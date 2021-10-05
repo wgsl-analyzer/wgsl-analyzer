@@ -1,0 +1,21 @@
+[package]
+name = "ide"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+salsa = "0.17.0-pre.1"
+tracing = "0.1.29"
+
+base_db = { path = "../base_db" }
+hir_def = { path = "../hir_def" }
+hir_ty = { path = "../hir_ty" }
+hir = { path = "../hir" }
+ide_completion = { path = "../ide_completion" }
+syntax = { path = "../syntax" }
+rowan = "0.14.1"
+
+vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "eb32b60dc" }
+
+expect-test = "1.1.0"
+itertools = "0.10.1"

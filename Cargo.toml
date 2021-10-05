@@ -1,0 +1,10 @@
+[workspace]
+members = ["crates/*", "tools"]
+
+
+[profile.dev]
+debug = 0
+
+
+[profile.release]
+debug = 0

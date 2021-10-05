@@ -1,0 +1,51 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Server",
+            "group": "build",
+            "type": "shell",
+            "command": "cargo build --package wgsl_analyzer",
+            "problemMatcher": "$rustc"
+        },
+        {
+            "label": "Build Server (Release)",
+            "group": "build",
+            "type": "shell",
+            "command": "cargo build --package wgsl_analyzer --release",
+            "problemMatcher": "$rustc"
+        },
+        {
+            "label": "Build Extension",
+            "group": "build",
+            "type": "npm",
+            "script": "build",
+            "path": "editors/code/",
+            "problemMatcher": {
+                "base": "$tsc",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceFolder}/editors/code/"
+                ]
+            },
+        },
+        {
+            "label": "Build Server and Extension",
+            "group": "build",
+            "dependsOn": [
+                "Build Server",
+                "Build Extension"
+            ],
+            "problemMatcher": "$rustc"
+        },
+        {
+            "label": "Build Server (Release) and Extension",
+            "group": "build",
+            "dependsOn": [
+                "Build Server (Release)",
+                "Build Extension"
+            ],
+            "problemMatcher": "$rustc"
+        },
+    ]
+}

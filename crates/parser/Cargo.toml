@@ -1,0 +1,9 @@
+[package]
+name = "parser"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+drop_bomb = "0.1.5"
+logos = "0.12.0"
+rowan = "0.14.1"

@@ -1,0 +1,14 @@
+[package]
+name = "hir"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+base_db = { path = "../base_db" }
+either = "1.6.1"
+hir_def = { path = "../hir_def" }
+hir_ty = { path = "../hir_ty" }
+syntax = { path = "../syntax" }
+tracing = "0.1"
+la-arena = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "eb32b60dc" }
+smallvec = "1.7.0"

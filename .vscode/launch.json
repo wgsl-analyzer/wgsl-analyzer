@@ -1,0 +1,46 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "extensionHost",
+            "request": "launch",
+            "name": "Run Extension (Debug Build)",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--disable-extensions",
+                "--extensionDevelopmentPath=${workspaceRoot}/editors/code"
+            ],
+            "outFiles": [
+                "${workspaceRoot}/editors/code/out/**/*.js"
+            ],
+            "preLaunchTask": "Build Server and Extension"
+        },
+        {
+            "type": "extensionHost",
+            "request": "launch",
+            "name": "Run Extension (Debug Build, don't disable extensions)",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--extensionDevelopmentPath=${workspaceRoot}/editors/code"
+            ],
+            "outFiles": [
+                "${workspaceRoot}/editors/code/out/**/*.js"
+            ],
+            "preLaunchTask": "Build Server and Extension"
+        },
+        {
+            "type": "extensionHost",
+            "request": "launch",
+            "name": "Run Extension (Release Build)",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--disable-extensions",
+                "--extensionDevelopmentPath=${workspaceRoot}/editors/code"
+            ],
+            "outFiles": [
+                "${workspaceRoot}/editors/code/out/**/*.js"
+            ],
+            "preLaunchTask": "Build Server (Release) and Extension"
+        },
+    ],
+}

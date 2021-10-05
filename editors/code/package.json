@@ -1,0 +1,98 @@
+{
+    "name": "wgsl-analyzer",
+    "description": "A language server implementation for the WGSL shading language",
+    "license": "MIT OR Apache-2.0",
+    "version": "0.1.0",
+    "publisher": "wgsl-analyzer",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/wgsl-analyzer/wgsl-analyzer"
+    },
+    "engines": {
+        "vscode": "^1.61.0"
+    },
+    "scripts": {
+        "build-base": "esbuild ./src/main.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --target=node14",
+        "build": "npm run build-base -- --sourcemap",
+        "watch": "npm run build-base -- --sourcemap --watch",
+        "lint": "eslint ./src --ext .ts,.tsx",
+        "package": "vsce package",
+        "vscode:prepublish": "npm run build-base -- --minify"
+    },
+    "dependencies": {
+        "vscode-languageclient": "^7.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "~14.17.5",
+        "@types/vscode": "^1.52.0",
+        "esbuild": "^0.13.4",
+        "vsce": "^2.3.0"
+    },
+    "main": "./out/main.js",
+    "activationEvents": [
+        "onLanguage:wgsl"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "wgsl",
+                "extensions": [
+                    ".wgsl"
+                ],
+                "aliases": [
+                    "WGSL"
+                ],
+                "configuration": "./language-configuration.json"
+            },
+            {
+                "id": "wgsl_syntax_tree",
+                "extensions": [
+                    ".wgslst"
+                ]
+            }
+        ],
+        "grammars": [
+            {
+                "language": "wgsl",
+                "scopeName": "source.wgsl",
+                "path": "./syntaxes/wgsl.tmLanguage.json"
+            }
+        ],
+        "commands": [
+            {
+                "command": "wgsl-analyzer.syntaxTree",
+                "title": "Show Syntax Tree",
+                "category": "WGSL Analyzer"
+            },
+            {
+                "command": "wgsl-analyzer.debugCommand",
+                "title": "Debug command",
+                "category": "WGSL Analyzer"
+            }
+        ],
+        "configuration": {
+            "title": "WGSL analyzer",
+            "properties": {
+                "wgsl-analyzer.server.path": {
+                    "type": [
+                        "null",
+                        "string"
+                    ],
+                    "description": "Path the the wgsl-analyzer executable"
+                },
+                "wgsl-analyzer.showTypeErrors": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to show type errors"
+                },
+                "wgsl-analyzer.customImports": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "default": {}
+                }
+            }
+        }
+    }
+}

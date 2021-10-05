@@ -1,0 +1,10 @@
+[package]
+name = "syntax"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+either = "1.6.1"
+itertools = "0.10.1"
+rowan = "0.14.1"
+wgsl_parser = { path = "../wgsl_parser" }

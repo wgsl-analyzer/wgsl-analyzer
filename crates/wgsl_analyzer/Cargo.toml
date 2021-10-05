@@ -1,0 +1,33 @@
+[package]
+name = "wgsl_analyzer"
+version = "0.0.0"
+edition = "2021"
+
+[[bin]]
+name = "wgsl_analyzer"
+path = "src/bin/main.rs"
+
+[dependencies]
+anyhow = "1.0.44"
+crossbeam-channel = "0.5.1"
+lsp-server = "0.5.2"
+lsp-types = "0.90.0"
+parking_lot = "0.11.2"
+serde = "1.0.130"
+serde_json = "1.0.68"
+threadpool = "1.8.1"
+tracing = "0.1.28"
+tracing-subscriber = "0.2.24"
+salsa = "0.17.0-pre.1"
+
+base_db = { path = "../base_db" }
+hir_def = { path = "../hir_def" }
+hir = { path = "../hir" }
+ide = { path = "../ide" }
+ide_completion = { path = "../ide_completion" }
+
+vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "eb32b60dc" }
+paths = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "eb32b60dc" }
+text_edit = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "eb32b60dc" }
+itertools = "0.10.1"
+dissimilar = "1.0.3"

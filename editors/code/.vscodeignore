@@ -1,0 +1,11 @@
+**
+!language-configuration.json
+!syntaxes
+!out
+out/**
+!out/src
+!package.json
+!package-lock.json
+!icon.png
+!README.md
+!LICENSE.md
