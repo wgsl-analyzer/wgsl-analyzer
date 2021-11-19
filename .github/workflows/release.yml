@@ -1,0 +1,131 @@
+name: CI
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win32
+            arch: x64
+            npm_config_arch: x64
+            rust_target: x86_64-pc-windows-msvc
+          # - os: windows-latest
+          #   platform: win32
+          #   arch: ia32
+          #   npm_config_arch: ia32
+          #   rust_target: x86_64-pc-windows-msvc
+          # - os: windows-latest
+          #   platform: win32
+          #   arch: arm64
+          #   npm_config_arch: arm
+          #   rust_target: aarch64-pc-windows-msvc
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            npm_config_arch: x64
+            rust_target: x86_64-unknown-linux-gnu
+          # - os: ubuntu-latest
+          #   platform: linux
+          #   arch: arm64
+          #   npm_config_arch: arm64
+          #   rust_target: aarch64-unknown-linux-gnu
+          # - os: ubuntu-latest
+          #   platform: linux
+          #   arch: armhf
+          #   npm_config_arch: arm
+          #   rust_target: aarch64-unknown-linux-musl
+          # - os: ubuntu-latest
+          #   platform: alpine
+          #   arch: x64
+          #   npm_config_arch: x64
+          #   rust_target: x86_64-unknown-linux-musl
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+            npm_config_arch: x64
+            rust_target: x86_64-apple-darwin
+          # - os: macos-latest
+          #   platform: darwin
+          #   arch: arm64
+          #   npm_config_arch: arm64
+          #   rust_target: aarch64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 14.x
+      - run: npm install
+        working-directory: ./editors/code
+        env:
+          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          npm_config_arch: ${{ matrix.npm_config_arch }}
+      - name: Install rustup
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+      - shell: pwsh
+        run: |
+          echo "target=${{ matrix.platform }}-${{ matrix.arch }}" >> $env:GITHUB_ENV
+          cargo build --release -p wgsl_analyzer --target ${{ matrix.rust_target }}
+          mkdir -p editors/code/out
+          cp "target/${{ matrix.rust_target }}/release/wgsl_analyzer$(If ('${{ matrix.platform }}' -eq 'win32') { '.exe' } else { '' } )" "editors/code/out/"
+      - shell: pwsh
+        run: npm run package -- --target ${{ env.target }} -o wgsl-analyzer-${{ env.target }}.vsix
+        working-directory: ./editors/code
+      - uses: actions/upload-artifact@v2
+        with:
+          name: wgsl-analyzer-${{ env.target }}.vsix
+          path: editors/code/wgsl-analyzer-${{ env.target }}.vsix
+
+  build_generic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 14.x
+      - shell: pwsh
+        run: |
+          npm install
+          $targets = @("win32-ia32", "win32-arm64", "linux-arm64", "linux-armhf", "alpine-x64", "darwin-arm64")
+          foreach($target in $targets) {
+            npm run package -- --target $target -o wgsl-analyzer-$target.vsix
+          }
+        working-directory: ./editors/code
+      - uses: actions/upload-artifact@v2
+        with:
+          name: wgsl-analyzer-generic
+          path: editors/code/wgsl-analyzer-*.vsix
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+      - name: Display structure of downloaded files
+        run: ls -R artifacts
+      - uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts: "artifacts/*/*.vsix"
+          allowUpdates: true
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [build, build_generic]
+    if: success() && startsWith( github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v2
+      - run: npx vsce publish --packagePath $(find . -iname '*.vsix')
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
