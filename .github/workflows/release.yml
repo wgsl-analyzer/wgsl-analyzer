@@ -126,6 +126,6 @@ jobs:
     if: success() && startsWith( github.ref, 'refs/tags/')
     steps:
       - uses: actions/download-artifact@v2
-      - run: npx vsce publish --packagePath $(find . -iname '*.vsix')
+      - run: npx vsce publish --packagePath $(find . -type f -iname '*.vsix')
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
