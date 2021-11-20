@@ -4,9 +4,22 @@ wgsl-analyzer is a [language server](https://microsoft.github.io/language-server
 
 It comes with a [VS Code](https://code.visualstudio.com/) plugin located in [./editors/code](./editors/code), but due to the nature of the language server protocol it should be possible to create plugins for other editors as well.
 
-## Installation
+## Installation (VS Code)
 
-TODO - vscode extension published in marketplace
+The extension is [published on the marketplace](https://marketplace.visualstudio.com/items?itemName=wgsl-analyzer.wgsl-analyzer), so you can simply download the extension like any other.
+
+If you are not using a platform for which the vscode extension ships prebuilt binaries (currently only windows-x64, linux-x64 and macos-x64), then you need to compile the language server yourself:
+```sh
+cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl_analyzer
+```
+
+Specify the server path in the settings:
+
+```json
+{
+    "wgsl-analyzer.server.path": "~/.cargo/bin/wgsl_analyzer"
+}
+```
 
 ## Building from source
 
