@@ -186,10 +186,10 @@ textureLoad(texture_depth_2d_array, vec2<i32>, i32, i32) -> f32
 textureLoad(texture_depth_multisampled_2d, vec2<i32>, i32) -> f32
 textureLoad(texture_external, vec2<i32>) -> vec4<f32>
 
-textureLoad(texture_storage_1d<F;write>, i32) -> F::StorageType
-textureLoad(texture_storage_2d<F;write>, vec2<i32>) -> F::StorageType
-textureLoad(texture_storage_2d_array<F;write>, vec2<i32>, i32) -> F::StorageType
-textureLoad(texture_storage_3d<F;write>, vec3<i32>) -> F::StorageType
+textureLoad(texture_storage_1d<F;read>, i32) -> F::StorageType
+textureLoad(texture_storage_2d<F;read>, vec2<i32>) -> F::StorageType
+textureLoad(texture_storage_2d_array<F;read>, vec2<i32>, i32) -> F::StorageType
+textureLoad(texture_storage_3d<F;read>, vec3<i32>) -> F::StorageType
 
 textureNumLayers(texture_2d_array<T>) -> i32
 textureNumLayers(texture_cube_array<T>) -> i32
