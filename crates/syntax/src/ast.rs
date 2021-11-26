@@ -684,6 +684,7 @@ ast_node!(PathType:
 );
 ast_node!(Atomic AtomicType);
 ast_node!(Array ArrayType);
+ast_node!(Pointer PtrType);
 
 ast_enum_compound! {
     enum Type {
@@ -695,6 +696,7 @@ ast_enum_compound! {
         SamplerType,
         AtomicType,
         ArrayType,
+        PtrType,
     }
 }
 
@@ -714,6 +716,7 @@ impl HasGenerics for TextureType {}
 impl HasGenerics for ScalarType {}
 impl HasGenerics for AtomicType {}
 impl HasGenerics for ArrayType {}
+impl HasGenerics for PtrType {}
 
 impl InfixExpr {
     pub fn lhs(&self) -> Option<Expr> {

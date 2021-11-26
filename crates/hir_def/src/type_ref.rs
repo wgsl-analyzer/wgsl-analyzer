@@ -13,6 +13,7 @@ pub enum TypeRef {
     Atomic(AtomicType),
     Array(ArrayType),
     Path(Name),
+    Ptr(PtrType),
 }
 impl std::fmt::Display for TypeRef {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -26,6 +27,7 @@ impl std::fmt::Display for TypeRef {
             TypeRef::Atomic(val) => write!(f, "{}", val),
             TypeRef::Array(val) => write!(f, "{}", val),
             TypeRef::Path(val) => write!(f, "{}", val.as_str()),
+            TypeRef::Ptr(val) => write!(f, "{}", val),
         }
     }
 }
@@ -43,6 +45,7 @@ impl TryFrom<ast::Type> for TypeRef {
             ast::Type::SamplerType(sampler) => TypeRef::Sampler(sampler.into()),
             ast::Type::AtomicType(atomic) => TypeRef::Atomic(atomic.try_into()?),
             ast::Type::ArrayType(array) => TypeRef::Array(array.try_into()?),
+            ast::Type::PtrType(ptr) => TypeRef::Ptr(ptr.try_into()?),
         };
         Ok(type_ref)
     }
@@ -353,6 +356,18 @@ pub enum StorageClass {
     Storage,
     Handle,
 }
+impl std::fmt::Display for StorageClass {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            StorageClass::Function => "function",
+            StorageClass::Private => "private",
+            StorageClass::Workgroup => "workgroup",
+            StorageClass::Uniform => "uniform",
+            StorageClass::Storage => "storage",
+            StorageClass::Handle => "handle",
+        })
+    }
+}
 impl StorageClass {
     pub fn default_access_mode(self) -> AccessMode {
         match self {
@@ -464,6 +479,43 @@ impl TryFrom<ast::ArrayType> for ArrayType {
         Ok(ArrayType {
             inner: Box::new(inner.try_into()?),
             size,
+        })
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct PtrType {
+    pub storage_class: StorageClass,
+    pub access_mode: AccessMode,
+    pub inner: Box<TypeRef>,
+}
+impl std::fmt::Display for PtrType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ptr<{}, {}>", self.storage_class, self.inner)
+    }
+}
+
+impl TryFrom<ast::PtrType> for PtrType {
+    type Error = ();
+
+    fn try_from(ptr: ast::PtrType) -> Result<Self, Self::Error> {
+        let mut generics = ptr.generic_arg_list().ok_or(())?.generics();
+        let storage_class: StorageClass = match generics.next() {
+            Some(ast::GenericArg::StorageClass(class)) => class.into(),
+            _ => return Err(()),
+        };
+        let inner = generics.next().ok_or(())?.as_type().ok_or(())?;
+
+        let access_mode = match generics.next() {
+            Some(ast::GenericArg::AccessMode(mode)) => mode.into(),
+            None => storage_class.default_access_mode(),
+            _ => return Err(()),
+        };
+
+        Ok(PtrType {
+            inner: Box::new(inner.try_into()?),
+            access_mode,
+            storage_class,
         })
     }
 }

@@ -1292,6 +1292,11 @@ impl<'db> TyLoweringContext<'db> {
                     type_ref::ArraySize::Dynamic => ArraySize::Dynamic,
                 },
             }),
+            TypeRef::Ptr(ptr) => TyKind::Ptr(Ptr {
+                storage_class: ptr.storage_class,
+                inner: self.lower_ty(&*ptr.inner),
+                access_mode: ptr.access_mode,
+            }),
             TypeRef::Path(name) => self
                 .resolver
                 .resolve_type(name)
