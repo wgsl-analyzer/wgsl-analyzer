@@ -297,14 +297,14 @@ atomicExchange(ptr<atomic<T>>, T) -> T
 // data packing
 pack4x8snorm(vec4<f32>) -> u32
 pack4x8unorm(vec4<f32>) -> u32
-pack2x8snorm(vec2<f32>) -> u32
-pack2x8unorm(vec2<f32>) -> u32
-pack2x8float(vec2<f32>) -> u32
+pack2x16snorm(vec2<f32>) -> u32
+pack2x16unorm(vec2<f32>) -> u32
+pack2x16float(vec2<f32>) -> u32
 unpack4x8snorm(u32) -> vec4<f32>
 unpack4x8unorm(u32) -> vec4<f32>
-unpack2x8snorm(u32) -> vec2<f32>
-unpack2x8unorm(u32) -> vec2<f32>
-unpack2x8float(u32) -> vec2<f32>
+unpack2x16snorm(u32) -> vec2<f32>
+unpack2x16unorm(u32) -> vec2<f32>
+unpack2x16float(u32) -> vec2<f32>
 
 // synchronization
 storageBarrier()
