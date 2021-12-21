@@ -466,7 +466,7 @@ fn parse_if_stmt() {
 #[test]
 fn parse_if_else() {
     check_statement(
-        "if (0) {} elseif (1) {} elseif (2) {} else {}",
+        "if (0) {} else if (1) {} else if (2) {} else {}",
         expect![[r#"
         IfStatement@0..45
           If@0..2 "if"

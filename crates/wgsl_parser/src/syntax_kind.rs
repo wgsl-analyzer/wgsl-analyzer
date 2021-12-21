@@ -219,8 +219,6 @@ pub enum SyntaxKind {
     Discard,
     #[token("else")]
     Else,
-    #[token("elseif")]
-    ElseIf,
     #[token("enable")]
     Enable,
     #[token("fallthrough")]

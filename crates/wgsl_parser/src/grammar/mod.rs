@@ -489,19 +489,22 @@ fn if_statement(p: &mut Parser) {
     surround(p, SyntaxKind::ParenLeft, SyntaxKind::ParenRight, expr);
     compound_statement(p);
 
-    while p.at(SyntaxKind::ElseIf) {
-        let m_else_if = p.start();
-        p.bump();
-        surround(p, SyntaxKind::ParenLeft, SyntaxKind::ParenRight, expr);
-        compound_statement(p);
-        m_else_if.complete(p, SyntaxKind::ElseIfBlock);
-    }
-
-    if p.at(SyntaxKind::Else) {
-        p.bump();
+    while p.at(SyntaxKind::Else) {
         let m_else = p.start();
-        compound_statement(p);
-        m_else.complete(p, SyntaxKind::ElseBlock);
+        p.bump();
+
+        if p.at(SyntaxKind::If) {
+            p.bump();
+            surround(p, SyntaxKind::ParenLeft, SyntaxKind::ParenRight, expr);
+            compound_statement(p);
+            m_else.complete(p, SyntaxKind::ElseIfBlock);
+        } else if p.at(SyntaxKind::BraceLeft) {
+            compound_statement(p);
+            m_else.complete(p, SyntaxKind::ElseBlock);
+        } else {
+            m_else.complete(p, SyntaxKind::Error);
+            p.error_recovery(&[SyntaxKind::Else]);
+        }
     }
 
     m.complete(p, SyntaxKind::IfStatement);
