@@ -1,6 +1,6 @@
 pub mod global_variable;
 
-use hir_def::{body::BodySourceMap, module_data::Name, type_ref::StorageClass, HirFileId, InFile};
+use hir_def::{body::BodySourceMap, module_data::Name, HirFileId, InFile};
 use hir_ty::{
     builtins::BuiltinId,
     infer::{InferenceDiagnostic, TypeExpectation, TypeLoweringError},
@@ -74,10 +74,6 @@ pub enum AnyDiagnostic {
         var: InFile<AstPtr<ast::GlobalVariableDecl>>,
         error: StorageClassError,
     },
-    MissingBlockAttribute {
-        var: InFile<AstPtr<ast::GlobalVariableDecl>>,
-        storage_class: StorageClass,
-    },
 
     InvalidType {
         file_id: HirFileId,
@@ -105,7 +101,6 @@ impl AnyDiagnostic {
             AnyDiagnostic::DerefNotPtr { expr, .. } => expr.file_id,
             AnyDiagnostic::MissingStorageClass { var } => var.file_id,
             AnyDiagnostic::InvalidStorageClass { var, .. } => var.file_id,
-            AnyDiagnostic::MissingBlockAttribute { var, .. } => var.file_id,
             AnyDiagnostic::InvalidType { file_id, .. } => *file_id,
             AnyDiagnostic::UnresolvedImport { import, .. } => import.file_id,
         }
@@ -264,9 +259,6 @@ pub(crate) fn any_diag_from_global_var(
         GlobalVariableDiagnostic::MissingStorageClass => AnyDiagnostic::MissingStorageClass { var },
         GlobalVariableDiagnostic::StorageClassError(error) => {
             AnyDiagnostic::InvalidStorageClass { var, error }
-        }
-        GlobalVariableDiagnostic::MissingBlockAttribute(storage_class) => {
-            AnyDiagnostic::MissingBlockAttribute { var, storage_class }
         }
     }
 }

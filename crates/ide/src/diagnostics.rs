@@ -186,23 +186,6 @@ pub fn diagnostics(
                 let frange = original_file_range(db.upcast(), var.file_id, &source);
                 DiagnosticMessage::new(format!("{}", error), frange.range)
             }
-            AnyDiagnostic::MissingBlockAttribute { var, storage_class } => {
-                let var_decl = var.value.to_node(&root);
-                let source = var_decl
-                    .var_token()
-                    .map(NodeOrToken::Token)
-                    .unwrap_or(NodeOrToken::Node(var_decl.syntax()));
-                let name = match storage_class {
-                    ty::StorageClass::Uniform => "uniform buffers",
-                    ty::StorageClass::Storage => "storage buffers",
-                    _ => unreachable!(),
-                };
-                let frange = original_file_range(db.upcast(), var.file_id, &source);
-                DiagnosticMessage::new(
-                    format!("the type of {} needs to have a `[[block]]` attribute", name),
-                    frange.range,
-                )
-            }
             AnyDiagnostic::InvalidType {
                 file_id: _,
                 location,
