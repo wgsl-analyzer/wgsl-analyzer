@@ -468,49 +468,81 @@ fn parse_if_else() {
     check_statement(
         "if (0) {} else if (1) {} else if (2) {} else {}",
         expect![[r#"
-        IfStatement@0..45
-          If@0..2 "if"
-          Whitespace@2..3 " "
-          ParenLeft@3..4 "("
-          Literal@4..5
-            IntLiteral@4..5 "0"
-          ParenRight@5..6 ")"
-          Whitespace@6..7 " "
-          CompoundStatement@7..10
-            BraceLeft@7..8 "{"
-            BraceRight@8..9 "}"
-            Whitespace@9..10 " "
-          ElseIfBlock@10..24
-            ElseIf@10..16 "elseif"
-            Whitespace@16..17 " "
-            ParenLeft@17..18 "("
-            Literal@18..19
-              IntLiteral@18..19 "1"
-            ParenRight@19..20 ")"
-            Whitespace@20..21 " "
-            CompoundStatement@21..24
-              BraceLeft@21..22 "{"
-              BraceRight@22..23 "}"
-              Whitespace@23..24 " "
-          ElseIfBlock@24..38
-            ElseIf@24..30 "elseif"
-            Whitespace@30..31 " "
-            ParenLeft@31..32 "("
-            Literal@32..33
-              IntLiteral@32..33 "2"
-            ParenRight@33..34 ")"
-            Whitespace@34..35 " "
-            CompoundStatement@35..38
-              BraceLeft@35..36 "{"
-              BraceRight@36..37 "}"
-              Whitespace@37..38 " "
-          Else@38..42 "else"
-          Whitespace@42..43 " "
-          ElseBlock@43..45
-            CompoundStatement@43..45
-              BraceLeft@43..44 "{"
-              BraceRight@44..45 "}""#]],
+            IfStatement@0..47
+              If@0..2 "if"
+              Whitespace@2..3 " "
+              ParenLeft@3..4 "("
+              Literal@4..5
+                IntLiteral@4..5 "0"
+              ParenRight@5..6 ")"
+              Whitespace@6..7 " "
+              CompoundStatement@7..10
+                BraceLeft@7..8 "{"
+                BraceRight@8..9 "}"
+                Whitespace@9..10 " "
+              ElseIfBlock@10..25
+                Else@10..14 "else"
+                Whitespace@14..15 " "
+                If@15..17 "if"
+                Whitespace@17..18 " "
+                ParenLeft@18..19 "("
+                Literal@19..20
+                  IntLiteral@19..20 "1"
+                ParenRight@20..21 ")"
+                Whitespace@21..22 " "
+                CompoundStatement@22..25
+                  BraceLeft@22..23 "{"
+                  BraceRight@23..24 "}"
+                  Whitespace@24..25 " "
+              ElseIfBlock@25..40
+                Else@25..29 "else"
+                Whitespace@29..30 " "
+                If@30..32 "if"
+                Whitespace@32..33 " "
+                ParenLeft@33..34 "("
+                Literal@34..35
+                  IntLiteral@34..35 "2"
+                ParenRight@35..36 ")"
+                Whitespace@36..37 " "
+                CompoundStatement@37..40
+                  BraceLeft@37..38 "{"
+                  BraceRight@38..39 "}"
+                  Whitespace@39..40 " "
+              ElseBlock@40..47
+                Else@40..44 "else"
+                Whitespace@44..45 " "
+                CompoundStatement@45..47
+                  BraceLeft@45..46 "{"
+                  BraceRight@46..47 "}""#]],
     )
+}
+
+#[test]
+fn parse_if_recovery_1() {
+    check_statement(
+        "if (false) {} else if {}",
+        expect![[r#"
+            IfStatement@0..24
+              If@0..2 "if"
+              Whitespace@2..3 " "
+              ParenLeft@3..4 "("
+              Literal@4..9
+                False@4..9 "false"
+              ParenRight@9..10 ")"
+              Whitespace@10..11 " "
+              CompoundStatement@11..14
+                BraceLeft@11..12 "{"
+                BraceRight@12..13 "}"
+                Whitespace@13..14 " "
+              ElseIfBlock@14..24
+                Else@14..18 "else"
+                Whitespace@18..19 " "
+                If@19..21 "if"
+                Whitespace@21..22 " "
+                CompoundStatement@22..24
+                  BraceLeft@22..23 "{"
+                  BraceRight@23..24 "}""#]],
+    );
 }
 
 #[test]
