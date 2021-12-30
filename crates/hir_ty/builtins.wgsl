@@ -7,13 +7,13 @@ select(T, T, bool) -> T
 select(vecN<T>, vecN<T>, vecN<bool>) -> vecN<T>
 
 // value-testing
-isNan(f32) -> f32
+isNan(f32) -> bool
 isNan(vecN<f32>) -> vecN<bool>
-isInf(f32) -> f32
+isInf(f32) -> bool
 isInf(vecN<f32>) -> vecN<bool>
-isFinite(f32) -> f32
+isFinite(f32) -> bool
 isFinite(vecN<f32>) -> vecN<bool>
-isNormal(f32) -> f32
+isNormal(f32) -> bool
 isNormal(vecN<f32>) -> vecN<bool>
 arrayLength(ptr<array<T>>) -> u32
 
