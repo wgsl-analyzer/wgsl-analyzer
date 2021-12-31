@@ -40,6 +40,7 @@ fn write_type_expectation_inner(
             write!(f, "i32 or f32")?;
         }
         TypeExpectationInner::NumericScalar => write!(f, "i32, u32 or f32")?,
+        TypeExpectationInner::IntegerScalar => write!(f, "i32 or u32")?,
     }
     Ok(())
 }

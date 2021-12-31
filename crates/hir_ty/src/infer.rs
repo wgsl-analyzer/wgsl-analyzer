@@ -325,7 +325,31 @@ impl<'db> InferenceContext<'db> {
 
                 self.expect_same_type(lhs, ty, lhs_inner);
             }
+            Statement::IncrDecr { expr, .. } => {
+                let lhs_ty = self.infer_expr(expr);
 
+                let lhs_kind = lhs_ty.kind(self.db);
+                let lhs_inner = match lhs_kind {
+                    TyKind::Ref(r) => r.inner,
+                    _ => {
+                        self.push_diagnostic(InferenceDiagnostic::AssignmentNotAReference {
+                            lhs: expr,
+                            actual: lhs_ty,
+                        });
+                        self.err_ty()
+                    }
+                };
+
+                if let Err(_) =
+                    self.expect_ty_inner(lhs_inner, &TypeExpectationInner::IntegerScalar)
+                {
+                    self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
+                        expr,
+                        actual: lhs_inner,
+                        expected: TypeExpectation::Type(TypeExpectationInner::IntegerScalar),
+                    });
+                }
+            }
             Statement::If {
                 condition,
                 block,
@@ -396,6 +420,10 @@ impl<'db> InferenceContext<'db> {
             },
             TypeExpectationInner::NumericScalar => match ty.kind(self.db).unref(self.db).as_ref() {
                 TyKind::Scalar(ScalarType::I32 | ScalarType::F32 | ScalarType::U32) => Ok(()),
+                _ => Err(()),
+            },
+            TypeExpectationInner::IntegerScalar => match ty.kind(self.db).unref(self.db).as_ref() {
+                TyKind::Scalar(ScalarType::I32 | ScalarType::U32) => Ok(()),
                 _ => Err(()),
             },
         }
@@ -1139,6 +1167,7 @@ pub enum TypeExpectationInner {
     Exact(Ty),
     I32OrF32,
     NumericScalar,
+    IntegerScalar,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]

@@ -29,6 +29,8 @@ pub enum SyntaxKind {
     LoopStatement,
     /// if (expr) { stmts }
     IfStatement,
+    // i++, i--
+    IncrDecrStatement,
     ElseIfBlock,
     ElseBlock,
     /// for(init, cmp, update) {}

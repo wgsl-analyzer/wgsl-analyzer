@@ -1,5 +1,5 @@
 use la_arena::Idx;
-use syntax::ast::{self};
+use syntax::ast::{self, IncrDecr};
 
 use crate::{
     body::BindingId,
@@ -95,6 +95,10 @@ pub enum Statement {
         lhs: ExprId,
         rhs: ExprId,
         op: CompoundOp,
+    },
+    IncrDecr {
+        expr: ExprId,
+        op: IncrDecr,
     },
     If {
         condition: ExprId,

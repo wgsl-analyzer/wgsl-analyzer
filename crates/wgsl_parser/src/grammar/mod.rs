@@ -406,14 +406,17 @@ pub fn statement(p: &mut Parser) {
         let m = p.start();
         expr(p);
 
-        if p.at_set(COMPOUND_ASSIGNMENT_SET) {
-            p.bump();
-            expr(p);
-            m.complete(p, SyntaxKind::CompoundAssignmentStmt);
-        } else if p.at(SyntaxKind::Equal) {
+        if p.at(SyntaxKind::Equal) {
             p.expect(SyntaxKind::Equal);
             expr(p);
             m.complete(p, SyntaxKind::AssignmentStmt);
+        } else if p.at_set(&[SyntaxKind::PlusPlus, SyntaxKind::MinusMinus]) {
+            p.bump();
+            m.complete(p, SyntaxKind::IncrDecrStatement);
+        } else if p.at_set(COMPOUND_ASSIGNMENT_SET) {
+            p.bump();
+            expr(p);
+            m.complete(p, SyntaxKind::CompoundAssignmentStmt);
         } else {
             // only function calls are actually allowed as statements in wgsl.
             m.complete(p, SyntaxKind::ExprStatement);

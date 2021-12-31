@@ -522,6 +522,29 @@ impl AssignmentStmt {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum IncrDecr {
+    Increment,
+    Decrement,
+}
+
+ast_node!(IncrDecrStatement);
+impl IncrDecrStatement {
+    pub fn expr(&self) -> Option<Expr> {
+        crate::support::children(&self.syntax()).next()
+    }
+    pub fn incr_decr(&self) -> Option<IncrDecr> {
+        self.syntax()
+            .children_with_tokens()
+            .filter_map(|it| it.into_token())
+            .find_map(|token| match token.kind() {
+                SyntaxKind::PlusPlus => Some(IncrDecr::Increment),
+                SyntaxKind::MinusMinus => Some(IncrDecr::Increment),
+                _ => None,
+            })
+    }
+}
+
 ast_token_enum! {
     enum CompoundAssignmentOperator {
         PlusEqual,
@@ -651,6 +674,7 @@ ast_enum! {
         Continue,
         ContinuingStatement,
         ExprStatement,
+        IncrDecrStatement,
     }
 }
 

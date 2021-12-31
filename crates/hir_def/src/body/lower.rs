@@ -156,6 +156,11 @@ impl<'a> Collector<'a> {
                 let op = assignment.op()?;
                 Statement::CompoundAssignment { lhs, rhs, op }
             }
+            ast::Statement::IncrDecrStatement(ref stmt) => {
+                let expr = self.collect_expr_opt(stmt.expr());
+                let op = stmt.incr_decr()?;
+                Statement::IncrDecr { expr, op }
+            }
             ast::Statement::IfStatement(ref if_stmt) => {
                 let condition = self.collect_expr_opt(if_stmt.condition());
                 let block = self.collect_compound_stmt_opt(if_stmt.block());

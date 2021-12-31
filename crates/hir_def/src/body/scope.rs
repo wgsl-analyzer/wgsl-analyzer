@@ -171,6 +171,9 @@ fn compute_statement_scopes(
             compute_expr_scopes(*lhs, body, scopes, scope);
             compute_expr_scopes(*rhs, body, scopes, scope);
         }
+        Statement::IncrDecr { expr, .. } => {
+            compute_expr_scopes(*expr, body, scopes, scope);
+        }
         Statement::If {
             condition,
             block,
