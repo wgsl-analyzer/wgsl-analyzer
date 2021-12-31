@@ -934,6 +934,51 @@ fn parse_stmt_recover() {
 }
 
 #[test]
+fn parse_coumpound_assignment_stmt() {
+    check_statement(
+        "a += 3",
+        expect![[r#"
+            CompoundAssignmentStmt@0..6
+              PathExpr@0..2
+                NameRef@0..2
+                  Ident@0..1 "a"
+                  Whitespace@1..2 " "
+              PlusEqual@2..4 "+="
+              Whitespace@4..5 " "
+              Literal@5..6
+                IntLiteral@5..6 "3""#]],
+    );
+}
+
+#[test]
+fn parse_coumpound_assignment_stmt_expr() {
+    check_statement(
+        "*func() += foo()",
+        expect![[r#"
+            CompoundAssignmentStmt@0..16
+              PrefixExpr@0..8
+                Star@0..1 "*"
+                FunctionCall@1..8
+                  PathExpr@1..5
+                    NameRef@1..5
+                      Ident@1..5 "func"
+                  FunctionParamList@5..8
+                    ParenLeft@5..6 "("
+                    ParenRight@6..7 ")"
+                    Whitespace@7..8 " "
+              PlusEqual@8..10 "+="
+              Whitespace@10..11 " "
+              FunctionCall@11..16
+                PathExpr@11..14
+                  NameRef@11..14
+                    Ident@11..14 "foo"
+                FunctionParamList@14..16
+                  ParenLeft@14..15 "("
+                  ParenRight@15..16 ")""#]],
+    );
+}
+
+#[test]
 fn parse_var_without_initializer() {
     check_statement(
         "var x: u32;",

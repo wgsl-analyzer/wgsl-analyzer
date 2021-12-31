@@ -405,7 +405,12 @@ pub fn statement(p: &mut Parser) {
     } else {
         let m = p.start();
         expr(p);
-        if p.at(SyntaxKind::Equal) {
+
+        if p.at_set(COMPOUND_ASSIGNMENT_SET) {
+            p.bump();
+            expr(p);
+            m.complete(p, SyntaxKind::CompoundAssignmentStmt);
+        } else if p.at(SyntaxKind::Equal) {
             p.expect(SyntaxKind::Equal);
             expr(p);
             m.complete(p, SyntaxKind::AssignmentStmt);
@@ -415,6 +420,19 @@ pub fn statement(p: &mut Parser) {
         }
     }
 }
+
+const COMPOUND_ASSIGNMENT_SET: &[SyntaxKind] = &[
+    SyntaxKind::PlusEqual,
+    SyntaxKind::MinusEqual,
+    SyntaxKind::TimesEqual,
+    SyntaxKind::DivisionEqual,
+    SyntaxKind::ModuloEqual,
+    SyntaxKind::AndEqual,
+    SyntaxKind::OrEqual,
+    SyntaxKind::XorEqual,
+    SyntaxKind::ShiftRightEqual,
+    SyntaxKind::ShiftLeftEqual,
+];
 
 fn loop_statement(p: &mut Parser) {
     let m = p.start();

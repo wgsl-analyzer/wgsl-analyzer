@@ -68,6 +68,8 @@ pub enum SyntaxKind {
     PathType,
     /// a = b
     AssignmentStmt,
+    /// a += b
+    CompoundAssignmentStmt,
     /// [[location(0), interpolate(flat)]]
     AttributeList,
     /// location(0, 1, 2)
@@ -339,6 +341,27 @@ pub enum SyntaxKind {
     Tilde,
     #[token("^")]
     Xor,
+
+    #[token("+=")]
+    PlusEqual,
+    #[token("-=")]
+    MinusEqual,
+    #[token("*=")]
+    TimesEqual,
+    #[token("/=")]
+    DivisionEqual,
+    #[token("%=")]
+    ModuloEqual,
+    #[token("&=")]
+    AndEqual,
+    #[token("|=")]
+    OrEqual,
+    #[token("^=")]
+    XorEqual,
+    #[token(">>=")]
+    ShiftRightEqual,
+    #[token("<<=")]
+    ShiftLeftEqual,
 
     #[error]
     Error,

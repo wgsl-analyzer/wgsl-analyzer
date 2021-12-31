@@ -15,6 +15,7 @@ use crate::TokenText;
 use wgsl_parser::{SyntaxKind, SyntaxNode};
 
 use self::operators::BinaryOp;
+use self::operators::CompoundOp;
 use self::operators::UnaryOp;
 
 macro_rules! ast_node {
@@ -520,6 +521,47 @@ impl AssignmentStmt {
         crate::support::children(&self.syntax()).nth(1)
     }
 }
+
+ast_token_enum! {
+    enum CompoundAssignmentOperator {
+        PlusEqual,
+        MinusEqual,
+        TimesEqual,
+        DivisionEqual,
+        ModuloEqual,
+        AndEqual,
+        OrEqual,
+        XorEqual,
+        ShiftRightEqual,
+        ShiftLeftEqual,
+    }
+}
+
+ast_node!(CompoundAssignmentStmt);
+impl CompoundAssignmentStmt {
+    pub fn lhs(&self) -> Option<Expr> {
+        crate::support::children(&self.syntax()).next()
+    }
+    pub fn rhs(&self) -> Option<Expr> {
+        crate::support::children(&self.syntax()).nth(1)
+    }
+    pub fn op(&self) -> Option<CompoundOp> {
+        let kind: CompoundAssignmentOperator = support::child_token(&self.syntax())?;
+        let op = match kind {
+            CompoundAssignmentOperator::PlusEqual(_) => CompoundOp::Add,
+            CompoundAssignmentOperator::MinusEqual(_) => CompoundOp::Sub,
+            CompoundAssignmentOperator::TimesEqual(_) => CompoundOp::Mul,
+            CompoundAssignmentOperator::DivisionEqual(_) => CompoundOp::Div,
+            CompoundAssignmentOperator::ModuloEqual(_) => CompoundOp::Modulo,
+            CompoundAssignmentOperator::AndEqual(_) => CompoundOp::BitAnd,
+            CompoundAssignmentOperator::OrEqual(_) => CompoundOp::BitOr,
+            CompoundAssignmentOperator::XorEqual(_) => CompoundOp::BitXor,
+            CompoundAssignmentOperator::ShiftRightEqual(_) => CompoundOp::Shr,
+            CompoundAssignmentOperator::ShiftLeftEqual(_) => CompoundOp::Shl,
+        };
+        Some(op)
+    }
+}
 ast_node!(ElseIfBlock:
     block: Option<CompoundStatement>;
 );
@@ -600,6 +642,7 @@ ast_enum! {
         VariableStatement,
         ReturnStmt,
         AssignmentStmt,
+        CompoundAssignmentStmt,
         IfStatement,
         ForStatement,
         LoopStatement,

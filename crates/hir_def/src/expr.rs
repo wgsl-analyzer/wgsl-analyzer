@@ -91,6 +91,11 @@ pub enum Statement {
         lhs: ExprId,
         rhs: ExprId,
     },
+    CompoundAssignment {
+        lhs: ExprId,
+        rhs: ExprId,
+        op: CompoundOp,
+    },
     If {
         condition: ExprId,
         block: StatementId,

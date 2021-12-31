@@ -306,6 +306,26 @@ impl<'db> InferenceContext<'db> {
 
                 self.infer_expr_expect(rhs, TypeExpectation::from_ty(lhs_inner));
             }
+            Statement::CompoundAssignment { lhs, rhs, op } => {
+                let lhs_ty = self.infer_expr(lhs);
+
+                let lhs_kind = lhs_ty.kind(self.db);
+                let lhs_inner = match lhs_kind {
+                    TyKind::Ref(r) => r.inner,
+                    _ => {
+                        self.push_diagnostic(InferenceDiagnostic::AssignmentNotAReference {
+                            lhs,
+                            actual: lhs_ty,
+                        });
+                        self.err_ty()
+                    }
+                };
+
+                let ty = self.infer_binary_op(lhs, rhs, op.into());
+
+                self.expect_same_type(lhs, ty, lhs_inner);
+            }
+
             Statement::If {
                 condition,
                 block,
@@ -428,7 +448,7 @@ impl<'db> InferenceContext<'db> {
         let body = Arc::clone(&self.body);
         let ty = match body.exprs[expr] {
             Expr::Missing => self.err_ty(),
-            Expr::BinaryOp { lhs, rhs, op } => self.infer_binary_op(expr, lhs, rhs, op),
+            Expr::BinaryOp { lhs, rhs, op } => self.infer_binary_op(lhs, rhs, op),
             Expr::UnaryOp { expr, op } => self.infer_unary_op(expr, op),
             Expr::Field {
                 expr: field_expr,
@@ -660,7 +680,7 @@ impl<'db> InferenceContext<'db> {
         self.call_builtin(expr, builtin, &[arg_ty])
     }
 
-    fn infer_binary_op(&mut self, _expr: ExprId, lhs: ExprId, rhs: ExprId, op: BinaryOp) -> Ty {
+    fn infer_binary_op(&mut self, lhs: ExprId, rhs: ExprId, op: BinaryOp) -> Ty {
         let lhs_ty = self.infer_expr(lhs).unref(self.db);
         let rhs_ty = self.infer_expr(rhs).unref(self.db);
 

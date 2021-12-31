@@ -150,6 +150,12 @@ impl<'a> Collector<'a> {
                 let rhs = self.collect_expr_opt(assignment.rhs());
                 Statement::Assignment { lhs, rhs }
             }
+            ast::Statement::CompoundAssignmentStmt(ref assignment) => {
+                let lhs = self.collect_expr_opt(assignment.lhs());
+                let rhs = self.collect_expr_opt(assignment.rhs());
+                let op = assignment.op()?;
+                Statement::CompoundAssignment { lhs, rhs, op }
+            }
             ast::Statement::IfStatement(ref if_stmt) => {
                 let condition = self.collect_expr_opt(if_stmt.condition());
                 let block = self.collect_compound_stmt_opt(if_stmt.block());
