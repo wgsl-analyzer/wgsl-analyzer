@@ -4,6 +4,16 @@
     "license": "MIT OR Apache-2.0",
     "version": "0.1.2",
     "publisher": "wgsl-analyzer",
+    "keywords": [
+        "wgsl",
+        "shading",
+        "web"
+    ],
+    "categories": [
+        "Programming Languages",
+        "Formatters",
+        "Linters"
+    ],
     "repository": {
         "type": "git",
         "url": "https://github.com/wgsl-analyzer/wgsl-analyzer"
