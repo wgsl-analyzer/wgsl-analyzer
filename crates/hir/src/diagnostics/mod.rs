@@ -57,6 +57,7 @@ pub enum AnyDiagnostic {
     NoBuiltinOverload {
         expr: InFile<AstPtr<ast::Expr>>,
         builtin: BuiltinId,
+        name: Option<&'static str>,
         parameters: Vec<Ty>,
     },
     AddrOfNotRef {
@@ -184,6 +185,7 @@ pub(crate) fn any_diag_from_infer_diag(
             expr,
             builtin,
             ref parameters,
+            name,
         } => {
             let ptr = source_map.expr_to_source(expr).ok()?.clone();
             let source = InFile::new(file_id, ptr);
@@ -191,6 +193,7 @@ pub(crate) fn any_diag_from_infer_diag(
             AnyDiagnostic::NoBuiltinOverload {
                 expr: source,
                 builtin,
+                name,
                 parameters: parameters.clone(),
             }
         }

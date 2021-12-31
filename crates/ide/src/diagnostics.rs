@@ -123,6 +123,7 @@ pub fn diagnostics(
                 expr,
                 builtin,
                 parameters,
+                name,
             } => {
                 let source = expr.value.to_node(&root).syntax().parent().unwrap();
                 let builtin = builtin.lookup(db);
@@ -138,11 +139,16 @@ pub fn diagnostics(
                     .map(|overload| ty::pretty::pretty_type(db, overload.ty))
                     .join("\n");
 
+                let name = match name {
+                    Some(name) => name,
+                    None => builtin.name.as_str(),
+                };
+
                 let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
                 DiagnosticMessage::new(
                     format!(
                         "no overload of `{}` found for given arguments. Found ({}), expected one of:\n{}",
-                        builtin.name.as_str(),
+                        name,
                         parameters,
                         possible
                     ),

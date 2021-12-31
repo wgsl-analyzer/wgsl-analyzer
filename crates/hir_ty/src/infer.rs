@@ -77,6 +77,7 @@ pub enum InferenceDiagnostic {
     NoBuiltinOverload {
         expr: ExprId,
         builtin: BuiltinId,
+        name: Option<&'static str>,
         parameters: Vec<Ty>,
     },
 
@@ -563,7 +564,7 @@ impl<'db> InferenceContext<'db> {
                 match callee_ty.kind(self.db) {
                     // TODO refactor to allow early return
                     TyKind::Error => self.err_ty(),
-                    TyKind::BuiltinFn(builtin) => self.call_builtin(callee, builtin, &args),
+                    TyKind::BuiltinFn(builtin) => self.call_builtin(callee, builtin, &args, None),
                     TyKind::Function(f) => {
                         if f.parameters.len() != args.len() {
                             self.push_diagnostic(
@@ -705,7 +706,7 @@ impl<'db> InferenceContext<'db> {
         };
 
         let arg_ty = expr_ty.unref(self.db);
-        self.call_builtin(expr, builtin, &[arg_ty])
+        self.call_builtin(expr, builtin, &[arg_ty], Some(op.symbol()))
     }
 
     fn infer_binary_op(&mut self, lhs: ExprId, rhs: ExprId, op: BinaryOp) -> Ty {
@@ -737,7 +738,7 @@ impl<'db> InferenceContext<'db> {
             },
         };
 
-        self.call_builtin(lhs, builtin, &[lhs_ty, rhs_ty])
+        self.call_builtin(lhs, builtin, &[lhs_ty, rhs_ty], Some(op.symbol()))
     }
 
     fn resolve_path_expr(&self, expr: ExprId, path: &Name) -> Option<Ty> {
@@ -818,7 +819,13 @@ impl<'db> InferenceContext<'db> {
         Err(())
     }
 
-    fn call_builtin(&mut self, expr: ExprId, builtin_id: BuiltinId, args: &[Ty]) -> Ty {
+    fn call_builtin(
+        &mut self,
+        expr: ExprId,
+        builtin_id: BuiltinId,
+        args: &[Ty],
+        name: Option<&'static str>,
+    ) -> Ty {
         let builtin = builtin_id.lookup(self.db);
 
         for overload in &builtin.overloads {
@@ -830,6 +837,7 @@ impl<'db> InferenceContext<'db> {
         self.push_diagnostic(InferenceDiagnostic::NoBuiltinOverload {
             expr,
             builtin: builtin_id,
+            name,
             parameters: args.to_vec(),
         });
 
