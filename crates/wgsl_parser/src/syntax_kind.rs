@@ -98,6 +98,8 @@ pub enum SyntaxKind {
     UnofficialPreprocessorIfDef,
     #[regex("#endif.*")]
     UnofficialPreprocessorEndif,
+    #[regex("#else.*")]
+    UnofficialPreprocessorElse,
     #[regex("#import")]
     UnofficialPreprocessorImport,
 
@@ -389,6 +391,7 @@ impl SyntaxKind {
                 | SyntaxKind::Comment
                 | SyntaxKind::UnofficialPreprocessorEndif
                 | SyntaxKind::UnofficialPreprocessorIfDef
+                | SyntaxKind::UnofficialPreprocessorElse
         )
     }
 }
