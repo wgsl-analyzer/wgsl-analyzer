@@ -907,14 +907,14 @@ impl UnificationTable {
     fn resolve(&self, db: &dyn HirDatabase, ty: Ty) -> Ty {
         match ty.kind(db) {
             TyKind::BoundVar(var) => *self.type_vars.get(&var).expect("type var not contrained"),
-            TyKind::Vector(VectorType {
-                size: VecSize::BoundVar(size_var),
-                inner,
-            }) => {
-                let size = *self
-                    .vec_size_vars
-                    .get(&size_var)
-                    .expect("vec size var not constrained");
+            TyKind::Vector(VectorType { size, inner }) => {
+                let size = match size {
+                    VecSize::BoundVar(size_var) => *self
+                        .vec_size_vars
+                        .get(&size_var)
+                        .expect("vec size var not constrained"),
+                    size => size,
+                };
                 let inner = self.resolve(db, inner);
                 TyKind::Vector(VectorType { size, inner }).intern(db)
             }
