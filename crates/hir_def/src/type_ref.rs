@@ -179,12 +179,12 @@ impl std::fmt::Display for TextureType {
             TextureKind::Sampled(ty) => write!(
                 f,
                 "texture_{}{}{}<{}>",
-                self.dimension,
                 if self.multisampled {
                     "_multisampled"
                 } else {
                     ""
                 },
+                self.dimension,
                 if self.arrayed { "_array" } else { "" },
                 ty
             ),
