@@ -180,7 +180,7 @@ impl std::fmt::Display for TextureType {
                 f,
                 "texture_{}{}{}<{}>",
                 if self.multisampled {
-                    "_multisampled"
+                    "multisampled_"
                 } else {
                     ""
                 },
@@ -204,12 +204,12 @@ impl std::fmt::Display for TextureType {
             TextureKind::Depth => write!(
                 f,
                 "texture_depth_{}{}{}",
-                self.dimension,
                 if self.multisampled {
-                    "_multisampled"
+                    "multisampled_"
                 } else {
                     ""
                 },
+                self.dimension,
                 if self.arrayed { "_array" } else { "" },
             ),
             TextureKind::External => write!(f, "texture_external"),

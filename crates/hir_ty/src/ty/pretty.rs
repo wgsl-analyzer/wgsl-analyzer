@@ -95,23 +95,23 @@ fn write_ty(db: &dyn HirDatabase, ty: Ty, f: &mut String) -> std::fmt::Result {
             let val = match e.kind {
                 TextureKind::Sampled(ty) => format!(
                     "texture_{}{}{}<{}>",
+                    if e.multisampled { "multisampled_" } else { "" },
                     e.dimension,
-                    if e.multisampled { "_multisampled" } else { "" },
                     if e.arrayed { "_array" } else { "" },
                     pretty_type(db, ty),
                 ),
                 TextureKind::Storage(format, mode) => format!(
                     "texture_storage_{}{}{}<{},{}>",
+                    if e.multisampled { "multisampled_" } else { "" },
                     e.dimension,
-                    if e.multisampled { "_multisampled" } else { "" },
                     if e.arrayed { "_array" } else { "" },
                     format,
                     mode,
                 ),
                 TextureKind::Depth => format!(
                     "texture_depth_{}{}{}",
+                    if e.multisampled { "multisampled_" } else { "" },
                     e.dimension,
-                    if e.multisampled { "_multisampled" } else { "" },
                     if e.arrayed { "_array" } else { "" },
                 ),
                 TextureKind::External => "texture_external".into(),
