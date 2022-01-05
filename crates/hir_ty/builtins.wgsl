@@ -358,6 +358,9 @@ op_binary_div(T, T) -> T
 op_binary_mul(matMxN<f32>, matMxN<f32>) -> matMxN<f32>
 op_binary_mul(matMxN<f32>, vecM<f32>) -> vecN<f32>
 op_binary_mul(vecN<f32>, matMxN<f32>) -> vecM<f32>
+op_binary_mul(matMxN<f32>, f32) -> matMxN<f32>
+op_binary_mul(f32, matMxN<f32>) -> matMxN<f32>
+op_binary_mul(matKxN<f32>, matMxK<f32>) -> matMxN<f32>
 op_binary_mul(vecN<T>, vecN<T>) -> vecN<T>
 op_binary_mul(vecN<T>, vecN<T>) -> vecN<T>
 op_binary_mul(vecN<T>, T) -> vecN<T>
