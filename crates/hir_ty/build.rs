@@ -278,7 +278,7 @@ fn parse_ty(generics: &mut BTreeMap<char, (usize, Generic)>, ty: &str) -> Type {
                 "3d" => TextureType { dimension: TextureDimensionality::D3, arrayed: false, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
                 "cube" => TextureType { dimension: TextureDimensionality::Cube, arrayed: false, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
                 "cube_array" => TextureType { dimension: TextureDimensionality::Cube, arrayed: true, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
-                "multisampled_2d" => TextureType { dimension: TextureDimensionality::D2, arrayed: true, multisampled: true, kind: TextureKind::Sampled(Box::new(inner)) },
+                "multisampled_2d" => TextureType { dimension: TextureDimensionality::D2, arrayed: false, multisampled: true, kind: TextureKind::Sampled(Box::new(inner)) },
                 _ => unimplemented!("{}", ty),
             };
             return Type::Texture(texture_type);
@@ -316,7 +316,7 @@ fn parse_ty(generics: &mut BTreeMap<char, (usize, Generic)>, ty: &str) -> Type {
             "depth_cube" => TextureType { dimension: TextureDimensionality::Cube, arrayed: false, multisampled: false, kind: TextureKind::Depth },
             "depth_cube_array" => TextureType { dimension: TextureDimensionality::Cube, arrayed: true, multisampled: false, kind: TextureKind::Depth },
             "depth_multisampled_2d" => TextureType { dimension: TextureDimensionality::D2, arrayed: false, multisampled: true, kind: TextureKind::Depth },
-            "external" => TextureType { dimension: TextureDimensionality::D2, arrayed: false, multisampled: true, kind: TextureKind::External },
+            "external" => TextureType { dimension: TextureDimensionality::D2, arrayed: false, multisampled: false, kind: TextureKind::External },
             _ => unimplemented!("{}", ty),
         };
         return Type::Texture(texture_type);
