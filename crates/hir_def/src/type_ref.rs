@@ -275,7 +275,7 @@ impl TryFrom<ast::TextureType> for TextureType {
             ast::TextureType::TextureDepth2dArray(_) => (TextureKindVariant::Depth, TextureDimension::D2, true, false),
             ast::TextureType::TextureDepthCube(_) => (TextureKindVariant::Depth, TextureDimension::Cube, false, false),
             ast::TextureType::TextureDepthCubeArray(_) => (TextureKindVariant::Depth, TextureDimension::Cube, true, false),
-            ast::TextureType::TextureDepthMultisampled2d(_) => (TextureKindVariant::Depth, TextureDimension::D1, false, true),
+            ast::TextureType::TextureDepthMultisampled2d(_) => (TextureKindVariant::Depth, TextureDimension::D2, false, true),
         };
 
         let kind = match kind {
