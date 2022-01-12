@@ -1,4 +1,3 @@
-import { VersionedTextDocumentIdentifier } from "vscode-languageserver-types";
 import * as vscode from 'vscode';
 
 export class Config {
