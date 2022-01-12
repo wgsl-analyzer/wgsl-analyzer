@@ -21,7 +21,7 @@
             "dependsOn": ["Build Server"],
             "type": "shell",
             "windows": {
-                "command": "copy target/release/wgsl_analyzer.exe editors/code/out",
+                "command": "copy target/debug/wgsl_analyzer.exe editors/code/out",
                 "options": {
                     "env": {
                         "COPYCMD": "/Y",
