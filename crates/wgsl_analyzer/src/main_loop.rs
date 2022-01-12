@@ -112,7 +112,7 @@ impl GlobalState {
                         handlers::publish_diagnostics(&snapshot, &diagnostics_config, file_id)
                             .map_err(|err| {
                                 if !is_cancelled(&*err) {
-                                    tracing::error!("failed to compute diagnostics: {:?}", err);
+                                    tracing::error!("Failed to compute diagnostics: {:?}", err);
                                 }
                             })
                             .ok()?;
@@ -170,12 +170,12 @@ impl GlobalState {
                         }],
                     },
                     |this, resp| {
-                        tracing::debug!("config update response: '{:?}", resp);
+                        tracing::debug!("Config update response: {:?}", resp);
                         let lsp_server::Response { error, result, .. } = resp;
 
                         match (error, result) {
                             (Some(err), _) => {
-                                tracing::error!("failed to fetch the server settings: {:?}", err)
+                                tracing::error!("Failed to fetch the server settings: {:?}", err)
                             }
                             (None, Some(mut configs)) => {
                                 if let Some(json) = configs.get_mut(0) {
@@ -187,7 +187,7 @@ impl GlobalState {
                                 }
                             }
                             (None, None) => tracing::error!(
-                                "received empty server settings response from the client"
+                                "Received empty server settings response from the client"
                             ),
                         }
                     },
@@ -226,7 +226,7 @@ mod text_notifications {
         let path = match from_proto::vfs_path(&params.text_document.uri) {
             Ok(path) => path,
             Err(e) => {
-                error!("invalid path in DidOpenTextDocument: {}", e);
+                error!("Invalid path in DidOpenTextDocument: {}", e);
                 return Ok(());
             }
         };

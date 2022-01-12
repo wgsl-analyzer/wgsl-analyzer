@@ -128,8 +128,8 @@ impl GlobalState {
             }
 
             let duration = start.elapsed();
-            tracing::info!(
-                "handled {} - ({}) in {:0.2?}",
+            tracing::debug!(
+                "Handled {} - ({}) in {:0.2?}",
                 method,
                 response.id,
                 duration

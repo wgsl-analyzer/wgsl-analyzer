@@ -109,7 +109,7 @@ impl<'a> RequestDispatcher<'a> {
 
     pub(crate) fn finish(&mut self) {
         if let Some(req) = self.req.take() {
-            tracing::error!("unknown request: {:?}", req);
+            tracing::error!("Unknown request: {:?}", req);
             let response = lsp_server::Response::new_err(
                 req.id,
                 lsp_server::ErrorCode::MethodNotFound as i32,
@@ -245,7 +245,7 @@ impl<'a> NotificationDispatcher<'a> {
     pub(crate) fn finish(&mut self) {
         if let Some(not) = &self.not {
             if !not.method.starts_with("$/") {
-                tracing::error!("unhandled notification: {:?}", not);
+                tracing::error!("Unhandled notification: {:?}", not);
             }
         }
     }
