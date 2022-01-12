@@ -103,6 +103,16 @@
                         "type": "string"
                     },
                     "default": {}
+                },
+                "wgsl-analyzer.trace.extension": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Log debug info."
+                },
+                "wgsl-analyzer.trace.server": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Log messages between client and server."
                 }
             }
         }
