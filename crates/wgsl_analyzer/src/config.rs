@@ -1,12 +1,21 @@
 use std::collections::HashMap;
 
+use serde::Deserialize;
+
 use hir::diagnostics::DiagnosticsConfig;
 
-#[derive(Default, Clone, Debug, serde::Deserialize)]
+#[derive(Default, Clone, Debug, Deserialize)]
+pub struct TraceConfig {
+    pub extension: bool,
+    pub server: bool,
+}
+
+#[derive(Default, Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Config {
     pub show_type_errors: bool,
     pub custom_imports: HashMap<String, String>,
+    pub trace: TraceConfig,
 }
 
 impl Config {
@@ -19,8 +28,9 @@ impl Config {
         if value.is_null() {
             return;
         }
-        if let Err(e) = self.try_update(value) {
+        if let Err(e) = self.try_update(value.clone()) {
             tracing::error!("failed to update config: {:?}", e);
+            tracing::error!("received JSON: {:?}", value);
         }
     }
 
