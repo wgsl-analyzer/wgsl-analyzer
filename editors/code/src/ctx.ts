@@ -20,6 +20,7 @@ export class Ctx {
 
         const clientOptions: LanguageClientOptions = {
             documentSelector: [{ language: "wgsl" }, { scheme: 'file', pattern: '*.wgsl' }],
+            outputChannelName: "WGSL Analyzer",
             initializationOptions,
         };
 
@@ -43,6 +44,7 @@ export class Ctx {
         const dispoable = vscode.commands.registerCommand(fullName, cmd);
         this.pushCleanup(dispoable);
     }
+
     pushCleanup(disposable: Disposable) {
         this.ctx.subscriptions.push(disposable);
     }
