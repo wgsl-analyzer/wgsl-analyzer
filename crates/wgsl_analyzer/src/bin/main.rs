@@ -19,7 +19,7 @@ fn main() -> Result<()> {
     };
     let initialize_result = serde_json::to_value(initialize_result).unwrap();
     connection.initialize_finish(initialize_id, initialize_result)?;
-    info!("Initialized");
+    info!("initialized");
 
     let mut config = Config::default();
     if let Some(options) = initialize_params.initialization_options {
