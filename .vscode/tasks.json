@@ -16,6 +16,40 @@
             "problemMatcher": "$rustc"
         },
         {
+            "label": "Build and Copy Server",
+            "group": "build",
+            "dependsOn": ["Build Server"],
+            "type": "shell",
+            "windows": {
+                "command": "copy target/release/wgsl_analyzer.exe editors/code/out",
+                "options": {
+                    "env": {
+                        "COPYCMD": "/Y",
+                    },
+                },
+            },
+            "osx": { "command": "cp target/debug/wgsl_analyzer editors/code/out" },
+            "linux": { "command": "cp target/debug/wgsl_analyzer editors/code/out" },
+            "problemMatcher": "$rustc",
+        },
+        {
+            "label": "Build and Copy Server (Release)",
+            "group": "build",
+            "dependsOn": ["Build Server (Release)"],
+            "type": "shell",
+            "windows": {
+                "command": "copy target/release/wgsl_analyzer.exe editors/code/out",
+                "options": {
+                    "env": {
+                        "COPYCMD": "/Y",
+                    },
+                },
+            },
+            "osx": { "command": "cp target/release/wgsl_analyzer editors/code/out" },
+            "linux": { "command": "cp target/release/wgsl_analyzer editors/code/out" },
+            "problemMatcher": "$rustc",
+        },
+        {
             "label": "Build Extension",
             "group": "build",
             "type": "npm",
@@ -33,7 +67,7 @@
             "label": "Build Server and Extension",
             "group": "build",
             "dependsOn": [
-                "Build Server",
+                "Build and Copy Server",
                 "Build Extension"
             ],
             "problemMatcher": "$rustc"
@@ -42,7 +76,7 @@
             "label": "Build Server (Release) and Extension",
             "group": "build",
             "dependsOn": [
-                "Build Server (Release)",
+                "Build and Copy Server (Release)",
                 "Build Extension"
             ],
             "problemMatcher": "$rustc"
