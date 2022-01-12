@@ -29,8 +29,8 @@ impl Config {
             return;
         }
         if let Err(e) = self.try_update(value.clone()) {
-            tracing::error!("failed to update config: {:?}", e);
-            tracing::error!("received JSON: {:?}", value);
+            tracing::error!("Failed to update config: {:?}", e);
+            tracing::error!("Received JSON: {}", value.to_string());
         }
     }
 
