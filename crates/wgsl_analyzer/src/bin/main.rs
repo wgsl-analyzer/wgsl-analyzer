@@ -34,12 +34,8 @@ fn main() -> Result<()> {
 }
 
 fn setup_logging(trace: &TraceConfig) {
-    let mut filter = String::with_capacity(51);
     let level = if trace.extension { "debug" } else { "info" };
-    filter.push_str("warn,wgsl_analyzer=");
-    filter.push_str(level);
-    filter.push_str(",hir=");
-    filter.push_str(level);
+    let mut filter = String::from(format!("warn,hir={level},hir_def={level},ide={level},wgsl_analyzer={level}", level=level).as_str());
     if trace.server {
         filter.push_str(",lsp_server=debug")
     }
