@@ -27,7 +27,7 @@ In the `wgsl-analyzer` section in the vscode settings you can specify the follow
 
 ### Custom imports
 
-wgsl-analyzer supports `#import` directives in the flavour or the [bevy engine](https://bevyengine.org/) shader preprocessor. You can define custom import snippet in the `wgsl-analyzer.customImports` section.
+wgsl-analyzer supports `#import` directives in the flavour of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports). You can define custom import snippet in the `wgsl-analyzer.customImports` section.
 
 ```json
 {
