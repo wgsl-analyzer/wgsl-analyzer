@@ -123,14 +123,14 @@ fn write_ty(db: &dyn HirDatabase, ty: Ty, f: &mut String) -> std::fmt::Result {
             false => write!(f, "sampler"),
         },
         TyKind::Ref(t) => {
-            write!(f, "ref<")?;
+            write!(f, "ref<{}, ", t.storage_class)?;
             write_ty(db, t.inner, f)?;
-            write!(f, ">")
+            write!(f, ", {}>", t.access_mode)
         }
         TyKind::Ptr(t) => {
-            write!(f, "ptr<")?;
+            write!(f, "ptr<{}, ", t.storage_class)?;
             write_ty(db, t.inner, f)?;
-            write!(f, ">")
+            write!(f, ", {}>", t.access_mode)
         }
         TyKind::Function(function) => {
             write!(f, "fn(")?;
