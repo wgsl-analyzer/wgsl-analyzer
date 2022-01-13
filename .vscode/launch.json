@@ -13,8 +13,7 @@
             "outFiles": [
                 "${workspaceRoot}/editors/code/out/**/*.js"
             ],
-            "preLaunchTask": "Build Server and Extension",
-            "postDebugTask": "Kill wgsl-analyzer Servers"
+            "preLaunchTask": "Build Server and Extension"
         },
         {
             "type": "extensionHost",
@@ -27,8 +26,7 @@
             "outFiles": [
                 "${workspaceRoot}/editors/code/out/**/*.js"
             ],
-            "preLaunchTask": "Build Server and Extension",
-            "postDebugTask": "Kill wgsl-analyzer Servers"
+            "preLaunchTask": "Build Server and Extension"
         },
         {
             "type": "extensionHost",
@@ -42,8 +40,7 @@
             "outFiles": [
                 "${workspaceRoot}/editors/code/out/**/*.js"
             ],
-            "preLaunchTask": "Build Server (Release) and Extension",
-            "postDebugTask": "Kill wgsl-analyzer Servers"
+            "preLaunchTask": "Build Server (Release) and Extension"
         },
     ],
 }

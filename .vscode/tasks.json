@@ -21,16 +21,53 @@
             "dependsOn": ["Build Server"],
             "type": "shell",
             "windows": {
-                "command": "copy target/debug/wgsl_analyzer.exe editors/code/out",
-                "options": {
-                    "env": {
-                        "COPYCMD": "/Y",
-                    },
-                },
+                "command": "npx",
+                "args": [
+                    "concurrently",
+                    "--max-processes",
+                    "1",
+                    "--success",
+                    "first",
+                    "cd .",
+                    "move wgsl_analyzer.exe wgsl_analyzer.old",
+                    "copy ..\\..\\..\\target\\debug\\wgsl_analyzer.exe .",
+                    "taskkill /f /im wgsl_analyzer.exe",
+                    "del wgsl_analyzer.old",
+                ],
             },
-            "osx": { "command": "cp target/debug/wgsl_analyzer editors/code/out" },
-            "linux": { "command": "cp target/debug/wgsl_analyzer editors/code/out" },
-            "problemMatcher": "$rustc",
+            "osx": {
+                "command": "npx",
+                "args": [
+                    "concurrently",
+                    "--max-processes",
+                    "1",
+                    "--success",
+                    "first",
+                    "cd .",
+                    "move wgsl_analyzer wgsl_analyzer.old",
+                    "copy ..\\..\\..\\target\\debug\\wgsl_analyzer .",
+                    "taskkill /f /im wgsl_analyzer",
+                    "del wgsl_analyzer.old",
+                ],
+            },
+            "linux": {
+                "command": "npx",
+                "args": [
+                    "concurrently",
+                    "--max-processes",
+                    "1",
+                    "--success",
+                    "first",
+                    "cd .",
+                    "move wgsl_analyzer wgsl_analyzer.old",
+                    "copy ..\\..\\..\\target\\debug\\wgsl_analyzer .",
+                    "taskkill /f /im wgsl_analyzer",
+                    "del wgsl_analyzer.old",
+                ],
+            },
+            "options": {
+                "cwd": "editors/code/out",
+            },
         },
         {
             "label": "Build and Copy Server (Release)",
@@ -38,16 +75,50 @@
             "dependsOn": ["Build Server (Release)"],
             "type": "shell",
             "windows": {
-                "command": "copy target/release/wgsl_analyzer.exe editors/code/out",
-                "options": {
-                    "env": {
-                        "COPYCMD": "/y",
-                    },
-                },
+                "command": "npx",
+                "args": [
+                    "concurrently",
+                    "--max-processes",
+                    "1",
+                    "--success",
+                    "first",
+                    "cd .",
+                    "move wgsl_analyzer.exe wgsl_analyzer.old",
+                    "copy ..\\..\\..\\target\\release\\wgsl_analyzer.exe .",
+                    "taskkill /f /im wgsl_analyzer.exe",
+                    "del wgsl_analyzer.old",
+                ],
             },
-            "osx": { "command": "cp target/release/wgsl_analyzer editors/code/out" },
-            "linux": { "command": "cp target/release/wgsl_analyzer editors/code/out" },
-            "problemMatcher": "$rustc",
+            "osx": {
+                "command": "npx",
+                "args": [
+                    "concurrently",
+                    "--max-processes",
+                    "1",
+                    "--success",
+                    "first",
+                    "cd .",
+                    "move wgsl_analyzer wgsl_analyzer.old",
+                    "copy ..\\..\\..\\target\\release\\wgsl_analyzer .",
+                    "taskkill /f /im wgsl_analyzer",
+                    "del wgsl_analyzer.old",
+                ],
+            },
+            "linux": {
+                "command": "npx",
+                "args": [
+                    "concurrently",
+                    "--max-processes",
+                    "1",
+                    "--success",
+                    "first",
+                    "cd .",
+                    "move wgsl_analyzer wgsl_analyzer.old",
+                    "copy ..\\..\\..\\target\\release\\wgsl_analyzer .",
+                    "taskkill /f /im wgsl_analyzer",
+                    "del wgsl_analyzer.old",
+                ],
+            },
         },
         {
             "label": "Build Extension",
@@ -70,7 +141,6 @@
                 "Build and Copy Server",
                 "Build Extension"
             ],
-            "problemMatcher": "$rustc"
         },
         {
             "label": "Build Server (Release) and Extension",
@@ -79,14 +149,6 @@
                 "Build and Copy Server (Release)",
                 "Build Extension"
             ],
-            "problemMatcher": "$rustc"
-        },
-        {
-            "label": "Kill wgsl-analyzer Servers",
-            "type": "shell",
-            "windows": { "command": "taskkill /im wgsl_analyzer.exe" },
-            "osx": { "command": "killall wgsl_analyzer" },
-            "linux": { "command": "killall wgsl_analyzer" }
         },
     ]
 }
