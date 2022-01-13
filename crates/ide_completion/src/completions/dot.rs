@@ -55,7 +55,7 @@ fn swizzle_items<'a>(
         })
     };
     sets.iter()
-        .flat_map(move |set| swizzle(set))
+        .flat_map(swizzle)
         .enumerate()
         .map(move |(i, label)| {
             CompletionItem::new(CompletionItemKind::Field, ctx.source_range(), label)

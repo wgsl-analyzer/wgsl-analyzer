@@ -29,6 +29,7 @@ pub struct AnalysisHost {
 }
 
 impl AnalysisHost {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> AnalysisHost {
         AnalysisHost {
             db: RootDatabase::new(),
@@ -115,7 +116,8 @@ impl Analysis {
     }
 
     pub fn debug_command(&self, file_position: FilePosition) -> Cancellable<()> {
-        self.with_db(|db| drop(debug_command::debug_command(db, file_position)))
+        self.with_db(|db| debug_command::debug_command(db, file_position)).unwrap();
+        Ok(())
     }
 }
 

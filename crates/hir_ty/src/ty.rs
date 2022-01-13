@@ -36,8 +36,8 @@ impl Ty {
     pub fn is_err(self, db: &dyn HirDatabase) -> bool {
         matches!(db.lookup_intern_ty(self), TyKind::Error)
     }
-    // T -> T
-    // vecN<T> -> T
+    /// T -> T, vecN<T> -> T
+    #[must_use]
     pub fn this_or_vec_inner(self, db: &dyn HirDatabase) -> Ty {
         match self.kind(db) {
             TyKind::Vector(vec) => vec.inner,
@@ -47,6 +47,7 @@ impl Ty {
     }
 
     /// ref<inner> -> inner, ptr<inner> -> ptr<inner>
+    #[must_use]
     pub fn unref(self, db: &dyn HirDatabase) -> Ty {
         match self.kind(db) {
             TyKind::Ref(r) => r.inner,
@@ -121,18 +122,17 @@ impl TyKind {
     }
 
     pub fn is_plain(&self) -> bool {
-        match self {
+        matches!(self,
             TyKind::Scalar(_)
             | TyKind::Vector(_)
             | TyKind::Matrix(_)
             | TyKind::Atomic(_)
             | TyKind::Array(_)
-            | TyKind::Struct(_) => true,
-            _ => false,
-        }
+            | TyKind::Struct(_)
+        )
     }
     pub fn is_constructable(&self) -> bool {
-        match self {
+        matches!(self,
             TyKind::Scalar(_)
             | TyKind::Vector(_)
             | TyKind::Matrix(_)
@@ -140,12 +140,11 @@ impl TyKind {
                 size: ArraySize::Const(_),
                 ..
             })
-            | TyKind::Struct(_) => true,
-            _ => false,
-        }
+            | TyKind::Struct(_)
+        )
     }
     pub fn is_storable(&self) -> bool {
-        match self {
+        matches!(self,
             TyKind::Scalar(_)
             | TyKind::Vector(_)
             | TyKind::Matrix(_)
@@ -153,9 +152,8 @@ impl TyKind {
             | TyKind::Array(_)
             | TyKind::Struct(_)
             | TyKind::Texture(_)
-            | TyKind::Sampler(_) => true,
-            _ => false,
-        }
+            | TyKind::Sampler(_)
+        )
     }
     pub fn is_io_shareable(&self, db: &dyn HirDatabase) -> bool {
         match self {

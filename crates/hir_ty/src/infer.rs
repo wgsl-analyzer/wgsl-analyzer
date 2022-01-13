@@ -204,12 +204,12 @@ impl<'db> InferenceContext<'db> {
             }
             Some(Either::Right(expr)) => {
                 let ty = self
-                    .infer_expr_expect(expr, TypeExpectation::from_option(self.return_ty.clone()));
+                    .infer_expr_expect(expr, TypeExpectation::from_option(self.return_ty));
                 if self.return_ty.is_none() {
                     self.return_ty = Some(ty);
                 }
             }
-            None => return,
+            None => (),
         }
     }
 
@@ -253,13 +253,13 @@ impl<'db> InferenceContext<'db> {
                     let expr_ty = self.infer_expr_expect(init, TypeExpectation::from_option(ty));
                     ty.unwrap_or(expr_ty)
                 } else {
-                    ty.unwrap_or(self.err_ty())
+                    ty.unwrap_or_else(|| self.err_ty())
                 };
 
                 let ref_ty = self.make_ref(
                     ty,
                     storage_class.unwrap_or(StorageClass::Function),
-                    access_mode.unwrap_or(AccessMode::read_write()),
+                    access_mode.unwrap_or_else(AccessMode::read_write),
                 );
                 self.set_binding_ty(binding_id, ref_ty)
             }
@@ -279,7 +279,7 @@ impl<'db> InferenceContext<'db> {
                     let expr_ty = self.infer_expr_expect(init, TypeExpectation::from_option(ty));
                     ty.unwrap_or(expr_ty)
                 } else {
-                    ty.unwrap_or(self.err_ty())
+                    ty.unwrap_or_else(|| self.err_ty())
                 };
 
                 self.set_binding_ty(binding_id, ty)
@@ -341,9 +341,7 @@ impl<'db> InferenceContext<'db> {
                     }
                 };
 
-                if let Err(_) =
-                    self.expect_ty_inner(lhs_inner, &TypeExpectationInner::IntegerScalar)
-                {
+                if self.expect_ty_inner(lhs_inner, &TypeExpectationInner::IntegerScalar).is_err() {
                     self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
                         expr,
                         actual: lhs_inner,
@@ -554,7 +552,7 @@ impl<'db> InferenceContext<'db> {
                     let type_ref = TypeRef::Path(path.clone());
                     if let Ok(ty) = self.try_lower_ty(&type_ref) {
                         self.check_type_initializer_args(ty, &args);
-                        self.set_expr_ty(expr, ty.clone()); // because of early return
+                        self.set_expr_ty(expr, ty); // because of early return
                         return ty;
                     }
                 }
@@ -659,7 +657,7 @@ impl<'db> InferenceContext<'db> {
             }),
         };
 
-        self.set_expr_ty(expr, ty.clone());
+        self.set_expr_ty(expr, ty);
 
         ty
     }
@@ -752,7 +750,7 @@ impl<'db> InferenceContext<'db> {
         let resolve = resolver.resolve_value(path)?;
         let ty = match resolve {
             hir_def::resolver::ResolveValue::Local(local) => {
-                let ty = self.result.type_of_binding.get(local)?.clone();
+                let ty = *self.result.type_of_binding.get(local)?;
                 ty
             }
             hir_def::resolver::ResolveValue::GlobalVariable(loc) => {
@@ -770,14 +768,11 @@ impl<'db> InferenceContext<'db> {
             hir_def::resolver::ResolveValue::GlobalConstant(loc) => {
                 let id = self.db.intern_global_constant(loc);
                 let result = self.db.infer(DefWithBodyId::GlobalConstant(id));
-                let ty = result.return_type.unwrap_or_else(|| self.err_ty());
-                ty
+                result.return_type.unwrap_or_else(|| self.err_ty())
             }
             hir_def::resolver::ResolveValue::Function(loc) => {
                 let id = self.db.intern_function(loc);
-                let ty = self.db.function_type(id);
-
-                ty
+                self.db.function_type(id)
             }
         };
         Some(ty)
@@ -929,14 +924,12 @@ impl UnificationTable {
                 };
 
                 let inner = self.resolve(db, mat.inner);
-                let ty = TyKind::Matrix(MatrixType {
+                TyKind::Matrix(MatrixType {
                     columns,
                     rows,
                     inner,
                 })
-                .intern(db);
-
-                ty
+                .intern(db)
             }
             TyKind::Texture(TextureType {
                 kind: TextureKind::Storage(TexelFormat::BoundVar(var), mode),
@@ -1034,7 +1027,7 @@ fn unify(
 
                 Ok(())
             }
-            _ => return Err(()),
+            _ => Err(()),
         },
         TyKind::Array(array) => match found_kind {
             TyKind::Array(found_array) => {
@@ -1042,7 +1035,7 @@ fn unify(
 
                 Ok(())
             }
-            _ => return Err(()),
+            _ => Err(()),
         },
         TyKind::Atomic(atomic) => match found_kind {
             TyKind::Atomic(found_atomic) => {
@@ -1050,7 +1043,7 @@ fn unify(
 
                 Ok(())
             }
-            _ => return Err(()),
+            _ => Err(()),
         },
         TyKind::Texture(TextureType {
             kind: TextureKind::Storage(format, mode),
@@ -1098,7 +1091,7 @@ fn unify(
 
                 Ok(())
             }
-            _ => return Err(()),
+            _ => Err(()),
         },
         TyKind::StorageTypeOfTexelFormat(format) => {
             let format = *table.texel_format_vars.get(&format).unwrap();
@@ -1134,7 +1127,7 @@ fn unify(
 
                 Ok(())
             }
-            _ => return Err(()),
+            _ => Err(()),
         },
 
         _ if expected == found => Ok(()),

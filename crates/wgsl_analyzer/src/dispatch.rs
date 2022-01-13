@@ -50,7 +50,7 @@ impl<'a> RequestDispatcher<'a> {
             None => return Ok(self),
         };
 
-        let result = f(&mut self.global_state, params);
+        let result = f(self.global_state, params);
         let response = result_to_response::<R>(id, result);
 
         self.global_state.respond(response);
