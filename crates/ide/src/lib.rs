@@ -116,7 +116,8 @@ impl Analysis {
     }
 
     pub fn debug_command(&self, file_position: FilePosition) -> Cancellable<()> {
-        self.with_db(|db| debug_command::debug_command(db, file_position)).unwrap();
+        self.with_db(|db| debug_command::debug_command(db, file_position))
+            .unwrap();
         Ok(())
     }
 }
