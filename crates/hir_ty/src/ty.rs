@@ -122,37 +122,40 @@ impl TyKind {
     }
 
     pub fn is_plain(&self) -> bool {
-        matches!(self,
+        matches!(
+            self,
             TyKind::Scalar(_)
-            | TyKind::Vector(_)
-            | TyKind::Matrix(_)
-            | TyKind::Atomic(_)
-            | TyKind::Array(_)
-            | TyKind::Struct(_)
+                | TyKind::Vector(_)
+                | TyKind::Matrix(_)
+                | TyKind::Atomic(_)
+                | TyKind::Array(_)
+                | TyKind::Struct(_)
         )
     }
     pub fn is_constructable(&self) -> bool {
-        matches!(self,
+        matches!(
+            self,
             TyKind::Scalar(_)
-            | TyKind::Vector(_)
-            | TyKind::Matrix(_)
-            | TyKind::Array(ArrayType {
-                size: ArraySize::Const(_),
-                ..
-            })
-            | TyKind::Struct(_)
+                | TyKind::Vector(_)
+                | TyKind::Matrix(_)
+                | TyKind::Array(ArrayType {
+                    size: ArraySize::Const(_),
+                    ..
+                })
+                | TyKind::Struct(_)
         )
     }
     pub fn is_storable(&self) -> bool {
-        matches!(self,
+        matches!(
+            self,
             TyKind::Scalar(_)
-            | TyKind::Vector(_)
-            | TyKind::Matrix(_)
-            | TyKind::Atomic(_)
-            | TyKind::Array(_)
-            | TyKind::Struct(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
+                | TyKind::Vector(_)
+                | TyKind::Matrix(_)
+                | TyKind::Atomic(_)
+                | TyKind::Array(_)
+                | TyKind::Struct(_)
+                | TyKind::Texture(_)
+                | TyKind::Sampler(_)
         )
     }
     pub fn is_io_shareable(&self, db: &dyn HirDatabase) -> bool {

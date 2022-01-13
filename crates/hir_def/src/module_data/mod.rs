@@ -170,7 +170,6 @@ impl<N> From<Idx<N>> for ModuleItemId<N> {
     }
 }
 
-
 // If we automatically derive this trait, ModuleItemId<N> where N doesn't implement Hash can't compile
 #[allow(clippy::derive_hash_xor_eq)]
 impl<N> std::hash::Hash for ModuleItemId<N> {

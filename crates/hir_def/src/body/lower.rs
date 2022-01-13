@@ -68,10 +68,7 @@ impl<'a> Collector<'a> {
 
     fn collect_binding(&mut self, binding: ast::Binding) -> BindingId {
         let src = AstPtr::new(&binding);
-        let name = binding
-            .name()
-            .map(Name::from)
-            .unwrap_or_else(Name::missing);
+        let name = binding.name().map(Name::from).unwrap_or_else(Name::missing);
         self.alloc_binding(Binding { name }, src)
     }
     fn collect_binding_opt(&mut self, binding: Option<ast::Binding>) -> BindingId {

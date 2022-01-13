@@ -35,12 +35,10 @@ pub struct AttrList {
 
 impl AttrList {
     pub fn has(&self, db: &dyn DefDatabase, name: &str) -> bool {
-        self.attrs
-            .iter()
-            .any(|attr| {
-                let attr = db.lookup_intern_attr(*attr);
-                attr.name.as_str() == name
-            })
+        self.attrs.iter().any(|attr| {
+            let attr = db.lookup_intern_attr(*attr);
+            attr.name.as_str() == name
+        })
     }
 }
 

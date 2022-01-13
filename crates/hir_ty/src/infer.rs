@@ -203,8 +203,7 @@ impl<'db> InferenceContext<'db> {
                 self.infer_stmt(stmt);
             }
             Some(Either::Right(expr)) => {
-                let ty = self
-                    .infer_expr_expect(expr, TypeExpectation::from_option(self.return_ty));
+                let ty = self.infer_expr_expect(expr, TypeExpectation::from_option(self.return_ty));
                 if self.return_ty.is_none() {
                     self.return_ty = Some(ty);
                 }
@@ -341,7 +340,10 @@ impl<'db> InferenceContext<'db> {
                     }
                 };
 
-                if self.expect_ty_inner(lhs_inner, &TypeExpectationInner::IntegerScalar).is_err() {
+                if self
+                    .expect_ty_inner(lhs_inner, &TypeExpectationInner::IntegerScalar)
+                    .is_err()
+                {
                     self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
                         expr,
                         actual: lhs_inner,
