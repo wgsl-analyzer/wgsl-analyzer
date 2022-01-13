@@ -16,7 +16,7 @@ import * as commands from './commands';
 import { Config } from './config';
 import { fstat } from 'fs';
 
-let client: LanguageClient;
+let ctx: Ctx;
 
 export async function activate(context: ExtensionContext) {
     const config = new Config(context);
@@ -25,7 +25,7 @@ export async function activate(context: ExtensionContext) {
         return;
     }
 
-    let ctx = await Ctx.create(serverPath, context);
+    ctx = await Ctx.create(serverPath, context);
     ctx.registerCommand("syntaxTree", commands.syntaxTree);
     ctx.registerCommand("debugCommand", commands.debugCommand);
 
@@ -33,10 +33,10 @@ export async function activate(context: ExtensionContext) {
 }
 
 export function deactivate(): Thenable<void> | undefined {
-    if (!client) {
+    if (!ctx.client) {
         return undefined;
     }
-    return client.stop();
+    return ctx.client.stop();
 }
 
 async function getServer(config: Config): Promise<string | undefined> {
