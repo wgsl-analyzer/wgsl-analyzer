@@ -133,6 +133,7 @@ impl GlobalState {
             .on::<lsp_types::request::Completion>(handlers::handle_completion)
             .on::<lsp_types::request::Formatting>(handlers::handle_formatting)
             .on::<lsp_types::request::HoverRequest>(handlers::handle_hover)
+            .on::<lsp_types::request::Shutdown>(handlers::handle_shutdown)
             .on::<lsp_ext::SyntaxTree>(handlers::show_syntax_tree)
             .on::<lsp_ext::DebugCommand>(handlers::debug_command)
             .finish();
