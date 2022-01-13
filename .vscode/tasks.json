@@ -41,7 +41,7 @@
                 "command": "copy target/release/wgsl_analyzer.exe editors/code/out",
                 "options": {
                     "env": {
-                        "COPYCMD": "/Y",
+                        "COPYCMD": "/y",
                     },
                 },
             },
@@ -80,6 +80,13 @@
                 "Build Extension"
             ],
             "problemMatcher": "$rustc"
+        },
+        {
+            "label": "Kill wgsl-analyzer Servers",
+            "type": "shell",
+            "windows": { "command": "taskkill /im wgsl_analyzer.exe" },
+            "osx": { "command": "killall wgsl_analyzer" },
+            "linux": { "command": "killall wgsl_analyzer" }
         },
     ]
 }
