@@ -98,10 +98,7 @@ pub fn handle_hover(
     Ok(Some(hover))
 }
 
-pub fn handle_shutdown(
-    _snap: GlobalStateSnapshot,
-    _: (),
-) -> Result<()> {
+pub fn handle_shutdown(_snap: GlobalStateSnapshot, _: ()) -> Result<()> {
     exit(0);
 }
 
