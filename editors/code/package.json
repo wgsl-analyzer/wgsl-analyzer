@@ -90,29 +90,30 @@
                         "null",
                         "string"
                     ],
-                    "description": "Path the the wgsl-analyzer executable"
+                    "description": "Path to the wgsl-analyzer executable."
                 },
                 "wgsl-analyzer.showTypeErrors": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Whether to show type errors"
+                    "description": "Controls whether to show type errors."
                 },
                 "wgsl-analyzer.customImports": {
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
                     },
-                    "default": {}
+                    "default": {},
+                    "markdownDescription": "`#import` directives in the flavour of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports). To use objects from an import, add `#import <name>` to your WGSL."
                 },
                 "wgsl-analyzer.trace.extension": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Log debug info."
+                    "description": "Log debug info in the WGSL Analyzer output pane."
                 },
                 "wgsl-analyzer.trace.server": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Log messages between client and server."
+                    "description": "Log messages between client and server in the WGSL Analyzer output pane."
                 }
             }
         }
