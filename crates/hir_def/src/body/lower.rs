@@ -71,7 +71,7 @@ impl<'a> Collector<'a> {
         let name = binding
             .name()
             .map(Name::from)
-            .unwrap_or_else(|| Name::missing());
+            .unwrap_or_else(Name::missing);
         self.alloc_binding(Binding { name }, src)
     }
     fn collect_binding_opt(&mut self, binding: Option<ast::Binding>) -> BindingId {

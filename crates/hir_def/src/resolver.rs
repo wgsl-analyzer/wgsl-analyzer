@@ -55,10 +55,12 @@ pub struct Resolver {
     scopes: Vec<Scope>, // TODO: smallvec<2>
 }
 impl Resolver {
+    #[must_use]
     pub fn push_scope(mut self, scope: Scope) -> Resolver {
         self.scopes.push(scope);
         self
     }
+    #[must_use]
     pub fn push_module_scope(
         mut self,
         db: &dyn DefDatabase,
@@ -72,7 +74,7 @@ impl Resolver {
                 let import_file = HirFileId::from(ImportFile { import_id });
                 let module_info = db.module_info(import_file);
 
-                self = self.push_module_scope(db, import_file.into(), module_info);
+                self = self.push_module_scope(db, import_file, module_info);
             }
         }
 
@@ -82,6 +84,7 @@ impl Resolver {
         }));
         self
     }
+    #[must_use]
     pub fn push_expr_scope(
         mut self,
         owner: FunctionId,
@@ -193,7 +196,7 @@ impl Resolver {
                 scope
                     .module_info
                     .items()
-                    .into_iter()
+                    .iter()
                     .find_map(|item| match item {
                         ModuleItem::Struct(id) => {
                             let strukt = scope.module_info.get(*id);

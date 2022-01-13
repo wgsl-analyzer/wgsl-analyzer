@@ -74,7 +74,7 @@ fn compile(rust_target: &str) -> Result<PathBuf> {
     cmd!("rustup target add {rust_target}").run()?;
     cmd!("cargo build --release --target {rust_target}").run()?;
 
-    let suffix = exe_suffix(&rust_target);
+    let suffix = exe_suffix(rust_target);
     Ok(PathBuf::from(format!(
         "target/{}/release/wgsl_analyzer{}",
         rust_target, suffix

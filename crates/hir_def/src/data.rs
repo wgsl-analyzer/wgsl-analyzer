@@ -29,7 +29,7 @@ impl FunctionData {
                 .into_iter()
                 .map(|param| module_info.data[param].ty)
                 .collect(),
-            return_type: function.return_type.clone(),
+            return_type: function.return_type,
         })
     }
 }

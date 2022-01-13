@@ -102,8 +102,8 @@ impl<'a> Ctx<'a> {
             name,
             ty,
             ast_id,
-            storage_class: storage_class,
-            access_mode: access_mode,
+            storage_class,
+            access_mode,
         };
         Some(self.module_data.global_variables.alloc(var).into())
     }

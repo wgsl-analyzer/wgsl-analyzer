@@ -131,7 +131,7 @@ pub fn parse_literal(lit: ast::LiteralKind) -> Literal {
     match lit {
         ast::LiteralKind::IntLiteral(lit) => {
             let text = lit.text();
-            let (text, negative) = match text.strip_prefix("-") {
+            let (text, negative) = match text.strip_prefix('-') {
                 Some(new) => (new, true),
                 None => (text, false),
             };
@@ -148,7 +148,7 @@ pub fn parse_literal(lit: ast::LiteralKind) -> Literal {
             Literal::Int(value, BuiltinInt::I32)
         }
         ast::LiteralKind::UintLiteral(lit) => {
-            let text = lit.text().trim_end_matches("u");
+            let text = lit.text().trim_end_matches('u');
             let value = match text.strip_prefix("0x") {
                 Some(hex) => u64::from_str_radix(hex, 16),
                 None => text.parse(),
