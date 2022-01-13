@@ -405,9 +405,9 @@ impl Module {
                 ModuleItem::Import(import) => Some(import),
                 _ => None,
             })
-            .filter_map(|id| {
+            .map(|id| {
                 let id = db.intern_import(Location::new(self.file_id, *id));
-                Some(Import { id })
+                Import { id }
             })
             .collect()
     }
@@ -423,7 +423,7 @@ impl Module {
         acc: &mut Vec<AnyDiagnostic>,
     ) {
         for import in self.imports(db) {
-            if import.resolve(db).is_err() {
+            if !import.resolve(db) {
                 let import_loc = import.id.lookup(db.upcast());
 
                 let module_info = self.module_info(db);
@@ -492,20 +492,17 @@ impl Import {
         }
     }
 
-    pub fn resolve(&self, db: &dyn HirDatabase) -> Result<(), ()> {
+    pub fn resolve(&self, db: &dyn HirDatabase) -> bool {
         let import_loc = self.id.lookup(db.upcast());
 
         let module_info = db.module_info(import_loc.file_id);
         let import = module_info.get(import_loc.value);
 
         match &import.value {
-            ImportValue::Path(_) => Err(()),
+            ImportValue::Path(_) => false,
             ImportValue::Custom(key) => {
                 let imports = db.custom_imports();
-                match imports.contains_key(key) {
-                    true => Ok(()),
-                    false => Err(()),
-                }
+                imports.contains_key(key)
             }
         }
     }

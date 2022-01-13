@@ -48,7 +48,7 @@ impl<'a> CompletionContext<'a> {
             .siblings_with_tokens(Direction::Prev)
             .find_map(|sib| match sib {
                 NodeOrToken::Node(node) if ExprOrStatement::can_cast(node.kind()) => {
-                    ExprOrStatement::cast(node.clone())
+                    ExprOrStatement::cast(node)
                 }
                 _ => None,
             })

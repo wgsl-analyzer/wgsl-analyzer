@@ -26,11 +26,9 @@ pub fn collect(
             db,
             |error| f(GlobalVariableDiagnostic::StorageClassError(error)),
         );
-    } else {
-        if let Some(ty) = ty_kind {
-            if !matches!(ty, TyKind::Error | TyKind::Sampler(_) | TyKind::Texture(_)) {
-                f(GlobalVariableDiagnostic::MissingStorageClass);
-            }
+    } else if let Some(ty) = ty_kind {
+        if !matches!(ty, TyKind::Error | TyKind::Sampler(_) | TyKind::Texture(_)) {
+            f(GlobalVariableDiagnostic::MissingStorageClass);
         }
     }
 }

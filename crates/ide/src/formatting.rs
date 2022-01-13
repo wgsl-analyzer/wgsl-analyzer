@@ -25,9 +25,9 @@ fn format_recursive(syntax: SyntaxNode) {
     let preorder = syntax.preorder();
     for event in preorder {
         match event {
-            WalkEvent::Enter(node) => drop(format_syntax_node(node)),
-            WalkEvent::Leave(_) => {}
-        }
+            WalkEvent::Enter(node) => format_syntax_node(node),
+            WalkEvent::Leave(_) => None,
+        };
     }
 }
 
@@ -39,7 +39,7 @@ fn format_syntax_node(syntax: SyntaxNode) -> Option<()> {
         //     param : type,
         // ) -> return_ty {}
         SyntaxKind::Function => {
-            let function = ast::Function::cast(syntax.clone())?;
+            let function = ast::Function::cast(syntax)?;
 
             trim_whitespace_before_to_newline(function.fn_token()?);
 
@@ -104,16 +104,16 @@ fn format_syntax_node(syntax: SyntaxNode) -> Option<()> {
             }
         }
         SyntaxKind::VariableIdentDecl => {
-            let param_list = ast::VariableIdentDecl::cast(syntax.clone())?;
+            let param_list = ast::VariableIdentDecl::cast(syntax)?;
             remove_if_whitespace(param_list.colon_token()?.prev_token()?);
             set_whitespace_single_after(param_list.colon_token()?);
         }
         SyntaxKind::ReturnType => {
-            let return_type = ast::ReturnType::cast(syntax.clone())?;
+            let return_type = ast::ReturnType::cast(syntax)?;
             whitespace_to_single_around(return_type.arrow_token()?);
         }
         SyntaxKind::StructDecl => {
-            let strukt = ast::StructDecl::cast(syntax.clone())?;
+            let strukt = ast::StructDecl::cast(syntax)?;
 
             trim_whitespace_before_to_newline(strukt.struct_token()?);
 
@@ -132,7 +132,7 @@ fn trim_whitespace_before_to_newline(before: SyntaxToken) -> Option<()> {
     if maybe_whitespace.kind().is_whitespace() {
         let idx = maybe_whitespace.index();
 
-        let text = maybe_whitespace.text().trim_end_matches(" ");
+        let text = maybe_whitespace.text().trim_end_matches(' ');
 
         maybe_whitespace.parent().unwrap().splice_children(
             idx..idx + 1,

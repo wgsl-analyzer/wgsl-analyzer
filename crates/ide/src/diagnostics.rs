@@ -175,11 +175,11 @@ pub fn diagnostics(
                 let source = var_decl
                     .var_token()
                     .map(NodeOrToken::Token)
-                    .unwrap_or(NodeOrToken::Node(var_decl.syntax()));
+                    .unwrap_or_else(|| NodeOrToken::Node(var_decl.syntax()));
 
                 let frange = original_file_range(db.upcast(), var.file_id, &source);
                 DiagnosticMessage::new(
-                    format!("missing storage class on global variable"),
+                    "missing storage class on global variable".to_string(),
                     frange.range,
                 )
             }
@@ -188,7 +188,7 @@ pub fn diagnostics(
                 let source = var_decl
                     .var_token()
                     .map(NodeOrToken::Token)
-                    .unwrap_or(NodeOrToken::Node(var_decl.syntax()));
+                    .unwrap_or_else(|| NodeOrToken::Node(var_decl.syntax()));
                 let frange = original_file_range(db.upcast(), var.file_id, &source);
                 DiagnosticMessage::new(format!("{}", error), frange.range)
             }
@@ -204,7 +204,7 @@ pub fn diagnostics(
             AnyDiagnostic::UnresolvedImport { import } => {
                 let source = import.value.to_node(&root);
                 let frange = original_file_range(db.upcast(), file_id, source.syntax());
-                DiagnosticMessage::new(format!("unresolved import"), frange.range)
+                DiagnosticMessage::new("unresolved import".to_string(), frange.range)
             }
         };
         diagnostics.push(msg);

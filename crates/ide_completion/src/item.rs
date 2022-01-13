@@ -177,6 +177,7 @@ impl CompletionRelevance {
 }
 
 impl CompletionItem {
+    #[allow(clippy::new_ret_no_self)]
     pub(crate) fn new(
         kind: CompletionItemKind,
         source_range: TextRange,
@@ -192,7 +193,7 @@ impl CompletionItem {
             detail: None,
             // documentation: None,
             lookup: None,
-            kind: kind.into(),
+            kind,
             text_edit: None,
             // deprecated: false,
             // trigger_call_info: None,
@@ -366,7 +367,7 @@ impl Builder {
         self.detail = detail.map(Into::into);
         if let Some(detail) = &self.detail {
             if never!(detail.contains('\n'), "multiline detail:\n{}", detail) {
-                self.detail = Some(detail.splitn(2, '\n').next().unwrap().to_string());
+                self.detail = Some(detail.split_once('\n').map(|x| x.0).unwrap().to_string());
             }
         }
         self

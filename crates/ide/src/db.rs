@@ -41,6 +41,7 @@ impl Drop for RootDatabase {
 }
 
 impl RootDatabase {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             storage: ManuallyDrop::new(salsa::Storage::default()),

@@ -20,7 +20,7 @@ pub fn handle_goto_definition(
     };
 
     let range = FileRange {
-        file_id: file_id,
+        file_id,
         range: nav_target.focus_or_full_range(),
     };
     let location = to_proto::location(&snap, range)?;
@@ -70,7 +70,7 @@ pub fn handle_hover(
     snap: GlobalStateSnapshot,
     params: lsp_types::HoverParams,
 ) -> Result<Option<lsp_types::Hover>> {
-    let position = from_proto::file_position(&snap, params.text_document_position_params.clone())?;
+    let position = from_proto::file_position(&snap, params.text_document_position_params)?;
     let line_index = snap.analysis.line_index(position.file_id)?;
     let range = TextRange::new(position.offset, position.offset);
     let file_range = FileRange {
