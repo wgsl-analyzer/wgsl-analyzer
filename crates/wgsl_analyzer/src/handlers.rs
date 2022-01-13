@@ -7,11 +7,62 @@ use vfs::FileId;
 use crate::global_state::GlobalStateSnapshot;
 use crate::{from_proto, lsp_ext, to_proto, Result};
 
-pub fn debug_command(snap: GlobalStateSnapshot, params: lsp_ext::DebugCommandParams) -> Result<()> {
-    let position = from_proto::file_position(&snap, params.position)?;
-    snap.analysis.debug_command(position)?;
+pub fn handle_goto_definition(
+    snap: GlobalStateSnapshot,
+    params: lsp_types::GotoDefinitionParams,
+) -> Result<Option<GotoDefinitionResponse>> {
+    let position = from_proto::file_position(&snap, params.text_document_position_params)?;
+    let file_id = position.file_id;
+    let nav_target = match snap.analysis.goto_definition(position)? {
+        Some(nav_target) => nav_target,
+        None => return Ok(None),
+    };
 
-    Ok(())
+    let range = FileRange {
+        file_id: file_id,
+        range: nav_target.focus_or_full_range(),
+    };
+    let location = to_proto::location(&snap, range)?;
+    let response = GotoDefinitionResponse::Scalar(location);
+
+    Ok(Some(response))
+}
+
+pub fn handle_completion(
+    snap: GlobalStateSnapshot,
+    params: lsp_types::CompletionParams,
+) -> Result<Option<lsp_types::CompletionResponse>> {
+    let position = from_proto::file_position(&snap, params.text_document_position.clone())?;
+    let line_index = snap.analysis.line_index(position.file_id)?;
+    let items = match snap.analysis.completions(position)? {
+        Some(items) => items,
+        None => return Ok(None),
+    };
+    let items = to_proto::completion_items(&line_index, params.text_document_position, items);
+    let list = lsp_types::CompletionList {
+        is_incomplete: true,
+        items,
+    };
+    Ok(Some(list.into()))
+}
+
+pub fn handle_formatting(
+    snap: GlobalStateSnapshot,
+    params: lsp_types::DocumentFormattingParams,
+) -> Result<Option<Vec<lsp_types::TextEdit>>> {
+    let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
+    let node = match snap.analysis.format(file_id, None)? {
+        Some(node) => node,
+        None => return Ok(None),
+    };
+    let line_index = snap.analysis.line_index(file_id)?;
+
+    let before = snap.analysis.file_text(file_id)?;
+    let after = node.to_string();
+
+    let diff = diff::diff(&before, &after);
+    let edits = to_proto::text_edit_vec(&line_index, diff);
+    Ok(Some(edits))
 }
 
 pub fn handle_hover(
@@ -46,53 +97,20 @@ pub fn handle_hover(
     Ok(Some(hover))
 }
 
-pub fn handle_completion(
-    snap: GlobalStateSnapshot,
-    params: lsp_types::CompletionParams,
-) -> Result<Option<lsp_types::CompletionResponse>> {
-    let position = from_proto::file_position(&snap, params.text_document_position.clone())?;
-    let line_index = snap.analysis.line_index(position.file_id)?;
-    let items = match snap.analysis.completions(position)? {
-        Some(items) => items,
-        None => return Ok(None),
-    };
-    let items = to_proto::completion_items(&line_index, params.text_document_position, items);
-    let list = lsp_types::CompletionList {
-        is_incomplete: true,
-        items,
-    };
-    Ok(Some(list.into()))
-}
-
-pub fn handle_goto_definition(
-    snap: GlobalStateSnapshot,
-    params: lsp_types::GotoDefinitionParams,
-) -> Result<Option<GotoDefinitionResponse>> {
-    let position = from_proto::file_position(&snap, params.text_document_position_params)?;
-    let file_id = position.file_id;
-    let nav_target = match snap.analysis.goto_definition(position)? {
-        Some(nav_target) => nav_target,
-        None => return Ok(None),
-    };
-
-    let range = FileRange {
-        file_id: file_id,
-        range: nav_target.focus_or_full_range(),
-    };
-    let location = to_proto::location(&snap, range)?;
-    let response = GotoDefinitionResponse::Scalar(location);
-
-    Ok(Some(response))
-}
-
 pub fn show_syntax_tree(
     snap: GlobalStateSnapshot,
     params: lsp_ext::SyntaxTreeParams,
 ) -> Result<String> {
     let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
-
     let string = snap.analysis.syntax_tree(file_id)?;
     Ok(string)
+}
+
+pub fn debug_command(snap: GlobalStateSnapshot, params: lsp_ext::DebugCommandParams) -> Result<()> {
+    let position = from_proto::file_position(&snap, params.position)?;
+    snap.analysis.debug_command(position)?;
+
+    Ok(())
 }
 
 pub fn publish_diagnostics(
@@ -118,25 +136,6 @@ pub fn publish_diagnostics(
         .collect();
 
     Ok(lsp_diagnostics)
-}
-
-pub fn handle_formatting(
-    snap: GlobalStateSnapshot,
-    params: lsp_types::DocumentFormattingParams,
-) -> Result<Option<Vec<lsp_types::TextEdit>>> {
-    let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
-    let node = match snap.analysis.format(file_id, None)? {
-        Some(node) => node,
-        None => return Ok(None),
-    };
-    let line_index = snap.analysis.line_index(file_id)?;
-
-    let before = snap.analysis.file_text(file_id)?;
-    let after = node.to_string();
-
-    let diff = diff::diff(&before, &after);
-    let edits = to_proto::text_edit_vec(&line_index, diff);
-    Ok(Some(edits))
 }
 
 mod diff {
