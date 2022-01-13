@@ -19,14 +19,14 @@ export class Ctx {
         const initializationOptions = vscode.workspace.getConfiguration(Config.rootSection);
 
         const clientOptions: LanguageClientOptions = {
-            documentSelector: [{ language: "wgsl" }, { scheme: 'file', pattern: '*.wgsl' }],
+            documentSelector: [{ language: "wgsl" }, { scheme: "file", pattern: "*.wgsl" }],
             outputChannelName: "WGSL Analyzer",
             initializationOptions,
         };
 
         let client = new LanguageClient(
-            'wgsl_analyzer',
-            'WGSL Language server',
+            "wgsl_analyzer",
+            "WGSL Language server",
             serverOptions,
             clientOptions
         );

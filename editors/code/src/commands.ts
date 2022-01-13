@@ -1,12 +1,11 @@
 import { Cmd, Ctx } from "./ctx";
 import * as vscode from "vscode";
 import { isWgslDocument, isWgslEditor, sleep } from "./util";
-import * as lsp_ext from './lsp_ext';
-import { stringify } from "querystring";
+import * as lsp_ext from "./lsp_ext";
 
 export function syntaxTree(ctx: Ctx): Cmd {
     const tdcp = new class implements vscode.TextDocumentContentProvider {
-        readonly uri = vscode.Uri.parse('wgsl-analyzer://syntaxtree/tree.wgslst');
+        readonly uri = vscode.Uri.parse("wgsl-analyzer://syntaxtree/tree.wgslst");
         readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
         constructor() {
             vscode.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument, this, ctx.subscriptions);
@@ -28,7 +27,7 @@ export function syntaxTree(ctx: Ctx): Cmd {
 
         provideTextDocumentContent(uri: vscode.Uri, ct: vscode.CancellationToken): vscode.ProviderResult<string> {
             const wgslEditor = ctx.activeWgslEditor;
-            if (!wgslEditor) return '';
+            if (!wgslEditor) return "";
 
             const params = { textDocument: { uri: wgslEditor.document.uri.toString() } };
             return ctx.client.sendRequest(lsp_ext.syntaxTree, params, ct);
@@ -39,7 +38,7 @@ export function syntaxTree(ctx: Ctx): Cmd {
         }
     };
 
-    ctx.pushCleanup(vscode.workspace.registerTextDocumentContentProvider('wgsl-analyzer', tdcp));
+    ctx.pushCleanup(vscode.workspace.registerTextDocumentContentProvider("wgsl-analyzer", tdcp));
     ctx.pushCleanup(vscode.languages.setLanguageConfiguration("wgsl_syntax_tree", {
         brackets: [["[", ")"]],
     }));
@@ -58,6 +57,7 @@ export function syntaxTree(ctx: Ctx): Cmd {
     };
 
 }
+
 export function debugCommand(ctx: Ctx): Cmd {
     return () => {
         const wgslEditor = ctx.activeWgslEditor;
