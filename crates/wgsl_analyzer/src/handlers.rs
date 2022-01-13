@@ -2,6 +2,7 @@ use base_db::{FileRange, TextRange};
 use hir::diagnostics::DiagnosticsConfig;
 use ide::HoverResult;
 use lsp_types::{GotoDefinitionResponse, LanguageString, MarkedString};
+use std::process::exit;
 use vfs::FileId;
 
 use crate::global_state::GlobalStateSnapshot;
@@ -95,6 +96,13 @@ pub fn handle_hover(
     };
 
     Ok(Some(hover))
+}
+
+pub fn handle_shutdown(
+    _snap: GlobalStateSnapshot,
+    _: (),
+) -> Result<()> {
+    exit(0);
 }
 
 pub fn show_syntax_tree(
