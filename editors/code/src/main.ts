@@ -1,5 +1,5 @@
-import { ExtensionContext } from 'vscode';
-import * as vscode from 'vscode';
+import { ExtensionContext } from "vscode";
+import * as vscode from "vscode";
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs";
@@ -7,14 +7,9 @@ import * as util from "util";
 
 const fileExists = (path: string) => util.promisify(fs.access)(path).then(s => true).catch(() => false);
 
-import {
-    LanguageClient,
-} from 'vscode-languageclient/node';
-
-import { Ctx } from './ctx';
-import * as commands from './commands';
-import { Config } from './config';
-import { fstat } from 'fs';
+import { Ctx } from "./ctx";
+import * as commands from "./commands";
+import { Config } from "./config";
 
 let ctx: Ctx;
 

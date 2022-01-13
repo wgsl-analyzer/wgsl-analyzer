@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
 export class Config {
     public static readonly rootSection = "wgsl-analyzer";
@@ -9,6 +9,7 @@ export class Config {
     private get cfg(): vscode.WorkspaceConfiguration {
         return vscode.workspace.getConfiguration(Config.rootSection);
     }
+
     private get<T>(path: string): T {
         return this.cfg.get<T>(path)!;
     }
