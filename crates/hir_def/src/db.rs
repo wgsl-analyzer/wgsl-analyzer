@@ -112,7 +112,7 @@ impl<T> PartialEq for Interned<T> {
 impl<T> Eq for Interned<T> {}
 impl<T> Clone for Interned<T> {
     fn clone(&self) -> Self {
-        Self(self.0.clone(), PhantomData)
+        Self(self.0, PhantomData)
     }
 }
 impl<T> Copy for Interned<T> {}
@@ -190,7 +190,6 @@ impl DefWithBodyId {
     pub fn resolver(&self, db: &dyn DefDatabase) -> Resolver {
         let file_id = self.file_id(db);
         let module_info = db.module_info(file_id);
-        let resolver = Resolver::default().push_module_scope(db, file_id, module_info);
-        resolver
+        Resolver::default().push_module_scope(db, file_id, module_info)
     }
 }

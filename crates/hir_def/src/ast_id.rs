@@ -20,7 +20,7 @@ impl AstIdMap {
             .children()
             .flat_map(ast::Item::cast)
             .for_each(|item| {
-                map.alloc(&item.syntax());
+                map.alloc(item.syntax());
             });
         map
     }
@@ -68,7 +68,7 @@ impl<N: AstNode> Eq for FileAstId<N> {}
 impl<N: AstNode> Clone for FileAstId<N> {
     fn clone(&self) -> Self {
         Self {
-            id: self.id.clone(),
+            id: self.id,
             _marker: PhantomData,
         }
     }

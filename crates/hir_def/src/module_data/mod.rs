@@ -170,6 +170,9 @@ impl<N> From<Idx<N>> for ModuleItemId<N> {
     }
 }
 
+
+// If we automatically derive this trait, ModuleItemId<N> where N doesn't implement Hash can't compile
+#[allow(clippy::derive_hash_xor_eq)]
 impl<N> std::hash::Hash for ModuleItemId<N> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.index.hash(state);
@@ -287,7 +290,7 @@ pub fn find_item<M: ModuleDataNode>(
         let def_map = db.ast_id_map(file_id);
 
         let source_ast_id = def_map.ast_id(source);
-        let item_ast_id = M::ast_id(&data);
+        let item_ast_id = M::ast_id(data);
 
         if source_ast_id == item_ast_id {
             Some(id)

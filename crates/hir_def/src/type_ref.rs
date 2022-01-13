@@ -163,7 +163,7 @@ fn first_type_generic<T: HasGenerics>(ty: &T) -> Result<ast::Type, ()> {
     let mut generics = ty.generic_arg_list().ok_or(())?.generics();
     let first_generic = generics.next().ok_or(())?;
     let generic = first_generic.as_type().ok_or(())?;
-    Ok(generic.clone())
+    Ok(generic)
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]

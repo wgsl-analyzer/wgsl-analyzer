@@ -37,15 +37,10 @@ impl AttrList {
     pub fn has(&self, db: &dyn DefDatabase, name: &str) -> bool {
         self.attrs
             .iter()
-            .find(|attr| {
-                let attr = db.lookup_intern_attr(**attr);
-                if attr.name.as_str() == name {
-                    true
-                } else {
-                    false
-                }
+            .any(|attr| {
+                let attr = db.lookup_intern_attr(*attr);
+                attr.name.as_str() == name
             })
-            .is_some()
     }
 }
 

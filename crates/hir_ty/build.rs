@@ -179,8 +179,8 @@ impl Builtin {{
 }
 
 fn parse_line(line: &str) -> (&str, Overload) {
-    let (name, line) = line.split_once("(").unwrap();
-    let (parameters, line) = line.split_once(")").unwrap();
+    let (name, line) = line.split_once('(').unwrap();
+    let (parameters, line) = line.split_once(')').unwrap();
     let return_type = line.trim_start_matches(" ->").trim();
 
     let mut generics = BTreeMap::<char, (usize, Generic)>::default();
@@ -255,7 +255,7 @@ fn parse_ty(generics: &mut BTreeMap<char, (usize, Generic)>, ty: &str) -> Type {
             let inner = parse_ty(generics, inner);
             return Type::Vec(size, Box::new(inner));
         } else if let Some(texture) = ty.strip_prefix("texture_storage_") {
-            let (format, mode) = inner.split_once(";").unwrap();
+            let (format, mode) = inner.split_once(';').unwrap();
             let format = parse_texel_format(generics, only_char(format));
             let mode = mode.parse().unwrap();
 

@@ -445,7 +445,7 @@ ast_node!(PrefixExpr:
 ast_node!(Literal);
 impl Literal {
     pub fn kind(&self) -> LiteralKind {
-        support::child_token(&self.syntax()).expect("invalid literal parsed")
+        support::child_token(self.syntax()).expect("invalid literal parsed")
     }
 }
 ast_token_enum! {
@@ -479,10 +479,10 @@ ast_node!(FunctionCall:
 ast_node!(IndexExpr);
 impl IndexExpr {
     pub fn expr(&self) -> Option<Expr> {
-        support::children(&self.syntax()).next()
+        support::children(self.syntax()).next()
     }
     pub fn index(&self) -> Option<Expr> {
-        support::children(&self.syntax()).nth(1)
+        support::children(self.syntax()).nth(1)
     }
 }
 
@@ -515,10 +515,10 @@ ast_node!(CompoundStatement:
 ast_node!(AssignmentStmt);
 impl AssignmentStmt {
     pub fn lhs(&self) -> Option<Expr> {
-        crate::support::children(&self.syntax()).next()
+        crate::support::children(self.syntax()).next()
     }
     pub fn rhs(&self) -> Option<Expr> {
-        crate::support::children(&self.syntax()).nth(1)
+        crate::support::children(self.syntax()).nth(1)
     }
 }
 
@@ -531,7 +531,7 @@ pub enum IncrDecr {
 ast_node!(IncrDecrStatement);
 impl IncrDecrStatement {
     pub fn expr(&self) -> Option<Expr> {
-        crate::support::children(&self.syntax()).next()
+        crate::support::children(self.syntax()).next()
     }
     pub fn incr_decr(&self) -> Option<IncrDecr> {
         self.syntax()
@@ -563,13 +563,13 @@ ast_token_enum! {
 ast_node!(CompoundAssignmentStmt);
 impl CompoundAssignmentStmt {
     pub fn lhs(&self) -> Option<Expr> {
-        crate::support::children(&self.syntax()).next()
+        crate::support::children(self.syntax()).next()
     }
     pub fn rhs(&self) -> Option<Expr> {
-        crate::support::children(&self.syntax()).nth(1)
+        crate::support::children(self.syntax()).nth(1)
     }
     pub fn op(&self) -> Option<CompoundOp> {
-        let kind: CompoundAssignmentOperator = support::child_token(&self.syntax())?;
+        let kind: CompoundAssignmentOperator = support::child_token(self.syntax())?;
         let op = match kind {
             CompoundAssignmentOperator::PlusEqual(_) => CompoundOp::Add,
             CompoundAssignmentOperator::MinusEqual(_) => CompoundOp::Sub,
@@ -629,21 +629,21 @@ pub enum VariableStatementKind {
 ast_node!(ForStatement);
 impl ForStatement {
     pub fn block(&self) -> Option<CompoundStatement> {
-        support::child(&self.syntax())
+        support::child(self.syntax())
     }
 
     pub fn initializer(&self) -> Option<Statement> {
-        support::child_syntax(&self.syntax(), SyntaxKind::ForInitializer)
+        support::child_syntax(self.syntax(), SyntaxKind::ForInitializer)
             .as_ref()
             .and_then(support::child::<Statement>)
     }
     pub fn condition(&self) -> Option<Expr> {
-        support::child_syntax(&self.syntax(), SyntaxKind::ForCondition)
+        support::child_syntax(self.syntax(), SyntaxKind::ForCondition)
             .as_ref()
             .and_then(support::child::<Expr>)
     }
     pub fn continuing_part(&self) -> Option<Statement> {
-        support::child_syntax(&self.syntax(), SyntaxKind::ForContinuingPart)
+        support::child_syntax(self.syntax(), SyntaxKind::ForContinuingPart)
             .as_ref()
             .and_then(support::child::<Statement>)
     }
@@ -787,13 +787,13 @@ impl HasGenerics for PtrType {}
 
 impl InfixExpr {
     pub fn lhs(&self) -> Option<Expr> {
-        crate::support::children(&self.syntax()).next()
+        crate::support::children(self.syntax()).next()
     }
     pub fn rhs(&self) -> Option<Expr> {
-        crate::support::children(&self.syntax()).nth(1)
+        crate::support::children(self.syntax()).nth(1)
     }
     pub fn op_kind(&self) -> Option<BinaryOp> {
-        let kind: BinaryOpKind = support::child_token(&self.syntax())?;
+        let kind: BinaryOpKind = support::child_token(self.syntax())?;
         #[rustfmt::skip]
         let op = match kind {
             BinaryOpKind::EqualEqual(_) => BinaryOp::CmpOp(CmpOp::Eq { negated: false }),
@@ -820,7 +820,7 @@ impl InfixExpr {
 
 impl PrefixExpr {
     pub fn op_kind(&self) -> Option<UnaryOp> {
-        let kind: PrefixOpKind = support::child_token(&self.syntax())?;
+        let kind: PrefixOpKind = support::child_token(self.syntax())?;
         let op = match kind {
             PrefixOpKind::Minus(_) => UnaryOp::Minus,
             PrefixOpKind::Bang(_) => UnaryOp::Not,

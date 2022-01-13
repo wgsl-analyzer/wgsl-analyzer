@@ -59,8 +59,8 @@ impl ExprScopes {
 
         if let Some(stmt) = body.root {
             match stmt {
-                Either::Left(stmt) => compute_statement_scopes(stmt, &body, &mut scopes, root),
-                Either::Right(expr) => compute_expr_scopes(expr, &body, &mut scopes, root),
+                Either::Left(stmt) => compute_statement_scopes(stmt, body, &mut scopes, root),
+                Either::Right(expr) => compute_expr_scopes(expr, body, &mut scopes, root),
             }
         }
 
