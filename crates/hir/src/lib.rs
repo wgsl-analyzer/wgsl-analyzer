@@ -423,7 +423,7 @@ impl Module {
         acc: &mut Vec<AnyDiagnostic>,
     ) {
         for import in self.imports(db) {
-            if !import.resolve(db) {
+            if import.resolve(db).is_err() {
                 let import_loc = import.id.lookup(db.upcast());
 
                 let module_info = self.module_info(db);
@@ -492,17 +492,22 @@ impl Import {
         }
     }
 
-    pub fn resolve(&self, db: &dyn HirDatabase) -> bool {
+    #[allow(clippy::result_unit_err)]
+    pub fn resolve(&self, db: &dyn HirDatabase) -> Result<(), ()> {
         let import_loc = self.id.lookup(db.upcast());
 
         let module_info = db.module_info(import_loc.file_id);
         let import = module_info.get(import_loc.value);
 
         match &import.value {
-            ImportValue::Path(_) => false,
+            ImportValue::Path(_) => Err(()),
             ImportValue::Custom(key) => {
                 let imports = db.custom_imports();
-                imports.contains_key(key)
+                if imports.contains_key(key) {
+                    Ok(())
+                } else {
+                    Err(())
+                }
             }
         }
     }
