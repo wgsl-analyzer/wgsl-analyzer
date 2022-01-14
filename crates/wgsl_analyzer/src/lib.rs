@@ -1,5 +1,3 @@
-#![feature(derive_default_enum)]
-
 mod capabilities;
 pub mod config;
 mod diagnostics;
