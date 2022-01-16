@@ -3,7 +3,10 @@ use std::sync::Arc;
 use la_arena::{Arena, Idx};
 
 use crate::{
-    db::{DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Interned, Lookup, StructId},
+    db::{
+        DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Interned, Lookup, StructId,
+        TypeAliasId,
+    },
     module_data::Name,
     type_ref::{AccessMode, StorageClass, TypeRef},
 };
@@ -88,6 +91,24 @@ impl StructData {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TypeAliasData {
+    pub name: Name,
+    pub ty: Interned<TypeRef>,
+}
+
+impl TypeAliasData {
+    pub fn type_alias_data_query(db: &dyn DefDatabase, func: TypeAliasId) -> Arc<TypeAliasData> {
+        let loc = func.lookup(db);
+        let module_info = db.module_info(loc.file_id);
+        let type_alias = &module_info.data[loc.value.index];
+
+        Arc::new(TypeAliasData {
+            name: type_alias.name.clone(),
+            ty: type_alias.ty,
+        })
+    }
+}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GlobalVariableData {
     pub name: Name,

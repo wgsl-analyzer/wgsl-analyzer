@@ -79,7 +79,9 @@ fn write_pretty_module_item(
         }
         ModuleItem::TypeAlias(type_alias) => {
             let type_alias = &module.data[type_alias.index];
-            let _ = write!(f, "type {} = {};", &type_alias.name.0, "TODO");
+            let name = &type_alias.name.0;
+            let ty = db.lookup_intern_type_ref(type_alias.ty);
+            let _ = write!(f, "type {} = {};", name, ty);
         }
     }
 }

@@ -82,6 +82,7 @@ pub struct GlobalConstant {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TypeAlias {
     pub name: Name,
+    pub ty: Interned<TypeRef>,
     pub ast_id: FileAstId<ast::TypeAliasDecl>,
 }
 #[derive(Debug, Clone, Eq, PartialEq)]
