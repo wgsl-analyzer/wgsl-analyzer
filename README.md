@@ -27,13 +27,17 @@ The lsp server can be built using `cargo build --release -p wgsl_analyzer`.
 
 The vscode extension can either be built as a platform-specific extension which bundles the language server binary, or as a platform-independant one.
 
-**Platform independant extension:**
+**Install node modules:**
+
+`cd editors/code && npm install`
+
+**Platform independent extension:**
 
 `cd editors/code && npm run package`
 
 **Platform-specific extension:**
 
-Copy the server binary (either `wgsl_analyzer` or `wgsl_analyzer.exe`) to `./editors/code/out`, the run 
+Copy the server binary (either `wgsl_analyzer` or `wgsl_analyzer.exe`) into `./editors/code/out/`, then run
 `npm run package -- --target <target> -o wgsl_analyzer-<target>.vsix` where the target is one of the targets listed as [platform-specific extension targets](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions).
 
 ## Design
