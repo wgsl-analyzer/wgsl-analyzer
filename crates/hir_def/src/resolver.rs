@@ -133,6 +133,7 @@ impl Resolver {
                         ),
                         ModuleItem::Struct(_) => {}
                         ModuleItem::Import(_) => {}
+                        ModuleItem::TypeAlias(_) => {} // TODO: ?
                     });
             }
             Scope::ExprScope(expr_scope) => {

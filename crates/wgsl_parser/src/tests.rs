@@ -1963,6 +1963,26 @@ fn global_variable_decl_init() {
 }
 
 #[test]
+fn type_alias_decl() {
+    check(
+        "type float = f32;",
+        expect![[r#"
+        SourceFile@0..17
+          TypeAliasDecl@0..17
+            Type@0..4 "type"
+            Whitespace@4..5 " "
+            Name@5..11
+              Ident@5..10 "float"
+              Whitespace@10..11 " "
+            Equal@11..12 "="
+            Whitespace@12..13 " "
+            Float32@13..16
+              Float32@13..16 "f32"
+            Semicolon@16..17 ";""#]],
+    );
+}
+
+#[test]
 fn parse_stmt_expr() {
     check_statement(
         "test(args);",

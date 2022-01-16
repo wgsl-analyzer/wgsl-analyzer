@@ -26,6 +26,7 @@ pub(crate) fn complete_names_in_scope(
         }
         let kind = match item {
             ScopeDef::Local(_) => CompletionItemKind::Variable,
+            ScopeDef::ModuleItem(_, ModuleItem::TypeAlias(_)) => CompletionItemKind::TypeAlias,
             ScopeDef::ModuleItem(_, ModuleItem::Function(_)) => CompletionItemKind::Function,
             ScopeDef::ModuleItem(_, ModuleItem::GlobalVariable(_)) => CompletionItemKind::Variable,
             ScopeDef::ModuleItem(_, ModuleItem::GlobalConstant(_)) => CompletionItemKind::Constant,

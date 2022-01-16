@@ -13,6 +13,7 @@ use crate::{
     hir_file_id::HirFileIdRepr,
     module_data::{
         Function, GlobalConstant, GlobalVariable, Import, ModuleInfo, ModuleItemId, Struct,
+        TypeAlias,
     },
     resolver::Resolver,
     type_ref::TypeRef,
@@ -94,6 +95,8 @@ pub trait InternDatabase: SourceDatabase {
     fn intern_struct(&self, loc: Location<Struct>) -> StructId;
     #[salsa::interned]
     fn intern_import(&self, loc: Location<Import>) -> ImportId;
+    #[salsa::interned]
+    fn intern_type_alias(&self, loc: Location<TypeAlias>) -> TypeAliasId;
 }
 pub type Location<T> = InFile<ModuleItemId<T>>;
 
@@ -172,6 +175,7 @@ intern_id!(
 );
 intern_id!(StructId, Location<Struct>, lookup_intern_struct);
 intern_id!(ImportId, Location<Import>, lookup_intern_import);
+intern_id!(TypeAliasId, Location<TypeAlias>, lookup_intern_type_alias);
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
 pub enum DefWithBodyId {

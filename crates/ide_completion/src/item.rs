@@ -70,6 +70,7 @@ pub enum CompletionItemKind {
     Constant,
     Struct,
     Module,
+    TypeAlias,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
