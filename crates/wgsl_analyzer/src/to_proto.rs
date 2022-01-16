@@ -224,7 +224,7 @@ pub(crate) fn completion_item_kind(
         CompletionItemKind::Constant => lsp_types::CompletionItemKind::Constant,
         CompletionItemKind::Struct => lsp_types::CompletionItemKind::Struct,
         CompletionItemKind::Module => lsp_types::CompletionItemKind::Module,
-        CompletionItemKind::TypeAlias => lsp_types::CompletionItemKind::Struct, // TODO: not sure what the right type is here...
+        CompletionItemKind::TypeAlias => lsp_types::CompletionItemKind::Struct,
     }
 }
 
