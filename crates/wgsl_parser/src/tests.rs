@@ -1983,6 +1983,40 @@ fn type_alias_decl() {
 }
 
 #[test]
+fn type_alias_decl_recover() {
+    check(
+        "type float = f32\ntype other = u32;",
+        expect![[r#"
+            SourceFile@0..34
+              TypeAliasDecl@0..17
+                Type@0..4 "type"
+                Whitespace@4..5 " "
+                Name@5..11
+                  Ident@5..10 "float"
+                  Whitespace@10..11 " "
+                Equal@11..12 "="
+                Whitespace@12..13 " "
+                Float32@13..17
+                  Float32@13..16 "f32"
+                  Whitespace@16..17 "\n"
+                Error@17..17
+              TypeAliasDecl@17..34
+                Type@17..21 "type"
+                Whitespace@21..22 " "
+                Name@22..28
+                  Ident@22..27 "other"
+                  Whitespace@27..28 " "
+                Equal@28..29 "="
+                Whitespace@29..30 " "
+                Uint32@30..33
+                  Uint32@30..33 "u32"
+                Semicolon@33..34 ";"
+
+            error at 17..21: expected LessThan or Semicolon, but found Type"#]],
+    );
+}
+
+#[test]
 fn parse_stmt_expr() {
     check_statement(
         "test(args);",
