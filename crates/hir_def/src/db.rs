@@ -9,7 +9,7 @@ use crate::{
     attrs::{Attr, AttrDefId, AttrsWithOwner},
     body::scope::ExprScopes,
     body::{Body, BodySourceMap},
-    data::{FunctionData, GlobalConstantData, GlobalVariableData, StructData},
+    data::{FunctionData, GlobalConstantData, GlobalVariableData, StructData, TypeAliasData},
     hir_file_id::HirFileIdRepr,
     module_data::{
         Function, GlobalConstant, GlobalVariable, Import, ModuleInfo, ModuleItemId, Struct,
@@ -43,6 +43,9 @@ pub trait DefDatabase: InternDatabase + Upcast<dyn SourceDatabase> {
 
     #[salsa::invoke(StructData::struct_data_query)]
     fn struct_data(&self, strukt: StructId) -> Arc<StructData>;
+
+    #[salsa::invoke(TypeAliasData::type_alias_data_query)]
+    fn type_alias_data(&self, type_alias: TypeAliasId) -> Arc<TypeAliasData>;
 
     #[salsa::invoke(GlobalVariableData::global_var_data_query)]
     fn global_var_data(&self, def: GlobalVariableId) -> Arc<GlobalVariableData>;

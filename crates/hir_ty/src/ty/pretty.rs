@@ -82,6 +82,10 @@ fn write_ty(db: &dyn HirDatabase, ty: Ty, f: &mut String) -> std::fmt::Result {
             let data = db.struct_data(strukt);
             write!(f, "{}", data.name.as_str())
         }
+        TyKind::TypeAlias(type_alias) => {
+            let data = db.type_alias_data(type_alias);
+            write!(f, "{}", data.name.as_str())
+        }
         TyKind::Array(t) => {
             write!(f, "array<")?;
             write_ty(db, t.inner, f)?;

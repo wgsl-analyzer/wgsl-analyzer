@@ -14,7 +14,7 @@ use syntax::{
     AstNode,
 };
 
-use crate::{Function, GlobalConstant, GlobalVariable, HasSource};
+use crate::{Function, GlobalConstant, GlobalVariable, HasSource, TypeAlias};
 
 use self::global_variable::GlobalVariableDiagnostic;
 
@@ -243,6 +243,10 @@ pub(crate) fn any_diag_from_infer_diag(
                 hir_ty::infer::TypeContainer::VariableStatement(stmt) => {
                     let stmt = source_map.stmt_to_source(stmt).ok()?;
                     stmt.syntax_node_ptr()
+                }
+                hir_ty::infer::TypeContainer::TypeAlias(id) => {
+                    let source = TypeAlias { id }.source(db.upcast())?;
+                    SyntaxNodePtr::new(source.value.type_decl()?.syntax())
                 }
             };
             AnyDiagnostic::InvalidType {

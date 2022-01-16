@@ -69,11 +69,19 @@ impl<'a> Ctx<'a> {
         type_alias: &syntax::ast::TypeAliasDecl,
     ) -> Option<ModuleItemId<TypeAlias>> {
         let name = type_alias.name()?.text().into();
+
+        let ty = type_alias
+            .type_decl()
+            .and_then(|type_decl| self.lower_type_ref(type_decl))
+            .unwrap_or(TypeRef::Error);
+
+        let ty = self.db.intern_type_ref(ty);
+
         let ast_id = self.source_ast_id_map.ast_id(type_alias);
         Some(
             self.module_data
                 .type_aliases
-                .alloc(TypeAlias { name, ast_id })
+                .alloc(TypeAlias { name, ast_id, ty })
                 .into(),
         )
     }

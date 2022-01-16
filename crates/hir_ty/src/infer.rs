@@ -2,7 +2,7 @@ use either::Either;
 use hir_def::{
     body::{BindingId, Body},
     data::{FieldId, FunctionData, GlobalConstantData, GlobalVariableData},
-    db::{DefWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId},
+    db::{DefWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, TypeAliasId},
     expr::{ArithOp, BinaryOp, CmpOp, Expr, ExprId, Statement, StatementId, UnaryOp},
     module_data::Name,
     resolver::Resolver,
@@ -101,6 +101,7 @@ pub enum TypeContainer {
     Expr(ExprId),
     GlobalVar(GlobalVariableId),
     GlobalConstant(GlobalConstantId),
+    TypeAlias(TypeAliasId),
     FunctionParameter(FunctionId, BindingId),
     FunctionReturn(FunctionId),
     VariableStatement(StatementId),
@@ -398,23 +399,38 @@ impl<'db> InferenceContext<'db> {
         }
     }
 
-    fn expect_ty_inner(&self, ty: Ty, expectation: &TypeExpectationInner) -> Result<(), ()> {
-        if let TyKind::Error = ty.kind(self.db) {
+    fn expect_ty_inner(&mut self, ty: Ty, expectation: &TypeExpectationInner) -> Result<(), ()> {
+        let ty_kind = ty.kind(self.db);
+        if let TyKind::Error = ty_kind {
             return Ok(());
         };
 
-        match *expectation {
-            TypeExpectationInner::Exact(expected_type) => {
-                if let TyKind::Error = expected_type.kind(self.db) {
-                    return Ok(());
-                };
-
-                if ty != expected_type {
-                    Err(())
-                } else {
-                    Ok(())
-                }
+        let ty = match ty_kind {
+            TyKind::TypeAlias(id) => {
+                let data = self.db.type_alias_data(id);
+                let ty_ref = &self.db.lookup_intern_type_ref(data.ty);
+                self.lower_ty(TypeContainer::TypeAlias(id), ty_ref)
             }
+            _ => ty,
+        };
+
+        match *expectation {
+            TypeExpectationInner::Exact(expected_type) => match expected_type.kind(self.db) {
+                TyKind::Error => Ok(()),
+                TyKind::TypeAlias(id) => {
+                    let data = self.db.type_alias_data(id);
+                    let ty_ref = &self.db.lookup_intern_type_ref(data.ty);
+                    let inner = self.lower_ty(TypeContainer::TypeAlias(id), ty_ref);
+                    self.expect_ty_inner(ty, &TypeExpectationInner::Exact(inner))
+                }
+                _ => {
+                    if ty == expected_type {
+                        Ok(())
+                    } else {
+                        Err(())
+                    }
+                }
+            },
             TypeExpectationInner::I32OrF32 => match ty.kind(self.db).unref(self.db).as_ref() {
                 TyKind::Scalar(ScalarType::I32 | ScalarType::F32) => Ok(()),
                 _ => Err(()),
@@ -1356,6 +1372,10 @@ impl<'db> TyLoweringContext<'db> {
                     hir_def::resolver::ResolveType::Struct(loc) => {
                         let strukt = self.db.intern_struct(loc);
                         TyKind::Struct(strukt)
+                    }
+                    hir_def::resolver::ResolveType::TypeAlias(loc) => {
+                        let alias = self.db.intern_type_alias(loc);
+                        TyKind::TypeAlias(alias)
                     }
                 })
                 .ok_or_else(|| TypeLoweringError::UnresolvedName(name.clone()))?,

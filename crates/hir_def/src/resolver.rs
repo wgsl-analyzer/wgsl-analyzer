@@ -7,7 +7,9 @@ use crate::{
     },
     db::{DefDatabase, FunctionId, Location},
     hir_file_id::ImportFile,
-    module_data::{Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItem, Name, Struct},
+    module_data::{
+        Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItem, Name, Struct, TypeAlias,
+    },
     HirFileId, InFile,
 };
 
@@ -43,6 +45,7 @@ pub enum ResolveValue {
 #[derive(Debug)]
 pub enum ResolveType {
     Struct(Location<Struct>),
+    TypeAlias(Location<TypeAlias>),
 }
 
 pub enum ScopeDef {
@@ -203,6 +206,11 @@ impl Resolver {
                             let strukt = scope.module_info.get(*id);
                             (&strukt.name == name)
                                 .then(|| ResolveType::Struct(InFile::new(scope.file_id, *id)))
+                        }
+                        ModuleItem::TypeAlias(id) => {
+                            let type_alias = scope.module_info.get(*id);
+                            (&type_alias.name == name)
+                                .then(|| ResolveType::TypeAlias(InFile::new(scope.file_id, *id)))
                         }
                         _ => None,
                     })
