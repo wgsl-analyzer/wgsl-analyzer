@@ -77,6 +77,10 @@ fn write_pretty_module_item(
                 ImportValue::Custom(key) => write!(f, "#import {}", key),
             };
         }
+        ModuleItem::TypeAlias(type_alias) => {
+            let type_alias = &module.data[type_alias.index];
+            let _ = write!(f, "type {} = {};", &type_alias.name.0, "TODO");
+        }
     }
 }
 

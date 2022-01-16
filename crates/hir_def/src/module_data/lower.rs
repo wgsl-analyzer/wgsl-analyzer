@@ -6,7 +6,7 @@ use std::sync::Arc;
 use syntax::ast::{self, Item, SourceFile};
 use syntax::HasName;
 
-use super::{Field, GlobalConstant, GlobalVariable, Import, ImportValue, Name, Struct};
+use super::{Field, GlobalConstant, GlobalVariable, Import, ImportValue, Name, Struct, TypeAlias};
 
 pub(crate) struct Ctx<'a> {
     db: &'a dyn DefDatabase,
@@ -41,6 +41,9 @@ impl<'a> Ctx<'a> {
                 ModuleItem::GlobalConstant(self.lower_global_constant(&constant)?)
             }
             Item::Import(import) => ModuleItem::Import(self.lower_import(&import)?),
+            Item::TypeAliasDecl(type_alias) => {
+                ModuleItem::TypeAlias(self.lower_type_alias(&type_alias)?)
+            }
         };
         self.items.push(item);
         Some(())
@@ -59,6 +62,20 @@ impl<'a> Ctx<'a> {
         let import = Import { value, ast_id };
 
         Some(self.module_data.imports.alloc(import).into())
+    }
+
+    fn lower_type_alias(
+        &mut self,
+        type_alias: &syntax::ast::TypeAliasDecl,
+    ) -> Option<ModuleItemId<TypeAlias>> {
+        let name = type_alias.name()?.text().into();
+        let ast_id = self.source_ast_id_map.ast_id(type_alias);
+        Some(
+            self.module_data
+                .type_aliases
+                .alloc(TypeAlias { name, ast_id })
+                .into(),
+        )
     }
 
     fn lower_global_constant(

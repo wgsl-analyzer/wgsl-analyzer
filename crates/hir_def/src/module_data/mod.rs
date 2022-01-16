@@ -82,6 +82,7 @@ pub struct GlobalConstant {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TypeAlias {
     pub name: Name,
+    pub ast_id: FileAstId<ast::TypeAliasDecl>,
 }
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Struct {
@@ -275,6 +276,7 @@ mod_items! {
     GlobalVariable in global_variables -> ast::GlobalVariableDecl,
     GlobalConstant in global_constants -> ast::GlobalConstantDecl,
     Import in imports -> ast::Import,
+    TypeAlias in type_aliases -> ast::TypeAliasDecl,
 }
 
 pub fn find_item<M: ModuleDataNode>(

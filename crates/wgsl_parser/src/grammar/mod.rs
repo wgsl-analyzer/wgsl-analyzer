@@ -37,12 +37,15 @@ fn item(p: &mut Parser) {
         global_variable_decl(p, m);
     } else if p.at(SyntaxKind::Let) {
         global_constant_decl(p, m);
+    } else if p.at(SyntaxKind::Type) {
+        type_alias_decl(p, m);
     } else {
         p.error_expected(&[
             SyntaxKind::Fn,
             SyntaxKind::Struct,
             SyntaxKind::Var,
             SyntaxKind::Let,
+            SyntaxKind::Type,
         ]);
         m.complete(p, SyntaxKind::Error);
     }
@@ -100,6 +103,20 @@ fn global_decl(p: &mut Parser, m: Marker, var_kind: SyntaxKind, kind: SyntaxKind
     p.expect_no_bump(SyntaxKind::Semicolon);
 
     m.complete(p, kind);
+}
+
+fn type_alias_decl(p: &mut Parser, m: Marker) {
+    p.expect(SyntaxKind::Type);
+
+    name(p);
+
+    p.expect(SyntaxKind::Equal);
+
+    type_decl(p);
+
+    p.expect_no_bump(SyntaxKind::Semicolon);
+
+    m.complete(p, SyntaxKind::TypeAliasDecl);
 }
 
 fn struct_(p: &mut Parser, m: Marker) {

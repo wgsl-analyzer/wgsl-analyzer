@@ -90,6 +90,8 @@ pub enum SyntaxKind {
     GlobalConstantDecl,
     /// continuing { stmts }
     ContinuingStatement,
+    /// Type alias declaration: type float4 = vec4<f32>
+    TypeAliasDecl,
 
     /// `#import foo` or `#import "file.wgsl"`
     Import,

@@ -291,6 +291,14 @@ ast_node!(GlobalConstantDecl:
     init: Option<Expr>;
 );
 
+impl HasAttrs for TypeAliasDecl {} // TODO: what does this trait do?
+ast_node!(TypeAliasDecl:
+    type_token: Option<SyntaxToken Type>;
+    name: Option<Name>;
+    equal_token: Option<SyntaxToken Equal>;
+    type_decl: Option<Type>;
+);
+
 ast_enum! {
     enum Item {
         Function,
@@ -298,6 +306,7 @@ ast_enum! {
         GlobalVariableDecl,
         GlobalConstantDecl,
         Import,
+        TypeAliasDecl,
     }
 }
 

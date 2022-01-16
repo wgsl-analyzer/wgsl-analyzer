@@ -12,7 +12,7 @@ use hir_def::{
     data::FieldId,
     db::{
         DefDatabase, DefWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, ImportId,
-        Location, Lookup, StructId,
+        Location, Lookup, StructId, TypeAliasId,
     },
     expr::{ExprId, StatementId},
     hir_file_id::ImportFile,
@@ -191,6 +191,11 @@ fn module_item_to_def(
                 .flat_map(|item| module_item_to_def(db, import_file, item))
                 .collect();
         }
+        ModuleItem::TypeAlias(type_alias) => {
+            let loc = Location::new(file_id, type_alias);
+            let id = db.intern_type_alias(loc);
+            ModuleDef::TypeAlias(TypeAlias { id })
+        }
     };
     smallvec::smallvec![def]
 }
@@ -341,6 +346,19 @@ impl HasSource for Struct {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
+pub struct TypeAlias {
+    id: TypeAliasId,
+}
+
+impl HasSource for TypeAlias {
+    type Ast = ast::TypeAliasDecl;
+
+    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+        Some(self.id.lookup(db).source(db))
+    }
+}
+
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub struct Field {
     id: FieldId,
@@ -370,6 +388,7 @@ pub enum ModuleDef {
     GlobalVariable(GlobalVariable),
     GlobalConstant(GlobalConstant),
     Struct(Struct),
+    TypeAlias(TypeAlias),
 }
 
 impl ModuleDef {
@@ -379,6 +398,7 @@ impl ModuleDef {
             ModuleDef::GlobalVariable(var) => Some(DefWithBodyId::GlobalVariable(var.id)),
             ModuleDef::GlobalConstant(constant) => Some(DefWithBodyId::GlobalConstant(constant.id)),
             ModuleDef::Struct(_) => None,
+            ModuleDef::TypeAlias(_) => None, // TODO: ?
         }
     }
 }
@@ -447,6 +467,7 @@ impl Module {
                 }
                 ModuleDef::GlobalConstant(_constant) => {}
                 ModuleDef::Struct(_strukt) => {}
+                ModuleDef::TypeAlias(_type_alias) => {}
             }
             if config.show_type_errors {
                 if let Some(def) = item.as_def_with_body_id() {
