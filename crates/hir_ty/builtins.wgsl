@@ -103,10 +103,34 @@ clamp(i32, i32, i32) -> i32
 clamp(vecN<i32>, vecN<i32>, vecN<i32>) -> vecN<i32>
 clamp(u32, u32, u32) -> u32
 clamp(vecN<u32>, vecN<u32>, vecN<u32>) -> vecN<u32>
+countLeadingZeros(i32) -> i32
+countLeadingZeros(vecN<i32>) -> vecN<i32>
+countLeadingZeros(u32) -> u32
+countLeadingZeros(vecN<u32>) -> vecN<u32>
 countOneBits(i32) -> i32
 countOneBits(vecN<i32>) -> vecN<i32>
 countOneBits(u32) -> u32
 countOneBits(vecN<u32>) -> vecN<u32>
+countTrailingZeros(i32) -> i32
+countTrailingZeros(vecN<i32>) -> vecN<i32>
+countTrailingZeros(u32) -> u32
+countTrailingZeros(vecN<u32>) -> vecN<u32>
+firstBitHigh(i32) -> i32
+firstBitHigh(vecN<i32>) -> vecN<i32>
+firstBitHigh(u32) -> u32
+firstBitHigh(vecN<u32>) -> vecN<u32>
+firstBitLow(i32) -> i32
+firstBitLow(vecN<i32>) -> vecN<i32>
+firstBitLow(u32) -> u32
+firstBitLow(vecN<u32>) -> vecN<u32>
+extractBits(i32, u32, u32) -> i32
+extractBits(vecN<i32>, u32, u32) -> vecN<i32>
+extractBits(u32, u32, u32) -> u32
+extractBits(vecN<u32>, u32, u32) -> vecN<i32>
+insertBits(i32, i32, u32, u32) -> i32
+insertBits(vecN<i32>, vecN<i32>, u32, u32) -> vecN<i32>
+insertBits(u32, u32, u32, u32) -> u32
+insertBits(vecN<u32>, vecN<u32>, u32, u32) -> vecN<u32>
 max(i32, i32) -> i32
 max(vecN<i32>, vecN<i32>) -> vecN<i32>
 max(u32, u32) -> u32
