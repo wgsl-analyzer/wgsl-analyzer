@@ -138,7 +138,11 @@ fn struct_(p: &mut Parser, m: Marker) {
         SyntaxKind::StructDeclBody,
         struct_member,
     );
-    let _ = p.expect_recover(SyntaxKind::Semicolon, ITEM_RECOVERY_SET);
+
+    if p.at(SyntaxKind::Semicolon) {
+        p.bump();
+    }
+
     m.complete(p, SyntaxKind::StructDecl);
 }
 

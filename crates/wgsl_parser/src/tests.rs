@@ -1629,9 +1629,7 @@ struct Test {
                     Semicolon@43..44 ";"
                     Whitespace@44..45 "\n"
                   BraceRight@45..46 "}"
-                  Whitespace@46..47 "\n"
-
-            error at 46..47: expected Semicolon"#]],
+                  Whitespace@46..47 "\n""#]],
     );
 }
 
@@ -1874,7 +1872,6 @@ fn test()
                   Semicolon@27..28 ";"
                   Whitespace@28..29 "\n"
 
-            error at 16..18: expected Semicolon, but found Fn
             error at 26..27: expected Arrow or BraceLeft, but found BraceRight
             error at 27..28: expected Fn, Struct, Var, Let or Type, but found Semicolon"#]],
     );
@@ -1911,8 +1908,7 @@ struct
             error at 10..12: expected BraceLeft, but found AttrLeft
             error at 26..27: expected Ident
             error at 26..27: expected BraceLeft
-            error at 26..27: expected BraceRight
-            error at 26..27: expected Semicolon"#]],
+            error at 26..27: expected BraceRight"#]],
     );
 }
 
