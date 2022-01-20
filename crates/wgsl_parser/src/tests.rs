@@ -667,16 +667,16 @@ fn for_statement_incomplete_1() {
     check_statement(
         "for(;;)",
         expect![[r#"
-        ForStatement@0..7
-          For@0..3 "for"
-          ParenLeft@3..4 "("
-          Semicolon@4..5 ";"
-          Semicolon@5..6 ";"
-          ParenRight@6..7 ")"
-          CompoundStatement@7..7
+            ForStatement@0..7
+              For@0..3 "for"
+              ParenLeft@3..4 "("
+              Semicolon@4..5 ";"
+              Semicolon@5..6 ";"
+              ParenRight@6..7 ")"
+              CompoundStatement@7..7
 
-        error at 6..7: expected BraceLeft
-        error at 6..7: expected BraceRight or BraceRight"#]],
+            error at 6..7: expected BraceLeft
+            error at 6..7: expected BraceRight"#]],
     );
 }
 #[test]
@@ -684,24 +684,24 @@ fn for_statement_incomplete_2() {
     check_statement(
         "for(i=0;;)",
         expect![[r#"
-        ForStatement@0..10
-          For@0..3 "for"
-          ParenLeft@3..4 "("
-          ForInitializer@4..7
-            AssignmentStmt@4..7
-              PathExpr@4..5
-                NameRef@4..5
-                  Ident@4..5 "i"
-              Equal@5..6 "="
-              Literal@6..7
-                IntLiteral@6..7 "0"
-          Semicolon@7..8 ";"
-          Semicolon@8..9 ";"
-          ParenRight@9..10 ")"
-          CompoundStatement@10..10
+            ForStatement@0..10
+              For@0..3 "for"
+              ParenLeft@3..4 "("
+              ForInitializer@4..7
+                AssignmentStmt@4..7
+                  PathExpr@4..5
+                    NameRef@4..5
+                      Ident@4..5 "i"
+                  Equal@5..6 "="
+                  Literal@6..7
+                    IntLiteral@6..7 "0"
+              Semicolon@7..8 ";"
+              Semicolon@8..9 ";"
+              ParenRight@9..10 ")"
+              CompoundStatement@10..10
 
-        error at 9..10: expected BraceLeft
-        error at 9..10: expected BraceRight or BraceRight"#]],
+            error at 9..10: expected BraceLeft
+            error at 9..10: expected BraceRight"#]],
     );
 }
 #[test]
@@ -709,19 +709,19 @@ fn for_statement_incomplete_3() {
     check_statement(
         "for(;false;)",
         expect![[r#"
-        ForStatement@0..12
-          For@0..3 "for"
-          ParenLeft@3..4 "("
-          Semicolon@4..5 ";"
-          ForCondition@5..10
-            Literal@5..10
-              False@5..10 "false"
-          Semicolon@10..11 ";"
-          ParenRight@11..12 ")"
-          CompoundStatement@12..12
+            ForStatement@0..12
+              For@0..3 "for"
+              ParenLeft@3..4 "("
+              Semicolon@4..5 ";"
+              ForCondition@5..10
+                Literal@5..10
+                  False@5..10 "false"
+              Semicolon@10..11 ";"
+              ParenRight@11..12 ")"
+              CompoundStatement@12..12
 
-        error at 11..12: expected BraceLeft
-        error at 11..12: expected BraceRight or BraceRight"#]],
+            error at 11..12: expected BraceLeft
+            error at 11..12: expected BraceRight"#]],
     );
 }
 #[test]
@@ -729,26 +729,26 @@ fn for_statement_incomplete_4() {
     check_statement(
         "for(;;a = 1)",
         expect![[r#"
-        ForStatement@0..12
-          For@0..3 "for"
-          ParenLeft@3..4 "("
-          Semicolon@4..5 ";"
-          Semicolon@5..6 ";"
-          ForContinuingPart@6..11
-            AssignmentStmt@6..11
-              PathExpr@6..8
-                NameRef@6..8
-                  Ident@6..7 "a"
-                  Whitespace@7..8 " "
-              Equal@8..9 "="
-              Whitespace@9..10 " "
-              Literal@10..11
-                IntLiteral@10..11 "1"
-          ParenRight@11..12 ")"
-          CompoundStatement@12..12
+            ForStatement@0..12
+              For@0..3 "for"
+              ParenLeft@3..4 "("
+              Semicolon@4..5 ";"
+              Semicolon@5..6 ";"
+              ForContinuingPart@6..11
+                AssignmentStmt@6..11
+                  PathExpr@6..8
+                    NameRef@6..8
+                      Ident@6..7 "a"
+                      Whitespace@7..8 " "
+                  Equal@8..9 "="
+                  Whitespace@9..10 " "
+                  Literal@10..11
+                    IntLiteral@10..11 "1"
+              ParenRight@11..12 ")"
+              CompoundStatement@12..12
 
-        error at 11..12: expected BraceLeft
-        error at 11..12: expected BraceRight or BraceRight"#]],
+            error at 11..12: expected BraceLeft
+            error at 11..12: expected BraceRight"#]],
     );
 }
 
@@ -1250,7 +1250,7 @@ fn fn_recover_attr_2() {
                   BraceLeft@14..15 "{"
                   BraceRight@15..16 "}"
 
-            error at 8..9: expected ParenRight, AttrLeft, ParenRight or Ident, but found BracketLeft
+            error at 8..9: expected ParenRight, AttrLeft or Ident, but found BracketLeft
             error at 9..10: expected Colon, but found BracketRight"#]],
     )
 }
@@ -1866,7 +1866,7 @@ struct
             error at 10..12: expected BraceLeft, but found AttrLeft
             error at 26..27: expected Ident
             error at 26..27: expected BraceLeft
-            error at 26..27: expected BraceRight or BraceRight
+            error at 26..27: expected BraceRight
             error at 26..27: expected Semicolon"#]],
     );
 }
@@ -1876,23 +1876,23 @@ fn global_variable_decl() {
     check(
         "var<uniform> param: Params;",
         expect![[r#"
-            SourceFile@0..27
-              GlobalVariableDecl@0..27
-                Var@0..3 "var"
-                VariableQualifier@3..13
-                  LessThan@3..4 "<"
-                  Uniform@4..11 "uniform"
-                  GreaterThan@11..12 ">"
-                  Whitespace@12..13 " "
-                Binding@13..18
-                  Name@13..18
-                    Ident@13..18 "param"
-                Colon@18..19 ":"
-                Whitespace@19..20 " "
-                PathType@20..26
-                  NameRef@20..26
-                    Ident@20..26 "Params"
-                Semicolon@26..27 ";""#]],
+        SourceFile@0..27
+          GlobalVariableDecl@0..27
+            Var@0..3 "var"
+            VariableQualifier@3..13
+              LessThan@3..4 "<"
+              Uniform@4..11 "uniform"
+              GreaterThan@11..12 ">"
+              Whitespace@12..13 " "
+            Binding@13..18
+              Name@13..18
+                Ident@13..18 "param"
+            Colon@18..19 ":"
+            Whitespace@19..20 " "
+            PathType@20..26
+              NameRef@20..26
+                Ident@20..26 "Params"
+            Semicolon@26..27 ";""#]],
     );
 }
 #[test]
@@ -1987,32 +1987,32 @@ fn type_alias_decl_recover() {
     check(
         "type float = f32\ntype other = u32;",
         expect![[r#"
-            SourceFile@0..34
-              TypeAliasDecl@0..17
-                Type@0..4 "type"
-                Whitespace@4..5 " "
-                Name@5..11
-                  Ident@5..10 "float"
-                  Whitespace@10..11 " "
-                Equal@11..12 "="
-                Whitespace@12..13 " "
-                Float32@13..17
-                  Float32@13..16 "f32"
-                  Whitespace@16..17 "\n"
-                Error@17..17
-              TypeAliasDecl@17..34
-                Type@17..21 "type"
-                Whitespace@21..22 " "
-                Name@22..28
-                  Ident@22..27 "other"
-                  Whitespace@27..28 " "
-                Equal@28..29 "="
-                Whitespace@29..30 " "
-                Uint32@30..33
-                  Uint32@30..33 "u32"
-                Semicolon@33..34 ";"
+        SourceFile@0..34
+          TypeAliasDecl@0..17
+            Type@0..4 "type"
+            Whitespace@4..5 " "
+            Name@5..11
+              Ident@5..10 "float"
+              Whitespace@10..11 " "
+            Equal@11..12 "="
+            Whitespace@12..13 " "
+            Float32@13..17
+              Float32@13..16 "f32"
+              Whitespace@16..17 "\n"
+            Error@17..17
+          TypeAliasDecl@17..34
+            Type@17..21 "type"
+            Whitespace@21..22 " "
+            Name@22..28
+              Ident@22..27 "other"
+              Whitespace@27..28 " "
+            Equal@28..29 "="
+            Whitespace@29..30 " "
+            Uint32@30..33
+              Uint32@30..33 "u32"
+            Semicolon@33..34 ";"
 
-            error at 17..21: expected LessThan or Semicolon, but found Type"#]],
+        error at 17..21: expected LessThan or Semicolon, but found Type"#]],
     );
 }
 

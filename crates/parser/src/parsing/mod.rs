@@ -136,7 +136,9 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
     }
 
     pub fn at(&mut self, kind: P::TokenKind) -> bool {
-        self.expected_kinds.push(kind);
+        if !self.expected_kinds.contains(&kind) {
+            self.expected_kinds.push(kind);
+        }
         self.peek() == Some(kind)
     }
 
