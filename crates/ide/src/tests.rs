@@ -72,7 +72,7 @@ struct Test {
             let tex_storage: texture_storage_2d<rgba8unorm, read_write>;
             let tex_depth: texture_depth;
             let tex_external: texture_external;
-            let tex_depth_multisampled: texture_depth_1d_multisampled;
+            let tex_depth_multisampled: texture_depth_multisampled_2d;
             let x: sampler_comparison;
             let y: atomic<u32>;
             let z: array<path, 10>;
