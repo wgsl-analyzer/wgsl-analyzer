@@ -20,7 +20,7 @@ export async function activate(context: ExtensionContext) {
         return;
     }
 
-    ctx = await Ctx.create(serverPath, context);
+    ctx = await Ctx.create(serverPath, context, config);
     ctx.registerCommand("syntaxTree", commands.syntaxTree);
     ctx.registerCommand("debugCommand", commands.debugCommand);
 

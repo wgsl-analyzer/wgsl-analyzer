@@ -4,10 +4,17 @@ import { Executable, LanguageClient, LanguageClientOptions, ServerOptions } from
 import { Config } from "./config";
 import { isWgslEditor, WgslEditor } from "./util";
 
+
+interface WGSLAnalyzerConfiguration {
+    showTypeErrors: boolean,
+    customImports: Record<string, string>,
+    trace: { extension: boolean, server: boolean; };
+}
+
 export class Ctx {
     private constructor(readonly ctx: ExtensionContext, readonly client: LanguageClient) { }
 
-    static async create(serverPath: string, ctx: ExtensionContext) {
+    static async create(serverPath: string, ctx: ExtensionContext, config: Config) {
         const run: Executable = {
             command: serverPath,
         };
@@ -16,7 +23,11 @@ export class Ctx {
             debug: run,
         };
 
-        const initializationOptions = vscode.workspace.getConfiguration(Config.rootSection);
+        const initializationOptions: WGSLAnalyzerConfiguration = {
+            customImports: config.customImports,
+            showTypeErrors: config.showTypeErrors,
+            trace: config.trace,
+        };
 
         const clientOptions: LanguageClientOptions = {
             documentSelector: [{ language: "wgsl" }, { scheme: "file", pattern: "*.wgsl" }],

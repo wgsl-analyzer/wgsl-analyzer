@@ -21,4 +21,12 @@ export class Config {
     get serverPath(): string | null {
         return this.get<string | null>("server.path");
     }
+
+    get customImports(): Record<string, string> {
+        return this.get("customImports");
+    }
+
+    get trace(): { extension: boolean, server: boolean; } {
+        return this.get("trace");
+    }
 }
