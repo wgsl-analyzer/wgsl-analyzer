@@ -1831,7 +1831,7 @@ fn test()
 
             error at 16..18: expected Semicolon, but found Fn
             error at 26..27: expected Arrow or BraceLeft, but found BraceRight
-            error at 27..28: expected Fn, Struct, Var or Let, but found Semicolon"#]],
+            error at 27..28: expected Fn, Struct, Var, Let or Type, but found Semicolon"#]],
     );
 }
 
