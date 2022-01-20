@@ -1018,6 +1018,51 @@ fn parse_var_with_initializer() {
 }
 
 #[test]
+fn attribute_list_modern() {
+    check_attribute_list(
+        "@location(0) @interpolate(flat) @attr(1, 2, 0.0, ident)",
+        expect![[r#"
+            AttributeList@0..55
+              Attr@0..1 "@"
+              Attribute@1..13
+                Ident@1..9 "location"
+                AttributeParameters@9..13
+                  ParenLeft@9..10 "("
+                  Literal@10..11
+                    IntLiteral@10..11 "0"
+                  ParenRight@11..12 ")"
+                  Whitespace@12..13 " "
+              Attr@13..14 "@"
+              Attribute@14..32
+                Ident@14..25 "interpolate"
+                AttributeParameters@25..32
+                  ParenLeft@25..26 "("
+                  Ident@26..30 "flat"
+                  ParenRight@30..31 ")"
+                  Whitespace@31..32 " "
+              Attr@32..33 "@"
+              Attribute@33..55
+                Ident@33..37 "attr"
+                AttributeParameters@37..55
+                  ParenLeft@37..38 "("
+                  Literal@38..39
+                    IntLiteral@38..39 "1"
+                  Comma@39..40 ","
+                  Whitespace@40..41 " "
+                  Literal@41..42
+                    IntLiteral@41..42 "2"
+                  Comma@42..43 ","
+                  Whitespace@43..44 " "
+                  Literal@44..47
+                    DecimalFloatLiteral@44..47 "0.0"
+                  Comma@47..48 ","
+                  Whitespace@48..49 " "
+                  Ident@49..54 "ident"
+                  ParenRight@54..55 ")""#]],
+    );
+}
+
+#[test]
 fn attribute_list() {
     check_attribute_list(
         "[[location(0), interpolate(flat), attr(1, 2, 0.0, ident)]]",
@@ -1250,7 +1295,7 @@ fn fn_recover_attr_2() {
                   BraceLeft@14..15 "{"
                   BraceRight@15..16 "}"
 
-            error at 8..9: expected ParenRight, AttrLeft or Ident, but found BracketLeft
+            error at 8..9: expected ParenRight, Attr, AttrLeft or Ident, but found BracketLeft
             error at 9..10: expected Colon, but found BracketRight"#]],
     )
 }

@@ -281,6 +281,8 @@ pub enum SyntaxKind {
     AttrLeft,
     #[token("]]")]
     AttrRight,
+    #[token("@")]
+    Attr,
     #[token("/")]
     ForwardSlash,
     #[token("!")]

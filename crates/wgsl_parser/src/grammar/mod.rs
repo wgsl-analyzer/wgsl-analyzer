@@ -668,11 +668,28 @@ fn access_mode(p: &mut Parser) {
 }
 
 pub fn attribute_list_opt(p: &mut Parser) {
-    if p.at(SyntaxKind::AttrLeft) {
+    if p.at(SyntaxKind::Attr) || p.at(SyntaxKind::AttrLeft) {
         attribute_list(p);
     }
 }
 pub fn attribute_list(p: &mut Parser) {
+    if p.at(SyntaxKind::Attr) {
+        attribute_list_modern(p);
+    } else if p.at(SyntaxKind::AttrLeft) {
+        attribute_list_legacy(p);
+    }
+}
+
+fn attribute_list_modern(p: &mut Parser) {
+    let m = p.start();
+    while p.at(SyntaxKind::Attr) {
+        p.bump();
+        attribute(p);
+    }
+    m.complete(p, SyntaxKind::AttributeList);
+}
+
+fn attribute_list_legacy(p: &mut Parser) {
     list(
         p,
         SyntaxKind::AttrLeft,
@@ -685,28 +702,31 @@ pub fn attribute_list(p: &mut Parser) {
 
 fn attribute(p: &mut Parser) {
     let m = p.start();
-    p.expect(SyntaxKind::Ident);
-    if p.at(SyntaxKind::AttrRight) {
-        m.complete(p, SyntaxKind::Attribute);
-        return;
+    if p.at(SyntaxKind::Ident) {
+        p.bump();
+    } else {
+        p.error_no_bump(&[SyntaxKind::Ident])
     }
 
-    list(
-        p,
-        SyntaxKind::ParenLeft,
-        SyntaxKind::ParenRight,
-        SyntaxKind::Comma,
-        SyntaxKind::AttributeParameters,
-        |p| {
-            if p.at(SyntaxKind::Ident) {
-                p.bump();
-            } else if p.at_set(TOKENSET_LITERAL) {
-                expr::literal(p);
-            } else {
-                p.error_recovery(&[SyntaxKind::ParenRight]);
-            }
-        },
-    );
+    if p.at(SyntaxKind::ParenLeft) {
+        list(
+            p,
+            SyntaxKind::ParenLeft,
+            SyntaxKind::ParenRight,
+            SyntaxKind::Comma,
+            SyntaxKind::AttributeParameters,
+            |p| {
+                if p.at(SyntaxKind::Ident) {
+                    p.bump();
+                } else if p.at_set(TOKENSET_LITERAL) {
+                    expr::literal(p);
+                } else {
+                    p.error_recovery(&[SyntaxKind::ParenRight]);
+                }
+            },
+        );
+    }
+
     m.complete(p, SyntaxKind::Attribute);
 }
 
