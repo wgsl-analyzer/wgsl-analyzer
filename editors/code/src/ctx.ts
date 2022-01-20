@@ -1,3 +1,6 @@
+import { readFile } from "fs";
+import fetch from "node-fetch";
+import { promisify } from "util";
 import * as vscode from "vscode";
 import { Disposable, ExtensionContext } from "vscode";
 import { Executable, LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
@@ -23,8 +26,19 @@ export class Ctx {
             debug: run,
         };
 
+
+        let start = process.hrtime();
+        let customImports = await mapObjectAsync(config.customImports, resolveImport, (name, _, val) => {
+            vscode.window.showErrorMessage(`WGSL-Analyzer: failed to resolve import \`${name}\`: ${val}`);
+        });
+        let elapsed = process.hrtime(start);
+        let millis = elapsed[0] * 1000 + elapsed[1] / 1_000_000;
+        if (millis > 1000) {
+            vscode.window.showWarningMessage(`WGSL-Analalyzer: Took ${millis.toFixed(0)}ms to resolve imports.`);
+        }
+
         const initializationOptions: WGSLAnalyzerConfiguration = {
-            customImports: config.customImports,
+            customImports,
             showTypeErrors: config.showTypeErrors,
             trace: config.trace,
         };
@@ -71,7 +85,44 @@ export class Ctx {
             ? editor
             : undefined;
     }
+}
 
+function parseUrl(url: string): vscode.Uri | undefined {
+    try {
+        return vscode.Uri.parse(url, true);
+    } catch {
+        return undefined;
+    }
+}
+
+async function resolveImport(content: string): Promise<string> {
+    let uri = parseUrl(content);
+
+    if (uri !== undefined) {
+        if (uri.scheme == "file") {
+            return promisify(readFile)(uri.fsPath, "utf-8");
+        } else if (["http", "https"].includes(uri.scheme)) {
+            return fetch(content).then(res => res.text());
+        } else {
+            throw new Error(`unknown scheme \`${uri.scheme}\``);
+        }
+    } else {
+        return content;
+    }
+}
+
+async function mapObjectAsync<T, U>(object: Record<string, T>, f: (val: T) => Promise<U>, handleError?: (key: string, val: T, error: unknown) => void): Promise<Record<string, U>> {
+    let map = async ([key, value]) => {
+        try {
+            const mapped = await f(value);
+            return ([key, mapped]);
+        } catch (e) {
+            handleError && handleError(key, value, e);
+            return undefined;
+        }
+    };
+    let entries = await Promise.all(Object.entries(object).map(map));
+    return Object.fromEntries(entries.filter(entry => entry !== undefined));
 }
 
 export type Cmd = (...args: any[]) => unknown;

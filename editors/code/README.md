@@ -29,11 +29,13 @@ In the `wgsl-analyzer` section in the vscode settings you can specify the follow
 
 wgsl-analyzer supports `#import` directives in the flavour of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports). You can define custom import snippet in the `wgsl-analyzer.customImports` section.
 
+If you provide a URL with a `http`, `https` or `file` scheme that resource will be downloaded and used. Keep in mind that this will slow down the LSP startup, so if you notice significant delays (the extension will warn if it took longer than a second) consider replacing resources on the network by file URLs or inline text.
+
 ```json
 {
     "wgsl-analyzer.customImports": {
-        "bevy_pbr::mesh_view_bind_group": "struct View {\n    view_proj: mat4x4<f32>;\n    inverse_view: mat4x4<f32>; ...",
-        "bevy_pbr::mesh_struct": "struct Mesh {\n    model: mat4x4<f32>;\n    inverse_transpose_model: mat4x4<f32>; ...",
+        "bevy_pbr::mesh_view_bind_group": "https://raw.githubusercontent.com/bevyengine/bevy/v0.6.0/crates/bevy_pbr/src/render/mesh_view_bind_group.wgsl",
+        "bevy_pbr::mesh_struct": "https://raw.githubusercontent.com/bevyengine/bevy/v0.6.0/crates/bevy_pbr/src/render/mesh_struct.wgsl",
     }
 }
 ```
