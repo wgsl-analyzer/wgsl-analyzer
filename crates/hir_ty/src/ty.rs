@@ -2,7 +2,7 @@ pub mod pretty;
 
 use std::{borrow::Cow, fmt::Write, str::FromStr};
 
-use hir_def::db::{StructId, TypeAliasId};
+use hir_def::db::StructId;
 use hir_def::type_ref;
 pub use hir_def::type_ref::{AccessMode, StorageClass};
 use salsa::InternKey;
@@ -64,7 +64,6 @@ pub enum TyKind {
     Vector(VectorType),
     Matrix(MatrixType),
     Struct(StructId),
-    TypeAlias(TypeAliasId),
     Array(ArrayType),
     Texture(TextureType),
     Sampler(SamplerType),

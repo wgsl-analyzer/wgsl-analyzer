@@ -5,7 +5,7 @@ use hir_def::{
     db::{DefWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, TypeAliasId},
     expr::{ArithOp, BinaryOp, CmpOp, Expr, ExprId, Statement, StatementId, UnaryOp},
     module_data::Name,
-    resolver::Resolver,
+    resolver::{ResolveType, Resolver},
     type_ref::{self, AccessMode, StorageClass, TypeRef},
 };
 use la_arena::ArenaMap;
@@ -405,24 +405,9 @@ impl<'db> InferenceContext<'db> {
             return Ok(());
         };
 
-        let ty = match ty_kind {
-            TyKind::TypeAlias(id) => {
-                let data = self.db.type_alias_data(id);
-                let ty_ref = &self.db.lookup_intern_type_ref(data.ty);
-                self.lower_ty(TypeContainer::TypeAlias(id), ty_ref)
-            }
-            _ => ty,
-        };
-
         match *expectation {
             TypeExpectationInner::Exact(expected_type) => match expected_type.kind(self.db) {
                 TyKind::Error => Ok(()),
-                TyKind::TypeAlias(id) => {
-                    let data = self.db.type_alias_data(id);
-                    let ty_ref = &self.db.lookup_intern_type_ref(data.ty);
-                    let inner = self.lower_ty(TypeContainer::TypeAlias(id), ty_ref);
-                    self.expect_ty_inner(ty, &TypeExpectationInner::Exact(inner))
-                }
                 _ => {
                     if ty == expected_type {
                         Ok(())
@@ -1365,20 +1350,20 @@ impl<'db> TyLoweringContext<'db> {
                 inner: self.lower_ty(&*ptr.inner),
                 access_mode: ptr.access_mode,
             }),
-            TypeRef::Path(name) => self
-                .resolver
-                .resolve_type(name)
-                .map(|ty| match ty {
-                    hir_def::resolver::ResolveType::Struct(loc) => {
-                        let strukt = self.db.intern_struct(loc);
-                        TyKind::Struct(strukt)
-                    }
-                    hir_def::resolver::ResolveType::TypeAlias(loc) => {
-                        let alias = self.db.intern_type_alias(loc);
-                        TyKind::TypeAlias(alias)
-                    }
-                })
-                .ok_or_else(|| TypeLoweringError::UnresolvedName(name.clone()))?,
+            TypeRef::Path(name) => match self.resolver.resolve_type(name) {
+                Some(ResolveType::Struct(loc)) => {
+                    let strukt = self.db.intern_struct(loc);
+                    TyKind::Struct(strukt)
+                }
+                Some(ResolveType::TypeAlias(loc)) => {
+                    let alias = self.db.intern_type_alias(loc);
+                    let data = self.db.type_alias_data(alias);
+                    let type_ref = &self.db.lookup_intern_type_ref(data.ty);
+
+                    return Ok(self.lower_ty(type_ref));
+                }
+                None => return Err(TypeLoweringError::UnresolvedName(name.clone())),
+            },
         };
         Ok(self.db.intern_ty(ty_kind))
     }
