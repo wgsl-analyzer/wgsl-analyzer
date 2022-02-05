@@ -329,6 +329,8 @@ ast_node!(VariableIdentDecl:
     ty: Option<Type>;
 );
 ast_node!(FunctionParamList:
+    left_paren_token: Option<SyntaxToken ParenLeft>;
+    right_paren_token: Option<SyntaxToken ParenRight>;
     args: AstChildren<Expr>;
 );
 ast_node!(ReturnType:
@@ -520,7 +522,9 @@ ast_node!(CompoundStatement:
     right_brace_token: Option<SyntaxToken BraceRight>;
     statements: AstChildren<Statement>;
 );
-ast_node!(AssignmentStmt);
+ast_node!(AssignmentStmt:
+    equal_token: Option<SyntaxToken Equal>;
+);
 impl AssignmentStmt {
     pub fn lhs(&self) -> Option<Expr> {
         crate::support::children(self.syntax()).next()
@@ -576,6 +580,9 @@ impl CompoundAssignmentStmt {
     pub fn rhs(&self) -> Option<Expr> {
         crate::support::children(self.syntax()).nth(1)
     }
+    pub fn op_token(&self) -> Option<SyntaxToken> {
+        self.lhs()?.syntax().last_token()?.next_token()
+    }
     pub fn op(&self) -> Option<CompoundOp> {
         let kind: CompoundAssignmentOperator = support::child_token(self.syntax())?;
         let op = match kind {
@@ -594,12 +601,17 @@ impl CompoundAssignmentStmt {
     }
 }
 ast_node!(ElseIfBlock:
+    else_token: Option<SyntaxToken Else>;
+    if_token: Option<SyntaxToken If>;
+    condition: Option<Expr>;
     block: Option<CompoundStatement>;
 );
 ast_node!(ElseBlock:
+    else_token: Option<SyntaxToken Else>;
     block: Option<CompoundStatement>;
 );
 ast_node!(IfStatement:
+    if_token: Option<SyntaxToken If>;
     condition: Option<Expr>;
     block: Option<CompoundStatement>;
     else_if_blocks: AstChildren<ElseIfBlock>;
@@ -615,6 +627,7 @@ ast_node!(VariableStatement:
     variable_qualifier: Option<VariableQualifier>;
     binding: Option<Binding>;
     ty: Option<Type>;
+    equal_token: Option<SyntaxToken Equal>;
     initializer: Option<Expr>;
 );
 impl VariableStatement {
@@ -634,7 +647,9 @@ pub enum VariableStatementKind {
     Var,
 }
 
-ast_node!(ForStatement);
+ast_node!(ForStatement:
+    for_token: Option<SyntaxToken For>;
+);
 impl ForStatement {
     pub fn block(&self) -> Option<CompoundStatement> {
         support::child(self.syntax())
@@ -799,6 +814,9 @@ impl InfixExpr {
     }
     pub fn rhs(&self) -> Option<Expr> {
         crate::support::children(self.syntax()).nth(1)
+    }
+    pub fn op_token(&self) -> Option<SyntaxToken> {
+        self.lhs()?.syntax().last_token()?.next_token()
     }
     pub fn op_kind(&self) -> Option<BinaryOp> {
         let kind: BinaryOpKind = support::child_token(self.syntax())?;

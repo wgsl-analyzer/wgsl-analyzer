@@ -53,54 +53,16 @@ fn format_syntax_node(syntax: SyntaxNode) -> Option<()> {
             let has_newline =
                 remove_whitespace_keep_newline(param_list.left_paren_token()?.next_token()?);
 
-            let mut first = true;
-            let n_params = param_list.params().count();
-            for (i, param) in param_list.params().enumerate() {
-                let last = i == n_params - 1;
+            format_param_list(
+                param_list.params(),
+                param_list.params().count(),
+                has_newline,
+            );
 
-                if !first {
-                    let ws = create_whitespace(match has_newline {
-                        true => "\n    ",
-                        false => " ",
-                    });
-
-                    let first_token = param.syntax().first_token()?;
-                    set_whitespace_before(first_token, ws);
-                }
-
-                let last_param_token = param.syntax().last_token()?;
-                remove_if_whitespace(last_param_token);
-
-                let token_after_param = match param.syntax().next_sibling_or_token()? {
-                    NodeOrToken::Node(node) => node.first_token()?,
-                    NodeOrToken::Token(token) => token,
-                };
-                match (last, token_after_param.kind() == SyntaxKind::Comma) {
-                    (true, false) if has_newline => {
-                        insert_after_syntax(
-                            param.syntax(),
-                            create_syntax_token(SyntaxKind::Comma, ","),
-                        );
-                    }
-                    (true, false) => {}
-                    (true, true) if has_newline => {}
-                    (true, true) => token_after_param.detach(),
-                    (false, true) => {}
-                    (false, false) => {
-                        insert_after_syntax(
-                            param.syntax(),
-                            create_syntax_token(SyntaxKind::Comma, ","),
-                        );
-                    }
-                };
-
-                if has_newline {
-                    set_whitespace_before(param_list.right_paren_token()?, create_whitespace("\n"));
-                } else {
-                    remove_if_whitespace(param_list.right_paren_token()?.prev_token()?);
-                }
-
-                first = false;
+            if has_newline {
+                set_whitespace_before(param_list.right_paren_token()?, create_whitespace("\n"));
+            } else {
+                remove_if_whitespace(param_list.right_paren_token()?.prev_token()?);
             }
         }
         SyntaxKind::VariableIdentDecl => {
@@ -120,10 +82,130 @@ fn format_syntax_node(syntax: SyntaxNode) -> Option<()> {
             let name = strukt.name()?.ident_token()?;
             whitespace_to_single_around(name);
         }
+        SyntaxKind::IfStatement => {
+            let if_statement = ast::IfStatement::cast(syntax)?;
+
+            set_whitespace_single_after(if_statement.if_token()?);
+
+            let condition = if_statement.condition()?.syntax().clone();
+            remove_if_whitespace(condition.first_token()?.prev_token()?);
+            remove_if_whitespace(condition.last_token()?);
+
+            set_whitespace_single_before(if_statement.block()?.left_brace_token()?);
+
+            if let Some(else_block) = if_statement.else_block() {
+                whitespace_to_single_around(else_block.else_token()?);
+            }
+
+            for else_if_block in if_statement.else_if_blocks() {
+                whitespace_to_single_around(else_if_block.else_token()?);
+                whitespace_to_single_around(else_if_block.if_token()?);
+
+                let condition = else_if_block.condition()?.syntax().clone();
+                remove_if_whitespace(condition.first_token()?.prev_token()?);
+                remove_if_whitespace(condition.last_token()?);
+
+                set_whitespace_single_before(else_if_block.block()?.left_brace_token()?);
+            }
+        }
+        SyntaxKind::ForStatement => {
+            let for_statement = ast::ForStatement::cast(syntax)?;
+
+            set_whitespace_single_after(for_statement.for_token()?);
+
+            set_whitespace_single_before(for_statement.block()?.left_brace_token()?);
+
+            remove_if_whitespace(
+                for_statement
+                    .initializer()?
+                    .syntax()
+                    .first_token()?
+                    .prev_token()?,
+            );
+            set_whitespace_single_before(for_statement.condition()?.syntax().first_token()?);
+            set_whitespace_single_before(for_statement.continuing_part()?.syntax().first_token()?);
+            remove_if_whitespace(for_statement.continuing_part()?.syntax().last_token()?);
+        }
+        SyntaxKind::FunctionCall => {
+            let function_call = ast::FunctionCall::cast(syntax)?;
+
+            remove_if_whitespace(function_call.expr()?.syntax().last_token()?);
+
+            if let Some(type_initializer) = function_call.type_initializer() {
+                remove_if_whitespace(type_initializer.syntax().last_token()?);
+            }
+
+            let param_list = function_call.params()?;
+            remove_if_whitespace(param_list.left_paren_token()?.prev_token()?);
+            remove_if_whitespace(param_list.left_paren_token()?.next_token()?);
+            format_param_list(param_list.args(), param_list.args().count(), false);
+            remove_if_whitespace(param_list.right_paren_token()?.prev_token()?);
+        }
+        SyntaxKind::InfixExpr => {
+            let expr = ast::InfixExpr::cast(syntax)?;
+            whitespace_to_single_around(expr.op_token()?);
+        }
+        SyntaxKind::AssignmentStmt => {
+            let stmt = ast::AssignmentStmt::cast(syntax)?;
+            whitespace_to_single_around(stmt.equal_token()?);
+        }
+        SyntaxKind::CompoundAssignmentStmt => {
+            let stmt = ast::CompoundAssignmentStmt::cast(syntax)?;
+            whitespace_to_single_around(stmt.op_token()?);
+        }
+        SyntaxKind::VariableStatement => {
+            let stmt = ast::VariableStatement::cast(syntax)?;
+            whitespace_to_single_around(stmt.equal_token()?);
+        }
         _ => {}
     }
 
     None
+}
+
+fn format_param_list<T: AstNode>(
+    params: syntax::AstChildren<T>,
+    count: usize,
+    has_newline: bool,
+) -> Option<()> {
+    let mut first = true;
+    for (i, param) in params.enumerate() {
+        let last = i == count - 1;
+
+        if !first {
+            let ws = create_whitespace(match has_newline {
+                true => "\n    ",
+                false => " ",
+            });
+
+            let first_token = param.syntax().first_token()?;
+            set_whitespace_before(first_token, ws);
+        }
+
+        let last_param_token = param.syntax().last_token()?;
+        remove_if_whitespace(last_param_token);
+
+        let token_after_param = match param.syntax().next_sibling_or_token()? {
+            NodeOrToken::Node(node) => node.first_token()?,
+            NodeOrToken::Token(token) => token,
+        };
+        match (last, token_after_param.kind() == SyntaxKind::Comma) {
+            (true, false) if has_newline => {
+                insert_after_syntax(param.syntax(), create_syntax_token(SyntaxKind::Comma, ","));
+            }
+            (true, false) => {}
+            (true, true) if has_newline => {}
+            (true, true) => token_after_param.detach(),
+            (false, true) => {}
+            (false, false) => {
+                insert_after_syntax(param.syntax(), create_syntax_token(SyntaxKind::Comma, ","));
+            }
+        };
+
+        first = false;
+    }
+
+    Some(())
 }
 
 // "\n  fn" -> "\nfn"
@@ -411,5 +493,105 @@ mod tests {
               NoH: f32, LoH: f32, specularIntensity: f32) -> vec3<f32> {",
             expect![["fn specular(f0: vec3<f32>, roughness: f32, h: vec3<f32>, NoV: f32, NoL: f32, NoH: f32, LoH: f32, specularIntensity: f32) -> vec3<f32> {"]],
         )
+    }
+
+    #[test]
+    fn format_if() {
+        check(
+            "fn main() {
+    if(x < 1){}
+    if  (  x < 1   )  {}
+}",
+            expect![[r#"
+                fn main() {
+                    if (x < 1) {}
+                    if (x < 1) {}
+                }"#]],
+        );
+    }
+
+    #[test]
+    fn format_if_2() {
+        check(
+            "fn main() {
+    if(x < 1){}
+    else{
+
+    }else     if(  x > 2 ){}
+}",
+            expect![[r#"
+                fn main() {
+                    if (x < 1) {} else {
+                
+                    } else if (x > 2) {}
+                }"#]],
+        );
+    }
+
+    #[test]
+    fn format_for() {
+        check(
+            "fn main() {
+    for( var i = 0;i < 100;   i = i + 1  ){}
+}",
+            expect![[r#"
+                fn main() {
+                    for (var i = 0; i < 100; i = i + 1) {}
+                }"#]],
+        );
+    }
+
+    #[test]
+    fn format_function_call() {
+        check(
+            "fn main() {
+    min  (  x,y );
+}",
+            expect![[r#"
+                fn main() {
+                    min(x, y);
+                }"#]],
+        );
+    }
+
+    #[test]
+    fn format_infix_expr() {
+        check(
+            "fn main() {
+    x+y*z;
+}",
+            expect![[r#"
+                fn main() {
+                    x + y * z;
+                }"#]],
+        );
+    }
+
+    #[test]
+    fn format_assignment() {
+        check(
+            "fn main() {
+    x=0;
+    y  +=  x + y;
+}",
+            expect![[r#"
+                fn main() {
+                    x = 0;
+                    y += x + y;
+                }"#]],
+        );
+    }
+
+    #[test]
+    fn format_variable() {
+        check(
+            "fn main() {
+    var x=0;
+}",
+            expect![[r#"
+                fn main() {
+                    var x = 0;
+                }"#]],
+        );
     }
 }
