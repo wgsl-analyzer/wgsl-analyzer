@@ -129,9 +129,12 @@ fn format_syntax_node(syntax: SyntaxNode) -> Option<()> {
         SyntaxKind::FunctionCall => {
             let function_call = ast::FunctionCall::cast(syntax)?;
 
-            remove_if_whitespace(function_call.expr()?.syntax().last_token()?);
+            if let Some(expr) = function_call.expr() {
+                remove_if_whitespace(expr.syntax().last_token()?);
+            }
 
             if let Some(type_initializer) = function_call.type_initializer() {
+                remove_if_whitespace(type_initializer.syntax().first_token()?.next_token()?);
                 remove_if_whitespace(type_initializer.syntax().last_token()?);
             }
 
@@ -550,6 +553,19 @@ mod tests {
             expect![[r#"
                 fn main() {
                     min(x, y);
+                }"#]],
+        );
+    }
+
+    #[test]
+    fn format_function_call_2() {
+        check(
+            "fn main() {
+    vec3  <f32>  (  x,y,z );
+}",
+            expect![[r#"
+                fn main() {
+                    vec3<f32>(x, y, z);
                 }"#]],
         );
     }
