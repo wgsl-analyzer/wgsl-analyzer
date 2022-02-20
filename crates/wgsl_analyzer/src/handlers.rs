@@ -102,6 +102,16 @@ pub fn handle_shutdown(_snap: GlobalStateSnapshot, _: ()) -> Result<()> {
     exit(0);
 }
 
+pub fn full_source(snap: GlobalStateSnapshot, params: lsp_ext::FullSourceParams) -> Result<String> {
+    let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
+    let source = match snap.analysis.resolve_full_source(file_id)? {
+        Ok(source) => source,
+        Err(_) => "".to_string(),
+    };
+
+    Ok(source)
+}
+
 pub fn show_syntax_tree(
     snap: GlobalStateSnapshot,
     params: lsp_ext::SyntaxTreeParams,

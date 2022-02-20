@@ -67,5 +67,56 @@ export function debugCommand(ctx: Ctx): Cmd {
         const params = { textDocument: { uri: wgslEditor.document.uri.toString() }, position };
         ctx.client.sendRequest(lsp_ext.debugCommand, params);
     };
+}
 
+export function showFullSource(ctx: Ctx): Cmd {
+    const tdcp = new class implements vscode.TextDocumentContentProvider {
+        readonly uri = vscode.Uri.parse("wgsl-analyzer:///fullSource.wgsl");
+        readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
+        constructor() {
+            vscode.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument, this, ctx.subscriptions);
+            vscode.window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor, this, ctx.subscriptions);
+        }
+
+        private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent) {
+            if (isWgslDocument(event.document)) {
+                // We need to order this after language server updates, but there's no API for that.
+                // Hence, good old sleep().
+                void sleep(10).then(() => this.eventEmitter.fire(this.uri));
+            }
+        }
+        private onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined) {
+            if (editor && isWgslEditor(editor)) {
+                this.eventEmitter.fire(this.uri);
+            }
+        }
+
+        provideTextDocumentContent(uri: vscode.Uri, ct: vscode.CancellationToken): vscode.ProviderResult<string> {
+            const wgslEditor = ctx.activeWgslEditor;
+            if (!wgslEditor) return "";
+
+            const params = { textDocument: { uri: wgslEditor.document.uri.toString() } };
+            return ctx.client.sendRequest(lsp_ext.fullSource, params, ct);
+        }
+
+        get onDidChange(): vscode.Event<vscode.Uri> {
+            return this.eventEmitter.event;
+        }
+    };
+
+    ctx.pushCleanup(vscode.workspace.registerTextDocumentContentProvider("wgsl-analyzer", tdcp));
+
+    return async () => {
+        const wgslEditor = ctx.activeWgslEditor;
+        if (!wgslEditor) return;
+
+        const uri = tdcp.uri;
+        const document = await vscode.workspace.openTextDocument(uri);
+        vscode.languages.setTextDocumentLanguage(document, "wgsl");
+
+        await vscode.window.showTextDocument(document, {
+            viewColumn: vscode.ViewColumn.Two,
+            preserveFocus: true
+        });
+    };
 }

@@ -81,6 +81,11 @@
                 "command": "wgsl-analyzer.debugCommand",
                 "title": "Debug command",
                 "category": "WGSL Analyzer"
+            },
+            {
+                "command": "wgsl-analyzer.fullSource",
+                "title": "Show full WGSL source",
+                "category": "WGSL Analyzer"
             }
         ],
         "configuration": {

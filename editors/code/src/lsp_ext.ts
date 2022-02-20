@@ -11,3 +11,9 @@ export interface DebugCommand {
     position: lc.Position;
 }
 export const debugCommand = new lc.RequestType<DebugCommand, string, void>("wgsl-analyzer/debugCommand");
+
+
+export interface FullSourceParams {
+    textDocument: lc.TextDocumentIdentifier;
+}
+export const fullSource = new lc.RequestType<FullSourceParams, string, void>("wgsl-analyzer/fullSource");

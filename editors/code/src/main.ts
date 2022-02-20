@@ -23,6 +23,7 @@ export async function activate(context: ExtensionContext) {
     ctx = await Ctx.create(serverPath, context, config);
     ctx.registerCommand("syntaxTree", commands.syntaxTree);
     ctx.registerCommand("debugCommand", commands.debugCommand);
+    ctx.registerCommand("fullSource", commands.showFullSource);
 
     vscode.workspace.onDidChangeConfiguration(_ => ctx.client.sendNotification("workspace/didChangeConfiguration", { settings: "" }), null, ctx.subscriptions);
 }

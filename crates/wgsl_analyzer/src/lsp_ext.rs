@@ -29,3 +29,17 @@ pub struct DebugCommandParams {
     #[serde(flatten)]
     pub position: TextDocumentPositionParams,
 }
+
+pub enum FullSource {}
+
+impl Request for FullSource {
+    type Params = FullSourceParams;
+    type Result = String;
+    const METHOD: &'static str = "wgsl-analyzer/fullSource";
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FullSourceParams {
+    pub text_document: TextDocumentIdentifier,
+}

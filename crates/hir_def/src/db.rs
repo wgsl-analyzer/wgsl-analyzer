@@ -82,33 +82,40 @@ fn resolve_full_source(db: &dyn DefDatabase, file_id: HirFileId) -> Result<Strin
     let parse = db.parse_or_resolve(file_id)?;
 
     let root = ast::SourceFile::cast(parse.syntax().clone_for_update()).unwrap();
-    for item in root.items() {
-        if let Item::Import(import) = item {
-            let import_mod_id = crate::module_data::find_item(db, file_id, &import).ok_or(())?;
+
+    let imports = root
+        .items()
+        .filter_map(|item| match item {
+            Item::Import(import) => Some(import),
+            _ => None,
+        })
+        .filter_map(|import| {
+            let import_mod_id = crate::module_data::find_item(db, file_id, &import)?;
             let import_id = db.intern_import(Location::new(file_id, import_mod_id));
             let import_file = HirFileId::from(ImportFile { import_id });
 
-            let import_source = db
-                .parse_or_resolve(import_file)?
-                .syntax()
-                .clone_for_update();
+            Some((import.syntax().clone(), import_file))
+        });
 
-            let import_syntax = import.syntax();
+    for (import, import_file) in imports {
+        let import_source = match db.parse_or_resolve(import_file) {
+            Ok(it) => it.syntax().clone_for_update(),
+            Err(_) => continue,
+        };
 
-            let import_whitespace = import_syntax
-                .last_token()
-                .filter(|token| token.kind().is_whitespace());
-            let to_insert = match import_whitespace {
-                Some(whitespace) => vec![import_source.into(), whitespace.into()],
-                None => vec![import_source.into()],
-            };
+        let import_whitespace = import
+            .last_token()
+            .filter(|token| token.kind().is_whitespace());
+        let to_insert = match import_whitespace {
+            Some(whitespace) => vec![import_source.into(), whitespace.into()],
+            None => vec![import_source.into()],
+        };
 
-            let idx = import_syntax.index();
-            import_syntax
-                .parent()
-                .unwrap()
-                .splice_children(idx..idx + 1, to_insert);
-        }
+        let idx = import.index();
+        import
+            .parent()
+            .unwrap()
+            .splice_children(idx..idx + 1, to_insert);
     }
 
     Ok(root.syntax().to_string())

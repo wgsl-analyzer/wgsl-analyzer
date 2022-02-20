@@ -10,7 +10,7 @@ use crate::{global_state::GlobalStateSnapshot, Result};
 pub(crate) fn abs_path(url: &lsp_types::Url) -> Result<AbsPathBuf> {
     let path = url
         .to_file_path()
-        .map_err(|()| anyhow::anyhow!("url is not a file"))?;
+        .map_err(|()| anyhow::anyhow!("url is not a file: {}", url.as_str()))?;
     Ok(AbsPathBuf::try_from(path).unwrap())
 }
 
