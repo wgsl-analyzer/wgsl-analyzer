@@ -2,7 +2,10 @@ use std::{fmt::Debug, marker::PhantomData, sync::Arc};
 
 use base_db::{SourceDatabase, Upcast};
 use salsa::InternKey;
-use syntax::Parse;
+use syntax::{
+    ast::{self, Item},
+    AstNode, Parse,
+};
 
 use crate::{
     ast_id::AstIdMap,
@@ -10,7 +13,7 @@ use crate::{
     body::scope::ExprScopes,
     body::{Body, BodySourceMap},
     data::{FunctionData, GlobalConstantData, GlobalVariableData, StructData, TypeAliasData},
-    hir_file_id::HirFileIdRepr,
+    hir_file_id::{HirFileIdRepr, ImportFile},
     module_data::{
         Function, GlobalConstant, GlobalVariable, Import, ModuleInfo, ModuleItemId, Struct,
         TypeAlias,
@@ -25,6 +28,8 @@ pub trait DefDatabase: InternDatabase + Upcast<dyn SourceDatabase> {
     fn parse_or_resolve(&self, file_id: HirFileId) -> Result<Parse, ()>;
 
     fn ast_id_map(&self, file_id: HirFileId) -> Arc<AstIdMap>;
+
+    fn resolve_full_source(&self, file_id: HirFileId) -> Result<String, ()>;
 
     #[salsa::invoke(ModuleInfo::module_info_query)]
     fn module_info(&self, file_id: HirFileId) -> Arc<ModuleInfo>;
@@ -71,6 +76,42 @@ fn parse_or_resolve(db: &dyn DefDatabase, file_id: HirFileId) -> Result<Parse, (
             }
         }
     }
+}
+
+fn resolve_full_source(db: &dyn DefDatabase, file_id: HirFileId) -> Result<String, ()> {
+    let parse = db.parse_or_resolve(file_id)?;
+
+    let root = ast::SourceFile::cast(parse.syntax().clone_for_update()).unwrap();
+    for item in root.items() {
+        if let Item::Import(import) = item {
+            let import_mod_id = crate::module_data::find_item(db, file_id, &import).ok_or(())?;
+            let import_id = db.intern_import(Location::new(file_id, import_mod_id));
+            let import_file = HirFileId::from(ImportFile { import_id });
+
+            let import_source = db
+                .parse_or_resolve(import_file)?
+                .syntax()
+                .clone_for_update();
+
+            let import_syntax = import.syntax();
+
+            let import_whitespace = import_syntax
+                .last_token()
+                .filter(|token| token.kind().is_whitespace());
+            let to_insert = match import_whitespace {
+                Some(whitespace) => vec![import_source.into(), whitespace.into()],
+                None => vec![import_source.into()],
+            };
+
+            let idx = import_syntax.index();
+            import_syntax
+                .parent()
+                .unwrap()
+                .splice_children(idx..idx + 1, to_insert);
+        }
+    }
+
+    Ok(root.syntax().to_string())
 }
 
 fn ast_id_map(db: &dyn DefDatabase, file_id: HirFileId) -> Arc<AstIdMap> {

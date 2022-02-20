@@ -12,6 +12,7 @@ use base_db::{line_index::LineIndex, FilePosition, FileRange, RangeInfo, TextRan
 use diagnostics::DiagnosticMessage;
 use goto_definition::NavigationTarget;
 use hir::diagnostics::DiagnosticsConfig;
+use hir_def::db::DefDatabase;
 pub use hover::HoverResult;
 use ide_completion::item::CompletionItem;
 use salsa::{Cancelled, ParallelDatabase};
@@ -66,6 +67,11 @@ impl Analysis {
     /// Gets the text of the source file.
     pub fn file_text(&self, file_id: FileId) -> Cancellable<Arc<String>> {
         self.with_db(|db| db.file_text(file_id))
+    }
+
+    // Returns the full source code with imports resolved
+    pub fn resolve_full_source(&self, file_id: FileId) -> Cancellable<Result<String, ()>> {
+        self.with_db(|db| db.resolve_full_source(file_id.into()))
     }
 
     /// Gets the syntax tree of the file.
