@@ -7,7 +7,7 @@ use syntax::{ast, AstNode, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken};
 use crate::RootDatabase;
 
 pub fn format(db: &RootDatabase, file_id: FileId, range: Option<TextRange>) -> Option<SyntaxNode> {
-    let file: ast::SourceFile = db.parse(file_id).tree();
+    let file: ast::SourceFile = db.parse_no_preprocessor(file_id).tree();
 
     let node = match range {
         None => file.syntax().clone_for_update(),

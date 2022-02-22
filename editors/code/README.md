@@ -39,3 +39,15 @@ If you provide a URL with a `http`, `https` or `file` scheme that resource will 
     }
 }
 ```
+
+### Preprocessor defines
+
+wgsl-analyzer supports `#ifdef`, `#ifndef`, `#else`, `#endif` directives in the flavour of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports).
+
+```json
+{
+    "wgsl-analyzer.preprocessor.shaderDefs": [
+        "VERTEX_TANGENTS"
+    ]
+}
+```

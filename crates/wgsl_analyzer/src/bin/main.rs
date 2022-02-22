@@ -37,7 +37,7 @@ fn setup_logging(trace: &TraceConfig) {
     let level = if trace.extension { "debug" } else { "info" };
     let mut filter = String::from(
         format!(
-            "warn,hir={level},hir_def={level},ide={level},wgsl_analyzer={level}",
+            "warn,hir={level},hir_def={level},ide={level},wgsl_analyzer={level},base_db={level}",
             level = level
         )
         .as_str(),

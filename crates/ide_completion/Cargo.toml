@@ -10,6 +10,7 @@ hir_ty = { path = "../hir_ty" }
 hir_def = { path = "../hir_def" }
 syntax = { path = "../syntax" }
 always-assert = { version = "0.1.2", features = ["log"] }
+tracing = "0.1"
 
 text_edit = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "eb32b60dc" }
 itertools = "0.10.1"

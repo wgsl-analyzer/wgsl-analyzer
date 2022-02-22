@@ -7,6 +7,7 @@ use crate::{handlers, lsp_ext, Result};
 use base_db::SourceDatabase;
 use crossbeam_channel::{select, Receiver};
 use lsp_server::Connection;
+use salsa::Durability;
 use std::sync::Arc;
 use std::time::Instant;
 use vfs::FileId;
@@ -195,7 +196,19 @@ impl GlobalState {
         if old_config.custom_imports != self.config.custom_imports {
             self.analysis_host
                 .raw_database_mut()
-                .set_custom_imports(Arc::new(self.config.custom_imports.clone()));
+                .set_custom_imports_with_durability(
+                    Arc::new(self.config.custom_imports.clone()),
+                    Durability::HIGH,
+                );
+        }
+
+        if old_config.shader_defs != self.config.shader_defs {
+            self.analysis_host
+                .raw_database_mut()
+                .set_shader_defs_with_durability(
+                    Arc::new(self.config.shader_defs.clone()),
+                    Durability::HIGH,
+                );
         }
     }
 }

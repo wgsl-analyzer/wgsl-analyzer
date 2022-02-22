@@ -83,7 +83,7 @@ fn resolve_full_source(db: &dyn DefDatabase, file_id: HirFileId) -> Result<Strin
 
     let root = ast::SourceFile::cast(parse.syntax().clone_for_update()).unwrap();
 
-    let imports = root
+    let imports: Vec<_> = root
         .items()
         .filter_map(|item| match item {
             Item::Import(import) => Some(import),
@@ -95,9 +95,10 @@ fn resolve_full_source(db: &dyn DefDatabase, file_id: HirFileId) -> Result<Strin
             let import_file = HirFileId::from(ImportFile { import_id });
 
             Some((import.syntax().clone(), import_file))
-        });
+        })
+        .collect();
 
-    for (import, import_file) in imports {
+    for (import, import_file) in imports.into_iter().rev() {
         let import_source = match db.parse_or_resolve(import_file) {
             Ok(it) => it.syntax().clone_for_update(),
             Err(_) => continue,

@@ -26,6 +26,10 @@ export class Config {
         return this.get("customImports");
     }
 
+    get shaderDefs(): [string] {
+        return this.get<[string]>("preprocessor.shaderDefs");
+    }
+
     get trace(): { extension: boolean, server: boolean; } {
         return this.get("trace");
     }

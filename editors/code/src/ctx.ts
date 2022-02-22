@@ -12,6 +12,7 @@ import { isWgslEditor, WgslEditor } from "./util";
 interface WGSLAnalyzerConfiguration {
     showTypeErrors: boolean,
     customImports: Record<string, string>,
+    shaderDefs: [string],
     trace: { extension: boolean, server: boolean; };
 }
 
@@ -28,6 +29,7 @@ async function lspOptions(config: Config): Promise<WGSLAnalyzerConfiguration> {
 
     return {
         customImports,
+        shaderDefs: config.shaderDefs,
         showTypeErrors: config.showTypeErrors,
         trace: config.trace,
     };
@@ -62,9 +64,7 @@ export class Ctx {
         await client.onReady();
 
         ctx.subscriptions.push(client.onRequest(lsp_ext.requestConfiguration, async (_, ct) => {
-            vscode.window.showInformationMessage("requestConfiguration");
             let options = await lspOptions(config);
-            vscode.window.showInformationMessage("requestConfiguration: " + JSON.stringify(options));
             return options;
         }));
 

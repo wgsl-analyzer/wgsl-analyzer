@@ -1,4 +1,4 @@
-use std::mem::ManuallyDrop;
+use std::{mem::ManuallyDrop, sync::Arc};
 
 use base_db::{change::Change, SourceDatabase, Upcast};
 use hir_def::db::DefDatabase;
@@ -43,9 +43,12 @@ impl Drop for RootDatabase {
 impl RootDatabase {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
-        Self {
+        let mut this = Self {
             storage: ManuallyDrop::new(salsa::Storage::default()),
-        }
+        };
+        this.set_custom_imports(Arc::new(Default::default()));
+        this.set_shader_defs(Arc::new(Default::default()));
+        this
     }
 
     pub fn apply_change(&mut self, change: Change) {

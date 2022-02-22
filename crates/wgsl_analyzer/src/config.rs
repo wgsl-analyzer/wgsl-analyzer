@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::Deserialize;
 
@@ -15,6 +15,7 @@ pub struct TraceConfig {
 pub struct Config {
     pub show_type_errors: bool,
     pub custom_imports: HashMap<String, String>,
+    pub shader_defs: HashSet<String>,
     pub trace: TraceConfig,
 }
 
