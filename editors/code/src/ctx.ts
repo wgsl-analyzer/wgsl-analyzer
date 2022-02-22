@@ -1,6 +1,7 @@
 import { readFile } from "fs";
 import fetch from "node-fetch";
 import { promisify } from "util";
+import * as lsp_ext from "./lsp_ext";
 import * as vscode from "vscode";
 import { Disposable, ExtensionContext } from "vscode";
 import { Executable, LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
@@ -12,6 +13,24 @@ interface WGSLAnalyzerConfiguration {
     showTypeErrors: boolean,
     customImports: Record<string, string>,
     trace: { extension: boolean, server: boolean; };
+}
+
+async function lspOptions(config: Config): Promise<WGSLAnalyzerConfiguration> {
+    let start = process.hrtime();
+    let customImports = await mapObjectAsync(config.customImports, resolveImport, (name, _, val) => {
+        vscode.window.showErrorMessage(`WGSL-Analyzer: failed to resolve import \`${name}\`: ${val}`);
+    });
+    let elapsed = process.hrtime(start);
+    let millis = elapsed[0] * 1000 + elapsed[1] / 1_000_000;
+    if (millis > 1000) {
+        vscode.window.showWarningMessage(`WGSL-Analalyzer: Took ${millis.toFixed(0)}ms to resolve imports.`);
+    }
+
+    return {
+        customImports,
+        showTypeErrors: config.showTypeErrors,
+        trace: config.trace,
+    };
 }
 
 export class Ctx {
@@ -26,27 +45,10 @@ export class Ctx {
             debug: run,
         };
 
-
-        let start = process.hrtime();
-        let customImports = await mapObjectAsync(config.customImports, resolveImport, (name, _, val) => {
-            vscode.window.showErrorMessage(`WGSL-Analyzer: failed to resolve import \`${name}\`: ${val}`);
-        });
-        let elapsed = process.hrtime(start);
-        let millis = elapsed[0] * 1000 + elapsed[1] / 1_000_000;
-        if (millis > 1000) {
-            vscode.window.showWarningMessage(`WGSL-Analalyzer: Took ${millis.toFixed(0)}ms to resolve imports.`);
-        }
-
-        const initializationOptions: WGSLAnalyzerConfiguration = {
-            customImports,
-            showTypeErrors: config.showTypeErrors,
-            trace: config.trace,
-        };
-
         const clientOptions: LanguageClientOptions = {
             documentSelector: [{ language: "wgsl" }, { scheme: "file", pattern: "*.wgsl" }],
             outputChannelName: "WGSL Analyzer",
-            initializationOptions,
+            initializationOptions: await lspOptions(config),
         };
 
         let client = new LanguageClient(
@@ -58,6 +60,14 @@ export class Ctx {
 
         client.start();
         await client.onReady();
+
+        ctx.subscriptions.push(client.onRequest(lsp_ext.requestConfiguration, async (_, ct) => {
+            vscode.window.showInformationMessage("requestConfiguration");
+            let options = await lspOptions(config);
+            vscode.window.showInformationMessage("requestConfiguration: " + JSON.stringify(options));
+            return options;
+        }));
+
 
         return new Ctx(ctx, client);
     }

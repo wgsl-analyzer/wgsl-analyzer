@@ -43,3 +43,11 @@ impl Request for FullSource {
 pub struct FullSourceParams {
     pub text_document: TextDocumentIdentifier,
 }
+
+pub enum RequestConfiguration {}
+
+impl Request for RequestConfiguration {
+    type Params = ();
+    type Result = serde_json::Value;
+    const METHOD: &'static str = "wgsl-analyzer/requestConfiguration";
+}

@@ -164,36 +164,25 @@ impl GlobalState {
             .on::<lsp_types::notification::DidChangeConfiguration>(|this, _params| {
                 // As stated in https://github.com/microsoft/language-server-protocol/issues/676,
                 // this notification's parameters should be ignored and the actual config queried separately.
-                this.send_request::<lsp_types::request::WorkspaceConfiguration>(
-                    lsp_types::ConfigurationParams {
-                        items: vec![lsp_types::ConfigurationItem {
-                            scope_uri: None,
-                            section: Some("wgsl-analyzer".to_string()),
-                        }],
-                    },
-                    |this, resp| {
-                        tracing::debug!("Config update response: {:?}", resp);
-                        let lsp_server::Response { error, result, .. } = resp;
+                this.send_request::<lsp_ext::RequestConfiguration>((), |this, resp| {
+                    let lsp_server::Response { error, result, .. } = resp;
 
-                        match (error, result) {
-                            (Some(err), _) => {
-                                tracing::error!("Failed to fetch the server settings: {:?}", err)
-                            }
-                            (None, Some(mut configs)) => {
-                                if let Some(json) = configs.get_mut(0) {
-                                    // Note that json can be null according to the spec if the client can't
-                                    // provide a configuration. This is handled in Config::update below.
-                                    let mut config = Config::clone(&*this.config);
-                                    config.update(json.take());
-                                    this.update_configuration(config);
-                                }
-                            }
-                            (None, None) => tracing::error!(
-                                "Received empty server settings response from the client"
-                            ),
+                    match (error, result) {
+                        (Some(err), _) => {
+                            tracing::error!("Failed to fetch the server settings: {:?}", err)
                         }
-                    },
-                );
+                        (None, Some(configs)) => {
+                            // Note that json can be null according to the spec if the client can't
+                            // provide a configuration. This is handled in Config::update below.
+                            let mut config = Config::clone(&*this.config);
+                            config.update(configs);
+                            this.update_configuration(config);
+                        }
+                        (None, None) => tracing::error!(
+                            "Received empty server settings response from the client"
+                        ),
+                    }
+                });
                 Ok(())
             })?
             .finish();

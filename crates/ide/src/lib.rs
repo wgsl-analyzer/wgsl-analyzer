@@ -32,9 +32,11 @@ pub struct AnalysisHost {
 impl AnalysisHost {
     #[allow(clippy::new_without_default)]
     pub fn new() -> AnalysisHost {
-        AnalysisHost {
+        let mut this = AnalysisHost {
             db: RootDatabase::new(),
-        }
+        };
+        this.db.set_custom_imports(Arc::new(Default::default()));
+        this
     }
 
     pub fn apply_change(&mut self, change: Change) {

@@ -17,3 +17,5 @@ export interface FullSourceParams {
     textDocument: lc.TextDocumentIdentifier;
 }
 export const fullSource = new lc.RequestType<FullSourceParams, string, void>("wgsl-analyzer/fullSource");
+
+export const requestConfiguration = new lc.RequestType<void, unknown, void>("wgsl-analyzer/requestConfiguration");
