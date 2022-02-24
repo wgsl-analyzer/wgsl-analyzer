@@ -12,7 +12,7 @@
             "label": "Build Server (Release)",
             "group": "build",
             "type": "shell",
-            "command": "mv $(cargo build --package=wgsl_analyzer --message-format=json --release | jq '. | select(.target.kind == [\"bin\"]) | .executable' -r) ./editors/code/out",
+            "command": "file=$(cargo build --package=wgsl_analyzer --message-format=json --release | jq '. | select(.target.kind == [\"bin\"]) | .executable' -r); rm -f ./editors/code/out/wgsl_analyzer; cp \"$file\" ./editors/code/out",
             "problemMatcher": "$rustc"
         },
         {
