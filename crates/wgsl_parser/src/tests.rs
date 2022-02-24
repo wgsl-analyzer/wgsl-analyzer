@@ -464,6 +464,72 @@ fn parse_if_stmt() {
 }
 
 #[test]
+fn parse_if_recover_paren() {
+    check_statement(
+        r#"if () {
+          let x = 3;
+        }"#,
+        expect![[r#"
+            IfStatement@0..38
+              If@0..2 "if"
+              Whitespace@2..3 " "
+              ParenLeft@3..4 "("
+              ParenRight@4..5 ")"
+              Whitespace@5..6 " "
+              CompoundStatement@6..38
+                BraceLeft@6..7 "{"
+                Whitespace@7..18 "\n          "
+                VariableStatement@18..27
+                  Let@18..21 "let"
+                  Whitespace@21..22 " "
+                  Binding@22..24
+                    Name@22..24
+                      Ident@22..23 "x"
+                      Whitespace@23..24 " "
+                  Equal@24..25 "="
+                  Whitespace@25..26 " "
+                  Literal@26..27
+                    IntLiteral@26..27 "3"
+                Semicolon@27..28 ";"
+                Whitespace@28..37 "\n        "
+                BraceRight@37..38 "}""#]],
+    );
+}
+
+#[test]
+fn parse_if_recover_empty() {
+    check_statement(
+        r#"if {
+          let x = 3;
+        }"#,
+        expect![[r#"
+            IfStatement@0..35
+              If@0..2 "if"
+              Whitespace@2..3 " "
+              Error@3..3
+              CompoundStatement@3..35
+                BraceLeft@3..4 "{"
+                Whitespace@4..15 "\n          "
+                VariableStatement@15..24
+                  Let@15..18 "let"
+                  Whitespace@18..19 " "
+                  Binding@19..21
+                    Name@19..21
+                      Ident@19..20 "x"
+                      Whitespace@20..21 " "
+                  Equal@21..22 "="
+                  Whitespace@22..23 " "
+                  Literal@23..24
+                    IntLiteral@23..24 "3"
+                Semicolon@24..25 ";"
+                Whitespace@25..34 "\n        "
+                BraceRight@34..35 "}"
+
+            error at 3..4: expected ParenLeft, but found BraceLeft"#]],
+    );
+}
+
+#[test]
 fn parse_if_else() {
     check_statement(
         "if (0) {} else if (1) {} else if (2) {} else {}",

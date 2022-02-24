@@ -67,9 +67,12 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
         }
     }
 
-    pub fn eat(&mut self, kind: P::TokenKind) {
+    pub fn eat(&mut self, kind: P::TokenKind) -> bool {
         if self.at(kind) {
             self.bump();
+            true
+        } else {
+            false
         }
     }
     pub fn eat_set(&mut self, set: &[P::TokenKind]) {
@@ -83,6 +86,9 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
     }
     pub fn error_expected(&mut self, expected: &[P::TokenKind]) {
         self.error_inner(None, expected, false)
+    }
+    pub fn error_expected_no_bump(&mut self, expected: &[P::TokenKind]) {
+        self.error_inner(None, expected, true)
     }
     pub fn error_recovery(&mut self, recovery: &[P::TokenKind]) {
         self.error_inner(Some(recovery), &[], false)

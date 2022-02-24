@@ -480,7 +480,13 @@ fn for_statement(p: &mut Parser) {
     let m = p.start();
     p.expect(SyntaxKind::For);
 
-    surround(p, SyntaxKind::ParenLeft, SyntaxKind::ParenRight, for_header);
+    surround(
+        p,
+        SyntaxKind::ParenLeft,
+        SyntaxKind::ParenRight,
+        &[SyntaxKind::BraceLeft],
+        for_header,
+    );
 
     if p.at_set(STATEMENT_RECOVER_SET) {
         m.complete(p, SyntaxKind::ForStatement);
@@ -529,7 +535,13 @@ fn if_statement(p: &mut Parser) {
     let m = p.start();
     p.expect(SyntaxKind::If);
 
-    surround(p, SyntaxKind::ParenLeft, SyntaxKind::ParenRight, expr);
+    surround(
+        p,
+        SyntaxKind::ParenLeft,
+        SyntaxKind::ParenRight,
+        &[SyntaxKind::BraceLeft],
+        expr,
+    );
     compound_statement(p);
 
     while p.at(SyntaxKind::Else) {
@@ -540,7 +552,13 @@ fn if_statement(p: &mut Parser) {
             p.bump();
 
             if !p.at(SyntaxKind::BraceLeft) {
-                surround(p, SyntaxKind::ParenLeft, SyntaxKind::ParenRight, expr);
+                surround(
+                    p,
+                    SyntaxKind::ParenLeft,
+                    SyntaxKind::ParenRight,
+                    &[SyntaxKind::BraceLeft],
+                    expr,
+                );
             }
 
             compound_statement(p);
@@ -557,9 +575,25 @@ fn if_statement(p: &mut Parser) {
     m.complete(p, SyntaxKind::IfStatement);
 }
 
-fn surround(p: &mut Parser, before: SyntaxKind, after: SyntaxKind, inner: impl Fn(&mut Parser)) {
+fn surround(
+    p: &mut Parser,
+    before: SyntaxKind,
+    after: SyntaxKind,
+    recover: &[SyntaxKind],
+    inner: impl Fn(&mut Parser),
+) {
+    if p.at_set(recover) {
+        p.error_expected_no_bump(&[SyntaxKind::ParenLeft]);
+        return;
+    }
+
     p.expect(before);
+    if p.eat(after) {
+        return;
+    }
+
     inner(p);
+
     p.expect(after);
 }
 
