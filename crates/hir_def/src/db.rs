@@ -78,6 +78,7 @@ fn parse_or_resolve(db: &dyn DefDatabase, file_id: HirFileId) -> Result<Parse, (
     }
 }
 
+#[allow(clippy::needless_collect)] // false positive
 fn resolve_full_source(db: &dyn DefDatabase, file_id: HirFileId) -> Result<String, ()> {
     let parse = db.parse_or_resolve(file_id)?;
 

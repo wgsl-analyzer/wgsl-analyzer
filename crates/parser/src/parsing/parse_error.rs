@@ -18,16 +18,16 @@ impl<P: ParserDefinition> ParseError<P> {
 
         for (idx, expected_kind) in self.expected.iter().enumerate() {
             if is_first(idx) {
-                let _ = write!(&mut msg, "{:?}", expected_kind);
+                let _ = write!(msg, "{:?}", expected_kind);
             } else if is_last(idx) {
-                let _ = write!(&mut msg, " or {:?}", expected_kind);
+                let _ = write!(msg, " or {:?}", expected_kind);
             } else {
-                let _ = write!(&mut msg, ", {:?}", expected_kind);
+                let _ = write!(msg, ", {:?}", expected_kind);
             }
         }
 
         if let Some(found) = self.found {
-            let _ = write!(&mut msg, ", but found {:?}", found);
+            let _ = write!(msg, ", but found {:?}", found);
         }
 
         msg

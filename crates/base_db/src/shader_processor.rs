@@ -78,7 +78,7 @@ mod tests {
 
     fn test_shader(input: &str, defs: &[&str], output: &str) {
         let processor = ShaderProcessor::default();
-        let defs = HashSet::from_iter(defs.into_iter().map(|s| s.to_string()));
+        let defs = HashSet::from_iter(defs.iter().map(|s| s.to_string()));
         let result = processor.process(input, &defs);
 
         assert_eq!(result, output);
