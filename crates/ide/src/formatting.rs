@@ -51,12 +51,13 @@ fn format_syntax_node(syntax: SyntaxNode) -> Option<()> {
             remove_if_whitespace(param_list.left_paren_token()?.prev_token()?);
 
             let has_newline =
-                remove_whitespace_keep_newline(param_list.left_paren_token()?.next_token()?);
+                remove_whitespace_keep_newline(param_list.left_paren_token()?.next_token()?, 1);
 
             format_param_list(
                 param_list.params(),
                 param_list.params().count(),
                 has_newline,
+                1,
             );
 
             if has_newline {
@@ -139,10 +140,17 @@ fn format_syntax_node(syntax: SyntaxNode) -> Option<()> {
             }
 
             let param_list = function_call.params()?;
-            remove_if_whitespace(param_list.left_paren_token()?.prev_token()?);
-            remove_if_whitespace(param_list.left_paren_token()?.next_token()?);
-            format_param_list(param_list.args(), param_list.args().count(), false);
-            remove_if_whitespace(param_list.right_paren_token()?.prev_token()?);
+
+            let has_newline =
+                remove_whitespace_keep_newline(param_list.left_paren_token()?.next_token()?, 2);
+
+            format_param_list(param_list.args(), param_list.args().count(), has_newline, 2);
+
+            if has_newline {
+                set_whitespace_before(param_list.right_paren_token()?, create_whitespace("\n    "));
+            } else {
+                remove_if_whitespace(param_list.right_paren_token()?.prev_token()?);
+            }
         }
         SyntaxKind::InfixExpr => {
             let expr = ast::InfixExpr::cast(syntax)?;
@@ -170,16 +178,17 @@ fn format_param_list<T: AstNode>(
     params: syntax::AstChildren<T>,
     count: usize,
     has_newline: bool,
+    n_indentations: usize,
 ) -> Option<()> {
     let mut first = true;
     for (i, param) in params.enumerate() {
         let last = i == count - 1;
 
         if !first {
-            let ws = create_whitespace(match has_newline {
-                true => "\n    ",
-                false => " ",
-            });
+            let ws = match has_newline {
+                true => create_whitespace(&format!("\n{}", "    ".repeat(n_indentations))),
+                false => create_whitespace(" "),
+            };
 
             let first_token = param.syntax().first_token()?;
             set_whitespace_before(first_token, ws);
@@ -227,13 +236,16 @@ fn trim_whitespace_before_to_newline(before: SyntaxToken) -> Option<()> {
     Some(())
 }
 
-fn remove_whitespace_keep_newline(maybe_whitespace: SyntaxToken) -> bool {
+fn remove_whitespace_keep_newline(maybe_whitespace: SyntaxToken, n_indentations: usize) -> bool {
     if maybe_whitespace.kind().is_whitespace() {
         if maybe_whitespace.text().contains('\n') {
             let idx = maybe_whitespace.index();
             maybe_whitespace.parent().unwrap().splice_children(
                 idx..idx + 1,
-                vec![SyntaxElement::Token(create_whitespace("\n    "))],
+                vec![SyntaxElement::Token(create_whitespace(&format!(
+                    "\n{}",
+                    "    ".repeat(n_indentations)
+                )))],
             );
             true
         } else {
@@ -553,6 +565,23 @@ mod tests {
             expect![[r#"
                 fn main() {
                     min(x, y);
+                }"#]],
+        );
+    }
+
+    #[test]
+    fn format_function_call_newline() {
+        check(
+            "fn main() {
+    min  (  
+        x,y );
+}",
+            expect![[r#"
+                fn main() {
+                    min(
+                        x,
+                        y,
+                    );
                 }"#]],
         );
     }
