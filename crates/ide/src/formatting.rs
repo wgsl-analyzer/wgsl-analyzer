@@ -51,7 +51,7 @@ fn format_syntax_node(syntax: SyntaxNode) -> Option<()> {
             remove_if_whitespace(param_list.left_paren_token()?.prev_token()?);
 
             let has_newline =
-                remove_whitespace_keep_newline(param_list.left_paren_token()?.next_token()?, 1);
+                is_whitespace_with_newline(param_list.left_paren_token()?.next_token()?);
 
             format_param_list(
                 param_list.params(),
@@ -142,7 +142,7 @@ fn format_syntax_node(syntax: SyntaxNode) -> Option<()> {
             let param_list = function_call.params()?;
 
             let has_newline =
-                remove_whitespace_keep_newline(param_list.left_paren_token()?.next_token()?, 2);
+                is_whitespace_with_newline(param_list.left_paren_token()?.next_token()?);
 
             format_param_list(param_list.args(), param_list.args().count(), has_newline, 2);
 
@@ -184,15 +184,14 @@ fn format_param_list<T: AstNode>(
     for (i, param) in params.enumerate() {
         let last = i == count - 1;
 
-        if !first {
-            let ws = match has_newline {
-                true => create_whitespace(&format!("\n{}", "    ".repeat(n_indentations))),
-                false => create_whitespace(" "),
-            };
+        let ws = match (first, has_newline) {
+            (true, false) => create_whitespace(""),
+            (_, true) => create_whitespace(&format!("\n{}", "    ".repeat(n_indentations))),
+            (false, false) => create_whitespace(" "),
+        };
 
-            let first_token = param.syntax().first_token()?;
-            set_whitespace_before(first_token, ws);
-        }
+        let first_token = param.syntax().first_token()?;
+        set_whitespace_before(first_token, ws);
 
         let last_param_token = param.syntax().last_token()?;
         remove_if_whitespace(last_param_token);
@@ -236,29 +235,8 @@ fn trim_whitespace_before_to_newline(before: SyntaxToken) -> Option<()> {
     Some(())
 }
 
-fn remove_whitespace_keep_newline(maybe_whitespace: SyntaxToken, n_indentations: usize) -> bool {
-    if maybe_whitespace.kind().is_whitespace() {
-        if maybe_whitespace.text().contains('\n') {
-            let idx = maybe_whitespace.index();
-            maybe_whitespace.parent().unwrap().splice_children(
-                idx..idx + 1,
-                vec![SyntaxElement::Token(create_whitespace(&format!(
-                    "\n{}",
-                    "    ".repeat(n_indentations)
-                )))],
-            );
-            true
-        } else {
-            let idx = maybe_whitespace.index();
-            maybe_whitespace
-                .parent()
-                .unwrap()
-                .splice_children(idx..idx + 1, Vec::new());
-            false
-        }
-    } else {
-        false
-    }
+fn is_whitespace_with_newline(maybe_whitespace: SyntaxToken) -> bool {
+    maybe_whitespace.kind().is_whitespace() && maybe_whitespace.text().contains('\n')
 }
 
 fn remove_if_whitespace(maybe_whitespace: SyntaxToken) {
