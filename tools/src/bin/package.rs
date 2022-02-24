@@ -62,23 +62,25 @@ const TARGETS: &[(&str, &str)] = &[
     // linux-armhf
 ];
 
-fn exe_suffix(rust_target: &str) -> String {
-    if rust_target.contains("-windows-") {
-        ".exe".into()
-    } else {
-        "".into()
-    }
-}
-
 fn compile(rust_target: &str) -> Result<PathBuf> {
     cmd!("rustup target add {rust_target}").run()?;
-    cmd!("cargo build --release --target {rust_target}").run()?;
+    let output =
+        cmd!("cargo build --release --package wgsl_analyzer --target {rust_target} --message-format=json").read()?;
 
-    let suffix = exe_suffix(rust_target);
-    Ok(PathBuf::from(format!(
-        "target/{}/release/wgsl_analyzer{}",
-        rust_target, suffix
-    )))
+    let executable_path = serde_json::Deserializer::from_str(&output)
+        .into_iter::<serde_json::Value>()
+        .filter_map(Result::ok)
+        .filter(|value| {
+            value["reason"] == "compiler-artifact"
+                && value["target"]["crate_types"]
+                    .as_array()
+                    .map_or(false, |arr| arr.iter().any(|v| v == "bin"))
+        })
+        .filter_map(|value| value["executable"].as_str().map(|s| s.to_owned()))
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("cargo json output doesn't report executable path"))?;
+
+    Ok(PathBuf::from(executable_path))
 }
 
 fn package(target: &str) -> Result<PathBuf> {
