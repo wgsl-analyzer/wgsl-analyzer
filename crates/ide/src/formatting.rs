@@ -21,17 +21,48 @@ pub fn format(db: &RootDatabase, file_id: FileId, range: Option<TextRange>) -> O
     Some(node)
 }
 
+fn is_indent_kind(node: SyntaxNode) -> bool {
+    if matches!(node.kind(), SyntaxKind::CompoundStatement) {
+        return true;
+    }
+
+    let param_list_left_paren = ast::ParamList::cast(node.clone())
+        .and_then(|l| l.left_paren_token())
+        .or_else(|| ast::FunctionParamList::cast(node.clone()).and_then(|l| l.left_paren_token()));
+
+    if param_list_left_paren
+        .and_then(|token| token.next_token())
+        .map_or(false, is_whitespace_with_newline)
+    {
+        return true;
+    }
+
+    false
+}
+
 fn format_recursive(syntax: SyntaxNode) {
     let preorder = syntax.preorder();
+
+    let mut indentation: usize = 0;
+
     for event in preorder {
         match event {
-            WalkEvent::Enter(node) => format_syntax_node(node),
-            WalkEvent::Leave(_) => None,
+            WalkEvent::Enter(node) => {
+                if is_indent_kind(node.clone()) {
+                    indentation += 1;
+                }
+                format_syntax_node(node, indentation);
+            }
+            WalkEvent::Leave(node) => {
+                if is_indent_kind(node) {
+                    indentation = indentation.saturating_sub(1);
+                }
+            }
         };
     }
 }
 
-fn format_syntax_node(syntax: SyntaxNode) -> Option<()> {
+fn format_syntax_node(syntax: SyntaxNode, indentation: usize) -> Option<()> {
     match syntax.kind() {
         // fn name ( param : type, param : type ) -> return_ty {}
         // fn name(
@@ -144,10 +175,18 @@ fn format_syntax_node(syntax: SyntaxNode) -> Option<()> {
             let has_newline =
                 is_whitespace_with_newline(param_list.left_paren_token()?.next_token()?);
 
-            format_param_list(param_list.args(), param_list.args().count(), has_newline, 2);
+            format_param_list(
+                param_list.args(),
+                param_list.args().count(),
+                has_newline,
+                indentation + 1,
+            );
 
             if has_newline {
-                set_whitespace_before(param_list.right_paren_token()?, create_whitespace("\n    "));
+                set_whitespace_before(
+                    param_list.right_paren_token()?,
+                    create_whitespace(&format!("\n{}", "    ".repeat(indentation))),
+                );
             } else {
                 remove_if_whitespace(param_list.right_paren_token()?.prev_token()?);
             }
@@ -560,6 +599,50 @@ mod tests {
                         x,
                         y,
                     );
+                }"#]],
+        );
+    }
+
+    #[test]
+    fn format_function_call_newline_indent() {
+        check(
+            "fn main() {
+    if (false) {
+        min  (  
+            x,y );
+    }
+}",
+            expect![[r#"
+                fn main() {
+                    if (false) {
+                        min(
+                            x,
+                            y,
+                        );
+                    }
+                }"#]],
+        );
+    }
+
+    #[test]
+    fn format_function_call_newline_nested() {
+        check(
+            "fn main() {
+    min(
+        min(
+            1,
+            2,
+        )
+    )
+}",
+            expect![[r#"
+                fn main() {
+                    min(
+                        min(
+                            1,
+                            2,
+                        ),
+                    )
                 }"#]],
         );
     }
