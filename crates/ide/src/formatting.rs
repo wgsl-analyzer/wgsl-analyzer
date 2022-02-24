@@ -63,6 +63,15 @@ fn format_recursive(syntax: SyntaxNode) {
 }
 
 fn format_syntax_node(syntax: SyntaxNode, indentation: usize) -> Option<()> {
+    if syntax.parent().map_or(false, |parent| {
+        parent.kind() == SyntaxKind::CompoundStatement
+    }) {
+        set_whitespace_before(
+            syntax.first_token()?,
+            create_whitespace(&format!("\n{}", "    ".repeat(indentation))),
+        );
+    }
+
     match syntax.kind() {
         // fn name ( param : type, param : type ) -> return_ty {}
         // fn name(
@@ -157,6 +166,20 @@ fn format_syntax_node(syntax: SyntaxNode, indentation: usize) -> Option<()> {
             set_whitespace_single_before(for_statement.condition()?.syntax().first_token()?);
             set_whitespace_single_before(for_statement.continuing_part()?.syntax().first_token()?);
             remove_if_whitespace(for_statement.continuing_part()?.syntax().last_token()?);
+        }
+        SyntaxKind::CompoundStatement => {
+            let stmt = ast::CompoundStatement::cast(syntax)?;
+            let has_newline = is_whitespace_with_newline(stmt.left_brace_token()?.next_token()?);
+
+            if has_newline {
+                set_whitespace_before(
+                    stmt.right_brace_token()?,
+                    create_whitespace(&format!(
+                        "\n{}",
+                        "    ".repeat(indentation.saturating_sub(1))
+                    )),
+                );
+            }
         }
         SyntaxKind::FunctionCall => {
             let function_call = ast::FunctionCall::cast(syntax)?;
@@ -548,13 +571,13 @@ mod tests {
             "fn main() {
     if(x < 1){}
     else{
-
+        let a = 3;
     }else     if(  x > 2 ){}
 }",
             expect![[r#"
                 fn main() {
                     if (x < 1) {} else {
-                
+                        let a = 3;
                     } else if (x > 2) {}
                 }"#]],
         );
@@ -697,6 +720,40 @@ mod tests {
             expect![[r#"
                 fn main() {
                     var x = 0;
+                }"#]],
+        );
+    }
+
+    #[test]
+    fn format_statement_indent() {
+        check(
+            "fn main() {
+var x=0;
+}",
+            expect![[r#"
+                fn main() {
+                    var x = 0;
+                }"#]],
+        );
+    }
+
+    #[test]
+    fn format_statement_indent_nested() {
+        check(
+            "fn main() {
+for() {
+if() {
+var x = 0;
+}
+}
+}",
+            expect![[r#"
+                fn main() {
+                    for () {
+                        if () {
+                            var x = 0;
+                        }
+                    }
                 }"#]],
         );
     }
