@@ -13,6 +13,7 @@ hir_ty = { path = "../hir_ty" }
 hir = { path = "../hir" }
 ide_completion = { path = "../ide_completion" }
 syntax = { path = "../syntax" }
+wgsl_formatter = { path = "../wgsl_formatter" }
 rowan = "0.14.1"
 
 vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "eb32b60dc" }
