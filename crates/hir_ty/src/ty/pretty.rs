@@ -6,15 +6,36 @@ use crate::{
 };
 use std::fmt::Write;
 
+#[derive(Debug, Clone, Copy)]
+pub enum TypeVerbosity {
+    Full,    // ref<uniform, f32, read_write>,
+    Compact, // ref<f32>,
+    Inner,   // f32
+}
+
+impl Default for TypeVerbosity {
+    fn default() -> Self {
+        TypeVerbosity::Compact
+    }
+}
+
 pub fn pretty_type_expectation(db: &dyn HirDatabase, ty: TypeExpectation) -> String {
+    pretty_type_expectation_with_verbosity(db, ty, TypeVerbosity::default())
+}
+
+pub fn pretty_type_expectation_with_verbosity(
+    db: &dyn HirDatabase,
+    ty: TypeExpectation,
+    verbosity: TypeVerbosity,
+) -> String {
     let mut str = String::new();
 
     match ty {
         TypeExpectation::Type(ty) => {
-            let _ = write_type_expectation_inner(db, ty, false, &mut str);
+            let _ = write_type_expectation_inner(db, ty, false, &mut str, verbosity);
         }
         TypeExpectation::TypeOrVecOf(inner) => {
-            let _ = write_type_expectation_inner(db, inner, true, &mut str);
+            let _ = write_type_expectation_inner(db, inner, true, &mut str, verbosity);
         }
         TypeExpectation::None => unreachable!(),
     }
@@ -26,13 +47,14 @@ fn write_type_expectation_inner(
     inner: TypeExpectationInner,
     or_vec: bool,
     f: &mut String,
+    verbosity: TypeVerbosity,
 ) -> std::fmt::Result {
     match inner {
         TypeExpectationInner::Exact(ty) => {
-            write_ty(db, ty, f)?;
+            write_ty(db, ty, f, verbosity)?;
             if or_vec {
                 write!(f, " or vecN<")?;
-                write_ty(db, ty, f)?;
+                write_ty(db, ty, f, verbosity)?;
                 write!(f, ">")?;
             }
         }
@@ -46,12 +68,25 @@ fn write_type_expectation_inner(
 }
 
 pub fn pretty_type(db: &dyn HirDatabase, ty: Ty) -> String {
+    pretty_type_with_verbosity(db, ty, TypeVerbosity::default())
+}
+
+pub fn pretty_type_with_verbosity(
+    db: &dyn HirDatabase,
+    ty: Ty,
+    verbosity: TypeVerbosity,
+) -> String {
     let mut str = String::new();
-    write_ty(db, ty, &mut str).unwrap();
+    write_ty(db, ty, &mut str, verbosity).unwrap();
     str
 }
 
-fn write_ty(db: &dyn HirDatabase, ty: Ty, f: &mut String) -> std::fmt::Result {
+fn write_ty(
+    db: &dyn HirDatabase,
+    ty: Ty,
+    f: &mut String,
+    verbosity: TypeVerbosity,
+) -> std::fmt::Result {
     match ty.kind(db) {
         TyKind::Error => write!(f, "[error]"),
         TyKind::Scalar(scalar) => {
@@ -65,17 +100,17 @@ fn write_ty(db: &dyn HirDatabase, ty: Ty, f: &mut String) -> std::fmt::Result {
         }
         TyKind::Atomic(atomic) => {
             write!(f, "atomic<")?;
-            write_ty(db, atomic.inner, f)?;
+            write_ty(db, atomic.inner, f, verbosity)?;
             write!(f, ">")
         }
         TyKind::Vector(t) => {
             write!(f, "vec{}<", t.size)?;
-            write_ty(db, t.inner, f)?;
+            write_ty(db, t.inner, f, verbosity)?;
             write!(f, ">")
         }
         TyKind::Matrix(t) => {
             write!(f, "mat{}x{}<", t.columns, t.rows)?;
-            write_ty(db, t.inner, f)?;
+            write_ty(db, t.inner, f, verbosity)?;
             write!(f, ">")
         }
         TyKind::Struct(strukt) => {
@@ -84,7 +119,7 @@ fn write_ty(db: &dyn HirDatabase, ty: Ty, f: &mut String) -> std::fmt::Result {
         }
         TyKind::Array(t) => {
             write!(f, "array<")?;
-            write_ty(db, t.inner, f)?;
+            write_ty(db, t.inner, f, verbosity)?;
             match t.size {
                 ArraySize::Const(val) => write!(f, ", {}", val)?,
                 ArraySize::Dynamic => {}
@@ -122,28 +157,43 @@ fn write_ty(db: &dyn HirDatabase, ty: Ty, f: &mut String) -> std::fmt::Result {
             true => write!(f, "sampler_comparison"),
             false => write!(f, "sampler"),
         },
-        TyKind::Ref(t) => {
-            write!(f, "ref<{}, ", t.storage_class)?;
-            write_ty(db, t.inner, f)?;
-            write!(f, ", {}>", t.access_mode)
-        }
-        TyKind::Ptr(t) => {
-            write!(f, "ptr<{}, ", t.storage_class)?;
-            write_ty(db, t.inner, f)?;
-            write!(f, ", {}>", t.access_mode)
-        }
+        TyKind::Ref(t) => match verbosity {
+            TypeVerbosity::Full => {
+                write!(f, "ref<{}, ", t.storage_class)?;
+                write_ty(db, t.inner, f, verbosity)?;
+                write!(f, ", {}>", t.access_mode)
+            }
+            TypeVerbosity::Compact => {
+                write!(f, "ref<")?;
+                write_ty(db, t.inner, f, verbosity)?;
+                write!(f, ">")
+            }
+            TypeVerbosity::Inner => write_ty(db, t.inner, f, verbosity),
+        },
+        TyKind::Ptr(t) => match verbosity {
+            TypeVerbosity::Full => {
+                write!(f, "ptr<{}, ", t.storage_class)?;
+                write_ty(db, t.inner, f, verbosity)?;
+                write!(f, ", {}>", t.access_mode)
+            }
+            TypeVerbosity::Compact | TypeVerbosity::Inner => {
+                write!(f, "ptr<")?;
+                write_ty(db, t.inner, f, verbosity)?;
+                write!(f, ">")
+            }
+        },
         TyKind::Function(function) => {
             write!(f, "fn(")?;
             for (i, &param) in function.parameters.iter().enumerate() {
                 if i != 0 {
                     f.push_str(", ");
                 }
-                write_ty(db, param, f)?;
+                write_ty(db, param, f, verbosity)?;
             }
             write!(f, ")")?;
             if let Some(ret) = function.return_type {
                 f.push_str(" -> ");
-                write_ty(db, ret, f)?;
+                write_ty(db, ret, f, verbosity)?;
             }
             Ok(())
         }

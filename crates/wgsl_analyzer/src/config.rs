@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use hir_ty::ty::pretty::TypeVerbosity;
 use serde::Deserialize;
 
 use hir::diagnostics::DiagnosticsConfig;
@@ -12,11 +13,32 @@ pub struct TraceConfig {
 
 #[derive(Default, Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct InlayHintsConfig {
+    pub enabled: bool,
+    pub type_verbosity: InlayHintsTypeVerbosity,
+}
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum InlayHintsTypeVerbosity {
+    Full,    // ref<uniform, f32, read_write>,
+    Compact, // ref<f32>,
+    Inner,   // f32
+}
+
+impl Default for InlayHintsTypeVerbosity {
+    fn default() -> Self {
+        InlayHintsTypeVerbosity::Compact
+    }
+}
+
+#[derive(Default, Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Config {
     pub show_type_errors: bool,
     pub custom_imports: HashMap<String, String>,
     pub shader_defs: HashSet<String>,
     pub trace: TraceConfig,
+    pub inlay_hints: InlayHintsConfig,
 }
 
 impl Config {
@@ -38,6 +60,17 @@ impl Config {
     pub fn diagnostics(&self) -> DiagnosticsConfig {
         DiagnosticsConfig {
             show_type_errors: self.show_type_errors,
+        }
+    }
+
+    pub fn inlay_hints(&self) -> ide::inlay_hints::InlayHintsConfig {
+        ide::inlay_hints::InlayHintsConfig {
+            enabled: self.inlay_hints.enabled,
+            type_verbosity: match self.inlay_hints.type_verbosity {
+                InlayHintsTypeVerbosity::Full => TypeVerbosity::Full,
+                InlayHintsTypeVerbosity::Compact => TypeVerbosity::Compact,
+                InlayHintsTypeVerbosity::Inner => TypeVerbosity::Inner,
+            },
         }
     }
 }

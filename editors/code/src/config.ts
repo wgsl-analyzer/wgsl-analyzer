@@ -1,5 +1,15 @@
 import * as vscode from "vscode";
 
+export interface TraceConfig {
+    extension: boolean,
+    server: boolean;
+}
+
+export interface InlayHintsConfig {
+    enabled: boolean;
+    typeVerbosity: "full" | "short" | "compact";
+}
+
 export class Config {
     public static readonly rootSection = "wgsl-analyzer";
 
@@ -30,7 +40,10 @@ export class Config {
         return this.get<[string]>("preprocessor.shaderDefs");
     }
 
-    get trace(): { extension: boolean, server: boolean; } {
+    get trace(): TraceConfig {
         return this.get("trace");
+    }
+    get inlayHints(): InlayHintsConfig {
+        return this.get("inlayHints");
     }
 }

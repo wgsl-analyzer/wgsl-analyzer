@@ -12,11 +12,7 @@ export function activateInlayHints(ctx: Ctx) {
         async onConfigChange() {
             this.dispose();
 
-            // const anyEnabled = ctx.config.inlayHints.typeHints
-            // || ctx.config.inlayHints.parameterHints
-            // || ctx.config.inlayHints.chainingHints;
-            // const enabled = ctx.config.inlayHints.enable && anyEnabled;
-            const enabled = true;
+            const enabled = ctx.config.inlayHints.enabled;
             if (!enabled) return;
 
             const event = this.updateHintsEventEmitter.event;

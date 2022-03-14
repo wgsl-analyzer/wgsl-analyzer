@@ -128,6 +128,25 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Log messages between client and server in the WGSL Analyzer output pane."
+                },
+                "wgsl-analyzer.inlayHints.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to show inlay hints"
+                },
+                "wgsl-analyzer.inlayHints.typeVerbosity": {
+                    "type": "string",
+                    "enum": [
+                        "full",
+                        "compact",
+                        "inner"
+                    ],
+                    "enumDescriptions": [
+                        "e.g. ref<uniform, f32, read_write>",
+                        "e.g. ref<f32>",
+                        "e.g. f32"
+                    ],
+                    "default": "compact"
                 }
             }
         }

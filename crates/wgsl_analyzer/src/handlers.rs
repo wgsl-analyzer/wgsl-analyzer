@@ -1,7 +1,6 @@
 use base_db::{FileRange, TextRange};
 use hir::diagnostics::DiagnosticsConfig;
 use ide::diagnostics::Severity;
-use ide::inlay_hints::InlayHintsConfig;
 use ide::HoverResult;
 use lsp_types::{
     DiagnosticTag, GotoDefinitionResponse, LanguageString, MarkedString, TextDocumentIdentifier,
@@ -150,10 +149,9 @@ pub(crate) fn handle_inlay_hints(
             )
         })
         .transpose()?;
-    let inlay_hints_config = InlayHintsConfig {};
     Ok(snap
         .analysis
-        .inlay_hints(&inlay_hints_config, file_id, range)?
+        .inlay_hints(&snap.config.inlay_hints(), file_id, range)?
         .into_iter()
         .map(|it| to_proto::inlay_hint(true, &line_index, it))
         .collect())

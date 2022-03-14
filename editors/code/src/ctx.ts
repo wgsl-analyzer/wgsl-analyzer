@@ -3,9 +3,9 @@ import fetch from "node-fetch";
 import { promisify } from "util";
 import * as lsp_ext from "./lsp_ext";
 import * as vscode from "vscode";
-import { Disposable, ExtensionContext } from "vscode";
+import { ExtensionContext } from "vscode";
 import { Executable, LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
-import { Config } from "./config";
+import { Config, InlayHintsConfig, TraceConfig } from "./config";
 import { isWgslEditor, WgslEditor } from "./util";
 
 
@@ -13,7 +13,8 @@ interface WGSLAnalyzerConfiguration {
     showTypeErrors: boolean,
     customImports: Record<string, string>,
     shaderDefs: [string],
-    trace: { extension: boolean, server: boolean; };
+    trace: TraceConfig,
+    inlayHints: InlayHintsConfig,
 }
 
 async function lspOptions(config: Config): Promise<WGSLAnalyzerConfiguration> {
@@ -32,6 +33,7 @@ async function lspOptions(config: Config): Promise<WGSLAnalyzerConfiguration> {
         shaderDefs: config.shaderDefs,
         showTypeErrors: config.showTypeErrors,
         trace: config.trace,
+        inlayHints: config.inlayHints,
     };
 }
 

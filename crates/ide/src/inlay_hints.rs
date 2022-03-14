@@ -1,6 +1,6 @@
 use base_db::{FileId, FileRange, TextRange};
 use hir::Semantics;
-use hir_ty::ty::pretty::pretty_type;
+use hir_ty::ty::pretty::{pretty_type_with_verbosity, TypeVerbosity};
 use rowan::NodeOrToken;
 use smol_str::SmolStr;
 use syntax::{ast, AstNode, HasName, SyntaxNode};
@@ -8,7 +8,10 @@ use syntax::{ast, AstNode, HasName, SyntaxNode};
 use crate::RootDatabase;
 
 #[derive(Clone, Debug)]
-pub struct InlayHintsConfig {}
+pub struct InlayHintsConfig {
+    pub enabled: bool,
+    pub type_verbosity: TypeVerbosity,
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum InlayKind {
@@ -61,7 +64,7 @@ fn get_hints(
     hints: &mut Vec<InlayHint>,
     file_id: FileId,
     sema: &Semantics,
-    _config: &InlayHintsConfig,
+    config: &InlayHintsConfig,
     node: SyntaxNode,
 ) -> Option<()> {
     if let Some(expr) = ast::Expr::cast(node.clone()) {
@@ -74,7 +77,7 @@ fn get_hints(
 
         let container = sema.find_container(file_id.into(), &node)?;
         let ty = sema.analyze(container).type_of_binding(&binding)?;
-        let label = pretty_type(sema.db, ty);
+        let label = pretty_type_with_verbosity(sema.db, ty, config.type_verbosity);
 
         if variable_statement.ty().is_none() {
             hints.push(InlayHint {
