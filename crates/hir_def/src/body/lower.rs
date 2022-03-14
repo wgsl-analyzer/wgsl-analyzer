@@ -21,13 +21,27 @@ pub fn lower_function_body(
     .collect_function(param_list, body)
 }
 
-pub fn lower_global_decl(db: &dyn DefDatabase, expr: Option<ast::Expr>) -> (Body, BodySourceMap) {
+pub fn lower_global_var_decl(
+    db: &dyn DefDatabase,
+    decl: ast::GlobalVariableDecl,
+) -> (Body, BodySourceMap) {
     Collector {
         db,
         body: Body::default(),
         source_map: BodySourceMap::default(),
     }
-    .collect_decl(expr)
+    .collect_global_var_decl(decl)
+}
+pub fn lower_global_constant_decl(
+    db: &dyn DefDatabase,
+    decl: ast::GlobalConstantDecl,
+) -> (Body, BodySourceMap) {
+    Collector {
+        db,
+        body: Body::default(),
+        source_map: BodySourceMap::default(),
+    }
+    .collect_global_constant_decl(decl)
 }
 
 struct Collector<'a> {
@@ -60,8 +74,26 @@ impl<'a> Collector<'a> {
         (self.body, self.source_map)
     }
 
-    fn collect_decl(mut self, expr: Option<ast::Expr>) -> (Body, BodySourceMap) {
-        self.body.root = expr.map(|expr| self.collect_expr(expr)).map(Either::Right);
+    fn collect_global_var_decl(mut self, decl: ast::GlobalVariableDecl) -> (Body, BodySourceMap) {
+        self.body.root = decl
+            .init()
+            .map(|expr| self.collect_expr(expr))
+            .map(Either::Right);
+
+        self.body.main_binding = decl.binding().map(|binding| self.collect_binding(binding));
+
+        (self.body, self.source_map)
+    }
+    fn collect_global_constant_decl(
+        mut self,
+        decl: ast::GlobalConstantDecl,
+    ) -> (Body, BodySourceMap) {
+        self.body.root = decl
+            .init()
+            .map(|expr| self.collect_expr(expr))
+            .map(Either::Right);
+
+        self.body.main_binding = decl.binding().map(|binding| self.collect_binding(binding));
 
         (self.body, self.source_map)
     }

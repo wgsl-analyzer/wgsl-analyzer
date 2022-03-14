@@ -72,14 +72,22 @@ fn get_hints(
             ast::Expr::FunctionCall(_) => {}
             _ => {}
         }
-    } else if let Some(variable_statement) = ast::VariableStatement::cast(node.clone()) {
-        let binding = variable_statement.binding()?;
+    } else if let Some((binding, ty)) = ast::VariableStatement::cast(node.clone())
+        .and_then(|stmt| Some((stmt.binding()?, stmt.ty())))
+        .or_else(|| {
+            ast::GlobalConstantDecl::cast(node.clone())
+                .and_then(|stmt| Some((stmt.binding()?, stmt.ty())))
+        })
+        .or_else(|| {
+            ast::GlobalVariableDecl::cast(node.clone())
+                .and_then(|stmt| Some((stmt.binding()?, stmt.ty())))
+        })
+    {
+        if ty.is_none() {
+            let container = sema.find_container(file_id.into(), &node)?;
+            let ty = sema.analyze(container).type_of_binding(&binding)?;
 
-        let container = sema.find_container(file_id.into(), &node)?;
-        let ty = sema.analyze(container).type_of_binding(&binding)?;
-        let label = pretty_type_with_verbosity(sema.db, ty, config.type_verbosity);
-
-        if variable_statement.ty().is_none() {
+            let label = pretty_type_with_verbosity(sema.db, ty, config.type_verbosity);
             hints.push(InlayHint {
                 range: binding.name()?.ident_token()?.text_range(),
                 kind: InlayKind::TypeHint,

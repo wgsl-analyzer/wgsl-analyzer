@@ -28,6 +28,9 @@ pub struct Body {
     pub statements: Arena<Statement>,
     pub bindings: Arena<Binding>,
 
+    // for global declarations
+    pub main_binding: Option<BindingId>,
+    // for functions
     pub params: Vec<BindingId>,
 
     pub root: Option<Either<StatementId, ExprId>>,
@@ -74,16 +77,14 @@ impl Body {
             DefWithBodyId::GlobalVariable(id) => {
                 let location = id.lookup(db);
                 let src = location.source(db);
-                let expr = src.value.init();
 
-                lower::lower_global_decl(db, expr)
+                lower::lower_global_var_decl(db, src.value)
             }
             DefWithBodyId::GlobalConstant(id) => {
                 let location = id.lookup(db);
                 let src = location.source(db);
-                let expr = src.value.init();
 
-                lower::lower_global_decl(db, expr)
+                lower::lower_global_constant_decl(db, src.value)
             }
         };
 

@@ -67,7 +67,7 @@ pub struct Param {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct GlobalVariable {
     pub name: Name,
-    pub ty: Interned<TypeRef>,
+    pub ty: Option<Interned<TypeRef>>,
     pub ast_id: FileAstId<ast::GlobalVariableDecl>,
     pub storage_class: Option<StorageClass>,
     pub access_mode: Option<AccessMode>,

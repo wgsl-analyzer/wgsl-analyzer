@@ -112,7 +112,7 @@ impl TypeAliasData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GlobalVariableData {
     pub name: Name,
-    pub ty: Interned<TypeRef>,
+    pub ty: Option<Interned<TypeRef>>,
     pub storage_class: Option<StorageClass>,
     pub access_mode: Option<AccessMode>,
 }

@@ -94,7 +94,7 @@ impl<'a> Ctx<'a> {
         let ast_id = self.source_ast_id_map.ast_id(constant);
 
         let ty = constant
-            .type_decl()
+            .ty()
             .map(|type_decl| self.lower_type_ref(type_decl).unwrap_or(TypeRef::Error))
             .map(|ty| self.db.intern_type_ref(ty));
 
@@ -109,10 +109,9 @@ impl<'a> Ctx<'a> {
         let ast_id = self.source_ast_id_map.ast_id(var);
 
         let ty = var
-            .type_decl()
+            .ty()
             .and_then(|type_decl| self.lower_type_ref(type_decl))
-            .unwrap_or(TypeRef::Error);
-        let ty = self.db.intern_type_ref(ty);
+            .map(|ty| self.db.intern_type_ref(ty));
 
         let storage_class = var
             .variable_qualifier()

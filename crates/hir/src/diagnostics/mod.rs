@@ -226,11 +226,11 @@ pub(crate) fn any_diag_from_infer_diag(
                 }
                 hir_ty::infer::TypeContainer::GlobalVar(id) => {
                     let source = GlobalVariable { id }.source(db.upcast())?;
-                    SyntaxNodePtr::new(source.value.type_decl()?.syntax())
+                    SyntaxNodePtr::new(source.value.ty()?.syntax())
                 }
                 hir_ty::infer::TypeContainer::GlobalConstant(id) => {
                     let source = GlobalConstant { id }.source(db.upcast())?;
-                    SyntaxNodePtr::new(source.value.type_decl()?.syntax())
+                    SyntaxNodePtr::new(source.value.ty()?.syntax())
                 }
                 hir_ty::infer::TypeContainer::FunctionParameter(_, binding) => {
                     let binding = source_map.binding_to_source(binding).ok()?;

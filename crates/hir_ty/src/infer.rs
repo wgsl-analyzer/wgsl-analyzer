@@ -168,18 +168,36 @@ impl<'db> InferenceContext<'db> {
     }
 
     fn collect_global_variable(&mut self, id: GlobalVariableId, var: &GlobalVariableData) {
-        self.return_ty = Some(self.lower_ty(
-            TypeContainer::GlobalVar(id),
-            &self.db.lookup_intern_type_ref(var.ty),
-        ));
+        let ty = var.ty.map(|ty| {
+            self.lower_ty(
+                TypeContainer::GlobalVar(id),
+                &self.db.lookup_intern_type_ref(ty),
+            )
+        });
+
+        if let Some(ty) = ty {
+            if let Some(binding) = self.body.main_binding {
+                self.set_binding_ty(binding, ty);
+            }
+        }
+
+        self.return_ty = ty;
     }
     fn collect_global_constant(&mut self, id: GlobalConstantId, constant: &GlobalConstantData) {
-        self.return_ty = constant.ty.map(|ty| {
+        let ty = constant.ty.map(|ty| {
             self.lower_ty(
                 TypeContainer::GlobalConstant(id),
                 &self.db.lookup_intern_type_ref(ty),
             )
         });
+
+        if let Some(ty) = ty {
+            if let Some(binding) = self.body.main_binding {
+                self.set_binding_ty(binding, ty);
+            }
+        }
+
+        self.return_ty = ty;
     }
 
     fn collect_fn(&mut self, function_id: FunctionId, f: &FunctionData) {
@@ -207,6 +225,10 @@ impl<'db> InferenceContext<'db> {
                 let ty = self.infer_expr_expect(expr, TypeExpectation::from_option(self.return_ty));
                 if self.return_ty.is_none() {
                     self.return_ty = Some(ty);
+                }
+
+                if let Some(main_binding) = self.body.main_binding {
+                    self.set_binding_ty(main_binding, ty);
                 }
             }
             None => (),

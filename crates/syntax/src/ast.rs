@@ -280,14 +280,14 @@ ast_node!(GlobalVariableDecl:
     var_token: Option<SyntaxToken Var>;
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
-    type_decl: Option<Type>;
+    ty: Option<Type>;
     init: Option<Expr>;
 );
 impl HasAttrs for GlobalVariableDecl {}
 ast_node!(GlobalConstantDecl:
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
-    type_decl: Option<Type>;
+    ty: Option<Type>;
     init: Option<Expr>;
 );
 

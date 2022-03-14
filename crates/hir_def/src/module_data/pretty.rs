@@ -59,8 +59,11 @@ fn write_pretty_module_item(
         }
         ModuleItem::GlobalVariable(var) => {
             let var = &module.data[var.index];
-            let ty = db.lookup_intern_type_ref(var.ty);
-            let _ = write!(f, "var {}: {}", var.name.0, ty);
+            let ty = var.ty.map(|ty| db.lookup_intern_type_ref(ty));
+            let _ = write!(f, "var {}", &var.name.0);
+            if let Some(ty) = ty {
+                let _ = write!(f, ": {}", ty);
+            }
         }
         ModuleItem::GlobalConstant(var) => {
             let constant = &module.data[var.index];
