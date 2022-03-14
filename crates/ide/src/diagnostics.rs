@@ -13,11 +13,23 @@ use vfs::FileId;
 pub struct DiagnosticMessage {
     pub message: String,
     pub range: TextRange,
+    pub unused: bool,
 }
 
 impl DiagnosticMessage {
     pub fn new(message: String, range: TextRange) -> Self {
-        Self { message, range }
+        Self {
+            message,
+            range,
+            unused: false,
+        }
+    }
+
+    pub fn unused(self) -> Self {
+        DiagnosticMessage {
+            unused: true,
+            ..self
+        }
     }
 }
 
@@ -31,11 +43,10 @@ pub fn diagnostics(
     let mut diagnostics: Vec<_> = parse
         .errors()
         .iter()
-        .map(|error| DiagnosticMessage {
-            message: error.message(),
-            range: error.range,
-        })
+        .map(|error| DiagnosticMessage::new(error.message(), error.range))
         .collect();
+
+    let parse_no_preprocessor = db.parse_no_preprocessor(file_id);
 
     let sema = Semantics::new(db);
 

@@ -1,7 +1,7 @@
 use base_db::{FileRange, TextRange};
 use hir::diagnostics::DiagnosticsConfig;
 use ide::HoverResult;
-use lsp_types::{GotoDefinitionResponse, LanguageString, MarkedString};
+use lsp_types::{DiagnosticTag, GotoDefinitionResponse, LanguageString, MarkedString};
 use std::process::exit;
 use vfs::FileId;
 
@@ -145,7 +145,11 @@ pub fn publish_diagnostics(
             source: None,
             message: diagnostic.message,
             related_information: None,
-            tags: None,
+            tags: if diagnostic.unused {
+                Some(vec![DiagnosticTag::UNNECESSARY])
+            } else {
+                None
+            },
             data: None,
         })
         .collect();
