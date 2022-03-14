@@ -1,12 +1,16 @@
 use base_db::{FileRange, TextRange};
 use hir::diagnostics::DiagnosticsConfig;
 use ide::diagnostics::Severity;
+use ide::inlay_hints::InlayHintsConfig;
 use ide::HoverResult;
-use lsp_types::{DiagnosticTag, GotoDefinitionResponse, LanguageString, MarkedString};
+use lsp_types::{
+    DiagnosticTag, GotoDefinitionResponse, LanguageString, MarkedString, TextDocumentIdentifier,
+};
 use std::process::exit;
 use vfs::FileId;
 
 use crate::global_state::GlobalStateSnapshot;
+use crate::lsp_ext::inlay_hints::{InlayHint, InlayHintsParams};
 use crate::{from_proto, lsp_ext, to_proto, Result};
 
 pub fn handle_goto_definition(
@@ -127,6 +131,32 @@ pub fn debug_command(snap: GlobalStateSnapshot, params: lsp_ext::DebugCommandPar
     snap.analysis.debug_command(position)?;
 
     Ok(())
+}
+
+pub(crate) fn handle_inlay_hints(
+    snap: GlobalStateSnapshot,
+    params: InlayHintsParams,
+) -> Result<Vec<InlayHint>> {
+    let document_uri = &params.text_document.uri;
+    let file_id = from_proto::file_id(&snap, document_uri)?;
+    let line_index = snap.analysis.line_index(file_id)?;
+    let range = params
+        .range
+        .map(|range| {
+            from_proto::file_range(
+                &snap,
+                TextDocumentIdentifier::new(document_uri.to_owned()),
+                range,
+            )
+        })
+        .transpose()?;
+    let inlay_hints_config = InlayHintsConfig {};
+    Ok(snap
+        .analysis
+        .inlay_hints(&inlay_hints_config, file_id, range)?
+        .into_iter()
+        .map(|it| to_proto::inlay_hint(true, &line_index, it))
+        .collect())
 }
 
 pub fn publish_diagnostics(

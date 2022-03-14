@@ -1,4 +1,5 @@
 use base_db::{line_index::LineIndex, FileRange, TextRange, TextSize};
+use ide::inlay_hints::{InlayHint, InlayKind};
 use ide_completion::item::{CompletionItem, CompletionItemKind, CompletionRelevance};
 use itertools::Itertools;
 use paths::AbsPath;
@@ -6,7 +7,7 @@ use std::path;
 use text_edit::{Indel, TextEdit};
 use vfs::FileId;
 
-use crate::{global_state::GlobalStateSnapshot, Result};
+use crate::{global_state::GlobalStateSnapshot, lsp_ext, Result};
 
 /// Returns a `Url` object from a given path, will lowercase drive letters if present.
 /// This will only happen when processing windows paths.
@@ -263,5 +264,36 @@ pub(crate) fn completion_text_edit(
         }
         .into(),
         None => text_edit.into(),
+    }
+}
+
+pub(crate) fn inlay_hint(
+    render_colons: bool,
+    line_index: &LineIndex,
+    inlay_hint: InlayHint,
+) -> lsp_ext::inlay_hints::InlayHint {
+    lsp_ext::inlay_hints::InlayHint {
+        label: lsp_ext::inlay_hints::InlayHintLabel::String(match inlay_hint.kind {
+            InlayKind::ParameterHint if render_colons => format!("{}:", inlay_hint.label),
+            InlayKind::TypeHint if render_colons => format!(": {}", inlay_hint.label),
+            _ => inlay_hint.label.to_string(),
+        }),
+        position: match inlay_hint.kind {
+            InlayKind::ParameterHint => position(line_index, inlay_hint.range.start()),
+            InlayKind::TypeHint => position(line_index, inlay_hint.range.end()),
+        },
+        kind: match inlay_hint.kind {
+            InlayKind::ParameterHint => Some(lsp_ext::inlay_hints::InlayHintKind::PARAMETER),
+            InlayKind::TypeHint => Some(lsp_ext::inlay_hints::InlayHintKind::TYPE),
+        },
+        tooltip: None,
+        padding_left: Some(match inlay_hint.kind {
+            InlayKind::TypeHint => !render_colons,
+            InlayKind::ParameterHint => false,
+        }),
+        padding_right: Some(match inlay_hint.kind {
+            InlayKind::TypeHint => false,
+            InlayKind::ParameterHint => true,
+        }),
     }
 }

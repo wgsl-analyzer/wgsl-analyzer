@@ -35,6 +35,7 @@ pub struct GlobalState {
 pub struct GlobalStateSnapshot {
     pub vfs: Arc<RwLock<Vfs>>,
     pub analysis: Analysis,
+    pub config: Arc<Config>,
 }
 
 impl GlobalState {
@@ -86,6 +87,7 @@ impl GlobalState {
         GlobalStateSnapshot {
             vfs: Arc::clone(&self.vfs),
             analysis: self.analysis_host.snapshot(),
+            config: Arc::clone(&self.config),
         }
     }
 

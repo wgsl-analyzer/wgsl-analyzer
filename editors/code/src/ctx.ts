@@ -36,7 +36,7 @@ async function lspOptions(config: Config): Promise<WGSLAnalyzerConfiguration> {
 }
 
 export class Ctx {
-    private constructor(readonly ctx: ExtensionContext, readonly client: LanguageClient) { }
+    private constructor(readonly config: Config, readonly ctx: ExtensionContext, readonly client: LanguageClient) { }
 
     static async create(serverPath: string, ctx: ExtensionContext, config: Config) {
         const run: Executable = {
@@ -69,7 +69,7 @@ export class Ctx {
         }));
 
 
-        return new Ctx(ctx, client);
+        return new Ctx(config, ctx, client);
     }
 
 
@@ -133,6 +133,10 @@ async function mapObjectAsync<T, U>(object: Record<string, T>, f: (val: T) => Pr
     };
     let entries = await Promise.all(Object.entries(object).map(map));
     return Object.fromEntries(entries.filter(entry => entry !== undefined));
+}
+
+export interface Disposable {
+    dispose(): void;
 }
 
 export type Cmd = (...args: any[]) => unknown;

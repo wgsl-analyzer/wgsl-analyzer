@@ -5,6 +5,7 @@ mod formatting;
 mod goto_definition;
 mod helpers;
 mod hover;
+pub mod inlay_hints;
 mod syntax_tree;
 
 use base_db::{change::Change, SourceDatabase};
@@ -15,6 +16,7 @@ use hir::diagnostics::DiagnosticsConfig;
 use hir_def::db::DefDatabase;
 pub use hover::HoverResult;
 use ide_completion::item::CompletionItem;
+use inlay_hints::{InlayHint, InlayHintsConfig};
 use salsa::{Cancelled, ParallelDatabase};
 use std::sync::Arc;
 use syntax::{Parse, SyntaxNode};
@@ -87,6 +89,15 @@ impl Analysis {
 
     pub fn syntax_tree(&self, file_id: FileId) -> Cancellable<String> {
         self.with_db(|db| syntax_tree::syntax_tree(db, file_id))
+    }
+
+    pub fn inlay_hints(
+        &self,
+        config: &InlayHintsConfig,
+        file_id: FileId,
+        range: Option<FileRange>,
+    ) -> Cancellable<Vec<InlayHint>> {
+        self.with_db(|db| inlay_hints::inlay_hints(db, file_id, range, config))
     }
 
     pub fn diagnostics(

@@ -1,6 +1,6 @@
 use base_db::{
     line_index::{LineCol, LineIndex},
-    FilePosition, TextRange, TextSize,
+    FilePosition, FileRange, TextRange, TextSize,
 };
 use std::convert::TryFrom;
 use vfs::{AbsPathBuf, FileId};
@@ -44,4 +44,15 @@ pub(crate) fn file_position(
     let line_index = snap.analysis.line_index(file_id)?;
     let offset = offset(&line_index, tdpp.position);
     Ok(FilePosition { file_id, offset })
+}
+
+pub(crate) fn file_range(
+    snap: &GlobalStateSnapshot,
+    text_document_identifier: lsp_types::TextDocumentIdentifier,
+    range: lsp_types::Range,
+) -> Result<FileRange> {
+    let file_id = file_id(snap, &text_document_identifier.uri)?;
+    let line_index = snap.analysis.line_index(file_id)?;
+    let range = text_range(&line_index, range);
+    Ok(FileRange { file_id, range })
 }

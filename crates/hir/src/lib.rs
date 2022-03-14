@@ -227,6 +227,12 @@ impl<'db> SourceAnalyzer<'db> {
         Some(ty)
     }
 
+    pub fn type_of_binding(&self, binding: &ast::Binding) -> Option<Ty> {
+        let id = self.binding_id(binding)?;
+        let ty = *self.infer.type_of_binding.get(id)?;
+        Some(ty)
+    }
+
     pub fn resolve_field(&self, field: ast::FieldExpr) -> Option<Field> {
         let expr = self.expr_id(&ast::Expr::FieldExpr(field))?;
         let field = self.infer.field_resolution(expr)?;
@@ -266,6 +272,9 @@ impl<'db> SourceAnalyzer<'db> {
         resolver
     }
 
+    fn binding_id(&self, src: &ast::Binding) -> Option<BindingId> {
+        self.body_source_map.lookup_binding(&AstPtr::new(src))
+    }
     fn expr_id(&self, src: &ast::Expr) -> Option<ExprId> {
         self.body_source_map.lookup_expr(&AstPtr::new(src))
     }
