@@ -1,6 +1,6 @@
 mod db;
 mod debug_command;
-mod diagnostics;
+pub mod diagnostics;
 mod formatting;
 mod goto_definition;
 mod helpers;

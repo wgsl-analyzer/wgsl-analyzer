@@ -14,6 +14,13 @@ pub struct DiagnosticMessage {
     pub message: String,
     pub range: TextRange,
     pub unused: bool,
+    pub severity: Severity,
+}
+
+#[derive(Clone, Copy)]
+pub enum Severity {
+    Error,
+    WeakWarning,
 }
 
 impl DiagnosticMessage {
@@ -21,7 +28,15 @@ impl DiagnosticMessage {
         Self {
             message,
             range,
+            severity: Severity::Error,
             unused: false,
+        }
+    }
+
+    pub fn with_severity(self, severity: Severity) -> Self {
+        DiagnosticMessage {
+            severity: severity,
+            ..self
         }
     }
 
@@ -38,7 +53,7 @@ pub fn diagnostics(
     config: &DiagnosticsConfig,
     file_id: FileId,
 ) -> Vec<DiagnosticMessage> {
-    let parse = db.parse(file_id);
+    let (parse, unconfigured) = db.parse_with_unconfigured(file_id);
 
     let mut diagnostics: Vec<_> = parse
         .errors()
@@ -46,7 +61,18 @@ pub fn diagnostics(
         .map(|error| DiagnosticMessage::new(error.message(), error.range))
         .collect();
 
-    let parse_no_preprocessor = db.parse_no_preprocessor(file_id);
+    for unconfigured in unconfigured.iter() {
+        let msg = DiagnosticMessage::new(
+            format!(
+                "code is inactive due to `#ifdef` directives: `{}` is not enabled",
+                unconfigured.def
+            ),
+            unconfigured.range,
+        )
+        .with_severity(Severity::WeakWarning)
+        .unused();
+        diagnostics.push(msg);
+    }
 
     let sema = Semantics::new(db);
 

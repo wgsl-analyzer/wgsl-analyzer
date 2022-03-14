@@ -1,5 +1,6 @@
 use base_db::{FileRange, TextRange};
 use hir::diagnostics::DiagnosticsConfig;
+use ide::diagnostics::Severity;
 use ide::HoverResult;
 use lsp_types::{DiagnosticTag, GotoDefinitionResponse, LanguageString, MarkedString};
 use std::process::exit;
@@ -139,7 +140,7 @@ pub fn publish_diagnostics(
         .into_iter()
         .map(|diagnostic| lsp_types::Diagnostic {
             range: to_proto::range(&*line_index, diagnostic.range),
-            severity: Some(lsp_types::DiagnosticSeverity::ERROR),
+            severity: Some(diagnostic_severity(diagnostic.severity)),
             code: None,
             code_description: None,
             source: None,
@@ -155,6 +156,13 @@ pub fn publish_diagnostics(
         .collect();
 
     Ok(lsp_diagnostics)
+}
+
+fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSeverity {
+    match severity {
+        Severity::Error => lsp_types::DiagnosticSeverity::ERROR,
+        Severity::WeakWarning => lsp_types::DiagnosticSeverity::HINT,
+    }
 }
 
 mod diff {

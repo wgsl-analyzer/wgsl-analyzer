@@ -33,6 +33,9 @@ pub trait SourceDatabase {
     #[salsa::invoke(parse_no_preprocessor_query)]
     fn parse_no_preprocessor(&self, file_id: FileId) -> syntax::Parse;
 
+    #[salsa::invoke(parse_with_unconfigured_query)]
+    fn parse_with_unconfigured(&self, file_id: FileId) -> (Parse, Arc<Vec<UnconfiguredCode>>);
+
     #[salsa::invoke(parse_query)]
     fn parse(&self, file_id: FileId) -> Parse;
 
@@ -64,12 +67,38 @@ fn parse_import_no_preprocessor_query(
     Ok(syntax::parse(&*source))
 }
 
-fn parse_query(db: &dyn SourceDatabase, file_id: FileId) -> Parse {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UnconfiguredCode {
+    pub range: TextRange,
+    pub def: String,
+}
+
+fn parse_with_unconfigured_query(
+    db: &dyn SourceDatabase,
+    file_id: FileId,
+) -> (Parse, Arc<Vec<UnconfiguredCode>>) {
     let shader_defs = db.shader_defs();
     let source = db.file_text(file_id);
 
-    let processed_source = shader_processor::SHADER_PROCESSOR.process(&source, &shader_defs);
-    syntax::parse(&processed_source)
+    let mut unconfigured = Vec::new();
+
+    let processed_source =
+        shader_processor::SHADER_PROCESSOR.process(&source, &shader_defs, |range, def| {
+            let range = TextRange::new(
+                TextSize::from(range.start as u32),
+                TextSize::from(range.end as u32),
+            );
+            unconfigured.push(UnconfiguredCode {
+                range,
+                def: def.to_string(),
+            })
+        });
+    let parse = syntax::parse(&processed_source);
+    (parse, Arc::new(unconfigured))
+}
+
+fn parse_query(db: &dyn SourceDatabase, file_id: FileId) -> Parse {
+    db.parse_with_unconfigured(file_id).0
 }
 
 fn parse_import_query(db: &dyn SourceDatabase, key: String) -> Result<Parse, ()> {
@@ -77,6 +106,7 @@ fn parse_import_query(db: &dyn SourceDatabase, key: String) -> Result<Parse, ()>
     let shader_defs = db.shader_defs();
     let source = imports.get(&key).ok_or(())?;
 
-    let processed_source = shader_processor::SHADER_PROCESSOR.process(source, &shader_defs);
+    let processed_source =
+        shader_processor::SHADER_PROCESSOR.process(source, &shader_defs, |_, _| {});
     Ok(syntax::parse(&processed_source))
 }
