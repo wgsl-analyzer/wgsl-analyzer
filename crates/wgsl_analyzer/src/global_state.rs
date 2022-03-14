@@ -124,7 +124,7 @@ impl GlobalState {
     pub(crate) fn respond(&mut self, response: lsp_server::Response) {
         if let Some((method, start)) = self.req_queue.incoming.complete(response.id.clone()) {
             if let Some(err) = &response.error {
-                self.show_message(lsp_types::MessageType::Error, err.message.clone());
+                self.show_message(lsp_types::MessageType::ERROR, err.message.clone());
             }
 
             let duration = start.elapsed();

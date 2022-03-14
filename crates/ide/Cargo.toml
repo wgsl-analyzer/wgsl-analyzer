@@ -14,9 +14,9 @@ hir = { path = "../hir" }
 ide_completion = { path = "../ide_completion" }
 syntax = { path = "../syntax" }
 wgsl_formatter = { path = "../wgsl_formatter" }
-rowan = "0.14.1"
+rowan = "0.15"
 
-vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "eb32b60dc" }
+vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "20fa7cbcad" }
 
 expect-test = "1.1.0"
 itertools = "0.10.1"

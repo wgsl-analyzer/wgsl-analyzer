@@ -151,7 +151,7 @@ fn completion_item(
     // }
 
     if item.is_snippet() {
-        lsp_item.insert_text_format = Some(lsp_types::InsertTextFormat::Snippet);
+        lsp_item.insert_text_format = Some(lsp_types::InsertTextFormat::SNIPPET);
     }
     /*if config.completion().enable_imports_on_the_fly {
         if let imports @ [_, ..] = item.imports_to_add() {
@@ -216,15 +216,15 @@ pub(crate) fn completion_item_kind(
     completion_item_kind: CompletionItemKind,
 ) -> lsp_types::CompletionItemKind {
     match completion_item_kind {
-        CompletionItemKind::Field => lsp_types::CompletionItemKind::Field,
-        CompletionItemKind::Function => lsp_types::CompletionItemKind::Function,
-        CompletionItemKind::Variable => lsp_types::CompletionItemKind::Variable,
-        CompletionItemKind::Keyword => lsp_types::CompletionItemKind::Keyword,
-        CompletionItemKind::Snippet => lsp_types::CompletionItemKind::Snippet,
-        CompletionItemKind::Constant => lsp_types::CompletionItemKind::Constant,
-        CompletionItemKind::Struct => lsp_types::CompletionItemKind::Struct,
-        CompletionItemKind::Module => lsp_types::CompletionItemKind::Module,
-        CompletionItemKind::TypeAlias => lsp_types::CompletionItemKind::Struct,
+        CompletionItemKind::Field => lsp_types::CompletionItemKind::FIELD,
+        CompletionItemKind::Function => lsp_types::CompletionItemKind::FUNCTION,
+        CompletionItemKind::Variable => lsp_types::CompletionItemKind::VARIABLE,
+        CompletionItemKind::Keyword => lsp_types::CompletionItemKind::KEYWORD,
+        CompletionItemKind::Snippet => lsp_types::CompletionItemKind::SNIPPET,
+        CompletionItemKind::Constant => lsp_types::CompletionItemKind::CONSTANT,
+        CompletionItemKind::Struct => lsp_types::CompletionItemKind::STRUCT,
+        CompletionItemKind::Module => lsp_types::CompletionItemKind::MODULE,
+        CompletionItemKind::TypeAlias => lsp_types::CompletionItemKind::STRUCT,
     }
 }
 

@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 logos = "0.12.0"
 parser = { path = "../parser" }
-rowan = "0.14.1"
+rowan = "0.15"
 
 [dev-dependencies]
 expect-test = "1.1.0"

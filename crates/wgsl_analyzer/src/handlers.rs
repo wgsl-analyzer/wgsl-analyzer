@@ -139,7 +139,7 @@ pub fn publish_diagnostics(
         .into_iter()
         .map(|diagnostic| lsp_types::Diagnostic {
             range: to_proto::range(&*line_index, diagnostic.range),
-            severity: Some(lsp_types::DiagnosticSeverity::Error),
+            severity: Some(lsp_types::DiagnosticSeverity::ERROR),
             code: None,
             code_description: None,
             source: None,

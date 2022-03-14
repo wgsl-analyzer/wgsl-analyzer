@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use xshell::{cmd, cp, pushd, rm_rf};
+use xshell::cmd;
 
 type Result<T, E = anyhow::Error> = std::result::Result<T, E>;
 
@@ -40,10 +40,12 @@ fn parse_args() -> Result<Args, lexopt::Error> {
 fn main() -> Result<()> {
     let args = parse_args()?;
 
-    let extension = package(&args.target)?;
+    let sh = xshell::Shell::new()?;
+
+    let extension = package(&sh, &args.target)?;
 
     if args.install {
-        cmd!("code --install-extension {extension} --force").run()?;
+        cmd!(sh, "code --install-extension {extension} --force").run()?;
     }
 
     Ok(())
@@ -62,10 +64,10 @@ const TARGETS: &[(&str, &str)] = &[
     // linux-armhf
 ];
 
-fn compile(rust_target: &str) -> Result<PathBuf> {
-    cmd!("rustup target add {rust_target}").run()?;
+fn compile(sh: &xshell::Shell, rust_target: &str) -> Result<PathBuf> {
+    cmd!(sh, "rustup target add {rust_target}").run()?;
     let output =
-        cmd!("cargo build --release --package wgsl_analyzer --target {rust_target} --message-format=json").read()?;
+        cmd!(sh, "cargo build --release --package wgsl_analyzer --target {rust_target} --message-format=json").read()?;
 
     let executable_path = serde_json::Deserializer::from_str(&output)
         .into_iter::<serde_json::Value>()
@@ -83,24 +85,30 @@ fn compile(rust_target: &str) -> Result<PathBuf> {
     Ok(PathBuf::from(executable_path))
 }
 
-fn package(target: &str) -> Result<PathBuf> {
+fn package(sh: &xshell::Shell, target: &str) -> Result<PathBuf> {
     let (_, rust_target) = TARGETS
         .iter()
         .find(|(t, _)| *t == target)
         .ok_or_else(|| anyhow::anyhow!("invalid target"))?;
 
-    let src = compile(rust_target)?;
+    let src = compile(sh, rust_target)?;
     let out = Path::new("editors/code/out");
     let dst = out.join("wgsl_analyzer");
 
-    xshell::mkdir_p(out)?;
+    sh.create_dir(out)?;
 
-    cp(src, &dst)?;
+    sh.copy_file(src, &dst)?;
 
-    let _dir = pushd("editors/code")?;
-    cmd!("npm run package --silent -- -o wgsl-analyzer-{target}.vsix --target {target}").run()?;
+    {
+        let _dir = sh.push_dir("editors/code");
+        cmd!(
+            sh,
+            "npm run package --silent -- -o wgsl-analyzer-{target}.vsix --target {target}"
+        )
+        .run()?;
+    }
 
-    rm_rf(&dst)?;
+    sh.remove_path(&dst)?;
 
     Ok(PathBuf::from(format!(
         "editors/code/wgsl-analyzer-{}.vsix",

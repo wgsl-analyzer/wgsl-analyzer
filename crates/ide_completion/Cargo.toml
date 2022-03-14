@@ -12,7 +12,7 @@ syntax = { path = "../syntax" }
 always-assert = { version = "0.1.2", features = ["log"] }
 tracing = "0.1"
 
-text_edit = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "eb32b60dc" }
+text_edit = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "20fa7cbcad" }
 itertools = "0.10.1"
 either = "1.6.1"
-rowan = "0.14.1"
+rowan = "0.15"

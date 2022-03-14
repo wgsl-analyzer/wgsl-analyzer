@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 syntax = { path = "../syntax" }
 wgsl_parser = { path = "../wgsl_parser" }
-rowan = "0.14.1"
+rowan = "0.15"
 
 [dev-dependencies]
 anyhow = "1.0"

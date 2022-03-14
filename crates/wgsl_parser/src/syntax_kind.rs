@@ -1,4 +1,4 @@
-#[derive(logos::Logos, Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(logos::Logos, Debug, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
 #[repr(u16)]
 pub enum SyntaxKind {
     SourceFile,
