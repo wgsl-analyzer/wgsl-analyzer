@@ -361,3 +361,20 @@ var x = 0;
                 }"#]],
     );
 }
+
+#[test]
+fn format_statements_newline() {
+    check(
+        "fn main() {
+let x = 3;
+
+let y = 4;
+}",
+        expect![[r#"
+            fn main() {
+                let x = 3;
+            
+                let y = 4;
+            }"#]],
+    );
+}

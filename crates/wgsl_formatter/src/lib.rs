@@ -56,9 +56,17 @@ fn format_syntax_node(syntax: SyntaxNode, indentation: usize) -> Option<()> {
     if syntax.parent().map_or(false, |parent| {
         parent.kind() == SyntaxKind::CompoundStatement
     }) {
+        let start = syntax.first_token()?;
+
+        let n_newlines = n_newlines_in_whitespace(start.prev_token()?).unwrap_or(1);
+
         set_whitespace_before(
             syntax.first_token()?,
-            create_whitespace(&format!("\n{}", "    ".repeat(indentation))),
+            create_whitespace(&format!(
+                "{}{}",
+                "\n".repeat(n_newlines),
+                "    ".repeat(indentation)
+            )),
         );
     }
 
@@ -289,6 +297,13 @@ fn trim_whitespace_before_to_newline(before: SyntaxToken) -> Option<()> {
 
 fn is_whitespace_with_newline(maybe_whitespace: SyntaxToken) -> bool {
     maybe_whitespace.kind().is_whitespace() && maybe_whitespace.text().contains('\n')
+}
+
+fn n_newlines_in_whitespace(maybe_whitespace: SyntaxToken) -> Option<usize> {
+    maybe_whitespace
+        .kind()
+        .is_whitespace()
+        .then(|| maybe_whitespace.text().matches('\n').count())
 }
 
 fn remove_if_whitespace(maybe_whitespace: SyntaxToken) {
