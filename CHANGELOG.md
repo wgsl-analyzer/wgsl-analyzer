@@ -5,6 +5,8 @@
 - add `Show full WGSL source` command that resolves imports
 - fix reloading of configuration for imports
 - some more code formatting ([#18](https://github.com/wgsl-analyzer/wgsl-analyzer/pull/18))
+- add inlay hints (configurable via `wgsl-analyzer.inlayHints.{enabled,typeHints,parameterHints,typeVerbosity}`)
+- grey out `#ifdef`d code
 
 ## Version 0.3.1
 - fix `smoothStep` to work with `vecN<f32>`
