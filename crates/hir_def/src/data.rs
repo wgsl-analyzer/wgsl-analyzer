@@ -14,7 +14,7 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FunctionData {
     pub name: Name,
-    pub params: Vec<Interned<TypeRef>>,
+    pub params: Vec<(Interned<TypeRef>, Name)>,
     pub return_type: Option<Interned<TypeRef>>,
 }
 
@@ -30,7 +30,10 @@ impl FunctionData {
                 .params
                 .clone()
                 .into_iter()
-                .map(|param| module_info.data[param].ty)
+                .map(|param| {
+                    let param = &module_info.data[param];
+                    (param.ty, param.name.clone())
+                })
                 .collect(),
             return_type: function.return_type,
         })

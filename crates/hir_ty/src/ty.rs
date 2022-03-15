@@ -2,9 +2,9 @@ pub mod pretty;
 
 use std::{borrow::Cow, fmt::Write, str::FromStr};
 
-use hir_def::db::StructId;
 use hir_def::type_ref;
 pub use hir_def::type_ref::{AccessMode, StorageClass};
+use hir_def::{db::StructId, module_data::Name};
 use salsa::InternKey;
 
 use crate::{
@@ -366,7 +366,20 @@ pub struct SamplerType {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FunctionType {
     pub return_type: Option<Ty>,
-    pub parameters: Vec<Ty>,
+    pub parameters: Vec<(Ty, Name)>,
+}
+impl FunctionType {
+    pub fn parameters(&self) -> impl Iterator<Item = Ty> + '_ {
+        self.parameters.iter().map(|(ty, _)| *ty)
+    }
+    pub fn parameter_names(&self) -> impl Iterator<Item = &str> + '_ {
+        self.parameters.iter().map(|(_, name)| name.as_str())
+    }
+    pub fn parameters_with_names(&self) -> impl Iterator<Item = (Ty, &str)> + '_ {
+        self.parameters
+            .iter()
+            .map(|(ty, name)| (*ty, name.as_str()))
+    }
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]

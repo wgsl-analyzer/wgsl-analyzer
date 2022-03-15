@@ -62,6 +62,7 @@ pub struct Function {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Param {
     pub ty: Interned<TypeRef>,
+    pub name: Name,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]

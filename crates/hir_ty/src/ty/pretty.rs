@@ -184,7 +184,7 @@ fn write_ty(
         },
         TyKind::Function(function) => {
             write!(f, "fn(")?;
-            for (i, &param) in function.parameters.iter().enumerate() {
+            for (i, param) in function.parameters().enumerate() {
                 if i != 0 {
                     f.push_str(", ");
                 }

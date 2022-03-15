@@ -452,8 +452,8 @@ fn builtin_to_rust(
             write!(
                 f,
                 "
-                        {},",
-                type_to_rust(param)
+                        ({}, Name::missing()),",
+                type_to_rust(param),
             )?;
         }
         write!(

@@ -202,7 +202,7 @@ impl<'db> InferenceContext<'db> {
 
     fn collect_fn(&mut self, function_id: FunctionId, f: &FunctionData) {
         let body = Arc::clone(&self.body);
-        for (&param, &id) in f.params.iter().zip(&body.params) {
+        for (&(param, _), &id) in f.params.iter().zip(&body.params) {
             let type_ref = self.db.lookup_intern_type_ref(param);
             let param_ty =
                 self.lower_ty(TypeContainer::FunctionParameter(function_id, id), &type_ref);
@@ -700,7 +700,7 @@ impl<'db> InferenceContext<'db> {
             });
             self.err_ty()
         } else {
-            for (expected, actual) in f.parameters.iter().copied().zip(args.iter().copied()) {
+            for (expected, actual) in f.parameters().zip(args.iter().copied()) {
                 self.expect_same_type(expr, expected, actual);
             }
 
@@ -908,7 +908,7 @@ impl<'db> InferenceContext<'db> {
         }
 
         let mut unification_table = UnificationTable::default();
-        for (&expected, &found) in fn_ty.parameters.iter().zip(args.iter()) {
+        for (expected, &found) in fn_ty.parameters().zip(args.iter()) {
             unify(self.db, &mut unification_table, expected, found)?;
         }
 

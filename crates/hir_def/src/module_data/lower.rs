@@ -175,7 +175,11 @@ impl<'a> Ctx<'a> {
                 .and_then(|ty| self.lower_type_ref(ty))
                 .unwrap_or(TypeRef::Error);
             let ty = self.db.intern_type_ref(ty);
-            self.module_data.params.alloc(Param { ty });
+            let name = param
+                .binding()
+                .and_then(|binding| binding.name())
+                .map_or_else(Name::missing, Name::from);
+            self.module_data.params.alloc(Param { ty, name });
         }
         let end_param = self.next_param_idx();
         let params = IdxRange::new(start_param..end_param);

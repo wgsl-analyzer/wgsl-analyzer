@@ -70,7 +70,10 @@ fn function_type(db: &dyn HirDatabase, function: FunctionId) -> Ty {
     let parameters = data
         .params
         .iter()
-        .map(|type_ref| ty_ctx.lower_ty(&db.lookup_intern_type_ref(*type_ref)))
+        .map(|(type_ref, name)| {
+            let ty = ty_ctx.lower_ty(&db.lookup_intern_type_ref(*type_ref));
+            (ty, name.clone())
+        })
         .collect();
 
     let ty = TyKind::Function(FunctionType {
