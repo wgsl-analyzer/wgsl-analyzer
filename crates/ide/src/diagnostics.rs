@@ -171,14 +171,13 @@ pub fn diagnostics(
                     .join(", ");
 
                 let possible = builtin
-                    .overloads
-                    .iter()
-                    .map(|overload| ty::pretty::pretty_type(db, overload.ty))
+                    .overloads()
+                    .map(|(_, overload)| ty::pretty::pretty_type(db, overload.ty))
                     .join("\n");
 
                 let name = match name {
                     Some(name) => name,
-                    None => builtin.name.as_str(),
+                    None => builtin.name(),
                 };
 
                 let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());

@@ -7,7 +7,10 @@ use hir_def::type_ref;
 pub use hir_def::type_ref::{AccessMode, StorageClass};
 use salsa::InternKey;
 
-use crate::{builtins::BuiltinId, HirDatabase};
+use crate::{
+    builtins::{BuiltinId, BuiltinOverloadId},
+    HirDatabase,
+};
 
 // TOOD:
 // [ ] nesting depth
@@ -56,6 +59,15 @@ impl Ty {
     }
 }
 
+impl TyKind {
+    pub fn as_function(self) -> Option<FunctionType> {
+        match self {
+            TyKind::Function(function) => Some(function),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TyKind {
     Error,
@@ -72,7 +84,8 @@ pub enum TyKind {
     Function(FunctionType),
     BoundVar(BoundVar),
     StorageTypeOfTexelFormat(BoundVar), // e.g. rgba8unorm -> vec4<f32>
-    BuiltinFn(BuiltinId),
+    BuiltinFnUndecided(BuiltinId),
+    BuiltinFnOverload(BuiltinId, BuiltinOverloadId),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

@@ -200,8 +200,15 @@ fn write_ty(
         TyKind::BoundVar(var) => {
             write!(f, "{}", ('T'..).nth(var.index).unwrap())
         }
-        TyKind::BuiltinFn(builtin) => {
-            write!(f, "<builtin> {}", builtin.lookup(db).name.as_str())
+        TyKind::BuiltinFnOverload(builtin, overload_id) => {
+            let builtin = builtin.lookup(db);
+            let overload = builtin.overload(overload_id);
+            write!(f, "<builtin {}> ", builtin.name())?;
+            write_ty(db, overload.ty, f, verbosity)
+        }
+        TyKind::BuiltinFnUndecided(builtin) => {
+            let builtin = builtin.lookup(db);
+            write!(f, "<builtin {}> ", builtin.name())
         }
         TyKind::StorageTypeOfTexelFormat(var) => {
             write!(f, "{}::StorageType", ('F'..).nth(var.index).unwrap())

@@ -13,11 +13,11 @@ use rustc_hash::FxHashMap;
 use std::{collections::hash_map::Entry, sync::Arc};
 
 use crate::{
-    builtins::{Builtin, BuiltinId, BuiltinOverload},
+    builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
     ty::{
-        ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Ptr, Ref, SamplerType, ScalarType,
-        TexelFormat, TextureDimensionality, TextureKind, TextureType, Ty, TyKind, VecSize,
-        VectorType,
+        ArraySize, ArrayType, AtomicType, BoundVar, FunctionType, MatrixType, Ptr, Ref,
+        SamplerType, ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType, Ty,
+        TyKind, VecSize, VectorType,
     },
     HirDatabase,
 };
@@ -587,27 +587,25 @@ impl<'db> InferenceContext<'db> {
                 match callee_ty.kind(self.db) {
                     // TODO refactor to allow early return
                     TyKind::Error => self.err_ty(),
-                    TyKind::BuiltinFn(builtin) => self.call_builtin(callee, builtin, &args, None),
-                    TyKind::Function(f) => {
-                        if f.parameters.len() != args.len() {
-                            self.push_diagnostic(
-                                InferenceDiagnostic::FunctionCallArgCountMismatch {
-                                    expr: callee,
-                                    n_expected: f.parameters.len(),
-                                    n_actual: args.len(),
-                                },
-                            );
-                            self.err_ty()
-                        } else {
-                            for (expected, actual) in
-                                f.parameters.iter().copied().zip(args.iter().copied())
-                            {
-                                self.expect_same_type(expr, expected, actual);
+                    TyKind::BuiltinFnUndecided(builtin) => {
+                        match self.try_call_builtin(callee, builtin, &args, None) {
+                            Ok((ty, builtin_overload_id)) => {
+                                let overload_ty =
+                                    TyKind::BuiltinFnOverload(builtin, builtin_overload_id);
+                                self.set_expr_ty(callee, overload_ty.intern(self.db));
+                                ty
                             }
-
-                            f.return_type.unwrap_or_else(|| self.err_ty())
+                            Err(()) => self.err_ty(),
                         }
                     }
+                    TyKind::BuiltinFnOverload(builtin, overload_id) => {
+                        let builtin = builtin.lookup(self.db);
+                        let overload = builtin.overload(overload_id);
+                        let ty = overload.ty.kind(self.db);
+                        let f = ty.as_function().expect("builtin type should be a function");
+                        self.validate_function_call(f, args, callee, expr)
+                    }
+                    TyKind::Function(f) => self.validate_function_call(f, args, callee, expr),
                     _ => {
                         self.push_diagnostic(InferenceDiagnostic::InvalidCallType {
                             expr: callee,
@@ -685,6 +683,29 @@ impl<'db> InferenceContext<'db> {
         self.set_expr_ty(expr, ty);
 
         ty
+    }
+
+    fn validate_function_call(
+        &mut self,
+        f: FunctionType,
+        args: Vec<Ty>,
+        callee: ExprId,
+        expr: ExprId,
+    ) -> Ty {
+        if f.parameters.len() != args.len() {
+            self.push_diagnostic(InferenceDiagnostic::FunctionCallArgCountMismatch {
+                expr: callee,
+                n_expected: f.parameters.len(),
+                n_actual: args.len(),
+            });
+            self.err_ty()
+        } else {
+            for (expected, actual) in f.parameters.iter().copied().zip(args.iter().copied()) {
+                self.expect_same_type(expr, expected, actual);
+            }
+
+            f.return_type.unwrap_or_else(|| self.err_ty())
+        }
     }
 
     fn check_type_initializer_args(&self, _ty: Ty, _args: &[Ty]) {
@@ -767,7 +788,7 @@ impl<'db> InferenceContext<'db> {
     fn resolve_path_expr(&self, expr: ExprId, path: &Name) -> Option<Ty> {
         self.resolve_path_expr_inner(expr, path).or_else(|| {
             let builtin = Builtin::for_name(self.db, path)?.intern(self.db);
-            Some(TyKind::BuiltinFn(builtin).intern(self.db))
+            Some(TyKind::BuiltinFnUndecided(builtin).intern(self.db))
         })
     }
     fn resolve_path_expr_inner(&self, expr: ExprId, path: &Name) -> Option<Ty> {
@@ -846,11 +867,23 @@ impl<'db> InferenceContext<'db> {
         args: &[Ty],
         name: Option<&'static str>,
     ) -> Ty {
+        match self.try_call_builtin(expr, builtin_id, args, name) {
+            Ok((ty, _)) => ty,
+            Err(()) => self.err_ty(),
+        }
+    }
+    fn try_call_builtin(
+        &mut self,
+        expr: ExprId,
+        builtin_id: BuiltinId,
+        args: &[Ty],
+        name: Option<&'static str>,
+    ) -> Result<(Ty, BuiltinOverloadId), ()> {
         let builtin = builtin_id.lookup(self.db);
 
-        for overload in &builtin.overloads {
+        for (overload_id, overload) in builtin.overloads() {
             if let Ok(ty) = self.call_builtin_overload(overload, args) {
-                return ty;
+                return Ok((ty, overload_id));
             }
         }
 
@@ -861,8 +894,9 @@ impl<'db> InferenceContext<'db> {
             parameters: args.to_vec(),
         });
 
-        self.err_ty()
+        Err(())
     }
+
     fn call_builtin_overload(&self, sig: &BuiltinOverload, args: &[Ty]) -> Result<Ty, ()> {
         let fn_ty = match sig.ty.kind(self.db) {
             TyKind::Function(fn_ty) => fn_ty,
