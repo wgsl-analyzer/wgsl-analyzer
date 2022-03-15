@@ -3,7 +3,7 @@ use hir::Semantics;
 use hir_def::module_data::Name;
 use hir_ty::ty::{
     pretty::{pretty_type_with_verbosity, TypeVerbosity},
-    TyKind,
+    FunctionType, TyKind,
 };
 use rowan::NodeOrToken;
 use smol_str::SmolStr;
@@ -104,6 +104,9 @@ fn get_hints(
                     .parameter_names()
                     .zip(parameter_exprs)
                     .filter(|&(name, _)| !Name::is_missing(name))
+                    .filter(|(param_name, expr)| {
+                        !should_hide_param_name_hint(&ty, param_name, expr)
+                    })
                     .map(|(param_name, expr)| InlayHint {
                         range: expr.syntax().text_range(),
                         kind: InlayKind::ParameterHint,
@@ -142,4 +145,70 @@ fn get_hints(
     }
 
     Some(())
+}
+
+// taken from https://github.com/rust-analyzer/rust-analyzer/blob/7308b3ef413cad8c211e239d32c9fab29ae2e664/crates/ide/src/inlay_hints.rs#L422
+
+fn should_hide_param_name_hint(ty: &FunctionType, param_name: &str, expr: &ast::Expr) -> bool {
+    is_argument_similar_to_param_name(expr, param_name)
+        || (ty.parameters.len() == 1 && is_obvious_param(param_name))
+}
+
+fn is_argument_similar_to_param_name(expr: &ast::Expr, param_name: &str) -> bool {
+    let argument = match get_string_representation(expr) {
+        Some(argument) => argument,
+        None => return false,
+    };
+
+    // std is honestly too panic happy...
+    let str_split_at = |str: &str, at| str.is_char_boundary(at).then(|| argument.split_at(at));
+
+    let param_name = param_name.trim_start_matches('_');
+    let argument = argument.trim_start_matches('_');
+
+    match str_split_at(argument, param_name.len()) {
+        Some((prefix, rest)) if prefix.eq_ignore_ascii_case(param_name) => {
+            return rest.is_empty() || rest.starts_with('_');
+        }
+        _ => (),
+    }
+    match argument
+        .len()
+        .checked_sub(param_name.len())
+        .and_then(|at| str_split_at(argument, at))
+    {
+        Some((rest, suffix)) if param_name.eq_ignore_ascii_case(suffix) => {
+            return rest.is_empty() || rest.ends_with('_');
+        }
+        _ => (),
+    }
+
+    // mixed camelCase/snake_case
+    if compare_ignore_case_convention(argument, param_name) {
+        return true;
+    }
+
+    false
+}
+
+fn is_obvious_param(param_name: &str) -> bool {
+    let is_obvious_param_name = matches!(param_name, "predicate" | "value");
+    param_name.len() == 1 || is_obvious_param_name
+}
+
+fn compare_ignore_case_convention(argument: &str, param_name: &str) -> bool {
+    argument
+        .chars()
+        .filter(|&c| c != '_')
+        .zip(param_name.chars().filter(|&c| c != '_'))
+        .all(|(a, b)| a.eq_ignore_ascii_case(&b))
+}
+
+fn get_string_representation(expr: &ast::Expr) -> Option<String> {
+    match expr {
+        ast::Expr::PathExpr(expr) => Some(expr.name_ref()?.text().as_str().to_string()),
+        ast::Expr::PrefixExpr(expr) => get_string_representation(&expr.expr()?),
+        ast::Expr::FieldExpr(expr) => Some(expr.name_ref()?.text().as_str().to_string()),
+        _ => None,
+    }
 }
