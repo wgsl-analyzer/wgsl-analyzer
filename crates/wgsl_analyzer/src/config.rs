@@ -15,6 +15,8 @@ pub struct TraceConfig {
 #[serde(rename_all = "camelCase")]
 pub struct InlayHintsConfig {
     pub enabled: bool,
+    pub type_hints: bool,
+    pub parameter_hints: bool,
     pub type_verbosity: InlayHintsTypeVerbosity,
 }
 #[derive(Clone, Debug, Deserialize)]
@@ -66,6 +68,8 @@ impl Config {
     pub fn inlay_hints(&self) -> ide::inlay_hints::InlayHintsConfig {
         ide::inlay_hints::InlayHintsConfig {
             enabled: self.inlay_hints.enabled,
+            type_hints: self.inlay_hints.type_hints,
+            parameter_hints: self.inlay_hints.parameter_hints,
             type_verbosity: match self.inlay_hints.type_verbosity {
                 InlayHintsTypeVerbosity::Full => TypeVerbosity::Full,
                 InlayHintsTypeVerbosity::Compact => TypeVerbosity::Compact,

@@ -7,6 +7,8 @@ export interface TraceConfig {
 
 export interface InlayHintsConfig {
     enabled: boolean;
+    typeHints: boolean;
+    parameterHints: boolean;
     typeVerbosity: "full" | "short" | "compact";
 }
 

@@ -14,6 +14,8 @@ use crate::RootDatabase;
 #[derive(Clone, Debug)]
 pub struct InlayHintsConfig {
     pub enabled: bool,
+    pub type_hints: bool,
+    pub parameter_hints: bool,
     pub type_verbosity: TypeVerbosity,
 }
 
@@ -74,6 +76,9 @@ fn get_hints(
     if let Some(expr) = ast::Expr::cast(node.clone()) {
         match &expr {
             ast::Expr::FunctionCall(function_call_expr) => {
+                if !config.parameter_hints {
+                    return None;
+                }
                 let container = sema.find_container(file_id.into(), &node)?;
 
                 let analyzed = sema.analyze(container);
@@ -120,6 +125,9 @@ fn get_hints(
                 .and_then(|stmt| Some((stmt.binding()?, stmt.ty())))
         })
     {
+        if !config.type_hints {
+            return None;
+        }
         if ty.is_none() {
             let container = sema.find_container(file_id.into(), &node)?;
             let ty = sema.analyze(container).type_of_binding(&binding)?;
