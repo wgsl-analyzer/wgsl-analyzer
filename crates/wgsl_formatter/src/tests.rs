@@ -1,11 +1,14 @@
-use crate::format_recursive;
+use crate::{format_recursive, FormattingOptions};
 use expect_test::{expect, Expect};
 
 fn check(before: &str, after: Expect) {
+    check_with_options(before, after, &FormattingOptions::default())
+}
+fn check_with_options(before: &str, after: Expect, options: &FormattingOptions) {
     let syntax = syntax::parse(before.trim_start())
         .syntax()
         .clone_for_update();
-    format_recursive(syntax.clone());
+    format_recursive(syntax.clone(), options);
 
     eprintln!("{:#?}", syntax);
 
@@ -47,10 +50,10 @@ fn format_fn_header_comma_multiline() {
         "fn main(
                 a: b , c: d ,)  -> f32   {}",
         expect![[r#"
-                fn main(
-                    a: b,
-                    c: d,
-                ) -> f32 {}"#]],
+            fn main(
+                a: b,
+                c: d,
+            ) -> f32 {}"#]],
     );
 }
 
@@ -263,14 +266,14 @@ fn format_function_call_newline_nested() {
     )
 }",
         expect![[r#"
-                fn main() {
+            fn main() {
+                min(
                     min(
-                        min(
-                            1,
-                            2,
-                        ),
-                    )
-                }"#]],
+                        1,
+                        2,
+                    ),
+                )
+            }"#]],
     );
 }
 

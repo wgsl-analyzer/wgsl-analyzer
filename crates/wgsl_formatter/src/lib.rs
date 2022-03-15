@@ -4,14 +4,34 @@ mod tests;
 use rowan::{GreenNode, GreenToken, NodeOrToken, WalkEvent};
 use syntax::{ast, AstNode, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken};
 
-pub fn format_str(input: &str) -> String {
+pub fn format_str(input: &str, options: &FormattingOptions) -> String {
     let parse = wgsl_parser::parse_file(input);
     let node = parse.syntax().clone_for_update();
-    format_recursive(node.clone());
+    format_recursive(node.clone(), options);
     node.to_string()
 }
 
-pub fn format_recursive(syntax: SyntaxNode) {
+#[derive(Debug)]
+pub struct FormattingOptions {
+    pub trailing_commas: Policy,
+}
+
+impl Default for FormattingOptions {
+    fn default() -> Self {
+        Self {
+            trailing_commas: Policy::Ignore,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum Policy {
+    Ignore,
+    Remove,
+    Insert,
+}
+
+pub fn format_recursive(syntax: SyntaxNode, options: &FormattingOptions) {
     let preorder = syntax.preorder();
 
     let mut indentation: usize = 0;
@@ -22,7 +42,7 @@ pub fn format_recursive(syntax: SyntaxNode) {
                 if is_indent_kind(node.clone()) {
                     indentation += 1;
                 }
-                format_syntax_node(node, indentation);
+                format_syntax_node(node, indentation, options);
             }
             WalkEvent::Leave(node) => {
                 if is_indent_kind(node) {
@@ -52,7 +72,11 @@ fn is_indent_kind(node: SyntaxNode) -> bool {
     false
 }
 
-fn format_syntax_node(syntax: SyntaxNode, indentation: usize) -> Option<()> {
+fn format_syntax_node(
+    syntax: SyntaxNode,
+    indentation: usize,
+    options: &FormattingOptions,
+) -> Option<()> {
     if syntax.parent().map_or(false, |parent| {
         parent.kind() == SyntaxKind::CompoundStatement
     }) {
@@ -96,6 +120,7 @@ fn format_syntax_node(syntax: SyntaxNode, indentation: usize) -> Option<()> {
                 param_list.params().count(),
                 has_newline,
                 1,
+                options.trailing_commas,
             );
 
             if has_newline {
@@ -201,6 +226,7 @@ fn format_syntax_node(syntax: SyntaxNode, indentation: usize) -> Option<()> {
                 param_list.args().count(),
                 has_newline,
                 indentation + 1,
+                options.trailing_commas,
             );
 
             if has_newline {
@@ -239,6 +265,7 @@ fn format_param_list<T: AstNode>(
     count: usize,
     has_newline: bool,
     n_indentations: usize,
+    trailing_comma_policy: Policy,
 ) -> Option<()> {
     let mut first = true;
     for (i, param) in params.enumerate() {
@@ -261,12 +288,19 @@ fn format_param_list<T: AstNode>(
             NodeOrToken::Token(token) => token,
         };
         match (last, token_after_param.kind() == SyntaxKind::Comma) {
-            (true, false) if has_newline => {
-                insert_after_syntax(param.syntax(), create_syntax_token(SyntaxKind::Comma, ","));
-            }
-            (true, false) => {}
-            (true, true) if has_newline => {}
-            (true, true) => token_after_param.detach(),
+            (true, true) if !has_newline => token_after_param.detach(),
+            (true, has_comma) => match (trailing_comma_policy, has_comma) {
+                (Policy::Ignore, _) => {}
+                (Policy::Remove, true) => token_after_param.detach(),
+                (Policy::Remove, false) => {}
+                (Policy::Insert, true) => {}
+                (Policy::Insert, false) => {
+                    insert_after_syntax(
+                        param.syntax(),
+                        create_syntax_token(SyntaxKind::Comma, ","),
+                    );
+                }
+            },
             (false, true) => {}
             (false, false) => {
                 insert_after_syntax(param.syntax(), create_syntax_token(SyntaxKind::Comma, ","));

@@ -1,5 +1,7 @@
 use std::io::Read;
 
+use wgsl_formatter::FormattingOptions;
+
 fn main() -> Result<(), anyhow::Error> {
     let file = std::env::args().nth(1).filter(|arg| arg != "-");
     let input = match file {
@@ -11,7 +13,8 @@ fn main() -> Result<(), anyhow::Error> {
         }
     };
 
-    let output = wgsl_formatter::format_str(&input);
+    let formatting_options = FormattingOptions::default();
+    let output = wgsl_formatter::format_str(&input, &formatting_options);
 
     println!("{}", output);
 

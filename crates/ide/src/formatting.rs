@@ -3,6 +3,7 @@ use base_db::SourceDatabase;
 use base_db::TextRange;
 use rowan::NodeOrToken;
 use syntax::{ast, AstNode, SyntaxNode};
+use wgsl_formatter::FormattingOptions;
 
 use crate::RootDatabase;
 
@@ -17,6 +18,6 @@ pub fn format(db: &RootDatabase, file_id: FileId, range: Option<TextRange>) -> O
         },
     };
 
-    wgsl_formatter::format_recursive(node.clone());
+    wgsl_formatter::format_recursive(node.clone(), &FormattingOptions::default());
     Some(node)
 }
