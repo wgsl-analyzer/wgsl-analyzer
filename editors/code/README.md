@@ -51,3 +51,25 @@ wgsl-analyzer supports `#ifdef`, `#ifndef`, `#else`, `#endif` directives in the 
     ]
 }
 ```
+
+### Inlay hints
+
+
+wgsl-analyzer can display read-only virtual text snippets interspersed with code, used to display the inferred types of variable declarations or the names of function parameters at the call site.
+
+```json
+{
+    "wgsl-analyzer.inlayHints.enabled": true,
+    "wgsl-analyzer.inlayHints.typeHints": true,
+    "wgsl-analyzer.inlayHints.parameterHints": true,
+    "wgsl-analyzer.inlayHints.typeVerbosity": "compact",
+}
+```
+
+The `typeVerbosity` argument can be either `full`, `compact` or `inner`, which will correspond to
+```rust
+var x: ref<function, f32, read_write> = 0.0;
+var x: ref<f32> = 0.0;
+var x: f32 = 0.0;
+```
+respectively. For more information, check out references and the "Load Rule" in the [WGSL Spec](https://gpuweb.github.io/gpuweb/wgsl/#load-rule).
