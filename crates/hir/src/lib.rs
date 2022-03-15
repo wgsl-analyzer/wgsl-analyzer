@@ -272,13 +272,13 @@ impl<'db> SourceAnalyzer<'db> {
         resolver
     }
 
-    fn binding_id(&self, src: &ast::Binding) -> Option<BindingId> {
+    pub fn binding_id(&self, src: &ast::Binding) -> Option<BindingId> {
         self.body_source_map.lookup_binding(&AstPtr::new(src))
     }
-    fn expr_id(&self, src: &ast::Expr) -> Option<ExprId> {
+    pub fn expr_id(&self, src: &ast::Expr) -> Option<ExprId> {
         self.body_source_map.lookup_expr(&AstPtr::new(src))
     }
-    fn stmt_id(&self, src: &ast::Statement) -> Option<StatementId> {
+    pub fn stmt_id(&self, src: &ast::Statement) -> Option<StatementId> {
         self.body_source_map.lookup_statement(&AstPtr::new(src))
     }
 }

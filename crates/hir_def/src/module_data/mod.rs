@@ -9,13 +9,19 @@ use smol_str::SmolStr;
 use std::{marker::PhantomData, sync::Arc};
 use syntax::{ast, AstNode, TokenText};
 
+const MISSING_NAME_PLACEHOLDER: &str = "[missing name]";
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Name(SmolStr);
 
 impl Name {
     pub fn missing() -> Name {
-        Name("[missing name]".into())
+        Name(MISSING_NAME_PLACEHOLDER.into())
     }
+    pub fn is_missing(val: &str) -> bool {
+        val == MISSING_NAME_PLACEHOLDER
+    }
+
     pub fn as_str(&self) -> &str {
         &self.0
     }
