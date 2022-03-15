@@ -1,6 +1,8 @@
 # Changelog
 
 ### Unreleased
+
+## Version 0.4.0
 - support `#ifdef`, `#ifndef`, `#else`, `#endif` preprocessor macros
 - add `Show full WGSL source` command that resolves imports
 - fix reloading of configuration for imports
