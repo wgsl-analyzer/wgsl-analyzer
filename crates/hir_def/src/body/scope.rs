@@ -189,7 +189,27 @@ fn compute_statement_scopes(
                 compute_statement_scopes(*else_block, body, scopes, scope);
             }
         }
-        Statement::Switch { .. } => todo!("switch scopes"),
+        Statement::Switch {
+            expr,
+            case_blocks,
+            default_block,
+        } => {
+            compute_expr_scopes(*expr, body, scopes, scope);
+
+            for (selectors, case) in case_blocks {
+                for selector in selectors {
+                    compute_expr_scopes(*selector, body, scopes, scope);
+                }
+
+                let case_scope = scopes.new_block_scope(scope);
+                compute_statement_scopes(*case, body, scopes, case_scope);
+            }
+
+            if let Some(default_block) = default_block {
+                let default_scope = scopes.new_block_scope(scope);
+                compute_statement_scopes(*default_block, body, scopes, default_scope);
+            }
+        }
         Statement::For {
             initializer,
             condition,
