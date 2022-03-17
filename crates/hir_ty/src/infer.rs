@@ -389,7 +389,24 @@ impl<'db> InferenceContext<'db> {
                 }
                 self.infer_expr_expect(condition, TypeExpectation::from_ty(self.bool_ty()));
             }
-            Statement::Switch { .. } => todo!("switch"),
+            Statement::Switch {
+                expr,
+                ref case_blocks,
+                ref default_block,
+            } => {
+                let ty = self.infer_expr(expr);
+
+                for (selectors, case) in case_blocks {
+                    for selector in selectors {
+                        self.infer_expr_expect(*selector, TypeExpectation::from_ty(ty));
+                    }
+                    self.infer_stmt(*case);
+                }
+
+                if let Some(default_block) = *default_block {
+                    self.infer_stmt(default_block);
+                }
+            }
             Statement::For {
                 initializer,
                 condition,
