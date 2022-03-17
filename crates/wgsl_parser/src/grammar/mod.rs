@@ -602,13 +602,26 @@ fn switch_body(p: &mut Parser) {
         p.expect(SyntaxKind::Case);
 
         let m_selectors = p.start();
-        while !p.at_or_end(SyntaxKind::Colon) {
+        while !p.at_or_end(SyntaxKind::Colon) || p.at_end() {
+            if p.at(SyntaxKind::BraceRight) {
+                break;
+            }
             expr(p); // actually only const_literals are allowed here, but we parse more liberally
             p.eat(SyntaxKind::Comma);
         }
         m_selectors.complete(p, SyntaxKind::SwitchCaseSelectors);
 
+        if p.at(SyntaxKind::BraceRight) {
+            m.complete(p, SyntaxKind::SwitchBodyCase);
+            return;
+        }
+
         p.expect(SyntaxKind::Colon);
+
+        if p.at(SyntaxKind::BraceRight) {
+            m.complete(p, SyntaxKind::SwitchBodyCase);
+            return;
+        }
 
         compound_statement(p);
         m.complete(p, SyntaxKind::SwitchBodyCase);

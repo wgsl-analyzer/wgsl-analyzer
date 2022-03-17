@@ -2380,3 +2380,177 @@ switch i {
                 Whitespace@83..92 "\n        ""#]],
     );
 }
+
+#[test]
+fn parse_switch_statement_recover_1() {
+    check_statement(
+        r#"
+switch i {
+  case
+}
+        "#,
+        expect![[r#"
+            SwitchStatement@0..29
+              Whitespace@0..1 "\n"
+              Switch@1..7 "switch"
+              Whitespace@7..8 " "
+              PathExpr@8..10
+                NameRef@8..10
+                  Ident@8..9 "i"
+                  Whitespace@9..10 " "
+              SwitchBlock@10..29
+                BraceLeft@10..11 "{"
+                Whitespace@11..14 "\n  "
+                SwitchBodyCase@14..19
+                  Case@14..18 "case"
+                  Whitespace@18..19 "\n"
+                  SwitchCaseSelectors@19..19
+                BraceRight@19..20 "}"
+                Whitespace@20..29 "\n        ""#]],
+    );
+}
+
+#[test]
+fn parse_switch_statement_recover_2() {
+    check_statement(
+        r#"
+switch i {
+  case 1
+}
+        "#,
+        expect![[r#"
+            SwitchStatement@0..31
+              Whitespace@0..1 "\n"
+              Switch@1..7 "switch"
+              Whitespace@7..8 " "
+              PathExpr@8..10
+                NameRef@8..10
+                  Ident@8..9 "i"
+                  Whitespace@9..10 " "
+              SwitchBlock@10..31
+                BraceLeft@10..11 "{"
+                Whitespace@11..14 "\n  "
+                SwitchBodyCase@14..21
+                  Case@14..18 "case"
+                  Whitespace@18..19 " "
+                  SwitchCaseSelectors@19..21
+                    Literal@19..21
+                      IntLiteral@19..20 "1"
+                      Whitespace@20..21 "\n"
+                BraceRight@21..22 "}"
+                Whitespace@22..31 "\n        ""#]],
+    );
+}
+
+#[test]
+fn parse_switch_statement_recover_3() {
+    check_statement(
+        r#"
+{
+switch i {
+  case 1:
+}
+
+let x = 3;
+}
+        "#,
+        expect![[r#"
+            CompoundStatement@0..48
+              Whitespace@0..1 "\n"
+              BraceLeft@1..2 "{"
+              Whitespace@2..3 "\n"
+              SwitchStatement@3..27
+                Switch@3..9 "switch"
+                Whitespace@9..10 " "
+                PathExpr@10..12
+                  NameRef@10..12
+                    Ident@10..11 "i"
+                    Whitespace@11..12 " "
+                SwitchBlock@12..27
+                  BraceLeft@12..13 "{"
+                  Whitespace@13..16 "\n  "
+                  SwitchBodyCase@16..24
+                    Case@16..20 "case"
+                    Whitespace@20..21 " "
+                    SwitchCaseSelectors@21..22
+                      Literal@21..22
+                        IntLiteral@21..22 "1"
+                    Colon@22..23 ":"
+                    Whitespace@23..24 "\n"
+                  BraceRight@24..25 "}"
+                  Whitespace@25..27 "\n\n"
+              VariableStatement@27..36
+                Let@27..30 "let"
+                Whitespace@30..31 " "
+                Binding@31..33
+                  Name@31..33
+                    Ident@31..32 "x"
+                    Whitespace@32..33 " "
+                Equal@33..34 "="
+                Whitespace@34..35 " "
+                Literal@35..36
+                  IntLiteral@35..36 "3"
+              Semicolon@36..37 ";"
+              Whitespace@37..38 "\n"
+              BraceRight@38..39 "}"
+              Whitespace@39..48 "\n        ""#]],
+    );
+}
+
+#[test]
+fn parse_switch_statement_recover_4() {
+    check_statement(
+        r#"
+{
+switch i {
+  case 1, 2, 
+}
+let x = 3;
+}
+        "#,
+        expect![[r#"
+            CompoundStatement@0..51
+              Whitespace@0..1 "\n"
+              BraceLeft@1..2 "{"
+              Whitespace@2..3 "\n"
+              SwitchStatement@3..30
+                Switch@3..9 "switch"
+                Whitespace@9..10 " "
+                PathExpr@10..12
+                  NameRef@10..12
+                    Ident@10..11 "i"
+                    Whitespace@11..12 " "
+                SwitchBlock@12..30
+                  BraceLeft@12..13 "{"
+                  Whitespace@13..16 "\n  "
+                  SwitchBodyCase@16..28
+                    Case@16..20 "case"
+                    Whitespace@20..21 " "
+                    SwitchCaseSelectors@21..28
+                      Literal@21..22
+                        IntLiteral@21..22 "1"
+                      Comma@22..23 ","
+                      Whitespace@23..24 " "
+                      Literal@24..25
+                        IntLiteral@24..25 "2"
+                      Comma@25..26 ","
+                      Whitespace@26..28 " \n"
+                  BraceRight@28..29 "}"
+                  Whitespace@29..30 "\n"
+              VariableStatement@30..39
+                Let@30..33 "let"
+                Whitespace@33..34 " "
+                Binding@34..36
+                  Name@34..36
+                    Ident@34..35 "x"
+                    Whitespace@35..36 " "
+                Equal@36..37 "="
+                Whitespace@37..38 " "
+                Literal@38..39
+                  IntLiteral@38..39 "3"
+              Semicolon@39..40 ";"
+              Whitespace@40..41 "\n"
+              BraceRight@41..42 "}"
+              Whitespace@42..51 "\n        ""#]],
+    );
+}
