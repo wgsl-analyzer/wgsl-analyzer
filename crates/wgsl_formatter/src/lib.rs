@@ -54,7 +54,10 @@ pub fn format_recursive(syntax: SyntaxNode, options: &FormattingOptions) {
 }
 
 fn is_indent_kind(node: SyntaxNode) -> bool {
-    if matches!(node.kind(), SyntaxKind::CompoundStatement) {
+    if matches!(
+        node.kind(),
+        SyntaxKind::CompoundStatement | SyntaxKind::SwitchBlock
+    ) {
         return true;
     }
 
