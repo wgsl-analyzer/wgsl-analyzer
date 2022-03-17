@@ -84,14 +84,16 @@ fn format_syntax_node(
 
         let n_newlines = n_newlines_in_whitespace(start.prev_token()?).unwrap_or(1);
 
-        set_whitespace_before(
-            syntax.first_token()?,
-            create_whitespace(&format!(
-                "{}{}",
-                "\n".repeat(n_newlines),
-                "    ".repeat(indentation)
-            )),
-        );
+        if n_newlines > 0 {
+            set_whitespace_before(
+                syntax.first_token()?,
+                create_whitespace(&format!(
+                    "{}{}",
+                    "\n".repeat(n_newlines),
+                    "    ".repeat(indentation)
+                )),
+            );
+        }
     }
 
     match syntax.kind() {
