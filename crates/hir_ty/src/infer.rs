@@ -389,6 +389,7 @@ impl<'db> InferenceContext<'db> {
                 }
                 self.infer_expr_expect(condition, TypeExpectation::from_ty(self.bool_ty()));
             }
+            Statement::Switch { .. } => todo!("switch"),
             Statement::For {
                 initializer,
                 condition,

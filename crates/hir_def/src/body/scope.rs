@@ -189,6 +189,7 @@ fn compute_statement_scopes(
                 compute_statement_scopes(*else_block, body, scopes, scope);
             }
         }
+        Statement::Switch { .. } => todo!("switch scopes"),
         Statement::For {
             initializer,
             condition,

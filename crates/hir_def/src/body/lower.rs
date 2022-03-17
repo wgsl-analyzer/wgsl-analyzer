@@ -207,8 +207,41 @@ impl<'a> Collector<'a> {
                     else_block,
                 }
             }
-            ast::Statement::SwitchStatement(_) => {
-                todo!("handle switch statement")
+            ast::Statement::SwitchStatement(ref stmt) => {
+                let expr = self.collect_expr_opt(stmt.expr());
+
+                let (case_blocks, default_block) = match stmt.block() {
+                    Some(block) => {
+                        let case_blocks = block
+                            .cases()
+                            .map(|case| {
+                                let selectors =
+                                    case.selectors().map_or_else(Vec::new, |selectors| {
+                                        selectors
+                                            .exprs()
+                                            .map(|expr| self.collect_expr(expr))
+                                            .collect()
+                                    });
+                                let block = self.collect_compound_stmt_opt(case.block());
+                                (selectors, block)
+                            })
+                            .collect();
+
+                        let default_block = block
+                            .default()
+                            .last()
+                            .map(|default| self.collect_compound_stmt_opt(default.block()));
+
+                        (case_blocks, default_block)
+                    }
+                    None => (Vec::default(), None),
+                };
+
+                Statement::Switch {
+                    expr,
+                    case_blocks,
+                    default_block,
+                }
             }
             ast::Statement::ForStatement(ref for_stmt) => {
                 let initializer = for_stmt
