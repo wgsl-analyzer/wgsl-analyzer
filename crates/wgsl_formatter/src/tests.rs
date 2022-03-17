@@ -80,9 +80,9 @@ fn format_fn_newline() {
     a:b
 )->f32{}",
         expect![[r#"
-                fn main(
-                    a: b,
-                ) -> f32 {}"#]],
+            fn main(
+                a: b
+            ) -> f32 {}"#]],
     );
 }
 
@@ -92,10 +92,10 @@ fn format_fn_newline_2() {
         "fn main(
     a:b, c:d)->f32{}",
         expect![[r#"
-                fn main(
-                    a: b,
-                    c: d,
-                ) -> f32 {}"#]],
+            fn main(
+                a: b,
+                c: d
+            ) -> f32 {}"#]],
     );
 }
 
@@ -107,10 +107,10 @@ fn format_fn_newline_3() {
     c:d
 )->f32{}",
         expect![[r#"
-                fn main(
-                    a: b,
-                    c: d,
-                ) -> f32 {}"#]],
+            fn main(
+                a: b,
+                c: d
+            ) -> f32 {}"#]],
     );
 }
 
@@ -224,12 +224,12 @@ fn format_function_call_newline() {
         x,y );
 }",
         expect![[r#"
-                fn main() {
-                    min(
-                        x,
-                        y,
-                    );
-                }"#]],
+            fn main() {
+                min(
+                    x,
+                    y
+                );
+            }"#]],
     );
 }
 
@@ -243,14 +243,14 @@ fn format_function_call_newline_indent() {
     }
 }",
         expect![[r#"
-                fn main() {
-                    if (false) {
-                        min(
-                            x,
-                            y,
-                        );
-                    }
-                }"#]],
+            fn main() {
+                if (false) {
+                    min(
+                        x,
+                        y
+                    );
+                }
+            }"#]],
     );
 }
 
@@ -271,7 +271,7 @@ fn format_function_call_newline_nested() {
                     min(
                         1,
                         2,
-                    ),
+                    )
                 )
             }"#]],
     );
