@@ -83,6 +83,10 @@ jobs:
         with:
           name: wgsl-analyzer-${{ env.target }}.vsix
           path: editors/code/wgsl-analyzer-${{ env.target }}.vsix
+      - uses: actions/upload-artifact@v2
+        with:
+          name: wgsl-analyzer-${{ env.target }}
+          path: target/${{ matrix.rust_target }}/release/wgsl_analyzer$(If ('${{ matrix.platform }}' -eq 'win32') { '.exe' } else { '' } )"
 
   build_generic:
     runs-on: ubuntu-latest
@@ -117,7 +121,7 @@ jobs:
       - uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: "artifacts/*/*.vsix"
+          artifacts: "artifacts/*/*"
           allowUpdates: true
 
   publish:
