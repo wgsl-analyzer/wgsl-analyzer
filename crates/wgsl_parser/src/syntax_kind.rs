@@ -29,6 +29,17 @@ pub enum SyntaxKind {
     LoopStatement,
     /// if (expr) { stmts }
     IfStatement,
+    /// switch expr { case 1, 2: {} default: {}}
+    SwitchStatement,
+    /// The block of a switch statement
+    SwitchBlock,
+    /// case 1, 2: {};
+    SwitchBodyCase,
+    /// the `1, 2` in `case 1, 2: {}`
+    SwitchCaseSelectors,
+    /// default: {}
+    SwitchBodyDefault,
+
     // i++, i--
     IncrDecrStatement,
     ElseIfBlock,

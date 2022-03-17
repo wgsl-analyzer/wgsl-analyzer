@@ -380,6 +380,7 @@ const STATEMENT_RECOVER_SET: &[SyntaxKind] = &[
     SyntaxKind::For,
     SyntaxKind::Break,
     SyntaxKind::Continue,
+    SyntaxKind::Fallthrough,
     SyntaxKind::Discard,
     SyntaxKind::BraceRight,
 ];
@@ -388,7 +389,7 @@ pub fn statement(p: &mut Parser) {
     /*
     | [x] return_statement SEMICOLON
     | [x] if_statement
-    | [ ] switch_statement
+    | [x] switch_statement
     | [x] loop_statement
     | [x] for_statement
     | [kinda] func_call_statement SEMICOLON
@@ -410,7 +411,7 @@ pub fn statement(p: &mut Parser) {
     } else if p.at(SyntaxKind::If) {
         if_statement(p);
     } else if p.at(SyntaxKind::Switch) {
-        p.error();
+        switch_statement(p);
     } else if p.at(SyntaxKind::Loop) {
         loop_statement(p);
     } else if p.at(SyntaxKind::For) {
@@ -420,6 +421,8 @@ pub fn statement(p: &mut Parser) {
     } else if p.at(SyntaxKind::Continue) {
         p.bump();
     } else if p.at(SyntaxKind::Discard) {
+        p.bump();
+    } else if p.at(SyntaxKind::Fallthrough) {
         p.bump();
     } else if p.at(SyntaxKind::Continuing) {
         continuing_statement(p);
@@ -573,6 +576,51 @@ fn if_statement(p: &mut Parser) {
     }
 
     m.complete(p, SyntaxKind::IfStatement);
+}
+
+fn switch_statement(p: &mut Parser) {
+    let m = p.start();
+    p.expect(SyntaxKind::Switch);
+
+    expr(p);
+
+    list(
+        p,
+        SyntaxKind::BraceLeft,
+        SyntaxKind::BraceRight,
+        SyntaxKind::Semicolon,
+        SyntaxKind::SwitchBlock,
+        switch_body,
+    );
+
+    m.complete(p, SyntaxKind::SwitchStatement);
+}
+
+fn switch_body(p: &mut Parser) {
+    let m = p.start();
+    if p.at(SyntaxKind::Case) {
+        p.expect(SyntaxKind::Case);
+
+        let m_selectors = p.start();
+        while !p.at_or_end(SyntaxKind::Colon) {
+            expr(p); // actually only const_literals are allowed here, but we parse more liberally
+            p.eat(SyntaxKind::Comma);
+        }
+        m_selectors.complete(p, SyntaxKind::SwitchCaseSelectors);
+
+        p.expect(SyntaxKind::Colon);
+
+        compound_statement(p);
+        m.complete(p, SyntaxKind::SwitchBodyCase);
+    } else if p.at(SyntaxKind::Default) {
+        p.expect(SyntaxKind::Default);
+        p.expect(SyntaxKind::Colon);
+        compound_statement(p);
+        m.complete(p, SyntaxKind::SwitchBodyDefault);
+    } else {
+        p.error();
+        m.complete(p, SyntaxKind::SwitchBodyCase);
+    }
 }
 
 fn surround(

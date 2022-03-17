@@ -2303,3 +2303,80 @@ fn parse_string_import() {
                   StringLiteral@8..19 "\"file.wgsl\"""##]],
     );
 }
+
+#[test]
+
+fn parse_switch_statement() {
+    check_statement(
+        r#"
+switch i {
+  case 0: { fallthrough; }
+  case 1, 2: { return 42; }
+  default: { }
+}
+        "#,
+        expect![[r#"
+            SwitchStatement@0..92
+              Whitespace@0..1 "\n"
+              Switch@1..7 "switch"
+              Whitespace@7..8 " "
+              PathExpr@8..10
+                NameRef@8..10
+                  Ident@8..9 "i"
+                  Whitespace@9..10 " "
+              SwitchBlock@10..92
+                BraceLeft@10..11 "{"
+                Whitespace@11..14 "\n  "
+                SwitchBodyCase@14..41
+                  Case@14..18 "case"
+                  Whitespace@18..19 " "
+                  SwitchCaseSelectors@19..20
+                    Literal@19..20
+                      IntLiteral@19..20 "0"
+                  Colon@20..21 ":"
+                  Whitespace@21..22 " "
+                  CompoundStatement@22..41
+                    BraceLeft@22..23 "{"
+                    Whitespace@23..24 " "
+                    Fallthrough@24..35 "fallthrough"
+                    Semicolon@35..36 ";"
+                    Whitespace@36..37 " "
+                    BraceRight@37..38 "}"
+                    Whitespace@38..41 "\n  "
+                SwitchBodyCase@41..69
+                  Case@41..45 "case"
+                  Whitespace@45..46 " "
+                  SwitchCaseSelectors@46..50
+                    Literal@46..47
+                      IntLiteral@46..47 "1"
+                    Comma@47..48 ","
+                    Whitespace@48..49 " "
+                    Literal@49..50
+                      IntLiteral@49..50 "2"
+                  Colon@50..51 ":"
+                  Whitespace@51..52 " "
+                  CompoundStatement@52..69
+                    BraceLeft@52..53 "{"
+                    Whitespace@53..54 " "
+                    ReturnStmt@54..63
+                      Return@54..60 "return"
+                      Whitespace@60..61 " "
+                      Literal@61..63
+                        IntLiteral@61..63 "42"
+                    Semicolon@63..64 ";"
+                    Whitespace@64..65 " "
+                    BraceRight@65..66 "}"
+                    Whitespace@66..69 "\n  "
+                SwitchBodyDefault@69..82
+                  Default@69..76 "default"
+                  Colon@76..77 ":"
+                  Whitespace@77..78 " "
+                  CompoundStatement@78..82
+                    BraceLeft@78..79 "{"
+                    Whitespace@79..80 " "
+                    BraceRight@80..81 "}"
+                    Whitespace@81..82 "\n"
+                BraceRight@82..83 "}"
+                Whitespace@83..92 "\n        ""#]],
+    );
+}
