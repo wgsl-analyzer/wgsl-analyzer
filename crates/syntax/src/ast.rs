@@ -617,6 +617,26 @@ ast_node!(IfStatement:
     else_if_blocks: AstChildren<ElseIfBlock>;
     else_block: Option<ElseBlock>;
 );
+
+ast_node!(SwitchStatement:
+    expr: Option<Expr>;
+    block: Option<SwitchBlock>;
+);
+ast_node!(SwitchBlock:
+    cases: AstChildren<SwitchBodyCase>;
+    default: AstChildren<SwitchBodyDefault>;
+);
+ast_node!(SwitchBodyCase:
+    selectors: Option<SwitchCaseSelectors>;
+    block: Option<CompoundStatement>;
+);
+ast_node!(SwitchCaseSelectors:
+    exprs: AstChildren<Expr>;
+);
+ast_node!(SwitchBodyDefault:
+    block: Option<CompoundStatement>;
+);
+
 ast_node!(LoopStatement:
     block: Option<CompoundStatement>;
 );
@@ -691,6 +711,7 @@ ast_enum! {
         CompoundAssignmentStmt,
         IfStatement,
         ForStatement,
+        SwitchStatement,
         LoopStatement,
         Discard,
         Break,

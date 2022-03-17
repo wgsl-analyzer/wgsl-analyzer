@@ -207,6 +207,9 @@ impl<'a> Collector<'a> {
                     else_block,
                 }
             }
+            ast::Statement::SwitchStatement(_) => {
+                todo!("handle switch statement")
+            }
             ast::Statement::ForStatement(ref for_stmt) => {
                 let initializer = for_stmt
                     .initializer()
