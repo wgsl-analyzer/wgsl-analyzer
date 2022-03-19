@@ -1,6 +1,6 @@
 //! `LineIndex` maps flat `TextSize` offsets into `(Line, Column)`
 //! representation.
-use std::iter;
+use std::{iter, mem};
 
 use rowan::{TextRange, TextSize};
 use rustc_hash::FxHashMap;
@@ -8,9 +8,9 @@ use rustc_hash::FxHashMap;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LineIndex {
     /// Offset the the beginning of each line, zero-based
-    pub newlines: Vec<TextSize>,
+    pub(crate) newlines: Vec<TextSize>,
     /// List of non-ASCII characters on each line
-    pub utf16_lines: FxHashMap<u32, Vec<Utf16Char>>,
+    pub(crate) utf16_lines: FxHashMap<u32, Vec<Utf16Char>>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -30,11 +30,11 @@ pub struct LineCol {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct Utf16Char {
+pub(crate) struct Utf16Char {
     /// Start offset of a character inside a line, zero-based
-    pub start: TextSize,
+    pub(crate) start: TextSize,
     /// End offset of a character inside a line, zero-based
-    pub end: TextSize,
+    pub(crate) end: TextSize,
 }
 
 impl Utf16Char {
@@ -59,8 +59,7 @@ impl LineIndex {
         let mut utf16_chars = Vec::new();
 
         let mut newlines = vec![0.into()];
-        let mut curr_row = 0.into();
-        let mut curr_col = 0.into();
+        let mut curr_row @ mut curr_col = 0.into();
         let mut line = 0;
         for c in text.chars() {
             let c_len = TextSize::of(c);
@@ -70,8 +69,7 @@ impl LineIndex {
 
                 // Save any utf-16 characters seen in the previous line
                 if !utf16_chars.is_empty() {
-                    utf16_lines.insert(line, utf16_chars);
-                    utf16_chars = Vec::new();
+                    utf16_lines.insert(line, mem::take(&mut utf16_chars));
                 }
 
                 // Prepare for processing the next line
@@ -111,8 +109,10 @@ impl LineIndex {
         }
     }
 
-    pub fn offset(&self, line_col: LineCol) -> TextSize {
-        self.newlines[line_col.line as usize] + TextSize::from(line_col.col)
+    pub fn offset(&self, line_col: LineCol) -> Option<TextSize> {
+        self.newlines
+            .get(line_col.line as usize)
+            .map(|offset| offset + TextSize::from(line_col.col))
     }
 
     pub fn to_utf16(&self, line_col: LineCol) -> LineColUtf16 {

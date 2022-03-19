@@ -74,7 +74,7 @@ impl GlobalState {
 
         if let Some(diagnostic_changes) = self.diagnostics.take_changes() {
             for file_id in diagnostic_changes {
-                let url = file_id_to_url(&self.vfs.read().unwrap(), file_id);
+                let url = file_id_to_url(&self.vfs.read().unwrap().0, file_id);
                 let diagnostics = self.diagnostics.diagnostics_for(file_id).cloned().collect();
                 // let version = from_proto::vfs_path(&url)
                 // .map(|path| self.mem_docs.get(&path).map(|it| it.version))
@@ -99,6 +99,7 @@ impl GlobalState {
             .vfs
             .read()
             .unwrap()
+            .0
             .iter()
             .map(|(file_id, _)| file_id)
             .collect();
@@ -240,6 +241,7 @@ mod text_notifications {
             .vfs
             .write()
             .unwrap()
+            .0
             .set_file_contents(path, Some(params.text_document.text.into_bytes()));
 
         Ok(())
@@ -252,7 +254,7 @@ mod text_notifications {
         let path = from_proto::vfs_path(&params.text_document.uri)
             .context("invalid path in did_change_text_document")?;
 
-        let mut vfs = state.vfs.write().unwrap();
+        let vfs = &mut state.vfs.write().unwrap().0;
         let file_id = vfs.file_id(&path).unwrap();
         let mut text = String::from_utf8(vfs.file_contents(file_id).to_vec()).unwrap();
         apply_document_changes(&mut text, params.content_changes);

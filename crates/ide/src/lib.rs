@@ -51,6 +51,10 @@ impl AnalysisHost {
         }
     }
 
+    pub fn raw_database(&mut self) -> &RootDatabase {
+        &self.db
+    }
+
     pub fn raw_database_mut(&mut self) -> &mut RootDatabase {
         &mut self.db
     }

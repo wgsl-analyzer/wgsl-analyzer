@@ -1,4 +1,4 @@
-use base_db::{line_index::LineIndex, FileRange, TextRange, TextSize};
+use base_db::{FileRange, TextRange, TextSize};
 use ide::inlay_hints::{InlayHint, InlayKind};
 use ide_completion::item::{CompletionItem, CompletionItemKind, CompletionRelevance};
 use itertools::Itertools;
@@ -7,7 +7,11 @@ use std::path;
 use text_edit::{Indel, TextEdit};
 use vfs::FileId;
 
-use crate::{global_state::GlobalStateSnapshot, lsp_ext, Result};
+use crate::{
+    global_state::GlobalStateSnapshot,
+    line_index::{LineEndings, LineIndex, OffsetEncoding},
+    lsp_ext, Result,
+};
 
 /// Returns a `Url` object from a given path, will lowercase drive letters if present.
 /// This will only happen when processing windows paths.
@@ -51,8 +55,14 @@ pub(crate) fn range(line_index: &LineIndex, range: TextRange) -> lsp_types::Rang
 }
 
 pub(crate) fn position(line_index: &LineIndex, offset: TextSize) -> lsp_types::Position {
-    let line_col = line_index.line_col(offset);
-    lsp_types::Position::new(line_col.line, line_col.col)
+    let line_col = line_index.index.line_col(offset);
+    match line_index.encoding {
+        OffsetEncoding::Utf8 => lsp_types::Position::new(line_col.line, line_col.col),
+        OffsetEncoding::Utf16 => {
+            let line_col = line_index.index.to_utf16(line_col);
+            lsp_types::Position::new(line_col.line, line_col.col)
+        }
+    }
 }
 
 pub(crate) fn url(snap: &GlobalStateSnapshot, file_id: FileId) -> lsp_types::Url {
@@ -64,7 +74,7 @@ pub(crate) fn location(
     frange: FileRange,
 ) -> Result<lsp_types::Location> {
     let url = url(snap, frange.file_id);
-    let line_index = snap.analysis.line_index(frange.file_id)?;
+    let line_index = snap.file_line_index(frange.file_id)?;
     let range = range(&line_index, frange.range);
     let loc = lsp_types::Location::new(url, range);
     Ok(loc)
@@ -231,10 +241,11 @@ pub(crate) fn completion_item_kind(
 
 pub(crate) fn text_edit(line_index: &LineIndex, indel: Indel) -> lsp_types::TextEdit {
     let range = range(line_index, indel.delete);
-    lsp_types::TextEdit {
-        range,
-        new_text: indel.insert,
-    }
+    let new_text = match line_index.endings {
+        LineEndings::Unix => indel.insert,
+        LineEndings::Dos => indel.insert.replace('\n', "\r\n"),
+    };
+    lsp_types::TextEdit { range, new_text }
 }
 
 pub(crate) fn text_edit_vec(

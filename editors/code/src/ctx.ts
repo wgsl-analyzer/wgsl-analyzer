@@ -43,6 +43,11 @@ export class Ctx {
     static async create(serverPath: string, ctx: ExtensionContext, config: Config) {
         const run: Executable = {
             command: serverPath,
+            options: {
+                env: {
+                    "RUST_BACKTRACE": "1"
+                }
+            }
         };
         const serverOptions: ServerOptions = {
             run,

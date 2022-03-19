@@ -5,6 +5,7 @@ mod dispatch;
 mod from_proto;
 mod global_state;
 mod handlers;
+mod line_index;
 mod lsp_ext;
 mod lsp_utils;
 pub mod main_loop;

@@ -1,11 +1,15 @@
 #![allow(dead_code)]
 //! Utilities for LSP-related boilerplate code.
-use std::{error::Error, ops::Range};
+use std::{error::Error, ops::Range, sync::Arc};
 
 use lsp_server::Notification;
 
-use crate::{from_proto, global_state::GlobalState, LspError};
-use base_db::line_index::LineIndex;
+use crate::{
+    from_proto,
+    global_state::GlobalState,
+    line_index::{LineEndings, LineIndex, OffsetEncoding},
+    LspError,
+};
 
 pub(crate) fn is_cancelled(e: &(dyn Error + 'static)) -> bool {
     e.downcast_ref::<salsa::Cancelled>().is_some()
@@ -99,7 +103,12 @@ pub(crate) fn apply_document_changes(
     old_text: &mut String,
     content_changes: Vec<lsp_types::TextDocumentContentChangeEvent>,
 ) {
-    let mut line_index = LineIndex::new(old_text);
+    let mut line_index = LineIndex {
+        index: Arc::new(base_db::line_index::LineIndex::new(old_text)),
+        // We don't care about line endings or offset encoding here.
+        endings: LineEndings::Unix,
+        encoding: OffsetEncoding::Utf16,
+    };
 
     // The changes we got must be applied sequentially, but can cross lines so we
     // have to keep our line index updated.
@@ -125,11 +134,12 @@ pub(crate) fn apply_document_changes(
         match change.range {
             Some(range) => {
                 if !index_valid.covers(range.end.line) {
-                    line_index = LineIndex::new(old_text);
+                    line_index.index = Arc::new(base_db::line_index::LineIndex::new(old_text));
                 }
                 index_valid = IndexValid::UpToLineExclusive(range.start.line);
-                let range = from_proto::text_range(&line_index, range);
-                old_text.replace_range(Range::<usize>::from(range), &change.text);
+                if let Ok(range) = from_proto::text_range(&line_index, range) {
+                    old_text.replace_range(Range::<usize>::from(range), &change.text);
+                }
             }
             None => {
                 *old_text = change.text;

@@ -3,12 +3,14 @@ use std::time::Instant;
 
 use base_db::change::Change;
 use crossbeam_channel::{unbounded, Receiver, Sender};
-use ide::{Analysis, AnalysisHost};
+use ide::{Analysis, AnalysisHost, Cancellable};
 use lsp_types::Url;
+use rustc_hash::FxHashMap;
 use vfs::{FileId, Vfs};
 
 use crate::config::Config;
 use crate::diagnostics::DiagnosticCollection;
+use crate::line_index::{LineEndings, LineIndex};
 use crate::Result;
 use crate::{from_proto, to_proto};
 use crate::{main_loop::Task, task_pool::TaskPool};
@@ -26,14 +28,14 @@ pub struct GlobalState {
     pub sender: Sender<lsp_server::Message>,
     pub req_queue: ReqQueue,
     pub task_pool: Handle<TaskPool<Task>, Receiver<Task>>,
-    pub vfs: Arc<RwLock<Vfs>>,
+    pub vfs: Arc<RwLock<(Vfs, FxHashMap<FileId, LineEndings>)>>,
     pub analysis_host: AnalysisHost,
     pub diagnostics: DiagnosticCollection,
     pub config: Arc<Config>,
 }
 
 pub struct GlobalStateSnapshot {
-    pub vfs: Arc<RwLock<Vfs>>,
+    pub vfs: Arc<RwLock<(Vfs, FxHashMap<FileId, LineEndings>)>>,
     pub analysis: Analysis,
     pub config: Arc<Config>,
 }
@@ -50,7 +52,7 @@ impl GlobalState {
             sender,
             req_queue: ReqQueue::default(),
             task_pool,
-            vfs: Arc::new(RwLock::new(Vfs::default())),
+            vfs: Arc::new(RwLock::new((Vfs::default(), FxHashMap::default()))),
             analysis_host: AnalysisHost::new(),
             diagnostics: DiagnosticCollection::default(),
             config: Arc::new(Default::default()),
@@ -59,27 +61,35 @@ impl GlobalState {
         this
     }
 
-    pub fn process_changes(&mut self) -> bool {
-        let mut vfs = self.vfs.write().unwrap();
-        let changed_files = vfs.take_changes();
-        if changed_files.is_empty() {
-            return false;
-        }
+    pub(crate) fn process_changes(&mut self) -> bool {
+        let change = {
+            let mut change = Change::new();
+            let (vfs, line_endings_map) = &mut *self.vfs.write().unwrap();
+            let changed_files = vfs.take_changes();
+            if changed_files.is_empty() {
+                return false;
+            }
 
-        let mut change = Change::new();
-
-        for file in changed_files {
-            let text = if file.exists() {
-                let content = vfs.file_contents(file.file_id).to_vec();
-                String::from_utf8(content).ok().map(Arc::new)
-            } else {
-                None
-            };
-            change.change_file(file.file_id, text);
-        }
+            for file in changed_files {
+                let text = if file.exists() {
+                    let bytes = vfs.file_contents(file.file_id).to_vec();
+                    match String::from_utf8(bytes).ok() {
+                        Some(text) => {
+                            let (text, line_endings) = LineEndings::normalize(text);
+                            line_endings_map.insert(file.file_id, line_endings);
+                            Some(Arc::new(text))
+                        }
+                        None => None,
+                    }
+                } else {
+                    None
+                };
+                change.change_file(file.file_id, text);
+            }
+            change
+        };
 
         self.analysis_host.apply_change(change);
-
         true
     }
 
@@ -153,12 +163,23 @@ impl GlobalState {
 
 impl GlobalStateSnapshot {
     pub(crate) fn url_to_file_id(&self, url: &Url) -> Result<FileId> {
-        url_to_file_id(&self.vfs.read().unwrap(), url)
+        url_to_file_id(&self.vfs.read().unwrap().0, url)
     }
 
     #[allow(dead_code)]
     pub(crate) fn file_id_to_url(&self, id: FileId) -> Url {
-        file_id_to_url(&self.vfs.read().unwrap(), id)
+        file_id_to_url(&self.vfs.read().unwrap().0, id)
+    }
+
+    pub(crate) fn file_line_index(&self, file_id: FileId) -> Cancellable<LineIndex> {
+        let endings = self.vfs.read().unwrap().1[&file_id];
+        let index = self.analysis.line_index(file_id)?;
+        let res = LineIndex {
+            index,
+            endings,
+            encoding: self.config.offset_encoding(),
+        };
+        Ok(res)
     }
 }
 

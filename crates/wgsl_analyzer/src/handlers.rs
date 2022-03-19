@@ -38,7 +38,7 @@ pub fn handle_completion(
     params: lsp_types::CompletionParams,
 ) -> Result<Option<lsp_types::CompletionResponse>> {
     let position = from_proto::file_position(&snap, params.text_document_position.clone())?;
-    let line_index = snap.analysis.line_index(position.file_id)?;
+    let line_index = snap.file_line_index(position.file_id)?;
     let items = match snap.analysis.completions(position)? {
         Some(items) => items,
         None => return Ok(None),
@@ -60,7 +60,7 @@ pub fn handle_formatting(
         Some(node) => node,
         None => return Ok(None),
     };
-    let line_index = snap.analysis.line_index(file_id)?;
+    let line_index = snap.file_line_index(file_id)?;
 
     let before = snap.analysis.file_text(file_id)?;
     let after = node.to_string();
@@ -75,7 +75,7 @@ pub fn handle_hover(
     params: lsp_types::HoverParams,
 ) -> Result<Option<lsp_types::Hover>> {
     let position = from_proto::file_position(&snap, params.text_document_position_params)?;
-    let line_index = snap.analysis.line_index(position.file_id)?;
+    let line_index = snap.file_line_index(position.file_id)?;
     let range = TextRange::new(position.offset, position.offset);
     let file_range = FileRange {
         file_id: position.file_id,
@@ -138,7 +138,7 @@ pub(crate) fn handle_inlay_hints(
 ) -> Result<Vec<InlayHint>> {
     let document_uri = &params.text_document.uri;
     let file_id = from_proto::file_id(&snap, document_uri)?;
-    let line_index = snap.analysis.line_index(file_id)?;
+    let line_index = snap.file_line_index(file_id)?;
     let range = params
         .range
         .map(|range| {
@@ -162,12 +162,12 @@ pub fn publish_diagnostics(
     config: &DiagnosticsConfig,
     file_id: FileId,
 ) -> Result<Vec<lsp_types::Diagnostic>> {
-    let line_index = snap.analysis.line_index(file_id)?;
+    let line_index = snap.file_line_index(file_id)?;
     let diagnostics = snap.analysis.diagnostics(config, file_id)?;
     let lsp_diagnostics = diagnostics
         .into_iter()
         .map(|diagnostic| lsp_types::Diagnostic {
-            range: to_proto::range(&*line_index, diagnostic.range),
+            range: to_proto::range(&line_index, diagnostic.range),
             severity: Some(diagnostic_severity(diagnostic.severity)),
             code: None,
             code_description: None,

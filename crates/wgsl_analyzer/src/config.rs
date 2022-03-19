@@ -5,6 +5,8 @@ use serde::Deserialize;
 
 use hir::diagnostics::DiagnosticsConfig;
 
+use crate::line_index::OffsetEncoding;
+
 #[derive(Default, Clone, Debug, Deserialize)]
 pub struct TraceConfig {
     pub extension: bool,
@@ -76,5 +78,9 @@ impl Config {
                 InlayHintsTypeVerbosity::Inner => TypeVerbosity::Inner,
             },
         }
+    }
+
+    pub fn offset_encoding(&self) -> OffsetEncoding {
+        OffsetEncoding::Utf8 // do we need to check whether it is supported?
     }
 }
