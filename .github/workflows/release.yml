@@ -86,7 +86,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: wgsl-analyzer-${{ env.target }}
-          path: target/${{ matrix.rust_target }}/release/wgsl_analyzer$(If ('${{ matrix.platform }}' -eq 'win32') { '.exe' } else { '' } )"
+          path: target/${{ matrix.rust_target }}/release/wgsl_analyzer${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
 
   build_generic:
     runs-on: ubuntu-latest
