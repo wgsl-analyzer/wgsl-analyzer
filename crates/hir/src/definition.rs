@@ -1,13 +1,15 @@
-use hir_def::{module_data::Name, HirFileId};
+use hir_def::{module_data::Name, resolver::ResolveType, HirFileId};
 use syntax::{ast, match_ast, AstNode, SyntaxNode, SyntaxToken};
 
-use crate::{Field, Local, ModuleDef, Semantics};
+use crate::{Field, Local, ModuleDef, Semantics, Struct, TypeAlias};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Definition {
     Local(Local),
     Field(Field),
     ModuleDef(ModuleDef),
+    Struct(Struct),
+    TypeAlias(TypeAlias),
 }
 
 impl Definition {
@@ -52,11 +54,24 @@ fn resolve_name_ref(
         let def = sema.resolve_name_in_expr_scope(def, expr.syntax(), name)?;
 
         Some(def)
-    } else if let Some(expr) = ast::FieldExpr::cast(parent) {
+    } else if let Some(expr) = ast::FieldExpr::cast(parent.clone()) {
         let def = sema.find_container(file_id, expr.syntax())?;
         let field = sema.analyze(def).resolve_field(expr)?;
 
         Some(Definition::Field(field))
+    } else if let Some(ty) = ast::PathType::cast(parent.clone()) {
+        let resolver = sema.resolver(file_id, ty.syntax());
+
+        match resolver.resolve_type(&ty.name()?.into())? {
+            ResolveType::Struct(loc) => {
+                let id = sema.db.intern_struct(loc);
+                Some(Definition::Struct(Struct { id }))
+            }
+            ResolveType::TypeAlias(loc) => {
+                let id = sema.db.intern_type_alias(loc);
+                Some(Definition::TypeAlias(TypeAlias { id }))
+            }
+        }
     } else {
         None
     }

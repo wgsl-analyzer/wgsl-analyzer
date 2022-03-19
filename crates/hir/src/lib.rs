@@ -62,6 +62,15 @@ impl<'db> Semantics<'db> {
             }
         })
     }
+    pub fn resolver(&self, file_id: HirFileId, src: &SyntaxNode) -> Resolver {
+        match self.find_container(file_id, src) {
+            Some(def) => def.resolver(self.db.upcast()),
+            None => {
+                let module_info = self.db.module_info(file_id);
+                Resolver::default().push_module_scope(self.db.upcast(), file_id, module_info)
+            }
+        }
+    }
 
     pub fn module(&self, file_id: FileId) -> Module {
         Module {

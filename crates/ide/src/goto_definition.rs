@@ -153,6 +153,28 @@ impl ToNav for InFile<Definition> {
 
                 NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
             }
+            Definition::Struct(strukt) => {
+                let decl = strukt.source(db)?;
+                let frange = decl.original_file_range(db);
+
+                let focus_range = decl
+                    .value
+                    .name()
+                    .map(|name| decl.with_value(name).original_file_range(db).range);
+
+                NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
+            }
+            Definition::TypeAlias(type_alias) => {
+                let decl = type_alias.source(db)?;
+                let frange = decl.original_file_range(db);
+
+                let focus_range = decl
+                    .value
+                    .name()
+                    .map(|name| decl.with_value(name).original_file_range(db).range);
+
+                NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
+            }
         };
         Some(nav)
     }
