@@ -6,6 +6,9 @@
             "group": "build",
             "type": "shell",
             "command": "file=$(cargo build --package=wgsl_analyzer --message-format=json | jq '. | select(.target.kind == [\"bin\"]) | .executable' -r); mkdir -p ./editors/code/out; rm -f ./editors/code/out/wgsl_analyzer; cp \"$file\" ./editors/code/out/",
+            "windows": {
+                "command": "cargo build --package=wgsl_analyzer ; mkdir -p ./editors/code/out; rm ./editors/code/out/wgsl_analyzer; cp target/debug/wgsl_analyzer.exe ./editors/code/out/",
+            },
             "problemMatcher": "$rustc"
         },
         {
@@ -13,6 +16,9 @@
             "group": "build",
             "type": "shell",
             "command": "file=$(cargo build --package=wgsl_analyzer --message-format=json --release | jq '. | select(.target.kind == [\"bin\"]) | .executable' -r); mkdir -p ./editors/code/out; rm -f ./editors/code/out/wgsl_analyzer; cp \"$file\" ./editors/code/out/",
+            "windows": {
+                "command": "cargo build --package=wgsl_analyzer --release ; mkdir -p ./editors/code/out; rm ./editors/code/out/wgsl_analyzer; cp target/release/wgsl_analyzer.exe ./editors/code/out/",
+            },
             "problemMatcher": "$rustc"
         },
         {
