@@ -5,7 +5,10 @@ use builtins::{Builtin, BuiltinId};
 use hir_def::{
     data::LocalFieldId,
     db::{DefDatabase, DefWithBodyId, FunctionId, Lookup, StructId},
+    hir_file_id::ImportFile,
     resolver::Resolver,
+    type_ref::StorageClass,
+    HirFileId, InFile,
 };
 use infer::{InferenceResult, TyLoweringContext};
 use la_arena::ArenaMap;
@@ -24,6 +27,8 @@ pub trait HirDatabase: DefDatabase + Upcast<dyn DefDatabase> {
 
     fn field_types(&self, strukt: StructId) -> Arc<ArenaMap<LocalFieldId, Ty>>;
     fn function_type(&self, function: FunctionId) -> Ty;
+
+    fn struct_is_used_in_uniform(&self, strukt: StructId, file_id: HirFileId) -> bool;
 
     #[salsa::interned]
     fn intern_ty(&self, ty: TyKind) -> Ty;
@@ -82,4 +87,32 @@ fn function_type(db: &dyn HirDatabase, function: FunctionId) -> Ty {
         parameters,
     });
     db.intern_ty(ty)
+}
+
+fn struct_is_used_in_uniform(db: &dyn HirDatabase, strukt: StructId, file_id: HirFileId) -> bool {
+    let module_info = db.module_info(file_id.into());
+    module_info.items().iter().any(|item| match *item {
+        hir_def::module_data::ModuleItem::Import(import) => {
+            let import_id = db.intern_import(InFile::new(file_id, import));
+            let file_id = ImportFile { import_id };
+            db.struct_is_used_in_uniform(strukt, file_id.into())
+        }
+        hir_def::module_data::ModuleItem::GlobalVariable(decl) => {
+            let decl = db.intern_global_variable(InFile::new(file_id, decl));
+            let data = db.global_var_data(decl);
+
+            if !matches!(data.storage_class, Some(StorageClass::Uniform)) {
+                return false;
+            }
+
+            let inference = db.infer(DefWithBodyId::GlobalVariable(decl));
+            let ty = match inference.return_type {
+                Some(ty) => ty,
+                None => return false,
+            };
+
+            ty.contains_struct(db, strukt)
+        }
+        _ => false,
+    })
 }

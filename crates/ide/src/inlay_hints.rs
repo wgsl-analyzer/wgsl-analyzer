@@ -93,7 +93,11 @@ fn get_struct_layout_hints(
         let strukt = sema.db.intern_struct(InFile::new(file_id.into(), strukt));
         let fields = sema.db.field_types(strukt);
 
-        let address_space = LayoutAddressSpace::Storage;
+        let address_space = if sema.db.struct_is_used_in_uniform(strukt, file_id.into()) {
+            LayoutAddressSpace::Uniform
+        } else {
+            LayoutAddressSpace::Storage
+        };
 
         hir_ty::layout::struct_member_layout(
             &fields,

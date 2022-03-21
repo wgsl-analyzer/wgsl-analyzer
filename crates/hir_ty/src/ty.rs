@@ -57,6 +57,10 @@ impl Ty {
             _ => self,
         }
     }
+
+    pub fn contains_struct(self, db: &dyn HirDatabase, strukt: StructId) -> bool {
+        self.kind(db).contains_struct(db, strukt)
+    }
 }
 
 impl TyKind {
@@ -210,6 +214,24 @@ impl TyKind {
                 .field_types(*strukt)
                 .iter()
                 .any(|(_, ty)| ty.kind(db).contains_runtime_sized_array(db)),
+            _ => false,
+        }
+    }
+
+    pub fn contains_struct(&self, db: &dyn HirDatabase, strukt: StructId) -> bool {
+        match self {
+            TyKind::Atomic(atomic) => atomic.inner.contains_struct(db, strukt),
+            TyKind::Struct(id) => {
+                if *id == strukt {
+                    return true;
+                }
+                db.field_types(*id)
+                    .values()
+                    .any(|ty| ty.contains_struct(db, strukt))
+            }
+            TyKind::Array(array) => array.inner.contains_struct(db, strukt),
+            TyKind::Ref(r) => r.inner.contains_struct(db, strukt),
+            TyKind::Ptr(ptr) => ptr.inner.contains_struct(db, strukt),
             _ => false,
         }
     }
