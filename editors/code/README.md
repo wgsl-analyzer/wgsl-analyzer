@@ -62,6 +62,7 @@ wgsl-analyzer can display read-only virtual text snippets interspersed with code
     "wgsl-analyzer.inlayHints.enabled": true,
     "wgsl-analyzer.inlayHints.typeHints": true,
     "wgsl-analyzer.inlayHints.parameterHints": true,
+    "wgsl-analyzer.inlayHints.structLayoutHints": false,
     "wgsl-analyzer.inlayHints.typeVerbosity": "compact",
 }
 ```

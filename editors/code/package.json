@@ -144,6 +144,11 @@
                     "default": true,
                     "description": "Whether to show inlay hints for the names of function parameters"
                 },
+                "wgsl-analyzer.inlayHints.structLayoutHints": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to show inlay hints for the layout of struct fields"
+                },
                 "wgsl-analyzer.inlayHints.typeVerbosity": {
                     "type": "string",
                     "enum": [

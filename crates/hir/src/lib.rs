@@ -379,7 +379,7 @@ impl HasSource for TypeAlias {
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub struct Field {
-    id: FieldId,
+    pub id: FieldId,
 }
 
 impl HasSource for Field {

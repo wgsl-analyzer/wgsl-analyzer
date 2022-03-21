@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use hir_ty::ty::pretty::TypeVerbosity;
+use ide::inlay_hints::StructLayoutHints;
 use serde::Deserialize;
 
 use hir::diagnostics::DiagnosticsConfig;
@@ -19,9 +20,10 @@ pub struct InlayHintsConfig {
     pub enabled: bool,
     pub type_hints: bool,
     pub parameter_hints: bool,
+    pub struct_layout_hints: bool,
     pub type_verbosity: InlayHintsTypeVerbosity,
 }
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum InlayHintsTypeVerbosity {
     Full,    // ref<uniform, f32, read_write>,
@@ -72,6 +74,10 @@ impl Config {
             enabled: self.inlay_hints.enabled,
             type_hints: self.inlay_hints.type_hints,
             parameter_hints: self.inlay_hints.parameter_hints,
+            struct_layout_hints: self
+                .inlay_hints
+                .struct_layout_hints
+                .then(|| StructLayoutHints::Offset),
             type_verbosity: match self.inlay_hints.type_verbosity {
                 InlayHintsTypeVerbosity::Full => TypeVerbosity::Full,
                 InlayHintsTypeVerbosity::Compact => TypeVerbosity::Compact,

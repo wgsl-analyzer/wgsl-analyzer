@@ -1,9 +1,12 @@
 use base_db::{FileId, FileRange, TextRange};
-use hir::Semantics;
-use hir_def::module_data::Name;
-use hir_ty::ty::{
-    pretty::{pretty_type_with_verbosity, TypeVerbosity},
-    FunctionType, TyKind,
+use hir::{Field, HasSource, Semantics};
+use hir_def::{data::FieldId, module_data::Name, InFile};
+use hir_ty::{
+    layout::FieldLayout,
+    ty::{
+        pretty::{pretty_type_with_verbosity, TypeVerbosity},
+        FunctionType, TyKind,
+    },
 };
 use rowan::NodeOrToken;
 use smol_str::SmolStr;
@@ -16,13 +19,20 @@ pub struct InlayHintsConfig {
     pub enabled: bool,
     pub type_hints: bool,
     pub parameter_hints: bool,
+    pub struct_layout_hints: Option<StructLayoutHints>,
     pub type_verbosity: TypeVerbosity,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum StructLayoutHints {
+    Offset,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum InlayKind {
     TypeHint,
     ParameterHint,
+    StructLayoutHint,
 }
 
 #[derive(Debug)]
@@ -40,13 +50,12 @@ pub(crate) fn inlay_hints(
 ) -> Vec<InlayHint> {
     let sema = Semantics::new(db);
     let file = sema.parse(file_id);
-    let file = file.syntax();
 
     let mut hints = Vec::new();
 
     if let Some(range_limit) = range_limit {
         let range_limit = range_limit.range;
-        match file.covering_element(range_limit) {
+        match file.syntax().covering_element(range_limit) {
             NodeOrToken::Token(_) => return hints,
             NodeOrToken::Node(n) => {
                 for node in n
@@ -55,15 +64,70 @@ pub(crate) fn inlay_hints(
                 {
                     get_hints(&mut hints, file_id, &sema, config, node);
                 }
+
+                get_struct_layout_hints(&mut hints, file_id, &sema, config);
             }
         }
     } else {
-        for node in file.descendants() {
+        for node in file.syntax().descendants() {
             get_hints(&mut hints, file_id, &sema, config, node);
         }
+
+        get_struct_layout_hints(&mut hints, file_id, &sema, config);
     }
 
     hints
+}
+
+fn get_struct_layout_hints(
+    hints: &mut Vec<InlayHint>,
+    file_id: FileId,
+    sema: &Semantics,
+    config: &InlayHintsConfig,
+) -> Option<()> {
+    let display_kind = config.struct_layout_hints?;
+
+    let module_info = sema.db.module_info(file_id.into());
+
+    for strukt in module_info.structs() {
+        let strukt = sema.db.intern_struct(InFile::new(file_id.into(), strukt));
+        let fields = sema.db.field_types(strukt);
+
+        hir_ty::layout::struct_member_layout(&fields, sema.db, |field, field_layout| {
+            let FieldLayout {
+                offset,
+                align: _,
+                size: _,
+            } = field_layout;
+            let field = Field {
+                id: FieldId { strukt, field },
+            };
+
+            let source = field.source(sema.db.upcast())?.value;
+
+            // this is only necessary, because the field syntax nodes include the whitespace to the next line...
+            let actual_last_token =
+                std::iter::successors(source.syntax().last_token(), rowan::SyntaxToken::prev_token)
+                    .skip_while(|token| token.kind().is_trivia())
+                    .next()?;
+            let range = TextRange::new(
+                source.syntax().text_range().start(),
+                actual_last_token.text_range().end(),
+            );
+
+            hints.push(InlayHint {
+                range,
+                kind: InlayKind::StructLayoutHint,
+                label: match display_kind {
+                    StructLayoutHints::Offset => format!("{offset}").into(),
+                },
+            });
+
+            Some(())
+        });
+    }
+
+    Some(())
 }
 
 fn get_hints(

@@ -292,19 +292,23 @@ pub(crate) fn inlay_hint(
         position: match inlay_hint.kind {
             InlayKind::ParameterHint => position(line_index, inlay_hint.range.start()),
             InlayKind::TypeHint => position(line_index, inlay_hint.range.end()),
+            InlayKind::StructLayoutHint => position(line_index, inlay_hint.range.start()),
         },
         kind: match inlay_hint.kind {
             InlayKind::ParameterHint => Some(lsp_ext::inlay_hints::InlayHintKind::PARAMETER),
             InlayKind::TypeHint => Some(lsp_ext::inlay_hints::InlayHintKind::TYPE),
+            InlayKind::StructLayoutHint => None,
         },
         tooltip: None,
         padding_left: Some(match inlay_hint.kind {
             InlayKind::TypeHint => !render_colons,
             InlayKind::ParameterHint => false,
+            InlayKind::StructLayoutHint => false,
         }),
         padding_right: Some(match inlay_hint.kind {
             InlayKind::TypeHint => false,
             InlayKind::ParameterHint => true,
+            InlayKind::StructLayoutHint => true,
         }),
     }
 }

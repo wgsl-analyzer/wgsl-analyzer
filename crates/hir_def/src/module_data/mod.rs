@@ -159,6 +159,13 @@ impl ModuleInfo {
         &self.items
     }
 
+    pub fn structs(&self) -> impl Iterator<Item = ModuleItemId<Struct>> + '_ {
+        self.items.iter().filter_map(|item| match item {
+            ModuleItem::Struct(strukt) => Some(*strukt),
+            _ => None,
+        })
+    }
+
     pub fn get<M: ModuleDataNode>(&self, id: ModuleItemId<M>) -> &M {
         M::lookup(&self.data, id.index)
     }
