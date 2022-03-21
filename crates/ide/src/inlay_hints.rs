@@ -2,7 +2,7 @@ use base_db::{FileId, FileRange, TextRange};
 use hir::{Field, HasSource, Semantics};
 use hir_def::{data::FieldId, module_data::Name, InFile};
 use hir_ty::{
-    layout::FieldLayout,
+    layout::{FieldLayout, LayoutAddressSpace},
     ty::{
         pretty::{pretty_type_with_verbosity, TypeVerbosity},
         FunctionType, TyKind,
@@ -93,38 +93,47 @@ fn get_struct_layout_hints(
         let strukt = sema.db.intern_struct(InFile::new(file_id.into(), strukt));
         let fields = sema.db.field_types(strukt);
 
-        hir_ty::layout::struct_member_layout(&fields, sema.db, |field, field_layout| {
-            let FieldLayout {
-                offset,
-                align: _,
-                size: _,
-            } = field_layout;
-            let field = Field {
-                id: FieldId { strukt, field },
-            };
+        let address_space = LayoutAddressSpace::Storage;
 
-            let source = field.source(sema.db.upcast())?.value;
+        hir_ty::layout::struct_member_layout(
+            &fields,
+            sema.db,
+            address_space,
+            |field, field_layout| {
+                let FieldLayout {
+                    offset,
+                    align: _,
+                    size: _,
+                } = field_layout;
+                let field = Field {
+                    id: FieldId { strukt, field },
+                };
 
-            // this is only necessary, because the field syntax nodes include the whitespace to the next line...
-            let actual_last_token =
-                std::iter::successors(source.syntax().last_token(), rowan::SyntaxToken::prev_token)
-                    .skip_while(|token| token.kind().is_trivia())
-                    .next()?;
-            let range = TextRange::new(
-                source.syntax().text_range().start(),
-                actual_last_token.text_range().end(),
-            );
+                let source = field.source(sema.db.upcast())?.value;
 
-            hints.push(InlayHint {
-                range,
-                kind: InlayKind::StructLayoutHint,
-                label: match display_kind {
-                    StructLayoutHints::Offset => format!("{offset}").into(),
-                },
-            });
+                // this is only necessary, because the field syntax nodes include the whitespace to the next line...
+                let actual_last_token = std::iter::successors(
+                    source.syntax().last_token(),
+                    rowan::SyntaxToken::prev_token,
+                )
+                .skip_while(|token| token.kind().is_trivia())
+                .next()?;
+                let range = TextRange::new(
+                    source.syntax().text_range().start(),
+                    actual_last_token.text_range().end(),
+                );
 
-            Some(())
-        });
+                hints.push(InlayHint {
+                    range,
+                    kind: InlayKind::StructLayoutHint,
+                    label: match display_kind {
+                        StructLayoutHints::Offset => format!("{offset}").into(),
+                    },
+                });
+
+                Some(())
+            },
+        );
     }
 
     Some(())
