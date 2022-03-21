@@ -13,6 +13,7 @@ use ty::{FunctionType, Ty, TyKind};
 
 pub mod builtins;
 pub mod infer;
+pub mod layout;
 pub mod ty;
 pub mod validate;
 
