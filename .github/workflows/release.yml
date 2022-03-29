@@ -76,6 +76,7 @@ jobs:
           cargo build --release -p wgsl_analyzer --target ${{ matrix.rust_target }}
           mkdir -p editors/code/out
           cp "target/${{ matrix.rust_target }}/release/wgsl_analyzer$(If ('${{ matrix.platform }}' -eq 'win32') { '.exe' } else { '' } )" "editors/code/out/"
+          cp "target/${{ matrix.rust_target }}/release/wgsl_analyzer$(If ('${{ matrix.platform }}' -eq 'win32') { '.exe' } else { '' } )" "wgsl_analyzer-${{ matrix.platform }}-${{ matrix.arch }}$(If ('${{ matrix.platform }}' -eq 'win32') { '.exe' } else { '' } )"
       - shell: pwsh
         run: npm run package -- --target ${{ env.target }} -o wgsl-analyzer-${{ env.target }}.vsix
         working-directory: ./editors/code
@@ -86,7 +87,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: wgsl-analyzer-${{ env.target }}
-          path: target/${{ matrix.rust_target }}/release/wgsl_analyzer${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
+          path: wgsl_analyzer-${{ matrix.platform }}-${{ matrix.arch }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
 
   build_generic:
     runs-on: ubuntu-latest
