@@ -49,11 +49,11 @@ jobs:
             arch: x64
             npm_config_arch: x64
             rust_target: x86_64-apple-darwin
-          - os: macos-latest
-            platform: darwin
-            arch: arm64
-            npm_config_arch: arm64
-            rust_target: aarch64-apple-darwin
+          # - os: macos-latest
+          #   platform: darwin
+          #   arch: arm64
+          #   npm_config_arch: arm64
+          #   rust_target: aarch64-apple-darwin
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -99,7 +99,7 @@ jobs:
       - shell: pwsh
         run: |
           npm install
-          $targets = @("win32-ia32", "win32-arm64", "linux-arm64", "linux-armhf", "alpine-x64")
+          $targets = @("win32-ia32", "win32-arm64", "linux-arm64", "linux-armhf", "alpine-x64", "darwin-arm64")
           foreach($target in $targets) {
             npm run package -- --target $target -o wgsl-analyzer-$target.vsix
           }
