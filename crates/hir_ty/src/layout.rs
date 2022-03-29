@@ -71,7 +71,11 @@ impl TyKind {
                 let fields = db.field_types(*strukt);
                 let (align, _) =
                     struct_member_layout(&fields, db, LayoutAddressSpace::Storage, |_, _| {})?;
-                align
+
+                match address_space {
+                    LayoutAddressSpace::Storage => align,
+                    LayoutAddressSpace::Uniform => round_up(16, align),
+                }
             }
             TyKind::Array(array) => {
                 let inner_align = array.inner.align(address_space, db)?;
@@ -152,11 +156,6 @@ pub fn struct_member_layout<R>(
         let align = custom_align.or_else(|| field.align(address_space, db))?;
         let size = custom_size.or_else(|| field.align(address_space, db))?;
 
-        let required_align = match address_space {
-            LayoutAddressSpace::Storage => align,
-            LayoutAddressSpace::Uniform => round_up(16, align),
-        };
-
         struct_align = struct_align.max(align);
 
         on_field(
@@ -168,7 +167,7 @@ pub fn struct_member_layout<R>(
             },
         );
 
-        let new_offset = round_up(required_align, offset + size);
+        let new_offset = round_up(align, offset + size);
         last_member_size = Some(size);
         offset = new_offset;
     }
