@@ -118,11 +118,8 @@ impl TyKind {
             }
             TyKind::Array(array) => match array.size {
                 ArraySize::Const(n) => {
-                    let element_size = round_up(
-                        array.inner.align(address_space, db)?,
-                        array.inner.align(address_space, db)?,
-                    );
-                    n as Bytes * element_size
+                    let stride = array.stride(address_space, db)?;
+                    n as Bytes * stride
                 }
                 ArraySize::Dynamic => return None,
             },
