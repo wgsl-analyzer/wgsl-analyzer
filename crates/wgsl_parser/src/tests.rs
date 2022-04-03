@@ -1647,7 +1647,7 @@ fn let_stmt_recover_3() {
 }
 
 #[test]
-fn struct_decl() {
+fn struct_decl_semi() {
     check(
         r#"
 struct Test {
@@ -1693,6 +1693,59 @@ struct Test {
                             Float32@39..42 "f32"
                           GreaterThan@42..43 ">"
                     Semicolon@43..44 ";"
+                    Whitespace@44..45 "\n"
+                  BraceRight@45..46 "}"
+                  Whitespace@46..47 "\n""#]],
+    );
+}
+
+#[test]
+fn struct_decl() {
+    check(
+        r#"
+struct Test {
+    a: f32,
+    b: vec3<f32>,
+}
+"#,
+        expect![[r#"
+            SourceFile@0..47
+              Whitespace@0..1 "\n"
+              StructDecl@1..47
+                Struct@1..7 "struct"
+                Whitespace@7..8 " "
+                Name@8..13
+                  Ident@8..12 "Test"
+                  Whitespace@12..13 " "
+                StructDeclBody@13..47
+                  BraceLeft@13..14 "{"
+                  Whitespace@14..19 "\n    "
+                  StructDeclField@19..31
+                    VariableIdentDecl@19..25
+                      Binding@19..20
+                        Name@19..20
+                          Ident@19..20 "a"
+                      Colon@20..21 ":"
+                      Whitespace@21..22 " "
+                      Float32@22..25
+                        Float32@22..25 "f32"
+                    Comma@25..26 ","
+                    Whitespace@26..31 "\n    "
+                  StructDeclField@31..45
+                    VariableIdentDecl@31..43
+                      Binding@31..32
+                        Name@31..32
+                          Ident@31..32 "b"
+                      Colon@32..33 ":"
+                      Whitespace@33..34 " "
+                      Vec3@34..43
+                        Vec3@34..38 "vec3"
+                        GenericArgList@38..43
+                          LessThan@38..39 "<"
+                          Float32@39..42
+                            Float32@39..42 "f32"
+                          GreaterThan@42..43 ">"
+                    Comma@43..44 ","
                     Whitespace@44..45 "\n"
                   BraceRight@45..46 "}"
                   Whitespace@46..47 "\n""#]],
@@ -1780,65 +1833,6 @@ struct Test {
                   BraceRight@101..102 "}"
                 Semicolon@102..103 ";"
                 Whitespace@103..104 "\n""#]],
-    );
-}
-
-#[test]
-fn struct_decl_comma() {
-    check(
-        r#"
-struct Test {
-    a: f32,
-    b: vec3<f32>,
-};
-"#,
-        expect![[r#"
-            SourceFile@0..48
-              Whitespace@0..1 "\n"
-              StructDecl@1..48
-                Struct@1..7 "struct"
-                Whitespace@7..8 " "
-                Name@8..13
-                  Ident@8..12 "Test"
-                  Whitespace@12..13 " "
-                StructDeclBody@13..46
-                  BraceLeft@13..14 "{"
-                  Whitespace@14..19 "\n    "
-                  StructDeclField@19..31
-                    VariableIdentDecl@19..25
-                      Binding@19..20
-                        Name@19..20
-                          Ident@19..20 "a"
-                      Colon@20..21 ":"
-                      Whitespace@21..22 " "
-                      Float32@22..25
-                        Float32@22..25 "f32"
-                    Error@25..31
-                      Comma@25..26 ","
-                      Whitespace@26..31 "\n    "
-                  StructDeclField@31..45
-                    VariableIdentDecl@31..43
-                      Binding@31..32
-                        Name@31..32
-                          Ident@31..32 "b"
-                      Colon@32..33 ":"
-                      Whitespace@33..34 " "
-                      Vec3@34..43
-                        Vec3@34..38 "vec3"
-                        GenericArgList@38..43
-                          LessThan@38..39 "<"
-                          Float32@39..42
-                            Float32@39..42 "f32"
-                          GreaterThan@42..43 ">"
-                    Error@43..45
-                      Comma@43..44 ","
-                      Whitespace@44..45 "\n"
-                  BraceRight@45..46 "}"
-                Semicolon@46..47 ";"
-                Whitespace@47..48 "\n"
-
-            error at 25..26: expected LessThan or Semicolon, but found Comma
-            error at 43..44: expected Semicolon, but found Comma"#]],
     );
 }
 

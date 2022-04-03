@@ -130,11 +130,11 @@ fn struct_(p: &mut Parser, m: Marker) {
         return;
     }
 
-    list(
+    list_multisep(
         p,
         SyntaxKind::BraceLeft,
         SyntaxKind::BraceRight,
-        SyntaxKind::Semicolon,
+        &[SyntaxKind::Semicolon, SyntaxKind::Comma],
         SyntaxKind::StructDeclBody,
         struct_member,
     );
@@ -150,7 +150,11 @@ fn struct_member(p: &mut Parser) {
     let m = p.start();
     attribute_list_opt(p);
     variable_ident_decl(p);
-    p.expect(SyntaxKind::Semicolon);
+
+    if p.at(SyntaxKind::Semicolon) || p.at(SyntaxKind::Comma) {
+        p.bump();
+    }
+
     m.complete(p, SyntaxKind::StructDeclField);
 }
 
@@ -220,6 +224,28 @@ fn list(
         p.peek();
         f(p);
         p.eat(separator);
+    }
+    p.expect(end);
+    m.complete(p, kind);
+}
+
+fn list_multisep(
+    p: &mut Parser,
+    begin: SyntaxKind,
+    end: SyntaxKind,
+    separators: &[SyntaxKind],
+    kind: SyntaxKind,
+    f: impl Fn(&mut Parser),
+) {
+    let m = p.start();
+    p.expect(begin);
+    while !p.at_or_end(end) {
+        p.peek();
+        f(p);
+
+        if p.at_set(separators) {
+            p.bump();
+        }
     }
     p.expect(end);
     m.complete(p, kind);
