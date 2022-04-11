@@ -66,6 +66,8 @@ impl Config {
     pub fn diagnostics(&self) -> DiagnosticsConfig {
         DiagnosticsConfig {
             show_type_errors: self.show_type_errors,
+            show_naga_errors_parsing: true,
+            show_naga_errors_validation: true,
         }
     }
 

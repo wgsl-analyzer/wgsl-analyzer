@@ -1,6 +1,6 @@
 use std::{fmt::Debug, marker::PhantomData, sync::Arc};
 
-use base_db::{SourceDatabase, Upcast};
+use base_db::{SourceDatabase, TextRange, TextSize, Upcast};
 use salsa::InternKey;
 use syntax::{
     ast::{self, Item},
@@ -30,6 +30,8 @@ pub trait DefDatabase: InternDatabase + Upcast<dyn SourceDatabase> {
     fn ast_id_map(&self, file_id: HirFileId) -> Arc<AstIdMap>;
 
     fn resolve_full_source(&self, file_id: HirFileId) -> Result<String, ()>;
+
+    fn text_range_from_full(&self, file_id: HirFileId, range: TextRange) -> Result<TextRange, ()>;
 
     #[salsa::invoke(ModuleInfo::module_info_query)]
     fn module_info(&self, file_id: HirFileId) -> Arc<ModuleInfo>;
@@ -121,6 +123,49 @@ fn resolve_full_source(db: &dyn DefDatabase, file_id: HirFileId) -> Result<Strin
     }
 
     Ok(root.syntax().to_string())
+}
+
+fn text_range_from_full(
+    db: &dyn DefDatabase,
+    file_id: HirFileId,
+    mut range: TextRange,
+) -> Result<TextRange, ()> {
+    let root = db.parse_or_resolve(file_id)?.tree();
+
+    let mut imports = root
+        .items()
+        .filter_map(|item| match item {
+            Item::Import(import) => Some(import),
+            _ => None,
+        })
+        .filter_map(|import| {
+            let import_mod_id = crate::module_data::find_item(db, file_id, &import)?;
+            let import_id = db.intern_import(Location::new(file_id, import_mod_id));
+            let import_file = HirFileId::from(ImportFile { import_id });
+
+            Some((import.syntax().clone(), import_file))
+        });
+
+    while let Some((import, import_file)) = imports.next() {
+        if import.text_range().start() > range.end() {
+            break;
+        }
+
+        let import_len = match db.parse_or_resolve(import_file) {
+            Ok(it) => it.syntax().text().len(),
+            Err(_) => continue,
+        };
+
+        let import_whitespace = import
+            .last_token()
+            .filter(|token| token.kind().is_whitespace())
+            .map_or(0, |ws| ws.text().len());
+
+        range -= import_len + TextSize::from(import_whitespace as u32);
+        range += import.syntax().text().len();
+    }
+
+    Ok(range)
 }
 
 fn ast_id_map(db: &dyn DefDatabase, file_id: HirFileId) -> Arc<AstIdMap> {

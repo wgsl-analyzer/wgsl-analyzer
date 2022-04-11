@@ -1,5 +1,6 @@
 pub mod global_variable;
 
+use base_db::TextRange;
 use hir_def::{body::BodySourceMap, module_data::Name, HirFileId, InFile};
 use hir_ty::{
     builtins::BuiltinId,
@@ -20,6 +21,8 @@ use self::global_variable::GlobalVariableDiagnostic;
 
 pub struct DiagnosticsConfig {
     pub show_type_errors: bool,
+    pub show_naga_errors_parsing: bool,
+    pub show_naga_errors_validation: bool,
 }
 
 pub enum AnyDiagnostic {
@@ -85,6 +88,12 @@ pub enum AnyDiagnostic {
     UnresolvedImport {
         import: InFile<AstPtr<ast::Import>>,
     },
+
+    NagaValidationError {
+        file_id: HirFileId,
+        range: TextRange,
+        message: String,
+    },
 }
 
 impl AnyDiagnostic {
@@ -104,6 +113,7 @@ impl AnyDiagnostic {
             AnyDiagnostic::InvalidStorageClass { var, .. } => var.file_id,
             AnyDiagnostic::InvalidType { file_id, .. } => *file_id,
             AnyDiagnostic::UnresolvedImport { import, .. } => import.file_id,
+            AnyDiagnostic::NagaValidationError { file_id, .. } => *file_id,
         }
     }
 }

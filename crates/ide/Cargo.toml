@@ -21,3 +21,6 @@ vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "20fa7cbca
 expect-test = "1.1.0"
 itertools = "0.10.1"
 smol_str = "0.1.21"
+
+# naga = { git = "https://github.com/gfx-rs/naga", rev = "8f5d8f61a82edd49750aeae757c94133a6481c26", features = ["wgsl-in", "validate"] }
+naga = { path = "/home/jakob/dev/rust/contrib/naga", features = ["wgsl-in", "validate", "span"] }

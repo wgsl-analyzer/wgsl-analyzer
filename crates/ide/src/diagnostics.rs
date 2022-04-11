@@ -1,4 +1,4 @@
-use base_db::TextRange;
+use base_db::{TextRange, TextSize};
 use hir::{
     diagnostics::{AnyDiagnostic, DiagnosticsConfig},
     HirDatabase, Semantics,
@@ -48,6 +48,92 @@ impl DiagnosticMessage {
     }
 }
 
+fn naga_diagnostics(
+    db: &dyn HirDatabase,
+    file_id: FileId,
+    config: &DiagnosticsConfig,
+    acc: &mut Vec<AnyDiagnostic>,
+) -> Result<(), ()> {
+    let source = match db.resolve_full_source(file_id.into()) {
+        Ok(source) => source,
+        Err(_) => return Ok(()),
+    };
+
+    let original_range = |range: std::ops::Range<usize>| {
+        let range_in_full = TextRange::new(
+            TextSize::from(range.start as u32),
+            TextSize::from(range.end as u32),
+        );
+        db.text_range_from_full(file_id.into(), range_in_full)
+    };
+
+    match naga::front::wgsl::parse_str(&source) {
+        Ok(module) => {
+            if !config.show_naga_errors_validation {
+                return Ok(());
+            }
+
+            let flags = naga::valid::ValidationFlags::all();
+            let capabilities = naga::valid::Capabilities::all();
+            let mut validator = naga::valid::Validator::new(flags, capabilities);
+            let error = match validator.validate(&module) {
+                Err(e) => e,
+                _ => return Ok(()),
+            };
+
+            let full_range = || TextRange::new(0.into(), TextSize::from(source.len() as u32 - 1));
+
+            let message = err_message_cause_chain(&error);
+
+            if error.spans().len() == 0 {
+                acc.push(AnyDiagnostic::NagaValidationError {
+                    file_id: file_id.into(),
+                    range: full_range(),
+                    message: message,
+                })
+            } else {
+                error
+                    .spans()
+                    .filter_map(|(span, label)| {
+                        let range = span
+                            .to_range()
+                            .map(|range| original_range(range))
+                            .transpose()
+                            .ok()?
+                            .unwrap_or_else(full_range);
+                        Some((range, label))
+                    })
+                    .for_each(|(range, label)| {
+                        acc.push(AnyDiagnostic::NagaValidationError {
+                            file_id: file_id.into(),
+                            range,
+                            message: format!("{}: {}", message, label),
+                        })
+                    });
+            }
+        }
+        Err(error) => {
+            if !config.show_naga_errors_parsing {
+                return Ok(());
+            }
+
+            let message = err_message_cause_chain(&error);
+            error
+                .labels()
+                .filter_map(|(span, label)| Some((original_range(span).ok()?, label)))
+                .for_each(|(range, label)| {
+                    acc.push(AnyDiagnostic::NagaValidationError {
+                        file_id: file_id.into(),
+                        range,
+                        message: format!("{}: {}", message, label),
+                    })
+                });
+        }
+    }
+
+    Ok(())
+}
+
 pub fn diagnostics(
     db: &dyn HirDatabase,
     config: &DiagnosticsConfig,
@@ -80,6 +166,10 @@ pub fn diagnostics(
 
     if config.show_type_errors {
         sema.module(file_id).diagnostics(db, config, &mut all);
+    }
+
+    if config.show_naga_errors_parsing || config.show_naga_errors_validation {
+        let _ = naga_diagnostics(db, file_id, config, &mut all);
     }
 
     for diagnostic in all {
@@ -242,9 +332,28 @@ pub fn diagnostics(
                 let frange = original_file_range(db.upcast(), file_id, source.syntax());
                 DiagnosticMessage::new("unresolved import".to_string(), frange.range)
             }
+            AnyDiagnostic::NagaValidationError { message, range, .. } => {
+                DiagnosticMessage::new(message, range)
+            }
         };
         diagnostics.push(msg);
     }
 
     diagnostics
+}
+
+fn err_message_cause_chain(error: &dyn std::error::Error) -> String {
+    let mut msg = error.to_string();
+
+    let mut e = error.source();
+    if e.is_some() {
+        msg.push_str(": ");
+    }
+
+    while let Some(source) = e {
+        msg.push_str(&source.to_string());
+        e = source.source();
+    }
+
+    msg
 }
