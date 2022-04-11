@@ -12,6 +12,12 @@ export interface InlayHintsConfig {
     typeVerbosity: "full" | "short" | "compact";
 }
 
+export interface DiagnosticsConfig {
+    typeErrors: boolean;
+    nagaParsing: boolean;
+    nagaValidation: boolean;
+}
+
 export class Config {
     public static readonly rootSection = "wgsl-analyzer";
 
@@ -26,8 +32,8 @@ export class Config {
         return this.cfg.get<T>(path)!;
     }
 
-    get showTypeErrors(): boolean {
-        return this.get<boolean>("showTypeErrors");
+    get diagnostics(): DiagnosticsConfig {
+        return this.get<DiagnosticsConfig>("diagnostics");
     }
 
     get serverPath(): string | null {

@@ -4,8 +4,6 @@ use hir_ty::ty::pretty::TypeVerbosity;
 use ide::inlay_hints::StructLayoutHints;
 use serde::Deserialize;
 
-use hir::diagnostics::DiagnosticsConfig;
-
 use crate::line_index::OffsetEncoding;
 
 #[derive(Default, Clone, Debug, Deserialize)]
@@ -40,11 +38,19 @@ impl Default for InlayHintsTypeVerbosity {
 #[derive(Default, Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Config {
-    pub show_type_errors: bool,
     pub custom_imports: HashMap<String, String>,
     pub shader_defs: HashSet<String>,
     pub trace: TraceConfig,
     pub inlay_hints: InlayHintsConfig,
+    pub diagnostics: DiagnosticsConfig,
+}
+
+#[derive(Default, Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DiagnosticsConfig {
+    pub type_errors: bool,
+    pub naga_parsing_errors: bool,
+    pub naga_validation_errors: bool,
 }
 
 impl Config {
@@ -63,11 +69,11 @@ impl Config {
         }
     }
 
-    pub fn diagnostics(&self) -> DiagnosticsConfig {
-        DiagnosticsConfig {
-            show_type_errors: self.show_type_errors,
-            show_naga_errors_parsing: true,
-            show_naga_errors_validation: true,
+    pub fn diagnostics(&self) -> hir::diagnostics::DiagnosticsConfig {
+        hir::diagnostics::DiagnosticsConfig {
+            type_errors: self.diagnostics.type_errors,
+            naga_parsing_errors: self.diagnostics.naga_parsing_errors,
+            naga_validation_errors: self.diagnostics.naga_validation_errors,
         }
     }
 

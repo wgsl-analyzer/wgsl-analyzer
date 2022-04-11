@@ -487,7 +487,7 @@ impl Module {
                 ModuleDef::Struct(_strukt) => {}
                 ModuleDef::TypeAlias(_type_alias) => {}
             }
-            if config.show_type_errors {
+            if config.type_errors {
                 if let Some(def) = item.as_def_with_body_id() {
                     let (_, source_map) = db.body_with_source_map(def);
                     let infer = db.infer(def);

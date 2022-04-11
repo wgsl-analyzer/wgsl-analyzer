@@ -71,7 +71,7 @@ fn naga_diagnostics(
 
     match naga::front::wgsl::parse_str(&source) {
         Ok(module) => {
-            if !config.show_naga_errors_validation {
+            if !config.naga_validation_errors {
                 return Ok(());
             }
 
@@ -115,7 +115,7 @@ fn naga_diagnostics(
             }
         }
         Err(error) => {
-            if !config.show_naga_errors_parsing {
+            if !config.naga_parsing_errors {
                 return Ok(());
             }
 
@@ -166,11 +166,11 @@ pub fn diagnostics(
 
     let mut all = Vec::new();
 
-    if config.show_type_errors {
+    if config.type_errors {
         sema.module(file_id).diagnostics(db, config, &mut all);
     }
 
-    if config.show_naga_errors_parsing || config.show_naga_errors_validation {
+    if config.naga_parsing_errors || config.naga_validation_errors {
         let _ = naga_diagnostics(db, file_id, config, &mut all);
     }
 

@@ -5,15 +5,15 @@ import * as lsp_ext from "./lsp_ext";
 import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
 import { Executable, LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
-import { Config, InlayHintsConfig, TraceConfig } from "./config";
+import { Config, DiagnosticsConfig, InlayHintsConfig, TraceConfig } from "./config";
 import { isWgslEditor, WgslEditor } from "./util";
 
 
 interface WGSLAnalyzerConfiguration {
-    showTypeErrors: boolean,
     customImports: Record<string, string>,
     shaderDefs: [string],
     trace: TraceConfig,
+    diagnostics: DiagnosticsConfig,
     inlayHints: InlayHintsConfig,
 }
 
@@ -31,7 +31,7 @@ async function lspOptions(config: Config): Promise<WGSLAnalyzerConfiguration> {
     return {
         customImports,
         shaderDefs: config.shaderDefs,
-        showTypeErrors: config.showTypeErrors,
+        diagnostics: config.diagnostics,
         trace: config.trace,
         inlayHints: config.inlayHints,
     };

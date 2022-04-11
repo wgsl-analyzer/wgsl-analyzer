@@ -98,10 +98,20 @@
                     ],
                     "description": "Path to the wgsl-analyzer executable."
                 },
-                "wgsl-analyzer.showTypeErrors": {
+                "wgsl-analyzer.diagnostics.typeErrors": {
                     "type": "boolean",
                     "default": true,
                     "description": "Controls whether to show type errors."
+                },
+                "wgsl-analyzer.diagnostics.nagaParsingErrors": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Controls whether to show naga's parsing errors."
+                },
+                "wgsl-analyzer.diagnostics.nagaValidationErrors": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Controls whether to show naga's validation errors."
                 },
                 "wgsl-analyzer.customImports": {
                     "type": "object",

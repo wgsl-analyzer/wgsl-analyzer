@@ -20,9 +20,9 @@ use crate::{Function, GlobalConstant, GlobalVariable, HasSource, TypeAlias};
 use self::global_variable::GlobalVariableDiagnostic;
 
 pub struct DiagnosticsConfig {
-    pub show_type_errors: bool,
-    pub show_naga_errors_parsing: bool,
-    pub show_naga_errors_validation: bool,
+    pub type_errors: bool,
+    pub naga_parsing_errors: bool,
+    pub naga_validation_errors: bool,
 }
 
 pub enum AnyDiagnostic {
