@@ -81,8 +81,8 @@ sin(f32) -> f32
 sin(vecN<f32>) -> vecN<f32>
 sinh(f32) -> f32
 sinh(vecN<f32>) -> vecN<f32>
-smoothStep(f32, f32, f32) -> f32
-smoothStep(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
+smoothstep(f32, f32, f32) -> f32
+smoothstep(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
 sqrt(f32) -> f32
 sqrt(vecN<f32>) -> vecN<f32>
 step(f32, f32) -> f32
