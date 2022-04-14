@@ -3,7 +3,8 @@ use hir::diagnostics::DiagnosticsConfig;
 use ide::diagnostics::Severity;
 use ide::HoverResult;
 use lsp_types::{
-    DiagnosticTag, GotoDefinitionResponse, LanguageString, MarkedString, TextDocumentIdentifier,
+    DiagnosticRelatedInformation, DiagnosticTag, GotoDefinitionResponse, LanguageString,
+    MarkedString, TextDocumentIdentifier,
 };
 use std::process::exit;
 use vfs::FileId;
@@ -166,24 +167,36 @@ pub fn publish_diagnostics(
     let diagnostics = snap.analysis.diagnostics(config, file_id)?;
     let lsp_diagnostics = diagnostics
         .into_iter()
-        .map(|diagnostic| lsp_types::Diagnostic {
-            range: to_proto::range(&line_index, diagnostic.range),
-            severity: Some(diagnostic_severity(diagnostic.severity)),
-            code: None,
-            code_description: None,
-            source: None,
-            message: diagnostic.message,
-            related_information: None,
-            tags: if diagnostic.unused {
-                Some(vec![DiagnosticTag::UNNECESSARY])
-            } else {
-                None
-            },
-            data: None,
+        .map(|diagnostic| {
+            let related = diagnostic
+                .related
+                .into_iter()
+                .map(|(message, range)| {
+                    Ok(DiagnosticRelatedInformation {
+                        location: to_proto::location(snap, range)?,
+                        message,
+                    })
+                })
+                .collect::<Result<Vec<_>>>()?;
+            Ok(lsp_types::Diagnostic {
+                range: to_proto::range(&line_index, diagnostic.range),
+                severity: Some(diagnostic_severity(diagnostic.severity)),
+                code: None,
+                code_description: None,
+                source: None,
+                message: diagnostic.message,
+                related_information: (!related.is_empty()).then(|| related),
+                tags: if diagnostic.unused {
+                    Some(vec![DiagnosticTag::UNNECESSARY])
+                } else {
+                    None
+                },
+                data: None,
+            })
         })
         .collect();
 
-    Ok(lsp_diagnostics)
+    lsp_diagnostics
 }
 
 fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSeverity {

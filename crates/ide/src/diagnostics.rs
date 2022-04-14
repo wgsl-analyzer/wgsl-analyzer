@@ -1,4 +1,4 @@
-use base_db::{TextRange, TextSize};
+use base_db::{FileRange, TextRange, TextSize};
 use hir::{
     diagnostics::{AnyDiagnostic, DiagnosticsConfig},
     HirDatabase, Semantics,
@@ -15,6 +15,7 @@ pub struct DiagnosticMessage {
     pub range: TextRange,
     pub unused: bool,
     pub severity: Severity,
+    pub related: Vec<(String, FileRange)>,
 }
 
 #[derive(Clone, Copy)]
@@ -30,6 +31,7 @@ impl DiagnosticMessage {
             range,
             severity: Severity::Error,
             unused: false,
+            related: Vec::new(),
         }
     }
 
