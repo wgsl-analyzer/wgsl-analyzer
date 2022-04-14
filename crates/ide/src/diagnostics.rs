@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use base_db::{FileRange, TextRange, TextSize};
 use hir::{
-    diagnostics::{AnyDiagnostic, DiagnosticsConfig},
+    diagnostics::{AnyDiagnostic, DiagnosticsConfig, NagaVersion},
     HirDatabase, Semantics,
 };
 use hir_def::original_file_range;
@@ -95,6 +95,46 @@ impl NagaError for naga08::front::wgsl::ParseError {
     }
 }
 impl NagaError for naga08::WithSpan<naga08::valid::ValidationError> {
+    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
+        Box::new(
+            self.spans()
+                .filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
+        )
+    }
+    fn has_spans(&self) -> bool {
+        self.spans().len() > 0
+    }
+}
+
+struct NagaMain;
+impl Naga for NagaMain {
+    type Module = nagamain::Module;
+    type ParseError = nagamain::front::wgsl::ParseError;
+    type ValidationError = nagamain::WithSpan<nagamain::valid::ValidationError>;
+
+    fn parse(source: &str) -> Result<Self::Module, Self::ParseError> {
+        nagamain::front::wgsl::parse_str(source)
+    }
+
+    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
+        let flags = nagamain::valid::ValidationFlags::all();
+        let capabilities = nagamain::valid::Capabilities::all();
+        let mut validator = nagamain::valid::Validator::new(flags, capabilities);
+        validator.validate(&module).map(drop)
+    }
+}
+impl NagaError for nagamain::front::wgsl::ParseError {
+    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
+        Box::new(
+            self.labels()
+                .map(|(range, label)| (range, label.to_string())),
+        )
+    }
+    fn has_spans(&self) -> bool {
+        self.labels().len() > 0
+    }
+}
+impl NagaError for nagamain::WithSpan<nagamain::valid::ValidationError> {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
             self.spans()
@@ -260,7 +300,14 @@ pub fn diagnostics(
     }
 
     if config.naga_parsing_errors || config.naga_validation_errors {
-        let _ = naga_diagnostics::<Naga08>(db, file_id, config, &mut diagnostics);
+        match &config.naga_version {
+            NagaVersion::Naga08 => {
+                let _ = naga_diagnostics::<Naga08>(db, file_id, config, &mut diagnostics);
+            }
+            NagaVersion::NagaMain => {
+                let _ = naga_diagnostics::<NagaMain>(db, file_id, config, &mut diagnostics);
+            }
+        }
     }
 
     diagnostics.into_iter().map(|diagnostic| {

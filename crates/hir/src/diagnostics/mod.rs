@@ -23,6 +23,13 @@ pub struct DiagnosticsConfig {
     pub type_errors: bool,
     pub naga_parsing_errors: bool,
     pub naga_validation_errors: bool,
+    pub naga_version: NagaVersion,
+}
+
+#[derive(Debug)]
+pub enum NagaVersion {
+    Naga08,
+    NagaMain,
 }
 
 pub enum AnyDiagnostic {

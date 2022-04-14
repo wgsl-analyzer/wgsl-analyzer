@@ -22,5 +22,5 @@ expect-test = "1.1.0"
 itertools = "0.10.1"
 smol_str = "0.1.21"
 
-# naga = { git = "https://github.com/gfx-rs/naga", rev = "8f5d8f61a82edd49750aeae757c94133a6481c26", features = ["wgsl-in", "validate"] }
-naga08 = { package = "naga", path = "/home/jakob/dev/rust/contrib/naga", features = ["wgsl-in", "validate", "span"] }
+naga08 = { package = "naga", git = "https://github.com/jakobhellermann/naga", branch = "expose-error-messages-0.8-backport", features = ["wgsl-in", "validate", "span"] }
+nagamain = { package = "naga", git = "https://github.com/jakobhellermann/naga", branch = "error-message-expose", features = ["wgsl-in", "validate", "span"] }
