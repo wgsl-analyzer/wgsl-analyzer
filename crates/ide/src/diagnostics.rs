@@ -69,6 +69,79 @@ fn naga_diagnostics(
         db.text_range_from_full(file_id.into(), range_in_full)
     };
 
+    let naga_prefix = "naga: ";
+
+    #[allow(dead_code)]
+    enum NagaErrorPolicy {
+        SeparateSpans,
+        SmallestSpan,
+        Related,
+    }
+
+    impl NagaErrorPolicy {
+        fn emit(
+            &self,
+            message: String,
+            spans: impl Iterator<Item = (TextRange, String)>,
+            empty: bool,
+            file_id: FileId,
+            full_range: TextRange,
+            acc: &mut Vec<AnyDiagnostic>,
+        ) {
+            if empty {
+                acc.push(AnyDiagnostic::NagaValidationError {
+                    file_id: file_id.into(),
+                    range: full_range,
+                    message,
+                    related: Vec::new(),
+                });
+                return;
+            }
+            match *self {
+                NagaErrorPolicy::SeparateSpans => {
+                    spans.for_each(|(range, label)| {
+                        acc.push(AnyDiagnostic::NagaValidationError {
+                            file_id: file_id.into(),
+                            range,
+                            message: format!("{}: {}", message, label),
+                            related: Vec::new(),
+                        });
+                    });
+                }
+                NagaErrorPolicy::SmallestSpan => {
+                    if let Some((range, _)) = spans.min_by_key(|(range, _)| range.len()) {
+                        acc.push(AnyDiagnostic::NagaValidationError {
+                            file_id: file_id.into(),
+                            range,
+                            message,
+                            related: Vec::new(),
+                        });
+                    }
+                }
+                NagaErrorPolicy::Related => {
+                    let related: Vec<_> = spans
+                        .map(|(range, message)| (message.clone(), FileRange { range, file_id }))
+                        .collect();
+                    let min_range = related
+                        .iter()
+                        .map(|(_, frange)| frange.range)
+                        .min_by_key(|range| range.len())
+                        .unwrap_or_else(|| full_range);
+
+                    acc.push(AnyDiagnostic::NagaValidationError {
+                        file_id: file_id.into(),
+                        range: min_range,
+                        message,
+                        related,
+                    });
+                }
+            }
+        }
+    }
+    let policy = NagaErrorPolicy::Related;
+
+    let full_range = TextRange::new(0.into(), TextSize::from(source.len() as u32 - 1));
+
     match naga::front::wgsl::parse_str(&source) {
         Ok(module) => {
             if !config.naga_validation_errors {
@@ -83,53 +156,47 @@ fn naga_diagnostics(
                 _ => return Ok(()),
             };
 
-            let full_range = || TextRange::new(0.into(), TextSize::from(source.len() as u32 - 1));
+            let message = err_message_cause_chain(naga_prefix, &error);
 
-            let message = err_message_cause_chain(&error);
+            let spans = error.spans().filter_map(|(span, label)| {
+                let range = span
+                    .to_range()
+                    .map(|range| original_range(range))
+                    .transpose()
+                    .ok()?
+                    .unwrap_or(full_range);
+                Some((range, label.clone()))
+            });
 
-            if error.spans().len() == 0 {
-                acc.push(AnyDiagnostic::NagaValidationError {
-                    file_id: file_id.into(),
-                    range: full_range(),
-                    message: message,
-                })
-            } else {
-                error
-                    .spans()
-                    .filter_map(|(span, label)| {
-                        let range = span
-                            .to_range()
-                            .map(|range| original_range(range))
-                            .transpose()
-                            .ok()?
-                            .unwrap_or_else(full_range);
-                        Some((range, label))
-                    })
-                    .for_each(|(range, label)| {
-                        acc.push(AnyDiagnostic::NagaValidationError {
-                            file_id: file_id.into(),
-                            range,
-                            message: format!("{}: {}", message, label),
-                        })
-                    });
-            }
+            policy.emit(
+                message,
+                spans,
+                error.spans().len() == 0,
+                file_id,
+                full_range,
+                acc,
+            );
         }
         Err(error) => {
             if !config.naga_parsing_errors {
                 return Ok(());
             }
 
-            let message = err_message_cause_chain(&error);
-            error
-                .labels()
-                .filter_map(|(span, label)| Some((original_range(span).ok()?, label)))
-                .for_each(|(range, label)| {
-                    acc.push(AnyDiagnostic::NagaValidationError {
-                        file_id: file_id.into(),
-                        range,
-                        message: format!("{}: {}", message, label),
-                    })
-                });
+            let message = err_message_cause_chain(naga_prefix, &error);
+
+            let spans = error.labels().filter_map(|(range, label)| {
+                let range = original_range(range).ok().unwrap_or(full_range);
+                Some((range, label.to_string()))
+            });
+
+            policy.emit(
+                message,
+                spans,
+                error.labels().len() == 0,
+                file_id,
+                full_range,
+                acc,
+            );
         }
     }
 
@@ -337,8 +404,10 @@ pub fn diagnostics(
                 let frange = original_file_range(db.upcast(), file_id, source.syntax());
                 DiagnosticMessage::new("unresolved import".to_string(), frange.range)
             }
-            AnyDiagnostic::NagaValidationError { message, range, .. } => {
-                DiagnosticMessage::new(message, range)
+            AnyDiagnostic::NagaValidationError { message, range, related, .. } => {
+                let mut msg = DiagnosticMessage::new(message, range);
+                msg.related = related;
+                msg
             }
             AnyDiagnostic::ParseError { message, range, .. } => {
                 DiagnosticMessage::new(message, range)
@@ -356,8 +425,8 @@ pub fn diagnostics(
     }).collect()
 }
 
-fn err_message_cause_chain(error: &dyn std::error::Error) -> String {
-    let mut msg = error.to_string();
+fn err_message_cause_chain(prefix: &str, error: &dyn std::error::Error) -> String {
+    let mut msg = format!("{}{}", prefix, error);
 
     let mut e = error.source();
     if e.is_some() {

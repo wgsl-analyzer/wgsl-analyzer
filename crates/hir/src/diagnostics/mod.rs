@@ -1,6 +1,6 @@
 pub mod global_variable;
 
-use base_db::TextRange;
+use base_db::{FileRange, TextRange};
 use hir_def::{body::BodySourceMap, module_data::Name, HirFileId, InFile};
 use hir_ty::{
     builtins::BuiltinId,
@@ -105,6 +105,7 @@ pub enum AnyDiagnostic {
         file_id: HirFileId,
         range: TextRange,
         message: String,
+        related: Vec<(String, FileRange)>,
     },
 }
 
