@@ -161,8 +161,15 @@ fn text_range_from_full(
             .filter(|token| token.kind().is_whitespace())
             .map_or(0, |ws| ws.text().len());
 
-        range -= import_len + TextSize::from(import_whitespace as u32);
-        range += import.syntax().text().len();
+        let to_remove = import_len + TextSize::from(import_whitespace as u32);
+
+        if let Some(new_range) = range.checked_sub(to_remove) {
+            range = new_range + import.syntax().text().len();
+        } else {
+            // original range is inside the import
+            range = import.syntax().text_range();
+            break;
+        }
     }
 
     Ok(range)
