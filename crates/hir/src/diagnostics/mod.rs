@@ -26,6 +26,18 @@ pub struct DiagnosticsConfig {
 }
 
 pub enum AnyDiagnostic {
+    ParseError {
+        message: String,
+        range: TextRange,
+        file_id: HirFileId,
+    },
+
+    UnconfiguredCode {
+        def: String,
+        range: TextRange,
+        file_id: HirFileId,
+    },
+
     AssignmentNotAReference {
         lhs: InFile<AstPtr<ast::Expr>>,
         actual: Ty,
@@ -114,6 +126,8 @@ impl AnyDiagnostic {
             AnyDiagnostic::InvalidType { file_id, .. } => *file_id,
             AnyDiagnostic::UnresolvedImport { import, .. } => import.file_id,
             AnyDiagnostic::NagaValidationError { file_id, .. } => *file_id,
+            AnyDiagnostic::ParseError { file_id, .. } => *file_id,
+            AnyDiagnostic::UnconfiguredCode { file_id, .. } => *file_id,
         }
     }
 }

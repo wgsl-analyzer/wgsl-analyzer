@@ -143,41 +143,44 @@ pub fn diagnostics(
 ) -> Vec<DiagnosticMessage> {
     let (parse, unconfigured) = db.parse_with_unconfigured(file_id);
 
-    let mut diagnostics: Vec<_> = parse
-        .errors()
-        .iter()
-        .map(|error| DiagnosticMessage::new(error.message(), error.range))
-        .collect();
+    let mut diagnostics = Vec::new();
 
-    for unconfigured in unconfigured.iter() {
-        let msg = DiagnosticMessage::new(
-            format!(
-                "code is inactive due to `#ifdef` directives: `{}` is not enabled",
-                unconfigured.def
-            ),
-            unconfigured.range,
-        )
-        .with_severity(Severity::WeakWarning)
-        .unused();
-        diagnostics.push(msg);
-    }
+    diagnostics.extend(
+        parse
+            .errors()
+            .iter()
+            .map(|error| AnyDiagnostic::ParseError {
+                message: error.message(),
+                range: error.range,
+                file_id: file_id.into(),
+            }),
+    );
+
+    diagnostics.extend(
+        unconfigured
+            .iter()
+            .map(|unconfigured| AnyDiagnostic::UnconfiguredCode {
+                def: unconfigured.def.clone(),
+                range: unconfigured.range,
+                file_id: file_id.into(),
+            }),
+    );
 
     let sema = Semantics::new(db);
 
-    let mut all = Vec::new();
-
     if config.type_errors {
-        sema.module(file_id).diagnostics(db, config, &mut all);
+        sema.module(file_id)
+            .diagnostics(db, config, &mut diagnostics);
     }
 
     if config.naga_parsing_errors || config.naga_validation_errors {
-        let _ = naga_diagnostics(db, file_id, config, &mut all);
+        let _ = naga_diagnostics(db, file_id, config, &mut diagnostics);
     }
 
-    for diagnostic in all {
+    diagnostics.into_iter().map(|diagnostic| {
         let file_id = diagnostic.file_id();
         let root = db.parse_or_resolve(file_id).unwrap().syntax();
-        let msg = match diagnostic {
+         match diagnostic {
             AnyDiagnostic::AssignmentNotAReference { lhs, actual } => {
                 let source = lhs.value.to_node(&root);
                 let actual = ty::pretty::pretty_type(db, actual);
@@ -337,11 +340,20 @@ pub fn diagnostics(
             AnyDiagnostic::NagaValidationError { message, range, .. } => {
                 DiagnosticMessage::new(message, range)
             }
-        };
-        diagnostics.push(msg);
-    }
-
-    diagnostics
+            AnyDiagnostic::ParseError { message, range, .. } => {
+                DiagnosticMessage::new(message, range)
+            }
+            AnyDiagnostic::UnconfiguredCode { def, range, .. } => DiagnosticMessage::new(
+                format!(
+                    "code is inactive due to `#ifdef` directives: `{}` is not enabled",
+                    def
+                ),
+                range,
+            )
+            .with_severity(Severity::WeakWarning)
+            .unused(),
+        }
+    }).collect()
 }
 
 fn err_message_cause_chain(error: &dyn std::error::Error) -> String {
