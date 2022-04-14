@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use base_db::{FileRange, TextRange, TextSize};
 use hir::{
     diagnostics::{AnyDiagnostic, DiagnosticsConfig},
@@ -50,7 +52,143 @@ impl DiagnosticMessage {
     }
 }
 
-fn naga_diagnostics(
+trait Naga {
+    type Module;
+    type ParseError: NagaError;
+    type ValidationError: NagaError;
+
+    fn parse(source: &str) -> Result<Self::Module, Self::ParseError>;
+    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError>;
+}
+
+trait NagaError: std::error::Error {
+    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a>;
+    fn has_spans(&self) -> bool;
+}
+
+struct Naga08;
+impl Naga for Naga08 {
+    type Module = naga08::Module;
+    type ParseError = naga08::front::wgsl::ParseError;
+    type ValidationError = naga08::WithSpan<naga08::valid::ValidationError>;
+
+    fn parse(source: &str) -> Result<Self::Module, Self::ParseError> {
+        naga08::front::wgsl::parse_str(source)
+    }
+
+    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
+        let flags = naga08::valid::ValidationFlags::all();
+        let capabilities = naga08::valid::Capabilities::all();
+        let mut validator = naga08::valid::Validator::new(flags, capabilities);
+        validator.validate(&module).map(drop)
+    }
+}
+impl NagaError for naga08::front::wgsl::ParseError {
+    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
+        Box::new(
+            self.labels()
+                .map(|(range, label)| (range, label.to_string())),
+        )
+    }
+    fn has_spans(&self) -> bool {
+        self.labels().len() > 0
+    }
+}
+impl NagaError for naga08::WithSpan<naga08::valid::ValidationError> {
+    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
+        Box::new(
+            self.spans()
+                .filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
+        )
+    }
+    fn has_spans(&self) -> bool {
+        self.spans().len() > 0
+    }
+}
+
+#[allow(dead_code)]
+enum NagaErrorPolicy {
+    SeparateSpans,
+    SmallestSpan,
+    Related,
+}
+
+impl NagaErrorPolicy {
+    fn emit<'a, E: NagaError>(
+        &self,
+        db: &dyn HirDatabase,
+        error: E,
+        file_id: FileId,
+        full_range: TextRange,
+        acc: &mut Vec<AnyDiagnostic>,
+    ) {
+        let message = err_message_cause_chain("naga: ", &error);
+
+        if !error.has_spans() {
+            acc.push(AnyDiagnostic::NagaValidationError {
+                file_id: file_id.into(),
+                range: full_range,
+                message,
+                related: Vec::new(),
+            });
+            return;
+        }
+
+        let original_range = |range: std::ops::Range<usize>| {
+            let range_in_full = TextRange::new(
+                TextSize::from(range.start as u32),
+                TextSize::from(range.end as u32),
+            );
+            db.text_range_from_full(file_id.into(), range_in_full)
+        };
+
+        let spans = error.spans().filter_map(|(span, label)| {
+            let range = original_range(span).ok()?;
+            Some((range, label))
+        });
+
+        match *self {
+            NagaErrorPolicy::SeparateSpans => {
+                spans.for_each(|(range, label)| {
+                    acc.push(AnyDiagnostic::NagaValidationError {
+                        file_id: file_id.into(),
+                        range,
+                        message: format!("{}: {}", message, label),
+                        related: Vec::new(),
+                    });
+                });
+            }
+            NagaErrorPolicy::SmallestSpan => {
+                if let Some((range, _)) = spans.min_by_key(|(range, _)| range.len()) {
+                    acc.push(AnyDiagnostic::NagaValidationError {
+                        file_id: file_id.into(),
+                        range,
+                        message,
+                        related: Vec::new(),
+                    });
+                }
+            }
+            NagaErrorPolicy::Related => {
+                let related: Vec<_> = spans
+                    .map(|(range, message)| (message.clone(), FileRange { range, file_id }))
+                    .collect();
+                let min_range = related
+                    .iter()
+                    .map(|(_, frange)| frange.range)
+                    .min_by_key(|range| range.len())
+                    .unwrap_or_else(|| full_range);
+
+                acc.push(AnyDiagnostic::NagaValidationError {
+                    file_id: file_id.into(),
+                    range: min_range,
+                    message,
+                    related,
+                });
+            }
+        }
+    }
+}
+fn naga_diagnostics<N: Naga>(
     db: &dyn HirDatabase,
     file_id: FileId,
     config: &DiagnosticsConfig,
@@ -61,142 +199,23 @@ fn naga_diagnostics(
         Err(_) => return Ok(()),
     };
 
-    let original_range = |range: std::ops::Range<usize>| {
-        let range_in_full = TextRange::new(
-            TextSize::from(range.start as u32),
-            TextSize::from(range.end as u32),
-        );
-        db.text_range_from_full(file_id.into(), range_in_full)
-    };
-
-    let naga_prefix = "naga: ";
-
-    #[allow(dead_code)]
-    enum NagaErrorPolicy {
-        SeparateSpans,
-        SmallestSpan,
-        Related,
-    }
-
-    impl NagaErrorPolicy {
-        fn emit(
-            &self,
-            message: String,
-            spans: impl Iterator<Item = (TextRange, String)>,
-            empty: bool,
-            file_id: FileId,
-            full_range: TextRange,
-            acc: &mut Vec<AnyDiagnostic>,
-        ) {
-            if empty {
-                acc.push(AnyDiagnostic::NagaValidationError {
-                    file_id: file_id.into(),
-                    range: full_range,
-                    message,
-                    related: Vec::new(),
-                });
-                return;
-            }
-            match *self {
-                NagaErrorPolicy::SeparateSpans => {
-                    spans.for_each(|(range, label)| {
-                        acc.push(AnyDiagnostic::NagaValidationError {
-                            file_id: file_id.into(),
-                            range,
-                            message: format!("{}: {}", message, label),
-                            related: Vec::new(),
-                        });
-                    });
-                }
-                NagaErrorPolicy::SmallestSpan => {
-                    if let Some((range, _)) = spans.min_by_key(|(range, _)| range.len()) {
-                        acc.push(AnyDiagnostic::NagaValidationError {
-                            file_id: file_id.into(),
-                            range,
-                            message,
-                            related: Vec::new(),
-                        });
-                    }
-                }
-                NagaErrorPolicy::Related => {
-                    let related: Vec<_> = spans
-                        .map(|(range, message)| (message.clone(), FileRange { range, file_id }))
-                        .collect();
-                    let min_range = related
-                        .iter()
-                        .map(|(_, frange)| frange.range)
-                        .min_by_key(|range| range.len())
-                        .unwrap_or_else(|| full_range);
-
-                    acc.push(AnyDiagnostic::NagaValidationError {
-                        file_id: file_id.into(),
-                        range: min_range,
-                        message,
-                        related,
-                    });
-                }
-            }
-        }
-    }
-    let policy = NagaErrorPolicy::Related;
-
     let full_range = TextRange::new(0.into(), TextSize::from(source.len() as u32 - 1));
 
-    match naga::front::wgsl::parse_str(&source) {
+    let policy = NagaErrorPolicy::Related;
+    match N::parse(&source) {
         Ok(module) => {
             if !config.naga_validation_errors {
                 return Ok(());
             }
-
-            let flags = naga::valid::ValidationFlags::all();
-            let capabilities = naga::valid::Capabilities::all();
-            let mut validator = naga::valid::Validator::new(flags, capabilities);
-            let error = match validator.validate(&module) {
-                Err(e) => e,
-                _ => return Ok(()),
-            };
-
-            let message = err_message_cause_chain(naga_prefix, &error);
-
-            let spans = error.spans().filter_map(|(span, label)| {
-                let range = span
-                    .to_range()
-                    .map(|range| original_range(range))
-                    .transpose()
-                    .ok()?
-                    .unwrap_or(full_range);
-                Some((range, label.clone()))
-            });
-
-            policy.emit(
-                message,
-                spans,
-                error.spans().len() == 0,
-                file_id,
-                full_range,
-                acc,
-            );
+            if let Err(error) = N::validate(&module) {
+                policy.emit(db, error, file_id, full_range, acc);
+            }
         }
         Err(error) => {
             if !config.naga_parsing_errors {
                 return Ok(());
             }
-
-            let message = err_message_cause_chain(naga_prefix, &error);
-
-            let spans = error.labels().filter_map(|(range, label)| {
-                let range = original_range(range).ok().unwrap_or(full_range);
-                Some((range, label.to_string()))
-            });
-
-            policy.emit(
-                message,
-                spans,
-                error.labels().len() == 0,
-                file_id,
-                full_range,
-                acc,
-            );
+            policy.emit(db, error, file_id, full_range, acc);
         }
     }
 
@@ -241,7 +260,7 @@ pub fn diagnostics(
     }
 
     if config.naga_parsing_errors || config.naga_validation_errors {
-        let _ = naga_diagnostics(db, file_id, config, &mut diagnostics);
+        let _ = naga_diagnostics::<Naga08>(db, file_id, config, &mut diagnostics);
     }
 
     diagnostics.into_iter().map(|diagnostic| {
