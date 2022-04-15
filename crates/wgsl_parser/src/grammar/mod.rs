@@ -766,6 +766,7 @@ const STORAGE_CLASS_SET: &[SyntaxKind] = &[
     SyntaxKind::Workgroup,
     SyntaxKind::Uniform,
     SyntaxKind::Storage,
+    SyntaxKind::PushConstant,
 ];
 
 fn if_at_set(p: &mut Parser, set: &[SyntaxKind]) -> bool {

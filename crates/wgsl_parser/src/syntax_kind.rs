@@ -268,6 +268,8 @@ pub enum SyntaxKind {
     Return,
     #[token("storage")]
     Storage,
+    #[token("push_constant")]
+    PushConstant,
     #[token("switch")]
     Switch,
     #[token("true")]

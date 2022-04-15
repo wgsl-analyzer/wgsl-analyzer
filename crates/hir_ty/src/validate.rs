@@ -149,5 +149,8 @@ pub fn validate_storage_class(
                 _ => sink(StorageClassError::ExpectedHandleOrTexture),
             }
         }
+        StorageClass::PushConstant => {
+            // TODO: validate push constants
+        }
     }
 }

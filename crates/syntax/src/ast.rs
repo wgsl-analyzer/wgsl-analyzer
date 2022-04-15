@@ -368,6 +368,7 @@ ast_token_enum! {
         Workgroup,
         Uniform,
         Storage,
+        PushConstant,
     }
 }
 pub enum GenericArg {

@@ -355,6 +355,7 @@ pub enum StorageClass {
     Uniform,
     Storage,
     Handle,
+    PushConstant,
 }
 impl std::fmt::Display for StorageClass {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -365,6 +366,7 @@ impl std::fmt::Display for StorageClass {
             StorageClass::Uniform => "uniform",
             StorageClass::Storage => "storage",
             StorageClass::Handle => "handle",
+            StorageClass::PushConstant => "push_constant",
         })
     }
 }
@@ -377,6 +379,7 @@ impl StorageClass {
             StorageClass::Workgroup => AccessMode::ReadWrite,
             StorageClass::Uniform => AccessMode::Read,
             StorageClass::Handle => AccessMode::Read,
+            StorageClass::PushConstant => AccessMode::Read,
         }
     }
 }
@@ -388,6 +391,7 @@ impl From<ast::StorageClass> for StorageClass {
             ast::StorageClass::Workgroup(_) => StorageClass::Workgroup,
             ast::StorageClass::Uniform(_) => StorageClass::Uniform,
             ast::StorageClass::Storage(_) => StorageClass::Storage,
+            ast::StorageClass::PushConstant(_) => StorageClass::PushConstant,
         }
     }
 }
