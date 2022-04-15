@@ -10,6 +10,7 @@ pub struct ShaderProcessor {
     ifndef_regex: Regex,
     else_regex: Regex,
     endif_regex: Regex,
+    define_import_path_regex: Regex,
 }
 
 impl Default for ShaderProcessor {
@@ -19,6 +20,7 @@ impl Default for ShaderProcessor {
             ifndef_regex: Regex::new(r"^\s*#\s*ifndef\s*([\w|\d|_]+)").unwrap(),
             else_regex: Regex::new(r"^\s*#\s*else").unwrap(),
             endif_regex: Regex::new(r"^\s*#\s*endif").unwrap(),
+            define_import_path_regex: Regex::new(r"^\s*#\s*define_import_path").unwrap(),
         }
     }
 }
@@ -86,6 +88,8 @@ impl ShaderProcessor {
                 if scopes.is_empty() {
                     // return Err(ProcessShaderError::TooManyEndIfs);
                 }
+                false
+            } else if self.define_import_path_regex.is_match(line) {
                 false
             } else {
                 scopes.last().map(|&(used, _, _)| used).unwrap_or(true)
