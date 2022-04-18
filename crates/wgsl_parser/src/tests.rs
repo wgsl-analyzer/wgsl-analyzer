@@ -223,6 +223,30 @@ fn parse_type_generic() {
 }
 
 #[test]
+fn parse_type_generic_shift_ambiguity() {
+    check_type(
+        "array<vec3<f32, 2>>",
+        expect![[r#"
+            Array@0..19
+              Array@0..5 "array"
+              GenericArgList@5..19
+                LessThan@5..6 "<"
+                Vec3@6..18
+                  Vec3@6..10 "vec3"
+                  GenericArgList@10..18
+                    LessThan@10..11 "<"
+                    Float32@11..14
+                      Float32@11..14 "f32"
+                    Comma@14..15 ","
+                    Whitespace@15..16 " "
+                    Literal@16..17
+                      IntLiteral@16..17 "2"
+                    GreaterThan@17..18 ">"
+                GreaterThan@18..19 ">""#]],
+    );
+}
+
+#[test]
 fn parse_type_generic_int() {
     check_type(
         "array<f32, 100>",
