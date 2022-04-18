@@ -12,6 +12,7 @@ use crate::HasGenerics;
 use crate::HasName;
 use crate::SyntaxToken;
 use crate::TokenText;
+use rowan::NodeOrToken;
 use wgsl_parser::{SyntaxKind, SyntaxNode};
 
 use self::operators::BinaryOp;
@@ -835,9 +836,21 @@ impl InfixExpr {
     pub fn rhs(&self) -> Option<Expr> {
         crate::support::children(self.syntax()).nth(1)
     }
-    pub fn op_token(&self) -> Option<SyntaxToken> {
-        self.lhs()?.syntax().last_token()?.next_token()
+    pub fn op(&self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
+        if let Some(op) = self.syntax().children().find(|child| match child.kind() {
+            SyntaxKind::ShiftLeft | SyntaxKind::ShiftRight => true,
+            _ => false,
+        }) {
+            return Some(NodeOrToken::Node(op));
+        }
+
+        if let Some(token) = self.lhs()?.syntax().last_token()?.next_token() {
+            return Some(NodeOrToken::Token(token));
+        }
+
+        None
     }
+
     pub fn op_kind(&self) -> Option<BinaryOp> {
         if let Some(kind) = support::child_token::<BinaryOpKind>(self.syntax()) {
             #[rustfmt::skip]

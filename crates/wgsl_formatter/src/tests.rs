@@ -381,3 +381,19 @@ let y = 4;
             }"#]],
     );
 }
+
+#[test]
+fn format_expr_shift_right() {
+    check(
+        "fn main() { let x = 1u >> 3u; }",
+        expect![[r#"fn main() { let x = 1u >> 3u; }"#]],
+    );
+}
+
+#[test]
+fn format_expr_shift_left() {
+    check(
+        "fn main() { let x = 1u << 3u; }",
+        expect![[r#"fn main() { let x = 1u << 3u; }"#]],
+    );
+}

@@ -245,7 +245,16 @@ fn format_syntax_node(
         }
         SyntaxKind::InfixExpr => {
             let expr = ast::InfixExpr::cast(syntax)?;
-            whitespace_to_single_around(expr.op_token()?);
+
+            match expr.op()? {
+                NodeOrToken::Node(node) => {
+                    set_whitespace_single_before(node.first_token()?);
+                    set_whitespace_single_before(node.last_token()?.next_token()?);
+                }
+                NodeOrToken::Token(token) => {
+                    whitespace_to_single_around(token);
+                }
+            }
         }
         SyntaxKind::AssignmentStmt => {
             let stmt = ast::AssignmentStmt::cast(syntax)?;
