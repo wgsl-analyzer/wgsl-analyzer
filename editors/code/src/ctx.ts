@@ -25,7 +25,7 @@ async function lspOptions(config: Config): Promise<WGSLAnalyzerConfiguration> {
     let elapsed = process.hrtime(start);
     let millis = elapsed[0] * 1000 + elapsed[1] / 1_000_000;
     if (millis > 1000) {
-        vscode.window.showWarningMessage(`WGSL-Analalyzer: Took ${millis.toFixed(0)}ms to resolve imports.`);
+        vscode.window.showWarningMessage(`WGSL-Analyzer: Took ${millis.toFixed(0)}ms to resolve imports.`);
     }
 
     return {
