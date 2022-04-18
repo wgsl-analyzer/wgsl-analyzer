@@ -426,10 +426,8 @@ ast_token_enum! {
         NotEqual,
         GreaterThan,
         GreaterThanEqual,
-        ShiftRight,
         LessThan,
         LessThanEqual,
-        ShiftLeft,
         Modulo,
         Minus,
         Plus,
@@ -841,28 +839,39 @@ impl InfixExpr {
         self.lhs()?.syntax().last_token()?.next_token()
     }
     pub fn op_kind(&self) -> Option<BinaryOp> {
-        let kind: BinaryOpKind = support::child_token(self.syntax())?;
-        #[rustfmt::skip]
-        let op = match kind {
-            BinaryOpKind::EqualEqual(_) => BinaryOp::CmpOp(CmpOp::Eq { negated: false }),
-            BinaryOpKind::NotEqual(_) => BinaryOp::CmpOp(CmpOp::Eq { negated: true }),
-            BinaryOpKind::GreaterThan(_) => BinaryOp::CmpOp(CmpOp::Ord { ordering: operators::Ordering::Greater, strict: true }),
-            BinaryOpKind::GreaterThanEqual(_) => BinaryOp::CmpOp(CmpOp::Ord { ordering: operators::Ordering::Greater, strict: false }),
-            BinaryOpKind::LessThan(_) => BinaryOp::CmpOp(CmpOp::Ord { ordering: operators::Ordering::Less, strict: true }),
-            BinaryOpKind::LessThanEqual(_) => BinaryOp::CmpOp(CmpOp::Ord { ordering: operators::Ordering::Less, strict: false }),
-            BinaryOpKind::Minus(_) => BinaryOp::ArithOp(ArithOp::Sub),
-            BinaryOpKind::Plus(_) => BinaryOp::ArithOp(ArithOp::Add),
-            BinaryOpKind::Star(_) => BinaryOp::ArithOp(ArithOp::Mul),
-            BinaryOpKind::ForwardSlash(_) => BinaryOp::ArithOp(ArithOp::Div),
-            BinaryOpKind::ShiftRight(_) => BinaryOp::ArithOp(ArithOp::Shr),
-            BinaryOpKind::ShiftLeft(_) => BinaryOp::ArithOp(ArithOp::Shl),
-            BinaryOpKind::Modulo(_) => BinaryOp::ArithOp(ArithOp::Modulo),
-            BinaryOpKind::Or(_) => BinaryOp::ArithOp(ArithOp::BitOr),
-            BinaryOpKind::And(_) => BinaryOp::ArithOp(ArithOp::BitAnd),
-            BinaryOpKind::OrOr(_) => BinaryOp::LogicOp(LogicOp::Or),
-            BinaryOpKind::AndAnd(_) => BinaryOp::LogicOp(LogicOp::And),
-        };
-        Some(op)
+        if let Some(kind) = support::child_token::<BinaryOpKind>(self.syntax()) {
+            #[rustfmt::skip]
+            let op = match kind {
+                BinaryOpKind::EqualEqual(_) => BinaryOp::CmpOp(CmpOp::Eq { negated: false }),
+                BinaryOpKind::NotEqual(_) => BinaryOp::CmpOp(CmpOp::Eq { negated: true }),
+                BinaryOpKind::GreaterThan(_) => BinaryOp::CmpOp(CmpOp::Ord { ordering: operators::Ordering::Greater, strict: true }),
+                BinaryOpKind::GreaterThanEqual(_) => BinaryOp::CmpOp(CmpOp::Ord { ordering: operators::Ordering::Greater, strict: false }),
+                BinaryOpKind::LessThan(_) => BinaryOp::CmpOp(CmpOp::Ord { ordering: operators::Ordering::Less, strict: true }),
+                BinaryOpKind::LessThanEqual(_) => BinaryOp::CmpOp(CmpOp::Ord { ordering: operators::Ordering::Less, strict: false }),
+                BinaryOpKind::Minus(_) => BinaryOp::ArithOp(ArithOp::Sub),
+                BinaryOpKind::Plus(_) => BinaryOp::ArithOp(ArithOp::Add),
+                BinaryOpKind::Star(_) => BinaryOp::ArithOp(ArithOp::Mul),
+                BinaryOpKind::ForwardSlash(_) => BinaryOp::ArithOp(ArithOp::Div),
+                BinaryOpKind::Modulo(_) => BinaryOp::ArithOp(ArithOp::Modulo),
+                BinaryOpKind::Or(_) => BinaryOp::ArithOp(ArithOp::BitOr),
+                BinaryOpKind::And(_) => BinaryOp::ArithOp(ArithOp::BitAnd),
+                BinaryOpKind::OrOr(_) => BinaryOp::LogicOp(LogicOp::Or),
+                BinaryOpKind::AndAnd(_) => BinaryOp::LogicOp(LogicOp::And),
+            };
+            Some(op)
+        } else if let Some(op) = self
+            .syntax()
+            .children()
+            .find_map(|child| match child.kind() {
+                SyntaxKind::ShiftLeft => Some(BinaryOp::ArithOp(ArithOp::Shl)),
+                SyntaxKind::ShiftRight => Some(BinaryOp::ArithOp(ArithOp::Shr)),
+                _ => None,
+            })
+        {
+            return Some(op);
+        } else {
+            None
+        }
     }
 }
 
