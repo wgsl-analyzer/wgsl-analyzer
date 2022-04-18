@@ -141,11 +141,32 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
         token.kind
     }
 
+    pub fn bump_compound(&mut self, token: P::SyntaxKind) {
+        self.expected_kinds.clear();
+        let m = self.start();
+        let _token1 = self.source.next_token().unwrap();
+        self.events.push(Event::AddToken);
+        let _token2 = self.source.next_token().unwrap();
+        self.events.push(Event::AddToken);
+        m.complete(self, token);
+    }
+
     pub fn at(&mut self, kind: P::TokenKind) -> bool {
         if !self.expected_kinds.contains(&kind) {
             self.expected_kinds.push(kind);
         }
         self.peek() == Some(kind)
+    }
+
+    pub fn at_compound(&mut self, kind_1: P::TokenKind, kind_2: P::TokenKind) -> bool {
+        if !self.expected_kinds.contains(&kind_1) {
+            self.expected_kinds.push(kind_1);
+        }
+        if let Some((a, b)) = self.peek_compound() {
+            a == kind_1 && b == kind_2
+        } else {
+            false
+        }
     }
 
     pub fn at_or_end(&mut self, kind: P::TokenKind) -> bool {
@@ -164,6 +185,9 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 
     pub fn peek(&mut self) -> Option<P::TokenKind> {
         self.source.peek_kind()
+    }
+    pub fn peek_compound(&mut self) -> Option<(P::TokenKind, P::TokenKind)> {
+        self.source.peek_kind_compound()
     }
 
     pub fn set_expected(&mut self, expected: Vec<P::TokenKind>) {

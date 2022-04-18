@@ -52,7 +52,14 @@ fn expr_binding_power(p: &mut Parser, minimum_binding_power: u8) -> Option<Compl
         }
 
         // Eat the operator's token.
-        p.bump();
+
+        match infix_op {
+            BinaryOp::ShiftLeft => p.bump_compound(SyntaxKind::ShiftLeft),
+            BinaryOp::ShiftRight => p.bump_compound(SyntaxKind::ShiftRight),
+            _ => {
+                p.bump();
+            }
+        }
 
         let m = lhs.precede(p);
         let parsed_rhs = expr_binding_power(p, right_binding_power).is_some();
@@ -147,9 +154,9 @@ fn binary_op(p: &mut Parser) -> Option<BinaryOp> {
         Some(BinaryOp::ShortCircuitAnd)
     } else if p.at(SyntaxKind::Xor) {
         Some(BinaryOp::Xor)
-    } else if p.at(SyntaxKind::ShiftLeft) {
+    } else if p.at_compound(SyntaxKind::LessThan, SyntaxKind::LessThan) {
         Some(BinaryOp::ShiftLeft)
-    } else if p.at(SyntaxKind::ShiftRight) {
+    } else if p.at_compound(SyntaxKind::GreaterThan, SyntaxKind::GreaterThan) {
         Some(BinaryOp::ShiftRight)
     } else if p.at(SyntaxKind::GreaterThan) {
         Some(BinaryOp::GreaterThan)
@@ -843,5 +850,49 @@ mod tests {
               NameRef@5..6
                 Ident@5..6 "b""#]],
         );
+    }
+
+    #[test]
+    fn shift_right() {
+        check("2 >> 3", expect![[r#"
+            InfixExpr@0..6
+              Literal@0..2
+                IntLiteral@0..1 "2"
+                Whitespace@1..2 " "
+              ShiftRight@2..5
+                GreaterThan@2..3 ">"
+                GreaterThan@3..4 ">"
+                Whitespace@4..5 " "
+              Literal@5..6
+                IntLiteral@5..6 "3""#]]);
+    }
+
+    #[test]
+    fn shift_multiple() {
+        check("2 >> 3 + 2 << 4", expect![[r#"
+            InfixExpr@0..15
+              InfixExpr@0..11
+                Literal@0..2
+                  IntLiteral@0..1 "2"
+                  Whitespace@1..2 " "
+                ShiftRight@2..5
+                  GreaterThan@2..3 ">"
+                  GreaterThan@3..4 ">"
+                  Whitespace@4..5 " "
+                InfixExpr@5..11
+                  Literal@5..7
+                    IntLiteral@5..6 "3"
+                    Whitespace@6..7 " "
+                  Plus@7..8 "+"
+                  Whitespace@8..9 " "
+                  Literal@9..11
+                    IntLiteral@9..10 "2"
+                    Whitespace@10..11 " "
+              ShiftLeft@11..14
+                LessThan@11..12 "<"
+                LessThan@12..13 "<"
+                Whitespace@13..14 " "
+              Literal@14..15
+                IntLiteral@14..15 "4""#]]);
     }
 }

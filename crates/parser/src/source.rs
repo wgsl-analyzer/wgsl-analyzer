@@ -28,6 +28,11 @@ impl<'t, 'input, P: ParserDefinition> Source<'t, 'input, P> {
         self.peek_kind_raw()
     }
 
+    pub(crate) fn peek_kind_compound(&mut self) -> Option<(P::TokenKind, P::TokenKind)> {
+        self.eat_trivia();
+        self.peek_compound_raw().map(|(a, b)| (a.kind, b.kind))
+    }
+
     pub(crate) fn peek_token(&mut self) -> Option<&Token<P::TokenKind>> {
         self.eat_trivia();
         self.peek_token_raw()
@@ -53,5 +58,11 @@ impl<'t, 'input, P: ParserDefinition> Source<'t, 'input, P> {
 
     fn peek_token_raw(&self) -> Option<&Token<P::TokenKind>> {
         self.tokens.get(self.cursor)
+    }
+
+    fn peek_compound_raw(&self) -> Option<(&Token<P::TokenKind>, &Token<P::TokenKind>)> {
+        let a = self.tokens.get(self.cursor)?;
+        let b = self.tokens.get(self.cursor + 1)?;
+        Some((a, b))
     }
 }

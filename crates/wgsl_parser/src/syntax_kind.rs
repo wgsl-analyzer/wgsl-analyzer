@@ -326,14 +326,10 @@ pub enum SyntaxKind {
     GreaterThan,
     #[token(">=")]
     GreaterThanEqual,
-    #[token(">>")]
-    ShiftRight,
     #[token("<")]
     LessThan,
     #[token("<=")]
     LessThanEqual,
-    #[token("<<")]
-    ShiftLeft,
     #[token("%")]
     Modulo,
     #[token("-")]
@@ -383,6 +379,10 @@ pub enum SyntaxKind {
     ShiftRightEqual,
     #[token("<<=")]
     ShiftLeftEqual,
+
+    // compound tokens
+    ShiftLeft,
+    ShiftRight,
 
     #[error]
     Error,
