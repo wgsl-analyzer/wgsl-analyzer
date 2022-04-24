@@ -33,7 +33,7 @@ export function syntaxTree(ctx: Ctx): Cmd {
         textDocument: {
           uri: wgslEditor.document.uri.toString(),
         },
-        range: { start: selection.start, end: selection.end },
+        range: selection.isEmpty ? null : { start: selection.start, end: selection.end },
       };
       return ctx.client.sendRequest(lsp_ext.syntaxTree, params, ct);
     }
