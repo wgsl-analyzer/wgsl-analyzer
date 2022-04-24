@@ -8,7 +8,14 @@ use wgsl_analyzer::{
     Result,
 };
 
+const VERSION: &'static str = "0.4.3";
+
 fn main() -> Result<()> {
+    if std::env::args().any(|arg| arg == "--version") {
+        println!("{}", VERSION);
+        return Ok(());
+    }
+
     let (connection, _io_threads) = Connection::stdio();
     let (initialize_id, initialize_params) = connection.initialize_start()?;
     let initialize_params: InitializeParams = from_json("InitializeParams", initialize_params)?;

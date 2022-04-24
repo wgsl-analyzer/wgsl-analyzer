@@ -4,8 +4,13 @@ import * as path from "path";
 import * as os from "os";
 import * as fs from "fs";
 import * as util from "util";
+import * as cp from "child_process";
+
+const VERSION = "0.4.3";
+const REV = "01ca365";
 
 const fileExists = (path: string) => util.promisify(fs.access)(path).then(s => true).catch(() => false);
+const exec = util.promisify(cp.exec);
 
 import { Ctx } from "./ctx";
 import * as commands from "./commands";
@@ -18,6 +23,13 @@ export async function activate(context: ExtensionContext) {
     const config = new Config(context);
     const serverPath = await getServer(config);
     if (!serverPath) {
+        return;
+    }
+    const serverVersion = await getServerVersion(serverPath);
+    if (serverVersion != VERSION) {
+        const msg = `wgsl-analyzer binary version (${serverVersion}) does not match extension (${VERSION}).
+If you are using a version of wgsl-analyzer without a prepackaged binary or specify a custom server path, please use the matching version: \`cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer --rev ${REV} wgsl_analyzer\`.`;
+        vscode.window.showWarningMessage(msg, "Okay");
         return;
     }
 
@@ -58,4 +70,9 @@ async function getServer(config: Config): Promise<string | undefined> {
 
     vscode.window.showErrorMessage("wgsl-analyzer.server.path is not specified");
     return undefined;
+}
+
+async function getServerVersion(serverPath: string): Promise<string> {
+    const result = await exec(`${serverPath} --version`);
+    return result.stdout.trim();
 }
