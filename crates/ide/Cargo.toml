@@ -15,12 +15,20 @@ ide_completion = { path = "../ide_completion" }
 syntax = { path = "../syntax" }
 wgsl_formatter = { path = "../wgsl_formatter" }
 rowan = "0.15"
-
+lsp-types = "0.91.0"
 vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "20fa7cbcad" }
 
 expect-test = "1.1.0"
 itertools = "0.10.1"
 smol_str = "0.1.21"
 
-naga08 = { package = "naga", git = "https://github.com/jakobhellermann/naga", branch = "expose-error-messages-0.8-backport", features = ["wgsl-in", "validate", "span"] }
-nagamain = { package = "naga", git = "https://github.com/gfx-rs/naga", rev = "8584507f", features = ["wgsl-in", "validate", "span"] }
+naga08 = { package = "naga", git = "https://github.com/jakobhellermann/naga", branch = "expose-error-messages-0.8-backport", features = [
+  "wgsl-in",
+  "validate",
+  "span",
+] }
+nagamain = { package = "naga", git = "https://github.com/gfx-rs/naga", rev = "8584507f", features = [
+  "wgsl-in",
+  "validate",
+  "span",
+] }
