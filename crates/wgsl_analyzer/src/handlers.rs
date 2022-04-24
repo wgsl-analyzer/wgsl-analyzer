@@ -122,7 +122,7 @@ pub fn show_syntax_tree(
     params: lsp_ext::SyntaxTreeParams,
 ) -> Result<String> {
     let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
-    let string = snap.analysis.syntax_tree(file_id)?;
+    let string = snap.analysis.syntax_tree(file_id, params.range)?;
     Ok(string)
 }
 

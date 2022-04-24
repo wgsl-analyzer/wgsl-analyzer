@@ -1,4 +1,4 @@
-use lsp_types::{request::Request, TextDocumentIdentifier, TextDocumentPositionParams};
+use lsp_types::{request::Request, TextDocumentIdentifier, TextDocumentPositionParams, Range};
 use serde::{Deserialize, Serialize};
 
 pub enum SyntaxTree {}
@@ -13,6 +13,7 @@ impl Request for SyntaxTree {
 #[serde(rename_all = "camelCase")]
 pub struct SyntaxTreeParams {
     pub text_document: TextDocumentIdentifier,
+    pub range: Option<Range>,
 }
 
 pub enum DebugCommand {}
