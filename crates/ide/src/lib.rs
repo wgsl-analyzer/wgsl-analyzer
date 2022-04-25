@@ -17,7 +17,6 @@ use hir_def::db::DefDatabase;
 pub use hover::HoverResult;
 use ide_completion::item::CompletionItem;
 use inlay_hints::{InlayHint, InlayHintsConfig};
-use lsp_types::Range;
 use salsa::{Cancelled, ParallelDatabase};
 use std::sync::Arc;
 use syntax::{Parse, SyntaxNode};
@@ -92,7 +91,7 @@ impl Analysis {
         self.with_db(|db| db.line_index(file_id))
     }
 
-    pub fn syntax_tree(&self, file_id: FileId, range: Option<Range>) -> Cancellable<String> {
+    pub fn syntax_tree(&self, file_id: FileId, range: Option<TextRange>) -> Cancellable<String> {
         self.with_db(|db| syntax_tree::syntax_tree(db, file_id, range).unwrap_or_default())
     }
 

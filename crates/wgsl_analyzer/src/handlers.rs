@@ -122,7 +122,13 @@ pub fn show_syntax_tree(
     params: lsp_ext::SyntaxTreeParams,
 ) -> Result<String> {
     let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
-    let string = snap.analysis.syntax_tree(file_id, params.range)?;
+    let line_index = snap.file_line_index(file_id)?;
+    let string = snap.analysis.syntax_tree(
+        file_id,
+        params
+            .range
+            .and_then(|range| from_proto::text_range(&line_index, range).ok()),
+    )?;
     Ok(string)
 }
 
