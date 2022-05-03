@@ -221,8 +221,11 @@ fn list(
     let m = p.start();
     p.expect(begin);
     while !p.at_or_end(end) {
-        p.peek();
+        let location = p.location();
         f(p);
+        if p.location() == location {
+            p.error();
+        }
         p.eat(separator);
     }
     p.expect(end);

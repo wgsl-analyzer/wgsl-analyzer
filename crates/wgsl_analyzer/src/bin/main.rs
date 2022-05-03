@@ -42,16 +42,11 @@ fn main() -> Result<()> {
 
 fn setup_logging(trace: &TraceConfig) {
     let level = if trace.extension { "debug" } else { "info" };
-    let mut filter = String::from(
-        format!(
-            "warn,hir={level},hir_def={level},ide={level},wgsl_analyzer={level},base_db={level}",
-            level = level
-        )
-        .as_str(),
+    let filter = format!(
+        "{default},salsa=warn,naga=warn,lsp_server={lsp_server}",
+        default = level,
+        lsp_server = if trace.server { "debug" } else { "info" }
     );
-    if trace.server {
-        filter.push_str(",lsp_server=debug")
-    }
 
     tracing_subscriber::fmt::Subscriber::builder()
         .with_ansi(false)

@@ -193,4 +193,8 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
     pub fn set_expected(&mut self, expected: Vec<P::TokenKind>) {
         self.expected_kinds = expected;
     }
+
+    pub fn location(&mut self) -> impl Eq {
+        self.source.location()
+    }
 }

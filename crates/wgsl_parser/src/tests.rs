@@ -1153,6 +1153,30 @@ fn attribute_list_modern() {
 }
 
 #[test]
+fn unfinished_attr() {
+    check_attribute_list(
+        "[[stage(fragment)]",
+        expect![[r#"
+            AttributeList@0..18
+              AttrLeft@0..2 "[["
+              Attribute@2..17
+                Ident@2..7 "stage"
+                AttributeParameters@7..17
+                  ParenLeft@7..8 "("
+                  Ident@8..16 "fragment"
+                  ParenRight@16..17 ")"
+              Attribute@17..17
+                Error@17..17
+              Error@17..18
+                BracketRight@17..18 "]"
+
+            error at 17..18: expected Ident, but found BracketRight
+            error at 17..18: expected Comma, AttrRight, Ident or ParenLeft, but found BracketRight
+            error at 17..18: expected Comma or AttrRight"#]],
+    );
+}
+
+#[test]
 fn attribute_list() {
     check_attribute_list(
         "[[location(0), interpolate(flat), attr(1, 2, 0.0, ident)]]",

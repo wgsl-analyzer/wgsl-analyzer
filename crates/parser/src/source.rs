@@ -38,6 +38,10 @@ impl<'t, 'input, P: ParserDefinition> Source<'t, 'input, P> {
         self.peek_token_raw()
     }
 
+    pub fn location(&mut self) -> impl Eq {
+        self.cursor
+    }
+
     fn eat_trivia(&mut self) {
         while self.at_trivia() {
             self.cursor += 1;
