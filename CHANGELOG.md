@@ -1,6 +1,29 @@
 # Changelog
 
 ### Unreleased
+- add naga parsing/validation diagnostics (`wgsl-analyzer.diagnostics.nagaParsingErrors` enabled by default, `wgsl-analyzer.diagnostics.nagaValidationErrors` not).
+- Naga version can be configured to be either `0.8` (default) or `main`: `wgsl-analyzer.diagnostics.nagaVersion": "0.8"`
+- better spans in diagnostics
+- parse push constants
+- fix handling of `>>`, e.g. for `array<vec3<f32>>`
+- support `binding_array`s
+- verify that vscode extension and server binary match
+- add `textureGather`/`textureGatherCompare` builtins
+- fix an infinite loop in the parser
+
+## Version 0.4.3
+- experimental: struct layout hints with `wgsl-analyzer.inlayHints.structLayoutHints`
+- handle `,` as struct field separator
+
+## Version 0.4.2
+- handle windows line endings
+- implement goto definition for types
+
+## Version 0.4.1
+- ignore `#define_import_path`
+- handle `switch` statement
+- some formatting fixes
+- include prebuilt `wgsl_analyzer` in github releases
 
 ## Version 0.4.0
 - support `#ifdef`, `#ifndef`, `#else`, `#endif` preprocessor macros
