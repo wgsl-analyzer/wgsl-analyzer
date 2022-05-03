@@ -215,6 +215,27 @@ textureLoad(texture_storage_2d<F;read>, vec2<i32>) -> F::StorageType
 textureLoad(texture_storage_2d_array<F;read>, vec2<i32>, i32) -> F::StorageType
 textureLoad(texture_storage_3d<F;read>, vec3<i32>) -> F::StorageType
 
+textureGather(i32, texture_2d<T>, sampler, vec2<f32>) -> vec4<T>
+textureGather(i32, texture_2d<T>, sampler, vec2<f32>, vec2<i32>) -> vec4<T>
+textureGather(i32, texture_2d_array<T>, sampler, vec2<f32>, i32) -> vec4<T>
+textureGather(i32, texture_2d_array<T>, sampler, vec2<f32>, i32, vec2<i32>) -> vec4<T>
+textureGather(i32, texture_cube<T>, sampler, vec3<f32>) -> vec4<T>
+textureGather(i32, texture_cube_array<T>, sampler, vec3<f32>, i32) -> vec4<T>
+textureGather(texture_depth_2d, sampler, vec2<f32>) -> vec4<f32>
+textureGather(texture_depth_2d, sampler, vec2<f32>, vec2<i32>) -> vec4<f32>
+textureGather(texture_depth_2d_array, sampler, vec2<f32>, i32) -> vec4<f32>
+textureGather(texture_depth_2d_array, sampler, vec2<f32>, i32, vec2<i32>) -> vec4<f32>
+textureGather(texture_depth_cube, sampler, vec3<f32>) -> vec4<f32>
+textureGather(texture_depth_cube_array, sampler, vec3<f32>, i32) -> vec4<f32>
+
+textureGatherCompare(texture_depth_2d, sampler_comparison, vec2<f32>, f32) -> vec4<f32>
+textureGatherCompare(texture_depth_2d, sampler_comparison, vec2<f32>, f32, vec2<i32>) -> vec4<f32>
+textureGatherCompare(texture_depth_2d_array, sampler_comparison, vec2<f32>, i32, f32) -> vec4<f32>
+textureGatherCompare(texture_depth_2d_array, sampler_comparison, vec2<f32>, i32, f32, vec2<i32>) -> vec4<f32>
+textureGatherCompare(texture_depth_cube, sampler_comparison, vec3<f32>, f32) -> vec4<f32>
+textureGatherCompare(texture_depth_cube_array, sampler_comparison, vec3<f32>, i32, f32) -> vec4<f32>
+
+
 textureNumLayers(texture_2d_array<T>) -> i32
 textureNumLayers(texture_cube_array<T>) -> i32
 textureNumLayers(texture_depth_2d_array) -> i32
