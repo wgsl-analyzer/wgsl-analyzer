@@ -4,12 +4,13 @@ use xshell::cmd;
 
 type Result<T, E = anyhow::Error> = std::result::Result<T, E>;
 
-const HELP_STR: &str = "Usage: cargo run --bin package --target linux-x64";
+const HELP_STR: &str = "Usage: cargo run --bin package --target linux-x64 [--no-prebuilt-binary]";
 
 #[derive(Debug)]
 struct Args {
     target: String,
     install: bool,
+    no_prebuilt_binary: bool,
 }
 
 fn parse_args() -> Result<Args, lexopt::Error> {
@@ -17,6 +18,7 @@ fn parse_args() -> Result<Args, lexopt::Error> {
 
     let mut target = None;
     let mut install = false;
+    let mut no_prebuilt_binary = false;
 
     while let Some(arg) = parser.next()? {
         match arg {
@@ -28,12 +30,14 @@ fn parse_args() -> Result<Args, lexopt::Error> {
                 target = Some(parser.value()?.into_string()?);
             }
             lexopt::Arg::Long("install") => install = true,
+            lexopt::Arg::Long("no-prebuilt-binary") => no_prebuilt_binary = true,
             _ => return Err(arg.unexpected()),
         }
     }
     Ok(Args {
         target: target.ok_or("missing argument --target")?,
         install,
+        no_prebuilt_binary,
     })
 }
 
@@ -42,7 +46,7 @@ fn main() -> Result<()> {
 
     let sh = xshell::Shell::new()?;
 
-    let extension = package(&sh, &args.target)?;
+    let extension = package(&sh, &args.target, !args.no_prebuilt_binary)?;
 
     if args.install {
         cmd!(sh, "code --install-extension {extension} --force").run()?;
@@ -85,19 +89,19 @@ fn compile(sh: &xshell::Shell, rust_target: &str) -> Result<PathBuf> {
     Ok(PathBuf::from(executable_path))
 }
 
-fn package(sh: &xshell::Shell, target: &str) -> Result<PathBuf> {
+fn package(sh: &xshell::Shell, target: &str, prebuilt_binary: bool) -> Result<PathBuf> {
     let (_, rust_target) = TARGETS
         .iter()
         .find(|(t, _)| *t == target)
         .ok_or_else(|| anyhow::anyhow!("invalid target"))?;
 
-    let src = compile(sh, rust_target)?;
     let out = Path::new("editors/code/out");
     let dst = out.join("wgsl_analyzer");
-
-    sh.create_dir(out)?;
-
-    sh.copy_file(src, &dst)?;
+    if prebuilt_binary {
+        let src = compile(sh, rust_target)?;
+        sh.create_dir(out)?;
+        sh.copy_file(src, &dst)?;
+    }
 
     {
         let _dir = sh.push_dir("editors/code");
