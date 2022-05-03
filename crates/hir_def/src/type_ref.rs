@@ -45,6 +45,7 @@ impl TryFrom<ast::Type> for TypeRef {
             ast::Type::SamplerType(sampler) => TypeRef::Sampler(sampler.into()),
             ast::Type::AtomicType(atomic) => TypeRef::Atomic(atomic.try_into()?),
             ast::Type::ArrayType(array) => TypeRef::Array(array.try_into()?),
+            ast::Type::BindingArrayType(array) => TypeRef::Array(array.try_into()?),
             ast::Type::PtrType(ptr) => TypeRef::Ptr(ptr.try_into()?),
         };
         Ok(type_ref)
@@ -443,16 +444,20 @@ impl TryFrom<ast::AtomicType> for AtomicType {
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ArrayType {
     pub inner: Box<TypeRef>,
+    pub binding_array: bool,
     pub size: ArraySize,
 }
 
 impl std::fmt::Display for ArrayType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let prefix = if self.binding_array { "binding_" } else { "" };
         match self.size {
-            ArraySize::Int(size) => write!(f, "array<{}, {}>", self.inner, size),
-            ArraySize::Uint(size) => write!(f, "array<{}, {}>", self.inner, size),
-            ArraySize::Path(ref size) => write!(f, "array<{}, {}>", self.inner, size.as_str()),
-            ArraySize::Dynamic => write!(f, "array<{}>", self.inner),
+            ArraySize::Int(size) => write!(f, "{}array<{}, {}>", prefix, self.inner, size),
+            ArraySize::Uint(size) => write!(f, "{}array<{}, {}>", prefix, self.inner, size),
+            ArraySize::Path(ref size) => {
+                write!(f, "{}array<{}, {}>", prefix, self.inner, size.as_str())
+            }
+            ArraySize::Dynamic => write!(f, "{}array<{}>", prefix, self.inner),
         }
     }
 }
@@ -483,6 +488,30 @@ impl TryFrom<ast::ArrayType> for ArrayType {
         Ok(ArrayType {
             inner: Box::new(inner.try_into()?),
             size,
+            binding_array: false,
+        })
+    }
+}
+impl TryFrom<ast::BindingArrayType> for ArrayType {
+    type Error = ();
+
+    fn try_from(array: ast::BindingArrayType) -> Result<Self, Self::Error> {
+        let mut generics = array.generic_arg_list().ok_or(())?.generics();
+        let inner = generics.next().ok_or(())?.as_type().ok_or(())?;
+        let size = match generics.next() {
+            Some(ast::GenericArg::Type(ty)) => ArraySize::Path(Name::from(ty.as_name().ok_or(())?)),
+            Some(ast::GenericArg::Literal(lit)) => match parse_literal(lit.kind()) {
+                crate::expr::Literal::Int(val, _) => ArraySize::Int(val),
+                crate::expr::Literal::Uint(val, _) => ArraySize::Uint(val),
+                _ => return Err(()),
+            },
+            None => ArraySize::Dynamic,
+            _ => return Err(()),
+        };
+        Ok(ArrayType {
+            inner: Box::new(inner.try_into()?),
+            size,
+            binding_array: true,
         })
     }
 }

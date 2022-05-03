@@ -345,6 +345,7 @@ const TYPE_SET: &[SyntaxKind] = &[
     SyntaxKind::Vec2,
     SyntaxKind::Vec3,
     SyntaxKind::Vec4,
+    SyntaxKind::BindingArray,
 ];
 pub fn type_decl(p: &mut Parser) -> Option<CompletedMarker> {
     if p.at_set(TYPE_SET) {

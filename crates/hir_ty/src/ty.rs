@@ -323,6 +323,7 @@ pub struct AtomicType {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ArrayType {
     pub inner: Ty,
+    pub binding_array: bool,
     pub size: ArraySize,
 }
 

@@ -1,5 +1,9 @@
 use hir_def::db::{DefWithBodyId, GlobalVariableId};
-use hir_ty::{ty::TyKind, validate::StorageClassError, HirDatabase};
+use hir_ty::{
+    ty::{ArrayType, TyKind},
+    validate::StorageClassError,
+    HirDatabase,
+};
 
 pub enum GlobalVariableDiagnostic {
     MissingStorageClass,
@@ -27,7 +31,16 @@ pub fn collect(
             |error| f(GlobalVariableDiagnostic::StorageClassError(error)),
         );
     } else if let Some(ty) = ty_kind {
-        if !matches!(ty, TyKind::Error | TyKind::Sampler(_) | TyKind::Texture(_)) {
+        if !matches!(
+            ty,
+            TyKind::Error
+                | TyKind::Sampler(_)
+                | TyKind::Texture(_)
+                | TyKind::Array(ArrayType {
+                    binding_array: true,
+                    ..
+                })
+        ) {
             f(GlobalVariableDiagnostic::MissingStorageClass);
         }
     }

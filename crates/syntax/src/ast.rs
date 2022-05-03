@@ -795,6 +795,7 @@ ast_node!(PathType:
 );
 ast_node!(Atomic AtomicType);
 ast_node!(Array ArrayType);
+ast_node!(BindingArray BindingArrayType);
 ast_node!(Pointer PtrType);
 
 ast_enum_compound! {
@@ -807,6 +808,7 @@ ast_enum_compound! {
         SamplerType,
         AtomicType,
         ArrayType,
+        BindingArrayType,
         PtrType,
     }
 }
@@ -827,6 +829,7 @@ impl HasGenerics for TextureType {}
 impl HasGenerics for ScalarType {}
 impl HasGenerics for AtomicType {}
 impl HasGenerics for ArrayType {}
+impl HasGenerics for BindingArrayType {}
 impl HasGenerics for PtrType {}
 
 impl InfixExpr {

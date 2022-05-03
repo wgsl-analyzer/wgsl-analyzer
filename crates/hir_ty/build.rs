@@ -396,6 +396,7 @@ fn type_to_rust(ty: &Type) -> String {
         ),
         Type::RuntimeArray(inner) => format!("TyKind::Array(ArrayType {{
             size: ArraySize::Dynamic,
+            binding_array: false,
             inner: {}
         }}).intern(db)", type_to_rust(inner)),
         Type::Ptr(inner) => format!("TyKind::Ptr(Ptr {{

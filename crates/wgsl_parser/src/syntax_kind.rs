@@ -220,6 +220,8 @@ pub enum SyntaxKind {
     Vec3,
     #[token("vec4")]
     Vec4,
+    #[token("binding_array")]
+    BindingArray,
 
     // other keywords
     #[token("bitcast")]

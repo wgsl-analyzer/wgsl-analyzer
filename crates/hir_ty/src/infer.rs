@@ -1411,6 +1411,7 @@ impl<'db> TyLoweringContext<'db> {
                 inner: self.lower_ty(&*atomic.inner),
             }),
             TypeRef::Array(array) => TyKind::Array(ArrayType {
+                binding_array: array.binding_array,
                 inner: self.lower_ty(&*array.inner),
                 size: match array.size {
                     type_ref::ArraySize::Int(i) => ArraySize::Const(i as u64), // TODO error
