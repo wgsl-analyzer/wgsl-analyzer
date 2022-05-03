@@ -21,6 +21,10 @@ Specify the server path in the settings:
 }
 ```
 
+## Configuration
+
+Configuration for the VS Code plugin can be found in its subdirectory: [./editors/code/README.md](./editors/code/README.md).
+
 ## Building from source
 
 The lsp server can be built using `cargo build --release -p wgsl_analyzer`.
