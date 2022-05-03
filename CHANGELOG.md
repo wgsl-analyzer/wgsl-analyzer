@@ -1,5 +1,8 @@
 # Changelog
 
+### Version 0.4.5
+- fix issue where the `wgsl_analyzer` binary wasn't included in the `.vsix` extension file
+
 ### Version 0.4.4
 - add naga parsing/validation diagnostics (`wgsl-analyzer.diagnostics.nagaParsingErrors` enabled by default, `wgsl-analyzer.diagnostics.nagaValidationErrors` not).
 - Naga version can be configured to be either `0.8` (default) or `main`: `wgsl-analyzer.diagnostics.nagaVersion": "0.8"`

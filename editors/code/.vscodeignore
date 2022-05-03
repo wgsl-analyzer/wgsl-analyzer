@@ -2,6 +2,8 @@
 !language-configuration.json
 !syntaxes
 !out/main.js
+!out/wgsl_analyzer
+!out/wgsl_analyzer.exe
 !package.json
 !package-lock.json
 !icon.png
