@@ -59,7 +59,7 @@ fn resolve_name_ref(
         let field = sema.analyze(def).resolve_field(expr)?;
 
         Some(Definition::Field(field))
-    } else if let Some(ty) = ast::PathType::cast(parent.clone()) {
+    } else if let Some(ty) = ast::PathType::cast(parent) {
         let resolver = sema.resolver(file_id, ty.syntax());
 
         match resolver.resolve_type(&ty.name()?.into())? {

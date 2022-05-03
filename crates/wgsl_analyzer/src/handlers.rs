@@ -171,7 +171,8 @@ pub fn publish_diagnostics(
 ) -> Result<Vec<lsp_types::Diagnostic>> {
     let line_index = snap.file_line_index(file_id)?;
     let diagnostics = snap.analysis.diagnostics(config, file_id)?;
-    let lsp_diagnostics = diagnostics
+
+    diagnostics
         .into_iter()
         .map(|diagnostic| {
             let related = diagnostic
@@ -200,9 +201,7 @@ pub fn publish_diagnostics(
                 data: None,
             })
         })
-        .collect();
-
-    lsp_diagnostics
+        .collect()
 }
 
 fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSeverity {

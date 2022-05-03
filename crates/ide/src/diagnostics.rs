@@ -38,10 +38,7 @@ impl DiagnosticMessage {
     }
 
     pub fn with_severity(self, severity: Severity) -> Self {
-        DiagnosticMessage {
-            severity: severity,
-            ..self
-        }
+        DiagnosticMessage { severity, ..self }
     }
 
     pub fn unused(self) -> Self {
@@ -80,7 +77,7 @@ impl Naga for Naga08 {
         let flags = naga08::valid::ValidationFlags::all();
         let capabilities = naga08::valid::Capabilities::all();
         let mut validator = naga08::valid::Validator::new(flags, capabilities);
-        validator.validate(&module).map(drop)
+        validator.validate(module).map(drop)
     }
 }
 impl NagaError for naga08::front::wgsl::ParseError {
@@ -120,7 +117,7 @@ impl Naga for NagaMain {
         let flags = nagamain::valid::ValidationFlags::all();
         let capabilities = nagamain::valid::Capabilities::all();
         let mut validator = nagamain::valid::Validator::new(flags, capabilities);
-        validator.validate(&module).map(drop)
+        validator.validate(module).map(drop)
     }
 }
 impl NagaError for nagamain::front::wgsl::ParseError {
@@ -154,7 +151,7 @@ enum NagaErrorPolicy {
 }
 
 impl NagaErrorPolicy {
-    fn emit<'a, E: NagaError>(
+    fn emit<E: NagaError>(
         &self,
         db: &dyn HirDatabase,
         error: E,
@@ -210,13 +207,13 @@ impl NagaErrorPolicy {
             }
             NagaErrorPolicy::Related => {
                 let related: Vec<_> = spans
-                    .map(|(range, message)| (message.clone(), FileRange { range, file_id }))
+                    .map(|(range, message)| (message, FileRange { range, file_id }))
                     .collect();
                 let min_range = related
                     .iter()
                     .map(|(_, frange)| frange.range)
                     .min_by_key(|range| range.len())
-                    .unwrap_or_else(|| full_range);
+                    .unwrap_or(full_range);
 
                 acc.push(AnyDiagnostic::NagaValidationError {
                     file_id: file_id.into(),

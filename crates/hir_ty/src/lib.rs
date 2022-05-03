@@ -90,7 +90,7 @@ fn function_type(db: &dyn HirDatabase, function: FunctionId) -> Ty {
 }
 
 fn struct_is_used_in_uniform(db: &dyn HirDatabase, strukt: StructId, file_id: HirFileId) -> bool {
-    let module_info = db.module_info(file_id.into());
+    let module_info = db.module_info(file_id);
     module_info.items().iter().any(|item| match *item {
         hir_def::module_data::ModuleItem::Import(import) => {
             let import_id = db.intern_import(InFile::new(file_id, import));

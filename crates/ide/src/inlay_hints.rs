@@ -120,8 +120,7 @@ fn get_struct_layout_hints(
                     source.syntax().last_token(),
                     rowan::SyntaxToken::prev_token,
                 )
-                .skip_while(|token| token.kind().is_trivia())
-                .next()?;
+                .find(|token| !token.kind().is_trivia())?;
                 let range = TextRange::new(
                     source.syntax().text_range().start(),
                     actual_last_token.text_range().end(),
@@ -151,6 +150,7 @@ fn get_hints(
     node: SyntaxNode,
 ) -> Option<()> {
     if let Some(expr) = ast::Expr::cast(node.clone()) {
+        #[allow(clippy::single_match)] // for extendability
         match &expr {
             ast::Expr::FunctionCall(function_call_expr) => {
                 if !config.parameter_hints {

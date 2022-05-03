@@ -132,7 +132,7 @@ fn text_range_from_full(
 ) -> Result<TextRange, ()> {
     let root = db.parse_or_resolve(file_id)?.tree();
 
-    let mut imports = root
+    let imports = root
         .items()
         .filter_map(|item| match item {
             Item::Import(import) => Some(import),
@@ -146,7 +146,7 @@ fn text_range_from_full(
             Some((import.syntax().clone(), import_file))
         });
 
-    while let Some((import, import_file)) = imports.next() {
+    for (import, import_file) in imports {
         if import.text_range().start() > range.end() {
             break;
         }

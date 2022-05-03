@@ -64,6 +64,7 @@ impl<'t, 'input, P: ParserDefinition> Source<'t, 'input, P> {
         self.tokens.get(self.cursor)
     }
 
+    #[allow(clippy::type_complexity)]
     fn peek_compound_raw(&self) -> Option<(&Token<P::TokenKind>, &Token<P::TokenKind>)> {
         let a = self.tokens.get(self.cursor)?;
         let b = self.tokens.get(self.cursor + 1)?;

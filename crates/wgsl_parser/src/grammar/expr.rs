@@ -854,7 +854,9 @@ mod tests {
 
     #[test]
     fn shift_right() {
-        check("2 >> 3", expect![[r#"
+        check(
+            "2 >> 3",
+            expect![[r#"
             InfixExpr@0..6
               Literal@0..2
                 IntLiteral@0..1 "2"
@@ -864,12 +866,15 @@ mod tests {
                 GreaterThan@3..4 ">"
                 Whitespace@4..5 " "
               Literal@5..6
-                IntLiteral@5..6 "3""#]]);
+                IntLiteral@5..6 "3""#]],
+        );
     }
 
     #[test]
     fn shift_multiple() {
-        check("2 >> 3 + 2 << 4", expect![[r#"
+        check(
+            "2 >> 3 + 2 << 4",
+            expect![[r#"
             InfixExpr@0..15
               InfixExpr@0..11
                 Literal@0..2
@@ -893,6 +898,7 @@ mod tests {
                 LessThan@12..13 "<"
                 Whitespace@13..14 " "
               Literal@14..15
-                IntLiteral@14..15 "4""#]]);
+                IntLiteral@14..15 "4""#]],
+        );
     }
 }

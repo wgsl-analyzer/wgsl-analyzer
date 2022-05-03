@@ -840,10 +840,11 @@ impl InfixExpr {
         crate::support::children(self.syntax()).nth(1)
     }
     pub fn op(&self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
-        if let Some(op) = self.syntax().children().find(|child| match child.kind() {
-            SyntaxKind::ShiftLeft | SyntaxKind::ShiftRight => true,
-            _ => false,
-        }) {
+        if let Some(op) = self
+            .syntax()
+            .children()
+            .find(|child| matches!(child.kind(), SyntaxKind::ShiftLeft | SyntaxKind::ShiftRight))
+        {
             return Some(NodeOrToken::Node(op));
         }
 
@@ -875,18 +876,14 @@ impl InfixExpr {
                 BinaryOpKind::AndAnd(_) => BinaryOp::LogicOp(LogicOp::And),
             };
             Some(op)
-        } else if let Some(op) = self
-            .syntax()
-            .children()
-            .find_map(|child| match child.kind() {
-                SyntaxKind::ShiftLeft => Some(BinaryOp::ArithOp(ArithOp::Shl)),
-                SyntaxKind::ShiftRight => Some(BinaryOp::ArithOp(ArithOp::Shr)),
-                _ => None,
-            })
-        {
-            return Some(op);
         } else {
-            None
+            self.syntax()
+                .children()
+                .find_map(|child| match child.kind() {
+                    SyntaxKind::ShiftLeft => Some(BinaryOp::ArithOp(ArithOp::Shl)),
+                    SyntaxKind::ShiftRight => Some(BinaryOp::ArithOp(ArithOp::Shr)),
+                    _ => None,
+                })
         }
     }
 }
