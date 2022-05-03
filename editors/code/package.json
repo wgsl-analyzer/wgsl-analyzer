@@ -27,7 +27,7 @@
         "watch": "npm run build-base -- --sourcemap --watch",
         "lint": "eslint ./src --ext .ts,.tsx",
         "package": "vsce package",
-        "vscode:prepublish": "concurrently --max-processes 1 \"rimraf out/main.js.map\" \"npm run build-base -- --minify\""
+        "vscode:prepublish": "npm run build-base -- --minify"
     },
     "dependencies": {
         "node-fetch": "^3.1.1",
@@ -36,9 +36,7 @@
     "devDependencies": {
         "@types/node": "~17.0.0",
         "@types/vscode": "^1.52.0",
-        "concurrently": "^7.0.0",
         "esbuild": "^0.14.0",
-        "rimraf": "^3.0.2",
         "vsce": "^2.3.0"
     },
     "main": "./out/main.js",

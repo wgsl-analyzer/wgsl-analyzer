@@ -1,9 +1,7 @@
 **
 !language-configuration.json
 !syntaxes
-!out
-out/**
-!out/src
+!out/main.js
 !package.json
 !package-lock.json
 !icon.png
