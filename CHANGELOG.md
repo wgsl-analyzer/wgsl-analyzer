@@ -1,6 +1,6 @@
 # Changelog
 
-### Unreleased
+### Version 0.4.4
 - add naga parsing/validation diagnostics (`wgsl-analyzer.diagnostics.nagaParsingErrors` enabled by default, `wgsl-analyzer.diagnostics.nagaValidationErrors` not).
 - Naga version can be configured to be either `0.8` (default) or `main`: `wgsl-analyzer.diagnostics.nagaVersion": "0.8"`
 - better spans in diagnostics
