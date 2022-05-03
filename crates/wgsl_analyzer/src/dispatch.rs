@@ -6,6 +6,7 @@ use crate::{LspError, Result};
 
 use std::{fmt, panic, thread};
 
+use lsp_server::ExtractError;
 use serde::{de::DeserializeOwned, Serialize};
 
 /// A visitor for routing a raw JSON request to an appropriate handler function.
@@ -233,7 +234,10 @@ impl<'a> NotificationDispatcher<'a> {
         };
         let params = match not.extract::<N::Params>(N::METHOD) {
             Ok(it) => it,
-            Err(not) => {
+            Err(ExtractError::JsonError { method, error }) => {
+                panic!("Invalid request\nMethod: {method}\n error: {error}",)
+            }
+            Err(ExtractError::MethodMismatch(not)) => {
                 self.not = Some(not);
                 return Ok(self);
             }

@@ -15,7 +15,7 @@ ide_completion = { path = "../ide_completion" }
 syntax = { path = "../syntax" }
 wgsl_formatter = { path = "../wgsl_formatter" }
 rowan = "0.15"
-lsp-types = "0.91.0"
+lsp-types = "0.93.0"
 vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "20fa7cbcad" }
 
 expect-test = "1.1.0"
@@ -27,7 +27,7 @@ naga08 = { package = "naga", git = "https://github.com/jakobhellermann/naga", br
   "validate",
   "span",
 ] }
-nagamain = { package = "naga", git = "https://github.com/gfx-rs/naga", rev = "8584507f", features = [
+nagamain = { package = "naga", git = "https://github.com/gfx-rs/naga", rev = "9c8a51830c0348fabb3cda990e2449eea8f9de60", features = [
   "wgsl-in",
   "validate",
   "span",
