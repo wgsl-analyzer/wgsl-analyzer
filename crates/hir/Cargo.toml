@@ -10,5 +10,5 @@ hir_def = { path = "../hir_def" }
 hir_ty = { path = "../hir_ty" }
 syntax = { path = "../syntax" }
 tracing = "0.1"
-la-arena = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "20fa7cbcad" }
+la-arena = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "0ee4e6a22" }
 smallvec = "1.7.0"

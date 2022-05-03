@@ -28,8 +28,8 @@ hir = { path = "../hir" }
 ide = { path = "../ide" }
 ide_completion = { path = "../ide_completion" }
 
-vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "20fa7cbcad" }
-paths = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "20fa7cbcad" }
-text_edit = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "20fa7cbcad" }
+vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "0ee4e6a22" }
+paths = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "0ee4e6a22" }
+text-edit = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "0ee4e6a22" }
 itertools = "0.10.1"
 dissimilar = "1.0.3"
