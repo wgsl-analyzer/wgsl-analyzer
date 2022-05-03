@@ -73,6 +73,13 @@ async function getServer(config: Config): Promise<string | undefined> {
 }
 
 async function getServerVersion(serverPath: string): Promise<string> {
-    const result = await exec(`${serverPath} --version`);
-    return result.stdout.trim();
+    const promise = exec(`${serverPath} --version`);
+    const stdin = (promise as { child: cp.ChildProcess; }).child.stdin;
+    stdin.write("\n");
+    try {
+        return (await promise).stdout.trim();
+    } catch (e) {
+        console.error(e);
+        return "<unknown>";
+    }
 }
