@@ -52,7 +52,7 @@ impl<'a> CompletionContext<'a> {
                 }
                 _ => None,
             })
-            .or_else(|| token.ancestors().find_map(ExprOrStatement::cast));
+            .or_else(|| token.parent_ancestors().find_map(ExprOrStatement::cast));
 
         if let Some(scope) = nearest_scope {
             if let Some(def) = container {
