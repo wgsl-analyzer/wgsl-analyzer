@@ -115,9 +115,10 @@
                     "type": "string",
                     "enum": [
                         "0.8",
+                        "0.9",
                         "main"
                     ],
-                    "default": "0.8",
+                    "default": "0.9",
                     "description": "Which version of naga to use for its diagnostics"
                 },
                 "wgsl-analyzer.customImports": {

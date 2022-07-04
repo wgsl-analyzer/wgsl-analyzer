@@ -103,6 +103,48 @@ impl NagaError for naga08::WithSpan<naga08::valid::ValidationError> {
     }
 }
 
+
+struct Naga09;
+impl Naga for Naga09 {
+    type Module = naga09::Module;
+    type ParseError = naga09::front::wgsl::ParseError;
+    type ValidationError = naga09::WithSpan<naga09::valid::ValidationError>;
+
+    fn parse(source: &str) -> Result<Self::Module, Self::ParseError> {
+        naga09::front::wgsl::parse_str(source)
+    }
+
+    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
+        let flags = naga09::valid::ValidationFlags::all();
+        let capabilities = naga09::valid::Capabilities::all();
+        let mut validator = naga09::valid::Validator::new(flags, capabilities);
+        validator.validate(module).map(drop)
+    }
+}
+impl NagaError for naga09::front::wgsl::ParseError {
+    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
+        Box::new(
+            self.labels()
+                .map(|(range, label)| (range, label.to_string())),
+        )
+    }
+    fn has_spans(&self) -> bool {
+        self.labels().len() > 0
+    }
+}
+impl NagaError for naga09::WithSpan<naga09::valid::ValidationError> {
+    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
+        Box::new(
+            self.spans()
+                .filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
+        )
+    }
+    fn has_spans(&self) -> bool {
+        self.spans().len() > 0
+    }
+}
+
+
 struct NagaMain;
 impl Naga for NagaMain {
     type Module = nagamain::Module;
@@ -300,6 +342,9 @@ pub fn diagnostics(
         match &config.naga_version {
             NagaVersion::Naga08 => {
                 let _ = naga_diagnostics::<Naga08>(db, file_id, config, &mut diagnostics);
+            }
+            NagaVersion::Naga09 => {
+                let _ = naga_diagnostics::<Naga09>(db, file_id, config, &mut diagnostics);
             }
             NagaVersion::NagaMain => {
                 let _ = naga_diagnostics::<NagaMain>(db, file_id, config, &mut diagnostics);

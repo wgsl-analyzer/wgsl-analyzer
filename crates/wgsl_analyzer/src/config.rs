@@ -58,6 +58,8 @@ pub struct DiagnosticsConfig {
 pub enum NagaVersion {
     #[serde(rename = "0.8")]
     Naga08,
+    #[serde(rename = "0.9")]
+    Naga09,
     #[serde(rename = "main")]
     NagaMain,
 }
@@ -91,6 +93,7 @@ impl Config {
             naga_validation_errors: self.diagnostics.naga_validation_errors,
             naga_version: match self.diagnostics.naga_version {
                 NagaVersion::Naga08 => hir::diagnostics::NagaVersion::Naga08,
+                NagaVersion::Naga09 => hir::diagnostics::NagaVersion::Naga09,
                 NagaVersion::NagaMain => hir::diagnostics::NagaVersion::NagaMain,
             },
         }
