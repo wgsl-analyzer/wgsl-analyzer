@@ -2,3 +2,4 @@ out
 node_modules
 .vscode-test
 wgsl-analyzer-*.vsix
+wgsl-analyzer-*.vsix.zip
