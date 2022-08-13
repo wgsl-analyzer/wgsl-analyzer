@@ -34,11 +34,70 @@ If you provide a URL with a `http`, `https` or `file` scheme that resource will 
 ```json
 {
     "wgsl-analyzer.customImports": {
-        "bevy_pbr::mesh_view_bind_group": "https://raw.githubusercontent.com/bevyengine/bevy/v0.6.0/crates/bevy_pbr/src/render/mesh_view_bind_group.wgsl",
-        "bevy_pbr::mesh_struct": "https://raw.githubusercontent.com/bevyengine/bevy/v0.6.0/crates/bevy_pbr/src/render/mesh_struct.wgsl",
+        "bevy_pbr::mesh_bindings": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/mesh_bindings.wgsl",
+        "bevy_pbr::mesh_functions": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/mesh_functions.wgsl"
     }
 }
 ```
+
+<details>
+<summary>
+List of imports for bevy as of version 0.8
+</summary>
+
+
+_Generated using `rg define_import_path -g '*.wgsl' --sort path | sd '^([^:]*):#define_import_path (.*)' '        "$2": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/$1",'` inside the bevy folder_
+
+```json
+{
+    "wgsl-analyzer.customImports": {
+        "bevy_pbr::clustered_forward": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/clustered_forward.wgsl",
+        "bevy_pbr::mesh_bindings": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/mesh_bindings.wgsl",
+        "bevy_pbr::mesh_functions": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/mesh_functions.wgsl",
+        "bevy_pbr::mesh_types": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/mesh_types.wgsl",
+        "bevy_pbr::mesh_vertex_output": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/mesh_vertex_output.wgsl",
+        "bevy_pbr::mesh_view_bindings": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/mesh_view_bindings.wgsl",
+        "bevy_pbr::mesh_view_types": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/mesh_view_types.wgsl",
+        "bevy_pbr::pbr_bindings": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/pbr_bindings.wgsl",
+        "bevy_pbr::pbr_functions": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/pbr_functions.wgsl",
+        "bevy_pbr::lighting": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/pbr_lighting.wgsl",
+        "bevy_pbr::pbr_types": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/pbr_types.wgsl",
+        "bevy_pbr::shadows": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/shadows.wgsl",
+        "bevy_pbr::skinning": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/skinning.wgsl",
+        "bevy_pbr::utils": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_pbr/src/render/utils.wgsl",
+        "bevy_sprite::mesh2d_bindings": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_sprite/src/mesh2d/mesh2d_bindings.wgsl",
+        "bevy_sprite::mesh2d_functions": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_sprite/src/mesh2d/mesh2d_functions.wgsl",
+        "bevy_sprite::mesh2d_types": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_sprite/src/mesh2d/mesh2d_types.wgsl",
+        "bevy_sprite::mesh2d_vertex_output": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_sprite/src/mesh2d/mesh2d_vertex_output.wgsl",
+        "bevy_sprite::mesh2d_view_bindings": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_sprite/src/mesh2d/mesh2d_view_bindings.wgsl",
+        "bevy_sprite::mesh2d_view_types": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/crates/bevy_sprite/src/mesh2d/mesh2d_view_types.wgsl",
+
+        // or alternatively for faster startup
+
+        "bevy_pbr::clustered_forward": "file:///path/to/your/local/bevy/clone/crates/bevy_pbr/src/render/clustered_forward.wgsl",
+        "bevy_pbr::mesh_bindings": "file:///path/to/your/local/bevy/clone/crates/bevy_pbr/src/render/mesh_bindings.wgsl",
+        "bevy_pbr::mesh_functions": "file:///path/to/your/local/bevy/clone/crates/bevy_pbr/src/render/mesh_functions.wgsl",
+        "bevy_pbr::mesh_types": "file:///path/to/your/local/bevy/clone/crates/bevy_pbr/src/render/mesh_types.wgsl",
+        "bevy_pbr::mesh_vertex_output": "file:///path/to/your/local/bevy/clone/crates/bevy_pbr/src/render/mesh_vertex_output.wgsl",
+        "bevy_pbr::mesh_view_bindings": "file:///path/to/your/local/bevy/clone/crates/bevy_pbr/src/render/mesh_view_bindings.wgsl",
+        "bevy_pbr::mesh_view_types": "file:///path/to/your/local/bevy/clone/crates/bevy_pbr/src/render/mesh_view_types.wgsl",
+        "bevy_pbr::pbr_bindings": "file:///path/to/your/local/bevy/clone/crates/bevy_pbr/src/render/pbr_bindings.wgsl",
+        "bevy_pbr::pbr_functions": "file:///path/to/your/local/bevy/clone/crates/bevy_pbr/src/render/pbr_functions.wgsl",
+        "bevy_pbr::lighting": "file:///path/to/your/local/bevy/clone/crates/bevy_pbr/src/render/pbr_lighting.wgsl",
+        "bevy_pbr::pbr_types": "file:///path/to/your/local/bevy/clone/crates/bevy_pbr/src/render/pbr_types.wgsl",
+        "bevy_pbr::shadows": "file:///path/to/your/local/bevy/clone/crates/bevy_pbr/src/render/shadows.wgsl",
+        "bevy_pbr::skinning": "file:///path/to/your/local/bevy/clone/crates/bevy_pbr/src/render/skinning.wgsl",
+        "bevy_pbr::utils": "file:///path/to/your/local/bevy/clone/crates/bevy_pbr/src/render/utils.wgsl",
+        "bevy_sprite::mesh2d_bindings": "file:///path/to/your/local/bevy/clone/crates/bevy_sprite/src/mesh2d/mesh2d_bindings.wgsl",
+        "bevy_sprite::mesh2d_functions": "file:///path/to/your/local/bevy/clone/crates/bevy_sprite/src/mesh2d/mesh2d_functions.wgsl",
+        "bevy_sprite::mesh2d_types": "file:///path/to/your/local/bevy/clone/crates/bevy_sprite/src/mesh2d/mesh2d_types.wgsl",
+        "bevy_sprite::mesh2d_vertex_output": "file:///path/to/your/local/bevy/clone/crates/bevy_sprite/src/mesh2d/mesh2d_vertex_output.wgsl",
+        "bevy_sprite::mesh2d_view_bindings": "file:///path/to/your/local/bevy/clone/crates/bevy_sprite/src/mesh2d/mesh2d_view_bindings.wgsl",
+        "bevy_sprite::mesh2d_view_types": "file:///path/to/your/local/bevy/clone/crates/bevy_sprite/src/mesh2d/mesh2d_view_types.wgsl"
+    }
+}
+```
+</details>
 
 ### Preprocessor defines
 
