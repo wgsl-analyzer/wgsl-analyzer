@@ -4,7 +4,7 @@ use crate::{ast_id::AstIdMap, db::DefDatabase, type_ref::TypeRef};
 use la_arena::{Idx, IdxRange};
 use std::sync::Arc;
 use syntax::ast::{self, Item, SourceFile};
-use syntax::HasName;
+use syntax::{AstNode, HasName};
 
 use super::{Field, GlobalConstant, GlobalVariable, Import, ImportValue, Name, Struct, TypeAlias};
 
@@ -168,19 +168,7 @@ impl<'a> Ctx<'a> {
         let ast_id = self.source_ast_id_map.ast_id(function);
 
         let start_param = self.next_param_idx();
-        for param in function.param_list()?.params() {
-            let param = param.variable_ident_declaration()?;
-            let ty = param
-                .ty()
-                .and_then(|ty| self.lower_type_ref(ty))
-                .unwrap_or(TypeRef::Error);
-            let ty = self.db.intern_type_ref(ty);
-            let name = param
-                .binding()
-                .and_then(|binding| binding.name())
-                .map_or_else(Name::missing, Name::from);
-            self.module_data.params.alloc(Param { ty, name });
-        }
+        self.lower_function_param_list(function.param_list()?);
         let end_param = self.next_param_idx();
         let params = IdxRange::new(start_param..end_param);
 
@@ -198,6 +186,38 @@ impl<'a> Ctx<'a> {
         };
 
         Some(self.module_data.functions.alloc(function).into())
+    }
+
+    fn lower_function_param_list(&mut self, function_param_list: ast::ParamList) -> Option<()> {
+        for param in function_param_list.params() {
+            if let Some(param) = param.variable_ident_declaration() {
+                let ty = param
+                    .ty()
+                    .and_then(|ty| self.lower_type_ref(ty))
+                    .unwrap_or(TypeRef::Error);
+                let ty = self.db.intern_type_ref(ty);
+                let name = param
+                    .binding()
+                    .and_then(|binding| binding.name())
+                    .map_or_else(Name::missing, Name::from);
+                self.module_data.params.alloc(Param { ty, name });
+            } else if let Some(import) = param.import() {
+                let import = self.lower_import(&import)?;
+                let import = &self.module_data.imports[import.index];
+                let parse = match &import.value {
+                    crate::module_data::ImportValue::Path(_) => Err(()), // TODO: path imports
+                    crate::module_data::ImportValue::Custom(key) => self
+                        .db
+                        .parse_import(key.clone(), syntax::ParseEntryPoint::FnParamList),
+                };
+                if let Ok(parse) = parse {
+                    let param_list = ast::ParamList::cast(parse.syntax())?;
+                    self.lower_function_param_list(param_list)?;
+                }
+            }
+        }
+
+        Some(())
     }
 
     fn lower_type_ref(&self, ty: ast::Type) -> Option<TypeRef> {

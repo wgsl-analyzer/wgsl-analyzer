@@ -37,12 +37,14 @@ pub type PreorderWithTokens = rowan::api::PreorderWithTokens<WgslLanguage>;
 pub type Parse = parser::Parse<ParserDefinition>;
 pub type ParseError = parser::ParseError<ParserDefinition>;
 
+#[derive(PartialEq, Eq, Clone, Hash, Debug)]
 pub enum ParseEntryPoint {
     File,
     Expression,
     Statement,
     Type,
     AttributeList,
+    FnParamList,
 }
 
 pub fn parse_entrypoint(input: &str, entrypoint: ParseEntryPoint) -> Parse {
@@ -57,6 +59,9 @@ pub fn parse_entrypoint(input: &str, entrypoint: ParseEntryPoint) -> Parse {
         }),
         ParseEntryPoint::AttributeList => {
             parser::parse::<ParserDefinition, _>(input, grammar::attribute_list)
+        }
+        ParseEntryPoint::FnParamList => {
+            parser::parse::<ParserDefinition, _>(input, grammar::inner_param_list)
         }
     }
 }

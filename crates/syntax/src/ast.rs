@@ -316,6 +316,7 @@ ast_node!(Name:
 );
 ast_node!(Param:
     variable_ident_declaration: Option<VariableIdentDecl>;
+    import: Option<Import>;
 );
 ast_node!(ParamList:
     left_paren_token: Option<SyntaxToken ParenLeft>;

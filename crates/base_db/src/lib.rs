@@ -12,7 +12,7 @@ use std::{
 };
 
 use line_index::LineIndex;
-use syntax::Parse;
+use syntax::{Parse, ParseEntryPoint};
 pub use vfs::FileId;
 
 pub trait Upcast<T: ?Sized> {
@@ -43,7 +43,7 @@ pub trait SourceDatabase {
     fn parse_import_no_preprocessor(&self, key: String) -> Result<syntax::Parse, ()>;
 
     #[salsa::invoke(parse_import_query)]
-    fn parse_import(&self, key: String) -> Result<Parse, ()>;
+    fn parse_import(&self, key: String, parse_entrypoint: ParseEntryPoint) -> Result<Parse, ()>;
 
     fn line_index(&self, file_id: FileId) -> Arc<LineIndex>;
 }
@@ -101,12 +101,19 @@ fn parse_query(db: &dyn SourceDatabase, file_id: FileId) -> Parse {
     db.parse_with_unconfigured(file_id).0
 }
 
-fn parse_import_query(db: &dyn SourceDatabase, key: String) -> Result<Parse, ()> {
+fn parse_import_query(
+    db: &dyn SourceDatabase,
+    key: String,
+    parse_entrypoint: ParseEntryPoint,
+) -> Result<Parse, ()> {
     let imports = db.custom_imports();
     let shader_defs = db.shader_defs();
     let source = imports.get(&key).ok_or(())?;
 
     let processed_source =
         shader_processor::SHADER_PROCESSOR.process(source, &shader_defs, |_, _| {});
-    Ok(syntax::parse(&processed_source))
+    Ok(syntax::parse_entrypoint(
+        &processed_source,
+        parse_entrypoint,
+    ))
 }

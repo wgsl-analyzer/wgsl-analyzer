@@ -65,6 +65,7 @@ impl Body {
         db: &dyn DefDatabase,
         def: DefWithBodyId,
     ) -> (Arc<Body>, Arc<BodySourceMap>) {
+        let file_id = def.file_id(db);
         let (body, source_map) = match def {
             DefWithBodyId::Function(id) => {
                 let location = id.lookup(db);
@@ -72,19 +73,19 @@ impl Body {
                 let params = src.value.param_list();
                 let body = src.value.body();
 
-                lower::lower_function_body(db, params, body)
+                lower::lower_function_body(db, file_id, params, body)
             }
             DefWithBodyId::GlobalVariable(id) => {
                 let location = id.lookup(db);
                 let src = location.source(db);
 
-                lower::lower_global_var_decl(db, src.value)
+                lower::lower_global_var_decl(db, file_id, src.value)
             }
             DefWithBodyId::GlobalConstant(id) => {
                 let location = id.lookup(db);
                 let src = location.source(db);
 
-                lower::lower_global_constant_decl(db, src.value)
+                lower::lower_global_constant_decl(db, file_id, src.value)
             }
         };
 

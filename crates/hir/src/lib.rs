@@ -150,7 +150,8 @@ impl<'db> Semantics<'db> {
     }
 
     pub fn import_to_def(&self, src: InFile<ast::Import>) -> Option<ImportId> {
-        let import = module_data::find_item(self.db.upcast(), src.file_id, &src.value)?;
+        let import = module_data::find_import(self.db.upcast(), src.file_id, &src.value)?;
+
         let import_id = self.db.intern_import(Location::new(src.file_id, import));
         Some(import_id)
     }

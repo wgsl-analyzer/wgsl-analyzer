@@ -7,7 +7,8 @@ use std::{marker::PhantomData, ops::Deref, sync::Arc};
 use either::Either;
 pub use rowan::Direction;
 pub use wgsl_parser::{
-    ParseError, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodeChildren, SyntaxToken,
+    ParseEntryPoint, ParseError, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodeChildren,
+    SyntaxToken,
 };
 
 #[derive(Clone, Debug)]
@@ -34,7 +35,10 @@ impl Parse {
 }
 
 pub fn parse(input: &str) -> Parse {
-    let (green_node, errors) = wgsl_parser::parse_file(input).into_parts();
+    parse_entrypoint(input, ParseEntryPoint::File)
+}
+pub fn parse_entrypoint(input: &str, parse_entrypoint: ParseEntryPoint) -> Parse {
+    let (green_node, errors) = wgsl_parser::parse_entrypoint(input, parse_entrypoint).into_parts();
     Parse {
         green_node,
         errors: Arc::new(errors),

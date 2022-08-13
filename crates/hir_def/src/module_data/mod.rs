@@ -315,3 +315,26 @@ pub fn find_item<M: ModuleDataNode>(
         }
     })
 }
+
+// imports can be found not just in the items
+pub fn find_import(
+    db: &dyn DefDatabase,
+    file_id: HirFileId,
+    source: &syntax::ast::Import,
+) -> Option<ModuleItemId<Import>> {
+    let module_info = db.module_info(file_id);
+    let result = module_info.data.imports.iter().find_map(|(idx, data)| {
+        let id = ModuleItemId::from(idx);
+        let def_map = db.ast_id_map(file_id);
+
+        let source_ast_id = def_map.ast_id(source);
+        let item_ast_id = Import::ast_id(data);
+
+        if source_ast_id == item_ast_id {
+            Some(id)
+        } else {
+            None
+        }
+    });
+    result
+}

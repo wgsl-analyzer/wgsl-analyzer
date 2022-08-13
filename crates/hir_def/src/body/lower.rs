@@ -4,12 +4,14 @@ use crate::{
     expr::{parse_literal, Expr, ExprId, Statement, StatementId},
     module_data::Name,
     type_ref::TypeRef,
+    HirFileId, InFile,
 };
 use either::Either;
-use syntax::{ast, ptr::AstPtr, HasName};
+use syntax::{ast, ptr::AstPtr, AstNode, HasName};
 
 pub fn lower_function_body(
     db: &dyn DefDatabase,
+    file_id: HirFileId,
     param_list: Option<ast::ParamList>,
     body: Option<ast::CompoundStatement>,
 ) -> (Body, BodySourceMap) {
@@ -17,29 +19,34 @@ pub fn lower_function_body(
         db,
         body: Body::default(),
         source_map: BodySourceMap::default(),
+        file_id,
     }
     .collect_function(param_list, body)
 }
 
 pub fn lower_global_var_decl(
     db: &dyn DefDatabase,
+    file_id: HirFileId,
     decl: ast::GlobalVariableDecl,
 ) -> (Body, BodySourceMap) {
     Collector {
         db,
         body: Body::default(),
         source_map: BodySourceMap::default(),
+        file_id: file_id,
     }
     .collect_global_var_decl(decl)
 }
 pub fn lower_global_constant_decl(
     db: &dyn DefDatabase,
+    file_id: HirFileId,
     decl: ast::GlobalConstantDecl,
 ) -> (Body, BodySourceMap) {
     Collector {
         db,
         body: Body::default(),
         source_map: BodySourceMap::default(),
+        file_id,
     }
     .collect_global_constant_decl(decl)
 }
@@ -48,6 +55,7 @@ struct Collector<'a> {
     db: &'a dyn DefDatabase,
     body: Body,
     source_map: BodySourceMap,
+    file_id: HirFileId,
 }
 
 impl<'a> Collector<'a> {
@@ -56,22 +64,49 @@ impl<'a> Collector<'a> {
         param_list: Option<ast::ParamList>,
         body: Option<ast::CompoundStatement>,
     ) -> (Body, BodySourceMap) {
-        if let Some(param_list) = param_list {
-            for binding in param_list
-                .params()
-                .filter_map(|p| p.variable_ident_declaration())
-                .filter_map(|var_decl| var_decl.binding())
-            {
-                let binding_id = self.collect_binding(binding);
-                self.body.params.push(binding_id);
-            }
-        }
+        self.collect_function_param_list(param_list);
 
         self.body.root = body
             .map(|body| self.collect_compound_stmt(body))
             .map(Either::Left);
 
         (self.body, self.source_map)
+    }
+
+    fn collect_function_param_list(&mut self, param_list: Option<ast::ParamList>) {
+        if let Some(param_list) = param_list {
+            for p in param_list.params() {
+                if let Some(binding) = p
+                    .variable_ident_declaration()
+                    .and_then(|decl| decl.binding())
+                {
+                    let binding_id = self.collect_binding(binding);
+                    self.body.params.push(binding_id);
+                } else if let Some(import) = p.import() {
+                    let import_param_list =
+                        crate::module_data::find_import(self.db, self.file_id, &import)
+                            .map(|import| self.db.intern_import(InFile::new(self.file_id, import)))
+                            .and_then(|import_id| {
+                                let import_loc = self.db.lookup_intern_import(import_id);
+                                let module_info = self.db.module_info(import_loc.file_id);
+                                let import = module_info.get(import_loc.value);
+
+                                match &import.value {
+                                    crate::module_data::ImportValue::Path(_) => None, // TODO: path imports
+                                    crate::module_data::ImportValue::Custom(key) => self
+                                        .db
+                                        .parse_import(
+                                            key.clone(),
+                                            syntax::ParseEntryPoint::FnParamList,
+                                        )
+                                        .ok(),
+                                }
+                            })
+                            .and_then(|parse| ast::ParamList::cast(parse.syntax()));
+                    self.collect_function_param_list(import_param_list);
+                }
+            }
+        }
     }
 
     fn collect_global_var_decl(mut self, decl: ast::GlobalVariableDecl) -> (Body, BodySourceMap) {

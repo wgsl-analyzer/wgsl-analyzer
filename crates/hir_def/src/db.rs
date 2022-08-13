@@ -74,7 +74,9 @@ fn parse_or_resolve(db: &dyn DefDatabase, file_id: HirFileId) -> Result<Parse, (
 
             match &import.value {
                 crate::module_data::ImportValue::Path(_) => Err(()), // TODO: path imports
-                crate::module_data::ImportValue::Custom(key) => db.parse_import(key.clone()),
+                crate::module_data::ImportValue::Custom(key) => {
+                    db.parse_import(key.clone(), syntax::ParseEntryPoint::File)
+                }
             }
         }
     }

@@ -21,6 +21,14 @@ impl AstIdMap {
             .flat_map(ast::Item::cast)
             .for_each(|item| {
                 map.alloc(item.syntax());
+
+                if let ast::Item::Function(function) = item {
+                    if let Some(params) = function.param_list() {
+                        for import in params.params().filter_map(|param| param.import()) {
+                            map.alloc(import.syntax());
+                        }
+                    }
+                }
             });
         map
     }
