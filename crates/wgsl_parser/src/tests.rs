@@ -520,6 +520,39 @@ fn parse_if_recover_paren() {
     );
 }
 
+#[test] 
+fn parse_if_without_paren() {
+    check_statement(
+        r#"if true {
+          let x = 3;
+        }"#,
+        expect![[r#"
+            IfStatement@0..40
+              If@0..2 "if"
+              Whitespace@2..3 " "
+              Literal@3..8
+                True@3..7 "true"
+                Whitespace@7..8 " "
+              CompoundStatement@8..40
+                BraceLeft@8..9 "{"
+                Whitespace@9..20 "\n          "
+                VariableStatement@20..29
+                  Let@20..23 "let"
+                  Whitespace@23..24 " "
+                  Binding@24..26
+                    Name@24..26
+                      Ident@24..25 "x"
+                      Whitespace@25..26 " "
+                  Equal@26..27 "="
+                  Whitespace@27..28 " "
+                  Literal@28..29
+                    IntLiteral@28..29 "3"
+                Semicolon@29..30 ";"
+                Whitespace@30..39 "\n        "
+                BraceRight@39..40 "}""#]],
+    );
+
+}
 #[test]
 fn parse_if_recover_empty() {
     check_statement(
@@ -530,15 +563,16 @@ fn parse_if_recover_empty() {
             IfStatement@0..35
               If@0..2 "if"
               Whitespace@2..3 " "
-              Error@3..3
-              CompoundStatement@3..35
+              Error@3..15
                 BraceLeft@3..4 "{"
                 Whitespace@4..15 "\n          "
-                VariableStatement@15..24
+              CompoundStatement@15..35
+                Error@15..19
                   Let@15..18 "let"
                   Whitespace@18..19 " "
-                  Binding@19..21
-                    Name@19..21
+                AssignmentStmt@19..24
+                  PathExpr@19..21
+                    NameRef@19..21
                       Ident@19..20 "x"
                       Whitespace@20..21 " "
                   Equal@21..22 "="
@@ -549,7 +583,8 @@ fn parse_if_recover_empty() {
                 Whitespace@25..34 "\n        "
                 BraceRight@34..35 "}"
 
-            error at 3..4: expected ParenLeft, but found BraceLeft"#]],
+            error at 3..4: expected ParenLeft or Ident, but found BraceLeft
+            error at 15..18: expected BraceLeft, but found Let"#]],
     );
 }
 
@@ -1409,7 +1444,7 @@ fn fn_recover_attr_2() {
                   BraceLeft@14..15 "{"
                   BraceRight@15..16 "}"
 
-            error at 8..9: expected ParenRight, Attr, AttrLeft or Ident, but found BracketLeft
+            error at 8..9: expected ParenRight, UnofficialPreprocessorImport, Attr, AttrLeft or Ident, but found BracketLeft
             error at 9..10: expected Colon, but found BracketRight"#]],
     )
 }
