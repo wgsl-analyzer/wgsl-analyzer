@@ -4,7 +4,9 @@ wgsl-analyzer is a [language server](https://microsoft.github.io/language-server
 
 It comes with a [VS Code](https://code.visualstudio.com/) plugin located in [./editors/code](./editors/code), but due to the nature of the language server protocol it should be possible to create plugins for other editors as well.
 
-## Installation (VS Code)
+## Installation
+
+### VS Code
 
 The extension is [published on the marketplace](https://marketplace.visualstudio.com/items?itemName=wgsl-analyzer.wgsl-analyzer), so you can simply download the extension like any other.
 
@@ -20,6 +22,39 @@ Specify the server path in the settings:
     "wgsl-analyzer.server.path": "~/.cargo/bin/wgsl_analyzer"
 }
 ```
+
+### Neovim / Vim (using coc.nvim)
+
+- Requires CoC to be installed: https://github.com/neoclide/coc.nvim
+- Requires cargo to be installed to build binaries: 
+
+1.) Install the language server
+```sh
+cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl_analyzer
+```
+(if you are not familiar with using and setting up cargo, you might run into problems finding your binary.
+Ensure that $HOME/.cargo/bin is in your $PATH. More Info about $PATH: https://linuxconfig.org/linux-path-environment-variable)
+
+2.) open Neovim / Vim and type `:CocConfig` to configure coc.nvim.
+
+3.) under `.languageserver: { ... }` create a new field named "wgsl". The field should look like this:
+```jsonc
+//  {
+//    "languageserver": {
+        "wgsl": {
+          "command": "wgsl_analyzer", // alternatively you can specify the absolute path to your binary.
+          "filetypes": ["wgsl"],
+        },
+//      ...
+//  }
+```
+
+4.) In order for your editor to recognize wgsl files as such, you need to put this into your `vim.rc`
+```vim
+" Recognize wgsl
+au BufNewFile,BufRead *.wgsl set filetype=wgsl
+```
+
 
 ## Configuration
 
