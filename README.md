@@ -28,16 +28,16 @@ Specify the server path in the settings:
 - Requires CoC to be installed: https://github.com/neoclide/coc.nvim
 - Requires cargo to be installed to build binaries: 
 
-1.) Install the language server
+1. Install the language server
 ```sh
 cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl_analyzer
 ```
 (if you are not familiar with using and setting up cargo, you might run into problems finding your binary.
 Ensure that $HOME/.cargo/bin is in your $PATH. More Info about $PATH: https://linuxconfig.org/linux-path-environment-variable)
 
-2.) open Neovim / Vim and type `:CocConfig` to configure coc.nvim.
+2. open Neovim / Vim and type `:CocConfig` to configure coc.nvim.
 
-3.) under `.languageserver: { ... }` create a new field named "wgsl". The field should look like this:
+3. under `.languageserver: { ... }` create a new field named "wgsl". The field should look like this:
 ```jsonc
 //  {
 //    "languageserver": {
@@ -49,7 +49,7 @@ Ensure that $HOME/.cargo/bin is in your $PATH. More Info about $PATH: https://li
 //  }
 ```
 
-4.) In order for your editor to recognize wgsl files as such, you need to put this into your `vim.rc`
+4. In order for your editor to recognize wgsl files as such, you need to put this into your `vim.rc`
 ```vim
 " Recognize wgsl
 au BufNewFile,BufRead *.wgsl set filetype=wgsl
