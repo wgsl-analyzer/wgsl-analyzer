@@ -296,6 +296,11 @@ impl<'a> Collector<'a> {
                     block,
                 }
             }
+            ast::Statement::WhileStatement(ref while_stmt) => {
+                let condition = self.collect_expr_opt(while_stmt.condition());
+                let block = self.collect_compound_stmt_opt(while_stmt.block());
+                Statement::While { condition, block }
+            }
             ast::Statement::Discard(_) => Statement::Discard,
             ast::Statement::Break(_) => Statement::Break,
             ast::Statement::Continue(_) => Statement::Continue,

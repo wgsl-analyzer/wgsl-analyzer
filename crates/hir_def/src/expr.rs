@@ -112,6 +112,10 @@ pub enum Statement {
         continuing_part: Option<StatementId>,
         block: StatementId,
     },
+    While {
+        condition: ExprId,
+        block: StatementId,
+    },
     Switch {
         expr: ExprId,
         case_blocks: Vec<(Vec<ExprId>, StatementId)>,

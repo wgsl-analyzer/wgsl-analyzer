@@ -25,8 +25,10 @@ pub enum SyntaxKind {
     VariableStatement,
     /// an expression in statement position. Only function calls are allowed there in WGSL, but we parse it nonetheless
     ExprStatement,
-    /// loop (expr) { stmts }
+    /// loop { stmts }
     LoopStatement,
+    /// while (expr) { stmts }
+    WhileStatement,
     /// if (expr) { stmts }
     IfStatement,
     /// switch expr { case 1, 2: {} default: {}}
@@ -282,6 +284,8 @@ pub enum SyntaxKind {
     Uniform,
     #[token("var")]
     Var,
+    #[token("while")]
+    While,
     #[token("workgroup")]
     Workgroup,
     #[token("write")]

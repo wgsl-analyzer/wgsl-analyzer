@@ -157,7 +157,6 @@ fn format_syntax_node(
             set_whitespace_single_after(if_statement.if_token()?);
 
             let condition = if_statement.condition()?.syntax().clone();
-            remove_if_whitespace(condition.first_token()?.prev_token()?);
             remove_if_whitespace(condition.last_token()?);
 
             set_whitespace_single_before(if_statement.block()?.left_brace_token()?);
@@ -170,12 +169,22 @@ fn format_syntax_node(
                 whitespace_to_single_around(else_if_block.else_token()?);
                 whitespace_to_single_around(else_if_block.if_token()?);
 
-                let condition = else_if_block.condition()?.syntax().clone();
-                remove_if_whitespace(condition.first_token()?.prev_token()?);
-                remove_if_whitespace(condition.last_token()?);
+                // let condition = else_if_block.condition()?.syntax().clone();
+                // remove_if_whitespace(condition.first_token()?.prev_token()?);
+                // remove_if_whitespace(condition.last_token()?);
 
                 set_whitespace_single_before(else_if_block.block()?.left_brace_token()?);
             }
+        }
+        SyntaxKind::WhileStatement => {
+            let while_statement = ast::WhileStatement::cast(syntax)?;
+
+            set_whitespace_single_after(while_statement.while_token()?);
+
+            let condition = while_statement.condition()?.syntax().clone();
+            remove_if_whitespace(condition.last_token()?);
+
+            set_whitespace_single_before(while_statement.block()?.left_brace_token()?);
         }
         SyntaxKind::ForStatement => {
             let for_statement = ast::ForStatement::cast(syntax)?;
@@ -255,6 +264,11 @@ fn format_syntax_node(
                     whitespace_to_single_around(token);
                 }
             }
+        }
+        SyntaxKind::ParenExpr => {
+            let paren_expr = syntax.clone();
+            remove_if_whitespace(paren_expr.first_token()?.next_token()?);
+            remove_if_whitespace(paren_expr.last_token()?.prev_token()?);
         }
         SyntaxKind::AssignmentStmt => {
             let stmt = ast::AssignmentStmt::cast(syntax)?;

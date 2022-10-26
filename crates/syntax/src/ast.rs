@@ -619,6 +619,12 @@ ast_node!(IfStatement:
     else_block: Option<ElseBlock>;
 );
 
+ast_node!(WhileStatement:
+    while_token: Option<SyntaxToken While>;
+    condition: Option<Expr>;
+    block: Option<CompoundStatement>;
+);
+
 ast_node!(SwitchStatement:
     expr: Option<Expr>;
     block: Option<SwitchBlock>;
@@ -714,6 +720,7 @@ ast_enum! {
         ForStatement,
         SwitchStatement,
         LoopStatement,
+        WhileStatement,
         Discard,
         Break,
         Continue,

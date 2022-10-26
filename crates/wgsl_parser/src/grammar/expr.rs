@@ -295,6 +295,13 @@ fn paren_expr(p: &mut Parser) -> CompletedMarker {
 
     let m = p.start();
     p.bump();
+    if p.at(SyntaxKind::ParenRight) {
+        // TODO: Better kind of error here. Ideally just EXPR
+        p.error_expected_no_bump(&[SyntaxKind::ParenExpr]);
+        p.bump();
+        return m.complete(p, SyntaxKind::ParenExpr);
+    }
+
     expr_binding_power(p, 0);
     p.expect(SyntaxKind::ParenRight);
 

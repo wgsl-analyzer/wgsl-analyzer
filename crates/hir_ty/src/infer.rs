@@ -389,6 +389,10 @@ impl<'db> InferenceContext<'db> {
                 }
                 self.infer_expr_expect(condition, TypeExpectation::from_ty(self.bool_ty()));
             }
+            Statement::While { condition, block } => {
+                self.infer_stmt(block);
+                self.infer_expr_expect(condition, TypeExpectation::from_ty(self.bool_ty()));
+            }
             Statement::Switch {
                 expr,
                 ref case_blocks,

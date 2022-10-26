@@ -465,6 +465,8 @@ pub fn statement(p: &mut Parser) {
         switch_statement(p);
     } else if p.at(SyntaxKind::Loop) {
         loop_statement(p);
+    } else if p.at(SyntaxKind::While) {
+        while_statement(p);
     } else if p.at(SyntaxKind::For) {
         for_statement(p);
     } else if p.at(SyntaxKind::Break) {
@@ -530,6 +532,22 @@ fn continuing_statement(p: &mut Parser) {
     m.complete(p, SyntaxKind::ContinuingStatement);
 }
 
+fn while_statement(p: &mut Parser) {
+    let m = p.start();
+    p.expect(SyntaxKind::While);
+    if p.at_set(&[SyntaxKind::BraceLeft]) {
+        // TODO: Better error here
+        p.error_expected_no_bump(&[SyntaxKind::Bool]);
+        m.complete(p, SyntaxKind::WhileStatement);
+        return;
+    }
+
+    expr(p);
+
+    compound_statement(p);
+    m.complete(p, SyntaxKind::WhileStatement);
+}
+
 fn for_statement(p: &mut Parser) {
     let m = p.start();
     p.expect(SyntaxKind::For);
@@ -589,7 +607,12 @@ fn if_statement(p: &mut Parser) {
     let m = p.start();
     p.expect(SyntaxKind::If);
 
-    expr(p);
+    if p.at_set(&[SyntaxKind::BraceLeft]) {
+        // TODO: Better error here
+        p.error_expected_no_bump(&[SyntaxKind::Bool]);
+    } else {
+        expr(p);
+    }
 
     compound_statement(p);
 
@@ -600,7 +623,12 @@ fn if_statement(p: &mut Parser) {
         if p.at(SyntaxKind::If) {
             p.bump();
 
-            expr(p);
+            if p.at_set(&[SyntaxKind::BraceLeft]) {
+                // TODO: Better error here
+                p.error_expected_no_bump(&[SyntaxKind::Bool]);
+            } else {
+                expr(p);
+            }
 
             compound_statement(p);
             m_else.complete(p, SyntaxKind::ElseIfBlock);
