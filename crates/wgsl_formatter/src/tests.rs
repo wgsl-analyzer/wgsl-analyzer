@@ -204,6 +204,21 @@ fn format_for() {
 }
 
 #[test]
+fn format_while() {
+    check(
+        "fn main() {
+        while(x < 1){}
+        while  (  x < 1   )  {}
+    }",
+        expect![[r#"
+            fn main() {
+                while (x < 1) {}
+                while (x < 1) {}
+            }"#]],
+    );
+}
+
+#[test]
 fn format_function_call() {
     check(
         "fn main() {
