@@ -441,49 +441,87 @@ fn parse_stmt_return() {
 }
 
 #[test]
+fn parse_while_stmt() {
+    check_statement(
+        r#"while 0 > 3 { let x = 3; }"#,
+        expect![[r#"
+        WhileStatement@0..26
+          While@0..5 "while"
+          Whitespace@5..6 " "
+          InfixExpr@6..12
+            Literal@6..8
+              IntLiteral@6..7 "0"
+              Whitespace@7..8 " "
+            GreaterThan@8..9 ">"
+            Whitespace@9..10 " "
+            Literal@10..12
+              IntLiteral@10..11 "3"
+              Whitespace@11..12 " "
+          CompoundStatement@12..26
+            BraceLeft@12..13 "{"
+            Whitespace@13..14 " "
+            VariableStatement@14..23
+              Let@14..17 "let"
+              Whitespace@17..18 " "
+              Binding@18..20
+                Name@18..20
+                  Ident@18..19 "x"
+                  Whitespace@19..20 " "
+              Equal@20..21 "="
+              Whitespace@21..22 " "
+              Literal@22..23
+                IntLiteral@22..23 "3"
+            Semicolon@23..24 ";"
+            Whitespace@24..25 " "
+            BraceRight@25..26 "}""#]],
+    );
+}
+
+#[test]
 fn parse_if_stmt() {
     check_statement(
         r#"if (0 > 3) { let x = 3; return x; }"#,
         expect![[r#"
-        IfStatement@0..35
-          If@0..2 "if"
-          Whitespace@2..3 " "
-          ParenLeft@3..4 "("
-          InfixExpr@4..9
-            Literal@4..6
-              IntLiteral@4..5 "0"
-              Whitespace@5..6 " "
-            GreaterThan@6..7 ">"
-            Whitespace@7..8 " "
-            Literal@8..9
-              IntLiteral@8..9 "3"
-          ParenRight@9..10 ")"
-          Whitespace@10..11 " "
-          CompoundStatement@11..35
-            BraceLeft@11..12 "{"
-            Whitespace@12..13 " "
-            VariableStatement@13..22
-              Let@13..16 "let"
-              Whitespace@16..17 " "
-              Binding@17..19
-                Name@17..19
-                  Ident@17..18 "x"
-                  Whitespace@18..19 " "
-              Equal@19..20 "="
-              Whitespace@20..21 " "
-              Literal@21..22
-                IntLiteral@21..22 "3"
-            Semicolon@22..23 ";"
-            Whitespace@23..24 " "
-            ReturnStmt@24..32
-              Return@24..30 "return"
-              Whitespace@30..31 " "
-              PathExpr@31..32
-                NameRef@31..32
-                  Ident@31..32 "x"
-            Semicolon@32..33 ";"
-            Whitespace@33..34 " "
-            BraceRight@34..35 "}""#]],
+            IfStatement@0..35
+              If@0..2 "if"
+              Whitespace@2..3 " "
+              ParenExpr@3..11
+                ParenLeft@3..4 "("
+                InfixExpr@4..9
+                  Literal@4..6
+                    IntLiteral@4..5 "0"
+                    Whitespace@5..6 " "
+                  GreaterThan@6..7 ">"
+                  Whitespace@7..8 " "
+                  Literal@8..9
+                    IntLiteral@8..9 "3"
+                ParenRight@9..10 ")"
+                Whitespace@10..11 " "
+              CompoundStatement@11..35
+                BraceLeft@11..12 "{"
+                Whitespace@12..13 " "
+                VariableStatement@13..22
+                  Let@13..16 "let"
+                  Whitespace@16..17 " "
+                  Binding@17..19
+                    Name@17..19
+                      Ident@17..18 "x"
+                      Whitespace@18..19 " "
+                  Equal@19..20 "="
+                  Whitespace@20..21 " "
+                  Literal@21..22
+                    IntLiteral@21..22 "3"
+                Semicolon@22..23 ";"
+                Whitespace@23..24 " "
+                ReturnStmt@24..32
+                  Return@24..30 "return"
+                  Whitespace@30..31 " "
+                  PathExpr@31..32
+                    NameRef@31..32
+                      Ident@31..32 "x"
+                Semicolon@32..33 ";"
+                Whitespace@33..34 " "
+                BraceRight@34..35 "}""#]],
     );
 }
 
@@ -497,9 +535,11 @@ fn parse_if_recover_paren() {
             IfStatement@0..38
               If@0..2 "if"
               Whitespace@2..3 " "
-              ParenLeft@3..4 "("
-              ParenRight@4..5 ")"
-              Whitespace@5..6 " "
+              ParenExpr@3..6
+                ParenLeft@3..4 "("
+                Error@4..4
+                ParenRight@4..5 ")"
+                Whitespace@5..6 " "
               CompoundStatement@6..38
                 BraceLeft@6..7 "{"
                 Whitespace@7..18 "\n          "
@@ -516,11 +556,13 @@ fn parse_if_recover_paren() {
                     IntLiteral@26..27 "3"
                 Semicolon@27..28 ";"
                 Whitespace@28..37 "\n        "
-                BraceRight@37..38 "}""#]],
+                BraceRight@37..38 "}"
+
+            error at 4..5: expected ParenExpr, but found ParenRight"#]],
     );
 }
 
-#[test] 
+#[test]
 fn parse_if_without_paren() {
     check_statement(
         r#"if true {
@@ -551,7 +593,6 @@ fn parse_if_without_paren() {
                 Whitespace@30..39 "\n        "
                 BraceRight@39..40 "}""#]],
     );
-
 }
 #[test]
 fn parse_if_recover_empty() {
@@ -563,16 +604,15 @@ fn parse_if_recover_empty() {
             IfStatement@0..35
               If@0..2 "if"
               Whitespace@2..3 " "
-              Error@3..15
+              Error@3..3
+              CompoundStatement@3..35
                 BraceLeft@3..4 "{"
                 Whitespace@4..15 "\n          "
-              CompoundStatement@15..35
-                Error@15..19
+                VariableStatement@15..24
                   Let@15..18 "let"
                   Whitespace@18..19 " "
-                AssignmentStmt@19..24
-                  PathExpr@19..21
-                    NameRef@19..21
+                  Binding@19..21
+                    Name@19..21
                       Ident@19..20 "x"
                       Whitespace@20..21 " "
                   Equal@21..22 "="
@@ -583,8 +623,7 @@ fn parse_if_recover_empty() {
                 Whitespace@25..34 "\n        "
                 BraceRight@34..35 "}"
 
-            error at 3..4: expected ParenLeft or Ident, but found BraceLeft
-            error at 15..18: expected BraceLeft, but found Let"#]],
+            error at 3..4: expected Bool, but found BraceLeft"#]],
     );
 }
 
@@ -596,11 +635,12 @@ fn parse_if_else() {
             IfStatement@0..47
               If@0..2 "if"
               Whitespace@2..3 " "
-              ParenLeft@3..4 "("
-              Literal@4..5
-                IntLiteral@4..5 "0"
-              ParenRight@5..6 ")"
-              Whitespace@6..7 " "
+              ParenExpr@3..7
+                ParenLeft@3..4 "("
+                Literal@4..5
+                  IntLiteral@4..5 "0"
+                ParenRight@5..6 ")"
+                Whitespace@6..7 " "
               CompoundStatement@7..10
                 BraceLeft@7..8 "{"
                 BraceRight@8..9 "}"
@@ -610,11 +650,12 @@ fn parse_if_else() {
                 Whitespace@14..15 " "
                 If@15..17 "if"
                 Whitespace@17..18 " "
-                ParenLeft@18..19 "("
-                Literal@19..20
-                  IntLiteral@19..20 "1"
-                ParenRight@20..21 ")"
-                Whitespace@21..22 " "
+                ParenExpr@18..22
+                  ParenLeft@18..19 "("
+                  Literal@19..20
+                    IntLiteral@19..20 "1"
+                  ParenRight@20..21 ")"
+                  Whitespace@21..22 " "
                 CompoundStatement@22..25
                   BraceLeft@22..23 "{"
                   BraceRight@23..24 "}"
@@ -624,11 +665,12 @@ fn parse_if_else() {
                 Whitespace@29..30 " "
                 If@30..32 "if"
                 Whitespace@32..33 " "
-                ParenLeft@33..34 "("
-                Literal@34..35
-                  IntLiteral@34..35 "2"
-                ParenRight@35..36 ")"
-                Whitespace@36..37 " "
+                ParenExpr@33..37
+                  ParenLeft@33..34 "("
+                  Literal@34..35
+                    IntLiteral@34..35 "2"
+                  ParenRight@35..36 ")"
+                  Whitespace@36..37 " "
                 CompoundStatement@37..40
                   BraceLeft@37..38 "{"
                   BraceRight@38..39 "}"
@@ -650,11 +692,12 @@ fn parse_if_recovery_1() {
             IfStatement@0..24
               If@0..2 "if"
               Whitespace@2..3 " "
-              ParenLeft@3..4 "("
-              Literal@4..9
-                False@4..9 "false"
-              ParenRight@9..10 ")"
-              Whitespace@10..11 " "
+              ParenExpr@3..11
+                ParenLeft@3..4 "("
+                Literal@4..9
+                  False@4..9 "false"
+                ParenRight@9..10 ")"
+                Whitespace@10..11 " "
               CompoundStatement@11..14
                 BraceLeft@11..12 "{"
                 BraceRight@12..13 "}"
@@ -664,9 +707,12 @@ fn parse_if_recovery_1() {
                 Whitespace@18..19 " "
                 If@19..21 "if"
                 Whitespace@21..22 " "
+                Error@22..22
                 CompoundStatement@22..24
                   BraceLeft@22..23 "{"
-                  BraceRight@23..24 "}""#]],
+                  BraceRight@23..24 "}"
+
+            error at 22..23: expected Bool, but found BraceLeft"#]],
     );
 }
 

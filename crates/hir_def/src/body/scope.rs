@@ -227,6 +227,10 @@ fn compute_statement_scopes(
             }
             compute_statement_scopes(*block, body, scopes, scope);
         }
+        Statement::While { condition, block } => {
+            compute_expr_scopes(*condition, body, scopes, scope);
+            compute_statement_scopes(*block, body, scopes, scope);
+        }
         Statement::Return { expr } => {
             if let Some(expr) = expr {
                 compute_expr_scopes(*expr, body, scopes, scope);

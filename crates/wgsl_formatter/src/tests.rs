@@ -349,7 +349,7 @@ fn format_statement_indent_nested() {
     check(
         "fn main() {
 for() {
-if() {
+if(y) {
 var x = 0;
 }
 }
@@ -357,7 +357,7 @@ var x = 0;
         expect![[r#"
                 fn main() {
                     for () {
-                        if () {
+                        if (y) {
                             var x = 0;
                         }
                     }
