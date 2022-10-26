@@ -236,12 +236,12 @@
                 {
                     "comment": "other keywords",
                     "name": "keyword.control.wgsl",
-                    "match": "\\b(bitcast|block|break|case|continue|continuing|default|discard|else|elseif|enable|fallthrough|for|function|if|loop|private|read|read_write|return|storage|switch|uniform|workgroup|write)\\b"
+                    "match": "\\b(bitcast|block|break|case|continue|continuing|default|discard|else|elseif|enable|fallthrough|for|function|if|loop|private|read|read_write|return|storage|switch|uniform|while|workgroup|write)\\b"
                 },
                 {
                     "comment": "reserved keywords",
                     "name": "keyword.control.wgsl",
-                    "match": "\\b(asm|const|do|enum|handle|mat|premerge|regardless|typedef|unless|using|vec|void|while)\\b"
+                    "match": "\\b(asm|const|do|enum|handle|mat|premerge|regardless|typedef|unless|using|vec|void)\\b"
                 },
                 {
                     "comment": "storage keywords",
