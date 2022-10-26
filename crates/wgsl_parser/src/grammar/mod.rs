@@ -589,17 +589,7 @@ fn if_statement(p: &mut Parser) {
     let m = p.start();
     p.expect(SyntaxKind::If);
 
-    if p.at(SyntaxKind::ParenLeft) {
-        surround(
-            p,
-            SyntaxKind::ParenLeft,
-            SyntaxKind::ParenRight,
-            &[SyntaxKind::BraceLeft],
-            expr,
-        );
-    } else {
-        expr(p);
-    }
+    expr(p);
 
     compound_statement(p);
 
@@ -610,15 +600,7 @@ fn if_statement(p: &mut Parser) {
         if p.at(SyntaxKind::If) {
             p.bump();
 
-            if !p.at(SyntaxKind::BraceLeft) {
-                surround(
-                    p,
-                    SyntaxKind::ParenLeft,
-                    SyntaxKind::ParenRight,
-                    &[SyntaxKind::BraceLeft],
-                    expr,
-                );
-            }
+            expr(p);
 
             compound_statement(p);
             m_else.complete(p, SyntaxKind::ElseIfBlock);
