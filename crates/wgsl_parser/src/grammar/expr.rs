@@ -868,6 +868,31 @@ mod tests {
     }
 
     #[test]
+    fn bitcast_vector() {
+        check(
+            "bitcast<vec4<u32>>(x)",
+            expect![[r#"
+                BitcastExpr@0..21
+                  Bitcast@0..7 "bitcast"
+                  LessThan@7..8 "<"
+                  Vec4@8..17
+                    Vec4@8..12 "vec4"
+                    GenericArgList@12..17
+                      LessThan@12..13 "<"
+                      Uint32@13..16
+                        Uint32@13..16 "u32"
+                      GreaterThan@16..17 ">"
+                  GreaterThan@17..18 ">"
+                  ParenExpr@18..21
+                    ParenLeft@18..19 "("
+                    PathExpr@19..20
+                      NameRef@19..20
+                        Ident@19..20 "x"
+                    ParenRight@20..21 ")""#]],
+        );
+    }
+
+    #[test]
     fn bitcast_no_generics() {
         check(
             "bitcast(x)",
