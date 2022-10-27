@@ -28,6 +28,8 @@ atan(f32) -> f32
 atan(vecN<f32>) -> vecN<f32>
 atan2(f32, f32) -> f32
 atan2(vecN<f32>, vecN<f32>) -> vecN<f32>
+ceil(f32) -> f32
+ceil(vecN<f32>) -> vecN<f32>
 clamp(f32, f32, f32) -> f32
 clamp(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
 cos(f32) -> f32
