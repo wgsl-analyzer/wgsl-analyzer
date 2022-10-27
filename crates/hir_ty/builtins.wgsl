@@ -115,14 +115,14 @@ countTrailingZeros(i32) -> i32
 countTrailingZeros(vecN<i32>) -> vecN<i32>
 countTrailingZeros(u32) -> u32
 countTrailingZeros(vecN<u32>) -> vecN<u32>
-firstBitHigh(i32) -> i32
-firstBitHigh(vecN<i32>) -> vecN<i32>
-firstBitHigh(u32) -> u32
-firstBitHigh(vecN<u32>) -> vecN<u32>
-firstBitLow(i32) -> i32
-firstBitLow(vecN<i32>) -> vecN<i32>
-firstBitLow(u32) -> u32
-firstBitLow(vecN<u32>) -> vecN<u32>
+firstLeadingBit(i32) -> i32
+firstLeadingBit(vecN<i32>) -> vecN<i32>
+firstLeadingBit(u32) -> u32
+firstLeadingBit(vecN<u32>) -> vecN<u32>
+firstTrailingBit(i32) -> i32
+firstTrailingBit(vecN<i32>) -> vecN<i32>
+firstTrailingBit(u32) -> u32
+firstTrailingBit(vecN<u32>) -> vecN<u32>
 extractBits(i32, u32, u32) -> i32
 extractBits(vecN<i32>, u32, u32) -> vecN<i32>
 extractBits(u32, u32, u32) -> u32
