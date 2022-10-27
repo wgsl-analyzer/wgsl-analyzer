@@ -79,6 +79,8 @@ pub enum SyntaxKind {
     NameRef,
     /// an expression inside parenthesis
     ParenExpr,
+    /// an expression of the form bitcast< <type> >(expr)
+    BitcastExpr,
     /// a non-builtin type
     PathType,
     /// a = b
