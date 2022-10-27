@@ -113,7 +113,12 @@ function parseUrl(url: string): vscode.Uri | undefined {
 }
 
 async function resolveImport(content: string): Promise<string> {
-    const content_replaced = content.replace("${workspaceFolder}", vscode.workspace.workspaceFile.path);
+    let content_replaced = content;
+    const folders = vscode.workspace.workspaceFolders;
+    if (vscode.workspace.workspaceFolders.length == 1) {
+        content_replaced = content_replaced.replace("${workspaceFolder}", folders[0].uri.toString());
+
+    }
     let uri = parseUrl(content_replaced);
 
     if (uri !== undefined) {
