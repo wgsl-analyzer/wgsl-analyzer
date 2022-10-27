@@ -11,3 +11,4 @@ rowan = "0.15"
 [dev-dependencies]
 anyhow = "1.0"
 expect-test = "1.1.0"
+dissimilar = "1.0.4"
