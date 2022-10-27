@@ -412,3 +412,11 @@ fn format_expr_shift_left() {
         expect![[r#"fn main() { let x = 1u << 3u; }"#]],
     );
 }
+
+#[test]
+fn format_expr_bitcast() {
+    check(
+        "fn main() { bitcast   <  vec4<u32>  >  ( x+5 ) }",
+        expect!["fn main() { bitcast<vec4<u32>>(x + 5) }"],
+    );
+}

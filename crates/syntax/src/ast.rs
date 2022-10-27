@@ -482,6 +482,8 @@ ast_node!(ParenExpr:
 );
 ast_node!(BitcastExpr:
     bitcast_token: Option<SyntaxToken Bitcast>;
+    l_angle_token: Option<SyntaxToken LessThan>;
+    r_angle_token: Option<SyntaxToken GreaterThan>;
     ty: Option<Type>;
     inner: Option<ParenExpr>;
 );

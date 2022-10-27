@@ -260,6 +260,15 @@ fn format_syntax_node(
             remove_if_whitespace(paren_expr.left_paren_token()?.next_token()?);
             remove_if_whitespace(paren_expr.right_paren_token()?.prev_token()?);
         }
+        SyntaxKind::BitcastExpr => {
+            let bitcast_expr = ast::BitcastExpr::cast(syntax)?;
+            remove_if_whitespace(bitcast_expr.bitcast_token()?.next_token()?);
+
+            remove_if_whitespace(bitcast_expr.l_angle_token()?.next_token()?);
+            remove_if_whitespace(bitcast_expr.r_angle_token()?.prev_token()?);
+
+            remove_if_whitespace(bitcast_expr.r_angle_token()?.next_token()?);
+        }
         SyntaxKind::AssignmentStmt => {
             let stmt = ast::AssignmentStmt::cast(syntax)?;
             whitespace_to_single_around(stmt.equal_token()?);
