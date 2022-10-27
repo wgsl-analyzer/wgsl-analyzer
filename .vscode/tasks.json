@@ -42,6 +42,7 @@
                 "Build Server",
                 "Build Extension"
             ],
+            "dependsOrder": "sequence"
         },
         {
             "label": "Build Server (Release) and Extension",
@@ -50,6 +51,7 @@
                 "Build Server (Release)",
                 "Build Extension"
             ],
+            "dependsOrder": "sequence"
         },
     ]
 }
