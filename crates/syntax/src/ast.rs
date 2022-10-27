@@ -476,6 +476,8 @@ ast_node!(NameRef:
     text: TokenText<'_>;
 );
 ast_node!(ParenExpr:
+    left_paren_token: Option<SyntaxToken ParenLeft>;
+    right_paren_token: Option<SyntaxToken ParenRight>;
     inner: Option<Expr>;
 );
 ast_node!(FieldExpr:
