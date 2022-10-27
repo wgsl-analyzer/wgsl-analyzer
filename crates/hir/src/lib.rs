@@ -492,12 +492,13 @@ impl Module {
                 if let Some(def) = item.as_def_with_body_id() {
                     let (_, source_map) = db.body_with_source_map(def);
                     let infer = db.infer(def);
+                    let file = def.file_id(db.upcast());
                     for diagnostic in &infer.diagnostics {
                         match diagnostics::any_diag_from_infer_diag(
                             db,
                             diagnostic,
                             &*source_map,
-                            self.file_id,
+                            file,
                         ) {
                             Some(diag) => acc.push(diag),
                             None => {
