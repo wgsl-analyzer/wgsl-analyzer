@@ -98,6 +98,8 @@ fn lhs(p: &mut Parser) -> Option<CompletedMarker> {
         let m = p.start();
         name_ref(p);
         m.complete(p, SyntaxKind::PathExpr)
+    } else if p.at(SyntaxKind::Bitcast) {
+        bitcast_expr(p)
     } else if p.at_set(TYPE_SET) {
         let type_decl = super::type_decl(p).unwrap();
         type_decl
@@ -261,6 +263,28 @@ pub fn literal(p: &mut Parser) -> CompletedMarker {
     let m = p.start();
     p.bump();
     m.complete(p, SyntaxKind::Literal)
+}
+
+fn bitcast_expr(p: &mut Parser) -> CompletedMarker {
+    assert!(p.at(SyntaxKind::Bitcast));
+    let m = p.start();
+    p.bump();
+    if !p.eat(SyntaxKind::LessThan) {
+        p.error_expected_no_bump(&[SyntaxKind::LessThan]);
+        if p.at(SyntaxKind::ParenLeft) {
+            paren_expr(p);
+        }
+        return m.complete(p, SyntaxKind::BitcastExpr);
+    }
+    let _ = super::type_decl(p);
+    p.expect(SyntaxKind::GreaterThan);
+
+    if !p.at(SyntaxKind::ParenLeft) {
+        p.error_expected_no_bump(&[SyntaxKind::ParenLeft]);
+        return m.complete(p, SyntaxKind::BitcastExpr);
+    }
+    paren_expr(p);
+    return m.complete(p, SyntaxKind::BitcastExpr);
 }
 
 fn prefix_expr(p: &mut Parser) -> CompletedMarker {
@@ -461,7 +485,7 @@ mod tests {
                       IntLiteral@1..2 "1"
                     Plus@2..3 "+"
 
-                error at 2..3: expected Ident or ParenLeft
+                error at 2..3: expected Ident, Bitcast or ParenLeft
                 error at 2..3: expected ParenRight"#]],
         );
     }
@@ -820,6 +844,78 @@ mod tests {
                     PathExpr@4..7
                       NameRef@4..7
                         Ident@4..7 "foo""#]],
+        );
+    }
+
+    #[test]
+    fn bitcast() {
+        check(
+            "bitcast<u32>(x)",
+            expect![[r#"
+                BitcastExpr@0..15
+                  Bitcast@0..7 "bitcast"
+                  LessThan@7..8 "<"
+                  Uint32@8..11
+                    Uint32@8..11 "u32"
+                  GreaterThan@11..12 ">"
+                  ParenExpr@12..15
+                    ParenLeft@12..13 "("
+                    PathExpr@13..14
+                      NameRef@13..14
+                        Ident@13..14 "x"
+                    ParenRight@14..15 ")""#]],
+        );
+    }
+
+    #[test]
+    fn bitcast_no_generics() {
+        check(
+            "bitcast(x)",
+            expect![[r#"
+                BitcastExpr@0..10
+                  Bitcast@0..7 "bitcast"
+                  Error@7..7
+                  ParenExpr@7..10
+                    ParenLeft@7..8 "("
+                    PathExpr@8..9
+                      NameRef@8..9
+                        Ident@8..9 "x"
+                    ParenRight@9..10 ")"
+
+                error at 7..8: expected LessThan, but found ParenLeft"#]],
+        );
+    }
+    #[test]
+    fn bitcast_in_expr() {
+        check(
+            "1 + -bitcast<u32>(x) + 1",
+            expect![[r#"
+                InfixExpr@0..24
+                  InfixExpr@0..21
+                    Literal@0..2
+                      IntLiteral@0..1 "1"
+                      Whitespace@1..2 " "
+                    Plus@2..3 "+"
+                    Whitespace@3..4 " "
+                    PrefixExpr@4..21
+                      Minus@4..5 "-"
+                      BitcastExpr@5..21
+                        Bitcast@5..12 "bitcast"
+                        LessThan@12..13 "<"
+                        Uint32@13..16
+                          Uint32@13..16 "u32"
+                        GreaterThan@16..17 ">"
+                        ParenExpr@17..21
+                          ParenLeft@17..18 "("
+                          PathExpr@18..19
+                            NameRef@18..19
+                              Ident@18..19 "x"
+                          ParenRight@19..20 ")"
+                          Whitespace@20..21 " "
+                  Plus@21..22 "+"
+                  Whitespace@22..23 " "
+                  Literal@23..24
+                    IntLiteral@23..24 "1""#]],
         );
     }
 
