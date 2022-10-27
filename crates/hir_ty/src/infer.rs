@@ -638,6 +638,13 @@ impl<'db> InferenceContext<'db> {
                     }
                 }
             }
+            Expr::Bitcast { ty, expr } => {
+                self.infer_expr(expr);
+                let ty = self
+                    .try_lower_ty(&self.db.lookup_intern_type_ref(ty))
+                    .unwrap_or_else(|_| self.err_ty());
+                ty
+            }
             Expr::TypeInitializer { ty, ref args } => {
                 let args: Vec<_> = args.iter().map(|&arg| self.infer_expr(arg)).collect();
                 let ty = self.lower_ty(expr, &self.db.lookup_intern_type_ref(ty));

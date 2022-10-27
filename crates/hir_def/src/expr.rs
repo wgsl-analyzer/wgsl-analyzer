@@ -60,6 +60,10 @@ pub enum Expr {
         lhs: ExprId,
         index: ExprId,
     },
+    Bitcast {
+        expr: ExprId,
+        ty: Interned<TypeRef>,
+    },
     Literal(Literal),
     Path(Name),
 }
@@ -200,6 +204,9 @@ impl Expr {
             Expr::Index { lhs, index } => {
                 f(*lhs);
                 f(*index);
+            }
+            Expr::Bitcast { expr, .. } => {
+                f(*expr);
             }
             Expr::Missing => {}
             Expr::Literal(_) => {}
