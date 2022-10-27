@@ -85,7 +85,7 @@ fn format_syntax_node(
     }) {
         let start = syntax.first_token()?;
 
-        let n_newlines = n_newlines_in_whitespace(start.prev_token()?).unwrap_or(1);
+        let n_newlines = n_newlines_in_whitespace(start.prev_token()?).unwrap_or(0);
 
         if n_newlines > 0 {
             set_whitespace_before(
@@ -279,6 +279,10 @@ fn format_syntax_node(
         }
         SyntaxKind::VariableStatement => {
             let stmt = ast::VariableStatement::cast(syntax)?;
+            if let Some(colon) = stmt.colon() {
+                remove_if_whitespace(colon.prev_token()?);
+                set_whitespace_single_after(colon);
+            }
             whitespace_to_single_around(stmt.equal_token()?);
         }
         _ => {}

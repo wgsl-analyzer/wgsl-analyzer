@@ -662,6 +662,7 @@ ast_node!(ReturnStmt:
 ast_node!(VariableStatement:
     variable_qualifier: Option<VariableQualifier>;
     binding: Option<Binding>;
+    colon: Option<SyntaxToken Colon>;
     ty: Option<Type>;
     equal_token: Option<SyntaxToken Equal>;
     initializer: Option<Expr>;

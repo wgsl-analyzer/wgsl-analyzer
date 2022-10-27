@@ -1076,6 +1076,7 @@ name = "wgsl_formatter"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "dissimilar",
  "expect-test",
  "rowan",
  "syntax",

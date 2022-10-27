@@ -1,19 +1,67 @@
+use std::panic;
+
 use crate::{format_recursive, FormattingOptions};
 use expect_test::{expect, Expect};
 
 fn check(before: &str, after: Expect) {
     check_with_options(before, after, &FormattingOptions::default())
 }
+#[track_caller]
 fn check_with_options(before: &str, after: Expect, options: &FormattingOptions) {
     let syntax = syntax::parse(before.trim_start())
         .syntax()
         .clone_for_update();
     format_recursive(syntax.clone(), options);
-
     eprintln!("{:#?}", syntax);
 
     let new = syntax.to_string();
     after.assert_eq(&new);
+
+    // Check for idempotence
+    let syntax = syntax::parse(new.trim_start()).syntax().clone_for_update();
+    format_recursive(syntax.clone(), options);
+    let new_second = syntax.to_string();
+    let diff = dissimilar::diff(&new, &new_second);
+    let position = panic::Location::caller();
+    if new == new_second {
+        return;
+    }
+    println!(
+        "\n
+\x1b[1m\x1b[91merror\x1b[97m: Formatting Idempotence check failed\x1b[0m
+\x1b[1m\x1b[34m-->\x1b[0m {position}
+\x1b[1mExpect\x1b[0m:
+----
+{new}
+----
+
+\x1b[1mActual\x1b[0m:
+----
+{new_second}
+----
+
+\x1b[1mDiff\x1b[0m:
+----
+{}
+----
+",
+        format_chunks(diff)
+    );
+    // Use resume_unwind instead of panic!() to prevent a backtrace, which is unnecessary noise.
+    panic::resume_unwind(Box::new(()));
+}
+
+fn format_chunks(chunks: Vec<dissimilar::Chunk>) -> String {
+    let mut buf = String::new();
+    for chunk in chunks {
+        let formatted = match chunk {
+            dissimilar::Chunk::Equal(text) => text.into(),
+            dissimilar::Chunk::Delete(text) => format!("\x1b[41m{}\x1b[0m", text),
+            dissimilar::Chunk::Insert(text) => format!("\x1b[42m{}\x1b[0m", text),
+        };
+        buf.push_str(&formatted);
+    }
+    buf
 }
 
 #[test]
@@ -356,6 +404,14 @@ var x=0;
                 fn main() {
                     var x = 0;
                 }"#]],
+    );
+}
+
+#[test]
+fn format_variable_type() {
+    check(
+        "fn main() {var x   : u32=0;}",
+        expect!["fn main() {var x: u32 = 0;}"],
     );
 }
 
