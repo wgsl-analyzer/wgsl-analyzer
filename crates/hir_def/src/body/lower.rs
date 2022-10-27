@@ -349,6 +349,17 @@ impl<'a> Collector<'a> {
                 self.source_map.expr_map.insert(syntax_ptr, inner);
                 return inner;
             }
+            ast::Expr::BitcastExpr(expr) => {
+                let inner = self.collect_expr_opt(expr.inner().map(ast::Expr::ParenExpr));
+
+                let ty = expr
+                    .ty()
+                    .and_then(|ty| TypeRef::try_from(ty).ok())
+                    .unwrap_or(TypeRef::Error);
+                let ty = self.db.intern_type_ref(ty);
+
+                Expr::Bitcast { expr: inner, ty }
+            }
             ast::Expr::FieldExpr(field) => {
                 let expr = self.collect_expr_opt(field.expr());
                 let name = field
