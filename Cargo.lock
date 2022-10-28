@@ -267,9 +267,9 @@ dependencies = [
  "ide_completion",
  "itertools",
  "lsp-types",
- "naga 0.8.0",
- "naga 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "naga 0.9.0 (git+https://github.com/gfx-rs/naga?rev=350171ed2f45612386cc91a0ee9ff79d918939a9)",
+ "naga 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "naga 0.10.0 (git+https://github.com/gfx-rs/naga?rev=e7fc8e64f2f23397b149217ecce6e123c5aa5092)",
+ "naga 0.9.0",
  "rowan",
  "salsa",
  "smol_str",
@@ -450,22 +450,6 @@ dependencies = [
 
 [[package]]
 name = "naga"
-version = "0.8.0"
-source = "git+https://github.com/jakobhellermann/naga?branch=expose-error-messages-0.8-backport#8dba15a357123d20bafadd9433788bc3c1599908"
-dependencies = [
- "bit-set",
- "bitflags",
- "codespan-reporting",
- "hexf-parse",
- "indexmap",
- "log",
- "num-traits",
- "rustc-hash",
- "thiserror",
-]
-
-[[package]]
-name = "naga"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f50357e1167a3ab92d6b3c7f4bf5f7fd13fde3f4b28bf0d5ea07b5100fdb6c0"
@@ -485,8 +469,27 @@ dependencies = [
 
 [[package]]
 name = "naga"
-version = "0.9.0"
-source = "git+https://github.com/gfx-rs/naga?rev=350171ed2f45612386cc91a0ee9ff79d918939a9#350171ed2f45612386cc91a0ee9ff79d918939a9"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "262d2840e72dbe250e8cf2f522d080988dfca624c4112c096238a4845f591707"
+dependencies = [
+ "bit-set",
+ "bitflags",
+ "codespan-reporting",
+ "hexf-parse",
+ "indexmap",
+ "log",
+ "num-traits",
+ "rustc-hash",
+ "termcolor",
+ "thiserror",
+ "unicode-xid",
+]
+
+[[package]]
+name = "naga"
+version = "0.10.0"
+source = "git+https://github.com/gfx-rs/naga?rev=e7fc8e64f2f23397b149217ecce6e123c5aa5092#e7fc8e64f2f23397b149217ecce6e123c5aa5092"
 dependencies = [
  "bit-set",
  "bitflags",

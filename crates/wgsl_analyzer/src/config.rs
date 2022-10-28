@@ -56,17 +56,17 @@ pub struct DiagnosticsConfig {
 
 #[derive(Clone, Debug, Deserialize)]
 pub enum NagaVersion {
-    #[serde(rename = "0.8")]
-    Naga08,
     #[serde(rename = "0.9")]
     Naga09,
+    #[serde(rename = "0.10")]
+    Naga10,
     #[serde(rename = "main")]
     NagaMain,
 }
 
 impl Default for NagaVersion {
     fn default() -> Self {
-        NagaVersion::Naga08
+        NagaVersion::Naga10
     }
 }
 
@@ -92,8 +92,8 @@ impl Config {
             naga_parsing_errors: self.diagnostics.naga_parsing_errors,
             naga_validation_errors: self.diagnostics.naga_validation_errors,
             naga_version: match self.diagnostics.naga_version {
-                NagaVersion::Naga08 => hir::diagnostics::NagaVersion::Naga08,
                 NagaVersion::Naga09 => hir::diagnostics::NagaVersion::Naga09,
+                NagaVersion::Naga10 => hir::diagnostics::NagaVersion::Naga10,
                 NagaVersion::NagaMain => hir::diagnostics::NagaVersion::NagaMain,
             },
         }

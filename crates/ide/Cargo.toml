@@ -22,17 +22,17 @@ expect-test = "1.1.0"
 itertools = "0.10.1"
 smol_str = "0.1.21"
 
-naga08 = { package = "naga", git = "https://github.com/jakobhellermann/naga", branch = "expose-error-messages-0.8-backport", features = [
-  "wgsl-in",
-  "validate",
-  "span",
-] }
 naga09 = { package = "naga", version = "0.9", features = [
   "wgsl-in",
   "validate",
   "span",
 ] }
-nagamain = { package = "naga", git = "https://github.com/gfx-rs/naga", rev = "350171ed2f45612386cc91a0ee9ff79d918939a9", features = [
+naga10 = { package = "naga", version = "0.10", features = [
+  "wgsl-in",
+  "validate",
+  "span",
+] }
+nagamain = { package = "naga", git = "https://github.com/gfx-rs/naga", rev = "e7fc8e64f2f23397b149217ecce6e123c5aa5092", features = [
   "wgsl-in",
   "validate",
   "span",
