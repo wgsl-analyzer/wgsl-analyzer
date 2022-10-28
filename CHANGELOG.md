@@ -1,5 +1,32 @@
 # Changelog
 
+### Version 0.5.3
+- clear diagnostics on file close
+- format variables
+- remove unused parenthesis on format 
+- avoid panic on number with suffix
+- update naga versions (now supports `0.9`, `0.10` and `main`)
+
+### Version 0.5.2
+- add `ceil` builtin
+- fix panic due to wrong file in diagnostic
+- allow exponentials without decimal point
+- support `bitcast`
+- replace `${workspaceFolder}` in import paths (other variables not supported yet)
+
+### Version 0.5.1
+- support while
+- rename `firstLeadingBit`/`firstTrailingBit` builtins
+- add instructions for vim usage
+- fix parser hang
+
+### Version 0.5.0
+- implement #import's in function param list
+
+### Version 0.4.6
+- add naga 0.9 option
+- update naga main
+
 ### Version 0.4.5
 - fix issue where the `wgsl_analyzer` binary wasn't included in the `.vsix` extension file
 
