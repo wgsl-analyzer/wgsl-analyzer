@@ -103,7 +103,6 @@ impl NagaError for naga08::WithSpan<naga08::valid::ValidationError> {
     }
 }
 
-
 struct Naga09;
 impl Naga for Naga09 {
     type Module = naga09::Module;
@@ -143,7 +142,6 @@ impl NagaError for naga09::WithSpan<naga09::valid::ValidationError> {
         self.spans().len() > 0
     }
 }
-
 
 struct NagaMain;
 impl Naga for NagaMain {
@@ -278,7 +276,7 @@ fn naga_diagnostics<N: Naga>(
         Err(_) => return Ok(()),
     };
 
-    let full_range = TextRange::new(0.into(), TextSize::from(source.len() as u32 - 1));
+    let full_range = TextRange::up_to(TextSize::of(&source));
 
     let policy = NagaErrorPolicy::Related;
     match N::parse(&source) {
