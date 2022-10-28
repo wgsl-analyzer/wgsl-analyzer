@@ -143,7 +143,7 @@ pub enum Statement {
 pub fn parse_literal(lit: ast::LiteralKind) -> Literal {
     match lit {
         ast::LiteralKind::IntLiteral(lit) => {
-            let text = lit.text();
+            let text = lit.text().trim_end_matches('i');
             let (text, negative) = match text.strip_prefix('-') {
                 Some(new) => (new, true),
                 None => (text, false),
@@ -173,7 +173,9 @@ pub fn parse_literal(lit: ast::LiteralKind) -> Literal {
         ast::LiteralKind::HexFloatLiteral(_) => Literal::Float(0, BuiltinFloat::F32),
         ast::LiteralKind::DecimalFloatLiteral(lit) => {
             use std::str::FromStr;
-            let _value = f32::from_str(lit.text()).expect("invalid literal");
+            // Float suffixes aren't accepted by `f32::from_str`. Ignore them
+            let text = lit.text().trim_end_matches(char::is_alphabetic);
+            let _value = f32::from_str(text).expect("invalid literal");
             Literal::Float(0, BuiltinFloat::F32)
         }
         ast::LiteralKind::True(_) => Literal::Bool(true),
