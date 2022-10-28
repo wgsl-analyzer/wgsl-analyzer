@@ -223,8 +223,8 @@ impl GlobalState {
 mod text_notifications {
     use anyhow::Context;
     use lsp_types::{
-        DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
-        DidSaveTextDocumentParams,
+        notification::PublishDiagnostics, DidChangeTextDocumentParams, DidCloseTextDocumentParams,
+        DidOpenTextDocumentParams, DidSaveTextDocumentParams, PublishDiagnosticsParams,
     };
     use tracing::error;
 
@@ -275,6 +275,12 @@ mod text_notifications {
     ) -> Result<()> {
         let _path = from_proto::vfs_path(&params.text_document.uri)
             .context("invalid path in did_change_text_document")?;
+
+        _state.send_notification::<PublishDiagnostics>(PublishDiagnosticsParams {
+            uri: params.text_document.uri,
+            diagnostics: vec![],
+            version: None,
+        });
 
         Ok(())
     }
