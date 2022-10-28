@@ -28,8 +28,8 @@ pub struct DiagnosticsConfig {
 
 #[derive(Debug)]
 pub enum NagaVersion {
-    Naga08,
     Naga09,
+    Naga10,
     NagaMain,
 }
 
