@@ -165,10 +165,10 @@ fn format_if() {
     if  (  x < 1   )  {}
 }",
         expect![[r#"
-                fn main() {
-                    if (x < 1) {}
-                    if (x < 1) {}
-                }"#]],
+            fn main() {
+                if x < 1 {}
+                if x < 1 {}
+            }"#]],
     );
 }
 
@@ -182,11 +182,11 @@ fn format_if_2() {
     }else     if(  x > 2 ){}
 }",
         expect![[r#"
-                fn main() {
-                    if (x < 1) {} else {
-                        let a = 3;
-                    } else if (x > 2) {}
-                }"#]],
+            fn main() {
+                if x < 1 {} else {
+                    let a = 3;
+                } else if x > 2 {}
+            }"#]],
     );
 }
 
@@ -212,8 +212,8 @@ fn format_while() {
     }",
         expect![[r#"
             fn main() {
-                while (x < 1) {}
-                while (x < 1) {}
+                while x < 1 {}
+                while x < 1 {}
             }"#]],
     );
 }
@@ -259,7 +259,7 @@ fn format_function_call_newline_indent() {
 }",
         expect![[r#"
             fn main() {
-                if (false) {
+                if false {
                     min(
                         x,
                         y
@@ -370,13 +370,13 @@ var x = 0;
 }
 }",
         expect![[r#"
-                fn main() {
-                    for () {
-                        if (y) {
-                            var x = 0;
-                        }
+            fn main() {
+                for () {
+                    if y {
+                        var x = 0;
                     }
-                }"#]],
+                }
+            }"#]],
     );
 }
 

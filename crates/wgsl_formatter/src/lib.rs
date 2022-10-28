@@ -259,6 +259,16 @@ fn format_syntax_node(
             let paren_expr = ast::ParenExpr::cast(syntax)?;
             remove_if_whitespace(paren_expr.left_paren_token()?.next_token()?);
             remove_if_whitespace(paren_expr.right_paren_token()?.prev_token()?);
+
+            if paren_expr.syntax().parent().map_or(false, |parent| {
+                matches!(
+                    parent.kind(),
+                    |SyntaxKind::WhileStatement| SyntaxKind::IfStatement | SyntaxKind::ElseIfBlock
+                )
+            }) {
+                remove_token(paren_expr.right_paren_token()?);
+                remove_token(paren_expr.left_paren_token()?);
+            }
         }
         SyntaxKind::BitcastExpr => {
             let bitcast_expr = ast::BitcastExpr::cast(syntax)?;
@@ -369,12 +379,16 @@ fn n_newlines_in_whitespace(maybe_whitespace: SyntaxToken) -> Option<usize> {
 
 fn remove_if_whitespace(maybe_whitespace: SyntaxToken) {
     if maybe_whitespace.kind().is_whitespace() {
-        let idx = maybe_whitespace.index();
-        maybe_whitespace
-            .parent()
-            .unwrap()
-            .splice_children(idx..idx + 1, Vec::new());
+        remove_token(maybe_whitespace);
     }
+}
+
+fn remove_token(token: SyntaxToken) {
+    let idx = token.index();
+    token
+        .parent()
+        .unwrap()
+        .splice_children(idx..idx + 1, Vec::new())
 }
 
 fn replace_token_with(token: SyntaxToken, replacement: SyntaxToken) {
