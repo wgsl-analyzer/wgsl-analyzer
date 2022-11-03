@@ -78,15 +78,18 @@ impl ShaderProcessor {
                 }
                 false
             } else if self.endif_regex.is_match(line) {
-                if let Some((used, start_offset, def)) = scopes.pop() {
-                    if !used {
-                        let range = start_offset..offset + line.len();
-                        emit_unconfigured(range, def);
-                    }
-                }
-
-                if scopes.is_empty() {
+                // HACK: Ignore endifs without a corresponding
+                // This does need proper error reporting somewhere, which is not yet implemented
+                // Presumably this would be through a side channel
+                if scopes.len() == 1 {
                     // return Err(ProcessShaderError::TooManyEndIfs);
+                } else {
+                    if let Some((used, start_offset, def)) = scopes.pop() {
+                        if !used {
+                            let range = start_offset..offset + line.len();
+                            emit_unconfigured(range, def);
+                        }
+                    }
                 }
                 false
             } else if self.define_import_path_regex.is_match(line) {
