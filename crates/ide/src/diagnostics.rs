@@ -527,6 +527,11 @@ pub fn diagnostics(
             )
             .with_severity(Severity::WeakWarning)
             .unused(),
+            AnyDiagnostic::ShiftRequiresPrecedence { expr } => {
+                let source = expr.value.to_node(&root);
+                let frange = original_file_range(db.upcast(), file_id, source.syntax());
+                DiagnosticMessage::new("shift expressions require brackets around sub-expressions".to_string(), frange.range)
+            },
         }
     }).collect()
 }

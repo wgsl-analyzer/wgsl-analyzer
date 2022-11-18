@@ -488,11 +488,11 @@ impl Module {
                 ModuleDef::Struct(_strukt) => {}
                 ModuleDef::TypeAlias(_type_alias) => {}
             }
-            if config.type_errors {
-                if let Some(def) = item.as_def_with_body_id() {
-                    let (_, source_map) = db.body_with_source_map(def);
+            if let Some(def) = item.as_def_with_body_id() {
+                let file = def.file_id(db.upcast());
+                let (_, source_map) = db.body_with_source_map(def);
+                if config.type_errors {
                     let infer = db.infer(def);
-                    let file = def.file_id(db.upcast());
                     for diagnostic in &infer.diagnostics {
                         match diagnostics::any_diag_from_infer_diag(
                             db,
@@ -507,6 +507,15 @@ impl Module {
                         }
                     }
                 }
+
+                diagnostics::shift_precedence::collect(db, def, |diagnostic| {
+                    match diagnostics::any_diag_from_shift(&diagnostic, &*source_map, file) {
+                        Some(diag) => acc.push(diag),
+                        None => {
+                            tracing::warn!("could not create diagnostic from {:?}", diagnostic)
+                        }
+                    }
+                });
             }
         }
     }

@@ -1,4 +1,5 @@
 pub mod global_variable;
+pub mod shift_precedence;
 
 use base_db::{FileRange, TextRange};
 use hir_def::{body::BodySourceMap, module_data::Name, HirFileId, InFile};
@@ -17,7 +18,7 @@ use syntax::{
 
 use crate::{Function, GlobalConstant, GlobalVariable, HasSource, TypeAlias};
 
-use self::global_variable::GlobalVariableDiagnostic;
+use self::{global_variable::GlobalVariableDiagnostic, shift_precedence::PrecedenceDiagnostic};
 
 pub struct DiagnosticsConfig {
     pub type_errors: bool,
@@ -109,6 +110,9 @@ pub enum AnyDiagnostic {
         import: InFile<AstPtr<ast::Import>>,
     },
 
+    ShiftRequiresPrecedence {
+        expr: InFile<AstPtr<ast::Expr>>,
+    },
     NagaValidationError {
         file_id: HirFileId,
         range: TextRange,
@@ -137,6 +141,7 @@ impl AnyDiagnostic {
             AnyDiagnostic::NagaValidationError { file_id, .. } => *file_id,
             AnyDiagnostic::ParseError { file_id, .. } => *file_id,
             AnyDiagnostic::UnconfiguredCode { file_id, .. } => *file_id,
+            AnyDiagnostic::ShiftRequiresPrecedence { expr } => expr.file_id,
         }
     }
 }
@@ -299,6 +304,20 @@ pub(crate) fn any_diag_from_global_var(
         GlobalVariableDiagnostic::MissingStorageClass => AnyDiagnostic::MissingStorageClass { var },
         GlobalVariableDiagnostic::StorageClassError(error) => {
             AnyDiagnostic::InvalidStorageClass { var, error }
+        }
+    }
+}
+
+pub(crate) fn any_diag_from_shift(
+    error: &PrecedenceDiagnostic,
+    source_map: &BodySourceMap,
+    file_id: HirFileId,
+) -> Option<AnyDiagnostic> {
+    match error {
+        PrecedenceDiagnostic::BracesRequired(expr) => {
+            let ptr = source_map.expr_to_source(*expr).ok()?.clone();
+            let source = InFile::new(file_id, ptr);
+            Some(AnyDiagnostic::ShiftRequiresPrecedence { expr: source })
         }
     }
 }
