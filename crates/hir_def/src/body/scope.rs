@@ -59,7 +59,9 @@ impl ExprScopes {
 
         if let Some(stmt) = body.root {
             match stmt {
-                Either::Left(stmt) => compute_statement_scopes(stmt, body, &mut scopes, root),
+                Either::Left(stmt) => {
+                    let _ = compute_statement_scopes(stmt, body, &mut scopes, root);
+                }
                 Either::Right(expr) => compute_expr_scopes(expr, body, &mut scopes, root),
             }
         }
@@ -125,10 +127,10 @@ fn compute_compound_statement_scopes(
     statements: &[StatementId],
     body: &Body,
     scopes: &mut ExprScopes,
-    scope: ScopeId,
+    mut scope: ScopeId,
 ) {
     for statement in statements {
-        compute_statement_scopes(*statement, body, scopes, scope);
+        scope = compute_statement_scopes(*statement, body, scopes, scope);
     }
 }
 
@@ -137,7 +139,7 @@ fn compute_statement_scopes(
     body: &Body,
     scopes: &mut ExprScopes,
     scope: ScopeId,
-) {
+) -> ScopeId {
     scopes.set_scope_stmt(stmt_id, scope);
 
     let stmt = &body.statements[stmt_id];
@@ -161,7 +163,9 @@ fn compute_statement_scopes(
             if let Some(init) = initializer {
                 compute_expr_scopes(*init, body, scopes, scope);
             }
+            let scope = scopes.new_block_scope(scope);
             scopes.add_binding(body, *binding_id, scope);
+            return scope;
         }
         Statement::Assignment { lhs, rhs } => {
             compute_expr_scopes(*lhs, body, scopes, scope);
@@ -216,16 +220,18 @@ fn compute_statement_scopes(
             continuing_part,
             block,
         } => {
+            let mut scope = scope;
             if let Some(init) = initializer {
-                compute_statement_scopes(*init, body, scopes, scope);
+                scope = compute_statement_scopes(*init, body, scopes, scope);
             }
             if let Some(condition) = condition {
                 compute_expr_scopes(*condition, body, scopes, scope);
             }
             if let Some(cont) = continuing_part {
-                compute_statement_scopes(*cont, body, scopes, scope);
+                // Variables produced in the continuing block aren't used
+                let _ = compute_statement_scopes(*cont, body, scopes, scope);
             }
-            compute_statement_scopes(*block, body, scopes, scope);
+            let _ = compute_statement_scopes(*block, body, scopes, scope);
         }
         Statement::While { condition, block } => {
             compute_expr_scopes(*condition, body, scopes, scope);
@@ -243,8 +249,11 @@ fn compute_statement_scopes(
         Statement::Expr { expr } => {
             compute_expr_scopes(*expr, body, scopes, scope);
         }
-        Statement::Loop { body: block } => compute_statement_scopes(*block, body, scopes, scope),
+        Statement::Loop { body: block } => {
+            let _ = compute_statement_scopes(*block, body, scopes, scope);
+        }
     }
+    scope
 }
 
 fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope: ScopeId) {
