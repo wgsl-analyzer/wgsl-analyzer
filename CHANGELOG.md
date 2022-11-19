@@ -1,5 +1,8 @@
 # Changelog
 
+### Unreleased
+ - lint for parsing precedence issues
+
 ### Version 0.5.3
 - clear diagnostics on file close
 - format variables
