@@ -508,7 +508,7 @@ impl Module {
                     }
                 }
 
-                diagnostics::shift_precedence::collect(db, def, |diagnostic| {
+                diagnostics::precedence::collect(db, def, |diagnostic| {
                     match diagnostics::any_diag_from_shift(&diagnostic, &*source_map, file) {
                         Some(diag) => acc.push(diag),
                         None => {

@@ -1,7 +1,7 @@
 mod lower;
 pub mod scope;
 
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use either::Either;
 use la_arena::{Arena, ArenaMap, Idx};
@@ -27,6 +27,7 @@ pub struct Body {
     pub exprs: Arena<Expr>,
     pub statements: Arena<Statement>,
     pub bindings: Arena<Binding>,
+    pub paren_exprs: HashSet<ExprId>,
 
     // for global declarations
     pub main_binding: Option<BindingId>,
