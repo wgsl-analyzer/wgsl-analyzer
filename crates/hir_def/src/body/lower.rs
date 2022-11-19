@@ -347,6 +347,7 @@ impl<'a> Collector<'a> {
                 let inner = self.collect_expr_opt(expr.inner());
                 // make the paren expr point to the inner expression as well
                 self.source_map.expr_map.insert(syntax_ptr, inner);
+                self.body.paren_exprs.insert(inner);
                 return inner;
             }
             ast::Expr::BitcastExpr(expr) => {

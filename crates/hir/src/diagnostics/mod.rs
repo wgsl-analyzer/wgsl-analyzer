@@ -1,8 +1,8 @@
 pub mod global_variable;
-pub mod shift_precedence;
+pub mod precedence;
 
 use base_db::{FileRange, TextRange};
-use hir_def::{body::BodySourceMap, module_data::Name, HirFileId, InFile};
+use hir_def::{body::BodySourceMap, expr::BinaryOp, module_data::Name, HirFileId, InFile};
 use hir_ty::{
     builtins::BuiltinId,
     infer::{InferenceDiagnostic, TypeExpectation, TypeLoweringError},
@@ -18,7 +18,7 @@ use syntax::{
 
 use crate::{Function, GlobalConstant, GlobalVariable, HasSource, TypeAlias};
 
-use self::{global_variable::GlobalVariableDiagnostic, shift_precedence::PrecedenceDiagnostic};
+use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
 
 pub struct DiagnosticsConfig {
     pub type_errors: bool,
@@ -110,8 +110,10 @@ pub enum AnyDiagnostic {
         import: InFile<AstPtr<ast::Import>>,
     },
 
-    ShiftRequiresPrecedence {
+    PrecedenceParensRequired {
         expr: InFile<AstPtr<ast::Expr>>,
+        op: BinaryOp,
+        sequence_permitted: bool,
     },
     NagaValidationError {
         file_id: HirFileId,
@@ -141,7 +143,7 @@ impl AnyDiagnostic {
             AnyDiagnostic::NagaValidationError { file_id, .. } => *file_id,
             AnyDiagnostic::ParseError { file_id, .. } => *file_id,
             AnyDiagnostic::UnconfiguredCode { file_id, .. } => *file_id,
-            AnyDiagnostic::ShiftRequiresPrecedence { expr } => expr.file_id,
+            AnyDiagnostic::PrecedenceParensRequired { expr, .. } => expr.file_id,
         }
     }
 }
@@ -314,10 +316,23 @@ pub(crate) fn any_diag_from_shift(
     file_id: HirFileId,
 ) -> Option<AnyDiagnostic> {
     match error {
-        PrecedenceDiagnostic::BracesRequired(expr) => {
+        PrecedenceDiagnostic::NeverNested(expr, op) => {
             let ptr = source_map.expr_to_source(*expr).ok()?.clone();
             let source = InFile::new(file_id, ptr);
-            Some(AnyDiagnostic::ShiftRequiresPrecedence { expr: source })
+            Some(AnyDiagnostic::PrecedenceParensRequired {
+                expr: source,
+                op: *op,
+                sequence_permitted: false,
+            })
+        }
+        PrecedenceDiagnostic::SequencesAllowed(expr, op) => {
+            let ptr = source_map.expr_to_source(*expr).ok()?.clone();
+            let source = InFile::new(file_id, ptr);
+            Some(AnyDiagnostic::PrecedenceParensRequired {
+                expr: source,
+                op: *op,
+                sequence_permitted: true,
+            })
         }
     }
 }
