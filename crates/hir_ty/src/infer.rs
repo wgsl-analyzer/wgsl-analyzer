@@ -3,7 +3,10 @@ use hir_def::{
     body::{BindingId, Body},
     data::{FieldId, FunctionData, GlobalConstantData, GlobalVariableData},
     db::{DefWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, TypeAliasId},
-    expr::{ArithOp, BinaryOp, CmpOp, Expr, ExprId, Statement, StatementId, UnaryOp},
+    expr::{
+        ArithOp, BinaryOp, CmpOp, Expr, ExprId, InferredInitializer, Statement, StatementId,
+        UnaryOp,
+    },
     module_data::Name,
     resolver::{ResolveType, Resolver},
     type_ref::{self, AccessMode, StorageClass, TypeRef},
@@ -707,6 +710,9 @@ impl<'db> InferenceContext<'db> {
                 });
                 self.err_ty()
             }),
+            Expr::InferredInitializer(ref initialiser) => {
+                self.resolve_inferred_initialiser(initialiser)
+            }
         };
 
         self.set_expr_ty(expr, ty);
@@ -812,6 +818,31 @@ impl<'db> InferenceContext<'db> {
         };
 
         self.call_builtin(lhs, builtin, &[lhs_ty, rhs_ty], Some(op.symbol()))
+    }
+
+    fn resolve_inferred_initialiser(&self, initialiser: &InferredInitializer) -> Ty {
+        use type_ref::VecDimensionality::*;
+        let builtin = match initialiser {
+            InferredInitializer::Matrix { rows, columns } => match (rows, columns) {
+                (Two, Two) => Builtin::builtin_mat2x2_constructor(self.db),
+                (Two, Three) => Builtin::builtin_mat2x3_constructor(self.db),
+                (Two, Four) => Builtin::builtin_mat2x4_constructor(self.db),
+                (Three, Two) => Builtin::builtin_mat3x2_constructor(self.db),
+                (Three, Three) => Builtin::builtin_mat3x3_constructor(self.db),
+                (Three, Four) => Builtin::builtin_mat3x4_constructor(self.db),
+                (Four, Two) => Builtin::builtin_mat4x2_constructor(self.db),
+                (Four, Three) => Builtin::builtin_mat4x3_constructor(self.db),
+                (Four, Four) => Builtin::builtin_mat4x4_constructor(self.db),
+            },
+            InferredInitializer::Vec(size) => match size {
+                Two => Builtin::builtin_vec2_constructor(self.db),
+                Three => Builtin::builtin_vec3_constructor(self.db),
+                Four => Builtin::builtin_vec4_constructor(self.db),
+            },
+            InferredInitializer::Array => Builtin::builtin_array_constructor(self.db),
+        }
+        .intern(self.db);
+        TyKind::BuiltinFnUndecided(builtin).intern(self.db)
     }
 
     fn resolve_path_expr(&self, expr: ExprId, path: &Name) -> Option<Ty> {

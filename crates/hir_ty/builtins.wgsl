@@ -413,3 +413,20 @@ op_binary_mul(vecN<T>, vecN<T>) -> vecN<T>
 op_binary_mul(vecN<T>, T) -> vecN<T>
 op_binary_mul(T, vecN<T>) -> vecN<T>
 op_binary_mul(T, T) -> T
+
+vec2_constructor(T) -> vec2<T>
+vec3_constructor(T) -> vec3<T>
+vec4_constructor(T) -> vec4<T>
+
+mat2x2_constructor(T) -> mat2x2<T>
+mat3x2_constructor(T) -> mat3x2<T>
+mat2x3_constructor(T) -> mat2x3<T>
+mat4x2_constructor(T) -> mat4x2<T>
+mat2x4_constructor(T) -> mat2x4<T>
+mat3x3_constructor(T) -> mat3x3<T>
+mat4x3_constructor(T) -> mat4x3<T>
+mat3x4_constructor(T) -> mat3x4<T>
+mat4x4_constructor(T) -> mat4x4<T>
+
+array_constructor(T) -> array<T>
+array_constructor(T, T) -> array<T>

@@ -91,6 +91,22 @@ fn array_index(p: &mut Parser) {
     p.expect(SyntaxKind::BracketRight);
 }
 
+const INFERRED_EXPR_SET: &[SyntaxKind] = &[
+    SyntaxKind::Array,
+    SyntaxKind::Mat2x2,
+    SyntaxKind::Mat2x3,
+    SyntaxKind::Mat2x4,
+    SyntaxKind::Mat3x2,
+    SyntaxKind::Mat3x3,
+    SyntaxKind::Mat3x4,
+    SyntaxKind::Mat4x2,
+    SyntaxKind::Mat4x3,
+    SyntaxKind::Mat4x4,
+    SyntaxKind::Vec2,
+    SyntaxKind::Vec3,
+    SyntaxKind::Vec4,
+];
+
 fn lhs(p: &mut Parser) -> Option<CompletedMarker> {
     let cm = if p.at_set(TOKENSET_LITERAL) {
         literal(p)
@@ -100,6 +116,18 @@ fn lhs(p: &mut Parser) -> Option<CompletedMarker> {
         m.complete(p, SyntaxKind::PathExpr)
     } else if p.at(SyntaxKind::Bitcast) {
         bitcast_expr(p)
+    } else if p.at_set(INFERRED_EXPR_SET) {
+        let m = p.start();
+        let ty = p.bump();
+        let kind;
+        if p.at(SyntaxKind::LessThan) {
+            type_decl_generics(p);
+            kind = SyntaxKind::TypeInitializer;
+        } else {
+            kind = SyntaxKind::InferredInitializer;
+        }
+        let type_decl = m.complete(p, ty);
+        type_decl.precede(p).complete(p, kind)
     } else if p.at_set(TYPE_SET) {
         let type_decl = super::type_decl(p).unwrap();
         type_decl
@@ -749,6 +777,22 @@ mod tests {
                     Literal@10..13
                       DecimalFloatLiteral@10..13 "1.0"
                     ParenRight@13..14 ")""#]],
+        );
+    }
+
+    #[test]
+    fn parse_vec3_initializer_inferred() {
+        check(
+            "vec3(1.0)",
+            expect![[r#"
+                FunctionCall@0..9
+                  InferredInitializer@0..4
+                    Vec3@0..4 "vec3"
+                  FunctionParamList@4..9
+                    ParenLeft@4..5 "("
+                    Literal@5..8
+                      DecimalFloatLiteral@5..8 "1.0"
+                    ParenRight@8..9 ")""#]],
         );
     }
 

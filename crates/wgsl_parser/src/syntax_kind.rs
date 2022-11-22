@@ -65,6 +65,8 @@ pub enum SyntaxKind {
     IndexExpr,
     /// vec3<f32>(1.0)
     TypeInitializer,
+    // vec3(1.0)
+    InferredInitializer,
     // return foo
     ReturnStmt,
     /// an expression of the form `lhs <op> rhs`
