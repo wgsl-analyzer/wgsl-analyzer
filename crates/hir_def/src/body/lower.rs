@@ -398,6 +398,9 @@ impl<'a> Collector<'a> {
                     }
                 }
             }
+            ast::Expr::InferredInitializer(initialiser) => {
+                Expr::InferredInitializer(initialiser.into())
+            }
             ast::Expr::PathExpr(path) => {
                 let name = path
                     .name_ref()

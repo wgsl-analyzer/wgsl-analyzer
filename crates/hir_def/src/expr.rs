@@ -5,7 +5,7 @@ use crate::{
     body::BindingId,
     db::Interned,
     module_data::Name,
-    type_ref::{AccessMode, StorageClass, TypeRef},
+    type_ref::{AccessMode, StorageClass, TypeRef, VecDimensionality},
 };
 
 pub use syntax::ast::operators::*;
@@ -30,6 +30,69 @@ pub enum BuiltinInt {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BuiltinUint {
     U32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum InferredInitializer {
+    Matrix {
+        rows: VecDimensionality,
+        columns: VecDimensionality,
+    },
+    Vec(VecDimensionality),
+    Array,
+}
+
+impl From<ast::InferredInitializer> for InferredInitializer {
+    fn from(initializer: ast::InferredInitializer) -> Self {
+        use ast::InferredInitializerType::*;
+        use VecDimensionality::*;
+        dbg!(&initializer);
+        match initializer
+            .ty()
+            .expect("InferredInitializer is only created from a single token, so that token definitely exists")
+        {
+            Array(_) => InferredInitializer::Array,
+            Mat2x2(_) => InferredInitializer::Matrix {
+                rows: Two,
+                columns: Two,
+            },
+            Mat2x3(_) => InferredInitializer::Matrix {
+                rows: Two,
+                columns: Three,
+            },
+            Mat2x4(_) => InferredInitializer::Matrix {
+                rows: Two,
+                columns: Four,
+            },
+            Mat3x2(_) => InferredInitializer::Matrix {
+                rows: Three,
+                columns: Two,
+            },
+            Mat3x3(_) => InferredInitializer::Matrix {
+                rows: Three,
+                columns: Three,
+            },
+            Mat3x4(_) => InferredInitializer::Matrix {
+                rows: Three,
+                columns: Four,
+            },
+            Mat4x2(_) => InferredInitializer::Matrix {
+                rows: Four,
+                columns: Two,
+            },
+            Mat4x3(_) => InferredInitializer::Matrix {
+                rows: Four,
+                columns: Three,
+            },
+            Mat4x4(_) => InferredInitializer::Matrix {
+                rows: Four,
+                columns: Four,
+            },
+            Vec2(_) => InferredInitializer::Vec(Two),
+            Vec3(_) => InferredInitializer::Vec(Three),
+            Vec4(_) => InferredInitializer::Vec(Four),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -66,6 +129,7 @@ pub enum Expr {
     },
     Literal(Literal),
     Path(Name),
+    InferredInitializer(InferredInitializer),
 }
 
 pub type StatementId = Idx<Statement>;
@@ -213,6 +277,7 @@ impl Expr {
             Expr::Missing => {}
             Expr::Literal(_) => {}
             Expr::Path(_) => {}
+            Expr::InferredInitializer(_) => {}
         }
     }
 }
