@@ -33,7 +33,7 @@ pub enum BuiltinUint {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum InferredInitializer {
+pub enum BuiltinInitializer {
     Matrix {
         rows: VecDimensionality,
         columns: VecDimensionality,
@@ -42,55 +42,54 @@ pub enum InferredInitializer {
     Array,
 }
 
-impl From<ast::InferredInitializer> for InferredInitializer {
+impl From<ast::InferredInitializer> for BuiltinInitializer {
     fn from(initializer: ast::InferredInitializer) -> Self {
         use ast::InferredInitializerType::*;
         use VecDimensionality::*;
-        dbg!(&initializer);
         match initializer
             .ty()
             .expect("InferredInitializer is only created from a single token, so that token definitely exists")
         {
-            Array(_) => InferredInitializer::Array,
-            Mat2x2(_) => InferredInitializer::Matrix {
+            Array(_) => BuiltinInitializer::Array,
+            Mat2x2(_) => BuiltinInitializer::Matrix {
                 rows: Two,
                 columns: Two,
             },
-            Mat2x3(_) => InferredInitializer::Matrix {
+            Mat2x3(_) => BuiltinInitializer::Matrix {
                 rows: Two,
                 columns: Three,
             },
-            Mat2x4(_) => InferredInitializer::Matrix {
+            Mat2x4(_) => BuiltinInitializer::Matrix {
                 rows: Two,
                 columns: Four,
             },
-            Mat3x2(_) => InferredInitializer::Matrix {
+            Mat3x2(_) => BuiltinInitializer::Matrix {
                 rows: Three,
                 columns: Two,
             },
-            Mat3x3(_) => InferredInitializer::Matrix {
+            Mat3x3(_) => BuiltinInitializer::Matrix {
                 rows: Three,
                 columns: Three,
             },
-            Mat3x4(_) => InferredInitializer::Matrix {
+            Mat3x4(_) => BuiltinInitializer::Matrix {
                 rows: Three,
                 columns: Four,
             },
-            Mat4x2(_) => InferredInitializer::Matrix {
+            Mat4x2(_) => BuiltinInitializer::Matrix {
                 rows: Four,
                 columns: Two,
             },
-            Mat4x3(_) => InferredInitializer::Matrix {
+            Mat4x3(_) => BuiltinInitializer::Matrix {
                 rows: Four,
                 columns: Three,
             },
-            Mat4x4(_) => InferredInitializer::Matrix {
+            Mat4x4(_) => BuiltinInitializer::Matrix {
                 rows: Four,
                 columns: Four,
             },
-            Vec2(_) => InferredInitializer::Vec(Two),
-            Vec3(_) => InferredInitializer::Vec(Three),
-            Vec4(_) => InferredInitializer::Vec(Four),
+            Vec2(_) => BuiltinInitializer::Vec(Two),
+            Vec3(_) => BuiltinInitializer::Vec(Three),
+            Vec4(_) => BuiltinInitializer::Vec(Four),
         }
     }
 }
@@ -129,7 +128,7 @@ pub enum Expr {
     },
     Literal(Literal),
     Path(Name),
-    InferredInitializer(InferredInitializer),
+    InferredInitializer(BuiltinInitializer),
 }
 
 pub type StatementId = Idx<Statement>;
