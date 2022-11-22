@@ -4,12 +4,11 @@ use hir_def::{
     data::{FieldId, FunctionData, GlobalConstantData, GlobalVariableData},
     db::{DefWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, TypeAliasId},
     expr::{
-        ArithOp, BinaryOp, CmpOp, Expr, ExprId, InferredInitializer, Statement, StatementId,
-        UnaryOp,
+        ArithOp, BinaryOp, BuiltinInitializer, CmpOp, Expr, ExprId, Statement, StatementId, UnaryOp,
     },
     module_data::Name,
     resolver::{ResolveType, Resolver},
-    type_ref::{self, AccessMode, StorageClass, TypeRef},
+    type_ref::{self, AccessMode, StorageClass, TypeRef, VecDimensionality},
 };
 use la_arena::ArenaMap;
 use rustc_hash::FxHashMap;
@@ -601,7 +600,7 @@ impl<'db> InferenceContext<'db> {
                 if let Expr::Path(path) = &body.exprs[callee] {
                     let type_ref = TypeRef::Path(path.clone());
                     if let Ok(ty) = self.try_lower_ty(&type_ref) {
-                        self.check_type_initializer_args(ty, &args);
+                        self.check_type_initializer_args(ty, &args, expr);
                         self.set_expr_ty(expr, ty); // because of early return
                         return ty;
                     }
@@ -649,9 +648,12 @@ impl<'db> InferenceContext<'db> {
                 ty
             }
             Expr::TypeInitializer { ty, ref args } => {
-                let args: Vec<_> = args.iter().map(|&arg| self.infer_expr(arg)).collect();
+                let args: Vec<_> = args
+                    .iter()
+                    .map(|&arg| self.infer_expr(arg).unref(self.db))
+                    .collect();
                 let ty = self.lower_ty(expr, &self.db.lookup_intern_type_ref(ty));
-                self.check_type_initializer_args(ty, &args);
+                self.check_type_initializer_args(ty, &args, expr);
                 ty
             }
             Expr::Index { lhs, index } => {
@@ -711,7 +713,7 @@ impl<'db> InferenceContext<'db> {
                 self.err_ty()
             }),
             Expr::InferredInitializer(ref initialiser) => {
-                self.resolve_inferred_initialiser(initialiser)
+                TyKind::BuiltinFnUndecided(self.initialiser_to_builtin(initialiser)).intern(self.db)
             }
         };
 
@@ -743,8 +745,48 @@ impl<'db> InferenceContext<'db> {
         }
     }
 
-    fn check_type_initializer_args(&self, _ty: Ty, _args: &[Ty]) {
-        // TODO check args
+    fn check_type_initializer_args(&mut self, ty: Ty, args: &[Ty], expr: ExprId) {
+        fn s2d(size: VecSize) -> VecDimensionality {
+            match size {
+                VecSize::Two => VecDimensionality::Two,
+                VecSize::Three => VecDimensionality::Three,
+                VecSize::Four => VecDimensionality::Four,
+                VecSize::BoundVar(_) => unreachable!("Can never have unbound type at this point"),
+            }
+        }
+        if args.len() == 1 {
+            let arg_ty = &args[0];
+            match (arg_ty.kind(self.db), ty.kind(self.db)) {
+                // Hackily support type conversions
+                (TyKind::Matrix(_), TyKind::Matrix(_)) | (TyKind::Vector(_), TyKind::Vector(_)) => {
+                    return
+                }
+                _ => {}
+            }
+        }
+        let initialiser = match ty.kind(self.db) {
+            TyKind::Vector(vec) => BuiltinInitializer::Vec(s2d(vec.size)),
+            TyKind::Matrix(mat) => BuiltinInitializer::Matrix {
+                rows: s2d(mat.rows),
+                columns: s2d(mat.columns),
+            },
+            TyKind::Array(_) => BuiltinInitializer::Array,
+            _ => return,
+        };
+
+        let builtin_id = self.initialiser_to_builtin(&initialiser);
+
+        if let Ok((return_ty, _)) = self.try_call_builtin(expr, builtin_id, &args, None) {
+            if return_ty != ty {
+                self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
+                    expr,
+                    expected: TypeExpectation::Type(TypeExpectationInner::Exact(ty)),
+                    actual: return_ty,
+                });
+            }
+        } else {
+            return;
+        };
     }
 
     fn infer_unary_op(&mut self, expr: ExprId, op: UnaryOp) -> Ty {
@@ -820,10 +862,10 @@ impl<'db> InferenceContext<'db> {
         self.call_builtin(lhs, builtin, &[lhs_ty, rhs_ty], Some(op.symbol()))
     }
 
-    fn resolve_inferred_initialiser(&self, initialiser: &InferredInitializer) -> Ty {
+    fn initialiser_to_builtin(&self, initialiser: &BuiltinInitializer) -> BuiltinId {
         use type_ref::VecDimensionality::*;
-        let builtin = match initialiser {
-            InferredInitializer::Matrix { rows, columns } => match (rows, columns) {
+        match initialiser {
+            BuiltinInitializer::Matrix { rows, columns } => match (rows, columns) {
                 (Two, Two) => Builtin::builtin_mat2x2_constructor(self.db),
                 (Two, Three) => Builtin::builtin_mat2x3_constructor(self.db),
                 (Two, Four) => Builtin::builtin_mat2x4_constructor(self.db),
@@ -834,15 +876,14 @@ impl<'db> InferenceContext<'db> {
                 (Four, Three) => Builtin::builtin_mat4x3_constructor(self.db),
                 (Four, Four) => Builtin::builtin_mat4x4_constructor(self.db),
             },
-            InferredInitializer::Vec(size) => match size {
+            BuiltinInitializer::Vec(size) => match size {
                 Two => Builtin::builtin_vec2_constructor(self.db),
                 Three => Builtin::builtin_vec3_constructor(self.db),
                 Four => Builtin::builtin_vec4_constructor(self.db),
             },
-            InferredInitializer::Array => Builtin::builtin_array_constructor(self.db),
+            BuiltinInitializer::Array => Builtin::builtin_array_constructor(self.db),
         }
-        .intern(self.db);
-        TyKind::BuiltinFnUndecided(builtin).intern(self.db)
+        .intern(self.db)
     }
 
     fn resolve_path_expr(&self, expr: ExprId, path: &Name) -> Option<Ty> {
@@ -1105,13 +1146,14 @@ fn unify(
             table.set_type(var, found)?;
             Ok(())
         }
-        TyKind::Vector(VectorType {
-            size: VecSize::BoundVar(vec_size_var),
-            inner,
-        }) => match found_kind {
+        TyKind::Vector(VectorType { size, inner }) => match found_kind {
             TyKind::Vector(found_vec) => {
                 unify(db, table, inner, found_vec.inner)?;
-                table.set_vec_size(vec_size_var, found_vec.size)?;
+                if let VecSize::BoundVar(vec_size_var) = size {
+                    table.set_vec_size(vec_size_var, found_vec.size)?;
+                } else if size != found_vec.size {
+                    return Err(());
+                }
                 Ok(())
             }
             _ => Err(()),

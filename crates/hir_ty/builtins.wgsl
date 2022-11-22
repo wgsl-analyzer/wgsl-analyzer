@@ -414,37 +414,31 @@ op_binary_mul(vecN<T>, T) -> vecN<T>
 op_binary_mul(T, vecN<T>) -> vecN<T>
 op_binary_mul(T, T) -> T
 
+// Identity transformation (never used)
+vec2_constructor(vec2<T>) -> vec2<T>
+vec3_constructor(vec3<T>) -> vec3<T>
+vec4_constructor(vec4<T>) -> vec4<T>
+
 // Each component has the same value
 vec2_constructor(T) -> vec2<T>
 vec3_constructor(T) -> vec3<T>
 vec4_constructor(T) -> vec4<T>
-
-// Identity transformation
-vec2_constructor(vec2<T>) -> vec2<T>
-vec3_constructor(vec3<T>) -> vec3<T>
-vec4_constructor(vec4<T>) -> vec4<T>
 
 // More interesting constructors
 vec2_constructor(T, T) -> vec2<T>
 
 vec3_constructor(T, T, T) -> vec3<T>
 vec3_constructor(T, vec2<T>) -> vec3<T>
+vec3_constructor(vec2<T>, T) -> vec3<T>
 
 vec4_constructor(T, T, T, T) -> vec4<T>
 vec4_constructor(T, T, vec2<T>) -> vec4<T>
+vec4_constructor(T, vec2<T>, T) -> vec4<T>
+vec4_constructor(vec2<T>, T, T) -> vec4<T>
 vec4_constructor(vec2<T>, vec2<T>) -> vec4<T>
 vec4_constructor(T, vec3<T>) -> vec4<T>
+vec4_constructor(vec3<T>, T) -> vec4<T>
 
-// Each component has the same value
-mat2x2_constructor(T) -> mat2x2<T>
-mat3x2_constructor(T) -> mat3x2<T>
-mat2x3_constructor(T) -> mat2x3<T>
-mat4x2_constructor(T) -> mat4x2<T>
-mat2x4_constructor(T) -> mat2x4<T>
-mat3x3_constructor(T) -> mat3x3<T>
-mat4x3_constructor(T) -> mat4x3<T>
-mat3x4_constructor(T) -> mat3x4<T>
-mat4x4_constructor(T) -> mat4x4<T>
 
 // Identity transformation
 mat2x2_constructor(mat2x2<T>) -> mat2x2<T>
@@ -456,6 +450,17 @@ mat3x3_constructor(mat3x3<T>) -> mat3x3<T>
 mat4x3_constructor(mat4x3<T>) -> mat4x3<T>
 mat3x4_constructor(mat3x4<T>) -> mat3x4<T>
 mat4x4_constructor(mat4x4<T>) -> mat4x4<T>
+
+// Each component has the same value
+mat2x2_constructor(T) -> mat2x2<T>
+mat3x2_constructor(T) -> mat3x2<T>
+mat2x3_constructor(T) -> mat2x3<T>
+mat4x2_constructor(T) -> mat4x2<T>
+mat2x4_constructor(T) -> mat2x4<T>
+mat3x3_constructor(T) -> mat3x3<T>
+mat4x3_constructor(T) -> mat4x3<T>
+mat3x4_constructor(T) -> mat3x4<T>
+mat4x4_constructor(T) -> mat4x4<T>
 
 // Column-major construction by elements
 mat2x2_constructor(T, T, T, T) -> mat2x2<T>
