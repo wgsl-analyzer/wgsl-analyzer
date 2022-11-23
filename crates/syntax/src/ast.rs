@@ -409,6 +409,7 @@ impl GenericArg {
 ast_node!(BinaryOperator);
 ast_node!(TypeInitializer:
     ty: Option<Type>;
+    args: Option<FunctionParamList>;
 );
 
 ast_enum_raw! {
@@ -515,8 +516,11 @@ ast_node!(FieldExpr:
     name_ref: Option<NameRef>;
 );
 ast_node!(FunctionCall:
+    ident: Option<NameRef>;
+    params: Option<FunctionParamList>;
+);
+ast_node!(InvalidFunctionCall:
     expr: Option<Expr>;
-    type_initializer: Option<TypeInitializer>;
     params: Option<FunctionParamList>;
 );
 ast_node!(IndexExpr);
@@ -772,9 +776,11 @@ ast_enum! {
         ParenExpr,
         FieldExpr,
         FunctionCall,
+        TypeInitializer,
         IndexExpr,
         PathExpr,
         BitcastExpr,
+        InvalidFunctionCall,
     }
 }
 

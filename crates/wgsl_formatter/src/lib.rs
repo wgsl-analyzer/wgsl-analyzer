@@ -208,39 +208,25 @@ fn format_syntax_node(
                 );
             }
         }
-        SyntaxKind::FunctionCall => {
-            let function_call = ast::FunctionCall::cast(syntax)?;
+        SyntaxKind::TypeInitializer => {
+            let type_initialiser = ast::TypeInitializer::cast(syntax)?;
 
-            if let Some(expr) = function_call.expr() {
+            if let Some(expr) = type_initialiser.ty() {
                 remove_if_whitespace(expr.syntax().last_token()?);
             }
 
-            if let Some(type_initializer) = function_call.type_initializer() {
-                remove_if_whitespace(type_initializer.syntax().first_token()?.next_token()?);
-                remove_if_whitespace(type_initializer.syntax().last_token()?);
+            format_params(type_initialiser.args()?, indentation, options)?;
+        }
+        SyntaxKind::FunctionCall => {
+            let function_call = ast::FunctionCall::cast(syntax)?;
+
+            if let Some(expr) = function_call.ident() {
+                remove_if_whitespace(expr.syntax().last_token()?);
             }
 
             let param_list = function_call.params()?;
 
-            let has_newline =
-                is_whitespace_with_newline(param_list.left_paren_token()?.next_token()?);
-
-            format_param_list(
-                param_list.args(),
-                param_list.args().count(),
-                has_newline,
-                indentation + 1,
-                options.trailing_commas,
-            );
-
-            if has_newline {
-                set_whitespace_before(
-                    param_list.right_paren_token()?,
-                    create_whitespace(&format!("\n{}", "    ".repeat(indentation))),
-                );
-            } else {
-                remove_if_whitespace(param_list.right_paren_token()?.prev_token()?);
-            }
+            format_params(param_list, indentation, options)?;
         }
         SyntaxKind::InfixExpr => {
             let expr = ast::InfixExpr::cast(syntax)?;
@@ -299,6 +285,29 @@ fn format_syntax_node(
     }
 
     None
+}
+
+fn format_params(
+    param_list: ast::FunctionParamList,
+    indentation: usize,
+    options: &FormattingOptions,
+) -> Option<()> {
+    let has_newline = is_whitespace_with_newline(param_list.left_paren_token()?.next_token()?);
+    format_param_list(
+        param_list.args(),
+        param_list.args().count(),
+        has_newline,
+        indentation + 1,
+        options.trailing_commas,
+    );
+    Some(if has_newline {
+        set_whitespace_before(
+            param_list.right_paren_token()?,
+            create_whitespace(&format!("\n{}", "    ".repeat(indentation))),
+        );
+    } else {
+        remove_if_whitespace(param_list.right_paren_token()?.prev_token()?);
+    })
 }
 
 fn format_param_list<T: AstNode>(

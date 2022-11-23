@@ -23,8 +23,10 @@ fn expr_binding_power(p: &mut Parser, minimum_binding_power: u8) -> Option<Compl
             let m = lhs.precede(p);
             match postfix_op {
                 PostfixOp::Call => {
+                    // Calls cannot be made on arbitrary expressions, merely on only a few versions
+                    // We have this as an error
                     function_param_list(p);
-                    lhs = m.complete(p, SyntaxKind::FunctionCall);
+                    lhs = m.complete(p, SyntaxKind::InvalidFunctionCall);
                 }
                 PostfixOp::Index => {
                     array_index(p);
@@ -91,48 +93,30 @@ fn array_index(p: &mut Parser) {
     p.expect(SyntaxKind::BracketRight);
 }
 
-const INFERRED_EXPR_SET: &[SyntaxKind] = &[
-    SyntaxKind::Array,
-    SyntaxKind::Mat2x2,
-    SyntaxKind::Mat2x3,
-    SyntaxKind::Mat2x4,
-    SyntaxKind::Mat3x2,
-    SyntaxKind::Mat3x3,
-    SyntaxKind::Mat3x4,
-    SyntaxKind::Mat4x2,
-    SyntaxKind::Mat4x3,
-    SyntaxKind::Mat4x4,
-    SyntaxKind::Vec2,
-    SyntaxKind::Vec3,
-    SyntaxKind::Vec4,
-];
-
 fn lhs(p: &mut Parser) -> Option<CompletedMarker> {
     let cm = if p.at_set(TOKENSET_LITERAL) {
         literal(p)
     } else if p.at(SyntaxKind::Ident) {
         let m = p.start();
         name_ref(p);
-        m.complete(p, SyntaxKind::PathExpr)
+        if p.at(SyntaxKind::ParenLeft) {
+            function_param_list(p);
+            // Function call, may be a type initialiser too
+            m.complete(p, SyntaxKind::FunctionCall)
+        } else {
+            m.complete(p, SyntaxKind::PathExpr)
+        }
     } else if p.at(SyntaxKind::Bitcast) {
         bitcast_expr(p)
-    } else if p.at_set(INFERRED_EXPR_SET) {
-        let m = p.start();
-        let ty = p.bump();
-        let kind;
-        if p.at(SyntaxKind::LessThan) {
-            type_decl_generics(p);
-            kind = SyntaxKind::TypeInitializer;
-        } else {
-            kind = SyntaxKind::InferredInitializer;
-        }
-        let type_decl = m.complete(p, ty);
-        type_decl.precede(p).complete(p, kind)
     } else if p.at_set(TYPE_SET) {
-        let type_decl = super::type_decl(p).unwrap();
-        type_decl
-            .precede(p)
-            .complete(p, SyntaxKind::TypeInitializer)
+        let m = p.start();
+        super::type_decl(p).unwrap();
+        if p.at(SyntaxKind::ParenLeft) {
+            function_param_list(p);
+        } else {
+            p.error_no_bump(&[SyntaxKind::ParenLeft]);
+        }
+        m.complete(p, SyntaxKind::TypeInitializer)
     } else if p.at_set(PREFIX_OP_SET) {
         prefix_expr(p)
     } else if p.at(SyntaxKind::ParenLeft) {

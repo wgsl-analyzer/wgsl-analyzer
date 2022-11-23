@@ -40,6 +40,7 @@ pub enum ResolveValue {
     GlobalVariable(Location<GlobalVariable>),
     GlobalConstant(Location<GlobalConstant>),
     Function(Location<Function>),
+    TypeInitializer(ResolveType)
 }
 
 #[derive(Debug)]

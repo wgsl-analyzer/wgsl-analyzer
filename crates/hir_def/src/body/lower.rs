@@ -378,25 +378,25 @@ impl<'a> Collector<'a> {
                     .map(|expr| self.collect_expr(expr))
                     .collect();
 
-                match (call.type_initializer(), call.expr()) {
-                    (None, Some(expr)) => {
-                        let expr = self.collect_expr(expr);
-                        Expr::Call { callee: expr, args }
-                    }
-                    (Some(ty), None) => {
-                        let ty = ty
-                            .ty()
-                            .and_then(|ty| TypeRef::try_from(ty).ok())
-                            .unwrap_or(TypeRef::Error);
-                        let ty = self.db.intern_type_ref(ty);
-                        Expr::TypeInitializer { ty, args }
-                    }
-                    (Some(_), Some(_)) => unreachable!(),
-                    (None, None) => {
-                        let expr = self.missing_expr();
-                        Expr::Call { callee: expr, args }
-                    }
+                if let Some(expr) = call.expr() {
+                    let expr = self.collect_expr(expr);
+                    Expr::Call { callee: expr, args }
+                } else {
+                    Expr::Missing
                 }
+            }
+            ast::Expr::InvalidFunctionCall(call) => {
+                if let Some(expr) = call.expr() {
+                    self.collect_expr(expr);
+                }
+                call.params()
+                    .into_iter()
+                    .flat_map(|params| params.args())
+                    .for_each(|expr| {
+                        self.collect_expr(expr);
+                    });
+
+                Expr::Missing
             }
             ast::Expr::InferredInitializer(initialiser) => {
                 Expr::InferredInitializer(initialiser.into())
@@ -413,6 +413,9 @@ impl<'a> Collector<'a> {
                 let lhs = self.collect_expr_opt(index.expr());
                 let index = self.collect_expr_opt(index.index());
                 Expr::Index { lhs, index }
+            }
+            ast::Expr::TypeInitializer(_ty) => {
+                todo!();
             }
         };
 

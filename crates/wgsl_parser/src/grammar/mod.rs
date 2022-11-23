@@ -375,6 +375,9 @@ pub fn type_decl(p: &mut Parser) -> Option<CompletedMarker> {
     if p.at_set(TYPE_SET) {
         let m_ty = p.start();
         let ty = p.bump();
+        // We don't validate which types should have generics and which shouldn't here,
+        // because `expr` relies on that (specifically for vec3(1.0) etc., where the
+        // type is inferred)
         if p.at(SyntaxKind::LessThan) {
             type_decl_generics(p);
         }
