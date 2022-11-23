@@ -61,6 +61,8 @@ pub enum SyntaxKind {
     FieldExpr,
     /// pow(2, 3)
     FunctionCall,
+    // (pow)(2, 3)
+    InvalidFunctionCall,
     /// a\[0\]
     IndexExpr,
     /// vec3<f32>(1.0)

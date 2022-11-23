@@ -208,7 +208,7 @@ impl<'db> InferenceContext<'db> {
             let type_ref = self.db.lookup_intern_type_ref(param);
             let param_ty =
                 self.lower_ty(TypeContainer::FunctionParameter(function_id, id), &type_ref);
-            self.set_binding_ty(id, self.make_ref_fn_param(param_ty));
+            self.set_binding_ty(id, param_ty);
         }
         self.return_ty = f.return_type.map(|type_ref| {
             self.lower_ty(
@@ -400,7 +400,7 @@ impl<'db> InferenceContext<'db> {
                 ref case_blocks,
                 ref default_block,
             } => {
-                let ty = self.infer_expr(expr);
+                let ty = self.infer_expr(expr).unref(self.db);
 
                 for (selectors, case) in case_blocks {
                     for selector in selectors {
@@ -1351,10 +1351,6 @@ impl TypeExpectation {
 }
 
 impl InferenceContext<'_> {
-    fn make_ref_fn_param(&self, ty: Ty) -> Ty {
-        self.make_ref(ty, StorageClass::Function, AccessMode::read_write())
-    }
-
     fn make_ref(&self, ty: Ty, storage_class: StorageClass, access_mode: AccessMode) -> Ty {
         self.db.intern_ty(TyKind::Ref(Ref {
             inner: ty,
