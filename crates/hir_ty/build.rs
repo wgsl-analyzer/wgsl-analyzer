@@ -431,7 +431,7 @@ fn builtin_to_rust(
             "
             BuiltinOverload {{
                 generics: vec![{generics}],
-                ty: TyKind::Function(FunctionType {{
+                ty: FunctionDetails {{
                     return_type: {return_ty},
                     parameters: vec![",
             return_ty = overload
@@ -461,7 +461,7 @@ fn builtin_to_rust(
             f,
             r#"
                     ],
-                }})
+                }}
                 .intern(db),
             }},"#,
         )?;

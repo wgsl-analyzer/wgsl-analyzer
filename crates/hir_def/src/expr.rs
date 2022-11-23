@@ -32,66 +32,68 @@ pub enum BuiltinUint {
     U32,
 }
 
+// impl From<ast::InferredInitializer> for BuiltinInitializer {
+//     fn from(initializer: ast::InferredInitializer) -> Self {
+//         use ast::InferredInitializerType::*;
+//         use VecDimensionality::*;
+//         match initializer
+//             .ty()
+//             .expect("InferredInitializer is only created from a single token, so that token definitely exists")
+//         {
+//             Array(_) => BuiltinInitializer::Array,
+//             Mat2x2(_) => BuiltinInitializer::Matrix {
+//                 rows: Two,
+//                 columns: Two,
+//             },
+//             Mat2x3(_) => BuiltinInitializer::Matrix {
+//                 rows: Two,
+//                 columns: Three,
+//             },
+//             Mat2x4(_) => BuiltinInitializer::Matrix {
+//                 rows: Two,
+//                 columns: Four,
+//             },
+//             Mat3x2(_) => BuiltinInitializer::Matrix {
+//                 rows: Three,
+//                 columns: Two,
+//             },
+//             Mat3x3(_) => BuiltinInitializer::Matrix {
+//                 rows: Three,
+//                 columns: Three,
+//             },
+//             Mat3x4(_) => BuiltinInitializer::Matrix {
+//                 rows: Three,
+//                 columns: Four,
+//             },
+//             Mat4x2(_) => BuiltinInitializer::Matrix {
+//                 rows: Four,
+//                 columns: Two,
+//             },
+//             Mat4x3(_) => BuiltinInitializer::Matrix {
+//                 rows: Four,
+//                 columns: Three,
+//             },
+//             Mat4x4(_) => BuiltinInitializer::Matrix {
+//                 rows: Four,
+//                 columns: Four,
+//             },
+//             Vec2(_) => BuiltinInitializer::Vec(Two),
+//             Vec3(_) => BuiltinInitializer::Vec(Three),
+//             Vec4(_) => BuiltinInitializer::Vec(Four),
+//         }
+//     }
+// }
+
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum BuiltinInitializer {
-    Matrix {
+pub enum Callee {
+    InferredComponentMatrix {
         rows: VecDimensionality,
         columns: VecDimensionality,
     },
-    Vec(VecDimensionality),
-    Array,
-}
-
-impl From<ast::InferredInitializer> for BuiltinInitializer {
-    fn from(initializer: ast::InferredInitializer) -> Self {
-        use ast::InferredInitializerType::*;
-        use VecDimensionality::*;
-        match initializer
-            .ty()
-            .expect("InferredInitializer is only created from a single token, so that token definitely exists")
-        {
-            Array(_) => BuiltinInitializer::Array,
-            Mat2x2(_) => BuiltinInitializer::Matrix {
-                rows: Two,
-                columns: Two,
-            },
-            Mat2x3(_) => BuiltinInitializer::Matrix {
-                rows: Two,
-                columns: Three,
-            },
-            Mat2x4(_) => BuiltinInitializer::Matrix {
-                rows: Two,
-                columns: Four,
-            },
-            Mat3x2(_) => BuiltinInitializer::Matrix {
-                rows: Three,
-                columns: Two,
-            },
-            Mat3x3(_) => BuiltinInitializer::Matrix {
-                rows: Three,
-                columns: Three,
-            },
-            Mat3x4(_) => BuiltinInitializer::Matrix {
-                rows: Three,
-                columns: Four,
-            },
-            Mat4x2(_) => BuiltinInitializer::Matrix {
-                rows: Four,
-                columns: Two,
-            },
-            Mat4x3(_) => BuiltinInitializer::Matrix {
-                rows: Four,
-                columns: Three,
-            },
-            Mat4x4(_) => BuiltinInitializer::Matrix {
-                rows: Four,
-                columns: Four,
-            },
-            Vec2(_) => BuiltinInitializer::Vec(Two),
-            Vec3(_) => BuiltinInitializer::Vec(Three),
-            Vec4(_) => BuiltinInitializer::Vec(Four),
-        }
-    }
+    InferredComponentVec(VecDimensionality),
+    InferredComponentArray,
+    Name(Name),
+    Type(Interned<TypeRef>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -111,11 +113,7 @@ pub enum Expr {
         name: Name,
     },
     Call {
-        callee: ExprId,
-        args: Vec<ExprId>,
-    },
-    TypeInitializer {
-        ty: Interned<TypeRef>,
+        callee: Callee,
         args: Vec<ExprId>,
     },
     Index {
@@ -128,7 +126,6 @@ pub enum Expr {
     },
     Literal(Literal),
     Path(Name),
-    InferredInitializer(BuiltinInitializer),
 }
 
 pub type StatementId = Idx<Statement>;
@@ -259,11 +256,7 @@ impl Expr {
             Expr::Field { expr, .. } => {
                 f(*expr);
             }
-            Expr::Call { callee, args } => {
-                f(*callee);
-                args.iter().copied().for_each(f);
-            }
-            Expr::TypeInitializer { ty: _, args } => {
+            Expr::Call { args, .. } => {
                 args.iter().copied().for_each(f);
             }
             Expr::Index { lhs, index } => {
@@ -276,7 +269,6 @@ impl Expr {
             Expr::Missing => {}
             Expr::Literal(_) => {}
             Expr::Path(_) => {}
-            Expr::InferredInitializer(_) => {}
         }
     }
 }

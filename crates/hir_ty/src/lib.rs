@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use base_db::Upcast;
 use builtins::{Builtin, BuiltinId};
+use function::{FunctionDetails, ResolvedFunctionId};
 use hir_def::{
     data::LocalFieldId,
     db::{DefDatabase, DefWithBodyId, FunctionId, Lookup, StructId},
@@ -12,9 +13,10 @@ use hir_def::{
 };
 use infer::{InferenceResult, TyLoweringContext};
 use la_arena::ArenaMap;
-use ty::{FunctionType, Ty, TyKind};
+use ty::{Ty, TyKind};
 
 pub mod builtins;
+mod function;
 pub mod infer;
 pub mod layout;
 pub mod ty;
@@ -26,7 +28,7 @@ pub trait HirDatabase: DefDatabase + Upcast<dyn DefDatabase> {
     fn infer(&self, def: DefWithBodyId) -> Arc<InferenceResult>;
 
     fn field_types(&self, strukt: StructId) -> Arc<ArenaMap<LocalFieldId, Ty>>;
-    fn function_type(&self, function: FunctionId) -> Ty;
+    fn function_type(&self, function: FunctionId) -> ResolvedFunctionId;
 
     fn struct_is_used_in_uniform(&self, strukt: StructId, file_id: HirFileId) -> bool;
 
@@ -35,6 +37,9 @@ pub trait HirDatabase: DefDatabase + Upcast<dyn DefDatabase> {
 
     #[salsa::interned]
     fn intern_builtin(&self, builtin: Builtin) -> BuiltinId;
+
+    #[salsa::interned]
+    fn intern_resolved_function(&self, builtin: FunctionDetails) -> ResolvedFunctionId;
 }
 
 fn field_types(db: &dyn HirDatabase, strukt: StructId) -> Arc<ArenaMap<LocalFieldId, Ty>> {
@@ -57,11 +62,7 @@ fn field_types(db: &dyn HirDatabase, strukt: StructId) -> Arc<ArenaMap<LocalFiel
     Arc::new(map)
 }
 
-#[derive(PartialEq, Eq, Clone, Hash, Debug)]
-pub struct FunctionTypes {
-    pub function_type: Ty,
-}
-fn function_type(db: &dyn HirDatabase, function: FunctionId) -> Ty {
+fn function_type(db: &dyn HirDatabase, function: FunctionId) -> ResolvedFunctionId {
     let data = db.fn_data(function);
 
     let file_id = function.lookup(db.upcast()).file_id;
@@ -82,11 +83,10 @@ fn function_type(db: &dyn HirDatabase, function: FunctionId) -> Ty {
         })
         .collect();
 
-    let ty = TyKind::Function(FunctionType {
+    db.intern_resolved_function(FunctionDetails {
         return_type,
         parameters,
-    });
-    db.intern_ty(ty)
+    })
 }
 
 fn struct_is_used_in_uniform(db: &dyn HirDatabase, strukt: StructId, file_id: HirFileId) -> bool {

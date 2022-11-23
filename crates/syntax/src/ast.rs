@@ -412,29 +412,6 @@ ast_node!(TypeInitializer:
     args: Option<FunctionParamList>;
 );
 
-ast_enum_raw! {
-    enum InferredInitializerType {
-        Array,
-        Mat2x2,
-        Mat2x3,
-        Mat2x4,
-        Mat3x2,
-        Mat3x3,
-        Mat3x4,
-        Mat4x2,
-        Mat4x3,
-        Mat4x4,
-        Vec2,
-        Vec3,
-        Vec4,
-    }
-}
-
-ast_node!(InferredInitializer:
-    // `Some` by definition
-    ty: Option<InferredInitializerType>;
-);
-
 ast_node!(VariableQualifier);
 impl VariableQualifier {
     pub fn access_mode(&self) -> Option<AccessMode> {
@@ -516,7 +493,7 @@ ast_node!(FieldExpr:
     name_ref: Option<NameRef>;
 );
 ast_node!(FunctionCall:
-    ident: Option<NameRef>;
+    name_ref: Option<NameRef>;
     params: Option<FunctionParamList>;
 );
 ast_node!(InvalidFunctionCall:
@@ -770,7 +747,6 @@ ast_enum! {
 ast_enum! {
     enum Expr {
         InfixExpr,
-        InferredInitializer,
         PrefixExpr,
         Literal,
         ParenExpr,

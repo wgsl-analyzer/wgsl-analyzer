@@ -1,6 +1,10 @@
 use hir_def::module_data::Name;
 
-use crate::{ty::*, HirDatabase};
+use crate::{
+    function::{FunctionDetails, ResolvedFunctionId},
+    ty::*,
+    HirDatabase,
+};
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub struct BuiltinId(salsa::InternId);
@@ -62,7 +66,7 @@ impl Builtin {
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub struct BuiltinOverload {
     pub generics: Vec<GenericArgKind>,
-    pub ty: Ty,
+    pub ty: ResolvedFunctionId,
 }
 
 include!(concat!(env!("OUT_DIR"), "/generated/builtins.rs"));
