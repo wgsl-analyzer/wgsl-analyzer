@@ -182,33 +182,8 @@ fn write_ty(
                 write!(f, ">")
             }
         },
-        TyKind::Function(function) => {
-            write!(f, "fn(")?;
-            for (i, param) in function.parameters().enumerate() {
-                if i != 0 {
-                    f.push_str(", ");
-                }
-                write_ty(db, param, f, verbosity)?;
-            }
-            write!(f, ")")?;
-            if let Some(ret) = function.return_type {
-                f.push_str(" -> ");
-                write_ty(db, ret, f, verbosity)?;
-            }
-            Ok(())
-        }
         TyKind::BoundVar(var) => {
             write!(f, "{}", ('T'..).nth(var.index).unwrap())
-        }
-        TyKind::BuiltinFnOverload(builtin, overload_id) => {
-            let builtin = builtin.lookup(db);
-            let overload = builtin.overload(overload_id);
-            write!(f, "<builtin {}> ", builtin.name())?;
-            write_ty(db, overload.ty, f, verbosity)
-        }
-        TyKind::BuiltinFnUndecided(builtin) => {
-            let builtin = builtin.lookup(db);
-            write!(f, "<builtin {}> ", builtin.name())
         }
         TyKind::StorageTypeOfTexelFormat(var) => {
             write!(f, "{}::StorageType", ('F'..).nth(var.index).unwrap())

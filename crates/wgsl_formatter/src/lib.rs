@@ -220,8 +220,8 @@ fn format_syntax_node(
         SyntaxKind::FunctionCall => {
             let function_call = ast::FunctionCall::cast(syntax)?;
 
-            if let Some(expr) = function_call.ident() {
-                remove_if_whitespace(expr.syntax().last_token()?);
+            if let Some(name_ref) = function_call.name_ref() {
+                remove_if_whitespace(name_ref.syntax().last_token()?);
             }
 
             let param_list = function_call.params()?;

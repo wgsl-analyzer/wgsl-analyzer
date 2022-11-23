@@ -39,14 +39,19 @@ pub enum ResolveValue {
     Local(BindingId),
     GlobalVariable(Location<GlobalVariable>),
     GlobalConstant(Location<GlobalConstant>),
-    Function(Location<Function>),
-    TypeInitializer(ResolveType)
 }
 
 #[derive(Debug)]
 pub enum ResolveType {
     Struct(Location<Struct>),
     TypeAlias(Location<TypeAlias>),
+}
+
+#[derive(Debug)]
+pub enum ResolveCallable {
+    Struct(Location<Struct>),
+    TypeAlias(Location<TypeAlias>),
+    Function(Location<Function>),
 }
 
 pub enum ScopeDef {
@@ -184,11 +189,6 @@ impl Resolver {
                                 *c,
                             )))
                         }
-                        ModuleItem::Function(f)
-                            if &scope.module_info.data[f.index].name == name =>
-                        {
-                            Some(ResolveValue::Function(Location::new(scope.file_id, *f)))
-                        }
                         _ => None,
                     })
             }
@@ -212,6 +212,37 @@ impl Resolver {
                             let type_alias = scope.module_info.get(*id);
                             (&type_alias.name == name)
                                 .then(|| ResolveType::TypeAlias(InFile::new(scope.file_id, *id)))
+                        }
+                        _ => None,
+                    })
+            }
+            Scope::ExprScope(_) => None,
+        })
+    }
+
+    pub fn resolve_callable(&self, name: &Name) -> Option<ResolveCallable> {
+        self.scopes().find_map(|scope| match scope {
+            Scope::ModuleScope(scope) => {
+                scope
+                    .module_info
+                    .items()
+                    .iter()
+                    .find_map(|item| match item {
+                        ModuleItem::Struct(id) => {
+                            let strukt = scope.module_info.get(*id);
+                            (&strukt.name == name)
+                                .then(|| ResolveCallable::Struct(InFile::new(scope.file_id, *id)))
+                        }
+                        ModuleItem::TypeAlias(id) => {
+                            let type_alias = scope.module_info.get(*id);
+                            (&type_alias.name == name).then(|| {
+                                ResolveCallable::TypeAlias(InFile::new(scope.file_id, *id))
+                            })
+                        }
+                        ModuleItem::Function(id) => {
+                            let function = scope.module_info.get(*id);
+                            (&function.name == name)
+                                .then(|| ResolveCallable::Function(InFile::new(scope.file_id, *id)))
                         }
                         _ => None,
                     })

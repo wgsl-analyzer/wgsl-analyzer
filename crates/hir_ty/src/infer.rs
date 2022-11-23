@@ -3,9 +3,7 @@ use hir_def::{
     body::{BindingId, Body},
     data::{FieldId, FunctionData, GlobalConstantData, GlobalVariableData},
     db::{DefWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, TypeAliasId},
-    expr::{
-        ArithOp, BinaryOp, BuiltinInitializer, CmpOp, Expr, ExprId, Statement, StatementId, UnaryOp,
-    },
+    expr::{ArithOp, BinaryOp, Callee, CmpOp, Expr, ExprId, Statement, StatementId, UnaryOp},
     module_data::Name,
     resolver::{ResolveType, Resolver},
     type_ref::{self, AccessMode, StorageClass, TypeRef, VecDimensionality},
@@ -16,10 +14,11 @@ use std::{collections::hash_map::Entry, sync::Arc};
 
 use crate::{
     builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
+    function::FunctionDetails,
     ty::{
-        ArraySize, ArrayType, AtomicType, BoundVar, FunctionType, MatrixType, Ptr, Ref,
-        SamplerType, ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType, Ty,
-        TyKind, VecSize, VectorType,
+        ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Ptr, Ref, SamplerType, ScalarType,
+        TexelFormat, TextureDimensionality, TextureKind, TextureType, Ty, TyKind, VecSize,
+        VectorType,
     },
     HirDatabase,
 };
@@ -596,64 +595,55 @@ impl<'db> InferenceContext<'db> {
                     .iter()
                     .map(|&arg| self.infer_expr(arg).unref(self.db))
                     .collect();
+                self.infer_call(expr, callee, args)
+                // if let Expr::Path(path) = &body.exprs[callee] {
+                //     let type_ref = TypeRef::Path(path.clone());
+                //     if let Ok(ty) = self.try_lower_ty(&type_ref) {
+                //         self.check_type_initializer_args(ty, &args, expr);
+                //         self.set_expr_ty(expr, ty); // because of early return
+                //         return ty;
+                //     }
+                // }
 
-                if let Expr::Path(path) = &body.exprs[callee] {
-                    let type_ref = TypeRef::Path(path.clone());
-                    if let Ok(ty) = self.try_lower_ty(&type_ref) {
-                        self.check_type_initializer_args(ty, &args, expr);
-                        self.set_expr_ty(expr, ty); // because of early return
-                        return ty;
-                    }
-                }
+                // let callee_ty = self.infer_expr(callee);
 
-                let callee_ty = self.infer_expr(callee);
+                // match callee_ty.kind(self.db) {
+                //     // TODO refactor to allow early return
+                //     TyKind::Error => self.err_ty(),
+                //     TyKind::BuiltinFnUndecided(builtin) => {
+                //         match self.try_call_builtin(callee, builtin, &args, None) {
+                //             Ok((ty, builtin_overload_id)) => {
+                //                 let overload_ty =
+                //                     TyKind::BuiltinFnOverload(builtin, builtin_overload_id);
+                //                 self.set_expr_ty(callee, overload_ty.intern(self.db));
+                //                 ty
+                //             }
+                //             Err(()) => self.err_ty(),
+                //         }
+                //     }
+                //     TyKind::BuiltinFnOverload(builtin, overload_id) => {
+                //         let builtin = builtin.lookup(self.db);
+                //         let overload = builtin.overload(overload_id);
+                //         let ty = overload.ty.kind(self.db);
+                //         let f = ty.as_function().expect("builtin type should be a function");
+                //         self.validate_function_call(f, args, callee, expr)
+                //     }
+                //     TyKind::Function(f) => self.validate_function_call(f, args, callee, expr),
+                //     _ => {
+                //         self.push_diagnostic(InferenceDiagnostic::InvalidCallType {
+                //             expr: callee,
+                //             ty: callee_ty,
+                //         });
 
-                match callee_ty.kind(self.db) {
-                    // TODO refactor to allow early return
-                    TyKind::Error => self.err_ty(),
-                    TyKind::BuiltinFnUndecided(builtin) => {
-                        match self.try_call_builtin(callee, builtin, &args, None) {
-                            Ok((ty, builtin_overload_id)) => {
-                                let overload_ty =
-                                    TyKind::BuiltinFnOverload(builtin, builtin_overload_id);
-                                self.set_expr_ty(callee, overload_ty.intern(self.db));
-                                ty
-                            }
-                            Err(()) => self.err_ty(),
-                        }
-                    }
-                    TyKind::BuiltinFnOverload(builtin, overload_id) => {
-                        let builtin = builtin.lookup(self.db);
-                        let overload = builtin.overload(overload_id);
-                        let ty = overload.ty.kind(self.db);
-                        let f = ty.as_function().expect("builtin type should be a function");
-                        self.validate_function_call(f, args, callee, expr)
-                    }
-                    TyKind::Function(f) => self.validate_function_call(f, args, callee, expr),
-                    _ => {
-                        self.push_diagnostic(InferenceDiagnostic::InvalidCallType {
-                            expr: callee,
-                            ty: callee_ty,
-                        });
-
-                        self.err_ty()
-                    }
-                }
+                //         self.err_ty()
+                //     }
+                // }
             }
             Expr::Bitcast { ty, expr } => {
                 self.infer_expr(expr);
                 let ty = self
                     .try_lower_ty(&self.db.lookup_intern_type_ref(ty))
                     .unwrap_or_else(|_| self.err_ty());
-                ty
-            }
-            Expr::TypeInitializer { ty, ref args } => {
-                let args: Vec<_> = args
-                    .iter()
-                    .map(|&arg| self.infer_expr(arg).unref(self.db))
-                    .collect();
-                let ty = self.lower_ty(expr, &self.db.lookup_intern_type_ref(ty));
-                self.check_type_initializer_args(ty, &args, expr);
                 ty
             }
             Expr::Index { lhs, index } => {
@@ -712,9 +702,6 @@ impl<'db> InferenceContext<'db> {
                 });
                 self.err_ty()
             }),
-            Expr::InferredInitializer(ref initialiser) => {
-                TyKind::BuiltinFnUndecided(self.initialiser_to_builtin(initialiser)).intern(self.db)
-            }
         };
 
         self.set_expr_ty(expr, ty);
@@ -724,7 +711,7 @@ impl<'db> InferenceContext<'db> {
 
     fn validate_function_call(
         &mut self,
-        f: FunctionType,
+        f: FunctionDetails,
         args: Vec<Ty>,
         callee: ExprId,
         expr: ExprId,
@@ -887,10 +874,7 @@ impl<'db> InferenceContext<'db> {
     }
 
     fn resolve_path_expr(&self, expr: ExprId, path: &Name) -> Option<Ty> {
-        self.resolve_path_expr_inner(expr, path).or_else(|| {
-            let builtin = Builtin::for_name(self.db, path)?.intern(self.db);
-            Some(TyKind::BuiltinFnUndecided(builtin).intern(self.db))
-        })
+        self.resolve_path_expr_inner(expr, path)
     }
     fn resolve_path_expr_inner(&self, expr: ExprId, path: &Name) -> Option<Ty> {
         let resolver = self.resolver_for_expr(expr);
@@ -916,10 +900,6 @@ impl<'db> InferenceContext<'db> {
                 let id = self.db.intern_global_constant(loc);
                 let result = self.db.infer(DefWithBodyId::GlobalConstant(id));
                 result.return_type.unwrap_or_else(|| self.err_ty())
-            }
-            hir_def::resolver::ResolveValue::Function(loc) => {
-                let id = self.db.intern_function(loc);
-                self.db.function_type(id)
             }
         };
         Some(ty)
@@ -999,10 +979,7 @@ impl<'db> InferenceContext<'db> {
     }
 
     fn call_builtin_overload(&self, sig: &BuiltinOverload, args: &[Ty]) -> Result<Ty, ()> {
-        let fn_ty = match sig.ty.kind(self.db) {
-            TyKind::Function(fn_ty) => fn_ty,
-            _ => unreachable!(),
-        };
+        let fn_ty = sig.ty.lookup(self.db);
 
         if fn_ty.parameters.len() != args.len() {
             return Err(());
@@ -1018,6 +995,38 @@ impl<'db> InferenceContext<'db> {
             .map(|ty| unification_table.resolve(self.db, ty));
 
         Ok(return_type.unwrap_or_else(|| self.err_ty()))
+    }
+
+    fn infer_call(&self, expr: ExprId, callee: Callee, args: Vec<Ty>) -> Ty {
+        match callee {
+            Callee::InferredComponentMatrix { rows, columns } => todo!(),
+            Callee::InferredComponentVec(_) => todo!(),
+            Callee::InferredComponentArray => todo!(),
+            Callee::Name(name) => match self.resolver.resolve_callable(&name) {
+                Some(arg) => match arg {
+                    hir_def::resolver::ResolveCallable::Struct(strukt) => todo!(),
+                    hir_def::resolver::ResolveCallable::TypeAlias(alias) => todo!(),
+                    hir_def::resolver::ResolveCallable::Function(function) => todo!(),
+                },
+                None => {
+                    let builtin = Builtin::for_name(self.db, &name);
+                    if let Some(builtin) = builtin {
+                        let builtin_id = builtin.intern(self.db);
+                        self.call_builtin(expr, builtin_id, &args, Some(name.as_str()))
+                    } else {
+                        self.push_diagnostic(InferenceDiagnostic::UnresolvedName {
+                            expr,
+                            name: name.clone(),
+                        });
+                        self.err_ty()
+                    }
+                }
+            },
+            Callee::Type(ty) => {
+                let ty = self.lower_ty(expr, &self.db.lookup_intern_type_ref(ty));
+                ty
+            }
+        }
     }
 }
 

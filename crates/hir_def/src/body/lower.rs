@@ -1,7 +1,7 @@
 use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
 use crate::{
     db::DefDatabase,
-    expr::{parse_literal, Expr, ExprId, Statement, StatementId},
+    expr::{parse_literal, Callee, Expr, ExprId, Statement, StatementId},
     module_data::Name,
     type_ref::TypeRef,
     HirFileId, InFile,
@@ -378,11 +378,14 @@ impl<'a> Collector<'a> {
                     .map(|expr| self.collect_expr(expr))
                     .collect();
 
-                if let Some(expr) = call.expr() {
-                    let expr = self.collect_expr(expr);
-                    Expr::Call { callee: expr, args }
-                } else {
-                    Expr::Missing
+                let name = call
+                    .name_ref()
+                    .map(Name::from)
+                    .unwrap_or_else(Name::missing);
+
+                Expr::Call {
+                    callee: Callee::Name(name),
+                    args,
                 }
             }
             ast::Expr::InvalidFunctionCall(call) => {
@@ -397,9 +400,6 @@ impl<'a> Collector<'a> {
                     });
 
                 Expr::Missing
-            }
-            ast::Expr::InferredInitializer(initialiser) => {
-                Expr::InferredInitializer(initialiser.into())
             }
             ast::Expr::PathExpr(path) => {
                 let name = path
