@@ -1,7 +1,11 @@
-use hir_def::{module_data::Name, resolver::ResolveType, HirFileId};
+use hir_def::{
+    module_data::Name,
+    resolver::{ResolveCallable, ResolveType},
+    HirFileId,
+};
 use syntax::{ast, match_ast, AstNode, SyntaxNode, SyntaxToken};
 
-use crate::{Field, Local, ModuleDef, Semantics, Struct, TypeAlias};
+use crate::{Field, Function, Local, ModuleDef, Semantics, Struct, TypeAlias};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Definition {
@@ -59,6 +63,23 @@ fn resolve_name_ref(
         let field = sema.analyze(def).resolve_field(expr)?;
 
         Some(Definition::Field(field))
+    } else if let Some(expr) = ast::FunctionCall::cast(parent.clone()) {
+        let resolver = sema.resolver(file_id, expr.syntax());
+
+        match resolver.resolve_callable(&expr.name_ref()?.into())? {
+            ResolveCallable::Struct(loc) => {
+                let id = sema.db.intern_struct(loc);
+                Some(Definition::Struct(Struct { id }))
+            }
+            ResolveCallable::TypeAlias(loc) => {
+                let id = sema.db.intern_type_alias(loc);
+                Some(Definition::TypeAlias(TypeAlias { id }))
+            }
+            ResolveCallable::Function(function) => {
+                let id = sema.db.intern_function(function);
+                Some(Definition::ModuleDef(ModuleDef::Function(Function { id })))
+            }
+        }
     } else if let Some(ty) = ast::PathType::cast(parent) {
         let resolver = sema.resolver(file_id, ty.syntax());
 

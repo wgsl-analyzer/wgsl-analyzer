@@ -14,7 +14,7 @@ enum Generic {
 struct Overload {
     generics: BTreeMap<char, (usize, Generic)>,
     return_type: Option<Type>,
-    parameters: Vec<Type>,
+    parameters: Vec<(Type, Option<String>)>,
 }
 #[derive(Debug)]
 enum Type {
@@ -187,7 +187,16 @@ fn parse_line(line: &str) -> (&str, Overload) {
     let parameters: Vec<_> = parameters
         .split(',')
         .filter(|param| !param.is_empty())
-        .map(|ty| parse_ty(&mut generics, ty.trim()))
+        .map(|ty| match ty.find(":") {
+            Some(idx) if !ty[idx..].starts_with("::") => {
+                let (name, ty) = ty.split_at(idx);
+                let ty = &ty[1..];
+                let name = name.trim();
+                let name = (!name.is_empty()).then(|| name.to_string());
+                (parse_ty(&mut generics, ty.trim()), name)
+            }
+            _ => (parse_ty(&mut generics, ty.trim()), None),
+        })
         .collect();
 
     let return_type = match return_type {
@@ -449,12 +458,16 @@ fn builtin_to_rust(
                 })
                 .collect::<String>()
         )?;
-        for param in &overload.parameters {
+        for (param, name) in &overload.parameters {
             write!(
                 f,
                 "
-                        ({}, Name::missing()),",
-                type_to_rust(param),
+                        ({ty}, {name}),",
+                ty = type_to_rust(param),
+                name = match name {
+                    Some(name) => format!("Name::from({name:?})"),
+                    None => "Name::missing()".to_string(),
+                }
             )?;
         }
         write!(
