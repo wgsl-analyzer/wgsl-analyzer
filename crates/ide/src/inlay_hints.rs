@@ -9,7 +9,7 @@ use hir_ty::{
 };
 use rowan::NodeOrToken;
 use smol_str::SmolStr;
-use syntax::{ast, AstNode, HasName, SyntaxNode};
+use syntax::{ast, AstChildren, AstNode, HasName, SyntaxNode};
 
 use crate::RootDatabase;
 
@@ -155,33 +155,30 @@ fn get_hints(
                 if !config.parameter_hints {
                     return None;
                 }
-                let container = sema.find_container(file_id.into(), &node)?;
-
-                let analyzed = sema.analyze(container);
-                let expression = analyzed.expr_id(&expr)?;
-
-                let parameter_exprs = function_call_expr.params()?.args();
-
-                let resolved = analyzed.infer.call_resolution(expression)?;
-                let func = match resolved {
-                    ResolvedCall::Function(func) => func.lookup(analyzed.db),
-                    ResolvedCall::OtherTypeInitializer(_) => return None,
-                };
-
-                let param_hints = func
-                    .parameter_names()
-                    .zip(parameter_exprs)
-                    .filter(|&(name, _)| !Name::is_missing(name))
-                    .filter(|(param_name, expr)| {
-                        !should_hide_param_name_hint(&func, param_name, expr)
-                    })
-                    .map(|(param_name, expr)| InlayHint {
-                        range: expr.syntax().text_range(),
-                        kind: InlayKind::ParameterHint,
-                        label: param_name.into(),
-                    });
-
-                hints.extend(param_hints);
+                function_hints(
+                    sema,
+                    file_id,
+                    &node,
+                    &expr,
+                    function_call_expr.params()?.args(),
+                    hints,
+                )?;
+            }
+            ast::Expr::TypeInitializer(type_initialiser_expr) => {
+                if !config.parameter_hints {
+                    return None;
+                }
+                // Show hints for the built-in initializers.
+                // `vec4(xyz: val1, w: val2)` could also be
+                // `vec4(xy: val1, zw: val2)` without hints
+                function_hints(
+                    sema,
+                    file_id,
+                    &node,
+                    &expr,
+                    type_initialiser_expr.args()?.args(),
+                    hints,
+                )?;
             }
             _ => {}
         }
@@ -212,6 +209,36 @@ fn get_hints(
         }
     }
 
+    Some(())
+}
+
+fn function_hints(
+    sema: &Semantics,
+    file_id: FileId,
+    node: &SyntaxNode,
+    expr: &ast::Expr,
+    parameter_exprs: AstChildren<ast::Expr>,
+    hints: &mut Vec<InlayHint>,
+) -> Option<()> {
+    let container = sema.find_container(file_id.into(), node)?;
+    let analyzed = sema.analyze(container);
+    let expression = analyzed.expr_id(expr)?;
+    let resolved = analyzed.infer.call_resolution(expression)?;
+    let func = match resolved {
+        ResolvedCall::Function(func) => func.lookup(analyzed.db),
+        ResolvedCall::OtherTypeInitializer(_) => return None,
+    };
+    let param_hints = func
+        .parameter_names()
+        .zip(parameter_exprs)
+        .filter(|&(name, _)| !Name::is_missing(name))
+        .filter(|(param_name, expr)| !should_hide_param_name_hint(&func, param_name, expr))
+        .map(|(param_name, expr)| InlayHint {
+            range: expr.syntax().text_range(),
+            kind: InlayKind::ParameterHint,
+            label: param_name.into(),
+        });
+    hints.extend(param_hints);
     Some(())
 }
 

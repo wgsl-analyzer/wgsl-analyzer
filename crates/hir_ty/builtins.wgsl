@@ -101,10 +101,10 @@ abs(i32) -> i32
 abs(vecN<i32>) -> vecN<i32>
 abs(u32) -> u32
 abs(vecN<u32>) -> vecN<u32>
-clamp(i32, i32, i32) -> i32
-clamp(vecN<i32>, vecN<i32>, vecN<i32>) -> vecN<i32>
-clamp(u32, u32, u32) -> u32
-clamp(vecN<u32>, vecN<u32>, vecN<u32>) -> vecN<u32>
+clamp(i32, low: i32, high: i32) -> i32
+clamp(vecN<i32>, low: vecN<i32>, high: vecN<i32>) -> vecN<i32>
+clamp(u32, low: u32, high: u32) -> u32
+clamp(vecN<u32>, low: vecN<u32>, high: vecN<u32>) -> vecN<u32>
 countLeadingZeros(i32) -> i32
 countLeadingZeros(vecN<i32>) -> vecN<i32>
 countLeadingZeros(u32) -> u32
@@ -428,16 +428,16 @@ op_vec4_constructor(T) -> vec4<T>
 op_vec2_constructor(T, T) -> vec2<T>
 
 op_vec3_constructor(T, T, T) -> vec3<T>
-op_vec3_constructor(T, vec2<T>) -> vec3<T>
-op_vec3_constructor(vec2<T>, T) -> vec3<T>
+op_vec3_constructor(x: T, yz: vec2<T>) -> vec3<T>
+op_vec3_constructor(xy: vec2<T>, z: T) -> vec3<T>
 
 op_vec4_constructor(T, T, T, T) -> vec4<T>
-op_vec4_constructor(T, T, vec2<T>) -> vec4<T>
-op_vec4_constructor(T, vec2<T>, T) -> vec4<T>
-op_vec4_constructor(vec2<T>, T, T) -> vec4<T>
-op_vec4_constructor(vec2<T>, vec2<T>) -> vec4<T>
-op_vec4_constructor(T, vec3<T>) -> vec4<T>
-op_vec4_constructor(vec3<T>, T) -> vec4<T>
+op_vec4_constructor(x: T, y: T, zw: vec2<T>) -> vec4<T>
+op_vec4_constructor(x: T, yz: vec2<T>, w: T) -> vec4<T>
+op_vec4_constructor(xy: vec2<T>, z: T, w: T) -> vec4<T>
+op_vec4_constructor(xy: vec2<T>, zw: vec2<T>) -> vec4<T>
+op_vec4_constructor(x: T, yzw: vec3<T>) -> vec4<T>
+op_vec4_constructor(xyz: vec3<T>, w: T) -> vec4<T>
 
 
 // Identity transformation
@@ -480,17 +480,17 @@ op_mat4x4_constructor(T, T, T, T,  T, T, T, T,  T, T, T, T,  T, T, T, T) -> mat4
 
 // Column by column construction.
 
-op_mat2x2_constructor(vec2<T>, vec2<T>) -> mat2x2<T>
-op_mat3x2_constructor(vec2<T>, vec2<T>, vec2<T>) -> mat3x2<T>
-op_mat4x2_constructor(vec2<T>, vec2<T>, vec2<T>, vec2<T>) -> mat4x2<T>
+op_mat2x2_constructor(col1: vec2<T>, col2: vec2<T>) -> mat2x2<T>
+op_mat3x2_constructor(col1: vec2<T>, col2: vec2<T>, col3: vec2<T>) -> mat3x2<T>
+op_mat4x2_constructor(col1: vec2<T>, col2: vec2<T>, col3: vec2<T>, col4: vec2<T>) -> mat4x2<T>
 
-op_mat2x3_constructor(vec3<T>, vec3<T>) -> mat2x3<T>
-op_mat3x3_constructor(vec3<T>, vec3<T>, vec3<T>) -> mat3x3<T>
-op_mat4x3_constructor(vec3<T>, vec3<T>, vec3<T>, vec3<T>) -> mat4x3<T>
+op_mat2x3_constructor(col1: vec3<T>, col2: vec3<T>) -> mat2x3<T>
+op_mat3x3_constructor(col1: vec3<T>, col2: vec3<T>, col3: vec3<T>) -> mat3x3<T>
+op_mat4x3_constructor(col1: vec3<T>, col2: vec3<T>, col3: vec3<T>, col4: vec3<T>) -> mat4x3<T>
 
-op_mat2x4_constructor(vec4<T>, vec4<T>) -> mat2x4<T>
-op_mat3x4_constructor(vec4<T>, vec4<T>, vec4<T>) -> mat3x4<T>
-op_mat4x4_constructor(vec4<T>, vec4<T>, vec4<T>, vec4<T>) -> mat4x4<T>
+op_mat2x4_constructor(col1: vec4<T>, col2: vec4<T>) -> mat2x4<T>
+op_mat3x4_constructor(col1: vec4<T>, col2: vec4<T>, col3: vec4<T>) -> mat3x4<T>
+op_mat4x4_constructor(col1: vec4<T>, col2: vec4<T>, col3: vec4<T>, col4: vec4<T>) -> mat4x4<T>
 
 op_array_constructor(T) -> array<T>
 op_array_constructor(T, T) -> array<T>
