@@ -66,7 +66,7 @@ pub enum InferenceDiagnostic {
         expr: ExprId,
         name: Name,
     },
-    InvalidCallType {
+    InvalidConstructionType {
         expr: ExprId,
         ty: Ty,
     },
@@ -79,6 +79,12 @@ pub enum InferenceDiagnostic {
         expr: ExprId,
         builtin: BuiltinId,
         name: Option<&'static str>,
+        parameters: Vec<Ty>,
+    },
+    NoConstructor {
+        expr: ExprId,
+        builtins: [BuiltinId; 2],
+        ty: Ty,
         parameters: Vec<Ty>,
     },
 
@@ -609,48 +615,6 @@ impl<'db> InferenceContext<'db> {
                     .map(|&arg| self.infer_expr(arg).unref(self.db))
                     .collect();
                 self.infer_call(expr, callee, args)
-                // if let Expr::Path(path) = &body.exprs[callee] {
-                //     let type_ref = TypeRef::Path(path.clone());
-                //     if let Ok(ty) = self.try_lower_ty(&type_ref) {
-                //         self.check_type_initializer_args(ty, &args, expr);
-                //         self.set_expr_ty(expr, ty); // because of early return
-                //         return ty;
-                //     }
-                // }
-
-                // let callee_ty = self.infer_expr(callee);
-
-                // match callee_ty.kind(self.db) {
-                //     // TODO refactor to allow early return
-                //     TyKind::Error => self.err_ty(),
-                //     TyKind::BuiltinFnUndecided(builtin) => {
-                //         match self.try_call_builtin(callee, builtin, &args, None) {
-                //             Ok((ty, builtin_overload_id)) => {
-                //                 let overload_ty =
-                //                     TyKind::BuiltinFnOverload(builtin, builtin_overload_id);
-                //                 self.set_expr_ty(callee, overload_ty.intern(self.db));
-                //                 ty
-                //             }
-                //             Err(()) => self.err_ty(),
-                //         }
-                //     }
-                //     TyKind::BuiltinFnOverload(builtin, overload_id) => {
-                //         let builtin = builtin.lookup(self.db);
-                //         let overload = builtin.overload(overload_id);
-                //         let ty = overload.ty.kind(self.db);
-                //         let f = ty.as_function().expect("builtin type should be a function");
-                //         self.validate_function_call(f, args, callee, expr)
-                //     }
-                //     TyKind::Function(f) => self.validate_function_call(f, args, callee, expr),
-                //     _ => {
-                //         self.push_diagnostic(InferenceDiagnostic::InvalidCallType {
-                //             expr: callee,
-                //             ty: callee_ty,
-                //         });
-
-                //         self.err_ty()
-                //     }
-                // }
             }
             Expr::Bitcast { ty, expr } => {
                 self.infer_expr(expr);
@@ -921,40 +885,64 @@ impl<'db> InferenceContext<'db> {
         args: &[Ty],
         name: Option<&'static str>,
     ) -> Ty {
-        match self.try_call_builtin(expr, builtin_id, args, name) {
-            Ok((return_ty, overload_id)) => {
-                let builtin = builtin_id.lookup(self.db);
-                let resolved = builtin.overload(overload_id).ty;
-                self.result
-                    .call_resolutions
-                    .insert(expr, ResolvedCall::Function(resolved));
-                return_ty
-            }
-            Err(()) => self.err_ty(),
-        }
+        self.call_builtin_inner(expr, builtin_id, args, name, None)
     }
-    fn try_call_builtin(
+
+    fn call_builtin_with_return(
         &mut self,
         expr: ExprId,
         builtin_id: BuiltinId,
         args: &[Ty],
         name: Option<&'static str>,
+        ty: Ty,
+    ) -> Ty {
+        self.call_builtin_inner(expr, builtin_id, args, name, Some(ty))
+    }
+
+    fn call_builtin_inner(
+        &mut self,
+        expr: ExprId,
+        builtin_id: BuiltinId,
+        args: &[Ty],
+        name: Option<&'static str>,
+        return_ty: Option<Ty>,
+    ) -> Ty {
+        if let Ok((return_ty, overload_id)) = self.try_call_builtin(builtin_id, args, return_ty) {
+            let builtin = builtin_id.lookup(self.db);
+            let resolved = builtin.overload(overload_id).ty;
+            self.result
+                .call_resolutions
+                .insert(expr, ResolvedCall::Function(resolved));
+            return return_ty;
+        } else {
+            self.push_diagnostic(InferenceDiagnostic::NoBuiltinOverload {
+                expr,
+                builtin: builtin_id,
+                name,
+                parameters: args.to_vec(),
+            });
+            self.err_ty()
+        }
+    }
+
+    fn try_call_builtin(
+        &mut self,
+        builtin_id: BuiltinId,
+        args: &[Ty],
+        return_ty: Option<Ty>,
     ) -> Result<(Ty, BuiltinOverloadId), ()> {
         let builtin = builtin_id.lookup(self.db);
-
         for (overload_id, overload) in builtin.overloads() {
             if let Ok(ty) = self.call_builtin_overload(overload, args) {
-                return Ok((ty, overload_id));
+                if let Some(ret) = return_ty {
+                    if ret == ty {
+                        return Ok((ty, overload_id));
+                    }
+                } else {
+                    return Ok((ty, overload_id));
+                }
             }
         }
-
-        self.push_diagnostic(InferenceDiagnostic::NoBuiltinOverload {
-            expr,
-            builtin: builtin_id,
-            name,
-            parameters: args.to_vec(),
-        });
-
         Err(())
     }
 
@@ -981,18 +969,21 @@ impl<'db> InferenceContext<'db> {
         match callee {
             Callee::InferredComponentMatrix { rows, columns } => {
                 let builtin_id = self.builtin_matrix_inferred_constructor(&columns, &rows);
-                let return_ty = self.call_builtin(expr, builtin_id, &args, Some("matrix"));
+                let return_ty =
+                    self.call_builtin(expr, builtin_id, &args, Some("matrix construction"));
                 return_ty
             }
             Callee::InferredComponentVec(size) => {
                 let builtin_id = self.builtin_vector_inferred_constructor(&size);
-                let return_ty = self.call_builtin(expr, builtin_id, &args, Some("vec"));
+                let return_ty =
+                    self.call_builtin(expr, builtin_id, &args, Some("vec construction"));
                 return_ty
             }
             Callee::InferredComponentArray => {
                 let builtin_id = Builtin::builtin_op_array_constructor(self.db).intern(self.db);
                 // TODO: Special case calling array initialisers to allow n-ary calls
-                let return_ty = self.call_builtin(expr, builtin_id, &args, Some("array"));
+                let return_ty =
+                    self.call_builtin(expr, builtin_id, &args, Some("array construction"));
                 return_ty
             }
             Callee::Name(name) => match self.resolver.resolve_callable(&name) {
@@ -1045,50 +1036,99 @@ impl<'db> InferenceContext<'db> {
             }
         }
     }
-    fn check_ty_initialiser(&self, _expr: ExprId, _ty: Ty, _args: Vec<Ty>) {
-        // TODO
+    fn check_ty_initialiser(&mut self, expr: ExprId, ty: Ty, args: Vec<Ty>) {
+        fn size_to_dimension(size: VecSize) -> VecDimensionality {
+            match size {
+                VecSize::Two => VecDimensionality::Two,
+                VecSize::Three => VecDimensionality::Three,
+                VecSize::Four => VecDimensionality::Four,
+                VecSize::BoundVar(_) => unreachable!("Can never have unbound type at this point"),
+            }
+        }
 
-        // fn s2d(size: VecSize) -> VecDimensionality {
-        //     match size {
-        //         VecSize::Two => VecDimensionality::Two,
-        //         VecSize::Three => VecDimensionality::Three,
-        //         VecSize::Four => VecDimensionality::Four,
-        //         VecSize::BoundVar(_) => unreachable!("Can never have unbound type at this point"),
-        //     }
-        // }
-        // if args.len() == 1 {
-        //     let arg_ty = &args[0];
-        //     match (arg_ty.kind(self.db), ty.kind(self.db)) {
-        //         // Hackily support type conversions
-        //         (TyKind::Matrix(_), TyKind::Matrix(_)) | (TyKind::Vector(_), TyKind::Vector(_)) => {
-        //             return
-        //         }
-        //         _ => {}
-        //     }
-        // }
-        // let initialiser = match ty.kind(self.db) {
-        //     TyKind::Vector(vec) => BuiltinInitializer::Vec(s2d(vec.size)),
-        //     TyKind::Matrix(mat) => BuiltinInitializer::Matrix {
-        //         rows: s2d(mat.rows),
-        //         columns: s2d(mat.columns),
-        //     },
-        //     TyKind::Array(_) => BuiltinInitializer::Array,
-        //     _ => return,
-        // };
+        match ty.kind(self.db) {
+            TyKind::Scalar(_) => {
+                if args.is_empty() {
+                    // Permit the zero value
+                    return;
+                }
+                let builtin = Builtin::builtin_op_convert(self.db).intern(self.db);
+                self.call_builtin_with_return(expr, builtin, &args, Some("conversion"), ty);
+            }
+            TyKind::Array(_) => {
+                if args.is_empty() {
+                    return;
+                }
+                // TODO: Implement checking that all the arguments have the same type (inner)
+                return;
+            }
+            TyKind::Vector(vec) => {
+                if args.is_empty() {
+                    return;
+                }
+                let construction_builtin_id =
+                    self.builtin_vector_inferred_constructor(&size_to_dimension(vec.size));
+                let construction_result =
+                    self.try_call_builtin(construction_builtin_id, &args, Some(ty));
+                if construction_result.is_ok() {
+                    return;
+                }
+                let conversion_id = Builtin::builtin_op_convert(self.db).intern(self.db);
+                let conversion_result = self.try_call_builtin(conversion_id, &args, Some(ty));
+                if conversion_result.is_ok() {
+                    return;
+                }
+                self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                    expr,
+                    builtins: [construction_builtin_id, conversion_id],
+                    ty,
+                    parameters: args,
+                })
+            }
+            TyKind::Matrix(matrix) => {
+                if args.is_empty() {
+                    return;
+                }
+                let construction_builtin_id = self.builtin_matrix_inferred_constructor(
+                    &size_to_dimension(matrix.columns),
+                    &size_to_dimension(matrix.rows),
+                );
+                let construction_result =
+                    self.try_call_builtin(construction_builtin_id, &args, Some(ty));
+                if construction_result.is_ok() {
+                    return;
+                }
+                let conversion_id = Builtin::builtin_op_convert(self.db).intern(self.db);
+                let conversion_result = self.try_call_builtin(conversion_id, &args, Some(ty));
+                if conversion_result.is_ok() {
+                    return;
+                }
+                self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                    expr,
+                    builtins: [construction_builtin_id, conversion_id],
+                    ty,
+                    parameters: args,
+                })
+            }
+            TyKind::Struct(_) => {
+                if args.is_empty() {
+                    return;
+                }
+                // TODO: Implement checking field types
+                return;
+            }
 
-        // let builtin_id = self.initialiser_to_builtin(&initialiser);
-
-        // if let Ok((return_ty, _)) = self.try_call_builtin(expr, builtin_id, &args, None) {
-        //     if return_ty != ty {
-        //         self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
-        //             expr,
-        //             expected: TypeExpectation::Type(TypeExpectationInner::Exact(ty)),
-        //             actual: return_ty,
-        //         });
-        //     }
-        // } else {
-        //     return;
-        // };
+            // Never constructible
+            TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Ptr(_)
+            | TyKind::Atomic(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => {
+                self.push_diagnostic(InferenceDiagnostic::InvalidConstructionType { expr, ty })
+            }
+            TyKind::BoundVar(_) | TyKind::Ref(_) => unreachable!(),
+            TyKind::Error => {}
+        }
     }
 }
 

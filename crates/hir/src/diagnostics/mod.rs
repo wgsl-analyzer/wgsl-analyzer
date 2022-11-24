@@ -69,7 +69,7 @@ pub enum AnyDiagnostic {
         expr: InFile<AstPtr<ast::Expr>>,
         name: Name,
     },
-    InvalidCallType {
+    InvalidConstructionType {
         expr: InFile<AstPtr<ast::Expr>>,
         ty: Ty,
     },
@@ -121,6 +121,12 @@ pub enum AnyDiagnostic {
         message: String,
         related: Vec<(String, FileRange)>,
     },
+    NoConstructor {
+        expr: InFile<AstPtr<ast::Expr>>,
+        builtins: [BuiltinId; 2],
+        ty: Ty,
+        parameters: Vec<Ty>,
+    },
 }
 
 impl AnyDiagnostic {
@@ -131,7 +137,7 @@ impl AnyDiagnostic {
             AnyDiagnostic::NoSuchField { expr, .. } => expr.file_id,
             AnyDiagnostic::ArrayAccessInvalidType { expr, .. } => expr.file_id,
             AnyDiagnostic::UnresolvedName { expr, .. } => expr.file_id,
-            AnyDiagnostic::InvalidCallType { expr, .. } => expr.file_id,
+            AnyDiagnostic::InvalidConstructionType { expr, .. } => expr.file_id,
             AnyDiagnostic::FunctionCallArgCountMismatch { expr, .. } => expr.file_id,
             AnyDiagnostic::NoBuiltinOverload { expr, .. } => expr.file_id,
             AnyDiagnostic::AddrOfNotRef { expr, .. } => expr.file_id,
@@ -143,6 +149,7 @@ impl AnyDiagnostic {
             AnyDiagnostic::NagaValidationError { file_id, .. } => *file_id,
             AnyDiagnostic::ParseError { file_id, .. } => *file_id,
             AnyDiagnostic::UnconfiguredCode { file_id, .. } => *file_id,
+            AnyDiagnostic::NoConstructor { expr, .. } => expr.file_id,
             AnyDiagnostic::PrecedenceParensRequired { expr, .. } => expr.file_id,
         }
     }
@@ -201,11 +208,27 @@ pub(crate) fn any_diag_from_infer_diag(
                 name: name.clone(),
             }
         }
-        InferenceDiagnostic::InvalidCallType { expr, ty } => {
+        InferenceDiagnostic::InvalidConstructionType { expr, ty } => {
             let ptr = source_map.expr_to_source(expr).ok()?.clone();
             let source = InFile::new(file_id, ptr);
 
-            AnyDiagnostic::InvalidCallType { expr: source, ty }
+            AnyDiagnostic::InvalidConstructionType { expr: source, ty }
+        }
+        InferenceDiagnostic::NoConstructor {
+            expr,
+            ty,
+            ref builtins,
+            ref parameters,
+        } => {
+            let ptr = source_map.expr_to_source(expr).ok()?.clone();
+            let source = InFile::new(file_id, ptr);
+
+            AnyDiagnostic::NoConstructor {
+                expr: source,
+                builtins: builtins.clone(),
+                ty,
+                parameters: parameters.clone(),
+            }
         }
         InferenceDiagnostic::FunctionCallArgCountMismatch {
             expr,

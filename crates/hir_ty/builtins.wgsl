@@ -494,3 +494,44 @@ op_mat4x4_constructor(col1: vec4<T>, col2: vec4<T>, col3: vec4<T>, col4: vec4<T>
 
 op_array_constructor(T) -> array<T>
 op_array_constructor(T, T) -> array<T>
+op_array_constructor(T, T, T) -> array<T>
+op_array_constructor(T, T, T, T) -> array<T>
+op_array_constructor(T, T, T, T, T) -> array<T>
+
+op_convert(u32) -> bool
+op_convert(i32) -> bool
+op_convert(f32) -> bool
+op_convert(vecN<u32>) -> vecN<bool>
+op_convert(vecN<i32>) -> vecN<bool>
+op_convert(vecN<f32>) -> vecN<bool>
+
+op_convert(bool) -> i32
+op_convert(u32) -> i32
+op_convert(f32) -> i32
+op_convert(vecN<bool>) -> vecN<i32>
+op_convert(vecN<u32>) -> vecN<i32>
+op_convert(vecN<f32>) -> vecN<i32>
+
+op_convert(bool) -> u32
+op_convert(i32) -> u32
+op_convert(f32) -> u32
+op_convert(vecN<bool>) -> vecN<u32>
+op_convert(vecN<i32>) -> vecN<u32>
+op_convert(vecN<f32>) -> vecN<u32>
+
+op_convert(bool) -> u32
+op_convert(i32) -> u32
+op_convert(f32) -> u32
+op_convert(vecN<bool>) -> vecN<u32>
+op_convert(vecN<i32>) -> vecN<u32>
+op_convert(vecN<f32>) -> vecN<u32>
+
+op_convert(bool) -> f32
+op_convert(i32) -> f32
+op_convert(u32) -> f32
+op_convert(vecN<bool>) -> vecN<f32>
+op_convert(vecN<i32>) -> vecN<f32>
+op_convert(vecN<u32>) -> vecN<f32>
+
+// op_convert(matNxM<f16>) -> matNxM<f32>
+// op_convert(matNxM<f32>) -> matNxM<f16>
