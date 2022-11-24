@@ -6,7 +6,11 @@ use hir::{
     HirDatabase, Semantics,
 };
 use hir_def::original_file_range;
-use hir_ty::ty::{self, pretty::pretty_fn};
+use hir_ty::ty::{
+    self,
+    pretty::{pretty_fn, pretty_type},
+    Ty, VecSize,
+};
 use itertools::Itertools;
 use rowan::NodeOrToken;
 use syntax::AstNode;
@@ -405,12 +409,12 @@ pub fn diagnostics(
                         frange.range,
                     )
                 }
-                AnyDiagnostic::InvalidCallType { expr, ty } => {
+                AnyDiagnostic::InvalidConstructionType { expr, ty } => {
                     let source = expr.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, ty);
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
                     DiagnosticMessage::new(
-                        format!("can't call expression of type {}", ty),
+                        format!("can't construct value of type {}", ty),
                         frange.range,
                     )
                 }
@@ -450,41 +454,38 @@ pub fn diagnostics(
                         None => builtin.name(),
                     };
 
-                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                    DiagnosticMessage::new(
-                        format!(
-                            // Rustfmt doesn't like this string if not split across multiple lines
-                            "no overload of `{}` found for given arguments.\
-                        Found ({}), expected one of:\n{}",
-                            name, parameters, possible
-                        ),
-                        frange.range,
-                    )
-                }
-                AnyDiagnostic::AddrOfNotRef { expr, actual } => {
-                    let source = expr.value.to_node(&root);
-                    let ty = ty::pretty::pretty_type(db, actual);
-                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                    DiagnosticMessage::new(
-                        format!("expected a reference, found {}", ty),
-                        frange.range,
-                    )
-                }
-                AnyDiagnostic::DerefNotPtr { expr, actual } => {
-                    let source = expr.value.to_node(&root);
-                    let ty = ty::pretty::pretty_type(db, actual);
-                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                    DiagnosticMessage::new(
-                        format!("cannot dereference expression of type {}", ty),
-                        frange.range,
-                    )
-                }
-                AnyDiagnostic::MissingStorageClass { var } => {
-                    let var_decl = var.value.to_node(&root);
-                    let source = var_decl
-                        .var_token()
-                        .map(NodeOrToken::Token)
-                        .unwrap_or_else(|| NodeOrToken::Node(var_decl.syntax()));
+                let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                DiagnosticMessage::new(
+                    format!(
+                        "no overload of `{}` found for given arguments. Found ({}), expected one of:\n{}",
+                        name,
+                        parameters,
+                        possible
+                    ),
+                    frange.range,
+                )
+            }
+            AnyDiagnostic::AddrOfNotRef { expr, actual } => {
+                let source = expr.value.to_node(&root);
+                let ty = ty::pretty::pretty_type(db, actual);
+                let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                DiagnosticMessage::new(format!("expected a reference, found {}", ty), frange.range)
+            }
+            AnyDiagnostic::DerefNotPtr { expr, actual } => {
+                let source = expr.value.to_node(&root);
+                let ty = ty::pretty::pretty_type(db, actual);
+                let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                DiagnosticMessage::new(
+                    format!("cannot dereference expression of type {}", ty),
+                    frange.range,
+                )
+            }
+            AnyDiagnostic::MissingStorageClass { var } => {
+                let var_decl = var.value.to_node(&root);
+                let source = var_decl
+                    .var_token()
+                    .map(NodeOrToken::Token)
+                    .unwrap_or_else(|| NodeOrToken::Node(var_decl.syntax()));
 
                     let frange = original_file_range(db.upcast(), var.file_id, &source);
                     DiagnosticMessage::new(
@@ -561,6 +562,30 @@ pub fn diagnostics(
             }
         })
         .collect()
+}
+
+fn size_compatible(target: VecSize, overload: VecSize) -> bool {
+    match overload {
+        VecSize::Two | VecSize::Three | VecSize::Four => overload == target,
+        VecSize::BoundVar(_) => true,
+    }
+}
+
+fn convert_compatible(db: &dyn HirDatabase, target: Ty, overload: Ty) -> bool {
+    let target_kind = target.kind(db);
+    let overload_kind = overload.kind(db);
+    match (target_kind, overload_kind) {
+        (ty::TyKind::Vector(tg), ty::TyKind::Vector(ov)) => {
+            size_compatible(tg.size, ov.size) && convert_compatible(db, tg.inner, ov.inner)
+        }
+        (ty::TyKind::Matrix(tg), ty::TyKind::Matrix(ov)) => {
+            size_compatible(tg.columns, ov.columns)
+                && size_compatible(tg.rows, ov.rows)
+                && convert_compatible(db, tg.inner, ov.inner)
+        }
+        (ty::TyKind::Scalar(s1), ty::TyKind::Scalar(s2)) => s1 == s2,
+        _ => false,
+    }
 }
 
 fn err_message_cause_chain(prefix: &str, error: &dyn std::error::Error) -> String {
