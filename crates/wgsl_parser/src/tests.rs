@@ -1130,9 +1130,8 @@ fn parse_coumpound_assignment_stmt_expr() {
               PrefixExpr@0..8
                 Star@0..1 "*"
                 FunctionCall@1..8
-                  PathExpr@1..5
-                    NameRef@1..5
-                      Ident@1..5 "func"
+                  NameRef@1..5
+                    Ident@1..5 "func"
                   FunctionParamList@5..8
                     ParenLeft@5..6 "("
                     ParenRight@6..7 ")"
@@ -1140,9 +1139,8 @@ fn parse_coumpound_assignment_stmt_expr() {
               PlusEqual@8..10 "+="
               Whitespace@10..11 " "
               FunctionCall@11..16
-                PathExpr@11..14
-                  NameRef@11..14
-                    Ident@11..14 "foo"
+                NameRef@11..14
+                  Ident@11..14 "foo"
                 FunctionParamList@14..16
                   ParenLeft@14..15 "("
                   ParenRight@15..16 ")""#]],
@@ -1399,15 +1397,14 @@ fn vert_main([[builtin(position)]] coord_in: vec4<f32>) -> [[location(0)]] vec4<
                   ReturnStmt@110..146
                     Return@110..116 "return"
                     Whitespace@116..117 " "
-                    FunctionCall@117..146
-                      TypeInitializer@117..126
-                        Vec4@117..126
-                          Vec4@117..121 "vec4"
-                          GenericArgList@121..126
-                            LessThan@121..122 "<"
-                            Float32@122..125
-                              Float32@122..125 "f32"
-                            GreaterThan@125..126 ">"
+                    TypeInitializer@117..146
+                      Vec4@117..126
+                        Vec4@117..121 "vec4"
+                        GenericArgList@121..126
+                          LessThan@121..122 "<"
+                          Float32@122..125
+                            Float32@122..125 "f32"
+                          GreaterThan@125..126 ">"
                       FunctionParamList@126..146
                         ParenLeft@126..127 "("
                         Literal@127..130
@@ -2251,17 +2248,16 @@ fn parse_stmt_expr() {
     check_statement(
         "test(args);",
         expect![[r#"
-        ExprStatement@0..10
-          FunctionCall@0..10
-            PathExpr@0..4
-              NameRef@0..4
-                Ident@0..4 "test"
-            FunctionParamList@4..10
-              ParenLeft@4..5 "("
-              PathExpr@5..9
-                NameRef@5..9
-                  Ident@5..9 "args"
-              ParenRight@9..10 ")""#]],
+            ExprStatement@0..10
+              FunctionCall@0..10
+                NameRef@0..4
+                  Ident@0..4 "test"
+                FunctionParamList@4..10
+                  ParenLeft@4..5 "("
+                  PathExpr@5..9
+                    NameRef@5..9
+                      Ident@5..9 "args"
+                  ParenRight@9..10 ")""#]],
     );
 }
 

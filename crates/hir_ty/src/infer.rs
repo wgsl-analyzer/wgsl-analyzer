@@ -14,7 +14,7 @@ use std::{collections::hash_map::Entry, sync::Arc};
 
 use crate::{
     builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
-    function::FunctionDetails,
+    function::{FunctionDetails, ResolvedFunctionId},
     ty::{
         ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Ptr, Ref, SamplerType, ScalarType,
         TexelFormat, TextureDimensionality, TextureKind, TextureType, Ty, TyKind, VecSize,
@@ -114,18 +114,28 @@ impl From<ExprId> for TypeContainer {
     }
 }
 
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+pub enum ResolvedCall {
+    Function(ResolvedFunctionId),
+    OtherTypeInitializer(Ty),
+}
+
 #[derive(Default, PartialEq, Eq, Debug)]
 pub struct InferenceResult {
     pub type_of_expr: ArenaMap<ExprId, Ty>,
     pub type_of_binding: ArenaMap<BindingId, Ty>,
     pub diagnostics: Vec<InferenceDiagnostic>,
     pub return_type: Option<Ty>,
+    call_resolutions: FxHashMap<ExprId, ResolvedCall>,
     field_resolutions: FxHashMap<ExprId, FieldId>,
 }
 
 impl InferenceResult {
     pub fn field_resolution(&self, expr: ExprId) -> Option<FieldId> {
         self.field_resolutions.get(&expr).copied()
+    }
+    pub fn call_resolution(&self, expr: ExprId) -> Option<ResolvedCall> {
+        self.call_resolutions.get(&expr).copied()
     }
 }
 
@@ -810,9 +820,9 @@ impl<'db> InferenceContext<'db> {
 
     fn builtin_vector_inferred_constructor(&self, size: &VecDimensionality) -> BuiltinId {
         match size {
-            VecDimensionality::Two => Builtin::builtin_vec2_constructor(self.db),
-            VecDimensionality::Three => Builtin::builtin_vec3_constructor(self.db),
-            VecDimensionality::Four => Builtin::builtin_vec4_constructor(self.db),
+            VecDimensionality::Two => Builtin::builtin_op_vec2_constructor(self.db),
+            VecDimensionality::Three => Builtin::builtin_op_vec3_constructor(self.db),
+            VecDimensionality::Four => Builtin::builtin_op_vec4_constructor(self.db),
         }
         .intern(self.db)
     }
@@ -823,15 +833,15 @@ impl<'db> InferenceContext<'db> {
     ) -> BuiltinId {
         use type_ref::VecDimensionality::*;
         match (columns, rows) {
-            (Two, Two) => Builtin::builtin_mat2x2_constructor(self.db),
-            (Two, Three) => Builtin::builtin_mat2x3_constructor(self.db),
-            (Two, Four) => Builtin::builtin_mat2x4_constructor(self.db),
-            (Three, Two) => Builtin::builtin_mat3x2_constructor(self.db),
-            (Three, Three) => Builtin::builtin_mat3x3_constructor(self.db),
-            (Three, Four) => Builtin::builtin_mat3x4_constructor(self.db),
-            (Four, Two) => Builtin::builtin_mat4x2_constructor(self.db),
-            (Four, Three) => Builtin::builtin_mat4x3_constructor(self.db),
-            (Four, Four) => Builtin::builtin_mat4x4_constructor(self.db),
+            (Two, Two) => Builtin::builtin_op_mat2x2_constructor(self.db),
+            (Two, Three) => Builtin::builtin_op_mat2x3_constructor(self.db),
+            (Two, Four) => Builtin::builtin_op_mat2x4_constructor(self.db),
+            (Three, Two) => Builtin::builtin_op_mat3x2_constructor(self.db),
+            (Three, Three) => Builtin::builtin_op_mat3x3_constructor(self.db),
+            (Three, Four) => Builtin::builtin_op_mat3x4_constructor(self.db),
+            (Four, Two) => Builtin::builtin_op_mat4x2_constructor(self.db),
+            (Four, Three) => Builtin::builtin_op_mat4x3_constructor(self.db),
+            (Four, Four) => Builtin::builtin_op_mat4x4_constructor(self.db),
         }
         .intern(self.db)
     }
@@ -912,7 +922,14 @@ impl<'db> InferenceContext<'db> {
         name: Option<&'static str>,
     ) -> Ty {
         match self.try_call_builtin(expr, builtin_id, args, name) {
-            Ok((ty, _)) => ty,
+            Ok((return_ty, overload_id)) => {
+                let builtin = builtin_id.lookup(self.db);
+                let resolved = builtin.overload(overload_id).ty;
+                self.result
+                    .call_resolutions
+                    .insert(expr, ResolvedCall::Function(resolved));
+                return_ty
+            }
             Err(()) => self.err_ty(),
         }
     }
@@ -973,7 +990,7 @@ impl<'db> InferenceContext<'db> {
                 return_ty
             }
             Callee::InferredComponentArray => {
-                let builtin_id = Builtin::builtin_array_constructor(self.db).intern(self.db);
+                let builtin_id = Builtin::builtin_op_array_constructor(self.db).intern(self.db);
                 // TODO: Special case calling array initialisers to allow n-ary calls
                 let return_ty = self.call_builtin(expr, builtin_id, &args, Some("array"));
                 return_ty
@@ -998,8 +1015,11 @@ impl<'db> InferenceContext<'db> {
                     }
                     hir_def::resolver::ResolveCallable::Function(loc) => {
                         let id = self.db.intern_function(loc);
-                        let details = self.db.function_type(id).lookup(self.db);
-                        // TODO: Find a way to point at the call
+                        let resolved = self.db.function_type(id);
+                        let details = resolved.lookup(self.db);
+                        self.result
+                            .call_resolutions
+                            .insert(expr, ResolvedCall::Function(resolved));
                         self.validate_function_call(&details, args, expr, expr)
                     }
                 },

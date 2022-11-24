@@ -1,5 +1,6 @@
 use super::{Ty, TyKind};
 use crate::{
+    function::FunctionDetails,
     infer::{TypeExpectation, TypeExpectationInner},
     ty::{ArraySize, ScalarType, TextureKind},
     HirDatabase,
@@ -79,6 +80,40 @@ pub fn pretty_type_with_verbosity(
     let mut str = String::new();
     write_ty(db, ty, &mut str, verbosity).unwrap();
     str
+}
+
+pub fn pretty_fn(db: &dyn HirDatabase, function: &FunctionDetails) -> String {
+    pretty_fn_with_verbosity(db, function, TypeVerbosity::default())
+}
+pub fn pretty_fn_with_verbosity(
+    db: &dyn HirDatabase,
+    function: &FunctionDetails,
+    verbosity: TypeVerbosity,
+) -> String {
+    let mut str = String::new();
+    pretty_fn_inner(db, function, &mut str, verbosity).unwrap();
+    str
+}
+
+fn pretty_fn_inner(
+    db: &dyn HirDatabase,
+    function: &FunctionDetails,
+    f: &mut String,
+    verbosity: TypeVerbosity,
+) -> std::fmt::Result {
+    write!(f, "fn(")?;
+    for (i, param) in function.parameters().enumerate() {
+        if i != 0 {
+            f.push_str(", ");
+        }
+        write_ty(db, param, f, verbosity)?;
+    }
+    write!(f, ")")?;
+    if let Some(ret) = function.return_type {
+        f.push_str(" -> ");
+        write_ty(db, ret, f, verbosity)?;
+    }
+    Ok(())
 }
 
 fn write_ty(

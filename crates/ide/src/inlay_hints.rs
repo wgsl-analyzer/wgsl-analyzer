@@ -2,11 +2,10 @@ use base_db::{FileId, FileRange, TextRange};
 use hir::{Field, HasSource, Semantics};
 use hir_def::{data::FieldId, module_data::Name, InFile};
 use hir_ty::{
+    function::FunctionDetails,
+    infer::ResolvedCall,
     layout::{FieldLayout, LayoutAddressSpace},
-    ty::{
-        pretty::{pretty_type_with_verbosity, TypeVerbosity},
-        FunctionType, TyKind,
-    },
+    ty::pretty::{pretty_type_with_verbosity, TypeVerbosity},
 };
 use rowan::NodeOrToken;
 use smol_str::SmolStr;
@@ -159,30 +158,22 @@ fn get_hints(
                 let container = sema.find_container(file_id.into(), &node)?;
 
                 let analyzed = sema.analyze(container);
-                let function_ty = analyzed
-                    .type_of_expr(&function_call_expr.expr()?)?
-                    .kind(sema.db);
+                let expression = analyzed.expr_id(&expr)?;
 
                 let parameter_exprs = function_call_expr.params()?.args();
 
-                let ty = match function_ty {
-                    TyKind::Function(ty) => ty,
-                    TyKind::BuiltinFnOverload(builtin, overload_id) => builtin
-                        .lookup(sema.db)
-                        .overload(overload_id)
-                        .ty
-                        .kind(sema.db)
-                        .as_function()
-                        .expect("builtin type should be function"),
-                    _ => return None,
+                let resolved = analyzed.infer.call_resolution(expression)?;
+                let func = match resolved {
+                    ResolvedCall::Function(func) => func.lookup(analyzed.db),
+                    ResolvedCall::OtherTypeInitializer(_) => return None,
                 };
 
-                let param_hints = ty
+                let param_hints = func
                     .parameter_names()
                     .zip(parameter_exprs)
                     .filter(|&(name, _)| !Name::is_missing(name))
                     .filter(|(param_name, expr)| {
-                        !should_hide_param_name_hint(&ty, param_name, expr)
+                        !should_hide_param_name_hint(&func, param_name, expr)
                     })
                     .map(|(param_name, expr)| InlayHint {
                         range: expr.syntax().text_range(),
@@ -226,9 +217,9 @@ fn get_hints(
 
 // taken from https://github.com/rust-analyzer/rust-analyzer/blob/7308b3ef413cad8c211e239d32c9fab29ae2e664/crates/ide/src/inlay_hints.rs#L422
 
-fn should_hide_param_name_hint(ty: &FunctionType, param_name: &str, expr: &ast::Expr) -> bool {
+fn should_hide_param_name_hint(func: &FunctionDetails, param_name: &str, expr: &ast::Expr) -> bool {
     is_argument_similar_to_param_name(expr, param_name)
-        || (ty.parameters.len() == 1 && is_obvious_param(param_name))
+        || (func.parameters.len() == 1 && is_obvious_param(param_name))
 }
 
 fn is_argument_similar_to_param_name(expr: &ast::Expr, param_name: &str) -> bool {
