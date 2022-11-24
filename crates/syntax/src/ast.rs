@@ -339,7 +339,10 @@ ast_node!(ReturnType:
     arrow_token: Option<SyntaxToken Arrow>;
     ty: Option<Type>;
 );
-ast_node!(GenericArgList);
+ast_node!(GenericArgList:
+    l_angle_token: Option<SyntaxToken LessThan>;
+    t_angle_token: Option<SyntaxToken GreaterThan>;
+);
 
 impl GenericArgList {
     #[rustfmt::skip]

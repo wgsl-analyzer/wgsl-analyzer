@@ -6,7 +6,7 @@ use hir::{
     HirDatabase, Semantics,
 };
 use hir_def::original_file_range;
-use hir_ty::ty;
+use hir_ty::ty::{self, pretty::pretty_fn};
 use itertools::Itertools;
 use rowan::NodeOrToken;
 use syntax::AstNode;
@@ -442,11 +442,7 @@ pub fn diagnostics(
 
                     let possible = builtin
                         .overloads()
-                        .map(|(_, overload)| {
-                            let overload = overload.ty.lookup(db);
-                            // ty::pretty::pretty_type(db, overload.return_type.unwrap())
-                            // pretty function
-                        })
+                        .map(|(_, overload)| pretty_fn(db, &overload.ty.lookup(db)))
                         .join("\n");
 
                     let name = match name {

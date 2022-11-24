@@ -2,7 +2,7 @@
 mod tests;
 
 use rowan::{GreenNode, GreenToken, NodeOrToken, WalkEvent};
-use syntax::{ast, AstNode, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken};
+use syntax::{ast, AstNode, HasGenerics, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken};
 
 pub fn format_str(input: &str, options: &FormattingOptions) -> String {
     let parse = wgsl_parser::parse_file(input);
@@ -281,7 +281,16 @@ fn format_syntax_node(
             }
             whitespace_to_single_around(stmt.equal_token()?);
         }
-        _ => {}
+        _ => {
+            if let Some(ty) = ast::Type::cast(syntax) {
+                let generics = ty.generic_arg_list()?;
+                let l_angle = generics.l_angle_token()?;
+                remove_if_whitespace(l_angle.prev_token()?);
+                remove_if_whitespace(l_angle.next_token()?);
+                let r_angle = generics.l_angle_token()?;
+                remove_if_whitespace(r_angle.prev_token()?);
+            }
+        }
     }
 
     None

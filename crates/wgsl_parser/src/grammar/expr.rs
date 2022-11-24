@@ -693,9 +693,8 @@ mod tests {
             "pow(2, 3)",
             expect![[r#"
                 FunctionCall@0..9
-                  PathExpr@0..3
-                    NameRef@0..3
-                      Ident@0..3 "pow"
+                  NameRef@0..3
+                    Ident@0..3 "pow"
                   FunctionParamList@3..9
                     ParenLeft@3..4 "("
                     Literal@4..5
@@ -715,9 +714,8 @@ mod tests {
             expect![[r#"
                 InfixExpr@0..27
                   FunctionCall@0..22
-                    PathExpr@0..3
-                      NameRef@0..3
-                        Ident@0..3 "pow"
+                    NameRef@0..3
+                      Ident@0..3 "pow"
                     FunctionParamList@3..22
                       ParenLeft@3..4 "("
                       InfixExpr@4..15
@@ -747,15 +745,14 @@ mod tests {
         check(
             "vec3<f32>(1.0)",
             expect![[r#"
-                FunctionCall@0..14
-                  TypeInitializer@0..9
-                    Vec3@0..9
-                      Vec3@0..4 "vec3"
-                      GenericArgList@4..9
-                        LessThan@4..5 "<"
-                        Float32@5..8
-                          Float32@5..8 "f32"
-                        GreaterThan@8..9 ">"
+                TypeInitializer@0..14
+                  Vec3@0..9
+                    Vec3@0..4 "vec3"
+                    GenericArgList@4..9
+                      LessThan@4..5 "<"
+                      Float32@5..8
+                        Float32@5..8 "f32"
+                      GreaterThan@8..9 ">"
                   FunctionParamList@9..14
                     ParenLeft@9..10 "("
                     Literal@10..13
@@ -769,8 +766,8 @@ mod tests {
         check(
             "vec3(1.0)",
             expect![[r#"
-                FunctionCall@0..9
-                  InferredInitializer@0..4
+                TypeInitializer@0..9
+                  Vec3@0..4
                     Vec3@0..4 "vec3"
                   FunctionParamList@4..9
                     ParenLeft@4..5 "("

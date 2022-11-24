@@ -16,7 +16,7 @@ use la_arena::ArenaMap;
 use ty::{Ty, TyKind};
 
 pub mod builtins;
-mod function;
+pub mod function;
 pub mod infer;
 pub mod layout;
 pub mod ty;
