@@ -110,11 +110,7 @@ impl std::fmt::Display for VecDimensionality {
 impl TryFrom<ast::VecType> for VecType {
     type Error = ();
     fn try_from(ty: ast::VecType) -> Result<Self, ()> {
-        let size = match ty {
-            ast::VecType::Vec2(_) => VecDimensionality::Two,
-            ast::VecType::Vec3(_) => VecDimensionality::Three,
-            ast::VecType::Vec4(_) => VecDimensionality::Four,
-        };
+        let size = vector_dimensions(&ty);
         let inner = first_type_generic(&ty)?;
 
         Ok(VecType {
@@ -122,6 +118,15 @@ impl TryFrom<ast::VecType> for VecType {
             inner: Box::new(inner.try_into()?),
         })
     }
+}
+
+pub(crate) fn vector_dimensions(ty: &ast::VecType) -> VecDimensionality {
+    let size = match *ty {
+        ast::VecType::Vec2(_) => VecDimensionality::Two,
+        ast::VecType::Vec3(_) => VecDimensionality::Three,
+        ast::VecType::Vec4(_) => VecDimensionality::Four,
+    };
+    size
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -133,17 +138,7 @@ pub struct MatrixType {
 impl TryFrom<ast::MatrixType> for MatrixType {
     type Error = ();
     fn try_from(ty: ast::MatrixType) -> Result<Self, ()> {
-        let (columns, rows) = match ty {
-            ast::MatrixType::Mat2x2(_) => (VecDimensionality::Two, VecDimensionality::Two),
-            ast::MatrixType::Mat2x3(_) => (VecDimensionality::Two, VecDimensionality::Three),
-            ast::MatrixType::Mat2x4(_) => (VecDimensionality::Two, VecDimensionality::Two),
-            ast::MatrixType::Mat3x2(_) => (VecDimensionality::Three, VecDimensionality::Two),
-            ast::MatrixType::Mat3x3(_) => (VecDimensionality::Three, VecDimensionality::Three),
-            ast::MatrixType::Mat3x4(_) => (VecDimensionality::Three, VecDimensionality::Four),
-            ast::MatrixType::Mat4x2(_) => (VecDimensionality::Four, VecDimensionality::Two),
-            ast::MatrixType::Mat4x3(_) => (VecDimensionality::Four, VecDimensionality::Three),
-            ast::MatrixType::Mat4x4(_) => (VecDimensionality::Four, VecDimensionality::Four),
-        };
+        let (columns, rows) = matrix_dimensions(&ty);
         let inner = first_type_generic(&ty)?;
 
         Ok(MatrixType {
@@ -152,6 +147,21 @@ impl TryFrom<ast::MatrixType> for MatrixType {
             inner: Box::new(inner.try_into()?),
         })
     }
+}
+
+pub(crate) fn matrix_dimensions(ty: &ast::MatrixType) -> (VecDimensionality, VecDimensionality) {
+    let (columns, rows) = match *ty {
+        ast::MatrixType::Mat2x2(_) => (VecDimensionality::Two, VecDimensionality::Two),
+        ast::MatrixType::Mat2x3(_) => (VecDimensionality::Two, VecDimensionality::Three),
+        ast::MatrixType::Mat2x4(_) => (VecDimensionality::Two, VecDimensionality::Two),
+        ast::MatrixType::Mat3x2(_) => (VecDimensionality::Three, VecDimensionality::Two),
+        ast::MatrixType::Mat3x3(_) => (VecDimensionality::Three, VecDimensionality::Three),
+        ast::MatrixType::Mat3x4(_) => (VecDimensionality::Three, VecDimensionality::Four),
+        ast::MatrixType::Mat4x2(_) => (VecDimensionality::Four, VecDimensionality::Two),
+        ast::MatrixType::Mat4x3(_) => (VecDimensionality::Four, VecDimensionality::Three),
+        ast::MatrixType::Mat4x4(_) => (VecDimensionality::Four, VecDimensionality::Four),
+    };
+    (columns, rows)
 }
 
 impl std::fmt::Display for MatrixType {

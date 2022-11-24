@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use hir_def::module_data::Name;
 
 use crate::{ty::Ty, HirDatabase};
@@ -32,12 +34,12 @@ impl salsa::InternKey for ResolvedFunctionId {
     }
 }
 impl ResolvedFunctionId {
-    pub fn lookup(self, db: &dyn HirDatabase) -> FunctionDetails {
+    pub fn lookup(self, db: &dyn HirDatabase) -> Arc<FunctionDetails> {
         db.lookup_intern_resolved_function(self)
     }
 }
 impl FunctionDetails {
     pub fn intern(self, db: &dyn HirDatabase) -> ResolvedFunctionId {
-        db.intern_resolved_function(self)
+        db.intern_resolved_function(Arc::new(self))
     }
 }

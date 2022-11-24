@@ -3,11 +3,11 @@ use crate::{
     db::DefDatabase,
     expr::{parse_literal, Callee, Expr, ExprId, Statement, StatementId},
     module_data::Name,
-    type_ref::TypeRef,
+    type_ref::{matrix_dimensions, vector_dimensions, TypeRef},
     HirFileId, InFile,
 };
 use either::Either;
-use syntax::{ast, ptr::AstPtr, AstNode, HasName};
+use syntax::{ast, ptr::AstPtr, AstNode, HasGenerics, HasName};
 
 pub fn lower_function_body(
     db: &dyn DefDatabase,
@@ -414,8 +414,37 @@ impl<'a> Collector<'a> {
                 let index = self.collect_expr_opt(index.index());
                 Expr::Index { lhs, index }
             }
-            ast::Expr::TypeInitializer(_ty) => {
-                todo!();
+            ast::Expr::TypeInitializer(ty) => {
+                let args = ty
+                    .args()
+                    .into_iter()
+                    .flat_map(|params| params.args())
+                    .map(|expr| self.collect_expr(expr))
+                    .collect();
+
+                let ty = ty.ty();
+                if let Some(ty) = ty {
+                    let has_generic = ty.generic_arg_list().is_some();
+                    let callee = match ty {
+                        ast::Type::VecType(vec) if !has_generic => {
+                            let dimensions = vector_dimensions(&vec);
+                            Callee::InferredComponentVec(dimensions)
+                        }
+                        ast::Type::MatrixType(matrix) if !has_generic => {
+                            let (columns, rows) = matrix_dimensions(&matrix);
+                            Callee::InferredComponentMatrix { rows, columns }
+                        }
+                        ast::Type::ArrayType(_) if !has_generic => Callee::InferredComponentArray,
+                        ty => {
+                            let ty = TypeRef::try_from(ty).unwrap_or(TypeRef::Error);
+                            let ty = self.db.intern_type_ref(ty);
+                            Callee::Type(ty)
+                        }
+                    };
+                    Expr::Call { callee, args }
+                } else {
+                    Expr::Missing
+                }
             }
         };
 
