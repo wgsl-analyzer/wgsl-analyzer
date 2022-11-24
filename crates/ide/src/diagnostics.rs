@@ -442,7 +442,11 @@ pub fn diagnostics(
 
                     let possible = builtin
                         .overloads()
-                        .map(|(_, overload)| ty::pretty::pretty_type(db, overload.ty))
+                        .map(|(_, overload)| {
+                            let overload = overload.ty.lookup(db);
+                            // ty::pretty::pretty_type(db, overload.return_type.unwrap())
+                            // pretty function
+                        })
                         .join("\n");
 
                     let name = match name {

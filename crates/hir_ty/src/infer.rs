@@ -590,7 +590,10 @@ impl<'db> InferenceContext<'db> {
                     }
                 }
             }
-            Expr::Call { callee, ref args } => {
+            Expr::Call {
+                ref callee,
+                ref args,
+            } => {
                 let args: Vec<_> = args
                     .iter()
                     .map(|&arg| self.infer_expr(arg).unref(self.db))
@@ -711,7 +714,7 @@ impl<'db> InferenceContext<'db> {
 
     fn validate_function_call(
         &mut self,
-        f: FunctionDetails,
+        f: &FunctionDetails,
         args: Vec<Ty>,
         callee: ExprId,
         expr: ExprId,
@@ -730,50 +733,6 @@ impl<'db> InferenceContext<'db> {
 
             f.return_type.unwrap_or_else(|| self.err_ty())
         }
-    }
-
-    fn check_type_initializer_args(&mut self, ty: Ty, args: &[Ty], expr: ExprId) {
-        fn s2d(size: VecSize) -> VecDimensionality {
-            match size {
-                VecSize::Two => VecDimensionality::Two,
-                VecSize::Three => VecDimensionality::Three,
-                VecSize::Four => VecDimensionality::Four,
-                VecSize::BoundVar(_) => unreachable!("Can never have unbound type at this point"),
-            }
-        }
-        if args.len() == 1 {
-            let arg_ty = &args[0];
-            match (arg_ty.kind(self.db), ty.kind(self.db)) {
-                // Hackily support type conversions
-                (TyKind::Matrix(_), TyKind::Matrix(_)) | (TyKind::Vector(_), TyKind::Vector(_)) => {
-                    return
-                }
-                _ => {}
-            }
-        }
-        let initialiser = match ty.kind(self.db) {
-            TyKind::Vector(vec) => BuiltinInitializer::Vec(s2d(vec.size)),
-            TyKind::Matrix(mat) => BuiltinInitializer::Matrix {
-                rows: s2d(mat.rows),
-                columns: s2d(mat.columns),
-            },
-            TyKind::Array(_) => BuiltinInitializer::Array,
-            _ => return,
-        };
-
-        let builtin_id = self.initialiser_to_builtin(&initialiser);
-
-        if let Ok((return_ty, _)) = self.try_call_builtin(expr, builtin_id, &args, None) {
-            if return_ty != ty {
-                self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
-                    expr,
-                    expected: TypeExpectation::Type(TypeExpectationInner::Exact(ty)),
-                    actual: return_ty,
-                });
-            }
-        } else {
-            return;
-        };
     }
 
     fn infer_unary_op(&mut self, expr: ExprId, op: UnaryOp) -> Ty {
@@ -849,26 +808,30 @@ impl<'db> InferenceContext<'db> {
         self.call_builtin(lhs, builtin, &[lhs_ty, rhs_ty], Some(op.symbol()))
     }
 
-    fn initialiser_to_builtin(&self, initialiser: &BuiltinInitializer) -> BuiltinId {
+    fn builtin_vector_inferred_constructor(&self, size: &VecDimensionality) -> BuiltinId {
+        match size {
+            VecDimensionality::Two => Builtin::builtin_vec2_constructor(self.db),
+            VecDimensionality::Three => Builtin::builtin_vec3_constructor(self.db),
+            VecDimensionality::Four => Builtin::builtin_vec4_constructor(self.db),
+        }
+        .intern(self.db)
+    }
+    fn builtin_matrix_inferred_constructor(
+        &self,
+        columns: &VecDimensionality,
+        rows: &VecDimensionality,
+    ) -> BuiltinId {
         use type_ref::VecDimensionality::*;
-        match initialiser {
-            BuiltinInitializer::Matrix { rows, columns } => match (rows, columns) {
-                (Two, Two) => Builtin::builtin_mat2x2_constructor(self.db),
-                (Two, Three) => Builtin::builtin_mat2x3_constructor(self.db),
-                (Two, Four) => Builtin::builtin_mat2x4_constructor(self.db),
-                (Three, Two) => Builtin::builtin_mat3x2_constructor(self.db),
-                (Three, Three) => Builtin::builtin_mat3x3_constructor(self.db),
-                (Three, Four) => Builtin::builtin_mat3x4_constructor(self.db),
-                (Four, Two) => Builtin::builtin_mat4x2_constructor(self.db),
-                (Four, Three) => Builtin::builtin_mat4x3_constructor(self.db),
-                (Four, Four) => Builtin::builtin_mat4x4_constructor(self.db),
-            },
-            BuiltinInitializer::Vec(size) => match size {
-                Two => Builtin::builtin_vec2_constructor(self.db),
-                Three => Builtin::builtin_vec3_constructor(self.db),
-                Four => Builtin::builtin_vec4_constructor(self.db),
-            },
-            BuiltinInitializer::Array => Builtin::builtin_array_constructor(self.db),
+        match (columns, rows) {
+            (Two, Two) => Builtin::builtin_mat2x2_constructor(self.db),
+            (Two, Three) => Builtin::builtin_mat2x3_constructor(self.db),
+            (Two, Four) => Builtin::builtin_mat2x4_constructor(self.db),
+            (Three, Two) => Builtin::builtin_mat3x2_constructor(self.db),
+            (Three, Three) => Builtin::builtin_mat3x3_constructor(self.db),
+            (Three, Four) => Builtin::builtin_mat3x4_constructor(self.db),
+            (Four, Two) => Builtin::builtin_mat4x2_constructor(self.db),
+            (Four, Three) => Builtin::builtin_mat4x3_constructor(self.db),
+            (Four, Four) => Builtin::builtin_mat4x4_constructor(self.db),
         }
         .intern(self.db)
     }
@@ -997,22 +960,54 @@ impl<'db> InferenceContext<'db> {
         Ok(return_type.unwrap_or_else(|| self.err_ty()))
     }
 
-    fn infer_call(&self, expr: ExprId, callee: Callee, args: Vec<Ty>) -> Ty {
+    fn infer_call(&mut self, expr: ExprId, callee: &Callee, args: Vec<Ty>) -> Ty {
         match callee {
-            Callee::InferredComponentMatrix { rows, columns } => todo!(),
-            Callee::InferredComponentVec(_) => todo!(),
-            Callee::InferredComponentArray => todo!(),
+            Callee::InferredComponentMatrix { rows, columns } => {
+                let builtin_id = self.builtin_matrix_inferred_constructor(&columns, &rows);
+                let return_ty = self.call_builtin(expr, builtin_id, &args, Some("matrix"));
+                return_ty
+            }
+            Callee::InferredComponentVec(size) => {
+                let builtin_id = self.builtin_vector_inferred_constructor(&size);
+                let return_ty = self.call_builtin(expr, builtin_id, &args, Some("vec"));
+                return_ty
+            }
+            Callee::InferredComponentArray => {
+                let builtin_id = Builtin::builtin_array_constructor(self.db).intern(self.db);
+                // TODO: Special case calling array initialisers to allow n-ary calls
+                let return_ty = self.call_builtin(expr, builtin_id, &args, Some("array"));
+                return_ty
+            }
             Callee::Name(name) => match self.resolver.resolve_callable(&name) {
                 Some(arg) => match arg {
-                    hir_def::resolver::ResolveCallable::Struct(strukt) => todo!(),
-                    hir_def::resolver::ResolveCallable::TypeAlias(alias) => todo!(),
-                    hir_def::resolver::ResolveCallable::Function(function) => todo!(),
+                    hir_def::resolver::ResolveCallable::Struct(loc) => {
+                        let strukt = self.db.intern_struct(loc);
+                        let kind = TyKind::Struct(strukt);
+                        let ty = self.db.intern_ty(kind);
+                        self.check_ty_initialiser(expr, ty, args);
+                        ty
+                    }
+                    hir_def::resolver::ResolveCallable::TypeAlias(alias) => {
+                        let alias = self.db.intern_type_alias(alias);
+                        let data = self.db.type_alias_data(alias);
+                        let type_ref = self.db.lookup_intern_type_ref(data.ty);
+
+                        let ty = self.lower_ty(TypeContainer::TypeAlias(alias), &type_ref);
+                        self.check_ty_initialiser(expr, ty, args);
+                        ty
+                    }
+                    hir_def::resolver::ResolveCallable::Function(loc) => {
+                        let id = self.db.intern_function(loc);
+                        let details = self.db.function_type(id).lookup(self.db);
+                        // TODO: Find a way to point at the call
+                        self.validate_function_call(&details, args, expr, expr)
+                    }
                 },
                 None => {
                     let builtin = Builtin::for_name(self.db, &name);
                     if let Some(builtin) = builtin {
                         let builtin_id = builtin.intern(self.db);
-                        self.call_builtin(expr, builtin_id, &args, Some(name.as_str()))
+                        self.call_builtin(expr, builtin_id, &args, None)
                     } else {
                         self.push_diagnostic(InferenceDiagnostic::UnresolvedName {
                             expr,
@@ -1023,10 +1018,57 @@ impl<'db> InferenceContext<'db> {
                 }
             },
             Callee::Type(ty) => {
-                let ty = self.lower_ty(expr, &self.db.lookup_intern_type_ref(ty));
+                let ty = self.lower_ty(expr, &self.db.lookup_intern_type_ref(*ty));
+                self.check_ty_initialiser(expr, ty, args);
+                // A type initialiser always returns just the returned type
                 ty
             }
         }
+    }
+    fn check_ty_initialiser(&self, _expr: ExprId, _ty: Ty, _args: Vec<Ty>) {
+        // TODO
+
+        // fn s2d(size: VecSize) -> VecDimensionality {
+        //     match size {
+        //         VecSize::Two => VecDimensionality::Two,
+        //         VecSize::Three => VecDimensionality::Three,
+        //         VecSize::Four => VecDimensionality::Four,
+        //         VecSize::BoundVar(_) => unreachable!("Can never have unbound type at this point"),
+        //     }
+        // }
+        // if args.len() == 1 {
+        //     let arg_ty = &args[0];
+        //     match (arg_ty.kind(self.db), ty.kind(self.db)) {
+        //         // Hackily support type conversions
+        //         (TyKind::Matrix(_), TyKind::Matrix(_)) | (TyKind::Vector(_), TyKind::Vector(_)) => {
+        //             return
+        //         }
+        //         _ => {}
+        //     }
+        // }
+        // let initialiser = match ty.kind(self.db) {
+        //     TyKind::Vector(vec) => BuiltinInitializer::Vec(s2d(vec.size)),
+        //     TyKind::Matrix(mat) => BuiltinInitializer::Matrix {
+        //         rows: s2d(mat.rows),
+        //         columns: s2d(mat.columns),
+        //     },
+        //     TyKind::Array(_) => BuiltinInitializer::Array,
+        //     _ => return,
+        // };
+
+        // let builtin_id = self.initialiser_to_builtin(&initialiser);
+
+        // if let Ok((return_ty, _)) = self.try_call_builtin(expr, builtin_id, &args, None) {
+        //     if return_ty != ty {
+        //         self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
+        //             expr,
+        //             expected: TypeExpectation::Type(TypeExpectationInner::Exact(ty)),
+        //             actual: return_ty,
+        //         });
+        //     }
+        // } else {
+        //     return;
+        // };
     }
 }
 

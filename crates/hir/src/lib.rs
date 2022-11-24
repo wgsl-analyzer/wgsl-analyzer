@@ -104,10 +104,6 @@ impl<'db> Semantics<'db> {
                 parent: resolver.body_owner()?,
                 binding,
             }),
-            ResolveValue::Function(loc) => {
-                let id = self.db.intern_function(loc);
-                Definition::ModuleDef(ModuleDef::Function(Function { id }))
-            }
             ResolveValue::GlobalVariable(loc) => {
                 let id = self.db.intern_global_variable(loc);
                 Definition::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))

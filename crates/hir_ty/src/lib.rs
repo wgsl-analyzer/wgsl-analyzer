@@ -39,7 +39,7 @@ pub trait HirDatabase: DefDatabase + Upcast<dyn DefDatabase> {
     fn intern_builtin(&self, builtin: Builtin) -> BuiltinId;
 
     #[salsa::interned]
-    fn intern_resolved_function(&self, builtin: FunctionDetails) -> ResolvedFunctionId;
+    fn intern_resolved_function(&self, builtin: Arc<FunctionDetails>) -> ResolvedFunctionId;
 }
 
 fn field_types(db: &dyn HirDatabase, strukt: StructId) -> Arc<ArenaMap<LocalFieldId, Ty>> {
@@ -83,10 +83,11 @@ fn function_type(db: &dyn HirDatabase, function: FunctionId) -> ResolvedFunction
         })
         .collect();
 
-    db.intern_resolved_function(FunctionDetails {
+    FunctionDetails {
         return_type,
         parameters,
-    })
+    }
+    .intern(db)
 }
 
 fn struct_is_used_in_uniform(db: &dyn HirDatabase, strukt: StructId, file_id: HirFileId) -> bool {
