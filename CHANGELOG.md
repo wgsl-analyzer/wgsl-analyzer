@@ -1,6 +1,9 @@
 # Changelog
 
-### Unreleased
+## Unreleased
+ - Show pre-existing diagnostics on file open
+
+### Version 0.6.0
  - lint for parsing precedence issues
  - support type construction expressions properly
  - avoid panicking in cases where there are more `endif`s than `if`s
