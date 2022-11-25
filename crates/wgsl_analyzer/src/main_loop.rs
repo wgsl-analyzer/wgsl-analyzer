@@ -242,12 +242,17 @@ mod text_notifications {
             }
         };
 
-        state
-            .vfs
-            .write()
-            .unwrap()
-            .0
-            .set_file_contents(path, Some(params.text_document.text.into_bytes()));
+        let file_id = {
+            let mut vfs = state.vfs.write().unwrap();
+            vfs.0
+                .set_file_contents(path.clone(), Some(params.text_document.text.into_bytes()));
+            vfs.0.file_id(&path)
+        };
+        // When the file gets closed, we hide the diagnostics, because the LSP doesn't give a good way to determine when a file has been deleted
+        // If there are pre-existing diagnostics, send them now
+        if let Some(file_id) = file_id {
+            state.diagnostics.make_updated(file_id);
+        }
 
         Ok(())
     }
