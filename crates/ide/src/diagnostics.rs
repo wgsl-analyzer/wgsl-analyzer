@@ -454,38 +454,40 @@ pub fn diagnostics(
                         None => builtin.name(),
                     };
 
-                let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                DiagnosticMessage::new(
-                    format!(
-                        "no overload of `{}` found for given arguments. Found ({}), expected one of:\n{}",
-                        name,
-                        parameters,
-                        possible
-                    ),
-                    frange.range,
-                )
-            }
-            AnyDiagnostic::AddrOfNotRef { expr, actual } => {
-                let source = expr.value.to_node(&root);
-                let ty = ty::pretty::pretty_type(db, actual);
-                let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                DiagnosticMessage::new(format!("expected a reference, found {}", ty), frange.range)
-            }
-            AnyDiagnostic::DerefNotPtr { expr, actual } => {
-                let source = expr.value.to_node(&root);
-                let ty = ty::pretty::pretty_type(db, actual);
-                let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                DiagnosticMessage::new(
-                    format!("cannot dereference expression of type {}", ty),
-                    frange.range,
-                )
-            }
-            AnyDiagnostic::MissingStorageClass { var } => {
-                let var_decl = var.value.to_node(&root);
-                let source = var_decl
-                    .var_token()
-                    .map(NodeOrToken::Token)
-                    .unwrap_or_else(|| NodeOrToken::Node(var_decl.syntax()));
+                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                    DiagnosticMessage::new(
+                        format!(
+                            "no overload of `{}` found for given arguments.\
+                        Found ({}), expected one of:\n{}",
+                            name, parameters, possible
+                        ),
+                        frange.range,
+                    )
+                }
+                AnyDiagnostic::AddrOfNotRef { expr, actual } => {
+                    let source = expr.value.to_node(&root);
+                    let ty = ty::pretty::pretty_type(db, actual);
+                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                    DiagnosticMessage::new(
+                        format!("expected a reference, found {}", ty),
+                        frange.range,
+                    )
+                }
+                AnyDiagnostic::DerefNotPtr { expr, actual } => {
+                    let source = expr.value.to_node(&root);
+                    let ty = ty::pretty::pretty_type(db, actual);
+                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                    DiagnosticMessage::new(
+                        format!("cannot dereference expression of type {}", ty),
+                        frange.range,
+                    )
+                }
+                AnyDiagnostic::MissingStorageClass { var } => {
+                    let var_decl = var.value.to_node(&root);
+                    let source = var_decl
+                        .var_token()
+                        .map(NodeOrToken::Token)
+                        .unwrap_or_else(|| NodeOrToken::Node(var_decl.syntax()));
 
                     let frange = original_file_range(db.upcast(), var.file_id, &source);
                     DiagnosticMessage::new(
@@ -538,6 +540,53 @@ pub fn diagnostics(
                 )
                 .with_severity(Severity::WeakWarning)
                 .unused(),
+                AnyDiagnostic::NoConstructor {
+                    expr,
+                    builtins: [specific, general],
+                    ty,
+                    parameters,
+                } => {
+                    let source = expr.value.to_node(&root).syntax().clone();
+
+                    let parameters = parameters
+                        .iter()
+                        .map(|ty| ty::pretty::pretty_type(db, *ty))
+                        .join(", ");
+
+                    let mut possible = Vec::with_capacity(32);
+                    let builtin_specific = specific.lookup(db);
+                    possible.extend(
+                        builtin_specific
+                            .overloads()
+                            .map(|(_, overload)| pretty_fn(db, &overload.ty.lookup(db))),
+                    );
+                    let builtin_general = general.lookup(db);
+                    possible.extend(
+                        builtin_general
+                            .overloads()
+                            .filter(|(_, overload)| {
+                                let function = overload.ty.lookup(db);
+                                if let Some(return_ty) = function.return_type {
+                                    convert_compatible(db, ty, return_ty)
+                                } else {
+                                    true
+                                }
+                            })
+                            .map(|(_, overload)| pretty_fn(db, &overload.ty.lookup(db))),
+                    );
+
+                    let possible = possible.join("\n");
+
+                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                    DiagnosticMessage::new(
+                        format!(
+                            "no overload of constructor `{}` found for given\
+                            arguments. Found ({parameters}), expected one of:\n{possible}",
+                            pretty_type(db, ty),
+                        ),
+                        frange.range,
+                    )
+                }
                 AnyDiagnostic::PrecedenceParensRequired {
                     expr,
                     op,
