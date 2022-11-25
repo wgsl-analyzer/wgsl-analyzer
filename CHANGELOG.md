@@ -2,6 +2,9 @@
 
 ### Unreleased
  - lint for parsing precedence issues
+ - support type construction expressions properly
+ - avoid panicking in cases where there are more `endif`s than `if`s
+ - handle the scopes of bindings properly (this enables shadowing)
 
 ### Version 0.5.3
 - clear diagnostics on file close
