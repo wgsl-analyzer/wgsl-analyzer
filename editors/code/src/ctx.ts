@@ -55,7 +55,7 @@ export class Ctx {
         };
 
         const clientOptions: LanguageClientOptions = {
-            documentSelector: [{ language: "wgsl" }, { scheme: "file", pattern: "*.wgsl" }],
+            documentSelector: [{ language: "wgsl", scheme: "file" }, { scheme: "file", pattern: "*.wgsl" }],
             outputChannelName: "WGSL Analyzer",
             initializationOptions: await lspOptions(config),
         };
