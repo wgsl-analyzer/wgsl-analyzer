@@ -1,7 +1,10 @@
 # Changelog
 
 ## Unreleased
+
+## Version 0.6.1
  - Show pre-existing diagnostics on file open
+ - properly report that only `file`-schemed paths are supported, to prevent overwriting diffs
 
 ### Version 0.6.0
  - lint for parsing precedence issues
