@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## Version 0.6.2
+- fixes version mismatch between wgsl-analyzer server and binary
+
 ## Version 0.6.1
  - Show pre-existing diagnostics on file open
  - properly report that only `file`-schemed paths are supported, to prevent overwriting diffs
