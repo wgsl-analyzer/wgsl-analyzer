@@ -155,6 +155,11 @@ fn compute_statement_scopes(
             initializer,
             ..
         }
+        | Statement::ConstStatement {
+            binding_id,
+            initializer,
+            ..
+        }
         | Statement::LetStatement {
             binding_id,
             initializer,

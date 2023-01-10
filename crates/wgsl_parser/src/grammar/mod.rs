@@ -37,6 +37,8 @@ fn item(p: &mut Parser) {
         global_variable_decl(p, m);
     } else if p.at(SyntaxKind::Let) {
         global_constant_decl(p, m);
+    } else if p.at(SyntaxKind::Const) {
+        global_constant_decl(p, m);
     } else if p.at(SyntaxKind::Type) {
         type_alias_decl(p, m);
     } else {
@@ -45,6 +47,7 @@ fn item(p: &mut Parser) {
             SyntaxKind::Struct,
             SyntaxKind::Var,
             SyntaxKind::Let,
+            SyntaxKind::Const,
             SyntaxKind::Type,
         ]);
         m.complete(p, SyntaxKind::Error);
@@ -425,6 +428,7 @@ fn compound_statement(p: &mut Parser) {
 }
 
 const STATEMENT_RECOVER_SET: &[SyntaxKind] = &[
+    SyntaxKind::Const,
     SyntaxKind::Let,
     SyntaxKind::Var,
     SyntaxKind::Return,
@@ -456,7 +460,7 @@ pub fn statement(p: &mut Parser) {
     | [x] compound_statement
      */
 
-    if p.at_set(&[SyntaxKind::Let, SyntaxKind::Var]) {
+    if p.at_set(&[SyntaxKind::Const, SyntaxKind::Let, SyntaxKind::Var]) {
         variable_statement(p);
     } else if p.at(SyntaxKind::Return) {
         return_statement(p);
@@ -740,6 +744,8 @@ fn variable_statement(p: &mut Parser) {
     let m = p.start();
 
     if p.at(SyntaxKind::Let) {
+        p.bump();
+    } else if p.at(SyntaxKind::Const) {
         p.bump();
     } else if p.at(SyntaxKind::Var) {
         p.bump();

@@ -265,6 +265,8 @@ pub enum SyntaxKind {
     Continue,
     #[token("continuing")]
     Continuing,
+    #[token("const")]
+    Const,
     #[token("default")]
     Default,
     #[token("discard")]

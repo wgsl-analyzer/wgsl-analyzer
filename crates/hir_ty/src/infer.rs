@@ -302,6 +302,27 @@ impl<'db> InferenceContext<'db> {
                 );
                 self.set_binding_ty(binding_id, ref_ty)
             }
+            Statement::ConstStatement {
+                binding_id,
+                type_ref,
+                initializer,
+                ..
+            } => {
+                let ty = type_ref.map(|ty| {
+                    self.lower_ty(
+                        TypeContainer::VariableStatement(stmt),
+                        &self.db.lookup_intern_type_ref(ty),
+                    )
+                });
+                let ty = if let Some(init) = initializer {
+                    let expr_ty = self.infer_expr_expect(init, TypeExpectation::from_option(ty));
+                    ty.unwrap_or(expr_ty)
+                } else {
+                    ty.unwrap_or_else(|| self.err_ty())
+                };
+
+                self.set_binding_ty(binding_id, ty)
+            }
             Statement::LetStatement {
                 binding_id,
                 type_ref,
