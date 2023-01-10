@@ -680,6 +680,7 @@ impl VariableStatement {
             .children_with_tokens()
             .filter_map(|it| it.into_token())
             .find_map(|token| match token.kind() {
+                SyntaxKind::Const => Some(VariableStatementKind::Const),
                 SyntaxKind::Let => Some(VariableStatementKind::Let),
                 SyntaxKind::Var => Some(VariableStatementKind::Var),
                 _ => None,
@@ -687,6 +688,7 @@ impl VariableStatement {
     }
 }
 pub enum VariableStatementKind {
+    Const,
     Let,
     Var,
 }

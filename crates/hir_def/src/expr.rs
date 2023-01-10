@@ -141,6 +141,11 @@ pub enum Statement {
         type_ref: Option<Interned<TypeRef>>,
         initializer: Option<ExprId>,
     },
+    ConstStatement {
+        binding_id: BindingId,
+        type_ref: Option<Interned<TypeRef>>,
+        initializer: Option<ExprId>,
+    },
     VariableStatement {
         binding_id: BindingId,
         type_ref: Option<Interned<TypeRef>>,

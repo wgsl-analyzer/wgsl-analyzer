@@ -182,6 +182,11 @@ impl<'a> Collector<'a> {
                         type_ref,
                         initializer,
                     },
+                    ast::VariableStatementKind::Const => Statement::ConstStatement {
+                        binding_id,
+                        type_ref,
+                        initializer,
+                    },
                     ast::VariableStatementKind::Var => {
                         let storage_class = variable_statement
                             .variable_qualifier()
