@@ -1,0 +1,15 @@
+[package]
+name = "wgsl-fuzz"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tree-sitter-wgsl = { path = "./tree-sitter-wgsl" }
+tree-sitter = "~0.20.3"
+wgsl_parser = { path = "../crates/wgsl_parser" }
+
+
+[build-dependencies]
+cc = "*"

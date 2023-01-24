@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/*", "tools"]
+members = ["crates/*", "tools", "fuzz", "fuzz/tree-sitter-wgsl"]
 
 
 [profile.dev]
