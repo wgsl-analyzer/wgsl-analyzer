@@ -1,4 +1,5 @@
 mod shader_processor;
+mod translator;
 
 pub mod change;
 pub mod line_index;
@@ -59,12 +60,10 @@ fn parse_no_preprocessor_query(db: &dyn SourceDatabase, file_id: FileId) -> synt
 }
 
 fn parse_import_no_preprocessor_query(
-    db: &dyn SourceDatabase,
-    key: String,
+    _db: &dyn SourceDatabase,
+    _key: String,
 ) -> Result<syntax::Parse, ()> {
-    let imports = db.custom_imports();
-    let source = imports.get(&key).ok_or(())?;
-    Ok(syntax::parse(&*source))
+    panic!("Should not call");
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -78,12 +77,16 @@ fn parse_with_unconfigured_query(
     file_id: FileId,
 ) -> (Parse, Arc<Vec<UnconfiguredCode>>) {
     let shader_defs = db.shader_defs();
+    let custom_imports = db.custom_imports();
     let source = db.file_text(file_id);
 
     let mut unconfigured = Vec::new();
 
-    let processed_source =
-        shader_processor::SHADER_PROCESSOR.process(&source, &shader_defs, |range, def| {
+    let processed_source = shader_processor::SHADER_PROCESSOR.process(
+        &source,
+        &shader_defs,
+        &custom_imports,
+        |range, def| {
             let range = TextRange::new(
                 TextSize::from(range.start as u32),
                 TextSize::from(range.end as u32),
@@ -92,8 +95,9 @@ fn parse_with_unconfigured_query(
                 range,
                 def: def.to_string(),
             })
-        });
-    let parse = syntax::parse(&processed_source);
+        },
+    );
+    let parse = syntax::parse(&processed_source.0);
     (parse, Arc::new(unconfigured))
 }
 
@@ -102,18 +106,9 @@ fn parse_query(db: &dyn SourceDatabase, file_id: FileId) -> Parse {
 }
 
 fn parse_import_query(
-    db: &dyn SourceDatabase,
-    key: String,
-    parse_entrypoint: ParseEntryPoint,
+    _db: &dyn SourceDatabase,
+    _key: String,
+    _parse_entrypoint: ParseEntryPoint,
 ) -> Result<Parse, ()> {
-    let imports = db.custom_imports();
-    let shader_defs = db.shader_defs();
-    let source = imports.get(&key).ok_or(())?;
-
-    let processed_source =
-        shader_processor::SHADER_PROCESSOR.process(source, &shader_defs, |_, _| {});
-    Ok(syntax::parse_entrypoint(
-        &processed_source,
-        parse_entrypoint,
-    ))
+    panic!("Should not call");
 }

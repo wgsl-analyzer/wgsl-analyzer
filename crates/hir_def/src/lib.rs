@@ -15,8 +15,7 @@ use db::DefDatabase;
 pub use hir_file_id::HirFileId;
 use hir_file_id::HirFileIdRepr;
 use module_data::{ModuleDataNode, ModuleItemId};
-use rowan::NodeOrToken;
-use syntax::{AstNode, SyntaxNode, SyntaxToken};
+use syntax::{AstNode, HasTranslatableTextRange, SyntaxNode, SyntaxToken};
 
 use crate::{db::ImportId, module_data::Import};
 
@@ -52,71 +51,8 @@ impl<T> InFile<T> {
 
 impl<N: AstNode> InFile<N> {
     pub fn original_file_range(&self, db: &dyn DefDatabase) -> FileRange {
-        original_file_range(db, self.file_id, self.value.syntax())
+        todo!()
     }
-}
-
-pub trait HasTextRange {
-    fn text_range(&self) -> TextRange;
-}
-
-impl<T: HasTextRange> HasTextRange for &T {
-    fn text_range(&self) -> TextRange {
-        (*self).text_range()
-    }
-}
-
-impl HasTextRange for SyntaxToken {
-    fn text_range(&self) -> TextRange {
-        self.text_range()
-    }
-}
-impl HasTextRange for SyntaxNode {
-    fn text_range(&self) -> TextRange {
-        self.text_range()
-    }
-}
-impl<N: HasTextRange, T: HasTextRange> HasTextRange for NodeOrToken<N, T> {
-    fn text_range(&self) -> TextRange {
-        match self {
-            NodeOrToken::Node(n) => n.text_range(),
-            NodeOrToken::Token(t) => t.text_range(),
-        }
-    }
-}
-
-pub fn original_file_range<T: HasTextRange>(
-    db: &dyn DefDatabase,
-    file_id: HirFileId,
-    val: &T,
-) -> FileRange {
-    original_file_range_inner(db, file_id, val.text_range())
-}
-
-fn original_file_range_inner(
-    db: &dyn DefDatabase,
-    file_id: HirFileId,
-    range: TextRange,
-) -> FileRange {
-    match file_id.0 {
-        HirFileIdRepr::FileId(file_id) => FileRange { file_id, range },
-        HirFileIdRepr::MacroFile(import) => {
-            let loc = import_location(db, import.import_id);
-            original_file_range_inner(db, loc.file_id, loc.value)
-        }
-    }
-}
-
-fn import_location(db: &dyn DefDatabase, import_id: ImportId) -> InFile<TextRange> {
-    let import_loc = db.lookup_intern_import(import_id);
-    let module_info = db.module_info(import_loc.file_id);
-    let def_map = db.ast_id_map(import_loc.file_id);
-    let root = db.parse_or_resolve(import_loc.file_id).unwrap().syntax();
-    let import: &Import = module_info.get(import_loc.value);
-    let ptr = def_map.get(import.ast_id);
-    let node = ptr.to_node(&root);
-
-    import_loc.with_value(node.syntax().text_range())
 }
 
 pub trait HasSource {

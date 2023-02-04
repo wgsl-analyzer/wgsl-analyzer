@@ -1,20 +1,27 @@
 pub mod algo;
 pub mod ast;
 pub mod ptr;
+pub mod range;
 
-use std::{marker::PhantomData, ops::Deref, sync::Arc};
+use std::{fmt::Debug, marker::PhantomData, ops::Deref, sync::Arc};
 
 use either::Either;
+pub use range::HasTranslatableTextRange;
 pub use rowan::Direction;
 pub use wgsl_parser::{
     ParseEntryPoint, ParseError, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodeChildren,
     SyntaxToken,
 };
 
+pub trait TextRangeTranslator: Debug + Send + Sync + std::panic::RefUnwindSafe {
+    fn translate_range(&self, input: rowan::TextRange) -> rowan::TextRange;
+}
+
 #[derive(Clone, Debug)]
 pub struct Parse {
     green_node: rowan::GreenNode,
     errors: Arc<Vec<ParseError>>,
+    translator: Arc<dyn TextRangeTranslator + Send + Sync>,
 }
 impl PartialEq for Parse {
     fn eq(&self, other: &Self) -> bool {
@@ -32,16 +39,31 @@ impl Parse {
     pub fn tree(&self) -> ast::SourceFile {
         ast::SourceFile::cast(self.syntax()).unwrap()
     }
+    pub fn translator(&self) -> &dyn TextRangeTranslator {
+        self.translator.as_ref()
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct IdentityTranslator;
+impl TextRangeTranslator for IdentityTranslator {
+    fn translate_range(&self, input: rowan::TextRange) -> rowan::TextRange {
+        input
+    }
 }
 
 pub fn parse(input: &str) -> Parse {
-    parse_entrypoint(input, ParseEntryPoint::File)
+    parse_processed(input, IdentityTranslator)
 }
-pub fn parse_entrypoint(input: &str, parse_entrypoint: ParseEntryPoint) -> Parse {
-    let (green_node, errors) = wgsl_parser::parse_entrypoint(input, parse_entrypoint).into_parts();
+
+pub fn parse_processed<T: TextRangeTranslator + 'static>(input: &str, translator: T) -> Parse {
+    let (green_node, errors) =
+        wgsl_parser::parse_entrypoint(input, ParseEntryPoint::File).into_parts();
+
     Parse {
         green_node,
         errors: Arc::new(errors),
+        translator: Arc::new(translator),
     }
 }
 

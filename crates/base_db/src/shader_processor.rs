@@ -1,7 +1,12 @@
-use std::{collections::HashSet, ops::Range};
+use std::{
+    collections::{HashMap, HashSet},
+    ops::Range,
+};
 
 use once_cell::sync::Lazy;
 use regex::Regex;
+
+use crate::translator::{PreProcessTranslator, TranslationStrategy};
 
 pub static SHADER_PROCESSOR: Lazy<ShaderProcessor> = Lazy::new(ShaderProcessor::default);
 
@@ -10,6 +15,9 @@ pub struct ShaderProcessor {
     ifndef_regex: Regex,
     else_regex: Regex,
     endif_regex: Regex,
+
+    import_asset_path_regex: Regex,
+    import_custom_path_regex: Regex,
     define_import_path_regex: Regex,
 }
 
@@ -20,7 +28,10 @@ impl Default for ShaderProcessor {
             ifndef_regex: Regex::new(r"^\s*#\s*ifndef\s*([\w|\d|_]+)").unwrap(),
             else_regex: Regex::new(r"^\s*#\s*else").unwrap(),
             endif_regex: Regex::new(r"^\s*#\s*endif").unwrap(),
-            define_import_path_regex: Regex::new(r"^\s*#\s*define_import_path").unwrap(),
+
+            import_asset_path_regex: Regex::new(r#"^\s*#\s*import\s+"(.+)""#).unwrap(),
+            import_custom_path_regex: Regex::new(r"^\s*#\s*import\s+(.+)").unwrap(),
+            define_import_path_regex: Regex::new(r"^\s*#\s*define_import_path\s+(.+)").unwrap(),
         }
     }
 }
@@ -30,29 +41,38 @@ impl ShaderProcessor {
         &self,
         shader_str: &str,
         shader_defs: &HashSet<String>,
+        custom_imports: &HashMap<String, String>,
         mut emit_unconfigured: impl FnMut(Range<usize>, &str),
-    ) -> String {
-        self.process_inner(shader_str, shader_defs, &mut emit_unconfigured)
+    ) -> (String, PreProcessTranslator) {
+        self.process_inner(
+            shader_str,
+            shader_defs,
+            custom_imports,
+            &mut emit_unconfigured,
+        )
     }
 
     fn process_inner(
         &self,
         shader_str: &str,
         shader_defs: &HashSet<String>,
+        custom_imports: &HashMap<String, String>,
         emit_unconfigured: &mut dyn FnMut(Range<usize>, &str),
-    ) -> String {
+    ) -> (String, PreProcessTranslator) {
+        let mut offset_table = PreProcessTranslator::new();
         let mut scopes = vec![(true, 0, "root scope")];
         let mut final_string = String::with_capacity(shader_str.len());
 
-        for (line, offset) in lines_with_offsets(shader_str) {
-            let use_line = if let Some(cap) = self.ifdef_regex.captures(line) {
+        let mut offset = 0_usize;
+
+        for line in shader_str.lines() {
+            if let Some(cap) = self.ifdef_regex.captures(line) {
                 let def = cap.get(1).unwrap().as_str();
                 scopes.push((
                     scopes.last().unwrap().0 && shader_defs.contains(def),
                     offset,
                     def,
                 ));
-                false
             } else if let Some(cap) = self.ifndef_regex.captures(line) {
                 let def = cap.get(1).unwrap().as_str();
                 scopes.push((
@@ -60,7 +80,6 @@ impl ShaderProcessor {
                     offset,
                     def,
                 ));
-                false
             } else if self.else_regex.is_match(line) {
                 let mut is_parent_scope_truthy = true;
                 if scopes.len() > 1 {
@@ -76,7 +95,6 @@ impl ShaderProcessor {
                     *start_offset = offset;
                     *last = is_parent_scope_truthy && !*last;
                 }
-                false
             } else if self.endif_regex.is_match(line) {
                 // HACK: Ignore endifs without a corresponding
                 // This does need proper error reporting somewhere, which is not yet implemented
@@ -91,50 +109,72 @@ impl ShaderProcessor {
                         }
                     }
                 }
-                false
-            } else if self.define_import_path_regex.is_match(line) {
-                false
-            } else {
-                scopes.last().map(|&(used, _, _)| used).unwrap_or(true)
-            };
+            } else if scopes.last().unwrap().0 {
+                if let Some(_cap) = self.import_asset_path_regex.captures(line) {
+                    // path import is not supported right now
+                } else if let Some(cap) = self.import_custom_path_regex.captures(line) {
+                    let default_import_str = "".to_string();
+                    let import_str = custom_imports
+                        .get(&cap.get(1).unwrap().as_str().to_string())
+                        .unwrap_or(&default_import_str);
+                    let import_final_str = self
+                        .process_inner(import_str, shader_defs, &custom_imports, &mut |_, _| {})
+                        .0;
 
-            if use_line {
-                final_string.push_str(line);
-            } else {
-                final_string.extend(std::iter::repeat(' ').take(line.len()));
+                    final_string.push_str(&import_final_str);
+
+                    offset_table.set_last_block_strategy(TranslationStrategy::Import);
+                } else if self.define_import_path_regex.is_match(line) {
+                    // ignore import path lines
+                } else {
+                    final_string.push_str(line);
+                }
             }
 
             final_string.push('\n');
+            let final_str_offset = final_string.len();
+            offset = offset + line.len() + 1; // +1 for '\n'
+            offset_table.insert(offset as u32, final_str_offset as u32);
         }
 
         if scopes.len() != 1 {
             // return Err(ProcessShaderError::NotEnoughEndIfs);
         }
 
-        final_string
+        (final_string, offset_table)
     }
-}
-
-fn lines_with_offsets(input: &str) -> impl Iterator<Item = (&str, usize)> {
-    input.lines().scan(0, |offset, line| {
-        let the_offset = *offset;
-        *offset = the_offset + line.len() + 1;
-
-        Some((line, the_offset))
-    })
 }
 
 #[cfg(test)]
 mod tests {
-    use super::ShaderProcessor;
-    use std::collections::HashSet;
+    use rowan::{TextRange, TextSize};
 
-    fn test_shader(input: &str, defs: &[&str], output: &str) {
+    use super::ShaderProcessor;
+    use std::collections::{BTreeMap, HashMap, HashSet};
+
+    fn test_shader_with_imports(
+        input: &str,
+        defs: &[&str],
+        imports: &HashMap<String, String>,
+        output: &str,
+        offsets: &BTreeMap<u32, u32>,
+    ) {
         let processor = ShaderProcessor::default();
         let defs = HashSet::from_iter(defs.iter().map(|s| s.to_string()));
-        let result = processor.process(input, &defs, |_, _| {});
+        let result = processor.process_inner(input, &defs, imports, &mut |_, _| {});
 
-        pretty_assertions::assert_eq!(result, output);
+        pretty_assertions::assert_eq!(result.0, output);
+
+        for (expected_pre, expected_post) in offsets {
+            let actual_pre = result
+                .1
+                .translate_size(TextSize::from(*expected_post as u32));
+            pretty_assertions::assert_eq!(expected_pre, &actual_pre.into());
+        }
+    }
+
+    fn test_shader(input: &str, defs: &[&str], output: &str, offsets: &BTreeMap<u32, u32>) {
+        test_shader_with_imports(input, defs, &HashMap::new(), output, offsets)
     }
 
     #[test]
@@ -145,6 +185,7 @@ mod tests {
             &[],
             r#"
 "#,
+            &BTreeMap::from([(0, 0)]),
         );
     }
 
@@ -161,11 +202,75 @@ IGNORE
             &[],
             r#"
 .
-            
-      
-      
+
+
+
 .
 "#,
+            &BTreeMap::from([
+                (0, 0),
+                (1, 1),
+                (2, 2),
+                (3, 3),
+                (16, 4),
+                (23, 5),
+                (30, 6),
+                (31, 7),
+                (32, 8),
+            ]),
+        );
+    }
+
+    #[test]
+    fn test_resolve_import_offset() {
+        test_shader_with_imports(
+            r#"
+.
+#ifdef FALSE
+this should not be imported
+#import test::one
+#endif
+here is a actual import
+#import test::two
+.
+"#,
+            &[],
+            &HashMap::from([
+                (
+                    "test::one".to_string(),
+                    r#"
+#define_import_path test::one
+This is test one.
+"#
+                    .to_string(),
+                ),
+                (
+                    "test::two".to_string(),
+                    r#"
+#define_import_path test::two
+This is test two.
+Here is another line.
+The last line.
+"#
+                    .to_string(),
+                ),
+            ]),
+            r#"
+.
+
+
+
+
+here is a actual import
+
+
+This is test two.
+Here is another line.
+The last line.
+
+.
+"#,
+            &BTreeMap::from([(0, 0), (1, 1), (2, 2), (93, 31), (93, 32), (113, 91)]),
         );
     }
 
@@ -298,7 +403,7 @@ var<storage> cluster_offsets_and_counts: ClusterOffsetsAndCounts;
 "#,
             &[],
             r#"
-                                                  
+
 
 struct View {
     view_proj: mat4x4<f32>;
@@ -357,20 +462,20 @@ struct Lights {
     n_directional_lights: u32;
 };
 
-                                 
-                    
-                                  
-  
-                               
-                                                                
-                                  
-  
-                                
-                                                                                       
-                                                                   
-                                  
-  
-     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct PointLights {
     data: array<PointLight>;
 };
@@ -380,47 +485,104 @@ struct ClusterLightIndexLists {
 struct ClusterOffsetsAndCounts {
     data: array<vec2<u32>>;
 };
-      
+
 
 [[group(0), binding(0)]]
 var<uniform> view: View;
 [[group(0), binding(1)]]
 var<uniform> lights: Lights;
-                                
-                        
-                                              
-     
+
+
+
+
 [[group(0), binding(2)]]
 var point_shadow_textures: texture_depth_cube_array;
-      
+
 [[group(0), binding(3)]]
 var point_shadow_textures_sampler: sampler_comparison;
-                                
-                        
-                                                  
-     
+
+
+
+
 [[group(0), binding(4)]]
 var directional_shadow_textures: texture_depth_2d_array;
-      
+
 [[group(0), binding(5)]]
 var directional_shadow_textures_sampler: sampler_comparison;
 
-                                 
-                        
-                                       
-                        
-                                                               
-                        
-                                                                 
-     
+
+
+
+
+
+
+
+
 [[group(0), binding(6)]]
 var<storage> point_lights: PointLights;
 [[group(0), binding(7)]]
 var<storage> cluster_light_index_lists: ClusterLightIndexLists;
 [[group(0), binding(8)]]
 var<storage> cluster_offsets_and_counts: ClusterOffsetsAndCounts;
-      
+
 "#,
+            &BTreeMap::from([(0, 0), (3652, 2636)]),
         )
+    }
+
+    #[test]
+    fn offset_table_translation() {
+        let imports = HashMap::from([
+            (
+                "test::one".to_string(),
+                r#"#define_import_path test::one
+one"#
+                    .to_string(),
+            ),
+            (
+                "test::two".to_string(),
+                r#"#define_import_path test::two
+This is test two.
+Here is another line.
+The last line."#
+                    .to_string(),
+            ),
+        ]);
+
+        let input = r#"
+here is the shorter import
+#import test::one
+here is a longer import
+#import test::two
+"#
+        .to_string();
+
+        let processor = ShaderProcessor::default();
+        let (output, table) =
+            processor.process_inner(&input, &HashSet::new(), &imports, &mut |_, _| {});
+
+        {
+            pretty_assertions::assert_eq!(&output[29..32], "one");
+            pretty_assertions::assert_eq!(&input[28..45], "#import test::one");
+
+            let processed_range = TextRange::new(TextSize::from(29), TextSize::from(32));
+            let original_range = TextRange::new(TextSize::from(28), TextSize::from(45));
+
+            let translated_range = table.translate_range(processed_range);
+
+            pretty_assertions::assert_eq!(translated_range, original_range);
+        }
+
+        {
+            pretty_assertions::assert_eq!(&output[85..97], "another line");
+            pretty_assertions::assert_eq!(&input[70..87], "#import test::two");
+
+            let processed_range = TextRange::new(TextSize::from(85), TextSize::from(97));
+            let original_range = TextRange::new(TextSize::from(70), TextSize::from(87));
+
+            let translated_range = table.translate_range(processed_range);
+
+            pretty_assertions::assert_eq!(translated_range, original_range);
+        }
     }
 }
