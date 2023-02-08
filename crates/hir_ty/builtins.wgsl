@@ -77,6 +77,8 @@ reflect(vecN<f32>, vecN<f32>) -> vecN<f32>
 refract(vecN<f32>, vecN<f32>, f32) -> f32
 round(f32) -> f32
 round(vecN<f32>) -> vecN<f32>
+saturate(e: f32) -> f32
+saturate(e: vecN<f32>) -> vecN<f32>
 sign(f32) -> f32
 sign(vecN<f32>) -> vecN<f32>
 sin(f32) -> f32
