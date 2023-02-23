@@ -5,7 +5,6 @@ pub fn parse_compare(code: &str) {
     let language = tree_sitter_wgsl::language();
     parser.set_language(language).unwrap();
     let tree = parser.parse(code, None).unwrap();
-    dbg!(tree.root_node());
 
     let should_error = tree.root_node().has_error();
     if !should_error {

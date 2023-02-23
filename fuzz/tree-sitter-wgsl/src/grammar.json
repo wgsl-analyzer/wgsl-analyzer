@@ -5707,23 +5707,11 @@
       "name": "ident_pattern_token"
     },
     "_comment": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "TOKEN",
-          "content": {
-            "type": "STRING",
-            "value": "//"
-          }
-        },
-        {
-          "type": "TOKEN",
-          "content": {
-            "type": "PATTERN",
-            "value": ".*"
-          }
-        }
-      ]
+      "type": "TOKEN",
+      "content": {
+        "type": "STRING",
+        "value": "//.*"
+      }
     },
     "_blankspace": {
       "type": "TOKEN",
