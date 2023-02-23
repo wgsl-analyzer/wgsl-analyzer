@@ -443,6 +443,7 @@ ast_token_enum! {
         AndAnd,
         Star,
         ForwardSlash,
+        Xor,
     }
 }
 ast_token_enum! {
@@ -900,6 +901,7 @@ impl InfixExpr {
                 BinaryOpKind::Modulo(_) => BinaryOp::ArithOp(ArithOp::Modulo),
                 BinaryOpKind::Or(_) => BinaryOp::ArithOp(ArithOp::BitOr),
                 BinaryOpKind::And(_) => BinaryOp::ArithOp(ArithOp::BitAnd),
+                BinaryOpKind::Xor(_)=>BinaryOp::ArithOp(ArithOp::BitXor),
                 BinaryOpKind::OrOr(_) => BinaryOp::LogicOp(LogicOp::Or),
                 BinaryOpKind::AndAnd(_) => BinaryOp::LogicOp(LogicOp::And),
             };
