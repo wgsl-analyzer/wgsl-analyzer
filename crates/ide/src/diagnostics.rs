@@ -67,46 +67,6 @@ trait NagaError: std::error::Error {
     fn has_spans(&self) -> bool;
 }
 
-struct Naga09;
-impl Naga for Naga09 {
-    type Module = naga09::Module;
-    type ParseError = naga09::front::wgsl::ParseError;
-    type ValidationError = naga09::WithSpan<naga09::valid::ValidationError>;
-
-    fn parse(source: &str) -> Result<Self::Module, Self::ParseError> {
-        naga09::front::wgsl::parse_str(source)
-    }
-
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
-        let flags = naga09::valid::ValidationFlags::all();
-        let capabilities = naga09::valid::Capabilities::all();
-        let mut validator = naga09::valid::Validator::new(flags, capabilities);
-        validator.validate(module).map(drop)
-    }
-}
-impl NagaError for naga09::front::wgsl::ParseError {
-    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
-        Box::new(
-            self.labels()
-                .map(|(range, label)| (range, label.to_string())),
-        )
-    }
-    fn has_spans(&self) -> bool {
-        self.labels().len() > 0
-    }
-}
-impl NagaError for naga09::WithSpan<naga09::valid::ValidationError> {
-    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
-        Box::new(
-            self.spans()
-                .filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
-        )
-    }
-    fn has_spans(&self) -> bool {
-        self.spans().len() > 0
-    }
-}
-
 struct Naga10;
 impl Naga for Naga10 {
     type Module = naga10::Module;
@@ -147,6 +107,46 @@ impl NagaError for naga10::WithSpan<naga10::valid::ValidationError> {
     }
 }
 
+struct Naga11;
+impl Naga for Naga11 {
+    type Module = naga11::Module;
+    type ParseError = naga11::front::wgsl::ParseError;
+    type ValidationError = naga11::WithSpan<naga11::valid::ValidationError>;
+
+    fn parse(source: &str) -> Result<Self::Module, Self::ParseError> {
+        naga11::front::wgsl::parse_str(source)
+    }
+
+    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
+        let flags = naga11::valid::ValidationFlags::all();
+        let capabilities = naga11::valid::Capabilities::all();
+        let mut validator = naga11::valid::Validator::new(flags, capabilities);
+        validator.validate(module).map(drop)
+    }
+}
+impl NagaError for naga11::front::wgsl::ParseError {
+    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
+        Box::new(
+            self.labels()
+                .flat_map(|(range, label)| Some((range.to_range()?, label.to_string()))),
+        )
+    }
+    fn has_spans(&self) -> bool {
+        self.labels().len() > 0
+    }
+}
+impl NagaError for naga11::WithSpan<naga11::valid::ValidationError> {
+    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
+        Box::new(
+            self.spans()
+                .filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
+        )
+    }
+    fn has_spans(&self) -> bool {
+        self.spans().len() > 0
+    }
+}
+
 struct NagaMain;
 impl Naga for NagaMain {
     type Module = nagamain::Module;
@@ -168,7 +168,7 @@ impl NagaError for nagamain::front::wgsl::ParseError {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
             self.labels()
-                .map(|(range, label)| (range, label.to_string())),
+                .flat_map(|(range, label)| Some((range.to_range()?, label.to_string()))),
         )
     }
     fn has_spans(&self) -> bool {
@@ -342,8 +342,8 @@ pub fn diagnostics(
 
     if config.naga_parsing_errors || config.naga_validation_errors {
         match &config.naga_version {
-            NagaVersion::Naga09 => {
-                let _ = naga_diagnostics::<Naga09>(db, file_id, config, &mut diagnostics);
+            NagaVersion::Naga11 => {
+                let _ = naga_diagnostics::<Naga11>(db, file_id, config, &mut diagnostics);
             }
             NagaVersion::Naga10 => {
                 let _ = naga_diagnostics::<Naga10>(db, file_id, config, &mut diagnostics);
