@@ -2190,6 +2190,27 @@ fn global_variable_decl_init() {
 }
 
 #[test]
+fn global_const_decl() {
+    check(
+        "const constant = 0;",
+        expect![[r#"
+        SourceFile@0..19
+          GlobalConstantDecl@0..19
+            Const@0..5 "const"
+            Whitespace@5..6 " "
+            Binding@6..15
+              Name@6..15
+                Ident@6..14 "constant"
+                Whitespace@14..15 " "
+            Equal@15..16 "="
+            Whitespace@16..17 " "
+            Literal@17..18
+              IntLiteral@17..18 "0"
+            Semicolon@18..19 ";""#]],
+    );
+}
+
+#[test]
 fn type_alias_decl() {
     check(
         "type float = f32;",

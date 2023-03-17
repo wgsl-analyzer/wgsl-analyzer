@@ -36,9 +36,9 @@ fn item(p: &mut Parser) {
     } else if p.at(SyntaxKind::Var) {
         global_variable_decl(p, m);
     } else if p.at(SyntaxKind::Let) {
-        global_constant_decl(p, m);
+        global_constant_decl(p, m, SyntaxKind::Let);
     } else if p.at(SyntaxKind::Const) {
-        global_constant_decl(p, m);
+        global_constant_decl(p, m, SyntaxKind::Const);
     } else if p.at(SyntaxKind::Type) {
         type_alias_decl(p, m);
     } else {
@@ -75,8 +75,8 @@ fn import(p: &mut Parser, m: Marker) {
 fn global_variable_decl(p: &mut Parser, m: Marker) {
     global_decl(p, m, SyntaxKind::Var, SyntaxKind::GlobalVariableDecl);
 }
-fn global_constant_decl(p: &mut Parser, m: Marker) {
-    global_decl(p, m, SyntaxKind::Let, SyntaxKind::GlobalConstantDecl);
+fn global_constant_decl(p: &mut Parser, m: Marker, kind: SyntaxKind) {
+    global_decl(p, m, kind, SyntaxKind::GlobalConstantDecl);
 }
 fn global_decl(p: &mut Parser, m: Marker, var_kind: SyntaxKind, kind: SyntaxKind) {
     p.expect(var_kind);
