@@ -112,3 +112,21 @@ pub mod inlay_hints {
         pub command: Option<lsp_types::Command>,
     }
 }
+
+pub enum ImportTextDocument {}
+
+impl Request for ImportTextDocument {
+    type Params = import_text_document::ImportTextDocumentParams;
+    type Result = ();
+    const METHOD: &'static str = "wgsl-analyzer/importTextDocument";
+}
+
+pub mod import_text_document {
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Serialize, Deserialize, Debug)]
+    #[serde(rename_all = "camelCase")]
+    pub struct ImportTextDocumentParams {
+        pub uri: String,
+    }
+}

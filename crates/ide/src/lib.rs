@@ -26,6 +26,9 @@ pub type Cancellable<T> = Result<T, Cancelled>;
 
 pub use db::RootDatabase;
 
+/// `base_db` is normally also needed in places where `ide_db` is used, so this re-export is for convenience.
+pub use base_db;
+
 #[derive(Debug)]
 pub struct AnalysisHost {
     db: RootDatabase,

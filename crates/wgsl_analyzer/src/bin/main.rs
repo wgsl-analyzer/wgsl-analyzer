@@ -1,5 +1,8 @@
+use std::env;
+
 use lsp_server::Connection;
 use lsp_types::InitializeParams;
+use paths::AbsPathBuf;
 use tracing::info;
 use wgsl_analyzer::{
     config::{Config, TraceConfig},
@@ -20,6 +23,19 @@ fn main() -> Result<()> {
     let (initialize_id, initialize_params) = connection.initialize_start()?;
     let initialize_params: InitializeParams = from_json("InitializeParams", initialize_params)?;
 
+    // Root path of current open folder
+    let root_path = match initialize_params
+        .root_uri
+        .and_then(|it| it.to_file_path().ok())
+        .and_then(|it| AbsPathBuf::try_from(it).ok())
+    {
+        Some(it) => it,
+        None => {
+            let cwd = env::current_dir()?;
+            AbsPathBuf::assert(cwd)
+        }
+    };
+
     let initialize_result = lsp_types::InitializeResult {
         capabilities: wgsl_analyzer::server_capabilities(),
         server_info: Some(lsp_types::ServerInfo {
@@ -30,12 +46,12 @@ fn main() -> Result<()> {
     let initialize_result = serde_json::to_value(initialize_result).unwrap();
     connection.initialize_finish(initialize_id, initialize_result)?;
 
-    let mut config = Config::default();
+    let mut config = Config::new(root_path);
     if let Some(options) = initialize_params.initialization_options {
-        config.update(options);
+        config.data.update(options);
     }
 
-    setup_logging(&config.trace);
+    setup_logging(&config.data.trace);
     info!("Initialized");
     main_loop(config, connection)
 }

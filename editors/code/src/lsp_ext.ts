@@ -27,3 +27,8 @@ export interface InlayHintsParams {
     range: lc.Range;
 }
 export const inlayHints = new lc.RequestType<InlayHintsParams, InlayHint[], void>("experimental/inlayHints");
+
+export interface ImportTextDocumentParams {
+    uri: lc.DocumentUri;
+}
+export const importTextDocument = new lc.RequestType<ImportTextDocumentParams, unknown, void>("wgsl-analyzer/importTextDocument");

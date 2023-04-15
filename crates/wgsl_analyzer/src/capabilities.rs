@@ -11,6 +11,7 @@ pub fn server_capabilities() -> ServerCapabilities {
         )),
         definition_provider: Some(OneOf::Left(true)),
         completion_provider: Some(CompletionOptions {
+            completion_item: None,
             resolve_provider: None,
             trigger_characters: Some(vec![".".to_string()]),
             all_commit_characters: None,
