@@ -679,7 +679,12 @@ fn switch_body(p: &mut Parser) {
         p.expect(SyntaxKind::Case);
 
         let m_selectors = p.start();
-        while !p.at_or_end(SyntaxKind::Colon) || p.at_end() {
+        while !p.at_set(&[
+            SyntaxKind::Colon,
+            SyntaxKind::BraceLeft,
+            SyntaxKind::BraceRight,
+        ]) || p.at_end()
+        {
             if p.at(SyntaxKind::BraceRight) {
                 break;
             }
@@ -688,12 +693,7 @@ fn switch_body(p: &mut Parser) {
         }
         m_selectors.complete(p, SyntaxKind::SwitchCaseSelectors);
 
-        if p.at(SyntaxKind::BraceRight) {
-            m.complete(p, SyntaxKind::SwitchBodyCase);
-            return;
-        }
-
-        p.expect(SyntaxKind::Colon);
+        p.eat(SyntaxKind::Colon);
 
         if p.at(SyntaxKind::BraceRight) {
             m.complete(p, SyntaxKind::SwitchBodyCase);
