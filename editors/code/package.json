@@ -37,7 +37,7 @@
         "@types/node": "~18.0.0",
         "@types/vscode": "^1.52.0",
         "@vscode/vsce": "^2.3.0",
-        "esbuild": "^0.17.0"
+        "esbuild": "^0.16.0"
     },
     "main": "./out/main.js",
     "activationEvents": [
