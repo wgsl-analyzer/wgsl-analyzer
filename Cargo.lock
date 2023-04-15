@@ -259,7 +259,7 @@ dependencies = [
  "lsp-types",
  "naga 0.10.0",
  "naga 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "naga 0.11.0 (git+https://github.com/gfx-rs/naga?rev=00be08e9f82a7bc2a4b8f8f3645d0191d9a89ec2)",
+ "naga 0.11.0 (git+https://github.com/gfx-rs/naga?rev=b9c5cb5a7841a8728137a58840fbbdbb9b310267)",
  "rowan",
  "salsa",
  "smol_str",
@@ -479,7 +479,7 @@ dependencies = [
 [[package]]
 name = "naga"
 version = "0.11.0"
-source = "git+https://github.com/gfx-rs/naga?rev=00be08e9f82a7bc2a4b8f8f3645d0191d9a89ec2#00be08e9f82a7bc2a4b8f8f3645d0191d9a89ec2"
+source = "git+https://github.com/gfx-rs/naga?rev=b9c5cb5a7841a8728137a58840fbbdbb9b310267#b9c5cb5a7841a8728137a58840fbbdbb9b310267"
 dependencies = [
  "bit-set",
  "bitflags",
