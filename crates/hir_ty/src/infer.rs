@@ -1649,6 +1649,9 @@ impl<'db> TyLoweringContext<'db> {
 
                     return Ok(self.lower_ty(type_ref));
                 }
+                Some(ResolveType::PredeclaredTypeAlias(type_ref)) => {
+                    return Ok(self.lower_ty(&type_ref))
+                }
                 None => return Err(TypeLoweringError::UnresolvedName(name.clone())),
             },
         };

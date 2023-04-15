@@ -92,6 +92,10 @@ fn resolve_name_ref(
                 let id = sema.db.intern_type_alias(loc);
                 Some(Definition::TypeAlias(TypeAlias { id }))
             }
+            ResolveType::PredeclaredTypeAlias(_) => {
+                // TODO: should this return something?
+                None
+            }
         }
     } else {
         None

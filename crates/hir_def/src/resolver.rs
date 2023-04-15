@@ -10,6 +10,7 @@ use crate::{
     module_data::{
         Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItem, Name, Struct, TypeAlias,
     },
+    type_ref::{TypeRef, VecDimensionality, VecType},
     HirFileId, InFile,
 };
 
@@ -19,6 +20,8 @@ pub enum Scope {
     ModuleScope(ModuleScope),
     /// Local bindings
     ExprScope(ExprScope),
+
+    BuiltinScope,
 }
 
 #[derive(Clone)]
@@ -45,6 +48,8 @@ pub enum ResolveValue {
 pub enum ResolveType {
     Struct(Location<Struct>),
     TypeAlias(Location<TypeAlias>),
+
+    PredeclaredTypeAlias(TypeRef),
 }
 
 #[derive(Debug)]
@@ -59,9 +64,17 @@ pub enum ScopeDef {
     ModuleItem(HirFileId, ModuleItem),
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct Resolver {
     scopes: Vec<Scope>, // TODO: smallvec<2>
+}
+
+impl Default for Resolver {
+    fn default() -> Self {
+        Self {
+            scopes: vec![Scope::BuiltinScope],
+        }
+    }
 }
 impl Resolver {
     #[must_use]
@@ -156,41 +169,45 @@ impl Resolver {
                         });
                     });
             }
+            Scope::BuiltinScope => {}
         });
     }
 
     pub fn resolve_value(&self, name: &Name) -> Option<ResolveValue> {
-        self.scopes().find_map(|scope| match scope {
-            Scope::ExprScope(scope) => {
-                let entry = scope
-                    .expr_scopes
-                    .resolve_name_in_scope(scope.scope_id, name)?;
-                Some(ResolveValue::Local(entry.binding))
-            }
-            Scope::ModuleScope(scope) => {
-                scope
-                    .module_info
-                    .items()
-                    .iter()
-                    .find_map(|item| match item {
-                        ModuleItem::GlobalVariable(var)
-                            if &scope.module_info.data[var.index].name == name =>
-                        {
-                            Some(ResolveValue::GlobalVariable(Location::new(
-                                scope.file_id,
-                                *var,
-                            )))
-                        }
-                        ModuleItem::GlobalConstant(c)
-                            if &scope.module_info.data[c.index].name == name =>
-                        {
-                            Some(ResolveValue::GlobalConstant(Location::new(
-                                scope.file_id,
-                                *c,
-                            )))
-                        }
-                        _ => None,
-                    })
+        self.scopes().find_map(|scope| -> Option<ResolveValue> {
+            match scope {
+                Scope::ExprScope(scope) => {
+                    let entry = scope
+                        .expr_scopes
+                        .resolve_name_in_scope(scope.scope_id, name)?;
+                    Some(ResolveValue::Local(entry.binding))
+                }
+                Scope::ModuleScope(scope) => {
+                    scope
+                        .module_info
+                        .items()
+                        .iter()
+                        .find_map(|item| match item {
+                            ModuleItem::GlobalVariable(var)
+                                if &scope.module_info.data[var.index].name == name =>
+                            {
+                                Some(ResolveValue::GlobalVariable(Location::new(
+                                    scope.file_id,
+                                    *var,
+                                )))
+                            }
+                            ModuleItem::GlobalConstant(c)
+                                if &scope.module_info.data[c.index].name == name =>
+                            {
+                                Some(ResolveValue::GlobalConstant(Location::new(
+                                    scope.file_id,
+                                    *c,
+                                )))
+                            }
+                            _ => None,
+                        })
+                }
+                Scope::BuiltinScope => None,
             }
         })
     }
@@ -217,6 +234,51 @@ impl Resolver {
                     })
             }
             Scope::ExprScope(_) => None,
+
+            Scope::BuiltinScope => {
+                let ty = match name.as_str() {
+                    "vec2i" => Some(TypeRef::Vec(VecType {
+                        size: VecDimensionality::Two,
+                        inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Int32)),
+                    })),
+                    "vec3i" => Some(TypeRef::Vec(VecType {
+                        size: VecDimensionality::Three,
+                        inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Int32)),
+                    })),
+                    "vec4i" => Some(TypeRef::Vec(VecType {
+                        size: VecDimensionality::Four,
+                        inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Int32)),
+                    })),
+                    "vec2u" => Some(TypeRef::Vec(VecType {
+                        size: VecDimensionality::Two,
+                        inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Uint32)),
+                    })),
+                    "vec3u" => Some(TypeRef::Vec(VecType {
+                        size: VecDimensionality::Three,
+                        inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Uint32)),
+                    })),
+                    "vec4u" => Some(TypeRef::Vec(VecType {
+                        size: VecDimensionality::Four,
+                        inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Uint32)),
+                    })),
+                    "vec2f" => Some(TypeRef::Vec(VecType {
+                        size: VecDimensionality::Two,
+                        inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Float32)),
+                    })),
+                    "vec3f" => Some(TypeRef::Vec(VecType {
+                        size: VecDimensionality::Three,
+                        inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Float32)),
+                    })),
+                    "vec4f" => Some(TypeRef::Vec(VecType {
+                        size: VecDimensionality::Four,
+                        inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Float32)),
+                    })),
+                    // TODO float16
+                    _ => None,
+                };
+
+                ty.map(ResolveType::PredeclaredTypeAlias)
+            }
         })
     }
 
@@ -248,6 +310,7 @@ impl Resolver {
                     })
             }
             Scope::ExprScope(_) => None,
+            Scope::BuiltinScope => None,
         })
     }
 }
