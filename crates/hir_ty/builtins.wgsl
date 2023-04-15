@@ -97,6 +97,8 @@ tanh(f32) -> f32
 tanh(vecN<f32>) -> vecN<f32>
 trunc(f32) -> f32
 trunc(vecN<f32>) -> vecN<f32>
+fma(f32, f32, f32) -> f32
+fma(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
 
 // integer
 abs(i32) -> i32
