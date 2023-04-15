@@ -9,7 +9,10 @@
             "windows": {
                 "command": "cargo build --package=wgsl_analyzer ; mkdir -p ./editors/code/out; rm ./editors/code/out/wgsl_analyzer; cp target/debug/wgsl_analyzer.exe ./editors/code/out/",
             },
-            "problemMatcher": "$rustc"
+            "problemMatcher": "$rustc",
+            "presentation": {
+                "reveal": "silent",
+            }
         },
         {
             "label": "Build Server (Release)",
@@ -19,7 +22,10 @@
             "windows": {
                 "command": "cargo build --package=wgsl_analyzer --release ; mkdir -p ./editors/code/out; rm ./editors/code/out/wgsl_analyzer; cp target/release/wgsl_analyzer.exe ./editors/code/out/",
             },
-            "problemMatcher": "$rustc"
+            "problemMatcher": "$rustc",
+            "presentation": {
+                "reveal": "silent",
+            }
         },
         {
             "label": "Build Extension",
@@ -34,6 +40,9 @@
                     "${workspaceFolder}/editors/code/"
                 ]
             },
+            "presentation": {
+                "reveal": "silent",
+            }
         },
         {
             "label": "Build Server and Extension",
