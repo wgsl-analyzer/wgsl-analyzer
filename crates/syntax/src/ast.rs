@@ -293,7 +293,7 @@ ast_node!(GlobalConstantDecl:
 );
 
 ast_node!(TypeAliasDecl:
-    type_token: Option<SyntaxToken Type>;
+    alias_token: Option<SyntaxToken Alias>;
     name: Option<Name>;
     equal_token: Option<SyntaxToken Equal>;
     type_decl: Option<Type>;

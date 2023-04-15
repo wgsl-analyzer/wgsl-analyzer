@@ -39,7 +39,7 @@ fn item(p: &mut Parser) {
         global_constant_decl(p, m, SyntaxKind::Let);
     } else if p.at(SyntaxKind::Const) {
         global_constant_decl(p, m, SyntaxKind::Const);
-    } else if p.at(SyntaxKind::Type) {
+    } else if p.at(SyntaxKind::Alias) || p.at(SyntaxKind::Type) {
         type_alias_decl(p, m);
     } else {
         p.error_expected(&[
@@ -48,7 +48,7 @@ fn item(p: &mut Parser) {
             SyntaxKind::Var,
             SyntaxKind::Let,
             SyntaxKind::Const,
-            SyntaxKind::Type,
+            SyntaxKind::Alias,
         ]);
         m.complete(p, SyntaxKind::Error);
     }
@@ -109,7 +109,11 @@ fn global_decl(p: &mut Parser, m: Marker, var_kind: SyntaxKind, kind: SyntaxKind
 }
 
 fn type_alias_decl(p: &mut Parser, m: Marker) {
-    p.expect(SyntaxKind::Type);
+    if p.at(SyntaxKind::Alias) || p.at(SyntaxKind::Type) {
+        p.bump();
+    } else {
+        p.error();
+    }
 
     name(p);
 

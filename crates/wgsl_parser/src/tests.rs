@@ -2059,7 +2059,7 @@ fn test()
                   Whitespace@28..29 "\n"
 
             error at 26..27: expected Arrow or BraceLeft, but found BraceRight
-            error at 27..28: expected Fn, Struct, Var, Let or Type, but found Semicolon"#]],
+            error at 27..28: expected Fn, Struct, Var, Let, Const or Alias, but found Semicolon"#]],
     );
 }
 
@@ -2212,6 +2212,25 @@ fn global_const_decl() {
 
 #[test]
 fn type_alias_decl() {
+    check(
+        "alias float = f32;",
+        expect![[r#"
+            SourceFile@0..18
+              TypeAliasDecl@0..18
+                Alias@0..5 "alias"
+                Whitespace@5..6 " "
+                Name@6..12
+                  Ident@6..11 "float"
+                  Whitespace@11..12 " "
+                Equal@12..13 "="
+                Whitespace@13..14 " "
+                Float32@14..17
+                  Float32@14..17 "f32"
+                Semicolon@17..18 ";""#]],
+    );
+}
+#[test]
+fn type_alias_decl_old() {
     check(
         "type float = f32;",
         expect![[r#"

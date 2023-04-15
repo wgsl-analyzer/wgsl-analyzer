@@ -253,6 +253,8 @@ pub enum SyntaxKind {
     BindingArray,
 
     // other keywords
+    #[token("alias")]
+    Alias,
     #[token("bitcast")]
     Bitcast,
     // #[token("block")]
