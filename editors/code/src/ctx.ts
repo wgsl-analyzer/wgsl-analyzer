@@ -68,7 +68,6 @@ export class Ctx {
         );
 
         client.start();
-        await client.onReady();
 
         ctx.subscriptions.push(client.onRequest(lsp_ext.requestConfiguration, async (_, ct) => {
             let options = await lspOptions(config);
