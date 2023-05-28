@@ -88,6 +88,12 @@ impl Body {
 
                 lower::lower_global_constant_decl(db, file_id, src.value)
             }
+            DefWithBodyId::Override(id) => {
+                let location = id.lookup(db);
+                let src = location.source(db);
+
+                lower::lower_override_decl(db, file_id, src.value)
+            }
         };
 
         (Arc::new(body), Arc::new(source_map))

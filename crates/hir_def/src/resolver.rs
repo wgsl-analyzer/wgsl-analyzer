@@ -8,7 +8,8 @@ use crate::{
     db::{DefDatabase, FunctionId, Location},
     hir_file_id::ImportFile,
     module_data::{
-        Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItem, Name, Struct, TypeAlias,
+        Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItem, Name, Override, Struct,
+        TypeAlias,
     },
     type_ref::{TypeRef, VecDimensionality, VecType},
     HirFileId, InFile,
@@ -42,6 +43,7 @@ pub enum ResolveValue {
     Local(BindingId),
     GlobalVariable(Location<GlobalVariable>),
     GlobalConstant(Location<GlobalConstant>),
+    Override(Location<Override>),
 }
 
 #[derive(Debug)]
@@ -153,6 +155,10 @@ impl Resolver {
                             scope.module_info.data[constant.index].name.clone(),
                             ScopeDef::ModuleItem(scope.file_id, *item),
                         ),
+                        ModuleItem::Override(override_decl) => f(
+                            scope.module_info.data[override_decl.index].name.clone(),
+                            ScopeDef::ModuleItem(scope.file_id, *item),
+                        ),
                         ModuleItem::Struct(_) => {}
                         ModuleItem::Import(_) => {}
                         ModuleItem::TypeAlias(_) => {}
@@ -203,6 +209,11 @@ impl Resolver {
                                     scope.file_id,
                                     *c,
                                 )))
+                            }
+                            ModuleItem::Override(c)
+                                if &scope.module_info.data[c.index].name == name =>
+                            {
+                                Some(ResolveValue::Override(Location::new(scope.file_id, *c)))
                             }
                             _ => None,
                         })

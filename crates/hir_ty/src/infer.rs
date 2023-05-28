@@ -1,8 +1,8 @@
 use either::Either;
 use hir_def::{
     body::{BindingId, Body},
-    data::{FieldId, FunctionData, GlobalConstantData, GlobalVariableData},
-    db::{DefWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, TypeAliasId},
+    data::{FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData},
+    db::{DefWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, OverrideId, TypeAliasId},
     expr::{ArithOp, BinaryOp, Callee, CmpOp, Expr, ExprId, Statement, StatementId, UnaryOp},
     module_data::Name,
     resolver::{ResolveType, Resolver},
@@ -34,6 +34,9 @@ pub fn infer_query(db: &dyn HirDatabase, def: DefWithBodyId) -> Arc<InferenceRes
         }
         DefWithBodyId::GlobalConstant(constant) => {
             ctx.collect_global_constant(constant, &db.global_constant_data(constant))
+        }
+        DefWithBodyId::Override(override_decl) => {
+            ctx.collect_override(override_decl, &db.override_data(override_decl))
         }
     }
 
@@ -108,6 +111,7 @@ pub enum TypeContainer {
     Expr(ExprId),
     GlobalVar(GlobalVariableId),
     GlobalConstant(GlobalConstantId),
+    Override(OverrideId),
     TypeAlias(TypeAliasId),
     FunctionParameter(FunctionId, BindingId),
     FunctionReturn(FunctionId),
@@ -216,6 +220,22 @@ impl<'db> InferenceContext<'db> {
 
         self.return_ty = ty;
     }
+    fn collect_override(&mut self, id: OverrideId, constant: &OverrideData) {
+        let ty = constant.ty.map(|ty| {
+            self.lower_ty(
+                TypeContainer::Override(id),
+                &self.db.lookup_intern_type_ref(ty),
+            )
+        });
+
+        if let Some(ty) = ty {
+            if let Some(binding) = self.body.main_binding {
+                self.set_binding_ty(binding, ty);
+            }
+        }
+
+        self.return_ty = ty;
+    }
 
     fn collect_fn(&mut self, function_id: FunctionId, f: &FunctionData) {
         let body = Arc::clone(&self.body);
@@ -262,6 +282,7 @@ impl<'db> InferenceContext<'db> {
             }
             DefWithBodyId::GlobalVariable(_) => resolver,
             DefWithBodyId::GlobalConstant(_) => resolver,
+            DefWithBodyId::Override(_) => resolver,
         }
     }
 
@@ -857,6 +878,11 @@ impl<'db> InferenceContext<'db> {
             hir_def::resolver::ResolveValue::GlobalConstant(loc) => {
                 let id = self.db.intern_global_constant(loc);
                 let result = self.db.infer(DefWithBodyId::GlobalConstant(id));
+                result.return_type.unwrap_or_else(|| self.err_ty())
+            }
+            hir_def::resolver::ResolveValue::Override(loc) => {
+                let id = self.db.intern_override(loc);
+                let result = self.db.infer(DefWithBodyId::Override(id));
                 result.return_type.unwrap_or_else(|| self.err_ty())
             }
         };

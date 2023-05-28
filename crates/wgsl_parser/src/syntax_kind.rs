@@ -107,6 +107,8 @@ pub enum SyntaxKind {
     GlobalVariableDecl,
     /// let global: u32 = 10u
     GlobalConstantDecl,
+    /// override gain: f32;
+    OverrideDecl,
     /// continuing { stmts }
     ContinuingStatement,
     /// Type alias declaration: type float4 = vec4<f32>
@@ -293,6 +295,8 @@ pub enum SyntaxKind {
     Let,
     #[token("loop")]
     Loop,
+    #[token("override")]
+    Override,
     #[token("private")]
     Private,
     #[token("read")]

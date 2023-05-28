@@ -51,6 +51,20 @@ pub fn lower_global_constant_decl(
     .collect_global_constant_decl(decl)
 }
 
+pub fn lower_override_decl(
+    db: &dyn DefDatabase,
+    file_id: HirFileId,
+    decl: ast::OverrideDecl,
+) -> (Body, BodySourceMap) {
+    Collector {
+        db,
+        body: Body::default(),
+        source_map: BodySourceMap::default(),
+        file_id,
+    }
+    .collect_override_decl(decl)
+}
+
 struct Collector<'a> {
     db: &'a dyn DefDatabase,
     body: Body,
@@ -123,6 +137,16 @@ impl<'a> Collector<'a> {
         mut self,
         decl: ast::GlobalConstantDecl,
     ) -> (Body, BodySourceMap) {
+        self.body.root = decl
+            .init()
+            .map(|expr| self.collect_expr(expr))
+            .map(Either::Right);
+
+        self.body.main_binding = decl.binding().map(|binding| self.collect_binding(binding));
+
+        (self.body, self.source_map)
+    }
+    fn collect_override_decl(mut self, decl: ast::OverrideDecl) -> (Body, BodySourceMap) {
         self.body.root = decl
             .init()
             .map(|expr| self.collect_expr(expr))

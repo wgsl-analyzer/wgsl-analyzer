@@ -12,11 +12,14 @@ use crate::{
     attrs::{Attr, AttrDefId, AttrsWithOwner},
     body::scope::ExprScopes,
     body::{Body, BodySourceMap},
-    data::{FunctionData, GlobalConstantData, GlobalVariableData, StructData, TypeAliasData},
+    data::{
+        FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, StructData,
+        TypeAliasData,
+    },
     hir_file_id::{HirFileIdRepr, ImportFile},
     module_data::{
-        Function, GlobalConstant, GlobalVariable, Import, ModuleInfo, ModuleItemId, Struct,
-        TypeAlias,
+        Function, GlobalConstant, GlobalVariable, Import, ModuleInfo, ModuleItemId, Override,
+        Struct, TypeAlias,
     },
     resolver::Resolver,
     type_ref::TypeRef,
@@ -59,6 +62,9 @@ pub trait DefDatabase: InternDatabase + Upcast<dyn SourceDatabase> {
 
     #[salsa::invoke(GlobalConstantData::global_constant_data_query)]
     fn global_constant_data(&self, def: GlobalConstantId) -> Arc<GlobalConstantData>;
+
+    #[salsa::invoke(OverrideData::override_data_query)]
+    fn override_data(&self, def: OverrideId) -> Arc<OverrideData>;
 
     #[salsa::invoke(AttrsWithOwner::attrs_query)]
     fn attrs(&self, def: AttrDefId) -> Arc<AttrsWithOwner>;
@@ -199,6 +205,8 @@ pub trait InternDatabase: SourceDatabase {
     #[salsa::interned]
     fn intern_global_constant(&self, loc: Location<GlobalConstant>) -> GlobalConstantId;
     #[salsa::interned]
+    fn intern_override(&self, loc: Location<Override>) -> OverrideId;
+    #[salsa::interned]
     fn intern_struct(&self, loc: Location<Struct>) -> StructId;
     #[salsa::interned]
     fn intern_import(&self, loc: Location<Import>) -> ImportId;
@@ -280,6 +288,7 @@ intern_id!(
     Location<GlobalConstant>,
     lookup_intern_global_constant
 );
+intern_id!(OverrideId, Location<Override>, lookup_intern_override);
 intern_id!(StructId, Location<Struct>, lookup_intern_struct);
 intern_id!(ImportId, Location<Import>, lookup_intern_import);
 intern_id!(TypeAliasId, Location<TypeAlias>, lookup_intern_type_alias);
@@ -289,6 +298,7 @@ pub enum DefWithBodyId {
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),
     GlobalConstant(GlobalConstantId),
+    Override(OverrideId),
 }
 impl DefWithBodyId {
     pub fn file_id(&self, db: &dyn DefDatabase) -> HirFileId {
@@ -296,6 +306,7 @@ impl DefWithBodyId {
             DefWithBodyId::Function(id) => id.lookup(db).file_id,
             DefWithBodyId::GlobalVariable(id) => id.lookup(db).file_id,
             DefWithBodyId::GlobalConstant(id) => id.lookup(db).file_id,
+            DefWithBodyId::Override(id) => id.lookup(db).file_id,
         }
     }
     pub fn resolver(&self, db: &dyn DefDatabase) -> Resolver {

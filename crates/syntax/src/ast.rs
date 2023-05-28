@@ -291,6 +291,13 @@ ast_node!(GlobalConstantDecl:
     ty: Option<Type>;
     init: Option<Expr>;
 );
+impl HasAttrs for OverrideDecl {}
+ast_node!(OverrideDecl:
+    binding: Option<Binding>;
+    variable_qualifier: Option<VariableQualifier>;
+    ty: Option<Type>;
+    init: Option<Expr>;
+);
 
 ast_node!(TypeAliasDecl:
     alias_token: Option<SyntaxToken Alias>;
@@ -305,6 +312,7 @@ ast_enum! {
         StructDecl,
         GlobalVariableDecl,
         GlobalConstantDecl,
+        OverrideDecl,
         Import,
         TypeAliasDecl,
     }

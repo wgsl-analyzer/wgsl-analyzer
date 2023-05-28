@@ -73,6 +73,14 @@ fn write_pretty_module_item(
                 let _ = write!(f, ": {}", ty);
             }
         }
+        ModuleItem::Override(var) => {
+            let override_decl = &module.data[var.index];
+            let ty = override_decl.ty.map(|ty| db.lookup_intern_type_ref(ty));
+            let _ = write!(f, "override {}", &override_decl.name.0);
+            if let Some(ty) = ty {
+                let _ = write!(f, ": {}", ty);
+            }
+        }
         ModuleItem::Import(import) => {
             let import = &module.data[import.index];
             let _ = match &import.value {

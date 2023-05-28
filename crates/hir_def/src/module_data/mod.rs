@@ -86,6 +86,14 @@ pub struct GlobalConstant {
     pub ty: Option<Interned<TypeRef>>,
     pub ast_id: FileAstId<ast::GlobalConstantDecl>,
 }
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Override {
+    pub name: Name,
+    pub ty: Option<Interned<TypeRef>>,
+    pub ast_id: FileAstId<ast::OverrideDecl>,
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TypeAlias {
     pub name: Name,
@@ -132,6 +140,7 @@ pub struct ModuleData {
     params: Arena<Param>,
     global_variables: Arena<GlobalVariable>,
     global_constants: Arena<GlobalConstant>,
+    overrides: Arena<Override>,
     type_aliases: Arena<TypeAlias>,
     structs: Arena<Struct>,
     pub(crate) fields: Arena<Field>,
@@ -290,6 +299,7 @@ mod_items! {
     Struct in structs -> ast::StructDecl,
     GlobalVariable in global_variables -> ast::GlobalVariableDecl,
     GlobalConstant in global_constants -> ast::GlobalConstantDecl,
+    Override in overrides -> ast::OverrideDecl,
     Import in imports -> ast::Import,
     TypeAlias in type_aliases -> ast::TypeAliasDecl,
 }

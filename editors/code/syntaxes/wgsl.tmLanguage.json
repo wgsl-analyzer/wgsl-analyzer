@@ -236,7 +236,7 @@
                 {
                     "comment": "other keywords",
                     "name": "keyword.control.wgsl",
-                    "match": "\\b(bitcast|block|break|case|continue|continuing|default|discard|else|elseif|enable|fallthrough|for|function|if|loop|private|read|read_write|return|storage|switch|uniform|while|workgroup|write)\\b"
+                    "match": "\\b(bitcast|block|break|case|continue|continuing|default|discard|else|elseif|enable|fallthrough|for|function|if|loop|override|private|read|read_write|return|storage|switch|uniform|while|workgroup|write)\\b"
                 },
                 {
                     "comment": "reserved keywords",

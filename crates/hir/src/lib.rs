@@ -12,7 +12,7 @@ use hir_def::{
     data::FieldId,
     db::{
         DefDatabase, DefWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, ImportId,
-        Location, Lookup, StructId, TypeAliasId,
+        Location, Lookup, OverrideId, StructId, TypeAliasId,
     },
     expr::{ExprId, StatementId},
     hir_file_id::ImportFile,
@@ -112,6 +112,10 @@ impl<'db> Semantics<'db> {
                 let id = self.db.intern_global_constant(loc);
                 Definition::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id }))
             }
+            ResolveValue::Override(loc) => {
+                let id = self.db.intern_override(loc);
+                Definition::ModuleDef(ModuleDef::Override(Override { id }))
+            }
         };
 
         Some(def)
@@ -183,6 +187,11 @@ fn module_item_to_def(
             let loc = Location::new(file_id, constant);
             let id = db.intern_global_constant(loc);
             ModuleDef::GlobalConstant(GlobalConstant { id })
+        }
+        ModuleItem::Override(constant) => {
+            let loc = Location::new(file_id, constant);
+            let id = db.intern_override(loc);
+            ModuleDef::Override(Override { id })
         }
         ModuleItem::Import(import) => {
             let loc = Location::new(file_id, import);
@@ -340,7 +349,6 @@ impl HasSource for GlobalVariable {
 pub struct GlobalConstant {
     id: GlobalConstantId,
 }
-
 impl HasSource for GlobalConstant {
     type Ast = ast::GlobalConstantDecl;
 
@@ -348,6 +356,19 @@ impl HasSource for GlobalConstant {
         Some(self.id.lookup(db).source(db))
     }
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
+pub struct Override {
+    id: OverrideId,
+}
+impl HasSource for Override {
+    type Ast = ast::OverrideDecl;
+
+    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+        Some(self.id.lookup(db).source(db))
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub struct Struct {
     id: StructId,
@@ -402,6 +423,7 @@ pub enum ModuleDef {
     Function(Function),
     GlobalVariable(GlobalVariable),
     GlobalConstant(GlobalConstant),
+    Override(Override),
     Struct(Struct),
     TypeAlias(TypeAlias),
 }
@@ -412,6 +434,7 @@ impl ModuleDef {
             ModuleDef::Function(function) => Some(DefWithBodyId::Function(function.id)),
             ModuleDef::GlobalVariable(var) => Some(DefWithBodyId::GlobalVariable(var.id)),
             ModuleDef::GlobalConstant(constant) => Some(DefWithBodyId::GlobalConstant(constant.id)),
+            ModuleDef::Override(override_decl) => Some(DefWithBodyId::Override(override_decl.id)),
             ModuleDef::Struct(_) => None,
             ModuleDef::TypeAlias(_) => None, // TODO: ?
         }
@@ -481,6 +504,7 @@ impl Module {
                     });
                 }
                 ModuleDef::GlobalConstant(_constant) => {}
+                ModuleDef::Override(_constant) => {}
                 ModuleDef::Struct(_strukt) => {}
                 ModuleDef::TypeAlias(_type_alias) => {}
             }

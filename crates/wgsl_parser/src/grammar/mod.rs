@@ -21,8 +21,12 @@ pub fn file(p: &mut Parser) {
     m.complete(p, SyntaxKind::SourceFile);
 }
 
-const ITEM_RECOVERY_SET: &[SyntaxKind] =
-    &[SyntaxKind::Fn, SyntaxKind::Struct, SyntaxKind::AttrLeft];
+const ITEM_RECOVERY_SET: &[SyntaxKind] = &[
+    SyntaxKind::Fn,
+    SyntaxKind::Struct,
+    SyntaxKind::AttrLeft,
+    SyntaxKind::Override,
+];
 
 fn item(p: &mut Parser) {
     let m = p.start();
@@ -41,6 +45,8 @@ fn item(p: &mut Parser) {
         global_constant_decl(p, m, SyntaxKind::Const);
     } else if p.at(SyntaxKind::Alias) || p.at(SyntaxKind::Type) {
         type_alias_decl(p, m);
+    } else if p.at(SyntaxKind::Override) {
+        override_decl(p, m);
     } else {
         p.error_expected(&[
             SyntaxKind::Fn,
@@ -49,6 +55,7 @@ fn item(p: &mut Parser) {
             SyntaxKind::Let,
             SyntaxKind::Const,
             SyntaxKind::Alias,
+            SyntaxKind::Override,
         ]);
         m.complete(p, SyntaxKind::Error);
     }
@@ -70,6 +77,10 @@ fn import(p: &mut Parser, m: Marker) {
     }
 
     m.complete(p, SyntaxKind::Import);
+}
+
+fn override_decl(p: &mut Parser, m: Marker) {
+    global_decl(p, m, SyntaxKind::Override, SyntaxKind::OverrideDecl);
 }
 
 fn global_variable_decl(p: &mut Parser, m: Marker) {

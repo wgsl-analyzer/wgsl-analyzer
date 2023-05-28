@@ -4,8 +4,8 @@ use la_arena::{Arena, Idx};
 
 use crate::{
     db::{
-        DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Interned, Lookup, StructId,
-        TypeAliasId,
+        DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Interned, Lookup, OverrideId,
+        StructId, TypeAliasId,
     },
     module_data::Name,
     type_ref::{AccessMode, StorageClass, TypeRef},
@@ -152,6 +152,27 @@ impl GlobalConstantData {
         let constant = &module_info.data[loc.value.index];
 
         Arc::new(GlobalConstantData {
+            name: constant.name.clone(),
+            ty: constant.ty,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OverrideData {
+    pub name: Name,
+    pub ty: Option<Interned<TypeRef>>,
+}
+impl OverrideData {
+    pub fn override_data_query(
+        db: &dyn DefDatabase,
+        override_decl: OverrideId,
+    ) -> Arc<OverrideData> {
+        let loc = db.lookup_intern_override(override_decl);
+        let module_info = db.module_info(loc.file_id);
+        let constant = &module_info.data[loc.value.index];
+
+        Arc::new(OverrideData {
             name: constant.name.clone(),
             ty: constant.ty,
         })

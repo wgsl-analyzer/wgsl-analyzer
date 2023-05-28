@@ -119,6 +119,17 @@ impl ToNav for InFile<Definition> {
 
                     NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
                 }
+                hir::ModuleDef::Override(override_decl) => {
+                    let decl = override_decl.source(db)?;
+
+                    let frange = decl.original_file_range(db);
+                    let focus_range = decl
+                        .value
+                        .binding()
+                        .map(|name| decl.with_value(name).original_file_range(db).range);
+
+                    NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
+                }
                 hir::ModuleDef::Struct(strukt) => {
                     let decl = strukt.source(db)?;
 

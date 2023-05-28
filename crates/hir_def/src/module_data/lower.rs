@@ -6,7 +6,9 @@ use std::sync::Arc;
 use syntax::ast::{self, Item, SourceFile};
 use syntax::{AstNode, HasName};
 
-use super::{Field, GlobalConstant, GlobalVariable, Import, ImportValue, Name, Struct, TypeAlias};
+use super::{
+    Field, GlobalConstant, GlobalVariable, Import, ImportValue, Name, Override, Struct, TypeAlias,
+};
 
 pub(crate) struct Ctx<'a> {
     db: &'a dyn DefDatabase,
@@ -39,6 +41,9 @@ impl<'a> Ctx<'a> {
             }
             Item::GlobalConstantDecl(constant) => {
                 ModuleItem::GlobalConstant(self.lower_global_constant(&constant)?)
+            }
+            Item::OverrideDecl(override_decl) => {
+                ModuleItem::Override(self.lower_override(&override_decl)?)
             }
             Item::Import(import) => ModuleItem::Import(self.lower_import(&import)?),
             Item::TypeAliasDecl(type_alias) => {
@@ -84,6 +89,22 @@ impl<'a> Ctx<'a> {
                 .alloc(TypeAlias { name, ast_id, ty })
                 .into(),
         )
+    }
+
+    fn lower_override(
+        &mut self,
+        override_decl: &syntax::ast::OverrideDecl,
+    ) -> Option<ModuleItemId<Override>> {
+        let name = override_decl.binding()?.name()?.text().into();
+        let ast_id = self.source_ast_id_map.ast_id(override_decl);
+
+        let ty = override_decl
+            .ty()
+            .map(|type_decl| self.lower_type_ref(type_decl).unwrap_or(TypeRef::Error))
+            .map(|ty| self.db.intern_type_ref(ty));
+
+        let override_decl = Override { name, ty, ast_id };
+        Some(self.module_data.overrides.alloc(override_decl).into())
     }
 
     fn lower_global_constant(

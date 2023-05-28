@@ -16,7 +16,7 @@ use syntax::{
     AstNode,
 };
 
-use crate::{Function, GlobalConstant, GlobalVariable, HasSource, TypeAlias};
+use crate::{Function, GlobalConstant, GlobalVariable, HasSource, Override, TypeAlias};
 
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
 
@@ -293,6 +293,10 @@ pub(crate) fn any_diag_from_infer_diag(
                 }
                 hir_ty::infer::TypeContainer::GlobalConstant(id) => {
                     let source = GlobalConstant { id }.source(db.upcast())?;
+                    SyntaxNodePtr::new(source.value.ty()?.syntax())
+                }
+                hir_ty::infer::TypeContainer::Override(id) => {
+                    let source = Override { id }.source(db.upcast())?;
                     SyntaxNodePtr::new(source.value.ty()?.syntax())
                 }
                 hir_ty::infer::TypeContainer::FunctionParameter(_, binding) => {
