@@ -110,6 +110,12 @@ fn global_decl(p: &mut Parser, m: Marker, var_kind: SyntaxKind, kind: SyntaxKind
 
     if p.at(SyntaxKind::Equal) {
         p.expect(SyntaxKind::Equal);
+
+        if p.at_set(ITEM_RECOVERY_SET) {
+            m.complete(p, kind);
+            return;
+        }
+
         // const expr
         expr(p);
     }
