@@ -83,3 +83,15 @@ Copy the server binary (either `wgsl_analyzer` or `wgsl_analyzer.exe`) into `./e
 
 The design is heavily inspired (and in large parts copied from) [rust-analyzer](https://github.com/rust-analyzer/rust-analyzer).
 See [rust-analyzer/docs/dev/architecture.md](https://github.com/rust-analyzer/rust-analyzer/blob/master/docs/dev/architecture.md) for a summary of the architecture.
+
+
+## Development
+
+### Release process
+
+The extension gets automatically packaged and released to the marketplace in CI.
+
+1. update version in `package.json`
+2. run `./tools/update_version.sh`
+3. commit and tag with `vx.y.z`
+4. `git push && git push --tags`
