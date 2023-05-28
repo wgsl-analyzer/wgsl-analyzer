@@ -99,6 +99,10 @@ trunc(f32) -> f32
 trunc(vecN<f32>) -> vecN<f32>
 fma(f32, f32, f32) -> f32
 fma(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
+radians(f32) -> f32
+radians(vecN<f32>) -> vecN<f32>
+degrees(f32) -> f32
+degrees(vecN<f32>) -> vecN<f32>
 
 // integer
 abs(i32) -> i32
