@@ -133,7 +133,7 @@ pub enum SyntaxKind {
     #[regex("//.*")]
     Comment,
 
-    #[regex("[a-zA-Z][0-9a-zA-Z_]*")]
+    #[regex(r#"([_\p{XID_Start}]\p{XID_Continue}*)|(\p{XID_Start})"#)]
     Ident,
 
     // literals

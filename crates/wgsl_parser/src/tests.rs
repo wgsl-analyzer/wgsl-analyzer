@@ -1773,6 +1773,67 @@ fn let_stmt_recover_3() {
 }
 
 #[test]
+fn struct_underscore_field_name() {
+    check(
+        r#"
+struct UBO {
+  camera_position: vec3f,
+  _pad: u32
+  time: f32,
+};
+"#,
+        expect![[r#"
+            SourceFile@0..68
+              Whitespace@0..1 "\n"
+              StructDecl@1..68
+                Struct@1..7 "struct"
+                Whitespace@7..8 " "
+                Name@8..12
+                  Ident@8..11 "UBO"
+                  Whitespace@11..12 " "
+                StructDeclBody@12..66
+                  BraceLeft@12..13 "{"
+                  Whitespace@13..16 "\n  "
+                  StructDeclField@16..42
+                    VariableIdentDecl@16..38
+                      Binding@16..31
+                        Name@16..31
+                          Ident@16..31 "camera_position"
+                      Colon@31..32 ":"
+                      Whitespace@32..33 " "
+                      PathType@33..38
+                        NameRef@33..38
+                          Ident@33..38 "vec3f"
+                    Comma@38..39 ","
+                    Whitespace@39..42 "\n  "
+                  StructDeclField@42..54
+                    VariableIdentDecl@42..54
+                      Binding@42..46
+                        Name@42..46
+                          Ident@42..46 "_pad"
+                      Colon@46..47 ":"
+                      Whitespace@47..48 " "
+                      Uint32@48..54
+                        Uint32@48..51 "u32"
+                        Whitespace@51..54 "\n  "
+                  StructDeclField@54..65
+                    VariableIdentDecl@54..63
+                      Binding@54..58
+                        Name@54..58
+                          Ident@54..58 "time"
+                      Colon@58..59 ":"
+                      Whitespace@59..60 " "
+                      Float32@60..63
+                        Float32@60..63 "f32"
+                    Comma@63..64 ","
+                    Whitespace@64..65 "\n"
+                  BraceRight@65..66 "}"
+                Semicolon@66..67 ";"
+                Whitespace@67..68 "\n""#]],
+    );
+}
+
+#[test]
 fn struct_decl_semi() {
     check(
         r#"
