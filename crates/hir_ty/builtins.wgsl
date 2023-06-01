@@ -160,6 +160,8 @@ transpose(matMxN<T>) -> matNxM<T>
 
 // vector
 dot(vecN<f32>, vecN<f32>) -> f32
+dot(vecN<i32>, vecN<i32>) -> i32
+dot(vecN<u32>, vecN<u32>) -> u32
 
 // derivative
 dpdx(f32) -> f32
