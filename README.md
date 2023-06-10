@@ -63,7 +63,7 @@ au BufNewFile,BufRead *.wgsl set filetype=wgsl
 ```sh
 cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl_analyzer
 ```
-3. Add the following to your init.el
+2. Add the following to your init.el
 ```elisp
 (with-eval-after-load 'lsp-mode
   (add-to-list 'lsp-language-id-configuration '(wgsl-mode . "wgsl"))
