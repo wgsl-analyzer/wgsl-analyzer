@@ -55,6 +55,22 @@ Ensure that $HOME/.cargo/bin is in your $PATH. More Info about $PATH: https://li
 au BufNewFile,BufRead *.wgsl set filetype=wgsl
 ```
 
+### Emacs (using lsp-mode)
+
+ - Assumes you are using wgsl-mode: https://github.com/acowley/wgsl-mode
+
+1. Install the language server 
+```sh
+cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl_analyzer
+```
+3. Add the following to your init.el
+```elisp
+(with-eval-after-load 'lsp-mode
+  (add-to-list 'lsp-language-id-configuration '(wgsl-mode . "wgsl"))
+  (lsp-register-client (make-lsp-client :new-connection (lsp-stdio-connection "wgsl_analyzer")
+                                        :activation-fn (lsp-activate-on "wgsl")
+                                        :server-id 'wgsl_analyzer)))
+```
 
 ## Configuration
 
