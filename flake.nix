@@ -20,8 +20,10 @@
         packages.default = builder.buildPackage {
           name = "wgsl-analyzer";
           src = ./.;
-          cargoBuildOptions = opts: ["-p" "wgsl_analyzer"] ++ opts;
+          cargoBuildOptions = opts: [ "-p" "wgsl_analyzer" ] ++ opts;
         };
+        overlays.default = (self: super: { wgsl-analyzer = packages.default; });
+
         apps.default = packages.default;
         devShell =
           pkgs.mkShell { packages = with pkgs; [ rust-analyzer rust ]; };
