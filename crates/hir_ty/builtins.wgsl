@@ -364,7 +364,7 @@ unpack2x16float(u32) -> vec2<f32>
 // synchronization
 storageBarrier()
 workgroupBarrier()
-
+workgroupUniformLoad(ptr<T>) -> T
 
 // TODO: T should only match i32, f32, u32 in a lot of ops
 
