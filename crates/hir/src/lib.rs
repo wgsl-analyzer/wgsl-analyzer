@@ -15,7 +15,7 @@ use hir_def::{
         Location, Lookup, OverrideId, StructId, TypeAliasId,
     },
     expr::{ExprId, StatementId},
-    hir_file_id::ImportFile,
+    hir_file_id::{relative_file, ImportFile},
     module_data::{self, ImportValue, ModuleInfo, ModuleItem, Name},
     resolver::{ResolveValue, Resolver},
     InFile,
@@ -198,13 +198,18 @@ fn module_item_to_def(
             let import_id = db.intern_import(loc);
 
             let import_file = HirFileId::from(ImportFile { import_id });
-
-            let module_info = db.module_info(import_file);
-            return module_info
-                .items()
-                .iter()
-                .flat_map(|item| module_item_to_def(db, import_file, item))
-                .collect();
+            match import_file.original_file(db.upcast()) {
+                Some(original_file) => {
+                    let original_file = original_file.into();
+                    let module_info = db.module_info(original_file);
+                    return module_info
+                        .items()
+                        .iter()
+                        .flat_map(|item| module_item_to_def(db, original_file, item))
+                        .collect();
+                }
+                _ => return smallvec::smallvec![],
+            }
         }
         ModuleItem::TypeAlias(type_alias) => {
             let loc = Location::new(file_id, type_alias);
@@ -545,7 +550,15 @@ impl Module {
 pub struct Import {
     id: ImportId,
 }
+
 impl Import {
+    pub fn is_path(&self, db: &dyn HirDatabase) -> bool {
+        let import_loc = self.id.lookup(db.upcast());
+        let module_info = db.module_info(import_loc.file_id);
+        let import = module_info.get(import_loc.value);
+        matches!(import.value, ImportValue::Path(_))
+    }
+
     pub fn file_text(&self, db: &dyn HirDatabase) -> Option<String> {
         let import_loc = self.id.lookup(db.upcast());
 
@@ -553,7 +566,10 @@ impl Import {
         let import = module_info.get(import_loc.value);
 
         match &import.value {
-            ImportValue::Path(_) => None, // TODO: path imports
+            ImportValue::Path(path) => {
+                let file_id = relative_file(db.upcast(), import_loc.file_id, path)?;
+                Some(db.file_text(file_id).to_string())
+            }
             ImportValue::Custom(key) => {
                 let imports = db.custom_imports();
                 let source = imports.get(key)?;
@@ -570,7 +586,10 @@ impl Import {
         let import = module_info.get(import_loc.value);
 
         match &import.value {
-            ImportValue::Path(_) => Err(()),
+            ImportValue::Path(path) => {
+                relative_file(db.upcast(), import_loc.file_id, path).ok_or(())?;
+                Ok(())
+            }
             ImportValue::Custom(key) => {
                 let imports = db.custom_imports();
                 if imports.contains_key(key) {

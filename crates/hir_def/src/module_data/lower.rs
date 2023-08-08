@@ -1,3 +1,4 @@
+use crate::hir_file_id::relative_file;
 use crate::module_data::{Function, ModuleData, ModuleItem, ModuleItemId, Param};
 use crate::HirFileId;
 use crate::{ast_id::AstIdMap, db::DefDatabase, type_ref::TypeRef};
@@ -12,6 +13,7 @@ use super::{
 
 pub(crate) struct Ctx<'a> {
     db: &'a dyn DefDatabase,
+    file_id: HirFileId,
     source_ast_id_map: Arc<AstIdMap>,
     pub module_data: ModuleData,
     pub items: Vec<ModuleItem>,
@@ -21,6 +23,7 @@ impl<'a> Ctx<'a> {
     pub(crate) fn new(db: &'a dyn DefDatabase, file_id: HirFileId) -> Self {
         Self {
             db,
+            file_id,
             source_ast_id_map: db.ast_id_map(file_id),
             module_data: ModuleData::default(),
             items: vec![],
@@ -59,7 +62,13 @@ impl<'a> Ctx<'a> {
 
         let value = match import.import()? {
             ast::ImportKind::ImportPath(path) => {
-                ImportValue::Path(path.string_literal()?.text().to_string())
+                let import_path = path
+                    .string_literal()?
+                    .text()
+                    .chars()
+                    .filter(|&c| c != '"')
+                    .collect();
+                ImportValue::Path(import_path)
             }
             ast::ImportKind::ImportCustom(custom) => ImportValue::Custom(custom.key()),
         };
@@ -226,7 +235,10 @@ impl<'a> Ctx<'a> {
                 let import = self.lower_import(&import)?;
                 let import = &self.module_data.imports[import.index];
                 let parse = match &import.value {
-                    crate::module_data::ImportValue::Path(_) => Err(()), // TODO: path imports
+                    crate::module_data::ImportValue::Path(path) => {
+                        let file_id = relative_file(self.db, self.file_id, path)?;
+                        Ok(self.db.parse(file_id))
+                    }
                     crate::module_data::ImportValue::Custom(key) => self
                         .db
                         .parse_import(key.clone(), syntax::ParseEntryPoint::FnParamList),

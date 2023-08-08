@@ -1,6 +1,10 @@
 use base_db::FileId;
+use vfs::AnchoredPath;
 
-use crate::db::ImportId;
+use crate::{
+    db::{DefDatabase, ImportId},
+    module_data::ImportValue,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct HirFileId(pub(crate) HirFileIdRepr);
@@ -21,7 +25,45 @@ impl From<ImportFile> for HirFileId {
     }
 }
 
+impl HirFileId {
+    /// For import files, returns the file id of the file that needs to be imported
+    /// or `None` if that file has not been opened yet
+    pub fn original_file(self, db: &dyn DefDatabase) -> Option<FileId> {
+        loop {
+            match self.0 {
+                HirFileIdRepr::FileId(id) => break Some(id),
+                HirFileIdRepr::MacroFile(ImportFile { import_id }) => {
+                    let import_loc = db.lookup_intern_import(import_id);
+                    let module_info = db.module_info(import_loc.file_id);
+                    let import = module_info.get(import_loc.value);
+
+                    match &import.value {
+                        ImportValue::Path(path) => {
+                            return relative_file(db, import_loc.file_id, path)
+                        }
+                        _ => unimplemented!(),
+                    }
+                }
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ImportFile {
     pub import_id: ImportId,
+}
+
+pub fn relative_file(db: &dyn DefDatabase, call_id: HirFileId, path_str: &str) -> Option<FileId> {
+    let call_site = call_id.original_file(db)?;
+    let path = AnchoredPath {
+        anchor: call_site,
+        path: path_str,
+    };
+    match db.resolve_path(path) {
+        // Prevent including itself
+        Some(res) if res != call_site => Some(res),
+        // Possibly file not imported yet
+        _ => None,
+    }
 }

@@ -213,6 +213,7 @@ dependencies = [
  "smallvec",
  "syntax",
  "tracing",
+ "vfs",
 ]
 
 [[package]]
@@ -229,6 +230,7 @@ dependencies = [
  "smol_str",
  "syntax",
  "tracing",
+ "vfs",
 ]
 
 [[package]]
@@ -256,7 +258,7 @@ dependencies = [
  "hir_ty",
  "ide_completion",
  "itertools",
- "lsp-types",
+ "lsp-types 0.93.2",
  "naga 0.10.0",
  "naga 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "naga 0.11.0 (git+https://github.com/gfx-rs/naga?rev=b9c5cb5a7841a8728137a58840fbbdbb9b310267)",
@@ -412,6 +414,19 @@ name = "lsp-types"
 version = "0.93.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9be6e9c7e2d18f651974370d7aff703f9513e0df6e464fd795660edc77e6ca51"
+dependencies = [
+ "bitflags",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "url",
+]
+
+[[package]]
+name = "lsp-types"
+version = "0.94.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b63735a13a1f9cd4f4835223d828ed9c2e35c8c5e61837774399f558b6a1237"
 dependencies = [
  "bitflags",
  "serde",
@@ -1066,7 +1081,7 @@ dependencies = [
  "ide_completion",
  "itertools",
  "lsp-server",
- "lsp-types",
+ "lsp-types 0.94.0",
  "parking_lot 0.12.1",
  "paths",
  "rustc-hash",

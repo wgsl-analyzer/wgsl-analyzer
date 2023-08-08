@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use hir_ty::ty::pretty::TypeVerbosity;
 use ide::inlay_hints::StructLayoutHints;
+use paths::AbsPathBuf;
 use serde::Deserialize;
 
 use crate::line_index::OffsetEncoding;
@@ -35,14 +36,29 @@ impl Default for InlayHintsTypeVerbosity {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct Config {
+    pub root_path: AbsPathBuf,
+    pub data: ConfigData,
+}
+
 #[derive(Default, Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Config {
+pub struct ConfigData {
     pub custom_imports: HashMap<String, String>,
     pub shader_defs: HashSet<String>,
     pub trace: TraceConfig,
     pub inlay_hints: InlayHintsConfig,
     pub diagnostics: DiagnosticsConfig,
+}
+
+impl Config {
+    pub fn new(root_path: AbsPathBuf) -> Self {
+        Self {
+            root_path,
+            data: ConfigData::default(),
+        }
+    }
 }
 
 #[derive(Default, Clone, Debug, Deserialize)]
@@ -70,7 +86,7 @@ impl Default for NagaVersion {
     }
 }
 
-impl Config {
+impl ConfigData {
     fn try_update(&mut self, value: serde_json::Value) -> Result<(), serde_json::Error> {
         *self = serde_json::from_value(value)?;
         Ok(())

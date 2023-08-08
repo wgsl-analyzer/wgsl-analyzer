@@ -97,8 +97,9 @@ impl Resolver {
                 let import_id = db.intern_import(loc);
                 let import_file = HirFileId::from(ImportFile { import_id });
                 let module_info = db.module_info(import_file);
+                let original_file = import_file.original_file(db).unwrap().into();
 
-                self = self.push_module_scope(db, import_file, module_info);
+                self = self.push_module_scope(db, original_file, module_info);
             }
         }
 

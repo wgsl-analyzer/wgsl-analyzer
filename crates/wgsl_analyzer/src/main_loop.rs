@@ -1,15 +1,20 @@
 use crate::config::Config;
 use crate::dispatch::NotificationDispatcher;
 use crate::global_state::file_id_to_url;
-use crate::lsp_utils::is_cancelled;
+use crate::lsp_utils::{is_cancelled, Progress};
+use crate::reload::ProjectWorkspaceProgress;
 use crate::{dispatch::RequestDispatcher, global_state::GlobalState};
-use crate::{handlers, lsp_ext, Result};
+use crate::{from_proto, handlers, lsp_ext, Result};
 use base_db::SourceDatabase;
 use crossbeam_channel::{select, Receiver};
+use hir_def::db::DefDatabase;
+use hir_def::module_data::{ImportValue, ModuleItem};
+use hir_def::HirFileId;
 use lsp_server::Connection;
 use salsa::Durability;
 use std::sync::Arc;
 use std::time::Instant;
+use tracing::info;
 use vfs::FileId;
 
 pub fn main_loop(config: Config, connection: Connection) -> Result<()> {
@@ -25,10 +30,13 @@ pub enum Event {
 pub enum Task {
     Response(lsp_server::Response),
     Diagnostics(Vec<(FileId, Vec<lsp_types::Diagnostic>)>),
+    FetchWorkspace(ProjectWorkspaceProgress),
 }
 
 impl GlobalState {
     fn run(mut self, receiver: Receiver<lsp_server::Message>) -> Result<()> {
+        self.fetch_workspaces();
+
         while let Some(event) = self.next_event(&receiver) {
             self.handle_event(event)?;
         }
@@ -64,6 +72,18 @@ impl GlobalState {
                             .set_native_diagnostics(file_id, diagnostics)
                     }
                 }
+                Task::FetchWorkspace(progress) => {
+                    let (state, msg) = match progress {
+                        ProjectWorkspaceProgress::Begin => (Progress::Begin, None),
+                        ProjectWorkspaceProgress::Report(msg) => (Progress::Report, Some(msg)),
+                        ProjectWorkspaceProgress::End(_) => {
+                            self.switch_workspaces();
+                            (Progress::End, None)
+                        }
+                    };
+
+                    self.report_progress("Fetching", state, msg, None);
+                }
             },
         }
 
@@ -72,7 +92,42 @@ impl GlobalState {
             self.update_diagnostics();
         }
 
-        if let Some(diagnostic_changes) = self.diagnostics.take_changes() {
+        let changes = self.diagnostics.take_changes();
+
+        if state_changed {
+            // Update import paths?
+            if let Some(changes) = changes.as_ref() {
+                for file_id in changes {
+                    let module = self
+                        .analysis_host
+                        .raw_database()
+                        .module_info(HirFileId::from(*file_id));
+                    for item in module.items() {
+                        if let ModuleItem::Import(import) = item {
+                            let import = module.get(*import);
+                            if let ImportValue::Path(path) = &import.value {
+                                let parent_path = self
+                                    .analysis_host
+                                    .raw_database()
+                                    .file_path(*file_id)
+                                    .parent()
+                                    .unwrap();
+                                let import_path = parent_path.join(path).unwrap();
+
+                                let params =
+                                    lsp_ext::import_text_document::ImportTextDocumentParams {
+                                        uri: import_path.to_string(),
+                                    };
+
+                                self.send_request::<lsp_ext::ImportTextDocument>(params, |_, _| {});
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if let Some(diagnostic_changes) = changes {
             for file_id in diagnostic_changes {
                 let url = file_id_to_url(&self.vfs.read().unwrap().0, file_id);
                 let diagnostics = self.diagnostics.diagnostics_for(file_id).cloned().collect();
@@ -104,7 +159,7 @@ impl GlobalState {
             .map(|(file_id, _)| file_id)
             .collect();
 
-        let diagnostics_config = self.config.diagnostics();
+        let diagnostics_config = self.config.data.diagnostics();
 
         self.task_pool.handle.spawn(move || {
             let diagnostics = relevant_files
@@ -183,7 +238,7 @@ impl GlobalState {
                             // Note that json can be null according to the spec if the client can't
                             // provide a configuration. This is handled in Config::update below.
                             let mut config = Config::clone(&*this.config);
-                            config.update(configs);
+                            config.data.update(configs);
                             this.update_configuration(config);
                         }
                         (None, None) => tracing::error!(
@@ -193,6 +248,15 @@ impl GlobalState {
                 });
                 Ok(())
             })?
+            .on::<lsp_types::notification::DidChangeWatchedFiles>(|_, params| {
+                for change in params.changes {
+                    if let Ok(path) = from_proto::abs_path(&change.uri) {
+                        info!("Changed {}", path.display());
+                        //this.loader.handle.invalidate(path);
+                    }
+                }
+                Ok(())
+            })?
             .finish();
         Ok(())
     }
@@ -200,20 +264,20 @@ impl GlobalState {
     pub fn update_configuration(&mut self, config: Config) {
         let old_config = std::mem::replace(&mut self.config, Arc::new(config));
 
-        if old_config.custom_imports != self.config.custom_imports {
+        if old_config.data.custom_imports != self.config.data.custom_imports {
             self.analysis_host
                 .raw_database_mut()
                 .set_custom_imports_with_durability(
-                    Arc::new(self.config.custom_imports.clone()),
+                    Arc::new(self.config.data.custom_imports.clone()),
                     Durability::HIGH,
                 );
         }
 
-        if old_config.shader_defs != self.config.shader_defs {
+        if old_config.data.shader_defs != self.config.data.shader_defs {
             self.analysis_host
                 .raw_database_mut()
                 .set_shader_defs_with_durability(
-                    Arc::new(self.config.shader_defs.clone()),
+                    Arc::new(self.config.data.shader_defs.clone()),
                     Durability::HIGH,
                 );
         }

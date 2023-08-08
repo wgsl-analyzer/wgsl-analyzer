@@ -1,10 +1,13 @@
+pub mod input;
 mod shader_processor;
 
 pub mod change;
 pub mod line_index;
 
 mod util_types;
+use input::{SourceRoot, SourceRootId};
 pub use util_types::*;
+use vfs::{AnchoredPath, VfsPath};
 
 use std::{
     collections::{HashMap, HashSet},
@@ -19,16 +22,34 @@ pub trait Upcast<T: ?Sized> {
     fn upcast(&self) -> &T;
 }
 
+pub trait FileLoader {
+    fn resolve_path(&self, path: AnchoredPath<'_>) -> Option<FileId>;
+}
+
 #[salsa::query_group(SourceDatabaseStorage)]
-pub trait SourceDatabase {
+pub trait SourceDatabase: FileLoader {
     #[salsa::input]
     fn file_text(&self, file_id: FileId) -> Arc<String>;
+
+    #[salsa::input]
+    fn file_path(&self, file_id: FileId) -> VfsPath;
+
+    #[salsa::input]
+    fn file_id(&self, path: VfsPath) -> FileId;
 
     #[salsa::input]
     fn custom_imports(&self) -> Arc<HashMap<String, String>>;
 
     #[salsa::input]
     fn shader_defs(&self) -> Arc<HashSet<String>>;
+
+    /// Path to a file, relative to the root of its source root.
+    /// Source root of the file.
+    #[salsa::input]
+    fn file_source_root(&self, file_id: FileId) -> SourceRootId;
+    /// Contents of the source root.
+    #[salsa::input]
+    fn source_root(&self, id: SourceRootId) -> Arc<SourceRoot>;
 
     #[salsa::invoke(parse_no_preprocessor_query)]
     fn parse_no_preprocessor(&self, file_id: FileId) -> syntax::Parse;
@@ -116,4 +137,16 @@ fn parse_import_query(
         &processed_source,
         parse_entrypoint,
     ))
+}
+
+/// Silly workaround for cyclic deps between the traits
+pub struct FileLoaderDelegate<T>(pub T);
+
+impl<T: SourceDatabase> FileLoader for FileLoaderDelegate<&'_ T> {
+    fn resolve_path(&self, path: AnchoredPath<'_>) -> Option<FileId> {
+        // FIXME: this *somehow* should be platform agnostic...
+        let source_root = self.0.file_source_root(path.anchor);
+        let source_root = self.0.source_root(source_root);
+        source_root.resolve_path(path)
+    }
 }

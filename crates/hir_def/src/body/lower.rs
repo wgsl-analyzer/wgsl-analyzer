@@ -2,6 +2,7 @@ use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
 use crate::{
     db::DefDatabase,
     expr::{parse_literal, Callee, Expr, ExprId, Statement, StatementId},
+    hir_file_id::relative_file,
     module_data::Name,
     type_ref::{matrix_dimensions, vector_dimensions, TypeRef},
     HirFileId, InFile,
@@ -106,7 +107,11 @@ impl<'a> Collector<'a> {
                                 let import = module_info.get(import_loc.value);
 
                                 match &import.value {
-                                    crate::module_data::ImportValue::Path(_) => None, // TODO: path imports
+                                    crate::module_data::ImportValue::Path(path) => {
+                                        let file_id =
+                                            relative_file(self.db, import_loc.file_id, path)?;
+                                        Some(self.db.parse(file_id))
+                                    }
                                     crate::module_data::ImportValue::Custom(key) => self
                                         .db
                                         .parse_import(

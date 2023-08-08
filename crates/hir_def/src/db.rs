@@ -1,11 +1,12 @@
 use std::{fmt::Debug, marker::PhantomData, sync::Arc};
 
-use base_db::{SourceDatabase, TextRange, TextSize, Upcast};
+use base_db::{FileId, SourceDatabase, TextRange, TextSize, Upcast};
 use salsa::InternKey;
 use syntax::{
     ast::{self, Item},
     AstNode, Parse,
 };
+use vfs::VfsPath;
 
 use crate::{
     ast_id::AstIdMap,
@@ -16,7 +17,7 @@ use crate::{
         FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, StructData,
         TypeAliasData,
     },
-    hir_file_id::{HirFileIdRepr, ImportFile},
+    hir_file_id::{relative_file, HirFileIdRepr, ImportFile},
     module_data::{
         Function, GlobalConstant, GlobalVariable, Import, ModuleInfo, ModuleItemId, Override,
         Struct, TypeAlias,
@@ -29,6 +30,10 @@ use crate::{
 #[salsa::query_group(DefDatabaseStorage)]
 pub trait DefDatabase: InternDatabase + Upcast<dyn SourceDatabase> {
     fn parse_or_resolve(&self, file_id: HirFileId) -> Result<Parse, ()>;
+
+    fn get_path(&self, file_id: HirFileId) -> Result<VfsPath, ()>;
+
+    fn get_file_id(&self, path: VfsPath) -> Result<FileId, ()>;
 
     fn ast_id_map(&self, file_id: HirFileId) -> Arc<AstIdMap>;
 
@@ -70,6 +75,17 @@ pub trait DefDatabase: InternDatabase + Upcast<dyn SourceDatabase> {
     fn attrs(&self, def: AttrDefId) -> Arc<AttrsWithOwner>;
 }
 
+fn get_path(db: &dyn DefDatabase, file_id: HirFileId) -> Result<VfsPath, ()> {
+    match file_id.0 {
+        HirFileIdRepr::FileId(file_id) => Ok(db.file_path(file_id)),
+        _ => Err(()),
+    }
+}
+
+fn get_file_id(db: &dyn DefDatabase, path: VfsPath) -> Result<FileId, ()> {
+    Ok(db.file_id(path))
+}
+
 fn parse_or_resolve(db: &dyn DefDatabase, file_id: HirFileId) -> Result<Parse, ()> {
     match file_id.0 {
         HirFileIdRepr::FileId(file_id) => Ok(db.parse(file_id)),
@@ -79,7 +95,10 @@ fn parse_or_resolve(db: &dyn DefDatabase, file_id: HirFileId) -> Result<Parse, (
             let import: &Import = module_info.get(import_loc.value);
 
             match &import.value {
-                crate::module_data::ImportValue::Path(_) => Err(()), // TODO: path imports
+                crate::module_data::ImportValue::Path(path) => {
+                    let file_id = relative_file(db, import_loc.file_id, path).ok_or(())?;
+                    Ok(db.parse(file_id))
+                }
                 crate::module_data::ImportValue::Custom(key) => {
                     db.parse_import(key.clone(), syntax::ParseEntryPoint::File)
                 }

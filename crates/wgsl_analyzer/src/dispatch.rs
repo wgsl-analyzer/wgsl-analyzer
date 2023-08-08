@@ -193,10 +193,13 @@ where
             Ok(lsp_error) => lsp_server::Response::new_err(id, lsp_error.code, lsp_error.message),
             Err(e) => {
                 if is_cancelled(&*e) {
+                    // It can happen that, while processing a file with import directives for the first time,
+                    // import files requested to be opened are available and change the salsa DB, hence there is no
+                    // real need to report the user any error message.
                     lsp_server::Response::new_err(
                         id,
                         lsp_server::ErrorCode::ContentModified as i32,
-                        "content modified".to_string(),
+                        "".to_string(),
                     )
                 } else {
                     lsp_server::Response::new_err(

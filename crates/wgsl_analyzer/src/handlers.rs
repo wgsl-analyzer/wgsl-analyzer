@@ -158,7 +158,7 @@ pub(crate) fn handle_inlay_hints(
         .transpose()?;
     Ok(snap
         .analysis
-        .inlay_hints(&snap.config.inlay_hints(), file_id, range)?
+        .inlay_hints(&snap.config.data.inlay_hints(), file_id, range)?
         .into_iter()
         .map(|it| to_proto::inlay_hint(true, &line_index, it))
         .collect())
