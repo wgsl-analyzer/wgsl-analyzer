@@ -16,7 +16,7 @@ syntax = { path = "../syntax" }
 wgsl_formatter = { path = "../wgsl_formatter" }
 rowan = "0.15"
 lsp-types = "0.93.0"
-vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "0ee4e6a22" }
+vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "8a23314" }
 
 expect-test = "1.1.0"
 itertools = "0.10.1"

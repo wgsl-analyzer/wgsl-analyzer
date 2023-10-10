@@ -4,7 +4,7 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-la-arena = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "0ee4e6a22" }
+la-arena = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "8a23314" }
 salsa = "0.17.0-pre.1"
 syntax = { path = "../syntax" }
 base_db = { path = "../base_db" }
