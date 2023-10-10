@@ -330,13 +330,17 @@ fn format_param_list<T: AstNode>(
     for (i, param) in params.enumerate() {
         let last = i == count - 1;
 
-        let ws = match (first, has_newline) {
+        let first_token = param.syntax().first_token()?;
+        let previous_had_newline = first_token.prev_token().map_or(false, |token| {
+            token.kind().is_whitespace() && token.text().contains('\n')
+        });
+
+        let ws = match (first, previous_had_newline) {
             (true, false) => create_whitespace(""),
             (_, true) => create_whitespace(&format!("\n{}", "    ".repeat(n_indentations))),
             (false, false) => create_whitespace(" "),
         };
 
-        let first_token = param.syntax().first_token()?;
         set_whitespace_before(first_token, ws);
 
         let last_param_token = param.syntax().last_token()?;
