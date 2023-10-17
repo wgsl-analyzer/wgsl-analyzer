@@ -6,7 +6,6 @@ use lsp_types::{
     DiagnosticRelatedInformation, DiagnosticTag, GotoDefinitionResponse, LanguageString,
     MarkedString, TextDocumentIdentifier,
 };
-use std::process::exit;
 use vfs::FileId;
 
 use crate::global_state::GlobalStateSnapshot;
@@ -104,7 +103,7 @@ pub fn handle_hover(
 }
 
 pub fn handle_shutdown(_snap: GlobalStateSnapshot, _: ()) -> Result<()> {
-    exit(0);
+    Ok(())
 }
 
 pub fn full_source(snap: GlobalStateSnapshot, params: lsp_ext::FullSourceParams) -> Result<String> {
