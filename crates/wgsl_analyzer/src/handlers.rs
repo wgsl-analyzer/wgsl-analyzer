@@ -140,6 +140,29 @@ pub fn debug_command(snap: GlobalStateSnapshot, params: lsp_ext::DebugCommandPar
 
 pub(crate) fn handle_inlay_hints(
     snap: GlobalStateSnapshot,
+    params: lsp_types::InlayHintParams,
+) -> Result<Option<Vec<lsp_types::InlayHint>>> {
+    let document_uri = &params.text_document.uri;
+    let file_id = from_proto::file_id(&snap, document_uri)?;
+    let line_index = snap.file_line_index(file_id)?;
+
+    let range = from_proto::file_range(
+        &snap,
+        TextDocumentIdentifier::new(document_uri.to_owned()),
+        params.range,
+    );
+
+    Ok(Some(
+        snap.analysis
+            .inlay_hints(&snap.config.inlay_hints(), file_id, range.ok())?
+            .into_iter()
+            .map(|it| to_proto::inlay_hint(true, &line_index, it))
+            .collect(),
+    ))
+}
+
+pub(crate) fn handle_inlay_hints_old(
+    snap: GlobalStateSnapshot,
     params: InlayHintsParams,
 ) -> Result<Vec<InlayHint>> {
     let document_uri = &params.text_document.uri;
@@ -159,7 +182,7 @@ pub(crate) fn handle_inlay_hints(
         .analysis
         .inlay_hints(&snap.config.inlay_hints(), file_id, range)?
         .into_iter()
-        .map(|it| to_proto::inlay_hint(true, &line_index, it))
+        .map(|it| to_proto::inlay_hint_old(true, &line_index, it))
         .collect())
 }
 
