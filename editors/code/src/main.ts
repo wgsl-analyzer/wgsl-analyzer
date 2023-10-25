@@ -15,7 +15,6 @@ const exec = util.promisify(cp.exec);
 import { Ctx } from "./ctx";
 import * as commands from "./commands";
 import { Config } from "./config";
-import { activateInlayHints } from "./inlay_hints";
 
 let ctx: Ctx;
 
@@ -37,8 +36,6 @@ If you are using a version of wgsl-analyzer without a prepackaged binary or spec
     ctx.registerCommand("syntaxTree", commands.syntaxTree);
     ctx.registerCommand("debugCommand", commands.debugCommand);
     ctx.registerCommand("fullSource", commands.showFullSource);
-
-    activateInlayHints(ctx);
 
     vscode.workspace.onDidChangeConfiguration(_ => ctx.client.sendNotification("workspace/didChangeConfiguration", { settings: "" }), null, ctx.subscriptions);
 }
