@@ -187,25 +187,35 @@ fwidthFine(vecN<f32>) -> vecN<f32>
 // texture
 textureDimensions(texture_1d<T>) -> i32
 textureDimensions(texture_1d<T>, i32) -> i32
+textureDimensions(texture_1d<T>, u32) -> i32
 textureDimensions(texture_2d<T>) -> vec2<i32>
 textureDimensions(texture_2d<T>, i32) -> vec2<i32>
+textureDimensions(texture_2d<T>, u32) -> vec2<i32>
 textureDimensions(texture_2d_array<T>) -> vec2<i32>
 textureDimensions(texture_2d_array<T>, i32) -> vec2<i32>
+textureDimensions(texture_2d_array<T>, u32) -> vec2<i32>
 textureDimensions(texture_3d<T>) -> vec3<i32>
 textureDimensions(texture_3d<T>, i32) -> vec3<i32>
+textureDimensions(texture_3d<T>, u32) -> vec3<i32>
 textureDimensions(texture_cube<T>) -> vec2<i32>
 textureDimensions(texture_cube<T>, i32) -> vec2<i32>
+textureDimensions(texture_cube<T>, u32) -> vec2<i32>
 textureDimensions(texture_cube_array<T>) -> vec2<i32>
 textureDimensions(texture_cube_array<T>, i32) -> vec2<i32>
+textureDimensions(texture_cube_array<T>, u32) -> vec2<i32>
 textureDimensions(texture_multisampled_2d<T>) -> vec2<i32>
 textureDimensions(texture_depth_2d) -> vec2<i32>
 textureDimensions(texture_depth_2d, i32) -> vec2<i32>
+textureDimensions(texture_depth_2d, u32) -> vec2<i32>
 textureDimensions(texture_depth_2d_array) -> vec2<i32>
 textureDimensions(texture_depth_2d_array, i32) -> vec2<i32>
+textureDimensions(texture_depth_2d_array, u32) -> vec2<i32>
 textureDimensions(texture_depth_cube) -> vec2<i32>
 textureDimensions(texture_depth_cube, i32) -> vec2<i32>
+textureDimensions(texture_depth_cube, u32) -> vec2<i32>
 textureDimensions(texture_depth_cube_array) -> vec2<i32>
 textureDimensions(texture_depth_cube_array, i32) -> vec2<i32>
+textureDimensions(texture_depth_cube_array, u32) -> vec2<i32>
 textureDimensions(texture_depth_multisampled_2d) -> vec2<i32>
 textureDimensions(texture_storage_1d<_;_>) -> i32
 textureDimensions(texture_storage_2d<_;_>) -> vec2<i32>
