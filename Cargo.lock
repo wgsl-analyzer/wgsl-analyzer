@@ -264,7 +264,7 @@ dependencies = [
  "hir_ty",
  "ide_completion",
  "itertools",
- "lsp-types",
+ "lsp-types 0.93.2",
  "naga 0.10.1",
  "naga 0.11.0",
  "naga 0.11.1",
@@ -433,6 +433,19 @@ name = "lsp-types"
 version = "0.93.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9be6e9c7e2d18f651974370d7aff703f9513e0df6e464fd795660edc77e6ca51"
+dependencies = [
+ "bitflags",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "url",
+]
+
+[[package]]
+name = "lsp-types"
+version = "0.94.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c66bfd44a06ae10647fe3f8214762e9369fd4248df1350924b4ef9e770a85ea1"
 dependencies = [
  "bitflags",
  "serde",
@@ -1153,7 +1166,7 @@ dependencies = [
  "ide_completion",
  "itertools",
  "lsp-server",
- "lsp-types",
+ "lsp-types 0.94.1",
  "parking_lot 0.12.1",
  "paths",
  "rustc-hash",

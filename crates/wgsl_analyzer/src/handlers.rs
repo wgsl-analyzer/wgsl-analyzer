@@ -9,7 +9,6 @@ use lsp_types::{
 use vfs::FileId;
 
 use crate::global_state::GlobalStateSnapshot;
-use crate::lsp_ext::inlay_hints::{InlayHint, InlayHintsParams};
 use crate::{from_proto, lsp_ext, to_proto, Result};
 
 pub fn handle_goto_definition(
@@ -159,31 +158,6 @@ pub(crate) fn handle_inlay_hints(
             .map(|it| to_proto::inlay_hint(true, &line_index, it))
             .collect(),
     ))
-}
-
-pub(crate) fn handle_inlay_hints_old(
-    snap: GlobalStateSnapshot,
-    params: InlayHintsParams,
-) -> Result<Vec<InlayHint>> {
-    let document_uri = &params.text_document.uri;
-    let file_id = from_proto::file_id(&snap, document_uri)?;
-    let line_index = snap.file_line_index(file_id)?;
-    let range = params
-        .range
-        .map(|range| {
-            from_proto::file_range(
-                &snap,
-                TextDocumentIdentifier::new(document_uri.to_owned()),
-                range,
-            )
-        })
-        .transpose()?;
-    Ok(snap
-        .analysis
-        .inlay_hints(&snap.config.inlay_hints(), file_id, range)?
-        .into_iter()
-        .map(|it| to_proto::inlay_hint_old(true, &line_index, it))
-        .collect())
 }
 
 pub fn publish_diagnostics(

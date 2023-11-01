@@ -140,7 +140,6 @@ impl GlobalState {
             .on::<lsp_ext::SyntaxTree>(handlers::show_syntax_tree)
             .on::<lsp_ext::DebugCommand>(handlers::debug_command)
             .on::<lsp_ext::FullSource>(handlers::full_source)
-            .on::<lsp_ext::InlayHints>(handlers::handle_inlay_hints_old)
             .finish();
 
         Ok(())
