@@ -63,6 +63,7 @@ fn main() -> Result<(), anyhow::Error> {
                 let diff = prettydiff::diff_lines(&input, &output);
 
                 println!("Diff in {}\n{}:", file.display(), diff);
+                std::process::exit(1);
             }
         } else {
             if is_stdin {
