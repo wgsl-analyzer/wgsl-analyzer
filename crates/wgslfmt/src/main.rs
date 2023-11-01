@@ -16,7 +16,7 @@ fn main() -> Result<(), anyhow::Error> {
     let formatting_options = FormattingOptions::default();
     let output = wgsl_formatter::format_str(&input, &formatting_options);
 
-    println!("{}", output);
+    print!("{}", output);
 
     Ok(())
 }
