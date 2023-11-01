@@ -540,6 +540,7 @@ op_convert(vecN<f32>) -> vecN<u32>
 op_convert(bool) -> f32
 op_convert(i32) -> f32
 op_convert(u32) -> f32
+op_convert(f32) -> f32
 op_convert(vecN<bool>) -> vecN<f32>
 op_convert(vecN<i32>) -> vecN<f32>
 op_convert(vecN<u32>) -> vecN<f32>
