@@ -79,6 +79,7 @@ round(f32) -> f32
 round(vecN<f32>) -> vecN<f32>
 saturate(e: f32) -> f32
 saturate(e: vecN<f32>) -> vecN<f32>
+sign(i32) -> i32
 sign(f32) -> f32
 sign(vecN<f32>) -> vecN<f32>
 sin(f32) -> f32
@@ -160,6 +161,8 @@ transpose(matMxN<T>) -> matNxM<T>
 
 // vector
 dot(vecN<f32>, vecN<f32>) -> f32
+dot(vecN<i32>, vecN<i32>) -> i32
+dot(vecN<u32>, vecN<u32>) -> u32
 
 // derivative
 dpdx(f32) -> f32
@@ -182,68 +185,90 @@ fwidthFine(f32) -> f32
 fwidthFine(vecN<f32>) -> vecN<f32>
 
 // texture
-textureDimensions(texture_1d<T>) -> i32
-textureDimensions(texture_1d<T>, i32) -> i32
-textureDimensions(texture_2d<T>) -> vec2<i32>
-textureDimensions(texture_2d<T>, i32) -> vec2<i32>
-textureDimensions(texture_2d_array<T>) -> vec2<i32>
-textureDimensions(texture_2d_array<T>, i32) -> vec2<i32>
-textureDimensions(texture_3d<T>) -> vec3<i32>
-textureDimensions(texture_3d<T>, i32) -> vec3<i32>
-textureDimensions(texture_cube<T>) -> vec2<i32>
-textureDimensions(texture_cube<T>, i32) -> vec2<i32>
-textureDimensions(texture_cube_array<T>) -> vec2<i32>
-textureDimensions(texture_cube_array<T>, i32) -> vec2<i32>
-textureDimensions(texture_multisampled_2d<T>) -> vec2<i32>
-textureDimensions(texture_depth_2d) -> vec2<i32>
-textureDimensions(texture_depth_2d, i32) -> vec2<i32>
-textureDimensions(texture_depth_2d_array) -> vec2<i32>
-textureDimensions(texture_depth_2d_array, i32) -> vec2<i32>
-textureDimensions(texture_depth_cube) -> vec2<i32>
-textureDimensions(texture_depth_cube, i32) -> vec2<i32>
-textureDimensions(texture_depth_cube_array) -> vec2<i32>
-textureDimensions(texture_depth_cube_array, i32) -> vec2<i32>
-textureDimensions(texture_depth_multisampled_2d) -> vec2<i32>
-textureDimensions(texture_storage_1d<_;_>) -> i32
-textureDimensions(texture_storage_2d<_;_>) -> vec2<i32>
-textureDimensions(texture_storage_2d_array<_;_>) -> vec2<i32>
-textureDimensions(texture_storage_3d<_;_>) -> vec3<i32>
-textureDimensions(texture_external) -> vec2<i32>
+textureDimensions(texture_1d<T>) -> u32
+textureDimensions(texture_1d<T>, i32) -> u32
+textureDimensions(texture_1d<T>, u32) -> u32
+textureDimensions(texture_2d<T>) -> vec2<u32>
+textureDimensions(texture_2d<T>, i32) -> vec2<u32>
+textureDimensions(texture_2d<T>, u32) -> vec2<u32>
+textureDimensions(texture_2d_array<T>) -> vec2<u32>
+textureDimensions(texture_2d_array<T>, i32) -> vec2<u32>
+textureDimensions(texture_2d_array<T>, u32) -> vec2<u32>
+textureDimensions(texture_3d<T>) -> vec3<u32>
+textureDimensions(texture_3d<T>, i32) -> vec3<u32>
+textureDimensions(texture_3d<T>, u32) -> vec3<u32>
+textureDimensions(texture_cube<T>) -> vec2<u32>
+textureDimensions(texture_cube<T>, i32) -> vec2<u32>
+textureDimensions(texture_cube<T>, u32) -> vec2<u32>
+textureDimensions(texture_cube_array<T>) -> vec2<u32>
+textureDimensions(texture_cube_array<T>, i32) -> vec2<u32>
+textureDimensions(texture_cube_array<T>, u32) -> vec2<u32>
+textureDimensions(texture_multisampled_2d<T>) -> vec2<u32>
+textureDimensions(texture_depth_2d) -> vec2<u32>
+textureDimensions(texture_depth_2d, i32) -> vec2<u32>
+textureDimensions(texture_depth_2d, u32) -> vec2<u32>
+textureDimensions(texture_depth_2d_array) -> vec2<u32>
+textureDimensions(texture_depth_2d_array, i32) -> vec2<u32>
+textureDimensions(texture_depth_2d_array, u32) -> vec2<u32>
+textureDimensions(texture_depth_cube) -> vec2<u32>
+textureDimensions(texture_depth_cube, i32) -> vec2<u32>
+textureDimensions(texture_depth_cube, u32) -> vec2<u32>
+textureDimensions(texture_depth_cube_array) -> vec2<u32>
+textureDimensions(texture_depth_cube_array, i32) -> vec2<u32>
+textureDimensions(texture_depth_cube_array, u32) -> vec2<u32>
+textureDimensions(texture_depth_multisampled_2d) -> vec2<u32>
+textureDimensions(texture_storage_1d<_;_>) -> u32
+textureDimensions(texture_storage_2d<_;_>) -> vec2<u32>
+textureDimensions(texture_storage_2d_array<_;_>) -> vec2<u32>
+textureDimensions(texture_storage_3d<_;_>) -> vec3<u32>
+textureDimensions(texture_external) -> vec2<u32>
 
 textureLoad(texture_1d<T>, i32, i32) -> vec4<T>
 textureLoad(texture_2d<T>, vec2<i32>, i32) -> vec4<T>
 textureLoad(texture_2d_array<T>, vec2<i32>, i32, i32) -> vec4<T>
+textureLoad(texture_2d_array<T>, vec2<i32>, u32, i32) -> vec4<T>
 textureLoad(texture_3d<T>, vec3<i32>, i32) -> vec4<T>
 textureLoad(texture_multisampled_2d<T>, vec2<i32>, i32) -> vec4<T>
 textureLoad(texture_depth_2d, vec2<i32>, i32) -> f32
 textureLoad(texture_depth_2d_array, vec2<i32>, i32, i32) -> f32
+textureLoad(texture_depth_2d_array, vec2<i32>, u32, i32) -> f32
 textureLoad(texture_depth_multisampled_2d, vec2<i32>, i32) -> f32
 textureLoad(texture_external, vec2<i32>) -> vec4<f32>
 
 textureLoad(texture_storage_1d<F;read>, i32) -> F::StorageType
 textureLoad(texture_storage_2d<F;read>, vec2<i32>) -> F::StorageType
 textureLoad(texture_storage_2d_array<F;read>, vec2<i32>, i32) -> F::StorageType
+textureLoad(texture_storage_2d_array<F;read>, vec2<i32>, u32) -> F::StorageType
 textureLoad(texture_storage_3d<F;read>, vec3<i32>) -> F::StorageType
 
 textureGather(i32, texture_2d<T>, sampler, vec2<f32>) -> vec4<T>
 textureGather(i32, texture_2d<T>, sampler, vec2<f32>, vec2<i32>) -> vec4<T>
 textureGather(i32, texture_2d_array<T>, sampler, vec2<f32>, i32) -> vec4<T>
+textureGather(i32, texture_2d_array<T>, sampler, vec2<f32>, u32) -> vec4<T>
 textureGather(i32, texture_2d_array<T>, sampler, vec2<f32>, i32, vec2<i32>) -> vec4<T>
+textureGather(i32, texture_2d_array<T>, sampler, vec2<f32>, u32, vec2<i32>) -> vec4<T>
 textureGather(i32, texture_cube<T>, sampler, vec3<f32>) -> vec4<T>
 textureGather(i32, texture_cube_array<T>, sampler, vec3<f32>, i32) -> vec4<T>
+textureGather(i32, texture_cube_array<T>, sampler, vec3<f32>, u32) -> vec4<T>
 textureGather(texture_depth_2d, sampler, vec2<f32>) -> vec4<f32>
 textureGather(texture_depth_2d, sampler, vec2<f32>, vec2<i32>) -> vec4<f32>
 textureGather(texture_depth_2d_array, sampler, vec2<f32>, i32) -> vec4<f32>
+textureGather(texture_depth_2d_array, sampler, vec2<f32>, u32) -> vec4<f32>
 textureGather(texture_depth_2d_array, sampler, vec2<f32>, i32, vec2<i32>) -> vec4<f32>
+textureGather(texture_depth_2d_array, sampler, vec2<f32>, u32, vec2<i32>) -> vec4<f32>
 textureGather(texture_depth_cube, sampler, vec3<f32>) -> vec4<f32>
 textureGather(texture_depth_cube_array, sampler, vec3<f32>, i32) -> vec4<f32>
+textureGather(texture_depth_cube_array, sampler, vec3<f32>, u32) -> vec4<f32>
 
 textureGatherCompare(texture_depth_2d, sampler_comparison, vec2<f32>, f32) -> vec4<f32>
 textureGatherCompare(texture_depth_2d, sampler_comparison, vec2<f32>, f32, vec2<i32>) -> vec4<f32>
 textureGatherCompare(texture_depth_2d_array, sampler_comparison, vec2<f32>, i32, f32) -> vec4<f32>
+textureGatherCompare(texture_depth_2d_array, sampler_comparison, vec2<f32>, u32, f32) -> vec4<f32>
 textureGatherCompare(texture_depth_2d_array, sampler_comparison, vec2<f32>, i32, f32, vec2<i32>) -> vec4<f32>
+textureGatherCompare(texture_depth_2d_array, sampler_comparison, vec2<f32>, u32, f32, vec2<i32>) -> vec4<f32>
 textureGatherCompare(texture_depth_cube, sampler_comparison, vec3<f32>, f32) -> vec4<f32>
 textureGatherCompare(texture_depth_cube_array, sampler_comparison, vec3<f32>, i32, f32) -> vec4<f32>
+textureGatherCompare(texture_depth_cube_array, sampler_comparison, vec3<f32>, u32, f32) -> vec4<f32>
 
 
 textureNumLayers(texture_2d_array<T>) -> i32
@@ -270,69 +295,94 @@ textureSample(texture_1d<f32>, sampler, f32) -> vec4<f32>
 textureSample(texture_2d<f32>, sampler, vec2<f32>) -> vec4<f32>
 textureSample(texture_2d<f32>, sampler, vec2<f32>, vec2<i32>) -> vec4<f32>
 textureSample(texture_2d_array<f32>, sampler, vec2<f32>, i32) -> vec4<f32>
+textureSample(texture_2d_array<f32>, sampler, vec2<f32>, u32) -> vec4<f32>
 textureSample(texture_2d_array<f32>, sampler, vec2<f32>, i32, vec2<i32>) -> vec4<f32>
+textureSample(texture_2d_array<f32>, sampler, vec2<f32>, u32, vec2<i32>) -> vec4<f32>
 textureSample(texture_3d<f32>, sampler, vec3<f32>) -> vec4<f32>
 textureSample(texture_3d<f32>, sampler, vec3<f32>, vec3<i32>) -> vec4<f32>
 textureSample(texture_cube<f32>, sampler, vec3<f32>) -> vec4<f32>
 textureSample(texture_cube_array<f32>, sampler, vec3<f32>, i32) -> vec4<f32>
+textureSample(texture_cube_array<f32>, sampler, vec3<f32>, u32) -> vec4<f32>
 textureSample(texture_depth_2d, sampler, vec2<f32>) -> f32
 textureSample(texture_depth_2d, sampler, vec2<f32>, vec2<i32>) -> f32
 textureSample(texture_depth_2d_array, sampler, vec2<f32>, i32) -> f32
+textureSample(texture_depth_2d_array, sampler, vec2<f32>, u32) -> f32
 textureSample(texture_depth_2d_array, sampler, vec2<f32>, i32, vec2<i32>) -> f32
+textureSample(texture_depth_2d_array, sampler, vec2<f32>, u32, vec2<i32>) -> f32
 textureSample(texture_depth_cube, sampler, vec3<f32>) -> f32
 textureSample(texture_depth_cube_array, sampler, vec3<f32>, i32) -> f32
+textureSample(texture_depth_cube_array, sampler, vec3<f32>, u32) -> f32
 
 textureSampleBias(texture_2d<f32>, sampler, vec2<f32>, f32) -> vec4<f32>
 textureSampleBias(texture_2d<f32>, sampler, vec2<f32>, f32, vec2<i32>) -> vec4<f32>
 textureSampleBias(texture_2d_array<f32>, sampler, vec2<f32>, i32, f32) -> vec4<f32>
+textureSampleBias(texture_2d_array<f32>, sampler, vec2<f32>, u32, f32) -> vec4<f32>
 textureSampleBias(texture_2d_array<f32>, sampler, vec2<f32>, i32, f32, vec2<i32>) -> vec4<f32>
+textureSampleBias(texture_2d_array<f32>, sampler, vec2<f32>, u32, f32, vec2<i32>) -> vec4<f32>
 textureSampleBias(texture_3d<f32>, sampler, vec3<f32>, f32) -> vec4<f32>
 textureSampleBias(texture_3d<f32>, sampler, vec3<f32>, f32, vec3<i32>) -> vec4<f32>
 textureSampleBias(texture_cube<f32>, sampler, vec3<f32>, f32) -> vec4<f32>
 textureSampleBias(texture_cube_array<f32>, sampler, vec3<f32>, i32, f32) -> vec4<f32>
+textureSampleBias(texture_cube_array<f32>, sampler, vec3<f32>, u32, f32) -> vec4<f32>
 
 textureSampleCompare(texture_depth_2d, sampler_comparison, vec2<f32>, f32) -> f32
 textureSampleCompare(texture_depth_2d, sampler_comparison, vec2<f32>, f32, vec2<i32>) -> f32
 textureSampleCompare(texture_depth_2d_array, sampler_comparison, vec2<f32>, i32, f32) -> f32
+textureSampleCompare(texture_depth_2d_array, sampler_comparison, vec2<f32>, u32, f32) -> f32
 textureSampleCompare(texture_depth_2d_array, sampler_comparison, vec2<f32>, i32, f32, vec2<i32>) -> f32
+textureSampleCompare(texture_depth_2d_array, sampler_comparison, vec2<f32>, u32, f32, vec2<i32>) -> f32
 textureSampleCompare(texture_depth_cube, sampler_comparison, vec3<f32>, f32) -> f32
 textureSampleCompare(texture_depth_cube_array, sampler_comparison, vec3<f32>, i32, f32) -> f32
+textureSampleCompare(texture_depth_cube_array, sampler_comparison, vec3<f32>, u32, f32) -> f32
 
 textureSampleCompareLevel(texture_depth_2d, sampler_comparison, vec2<f32>, f32) -> f32
 textureSampleCompareLevel(texture_depth_2d, sampler_comparison, vec2<f32>, f32, vec2<i32>) -> f32
 textureSampleCompareLevel(texture_depth_2d_array, sampler_comparison, vec2<f32>, i32, f32) -> f32
+textureSampleCompareLevel(texture_depth_2d_array, sampler_comparison, vec2<f32>, u32, f32) -> f32
 textureSampleCompareLevel(texture_depth_2d_array, sampler_comparison, vec2<f32>, i32, f32, vec2<i32>) -> f32
+textureSampleCompareLevel(texture_depth_2d_array, sampler_comparison, vec2<f32>, u32, f32, vec2<i32>) -> f32
 textureSampleCompareLevel(texture_depth_cube, sampler_comparison, vec3<f32>, f32) -> f32
 textureSampleCompareLevel(texture_depth_cube_array, sampler_comparison, vec3<f32>, i32, f32) -> f32
+textureSampleCompareLevel(texture_depth_cube_array, sampler_comparison, vec3<f32>, u32, f32) -> f32
 
 textureSampleGrad(texture_2d<f32>, sampler, vec2<f32>, vec2<f32>, vec2<f32>) -> vec4<f32>
 textureSampleGrad(texture_2d<f32>, sampler, vec2<f32>, vec2<f32>, vec2<f32>, vec2<i32>) -> vec4<f32>
 textureSampleGrad(texture_2d_array<f32>, sampler, vec2<f32>, i32, vec2<f32>, vec2<f32>) -> vec4<f32>
+textureSampleGrad(texture_2d_array<f32>, sampler, vec2<f32>, u32, vec2<f32>, vec2<f32>) -> vec4<f32>
 textureSampleGrad(texture_2d_array<f32>, sampler, vec2<f32>, i32, vec2<f32>, vec2<f32>, vec2<i32>) -> vec4<f32>
+textureSampleGrad(texture_2d_array<f32>, sampler, vec2<f32>, u32, vec2<f32>, vec2<f32>, vec2<i32>) -> vec4<f32>
 textureSampleGrad(texture_3d<f32>, sampler, vec3<f32>, vec3<f32>, vec3<f32>) -> vec4<f32>
 textureSampleGrad(texture_3d<f32>, sampler, vec3<f32>, vec3<f32>, vec3<f32>, vec3<i32>) -> vec4<f32>
 textureSampleGrad(texture_cube<f32>, sampler, vec3<f32>, vec3<f32>, vec3<f32>) -> vec4<f32>
 textureSampleGrad(texture_cube_array<f32>, sampler, vec3<f32>, i32, vec3<f32>, vec3<f32>) -> vec4<f32>
+textureSampleGrad(texture_cube_array<f32>, sampler, vec3<f32>, u32, vec3<f32>, vec3<f32>) -> vec4<f32>
 
 textureSampleLevel(texture_2d<f32>, sampler, vec2<f32>, f32) -> vec4<f32>
 textureSampleLevel(texture_2d<f32>, sampler, vec2<f32>, f32, vec2<i32>) -> vec4<f32>
 textureSampleLevel(texture_2d_array<f32>, sampler, vec2<f32>, i32, f32) -> vec4<f32>
+textureSampleLevel(texture_2d_array<f32>, sampler, vec2<f32>, u32, f32) -> vec4<f32>
 textureSampleLevel(texture_2d_array<f32>, sampler, vec2<f32>, i32, f32, vec2<i32>) -> vec4<f32>
+textureSampleLevel(texture_2d_array<f32>, sampler, vec2<f32>, u32, f32, vec2<i32>) -> vec4<f32>
 textureSampleLevel(texture_3d<f32>, sampler, vec3<f32>, f32) -> vec4<f32>
 textureSampleLevel(texture_3d<f32>, sampler, vec3<f32>, f32, vec3<i32>) -> vec4<f32>
 textureSampleLevel(texture_cube<f32>, sampler, vec3<f32>, f32) -> vec4<f32>
 textureSampleLevel(texture_cube_array<f32>, sampler, vec3<f32>, i32, f32) -> vec4<f32>
+textureSampleLevel(texture_cube_array<f32>, sampler, vec3<f32>, u32, f32) -> vec4<f32>
 textureSampleLevel(texture_depth_2d, sampler, vec2<f32>, i32) -> f32
 textureSampleLevel(texture_depth_2d, sampler, vec2<f32>, i32, vec2<i32>) -> f32
 textureSampleLevel(texture_depth_2d_array, sampler, vec2<f32>, i32, i32) -> f32
+textureSampleLevel(texture_depth_2d_array, sampler, vec2<f32>, u32, i32) -> f32
 textureSampleLevel(texture_depth_2d_array, sampler, vec2<f32>, i32, i32, vec2<i32>) -> f32
+textureSampleLevel(texture_depth_2d_array, sampler, vec2<f32>, u32, i32, vec2<i32>) -> f32
 textureSampleLevel(texture_depth_cube, sampler, vec3<f32>, i32) -> f32
 textureSampleLevel(texture_depth_cube_array, sampler, vec3<f32>, i32, i32) -> f32
+textureSampleLevel(texture_depth_cube_array, sampler, vec3<f32>, u32, i32) -> f32
 textureSampleLevel(texture_external, sampler, vec2<f32>) -> vec4<f32>
 
 textureStore(texture_storage_1d<F;write>, i32, F::StorageType)
 textureStore(texture_storage_2d<F;write>, vec2<i32>, F::StorageType)
 textureStore(texture_storage_2d_array<F;write>, vec2<i32>, i32, F::StorageType)
+textureStore(texture_storage_2d_array<F;write>, vec2<i32>, u32, F::StorageType)
 textureStore(texture_storage_3d<F;write>, vec3<i32>, F::StorageType)
 
 // TODO atomic
@@ -364,7 +414,7 @@ unpack2x16float(u32) -> vec2<f32>
 // synchronization
 storageBarrier()
 workgroupBarrier()
-
+workgroupUniformLoad(ptr<T>) -> T
 
 // TODO: T should only match i32, f32, u32 in a lot of ops
 
@@ -537,6 +587,7 @@ op_convert(vecN<f32>) -> vecN<u32>
 op_convert(bool) -> f32
 op_convert(i32) -> f32
 op_convert(u32) -> f32
+op_convert(f32) -> f32
 op_convert(vecN<bool>) -> vecN<f32>
 op_convert(vecN<i32>) -> vecN<f32>
 op_convert(vecN<u32>) -> vecN<f32>

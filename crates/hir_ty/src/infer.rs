@@ -1060,6 +1060,11 @@ impl<'db> InferenceContext<'db> {
                             .insert(expr, ResolvedCall::Function(resolved));
                         self.validate_function_call(&details, args, expr, expr)
                     }
+                    hir_def::resolver::ResolveCallable::PredeclaredTypeAlias(type_ref) => {
+                        let ty = self.lower_ty(expr, &type_ref);
+                        self.check_ty_initialiser(expr, ty, args);
+                        ty
+                    }
                 },
                 None => {
                     let builtin = Builtin::for_name(self.db, &name);

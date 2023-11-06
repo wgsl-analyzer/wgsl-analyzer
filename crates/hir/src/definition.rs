@@ -79,6 +79,7 @@ fn resolve_name_ref(
                 let id = sema.db.intern_function(function);
                 Some(Definition::ModuleDef(ModuleDef::Function(Function { id })))
             }
+            ResolveCallable::PredeclaredTypeAlias(_) => None,
         }
     } else if let Some(ty) = ast::PathType::cast(parent) {
         let resolver = sema.resolver(file_id, ty.syntax());

@@ -1,6 +1,19 @@
 # Changelog
 
-## Unreleased
+## Version 0.8
+- add `workgroupUniformLoad` builtin and missing `dot` builtins
+- formatter: preserve linebreaks in function calls
+- ignore `#if` directives
+- use proper inlay hint API (thanks to @themcat https://github.com/wgsl-analyzer/wgsl-analyzer/pull/98)
+- fix `textureDimensions` to return `u32` instead of `i32`
+- allow predeclared type aliases in constructors (`vec32f(0.0)`)
+- `wgslfmt`: add `--check` mode and inplace file writing
+
+## Version 0.7
+- add more missing builtins
+- support identifiers using correct XID\_Start/XID\_Continue sets
+- parse override declaraionts
+- improve parser recovery
 
 ## Version 0.6.2
 - fixes version mismatch between wgsl-analyzer server and binary

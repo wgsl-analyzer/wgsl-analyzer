@@ -10,7 +10,7 @@ use vfs::FileId;
 use crate::{
     global_state::GlobalStateSnapshot,
     line_index::{LineEndings, LineIndex, OffsetEncoding},
-    lsp_ext, Result,
+    Result,
 };
 
 /// Returns a `Url` object from a given path, will lowercase drive letters if present.
@@ -282,9 +282,9 @@ pub(crate) fn inlay_hint(
     render_colons: bool,
     line_index: &LineIndex,
     inlay_hint: InlayHint,
-) -> lsp_ext::inlay_hints::InlayHint {
-    lsp_ext::inlay_hints::InlayHint {
-        label: lsp_ext::inlay_hints::InlayHintLabel::String(match inlay_hint.kind {
+) -> lsp_types::InlayHint {
+    lsp_types::InlayHint {
+        label: lsp_types::InlayHintLabel::String(match inlay_hint.kind {
             InlayKind::ParameterHint if render_colons => format!("{}:", inlay_hint.label),
             InlayKind::TypeHint if render_colons => format!(": {}", inlay_hint.label),
             _ => inlay_hint.label.to_string(),
@@ -294,9 +294,11 @@ pub(crate) fn inlay_hint(
             InlayKind::TypeHint => position(line_index, inlay_hint.range.end()),
             InlayKind::StructLayoutHint => position(line_index, inlay_hint.range.start()),
         },
+        data: None,
+        text_edits: None,
         kind: match inlay_hint.kind {
-            InlayKind::ParameterHint => Some(lsp_ext::inlay_hints::InlayHintKind::PARAMETER),
-            InlayKind::TypeHint => Some(lsp_ext::inlay_hints::InlayHintKind::TYPE),
+            InlayKind::ParameterHint => Some(lsp_types::InlayHintKind::PARAMETER),
+            InlayKind::TypeHint => Some(lsp_types::InlayHintKind::TYPE),
             InlayKind::StructLayoutHint => None,
         },
         tooltip: None,

@@ -4,7 +4,8 @@ use xshell::cmd;
 
 type Result<T, E = anyhow::Error> = std::result::Result<T, E>;
 
-const HELP_STR: &str = "Usage: cargo run --bin package --target linux-x64 [--no-prebuilt-binary]";
+const HELP_STR: &str =
+    "Usage: cargo run --bin package -- --target linux-x64 [--no-prebuilt-binary] [--install]";
 
 #[derive(Debug)]
 struct Args {

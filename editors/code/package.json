@@ -2,7 +2,7 @@
     "name": "wgsl-analyzer",
     "description": "A language server implementation for the WGSL shading language",
     "license": "MIT OR Apache-2.0",
-    "version": "0.7.0",
+    "version": "0.8.0",
     "publisher": "wgsl-analyzer",
     "keywords": [
         "wgsl",
@@ -116,6 +116,7 @@
                     "enum": [
                         "0.10",
                         "0.11",
+                        "0.13",
                         "main"
                     ],
                     "default": "0.11",

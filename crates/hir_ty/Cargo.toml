@@ -8,7 +8,7 @@ base_db = { path = "../base_db" }
 hir_def = { path = "../hir_def" }
 
 salsa = "0.17.0-pre.1"
-la-arena = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "0ee4e6a22" }
+la-arena = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "8a23314" }
 either = "1.6.1"
 rustc-hash = "1.1.0"
 itertools = "0.10.1"
