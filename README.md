@@ -55,6 +55,22 @@ Ensure that $HOME/.cargo/bin is in your $PATH. More Info about $PATH: https://li
 au BufNewFile,BufRead *.wgsl set filetype=wgsl
 ```
 
+### Neovim (using lsp)
+
+1. Install the `wgsl_analyzer` language server
+2. Configure the wgsl filetype
+```lua
+vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
+  pattern = "*.wgsl",
+  command = "set filetype=wgsl",
+})
+
+```
+3. Configure the nvim lsp
+```lua
+local lspconfig = require('lspconfig')
+lspconfig.wgsl_analyzer.setup()
+```
 
 ## Configuration
 
