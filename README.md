@@ -62,7 +62,9 @@ au BufNewFile,BufRead *.wgsl set filetype=wgsl
 ```lua
 vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
   pattern = "*.wgsl",
-  command = "set filetype=wgsl",
+  callback = function()
+    vim.bo.filetype = "wgsl"
+  end,
 })
 
 ```
