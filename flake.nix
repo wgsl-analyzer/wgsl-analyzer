@@ -1,31 +1,34 @@
 {
   inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    crane.url = "github:ipetkov/crane";
+    crane.inputs.nixpkgs.follows = "nixpkgs";
     flake-utils.url = "github:numtide/flake-utils";
-    naersk.url = "github:nix-community/naersk";
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    nixpkgs.url = "nixpkgs/nixos-unstable";
   };
-  outputs = { self, nixpkgs, flake-utils, rust-overlay, naersk }:
+
+  outputs = { nixpkgs, crane, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        overlays = [ rust-overlay.overlays.default ];
-        rust = pkgs.rust-bin.stable.latest.default;
-        builder = pkgs.callPackage naersk { rustc = rust; };
-        pkgs = import nixpkgs { inherit system overlays; };
-
-      in rec {
-        packages.default = builder.buildPackage {
-          name = "wgsl-analyzer";
-          src = ./.;
-          cargoBuildOptions = opts: [ "-p" "wgsl_analyzer" ] ++ opts;
+        craneLib = crane.lib.${system};
+          wgslFilter = path: _type: builtins.match ".*wgsl$" path != null;
+          wgslOrCargo = path: type:
+            (wgslFilter path type) || (craneLib.filterCargoSources path type);
+      in
+    {
+      packages.default = craneLib.buildPackage {
+        src = nixpkgs.lib.cleanSourceWith {
+          src = craneLib.path ./.; 
+          filter = wgslOrCargo;
         };
-        overlays.default = (self: super: { wgsl-analyzer = packages.default; });
-
-        apps.default = packages.default;
-        devShell =
-          pkgs.mkShell { packages = with pkgs; [ rust-analyzer rust ]; };
-      });
+  
+        cargoExtraArgs = "-p wgsl_analyzer";
+        pname = "wgsl_analyzer";
+        version = "0.0.0";
+      };
+    });
 }
+
+
+
+
+
