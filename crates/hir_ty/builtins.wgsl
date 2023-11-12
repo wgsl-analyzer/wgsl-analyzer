@@ -224,7 +224,11 @@ textureDimensions(texture_storage_3d<_;_>) -> vec3<u32>
 textureDimensions(texture_external) -> vec2<u32>
 
 textureLoad(texture_1d<T>, i32, i32) -> vec4<T>
+textureLoad(texture_1d<T>, u32, i32) -> vec4<T>
 textureLoad(texture_2d<T>, vec2<i32>, i32) -> vec4<T>
+textureLoad(texture_2d<T>, vec2<i32>, u32) -> vec4<T>
+textureLoad(texture_2d<T>, vec2<u32>, u32) -> vec4<T>
+textureLoad(texture_2d<T>, vec2<u32>, i32) -> vec4<T>
 textureLoad(texture_2d_array<T>, vec2<i32>, i32, i32) -> vec4<T>
 textureLoad(texture_2d_array<T>, vec2<i32>, u32, i32) -> vec4<T>
 textureLoad(texture_3d<T>, vec3<i32>, i32) -> vec4<T>
