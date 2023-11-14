@@ -74,7 +74,7 @@ pow(vecN<f32>, vecN<f32>) -> vecN<f32>
 quantizeToF16(f32) -> f32
 quantizeToF16(vecN<f32>) -> vecN<f32>
 reflect(vecN<f32>, vecN<f32>) -> vecN<f32>
-refract(vecN<f32>, vecN<f32>, f32) -> f32
+refract(vecN<f32>, vecN<f32>, f32) -> vecN<f32>
 round(f32) -> f32
 round(vecN<f32>) -> vecN<f32>
 saturate(e: f32) -> f32
