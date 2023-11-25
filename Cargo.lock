@@ -388,6 +388,7 @@ dependencies = [
  "naga 0.11.0",
  "naga 0.11.1",
  "naga 0.13.0",
+ "naga 0.14.1",
  "rowan",
  "salsa",
  "smol_str",
@@ -697,6 +698,25 @@ dependencies = [
  "codespan-reporting",
  "hexf-parse",
  "indexmap 1.9.3",
+ "log",
+ "num-traits",
+ "rustc-hash",
+ "termcolor",
+ "thiserror",
+ "unicode-xid",
+]
+
+[[package]]
+name = "naga"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6cd05939c491da968a42986204b7431678be21fdcd4b10cc84997ba130ada5a4"
+dependencies = [
+ "bit-set",
+ "bitflags 2.4.1",
+ "codespan-reporting",
+ "hexf-parse",
+ "indexmap 2.0.2",
  "log",
  "num-traits",
  "rustc-hash",
