@@ -384,10 +384,10 @@ dependencies = [
  "ide_completion",
  "itertools",
  "lsp-types 0.93.2",
- "naga 0.10.1",
- "naga 0.11.0",
  "naga 0.11.1",
+ "naga 0.12.3",
  "naga 0.13.0",
+ "naga 0.14.0",
  "naga 0.14.1",
  "rowan",
  "salsa",
@@ -633,46 +633,28 @@ dependencies = [
 
 [[package]]
 name = "naga"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21bb1a241901d94de4725d638a5295187b046ceb89ed8b2be368038654d9c81d"
-dependencies = [
- "bit-set",
- "bitflags 1.3.2",
- "codespan-reporting",
- "hexf-parse",
- "indexmap 1.9.3",
- "log",
- "num-traits",
- "rustc-hash",
- "termcolor",
- "thiserror",
- "unicode-xid",
-]
-
-[[package]]
-name = "naga"
-version = "0.11.0"
-source = "git+https://github.com/gfx-rs/naga?rev=b9c5cb5a7841a8728137a58840fbbdbb9b310267#b9c5cb5a7841a8728137a58840fbbdbb9b310267"
-dependencies = [
- "bit-set",
- "bitflags 1.3.2",
- "codespan-reporting",
- "hexf-parse",
- "indexmap 1.9.3",
- "log",
- "num-traits",
- "rustc-hash",
- "termcolor",
- "thiserror",
- "unicode-xid",
-]
-
-[[package]]
-name = "naga"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c3d4269bcb7d50121097702fde1afb75f4ea8083aeb7a55688dcf289a853271"
+dependencies = [
+ "bit-set",
+ "bitflags 1.3.2",
+ "codespan-reporting",
+ "hexf-parse",
+ "indexmap 1.9.3",
+ "log",
+ "num-traits",
+ "rustc-hash",
+ "termcolor",
+ "thiserror",
+ "unicode-xid",
+]
+
+[[package]]
+name = "naga"
+version = "0.12.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbcc2e0513220fd2b598e6068608d4462db20322c0e77e47f6f488dfcfc279cb"
 dependencies = [
  "bit-set",
  "bitflags 1.3.2",
@@ -698,6 +680,24 @@ dependencies = [
  "codespan-reporting",
  "hexf-parse",
  "indexmap 1.9.3",
+ "log",
+ "num-traits",
+ "rustc-hash",
+ "termcolor",
+ "thiserror",
+ "unicode-xid",
+]
+
+[[package]]
+name = "naga"
+version = "0.14.0"
+source = "git+https://github.com/gfx-rs/naga?rev=d0f28c0b1a3c772e55e68db1c47eff5131cb6732#d0f28c0b1a3c772e55e68db1c47eff5131cb6732"
+dependencies = [
+ "bit-set",
+ "bitflags 2.4.1",
+ "codespan-reporting",
+ "hexf-parse",
+ "indexmap 2.0.2",
  "log",
  "num-traits",
  "rustc-hash",

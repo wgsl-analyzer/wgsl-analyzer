@@ -122,7 +122,7 @@ You can also additionally enable diagnostics for naga parsing errors.
     "wgsl-analyzer.diagnostics.typeErrors": true,
     "wgsl-analyzer.diagnostics.nagaParsing": false,
     "wgsl-analyzer.diagnostics.nagaValidation": true,
-    "wgsl-analyzer.diagnostics.nagaVersion": "0.11", // either "0.14", "0.13", "0.11", "0.10", or "main"
+    "wgsl-analyzer.diagnostics.nagaVersion": "0.14", // either "0.12", "0.13", "0.14", or "main"
 }
 ```
 

@@ -114,8 +114,7 @@
                 "wgsl-analyzer.diagnostics.nagaVersion": {
                     "type": "string",
                     "enum": [
-                        "0.10",
-                        "0.11",
+                        "0.12",
                         "0.13",
                         "0.14",
                         "main"

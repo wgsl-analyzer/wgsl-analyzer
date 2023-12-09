@@ -22,12 +22,12 @@ expect-test = "1.1.0"
 itertools = "0.10.1"
 smol_str = "0.1.21"
 
-naga10 = { package = "naga", version = "0.10", features = [
+naga11 = { package = "naga", version = "0.11", features = [
   "wgsl-in",
   "validate",
   "span",
 ] }
-naga11 = { package = "naga", version = "0.11", features = [
+naga12 = { package = "naga", version = "0.12", features = [
   "wgsl-in",
   "validate",
   "span",
@@ -42,7 +42,7 @@ naga14 = { package = "naga", version = "0.14", features = [
   "validate",
   "span",
 ] }
-nagamain = { package = "naga", git = "https://github.com/gfx-rs/naga", rev = "b9c5cb5a7841a8728137a58840fbbdbb9b310267", features = [
+nagamain = { package = "naga", git = "https://github.com/gfx-rs/naga", rev = "d0f28c0b1a3c772e55e68db1c47eff5131cb6732", features = [
   "wgsl-in",
   "validate",
   "span",
