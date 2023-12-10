@@ -71,7 +71,7 @@ vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
 3. Configure the nvim lsp
 ```lua
 local lspconfig = require('lspconfig')
-lspconfig.wgsl_analyzer.setup()
+lspconfig.wgsl_analyzer.setup({})
 ```
 
 ## Configuration
