@@ -14,12 +14,14 @@ pub fn format_str(input: &str, options: &FormattingOptions) -> String {
 #[derive(Debug)]
 pub struct FormattingOptions {
     pub trailing_commas: Policy,
+    pub indent_symbol: String,
 }
 
 impl Default for FormattingOptions {
     fn default() -> Self {
         Self {
             trailing_commas: Policy::Ignore,
+            indent_symbol: "    ".to_string(),
         }
     }
 }
@@ -93,7 +95,7 @@ fn format_syntax_node(
                 create_whitespace(&format!(
                     "{}{}",
                     "\n".repeat(n_newlines),
-                    "    ".repeat(indentation)
+                    options.indent_symbol.repeat(indentation)
                 )),
             );
         }
@@ -126,6 +128,7 @@ fn format_syntax_node(
                 has_newline,
                 1,
                 options.trailing_commas,
+                &options.indent_symbol,
             );
 
             if has_newline {
@@ -203,7 +206,7 @@ fn format_syntax_node(
                     stmt.right_brace_token()?,
                     create_whitespace(&format!(
                         "\n{}",
-                        "    ".repeat(indentation.saturating_sub(1))
+                        options.indent_symbol.repeat(indentation.saturating_sub(1))
                     )),
                 );
             }
@@ -308,11 +311,12 @@ fn format_params(
         has_newline,
         indentation + 1,
         options.trailing_commas,
+        &options.indent_symbol,
     );
     Some(if has_newline {
         set_whitespace_before(
             param_list.right_paren_token()?,
-            create_whitespace(&format!("\n{}", "    ".repeat(indentation))),
+            create_whitespace(&format!("\n{}", options.indent_symbol.repeat(indentation))),
         );
     } else {
         remove_if_whitespace(param_list.right_paren_token()?.prev_token()?);
@@ -325,6 +329,7 @@ fn format_param_list<T: AstNode>(
     has_newline: bool,
     n_indentations: usize,
     trailing_comma_policy: Policy,
+    indent_symbol: &str,
 ) -> Option<()> {
     let mut first = true;
     for (i, param) in params.enumerate() {
@@ -337,7 +342,7 @@ fn format_param_list<T: AstNode>(
 
         let ws = match (first, previous_had_newline) {
             (true, false) => create_whitespace(""),
-            (_, true) => create_whitespace(&format!("\n{}", "    ".repeat(n_indentations))),
+            (_, true) => create_whitespace(&format!("\n{}", indent_symbol.repeat(n_indentations))),
             (false, false) => create_whitespace(" "),
         };
 

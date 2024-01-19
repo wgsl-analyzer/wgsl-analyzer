@@ -6,6 +6,11 @@ use expect_test::{expect, Expect};
 fn check(before: &str, after: Expect) {
     check_with_options(before, after, &FormattingOptions::default())
 }
+fn check_tabs(before: &str, after: Expect) {
+    let mut options = FormattingOptions::default();
+    options.indent_symbol = "\t".to_string();
+    check_with_options(before, after, &options)
+}
 #[track_caller]
 fn check_with_options(before: &str, after: Expect, options: &FormattingOptions) {
     let syntax = syntax::parse(before.trim_start())
@@ -495,4 +500,26 @@ fn main() {
                 );
             }"#]],
     );
+}
+
+#[test]
+fn leave_matrix_alone_tabs() {
+    check_tabs(
+		r#"
+fn main() {
+	let x = mat3x3(
+		cosR,  0.0, sinR,
+		0.0, 1.0, 0.0,
+		-sinR, 0.0, cosR,
+	);
+}"#,
+        expect![[r#"
+			fn main() {
+				let x = mat3x3(
+					cosR, 0.0, sinR,
+					0.0, 1.0, 0.0,
+					-sinR, 0.0, cosR,
+				);
+			}"#]],
+	);
 }
