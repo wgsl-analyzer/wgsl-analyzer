@@ -9,7 +9,7 @@ const HELP_STR: &'static str = r#"wgslfmt [options] <file>...
 Options:
     --check     Run in 'check' mode. Exists with 0 if input is
                 formatted correctly. Exits with 1 and prints a diff if
-                formatting is requried.
+                formatting is required.
 "#;
 
 struct Args {
