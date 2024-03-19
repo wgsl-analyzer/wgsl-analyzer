@@ -3,7 +3,6 @@ use base_db::{
     line_index::{LineCol, LineColUtf16},
     FilePosition, FileRange, TextRange, TextSize,
 };
-use std::convert::TryFrom;
 use vfs::{AbsPathBuf, FileId};
 
 use crate::{
