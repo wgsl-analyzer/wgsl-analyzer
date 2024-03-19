@@ -83,7 +83,7 @@ fn parse_with_unconfigured_query(
     let mut unconfigured = Vec::new();
 
     let processed_source =
-        shader_processor::SHADER_PROCESSOR.process(&source, &shader_defs, |range, def| {
+        shader_processor::get_shader_processor().process(&source, &shader_defs, |range, def| {
             let range = TextRange::new(
                 TextSize::from(range.start as u32),
                 TextSize::from(range.end as u32),
@@ -111,7 +111,7 @@ fn parse_import_query(
     let source = imports.get(&key).ok_or(())?;
 
     let processed_source =
-        shader_processor::SHADER_PROCESSOR.process(source, &shader_defs, |_, _| {});
+        shader_processor::get_shader_processor().process(source, &shader_defs, |_, _| {});
     Ok(syntax::parse_entrypoint(
         &processed_source,
         parse_entrypoint,
