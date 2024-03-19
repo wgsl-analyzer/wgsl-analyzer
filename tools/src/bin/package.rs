@@ -91,11 +91,18 @@ fn compile(sh: &xshell::Shell, rust_target: &str) -> Result<PathBuf> {
 }
 
 fn package(sh: &xshell::Shell, target: &str, prebuilt_binary: bool) -> Result<PathBuf> {
-    let (_, rust_target) = TARGETS
-        .iter()
-        .find(|(t, _)| *t == target)
-        .ok_or_else(|| anyhow::anyhow!("invalid target"))?;
+    let (_, rust_target) = TARGETS.iter().find(|(t, _)| *t == target).ok_or_else(|| {
+        let target_names = TARGETS
+            .iter()
+            .map(|(t, _)| *t)
+            .collect::<Vec<_>>()
+            .join(", ");
+        anyhow::anyhow!("invalid target, expected one of {}", target_names)
+    })?;
 
+    if !Path::new("editors/code").exists() {
+        Err(anyhow::anyhow!("./editors/code folder does not exist, run this script from the root of the repository."))?;
+    }
     let out = Path::new("editors/code/out");
     let dst = out.join("wgsl_analyzer");
     if prebuilt_binary {
