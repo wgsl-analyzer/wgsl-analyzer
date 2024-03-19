@@ -32,6 +32,7 @@ pub enum NagaVersion {
     Naga12,
     Naga13,
     Naga14,
+    Naga19,
     NagaMain,
 }
 
