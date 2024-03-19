@@ -42,6 +42,17 @@ fn parse_args() -> Result<Args, lexopt::Error> {
     })
 }
 
+// Windows needs a workaround for npm.cmd, see https://github.com/rust-lang/rust/issues/42791
+#[cfg(windows)]
+const NPM: &'static str = "npm.cmd";
+#[cfg(not(windows))]
+const NPM: &'static str = "npm";
+
+#[cfg(windows)]
+const CODE: &'static str = "code.cmd";
+#[cfg(not(windows))]
+const CODE: &'static str = "code";
+
 fn main() -> Result<()> {
     let args = parse_args()?;
 
@@ -50,7 +61,7 @@ fn main() -> Result<()> {
     let extension = package(&sh, &args.target, !args.no_prebuilt_binary)?;
 
     if args.install {
-        cmd!(sh, "code --install-extension {extension} --force").run()?;
+        cmd!(sh, "{CODE} --install-extension {extension} --force").run()?;
     }
 
     Ok(())
@@ -115,7 +126,7 @@ fn package(sh: &xshell::Shell, target: &str, prebuilt_binary: bool) -> Result<Pa
         let _dir = sh.push_dir("editors/code");
         cmd!(
             sh,
-            "npm run package --silent -- -o wgsl-analyzer-{target}.vsix --target {target}"
+            "{NPM} run package --silent -- -o wgsl-analyzer-{target}.vsix --target {target}"
         )
         .run()?;
     }
