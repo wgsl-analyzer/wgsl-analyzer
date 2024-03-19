@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.9
+- Add Naga 19 support
+
 ## Version 0.8
 - add `workgroupUniformLoad` builtin and missing `dot` builtins
 - formatter: preserve linebreaks in function calls
