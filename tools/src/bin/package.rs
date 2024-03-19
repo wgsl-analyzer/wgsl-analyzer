@@ -115,10 +115,13 @@ fn package(sh: &xshell::Shell, target: &str, prebuilt_binary: bool) -> Result<Pa
         Err(anyhow::anyhow!("./editors/code folder does not exist, run this script from the root of the repository."))?;
     }
     let out = Path::new("editors/code/out");
-    let dst = out.join("wgsl_analyzer");
+    let mut dst = out.join("wgsl_analyzer");
     if prebuilt_binary {
         let src = compile(sh, rust_target)?;
         sh.create_dir(out)?;
+        if let Some(ext) = src.extension() {
+            dst.set_extension(ext);
+        }
         sh.copy_file(src, &dst)?;
     }
 
