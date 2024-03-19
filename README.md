@@ -97,6 +97,8 @@ The vscode extension can either be built as a platform-specific extension which 
 Copy the server binary (either `wgsl_analyzer` or `wgsl_analyzer.exe`) into `./editors/code/out/`, then run
 `npm run package -- --target <target> -o wgsl_analyzer-<target>.vsix` where the target is one of the targets listed as [platform-specific extension targets](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions).
 
+This can be done automatically with `cargo run --bin package -- --target linux-x64 --install`.
+
 ## Design
 
 The design is heavily inspired (and in large parts copied from) [rust-analyzer](https://github.com/rust-analyzer/rust-analyzer).

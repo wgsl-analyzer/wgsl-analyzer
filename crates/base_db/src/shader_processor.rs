@@ -1,9 +1,12 @@
 use std::{collections::HashSet, ops::Range};
 
-use once_cell::sync::Lazy;
 use regex::Regex;
+use std::sync::OnceLock;
 
-pub static SHADER_PROCESSOR: Lazy<ShaderProcessor> = Lazy::new(ShaderProcessor::default);
+pub fn get_shader_processor() -> &'static ShaderProcessor {
+    static SHADER_PROCESSOR: OnceLock<ShaderProcessor> = OnceLock::new();
+    SHADER_PROCESSOR.get_or_init(ShaderProcessor::default)
+}
 
 pub struct ShaderProcessor {
     ifdef_regex: Regex,
