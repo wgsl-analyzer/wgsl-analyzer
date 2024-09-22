@@ -721,7 +721,9 @@ fn switch_body(p: &mut Parser) {
         m.complete(p, SyntaxKind::SwitchBodyCase);
     } else if p.at(SyntaxKind::Default) {
         p.expect(SyntaxKind::Default);
-        p.expect(SyntaxKind::Colon);
+        if p.at(SyntaxKind::Colon) {
+            p.bump();
+        }
         compound_statement(p);
         m.complete(p, SyntaxKind::SwitchBodyDefault);
     } else {
