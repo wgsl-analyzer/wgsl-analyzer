@@ -67,86 +67,6 @@ trait NagaError: std::error::Error {
     fn has_spans(&self) -> bool;
 }
 
-struct Naga12;
-impl Naga for Naga12 {
-    type Module = naga12::Module;
-    type ParseError = naga12::front::wgsl::ParseError;
-    type ValidationError = naga12::WithSpan<naga12::valid::ValidationError>;
-
-    fn parse(source: &str) -> Result<Self::Module, Self::ParseError> {
-        naga12::front::wgsl::parse_str(source)
-    }
-
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
-        let flags = naga12::valid::ValidationFlags::all();
-        let capabilities = naga12::valid::Capabilities::all();
-        let mut validator = naga12::valid::Validator::new(flags, capabilities);
-        validator.validate(module).map(drop)
-    }
-}
-impl NagaError for naga12::front::wgsl::ParseError {
-    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
-        Box::new(
-            self.labels()
-                .filter_map(|(span, label)| Some((span.to_range()?, label.to_string()))),
-        )
-    }
-    fn has_spans(&self) -> bool {
-        self.labels().len() > 0
-    }
-}
-impl NagaError for naga12::WithSpan<naga12::valid::ValidationError> {
-    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
-        Box::new(
-            self.spans()
-                .filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
-        )
-    }
-    fn has_spans(&self) -> bool {
-        self.spans().len() > 0
-    }
-}
-
-struct Naga13;
-impl Naga for Naga13 {
-    type Module = naga13::Module;
-    type ParseError = naga13::front::wgsl::ParseError;
-    type ValidationError = naga13::WithSpan<naga13::valid::ValidationError>;
-
-    fn parse(source: &str) -> Result<Self::Module, Self::ParseError> {
-        naga13::front::wgsl::parse_str(source)
-    }
-
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
-        let flags = naga13::valid::ValidationFlags::all();
-        let capabilities = naga13::valid::Capabilities::all();
-        let mut validator = naga13::valid::Validator::new(flags, capabilities);
-        validator.validate(module).map(drop)
-    }
-}
-impl NagaError for naga13::front::wgsl::ParseError {
-    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
-        Box::new(
-            self.labels()
-                .flat_map(|(range, label)| Some((range.to_range()?, label.to_string()))),
-        )
-    }
-    fn has_spans(&self) -> bool {
-        self.labels().len() > 0
-    }
-}
-impl NagaError for naga13::WithSpan<naga13::valid::ValidationError> {
-    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
-        Box::new(
-            self.spans()
-                .filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
-        )
-    }
-    fn has_spans(&self) -> bool {
-        self.spans().len() > 0
-    }
-}
-
 struct Naga14;
 impl Naga for Naga14 {
     type Module = naga14::Module;
@@ -470,12 +390,6 @@ pub fn diagnostics(
             }
             NagaVersion::Naga14 => {
                 let _ = naga_diagnostics::<Naga14>(db, file_id, config, &mut diagnostics);
-            }
-            NagaVersion::Naga13 => {
-                let _ = naga_diagnostics::<Naga13>(db, file_id, config, &mut diagnostics);
-            }
-            NagaVersion::Naga12 => {
-                let _ = naga_diagnostics::<Naga12>(db, file_id, config, &mut diagnostics);
             }
             NagaVersion::NagaMain => {
                 let _ = naga_diagnostics::<NagaMain>(db, file_id, config, &mut diagnostics);
