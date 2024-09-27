@@ -8,17 +8,14 @@ use crate::{
 use std::fmt::Write;
 
 #[derive(Debug, Clone, Copy)]
+#[derive(Default)]
 pub enum TypeVerbosity {
     Full,    // ref<uniform, f32, read_write>,
+    #[default]
     Compact, // ref<f32>,
     Inner,   // f32
 }
 
-impl Default for TypeVerbosity {
-    fn default() -> Self {
-        TypeVerbosity::Compact
-    }
-}
 
 pub fn pretty_type_expectation(db: &dyn HirDatabase, ty: TypeExpectation) -> String {
     pretty_type_expectation_with_verbosity(db, ty, TypeVerbosity::default())

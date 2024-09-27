@@ -196,7 +196,7 @@ impl<N> From<Idx<N>> for ModuleItemId<N> {
 }
 
 // If we automatically derive this trait, ModuleItemId<N> where N doesn't implement Hash can't compile
-#[allow(clippy::derive_hash_xor_eq)]
+#[allow(clippy::derived_hash_with_manual_eq)]
 impl<N> std::hash::Hash for ModuleItemId<N> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.index.hash(state);

@@ -75,10 +75,7 @@ impl<N: AstNode> Eq for FileAstId<N> {}
 
 impl<N: AstNode> Clone for FileAstId<N> {
     fn clone(&self) -> Self {
-        Self {
-            id: self.id,
-            _marker: PhantomData,
-        }
+        *self
     }
 }
 impl<N: AstNode> Copy for FileAstId<N> {}

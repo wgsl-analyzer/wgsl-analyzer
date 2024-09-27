@@ -38,7 +38,7 @@ pub struct Semantics<'db> {
 }
 
 impl<'db> Semantics<'db> {
-    pub fn new(db: &'db dyn HirDatabase) -> Semantics {
+    pub fn new(db: &'db dyn HirDatabase) -> Semantics<'db> {
         Semantics { db }
     }
 
@@ -411,7 +411,7 @@ impl HasSource for Field {
 
         let field = strukt.value.body()?.fields().find_map(|field| {
             let name = field.variable_ident_decl()?.binding()?.name()?;
-            (name.ident_token()?.text() == field_name.as_str()).then(|| field)
+            (name.ident_token()?.text() == field_name.as_str()).then_some(field)
         })?;
 
         Some(InFile::new(strukt.file_id, field))
@@ -517,7 +517,7 @@ impl Module {
                         match diagnostics::any_diag_from_infer_diag(
                             db,
                             diagnostic,
-                            &*source_map,
+                            &source_map,
                             file,
                         ) {
                             Some(diag) => acc.push(diag),
@@ -529,7 +529,7 @@ impl Module {
                 }
 
                 diagnostics::precedence::collect(db, def, |diagnostic| {
-                    match diagnostics::any_diag_from_shift(&diagnostic, &*source_map, file) {
+                    match diagnostics::any_diag_from_shift(&diagnostic, &source_map, file) {
                         Some(diag) => acc.push(diag),
                         None => {
                             tracing::warn!("could not create diagnostic from {:?}", diagnostic)

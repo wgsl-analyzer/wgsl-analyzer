@@ -230,7 +230,7 @@ impl<T> PartialEq for Interned<T> {
 impl<T> Eq for Interned<T> {}
 impl<T> Clone for Interned<T> {
     fn clone(&self) -> Self {
-        Self(self.0, PhantomData)
+        *self
     }
 }
 impl<T> Copy for Interned<T> {}

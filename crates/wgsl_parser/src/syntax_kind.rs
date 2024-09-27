@@ -127,10 +127,12 @@ pub enum SyntaxKind {
     UnofficialPreprocessorEndif,
     #[regex("#else.*")]
     UnofficialPreprocessorElse,
-    #[regex("#import")]
+    #[regex("#import.*")]
     UnofficialPreprocessorImport,
     #[regex("#define_import_path.*")]
     UnofficialPreprocessorDefineImportPath,
+    #[regex("#if.*")]
+    UnofficialPreprocessIf,
 
     #[regex("//.*")]
     Comment,
@@ -478,6 +480,7 @@ impl SyntaxKind {
                 | SyntaxKind::UnofficialPreprocessorIfDef
                 | SyntaxKind::UnofficialPreprocessorElse
                 | SyntaxKind::UnofficialPreprocessorDefineImportPath
+                | SyntaxKind::UnofficialPreprocessIf
         )
     }
 }

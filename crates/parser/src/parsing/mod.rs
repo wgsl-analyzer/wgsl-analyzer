@@ -172,7 +172,7 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
     pub fn at_or_end(&mut self, kind: P::TokenKind) -> bool {
         self.expected_kinds.push(kind);
         let token = self.peek();
-        token == Some(kind) || token == None
+        token == Some(kind) || token.is_none()
     }
 
     pub fn at_set(&mut self, set: &[P::TokenKind]) -> bool {

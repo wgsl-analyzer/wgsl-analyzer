@@ -4,7 +4,8 @@ use xshell::cmd;
 
 type Result<T, E = anyhow::Error> = std::result::Result<T, E>;
 
-const HELP_STR: &str = "Usage: cargo run --bin package --target linux-x64 [--no-prebuilt-binary]";
+const HELP_STR: &str =
+    "Usage: cargo run --bin package -- --target linux-x64 [--no-prebuilt-binary] [--install]";
 
 #[derive(Debug)]
 struct Args {
@@ -41,6 +42,17 @@ fn parse_args() -> Result<Args, lexopt::Error> {
     })
 }
 
+// Windows needs a workaround for npm.cmd, see https://github.com/rust-lang/rust/issues/42791
+#[cfg(windows)]
+const NPM: &'static str = "npm.cmd";
+#[cfg(not(windows))]
+const NPM: &str = "npm";
+
+#[cfg(windows)]
+const CODE: &'static str = "code.cmd";
+#[cfg(not(windows))]
+const CODE: &str = "code";
+
 fn main() -> Result<()> {
     let args = parse_args()?;
 
@@ -49,7 +61,7 @@ fn main() -> Result<()> {
     let extension = package(&sh, &args.target, !args.no_prebuilt_binary)?;
 
     if args.install {
-        cmd!(sh, "code --install-extension {extension} --force").run()?;
+        cmd!(sh, "{CODE} --install-extension {extension} --force").run()?;
     }
 
     Ok(())
@@ -90,16 +102,26 @@ fn compile(sh: &xshell::Shell, rust_target: &str) -> Result<PathBuf> {
 }
 
 fn package(sh: &xshell::Shell, target: &str, prebuilt_binary: bool) -> Result<PathBuf> {
-    let (_, rust_target) = TARGETS
-        .iter()
-        .find(|(t, _)| *t == target)
-        .ok_or_else(|| anyhow::anyhow!("invalid target"))?;
+    let (_, rust_target) = TARGETS.iter().find(|(t, _)| *t == target).ok_or_else(|| {
+        let target_names = TARGETS
+            .iter()
+            .map(|(t, _)| *t)
+            .collect::<Vec<_>>()
+            .join(", ");
+        anyhow::anyhow!("invalid target, expected one of {}", target_names)
+    })?;
 
+    if !Path::new("editors/code").exists() {
+        Err(anyhow::anyhow!("./editors/code folder does not exist, run this script from the root of the repository."))?;
+    }
     let out = Path::new("editors/code/out");
-    let dst = out.join("wgsl_analyzer");
+    let mut dst = out.join("wgsl_analyzer");
     if prebuilt_binary {
         let src = compile(sh, rust_target)?;
         sh.create_dir(out)?;
+        if let Some(ext) = src.extension() {
+            dst.set_extension(ext);
+        }
         sh.copy_file(src, &dst)?;
     }
 
@@ -107,7 +129,7 @@ fn package(sh: &xshell::Shell, target: &str, prebuilt_binary: bool) -> Result<Pa
         let _dir = sh.push_dir("editors/code");
         cmd!(
             sh,
-            "npm run package --silent -- -o wgsl-analyzer-{target}.vsix --target {target}"
+            "{NPM} run package --silent -- -o wgsl-analyzer-{target}.vsix --target {target}"
         )
         .run()?;
     }

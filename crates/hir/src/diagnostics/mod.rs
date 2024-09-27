@@ -29,8 +29,9 @@ pub struct DiagnosticsConfig {
 
 #[derive(Debug)]
 pub enum NagaVersion {
-    Naga10,
-    Naga11,
+    Naga14,
+    Naga19,
+    Naga22,
     NagaMain,
 }
 
@@ -225,7 +226,7 @@ pub(crate) fn any_diag_from_infer_diag(
 
             AnyDiagnostic::NoConstructor {
                 expr: source,
-                builtins: builtins.clone(),
+                builtins: *builtins,
                 ty,
                 parameters: parameters.clone(),
             }

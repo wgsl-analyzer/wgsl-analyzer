@@ -99,8 +99,7 @@ fn format_fn_header_comma_multiline() {
                 a: b , c: d ,)  -> f32   {}",
         expect![[r#"
             fn main(
-                a: b,
-                c: d,
+                a: b, c: d,
             ) -> f32 {}"#]],
     );
 }
@@ -141,8 +140,7 @@ fn format_fn_newline_2() {
     a:b, c:d)->f32{}",
         expect![[r#"
             fn main(
-                a: b,
-                c: d
+                a: b, c: d
             ) -> f32 {}"#]],
     );
 }
@@ -201,7 +199,9 @@ fn format_bevy_function_2() {
     check(
             "fn specular(f0: vec3<f32>, roughness: f32, h: vec3<f32>, NoV: f32, NoL: f32,
               NoH: f32, LoH: f32, specularIntensity: f32) -> vec3<f32> {",
-            expect![["fn specular(f0: vec3<f32>, roughness: f32, h: vec3<f32>, NoV: f32, NoL: f32, NoH: f32, LoH: f32, specularIntensity: f32) -> vec3<f32> {"]],
+            expect![[r#"
+                fn specular(f0: vec3<f32>, roughness: f32, h: vec3<f32>, NoV: f32, NoL: f32,
+                    NoH: f32, LoH: f32, specularIntensity: f32) -> vec3<f32> {"#]],
         )
 }
 
@@ -289,8 +289,7 @@ fn format_function_call_newline() {
         expect![[r#"
             fn main() {
                 min(
-                    x,
-                    y
+                    x, y
                 );
             }"#]],
     );
@@ -309,8 +308,7 @@ fn format_function_call_newline_indent() {
             fn main() {
                 if false {
                     min(
-                        x,
-                        y
+                        x, y
                     );
                 }
             }"#]],
@@ -474,5 +472,27 @@ fn format_expr_bitcast() {
     check(
         "fn main() { bitcast   <  vec4<u32>  >  ( x+5 ) }",
         expect!["fn main() { bitcast<vec4<u32>>(x + 5) }"],
+    );
+}
+
+#[test]
+fn leave_matrix_alone() {
+    check(
+        r#"
+fn main() {
+    let x = mat3x3(
+        cosR,  0.0, sinR,
+        0.0, 1.0, 0.0,
+        -sinR, 0.0, cosR,
+    );
+}"#,
+        expect![[r#"
+            fn main() {
+                let x = mat3x3(
+                    cosR, 0.0, sinR,
+                    0.0, 1.0, 0.0,
+                    -sinR, 0.0, cosR,
+                );
+            }"#]],
     );
 }

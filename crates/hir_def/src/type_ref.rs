@@ -121,12 +121,12 @@ impl TryFrom<ast::VecType> for VecType {
 }
 
 pub(crate) fn vector_dimensions(ty: &ast::VecType) -> VecDimensionality {
-    let size = match *ty {
+    
+    match *ty {
         ast::VecType::Vec2(_) => VecDimensionality::Two,
         ast::VecType::Vec3(_) => VecDimensionality::Three,
         ast::VecType::Vec4(_) => VecDimensionality::Four,
-    };
-    size
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]

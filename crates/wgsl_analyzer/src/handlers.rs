@@ -6,11 +6,9 @@ use lsp_types::{
     DiagnosticRelatedInformation, DiagnosticTag, GotoDefinitionResponse, LanguageString,
     MarkedString, TextDocumentIdentifier,
 };
-use std::process::exit;
 use vfs::FileId;
 
 use crate::global_state::GlobalStateSnapshot;
-use crate::lsp_ext::inlay_hints::{InlayHint, InlayHintsParams};
 use crate::{from_proto, lsp_ext, to_proto, Result};
 
 pub fn handle_goto_definition(
@@ -104,7 +102,7 @@ pub fn handle_hover(
 }
 
 pub fn handle_shutdown(_snap: GlobalStateSnapshot, _: ()) -> Result<()> {
-    exit(0);
+    Ok(())
 }
 
 pub fn full_source(snap: GlobalStateSnapshot, params: lsp_ext::FullSourceParams) -> Result<String> {
@@ -141,27 +139,25 @@ pub fn debug_command(snap: GlobalStateSnapshot, params: lsp_ext::DebugCommandPar
 
 pub(crate) fn handle_inlay_hints(
     snap: GlobalStateSnapshot,
-    params: InlayHintsParams,
-) -> Result<Vec<InlayHint>> {
+    params: lsp_types::InlayHintParams,
+) -> Result<Option<Vec<lsp_types::InlayHint>>> {
     let document_uri = &params.text_document.uri;
     let file_id = from_proto::file_id(&snap, document_uri)?;
     let line_index = snap.file_line_index(file_id)?;
-    let range = params
-        .range
-        .map(|range| {
-            from_proto::file_range(
-                &snap,
-                TextDocumentIdentifier::new(document_uri.to_owned()),
-                range,
-            )
-        })
-        .transpose()?;
-    Ok(snap
-        .analysis
-        .inlay_hints(&snap.config.inlay_hints(), file_id, range)?
-        .into_iter()
-        .map(|it| to_proto::inlay_hint(true, &line_index, it))
-        .collect())
+
+    let range = from_proto::file_range(
+        &snap,
+        TextDocumentIdentifier::new(document_uri.to_owned()),
+        params.range,
+    );
+
+    Ok(Some(
+        snap.analysis
+            .inlay_hints(&snap.config.inlay_hints(), file_id, range.ok())?
+            .into_iter()
+            .map(|it| to_proto::inlay_hint(true, &line_index, it))
+            .collect(),
+    ))
 }
 
 pub fn publish_diagnostics(
@@ -192,7 +188,7 @@ pub fn publish_diagnostics(
                 code_description: None,
                 source: None,
                 message: diagnostic.message,
-                related_information: (!related.is_empty()).then(|| related),
+                related_information: (!related.is_empty()).then_some(related),
                 tags: if diagnostic.unused {
                     Some(vec![DiagnosticTag::UNNECESSARY])
                 } else {

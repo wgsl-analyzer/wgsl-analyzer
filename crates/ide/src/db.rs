@@ -58,12 +58,12 @@ impl RootDatabase {
 
 impl Upcast<dyn DefDatabase> for RootDatabase {
     fn upcast(&self) -> &(dyn DefDatabase + 'static) {
-        &*self
+        self
     }
 }
 
 impl Upcast<dyn SourceDatabase> for RootDatabase {
     fn upcast(&self) -> &(dyn SourceDatabase + 'static) {
-        &*self
+        self
     }
 }

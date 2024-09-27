@@ -16,24 +16,32 @@ syntax = { path = "../syntax" }
 wgsl_formatter = { path = "../wgsl_formatter" }
 rowan = "0.15"
 lsp-types = "0.93.0"
-vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "0ee4e6a22" }
+vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "8a23314" }
 
 expect-test = "1.1.0"
 itertools = "0.10.1"
 smol_str = "0.1.21"
 
-naga10 = { package = "naga", version = "0.10", features = [
-  "wgsl-in",
-  "validate",
-  "span",
-] }
 naga11 = { package = "naga", version = "0.11", features = [
   "wgsl-in",
   "validate",
   "span",
 ] }
-nagamain = { package = "naga", git = "https://github.com/gfx-rs/naga", rev = "b9c5cb5a7841a8728137a58840fbbdbb9b310267", features = [
+naga12 = { package = "naga", version = "0.12", features = [
   "wgsl-in",
   "validate",
   "span",
 ] }
+naga13 = { package = "naga", version = "0.13", features = [
+  "wgsl-in",
+  "validate",
+  "span",
+] }
+naga14 = { package = "naga", version = "0.14", features = [
+  "wgsl-in",
+  "validate",
+  "span",
+] }
+naga19 = { package = "naga", version = "0.19", features = [ "wgsl-in" ] }
+naga22 = { package = "naga", version = "22", features = [ "wgsl-in" ] }
+nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "765c20235ea712fd14ad1b9e36bbb2071a86e319", features = [ "wgsl-in" ] }

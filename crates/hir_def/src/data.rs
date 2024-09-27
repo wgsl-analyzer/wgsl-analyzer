@@ -29,7 +29,6 @@ impl FunctionData {
             params: function
                 .params
                 .clone()
-                .into_iter()
                 .map(|param| {
                     let param = &module_info.data[param];
                     (param.ty, param.name.clone())
@@ -68,7 +67,6 @@ impl StructData {
         strukt
             .fields
             .clone()
-            .into_iter()
             .map(|field| &module_info.data[field])
             .map(|field| FieldData {
                 name: field.name.clone(),

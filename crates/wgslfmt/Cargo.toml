@@ -6,3 +6,5 @@ edition = "2021"
 [dependencies]
 wgsl_formatter = { path = "../wgsl_formatter" }
 anyhow = "1.0"
+lexopt = "0.3"
+prettydiff = "0.6.4"

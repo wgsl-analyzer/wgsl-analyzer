@@ -50,12 +50,12 @@ pub trait SourceDatabase {
 
 fn line_index(db: &dyn SourceDatabase, file_id: FileId) -> Arc<LineIndex> {
     let text = db.file_text(file_id);
-    Arc::new(LineIndex::new(&*text))
+    Arc::new(LineIndex::new(&text))
 }
 
 fn parse_no_preprocessor_query(db: &dyn SourceDatabase, file_id: FileId) -> syntax::Parse {
     let source = db.file_text(file_id);
-    syntax::parse(&*source)
+    syntax::parse(&source)
 }
 
 fn parse_import_no_preprocessor_query(
@@ -64,7 +64,7 @@ fn parse_import_no_preprocessor_query(
 ) -> Result<syntax::Parse, ()> {
     let imports = db.custom_imports();
     let source = imports.get(&key).ok_or(())?;
-    Ok(syntax::parse(&*source))
+    Ok(syntax::parse(source))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -83,7 +83,7 @@ fn parse_with_unconfigured_query(
     let mut unconfigured = Vec::new();
 
     let processed_source =
-        shader_processor::SHADER_PROCESSOR.process(&source, &shader_defs, |range, def| {
+        shader_processor::get_shader_processor().process(&source, &shader_defs, |range, def| {
             let range = TextRange::new(
                 TextSize::from(range.start as u32),
                 TextSize::from(range.end as u32),
@@ -111,7 +111,7 @@ fn parse_import_query(
     let source = imports.get(&key).ok_or(())?;
 
     let processed_source =
-        shader_processor::SHADER_PROCESSOR.process(source, &shader_defs, |_, _| {});
+        shader_processor::get_shader_processor().process(source, &shader_defs, |_, _| {});
     Ok(syntax::parse_entrypoint(
         &processed_source,
         parse_entrypoint,

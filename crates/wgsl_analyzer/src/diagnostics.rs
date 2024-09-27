@@ -10,12 +10,12 @@ use vfs::FileId;
 // PERF: FxHashMap/Set
 // pub(crate) type CheckFixes = Arc<HashMap<FileId, Vec<Fix>>>;
 
-#[derive(Debug, Default, Clone)]
-pub struct DiagnosticsMapConfig {
-    pub remap_prefix: HashMap<String, String>,
-    pub warnings_as_info: Vec<String>,
-    pub warnings_as_hint: Vec<String>,
-}
+// #[derive(Debug, Default, Clone)]
+// pub struct DiagnosticsMapConfig {
+//     pub remap_prefix: HashMap<String, String>,
+//     pub warnings_as_info: Vec<String>,
+//     pub warnings_as_hint: Vec<String>,
+// }
 
 #[derive(Debug, Default, Clone)]
 pub struct DiagnosticCollection {
