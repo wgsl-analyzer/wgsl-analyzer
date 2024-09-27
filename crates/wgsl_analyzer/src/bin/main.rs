@@ -8,7 +8,7 @@ use wgsl_analyzer::{
     Result,
 };
 
-const VERSION: &str = "0.8.1";
+const VERSION: &str = "0.9.0";
 
 fn main() -> Result<()> {
     if std::env::args().any(|arg| arg == "--version") {
