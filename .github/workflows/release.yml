@@ -80,11 +80,11 @@ jobs:
       - shell: pwsh
         run: npm run package -- --target ${{ env.target }} -o wgsl-analyzer-${{ env.target }}.vsix
         working-directory: ./editors/code
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: wgsl-analyzer-${{ env.target }}.vsix
           path: editors/code/wgsl-analyzer-${{ env.target }}.vsix
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: wgsl-analyzer-${{ env.target }}
           path: wgsl_analyzer-${{ matrix.platform }}-${{ matrix.arch }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
@@ -104,7 +104,7 @@ jobs:
             npm run package -- --target $target -o wgsl-analyzer-$target.vsix
           }
         working-directory: ./editors/code
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: wgsl-analyzer-generic
           path: editors/code/wgsl-analyzer-*.vsix
@@ -114,7 +114,7 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
       - name: Display structure of downloaded files
@@ -130,7 +130,7 @@ jobs:
     needs: [build, build_generic]
     if: success() && startsWith( github.ref, 'refs/tags/')
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
       - run: npx vsce publish --packagePath $(find . -type f -iname '*.vsix')
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
