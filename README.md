@@ -1,4 +1,4 @@
-# wgsl-analyzer
+<img src="https://raw.githubusercontent.com/wgsl-analyzer/wgsl-analyzer/master/logo.svg" alt="wgsl-analyzer logo">
 
 wgsl-analyzer is a [language server](https://microsoft.github.io/language-server-protocol/) plugin for the [WGSL Shading language](https://gpuweb.github.io/gpuweb/wgsl/).
 
