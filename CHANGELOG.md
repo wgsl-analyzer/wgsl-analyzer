@@ -1,7 +1,9 @@
 # Changelog
 
 ## Version 0.9
-- Add Naga 19 support
+- Add Naga 19 and 22 support, remove old 0.12 and 0.13
+- fix issues around packaging script on windows
+- make colons optional in default switch statement
 
 ## Version 0.8
 - add `workgroupUniformLoad` builtin and missing `dot` builtins
