@@ -4,7 +4,7 @@ use std::{io::Read, path::PathBuf};
 
 use wgsl_formatter::FormattingOptions;
 
-const HELP_STR: &'static str = r#"wgslfmt [options] <file>...
+const HELP_STR: &str = r#"wgslfmt [options] <file>...
 
 Options:
     --check     Run in 'check' mode. Exists with 0 if input is
@@ -65,13 +65,11 @@ fn main() -> Result<(), anyhow::Error> {
                 println!("Diff in {}\n{}:", file.display(), diff);
                 std::process::exit(1);
             }
+        } else if is_stdin {
+            print!("{}", output);
         } else {
-            if is_stdin {
-                print!("{}", output);
-            } else {
-                std::fs::write(&file, output)
-                    .with_context(|| format!("failed to write to {}", file.display()))?;
-            }
+            std::fs::write(&file, output)
+                .with_context(|| format!("failed to write to {}", file.display()))?;
         }
     }
 

@@ -188,7 +188,7 @@ pub fn publish_diagnostics(
                 code_description: None,
                 source: None,
                 message: diagnostic.message,
-                related_information: (!related.is_empty()).then(|| related),
+                related_information: (!related.is_empty()).then_some(related),
                 tags: if diagnostic.unused {
                     Some(vec![DiagnosticTag::UNNECESSARY])
                 } else {

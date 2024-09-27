@@ -50,12 +50,12 @@ pub trait SourceDatabase {
 
 fn line_index(db: &dyn SourceDatabase, file_id: FileId) -> Arc<LineIndex> {
     let text = db.file_text(file_id);
-    Arc::new(LineIndex::new(&*text))
+    Arc::new(LineIndex::new(&text))
 }
 
 fn parse_no_preprocessor_query(db: &dyn SourceDatabase, file_id: FileId) -> syntax::Parse {
     let source = db.file_text(file_id);
-    syntax::parse(&*source)
+    syntax::parse(&source)
 }
 
 fn parse_import_no_preprocessor_query(
@@ -64,7 +64,7 @@ fn parse_import_no_preprocessor_query(
 ) -> Result<syntax::Parse, ()> {
     let imports = db.custom_imports();
     let source = imports.get(&key).ok_or(())?;
-    Ok(syntax::parse(&*source))
+    Ok(syntax::parse(source))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

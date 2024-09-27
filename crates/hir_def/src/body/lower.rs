@@ -33,7 +33,7 @@ pub fn lower_global_var_decl(
         db,
         body: Body::default(),
         source_map: BodySourceMap::default(),
-        file_id: file_id,
+        file_id,
     }
     .collect_global_var_decl(decl)
 }

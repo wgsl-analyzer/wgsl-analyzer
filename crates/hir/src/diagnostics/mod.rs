@@ -226,7 +226,7 @@ pub(crate) fn any_diag_from_infer_diag(
 
             AnyDiagnostic::NoConstructor {
                 expr: source,
-                builtins: builtins.clone(),
+                builtins: *builtins,
                 ty,
                 parameters: parameters.clone(),
             }

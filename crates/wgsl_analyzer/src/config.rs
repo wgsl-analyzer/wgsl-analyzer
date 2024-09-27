@@ -23,17 +23,14 @@ pub struct InlayHintsConfig {
 }
 #[derive(Clone, Copy, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum InlayHintsTypeVerbosity {
     Full,    // ref<uniform, f32, read_write>,
+    #[default]
     Compact, // ref<f32>,
     Inner,   // f32
 }
 
-impl Default for InlayHintsTypeVerbosity {
-    fn default() -> Self {
-        InlayHintsTypeVerbosity::Compact
-    }
-}
 
 #[derive(Default, Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -55,10 +52,12 @@ pub struct DiagnosticsConfig {
 }
 
 #[derive(Clone, Debug, Deserialize)]
+#[derive(Default)]
 pub enum NagaVersion {
     #[serde(rename = "0.14")]
     Naga14,
     #[serde(rename = "0.19")]
+    #[default]
     Naga19,
     #[serde(rename = "0.22")]
     Naga22,
@@ -66,11 +65,6 @@ pub enum NagaVersion {
     NagaMain,
 }
 
-impl Default for NagaVersion {
-    fn default() -> Self {
-        NagaVersion::Naga19
-    }
-}
 
 impl Config {
     fn try_update(&mut self, value: serde_json::Value) -> Result<(), serde_json::Error> {
@@ -110,7 +104,7 @@ impl Config {
             struct_layout_hints: self
                 .inlay_hints
                 .struct_layout_hints
-                .then(|| StructLayoutHints::Offset),
+                .then_some(StructLayoutHints::Offset),
             type_verbosity: match self.inlay_hints.type_verbosity {
                 InlayHintsTypeVerbosity::Full => TypeVerbosity::Full,
                 InlayHintsTypeVerbosity::Compact => TypeVerbosity::Compact,

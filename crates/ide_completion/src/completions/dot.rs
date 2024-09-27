@@ -49,7 +49,6 @@ fn swizzle_items<'a>(
     let swizzle = move |set: &'a [&'a str; 4]| {
         (1..=4).flat_map(move |n| {
             (std::iter::repeat_with(|| set[0..size].iter()).take(n))
-                .into_iter()
                 .multi_cartesian_product()
                 .map(|result| result.into_iter().copied().collect::<String>())
         })

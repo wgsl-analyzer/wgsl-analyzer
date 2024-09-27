@@ -46,12 +46,12 @@ fn parse_args() -> Result<Args, lexopt::Error> {
 #[cfg(windows)]
 const NPM: &'static str = "npm.cmd";
 #[cfg(not(windows))]
-const NPM: &'static str = "npm";
+const NPM: &str = "npm";
 
 #[cfg(windows)]
 const CODE: &'static str = "code.cmd";
 #[cfg(not(windows))]
-const CODE: &'static str = "code";
+const CODE: &str = "code";
 
 fn main() -> Result<()> {
     let args = parse_args()?;

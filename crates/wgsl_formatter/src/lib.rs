@@ -309,14 +309,15 @@ fn format_params(
         indentation + 1,
         options.trailing_commas,
     );
-    Some(if has_newline {
+    if has_newline {
         set_whitespace_before(
             param_list.right_paren_token()?,
             create_whitespace(&format!("\n{}", "    ".repeat(indentation))),
         );
     } else {
         remove_if_whitespace(param_list.right_paren_token()?.prev_token()?);
-    })
+    };
+    Some(())
 }
 
 fn format_param_list<T: AstNode>(

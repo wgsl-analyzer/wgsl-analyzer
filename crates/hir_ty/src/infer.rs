@@ -660,10 +660,10 @@ impl<'db> InferenceContext<'db> {
             }
             Expr::Bitcast { ty, expr } => {
                 self.infer_expr(expr);
-                let ty = self
+                
+                self
                     .try_lower_ty(&self.db.lookup_intern_type_ref(ty))
-                    .unwrap_or_else(|_| self.err_ty());
-                ty
+                    .unwrap_or_else(|_| self.err_ty())
             }
             Expr::Index { lhs, index } => {
                 let lhs = self.infer_expr(lhs);
@@ -860,8 +860,8 @@ impl<'db> InferenceContext<'db> {
         let resolve = resolver.resolve_value(path)?;
         let ty = match resolve {
             hir_def::resolver::ResolveValue::Local(local) => {
-                let ty = *self.result.type_of_binding.get(local)?;
-                ty
+                
+                *self.result.type_of_binding.get(local)?
             }
             hir_def::resolver::ResolveValue::GlobalVariable(loc) => {
                 let id = self.db.intern_global_variable(loc);
@@ -960,7 +960,7 @@ impl<'db> InferenceContext<'db> {
             self.result
                 .call_resolutions
                 .insert(expr, ResolvedCall::Function(resolved));
-            return return_ty;
+            return_ty
         } else {
             self.push_diagnostic(InferenceDiagnostic::NoBuiltinOverload {
                 expr,
@@ -1015,25 +1015,22 @@ impl<'db> InferenceContext<'db> {
     fn infer_call(&mut self, expr: ExprId, callee: &Callee, args: Vec<Ty>) -> Ty {
         match callee {
             Callee::InferredComponentMatrix { rows, columns } => {
-                let builtin_id = self.builtin_matrix_inferred_constructor(&columns, &rows);
-                let return_ty =
-                    self.call_builtin(expr, builtin_id, &args, Some("matrix construction"));
-                return_ty
+                let builtin_id = self.builtin_matrix_inferred_constructor(columns, rows);
+                
+                self.call_builtin(expr, builtin_id, &args, Some("matrix construction"))
             }
             Callee::InferredComponentVec(size) => {
-                let builtin_id = self.builtin_vector_inferred_constructor(&size);
-                let return_ty =
-                    self.call_builtin(expr, builtin_id, &args, Some("vec construction"));
-                return_ty
+                let builtin_id = self.builtin_vector_inferred_constructor(size);
+                
+                self.call_builtin(expr, builtin_id, &args, Some("vec construction"))
             }
             Callee::InferredComponentArray => {
                 let builtin_id = Builtin::builtin_op_array_constructor(self.db).intern(self.db);
                 // TODO: Special case calling array initialisers to allow n-ary calls
-                let return_ty =
-                    self.call_builtin(expr, builtin_id, &args, Some("array construction"));
-                return_ty
+                
+                self.call_builtin(expr, builtin_id, &args, Some("array construction"))
             }
-            Callee::Name(name) => match self.resolver.resolve_callable(&name) {
+            Callee::Name(name) => match self.resolver.resolve_callable(name) {
                 Some(arg) => match arg {
                     hir_def::resolver::ResolveCallable::Struct(loc) => {
                         let strukt = self.db.intern_struct(loc);
@@ -1067,7 +1064,7 @@ impl<'db> InferenceContext<'db> {
                     }
                 },
                 None => {
-                    let builtin = Builtin::for_name(self.db, &name);
+                    let builtin = Builtin::for_name(self.db, name);
                     if let Some(builtin) = builtin {
                         let builtin_id = builtin.intern(self.db);
                         self.call_builtin(expr, builtin_id, &args, None)
@@ -1109,10 +1106,8 @@ impl<'db> InferenceContext<'db> {
             }
             TyKind::Array(_) => {
                 if args.is_empty() {
-                    return;
                 }
                 // TODO: Implement checking that all the arguments have the same type (inner)
-                return;
             }
             TyKind::Vector(vec) => {
                 if args.is_empty() {
@@ -1164,10 +1159,8 @@ impl<'db> InferenceContext<'db> {
             }
             TyKind::Struct(_) => {
                 if args.is_empty() {
-                    return;
                 }
                 // TODO: Implement checking field types
-                return;
             }
 
             // Never constructible
@@ -1619,12 +1612,12 @@ impl<'db> TyLoweringContext<'db> {
             }
             TypeRef::Vec(vec) => TyKind::Vector(VectorType {
                 size: vec.size.into(),
-                inner: self.lower_ty(&*vec.inner),
+                inner: self.lower_ty(&vec.inner),
             }),
             TypeRef::Matrix(matrix) => TyKind::Matrix(MatrixType {
                 columns: matrix.columns.into(),
                 rows: matrix.rows.into(),
-                inner: self.lower_ty(&*matrix.inner),
+                inner: self.lower_ty(&matrix.inner),
             }),
             TypeRef::Texture(tex) => TyKind::Texture(TextureType {
                 dimension: match tex.dimension {
@@ -1636,7 +1629,7 @@ impl<'db> TyLoweringContext<'db> {
                 arrayed: tex.arrayed,
                 multisampled: tex.multisampled,
                 kind: match &tex.kind {
-                    type_ref::TextureKind::Sampled(ty) => TextureKind::Sampled(self.lower_ty(&*ty)),
+                    type_ref::TextureKind::Sampled(ty) => TextureKind::Sampled(self.lower_ty(ty)),
                     type_ref::TextureKind::Storage(format, mode) => TextureKind::Storage(
                         format
                             .parse()
@@ -1651,11 +1644,11 @@ impl<'db> TyLoweringContext<'db> {
                 comparison: sampler.comparison,
             }),
             TypeRef::Atomic(atomic) => TyKind::Atomic(AtomicType {
-                inner: self.lower_ty(&*atomic.inner),
+                inner: self.lower_ty(&atomic.inner),
             }),
             TypeRef::Array(array) => TyKind::Array(ArrayType {
                 binding_array: array.binding_array,
-                inner: self.lower_ty(&*array.inner),
+                inner: self.lower_ty(&array.inner),
                 size: match array.size {
                     type_ref::ArraySize::Int(i) => ArraySize::Const(i as u64), // TODO error
                     type_ref::ArraySize::Uint(u) => ArraySize::Const(u),
@@ -1665,7 +1658,7 @@ impl<'db> TyLoweringContext<'db> {
             }),
             TypeRef::Ptr(ptr) => TyKind::Ptr(Ptr {
                 storage_class: ptr.storage_class,
-                inner: self.lower_ty(&*ptr.inner),
+                inner: self.lower_ty(&ptr.inner),
                 access_mode: ptr.access_mode,
             }),
             TypeRef::Path(name) => match self.resolver.resolve_type(name) {

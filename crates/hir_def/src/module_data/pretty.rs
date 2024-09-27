@@ -38,7 +38,6 @@ fn write_pretty_module_item(
             for param in function
                 .params
                 .clone()
-                .into_iter()
                 .map(|idx| &module.data[idx])
             {
                 let ty = db.lookup_intern_type_ref(param.ty);
