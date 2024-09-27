@@ -65,11 +65,7 @@ jobs:
         env:
           # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_arch: ${{ matrix.npm_config_arch }}
-      - name: Install rustup
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
+      - uses: dtolnay/rust-toolchain@stable
       - shell: pwsh
         run: |
           echo "target=${{ matrix.platform }}-${{ matrix.arch }}" >> $env:GITHUB_ENV
