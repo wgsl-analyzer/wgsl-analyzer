@@ -227,6 +227,46 @@ impl NagaError for naga19::WithSpan<naga19::valid::ValidationError> {
     }
 }
 
+struct Naga22;
+impl Naga for Naga22 {
+    type Module = naga22::Module;
+    type ParseError = naga22::front::wgsl::ParseError;
+    type ValidationError = naga22::WithSpan<naga22::valid::ValidationError>;
+
+    fn parse(source: &str) -> Result<Self::Module, Self::ParseError> {
+        naga22::front::wgsl::parse_str(source)
+    }
+
+    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
+        let flags = naga22::valid::ValidationFlags::all();
+        let capabilities = naga22::valid::Capabilities::all();
+        let mut validator = naga22::valid::Validator::new(flags, capabilities);
+        validator.validate(module).map(drop)
+    }
+}
+impl NagaError for naga22::front::wgsl::ParseError {
+    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
+        Box::new(
+            self.labels()
+                .flat_map(|(range, label)| Some((range.to_range()?, label.to_string()))),
+        )
+    }
+    fn has_spans(&self) -> bool {
+        self.labels().len() > 0
+    }
+}
+impl NagaError for naga22::WithSpan<naga22::valid::ValidationError> {
+    fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
+        Box::new(
+            self.spans()
+                .filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
+        )
+    }
+    fn has_spans(&self) -> bool {
+        self.spans().len() > 0
+    }
+}
+
 struct NagaMain;
 impl Naga for NagaMain {
     type Module = nagamain::Module;
@@ -422,6 +462,9 @@ pub fn diagnostics(
 
     if config.naga_parsing_errors || config.naga_validation_errors {
         match &config.naga_version {
+            NagaVersion::Naga22 => {
+                let _ = naga_diagnostics::<Naga22>(db, file_id, config, &mut diagnostics);
+            }
             NagaVersion::Naga19 => {
                 let _ = naga_diagnostics::<Naga19>(db, file_id, config, &mut diagnostics);
             }

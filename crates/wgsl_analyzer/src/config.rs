@@ -64,6 +64,8 @@ pub enum NagaVersion {
     Naga14,
     #[serde(rename = "0.19")]
     Naga19,
+    #[serde(rename = "0.22")]
+    Naga22,
     #[serde(rename = "main")]
     NagaMain,
 }
@@ -100,6 +102,7 @@ impl Config {
                 NagaVersion::Naga13 => hir::diagnostics::NagaVersion::Naga13,
                 NagaVersion::Naga14 => hir::diagnostics::NagaVersion::Naga14,
                 NagaVersion::Naga19 => hir::diagnostics::NagaVersion::Naga19,
+                NagaVersion::Naga22 => hir::diagnostics::NagaVersion::Naga22,
                 NagaVersion::NagaMain => hir::diagnostics::NagaVersion::NagaMain,
             },
         }

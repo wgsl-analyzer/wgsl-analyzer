@@ -118,9 +118,10 @@
                         "0.13",
                         "0.14",
                         "0.19",
+                        "0.22",
                         "main"
                     ],
-                    "default": "0.19",
+                    "default": "0.22",
                     "description": "Which version of naga to use for its diagnostics"
                 },
                 "wgsl-analyzer.customImports": {
