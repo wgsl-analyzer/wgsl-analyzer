@@ -1,5 +1,11 @@
 <img src="https://raw.githubusercontent.com/wgsl-analyzer/wgsl-analyzer/master/logo.svg" alt="wgsl-analyzer logo">
 
+#
+
+[![Discord](https://img.shields.io/discord/691052431525675048.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/dZJ3JTbhaU)
+
+## What wgsl-analyzer is
+
 wgsl-analyzer is a [language server](https://microsoft.github.io/language-server-protocol/) plugin for the [WGSL Shading language](https://gpuweb.github.io/gpuweb/wgsl/).
 
 It comes with a [VS Code](https://code.visualstudio.com/) plugin located in [./editors/code](./editors/code), but due to the nature of the language server protocol it should be possible to create plugins for other editors as well.
