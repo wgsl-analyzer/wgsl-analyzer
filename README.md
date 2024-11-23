@@ -95,6 +95,7 @@ cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl_analyzer
   (lsp-register-client (make-lsp-client :new-connection (lsp-stdio-connection "wgsl_analyzer")
                                         :activation-fn (lsp-activate-on "wgsl")
                                         :server-id 'wgsl_analyzer)))
+```
 
 ## Configuration
 
