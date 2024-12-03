@@ -17,8 +17,9 @@ It comes with a [VS Code](https://code.visualstudio.com/) plugin located in [./e
 The extension is [published on the marketplace](https://marketplace.visualstudio.com/items?itemName=wgsl-analyzer.wgsl-analyzer), so you can simply download the extension like any other.
 
 If you are not using a platform for which the vscode extension ships prebuilt binaries (currently only windows-x64, linux-x64 and macos-x64), then you need to compile the language server yourself:
+
 ```sh
-cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl_analyzer
+cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer.git wgsl_analyzer
 ```
 
 Specify the server path in the settings:
@@ -35,50 +36,56 @@ Specify the server path in the settings:
 - Requires cargo to be installed to build binaries: 
 
 1. Install the language server
-```sh
-cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl_analyzer
-```
-(if you are not familiar with using and setting up cargo, you might run into problems finding your binary.
-Ensure that $HOME/.cargo/bin is in your $PATH. More Info about $PATH: https://linuxconfig.org/linux-path-environment-variable)
+
+    ```sh
+    cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer.git wgsl_analyzer
+    ```
+    
+    (if you are not familiar with using and setting up cargo, you might run into problems finding your binary.
+    Ensure that $HOME/.cargo/bin is in your $PATH. More Info about $PATH: https://linuxconfig.org/linux-path-environment-variable)
 
 2. open Neovim / Vim and type `:CocConfig` to configure coc.nvim.
 
 3. under `.languageserver: { ... }` create a new field named "wgsl". The field should look like this:
-```jsonc
-//  {
-//    "languageserver": {
-        "wgsl": {
-          "command": "wgsl_analyzer", // alternatively you can specify the absolute path to your binary.
-          "filetypes": ["wgsl"],
-        },
-//      ...
-//  }
-```
+
+    ```jsonc
+    //  {
+    //    "languageserver": {
+            "wgsl": {
+              "command": "wgsl_analyzer", // alternatively you can specify the absolute path to your binary.
+              "filetypes": ["wgsl"],
+            },
+    //      ...
+    //  }
+    ```
 
 4. In order for your editor to recognize wgsl files as such, you need to put this into your `vim.rc`
-```vim
-" Recognize wgsl
-au BufNewFile,BufRead *.wgsl set filetype=wgsl
-```
+
+    ```vim
+    " Recognize wgsl
+    au BufNewFile,BufRead *.wgsl set filetype=wgsl
+    ```
 
 ### Neovim (using lsp)
 
 1. Install the `wgsl_analyzer` language server
 2. Configure the wgsl filetype
-```lua
-vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
-  pattern = "*.wgsl",
-  callback = function()
-    vim.bo.filetype = "wgsl"
-  end,
-})
 
-```
+    ```lua
+    vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
+      pattern = "*.wgsl",
+      callback = function()
+        vim.bo.filetype = "wgsl"
+      end,
+    })
+    ```
+
 3. Configure the nvim lsp
-```lua
-local lspconfig = require('lspconfig')
-lspconfig.wgsl_analyzer.setup({})
-```
+
+    ```lua
+    local lspconfig = require('lspconfig')
+    lspconfig.wgsl_analyzer.setup({})
+    ```
 
 ### Emacs (using lsp-mode)
 
