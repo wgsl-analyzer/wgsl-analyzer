@@ -7,7 +7,7 @@ REV=$(head -c 7 .git/refs/heads/main)
 
 sd "const VERSION: &str = \"(.*)\"" \
    "const VERSION: &str = \"$VERSION\"" \
-    crates/wgsl_analyzer/src/bin/main.rs 
+    crates/wgsl_analyzer/src/bin/main.rs
 
 sd "const VERSION = \"(.*)\"" \
    "const VERSION = \"$VERSION\"" \
