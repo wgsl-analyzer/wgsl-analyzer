@@ -66,6 +66,8 @@ jobs:
           # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_arch: ${{ matrix.npm_config_arch }}
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          target: ${{ matrix.rust_target }}
       - shell: pwsh
         run: |
           echo "target=${{ matrix.platform }}-${{ matrix.arch }}" >> $env:GITHUB_ENV
