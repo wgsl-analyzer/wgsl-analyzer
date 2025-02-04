@@ -6,8 +6,8 @@ import * as fs from "fs";
 import * as util from "util";
 import * as cp from "child_process";
 
-const VERSION = "0.9.3";
-const REV = "63518d4";
+const VERSION = "0.9.4";
+const REV = "5272d0d";
 
 const fileExists = (path: string) => util.promisify(fs.access)(path).then(s => true).catch(() => false);
 const exec = util.promisify(cp.exec);
