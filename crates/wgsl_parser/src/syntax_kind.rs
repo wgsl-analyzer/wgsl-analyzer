@@ -127,7 +127,7 @@ pub enum SyntaxKind {
     UnofficialPreprocessorEndif,
     #[regex("#else.*")]
     UnofficialPreprocessorElse,
-    #[regex("#import.*")]
+    #[regex("#import")]
     UnofficialPreprocessorImport,
     #[regex("#define_import_path.*")]
     UnofficialPreprocessorDefineImportPath,
