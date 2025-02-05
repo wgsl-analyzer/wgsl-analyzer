@@ -8,7 +8,7 @@ const HELP_STR: &str = r#"wgslfmt [options] <file>...
 
 Options:
     --check     Run in 'check' mode. Exists with 0 if input is formatted correctly.
-                Exits with 1 and prints a diff if formatting is requried.
+                Exits with 1 and prints a diff if formatting is required.
     --tabs      Use tabs for indentation (instead of spaces)
 "#;
 

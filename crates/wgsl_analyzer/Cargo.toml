@@ -8,18 +8,18 @@ name = "wgsl_analyzer"
 path = "src/bin/main.rs"
 
 [dependencies]
-anyhow = "1.0.44"
-crossbeam-channel = "0.5.1"
-lsp-server = "0.6.0"
-lsp-types = "0.94.1"
-parking_lot = "0.12"
-serde = "1.0.130"
-serde_json = "1.0.68"
+anyhow = "1.0.95"
+crossbeam-channel = "0.5.14"
+lsp-server = "0.7.8"
+lsp-types = "0.95.0"
+parking_lot = "0.12.3"
+serde = "1.0.217"
+serde_json = "1.0.138"
 threadpool = "1.8.1"
-tracing = "0.1.28"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-salsa = "0.17.0-pre.1"
-rustc-hash = "1.1.0"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+salsa = "0.17.0-pre.2"
+rustc-hash = "2.1.0"
 
 base_db = { path = "../base_db" }
 hir_def = { path = "../hir_def" }
@@ -31,5 +31,5 @@ ide_completion = { path = "../ide_completion" }
 vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "8a23314" }
 paths = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "8a23314" }
 text-edit = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "8a23314" }
-itertools = "0.10.1"
-dissimilar = "1.0.3"
+itertools = "0.14.0"
+dissimilar = "1.0.9"
