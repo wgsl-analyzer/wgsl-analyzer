@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 drop_bomb = "0.1.5"
-logos = "0.12.0"
+logos = "0.15.0"
 rowan = "0.16.1"

@@ -4,7 +4,7 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-logos = "0.12.0"
+logos = "0.15.0"
 parser = { path = "../parser" }
 rowan = "0.16.1"
 
