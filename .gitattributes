@@ -1,0 +1,14 @@
+# From: https://docs.github.com/en/github/getting-started-with-github/configuring-git-to-handle-line-endings
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto
+
+# Explicitly declare text files you want to always be normalized and converted
+# to native line endings on checkout.
+.gitattributes text eol=lf
+.gitignore text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.rs text eol=lf
+*.sh text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf

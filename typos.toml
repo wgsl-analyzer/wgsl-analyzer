@@ -1,0 +1,22 @@
+[files]
+extend-exclude = [
+  "*.patch", # Automatically generated files that should not be manually modified.
+  "*.bin",   # Binary files
+  ".git/",   # Version control files
+]
+ignore-hidden = false
+
+# Corrections take the form of a key/value pair. The key is the incorrect word
+# and the value is the correct word. If the key and value are the same, the
+# word is treated as always correct. If the value is an empty string, the word
+# is treated as always incorrect.
+
+# Match Whole Word - Case Sensitive
+[default.extend-identifiers]
+
+# Match Inside a Word - Case Insensitive
+[default.extend-words]
+
+[default]
+locale = "en-us"
+extend-ignore-identifiers-re = []

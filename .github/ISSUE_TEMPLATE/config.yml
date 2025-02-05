@@ -1,0 +1,10 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question
+    url: https://github.com/wgsl-analyzer/wgsl-analyzer/discussions
+    about: Questions about how to use or contribute belong in Github Discussions.
+      You can use the search to check if someone already answered your question!
+
+  - name: Community
+    url: https://discord.gg/wgsl-analyzer
+    about: If you'd like to converse with members of the `wgsl-analyzer` community, join us on discord.

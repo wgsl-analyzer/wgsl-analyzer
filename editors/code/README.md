@@ -27,7 +27,7 @@ In the `wgsl-analyzer` section in the vscode settings you can specify the follow
 
 ### Custom imports
 
-wgsl-analyzer supports `#import` directives in the flavour of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports). You can define custom import snippet in the `wgsl-analyzer.customImports` section.
+wgsl-analyzer supports `#import` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports). You can define custom import snippet in the `wgsl-analyzer.customImports` section.
 
 If you provide a URL with a `http`, `https` or `file` scheme that resource will be downloaded and used. Keep in mind that this will slow down the LSP startup, so if you notice significant delays (the extension will warn if it took longer than a second) consider replacing resources on the network by file URLs or inline text.
 
@@ -101,7 +101,7 @@ _Generated using `rg define_import_path -g '*.wgsl' --sort path | sd '^([^:]*):#
 
 ### Preprocessor defines
 
-wgsl-analyzer supports `#ifdef`, `#ifndef`, `#else`, `#endif` directives in the flavour of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports).
+wgsl-analyzer supports `#ifdef`, `#ifndef`, `#else`, `#endif` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports).
 
 ```json
 {

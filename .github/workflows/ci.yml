@@ -1,0 +1,328 @@
+name: Continuous integration
+
+on:
+  merge_group:
+  pull_request:
+  push:
+    branches:
+      - main
+      - release-*
+
+env:
+  CARGO_TERM_COLOR: always
+  # If nightly is breaking CI, modify this variable to target a specific nightly version.
+  NIGHTLY_TOOLCHAIN: nightly
+
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: ${{github.event_name == 'pull_request'}}
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-build-stable-${{ hashFiles('**/Cargo.toml') }}
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build & run tests
+        run: cargo test --workspace --lib --bins --tests --benches
+        env:
+          CARGO_INCREMENTAL: 0
+          RUSTFLAGS: "-C debuginfo=0 -D warnings"
+
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-ci-${{ hashFiles('**/Cargo.toml') }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -Dwarnings
+
+  miri:
+    # Explicitly use macOS 14 to take advantage of M1 chip.
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-miri-${{ hashFiles('**/Cargo.toml') }}
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.NIGHTLY_TOOLCHAIN }}
+          components: miri
+      - name: CI job
+        run: cargo miri test
+        env:
+          RUSTFLAGS: -Zrandomize-layout
+
+  check-compiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-check-compiles-${{ hashFiles('**/Cargo.toml') }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+      - name: Check Compile
+        run: |
+          cargo test --target-dir ../../../target
+          cargo check --benches --target-dir ../target --manifest-path ./benches/Cargo.toml
+          cargo check --workspace --examples
+          cargo check --workspace
+          cargo check --workspace --tests
+
+  check-compiles-no-std:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-check-compiles-no-std-${{ hashFiles('**/Cargo.toml') }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-none
+      - name: Check Compile
+        run: cargo check --no-default-features
+
+  build-wasm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ubuntu-assets-cargo-build-wasm-stable-${{ hashFiles('**/Cargo.toml') }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          target: wasm32-unknown-unknown
+      - name: Check wasm
+        run: cargo check --target wasm32-unknown-unknown
+
+  build-wasm-atomics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ubuntu-assets-cargo-build-wasm-nightly-${{ hashFiles('**/Cargo.toml') }}
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.NIGHTLY_TOOLCHAIN }}
+          targets: wasm32-unknown-unknown
+          components: rust-src
+      - name: Check wasm
+        run: cargo check --target wasm32-unknown-unknown -Z build-std=std,panic_abort
+        env:
+          RUSTFLAGS: "-C target-feature=+atomics,+bulk-memory"
+
+  markdownlint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full git history is needed to get a proper list of changed files within `super-linter`
+          fetch-depth: 0
+      - name: Run Markdown Lint
+        uses: docker://ghcr.io/github/super-linter:slim-v4
+        env:
+          MULTI_STATUS: false
+          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_MARKDOWN: true
+          DEFAULT_BRANCH: main
+
+  toml:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install taplo
+        run: cargo install taplo-cli --locked
+      - name: Run Taplo
+        id: taplo
+        run: taplo fmt --check --diff
+      - name: Taplo info
+        if: failure()
+        run: |
+          echo 'To fix toml fmt, please run `taplo fmt`.'
+          echo 'To check for a diff, run `taplo fmt --check --diff`.'
+          echo 'You can find taplo here: https://taplo.tamasfe.dev/.'
+          echo 'Also use the `Even Better Toml` extension.'
+          echo 'You can find the extension here: https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml'
+
+  typos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for typos
+        uses: crate-ci/typos@v1.27.3
+      - name: Typos info
+        if: failure()
+        run: |
+          echo 'To fix typos, please run `typos -w`'
+          echo 'To check for a diff, run `typos`'
+          echo 'You can find typos here: https://crates.io/crates/typos'
+          echo 'if you use VSCode, you can also install `Typos Spell Checker'
+          echo 'You can find the extension here: https://marketplace.visualstudio.com/items?itemName=tekumara.typos-vscode'
+
+  run-examples-macos-metal:
+    # Explicitly use macOS 14 to take advantage of M1 chip.
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build
+        # this uses the same command as when running the example to ensure build is reused
+        run: |
+          CI_TESTING_CONFIG=.github/example-run/template_example_name.ron cargo build --example template_example_name
+      - name: Run examples
+        run: |
+          for example in .github/example-run/*.ron; do
+            example_name=`basename $example .ron`
+            echo -n $example_name > last_example_run
+            echo "running $example_name - "`date`
+            time CI_TESTING_CONFIG=$example cargo run --example $example_name
+            sleep 10
+          done
+
+  check-doc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-check-doc-${{ hashFiles('**/Cargo.toml') }}
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.NIGHTLY_TOOLCHAIN }}
+      - name: Build doc
+        run: cargo doc --workspace --all-features --no-deps --document-private-items --keep-going
+        env:
+          CARGO_INCREMENTAL: 0
+          RUSTFLAGS: "-C debuginfo=0 --cfg docsrs_dep"
+      - name: Check doc
+        run: cargo test --workspace --doc
+        env:
+          CARGO_INCREMENTAL: 0
+          RUSTFLAGS: "-C debuginfo=0 --cfg docsrs_dep"
+      - name: Installs cargo-deadlinks
+        run: cargo install --force cargo-deadlinks
+      - name: Checks dead links
+        run: cargo deadlinks --dir target/documentation
+        continue-on-error: true
+
+  msrv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-msrv-${{ hashFiles('**/Cargo.toml') }}
+      - name: Get minimum supported rust version
+        id: msrv
+        run: |
+          msrv=`cargo metadata --no-deps --format-version 1 | jq --raw-output '.packages[] | select(.name=="template_crate_name") | .rust_version'`
+          echo "msrv=$msrv" >> $GITHUB_OUTPUT
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.msrv.outputs.msrv }}
+      - name: Run cargo check
+        id: check
+        run: |
+          echo 'If this fails, run `cargo msrv` and update the msrv in `Cargo.toml`.'
+          cargo check
+      - name: Save PR number
+        if: ${{ failure() && github.event_name == 'pull_request' && steps.check.conclusion == 'failure' }}
+        run: |
+          mkdir -p ./msrv
+          echo ${{ github.event.number }} > ./msrv/NR
+      - uses: actions/upload-artifact@v4
+        if: ${{ failure() && github.event_name == 'pull_request' && steps.check.conclusion == 'failure' }}
+        with:
+          name: msrv
+          path: msrv/
