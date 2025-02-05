@@ -15,7 +15,7 @@ ide_completion = { path = "../ide_completion" }
 syntax = { path = "../syntax" }
 wgsl_formatter = { path = "../wgsl_formatter" }
 rowan = "0.16.1"
-lsp-types = "0.95.0"
+lsp-types = "0.97.0"
 vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "8a23314" }
 
 expect-test = "1.5.1"
