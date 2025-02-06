@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-syntax = { path = "../syntax" }
-wgsl_parser = { path = "../wgsl_parser" }
+syntax = { path = "../syntax", version = "0.0.0" }
+wgsl_parser = { path = "../wgsl_parser", version = "0.0.0" }
 rowan = "0.16.1"
 
 [dev-dependencies]

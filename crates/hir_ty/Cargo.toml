@@ -1,14 +1,23 @@
 [package]
-name = "hir_ty"
+name = "hir-ty"
 version = "0.0.0"
-edition = "2021"
+repository.workspace = true
+description = "The type system for wgsl-analyzer."
+
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+doctest = false
 
 [dependencies]
-base_db = { path = "../base_db" }
-hir_def = { path = "../hir_def" }
+base-db = { path = "../base_db", version = "0.0.0" }
+hir-def = { path = "../hir_def", version = "0.0.0" }
 
 salsa = "0.17.0-pre.2"
-la-arena = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "8a23314" }
+la-arena = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.3.1" }
 either = "1.13.0"
 rustc-hash = "2.1.0"
 itertools = "0.14.0"

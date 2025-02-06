@@ -1,14 +1,23 @@
 [package]
 name = "hir"
 version = "0.0.0"
-edition = "2021"
+repository.workspace = true
+description = "A high-level object-oriented access to WGSL code for wgsl-analyzer."
+
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+doctest = false
 
 [dependencies]
-base_db = { path = "../base_db" }
+base-db = { path = "../base_db", version = "0.0.0" }
 either = "1.13.0"
-hir_def = { path = "../hir_def" }
-hir_ty = { path = "../hir_ty" }
-syntax = { path = "../syntax" }
+hir-def = { path = "../hir_def", version = "0.0.0" }
+hir-ty = { path = "../hir_ty", version = "0.0.0" }
+syntax = { path = "../syntax", version = "0.0.0" }
 tracing = "0.1.41"
-la-arena = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "8a23314" }
+la-arena = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.3.1" }
 smallvec = "1.13.2"

@@ -1,13 +1,22 @@
 [package]
-name = "hir_def"
+name = "hir-def"
 version = "0.0.0"
-edition = "2021"
+repository.workspace = true
+description = "RPC Api for the `proc-macro-srv` crate of wgsl-analyzer."
+
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+doctest = false
 
 [dependencies]
-la-arena = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "8a23314" }
+la-arena = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.3.1" }
 salsa = "0.17.0-pre.2"
-syntax = { path = "../syntax" }
-base_db = { path = "../base_db" }
+syntax = { path = "../syntax", version = "0.0.0" }
+base-db = { path = "../base_db", version = "0.0.0" }
 smol_str = "0.3.2"
 rustc-hash = "2.1.0"
 tracing = "0.1.41"
