@@ -45,7 +45,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
-name = "base_db"
+name = "base-db"
 version = "0.0.0"
 dependencies = [
  "pretty_assertions",
@@ -365,10 +365,10 @@ checksum = "dfa686283ad6dd069f105e5ab091b04c62850d3e4cf5d67debad1933f55023df"
 name = "hir"
 version = "0.0.0"
 dependencies = [
- "base_db",
+ "base-db",
  "either",
- "hir_def",
- "hir_ty",
+ "hir-def",
+ "hir-ty",
  "la-arena",
  "smallvec",
  "syntax",
@@ -376,10 +376,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "hir_def"
+name = "hir-def"
 version = "0.0.0"
 dependencies = [
- "base_db",
+ "base-db",
  "either",
  "la-arena",
  "rowan",
@@ -392,12 +392,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "hir_ty"
+name = "hir-ty"
 version = "0.0.0"
 dependencies = [
- "base_db",
+ "base-db",
  "either",
- "hir_def",
+ "hir-def",
  "itertools 0.14.0",
  "la-arena",
  "rustc-hash 2.1.1",
@@ -527,12 +527,12 @@ dependencies = [
 name = "ide"
 version = "0.0.0"
 dependencies = [
- "base_db",
+ "base-db",
  "expect-test",
  "hir",
- "hir_def",
- "hir_ty",
- "ide_completion",
+ "hir-def",
+ "hir-ty",
+ "ide-completion",
  "itertools 0.14.0",
  "lsp-types",
  "naga 0.11.1",
@@ -554,15 +554,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "ide_completion"
+name = "ide-completion"
 version = "0.0.0"
 dependencies = [
  "always-assert 0.2.0",
- "base_db",
+ "base-db",
  "either",
  "hir",
- "hir_def",
- "hir_ty",
+ "hir-def",
+ "hir-ty",
  "itertools 0.14.0",
  "rowan",
  "syntax",
@@ -664,7 +664,7 @@ checksum = "8b23360e99b8717f20aaa4598f5a6541efbe30630039fbc7706cf954a87947ae"
 [[package]]
 name = "la-arena"
 version = "0.3.1"
-source = "git+https://github.com/rust-analyzer/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
 
 [[package]]
 name = "lazy_static"
@@ -1092,7 +1092,7 @@ dependencies = [
 [[package]]
 name = "paths"
 version = "0.0.0"
-source = "git+https://github.com/rust-analyzer/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
 
 [[package]]
 name = "percent-encoding"
@@ -1380,7 +1380,7 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 [[package]]
 name = "stdx"
 version = "0.0.0"
-source = "git+https://github.com/rust-analyzer/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
 dependencies = [
  "always-assert 0.1.3",
  "crossbeam-channel",
@@ -1478,7 +1478,7 @@ dependencies = [
 [[package]]
 name = "text-edit"
 version = "0.0.0"
-source = "git+https://github.com/rust-analyzer/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
 dependencies = [
  "itertools 0.10.5",
  "text-size",
@@ -1557,16 +1557,6 @@ checksum = "9117f5d4db391c1cf6927e7bea3db74b9a1c1add8f7eda9ffd5364f40f57b82f"
 dependencies = [
  "displaydoc",
  "zerovec",
-]
-
-[[package]]
-name = "tools"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "lexopt",
- "serde_json",
- "xshell",
 ]
 
 [[package]]
@@ -1687,7 +1677,7 @@ checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 [[package]]
 name = "vfs"
 version = "0.0.0"
-source = "git+https://github.com/rust-analyzer/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
 dependencies = [
  "fst",
  "indexmap 2.7.1",
@@ -1708,14 +1698,14 @@ name = "wgsl_analyzer"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "base_db",
+ "base-db",
  "crossbeam-channel",
  "dissimilar",
  "hir",
- "hir_def",
- "hir_ty",
+ "hir-def",
+ "hir-ty",
  "ide",
- "ide_completion",
+ "ide-completion",
  "itertools 0.14.0",
  "lsp-server",
  "lsp-types",
@@ -1734,7 +1724,7 @@ dependencies = [
 
 [[package]]
 name = "wgsl_formatter"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "anyhow",
  "dissimilar",
@@ -1936,21 +1926,6 @@ name = "writeable"
 version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e9df38ee2d2c3c5948ea468a8406ff0db0b29ae1ffde1bcf20ef305bcc95c51"
-
-[[package]]
-name = "xshell"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e7290c623014758632efe00737145b6867b66292c42167f2ec381eb566a373d"
-dependencies = [
- "xshell-macros",
-]
-
-[[package]]
-name = "xshell-macros"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32ac00cd3f8ec9c1d33fb3e7958a82df6989c42d747bd326c822b1d625283547"
 
 [[package]]
 name = "yansi"

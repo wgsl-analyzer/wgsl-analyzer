@@ -1,14 +1,17 @@
 [package]
 name = "benches"
-edition = "2021"
 description = "Benchmarks that test performance"
 publish = false
-license = "MIT OR Apache-2.0"
+readme = "README.md"
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords = ["wgsl"]
 
 [dev-dependencies]
-rand = "0.8"
-rand_chacha = "0.3"
-criterion = { version = "0.3", features = ["html_reports"] }
+rand = "0.9.0"
+rand_chacha = "0.9.0"
+criterion = { version = "0.5.1", features = ["html_reports"] }
 
 [profile.release]
 opt-level = 3

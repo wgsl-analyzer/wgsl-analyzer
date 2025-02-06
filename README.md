@@ -1,6 +1,6 @@
-<img src="https://raw.githubusercontent.com/wgsl-analyzer/wgsl-analyzer/master/logo.svg" alt="wgsl-analyzer logo">
+# wgsl-analyzer
 
-#
+![wgsl-analyzer logo](logo.svg)
 
 [![Discord](https://img.shields.io/discord/691052431525675048.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/dZJ3JTbhaU)
 
@@ -32,17 +32,17 @@ Specify the server path in the settings:
 
 ### Neovim / Vim (using coc.nvim)
 
-- Requires CoC to be installed: https://github.com/neoclide/coc.nvim
-- Requires cargo to be installed to build binaries: 
+- Requires CoC to be installed: <https://github.com/neoclide/coc.nvim>
+- Requires cargo to be installed to build binaries:
 
 1. Install the language server
 
     ```sh
     cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer.git wgsl_analyzer
     ```
-    
+
     (if you are not familiar with using and setting up cargo, you might run into problems finding your binary.
-    Ensure that $HOME/.cargo/bin is in your $PATH. More Info about $PATH: https://linuxconfig.org/linux-path-environment-variable)
+    Ensure that $HOME/.cargo/bin is in your $PATH. More Info about $PATH: <https://linuxconfig.org/linux-path-environment-variable>)
 
 2. open Neovim / Vim and type `:CocConfig` to configure coc.nvim.
 
@@ -89,20 +89,23 @@ Specify the server path in the settings:
 
 ### Emacs (using lsp-mode)
 
- - Assumes you are using wgsl-mode: https://github.com/acowley/wgsl-mode
+- Assumes you are using wgsl-mode: <https://github.com/acowley/wgsl-mode>
 
-1. Install the language server 
-```sh
-cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl_analyzer
-```
+1. Install the language server
+
+    ```sh
+    cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl_analyzer
+    ```
+
 2. Add the following to your init.el
-```elisp
-(with-eval-after-load 'lsp-mode
-  (add-to-list 'lsp-language-id-configuration '(wgsl-mode . "wgsl"))
-  (lsp-register-client (make-lsp-client :new-connection (lsp-stdio-connection "wgsl_analyzer")
-                                        :activation-fn (lsp-activate-on "wgsl")
-                                        :server-id 'wgsl_analyzer)))
-```
+
+    ```elisp
+    (with-eval-after-load 'lsp-mode
+    (add-to-list 'lsp-language-id-configuration '(wgsl-mode . "wgsl"))
+    (lsp-register-client (make-lsp-client :new-connection (lsp-stdio-connection "wgsl_analyzer")
+                                            :activation-fn (lsp-activate-on "wgsl")
+                                            :server-id 'wgsl_analyzer)))
+    ```
 
 ## Configuration
 
@@ -112,7 +115,7 @@ Configuration for the VS Code plugin can be found in its subdirectory: [./editor
 
 The lsp server can be built using `cargo build --release -p wgsl_analyzer`.
 
-The vscode extension can either be built as a platform-specific extension which bundles the language server binary, or as a platform-independant one.
+The vscode extension can either be built as a platform-specific extension which bundles the language server binary, or as a platform-independent one.
 
 **Install node modules:**
 
@@ -131,9 +134,8 @@ This can be done automatically with `cargo run --bin package -- --target linux-x
 
 ## Design
 
-The design is heavily inspired (and in large parts copied from) [rust-analyzer](https://github.com/rust-analyzer/rust-analyzer).
-See [rust-analyzer/docs/dev/architecture.md](https://github.com/rust-analyzer/rust-analyzer/blob/master/docs/dev/architecture.md) for a summary of the architecture.
-
+The design is heavily inspired (and in large parts copied from) [rust-analyzer](https://github.com/rust-lang/rust-analyzer).
+See [rust-analyzer/docs/dev/architecture.md](https://github.com/rust-lang/rust-analyzer/blob/master/docs/dev/architecture.md) for a summary of the architecture.
 
 ## Development
 

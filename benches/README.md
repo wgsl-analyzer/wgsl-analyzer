@@ -8,19 +8,19 @@ This is a crate with a collection of benchmarks, separate from the rest of the c
 2. `cd` into the `benches` directory (where this README is located).
 
     ```sh
-    template_crate_name $ cd benches
+    wgsl-analyzer $ cd benches
     ```
 
 3. Run the benchmarks with cargo (This will take a while)
 
     ```sh
-    template_crate_name/benches $ cargo bench
+    wgsl-analyzer/benches $ cargo bench
     ```
 
     If you'd like to only compile the benchmarks (without running them), you can do that like this:
 
     ```sh
-    template_crate_name/benches $ cargo bench --no-run
+    wgsl-analyzer/benches $ cargo bench --no-run
     ```
 
 ## Criterion

@@ -1,11 +1,67 @@
 [workspace]
+members = [
+  # "xtask/",
+  # "lib/*",
+  "crates/*",
+]
+exclude = ["crates/proc-macro-srv/proc-macro-test/imp"]
 resolver = "2"
-members = ["crates/*", "tools"]
 
+[workspace.package]
+rust-version = "1.84"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["wgsl-analyzer team"]
+repository = "https://github.com/wgsl-analyzer/wgsl-analyzer"
 
 [profile.dev]
-debug = 0
+debug = 1
 
+[profile.dev.package]
+# These speed up local tests.
+rowan.opt-level = 3
+rustc-hash.opt-level = 3
+smol_str.opt-level = 3
+text-size.opt-level = 3
+serde.opt-level = 3
+salsa.opt-level = 3
+# This speeds up `cargo xtask dist`.
+# miniz_oxide.opt-level = 3
 
 [profile.release]
+incremental = true
+# Set this to 1 or 2 to get more useful backtraces in debugger.
 debug = 0
+
+[profile.dev-rel]
+inherits = "release"
+debug = 2
+
+[workspace.lints.rust]
+warnings = { level = "warn", priority = -2 }
+deprecated-safe = { level = "deny", priority = -1 }
+future-incompatible = { level = "deny", priority = -1 }
+keyword-idents = { level = "deny", priority = -1 }
+let-underscore = { level = "deny", priority = -1 }
+nonstandard-style = { level = "deny", priority = -1 }
+refining-impl-trait = { level = "deny", priority = -1 }
+rust-2018-compatibility = { level = "deny", priority = -1 }
+rust-2018-idioms = { level = "deny", priority = -1 }
+rust-2021-compatibility = { level = "deny", priority = -1 }
+rust-2024-compatibility = { level = "deny", priority = -1 }
+unused = { level = "warn", priority = -2 }
+all = { level = "warn", priority = -2 }
+
+[workspace.lints.clippy]
+cargo = { level = "warn", priority = -2 }
+complexity = { level = "warn", priority = -2 }
+correctness = { level = "deny", priority = -1 }
+nursery = { level = "warn", priority = -2 }
+pedantic = { level = "warn", priority = -2 }
+perf = { level = "warn", priority = -2 }
+restriction = { level = "warn", priority = -2 }
+style = { level = "warn", priority = -2 }
+suspicious = { level = "warn", priority = -2 }
+deprecated = { level = "allow", priority = -3 }
+
+exhaustive_structs = "allow" # wgsl-analyzer has no stability commitment
