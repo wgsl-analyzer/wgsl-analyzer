@@ -31,15 +31,7 @@ expect-test = "1.5.1"
 itertools = "0.14.0"
 smol_str = "0.3.2"
 
-naga11 = { package = "naga", version = "0.11", features = ["wgsl-in", "validate", "span"] }
-naga12 = { package = "naga", version = "0.12", features = ["wgsl-in", "validate", "span"] }
-naga13 = { package = "naga", version = "0.13", features = ["wgsl-in", "validate", "span"] }
-naga14 = { package = "naga", version = "0.14", features = ["wgsl-in", "validate", "span"] }
-naga19 = { package = "naga", version = "0.19", features = ["wgsl-in"] }
-naga22 = { package = "naga", version = "22.1.0", features = ["wgsl-in"] }
-naga23 = { package = "naga", version = "23.0.0", features = ["wgsl-in"] }
-naga24 = { package = "naga", version = "24.0.0", features = ["wgsl-in"] }
-nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "765c20235ea712fd14ad1b9e36bbb2071a86e319", features = [
+naga11 = { package = "naga", version = "0.11", features = [
   "wgsl-in",
   "validate",
   "span",
@@ -65,4 +57,6 @@ naga23 = { package = "naga", version = "23.0.0", features = ["wgsl-in"] }
 naga24 = { package = "naga", version = "24.0.0", features = ["wgsl-in"] }
 nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "765c20235ea712fd14ad1b9e36bbb2071a86e319", features = [
   "wgsl-in",
-], version = "22.0.0" }
+  "validate",
+  "span",
+] }
