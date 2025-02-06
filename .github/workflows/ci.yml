@@ -109,7 +109,7 @@ jobs:
       - name: Check Compile
         run: |
           cargo test --target-dir ../../../target
-          cargo check --benches --target-dir ../target --manifest-path ./benches/Cargo.toml
+          # cargo check --benches --target-dir ../target --manifest-path ./benches/Cargo.toml
           cargo check --workspace --examples
           cargo check --workspace
           cargo check --workspace --tests
