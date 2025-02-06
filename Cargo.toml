@@ -64,7 +64,6 @@ perf = { level = "warn", priority = -2 }
 restriction = { level = "warn", priority = -2 }
 style = { level = "warn", priority = -2 }
 suspicious = { level = "warn", priority = -2 }
-deprecated = { level = "allow", priority = -3 }
 
 exhaustive_structs = "allow" # wgsl-analyzer has no stability commitment
 exhaustive_enums = "allow" # wgsl-analyzer has no stability commitment
