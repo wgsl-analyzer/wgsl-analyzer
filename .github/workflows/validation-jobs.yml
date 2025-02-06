@@ -19,7 +19,7 @@ env:
 
 jobs:
   build-without-default-features:
-    if: ${{ github.event_name == 'merge_group' }}
+    if: ${{ github.event_name == 'pull_request' }}
     timeout-minutes: 30
     strategy:
       max-parallel: 1
@@ -34,9 +34,7 @@ jobs:
           RUSTFLAGS: "-C debuginfo=0 -D warnings"
 
   build-without-default-features-status:
-    if: |
-      always() &&
-      github.event_name == 'merge_group'
+    if: github.event_name == 'pull_request'
     needs: build-without-default-features
     runs-on: ubuntu-latest
     steps:
@@ -48,7 +46,7 @@ jobs:
         run: exit 1
 
   check-unused-dependencies:
-    if: ${{ github.event_name == 'merge_group' }}
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
