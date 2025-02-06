@@ -285,6 +285,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
+name = "foldhash"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a0d2fde1f7b3d48b8395d5f2de76c18a528bd6a9cdde438df747bfcba3e05d6f"
+
+[[package]]
 name = "form_urlencoded"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -327,6 +333,9 @@ name = "hashbrown"
 version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf151400ff0baff5465007dd2f3e717f3fe502074ca563069ce3a6629d07b289"
+dependencies = [
+ "foldhash",
+]
 
 [[package]]
 name = "heck"
@@ -540,10 +549,10 @@ dependencies = [
  "naga 0.13.0",
  "naga 0.14.2",
  "naga 0.19.2",
- "naga 22.0.0",
  "naga 22.1.0",
  "naga 23.1.0",
- "naga 24.0.0",
+ "naga 24.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "naga 24.0.0 (git+https://github.com/gfx-rs/wgpu?rev=b32cbd4ea6b6b898b27b7837145b3cfe30ac1543)",
  "rowan",
  "salsa",
  "smol_str",
@@ -886,25 +895,6 @@ dependencies = [
 
 [[package]]
 name = "naga"
-version = "22.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=765c20235ea712fd14ad1b9e36bbb2071a86e319#765c20235ea712fd14ad1b9e36bbb2071a86e319"
-dependencies = [
- "arrayvec",
- "bit-set 0.8.0",
- "bitflags 2.8.0",
- "cfg_aliases 0.1.1",
- "codespan-reporting",
- "hexf-parse",
- "indexmap 2.7.1",
- "log",
- "rustc-hash 1.1.0",
- "termcolor",
- "thiserror 1.0.69",
- "unicode-xid",
-]
-
-[[package]]
-name = "naga"
 version = "22.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8bd5a652b6faf21496f2cfd88fc49989c8db0825d1f6746b1a71a6ede24a63ad"
@@ -954,6 +944,27 @@ dependencies = [
  "bitflags 2.8.0",
  "cfg_aliases 0.2.1",
  "codespan-reporting",
+ "hexf-parse",
+ "indexmap 2.7.1",
+ "log",
+ "rustc-hash 1.1.0",
+ "strum",
+ "termcolor",
+ "thiserror 2.0.11",
+ "unicode-xid",
+]
+
+[[package]]
+name = "naga"
+version = "24.0.0"
+source = "git+https://github.com/gfx-rs/wgpu?rev=b32cbd4ea6b6b898b27b7837145b3cfe30ac1543#b32cbd4ea6b6b898b27b7837145b3cfe30ac1543"
+dependencies = [
+ "arrayvec",
+ "bit-set 0.8.0",
+ "bitflags 2.8.0",
+ "cfg_aliases 0.2.1",
+ "codespan-reporting",
+ "hashbrown 0.15.2",
  "hexf-parse",
  "indexmap 2.7.1",
  "log",

@@ -57,6 +57,4 @@ naga23 = { package = "naga", version = "23.0.0", features = ["wgsl-in"] }
 naga24 = { package = "naga", version = "24.0.0", features = ["wgsl-in"] }
 nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "b32cbd4ea6b6b898b27b7837145b3cfe30ac1543", features = [
   "wgsl-in",
-  "validate",
-  "span",
-], version = "22.0.0" }
+], version = "24.0.0" }
