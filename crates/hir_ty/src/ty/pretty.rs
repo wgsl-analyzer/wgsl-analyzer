@@ -89,6 +89,7 @@ pub fn pretty_fn(
 ) -> String {
     pretty_fn_with_verbosity(db, function, TypeVerbosity::default())
 }
+
 pub fn pretty_fn_with_verbosity(
     db: &dyn HirDatabase,
     function: &FunctionDetails,

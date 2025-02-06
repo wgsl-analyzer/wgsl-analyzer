@@ -15,6 +15,7 @@ pub enum TypeRef {
     Path(Name),
     Ptr(PtrType),
 }
+
 impl std::fmt::Display for TypeRef {
     fn fmt(
         &self,
@@ -62,6 +63,7 @@ pub enum ScalarType {
     Int32,
     Uint32,
 }
+
 impl From<ast::ScalarType> for ScalarType {
     fn from(ty: ast::ScalarType) -> Self {
         match ty {
@@ -72,6 +74,7 @@ impl From<ast::ScalarType> for ScalarType {
         }
     }
 }
+
 impl std::fmt::Display for ScalarType {
     fn fmt(
         &self,
@@ -107,6 +110,7 @@ pub enum VecDimensionality {
     Three,
     Four,
 }
+
 impl std::fmt::Display for VecDimensionality {
     fn fmt(
         &self,
@@ -119,6 +123,7 @@ impl std::fmt::Display for VecDimensionality {
         }
     }
 }
+
 impl TryFrom<ast::VecType> for VecType {
     type Error = ();
     fn try_from(ty: ast::VecType) -> Result<Self, ()> {
@@ -146,6 +151,7 @@ pub struct MatrixType {
     pub rows: VecDimensionality,
     pub inner: Box<TypeRef>,
 }
+
 impl TryFrom<ast::MatrixType> for MatrixType {
     type Error = ();
     fn try_from(ty: ast::MatrixType) -> Result<Self, ()> {
@@ -198,6 +204,7 @@ pub struct TextureType {
     pub multisampled: bool,
     pub kind: TextureKind,
 }
+
 impl std::fmt::Display for TextureType {
     fn fmt(
         &self,
@@ -352,6 +359,7 @@ pub enum AccessMode {
     // this is only used for builtins which don't care about the access mode (e.g. textureDimensions)
     Any,
 }
+
 impl std::fmt::Display for AccessMode {
     fn fmt(
         &self,
@@ -365,6 +373,7 @@ impl std::fmt::Display for AccessMode {
         }
     }
 }
+
 impl AccessMode {
     pub fn read_write() -> AccessMode {
         AccessMode::ReadWrite
@@ -391,6 +400,7 @@ pub enum StorageClass {
     Handle,
     PushConstant,
 }
+
 impl std::fmt::Display for StorageClass {
     fn fmt(
         &self,
@@ -407,6 +417,7 @@ impl std::fmt::Display for StorageClass {
         })
     }
 }
+
 impl StorageClass {
     pub fn default_access_mode(self) -> AccessMode {
         match self {
@@ -420,6 +431,7 @@ impl StorageClass {
         }
     }
 }
+
 impl From<ast::StorageClass> for StorageClass {
     fn from(class: ast::StorageClass) -> Self {
         match class {
@@ -463,6 +475,7 @@ impl From<ast::SamplerType> for SamplerType {
 pub struct AtomicType {
     pub inner: Box<TypeRef>,
 }
+
 impl std::fmt::Display for AtomicType {
     fn fmt(
         &self,
@@ -514,6 +527,7 @@ pub enum ArraySize {
     Path(Name),
     Dynamic,
 }
+
 impl TryFrom<ast::ArrayType> for ArrayType {
     type Error = ();
 
@@ -537,6 +551,7 @@ impl TryFrom<ast::ArrayType> for ArrayType {
         })
     }
 }
+
 impl TryFrom<ast::BindingArrayType> for ArrayType {
     type Error = ();
 
@@ -567,6 +582,7 @@ pub struct PtrType {
     pub access_mode: AccessMode,
     pub inner: Box<TypeRef>,
 }
+
 impl std::fmt::Display for PtrType {
     fn fmt(
         &self,

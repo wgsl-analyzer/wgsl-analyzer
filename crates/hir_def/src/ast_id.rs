@@ -11,6 +11,7 @@ use syntax::{
 pub struct AstIdMap {
     arena: Arena<SyntaxNodePtr>,
 }
+
 impl AstIdMap {
     pub fn from_source(source: SourceFile) -> AstIdMap {
         let mut map = AstIdMap::default();
@@ -90,6 +91,7 @@ impl<N: AstNode> Clone for FileAstId<N> {
         *self
     }
 }
+
 impl<N: AstNode> Copy for FileAstId<N> {}
 
 impl<N: AstNode> std::fmt::Debug for FileAstId<N> {

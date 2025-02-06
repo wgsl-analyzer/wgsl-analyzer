@@ -27,6 +27,7 @@ impl std::fmt::Debug for RootDatabase {
 }
 
 impl salsa::Database for RootDatabase {}
+
 impl salsa::ParallelDatabase for RootDatabase {
     fn snapshot(&self) -> salsa::Snapshot<RootDatabase> {
         salsa::Snapshot::new(RootDatabase {

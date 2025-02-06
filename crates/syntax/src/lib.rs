@@ -16,6 +16,7 @@ pub struct Parse {
     green_node: rowan::GreenNode,
     errors: Arc<Vec<ParseError>>,
 }
+
 impl PartialEq for Parse {
     fn eq(
         &self,
@@ -24,7 +25,9 @@ impl PartialEq for Parse {
         self.green_node == other.green_node
     }
 }
+
 impl Eq for Parse {}
+
 impl Parse {
     pub fn syntax(&self) -> SyntaxNode {
         SyntaxNode::new_root(self.green_node.clone())
@@ -40,6 +43,7 @@ impl Parse {
 pub fn parse(input: &str) -> Parse {
     parse_entrypoint(input, ParseEntryPoint::File)
 }
+
 pub fn parse_entrypoint(
     input: &str,
     parse_entrypoint: ParseEntryPoint,
@@ -121,6 +125,7 @@ pub enum TokenText<'a> {
     Borrowed(&'a str),
     Owned(rowan::GreenToken),
 }
+
 impl<'a> TokenText<'a> {
     pub fn as_str(&'a self) -> &'a str {
         match self {
@@ -129,6 +134,7 @@ impl<'a> TokenText<'a> {
         }
     }
 }
+
 impl Deref for TokenText<'_> {
     type Target = str;
 
@@ -200,6 +206,7 @@ pub trait HasName: AstNode {
         support::child(self.syntax())
     }
 }
+
 pub trait HasGenerics: AstNode {
     fn generic_arg_list(&self) -> Option<ast::GenericArgList> {
         support::child(self.syntax())

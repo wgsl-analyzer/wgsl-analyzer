@@ -80,6 +80,7 @@ impl Default for Resolver {
         }
     }
 }
+
 impl Resolver {
     #[must_use]
     pub fn push_scope(

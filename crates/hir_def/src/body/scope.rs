@@ -26,6 +26,7 @@ pub struct ScopeData {
     parent: Option<ScopeId>,
     pub entries: Vec<ScopeEntry>,
 }
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct ScopeEntry {
     pub name: Name,

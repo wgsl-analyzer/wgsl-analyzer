@@ -86,11 +86,13 @@ impl HasTextRange for SyntaxToken {
         self.text_range()
     }
 }
+
 impl HasTextRange for SyntaxNode {
     fn text_range(&self) -> TextRange {
         self.text_range()
     }
 }
+
 impl<N: HasTextRange, T: HasTextRange> HasTextRange for NodeOrToken<N, T> {
     fn text_range(&self) -> TextRange {
         match self {

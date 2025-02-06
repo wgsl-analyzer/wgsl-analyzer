@@ -9,18 +9,21 @@ fn check(
 ) {
     crate::check_entrypoint(input, ParseEntryPoint::File, expected_tree);
 }
+
 fn check_type(
     input: &str,
     expected_tree: Expect,
 ) {
     crate::check_entrypoint(input, ParseEntryPoint::Type, expected_tree);
 }
+
 fn check_statement(
     stmt: &str,
     expected_tree: Expect,
 ) {
     crate::check_entrypoint(stmt, ParseEntryPoint::Statement, expected_tree);
 }
+
 fn check_attribute_list(
     stmt: &str,
     expected_tree: Expect,
@@ -289,6 +292,7 @@ fn parse_type_generic_empty() {
                 GreaterThan@5..6 ">""#]],
     );
 }
+
 #[test]
 fn parse_type_generic_comma_recover() {
     check_type(
@@ -606,6 +610,7 @@ fn parse_if_without_paren() {
                 BraceRight@39..40 "}""#]],
     );
 }
+
 #[test]
 fn parse_if_recover_empty() {
     check_statement(
@@ -786,6 +791,7 @@ fn parse_for_statement() {
                 BraceRight@34..35 "}""#]],
     )
 }
+
 #[test]
 fn parse_for_statement_comma() {
     check_statement(
@@ -862,6 +868,7 @@ fn for_statement_incomplete_1() {
             error at 6..7: expected BraceRight"#]],
     );
 }
+
 #[test]
 fn for_statement_incomplete_2() {
     check_statement(
@@ -887,6 +894,7 @@ fn for_statement_incomplete_2() {
             error at 9..10: expected BraceRight"#]],
     );
 }
+
 #[test]
 fn for_statement_incomplete_3() {
     check_statement(
@@ -907,6 +915,7 @@ fn for_statement_incomplete_3() {
             error at 11..12: expected BraceRight"#]],
     );
 }
+
 #[test]
 fn for_statement_incomplete_4() {
     check_statement(
@@ -1176,6 +1185,7 @@ fn parse_var_without_initializer() {
                 Uint32@7..10 "u32""#]],
     )
 }
+
 #[test]
 fn parse_var_with_initializer() {
     check_statement(
@@ -1532,6 +1542,7 @@ fn fn_recover_incomplete_param() {
             error at 9..10: expected Colon, but found ParenRight"#]],
     );
 }
+
 #[test]
 fn let_stmt_recover_return_no_eq() {
     check(
@@ -1605,6 +1616,7 @@ fn let_stmt_recover_return() {
             error at 40..46: expected Binding, but found Return"#]],
     );
 }
+
 #[test]
 fn let_stmt_recover_return_2() {
     check(
@@ -1646,6 +1658,7 @@ fn let_stmt_recover_return_2() {
             error at 42..48: expected Binding, but found Return"#]],
     );
 }
+
 #[test]
 fn let_stmt_recover_return_3() {
     check(
@@ -2063,6 +2076,7 @@ fn test()
             error at 17..18: expected Arrow or BraceLeft"#]],
     );
 }
+
 #[test]
 fn struct_recover_2() {
     check(
@@ -2094,11 +2108,13 @@ fn test()
             error at 22..23: expected Arrow or BraceLeft"#]],
     );
 }
+
 #[test]
 fn struct_recover_3() {
     check(
         r#"
 struct test {}
+
 fn test()
 };
 "#,
@@ -2195,6 +2211,7 @@ fn global_variable_decl() {
             Semicolon@26..27 ";""#]],
     );
 }
+
 #[test]
 fn global_variable_decl_attrs() {
     check(
@@ -2241,6 +2258,7 @@ fn global_variable_decl_attrs() {
                 Semicolon@70..71 ";""#]],
     );
 }
+
 #[test]
 fn global_variable_decl_init() {
     check(
@@ -2302,6 +2320,7 @@ fn type_alias_decl() {
                 Semicolon@17..18 ";""#]],
     );
 }
+
 #[test]
 fn type_alias_decl_old() {
     check(

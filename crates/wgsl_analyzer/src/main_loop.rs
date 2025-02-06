@@ -25,6 +25,7 @@ pub enum Event {
     Lsp(lsp_server::Message),
     Task(Task),
 }
+
 #[derive(Debug)]
 pub enum Task {
     Response(lsp_server::Response),

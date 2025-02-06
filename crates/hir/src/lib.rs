@@ -356,6 +356,7 @@ pub struct Local {
     pub parent: FunctionId,
     pub binding: BindingId,
 }
+
 impl HasSource for Local {
     type Ast = ast::Binding;
 
@@ -411,6 +412,7 @@ impl HasSource for GlobalVariable {
 pub struct GlobalConstant {
     id: GlobalConstantId,
 }
+
 impl HasSource for GlobalConstant {
     type Ast = ast::GlobalConstantDecl;
 
@@ -426,6 +428,7 @@ impl HasSource for GlobalConstant {
 pub struct Override {
     id: OverrideId,
 }
+
 impl HasSource for Override {
     type Ast = ast::OverrideDecl;
 
@@ -631,6 +634,7 @@ impl Module {
 pub struct Import {
     id: ImportId,
 }
+
 impl Import {
     pub fn file_text(
         &self,

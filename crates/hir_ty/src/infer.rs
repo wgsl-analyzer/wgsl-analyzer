@@ -1287,6 +1287,7 @@ struct UnificationTable {
     vec_size_vars: FxHashMap<BoundVar, VecSize>,
     texel_format_vars: FxHashMap<BoundVar, TexelFormat>,
 }
+
 impl UnificationTable {
     fn set_vec_size(
         &mut self,
@@ -1617,6 +1618,7 @@ pub enum TypeExpectation {
     TypeOrVecOf(TypeExpectationInner),
     None,
 }
+
 impl TypeExpectation {
     fn from_option(option: Option<Ty>) -> Self {
         match option {

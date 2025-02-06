@@ -47,6 +47,7 @@ pub struct FieldId {
     pub strukt: StructId,
     pub field: LocalFieldId,
 }
+
 pub type LocalFieldId = Idx<FieldData>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -54,6 +55,7 @@ pub struct StructData {
     pub name: Name,
     pub fields: Arena<FieldData>,
 }
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FieldData {
     pub name: Name,
@@ -122,6 +124,7 @@ impl TypeAliasData {
         })
     }
 }
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GlobalVariableData {
     pub name: Name,
@@ -129,6 +132,7 @@ pub struct GlobalVariableData {
     pub storage_class: Option<StorageClass>,
     pub access_mode: Option<AccessMode>,
 }
+
 impl GlobalVariableData {
     pub fn global_var_data_query(
         db: &dyn DefDatabase,
@@ -152,6 +156,7 @@ pub struct GlobalConstantData {
     pub name: Name,
     pub ty: Option<Interned<TypeRef>>,
 }
+
 impl GlobalConstantData {
     pub fn global_constant_data_query(
         db: &dyn DefDatabase,
@@ -173,6 +178,7 @@ pub struct OverrideData {
     pub name: Name,
     pub ty: Option<Interned<TypeRef>>,
 }
+
 impl OverrideData {
     pub fn override_data_query(
         db: &dyn DefDatabase,

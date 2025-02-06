@@ -5,6 +5,7 @@ pub use syntax_kind::SyntaxKind;
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum WgslLanguage {}
+
 impl rowan::Language for WgslLanguage {
     type Kind = SyntaxKind;
 

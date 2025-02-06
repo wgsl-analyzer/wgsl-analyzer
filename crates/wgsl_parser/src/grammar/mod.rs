@@ -95,6 +95,7 @@ fn global_variable_decl(
 ) {
     global_decl(p, m, SyntaxKind::Var, SyntaxKind::GlobalVariableDecl);
 }
+
 fn global_constant_decl(
     p: &mut Parser,
     m: Marker,
@@ -102,6 +103,7 @@ fn global_constant_decl(
 ) {
     global_decl(p, m, kind, SyntaxKind::GlobalConstantDecl);
 }
+
 fn global_decl(
     p: &mut Parser,
     m: Marker,
@@ -254,6 +256,7 @@ fn name(p: &mut Parser) {
     p.expect(SyntaxKind::Ident);
     m.complete(p, SyntaxKind::Name);
 }
+
 fn name_recover(
     p: &mut Parser,
     recovery_set: &[SyntaxKind],
@@ -447,6 +450,7 @@ pub fn type_decl(p: &mut Parser) -> Option<CompletedMarker> {
         None
     }
 }
+
 pub(crate) fn type_decl_generics(p: &mut Parser) {
     list(
         p,
@@ -626,7 +630,9 @@ fn for_statement(p: &mut Parser) {
 
     m.complete(p, SyntaxKind::ForStatement);
 }
+
 const COMMA_SEMICOLON_SET: &[SyntaxKind] = &[SyntaxKind::Comma, SyntaxKind::Semicolon];
+
 fn for_header(p: &mut Parser) {
     if p.at(SyntaxKind::Semicolon) {
         p.bump();
@@ -877,6 +883,7 @@ fn if_at_set(
 ) -> bool {
     if_at_set_inner(p, set, None)
 }
+
 fn if_at_set_or(
     p: &mut Parser,
     set: &[SyntaxKind],
@@ -884,6 +891,7 @@ fn if_at_set_or(
 ) -> bool {
     if_at_set_inner(p, set, Some(or))
 }
+
 fn if_at_set_inner(
     p: &mut Parser,
     set: &[SyntaxKind],
@@ -900,6 +908,7 @@ fn if_at_set_inner(
 fn storage_class(p: &mut Parser) {
     if_at_set_or(p, STORAGE_CLASS_SET, SyntaxKind::Ident);
 }
+
 const ACCESS_MODE_SET: &[SyntaxKind] =
     &[SyntaxKind::Read, SyntaxKind::Write, SyntaxKind::ReadWrite];
 fn access_mode(p: &mut Parser) {
@@ -911,6 +920,7 @@ pub fn attribute_list_opt(p: &mut Parser) {
         attribute_list(p);
     }
 }
+
 pub fn attribute_list(p: &mut Parser) {
     if p.at(SyntaxKind::Attr) {
         attribute_list_modern(p);

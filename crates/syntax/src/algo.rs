@@ -53,6 +53,7 @@ pub fn skip_trivia_token(
     }
     Some(token)
 }
+
 /// Skip to next non `whitespace` token
 pub fn skip_whitespace_token(
     mut token: SyntaxToken,

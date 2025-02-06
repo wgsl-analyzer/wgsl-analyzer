@@ -295,6 +295,7 @@ pub trait InternDatabase: SourceDatabase {
         loc: Location<TypeAlias>,
     ) -> TypeAliasId;
 }
+
 pub type Location<T> = InFile<ModuleItemId<T>>;
 
 pub struct Interned<T>(salsa::InternId, PhantomData<T>);
@@ -307,6 +308,7 @@ impl<T> std::hash::Hash for Interned<T> {
         self.0.hash(state);
     }
 }
+
 impl<T> PartialEq for Interned<T> {
     fn eq(
         &self,
@@ -315,13 +317,17 @@ impl<T> PartialEq for Interned<T> {
         self.0 == other.0
     }
 }
+
 impl<T> Eq for Interned<T> {}
+
 impl<T> Clone for Interned<T> {
     fn clone(&self) -> Self {
         *self
     }
 }
+
 impl<T> Copy for Interned<T> {}
+
 impl<T> std::fmt::Debug for Interned<T> {
     fn fmt(
         &self,
@@ -330,6 +336,7 @@ impl<T> std::fmt::Debug for Interned<T> {
         f.debug_tuple("Interned").field(&self.0).finish()
     }
 }
+
 impl<T> InternKey for Interned<T> {
     fn from_intern_id(v: salsa::InternId) -> Self {
         Interned(v, PhantomData)
@@ -397,6 +404,7 @@ pub enum DefWithBodyId {
     GlobalConstant(GlobalConstantId),
     Override(OverrideId),
 }
+
 impl DefWithBodyId {
     pub fn file_id(
         &self,

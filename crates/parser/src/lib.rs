@@ -69,6 +69,7 @@ impl<P: ParserDefinition> PartialEq for Parse<P> {
         self.green_node == other.green_node
     }
 }
+
 impl<P: ParserDefinition> Eq for Parse<P> {}
 
 impl<P: ParserDefinition> Parse<P> {

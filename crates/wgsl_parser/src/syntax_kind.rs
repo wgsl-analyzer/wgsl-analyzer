@@ -436,6 +436,7 @@ impl From<SyntaxKind> for rowan::SyntaxKind {
         Self(kind as u16)
     }
 }
+
 impl From<rowan::SyntaxKind> for SyntaxKind {
     fn from(kind: rowan::SyntaxKind) -> Self {
         let max_element = SyntaxKind::Error as u16;
@@ -448,6 +449,7 @@ impl From<rowan::SyntaxKind> for SyntaxKind {
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum WgslLanguage {}
+
 impl rowan::Language for WgslLanguage {
     type Kind = SyntaxKind;
 

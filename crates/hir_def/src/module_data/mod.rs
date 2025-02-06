@@ -26,31 +26,37 @@ impl Name {
         &self.0
     }
 }
+
 impl AsRef<str> for Name {
     fn as_ref(&self) -> &str {
         &self.0
     }
 }
+
 impl From<TokenText<'_>> for Name {
     fn from(text: TokenText<'_>) -> Self {
         Name(text.as_str().into())
     }
 }
+
 impl From<ast::Name> for Name {
     fn from(name: ast::Name) -> Self {
         Name(name.text().as_str().into())
     }
 }
+
 impl From<ast::NameRef> for Name {
     fn from(name: ast::NameRef) -> Self {
         Name(name.text().as_str().into())
     }
 }
+
 impl From<ast::Ident> for Name {
     fn from(ident: ast::Ident) -> Self {
         Name(ident.text().as_str().into())
     }
 }
+
 impl From<&'_ str> for Name {
     fn from(text: &str) -> Self {
         Name(text.into())
@@ -100,12 +106,14 @@ pub struct TypeAlias {
     pub ty: Interned<TypeRef>,
     pub ast_id: FileAstId<ast::TypeAliasDecl>,
 }
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Struct {
     pub name: Name,
     pub ast_id: FileAstId<ast::StructDecl>,
     pub fields: IdxRange<Field>,
 }
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Field {
     pub ty: Interned<TypeRef>,
@@ -211,6 +219,7 @@ impl<N> std::hash::Hash for ModuleItemId<N> {
         self.index.hash(state);
     }
 }
+
 impl<N> Clone for ModuleItemId<N> {
     fn clone(&self) -> Self {
         Self {
@@ -219,6 +228,7 @@ impl<N> Clone for ModuleItemId<N> {
         }
     }
 }
+
 impl<N: ModuleDataNode> Copy for ModuleItemId<N> {}
 
 pub trait ModuleDataNode: Clone {
@@ -251,8 +261,6 @@ macro_rules! mod_items {
                 ModuleItem::$typ(id)
             }
         })+
-
-
 
         $(impl std::ops::Index<la_arena::Idx<$typ>> for ModuleData {
             type Output = $typ;
@@ -301,6 +309,7 @@ impl std::ops::Index<Idx<Field>> for ModuleData {
         &self.fields[index]
     }
 }
+
 impl std::ops::Index<Idx<Param>> for ModuleData {
     type Output = Param;
 

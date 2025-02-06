@@ -90,6 +90,7 @@ impl Naga for Naga14 {
         validator.validate(module).map(drop)
     }
 }
+
 impl NagaError for naga14::front::wgsl::ParseError {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -101,6 +102,7 @@ impl NagaError for naga14::front::wgsl::ParseError {
         self.labels().len() > 0
     }
 }
+
 impl NagaError for naga14::WithSpan<naga14::valid::ValidationError> {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -130,6 +132,7 @@ impl Naga for Naga19 {
         validator.validate(module).map(drop)
     }
 }
+
 impl NagaError for naga19::front::wgsl::ParseError {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -141,6 +144,7 @@ impl NagaError for naga19::front::wgsl::ParseError {
         self.labels().len() > 0
     }
 }
+
 impl NagaError for naga19::WithSpan<naga19::valid::ValidationError> {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -170,6 +174,7 @@ impl Naga for Naga22 {
         validator.validate(module).map(drop)
     }
 }
+
 impl NagaError for naga22::front::wgsl::ParseError {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -181,6 +186,7 @@ impl NagaError for naga22::front::wgsl::ParseError {
         self.labels().len() > 0
     }
 }
+
 impl NagaError for naga22::WithSpan<naga22::valid::ValidationError> {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -210,6 +216,7 @@ impl Naga for NagaMain {
         validator.validate(module).map(drop)
     }
 }
+
 impl NagaError for nagamain::front::wgsl::ParseError {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -221,6 +228,7 @@ impl NagaError for nagamain::front::wgsl::ParseError {
         self.labels().len() > 0
     }
 }
+
 impl NagaError for nagamain::WithSpan<nagamain::valid::ValidationError> {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -314,6 +322,7 @@ impl NagaErrorPolicy {
         }
     }
 }
+
 fn naga_diagnostics<N: Naga>(
     db: &dyn HirDatabase,
     file_id: FileId,

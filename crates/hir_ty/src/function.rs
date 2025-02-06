@@ -9,6 +9,7 @@ pub struct FunctionDetails {
     pub return_type: Option<Ty>,
     pub parameters: Vec<(Ty, Name)>,
 }
+
 impl FunctionDetails {
     pub fn parameters(&self) -> impl Iterator<Item = Ty> + '_ {
         self.parameters.iter().map(|(ty, _)| *ty)
@@ -33,6 +34,7 @@ impl salsa::InternKey for ResolvedFunctionId {
         self.0
     }
 }
+
 impl ResolvedFunctionId {
     pub fn lookup(
         self,
@@ -41,6 +43,7 @@ impl ResolvedFunctionId {
         db.lookup_intern_resolved_function(self)
     }
 }
+
 impl FunctionDetails {
     pub fn intern(
         self,

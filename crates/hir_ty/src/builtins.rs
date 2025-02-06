@@ -16,6 +16,7 @@ impl salsa::InternKey for BuiltinId {
         self.0
     }
 }
+
 impl BuiltinId {
     pub fn lookup(
         self,
@@ -24,6 +25,7 @@ impl BuiltinId {
         db.lookup_intern_builtin(self)
     }
 }
+
 impl Builtin {
     pub fn intern(
         self,
@@ -39,6 +41,7 @@ pub enum GenericArgKind {
     Type,
     TexelFormat,
 }
+
 pub enum GenericArg {
     VecSize(VecSize),
     Type(Ty),

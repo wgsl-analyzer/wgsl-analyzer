@@ -23,6 +23,7 @@ pub struct InlayHintsConfig {
     pub struct_layout_hints: bool,
     pub type_verbosity: InlayHintsTypeVerbosity,
 }
+
 #[derive(Clone, Copy, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
 #[derive(Default)]

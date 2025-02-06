@@ -37,6 +37,7 @@ pub fn lower_global_var_decl(
     }
     .collect_global_var_decl(decl)
 }
+
 pub fn lower_global_constant_decl(
     db: &dyn DefDatabase,
     file_id: HirFileId,

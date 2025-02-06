@@ -4,18 +4,21 @@ use std::{collections::BTreeMap, fs::File, path::PathBuf, str::FromStr};
 struct Builtin {
     overloads: Vec<Overload>,
 }
+
 #[derive(Debug)]
 enum Generic {
     VecSize,
     Type,
     TexelFormat,
 }
+
 #[derive(Debug)]
 struct Overload {
     generics: BTreeMap<char, (usize, Generic)>,
     return_type: Option<Type>,
     parameters: Vec<(Type, Option<String>)>,
 }
+
 #[derive(Debug)]
 enum Type {
     Vec(VecSize, Box<Type>),
@@ -32,6 +35,7 @@ enum Type {
     Bound(usize),
     StorageTypeOfTexelFormat(usize),
 }
+
 enum VecSize {
     Two,
     Three,
@@ -66,6 +70,7 @@ enum TexelFormat {
     Any,
     Bound(usize),
 }
+
 #[derive(Debug)]
 enum AccessMode {
     ReadWrite,
@@ -73,6 +78,7 @@ enum AccessMode {
     Write,
     Any,
 }
+
 impl FromStr for AccessMode {
     type Err = ();
 
@@ -438,6 +444,7 @@ fn type_to_rust(ty: &Type) -> String {
         Type::StorageTypeOfTexelFormat(var) => format!("TyKind::StorageTypeOfTexelFormat(BoundVar {{ index: {} }}).intern(db)", var),
     }
 }
+
 fn builtin_to_rust(
     f: &mut dyn std::io::Write,
     name: &str,

@@ -34,12 +34,16 @@ fn simple_item_tree() {
     check_item_tree(
         r#"
 fn test(a: f32) {}
+
 fn test2(b: vec3<u32>, c: vec4<test>) {}
+
 fn error(d: ?) {}
 "#,
         expect![[r#"
             fn test(f32);
+
             fn test2(vec3<u32>, vec4<test>);
+
             fn error([error]);
         "#]],
     );

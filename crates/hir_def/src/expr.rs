@@ -19,70 +19,21 @@ pub enum Literal {
     Float(u32, BuiltinFloat), // FIXME: f32 is not Eq
     Bool(bool),
 }
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BuiltinFloat {
     F32,
 }
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BuiltinInt {
     I32,
 }
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BuiltinUint {
     U32,
 }
-
-// impl From<ast::InferredInitializer> for BuiltinInitializer {
-//     fn from(initializer: ast::InferredInitializer) -> Self {
-//         use ast::InferredInitializerType::*;
-//         use VecDimensionality::*;
-//         match initializer
-//             .ty()
-//             .expect("InferredInitializer is only created from a single token, so that token definitely exists")
-//         {
-//             Array(_) => BuiltinInitializer::Array,
-//             Mat2x2(_) => BuiltinInitializer::Matrix {
-//                 rows: Two,
-//                 columns: Two,
-//             },
-//             Mat2x3(_) => BuiltinInitializer::Matrix {
-//                 rows: Two,
-//                 columns: Three,
-//             },
-//             Mat2x4(_) => BuiltinInitializer::Matrix {
-//                 rows: Two,
-//                 columns: Four,
-//             },
-//             Mat3x2(_) => BuiltinInitializer::Matrix {
-//                 rows: Three,
-//                 columns: Two,
-//             },
-//             Mat3x3(_) => BuiltinInitializer::Matrix {
-//                 rows: Three,
-//                 columns: Three,
-//             },
-//             Mat3x4(_) => BuiltinInitializer::Matrix {
-//                 rows: Three,
-//                 columns: Four,
-//             },
-//             Mat4x2(_) => BuiltinInitializer::Matrix {
-//                 rows: Four,
-//                 columns: Two,
-//             },
-//             Mat4x3(_) => BuiltinInitializer::Matrix {
-//                 rows: Four,
-//                 columns: Three,
-//             },
-//             Mat4x4(_) => BuiltinInitializer::Matrix {
-//                 rows: Four,
-//                 columns: Four,
-//             },
-//             Vec2(_) => BuiltinInitializer::Vec(Two),
-//             Vec3(_) => BuiltinInitializer::Vec(Three),
-//             Vec4(_) => BuiltinInitializer::Vec(Four),
-//         }
-//     }
-// }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Callee {

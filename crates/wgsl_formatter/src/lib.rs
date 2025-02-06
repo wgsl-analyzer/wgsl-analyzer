@@ -510,6 +510,7 @@ fn set_whitespace_before(
 fn set_whitespace_single_after(after: SyntaxToken) -> Option<()> {
     set_whitespace_after(after, single_whitespace())
 }
+
 fn set_whitespace_single_before(before: SyntaxToken) -> Option<()> {
     set_whitespace_before(before, single_whitespace())
 }
@@ -517,9 +518,11 @@ fn set_whitespace_single_before(before: SyntaxToken) -> Option<()> {
 fn single_whitespace() -> SyntaxToken {
     create_whitespace(" ")
 }
+
 fn create_whitespace(text: &str) -> SyntaxToken {
     create_syntax_token(SyntaxKind::Whitespace, text)
 }
+
 fn create_syntax_token(
     kind: SyntaxKind,
     text: &str,

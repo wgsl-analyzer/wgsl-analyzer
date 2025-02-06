@@ -9,6 +9,7 @@ fn check(
 ) {
     check_with_options(before, after, &FormattingOptions::default())
 }
+
 fn check_tabs(
     before: &str,
     after: Expect,
@@ -19,6 +20,7 @@ fn check_tabs(
     };
     check_with_options(before, after, &options)
 }
+
 #[track_caller]
 fn check_with_options(
     before: &str,
@@ -109,6 +111,7 @@ fn format_fn_header_comma_oneline() {
         expect![[r#"fn main(a: b, c: d) -> f32 {}"#]],
     );
 }
+
 #[test]
 fn format_fn_header_comma_multiline() {
     check(

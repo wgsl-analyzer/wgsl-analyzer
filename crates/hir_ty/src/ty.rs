@@ -20,6 +20,7 @@ use crate::HirDatabase;
 pub struct Ty {
     ty: salsa::InternId,
 }
+
 impl InternKey for Ty {
     fn from_intern_id(ty: salsa::InternId) -> Self {
         Ty { ty }
@@ -29,6 +30,7 @@ impl InternKey for Ty {
         self.ty
     }
 }
+
 impl Ty {
     pub fn kind(
         self,
@@ -264,6 +266,7 @@ pub enum ScalarType {
     U32,
     F32,
 }
+
 impl ScalarType {
     pub fn is_numeric(&self) -> bool {
         matches!(self, ScalarType::F32 | ScalarType::U32 | ScalarType::I32)
@@ -277,6 +280,7 @@ pub enum VecSize {
     Four,
     BoundVar(BoundVar),
 }
+
 impl TryFrom<u8> for VecSize {
     type Error = ();
 
@@ -289,6 +293,7 @@ impl TryFrom<u8> for VecSize {
         })
     }
 }
+
 impl From<type_ref::VecDimensionality> for VecSize {
     fn from(dim: type_ref::VecDimensionality) -> Self {
         match dim {
@@ -298,6 +303,7 @@ impl From<type_ref::VecDimensionality> for VecSize {
         }
     }
 }
+
 impl std::fmt::Display for VecSize {
     fn fmt(
         &self,
@@ -314,6 +320,7 @@ impl std::fmt::Display for VecSize {
         }
     }
 }
+
 impl VecSize {
     pub fn as_u8(&self) -> u8 {
         match self {
@@ -466,6 +473,7 @@ impl std::fmt::Display for TexelFormat {
         f.write_str(str)
     }
 }
+
 impl FromStr for TexelFormat {
     type Err = ();
 

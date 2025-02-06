@@ -90,6 +90,7 @@ fn function_param_list(p: &mut Parser) {
         },
     );
 }
+
 fn array_index(p: &mut Parser) {
     p.expect(SyntaxKind::BracketLeft);
     expr_binding_power(p, 0);
@@ -152,6 +153,7 @@ enum BinaryOp {
     Equals,
     Modulo,
 }
+
 fn binary_op(p: &mut Parser) -> Option<BinaryOp> {
     let op = if p.at(SyntaxKind::Plus) {
         Some(BinaryOp::Add)
@@ -245,6 +247,7 @@ enum PostfixOp {
     Index,
     Field,
 }
+
 impl PostfixOp {
     fn binding_power(&self) -> (u8, ()) {
         match self {
@@ -252,6 +255,7 @@ impl PostfixOp {
         }
     }
 }
+
 fn postfix_op(p: &mut Parser) -> Option<PostfixOp> {
     if p.at(SyntaxKind::Period) {
         Some(PostfixOp::Field)
