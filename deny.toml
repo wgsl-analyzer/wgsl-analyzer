@@ -25,7 +25,10 @@ allow = [
   "Zlib",
 ]
 
-exceptions = [{ name = "unicode-ident", allow = ["Unicode-DFS-2016"] }]
+exceptions = [
+  { name = "unicode-ident", allow = ["Unicode-DFS-2016"] }
+  { name = "zerovec-derive", allow = ["Unicode-3.0"] }
+  ]
 
 [bans]
 multiple-versions = "warn"
