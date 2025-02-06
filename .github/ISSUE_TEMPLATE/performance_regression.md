@@ -6,7 +6,7 @@ labels: C-Bug, C-Performance, P-Regression, S-Needs-Triage
 assignees: ''
 ---
 
-## `template_crate_name` version
+## `wgsl-analyzer` version
 
 Original: `` <!-- The release number or commit hash of the version you last tested your app against. -->
 
@@ -22,12 +22,13 @@ Rust version you're using: (`cargo --version`)
 
 ```
 
-> Notes:
->
-> - Pay attention to the msrv (minimum supported rust version) of `template_crate_name`.
-> - `nightly` should work, but sometimes there are regressions: please let us know!
-
 Operating system, including version:
+
+```text
+
+```
+
+Editor name, including version:
 
 ```text
 
