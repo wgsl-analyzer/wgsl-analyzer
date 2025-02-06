@@ -2119,36 +2119,36 @@ fn test()
 };
 "#,
         expect![[r#"
-            SourceFile@0..29
+            SourceFile@0..30
               Whitespace@0..1 "\n"
-              StructDecl@1..16
+              StructDecl@1..17
                 Struct@1..7 "struct"
                 Whitespace@7..8 " "
                 Name@8..13
                   Ident@8..12 "test"
                   Whitespace@12..13 " "
-                StructDeclBody@13..16
+                StructDeclBody@13..17
                   BraceLeft@13..14 "{"
                   BraceRight@14..15 "}"
-                  Whitespace@15..16 "\n"
-              Function@16..27
-                Fn@16..18 "fn"
-                Whitespace@18..19 " "
-                Name@19..23
-                  Ident@19..23 "test"
-                ParamList@23..26
-                  ParenLeft@23..24 "("
-                  ParenRight@24..25 ")"
-                  Whitespace@25..26 "\n"
-                Error@26..27
-                  BraceRight@26..27 "}"
-              Error@27..29
-                Error@27..29
-                  Semicolon@27..28 ";"
-                  Whitespace@28..29 "\n"
+                  Whitespace@15..17 "\n\n"
+              Function@17..28
+                Fn@17..19 "fn"
+                Whitespace@19..20 " "
+                Name@20..24
+                  Ident@20..24 "test"
+                ParamList@24..27
+                  ParenLeft@24..25 "("
+                  ParenRight@25..26 ")"
+                  Whitespace@26..27 "\n"
+                Error@27..28
+                  BraceRight@27..28 "}"
+              Error@28..30
+                Error@28..30
+                  Semicolon@28..29 ";"
+                  Whitespace@29..30 "\n"
 
-            error at 26..27: expected Arrow or BraceLeft, but found BraceRight
-            error at 27..28: expected Fn, Struct, Var, Let, Const, Alias or Override, but found Semicolon"#]],
+            error at 27..28: expected Arrow or BraceLeft, but found BraceRight
+            error at 28..29: expected Fn, Struct, Var, Let, Const, Alias or Override, but found Semicolon"#]],
     );
 }
 

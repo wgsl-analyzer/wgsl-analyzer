@@ -41,9 +41,7 @@ fn error(d: ?) {}
 "#,
         expect![[r#"
             fn test(f32);
-
             fn test2(vec3<u32>, vec4<test>);
-
             fn error([error]);
         "#]],
     );
