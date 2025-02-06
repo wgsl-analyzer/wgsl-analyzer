@@ -1,6 +1,10 @@
+use std::io::stderr;
+
 use lsp_server::Connection;
 use lsp_types::InitializeParams;
+use std::env::args;
 use tracing::info;
+use tracing_subscriber::fmt::Subscriber;
 use wgsl_analyzer::{
     config::{Config, TraceConfig},
     from_json,
@@ -11,14 +15,17 @@ use wgsl_analyzer::{
 const VERSION: &str = "0.9.4";
 
 fn main() -> Result<()> {
-    if std::env::args().any(|arg| arg == "--version") {
-        println!("{}", VERSION);
+    if args().any(|arg| arg == "--version") {
+        #[expect(clippy::print_stdout, reason = "intended behavior")]
+        {
+            println!("{VERSION}");
+        };
         return Ok(());
     }
 
     let (connection, _io_threads) = Connection::stdio();
     let (initialize_id, initialize_params) = connection.initialize_start()?;
-    let initialize_params: InitializeParams = from_json("InitializeParams", initialize_params)?;
+    let initialize_params: InitializeParams = from_json("InitializeParams", &initialize_params)?;
 
     let initialize_result = lsp_types::InitializeResult {
         capabilities: wgsl_analyzer::server_capabilities(),
@@ -27,12 +34,12 @@ fn main() -> Result<()> {
             version: None,
         }),
     };
-    let initialize_result = serde_json::to_value(initialize_result).unwrap();
+    let initialize_result = serde_json::to_value(initialize_result)?;
     connection.initialize_finish(initialize_id, initialize_result)?;
 
     let mut config = Config::default();
     if let Some(options) = initialize_params.initialization_options {
-        config.update(options);
+        config.update(&options);
     }
 
     setup_logging(&config.trace);
@@ -48,9 +55,9 @@ fn setup_logging(trace: &TraceConfig) {
         lsp_server = if trace.server { "debug" } else { "info" }
     );
 
-    tracing_subscriber::fmt::Subscriber::builder()
+    Subscriber::builder()
         .with_ansi(false)
-        .with_writer(std::io::stderr)
+        .with_writer(stderr)
         .with_env_filter(filter)
         .init();
 }

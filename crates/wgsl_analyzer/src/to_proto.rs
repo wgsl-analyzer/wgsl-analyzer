@@ -1,7 +1,7 @@
 use base_db::{FileRange, TextRange, TextSize};
 use ide::inlay_hints::{InlayHint, InlayKind};
 use ide_completion::item::{CompletionItem, CompletionItemKind, CompletionRelevance};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use paths::AbsPath;
 use std::path;
 use text_edit::{Indel, TextEdit};
@@ -17,7 +17,7 @@ use crate::{
 /// This will only happen when processing windows paths.
 ///
 /// When processing non-windows path, this is essentially the same as `Url::from_file_path`.
-pub(crate) fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
+pub fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
     let url = lsp_types::Url::from_file_path(path).unwrap();
     match path.as_ref().components().next() {
         Some(path::Component::Prefix(prefix))
@@ -31,10 +31,11 @@ pub(crate) fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
         _ => return url,
     }
 
+    // TODO find a crate that does this better
     let driver_letter_range = {
-        let (scheme, drive_letter, _rest) = match url.as_str().splitn(3, ':').collect_tuple() {
-            Some(it) => it,
-            None => return url,
+        let Some((scheme, drive_letter, _rest)) = url.as_str().splitn(3, ':').collect_tuple()
+        else {
+            return url;
         };
         let start = scheme.len() + ':'.len_utf8();
         start..(start + drive_letter.len())
@@ -48,7 +49,7 @@ pub(crate) fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
     lsp_types::Url::parse(&url).unwrap()
 }
 
-pub(crate) fn range(
+pub fn range(
     line_index: &LineIndex,
     range: TextRange,
 ) -> lsp_types::Range {
@@ -57,7 +58,7 @@ pub(crate) fn range(
     lsp_types::Range::new(start, end)
 }
 
-pub(crate) fn position(
+pub fn position(
     line_index: &LineIndex,
     offset: TextSize,
 ) -> lsp_types::Position {
@@ -71,14 +72,14 @@ pub(crate) fn position(
     }
 }
 
-pub(crate) fn url(
+pub fn url(
     snap: &GlobalStateSnapshot,
     file_id: FileId,
 ) -> lsp_types::Url {
     snap.file_id_to_url(file_id)
 }
 
-pub(crate) fn location(
+pub fn location(
     snap: &GlobalStateSnapshot,
     frange: FileRange,
 ) -> Result<lsp_types::Location> {
@@ -89,11 +90,11 @@ pub(crate) fn location(
     Ok(loc)
 }
 
-pub(crate) fn completion_items(
+pub fn completion_items(
     // config: &Config,
     line_index: &LineIndex,
-    tdpp: lsp_types::TextDocumentPositionParams,
-    items: Vec<CompletionItem>,
+    tdpp: &lsp_types::TextDocumentPositionParams,
+    items: &[CompletionItem],
 ) -> Vec<lsp_types::CompletionItem> {
     let max_relevance = items
         .iter()
@@ -102,7 +103,7 @@ pub(crate) fn completion_items(
         .unwrap_or_default();
     let mut res = Vec::with_capacity(items.len());
     for item in items {
-        completion_item(&mut res, line_index, &tdpp, max_relevance, item)
+        completion_item(&mut res, line_index, tdpp, max_relevance, item);
     }
     res
 }
@@ -113,7 +114,7 @@ fn completion_item(
     line_index: &LineIndex,
     _tdpp: &lsp_types::TextDocumentPositionParams,
     max_relevance: u32,
-    item: CompletionItem,
+    item: &CompletionItem,
 ) {
     let mut additional_text_edits = Vec::new();
 
@@ -122,7 +123,7 @@ fn completion_item(
     let text_edit = {
         let mut text_edit = None;
         let source_range = item.source_range();
-        for indel in item.text_edit().iter() {
+        for indel in item.text_edit() {
             if indel.delete.contains_range(source_range) {
                 // let insert_replace_support = config.insert_replace_support().then(|| tdpp.position);
                 let insert_replace_support = None;
@@ -136,7 +137,7 @@ fn completion_item(
                     let indel2 = Indel::replace(range2, indel.insert.clone());
                     additional_text_edits.push(self::text_edit(line_index, indel1));
                     self::completion_text_edit(line_index, insert_replace_support, indel2)
-                })
+                });
             } else {
                 assert!(source_range.intersect(indel.delete).is_none());
                 let text_edit = self::text_edit(line_index, indel.clone());
@@ -147,9 +148,9 @@ fn completion_item(
     };
 
     let mut lsp_item = lsp_types::CompletionItem {
-        label: item.label().to_string(),
-        detail: item.detail().map(|it| it.to_string()),
-        filter_text: Some(item.lookup().to_string()),
+        label: item.label().to_owned(),
+        detail: item.detail().map(std::borrow::ToOwned::to_owned),
+        filter_text: Some(item.lookup().to_owned()),
         kind: Some(completion_item_kind(item.kind())),
         text_edit: Some(text_edit),
         additional_text_edits: Some(additional_text_edits),
@@ -232,7 +233,7 @@ fn completion_item(
     }
 }
 
-pub(crate) fn completion_item_kind(
+pub const fn completion_item_kind(
     completion_item_kind: CompletionItemKind
 ) -> lsp_types::CompletionItemKind {
     match completion_item_kind {
@@ -242,13 +243,14 @@ pub(crate) fn completion_item_kind(
         CompletionItemKind::Keyword => lsp_types::CompletionItemKind::KEYWORD,
         CompletionItemKind::Snippet => lsp_types::CompletionItemKind::SNIPPET,
         CompletionItemKind::Constant => lsp_types::CompletionItemKind::CONSTANT,
-        CompletionItemKind::Struct => lsp_types::CompletionItemKind::STRUCT,
         CompletionItemKind::Module => lsp_types::CompletionItemKind::MODULE,
-        CompletionItemKind::TypeAlias => lsp_types::CompletionItemKind::STRUCT,
+        CompletionItemKind::TypeAlias | CompletionItemKind::Struct => {
+            lsp_types::CompletionItemKind::STRUCT
+        }
     }
 }
 
-pub(crate) fn text_edit(
+pub fn text_edit(
     line_index: &LineIndex,
     indel: Indel,
 ) -> lsp_types::TextEdit {
@@ -260,7 +262,7 @@ pub(crate) fn text_edit(
     lsp_types::TextEdit { range, new_text }
 }
 
-pub(crate) fn text_edit_vec(
+pub fn text_edit_vec(
     line_index: &LineIndex,
     text_edit: TextEdit,
 ) -> Vec<lsp_types::TextEdit> {
@@ -270,7 +272,7 @@ pub(crate) fn text_edit_vec(
         .collect()
 }
 
-pub(crate) fn completion_text_edit(
+pub fn completion_text_edit(
     line_index: &LineIndex,
     insert_replace_support: Option<lsp_types::Position>,
     indel: Indel,
@@ -290,21 +292,24 @@ pub(crate) fn completion_text_edit(
     }
 }
 
-pub(crate) fn inlay_hint(
+pub fn inlay_hint(
     render_colons: bool,
     line_index: &LineIndex,
-    inlay_hint: InlayHint,
+    inlay_hint: &InlayHint,
 ) -> lsp_types::InlayHint {
     lsp_types::InlayHint {
         label: lsp_types::InlayHintLabel::String(match inlay_hint.kind {
             InlayKind::ParameterHint if render_colons => format!("{}:", inlay_hint.label),
             InlayKind::TypeHint if render_colons => format!(": {}", inlay_hint.label),
-            _ => inlay_hint.label.to_string(),
+            InlayKind::TypeHint | InlayKind::ParameterHint | InlayKind::StructLayoutHint => {
+                inlay_hint.label.to_string()
+            }
         }),
         position: match inlay_hint.kind {
-            InlayKind::ParameterHint => position(line_index, inlay_hint.range.start()),
             InlayKind::TypeHint => position(line_index, inlay_hint.range.end()),
-            InlayKind::StructLayoutHint => position(line_index, inlay_hint.range.start()),
+            InlayKind::StructLayoutHint | InlayKind::ParameterHint => {
+                position(line_index, inlay_hint.range.start())
+            }
         },
         data: None,
         text_edits: None,
@@ -316,13 +321,11 @@ pub(crate) fn inlay_hint(
         tooltip: None,
         padding_left: Some(match inlay_hint.kind {
             InlayKind::TypeHint => !render_colons,
-            InlayKind::ParameterHint => false,
-            InlayKind::StructLayoutHint => false,
+            InlayKind::ParameterHint | InlayKind::StructLayoutHint => false,
         }),
         padding_right: Some(match inlay_hint.kind {
             InlayKind::TypeHint => false,
-            InlayKind::ParameterHint => true,
-            InlayKind::StructLayoutHint => true,
+            InlayKind::ParameterHint | InlayKind::StructLayoutHint => true,
         }),
     }
 }

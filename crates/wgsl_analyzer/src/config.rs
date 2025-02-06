@@ -1,6 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
+use hir::diagnostics;
 use hir_ty::ty::pretty::TypeVerbosity;
+use ide::inlay_hints;
 use ide::inlay_hints::StructLayoutHints;
 use serde::Deserialize;
 
@@ -72,35 +74,40 @@ impl Config {
         Ok(())
     }
 
+    #[inline]
     pub fn update(
         &mut self,
-        value: serde_json::Value,
+        value: &serde_json::Value,
     ) {
         if value.is_null() {
             return;
         }
-        if let Err(e) = self.try_update(value.clone()) {
-            tracing::error!("Failed to update config: {:?}", e);
+        if let Err(error) = self.try_update(value.clone()) {
+            tracing::error!("Failed to update config: {:?}", error);
             tracing::error!("Received JSON: {}", value.to_string());
         }
     }
 
-    pub fn diagnostics(&self) -> hir::diagnostics::DiagnosticsConfig {
-        hir::diagnostics::DiagnosticsConfig {
+    #[inline]
+    #[must_use]
+    pub const fn diagnostics(&self) -> diagnostics::DiagnosticsConfig {
+        diagnostics::DiagnosticsConfig {
             type_errors: self.diagnostics.type_errors,
             naga_parsing_errors: self.diagnostics.naga_parsing_errors,
             naga_validation_errors: self.diagnostics.naga_validation_errors,
             naga_version: match self.diagnostics.naga_version {
-                NagaVersion::Naga14 => hir::diagnostics::NagaVersion::Naga14,
-                NagaVersion::Naga19 => hir::diagnostics::NagaVersion::Naga19,
-                NagaVersion::Naga22 => hir::diagnostics::NagaVersion::Naga22,
-                NagaVersion::NagaMain => hir::diagnostics::NagaVersion::NagaMain,
+                NagaVersion::Naga14 => diagnostics::NagaVersion::Naga14,
+                NagaVersion::Naga19 => diagnostics::NagaVersion::Naga19,
+                NagaVersion::Naga22 => diagnostics::NagaVersion::Naga22,
+                NagaVersion::NagaMain => diagnostics::NagaVersion::NagaMain,
             },
         }
     }
 
-    pub fn inlay_hints(&self) -> ide::inlay_hints::InlayHintsConfig {
-        ide::inlay_hints::InlayHintsConfig {
+    #[inline]
+    #[must_use]
+    pub fn inlay_hints(&self) -> inlay_hints::InlayHintsConfig {
+        inlay_hints::InlayHintsConfig {
             enabled: self.inlay_hints.enabled,
             type_hints: self.inlay_hints.type_hints,
             parameter_hints: self.inlay_hints.parameter_hints,
@@ -116,7 +123,9 @@ impl Config {
         }
     }
 
-    pub fn offset_encoding(&self) -> OffsetEncoding {
-        OffsetEncoding::Utf8 // do we need to check whether it is supported?
+    #[inline]
+    #[must_use]
+    pub const fn offset_encoding(&self) -> OffsetEncoding {
+        OffsetEncoding::Utf8 // TODO do we need to check whether it is supported?
     }
 }

@@ -4,7 +4,7 @@ use crate::global_state::file_id_to_url;
 use crate::lsp_utils::is_cancelled;
 use crate::{dispatch::RequestDispatcher, global_state::GlobalState};
 use crate::{handlers, lsp_ext, Result};
-use base_db::SourceDatabase;
+use base_db::SourceDatabase as _;
 use crossbeam_channel::{select, Receiver};
 use lsp_server::Connection;
 use salsa::Durability;
@@ -12,11 +12,12 @@ use std::sync::Arc;
 use std::time::Instant;
 use vfs::FileId;
 
+#[inline]
 pub fn main_loop(
     config: Config,
     connection: Connection,
 ) -> Result<()> {
-    GlobalState::new(connection.sender, config).run(connection.receiver)
+    GlobalState::new(connection.sender, config).run(&connection.receiver)
 }
 
 #[derive(Debug)]
@@ -33,9 +34,9 @@ pub enum Task {
 impl GlobalState {
     fn run(
         mut self,
-        receiver: Receiver<lsp_server::Message>,
+        receiver: &Receiver<lsp_server::Message>,
     ) -> Result<()> {
-        while let Some(event) = self.next_event(&receiver) {
+        while let Some(event) = self.next_event(receiver) {
             self.handle_event(event)?;
         }
 
@@ -65,7 +66,7 @@ impl GlobalState {
                 lsp_server::Message::Request(req) => self.on_request(req, start_time)?,
                 lsp_server::Message::Response(response) => self.complete_request(response),
                 lsp_server::Message::Notification(notification) => {
-                    self.on_notification(notification)?
+                    self.on_notification(notification)?;
                 }
             },
             Event::Task(task) => match task {
@@ -73,7 +74,7 @@ impl GlobalState {
                 Task::Diagnostics(diagnostics_per_file) => {
                     for (file_id, diagnostics) in diagnostics_per_file {
                         self.diagnostics
-                            .set_native_diagnostics(file_id, diagnostics)
+                            .set_native_diagnostics(file_id, diagnostics);
                     }
                 }
             },
@@ -85,13 +86,10 @@ impl GlobalState {
         }
 
         if let Some(diagnostic_changes) = self.diagnostics.take_changes() {
+            // TODO is order important here?
             for file_id in diagnostic_changes {
                 let url = file_id_to_url(&self.vfs.read().unwrap().0, file_id);
                 let diagnostics = self.diagnostics.diagnostics_for(file_id).cloned().collect();
-                // let version = from_proto::vfs_path(&url)
-                // .map(|path| self.mem_docs.get(&path).map(|it| it.version))
-                // .unwrap_or_default();
-
                 self.send_notification::<lsp_types::notification::PublishDiagnostics>(
                     lsp_types::PublishDiagnosticsParams {
                         uri: url,
@@ -101,11 +99,10 @@ impl GlobalState {
                 );
             }
         }
-
         Ok(())
     }
 
-    fn update_diagnostics(&mut self) {
+    fn update_diagnostics(&self) {
         let snapshot = self.snapshot();
         let relevant_files: Vec<_> = self
             .vfs
@@ -170,8 +167,7 @@ impl GlobalState {
             .outgoing
             .complete(response.id.clone())
             .expect("received response for unknown request");
-
-        handler(self, response)
+        handler(self, response);
     }
 
     fn on_notification(
@@ -199,13 +195,13 @@ impl GlobalState {
 
                     match (error, result) {
                         (Some(err), _) => {
-                            tracing::error!("Failed to fetch the server settings: {:?}", err)
+                            tracing::error!("Failed to fetch the server settings: {:?}", err);
                         }
                         (None, Some(configs)) => {
                             // Note that json can be null according to the spec if the client can't
                             // provide a configuration. This is handled in Config::update below.
                             let mut config = Config::clone(&*this.config);
-                            config.update(configs);
+                            config.update(&configs);
                             this.update_configuration(config);
                         }
                         (None, None) => tracing::error!(
@@ -246,7 +242,7 @@ impl GlobalState {
 }
 
 mod text_notifications {
-    use anyhow::Context;
+    use anyhow::Context as _;
     use lsp_types::{
         notification::PublishDiagnostics, DidChangeTextDocumentParams, DidCloseTextDocumentParams,
         DidOpenTextDocumentParams, DidSaveTextDocumentParams, PublishDiagnosticsParams,
@@ -261,8 +257,8 @@ mod text_notifications {
     ) -> Result<()> {
         let path = match from_proto::vfs_path(&params.text_document.uri) {
             Ok(path) => path,
-            Err(e) => {
-                error!("Invalid path in DidOpenTextDocument: {}", e);
+            Err(error) => {
+                error!("Invalid path in DidOpenTextDocument: {}", error);
                 return Ok(());
             }
         };
@@ -300,13 +296,13 @@ mod text_notifications {
     }
 
     pub fn did_close_text_document(
-        _state: &mut GlobalState,
+        state: &mut GlobalState,
         params: DidCloseTextDocumentParams,
     ) -> Result<()> {
         let _path = from_proto::vfs_path(&params.text_document.uri)
             .context("invalid path in did_change_text_document")?;
 
-        _state.send_notification::<PublishDiagnostics>(PublishDiagnosticsParams {
+        state.send_notification::<PublishDiagnostics>(PublishDiagnosticsParams {
             uri: params.text_document.uri,
             diagnostics: vec![],
             version: None,
@@ -315,11 +311,15 @@ mod text_notifications {
         Ok(())
     }
 
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "handlers should have this signature"
+    )]
     pub fn did_save_text_document(
-        _state: &mut GlobalState,
+        state: &mut GlobalState,
         params: DidSaveTextDocumentParams,
     ) -> Result<()> {
-        let _path = from_proto::vfs_path(&params.text_document.uri)
+        let path = from_proto::vfs_path(&params.text_document.uri)
             .context("invalid path in did_change_text_document")?;
         Ok(())
     }

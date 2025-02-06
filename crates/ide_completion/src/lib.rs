@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+
 use base_db::FilePosition;
 use completions::Completions;
 use context::CompletionContext;

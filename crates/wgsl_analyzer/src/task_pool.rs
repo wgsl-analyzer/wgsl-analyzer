@@ -8,15 +8,15 @@ pub struct TaskPool<T> {
 }
 
 impl<T> TaskPool<T> {
-    pub(crate) fn new(sender: Sender<T>) -> TaskPool<T> {
-        TaskPool {
+    pub(crate) fn new(sender: Sender<T>) -> Self {
+        Self {
             sender,
             inner: threadpool::ThreadPool::default(),
         }
     }
 
     pub fn spawn<F>(
-        &mut self,
+        &self,
         task: F,
     ) where
         F: FnOnce() -> T + Send + 'static,
@@ -25,12 +25,11 @@ impl<T> TaskPool<T> {
         self.inner.execute({
             let sender = self.sender.clone();
             move || sender.send(task()).unwrap()
-        })
+        });
     }
 
-    #[allow(dead_code)]
     pub fn spawn_with_sender<F>(
-        &mut self,
+        &self,
         task: F,
     ) where
         F: FnOnce(Sender<T>) + Send + 'static,
@@ -39,10 +38,9 @@ impl<T> TaskPool<T> {
         self.inner.execute({
             let sender = self.sender.clone();
             move || task(sender)
-        })
+        });
     }
 
-    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.inner.queued_count()
     }
@@ -50,6 +48,6 @@ impl<T> TaskPool<T> {
 
 impl<T> Drop for TaskPool<T> {
     fn drop(&mut self) {
-        self.inner.join()
+        self.inner.join();
     }
 }

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 mod db;
 mod debug_command;
 pub mod diagnostics;

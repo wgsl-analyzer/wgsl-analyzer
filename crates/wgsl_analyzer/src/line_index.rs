@@ -5,6 +5,7 @@
 //! This module does line ending conversion and detection (so that we can
 //! convert back to `\r\n` on the way out).
 
+use base_db::line_index;
 use std::sync::Arc;
 
 pub enum OffsetEncoding {
@@ -12,10 +13,10 @@ pub enum OffsetEncoding {
     Utf16,
 }
 
-pub(crate) struct LineIndex {
-    pub(crate) index: Arc<base_db::line_index::LineIndex>,
-    pub(crate) endings: LineEndings,
-    pub(crate) encoding: OffsetEncoding,
+pub struct LineIndex {
+    pub index: Arc<line_index::LineIndex>,
+    pub endings: LineEndings,
+    pub encoding: OffsetEncoding,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -26,9 +27,9 @@ pub enum LineEndings {
 
 impl LineEndings {
     /// Replaces `\r\n` with `\n` in-place in `src`.
-    pub(crate) fn normalize(src: String) -> (String, LineEndings) {
+    pub(crate) fn normalize(src: String) -> (String, Self) {
         if !src.as_bytes().contains(&b'\r') {
-            return (src, LineEndings::Unix);
+            return (src, Self::Unix);
         }
 
         // We replace `\r\n` with `\n` in-place, which doesn't break utf-8 encoding.
@@ -40,10 +41,7 @@ impl LineEndings {
         let mut gap_len = 0;
         let mut tail = buf.as_mut_slice();
         loop {
-            let idx = match find_crlf(&tail[gap_len..]) {
-                None => tail.len(),
-                Some(idx) => idx + gap_len,
-            };
+            let idx = find_crlf(&tail[gap_len..]).map_or(tail.len(), |idx| idx + gap_len);
             tail.copy_within(gap_len..idx, 0);
             tail = &mut tail[idx - gap_len..];
             if tail.len() == gap_len {
@@ -59,7 +57,7 @@ impl LineEndings {
             buf.set_len(new_len);
             String::from_utf8_unchecked(buf)
         };
-        return (src, LineEndings::Dos);
+        return (src, Self::Dos);
 
         fn find_crlf(src: &[u8]) -> Option<usize> {
             src.windows(2).position(|it| it == b"\r\n")

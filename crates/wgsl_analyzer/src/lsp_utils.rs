@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Utilities for LSP-related boilerplate code.
 use std::{error::Error, ops::Range, sync::Arc};
 
@@ -11,31 +10,33 @@ use crate::{
     LspError,
 };
 
-pub(crate) fn is_cancelled(e: &(dyn Error + 'static)) -> bool {
-    e.downcast_ref::<salsa::Cancelled>().is_some()
+pub fn is_cancelled(error: &(dyn Error + 'static)) -> bool {
+    error.downcast_ref::<salsa::Cancelled>().is_some()
 }
 
-pub(crate) fn invalid_params_error(message: String) -> LspError {
+#[expect(clippy::as_conversions, reason = "valid according to JSON RPC")]
+pub const fn invalid_params_error(message: String) -> LspError {
     LspError {
         code: lsp_server::ErrorCode::InvalidParams as i32,
         message,
     }
 }
 
-pub(crate) fn notification_is<N: lsp_types::notification::Notification>(
+pub fn notification_is<N: lsp_types::notification::Notification>(
     notification: &Notification
 ) -> bool {
     notification.method == N::METHOD
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub(crate) enum Progress {
+pub enum Progress {
     Begin,
     Report,
     End,
 }
 
 impl Progress {
+    #[expect(clippy::as_conversions, reason = "necessary to obtain a decimal value")]
     pub(crate) fn fraction(
         done: usize,
         total: usize,
@@ -47,30 +48,34 @@ impl Progress {
 
 impl GlobalState {
     pub(crate) fn show_message(
-        &mut self,
+        &self,
         typ: lsp_types::MessageType,
         message: String,
     ) {
         self.send_notification::<lsp_types::notification::ShowMessage>(
             lsp_types::ShowMessageParams { typ, message },
-        )
+        );
     }
 
     pub(crate) fn report_progress(
         &mut self,
         title: &str,
-        state: Progress,
+        state: &Progress,
         message: Option<String>,
         fraction: Option<f64>,
     ) {
         /*if !self.config.work_done_progress() {
             return;
         }*/
-        let percentage = fraction.map(|f| {
-            assert!((0.0..=1.0).contains(&f));
-            (f * 100.0) as u32
+        let percentage = fraction.map(|fraction| {
+            assert!((0.0..=1.0).contains(&fraction));
+            // TODO can this be done better?
+            #[expect(clippy::cast_sign_loss, clippy::as_conversions, reason = "asserted")]
+            {
+                (fraction * 100.0) as u32
+            }
         });
-        let token = lsp_types::ProgressToken::String(format!("rustAnalyzer/{}", title));
+        let token = lsp_types::ProgressToken::String(format!("rustAnalyzer/{title}"));
         let work_done_progress = match state {
             Progress::Begin => {
                 self.send_request::<lsp_types::request::WorkDoneProgressCreate>(
@@ -105,7 +110,7 @@ impl GlobalState {
     }
 }
 
-pub(crate) fn apply_document_changes(
+pub fn apply_document_changes(
     old_text: &mut String,
     content_changes: Vec<lsp_types::TextDocumentContentChangeEvent>,
 ) {
@@ -127,43 +132,38 @@ pub(crate) fn apply_document_changes(
     }
 
     impl IndexValid {
-        fn covers(
+        const fn covers(
             &self,
             line: u32,
         ) -> bool {
             match *self {
-                IndexValid::UpToLineExclusive(to) => to > line,
-                _ => true,
+                Self::UpToLineExclusive(to) => to > line,
+                Self::All => true,
             }
         }
     }
 
     let mut index_valid = IndexValid::All;
     for change in content_changes {
-        match change.range {
-            Some(range) => {
-                if !index_valid.covers(range.end.line) {
-                    line_index.index = Arc::new(base_db::line_index::LineIndex::new(old_text));
-                }
-                index_valid = IndexValid::UpToLineExclusive(range.start.line);
-                match from_proto::text_range(&line_index, range) {
-                    Ok(range1) => {
-                        old_text.replace_range(Range::<usize>::from(range1), &change.text);
-                    }
-                    _ => {}
-                }
+        if let Some(range) = change.range {
+            if !index_valid.covers(range.end.line) {
+                line_index.index = Arc::new(base_db::line_index::LineIndex::new(old_text));
             }
-            None => {
-                *old_text = change.text;
-                index_valid = IndexValid::UpToLineExclusive(0);
+            index_valid = IndexValid::UpToLineExclusive(range.start.line);
+            #[expect(if_let_rescope, reason = "conflicting lints")]
+            if let Ok(range) = from_proto::text_range(&line_index, range) {
+                old_text.replace_range(Range::<usize>::from(range), &change.text);
             }
+        } else {
+            *old_text = change.text;
+            index_valid = IndexValid::UpToLineExclusive(0);
         }
     }
 }
 
 /// Checks that the edits inside the completion and the additional edits do not overlap.
 /// LSP explicitly forbids the additional edits to overlap both with the main edit and themselves.
-pub(crate) fn all_edits_are_disjoint(
+pub fn all_edits_are_disjoint(
     completion: &lsp_types::CompletionItem,
     additional_edits: &[lsp_types::TextEdit],
 ) -> bool {

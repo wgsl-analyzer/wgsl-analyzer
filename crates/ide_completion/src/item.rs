@@ -369,7 +369,6 @@ impl Builder {
     ) -> &mut Builder {
         self.set_detail(Some(detail))
     }
-    #[allow(dead_code)]
     pub(crate) fn set_detail(
         &mut self,
         detail: Option<impl Into<String>>,

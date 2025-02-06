@@ -18,12 +18,13 @@ pub type Result<T, E = anyhow::Error> = std::result::Result<T, E>;
 
 use serde::de::DeserializeOwned;
 
+#[inline]
 pub fn from_json<T: DeserializeOwned>(
     what: &'static str,
-    json: serde_json::Value,
+    json: &serde_json::Value,
 ) -> Result<T> {
     let res = serde_json::from_value(json.clone())
-        .map_err(|e| anyhow::anyhow!("Failed to deserialize {}: {}; {}", what, e, json))?;
+        .map_err(|error| anyhow::anyhow!("Failed to deserialize {}: {}; {}", what, error, json))?;
     Ok(res)
 }
 
@@ -34,15 +35,15 @@ struct LspError {
 }
 
 impl LspError {
-    #[allow(dead_code)]
-    fn new(
+    const fn new(
         code: i32,
         message: String,
-    ) -> LspError {
-        LspError { code, message }
+    ) -> Self {
+        Self { code, message }
     }
 }
 
+#[expect(clippy::min_ident_chars, reason = "trait method")]
 impl std::fmt::Display for LspError {
     fn fmt(
         &self,

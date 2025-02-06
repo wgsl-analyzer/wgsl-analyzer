@@ -233,7 +233,6 @@ impl NagaError for nagamain::WithSpan<nagamain::valid::ValidationError> {
     }
 }
 
-#[allow(dead_code)]
 enum NagaErrorPolicy {
     SeparateSpans,
     SmallestSpan,

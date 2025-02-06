@@ -58,7 +58,7 @@ impl GlobalState {
             vfs: Arc::new(RwLock::new((Vfs::default(), FxHashMap::default()))),
             analysis_host: AnalysisHost::new(),
             diagnostics: DiagnosticCollection::default(),
-            config: Arc::new(Default::default()),
+            config: Arc::new(Config::default()),
         };
         this.update_configuration(config);
         this
@@ -76,14 +76,11 @@ impl GlobalState {
             for file in changed_files {
                 let text = if file.exists() {
                     let bytes = vfs.file_contents(file.file_id).to_vec();
-                    match String::from_utf8(bytes).ok() {
-                        Some(text) => {
-                            let (text, line_endings) = LineEndings::normalize(text);
-                            line_endings_map.insert(file.file_id, line_endings);
-                            Some(Arc::new(text))
-                        }
-                        None => None,
-                    }
+                    String::from_utf8(bytes).ok().map(|text| {
+                        let (text, line_endings) = LineEndings::normalize(text);
+                        line_endings_map.insert(file.file_id, line_endings);
+                        Arc::new(text)
+                    })
                 } else {
                     None
                 };
@@ -104,7 +101,6 @@ impl GlobalState {
         }
     }
 
-    #[allow(dead_code)]
     pub(crate) fn send_request<R: lsp_types::request::Request>(
         &mut self,
         params: R::Params,
@@ -113,16 +109,15 @@ impl GlobalState {
         let request = self
             .req_queue
             .outgoing
-            .register(R::METHOD.to_string(), params, handler);
+            .register(R::METHOD.to_owned(), params, handler);
         self.send(request.into());
     }
 
-    #[allow(dead_code)]
     pub(crate) fn send_notification<N: lsp_types::notification::Notification>(
-        &mut self,
+        &self,
         params: N::Params,
     ) {
-        let not = lsp_server::Notification::new(N::METHOD.to_string(), params);
+        let not = lsp_server::Notification::new(N::METHOD.to_owned(), params);
         self.send(not.into());
     }
 
@@ -155,7 +150,6 @@ impl GlobalState {
             self.send(response.into());
         }
     }
-    #[allow(dead_code)]
     pub(crate) fn cancel(
         &mut self,
         request_id: lsp_server::RequestId,
@@ -166,10 +160,10 @@ impl GlobalState {
     }
 
     fn send(
-        &mut self,
+        &self,
         message: lsp_server::Message,
     ) {
-        self.sender.send(message).unwrap()
+        self.sender.send(message).unwrap();
     }
 }
 
@@ -181,7 +175,6 @@ impl GlobalStateSnapshot {
         url_to_file_id(&self.vfs.read().unwrap().0, url)
     }
 
-    #[allow(dead_code)]
     pub(crate) fn file_id_to_url(
         &self,
         id: FileId,
@@ -204,7 +197,7 @@ impl GlobalStateSnapshot {
     }
 }
 
-pub(crate) fn file_id_to_url(
+pub fn file_id_to_url(
     vfs: &vfs::Vfs,
     id: FileId,
 ) -> Url {
@@ -213,7 +206,7 @@ pub(crate) fn file_id_to_url(
     to_proto::url_from_abs_path(path)
 }
 
-pub(crate) fn url_to_file_id(
+pub fn url_to_file_id(
     vfs: &vfs::Vfs,
     url: &Url,
 ) -> Result<FileId> {
