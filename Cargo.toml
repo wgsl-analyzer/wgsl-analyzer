@@ -52,7 +52,7 @@ rust-2024-compatibility = { level = "deny", priority = -1 }
 unused = { level = "allow", priority = -2 }
 
 # TODO
-dead_code = "allow"  # still prototyping
+dead_code = "allow" # still prototyping
 
 [workspace.lints.clippy]
 cargo = { level = "warn", priority = -2 }
@@ -65,25 +65,25 @@ restriction = { level = "warn", priority = -2 }
 style = { level = "warn", priority = -2 }
 suspicious = { level = "warn", priority = -2 }
 
-exhaustive_structs = "allow" # wgsl-analyzer has no stability commitment
-exhaustive_enums = "allow" # wgsl-analyzer has no stability commitment
-single_call_fn = "allow" # good for organization
-implicit_return = "allow" # unidiomatic
-question_mark_used = "allow" # unidiomatic
-shadow_reuse = "allow" # often useful
-pub_use = "allow" # often useful
-std_instead_of_alloc = "allow" # no no_std support
-std_instead_of_core = "allow" # no no_std support
-cargo_common_metadata = "allow" # not important
-multiple_crate_versions = "allow" # not under this crate's control
+exhaustive_structs = "allow"               # wgsl-analyzer has no stability commitment
+exhaustive_enums = "allow"                 # wgsl-analyzer has no stability commitment
+single_call_fn = "allow"                   # good for organization
+implicit_return = "allow"                  # unidiomatic
+question_mark_used = "allow"               # unidiomatic
+shadow_reuse = "allow"                     # often useful
+pub_use = "allow"                          # often useful
+std_instead_of_alloc = "allow"             # no no_std support
+std_instead_of_core = "allow"              # no no_std support
+cargo_common_metadata = "allow"            # not important
+multiple_crate_versions = "allow"          # not under this crate's control
 blanket_clippy_restriction_lints = "allow" # makes it easier to keep up to date with new lints
-pub_with_shorthand = "allow" # style preference
-absolute_paths = "allow" # often hurts readability
-items_after_statements = "allow" # incorrect
-shadow_unrelated = "allow" # don't care
-missing_trait_methods = "allow" # antipattern
-float_arithmetic = "allow" # is fine
-separated_literal_suffix = "allow" # style preference
+pub_with_shorthand = "allow"               # style preference
+absolute_paths = "allow"                   # often hurts readability
+items_after_statements = "allow"           # incorrect
+shadow_unrelated = "allow"                 # don't care
+missing_trait_methods = "allow"            # antipattern
+float_arithmetic = "allow"                 # is fine
+separated_literal_suffix = "allow"         # style preference
 
 # TODOs
 missing_docs_in_private_items = "allow"
