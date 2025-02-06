@@ -23,16 +23,10 @@ allow = [
   "MIT-0",
   "Unlicense",
   "Zlib",
+  "Unicode-3.0",
 ]
 
-exceptions = [
-  { name = "unicode-ident", allow = [
-    "Unicode-DFS-2016",
-  ] },
-  { name = "zerovec-derive", allow = [
-    "Unicode-3.0",
-  ] },
-]
+exceptions = [{ name = "unicode-ident", allow = ["Unicode-DFS-2016"] }]
 
 [bans]
 multiple-versions = "warn"

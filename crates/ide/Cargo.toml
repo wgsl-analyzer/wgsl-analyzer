@@ -20,7 +20,7 @@ base-db = { path = "../base_db", version = "0.0.0" }
 hir-def = { path = "../hir_def", version = "0.0.0" }
 hir-ty = { path = "../hir_ty", version = "0.0.0" }
 hir = { path = "../hir", version = "0.0.0" }
-ide-completion = { path = "../ide_completion" }
+ide-completion = { path = "../ide_completion", version = "0.0.0" }
 syntax = { path = "../syntax", version = "0.0.0" }
 wgsl-formatter = { path = "../wgsl_formatter", version = "0.0.0" }
 rowan = "0.16.1"
