@@ -68,11 +68,17 @@ pub fn goto_definition(
 }
 
 trait ToNav {
-    fn to_nav(&self, db: &dyn DefDatabase) -> Option<NavigationTarget>;
+    fn to_nav(
+        &self,
+        db: &dyn DefDatabase,
+    ) -> Option<NavigationTarget>;
 }
 
 impl ToNav for InFile<Local> {
-    fn to_nav(&self, db: &dyn DefDatabase) -> Option<NavigationTarget> {
+    fn to_nav(
+        &self,
+        db: &dyn DefDatabase,
+    ) -> Option<NavigationTarget> {
         let binding = self.value.source(db)?;
 
         let frange = binding.original_file_range(db);
@@ -82,7 +88,10 @@ impl ToNav for InFile<Local> {
 }
 
 impl ToNav for InFile<Definition> {
-    fn to_nav(&self, db: &dyn DefDatabase) -> Option<NavigationTarget> {
+    fn to_nav(
+        &self,
+        db: &dyn DefDatabase,
+    ) -> Option<NavigationTarget> {
         let nav = match &self.value {
             Definition::Local(local) => InFile::new(self.file_id, *local).to_nav(db)?,
             Definition::ModuleDef(def) => match def {

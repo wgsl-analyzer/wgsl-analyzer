@@ -34,7 +34,11 @@ pub struct AttrList {
 }
 
 impl AttrList {
-    pub fn has(&self, db: &dyn DefDatabase, name: &str) -> bool {
+    pub fn has(
+        &self,
+        db: &dyn DefDatabase,
+        name: &str,
+    ) -> bool {
         self.attrs.iter().any(|attr| {
             let attr = db.lookup_intern_attr(*attr);
             attr.name.as_str() == name
@@ -43,7 +47,10 @@ impl AttrList {
 }
 
 impl AttrList {
-    pub fn from_src(db: &dyn DefDatabase, src: &dyn HasAttrs) -> AttrList {
+    pub fn from_src(
+        db: &dyn DefDatabase,
+        src: &dyn HasAttrs,
+    ) -> AttrList {
         let attrs = src
             .attributes()
             .map(|attr| Attr {
@@ -89,7 +96,10 @@ pub struct AttrsWithOwner {
 }
 
 impl AttrsWithOwner {
-    pub(crate) fn attrs_query(db: &dyn DefDatabase, def: AttrDefId) -> Arc<Self> {
+    pub(crate) fn attrs_query(
+        db: &dyn DefDatabase,
+        def: AttrDefId,
+    ) -> Arc<Self> {
         let attrs = match def {
             AttrDefId::StructId(id) => AttrList::from_src(db, &id.lookup(db).source(db).value),
             AttrDefId::FieldId(id) => {

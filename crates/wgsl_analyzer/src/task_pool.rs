@@ -15,8 +15,10 @@ impl<T> TaskPool<T> {
         }
     }
 
-    pub fn spawn<F>(&mut self, task: F)
-    where
+    pub fn spawn<F>(
+        &mut self,
+        task: F,
+    ) where
         F: FnOnce() -> T + Send + 'static,
         T: Send + 'static,
     {
@@ -27,8 +29,10 @@ impl<T> TaskPool<T> {
     }
 
     #[allow(dead_code)]
-    pub fn spawn_with_sender<F>(&mut self, task: F)
-    where
+    pub fn spawn_with_sender<F>(
+        &mut self,
+        task: F,
+    ) where
         F: FnOnce(Sender<T>) + Send + 'static,
         T: Send + 'static,
     {

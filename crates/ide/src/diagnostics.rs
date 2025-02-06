@@ -31,7 +31,10 @@ pub enum Severity {
 }
 
 impl DiagnosticMessage {
-    pub fn new(message: String, range: TextRange) -> Self {
+    pub fn new(
+        message: String,
+        range: TextRange,
+    ) -> Self {
         Self {
             message,
             range,
@@ -41,7 +44,10 @@ impl DiagnosticMessage {
         }
     }
 
-    pub fn with_severity(self, severity: Severity) -> Self {
+    pub fn with_severity(
+        self,
+        severity: Severity,
+    ) -> Self {
         DiagnosticMessage { severity, ..self }
     }
 
@@ -656,14 +662,21 @@ pub fn diagnostics(
         .collect()
 }
 
-fn size_compatible(target: VecSize, overload: VecSize) -> bool {
+fn size_compatible(
+    target: VecSize,
+    overload: VecSize,
+) -> bool {
     match overload {
         VecSize::Two | VecSize::Three | VecSize::Four => overload == target,
         VecSize::BoundVar(_) => true,
     }
 }
 
-fn convert_compatible(db: &dyn HirDatabase, target: Ty, overload: Ty) -> bool {
+fn convert_compatible(
+    db: &dyn HirDatabase,
+    target: Ty,
+    overload: Ty,
+) -> bool {
     let target_kind = target.kind(db);
     let overload_kind = overload.kind(db);
     match (target_kind, overload_kind) {
@@ -680,7 +693,10 @@ fn convert_compatible(db: &dyn HirDatabase, target: Ty, overload: Ty) -> bool {
     }
 }
 
-fn err_message_cause_chain(prefix: &str, error: &dyn std::error::Error) -> String {
+fn err_message_cause_chain(
+    prefix: &str,
+    error: &dyn std::error::Error,
+) -> String {
     let mut msg = format!("{}{}", prefix, error);
 
     let mut e = error.source();

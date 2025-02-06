@@ -149,7 +149,10 @@ pub struct ModuleData {
 }
 
 impl ModuleInfo {
-    pub fn module_info_query(db: &dyn DefDatabase, file_id: HirFileId) -> Arc<ModuleInfo> {
+    pub fn module_info_query(
+        db: &dyn DefDatabase,
+        file_id: HirFileId,
+    ) -> Arc<ModuleInfo> {
         let source = match db.parse_or_resolve(file_id) {
             Ok(val) => val.tree(),
             Err(_) => return Arc::new(ModuleInfo::default()),
@@ -175,7 +178,10 @@ impl ModuleInfo {
         })
     }
 
-    pub fn get<M: ModuleDataNode>(&self, id: ModuleItemId<M>) -> &M {
+    pub fn get<M: ModuleDataNode>(
+        &self,
+        id: ModuleItemId<M>,
+    ) -> &M {
         M::lookup(&self.data, id.index)
     }
 }
@@ -198,7 +204,10 @@ impl<N> From<Idx<N>> for ModuleItemId<N> {
 // If we automatically derive this trait, ModuleItemId<N> where N doesn't implement Hash can't compile
 #[allow(clippy::derived_hash_with_manual_eq)]
 impl<N> std::hash::Hash for ModuleItemId<N> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: std::hash::Hasher>(
+        &self,
+        state: &mut H,
+    ) {
         self.index.hash(state);
     }
 }
@@ -218,7 +227,10 @@ pub trait ModuleDataNode: Clone {
     fn ast_id(&self) -> FileAstId<Self::Source>;
 
     /// Looks up an instance of `Self` in an item tree.
-    fn lookup(data: &ModuleData, index: Idx<Self>) -> &Self;
+    fn lookup(
+        data: &ModuleData,
+        index: Idx<Self>,
+    ) -> &Self;
 
     /// Downcasts a `ModItem` to a `FileItemTreeId` specific to this type.
     fn id_from_mod_item(mod_item: &ModuleItem) -> Option<ModuleItemId<Self>>;
@@ -282,14 +294,20 @@ macro_rules! mod_items {
 impl std::ops::Index<Idx<Field>> for ModuleData {
     type Output = Field;
 
-    fn index(&self, index: Idx<Field>) -> &Self::Output {
+    fn index(
+        &self,
+        index: Idx<Field>,
+    ) -> &Self::Output {
         &self.fields[index]
     }
 }
 impl std::ops::Index<Idx<Param>> for ModuleData {
     type Output = Param;
 
-    fn index(&self, index: Idx<Param>) -> &Self::Output {
+    fn index(
+        &self,
+        index: Idx<Param>,
+    ) -> &Self::Output {
         &self.params[index]
     }
 }

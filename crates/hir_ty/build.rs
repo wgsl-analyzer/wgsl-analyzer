@@ -40,7 +40,10 @@ enum VecSize {
 }
 
 impl std::fmt::Debug for VecSize {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self {
             Self::Two => write!(f, "Two"),
             Self::Three => write!(f, "Three"),
@@ -131,7 +134,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn foo(f: &mut dyn std::io::Write, builtins: &BTreeMap<String, Builtin>) -> std::io::Result<()> {
+fn foo(
+    f: &mut dyn std::io::Write,
+    builtins: &BTreeMap<String, Builtin>,
+) -> std::io::Result<()> {
     write!(
         f,
         r#"
@@ -220,7 +226,10 @@ fn parse_generic(ty: &str) -> Option<(&str, &str)> {
     Some((ty, inner))
 }
 
-fn parse_vec_size(generics: &mut BTreeMap<char, (usize, Generic)>, size: char) -> VecSize {
+fn parse_vec_size(
+    generics: &mut BTreeMap<char, (usize, Generic)>,
+    size: char,
+) -> VecSize {
     match size {
         '2' => VecSize::Two,
         '3' => VecSize::Three,
@@ -255,7 +264,10 @@ fn only_char(input: &str) -> char {
     val
 }
 
-fn parse_ty(generics: &mut BTreeMap<char, (usize, Generic)>, ty: &str) -> Type {
+fn parse_ty(
+    generics: &mut BTreeMap<char, (usize, Generic)>,
+    ty: &str,
+) -> Type {
     if let Some((ty, inner)) = parse_generic(ty) {
         if let Some(size) = ty.strip_prefix("vec") {
             let size = only_char(size);
@@ -363,7 +375,8 @@ fn type_to_rust(ty: &Type) -> String {
 
         Type::Matrix(columns, rows, inner) => format!(
             "TyKind::Matrix(MatrixType {{ columns: VecSize::{:?}, rows: VecSize::{:?}, inner: {} }}).intern(db)",
-            columns, rows,
+            columns,
+            rows,
             type_to_rust(inner)
         ),
 
@@ -386,11 +399,11 @@ fn type_to_rust(ty: &Type) -> String {
                     TextureKind::Storage(texel_format, access_mode) => {
                         let texel_format = match texel_format {
                             TexelFormat::Any => "Any".to_string(),
-                            TexelFormat::Bound(var) => format!("BoundVar(BoundVar {{ index: {} }})",var),
+                            TexelFormat::Bound(var) => format!("BoundVar(BoundVar {{ index: {} }})", var),
                         };
 
                         format!("Storage(TexelFormat::{}, AccessMode::{:?})", texel_format, access_mode)
-                    },
+                    }
                     TextureKind::Depth => "Depth".to_string(),
                     TextureKind::External => "External".to_string(),
                 },
@@ -399,23 +412,29 @@ fn type_to_rust(ty: &Type) -> String {
                 texture.dimension,
             )
         }
-        Type::Sampler { comparison } => format!(
-            "TyKind::Sampler(SamplerType {{ comparison: {}  }}).intern(db)",
-            comparison
-        ),
-        Type::RuntimeArray(inner) => format!("TyKind::Array(ArrayType {{
+        Type::Sampler { comparison } => format!("TyKind::Sampler(SamplerType {{ comparison: {}  }}).intern(db)", comparison),
+        Type::RuntimeArray(inner) => format!(
+            "TyKind::Array(ArrayType {{
             size: ArraySize::Dynamic,
             binding_array: false,
             inner: {}
-        }}).intern(db)", type_to_rust(inner)),
-        Type::Ptr(inner) => format!("TyKind::Ptr(Ptr {{
+        }}).intern(db)",
+            type_to_rust(inner)
+        ),
+        Type::Ptr(inner) => format!(
+            "TyKind::Ptr(Ptr {{
             inner: {},
             access_mode: AccessMode::ReadWrite,
             storage_class: StorageClass::Private,
-        }}).intern(db)", type_to_rust(inner)),
-        Type::Atomic(inner) => format!("TyKind::Atomic(AtomicType {{
+        }}).intern(db)",
+            type_to_rust(inner)
+        ),
+        Type::Atomic(inner) => format!(
+            "TyKind::Atomic(AtomicType {{
             inner: {},
-        }}).intern(db)", type_to_rust(inner)),
+        }}).intern(db)",
+            type_to_rust(inner)
+        ),
         Type::StorageTypeOfTexelFormat(var) => format!("TyKind::StorageTypeOfTexelFormat(BoundVar {{ index: {} }}).intern(db)", var),
     }
 }

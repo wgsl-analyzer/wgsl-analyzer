@@ -35,13 +35,19 @@ pub struct ScopeEntry {
 impl Index<ScopeId> for ExprScopes {
     type Output = ScopeData;
 
-    fn index(&self, index: ScopeId) -> &Self::Output {
+    fn index(
+        &self,
+        index: ScopeId,
+    ) -> &Self::Output {
         &self.scopes[index]
     }
 }
 
 impl ExprScopes {
-    pub fn expr_scopes_query(db: &dyn DefDatabase, def: DefWithBodyId) -> Arc<ExprScopes> {
+    pub fn expr_scopes_query(
+        db: &dyn DefDatabase,
+        def: DefWithBodyId,
+    ) -> Arc<ExprScopes> {
         let body = db.body(def);
         Arc::new(ExprScopes::new(&body))
     }
@@ -69,22 +75,38 @@ impl ExprScopes {
         scopes
     }
 
-    pub fn scope_for_expr(&self, expr: ExprId) -> Option<ScopeId> {
+    pub fn scope_for_expr(
+        &self,
+        expr: ExprId,
+    ) -> Option<ScopeId> {
         self.scope_by_expr.get(&expr).copied()
     }
-    pub fn scope_for_statement(&self, stmt: StatementId) -> Option<ScopeId> {
+    pub fn scope_for_statement(
+        &self,
+        stmt: StatementId,
+    ) -> Option<ScopeId> {
         self.scope_by_stmt.get(&stmt).copied()
     }
 
-    pub fn scope_chain(&self, scope: Option<ScopeId>) -> impl Iterator<Item = ScopeId> + '_ {
+    pub fn scope_chain(
+        &self,
+        scope: Option<ScopeId>,
+    ) -> impl Iterator<Item = ScopeId> + '_ {
         std::iter::successors(scope, move |&scope| self.scopes[scope].parent)
     }
 
-    pub fn entries(&self, scope: ScopeId) -> &[ScopeEntry] {
+    pub fn entries(
+        &self,
+        scope: ScopeId,
+    ) -> &[ScopeEntry] {
         &self.scopes[scope].entries
     }
 
-    pub fn resolve_name_in_scope(&self, scope: ScopeId, name: &Name) -> Option<&ScopeEntry> {
+    pub fn resolve_name_in_scope(
+        &self,
+        scope: ScopeId,
+        name: &Name,
+    ) -> Option<&ScopeEntry> {
         self.scope_chain(Some(scope))
             .find_map(|scope| self.entries(scope).iter().find(|it| it.name == *name))
     }
@@ -93,20 +115,38 @@ impl ExprScopes {
         self.scopes.alloc(ScopeData::default())
     }
 
-    fn set_scope_expr(&mut self, expr: ExprId, scope: ScopeId) {
+    fn set_scope_expr(
+        &mut self,
+        expr: ExprId,
+        scope: ScopeId,
+    ) {
         self.scope_by_expr.insert(expr, scope);
     }
-    fn set_scope_stmt(&mut self, stmt: StatementId, scope: ScopeId) {
+    fn set_scope_stmt(
+        &mut self,
+        stmt: StatementId,
+        scope: ScopeId,
+    ) {
         self.scope_by_stmt.insert(stmt, scope);
     }
 
-    fn add_param_bindings(&mut self, body: &Body, root: Idx<ScopeData>, params: &[BindingId]) {
+    fn add_param_bindings(
+        &mut self,
+        body: &Body,
+        root: Idx<ScopeData>,
+        params: &[BindingId],
+    ) {
         for param in params {
             self.add_binding(body, *param, root);
         }
     }
 
-    fn add_binding(&mut self, body: &Body, binding_id: BindingId, scope: ScopeId) {
+    fn add_binding(
+        &mut self,
+        body: &Body,
+        binding_id: BindingId,
+        scope: ScopeId,
+    ) {
         let binding = &body.bindings[binding_id];
         let entry = ScopeEntry {
             name: binding.name.clone(),
@@ -115,7 +155,10 @@ impl ExprScopes {
         self.scopes[scope].entries.push(entry);
     }
 
-    fn new_block_scope(&mut self, parent: ScopeId) -> ScopeId {
+    fn new_block_scope(
+        &mut self,
+        parent: ScopeId,
+    ) -> ScopeId {
         self.scopes.alloc(ScopeData {
             parent: Some(parent),
             entries: vec![],
@@ -261,7 +304,12 @@ fn compute_statement_scopes(
     scope
 }
 
-fn compute_expr_scopes(expr: ExprId, body: &Body, scopes: &mut ExprScopes, scope: ScopeId) {
+fn compute_expr_scopes(
+    expr: ExprId,
+    body: &Body,
+    scopes: &mut ExprScopes,
+    scope: ScopeId,
+) {
     scopes.set_scope_expr(expr, scope);
     body.exprs[expr].walk_child_exprs(|child| {
         compute_expr_scopes(child, body, scopes, scope);

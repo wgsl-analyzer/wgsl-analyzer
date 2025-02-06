@@ -8,7 +8,10 @@ use crate::{
 
 use super::Completions;
 
-pub(crate) fn complete_dot(acc: &mut Completions, ctx: &CompletionContext) -> Option<()> {
+pub(crate) fn complete_dot(
+    acc: &mut Completions,
+    ctx: &CompletionContext,
+) -> Option<()> {
     let field_expr = match &ctx.completion_location {
         Some(ImmediateLocation::FieldAccess { expr }) => expr,
         _ => return Some(()),

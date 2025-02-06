@@ -19,7 +19,10 @@ pub struct FunctionData {
 }
 
 impl FunctionData {
-    pub fn fn_data_query(db: &dyn DefDatabase, func: FunctionId) -> Arc<FunctionData> {
+    pub fn fn_data_query(
+        db: &dyn DefDatabase,
+        func: FunctionId,
+    ) -> Arc<FunctionData> {
         let loc = func.lookup(db);
         let module_info = db.module_info(loc.file_id);
         let function = &module_info.data[loc.value.index];
@@ -58,7 +61,10 @@ pub struct FieldData {
 }
 
 impl StructData {
-    pub fn struct_data_query(db: &dyn DefDatabase, func: StructId) -> Arc<StructData> {
+    pub fn struct_data_query(
+        db: &dyn DefDatabase,
+        func: StructId,
+    ) -> Arc<StructData> {
         let loc = func.lookup(db);
         let module_info = db.module_info(loc.file_id);
         let strukt = &module_info.data[loc.value.index];
@@ -85,7 +91,10 @@ impl StructData {
         &self.fields
     }
 
-    pub fn field(&self, name: &Name) -> Option<LocalFieldId> {
+    pub fn field(
+        &self,
+        name: &Name,
+    ) -> Option<LocalFieldId> {
         self.fields()
             .iter()
             .find_map(|(id, data)| if &data.name == name { Some(id) } else { None })
@@ -99,7 +108,10 @@ pub struct TypeAliasData {
 }
 
 impl TypeAliasData {
-    pub fn type_alias_data_query(db: &dyn DefDatabase, func: TypeAliasId) -> Arc<TypeAliasData> {
+    pub fn type_alias_data_query(
+        db: &dyn DefDatabase,
+        func: TypeAliasId,
+    ) -> Arc<TypeAliasData> {
         let loc = func.lookup(db);
         let module_info = db.module_info(loc.file_id);
         let type_alias = &module_info.data[loc.value.index];

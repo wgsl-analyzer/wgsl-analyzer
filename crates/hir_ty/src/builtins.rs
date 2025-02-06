@@ -17,12 +17,18 @@ impl salsa::InternKey for BuiltinId {
     }
 }
 impl BuiltinId {
-    pub fn lookup(self, db: &dyn HirDatabase) -> Builtin {
+    pub fn lookup(
+        self,
+        db: &dyn HirDatabase,
+    ) -> Builtin {
         db.lookup_intern_builtin(self)
     }
 }
 impl Builtin {
-    pub fn intern(self, db: &dyn HirDatabase) -> BuiltinId {
+    pub fn intern(
+        self,
+        db: &dyn HirDatabase,
+    ) -> BuiltinId {
         db.intern_builtin(self)
     }
 }
@@ -58,7 +64,10 @@ impl Builtin {
             .enumerate()
             .map(|(i, overload)| (BuiltinOverloadId(i), overload))
     }
-    pub fn overload(&self, overload_id: BuiltinOverloadId) -> &BuiltinOverload {
+    pub fn overload(
+        &self,
+        overload_id: BuiltinOverloadId,
+    ) -> &BuiltinOverload {
         &self.overloads[overload_id.0]
     }
 }

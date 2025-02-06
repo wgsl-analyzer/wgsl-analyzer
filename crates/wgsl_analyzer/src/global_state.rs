@@ -41,7 +41,10 @@ pub struct GlobalStateSnapshot {
 }
 
 impl GlobalState {
-    pub fn new(sender: Sender<lsp_server::Message>, config: Config) -> Self {
+    pub fn new(
+        sender: Sender<lsp_server::Message>,
+        config: Config,
+    ) -> Self {
         let task_pool = {
             let (sender, receiver) = unbounded();
             let handle = TaskPool::new(sender);
@@ -133,7 +136,10 @@ impl GlobalState {
             (request.method.clone(), request_received),
         );
     }
-    pub(crate) fn respond(&mut self, response: lsp_server::Response) {
+    pub(crate) fn respond(
+        &mut self,
+        response: lsp_server::Response,
+    ) {
         if let Some((method, start)) = self.req_queue.incoming.complete(&response.id) {
             if let Some(err) = &response.error {
                 self.show_message(lsp_types::MessageType::ERROR, err.message.clone());
@@ -150,28 +156,43 @@ impl GlobalState {
         }
     }
     #[allow(dead_code)]
-    pub(crate) fn cancel(&mut self, request_id: lsp_server::RequestId) {
+    pub(crate) fn cancel(
+        &mut self,
+        request_id: lsp_server::RequestId,
+    ) {
         if let Some(response) = self.req_queue.incoming.cancel(request_id) {
             self.send(response.into());
         }
     }
 
-    fn send(&mut self, message: lsp_server::Message) {
+    fn send(
+        &mut self,
+        message: lsp_server::Message,
+    ) {
         self.sender.send(message).unwrap()
     }
 }
 
 impl GlobalStateSnapshot {
-    pub(crate) fn url_to_file_id(&self, url: &Url) -> Result<FileId> {
+    pub(crate) fn url_to_file_id(
+        &self,
+        url: &Url,
+    ) -> Result<FileId> {
         url_to_file_id(&self.vfs.read().unwrap().0, url)
     }
 
     #[allow(dead_code)]
-    pub(crate) fn file_id_to_url(&self, id: FileId) -> Url {
+    pub(crate) fn file_id_to_url(
+        &self,
+        id: FileId,
+    ) -> Url {
         file_id_to_url(&self.vfs.read().unwrap().0, id)
     }
 
-    pub(crate) fn file_line_index(&self, file_id: FileId) -> Cancellable<LineIndex> {
+    pub(crate) fn file_line_index(
+        &self,
+        file_id: FileId,
+    ) -> Cancellable<LineIndex> {
         let endings = self.vfs.read().unwrap().1[&file_id];
         let index = self.analysis.line_index(file_id)?;
         let res = LineIndex {
@@ -183,13 +204,19 @@ impl GlobalStateSnapshot {
     }
 }
 
-pub(crate) fn file_id_to_url(vfs: &vfs::Vfs, id: FileId) -> Url {
+pub(crate) fn file_id_to_url(
+    vfs: &vfs::Vfs,
+    id: FileId,
+) -> Url {
     let path = vfs.file_path(id);
     let path = path.as_path().unwrap();
     to_proto::url_from_abs_path(path)
 }
 
-pub(crate) fn url_to_file_id(vfs: &vfs::Vfs, url: &Url) -> Result<FileId> {
+pub(crate) fn url_to_file_id(
+    vfs: &vfs::Vfs,
+    url: &Url,
+) -> Result<FileId> {
     let path = from_proto::vfs_path(url)?;
     let res = vfs
         .file_id(&path)

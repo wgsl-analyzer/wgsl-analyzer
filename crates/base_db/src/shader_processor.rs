@@ -130,7 +130,11 @@ mod tests {
     use super::ShaderProcessor;
     use std::collections::HashSet;
 
-    fn test_shader(input: &str, defs: &[&str], output: &str) {
+    fn test_shader(
+        input: &str,
+        defs: &[&str],
+        output: &str,
+    ) {
         let processor = ShaderProcessor::default();
         let defs = HashSet::from_iter(defs.iter().map(|s| s.to_string()));
         let result = processor.process(input, &defs, |_, _| {});

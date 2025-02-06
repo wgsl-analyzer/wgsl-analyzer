@@ -25,12 +25,11 @@ pub struct InlayHintsConfig {
 #[serde(rename_all = "lowercase")]
 #[derive(Default)]
 pub enum InlayHintsTypeVerbosity {
-    Full,    // ref<uniform, f32, read_write>,
+    Full, // ref<uniform, f32, read_write>,
     #[default]
     Compact, // ref<f32>,
-    Inner,   // f32
+    Inner, // f32
 }
-
 
 #[derive(Default, Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -51,8 +50,7 @@ pub struct DiagnosticsConfig {
     pub naga_version: NagaVersion,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[derive(Default)]
+#[derive(Clone, Debug, Deserialize, Default)]
 pub enum NagaVersion {
     #[serde(rename = "0.14")]
     Naga14,
@@ -65,14 +63,19 @@ pub enum NagaVersion {
     NagaMain,
 }
 
-
 impl Config {
-    fn try_update(&mut self, value: serde_json::Value) -> Result<(), serde_json::Error> {
+    fn try_update(
+        &mut self,
+        value: serde_json::Value,
+    ) -> Result<(), serde_json::Error> {
         *self = serde_json::from_value(value)?;
         Ok(())
     }
 
-    pub fn update(&mut self, value: serde_json::Value) {
+    pub fn update(
+        &mut self,
+        value: serde_json::Value,
+    ) {
         if value.is_null() {
             return;
         }

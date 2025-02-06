@@ -8,8 +8,11 @@ use crate::{
 
 type Bytes = u32;
 
-fn round_up(multiple: Bytes, num: Bytes) -> Bytes {
-    (num + multiple - 1) / multiple * multiple
+fn round_up(
+    multiple: Bytes,
+    num: Bytes,
+) -> Bytes {
+    num.div_ceil(multiple) * multiple
 }
 
 #[test]
@@ -28,7 +31,11 @@ pub enum LayoutAddressSpace {
 }
 
 impl ArrayType {
-    pub fn stride(&self, address_space: LayoutAddressSpace, db: &dyn HirDatabase) -> Option<Bytes> {
+    pub fn stride(
+        &self,
+        address_space: LayoutAddressSpace,
+        db: &dyn HirDatabase,
+    ) -> Option<Bytes> {
         let stride = round_up(
             self.inner.align(address_space, db)?,
             self.inner.size(address_space, db)?,
@@ -41,16 +48,28 @@ impl ArrayType {
 }
 
 impl Ty {
-    pub fn align(&self, address_space: LayoutAddressSpace, db: &dyn HirDatabase) -> Option<Bytes> {
+    pub fn align(
+        &self,
+        address_space: LayoutAddressSpace,
+        db: &dyn HirDatabase,
+    ) -> Option<Bytes> {
         self.kind(db).align(address_space, db)
     }
-    pub fn size(&self, address_space: LayoutAddressSpace, db: &dyn HirDatabase) -> Option<Bytes> {
+    pub fn size(
+        &self,
+        address_space: LayoutAddressSpace,
+        db: &dyn HirDatabase,
+    ) -> Option<Bytes> {
         self.kind(db).size(address_space, db)
     }
 }
 
 impl TyKind {
-    pub fn align(&self, address_space: LayoutAddressSpace, db: &dyn HirDatabase) -> Option<Bytes> {
+    pub fn align(
+        &self,
+        address_space: LayoutAddressSpace,
+        db: &dyn HirDatabase,
+    ) -> Option<Bytes> {
         Some(match self {
             TyKind::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => 4,
             TyKind::Scalar(ScalarType::Bool) => return None,
@@ -88,7 +107,11 @@ impl TyKind {
         })
     }
 
-    pub fn size(&self, address_space: LayoutAddressSpace, db: &dyn HirDatabase) -> Option<Bytes> {
+    pub fn size(
+        &self,
+        address_space: LayoutAddressSpace,
+        db: &dyn HirDatabase,
+    ) -> Option<Bytes> {
         Some(match self {
             TyKind::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => 4,
             TyKind::Scalar(ScalarType::Bool) => return None,

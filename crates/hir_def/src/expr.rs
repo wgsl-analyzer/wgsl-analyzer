@@ -249,7 +249,10 @@ pub fn parse_literal(lit: ast::LiteralKind) -> Literal {
 }
 
 impl Expr {
-    pub fn walk_child_exprs(&self, mut f: impl FnMut(ExprId)) {
+    pub fn walk_child_exprs(
+        &self,
+        mut f: impl FnMut(ExprId),
+    ) {
         match self {
             Expr::BinaryOp { lhs, rhs, .. } => {
                 f(*lhs);

@@ -9,7 +9,10 @@ mod context;
 pub mod item;
 mod patterns;
 
-pub fn completions(db: &dyn HirDatabase, position: FilePosition) -> Option<Completions> {
+pub fn completions(
+    db: &dyn HirDatabase,
+    position: FilePosition,
+) -> Option<Completions> {
     let mut acc = Completions::default();
 
     let ctx = CompletionContext::new(db, position)?;

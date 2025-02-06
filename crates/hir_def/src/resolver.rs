@@ -82,7 +82,10 @@ impl Default for Resolver {
 }
 impl Resolver {
     #[must_use]
-    pub fn push_scope(mut self, scope: Scope) -> Resolver {
+    pub fn push_scope(
+        mut self,
+        scope: Scope,
+    ) -> Resolver {
         self.scopes.push(scope);
         self
     }
@@ -137,7 +140,10 @@ impl Resolver {
     }
 
     /// calls f for every local, function and global declaration, but not structs
-    pub fn process_value_names(&self, mut f: impl FnMut(Name, ScopeDef)) {
+    pub fn process_value_names(
+        &self,
+        mut f: impl FnMut(Name, ScopeDef),
+    ) {
         self.scopes().for_each(|scope| match scope {
             Scope::ModuleScope(scope) => {
                 scope
@@ -181,7 +187,10 @@ impl Resolver {
         });
     }
 
-    pub fn resolve_value(&self, name: &Name) -> Option<ResolveValue> {
+    pub fn resolve_value(
+        &self,
+        name: &Name,
+    ) -> Option<ResolveValue> {
         self.scopes().find_map(|scope| -> Option<ResolveValue> {
             match scope {
                 Scope::ExprScope(scope) => {
@@ -225,7 +234,10 @@ impl Resolver {
         })
     }
 
-    pub fn resolve_type(&self, name: &Name) -> Option<ResolveType> {
+    pub fn resolve_type(
+        &self,
+        name: &Name,
+    ) -> Option<ResolveType> {
         self.scopes().find_map(|scope| match scope {
             Scope::ModuleScope(scope) => {
                 scope
@@ -255,7 +267,10 @@ impl Resolver {
         })
     }
 
-    pub fn resolve_callable(&self, name: &Name) -> Option<ResolveCallable> {
+    pub fn resolve_callable(
+        &self,
+        name: &Name,
+    ) -> Option<ResolveCallable> {
         self.scopes().find_map(|scope| match scope {
             Scope::ModuleScope(scope) => {
                 scope

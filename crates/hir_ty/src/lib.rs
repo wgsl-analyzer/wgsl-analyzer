@@ -25,24 +25,49 @@ pub mod validate;
 #[salsa::query_group(HirDatabaseStorage)]
 pub trait HirDatabase: DefDatabase + Upcast<dyn DefDatabase> {
     #[salsa::invoke(infer::infer_query)]
-    fn infer(&self, def: DefWithBodyId) -> Arc<InferenceResult>;
+    fn infer(
+        &self,
+        def: DefWithBodyId,
+    ) -> Arc<InferenceResult>;
 
-    fn field_types(&self, strukt: StructId) -> Arc<ArenaMap<LocalFieldId, Ty>>;
-    fn function_type(&self, function: FunctionId) -> ResolvedFunctionId;
+    fn field_types(
+        &self,
+        strukt: StructId,
+    ) -> Arc<ArenaMap<LocalFieldId, Ty>>;
+    fn function_type(
+        &self,
+        function: FunctionId,
+    ) -> ResolvedFunctionId;
 
-    fn struct_is_used_in_uniform(&self, strukt: StructId, file_id: HirFileId) -> bool;
+    fn struct_is_used_in_uniform(
+        &self,
+        strukt: StructId,
+        file_id: HirFileId,
+    ) -> bool;
 
     #[salsa::interned]
-    fn intern_ty(&self, ty: TyKind) -> Ty;
+    fn intern_ty(
+        &self,
+        ty: TyKind,
+    ) -> Ty;
 
     #[salsa::interned]
-    fn intern_builtin(&self, builtin: Builtin) -> BuiltinId;
+    fn intern_builtin(
+        &self,
+        builtin: Builtin,
+    ) -> BuiltinId;
 
     #[salsa::interned]
-    fn intern_resolved_function(&self, builtin: Arc<FunctionDetails>) -> ResolvedFunctionId;
+    fn intern_resolved_function(
+        &self,
+        builtin: Arc<FunctionDetails>,
+    ) -> ResolvedFunctionId;
 }
 
-fn field_types(db: &dyn HirDatabase, strukt: StructId) -> Arc<ArenaMap<LocalFieldId, Ty>> {
+fn field_types(
+    db: &dyn HirDatabase,
+    strukt: StructId,
+) -> Arc<ArenaMap<LocalFieldId, Ty>> {
     let data = db.struct_data(strukt);
 
     let file_id = strukt.lookup(db.upcast()).file_id;
@@ -62,7 +87,10 @@ fn field_types(db: &dyn HirDatabase, strukt: StructId) -> Arc<ArenaMap<LocalFiel
     Arc::new(map)
 }
 
-fn function_type(db: &dyn HirDatabase, function: FunctionId) -> ResolvedFunctionId {
+fn function_type(
+    db: &dyn HirDatabase,
+    function: FunctionId,
+) -> ResolvedFunctionId {
     let data = db.fn_data(function);
 
     let file_id = function.lookup(db.upcast()).file_id;
@@ -90,7 +118,11 @@ fn function_type(db: &dyn HirDatabase, function: FunctionId) -> ResolvedFunction
     .intern(db)
 }
 
-fn struct_is_used_in_uniform(db: &dyn HirDatabase, strukt: StructId, file_id: HirFileId) -> bool {
+fn struct_is_used_in_uniform(
+    db: &dyn HirDatabase,
+    strukt: StructId,
+    file_id: HirFileId,
+) -> bool {
     let module_info = db.module_info(file_id);
     module_info.items().iter().any(|item| match *item {
         hir_def::module_data::ModuleItem::Import(import) => {

@@ -18,24 +18,35 @@ impl From<Completions> for Vec<CompletionItem> {
 impl Builder {
     /// Convenience method, which allows to add a freshly created completion into accumulator
     /// without binding it to the variable.
-    pub(crate) fn add_to(self, acc: &mut Completions) {
+    pub(crate) fn add_to(
+        self,
+        acc: &mut Completions,
+    ) {
         acc.add(self.build())
     }
 }
 
 impl Completions {
-    fn add(&mut self, item: CompletionItem) {
+    fn add(
+        &mut self,
+        item: CompletionItem,
+    ) {
         self.buf.push(item);
     }
 
-    fn add_opt(&mut self, item: Option<CompletionItem>) {
+    fn add_opt(
+        &mut self,
+        item: Option<CompletionItem>,
+    ) {
         if let Some(item) = item {
             self.buf.push(item)
         }
     }
 
-    pub(crate) fn add_all<I>(&mut self, items: I)
-    where
+    pub(crate) fn add_all<I>(
+        &mut self,
+        items: I,
+    ) where
         I: IntoIterator,
         I::Item: Into<CompletionItem>,
     {

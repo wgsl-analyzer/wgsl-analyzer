@@ -48,13 +48,19 @@ pub(crate) fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
     lsp_types::Url::parse(&url).unwrap()
 }
 
-pub(crate) fn range(line_index: &LineIndex, range: TextRange) -> lsp_types::Range {
+pub(crate) fn range(
+    line_index: &LineIndex,
+    range: TextRange,
+) -> lsp_types::Range {
     let start = position(line_index, range.start());
     let end = position(line_index, range.end());
     lsp_types::Range::new(start, end)
 }
 
-pub(crate) fn position(line_index: &LineIndex, offset: TextSize) -> lsp_types::Position {
+pub(crate) fn position(
+    line_index: &LineIndex,
+    offset: TextSize,
+) -> lsp_types::Position {
     let line_col = line_index.index.line_col(offset);
     match line_index.encoding {
         OffsetEncoding::Utf8 => lsp_types::Position::new(line_col.line, line_col.col),
@@ -65,7 +71,10 @@ pub(crate) fn position(line_index: &LineIndex, offset: TextSize) -> lsp_types::P
     }
 }
 
-pub(crate) fn url(snap: &GlobalStateSnapshot, file_id: FileId) -> lsp_types::Url {
+pub(crate) fn url(
+    snap: &GlobalStateSnapshot,
+    file_id: FileId,
+) -> lsp_types::Url {
     snap.file_id_to_url(file_id)
 }
 
@@ -224,7 +233,7 @@ fn completion_item(
 }
 
 pub(crate) fn completion_item_kind(
-    completion_item_kind: CompletionItemKind,
+    completion_item_kind: CompletionItemKind
 ) -> lsp_types::CompletionItemKind {
     match completion_item_kind {
         CompletionItemKind::Field => lsp_types::CompletionItemKind::FIELD,
@@ -239,7 +248,10 @@ pub(crate) fn completion_item_kind(
     }
 }
 
-pub(crate) fn text_edit(line_index: &LineIndex, indel: Indel) -> lsp_types::TextEdit {
+pub(crate) fn text_edit(
+    line_index: &LineIndex,
+    indel: Indel,
+) -> lsp_types::TextEdit {
     let range = range(line_index, indel.delete);
     let new_text = match line_index.endings {
         LineEndings::Unix => indel.insert,

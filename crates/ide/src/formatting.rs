@@ -7,7 +7,11 @@ use wgsl_formatter::FormattingOptions;
 
 use crate::RootDatabase;
 
-pub fn format(db: &RootDatabase, file_id: FileId, range: Option<TextRange>) -> Option<SyntaxNode> {
+pub fn format(
+    db: &RootDatabase,
+    file_id: FileId,
+    range: Option<TextRange>,
+) -> Option<SyntaxNode> {
     let file: ast::SourceFile = db.parse_no_preprocessor(file_id).tree();
 
     let node = match range {

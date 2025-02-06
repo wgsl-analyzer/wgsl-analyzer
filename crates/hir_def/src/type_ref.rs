@@ -16,7 +16,10 @@ pub enum TypeRef {
     Ptr(PtrType),
 }
 impl std::fmt::Display for TypeRef {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self {
             TypeRef::Error => write!(f, "[error]"),
             TypeRef::Scalar(val) => write!(f, "{}", val),
@@ -70,7 +73,10 @@ impl From<ast::ScalarType> for ScalarType {
     }
 }
 impl std::fmt::Display for ScalarType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self {
             ScalarType::Bool => f.write_str("bool"),
             ScalarType::Float32 => f.write_str("f32"),
@@ -87,7 +93,10 @@ pub struct VecType {
 }
 
 impl std::fmt::Display for VecType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         write!(f, "vec{}<{}>", self.size, &*self.inner)
     }
 }
@@ -99,7 +108,10 @@ pub enum VecDimensionality {
     Four,
 }
 impl std::fmt::Display for VecDimensionality {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self {
             VecDimensionality::Two => f.write_str("2"),
             VecDimensionality::Three => f.write_str("3"),
@@ -121,7 +133,6 @@ impl TryFrom<ast::VecType> for VecType {
 }
 
 pub(crate) fn vector_dimensions(ty: &ast::VecType) -> VecDimensionality {
-    
     match *ty {
         ast::VecType::Vec2(_) => VecDimensionality::Two,
         ast::VecType::Vec3(_) => VecDimensionality::Three,
@@ -165,7 +176,10 @@ pub(crate) fn matrix_dimensions(ty: &ast::MatrixType) -> (VecDimensionality, Vec
 }
 
 impl std::fmt::Display for MatrixType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         write!(f, "mat{}x{}<{}>", self.columns, self.rows, &*self.inner)
     }
 }
@@ -185,7 +199,10 @@ pub struct TextureType {
     pub kind: TextureKind,
 }
 impl std::fmt::Display for TextureType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match &self.kind {
             TextureKind::Sampled(ty) => write!(
                 f,
@@ -245,7 +262,10 @@ pub enum TextureDimension {
 }
 
 impl std::fmt::Display for TextureDimension {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self {
             TextureDimension::D1 => f.write_str("1d"),
             TextureDimension::D2 => f.write_str("2d"),
@@ -333,7 +353,10 @@ pub enum AccessMode {
     Any,
 }
 impl std::fmt::Display for AccessMode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self {
             AccessMode::ReadWrite => f.write_str("read_write"),
             AccessMode::Read => f.write_str("read"),
@@ -369,7 +392,10 @@ pub enum StorageClass {
     PushConstant,
 }
 impl std::fmt::Display for StorageClass {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         f.write_str(match self {
             StorageClass::Function => "function",
             StorageClass::Private => "private",
@@ -413,7 +439,10 @@ pub struct SamplerType {
 }
 
 impl std::fmt::Display for SamplerType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self.comparison {
             true => f.write_str("sampler_comparison"),
             false => f.write_str("sampler"),
@@ -435,7 +464,10 @@ pub struct AtomicType {
     pub inner: Box<TypeRef>,
 }
 impl std::fmt::Display for AtomicType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         write!(f, "atomic<{}>", self.inner)
     }
 }
@@ -459,7 +491,10 @@ pub struct ArrayType {
 }
 
 impl std::fmt::Display for ArrayType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         let prefix = if self.binding_array { "binding_" } else { "" };
         match self.size {
             ArraySize::Int(size) => write!(f, "{}array<{}, {}>", prefix, self.inner, size),
@@ -533,7 +568,10 @@ pub struct PtrType {
     pub inner: Box<TypeRef>,
 }
 impl std::fmt::Display for PtrType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         write!(f, "ptr<{}, {}>", self.storage_class, self.inner)
     }
 }

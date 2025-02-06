@@ -9,7 +9,10 @@ pub fn expr(p: &mut Parser) {
     expr_binding_power(p, 0);
 }
 
-fn expr_binding_power(p: &mut Parser, minimum_binding_power: u8) -> Option<CompletedMarker> {
+fn expr_binding_power(
+    p: &mut Parser,
+    minimum_binding_power: u8,
+) -> Option<CompletedMarker> {
     let mut lhs = lhs(p)?;
 
     loop {
@@ -349,7 +352,10 @@ mod tests {
     use crate::ParseEntryPoint;
     use expect_test::{expect, Expect};
 
-    fn check(input: &str, expected_tree: Expect) {
+    fn check(
+        input: &str,
+        expected_tree: Expect,
+    ) {
         crate::check_entrypoint(input, ParseEntryPoint::Expression, expected_tree);
     }
 
@@ -486,7 +492,7 @@ mod tests {
     }
 
     #[test]
-    fn do_not_parse_operator_if_gettting_rhs_failed() {
+    fn do_not_parse_operator_if_getting_rhs_failed() {
         check(
             "(1+",
             expect![[r#"

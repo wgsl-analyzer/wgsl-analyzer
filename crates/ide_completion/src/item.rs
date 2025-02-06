@@ -9,6 +9,7 @@ use text_edit::TextEdit;
 pub struct CompletionItem {
     /// Label in the completion pop up which identifies completion.
     label: String,
+
     /// Range of identifier that is being completed.
     ///
     /// It should be used primarily for UI, but we also use this to convert
@@ -18,10 +19,13 @@ pub struct CompletionItem {
     /// start with what `source_range` points to, or VSCode will filter out the
     /// completion silently.
     source_range: TextRange,
+
     /// What happens when user selects this item.
     ///
     /// Typically, replaces `source_range` with new identifier.
     text_edit: TextEdit,
+
+    /// Whether the item is a snippet.
     is_snippet: bool,
 
     /// What item (struct, function, etc) are we completing.
@@ -36,13 +40,6 @@ pub struct CompletionItem {
 
     /// Additional info to show in the UI pop up.
     detail: Option<String>,
-    // documentation: Option<Documentation>,
-    /// Whether this item is marked as deprecated
-    // deprecated: bool,
-
-    /// If completing a function call, ask the editor to show parameter popup
-    /// after completion.
-    // trigger_call_info: bool,
 
     /// We use this to sort completion. Relevance records facts like "do the
     /// types align precisely?". We can't sort by relevances directly, they are
@@ -52,12 +49,6 @@ pub struct CompletionItem {
     /// all possible items, and then separately build an ordered completion list
     /// based on relevance and fuzzy matching with the already typed identifier.
     relevance: CompletionRelevance,
-    // /// Indicates that a reference or mutable reference to this variable is a
-    // /// possible match.
-    // ref_match: Option<Mutability>,
-
-    // /// The import data to add to completion's edits.
-    // import_to_add: SmallVec<[ImportEdit; 1]>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -145,7 +136,7 @@ impl CompletionRelevance {
     /// it means "least relevant". The score value should only be used
     /// for relative ordering.
     ///
-    /// See is_relevant if you need to make some judgement about score
+    /// See is_relevant if you need to make some judgment about score
     /// in an absolute sense.
     pub fn score(&self) -> u32 {
         let mut score = u32::MAX / 2;
@@ -327,11 +318,17 @@ impl Builder {
             // import_to_add: self.imports_to_add,
         }
     }
-    pub(crate) fn lookup_by(&mut self, lookup: impl Into<String>) -> &mut Builder {
+    pub(crate) fn lookup_by(
+        &mut self,
+        lookup: impl Into<String>,
+    ) -> &mut Builder {
         self.lookup = Some(lookup.into());
         self
     }
-    pub(crate) fn label(&mut self, label: impl Into<String>) -> &mut Builder {
+    pub(crate) fn label(
+        &mut self,
+        label: impl Into<String>,
+    ) -> &mut Builder {
         self.label = label.into();
         self
     }
@@ -339,7 +336,10 @@ impl Builder {
     //     self.trait_name = Some(trait_name.into());
     //     self
     // }
-    pub(crate) fn insert_text(&mut self, insert_text: impl Into<String>) -> &mut Builder {
+    pub(crate) fn insert_text(
+        &mut self,
+        insert_text: impl Into<String>,
+    ) -> &mut Builder {
         self.insert_text = Some(insert_text.into());
         self
     }
@@ -352,7 +352,10 @@ impl Builder {
     //     self.is_snippet = true;
     //     self.insert_text(snippet)
     // }
-    pub(crate) fn text_edit(&mut self, edit: TextEdit) -> &mut Builder {
+    pub(crate) fn text_edit(
+        &mut self,
+        edit: TextEdit,
+    ) -> &mut Builder {
         self.text_edit = Some(edit);
         self
     }
@@ -360,11 +363,17 @@ impl Builder {
     //     self.is_snippet = true;
     //     self.text_edit(edit)
     // }
-    pub(crate) fn detail(&mut self, detail: impl Into<String>) -> &mut Builder {
+    pub(crate) fn detail(
+        &mut self,
+        detail: impl Into<String>,
+    ) -> &mut Builder {
         self.set_detail(Some(detail))
     }
     #[allow(dead_code)]
-    pub(crate) fn set_detail(&mut self, detail: Option<impl Into<String>>) -> &mut Builder {
+    pub(crate) fn set_detail(
+        &mut self,
+        detail: Option<impl Into<String>>,
+    ) -> &mut Builder {
         self.detail = detail.map(Into::into);
         if let Some(detail) = &self.detail {
             if never!(detail.contains('\n'), "multiline detail:\n{}", detail) {
@@ -385,11 +394,17 @@ impl Builder {
     //     self.deprecated = deprecated;
     //     self
     // }
-    pub(crate) fn set_relevance(&mut self, relevance: CompletionRelevance) -> &mut Builder {
+    pub(crate) fn set_relevance(
+        &mut self,
+        relevance: CompletionRelevance,
+    ) -> &mut Builder {
         self.relevance = relevance;
         self
     }
-    pub(crate) fn with_relevance(mut self, relevance: CompletionRelevance) -> Builder {
+    pub(crate) fn with_relevance(
+        mut self,
+        relevance: CompletionRelevance,
+    ) -> Builder {
         self.set_relevance(relevance);
         self
     }

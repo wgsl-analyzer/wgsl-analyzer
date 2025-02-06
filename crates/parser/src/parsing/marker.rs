@@ -20,7 +20,11 @@ impl<P: ParserDefinition> Marker<P> {
         }
     }
 
-    pub fn complete(mut self, p: &mut Parser<P>, kind: P::SyntaxKind) -> CompletedMarker<P> {
+    pub fn complete(
+        mut self,
+        p: &mut Parser<P>,
+        kind: P::SyntaxKind,
+    ) -> CompletedMarker<P> {
         self.bomb.defuse();
 
         let event_at_pos = &mut p.events[self.pos];
@@ -46,7 +50,10 @@ pub struct CompletedMarker<P: ParserDefinition> {
 }
 
 impl<P: ParserDefinition> CompletedMarker<P> {
-    pub fn precede(self, p: &mut Parser<P>) -> Marker<P> {
+    pub fn precede(
+        self,
+        p: &mut Parser<P>,
+    ) -> Marker<P> {
         let new_m = p.start();
 
         if let Event::StartNode {

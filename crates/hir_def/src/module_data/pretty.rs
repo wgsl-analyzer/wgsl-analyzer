@@ -7,7 +7,10 @@ use crate::{
 
 use super::ImportValue;
 
-pub fn pretty_print_module(db: &dyn DefDatabase, module: &ModuleInfo) -> String {
+pub fn pretty_print_module(
+    db: &dyn DefDatabase,
+    module: &ModuleInfo,
+) -> String {
     let mut f = String::new();
 
     for item in module.items() {
@@ -18,7 +21,11 @@ pub fn pretty_print_module(db: &dyn DefDatabase, module: &ModuleInfo) -> String 
     f
 }
 
-pub fn pretty_module_item(item: &ModuleItem, module: &ModuleInfo, db: &dyn DefDatabase) -> String {
+pub fn pretty_module_item(
+    item: &ModuleItem,
+    module: &ModuleInfo,
+    db: &dyn DefDatabase,
+) -> String {
     let mut f = String::new();
     write_pretty_module_item(item, module, &mut f, db);
     f
@@ -35,11 +42,7 @@ fn write_pretty_module_item(
             let function = &module.data[id.index];
 
             let _ = write!(f, "fn {}(", function.name.0);
-            for param in function
-                .params
-                .clone()
-                .map(|idx| &module.data[idx])
-            {
+            for param in function.params.clone().map(|idx| &module.data[idx]) {
                 let ty = db.lookup_intern_type_ref(param.ty);
                 let _ = write!(f, "{}, ", &ty);
             }
@@ -96,7 +99,10 @@ fn write_pretty_module_item(
     }
 }
 
-fn trim_in_place(s: &mut String, pat: &str) {
+fn trim_in_place(
+    s: &mut String,
+    pat: &str,
+) {
     let new_len = s.trim_end_matches(pat).len();
     s.truncate(new_len);
 }

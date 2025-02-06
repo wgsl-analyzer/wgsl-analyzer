@@ -29,7 +29,10 @@ pub use hir_ty::HirDatabase;
 
 pub trait HasSource {
     type Ast;
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>>;
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>>;
 }
 
 /// Nice API on top of the layers below
@@ -42,15 +45,25 @@ impl<'db> Semantics<'db> {
         Semantics { db }
     }
 
-    pub fn parse(&self, file_id: FileId) -> ast::SourceFile {
+    pub fn parse(
+        &self,
+        file_id: FileId,
+    ) -> ast::SourceFile {
         self.db.parse(file_id).tree()
     }
 
-    pub fn analyze(&self, def: DefWithBodyId) -> SourceAnalyzer {
+    pub fn analyze(
+        &self,
+        def: DefWithBodyId,
+    ) -> SourceAnalyzer {
         SourceAnalyzer::new(self.db, def)
     }
 
-    pub fn find_container(&self, file_id: HirFileId, src: &SyntaxNode) -> Option<DefWithBodyId> {
+    pub fn find_container(
+        &self,
+        file_id: HirFileId,
+        src: &SyntaxNode,
+    ) -> Option<DefWithBodyId> {
         src.ancestors().find_map(|syntax| {
             match_ast! {
                 match syntax {
@@ -62,7 +75,11 @@ impl<'db> Semantics<'db> {
             }
         })
     }
-    pub fn resolver(&self, file_id: HirFileId, src: &SyntaxNode) -> Resolver {
+    pub fn resolver(
+        &self,
+        file_id: HirFileId,
+        src: &SyntaxNode,
+    ) -> Resolver {
         match self.find_container(file_id, src) {
             Some(def) => def.resolver(self.db.upcast()),
             None => {
@@ -72,7 +89,10 @@ impl<'db> Semantics<'db> {
         }
     }
 
-    pub fn module(&self, file_id: FileId) -> Module {
+    pub fn module(
+        &self,
+        file_id: FileId,
+    ) -> Module {
         Module {
             file_id: file_id.into(),
         }
@@ -121,7 +141,10 @@ impl<'db> Semantics<'db> {
         Some(def)
     }
 
-    fn function_to_def(&self, src: InFile<ast::Function>) -> Option<FunctionId> {
+    fn function_to_def(
+        &self,
+        src: InFile<ast::Function>,
+    ) -> Option<FunctionId> {
         let function = module_data::find_item(self.db.upcast(), src.file_id, &src.value)?;
         let function_id = self
             .db
@@ -149,14 +172,20 @@ impl<'db> Semantics<'db> {
         Some(id)
     }
 
-    pub fn import_to_def(&self, src: InFile<ast::Import>) -> Option<ImportId> {
+    pub fn import_to_def(
+        &self,
+        src: InFile<ast::Import>,
+    ) -> Option<ImportId> {
         let import = module_data::find_import(self.db.upcast(), src.file_id, &src.value)?;
 
         let import_id = self.db.intern_import(Location::new(src.file_id, import));
         Some(import_id)
     }
 
-    pub fn resolve_import(&self, src: InFile<ast::Import>) -> Option<Import> {
+    pub fn resolve_import(
+        &self,
+        src: InFile<ast::Import>,
+    ) -> Option<Import> {
         let id = self.import_to_def(src)?;
         Some(Import { id })
     }
@@ -224,7 +253,10 @@ pub struct SourceAnalyzer<'db> {
 }
 
 impl<'db> SourceAnalyzer<'db> {
-    fn new(db: &'db dyn HirDatabase, def: DefWithBodyId) -> Self {
+    fn new(
+        db: &'db dyn HirDatabase,
+        def: DefWithBodyId,
+    ) -> Self {
         let (body, body_source_map) = db.body_with_source_map(def);
         let infer = db.infer(def);
         Self {
@@ -236,26 +268,38 @@ impl<'db> SourceAnalyzer<'db> {
         }
     }
 
-    pub fn type_of_expr(&self, expr: &ast::Expr) -> Option<Ty> {
+    pub fn type_of_expr(
+        &self,
+        expr: &ast::Expr,
+    ) -> Option<Ty> {
         let id = self.expr_id(expr)?;
         let ty = *self.infer.type_of_expr.get(id)?;
         Some(ty)
     }
 
-    pub fn type_of_binding(&self, binding: &ast::Binding) -> Option<Ty> {
+    pub fn type_of_binding(
+        &self,
+        binding: &ast::Binding,
+    ) -> Option<Ty> {
         let id = self.binding_id(binding)?;
         let ty = *self.infer.type_of_binding.get(id)?;
         Some(ty)
     }
 
-    pub fn resolve_field(&self, field: ast::FieldExpr) -> Option<Field> {
+    pub fn resolve_field(
+        &self,
+        field: ast::FieldExpr,
+    ) -> Option<Field> {
         let expr = self.expr_id(&ast::Expr::FieldExpr(field))?;
         let field = self.infer.field_resolution(expr)?;
 
         Some(Field { id: field })
     }
 
-    pub fn resolver_for(&self, scope: Either<ast::Expr, ast::Statement>) -> Resolver {
+    pub fn resolver_for(
+        &self,
+        scope: Either<ast::Expr, ast::Statement>,
+    ) -> Resolver {
         let mut resolver = self.owner.resolver(self.db.upcast());
 
         let expr_scopes = self.db.expr_scopes(self.owner);
@@ -287,13 +331,22 @@ impl<'db> SourceAnalyzer<'db> {
         resolver
     }
 
-    pub fn binding_id(&self, src: &ast::Binding) -> Option<BindingId> {
+    pub fn binding_id(
+        &self,
+        src: &ast::Binding,
+    ) -> Option<BindingId> {
         self.body_source_map.lookup_binding(&AstPtr::new(src))
     }
-    pub fn expr_id(&self, src: &ast::Expr) -> Option<ExprId> {
+    pub fn expr_id(
+        &self,
+        src: &ast::Expr,
+    ) -> Option<ExprId> {
         self.body_source_map.lookup_expr(&AstPtr::new(src))
     }
-    pub fn stmt_id(&self, src: &ast::Statement) -> Option<StatementId> {
+    pub fn stmt_id(
+        &self,
+        src: &ast::Statement,
+    ) -> Option<StatementId> {
         self.body_source_map.lookup_statement(&AstPtr::new(src))
     }
 }
@@ -306,7 +359,10 @@ pub struct Local {
 impl HasSource for Local {
     type Ast = ast::Binding;
 
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         let file_id = self.parent.lookup(db).file_id;
         let (_, source_map) = db.body_with_source_map(DefWithBodyId::Function(self.parent));
         let binding = source_map
@@ -327,7 +383,10 @@ pub struct Function {
 impl HasSource for Function {
     type Ast = ast::Function;
 
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(db).source(db))
     }
 }
@@ -340,7 +399,10 @@ pub struct GlobalVariable {
 impl HasSource for GlobalVariable {
     type Ast = ast::GlobalVariableDecl;
 
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(db).source(db))
     }
 }
@@ -352,7 +414,10 @@ pub struct GlobalConstant {
 impl HasSource for GlobalConstant {
     type Ast = ast::GlobalConstantDecl;
 
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(db).source(db))
     }
 }
@@ -364,7 +429,10 @@ pub struct Override {
 impl HasSource for Override {
     type Ast = ast::OverrideDecl;
 
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(db).source(db))
     }
 }
@@ -377,7 +445,10 @@ pub struct Struct {
 impl HasSource for Struct {
     type Ast = ast::StructDecl;
 
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(db).source(db))
     }
 }
@@ -390,7 +461,10 @@ pub struct TypeAlias {
 impl HasSource for TypeAlias {
     type Ast = ast::TypeAliasDecl;
 
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(db).source(db))
     }
 }
@@ -402,7 +476,10 @@ pub struct Field {
 
 impl HasSource for Field {
     type Ast = ast::StructDeclField;
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         let struct_data = db.struct_data(self.id.strukt);
         let field_data = &struct_data.fields()[self.id.field];
         let field_name = &field_data.name;
@@ -446,7 +523,10 @@ pub struct Module {
 }
 
 impl Module {
-    pub fn items(&self, db: &dyn HirDatabase) -> Vec<ModuleDef> {
+    pub fn items(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> Vec<ModuleDef> {
         let module_info = db.module_info(self.file_id);
         module_info
             .items()
@@ -454,7 +534,10 @@ impl Module {
             .flat_map(|item| module_item_to_def(db, self.file_id, item))
             .collect()
     }
-    pub fn imports(&self, db: &dyn HirDatabase) -> Vec<Import> {
+    pub fn imports(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> Vec<Import> {
         let module_info = db.module_info(self.file_id);
         module_info
             .items()
@@ -470,7 +553,10 @@ impl Module {
             .collect()
     }
 
-    pub fn module_info(&self, db: &dyn HirDatabase) -> Arc<ModuleInfo> {
+    pub fn module_info(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> Arc<ModuleInfo> {
         db.module_info(self.file_id)
     }
 
@@ -546,7 +632,10 @@ pub struct Import {
     id: ImportId,
 }
 impl Import {
-    pub fn file_text(&self, db: &dyn HirDatabase) -> Option<String> {
+    pub fn file_text(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> Option<String> {
         let import_loc = self.id.lookup(db.upcast());
 
         let module_info = db.module_info(import_loc.file_id);
@@ -563,7 +652,10 @@ impl Import {
     }
 
     #[allow(clippy::result_unit_err)]
-    pub fn resolve(&self, db: &dyn HirDatabase) -> Result<(), ()> {
+    pub fn resolve(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> Result<(), ()> {
         let import_loc = self.id.lookup(db.upcast());
 
         let module_info = db.module_info(import_loc.file_id);

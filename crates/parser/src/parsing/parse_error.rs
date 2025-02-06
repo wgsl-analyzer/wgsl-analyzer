@@ -35,7 +35,10 @@ impl<P: ParserDefinition> ParseError<P> {
 }
 
 impl<P: ParserDefinition> fmt::Debug for ParseError<P> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         f.debug_struct("ParseError")
             .field("expected", &self.expected)
             .field("found", &self.found)
@@ -45,13 +48,19 @@ impl<P: ParserDefinition> fmt::Debug for ParseError<P> {
 }
 
 impl<P: ParserDefinition> PartialEq for ParseError<P> {
-    fn eq(&self, other: &Self) -> bool {
+    fn eq(
+        &self,
+        other: &Self,
+    ) -> bool {
         self.expected == other.expected && self.found == other.found && self.range == other.range
     }
 }
 
 impl<P: ParserDefinition> fmt::Display for ParseError<P> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         write!(
             f,
             "error at {}..{}: expected ",

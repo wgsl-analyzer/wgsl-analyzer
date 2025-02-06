@@ -26,16 +26,25 @@ pub fn ancestors_at_offset(
 /// ```
 ///
 /// then the shorter node will be silently preferred.
-pub fn find_node_at_offset<N: AstNode>(syntax: &SyntaxNode, offset: TextSize) -> Option<N> {
+pub fn find_node_at_offset<N: AstNode>(
+    syntax: &SyntaxNode,
+    offset: TextSize,
+) -> Option<N> {
     ancestors_at_offset(syntax, offset).find_map(N::cast)
 }
 
-pub fn find_node_at_range<N: AstNode>(syntax: &SyntaxNode, range: TextRange) -> Option<N> {
+pub fn find_node_at_range<N: AstNode>(
+    syntax: &SyntaxNode,
+    range: TextRange,
+) -> Option<N> {
     syntax.covering_element(range).ancestors().find_map(N::cast)
 }
 
 /// Skip to next non `trivia` token
-pub fn skip_trivia_token(mut token: SyntaxToken, direction: Direction) -> Option<SyntaxToken> {
+pub fn skip_trivia_token(
+    mut token: SyntaxToken,
+    direction: Direction,
+) -> Option<SyntaxToken> {
     while token.kind().is_trivia() {
         token = match direction {
             Direction::Next => token.next_token()?,
@@ -45,7 +54,10 @@ pub fn skip_trivia_token(mut token: SyntaxToken, direction: Direction) -> Option
     Some(token)
 }
 /// Skip to next non `whitespace` token
-pub fn skip_whitespace_token(mut token: SyntaxToken, direction: Direction) -> Option<SyntaxToken> {
+pub fn skip_whitespace_token(
+    mut token: SyntaxToken,
+    direction: Direction,
+) -> Option<SyntaxToken> {
     while token.kind() == SyntaxKind::Whitespace {
         token = match direction {
             Direction::Next => token.next_token()?,
@@ -56,7 +68,10 @@ pub fn skip_whitespace_token(mut token: SyntaxToken, direction: Direction) -> Op
 }
 
 /// Finds the first sibling in the given direction which is not `trivia`
-pub fn non_trivia_sibling(element: SyntaxElement, direction: Direction) -> Option<SyntaxElement> {
+pub fn non_trivia_sibling(
+    element: SyntaxElement,
+    direction: Direction,
+) -> Option<SyntaxElement> {
     return match element {
         NodeOrToken::Node(node) => node
             .siblings_with_tokens(direction)
@@ -76,7 +91,10 @@ pub fn non_trivia_sibling(element: SyntaxElement, direction: Direction) -> Optio
     }
 }
 
-pub fn least_common_ancestor(u: &SyntaxNode, v: &SyntaxNode) -> Option<SyntaxNode> {
+pub fn least_common_ancestor(
+    u: &SyntaxNode,
+    v: &SyntaxNode,
+) -> Option<SyntaxNode> {
     if u == v {
         return Some(u.clone());
     }
@@ -91,7 +109,10 @@ pub fn least_common_ancestor(u: &SyntaxNode, v: &SyntaxNode) -> Option<SyntaxNod
     Some(res)
 }
 
-pub fn neighbor<T: AstNode>(me: &T, direction: Direction) -> Option<T> {
+pub fn neighbor<T: AstNode>(
+    me: &T,
+    direction: Direction,
+) -> Option<T> {
     me.syntax().siblings(direction).skip(1).find_map(T::cast)
 }
 

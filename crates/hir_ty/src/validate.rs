@@ -10,7 +10,10 @@ pub enum Scope {
 }
 
 impl std::fmt::Debug for Scope {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self {
             Self::Function => write!(f, "function"),
             Self::Module => write!(f, "module"),
@@ -30,7 +33,10 @@ pub enum StorageClassError {
 }
 
 impl std::fmt::Display for StorageClassError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self {
             StorageClassError::ExpectedAccessMode(mode) => match mode.as_slice() {
                 &[mode] => write!(f, "expected {} access mode", mode),

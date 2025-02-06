@@ -15,7 +15,10 @@ pub(crate) struct Sink<'t, 'input, P: ParserDefinition> {
 }
 
 impl<'t, 'input, P: ParserDefinition> Sink<'t, 'input, P> {
-    pub(crate) fn new(tokens: &'t [Token<'input, P::TokenKind>], events: Vec<Event<P>>) -> Self {
+    pub(crate) fn new(
+        tokens: &'t [Token<'input, P::TokenKind>],
+        events: Vec<Event<P>>,
+    ) -> Self {
         Self {
             builder: GreenNodeBuilder::new(),
             tokens,

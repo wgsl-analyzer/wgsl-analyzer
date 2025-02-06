@@ -7,17 +7,18 @@ use crate::{
 };
 use std::fmt::Write;
 
-#[derive(Debug, Clone, Copy)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum TypeVerbosity {
-    Full,    // ref<uniform, f32, read_write>,
+    Full, // ref<uniform, f32, read_write>,
     #[default]
     Compact, // ref<f32>,
-    Inner,   // f32
+    Inner, // f32
 }
 
-
-pub fn pretty_type_expectation(db: &dyn HirDatabase, ty: TypeExpectation) -> String {
+pub fn pretty_type_expectation(
+    db: &dyn HirDatabase,
+    ty: TypeExpectation,
+) -> String {
     pretty_type_expectation_with_verbosity(db, ty, TypeVerbosity::default())
 }
 
@@ -65,7 +66,10 @@ fn write_type_expectation_inner(
     Ok(())
 }
 
-pub fn pretty_type(db: &dyn HirDatabase, ty: Ty) -> String {
+pub fn pretty_type(
+    db: &dyn HirDatabase,
+    ty: Ty,
+) -> String {
     pretty_type_with_verbosity(db, ty, TypeVerbosity::default())
 }
 
@@ -79,7 +83,10 @@ pub fn pretty_type_with_verbosity(
     str
 }
 
-pub fn pretty_fn(db: &dyn HirDatabase, function: &FunctionDetails) -> String {
+pub fn pretty_fn(
+    db: &dyn HirDatabase,
+    function: &FunctionDetails,
+) -> String {
     pretty_fn_with_verbosity(db, function, TypeVerbosity::default())
 }
 pub fn pretty_fn_with_verbosity(

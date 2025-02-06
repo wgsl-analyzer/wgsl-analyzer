@@ -24,7 +24,10 @@ pub(crate) struct CompletionContext<'a> {
 }
 
 impl<'a> CompletionContext<'a> {
-    pub(crate) fn new(db: &'a dyn HirDatabase, position: FilePosition) -> Option<Self> {
+    pub(crate) fn new(
+        db: &'a dyn HirDatabase,
+        position: FilePosition,
+    ) -> Option<Self> {
         let sema = Semantics::new(db);
         let file = sema.parse(position.file_id);
         let token = file

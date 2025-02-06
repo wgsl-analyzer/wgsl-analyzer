@@ -30,7 +30,10 @@ pub struct RequestDispatcher<'a> {
 
 #[allow(dead_code)]
 impl<'a> RequestDispatcher<'a> {
-    pub fn new(req: Option<lsp_server::Request>, global_state: &'a mut GlobalState) -> Self {
+    pub fn new(
+        req: Option<lsp_server::Request>,
+        global_state: &'a mut GlobalState,
+    ) -> Self {
         Self { req, global_state }
     }
 
@@ -216,7 +219,10 @@ pub struct NotificationDispatcher<'a> {
 }
 
 impl<'a> NotificationDispatcher<'a> {
-    pub fn new(not: Option<lsp_server::Notification>, global_state: &'a mut GlobalState) -> Self {
+    pub fn new(
+        not: Option<lsp_server::Notification>,
+        global_state: &'a mut GlobalState,
+    ) -> Self {
         Self { not, global_state }
     }
 

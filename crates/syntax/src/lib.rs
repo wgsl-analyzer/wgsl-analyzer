@@ -17,7 +17,10 @@ pub struct Parse {
     errors: Arc<Vec<ParseError>>,
 }
 impl PartialEq for Parse {
-    fn eq(&self, other: &Self) -> bool {
+    fn eq(
+        &self,
+        other: &Self,
+    ) -> bool {
         self.green_node == other.green_node
     }
 }
@@ -37,7 +40,10 @@ impl Parse {
 pub fn parse(input: &str) -> Parse {
     parse_entrypoint(input, ParseEntryPoint::File)
 }
-pub fn parse_entrypoint(input: &str, parse_entrypoint: ParseEntryPoint) -> Parse {
+pub fn parse_entrypoint(
+    input: &str,
+    parse_entrypoint: ParseEntryPoint,
+) -> Parse {
     let (green_node, errors) = wgsl_parser::parse_entrypoint(input, parse_entrypoint).into_parts();
     Parse {
         green_node,
@@ -146,7 +152,10 @@ mod support {
         AstChildren::new(parent)
     }
 
-    pub(crate) fn child_syntax(parent: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
+    pub(crate) fn child_syntax(
+        parent: &SyntaxNode,
+        kind: SyntaxKind,
+    ) -> Option<SyntaxNode> {
         parent.children().find(|n| n.kind() == kind)
     }
 
@@ -157,7 +166,10 @@ mod support {
             .find_map(N::cast)
     }
 
-    pub(crate) fn token(parent: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxToken> {
+    pub(crate) fn token(
+        parent: &SyntaxNode,
+        kind: SyntaxKind,
+    ) -> Option<SyntaxToken> {
         parent
             .children_with_tokens()
             .filter_map(|it| it.into_token())

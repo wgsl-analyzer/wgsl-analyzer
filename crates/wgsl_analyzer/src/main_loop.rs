@@ -12,7 +12,10 @@ use std::sync::Arc;
 use std::time::Instant;
 use vfs::FileId;
 
-pub fn main_loop(config: Config, connection: Connection) -> Result<()> {
+pub fn main_loop(
+    config: Config,
+    connection: Connection,
+) -> Result<()> {
     GlobalState::new(connection.sender, config).run(connection.receiver)
 }
 
@@ -28,7 +31,10 @@ pub enum Task {
 }
 
 impl GlobalState {
-    fn run(mut self, receiver: Receiver<lsp_server::Message>) -> Result<()> {
+    fn run(
+        mut self,
+        receiver: Receiver<lsp_server::Message>,
+    ) -> Result<()> {
         while let Some(event) = self.next_event(&receiver) {
             self.handle_event(event)?;
         }
@@ -38,14 +44,20 @@ impl GlobalState {
         ))
     }
 
-    fn next_event(&self, lsp_receiver: &Receiver<lsp_server::Message>) -> Option<Event> {
+    fn next_event(
+        &self,
+        lsp_receiver: &Receiver<lsp_server::Message>,
+    ) -> Option<Event> {
         select! {
             recv(lsp_receiver) -> msg => msg.ok().map(Event::Lsp),
             recv(self.task_pool.receiver) -> task => Some(Event::Task(task.unwrap())),
         }
     }
 
-    fn handle_event(&mut self, event: Event) -> Result<()> {
+    fn handle_event(
+        &mut self,
+        event: Event,
+    ) -> Result<()> {
         let start_time = Instant::now();
 
         match event {
@@ -127,7 +139,11 @@ impl GlobalState {
         });
     }
 
-    fn on_request(&mut self, req: lsp_server::Request, start_time: Instant) -> Result<()> {
+    fn on_request(
+        &mut self,
+        req: lsp_server::Request,
+        start_time: Instant,
+    ) -> Result<()> {
         self.register_request(&req, start_time);
 
         RequestDispatcher::new(Some(req), self)
@@ -145,7 +161,10 @@ impl GlobalState {
         Ok(())
     }
 
-    fn complete_request(&mut self, response: lsp_server::Response) {
+    fn complete_request(
+        &mut self,
+        response: lsp_server::Response,
+    ) {
         let handler = self
             .req_queue
             .outgoing
@@ -155,7 +174,10 @@ impl GlobalState {
         handler(self, response)
     }
 
-    fn on_notification(&mut self, notification: lsp_server::Notification) -> Result<()> {
+    fn on_notification(
+        &mut self,
+        notification: lsp_server::Notification,
+    ) -> Result<()> {
         NotificationDispatcher::new(Some(notification), self)
             .on::<lsp_types::notification::DidOpenTextDocument>(
                 text_notifications::did_open_text_document,
@@ -197,7 +219,10 @@ impl GlobalState {
         Ok(())
     }
 
-    pub fn update_configuration(&mut self, config: Config) {
+    pub fn update_configuration(
+        &mut self,
+        config: Config,
+    ) {
         let old_config = std::mem::replace(&mut self.config, Arc::new(config));
 
         if old_config.custom_imports != self.config.custom_imports {

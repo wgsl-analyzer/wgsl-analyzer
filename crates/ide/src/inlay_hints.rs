@@ -242,14 +242,21 @@ fn function_hints(
     Some(())
 }
 
-// taken from https://github.com/rust-analyzer/rust-analyzer/blob/7308b3ef413cad8c211e239d32c9fab29ae2e664/crates/ide/src/inlay_hints.rs#L422
+// taken from https://github.com/rust-lang/rust-analyzer/blob/7308b3ef413cad8c211e239d32c9fab29ae2e664/crates/ide/src/inlay_hints.rs#L422
 
-fn should_hide_param_name_hint(func: &FunctionDetails, param_name: &str, expr: &ast::Expr) -> bool {
+fn should_hide_param_name_hint(
+    func: &FunctionDetails,
+    param_name: &str,
+    expr: &ast::Expr,
+) -> bool {
     is_argument_similar_to_param_name(expr, param_name)
         || (func.parameters.len() == 1 && is_obvious_param(param_name))
 }
 
-fn is_argument_similar_to_param_name(expr: &ast::Expr, param_name: &str) -> bool {
+fn is_argument_similar_to_param_name(
+    expr: &ast::Expr,
+    param_name: &str,
+) -> bool {
     let argument = match get_string_representation(expr) {
         Some(argument) => argument,
         None => return false,
@@ -291,7 +298,10 @@ fn is_obvious_param(param_name: &str) -> bool {
     param_name.len() == 1 || is_obvious_param_name
 }
 
-fn compare_ignore_case_convention(argument: &str, param_name: &str) -> bool {
+fn compare_ignore_case_convention(
+    argument: &str,
+    param_name: &str,
+) -> bool {
     argument
         .chars()
         .filter(|&c| c != '_')

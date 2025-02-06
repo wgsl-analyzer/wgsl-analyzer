@@ -47,7 +47,10 @@ pub enum ParseEntryPoint {
     FnParamList,
 }
 
-pub fn parse_entrypoint(input: &str, entrypoint: ParseEntryPoint) -> Parse {
+pub fn parse_entrypoint(
+    input: &str,
+    entrypoint: ParseEntryPoint,
+) -> Parse {
     match entrypoint {
         ParseEntryPoint::File => parser::parse::<ParserDefinition, _>(input, grammar::file),
         ParseEntryPoint::Expression => parser::parse::<ParserDefinition, _>(input, grammar::expr),
@@ -71,7 +74,11 @@ pub fn parse_file(input: &str) -> Parse {
 }
 
 #[cfg(test)]
-fn check_entrypoint(input: &str, entry_point: ParseEntryPoint, expected_tree: expect_test::Expect) {
+fn check_entrypoint(
+    input: &str,
+    entry_point: ParseEntryPoint,
+    expected_tree: expect_test::Expect,
+) {
     let parse = crate::parse_entrypoint(input, entry_point);
     expected_tree.assert_eq(&parse.debug_tree());
 }

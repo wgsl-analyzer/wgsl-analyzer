@@ -18,7 +18,10 @@ pub(crate) struct Ctx<'a> {
 }
 
 impl<'a> Ctx<'a> {
-    pub(crate) fn new(db: &'a dyn DefDatabase, file_id: HirFileId) -> Self {
+    pub(crate) fn new(
+        db: &'a dyn DefDatabase,
+        file_id: HirFileId,
+    ) -> Self {
         Self {
             db,
             source_ast_id_map: db.ast_id_map(file_id),
@@ -27,12 +30,18 @@ impl<'a> Ctx<'a> {
         }
     }
 
-    pub(crate) fn lower_source_file(&mut self, source_file: SourceFile) {
+    pub(crate) fn lower_source_file(
+        &mut self,
+        source_file: SourceFile,
+    ) {
         source_file.items().for_each(|item| {
             self.lower_item(item);
         })
     }
-    fn lower_item(&mut self, item: Item) -> Option<()> {
+    fn lower_item(
+        &mut self,
+        item: Item,
+    ) -> Option<()> {
         let item = match item {
             Item::Function(function) => ModuleItem::Function(self.lower_function(&function)?),
             Item::StructDecl(strukt) => ModuleItem::Struct(self.lower_struct(&strukt)?),
@@ -54,7 +63,10 @@ impl<'a> Ctx<'a> {
         Some(())
     }
 
-    fn lower_import(&mut self, import: &syntax::ast::Import) -> Option<ModuleItemId<Import>> {
+    fn lower_import(
+        &mut self,
+        import: &syntax::ast::Import,
+    ) -> Option<ModuleItemId<Import>> {
         let ast_id = self.source_ast_id_map.ast_id(import);
 
         let value = match import.import()? {
@@ -153,7 +165,10 @@ impl<'a> Ctx<'a> {
         Some(self.module_data.global_variables.alloc(var).into())
     }
 
-    fn lower_struct(&mut self, strukt: &syntax::ast::StructDecl) -> Option<ModuleItemId<Struct>> {
+    fn lower_struct(
+        &mut self,
+        strukt: &syntax::ast::StructDecl,
+    ) -> Option<ModuleItemId<Struct>> {
         let name = strukt.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(strukt);
 
@@ -209,7 +224,10 @@ impl<'a> Ctx<'a> {
         Some(self.module_data.functions.alloc(function).into())
     }
 
-    fn lower_function_param_list(&mut self, function_param_list: ast::ParamList) -> Option<()> {
+    fn lower_function_param_list(
+        &mut self,
+        function_param_list: ast::ParamList,
+    ) -> Option<()> {
         for param in function_param_list.params() {
             if let Some(param) = param.variable_ident_declaration() {
                 let ty = param
@@ -241,7 +259,10 @@ impl<'a> Ctx<'a> {
         Some(())
     }
 
-    fn lower_type_ref(&self, ty: ast::Type) -> Option<TypeRef> {
+    fn lower_type_ref(
+        &self,
+        ty: ast::Type,
+    ) -> Option<TypeRef> {
         ty.try_into().ok()
     }
 

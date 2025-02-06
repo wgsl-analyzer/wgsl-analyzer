@@ -22,7 +22,10 @@ pub(crate) fn vfs_path(url: &lsp_types::Url) -> Result<vfs::VfsPath> {
     abs_path(url).map(vfs::VfsPath::from)
 }
 
-pub(crate) fn offset(line_index: &LineIndex, position: lsp_types::Position) -> Result<TextSize> {
+pub(crate) fn offset(
+    line_index: &LineIndex,
+    position: lsp_types::Position,
+) -> Result<TextSize> {
     let line_col = match line_index.encoding {
         OffsetEncoding::Utf8 => LineCol {
             line: position.line,
@@ -43,14 +46,20 @@ pub(crate) fn offset(line_index: &LineIndex, position: lsp_types::Position) -> R
     Ok(text_size)
 }
 
-pub(crate) fn text_range(line_index: &LineIndex, range: lsp_types::Range) -> Result<TextRange> {
+pub(crate) fn text_range(
+    line_index: &LineIndex,
+    range: lsp_types::Range,
+) -> Result<TextRange> {
     let start = offset(line_index, range.start)?;
     let end = offset(line_index, range.end)?;
     let text_range = TextRange::new(start, end);
     Ok(text_range)
 }
 
-pub(crate) fn file_id(snap: &GlobalStateSnapshot, url: &lsp_types::Url) -> Result<FileId> {
+pub(crate) fn file_id(
+    snap: &GlobalStateSnapshot,
+    url: &lsp_types::Url,
+) -> Result<FileId> {
     snap.url_to_file_id(url)
 }
 

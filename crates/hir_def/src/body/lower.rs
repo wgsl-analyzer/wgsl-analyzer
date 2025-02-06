@@ -72,7 +72,7 @@ struct Collector<'a> {
     file_id: HirFileId,
 }
 
-impl<'a> Collector<'a> {
+impl Collector<'_> {
     fn collect_function(
         mut self,
         param_list: Option<ast::ParamList>,
@@ -87,7 +87,10 @@ impl<'a> Collector<'a> {
         (self.body, self.source_map)
     }
 
-    fn collect_function_param_list(&mut self, param_list: Option<ast::ParamList>) {
+    fn collect_function_param_list(
+        &mut self,
+        param_list: Option<ast::ParamList>,
+    ) {
         if let Some(param_list) = param_list {
             for p in param_list.params() {
                 if let Some(binding) = p
@@ -123,7 +126,10 @@ impl<'a> Collector<'a> {
         }
     }
 
-    fn collect_global_var_decl(mut self, decl: ast::GlobalVariableDecl) -> (Body, BodySourceMap) {
+    fn collect_global_var_decl(
+        mut self,
+        decl: ast::GlobalVariableDecl,
+    ) -> (Body, BodySourceMap) {
         self.body.root = decl
             .init()
             .map(|expr| self.collect_expr(expr))
@@ -146,7 +152,10 @@ impl<'a> Collector<'a> {
 
         (self.body, self.source_map)
     }
-    fn collect_override_decl(mut self, decl: ast::OverrideDecl) -> (Body, BodySourceMap) {
+    fn collect_override_decl(
+        mut self,
+        decl: ast::OverrideDecl,
+    ) -> (Body, BodySourceMap) {
         self.body.root = decl
             .init()
             .map(|expr| self.collect_expr(expr))
@@ -157,12 +166,18 @@ impl<'a> Collector<'a> {
         (self.body, self.source_map)
     }
 
-    fn collect_binding(&mut self, binding: ast::Binding) -> BindingId {
+    fn collect_binding(
+        &mut self,
+        binding: ast::Binding,
+    ) -> BindingId {
         let src = AstPtr::new(&binding);
         let name = binding.name().map(Name::from).unwrap_or_else(Name::missing);
         self.alloc_binding(Binding { name }, src)
     }
-    fn collect_binding_opt(&mut self, binding: Option<ast::Binding>) -> BindingId {
+    fn collect_binding_opt(
+        &mut self,
+        binding: Option<ast::Binding>,
+    ) -> BindingId {
         match binding {
             Some(binding) => self.collect_binding(binding),
             None => self.missing_binding(),
@@ -177,7 +192,10 @@ impl<'a> Collector<'a> {
             .map(|stmt| self.collect_compound_stmt(stmt))
             .unwrap_or_else(|| self.missing_stmt())
     }
-    fn collect_compound_stmt(&mut self, compound_stmt: ast::CompoundStatement) -> StatementId {
+    fn collect_compound_stmt(
+        &mut self,
+        compound_stmt: ast::CompoundStatement,
+    ) -> StatementId {
         let statements = compound_stmt
             .statements()
             .filter_map(|stmt| self.collect_stmt(stmt))
@@ -188,7 +206,10 @@ impl<'a> Collector<'a> {
             .alloc(Statement::Compound { statements })
     }
 
-    fn collect_stmt(&mut self, stmt: ast::Statement) -> Option<StatementId> {
+    fn collect_stmt(
+        &mut self,
+        stmt: ast::Statement,
+    ) -> Option<StatementId> {
         let hir_stmt = match stmt {
             ast::Statement::VariableStatement(ref variable_statement) => {
                 let binding_id = self.collect_binding_opt(variable_statement.binding());
@@ -350,7 +371,10 @@ impl<'a> Collector<'a> {
         Some(id)
     }
 
-    fn collect_expr(&mut self, expr: ast::Expr) -> ExprId {
+    fn collect_expr(
+        &mut self,
+        expr: ast::Expr,
+    ) -> ExprId {
         let syntax_ptr = AstPtr::new(&expr);
         let expr = match expr {
             ast::Expr::InfixExpr(expr) => {
@@ -480,17 +504,29 @@ impl<'a> Collector<'a> {
         self.alloc_expr(expr, syntax_ptr)
     }
 
-    fn alloc_expr(&mut self, expr: Expr, src: AstPtr<ast::Expr>) -> ExprId {
+    fn alloc_expr(
+        &mut self,
+        expr: Expr,
+        src: AstPtr<ast::Expr>,
+    ) -> ExprId {
         let id = self.make_expr(expr, Ok(src.clone()));
         self.source_map.expr_map.insert(src, id);
         id
     }
-    fn make_expr(&mut self, expr: Expr, src: Result<AstPtr<ast::Expr>, SyntheticSyntax>) -> ExprId {
+    fn make_expr(
+        &mut self,
+        expr: Expr,
+        src: Result<AstPtr<ast::Expr>, SyntheticSyntax>,
+    ) -> ExprId {
         let id = self.body.exprs.alloc(expr);
         self.source_map.expr_map_back.insert(id, src);
         id
     }
-    fn alloc_stmt(&mut self, stmt: Statement, src: AstPtr<ast::Statement>) -> StatementId {
+    fn alloc_stmt(
+        &mut self,
+        stmt: Statement,
+        src: AstPtr<ast::Statement>,
+    ) -> StatementId {
         let id = self.make_stmt(stmt, Ok(src.clone()));
         self.source_map.stmt_map.insert(src, id);
         id
@@ -505,7 +541,11 @@ impl<'a> Collector<'a> {
         id
     }
 
-    fn alloc_binding(&mut self, binding: Binding, src: AstPtr<ast::Binding>) -> BindingId {
+    fn alloc_binding(
+        &mut self,
+        binding: Binding,
+        src: AstPtr<ast::Binding>,
+    ) -> BindingId {
         let id = self.make_binding(binding, Ok(src.clone()));
         self.source_map.binding_map.insert(src, id);
         id
@@ -535,7 +575,10 @@ impl<'a> Collector<'a> {
         self.make_stmt(Statement::Missing, Err(SyntheticSyntax))
     }
 
-    fn collect_expr_opt(&mut self, expr: Option<ast::Expr>) -> ExprId {
+    fn collect_expr_opt(
+        &mut self,
+        expr: Option<ast::Expr>,
+    ) -> ExprId {
         match expr {
             Some(expr) => self.collect_expr(expr),
             None => self.missing_expr(),

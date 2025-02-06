@@ -491,7 +491,10 @@ mod tests {
     use expect_test::expect;
     use logos::Logos;
 
-    fn check_lex(source: &str, expect: expect_test::Expect) {
+    fn check_lex(
+        source: &str,
+        expect: expect_test::Expect,
+    ) {
         let tokens: Vec<_> = SyntaxKind::lexer(source).collect();
         expect.assert_eq(&format!("{:?}", tokens));
     }

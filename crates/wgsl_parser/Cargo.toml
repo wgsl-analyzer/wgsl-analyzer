@@ -1,7 +1,11 @@
 [package]
 name = "wgsl_parser"
 version = "0.0.0"
-edition = "2021"
+readme = "README.md"
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords = ["wgsl"]
 
 [dependencies]
 logos = "0.12.0"
