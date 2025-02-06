@@ -22,7 +22,7 @@ hir-ty = { path = "../hir_ty", version = "0.0.0" }
 hir = { path = "../hir", version = "0.0.0" }
 ide-completion = { path = "../ide_completion" }
 syntax = { path = "../syntax", version = "0.0.0" }
-wgsl_formatter = { path = "../wgsl_formatter", version = "0.0.0" }
+wgsl-formatter = { path = "../wgsl_formatter", version = "0.0.0" }
 rowan = "0.16.1"
 lsp-types = "0.95.0"
 vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }

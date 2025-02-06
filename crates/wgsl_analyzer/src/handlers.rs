@@ -101,11 +101,17 @@ pub fn handle_hover(
     Ok(Some(hover))
 }
 
-pub fn handle_shutdown(_snap: GlobalStateSnapshot, _: ()) -> Result<()> {
+pub fn handle_shutdown(
+    _snap: GlobalStateSnapshot,
+    _: (),
+) -> Result<()> {
     Ok(())
 }
 
-pub fn full_source(snap: GlobalStateSnapshot, params: lsp_ext::FullSourceParams) -> Result<String> {
+pub fn full_source(
+    snap: GlobalStateSnapshot,
+    params: lsp_ext::FullSourceParams,
+) -> Result<String> {
     let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
     let source = match snap.analysis.resolve_full_source(file_id)? {
         Ok(source) => source,
@@ -130,7 +136,10 @@ pub fn show_syntax_tree(
     Ok(string)
 }
 
-pub fn debug_command(snap: GlobalStateSnapshot, params: lsp_ext::DebugCommandParams) -> Result<()> {
+pub fn debug_command(
+    snap: GlobalStateSnapshot,
+    params: lsp_ext::DebugCommandParams,
+) -> Result<()> {
     let position = from_proto::file_position(&snap, params.position)?;
     snap.analysis.debug_command(position)?;
 
@@ -212,12 +221,15 @@ mod diff {
     use dissimilar::Chunk;
     use text_edit::{TextEdit, TextRange, TextSize};
 
-    pub fn diff(left: &str, right: &str) -> TextEdit {
+    pub fn diff(
+        left: &str,
+        right: &str,
+    ) -> TextEdit {
         let chunks = dissimilar::diff(left, right);
         textedit_from_chunks(chunks)
     }
 
-    fn textedit_from_chunks(chunks: Vec<dissimilar::Chunk>) -> TextEdit {
+    fn textedit_from_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> TextEdit {
         let mut builder = TextEdit::builder();
         let mut pos = TextSize::default();
 

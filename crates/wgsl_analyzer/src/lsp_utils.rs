@@ -23,7 +23,7 @@ pub(crate) fn invalid_params_error(message: String) -> LspError {
 }
 
 pub(crate) fn notification_is<N: lsp_types::notification::Notification>(
-    notification: &Notification,
+    notification: &Notification
 ) -> bool {
     notification.method == N::METHOD
 }
@@ -36,14 +36,21 @@ pub(crate) enum Progress {
 }
 
 impl Progress {
-    pub(crate) fn fraction(done: usize, total: usize) -> f64 {
+    pub(crate) fn fraction(
+        done: usize,
+        total: usize,
+    ) -> f64 {
         assert!(done <= total);
         done as f64 / total.max(1) as f64
     }
 }
 
 impl GlobalState {
-    pub(crate) fn show_message(&mut self, typ: lsp_types::MessageType, message: String) {
+    pub(crate) fn show_message(
+        &mut self,
+        typ: lsp_types::MessageType,
+        message: String,
+    ) {
         self.send_notification::<lsp_types::notification::ShowMessage>(
             lsp_types::ShowMessageParams { typ, message },
         )
@@ -120,7 +127,10 @@ pub(crate) fn apply_document_changes(
     }
 
     impl IndexValid {
-        fn covers(&self, line: u32) -> bool {
+        fn covers(
+            &self,
+            line: u32,
+        ) -> bool {
             match *self {
                 IndexValid::UpToLineExclusive(to) => to > line,
                 _ => true,
@@ -136,8 +146,11 @@ pub(crate) fn apply_document_changes(
                     line_index.index = Arc::new(base_db::line_index::LineIndex::new(old_text));
                 }
                 index_valid = IndexValid::UpToLineExclusive(range.start.line);
-                if let Ok(range) = from_proto::text_range(&line_index, range) {
-                    old_text.replace_range(Range::<usize>::from(range), &change.text);
+                match from_proto::text_range(&line_index, range) {
+                    Ok(range1) => {
+                        old_text.replace_range(Range::<usize>::from(range1), &change.text);
+                    }
+                    _ => {}
                 }
             }
             None => {

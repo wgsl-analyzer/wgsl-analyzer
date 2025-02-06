@@ -18,7 +18,10 @@ pub type Result<T, E = anyhow::Error> = std::result::Result<T, E>;
 
 use serde::de::DeserializeOwned;
 
-pub fn from_json<T: DeserializeOwned>(what: &'static str, json: serde_json::Value) -> Result<T> {
+pub fn from_json<T: DeserializeOwned>(
+    what: &'static str,
+    json: serde_json::Value,
+) -> Result<T> {
     let res = serde_json::from_value(json.clone())
         .map_err(|e| anyhow::anyhow!("Failed to deserialize {}: {}; {}", what, e, json))?;
     Ok(res)
@@ -32,13 +35,19 @@ struct LspError {
 
 impl LspError {
     #[allow(dead_code)]
-    fn new(code: i32, message: String) -> LspError {
+    fn new(
+        code: i32,
+        message: String,
+    ) -> LspError {
         LspError { code, message }
     }
 }
 
 impl std::fmt::Display for LspError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         write!(
             f,
             "Language Server request failed with {}. ({})",
