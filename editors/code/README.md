@@ -5,13 +5,14 @@ wgsl-analyzer is a [language server](https://microsoft.github.io/language-server
 ## Features
 
 Currently, wgsl-analyzer supports
+
 - syntax highlighting
 - basic autocomplete
 - type checking
 - go to definition
 - basic formatting
 
-If you have any suggestions or bug reports, feel free to open an issue at https://github.com/wgsl-analyzer/wgsl-analyzer/issues.
+If you have any suggestions or bug reports, feel free to open an issue at <https://github.com/wgsl-analyzer/wgsl-analyzer/issues>.
 
 ## Configuration
 
@@ -40,11 +41,7 @@ If you provide a URL with a `http`, `https` or `file` scheme that resource will 
 }
 ```
 
-<details>
-<summary>
 List of imports for bevy as of version 0.8
-</summary>
-
 
 _Generated using `rg define_import_path -g '*.wgsl' --sort path | sd '^([^:]*):#define_import_path (.*)' '        "$2": "https://raw.githubusercontent.com/bevyengine/bevy/v0.8.0/$1",'` inside the bevy folder_
 
@@ -97,7 +94,6 @@ _Generated using `rg define_import_path -g '*.wgsl' --sort path | sd '^([^:]*):#
     }
 }
 ```
-</details>
 
 ### Preprocessor defines
 
@@ -110,7 +106,6 @@ wgsl-analyzer supports `#ifdef`, `#ifndef`, `#else`, `#endif` directives in the 
     ]
 }
 ```
-
 
 ### Diagnostics
 
@@ -128,7 +123,6 @@ You can also additionally enable diagnostics for naga parsing errors.
 
 ### Inlay hints
 
-
 wgsl-analyzer can display read-only virtual text snippets interspersed with code, used to display the inferred types of variable declarations or the names of function parameters at the call site.
 
 ```json
@@ -142,9 +136,11 @@ wgsl-analyzer can display read-only virtual text snippets interspersed with code
 ```
 
 The `typeVerbosity` argument can be either `full`, `compact` or `inner`, which will correspond to
+
 ```rust
 var x: ref<function, f32, read_write> = 0.0;
 var x: ref<f32> = 0.0;
 var x: f32 = 0.0;
 ```
+
 respectively. For more information, check out references and the "Load Rule" in the [WGSL Spec](https://gpuweb.github.io/gpuweb/wgsl/#load-rule).
