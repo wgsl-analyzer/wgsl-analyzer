@@ -26,9 +26,13 @@ allow = [
 ]
 
 exceptions = [
-  { name = "unicode-ident", allow = ["Unicode-DFS-2016"] }
-  { name = "zerovec-derive", allow = ["Unicode-3.0"] }
-  ]
+  { name = "unicode-ident", allow = [
+    "Unicode-DFS-2016",
+  ] },
+  { name = "zerovec-derive", allow = [
+    "Unicode-3.0",
+  ] },
+]
 
 [bans]
 multiple-versions = "warn"
