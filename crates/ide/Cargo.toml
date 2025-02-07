@@ -25,7 +25,6 @@ wgsl-formatter = { path = "../wgsl_formatter", version = "0.0.0" }
 rowan = "0.16.1"
 vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
 
-expect-test = "1.5.1"
 itertools = "0.14.0"
 smol_str = "0.3.2"
 
@@ -41,3 +40,6 @@ naga22 = { package = "naga", version = "22.1.0", features = ["wgsl-in"] }
 nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "b32cbd4ea6b6b898b27b7837145b3cfe30ac1543", features = [
   "wgsl-in",
 ], version = "24.0.0" }
+
+[dev-dependencies]
+expect-test = "1.5.1"
