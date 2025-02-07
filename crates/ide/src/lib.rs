@@ -10,8 +10,8 @@ mod hover;
 pub mod inlay_hints;
 mod syntax_tree;
 
-use base_db::{change::Change, SourceDatabase};
-use base_db::{line_index::LineIndex, FilePosition, FileRange, RangeInfo, TextRange};
+use base_db::{FilePosition, FileRange, RangeInfo, TextRange, line_index::LineIndex};
+use base_db::{SourceDatabase, change::Change};
 use diagnostics::DiagnosticMessage;
 use goto_definition::NavigationTarget;
 use hir::diagnostics::DiagnosticsConfig;

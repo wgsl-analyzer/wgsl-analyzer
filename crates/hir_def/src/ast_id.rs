@@ -1,9 +1,9 @@
 use la_arena::{Arena, Idx};
 use std::marker::PhantomData;
 use syntax::{
+	AstNode, SyntaxNode,
 	ast::{self, SourceFile},
 	ptr::{AstPtr, SyntaxNodePtr},
-	AstNode, SyntaxNode,
 };
 
 /// Maps items' `SyntaxNode`s to `ErasedFileAstId`s and back.

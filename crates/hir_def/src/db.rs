@@ -3,11 +3,12 @@ use std::{fmt::Debug, marker::PhantomData, sync::Arc};
 use base_db::{SourceDatabase, TextRange, TextSize, Upcast};
 use salsa::InternKey;
 use syntax::{
-	ast::{self, Item},
 	AstNode, Parse,
+	ast::{self, Item},
 };
 
 use crate::{
+	HirFileId, InFile,
 	ast_id::AstIdMap,
 	attrs::{Attr, AttrDefId, AttrsWithOwner},
 	body::scope::ExprScopes,
@@ -23,7 +24,6 @@ use crate::{
 	},
 	resolver::Resolver,
 	type_ref::TypeRef,
-	HirFileId, InFile,
 };
 
 #[salsa::query_group(DefDatabaseStorage)]

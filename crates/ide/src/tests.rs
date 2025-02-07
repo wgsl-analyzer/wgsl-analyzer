@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use base_db::{change::Change, FileId};
-use expect_test::{expect, Expect};
+use base_db::{FileId, change::Change};
+use expect_test::{Expect, expect};
 use hir_def::db::DefDatabase;
 
 use crate::RootDatabase;

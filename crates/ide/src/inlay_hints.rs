@@ -1,15 +1,15 @@
 use base_db::{FileId, FileRange, TextRange};
 use hir::{Field, HasSource, Semantics};
-use hir_def::{data::FieldId, module_data::Name, InFile};
+use hir_def::{InFile, data::FieldId, module_data::Name};
 use hir_ty::{
 	function::FunctionDetails,
 	infer::ResolvedCall,
 	layout::{FieldLayout, LayoutAddressSpace},
-	ty::pretty::{pretty_type_with_verbosity, TypeVerbosity},
+	ty::pretty::{TypeVerbosity, pretty_type_with_verbosity},
 };
 use rowan::NodeOrToken;
 use smol_str::SmolStr;
-use syntax::{ast, AstChildren, AstNode, HasName, SyntaxNode};
+use syntax::{AstChildren, AstNode, HasName, SyntaxNode, ast};
 
 use crate::RootDatabase;
 

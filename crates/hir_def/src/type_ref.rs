@@ -1,4 +1,4 @@
-use syntax::{ast, HasGenerics};
+use syntax::{HasGenerics, ast};
 
 use crate::{expr::parse_literal, module_data::Name};
 

@@ -2,7 +2,7 @@ use base_db::FileId;
 use base_db::SourceDatabase;
 use base_db::TextRange;
 use rowan::NodeOrToken;
-use syntax::{ast, AstNode, SyntaxNode};
+use syntax::{AstNode, SyntaxNode, ast};
 use wgsl_formatter::FormattingOptions;
 
 use crate::RootDatabase;

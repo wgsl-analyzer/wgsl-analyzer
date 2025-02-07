@@ -1,9 +1,5 @@
 pub mod operators;
 
-use crate::ast::operators::ArithOp;
-use crate::ast::operators::CmpOp;
-use crate::ast::operators::LogicOp;
-use crate::support;
 use crate::AstChildren;
 use crate::AstNode;
 use crate::AstToken;
@@ -12,6 +8,10 @@ use crate::HasGenerics;
 use crate::HasName;
 use crate::SyntaxToken;
 use crate::TokenText;
+use crate::ast::operators::ArithOp;
+use crate::ast::operators::CmpOp;
+use crate::ast::operators::LogicOp;
+use crate::support;
 use rowan::NodeOrToken;
 use wgsl_parser::{SyntaxKind, SyntaxNode};
 

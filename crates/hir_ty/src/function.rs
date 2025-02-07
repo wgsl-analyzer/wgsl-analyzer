@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use hir_def::module_data::Name;
 
-use crate::{ty::Ty, HirDatabase};
+use crate::{HirDatabase, ty::Ty};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FunctionDetails {

@@ -7,7 +7,7 @@ use crate::{LspError, Result};
 
 use fmt::Debug;
 use lsp_server::ExtractError;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use std::{fmt, panic, thread};
 
 /// A visitor for routing a raw JSON request to an appropriate handler function.

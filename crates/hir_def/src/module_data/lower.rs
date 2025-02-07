@@ -1,5 +1,5 @@
-use crate::module_data::{Function, ModuleData, ModuleItem, ModuleItemId, Param};
 use crate::HirFileId;
+use crate::module_data::{Function, ModuleData, ModuleItem, ModuleItemId, Param};
 use crate::{ast_id::AstIdMap, db::DefDatabase, type_ref::TypeRef};
 use la_arena::{Idx, IdxRange};
 use std::sync::Arc;

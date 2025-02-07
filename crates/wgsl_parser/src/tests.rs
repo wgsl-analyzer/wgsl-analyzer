@@ -1,5 +1,5 @@
 #![cfg_attr(not(test), allow(unused))]
-use expect_test::{expect, Expect};
+use expect_test::{Expect, expect};
 
 use crate::ParseEntryPoint;
 

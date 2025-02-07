@@ -8,9 +8,9 @@ use text_edit::{Indel, TextEdit};
 use vfs::FileId;
 
 use crate::{
+	Result,
 	global_state::GlobalStateSnapshot,
 	line_index::{LineEndings, LineIndex, OffsetEncoding},
-	Result,
 };
 
 /// Returns a `Url` object from a given path, will lowercase drive letters if present.

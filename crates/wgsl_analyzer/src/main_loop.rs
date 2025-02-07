@@ -2,10 +2,10 @@ use crate::config::Config;
 use crate::dispatch::NotificationDispatcher;
 use crate::global_state::file_id_to_url;
 use crate::lsp_utils::is_cancelled;
+use crate::{Result, handlers, lsp_ext};
 use crate::{dispatch::RequestDispatcher, global_state::GlobalState};
-use crate::{handlers, lsp_ext, Result};
 use base_db::SourceDatabase as _;
-use crossbeam_channel::{select, Receiver};
+use crossbeam_channel::{Receiver, select};
 use lsp_server::Connection;
 use salsa::Durability;
 use std::sync::Arc;
@@ -245,12 +245,12 @@ impl GlobalState {
 mod text_notifications {
 	use anyhow::Context as _;
 	use lsp_types::{
-		notification::PublishDiagnostics, DidChangeTextDocumentParams, DidCloseTextDocumentParams,
-		DidOpenTextDocumentParams, DidSaveTextDocumentParams, PublishDiagnosticsParams,
+		DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
+		DidSaveTextDocumentParams, PublishDiagnosticsParams, notification::PublishDiagnostics,
 	};
 	use tracing::error;
 
-	use crate::{from_proto, global_state::GlobalState, lsp_utils::apply_document_changes, Result};
+	use crate::{Result, from_proto, global_state::GlobalState, lsp_utils::apply_document_changes};
 
 	pub fn did_open_text_document(
 		state: &mut GlobalState,

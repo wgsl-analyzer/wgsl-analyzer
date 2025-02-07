@@ -7,7 +7,9 @@ use base_db::FileId;
 use definition::Definition;
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
 use either::Either;
+use hir_def::{HasSource as _, HirFileId};
 use hir_def::{
+	InFile,
 	body::{BindingId, Body, BodySourceMap},
 	data::FieldId,
 	db::{
@@ -18,12 +20,10 @@ use hir_def::{
 	hir_file_id::ImportFile,
 	module_data::{self, ImportValue, ModuleInfo, ModuleItem, Name},
 	resolver::{ResolveValue, Resolver},
-	InFile,
 };
-use hir_def::{HasSource as _, HirFileId};
 use hir_ty::{infer::InferenceResult, ty::Ty};
 use smallvec::SmallVec;
-use syntax::{ast, match_ast, ptr::AstPtr, AstNode, HasName, SyntaxNode};
+use syntax::{AstNode, HasName, SyntaxNode, ast, match_ast, ptr::AstPtr};
 
 pub use hir_ty::HirDatabase;
 

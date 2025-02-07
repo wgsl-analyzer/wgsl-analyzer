@@ -5,8 +5,8 @@
 
 use base_db::{FileRange, TextRange};
 use hir::diagnostics::DiagnosticsConfig;
-use ide::diagnostics::Severity;
 use ide::HoverResult;
+use ide::diagnostics::Severity;
 use lsp_types::{
 	DiagnosticRelatedInformation, DiagnosticTag, GotoDefinitionResponse, LanguageString,
 	MarkedString, TextDocumentIdentifier,
@@ -14,7 +14,7 @@ use lsp_types::{
 use vfs::FileId;
 
 use crate::global_state::GlobalStateSnapshot;
-use crate::{from_proto, lsp_ext, to_proto, Result};
+use crate::{Result, from_proto, lsp_ext, to_proto};
 
 pub fn handle_goto_definition(
 	snap: GlobalStateSnapshot,

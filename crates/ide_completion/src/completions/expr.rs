@@ -1,5 +1,5 @@
 use hir_def::{
-	module_data::{pretty::pretty_module_item, ModuleItem, Name},
+	module_data::{ModuleItem, Name, pretty::pretty_module_item},
 	resolver::ScopeDef,
 };
 use hir_ty::{builtins::Builtin, ty::pretty::pretty_type};

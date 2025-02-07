@@ -1,8 +1,8 @@
-use super::lexer::Token;
-use super::parsing::ParseError;
 use super::Parse;
 use super::TokenKind;
-use super::{event::Event, ParserDefinition};
+use super::lexer::Token;
+use super::parsing::ParseError;
+use super::{ParserDefinition, event::Event};
 use rowan::{GreenNodeBuilder, Language};
 use std::{marker::PhantomData, mem};
 

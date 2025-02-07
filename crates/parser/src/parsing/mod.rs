@@ -3,10 +3,10 @@ mod parse_error;
 
 pub use parse_error::ParseError;
 
+use super::ParserDefinition;
 use super::event::Event;
 use super::lexer::Token;
 use super::source::Source;
-use super::ParserDefinition;
 use marker::Marker;
 use std::marker::PhantomData;
 

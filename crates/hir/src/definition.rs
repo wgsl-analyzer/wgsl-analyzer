@@ -1,9 +1,9 @@
 use hir_def::{
+	HirFileId,
 	module_data::Name,
 	resolver::{ResolveCallable, ResolveType},
-	HirFileId,
 };
-use syntax::{ast, match_ast, AstNode, SyntaxNode, SyntaxToken};
+use syntax::{AstNode, SyntaxNode, SyntaxToken, ast, match_ast};
 
 use crate::{Field, Function, Local, ModuleDef, Semantics, Struct, TypeAlias};
 

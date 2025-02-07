@@ -2,16 +2,16 @@ use std::sync::{Arc, RwLock};
 use std::time::Instant;
 
 use base_db::change::Change;
-use crossbeam_channel::{unbounded, Receiver, Sender};
+use crossbeam_channel::{Receiver, Sender, unbounded};
 use ide::{Analysis, AnalysisHost, Cancellable};
 use lsp_types::Url;
 use rustc_hash::FxHashMap;
 use vfs::{FileId, Vfs};
 
+use crate::Result;
 use crate::config::Config;
 use crate::diagnostics::DiagnosticCollection;
 use crate::line_index::{LineEndings, LineIndex};
-use crate::Result;
 use crate::{from_proto, to_proto};
 use crate::{main_loop::Task, task_pool::TaskPool};
 

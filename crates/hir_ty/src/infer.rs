@@ -13,6 +13,7 @@ use rustc_hash::FxHashMap;
 use std::{collections::hash_map::Entry, sync::Arc};
 
 use crate::{
+	HirDatabase,
 	builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
 	function::{FunctionDetails, ResolvedFunctionId},
 	ty::{
@@ -20,7 +21,6 @@ use crate::{
 		TexelFormat, TextureDimensionality, TextureKind, TextureType, Ty, TyKind, VecSize,
 		VectorType,
 	},
-	HirDatabase,
 };
 
 pub fn infer_query(
@@ -1829,7 +1829,7 @@ impl<'db> TyLoweringContext<'db> {
 					return Ok(self.lower_ty(type_ref));
 				},
 				Some(ResolveType::PredeclaredTypeAlias(type_ref)) => {
-					return Ok(self.lower_ty(&type_ref))
+					return Ok(self.lower_ty(&type_ref));
 				},
 				None => return Err(TypeLoweringError::UnresolvedName(name.clone())),
 			},

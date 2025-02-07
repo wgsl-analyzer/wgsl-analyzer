@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use crate::{
+	HirFileId, InFile,
 	body::{
-		scope::{ExprScopes, ScopeId},
 		BindingId,
+		scope::{ExprScopes, ScopeId},
 	},
 	db::{DefDatabase, FunctionId, Location},
 	hir_file_id::ImportFile,
@@ -12,7 +13,6 @@ use crate::{
 		TypeAlias,
 	},
 	type_ref::{TypeRef, VecDimensionality, VecType},
-	HirFileId, InFile,
 };
 
 #[derive(Clone)]
