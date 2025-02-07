@@ -8,11 +8,20 @@ mod sink;
 mod source;
 
 pub use parsing::marker;
-pub use parsing::{ParseError, Parser};
+pub use parsing::{
+	ParseError,
+	Parser,
+};
 
-use std::{fmt::Debug, marker::PhantomData};
+use std::{
+	fmt::Debug,
+	marker::PhantomData,
+};
 
-use rowan::{GreenNode, SyntaxNode};
+use rowan::{
+	GreenNode,
+	SyntaxNode,
+};
 use sink::Sink;
 use source::Source;
 

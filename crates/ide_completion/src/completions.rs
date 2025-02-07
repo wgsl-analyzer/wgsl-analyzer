@@ -1,4 +1,7 @@
-use crate::item::{Builder, CompletionItem};
+use crate::item::{
+	Builder,
+	CompletionItem,
+};
 
 pub(crate) mod dot;
 pub(crate) mod expr;

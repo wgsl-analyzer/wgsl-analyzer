@@ -1,6 +1,12 @@
 use crate::{
-	context::{CompletionContext, ImmediateLocation},
-	item::{CompletionItem, CompletionItemKind},
+	context::{
+		CompletionContext,
+		ImmediateLocation,
+	},
+	item::{
+		CompletionItem,
+		CompletionItemKind,
+	},
 };
 
 use super::Completions;

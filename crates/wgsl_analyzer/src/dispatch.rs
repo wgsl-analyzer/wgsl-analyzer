@@ -1,14 +1,27 @@
 //! See [`RequestDispatcher`].
 
-use crate::global_state::{GlobalState, GlobalStateSnapshot};
+use crate::global_state::{
+	GlobalState,
+	GlobalStateSnapshot,
+};
 use crate::lsp_utils::is_cancelled;
 use crate::main_loop::Task;
-use crate::{LspError, Result};
+use crate::{
+	LspError,
+	Result,
+};
 
 use fmt::Debug;
 use lsp_server::ExtractError;
-use serde::{Serialize, de::DeserializeOwned};
-use std::{fmt, panic, thread};
+use serde::{
+	Serialize,
+	de::DeserializeOwned,
+};
+use std::{
+	fmt,
+	panic,
+	thread,
+};
 
 /// A visitor for routing a raw JSON request to an appropriate handler function.
 ///

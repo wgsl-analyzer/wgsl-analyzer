@@ -1,12 +1,26 @@
 use hir_def::{
-	module_data::{ModuleItem, Name, pretty::pretty_module_item},
+	module_data::{
+		ModuleItem,
+		Name,
+		pretty::pretty_module_item,
+	},
 	resolver::ScopeDef,
 };
-use hir_ty::{builtins::Builtin, ty::pretty::pretty_type};
+use hir_ty::{
+	builtins::Builtin,
+	ty::pretty::pretty_type,
+};
 
 use crate::{
-	context::{CompletionContext, ImmediateLocation},
-	item::{CompletionItem, CompletionItemKind, CompletionRelevance},
+	context::{
+		CompletionContext,
+		ImmediateLocation,
+	},
+	item::{
+		CompletionItem,
+		CompletionItemKind,
+		CompletionRelevance,
+	},
 };
 
 use super::Completions;

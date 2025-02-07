@@ -1,7 +1,10 @@
 //! Book keeping for keeping diagnostics easily in sync with the client.
 
 use std::{
-	collections::{HashMap, HashSet},
+	collections::{
+		HashMap,
+		HashSet,
+	},
 	mem,
 };
 

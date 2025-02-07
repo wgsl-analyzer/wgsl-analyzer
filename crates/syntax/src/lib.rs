@@ -2,12 +2,21 @@ pub mod algo;
 pub mod ast;
 pub mod ptr;
 
-use std::{marker::PhantomData, ops::Deref, sync::Arc};
+use std::{
+	marker::PhantomData,
+	ops::Deref,
+	sync::Arc,
+};
 
 use either::Either;
 pub use rowan::Direction;
 pub use wgsl_parser::{
-	ParseEntryPoint, ParseError, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodeChildren,
+	ParseEntryPoint,
+	ParseError,
+	SyntaxElement,
+	SyntaxKind,
+	SyntaxNode,
+	SyntaxNodeChildren,
 	SyntaxToken,
 };
 
@@ -148,7 +157,14 @@ mod support {
 
 	use crate::AstToken;
 
-	use super::{AstChildren, AstNode, SyntaxKind, SyntaxNode, SyntaxToken, TokenText};
+	use super::{
+		AstChildren,
+		AstNode,
+		SyntaxKind,
+		SyntaxNode,
+		SyntaxToken,
+		TokenText,
+	};
 
 	pub(crate) fn child<N: AstNode>(parent: &SyntaxNode) -> Option<N> {
 		parent.children().find_map(N::cast)

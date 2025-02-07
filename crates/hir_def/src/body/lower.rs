@@ -1,13 +1,37 @@
-use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
+use super::{
+	Binding,
+	BindingId,
+	Body,
+	BodySourceMap,
+	SyntheticSyntax,
+};
 use crate::{
-	HirFileId, InFile,
+	HirFileId,
+	InFile,
 	db::DefDatabase,
-	expr::{Callee, Expr, ExprId, Statement, StatementId, parse_literal},
+	expr::{
+		Callee,
+		Expr,
+		ExprId,
+		Statement,
+		StatementId,
+		parse_literal,
+	},
 	module_data::Name,
-	type_ref::{TypeRef, matrix_dimensions, vector_dimensions},
+	type_ref::{
+		TypeRef,
+		matrix_dimensions,
+		vector_dimensions,
+	},
 };
 use either::Either;
-use syntax::{AstNode, HasGenerics, HasName, ast, ptr::AstPtr};
+use syntax::{
+	AstNode,
+	HasGenerics,
+	HasName,
+	ast,
+	ptr::AstPtr,
+};
 
 pub fn lower_function_body(
 	db: &dyn DefDatabase,

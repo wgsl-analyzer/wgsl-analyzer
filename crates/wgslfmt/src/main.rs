@@ -1,6 +1,9 @@
 use anyhow::Context;
 use lexopt::prelude::*;
-use std::{io::Read, path::PathBuf};
+use std::{
+	io::Read,
+	path::PathBuf,
+};
 
 use wgsl_formatter::FormattingOptions;
 

@@ -2,7 +2,10 @@ use hir_def::module_data::Name;
 
 use crate::{
 	HirDatabase,
-	function::{FunctionDetails, ResolvedFunctionId},
+	function::{
+		FunctionDetails,
+		ResolvedFunctionId,
+	},
 	ty::*,
 };
 

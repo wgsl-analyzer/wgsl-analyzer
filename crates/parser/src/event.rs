@@ -1,4 +1,7 @@
-use crate::{ParserDefinition, parsing::ParseError};
+use crate::{
+	ParserDefinition,
+	parsing::ParseError,
+};
 
 pub(crate) enum Event<P: ParserDefinition> {
 	StartNode {

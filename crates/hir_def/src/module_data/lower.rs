@@ -1,13 +1,41 @@
 use crate::HirFileId;
-use crate::module_data::{Function, ModuleData, ModuleItem, ModuleItemId, Param};
-use crate::{ast_id::AstIdMap, db::DefDatabase, type_ref::TypeRef};
-use la_arena::{Idx, IdxRange};
+use crate::module_data::{
+	Function,
+	ModuleData,
+	ModuleItem,
+	ModuleItemId,
+	Param,
+};
+use crate::{
+	ast_id::AstIdMap,
+	db::DefDatabase,
+	type_ref::TypeRef,
+};
+use la_arena::{
+	Idx,
+	IdxRange,
+};
 use std::sync::Arc;
-use syntax::ast::{self, Item, SourceFile};
-use syntax::{AstNode, HasName};
+use syntax::ast::{
+	self,
+	Item,
+	SourceFile,
+};
+use syntax::{
+	AstNode,
+	HasName,
+};
 
 use super::{
-	Field, GlobalConstant, GlobalVariable, Import, ImportValue, Name, Override, Struct, TypeAlias,
+	Field,
+	GlobalConstant,
+	GlobalVariable,
+	Import,
+	ImportValue,
+	Name,
+	Override,
+	Struct,
+	TypeAlias,
 };
 
 pub(crate) struct Ctx<'a> {

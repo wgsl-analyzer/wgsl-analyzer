@@ -1,5 +1,8 @@
 use logos::Logos;
-use rowan::{TextRange, TextSize};
+use rowan::{
+	TextRange,
+	TextSize,
+};
 
 #[derive(Debug, PartialEq)]
 pub struct Token<'a, TokenKind> {

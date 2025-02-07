@@ -13,7 +13,10 @@ use crate::ast::operators::CmpOp;
 use crate::ast::operators::LogicOp;
 use crate::support;
 use rowan::NodeOrToken;
-use wgsl_parser::{SyntaxKind, SyntaxNode};
+use wgsl_parser::{
+	SyntaxKind,
+	SyntaxNode,
+};
 
 use self::operators::BinaryOp;
 use self::operators::CompoundOp;

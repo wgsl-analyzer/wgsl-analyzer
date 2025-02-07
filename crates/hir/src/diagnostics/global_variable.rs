@@ -1,7 +1,13 @@
-use hir_def::db::{DefWithBodyId, GlobalVariableId};
+use hir_def::db::{
+	DefWithBodyId,
+	GlobalVariableId,
+};
 use hir_ty::{
 	HirDatabase,
-	ty::{ArrayType, TyKind},
+	ty::{
+		ArrayType,
+		TyKind,
+	},
 	validate::StorageClassError,
 };
 

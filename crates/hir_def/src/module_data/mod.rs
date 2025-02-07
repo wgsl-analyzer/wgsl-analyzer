@@ -2,12 +2,29 @@ mod lower;
 pub mod pretty;
 
 use crate::ast_id::FileAstId;
-use crate::db::{DefDatabase, Interned};
-use crate::{HirFileId, type_ref::*};
-use la_arena::{Arena, Idx, IdxRange};
+use crate::db::{
+	DefDatabase,
+	Interned,
+};
+use crate::{
+	HirFileId,
+	type_ref::*,
+};
+use la_arena::{
+	Arena,
+	Idx,
+	IdxRange,
+};
 use smol_str::SmolStr;
-use std::{marker::PhantomData, sync::Arc};
-use syntax::{AstNode, TokenText, ast};
+use std::{
+	marker::PhantomData,
+	sync::Arc,
+};
+use syntax::{
+	AstNode,
+	TokenText,
+	ast,
+};
 
 const MISSING_NAME_PLACEHOLDER: &str = "[missing name]";
 

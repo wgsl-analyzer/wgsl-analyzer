@@ -5,25 +5,66 @@ use std::sync::Arc;
 
 use base_db::FileId;
 use definition::Definition;
-use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
+use diagnostics::{
+	AnyDiagnostic,
+	DiagnosticsConfig,
+};
 use either::Either;
-use hir_def::{HasSource as _, HirFileId};
+use hir_def::{
+	HasSource as _,
+	HirFileId,
+};
 use hir_def::{
 	InFile,
-	body::{BindingId, Body, BodySourceMap},
+	body::{
+		BindingId,
+		Body,
+		BodySourceMap,
+	},
 	data::FieldId,
 	db::{
-		DefDatabase, DefWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, ImportId,
-		Location, Lookup, OverrideId, StructId, TypeAliasId,
+		DefDatabase,
+		DefWithBodyId,
+		FunctionId,
+		GlobalConstantId,
+		GlobalVariableId,
+		ImportId,
+		Location,
+		Lookup,
+		OverrideId,
+		StructId,
+		TypeAliasId,
 	},
-	expr::{ExprId, StatementId},
+	expr::{
+		ExprId,
+		StatementId,
+	},
 	hir_file_id::ImportFile,
-	module_data::{self, ImportValue, ModuleInfo, ModuleItem, Name},
-	resolver::{ResolveValue, Resolver},
+	module_data::{
+		self,
+		ImportValue,
+		ModuleInfo,
+		ModuleItem,
+		Name,
+	},
+	resolver::{
+		ResolveValue,
+		Resolver,
+	},
 };
-use hir_ty::{infer::InferenceResult, ty::Ty};
+use hir_ty::{
+	infer::InferenceResult,
+	ty::Ty,
+};
 use smallvec::SmallVec;
-use syntax::{AstNode, HasName, SyntaxNode, ast, match_ast, ptr::AstPtr};
+use syntax::{
+	AstNode,
+	HasName,
+	SyntaxNode,
+	ast,
+	match_ast,
+	ptr::AstPtr,
+};
 
 pub use hir_ty::HirDatabase;
 

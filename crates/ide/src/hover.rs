@@ -1,7 +1,16 @@
-use base_db::{FileRange, RangeInfo};
-use hir::{HirDatabase, Semantics};
+use base_db::{
+	FileRange,
+	RangeInfo,
+};
+use hir::{
+	HirDatabase,
+	Semantics,
+};
 use hir_def::InFile;
-use syntax::{AstNode, ast};
+use syntax::{
+	AstNode,
+	ast,
+};
 
 pub enum HoverResult {
 	SourceCode(String),

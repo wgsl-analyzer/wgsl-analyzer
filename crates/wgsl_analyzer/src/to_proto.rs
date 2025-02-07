@@ -1,16 +1,34 @@
-use base_db::{FileRange, TextRange, TextSize};
-use ide::inlay_hints::{InlayHint, InlayKind};
-use ide_completion::item::{CompletionItem, CompletionItemKind, CompletionRelevance};
+use base_db::{
+	FileRange,
+	TextRange,
+	TextSize,
+};
+use ide::inlay_hints::{
+	InlayHint,
+	InlayKind,
+};
+use ide_completion::item::{
+	CompletionItem,
+	CompletionItemKind,
+	CompletionRelevance,
+};
 use itertools::Itertools as _;
 use paths::AbsPath;
 use std::path;
-use text_edit::{Indel, TextEdit};
+use text_edit::{
+	Indel,
+	TextEdit,
+};
 use vfs::FileId;
 
 use crate::{
 	Result,
 	global_state::GlobalStateSnapshot,
-	line_index::{LineEndings, LineIndex, OffsetEncoding},
+	line_index::{
+		LineEndings,
+		LineIndex,
+		OffsetEncoding,
+	},
 };
 
 /// Returns a `Url` object from a given path, will lowercase drive letters if present.

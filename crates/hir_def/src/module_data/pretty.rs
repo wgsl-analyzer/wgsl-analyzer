@@ -2,7 +2,10 @@ use std::fmt::Write;
 
 use crate::{
 	db::DefDatabase,
-	module_data::{ModuleInfo, ModuleItem},
+	module_data::{
+		ModuleInfo,
+		ModuleItem,
+	},
 };
 
 use super::ImportValue;

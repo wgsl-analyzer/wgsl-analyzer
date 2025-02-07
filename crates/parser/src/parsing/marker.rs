@@ -1,6 +1,9 @@
 use std::marker::PhantomData;
 
-use crate::{ParserDefinition, event::Event};
+use crate::{
+	ParserDefinition,
+	event::Event,
+};
 
 use super::Parser;
 use drop_bomb::DropBomb;

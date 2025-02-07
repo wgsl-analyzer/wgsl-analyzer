@@ -1,6 +1,12 @@
-use syntax::{HasGenerics, ast};
+use syntax::{
+	HasGenerics,
+	ast,
+};
 
-use crate::{expr::parse_literal, module_data::Name};
+use crate::{
+	expr::parse_literal,
+	module_data::Name,
+};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum TypeRef {

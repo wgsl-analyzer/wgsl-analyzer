@@ -1,4 +1,7 @@
-use std::{collections::HashSet, ops::Range};
+use std::{
+	collections::HashSet,
+	ops::Range,
+};
 
 use regex::Regex;
 use std::sync::OnceLock;

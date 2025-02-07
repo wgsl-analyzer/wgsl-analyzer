@@ -1,5 +1,8 @@
 use rowan::TokenAtOffset;
-use syntax::{SyntaxKind, SyntaxToken};
+use syntax::{
+	SyntaxKind,
+	SyntaxToken,
+};
 
 pub fn pick_best_token(
 	tokens: TokenAtOffset<SyntaxToken>,

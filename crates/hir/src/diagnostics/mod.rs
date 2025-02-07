@@ -1,23 +1,50 @@
 pub mod global_variable;
 pub mod precedence;
 
-use base_db::{FileRange, TextRange};
-use hir_def::{HirFileId, InFile, body::BodySourceMap, expr::BinaryOp, module_data::Name};
+use base_db::{
+	FileRange,
+	TextRange,
+};
+use hir_def::{
+	HirFileId,
+	InFile,
+	body::BodySourceMap,
+	expr::BinaryOp,
+	module_data::Name,
+};
 use hir_ty::{
 	HirDatabase,
 	builtins::BuiltinId,
-	infer::{InferenceDiagnostic, TypeExpectation, TypeLoweringError},
+	infer::{
+		InferenceDiagnostic,
+		TypeExpectation,
+		TypeLoweringError,
+	},
 	ty::Ty,
 	validate::StorageClassError,
 };
 use syntax::{
-	AstNode, ast,
-	ptr::{AstPtr, SyntaxNodePtr},
+	AstNode,
+	ast,
+	ptr::{
+		AstPtr,
+		SyntaxNodePtr,
+	},
 };
 
-use crate::{Function, GlobalConstant, GlobalVariable, HasSource, Override, TypeAlias};
+use crate::{
+	Function,
+	GlobalConstant,
+	GlobalVariable,
+	HasSource,
+	Override,
+	TypeAlias,
+};
 
-use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
+use self::{
+	global_variable::GlobalVariableDiagnostic,
+	precedence::PrecedenceDiagnostic,
+};
 
 pub struct DiagnosticsConfig {
 	pub type_errors: bool,

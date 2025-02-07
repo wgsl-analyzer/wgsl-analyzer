@@ -2,9 +2,18 @@ use super::Parse;
 use super::TokenKind;
 use super::lexer::Token;
 use super::parsing::ParseError;
-use super::{ParserDefinition, event::Event};
-use rowan::{GreenNodeBuilder, Language};
-use std::{marker::PhantomData, mem};
+use super::{
+	ParserDefinition,
+	event::Event,
+};
+use rowan::{
+	GreenNodeBuilder,
+	Language,
+};
+use std::{
+	marker::PhantomData,
+	mem,
+};
 
 pub(crate) struct Sink<'t, 'input, P: ParserDefinition> {
 	builder: GreenNodeBuilder<'static>,

@@ -10,15 +10,28 @@ pub mod resolver;
 pub mod type_ref;
 
 pub use ast_id::*;
-use base_db::{FileRange, TextRange};
+use base_db::{
+	FileRange,
+	TextRange,
+};
 use db::DefDatabase;
 pub use hir_file_id::HirFileId;
 use hir_file_id::HirFileIdRepr;
-use module_data::{ModuleDataNode, ModuleItemId};
+use module_data::{
+	ModuleDataNode,
+	ModuleItemId,
+};
 use rowan::NodeOrToken;
-use syntax::{AstNode, SyntaxNode, SyntaxToken};
+use syntax::{
+	AstNode,
+	SyntaxNode,
+	SyntaxToken,
+};
 
-use crate::{db::ImportId, module_data::Import};
+use crate::{
+	db::ImportId,
+	module_data::Import,
+};
 
 /// `InFile<T>` stores a value of `T` inside a particular file/syntax tree.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]

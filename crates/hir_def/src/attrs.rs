@@ -2,15 +2,29 @@ use std::sync::Arc;
 
 use either::Either;
 use syntax::{
-	HasAttrs, HasName,
-	ast::{self, IdentOrLiteral},
+	HasAttrs,
+	HasName,
+	ast::{
+		self,
+		IdentOrLiteral,
+	},
 };
 
 use crate::{
 	HasSource,
 	data::FieldId,
-	db::{DefDatabase, FunctionId, GlobalVariableId, Interned, Lookup, StructId},
-	expr::{Literal, parse_literal},
+	db::{
+		DefDatabase,
+		FunctionId,
+		GlobalVariableId,
+		Interned,
+		Lookup,
+		StructId,
+	},
+	expr::{
+		Literal,
+		parse_literal,
+	},
 	module_data::Name,
 };
 

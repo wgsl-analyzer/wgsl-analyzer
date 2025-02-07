@@ -2,8 +2,15 @@ use hir_ty::ty::TyKind;
 use itertools::Itertools;
 
 use crate::{
-	context::{CompletionContext, ImmediateLocation},
-	item::{CompletionItem, CompletionItemKind, CompletionRelevance},
+	context::{
+		CompletionContext,
+		ImmediateLocation,
+	},
+	item::{
+		CompletionItem,
+		CompletionItemKind,
+		CompletionRelevance,
+	},
 };
 
 use super::Completions;

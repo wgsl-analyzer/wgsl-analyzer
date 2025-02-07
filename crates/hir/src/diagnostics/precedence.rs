@@ -1,6 +1,10 @@
 use hir_def::{
 	db::DefWithBodyId,
-	expr::{ArithOp, BinaryOp, ExprId},
+	expr::{
+		ArithOp,
+		BinaryOp,
+		ExprId,
+	},
 };
 use hir_ty::HirDatabase;
 

@@ -1,4 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{
+	HashMap,
+	HashSet,
+};
 
 use hir::diagnostics;
 use hir_ty::ty::pretty::TypeVerbosity;

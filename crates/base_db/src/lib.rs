@@ -7,12 +7,18 @@ mod util_types;
 pub use util_types::*;
 
 use std::{
-	collections::{HashMap, HashSet},
+	collections::{
+		HashMap,
+		HashSet,
+	},
 	sync::Arc,
 };
 
 use line_index::LineIndex;
-use syntax::{Parse, ParseEntryPoint};
+use syntax::{
+	Parse,
+	ParseEntryPoint,
+};
 pub use vfs::FileId;
 
 pub trait Upcast<T: ?Sized> {

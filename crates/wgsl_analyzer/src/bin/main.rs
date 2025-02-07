@@ -7,7 +7,10 @@ use tracing::info;
 use tracing_subscriber::fmt::Subscriber;
 use wgsl_analyzer::{
 	Result,
-	config::{Config, TraceConfig},
+	config::{
+		Config,
+		TraceConfig,
+	},
 	from_json,
 	main_loop::main_loop,
 };

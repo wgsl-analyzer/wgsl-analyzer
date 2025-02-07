@@ -10,18 +10,36 @@ mod hover;
 pub mod inlay_hints;
 mod syntax_tree;
 
-use base_db::{FilePosition, FileRange, RangeInfo, TextRange, line_index::LineIndex};
-use base_db::{SourceDatabase, change::Change};
+use base_db::{
+	FilePosition,
+	FileRange,
+	RangeInfo,
+	TextRange,
+	line_index::LineIndex,
+};
+use base_db::{
+	SourceDatabase,
+	change::Change,
+};
 use diagnostics::DiagnosticMessage;
 use goto_definition::NavigationTarget;
 use hir::diagnostics::DiagnosticsConfig;
 use hir_def::db::DefDatabase;
 pub use hover::HoverResult;
 use ide_completion::item::CompletionItem;
-use inlay_hints::{InlayHint, InlayHintsConfig};
-use salsa::{Cancelled, ParallelDatabase};
+use inlay_hints::{
+	InlayHint,
+	InlayHintsConfig,
+};
+use salsa::{
+	Cancelled,
+	ParallelDatabase,
+};
 use std::sync::Arc;
-use syntax::{Parse, SyntaxNode};
+use syntax::{
+	Parse,
+	SyntaxNode,
+};
 use vfs::FileId;
 
 pub type Cancellable<T> = Result<T, Cancelled>;

@@ -1,14 +1,28 @@
 use std::sync::Arc;
 
-use la_arena::{Arena, Idx};
+use la_arena::{
+	Arena,
+	Idx,
+};
 
 use crate::{
 	db::{
-		DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Interned, Lookup, OverrideId,
-		StructId, TypeAliasId,
+		DefDatabase,
+		FunctionId,
+		GlobalConstantId,
+		GlobalVariableId,
+		Interned,
+		Lookup,
+		OverrideId,
+		StructId,
+		TypeAliasId,
 	},
 	module_data::Name,
-	type_ref::{AccessMode, StorageClass, TypeRef},
+	type_ref::{
+		AccessMode,
+		StorageClass,
+		TypeRef,
+	},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
