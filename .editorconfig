@@ -1,10 +1,12 @@
 root = true
 
-end_of_line = lf
 charset = utf-8
+end_of_line = lf
 indent_size = tab
-tab_width = 4
+indent_style = space
 insert_final_newline = true
+spelling_language = en-us
+tab_width = 4
 trim_trailing_whitespace = true
 
 [*.toml]
