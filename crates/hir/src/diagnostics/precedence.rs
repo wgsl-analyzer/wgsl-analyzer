@@ -10,13 +10,16 @@ pub enum PrecedenceDiagnostic {
     SequencesAllowed(ExprId, BinaryOp),
 }
 
-pub fn collect(db: &dyn HirDatabase, body: DefWithBodyId, mut f: impl FnMut(PrecedenceDiagnostic)) {
+pub fn collect(
+    db: &dyn HirDatabase,
+    body: DefWithBodyId,
+    mut f: impl FnMut(PrecedenceDiagnostic),
+) {
     let (body, _) = db.body_with_source_map(body);
 
     for (_, expr) in body.exprs.iter() {
         // See https://github.com/gpuweb/gpuweb/issues/1146#issuecomment-714721825
-        let hir_def::expr::Expr::BinaryOp { op, lhs, rhs } = expr
-        else {
+        let hir_def::expr::Expr::BinaryOp { op, lhs, rhs } = expr else {
             continue;
         };
 

@@ -3,9 +3,8 @@ mod expr;
 
 pub use expr::expr;
 
-use crate::SyntaxKind;
-
 use self::expr::TOKENSET_LITERAL;
+use crate::SyntaxKind;
 
 pub type Parser<'t, 'input> = parser::Parser<'t, 'input, crate::ParserDefinition>;
 pub type CompletedMarker = parser::marker::CompletedMarker<crate::ParserDefinition>;
@@ -61,7 +60,10 @@ fn item(p: &mut Parser) {
     }
 }
 
-fn import(p: &mut Parser, m: Marker) {
+fn import(
+    p: &mut Parser,
+    m: Marker,
+) {
     p.expect(SyntaxKind::UnofficialPreprocessorImport);
 
     if p.at(SyntaxKind::StringLiteral) {
@@ -79,17 +81,34 @@ fn import(p: &mut Parser, m: Marker) {
     m.complete(p, SyntaxKind::Import);
 }
 
-fn override_decl(p: &mut Parser, m: Marker) {
+fn override_decl(
+    p: &mut Parser,
+    m: Marker,
+) {
     global_decl(p, m, SyntaxKind::Override, SyntaxKind::OverrideDecl);
 }
 
-fn global_variable_decl(p: &mut Parser, m: Marker) {
+fn global_variable_decl(
+    p: &mut Parser,
+    m: Marker,
+) {
     global_decl(p, m, SyntaxKind::Var, SyntaxKind::GlobalVariableDecl);
 }
-fn global_constant_decl(p: &mut Parser, m: Marker, kind: SyntaxKind) {
+
+fn global_constant_decl(
+    p: &mut Parser,
+    m: Marker,
+    kind: SyntaxKind,
+) {
     global_decl(p, m, kind, SyntaxKind::GlobalConstantDecl);
 }
-fn global_decl(p: &mut Parser, m: Marker, var_kind: SyntaxKind, kind: SyntaxKind) {
+
+fn global_decl(
+    p: &mut Parser,
+    m: Marker,
+    var_kind: SyntaxKind,
+    kind: SyntaxKind,
+) {
     p.expect(var_kind);
     if p.at(SyntaxKind::LessThan) {
         variable_qualifier(p);
@@ -125,7 +144,10 @@ fn global_decl(p: &mut Parser, m: Marker, var_kind: SyntaxKind, kind: SyntaxKind
     m.complete(p, kind);
 }
 
-fn type_alias_decl(p: &mut Parser, m: Marker) {
+fn type_alias_decl(
+    p: &mut Parser,
+    m: Marker,
+) {
     if p.at(SyntaxKind::Alias) || p.at(SyntaxKind::Type) {
         p.bump();
     } else {
@@ -143,7 +165,10 @@ fn type_alias_decl(p: &mut Parser, m: Marker) {
     m.complete(p, SyntaxKind::TypeAliasDecl);
 }
 
-fn struct_(p: &mut Parser, m: Marker) {
+fn struct_(
+    p: &mut Parser,
+    m: Marker,
+) {
     p.expect(SyntaxKind::Struct);
 
     name_recover(p, ITEM_RECOVERY_SET);
@@ -182,7 +207,10 @@ fn struct_member(p: &mut Parser) {
     m.complete(p, SyntaxKind::StructDeclField);
 }
 
-fn function(p: &mut Parser, m: Marker) {
+fn function(
+    p: &mut Parser,
+    m: Marker,
+) {
     p.expect(SyntaxKind::Fn);
 
     if p.at(SyntaxKind::Ident) {
@@ -227,7 +255,11 @@ fn name(p: &mut Parser) {
     p.expect(SyntaxKind::Ident);
     m.complete(p, SyntaxKind::Name);
 }
-fn name_recover(p: &mut Parser, recovery_set: &[SyntaxKind]) {
+
+fn name_recover(
+    p: &mut Parser,
+    recovery_set: &[SyntaxKind],
+) {
     if p.at_set(recovery_set) {
         return;
     }
@@ -417,6 +449,7 @@ pub fn type_decl(p: &mut Parser) -> Option<CompletedMarker> {
         None
     }
 }
+
 pub(crate) fn type_decl_generics(p: &mut Parser) {
     list(
         p,
@@ -596,7 +629,9 @@ fn for_statement(p: &mut Parser) {
 
     m.complete(p, SyntaxKind::ForStatement);
 }
+
 const COMMA_SEMICOLON_SET: &[SyntaxKind] = &[SyntaxKind::Comma, SyntaxKind::Semicolon];
+
 fn for_header(p: &mut Parser) {
     if p.at(SyntaxKind::Semicolon) {
         p.bump();
@@ -806,15 +841,15 @@ fn variable_statement(p: &mut Parser) {
             expr(p);
 
             m.complete(p, SyntaxKind::VariableStatement);
-        }
+        },
         Some(SyntaxKind::Semicolon) => {
             m.complete(p, SyntaxKind::VariableStatement);
             return;
-        }
+        },
         _ => {
             p.error();
             m.complete(p, SyntaxKind::VariableStatement);
-        }
+        },
     }
 }
 
@@ -841,14 +876,27 @@ const STORAGE_CLASS_SET: &[SyntaxKind] = &[
     SyntaxKind::PushConstant,
 ];
 
-fn if_at_set(p: &mut Parser, set: &[SyntaxKind]) -> bool {
+fn if_at_set(
+    p: &mut Parser,
+    set: &[SyntaxKind],
+) -> bool {
     if_at_set_inner(p, set, None)
 }
-fn if_at_set_or(p: &mut Parser, set: &[SyntaxKind], or: SyntaxKind) -> bool {
+
+fn if_at_set_or(
+    p: &mut Parser,
+    set: &[SyntaxKind],
+    or: SyntaxKind,
+) -> bool {
     if_at_set_inner(p, set, Some(or))
 }
-fn if_at_set_inner(p: &mut Parser, set: &[SyntaxKind], or: Option<SyntaxKind>) -> bool {
-    if p.at_set(set) || or.map_or(false, |or| p.at(or)) {
+
+fn if_at_set_inner(
+    p: &mut Parser,
+    set: &[SyntaxKind],
+    or: Option<SyntaxKind>,
+) -> bool {
+    if p.at_set(set) || or.is_some_and(|or| p.at(or)) {
         p.bump();
         true
     } else {
@@ -859,6 +907,7 @@ fn if_at_set_inner(p: &mut Parser, set: &[SyntaxKind], or: Option<SyntaxKind>) -
 fn storage_class(p: &mut Parser) {
     if_at_set_or(p, STORAGE_CLASS_SET, SyntaxKind::Ident);
 }
+
 const ACCESS_MODE_SET: &[SyntaxKind] =
     &[SyntaxKind::Read, SyntaxKind::Write, SyntaxKind::ReadWrite];
 fn access_mode(p: &mut Parser) {
@@ -870,6 +919,7 @@ pub fn attribute_list_opt(p: &mut Parser) {
         attribute_list(p);
     }
 }
+
 pub fn attribute_list(p: &mut Parser) {
     if p.at(SyntaxKind::Attr) {
         attribute_list_modern(p);

@@ -4,7 +4,7 @@ on:
   schedule:
     # New versions of rust release on Thursdays. We test on Mondays to get at least 3 days of warning before all our CI breaks again.
     # https://forge.rust-lang.org/release/process.html#release-day-thursday
-    - cron:  '0 12 * * 1'
+    - cron: "0 12 * * 1"
   workflow_dispatch:
 
 env:
@@ -60,7 +60,7 @@ jobs:
       - name: Check Compile
         run: |
           cargo test --target-dir ../../../target
-          cargo check --benches --target-dir ../target --manifest-path ./benches/Cargo.toml
+          # cargo check --benches --target-dir ../target --manifest-path ./benches/Cargo.toml
           cargo check --workspace --examples
           cargo check --workspace
           cargo check --workspace --tests

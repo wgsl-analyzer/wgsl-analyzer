@@ -68,11 +68,17 @@ pub fn goto_definition(
 }
 
 trait ToNav {
-    fn to_nav(&self, db: &dyn DefDatabase) -> Option<NavigationTarget>;
+    fn to_nav(
+        &self,
+        db: &dyn DefDatabase,
+    ) -> Option<NavigationTarget>;
 }
 
 impl ToNav for InFile<Local> {
-    fn to_nav(&self, db: &dyn DefDatabase) -> Option<NavigationTarget> {
+    fn to_nav(
+        &self,
+        db: &dyn DefDatabase,
+    ) -> Option<NavigationTarget> {
         let binding = self.value.source(db)?;
 
         let frange = binding.original_file_range(db);
@@ -82,7 +88,10 @@ impl ToNav for InFile<Local> {
 }
 
 impl ToNav for InFile<Definition> {
-    fn to_nav(&self, db: &dyn DefDatabase) -> Option<NavigationTarget> {
+    fn to_nav(
+        &self,
+        db: &dyn DefDatabase,
+    ) -> Option<NavigationTarget> {
         let nav = match &self.value {
             Definition::Local(local) => InFile::new(self.file_id, *local).to_nav(db)?,
             Definition::ModuleDef(def) => match def {
@@ -96,7 +105,7 @@ impl ToNav for InFile<Definition> {
                         .map(|name| decl.with_value(name).original_file_range(db).range);
 
                     NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-                }
+                },
                 hir::ModuleDef::GlobalVariable(var) => {
                     let decl = var.source(db)?;
 
@@ -107,7 +116,7 @@ impl ToNav for InFile<Definition> {
                         .map(|name| decl.with_value(name).original_file_range(db).range);
 
                     NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-                }
+                },
                 hir::ModuleDef::GlobalConstant(constant) => {
                     let decl = constant.source(db)?;
 
@@ -118,7 +127,7 @@ impl ToNav for InFile<Definition> {
                         .map(|name| decl.with_value(name).original_file_range(db).range);
 
                     NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-                }
+                },
                 hir::ModuleDef::Override(override_decl) => {
                     let decl = override_decl.source(db)?;
 
@@ -129,7 +138,7 @@ impl ToNav for InFile<Definition> {
                         .map(|name| decl.with_value(name).original_file_range(db).range);
 
                     NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-                }
+                },
                 hir::ModuleDef::Struct(strukt) => {
                     let decl = strukt.source(db)?;
 
@@ -140,7 +149,7 @@ impl ToNav for InFile<Definition> {
                         .map(|name| decl.with_value(name).original_file_range(db).range);
 
                     NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-                }
+                },
                 hir::ModuleDef::TypeAlias(type_alias) => {
                     let decl = type_alias.source(db)?;
 
@@ -151,7 +160,7 @@ impl ToNav for InFile<Definition> {
                         .map(|name| decl.with_value(name).original_file_range(db).range);
 
                     NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-                }
+                },
             },
             Definition::Field(field) => {
                 let decl = field.source(db)?;
@@ -163,7 +172,7 @@ impl ToNav for InFile<Definition> {
                     .map(|name| decl.with_value(name).original_file_range(db).range);
 
                 NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-            }
+            },
             Definition::Struct(strukt) => {
                 let decl = strukt.source(db)?;
                 let frange = decl.original_file_range(db);
@@ -174,7 +183,7 @@ impl ToNav for InFile<Definition> {
                     .map(|name| decl.with_value(name).original_file_range(db).range);
 
                 NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-            }
+            },
             Definition::TypeAlias(type_alias) => {
                 let decl = type_alias.source(db)?;
                 let frange = decl.original_file_range(db);
@@ -185,7 +194,7 @@ impl ToNav for InFile<Definition> {
                     .map(|name| decl.with_value(name).original_file_range(db).range);
 
                 NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-            }
+            },
         };
         Some(nav)
     }

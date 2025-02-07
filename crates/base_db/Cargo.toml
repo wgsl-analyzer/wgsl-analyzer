@@ -1,17 +1,25 @@
 [package]
-name = "base_db"
+name = "base-db"
 version = "0.0.0"
-edition = "2021"
+repository.workspace = true
+description = "Basic database traits for wgsl-analyzer. The concrete DB is defined by `ide` (aka `ra_ap_ide`)."
+
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+doctest = false
 
 [dependencies]
 salsa = "0.17.0-pre.2"
 rowan = "0.16.1"
 rustc-hash = "2.1.0"
-syntax = { path = "../syntax" }
-tracing = "0.1.41"
+syntax = { path = "../syntax", version = "0.0.0" }
 regex = { version = "1.11.1", default-features = false, features = ["std"] }
 
-vfs = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "8a23314" }
+vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"

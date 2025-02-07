@@ -1,18 +1,33 @@
 use std::panic;
 
-use crate::{format_recursive, FormattingOptions};
 use expect_test::{expect, Expect};
 
-fn check(before: &str, after: Expect) {
+use crate::{format_recursive, FormattingOptions};
+
+fn check(
+    before: &str,
+    after: Expect,
+) {
     check_with_options(before, after, &FormattingOptions::default())
 }
-fn check_tabs(before: &str, after: Expect) {
-    let mut options = FormattingOptions::default();
-    options.indent_symbol = "\t".to_string();
+
+fn check_tabs(
+    before: &str,
+    after: Expect,
+) {
+    let options = FormattingOptions {
+        indent_symbol: "\t".to_string(),
+        ..Default::default()
+    };
     check_with_options(before, after, &options)
 }
+
 #[track_caller]
-fn check_with_options(before: &str, after: Expect, options: &FormattingOptions) {
+fn check_with_options(
+    before: &str,
+    after: Expect,
+    options: &FormattingOptions,
+) {
     let syntax = syntax::parse(before.trim_start())
         .syntax()
         .clone_for_update();
@@ -97,6 +112,7 @@ fn format_fn_header_comma_oneline() {
         expect![[r#"fn main(a: b, c: d) -> f32 {}"#]],
     );
 }
+
 #[test]
 fn format_fn_header_comma_multiline() {
     check(
@@ -194,20 +210,22 @@ fn format_struct() {
 #[test]
 fn format_bevy_function() {
     check(
-            "fn directional_light(light: DirectionalLight, roughness: f32, NdotV: f32, normal: vec3<f32>, view: vec3<f32>, R: vec3<f32>, F0: vec3<f32>, diffuseColor: vec3<f32>) -> vec3<f32> {}",
-            expect![["fn directional_light(light: DirectionalLight, roughness: f32, NdotV: f32, normal: vec3<f32>, view: vec3<f32>, R: vec3<f32>, F0: vec3<f32>, diffuseColor: vec3<f32>) -> vec3<f32> {}"]],
-        )
+		"fn directional_light(light: DirectionalLight, roughness: f32, NdotV: f32, normal: vec3<f32>, view: vec3<f32>, R: vec3<f32>, F0: vec3<f32>, diffuseColor: vec3<f32>) -> vec3<f32> {}",
+		expect![[
+			"fn directional_light(light: DirectionalLight, roughness: f32, NdotV: f32, normal: vec3<f32>, view: vec3<f32>, R: vec3<f32>, F0: vec3<f32>, diffuseColor: vec3<f32>) -> vec3<f32> {}"
+		]],
+	)
 }
 
 #[test]
 fn format_bevy_function_2() {
     check(
-            "fn specular(f0: vec3<f32>, roughness: f32, h: vec3<f32>, NoV: f32, NoL: f32,
+        "fn specular(f0: vec3<f32>, roughness: f32, h: vec3<f32>, NoV: f32, NoL: f32,
               NoH: f32, LoH: f32, specularIntensity: f32) -> vec3<f32> {",
-            expect![[r#"
+        expect![[r#"
                 fn specular(f0: vec3<f32>, roughness: f32, h: vec3<f32>, NoV: f32, NoL: f32,
                     NoH: f32, LoH: f32, specularIntensity: f32) -> vec3<f32> {"#]],
-        )
+    )
 }
 
 #[test]
@@ -288,7 +306,7 @@ fn format_function_call() {
 fn format_function_call_newline() {
     check(
         "fn main() {
-    min  (  
+    min  (
         x,y );
 }",
         expect![[r#"
@@ -305,7 +323,7 @@ fn format_function_call_newline_indent() {
     check(
         "fn main() {
     if (false) {
-        min  (  
+        min  (
             x,y );
     }
 }",
@@ -450,7 +468,7 @@ let y = 4;
         expect![[r#"
             fn main() {
                 let x = 3;
-            
+
                 let y = 4;
             }"#]],
     );
@@ -505,7 +523,7 @@ fn main() {
 #[test]
 fn leave_matrix_alone_tabs() {
     check_tabs(
-		r#"
+        r#"
 fn main() {
 	let x = mat3x3(
 		cosR,  0.0, sinR,
@@ -521,5 +539,5 @@ fn main() {
 					-sinR, 0.0, cosR,
 				);
 			}"#]],
-	);
+    );
 }

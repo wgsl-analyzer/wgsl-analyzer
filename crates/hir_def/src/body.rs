@@ -58,7 +58,10 @@ pub struct BodySourceMap {
 }
 
 impl Body {
-    pub fn body_query(db: &dyn DefDatabase, def: DefWithBodyId) -> Arc<Body> {
+    pub fn body_query(
+        db: &dyn DefDatabase,
+        def: DefWithBodyId,
+    ) -> Arc<Body> {
         db.body_with_source_map(def).0
     }
 
@@ -75,25 +78,25 @@ impl Body {
                 let body = src.value.body();
 
                 lower::lower_function_body(db, file_id, params, body)
-            }
+            },
             DefWithBodyId::GlobalVariable(id) => {
                 let location = id.lookup(db);
                 let src = location.source(db);
 
                 lower::lower_global_var_decl(db, file_id, src.value)
-            }
+            },
             DefWithBodyId::GlobalConstant(id) => {
                 let location = id.lookup(db);
                 let src = location.source(db);
 
                 lower::lower_global_constant_decl(db, file_id, src.value)
-            }
+            },
             DefWithBodyId::Override(id) => {
                 let location = id.lookup(db);
                 let src = location.source(db);
 
                 lower::lower_override_decl(db, file_id, src.value)
-            }
+            },
         };
 
         (Arc::new(body), Arc::new(source_map))
@@ -101,13 +104,24 @@ impl Body {
 }
 
 impl BodySourceMap {
-    pub fn lookup_expr(&self, source: &AstPtr<ast::Expr>) -> Option<ExprId> {
+    pub fn lookup_expr(
+        &self,
+        source: &AstPtr<ast::Expr>,
+    ) -> Option<ExprId> {
         self.expr_map.get(source).copied()
     }
-    pub fn lookup_statement(&self, source: &AstPtr<ast::Statement>) -> Option<StatementId> {
+
+    pub fn lookup_statement(
+        &self,
+        source: &AstPtr<ast::Statement>,
+    ) -> Option<StatementId> {
         self.stmt_map.get(source).copied()
     }
-    pub fn lookup_binding(&self, source: &AstPtr<ast::Binding>) -> Option<BindingId> {
+
+    pub fn lookup_binding(
+        &self,
+        source: &AstPtr<ast::Binding>,
+    ) -> Option<BindingId> {
         self.binding_map.get(source).copied()
     }
 
@@ -117,9 +131,14 @@ impl BodySourceMap {
     ) -> Result<&AstPtr<ast::Binding>, &SyntheticSyntax> {
         self.binding_map_back[binding].as_ref()
     }
-    pub fn expr_to_source(&self, expr: ExprId) -> Result<&AstPtr<ast::Expr>, &SyntheticSyntax> {
+
+    pub fn expr_to_source(
+        &self,
+        expr: ExprId,
+    ) -> Result<&AstPtr<ast::Expr>, &SyntheticSyntax> {
         self.expr_map_back[expr].as_ref()
     }
+
     pub fn stmt_to_source(
         &self,
         stmt: StatementId,

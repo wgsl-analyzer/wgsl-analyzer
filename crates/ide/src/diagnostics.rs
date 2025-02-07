@@ -31,7 +31,10 @@ pub enum Severity {
 }
 
 impl DiagnosticMessage {
-    pub fn new(message: String, range: TextRange) -> Self {
+    pub fn new(
+        message: String,
+        range: TextRange,
+    ) -> Self {
         Self {
             message,
             range,
@@ -41,7 +44,10 @@ impl DiagnosticMessage {
         }
     }
 
-    pub fn with_severity(self, severity: Severity) -> Self {
+    pub fn with_severity(
+        self,
+        severity: Severity,
+    ) -> Self {
         DiagnosticMessage { severity, ..self }
     }
 
@@ -84,6 +90,7 @@ impl Naga for Naga14 {
         validator.validate(module).map(drop)
     }
 }
+
 impl NagaError for naga14::front::wgsl::ParseError {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -91,10 +98,12 @@ impl NagaError for naga14::front::wgsl::ParseError {
                 .flat_map(|(range, label)| Some((range.to_range()?, label.to_string()))),
         )
     }
+
     fn has_spans(&self) -> bool {
         self.labels().len() > 0
     }
 }
+
 impl NagaError for naga14::WithSpan<naga14::valid::ValidationError> {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -102,6 +111,7 @@ impl NagaError for naga14::WithSpan<naga14::valid::ValidationError> {
                 .filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
         )
     }
+
     fn has_spans(&self) -> bool {
         self.spans().len() > 0
     }
@@ -124,6 +134,7 @@ impl Naga for Naga19 {
         validator.validate(module).map(drop)
     }
 }
+
 impl NagaError for naga19::front::wgsl::ParseError {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -131,10 +142,12 @@ impl NagaError for naga19::front::wgsl::ParseError {
                 .flat_map(|(range, label)| Some((range.to_range()?, label.to_string()))),
         )
     }
+
     fn has_spans(&self) -> bool {
         self.labels().len() > 0
     }
 }
+
 impl NagaError for naga19::WithSpan<naga19::valid::ValidationError> {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -142,6 +155,7 @@ impl NagaError for naga19::WithSpan<naga19::valid::ValidationError> {
                 .filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
         )
     }
+
     fn has_spans(&self) -> bool {
         self.spans().len() > 0
     }
@@ -164,6 +178,7 @@ impl Naga for Naga22 {
         validator.validate(module).map(drop)
     }
 }
+
 impl NagaError for naga22::front::wgsl::ParseError {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -171,10 +186,12 @@ impl NagaError for naga22::front::wgsl::ParseError {
                 .flat_map(|(range, label)| Some((range.to_range()?, label.to_string()))),
         )
     }
+
     fn has_spans(&self) -> bool {
         self.labels().len() > 0
     }
 }
+
 impl NagaError for naga22::WithSpan<naga22::valid::ValidationError> {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -182,6 +199,7 @@ impl NagaError for naga22::WithSpan<naga22::valid::ValidationError> {
                 .filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
         )
     }
+
     fn has_spans(&self) -> bool {
         self.spans().len() > 0
     }
@@ -204,6 +222,7 @@ impl Naga for NagaMain {
         validator.validate(module).map(drop)
     }
 }
+
 impl NagaError for nagamain::front::wgsl::ParseError {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -211,10 +230,12 @@ impl NagaError for nagamain::front::wgsl::ParseError {
                 .flat_map(|(range, label)| Some((range.to_range()?, label.to_string()))),
         )
     }
+
     fn has_spans(&self) -> bool {
         self.labels().len() > 0
     }
 }
+
 impl NagaError for nagamain::WithSpan<nagamain::valid::ValidationError> {
     fn spans<'a>(&'a self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + 'a> {
         Box::new(
@@ -222,12 +243,12 @@ impl NagaError for nagamain::WithSpan<nagamain::valid::ValidationError> {
                 .filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
         )
     }
+
     fn has_spans(&self) -> bool {
         self.spans().len() > 0
     }
 }
 
-#[allow(dead_code)]
 enum NagaErrorPolicy {
     SeparateSpans,
     SmallestSpan,
@@ -278,7 +299,7 @@ impl NagaErrorPolicy {
                         related: Vec::new(),
                     });
                 });
-            }
+            },
             NagaErrorPolicy::SmallestSpan => {
                 if let Some((range, _)) = spans.min_by_key(|(range, _)| range.len()) {
                     acc.push(AnyDiagnostic::NagaValidationError {
@@ -288,7 +309,7 @@ impl NagaErrorPolicy {
                         related: Vec::new(),
                     });
                 }
-            }
+            },
             NagaErrorPolicy::Related => {
                 let related: Vec<_> = spans
                     .map(|(range, message)| (message, FileRange { range, file_id }))
@@ -305,10 +326,11 @@ impl NagaErrorPolicy {
                     message,
                     related,
                 });
-            }
+            },
         }
     }
 }
+
 fn naga_diagnostics<N: Naga>(
     db: &dyn HirDatabase,
     file_id: FileId,
@@ -331,13 +353,13 @@ fn naga_diagnostics<N: Naga>(
             if let Err(error) = N::validate(&module) {
                 policy.emit(db, error, file_id, full_range, acc);
             }
-        }
+        },
         Err(error) => {
             if !config.naga_parsing_errors {
                 return Ok(());
             }
             policy.emit(db, error, file_id, full_range, acc);
-        }
+        },
     }
 
     Ok(())
@@ -384,16 +406,16 @@ pub fn diagnostics(
         match &config.naga_version {
             NagaVersion::Naga22 => {
                 let _ = naga_diagnostics::<Naga22>(db, file_id, config, &mut diagnostics);
-            }
+            },
             NagaVersion::Naga19 => {
                 let _ = naga_diagnostics::<Naga19>(db, file_id, config, &mut diagnostics);
-            }
+            },
             NagaVersion::Naga14 => {
                 let _ = naga_diagnostics::<Naga14>(db, file_id, config, &mut diagnostics);
-            }
+            },
             NagaVersion::NagaMain => {
                 let _ = naga_diagnostics::<NagaMain>(db, file_id, config, &mut diagnostics);
-            }
+            },
         }
     }
 
@@ -414,7 +436,7 @@ pub fn diagnostics(
                         ),
                         frange.range,
                     )
-                }
+                },
                 AnyDiagnostic::TypeMismatch {
                     expr,
                     expected,
@@ -428,7 +450,7 @@ pub fn diagnostics(
                         format!("expected {}, found {}", expected, actual),
                         frange.range,
                     )
-                }
+                },
                 AnyDiagnostic::NoSuchField { expr, name, ty } => {
                     let source = expr.value.to_node(&root).syntax().parent().unwrap();
                     let ty = ty::pretty::pretty_type(db, ty);
@@ -437,13 +459,13 @@ pub fn diagnostics(
                         format!("no field `{}` on type {}", name.as_ref(), ty),
                         frange.range,
                     )
-                }
+                },
                 AnyDiagnostic::ArrayAccessInvalidType { expr, ty } => {
                     let source = expr.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, ty);
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
                     DiagnosticMessage::new(format!("can't index into type {}", ty), frange.range)
-                }
+                },
                 AnyDiagnostic::UnresolvedName { expr, name } => {
                     let source = expr.value.to_node(&root);
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
@@ -451,7 +473,7 @@ pub fn diagnostics(
                         format!("cannot find `{}` in this scope", name.as_str()),
                         frange.range,
                     )
-                }
+                },
                 AnyDiagnostic::InvalidConstructionType { expr, ty } => {
                     let source = expr.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, ty);
@@ -460,7 +482,7 @@ pub fn diagnostics(
                         format!("can't construct value of type {}", ty),
                         frange.range,
                     )
-                }
+                },
                 AnyDiagnostic::FunctionCallArgCountMismatch {
                     expr,
                     n_expected,
@@ -472,7 +494,7 @@ pub fn diagnostics(
                         format!("expected {} parameters, found {}", n_expected, n_actual),
                         frange.range,
                     )
-                }
+                },
                 AnyDiagnostic::NoBuiltinOverload {
                     expr,
                     builtin,
@@ -506,7 +528,7 @@ pub fn diagnostics(
                         ),
                         frange.range,
                     )
-                }
+                },
                 AnyDiagnostic::AddrOfNotRef { expr, actual } => {
                     let source = expr.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, actual);
@@ -515,7 +537,7 @@ pub fn diagnostics(
                         format!("expected a reference, found {}", ty),
                         frange.range,
                     )
-                }
+                },
                 AnyDiagnostic::DerefNotPtr { expr, actual } => {
                     let source = expr.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, actual);
@@ -524,7 +546,7 @@ pub fn diagnostics(
                         format!("cannot dereference expression of type {}", ty),
                         frange.range,
                     )
-                }
+                },
                 AnyDiagnostic::MissingStorageClass { var } => {
                     let var_decl = var.value.to_node(&root);
                     let source = var_decl
@@ -537,7 +559,7 @@ pub fn diagnostics(
                         "missing storage class on global variable".to_string(),
                         frange.range,
                     )
-                }
+                },
                 AnyDiagnostic::InvalidStorageClass { var, error } => {
                     let var_decl = var.value.to_node(&root);
                     let source = var_decl
@@ -546,7 +568,7 @@ pub fn diagnostics(
                         .unwrap_or_else(|| NodeOrToken::Node(var_decl.syntax()));
                     let frange = original_file_range(db.upcast(), var.file_id, &source);
                     DiagnosticMessage::new(format!("{}", error), frange.range)
-                }
+                },
                 AnyDiagnostic::InvalidType {
                     file_id: _,
                     location,
@@ -555,12 +577,12 @@ pub fn diagnostics(
                     let source = location.to_node(&root);
                     let frange = original_file_range(db.upcast(), file_id, source.syntax());
                     DiagnosticMessage::new(format!("{}", error), frange.range)
-                }
+                },
                 AnyDiagnostic::UnresolvedImport { import } => {
                     let source = import.value.to_node(&root);
                     let frange = original_file_range(db.upcast(), file_id, source.syntax());
                     DiagnosticMessage::new("unresolved import".to_string(), frange.range)
-                }
+                },
                 AnyDiagnostic::NagaValidationError {
                     message,
                     range,
@@ -570,10 +592,10 @@ pub fn diagnostics(
                     let mut msg = DiagnosticMessage::new(message, range);
                     msg.related = related;
                     msg
-                }
+                },
                 AnyDiagnostic::ParseError { message, range, .. } => {
                     DiagnosticMessage::new(message, range)
-                }
+                },
                 AnyDiagnostic::UnconfiguredCode { def, range, .. } => DiagnosticMessage::new(
                     format!(
                         "code is inactive due to `#ifdef` directives: `{}` is not enabled",
@@ -629,7 +651,7 @@ pub fn diagnostics(
                         ),
                         frange.range,
                     )
-                }
+                },
                 AnyDiagnostic::PrecedenceParensRequired {
                     expr,
                     op,
@@ -650,37 +672,47 @@ pub fn diagnostics(
                         )
                     };
                     DiagnosticMessage::new(message, frange.range)
-                }
+                },
             }
         })
         .collect()
 }
 
-fn size_compatible(target: VecSize, overload: VecSize) -> bool {
+fn size_compatible(
+    target: VecSize,
+    overload: VecSize,
+) -> bool {
     match overload {
         VecSize::Two | VecSize::Three | VecSize::Four => overload == target,
         VecSize::BoundVar(_) => true,
     }
 }
 
-fn convert_compatible(db: &dyn HirDatabase, target: Ty, overload: Ty) -> bool {
+fn convert_compatible(
+    db: &dyn HirDatabase,
+    target: Ty,
+    overload: Ty,
+) -> bool {
     let target_kind = target.kind(db);
     let overload_kind = overload.kind(db);
     match (target_kind, overload_kind) {
         (ty::TyKind::Vector(tg), ty::TyKind::Vector(ov)) => {
             size_compatible(tg.size, ov.size) && convert_compatible(db, tg.inner, ov.inner)
-        }
+        },
         (ty::TyKind::Matrix(tg), ty::TyKind::Matrix(ov)) => {
             size_compatible(tg.columns, ov.columns)
                 && size_compatible(tg.rows, ov.rows)
                 && convert_compatible(db, tg.inner, ov.inner)
-        }
+        },
         (ty::TyKind::Scalar(s1), ty::TyKind::Scalar(s2)) => s1 == s2,
         _ => false,
     }
 }
 
-fn err_message_cause_chain(prefix: &str, error: &dyn std::error::Error) -> String {
+fn err_message_cause_chain(
+    prefix: &str,
+    error: &dyn std::error::Error,
+) -> String {
     let mut msg = format!("{}{}", prefix, error);
 
     let mut e = error.source();

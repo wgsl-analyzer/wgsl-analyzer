@@ -1,18 +1,27 @@
 [package]
-name = "ide_completion"
+name = "ide-completion"
 version = "0.0.0"
-edition = "2021"
+repository.workspace = true
+description = "Utilities for generating completions of user input for wgsl-analyzer."
+
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+doctest = false
 
 [dependencies]
-base_db = { path = "../base_db" }
-hir = { path = "../hir" }
-hir_ty = { path = "../hir_ty" }
-hir_def = { path = "../hir_def" }
-syntax = { path = "../syntax" }
+base-db = { path = "../base_db", version = "0.0.0" }
+hir = { path = "../hir", version = "0.0.0" }
+hir-ty = { path = "../hir_ty", version = "0.0.0" }
+hir-def = { path = "../hir_def", version = "0.0.0" }
+syntax = { path = "../syntax", version = "0.0.0" }
 always-assert = { version = "0.2.0" }
 tracing = "0.1.41"
 
-text-edit = { git = "https://github.com/rust-analyzer/rust-analyzer", rev = "8a23314" }
+text-edit = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
 itertools = "0.14.0"
 either = "1.13.0"
 rowan = "0.16.1"

@@ -4,18 +4,21 @@ use std::{collections::BTreeMap, fs::File, path::PathBuf, str::FromStr};
 struct Builtin {
     overloads: Vec<Overload>,
 }
+
 #[derive(Debug)]
 enum Generic {
     VecSize,
     Type,
     TexelFormat,
 }
+
 #[derive(Debug)]
 struct Overload {
     generics: BTreeMap<char, (usize, Generic)>,
     return_type: Option<Type>,
     parameters: Vec<(Type, Option<String>)>,
 }
+
 #[derive(Debug)]
 enum Type {
     Vec(VecSize, Box<Type>),
@@ -32,6 +35,7 @@ enum Type {
     Bound(usize),
     StorageTypeOfTexelFormat(usize),
 }
+
 enum VecSize {
     Two,
     Three,
@@ -40,7 +44,10 @@ enum VecSize {
 }
 
 impl std::fmt::Debug for VecSize {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self {
             Self::Two => write!(f, "Two"),
             Self::Three => write!(f, "Three"),
@@ -63,6 +70,7 @@ enum TexelFormat {
     Any,
     Bound(usize),
 }
+
 #[derive(Debug)]
 enum AccessMode {
     ReadWrite,
@@ -70,6 +78,7 @@ enum AccessMode {
     Write,
     Any,
 }
+
 impl FromStr for AccessMode {
     type Err = ();
 
@@ -131,7 +140,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn foo(f: &mut dyn std::io::Write, builtins: &BTreeMap<String, Builtin>) -> std::io::Result<()> {
+fn foo(
+    f: &mut dyn std::io::Write,
+    builtins: &BTreeMap<String, Builtin>,
+) -> std::io::Result<()> {
     write!(
         f,
         r#"
@@ -194,7 +206,7 @@ fn parse_line(line: &str) -> (&str, Overload) {
                 let name = name.trim();
                 let name = (!name.is_empty()).then(|| name.to_string());
                 (parse_ty(&mut generics, ty.trim()), name)
-            }
+            },
             _ => (parse_ty(&mut generics, ty.trim()), None),
         })
         .collect();
@@ -220,7 +232,10 @@ fn parse_generic(ty: &str) -> Option<(&str, &str)> {
     Some((ty, inner))
 }
 
-fn parse_vec_size(generics: &mut BTreeMap<char, (usize, Generic)>, size: char) -> VecSize {
+fn parse_vec_size(
+    generics: &mut BTreeMap<char, (usize, Generic)>,
+    size: char,
+) -> VecSize {
     match size {
         '2' => VecSize::Two,
         '3' => VecSize::Three,
@@ -229,7 +244,7 @@ fn parse_vec_size(generics: &mut BTreeMap<char, (usize, Generic)>, size: char) -
             let len = generics.len();
             let (i, _) = generics.entry(other).or_insert((len, Generic::VecSize));
             VecSize::Bound(*i)
-        }
+        },
     }
 }
 
@@ -243,7 +258,7 @@ fn parse_texel_format(
             let len = generics.len();
             let (i, _) = generics.entry(other).or_insert((len, Generic::TexelFormat));
             TexelFormat::Bound(*i)
-        }
+        },
     }
 }
 
@@ -255,7 +270,10 @@ fn only_char(input: &str) -> char {
     val
 }
 
-fn parse_ty(generics: &mut BTreeMap<char, (usize, Generic)>, ty: &str) -> Type {
+fn parse_ty(
+    generics: &mut BTreeMap<char, (usize, Generic)>,
+    ty: &str,
+) -> Type {
     if let Some((ty, inner)) = parse_generic(ty) {
         if let Some(size) = ty.strip_prefix("vec") {
             let size = only_char(size);
@@ -348,77 +366,96 @@ fn parse_ty(generics: &mut BTreeMap<char, (usize, Generic)>, ty: &str) -> Type {
         "F::StorageType" => {
             let var = generics.get(&'F').unwrap().0;
             Type::StorageTypeOfTexelFormat(var)
-        }
+        },
         other => unimplemented!("{}", other),
     }
 }
 
 fn type_to_rust(ty: &Type) -> String {
     match ty {
-        Type::Vec(size, inner) => format!(
-            "TyKind::Vector(VectorType {{ size: VecSize::{:?}, inner: {} }}).intern(db)",
-            size,
-            type_to_rust(inner)
-        ),
+		Type::Vec(size, inner) => format!(
+			"TyKind::Vector(VectorType {{ size: VecSize::{:?}, inner: {} }}).intern(db)",
+			size,
+			type_to_rust(inner)
+		),
 
-        Type::Matrix(columns, rows, inner) => format!(
-            "TyKind::Matrix(MatrixType {{ columns: VecSize::{:?}, rows: VecSize::{:?}, inner: {} }}).intern(db)",
-            columns, rows,
-            type_to_rust(inner)
-        ),
+		Type::Matrix(columns, rows, inner) => format!(
+			"TyKind::Matrix(MatrixType {{ columns: VecSize::{:?}, rows: VecSize::{:?}, inner: {} }}).intern(db)",
+			columns,
+			rows,
+			type_to_rust(inner)
+		),
 
-        ty @ (Type::Bool | Type::F32 | Type::I32 | Type::U32) => {
-            format!("TyKind::Scalar(ScalarType::{:?}).intern(db)", ty)
-        }
-        Type::Bound(i) => {
-            format!("TyKind::BoundVar(BoundVar {{ index: {} }}).intern(db)", i,)
-        }
-        Type::Texture(texture) => {
-            format!(
-                "TyKind::Texture(TextureType {{
+		ty @ (Type::Bool | Type::F32 | Type::I32 | Type::U32) => {
+			format!("TyKind::Scalar(ScalarType::{:?}).intern(db)", ty)
+		},
+		Type::Bound(i) => {
+			format!("TyKind::BoundVar(BoundVar {{ index: {} }}).intern(db)", i,)
+		},
+		Type::Texture(texture) => {
+			format!(
+				"TyKind::Texture(TextureType {{
                             kind: TextureKind::{},
                             arrayed: {},
                             multisampled: {},
                             dimension: TextureDimensionality::{:?},
                         }}).intern(db)",
-                match &texture.kind {
-                    TextureKind::Sampled(inner) => format!("Sampled({})", type_to_rust(inner)),
-                    TextureKind::Storage(texel_format, access_mode) => {
-                        let texel_format = match texel_format {
-                            TexelFormat::Any => "Any".to_string(),
-                            TexelFormat::Bound(var) => format!("BoundVar(BoundVar {{ index: {} }})",var),
-                        };
+				match &texture.kind {
+					TextureKind::Sampled(inner) => format!("Sampled({})", type_to_rust(inner)),
+					TextureKind::Storage(texel_format, access_mode) => {
+						let texel_format = match texel_format {
+							TexelFormat::Any => "Any".to_string(),
+							TexelFormat::Bound(var) => {
+								format!("BoundVar(BoundVar {{ index: {} }})", var)
+							},
+						};
 
-                        format!("Storage(TexelFormat::{}, AccessMode::{:?})", texel_format, access_mode)
-                    },
-                    TextureKind::Depth => "Depth".to_string(),
-                    TextureKind::External => "External".to_string(),
-                },
-                texture.arrayed,
-                texture.multisampled,
-                texture.dimension,
-            )
-        }
-        Type::Sampler { comparison } => format!(
-            "TyKind::Sampler(SamplerType {{ comparison: {}  }}).intern(db)",
-            comparison
-        ),
-        Type::RuntimeArray(inner) => format!("TyKind::Array(ArrayType {{
+						format!(
+							"Storage(TexelFormat::{}, AccessMode::{:?})",
+							texel_format, access_mode
+						)
+					},
+					TextureKind::Depth => "Depth".to_string(),
+					TextureKind::External => "External".to_string(),
+				},
+				texture.arrayed,
+				texture.multisampled,
+				texture.dimension,
+			)
+		},
+		Type::Sampler { comparison } => format!(
+			"TyKind::Sampler(SamplerType {{ comparison: {}  }}).intern(db)",
+			comparison
+		),
+		Type::RuntimeArray(inner) => format!(
+			"TyKind::Array(ArrayType {{
             size: ArraySize::Dynamic,
             binding_array: false,
             inner: {}
-        }}).intern(db)", type_to_rust(inner)),
-        Type::Ptr(inner) => format!("TyKind::Ptr(Ptr {{
+        }}).intern(db)",
+			type_to_rust(inner)
+		),
+		Type::Ptr(inner) => format!(
+			"TyKind::Ptr(Ptr {{
             inner: {},
             access_mode: AccessMode::ReadWrite,
             storage_class: StorageClass::Private,
-        }}).intern(db)", type_to_rust(inner)),
-        Type::Atomic(inner) => format!("TyKind::Atomic(AtomicType {{
+        }}).intern(db)",
+			type_to_rust(inner)
+		),
+		Type::Atomic(inner) => format!(
+			"TyKind::Atomic(AtomicType {{
             inner: {},
-        }}).intern(db)", type_to_rust(inner)),
-        Type::StorageTypeOfTexelFormat(var) => format!("TyKind::StorageTypeOfTexelFormat(BoundVar {{ index: {} }}).intern(db)", var),
-    }
+        }}).intern(db)",
+			type_to_rust(inner)
+		),
+		Type::StorageTypeOfTexelFormat(var) => format!(
+			"TyKind::StorageTypeOfTexelFormat(BoundVar {{ index: {} }}).intern(db)",
+			var
+		),
+	}
 }
+
 fn builtin_to_rust(
     f: &mut dyn std::io::Write,
     name: &str,

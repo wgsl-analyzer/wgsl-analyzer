@@ -1,25 +1,27 @@
+#![expect(
+    clippy::needless_pass_by_value,
+    reason = "handlers should have a specific signature"
+)]
+
 use base_db::{FileRange, TextRange};
 use hir::diagnostics::DiagnosticsConfig;
-use ide::diagnostics::Severity;
-use ide::HoverResult;
+use ide::{diagnostics::Severity, HoverResult};
 use lsp_types::{
     DiagnosticRelatedInformation, DiagnosticTag, GotoDefinitionResponse, LanguageString,
     MarkedString, TextDocumentIdentifier,
 };
 use vfs::FileId;
 
-use crate::global_state::GlobalStateSnapshot;
-use crate::{from_proto, lsp_ext, to_proto, Result};
+use crate::{from_proto, global_state::GlobalStateSnapshot, lsp_ext, to_proto, Result};
 
 pub fn handle_goto_definition(
     snap: GlobalStateSnapshot,
     params: lsp_types::GotoDefinitionParams,
 ) -> Result<Option<GotoDefinitionResponse>> {
-    let position = from_proto::file_position(&snap, params.text_document_position_params)?;
+    let position = from_proto::file_position(&snap, &params.text_document_position_params)?;
     let file_id = position.file_id;
-    let nav_target = match snap.analysis.goto_definition(position)? {
-        Some(nav_target) => nav_target,
-        None => return Ok(None),
+    let Some(nav_target) = snap.analysis.goto_definition(position)? else {
+        return Ok(None);
     };
 
     let range = FileRange {
@@ -36,13 +38,12 @@ pub fn handle_completion(
     snap: GlobalStateSnapshot,
     params: lsp_types::CompletionParams,
 ) -> Result<Option<lsp_types::CompletionResponse>> {
-    let position = from_proto::file_position(&snap, params.text_document_position.clone())?;
+    let position = from_proto::file_position(&snap, &params.text_document_position)?;
     let line_index = snap.file_line_index(position.file_id)?;
-    let items = match snap.analysis.completions(position)? {
-        Some(items) => items,
-        None => return Ok(None),
+    let Some(items) = snap.analysis.completions(position)? else {
+        return Ok(None);
     };
-    let items = to_proto::completion_items(&line_index, params.text_document_position, items);
+    let items = to_proto::completion_items(&line_index, &params.text_document_position, &items);
     let list = lsp_types::CompletionList {
         is_incomplete: true,
         items,
@@ -55,9 +56,8 @@ pub fn handle_formatting(
     params: lsp_types::DocumentFormattingParams,
 ) -> Result<Option<Vec<lsp_types::TextEdit>>> {
     let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
-    let node = match snap.analysis.format(file_id, None)? {
-        Some(node) => node,
-        None => return Ok(None),
+    let Some(node) = snap.analysis.format(file_id, None)? else {
+        return Ok(None);
     };
     let line_index = snap.file_line_index(file_id)?;
 
@@ -73,7 +73,7 @@ pub fn handle_hover(
     snap: GlobalStateSnapshot,
     params: lsp_types::HoverParams,
 ) -> Result<Option<lsp_types::Hover>> {
-    let position = from_proto::file_position(&snap, params.text_document_position_params)?;
+    let position = from_proto::file_position(&snap, &params.text_document_position_params)?;
     let line_index = snap.file_line_index(position.file_id)?;
     let range = TextRange::new(position.offset, position.offset);
     let file_range = FileRange {
@@ -81,14 +81,13 @@ pub fn handle_hover(
         range,
     };
 
-    let result = match snap.analysis.hover(file_range)? {
-        Some(hover) => hover,
-        None => return Ok(None),
+    let Some(result) = snap.analysis.hover(file_range)? else {
+        return Ok(None);
     };
 
     let hover_content = match result.info {
         HoverResult::SourceCode(code) => MarkedString::LanguageString(LanguageString {
-            language: "wgsl".to_string(),
+            language: "wgsl".to_owned(),
             value: code,
         }),
         HoverResult::Text(text) => MarkedString::String(text),
@@ -101,17 +100,26 @@ pub fn handle_hover(
     Ok(Some(hover))
 }
 
-pub fn handle_shutdown(_snap: GlobalStateSnapshot, _: ()) -> Result<()> {
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "handlers should have a specific signature"
+)]
+pub fn handle_shutdown(
+    _snap: GlobalStateSnapshot,
+    _: (),
+) -> Result<()> {
     Ok(())
 }
 
-pub fn full_source(snap: GlobalStateSnapshot, params: lsp_ext::FullSourceParams) -> Result<String> {
+pub fn full_source(
+    snap: GlobalStateSnapshot,
+    params: lsp_ext::FullSourceParams,
+) -> Result<String> {
     let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
-    let source = match snap.analysis.resolve_full_source(file_id)? {
-        Ok(source) => source,
-        Err(_) => "".to_string(),
-    };
-
+    let source = snap
+        .analysis
+        .resolve_full_source(file_id)?
+        .unwrap_or_else(|()| String::new()); // TODO this is weird
     Ok(source)
 }
 
@@ -130,14 +138,17 @@ pub fn show_syntax_tree(
     Ok(string)
 }
 
-pub fn debug_command(snap: GlobalStateSnapshot, params: lsp_ext::DebugCommandParams) -> Result<()> {
-    let position = from_proto::file_position(&snap, params.position)?;
+pub fn debug_command(
+    snap: GlobalStateSnapshot,
+    params: lsp_ext::DebugCommandParams,
+) -> Result<()> {
+    let position = from_proto::file_position(&snap, &params.position)?;
     snap.analysis.debug_command(position)?;
 
     Ok(())
 }
 
-pub(crate) fn handle_inlay_hints(
+pub fn handle_inlay_hints(
     snap: GlobalStateSnapshot,
     params: lsp_types::InlayHintParams,
 ) -> Result<Option<Vec<lsp_types::InlayHint>>> {
@@ -147,14 +158,14 @@ pub(crate) fn handle_inlay_hints(
 
     let range = from_proto::file_range(
         &snap,
-        TextDocumentIdentifier::new(document_uri.to_owned()),
+        &TextDocumentIdentifier::new(document_uri.to_owned()),
         params.range,
     );
 
     Ok(Some(
         snap.analysis
             .inlay_hints(&snap.config.inlay_hints(), file_id, range.ok())?
-            .into_iter()
+            .iter()
             .map(|it| to_proto::inlay_hint(true, &line_index, it))
             .collect(),
     ))
@@ -189,18 +200,14 @@ pub fn publish_diagnostics(
                 source: None,
                 message: diagnostic.message,
                 related_information: (!related.is_empty()).then_some(related),
-                tags: if diagnostic.unused {
-                    Some(vec![DiagnosticTag::UNNECESSARY])
-                } else {
-                    None
-                },
+                tags: diagnostic.unused.then(|| vec![DiagnosticTag::UNNECESSARY]),
                 data: None,
             })
         })
         .collect()
 }
 
-fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSeverity {
+const fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSeverity {
     match severity {
         Severity::Error => lsp_types::DiagnosticSeverity::ERROR,
         Severity::WeakWarning => lsp_types::DiagnosticSeverity::HINT,
@@ -212,12 +219,15 @@ mod diff {
     use dissimilar::Chunk;
     use text_edit::{TextEdit, TextRange, TextSize};
 
-    pub fn diff(left: &str, right: &str) -> TextEdit {
+    pub fn diff(
+        left: &str,
+        right: &str,
+    ) -> TextEdit {
         let chunks = dissimilar::diff(left, right);
         textedit_from_chunks(chunks)
     }
 
-    fn textedit_from_chunks(chunks: Vec<dissimilar::Chunk>) -> TextEdit {
+    fn textedit_from_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> TextEdit {
         let mut builder = TextEdit::builder();
         let mut pos = TextSize::default();
 
@@ -235,15 +245,15 @@ mod diff {
             match chunk {
                 Chunk::Equal(text) => {
                     pos += TextSize::of(text);
-                }
+                },
                 Chunk::Delete(deleted) => {
                     let deleted_len = TextSize::of(deleted);
                     builder.delete(TextRange::at(pos, deleted_len));
                     pos += deleted_len;
-                }
+                },
                 Chunk::Insert(inserted) => {
                     builder.insert(pos, inserted.into());
-                }
+                },
             }
         }
         builder.finish()

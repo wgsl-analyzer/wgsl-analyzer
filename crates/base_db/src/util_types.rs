@@ -20,7 +20,10 @@ pub struct RangeInfo<T> {
 }
 
 impl<T> RangeInfo<T> {
-    pub fn new(range: TextRange, info: T) -> RangeInfo<T> {
+    pub fn new(
+        range: TextRange,
+        info: T,
+    ) -> RangeInfo<T> {
         RangeInfo { range, info }
     }
 }

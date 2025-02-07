@@ -4,7 +4,10 @@ mod tests;
 use rowan::{GreenNode, GreenToken, NodeOrToken, WalkEvent};
 use syntax::{ast, AstNode, HasGenerics, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken};
 
-pub fn format_str(input: &str, options: &FormattingOptions) -> String {
+pub fn format_str(
+    input: &str,
+    options: &FormattingOptions,
+) -> String {
     let parse = wgsl_parser::parse_file(input);
     let node = parse.syntax().clone_for_update();
     format_recursive(node.clone(), options);
@@ -33,7 +36,10 @@ pub enum Policy {
     Insert,
 }
 
-pub fn format_recursive(syntax: SyntaxNode, options: &FormattingOptions) {
+pub fn format_recursive(
+    syntax: SyntaxNode,
+    options: &FormattingOptions,
+) {
     let preorder = syntax.preorder();
 
     let mut indentation: usize = 0;
@@ -45,12 +51,12 @@ pub fn format_recursive(syntax: SyntaxNode, options: &FormattingOptions) {
                     indentation += 1;
                 }
                 format_syntax_node(node, indentation, options);
-            }
+            },
             WalkEvent::Leave(node) => {
                 if is_indent_kind(node) {
                     indentation = indentation.saturating_sub(1);
                 }
-            }
+            },
         };
     }
 }
@@ -69,7 +75,7 @@ fn is_indent_kind(node: SyntaxNode) -> bool {
 
     if param_list_left_paren
         .and_then(|token| token.next_token())
-        .map_or(false, is_whitespace_with_newline)
+        .is_some_and(is_whitespace_with_newline)
     {
         return true;
     }
@@ -82,9 +88,10 @@ fn format_syntax_node(
     indentation: usize,
     options: &FormattingOptions,
 ) -> Option<()> {
-    if syntax.parent().map_or(false, |parent| {
-        parent.kind() == SyntaxKind::CompoundStatement
-    }) {
+    if syntax
+        .parent()
+        .is_some_and(|parent| parent.kind() == SyntaxKind::CompoundStatement)
+    {
         let start = syntax.first_token()?;
 
         let n_newlines = n_newlines_in_whitespace(start.prev_token()?).unwrap_or(0);
@@ -136,16 +143,16 @@ fn format_syntax_node(
             } else {
                 remove_if_whitespace(param_list.right_paren_token()?.prev_token()?);
             }
-        }
+        },
         SyntaxKind::VariableIdentDecl => {
             let param_list = ast::VariableIdentDecl::cast(syntax)?;
             remove_if_whitespace(param_list.colon_token()?.prev_token()?);
             set_whitespace_single_after(param_list.colon_token()?);
-        }
+        },
         SyntaxKind::ReturnType => {
             let return_type = ast::ReturnType::cast(syntax)?;
             whitespace_to_single_around(return_type.arrow_token()?);
-        }
+        },
         SyntaxKind::StructDecl => {
             let strukt = ast::StructDecl::cast(syntax)?;
 
@@ -153,7 +160,7 @@ fn format_syntax_node(
 
             let name = strukt.name()?.ident_token()?;
             whitespace_to_single_around(name);
-        }
+        },
         SyntaxKind::IfStatement => {
             let if_statement = ast::IfStatement::cast(syntax)?;
 
@@ -171,14 +178,14 @@ fn format_syntax_node(
 
                 set_whitespace_single_before(else_if_block.block()?.left_brace_token()?);
             }
-        }
+        },
         SyntaxKind::WhileStatement => {
             let while_statement = ast::WhileStatement::cast(syntax)?;
 
             set_whitespace_single_after(while_statement.while_token()?);
 
             set_whitespace_single_before(while_statement.block()?.left_brace_token()?);
-        }
+        },
         SyntaxKind::ForStatement => {
             let for_statement = ast::ForStatement::cast(syntax)?;
 
@@ -196,7 +203,7 @@ fn format_syntax_node(
             set_whitespace_single_before(for_statement.condition()?.syntax().first_token()?);
             set_whitespace_single_before(for_statement.continuing_part()?.syntax().first_token()?);
             remove_if_whitespace(for_statement.continuing_part()?.syntax().last_token()?);
-        }
+        },
         SyntaxKind::CompoundStatement => {
             let stmt = ast::CompoundStatement::cast(syntax)?;
             let has_newline = is_whitespace_with_newline(stmt.left_brace_token()?.next_token()?);
@@ -210,7 +217,7 @@ fn format_syntax_node(
                     )),
                 );
             }
-        }
+        },
         SyntaxKind::TypeInitializer => {
             let type_initialiser = ast::TypeInitializer::cast(syntax)?;
 
@@ -219,7 +226,7 @@ fn format_syntax_node(
             }
 
             format_params(type_initialiser.args()?, indentation, options)?;
-        }
+        },
         SyntaxKind::FunctionCall => {
             let function_call = ast::FunctionCall::cast(syntax)?;
 
@@ -230,7 +237,7 @@ fn format_syntax_node(
             let param_list = function_call.params()?;
 
             format_params(param_list, indentation, options)?;
-        }
+        },
         SyntaxKind::InfixExpr => {
             let expr = ast::InfixExpr::cast(syntax)?;
 
@@ -238,18 +245,18 @@ fn format_syntax_node(
                 NodeOrToken::Node(node) => {
                     set_whitespace_single_before(node.first_token()?);
                     set_whitespace_single_before(node.last_token()?.next_token()?);
-                }
+                },
                 NodeOrToken::Token(token) => {
                     whitespace_to_single_around(token);
-                }
+                },
             }
-        }
+        },
         SyntaxKind::ParenExpr => {
             let paren_expr = ast::ParenExpr::cast(syntax)?;
             remove_if_whitespace(paren_expr.left_paren_token()?.next_token()?);
             remove_if_whitespace(paren_expr.right_paren_token()?.prev_token()?);
 
-            if paren_expr.syntax().parent().map_or(false, |parent| {
+            if paren_expr.syntax().parent().is_some_and(|parent| {
                 matches!(
                     parent.kind(),
                     |SyntaxKind::WhileStatement| SyntaxKind::IfStatement | SyntaxKind::ElseIfBlock
@@ -258,7 +265,7 @@ fn format_syntax_node(
                 remove_token(paren_expr.right_paren_token()?);
                 remove_token(paren_expr.left_paren_token()?);
             }
-        }
+        },
         SyntaxKind::BitcastExpr => {
             let bitcast_expr = ast::BitcastExpr::cast(syntax)?;
             remove_if_whitespace(bitcast_expr.bitcast_token()?.next_token()?);
@@ -267,15 +274,15 @@ fn format_syntax_node(
             remove_if_whitespace(bitcast_expr.r_angle_token()?.prev_token()?);
 
             remove_if_whitespace(bitcast_expr.r_angle_token()?.next_token()?);
-        }
+        },
         SyntaxKind::AssignmentStmt => {
             let stmt = ast::AssignmentStmt::cast(syntax)?;
             whitespace_to_single_around(stmt.equal_token()?);
-        }
+        },
         SyntaxKind::CompoundAssignmentStmt => {
             let stmt = ast::CompoundAssignmentStmt::cast(syntax)?;
             whitespace_to_single_around(stmt.op_token()?);
-        }
+        },
         SyntaxKind::VariableStatement => {
             let stmt = ast::VariableStatement::cast(syntax)?;
             if let Some(colon) = stmt.colon() {
@@ -283,7 +290,7 @@ fn format_syntax_node(
                 set_whitespace_single_after(colon);
             }
             whitespace_to_single_around(stmt.equal_token()?);
-        }
+        },
         _ => {
             if let Some(ty) = ast::Type::cast(syntax) {
                 let generics = ty.generic_arg_list()?;
@@ -293,7 +300,7 @@ fn format_syntax_node(
                 let r_angle = generics.l_angle_token()?;
                 remove_if_whitespace(r_angle.prev_token()?);
             }
-        }
+        },
     }
 
     None
@@ -337,9 +344,9 @@ fn format_param_list<T: AstNode>(
         let last = i == count - 1;
 
         let first_token = param.syntax().first_token()?;
-        let previous_had_newline = first_token.prev_token().map_or(false, |token| {
-            token.kind().is_whitespace() && token.text().contains('\n')
-        });
+        let previous_had_newline = first_token
+            .prev_token()
+            .is_some_and(|token| token.kind().is_whitespace() && token.text().contains('\n'));
 
         let ws = match (first, previous_had_newline) {
             (true, false) => create_whitespace(""),
@@ -359,21 +366,21 @@ fn format_param_list<T: AstNode>(
         match (last, token_after_param.kind() == SyntaxKind::Comma) {
             (true, true) if !has_newline => token_after_param.detach(),
             (true, has_comma) => match (trailing_comma_policy, has_comma) {
-                (Policy::Ignore, _) => {}
+                (Policy::Ignore, _) => {},
                 (Policy::Remove, true) => token_after_param.detach(),
-                (Policy::Remove, false) => {}
-                (Policy::Insert, true) => {}
+                (Policy::Remove, false) => {},
+                (Policy::Insert, true) => {},
                 (Policy::Insert, false) => {
                     insert_after_syntax(
                         param.syntax(),
                         create_syntax_token(SyntaxKind::Comma, ","),
                     );
-                }
+                },
             },
-            (false, true) => {}
+            (false, true) => {},
             (false, false) => {
                 insert_after_syntax(param.syntax(), create_syntax_token(SyntaxKind::Comma, ","));
-            }
+            },
         };
 
         first = false;
@@ -423,7 +430,10 @@ fn remove_token(token: SyntaxToken) {
         .splice_children(idx..idx + 1, Vec::new())
 }
 
-fn replace_token_with(token: SyntaxToken, replacement: SyntaxToken) {
+fn replace_token_with(
+    token: SyntaxToken,
+    replacement: SyntaxToken,
+) {
     let idx = token.index();
     token
         .parent()
@@ -431,7 +441,10 @@ fn replace_token_with(token: SyntaxToken, replacement: SyntaxToken) {
         .splice_children(idx..idx + 1, vec![SyntaxElement::Token(replacement)]);
 }
 
-fn insert_after(token: SyntaxToken, insert: SyntaxToken) {
+fn insert_after(
+    token: SyntaxToken,
+    insert: SyntaxToken,
+) {
     let idx = token.index();
     token
         .parent()
@@ -439,14 +452,20 @@ fn insert_after(token: SyntaxToken, insert: SyntaxToken) {
         .splice_children(idx + 1..idx + 1, vec![SyntaxElement::Token(insert)]);
 }
 
-fn insert_after_syntax(node: &SyntaxNode, insert: SyntaxToken) {
+fn insert_after_syntax(
+    node: &SyntaxNode,
+    insert: SyntaxToken,
+) {
     let idx = node.index();
     node.parent()
         .unwrap()
         .splice_children(idx + 1..idx + 1, vec![SyntaxElement::Token(insert)]);
 }
 
-fn insert_before(token: SyntaxToken, insert: SyntaxToken) {
+fn insert_before(
+    token: SyntaxToken,
+    insert: SyntaxToken,
+) {
     let idx = token.index();
     token
         .parent()
@@ -460,7 +479,10 @@ fn whitespace_to_single_around(around: SyntaxToken) -> Option<()> {
     Some(())
 }
 
-fn set_whitespace_after(after: SyntaxToken, to: SyntaxToken) -> Option<()> {
+fn set_whitespace_after(
+    after: SyntaxToken,
+    to: SyntaxToken,
+) -> Option<()> {
     let maybe_whitespace = after.next_token()?;
     if maybe_whitespace.kind().is_whitespace() {
         replace_token_with(maybe_whitespace, to);
@@ -471,7 +493,10 @@ fn set_whitespace_after(after: SyntaxToken, to: SyntaxToken) -> Option<()> {
     Some(())
 }
 
-fn set_whitespace_before(before: SyntaxToken, to: SyntaxToken) -> Option<()> {
+fn set_whitespace_before(
+    before: SyntaxToken,
+    to: SyntaxToken,
+) -> Option<()> {
     let maybe_whitespace = before.prev_token()?;
     if maybe_whitespace.kind().is_whitespace() {
         replace_token_with(maybe_whitespace, to);
@@ -485,6 +510,7 @@ fn set_whitespace_before(before: SyntaxToken, to: SyntaxToken) -> Option<()> {
 fn set_whitespace_single_after(after: SyntaxToken) -> Option<()> {
     set_whitespace_after(after, single_whitespace())
 }
+
 fn set_whitespace_single_before(before: SyntaxToken) -> Option<()> {
     set_whitespace_before(before, single_whitespace())
 }
@@ -492,10 +518,15 @@ fn set_whitespace_single_before(before: SyntaxToken) -> Option<()> {
 fn single_whitespace() -> SyntaxToken {
     create_whitespace(" ")
 }
+
 fn create_whitespace(text: &str) -> SyntaxToken {
     create_syntax_token(SyntaxKind::Whitespace, text)
 }
-fn create_syntax_token(kind: SyntaxKind, text: &str) -> SyntaxToken {
+
+fn create_syntax_token(
+    kind: SyntaxKind,
+    text: &str,
+) -> SyntaxToken {
     let node = SyntaxNode::new_root(GreenNode::new(
         SyntaxKind::Error.into(),
         std::iter::once(NodeOrToken::Token(GreenToken::new(kind.into(), text))),

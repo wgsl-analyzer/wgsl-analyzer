@@ -12,7 +12,10 @@ pub(crate) enum Event<P: ParserDefinition> {
 }
 
 impl<P: ParserDefinition> std::fmt::Debug for Event<P> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self {
             Self::StartNode {
                 kind,
@@ -31,7 +34,10 @@ impl<P: ParserDefinition> std::fmt::Debug for Event<P> {
 }
 
 impl<P: ParserDefinition> PartialEq for Event<P> {
-    fn eq(&self, other: &Self) -> bool {
+    fn eq(
+        &self,
+        other: &Self,
+    ) -> bool {
         match (self, other) {
             (
                 Self::StartNode {

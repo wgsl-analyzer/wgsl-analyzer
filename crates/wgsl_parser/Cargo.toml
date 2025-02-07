@@ -1,11 +1,15 @@
 [package]
 name = "wgsl_parser"
 version = "0.0.0"
-edition = "2021"
+readme = "README.md"
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords = ["wgsl"]
 
 [dependencies]
 logos = "0.12.0"
-parser = { path = "../parser" }
+parser = { path = "../parser", version = "0.0.0" }
 rowan = "0.16.1"
 
 [dev-dependencies]

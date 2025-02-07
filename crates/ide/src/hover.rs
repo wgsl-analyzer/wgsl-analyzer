@@ -8,7 +8,10 @@ pub enum HoverResult {
     Text(String),
 }
 
-pub fn hover(db: &dyn HirDatabase, file_range: FileRange) -> Option<RangeInfo<HoverResult>> {
+pub fn hover(
+    db: &dyn HirDatabase,
+    file_range: FileRange,
+) -> Option<RangeInfo<HoverResult>> {
     let sema = &Semantics::new(db);
 
     let file = db.parse(file_range.file_id).tree();

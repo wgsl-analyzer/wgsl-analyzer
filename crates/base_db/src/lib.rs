@@ -4,8 +4,6 @@ pub mod change;
 pub mod line_index;
 
 mod util_types;
-pub use util_types::*;
-
 use std::{
     collections::{HashMap, HashSet},
     sync::Arc,
@@ -13,6 +11,7 @@ use std::{
 
 use line_index::LineIndex;
 use syntax::{Parse, ParseEntryPoint};
+pub use util_types::*;
 pub use vfs::FileId;
 
 pub trait Upcast<T: ?Sized> {
@@ -22,7 +21,10 @@ pub trait Upcast<T: ?Sized> {
 #[salsa::query_group(SourceDatabaseStorage)]
 pub trait SourceDatabase {
     #[salsa::input]
-    fn file_text(&self, file_id: FileId) -> Arc<String>;
+    fn file_text(
+        &self,
+        file_id: FileId,
+    ) -> Arc<String>;
 
     #[salsa::input]
     fn custom_imports(&self) -> Arc<HashMap<String, String>>;
@@ -31,29 +33,54 @@ pub trait SourceDatabase {
     fn shader_defs(&self) -> Arc<HashSet<String>>;
 
     #[salsa::invoke(parse_no_preprocessor_query)]
-    fn parse_no_preprocessor(&self, file_id: FileId) -> syntax::Parse;
+    fn parse_no_preprocessor(
+        &self,
+        file_id: FileId,
+    ) -> syntax::Parse;
 
     #[salsa::invoke(parse_with_unconfigured_query)]
-    fn parse_with_unconfigured(&self, file_id: FileId) -> (Parse, Arc<Vec<UnconfiguredCode>>);
+    fn parse_with_unconfigured(
+        &self,
+        file_id: FileId,
+    ) -> (Parse, Arc<Vec<UnconfiguredCode>>);
 
     #[salsa::invoke(parse_query)]
-    fn parse(&self, file_id: FileId) -> Parse;
+    fn parse(
+        &self,
+        file_id: FileId,
+    ) -> Parse;
 
     #[salsa::invoke(parse_import_no_preprocessor_query)]
-    fn parse_import_no_preprocessor(&self, key: String) -> Result<syntax::Parse, ()>;
+    fn parse_import_no_preprocessor(
+        &self,
+        key: String,
+    ) -> Result<syntax::Parse, ()>;
 
     #[salsa::invoke(parse_import_query)]
-    fn parse_import(&self, key: String, parse_entrypoint: ParseEntryPoint) -> Result<Parse, ()>;
+    fn parse_import(
+        &self,
+        key: String,
+        parse_entrypoint: ParseEntryPoint,
+    ) -> Result<Parse, ()>;
 
-    fn line_index(&self, file_id: FileId) -> Arc<LineIndex>;
+    fn line_index(
+        &self,
+        file_id: FileId,
+    ) -> Arc<LineIndex>;
 }
 
-fn line_index(db: &dyn SourceDatabase, file_id: FileId) -> Arc<LineIndex> {
+fn line_index(
+    db: &dyn SourceDatabase,
+    file_id: FileId,
+) -> Arc<LineIndex> {
     let text = db.file_text(file_id);
     Arc::new(LineIndex::new(&text))
 }
 
-fn parse_no_preprocessor_query(db: &dyn SourceDatabase, file_id: FileId) -> syntax::Parse {
+fn parse_no_preprocessor_query(
+    db: &dyn SourceDatabase,
+    file_id: FileId,
+) -> syntax::Parse {
     let source = db.file_text(file_id);
     syntax::parse(&source)
 }
@@ -97,7 +124,10 @@ fn parse_with_unconfigured_query(
     (parse, Arc::new(unconfigured))
 }
 
-fn parse_query(db: &dyn SourceDatabase, file_id: FileId) -> Parse {
+fn parse_query(
+    db: &dyn SourceDatabase,
+    file_id: FileId,
+) -> Parse {
     db.parse_with_unconfigured(file_id).0
 }
 

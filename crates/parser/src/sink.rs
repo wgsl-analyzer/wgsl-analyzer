@@ -1,10 +1,8 @@
-use super::lexer::Token;
-use super::parsing::ParseError;
-use super::Parse;
-use super::TokenKind;
-use super::{event::Event, ParserDefinition};
-use rowan::{GreenNodeBuilder, Language};
 use std::{marker::PhantomData, mem};
+
+use rowan::{GreenNodeBuilder, Language};
+
+use super::{event::Event, lexer::Token, parsing::ParseError, Parse, ParserDefinition, TokenKind};
 
 pub(crate) struct Sink<'t, 'input, P: ParserDefinition> {
     builder: GreenNodeBuilder<'static>,
@@ -15,7 +13,10 @@ pub(crate) struct Sink<'t, 'input, P: ParserDefinition> {
 }
 
 impl<'t, 'input, P: ParserDefinition> Sink<'t, 'input, P> {
-    pub(crate) fn new(tokens: &'t [Token<'input, P::TokenKind>], events: Vec<Event<P>>) -> Self {
+    pub(crate) fn new(
+        tokens: &'t [Token<'input, P::TokenKind>],
+        events: Vec<Event<P>>,
+    ) -> Self {
         Self {
             builder: GreenNodeBuilder::new(),
             tokens,
@@ -59,11 +60,11 @@ impl<'t, 'input, P: ParserDefinition> Sink<'t, 'input, P> {
                     for kind in kinds.into_iter().rev() {
                         self.builder.start_node(P::Language::kind_to_raw(kind));
                     }
-                }
+                },
                 Event::AddToken => self.token(),
                 Event::FinishNode => self.builder.finish_node(),
                 Event::Error(error) => self.errors.push(error),
-                Event::Placeholder => {}
+                Event::Placeholder => {},
             }
 
             self.eat_trivia();

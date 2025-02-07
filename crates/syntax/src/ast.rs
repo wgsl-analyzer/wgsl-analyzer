@@ -1,23 +1,14 @@
 pub mod operators;
 
-use crate::ast::operators::ArithOp;
-use crate::ast::operators::CmpOp;
-use crate::ast::operators::LogicOp;
-use crate::support;
-use crate::AstChildren;
-use crate::AstNode;
-use crate::AstToken;
-use crate::HasAttrs;
-use crate::HasGenerics;
-use crate::HasName;
-use crate::SyntaxToken;
-use crate::TokenText;
 use rowan::NodeOrToken;
 use wgsl_parser::{SyntaxKind, SyntaxNode};
 
-use self::operators::BinaryOp;
-use self::operators::CompoundOp;
-use self::operators::UnaryOp;
+use self::operators::{BinaryOp, CompoundOp, UnaryOp};
+use crate::{
+    ast::operators::{ArithOp, CmpOp, LogicOp},
+    support, AstChildren, AstNode, AstToken, HasAttrs, HasGenerics, HasName, SyntaxToken,
+    TokenText,
+};
 
 macro_rules! ast_node {
     ($kind:ident $($name:ident)? $(:
@@ -67,7 +58,6 @@ macro_rules! ast_node {
             }
         }
     };
-
 
     (@descendant $self:ident TokenText<'_>) => {
         crate::support::text_of_first_token(&$self.syntax)
@@ -263,20 +253,26 @@ ast_node!(Function:
     body: Option<CompoundStatement>;
 );
 impl HasName for Function {}
+
 impl HasAttrs for Function {}
+
 ast_node!(StructDecl:
     struct_token: Option<SyntaxToken Struct>;
     name: Option<Name>;
     body: Option<StructDeclBody>;
 );
+
 impl HasAttrs for StructDecl {}
+
 ast_node!(StructDeclBody:
     fields: AstChildren<StructDeclField>;
 );
+
 ast_node!(StructDeclField:
     variable_ident_decl: Option<VariableIdentDecl>;
 );
 impl HasAttrs for StructDeclField {}
+
 ast_node!(GlobalVariableDecl:
     var_token: Option<SyntaxToken Var>;
     binding: Option<Binding>;
@@ -284,14 +280,18 @@ ast_node!(GlobalVariableDecl:
     ty: Option<Type>;
     init: Option<Expr>;
 );
+
 impl HasAttrs for GlobalVariableDecl {}
+
 ast_node!(GlobalConstantDecl:
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
     ty: Option<Type>;
     init: Option<Expr>;
 );
+
 impl HasAttrs for OverrideDecl {}
+
 ast_node!(OverrideDecl:
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
@@ -322,31 +322,39 @@ ast_node!(Name:
     ident_token: Option<SyntaxToken Ident>;
     text: TokenText<'_>;
 );
+
 ast_node!(Param:
     variable_ident_declaration: Option<VariableIdentDecl>;
     import: Option<Import>;
 );
+
 ast_node!(ParamList:
     left_paren_token: Option<SyntaxToken ParenLeft>;
     right_paren_token: Option<SyntaxToken ParenRight>;
     params: AstChildren<Param>;
 );
+
 ast_node!(Binding);
+
 impl HasName for Binding {}
+
 ast_node!(VariableIdentDecl:
     colon_token: Option<SyntaxToken Colon>;
     binding: Option<Binding>;
     ty: Option<Type>;
 );
+
 ast_node!(FunctionParamList:
     left_paren_token: Option<SyntaxToken ParenLeft>;
     right_paren_token: Option<SyntaxToken ParenRight>;
     args: AstChildren<Expr>;
 );
+
 ast_node!(ReturnType:
     arrow_token: Option<SyntaxToken Arrow>;
     ty: Option<Type>;
 );
+
 ast_node!(GenericArgList:
     l_angle_token: Option<SyntaxToken LessThan>;
     t_angle_token: Option<SyntaxToken GreaterThan>;
@@ -374,6 +382,7 @@ ast_token_enum! {
         ReadWrite,
     }
 }
+
 ast_token_enum! {
     enum StorageClass {
         FunctionClass,
@@ -384,12 +393,14 @@ ast_token_enum! {
         PushConstant,
     }
 }
+
 pub enum GenericArg {
     Type(Type),
     Literal(Literal),
     AccessMode(AccessMode),
     StorageClass(StorageClass),
 }
+
 impl GenericArg {
     pub fn as_type(&self) -> Option<Type> {
         match self {
@@ -397,18 +408,21 @@ impl GenericArg {
             _ => None,
         }
     }
+
     pub fn as_literal(&self) -> Option<Literal> {
         match self {
             GenericArg::Literal(ty) => Some(ty.clone()),
             _ => None,
         }
     }
+
     pub fn as_access_mode(&self) -> Option<AccessMode> {
         match self {
             GenericArg::AccessMode(access) => Some(access.clone()),
             _ => None,
         }
     }
+
     pub fn as_storage_class(&self) -> Option<StorageClass> {
         match self {
             GenericArg::StorageClass(class) => Some(class.clone()),
@@ -428,6 +442,7 @@ impl VariableQualifier {
     pub fn access_mode(&self) -> Option<AccessMode> {
         support::child_token::<AccessMode>(self.syntax())
     }
+
     pub fn storage_class(self) -> Option<StorageClass> {
         support::child_token::<StorageClass>(self.syntax())
     }
@@ -454,6 +469,7 @@ ast_token_enum! {
         Xor,
     }
 }
+
 ast_token_enum! {
     enum PrefixOpKind {
         Bang,
@@ -463,6 +479,7 @@ ast_token_enum! {
         And,
     }
 }
+
 ast_node!(PrefixExpr:
     expr: Option<Expr>;
 );
@@ -472,6 +489,7 @@ impl Literal {
         support::child_token(self.syntax()).expect("invalid literal parsed")
     }
 }
+
 ast_token_enum! {
     enum LiteralKind {
         IntLiteral,
@@ -482,6 +500,7 @@ ast_token_enum! {
         False,
     }
 }
+
 ast_node!(PathExpr:
     name_ref: Option<NameRef>;
 );
@@ -517,6 +536,7 @@ impl IndexExpr {
     pub fn expr(&self) -> Option<Expr> {
         support::children(self.syntax()).next()
     }
+
     pub fn index(&self) -> Option<Expr> {
         support::children(self.syntax()).nth(1)
     }
@@ -555,6 +575,7 @@ impl AssignmentStmt {
     pub fn lhs(&self) -> Option<Expr> {
         crate::support::children(self.syntax()).next()
     }
+
     pub fn rhs(&self) -> Option<Expr> {
         crate::support::children(self.syntax()).nth(1)
     }
@@ -571,6 +592,7 @@ impl IncrDecrStatement {
     pub fn expr(&self) -> Option<Expr> {
         crate::support::children(self.syntax()).next()
     }
+
     pub fn incr_decr(&self) -> Option<IncrDecr> {
         self.syntax()
             .children_with_tokens()
@@ -599,16 +621,20 @@ ast_token_enum! {
 }
 
 ast_node!(CompoundAssignmentStmt);
+
 impl CompoundAssignmentStmt {
     pub fn lhs(&self) -> Option<Expr> {
         crate::support::children(self.syntax()).next()
     }
+
     pub fn rhs(&self) -> Option<Expr> {
         crate::support::children(self.syntax()).nth(1)
     }
+
     pub fn op_token(&self) -> Option<SyntaxToken> {
         self.lhs()?.syntax().last_token()?.next_token()
     }
+
     pub fn op(&self) -> Option<CompoundOp> {
         let kind: CompoundAssignmentOperator = support::child_token(self.syntax())?;
         let op = match kind {
@@ -626,16 +652,19 @@ impl CompoundAssignmentStmt {
         Some(op)
     }
 }
+
 ast_node!(ElseIfBlock:
     else_token: Option<SyntaxToken Else>;
     if_token: Option<SyntaxToken If>;
     condition: Option<Expr>;
     block: Option<CompoundStatement>;
 );
+
 ast_node!(ElseBlock:
     else_token: Option<SyntaxToken Else>;
     block: Option<CompoundStatement>;
 );
+
 ast_node!(IfStatement:
     if_token: Option<SyntaxToken If>;
     condition: Option<Expr>;
@@ -696,6 +725,7 @@ impl VariableStatement {
             })
     }
 }
+
 pub enum VariableStatementKind {
     Const,
     Let,
@@ -715,11 +745,13 @@ impl ForStatement {
             .as_ref()
             .and_then(support::child::<Statement>)
     }
+
     pub fn condition(&self) -> Option<Expr> {
         support::child_syntax(self.syntax(), SyntaxKind::ForCondition)
             .as_ref()
             .and_then(support::child::<Expr>)
     }
+
     pub fn continuing_part(&self) -> Option<Statement> {
         support::child_syntax(self.syntax(), SyntaxKind::ForContinuingPart)
             .as_ref()
@@ -787,6 +819,7 @@ ast_enum_raw! {
         Mat4x4,
     }
 }
+
 ast_enum_raw! {
     enum VecType {
         Vec2,
@@ -794,6 +827,7 @@ ast_enum_raw! {
         Vec4,
     }
 }
+
 ast_enum_raw! {
     enum ScalarType {
         Bool,
@@ -802,6 +836,7 @@ ast_enum_raw! {
         Uint32,
     }
 }
+
 ast_enum_raw! {
     enum TextureType {
         Texture1d,
@@ -823,15 +858,18 @@ ast_enum_raw! {
         TextureDepthMultisampled2d,
     }
 }
+
 ast_enum_raw! {
     enum SamplerType {
         Sampler,
         SamplerComparison,
     }
 }
+
 ast_node!(PathType:
     name: Option<NameRef>;
 );
+
 ast_node!(Atomic AtomicType);
 ast_node!(Array ArrayType);
 ast_node!(BindingArray BindingArrayType);
@@ -862,22 +900,32 @@ impl Type {
 }
 
 impl HasGenerics for Type {}
+
 impl HasGenerics for VecType {}
+
 impl HasGenerics for MatrixType {}
+
 impl HasGenerics for TextureType {}
+
 impl HasGenerics for ScalarType {}
+
 impl HasGenerics for AtomicType {}
+
 impl HasGenerics for ArrayType {}
+
 impl HasGenerics for BindingArrayType {}
+
 impl HasGenerics for PtrType {}
 
 impl InfixExpr {
     pub fn lhs(&self) -> Option<Expr> {
         crate::support::children(self.syntax()).next()
     }
+
     pub fn rhs(&self) -> Option<Expr> {
         crate::support::children(self.syntax()).nth(1)
     }
+
     pub fn op(&self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
         if let Some(op) = self
             .syntax()

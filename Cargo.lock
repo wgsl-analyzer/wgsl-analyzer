@@ -45,7 +45,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
-name = "base_db"
+name = "base-db"
 version = "0.0.0"
 dependencies = [
  "pretty_assertions",
@@ -54,7 +54,6 @@ dependencies = [
  "rustc-hash 2.1.1",
  "salsa",
  "syntax",
- "tracing",
  "vfs",
 ]
 
@@ -285,6 +284,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
+name = "foldhash"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a0d2fde1f7b3d48b8395d5f2de76c18a528bd6a9cdde438df747bfcba3e05d6f"
+
+[[package]]
 name = "form_urlencoded"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -327,6 +332,9 @@ name = "hashbrown"
 version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf151400ff0baff5465007dd2f3e717f3fe502074ca563069ce3a6629d07b289"
+dependencies = [
+ "foldhash",
+]
 
 [[package]]
 name = "heck"
@@ -365,10 +373,10 @@ checksum = "dfa686283ad6dd069f105e5ab091b04c62850d3e4cf5d67debad1933f55023df"
 name = "hir"
 version = "0.0.0"
 dependencies = [
- "base_db",
+ "base-db",
  "either",
- "hir_def",
- "hir_ty",
+ "hir-def",
+ "hir-ty",
  "la-arena",
  "smallvec",
  "syntax",
@@ -376,10 +384,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "hir_def"
+name = "hir-def"
 version = "0.0.0"
 dependencies = [
- "base_db",
+ "base-db",
  "either",
  "la-arena",
  "rowan",
@@ -388,16 +396,15 @@ dependencies = [
  "smallvec",
  "smol_str",
  "syntax",
- "tracing",
 ]
 
 [[package]]
-name = "hir_ty"
+name = "hir-ty"
 version = "0.0.0"
 dependencies = [
- "base_db",
+ "base-db",
  "either",
- "hir_def",
+ "hir-def",
  "itertools 0.14.0",
  "la-arena",
  "rustc-hash 2.1.1",
@@ -527,42 +534,35 @@ dependencies = [
 name = "ide"
 version = "0.0.0"
 dependencies = [
- "base_db",
+ "base-db",
  "expect-test",
  "hir",
- "hir_def",
- "hir_ty",
- "ide_completion",
+ "hir-def",
+ "hir-ty",
+ "ide-completion",
  "itertools 0.14.0",
- "lsp-types",
- "naga 0.11.1",
- "naga 0.12.3",
- "naga 0.13.0",
  "naga 0.14.2",
  "naga 0.19.2",
- "naga 22.0.0",
  "naga 22.1.0",
- "naga 23.1.0",
  "naga 24.0.0",
  "rowan",
  "salsa",
  "smol_str",
  "syntax",
- "tracing",
  "vfs",
- "wgsl_formatter",
+ "wgsl-formatter",
 ]
 
 [[package]]
-name = "ide_completion"
+name = "ide-completion"
 version = "0.0.0"
 dependencies = [
  "always-assert 0.2.0",
- "base_db",
+ "base-db",
  "either",
  "hir",
- "hir_def",
- "hir_ty",
+ "hir-def",
+ "hir-ty",
  "itertools 0.14.0",
  "rowan",
  "syntax",
@@ -664,7 +664,7 @@ checksum = "8b23360e99b8717f20aaa4598f5a6541efbe30630039fbc7706cf954a87947ae"
 [[package]]
 name = "la-arena"
 version = "0.3.1"
-source = "git+https://github.com/rust-analyzer/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
 
 [[package]]
 name = "lazy_static"
@@ -791,63 +791,6 @@ dependencies = [
 
 [[package]]
 name = "naga"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c3d4269bcb7d50121097702fde1afb75f4ea8083aeb7a55688dcf289a853271"
-dependencies = [
- "bit-set 0.5.3",
- "bitflags 1.3.2",
- "codespan-reporting",
- "hexf-parse",
- "indexmap 1.9.3",
- "log",
- "num-traits",
- "rustc-hash 1.1.0",
- "termcolor",
- "thiserror 1.0.69",
- "unicode-xid",
-]
-
-[[package]]
-name = "naga"
-version = "0.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbcc2e0513220fd2b598e6068608d4462db20322c0e77e47f6f488dfcfc279cb"
-dependencies = [
- "bit-set 0.5.3",
- "bitflags 1.3.2",
- "codespan-reporting",
- "hexf-parse",
- "indexmap 1.9.3",
- "log",
- "num-traits",
- "rustc-hash 1.1.0",
- "termcolor",
- "thiserror 1.0.69",
- "unicode-xid",
-]
-
-[[package]]
-name = "naga"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1ceaaa4eedaece7e4ec08c55c640ba03dbb73fb812a6570a59bcf1930d0f70e"
-dependencies = [
- "bit-set 0.5.3",
- "bitflags 2.8.0",
- "codespan-reporting",
- "hexf-parse",
- "indexmap 1.9.3",
- "log",
- "num-traits",
- "rustc-hash 1.1.0",
- "termcolor",
- "thiserror 1.0.69",
- "unicode-xid",
-]
-
-[[package]]
-name = "naga"
 version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ae585df4b6514cf8842ac0f1ab4992edc975892704835b549cf818dc0191249e"
@@ -886,25 +829,6 @@ dependencies = [
 
 [[package]]
 name = "naga"
-version = "22.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=765c20235ea712fd14ad1b9e36bbb2071a86e319#765c20235ea712fd14ad1b9e36bbb2071a86e319"
-dependencies = [
- "arrayvec",
- "bit-set 0.8.0",
- "bitflags 2.8.0",
- "cfg_aliases 0.1.1",
- "codespan-reporting",
- "hexf-parse",
- "indexmap 2.7.1",
- "log",
- "rustc-hash 1.1.0",
- "termcolor",
- "thiserror 1.0.69",
- "unicode-xid",
-]
-
-[[package]]
-name = "naga"
 version = "22.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8bd5a652b6faf21496f2cfd88fc49989c8db0825d1f6746b1a71a6ede24a63ad"
@@ -925,35 +849,15 @@ dependencies = [
 
 [[package]]
 name = "naga"
-version = "23.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "364f94bc34f61332abebe8cad6f6cd82a5b65cff22c828d05d0968911462ca4f"
-dependencies = [
- "arrayvec",
- "bit-set 0.8.0",
- "bitflags 2.8.0",
- "cfg_aliases 0.1.1",
- "codespan-reporting",
- "hexf-parse",
- "indexmap 2.7.1",
- "log",
- "rustc-hash 1.1.0",
- "termcolor",
- "thiserror 1.0.69",
- "unicode-xid",
-]
-
-[[package]]
-name = "naga"
 version = "24.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e380993072e52eef724eddfcde0ed013b0c023c3f0417336ed041aa9f076994e"
+source = "git+https://github.com/gfx-rs/wgpu?rev=b32cbd4ea6b6b898b27b7837145b3cfe30ac1543#b32cbd4ea6b6b898b27b7837145b3cfe30ac1543"
 dependencies = [
  "arrayvec",
  "bit-set 0.8.0",
  "bitflags 2.8.0",
  "cfg_aliases 0.2.1",
  "codespan-reporting",
+ "hashbrown 0.15.2",
  "hexf-parse",
  "indexmap 2.7.1",
  "log",
@@ -1040,17 +944,7 @@ checksum = "7d17b78036a60663b797adeaee46f5c9dfebb86948d1255007a1d6be0271ff99"
 dependencies = [
  "instant",
  "lock_api",
- "parking_lot_core 0.8.6",
-]
-
-[[package]]
-name = "parking_lot"
-version = "0.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1bf18183cf54e8d6059647fc3063646a1801cf30896933ec2311622cc4b9a27"
-dependencies = [
- "lock_api",
- "parking_lot_core 0.9.10",
+ "parking_lot_core",
 ]
 
 [[package]]
@@ -1062,22 +956,9 @@ dependencies = [
  "cfg-if",
  "instant",
  "libc",
- "redox_syscall 0.2.16",
+ "redox_syscall",
  "smallvec",
  "winapi",
-]
-
-[[package]]
-name = "parking_lot_core"
-version = "0.9.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e401f977ab385c9e4e3ab30627d6f26d00e2c73eef317493c4ec6d468726cf8"
-dependencies = [
- "cfg-if",
- "libc",
- "redox_syscall 0.5.8",
- "smallvec",
- "windows-targets",
 ]
 
 [[package]]
@@ -1092,7 +973,7 @@ dependencies = [
 [[package]]
 name = "paths"
 version = "0.0.0"
-source = "git+https://github.com/rust-analyzer/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
 
 [[package]]
 name = "percent-encoding"
@@ -1166,15 +1047,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fb5a58c1855b4b6819d59012155603f0b22ad30cad752600aadfcb695265519a"
 dependencies = [
  "bitflags 1.3.2",
-]
-
-[[package]]
-name = "redox_syscall"
-version = "0.5.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03a862b389f93e68874fbf580b9de08dd02facb9a788ebadaf4a3fd33cf58834"
-dependencies = [
- "bitflags 2.8.0",
 ]
 
 [[package]]
@@ -1279,7 +1151,7 @@ dependencies = [
  "lock_api",
  "log",
  "oorandom",
- "parking_lot 0.11.2",
+ "parking_lot",
  "rustc-hash 1.1.0",
  "salsa-macros",
  "smallvec",
@@ -1380,7 +1252,7 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 [[package]]
 name = "stdx"
 version = "0.0.0"
-source = "git+https://github.com/rust-analyzer/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
 dependencies = [
  "always-assert 0.1.3",
  "crossbeam-channel",
@@ -1478,7 +1350,7 @@ dependencies = [
 [[package]]
 name = "text-edit"
 version = "0.0.0"
-source = "git+https://github.com/rust-analyzer/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
 dependencies = [
  "itertools 0.10.5",
  "text-size",
@@ -1557,16 +1429,6 @@ checksum = "9117f5d4db391c1cf6927e7bea3db74b9a1c1add8f7eda9ffd5364f40f57b82f"
 dependencies = [
  "displaydoc",
  "zerovec",
-]
-
-[[package]]
-name = "tools"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "lexopt",
- "serde_json",
- "xshell",
 ]
 
 [[package]]
@@ -1687,7 +1549,7 @@ checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 [[package]]
 name = "vfs"
 version = "0.0.0"
-source = "git+https://github.com/rust-analyzer/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
 dependencies = [
  "fst",
  "indexmap 2.7.1",
@@ -1704,22 +1566,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
 
 [[package]]
+name = "wgsl-formatter"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "dissimilar",
+ "expect-test",
+ "rowan",
+ "syntax",
+ "wgsl_parser",
+]
+
+[[package]]
 name = "wgsl_analyzer"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "base_db",
+ "base-db",
  "crossbeam-channel",
  "dissimilar",
  "hir",
- "hir_def",
- "hir_ty",
+ "hir-def",
+ "hir-ty",
  "ide",
- "ide_completion",
+ "ide-completion",
  "itertools 0.14.0",
  "lsp-server",
  "lsp-types",
- "parking_lot 0.12.3",
  "paths",
  "rustc-hash 2.1.1",
  "salsa",
@@ -1730,18 +1603,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "vfs",
-]
-
-[[package]]
-name = "wgsl_formatter"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "dissimilar",
- "expect-test",
- "rowan",
- "syntax",
- "wgsl_parser",
 ]
 
 [[package]]
@@ -1761,7 +1622,7 @@ dependencies = [
  "anyhow",
  "lexopt",
  "prettydiff",
- "wgsl_formatter",
+ "wgsl-formatter",
 ]
 
 [[package]]
@@ -1936,21 +1797,6 @@ name = "writeable"
 version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e9df38ee2d2c3c5948ea468a8406ff0db0b29ae1ffde1bcf20ef305bcc95c51"
-
-[[package]]
-name = "xshell"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e7290c623014758632efe00737145b6867b66292c42167f2ec381eb566a373d"
-dependencies = [
- "xshell-macros",
-]
-
-[[package]]
-name = "xshell-macros"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32ac00cd3f8ec9c1d33fb3e7958a82df6989c42d747bd326c822b1d625283547"
 
 [[package]]
 name = "yansi"

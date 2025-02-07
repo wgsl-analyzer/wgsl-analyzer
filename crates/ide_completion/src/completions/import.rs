@@ -1,13 +1,15 @@
+use super::Completions;
 use crate::{
     context::{CompletionContext, ImmediateLocation},
     item::{CompletionItem, CompletionItemKind},
 };
 
-use super::Completions;
-
-pub(crate) fn complete_import(acc: &mut Completions, ctx: &CompletionContext) -> Option<()> {
+pub(crate) fn complete_import(
+    acc: &mut Completions,
+    ctx: &CompletionContext,
+) -> Option<()> {
     match &ctx.completion_location {
-        Some(ImmediateLocation::Import) => {}
+        Some(ImmediateLocation::Import) => {},
         _ => return None,
     };
 

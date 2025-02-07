@@ -70,15 +70,15 @@ fn resolve_name_ref(
             ResolveCallable::Struct(loc) => {
                 let id = sema.db.intern_struct(loc);
                 Some(Definition::Struct(Struct { id }))
-            }
+            },
             ResolveCallable::TypeAlias(loc) => {
                 let id = sema.db.intern_type_alias(loc);
                 Some(Definition::TypeAlias(TypeAlias { id }))
-            }
+            },
             ResolveCallable::Function(function) => {
                 let id = sema.db.intern_function(function);
                 Some(Definition::ModuleDef(ModuleDef::Function(Function { id })))
-            }
+            },
             ResolveCallable::PredeclaredTypeAlias(_) => None,
         }
     } else if let Some(ty) = ast::PathType::cast(parent) {
@@ -88,15 +88,15 @@ fn resolve_name_ref(
             ResolveType::Struct(loc) => {
                 let id = sema.db.intern_struct(loc);
                 Some(Definition::Struct(Struct { id }))
-            }
+            },
             ResolveType::TypeAlias(loc) => {
                 let id = sema.db.intern_type_alias(loc);
                 Some(Definition::TypeAlias(TypeAlias { id }))
-            }
+            },
             ResolveType::PredeclaredTypeAlias(_) => {
                 // TODO: should this return something?
                 None
-            }
+            },
         }
     } else {
         None

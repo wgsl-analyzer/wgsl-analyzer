@@ -16,19 +16,27 @@ pub struct Parse {
     green_node: rowan::GreenNode,
     errors: Arc<Vec<ParseError>>,
 }
+
 impl PartialEq for Parse {
-    fn eq(&self, other: &Self) -> bool {
+    fn eq(
+        &self,
+        other: &Self,
+    ) -> bool {
         self.green_node == other.green_node
     }
 }
+
 impl Eq for Parse {}
+
 impl Parse {
     pub fn syntax(&self) -> SyntaxNode {
         SyntaxNode::new_root(self.green_node.clone())
     }
+
     pub fn errors(&self) -> &[ParseError] {
         &self.errors
     }
+
     pub fn tree(&self) -> ast::SourceFile {
         ast::SourceFile::cast(self.syntax()).unwrap()
     }
@@ -37,7 +45,11 @@ impl Parse {
 pub fn parse(input: &str) -> Parse {
     parse_entrypoint(input, ParseEntryPoint::File)
 }
-pub fn parse_entrypoint(input: &str, parse_entrypoint: ParseEntryPoint) -> Parse {
+
+pub fn parse_entrypoint(
+    input: &str,
+    parse_entrypoint: ParseEntryPoint,
+) -> Parse {
     let (green_node, errors) = wgsl_parser::parse_entrypoint(input, parse_entrypoint).into_parts();
     Parse {
         green_node,
@@ -106,6 +118,7 @@ impl<N> AstChildren<N> {
 
 impl<N: AstNode> Iterator for AstChildren<N> {
     type Item = N;
+
     fn next(&mut self) -> Option<N> {
         self.inner.find_map(N::cast)
     }
@@ -115,6 +128,7 @@ pub enum TokenText<'a> {
     Borrowed(&'a str),
     Owned(rowan::GreenToken),
 }
+
 impl<'a> TokenText<'a> {
     pub fn as_str(&'a self) -> &'a str {
         match self {
@@ -123,6 +137,7 @@ impl<'a> TokenText<'a> {
         }
     }
 }
+
 impl Deref for TokenText<'_> {
     type Target = str;
 
@@ -134,9 +149,8 @@ impl Deref for TokenText<'_> {
 mod support {
     use std::borrow::Cow;
 
-    use crate::AstToken;
-
     use super::{AstChildren, AstNode, SyntaxKind, SyntaxNode, SyntaxToken, TokenText};
+    use crate::AstToken;
 
     pub(crate) fn child<N: AstNode>(parent: &SyntaxNode) -> Option<N> {
         parent.children().find_map(N::cast)
@@ -146,7 +160,10 @@ mod support {
         AstChildren::new(parent)
     }
 
-    pub(crate) fn child_syntax(parent: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxNode> {
+    pub(crate) fn child_syntax(
+        parent: &SyntaxNode,
+        kind: SyntaxKind,
+    ) -> Option<SyntaxNode> {
         parent.children().find(|n| n.kind() == kind)
     }
 
@@ -157,7 +174,10 @@ mod support {
             .find_map(N::cast)
     }
 
-    pub(crate) fn token(parent: &SyntaxNode, kind: SyntaxKind) -> Option<SyntaxToken> {
+    pub(crate) fn token(
+        parent: &SyntaxNode,
+        kind: SyntaxKind,
+    ) -> Option<SyntaxToken> {
         parent
             .children_with_tokens()
             .filter_map(|it| it.into_token())
@@ -175,7 +195,7 @@ mod support {
         match node.green() {
             Cow::Borrowed(green_ref) => {
                 TokenText::Borrowed(first_token(green_ref).map_or("", rowan::GreenTokenData::text))
-            }
+            },
             Cow::Owned(green) => first_token(&green)
                 .map(ToOwned::to_owned)
                 .map_or(TokenText::Borrowed(""), TokenText::Owned),
@@ -188,6 +208,7 @@ pub trait HasName: AstNode {
         support::child(self.syntax())
     }
 }
+
 pub trait HasGenerics: AstNode {
     fn generic_arg_list(&self) -> Option<ast::GenericArgList> {
         support::child(self.syntax())

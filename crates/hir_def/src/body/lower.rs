@@ -1,3 +1,6 @@
+use either::Either;
+use syntax::{ast, ptr::AstPtr, AstNode, HasGenerics, HasName};
+
 use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
 use crate::{
     db::DefDatabase,
@@ -6,8 +9,6 @@ use crate::{
     type_ref::{matrix_dimensions, vector_dimensions, TypeRef},
     HirFileId, InFile,
 };
-use either::Either;
-use syntax::{ast, ptr::AstPtr, AstNode, HasGenerics, HasName};
 
 pub fn lower_function_body(
     db: &dyn DefDatabase,
@@ -37,6 +38,7 @@ pub fn lower_global_var_decl(
     }
     .collect_global_var_decl(decl)
 }
+
 pub fn lower_global_constant_decl(
     db: &dyn DefDatabase,
     file_id: HirFileId,
@@ -72,7 +74,7 @@ struct Collector<'a> {
     file_id: HirFileId,
 }
 
-impl<'a> Collector<'a> {
+impl Collector<'_> {
     fn collect_function(
         mut self,
         param_list: Option<ast::ParamList>,
@@ -87,7 +89,10 @@ impl<'a> Collector<'a> {
         (self.body, self.source_map)
     }
 
-    fn collect_function_param_list(&mut self, param_list: Option<ast::ParamList>) {
+    fn collect_function_param_list(
+        &mut self,
+        param_list: Option<ast::ParamList>,
+    ) {
         if let Some(param_list) = param_list {
             for p in param_list.params() {
                 if let Some(binding) = p
@@ -123,7 +128,10 @@ impl<'a> Collector<'a> {
         }
     }
 
-    fn collect_global_var_decl(mut self, decl: ast::GlobalVariableDecl) -> (Body, BodySourceMap) {
+    fn collect_global_var_decl(
+        mut self,
+        decl: ast::GlobalVariableDecl,
+    ) -> (Body, BodySourceMap) {
         self.body.root = decl
             .init()
             .map(|expr| self.collect_expr(expr))
@@ -133,6 +141,7 @@ impl<'a> Collector<'a> {
 
         (self.body, self.source_map)
     }
+
     fn collect_global_constant_decl(
         mut self,
         decl: ast::GlobalConstantDecl,
@@ -146,7 +155,11 @@ impl<'a> Collector<'a> {
 
         (self.body, self.source_map)
     }
-    fn collect_override_decl(mut self, decl: ast::OverrideDecl) -> (Body, BodySourceMap) {
+
+    fn collect_override_decl(
+        mut self,
+        decl: ast::OverrideDecl,
+    ) -> (Body, BodySourceMap) {
         self.body.root = decl
             .init()
             .map(|expr| self.collect_expr(expr))
@@ -157,12 +170,19 @@ impl<'a> Collector<'a> {
         (self.body, self.source_map)
     }
 
-    fn collect_binding(&mut self, binding: ast::Binding) -> BindingId {
+    fn collect_binding(
+        &mut self,
+        binding: ast::Binding,
+    ) -> BindingId {
         let src = AstPtr::new(&binding);
         let name = binding.name().map(Name::from).unwrap_or_else(Name::missing);
         self.alloc_binding(Binding { name }, src)
     }
-    fn collect_binding_opt(&mut self, binding: Option<ast::Binding>) -> BindingId {
+
+    fn collect_binding_opt(
+        &mut self,
+        binding: Option<ast::Binding>,
+    ) -> BindingId {
         match binding {
             Some(binding) => self.collect_binding(binding),
             None => self.missing_binding(),
@@ -177,7 +197,11 @@ impl<'a> Collector<'a> {
             .map(|stmt| self.collect_compound_stmt(stmt))
             .unwrap_or_else(|| self.missing_stmt())
     }
-    fn collect_compound_stmt(&mut self, compound_stmt: ast::CompoundStatement) -> StatementId {
+
+    fn collect_compound_stmt(
+        &mut self,
+        compound_stmt: ast::CompoundStatement,
+    ) -> StatementId {
         let statements = compound_stmt
             .statements()
             .filter_map(|stmt| self.collect_stmt(stmt))
@@ -188,7 +212,10 @@ impl<'a> Collector<'a> {
             .alloc(Statement::Compound { statements })
     }
 
-    fn collect_stmt(&mut self, stmt: ast::Statement) -> Option<StatementId> {
+    fn collect_stmt(
+        &mut self,
+        stmt: ast::Statement,
+    ) -> Option<StatementId> {
         let hir_stmt = match stmt {
             ast::Statement::VariableStatement(ref variable_statement) => {
                 let binding_id = self.collect_binding_opt(variable_statement.binding());
@@ -228,32 +255,32 @@ impl<'a> Collector<'a> {
                             storage_class,
                             access_mode,
                         }
-                    }
+                    },
                 }
-            }
+            },
             ast::Statement::CompoundStatement(compound_stmt) => {
                 return Some(self.collect_compound_stmt(compound_stmt));
-            }
+            },
             ast::Statement::ReturnStmt(ref ret_stmt) => {
                 let expr = ret_stmt.expr().map(|expr| self.collect_expr(expr));
                 Statement::Return { expr }
-            }
+            },
             ast::Statement::AssignmentStmt(ref assignment) => {
                 let lhs = self.collect_expr_opt(assignment.lhs());
                 let rhs = self.collect_expr_opt(assignment.rhs());
                 Statement::Assignment { lhs, rhs }
-            }
+            },
             ast::Statement::CompoundAssignmentStmt(ref assignment) => {
                 let lhs = self.collect_expr_opt(assignment.lhs());
                 let rhs = self.collect_expr_opt(assignment.rhs());
                 let op = assignment.op()?;
                 Statement::CompoundAssignment { lhs, rhs, op }
-            }
+            },
             ast::Statement::IncrDecrStatement(ref stmt) => {
                 let expr = self.collect_expr_opt(stmt.expr());
                 let op = stmt.incr_decr()?;
                 Statement::IncrDecr { expr, op }
-            }
+            },
             ast::Statement::IfStatement(ref if_stmt) => {
                 let condition = self.collect_expr_opt(if_stmt.condition());
                 let block = self.collect_compound_stmt_opt(if_stmt.block());
@@ -270,7 +297,7 @@ impl<'a> Collector<'a> {
                     else_if_blocks,
                     else_block,
                 }
-            }
+            },
             ast::Statement::SwitchStatement(ref stmt) => {
                 let expr = self.collect_expr_opt(stmt.expr());
 
@@ -297,7 +324,7 @@ impl<'a> Collector<'a> {
                             .map(|default| self.collect_compound_stmt_opt(default.block()));
 
                         (case_blocks, default_block)
-                    }
+                    },
                     None => (Vec::default(), None),
                 };
 
@@ -306,7 +333,7 @@ impl<'a> Collector<'a> {
                     case_blocks,
                     default_block,
                 }
-            }
+            },
             ast::Statement::ForStatement(ref for_stmt) => {
                 let initializer = for_stmt
                     .initializer()
@@ -324,12 +351,12 @@ impl<'a> Collector<'a> {
                     continuing_part,
                     block,
                 }
-            }
+            },
             ast::Statement::WhileStatement(ref while_stmt) => {
                 let condition = self.collect_expr_opt(while_stmt.condition());
                 let block = self.collect_compound_stmt_opt(while_stmt.block());
                 Statement::While { condition, block }
-            }
+            },
             ast::Statement::Discard(_) => Statement::Discard,
             ast::Statement::Break(_) => Statement::Break,
             ast::Statement::Continue(_) => Statement::Continue,
@@ -339,18 +366,21 @@ impl<'a> Collector<'a> {
             ast::Statement::ExprStatement(ref expr) => {
                 let expr = self.collect_expr_opt(expr.expr());
                 Statement::Expr { expr }
-            }
+            },
             ast::Statement::LoopStatement(ref stmt) => {
                 let body = self.collect_compound_stmt_opt(stmt.block());
                 Statement::Loop { body }
-            }
+            },
         };
 
         let id = self.alloc_stmt(hir_stmt, AstPtr::new(&stmt));
         Some(id)
     }
 
-    fn collect_expr(&mut self, expr: ast::Expr) -> ExprId {
+    fn collect_expr(
+        &mut self,
+        expr: ast::Expr,
+    ) -> ExprId {
         let syntax_ptr = AstPtr::new(&expr);
         let expr = match expr {
             ast::Expr::InfixExpr(expr) => {
@@ -360,25 +390,25 @@ impl<'a> Collector<'a> {
                 expr.op_kind()
                     .map(|op| Expr::BinaryOp { lhs, rhs, op })
                     .unwrap_or(Expr::Missing)
-            }
+            },
             ast::Expr::PrefixExpr(prefix_expr) => {
                 let expr = self.collect_expr_opt(prefix_expr.expr());
                 prefix_expr
                     .op_kind()
                     .map(|op| Expr::UnaryOp { expr, op })
                     .unwrap_or(Expr::Missing)
-            }
+            },
             ast::Expr::Literal(literal) => {
                 let literal = literal.kind();
                 Expr::Literal(parse_literal(literal))
-            }
+            },
             ast::Expr::ParenExpr(expr) => {
                 let inner = self.collect_expr_opt(expr.inner());
                 // make the paren expr point to the inner expression as well
                 self.source_map.expr_map.insert(syntax_ptr, inner);
                 self.body.paren_exprs.insert(inner);
                 return inner;
-            }
+            },
             ast::Expr::BitcastExpr(expr) => {
                 let inner = self.collect_expr_opt(expr.inner().map(ast::Expr::ParenExpr));
 
@@ -389,7 +419,7 @@ impl<'a> Collector<'a> {
                 let ty = self.db.intern_type_ref(ty);
 
                 Expr::Bitcast { expr: inner, ty }
-            }
+            },
             ast::Expr::FieldExpr(field) => {
                 let expr = self.collect_expr_opt(field.expr());
                 let name = field
@@ -398,7 +428,7 @@ impl<'a> Collector<'a> {
                     .unwrap_or_else(Name::missing);
 
                 Expr::Field { expr, name }
-            }
+            },
             ast::Expr::FunctionCall(call) => {
                 let args = call
                     .params()
@@ -416,7 +446,7 @@ impl<'a> Collector<'a> {
                     callee: Callee::Name(name),
                     args,
                 }
-            }
+            },
             ast::Expr::InvalidFunctionCall(call) => {
                 if let Some(expr) = call.expr() {
                     self.collect_expr(expr);
@@ -429,7 +459,7 @@ impl<'a> Collector<'a> {
                     });
 
                 Expr::Missing
-            }
+            },
             ast::Expr::PathExpr(path) => {
                 let name = path
                     .name_ref()
@@ -437,12 +467,12 @@ impl<'a> Collector<'a> {
                     .unwrap_or_else(Name::missing);
 
                 Expr::Path(name)
-            }
+            },
             ast::Expr::IndexExpr(index) => {
                 let lhs = self.collect_expr_opt(index.expr());
                 let index = self.collect_expr_opt(index.index());
                 Expr::Index { lhs, index }
-            }
+            },
             ast::Expr::TypeInitializer(ty) => {
                 let args = ty
                     .args()
@@ -458,43 +488,58 @@ impl<'a> Collector<'a> {
                         ast::Type::VecType(vec) if !has_generic => {
                             let dimensions = vector_dimensions(&vec);
                             Callee::InferredComponentVec(dimensions)
-                        }
+                        },
                         ast::Type::MatrixType(matrix) if !has_generic => {
                             let (columns, rows) = matrix_dimensions(&matrix);
                             Callee::InferredComponentMatrix { rows, columns }
-                        }
+                        },
                         ast::Type::ArrayType(_) if !has_generic => Callee::InferredComponentArray,
                         ty => {
                             let ty = TypeRef::try_from(ty).unwrap_or(TypeRef::Error);
                             let ty = self.db.intern_type_ref(ty);
                             Callee::Type(ty)
-                        }
+                        },
                     };
                     Expr::Call { callee, args }
                 } else {
                     Expr::Missing
                 }
-            }
+            },
         };
 
         self.alloc_expr(expr, syntax_ptr)
     }
 
-    fn alloc_expr(&mut self, expr: Expr, src: AstPtr<ast::Expr>) -> ExprId {
+    fn alloc_expr(
+        &mut self,
+        expr: Expr,
+        src: AstPtr<ast::Expr>,
+    ) -> ExprId {
         let id = self.make_expr(expr, Ok(src.clone()));
         self.source_map.expr_map.insert(src, id);
         id
     }
-    fn make_expr(&mut self, expr: Expr, src: Result<AstPtr<ast::Expr>, SyntheticSyntax>) -> ExprId {
+
+    fn make_expr(
+        &mut self,
+        expr: Expr,
+        src: Result<AstPtr<ast::Expr>, SyntheticSyntax>,
+    ) -> ExprId {
         let id = self.body.exprs.alloc(expr);
         self.source_map.expr_map_back.insert(id, src);
         id
     }
-    fn alloc_stmt(&mut self, stmt: Statement, src: AstPtr<ast::Statement>) -> StatementId {
+
+    fn alloc_stmt(
+        &mut self,
+        stmt: Statement,
+        src: AstPtr<ast::Statement>,
+    ) -> StatementId {
         let id = self.make_stmt(stmt, Ok(src.clone()));
         self.source_map.stmt_map.insert(src, id);
         id
     }
+
     fn make_stmt(
         &mut self,
         stmt: Statement,
@@ -505,11 +550,16 @@ impl<'a> Collector<'a> {
         id
     }
 
-    fn alloc_binding(&mut self, binding: Binding, src: AstPtr<ast::Binding>) -> BindingId {
+    fn alloc_binding(
+        &mut self,
+        binding: Binding,
+        src: AstPtr<ast::Binding>,
+    ) -> BindingId {
         let id = self.make_binding(binding, Ok(src.clone()));
         self.source_map.binding_map.insert(src, id);
         id
     }
+
     fn make_binding(
         &mut self,
         binding: Binding,
@@ -528,14 +578,19 @@ impl<'a> Collector<'a> {
             Err(SyntheticSyntax),
         )
     }
+
     fn missing_expr(&mut self) -> ExprId {
         self.make_expr(Expr::Missing, Err(SyntheticSyntax))
     }
+
     fn missing_stmt(&mut self) -> StatementId {
         self.make_stmt(Statement::Missing, Err(SyntheticSyntax))
     }
 
-    fn collect_expr_opt(&mut self, expr: Option<ast::Expr>) -> ExprId {
+    fn collect_expr_opt(
+        &mut self,
+        expr: Option<ast::Expr>,
+    ) -> ExprId {
         match expr {
             Some(expr) => self.collect_expr(expr),
             None => self.missing_expr(),

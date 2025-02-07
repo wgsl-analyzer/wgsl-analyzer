@@ -12,17 +12,26 @@ impl salsa::InternKey for BuiltinId {
     fn from_intern_id(id: salsa::InternId) -> Self {
         BuiltinId(id)
     }
+
     fn as_intern_id(&self) -> salsa::InternId {
         self.0
     }
 }
+
 impl BuiltinId {
-    pub fn lookup(self, db: &dyn HirDatabase) -> Builtin {
+    pub fn lookup(
+        self,
+        db: &dyn HirDatabase,
+    ) -> Builtin {
         db.lookup_intern_builtin(self)
     }
 }
+
 impl Builtin {
-    pub fn intern(self, db: &dyn HirDatabase) -> BuiltinId {
+    pub fn intern(
+        self,
+        db: &dyn HirDatabase,
+    ) -> BuiltinId {
         db.intern_builtin(self)
     }
 }
@@ -33,6 +42,7 @@ pub enum GenericArgKind {
     Type,
     TexelFormat,
 }
+
 pub enum GenericArg {
     VecSize(VecSize),
     Type(Ty),
@@ -52,13 +62,18 @@ impl Builtin {
     pub fn name(&self) -> &str {
         self.name.as_str()
     }
+
     pub fn overloads(&self) -> impl Iterator<Item = (BuiltinOverloadId, &BuiltinOverload)> {
         self.overloads
             .iter()
             .enumerate()
             .map(|(i, overload)| (BuiltinOverloadId(i), overload))
     }
-    pub fn overload(&self, overload_id: BuiltinOverloadId) -> &BuiltinOverload {
+
+    pub fn overload(
+        &self,
+        overload_id: BuiltinOverloadId,
+    ) -> &BuiltinOverload {
         &self.overloads[overload_id.0]
     }
 }

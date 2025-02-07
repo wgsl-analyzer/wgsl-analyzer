@@ -16,7 +16,10 @@ fn single_file_db(source: &str) -> (RootDatabase, FileId) {
     (db, file_id)
 }
 
-fn check_item_tree(source: &str, expect: Expect) {
+fn check_item_tree(
+    source: &str,
+    expect: Expect,
+) {
     let (db, file_id) = single_file_db(source);
 
     let module_info = db.module_info(file_id.into());
@@ -31,7 +34,9 @@ fn simple_item_tree() {
     check_item_tree(
         r#"
 fn test(a: f32) {}
+
 fn test2(b: vec3<u32>, c: vec4<test>) {}
+
 fn error(d: ?) {}
 "#,
         expect![[r#"

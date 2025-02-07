@@ -8,8 +8,11 @@ use crate::{
 
 type Bytes = u32;
 
-fn round_up(multiple: Bytes, num: Bytes) -> Bytes {
-    (num + multiple - 1) / multiple * multiple
+fn round_up(
+    multiple: Bytes,
+    num: Bytes,
+) -> Bytes {
+    num.div_ceil(multiple) * multiple
 }
 
 #[test]
@@ -28,7 +31,11 @@ pub enum LayoutAddressSpace {
 }
 
 impl ArrayType {
-    pub fn stride(&self, address_space: LayoutAddressSpace, db: &dyn HirDatabase) -> Option<Bytes> {
+    pub fn stride(
+        &self,
+        address_space: LayoutAddressSpace,
+        db: &dyn HirDatabase,
+    ) -> Option<Bytes> {
         let stride = round_up(
             self.inner.align(address_space, db)?,
             self.inner.size(address_space, db)?,
@@ -41,16 +48,29 @@ impl ArrayType {
 }
 
 impl Ty {
-    pub fn align(&self, address_space: LayoutAddressSpace, db: &dyn HirDatabase) -> Option<Bytes> {
+    pub fn align(
+        &self,
+        address_space: LayoutAddressSpace,
+        db: &dyn HirDatabase,
+    ) -> Option<Bytes> {
         self.kind(db).align(address_space, db)
     }
-    pub fn size(&self, address_space: LayoutAddressSpace, db: &dyn HirDatabase) -> Option<Bytes> {
+
+    pub fn size(
+        &self,
+        address_space: LayoutAddressSpace,
+        db: &dyn HirDatabase,
+    ) -> Option<Bytes> {
         self.kind(db).size(address_space, db)
     }
 }
 
 impl TyKind {
-    pub fn align(&self, address_space: LayoutAddressSpace, db: &dyn HirDatabase) -> Option<Bytes> {
+    pub fn align(
+        &self,
+        address_space: LayoutAddressSpace,
+        db: &dyn HirDatabase,
+    ) -> Option<Bytes> {
         Some(match self {
             TyKind::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => 4,
             TyKind::Scalar(ScalarType::Bool) => return None,
@@ -76,19 +96,23 @@ impl TyKind {
                     LayoutAddressSpace::Storage => align,
                     LayoutAddressSpace::Uniform => round_up(16, align),
                 }
-            }
+            },
             TyKind::Array(array) => {
                 let inner_align = array.inner.align(address_space, db)?;
                 match address_space {
                     LayoutAddressSpace::Storage => inner_align,
                     LayoutAddressSpace::Uniform => round_up(16, inner_align),
                 }
-            }
+            },
             _ => return None,
         })
     }
 
-    pub fn size(&self, address_space: LayoutAddressSpace, db: &dyn HirDatabase) -> Option<Bytes> {
+    pub fn size(
+        &self,
+        address_space: LayoutAddressSpace,
+        db: &dyn HirDatabase,
+    ) -> Option<Bytes> {
         Some(match self {
             TyKind::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => 4,
             TyKind::Scalar(ScalarType::Bool) => return None,
@@ -109,18 +133,18 @@ impl TyKind {
                 };
 
                 round_up(vec_align, vec_size) * n
-            }
+            },
             TyKind::Struct(strukt) => {
                 let fields = db.field_types(*strukt);
                 let (_, size) =
                     struct_member_layout(&fields, db, LayoutAddressSpace::Storage, |_, _| {})?;
                 size
-            }
+            },
             TyKind::Array(array) => match array.size {
                 ArraySize::Const(n) => {
                     let stride = array.stride(address_space, db)?;
                     n as Bytes * stride
-                }
+                },
                 ArraySize::Dynamic => return None,
             },
             _ => return None,

@@ -1,7 +1,7 @@
-use anyhow::Context;
-use lexopt::prelude::*;
 use std::{io::Read, path::PathBuf};
 
+use anyhow::Context;
+use lexopt::prelude::*;
 use wgsl_formatter::FormattingOptions;
 
 const HELP_STR: &str = r#"wgslfmt [options] <file>...
@@ -31,7 +31,7 @@ fn parse_args() -> Result<Args, lexopt::Error> {
             Short('h') | Long("help") => {
                 print!("{}", HELP_STR);
                 std::process::exit(0);
-            }
+            },
             Long("check") => args.check = true,
             Long("tabs") => args.tab_indent = true,
             Value(file) => args.files.push(PathBuf::from(file)),

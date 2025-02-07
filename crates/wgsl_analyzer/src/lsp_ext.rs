@@ -6,6 +6,7 @@ pub enum SyntaxTree {}
 impl Request for SyntaxTree {
     type Params = SyntaxTreeParams;
     type Result = String;
+
     const METHOD: &'static str = "wgsl-analyzer/syntaxTree";
 }
 
@@ -21,6 +22,7 @@ pub enum DebugCommand {}
 impl Request for DebugCommand {
     type Params = DebugCommandParams;
     type Result = ();
+
     const METHOD: &'static str = "wgsl-analyzer/debugCommand";
 }
 
@@ -36,6 +38,7 @@ pub enum FullSource {}
 impl Request for FullSource {
     type Params = FullSourceParams;
     type Result = String;
+
     const METHOD: &'static str = "wgsl-analyzer/fullSource";
 }
 
@@ -50,5 +53,6 @@ pub enum RequestConfiguration {}
 impl Request for RequestConfiguration {
     type Params = ();
     type Result = serde_json::Value;
+
     const METHOD: &'static str = "wgsl-analyzer/requestConfiguration";
 }

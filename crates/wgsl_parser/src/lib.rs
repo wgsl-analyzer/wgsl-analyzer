@@ -5,6 +5,7 @@ pub use syntax_kind::SyntaxKind;
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum WgslLanguage {}
+
 impl rowan::Language for WgslLanguage {
     type Kind = SyntaxKind;
 
@@ -21,8 +22,8 @@ impl rowan::Language for WgslLanguage {
 pub struct ParserDefinition;
 impl parser::ParserDefinition for ParserDefinition {
     type Language = WgslLanguage;
-    type TokenKind = SyntaxKind;
     type SyntaxKind = SyntaxKind;
+    type TokenKind = SyntaxKind;
 
     const DEFAULT_RECOVERY_SET: &'static [SyntaxKind] = &[SyntaxKind::Fn];
 }
@@ -47,22 +48,25 @@ pub enum ParseEntryPoint {
     FnParamList,
 }
 
-pub fn parse_entrypoint(input: &str, entrypoint: ParseEntryPoint) -> Parse {
+pub fn parse_entrypoint(
+    input: &str,
+    entrypoint: ParseEntryPoint,
+) -> Parse {
     match entrypoint {
         ParseEntryPoint::File => parser::parse::<ParserDefinition, _>(input, grammar::file),
         ParseEntryPoint::Expression => parser::parse::<ParserDefinition, _>(input, grammar::expr),
         ParseEntryPoint::Statement => {
             parser::parse::<ParserDefinition, _>(input, grammar::statement)
-        }
+        },
         ParseEntryPoint::Type => parser::parse::<ParserDefinition, _>(input, |p| {
             grammar::type_decl(p);
         }),
         ParseEntryPoint::AttributeList => {
             parser::parse::<ParserDefinition, _>(input, grammar::attribute_list)
-        }
+        },
         ParseEntryPoint::FnParamList => {
             parser::parse::<ParserDefinition, _>(input, grammar::inner_param_list)
-        }
+        },
     }
 }
 
@@ -71,7 +75,11 @@ pub fn parse_file(input: &str) -> Parse {
 }
 
 #[cfg(test)]
-fn check_entrypoint(input: &str, entry_point: ParseEntryPoint, expected_tree: expect_test::Expect) {
+fn check_entrypoint(
+    input: &str,
+    entry_point: ParseEntryPoint,
+    expected_tree: expect_test::Expect,
+) {
     let parse = crate::parse_entrypoint(input, entry_point);
     expected_tree.assert_eq(&parse.debug_tree());
 }

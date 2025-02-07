@@ -4,19 +4,18 @@ use hir_def::{
 };
 use hir_ty::{builtins::Builtin, ty::pretty::pretty_type};
 
+use super::Completions;
 use crate::{
     context::{CompletionContext, ImmediateLocation},
     item::{CompletionItem, CompletionItemKind, CompletionRelevance},
 };
-
-use super::Completions;
 
 pub(crate) fn complete_names_in_scope(
     acc: &mut Completions,
     ctx: &CompletionContext,
 ) -> Option<()> {
     match ctx.completion_location {
-        Some(ImmediateLocation::InsideStatement) => {}
+        Some(ImmediateLocation::InsideStatement) => {},
         _ => return None,
     }
 
@@ -34,7 +33,7 @@ pub(crate) fn complete_names_in_scope(
             | ScopeDef::ModuleItem(_, ModuleItem::TypeAlias(_))
             | ScopeDef::ModuleItem(_, ModuleItem::Import(_)) => {
                 unreachable!()
-            }
+            },
         };
 
         let detail = match item {
@@ -49,7 +48,7 @@ pub(crate) fn complete_names_in_scope(
                 let module_info = ctx.db.module_info(file_id);
                 let detail = pretty_module_item(&item, &module_info, ctx.db.upcast());
                 Some(detail)
-            }
+            },
         };
 
         let mut completion = CompletionItem::new(kind, ctx.source_range(), name.as_str());

@@ -10,11 +10,13 @@ pub(crate) enum HirFileIdRepr {
     FileId(FileId),
     MacroFile(ImportFile),
 }
+
 impl From<FileId> for HirFileId {
     fn from(id: FileId) -> Self {
         HirFileId(HirFileIdRepr::FileId(id))
     }
 }
+
 impl From<ImportFile> for HirFileId {
     fn from(id: ImportFile) -> Self {
         HirFileId(HirFileIdRepr::MacroFile(id))

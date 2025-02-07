@@ -109,12 +109,12 @@ jobs:
       - name: Check Compile
         run: |
           cargo test --target-dir ../../../target
-          cargo check --benches --target-dir ../target --manifest-path ./benches/Cargo.toml
+          # cargo check --benches --target-dir ../target --manifest-path ./benches/Cargo.toml
           cargo check --workspace --examples
           cargo check --workspace
           cargo check --workspace --tests
 
-  check-compiles-no-std:
+  check-compiles-no-default-features:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: lint
@@ -134,52 +134,6 @@ jobs:
           targets: x86_64-unknown-none
       - name: Check Compile
         run: cargo check --no-default-features
-
-  build-wasm:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ubuntu-assets-cargo-build-wasm-stable-${{ hashFiles('**/Cargo.toml') }}
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          target: wasm32-unknown-unknown
-      - name: Check wasm
-        run: cargo check --target wasm32-unknown-unknown
-
-  build-wasm-atomics:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ubuntu-assets-cargo-build-wasm-nightly-${{ hashFiles('**/Cargo.toml') }}
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ env.NIGHTLY_TOOLCHAIN }}
-          targets: wasm32-unknown-unknown
-          components: rust-src
-      - name: Check wasm
-        run: cargo check --target wasm32-unknown-unknown -Z build-std=std,panic_abort
-        env:
-          RUSTFLAGS: "-C target-feature=+atomics,+bulk-memory"
 
   markdownlint:
     runs-on: ubuntu-latest
@@ -234,27 +188,6 @@ jobs:
           echo 'if you use VSCode, you can also install `Typos Spell Checker'
           echo 'You can find the extension here: https://marketplace.visualstudio.com/items?itemName=tekumara.typos-vscode'
 
-  run-examples-macos-metal:
-    # Explicitly use macOS 14 to take advantage of M1 chip.
-    runs-on: macos-14
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Build
-        # this uses the same command as when running the example to ensure build is reused
-        run: |
-          CI_TESTING_CONFIG=.github/example-run/template_example_name.ron cargo build --example template_example_name
-      - name: Run examples
-        run: |
-          for example in .github/example-run/*.ron; do
-            example_name=`basename $example .ron`
-            echo -n $example_name > last_example_run
-            echo "running $example_name - "`date`
-            time CI_TESTING_CONFIG=$example cargo run --example $example_name
-            sleep 10
-          done
-
   check-doc:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -288,10 +221,10 @@ jobs:
         run: cargo deadlinks --dir target/documentation
         continue-on-error: true
 
-  msrv:
+  check-unused-dependencies:
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: build
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -302,27 +235,11 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-msrv-${{ hashFiles('**/Cargo.toml') }}
-      - name: Get minimum supported rust version
-        id: msrv
-        run: |
-          msrv=`cargo metadata --no-deps --format-version 1 | jq --raw-output '.packages[] | select(.name=="template_crate_name") | .rust_version'`
-          echo "msrv=$msrv" >> $GITHUB_OUTPUT
+          key: ${{ runner.os }}-cargo-check-unused-dependencies-${{ hashFiles('**/Cargo.toml') }}
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{ steps.msrv.outputs.msrv }}
-      - name: Run cargo check
-        id: check
-        run: |
-          echo 'If this fails, run `cargo msrv` and update the msrv in `Cargo.toml`.'
-          cargo check
-      - name: Save PR number
-        if: ${{ failure() && github.event_name == 'pull_request' && steps.check.conclusion == 'failure' }}
-        run: |
-          mkdir -p ./msrv
-          echo ${{ github.event.number }} > ./msrv/NR
-      - uses: actions/upload-artifact@v4
-        if: ${{ failure() && github.event_name == 'pull_request' && steps.check.conclusion == 'failure' }}
-        with:
-          name: msrv
-          path: msrv/
+          toolchain: ${{ env.NIGHTLY_TOOLCHAIN }}
+      - name: Installs cargo-udeps
+        run: cargo install --force cargo-udeps
+      - name: Run cargo udeps
+        run: cargo udeps

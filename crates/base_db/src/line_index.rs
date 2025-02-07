@@ -99,7 +99,10 @@ impl LineIndex {
         }
     }
 
-    pub fn line_col(&self, offset: TextSize) -> LineCol {
+    pub fn line_col(
+        &self,
+        offset: TextSize,
+    ) -> LineCol {
         let line = self.newlines.partition_point(|&it| it <= offset) - 1;
         let line_start_offset = self.newlines[line];
         let col = offset - line_start_offset;
@@ -109,13 +112,19 @@ impl LineIndex {
         }
     }
 
-    pub fn offset(&self, line_col: LineCol) -> Option<TextSize> {
+    pub fn offset(
+        &self,
+        line_col: LineCol,
+    ) -> Option<TextSize> {
         self.newlines
             .get(line_col.line as usize)
             .map(|offset| offset + TextSize::from(line_col.col))
     }
 
-    pub fn to_utf16(&self, line_col: LineCol) -> LineColUtf16 {
+    pub fn to_utf16(
+        &self,
+        line_col: LineCol,
+    ) -> LineColUtf16 {
         let col = self.utf8_to_utf16_col(line_col.line, line_col.col.into());
         LineColUtf16 {
             line: line_col.line,
@@ -123,7 +132,10 @@ impl LineIndex {
         }
     }
 
-    pub fn to_utf8(&self, line_col: LineColUtf16) -> LineCol {
+    pub fn to_utf8(
+        &self,
+        line_col: LineColUtf16,
+    ) -> LineCol {
         let col = self.utf16_to_utf8_col(line_col.line, line_col.col);
         LineCol {
             line: line_col.line,
@@ -131,7 +143,10 @@ impl LineIndex {
         }
     }
 
-    pub fn lines(&self, range: TextRange) -> impl Iterator<Item = TextRange> + '_ {
+    pub fn lines(
+        &self,
+        range: TextRange,
+    ) -> impl Iterator<Item = TextRange> + '_ {
         let lo = self.newlines.partition_point(|&it| it < range.start());
         let hi = self.newlines.partition_point(|&it| it <= range.end());
         let all = iter::once(range.start())
@@ -144,7 +159,11 @@ impl LineIndex {
             .filter(|it| !it.is_empty())
     }
 
-    fn utf8_to_utf16_col(&self, line: u32, col: TextSize) -> usize {
+    fn utf8_to_utf16_col(
+        &self,
+        line: u32,
+        col: TextSize,
+    ) -> usize {
         let mut res: usize = col.into();
         if let Some(utf16_chars) = self.utf16_lines.get(&line) {
             for c in utf16_chars {
@@ -160,7 +179,11 @@ impl LineIndex {
         res
     }
 
-    fn utf16_to_utf8_col(&self, line: u32, mut col: u32) -> TextSize {
+    fn utf16_to_utf8_col(
+        &self,
+        line: u32,
+        mut col: u32,
+    ) -> TextSize {
         if let Some(utf16_chars) = self.utf16_lines.get(&line) {
             for c in utf16_chars {
                 if col > u32::from(c.start) {

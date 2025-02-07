@@ -1,7 +1,13 @@
 [package]
 name = "tools"
 version = "0.0.0"
-edition = "2021"
+readme = "README.md"
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords = ["tool"]
+categories = ["Development tools"]
+description = "tools to aid in CI or local development"
 
 [dependencies]
 anyhow = "1.0.95"

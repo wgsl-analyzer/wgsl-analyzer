@@ -14,11 +14,18 @@ impl Change {
         Self::default()
     }
 
-    pub fn change_file(&mut self, file_id: FileId, new_text: Option<Arc<String>>) {
+    pub fn change_file(
+        &mut self,
+        file_id: FileId,
+        new_text: Option<Arc<String>>,
+    ) {
         self.files_changed.push((file_id, new_text));
     }
 
-    pub fn apply(self, db: &mut dyn SourceDatabase) {
+    pub fn apply(
+        self,
+        db: &mut dyn SourceDatabase,
+    ) {
         for (file_id, text) in self.files_changed {
             db.set_file_text(file_id, text.unwrap_or_default());
         }

@@ -1,13 +1,18 @@
 mod lower;
 pub mod pretty;
 
-use crate::ast_id::FileAstId;
-use crate::db::{DefDatabase, Interned};
-use crate::{type_ref::*, HirFileId};
+use std::{marker::PhantomData, sync::Arc};
+
 use la_arena::{Arena, Idx, IdxRange};
 use smol_str::SmolStr;
-use std::{marker::PhantomData, sync::Arc};
 use syntax::{ast, AstNode, TokenText};
+
+use crate::{
+    ast_id::FileAstId,
+    db::{DefDatabase, Interned},
+    type_ref::*,
+    HirFileId,
+};
 
 const MISSING_NAME_PLACEHOLDER: &str = "[missing name]";
 
@@ -18,6 +23,7 @@ impl Name {
     pub fn missing() -> Name {
         Name(MISSING_NAME_PLACEHOLDER.into())
     }
+
     pub fn is_missing(val: &str) -> bool {
         val == MISSING_NAME_PLACEHOLDER
     }
@@ -26,31 +32,37 @@ impl Name {
         &self.0
     }
 }
+
 impl AsRef<str> for Name {
     fn as_ref(&self) -> &str {
         &self.0
     }
 }
+
 impl From<TokenText<'_>> for Name {
     fn from(text: TokenText<'_>) -> Self {
         Name(text.as_str().into())
     }
 }
+
 impl From<ast::Name> for Name {
     fn from(name: ast::Name) -> Self {
         Name(name.text().as_str().into())
     }
 }
+
 impl From<ast::NameRef> for Name {
     fn from(name: ast::NameRef) -> Self {
         Name(name.text().as_str().into())
     }
 }
+
 impl From<ast::Ident> for Name {
     fn from(ident: ast::Ident) -> Self {
         Name(ident.text().as_str().into())
     }
 }
+
 impl From<&'_ str> for Name {
     fn from(text: &str) -> Self {
         Name(text.into())
@@ -100,12 +112,14 @@ pub struct TypeAlias {
     pub ty: Interned<TypeRef>,
     pub ast_id: FileAstId<ast::TypeAliasDecl>,
 }
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Struct {
     pub name: Name,
     pub ast_id: FileAstId<ast::StructDecl>,
     pub fields: IdxRange<Field>,
 }
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Field {
     pub ty: Interned<TypeRef>,
@@ -149,7 +163,10 @@ pub struct ModuleData {
 }
 
 impl ModuleInfo {
-    pub fn module_info_query(db: &dyn DefDatabase, file_id: HirFileId) -> Arc<ModuleInfo> {
+    pub fn module_info_query(
+        db: &dyn DefDatabase,
+        file_id: HirFileId,
+    ) -> Arc<ModuleInfo> {
         let source = match db.parse_or_resolve(file_id) {
             Ok(val) => val.tree(),
             Err(_) => return Arc::new(ModuleInfo::default()),
@@ -175,7 +192,10 @@ impl ModuleInfo {
         })
     }
 
-    pub fn get<M: ModuleDataNode>(&self, id: ModuleItemId<M>) -> &M {
+    pub fn get<M: ModuleDataNode>(
+        &self,
+        id: ModuleItemId<M>,
+    ) -> &M {
         M::lookup(&self.data, id.index)
     }
 }
@@ -198,10 +218,14 @@ impl<N> From<Idx<N>> for ModuleItemId<N> {
 // If we automatically derive this trait, ModuleItemId<N> where N doesn't implement Hash can't compile
 #[allow(clippy::derived_hash_with_manual_eq)]
 impl<N> std::hash::Hash for ModuleItemId<N> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: std::hash::Hasher>(
+        &self,
+        state: &mut H,
+    ) {
         self.index.hash(state);
     }
 }
+
 impl<N> Clone for ModuleItemId<N> {
     fn clone(&self) -> Self {
         Self {
@@ -210,6 +234,7 @@ impl<N> Clone for ModuleItemId<N> {
         }
     }
 }
+
 impl<N: ModuleDataNode> Copy for ModuleItemId<N> {}
 
 pub trait ModuleDataNode: Clone {
@@ -218,7 +243,10 @@ pub trait ModuleDataNode: Clone {
     fn ast_id(&self) -> FileAstId<Self::Source>;
 
     /// Looks up an instance of `Self` in an item tree.
-    fn lookup(data: &ModuleData, index: Idx<Self>) -> &Self;
+    fn lookup(
+        data: &ModuleData,
+        index: Idx<Self>,
+    ) -> &Self;
 
     /// Downcasts a `ModItem` to a `FileItemTreeId` specific to this type.
     fn id_from_mod_item(mod_item: &ModuleItem) -> Option<ModuleItemId<Self>>;
@@ -239,8 +267,6 @@ macro_rules! mod_items {
                 ModuleItem::$typ(id)
             }
         })+
-
-
 
         $(impl std::ops::Index<la_arena::Idx<$typ>> for ModuleData {
             type Output = $typ;
@@ -282,14 +308,21 @@ macro_rules! mod_items {
 impl std::ops::Index<Idx<Field>> for ModuleData {
     type Output = Field;
 
-    fn index(&self, index: Idx<Field>) -> &Self::Output {
+    fn index(
+        &self,
+        index: Idx<Field>,
+    ) -> &Self::Output {
         &self.fields[index]
     }
 }
+
 impl std::ops::Index<Idx<Param>> for ModuleData {
     type Output = Param;
 
-    fn index(&self, index: Idx<Param>) -> &Self::Output {
+    fn index(
+        &self,
+        index: Idx<Param>,
+    ) -> &Self::Output {
         &self.params[index]
     }
 }

@@ -1,14 +1,16 @@
 use hir_ty::ty::TyKind;
 use itertools::Itertools;
 
+use super::Completions;
 use crate::{
     context::{CompletionContext, ImmediateLocation},
     item::{CompletionItem, CompletionItemKind, CompletionRelevance},
 };
 
-use super::Completions;
-
-pub(crate) fn complete_dot(acc: &mut Completions, ctx: &CompletionContext) -> Option<()> {
+pub(crate) fn complete_dot(
+    acc: &mut Completions,
+    ctx: &CompletionContext,
+) -> Option<()> {
     let field_expr = match &ctx.completion_location {
         Some(ImmediateLocation::FieldAccess { expr }) => expr,
         _ => return Some(()),
@@ -24,7 +26,7 @@ pub(crate) fn complete_dot(acc: &mut Completions, ctx: &CompletionContext) -> Op
             let size = vec.size.as_u8() as usize;
             let swizzle = swizzle_items(size, ctx, &[["x", "y", "z", "w"], ["r", "g", "b", "a"]]);
             acc.add_all(swizzle);
-        }
+        },
         TyKind::Matrix(_) => return None,
         TyKind::Struct(strukt) => {
             let strukt = ctx.db.struct_data(*strukt);
@@ -34,7 +36,7 @@ pub(crate) fn complete_dot(acc: &mut Completions, ctx: &CompletionContext) -> Op
                 .map(|(_, field)| field.name.as_str())
                 .map(field_completion_item);
             acc.add_all(items);
-        }
+        },
         _ => return None,
     };
 

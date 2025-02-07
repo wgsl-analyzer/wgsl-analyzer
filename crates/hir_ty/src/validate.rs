@@ -10,7 +10,10 @@ pub enum Scope {
 }
 
 impl std::fmt::Debug for Scope {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self {
             Self::Function => write!(f, "function"),
             Self::Module => write!(f, "module"),
@@ -30,7 +33,10 @@ pub enum StorageClassError {
 }
 
 impl std::fmt::Display for StorageClassError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self {
             StorageClassError::ExpectedAccessMode(mode) => match mode.as_slice() {
                 &[mode] => write!(f, "expected {} access mode", mode),
@@ -39,13 +45,13 @@ impl std::fmt::Display for StorageClassError {
             },
             StorageClassError::ExpectedScope(scope) => {
                 write!(f, "storage class is only valid in {:?}-scope", scope)
-            }
+            },
             StorageClassError::ExpectedConstructable => f.write_str("type is not constructable"),
             StorageClassError::ExpectedHostShareable => f.write_str("type is not host-shareable"),
             StorageClassError::ExpectedWorkgroupCompatible => f.write_str(""),
             StorageClassError::ExpectedHandleOrTexture => {
                 f.write_str("storage class is only valid for handle or texture types")
-            }
+            },
         }
     }
 }
@@ -74,7 +80,7 @@ pub fn validate_storage_class(
             if !ty_is_err && !ty.is_constructable() {
                 sink(StorageClassError::ExpectedConstructable);
             }
-        }
+        },
         StorageClass::Private => {
             if !matches!(scope, Scope::Module) {
                 sink(StorageClassError::ExpectedScope(Scope::Module));
@@ -88,7 +94,7 @@ pub fn validate_storage_class(
             if !ty_is_err && !ty.is_constructable() {
                 sink(StorageClassError::ExpectedConstructable);
             }
-        }
+        },
         StorageClass::Workgroup => {
             if !matches!(scope, Scope::Module) {
                 sink(StorageClassError::ExpectedScope(Scope::Module));
@@ -102,7 +108,7 @@ pub fn validate_storage_class(
             if !ty_is_err && (!ty.is_plain() || ty.contains_runtime_sized_array(db)) {
                 sink(StorageClassError::ExpectedWorkgroupCompatible);
             }
-        }
+        },
         StorageClass::Uniform => {
             if !matches!(scope, Scope::Module) {
                 sink(StorageClassError::ExpectedScope(Scope::Module));
@@ -119,7 +125,7 @@ pub fn validate_storage_class(
             if !ty.is_err() && !ty.is_constructable() {
                 sink(StorageClassError::ExpectedConstructable);
             }
-        }
+        },
         StorageClass::Storage => {
             if !matches!(scope, Scope::Module) {
                 sink(StorageClassError::ExpectedScope(Scope::Module));
@@ -133,7 +139,7 @@ pub fn validate_storage_class(
             if !ty.is_err() && !ty.is_host_shareable(db) {
                 sink(StorageClassError::ExpectedHostShareable);
             }
-        }
+        },
         StorageClass::Handle => {
             if !matches!(scope, Scope::Module) {
                 sink(StorageClassError::ExpectedScope(Scope::Module));
@@ -145,12 +151,12 @@ pub fn validate_storage_class(
             }
 
             match ty {
-                TyKind::Sampler(_) | TyKind::Texture(_) => {}
+                TyKind::Sampler(_) | TyKind::Texture(_) => {},
                 _ => sink(StorageClassError::ExpectedHandleOrTexture),
             }
-        }
+        },
         StorageClass::PushConstant => {
             // TODO: validate push constants
-        }
+        },
     }
 }

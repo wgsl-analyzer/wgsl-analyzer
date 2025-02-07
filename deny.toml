@@ -3,7 +3,10 @@ all-features = true
 
 [advisories]
 version = 2
-ignore = []
+ignore = [
+  # TODO: #157 - Delete this once salsa has been bumped.
+  "RUSTSEC-2024-0384",
+]
 
 [licenses]
 version = 2
@@ -20,63 +23,19 @@ allow = [
   "MIT-0",
   "Unlicense",
   "Zlib",
+  "Unicode-3.0",
 ]
 
-exceptions = [
-  { name = "unicode-ident", allow = [
-    "Unicode-DFS-2016",
-  ] },
-  { name = "symphonia", allow = [
-    "MPL-2.0",
-  ] },
-  { name = "symphonia-bundle-flac", allow = [
-    "MPL-2.0",
-  ] },
-  { name = "symphonia-bundle-mp3", allow = [
-    "MPL-2.0",
-  ] },
-  { name = "symphonia-codec-aac", allow = [
-    "MPL-2.0",
-  ] },
-  { name = "symphonia-codec-adpcm", allow = [
-    "MPL-2.0",
-  ] },
-  { name = "symphonia-codec-pcm", allow = [
-    "MPL-2.0",
-  ] },
-  { name = "symphonia-codec-vorbis", allow = [
-    "MPL-2.0",
-  ] },
-  { name = "symphonia-core", allow = [
-    "MPL-2.0",
-  ] },
-  { name = "symphonia-format-isomp4", allow = [
-    "MPL-2.0",
-  ] },
-  { name = "symphonia-format-riff", allow = [
-    "MPL-2.0",
-  ] },
-  { name = "symphonia-metadata", allow = [
-    "MPL-2.0",
-  ] },
-  { name = "symphonia-utils-xiph", allow = [
-    "MPL-2.0",
-  ] },
-]
+exceptions = [{ name = "unicode-ident", allow = ["Unicode-DFS-2016"] }]
 
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"
 # Certain crates that we don't want multiple versions of in the dependency tree
-deny = [
-  { name = "ahash", deny-multiple-versions = true },
-  { name = "android-activity", deny-multiple-versions = true },
-  { name = "glam", deny-multiple-versions = true },
-  { name = "raw-window-handle", deny-multiple-versions = true },
-]
+deny = []
 
 [sources]
-unknown-registry = "deny"
-unknown-git = "deny"
+unknown-registry = "warn"
+unknown-git = "warn"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 allow-git = []

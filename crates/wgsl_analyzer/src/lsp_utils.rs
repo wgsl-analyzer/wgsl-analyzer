@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Utilities for LSP-related boilerplate code.
 use std::{error::Error, ops::Range, sync::Arc};
 
@@ -11,59 +10,72 @@ use crate::{
     LspError,
 };
 
-pub(crate) fn is_cancelled(e: &(dyn Error + 'static)) -> bool {
-    e.downcast_ref::<salsa::Cancelled>().is_some()
+pub fn is_cancelled(error: &(dyn Error + 'static)) -> bool {
+    error.downcast_ref::<salsa::Cancelled>().is_some()
 }
 
-pub(crate) fn invalid_params_error(message: String) -> LspError {
+#[expect(clippy::as_conversions, reason = "valid according to JSON RPC")]
+pub const fn invalid_params_error(message: String) -> LspError {
     LspError {
         code: lsp_server::ErrorCode::InvalidParams as i32,
         message,
     }
 }
 
-pub(crate) fn notification_is<N: lsp_types::notification::Notification>(
-    notification: &Notification,
+pub fn notification_is<N: lsp_types::notification::Notification>(
+    notification: &Notification
 ) -> bool {
     notification.method == N::METHOD
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub(crate) enum Progress {
+pub enum Progress {
     Begin,
     Report,
     End,
 }
 
 impl Progress {
-    pub(crate) fn fraction(done: usize, total: usize) -> f64 {
+    #[expect(clippy::as_conversions, reason = "necessary to obtain a decimal value")]
+    pub(crate) fn fraction(
+        done: usize,
+        total: usize,
+    ) -> f64 {
         assert!(done <= total);
         done as f64 / total.max(1) as f64
     }
 }
 
 impl GlobalState {
-    pub(crate) fn show_message(&mut self, typ: lsp_types::MessageType, message: String) {
+    pub(crate) fn show_message(
+        &self,
+        typ: lsp_types::MessageType,
+        message: String,
+    ) {
         self.send_notification::<lsp_types::notification::ShowMessage>(
             lsp_types::ShowMessageParams { typ, message },
-        )
+        );
     }
 
     pub(crate) fn report_progress(
         &mut self,
         title: &str,
-        state: Progress,
+        state: &Progress,
         message: Option<String>,
         fraction: Option<f64>,
     ) {
         /*if !self.config.work_done_progress() {
             return;
         }*/
-        let percentage = fraction.map(|f| {
-            assert!((0.0..=1.0).contains(&f));
-            (f * 100.0) as u32
+        let percentage = fraction.map(|fraction| {
+            assert!((0.0..=1.0).contains(&fraction));
+            // TODO can this be done better?
+            #[expect(clippy::cast_sign_loss, clippy::as_conversions, reason = "asserted")]
+            {
+                (fraction * 100.0) as u32
+            }
         });
-        let token = lsp_types::ProgressToken::String(format!("rustAnalyzer/{}", title));
+        let token = lsp_types::ProgressToken::String(format!("rustAnalyzer/{title}"));
         let work_done_progress = match state {
             Progress::Begin => {
                 self.send_request::<lsp_types::request::WorkDoneProgressCreate>(
@@ -79,17 +91,17 @@ impl GlobalState {
                     message,
                     percentage,
                 })
-            }
+            },
             Progress::Report => {
                 lsp_types::WorkDoneProgress::Report(lsp_types::WorkDoneProgressReport {
                     cancellable: None,
                     message,
                     percentage,
                 })
-            }
+            },
             Progress::End => {
                 lsp_types::WorkDoneProgress::End(lsp_types::WorkDoneProgressEnd { message })
-            }
+            },
         };
         self.send_notification::<lsp_types::notification::Progress>(lsp_types::ProgressParams {
             token,
@@ -98,7 +110,7 @@ impl GlobalState {
     }
 }
 
-pub(crate) fn apply_document_changes(
+pub fn apply_document_changes(
     old_text: &mut String,
     content_changes: Vec<lsp_types::TextDocumentContentChangeEvent>,
 ) {
@@ -120,37 +132,38 @@ pub(crate) fn apply_document_changes(
     }
 
     impl IndexValid {
-        fn covers(&self, line: u32) -> bool {
+        const fn covers(
+            &self,
+            line: u32,
+        ) -> bool {
             match *self {
-                IndexValid::UpToLineExclusive(to) => to > line,
-                _ => true,
+                Self::UpToLineExclusive(to) => to > line,
+                Self::All => true,
             }
         }
     }
 
     let mut index_valid = IndexValid::All;
     for change in content_changes {
-        match change.range {
-            Some(range) => {
-                if !index_valid.covers(range.end.line) {
-                    line_index.index = Arc::new(base_db::line_index::LineIndex::new(old_text));
-                }
-                index_valid = IndexValid::UpToLineExclusive(range.start.line);
-                if let Ok(range) = from_proto::text_range(&line_index, range) {
-                    old_text.replace_range(Range::<usize>::from(range), &change.text);
-                }
+        if let Some(range) = change.range {
+            if !index_valid.covers(range.end.line) {
+                line_index.index = Arc::new(base_db::line_index::LineIndex::new(old_text));
             }
-            None => {
-                *old_text = change.text;
-                index_valid = IndexValid::UpToLineExclusive(0);
+            index_valid = IndexValid::UpToLineExclusive(range.start.line);
+            #[expect(if_let_rescope, reason = "conflicting lints")]
+            if let Ok(range) = from_proto::text_range(&line_index, range) {
+                old_text.replace_range(Range::<usize>::from(range), &change.text);
             }
+        } else {
+            *old_text = change.text;
+            index_valid = IndexValid::UpToLineExclusive(0);
         }
     }
 }
 
 /// Checks that the edits inside the completion and the additional edits do not overlap.
 /// LSP explicitly forbids the additional edits to overlap both with the main edit and themselves.
-pub(crate) fn all_edits_are_disjoint(
+pub fn all_edits_are_disjoint(
     completion: &lsp_types::CompletionItem,
     additional_edits: &[lsp_types::TextEdit],
 ) -> bool {
@@ -158,7 +171,7 @@ pub(crate) fn all_edits_are_disjoint(
     match completion.text_edit.as_ref() {
         Some(lsp_types::CompletionTextEdit::Edit(edit)) => {
             edit_ranges.push(edit.range);
-        }
+        },
         Some(lsp_types::CompletionTextEdit::InsertAndReplace(edit)) => {
             let replace = edit.replace;
             let insert = edit.insert;
@@ -170,8 +183,8 @@ pub(crate) fn all_edits_are_disjoint(
                 return false;
             }
             edit_ranges.push(replace);
-        }
-        None => {}
+        },
+        None => {},
     }
     if let Some(additional_changes) = completion.additional_text_edits.as_ref() {
         edit_ranges.extend(additional_changes.iter().map(|edit| edit.range));

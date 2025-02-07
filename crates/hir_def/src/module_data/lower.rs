@@ -1,13 +1,20 @@
-use crate::module_data::{Function, ModuleData, ModuleItem, ModuleItemId, Param};
-use crate::HirFileId;
-use crate::{ast_id::AstIdMap, db::DefDatabase, type_ref::TypeRef};
-use la_arena::{Idx, IdxRange};
 use std::sync::Arc;
-use syntax::ast::{self, Item, SourceFile};
-use syntax::{AstNode, HasName};
+
+use la_arena::{Idx, IdxRange};
+use syntax::{
+    ast::{self, Item, SourceFile},
+    AstNode, HasName,
+};
 
 use super::{
     Field, GlobalConstant, GlobalVariable, Import, ImportValue, Name, Override, Struct, TypeAlias,
+};
+use crate::{
+    ast_id::AstIdMap,
+    db::DefDatabase,
+    module_data::{Function, ModuleData, ModuleItem, ModuleItemId, Param},
+    type_ref::TypeRef,
+    HirFileId,
 };
 
 pub(crate) struct Ctx<'a> {
@@ -18,7 +25,10 @@ pub(crate) struct Ctx<'a> {
 }
 
 impl<'a> Ctx<'a> {
-    pub(crate) fn new(db: &'a dyn DefDatabase, file_id: HirFileId) -> Self {
+    pub(crate) fn new(
+        db: &'a dyn DefDatabase,
+        file_id: HirFileId,
+    ) -> Self {
         Self {
             db,
             source_ast_id_map: db.ast_id_map(file_id),
@@ -27,40 +37,50 @@ impl<'a> Ctx<'a> {
         }
     }
 
-    pub(crate) fn lower_source_file(&mut self, source_file: SourceFile) {
+    pub(crate) fn lower_source_file(
+        &mut self,
+        source_file: SourceFile,
+    ) {
         source_file.items().for_each(|item| {
             self.lower_item(item);
         })
     }
-    fn lower_item(&mut self, item: Item) -> Option<()> {
+
+    fn lower_item(
+        &mut self,
+        item: Item,
+    ) -> Option<()> {
         let item = match item {
             Item::Function(function) => ModuleItem::Function(self.lower_function(&function)?),
             Item::StructDecl(strukt) => ModuleItem::Struct(self.lower_struct(&strukt)?),
             Item::GlobalVariableDecl(var) => {
                 ModuleItem::GlobalVariable(self.lower_global_var(&var)?)
-            }
+            },
             Item::GlobalConstantDecl(constant) => {
                 ModuleItem::GlobalConstant(self.lower_global_constant(&constant)?)
-            }
+            },
             Item::OverrideDecl(override_decl) => {
                 ModuleItem::Override(self.lower_override(&override_decl)?)
-            }
+            },
             Item::Import(import) => ModuleItem::Import(self.lower_import(&import)?),
             Item::TypeAliasDecl(type_alias) => {
                 ModuleItem::TypeAlias(self.lower_type_alias(&type_alias)?)
-            }
+            },
         };
         self.items.push(item);
         Some(())
     }
 
-    fn lower_import(&mut self, import: &syntax::ast::Import) -> Option<ModuleItemId<Import>> {
+    fn lower_import(
+        &mut self,
+        import: &syntax::ast::Import,
+    ) -> Option<ModuleItemId<Import>> {
         let ast_id = self.source_ast_id_map.ast_id(import);
 
         let value = match import.import()? {
             ast::ImportKind::ImportPath(path) => {
                 ImportValue::Path(path.string_literal()?.text().to_string())
-            }
+            },
             ast::ImportKind::ImportCustom(custom) => ImportValue::Custom(custom.key()),
         };
 
@@ -122,6 +142,7 @@ impl<'a> Ctx<'a> {
         let constant = GlobalConstant { name, ty, ast_id };
         Some(self.module_data.global_constants.alloc(constant).into())
     }
+
     fn lower_global_var(
         &mut self,
         var: &syntax::ast::GlobalVariableDecl,
@@ -153,7 +174,10 @@ impl<'a> Ctx<'a> {
         Some(self.module_data.global_variables.alloc(var).into())
     }
 
-    fn lower_struct(&mut self, strukt: &syntax::ast::StructDecl) -> Option<ModuleItemId<Struct>> {
+    fn lower_struct(
+        &mut self,
+        strukt: &syntax::ast::StructDecl,
+    ) -> Option<ModuleItemId<Struct>> {
         let name = strukt.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(strukt);
 
@@ -209,7 +233,10 @@ impl<'a> Ctx<'a> {
         Some(self.module_data.functions.alloc(function).into())
     }
 
-    fn lower_function_param_list(&mut self, function_param_list: ast::ParamList) -> Option<()> {
+    fn lower_function_param_list(
+        &mut self,
+        function_param_list: ast::ParamList,
+    ) -> Option<()> {
         for param in function_param_list.params() {
             if let Some(param) = param.variable_ident_declaration() {
                 let ty = param
@@ -241,7 +268,10 @@ impl<'a> Ctx<'a> {
         Some(())
     }
 
-    fn lower_type_ref(&self, ty: ast::Type) -> Option<TypeRef> {
+    fn lower_type_ref(
+        &self,
+        ty: ast::Type,
+    ) -> Option<TypeRef> {
         ty.try_into().ok()
     }
 
@@ -249,6 +279,7 @@ impl<'a> Ctx<'a> {
         let idx = self.module_data.params.len() as u32;
         Idx::from_raw(la_arena::RawIdx::from(idx))
     }
+
     fn next_field_idx(&self) -> Idx<Field> {
         let idx = self.module_data.fields.len() as u32;
         Idx::from_raw(la_arena::RawIdx::from(idx))

@@ -2,14 +2,13 @@ pub mod pretty;
 
 use std::{borrow::Cow, fmt::Write, str::FromStr};
 
-use hir_def::db::StructId;
-use hir_def::type_ref;
 pub use hir_def::type_ref::{AccessMode, StorageClass};
+use hir_def::{db::StructId, type_ref};
 use salsa::InternKey;
 
 use crate::HirDatabase;
 
-// TOOD:
+// TODO:
 // [ ] nesting depth
 // [ ] constructable
 // [ ] io-shareable
@@ -20,6 +19,7 @@ use crate::HirDatabase;
 pub struct Ty {
     ty: salsa::InternId,
 }
+
 impl InternKey for Ty {
     fn from_intern_id(ty: salsa::InternId) -> Self {
         Ty { ty }
@@ -29,16 +29,28 @@ impl InternKey for Ty {
         self.ty
     }
 }
+
 impl Ty {
-    pub fn kind(self, db: &dyn HirDatabase) -> TyKind {
+    pub fn kind(
+        self,
+        db: &dyn HirDatabase,
+    ) -> TyKind {
         db.lookup_intern_ty(self)
     }
-    pub fn is_err(self, db: &dyn HirDatabase) -> bool {
+
+    pub fn is_err(
+        self,
+        db: &dyn HirDatabase,
+    ) -> bool {
         matches!(db.lookup_intern_ty(self), TyKind::Error)
     }
+
     /// T -> T, vecN<T> -> T
     #[must_use]
-    pub fn this_or_vec_inner(self, db: &dyn HirDatabase) -> Ty {
+    pub fn this_or_vec_inner(
+        self,
+        db: &dyn HirDatabase,
+    ) -> Ty {
         match self.kind(db) {
             TyKind::Vector(vec) => vec.inner,
             TyKind::Ref(r) => r.inner.this_or_vec_inner(db),
@@ -48,14 +60,21 @@ impl Ty {
 
     /// ref<inner> -> inner, ptr<inner> -> ptr<inner>
     #[must_use]
-    pub fn unref(self, db: &dyn HirDatabase) -> Ty {
+    pub fn unref(
+        self,
+        db: &dyn HirDatabase,
+    ) -> Ty {
         match self.kind(db) {
             TyKind::Ref(r) => r.inner,
             _ => self,
         }
     }
 
-    pub fn contains_struct(self, db: &dyn HirDatabase, strukt: StructId) -> bool {
+    pub fn contains_struct(
+        self,
+        db: &dyn HirDatabase,
+        strukt: StructId,
+    ) -> bool {
         self.kind(db).contains_struct(db, strukt)
     }
 }
@@ -86,22 +105,29 @@ impl TyKind {
     pub fn bool() -> TyKind {
         TyKind::Scalar(ScalarType::Bool)
     }
+
     pub fn f32() -> TyKind {
         TyKind::Scalar(ScalarType::Bool)
     }
+
     pub fn i32() -> TyKind {
         TyKind::Scalar(ScalarType::Bool)
     }
+
     pub fn u32() -> TyKind {
         TyKind::Scalar(ScalarType::Bool)
     }
+
     pub fn vec_of() -> TyKind {
         TyKind::Scalar(ScalarType::Bool)
     }
 }
 
 impl TyKind {
-    pub fn unref(&self, db: &dyn HirDatabase) -> Cow<'_, TyKind> {
+    pub fn unref(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> Cow<'_, TyKind> {
         match self {
             TyKind::Ref(r) => Cow::Owned(r.inner.kind(db)),
             _ => Cow::Borrowed(self),
@@ -115,7 +141,10 @@ impl TyKind {
         }
     }
 
-    pub fn intern(self, db: &dyn HirDatabase) -> Ty {
+    pub fn intern(
+        self,
+        db: &dyn HirDatabase,
+    ) -> Ty {
         db.intern_ty(self)
     }
 
@@ -134,6 +163,7 @@ impl TyKind {
                 | TyKind::Struct(_)
         )
     }
+
     pub fn is_constructable(&self) -> bool {
         matches!(
             self,
@@ -147,6 +177,7 @@ impl TyKind {
                 | TyKind::Struct(_)
         )
     }
+
     pub fn is_storable(&self) -> bool {
         matches!(
             self,
@@ -160,7 +191,11 @@ impl TyKind {
                 | TyKind::Sampler(_)
         )
     }
-    pub fn is_io_shareable(&self, db: &dyn HirDatabase) -> bool {
+
+    pub fn is_io_shareable(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> bool {
         match self {
             TyKind::Scalar(_) => true,
             TyKind::Vector(vec) => vec.inner.kind(db).is_numeric_scalar(),
@@ -172,11 +207,15 @@ impl TyKind {
                         TyKind::Vector(vec) if vec.inner.kind(db).is_numeric_scalar() => true,
                         _ => false,
                     })
-            }
+            },
             _ => false,
         }
     }
-    pub fn is_host_shareable(&self, db: &dyn HirDatabase) -> bool {
+
+    pub fn is_host_shareable(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> bool {
         match self {
             TyKind::Scalar(scalar) => scalar.is_numeric(),
             TyKind::Vector(vec) => vec.inner.kind(db).is_numeric_scalar(),
@@ -189,7 +228,11 @@ impl TyKind {
             _ => false,
         }
     }
-    pub fn contains_runtime_sized_array(&self, db: &dyn HirDatabase) -> bool {
+
+    pub fn contains_runtime_sized_array(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> bool {
         match self {
             TyKind::Array(ArrayType {
                 size: ArraySize::Dynamic,
@@ -203,7 +246,11 @@ impl TyKind {
         }
     }
 
-    pub fn contains_struct(&self, db: &dyn HirDatabase, strukt: StructId) -> bool {
+    pub fn contains_struct(
+        &self,
+        db: &dyn HirDatabase,
+        strukt: StructId,
+    ) -> bool {
         match self {
             TyKind::Atomic(atomic) => atomic.inner.contains_struct(db, strukt),
             TyKind::Struct(id) => {
@@ -213,7 +260,7 @@ impl TyKind {
                 db.field_types(*id)
                     .values()
                     .any(|ty| ty.contains_struct(db, strukt))
-            }
+            },
             TyKind::Array(array) => array.inner.contains_struct(db, strukt),
             TyKind::Ref(r) => r.inner.contains_struct(db, strukt),
             TyKind::Ptr(ptr) => ptr.inner.contains_struct(db, strukt),
@@ -229,6 +276,7 @@ pub enum ScalarType {
     U32,
     F32,
 }
+
 impl ScalarType {
     pub fn is_numeric(&self) -> bool {
         matches!(self, ScalarType::F32 | ScalarType::U32 | ScalarType::I32)
@@ -242,6 +290,7 @@ pub enum VecSize {
     Four,
     BoundVar(BoundVar),
 }
+
 impl TryFrom<u8> for VecSize {
     type Error = ();
 
@@ -254,6 +303,7 @@ impl TryFrom<u8> for VecSize {
         })
     }
 }
+
 impl From<type_ref::VecDimensionality> for VecSize {
     fn from(dim: type_ref::VecDimensionality) -> Self {
         match dim {
@@ -263,8 +313,12 @@ impl From<type_ref::VecDimensionality> for VecSize {
         }
     }
 }
+
 impl std::fmt::Display for VecSize {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self {
             VecSize::Two => f.write_str("2"),
             VecSize::Three => f.write_str("3"),
@@ -272,10 +326,11 @@ impl std::fmt::Display for VecSize {
             VecSize::BoundVar(var) => {
                 let mut names = "NMOPQRS".chars();
                 write!(f, "{}", names.nth(var.index).unwrap())
-            }
+            },
         }
     }
 }
+
 impl VecSize {
     pub fn as_u8(&self) -> u8 {
         match self {
@@ -357,7 +412,10 @@ pub enum TextureDimensionality {
 }
 
 impl std::fmt::Display for TextureDimensionality {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self {
             TextureDimensionality::D1 => f.write_str("1d"),
             TextureDimensionality::D2 => f.write_str("2d"),
@@ -398,7 +456,10 @@ pub enum TexelFormat {
 }
 
 impl std::fmt::Display for TexelFormat {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         let str = match self {
             TexelFormat::Rgba8unorm => "rgba8unorm",
             TexelFormat::Rgba8snorm => "rgba8snorm",
@@ -422,6 +483,7 @@ impl std::fmt::Display for TexelFormat {
         f.write_str(str)
     }
 }
+
 impl FromStr for TexelFormat {
     type Err = ();
 

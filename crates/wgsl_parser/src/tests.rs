@@ -3,16 +3,31 @@ use expect_test::{expect, Expect};
 
 use crate::ParseEntryPoint;
 
-fn check(input: &str, expected_tree: Expect) {
+fn check(
+    input: &str,
+    expected_tree: Expect,
+) {
     crate::check_entrypoint(input, ParseEntryPoint::File, expected_tree);
 }
-fn check_type(input: &str, expected_tree: Expect) {
+
+fn check_type(
+    input: &str,
+    expected_tree: Expect,
+) {
     crate::check_entrypoint(input, ParseEntryPoint::Type, expected_tree);
 }
-fn check_statement(stmt: &str, expected_tree: Expect) {
+
+fn check_statement(
+    stmt: &str,
+    expected_tree: Expect,
+) {
     crate::check_entrypoint(stmt, ParseEntryPoint::Statement, expected_tree);
 }
-fn check_attribute_list(stmt: &str, expected_tree: Expect) {
+
+fn check_attribute_list(
+    stmt: &str,
+    expected_tree: Expect,
+) {
     crate::check_entrypoint(stmt, ParseEntryPoint::AttributeList, expected_tree);
 }
 
@@ -277,6 +292,7 @@ fn parse_type_generic_empty() {
                 GreaterThan@5..6 ">""#]],
     );
 }
+
 #[test]
 fn parse_type_generic_comma_recover() {
     check_type(
@@ -594,6 +610,7 @@ fn parse_if_without_paren() {
                 BraceRight@39..40 "}""#]],
     );
 }
+
 #[test]
 fn parse_if_recover_empty() {
     check_statement(
@@ -774,6 +791,7 @@ fn parse_for_statement() {
                 BraceRight@34..35 "}""#]],
     )
 }
+
 #[test]
 fn parse_for_statement_comma() {
     check_statement(
@@ -850,6 +868,7 @@ fn for_statement_incomplete_1() {
             error at 6..7: expected BraceRight"#]],
     );
 }
+
 #[test]
 fn for_statement_incomplete_2() {
     check_statement(
@@ -875,6 +894,7 @@ fn for_statement_incomplete_2() {
             error at 9..10: expected BraceRight"#]],
     );
 }
+
 #[test]
 fn for_statement_incomplete_3() {
     check_statement(
@@ -895,6 +915,7 @@ fn for_statement_incomplete_3() {
             error at 11..12: expected BraceRight"#]],
     );
 }
+
 #[test]
 fn for_statement_incomplete_4() {
     check_statement(
@@ -1105,7 +1126,7 @@ fn parse_stmt_recover() {
 }
 
 #[test]
-fn parse_coumpound_assignment_stmt() {
+fn parse_compound_assignment_stmt() {
     check_statement(
         "a += 3",
         expect![[r#"
@@ -1122,7 +1143,7 @@ fn parse_coumpound_assignment_stmt() {
 }
 
 #[test]
-fn parse_coumpound_assignment_stmt_expr() {
+fn parse_compound_assignment_stmt_expr() {
     check_statement(
         "*func() += foo()",
         expect![[r#"
@@ -1164,6 +1185,7 @@ fn parse_var_without_initializer() {
                 Uint32@7..10 "u32""#]],
     )
 }
+
 #[test]
 fn parse_var_with_initializer() {
     check_statement(
@@ -1520,6 +1542,7 @@ fn fn_recover_incomplete_param() {
             error at 9..10: expected Colon, but found ParenRight"#]],
     );
 }
+
 #[test]
 fn let_stmt_recover_return_no_eq() {
     check(
@@ -1593,6 +1616,7 @@ fn let_stmt_recover_return() {
             error at 40..46: expected Binding, but found Return"#]],
     );
 }
+
 #[test]
 fn let_stmt_recover_return_2() {
     check(
@@ -1634,6 +1658,7 @@ fn let_stmt_recover_return_2() {
             error at 42..48: expected Binding, but found Return"#]],
     );
 }
+
 #[test]
 fn let_stmt_recover_return_3() {
     check(
@@ -2051,6 +2076,7 @@ fn test()
             error at 17..18: expected Arrow or BraceLeft"#]],
     );
 }
+
 #[test]
 fn struct_recover_2() {
     check(
@@ -2082,45 +2108,47 @@ fn test()
             error at 22..23: expected Arrow or BraceLeft"#]],
     );
 }
+
 #[test]
 fn struct_recover_3() {
     check(
         r#"
 struct test {}
+
 fn test()
 };
 "#,
         expect![[r#"
-            SourceFile@0..29
+            SourceFile@0..30
               Whitespace@0..1 "\n"
-              StructDecl@1..16
+              StructDecl@1..17
                 Struct@1..7 "struct"
                 Whitespace@7..8 " "
                 Name@8..13
                   Ident@8..12 "test"
                   Whitespace@12..13 " "
-                StructDeclBody@13..16
+                StructDeclBody@13..17
                   BraceLeft@13..14 "{"
                   BraceRight@14..15 "}"
-                  Whitespace@15..16 "\n"
-              Function@16..27
-                Fn@16..18 "fn"
-                Whitespace@18..19 " "
-                Name@19..23
-                  Ident@19..23 "test"
-                ParamList@23..26
-                  ParenLeft@23..24 "("
-                  ParenRight@24..25 ")"
-                  Whitespace@25..26 "\n"
-                Error@26..27
-                  BraceRight@26..27 "}"
-              Error@27..29
-                Error@27..29
-                  Semicolon@27..28 ";"
-                  Whitespace@28..29 "\n"
+                  Whitespace@15..17 "\n\n"
+              Function@17..28
+                Fn@17..19 "fn"
+                Whitespace@19..20 " "
+                Name@20..24
+                  Ident@20..24 "test"
+                ParamList@24..27
+                  ParenLeft@24..25 "("
+                  ParenRight@25..26 ")"
+                  Whitespace@26..27 "\n"
+                Error@27..28
+                  BraceRight@27..28 "}"
+              Error@28..30
+                Error@28..30
+                  Semicolon@28..29 ";"
+                  Whitespace@29..30 "\n"
 
-            error at 26..27: expected Arrow or BraceLeft, but found BraceRight
-            error at 27..28: expected Fn, Struct, Var, Let, Const or Alias, but found Semicolon"#]],
+            error at 27..28: expected Arrow or BraceLeft, but found BraceRight
+            error at 28..29: expected Fn, Struct, Var, Let, Const, Alias or Override, but found Semicolon"#]],
     );
 }
 
@@ -2128,34 +2156,34 @@ fn test()
 fn struct_recover_4() {
     check(
         r#"
-struct 
+struct
 
 [[block]]
 struct
 "#,
         expect![[r#"
-            SourceFile@0..27
+            SourceFile@0..26
               Whitespace@0..1 "\n"
-              Struct@1..10
+              Struct@1..9
                 Struct@1..7 "struct"
-                Whitespace@7..10 " \n\n"
-                Error@10..10
-              StructDecl@10..27
-                AttributeList@10..20
-                  AttrLeft@10..12 "[["
-                  Attribute@12..17
-                    Ident@12..17 "block"
-                  AttrRight@17..19 "]]"
-                  Whitespace@19..20 "\n"
-                Struct@20..26 "struct"
-                Whitespace@26..27 "\n"
-                Name@27..27
-                StructDeclBody@27..27
+                Whitespace@7..9 "\n\n"
+                Error@9..9
+              StructDecl@9..26
+                AttributeList@9..19
+                  AttrLeft@9..11 "[["
+                  Attribute@11..16
+                    Ident@11..16 "block"
+                  AttrRight@16..18 "]]"
+                  Whitespace@18..19 "\n"
+                Struct@19..25 "struct"
+                Whitespace@25..26 "\n"
+                Name@26..26
+                StructDeclBody@26..26
 
-            error at 10..12: expected BraceLeft, but found AttrLeft
-            error at 26..27: expected Ident
-            error at 26..27: expected BraceLeft
-            error at 26..27: expected BraceRight"#]],
+            error at 9..11: expected BraceLeft, but found AttrLeft
+            error at 25..26: expected Ident
+            error at 25..26: expected BraceLeft
+            error at 25..26: expected BraceRight"#]],
     );
 }
 
@@ -2183,6 +2211,7 @@ fn global_variable_decl() {
             Semicolon@26..27 ";""#]],
     );
 }
+
 #[test]
 fn global_variable_decl_attrs() {
     check(
@@ -2229,6 +2258,7 @@ fn global_variable_decl_attrs() {
                 Semicolon@70..71 ";""#]],
     );
 }
+
 #[test]
 fn global_variable_decl_init() {
     check(
@@ -2290,6 +2320,7 @@ fn type_alias_decl() {
                 Semicolon@17..18 ";""#]],
     );
 }
+
 #[test]
 fn type_alias_decl_old() {
     check(
@@ -2486,10 +2517,7 @@ fn parse_import() {
         expect![[r##"
             SourceFile@0..12
               Import@0..12
-                UnofficialPreprocessorImport@0..7 "#import"
-                Whitespace@7..8 " "
-                ImportCustom@8..12
-                  Ident@8..12 "test""##]],
+                UnofficialPreprocessorImport@0..12 "#import test""##]],
     );
 }
 
@@ -2500,12 +2528,7 @@ fn parse_import_colon() {
         expect![[r##"
             SourceFile@0..29
               Import@0..29
-                UnofficialPreprocessorImport@0..7 "#import"
-                Whitespace@7..8 " "
-                ImportCustom@8..29
-                  Ident@8..16 "bevy_pbr"
-                  ColonColon@16..18 "::"
-                  Ident@18..29 "mesh_struct""##]],
+                UnofficialPreprocessorImport@0..29 "#import bevy_pbr::mes ...""##]],
     );
 }
 
@@ -2517,10 +2540,7 @@ fn parse_string_import() {
         expect![[r##"
             SourceFile@0..19
               Import@0..19
-                UnofficialPreprocessorImport@0..7 "#import"
-                Whitespace@7..8 " "
-                ImportPath@8..19
-                  StringLiteral@8..19 "\"file.wgsl\"""##]],
+                UnofficialPreprocessorImport@0..19 "#import \"file.wgsl\"""##]],
     );
 }
 
@@ -2723,30 +2743,30 @@ fn parse_switch_statement_recover_4() {
         r#"
 {
 switch i {
-  case 1, 2, 
+  case 1, 2,
 }
 let x = 3;
 }
         "#,
         expect![[r#"
-            CompoundStatement@0..51
+            CompoundStatement@0..50
               Whitespace@0..1 "\n"
               BraceLeft@1..2 "{"
               Whitespace@2..3 "\n"
-              SwitchStatement@3..30
+              SwitchStatement@3..29
                 Switch@3..9 "switch"
                 Whitespace@9..10 " "
                 PathExpr@10..12
                   NameRef@10..12
                     Ident@10..11 "i"
                     Whitespace@11..12 " "
-                SwitchBlock@12..30
+                SwitchBlock@12..29
                   BraceLeft@12..13 "{"
                   Whitespace@13..16 "\n  "
-                  SwitchBodyCase@16..28
+                  SwitchBodyCase@16..27
                     Case@16..20 "case"
                     Whitespace@20..21 " "
-                    SwitchCaseSelectors@21..28
+                    SwitchCaseSelectors@21..27
                       Literal@21..22
                         IntLiteral@21..22 "1"
                       Comma@22..23 ","
@@ -2754,23 +2774,23 @@ let x = 3;
                       Literal@24..25
                         IntLiteral@24..25 "2"
                       Comma@25..26 ","
-                      Whitespace@26..28 " \n"
-                  BraceRight@28..29 "}"
-                  Whitespace@29..30 "\n"
-              VariableStatement@30..39
-                Let@30..33 "let"
-                Whitespace@33..34 " "
-                Binding@34..36
-                  Name@34..36
-                    Ident@34..35 "x"
-                    Whitespace@35..36 " "
-                Equal@36..37 "="
-                Whitespace@37..38 " "
-                Literal@38..39
-                  IntLiteral@38..39 "3"
-              Semicolon@39..40 ";"
-              Whitespace@40..41 "\n"
-              BraceRight@41..42 "}"
-              Whitespace@42..51 "\n        ""#]],
+                      Whitespace@26..27 "\n"
+                  BraceRight@27..28 "}"
+                  Whitespace@28..29 "\n"
+              VariableStatement@29..38
+                Let@29..32 "let"
+                Whitespace@32..33 " "
+                Binding@33..35
+                  Name@33..35
+                    Ident@33..34 "x"
+                    Whitespace@34..35 " "
+                Equal@35..36 "="
+                Whitespace@36..37 " "
+                Literal@37..38
+                  IntLiteral@37..38 "3"
+              Semicolon@38..39 ";"
+              Whitespace@39..40 "\n"
+              BraceRight@40..41 "}"
+              Whitespace@41..50 "\n        ""#]],
     );
 }

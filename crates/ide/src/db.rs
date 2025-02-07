@@ -18,12 +18,16 @@ pub struct RootDatabase {
 }
 
 impl std::fmt::Debug for RootDatabase {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         f.debug_struct("RootDatabase").finish()
     }
 }
 
 impl salsa::Database for RootDatabase {}
+
 impl salsa::ParallelDatabase for RootDatabase {
     fn snapshot(&self) -> salsa::Snapshot<RootDatabase> {
         salsa::Snapshot::new(RootDatabase {
@@ -51,7 +55,10 @@ impl RootDatabase {
         this
     }
 
-    pub fn apply_change(&mut self, change: Change) {
+    pub fn apply_change(
+        &mut self,
+        change: Change,
+    ) {
         change.apply(self);
     }
 }

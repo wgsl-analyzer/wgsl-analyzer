@@ -18,18 +18,19 @@ use hir_def::{
     hir_file_id::ImportFile,
     module_data::{self, ImportValue, ModuleInfo, ModuleItem, Name},
     resolver::{ResolveValue, Resolver},
-    InFile,
+    HasSource as _, HirFileId, InFile,
 };
-use hir_def::{HasSource as _, HirFileId};
+pub use hir_ty::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Ty};
 use smallvec::SmallVec;
 use syntax::{ast, match_ast, ptr::AstPtr, AstNode, HasName, SyntaxNode};
 
-pub use hir_ty::HirDatabase;
-
 pub trait HasSource {
     type Ast;
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>>;
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>>;
 }
 
 /// Nice API on top of the layers below
@@ -42,15 +43,25 @@ impl<'db> Semantics<'db> {
         Semantics { db }
     }
 
-    pub fn parse(&self, file_id: FileId) -> ast::SourceFile {
+    pub fn parse(
+        &self,
+        file_id: FileId,
+    ) -> ast::SourceFile {
         self.db.parse(file_id).tree()
     }
 
-    pub fn analyze(&self, def: DefWithBodyId) -> SourceAnalyzer {
+    pub fn analyze(
+        &self,
+        def: DefWithBodyId,
+    ) -> SourceAnalyzer {
         SourceAnalyzer::new(self.db, def)
     }
 
-    pub fn find_container(&self, file_id: HirFileId, src: &SyntaxNode) -> Option<DefWithBodyId> {
+    pub fn find_container(
+        &self,
+        file_id: HirFileId,
+        src: &SyntaxNode,
+    ) -> Option<DefWithBodyId> {
         src.ancestors().find_map(|syntax| {
             match_ast! {
                 match syntax {
@@ -62,17 +73,25 @@ impl<'db> Semantics<'db> {
             }
         })
     }
-    pub fn resolver(&self, file_id: HirFileId, src: &SyntaxNode) -> Resolver {
+
+    pub fn resolver(
+        &self,
+        file_id: HirFileId,
+        src: &SyntaxNode,
+    ) -> Resolver {
         match self.find_container(file_id, src) {
             Some(def) => def.resolver(self.db.upcast()),
             None => {
                 let module_info = self.db.module_info(file_id);
                 Resolver::default().push_module_scope(self.db.upcast(), file_id, module_info)
-            }
+            },
         }
     }
 
-    pub fn module(&self, file_id: FileId) -> Module {
+    pub fn module(
+        &self,
+        file_id: FileId,
+    ) -> Module {
         Module {
             file_id: file_id.into(),
         }
@@ -107,27 +126,31 @@ impl<'db> Semantics<'db> {
             ResolveValue::GlobalVariable(loc) => {
                 let id = self.db.intern_global_variable(loc);
                 Definition::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))
-            }
+            },
             ResolveValue::GlobalConstant(loc) => {
                 let id = self.db.intern_global_constant(loc);
                 Definition::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id }))
-            }
+            },
             ResolveValue::Override(loc) => {
                 let id = self.db.intern_override(loc);
                 Definition::ModuleDef(ModuleDef::Override(Override { id }))
-            }
+            },
         };
 
         Some(def)
     }
 
-    fn function_to_def(&self, src: InFile<ast::Function>) -> Option<FunctionId> {
+    fn function_to_def(
+        &self,
+        src: InFile<ast::Function>,
+    ) -> Option<FunctionId> {
         let function = module_data::find_item(self.db.upcast(), src.file_id, &src.value)?;
         let function_id = self
             .db
             .intern_function(Location::new(src.file_id, function));
         Some(function_id)
     }
+
     fn global_constant_to_def(
         &self,
         src: InFile<ast::GlobalConstantDecl>,
@@ -138,6 +161,7 @@ impl<'db> Semantics<'db> {
             .intern_global_constant(Location::new(src.file_id, global_constant));
         Some(id)
     }
+
     fn global_variable_to_def(
         &self,
         src: InFile<ast::GlobalVariableDecl>,
@@ -149,14 +173,20 @@ impl<'db> Semantics<'db> {
         Some(id)
     }
 
-    pub fn import_to_def(&self, src: InFile<ast::Import>) -> Option<ImportId> {
+    pub fn import_to_def(
+        &self,
+        src: InFile<ast::Import>,
+    ) -> Option<ImportId> {
         let import = module_data::find_import(self.db.upcast(), src.file_id, &src.value)?;
 
         let import_id = self.db.intern_import(Location::new(src.file_id, import));
         Some(import_id)
     }
 
-    pub fn resolve_import(&self, src: InFile<ast::Import>) -> Option<Import> {
+    pub fn resolve_import(
+        &self,
+        src: InFile<ast::Import>,
+    ) -> Option<Import> {
         let id = self.import_to_def(src)?;
         Some(Import { id })
     }
@@ -172,27 +202,27 @@ fn module_item_to_def(
             let loc = Location::new(file_id, func);
             let id = db.intern_function(loc);
             ModuleDef::Function(Function { id })
-        }
+        },
         ModuleItem::Struct(strukt) => {
             let loc = Location::new(file_id, strukt);
             let id = db.intern_struct(loc);
             ModuleDef::Struct(Struct { id })
-        }
+        },
         ModuleItem::GlobalVariable(var) => {
             let loc = Location::new(file_id, var);
             let id = db.intern_global_variable(loc);
             ModuleDef::GlobalVariable(GlobalVariable { id })
-        }
+        },
         ModuleItem::GlobalConstant(constant) => {
             let loc = Location::new(file_id, constant);
             let id = db.intern_global_constant(loc);
             ModuleDef::GlobalConstant(GlobalConstant { id })
-        }
+        },
         ModuleItem::Override(constant) => {
             let loc = Location::new(file_id, constant);
             let id = db.intern_override(loc);
             ModuleDef::Override(Override { id })
-        }
+        },
         ModuleItem::Import(import) => {
             let loc = Location::new(file_id, import);
             let import_id = db.intern_import(loc);
@@ -205,12 +235,12 @@ fn module_item_to_def(
                 .iter()
                 .flat_map(|item| module_item_to_def(db, import_file, item))
                 .collect();
-        }
+        },
         ModuleItem::TypeAlias(type_alias) => {
             let loc = Location::new(file_id, type_alias);
             let id = db.intern_type_alias(loc);
             ModuleDef::TypeAlias(TypeAlias { id })
-        }
+        },
     };
     smallvec::smallvec![def]
 }
@@ -224,7 +254,10 @@ pub struct SourceAnalyzer<'db> {
 }
 
 impl<'db> SourceAnalyzer<'db> {
-    fn new(db: &'db dyn HirDatabase, def: DefWithBodyId) -> Self {
+    fn new(
+        db: &'db dyn HirDatabase,
+        def: DefWithBodyId,
+    ) -> Self {
         let (body, body_source_map) = db.body_with_source_map(def);
         let infer = db.infer(def);
         Self {
@@ -236,26 +269,38 @@ impl<'db> SourceAnalyzer<'db> {
         }
     }
 
-    pub fn type_of_expr(&self, expr: &ast::Expr) -> Option<Ty> {
+    pub fn type_of_expr(
+        &self,
+        expr: &ast::Expr,
+    ) -> Option<Ty> {
         let id = self.expr_id(expr)?;
         let ty = *self.infer.type_of_expr.get(id)?;
         Some(ty)
     }
 
-    pub fn type_of_binding(&self, binding: &ast::Binding) -> Option<Ty> {
+    pub fn type_of_binding(
+        &self,
+        binding: &ast::Binding,
+    ) -> Option<Ty> {
         let id = self.binding_id(binding)?;
         let ty = *self.infer.type_of_binding.get(id)?;
         Some(ty)
     }
 
-    pub fn resolve_field(&self, field: ast::FieldExpr) -> Option<Field> {
+    pub fn resolve_field(
+        &self,
+        field: ast::FieldExpr,
+    ) -> Option<Field> {
         let expr = self.expr_id(&ast::Expr::FieldExpr(field))?;
         let field = self.infer.field_resolution(expr)?;
 
         Some(Field { id: field })
     }
 
-    pub fn resolver_for(&self, scope: Either<ast::Expr, ast::Statement>) -> Resolver {
+    pub fn resolver_for(
+        &self,
+        scope: Either<ast::Expr, ast::Statement>,
+    ) -> Resolver {
         let mut resolver = self.owner.resolver(self.db.upcast());
 
         let expr_scopes = self.db.expr_scopes(self.owner);
@@ -287,13 +332,24 @@ impl<'db> SourceAnalyzer<'db> {
         resolver
     }
 
-    pub fn binding_id(&self, src: &ast::Binding) -> Option<BindingId> {
+    pub fn binding_id(
+        &self,
+        src: &ast::Binding,
+    ) -> Option<BindingId> {
         self.body_source_map.lookup_binding(&AstPtr::new(src))
     }
-    pub fn expr_id(&self, src: &ast::Expr) -> Option<ExprId> {
+
+    pub fn expr_id(
+        &self,
+        src: &ast::Expr,
+    ) -> Option<ExprId> {
         self.body_source_map.lookup_expr(&AstPtr::new(src))
     }
-    pub fn stmt_id(&self, src: &ast::Statement) -> Option<StatementId> {
+
+    pub fn stmt_id(
+        &self,
+        src: &ast::Statement,
+    ) -> Option<StatementId> {
         self.body_source_map.lookup_statement(&AstPtr::new(src))
     }
 }
@@ -303,10 +359,14 @@ pub struct Local {
     pub parent: FunctionId,
     pub binding: BindingId,
 }
+
 impl HasSource for Local {
     type Ast = ast::Binding;
 
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         let file_id = self.parent.lookup(db).file_id;
         let (_, source_map) = db.body_with_source_map(DefWithBodyId::Function(self.parent));
         let binding = source_map
@@ -327,7 +387,10 @@ pub struct Function {
 impl HasSource for Function {
     type Ast = ast::Function;
 
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(db).source(db))
     }
 }
@@ -340,7 +403,10 @@ pub struct GlobalVariable {
 impl HasSource for GlobalVariable {
     type Ast = ast::GlobalVariableDecl;
 
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(db).source(db))
     }
 }
@@ -349,10 +415,14 @@ impl HasSource for GlobalVariable {
 pub struct GlobalConstant {
     id: GlobalConstantId,
 }
+
 impl HasSource for GlobalConstant {
     type Ast = ast::GlobalConstantDecl;
 
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(db).source(db))
     }
 }
@@ -361,10 +431,14 @@ impl HasSource for GlobalConstant {
 pub struct Override {
     id: OverrideId,
 }
+
 impl HasSource for Override {
     type Ast = ast::OverrideDecl;
 
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(db).source(db))
     }
 }
@@ -377,7 +451,10 @@ pub struct Struct {
 impl HasSource for Struct {
     type Ast = ast::StructDecl;
 
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(db).source(db))
     }
 }
@@ -390,7 +467,10 @@ pub struct TypeAlias {
 impl HasSource for TypeAlias {
     type Ast = ast::TypeAliasDecl;
 
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(db).source(db))
     }
 }
@@ -402,7 +482,11 @@ pub struct Field {
 
 impl HasSource for Field {
     type Ast = ast::StructDeclField;
-    fn source(self, db: &dyn DefDatabase) -> Option<InFile<Self::Ast>> {
+
+    fn source(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
         let struct_data = db.struct_data(self.id.strukt);
         let field_data = &struct_data.fields()[self.id.field];
         let field_name = &field_data.name;
@@ -446,7 +530,10 @@ pub struct Module {
 }
 
 impl Module {
-    pub fn items(&self, db: &dyn HirDatabase) -> Vec<ModuleDef> {
+    pub fn items(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> Vec<ModuleDef> {
         let module_info = db.module_info(self.file_id);
         module_info
             .items()
@@ -454,7 +541,11 @@ impl Module {
             .flat_map(|item| module_item_to_def(db, self.file_id, item))
             .collect()
     }
-    pub fn imports(&self, db: &dyn HirDatabase) -> Vec<Import> {
+
+    pub fn imports(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> Vec<Import> {
         let module_info = db.module_info(self.file_id);
         module_info
             .items()
@@ -470,7 +561,10 @@ impl Module {
             .collect()
     }
 
-    pub fn module_info(&self, db: &dyn HirDatabase) -> Arc<ModuleInfo> {
+    pub fn module_info(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> Arc<ModuleInfo> {
         db.module_info(self.file_id)
     }
 
@@ -494,7 +588,7 @@ impl Module {
         }
         for item in self.items(db) {
             match item {
-                ModuleDef::Function(_function) => {}
+                ModuleDef::Function(_function) => {},
                 ModuleDef::GlobalVariable(var) => {
                     diagnostics::global_variable::collect(db, var.id, |error| {
                         if let Some(source) = var.source(db.upcast()) {
@@ -502,11 +596,11 @@ impl Module {
                             acc.push(diagnostics::any_diag_from_global_var(error, source));
                         }
                     });
-                }
-                ModuleDef::GlobalConstant(_constant) => {}
-                ModuleDef::Override(_constant) => {}
-                ModuleDef::Struct(_strukt) => {}
-                ModuleDef::TypeAlias(_type_alias) => {}
+                },
+                ModuleDef::GlobalConstant(_constant) => {},
+                ModuleDef::Override(_constant) => {},
+                ModuleDef::Struct(_strukt) => {},
+                ModuleDef::TypeAlias(_type_alias) => {},
             }
             if let Some(def) = item.as_def_with_body_id() {
                 let file = def.file_id(db.upcast());
@@ -523,7 +617,7 @@ impl Module {
                             Some(diag) => acc.push(diag),
                             None => {
                                 tracing::warn!("could not create diagnostic from {:?}", diagnostic)
-                            }
+                            },
                         }
                     }
                 }
@@ -533,7 +627,7 @@ impl Module {
                         Some(diag) => acc.push(diag),
                         None => {
                             tracing::warn!("could not create diagnostic from {:?}", diagnostic)
-                        }
+                        },
                     }
                 });
             }
@@ -545,8 +639,12 @@ impl Module {
 pub struct Import {
     id: ImportId,
 }
+
 impl Import {
-    pub fn file_text(&self, db: &dyn HirDatabase) -> Option<String> {
+    pub fn file_text(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> Option<String> {
         let import_loc = self.id.lookup(db.upcast());
 
         let module_info = db.module_info(import_loc.file_id);
@@ -558,12 +656,15 @@ impl Import {
                 let imports = db.custom_imports();
                 let source = imports.get(key)?;
                 Some(source.clone())
-            }
+            },
         }
     }
 
     #[allow(clippy::result_unit_err)]
-    pub fn resolve(&self, db: &dyn HirDatabase) -> Result<(), ()> {
+    pub fn resolve(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> Result<(), ()> {
         let import_loc = self.id.lookup(db.upcast());
 
         let module_info = db.module_info(import_loc.file_id);
@@ -578,7 +679,7 @@ impl Import {
                 } else {
                     Err(())
                 }
-            }
+            },
         }
     }
 }

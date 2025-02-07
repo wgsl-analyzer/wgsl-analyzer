@@ -16,9 +16,8 @@ use syntax::{
     AstNode,
 };
 
-use crate::{Function, GlobalConstant, GlobalVariable, HasSource, Override, TypeAlias};
-
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
+use crate::{Function, GlobalConstant, GlobalVariable, HasSource, Override, TypeAlias};
 
 pub struct DiagnosticsConfig {
     pub type_errors: bool,
@@ -170,7 +169,7 @@ pub(crate) fn any_diag_from_infer_diag(
                 lhs: source,
                 actual,
             }
-        }
+        },
         InferenceDiagnostic::TypeMismatch {
             expr,
             ref expected,
@@ -183,7 +182,7 @@ pub(crate) fn any_diag_from_infer_diag(
                 expected: expected.clone(),
                 actual,
             }
-        }
+        },
         InferenceDiagnostic::NoSuchField { expr, ref name, ty } => {
             let ptr = source_map.expr_to_source(expr).ok()?.clone();
             let source = InFile::new(file_id, ptr);
@@ -193,13 +192,13 @@ pub(crate) fn any_diag_from_infer_diag(
                 name: name.clone(),
                 ty,
             }
-        }
+        },
         InferenceDiagnostic::ArrayAccessInvalidType { expr, ty } => {
             let ptr = source_map.expr_to_source(expr).ok()?.clone();
             let source = InFile::new(file_id, ptr);
 
             AnyDiagnostic::ArrayAccessInvalidType { expr: source, ty }
-        }
+        },
         InferenceDiagnostic::UnresolvedName { expr, ref name } => {
             let ptr = source_map.expr_to_source(expr).ok()?.clone();
             let source = InFile::new(file_id, ptr);
@@ -208,13 +207,13 @@ pub(crate) fn any_diag_from_infer_diag(
                 expr: source,
                 name: name.clone(),
             }
-        }
+        },
         InferenceDiagnostic::InvalidConstructionType { expr, ty } => {
             let ptr = source_map.expr_to_source(expr).ok()?.clone();
             let source = InFile::new(file_id, ptr);
 
             AnyDiagnostic::InvalidConstructionType { expr: source, ty }
-        }
+        },
         InferenceDiagnostic::NoConstructor {
             expr,
             ty,
@@ -230,7 +229,7 @@ pub(crate) fn any_diag_from_infer_diag(
                 ty,
                 parameters: parameters.clone(),
             }
-        }
+        },
         InferenceDiagnostic::FunctionCallArgCountMismatch {
             expr,
             n_expected,
@@ -244,7 +243,7 @@ pub(crate) fn any_diag_from_infer_diag(
                 n_expected,
                 n_actual,
             }
-        }
+        },
         InferenceDiagnostic::NoBuiltinOverload {
             expr,
             builtin,
@@ -260,7 +259,7 @@ pub(crate) fn any_diag_from_infer_diag(
                 name,
                 parameters: parameters.clone(),
             }
-        }
+        },
         InferenceDiagnostic::AddrOfNotRef { expr, actual } => {
             let ptr = source_map.expr_to_source(expr).ok()?.clone();
             let source = InFile::new(file_id, ptr);
@@ -269,7 +268,7 @@ pub(crate) fn any_diag_from_infer_diag(
                 expr: source,
                 actual,
             }
-        }
+        },
         InferenceDiagnostic::DerefNotAPtr { expr, actual } => {
             let ptr = source_map.expr_to_source(expr).ok()?.clone();
             let source = InFile::new(file_id, ptr);
@@ -278,7 +277,7 @@ pub(crate) fn any_diag_from_infer_diag(
                 expr: source,
                 actual,
             }
-        }
+        },
         InferenceDiagnostic::InvalidType {
             ref container,
             ref error,
@@ -287,42 +286,42 @@ pub(crate) fn any_diag_from_infer_diag(
                 hir_ty::infer::TypeContainer::Expr(expr) => {
                     let expr = source_map.expr_to_source(expr).ok()?;
                     expr.syntax_node_ptr()
-                }
+                },
                 hir_ty::infer::TypeContainer::GlobalVar(id) => {
                     let source = GlobalVariable { id }.source(db.upcast())?;
                     SyntaxNodePtr::new(source.value.ty()?.syntax())
-                }
+                },
                 hir_ty::infer::TypeContainer::GlobalConstant(id) => {
                     let source = GlobalConstant { id }.source(db.upcast())?;
                     SyntaxNodePtr::new(source.value.ty()?.syntax())
-                }
+                },
                 hir_ty::infer::TypeContainer::Override(id) => {
                     let source = Override { id }.source(db.upcast())?;
                     SyntaxNodePtr::new(source.value.ty()?.syntax())
-                }
+                },
                 hir_ty::infer::TypeContainer::FunctionParameter(_, binding) => {
                     let binding = source_map.binding_to_source(binding).ok()?;
                     binding.syntax_node_ptr()
-                }
+                },
                 hir_ty::infer::TypeContainer::FunctionReturn(id) => {
                     let source = Function { id }.source(db.upcast())?;
                     SyntaxNodePtr::new(source.value.return_type()?.syntax())
-                }
+                },
                 hir_ty::infer::TypeContainer::VariableStatement(stmt) => {
                     let stmt = source_map.stmt_to_source(stmt).ok()?;
                     stmt.syntax_node_ptr()
-                }
+                },
                 hir_ty::infer::TypeContainer::TypeAlias(id) => {
                     let source = TypeAlias { id }.source(db.upcast())?;
                     SyntaxNodePtr::new(source.value.type_decl()?.syntax())
-                }
+                },
             };
             AnyDiagnostic::InvalidType {
                 file_id,
                 location,
                 error: error.clone(),
             }
-        }
+        },
     })
 }
 
@@ -334,7 +333,7 @@ pub(crate) fn any_diag_from_global_var(
         GlobalVariableDiagnostic::MissingStorageClass => AnyDiagnostic::MissingStorageClass { var },
         GlobalVariableDiagnostic::StorageClassError(error) => {
             AnyDiagnostic::InvalidStorageClass { var, error }
-        }
+        },
     }
 }
 
@@ -352,7 +351,7 @@ pub(crate) fn any_diag_from_shift(
                 op: *op,
                 sequence_permitted: false,
             })
-        }
+        },
         PrecedenceDiagnostic::SequencesAllowed(expr, op) => {
             let ptr = source_map.expr_to_source(*expr).ok()?.clone();
             let source = InFile::new(file_id, ptr);
@@ -361,6 +360,6 @@ pub(crate) fn any_diag_from_shift(
                 op: *op,
                 sequence_permitted: true,
             })
-        }
+        },
     }
 }

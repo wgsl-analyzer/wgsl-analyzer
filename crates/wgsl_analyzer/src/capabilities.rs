@@ -4,6 +4,8 @@ use lsp_types::{
 };
 use serde_json::json;
 
+#[must_use]
+#[inline]
 pub fn server_capabilities() -> ServerCapabilities {
     ServerCapabilities {
         text_document_sync: Some(TextDocumentSyncCapability::Kind(
@@ -13,7 +15,7 @@ pub fn server_capabilities() -> ServerCapabilities {
         completion_provider: Some(CompletionOptions {
             completion_item: None,
             resolve_provider: None,
-            trigger_characters: Some(vec![".".to_string()]),
+            trigger_characters: Some(vec![".".to_owned()]),
             all_commit_characters: None,
             work_done_progress_options: WorkDoneProgressOptions {
                 work_done_progress: None,

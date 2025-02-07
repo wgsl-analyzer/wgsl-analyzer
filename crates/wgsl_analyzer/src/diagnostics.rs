@@ -99,12 +99,18 @@ impl DiagnosticCollection {
         Some(mem::take(&mut self.changes))
     }
 
-    pub(crate) fn make_updated(&mut self, file_id: FileId) {
+    pub(crate) fn make_updated(
+        &mut self,
+        file_id: FileId,
+    ) {
         self.changes.insert(file_id);
     }
 }
 
-fn are_diagnostics_equal(left: &lsp_types::Diagnostic, right: &lsp_types::Diagnostic) -> bool {
+fn are_diagnostics_equal(
+    left: &lsp_types::Diagnostic,
+    right: &lsp_types::Diagnostic,
+) -> bool {
     left.source == right.source
         && left.severity == right.severity
         && left.range == right.range

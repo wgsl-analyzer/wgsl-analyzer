@@ -1,8 +1,7 @@
-use super::lexer::Token;
-use crate::TokenKind;
 use rowan::TextRange;
 
-use super::ParserDefinition;
+use super::{lexer::Token, ParserDefinition};
+use crate::TokenKind;
 
 pub(crate) struct Source<'t, 'input, P: ParserDefinition> {
     tokens: &'t [Token<'input, P::TokenKind>],
@@ -49,7 +48,7 @@ impl<'t, 'input, P: ParserDefinition> Source<'t, 'input, P> {
     }
 
     fn at_trivia(&self) -> bool {
-        self.peek_kind_raw().map_or(false, P::TokenKind::is_trivia)
+        self.peek_kind_raw().is_some_and(P::TokenKind::is_trivia)
     }
 
     pub(crate) fn last_token_range(&self) -> Option<TextRange> {

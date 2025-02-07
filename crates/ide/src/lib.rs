@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 mod db;
 mod debug_command;
 pub mod diagnostics;
@@ -8,8 +10,12 @@ mod hover;
 pub mod inlay_hints;
 mod syntax_tree;
 
-use base_db::{change::Change, SourceDatabase};
-use base_db::{line_index::LineIndex, FilePosition, FileRange, RangeInfo, TextRange};
+use std::sync::Arc;
+
+use base_db::{
+    change::Change, line_index::LineIndex, FilePosition, FileRange, RangeInfo, SourceDatabase,
+    TextRange,
+};
 use diagnostics::DiagnosticMessage;
 use goto_definition::NavigationTarget;
 use hir::diagnostics::DiagnosticsConfig;
@@ -18,7 +24,6 @@ pub use hover::HoverResult;
 use ide_completion::item::CompletionItem;
 use inlay_hints::{InlayHint, InlayHintsConfig};
 use salsa::{Cancelled, ParallelDatabase};
-use std::sync::Arc;
 use syntax::{Parse, SyntaxNode};
 use vfs::FileId;
 
@@ -41,7 +46,10 @@ impl AnalysisHost {
         this
     }
 
-    pub fn apply_change(&mut self, change: Change) {
+    pub fn apply_change(
+        &mut self,
+        change: Change,
+    ) {
         self.db.apply_change(change)
     }
 
@@ -65,7 +73,10 @@ pub struct Analysis {
 }
 
 impl Analysis {
-    pub fn with_db<F, T>(&self, f: F) -> Cancellable<T>
+    pub fn with_db<F, T>(
+        &self,
+        f: F,
+    ) -> Cancellable<T>
     where
         F: FnOnce(&RootDatabase) -> T + std::panic::UnwindSafe,
     {
@@ -73,25 +84,41 @@ impl Analysis {
     }
 
     /// Gets the text of the source file.
-    pub fn file_text(&self, file_id: FileId) -> Cancellable<Arc<String>> {
+    pub fn file_text(
+        &self,
+        file_id: FileId,
+    ) -> Cancellable<Arc<String>> {
         self.with_db(|db| db.file_text(file_id))
     }
 
     // Returns the full source code with imports resolved
-    pub fn resolve_full_source(&self, file_id: FileId) -> Cancellable<Result<String, ()>> {
+    pub fn resolve_full_source(
+        &self,
+        file_id: FileId,
+    ) -> Cancellable<Result<String, ()>> {
         self.with_db(|db| db.resolve_full_source(file_id.into()))
     }
 
     /// Gets the syntax tree of the file.
-    pub fn parse(&self, file_id: FileId) -> Cancellable<Parse> {
+    pub fn parse(
+        &self,
+        file_id: FileId,
+    ) -> Cancellable<Parse> {
         self.with_db(|db| db.parse(file_id))
     }
 
-    pub fn line_index(&self, file_id: FileId) -> Cancellable<Arc<LineIndex>> {
+    pub fn line_index(
+        &self,
+        file_id: FileId,
+    ) -> Cancellable<Arc<LineIndex>> {
         self.with_db(|db| db.line_index(file_id))
     }
 
-    pub fn syntax_tree(&self, file_id: FileId, range: Option<TextRange>) -> Cancellable<String> {
+    pub fn syntax_tree(
+        &self,
+        file_id: FileId,
+        range: Option<TextRange>,
+    ) -> Cancellable<String> {
         self.with_db(|db| syntax_tree::syntax_tree(db, file_id, range).unwrap_or_default())
     }
 
@@ -134,11 +161,17 @@ impl Analysis {
         self.with_db(|db| formatting::format(db, file_id, range))
     }
 
-    pub fn hover(&self, range: FileRange) -> Cancellable<Option<RangeInfo<HoverResult>>> {
+    pub fn hover(
+        &self,
+        range: FileRange,
+    ) -> Cancellable<Option<RangeInfo<HoverResult>>> {
         self.with_db(|db| hover::hover(db, range))
     }
 
-    pub fn debug_command(&self, file_position: FilePosition) -> Cancellable<()> {
+    pub fn debug_command(
+        &self,
+        file_position: FilePosition,
+    ) -> Cancellable<()> {
         self.with_db(|db| debug_command::debug_command(db, file_position))
             .unwrap();
         Ok(())

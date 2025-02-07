@@ -19,7 +19,10 @@ pub struct FunctionData {
 }
 
 impl FunctionData {
-    pub fn fn_data_query(db: &dyn DefDatabase, func: FunctionId) -> Arc<FunctionData> {
+    pub fn fn_data_query(
+        db: &dyn DefDatabase,
+        func: FunctionId,
+    ) -> Arc<FunctionData> {
         let loc = func.lookup(db);
         let module_info = db.module_info(loc.file_id);
         let function = &module_info.data[loc.value.index];
@@ -44,6 +47,7 @@ pub struct FieldId {
     pub strukt: StructId,
     pub field: LocalFieldId,
 }
+
 pub type LocalFieldId = Idx<FieldData>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -51,6 +55,7 @@ pub struct StructData {
     pub name: Name,
     pub fields: Arena<FieldData>,
 }
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FieldData {
     pub name: Name,
@@ -58,7 +63,10 @@ pub struct FieldData {
 }
 
 impl StructData {
-    pub fn struct_data_query(db: &dyn DefDatabase, func: StructId) -> Arc<StructData> {
+    pub fn struct_data_query(
+        db: &dyn DefDatabase,
+        func: StructId,
+    ) -> Arc<StructData> {
         let loc = func.lookup(db);
         let module_info = db.module_info(loc.file_id);
         let strukt = &module_info.data[loc.value.index];
@@ -81,11 +89,15 @@ impl StructData {
             fields,
         })
     }
+
     pub fn fields(&self) -> &Arena<FieldData> {
         &self.fields
     }
 
-    pub fn field(&self, name: &Name) -> Option<LocalFieldId> {
+    pub fn field(
+        &self,
+        name: &Name,
+    ) -> Option<LocalFieldId> {
         self.fields()
             .iter()
             .find_map(|(id, data)| if &data.name == name { Some(id) } else { None })
@@ -99,7 +111,10 @@ pub struct TypeAliasData {
 }
 
 impl TypeAliasData {
-    pub fn type_alias_data_query(db: &dyn DefDatabase, func: TypeAliasId) -> Arc<TypeAliasData> {
+    pub fn type_alias_data_query(
+        db: &dyn DefDatabase,
+        func: TypeAliasId,
+    ) -> Arc<TypeAliasData> {
         let loc = func.lookup(db);
         let module_info = db.module_info(loc.file_id);
         let type_alias = &module_info.data[loc.value.index];
@@ -110,6 +125,7 @@ impl TypeAliasData {
         })
     }
 }
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GlobalVariableData {
     pub name: Name,
@@ -117,6 +133,7 @@ pub struct GlobalVariableData {
     pub storage_class: Option<StorageClass>,
     pub access_mode: Option<AccessMode>,
 }
+
 impl GlobalVariableData {
     pub fn global_var_data_query(
         db: &dyn DefDatabase,
@@ -140,6 +157,7 @@ pub struct GlobalConstantData {
     pub name: Name,
     pub ty: Option<Interned<TypeRef>>,
 }
+
 impl GlobalConstantData {
     pub fn global_constant_data_query(
         db: &dyn DefDatabase,
@@ -161,6 +179,7 @@ pub struct OverrideData {
     pub name: Name,
     pub ty: Option<Interned<TypeRef>>,
 }
+
 impl OverrideData {
     pub fn override_data_query(
         db: &dyn DefDatabase,

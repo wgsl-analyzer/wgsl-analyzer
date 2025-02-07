@@ -33,7 +33,10 @@ impl SyntaxNodePtr {
     /// tree width. As most trees are shallow, thinking about this as
     /// `O(log(N))` in the size of the tree is not too wrong!
     #[track_caller]
-    pub fn to_node(&self, root: &SyntaxNode) -> SyntaxNode {
+    pub fn to_node(
+        &self,
+        root: &SyntaxNode,
+    ) -> SyntaxNode {
         assert!(root.parent().is_none());
         std::iter::successors(Some(root.clone()), |node| {
             node.child_or_token_at_range(self.range)
@@ -62,7 +65,10 @@ pub struct AstPtr<N: AstNode> {
 }
 
 impl<N: AstNode> std::fmt::Debug for AstPtr<N> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         f.debug_struct("AstPtr").field("raw", &self.raw).finish()
     }
 }
@@ -79,13 +85,19 @@ impl<N: AstNode> Clone for AstPtr<N> {
 impl<N: AstNode> Eq for AstPtr<N> {}
 
 impl<N: AstNode> PartialEq for AstPtr<N> {
-    fn eq(&self, other: &AstPtr<N>) -> bool {
+    fn eq(
+        &self,
+        other: &AstPtr<N>,
+    ) -> bool {
         self.raw == other.raw
     }
 }
 
 impl<N: AstNode> std::hash::Hash for AstPtr<N> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: std::hash::Hasher>(
+        &self,
+        state: &mut H,
+    ) {
         self.raw.hash(state);
     }
 }
@@ -99,7 +111,10 @@ impl<N: AstNode> AstPtr<N> {
     }
 
     #[track_caller]
-    pub fn to_node(&self, root: &SyntaxNode) -> N {
+    pub fn to_node(
+        &self,
+        root: &SyntaxNode,
+    ) -> N {
         let syntax_node = self.raw.to_node(root);
         N::cast(syntax_node).unwrap()
     }

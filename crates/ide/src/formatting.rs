@@ -1,13 +1,15 @@
-use base_db::FileId;
-use base_db::SourceDatabase;
-use base_db::TextRange;
+use base_db::{FileId, SourceDatabase, TextRange};
 use rowan::NodeOrToken;
 use syntax::{ast, AstNode, SyntaxNode};
 use wgsl_formatter::FormattingOptions;
 
 use crate::RootDatabase;
 
-pub fn format(db: &RootDatabase, file_id: FileId, range: Option<TextRange>) -> Option<SyntaxNode> {
+pub fn format(
+    db: &RootDatabase,
+    file_id: FileId,
+    range: Option<TextRange>,
+) -> Option<SyntaxNode> {
     let file: ast::SourceFile = db.parse_no_preprocessor(file_id).tree();
 
     let node = match range {

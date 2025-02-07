@@ -7,16 +7,13 @@ mod parsing;
 mod sink;
 mod source;
 
-pub use parsing::marker;
-pub use parsing::{ParseError, Parser};
-
 use std::{fmt::Debug, marker::PhantomData};
 
+use lexer::Lexer;
+pub use parsing::{marker, ParseError, Parser};
 use rowan::{GreenNode, SyntaxNode};
 use sink::Sink;
 use source::Source;
-
-use lexer::Lexer;
 
 pub trait TokenKind: Copy + PartialEq + Debug {
     fn is_trivia(self) -> bool;
@@ -30,7 +27,10 @@ pub trait ParserDefinition {
     const DEFAULT_RECOVERY_SET: &'static [Self::TokenKind] = &[];
 }
 
-pub fn parse<P: ParserDefinition, F: Fn(&mut Parser<P>)>(input: &str, f: F) -> Parse<P> {
+pub fn parse<P: ParserDefinition, F: Fn(&mut Parser<P>)>(
+    input: &str,
+    f: F,
+) -> Parse<P> {
     let tokens: Vec<_> = Lexer::<P::TokenKind>::new(input).collect();
     let source = Source::new(&tokens);
     let parser = Parser::<P>::new(source);
@@ -47,7 +47,10 @@ pub struct Parse<P: ParserDefinition> {
 }
 
 impl<P: ParserDefinition> Debug for Parse<P> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         f.debug_struct("Parse")
             .field("green_node", &self.green_node)
             .field("errors", &self.errors)
@@ -56,10 +59,14 @@ impl<P: ParserDefinition> Debug for Parse<P> {
 }
 
 impl<P: ParserDefinition> PartialEq for Parse<P> {
-    fn eq(&self, other: &Self) -> bool {
+    fn eq(
+        &self,
+        other: &Self,
+    ) -> bool {
         self.green_node == other.green_node
     }
 }
+
 impl<P: ParserDefinition> Eq for Parse<P> {}
 
 impl<P: ParserDefinition> Parse<P> {

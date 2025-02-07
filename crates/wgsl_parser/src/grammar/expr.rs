@@ -9,7 +9,10 @@ pub fn expr(p: &mut Parser) {
     expr_binding_power(p, 0);
 }
 
-fn expr_binding_power(p: &mut Parser, minimum_binding_power: u8) -> Option<CompletedMarker> {
+fn expr_binding_power(
+    p: &mut Parser,
+    minimum_binding_power: u8,
+) -> Option<CompletedMarker> {
     let mut lhs = lhs(p)?;
 
     loop {
@@ -27,16 +30,16 @@ fn expr_binding_power(p: &mut Parser, minimum_binding_power: u8) -> Option<Compl
                     // We have this as an error
                     function_param_list(p);
                     lhs = m.complete(p, SyntaxKind::InvalidFunctionCall);
-                }
+                },
                 PostfixOp::Index => {
                     array_index(p);
                     lhs = m.complete(p, SyntaxKind::IndexExpr);
-                }
+                },
                 PostfixOp::Field => {
                     p.bump();
                     name_ref(p);
                     lhs = m.complete(p, SyntaxKind::FieldExpr);
-                }
+                },
             }
 
             continue;
@@ -60,7 +63,7 @@ fn expr_binding_power(p: &mut Parser, minimum_binding_power: u8) -> Option<Compl
             BinaryOp::ShiftRight => p.bump_compound(SyntaxKind::ShiftRight),
             _ => {
                 p.bump();
-            }
+            },
         }
 
         let m = lhs.precede(p);
@@ -87,6 +90,7 @@ fn function_param_list(p: &mut Parser) {
         },
     );
 }
+
 fn array_index(p: &mut Parser) {
     p.expect(SyntaxKind::BracketLeft);
     expr_binding_power(p, 0);
@@ -149,6 +153,7 @@ enum BinaryOp {
     Equals,
     Modulo,
 }
+
 fn binary_op(p: &mut Parser) -> Option<BinaryOp> {
     let op = if p.at(SyntaxKind::Plus) {
         Some(BinaryOp::Add)
@@ -242,6 +247,7 @@ enum PostfixOp {
     Index,
     Field,
 }
+
 impl PostfixOp {
     fn binding_power(&self) -> (u8, ()) {
         match self {
@@ -249,6 +255,7 @@ impl PostfixOp {
         }
     }
 }
+
 fn postfix_op(p: &mut Parser) -> Option<PostfixOp> {
     if p.at(SyntaxKind::Period) {
         Some(PostfixOp::Field)
@@ -346,10 +353,14 @@ fn paren_expr(p: &mut Parser) -> CompletedMarker {
 
 #[cfg(test)]
 mod tests {
-    use crate::ParseEntryPoint;
     use expect_test::{expect, Expect};
 
-    fn check(input: &str, expected_tree: Expect) {
+    use crate::ParseEntryPoint;
+
+    fn check(
+        input: &str,
+        expected_tree: Expect,
+    ) {
         crate::check_entrypoint(input, ParseEntryPoint::Expression, expected_tree);
     }
 
@@ -486,7 +497,7 @@ mod tests {
     }
 
     #[test]
-    fn do_not_parse_operator_if_gettting_rhs_failed() {
+    fn do_not_parse_operator_if_getting_rhs_failed() {
         check(
             "(1+",
             expect![[r#"

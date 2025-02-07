@@ -1,5 +1,6 @@
-use la_arena::{Arena, Idx};
 use std::marker::PhantomData;
+
+use la_arena::{Arena, Idx};
 use syntax::{
     ast::{self, SourceFile},
     ptr::{AstPtr, SyntaxNodePtr},
@@ -11,6 +12,7 @@ use syntax::{
 pub struct AstIdMap {
     arena: Arena<SyntaxNodePtr>,
 }
+
 impl AstIdMap {
     pub fn from_source(source: SourceFile) -> AstIdMap {
         let mut map = AstIdMap::default();
@@ -33,7 +35,10 @@ impl AstIdMap {
         map
     }
 
-    pub fn ast_id<N: AstNode>(&self, item: &N) -> FileAstId<N> {
+    pub fn ast_id<N: AstNode>(
+        &self,
+        item: &N,
+    ) -> FileAstId<N> {
         let ptr = SyntaxNodePtr::new(item.syntax());
         let id = match self.arena.iter().find(|(_id, i)| **i == ptr) {
             Some((it, _)) => it,
@@ -50,11 +55,17 @@ impl AstIdMap {
         }
     }
 
-    pub fn get<N: AstNode>(&self, id: FileAstId<N>) -> AstPtr<N> {
+    pub fn get<N: AstNode>(
+        &self,
+        id: FileAstId<N>,
+    ) -> AstPtr<N> {
         self.arena[id.id].clone().cast::<N>().unwrap()
     }
 
-    fn alloc(&mut self, item: &SyntaxNode) -> Idx<SyntaxNodePtr> {
+    fn alloc(
+        &mut self,
+        item: &SyntaxNode,
+    ) -> Idx<SyntaxNodePtr> {
         self.arena.alloc(SyntaxNodePtr::new(item))
     }
 }
@@ -66,7 +77,10 @@ pub struct FileAstId<N: AstNode> {
 }
 
 impl<N: AstNode> PartialEq for FileAstId<N> {
-    fn eq(&self, other: &Self) -> bool {
+    fn eq(
+        &self,
+        other: &Self,
+    ) -> bool {
         self.id == other.id
     }
 }
@@ -78,10 +92,14 @@ impl<N: AstNode> Clone for FileAstId<N> {
         *self
     }
 }
+
 impl<N: AstNode> Copy for FileAstId<N> {}
 
 impl<N: AstNode> std::fmt::Debug for FileAstId<N> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         f.debug_struct("FileAstId").field("id", &self.id).finish()
     }
 }

@@ -436,6 +436,7 @@ impl From<SyntaxKind> for rowan::SyntaxKind {
         Self(kind as u16)
     }
 }
+
 impl From<rowan::SyntaxKind> for SyntaxKind {
     fn from(kind: rowan::SyntaxKind) -> Self {
         let max_element = SyntaxKind::Error as u16;
@@ -448,6 +449,7 @@ impl From<rowan::SyntaxKind> for SyntaxKind {
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum WgslLanguage {}
+
 impl rowan::Language for WgslLanguage {
     type Kind = SyntaxKind;
 
@@ -471,6 +473,7 @@ impl SyntaxKind {
     pub fn is_whitespace(self) -> bool {
         matches!(self, SyntaxKind::Whitespace)
     }
+
     pub fn is_trivia(self) -> bool {
         matches!(
             self,
@@ -487,11 +490,15 @@ impl SyntaxKind {
 
 #[cfg(test)]
 mod tests {
-    use super::SyntaxKind;
     use expect_test::expect;
     use logos::Logos;
 
-    fn check_lex(source: &str, expect: expect_test::Expect) {
+    use super::SyntaxKind;
+
+    fn check_lex(
+        source: &str,
+        expect: expect_test::Expect,
+    ) {
         let tokens: Vec<_> = SyntaxKind::lexer(source).collect();
         expect.assert_eq(&format!("{:?}", tokens));
     }

@@ -28,22 +28,36 @@ pub struct InFile<T> {
 }
 
 impl<T> InFile<T> {
-    pub fn new(file_id: HirFileId, value: T) -> InFile<T> {
+    pub fn new(
+        file_id: HirFileId,
+        value: T,
+    ) -> InFile<T> {
         InFile { file_id, value }
     }
 
     // Similarly, naming here is stupid...
-    pub fn with_value<U>(&self, value: U) -> InFile<U> {
+    pub fn with_value<U>(
+        &self,
+        value: U,
+    ) -> InFile<U> {
         InFile::new(self.file_id, value)
     }
 
-    pub fn map<F: FnOnce(T) -> U, U>(self, f: F) -> InFile<U> {
+    pub fn map<F: FnOnce(T) -> U, U>(
+        self,
+        f: F,
+    ) -> InFile<U> {
         InFile::new(self.file_id, f(self.value))
     }
+
     pub fn as_ref(&self) -> InFile<&T> {
         self.with_value(&self.value)
     }
-    pub fn file_syntax(&self, db: &dyn db::DefDatabase) -> SyntaxNode {
+
+    pub fn file_syntax(
+        &self,
+        db: &dyn db::DefDatabase,
+    ) -> SyntaxNode {
         db.parse_or_resolve(self.file_id)
             .expect("source created from invalid file")
             .syntax()
@@ -51,7 +65,10 @@ impl<T> InFile<T> {
 }
 
 impl<N: AstNode> InFile<N> {
-    pub fn original_file_range(&self, db: &dyn DefDatabase) -> FileRange {
+    pub fn original_file_range(
+        &self,
+        db: &dyn DefDatabase,
+    ) -> FileRange {
         original_file_range(db, self.file_id, self.value.syntax())
     }
 }
@@ -71,11 +88,13 @@ impl HasTextRange for SyntaxToken {
         self.text_range()
     }
 }
+
 impl HasTextRange for SyntaxNode {
     fn text_range(&self) -> TextRange {
         self.text_range()
     }
 }
+
 impl<N: HasTextRange, T: HasTextRange> HasTextRange for NodeOrToken<N, T> {
     fn text_range(&self) -> TextRange {
         match self {
@@ -103,11 +122,14 @@ fn original_file_range_inner(
         HirFileIdRepr::MacroFile(import) => {
             let loc = import_location(db, import.import_id);
             original_file_range_inner(db, loc.file_id, loc.value)
-        }
+        },
     }
 }
 
-fn import_location(db: &dyn DefDatabase, import_id: ImportId) -> InFile<TextRange> {
+fn import_location(
+    db: &dyn DefDatabase,
+    import_id: ImportId,
+) -> InFile<TextRange> {
     let import_loc = db.lookup_intern_import(import_id);
     let module_info = db.module_info(import_loc.file_id);
     let def_map = db.ast_id_map(import_loc.file_id);
@@ -121,13 +143,19 @@ fn import_location(db: &dyn DefDatabase, import_id: ImportId) -> InFile<TextRang
 
 pub trait HasSource {
     type Value;
-    fn source(&self, db: &dyn DefDatabase) -> InFile<Self::Value>;
+    fn source(
+        &self,
+        db: &dyn DefDatabase,
+    ) -> InFile<Self::Value>;
 }
 
 impl<N: ModuleDataNode> HasSource for InFile<ModuleItemId<N>> {
     type Value = N::Source;
 
-    fn source(&self, db: &dyn DefDatabase) -> InFile<N::Source> {
+    fn source(
+        &self,
+        db: &dyn DefDatabase,
+    ) -> InFile<N::Source> {
         let module_info = db.module_info(self.file_id);
         let ast_id_map = db.ast_id_map(self.file_id);
         let root = db.parse_or_resolve(self.file_id);
