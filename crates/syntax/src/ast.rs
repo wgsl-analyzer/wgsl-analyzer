@@ -5,9 +5,9 @@ use wgsl_parser::{SyntaxKind, SyntaxNode};
 
 use self::operators::{BinaryOp, CompoundOp, UnaryOp};
 use crate::{
-	ast::operators::{ArithOp, CmpOp, LogicOp},
-	support, AstChildren, AstNode, AstToken, HasAttrs, HasGenerics, HasName, SyntaxToken,
-	TokenText,
+    ast::operators::{ArithOp, CmpOp, LogicOp},
+    support, AstChildren, AstNode, AstToken, HasAttrs, HasGenerics, HasName, SyntaxToken,
+    TokenText,
 };
 
 macro_rules! ast_node {
@@ -202,136 +202,136 @@ macro_rules! ast_token_enum {
 }
 
 ast_node!(SourceFile:
-	items: AstChildren<Item>;
+    items: AstChildren<Item>;
 );
 
 ast_node!(Import:
-	import_token: Option<SyntaxToken UnofficialPreprocessorImport>;
-	import: Option<ImportKind>;
+    import_token: Option<SyntaxToken UnofficialPreprocessorImport>;
+    import: Option<ImportKind>;
 );
 
 ast_node!(ImportPath:
-	string_literal: Option<SyntaxToken StringLiteral>;
+    string_literal: Option<SyntaxToken StringLiteral>;
 );
 ast_node!(ImportCustom);
 impl ImportCustom {
-	pub fn segments(&self) -> impl Iterator<Item = ImportCustomSegment> {
-		self.syntax
-			.children_with_tokens()
-			.filter_map(|token| ImportCustomSegment::cast(token.as_token()?.clone()))
-	}
+    pub fn segments(&self) -> impl Iterator<Item = ImportCustomSegment> {
+        self.syntax
+            .children_with_tokens()
+            .filter_map(|token| ImportCustomSegment::cast(token.as_token()?.clone()))
+    }
 
-	pub fn key(&self) -> String {
-		self.segments().fold(String::new(), |mut acc, segment| {
-			match segment {
-				ImportCustomSegment::Ident(ident) => acc.push_str(ident.text()),
-				ImportCustomSegment::ColonColon(colon_colon) => acc.push_str(colon_colon.text()),
-			};
-			acc
-		})
-	}
+    pub fn key(&self) -> String {
+        self.segments().fold(String::new(), |mut acc, segment| {
+            match segment {
+                ImportCustomSegment::Ident(ident) => acc.push_str(ident.text()),
+                ImportCustomSegment::ColonColon(colon_colon) => acc.push_str(colon_colon.text()),
+            };
+            acc
+        })
+    }
 }
 
 ast_token_enum! {
-	enum ImportCustomSegment {
-		Ident,
-		ColonColon,
-	}
+    enum ImportCustomSegment {
+        Ident,
+        ColonColon,
+    }
 }
 
 ast_enum! {
-	enum ImportKind {
-		ImportPath,
-		ImportCustom,
-	}
+    enum ImportKind {
+        ImportPath,
+        ImportCustom,
+    }
 }
 
 ast_node!(Function:
-	fn_token: Option<SyntaxToken Fn>;
-	param_list: Option<ParamList>;
-	return_type: Option<ReturnType>;
-	body: Option<CompoundStatement>;
+    fn_token: Option<SyntaxToken Fn>;
+    param_list: Option<ParamList>;
+    return_type: Option<ReturnType>;
+    body: Option<CompoundStatement>;
 );
 impl HasName for Function {}
 
 impl HasAttrs for Function {}
 
 ast_node!(StructDecl:
-	struct_token: Option<SyntaxToken Struct>;
-	name: Option<Name>;
-	body: Option<StructDeclBody>;
+    struct_token: Option<SyntaxToken Struct>;
+    name: Option<Name>;
+    body: Option<StructDeclBody>;
 );
 
 impl HasAttrs for StructDecl {}
 
 ast_node!(StructDeclBody:
-	fields: AstChildren<StructDeclField>;
+    fields: AstChildren<StructDeclField>;
 );
 
 ast_node!(StructDeclField:
-	variable_ident_decl: Option<VariableIdentDecl>;
+    variable_ident_decl: Option<VariableIdentDecl>;
 );
 impl HasAttrs for StructDeclField {}
 
 ast_node!(GlobalVariableDecl:
-	var_token: Option<SyntaxToken Var>;
-	binding: Option<Binding>;
-	variable_qualifier: Option<VariableQualifier>;
-	ty: Option<Type>;
-	init: Option<Expr>;
+    var_token: Option<SyntaxToken Var>;
+    binding: Option<Binding>;
+    variable_qualifier: Option<VariableQualifier>;
+    ty: Option<Type>;
+    init: Option<Expr>;
 );
 
 impl HasAttrs for GlobalVariableDecl {}
 
 ast_node!(GlobalConstantDecl:
-	binding: Option<Binding>;
-	variable_qualifier: Option<VariableQualifier>;
-	ty: Option<Type>;
-	init: Option<Expr>;
+    binding: Option<Binding>;
+    variable_qualifier: Option<VariableQualifier>;
+    ty: Option<Type>;
+    init: Option<Expr>;
 );
 
 impl HasAttrs for OverrideDecl {}
 
 ast_node!(OverrideDecl:
-	binding: Option<Binding>;
-	variable_qualifier: Option<VariableQualifier>;
-	ty: Option<Type>;
-	init: Option<Expr>;
+    binding: Option<Binding>;
+    variable_qualifier: Option<VariableQualifier>;
+    ty: Option<Type>;
+    init: Option<Expr>;
 );
 
 ast_node!(TypeAliasDecl:
-	alias_token: Option<SyntaxToken Alias>;
-	name: Option<Name>;
-	equal_token: Option<SyntaxToken Equal>;
-	type_decl: Option<Type>;
+    alias_token: Option<SyntaxToken Alias>;
+    name: Option<Name>;
+    equal_token: Option<SyntaxToken Equal>;
+    type_decl: Option<Type>;
 );
 
 ast_enum! {
-	enum Item {
-		Function,
-		StructDecl,
-		GlobalVariableDecl,
-		GlobalConstantDecl,
-		OverrideDecl,
-		Import,
-		TypeAliasDecl,
-	}
+    enum Item {
+        Function,
+        StructDecl,
+        GlobalVariableDecl,
+        GlobalConstantDecl,
+        OverrideDecl,
+        Import,
+        TypeAliasDecl,
+    }
 }
 
 ast_node!(Name:
-	ident_token: Option<SyntaxToken Ident>;
-	text: TokenText<'_>;
+    ident_token: Option<SyntaxToken Ident>;
+    text: TokenText<'_>;
 );
 
 ast_node!(Param:
-	variable_ident_declaration: Option<VariableIdentDecl>;
-	import: Option<Import>;
+    variable_ident_declaration: Option<VariableIdentDecl>;
+    import: Option<Import>;
 );
 
 ast_node!(ParamList:
-	left_paren_token: Option<SyntaxToken ParenLeft>;
-	right_paren_token: Option<SyntaxToken ParenRight>;
-	params: AstChildren<Param>;
+    left_paren_token: Option<SyntaxToken ParenLeft>;
+    right_paren_token: Option<SyntaxToken ParenRight>;
+    params: AstChildren<Param>;
 );
 
 ast_node!(Binding);
@@ -339,30 +339,30 @@ ast_node!(Binding);
 impl HasName for Binding {}
 
 ast_node!(VariableIdentDecl:
-	colon_token: Option<SyntaxToken Colon>;
-	binding: Option<Binding>;
-	ty: Option<Type>;
+    colon_token: Option<SyntaxToken Colon>;
+    binding: Option<Binding>;
+    ty: Option<Type>;
 );
 
 ast_node!(FunctionParamList:
-	left_paren_token: Option<SyntaxToken ParenLeft>;
-	right_paren_token: Option<SyntaxToken ParenRight>;
-	args: AstChildren<Expr>;
+    left_paren_token: Option<SyntaxToken ParenLeft>;
+    right_paren_token: Option<SyntaxToken ParenRight>;
+    args: AstChildren<Expr>;
 );
 
 ast_node!(ReturnType:
-	arrow_token: Option<SyntaxToken Arrow>;
-	ty: Option<Type>;
+    arrow_token: Option<SyntaxToken Arrow>;
+    ty: Option<Type>;
 );
 
 ast_node!(GenericArgList:
-	l_angle_token: Option<SyntaxToken LessThan>;
-	t_angle_token: Option<SyntaxToken GreaterThan>;
+    l_angle_token: Option<SyntaxToken LessThan>;
+    t_angle_token: Option<SyntaxToken GreaterThan>;
 );
 
 impl GenericArgList {
-	#[rustfmt::skip]
-	pub fn generics(&self) -> impl Iterator<Item = GenericArg> {
+    #[rustfmt::skip]
+    pub fn generics(&self) -> impl Iterator<Item = GenericArg> {
         self.syntax
             .children_with_tokens()
             .filter_map(|it| match it {
@@ -376,498 +376,498 @@ impl GenericArgList {
 }
 
 ast_token_enum! {
-	enum AccessMode {
-		Read,
-		Write,
-		ReadWrite,
-	}
+    enum AccessMode {
+        Read,
+        Write,
+        ReadWrite,
+    }
 }
 
 ast_token_enum! {
-	enum StorageClass {
-		FunctionClass,
-		Private,
-		Workgroup,
-		Uniform,
-		Storage,
-		PushConstant,
-	}
+    enum StorageClass {
+        FunctionClass,
+        Private,
+        Workgroup,
+        Uniform,
+        Storage,
+        PushConstant,
+    }
 }
 
 pub enum GenericArg {
-	Type(Type),
-	Literal(Literal),
-	AccessMode(AccessMode),
-	StorageClass(StorageClass),
+    Type(Type),
+    Literal(Literal),
+    AccessMode(AccessMode),
+    StorageClass(StorageClass),
 }
 
 impl GenericArg {
-	pub fn as_type(&self) -> Option<Type> {
-		match self {
-			GenericArg::Type(ty) => Some(ty.clone()),
-			_ => None,
-		}
-	}
+    pub fn as_type(&self) -> Option<Type> {
+        match self {
+            GenericArg::Type(ty) => Some(ty.clone()),
+            _ => None,
+        }
+    }
 
-	pub fn as_literal(&self) -> Option<Literal> {
-		match self {
-			GenericArg::Literal(ty) => Some(ty.clone()),
-			_ => None,
-		}
-	}
+    pub fn as_literal(&self) -> Option<Literal> {
+        match self {
+            GenericArg::Literal(ty) => Some(ty.clone()),
+            _ => None,
+        }
+    }
 
-	pub fn as_access_mode(&self) -> Option<AccessMode> {
-		match self {
-			GenericArg::AccessMode(access) => Some(access.clone()),
-			_ => None,
-		}
-	}
+    pub fn as_access_mode(&self) -> Option<AccessMode> {
+        match self {
+            GenericArg::AccessMode(access) => Some(access.clone()),
+            _ => None,
+        }
+    }
 
-	pub fn as_storage_class(&self) -> Option<StorageClass> {
-		match self {
-			GenericArg::StorageClass(class) => Some(class.clone()),
-			_ => None,
-		}
-	}
+    pub fn as_storage_class(&self) -> Option<StorageClass> {
+        match self {
+            GenericArg::StorageClass(class) => Some(class.clone()),
+            _ => None,
+        }
+    }
 }
 
 ast_node!(BinaryOperator);
 ast_node!(TypeInitializer:
-	ty: Option<Type>;
-	args: Option<FunctionParamList>;
+    ty: Option<Type>;
+    args: Option<FunctionParamList>;
 );
 
 ast_node!(VariableQualifier);
 impl VariableQualifier {
-	pub fn access_mode(&self) -> Option<AccessMode> {
-		support::child_token::<AccessMode>(self.syntax())
-	}
+    pub fn access_mode(&self) -> Option<AccessMode> {
+        support::child_token::<AccessMode>(self.syntax())
+    }
 
-	pub fn storage_class(self) -> Option<StorageClass> {
-		support::child_token::<StorageClass>(self.syntax())
-	}
+    pub fn storage_class(self) -> Option<StorageClass> {
+        support::child_token::<StorageClass>(self.syntax())
+    }
 }
 
 ast_node!(InfixExpr);
 ast_token_enum! {
-	enum BinaryOpKind {
-		EqualEqual,
-		NotEqual,
-		GreaterThan,
-		GreaterThanEqual,
-		LessThan,
-		LessThanEqual,
-		Modulo,
-		Minus,
-		Plus,
-		Or,
-		OrOr,
-		And,
-		AndAnd,
-		Star,
-		ForwardSlash,
-		Xor,
-	}
+    enum BinaryOpKind {
+        EqualEqual,
+        NotEqual,
+        GreaterThan,
+        GreaterThanEqual,
+        LessThan,
+        LessThanEqual,
+        Modulo,
+        Minus,
+        Plus,
+        Or,
+        OrOr,
+        And,
+        AndAnd,
+        Star,
+        ForwardSlash,
+        Xor,
+    }
 }
 
 ast_token_enum! {
-	enum PrefixOpKind {
-		Bang,
-		Minus,
-		Tilde,
-		Star,
-		And,
-	}
+    enum PrefixOpKind {
+        Bang,
+        Minus,
+        Tilde,
+        Star,
+        And,
+    }
 }
 
 ast_node!(PrefixExpr:
-	expr: Option<Expr>;
+    expr: Option<Expr>;
 );
 ast_node!(Literal);
 impl Literal {
-	pub fn kind(&self) -> LiteralKind {
-		support::child_token(self.syntax()).expect("invalid literal parsed")
-	}
+    pub fn kind(&self) -> LiteralKind {
+        support::child_token(self.syntax()).expect("invalid literal parsed")
+    }
 }
 
 ast_token_enum! {
-	enum LiteralKind {
-		IntLiteral,
-		UintLiteral,
-		HexFloatLiteral,
-		DecimalFloatLiteral,
-		True,
-		False,
-	}
+    enum LiteralKind {
+        IntLiteral,
+        UintLiteral,
+        HexFloatLiteral,
+        DecimalFloatLiteral,
+        True,
+        False,
+    }
 }
 
 ast_node!(PathExpr:
-	name_ref: Option<NameRef>;
+    name_ref: Option<NameRef>;
 );
 ast_node!(NameRef:
-	text: TokenText<'_>;
+    text: TokenText<'_>;
 );
 ast_node!(ParenExpr:
-	left_paren_token: Option<SyntaxToken ParenLeft>;
-	right_paren_token: Option<SyntaxToken ParenRight>;
-	inner: Option<Expr>;
+    left_paren_token: Option<SyntaxToken ParenLeft>;
+    right_paren_token: Option<SyntaxToken ParenRight>;
+    inner: Option<Expr>;
 );
 ast_node!(BitcastExpr:
-	bitcast_token: Option<SyntaxToken Bitcast>;
-	l_angle_token: Option<SyntaxToken LessThan>;
-	r_angle_token: Option<SyntaxToken GreaterThan>;
-	ty: Option<Type>;
-	inner: Option<ParenExpr>;
+    bitcast_token: Option<SyntaxToken Bitcast>;
+    l_angle_token: Option<SyntaxToken LessThan>;
+    r_angle_token: Option<SyntaxToken GreaterThan>;
+    ty: Option<Type>;
+    inner: Option<ParenExpr>;
 );
 ast_node!(FieldExpr:
-	expr: Option<Expr>;
-	name_ref: Option<NameRef>;
+    expr: Option<Expr>;
+    name_ref: Option<NameRef>;
 );
 ast_node!(FunctionCall:
-	name_ref: Option<NameRef>;
-	params: Option<FunctionParamList>;
+    name_ref: Option<NameRef>;
+    params: Option<FunctionParamList>;
 );
 ast_node!(InvalidFunctionCall:
-	expr: Option<Expr>;
-	params: Option<FunctionParamList>;
+    expr: Option<Expr>;
+    params: Option<FunctionParamList>;
 );
 ast_node!(IndexExpr);
 impl IndexExpr {
-	pub fn expr(&self) -> Option<Expr> {
-		support::children(self.syntax()).next()
-	}
+    pub fn expr(&self) -> Option<Expr> {
+        support::children(self.syntax()).next()
+    }
 
-	pub fn index(&self) -> Option<Expr> {
-		support::children(self.syntax()).nth(1)
-	}
+    pub fn index(&self) -> Option<Expr> {
+        support::children(self.syntax()).nth(1)
+    }
 }
 
 ast_node!(AttributeList:
-	attributes: AstChildren<Attribute>;
+    attributes: AstChildren<Attribute>;
 );
 ast_node!(Attribute:
-	ident_token: Option<SyntaxToken Ident>;
-	params: Option<AttributeParameters>;
+    ident_token: Option<SyntaxToken Ident>;
+    params: Option<AttributeParameters>;
 );
 ast_node!(AttributeParameters:
-	values: AstChildren<IdentOrLiteral>;
+    values: AstChildren<IdentOrLiteral>;
 );
 
 ast_node!(Ident:
-	text: TokenText<'_>;
+    text: TokenText<'_>;
 );
 ast_enum! {
-	enum IdentOrLiteral {
-		Ident,
-		Literal,
-	}
+    enum IdentOrLiteral {
+        Ident,
+        Literal,
+    }
 }
 
 ast_node!(CompoundStatement:
-	left_brace_token: Option<SyntaxToken BraceLeft>;
-	right_brace_token: Option<SyntaxToken BraceRight>;
-	statements: AstChildren<Statement>;
+    left_brace_token: Option<SyntaxToken BraceLeft>;
+    right_brace_token: Option<SyntaxToken BraceRight>;
+    statements: AstChildren<Statement>;
 );
 ast_node!(AssignmentStmt:
-	equal_token: Option<SyntaxToken Equal>;
+    equal_token: Option<SyntaxToken Equal>;
 );
 impl AssignmentStmt {
-	pub fn lhs(&self) -> Option<Expr> {
-		crate::support::children(self.syntax()).next()
-	}
+    pub fn lhs(&self) -> Option<Expr> {
+        crate::support::children(self.syntax()).next()
+    }
 
-	pub fn rhs(&self) -> Option<Expr> {
-		crate::support::children(self.syntax()).nth(1)
-	}
+    pub fn rhs(&self) -> Option<Expr> {
+        crate::support::children(self.syntax()).nth(1)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IncrDecr {
-	Increment,
-	Decrement,
+    Increment,
+    Decrement,
 }
 
 ast_node!(IncrDecrStatement);
 impl IncrDecrStatement {
-	pub fn expr(&self) -> Option<Expr> {
-		crate::support::children(self.syntax()).next()
-	}
+    pub fn expr(&self) -> Option<Expr> {
+        crate::support::children(self.syntax()).next()
+    }
 
-	pub fn incr_decr(&self) -> Option<IncrDecr> {
-		self.syntax()
-			.children_with_tokens()
-			.filter_map(|it| it.into_token())
-			.find_map(|token| match token.kind() {
-				SyntaxKind::PlusPlus => Some(IncrDecr::Increment),
-				SyntaxKind::MinusMinus => Some(IncrDecr::Increment),
-				_ => None,
-			})
-	}
+    pub fn incr_decr(&self) -> Option<IncrDecr> {
+        self.syntax()
+            .children_with_tokens()
+            .filter_map(|it| it.into_token())
+            .find_map(|token| match token.kind() {
+                SyntaxKind::PlusPlus => Some(IncrDecr::Increment),
+                SyntaxKind::MinusMinus => Some(IncrDecr::Increment),
+                _ => None,
+            })
+    }
 }
 
 ast_token_enum! {
-	enum CompoundAssignmentOperator {
-		PlusEqual,
-		MinusEqual,
-		TimesEqual,
-		DivisionEqual,
-		ModuloEqual,
-		AndEqual,
-		OrEqual,
-		XorEqual,
-		ShiftRightEqual,
-		ShiftLeftEqual,
-	}
+    enum CompoundAssignmentOperator {
+        PlusEqual,
+        MinusEqual,
+        TimesEqual,
+        DivisionEqual,
+        ModuloEqual,
+        AndEqual,
+        OrEqual,
+        XorEqual,
+        ShiftRightEqual,
+        ShiftLeftEqual,
+    }
 }
 
 ast_node!(CompoundAssignmentStmt);
 
 impl CompoundAssignmentStmt {
-	pub fn lhs(&self) -> Option<Expr> {
-		crate::support::children(self.syntax()).next()
-	}
+    pub fn lhs(&self) -> Option<Expr> {
+        crate::support::children(self.syntax()).next()
+    }
 
-	pub fn rhs(&self) -> Option<Expr> {
-		crate::support::children(self.syntax()).nth(1)
-	}
+    pub fn rhs(&self) -> Option<Expr> {
+        crate::support::children(self.syntax()).nth(1)
+    }
 
-	pub fn op_token(&self) -> Option<SyntaxToken> {
-		self.lhs()?.syntax().last_token()?.next_token()
-	}
+    pub fn op_token(&self) -> Option<SyntaxToken> {
+        self.lhs()?.syntax().last_token()?.next_token()
+    }
 
-	pub fn op(&self) -> Option<CompoundOp> {
-		let kind: CompoundAssignmentOperator = support::child_token(self.syntax())?;
-		let op = match kind {
-			CompoundAssignmentOperator::PlusEqual(_) => CompoundOp::Add,
-			CompoundAssignmentOperator::MinusEqual(_) => CompoundOp::Sub,
-			CompoundAssignmentOperator::TimesEqual(_) => CompoundOp::Mul,
-			CompoundAssignmentOperator::DivisionEqual(_) => CompoundOp::Div,
-			CompoundAssignmentOperator::ModuloEqual(_) => CompoundOp::Modulo,
-			CompoundAssignmentOperator::AndEqual(_) => CompoundOp::BitAnd,
-			CompoundAssignmentOperator::OrEqual(_) => CompoundOp::BitOr,
-			CompoundAssignmentOperator::XorEqual(_) => CompoundOp::BitXor,
-			CompoundAssignmentOperator::ShiftRightEqual(_) => CompoundOp::Shr,
-			CompoundAssignmentOperator::ShiftLeftEqual(_) => CompoundOp::Shl,
-		};
-		Some(op)
-	}
+    pub fn op(&self) -> Option<CompoundOp> {
+        let kind: CompoundAssignmentOperator = support::child_token(self.syntax())?;
+        let op = match kind {
+            CompoundAssignmentOperator::PlusEqual(_) => CompoundOp::Add,
+            CompoundAssignmentOperator::MinusEqual(_) => CompoundOp::Sub,
+            CompoundAssignmentOperator::TimesEqual(_) => CompoundOp::Mul,
+            CompoundAssignmentOperator::DivisionEqual(_) => CompoundOp::Div,
+            CompoundAssignmentOperator::ModuloEqual(_) => CompoundOp::Modulo,
+            CompoundAssignmentOperator::AndEqual(_) => CompoundOp::BitAnd,
+            CompoundAssignmentOperator::OrEqual(_) => CompoundOp::BitOr,
+            CompoundAssignmentOperator::XorEqual(_) => CompoundOp::BitXor,
+            CompoundAssignmentOperator::ShiftRightEqual(_) => CompoundOp::Shr,
+            CompoundAssignmentOperator::ShiftLeftEqual(_) => CompoundOp::Shl,
+        };
+        Some(op)
+    }
 }
 
 ast_node!(ElseIfBlock:
-	else_token: Option<SyntaxToken Else>;
-	if_token: Option<SyntaxToken If>;
-	condition: Option<Expr>;
-	block: Option<CompoundStatement>;
+    else_token: Option<SyntaxToken Else>;
+    if_token: Option<SyntaxToken If>;
+    condition: Option<Expr>;
+    block: Option<CompoundStatement>;
 );
 
 ast_node!(ElseBlock:
-	else_token: Option<SyntaxToken Else>;
-	block: Option<CompoundStatement>;
+    else_token: Option<SyntaxToken Else>;
+    block: Option<CompoundStatement>;
 );
 
 ast_node!(IfStatement:
-	if_token: Option<SyntaxToken If>;
-	condition: Option<Expr>;
-	block: Option<CompoundStatement>;
-	else_if_blocks: AstChildren<ElseIfBlock>;
-	else_block: Option<ElseBlock>;
+    if_token: Option<SyntaxToken If>;
+    condition: Option<Expr>;
+    block: Option<CompoundStatement>;
+    else_if_blocks: AstChildren<ElseIfBlock>;
+    else_block: Option<ElseBlock>;
 );
 
 ast_node!(WhileStatement:
-	while_token: Option<SyntaxToken While>;
-	condition: Option<Expr>;
-	block: Option<CompoundStatement>;
+    while_token: Option<SyntaxToken While>;
+    condition: Option<Expr>;
+    block: Option<CompoundStatement>;
 );
 
 ast_node!(SwitchStatement:
-	expr: Option<Expr>;
-	block: Option<SwitchBlock>;
+    expr: Option<Expr>;
+    block: Option<SwitchBlock>;
 );
 ast_node!(SwitchBlock:
-	cases: AstChildren<SwitchBodyCase>;
-	default: AstChildren<SwitchBodyDefault>;
+    cases: AstChildren<SwitchBodyCase>;
+    default: AstChildren<SwitchBodyDefault>;
 );
 ast_node!(SwitchBodyCase:
-	selectors: Option<SwitchCaseSelectors>;
-	block: Option<CompoundStatement>;
+    selectors: Option<SwitchCaseSelectors>;
+    block: Option<CompoundStatement>;
 );
 ast_node!(SwitchCaseSelectors:
-	exprs: AstChildren<Expr>;
+    exprs: AstChildren<Expr>;
 );
 ast_node!(SwitchBodyDefault:
-	block: Option<CompoundStatement>;
+    block: Option<CompoundStatement>;
 );
 
 ast_node!(LoopStatement:
-	block: Option<CompoundStatement>;
+    block: Option<CompoundStatement>;
 );
 ast_node!(ReturnStmt:
-	expr: Option<Expr>;
+    expr: Option<Expr>;
 );
 ast_node!(VariableStatement:
-	variable_qualifier: Option<VariableQualifier>;
-	binding: Option<Binding>;
-	colon: Option<SyntaxToken Colon>;
-	ty: Option<Type>;
-	equal_token: Option<SyntaxToken Equal>;
-	initializer: Option<Expr>;
+    variable_qualifier: Option<VariableQualifier>;
+    binding: Option<Binding>;
+    colon: Option<SyntaxToken Colon>;
+    ty: Option<Type>;
+    equal_token: Option<SyntaxToken Equal>;
+    initializer: Option<Expr>;
 );
 impl VariableStatement {
-	pub fn kind(&self) -> Option<VariableStatementKind> {
-		self.syntax()
-			.children_with_tokens()
-			.filter_map(|it| it.into_token())
-			.find_map(|token| match token.kind() {
-				SyntaxKind::Const => Some(VariableStatementKind::Const),
-				SyntaxKind::Let => Some(VariableStatementKind::Let),
-				SyntaxKind::Var => Some(VariableStatementKind::Var),
-				_ => None,
-			})
-	}
+    pub fn kind(&self) -> Option<VariableStatementKind> {
+        self.syntax()
+            .children_with_tokens()
+            .filter_map(|it| it.into_token())
+            .find_map(|token| match token.kind() {
+                SyntaxKind::Const => Some(VariableStatementKind::Const),
+                SyntaxKind::Let => Some(VariableStatementKind::Let),
+                SyntaxKind::Var => Some(VariableStatementKind::Var),
+                _ => None,
+            })
+    }
 }
 
 pub enum VariableStatementKind {
-	Const,
-	Let,
-	Var,
+    Const,
+    Let,
+    Var,
 }
 
 ast_node!(ForStatement:
-	for_token: Option<SyntaxToken For>;
+    for_token: Option<SyntaxToken For>;
 );
 impl ForStatement {
-	pub fn block(&self) -> Option<CompoundStatement> {
-		support::child(self.syntax())
-	}
+    pub fn block(&self) -> Option<CompoundStatement> {
+        support::child(self.syntax())
+    }
 
-	pub fn initializer(&self) -> Option<Statement> {
-		support::child_syntax(self.syntax(), SyntaxKind::ForInitializer)
-			.as_ref()
-			.and_then(support::child::<Statement>)
-	}
+    pub fn initializer(&self) -> Option<Statement> {
+        support::child_syntax(self.syntax(), SyntaxKind::ForInitializer)
+            .as_ref()
+            .and_then(support::child::<Statement>)
+    }
 
-	pub fn condition(&self) -> Option<Expr> {
-		support::child_syntax(self.syntax(), SyntaxKind::ForCondition)
-			.as_ref()
-			.and_then(support::child::<Expr>)
-	}
+    pub fn condition(&self) -> Option<Expr> {
+        support::child_syntax(self.syntax(), SyntaxKind::ForCondition)
+            .as_ref()
+            .and_then(support::child::<Expr>)
+    }
 
-	pub fn continuing_part(&self) -> Option<Statement> {
-		support::child_syntax(self.syntax(), SyntaxKind::ForContinuingPart)
-			.as_ref()
-			.and_then(support::child::<Statement>)
-	}
+    pub fn continuing_part(&self) -> Option<Statement> {
+        support::child_syntax(self.syntax(), SyntaxKind::ForContinuingPart)
+            .as_ref()
+            .and_then(support::child::<Statement>)
+    }
 }
 
 ast_node!(ExprStatement:
-	expr: Option<Expr>;
+    expr: Option<Expr>;
 );
 ast_node!(Discard);
 ast_node!(Break);
 ast_node!(Continue);
 ast_node!(ContinuingStatement:
-	block: Option<CompoundStatement>;
+    block: Option<CompoundStatement>;
 );
 
 ast_enum! {
-	enum Statement {
-		CompoundStatement,
-		VariableStatement,
-		ReturnStmt,
-		AssignmentStmt,
-		CompoundAssignmentStmt,
-		IfStatement,
-		ForStatement,
-		SwitchStatement,
-		LoopStatement,
-		WhileStatement,
-		Discard,
-		Break,
-		Continue,
-		ContinuingStatement,
-		ExprStatement,
-		IncrDecrStatement,
-	}
+    enum Statement {
+        CompoundStatement,
+        VariableStatement,
+        ReturnStmt,
+        AssignmentStmt,
+        CompoundAssignmentStmt,
+        IfStatement,
+        ForStatement,
+        SwitchStatement,
+        LoopStatement,
+        WhileStatement,
+        Discard,
+        Break,
+        Continue,
+        ContinuingStatement,
+        ExprStatement,
+        IncrDecrStatement,
+    }
 }
 
 ast_enum! {
-	enum Expr {
-		InfixExpr,
-		PrefixExpr,
-		Literal,
-		ParenExpr,
-		FieldExpr,
-		FunctionCall,
-		TypeInitializer,
-		IndexExpr,
-		PathExpr,
-		BitcastExpr,
-		InvalidFunctionCall,
-	}
+    enum Expr {
+        InfixExpr,
+        PrefixExpr,
+        Literal,
+        ParenExpr,
+        FieldExpr,
+        FunctionCall,
+        TypeInitializer,
+        IndexExpr,
+        PathExpr,
+        BitcastExpr,
+        InvalidFunctionCall,
+    }
 }
 
 ast_enum_raw! {
-	enum MatrixType {
-		Mat2x2,
-		Mat2x3,
-		Mat2x4,
-		Mat3x2,
-		Mat3x3,
-		Mat3x4,
-		Mat4x2,
-		Mat4x3,
-		Mat4x4,
-	}
+    enum MatrixType {
+        Mat2x2,
+        Mat2x3,
+        Mat2x4,
+        Mat3x2,
+        Mat3x3,
+        Mat3x4,
+        Mat4x2,
+        Mat4x3,
+        Mat4x4,
+    }
 }
 
 ast_enum_raw! {
-	enum VecType {
-		Vec2,
-		Vec3,
-		Vec4,
-	}
+    enum VecType {
+        Vec2,
+        Vec3,
+        Vec4,
+    }
 }
 
 ast_enum_raw! {
-	enum ScalarType {
-		Bool,
-		Float32,
-		Int32,
-		Uint32,
-	}
+    enum ScalarType {
+        Bool,
+        Float32,
+        Int32,
+        Uint32,
+    }
 }
 
 ast_enum_raw! {
-	enum TextureType {
-		Texture1d,
-		Texture2d,
-		Texture2dArray,
-		Texture3d,
-		TextureCube,
-		TextureCubeArray,
-		TextureMultisampled2d,
-		TextureExternal,
-		TextureStorage1d,
-		TextureStorage2d,
-		TextureStorage2dArray,
-		TextureStorage3d,
-		TextureDepth2d,
-		TextureDepth2dArray,
-		TextureDepthCube,
-		TextureDepthCubeArray,
-		TextureDepthMultisampled2d,
-	}
+    enum TextureType {
+        Texture1d,
+        Texture2d,
+        Texture2dArray,
+        Texture3d,
+        TextureCube,
+        TextureCubeArray,
+        TextureMultisampled2d,
+        TextureExternal,
+        TextureStorage1d,
+        TextureStorage2d,
+        TextureStorage2dArray,
+        TextureStorage3d,
+        TextureDepth2d,
+        TextureDepth2dArray,
+        TextureDepthCube,
+        TextureDepthCubeArray,
+        TextureDepthMultisampled2d,
+    }
 }
 
 ast_enum_raw! {
-	enum SamplerType {
-		Sampler,
-		SamplerComparison,
-	}
+    enum SamplerType {
+        Sampler,
+        SamplerComparison,
+    }
 }
 
 ast_node!(PathType:
-	name: Option<NameRef>;
+    name: Option<NameRef>;
 );
 
 ast_node!(Atomic AtomicType);
@@ -876,27 +876,27 @@ ast_node!(BindingArray BindingArrayType);
 ast_node!(Pointer PtrType);
 
 ast_enum_compound! {
-	enum Type {
-		PathType,
-		ScalarType,
-		VecType,
-		MatrixType,
-		TextureType,
-		SamplerType,
-		AtomicType,
-		ArrayType,
-		BindingArrayType,
-		PtrType,
-	}
+    enum Type {
+        PathType,
+        ScalarType,
+        VecType,
+        MatrixType,
+        TextureType,
+        SamplerType,
+        AtomicType,
+        ArrayType,
+        BindingArrayType,
+        PtrType,
+    }
 }
 
 impl Type {
-	pub fn as_name(&self) -> Option<NameRef> {
-		match self {
-			Type::PathType(path) => path.name(),
-			_ => None,
-		}
-	}
+    pub fn as_name(&self) -> Option<NameRef> {
+        match self {
+            Type::PathType(path) => path.name(),
+            _ => None,
+        }
+    }
 }
 
 impl HasGenerics for Type {}
@@ -918,33 +918,33 @@ impl HasGenerics for BindingArrayType {}
 impl HasGenerics for PtrType {}
 
 impl InfixExpr {
-	pub fn lhs(&self) -> Option<Expr> {
-		crate::support::children(self.syntax()).next()
-	}
+    pub fn lhs(&self) -> Option<Expr> {
+        crate::support::children(self.syntax()).next()
+    }
 
-	pub fn rhs(&self) -> Option<Expr> {
-		crate::support::children(self.syntax()).nth(1)
-	}
+    pub fn rhs(&self) -> Option<Expr> {
+        crate::support::children(self.syntax()).nth(1)
+    }
 
-	pub fn op(&self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
-		if let Some(op) = self
-			.syntax()
-			.children()
-			.find(|child| matches!(child.kind(), SyntaxKind::ShiftLeft | SyntaxKind::ShiftRight))
-		{
-			return Some(NodeOrToken::Node(op));
-		}
+    pub fn op(&self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
+        if let Some(op) = self
+            .syntax()
+            .children()
+            .find(|child| matches!(child.kind(), SyntaxKind::ShiftLeft | SyntaxKind::ShiftRight))
+        {
+            return Some(NodeOrToken::Node(op));
+        }
 
-		if let Some(token) = self.lhs()?.syntax().last_token()?.next_token() {
-			return Some(NodeOrToken::Token(token));
-		}
+        if let Some(token) = self.lhs()?.syntax().last_token()?.next_token() {
+            return Some(NodeOrToken::Token(token));
+        }
 
-		None
-	}
+        None
+    }
 
-	pub fn op_kind(&self) -> Option<BinaryOp> {
-		if let Some(kind) = support::child_token::<BinaryOpKind>(self.syntax()) {
-			#[rustfmt::skip]
+    pub fn op_kind(&self) -> Option<BinaryOp> {
+        if let Some(kind) = support::child_token::<BinaryOpKind>(self.syntax()) {
+            #[rustfmt::skip]
             let op = match kind {
                 BinaryOpKind::EqualEqual(_) => BinaryOp::CmpOp(CmpOp::Eq { negated: false }),
                 BinaryOpKind::NotEqual(_) => BinaryOp::CmpOp(CmpOp::Eq { negated: true }),
@@ -963,45 +963,45 @@ impl InfixExpr {
                 BinaryOpKind::OrOr(_) => BinaryOp::LogicOp(LogicOp::Or),
                 BinaryOpKind::AndAnd(_) => BinaryOp::LogicOp(LogicOp::And),
             };
-			Some(op)
-		} else {
-			self.syntax()
-				.children()
-				.find_map(|child| match child.kind() {
-					SyntaxKind::ShiftLeft => Some(BinaryOp::ArithOp(ArithOp::Shl)),
-					SyntaxKind::ShiftRight => Some(BinaryOp::ArithOp(ArithOp::Shr)),
-					_ => None,
-				})
-		}
-	}
+            Some(op)
+        } else {
+            self.syntax()
+                .children()
+                .find_map(|child| match child.kind() {
+                    SyntaxKind::ShiftLeft => Some(BinaryOp::ArithOp(ArithOp::Shl)),
+                    SyntaxKind::ShiftRight => Some(BinaryOp::ArithOp(ArithOp::Shr)),
+                    _ => None,
+                })
+        }
+    }
 }
 
 impl PrefixExpr {
-	pub fn op_kind(&self) -> Option<UnaryOp> {
-		let kind: PrefixOpKind = support::child_token(self.syntax())?;
-		let op = match kind {
-			PrefixOpKind::Minus(_) => UnaryOp::Minus,
-			PrefixOpKind::Bang(_) => UnaryOp::Not,
-			PrefixOpKind::Tilde(_) => UnaryOp::BitNot,
-			PrefixOpKind::Star(_) => UnaryOp::Deref,
-			PrefixOpKind::And(_) => UnaryOp::Ref,
-		};
-		Some(op)
-	}
+    pub fn op_kind(&self) -> Option<UnaryOp> {
+        let kind: PrefixOpKind = support::child_token(self.syntax())?;
+        let op = match kind {
+            PrefixOpKind::Minus(_) => UnaryOp::Minus,
+            PrefixOpKind::Bang(_) => UnaryOp::Not,
+            PrefixOpKind::Tilde(_) => UnaryOp::BitNot,
+            PrefixOpKind::Star(_) => UnaryOp::Deref,
+            PrefixOpKind::And(_) => UnaryOp::Ref,
+        };
+        Some(op)
+    }
 }
 
 ast_enum! {
-	enum NameLike {
-		NameRef,
-		Name,
-	}
+    enum NameLike {
+        NameRef,
+        Name,
+    }
 }
 
 impl NameLike {
-	pub fn as_name_ref(&self) -> Option<&NameRef> {
-		match self {
-			NameLike::NameRef(name_ref) => Some(name_ref),
-			NameLike::Name(_) => None,
-		}
-	}
+    pub fn as_name_ref(&self) -> Option<&NameRef> {
+        match self {
+            NameLike::NameRef(name_ref) => Some(name_ref),
+            NameLike::Name(_) => None,
+        }
+    }
 }

@@ -16,87 +16,87 @@ use sink::Sink;
 use source::Source;
 
 pub trait TokenKind: Copy + PartialEq + Debug {
-	fn is_trivia(self) -> bool;
+    fn is_trivia(self) -> bool;
 }
 
 pub trait ParserDefinition {
-	type Language: rowan::Language<Kind = Self::SyntaxKind>;
-	type TokenKind: for<'a> logos::Logos<'a, Source = str, Extras = ()> + TokenKind + 'static;
-	type SyntaxKind: Debug + PartialEq + std::convert::From<Self::TokenKind>;
+    type Language: rowan::Language<Kind = Self::SyntaxKind>;
+    type TokenKind: for<'a> logos::Logos<'a, Source = str, Extras = ()> + TokenKind + 'static;
+    type SyntaxKind: Debug + PartialEq + std::convert::From<Self::TokenKind>;
 
-	const DEFAULT_RECOVERY_SET: &'static [Self::TokenKind] = &[];
+    const DEFAULT_RECOVERY_SET: &'static [Self::TokenKind] = &[];
 }
 
 pub fn parse<P: ParserDefinition, F: Fn(&mut Parser<P>)>(
-	input: &str,
-	f: F,
+    input: &str,
+    f: F,
 ) -> Parse<P> {
-	let tokens: Vec<_> = Lexer::<P::TokenKind>::new(input).collect();
-	let source = Source::new(&tokens);
-	let parser = Parser::<P>::new(source);
-	let events = parser.parse(f);
-	let sink = Sink::new(&tokens, events);
+    let tokens: Vec<_> = Lexer::<P::TokenKind>::new(input).collect();
+    let source = Source::new(&tokens);
+    let parser = Parser::<P>::new(source);
+    let events = parser.parse(f);
+    let sink = Sink::new(&tokens, events);
 
-	sink.finish()
+    sink.finish()
 }
 
 pub struct Parse<P: ParserDefinition> {
-	green_node: GreenNode,
-	errors: Vec<ParseError<P>>,
-	_marker: PhantomData<P::Language>,
+    green_node: GreenNode,
+    errors: Vec<ParseError<P>>,
+    _marker: PhantomData<P::Language>,
 }
 
 impl<P: ParserDefinition> Debug for Parse<P> {
-	fn fmt(
-		&self,
-		f: &mut std::fmt::Formatter<'_>,
-	) -> std::fmt::Result {
-		f.debug_struct("Parse")
-			.field("green_node", &self.green_node)
-			.field("errors", &self.errors)
-			.finish()
-	}
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        f.debug_struct("Parse")
+            .field("green_node", &self.green_node)
+            .field("errors", &self.errors)
+            .finish()
+    }
 }
 
 impl<P: ParserDefinition> PartialEq for Parse<P> {
-	fn eq(
-		&self,
-		other: &Self,
-	) -> bool {
-		self.green_node == other.green_node
-	}
+    fn eq(
+        &self,
+        other: &Self,
+    ) -> bool {
+        self.green_node == other.green_node
+    }
 }
 
 impl<P: ParserDefinition> Eq for Parse<P> {}
 
 impl<P: ParserDefinition> Parse<P> {
-	pub fn debug_tree(&self) -> String {
-		let mut s = String::new();
+    pub fn debug_tree(&self) -> String {
+        let mut s = String::new();
 
-		let tree = format!("{:#?}", self.syntax());
+        let tree = format!("{:#?}", self.syntax());
 
-		// We cut off the last byte because formatting the SyntaxNode adds on a newline at the end.
-		s.push_str(&tree[0..tree.len() - 1]);
+        // We cut off the last byte because formatting the SyntaxNode adds on a newline at the end.
+        s.push_str(&tree[0..tree.len() - 1]);
 
-		if !self.errors.is_empty() {
-			s.push('\n');
-		}
-		for error in self.errors.iter() {
-			s.push_str(&format!("\n{}", error));
-		}
+        if !self.errors.is_empty() {
+            s.push('\n');
+        }
+        for error in self.errors.iter() {
+            s.push_str(&format!("\n{}", error));
+        }
 
-		s
-	}
+        s
+    }
 
-	pub fn syntax(&self) -> SyntaxNode<P::Language> {
-		SyntaxNode::new_root(self.green_node.clone())
-	}
+    pub fn syntax(&self) -> SyntaxNode<P::Language> {
+        SyntaxNode::new_root(self.green_node.clone())
+    }
 
-	pub fn errors(&self) -> &[ParseError<P>] {
-		&self.errors
-	}
+    pub fn errors(&self) -> &[ParseError<P>] {
+        &self.errors
+    }
 
-	pub fn into_parts(self) -> (GreenNode, Vec<ParseError<P>>) {
-		(self.green_node, self.errors)
-	}
+    pub fn into_parts(self) -> (GreenNode, Vec<ParseError<P>>) {
+        (self.green_node, self.errors)
+    }
 }
