@@ -1,14 +1,14 @@
 //! See [`RequestDispatcher`].
 
-use crate::global_state::{
-	GlobalState,
-	GlobalStateSnapshot,
-};
-use crate::lsp_utils::is_cancelled;
-use crate::main_loop::Task;
 use crate::{
 	LspError,
 	Result,
+	global_state::{
+		GlobalState,
+		GlobalStateSnapshot,
+	},
+	lsp_utils::is_cancelled,
+	main_loop::Task,
 };
 
 use fmt::Debug;

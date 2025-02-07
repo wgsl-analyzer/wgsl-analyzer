@@ -14,12 +14,10 @@ use base_db::{
 	FilePosition,
 	FileRange,
 	RangeInfo,
-	TextRange,
-	line_index::LineIndex,
-};
-use base_db::{
 	SourceDatabase,
+	TextRange,
 	change::Change,
+	line_index::LineIndex,
 };
 use diagnostics::DiagnosticMessage;
 use goto_definition::NavigationTarget;

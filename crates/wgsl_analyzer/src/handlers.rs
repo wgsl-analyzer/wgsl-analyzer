@@ -8,8 +8,10 @@ use base_db::{
 	TextRange,
 };
 use hir::diagnostics::DiagnosticsConfig;
-use ide::HoverResult;
-use ide::diagnostics::Severity;
+use ide::{
+	HoverResult,
+	diagnostics::Severity,
+};
 use lsp_types::{
 	DiagnosticRelatedInformation,
 	DiagnosticTag,
@@ -20,10 +22,10 @@ use lsp_types::{
 };
 use vfs::FileId;
 
-use crate::global_state::GlobalStateSnapshot;
 use crate::{
 	Result,
 	from_proto,
+	global_state::GlobalStateSnapshot,
 	lsp_ext,
 	to_proto,
 };

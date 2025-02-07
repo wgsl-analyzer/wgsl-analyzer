@@ -1,6 +1,8 @@
-use base_db::FileId;
-use base_db::SourceDatabase;
-use base_db::TextRange;
+use base_db::{
+	FileId,
+	SourceDatabase,
+	TextRange,
+};
 use rowan::NodeOrToken;
 use syntax::{
 	AstNode,

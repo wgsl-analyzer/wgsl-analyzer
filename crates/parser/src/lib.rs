@@ -7,10 +7,10 @@ mod parsing;
 mod sink;
 mod source;
 
-pub use parsing::marker;
 pub use parsing::{
 	ParseError,
 	Parser,
+	marker,
 };
 
 use std::{

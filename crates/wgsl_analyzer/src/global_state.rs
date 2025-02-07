@@ -1,8 +1,10 @@
-use std::sync::{
-	Arc,
-	RwLock,
+use std::{
+	sync::{
+		Arc,
+		RwLock,
+	},
+	time::Instant,
 };
-use std::time::Instant;
 
 use base_db::change::Change;
 use crossbeam_channel::{
@@ -22,20 +24,18 @@ use vfs::{
 	Vfs,
 };
 
-use crate::Result;
-use crate::config::Config;
-use crate::diagnostics::DiagnosticCollection;
-use crate::line_index::{
-	LineEndings,
-	LineIndex,
-};
 use crate::{
+	Result,
+	config::Config,
+	diagnostics::DiagnosticCollection,
 	from_proto,
-	to_proto,
-};
-use crate::{
+	line_index::{
+		LineEndings,
+		LineIndex,
+	},
 	main_loop::Task,
 	task_pool::TaskPool,
+	to_proto,
 };
 
 type ReqHandler = fn(&mut GlobalState, lsp_server::Response);

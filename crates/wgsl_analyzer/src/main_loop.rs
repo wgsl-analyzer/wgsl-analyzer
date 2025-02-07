@@ -1,15 +1,17 @@
-use crate::config::Config;
-use crate::dispatch::NotificationDispatcher;
-use crate::global_state::file_id_to_url;
-use crate::lsp_utils::is_cancelled;
 use crate::{
 	Result,
+	config::Config,
+	dispatch::{
+		NotificationDispatcher,
+		RequestDispatcher,
+	},
+	global_state::{
+		GlobalState,
+		file_id_to_url,
+	},
 	handlers,
 	lsp_ext,
-};
-use crate::{
-	dispatch::RequestDispatcher,
-	global_state::GlobalState,
+	lsp_utils::is_cancelled,
 };
 use base_db::SourceDatabase as _;
 use crossbeam_channel::{
@@ -18,8 +20,10 @@ use crossbeam_channel::{
 };
 use lsp_server::Connection;
 use salsa::Durability;
-use std::sync::Arc;
-use std::time::Instant;
+use std::{
+	sync::Arc,
+	time::Instant,
+};
 use vfs::FileId;
 
 #[inline]

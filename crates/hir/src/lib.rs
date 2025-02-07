@@ -13,8 +13,6 @@ use either::Either;
 use hir_def::{
 	HasSource as _,
 	HirFileId,
-};
-use hir_def::{
 	InFile,
 	body::{
 		BindingId,

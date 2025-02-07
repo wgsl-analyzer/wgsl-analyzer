@@ -1,26 +1,32 @@
 pub mod operators;
 
-use crate::AstChildren;
-use crate::AstNode;
-use crate::AstToken;
-use crate::HasAttrs;
-use crate::HasGenerics;
-use crate::HasName;
-use crate::SyntaxToken;
-use crate::TokenText;
-use crate::ast::operators::ArithOp;
-use crate::ast::operators::CmpOp;
-use crate::ast::operators::LogicOp;
-use crate::support;
+use crate::{
+	AstChildren,
+	AstNode,
+	AstToken,
+	HasAttrs,
+	HasGenerics,
+	HasName,
+	SyntaxToken,
+	TokenText,
+	ast::operators::{
+		ArithOp,
+		CmpOp,
+		LogicOp,
+	},
+	support,
+};
 use rowan::NodeOrToken;
 use wgsl_parser::{
 	SyntaxKind,
 	SyntaxNode,
 };
 
-use self::operators::BinaryOp;
-use self::operators::CompoundOp;
-use self::operators::UnaryOp;
+use self::operators::{
+	BinaryOp,
+	CompoundOp,
+	UnaryOp,
+};
 
 macro_rules! ast_node {
     ($kind:ident $($name:ident)? $(:

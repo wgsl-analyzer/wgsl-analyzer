@@ -29,10 +29,10 @@ use crate::{
 		AttrDefId,
 		AttrsWithOwner,
 	},
-	body::scope::ExprScopes,
 	body::{
 		Body,
 		BodySourceMap,
+		scope::ExprScopes,
 	},
 	data::{
 		FunctionData,

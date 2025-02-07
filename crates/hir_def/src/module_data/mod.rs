@@ -1,13 +1,13 @@
 mod lower;
 pub mod pretty;
 
-use crate::ast_id::FileAstId;
-use crate::db::{
-	DefDatabase,
-	Interned,
-};
 use crate::{
 	HirFileId,
+	ast_id::FileAstId,
+	db::{
+		DefDatabase,
+		Interned,
+	},
 	type_ref::*,
 };
 use la_arena::{

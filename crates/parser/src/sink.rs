@@ -1,10 +1,10 @@
-use super::Parse;
-use super::TokenKind;
-use super::lexer::Token;
-use super::parsing::ParseError;
 use super::{
+	Parse,
 	ParserDefinition,
+	TokenKind,
 	event::Event,
+	lexer::Token,
+	parsing::ParseError,
 };
 use rowan::{
 	GreenNodeBuilder,

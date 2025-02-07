@@ -6,11 +6,13 @@ use std::{
 	str::FromStr,
 };
 
-use hir_def::db::StructId;
-use hir_def::type_ref;
 pub use hir_def::type_ref::{
 	AccessMode,
 	StorageClass,
+};
+use hir_def::{
+	db::StructId,
+	type_ref,
 };
 use salsa::InternKey;
 
