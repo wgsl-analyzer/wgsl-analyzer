@@ -17,7 +17,6 @@ salsa = "0.17.0-pre.2"
 rowan = "0.16.1"
 rustc-hash = "2.1.0"
 syntax = { path = "../syntax", version = "0.0.0" }
-tracing = "0.1.41"
 regex = { version = "1.11.1", default-features = false, features = ["std"] }
 
 vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
