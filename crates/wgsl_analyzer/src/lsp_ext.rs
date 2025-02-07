@@ -1,13 +1,5 @@
-use lsp_types::{
-	Range,
-	TextDocumentIdentifier,
-	TextDocumentPositionParams,
-	request::Request,
-};
-use serde::{
-	Deserialize,
-	Serialize,
-};
+use lsp_types::{request::Request, Range, TextDocumentIdentifier, TextDocumentPositionParams};
+use serde::{Deserialize, Serialize};
 
 pub enum SyntaxTree {}
 

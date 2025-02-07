@@ -1,27 +1,13 @@
 use hir_def::{
-	module_data::{
-		ModuleItem,
-		Name,
-		pretty::pretty_module_item,
-	},
+	module_data::{pretty::pretty_module_item, ModuleItem, Name},
 	resolver::ScopeDef,
 };
-use hir_ty::{
-	builtins::Builtin,
-	ty::pretty::pretty_type,
-};
+use hir_ty::{builtins::Builtin, ty::pretty::pretty_type};
 
 use super::Completions;
 use crate::{
-	context::{
-		CompletionContext,
-		ImmediateLocation,
-	},
-	item::{
-		CompletionItem,
-		CompletionItemKind,
-		CompletionRelevance,
-	},
+	context::{CompletionContext, ImmediateLocation},
+	item::{CompletionItem, CompletionItemKind, CompletionRelevance},
 };
 
 pub(crate) fn complete_names_in_scope(

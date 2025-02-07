@@ -1,25 +1,9 @@
-use base_db::{
-	FilePosition,
-	TextRange,
-};
+use base_db::{FilePosition, TextRange};
 use either::Either;
-use hir::{
-	HirDatabase,
-	Semantics,
-};
-use hir_def::{
-	HirFileId,
-	db::DefWithBodyId,
-	resolver::Resolver,
-};
+use hir::{HirDatabase, Semantics};
+use hir_def::{db::DefWithBodyId, resolver::Resolver, HirFileId};
 use rowan::NodeOrToken;
-use syntax::{
-	AstNode,
-	Direction,
-	SyntaxKind,
-	SyntaxToken,
-	ast,
-};
+use syntax::{ast, AstNode, Direction, SyntaxKind, SyntaxToken};
 
 use crate::patterns::determine_location;
 

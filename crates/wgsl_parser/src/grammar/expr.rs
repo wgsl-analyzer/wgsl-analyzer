@@ -353,10 +353,7 @@ fn paren_expr(p: &mut Parser) -> CompletedMarker {
 
 #[cfg(test)]
 mod tests {
-	use expect_test::{
-		Expect,
-		expect,
-	};
+	use expect_test::{expect, Expect};
 
 	use crate::ParseEntryPoint;
 

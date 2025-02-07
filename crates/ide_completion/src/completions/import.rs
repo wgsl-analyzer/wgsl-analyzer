@@ -1,13 +1,7 @@
 use super::Completions;
 use crate::{
-	context::{
-		CompletionContext,
-		ImmediateLocation,
-	},
-	item::{
-		CompletionItem,
-		CompletionItemKind,
-	},
+	context::{CompletionContext, ImmediateLocation},
+	item::{CompletionItem, CompletionItemKind},
 };
 
 pub(crate) fn complete_import(

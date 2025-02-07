@@ -1,23 +1,7 @@
-use base_db::{
-	FilePosition,
-	TextRange,
-};
-use hir::{
-	HasSource,
-	HirDatabase,
-	Local,
-	Semantics,
-	definition::Definition,
-};
-use hir_def::{
-	InFile,
-	db::DefDatabase,
-};
-use syntax::{
-	AstNode,
-	HasName,
-	SyntaxKind,
-};
+use base_db::{FilePosition, TextRange};
+use hir::{definition::Definition, HasSource, HirDatabase, Local, Semantics};
+use hir_def::{db::DefDatabase, InFile};
+use syntax::{AstNode, HasName, SyntaxKind};
 use vfs::FileId;
 
 use crate::helpers;

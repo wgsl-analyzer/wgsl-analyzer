@@ -1,7 +1,4 @@
-use base_db::{
-	SourceDatabase,
-	TextRange,
-};
+use base_db::{SourceDatabase, TextRange};
 use vfs::FileId;
 
 pub fn syntax_tree(

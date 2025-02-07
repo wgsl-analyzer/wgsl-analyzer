@@ -1,29 +1,13 @@
-use std::{
-	ops::Index,
-	sync::Arc,
-};
+use std::{ops::Index, sync::Arc};
 
 use either::Either;
-use la_arena::{
-	Arena,
-	Idx,
-};
+use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
 
-use super::{
-	BindingId,
-	Body,
-};
+use super::{BindingId, Body};
 use crate::{
-	db::{
-		DefDatabase,
-		DefWithBodyId,
-	},
-	expr::{
-		ExprId,
-		Statement,
-		StatementId,
-	},
+	db::{DefDatabase, DefWithBodyId},
+	expr::{ExprId, Statement, StatementId},
 	module_data::Name,
 };
 

@@ -3,10 +3,7 @@ use std::fmt::Write;
 use super::ImportValue;
 use crate::{
 	db::DefDatabase,
-	module_data::{
-		ModuleInfo,
-		ModuleItem,
-	},
+	module_data::{ModuleInfo, ModuleItem},
 };
 
 pub fn pretty_print_module(

@@ -1,7 +1,4 @@
-pub use rowan::{
-	TextRange,
-	TextSize,
-};
+pub use rowan::{TextRange, TextSize};
 use vfs::FileId;
 
 #[derive(Clone, Copy, Debug)]

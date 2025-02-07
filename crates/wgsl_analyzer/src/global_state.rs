@@ -1,41 +1,23 @@
 use std::{
-	sync::{
-		Arc,
-		RwLock,
-	},
+	sync::{Arc, RwLock},
 	time::Instant,
 };
 
 use base_db::change::Change;
-use crossbeam_channel::{
-	Receiver,
-	Sender,
-	unbounded,
-};
-use ide::{
-	Analysis,
-	AnalysisHost,
-	Cancellable,
-};
+use crossbeam_channel::{unbounded, Receiver, Sender};
+use ide::{Analysis, AnalysisHost, Cancellable};
 use lsp_types::Url;
 use rustc_hash::FxHashMap;
-use vfs::{
-	FileId,
-	Vfs,
-};
+use vfs::{FileId, Vfs};
 
 use crate::{
-	Result,
 	config::Config,
 	diagnostics::DiagnosticCollection,
 	from_proto,
-	line_index::{
-		LineEndings,
-		LineIndex,
-	},
+	line_index::{LineEndings, LineIndex},
 	main_loop::Task,
 	task_pool::TaskPool,
-	to_proto,
+	to_proto, Result,
 };
 
 type ReqHandler = fn(&mut GlobalState, lsp_server::Response);

@@ -3,15 +3,8 @@ use itertools::Itertools;
 
 use super::Completions;
 use crate::{
-	context::{
-		CompletionContext,
-		ImmediateLocation,
-	},
-	item::{
-		CompletionItem,
-		CompletionItemKind,
-		CompletionRelevance,
-	},
+	context::{CompletionContext, ImmediateLocation},
+	item::{CompletionItem, CompletionItemKind, CompletionRelevance},
 };
 
 pub(crate) fn complete_dot(

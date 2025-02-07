@@ -1,19 +1,9 @@
 pub mod pretty;
 
-use std::{
-	borrow::Cow,
-	fmt::Write,
-	str::FromStr,
-};
+use std::{borrow::Cow, fmt::Write, str::FromStr};
 
-pub use hir_def::type_ref::{
-	AccessMode,
-	StorageClass,
-};
-use hir_def::{
-	db::StructId,
-	type_ref,
-};
+pub use hir_def::type_ref::{AccessMode, StorageClass};
+use hir_def::{db::StructId, type_ref};
 use salsa::InternKey;
 
 use crate::HirDatabase;

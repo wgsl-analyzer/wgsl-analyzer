@@ -1,16 +1,6 @@
 use itertools::Itertools;
-use rowan::{
-	Direction,
-	NodeOrToken,
-	TextRange,
-	TextSize,
-};
-use wgsl_parser::{
-	SyntaxElement,
-	SyntaxKind,
-	SyntaxNode,
-	SyntaxToken,
-};
+use rowan::{Direction, NodeOrToken, TextRange, TextSize};
+use wgsl_parser::{SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken};
 
 use crate::AstNode;
 

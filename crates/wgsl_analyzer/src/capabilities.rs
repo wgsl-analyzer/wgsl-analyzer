@@ -1,11 +1,6 @@
 use lsp_types::{
-	CompletionOptions,
-	HoverProviderCapability,
-	OneOf,
-	ServerCapabilities,
-	TextDocumentSyncCapability,
-	TextDocumentSyncKind,
-	WorkDoneProgressOptions,
+	CompletionOptions, HoverProviderCapability, OneOf, ServerCapabilities,
+	TextDocumentSyncCapability, TextDocumentSyncKind, WorkDoneProgressOptions,
 };
 use serde_json::json;
 

@@ -1,42 +1,20 @@
 use std::sync::Arc;
 
-use la_arena::{
-	Idx,
-	IdxRange,
-};
+use la_arena::{Idx, IdxRange};
 use syntax::{
-	AstNode,
-	HasName,
-	ast::{
-		self,
-		Item,
-		SourceFile,
-	},
+	ast::{self, Item, SourceFile},
+	AstNode, HasName,
 };
 
 use super::{
-	Field,
-	GlobalConstant,
-	GlobalVariable,
-	Import,
-	ImportValue,
-	Name,
-	Override,
-	Struct,
-	TypeAlias,
+	Field, GlobalConstant, GlobalVariable, Import, ImportValue, Name, Override, Struct, TypeAlias,
 };
 use crate::{
-	HirFileId,
 	ast_id::AstIdMap,
 	db::DefDatabase,
-	module_data::{
-		Function,
-		ModuleData,
-		ModuleItem,
-		ModuleItemId,
-		Param,
-	},
+	module_data::{Function, ModuleData, ModuleItem, ModuleItemId, Param},
 	type_ref::TypeRef,
+	HirFileId,
 };
 
 pub(crate) struct Ctx<'a> {

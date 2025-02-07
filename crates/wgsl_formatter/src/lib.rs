@@ -1,21 +1,8 @@
 #[cfg(test)]
 mod tests;
 
-use rowan::{
-	GreenNode,
-	GreenToken,
-	NodeOrToken,
-	WalkEvent,
-};
-use syntax::{
-	AstNode,
-	HasGenerics,
-	SyntaxElement,
-	SyntaxKind,
-	SyntaxNode,
-	SyntaxToken,
-	ast,
-};
+use rowan::{GreenNode, GreenToken, NodeOrToken, WalkEvent};
+use syntax::{ast, AstNode, HasGenerics, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken};
 
 pub fn format_str(
 	input: &str,

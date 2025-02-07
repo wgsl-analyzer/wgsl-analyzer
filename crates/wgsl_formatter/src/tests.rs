@@ -1,14 +1,8 @@
 use std::panic;
 
-use expect_test::{
-	Expect,
-	expect,
-};
+use expect_test::{expect, Expect};
 
-use crate::{
-	FormattingOptions,
-	format_recursive,
-};
+use crate::{format_recursive, FormattingOptions};
 
 fn check(
 	before: &str,

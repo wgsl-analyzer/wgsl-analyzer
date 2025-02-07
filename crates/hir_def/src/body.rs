@@ -1,37 +1,18 @@
 mod lower;
 pub mod scope;
 
-use std::{
-	collections::HashSet,
-	sync::Arc,
-};
+use std::{collections::HashSet, sync::Arc};
 
 use either::Either;
-use la_arena::{
-	Arena,
-	ArenaMap,
-	Idx,
-};
+use la_arena::{Arena, ArenaMap, Idx};
 use rustc_hash::FxHashMap;
-use syntax::{
-	ast,
-	ptr::AstPtr,
-};
+use syntax::{ast, ptr::AstPtr};
 
 use crate::{
-	HasSource,
-	db::{
-		DefDatabase,
-		DefWithBodyId,
-		Lookup,
-	},
-	expr::{
-		Expr,
-		ExprId,
-		Statement,
-		StatementId,
-	},
+	db::{DefDatabase, DefWithBodyId, Lookup},
+	expr::{Expr, ExprId, Statement, StatementId},
 	module_data::Name,
+	HasSource,
 };
 
 pub type BindingId = Idx<Binding>;

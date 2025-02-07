@@ -1,87 +1,27 @@
-use std::{
-	collections::hash_map::Entry,
-	sync::Arc,
-};
+use std::{collections::hash_map::Entry, sync::Arc};
 
 use either::Either;
 use hir_def::{
-	body::{
-		BindingId,
-		Body,
-	},
-	data::{
-		FieldId,
-		FunctionData,
-		GlobalConstantData,
-		GlobalVariableData,
-		OverrideData,
-	},
-	db::{
-		DefWithBodyId,
-		FunctionId,
-		GlobalConstantId,
-		GlobalVariableId,
-		OverrideId,
-		TypeAliasId,
-	},
-	expr::{
-		ArithOp,
-		BinaryOp,
-		Callee,
-		CmpOp,
-		Expr,
-		ExprId,
-		Statement,
-		StatementId,
-		UnaryOp,
-	},
+	body::{BindingId, Body},
+	data::{FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData},
+	db::{DefWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, OverrideId, TypeAliasId},
+	expr::{ArithOp, BinaryOp, Callee, CmpOp, Expr, ExprId, Statement, StatementId, UnaryOp},
 	module_data::Name,
-	resolver::{
-		ResolveType,
-		Resolver,
-	},
-	type_ref::{
-		self,
-		AccessMode,
-		StorageClass,
-		TypeRef,
-		VecDimensionality,
-	},
+	resolver::{ResolveType, Resolver},
+	type_ref::{self, AccessMode, StorageClass, TypeRef, VecDimensionality},
 };
 use la_arena::ArenaMap;
 use rustc_hash::FxHashMap;
 
 use crate::{
-	HirDatabase,
-	builtins::{
-		Builtin,
-		BuiltinId,
-		BuiltinOverload,
-		BuiltinOverloadId,
-	},
-	function::{
-		FunctionDetails,
-		ResolvedFunctionId,
-	},
+	builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
+	function::{FunctionDetails, ResolvedFunctionId},
 	ty::{
-		ArraySize,
-		ArrayType,
-		AtomicType,
-		BoundVar,
-		MatrixType,
-		Ptr,
-		Ref,
-		SamplerType,
-		ScalarType,
-		TexelFormat,
-		TextureDimensionality,
-		TextureKind,
-		TextureType,
-		Ty,
-		TyKind,
-		VecSize,
+		ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Ptr, Ref, SamplerType, ScalarType,
+		TexelFormat, TextureDimensionality, TextureKind, TextureType, Ty, TyKind, VecSize,
 		VectorType,
 	},
+	HirDatabase,
 };
 
 pub fn infer_query(

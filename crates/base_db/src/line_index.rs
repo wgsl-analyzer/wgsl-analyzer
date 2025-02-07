@@ -1,14 +1,8 @@
 //! `LineIndex` maps flat `TextSize` offsets into `(Line, Column)`
 //! representation.
-use std::{
-	iter,
-	mem,
-};
+use std::{iter, mem};
 
-use rowan::{
-	TextRange,
-	TextSize,
-};
+use rowan::{TextRange, TextSize};
 use rustc_hash::FxHashMap;
 
 #[derive(Clone, Debug, PartialEq, Eq)]

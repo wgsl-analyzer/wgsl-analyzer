@@ -5,18 +5,12 @@ pub mod line_index;
 
 mod util_types;
 use std::{
-	collections::{
-		HashMap,
-		HashSet,
-	},
+	collections::{HashMap, HashSet},
 	sync::Arc,
 };
 
 use line_index::LineIndex;
-use syntax::{
-	Parse,
-	ParseEntryPoint,
-};
+use syntax::{Parse, ParseEntryPoint};
 pub use util_types::*;
 pub use vfs::FileId;
 

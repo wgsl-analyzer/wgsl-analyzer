@@ -13,13 +13,8 @@ mod syntax_tree;
 use std::sync::Arc;
 
 use base_db::{
-	FilePosition,
-	FileRange,
-	RangeInfo,
-	SourceDatabase,
+	change::Change, line_index::LineIndex, FilePosition, FileRange, RangeInfo, SourceDatabase,
 	TextRange,
-	change::Change,
-	line_index::LineIndex,
 };
 use diagnostics::DiagnosticMessage;
 use goto_definition::NavigationTarget;
@@ -27,18 +22,9 @@ use hir::diagnostics::DiagnosticsConfig;
 use hir_def::db::DefDatabase;
 pub use hover::HoverResult;
 use ide_completion::item::CompletionItem;
-use inlay_hints::{
-	InlayHint,
-	InlayHintsConfig,
-};
-use salsa::{
-	Cancelled,
-	ParallelDatabase,
-};
-use syntax::{
-	Parse,
-	SyntaxNode,
-};
+use inlay_hints::{InlayHint, InlayHintsConfig};
+use salsa::{Cancelled, ParallelDatabase};
+use syntax::{Parse, SyntaxNode};
 use vfs::FileId;
 
 pub type Cancellable<T> = Result<T, Cancelled>;

@@ -2,15 +2,8 @@ use hir_def::data::LocalFieldId;
 use la_arena::ArenaMap;
 
 use crate::{
+	ty::{ArraySize, ArrayType, ScalarType, Ty, TyKind, VecSize},
 	HirDatabase,
-	ty::{
-		ArraySize,
-		ArrayType,
-		ScalarType,
-		Ty,
-		TyKind,
-		VecSize,
-	},
 };
 
 type Bytes = u32;

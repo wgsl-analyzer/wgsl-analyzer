@@ -1,13 +1,6 @@
-use std::{
-	mem::ManuallyDrop,
-	sync::Arc,
-};
+use std::{mem::ManuallyDrop, sync::Arc};
 
-use base_db::{
-	SourceDatabase,
-	Upcast,
-	change::Change,
-};
+use base_db::{change::Change, SourceDatabase, Upcast};
 use hir_def::db::DefDatabase;
 
 #[salsa::database(

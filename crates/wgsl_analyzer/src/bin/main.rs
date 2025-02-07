@@ -1,20 +1,14 @@
-use std::{
-	env::args,
-	io::stderr,
-};
+use std::{env::args, io::stderr};
 
 use lsp_server::Connection;
 use lsp_types::InitializeParams;
 use tracing::info;
 use tracing_subscriber::fmt::Subscriber;
 use wgsl_analyzer::{
-	Result,
-	config::{
-		Config,
-		TraceConfig,
-	},
+	config::{Config, TraceConfig},
 	from_json,
 	main_loop::main_loop,
+	Result,
 };
 
 const VERSION: &str = "0.9.4";

@@ -2,21 +2,12 @@ pub mod algo;
 pub mod ast;
 pub mod ptr;
 
-use std::{
-	marker::PhantomData,
-	ops::Deref,
-	sync::Arc,
-};
+use std::{marker::PhantomData, ops::Deref, sync::Arc};
 
 use either::Either;
 pub use rowan::Direction;
 pub use wgsl_parser::{
-	ParseEntryPoint,
-	ParseError,
-	SyntaxElement,
-	SyntaxKind,
-	SyntaxNode,
-	SyntaxNodeChildren,
+	ParseEntryPoint, ParseError, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodeChildren,
 	SyntaxToken,
 };
 
@@ -158,14 +149,7 @@ impl Deref for TokenText<'_> {
 mod support {
 	use std::borrow::Cow;
 
-	use super::{
-		AstChildren,
-		AstNode,
-		SyntaxKind,
-		SyntaxNode,
-		SyntaxToken,
-		TokenText,
-	};
+	use super::{AstChildren, AstNode, SyntaxKind, SyntaxNode, SyntaxToken, TokenText};
 	use crate::AstToken;
 
 	pub(crate) fn child<N: AstNode>(parent: &SyntaxNode) -> Option<N> {

@@ -3,32 +3,16 @@
 	reason = "handlers should have a specific signature"
 )]
 
-use base_db::{
-	FileRange,
-	TextRange,
-};
+use base_db::{FileRange, TextRange};
 use hir::diagnostics::DiagnosticsConfig;
-use ide::{
-	HoverResult,
-	diagnostics::Severity,
-};
+use ide::{diagnostics::Severity, HoverResult};
 use lsp_types::{
-	DiagnosticRelatedInformation,
-	DiagnosticTag,
-	GotoDefinitionResponse,
-	LanguageString,
-	MarkedString,
-	TextDocumentIdentifier,
+	DiagnosticRelatedInformation, DiagnosticTag, GotoDefinitionResponse, LanguageString,
+	MarkedString, TextDocumentIdentifier,
 };
 use vfs::FileId;
 
-use crate::{
-	Result,
-	from_proto,
-	global_state::GlobalStateSnapshot,
-	lsp_ext,
-	to_proto,
-};
+use crate::{from_proto, global_state::GlobalStateSnapshot, lsp_ext, to_proto, Result};
 
 pub fn handle_goto_definition(
 	snap: GlobalStateSnapshot,
@@ -233,11 +217,7 @@ const fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSeverit
 mod diff {
 	//! Generate minimal `TextEdit`s from different text versions
 	use dissimilar::Chunk;
-	use text_edit::{
-		TextEdit,
-		TextRange,
-		TextSize,
-	};
+	use text_edit::{TextEdit, TextRange, TextSize};
 
 	pub fn diff(
 		left: &str,

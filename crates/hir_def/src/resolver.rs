@@ -1,37 +1,18 @@
 use std::sync::Arc;
 
 use crate::{
-	HirFileId,
-	InFile,
 	body::{
+		scope::{ExprScopes, ScopeId},
 		BindingId,
-		scope::{
-			ExprScopes,
-			ScopeId,
-		},
 	},
-	db::{
-		DefDatabase,
-		FunctionId,
-		Location,
-	},
+	db::{DefDatabase, FunctionId, Location},
 	hir_file_id::ImportFile,
 	module_data::{
-		Function,
-		GlobalConstant,
-		GlobalVariable,
-		ModuleInfo,
-		ModuleItem,
-		Name,
-		Override,
-		Struct,
+		Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItem, Name, Override, Struct,
 		TypeAlias,
 	},
-	type_ref::{
-		TypeRef,
-		VecDimensionality,
-		VecType,
-	},
+	type_ref::{TypeRef, VecDimensionality, VecType},
+	HirFileId, InFile,
 };
 
 #[derive(Clone)]

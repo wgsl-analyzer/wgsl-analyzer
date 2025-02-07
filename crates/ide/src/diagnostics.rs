@@ -1,28 +1,15 @@
 use std::ops::Range;
 
-use base_db::{
-	FileRange,
-	TextRange,
-	TextSize,
-};
+use base_db::{FileRange, TextRange, TextSize};
 use hir::{
-	HirDatabase,
-	Semantics,
-	diagnostics::{
-		AnyDiagnostic,
-		DiagnosticsConfig,
-		NagaVersion,
-	},
+	diagnostics::{AnyDiagnostic, DiagnosticsConfig, NagaVersion},
+	HirDatabase, Semantics,
 };
 use hir_def::original_file_range;
 use hir_ty::ty::{
 	self,
-	Ty,
-	VecSize,
-	pretty::{
-		pretty_fn,
-		pretty_type,
-	},
+	pretty::{pretty_fn, pretty_type},
+	Ty, VecSize,
 };
 use itertools::Itertools;
 use rowan::NodeOrToken;

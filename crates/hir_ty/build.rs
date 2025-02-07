@@ -1,9 +1,4 @@
-use std::{
-	collections::BTreeMap,
-	fs::File,
-	path::PathBuf,
-	str::FromStr,
-};
+use std::{collections::BTreeMap, fs::File, path::PathBuf, str::FromStr};
 
 #[derive(Default, Debug)]
 struct Builtin {

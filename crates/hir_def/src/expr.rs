@@ -1,20 +1,12 @@
 use la_arena::Idx;
 pub use syntax::ast::operators::*;
-use syntax::ast::{
-	self,
-	IncrDecr,
-};
+use syntax::ast::{self, IncrDecr};
 
 use crate::{
 	body::BindingId,
 	db::Interned,
 	module_data::Name,
-	type_ref::{
-		AccessMode,
-		StorageClass,
-		TypeRef,
-		VecDimensionality,
-	},
+	type_ref::{AccessMode, StorageClass, TypeRef, VecDimensionality},
 };
 
 pub type ExprId = Idx<Expr>;

@@ -1,14 +1,8 @@
-use std::collections::{
-	HashMap,
-	HashSet,
-};
+use std::collections::{HashMap, HashSet};
 
 use hir::diagnostics;
 use hir_ty::ty::pretty::TypeVerbosity;
-use ide::{
-	inlay_hints,
-	inlay_hints::StructLayoutHints,
-};
+use ide::{inlay_hints, inlay_hints::StructLayoutHints};
 use serde::Deserialize;
 
 use crate::line_index::OffsetEncoding;

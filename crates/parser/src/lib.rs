@@ -7,21 +7,11 @@ mod parsing;
 mod sink;
 mod source;
 
-use std::{
-	fmt::Debug,
-	marker::PhantomData,
-};
+use std::{fmt::Debug, marker::PhantomData};
 
 use lexer::Lexer;
-pub use parsing::{
-	ParseError,
-	Parser,
-	marker,
-};
-use rowan::{
-	GreenNode,
-	SyntaxNode,
-};
+pub use parsing::{marker, ParseError, Parser};
+use rowan::{GreenNode, SyntaxNode};
 use sink::Sink;
 use source::Source;
 

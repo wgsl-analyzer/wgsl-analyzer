@@ -1,31 +1,18 @@
-use std::{
-	sync::Arc,
-	time::Instant,
-};
+use std::{sync::Arc, time::Instant};
 
 use base_db::SourceDatabase as _;
-use crossbeam_channel::{
-	Receiver,
-	select,
-};
+use crossbeam_channel::{select, Receiver};
 use lsp_server::Connection;
 use salsa::Durability;
 use vfs::FileId;
 
 use crate::{
-	Result,
 	config::Config,
-	dispatch::{
-		NotificationDispatcher,
-		RequestDispatcher,
-	},
-	global_state::{
-		GlobalState,
-		file_id_to_url,
-	},
-	handlers,
-	lsp_ext,
+	dispatch::{NotificationDispatcher, RequestDispatcher},
+	global_state::{file_id_to_url, GlobalState},
+	handlers, lsp_ext,
 	lsp_utils::is_cancelled,
+	Result,
 };
 
 #[inline]
@@ -261,21 +248,12 @@ impl GlobalState {
 mod text_notifications {
 	use anyhow::Context as _;
 	use lsp_types::{
-		DidChangeTextDocumentParams,
-		DidCloseTextDocumentParams,
-		DidOpenTextDocumentParams,
-		DidSaveTextDocumentParams,
-		PublishDiagnosticsParams,
-		notification::PublishDiagnostics,
+		notification::PublishDiagnostics, DidChangeTextDocumentParams, DidCloseTextDocumentParams,
+		DidOpenTextDocumentParams, DidSaveTextDocumentParams, PublishDiagnosticsParams,
 	};
 	use tracing::error;
 
-	use crate::{
-		Result,
-		from_proto,
-		global_state::GlobalState,
-		lsp_utils::apply_document_changes,
-	};
+	use crate::{from_proto, global_state::GlobalState, lsp_utils::apply_document_changes, Result};
 
 	pub fn did_open_text_document(
 		state: &mut GlobalState,

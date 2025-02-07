@@ -1,7 +1,4 @@
-use std::{
-	io::Read,
-	path::PathBuf,
-};
+use std::{io::Read, path::PathBuf};
 
 use anyhow::Context;
 use lexopt::prelude::*;

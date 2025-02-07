@@ -1,9 +1,6 @@
 use rowan::TextRange;
 
-use super::{
-	ParserDefinition,
-	lexer::Token,
-};
+use super::{lexer::Token, ParserDefinition};
 use crate::TokenKind;
 
 pub(crate) struct Source<'t, 'input, P: ParserDefinition> {
