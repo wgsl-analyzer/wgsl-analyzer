@@ -132,6 +132,7 @@ impl std::fmt::Display for VecDimensionality {
 
 impl TryFrom<ast::VecType> for VecType {
 	type Error = ();
+
 	fn try_from(ty: ast::VecType) -> Result<Self, ()> {
 		let size = vector_dimensions(&ty);
 		let inner = first_type_generic(&ty)?;
@@ -160,6 +161,7 @@ pub struct MatrixType {
 
 impl TryFrom<ast::MatrixType> for MatrixType {
 	type Error = ();
+
 	fn try_from(ty: ast::MatrixType) -> Result<Self, ()> {
 		let (columns, rows) = matrix_dimensions(&ty);
 		let inner = first_type_generic(&ty)?;

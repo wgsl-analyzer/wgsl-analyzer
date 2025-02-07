@@ -103,6 +103,7 @@ impl StructData {
 			fields,
 		})
 	}
+
 	pub fn fields(&self) -> &Arena<FieldData> {
 		&self.fields
 	}

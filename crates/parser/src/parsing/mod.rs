@@ -54,6 +54,7 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 			self.error();
 		}
 	}
+
 	pub fn expect_no_bump(
 		&mut self,
 		kind: P::TokenKind,
@@ -64,6 +65,7 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 			self.error_no_bump(&[]);
 		}
 	}
+
 	pub fn expect_recover(
 		&mut self,
 		kind: P::TokenKind,
@@ -89,6 +91,7 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 			false
 		}
 	}
+
 	pub fn eat_set(
 		&mut self,
 		set: &[P::TokenKind],
@@ -101,24 +104,28 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 	pub fn error(&mut self) {
 		self.error_inner(None, &[], false)
 	}
+
 	pub fn error_expected(
 		&mut self,
 		expected: &[P::TokenKind],
 	) {
 		self.error_inner(None, expected, false)
 	}
+
 	pub fn error_expected_no_bump(
 		&mut self,
 		expected: &[P::TokenKind],
 	) {
 		self.error_inner(None, expected, true)
 	}
+
 	pub fn error_recovery(
 		&mut self,
 		recovery: &[P::TokenKind],
 	) {
 		self.error_inner(Some(recovery), &[], false)
 	}
+
 	pub fn error_no_bump(
 		&mut self,
 		expected: &[P::TokenKind],
@@ -231,6 +238,7 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 	pub fn peek(&mut self) -> Option<P::TokenKind> {
 		self.source.peek_kind()
 	}
+
 	pub fn peek_compound(&mut self) -> Option<(P::TokenKind, P::TokenKind)> {
 		self.source.peek_kind_compound()
 	}

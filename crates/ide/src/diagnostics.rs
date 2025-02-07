@@ -111,6 +111,7 @@ impl NagaError for naga14::front::wgsl::ParseError {
 				.flat_map(|(range, label)| Some((range.to_range()?, label.to_string()))),
 		)
 	}
+
 	fn has_spans(&self) -> bool {
 		self.labels().len() > 0
 	}
@@ -123,6 +124,7 @@ impl NagaError for naga14::WithSpan<naga14::valid::ValidationError> {
 				.filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
 		)
 	}
+
 	fn has_spans(&self) -> bool {
 		self.spans().len() > 0
 	}
@@ -153,6 +155,7 @@ impl NagaError for naga19::front::wgsl::ParseError {
 				.flat_map(|(range, label)| Some((range.to_range()?, label.to_string()))),
 		)
 	}
+
 	fn has_spans(&self) -> bool {
 		self.labels().len() > 0
 	}
@@ -165,6 +168,7 @@ impl NagaError for naga19::WithSpan<naga19::valid::ValidationError> {
 				.filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
 		)
 	}
+
 	fn has_spans(&self) -> bool {
 		self.spans().len() > 0
 	}
@@ -195,6 +199,7 @@ impl NagaError for naga22::front::wgsl::ParseError {
 				.flat_map(|(range, label)| Some((range.to_range()?, label.to_string()))),
 		)
 	}
+
 	fn has_spans(&self) -> bool {
 		self.labels().len() > 0
 	}
@@ -207,6 +212,7 @@ impl NagaError for naga22::WithSpan<naga22::valid::ValidationError> {
 				.filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
 		)
 	}
+
 	fn has_spans(&self) -> bool {
 		self.spans().len() > 0
 	}
@@ -237,6 +243,7 @@ impl NagaError for nagamain::front::wgsl::ParseError {
 				.flat_map(|(range, label)| Some((range.to_range()?, label.to_string()))),
 		)
 	}
+
 	fn has_spans(&self) -> bool {
 		self.labels().len() > 0
 	}
@@ -249,6 +256,7 @@ impl NagaError for nagamain::WithSpan<nagamain::valid::ValidationError> {
 				.filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
 		)
 	}
+
 	fn has_spans(&self) -> bool {
 		self.spans().len() > 0
 	}

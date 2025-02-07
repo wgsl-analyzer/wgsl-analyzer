@@ -62,9 +62,11 @@ impl<T> InFile<T> {
 	) -> InFile<U> {
 		InFile::new(self.file_id, f(self.value))
 	}
+
 	pub fn as_ref(&self) -> InFile<&T> {
 		self.with_value(&self.value)
 	}
+
 	pub fn file_syntax(
 		&self,
 		db: &dyn db::DefDatabase,

@@ -398,6 +398,7 @@ macro_rules! intern_id {
 
 		impl Lookup for $id {
 			type Data = $loc;
+
 			fn lookup(
 				&self,
 				db: &dyn DefDatabase,
@@ -452,6 +453,7 @@ impl DefWithBodyId {
 			DefWithBodyId::Override(id) => id.lookup(db).file_id,
 		}
 	}
+
 	pub fn resolver(
 		&self,
 		db: &dyn DefDatabase,

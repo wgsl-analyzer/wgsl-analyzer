@@ -22,8 +22,8 @@ impl rowan::Language for WgslLanguage {
 pub struct ParserDefinition;
 impl parser::ParserDefinition for ParserDefinition {
 	type Language = WgslLanguage;
-	type TokenKind = SyntaxKind;
 	type SyntaxKind = SyntaxKind;
+	type TokenKind = SyntaxKind;
 
 	const DEFAULT_RECOVERY_SET: &'static [SyntaxKind] = &[SyntaxKind::Fn];
 }

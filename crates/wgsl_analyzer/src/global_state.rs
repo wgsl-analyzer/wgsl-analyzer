@@ -154,6 +154,7 @@ impl GlobalState {
 			(request.method.clone(), request_received),
 		);
 	}
+
 	pub(crate) fn respond(
 		&mut self,
 		response: lsp_server::Response,
@@ -173,6 +174,7 @@ impl GlobalState {
 			self.send(response.into());
 		}
 	}
+
 	pub(crate) fn cancel(
 		&mut self,
 		request_id: lsp_server::RequestId,

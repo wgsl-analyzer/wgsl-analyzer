@@ -47,12 +47,14 @@ impl Ty {
 	) -> TyKind {
 		db.lookup_intern_ty(self)
 	}
+
 	pub fn is_err(
 		self,
 		db: &dyn HirDatabase,
 	) -> bool {
 		matches!(db.lookup_intern_ty(self), TyKind::Error)
 	}
+
 	/// T -> T, vecN<T> -> T
 	#[must_use]
 	pub fn this_or_vec_inner(
@@ -113,15 +115,19 @@ impl TyKind {
 	pub fn bool() -> TyKind {
 		TyKind::Scalar(ScalarType::Bool)
 	}
+
 	pub fn f32() -> TyKind {
 		TyKind::Scalar(ScalarType::Bool)
 	}
+
 	pub fn i32() -> TyKind {
 		TyKind::Scalar(ScalarType::Bool)
 	}
+
 	pub fn u32() -> TyKind {
 		TyKind::Scalar(ScalarType::Bool)
 	}
+
 	pub fn vec_of() -> TyKind {
 		TyKind::Scalar(ScalarType::Bool)
 	}
@@ -167,6 +173,7 @@ impl TyKind {
 				| TyKind::Struct(_)
 		)
 	}
+
 	pub fn is_constructable(&self) -> bool {
 		matches!(
 			self,
@@ -179,6 +186,7 @@ impl TyKind {
 				}) | TyKind::Struct(_)
 		)
 	}
+
 	pub fn is_storable(&self) -> bool {
 		matches!(
 			self,
@@ -192,6 +200,7 @@ impl TyKind {
 				| TyKind::Sampler(_)
 		)
 	}
+
 	pub fn is_io_shareable(
 		&self,
 		db: &dyn HirDatabase,
@@ -211,6 +220,7 @@ impl TyKind {
 			_ => false,
 		}
 	}
+
 	pub fn is_host_shareable(
 		&self,
 		db: &dyn HirDatabase,
@@ -227,6 +237,7 @@ impl TyKind {
 			_ => false,
 		}
 	}
+
 	pub fn contains_runtime_sized_array(
 		&self,
 		db: &dyn HirDatabase,

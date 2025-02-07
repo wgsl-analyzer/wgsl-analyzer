@@ -114,6 +114,7 @@ impl<'db> Semantics<'db> {
             }
         })
 	}
+
 	pub fn resolver(
 		&self,
 		file_id: HirFileId,
@@ -190,6 +191,7 @@ impl<'db> Semantics<'db> {
 			.intern_function(Location::new(src.file_id, function));
 		Some(function_id)
 	}
+
 	fn global_constant_to_def(
 		&self,
 		src: InFile<ast::GlobalConstantDecl>,
@@ -200,6 +202,7 @@ impl<'db> Semantics<'db> {
 			.intern_global_constant(Location::new(src.file_id, global_constant));
 		Some(id)
 	}
+
 	fn global_variable_to_def(
 		&self,
 		src: InFile<ast::GlobalVariableDecl>,
@@ -376,12 +379,14 @@ impl<'db> SourceAnalyzer<'db> {
 	) -> Option<BindingId> {
 		self.body_source_map.lookup_binding(&AstPtr::new(src))
 	}
+
 	pub fn expr_id(
 		&self,
 		src: &ast::Expr,
 	) -> Option<ExprId> {
 		self.body_source_map.lookup_expr(&AstPtr::new(src))
 	}
+
 	pub fn stmt_id(
 		&self,
 		src: &ast::Statement,
@@ -518,6 +523,7 @@ pub struct Field {
 
 impl HasSource for Field {
 	type Ast = ast::StructDeclField;
+
 	fn source(
 		self,
 		db: &dyn DefDatabase,
@@ -576,6 +582,7 @@ impl Module {
 			.flat_map(|item| module_item_to_def(db, self.file_id, item))
 			.collect()
 	}
+
 	pub fn imports(
 		&self,
 		db: &dyn HirDatabase,

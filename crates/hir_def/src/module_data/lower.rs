@@ -66,6 +66,7 @@ impl<'a> Ctx<'a> {
 			self.lower_item(item);
 		})
 	}
+
 	fn lower_item(
 		&mut self,
 		item: Item,
@@ -162,6 +163,7 @@ impl<'a> Ctx<'a> {
 		let constant = GlobalConstant { name, ty, ast_id };
 		Some(self.module_data.global_constants.alloc(constant).into())
 	}
+
 	fn lower_global_var(
 		&mut self,
 		var: &syntax::ast::GlobalVariableDecl,
@@ -298,6 +300,7 @@ impl<'a> Ctx<'a> {
 		let idx = self.module_data.params.len() as u32;
 		Idx::from_raw(la_arena::RawIdx::from(idx))
 	}
+
 	fn next_field_idx(&self) -> Idx<Field> {
 		let idx = self.module_data.fields.len() as u32;
 		Idx::from_raw(la_arena::RawIdx::from(idx))

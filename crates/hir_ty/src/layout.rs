@@ -62,6 +62,7 @@ impl Ty {
 	) -> Option<Bytes> {
 		self.kind(db).align(address_space, db)
 	}
+
 	pub fn size(
 		&self,
 		address_space: LayoutAddressSpace,

@@ -17,9 +17,11 @@ impl FunctionDetails {
 	pub fn parameters(&self) -> impl Iterator<Item = Ty> + '_ {
 		self.parameters.iter().map(|(ty, _)| *ty)
 	}
+
 	pub fn parameter_names(&self) -> impl Iterator<Item = &str> + '_ {
 		self.parameters.iter().map(|(_, name)| name.as_str())
 	}
+
 	pub fn parameters_with_names(&self) -> impl Iterator<Item = (Ty, &str)> + '_ {
 		self.parameters
 			.iter()
@@ -33,6 +35,7 @@ impl salsa::InternKey for ResolvedFunctionId {
 	fn from_intern_id(id: salsa::InternId) -> Self {
 		ResolvedFunctionId(id)
 	}
+
 	fn as_intern_id(&self) -> salsa::InternId {
 		self.0
 	}

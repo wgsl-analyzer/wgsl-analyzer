@@ -109,6 +109,7 @@ impl Resolver {
 		self.scopes.push(scope);
 		self
 	}
+
 	#[must_use]
 	pub fn push_module_scope(
 		mut self,
@@ -133,6 +134,7 @@ impl Resolver {
 		}));
 		self
 	}
+
 	#[must_use]
 	pub fn push_expr_scope(
 		mut self,

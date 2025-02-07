@@ -473,6 +473,7 @@ impl SyntaxKind {
 	pub fn is_whitespace(self) -> bool {
 		matches!(self, SyntaxKind::Whitespace)
 	}
+
 	pub fn is_trivia(self) -> bool {
 		matches!(
 			self,

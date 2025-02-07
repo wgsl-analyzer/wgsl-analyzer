@@ -35,6 +35,7 @@ impl Name {
 	pub fn missing() -> Name {
 		Name(MISSING_NAME_PLACEHOLDER.into())
 	}
+
 	pub fn is_missing(val: &str) -> bool {
 		val == MISSING_NAME_PLACEHOLDER
 	}

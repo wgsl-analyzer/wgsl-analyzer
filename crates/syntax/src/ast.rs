@@ -426,18 +426,21 @@ impl GenericArg {
 			_ => None,
 		}
 	}
+
 	pub fn as_literal(&self) -> Option<Literal> {
 		match self {
 			GenericArg::Literal(ty) => Some(ty.clone()),
 			_ => None,
 		}
 	}
+
 	pub fn as_access_mode(&self) -> Option<AccessMode> {
 		match self {
 			GenericArg::AccessMode(access) => Some(access.clone()),
 			_ => None,
 		}
 	}
+
 	pub fn as_storage_class(&self) -> Option<StorageClass> {
 		match self {
 			GenericArg::StorageClass(class) => Some(class.clone()),
@@ -457,6 +460,7 @@ impl VariableQualifier {
 	pub fn access_mode(&self) -> Option<AccessMode> {
 		support::child_token::<AccessMode>(self.syntax())
 	}
+
 	pub fn storage_class(self) -> Option<StorageClass> {
 		support::child_token::<StorageClass>(self.syntax())
 	}
@@ -550,6 +554,7 @@ impl IndexExpr {
 	pub fn expr(&self) -> Option<Expr> {
 		support::children(self.syntax()).next()
 	}
+
 	pub fn index(&self) -> Option<Expr> {
 		support::children(self.syntax()).nth(1)
 	}
@@ -588,6 +593,7 @@ impl AssignmentStmt {
 	pub fn lhs(&self) -> Option<Expr> {
 		crate::support::children(self.syntax()).next()
 	}
+
 	pub fn rhs(&self) -> Option<Expr> {
 		crate::support::children(self.syntax()).nth(1)
 	}
@@ -604,6 +610,7 @@ impl IncrDecrStatement {
 	pub fn expr(&self) -> Option<Expr> {
 		crate::support::children(self.syntax()).next()
 	}
+
 	pub fn incr_decr(&self) -> Option<IncrDecr> {
 		self.syntax()
 			.children_with_tokens()
@@ -637,12 +644,15 @@ impl CompoundAssignmentStmt {
 	pub fn lhs(&self) -> Option<Expr> {
 		crate::support::children(self.syntax()).next()
 	}
+
 	pub fn rhs(&self) -> Option<Expr> {
 		crate::support::children(self.syntax()).nth(1)
 	}
+
 	pub fn op_token(&self) -> Option<SyntaxToken> {
 		self.lhs()?.syntax().last_token()?.next_token()
 	}
+
 	pub fn op(&self) -> Option<CompoundOp> {
 		let kind: CompoundAssignmentOperator = support::child_token(self.syntax())?;
 		let op = match kind {
@@ -753,11 +763,13 @@ impl ForStatement {
 			.as_ref()
 			.and_then(support::child::<Statement>)
 	}
+
 	pub fn condition(&self) -> Option<Expr> {
 		support::child_syntax(self.syntax(), SyntaxKind::ForCondition)
 			.as_ref()
 			.and_then(support::child::<Expr>)
 	}
+
 	pub fn continuing_part(&self) -> Option<Statement> {
 		support::child_syntax(self.syntax(), SyntaxKind::ForContinuingPart)
 			.as_ref()
@@ -927,9 +939,11 @@ impl InfixExpr {
 	pub fn lhs(&self) -> Option<Expr> {
 		crate::support::children(self.syntax()).next()
 	}
+
 	pub fn rhs(&self) -> Option<Expr> {
 		crate::support::children(self.syntax()).nth(1)
 	}
+
 	pub fn op(&self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
 		if let Some(op) = self
 			.syntax()

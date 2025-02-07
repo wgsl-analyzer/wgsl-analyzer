@@ -98,6 +98,7 @@ impl ExprScopes {
 	) -> Option<ScopeId> {
 		self.scope_by_expr.get(&expr).copied()
 	}
+
 	pub fn scope_for_statement(
 		&self,
 		stmt: StatementId,
@@ -139,6 +140,7 @@ impl ExprScopes {
 	) {
 		self.scope_by_expr.insert(expr, scope);
 	}
+
 	fn set_scope_stmt(
 		&mut self,
 		stmt: StatementId,

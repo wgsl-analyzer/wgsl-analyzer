@@ -210,6 +210,7 @@ impl InferenceResult {
 	) -> Option<FieldId> {
 		self.field_resolutions.get(&expr).copied()
 	}
+
 	pub fn call_resolution(
 		&self,
 		expr: ExprId,
@@ -250,6 +251,7 @@ impl<'db> InferenceContext<'db> {
 	) {
 		self.result.type_of_expr.insert(expr, ty);
 	}
+
 	fn set_binding_ty(
 		&mut self,
 		binding: BindingId,
@@ -257,6 +259,7 @@ impl<'db> InferenceContext<'db> {
 	) {
 		self.result.type_of_binding.insert(binding, ty);
 	}
+
 	fn set_field_resolution(
 		&mut self,
 		expr: ExprId,
@@ -264,6 +267,7 @@ impl<'db> InferenceContext<'db> {
 	) {
 		self.result.field_resolutions.insert(expr, field);
 	}
+
 	fn push_diagnostic(
 		&mut self,
 		diagnostic: InferenceDiagnostic,
@@ -296,6 +300,7 @@ impl<'db> InferenceContext<'db> {
 
 		self.return_ty = ty;
 	}
+
 	fn collect_global_constant(
 		&mut self,
 		id: GlobalConstantId,
@@ -316,6 +321,7 @@ impl<'db> InferenceContext<'db> {
 
 		self.return_ty = ty;
 	}
+
 	fn collect_override(
 		&mut self,
 		id: OverrideId,
@@ -969,6 +975,7 @@ impl<'db> InferenceContext<'db> {
 		}
 		.intern(self.db)
 	}
+
 	fn builtin_matrix_inferred_constructor(
 		&self,
 		columns: &VecDimensionality,
@@ -996,6 +1003,7 @@ impl<'db> InferenceContext<'db> {
 	) -> Option<Ty> {
 		self.resolve_path_expr_inner(expr, path)
 	}
+
 	fn resolve_path_expr_inner(
 		&self,
 		expr: ExprId,
@@ -1048,6 +1056,7 @@ impl<'db> InferenceContext<'db> {
 			self.db.intern_ty(kind)
 		}
 	}
+
 	fn vec_swizzle(
 		&self,
 		vec_type: &VectorType,
@@ -1246,6 +1255,7 @@ impl<'db> InferenceContext<'db> {
 			},
 		}
 	}
+
 	fn check_ty_initialiser(
 		&mut self,
 		expr: ExprId,
@@ -1363,6 +1373,7 @@ impl UnificationTable {
 			},
 		}
 	}
+
 	fn set_type(
 		&mut self,
 		var: BoundVar,
@@ -1377,6 +1388,7 @@ impl UnificationTable {
 			},
 		}
 	}
+
 	fn set_texel_format(
 		&mut self,
 		var: BoundVar,
@@ -1686,6 +1698,7 @@ impl TypeExpectation {
 			None => TypeExpectation::None,
 		}
 	}
+
 	fn from_ty(ty: Ty) -> Self {
 		TypeExpectation::Type(TypeExpectationInner::Exact(ty))
 	}
@@ -1704,6 +1717,7 @@ impl InferenceContext<'_> {
 			access_mode,
 		}))
 	}
+
 	fn ref_to_ptr(
 		&self,
 		reference: Ref,
@@ -1714,6 +1728,7 @@ impl InferenceContext<'_> {
 			access_mode: reference.access_mode,
 		}))
 	}
+
 	fn ptr_to_ref(
 		&self,
 		ptr: Ptr,
@@ -1728,6 +1743,7 @@ impl InferenceContext<'_> {
 	fn err_ty(&self) -> Ty {
 		self.db.intern_ty(TyKind::Error)
 	}
+
 	fn bool_ty(&self) -> Ty {
 		self.db.intern_ty(TyKind::Scalar(ScalarType::Bool))
 	}
@@ -1810,6 +1826,7 @@ impl<'db> TyLoweringContext<'db> {
 		self.try_lower_ty(type_ref)
 			.unwrap_or_else(|_| TyKind::Error.intern(self.db))
 	}
+
 	pub fn try_lower_ty(
 		&mut self,
 		type_ref: &TypeRef,

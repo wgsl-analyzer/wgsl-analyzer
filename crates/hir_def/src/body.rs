@@ -129,12 +129,14 @@ impl BodySourceMap {
 	) -> Option<ExprId> {
 		self.expr_map.get(source).copied()
 	}
+
 	pub fn lookup_statement(
 		&self,
 		source: &AstPtr<ast::Statement>,
 	) -> Option<StatementId> {
 		self.stmt_map.get(source).copied()
 	}
+
 	pub fn lookup_binding(
 		&self,
 		source: &AstPtr<ast::Binding>,
@@ -148,12 +150,14 @@ impl BodySourceMap {
 	) -> Result<&AstPtr<ast::Binding>, &SyntheticSyntax> {
 		self.binding_map_back[binding].as_ref()
 	}
+
 	pub fn expr_to_source(
 		&self,
 		expr: ExprId,
 	) -> Result<&AstPtr<ast::Expr>, &SyntheticSyntax> {
 		self.expr_map_back[expr].as_ref()
 	}
+
 	pub fn stmt_to_source(
 		&self,
 		stmt: StatementId,

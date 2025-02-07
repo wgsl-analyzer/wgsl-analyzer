@@ -41,9 +41,11 @@ impl Parse {
 	pub fn syntax(&self) -> SyntaxNode {
 		SyntaxNode::new_root(self.green_node.clone())
 	}
+
 	pub fn errors(&self) -> &[ParseError] {
 		&self.errors
 	}
+
 	pub fn tree(&self) -> ast::SourceFile {
 		ast::SourceFile::cast(self.syntax()).unwrap()
 	}
@@ -125,6 +127,7 @@ impl<N> AstChildren<N> {
 
 impl<N: AstNode> Iterator for AstChildren<N> {
 	type Item = N;
+
 	fn next(&mut self) -> Option<N> {
 		self.inner.find_map(N::cast)
 	}

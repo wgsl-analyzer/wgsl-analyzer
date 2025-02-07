@@ -164,6 +164,7 @@ impl Collector<'_> {
 
 		(self.body, self.source_map)
 	}
+
 	fn collect_global_constant_decl(
 		mut self,
 		decl: ast::GlobalConstantDecl,
@@ -177,6 +178,7 @@ impl Collector<'_> {
 
 		(self.body, self.source_map)
 	}
+
 	fn collect_override_decl(
 		mut self,
 		decl: ast::OverrideDecl,
@@ -199,6 +201,7 @@ impl Collector<'_> {
 		let name = binding.name().map(Name::from).unwrap_or_else(Name::missing);
 		self.alloc_binding(Binding { name }, src)
 	}
+
 	fn collect_binding_opt(
 		&mut self,
 		binding: Option<ast::Binding>,
@@ -217,6 +220,7 @@ impl Collector<'_> {
 			.map(|stmt| self.collect_compound_stmt(stmt))
 			.unwrap_or_else(|| self.missing_stmt())
 	}
+
 	fn collect_compound_stmt(
 		&mut self,
 		compound_stmt: ast::CompoundStatement,
@@ -538,6 +542,7 @@ impl Collector<'_> {
 		self.source_map.expr_map.insert(src, id);
 		id
 	}
+
 	fn make_expr(
 		&mut self,
 		expr: Expr,
@@ -547,6 +552,7 @@ impl Collector<'_> {
 		self.source_map.expr_map_back.insert(id, src);
 		id
 	}
+
 	fn alloc_stmt(
 		&mut self,
 		stmt: Statement,
@@ -556,6 +562,7 @@ impl Collector<'_> {
 		self.source_map.stmt_map.insert(src, id);
 		id
 	}
+
 	fn make_stmt(
 		&mut self,
 		stmt: Statement,
@@ -575,6 +582,7 @@ impl Collector<'_> {
 		self.source_map.binding_map.insert(src, id);
 		id
 	}
+
 	fn make_binding(
 		&mut self,
 		binding: Binding,
@@ -593,9 +601,11 @@ impl Collector<'_> {
 			Err(SyntheticSyntax),
 		)
 	}
+
 	fn missing_expr(&mut self) -> ExprId {
 		self.make_expr(Expr::Missing, Err(SyntheticSyntax))
 	}
+
 	fn missing_stmt(&mut self) -> StatementId {
 		self.make_stmt(Statement::Missing, Err(SyntheticSyntax))
 	}

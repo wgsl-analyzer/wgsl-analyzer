@@ -199,6 +199,7 @@ impl CompletionItem {
 	pub fn label(&self) -> &str {
 		&self.label
 	}
+
 	pub fn source_range(&self) -> TextRange {
 		self.source_range
 	}
@@ -206,6 +207,7 @@ impl CompletionItem {
 	pub fn text_edit(&self) -> &TextEdit {
 		&self.text_edit
 	}
+
 	/// Whether `text_edit` is a snippet (contains `$0` markers).
 	pub fn is_snippet(&self) -> bool {
 		self.is_snippet
@@ -215,6 +217,7 @@ impl CompletionItem {
 	pub fn detail(&self) -> Option<&str> {
 		self.detail.as_deref()
 	}
+
 	// /// A doc-comment
 	// pub fn documentation(&self) -> Option<Documentation> {
 	//     self.documentation.clone()
@@ -318,6 +321,7 @@ impl Builder {
 			// import_to_add: self.imports_to_add,
 		}
 	}
+
 	pub(crate) fn lookup_by(
 		&mut self,
 		lookup: impl Into<String>,
@@ -325,6 +329,7 @@ impl Builder {
 		self.lookup = Some(lookup.into());
 		self
 	}
+
 	pub(crate) fn label(
 		&mut self,
 		label: impl Into<String>,
@@ -332,6 +337,7 @@ impl Builder {
 		self.label = label.into();
 		self
 	}
+
 	// pub(crate) fn trait_name(&mut self, trait_name: impl Into<String>) -> &mut Builder {
 	//     self.trait_name = Some(trait_name.into());
 	//     self
@@ -343,6 +349,7 @@ impl Builder {
 		self.insert_text = Some(insert_text.into());
 		self
 	}
+
 	// pub(crate) fn insert_snippet(
 	//     &mut self,
 	//     cap: SnippetCap,
@@ -359,6 +366,7 @@ impl Builder {
 		self.text_edit = Some(edit);
 		self
 	}
+
 	// pub(crate) fn snippet_edit(&mut self, _cap: SnippetCap, edit: TextEdit) -> &mut Builder {
 	//     self.is_snippet = true;
 	//     self.text_edit(edit)
@@ -369,6 +377,7 @@ impl Builder {
 	) -> &mut Builder {
 		self.set_detail(Some(detail))
 	}
+
 	pub(crate) fn set_detail(
 		&mut self,
 		detail: Option<impl Into<String>>,
@@ -381,6 +390,7 @@ impl Builder {
 		}
 		self
 	}
+
 	// #[allow(unused)]
 	// pub(crate) fn documentation(&mut self, docs: Documentation) -> &mut Builder {
 	//     self.set_documentation(Some(docs))
@@ -400,6 +410,7 @@ impl Builder {
 		self.relevance = relevance;
 		self
 	}
+
 	pub(crate) fn with_relevance(
 		mut self,
 		relevance: CompletionRelevance,

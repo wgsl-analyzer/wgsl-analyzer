@@ -15,6 +15,7 @@ impl salsa::InternKey for BuiltinId {
 	fn from_intern_id(id: salsa::InternId) -> Self {
 		BuiltinId(id)
 	}
+
 	fn as_intern_id(&self) -> salsa::InternId {
 		self.0
 	}
@@ -64,12 +65,14 @@ impl Builtin {
 	pub fn name(&self) -> &str {
 		self.name.as_str()
 	}
+
 	pub fn overloads(&self) -> impl Iterator<Item = (BuiltinOverloadId, &BuiltinOverload)> {
 		self.overloads
 			.iter()
 			.enumerate()
 			.map(|(i, overload)| (BuiltinOverloadId(i), overload))
 	}
+
 	pub fn overload(
 		&self,
 		overload_id: BuiltinOverloadId,
