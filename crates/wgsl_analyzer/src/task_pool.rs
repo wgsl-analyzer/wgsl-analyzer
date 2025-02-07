@@ -3,51 +3,51 @@
 use crossbeam_channel::Sender;
 
 pub struct TaskPool<T> {
-    sender: Sender<T>,
-    inner: threadpool::ThreadPool,
+	sender: Sender<T>,
+	inner: threadpool::ThreadPool,
 }
 
 impl<T> TaskPool<T> {
-    pub(crate) fn new(sender: Sender<T>) -> Self {
-        Self {
-            sender,
-            inner: threadpool::ThreadPool::default(),
-        }
-    }
+	pub(crate) fn new(sender: Sender<T>) -> Self {
+		Self {
+			sender,
+			inner: threadpool::ThreadPool::default(),
+		}
+	}
 
-    pub fn spawn<F>(
-        &self,
-        task: F,
-    ) where
-        F: FnOnce() -> T + Send + 'static,
-        T: Send + 'static,
-    {
-        self.inner.execute({
-            let sender = self.sender.clone();
-            move || sender.send(task()).unwrap()
-        });
-    }
+	pub fn spawn<F>(
+		&self,
+		task: F,
+	) where
+		F: FnOnce() -> T + Send + 'static,
+		T: Send + 'static,
+	{
+		self.inner.execute({
+			let sender = self.sender.clone();
+			move || sender.send(task()).unwrap()
+		});
+	}
 
-    pub fn spawn_with_sender<F>(
-        &self,
-        task: F,
-    ) where
-        F: FnOnce(Sender<T>) + Send + 'static,
-        T: Send + 'static,
-    {
-        self.inner.execute({
-            let sender = self.sender.clone();
-            move || task(sender)
-        });
-    }
+	pub fn spawn_with_sender<F>(
+		&self,
+		task: F,
+	) where
+		F: FnOnce(Sender<T>) + Send + 'static,
+		T: Send + 'static,
+	{
+		self.inner.execute({
+			let sender = self.sender.clone();
+			move || task(sender)
+		});
+	}
 
-    pub fn len(&self) -> usize {
-        self.inner.queued_count()
-    }
+	pub fn len(&self) -> usize {
+		self.inner.queued_count()
+	}
 }
 
 impl<T> Drop for TaskPool<T> {
-    fn drop(&mut self) {
-        self.inner.join();
-    }
+	fn drop(&mut self) {
+		self.inner.join();
+	}
 }

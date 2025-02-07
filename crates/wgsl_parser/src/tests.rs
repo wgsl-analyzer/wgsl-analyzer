@@ -4,43 +4,43 @@ use expect_test::{expect, Expect};
 use crate::ParseEntryPoint;
 
 fn check(
-    input: &str,
-    expected_tree: Expect,
+	input: &str,
+	expected_tree: Expect,
 ) {
-    crate::check_entrypoint(input, ParseEntryPoint::File, expected_tree);
+	crate::check_entrypoint(input, ParseEntryPoint::File, expected_tree);
 }
 
 fn check_type(
-    input: &str,
-    expected_tree: Expect,
+	input: &str,
+	expected_tree: Expect,
 ) {
-    crate::check_entrypoint(input, ParseEntryPoint::Type, expected_tree);
+	crate::check_entrypoint(input, ParseEntryPoint::Type, expected_tree);
 }
 
 fn check_statement(
-    stmt: &str,
-    expected_tree: Expect,
+	stmt: &str,
+	expected_tree: Expect,
 ) {
-    crate::check_entrypoint(stmt, ParseEntryPoint::Statement, expected_tree);
+	crate::check_entrypoint(stmt, ParseEntryPoint::Statement, expected_tree);
 }
 
 fn check_attribute_list(
-    stmt: &str,
-    expected_tree: Expect,
+	stmt: &str,
+	expected_tree: Expect,
 ) {
-    crate::check_entrypoint(stmt, ParseEntryPoint::AttributeList, expected_tree);
+	crate::check_entrypoint(stmt, ParseEntryPoint::AttributeList, expected_tree);
 }
 
 #[test]
 fn parse_empty() {
-    check("", expect![[r#"SourceFile@0..0"#]]);
+	check("", expect![[r#"SourceFile@0..0"#]]);
 }
 
 #[test]
 fn fn_incomplete() {
-    check(
-        "fn name",
-        expect![[r#"
+	check(
+		"fn name",
+		expect![[r#"
             SourceFile@0..7
               Function@0..7
                 Fn@0..2 "fn"
@@ -50,14 +50,14 @@ fn fn_incomplete() {
 
             error at 3..7: expected ParenLeft
             error at 3..7: expected Arrow or BraceLeft"#]],
-    );
+	);
 }
 
 #[test]
 fn function() {
-    check(
-        "fn name(a: f32, b: i32) -> f32 {}",
-        expect![[r#"
+	check(
+		"fn name(a: f32, b: i32) -> f32 {}",
+		expect![[r#"
             SourceFile@0..33
               Function@0..33
                 Fn@0..2 "fn"
@@ -97,17 +97,17 @@ fn function() {
                 CompoundStatement@31..33
                   BraceLeft@31..32 "{"
                   BraceRight@32..33 "}""#]],
-    );
+	);
 }
 
 #[test]
 fn variable_declarations() {
-    check(
-        r#"fn name() {
+	check(
+		r#"fn name() {
 let x: f32 = 1.0;
 let y: f32 = 2.0;
         }"#,
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..57
               Function@0..57
                 Fn@0..2 "fn"
@@ -156,14 +156,14 @@ let y: f32 = 2.0;
                   Semicolon@46..47 ";"
                   Whitespace@47..56 "\n        "
                   BraceRight@56..57 "}""#]],
-    );
+	);
 }
 
 #[test]
 fn fn_recover() {
-    check(
-        "fn\nfn name",
-        expect![[r#"
+	check(
+		"fn\nfn name",
+		expect![[r#"
             SourceFile@0..10
               Function@0..3
                 Fn@0..2 "fn"
@@ -176,15 +176,15 @@ fn fn_recover() {
 
             error at 6..10: expected ParenLeft
             error at 6..10: expected Arrow or BraceLeft"#]],
-    );
+	);
 }
 
 #[test]
 fn fn_recover_2() {
-    check(
-        r#"fn name()
+	check(
+		r#"fn name()
         fn test() {}"#,
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..30
               Function@0..18
                 Fn@0..2 "fn"
@@ -209,24 +209,24 @@ fn fn_recover_2() {
                   BraceRight@29..30 "}"
 
             error at 18..20: expected Arrow or BraceLeft, but found Fn"#]],
-    );
+	);
 }
 
 #[test]
 fn parse_type_primitive() {
-    check_type(
-        "f32",
-        expect![[r#"
+	check_type(
+		"f32",
+		expect![[r#"
             Float32@0..3
               Float32@0..3 "f32""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_type_generic() {
-    check_type(
-        "vec3<f32>",
-        expect![[r#"
+	check_type(
+		"vec3<f32>",
+		expect![[r#"
             Vec3@0..9
               Vec3@0..4 "vec3"
               GenericArgList@4..9
@@ -234,14 +234,14 @@ fn parse_type_generic() {
                 Float32@5..8
                   Float32@5..8 "f32"
                 GreaterThan@8..9 ">""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_type_generic_shift_ambiguity() {
-    check_type(
-        "array<vec3<f32, 2>>",
-        expect![[r#"
+	check_type(
+		"array<vec3<f32, 2>>",
+		expect![[r#"
             Array@0..19
               Array@0..5 "array"
               GenericArgList@5..19
@@ -258,14 +258,14 @@ fn parse_type_generic_shift_ambiguity() {
                       IntLiteral@16..17 "2"
                     GreaterThan@17..18 ">"
                 GreaterThan@18..19 ">""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_type_generic_int() {
-    check_type(
-        "array<f32, 100>",
-        expect![[r#"
+	check_type(
+		"array<f32, 100>",
+		expect![[r#"
         Array@0..15
           Array@0..5 "array"
           GenericArgList@5..15
@@ -277,27 +277,27 @@ fn parse_type_generic_int() {
             Literal@11..14
               IntLiteral@11..14 "100"
             GreaterThan@14..15 ">""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_type_generic_empty() {
-    check_type(
-        "vec3<>",
-        expect![[r#"
+	check_type(
+		"vec3<>",
+		expect![[r#"
             Vec3@0..6
               Vec3@0..4 "vec3"
               GenericArgList@4..6
                 LessThan@4..5 "<"
                 GreaterThan@5..6 ">""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_type_generic_comma_recover() {
-    check_type(
-        "vec3<,>",
-        expect![[r#"
+	check_type(
+		"vec3<,>",
+		expect![[r#"
             Vec3@0..7
               Vec3@0..4 "vec3"
               GenericArgList@4..7
@@ -307,14 +307,14 @@ fn parse_type_generic_comma_recover() {
                 GreaterThan@6..7 ">"
 
             error at 5..6: expected GreaterThan or Ident, but found Comma"#]],
-    );
+	);
 }
 
 #[test]
 fn parse_type_generic_ptr() {
-    check_type(
-        "ptr<uniform, f32, read_write>",
-        expect![[r#"
+	check_type(
+		"ptr<uniform, f32, read_write>",
+		expect![[r#"
             Pointer@0..29
               Pointer@0..3 "ptr"
               GenericArgList@3..29
@@ -328,16 +328,16 @@ fn parse_type_generic_ptr() {
                 Whitespace@17..18 " "
                 ReadWrite@18..28 "read_write"
                 GreaterThan@28..29 ">""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_return_stmt() {
-    check(
-        r#"fn f() -> u32 {
+	check(
+		r#"fn f() -> u32 {
             return 0;
         }"#,
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..47
               Function@0..47
                 Fn@0..2 "fn"
@@ -365,18 +365,18 @@ fn parse_return_stmt() {
                   Semicolon@36..37 ";"
                   Whitespace@37..46 "\n        "
                   BraceRight@46..47 "}""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_let_stmt_recover() {
-    check(
-        r#"fn f() -> u32 {
+	check(
+		r#"fn f() -> u32 {
             let x =
             let y =
             return 0
         }"#,
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..86
               Function@0..86
                 Fn@0..2 "fn"
@@ -421,14 +421,14 @@ fn parse_let_stmt_recover() {
                       IntLiteral@75..76 "0"
                       Whitespace@76..85 "\n        "
                   BraceRight@85..86 "}""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_stmt_variable_decl() {
-    check_statement(
-        "let x = 3;",
-        expect![[r#"
+	check_statement(
+		"let x = 3;",
+		expect![[r#"
         VariableStatement@0..9
           Let@0..3 "let"
           Whitespace@3..4 " "
@@ -440,27 +440,27 @@ fn parse_stmt_variable_decl() {
           Whitespace@7..8 " "
           Literal@8..9
             IntLiteral@8..9 "3""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_stmt_return() {
-    check_statement(
-        "return 0;",
-        expect![[r#"
+	check_statement(
+		"return 0;",
+		expect![[r#"
             ReturnStmt@0..8
               Return@0..6 "return"
               Whitespace@6..7 " "
               Literal@7..8
                 IntLiteral@7..8 "0""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_while_stmt() {
-    check_statement(
-        r#"while 0 > 3 { let x = 3; }"#,
-        expect![[r#"
+	check_statement(
+		r#"while 0 > 3 { let x = 3; }"#,
+		expect![[r#"
         WhileStatement@0..26
           While@0..5 "while"
           Whitespace@5..6 " "
@@ -490,14 +490,14 @@ fn parse_while_stmt() {
             Semicolon@23..24 ";"
             Whitespace@24..25 " "
             BraceRight@25..26 "}""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_if_stmt() {
-    check_statement(
-        r#"if (0 > 3) { let x = 3; return x; }"#,
-        expect![[r#"
+	check_statement(
+		r#"if (0 > 3) { let x = 3; return x; }"#,
+		expect![[r#"
             IfStatement@0..35
               If@0..2 "if"
               Whitespace@2..3 " "
@@ -538,16 +538,16 @@ fn parse_if_stmt() {
                 Semicolon@32..33 ";"
                 Whitespace@33..34 " "
                 BraceRight@34..35 "}""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_if_recover_paren() {
-    check_statement(
-        r#"if () {
+	check_statement(
+		r#"if () {
           let x = 3;
         }"#,
-        expect![[r#"
+		expect![[r#"
             IfStatement@0..38
               If@0..2 "if"
               Whitespace@2..3 " "
@@ -575,16 +575,16 @@ fn parse_if_recover_paren() {
                 BraceRight@37..38 "}"
 
             error at 4..5: expected ParenExpr, but found ParenRight"#]],
-    );
+	);
 }
 
 #[test]
 fn parse_if_without_paren() {
-    check_statement(
-        r#"if true {
+	check_statement(
+		r#"if true {
           let x = 3;
         }"#,
-        expect![[r#"
+		expect![[r#"
             IfStatement@0..40
               If@0..2 "if"
               Whitespace@2..3 " "
@@ -608,16 +608,16 @@ fn parse_if_without_paren() {
                 Semicolon@29..30 ";"
                 Whitespace@30..39 "\n        "
                 BraceRight@39..40 "}""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_if_recover_empty() {
-    check_statement(
-        r#"if {
+	check_statement(
+		r#"if {
           let x = 3;
         }"#,
-        expect![[r#"
+		expect![[r#"
             IfStatement@0..35
               If@0..2 "if"
               Whitespace@2..3 " "
@@ -641,14 +641,14 @@ fn parse_if_recover_empty() {
                 BraceRight@34..35 "}"
 
             error at 3..4: expected Bool, but found BraceLeft"#]],
-    );
+	);
 }
 
 #[test]
 fn parse_if_else() {
-    check_statement(
-        "if (0) {} else if (1) {} else if (2) {} else {}",
-        expect![[r#"
+	check_statement(
+		"if (0) {} else if (1) {} else if (2) {} else {}",
+		expect![[r#"
             IfStatement@0..47
               If@0..2 "if"
               Whitespace@2..3 " "
@@ -698,14 +698,14 @@ fn parse_if_else() {
                 CompoundStatement@45..47
                   BraceLeft@45..46 "{"
                   BraceRight@46..47 "}""#]],
-    )
+	)
 }
 
 #[test]
 fn parse_if_recovery_1() {
-    check_statement(
-        "if (false) {} else if {}",
-        expect![[r#"
+	check_statement(
+		"if (false) {} else if {}",
+		expect![[r#"
             IfStatement@0..24
               If@0..2 "if"
               Whitespace@2..3 " "
@@ -730,14 +730,14 @@ fn parse_if_recovery_1() {
                   BraceRight@23..24 "}"
 
             error at 22..23: expected Bool, but found BraceLeft"#]],
-    );
+	);
 }
 
 #[test]
 fn parse_for_statement() {
-    check_statement(
-        "for(let i = 0; i < 3; i = i + 1) {}",
-        expect![[r#"
+	check_statement(
+		"for(let i = 0; i < 3; i = i + 1) {}",
+		expect![[r#"
             ForStatement@0..35
               For@0..3 "for"
               ParenLeft@3..4 "("
@@ -789,14 +789,14 @@ fn parse_for_statement() {
               CompoundStatement@33..35
                 BraceLeft@33..34 "{"
                 BraceRight@34..35 "}""#]],
-    )
+	)
 }
 
 #[test]
 fn parse_for_statement_comma() {
-    check_statement(
-        "for(let i = 0, i < 3, i = i + 1) {}",
-        expect![[r#"
+	check_statement(
+		"for(let i = 0, i < 3, i = i + 1) {}",
+		expect![[r#"
             ForStatement@0..35
               For@0..3 "for"
               ParenLeft@3..4 "("
@@ -848,14 +848,14 @@ fn parse_for_statement_comma() {
               CompoundStatement@33..35
                 BraceLeft@33..34 "{"
                 BraceRight@34..35 "}""#]],
-    )
+	)
 }
 
 #[test]
 fn for_statement_incomplete_1() {
-    check_statement(
-        "for(;;)",
-        expect![[r#"
+	check_statement(
+		"for(;;)",
+		expect![[r#"
             ForStatement@0..7
               For@0..3 "for"
               ParenLeft@3..4 "("
@@ -866,14 +866,14 @@ fn for_statement_incomplete_1() {
 
             error at 6..7: expected BraceLeft
             error at 6..7: expected BraceRight"#]],
-    );
+	);
 }
 
 #[test]
 fn for_statement_incomplete_2() {
-    check_statement(
-        "for(i=0;;)",
-        expect![[r#"
+	check_statement(
+		"for(i=0;;)",
+		expect![[r#"
             ForStatement@0..10
               For@0..3 "for"
               ParenLeft@3..4 "("
@@ -892,14 +892,14 @@ fn for_statement_incomplete_2() {
 
             error at 9..10: expected BraceLeft
             error at 9..10: expected BraceRight"#]],
-    );
+	);
 }
 
 #[test]
 fn for_statement_incomplete_3() {
-    check_statement(
-        "for(;false;)",
-        expect![[r#"
+	check_statement(
+		"for(;false;)",
+		expect![[r#"
             ForStatement@0..12
               For@0..3 "for"
               ParenLeft@3..4 "("
@@ -913,14 +913,14 @@ fn for_statement_incomplete_3() {
 
             error at 11..12: expected BraceLeft
             error at 11..12: expected BraceRight"#]],
-    );
+	);
 }
 
 #[test]
 fn for_statement_incomplete_4() {
-    check_statement(
-        "for(;;a = 1)",
-        expect![[r#"
+	check_statement(
+		"for(;;a = 1)",
+		expect![[r#"
             ForStatement@0..12
               For@0..3 "for"
               ParenLeft@3..4 "("
@@ -941,14 +941,14 @@ fn for_statement_incomplete_4() {
 
             error at 11..12: expected BraceLeft
             error at 11..12: expected BraceRight"#]],
-    );
+	);
 }
 
 #[test]
 fn for_statement_continue_break() {
-    check_statement(
-        "for(;;) { continue; break; continuing {}; }",
-        expect![[r#"
+	check_statement(
+		"for(;;) { continue; break; continuing {}; }",
+		expect![[r#"
         ForStatement@0..43
           For@0..3 "for"
           ParenLeft@3..4 "("
@@ -974,25 +974,25 @@ fn for_statement_continue_break() {
             Semicolon@40..41 ";"
             Whitespace@41..42 " "
             BraceRight@42..43 "}""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_stmt_compound_empty() {
-    check_statement(
-        "{}",
-        expect![[r#"
+	check_statement(
+		"{}",
+		expect![[r#"
             CompoundStatement@0..2
               BraceLeft@0..1 "{"
               BraceRight@1..2 "}""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_stmt_compound() {
-    check_statement(
-        "{ let x = 3; return x; }",
-        expect![[r#"
+	check_statement(
+		"{ let x = 3; return x; }",
+		expect![[r#"
             CompoundStatement@0..24
               BraceLeft@0..1 "{"
               Whitespace@1..2 " "
@@ -1018,14 +1018,14 @@ fn parse_stmt_compound() {
               Semicolon@21..22 ";"
               Whitespace@22..23 " "
               BraceRight@23..24 "}""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_stmt_assignment() {
-    check_statement(
-        "a = 3",
-        expect![[r#"
+	check_statement(
+		"a = 3",
+		expect![[r#"
         AssignmentStmt@0..5
           PathExpr@0..2
             NameRef@0..2
@@ -1035,14 +1035,14 @@ fn parse_stmt_assignment() {
           Whitespace@3..4 " "
           Literal@4..5
             IntLiteral@4..5 "3""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_stmt_assignment_field() {
-    check_statement(
-        "a.b = a.c * 3",
-        expect![[r#"
+	check_statement(
+		"a.b = a.c * 3",
+		expect![[r#"
             AssignmentStmt@0..13
               FieldExpr@0..4
                 PathExpr@0..1
@@ -1067,14 +1067,14 @@ fn parse_stmt_assignment_field() {
                 Whitespace@11..12 " "
                 Literal@12..13
                   IntLiteral@12..13 "3""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_stmt_assignment_invalid() {
-    check_statement(
-        "1+2=3",
-        expect![[r#"
+	check_statement(
+		"1+2=3",
+		expect![[r#"
         AssignmentStmt@0..5
           InfixExpr@0..3
             Literal@0..1
@@ -1085,14 +1085,14 @@ fn parse_stmt_assignment_invalid() {
           Equal@3..4 "="
           Literal@4..5
             IntLiteral@4..5 "3""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_stmt_recover() {
-    check_statement(
-        "{ { let x = } { return 0 } }",
-        expect![[r#"
+	check_statement(
+		"{ { let x = } { return 0 } }",
+		expect![[r#"
             CompoundStatement@0..28
               BraceLeft@0..1 "{"
               Whitespace@1..2 " "
@@ -1122,14 +1122,14 @@ fn parse_stmt_recover() {
                 BraceRight@25..26 "}"
                 Whitespace@26..27 " "
               BraceRight@27..28 "}""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_compound_assignment_stmt() {
-    check_statement(
-        "a += 3",
-        expect![[r#"
+	check_statement(
+		"a += 3",
+		expect![[r#"
             CompoundAssignmentStmt@0..6
               PathExpr@0..2
                 NameRef@0..2
@@ -1139,14 +1139,14 @@ fn parse_compound_assignment_stmt() {
               Whitespace@4..5 " "
               Literal@5..6
                 IntLiteral@5..6 "3""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_compound_assignment_stmt_expr() {
-    check_statement(
-        "*func() += foo()",
-        expect![[r#"
+	check_statement(
+		"*func() += foo()",
+		expect![[r#"
             CompoundAssignmentStmt@0..16
               PrefixExpr@0..8
                 Star@0..1 "*"
@@ -1165,14 +1165,14 @@ fn parse_compound_assignment_stmt_expr() {
                 FunctionParamList@14..16
                   ParenLeft@14..15 "("
                   ParenRight@15..16 ")""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_var_without_initializer() {
-    check_statement(
-        "var x: u32;",
-        expect![[r#"
+	check_statement(
+		"var x: u32;",
+		expect![[r#"
             VariableStatement@0..10
               Var@0..3 "var"
               Whitespace@3..4 " "
@@ -1183,14 +1183,14 @@ fn parse_var_without_initializer() {
               Whitespace@6..7 " "
               Uint32@7..10
                 Uint32@7..10 "u32""#]],
-    )
+	)
 }
 
 #[test]
 fn parse_var_with_initializer() {
-    check_statement(
-        "var<function> x: u32;",
-        expect![[r#"
+	check_statement(
+		"var<function> x: u32;",
+		expect![[r#"
             VariableStatement@0..20
               Var@0..3 "var"
               VariableQualifier@3..14
@@ -1205,14 +1205,14 @@ fn parse_var_with_initializer() {
               Whitespace@16..17 " "
               Uint32@17..20
                 Uint32@17..20 "u32""#]],
-    )
+	)
 }
 
 #[test]
 fn attribute_list_modern() {
-    check_attribute_list(
-        "@location(0) @interpolate(flat) @attr(1, 2, 0.0, ident)",
-        expect![[r#"
+	check_attribute_list(
+		"@location(0) @interpolate(flat) @attr(1, 2, 0.0, ident)",
+		expect![[r#"
             AttributeList@0..55
               Attr@0..1 "@"
               Attribute@1..13
@@ -1250,14 +1250,14 @@ fn attribute_list_modern() {
                   Whitespace@48..49 " "
                   Ident@49..54 "ident"
                   ParenRight@54..55 ")""#]],
-    );
+	);
 }
 
 #[test]
 fn unfinished_attr() {
-    check_attribute_list(
-        "[[stage(fragment)]",
-        expect![[r#"
+	check_attribute_list(
+		"[[stage(fragment)]",
+		expect![[r#"
             AttributeList@0..18
               AttrLeft@0..2 "[["
               Attribute@2..17
@@ -1274,14 +1274,14 @@ fn unfinished_attr() {
             error at 17..18: expected Ident, but found BracketRight
             error at 17..18: expected Comma, AttrRight, Ident or ParenLeft, but found BracketRight
             error at 17..18: expected Comma or AttrRight"#]],
-    );
+	);
 }
 
 #[test]
 fn attribute_list() {
-    check_attribute_list(
-        "[[location(0), interpolate(flat), attr(1, 2, 0.0, ident)]]",
-        expect![[r#"
+	check_attribute_list(
+		"[[location(0), interpolate(flat), attr(1, 2, 0.0, ident)]]",
+		expect![[r#"
             AttributeList@0..58
               AttrLeft@0..2 "[["
               Attribute@2..13
@@ -1320,32 +1320,32 @@ fn attribute_list() {
                   Ident@50..55 "ident"
                   ParenRight@55..56 ")"
               AttrRight@56..58 "]]""#]],
-    )
+	)
 }
 
 #[test]
 fn attribute_list_recover() {
-    check_attribute_list(
-        "[[location]]",
-        expect![[r#"
+	check_attribute_list(
+		"[[location]]",
+		expect![[r#"
         AttributeList@0..12
           AttrLeft@0..2 "[["
           Attribute@2..10
             Ident@2..10 "location"
           AttrRight@10..12 "]]""#]],
-    )
+	)
 }
 
 #[test]
 fn fn_with_attributes() {
-    check(
-        r#"
+	check(
+		r#"
 [[stage(fragment)]]
 fn vert_main([[builtin(position)]] coord_in: vec4<f32>) -> [[location(0)]] vec4<f32> {
   return vec4<f32>(0.0, 0.0, 0.0, 1.0);
 }
 "#,
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..150
               Whitespace@0..1 "\n"
               Function@1..150
@@ -1448,14 +1448,14 @@ fn vert_main([[builtin(position)]] coord_in: vec4<f32>) -> [[location(0)]] vec4<
                   Whitespace@147..148 "\n"
                   BraceRight@148..149 "}"
                   Whitespace@149..150 "\n""#]],
-    )
+	)
 }
 
 #[test]
 fn fn_recover_attr() {
-    check(
-        "fn main([[]]) {}",
-        expect![[r#"
+	check(
+		"fn main([[]]) {}",
+		expect![[r#"
         SourceFile@0..16
           Function@0..16
             Fn@0..2 "fn"
@@ -1475,14 +1475,14 @@ fn fn_recover_attr() {
               BraceRight@15..16 "}"
 
         error at 12..13: expected VariableIdentDecl, but found ParenRight"#]],
-    );
+	);
 }
 
 #[test]
 fn fn_recover_attr_2() {
-    check(
-        "fn main([] a) {}",
-        expect![[r#"
+	check(
+		"fn main([] a) {}",
+		expect![[r#"
             SourceFile@0..16
               Function@0..16
                 Fn@0..2 "fn"
@@ -1511,14 +1511,14 @@ fn fn_recover_attr_2() {
 
             error at 8..9: expected ParenRight, UnofficialPreprocessorImport, Attr, AttrLeft or Ident, but found BracketLeft
             error at 9..10: expected Colon, but found BracketRight"#]],
-    )
+	)
 }
 
 #[test]
 fn fn_recover_incomplete_param() {
-    check(
-        "fn main(p) {}",
-        expect![[r#"
+	check(
+		"fn main(p) {}",
+		expect![[r#"
             SourceFile@0..13
               Function@0..13
                 Fn@0..2 "fn"
@@ -1540,16 +1540,16 @@ fn fn_recover_incomplete_param() {
                   BraceRight@12..13 "}"
 
             error at 9..10: expected Colon, but found ParenRight"#]],
-    );
+	);
 }
 
 #[test]
 fn let_stmt_recover_return_no_eq() {
-    check(
-        "fn main() {
+	check(
+		"fn main() {
             let x be
         }",
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..42
               Function@0..42
                 Fn@0..2 "fn"
@@ -1576,17 +1576,17 @@ fn let_stmt_recover_return_no_eq() {
                   BraceRight@41..42 "}"
 
             error at 30..32: expected Colon, but found Ident"#]],
-    )
+	)
 }
 
 #[test]
 fn let_stmt_recover_return() {
-    check(
-        "fn main() {
+	check(
+		"fn main() {
             let
             return 0;
         }",
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..59
               Function@0..59
                 Fn@0..2 "fn"
@@ -1614,17 +1614,17 @@ fn let_stmt_recover_return() {
                   BraceRight@58..59 "}"
 
             error at 40..46: expected Binding, but found Return"#]],
-    );
+	);
 }
 
 #[test]
 fn let_stmt_recover_return_2() {
-    check(
-        "fn main() {
+	check(
+		"fn main() {
             let x
             return 0;
         }",
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..61
               Function@0..61
                 Fn@0..2 "fn"
@@ -1656,17 +1656,17 @@ fn let_stmt_recover_return_2() {
                   BraceRight@60..61 "}"
 
             error at 42..48: expected Binding, but found Return"#]],
-    );
+	);
 }
 
 #[test]
 fn let_stmt_recover_return_3() {
-    check(
-        "fn main() {
+	check(
+		"fn main() {
             let x =
             return 0;
         }",
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..63
               Function@0..63
                 Fn@0..2 "fn"
@@ -1697,16 +1697,16 @@ fn let_stmt_recover_return_3() {
                   Semicolon@52..53 ";"
                   Whitespace@53..62 "\n        "
                   BraceRight@62..63 "}""#]],
-    );
+	);
 }
 
 #[test]
 fn let_stmt_recover_1() {
-    check(
-        "fn main() {
+	check(
+		"fn main() {
             let x
         }",
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..39
               Function@0..39
                 Fn@0..2 "fn"
@@ -1731,16 +1731,16 @@ fn let_stmt_recover_1() {
                   BraceRight@38..39 "}"
 
             error at 38..39: expected Binding, but found BraceRight"#]],
-    );
+	);
 }
 
 #[test]
 fn let_stmt_recover_2() {
-    check(
-        "fn main() {
+	check(
+		"fn main() {
             let x =
         }",
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..41
               Function@0..41
                 Fn@0..2 "fn"
@@ -1764,16 +1764,16 @@ fn let_stmt_recover_2() {
                     Equal@30..31 "="
                     Whitespace@31..40 "\n        "
                   BraceRight@40..41 "}""#]],
-    );
+	);
 }
 
 #[test]
 fn let_stmt_recover_3() {
-    check(
-        "fn main() {
+	check(
+		"fn main() {
             let
         }",
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..37
               Function@0..37
                 Fn@0..2 "fn"
@@ -1794,20 +1794,20 @@ fn let_stmt_recover_3() {
                   BraceRight@36..37 "}"
 
             error at 36..37: expected Binding, but found BraceRight"#]],
-    );
+	);
 }
 
 #[test]
 fn struct_underscore_field_name() {
-    check(
-        r#"
+	check(
+		r#"
 struct UBO {
   camera_position: vec3f,
   _pad: u32
   time: f32,
 };
 "#,
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..68
               Whitespace@0..1 "\n"
               StructDecl@1..68
@@ -1855,19 +1855,19 @@ struct UBO {
                   BraceRight@65..66 "}"
                 Semicolon@66..67 ";"
                 Whitespace@67..68 "\n""#]],
-    );
+	);
 }
 
 #[test]
 fn struct_decl_semi() {
-    check(
-        r#"
+	check(
+		r#"
 struct Test {
     a: f32;
     b: vec3<f32>;
 }
 "#,
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..47
               Whitespace@0..1 "\n"
               StructDecl@1..47
@@ -1908,19 +1908,19 @@ struct Test {
                     Whitespace@44..45 "\n"
                   BraceRight@45..46 "}"
                   Whitespace@46..47 "\n""#]],
-    );
+	);
 }
 
 #[test]
 fn struct_decl() {
-    check(
-        r#"
+	check(
+		r#"
 struct Test {
     a: f32,
     b: vec3<f32>,
 }
 "#,
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..47
               Whitespace@0..1 "\n"
               StructDecl@1..47
@@ -1961,13 +1961,13 @@ struct Test {
                     Whitespace@44..45 "\n"
                   BraceRight@45..46 "}"
                   Whitespace@46..47 "\n""#]],
-    );
+	);
 }
 
 #[test]
 fn struct_decl_attributes() {
-    check(
-        r#"
+	check(
+		r#"
 [[block]]
 struct Test {
     [[location(0)]]
@@ -1976,7 +1976,7 @@ struct Test {
     b: vec3<f32>;
 };
 "#,
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..104
               Whitespace@0..1 "\n"
               StructDecl@1..104
@@ -2045,17 +2045,17 @@ struct Test {
                   BraceRight@101..102 "}"
                 Semicolon@102..103 ";"
                 Whitespace@103..104 "\n""#]],
-    );
+	);
 }
 
 #[test]
 fn struct_recover() {
-    check(
-        r#"
+	check(
+		r#"
 struct
 fn test()
 "#,
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..18
               Whitespace@0..1 "\n"
               Struct@1..8
@@ -2074,17 +2074,17 @@ fn test()
 
             error at 8..10: expected BraceLeft, but found Fn
             error at 17..18: expected Arrow or BraceLeft"#]],
-    );
+	);
 }
 
 #[test]
 fn struct_recover_2() {
-    check(
-        r#"
+	check(
+		r#"
 struct test
 fn test()
 "#,
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..23
               Whitespace@0..1 "\n"
               Struct@1..13
@@ -2106,19 +2106,19 @@ fn test()
 
             error at 13..15: expected BraceLeft, but found Fn
             error at 22..23: expected Arrow or BraceLeft"#]],
-    );
+	);
 }
 
 #[test]
 fn struct_recover_3() {
-    check(
-        r#"
+	check(
+		r#"
 struct test {}
 
 fn test()
 };
 "#,
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..30
               Whitespace@0..1 "\n"
               StructDecl@1..17
@@ -2149,19 +2149,19 @@ fn test()
 
             error at 27..28: expected Arrow or BraceLeft, but found BraceRight
             error at 28..29: expected Fn, Struct, Var, Let, Const, Alias or Override, but found Semicolon"#]],
-    );
+	);
 }
 
 #[test]
 fn struct_recover_4() {
-    check(
-        r#"
+	check(
+		r#"
 struct
 
 [[block]]
 struct
 "#,
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..26
               Whitespace@0..1 "\n"
               Struct@1..9
@@ -2184,14 +2184,14 @@ struct
             error at 25..26: expected Ident
             error at 25..26: expected BraceLeft
             error at 25..26: expected BraceRight"#]],
-    );
+	);
 }
 
 #[test]
 fn global_variable_decl() {
-    check(
-        "var<uniform> param: Params;",
-        expect![[r#"
+	check(
+		"var<uniform> param: Params;",
+		expect![[r#"
         SourceFile@0..27
           GlobalVariableDecl@0..27
             Var@0..3 "var"
@@ -2209,14 +2209,14 @@ fn global_variable_decl() {
               NameRef@20..26
                 Ident@20..26 "Params"
             Semicolon@26..27 ";""#]],
-    );
+	);
 }
 
 #[test]
 fn global_variable_decl_attrs() {
-    check(
-        "[[group(0), binding(0)]] var<storage,read_write> pbuf: PositionsBuffer;",
-        expect![[r#"
+	check(
+		"[[group(0), binding(0)]] var<storage,read_write> pbuf: PositionsBuffer;",
+		expect![[r#"
             SourceFile@0..71
               GlobalVariableDecl@0..71
                 AttributeList@0..25
@@ -2256,14 +2256,14 @@ fn global_variable_decl_attrs() {
                   NameRef@55..70
                     Ident@55..70 "PositionsBuffer"
                 Semicolon@70..71 ";""#]],
-    );
+	);
 }
 
 #[test]
 fn global_variable_decl_init() {
-    check(
-        "var flags = 0;",
-        expect![[r#"
+	check(
+		"var flags = 0;",
+		expect![[r#"
         SourceFile@0..14
           GlobalVariableDecl@0..14
             Var@0..3 "var"
@@ -2277,14 +2277,14 @@ fn global_variable_decl_init() {
             Literal@12..13
               IntLiteral@12..13 "0"
             Semicolon@13..14 ";""#]],
-    );
+	);
 }
 
 #[test]
 fn global_const_decl() {
-    check(
-        "const constant = 0;",
-        expect![[r#"
+	check(
+		"const constant = 0;",
+		expect![[r#"
         SourceFile@0..19
           GlobalConstantDecl@0..19
             Const@0..5 "const"
@@ -2298,14 +2298,14 @@ fn global_const_decl() {
             Literal@17..18
               IntLiteral@17..18 "0"
             Semicolon@18..19 ";""#]],
-    );
+	);
 }
 
 #[test]
 fn type_alias_decl() {
-    check(
-        "alias float = f32;",
-        expect![[r#"
+	check(
+		"alias float = f32;",
+		expect![[r#"
             SourceFile@0..18
               TypeAliasDecl@0..18
                 Alias@0..5 "alias"
@@ -2318,14 +2318,14 @@ fn type_alias_decl() {
                 Float32@14..17
                   Float32@14..17 "f32"
                 Semicolon@17..18 ";""#]],
-    );
+	);
 }
 
 #[test]
 fn type_alias_decl_old() {
-    check(
-        "type float = f32;",
-        expect![[r#"
+	check(
+		"type float = f32;",
+		expect![[r#"
         SourceFile@0..17
           TypeAliasDecl@0..17
             Type@0..4 "type"
@@ -2338,14 +2338,14 @@ fn type_alias_decl_old() {
             Float32@13..16
               Float32@13..16 "f32"
             Semicolon@16..17 ";""#]],
-    );
+	);
 }
 
 #[test]
 fn type_alias_decl_recover() {
-    check(
-        "type float = f32\ntype other = u32;",
-        expect![[r#"
+	check(
+		"type float = f32\ntype other = u32;",
+		expect![[r#"
         SourceFile@0..34
           TypeAliasDecl@0..17
             Type@0..4 "type"
@@ -2372,14 +2372,14 @@ fn type_alias_decl_recover() {
             Semicolon@33..34 ";"
 
         error at 17..21: expected LessThan or Semicolon, but found Type"#]],
-    );
+	);
 }
 
 #[test]
 fn parse_stmt_expr() {
-    check_statement(
-        "test(args);",
-        expect![[r#"
+	check_statement(
+		"test(args);",
+		expect![[r#"
             ExprStatement@0..10
               FunctionCall@0..10
                 NameRef@0..4
@@ -2390,19 +2390,19 @@ fn parse_stmt_expr() {
                     NameRef@5..9
                       Ident@5..9 "args"
                   ParenRight@9..10 ")""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_struct_attributes() {
-    check(
-        r#"
+	check(
+		r#"
 [[block]]
 struct PrimeIndices {
     data: [[stride(4)]] array<u32>;
 };
 "#,
-        expect![[r#"
+		expect![[r#"
             SourceFile@0..72
               Whitespace@0..1 "\n"
               StructDecl@1..72
@@ -2450,38 +2450,38 @@ struct PrimeIndices {
                   BraceRight@69..70 "}"
                 Semicolon@70..71 ";"
                 Whitespace@71..72 "\n""#]],
-    )
+	)
 }
 
 #[test]
 fn loop_statement() {
-    check_statement(
-        "loop {}",
-        expect![[r#"
+	check_statement(
+		"loop {}",
+		expect![[r#"
         LoopStatement@0..7
           Loop@0..4 "loop"
           Whitespace@4..5 " "
           CompoundStatement@5..7
             BraceLeft@5..6 "{"
             BraceRight@6..7 "}""#]],
-    );
+	);
 }
 
 #[test]
 fn empty_return_statement() {
-    check_statement(
-        "return;",
-        expect![[r#"
+	check_statement(
+		"return;",
+		expect![[r#"
         ReturnStmt@0..6
           Return@0..6 "return""#]],
-    );
+	);
 }
 
 #[test]
 fn empty_return_statement_no_semi() {
-    check_statement(
-        "{ let x = 3; return x } ",
-        expect![[r#"
+	check_statement(
+		"{ let x = 3; return x } ",
+		expect![[r#"
         CompoundStatement@0..24
           BraceLeft@0..1 "{"
           Whitespace@1..2 " "
@@ -2507,55 +2507,55 @@ fn empty_return_statement_no_semi() {
                 Whitespace@21..22 " "
           BraceRight@22..23 "}"
           Whitespace@23..24 " ""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_import() {
-    check(
-        "#import test",
-        expect![[r##"
+	check(
+		"#import test",
+		expect![[r##"
             SourceFile@0..12
               Import@0..12
                 UnofficialPreprocessorImport@0..12 "#import test""##]],
-    );
+	);
 }
 
 #[test]
 fn parse_import_colon() {
-    check(
-        "#import bevy_pbr::mesh_struct",
-        expect![[r##"
+	check(
+		"#import bevy_pbr::mesh_struct",
+		expect![[r##"
             SourceFile@0..29
               Import@0..29
                 UnofficialPreprocessorImport@0..29 "#import bevy_pbr::mes ...""##]],
-    );
+	);
 }
 
 #[test]
 
 fn parse_string_import() {
-    check(
-        r#"#import "file.wgsl""#,
-        expect![[r##"
+	check(
+		r#"#import "file.wgsl""#,
+		expect![[r##"
             SourceFile@0..19
               Import@0..19
                 UnofficialPreprocessorImport@0..19 "#import \"file.wgsl\"""##]],
-    );
+	);
 }
 
 #[test]
 
 fn parse_switch_statement() {
-    check_statement(
-        r#"
+	check_statement(
+		r#"
 switch i {
   case 0: { fallthrough; }
   case 1, 2: { return 42; }
   default: { }
 }
         "#,
-        expect![[r#"
+		expect![[r#"
             SwitchStatement@0..92
               Whitespace@0..1 "\n"
               Switch@1..7 "switch"
@@ -2618,18 +2618,18 @@ switch i {
                     Whitespace@81..82 "\n"
                 BraceRight@82..83 "}"
                 Whitespace@83..92 "\n        ""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_switch_statement_recover_1() {
-    check_statement(
-        r#"
+	check_statement(
+		r#"
 switch i {
   case
 }
         "#,
-        expect![[r#"
+		expect![[r#"
             SwitchStatement@0..29
               Whitespace@0..1 "\n"
               Switch@1..7 "switch"
@@ -2647,18 +2647,18 @@ switch i {
                   SwitchCaseSelectors@19..19
                 BraceRight@19..20 "}"
                 Whitespace@20..29 "\n        ""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_switch_statement_recover_2() {
-    check_statement(
-        r#"
+	check_statement(
+		r#"
 switch i {
   case 1
 }
         "#,
-        expect![[r#"
+		expect![[r#"
             SwitchStatement@0..31
               Whitespace@0..1 "\n"
               Switch@1..7 "switch"
@@ -2679,13 +2679,13 @@ switch i {
                       Whitespace@20..21 "\n"
                 BraceRight@21..22 "}"
                 Whitespace@22..31 "\n        ""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_switch_statement_recover_3() {
-    check_statement(
-        r#"
+	check_statement(
+		r#"
 {
 switch i {
   case 1:
@@ -2694,7 +2694,7 @@ switch i {
 let x = 3;
 }
         "#,
-        expect![[r#"
+		expect![[r#"
             CompoundStatement@0..48
               Whitespace@0..1 "\n"
               BraceLeft@1..2 "{"
@@ -2734,13 +2734,13 @@ let x = 3;
               Whitespace@37..38 "\n"
               BraceRight@38..39 "}"
               Whitespace@39..48 "\n        ""#]],
-    );
+	);
 }
 
 #[test]
 fn parse_switch_statement_recover_4() {
-    check_statement(
-        r#"
+	check_statement(
+		r#"
 {
 switch i {
   case 1, 2,
@@ -2748,7 +2748,7 @@ switch i {
 let x = 3;
 }
         "#,
-        expect![[r#"
+		expect![[r#"
             CompoundStatement@0..50
               Whitespace@0..1 "\n"
               BraceLeft@1..2 "{"
@@ -2792,5 +2792,5 @@ let x = 3;
               Whitespace@39..40 "\n"
               BraceRight@40..41 "}"
               Whitespace@41..50 "\n        ""#]],
-    );
+	);
 }

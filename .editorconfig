@@ -1,4 +1,11 @@
 root = true
 
+end_of_line = lf
+charset = utf-8
+indent_size = tab
+tab_width = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
 [*.toml]
 indent_size = 2

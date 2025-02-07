@@ -3,440 +3,440 @@
 use super::*;
 
 pub fn expr(p: &mut Parser) {
-    if p.at_set(super::STATEMENT_RECOVER_SET) {
-        return;
-    }
-    expr_binding_power(p, 0);
+	if p.at_set(super::STATEMENT_RECOVER_SET) {
+		return;
+	}
+	expr_binding_power(p, 0);
 }
 
 fn expr_binding_power(
-    p: &mut Parser,
-    minimum_binding_power: u8,
+	p: &mut Parser,
+	minimum_binding_power: u8,
 ) -> Option<CompletedMarker> {
-    let mut lhs = lhs(p)?;
+	let mut lhs = lhs(p)?;
 
-    loop {
-        // postfix ops
-        if let Some(postfix_op) = postfix_op(p) {
-            let (left_binding_power, ()) = postfix_op.binding_power();
-            if left_binding_power < minimum_binding_power {
-                break;
-            }
+	loop {
+		// postfix ops
+		if let Some(postfix_op) = postfix_op(p) {
+			let (left_binding_power, ()) = postfix_op.binding_power();
+			if left_binding_power < minimum_binding_power {
+				break;
+			}
 
-            let m = lhs.precede(p);
-            match postfix_op {
-                PostfixOp::Call => {
-                    // Calls cannot be made on arbitrary expressions, merely on only a few versions
-                    // We have this as an error
-                    function_param_list(p);
-                    lhs = m.complete(p, SyntaxKind::InvalidFunctionCall);
-                }
-                PostfixOp::Index => {
-                    array_index(p);
-                    lhs = m.complete(p, SyntaxKind::IndexExpr);
-                }
-                PostfixOp::Field => {
-                    p.bump();
-                    name_ref(p);
-                    lhs = m.complete(p, SyntaxKind::FieldExpr);
-                }
-            }
+			let m = lhs.precede(p);
+			match postfix_op {
+				PostfixOp::Call => {
+					// Calls cannot be made on arbitrary expressions, merely on only a few versions
+					// We have this as an error
+					function_param_list(p);
+					lhs = m.complete(p, SyntaxKind::InvalidFunctionCall);
+				},
+				PostfixOp::Index => {
+					array_index(p);
+					lhs = m.complete(p, SyntaxKind::IndexExpr);
+				},
+				PostfixOp::Field => {
+					p.bump();
+					name_ref(p);
+					lhs = m.complete(p, SyntaxKind::FieldExpr);
+				},
+			}
 
-            continue;
-        }
+			continue;
+		}
 
-        let infix_op = match binary_op(p) {
-            Some(op) => op,
-            None => break,
-        };
+		let infix_op = match binary_op(p) {
+			Some(op) => op,
+			None => break,
+		};
 
-        let (left_binding_power, right_binding_power) = infix_op.binding_power();
+		let (left_binding_power, right_binding_power) = infix_op.binding_power();
 
-        if left_binding_power < minimum_binding_power {
-            break;
-        }
+		if left_binding_power < minimum_binding_power {
+			break;
+		}
 
-        // Eat the operator's token.
+		// Eat the operator's token.
 
-        match infix_op {
-            BinaryOp::ShiftLeft => p.bump_compound(SyntaxKind::ShiftLeft),
-            BinaryOp::ShiftRight => p.bump_compound(SyntaxKind::ShiftRight),
-            _ => {
-                p.bump();
-            }
-        }
+		match infix_op {
+			BinaryOp::ShiftLeft => p.bump_compound(SyntaxKind::ShiftLeft),
+			BinaryOp::ShiftRight => p.bump_compound(SyntaxKind::ShiftRight),
+			_ => {
+				p.bump();
+			},
+		}
 
-        let m = lhs.precede(p);
-        let parsed_rhs = expr_binding_power(p, right_binding_power).is_some();
-        lhs = m.complete(p, SyntaxKind::InfixExpr);
+		let m = lhs.precede(p);
+		let parsed_rhs = expr_binding_power(p, right_binding_power).is_some();
+		lhs = m.complete(p, SyntaxKind::InfixExpr);
 
-        if !parsed_rhs {
-            break;
-        }
-    }
+		if !parsed_rhs {
+			break;
+		}
+	}
 
-    Some(lhs)
+	Some(lhs)
 }
 
 fn function_param_list(p: &mut Parser) {
-    list(
-        p,
-        SyntaxKind::ParenLeft,
-        SyntaxKind::ParenRight,
-        SyntaxKind::Comma,
-        SyntaxKind::FunctionParamList,
-        |p| {
-            expr_binding_power(p, 0);
-        },
-    );
+	list(
+		p,
+		SyntaxKind::ParenLeft,
+		SyntaxKind::ParenRight,
+		SyntaxKind::Comma,
+		SyntaxKind::FunctionParamList,
+		|p| {
+			expr_binding_power(p, 0);
+		},
+	);
 }
 
 fn array_index(p: &mut Parser) {
-    p.expect(SyntaxKind::BracketLeft);
-    expr_binding_power(p, 0);
-    p.expect(SyntaxKind::BracketRight);
+	p.expect(SyntaxKind::BracketLeft);
+	expr_binding_power(p, 0);
+	p.expect(SyntaxKind::BracketRight);
 }
 
 fn lhs(p: &mut Parser) -> Option<CompletedMarker> {
-    let cm = if p.at_set(TOKENSET_LITERAL) {
-        literal(p)
-    } else if p.at(SyntaxKind::Ident) {
-        let m = p.start();
-        name_ref(p);
-        if p.at(SyntaxKind::ParenLeft) {
-            function_param_list(p);
-            // Function call, may be a type initialiser too
-            m.complete(p, SyntaxKind::FunctionCall)
-        } else {
-            m.complete(p, SyntaxKind::PathExpr)
-        }
-    } else if p.at(SyntaxKind::Bitcast) {
-        bitcast_expr(p)
-    } else if p.at_set(TYPE_SET) {
-        let m = p.start();
-        super::type_decl(p).unwrap();
-        if p.at(SyntaxKind::ParenLeft) {
-            function_param_list(p);
-        } else {
-            p.error_no_bump(&[SyntaxKind::ParenLeft]);
-        }
-        m.complete(p, SyntaxKind::TypeInitializer)
-    } else if p.at_set(PREFIX_OP_SET) {
-        prefix_expr(p)
-    } else if p.at(SyntaxKind::ParenLeft) {
-        paren_expr(p)
-    } else {
-        p.error();
-        return None;
-    };
+	let cm = if p.at_set(TOKENSET_LITERAL) {
+		literal(p)
+	} else if p.at(SyntaxKind::Ident) {
+		let m = p.start();
+		name_ref(p);
+		if p.at(SyntaxKind::ParenLeft) {
+			function_param_list(p);
+			// Function call, may be a type initialiser too
+			m.complete(p, SyntaxKind::FunctionCall)
+		} else {
+			m.complete(p, SyntaxKind::PathExpr)
+		}
+	} else if p.at(SyntaxKind::Bitcast) {
+		bitcast_expr(p)
+	} else if p.at_set(TYPE_SET) {
+		let m = p.start();
+		super::type_decl(p).unwrap();
+		if p.at(SyntaxKind::ParenLeft) {
+			function_param_list(p);
+		} else {
+			p.error_no_bump(&[SyntaxKind::ParenLeft]);
+		}
+		m.complete(p, SyntaxKind::TypeInitializer)
+	} else if p.at_set(PREFIX_OP_SET) {
+		prefix_expr(p)
+	} else if p.at(SyntaxKind::ParenLeft) {
+		paren_expr(p)
+	} else {
+		p.error();
+		return None;
+	};
 
-    Some(cm)
+	Some(cm)
 }
 
 enum BinaryOp {
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Or,
-    And,
-    Xor,
-    ShortCircuitAnd,
-    ShortCircuitOr,
-    ShiftRight,
-    ShiftLeft,
-    GreaterThan,
-    LessThan,
-    GreaterThanEqual,
-    LessThanEqual,
-    NotEqual,
-    Equals,
-    Modulo,
+	Add,
+	Sub,
+	Mul,
+	Div,
+	Or,
+	And,
+	Xor,
+	ShortCircuitAnd,
+	ShortCircuitOr,
+	ShiftRight,
+	ShiftLeft,
+	GreaterThan,
+	LessThan,
+	GreaterThanEqual,
+	LessThanEqual,
+	NotEqual,
+	Equals,
+	Modulo,
 }
 
 fn binary_op(p: &mut Parser) -> Option<BinaryOp> {
-    let op = if p.at(SyntaxKind::Plus) {
-        Some(BinaryOp::Add)
-    } else if p.at(SyntaxKind::Minus) {
-        Some(BinaryOp::Sub)
-    } else if p.at(SyntaxKind::Star) {
-        Some(BinaryOp::Mul)
-    } else if p.at(SyntaxKind::ForwardSlash) {
-        Some(BinaryOp::Div)
-    } else if p.at(SyntaxKind::Or) {
-        Some(BinaryOp::Or)
-    } else if p.at(SyntaxKind::And) {
-        Some(BinaryOp::And)
-    } else if p.at(SyntaxKind::OrOr) {
-        Some(BinaryOp::ShortCircuitOr)
-    } else if p.at(SyntaxKind::AndAnd) {
-        Some(BinaryOp::ShortCircuitAnd)
-    } else if p.at(SyntaxKind::Xor) {
-        Some(BinaryOp::Xor)
-    } else if p.at_compound(SyntaxKind::LessThan, SyntaxKind::LessThan) {
-        Some(BinaryOp::ShiftLeft)
-    } else if p.at_compound(SyntaxKind::GreaterThan, SyntaxKind::GreaterThan) {
-        Some(BinaryOp::ShiftRight)
-    } else if p.at(SyntaxKind::GreaterThan) {
-        Some(BinaryOp::GreaterThan)
-    } else if p.at(SyntaxKind::LessThan) {
-        Some(BinaryOp::LessThan)
-    } else if p.at(SyntaxKind::GreaterThanEqual) {
-        Some(BinaryOp::GreaterThanEqual)
-    } else if p.at(SyntaxKind::LessThanEqual) {
-        Some(BinaryOp::LessThanEqual)
-    } else if p.at(SyntaxKind::NotEqual) {
-        Some(BinaryOp::NotEqual)
-    } else if p.at(SyntaxKind::EqualEqual) {
-        Some(BinaryOp::Equals)
-    } else if p.at(SyntaxKind::Modulo) {
-        Some(BinaryOp::Modulo)
-    } else {
-        None
-    };
-    p.set_expected(vec![SyntaxKind::BinaryOperator]);
-    op
+	let op = if p.at(SyntaxKind::Plus) {
+		Some(BinaryOp::Add)
+	} else if p.at(SyntaxKind::Minus) {
+		Some(BinaryOp::Sub)
+	} else if p.at(SyntaxKind::Star) {
+		Some(BinaryOp::Mul)
+	} else if p.at(SyntaxKind::ForwardSlash) {
+		Some(BinaryOp::Div)
+	} else if p.at(SyntaxKind::Or) {
+		Some(BinaryOp::Or)
+	} else if p.at(SyntaxKind::And) {
+		Some(BinaryOp::And)
+	} else if p.at(SyntaxKind::OrOr) {
+		Some(BinaryOp::ShortCircuitOr)
+	} else if p.at(SyntaxKind::AndAnd) {
+		Some(BinaryOp::ShortCircuitAnd)
+	} else if p.at(SyntaxKind::Xor) {
+		Some(BinaryOp::Xor)
+	} else if p.at_compound(SyntaxKind::LessThan, SyntaxKind::LessThan) {
+		Some(BinaryOp::ShiftLeft)
+	} else if p.at_compound(SyntaxKind::GreaterThan, SyntaxKind::GreaterThan) {
+		Some(BinaryOp::ShiftRight)
+	} else if p.at(SyntaxKind::GreaterThan) {
+		Some(BinaryOp::GreaterThan)
+	} else if p.at(SyntaxKind::LessThan) {
+		Some(BinaryOp::LessThan)
+	} else if p.at(SyntaxKind::GreaterThanEqual) {
+		Some(BinaryOp::GreaterThanEqual)
+	} else if p.at(SyntaxKind::LessThanEqual) {
+		Some(BinaryOp::LessThanEqual)
+	} else if p.at(SyntaxKind::NotEqual) {
+		Some(BinaryOp::NotEqual)
+	} else if p.at(SyntaxKind::EqualEqual) {
+		Some(BinaryOp::Equals)
+	} else if p.at(SyntaxKind::Modulo) {
+		Some(BinaryOp::Modulo)
+	} else {
+		None
+	};
+	p.set_expected(vec![SyntaxKind::BinaryOperator]);
+	op
 }
 
 impl BinaryOp {
-    fn binding_power(&self) -> (u8, u8) {
-        match self {
-            BinaryOp::ShortCircuitOr => (0, 1),
-            BinaryOp::ShortCircuitAnd => (2, 3),
-            BinaryOp::Or => (4, 5),
-            BinaryOp::Xor => (5, 6),
-            BinaryOp::And => (7, 8),
-            BinaryOp::Equals => (9, 10),
-            BinaryOp::LessThan
-            | BinaryOp::GreaterThan
-            | BinaryOp::LessThanEqual
-            | BinaryOp::GreaterThanEqual
-            | BinaryOp::NotEqual => (11, 12),
-            BinaryOp::ShiftLeft | BinaryOp::ShiftRight => (13, 14),
-            BinaryOp::Add | BinaryOp::Sub => (15, 16),
-            BinaryOp::Mul | BinaryOp::Div | BinaryOp::Modulo => (17, 18),
-        }
-    }
+	fn binding_power(&self) -> (u8, u8) {
+		match self {
+			BinaryOp::ShortCircuitOr => (0, 1),
+			BinaryOp::ShortCircuitAnd => (2, 3),
+			BinaryOp::Or => (4, 5),
+			BinaryOp::Xor => (5, 6),
+			BinaryOp::And => (7, 8),
+			BinaryOp::Equals => (9, 10),
+			BinaryOp::LessThan
+			| BinaryOp::GreaterThan
+			| BinaryOp::LessThanEqual
+			| BinaryOp::GreaterThanEqual
+			| BinaryOp::NotEqual => (11, 12),
+			BinaryOp::ShiftLeft | BinaryOp::ShiftRight => (13, 14),
+			BinaryOp::Add | BinaryOp::Sub => (15, 16),
+			BinaryOp::Mul | BinaryOp::Div | BinaryOp::Modulo => (17, 18),
+		}
+	}
 }
 
 const PREFIX_OP_SET: &[SyntaxKind] = &[
-    SyntaxKind::Bang,
-    SyntaxKind::Minus,
-    SyntaxKind::And,
-    SyntaxKind::Star,
-    SyntaxKind::Tilde,
+	SyntaxKind::Bang,
+	SyntaxKind::Minus,
+	SyntaxKind::And,
+	SyntaxKind::Star,
+	SyntaxKind::Tilde,
 ];
 enum PrefixOp {
-    Neg,
-    Not,
-    Ref,
-    Deref,
-    BitNot,
+	Neg,
+	Not,
+	Ref,
+	Deref,
+	BitNot,
 }
 
 impl PrefixOp {
-    fn binding_power(&self) -> ((), u8) {
-        match self {
-            Self::Neg | Self::Not | Self::Ref | Self::Deref | Self::BitNot => ((), 20),
-        }
-    }
+	fn binding_power(&self) -> ((), u8) {
+		match self {
+			Self::Neg | Self::Not | Self::Ref | Self::Deref | Self::BitNot => ((), 20),
+		}
+	}
 }
 
 enum PostfixOp {
-    Call,
-    Index,
-    Field,
+	Call,
+	Index,
+	Field,
 }
 
 impl PostfixOp {
-    fn binding_power(&self) -> (u8, ()) {
-        match self {
-            Self::Call | Self::Field | Self::Index => (21, ()),
-        }
-    }
+	fn binding_power(&self) -> (u8, ()) {
+		match self {
+			Self::Call | Self::Field | Self::Index => (21, ()),
+		}
+	}
 }
 
 fn postfix_op(p: &mut Parser) -> Option<PostfixOp> {
-    if p.at(SyntaxKind::Period) {
-        Some(PostfixOp::Field)
-    } else if p.at(SyntaxKind::ParenLeft) {
-        Some(PostfixOp::Call)
-    } else if p.at(SyntaxKind::BracketLeft) {
-        Some(PostfixOp::Index)
-    } else {
-        None
-    }
+	if p.at(SyntaxKind::Period) {
+		Some(PostfixOp::Field)
+	} else if p.at(SyntaxKind::ParenLeft) {
+		Some(PostfixOp::Call)
+	} else if p.at(SyntaxKind::BracketLeft) {
+		Some(PostfixOp::Index)
+	} else {
+		None
+	}
 }
 
 pub const TOKENSET_LITERAL: &[SyntaxKind] = &[
-    SyntaxKind::IntLiteral,
-    SyntaxKind::UintLiteral,
-    SyntaxKind::HexFloatLiteral,
-    SyntaxKind::DecimalFloatLiteral,
-    SyntaxKind::True,
-    SyntaxKind::False,
+	SyntaxKind::IntLiteral,
+	SyntaxKind::UintLiteral,
+	SyntaxKind::HexFloatLiteral,
+	SyntaxKind::DecimalFloatLiteral,
+	SyntaxKind::True,
+	SyntaxKind::False,
 ];
 pub fn literal(p: &mut Parser) -> CompletedMarker {
-    assert!(p.at_set(TOKENSET_LITERAL));
+	assert!(p.at_set(TOKENSET_LITERAL));
 
-    let m = p.start();
-    p.bump();
-    m.complete(p, SyntaxKind::Literal)
+	let m = p.start();
+	p.bump();
+	m.complete(p, SyntaxKind::Literal)
 }
 
 fn bitcast_expr(p: &mut Parser) -> CompletedMarker {
-    assert!(p.at(SyntaxKind::Bitcast));
-    let m = p.start();
-    p.bump();
-    if !p.eat(SyntaxKind::LessThan) {
-        p.error_expected_no_bump(&[SyntaxKind::LessThan]);
-        if p.at(SyntaxKind::ParenLeft) {
-            paren_expr(p);
-        }
-        return m.complete(p, SyntaxKind::BitcastExpr);
-    }
-    let _ = super::type_decl(p);
-    p.expect(SyntaxKind::GreaterThan);
+	assert!(p.at(SyntaxKind::Bitcast));
+	let m = p.start();
+	p.bump();
+	if !p.eat(SyntaxKind::LessThan) {
+		p.error_expected_no_bump(&[SyntaxKind::LessThan]);
+		if p.at(SyntaxKind::ParenLeft) {
+			paren_expr(p);
+		}
+		return m.complete(p, SyntaxKind::BitcastExpr);
+	}
+	let _ = super::type_decl(p);
+	p.expect(SyntaxKind::GreaterThan);
 
-    if !p.at(SyntaxKind::ParenLeft) {
-        p.error_expected_no_bump(&[SyntaxKind::ParenLeft]);
-        return m.complete(p, SyntaxKind::BitcastExpr);
-    }
-    paren_expr(p);
-    return m.complete(p, SyntaxKind::BitcastExpr);
+	if !p.at(SyntaxKind::ParenLeft) {
+		p.error_expected_no_bump(&[SyntaxKind::ParenLeft]);
+		return m.complete(p, SyntaxKind::BitcastExpr);
+	}
+	paren_expr(p);
+	return m.complete(p, SyntaxKind::BitcastExpr);
 }
 
 fn prefix_expr(p: &mut Parser) -> CompletedMarker {
-    let m = p.start();
-    let op = if p.at(SyntaxKind::Minus) {
-        PrefixOp::Neg
-    } else if p.at(SyntaxKind::Bang) {
-        PrefixOp::Not
-    } else if p.at(SyntaxKind::And) {
-        PrefixOp::Ref
-    } else if p.at(SyntaxKind::Star) {
-        PrefixOp::Deref
-    } else if p.at(SyntaxKind::Tilde) {
-        PrefixOp::BitNot
-    } else {
-        p.error();
-        return m.complete(p, SyntaxKind::PrefixExpr);
-    };
+	let m = p.start();
+	let op = if p.at(SyntaxKind::Minus) {
+		PrefixOp::Neg
+	} else if p.at(SyntaxKind::Bang) {
+		PrefixOp::Not
+	} else if p.at(SyntaxKind::And) {
+		PrefixOp::Ref
+	} else if p.at(SyntaxKind::Star) {
+		PrefixOp::Deref
+	} else if p.at(SyntaxKind::Tilde) {
+		PrefixOp::BitNot
+	} else {
+		p.error();
+		return m.complete(p, SyntaxKind::PrefixExpr);
+	};
 
-    let ((), right_binding_power) = op.binding_power();
+	let ((), right_binding_power) = op.binding_power();
 
-    // Eat the operator's token.
-    p.bump();
+	// Eat the operator's token.
+	p.bump();
 
-    expr_binding_power(p, right_binding_power);
+	expr_binding_power(p, right_binding_power);
 
-    m.complete(p, SyntaxKind::PrefixExpr)
+	m.complete(p, SyntaxKind::PrefixExpr)
 }
 
 fn paren_expr(p: &mut Parser) -> CompletedMarker {
-    assert!(p.at(SyntaxKind::ParenLeft));
+	assert!(p.at(SyntaxKind::ParenLeft));
 
-    let m = p.start();
-    p.bump();
-    if p.at(SyntaxKind::ParenRight) {
-        // TODO: Better kind of error here. Ideally just EXPR
-        p.error_expected_no_bump(&[SyntaxKind::ParenExpr]);
-        p.bump();
-        return m.complete(p, SyntaxKind::ParenExpr);
-    }
+	let m = p.start();
+	p.bump();
+	if p.at(SyntaxKind::ParenRight) {
+		// TODO: Better kind of error here. Ideally just EXPR
+		p.error_expected_no_bump(&[SyntaxKind::ParenExpr]);
+		p.bump();
+		return m.complete(p, SyntaxKind::ParenExpr);
+	}
 
-    expr_binding_power(p, 0);
-    p.expect(SyntaxKind::ParenRight);
+	expr_binding_power(p, 0);
+	p.expect(SyntaxKind::ParenRight);
 
-    m.complete(p, SyntaxKind::ParenExpr)
+	m.complete(p, SyntaxKind::ParenExpr)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::ParseEntryPoint;
-    use expect_test::{expect, Expect};
+	use crate::ParseEntryPoint;
+	use expect_test::{expect, Expect};
 
-    fn check(
-        input: &str,
-        expected_tree: Expect,
-    ) {
-        crate::check_entrypoint(input, ParseEntryPoint::Expression, expected_tree);
-    }
+	fn check(
+		input: &str,
+		expected_tree: Expect,
+	) {
+		crate::check_entrypoint(input, ParseEntryPoint::Expression, expected_tree);
+	}
 
-    #[test]
-    fn parse_number() {
-        check(
-            "123",
-            expect![[r#"
+	#[test]
+	fn parse_number() {
+		check(
+			"123",
+			expect![[r#"
                 Literal@0..3
                   IntLiteral@0..3 "123""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_number_preceded_by_whitespace() {
-        check(
-            "   9876",
-            expect![[r#"
+	#[test]
+	fn parse_number_preceded_by_whitespace() {
+		check(
+			"   9876",
+			expect![[r#"
                 Literal@0..7
                   Whitespace@0..3 "   "
                   IntLiteral@3..7 "9876""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_number_followed_by_whitespace() {
-        check(
-            "999   ",
-            expect![[r#"
+	#[test]
+	fn parse_number_followed_by_whitespace() {
+		check(
+			"999   ",
+			expect![[r#"
                 Literal@0..6
                   IntLiteral@0..3 "999"
                   Whitespace@3..6 "   ""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_number_surrounded_by_whitespace() {
-        check(
-            " 123     ",
-            expect![[r#"
+	#[test]
+	fn parse_number_surrounded_by_whitespace() {
+		check(
+			" 123     ",
+			expect![[r#"
                 Literal@0..9
                   Whitespace@0..1 " "
                   IntLiteral@1..4 "123"
                   Whitespace@4..9 "     ""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_variable_ref() {
-        check(
-            "counter",
-            expect![[r#"
+	#[test]
+	fn parse_variable_ref() {
+		check(
+			"counter",
+			expect![[r#"
                 PathExpr@0..7
                   NameRef@0..7
                     Ident@0..7 "counter""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_simple_infix_expression() {
-        check(
-            "1+2",
-            expect![[r#"
+	#[test]
+	fn parse_simple_infix_expression() {
+		check(
+			"1+2",
+			expect![[r#"
                 InfixExpr@0..3
                   Literal@0..1
                     IntLiteral@0..1 "1"
                   Plus@1..2 "+"
                   Literal@2..3
                     IntLiteral@2..3 "2""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_left_associative_infix_expression() {
-        check(
-            "1+2+3+4",
-            expect![[r#"
+	#[test]
+	fn parse_left_associative_infix_expression() {
+		check(
+			"1+2+3+4",
+			expect![[r#"
                 InfixExpr@0..7
                   InfixExpr@0..5
                     InfixExpr@0..3
@@ -451,14 +451,14 @@ mod tests {
                   Plus@5..6 "+"
                   Literal@6..7
                     IntLiteral@6..7 "4""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_infix_expression_with_mixed_binding_power() {
-        check(
-            "1+2*3-4",
-            expect![[r#"
+	#[test]
+	fn parse_infix_expression_with_mixed_binding_power() {
+		check(
+			"1+2*3-4",
+			expect![[r#"
                 InfixExpr@0..5
                   Literal@0..1
                     IntLiteral@0..1 "1"
@@ -469,14 +469,14 @@ mod tests {
                     Star@3..4 "*"
                     Literal@4..5
                       IntLiteral@4..5 "3""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_infix_expression_with_whitespace() {
-        check(
-            " 1 +   2* 3 ",
-            expect![[r#"
+	#[test]
+	fn parse_infix_expression_with_whitespace() {
+		check(
+			" 1 +   2* 3 ",
+			expect![[r#"
                 InfixExpr@0..12
                   Literal@0..3
                     Whitespace@0..1 " "
@@ -492,14 +492,14 @@ mod tests {
                     Literal@10..12
                       IntLiteral@10..11 "3"
                       Whitespace@11..12 " ""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn do_not_parse_operator_if_getting_rhs_failed() {
-        check(
-            "(1+",
-            expect![[r#"
+	#[test]
+	fn do_not_parse_operator_if_getting_rhs_failed() {
+		check(
+			"(1+",
+			expect![[r#"
                 ParenExpr@0..3
                   ParenLeft@0..1 "("
                   InfixExpr@1..3
@@ -509,38 +509,38 @@ mod tests {
 
                 error at 2..3: expected Ident, Bitcast or ParenLeft
                 error at 2..3: expected ParenRight"#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_negation() {
-        check(
-            "-10",
-            expect![[r#"
+	#[test]
+	fn parse_negation() {
+		check(
+			"-10",
+			expect![[r#"
                 Literal@0..3
                   IntLiteral@0..3 "-10""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn negation_has_higher_binding_power_than_binary_operators() {
-        check(
-            "-20+20",
-            expect![[r#"
+	#[test]
+	fn negation_has_higher_binding_power_than_binary_operators() {
+		check(
+			"-20+20",
+			expect![[r#"
                 InfixExpr@0..6
                   Literal@0..3
                     IntLiteral@0..3 "-20"
                   Plus@3..4 "+"
                   Literal@4..6
                     IntLiteral@4..6 "20""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_nested_parentheses() {
-        check(
-            "((((((10))))))",
-            expect![[r#"
+	#[test]
+	fn parse_nested_parentheses() {
+		check(
+			"((((((10))))))",
+			expect![[r#"
                 ParenExpr@0..14
                   ParenLeft@0..1 "("
                   ParenExpr@1..13
@@ -561,14 +561,14 @@ mod tests {
                       ParenRight@11..12 ")"
                     ParenRight@12..13 ")"
                   ParenRight@13..14 ")""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parentheses_affect_precedence() {
-        check(
-            "5*(2+1)",
-            expect![[r#"
+	#[test]
+	fn parentheses_affect_precedence() {
+		check(
+			"5*(2+1)",
+			expect![[r#"
                 InfixExpr@0..7
                   Literal@0..1
                     IntLiteral@0..1 "5"
@@ -582,14 +582,14 @@ mod tests {
                       Literal@5..6
                         IntLiteral@5..6 "1"
                     ParenRight@6..7 ")""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_unclosed_parentheses() {
-        check(
-            "(foo",
-            expect![[r#"
+	#[test]
+	fn parse_unclosed_parentheses() {
+		check(
+			"(foo",
+			expect![[r#"
                 ParenExpr@0..4
                   ParenLeft@0..1 "("
                   PathExpr@1..4
@@ -597,14 +597,14 @@ mod tests {
                       Ident@1..4 "foo"
 
                 error at 1..4: expected BinaryOperator or ParenRight"#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_expr_complex() {
-        check(
-            "1 + 2 == 3 || 4 < 5 / 2 == 0",
-            expect![[r#"
+	#[test]
+	fn parse_expr_complex() {
+		check(
+			"1 + 2 == 3 || 4 < 5 / 2 == 0",
+			expect![[r#"
             InfixExpr@0..28
               InfixExpr@0..11
                 InfixExpr@0..6
@@ -643,14 +643,14 @@ mod tests {
                 Whitespace@26..27 " "
                 Literal@27..28
                   IntLiteral@27..28 "0""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_expr_field() {
-        check(
-            "a.b.c",
-            expect![[r#"
+	#[test]
+	fn parse_expr_field() {
+		check(
+			"a.b.c",
+			expect![[r#"
                 FieldExpr@0..5
                   FieldExpr@0..3
                     PathExpr@0..1
@@ -662,14 +662,14 @@ mod tests {
                   Period@3..4 "."
                   NameRef@4..5
                     Ident@4..5 "c""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_expr_field_mix_ops() {
-        check(
-            "vec.xy + 2 * other.zw",
-            expect![[r#"
+	#[test]
+	fn parse_expr_field_mix_ops() {
+		check(
+			"vec.xy + 2 * other.zw",
+			expect![[r#"
                 InfixExpr@0..21
                   FieldExpr@0..7
                     PathExpr@0..3
@@ -694,14 +694,14 @@ mod tests {
                       Period@18..19 "."
                       NameRef@19..21
                         Ident@19..21 "zw""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_expr_function_call() {
-        check(
-            "pow(2, 3)",
-            expect![[r#"
+	#[test]
+	fn parse_expr_function_call() {
+		check(
+			"pow(2, 3)",
+			expect![[r#"
                 FunctionCall@0..9
                   NameRef@0..3
                     Ident@0..3 "pow"
@@ -714,14 +714,14 @@ mod tests {
                     Literal@7..8
                       IntLiteral@7..8 "3"
                     ParenRight@8..9 ")""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_expr_function_call_mixed() {
-        check(
-            "pow(srgb + 14.0, 3.0) * 2.0",
-            expect![[r#"
+	#[test]
+	fn parse_expr_function_call_mixed() {
+		check(
+			"pow(srgb + 14.0, 3.0) * 2.0",
+			expect![[r#"
                 InfixExpr@0..27
                   FunctionCall@0..22
                     NameRef@0..3
@@ -747,14 +747,14 @@ mod tests {
                   Whitespace@23..24 " "
                   Literal@24..27
                     DecimalFloatLiteral@24..27 "2.0""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_vec3_initializer() {
-        check(
-            "vec3<f32>(1.0)",
-            expect![[r#"
+	#[test]
+	fn parse_vec3_initializer() {
+		check(
+			"vec3<f32>(1.0)",
+			expect![[r#"
                 TypeInitializer@0..14
                   Vec3@0..9
                     Vec3@0..4 "vec3"
@@ -768,14 +768,14 @@ mod tests {
                     Literal@10..13
                       DecimalFloatLiteral@10..13 "1.0"
                     ParenRight@13..14 ")""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_vec3_initializer_inferred() {
-        check(
-            "vec3(1.0)",
-            expect![[r#"
+	#[test]
+	fn parse_vec3_initializer_inferred() {
+		check(
+			"vec3(1.0)",
+			expect![[r#"
                 TypeInitializer@0..9
                   Vec3@0..4
                     Vec3@0..4 "vec3"
@@ -784,24 +784,24 @@ mod tests {
                     Literal@5..8
                       DecimalFloatLiteral@5..8 "1.0"
                     ParenRight@8..9 ")""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_float_literal() {
-        check(
-            "0x1f.2",
-            expect![[r#"
+	#[test]
+	fn parse_float_literal() {
+		check(
+			"0x1f.2",
+			expect![[r#"
             Literal@0..6
               HexFloatLiteral@0..6 "0x1f.2""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_prefix_expr() {
-        check(
-            "- 3 + 3",
-            expect![[r#"
+	#[test]
+	fn parse_prefix_expr() {
+		check(
+			"- 3 + 3",
+			expect![[r#"
                 InfixExpr@0..7
                   PrefixExpr@0..4
                     Minus@0..1 "-"
@@ -813,14 +813,14 @@ mod tests {
                   Whitespace@5..6 " "
                   Literal@6..7
                     IntLiteral@6..7 "3""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_index() {
-        check(
-            "a.b[3+2]",
-            expect![[r#"
+	#[test]
+	fn parse_index() {
+		check(
+			"a.b[3+2]",
+			expect![[r#"
             IndexExpr@0..8
               FieldExpr@0..3
                 PathExpr@0..1
@@ -837,14 +837,14 @@ mod tests {
                 Literal@6..7
                   IntLiteral@6..7 "2"
               BracketRight@7..8 "]""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn parse_modulo_comparison() {
-        check(
-            "n % 2u == 0u",
-            expect![[r#"
+	#[test]
+	fn parse_modulo_comparison() {
+		check(
+			"n % 2u == 0u",
+			expect![[r#"
                 InfixExpr@0..12
                   InfixExpr@0..7
                     PathExpr@0..2
@@ -860,14 +860,14 @@ mod tests {
                   Whitespace@9..10 " "
                   Literal@10..12
                     UintLiteral@10..12 "0u""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn prefix_exprs() {
-        check(
-            "!~*&foo",
-            expect![[r#"
+	#[test]
+	fn prefix_exprs() {
+		check(
+			"!~*&foo",
+			expect![[r#"
             PrefixExpr@0..7
               Bang@0..1 "!"
               PrefixExpr@1..7
@@ -879,14 +879,14 @@ mod tests {
                     PathExpr@4..7
                       NameRef@4..7
                         Ident@4..7 "foo""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn bitcast() {
-        check(
-            "bitcast<u32>(x)",
-            expect![[r#"
+	#[test]
+	fn bitcast() {
+		check(
+			"bitcast<u32>(x)",
+			expect![[r#"
                 BitcastExpr@0..15
                   Bitcast@0..7 "bitcast"
                   LessThan@7..8 "<"
@@ -899,14 +899,14 @@ mod tests {
                       NameRef@13..14
                         Ident@13..14 "x"
                     ParenRight@14..15 ")""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn bitcast_vector() {
-        check(
-            "bitcast<vec4<u32>>(x)",
-            expect![[r#"
+	#[test]
+	fn bitcast_vector() {
+		check(
+			"bitcast<vec4<u32>>(x)",
+			expect![[r#"
                 BitcastExpr@0..21
                   Bitcast@0..7 "bitcast"
                   LessThan@7..8 "<"
@@ -924,14 +924,14 @@ mod tests {
                       NameRef@19..20
                         Ident@19..20 "x"
                     ParenRight@20..21 ")""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn bitcast_no_generics() {
-        check(
-            "bitcast(x)",
-            expect![[r#"
+	#[test]
+	fn bitcast_no_generics() {
+		check(
+			"bitcast(x)",
+			expect![[r#"
                 BitcastExpr@0..10
                   Bitcast@0..7 "bitcast"
                   Error@7..7
@@ -943,13 +943,13 @@ mod tests {
                     ParenRight@9..10 ")"
 
                 error at 7..8: expected LessThan, but found ParenLeft"#]],
-        );
-    }
-    #[test]
-    fn bitcast_in_expr() {
-        check(
-            "1 + -bitcast<u32>(x) + 1",
-            expect![[r#"
+		);
+	}
+	#[test]
+	fn bitcast_in_expr() {
+		check(
+			"1 + -bitcast<u32>(x) + 1",
+			expect![[r#"
                 InfixExpr@0..24
                   InfixExpr@0..21
                     Literal@0..2
@@ -976,14 +976,14 @@ mod tests {
                   Whitespace@22..23 " "
                   Literal@23..24
                     IntLiteral@23..24 "1""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn deref_field() {
-        check(
-            "*a.b",
-            expect![[r#"
+	#[test]
+	fn deref_field() {
+		check(
+			"*a.b",
+			expect![[r#"
                 PrefixExpr@0..4
                   Star@0..1 "*"
                   FieldExpr@1..4
@@ -993,13 +993,13 @@ mod tests {
                     Period@2..3 "."
                     NameRef@3..4
                       Ident@3..4 "b""#]],
-        );
-    }
-    #[test]
-    fn deref_field_paren() {
-        check(
-            "(*a).b",
-            expect![[r#"
+		);
+	}
+	#[test]
+	fn deref_field_paren() {
+		check(
+			"(*a).b",
+			expect![[r#"
             FieldExpr@0..6
               ParenExpr@0..4
                 ParenLeft@0..1 "("
@@ -1012,14 +1012,14 @@ mod tests {
               Period@4..5 "."
               NameRef@5..6
                 Ident@5..6 "b""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn shift_right() {
-        check(
-            "2 >> 3",
-            expect![[r#"
+	#[test]
+	fn shift_right() {
+		check(
+			"2 >> 3",
+			expect![[r#"
             InfixExpr@0..6
               Literal@0..2
                 IntLiteral@0..1 "2"
@@ -1030,14 +1030,14 @@ mod tests {
                 Whitespace@4..5 " "
               Literal@5..6
                 IntLiteral@5..6 "3""#]],
-        );
-    }
+		);
+	}
 
-    #[test]
-    fn shift_multiple() {
-        check(
-            "2 >> 3 + 2 << 4",
-            expect![[r#"
+	#[test]
+	fn shift_multiple() {
+		check(
+			"2 >> 3 + 2 << 4",
+			expect![[r#"
             InfixExpr@0..15
               InfixExpr@0..11
                 Literal@0..2
@@ -1062,6 +1062,6 @@ mod tests {
                 Whitespace@13..14 " "
               Literal@14..15
                 IntLiteral@14..15 "4""#]],
-        );
-    }
+		);
+	}
 }
