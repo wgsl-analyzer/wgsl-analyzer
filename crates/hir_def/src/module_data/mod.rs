@@ -1,6 +1,23 @@
 mod lower;
 pub mod pretty;
 
+use std::{
+	marker::PhantomData,
+	sync::Arc,
+};
+
+use la_arena::{
+	Arena,
+	Idx,
+	IdxRange,
+};
+use smol_str::SmolStr;
+use syntax::{
+	AstNode,
+	TokenText,
+	ast,
+};
+
 use crate::{
 	HirFileId,
 	ast_id::FileAstId,
@@ -9,21 +26,6 @@ use crate::{
 		Interned,
 	},
 	type_ref::*,
-};
-use la_arena::{
-	Arena,
-	Idx,
-	IdxRange,
-};
-use smol_str::SmolStr;
-use std::{
-	marker::PhantomData,
-	sync::Arc,
-};
-use syntax::{
-	AstNode,
-	TokenText,
-	ast,
 };
 
 const MISSING_NAME_PLACEHOLDER: &str = "[missing name]";

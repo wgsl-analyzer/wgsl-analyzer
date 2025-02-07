@@ -490,9 +490,10 @@ impl SyntaxKind {
 
 #[cfg(test)]
 mod tests {
-	use super::SyntaxKind;
 	use expect_test::expect;
 	use logos::Logos;
+
+	use super::SyntaxKind;
 
 	fn check_lex(
 		source: &str,

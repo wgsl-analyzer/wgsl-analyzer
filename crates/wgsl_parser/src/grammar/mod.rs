@@ -3,9 +3,8 @@ mod expr;
 
 pub use expr::expr;
 
-use crate::SyntaxKind;
-
 use self::expr::TOKENSET_LITERAL;
+use crate::SyntaxKind;
 
 pub type Parser<'t, 'input> = parser::Parser<'t, 'input, crate::ParserDefinition>;
 pub type CompletedMarker = parser::marker::CompletedMarker<crate::ParserDefinition>;

@@ -50,6 +50,7 @@ use hir_def::{
 		Resolver,
 	},
 };
+pub use hir_ty::HirDatabase;
 use hir_ty::{
 	infer::InferenceResult,
 	ty::Ty,
@@ -63,8 +64,6 @@ use syntax::{
 	match_ast,
 	ptr::AstPtr,
 };
-
-pub use hir_ty::HirDatabase;
 
 pub trait HasSource {
 	type Ast;

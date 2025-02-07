@@ -1,3 +1,4 @@
+use super::Completions;
 use crate::{
 	context::{
 		CompletionContext,
@@ -8,8 +9,6 @@ use crate::{
 		CompletionItemKind,
 	},
 };
-
-use super::Completions;
 
 pub(crate) fn complete_import(
 	acc: &mut Completions,

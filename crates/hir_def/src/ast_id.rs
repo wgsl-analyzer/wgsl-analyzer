@@ -1,8 +1,9 @@
+use std::marker::PhantomData;
+
 use la_arena::{
 	Arena,
 	Idx,
 };
-use std::marker::PhantomData;
 use syntax::{
 	AstNode,
 	SyntaxNode,

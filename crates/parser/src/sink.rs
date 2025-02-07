@@ -1,3 +1,13 @@
+use std::{
+	marker::PhantomData,
+	mem,
+};
+
+use rowan::{
+	GreenNodeBuilder,
+	Language,
+};
+
 use super::{
 	Parse,
 	ParserDefinition,
@@ -5,14 +15,6 @@ use super::{
 	event::Event,
 	lexer::Token,
 	parsing::ParseError,
-};
-use rowan::{
-	GreenNodeBuilder,
-	Language,
-};
-use std::{
-	marker::PhantomData,
-	mem,
 };
 
 pub(crate) struct Sink<'t, 'input, P: ParserDefinition> {

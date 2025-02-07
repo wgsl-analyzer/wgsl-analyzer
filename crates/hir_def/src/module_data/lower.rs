@@ -1,21 +1,9 @@
-use crate::{
-	HirFileId,
-	ast_id::AstIdMap,
-	db::DefDatabase,
-	module_data::{
-		Function,
-		ModuleData,
-		ModuleItem,
-		ModuleItemId,
-		Param,
-	},
-	type_ref::TypeRef,
-};
+use std::sync::Arc;
+
 use la_arena::{
 	Idx,
 	IdxRange,
 };
-use std::sync::Arc;
 use syntax::{
 	AstNode,
 	HasName,
@@ -36,6 +24,19 @@ use super::{
 	Override,
 	Struct,
 	TypeAlias,
+};
+use crate::{
+	HirFileId,
+	ast_id::AstIdMap,
+	db::DefDatabase,
+	module_data::{
+		Function,
+		ModuleData,
+		ModuleItem,
+		ModuleItemId,
+		Param,
+	},
+	type_ref::TypeRef,
 };
 
 pub(crate) struct Ctx<'a> {

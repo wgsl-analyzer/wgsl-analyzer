@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use super::{
 	Ty,
 	TyKind,
@@ -15,7 +17,6 @@ use crate::{
 		TextureKind,
 	},
 };
-use std::fmt::Write;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub enum TypeVerbosity {

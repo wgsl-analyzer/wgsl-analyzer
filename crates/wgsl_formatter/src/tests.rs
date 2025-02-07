@@ -1,12 +1,13 @@
 use std::panic;
 
-use crate::{
-	FormattingOptions,
-	format_recursive,
-};
 use expect_test::{
 	Expect,
 	expect,
+};
+
+use crate::{
+	FormattingOptions,
+	format_recursive,
 };
 
 fn check(

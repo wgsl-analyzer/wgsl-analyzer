@@ -32,6 +32,10 @@ use syntax::{
 	},
 };
 
+use self::{
+	global_variable::GlobalVariableDiagnostic,
+	precedence::PrecedenceDiagnostic,
+};
 use crate::{
 	Function,
 	GlobalConstant,
@@ -39,11 +43,6 @@ use crate::{
 	HasSource,
 	Override,
 	TypeAlias,
-};
-
-use self::{
-	global_variable::GlobalVariableDiagnostic,
-	precedence::PrecedenceDiagnostic,
 };
 
 pub struct DiagnosticsConfig {

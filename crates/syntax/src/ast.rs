@@ -1,5 +1,16 @@
 pub mod operators;
 
+use rowan::NodeOrToken;
+use wgsl_parser::{
+	SyntaxKind,
+	SyntaxNode,
+};
+
+use self::operators::{
+	BinaryOp,
+	CompoundOp,
+	UnaryOp,
+};
 use crate::{
 	AstChildren,
 	AstNode,
@@ -15,17 +26,6 @@ use crate::{
 		LogicOp,
 	},
 	support,
-};
-use rowan::NodeOrToken;
-use wgsl_parser::{
-	SyntaxKind,
-	SyntaxNode,
-};
-
-use self::operators::{
-	BinaryOp,
-	CompoundOp,
-	UnaryOp,
 };
 
 macro_rules! ast_node {

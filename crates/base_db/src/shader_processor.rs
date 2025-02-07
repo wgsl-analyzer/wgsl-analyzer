@@ -1,10 +1,10 @@
 use std::{
 	collections::HashSet,
 	ops::Range,
+	sync::OnceLock,
 };
 
 use regex::Regex;
-use std::sync::OnceLock;
 
 pub fn get_shader_processor() -> &'static ShaderProcessor {
 	static SHADER_PROCESSOR: OnceLock<ShaderProcessor> = OnceLock::new();
@@ -130,8 +130,9 @@ fn lines_with_offsets(input: &str) -> impl Iterator<Item = (&str, usize)> {
 
 #[cfg(test)]
 mod tests {
-	use super::ShaderProcessor;
 	use std::collections::HashSet;
+
+	use super::ShaderProcessor;
 
 	fn test_shader(
 		input: &str,

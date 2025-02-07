@@ -1,6 +1,7 @@
 use hir_ty::ty::TyKind;
 use itertools::Itertools;
 
+use super::Completions;
 use crate::{
 	context::{
 		CompletionContext,
@@ -12,8 +13,6 @@ use crate::{
 		CompletionRelevance,
 	},
 };
-
-use super::Completions;
 
 pub(crate) fn complete_dot(
 	acc: &mut Completions,

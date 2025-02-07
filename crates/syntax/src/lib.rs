@@ -158,8 +158,6 @@ impl Deref for TokenText<'_> {
 mod support {
 	use std::borrow::Cow;
 
-	use crate::AstToken;
-
 	use super::{
 		AstChildren,
 		AstNode,
@@ -168,6 +166,7 @@ mod support {
 		SyntaxToken,
 		TokenText,
 	};
+	use crate::AstToken;
 
 	pub(crate) fn child<N: AstNode>(parent: &SyntaxNode) -> Option<N> {
 		parent.children().find_map(N::cast)

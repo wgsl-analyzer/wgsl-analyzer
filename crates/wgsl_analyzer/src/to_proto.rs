@@ -1,3 +1,5 @@
+use std::path;
+
 use base_db::{
 	FileRange,
 	TextRange,
@@ -14,7 +16,6 @@ use ide_completion::item::{
 };
 use itertools::Itertools as _;
 use paths::AbsPath;
-use std::path;
 use text_edit::{
 	Indel,
 	TextEdit,

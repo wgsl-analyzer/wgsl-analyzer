@@ -1,5 +1,18 @@
 //! See [`RequestDispatcher`].
 
+use std::{
+	fmt,
+	panic,
+	thread,
+};
+
+use fmt::Debug;
+use lsp_server::ExtractError;
+use serde::{
+	Serialize,
+	de::DeserializeOwned,
+};
+
 use crate::{
 	LspError,
 	Result,
@@ -9,18 +22,6 @@ use crate::{
 	},
 	lsp_utils::is_cancelled,
 	main_loop::Task,
-};
-
-use fmt::Debug;
-use lsp_server::ExtractError;
-use serde::{
-	Serialize,
-	de::DeserializeOwned,
-};
-use std::{
-	fmt,
-	panic,
-	thread,
 };
 
 /// A visitor for routing a raw JSON request to an appropriate handler function.

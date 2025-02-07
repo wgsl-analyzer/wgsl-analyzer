@@ -1,3 +1,8 @@
+use std::{
+	collections::hash_map::Entry,
+	sync::Arc,
+};
+
 use either::Either;
 use hir_def::{
 	body::{
@@ -45,10 +50,6 @@ use hir_def::{
 };
 use la_arena::ArenaMap;
 use rustc_hash::FxHashMap;
-use std::{
-	collections::hash_map::Entry,
-	sync::Arc,
-};
 
 use crate::{
 	HirDatabase,

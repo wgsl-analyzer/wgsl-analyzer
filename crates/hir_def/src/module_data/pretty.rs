@@ -1,5 +1,6 @@
 use std::fmt::Write;
 
+use super::ImportValue;
 use crate::{
 	db::DefDatabase,
 	module_data::{
@@ -7,8 +8,6 @@ use crate::{
 		ModuleItem,
 	},
 };
-
-use super::ImportValue;
 
 pub fn pretty_print_module(
 	db: &dyn DefDatabase,

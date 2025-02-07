@@ -1,4 +1,5 @@
 use la_arena::Idx;
+pub use syntax::ast::operators::*;
 use syntax::ast::{
 	self,
 	IncrDecr,
@@ -15,8 +16,6 @@ use crate::{
 		VecDimensionality,
 	},
 };
-
-pub use syntax::ast::operators::*;
 
 pub type ExprId = Idx<Expr>;
 

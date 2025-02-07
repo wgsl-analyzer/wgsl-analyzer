@@ -11,6 +11,7 @@ use hir_ty::{
 	ty::pretty::pretty_type,
 };
 
+use super::Completions;
 use crate::{
 	context::{
 		CompletionContext,
@@ -22,8 +23,6 @@ use crate::{
 		CompletionRelevance,
 	},
 };
-
-use super::Completions;
 
 pub(crate) fn complete_names_in_scope(
 	acc: &mut Completions,

@@ -7,25 +7,23 @@ mod parsing;
 mod sink;
 mod source;
 
-pub use parsing::{
-	ParseError,
-	Parser,
-	marker,
-};
-
 use std::{
 	fmt::Debug,
 	marker::PhantomData,
 };
 
+use lexer::Lexer;
+pub use parsing::{
+	ParseError,
+	Parser,
+	marker,
+};
 use rowan::{
 	GreenNode,
 	SyntaxNode,
 };
 use sink::Sink;
 use source::Source;
-
-use lexer::Lexer;
 
 pub trait TokenKind: Copy + PartialEq + Debug {
 	fn is_trivia(self) -> bool;

@@ -1,3 +1,17 @@
+use std::{
+	sync::Arc,
+	time::Instant,
+};
+
+use base_db::SourceDatabase as _;
+use crossbeam_channel::{
+	Receiver,
+	select,
+};
+use lsp_server::Connection;
+use salsa::Durability;
+use vfs::FileId;
+
 use crate::{
 	Result,
 	config::Config,
@@ -13,18 +27,6 @@ use crate::{
 	lsp_ext,
 	lsp_utils::is_cancelled,
 };
-use base_db::SourceDatabase as _;
-use crossbeam_channel::{
-	Receiver,
-	select,
-};
-use lsp_server::Connection;
-use salsa::Durability;
-use std::{
-	sync::Arc,
-	time::Instant,
-};
-use vfs::FileId;
 
 #[inline]
 pub fn main_loop(

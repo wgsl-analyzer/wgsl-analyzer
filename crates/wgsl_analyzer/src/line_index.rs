@@ -5,8 +5,9 @@
 //! This module does line ending conversion and detection (so that we can
 //! convert back to `\r\n` on the way out).
 
-use base_db::line_index;
 use std::sync::Arc;
+
+use base_db::line_index;
 
 pub enum OffsetEncoding {
 	Utf8,

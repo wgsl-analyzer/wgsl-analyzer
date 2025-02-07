@@ -4,8 +4,6 @@ pub mod change;
 pub mod line_index;
 
 mod util_types;
-pub use util_types::*;
-
 use std::{
 	collections::{
 		HashMap,
@@ -19,6 +17,7 @@ use syntax::{
 	Parse,
 	ParseEntryPoint,
 };
+pub use util_types::*;
 pub use vfs::FileId;
 
 pub trait Upcast<T: ?Sized> {

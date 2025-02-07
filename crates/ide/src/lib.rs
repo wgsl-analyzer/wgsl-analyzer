@@ -10,6 +10,8 @@ mod hover;
 pub mod inlay_hints;
 mod syntax_tree;
 
+use std::sync::Arc;
+
 use base_db::{
 	FilePosition,
 	FileRange,
@@ -33,7 +35,6 @@ use salsa::{
 	Cancelled,
 	ParallelDatabase,
 };
-use std::sync::Arc;
 use syntax::{
 	Parse,
 	SyntaxNode,

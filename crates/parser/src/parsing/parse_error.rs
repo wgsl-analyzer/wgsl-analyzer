@@ -1,8 +1,9 @@
-use rowan::TextRange;
 use std::fmt::{
 	self,
 	Write,
 };
+
+use rowan::TextRange;
 
 use crate::parsing::ParserDefinition;
 

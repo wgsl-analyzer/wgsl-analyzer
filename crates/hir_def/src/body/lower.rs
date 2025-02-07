@@ -1,3 +1,12 @@
+use either::Either;
+use syntax::{
+	AstNode,
+	HasGenerics,
+	HasName,
+	ast,
+	ptr::AstPtr,
+};
+
 use super::{
 	Binding,
 	BindingId,
@@ -23,14 +32,6 @@ use crate::{
 		matrix_dimensions,
 		vector_dimensions,
 	},
-};
-use either::Either;
-use syntax::{
-	AstNode,
-	HasGenerics,
-	HasName,
-	ast,
-	ptr::AstPtr,
 };
 
 pub fn lower_function_body(

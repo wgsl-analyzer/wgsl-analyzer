@@ -10,6 +10,10 @@ use la_arena::{
 };
 use rustc_hash::FxHashMap;
 
+use super::{
+	BindingId,
+	Body,
+};
 use crate::{
 	db::{
 		DefDatabase,
@@ -21,11 +25,6 @@ use crate::{
 		StatementId,
 	},
 	module_data::Name,
-};
-
-use super::{
-	BindingId,
-	Body,
 };
 
 pub type ScopeId = Idx<ScopeData>;

@@ -1,8 +1,10 @@
-use std::io::stderr;
+use std::{
+	env::args,
+	io::stderr,
+};
 
 use lsp_server::Connection;
 use lsp_types::InitializeParams;
-use std::env::args;
 use tracing::info;
 use tracing_subscriber::fmt::Subscriber;
 use wgsl_analyzer::{

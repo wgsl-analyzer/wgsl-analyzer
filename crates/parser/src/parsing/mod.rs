@@ -1,6 +1,9 @@
 pub mod marker;
 mod parse_error;
 
+use std::marker::PhantomData;
+
+use marker::Marker;
 pub use parse_error::ParseError;
 
 use super::{
@@ -9,8 +12,6 @@ use super::{
 	lexer::Token,
 	source::Source,
 };
-use marker::Marker;
-use std::marker::PhantomData;
 
 pub struct Parser<'t, 'input, P: ParserDefinition> {
 	source: Source<'t, 'input, P>,

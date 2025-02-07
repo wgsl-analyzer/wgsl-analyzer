@@ -1,10 +1,10 @@
-use anyhow::Context;
-use lexopt::prelude::*;
 use std::{
 	io::Read,
 	path::PathBuf,
 };
 
+use anyhow::Context;
+use lexopt::prelude::*;
 use wgsl_formatter::FormattingOptions;
 
 const HELP_STR: &str = r#"wgslfmt [options] <file>...
