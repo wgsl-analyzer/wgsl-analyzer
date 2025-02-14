@@ -27,10 +27,12 @@ pub fn hover(
     if let Some(import) = import {
         let import = sema.resolve_import(InFile::new(file_range.file_id.into(), import))?;
 
-        return Some(RangeInfo {
-            range: file_range.range,
-            info: HoverResult::SourceCode(import.file_text(db)?),
-        });
+        if !import.is_path(db) {
+            return Some(RangeInfo {
+                range: file_range.range,
+                info: HoverResult::SourceCode(import.file_text(db)?),
+            });
+        }
     }
 
     None
