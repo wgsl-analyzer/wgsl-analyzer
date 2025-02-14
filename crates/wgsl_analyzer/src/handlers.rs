@@ -164,7 +164,7 @@ pub fn handle_inlay_hints(
 
     Ok(Some(
         snap.analysis
-            .inlay_hints(&snap.config.inlay_hints(), file_id, range.ok())?
+            .inlay_hints(&snap.config.data.inlay_hints(), file_id, range.ok())?
             .iter()
             .map(|it| to_proto::inlay_hint(true, &line_index, it))
             .collect(),

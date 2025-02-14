@@ -3,6 +3,7 @@ use std::sync::Arc;
 use base_db::{change::Change, FileId};
 use expect_test::{expect, Expect};
 use hir_def::db::DefDatabase;
+use vfs::VfsPath;
 
 use crate::RootDatabase;
 
@@ -10,7 +11,11 @@ fn single_file_db(source: &str) -> (RootDatabase, FileId) {
     let mut db = RootDatabase::new();
     let mut change = Change::new();
     let file_id = FileId(0);
-    change.change_file(file_id, Some(Arc::new(source.to_string())));
+    change.change_file(
+        file_id,
+        Some(Arc::new(source.to_string())),
+        VfsPath::new_virtual_path("/".into()),
+    );
     db.apply_change(change);
 
     (db, file_id)
