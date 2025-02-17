@@ -101,7 +101,7 @@ impl ShaderProcessor {
             if use_line {
                 final_string.push_str(line);
             } else {
-                final_string.extend(std::iter::repeat(' ').take(line.len()));
+                final_string.extend(std::iter::repeat_n(' ', line.len()));
             }
 
             final_string.push('\n');
