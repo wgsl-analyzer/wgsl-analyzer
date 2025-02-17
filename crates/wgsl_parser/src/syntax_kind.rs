@@ -2,8 +2,7 @@
 #[repr(u16)]
 pub enum SyntaxKind {
     SourceFile,
-
-    // Emergent nodes
+    /// Emergent nodes
     Name,
     /// a function
     Function,
@@ -25,13 +24,13 @@ pub enum SyntaxKind {
     VariableStatement,
     /// an expression in statement position. Only function calls are allowed there in WGSL, but we parse it nonetheless
     ExprStatement,
-    /// loop { stmts }
+    /// `loop { stmts }`
     LoopStatement,
-    /// while (expr) { stmts }
+    /// `while (expr) { stmts }`
     WhileStatement,
-    /// if (expr) { stmts }
+    /// `if (expr) { stmts }`
     IfStatement,
-    /// switch expr { case 1, 2: {} default: {}}
+    /// `switch expr { case 1, 2: {} default: {} }`
     SwitchStatement,
     /// The block of a switch statement
     SwitchBlock,
@@ -42,11 +41,11 @@ pub enum SyntaxKind {
     /// default: {}
     SwitchBodyDefault,
 
-    // i++, i--
+    /// `i++`, `i--`
     IncrDecrStatement,
     ElseIfBlock,
     ElseBlock,
-    /// for(init, cmp, update) {}
+    /// `for(init, cmp, update) {}`
     ForStatement,
     ForInitializer,
     ForCondition,
@@ -57,19 +56,19 @@ pub enum SyntaxKind {
     BinaryOperator,
     /// The parameters to a function call
     FunctionParamList,
-    /// a.b
+    /// `a.b`
     FieldExpr,
-    /// pow(2, 3)
+    /// `pow(2, 3)`
     FunctionCall,
-    // (pow)(2, 3)
+    /// `(pow)(2, 3)`
     InvalidFunctionCall,
-    /// a\[0\]
+    /// `a\[0\]`
     IndexExpr,
-    /// vec3<f32>(1.0)
+    /// `vec3<f32>(1.0)`
     TypeInitializer,
-    // vec3(1.0)
+    /// `vec3(1.0)`
     InferredInitializer,
-    // return foo
+    /// `return foo`
     ReturnStmt,
     /// an expression of the form `lhs <op> rhs`
     InfixExpr,
@@ -83,19 +82,19 @@ pub enum SyntaxKind {
     NameRef,
     /// an expression inside parenthesis
     ParenExpr,
-    /// an expression of the form bitcast< <type> >(expr)
+    /// an expression of the form `bitcast< <type> >(expr)`
     BitcastExpr,
     /// a non-builtin type
     PathType,
-    /// a = b
+    /// `a = b`
     AssignmentStmt,
-    /// a += b
+    /// `a += b`
     CompoundAssignmentStmt,
-    /// [[location(0), interpolate(flat)]]
+    /// `[[location(0), interpolate(flat)]]`
     AttributeList,
-    /// location(0, 1, 2)
+    /// `location(0, 1, 2)`
     Attribute,
-    /// (0, 1, ident)
+    /// `(0, 1, ident)`
     AttributeParameters,
     /// the definition of a struct
     StructDecl,
@@ -103,15 +102,15 @@ pub enum SyntaxKind {
     StructDeclBody,
     /// one field of a struct declaration
     StructDeclField,
-    /// var<uniform> test: u32
+    /// `var<uniform> test: u32`
     GlobalVariableDecl,
-    /// let global: u32 = 10u
+    /// `let global: u32 = 10u`
     GlobalConstantDecl,
-    /// override gain: f32;
+    /// `override gain: f32;`
     OverrideDecl,
-    /// continuing { stmts }
+    /// `continuing { stmts }`
     ContinuingStatement,
-    /// Type alias declaration: type float4 = vec4<f32>
+    /// Type alias declaration: `type float4 = vec4<f32>`
     TypeAliasDecl,
 
     /// `#import foo` or `#import "file.wgsl"`

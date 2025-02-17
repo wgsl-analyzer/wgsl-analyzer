@@ -33,7 +33,7 @@ pub struct RequestDispatcher<'global_state> {
 }
 
 impl<'global_state> RequestDispatcher<'global_state> {
-    pub fn new(
+    pub const fn new(
         request: Option<lsp_server::Request>,
         global_state: &'global_state mut GlobalState,
     ) -> Self {
@@ -179,7 +179,7 @@ where
             if let Some(panic_message) = panic_message {
                 message.push_str(": ");
                 message.push_str(panic_message);
-            };
+            }
             #[expect(clippy::as_conversions, reason = "valid according to JSON RPC")]
             lsp_server::Response::new_err(id, lsp_server::ErrorCode::InternalError as i32, message)
         },
@@ -226,7 +226,7 @@ pub struct NotificationDispatcher<'global_state> {
 }
 
 impl<'global_state> NotificationDispatcher<'global_state> {
-    pub fn new(
+    pub const fn new(
         not: Option<lsp_server::Notification>,
         global_state: &'global_state mut GlobalState,
     ) -> Self {

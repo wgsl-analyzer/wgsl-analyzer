@@ -1,5 +1,5 @@
-//! `LineIndex` maps flat `TextSize` offsets into `(Line, Column)`
-//! representation.
+//! `LineIndex` maps flat `TextSize` offsets into `(Line, Column)` representation.
+
 use std::{iter, mem};
 
 use rowan::{TextRange, TextSize};

@@ -150,6 +150,8 @@ pub fn apply_document_changes(
                 line_index.index = Arc::new(base_db::line_index::LineIndex::new(old_text));
             }
             index_valid = IndexValid::UpToLineExclusive(range.start.line);
+            #[expect(clippy::allow_attributes, reason = "only happens on nightly")]
+            #[allow(unfulfilled_lint_expectations, reason = "no longer happens on nightly")]
             #[expect(if_let_rescope, reason = "conflicting lints")]
             if let Ok(range) = from_proto::text_range(&line_index, range) {
                 old_text.replace_range(Range::<usize>::from(range), &change.text);
@@ -188,7 +190,7 @@ pub fn all_edits_are_disjoint(
     }
     if let Some(additional_changes) = completion.additional_text_edits.as_ref() {
         edit_ranges.extend(additional_changes.iter().map(|edit| edit.range));
-    };
+    }
     edit_ranges.extend(additional_edits.iter().map(|edit| edit.range));
     edit_ranges.sort_by_key(|range| (range.start, range.end));
     edit_ranges
