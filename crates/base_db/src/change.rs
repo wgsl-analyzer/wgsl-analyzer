@@ -19,7 +19,10 @@ impl Change {
         Self::default()
     }
 
-    pub fn set_roots(&mut self, roots: Vec<SourceRoot>) {
+    pub fn set_roots(
+        &mut self,
+        roots: Vec<SourceRoot>,
+    ) {
         self.roots = Some(roots);
     }
 

@@ -33,9 +33,15 @@ pub trait DefDatabase: InternDatabase + Upcast<dyn SourceDatabase> {
         file_id: HirFileId,
     ) -> Result<Parse, ()>;
 
-    fn get_path(&self, file_id: HirFileId) -> Result<VfsPath, ()>;
+    fn get_path(
+        &self,
+        file_id: HirFileId,
+    ) -> Result<VfsPath, ()>;
 
-    fn get_file_id(&self, path: VfsPath) -> Result<FileId, ()>;
+    fn get_file_id(
+        &self,
+        path: VfsPath,
+    ) -> Result<FileId, ()>;
 
     fn ast_id_map(
         &self,
@@ -120,14 +126,20 @@ pub trait DefDatabase: InternDatabase + Upcast<dyn SourceDatabase> {
     ) -> Arc<AttrsWithOwner>;
 }
 
-fn get_path(db: &dyn DefDatabase, file_id: HirFileId) -> Result<VfsPath, ()> {
+fn get_path(
+    db: &dyn DefDatabase,
+    file_id: HirFileId,
+) -> Result<VfsPath, ()> {
     match file_id.0 {
         HirFileIdRepr::FileId(file_id) => Ok(db.file_path(file_id)),
         _ => Err(()),
     }
 }
 
-fn get_file_id(db: &dyn DefDatabase, path: VfsPath) -> Result<FileId, ()> {
+fn get_file_id(
+    db: &dyn DefDatabase,
+    path: VfsPath,
+) -> Result<FileId, ()> {
     Ok(db.file_id(path))
 }
 
@@ -146,7 +158,7 @@ fn parse_or_resolve(
                 crate::module_data::ImportValue::Path(path) => {
                     let file_id = relative_file(db, import_loc.file_id, path).ok_or(())?;
                     Ok(db.parse(file_id))
-                }
+                },
                 crate::module_data::ImportValue::Custom(key) => {
                     db.parse_import(key.clone(), syntax::ParseEntryPoint::File)
                 },

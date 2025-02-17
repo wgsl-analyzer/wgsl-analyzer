@@ -85,7 +85,7 @@ impl<'a> Ctx<'a> {
                     .filter(|&c| c != '"')
                     .collect();
                 ImportValue::Path(import_path)
-            }
+            },
             ast::ImportKind::ImportCustom(custom) => ImportValue::Custom(custom.key()),
         };
 
@@ -262,7 +262,7 @@ impl<'a> Ctx<'a> {
                         tracing::info!("attempted import {:?}", path);
                         let file_id = relative_file(self.db, self.file_id, path)?;
                         Ok(self.db.parse(file_id))
-                    }
+                    },
                     crate::module_data::ImportValue::Custom(key) => self
                         .db
                         .parse_import(key.clone(), syntax::ParseEntryPoint::FnParamList),

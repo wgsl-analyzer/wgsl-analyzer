@@ -77,7 +77,10 @@ impl Upcast<dyn SourceDatabase> for RootDatabase {
 }
 
 impl FileLoader for RootDatabase {
-    fn resolve_path(&self, path: AnchoredPath<'_>) -> Option<FileId> {
+    fn resolve_path(
+        &self,
+        path: AnchoredPath<'_>,
+    ) -> Option<FileId> {
         FileLoaderDelegate(self).resolve_path(path)
     }
 }

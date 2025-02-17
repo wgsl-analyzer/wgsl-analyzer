@@ -35,15 +35,24 @@ impl SourceRoot {
         }
     }
 
-    pub fn path_for_file(&self, file: &FileId) -> Option<&VfsPath> {
+    pub fn path_for_file(
+        &self,
+        file: &FileId,
+    ) -> Option<&VfsPath> {
         self.file_set.path_for_file(file)
     }
 
-    pub fn file_for_path(&self, path: &VfsPath) -> Option<&FileId> {
+    pub fn file_for_path(
+        &self,
+        path: &VfsPath,
+    ) -> Option<&FileId> {
         self.file_set.file_for_path(path)
     }
 
-    pub fn resolve_path(&self, path: AnchoredPath<'_>) -> Option<FileId> {
+    pub fn resolve_path(
+        &self,
+        path: AnchoredPath<'_>,
+    ) -> Option<FileId> {
         self.file_set.resolve_path(path)
     }
 

@@ -84,7 +84,10 @@ pub struct SourceRootConfig {
 }
 
 impl SourceRootConfig {
-    pub(crate) fn partition(&self, vfs: &vfs::Vfs) -> Vec<SourceRoot> {
+    pub(crate) fn partition(
+        &self,
+        vfs: &vfs::Vfs,
+    ) -> Vec<SourceRoot> {
         //let _p = profile::span("SourceRootConfig::partition");
         self.fsc
             .partition(vfs)

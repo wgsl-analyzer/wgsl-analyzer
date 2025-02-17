@@ -30,7 +30,10 @@ impl From<ImportFile> for HirFileId {
 impl HirFileId {
     /// For import files, returns the file id of the file that needs to be imported
     /// or `None` if that file has not been opened yet
-    pub fn original_file(self, db: &dyn DefDatabase) -> Option<FileId> {
+    pub fn original_file(
+        self,
+        db: &dyn DefDatabase,
+    ) -> Option<FileId> {
         loop {
             match self.0 {
                 HirFileIdRepr::FileId(id) => break Some(id),
@@ -42,10 +45,10 @@ impl HirFileId {
                     match &import.value {
                         ImportValue::Path(path) => {
                             return relative_file(db, import_loc.file_id, path)
-                        }
+                        },
                         _ => unimplemented!(),
                     }
-                }
+                },
             }
         }
     }
@@ -56,7 +59,11 @@ pub struct ImportFile {
     pub import_id: ImportId,
 }
 
-pub fn relative_file(db: &dyn DefDatabase, call_id: HirFileId, path_str: &str) -> Option<FileId> {
+pub fn relative_file(
+    db: &dyn DefDatabase,
+    call_id: HirFileId,
+    path_str: &str,
+) -> Option<FileId> {
     let call_site = call_id.original_file(db)?;
     let path = AnchoredPath {
         anchor: call_site,

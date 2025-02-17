@@ -2,8 +2,8 @@ use std::collections::{HashMap, HashSet};
 
 use hir::diagnostics;
 use hir_ty::ty::pretty::TypeVerbosity;
-use paths::AbsPathBuf;
 use ide::{inlay_hints, inlay_hints::StructLayoutHints};
+use paths::AbsPathBuf;
 use serde::Deserialize;
 
 use crate::line_index::OffsetEncoding;
@@ -87,7 +87,10 @@ impl Default for NagaVersion {
 }
 
 impl ConfigData {
-    fn try_update(&mut self, value: serde_json::Value) -> Result<(), serde_json::Error> {
+    fn try_update(
+        &mut self,
+        value: serde_json::Value,
+    ) -> Result<(), serde_json::Error> {
         *self = serde_json::from_value(value)?;
         Ok(())
     }

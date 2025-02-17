@@ -116,7 +116,7 @@ impl Collector<'_> {
                                         let file_id =
                                             relative_file(self.db, import_loc.file_id, path)?;
                                         Some(self.db.parse(file_id))
-                                    }
+                                    },
                                     crate::module_data::ImportValue::Custom(key) => self
                                         .db
                                         .parse_import(

@@ -23,7 +23,10 @@ pub trait Upcast<T: ?Sized> {
 }
 
 pub trait FileLoader {
-    fn resolve_path(&self, path: AnchoredPath<'_>) -> Option<FileId>;
+    fn resolve_path(
+        &self,
+        path: AnchoredPath<'_>,
+    ) -> Option<FileId>;
 }
 
 #[salsa::query_group(SourceDatabaseStorage)]
@@ -35,10 +38,16 @@ pub trait SourceDatabase: FileLoader {
     ) -> Arc<String>;
 
     #[salsa::input]
-    fn file_path(&self, file_id: FileId) -> VfsPath;
+    fn file_path(
+        &self,
+        file_id: FileId,
+    ) -> VfsPath;
 
     #[salsa::input]
-    fn file_id(&self, path: VfsPath) -> FileId;
+    fn file_id(
+        &self,
+        path: VfsPath,
+    ) -> FileId;
 
     #[salsa::input]
     fn custom_imports(&self) -> Arc<HashMap<String, String>>;
@@ -49,10 +58,16 @@ pub trait SourceDatabase: FileLoader {
     /// Path to a file, relative to the root of its source root.
     /// Source root of the file.
     #[salsa::input]
-    fn file_source_root(&self, file_id: FileId) -> SourceRootId;
+    fn file_source_root(
+        &self,
+        file_id: FileId,
+    ) -> SourceRootId;
     /// Contents of the source root.
     #[salsa::input]
-    fn source_root(&self, id: SourceRootId) -> Arc<SourceRoot>;
+    fn source_root(
+        &self,
+        id: SourceRootId,
+    ) -> Arc<SourceRoot>;
 
     #[salsa::invoke(parse_no_preprocessor_query)]
     fn parse_no_preprocessor(
@@ -174,7 +189,10 @@ fn parse_import_query(
 pub struct FileLoaderDelegate<T>(pub T);
 
 impl<T: SourceDatabase> FileLoader for FileLoaderDelegate<&'_ T> {
-    fn resolve_path(&self, path: AnchoredPath<'_>) -> Option<FileId> {
+    fn resolve_path(
+        &self,
+        path: AnchoredPath<'_>,
+    ) -> Option<FileId> {
         // FIXME: this *somehow* should be platform agnostic...
         let source_root = self.0.file_source_root(path.anchor);
         let source_root = self.0.source_root(source_root);

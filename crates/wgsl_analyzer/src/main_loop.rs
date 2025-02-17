@@ -18,8 +18,7 @@ use crate::{
     config::Config,
     dispatch::{NotificationDispatcher, RequestDispatcher},
     global_state::{file_id_to_url, GlobalState},
-    handlers, lsp_ext,
-    Result,
+    handlers, lsp_ext, Result,
 };
 
 #[inline]
@@ -48,7 +47,6 @@ impl GlobalState {
         mut self,
         receiver: &Receiver<lsp_server::Message>,
     ) -> Result<()> {
-        
         let mut event = self.next_event(receiver);
         while let Some(e) = event {
             self.handle_event(e)?;
@@ -91,7 +89,7 @@ impl GlobalState {
                         self.diagnostics
                             .set_native_diagnostics(file_id, diagnostics);
                     }
-                }
+                },
                 Task::FetchWorkspace(progress) => {
                     let (state, msg) = match progress {
                         ProjectWorkspaceProgress::Begin => (Progress::Begin, None),
@@ -99,11 +97,11 @@ impl GlobalState {
                         ProjectWorkspaceProgress::End(_) => {
                             self.switch_workspaces();
                             (Progress::End, None)
-                        }
+                        },
                     };
 
                     self.report_progress("Fetching", &state, msg, None);
-                }
+                },
             },
         }
 
@@ -116,35 +114,41 @@ impl GlobalState {
 
         if state_changed {
             // Update import paths?
-            match changes.as_ref() { Some(changes) => {
-                for file_id in changes {
-                    let module = self
-                        .analysis_host
-                        .raw_database()
-                        .module_info(HirFileId::from(*file_id));
-                    for item in module.items() {
-                        if let ModuleItem::Import(import) = item {
-                            let import = module.get(*import);
-                            if let ImportValue::Path(path) = &import.value {
-                                let parent_path = self
-                                    .analysis_host
-                                    .raw_database()
-                                    .file_path(*file_id)
-                                    .parent()
-                                    .unwrap();
-                                let import_path = parent_path.join(path).unwrap();
+            match changes.as_ref() {
+                Some(changes) => {
+                    for file_id in changes {
+                        let module = self
+                            .analysis_host
+                            .raw_database()
+                            .module_info(HirFileId::from(*file_id));
+                        for item in module.items() {
+                            if let ModuleItem::Import(import) = item {
+                                let import = module.get(*import);
+                                if let ImportValue::Path(path) = &import.value {
+                                    let parent_path = self
+                                        .analysis_host
+                                        .raw_database()
+                                        .file_path(*file_id)
+                                        .parent()
+                                        .unwrap();
+                                    let import_path = parent_path.join(path).unwrap();
 
-                                let params =
-                                    lsp_ext::import_text_document::ImportTextDocumentParams {
-                                        uri: import_path.to_string(),
-                                    };
+                                    let params =
+                                        lsp_ext::import_text_document::ImportTextDocumentParams {
+                                            uri: import_path.to_string(),
+                                        };
 
-                                self.send_request::<lsp_ext::ImportTextDocument>(params, |_, _| {});
+                                    self.send_request::<lsp_ext::ImportTextDocument>(
+                                        params,
+                                        |_, _| {},
+                                    );
+                                }
                             }
                         }
                     }
-                }
-            } _ => {}}
+                },
+                _ => {},
+            }
         }
 
         if let Some(diagnostic_changes) = changes {
@@ -274,10 +278,13 @@ impl GlobalState {
             })?
             .on::<lsp_types::notification::DidChangeWatchedFiles>(|_, params| {
                 for change in params.changes {
-                    match from_proto::abs_path(&change.uri) { Ok(path) => {
-                        info!("Changed {}", path);
-                        //this.loader.handle.invalidate(path);
-                    } _ => {}}
+                    match from_proto::abs_path(&change.uri) {
+                        Ok(path) => {
+                            info!("Changed {}", path);
+                            //this.loader.handle.invalidate(path);
+                        },
+                        _ => {},
+                    }
                 }
                 Ok(())
             })?

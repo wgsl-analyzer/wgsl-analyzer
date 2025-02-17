@@ -237,10 +237,10 @@ fn module_item_to_def(
                         .iter()
                         .flat_map(|item| module_item_to_def(db, original_file, item))
                         .collect();
-                }
+                },
                 _ => return smallvec::smallvec![],
             }
-        }
+        },
         ModuleItem::TypeAlias(type_alias) => {
             let loc = Location::new(file_id, type_alias);
             let id = db.intern_type_alias(loc);
@@ -646,7 +646,10 @@ pub struct Import {
 }
 
 impl Import {
-    pub fn is_path(&self, db: &dyn HirDatabase) -> bool {
+    pub fn is_path(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> bool {
         let import_loc = self.id.lookup(db.upcast());
         let module_info = db.module_info(import_loc.file_id);
         let import = module_info.get(import_loc.value);
@@ -666,7 +669,7 @@ impl Import {
             ImportValue::Path(path) => {
                 let file_id = relative_file(db.upcast(), import_loc.file_id, path)?;
                 Some(db.file_text(file_id).to_string())
-            }
+            },
             ImportValue::Custom(key) => {
                 let imports = db.custom_imports();
                 let source = imports.get(key)?;
@@ -691,7 +694,7 @@ impl Import {
             ImportValue::Path(path) => {
                 relative_file(db.upcast(), import_loc.file_id, path).ok_or(())?;
                 Ok(())
-            }
+            },
             ImportValue::Custom(key) => {
                 let imports = db.custom_imports();
                 if imports.contains_key(key) {

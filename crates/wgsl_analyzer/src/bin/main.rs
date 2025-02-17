@@ -1,4 +1,7 @@
-use std::{env::{self, args}, io::stderr};
+use std::{
+    env::{self, args},
+    io::stderr,
+};
 
 use lsp_server::Connection;
 use lsp_types::InitializeParams;
@@ -51,7 +54,7 @@ fn main() -> Result<()> {
             } else {
                 get_cwd_as_abs_path()?
             }
-        }
+        },
         None => get_cwd_as_abs_path()?,
     };
 

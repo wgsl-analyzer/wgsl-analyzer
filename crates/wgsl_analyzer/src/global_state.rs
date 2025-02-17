@@ -11,7 +11,14 @@ use rustc_hash::FxHashMap;
 use vfs::{FileId, Vfs};
 
 use crate::{
-    config::Config, diagnostics::DiagnosticCollection, from_proto, line_index::{LineEndings, LineIndex}, main_loop::Task, reload::SourceRootConfig, task_pool::TaskPool, to_proto, Result
+    config::Config,
+    diagnostics::DiagnosticCollection,
+    from_proto,
+    line_index::{LineEndings, LineIndex},
+    main_loop::Task,
+    reload::SourceRootConfig,
+    task_pool::TaskPool,
+    to_proto, Result,
 };
 
 type ReqHandler = fn(&mut GlobalState, lsp_server::Response);
@@ -30,12 +37,10 @@ pub struct GlobalState {
 
     pub vfs: Arc<RwLock<(Vfs, FxHashMap<FileId, LineEndings>)>>,
     // pub vfs_config_version: u32,
-
     pub analysis_host: AnalysisHost,
     pub diagnostics: DiagnosticCollection,
     pub config: Arc<Config>,
     pub source_root_config: SourceRootConfig,
-
     // `workspaces` field stores the data we actually use, while the `OpQueue`
     // stores the result of the last fetch.
     // If the fetch (partially) fails, we do not update the current value.
