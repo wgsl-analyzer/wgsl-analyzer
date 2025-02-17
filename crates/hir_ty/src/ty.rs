@@ -45,7 +45,7 @@ impl Ty {
         matches!(db.lookup_intern_ty(self), TyKind::Error)
     }
 
-    /// T -> T, vecN<T> -> T
+    /// `T` -> `T`, `vecN<T>` -> `T`
     #[must_use]
     pub fn this_or_vec_inner(
         self,
@@ -58,7 +58,7 @@ impl Ty {
         }
     }
 
-    /// ref<inner> -> inner, ptr<inner> -> ptr<inner>
+    /// `ref<inner>` -> `inner`, `ptr<inner>` -> `ptr<inner>`
     #[must_use]
     pub fn unref(
         self,
