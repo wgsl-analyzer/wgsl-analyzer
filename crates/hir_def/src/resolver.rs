@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use tracing::info;
+
 use crate::{
     body::{
         scope::{ExprScopes, ScopeId},
@@ -104,8 +106,11 @@ impl Resolver {
                 let import_id = db.intern_import(loc);
                 let import_file = HirFileId::from(ImportFile { import_id });
                 let module_info = db.module_info(import_file);
-
-                self = self.push_module_scope(db, import_file, module_info);
+                if let Some(file_id) = import_file.original_file(db) {
+                    self = self.push_module_scope(db, file_id.into(), module_info);
+                } else {
+                    info!("Failed to resolve import file for {file_id:?}");
+                }
             }
         }
 

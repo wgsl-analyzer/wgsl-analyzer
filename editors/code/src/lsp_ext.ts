@@ -20,3 +20,14 @@ export interface FullSourceParams {
 export const fullSource = new lc.RequestType<FullSourceParams, string, void>("wgsl-analyzer/fullSource");
 
 export const requestConfiguration = new lc.RequestType<void, unknown, void>("wgsl-analyzer/requestConfiguration");
+
+export interface InlayHintsParams {
+    textDocument: lc.TextDocumentIdentifier;
+    range: lc.Range;
+}
+export const inlayHints = new lc.RequestType<InlayHintsParams, InlayHint[], void>("experimental/inlayHints");
+
+export interface ImportTextDocumentParams {
+    uri: lc.DocumentUri;
+}
+export const importTextDocument = new lc.RequestType<ImportTextDocumentParams, unknown, void>("wgsl-analyzer/importTextDocument");

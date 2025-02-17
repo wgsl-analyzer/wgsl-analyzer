@@ -10,6 +10,8 @@ use vfs::FileId;
 // PERF: FxHashMap/Set
 // pub(crate) type CheckFixes = Arc<HashMap<FileId, Vec<Fix>>>;
 
+#[derive(Debug, Default, Clone)]
+
 // #[derive(Debug, Default, Clone)]
 // pub struct DiagnosticsMapConfig {
 //     pub remap_prefix: HashMap<String, String>,
@@ -17,7 +19,6 @@ use vfs::FileId;
 //     pub warnings_as_hint: Vec<String>,
 // }
 
-#[derive(Debug, Default, Clone)]
 pub struct DiagnosticCollection {
     // FIXME: should be FxHashMap<FileId, Vec<ra_id::Diagnostic>>
     pub(crate) native: HashMap<FileId, Vec<lsp_types::Diagnostic>>,

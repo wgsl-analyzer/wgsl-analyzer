@@ -69,11 +69,16 @@ export class Ctx {
 
         client.start();
 
-        ctx.subscriptions.push(client.onRequest(lsp_ext.requestConfiguration, async (_, ct) => {
-            let options = await lspOptions(config);
-            return options;
-        }));
-
+        ctx.subscriptions.push(
+            client.onRequest(lsp_ext.requestConfiguration, async (_, ct) => {
+                let options = await lspOptions(config);
+                return options;
+            }),
+            client.onRequest(lsp_ext.importTextDocument, async (params, ct) => {
+                vscode.workspace.openTextDocument(params.uri);
+                return;
+            })
+        );
 
         return new Ctx(config, ctx, client);
     }
