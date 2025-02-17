@@ -54,9 +54,7 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-check-compiles-${{ hashFiles('**/Cargo.toml') }}
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
+      - uses: dtolnay/rust-toolchain@beta
       - name: Check Compile
         run: |
           cargo test --target-dir ../../../target
@@ -79,9 +77,7 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-check-doc-${{ hashFiles('**/Cargo.toml') }}
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
+      - uses: dtolnay/rust-toolchain@beta
       - name: Build doc
         run: cargo doc --workspace --all-features --no-deps --document-private-items --keep-going
         env:
