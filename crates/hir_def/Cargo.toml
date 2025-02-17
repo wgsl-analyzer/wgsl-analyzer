@@ -20,5 +20,5 @@ base-db = { path = "../base_db", version = "0.0.0" }
 smol_str = "0.3.2"
 rustc-hash = "2.1.0"
 either = "1.13.0"
-smallvec = "1.13.2"
+smallvec = "1.14.0"
 rowan = "0.16.1"
