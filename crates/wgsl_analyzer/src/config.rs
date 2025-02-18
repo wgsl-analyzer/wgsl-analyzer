@@ -51,6 +51,8 @@ pub struct ConfigData {
 }
 
 impl Config {
+    #[inline]
+    #[must_use]
     pub fn new(root_path: AbsPathBuf) -> Self {
         Self {
             root_path,
@@ -81,8 +83,9 @@ pub enum NagaVersion {
 }
 
 impl Default for NagaVersion {
+    #[inline]
     fn default() -> Self {
-        NagaVersion::Naga14
+        Self::Naga14
     }
 }
 

@@ -34,22 +34,20 @@ impl HirFileId {
         self,
         db: &dyn DefDatabase,
     ) -> Option<FileId> {
-        loop {
-            match self.0 {
-                HirFileIdRepr::FileId(id) => break Some(id),
-                HirFileIdRepr::MacroFile(ImportFile { import_id }) => {
-                    let import_loc = db.lookup_intern_import(import_id);
-                    let module_info = db.module_info(import_loc.file_id);
-                    let import = module_info.get(import_loc.value);
+        match self.0 {
+            HirFileIdRepr::FileId(id) => Some(id),
+            HirFileIdRepr::MacroFile(ImportFile { import_id }) => {
+                let import_loc = db.lookup_intern_import(import_id);
+                let module_info = db.module_info(import_loc.file_id);
+                let import = module_info.get(import_loc.value);
 
-                    match &import.value {
-                        ImportValue::Path(path) => {
-                            return relative_file(db, import_loc.file_id, path)
-                        },
-                        _ => unimplemented!(),
-                    }
-                },
-            }
+                match &import.value {
+                    ImportValue::Path(path) => {
+                        relative_file(db, import_loc.file_id, path)
+                    },
+                    _ => unimplemented!(),
+                }
+            },
         }
     }
 }

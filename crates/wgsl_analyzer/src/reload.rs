@@ -26,7 +26,7 @@ impl ProjectWorkspace {
     /// Returns the roots for the current `ProjectWorkspace`
     /// The return type contains the path and whether or not
     /// the root is a member of the current workspace
-    pub fn to_roots(&self) -> Vec<PackageRoot> {
+    pub const fn to_roots() -> Vec<PackageRoot> {
         Vec::new()
     }
 }
@@ -39,7 +39,7 @@ pub enum ProjectWorkspaceProgress {
 }
 
 impl GlobalState {
-    pub fn fetch_workspaces(&mut self) {
+    pub fn fetch_workspaces(&self) {
         self.task_pool.handle.spawn_with_sender(move |sender| {
             sender
                 .send(Task::FetchWorkspace(ProjectWorkspaceProgress::Begin))
@@ -63,8 +63,8 @@ impl GlobalState {
             }],
         };
         let registration = lsp_types::Registration {
-            id: "workspace/didChangeWatchedFiles".to_string(),
-            method: "workspace/didChangeWatchedFiles".to_string(),
+            id: "workspace/didChangeWatchedFiles".to_owned(),
+            method: "workspace/didChangeWatchedFiles".to_owned(),
             register_options: Some(serde_json::to_value(registration_options).unwrap()),
         };
         self.send_request::<lsp_types::request::RegisterCapability>(

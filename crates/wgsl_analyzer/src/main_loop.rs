@@ -1,12 +1,11 @@
 use crate::from_proto;
 use crate::lsp_utils::{is_cancelled, Progress};
 use crate::reload::ProjectWorkspaceProgress;
-use base_db::SourceDatabase;
+use base_db::SourceDatabase as _;
 use std::{sync::Arc, time::Instant};
 
-use base_db::SourceDatabase as _;
 use crossbeam_channel::{select, Receiver};
-use hir_def::db::DefDatabase;
+use hir_def::db::DefDatabase as _;
 use hir_def::module_data::{ImportValue, ModuleItem};
 use hir_def::HirFileId;
 use lsp_server::Connection;
@@ -48,8 +47,8 @@ impl GlobalState {
         receiver: &Receiver<lsp_server::Message>,
     ) -> Result<()> {
         let mut event = self.next_event(receiver);
-        while let Some(e) = event {
-            self.handle_event(e)?;
+        while let Some(current) = event {
+            self.handle_event(current)?;
             event = self.next_event(receiver);
         }
 
@@ -114,6 +113,7 @@ impl GlobalState {
 
         if state_changed {
             // Update import paths?
+            #[expect(clippy::single_match, reason = "changing to if let gives a warning about drop order")]
             match changes.as_ref() {
                 Some(changes) => {
                     for file_id in changes {
@@ -278,6 +278,7 @@ impl GlobalState {
             })?
             .on::<lsp_types::notification::DidChangeWatchedFiles>(|_, params| {
                 for change in params.changes {
+                    #[expect(clippy::single_match, reason = "changing to if let gives a warning about drop order")]
                     match from_proto::abs_path(&change.uri) {
                         Ok(path) => {
                             info!("Changed {}", path);

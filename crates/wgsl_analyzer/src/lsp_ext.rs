@@ -79,10 +79,9 @@ pub mod inlay_hints {
     #[serde(transparent)]
     pub struct InlayHintKind(u8);
 
-    #[allow(dead_code)]
     impl InlayHintKind {
-        pub const TYPE: InlayHintKind = InlayHintKind(1);
-        pub const PARAMETER: InlayHintKind = InlayHintKind(2);
+        pub const TYPE: Self = Self(1);
+        pub const PARAMETER: Self = Self(2);
     }
 
     #[derive(Debug, Deserialize, Serialize)]

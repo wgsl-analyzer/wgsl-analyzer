@@ -43,13 +43,13 @@ fn main() -> Result<()> {
                 warn!("Multiple workspace folders detected. Using the first one.");
             }
 
-            if let Some(first_folder) = workspace_folders.get(0) {
+            if let Some(first_folder) = workspace_folders.first() {
                 match first_folder.uri.to_file_path() {
                     Ok(path) => match AbsPathBuf::try_from(path) {
                         Ok(abs_path) => abs_path,
                         Err(_) => get_cwd_as_abs_path()?,
                     },
-                    Err(_) => get_cwd_as_abs_path()?,
+                    Err(()) => get_cwd_as_abs_path()?,
                 }
             } else {
                 get_cwd_as_abs_path()?
