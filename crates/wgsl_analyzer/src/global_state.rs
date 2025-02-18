@@ -16,6 +16,7 @@ use crate::{
     from_proto,
     line_index::{LineEndings, LineIndex},
     main_loop::Task,
+    reload::SourceRootConfig,
     task_pool::TaskPool,
     to_proto, Result,
 };
@@ -33,10 +34,17 @@ pub struct GlobalState {
     pub sender: Sender<lsp_server::Message>,
     pub req_queue: ReqQueue,
     pub task_pool: Handle<TaskPool<Task>, Receiver<Task>>,
+
     pub vfs: Arc<RwLock<(Vfs, FxHashMap<FileId, LineEndings>)>>,
+    // pub vfs_config_version: u32,
     pub analysis_host: AnalysisHost,
     pub diagnostics: DiagnosticCollection,
     pub config: Arc<Config>,
+    pub source_root_config: SourceRootConfig,
+    // `workspaces` field stores the data we actually use, while the `OpQueue`
+    // stores the result of the last fetch.
+    // If the fetch (partially) fails, we do not update the current value.
+    // pub workspaces: Arc<Vec<ProjectWorkspace>>,
 }
 
 pub struct GlobalStateSnapshot {
@@ -61,9 +69,12 @@ impl GlobalState {
             req_queue: ReqQueue::default(),
             task_pool,
             vfs: Arc::new(RwLock::new((Vfs::default(), FxHashMap::default()))),
+            // vfs_config_version: 0,
             analysis_host: AnalysisHost::new(),
             diagnostics: DiagnosticCollection::default(),
-            config: Arc::new(Config::default()),
+            // workspaces: Arc::new(Vec::new()),
+            config: Arc::new(config.clone()),
+            source_root_config: SourceRootConfig::default(),
         };
         this.update_configuration(config);
         this
@@ -89,8 +100,13 @@ impl GlobalState {
                 } else {
                     None
                 };
-                change.change_file(file.file_id, text);
+                let path = vfs.file_path(file.file_id);
+                change.change_file(file.file_id, text, path);
             }
+
+            let roots = self.source_root_config.partition(vfs);
+            change.set_roots(roots);
+
             change
         };
 
@@ -198,7 +214,7 @@ impl GlobalStateSnapshot {
         let res = LineIndex {
             index,
             endings,
-            encoding: self.config.offset_encoding(),
+            encoding: self.config.data.offset_encoding(),
         };
         Ok(res)
     }

@@ -1,7 +1,8 @@
 use std::{mem::ManuallyDrop, sync::Arc};
 
-use base_db::{change::Change, SourceDatabase, Upcast};
+use base_db::{change::Change, FileId, FileLoader, FileLoaderDelegate, SourceDatabase, Upcast};
 use hir_def::db::DefDatabase;
+use vfs::AnchoredPath;
 
 #[salsa::database(
     base_db::SourceDatabaseStorage,
@@ -72,5 +73,14 @@ impl Upcast<dyn DefDatabase> for RootDatabase {
 impl Upcast<dyn SourceDatabase> for RootDatabase {
     fn upcast(&self) -> &(dyn SourceDatabase + 'static) {
         self
+    }
+}
+
+impl FileLoader for RootDatabase {
+    fn resolve_path(
+        &self,
+        path: AnchoredPath<'_>,
+    ) -> Option<FileId> {
+        FileLoaderDelegate(self).resolve_path(path)
     }
 }

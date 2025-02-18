@@ -14,6 +14,7 @@ doctest = false
 
 [dependencies]
 la-arena = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.3.1" }
+vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
 salsa = "0.17.0-pre.2"
 syntax = { path = "../syntax", version = "0.0.0" }
 base-db = { path = "../base_db", version = "0.0.0" }
@@ -22,3 +23,4 @@ rustc-hash = "2.1.0"
 either = "1.13.0"
 smallvec = "1.14.0"
 rowan = "0.16.1"
+tracing = "0.1"

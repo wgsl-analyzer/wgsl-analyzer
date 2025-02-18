@@ -9,6 +9,7 @@ mod line_index;
 mod lsp_ext;
 mod lsp_utils;
 pub mod main_loop;
+mod reload;
 mod task_pool;
 mod to_proto;
 

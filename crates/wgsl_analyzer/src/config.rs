@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use hir::diagnostics;
 use hir_ty::ty::pretty::TypeVerbosity;
 use ide::{inlay_hints, inlay_hints::StructLayoutHints};
+use paths::AbsPathBuf;
 use serde::Deserialize;
 
 use crate::line_index::OffsetEncoding;
@@ -33,14 +34,31 @@ pub enum InlayHintsTypeVerbosity {
     Inner, // f32
 }
 
+#[derive(Clone, Debug)]
+pub struct Config {
+    pub root_path: AbsPathBuf,
+    pub data: ConfigData,
+}
+
 #[derive(Default, Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Config {
+pub struct ConfigData {
     pub custom_imports: HashMap<String, String>,
     pub shader_defs: HashSet<String>,
     pub trace: TraceConfig,
     pub inlay_hints: InlayHintsConfig,
     pub diagnostics: DiagnosticsConfig,
+}
+
+impl Config {
+    #[inline]
+    #[must_use]
+    pub fn new(root_path: AbsPathBuf) -> Self {
+        Self {
+            root_path,
+            data: ConfigData::default(),
+        }
+    }
 }
 
 #[derive(Default, Clone, Debug, Deserialize)]
@@ -52,12 +70,11 @@ pub struct DiagnosticsConfig {
     pub naga_version: NagaVersion,
 }
 
-#[derive(Clone, Debug, Deserialize, Default)]
+#[derive(Clone, Debug, Deserialize)]
 pub enum NagaVersion {
     #[serde(rename = "0.14")]
     Naga14,
     #[serde(rename = "0.19")]
-    #[default]
     Naga19,
     #[serde(rename = "0.22")]
     Naga22,
@@ -65,7 +82,14 @@ pub enum NagaVersion {
     NagaMain,
 }
 
-impl Config {
+impl Default for NagaVersion {
+    #[inline]
+    fn default() -> Self {
+        Self::Naga14
+    }
+}
+
+impl ConfigData {
     fn try_update(
         &mut self,
         value: serde_json::Value,

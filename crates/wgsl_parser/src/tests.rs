@@ -2515,9 +2515,12 @@ fn parse_import() {
     check(
         "#import test",
         expect![[r##"
-            SourceFile@0..12
-              Import@0..12
-                UnofficialPreprocessorImport@0..12 "#import test""##]],
+          SourceFile@0..12
+            Import@0..12
+              UnofficialPreprocessorImport@0..7 "#import"
+              Whitespace@7..8 " "
+              ImportCustom@8..12
+                Ident@8..12 "test""##]],
     );
 }
 
@@ -2528,7 +2531,12 @@ fn parse_import_colon() {
         expect![[r##"
             SourceFile@0..29
               Import@0..29
-                UnofficialPreprocessorImport@0..29 "#import bevy_pbr::mes ...""##]],
+                UnofficialPreprocessorImport@0..7 "#import"
+                Whitespace@7..8 " "
+                ImportCustom@8..29
+                  Ident@8..16 "bevy_pbr"
+                  ColonColon@16..18 "::"
+                  Ident@18..29 "mesh_struct""##]],
     );
 }
 
@@ -2538,9 +2546,12 @@ fn parse_string_import() {
     check(
         r#"#import "file.wgsl""#,
         expect![[r##"
-            SourceFile@0..19
-              Import@0..19
-                UnofficialPreprocessorImport@0..19 "#import \"file.wgsl\"""##]],
+          SourceFile@0..19
+            Import@0..19
+              UnofficialPreprocessorImport@0..7 "#import"
+              Whitespace@7..8 " "
+              ImportPath@8..19
+                StringLiteral@8..19 "\"file.wgsl\"""##]],
     );
 }
 
