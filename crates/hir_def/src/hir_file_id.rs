@@ -42,9 +42,7 @@ impl HirFileId {
                 let import = module_info.get(import_loc.value);
 
                 match &import.value {
-                    ImportValue::Path(path) => {
-                        relative_file(db, import_loc.file_id, path)
-                    },
+                    ImportValue::Path(path) => relative_file(db, import_loc.file_id, path),
                     _ => unimplemented!(),
                 }
             },

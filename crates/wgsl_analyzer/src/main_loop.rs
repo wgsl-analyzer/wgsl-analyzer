@@ -113,7 +113,10 @@ impl GlobalState {
 
         if state_changed {
             // Update import paths?
-            #[expect(clippy::single_match, reason = "changing to if let gives a warning about drop order")]
+            #[expect(
+                clippy::single_match,
+                reason = "changing to if let gives a warning about drop order"
+            )]
             match changes.as_ref() {
                 Some(changes) => {
                     for file_id in changes {
@@ -278,7 +281,10 @@ impl GlobalState {
             })?
             .on::<lsp_types::notification::DidChangeWatchedFiles>(|_, params| {
                 for change in params.changes {
-                    #[expect(clippy::single_match, reason = "changing to if let gives a warning about drop order")]
+                    #[expect(
+                        clippy::single_match,
+                        reason = "changing to if let gives a warning about drop order"
+                    )]
                     match from_proto::abs_path(&change.uri) {
                         Ok(path) => {
                             info!("Changed {}", path);
