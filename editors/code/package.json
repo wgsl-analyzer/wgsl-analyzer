@@ -1,188 +1,188 @@
 {
-    "name": "wgsl-analyzer",
-    "description": "A language server implementation for the WGSL shading language",
-    "license": "MIT OR Apache-2.0",
-    "version": "0.9.4",
-    "publisher": "wgsl-analyzer",
-    "keywords": [
-        "wgsl",
-        "shading",
-        "web"
-    ],
-    "categories": [
-        "Programming Languages",
-        "Formatters",
-        "Linters"
-    ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/wgsl-analyzer/wgsl-analyzer"
-    },
-    "engines": {
-        "vscode": "^1.61.0"
-    },
-    "scripts": {
-        "build-base": "esbuild ./src/main.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --target=node14",
-        "build": "npm run build-base -- --sourcemap",
-        "watch": "npm run build-base -- --sourcemap --watch",
-        "lint": "eslint ./src --ext .ts,.tsx",
-        "package": "vsce package",
-        "vscode:prepublish": "npm run build-base -- --minify"
-    },
-    "dependencies": {
-        "node-fetch": "^3.1.1",
-        "vscode-languageclient": "^8.0.0"
-    },
-    "devDependencies": {
-        "@types/node": "~18.0.0",
-        "@types/vscode": "^1.52.0",
-        "@vscode/vsce": "^2.3.0",
-        "esbuild": "^0.16.0"
-    },
-    "main": "./out/main.js",
-    "activationEvents": [
-        "onLanguage:wgsl"
-    ],
-    "contributes": {
-        "languages": [
-            {
-                "id": "wgsl",
-                "extensions": [
-                    ".wgsl"
-                ],
-                "aliases": [
-                    "WGSL"
-                ],
-                "configuration": "./language-configuration.json"
-            },
-            {
-                "id": "wgsl_syntax_tree",
-                "extensions": [
-                    ".wgslst"
-                ]
-            }
-        ],
-        "grammars": [
-            {
-                "language": "wgsl",
-                "scopeName": "source.wgsl",
-                "path": "./syntaxes/wgsl.tmLanguage.json"
-            }
-        ],
-        "commands": [
-            {
-                "command": "wgsl-analyzer.syntaxTree",
-                "title": "Show Syntax Tree",
-                "category": "WGSL Analyzer"
-            },
-            {
-                "command": "wgsl-analyzer.debugCommand",
-                "title": "Debug command",
-                "category": "WGSL Analyzer"
-            },
-            {
-                "command": "wgsl-analyzer.fullSource",
-                "title": "Show full WGSL source",
-                "category": "WGSL Analyzer"
-            }
-        ],
-        "configuration": {
-            "title": "WGSL analyzer",
-            "properties": {
-                "wgsl-analyzer.server.path": {
-                    "type": [
-                        "null",
-                        "string"
-                    ],
-                    "description": "Path to the wgsl-analyzer executable."
-                },
-                "wgsl-analyzer.diagnostics.typeErrors": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Controls whether to show type errors."
-                },
-                "wgsl-analyzer.diagnostics.nagaParsingErrors": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Controls whether to show naga's parsing errors."
-                },
-                "wgsl-analyzer.diagnostics.nagaValidationErrors": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Controls whether to show naga's validation errors."
-                },
-                "wgsl-analyzer.diagnostics.nagaVersion": {
-                    "type": "string",
-                    "enum": [
-                        "0.14",
-                        "0.19",
-                        "0.22",
-                        "main"
-                    ],
-                    "default": "0.22",
-                    "description": "Which version of naga to use for its diagnostics"
-                },
-                "wgsl-analyzer.customImports": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    },
-                    "default": {},
-                    "markdownDescription": "`#import` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports). To use objects from an import, add `#import <name>` to your WGSL."
-                },
-                "wgsl-analyzer.preprocessor.shaderDefs": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "default": [],
-                    "markdownDescription": "Shader defines used in `#ifdef` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports)."
-                },
-                "wgsl-analyzer.trace.extension": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Log debug info in the WGSL Analyzer output pane."
-                },
-                "wgsl-analyzer.trace.server": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Log messages between client and server in the WGSL Analyzer output pane."
-                },
-                "wgsl-analyzer.inlayHints.enabled": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Whether to show inlay hints"
-                },
-                "wgsl-analyzer.inlayHints.typeHints": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Whether to show inlay hints for types of variable declarations"
-                },
-                "wgsl-analyzer.inlayHints.parameterHints": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Whether to show inlay hints for the names of function parameters"
-                },
-                "wgsl-analyzer.inlayHints.structLayoutHints": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Whether to show inlay hints for the layout of struct fields"
-                },
-                "wgsl-analyzer.inlayHints.typeVerbosity": {
-                    "type": "string",
-                    "enum": [
-                        "full",
-                        "compact",
-                        "inner"
-                    ],
-                    "enumDescriptions": [
-                        "e.g. ref<uniform, f32, read_write>",
-                        "e.g. ref<f32>",
-                        "e.g. f32"
-                    ],
-                    "default": "compact"
-                }
-            }
-        }
-    }
+	"name": "wgsl-analyzer",
+	"description": "A language server implementation for the WGSL shading language",
+	"license": "MIT OR Apache-2.0",
+	"version": "0.9.5",
+	"publisher": "wgsl-analyzer",
+	"keywords": [
+		"wgsl",
+		"shading",
+		"web"
+	],
+	"categories": [
+		"Programming Languages",
+		"Formatters",
+		"Linters"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/wgsl-analyzer/wgsl-analyzer"
+	},
+	"engines": {
+		"vscode": "^1.61.0"
+	},
+	"scripts": {
+		"build-base": "esbuild ./src/main.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --target=node14",
+		"build": "npm run build-base -- --sourcemap",
+		"watch": "npm run build-base -- --sourcemap --watch",
+		"lint": "eslint ./src --ext .ts,.tsx",
+		"package": "vsce package",
+		"vscode:prepublish": "npm run build-base -- --minify"
+	},
+	"dependencies": {
+		"node-fetch": "^3.1.1",
+		"vscode-languageclient": "^8.0.0"
+	},
+	"devDependencies": {
+		"@types/node": "~18.0.0",
+		"@types/vscode": "^1.52.0",
+		"@vscode/vsce": "^2.3.0",
+		"esbuild": "^0.16.0"
+	},
+	"main": "./out/main.js",
+	"activationEvents": [
+		"onLanguage:wgsl"
+	],
+	"contributes": {
+		"languages": [
+			{
+				"id": "wgsl",
+				"extensions": [
+					".wgsl"
+				],
+				"aliases": [
+					"WGSL"
+				],
+				"configuration": "./language-configuration.json"
+			},
+			{
+				"id": "wgsl_syntax_tree",
+				"extensions": [
+					".wgslst"
+				]
+			}
+		],
+		"grammars": [
+			{
+				"language": "wgsl",
+				"scopeName": "source.wgsl",
+				"path": "./syntaxes/wgsl.tmLanguage.json"
+			}
+		],
+		"commands": [
+			{
+				"command": "wgsl-analyzer.syntaxTree",
+				"title": "Show Syntax Tree",
+				"category": "WGSL Analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.debugCommand",
+				"title": "Debug command",
+				"category": "WGSL Analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.fullSource",
+				"title": "Show full WGSL source",
+				"category": "WGSL Analyzer"
+			}
+		],
+		"configuration": {
+			"title": "WGSL analyzer",
+			"properties": {
+				"wgsl-analyzer.server.path": {
+					"type": [
+						"null",
+						"string"
+					],
+					"description": "Path to the wgsl-analyzer executable."
+				},
+				"wgsl-analyzer.diagnostics.typeErrors": {
+					"type": "boolean",
+					"default": true,
+					"description": "Controls whether to show type errors."
+				},
+				"wgsl-analyzer.diagnostics.nagaParsingErrors": {
+					"type": "boolean",
+					"default": false,
+					"description": "Controls whether to show naga's parsing errors."
+				},
+				"wgsl-analyzer.diagnostics.nagaValidationErrors": {
+					"type": "boolean",
+					"default": true,
+					"description": "Controls whether to show naga's validation errors."
+				},
+				"wgsl-analyzer.diagnostics.nagaVersion": {
+					"type": "string",
+					"enum": [
+						"0.14",
+						"0.19",
+						"0.22",
+						"main"
+					],
+					"default": "0.22",
+					"description": "Which version of naga to use for its diagnostics"
+				},
+				"wgsl-analyzer.customImports": {
+					"type": "object",
+					"additionalProperties": {
+						"type": "string"
+					},
+					"default": {},
+					"markdownDescription": "`#import` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports). To use objects from an import, add `#import <name>` to your WGSL."
+				},
+				"wgsl-analyzer.preprocessor.shaderDefs": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"default": [],
+					"markdownDescription": "Shader defines used in `#ifdef` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports)."
+				},
+				"wgsl-analyzer.trace.extension": {
+					"type": "boolean",
+					"default": false,
+					"description": "Log debug info in the WGSL Analyzer output pane."
+				},
+				"wgsl-analyzer.trace.server": {
+					"type": "boolean",
+					"default": false,
+					"description": "Log messages between client and server in the WGSL Analyzer output pane."
+				},
+				"wgsl-analyzer.inlayHints.enabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Whether to show inlay hints"
+				},
+				"wgsl-analyzer.inlayHints.typeHints": {
+					"type": "boolean",
+					"default": true,
+					"description": "Whether to show inlay hints for types of variable declarations"
+				},
+				"wgsl-analyzer.inlayHints.parameterHints": {
+					"type": "boolean",
+					"default": true,
+					"description": "Whether to show inlay hints for the names of function parameters"
+				},
+				"wgsl-analyzer.inlayHints.structLayoutHints": {
+					"type": "boolean",
+					"default": false,
+					"description": "Whether to show inlay hints for the layout of struct fields"
+				},
+				"wgsl-analyzer.inlayHints.typeVerbosity": {
+					"type": "string",
+					"enum": [
+						"full",
+						"compact",
+						"inner"
+					],
+					"enumDescriptions": [
+						"e.g. ref<uniform, f32, read_write>",
+						"e.g. ref<f32>",
+						"e.g. f32"
+					],
+					"default": "compact"
+				}
+			}
+		}
+	}
 }
