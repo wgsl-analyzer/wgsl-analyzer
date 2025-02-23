@@ -1,6 +1,6 @@
 use base_db::FilePosition;
 use hir::HirDatabase;
-use syntax::{AstNode, ast};
+use syntax::{ast, AstNode};
 
 pub fn debug_command(
     db: &dyn HirDatabase,

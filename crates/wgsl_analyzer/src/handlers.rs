@@ -5,14 +5,14 @@
 
 use base_db::{FileRange, TextRange};
 use hir::diagnostics::DiagnosticsConfig;
-use ide::{HoverResult, diagnostics::Severity};
+use ide::{diagnostics::Severity, HoverResult};
 use lsp_types::{
     DiagnosticRelatedInformation, DiagnosticTag, GotoDefinitionResponse, LanguageString,
     MarkedString, TextDocumentIdentifier,
 };
 use vfs::FileId;
 
-use crate::{Result, from_proto, global_state::GlobalStateSnapshot, lsp_ext, to_proto};
+use crate::{from_proto, global_state::GlobalStateSnapshot, lsp_ext, to_proto, Result};
 
 pub fn handle_goto_definition(
     snap: GlobalStateSnapshot,

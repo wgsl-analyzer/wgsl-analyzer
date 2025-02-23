@@ -8,7 +8,6 @@ use definition::Definition;
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
 use either::Either;
 use hir_def::{
-    HasSource as _, HirFileId, InFile,
     body::{BindingId, Body, BodySourceMap},
     data::FieldId,
     db::{
@@ -16,14 +15,15 @@ use hir_def::{
         Location, Lookup, OverrideId, StructId, TypeAliasId,
     },
     expr::{ExprId, StatementId},
-    hir_file_id::{ImportFile, relative_file},
+    hir_file_id::{relative_file, ImportFile},
     module_data::{self, ImportValue, ModuleInfo, ModuleItem, Name},
     resolver::{ResolveValue, Resolver},
+    HasSource as _, HirFileId, InFile,
 };
 pub use hir_ty::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Ty};
 use smallvec::SmallVec;
-use syntax::{AstNode, HasName, SyntaxNode, ast, match_ast, ptr::AstPtr};
+use syntax::{ast, match_ast, ptr::AstPtr, AstNode, HasName, SyntaxNode};
 
 pub trait HasSource {
     type Ast;

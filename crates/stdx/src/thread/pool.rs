@@ -10,8 +10,8 @@
 use std::{
     panic::{self, UnwindSafe},
     sync::{
-        Arc,
         atomic::{AtomicUsize, Ordering},
+        Arc,
     },
 };
 

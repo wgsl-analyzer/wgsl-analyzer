@@ -2,17 +2,18 @@ pub mod global_variable;
 pub mod precedence;
 
 use base_db::{FileRange, TextRange};
-use hir_def::{HirFileId, InFile, body::BodySourceMap, expr::BinaryOp, module_data::Name};
+use hir_def::{body::BodySourceMap, expr::BinaryOp, module_data::Name, HirFileId, InFile};
 use hir_ty::{
-    HirDatabase,
     builtins::BuiltinId,
     infer::{InferenceDiagnostic, TypeExpectation, TypeLoweringError},
     ty::Ty,
     validate::StorageClassError,
+    HirDatabase,
 };
 use syntax::{
-    AstNode, ast,
+    ast,
     ptr::{AstPtr, SyntaxNodePtr},
+    AstNode,
 };
 
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};

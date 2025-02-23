@@ -4,8 +4,8 @@ use salsa::Durability;
 use vfs::{FileId, VfsPath};
 
 use crate::{
-    SourceDatabase,
     input::{SourceRoot, SourceRootId},
+    SourceDatabase,
 };
 
 #[derive(Default)]

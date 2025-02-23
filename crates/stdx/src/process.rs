@@ -170,9 +170,9 @@ mod imp {
     };
 
     use miow::{
-        Overlapped,
         iocp::{CompletionPort, CompletionStatus},
         pipe::NamedPipe,
+        Overlapped,
     };
     use windows_sys::Win32::Foundation::ERROR_BROKEN_PIPE;
 

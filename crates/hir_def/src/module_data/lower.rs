@@ -1,13 +1,13 @@
-use crate::HirFileId;
 use crate::hir_file_id::relative_file;
 use crate::module_data::{Function, ModuleData, ModuleItem, ModuleItemId, Param};
+use crate::HirFileId;
 use crate::{ast_id::AstIdMap, db::DefDatabase, type_ref::TypeRef};
 use la_arena::{Idx, IdxRange};
 use std::sync::Arc;
 
 use syntax::{
-    AstNode, HasName,
     ast::{self, Item, SourceFile},
+    AstNode, HasName,
 };
 
 use super::{

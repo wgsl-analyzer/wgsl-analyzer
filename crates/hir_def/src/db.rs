@@ -3,27 +3,27 @@ use std::{fmt::Debug, marker::PhantomData, sync::Arc};
 use base_db::{FileId, SourceDatabase, TextRange, TextSize, Upcast};
 use salsa::InternKey;
 use syntax::{
-    AstNode, Parse,
     ast::{self, Item},
+    AstNode, Parse,
 };
 use vfs::VfsPath;
 
 use crate::{
-    HirFileId, InFile,
     ast_id::AstIdMap,
     attrs::{Attr, AttrDefId, AttrsWithOwner},
-    body::{Body, BodySourceMap, scope::ExprScopes},
+    body::{scope::ExprScopes, Body, BodySourceMap},
     data::{
         FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, StructData,
         TypeAliasData,
     },
-    hir_file_id::{HirFileIdRepr, ImportFile, relative_file},
+    hir_file_id::{relative_file, HirFileIdRepr, ImportFile},
     module_data::{
         Function, GlobalConstant, GlobalVariable, Import, ModuleInfo, ModuleItemId, Override,
         Struct, TypeAlias,
     },
     resolver::Resolver,
     type_ref::TypeRef,
+    HirFileId, InFile,
 };
 
 #[salsa::query_group(DefDatabaseStorage)]

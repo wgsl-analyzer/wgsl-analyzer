@@ -1,8 +1,8 @@
 use hir_def::db::{DefWithBodyId, GlobalVariableId};
 use hir_ty::{
-    HirDatabase,
     ty::{ArrayType, TyKind},
     validate::StorageClassError,
+    HirDatabase,
 };
 
 pub enum GlobalVariableDiagnostic {

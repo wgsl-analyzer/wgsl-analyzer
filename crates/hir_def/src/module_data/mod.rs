@@ -5,13 +5,13 @@ use std::{marker::PhantomData, sync::Arc};
 
 use la_arena::{Arena, Idx, IdxRange};
 use smol_str::SmolStr;
-use syntax::{AstNode, TokenText, ast};
+use syntax::{ast, AstNode, TokenText};
 
 use crate::{
-    HirFileId,
     ast_id::FileAstId,
     db::{DefDatabase, Interned},
     type_ref::*,
+    HirFileId,
 };
 
 const MISSING_NAME_PLACEHOLDER: &str = "[missing name]";

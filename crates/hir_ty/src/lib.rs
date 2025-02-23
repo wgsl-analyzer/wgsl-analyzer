@@ -4,12 +4,12 @@ use base_db::Upcast;
 use builtins::{Builtin, BuiltinId};
 use function::{FunctionDetails, ResolvedFunctionId};
 use hir_def::{
-    HirFileId, InFile,
     data::LocalFieldId,
     db::{DefDatabase, DefWithBodyId, FunctionId, Lookup, StructId},
     hir_file_id::ImportFile,
     resolver::Resolver,
     type_ref::StorageClass,
+    HirFileId, InFile,
 };
 use infer::{InferenceResult, TyLoweringContext};
 use la_arena::ArenaMap;

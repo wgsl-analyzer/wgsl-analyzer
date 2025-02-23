@@ -3,10 +3,9 @@ use std::sync::Arc;
 use tracing::info;
 
 use crate::{
-    HirFileId, InFile,
     body::{
-        BindingId,
         scope::{ExprScopes, ScopeId},
+        BindingId,
     },
     db::{DefDatabase, FunctionId, Location},
     hir_file_id::ImportFile,
@@ -15,6 +14,7 @@ use crate::{
         TypeAlias,
     },
     type_ref::{TypeRef, VecDimensionality, VecType},
+    HirFileId, InFile,
 };
 
 #[derive(Clone)]

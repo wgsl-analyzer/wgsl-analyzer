@@ -2,16 +2,16 @@ use std::sync::Arc;
 
 use either::Either;
 use syntax::{
-    HasAttrs, HasName,
     ast::{self, IdentOrLiteral},
+    HasAttrs, HasName,
 };
 
 use crate::{
-    HasSource,
     data::FieldId,
     db::{DefDatabase, FunctionId, GlobalVariableId, Interned, Lookup, StructId},
-    expr::{Literal, parse_literal},
+    expr::{parse_literal, Literal},
     module_data::Name,
+    HasSource,
 };
 
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
