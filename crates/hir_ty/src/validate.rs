@@ -1,8 +1,8 @@
 use hir_def::type_ref::{AccessMode, StorageClass};
 use itertools::Itertools;
-use smallvec::{smallvec, SmallVec};
+use smallvec::{SmallVec, smallvec};
 
-use crate::{ty::TyKind, HirDatabase};
+use crate::{HirDatabase, ty::TyKind};
 
 pub enum Scope {
     Function,

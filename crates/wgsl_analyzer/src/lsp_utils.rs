@@ -4,10 +4,9 @@ use std::{error::Error, ops::Range, sync::Arc};
 use lsp_server::Notification;
 
 use crate::{
-    from_proto,
+    LspError, from_proto,
     global_state::GlobalState,
     line_index::{LineEndings, LineIndex, OffsetEncoding},
-    LspError,
 };
 
 pub fn is_cancelled(error: &(dyn Error + 'static)) -> bool {

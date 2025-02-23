@@ -9,10 +9,10 @@ use paths::AbsPathBuf;
 use tracing::{info, warn};
 use tracing_subscriber::fmt::Subscriber;
 use wgsl_analyzer::{
+    Result,
     config::{Config, TraceConfig},
     from_json,
     main_loop::main_loop,
-    Result,
 };
 
 const VERSION: &str = "0.9.5";

@@ -9,10 +9,10 @@ use rustc_hash::FxHashMap;
 use syntax::{ast, ptr::AstPtr};
 
 use crate::{
+    HasSource,
     db::{DefDatabase, DefWithBodyId, Lookup},
     expr::{Expr, ExprId, Statement, StatementId},
     module_data::Name,
-    HasSource,
 };
 
 pub type BindingId = Idx<Binding>;

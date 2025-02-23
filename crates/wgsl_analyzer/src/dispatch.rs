@@ -4,13 +4,13 @@ use std::{fmt, panic, thread};
 
 use fmt::Debug;
 use lsp_server::ExtractError;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 use crate::{
+    LspError, Result,
     global_state::{GlobalState, GlobalStateSnapshot},
     lsp_utils::is_cancelled,
     main_loop::Task,
-    LspError, Result,
 };
 
 /// A visitor for routing a raw JSON request to an appropriate handler function.

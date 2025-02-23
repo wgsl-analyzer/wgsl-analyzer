@@ -373,87 +373,87 @@ fn parse_ty(
 
 fn type_to_rust(ty: &Type) -> String {
     match ty {
-		Type::Vec(size, inner) => format!(
-			"TyKind::Vector(VectorType {{ size: VecSize::{:?}, inner: {} }}).intern(db)",
-			size,
-			type_to_rust(inner)
-		),
+        Type::Vec(size, inner) => format!(
+            "TyKind::Vector(VectorType {{ size: VecSize::{:?}, inner: {} }}).intern(db)",
+            size,
+            type_to_rust(inner)
+        ),
 
-		Type::Matrix(columns, rows, inner) => format!(
-			"TyKind::Matrix(MatrixType {{ columns: VecSize::{:?}, rows: VecSize::{:?}, inner: {} }}).intern(db)",
-			columns,
-			rows,
-			type_to_rust(inner)
-		),
+        Type::Matrix(columns, rows, inner) => format!(
+            "TyKind::Matrix(MatrixType {{ columns: VecSize::{:?}, rows: VecSize::{:?}, inner: {} }}).intern(db)",
+            columns,
+            rows,
+            type_to_rust(inner)
+        ),
 
-		ty @ (Type::Bool | Type::F32 | Type::I32 | Type::U32) => {
-			format!("TyKind::Scalar(ScalarType::{:?}).intern(db)", ty)
-		},
-		Type::Bound(i) => {
-			format!("TyKind::BoundVar(BoundVar {{ index: {} }}).intern(db)", i,)
-		},
-		Type::Texture(texture) => {
-			format!(
-				"TyKind::Texture(TextureType {{
+        ty @ (Type::Bool | Type::F32 | Type::I32 | Type::U32) => {
+            format!("TyKind::Scalar(ScalarType::{:?}).intern(db)", ty)
+        },
+        Type::Bound(i) => {
+            format!("TyKind::BoundVar(BoundVar {{ index: {} }}).intern(db)", i,)
+        },
+        Type::Texture(texture) => {
+            format!(
+                "TyKind::Texture(TextureType {{
                             kind: TextureKind::{},
                             arrayed: {},
                             multisampled: {},
                             dimension: TextureDimensionality::{:?},
                         }}).intern(db)",
-				match &texture.kind {
-					TextureKind::Sampled(inner) => format!("Sampled({})", type_to_rust(inner)),
-					TextureKind::Storage(texel_format, access_mode) => {
-						let texel_format = match texel_format {
-							TexelFormat::Any => "Any".to_string(),
-							TexelFormat::Bound(var) => {
-								format!("BoundVar(BoundVar {{ index: {} }})", var)
-							},
-						};
+                match &texture.kind {
+                    TextureKind::Sampled(inner) => format!("Sampled({})", type_to_rust(inner)),
+                    TextureKind::Storage(texel_format, access_mode) => {
+                        let texel_format = match texel_format {
+                            TexelFormat::Any => "Any".to_string(),
+                            TexelFormat::Bound(var) => {
+                                format!("BoundVar(BoundVar {{ index: {} }})", var)
+                            },
+                        };
 
-						format!(
-							"Storage(TexelFormat::{}, AccessMode::{:?})",
-							texel_format, access_mode
-						)
-					},
-					TextureKind::Depth => "Depth".to_string(),
-					TextureKind::External => "External".to_string(),
-				},
-				texture.arrayed,
-				texture.multisampled,
-				texture.dimension,
-			)
-		},
-		Type::Sampler { comparison } => format!(
-			"TyKind::Sampler(SamplerType {{ comparison: {}  }}).intern(db)",
-			comparison
-		),
-		Type::RuntimeArray(inner) => format!(
-			"TyKind::Array(ArrayType {{
+                        format!(
+                            "Storage(TexelFormat::{}, AccessMode::{:?})",
+                            texel_format, access_mode
+                        )
+                    },
+                    TextureKind::Depth => "Depth".to_string(),
+                    TextureKind::External => "External".to_string(),
+                },
+                texture.arrayed,
+                texture.multisampled,
+                texture.dimension,
+            )
+        },
+        Type::Sampler { comparison } => format!(
+            "TyKind::Sampler(SamplerType {{ comparison: {}  }}).intern(db)",
+            comparison
+        ),
+        Type::RuntimeArray(inner) => format!(
+            "TyKind::Array(ArrayType {{
             size: ArraySize::Dynamic,
             binding_array: false,
             inner: {}
         }}).intern(db)",
-			type_to_rust(inner)
-		),
-		Type::Ptr(inner) => format!(
-			"TyKind::Ptr(Ptr {{
+            type_to_rust(inner)
+        ),
+        Type::Ptr(inner) => format!(
+            "TyKind::Ptr(Ptr {{
             inner: {},
             access_mode: AccessMode::ReadWrite,
             storage_class: StorageClass::Private,
         }}).intern(db)",
-			type_to_rust(inner)
-		),
-		Type::Atomic(inner) => format!(
-			"TyKind::Atomic(AtomicType {{
+            type_to_rust(inner)
+        ),
+        Type::Atomic(inner) => format!(
+            "TyKind::Atomic(AtomicType {{
             inner: {},
         }}).intern(db)",
-			type_to_rust(inner)
-		),
-		Type::StorageTypeOfTexelFormat(var) => format!(
-			"TyKind::StorageTypeOfTexelFormat(BoundVar {{ index: {} }}).intern(db)",
-			var
-		),
-	}
+            type_to_rust(inner)
+        ),
+        Type::StorageTypeOfTexelFormat(var) => format!(
+            "TyKind::StorageTypeOfTexelFormat(BoundVar {{ index: {} }}).intern(db)",
+            var
+        ),
+    }
 }
 
 fn builtin_to_rust(

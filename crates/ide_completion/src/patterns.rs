@@ -1,6 +1,6 @@
 use base_db::TextSize;
 use hir::Semantics;
-use syntax::{ast, AstNode, SyntaxKind, SyntaxNode, SyntaxToken};
+use syntax::{AstNode, SyntaxKind, SyntaxNode, SyntaxToken, ast};
 
 use crate::context::ImmediateLocation;
 

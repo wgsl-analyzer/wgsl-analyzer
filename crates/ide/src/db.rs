@@ -1,6 +1,6 @@
 use std::{mem::ManuallyDrop, sync::Arc};
 
-use base_db::{change::Change, FileId, FileLoader, FileLoaderDelegate, SourceDatabase, Upcast};
+use base_db::{FileId, FileLoader, FileLoaderDelegate, SourceDatabase, Upcast, change::Change};
 use hir_def::db::DefDatabase;
 use vfs::AnchoredPath;
 

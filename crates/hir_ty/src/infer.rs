@@ -14,6 +14,7 @@ use la_arena::ArenaMap;
 use rustc_hash::FxHashMap;
 
 use crate::{
+    HirDatabase,
     builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
     function::{FunctionDetails, ResolvedFunctionId},
     ty::{
@@ -21,7 +22,6 @@ use crate::{
         TexelFormat, TextureDimensionality, TextureKind, TextureType, Ty, TyKind, VecSize,
         VectorType,
     },
-    HirDatabase,
 };
 
 pub fn infer_query(

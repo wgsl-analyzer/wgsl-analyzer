@@ -1,4 +1,4 @@
-use vfs::{file_set::FileSet, AnchoredPath, FileId, VfsPath};
+use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
 /// Files are grouped into source roots. A source root is a directory on the
 /// file systems which is watched for changes. Typically it corresponds to a

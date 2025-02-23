@@ -5,9 +5,9 @@ use wgsl_parser::{SyntaxKind, SyntaxNode};
 
 use self::operators::{BinaryOp, CompoundOp, UnaryOp};
 use crate::{
+    AstChildren, AstNode, AstToken, HasAttrs, HasGenerics, HasName, SyntaxToken, TokenText,
     ast::operators::{ArithOp, CmpOp, LogicOp},
-    support, AstChildren, AstNode, AstToken, HasAttrs, HasGenerics, HasName, SyntaxToken,
-    TokenText,
+    support,
 };
 
 macro_rules! ast_node {

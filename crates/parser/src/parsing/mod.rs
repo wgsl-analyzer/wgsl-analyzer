@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use marker::Marker;
 pub use parse_error::ParseError;
 
-use super::{event::Event, lexer::Token, source::Source, ParserDefinition};
+use super::{ParserDefinition, event::Event, lexer::Token, source::Source};
 
 pub struct Parser<'t, 'input, P: ParserDefinition> {
     source: Source<'t, 'input, P>,
