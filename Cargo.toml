@@ -1,6 +1,6 @@
 [workspace]
 members = [
-  # "xtask/",
+  "xtask/",
   # "lib/*",
   "crates/*",
 ]
