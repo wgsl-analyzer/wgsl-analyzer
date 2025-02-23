@@ -1,5 +1,5 @@
 # From: https://docs.github.com/en/github/getting-started-with-github/configuring-git-to-handle-line-endings
-# Set the default behavior, in case people don't have core.autocrlf set.
+# Set the default behavior, in case people do not have core.autocrlf set.
 * text=auto
 
 # Explicitly declare text files you want to always be normalized and converted

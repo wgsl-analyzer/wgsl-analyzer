@@ -64,7 +64,7 @@
 
 ### Version 0.5.0
 
-- implement #import's in function param list
+- implement `#import`s in function param list
 
 ### Version 0.4.6
 
@@ -73,7 +73,7 @@
 
 ### Version 0.4.5
 
-- fix issue where the `wgsl_analyzer` binary wasn't included in the `.vsix` extension file
+- fix issue where the `wgsl_analyzer` binary was not included in the `.vsix` extension file
 
 ### Version 0.4.4
 
