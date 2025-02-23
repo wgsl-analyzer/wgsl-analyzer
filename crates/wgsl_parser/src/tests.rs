@@ -1,5 +1,5 @@
 #![cfg_attr(not(test), allow(unused))]
-use expect_test::{expect, Expect};
+use expect_test::{Expect, expect};
 
 use crate::ParseEntryPoint;
 
@@ -1272,7 +1272,7 @@ fn unfinished_attr() {
                 BracketRight@17..18 "]"
 
             error at 17..18: expected Ident, but found BracketRight
-            error at 17..18: expected Comma, AttrRight, Ident or ParenLeft, but found BracketRight
+            error at 17..18: expected Comma, AttrRight, Ident, or ParenLeft, but found BracketRight
             error at 17..18: expected Comma or AttrRight"#]],
     );
 }
@@ -1509,7 +1509,7 @@ fn fn_recover_attr_2() {
                   BraceLeft@14..15 "{"
                   BraceRight@15..16 "}"
 
-            error at 8..9: expected ParenRight, UnofficialPreprocessorImport, Attr, AttrLeft or Ident, but found BracketLeft
+            error at 8..9: expected ParenRight, UnofficialPreprocessorImport, Attr, AttrLeft, or Ident, but found BracketLeft
             error at 9..10: expected Colon, but found BracketRight"#]],
     )
 }
@@ -2148,7 +2148,7 @@ fn test()
                   Whitespace@29..30 "\n"
 
             error at 27..28: expected Arrow or BraceLeft, but found BraceRight
-            error at 28..29: expected Fn, Struct, Var, Let, Const, Alias or Override, but found Semicolon"#]],
+            error at 28..29: expected Fn, Struct, Var, Let, Const, Alias, or Override, but found Semicolon"#]],
     );
 }
 

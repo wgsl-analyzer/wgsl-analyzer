@@ -1790,19 +1790,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
 
 [[package]]
-name = "wgsl-formatter"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "dissimilar",
- "expect-test",
- "rowan",
- "syntax",
- "wgsl_parser",
-]
-
-[[package]]
-name = "wgsl_analyzer"
+name = "wgsl-analyzer"
 version = "0.0.0"
 dependencies = [
  "anyhow",
@@ -1827,6 +1815,18 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "vfs",
+]
+
+[[package]]
+name = "wgsl-formatter"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "dissimilar",
+ "expect-test",
+ "rowan",
+ "syntax",
+ "wgsl_parser",
 ]
 
 [[package]]

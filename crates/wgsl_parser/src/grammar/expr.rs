@@ -353,7 +353,7 @@ fn paren_expr(p: &mut Parser) -> CompletedMarker {
 
 #[cfg(test)]
 mod tests {
-    use expect_test::{expect, Expect};
+    use expect_test::{Expect, expect};
 
     use crate::ParseEntryPoint;
 
@@ -508,7 +508,7 @@ mod tests {
                       IntLiteral@1..2 "1"
                     Plus@2..3 "+"
 
-                error at 2..3: expected Ident, Bitcast or ParenLeft
+                error at 2..3: expected Ident, Bitcast, or ParenLeft
                 error at 2..3: expected ParenRight"#]],
         );
     }

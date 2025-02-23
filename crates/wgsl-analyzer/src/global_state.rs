@@ -4,21 +4,22 @@ use std::{
 };
 
 use base_db::change::Change;
-use crossbeam_channel::{unbounded, Receiver, Sender};
+use crossbeam_channel::{Receiver, Sender, unbounded};
 use ide::{Analysis, AnalysisHost, Cancellable};
 use lsp_types::Url;
 use rustc_hash::FxHashMap;
 use vfs::{FileId, Vfs};
 
 use crate::{
+    Result,
     config::Config,
     diagnostics::DiagnosticCollection,
-    from_proto,
     line_index::{LineEndings, LineIndex},
+    lsp::from_proto,
+    lsp::to_proto,
     main_loop::Task,
     reload::SourceRootConfig,
     task_pool::TaskPool,
-    to_proto, Result,
 };
 
 type ReqHandler = fn(&mut GlobalState, lsp_server::Response);

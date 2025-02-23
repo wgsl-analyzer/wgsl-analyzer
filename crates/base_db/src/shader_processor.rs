@@ -1,6 +1,7 @@
-use std::{collections::HashSet, ops::Range, sync::OnceLock};
+use std::{ops::Range, sync::OnceLock};
 
 use regex::Regex;
+use rustc_hash::FxHashSet;
 
 pub fn get_shader_processor() -> &'static ShaderProcessor {
     static SHADER_PROCESSOR: OnceLock<ShaderProcessor> = OnceLock::new();
@@ -31,7 +32,7 @@ impl ShaderProcessor {
     pub fn process(
         &self,
         shader_str: &str,
-        shader_defs: &HashSet<String>,
+        shader_defs: &FxHashSet<String>,
         mut emit_unconfigured: impl FnMut(Range<usize>, &str),
     ) -> String {
         self.process_inner(shader_str, shader_defs, &mut emit_unconfigured)
@@ -40,7 +41,7 @@ impl ShaderProcessor {
     fn process_inner(
         &self,
         shader_str: &str,
-        shader_defs: &HashSet<String>,
+        shader_defs: &FxHashSet<String>,
         emit_unconfigured: &mut dyn FnMut(Range<usize>, &str),
     ) -> String {
         let mut scopes = vec![(true, 0, "root scope")];
@@ -126,7 +127,7 @@ fn lines_with_offsets(input: &str) -> impl Iterator<Item = (&str, usize)> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
+    use rustc_hash::FxHashSet;
 
     use super::ShaderProcessor;
 
@@ -136,7 +137,7 @@ mod tests {
         output: &str,
     ) {
         let processor = ShaderProcessor::default();
-        let defs = HashSet::from_iter(defs.iter().map(|s| s.to_string()));
+        let defs = FxHashSet::from_iter(defs.iter().map(|s| s.to_string()));
         let result = processor.process(input, &defs, |_, _| {});
 
         pretty_assertions::assert_eq!(result, output);

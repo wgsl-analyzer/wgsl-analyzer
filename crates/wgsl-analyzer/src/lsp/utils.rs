@@ -1,14 +1,13 @@
 //! Utilities for LSP-related boilerplate code.
+use crate::lsp::from_proto;
 use std::{error::Error, ops::Range, sync::Arc};
 
-use lsp_server::Notification;
-
 use crate::{
-    from_proto,
+    LspError,
     global_state::GlobalState,
     line_index::{LineEndings, LineIndex, OffsetEncoding},
-    LspError,
 };
+use lsp_server::Notification;
 
 pub fn is_cancelled(error: &(dyn Error + 'static)) -> bool {
     error.downcast_ref::<salsa::Cancelled>().is_some()
@@ -116,7 +115,7 @@ pub fn apply_document_changes(
 ) {
     let mut line_index = LineIndex {
         index: Arc::new(base_db::line_index::LineIndex::new(old_text)),
-        // We don't care about line endings or offset encoding here.
+        // We do not care about line endings or offset encoding here.
         endings: LineEndings::Unix,
         encoding: OffsetEncoding::Utf16,
     };

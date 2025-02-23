@@ -9,7 +9,7 @@ use crate::AstNode;
 /// specific node across reparses of the same file.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SyntaxNodePtr {
-    // Don't expose this field further. At some point, we might want to replace
+    // Do not expose this field further. At some point, we might want to replace
     // range with node id.
     pub(crate) range: TextRange,
     kind: SyntaxKind,
@@ -30,7 +30,7 @@ impl SyntaxNodePtr {
     /// originally used to get this [`SyntaxNodePtr`].
     ///
     /// The complexity is linear in the depth of the tree and logarithmic in
-    /// tree width. As most trees are shallow, thinking about this as
+    /// tree width. Because most trees are shallow, thinking about this as
     /// `O(log(N))` in the size of the tree is not too wrong!
     #[track_caller]
     pub fn to_node(
@@ -43,7 +43,7 @@ impl SyntaxNodePtr {
                 .and_then(|it| it.into_node())
         })
         .find(|it| it.text_range() == self.range && it.kind() == self.kind)
-        .ok_or_else(|| format!("can't resolve local ptr to SyntaxNode: {:?}", self))
+        .ok_or_else(|| format!("cannot resolve local ptr to SyntaxNode: {:?}", self))
         .unwrap()
     }
 

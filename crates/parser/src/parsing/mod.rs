@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use marker::Marker;
 pub use parse_error::ParseError;
 
-use super::{event::Event, lexer::Token, source::Source, ParserDefinition};
+use super::{ParserDefinition, event::Event, lexer::Token, source::Source};
 
 pub struct Parser<'t, 'input, P: ParserDefinition> {
     source: Source<'t, 'input, P>,
@@ -140,7 +140,7 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
         let (found, range) = if let Some(Token { kind, range, .. }) = current_token {
             (Some(*kind), *range)
         } else {
-            // If we’re at the end of the input we use the range of the very last token in the
+            // If we are at the end of the input we use the range of the very last token in the
             // input.
             (None, self.source.last_token_range().unwrap())
         };
@@ -246,7 +246,7 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
         self.expected_kinds = expected;
     }
 
-    pub fn location(&mut self) -> impl Eq {
+    pub fn location(&mut self) -> impl Eq + use<P> {
         self.source.location()
     }
 }

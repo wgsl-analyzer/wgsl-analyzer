@@ -4,13 +4,13 @@ use std::{fmt, panic, thread};
 
 use fmt::Debug;
 use lsp_server::ExtractError;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
+use crate::lsp::utils::is_cancelled;
 use crate::{
-    global_state::{GlobalState, GlobalStateSnapshot},
-    lsp_utils::is_cancelled,
-    main_loop::Task,
     LspError, Result,
+    global_state::{GlobalState, GlobalStateSnapshot},
+    main_loop::Task,
 };
 
 /// A visitor for routing a raw JSON request to an appropriate handler function.
@@ -25,8 +25,8 @@ use crate::{
 /// Some requests modify the state, and are run on the main thread to get
 /// `&mut` (`on_sync_mut`).
 ///
-/// Read-only requests are wrapped into `catch_unwind` -- they don't modify the
-/// state, so it's OK to recover from their failures.
+/// Read-only requests are wrapped into `catch_unwind` -- they do not modify the
+/// state, so it is OK to recover from their failures.
 pub struct RequestDispatcher<'global_state> {
     request: Option<lsp_server::Request>,
     global_state: &'global_state mut GlobalState,
@@ -44,8 +44,8 @@ impl<'global_state> RequestDispatcher<'global_state> {
     }
 
     /// Dispatches the request onto the current thread, given full access to
-    /// mutable global state. Unlike all other methods here, this one isn't
-    /// guarded by `catch_unwind`, so, please, don't make bugs :-)
+    /// mutable global state. Unlike all other methods here, this one is not
+    /// guarded by `catch_unwind`, so, please, do not make bugs :-)
     pub(crate) fn on_sync_mut<R>(
         &mut self,
         function: fn(&mut GlobalState, R::Params) -> Result<R::Result>,

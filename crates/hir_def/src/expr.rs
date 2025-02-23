@@ -188,7 +188,7 @@ pub fn parse_literal(lit: ast::LiteralKind) -> Literal {
         ast::LiteralKind::HexFloatLiteral(_) => Literal::Float(0, BuiltinFloat::F32),
         ast::LiteralKind::DecimalFloatLiteral(lit) => {
             use std::str::FromStr;
-            // Float suffixes aren't accepted by `f32::from_str`. Ignore them
+            // Float suffixes are not accepted by `f32::from_str`. Ignore them
             let text = lit.text().trim_end_matches(char::is_alphabetic);
             let _value = f32::from_str(text).expect("invalid literal");
             Literal::Float(0, BuiltinFloat::F32)

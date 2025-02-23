@@ -278,7 +278,7 @@ fn compute_statement_scopes(
                 compute_expr_scopes(*condition, body, scopes, scope);
             }
             if let Some(cont) = continuing_part {
-                // Variables produced in the continuing block aren't used
+                // Variables produced in the continuing block are not used
                 let _ = compute_statement_scopes(*cont, body, scopes, scope);
             }
             let _ = compute_statement_scopes(*block, body, scopes, scope);

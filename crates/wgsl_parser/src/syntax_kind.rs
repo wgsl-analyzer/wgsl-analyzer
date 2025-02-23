@@ -149,7 +149,7 @@ pub enum SyntaxKind {
     #[regex(r"-?[0-9]+\.[0-9]*([eE][+-]?[0-9]+)?[fh]?")]
     #[regex(r"-?[0-9]+[eE][+-]?[0-9]+[fh]?")]
     DecimalFloatLiteral,
-    // As above we need priorities here
+    // Because above we need priorities here
     #[regex(
         r"-?0[xX][0-9a-fA-F]*\.[0-9a-fA-F]+([pP][+-]?[0-9]+[fh]?)?",
         priority = 1

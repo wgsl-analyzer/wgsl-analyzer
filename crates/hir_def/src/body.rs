@@ -1,18 +1,18 @@
 mod lower;
 pub mod scope;
 
-use std::{collections::HashSet, sync::Arc};
+use std::sync::Arc;
 
 use either::Either;
 use la_arena::{Arena, ArenaMap, Idx};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::{ast, ptr::AstPtr};
 
 use crate::{
+    HasSource,
     db::{DefDatabase, DefWithBodyId, Lookup},
     expr::{Expr, ExprId, Statement, StatementId},
     module_data::Name,
-    HasSource,
 };
 
 pub type BindingId = Idx<Binding>;
@@ -27,7 +27,7 @@ pub struct Body {
     pub exprs: Arena<Expr>,
     pub statements: Arena<Statement>,
     pub bindings: Arena<Binding>,
-    pub paren_exprs: HashSet<ExprId>,
+    pub paren_exprs: FxHashSet<ExprId>,
 
     // for global declarations
     pub main_binding: Option<BindingId>,
@@ -44,7 +44,7 @@ pub struct SyntheticSyntax;
 /// IDs. This is needed to go from e.g. a position in a file to the HIR
 /// expression containing it; but for type inference etc., we want to operate on
 /// a structure that is agnostic to the actual positions of expressions in the
-/// file, so that we don't recompute types whenever some whitespace is typed.
+/// file, so that we do not recompute types whenever some whitespace is typed.
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct BodySourceMap {
     expr_map: FxHashMap<AstPtr<ast::Expr>, ExprId>,

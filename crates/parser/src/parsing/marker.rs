@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use drop_bomb::DropBomb;
 
 use super::Parser;
-use crate::{event::Event, ParserDefinition};
+use crate::{ParserDefinition, event::Event};
 
 pub struct Marker<P: ParserDefinition> {
     pos: usize,

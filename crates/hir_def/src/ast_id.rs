@@ -2,9 +2,9 @@ use std::marker::PhantomData;
 
 use la_arena::{Arena, Idx};
 use syntax::{
+    AstNode, SyntaxNode,
     ast::{self, SourceFile},
     ptr::{AstPtr, SyntaxNodePtr},
-    AstNode, SyntaxNode,
 };
 
 /// Maps items' `SyntaxNode`s to `ErasedFileAstId`s and back.
@@ -43,7 +43,7 @@ impl AstIdMap {
         let id = match self.arena.iter().find(|(_id, i)| **i == ptr) {
             Some((it, _)) => it,
             None => panic!(
-                "Can't find {:?} in AstIdMap:\n{:?}",
+                "Cannot find {:?} in AstIdMap:\n{:?}",
                 item.syntax(),
                 self.arena.iter().map(|(_id, i)| i).collect::<Vec<_>>(),
             ),

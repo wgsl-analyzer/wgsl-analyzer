@@ -14,6 +14,7 @@ use la_arena::ArenaMap;
 use rustc_hash::FxHashMap;
 
 use crate::{
+    HirDatabase,
     builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
     function::{FunctionDetails, ResolvedFunctionId},
     ty::{
@@ -21,7 +22,6 @@ use crate::{
         TexelFormat, TextureDimensionality, TextureKind, TextureType, Ty, TyKind, VecSize,
         VectorType,
     },
-    HirDatabase,
 };
 
 pub fn infer_query(
@@ -630,7 +630,7 @@ impl<'db> InferenceContext<'db> {
                     ty
                 },
             },
-            TypeExpectation::TypeOrVecOf(ref expect) => {
+            TypeExpectation::TypeOrVecOf(expect) => {
                 match self.expect_ty_inner(ty.this_or_vec_inner(self.db), expect) {
                     Ok(_) => ty,
                     Err(_) => {

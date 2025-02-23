@@ -16,7 +16,7 @@ pub struct CompletionItem {
     /// generic TextEdit into LSP's completion edit (see conv.rs).
     ///
     /// `source_range` must contain the completion offset. `insert_text` should
-    /// start with what `source_range` points to, or VSCode will filter out the
+    /// start with what `source_range` points to, or VS Code will filter out the
     /// completion silently.
     source_range: TextRange,
 
@@ -42,7 +42,7 @@ pub struct CompletionItem {
     detail: Option<String>,
 
     /// We use this to sort completion. Relevance records facts like "do the
-    /// types align precisely?". We can't sort by relevances directly, they are
+    /// types align precisely?". We cannot sort by relevances directly, they are
     /// only partially ordered.
     ///
     /// Note that Relevance ignores fuzzy match score. We compute Relevance for
@@ -132,7 +132,7 @@ impl CompletionRelevance {
     /// Provides a relevance score. Higher values are more relevant.
     ///
     /// The absolute value of the relevance score is not meaningful, for
-    /// example a value of 0 doesn't mean "not relevant", rather
+    /// example a value of 0 does not mean "not relevant", rather
     /// it means "least relevant". The score value should only be used
     /// for relative ordering.
     ///

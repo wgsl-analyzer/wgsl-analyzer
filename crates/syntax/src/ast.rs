@@ -5,9 +5,9 @@ use wgsl_parser::{SyntaxKind, SyntaxNode};
 
 use self::operators::{BinaryOp, CompoundOp, UnaryOp};
 use crate::{
+    AstChildren, AstNode, AstToken, HasAttrs, HasGenerics, HasName, SyntaxToken, TokenText,
     ast::operators::{ArithOp, CmpOp, LogicOp},
-    support, AstChildren, AstNode, AstToken, HasAttrs, HasGenerics, HasName, SyntaxToken,
-    TokenText,
+    support,
 };
 
 macro_rules! ast_node {
@@ -362,7 +362,7 @@ ast_node!(GenericArgList:
 
 impl GenericArgList {
     #[rustfmt::skip]
-    pub fn generics(&self) -> impl Iterator<Item = GenericArg> {
+    pub fn generics(&self) -> impl Iterator<Item = GenericArg> + use<> {
         self.syntax
             .children_with_tokens()
             .filter_map(|it| match it {

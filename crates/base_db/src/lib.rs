@@ -9,12 +9,10 @@ use input::{SourceRoot, SourceRootId};
 pub use util_types::*;
 use vfs::{AnchoredPath, VfsPath};
 
-use std::{
-    collections::{HashMap, HashSet},
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use line_index::LineIndex;
+use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::{Parse, ParseEntryPoint};
 pub use vfs::FileId;
 
@@ -50,10 +48,10 @@ pub trait SourceDatabase: FileLoader {
     ) -> FileId;
 
     #[salsa::input]
-    fn custom_imports(&self) -> Arc<HashMap<String, String>>;
+    fn custom_imports(&self) -> Arc<FxHashMap<String, String>>;
 
     #[salsa::input]
-    fn shader_defs(&self) -> Arc<HashSet<String>>;
+    fn shader_defs(&self) -> Arc<FxHashSet<String>>;
 
     /// Path to a file, relative to the root of its source root.
     /// Source root of the file.

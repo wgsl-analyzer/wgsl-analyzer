@@ -1,23 +1,25 @@
-use crate::from_proto;
-use crate::lsp_utils::{is_cancelled, Progress};
+use crate::lsp::utils::{Progress, is_cancelled};
+use crate::lsp::{self, from_proto};
 use crate::reload::ProjectWorkspaceProgress;
 use base_db::SourceDatabase as _;
 use std::{sync::Arc, time::Instant};
 
-use crossbeam_channel::{select, Receiver};
+use crossbeam_channel::{Receiver, select};
+use hir_def::HirFileId;
 use hir_def::db::DefDatabase as _;
 use hir_def::module_data::{ImportValue, ModuleItem};
-use hir_def::HirFileId;
 use lsp_server::Connection;
 use salsa::Durability;
 use tracing::info;
 use vfs::FileId;
 
 use crate::{
+    Result,
     config::Config,
     dispatch::{NotificationDispatcher, RequestDispatcher},
-    global_state::{file_id_to_url, GlobalState},
-    handlers, lsp_ext, Result,
+    global_state::{GlobalState, file_id_to_url},
+    handlers,
+    lsp::ext,
 };
 
 #[inline]
@@ -137,11 +139,11 @@ impl GlobalState {
                                     let import_path = parent_path.join(path).unwrap();
 
                                     let params =
-                                        lsp_ext::import_text_document::ImportTextDocumentParams {
+                                        lsp::ext::import_text_document::ImportTextDocumentParams {
                                             uri: import_path.to_string(),
                                         };
 
-                                    self.send_request::<lsp_ext::ImportTextDocument>(
+                                    self.send_request::<lsp::ext::ImportTextDocument>(
                                         params,
                                         |_, _| {},
                                     );
@@ -218,9 +220,9 @@ impl GlobalState {
             .on::<lsp_types::request::HoverRequest>(handlers::handle_hover)
             .on::<lsp_types::request::Shutdown>(handlers::handle_shutdown)
             .on::<lsp_types::request::InlayHintRequest>(handlers::handle_inlay_hints)
-            .on::<lsp_ext::SyntaxTree>(handlers::show_syntax_tree)
-            .on::<lsp_ext::DebugCommand>(handlers::debug_command)
-            .on::<lsp_ext::FullSource>(handlers::full_source)
+            .on::<lsp::ext::SyntaxTree>(handlers::show_syntax_tree)
+            .on::<lsp::ext::DebugCommand>(handlers::debug_command)
+            .on::<lsp::ext::FullSource>(handlers::full_source)
             .finish();
 
         Ok(())
@@ -258,7 +260,7 @@ impl GlobalState {
             .on::<lsp_types::notification::DidChangeConfiguration>(|this, _params| {
                 // As stated in https://github.com/microsoft/language-server-protocol/issues/676,
                 // this notification's parameters should be ignored and the actual config queried separately.
-                this.send_request::<lsp_ext::RequestConfiguration>((), |this, resp| {
+                this.send_request::<lsp::ext::RequestConfiguration>((), |this, resp| {
                     let lsp_server::Response { error, result, .. } = resp;
 
                     match (error, result) {
@@ -266,7 +268,7 @@ impl GlobalState {
                             tracing::error!("Failed to fetch the server settings: {:?}", err);
                         },
                         (None, Some(configs)) => {
-                            // Note that json can be null according to the spec if the client can't
+                            // Note that json can be null according to the spec if the client cannot
                             // provide a configuration. This is handled in Config::update below.
                             let mut config = Config::clone(&*this.config);
                             config.data.update(&configs);
@@ -328,12 +330,16 @@ impl GlobalState {
 mod text_notifications {
     use anyhow::Context as _;
     use lsp_types::{
-        notification::PublishDiagnostics, DidChangeTextDocumentParams, DidCloseTextDocumentParams,
-        DidOpenTextDocumentParams, DidSaveTextDocumentParams, PublishDiagnosticsParams,
+        DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
+        DidSaveTextDocumentParams, PublishDiagnosticsParams, notification::PublishDiagnostics,
     };
     use tracing::error;
 
-    use crate::{from_proto, global_state::GlobalState, lsp_utils::apply_document_changes, Result};
+    use crate::{
+        Result,
+        global_state::GlobalState,
+        lsp::{from_proto, utils::apply_document_changes},
+    };
 
     pub fn did_open_text_document(
         state: &mut GlobalState,
@@ -353,7 +359,7 @@ mod text_notifications {
                 .set_file_contents(path.clone(), Some(params.text_document.text.into_bytes()));
             vfs.0.file_id(&path)
         };
-        // When the file gets closed, we hide the diagnostics, because the LSP doesn't give a good way to determine when a file has been deleted
+        // When the file gets closed, we hide the diagnostics, because the LSP does not give a good way to determine when a file has been deleted
         // If there are pre-existing diagnostics, send them now
         if let Some(file_id) = file_id {
             state.diagnostics.make_updated(file_id);

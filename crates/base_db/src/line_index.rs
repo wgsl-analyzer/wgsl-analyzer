@@ -171,7 +171,7 @@ impl LineIndex {
                     res -= usize::from(c.len()) - c.len_utf16();
                 } else {
                     // From here on, all utf16 characters come *after* the character we are mapping,
-                    // so we don't need to take them into account
+                    // so we do not need to take them into account
                     break;
                 }
             }
@@ -190,7 +190,7 @@ impl LineIndex {
                     col += u32::from(c.len()) - c.len_utf16() as u32;
                 } else {
                     // From here on, all utf16 characters come *after* the character we are mapping,
-                    // so we don't need to take them into account
+                    // so we do not need to take them into account
                     break;
                 }
             }

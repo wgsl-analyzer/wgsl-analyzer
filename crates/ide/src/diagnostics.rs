@@ -2,14 +2,13 @@ use std::ops::Range;
 
 use base_db::{FileRange, TextRange, TextSize};
 use hir::{
-    diagnostics::{AnyDiagnostic, DiagnosticsConfig, NagaVersion},
     HirDatabase, Semantics,
+    diagnostics::{AnyDiagnostic, DiagnosticsConfig, NagaVersion},
 };
 use hir_def::original_file_range;
 use hir_ty::ty::{
-    self,
+    self, Ty, VecSize,
     pretty::{pretty_fn, pretty_type},
-    Ty, VecSize,
 };
 use itertools::Itertools;
 use rowan::NodeOrToken;
@@ -464,7 +463,7 @@ pub fn diagnostics(
                     let source = expr.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, ty);
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                    DiagnosticMessage::new(format!("can't index into type {}", ty), frange.range)
+                    DiagnosticMessage::new(format!("cannot index into type {}", ty), frange.range)
                 },
                 AnyDiagnostic::UnresolvedName { expr, name } => {
                     let source = expr.value.to_node(&root);
@@ -479,7 +478,7 @@ pub fn diagnostics(
                     let ty = ty::pretty::pretty_type(db, ty);
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
                     DiagnosticMessage::new(
-                        format!("can't construct value of type {}", ty),
+                        format!("cannot construct value of type {}", ty),
                         frange.range,
                     )
                 },

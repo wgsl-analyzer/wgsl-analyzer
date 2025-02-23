@@ -3,9 +3,10 @@ use std::sync::Arc;
 use tracing::info;
 
 use crate::{
+    HirFileId, InFile,
     body::{
-        scope::{ExprScopes, ScopeId},
         BindingId,
+        scope::{ExprScopes, ScopeId},
     },
     db::{DefDatabase, FunctionId, Location},
     hir_file_id::ImportFile,
@@ -14,7 +15,6 @@ use crate::{
         TypeAlias,
     },
     type_ref::{TypeRef, VecDimensionality, VecType},
-    HirFileId, InFile,
 };
 
 #[derive(Clone)]
@@ -147,7 +147,7 @@ impl Resolver {
         })
     }
 
-    /// calls f for every local, function and global declaration, but not structs
+    /// calls f for every local, function, and global declaration, but not structs
     pub fn process_value_names(
         &self,
         mut f: impl FnMut(Name, ScopeDef),
