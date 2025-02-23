@@ -8,13 +8,13 @@ assignees: ''
 
 ## `wgsl-analyzer` version
 
-The release number or commit hash of the version you're using.
+The release number or commit hash of the version you are using.
 
 ## Relevant system information
 
 This section is optional. Remove it if you know that the problem is not platform dependent.
 
-Rust version you're using: (`cargo --version`)
+Rust version you are using: (`cargo --version`)
 
 ```text
 
@@ -38,7 +38,7 @@ Describe how you arrived at the problem. If you can, consider providing a code s
 
 ## What went wrong
 
-If it's not clear, break this out into:
+If it is not clear, break this out into:
 
 - what were you expecting?
 - what actually happened?
@@ -52,4 +52,4 @@ This commonly includes:
 - logs
 - theories about what might be going wrong
 - workarounds that you used
-- links to related bugs, PRs or discussions
+- links to related bugs, PRs, or discussions

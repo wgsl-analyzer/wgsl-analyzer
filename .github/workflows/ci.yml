@@ -185,7 +185,7 @@ jobs:
           echo 'To fix typos, please run `typos -w`'
           echo 'To check for a diff, run `typos`'
           echo 'You can find typos here: https://crates.io/crates/typos'
-          echo 'if you use VSCode, you can also install `Typos Spell Checker'
+          echo 'if you use VS Code, you can also install `Typos Spell Checker'
           echo 'You can find the extension here: https://marketplace.visualstudio.com/items?itemName=tekumara.typos-vscode'
 
   check-doc:

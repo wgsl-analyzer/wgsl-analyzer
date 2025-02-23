@@ -23,7 +23,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `It looks like your PR is a breaking change, but you didn't provide a migration guide.
+              body: `It looks like your PR is a breaking change, but you did not provide a migration guide.
 
               Could you add some context on what users should update when this change get released?
               Putting it after a \`## Migration Guide\` will help it get automatically picked up by our tooling.`
