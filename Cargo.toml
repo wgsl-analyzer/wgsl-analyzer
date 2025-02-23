@@ -1,6 +1,6 @@
 [workspace]
 members = [
-  # "xtask/",
+  "xtask/",
   # "lib/*",
   "crates/*",
 ]
@@ -8,7 +8,7 @@ exclude = ["crates/proc-macro-srv/proc-macro-test/imp"]
 resolver = "2"
 
 [workspace.package]
-rust-version = "1.84"
+rust-version = "1.85"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 authors = ["wgsl-analyzer team"]
@@ -36,6 +36,124 @@ debug = 0
 [profile.dev-rel]
 inherits = "release"
 debug = 2
+
+[workspace.dependencies]
+# local crates
+base-db = { path = "./crates/base-db", version = "0.0.0" }
+cfg = { path = "./crates/cfg", version = "0.0.0", features = ["tt"] }
+hir = { path = "./crates/hir", version = "0.0.0" }
+hir-def = { path = "./crates/hir-def", version = "0.0.0" }
+hir-expand = { path = "./crates/hir-expand", version = "0.0.0" }
+hir-ty = { path = "./crates/hir-ty", version = "0.0.0" }
+ide = { path = "./crates/ide", version = "0.0.0" }
+ide-assists = { path = "./crates/ide-assists", version = "0.0.0" }
+ide-completion = { path = "./crates/ide-completion", version = "0.0.0" }
+ide-db = { path = "./crates/ide-db", version = "0.0.0" }
+ide-diagnostics = { path = "./crates/ide-diagnostics", version = "0.0.0" }
+ide-ssr = { path = "./crates/ide-ssr", version = "0.0.0" }
+intern = { path = "./crates/intern", version = "0.0.0" }
+limit = { path = "./crates/limit", version = "0.0.0" }
+load-cargo = { path = "./crates/load-cargo", version = "0.0.0" }
+mbe = { path = "./crates/mbe", version = "0.0.0" }
+parser = { path = "./crates/parser", version = "0.0.0" }
+paths = { path = "./crates/paths", version = "0.0.0" }
+proc-macro-api = { path = "./crates/proc-macro-api", version = "0.0.0" }
+proc-macro-srv = { path = "./crates/proc-macro-srv", version = "0.0.0" }
+proc-macro-srv-cli = { path = "./crates/proc-macro-srv-cli", version = "0.0.0" }
+profile = { path = "./crates/profile", version = "0.0.0" }
+project-model = { path = "./crates/project-model", version = "0.0.0" }
+ra-salsa = { path = "./crates/ra-salsa", package = "salsa", version = "0.0.0" }
+span = { path = "./crates/span", version = "0.0.0" }
+stdx = { path = "./crates/stdx", version = "0.0.0" }
+syntax = { path = "./crates/syntax", version = "0.0.0" }
+syntax-bridge = { path = "./crates/syntax-bridge", version = "0.0.0" }
+test-fixture = { path = "./crates/test-fixture", version = "0.0.0" }
+test-utils = { path = "./crates/test-utils", version = "0.0.0" }
+toolchain = { path = "./crates/toolchain", version = "0.0.0" }
+tt = { path = "./crates/tt", version = "0.0.0" }
+vfs-notify = { path = "./crates/vfs-notify", version = "0.0.0" }
+vfs = { path = "./crates/vfs", version = "0.0.0" }
+
+ra-ap-rustc_lexer = { version = "0.96.0", default-features = false }
+ra-ap-rustc_parse_format = { version = "0.96.0", default-features = false }
+ra-ap-rustc_index = { version = "0.96.0", default-features = false }
+ra-ap-rustc_abi = { version = "0.96.0", default-features = false }
+ra-ap-rustc_pattern_analysis = { version = "0.96.0", default-features = false }
+
+# local crates that are not published to crates.io. These should not have versions.
+
+# in-tree crates that are published separately and follow semver. See lib/README.md
+line-index = { version = "0.1.2" }
+la-arena = { version = "0.3.1" }
+lsp-server = { version = "0.7.8" }
+
+# non-local crates
+anyhow = "1.0.96"
+arrayvec = "0.7.6"
+bitflags = "2.8.0"
+cargo_metadata = "0.19.1"
+camino = "1.1.9"
+chalk-solve = { version = "0.99.0", default-features = false }
+chalk-ir = "0.99.0"
+chalk-recursive = { version = "0.99.0", default-features = false }
+chalk-derive = "0.99.0"
+crossbeam-channel = "0.5.14"
+dissimilar = "1.0.9"
+dot = "0.1.4"
+either = "1.13.0"
+expect-test = "1.5.1"
+fxhash = "0.2.1"
+hashbrown = { version = "0.15.2", features = [
+  "inline-more",
+], default-features = false }
+indexmap = "2.7.1"
+itertools = "0.14.0"
+libc = "0.2.169"
+libloading = "0.8.6"
+memmap2 = "0.9.5"
+nohash-hasher = "0.2.0"
+oorandom = "11.1.4"
+object = { version = "0.36.7", default-features = false, features = [
+  "std",
+  "read_core",
+  "elf",
+  "macho",
+  "pe",
+] }
+process-wrap = { version = "8.2.0", features = ["std"] }
+pulldown-cmark-to-cmark = "21.0.0"
+pulldown-cmark = { version = "0.13.0", default-features = false }
+rayon = "1.10.0"
+rustc-hash = "2.1.1"
+salsa = "0.17.0-pre.2"
+semver = "1.0.25"
+serde = { version = "1.0.218" }
+serde_derive = { version = "1.0.218" }
+serde_json = "1.0.139"
+smallvec = { version = "1.14.0", features = [
+  "const_new",
+  "union",
+  "const_generics",
+] }
+smol_str = "0.3.2"
+text-size = "1.1.1"
+tracing = "0.1.41"
+tracing-tree = "0.4.0"
+tracing-subscriber = { version = "0.3.19", default-features = false, features = [
+  "registry",
+  "fmt",
+  "local-time",
+  "std",
+  "time",
+  "tracing-log",
+] }
+triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
+url = "2.5.4"
+xshell = "0.2.7"
+
+
+# We need to freeze the version of the crate, as the raw-api feature is considered unstable
+dashmap = { version = "6.1.0", features = ["raw-api"] }
 
 [workspace.lints.rust]
 warnings = { level = "warn", priority = -2 }
@@ -80,10 +198,13 @@ blanket_clippy_restriction_lints = "allow" # makes it easier to keep up to date 
 pub_with_shorthand = "allow"               # style preference
 absolute_paths = "allow"                   # often hurts readability
 items_after_statements = "allow"           # incorrect
-shadow_unrelated = "allow"                 # don't care
+shadow_unrelated = "allow"                 # do not care
 missing_trait_methods = "allow"            # antipattern
 float_arithmetic = "allow"                 # is fine
 separated_literal_suffix = "allow"         # style preference
+self_named_module_files = "allow"          # style preference
+semicolon_outside_block = "allow"          # style preference
+else_if_without_else = "allow"             # conflicting with redundant_else
 
 # TODOs
 missing_docs_in_private_items = "allow"
