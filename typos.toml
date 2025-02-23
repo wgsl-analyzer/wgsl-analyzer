@@ -16,6 +16,43 @@ ignore-hidden = false
 
 # Match Inside a Word - Case Insensitive
 [default.extend-words]
+"jod" = "jod"
+"anser" = "anser"
+
+# Contractions
+"don't" = "do not"
+"can't" = "cannot"
+"isn't" = "is not"
+"wouldn't" = "would not"
+"aren't" = "are not"
+"couldn't" = "could not"
+"shouldn't" = "should not"
+"won't" = "will not"
+"haven't" = "have not"
+"hasn't" = "has not"
+"hadn't" = "had not"
+"doesn't" = "does not"
+"didn't" = "did not"
+"mustn't" = "must not"
+"mightn't" = "might not"
+"shan't" = "shall not"
+"weren't" = "were not"
+"wasn't" = "was not"
+"needn't" = "need not"
+"let's" = "let us"
+"there's" = "there is"
+"who's" = "who is"
+"what's" = "what is"
+"where's" = "where is"
+"when's" = "when is"
+"why's" = "why is"
+"how's" = "how is"
+
+# Be concise
+":-)" = "be concise"
+";-)" = "be concise"
+"is going on" = "happens"
+"take a look at" = "examine"
 
 [default]
 locale = "en-us"

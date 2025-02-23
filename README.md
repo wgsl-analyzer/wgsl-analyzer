@@ -1,17 +1,15 @@
-# wgsl-analyzer
+# `wgsl-analyzer`
 
 ![wgsl-analyzer logo](logo.svg)
 
 [![Discord](https://img.shields.io/discord/691052431525675048.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/dZJ3JTbhaU)
 
-## What wgsl-analyzer is
+## What `wgsl-analyzer` is
 
-wgsl-analyzer is a [language server](https://microsoft.github.io/language-server-protocol/)
-plugin for the [WGSL Shading language](https://gpuweb.github.io/gpuweb/wgsl/).
+`wgsl-analyzer` is a [language server](https://microsoft.github.io/language-server-protocol/) plugin for the [WGSL Shading language](https://gpuweb.github.io/gpuweb/wgsl/).
 
-It comes with a [VS Code](https://code.visualstudio.com/) plugin located in
-[./editors/code](./editors/code), but due to the nature of the language server protocol,
-it should be possible to create plugins for other editors as well.
+It comes with a [VS Code](https://code.visualstudio.com/) plugin located in [./editors/code](./editors/code).
+Due to the nature of the language server protocol, it should be possible to create plugins for other editors as well.
 
 ## Installation
 
@@ -130,8 +128,13 @@ The vscode extension can either be built as a platform-specific extension which 
 
 **Platform-specific extension:**
 
-Copy the server binary (either `wgsl-analyzer` or `wgsl-analyzer.exe`) into `./editors/code/out/`, then run
-`npm run package -- --target <target> -o wgsl-analyzer-<target>.vsix` where the target is one of the targets listed as [platform-specific extension targets](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions).
+Copy the server binary (either `wgsl-analyzer` or `wgsl-analyzer.exe`) into `./editors/code/out/`, then run:
+
+```bash
+npm run package -- --target <target> -o wgsl-analyzer-<target>.vsix
+```
+
+where the target is one of the targets listed as [platform-specific extension targets](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions).
 
 This can be done automatically with `cargo run --bin package -- --target linux-x64 --install`.
 

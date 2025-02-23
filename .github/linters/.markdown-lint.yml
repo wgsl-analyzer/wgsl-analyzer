@@ -1,9 +1,3 @@
 {
-    "MD013": false,
-    "no-inline-html": {
-        "allowed_elements": [
-            "details",
-            "summary"
-        ]
-    }
+    "extends": "../../.markdownlint.jsonc"
 }

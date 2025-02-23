@@ -43,5 +43,5 @@ jobs:
               repo: context.repo.repo,
               body: `**Welcome**, new contributor!
 
-              Please make sure you've read our [contributing guide](https://github.com/wgsl-analyzer/wgsl-analyzer/blob/main/CONTRIBUTING.md) and we look forward to reviewing your pull request shortly ✨`
+              Please make sure you have read our [contributing guide](https://github.com/wgsl-analyzer/wgsl-analyzer/blob/main/CONTRIBUTING.md) and we look forward to reviewing your pull request shortly ✨`
             })
