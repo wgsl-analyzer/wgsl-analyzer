@@ -68,7 +68,6 @@ use ::std::collections::hash_map;
 /// Raw access to the underlying `HashMap`.
 ///
 /// This alias is provided for convenience because of the ugly third generic parameter.
-#[expect(clippy::disallowed_types, reason = "Uses a custom hasher")]
 pub type RawMap<A> = hash_map::HashMap<TypeId, Box<A>, BuildHasherDefault<TypeIdHasher>>;
 
 /// A collection containing zero or one values for any given type and allowing convenient,
