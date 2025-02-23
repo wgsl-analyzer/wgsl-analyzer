@@ -72,21 +72,21 @@ jobs:
       - shell: pwsh
         run: |
           echo "target=${{ matrix.platform }}-${{ matrix.arch }}" >> $env:GITHUB_ENV
-          cargo build --release -p wgsl_analyzer --target ${{ matrix.rust_target }}
+          cargo build --release -p wgsl-analyzer --target ${{ matrix.rust_target }}
           mkdir -p editors/code/out
-          cp "target/${{ matrix.rust_target }}/release/wgsl_analyzer$(If ('${{ matrix.platform }}' -eq 'win32') { '.exe' } else { '' } )" "editors/code/out/"
-          cp "target/${{ matrix.rust_target }}/release/wgsl_analyzer$(If ('${{ matrix.platform }}' -eq 'win32') { '.exe' } else { '' } )" "wgsl_analyzer-${{ matrix.platform }}-${{ matrix.arch }}$(If ('${{ matrix.platform }}' -eq 'win32') { '.exe' } else { '' } )"
+          cp "target/${{ matrix.rust_target }}/release/wgsl-analyzer$(If ('${{ matrix.platform }}' -eq 'win32') { '.exe' } else { '' } )" "editors/code/out/"
+          cp "target/${{ matrix.rust_target }}/release/wgsl-analyzer$(If ('${{ matrix.platform }}' -eq 'win32') { '.exe' } else { '' } )" "wgsl-analyzer-${{ matrix.platform }}-${{ matrix.arch }}$(If ('${{ matrix.platform }}' -eq 'win32') { '.exe' } else { '' } )"
       - shell: pwsh
-        run: npm run package -- --target ${{ env.target }} -o wgsl-analyzer-${{ env.target }}.vsix
+        run: npm run package -- --target ${{ matrix.platform }}-${{ matrix.arch }} -o wgsl-analyzer-${{ matrix.platform }}-${{ matrix.arch }}.vsix
         working-directory: ./editors/code
       - uses: actions/upload-artifact@v4
         with:
-          name: wgsl-analyzer-${{ env.target }}.vsix
-          path: editors/code/wgsl-analyzer-${{ env.target }}.vsix
+          name: wgsl-analyzer-${{ matrix.rust_target }}.vsix
+          path: editors/code/wgsl-analyzer-${{ matrix.rust_target }}.vsix
       - uses: actions/upload-artifact@v4
         with:
-          name: wgsl-analyzer-${{ env.target }}
-          path: wgsl_analyzer-${{ matrix.platform }}-${{ matrix.arch }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
+          name: wgsl-analyzer-${{ matrix.rust_target }}
+          path: wgsl-analyzer-${{ matrix.platform }}-${{ matrix.arch }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
 
   build_generic:
     runs-on: ubuntu-latest

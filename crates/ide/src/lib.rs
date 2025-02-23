@@ -13,8 +13,8 @@ mod syntax_tree;
 use std::sync::Arc;
 
 use base_db::{
-    change::Change, line_index::LineIndex, FilePosition, FileRange, RangeInfo, SourceDatabase,
-    TextRange,
+    FilePosition, FileRange, RangeInfo, SourceDatabase, TextRange, change::Change,
+    line_index::LineIndex,
 };
 use diagnostics::DiagnosticMessage;
 use goto_definition::NavigationTarget;

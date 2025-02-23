@@ -2,10 +2,10 @@ use std::fmt::Write;
 
 use super::{Ty, TyKind};
 use crate::{
+    HirDatabase,
     function::FunctionDetails,
     infer::{TypeExpectation, TypeExpectationInner},
     ty::{ArraySize, ScalarType, TextureKind},
-    HirDatabase,
 };
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -61,7 +61,7 @@ fn write_type_expectation_inner(
         TypeExpectationInner::I32OrF32 => {
             write!(f, "i32 or f32")?;
         },
-        TypeExpectationInner::NumericScalar => write!(f, "i32, u32 or f32")?,
+        TypeExpectationInner::NumericScalar => write!(f, "i32, u32, or f32")?,
         TypeExpectationInner::IntegerScalar => write!(f, "i32 or u32")?,
     }
     Ok(())

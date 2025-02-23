@@ -267,25 +267,25 @@ fn name_recover(
 }
 
 fn list(
-    p: &mut Parser,
+    parser: &mut Parser,
     begin: SyntaxKind,
     end: SyntaxKind,
     separator: SyntaxKind,
     kind: SyntaxKind,
     f: impl Fn(&mut Parser),
 ) {
-    let m = p.start();
-    p.expect(begin);
-    while !p.at_or_end(end) {
-        let location = p.location();
-        f(p);
-        if p.location() == location {
-            p.error();
+    let m = parser.start();
+    parser.expect(begin);
+    while !parser.at_or_end(end) {
+        let location = parser.location();
+        f(parser);
+        if parser.location() == location {
+            parser.error();
         }
-        p.eat(separator);
+        parser.eat(separator);
     }
-    p.expect(end);
-    m.complete(p, kind);
+    parser.expect(end);
+    m.complete(parser, kind);
 }
 
 fn list_multisep(
@@ -431,7 +431,7 @@ pub fn type_decl(p: &mut Parser) -> Option<CompletedMarker> {
     if p.at_set(TYPE_SET) {
         let m_ty = p.start();
         let ty = p.bump();
-        // We don't validate which types should have generics and which shouldn't here,
+        // We do not validate which types should have generics and which should not here,
         // because `expr` relies on that (specifically for vec3(1.0) etc., where the
         // type is inferred)
         if p.at(SyntaxKind::LessThan) {

@@ -1,9 +1,9 @@
 use hir_def::module_data::Name;
 
 use crate::{
+    HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
     ty::*,
-    HirDatabase,
 };
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]

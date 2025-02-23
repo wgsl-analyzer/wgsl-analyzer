@@ -32,12 +32,12 @@
               pkgs.libiconv
             ];
 
-          cargoExtraArgs = "-p wgsl_analyzer";
-          pname = "wgsl_analyzer";
+          cargoExtraArgs = "-p wgsl-analyzer";
+          pname = "wgsl-analyzer";
           version = "0.0.0";
         };
       in {
-        packages.default = wgsl_analyzer;
+        packages.default = wgsl-analyzer;
       }
     )
     // {

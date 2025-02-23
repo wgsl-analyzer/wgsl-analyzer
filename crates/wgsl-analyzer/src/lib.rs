@@ -2,16 +2,13 @@ mod capabilities;
 pub mod config;
 mod diagnostics;
 mod dispatch;
-mod from_proto;
 mod global_state;
 mod handlers;
 mod line_index;
-mod lsp_ext;
-mod lsp_utils;
+pub mod lsp;
 pub mod main_loop;
 mod reload;
 mod task_pool;
-mod to_proto;
 
 pub use capabilities::server_capabilities;
 

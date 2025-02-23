@@ -16,7 +16,7 @@ doctest = false
 base-db = { path = "../base_db", version = "0.0.0" }
 hir-def = { path = "../hir_def", version = "0.0.0" }
 
-salsa = "0.17.0-pre.2"
+salsa.workspace = true
 la-arena = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.3.1" }
 either = "1.13.0"
 rustc-hash = "2.1.0"

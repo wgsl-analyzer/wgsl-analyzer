@@ -9,10 +9,10 @@ use paths::AbsPathBuf;
 use tracing::{info, warn};
 use tracing_subscriber::fmt::Subscriber;
 use wgsl_analyzer::{
+    Result,
     config::{Config, TraceConfig},
     from_json,
     main_loop::main_loop,
-    Result,
 };
 
 const VERSION: &str = "0.9.5";
@@ -61,7 +61,7 @@ fn main() -> Result<()> {
     let initialize_result = lsp_types::InitializeResult {
         capabilities: wgsl_analyzer::server_capabilities(),
         server_info: Some(lsp_types::ServerInfo {
-            name: String::from("wgsl_analyzer"),
+            name: String::from("wgsl-analyzer"),
             version: None,
         }),
     };

@@ -1,6 +1,6 @@
 use rowan::TextRange;
 
-use super::{lexer::Token, ParserDefinition};
+use super::{ParserDefinition, lexer::Token};
 use crate::TokenKind;
 
 pub(crate) struct Source<'t, 'input, P: ParserDefinition> {
@@ -37,7 +37,7 @@ impl<'t, 'input, P: ParserDefinition> Source<'t, 'input, P> {
         self.peek_token_raw()
     }
 
-    pub fn location(&mut self) -> impl Eq {
+    pub fn location(&mut self) -> impl Eq + use<P> {
         self.cursor
     }
 

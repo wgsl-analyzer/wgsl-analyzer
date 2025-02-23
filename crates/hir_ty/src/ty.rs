@@ -451,7 +451,7 @@ pub enum TexelFormat {
     Rg32float,
 
     BoundVar(BoundVar),
-    // this is only used for builtins which don't care about the format
+    // this is only used for builtins which do not care about the format
     Any,
 }
 

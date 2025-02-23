@@ -10,7 +10,7 @@ mod source;
 use std::{fmt::Debug, marker::PhantomData};
 
 use lexer::Lexer;
-pub use parsing::{marker, ParseError, Parser};
+pub use parsing::{ParseError, Parser, marker};
 use rowan::{GreenNode, SyntaxNode};
 use sink::Sink;
 use source::Source;

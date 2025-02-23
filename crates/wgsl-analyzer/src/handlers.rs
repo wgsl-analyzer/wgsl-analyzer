@@ -5,14 +5,18 @@
 
 use base_db::{FileRange, TextRange};
 use hir::diagnostics::DiagnosticsConfig;
-use ide::{diagnostics::Severity, HoverResult};
+use ide::{HoverResult, diagnostics::Severity};
 use lsp_types::{
     DiagnosticRelatedInformation, DiagnosticTag, GotoDefinitionResponse, LanguageString,
     MarkedString, TextDocumentIdentifier,
 };
 use vfs::FileId;
 
-use crate::{from_proto, global_state::GlobalStateSnapshot, lsp_ext, to_proto, Result};
+use crate::{
+    Result,
+    global_state::GlobalStateSnapshot,
+    lsp::{ext, from_proto, to_proto},
+};
 
 pub fn handle_goto_definition(
     snap: GlobalStateSnapshot,
@@ -113,7 +117,7 @@ pub fn handle_shutdown(
 
 pub fn full_source(
     snap: GlobalStateSnapshot,
-    params: lsp_ext::FullSourceParams,
+    params: ext::FullSourceParams,
 ) -> Result<String> {
     let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
     let source = snap
@@ -125,7 +129,7 @@ pub fn full_source(
 
 pub fn show_syntax_tree(
     snap: GlobalStateSnapshot,
-    params: lsp_ext::SyntaxTreeParams,
+    params: ext::SyntaxTreeParams,
 ) -> Result<String> {
     let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
     let line_index = snap.file_line_index(file_id)?;
@@ -140,7 +144,7 @@ pub fn show_syntax_tree(
 
 pub fn debug_command(
     snap: GlobalStateSnapshot,
-    params: lsp_ext::DebugCommandParams,
+    params: ext::DebugCommandParams,
 ) -> Result<()> {
     let position = from_proto::file_position(&snap, &params.position)?;
     snap.analysis.debug_command(position)?;

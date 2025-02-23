@@ -16,10 +16,11 @@ impl<P: ParserDefinition> ParseError<P> {
         let num_expected = self.expected.len();
         let is_first = |idx| idx == 0;
         let is_last = |idx| idx == num_expected - 1;
-
         for (idx, expected_kind) in self.expected.iter().enumerate() {
             if is_first(idx) {
                 let _ = write!(msg, "{:?}", expected_kind);
+            } else if is_last(idx) && num_expected > 2 {
+                let _ = write!(msg, ", or {:?}", expected_kind);
             } else if is_last(idx) {
                 let _ = write!(msg, " or {:?}", expected_kind);
             } else {
@@ -76,6 +77,8 @@ impl<P: ParserDefinition> fmt::Display for ParseError<P> {
         for (idx, expected_kind) in self.expected.iter().enumerate() {
             if is_first(idx) {
                 write!(f, "{:?}", expected_kind)?;
+            } else if is_last(idx) && num_expected > 2 {
+                write!(f, ", or {:?}", expected_kind)?;
             } else if is_last(idx) {
                 write!(f, " or {:?}", expected_kind)?;
             } else {

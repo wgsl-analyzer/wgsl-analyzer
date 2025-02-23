@@ -9,9 +9,9 @@ use text_edit::{Indel, TextEdit};
 use vfs::FileId;
 
 use crate::{
+    Result,
     global_state::GlobalStateSnapshot,
     line_index::{LineEndings, LineIndex, OffsetEncoding},
-    Result,
 };
 
 /// Returns a `Url` object from a given path, will lowercase drive letters if present.
@@ -42,7 +42,7 @@ pub fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
         start..(start + drive_letter.len())
     };
 
-    // Note: lowercasing the `path` itself doesn't help, the `Url::parse`
+    // Note: lowercasing the `path` itself does not help, the `Url::parse`
     // machinery *also* canonicalizes the drive letter. So, just massage the
     // string in place.
     let mut url: String = url.into();

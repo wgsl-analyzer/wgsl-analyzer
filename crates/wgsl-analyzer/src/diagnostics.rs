@@ -1,10 +1,8 @@
 //! Book keeping for keeping diagnostics easily in sync with the client.
 
-use std::{
-    collections::{HashMap, HashSet},
-    mem,
-};
+use std::mem;
 
+use rustc_hash::{FxHashMap, FxHashSet};
 use vfs::FileId;
 
 // PERF: FxHashMap/Set
@@ -20,9 +18,9 @@ use vfs::FileId;
 // }
 
 pub struct DiagnosticCollection {
-    // FIXME: should be FxHashMap<FileId, Vec<ra_id::Diagnostic>>
-    pub(crate) native: HashMap<FileId, Vec<lsp_types::Diagnostic>>,
-    changes: HashSet<FileId>,
+    // FIXME: should be FxHashMap<FileId, Vec<wa_id::Diagnostic>>
+    pub(crate) native: FxHashMap<FileId, Vec<lsp_types::Diagnostic>>,
+    changes: FxHashSet<FileId>,
 }
 
 /*#[derive(Debug, Clone)]
@@ -93,7 +91,7 @@ impl DiagnosticCollection {
         native
     }
 
-    pub(crate) fn take_changes(&mut self) -> Option<HashSet<FileId>> {
+    pub(crate) fn take_changes(&mut self) -> Option<FxHashSet<FileId>> {
         if self.changes.is_empty() {
             return None;
         }

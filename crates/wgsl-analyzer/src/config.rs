@@ -1,9 +1,8 @@
-use std::collections::{HashMap, HashSet};
-
 use hir::diagnostics;
 use hir_ty::ty::pretty::TypeVerbosity;
 use ide::{inlay_hints, inlay_hints::StructLayoutHints};
 use paths::AbsPathBuf;
+use rustc_hash::{FxHashMap, FxHashSet};
 use serde::Deserialize;
 
 use crate::line_index::OffsetEncoding;
@@ -43,8 +42,8 @@ pub struct Config {
 #[derive(Default, Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigData {
-    pub custom_imports: HashMap<String, String>,
-    pub shader_defs: HashSet<String>,
+    pub custom_imports: FxHashMap<String, String>,
+    pub shader_defs: FxHashSet<String>,
     pub trace: TraceConfig,
     pub inlay_hints: InlayHintsConfig,
     pub diagnostics: DiagnosticsConfig,

@@ -5,13 +5,13 @@ use std::{marker::PhantomData, sync::Arc};
 
 use la_arena::{Arena, Idx, IdxRange};
 use smol_str::SmolStr;
-use syntax::{ast, AstNode, TokenText};
+use syntax::{AstNode, TokenText, ast};
 
 use crate::{
+    HirFileId,
     ast_id::FileAstId,
     db::{DefDatabase, Interned},
     type_ref::*,
-    HirFileId,
 };
 
 const MISSING_NAME_PLACEHOLDER: &str = "[missing name]";
@@ -215,7 +215,7 @@ impl<N> From<Idx<N>> for ModuleItemId<N> {
     }
 }
 
-// If we automatically derive this trait, ModuleItemId<N> where N doesn't implement Hash can't compile
+// If we automatically derive this trait, ModuleItemId<N> where N does not implement Hash cannot compile
 #[allow(clippy::derived_hash_with_manual_eq)]
 impl<N> std::hash::Hash for ModuleItemId<N> {
     fn hash<H: std::hash::Hasher>(

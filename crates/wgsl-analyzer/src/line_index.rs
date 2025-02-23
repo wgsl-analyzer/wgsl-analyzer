@@ -33,9 +33,9 @@ impl LineEndings {
             return (src, Self::Unix);
         }
 
-        // We replace `\r\n` with `\n` in-place, which doesn't break utf-8 encoding.
+        // We replace `\r\n` with `\n` in-place, which does not break utf-8 encoding.
         // While we *can* call `as_mut_vec` and do surgery on the live string
-        // directly, let's rather steal the contents of `src`. This makes the code
+        // directly, prefer to steal the contents of `src`. This makes the code
         // safe even if a panic occurs.
 
         let mut buf = src.into_bytes();

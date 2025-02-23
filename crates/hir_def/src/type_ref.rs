@@ -1,4 +1,4 @@
-use syntax::{ast, HasGenerics};
+use syntax::{HasGenerics, ast};
 
 use crate::{expr::parse_literal, module_data::Name};
 
@@ -358,7 +358,7 @@ pub enum AccessMode {
     Read,
     Write,
 
-    // this is only used for builtins which don't care about the access mode (e.g. textureDimensions)
+    // this is only used for builtins which do not care about the access mode (e.g. textureDimensions)
     Any,
 }
 

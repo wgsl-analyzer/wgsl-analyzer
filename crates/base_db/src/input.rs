@@ -1,11 +1,11 @@
-use vfs::{file_set::FileSet, AnchoredPath, FileId, VfsPath};
+use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
 /// Files are grouped into source roots. A source root is a directory on the
 /// file systems which is watched for changes. Typically it corresponds to a
 /// Rust crate. Source roots *might* be nested: in this case, a file belongs to
 /// the nearest enclosing source root. Paths to files are always relative to a
 /// source root, and the analyzer does not know the root path of the source root at
-/// all. So, a file from one source root can't refer to a file in another source
+/// all. So, a file from one source root cannot refer to a file in another source
 /// root by path.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct SourceRootId(pub u32);

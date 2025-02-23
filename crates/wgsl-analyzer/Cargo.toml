@@ -1,5 +1,5 @@
 [package]
-name = "wgsl_analyzer"
+name = "wgsl-analyzer"
 version = "0.0.0"
 # homepage = "https://wgsl-analyzer.github.io/"
 repository.workspace = true
@@ -16,21 +16,21 @@ rust-version.workspace = true
 doctest = false
 
 [[bin]]
-name = "wgsl_analyzer"
+name = "wgsl-analyzer"
 path = "src/bin/main.rs"
 
 [dependencies]
-anyhow = "1.0.95"
+anyhow = "1.0.96"
 crossbeam-channel = "0.5.14"
 lsp-server = "0.7.8"
 lsp-types = "0.95.0"
-serde = "1.0.217"
-serde_json = "1.0.138"
+serde = "1.0.218"
+serde_json = "1.0.139"
 threadpool = "1.8.1"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
-salsa = "0.17.0-pre.2"
-rustc-hash = "2.1.0"
+salsa.workspace = true
+rustc-hash = "2.1.1"
 
 base-db = { path = "../base_db", version = "0.0.0" }
 hir-def = { path = "../hir_def", version = "0.0.0" }
