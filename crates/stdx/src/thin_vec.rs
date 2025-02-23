@@ -1,9 +1,9 @@
-use std::alloc::{dealloc, handle_alloc_error, Layout};
+use std::alloc::{Layout, dealloc, handle_alloc_error};
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
-use std::ptr::{addr_of_mut, slice_from_raw_parts_mut, NonNull};
+use std::ptr::{NonNull, addr_of_mut, slice_from_raw_parts_mut};
 
 /// A type that is functionally equivalent to `(Header, Box<[Item]>)`,
 /// but all data is stored in one heap allocation and the pointer is thin,
