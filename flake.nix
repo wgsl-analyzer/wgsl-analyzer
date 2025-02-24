@@ -21,16 +21,15 @@
         wgslOrCargo = path: type:
           (wgslFilter path type) || (craneLib.filterCargoSources path type);
 
-        wgsl_analyzer = craneLib.buildPackage {
+        wgsl-analyzer = craneLib.buildPackage {
           src = lib.cleanSourceWith {
             src = craneLib.path ./.;
             filter = wgslOrCargo;
           };
 
-          buildInputs =
-            lib.optionals stdenv.isDarwin [
-              pkgs.libiconv
-            ];
+          buildInputs = lib.optionals stdenv.isDarwin [
+            pkgs.libiconv
+          ];
 
           cargoExtraArgs = "-p wgsl-analyzer";
           pname = "wgsl-analyzer";
