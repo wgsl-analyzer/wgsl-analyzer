@@ -61,7 +61,7 @@ impl flags::Release {
         let prev_tag = tags
             .lines()
             .filter(|line| is_release_tag(line))
-            .last()
+            .next_back()
             .unwrap();
 
         let contents = changelog::get_changelog(sh, changelog_n, &commit, prev_tag, &today)?;
