@@ -12,6 +12,7 @@ env:
   CARGO_TERM_COLOR: always
   # If nightly is breaking CI, modify this variable to target a specific nightly version.
   NIGHTLY_TOOLCHAIN: nightly
+  MIRIFLAGS: "-Zmiri-tree-borrows"
 
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
