@@ -145,11 +145,9 @@ fn parse_pr_number(string: &str) -> Option<u32> {
     const HOMU_PREFIX: &str = "Auto merge of #";
     string.strip_prefix(GITHUB_PREFIX).map_or_else(
         || {
-            string.strip_prefix(HOMU_PREFIX).and_then(|string| {
-                string
-                    .find(' ')
-                    .and_then(|space| string[..space].parse().ok())
-            })
+            let string = string.strip_prefix(HOMU_PREFIX)?;
+            let space = string.find(' ')?;
+            string[..space].parse().ok()
         },
         |string| {
             let string = string.find(' ').map_or(string, |space| &string[..space]);

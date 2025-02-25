@@ -95,7 +95,7 @@ fn install_client(
         cmd!(sh, "cmd.exe /c npm ci").run()?;
 
         cmd!(sh, "cmd.exe /c npm run package").run()?;
-    };
+    }
 
     // Find the appropriate VS Code binary.
     let lifetime_extender;
