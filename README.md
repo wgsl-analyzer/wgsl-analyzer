@@ -141,7 +141,10 @@ This can be done automatically with `cargo run --bin package -- --target linux-x
 ## Design
 
 The design is heavily inspired (and in large parts copied from) [rust-analyzer](https://github.com/rust-lang/rust-analyzer).
-See [rust-analyzer/docs/dev/architecture.md](https://github.com/rust-lang/rust-analyzer/blob/master/docs/dev/architecture.md) for a summary of the architecture.
+
+See [wgsl-analyzer architecture](https://wgsl-analyzer.github.io/book/contributing/architecture.html) for a summary of the architecture.
+
+(Also see [rust-analyzer architecture](https://rust-analyzer.github.io/book/contributing/architecture.html) for a summary of the original architecture.)
 
 ## Development
 
