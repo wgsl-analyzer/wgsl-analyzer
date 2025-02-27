@@ -1,12 +1,8 @@
 name: Continuous integration
 
 on:
-  merge_group:
   pull_request:
-  push:
-    branches:
-      - main
-      - release-*
+  merge_group:
 
 env:
   CARGO_TERM_COLOR: always
