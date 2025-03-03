@@ -11,6 +11,6 @@ edition = "2024"
 
 [dependencies]
 wgsl-formatter = { path = "../wgsl_formatter", version = "0.0.0" }
-anyhow = "1.0.95"
+anyhow = "1.0.97"
 lexopt = "0.3.0"
 prettydiff = "0.8.0"
