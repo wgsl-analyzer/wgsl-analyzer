@@ -223,6 +223,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/cache@v4
         with:
           path: |
@@ -231,11 +232,24 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-check-unused-dependencies-${{ hashFiles('**/Cargo.toml') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.NIGHTLY_TOOLCHAIN }}
-      - name: Installs cargo-udeps
-        run: cargo install --force cargo-udeps
+
+      - name: Check if cargo-udeps is installed
+        id: cargo-udeps-check
+        run: |
+          if command -v cargo-udeps &> /dev/null; then
+            echo "cache-hit=true" >> $GITHUB_ENV
+          else
+            echo "cache-hit=false" >> $GITHUB_ENV
+          fi
+
+      - name: Install cargo-udeps (if not cached)
+        if: env.cache-hit == 'false'
+        run: cargo install --locked cargo-udeps
+
       - name: Run cargo udeps
         run: cargo udeps
