@@ -28,9 +28,9 @@ pub(crate) fn complete_dot(
             acc.add_all(swizzle);
         },
         TyKind::Matrix(_) => return None,
-        TyKind::Struct(strukt) => {
-            let strukt = ctx.db.struct_data(*strukt);
-            let items = strukt
+        TyKind::Struct(r#struct) => {
+            let r#struct = ctx.db.struct_data(*r#struct);
+            let items = r#struct
                 .fields()
                 .iter()
                 .map(|(_, field)| field.name.as_str())

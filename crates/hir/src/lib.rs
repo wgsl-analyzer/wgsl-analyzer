@@ -203,8 +203,8 @@ fn module_item_to_def(
             let id = db.intern_function(loc);
             ModuleDef::Function(Function { id })
         },
-        ModuleItem::Struct(strukt) => {
-            let loc = Location::new(file_id, strukt);
+        ModuleItem::Struct(r#struct) => {
+            let loc = Location::new(file_id, r#struct);
             let id = db.intern_struct(loc);
             ModuleDef::Struct(Struct { id })
         },
@@ -492,18 +492,18 @@ impl HasSource for Field {
         self,
         db: &dyn DefDatabase,
     ) -> Option<InFile<Self::Ast>> {
-        let struct_data = db.struct_data(self.id.strukt);
+        let struct_data = db.struct_data(self.id.r#struct);
         let field_data = &struct_data.fields()[self.id.field];
         let field_name = &field_data.name;
 
-        let strukt = self.id.strukt.lookup(db).source(db);
+        let r#struct = self.id.r#struct.lookup(db).source(db);
 
-        let field = strukt.value.body()?.fields().find_map(|field| {
+        let field = r#struct.value.body()?.fields().find_map(|field| {
             let name = field.variable_ident_decl()?.binding()?.name()?;
             (name.ident_token()?.text() == field_name.as_str()).then_some(field)
         })?;
 
-        Some(InFile::new(strukt.file_id, field))
+        Some(InFile::new(r#struct.file_id, field))
     }
 }
 

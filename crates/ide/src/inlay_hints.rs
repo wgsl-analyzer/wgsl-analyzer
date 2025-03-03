@@ -88,11 +88,11 @@ fn get_struct_layout_hints(
 
     let module_info = sema.db.module_info(file_id.into());
 
-    for strukt in module_info.structs() {
-        let strukt = sema.db.intern_struct(InFile::new(file_id.into(), strukt));
-        let fields = sema.db.field_types(strukt);
+    for r#struct in module_info.structs() {
+        let r#struct = sema.db.intern_struct(InFile::new(file_id.into(), r#struct));
+        let fields = sema.db.field_types(r#struct);
 
-        let address_space = if sema.db.struct_is_used_in_uniform(strukt, file_id.into()) {
+        let address_space = if sema.db.struct_is_used_in_uniform(r#struct, file_id.into()) {
             LayoutAddressSpace::Uniform
         } else {
             LayoutAddressSpace::Storage
@@ -109,7 +109,7 @@ fn get_struct_layout_hints(
                     size: _,
                 } = field_layout;
                 let field = Field {
-                    id: FieldId { strukt, field },
+                    id: FieldId { r#struct: r#struct, field },
                 };
 
                 let source = field.source(sema.db.upcast())?.value;

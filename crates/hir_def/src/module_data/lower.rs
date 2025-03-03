@@ -51,7 +51,7 @@ impl<'a> Ctx<'a> {
     ) -> Option<()> {
         let item = match item {
             Item::Function(function) => ModuleItem::Function(self.lower_function(&function)?),
-            Item::StructDecl(strukt) => ModuleItem::Struct(self.lower_struct(&strukt)?),
+            Item::StructDecl(r#struct) => ModuleItem::Struct(self.lower_struct(&r#struct)?),
             Item::GlobalVariableDecl(var) => {
                 ModuleItem::GlobalVariable(self.lower_global_var(&var)?)
             },
@@ -181,13 +181,13 @@ impl<'a> Ctx<'a> {
 
     fn lower_struct(
         &mut self,
-        strukt: &syntax::ast::StructDecl,
+        r#struct: &syntax::ast::StructDecl,
     ) -> Option<ModuleItemId<Struct>> {
-        let name = strukt.name()?.text().into();
-        let ast_id = self.source_ast_id_map.ast_id(strukt);
+        let name = r#struct.name()?.text().into();
+        let ast_id = self.source_ast_id_map.ast_id(r#struct);
 
         let start_field = self.next_field_idx();
-        strukt
+        r#struct
             .body()?
             .fields()
             .map(|field| {
@@ -201,12 +201,12 @@ impl<'a> Ctx<'a> {
             .for_each(drop);
         let end_field = self.next_field_idx();
 
-        let strukt = Struct {
+        let r#struct = Struct {
             name,
             fields: IdxRange::new(start_field..end_field),
             ast_id,
         };
-        Some(self.module_data.structs.alloc(strukt).into())
+        Some(self.module_data.structs.alloc(r#struct).into())
     }
 
     fn lower_function(

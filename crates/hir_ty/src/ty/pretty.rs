@@ -154,8 +154,8 @@ fn write_ty(
             write_ty(db, t.inner, f, verbosity)?;
             write!(f, ">")
         },
-        TyKind::Struct(strukt) => {
-            let data = db.struct_data(strukt);
+        TyKind::Struct(r#struct) => {
+            let data = db.struct_data(r#struct);
             write!(f, "{}", data.name.as_str())
         },
         TyKind::Array(t) => {

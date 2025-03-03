@@ -139,8 +139,8 @@ impl ToNav for InFile<Definition> {
 
                     NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
                 },
-                hir::ModuleDef::Struct(strukt) => {
-                    let decl = strukt.source(db)?;
+                hir::ModuleDef::Struct(r#struct) => {
+                    let decl = r#struct.source(db)?;
 
                     let frange = decl.original_file_range(db);
                     let focus_range = decl
@@ -173,8 +173,8 @@ impl ToNav for InFile<Definition> {
 
                 NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
             },
-            Definition::Struct(strukt) => {
-                let decl = strukt.source(db)?;
+            Definition::Struct(r#struct) => {
+                let decl = r#struct.source(db)?;
                 let frange = decl.original_file_range(db);
 
                 let focus_range = decl

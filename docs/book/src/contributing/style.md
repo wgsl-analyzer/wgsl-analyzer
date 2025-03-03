@@ -680,13 +680,13 @@ Qualify items from `hir` and `ast`.
 // GOOD
 use syntax::ast;
 
-fn frobnicate(func: hir::Function, strukt: ast::Struct) {}
+fn frobnicate(func: hir::Function, r#struct: ast::Struct) {}
 
 // BAD
 use hir::Function;
 use syntax::ast::Struct;
 
-fn frobnicate(func: Function, strukt: Struct) {}
+fn frobnicate(func: Function, r#struct: Struct) {}
 ```
 
 **Rationale:** avoids name clashes, makes the layer clear at a glance.

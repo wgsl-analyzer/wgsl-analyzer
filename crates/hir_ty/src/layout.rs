@@ -87,8 +87,8 @@ impl TyKind {
                 VecSize::Four => 16,
                 VecSize::BoundVar(_) => return None,
             },
-            TyKind::Struct(strukt) => {
-                let fields = db.field_types(*strukt);
+            TyKind::Struct(r#struct) => {
+                let fields = db.field_types(*r#struct);
                 let (align, _) =
                     struct_member_layout(&fields, db, LayoutAddressSpace::Storage, |_, _| {})?;
 
@@ -134,8 +134,8 @@ impl TyKind {
 
                 round_up(vec_align, vec_size) * n
             },
-            TyKind::Struct(strukt) => {
-                let fields = db.field_types(*strukt);
+            TyKind::Struct(r#struct) => {
+                let fields = db.field_types(*r#struct);
                 let (_, size) =
                     struct_member_layout(&fields, db, LayoutAddressSpace::Storage, |_, _| {})?;
                 size

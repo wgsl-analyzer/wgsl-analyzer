@@ -187,7 +187,7 @@ impl ModuleInfo {
 
     pub fn structs(&self) -> impl Iterator<Item = ModuleItemId<Struct>> + '_ {
         self.items.iter().filter_map(|item| match item {
-            ModuleItem::Struct(strukt) => Some(*strukt),
+            ModuleItem::Struct(r#struct) => Some(*r#struct),
             _ => None,
         })
     }
@@ -256,28 +256,28 @@ pub trait ModuleDataNode: Clone {
 }
 
 macro_rules! mod_items {
-    ( $( $typ:ident in $fld:ident $(-> $ast:ty)? ),+ $(,)? ) => {
+    ( $( $r#type:ident in $fld:ident $(-> $ast:ty)? ),+ $(,)? ) => {
         #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
         pub enum ModuleItem {
-            $($typ(ModuleItemId<$typ>),)+
+            $($r#type(ModuleItemId<$r#type>),)+
         }
 
-        $(impl From<ModuleItemId<$typ>> for ModuleItem {
-            fn from(id: ModuleItemId<$typ>) -> ModuleItem {
-                ModuleItem::$typ(id)
+        $(impl From<ModuleItemId<$r#type>> for ModuleItem {
+            fn from(id: ModuleItemId<$r#type>) -> ModuleItem {
+                ModuleItem::$r#type(id)
             }
         })+
 
-        $(impl std::ops::Index<la_arena::Idx<$typ>> for ModuleData {
-            type Output = $typ;
+        $(impl std::ops::Index<la_arena::Idx<$r#type>> for ModuleData {
+            type Output = $r#type;
 
-            fn index(&self, index: la_arena::Idx<$typ>) -> &Self::Output {
+            fn index(&self, index: la_arena::Idx<$r#type>) -> &Self::Output {
                 &self.$fld[index]
             }
         })*
 
         $(
-        $(impl ModuleDataNode for $typ {
+        $(impl ModuleDataNode for $r#type {
                 type Source = $ast;
 
                 fn ast_id(&self) -> FileAstId<Self::Source> {
@@ -290,14 +290,14 @@ macro_rules! mod_items {
 
                 fn id_from_mod_item(mod_item: &ModuleItem) -> Option<ModuleItemId<Self>> {
                     match mod_item {
-                        ModuleItem::$typ(id) => Some(*id),
+                        ModuleItem::$r#type(id) => Some(*id),
                         #[allow(unreachable_patterns)]
                         _ => None,
                     }
                 }
 
                 fn id_to_mod_item(id: ModuleItemId<Self>) -> ModuleItem {
-                    ModuleItem::$typ(id)
+                    ModuleItem::$r#type(id)
                 }
             }
         )*

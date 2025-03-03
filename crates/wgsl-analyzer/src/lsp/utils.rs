@@ -48,11 +48,11 @@ impl Progress {
 impl GlobalState {
     pub(crate) fn show_message(
         &self,
-        typ: lsp_types::MessageType,
+        r#type: lsp_types::MessageType,
         message: String,
     ) {
         self.send_notification::<lsp_types::notification::ShowMessage>(
-            lsp_types::ShowMessageParams { typ, message },
+            lsp_types::ShowMessageParams { typ: r#type, message },
         );
     }
 
