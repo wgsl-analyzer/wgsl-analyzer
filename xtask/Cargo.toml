@@ -14,7 +14,7 @@ write-json = "0.1.4"
 xshell.workspace = true
 xflags = "0.3.2"
 time = { version = "0.3.37", default-features = false }
-zip = { version = "2.2.2", default-features = false, features = [
+zip = { version = "2.2.3", default-features = false, features = [
   "deflate",
   "time",
 ] }
