@@ -44,7 +44,7 @@ impl FunctionData {
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]
 pub struct FieldId {
-    pub strukt: StructId,
+    pub r#struct: StructId,
     pub field: LocalFieldId,
 }
 
@@ -69,10 +69,10 @@ impl StructData {
     ) -> Arc<StructData> {
         let loc = func.lookup(db);
         let module_info = db.module_info(loc.file_id);
-        let strukt = &module_info.data[loc.value.index];
+        let r#struct = &module_info.data[loc.value.index];
 
         let mut fields = Arena::new();
-        strukt
+        r#struct
             .fields
             .clone()
             .map(|field| &module_info.data[field])
@@ -85,7 +85,7 @@ impl StructData {
             });
 
         Arc::new(StructData {
-            name: strukt.name.clone(),
+            name: r#struct.name.clone(),
             fields,
         })
     }

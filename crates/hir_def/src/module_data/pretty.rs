@@ -49,9 +49,9 @@ fn write_pretty_module_item(
             let _ = write!(f, ")");
         },
         ModuleItem::Struct(id) => {
-            let strukt = &module.data[id.index];
-            let _ = writeln!(f, "struct {} {{", strukt.name.0);
-            for field in strukt.fields.clone() {
+            let r#struct = &module.data[id.index];
+            let _ = writeln!(f, "struct {} {{", r#struct.name.0);
+            for field in r#struct.fields.clone() {
                 let field = &module.data[field];
                 let ty = db.lookup_intern_type_ref(field.ty);
                 let _ = writeln!(f, "    {}: {};", field.name.0, ty);

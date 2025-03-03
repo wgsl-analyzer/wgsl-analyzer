@@ -154,11 +154,11 @@ fn format_syntax_node(
             whitespace_to_single_around(return_type.arrow_token()?);
         },
         SyntaxKind::StructDecl => {
-            let strukt = ast::StructDecl::cast(syntax)?;
+            let r#struct = ast::StructDecl::cast(syntax)?;
 
-            trim_whitespace_before_to_newline(strukt.struct_token()?);
+            trim_whitespace_before_to_newline(r#struct.struct_token()?);
 
-            let name = strukt.name()?.ident_token()?;
+            let name = r#struct.name()?.ident_token()?;
             whitespace_to_single_around(name);
         },
         SyntaxKind::IfStatement => {

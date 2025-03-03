@@ -254,8 +254,8 @@ impl Resolver {
                     .iter()
                     .find_map(|item| match item {
                         ModuleItem::Struct(id) => {
-                            let strukt = scope.module_info.get(*id);
-                            (&strukt.name == name)
+                            let r#struct = scope.module_info.get(*id);
+                            (&r#struct.name == name)
                                 .then(|| ResolveType::Struct(InFile::new(scope.file_id, *id)))
                         },
                         ModuleItem::TypeAlias(id) => {
@@ -287,8 +287,8 @@ impl Resolver {
                     .iter()
                     .find_map(|item| match item {
                         ModuleItem::Struct(id) => {
-                            let strukt = scope.module_info.get(*id);
-                            (&strukt.name == name)
+                            let r#struct = scope.module_info.get(*id);
+                            (&r#struct.name == name)
                                 .then(|| ResolveCallable::Struct(InFile::new(scope.file_id, *id)))
                         },
                         ModuleItem::TypeAlias(id) => {

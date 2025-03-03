@@ -32,7 +32,7 @@ pub trait HirDatabase: DefDatabase + Upcast<dyn DefDatabase> {
 
     fn field_types(
         &self,
-        strukt: StructId,
+        r#struct: StructId,
     ) -> Arc<ArenaMap<LocalFieldId, Ty>>;
     fn function_type(
         &self,
@@ -41,7 +41,7 @@ pub trait HirDatabase: DefDatabase + Upcast<dyn DefDatabase> {
 
     fn struct_is_used_in_uniform(
         &self,
-        strukt: StructId,
+        r#struct: StructId,
         file_id: HirFileId,
     ) -> bool;
 
@@ -66,11 +66,11 @@ pub trait HirDatabase: DefDatabase + Upcast<dyn DefDatabase> {
 
 fn field_types(
     db: &dyn HirDatabase,
-    strukt: StructId,
+    r#struct: StructId,
 ) -> Arc<ArenaMap<LocalFieldId, Ty>> {
-    let data = db.struct_data(strukt);
+    let data = db.struct_data(r#struct);
 
-    let file_id = strukt.lookup(db.upcast()).file_id;
+    let file_id = r#struct.lookup(db.upcast()).file_id;
     let module_info = db.module_info(file_id);
     let resolver = Resolver::default().push_module_scope(db.upcast(), file_id, module_info);
 
@@ -120,7 +120,7 @@ fn function_type(
 
 fn struct_is_used_in_uniform(
     db: &dyn HirDatabase,
-    strukt: StructId,
+    r#struct: StructId,
     file_id: HirFileId,
 ) -> bool {
     let module_info = db.module_info(file_id);
@@ -128,7 +128,7 @@ fn struct_is_used_in_uniform(
         hir_def::module_data::ModuleItem::Import(import) => {
             let import_id = db.intern_import(InFile::new(file_id, import));
             let file_id = ImportFile { import_id };
-            db.struct_is_used_in_uniform(strukt, file_id.into())
+            db.struct_is_used_in_uniform(r#struct, file_id.into())
         },
         hir_def::module_data::ModuleItem::GlobalVariable(decl) => {
             let decl = db.intern_global_variable(InFile::new(file_id, decl));
@@ -144,7 +144,7 @@ fn struct_is_used_in_uniform(
                 None => return false,
             };
 
-            ty.contains_struct(db, strukt)
+            ty.contains_struct(db, r#struct)
         },
         _ => false,
     })
