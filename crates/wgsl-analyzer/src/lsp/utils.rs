@@ -52,7 +52,10 @@ impl GlobalState {
         message: String,
     ) {
         self.send_notification::<lsp_types::notification::ShowMessage>(
-            lsp_types::ShowMessageParams { typ: r#type, message },
+            lsp_types::ShowMessageParams {
+                typ: r#type,
+                message,
+            },
         );
     }
 

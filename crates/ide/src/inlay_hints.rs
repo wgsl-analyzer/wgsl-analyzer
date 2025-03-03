@@ -109,7 +109,7 @@ fn get_struct_layout_hints(
                     size: _,
                 } = field_layout;
                 let field = Field {
-                    id: FieldId { r#struct: r#struct, field },
+                    id: FieldId { r#struct, field },
                 };
 
                 let source = field.source(sema.db.upcast())?.value;
