@@ -12,6 +12,7 @@ use std::{hash::Hasher, process::Command};
 pub mod anymap;
 pub mod assert;
 mod macros;
+pub mod assert;
 pub mod non_empty_vec;
 pub mod panic_context;
 pub mod process;
