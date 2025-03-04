@@ -1,6 +1,7 @@
 use anyhow::format_err;
 use base_db::{FilePosition, FileRange, TextRange, TextSize};
 use line_index::{LineCol, WideLineCol};
+use paths::Utf8PathBuf;
 use vfs::{AbsPathBuf, FileId};
 
 use crate::{
@@ -9,11 +10,11 @@ use crate::{
     line_index::{LineIndex, OffsetEncoding, PositionEncoding},
 };
 
-pub fn abs_path(url: &lsp_types::Url) -> Result<AbsPathBuf> {
+pub(crate) fn abs_path(url: &lsp_types::Url) -> anyhow::Result<AbsPathBuf> {
     let path = url
         .to_file_path()
-        .map_err(|()| anyhow::anyhow!("url is not a file: {}", url.as_str()))?;
-    Ok(AbsPathBuf::try_from(path).unwrap())
+        .map_err(|()| anyhow::format_err!("url is not a file"))?;
+    Ok(AbsPathBuf::try_from(Utf8PathBuf::from_path_buf(path).unwrap()).unwrap())
 }
 
 pub fn vfs_path(url: &lsp_types::Url) -> Result<vfs::VfsPath> {

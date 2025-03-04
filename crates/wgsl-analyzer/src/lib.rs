@@ -1,20 +1,21 @@
-mod capabilities;
 pub mod config;
 mod diagnostics;
 mod dispatch;
 mod global_state;
-mod handlers;
 mod line_index;
 pub mod lsp;
 pub mod main_loop;
+mod mem_docs;
+mod op_queue;
 mod reload;
 mod task_pool;
-
-pub use capabilities::server_capabilities;
+mod version;
 
 pub type Result<T, E = anyhow::Error> = std::result::Result<T, E>;
 
 use serde::de::DeserializeOwned;
+
+pub use crate::{lsp::capabilities::server_capabilities, main_loop::main_loop, version::version};
 
 #[inline]
 pub fn from_json<T: DeserializeOwned>(
@@ -67,3 +68,9 @@ macro_rules! try_default_ {
     };
 }
 pub(crate) use try_default_ as try_default;
+
+mod handlers {
+    // pub mod dispatch;
+    pub mod notification;
+    pub mod request;
+}

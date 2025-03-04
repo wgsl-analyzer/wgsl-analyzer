@@ -47,6 +47,9 @@ ignore-hidden = false
 "when's" = "when is"
 "why's" = "why is"
 "how's" = "how is"
+"params" = "parameters"
+"req" = "request"
+"res" = "result"
 
 # Be concise
 ":-)" = "be concise"
