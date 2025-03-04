@@ -1,14 +1,12 @@
 use anyhow::format_err;
 use base_db::{
     FilePosition, FileRange, TextRange, TextSize,
-    line_index::{LineCol, LineColUtf16},
 };
+use line_index::{LineCol, WideLineCol};
 use vfs::{AbsPathBuf, FileId};
 
 use crate::{
-    Result,
-    global_state::GlobalStateSnapshot,
-    line_index::{LineIndex, OffsetEncoding},
+    global_state::GlobalStateSnapshot, line_index::{LineIndex, OffsetEncoding, PositionEncoding}, Result
 };
 
 pub fn abs_path(url: &lsp_types::Url) -> Result<AbsPathBuf> {
@@ -22,28 +20,41 @@ pub fn vfs_path(url: &lsp_types::Url) -> Result<vfs::VfsPath> {
     abs_path(url).map(vfs::VfsPath::from)
 }
 
-pub fn offset(
+pub(crate) fn offset(
     line_index: &LineIndex,
     position: lsp_types::Position,
-) -> Result<TextSize> {
+) -> anyhow::Result<TextSize> {
     let line_col = match line_index.encoding {
-        OffsetEncoding::Utf8 => LineCol {
+        PositionEncoding::Utf8 => LineCol {
             line: position.line,
             col: position.character,
         },
-        OffsetEncoding::Utf16 => {
-            let line_col = LineColUtf16 {
+        PositionEncoding::Wide(enc) => {
+            let line_col = WideLineCol {
                 line: position.line,
                 col: position.character,
             };
-            line_index.index.to_utf8(line_col)
+            line_index
+                .index
+                .to_utf8(enc, line_col)
+                .ok_or_else(|| format_err!("Invalid wide col offset"))?
         },
     };
-    let text_size = line_index
-        .index
-        .offset(line_col)
-        .ok_or_else(|| format_err!("Invalid offset"))?;
-    Ok(text_size)
+    let line_range = line_index.index.line(line_col.line).ok_or_else(|| {
+        format_err!(
+            "Invalid offset {line_col:?} (line index length: {:?})",
+            line_index.index.len()
+        )
+    })?;
+    let col = TextSize::from(line_col.col);
+    let clamped_len = col.min(line_range.len());
+    if clamped_len < col {
+        tracing::error!(
+            "Position {line_col:?} column exceeds line length {}, clamping it",
+            u32::from(line_range.len()),
+        );
+    }
+    Ok(line_range.start() + clamped_len)
 }
 
 pub fn text_range(

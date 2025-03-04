@@ -2,16 +2,15 @@ pub mod input;
 mod shader_processor;
 
 pub mod change;
-pub mod line_index;
 
 mod util_types;
 use input::{SourceRoot, SourceRootId};
+use line_index::LineIndex;
 pub use util_types::*;
 use vfs::{AnchoredPath, VfsPath};
 
 use std::sync::Arc;
 
-use line_index::LineIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::{Parse, ParseEntryPoint};
 pub use vfs::FileId;

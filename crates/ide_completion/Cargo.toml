@@ -18,7 +18,7 @@ hir.workspace = true
 hir-ty.workspace = true
 hir-def.workspace = true
 syntax.workspace = true
-always-assert = { version = "0.2.0" }
+always-assert.workspace = true
 tracing.workspace = true
 
 text-edit.workspace = true

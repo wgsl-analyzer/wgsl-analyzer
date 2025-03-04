@@ -11,15 +11,7 @@ use rustc_hash::FxHashMap;
 use vfs::{FileId, Vfs};
 
 use crate::{
-    Result,
-    config::Config,
-    diagnostics::DiagnosticCollection,
-    line_index::{LineEndings, LineIndex},
-    lsp::from_proto,
-    lsp::to_proto,
-    main_loop::Task,
-    reload::SourceRootConfig,
-    task_pool::TaskPool,
+    config::Config, diagnostics::DiagnosticCollection, line_index::{LineEndings, LineIndex, PositionEncoding}, lsp::{from_proto, to_proto}, main_loop::Task, reload::SourceRootConfig, task_pool::TaskPool, Result
 };
 
 type ReqHandler = fn(&mut GlobalState, lsp_server::Response);
@@ -215,7 +207,7 @@ impl GlobalStateSnapshot {
         let res = LineIndex {
             index,
             endings,
-            encoding: self.config.data.offset_encoding(),
+            encoding: PositionEncoding::Utf8,
         };
         Ok(res)
     }
