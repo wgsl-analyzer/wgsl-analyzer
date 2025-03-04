@@ -39,24 +39,24 @@ debug = 2
 
 [workspace.dependencies]
 # local crates
-base-db = { path = "./crates/base-db", version = "0.0.0" }
+base-db = { path = "./crates/base_db", version = "0.0.0" }
 cfg = { path = "./crates/cfg", version = "0.0.0", features = ["tt"] }
 hir = { path = "./crates/hir", version = "0.0.0" }
-hir-def = { path = "./crates/hir-def", version = "0.0.0" }
+hir-def = { path = "./crates/hir_def", version = "0.0.0" }
 hir-expand = { path = "./crates/hir-expand", version = "0.0.0" }
-hir-ty = { path = "./crates/hir-ty", version = "0.0.0" }
+hir-ty = { path = "./crates/hir_ty", version = "0.0.0" }
 ide = { path = "./crates/ide", version = "0.0.0" }
 ide-assists = { path = "./crates/ide-assists", version = "0.0.0" }
-ide-completion = { path = "./crates/ide-completion", version = "0.0.0" }
+ide-completion = { path = "./crates/ide_completion", version = "0.0.0" }
 ide-db = { path = "./crates/ide-db", version = "0.0.0" }
-ide-diagnostics = { path = "./crates/ide-diagnostics", version = "0.0.0" }
+# ide-diagnostics = { path = "./crates/ide-diagnostics", version = "0.0.0" }
 ide-ssr = { path = "./crates/ide-ssr", version = "0.0.0" }
 intern = { path = "./crates/intern", version = "0.0.0" }
 limit = { path = "./crates/limit", version = "0.0.0" }
 load-cargo = { path = "./crates/load-cargo", version = "0.0.0" }
 mbe = { path = "./crates/mbe", version = "0.0.0" }
 parser = { path = "./crates/parser", version = "0.0.0" }
-paths = { path = "./crates/paths", version = "0.0.0" }
+# paths = { path = "./crates/paths", version = "0.0.0" }
 proc-macro-api = { path = "./crates/proc-macro-api", version = "0.0.0" }
 proc-macro-srv = { path = "./crates/proc-macro-srv", version = "0.0.0" }
 proc-macro-srv-cli = { path = "./crates/proc-macro-srv-cli", version = "0.0.0" }
@@ -67,12 +67,25 @@ span = { path = "./crates/span", version = "0.0.0" }
 stdx = { path = "./crates/stdx", version = "0.0.0" }
 syntax = { path = "./crates/syntax", version = "0.0.0" }
 syntax-bridge = { path = "./crates/syntax-bridge", version = "0.0.0" }
-test-fixture = { path = "./crates/test-fixture", version = "0.0.0" }
+# test-fixture = { path = "./crates/test-fixture", version = "0.0.0" }
 test-utils = { path = "./crates/test-utils", version = "0.0.0" }
 toolchain = { path = "./crates/toolchain", version = "0.0.0" }
 tt = { path = "./crates/tt", version = "0.0.0" }
-vfs-notify = { path = "./crates/vfs-notify", version = "0.0.0" }
-vfs = { path = "./crates/vfs", version = "0.0.0" }
+# vfs-notify = { path = "./crates/vfs-notify", version = "0.0.0" }
+# vfs = { path = "./crates/vfs", version = "0.0.0" }
+wgsl-parser = { path = "./crates/wgsl_parser", version = "0.0.0" }
+wgsl-analyzer = { path = "./crates/wgsl-analyzer", version = "0.0.0" }
+wgsl-formatter = { path = "./crates/wgsl_formatter", version = "0.0.0" }
+wgslfmt = { path = "./crates/wgslfmt", version = "0.0.0" }
+
+vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
+text-edit = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
+paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
+
+# vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "7cce80c1738e8576ba715ec87dc8fcf28da0c5c6", version = "0.0.0" }
+# text-edit = { git = "https://github.com/rust-lang/rust-analyzer", rev = "7cce80c1738e8576ba715ec87dc8fcf28da0c5c6", version = "0.0.0" }
+# paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "7cce80c1738e8576ba715ec87dc8fcf28da0c5c6", version = "0.0.0" }
+
 
 ra-ap-rustc_lexer = { version = "0.96.0", default-features = false }
 ra-ap-rustc_parse_format = { version = "0.96.0", default-features = false }
@@ -83,16 +96,20 @@ ra-ap-rustc_pattern_analysis = { version = "0.96.0", default-features = false }
 # local crates that are not published to crates.io. These should not have versions.
 
 # in-tree crates that are published separately and follow semver. See lib/README.md
-line-index = { version = "0.1.2" }
-la-arena = { version = "0.3.1" }
-lsp-server = { version = "0.7.8" }
+line-index = "0.1.2"
+la-arena = "0.3.1"
+lsp-server = "0.7.8"
 
 # non-local crates
+always-assert = "0.2.0"
 anyhow = "1.0.97"
 arrayvec = "0.7.6"
+base64 = "0.22"
 bitflags = "2.9.0"
 cargo_metadata = "0.19.1"
 camino = "1.1.9"
+dirs = "5.0.1"
+scip = "0.5.1"
 chalk-solve = { version = "0.99.0", default-features = false }
 chalk-ir = "0.99.0"
 chalk-recursive = { version = "0.99.0", default-features = false }
@@ -100,7 +117,7 @@ chalk-derive = "0.99.0"
 crossbeam-channel = "0.5.14"
 dissimilar = "1.0.9"
 dot = "0.1.4"
-either = "1.13.0"
+either = "1.14.0"
 expect-test = "1.5.1"
 fxhash = "0.2.1"
 hashbrown = { version = "0.15.2", features = [
@@ -108,8 +125,15 @@ hashbrown = { version = "0.15.2", features = [
 ], default-features = false }
 indexmap = "2.7.1"
 itertools = "0.14.0"
-libc = "0.2.169"
+jod-thread = "0.1.2"
+libc = "0.2.170"
 libloading = "0.8.6"
+memchr = "2.7.1"
+logos = "0.12.0"
+walkdir = "2.3.2"
+toml = "0.8.8"
+tenthash = "1.0.0"
+num_cpus = "1.15.0"
 memmap2 = "0.9.5"
 nohash-hasher = "0.2.0"
 oorandom = "11.1.4"
@@ -120,10 +144,14 @@ object = { version = "0.36.7", default-features = false, features = [
   "macho",
   "pe",
 ] }
+parking_lot = "0.12.3"
+xflags = "0.3.0"
+threadpool = "1.8.1"
 process-wrap = { version = "8.2.0", features = ["std"] }
 pulldown-cmark-to-cmark = "21.0.0"
 pulldown-cmark = { version = "0.13.0", default-features = false }
 rayon = "1.10.0"
+rowan = "0.16.1"
 rustc-hash = "2.1.1"
 salsa = "0.17.0-pre.2"
 semver = "1.0.25"
@@ -137,20 +165,23 @@ smallvec = { version = "1.14.0", features = [
 ] }
 smol_str = "0.3.2"
 text-size = "1.1.1"
-tracing = "0.1.41"
-tracing-tree = "0.4.0"
-tracing-subscriber = { version = "0.3.19", default-features = false, features = [
+tracing = "0.1.40"
+tracing-tree = "0.3.0"
+tracing-subscriber = { version = "0.3.18", default-features = false, features = [
   "registry",
   "fmt",
   "local-time",
   "std",
   "time",
   "tracing-log",
+  "env-filter",
 ] }
 triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
 url = "2.5.4"
 xshell = "0.2.7"
-
+lexopt = "0.3.0"
+prettydiff = "0.8.0"
+notify = "8.0.0"
 
 # We need to freeze the version of the crate, as the raw-api feature is considered unstable
 dashmap = { version = "6.1.0", features = ["raw-api"] }
@@ -167,10 +198,8 @@ rust-2018-compatibility = { level = "deny", priority = -1 }
 rust-2018-idioms = { level = "deny", priority = -1 }
 rust-2021-compatibility = { level = "deny", priority = -1 }
 rust-2024-compatibility = { level = "deny", priority = -1 }
-unused = { level = "allow", priority = -2 }
-
-# TODO
-dead_code = "allow" # still prototyping
+# TODO still prototyping
+unused = { level = "allow", priority = 1 }
 
 [workspace.lints.clippy]
 cargo = { level = "warn", priority = -2 }
@@ -231,3 +260,4 @@ expect_used = "allow"
 string_slice = "allow"
 cast_possible_truncation = "allow"
 default_numeric_fallback = "allow"
+redundant_pub_crate = "allow"

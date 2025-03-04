@@ -13,14 +13,14 @@ rust-version.workspace = true
 doctest = false
 
 [dependencies]
-la-arena = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.3.1" }
-vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
+la-arena.workspace = true
+vfs.workspace = true
 salsa.workspace = true
-syntax = { path = "../syntax", version = "0.0.0" }
-base-db = { path = "../base_db", version = "0.0.0" }
-smol_str = "0.3.2"
-rustc-hash = "2.1.0"
-either = "1.13.0"
-smallvec = "1.14.0"
-rowan = "0.16.1"
-tracing = "0.1"
+syntax.workspace = true
+base-db.workspace = true
+smol_str.workspace = true
+rustc-hash.workspace = true
+either.workspace = true
+smallvec.workspace = true
+rowan.workspace = true
+tracing.workspace = true

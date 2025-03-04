@@ -13,12 +13,12 @@ rust-version.workspace = true
 doctest = false
 
 [dependencies]
-base-db = { path = "../base_db", version = "0.0.0" }
-hir-def = { path = "../hir_def", version = "0.0.0" }
+base-db.workspace = true
+hir-def.workspace = true
 
 salsa.workspace = true
-la-arena = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.3.1" }
-either = "1.13.0"
-rustc-hash = "2.1.0"
-itertools = "0.14.0"
-smallvec = "1.14.0"
+la-arena.workspace = true
+either.workspace = true
+rustc-hash.workspace = true
+itertools.workspace = true
+smallvec.workspace = true

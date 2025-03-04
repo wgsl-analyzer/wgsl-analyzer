@@ -13,7 +13,7 @@ rust-version.workspace = true
 doctest = false
 
 [dependencies]
-either = "1.13.0"
-itertools = "0.14.0"
-rowan = "0.16.1"
-wgsl_parser = { path = "../wgsl_parser", version = "0.0.0" }
+either.workspace = true
+itertools.workspace = true
+rowan.workspace = true
+wgsl-parser.workspace = true

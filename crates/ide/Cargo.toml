@@ -15,18 +15,19 @@ doctest = false
 [dependencies]
 salsa.workspace = true
 
-base-db = { path = "../base_db", version = "0.0.0" }
-hir-def = { path = "../hir_def", version = "0.0.0" }
-hir-ty = { path = "../hir_ty", version = "0.0.0" }
-hir = { path = "../hir", version = "0.0.0" }
-ide-completion = { path = "../ide_completion", version = "0.0.0" }
-syntax = { path = "../syntax", version = "0.0.0" }
-wgsl-formatter = { path = "../wgsl_formatter", version = "0.0.0" }
-rowan = "0.16.1"
-vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
+base-db.workspace = true
+hir-def.workspace = true
+hir-ty.workspace = true
+hir.workspace = true
+ide-completion.workspace = true
+syntax.workspace = true
+wgsl-formatter.workspace = true
+rowan.workspace = true
+vfs.workspace = true
+line-index.workspace = true
 
-itertools = "0.14.0"
-smol_str = "0.3.2"
+itertools.workspace = true
+smol_str.workspace = true
 
 naga14 = { package = "naga", version = "0.14", features = [
   "wgsl-in",
