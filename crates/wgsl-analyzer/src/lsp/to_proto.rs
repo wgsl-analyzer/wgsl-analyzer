@@ -11,7 +11,7 @@ use vfs::FileId;
 use crate::{
     Result,
     global_state::GlobalStateSnapshot,
-    line_index::{LineEndings, LineIndex, OffsetEncoding},
+    line_index::{LineEndings, LineIndex, OffsetEncoding, PositionEncoding},
 };
 
 /// Returns a `Url` object from a given path, will lowercase drive letters if present.
@@ -59,15 +59,15 @@ pub fn range(
     lsp_types::Range::new(start, end)
 }
 
-pub fn position(
+pub(crate) fn position(
     line_index: &LineIndex,
     offset: TextSize,
 ) -> lsp_types::Position {
-    let line_col = line_index.index.line_col(offset);
+    let line_column = line_index.index.line_col(offset);
     match line_index.encoding {
-        OffsetEncoding::Utf8 => lsp_types::Position::new(line_col.line, line_col.col),
-        OffsetEncoding::Utf16 => {
-            let line_col = line_index.index.to_utf16(line_col);
+        PositionEncoding::Utf8 => lsp_types::Position::new(line_column.line, line_column.col),
+        PositionEncoding::Wide(encoding) => {
+            let line_col = line_index.index.to_wide(encoding, line_column).unwrap();
             lsp_types::Position::new(line_col.line, line_col.col)
         },
     }

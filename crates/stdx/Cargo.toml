@@ -19,7 +19,7 @@ jod-thread.workspace = true
 libc.workspace = true
 crossbeam-channel.workspace = true
 itertools.workspace = true
-always-assert = { version = "0.2.0", features = ["tracing"] }
+always-assert.workspace = true
 tracing.workspace = true
 # Think twice before adding anything here
 

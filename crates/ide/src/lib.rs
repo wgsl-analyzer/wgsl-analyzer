@@ -12,10 +12,7 @@ mod syntax_tree;
 
 use std::sync::Arc;
 
-use base_db::{
-    FilePosition, FileRange, RangeInfo, SourceDatabase, TextRange, change::Change,
-    line_index::LineIndex,
-};
+use base_db::{FilePosition, FileRange, RangeInfo, SourceDatabase, TextRange, change::Change};
 use diagnostics::DiagnosticMessage;
 use goto_definition::NavigationTarget;
 use hir::diagnostics::DiagnosticsConfig;
@@ -23,6 +20,7 @@ use hir_def::db::DefDatabase;
 pub use hover::HoverResult;
 use ide_completion::item::CompletionItem;
 use inlay_hints::{InlayHint, InlayHintsConfig};
+use line_index::LineIndex;
 use salsa::{Cancelled, ParallelDatabase};
 use syntax::{Parse, SyntaxNode};
 use vfs::FileId;

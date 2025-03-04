@@ -5,19 +5,24 @@
 //! This module does line ending conversion and detection (so that we can
 //! convert back to `\r\n` on the way out).
 
+use line_index::WideEncoding;
 use std::sync::Arc;
 
-use base_db::line_index;
+#[derive(Clone, Copy)]
+pub enum PositionEncoding {
+    Utf8,
+    Wide(WideEncoding),
+}
 
 pub enum OffsetEncoding {
     Utf8,
     Utf16,
 }
 
-pub struct LineIndex {
-    pub index: Arc<line_index::LineIndex>,
-    pub endings: LineEndings,
-    pub encoding: OffsetEncoding,
+pub(crate) struct LineIndex {
+    pub(crate) index: Arc<line_index::LineIndex>,
+    pub(crate) endings: LineEndings,
+    pub(crate) encoding: PositionEncoding,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
