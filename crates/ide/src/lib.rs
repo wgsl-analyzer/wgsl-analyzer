@@ -12,15 +12,18 @@ mod syntax_tree;
 
 use std::sync::Arc;
 
-use base_db::{FilePosition, FileRange, RangeInfo, SourceDatabase, TextRange, change::Change};
-use diagnostics::DiagnosticMessage;
+use base_db::{
+    FilePosition, FileRange, RangeInfo, SourceDatabase, TextRange, change::Change,
+    input::SourceRootId,
+};
+use diagnostics::Diagnostic;
 use goto_definition::NavigationTarget;
 use hir::diagnostics::DiagnosticsConfig;
 use hir_def::db::DefDatabase;
 pub use hover::HoverResult;
-use ide_completion::item::CompletionItem;
+use ide_completion::{CompletionConfig, item::CompletionItem};
 use inlay_hints::{InlayHint, InlayHintsConfig};
-use line_index::LineIndex;
+pub use line_index::{LineCol, LineIndex};
 use salsa::{Cancelled, ParallelDatabase};
 use syntax::{Parse, SyntaxNode};
 use vfs::FileId;
@@ -45,6 +48,14 @@ impl AnalysisHost {
         };
         this.db.set_custom_imports(Arc::new(Default::default()));
         this
+    }
+
+    /// Returns a snapshot of the current state, which you can query for
+    /// semantic information.
+    pub fn analysis(&self) -> Analysis {
+        Analysis {
+            db: self.db.snapshot(),
+        }
     }
 
     pub fn apply_change(
@@ -82,6 +93,42 @@ impl Analysis {
         F: FnOnce(&RootDatabase) -> T + std::panic::UnwindSafe,
     {
         Cancelled::catch(|| f(&self.db))
+    }
+
+    pub fn source_root_id(
+        &self,
+        file_id: FileId,
+    ) -> Cancellable<SourceRootId> {
+        self.with_db(|db| db.file_source_root(file_id))
+    }
+
+    /// Computes the set of parser level diagnostics for the given file.
+    pub fn syntax_diagnostics(
+        &self,
+        _config: &DiagnosticsConfig,
+        _file_id: FileId,
+    ) -> Cancellable<Vec<Diagnostic>> {
+        self.with_db(|_db| vec![])
+    }
+
+    /// Computes the set of semantic diagnostics for the given file.
+    pub fn semantic_diagnostics(
+        &self,
+        _config: &DiagnosticsConfig,
+        // resolve: AssistResolveStrategy,
+        _file_id: FileId,
+    ) -> Cancellable<Vec<Diagnostic>> {
+        self.with_db(|_db| vec![])
+    }
+
+    /// Computes the set of both syntax and semantic diagnostics for the given file.
+    pub fn full_diagnostics(
+        &self,
+        _config: &DiagnosticsConfig,
+        // resolve: AssistResolveStrategy,
+        _file_id: FileId,
+    ) -> Cancellable<Vec<Diagnostic>> {
+        self.with_db(|_db| vec![])
     }
 
     /// Gets the text of the source file.
@@ -136,7 +183,7 @@ impl Analysis {
         &self,
         config: &DiagnosticsConfig,
         file_id: FileId,
-    ) -> Cancellable<Vec<DiagnosticMessage>> {
+    ) -> Cancellable<Vec<Diagnostic>> {
         self.with_db(|db| diagnostics::diagnostics(db, config, file_id))
     }
 
@@ -147,11 +194,21 @@ impl Analysis {
         self.with_db(|db| goto_definition::goto_definition(db, file_position))
     }
 
+    /// Computes completions at the given position.
     pub fn completions(
         &self,
-        file_position: FilePosition,
+        // config: &CompletionConfig<'_>,
+        position: FilePosition,
+        trigger_character: Option<char>,
     ) -> Cancellable<Option<Vec<CompletionItem>>> {
-        self.with_db(|db| ide_completion::completions(db, file_position).map(Into::into))
+        self.with_db(|db| {
+            ide_completion::completions2(
+                db,
+                // config,
+                position,
+                trigger_character,
+            )
+        })
     }
 
     pub fn format(
