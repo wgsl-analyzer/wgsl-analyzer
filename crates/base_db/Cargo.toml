@@ -14,12 +14,13 @@ doctest = false
 
 [dependencies]
 salsa.workspace = true
-rowan = "0.16.1"
-rustc-hash = "2.1.0"
-syntax = { path = "../syntax", version = "0.0.0" }
+rowan.workspace = true
+rustc-hash.workspace = true
+syntax.workspace = true
 regex = { version = "1.11.1", default-features = false, features = ["std"] }
 
-vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
+line-index.workspace = true
+vfs.workspace = true
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"

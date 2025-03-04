@@ -16,9 +16,9 @@ use crate::{
     project_root,
 };
 
-const VERSION_STABLE: &str = "0.3";
-const VERSION_NIGHTLY: &str = "0.4";
-const VERSION_DEV: &str = "0.5"; // keep this one in sync with `package.json`
+const VERSION_STABLE: &str = "0.9";
+const VERSION_NIGHTLY: &str = "0.10";
+const VERSION_DEV: &str = "0.11"; // keep this one in sync with `package.json`
 
 impl flags::Dist {
     pub(crate) fn run(
@@ -242,7 +242,10 @@ impl Patch {
         from: &str,
         to: &str,
     ) -> &mut Self {
-        assert!(self.contents.contains(from));
+        assert!(
+            self.contents.contains(from),
+            "pattern not, found: '{from}', to: '{to}'"
+        );
         self.contents = self.contents.replace(from, to);
         self
     }

@@ -13,37 +13,96 @@ license.workspace = true
 rust-version.workspace = true
 
 [lib]
-doctest = false
 
 [[bin]]
 name = "wgsl-analyzer"
 path = "src/bin/main.rs"
 
 [dependencies]
-anyhow = "1.0.97"
-crossbeam-channel = "0.5.14"
-lsp-server = "0.7.8"
-lsp-types = "0.95.0"
-serde = "1.0.218"
-serde_json = "1.0.140"
-threadpool = "1.8.1"
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+anyhow.workspace = true
+base64.workspace = true
+crossbeam-channel.workspace = true
+dirs.workspace = true
+dissimilar.workspace = true
+ide-completion.workspace = true
+itertools.workspace = true
+scip.workspace = true
+lsp-types = { version = "=0.95.0" }
+# lsp-types = { version = "=0.95.0", features = ["proposed"] }
+parking_lot.workspace = true
+xflags.workspace = true
+threadpool.workspace = true
 salsa.workspace = true
-rustc-hash = "2.1.1"
+oorandom.workspace = true
+rayon.workspace = true
+rustc-hash.workspace = true
+serde_json = { workspace = true, features = ["preserve_order"] }
+serde.workspace = true
+serde_derive.workspace = true
+tenthash.workspace = true
+num_cpus.workspace = true
+mimalloc = { version = "0.1.30", default-features = false, optional = true }
+lsp-server.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tracing-tree.workspace = true
+triomphe.workspace = true
+toml.workspace = true
+nohash-hasher.workspace = true
+always-assert.workspace = true
+walkdir.workspace = true
+semver.workspace = true
+memchr.workspace = true
+cargo_metadata.workspace = true
+process-wrap.workspace = true
+# cfg.workspace = true
+hir-def.workspace = true
+hir-ty.workspace = true
+hir.workspace = true
+# ide-db.workspace = true
+# intern.workspace = true
+# This should only be used in CLI
+# ide-ssr.workspace = true
+ide.workspace = true
+# load-cargo.workspace = true
+# profile.workspace = true
+# project-model.workspace = true
+stdx.workspace = true
+syntax.workspace = true
+parser.workspace = true
+# toolchain.workspace = true
+# vfs-notify.workspace = true
+vfs.workspace = true
+paths.workspace = true
+camino = "1.1.9"
+base-db.workspace = true
+text-edit.workspace = true
+line-index.workspace = true
 
-base-db = { path = "../base_db", version = "0.0.0" }
-hir-def = { path = "../hir_def", version = "0.0.0" }
-hir-ty = { path = "../hir_ty", version = "0.0.0" }
-hir = { path = "../hir", version = "0.0.0" }
-ide = { path = "../ide", version = "0.0.0" }
-ide-completion = { path = "../ide_completion", version = "0.0.0" }
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = [
+  "Win32_System_Diagnostics_Debug",
+  "Win32_System_Threading",
+] }
 
-vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
-paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
-text-edit = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
-itertools = "0.14.0"
-dissimilar = "1.0.9"
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+jemallocator = { version = "0.5.0", package = "tikv-jemallocator", optional = true }
+
+[dev-dependencies]
+expect-test.workspace = true
+xshell.workspace = true
+
+# test-utils.workspace = true
+# test-fixture.workspace = true
+# syntax-bridge.workspace = true
+
+[features]
+jemalloc = [
+  "jemallocator", 
+  # "profile/jemalloc"
+]
+force-always-assert = ["stdx/force-always-assert"]
+sysroot-abi = []
 
 [lints]
 workspace = true
