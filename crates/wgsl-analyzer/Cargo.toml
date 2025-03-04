@@ -98,7 +98,7 @@ xshell.workspace = true
 
 [features]
 jemalloc = [
-  "jemallocator", 
+  "jemallocator",
   # "profile/jemalloc"
 ]
 force-always-assert = ["stdx/force-always-assert"]
