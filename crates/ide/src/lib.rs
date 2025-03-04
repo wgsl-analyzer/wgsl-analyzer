@@ -21,7 +21,7 @@ use goto_definition::NavigationTarget;
 use hir::diagnostics::DiagnosticsConfig;
 use hir_def::db::DefDatabase;
 pub use hover::HoverResult;
-use ide_completion::{CompletionConfig, item::CompletionItem};
+use ide_completion::item::CompletionItem;
 use inlay_hints::{InlayHint, InlayHintsConfig};
 pub use line_index::{LineCol, LineIndex};
 use salsa::{Cancelled, ParallelDatabase};
