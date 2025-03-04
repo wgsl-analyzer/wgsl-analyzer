@@ -10,8 +10,8 @@ use std::{hash::Hash, io as sio};
 use std::{hash::Hasher, process::Command};
 
 pub mod anymap;
-mod macros;
 pub mod assert;
+mod macros;
 pub mod non_empty_vec;
 pub mod panic_context;
 pub mod process;
