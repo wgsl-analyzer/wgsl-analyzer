@@ -20,7 +20,7 @@ pub enum OffsetEncoding {
 }
 
 pub(crate) struct LineIndex {
-    pub(crate) index: Arc<::line_index::LineIndex>,
+    pub(crate) index: Arc<line_index::LineIndex>,
     pub(crate) endings: LineEndings,
     pub(crate) encoding: PositionEncoding,
 }
