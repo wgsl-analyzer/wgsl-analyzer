@@ -11,7 +11,14 @@ use rustc_hash::FxHashMap;
 use vfs::{FileId, Vfs};
 
 use crate::{
-    config::Config, diagnostics::DiagnosticCollection, line_index::{LineEndings, LineIndex, PositionEncoding}, lsp::{from_proto, to_proto}, main_loop::Task, reload::SourceRootConfig, task_pool::TaskPool, Result
+    Result,
+    config::Config,
+    diagnostics::DiagnosticCollection,
+    line_index::{LineEndings, LineIndex, PositionEncoding},
+    lsp::{from_proto, to_proto},
+    main_loop::Task,
+    reload::SourceRootConfig,
+    task_pool::TaskPool,
 };
 
 type ReqHandler = fn(&mut GlobalState, lsp_server::Response);

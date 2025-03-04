@@ -1,12 +1,12 @@
 use anyhow::format_err;
-use base_db::{
-    FilePosition, FileRange, TextRange, TextSize,
-};
+use base_db::{FilePosition, FileRange, TextRange, TextSize};
 use line_index::{LineCol, WideLineCol};
 use vfs::{AbsPathBuf, FileId};
 
 use crate::{
-    global_state::GlobalStateSnapshot, line_index::{LineIndex, OffsetEncoding, PositionEncoding}, Result
+    Result,
+    global_state::GlobalStateSnapshot,
+    line_index::{LineIndex, OffsetEncoding, PositionEncoding},
 };
 
 pub fn abs_path(url: &lsp_types::Url) -> Result<AbsPathBuf> {
