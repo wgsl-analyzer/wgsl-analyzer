@@ -11,13 +11,13 @@ use std::{hash::Hasher, process::Command};
 
 pub mod anymap;
 mod macros;
+pub mod assert;
 pub mod non_empty_vec;
 pub mod panic_context;
 pub mod process;
 pub mod thin_vec;
 pub mod thread;
 
-pub use always_assert::{always, never};
 pub use itertools;
 
 #[expect(clippy::inline_always, reason = "copy pasted from r-a")]
