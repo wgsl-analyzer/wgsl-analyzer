@@ -15,12 +15,25 @@ use rowan::NodeOrToken;
 use syntax::AstNode;
 use vfs::FileId;
 
-pub struct DiagnosticMessage {
+pub struct Diagnostic {
+    pub code: DiagnosticCode,
     pub message: String,
     pub range: TextRange,
     pub unused: bool,
     pub severity: Severity,
     pub related: Vec<(String, FileRange)>,
+}
+
+pub struct DiagnosticCode(&'static str);
+
+impl DiagnosticCode {
+    pub fn url(&self) -> String {
+        self.0.to_string()
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        self.0
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -29,12 +42,14 @@ pub enum Severity {
     WeakWarning,
 }
 
-impl DiagnosticMessage {
+impl Diagnostic {
     pub fn new(
+        code: DiagnosticCode,
         message: String,
         range: TextRange,
     ) -> Self {
         Self {
+            code,
             message,
             range,
             severity: Severity::Error,
@@ -47,11 +62,11 @@ impl DiagnosticMessage {
         self,
         severity: Severity,
     ) -> Self {
-        DiagnosticMessage { severity, ..self }
+        Diagnostic { severity, ..self }
     }
 
     pub fn unused(self) -> Self {
-        DiagnosticMessage {
+        Diagnostic {
             unused: true,
             ..self
         }
@@ -368,7 +383,7 @@ pub fn diagnostics(
     db: &dyn HirDatabase,
     config: &DiagnosticsConfig,
     file_id: FileId,
-) -> Vec<DiagnosticMessage> {
+) -> Vec<Diagnostic> {
     let (parse, unconfigured) = db.parse_with_unconfigured(file_id);
 
     let mut diagnostics = Vec::new();
@@ -428,7 +443,8 @@ pub fn diagnostics(
                     let source = lhs.value.to_node(&root);
                     let actual = ty::pretty::pretty_type(db, actual);
                     let frange = original_file_range(db.upcast(), lhs.file_id, source.syntax());
-                    DiagnosticMessage::new(
+                    Diagnostic::new(
+                        DiagnosticCode("1"),
                         format!(
                             "left hand side of assignment should be a reference, found {}",
                             actual
@@ -445,7 +461,8 @@ pub fn diagnostics(
                     let expected = ty::pretty::pretty_type_expectation(db, expected);
                     let actual = ty::pretty::pretty_type(db, actual);
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                    DiagnosticMessage::new(
+                    Diagnostic::new(
+                        DiagnosticCode("2"),
                         format!("expected {}, found {}", expected, actual),
                         frange.range,
                     )
@@ -454,7 +471,8 @@ pub fn diagnostics(
                     let source = expr.value.to_node(&root).syntax().parent().unwrap();
                     let ty = ty::pretty::pretty_type(db, ty);
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                    DiagnosticMessage::new(
+                    Diagnostic::new(
+                        DiagnosticCode("3"),
                         format!("no field `{}` on type {}", name.as_ref(), ty),
                         frange.range,
                     )
@@ -463,12 +481,17 @@ pub fn diagnostics(
                     let source = expr.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, ty);
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                    DiagnosticMessage::new(format!("cannot index into type {}", ty), frange.range)
+                    Diagnostic::new(
+                        DiagnosticCode("4"),
+                        format!("cannot index into type {}", ty),
+                        frange.range,
+                    )
                 },
                 AnyDiagnostic::UnresolvedName { expr, name } => {
                     let source = expr.value.to_node(&root);
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                    DiagnosticMessage::new(
+                    Diagnostic::new(
+                        DiagnosticCode("5"),
                         format!("cannot find `{}` in this scope", name.as_str()),
                         frange.range,
                     )
@@ -477,7 +500,8 @@ pub fn diagnostics(
                     let source = expr.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, ty);
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                    DiagnosticMessage::new(
+                    Diagnostic::new(
+                        DiagnosticCode("6"),
                         format!("cannot construct value of type {}", ty),
                         frange.range,
                     )
@@ -489,7 +513,8 @@ pub fn diagnostics(
                 } => {
                     let source = expr.value.to_node(&root).syntax().parent().unwrap();
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                    DiagnosticMessage::new(
+                    Diagnostic::new(
+                        DiagnosticCode("7"),
                         format!("expected {} parameters, found {}", n_expected, n_actual),
                         frange.range,
                     )
@@ -519,7 +544,8 @@ pub fn diagnostics(
                     };
 
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                    DiagnosticMessage::new(
+                    Diagnostic::new(
+                        DiagnosticCode("8"),
                         format!(
                             "no overload of `{}` found for given arguments.\
                         Found ({}), expected one of:\n{}",
@@ -532,7 +558,8 @@ pub fn diagnostics(
                     let source = expr.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, actual);
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                    DiagnosticMessage::new(
+                    Diagnostic::new(
+                        DiagnosticCode("9"),
                         format!("expected a reference, found {}", ty),
                         frange.range,
                     )
@@ -541,7 +568,8 @@ pub fn diagnostics(
                     let source = expr.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, actual);
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                    DiagnosticMessage::new(
+                    Diagnostic::new(
+                        DiagnosticCode("10"),
                         format!("cannot dereference expression of type {}", ty),
                         frange.range,
                     )
@@ -554,7 +582,8 @@ pub fn diagnostics(
                         .unwrap_or_else(|| NodeOrToken::Node(var_decl.syntax()));
 
                     let frange = original_file_range(db.upcast(), var.file_id, &source);
-                    DiagnosticMessage::new(
+                    Diagnostic::new(
+                        DiagnosticCode("11"),
                         "missing storage class on global variable".to_string(),
                         frange.range,
                     )
@@ -566,7 +595,7 @@ pub fn diagnostics(
                         .map(NodeOrToken::Token)
                         .unwrap_or_else(|| NodeOrToken::Node(var_decl.syntax()));
                     let frange = original_file_range(db.upcast(), var.file_id, &source);
-                    DiagnosticMessage::new(format!("{}", error), frange.range)
+                    Diagnostic::new(DiagnosticCode("12"), format!("{}", error), frange.range)
                 },
                 AnyDiagnostic::InvalidType {
                     file_id: _,
@@ -575,12 +604,16 @@ pub fn diagnostics(
                 } => {
                     let source = location.to_node(&root);
                     let frange = original_file_range(db.upcast(), file_id, source.syntax());
-                    DiagnosticMessage::new(format!("{}", error), frange.range)
+                    Diagnostic::new(DiagnosticCode("13"), format!("{}", error), frange.range)
                 },
                 AnyDiagnostic::UnresolvedImport { import } => {
                     let source = import.value.to_node(&root);
                     let frange = original_file_range(db.upcast(), file_id, source.syntax());
-                    DiagnosticMessage::new("unresolved import".to_string(), frange.range)
+                    Diagnostic::new(
+                        DiagnosticCode("14"),
+                        "unresolved import".to_string(),
+                        frange.range,
+                    )
                 },
                 AnyDiagnostic::NagaValidationError {
                     message,
@@ -588,14 +621,15 @@ pub fn diagnostics(
                     related,
                     ..
                 } => {
-                    let mut msg = DiagnosticMessage::new(message, range);
+                    let mut msg = Diagnostic::new(DiagnosticCode("15"), message, range);
                     msg.related = related;
                     msg
                 },
                 AnyDiagnostic::ParseError { message, range, .. } => {
-                    DiagnosticMessage::new(message, range)
+                    Diagnostic::new(DiagnosticCode("16"), message, range)
                 },
-                AnyDiagnostic::UnconfiguredCode { def, range, .. } => DiagnosticMessage::new(
+                AnyDiagnostic::UnconfiguredCode { def, range, .. } => Diagnostic::new(
+                    DiagnosticCode("17"),
                     format!(
                         "code is inactive due to `#ifdef` directives: `{}` is not enabled",
                         def
@@ -642,7 +676,8 @@ pub fn diagnostics(
                     let possible = possible.join("\n");
 
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
-                    DiagnosticMessage::new(
+                    Diagnostic::new(
+                        DiagnosticCode("18"),
                         format!(
                             "no overload of constructor `{}` found for given\
                             arguments. Found ({parameters}), expected one of:\n{possible}",
@@ -670,7 +705,7 @@ pub fn diagnostics(
                             More complex operands must be this with parenthesized `()`"
                         )
                     };
-                    DiagnosticMessage::new(message, frange.range)
+                    Diagnostic::new(DiagnosticCode("19"), message, frange.range)
                 },
             }
         })

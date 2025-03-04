@@ -48,12 +48,12 @@ impl Drop for RootDatabase {
 impl RootDatabase {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
-        let mut this = Self {
+        let mut db = Self {
             storage: ManuallyDrop::new(salsa::Storage::default()),
         };
-        this.set_custom_imports(Arc::new(Default::default()));
-        this.set_shader_defs(Arc::new(Default::default()));
-        this
+        db.set_custom_imports(Arc::new(Default::default()));
+        db.set_shader_defs(Arc::new(Default::default()));
+        db
     }
 
     pub fn apply_change(

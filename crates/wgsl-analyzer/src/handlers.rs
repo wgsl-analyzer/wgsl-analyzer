@@ -16,6 +16,7 @@ use crate::{
     Result,
     global_state::GlobalStateSnapshot,
     lsp::{ext, from_proto, to_proto},
+    try_default,
 };
 
 pub fn handle_goto_definition(
@@ -44,7 +45,13 @@ pub fn handle_completion(
 ) -> Result<Option<lsp_types::CompletionResponse>> {
     let position = from_proto::file_position(&snap, &params.text_document_position)?;
     let line_index = snap.file_line_index(position.file_id)?;
-    let Some(items) = snap.analysis.completions(position)? else {
+    let source_root = snap.analysis.source_root_id(position.file_id)?;
+    // let completion_config = &snap.config.completion(Some(source_root));
+    let Some(items) = snap.analysis.completions(
+        // completion_config,
+        position, None,
+    )?
+    else {
         return Ok(None);
     };
     let items = to_proto::completion_items(&line_index, &params.text_document_position, &items);
