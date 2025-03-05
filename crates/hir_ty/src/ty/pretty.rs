@@ -115,9 +115,9 @@ fn pretty_fn_inner(
         write_ty(db, param, f, verbosity)?;
     }
     write!(f, ")")?;
-    if let Some(ret) = function.return_type {
+    if let Some(return_type) = function.return_type {
         f.push_str(" -> ");
-        write_ty(db, ret, f, verbosity)?;
+        write_ty(db, return_type, f, verbosity)?;
     }
     Ok(())
 }

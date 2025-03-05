@@ -28,6 +28,7 @@ impl FunctionDetails {
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub struct ResolvedFunctionId(salsa::InternId);
+
 impl salsa::InternKey for ResolvedFunctionId {
     fn from_intern_id(id: salsa::InternId) -> Self {
         ResolvedFunctionId(id)

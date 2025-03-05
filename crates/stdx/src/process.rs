@@ -133,7 +133,7 @@ mod imp {
             // reader will return Ok(0), in which case we will see `Ok` ourselves. In
             // this case we flip the other fd back into blocking mode and read
             // whatever is leftover on that file descriptor.
-            let handle = |res: io::Result<_>| match res {
+            let handle = |result: io::Result<_>| match result {
                 Ok(_) => Ok(true),
                 Err(error) => {
                     if error.kind() == io::ErrorKind::WouldBlock {

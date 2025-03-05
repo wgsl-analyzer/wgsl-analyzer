@@ -10,6 +10,7 @@ use hir_ty::{
     ty::Ty,
     validate::StorageClassError,
 };
+use serde::Deserialize;
 use syntax::{
     AstNode, ast,
     ptr::{AstPtr, SyntaxNodePtr},
@@ -18,19 +19,34 @@ use syntax::{
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
 use crate::{Function, GlobalConstant, GlobalVariable, HasSource, Override, TypeAlias};
 
+#[derive(Clone, Debug, Deserialize)]
+pub enum NagaVersion {
+    #[serde(rename = "0.14")]
+    Naga14,
+    #[serde(rename = "0.19")]
+    Naga19,
+    #[serde(rename = "0.22")]
+    Naga22,
+    #[serde(rename = "main")]
+    NagaMain,
+}
+
+impl Default for NagaVersion {
+    #[inline]
+    fn default() -> Self {
+        Self::Naga14
+    }
+}
+
+#[derive(Default, Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DiagnosticsConfig {
+    /// Whether native diagnostics are enabled.
+    pub enabled: bool,
     pub type_errors: bool,
     pub naga_parsing_errors: bool,
     pub naga_validation_errors: bool,
     pub naga_version: NagaVersion,
-}
-
-#[derive(Debug)]
-pub enum NagaVersion {
-    Naga14,
-    Naga19,
-    Naga22,
-    NagaMain,
 }
 
 pub enum AnyDiagnostic {
