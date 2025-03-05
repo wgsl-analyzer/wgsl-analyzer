@@ -117,9 +117,9 @@ pub(crate) fn handle_did_change_configuration(
                 section: Some("wgsl-analyzer".to_owned()),
             }],
         },
-        |this, resp| {
-            tracing::debug!("config update response: '{:?}", resp);
-            let lsp_server::Response { error, result, .. } = resp;
+        |this, response| {
+            tracing::debug!("config update response: '{:?}", response);
+            let lsp_server::Response { error, result, .. } = response;
 
             match (error, result) {
                 (Some(err), _) => {

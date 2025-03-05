@@ -353,12 +353,12 @@ impl GlobalStateSnapshot {
     ) -> Cancellable<LineIndex> {
         let endings = self.vfs.read().unwrap().1[&file_id];
         let index = self.analysis.line_index(file_id)?;
-        let res = LineIndex {
+        let result = LineIndex {
             index,
             endings,
             encoding: self.config.caps().negotiated_encoding(),
         };
-        Ok(res)
+        Ok(result)
     }
 }
 
@@ -376,8 +376,7 @@ pub fn url_to_file_id(
     url: &Url,
 ) -> Result<FileId> {
     let path = from_proto::vfs_path(url)?;
-    let res = vfs
+    vfs
         .file_id(&path)
-        .ok_or_else(|| anyhow::anyhow!("file not found: {}", path))?;
-    Ok(res)
+        .ok_or_else(|| anyhow::anyhow!("file not found: {}", path))
 }

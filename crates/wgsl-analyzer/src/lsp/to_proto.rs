@@ -101,11 +101,11 @@ pub fn completion_items(
         .map(|it| it.relevance().score())
         .min()
         .unwrap_or_default();
-    let mut res = Vec::with_capacity(items.len());
+    let mut result = Vec::with_capacity(items.len());
     for item in items {
-        completion_item(&mut res, line_index, tdpp, max_relevance, item);
+        completion_item(&mut result, line_index, tdpp, max_relevance, item);
     }
-    res
+    result
 }
 
 fn completion_item(
@@ -219,17 +219,17 @@ fn completion_item(
     acc.push(lsp_item);
 
     fn set_score(
-        res: &mut lsp_types::CompletionItem,
+        result: &mut lsp_types::CompletionItem,
         max_relevance: u32,
         relevance: CompletionRelevance,
     ) {
         if relevance.score() == max_relevance {
-            res.preselect = Some(true);
+            result.preselect = Some(true);
         }
         // Zero pad the string to ensure values can be properly sorted
         // by the client. Hex format is used because it is easier to
         // visually compare very large values.
-        res.sort_text = Some(format!("{:08x}", relevance.score()));
+        result.sort_text = Some(format!("{:08x}", relevance.score()));
     }
 }
 

@@ -98,16 +98,16 @@ async function fileExists(uri: vscode.Uri) {
 export async function isValidExecutable(path: string, extraEnv: Env): Promise<boolean> {
 	log.debug("Checking availability of a binary at", path);
 
-	const res = await spawnAsync(path, ["--version"], {
+	const result = await spawnAsync(path, ["--version"], {
 		env: { ...process.env, ...extraEnv },
 	});
 
-	if (res.error) {
-		log.warn(path, "--version:", res);
+	if (result.error) {
+		log.warn(path, "--version:", result);
 	} else {
-		log.info(path, "--version:", res);
+		log.info(path, "--version:", result);
 	}
-	return res.status === 0;
+	return result.status === 0;
 }
 
 async function getNixOsServer(

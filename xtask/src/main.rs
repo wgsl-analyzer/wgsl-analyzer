@@ -21,7 +21,7 @@ mod release;
 mod tidy;
 mod util;
 
-use anyhow::bail;
+use anyhow::{bail, Context};
 use std::{env, path::PathBuf};
 use xshell::{Shell, cmd};
 
@@ -77,8 +77,7 @@ fn run_fuzzer(sh: &Shell) -> anyhow::Result<()> {
 }
 
 fn date_iso(sh: &Shell) -> anyhow::Result<String> {
-    let res = cmd!(sh, "date -u +%Y-%m-%d").read()?;
-    Ok(res)
+    cmd!(sh, "date -u +%Y-%m-%d").read().context("failed to get current date")
 }
 
 fn is_release_tag(tag: &str) -> bool {

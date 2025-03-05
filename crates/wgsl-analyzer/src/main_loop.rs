@@ -159,11 +159,11 @@ impl fmt::Debug for Event {
                     return debug_non_verbose(not, f);
                 }
             },
-            Self::Task(Task::Response(resp)) => {
+            Self::Task(Task::Response(response)) => {
                 return f
                     .debug_struct("Response")
-                    .field("id", &resp.id)
-                    .field("error", &resp.error)
+                    .field("id", &response.id)
+                    .field("error", &response.error)
                     .finish();
             },
             Self::Lsp(_) | Self::Task(_) | Self::QueuedTask(_) | Self::Vfs(_) => (),

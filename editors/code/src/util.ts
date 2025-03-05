@@ -240,14 +240,14 @@ interface SpawnAsyncReturns {
 
 export async function spawnAsync(
 	path: string,
-	args?: ReadonlyArray<string>,
+	inputs?: ReadonlyArray<string>,
 	options?: SpawnOptionsWithoutStdio,
 ): Promise<SpawnAsyncReturns> {
-	const child = spawn(path, args, options);
+	const child = spawn(path, inputs, options);
 	const stdout: Array<Buffer> = [];
 	const stderr: Array<Buffer> = [];
 	try {
-		const res = await new Promise<{ stdout: string; stderr: string; status: number | null }>(
+		const result = await new Promise<{ stdout: string; stderr: string; status: number | null }>(
 			(resolve, reject) => {
 				child.stdout.on("data", (chunk) => stdout.push(Buffer.from(chunk)));
 				child.stderr.on("data", (chunk) => stderr.push(Buffer.from(chunk)));
@@ -269,9 +269,9 @@ export async function spawnAsync(
 		);
 
 		return {
-			stdout: res.stdout,
-			stderr: res.stderr,
-			status: res.status,
+			stdout: result.stdout,
+			stderr: result.stderr,
+			status: result.status,
 		};
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} catch (e: any) {

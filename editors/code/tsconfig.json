@@ -5,10 +5,10 @@
 		"module": "NodeNext",
 		"moduleResolution": "nodenext",
 		"target": "ES2024",
-		"outDir": "out",
+		"outDir": "out", // spellchecker:disable-line
 		"lib": ["ES2024"],
 		"sourceMap": true,
-		"rootDir": ".",
+		"rootDir": ".", // spellchecker:disable-line
 		"newLine": "lf",
 		// FIXME: https://github.com/rust-lang/rust-analyzer/issues/15253
 		"exactOptionalPropertyTypes": false

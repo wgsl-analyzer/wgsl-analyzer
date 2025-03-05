@@ -106,7 +106,7 @@ async function resolveImport(content: string): Promise<string> {
 		if (uri.scheme == "file") {
 			return promisify(readFile)(uri.fsPath, "utf-8");
 		} else if (["http", "https"].includes(uri.scheme)) {
-			return fetch(content).then(res => res.text());
+			return fetch(content).then(result => result.text());
 		} else {
 			throw new Error(`unknown scheme \`${uri.scheme}\``);
 		}

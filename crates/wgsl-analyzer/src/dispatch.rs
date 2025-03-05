@@ -313,7 +313,7 @@ where
     R::Result: Serialize,
 {
     let result = match result {
-        Ok(resp) => lsp_server::Response::new_ok(id, &resp),
+        Ok(response) => lsp_server::Response::new_ok(id, &response),
         Err(error) => match error.downcast::<LspError>() {
             Ok(lsp_error) => lsp_server::Response::new_err(id, lsp_error.code, lsp_error.message),
             Err(error) => {

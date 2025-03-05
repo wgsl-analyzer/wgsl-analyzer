@@ -47,15 +47,22 @@ ignore-hidden = false
 "when's" = "when is"
 "why's" = "why is"
 "how's" = "how is"
-"params" = "parameters"
+# "params" = "parameters"
 "req" = "request"
 "res" = "result"
+# "args" = "arguments"
+"sig" = "signature"
+"dir" = "directory"
+"resp" = "response"
 
 # Be concise
 ":-)" = "be concise"
 ";-)" = "be concise"
 "is going on" = "happens"
 "take a look at" = "examine"
+
+# "argument" = "input"
+# "response" = "answer"
 
 [default]
 locale = "en-us"

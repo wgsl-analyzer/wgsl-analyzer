@@ -187,8 +187,8 @@ const getPathForExecutable = memoizeAsync(
 async function lookupInPath(exec: string): Promise<boolean> {
 	const paths = process.env["PATH"] ?? "";
 
-	const candidates = paths.split(path.delimiter).flatMap((dirInPath) => {
-		const candidate = path.join(dirInPath, exec);
+	const candidates = paths.split(path.delimiter).flatMap((directoryInPath) => {
+		const candidate = path.join(directoryInPath, exec);
 		return os.type() === "Windows_NT" ? [candidate, `${candidate}.exe`] : [candidate];
 	});
 

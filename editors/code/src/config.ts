@@ -386,24 +386,24 @@ export class Config {
 	}
 }
 
-export function prepareVSCodeConfig<T>(resp: T): T {
-	if (Is.string(resp)) {
-		return substituteVSCodeVariableInString(resp) as T;
+export function prepareVSCodeConfig<T>(response: T): T {
+	if (Is.string(response)) {
+		return substituteVSCodeVariableInString(response) as T;
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} else if (resp && Is.array<any>(resp)) {
-		return resp.map((val) => {
+	} else if (response && Is.array<any>(response)) {
+		return response.map((val) => {
 			return prepareVSCodeConfig(val);
 		}) as T;
-	} else if (resp && typeof resp === "object") {
+	} else if (response && typeof response === "object") {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const res: { [key: string]: any } = {};
-		for (const key in resp) {
-			const val = resp[key];
-			res[key] = prepareVSCodeConfig(val);
+		const result: { [key: string]: any } = {};
+		for (const key in response) {
+			const val = response[key];
+			result[key] = prepareVSCodeConfig(val);
 		}
-		return res as T;
+		return result as T;
 	}
-	return resp;
+	return response;
 }
 
 // FIXME: Merge this with `substituteVSCodeVariables` above

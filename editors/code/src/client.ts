@@ -36,13 +36,13 @@ export async function createClient(
 				token: vscode.CancellationToken,
 				next: lc.ConfigurationRequest.HandlerSignature,
 			) {
-				const resp = await next(params, token);
-				if (resp && Array.isArray(resp)) {
-					return resp.map((val) => {
+				const response = await next(params, token);
+				if (response && Array.isArray(response)) {
+					return response.map((val) => {
 						return prepareVSCodeConfig(val);
 					});
 				} else {
-					return resp;
+					return response;
 				}
 			},
 		},

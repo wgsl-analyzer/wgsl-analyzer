@@ -22,9 +22,8 @@ pub fn from_json<T: DeserializeOwned>(
     what: &'static str,
     json: &serde_json::Value,
 ) -> Result<T> {
-    let res = serde_json::from_value(json.clone())
-        .map_err(|error| anyhow::anyhow!("Failed to deserialize {}: {}; {}", what, error, json))?;
-    Ok(res)
+    serde_json::from_value(json.clone())
+        .map_err(|error| anyhow::anyhow!("Failed to deserialize {}: {}; {}", what, error, json))
 }
 
 #[derive(Debug)]
