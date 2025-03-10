@@ -136,7 +136,7 @@ tenthash = "1.0.0"
 num_cpus = "1.15.0"
 memmap2 = "0.9.5"
 nohash-hasher = "0.2.0"
-oorandom = "11.1.4"
+oorandom = "11.1.5"
 object = { version = "0.36.7", default-features = false, features = [
   "std",
   "read_core",
