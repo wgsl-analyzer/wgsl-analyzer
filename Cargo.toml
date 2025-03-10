@@ -117,7 +117,7 @@ chalk-derive = "0.99.0"
 crossbeam-channel = "0.5.14"
 dissimilar = "1.0.9"
 dot = "0.1.4"
-either = "1.14.0"
+either = "1.15.0"
 expect-test = "1.5.1"
 fxhash = "0.2.1"
 hashbrown = { version = "0.15.2", features = [
