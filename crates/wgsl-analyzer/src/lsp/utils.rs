@@ -112,15 +112,33 @@ impl GlobalState {
     }
 }
 
-pub fn apply_document_changes(
-    old_text: &mut String,
-    content_changes: Vec<lsp_types::TextDocumentContentChangeEvent>,
-) {
+pub(crate) fn apply_document_changes(
+    encoding: PositionEncoding,
+    file_contents: &str,
+    mut content_changes: Vec<lsp_types::TextDocumentContentChangeEvent>,
+) -> String {
+    // If at least one of the changes is a full document change, use the last
+    // of them as the starting point and ignore all previous changes.
+    let (mut text, content_changes) = match content_changes
+        .iter()
+        .rposition(|change| change.range.is_none())
+    {
+        Some(idx) => {
+            let text = std::mem::take(&mut content_changes[idx].text);
+            (text, &content_changes[idx + 1..])
+        },
+        None => (file_contents.to_owned(), (&*content_changes)),
+    };
+    if content_changes.is_empty() {
+        return text;
+    }
+
     let mut line_index = LineIndex {
-        index: Arc::new(line_index::LineIndex::new(old_text)),
-        // We do not care about line endings or offset encoding here.
+        // the index will be overwritten in the bottom loop's first iteration
+        index: Arc::new(line_index::LineIndex::new(&text)),
+        // We don't care about line endings here.
         endings: LineEndings::Unix,
-        encoding: PositionEncoding::Utf8,
+        encoding,
     };
 
     // The changes we got must be applied sequentially, but can cross lines so we
@@ -128,41 +146,20 @@ pub fn apply_document_changes(
     // Some clients (e.g. Code) sort the ranges in reverse. As an optimization, we
     // remember the last valid line in the index and only rebuild it if needed.
     // The VFS will normalize the end of lines to `\n`.
-    enum IndexValid {
-        All,
-        UpToLineExclusive(u32),
-    }
-
-    impl IndexValid {
-        const fn covers(
-            &self,
-            line: u32,
-        ) -> bool {
-            match *self {
-                Self::UpToLineExclusive(to) => to > line,
-                Self::All => true,
-            }
-        }
-    }
-
-    let mut index_valid = IndexValid::All;
+    let mut index_valid = !0_u32;
     for change in content_changes {
+        // The None case can't happen as we have handled it above already
         if let Some(range) = change.range {
-            if !index_valid.covers(range.end.line) {
-                line_index.index = Arc::new(line_index::LineIndex::new(old_text));
+            if index_valid <= range.end.line {
+                *Arc::make_mut(&mut line_index.index) = ide::LineIndex::new(&text);
             }
-            index_valid = IndexValid::UpToLineExclusive(range.start.line);
-            #[expect(clippy::allow_attributes, reason = "only happens on nightly")]
-            #[allow(unfulfilled_lint_expectations, reason = "no longer happens on nightly")]
-            #[expect(if_let_rescope, reason = "conflicting lints")]
+            index_valid = range.start.line;
             if let Ok(range) = from_proto::text_range(&line_index, range) {
-                old_text.replace_range(Range::<usize>::from(range), &change.text);
+                text.replace_range(Range::<usize>::from(range), &change.text);
             }
-        } else {
-            *old_text = change.text;
-            index_valid = IndexValid::UpToLineExclusive(0);
         }
     }
+    text
 }
 
 /// Checks that the edits inside the completion and the additional edits do not overlap.

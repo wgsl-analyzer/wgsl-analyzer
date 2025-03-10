@@ -107,8 +107,8 @@ pub fn least_common_ancestor(
 
     let u_candidates = u.ancestors().skip(u_depth - keep);
     let v_candidates = v.ancestors().skip(v_depth - keep);
-    let (res, _) = u_candidates.zip(v_candidates).find(|(x, y)| x == y)?;
-    Some(res)
+    let (result, _) = u_candidates.zip(v_candidates).find(|(first, second)| first == second)?;
+    Some(result)
 }
 
 pub fn neighbor<T: AstNode>(

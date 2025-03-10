@@ -252,16 +252,13 @@ impl CompletionFieldsToResolve {
 
 pub fn completions2(
     db: &dyn HirDatabase,
-    // config: &CompletionConfig<'_>,
+    config: &CompletionConfig<'_>,
     position: FilePosition,
     _trigger_character: Option<char>,
 ) -> Option<Vec<CompletionItem>> {
     let mut acc = Completions::default();
 
-    let ctx = CompletionContext::new(
-        db, position,
-        // config
-    )?;
+    let ctx = CompletionContext::new(db, position, config)?;
     completions::import::complete_import(&mut acc, &ctx);
     completions::dot::complete_dot(&mut acc, &ctx);
     completions::expr::complete_names_in_scope(&mut acc, &ctx);

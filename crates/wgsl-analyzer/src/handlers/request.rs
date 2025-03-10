@@ -46,11 +46,10 @@ pub fn handle_completion(
     let position = from_proto::file_position(&snap, &params.text_document_position)?;
     let line_index = snap.file_line_index(position.file_id)?;
     let source_root = snap.analysis.source_root_id(position.file_id)?;
-    // let completion_config = &snap.config.completion(Some(source_root));
-    let Some(items) = snap.analysis.completions(
-        // completion_config,
-        position, None,
-    )?
+    let completion_config = &snap.config.completion(Some(source_root));
+    let Some(items) = snap
+        .analysis
+        .completions(completion_config, position, None)?
     else {
         return Ok(None);
     };
@@ -175,7 +174,7 @@ pub fn handle_inlay_hints(
 
     Ok(Some(
         snap.analysis
-            .inlay_hints(&snap.config.data.inlay_hints(), file_id, range.ok())?
+            .inlay_hints(&snap.config.data().inlay_hints(), file_id, range.ok())?
             .iter()
             .map(|it| to_proto::inlay_hint(true, &line_index, it))
             .collect(),

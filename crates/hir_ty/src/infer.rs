@@ -1078,17 +1078,17 @@ impl<'db> InferenceContext<'db> {
         &mut self,
         builtin_id: BuiltinId,
         args: &[Ty],
-        return_ty: Option<Ty>,
+        return_type: Option<Ty>,
     ) -> Result<(Ty, BuiltinOverloadId), ()> {
         let builtin = builtin_id.lookup(self.db);
         for (overload_id, overload) in builtin.overloads() {
-            if let Ok(ty) = self.call_builtin_overload(overload, args) {
-                if let Some(ret) = return_ty {
-                    if ret == ty {
-                        return Ok((ty, overload_id));
+            if let Ok(r#type) = self.call_builtin_overload(overload, args) {
+                if let Some(return_type) = return_type {
+                    if return_type == r#type {
+                        return Ok((r#type, overload_id));
                     }
                 } else {
-                    return Ok((ty, overload_id));
+                    return Ok((r#type, overload_id));
                 }
             }
         }
@@ -1097,17 +1097,17 @@ impl<'db> InferenceContext<'db> {
 
     fn call_builtin_overload(
         &self,
-        sig: &BuiltinOverload,
-        args: &[Ty],
+        signatre: &BuiltinOverload,
+        arguments: &[Ty],
     ) -> Result<Ty, ()> {
-        let fn_ty = sig.ty.lookup(self.db);
+        let fn_ty = signatre.ty.lookup(self.db);
 
-        if fn_ty.parameters.len() != args.len() {
+        if fn_ty.parameters.len() != arguments.len() {
             return Err(());
         }
 
         let mut unification_table = UnificationTable::default();
-        for (expected, &found) in fn_ty.parameters().zip(args.iter()) {
+        for (expected, &found) in fn_ty.parameters().zip(arguments.iter()) {
             unify(self.db, &mut unification_table, expected, found)?;
         }
 
