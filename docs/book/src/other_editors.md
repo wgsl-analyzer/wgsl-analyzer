@@ -297,3 +297,24 @@ No support.
 ## Zed
 
 No support.
+
+## IntelliJ IDEs
+
+This includes:
+
+- IntelliJ IDEA Ultimate
+- WebStorm
+- PhpStorm
+- PyCharm Professional
+- DataSpell
+- RubyMine
+- CLion
+- Aqua
+- DataGrip
+- GoLand
+- Rider
+- RustRover
+
+No support.
+
+See #207
