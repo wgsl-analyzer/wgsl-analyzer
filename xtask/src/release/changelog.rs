@@ -176,8 +176,7 @@ fn parse_changelog_line(string: &str) -> Option<PrInfo> {
             });
         },
     };
-    let res = PrInfo { message, kind };
-    Some(res)
+    Some(PrInfo { message, kind })
 }
 
 fn parse_title_line(string: &str) -> PrInfo {

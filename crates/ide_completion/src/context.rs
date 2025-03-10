@@ -27,7 +27,7 @@ impl<'a> CompletionContext<'a> {
     pub(crate) fn new(
         db: &'a dyn HirDatabase,
         position @ FilePosition { file_id, offset }: FilePosition,
-        // config: &'a CompletionConfig<'a>,
+        config: &'a CompletionConfig<'a>,
     ) -> Option<Self> {
         let sema = Semantics::new(db);
         let file = sema.parse(position.file_id);

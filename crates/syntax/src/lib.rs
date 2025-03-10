@@ -232,10 +232,10 @@ macro_rules! match_ast {
     (match $node:ident { $($tt:tt)* }) => { match_ast!(match ($node) { $($tt)* }) };
 
     (match ($node:expr) {
-        $( ast::$ast:ident($it:ident) => $res:expr, )*
+        $( ast::$ast:ident($it:ident) => $result:expr, )*
         _ => $catch_all:expr $(,)?
     }) => {{
-        $( if let Some($it) = <ast::$ast as $crate::AstNode>::cast($node.clone()) { $res } else )*
+        $( if let Some($it) = <ast::$ast as $crate::AstNode>::cast($node.clone()) { $result } else )*
         { $catch_all }
     }};
 }
