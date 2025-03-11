@@ -56,3 +56,14 @@ impl std::fmt::Display for LspError {
 }
 
 impl std::error::Error for LspError {}
+
+#[doc(hidden)]
+macro_rules! try_default_ {
+    ($it:expr $(,)?) => {
+        match $it {
+            Some(it) => it,
+            None => return Ok(Default::default()),
+        }
+    };
+}
+pub(crate) use try_default_ as try_default;

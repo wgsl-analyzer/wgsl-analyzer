@@ -1,5 +1,5 @@
 //! Utilities for LSP-related boilerplate code.
-use crate::lsp::from_proto;
+use crate::{line_index::PositionEncoding, lsp::from_proto};
 use std::{error::Error, ops::Range, sync::Arc};
 
 use crate::{
@@ -48,11 +48,14 @@ impl Progress {
 impl GlobalState {
     pub(crate) fn show_message(
         &self,
-        typ: lsp_types::MessageType,
+        r#type: lsp_types::MessageType,
         message: String,
     ) {
         self.send_notification::<lsp_types::notification::ShowMessage>(
-            lsp_types::ShowMessageParams { typ, message },
+            lsp_types::ShowMessageParams {
+                typ: r#type, // spellchecker:disable-line
+                message,
+            },
         );
     }
 
@@ -114,10 +117,10 @@ pub fn apply_document_changes(
     content_changes: Vec<lsp_types::TextDocumentContentChangeEvent>,
 ) {
     let mut line_index = LineIndex {
-        index: Arc::new(base_db::line_index::LineIndex::new(old_text)),
+        index: Arc::new(line_index::LineIndex::new(old_text)),
         // We do not care about line endings or offset encoding here.
         endings: LineEndings::Unix,
-        encoding: OffsetEncoding::Utf16,
+        encoding: PositionEncoding::Utf8,
     };
 
     // The changes we got must be applied sequentially, but can cross lines so we
@@ -146,7 +149,7 @@ pub fn apply_document_changes(
     for change in content_changes {
         if let Some(range) = change.range {
             if !index_valid.covers(range.end.line) {
-                line_index.index = Arc::new(base_db::line_index::LineIndex::new(old_text));
+                line_index.index = Arc::new(line_index::LineIndex::new(old_text));
             }
             index_valid = IndexValid::UpToLineExclusive(range.start.line);
             #[expect(clippy::allow_attributes, reason = "only happens on nightly")]

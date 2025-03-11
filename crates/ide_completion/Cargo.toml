@@ -13,15 +13,19 @@ rust-version.workspace = true
 doctest = false
 
 [dependencies]
-base-db = { path = "../base_db", version = "0.0.0" }
-hir = { path = "../hir", version = "0.0.0" }
-hir-ty = { path = "../hir_ty", version = "0.0.0" }
-hir-def = { path = "../hir_def", version = "0.0.0" }
-syntax = { path = "../syntax", version = "0.0.0" }
-always-assert = { version = "0.2.0" }
-tracing = "0.1.41"
+base-db.workspace = true
+hir.workspace = true
+hir-ty.workspace = true
+hir-def.workspace = true
+syntax.workspace = true
+always-assert.workspace = true
+tracing.workspace = true
 
-text-edit = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
-itertools = "0.14.0"
-either = "1.13.0"
-rowan = "0.16.1"
+text-edit.workspace = true
+itertools.workspace = true
+either.workspace = true
+rowan.workspace = true
+rustc-hash.workspace = true
+
+[lints.rust]
+unused = { level = "allow", priority = 1 }

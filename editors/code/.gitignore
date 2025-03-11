@@ -1,5 +1,7 @@
 out
 node_modules
-.vscode-test
-wgsl-analyzer-*.vsix
-wgsl-analyzer-*.vsix.zip
+server
+.vscode-test/
+*.vsix
+bundle
+vscode.proposed.d.ts

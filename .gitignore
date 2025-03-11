@@ -3,6 +3,7 @@
 /target
 crates/*/target
 **/*.rs.bk
+**/*.rs.pending-snap
 /benches/target
 /tools/compile_fail_utils/target
 
@@ -15,3 +16,34 @@ Cargo.lock
 /testfiles
 result
 .vscode/settings.json
+
+# npm
+
+node_modules
+editors/code/wgsl-analyzer.vsix
+
+# other build artifacts
+
+/dist/
+/out/
+docs/book/book
+docs/book/src/assists_generated.md
+docs/book/src/diagnostics_generated.md
+docs/book/src/features_generated.md
+
+.idea/*
+
+# logs
+*.log
+
+# intellij
+*.iml
+
+# mac thing
+.DS_Store
+
+# https://lsif.dev/
+/dump.lsif
+
+# https://direnv.net/
+.envrc

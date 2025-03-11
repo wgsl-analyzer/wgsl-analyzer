@@ -103,14 +103,14 @@ impl AttrsWithOwner {
         let attrs = match def {
             AttrDefId::StructId(id) => AttrList::from_src(db, &id.lookup(db).source(db).value),
             AttrDefId::FieldId(id) => {
-                let location = id.strukt.lookup(db).source(db);
+                let location = id.r#struct.lookup(db).source(db);
                 let struct_decl: ast::StructDecl = location.value;
                 let mut fields = struct_decl.body().map_or_else(
                     || Either::Left(std::iter::empty::<ast::StructDeclField>()),
                     |body| Either::Right(body.fields()),
                 );
 
-                let strukt_data = db.struct_data(id.strukt);
+                let strukt_data = db.struct_data(id.r#struct);
                 let field_name = strukt_data.fields[id.field].name.as_str();
 
                 // this is ugly but rust-analyzer is more complicated and this should work for now

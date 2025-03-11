@@ -1,12 +1,8 @@
 name: Continuous integration
 
 on:
-  merge_group:
   pull_request:
-  push:
-    branches:
-      - main
-      - release-*
+  merge_group:
 
 env:
   CARGO_TERM_COLOR: always
@@ -179,7 +175,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check for typos
-        uses: crate-ci/typos@v1.29.9
+        uses: crate-ci/typos@v1.30.1
       - name: Typos info
         if: failure()
         run: |
@@ -227,8 +223,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/bin/
@@ -236,11 +235,25 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-check-unused-dependencies-${{ hashFiles('**/Cargo.toml') }}
-      - uses: dtolnay/rust-toolchain@master
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.NIGHTLY_TOOLCHAIN }}
-      - name: Installs cargo-udeps
-        run: cargo install --force cargo-udeps
+
+      - name: Check if cargo-udeps is installed
+        id: cargo-udeps-check
+        run: |
+          if command -v cargo-udeps &> /dev/null; then
+            echo "cache-hit=true" >> $GITHUB_ENV
+          else
+            echo "cache-hit=false" >> $GITHUB_ENV
+          fi
+
+      - name: Install cargo-udeps (if not cached)
+        if: env.cache-hit == 'false'
+        run: cargo install --locked cargo-udeps
+
       - name: Run cargo udeps
         run: cargo udeps

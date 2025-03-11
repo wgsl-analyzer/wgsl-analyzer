@@ -666,13 +666,13 @@ impl<'db> InferenceContext<'db> {
                 }
 
                 match *expr_ty.kind(self.db).unref(self.db).as_ref() {
-                    TyKind::Struct(strukt) => {
-                        let struct_data = self.db.struct_data(strukt);
-                        let field_types = self.db.field_types(strukt);
+                    TyKind::Struct(r#struct) => {
+                        let struct_data = self.db.struct_data(r#struct);
+                        let field_types = self.db.field_types(r#struct);
 
                         match struct_data.field(name) {
                             Some(field) => {
-                                self.set_field_resolution(expr, FieldId { strukt, field });
+                                self.set_field_resolution(expr, FieldId { r#struct, field });
 
                                 let field_ty = field_types[field];
                                 // TODO: correct storage class/access mode
@@ -1144,8 +1144,8 @@ impl<'db> InferenceContext<'db> {
             Callee::Name(name) => match self.resolver.resolve_callable(name) {
                 Some(arg) => match arg {
                     hir_def::resolver::ResolveCallable::Struct(loc) => {
-                        let strukt = self.db.intern_struct(loc);
-                        let kind = TyKind::Struct(strukt);
+                        let r#struct = self.db.intern_struct(loc);
+                        let kind = TyKind::Struct(r#struct);
                         let ty = self.db.intern_ty(kind);
                         self.check_ty_initialiser(expr, ty, args);
                         ty
@@ -1836,8 +1836,8 @@ impl<'db> TyLoweringContext<'db> {
             }),
             TypeRef::Path(name) => match self.resolver.resolve_type(name) {
                 Some(ResolveType::Struct(loc)) => {
-                    let strukt = self.db.intern_struct(loc);
-                    TyKind::Struct(strukt)
+                    let r#struct = self.db.intern_struct(loc);
+                    TyKind::Struct(r#struct)
                 },
                 Some(ResolveType::TypeAlias(loc)) => {
                     let alias = self.db.intern_type_alias(loc);

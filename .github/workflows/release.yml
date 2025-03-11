@@ -1,4 +1,4 @@
-name: CI
+name: Release
 on:
   push:
     tags:
@@ -124,7 +124,8 @@ jobs:
           artifacts: "artifacts/*/*"
           allowUpdates: true
 
-  publish:
+  publishMS:
+    name: Publish to VS marketplace
     runs-on: ubuntu-latest
     needs: [build, build_generic]
     if: success() && startsWith( github.ref, 'refs/tags/')
@@ -133,3 +134,14 @@ jobs:
       - run: npx vsce publish --packagePath $(find . -type f -iname '*.vsix')
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+  publishOVSX:
+    name: Publish to Open VSX
+    runs-on: ubuntu-latest
+    needs: [build, build_generic]
+    if: success() && startsWith( github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+      - run: npx ovsx publish --packagePath $(find . -type f -iname '*.vsix')
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}

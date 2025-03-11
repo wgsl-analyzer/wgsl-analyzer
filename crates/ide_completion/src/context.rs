@@ -5,7 +5,7 @@ use hir_def::{HirFileId, db::DefWithBodyId, resolver::Resolver};
 use rowan::NodeOrToken;
 use syntax::{AstNode, Direction, SyntaxKind, SyntaxToken, ast};
 
-use crate::patterns::determine_location;
+use crate::{config::CompletionConfig, patterns::determine_location};
 
 type ExprOrStatement = Either<ast::Expr, ast::Statement>;
 
@@ -26,7 +26,8 @@ pub(crate) struct CompletionContext<'a> {
 impl<'a> CompletionContext<'a> {
     pub(crate) fn new(
         db: &'a dyn HirDatabase,
-        position: FilePosition,
+        position @ FilePosition { file_id, offset }: FilePosition,
+        // config: &'a CompletionConfig<'a>,
     ) -> Option<Self> {
         let sema = Semantics::new(db);
         let file = sema.parse(position.file_id);

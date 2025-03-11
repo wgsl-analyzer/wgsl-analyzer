@@ -73,9 +73,9 @@ impl Ty {
     pub fn contains_struct(
         self,
         db: &dyn HirDatabase,
-        strukt: StructId,
+        r#struct: StructId,
     ) -> bool {
-        self.kind(db).contains_struct(db, strukt)
+        self.kind(db).contains_struct(db, r#struct)
     }
 }
 
@@ -199,8 +199,8 @@ impl TyKind {
         match self {
             TyKind::Scalar(_) => true,
             TyKind::Vector(vec) => vec.inner.kind(db).is_numeric_scalar(),
-            TyKind::Struct(strukt) => {
-                db.field_types(*strukt)
+            TyKind::Struct(r#struct) => {
+                db.field_types(*r#struct)
                     .iter()
                     .all(|(_, ty)| match ty.kind(db) {
                         TyKind::Scalar(_) => true,
@@ -221,8 +221,8 @@ impl TyKind {
             TyKind::Vector(vec) => vec.inner.kind(db).is_numeric_scalar(),
             TyKind::Matrix(_) | TyKind::Atomic(_) => true,
             TyKind::Array(array) => array.inner.kind(db).is_host_shareable(db),
-            TyKind::Struct(strukt) => db
-                .field_types(*strukt)
+            TyKind::Struct(r#struct) => db
+                .field_types(*r#struct)
                 .iter()
                 .all(|(_, ty)| ty.kind(db).is_host_shareable(db)),
             _ => false,
@@ -238,8 +238,8 @@ impl TyKind {
                 size: ArraySize::Dynamic,
                 ..
             }) => true,
-            TyKind::Struct(strukt) => db
-                .field_types(*strukt)
+            TyKind::Struct(r#struct) => db
+                .field_types(*r#struct)
                 .iter()
                 .any(|(_, ty)| ty.kind(db).contains_runtime_sized_array(db)),
             _ => false,
@@ -249,21 +249,21 @@ impl TyKind {
     pub fn contains_struct(
         &self,
         db: &dyn HirDatabase,
-        strukt: StructId,
+        r#struct: StructId,
     ) -> bool {
         match self {
-            TyKind::Atomic(atomic) => atomic.inner.contains_struct(db, strukt),
+            TyKind::Atomic(atomic) => atomic.inner.contains_struct(db, r#struct),
             TyKind::Struct(id) => {
-                if *id == strukt {
+                if *id == r#struct {
                     return true;
                 }
                 db.field_types(*id)
                     .values()
-                    .any(|ty| ty.contains_struct(db, strukt))
+                    .any(|ty| ty.contains_struct(db, r#struct))
             },
-            TyKind::Array(array) => array.inner.contains_struct(db, strukt),
-            TyKind::Ref(r) => r.inner.contains_struct(db, strukt),
-            TyKind::Ptr(ptr) => ptr.inner.contains_struct(db, strukt),
+            TyKind::Array(array) => array.inner.contains_struct(db, r#struct),
+            TyKind::Ref(r) => r.inner.contains_struct(db, r#struct),
+            TyKind::Ptr(ptr) => ptr.inner.contains_struct(db, r#struct),
             _ => false,
         }
     }
