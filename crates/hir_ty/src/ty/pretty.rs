@@ -108,16 +108,16 @@ fn pretty_fn_inner(
     verbosity: TypeVerbosity,
 ) -> std::fmt::Result {
     write!(f, "fn(")?;
-    for (i, param) in function.parameters().enumerate() {
+    for (i, parameter) in function.parameters().enumerate() {
         if i != 0 {
             f.push_str(", ");
         }
-        write_ty(db, param, f, verbosity)?;
+        write_ty(db, parameter, f, verbosity)?;
     }
     write!(f, ")")?;
-    if let Some(ret) = function.return_type {
+    if let Some(return_type) = function.return_type {
         f.push_str(" -> ");
-        write_ty(db, ret, f, verbosity)?;
+        write_ty(db, return_type, f, verbosity)?;
     }
     Ok(())
 }
@@ -162,13 +162,13 @@ fn write_ty(
             write!(f, "array<")?;
             write_ty(db, t.inner, f, verbosity)?;
             match t.size {
-                ArraySize::Const(val) => write!(f, ", {}", val)?,
+                ArraySize::Constant(value) => write!(f, ", {}", value)?,
                 ArraySize::Dynamic => {},
             }
             write!(f, ">")
         },
         TyKind::Texture(e) => {
-            let val = match e.kind {
+            let value = match e.kind {
                 TextureKind::Sampled(ty) => format!(
                     "texture_{}{}{}<{}>",
                     if e.multisampled { "multisampled_" } else { "" },
@@ -192,7 +192,7 @@ fn write_ty(
                 ),
                 TextureKind::External => "texture_external".into(),
             };
-            write!(f, "{}", val)
+            write!(f, "{}", value)
         },
         TyKind::Sampler(sampler) => match sampler.comparison {
             true => write!(f, "sampler_comparison"),

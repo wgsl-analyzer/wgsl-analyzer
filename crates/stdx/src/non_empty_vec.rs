@@ -34,7 +34,7 @@ impl<T> NonEmptyVec<T> {
     }
 
     #[inline]
-    pub fn len(&self) -> usize {
+    pub fn length(&self) -> usize {
         1 + self.rest.len()
     }
 

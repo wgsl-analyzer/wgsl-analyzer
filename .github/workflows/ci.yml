@@ -14,6 +14,21 @@ concurrency:
   cancel-in-progress: ${{github.event_name == 'pull_request'}}
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      typescript: ${{ steps.filter.outputs.typescript }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@1441771bbfdd59dcd748680ee64ebd8faab1a242
+        id: filter
+        with:
+          filters: |
+            typescript:
+              - 'editors/code/**'
+
   build:
     strategy:
       matrix:
@@ -256,3 +271,70 @@ jobs:
 
       - name: Run cargo udeps
         run: cargo udeps
+
+  typescript:
+    needs: changes
+    if: github.repository == 'rust-lang/rust-analyzer'
+    name: TypeScript
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        if: needs.changes.outputs.typescript == 'true'
+
+      - name: Install Nodejs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+        if: needs.changes.outputs.typescript == 'true'
+
+      - name: Install xvfb
+        if: matrix.os == 'ubuntu-latest' && needs.changes.outputs.typescript == 'true'
+        run: sudo apt-get install -y xvfb
+
+      - run: npm ci
+        working-directory: ./editors/code
+        if: needs.changes.outputs.typescript == 'true'
+
+      #  - run: npm audit || { sleep 10 && npm audit; } || { sleep 30 && npm audit; }
+      #    if: runner.os == 'Linux'
+      #    working-directory: ./editors/code
+
+      # If this steps fails, your code's type integrity might be wrong at some places at TypeScript level.
+      - run: npm run typecheck
+        working-directory: ./editors/code
+        if: needs.changes.outputs.typescript == 'true'
+
+      # You may fix the code automatically by running `npm run lint:fix` if this steps fails.
+      - run: npm run lint
+        working-directory: ./editors/code
+        if: needs.changes.outputs.typescript == 'true'
+
+      # To fix this steps, please run `npm run format`.
+      - run: npm run format:check
+        working-directory: ./editors/code
+        if: needs.changes.outputs.typescript == 'true'
+
+      - name: Run VS Code tests (Linux)
+        if: matrix.os == 'ubuntu-latest' && needs.changes.outputs.typescript == 'true'
+        env:
+          VSCODE_CLI: 1
+        run: xvfb-run npm test
+        working-directory: ./editors/code
+
+      - name: Run VS Code tests (Windows)
+        if: matrix.os == 'windows-latest' && needs.changes.outputs.typescript == 'true'
+        env:
+          VSCODE_CLI: 1
+        run: npm test
+        working-directory: ./editors/code
+
+      - run: npm run package --scripts-prepend-node-path
+        working-directory: ./editors/code
+        if: needs.changes.outputs.typescript == 'true'

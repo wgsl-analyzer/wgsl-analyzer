@@ -71,21 +71,16 @@ syntax-bridge = { path = "./crates/syntax-bridge", version = "0.0.0" }
 test-utils = { path = "./crates/test-utils", version = "0.0.0" }
 toolchain = { path = "./crates/toolchain", version = "0.0.0" }
 tt = { path = "./crates/tt", version = "0.0.0" }
-# vfs-notify = { path = "./crates/vfs-notify", version = "0.0.0" }
 # vfs = { path = "./crates/vfs", version = "0.0.0" }
 wgsl-parser = { path = "./crates/wgsl_parser", version = "0.0.0" }
 wgsl-analyzer = { path = "./crates/wgsl-analyzer", version = "0.0.0" }
 wgsl-formatter = { path = "./crates/wgsl_formatter", version = "0.0.0" }
 wgslfmt = { path = "./crates/wgslfmt", version = "0.0.0" }
 
-vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
-text-edit = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
-paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "8a23314", version = "0.0.0" }
-
-# vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "7cce80c1738e8576ba715ec87dc8fcf28da0c5c6", version = "0.0.0" }
-# text-edit = { git = "https://github.com/rust-lang/rust-analyzer", rev = "7cce80c1738e8576ba715ec87dc8fcf28da0c5c6", version = "0.0.0" }
-# paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "7cce80c1738e8576ba715ec87dc8fcf28da0c5c6", version = "0.0.0" }
-
+vfs-notify = { git = "https://github.com/rust-lang/rust-analyzer", rev = "7cce80c1738e8576ba715ec87dc8fcf28da0c5c6", version = "0.0.0" }
+vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "7cce80c1738e8576ba715ec87dc8fcf28da0c5c6", version = "0.0.0" }
+text-edit = { git = "https://github.com/rust-lang/rust-analyzer", rev = "7cce80c1738e8576ba715ec87dc8fcf28da0c5c6", version = "0.0.0" }
+paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "7cce80c1738e8576ba715ec87dc8fcf28da0c5c6", version = "0.0.0" }
 
 ra-ap-rustc_lexer = { version = "0.96.0", default-features = false }
 ra-ap-rustc_parse_format = { version = "0.96.0", default-features = false }

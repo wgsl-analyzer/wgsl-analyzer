@@ -21,7 +21,7 @@ use goto_definition::NavigationTarget;
 use hir::diagnostics::DiagnosticsConfig;
 use hir_def::db::DefDatabase;
 pub use hover::HoverResult;
-use ide_completion::item::CompletionItem;
+use ide_completion::{CompletionConfig, item::CompletionItem};
 use inlay_hints::{InlayHint, InlayHintsConfig};
 pub use line_index::{LineCol, LineIndex};
 use salsa::{Cancelled, ParallelDatabase};
@@ -131,6 +131,42 @@ impl Analysis {
         self.with_db(|_db| vec![])
     }
 
+    pub fn source_root_id(
+        &self,
+        file_id: FileId,
+    ) -> Cancellable<SourceRootId> {
+        self.with_db(|db| db.file_source_root(file_id))
+    }
+
+    /// Computes the set of parser level diagnostics for the given file.
+    pub fn syntax_diagnostics(
+        &self,
+        _config: &DiagnosticsConfig,
+        _file_id: FileId,
+    ) -> Cancellable<Vec<Diagnostic>> {
+        self.with_db(|_db| vec![])
+    }
+
+    /// Computes the set of semantic diagnostics for the given file.
+    pub fn semantic_diagnostics(
+        &self,
+        _config: &DiagnosticsConfig,
+        // resolve: AssistResolveStrategy,
+        _file_id: FileId,
+    ) -> Cancellable<Vec<Diagnostic>> {
+        self.with_db(|_db| vec![])
+    }
+
+    /// Computes the set of both syntax and semantic diagnostics for the given file.
+    pub fn full_diagnostics(
+        &self,
+        _config: &DiagnosticsConfig,
+        // resolve: AssistResolveStrategy,
+        _file_id: FileId,
+    ) -> Cancellable<Vec<Diagnostic>> {
+        self.with_db(|_db| vec![])
+    }
+
     /// Gets the text of the source file.
     pub fn file_text(
         &self,
@@ -197,18 +233,11 @@ impl Analysis {
     /// Computes completions at the given position.
     pub fn completions(
         &self,
-        // config: &CompletionConfig<'_>,
+        config: &CompletionConfig<'_>,
         position: FilePosition,
         trigger_character: Option<char>,
     ) -> Cancellable<Option<Vec<CompletionItem>>> {
-        self.with_db(|db| {
-            ide_completion::completions2(
-                db,
-                // config,
-                position,
-                trigger_character,
-            )
-        })
+        self.with_db(|db| ide_completion::completions2(db, config, position, trigger_character))
     }
 
     pub fn format(
