@@ -461,6 +461,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "filetime"
+version = "0.2.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "35c0522e981e68cbfa8c3f978441a5f34b30b96e146b33cd3359176b50fe8586"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "libredox",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
 name = "flate2"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -489,6 +501,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e13624c2627564efccf4934284bdd98cbaa14e79b0b5a141218e507b3a823456"
 dependencies = [
  "percent-encoding",
+]
+
+[[package]]
+name = "fsevent-sys"
+version = "4.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "76ee7a02da4d231650c7cea31349b889be2f45ddb3ef3032d2ec8185f6313fd2"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
@@ -818,17 +839,6 @@ dependencies = [
 
 [[package]]
 name = "inotify"
-version = "0.9.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8069d3ec154eb856955c1c0fbffefbf5f3c40a104ec912d4797314c1801abff"
-dependencies = [
- "bitflags 1.3.2",
- "inotify-sys",
- "libc",
-]
-
-[[package]]
-name = "inotify"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f37dccff2791ab604f9babef0ba14fbe0be30bd368dc541e2b08d07c8aa908f3"
@@ -898,6 +908,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b23360e99b8717f20aaa4598f5a6541efbe30630039fbc7706cf954a87947ae"
 
 [[package]]
+name = "kqueue"
+version = "1.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7447f1ca1b7b563588a205fe93dea8df60fd981423a768bc1c0ded35ed147d0c"
+dependencies = [
+ "kqueue-sys",
+ "libc",
+]
+
+[[package]]
+name = "kqueue-sys"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed9625ffda8729b85e45cf04090035ac368927b8cebc34898e7c120f52e4838b"
+dependencies = [
+ "bitflags 1.3.2",
+ "libc",
+]
+
+[[package]]
 name = "la-arena"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -939,6 +969,7 @@ checksum = "c0ff37bd590ca25063e35af745c343cb7a0271906fb7b37e4813e8f79f00268d"
 dependencies = [
  "bitflags 2.9.0",
  "libc",
+ "redox_syscall 0.5.10",
 ]
 
 [[package]]
@@ -1062,15 +1093,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "miow"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52ffbca2f655e33c08be35d87278e5b18b89550a37dbd598c20db92f6a471123"
-dependencies = [
- "windows-sys 0.42.0",
-]
-
-[[package]]
 name = "mio"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1080,6 +1102,15 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "miow"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52ffbca2f655e33c08be35d87278e5b18b89550a37dbd598c20db92f6a471123"
+dependencies = [
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -1190,25 +1221,6 @@ checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 
 [[package]]
 name = "notify"
-version = "6.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6205bd8bb1e454ad2e27422015fb5e4f2bcc7e08fa8f27058670d208324a4d2d"
-dependencies = [
- "bitflags 2.9.0",
- "crossbeam-channel",
- "filetime",
- "fsevent-sys",
- "inotify 0.9.6",
- "kqueue",
- "libc",
- "log",
- "mio 0.8.11",
- "walkdir",
- "windows-sys 0.48.0",
-]
-
-[[package]]
-name = "notify"
 version = "8.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2fee8403b3d66ac7b26aee6e40a897d85dc5ce26f44da36b8b73e987cc52e943"
@@ -1216,11 +1228,11 @@ dependencies = [
  "bitflags 2.9.0",
  "filetime",
  "fsevent-sys",
- "inotify 0.11.0",
+ "inotify",
  "kqueue",
  "libc",
  "log",
- "mio 1.0.3",
+ "mio",
  "notify-types",
  "walkdir",
  "windows-sys 0.59.0",
@@ -2218,8 +2230,7 @@ dependencies = [
  "nohash-hasher",
  "paths",
  "rustc-hash 1.1.0",
- "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6)",
- "tracing",
+ "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=8a23314)",
 ]
 
 [[package]]
@@ -2228,27 +2239,11 @@ version = "0.0.0"
 dependencies = [
  "camino",
  "crossbeam-channel",
- "notify 8.0.0",
+ "notify",
  "paths",
  "rayon",
  "rustc-hash 2.1.1",
  "stdx 0.0.0",
- "tracing",
- "vfs",
- "walkdir",
-]
-
-[[package]]
-name = "vfs-notify"
-version = "0.0.0"
-source = "git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6#7cce80c1738e8576ba715ec87dc8fcf28da0c5c6"
-dependencies = [
- "crossbeam-channel",
- "notify 6.1.1",
- "paths",
- "rayon",
- "rustc-hash 1.1.0",
- "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6)",
  "tracing",
  "vfs",
  "walkdir",
@@ -2322,7 +2317,6 @@ dependencies = [
  "tracing-tree",
  "triomphe",
  "vfs",
- "vfs-notify 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6)",
  "walkdir",
  "windows-sys 0.59.0",
  "xflags",

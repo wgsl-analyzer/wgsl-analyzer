@@ -613,13 +613,13 @@ impl Module {
                 if config.type_errors {
                     let infer = db.infer(def);
                     for diagnostic in &infer.diagnostics {
-                        match diagnostics::any_diag_from_infer_diag(
+                        match diagnostics::any_diag_from_infer_diagnostic(
                             db,
                             diagnostic,
                             &source_map,
                             file,
                         ) {
-                            Some(diag) => acc.push(diag),
+                            Some(diagnostic) => acc.push(diagnostic),
                             None => {
                                 tracing::warn!("could not create diagnostic from {:?}", diagnostic)
                             },
@@ -629,7 +629,7 @@ impl Module {
 
                 diagnostics::precedence::collect(db, def, |diagnostic| {
                     match diagnostics::any_diag_from_shift(&diagnostic, &source_map, file) {
-                        Some(diag) => acc.push(diag),
+                        Some(diagnostic) => acc.push(diagnostic),
                         None => {
                             tracing::warn!("could not create diagnostic from {:?}", diagnostic)
                         },

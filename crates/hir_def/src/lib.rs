@@ -135,8 +135,8 @@ fn import_location(
     let def_map = db.ast_id_map(import_loc.file_id);
     let root = db.parse_or_resolve(import_loc.file_id).unwrap().syntax();
     let import: &Import = module_info.get(import_loc.value);
-    let ptr = def_map.get(import.ast_id);
-    let node = ptr.to_node(&root);
+    let pointer = def_map.get(import.ast_id);
+    let node = pointer.to_node(&root);
 
     import_loc.with_value(node.syntax().text_range())
 }

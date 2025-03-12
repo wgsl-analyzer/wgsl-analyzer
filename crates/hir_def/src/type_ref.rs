@@ -41,16 +41,16 @@ impl TryFrom<ast::Type> for TypeRef {
 
     fn try_from(ty: ast::Type) -> Result<Self, ()> {
         let type_ref = match ty {
-            ast::Type::PathType(path) => TypeRef::Path(path.name().ok_or(())?.text().into()),
-            ast::Type::ScalarType(scalar) => TypeRef::Scalar(scalar.into()),
-            ast::Type::VecType(vec) => TypeRef::Vec(vec.try_into()?),
-            ast::Type::MatrixType(matrix) => TypeRef::Matrix(matrix.try_into()?),
-            ast::Type::TextureType(tex) => TypeRef::Texture(tex.try_into()?),
-            ast::Type::SamplerType(sampler) => TypeRef::Sampler(sampler.into()),
-            ast::Type::AtomicType(atomic) => TypeRef::Atomic(atomic.try_into()?),
-            ast::Type::ArrayType(array) => TypeRef::Array(array.try_into()?),
-            ast::Type::BindingArrayType(array) => TypeRef::Array(array.try_into()?),
-            ast::Type::PtrType(ptr) => TypeRef::Ptr(ptr.try_into()?),
+            ast::Type::PathType(path) => TypeReference::Path(path.name().ok_or(())?.text().into()),
+            ast::Type::ScalarType(scalar) => TypeReference::Scalar(scalar.into()),
+            ast::Type::VecType(vec) => TypeReference::Vec(vec.try_into()?),
+            ast::Type::MatrixType(matrix) => TypeReference::Matrix(matrix.try_into()?),
+            ast::Type::TextureType(tex) => TypeReference::Texture(tex.try_into()?),
+            ast::Type::SamplerType(sampler) => TypeReference::Sampler(sampler.into()),
+            ast::Type::AtomicType(atomic) => TypeReference::Atomic(atomic.try_into()?),
+            ast::Type::ArrayType(array) => TypeReference::Array(array.try_into()?),
+            ast::Type::BindingArrayType(array) => TypeReference::Array(array.try_into()?),
+            ast::Type::PtrType(pointer) => TypeReference::Pointer(pointer.try_into()?),
         };
         Ok(type_ref)
     }
@@ -590,15 +590,15 @@ impl std::fmt::Display for PtrType {
         &self,
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
-        write!(f, "ptr<{}, {}>", self.storage_class, self.inner)
+        write!(f, "pointer<{}, {}>", self.storage_class, self.inner)
     }
 }
 
 impl TryFrom<ast::PtrType> for PtrType {
     type Error = ();
 
-    fn try_from(ptr: ast::PtrType) -> Result<Self, Self::Error> {
-        let mut generics = ptr.generic_arg_list().ok_or(())?.generics();
+    fn try_from(pointer: ast::PtrType) -> Result<Self, Self::Error> {
+        let mut generics = pointer.generic_arg_list().ok_or(())?.generics();
         let storage_class: StorageClass = match generics.next() {
             Some(ast::GenericArg::StorageClass(class)) => class.into(),
             _ => return Err(()),

@@ -145,6 +145,6 @@
 
 ## Version 0.1.1
 
-- implement `ptr` types
+- implement `pointer` types
 - fix `pack2x16` and `textureLoad` builtins
 - add proper README

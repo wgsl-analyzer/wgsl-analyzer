@@ -564,8 +564,8 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::DerefNotPtr { expr, actual } => {
-                    let source = expr.value.to_node(&root);
+                AnyDiagnostic::DerefNotPointer { expression, actual } => {
+                    let source = expression.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, actual);
                     let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
                     Diagnostic::new(

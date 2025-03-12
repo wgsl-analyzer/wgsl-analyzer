@@ -384,13 +384,13 @@ impl Collector<'_> {
 
     fn collect_expr(
         &mut self,
-        expr: ast::Expr,
-    ) -> ExprId {
-        let syntax_ptr = AstPtr::new(&expr);
-        let expr = match expr {
-            ast::Expr::InfixExpr(expr) => {
-                let lhs = self.collect_expr_opt(expr.lhs());
-                let rhs = self.collect_expr_opt(expr.rhs());
+        expression: ast::Expr,
+    ) -> ExpressionId {
+        let syntax_pointer = AstPointer::new(&expression);
+        let expression = match expression {
+            ast::Expr::InfixExpression(expression) => {
+                let left_side = self.collect_expression_opt(expression.left_side());
+                let right_side = self.collect_expression_opt(expression.right_side());
 
                 expr.op_kind()
                     .map(|op| Expr::BinaryOp { lhs, rhs, op })
@@ -407,11 +407,11 @@ impl Collector<'_> {
                 let literal = literal.kind();
                 Expr::Literal(parse_literal(literal))
             },
-            ast::Expr::ParenExpr(expr) => {
-                let inner = self.collect_expr_opt(expr.inner());
-                // make the paren expr point to the inner expression as well
-                self.source_map.expr_map.insert(syntax_ptr, inner);
-                self.body.paren_exprs.insert(inner);
+            ast::Expr::ParenethesisExpression(expression) => {
+                let inner = self.collect_expression_opt(expression.inner());
+                // make the paren expression point to the inner expression as well
+                self.source_map.expression_map.insert(syntax_pointer, inner);
+                self.body.parenthesis_expressions.insert(inner);
                 return inner;
             },
             ast::Expr::BitcastExpr(expr) => {
@@ -512,7 +512,7 @@ impl Collector<'_> {
             },
         };
 
-        self.alloc_expr(expr, syntax_ptr)
+        self.alloc_expression(expression, syntax_pointer)
     }
 
     fn alloc_expr(
