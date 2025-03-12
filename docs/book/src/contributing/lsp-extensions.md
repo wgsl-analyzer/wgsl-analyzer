@@ -26,7 +26,7 @@ If you want to be notified about the changes to this document, subscribe to [#17
 
 **Upstream Issue:** <https://github.com/microsoft/language-server-protocol/issues/567>
 
-The `initializationOptions` field of the `InitializeParams` of the initialization request should contain the `"wgsl-analyzer"` section of the configuration.
+The `initializationOptions` field of the `InitializeParameters` of the initialization request should contain the `"wgsl-analyzer"` section of the configuration.
 
 `wgsl-analyzer` normally sends a `"workspace/configuration"` request with `{ "items": ["wgsl-analyzer"] }` payload.
 However, the server cannot do this during initialization.
@@ -133,7 +133,7 @@ This request is sent from client to server to handle "Goto Parent Module" editor
 
 **Method:** `experimental/parentModule`
 
-**Request:** `TextDocumentPositionParams`
+**Request:** `TextDocumentPositionParameters`
 
 **Response:** `Location | Location[] | LocationLink[] | null`
 
@@ -169,7 +169,7 @@ This request is sent from client to server to handle "Join Lines" editor action.
 **Request:**
 
 ```typescript
-interface JoinLinesParams {
+interface JoinLinesParameters {
     textDocument: TextDocumentIdentifier,
     /// Currently active selections/cursor offsets.
     /// This is an array to support multiple cursors.
@@ -213,7 +213,7 @@ This request is sent from client to server to handle the <kbd>Enter</kbd> key pr
 
 **Method:** `experimental/onEnter`
 
-**Request:** `TextDocumentPositionParams`
+**Request:** `TextDocumentPositionParameters`
 
 **Response:**
 
@@ -267,7 +267,7 @@ This request is sent from client to server to handle structural search replace -
 **Request:**
 
 ```typescript
-interface SsrParams {
+interface SsrParameters {
     /// Search query.
     /// The specific syntax is specified outside of the protocol.
     query: string,
@@ -312,7 +312,7 @@ This request is sent from client to server to handle "Matching Brace" editor act
 **Request:**
 
 ```typescript
-interface MatchingBraceParams {
+interface MatchingBraceParameters {
     textDocument: TextDocumentIdentifier,
     /// Position for each cursor
     positions: Position[],
@@ -350,7 +350,7 @@ This request is sent from the client to the server to obtain web and local URL(s
 
 **Method:** `experimental/externalDocs`
 
-**Request:** `TextDocumentPositionParams`
+**Request:** `TextDocumentPositionParameters`
 
 **Response:** `string | null`
 
@@ -374,7 +374,7 @@ interface ExternalDocsResponse {
 **Request:**
 
 ```typescript
-interface AnalyzerStatusParams {
+interface AnalyzerStatusParameters {
     textDocument?: TextDocumentIdentifier;
 }
 ```
@@ -402,7 +402,7 @@ Reloads project information (that is, re-executes `cargo metadata`).
 **Notification:**
 
 ```typescript
-interface ServerStatusParams {
+interface ServerStatusParameters {
     /// `ok` means that the server is completely functional.
     ///
     /// `warning` means that the server is partially functional.
@@ -439,7 +439,7 @@ The flycheck/checkOnSave feature can be controlled via notifications sent by the
 **Notification:**
 
 ```typescript
-interface RunFlycheckParams {
+interface RunFlycheckParameters {
     /// The text document whose cargo workspace flycheck process should be started.
     /// If the document is null or does not belong to a cargo workspace all flycheck processes will be started.
     textDocument: lc.TextDocumentIdentifier | null;
@@ -453,7 +453,7 @@ Triggers the flycheck processes.
 **Notification:**
 
 ```typescript
-interface ClearFlycheckParams {}
+interface ClearFlycheckParameters {}
 ```
 
 Clears the flycheck diagnostics.
@@ -463,7 +463,7 @@ Clears the flycheck diagnostics.
 **Notification:**
 
 ```typescript
-interface CancelFlycheckParams {}
+interface CancelFlycheckParameters {}
 ```
 
 Cancels all running flycheck processes.
@@ -475,7 +475,7 @@ Cancels all running flycheck processes.
 **Request:**
 
 ```typescript
-interface SyntaxTreeParams {
+interface SyntaxTreeParameters {
     textDocument: TextDocumentIdentifier,
     range?: Range,
 }
@@ -493,7 +493,7 @@ Primarily for debugging, but very useful for all people working on wgsl-analyzer
 **Request:**
 
 ```typescript
-interface ViewSyntaxTreeParams {
+interface ViewSyntaxTreeParameters {
     textDocument: TextDocumentIdentifier,
 }
 ```
@@ -521,7 +521,7 @@ This is for debugging file sync problems.
 **Request:**
 
 ```typescript
-interface ViewItemTreeParams {
+interface ViewItemTreeParameters {
     textDocument: TextDocumentIdentifier,
 }
 ```
@@ -575,7 +575,7 @@ This request is sent from client to server to get the list of tests for the spec
 
 **Method:** `wgsl-analyzer/relatedTests`
 
-**Request:** `TextDocumentPositionParams`
+**Request:** `TextDocumentPositionParameters`
 
 **Response:** `TestInfo[]`
 
@@ -591,11 +591,11 @@ interface TestInfo {
 
 **Experimental Server Capability:** { "hoverRange": boolean }
 
-This extension allows passing a `Range` as a `position` field of `HoverParams`.
+This extension allows passing a `Range` as a `position` field of `HoverParameters`.
 The primary use-case is to use the hover request to show the type of the expression currently selected.
 
 ```typescript
-interface HoverParams extends WorkDoneProgressParams {
+interface HoverParameters extends WorkDoneProgressParameters {
     textDocument: TextDocumentIdentifier;
     position: Range | Position;
 }
@@ -621,12 +621,12 @@ This request is sent from client to server to move item under cursor or selectio
 
 **Method:** `experimental/moveItem`
 
-**Request:** `MoveItemParams`
+**Request:** `MoveItemParameters`
 
 **Response:** `SnippetTextEdit[]`
 
 ```typescript
-export interface MoveItemParams {
+export interface MoveItemParameters {
     textDocument: TextDocumentIdentifier,
     range: Range,
     direction: Direction
@@ -648,7 +648,7 @@ Extends the existing `workspace/symbol` request with ability to filter symbols b
 If this capability is set, `workspace/symbol` parameter gains two new optional fields:
 
 ```typescript
-interface WorkspaceSymbolParams {
+interface WorkspaceSymbolParameters {
     /**
      * Return only the symbols of specified kinds.
      */
@@ -714,7 +714,7 @@ export interface Diagnostic {
 
 **Method:** `wgsl-analyzer/viewRecursiveMemoryLayout`
 
-**Request:** `TextDocumentPositionParams`
+**Request:** `TextDocumentPositionParameters`
 
 **Response:**
 
@@ -731,11 +731,11 @@ export interface RecursiveMemoryLayoutNode = {
     /// Offset of the type relative to its parent (or 0 if its the root)
     offset: number;
     /// Index of the node's parent (or -1 if its the root)
-    parent_idx: number;
+    parent_index: number;
     /// Index of the node's children (or -1 if it does not have children)
     children_start: number;
     /// Number of child nodes (unspecified it does not have children)
-    children_len: number;
+    children_length: number;
 };
 
 export interface RecursiveMemoryLayout = {

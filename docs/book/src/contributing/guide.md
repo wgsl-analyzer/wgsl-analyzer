@@ -410,7 +410,7 @@ In [the handler](https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crat
 
 The [completion implementation](https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crates/ide-completion/src/lib.rs#L148-L229) is finally the place where we start doing the actual work.
 The first step is to collect the [`CompletionContext`] -- a struct that describes the cursor position in terms of Rust syntax and semantics.
-For example, `expected_name: Option<NameOrNameRef>` is the syntactic representation for the expected name of what we are completing (usually the parameter name of a function argument), while `expected_type: Option<Type>` is the semantic model for the expected type of what we are completing.
+For example, `expected_name: Option<NameOrNameReference>` is the syntactic representation for the expected name of what we are completing (usually the parameter name of a function argument), while `expected_type: Option<Type>` is the semantic model for the expected type of what we are completing.
 
 To construct the context, we first do an ["IntelliJ Trick"]: we insert a dummy identifier at the cursor's position and parse this modified file to get a reasonably looking syntax tree.
 Then we do a bunch of "classification" routines to figure out the context.
