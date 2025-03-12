@@ -817,6 +817,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "inotify"
+version = "0.9.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8069d3ec154eb856955c1c0fbffefbf5f3c40a104ec912d4797314c1801abff"
+dependencies = [
+ "bitflags 1.3.2",
+ "inotify-sys",
+ "libc",
+]
+
+[[package]]
+name = "inotify"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f37dccff2791ab604f9babef0ba14fbe0be30bd368dc541e2b08d07c8aa908f3"
+dependencies = [
+ "bitflags 2.9.0",
+ "inotify-sys",
+ "libc",
+]
+
+[[package]]
+name = "inotify-sys"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e05c02b5e89bff3b946cedeca278abc628fe811e604f027c45a8aa3cf793d0eb"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "instant"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1040,6 +1071,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "mio"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2886843bf800fba2e3377cff24abf6379b4c4d5c6681eaf9ea5b0d15090450bd"
+dependencies = [
+ "libc",
+ "log",
+ "wasi",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "miow"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1146,6 +1189,50 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 
 [[package]]
+name = "notify"
+version = "6.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6205bd8bb1e454ad2e27422015fb5e4f2bcc7e08fa8f27058670d208324a4d2d"
+dependencies = [
+ "bitflags 2.9.0",
+ "crossbeam-channel",
+ "filetime",
+ "fsevent-sys",
+ "inotify 0.9.6",
+ "kqueue",
+ "libc",
+ "log",
+ "mio 0.8.11",
+ "walkdir",
+ "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "notify"
+version = "8.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fee8403b3d66ac7b26aee6e40a897d85dc5ce26f44da36b8b73e987cc52e943"
+dependencies = [
+ "bitflags 2.9.0",
+ "filetime",
+ "fsevent-sys",
+ "inotify 0.11.0",
+ "kqueue",
+ "libc",
+ "log",
+ "mio 1.0.3",
+ "notify-types",
+ "walkdir",
+ "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "notify-types"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e0826a989adedc2a244799e823aece04662b66609d96af8dff7ac6df9a8925d"
+
+[[package]]
 name = "nu-ansi-term"
 version = "0.50.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1199,9 +1286,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.21.3"
+version = "1.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
+checksum = "cde51589ab56b20a6f686b2c68f7a0bd6add753d697abf720d63f8db3ab7b1ad"
 
 [[package]]
 name = "oorandom"
@@ -2131,7 +2218,40 @@ dependencies = [
  "nohash-hasher",
  "paths",
  "rustc-hash 1.1.0",
- "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=8a23314)",
+ "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6)",
+ "tracing",
+]
+
+[[package]]
+name = "vfs-notify"
+version = "0.0.0"
+dependencies = [
+ "camino",
+ "crossbeam-channel",
+ "notify 8.0.0",
+ "paths",
+ "rayon",
+ "rustc-hash 2.1.1",
+ "stdx 0.0.0",
+ "tracing",
+ "vfs",
+ "walkdir",
+]
+
+[[package]]
+name = "vfs-notify"
+version = "0.0.0"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6#7cce80c1738e8576ba715ec87dc8fcf28da0c5c6"
+dependencies = [
+ "crossbeam-channel",
+ "notify 6.1.1",
+ "paths",
+ "rayon",
+ "rustc-hash 1.1.0",
+ "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6)",
+ "tracing",
+ "vfs",
+ "walkdir",
 ]
 
 [[package]]
@@ -2202,6 +2322,7 @@ dependencies = [
  "tracing-tree",
  "triomphe",
  "vfs",
+ "vfs-notify 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6)",
  "walkdir",
  "windows-sys 0.59.0",
  "xflags",
