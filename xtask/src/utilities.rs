@@ -1,8 +1,10 @@
 use std::path::{Path, PathBuf};
 
+const RUST_FILE_EXTENSION: &str = "rs";
+
 pub(crate) fn list_rust_files(dir: &Path) -> Vec<PathBuf> {
-    let mut res = list_files(dir);
-    res.retain(|it| {
+    let mut result = list_files(dir);
+    result.retain(|it| {
         std::path::Path::new(
             it.file_name()
                 .unwrap_or_default()
@@ -10,16 +12,16 @@ pub(crate) fn list_rust_files(dir: &Path) -> Vec<PathBuf> {
                 .unwrap_or_default(),
         )
         .extension()
-        .is_some_and(|ext| ext.eq_ignore_ascii_case("rs"))
+        .is_some_and(|ext| ext.eq_ignore_ascii_case(RUST_FILE_EXTENSION))
     });
-    res
+    result
 }
 
-pub(crate) fn list_files(dir: &Path) -> Vec<PathBuf> {
-    let mut res = Vec::new();
-    let mut work = vec![dir.to_path_buf()];
-    while let Some(dir) = work.pop() {
-        for entry in dir.read_dir().unwrap() {
+pub(crate) fn list_files(directory: &Path) -> Vec<PathBuf> {
+    let mut result = Vec::new();
+    let mut work = vec![directory.to_path_buf()];
+    while let Some(directory) = work.pop() {
+        for entry in directory.read_dir().unwrap() {
             let entry = entry.unwrap();
             let file_type = entry.file_type().unwrap();
             let path = entry.path();
@@ -34,10 +36,10 @@ pub(crate) fn list_files(dir: &Path) -> Vec<PathBuf> {
                 if file_type.is_dir() {
                     work.push(path);
                 } else if file_type.is_file() {
-                    res.push(path);
+                    result.push(path);
                 }
             }
         }
     }
-    res
+    result
 }

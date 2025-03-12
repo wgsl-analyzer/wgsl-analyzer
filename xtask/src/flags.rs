@@ -162,8 +162,8 @@ impl Xtask {
         Self::from_env_()
     }
 
-    pub fn from_vec(args: Vec<std::ffi::OsString>) -> xflags::Result<Self> {
-        Self::from_vec_(args)
+    pub fn from_vec(arguments: Vec<std::ffi::OsString>) -> xflags::Result<Self> {
+        Self::from_vec_(arguments)
     }
 }
 // generated end
