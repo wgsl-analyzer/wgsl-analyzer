@@ -77,18 +77,18 @@ impl CompletionFieldsToResolve {
 // There are postfix completions, which can be triggered by typing something like
 // `foo().if`. The word after `.` determines postfix completion. Possible variants are:
 //
-// - `expr.if` -> `if expr {}` or `if let ... {}` for `Option` or `Result`
-// - `expr.match` -> `match expr {}`
-// - `expr.while` -> `while expr {}` or `while let ... {}` for `Option` or `Result`
-// - `expr.ref` -> `&expr`
-// - `expr.refm` -> `&mut expr`
-// - `expr.let` -> `let $0 = expr;`
-// - `expr.lete` -> `let $1 = expr else { $0 };`
-// - `expr.letm` -> `let mut $0 = expr;`
-// - `expr.not` -> `!expr`
-// - `expr.dbg` -> `dbg!(expr)`
-// - `expr.dbgr` -> `dbg!(&expr)`
-// - `expr.call` -> `(expr)`
+// - `expression.if` -> `if expression {}` or `if let ... {}` for `Option` or `Result`
+// - `expression.match` -> `match expression {}`
+// - `expression.while` -> `while expression {}` or `while let ... {}` for `Option` or `Result`
+// - `expression.ref` -> `&expression`
+// - `expression.refm` -> `&mut expression`
+// - `expression.let` -> `let $0 = expression;`
+// - `expression.lete` -> `let $1 = expression else { $0 };`
+// - `expression.letm` -> `let mut $0 = expression;`
+// - `expression.not` -> `!expression`
+// - `expression.dbg` -> `dbg!(expression)`
+// - `expression.dbgr` -> `dbg!(&expression)`
+// - `expression.call` -> `(expression)`
 //
 // There also snippet completions:
 //
@@ -178,9 +178,9 @@ impl CompletionFieldsToResolve {
 
 //     // prevent `(` from triggering unwanted completion noise
 //     if trigger_character == Some('(') {
-//         if let CompletionAnalysis::NameRef(NameRefContext {
+//         if let CompletionAnalysis::NameReference(NameReferenceContext {
 //             kind:
-//                 NameRefKind::Path(
+//                 NameReferenceKind::Path(
 //                     path_ctx @ PathCompletionCtx { kind: PathKind::Vis { has_in_token }, .. },
 //                 ),
 //             ..
@@ -196,9 +196,9 @@ impl CompletionFieldsToResolve {
 //     // so try to suppress completions in those cases
 //     if trigger_character == Some('_') && ctx.original_token.kind() == syntax::SyntaxKind::Underscore
 //     {
-//         if let CompletionAnalysis::NameRef(NameRefContext {
+//         if let CompletionAnalysis::NameReference(NameReferenceContext {
 //             kind:
-//                 NameRefKind::Path(
+//                 NameReferenceKind::Path(
 //                     path_ctx @ PathCompletionCtx {
 //                         kind: PathKind::Type { .. } | PathKind::Pat { .. },
 //                         ..
@@ -218,7 +218,7 @@ impl CompletionFieldsToResolve {
 
 //         match analysis {
 //             CompletionAnalysis::Name(name_ctx) => completions::complete_name(acc, ctx, name_ctx),
-//             CompletionAnalysis::NameRef(name_ref_ctx) => {
+//             CompletionAnalysis::NameReference(name_ref_ctx) => {
 //                 completions::complete_name_ref(acc, ctx, name_ref_ctx)
 //             }
 //             CompletionAnalysis::Lifetime(lifetime_ctx) => {
@@ -230,20 +230,20 @@ impl CompletionFieldsToResolve {
 //                 completions::format_string::format_string(acc, ctx, original, expanded);
 //                 completions::env_vars::complete_cargo_env_vars(acc, ctx, original, expanded);
 //             }
-//             CompletionAnalysis::UnexpandedAttrTT {
+//             CompletionAnalysis::UnexpandedAttributeTT {
 //                 colon_prefix,
-//                 fake_attribute_under_caret: Some(attr),
+//                 fake_attribute_under_caret: Some(attribute),
 //                 extern_crate,
 //             } => {
 //                 completions::attribute::complete_known_attribute_input(
 //                     acc,
 //                     ctx,
 //                     colon_prefix,
-//                     attr,
+//                     attribute,
 //                     extern_crate.as_ref(),
 //                 );
 //             }
-//             CompletionAnalysis::UnexpandedAttrTT { .. } | CompletionAnalysis::String { .. } => (),
+//             CompletionAnalysis::UnexpandedAttributeTT { .. } | CompletionAnalysis::String { .. } => (),
 //         }
 //     }
 
@@ -252,19 +252,16 @@ impl CompletionFieldsToResolve {
 
 pub fn completions2(
     db: &dyn HirDatabase,
-    // config: &CompletionConfig<'_>,
+    config: &CompletionConfig<'_>,
     position: FilePosition,
     _trigger_character: Option<char>,
 ) -> Option<Vec<CompletionItem>> {
     let mut acc = Completions::default();
 
-    let ctx = CompletionContext::new(
-        db, position,
-        // config
-    )?;
+    let ctx = CompletionContext::new(db, position, config)?;
     completions::import::complete_import(&mut acc, &ctx);
     completions::dot::complete_dot(&mut acc, &ctx);
-    completions::expr::complete_names_in_scope(&mut acc, &ctx);
+    completions::expression::complete_names_in_scope(&mut acc, &ctx);
 
     Some(acc.into())
 }

@@ -2,7 +2,7 @@
 
 Start with looking at the `wgsl-analyzer` version.
 Try the **wgsl-analyzer: Show WA Version** in VS Code (using **Command Palette** feature.
-It is typically activated by <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>) or `wgsl-analyzer --version` in the command line.
+It is typically activated by <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>) or `wgsl-analyzer --version` in the command line. <!-- spellchecker:disable-line -->
 If the date is more than a week ago, it is better to update your installation of wgsl-analyzer to the newest version.
 
 The next thing to check would be panic messages in `wgsl-analyzer`'s log.

@@ -1,7 +1,7 @@
 use crate::item::{Builder, CompletionItem};
 
 pub(crate) mod dot;
-pub(crate) mod expr;
+pub(crate) mod expression;
 pub(crate) mod import;
 
 #[derive(Debug, Default)]
@@ -10,8 +10,8 @@ pub struct Completions {
 }
 
 impl From<Completions> for Vec<CompletionItem> {
-    fn from(val: Completions) -> Self {
-        val.buf
+    fn from(value: Completions) -> Self {
+        value.buf
     }
 }
 

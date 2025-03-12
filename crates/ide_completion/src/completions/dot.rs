@@ -11,12 +11,12 @@ pub(crate) fn complete_dot(
     acc: &mut Completions,
     ctx: &CompletionContext,
 ) -> Option<()> {
-    let field_expr = match &ctx.completion_location {
-        Some(ImmediateLocation::FieldAccess { expr }) => expr,
+    let field_expression = match &ctx.completion_location {
+        Some(ImmediateLocation::FieldAccess { expression }) => expression,
         _ => return Some(()),
     };
     let sa = ctx.sema.analyze(ctx.container?);
-    let ty = sa.type_of_expr(&field_expr.expr()?)?;
+    let ty = sa.type_of_expression(&field_expression.expression()?)?;
 
     let field_completion_item =
         |name| CompletionItem::new(CompletionItemKind::Field, ctx.source_range(), name).build();

@@ -190,7 +190,7 @@ mod imp {
         match errno {
             libc::EPERM => {
                 // This thread has been excluded from the QoS system
-                // due to a previous call to a function such as `pthread_setschedparam`
+                // due to a previous call to a function such as `pthread_setschedparameter`
                 // which is incompatible with QoS.
                 //
                 // Panic instead of returning an error
