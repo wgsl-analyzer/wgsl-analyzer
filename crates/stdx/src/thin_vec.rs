@@ -22,7 +22,7 @@ unsafe impl<Header: Sync, Item: Sync> Sync for ThinVecWithHeader<Header, Item> {
 #[derive(Clone)]
 struct ThinVecInner<Header> {
     header: Header,
-    len: usize,
+    length: usize,
 }
 
 impl<Header, Item> ThinVecWithHeader<Header, Item> {
@@ -32,10 +32,10 @@ impl<Header, Item> ThinVecWithHeader<Header, Item> {
     #[inline]
     unsafe fn from_trusted_len_iter(
         header: Header,
-        len: usize,
+        length: usize,
         items: impl Iterator<Item = Item>,
     ) -> Self {
-        let (ptr, layout, items_offset) = Self::allocate(len);
+        let (ptr, layout, items_offset) = Self::allocate(length);
 
         struct DeallocGuard(*mut u8, Layout);
         impl Drop for DeallocGuard {
@@ -76,7 +76,7 @@ impl<Header, Item> ThinVecWithHeader<Header, Item> {
 
         // SAFETY: We allocated enough space.
         unsafe {
-            ptr.write(ThinVecInner { header, len });
+            ptr.write(ThinVecInner { header, length });
         };
         #[expect(clippy::mem_forget, reason = "copy pasted")]
         std::mem::forget(items_guard);
@@ -91,8 +91,8 @@ impl<Header, Item> ThinVecWithHeader<Header, Item> {
     }
 
     #[inline]
-    fn allocate(len: usize) -> (NonNull<ThinVecInner<Header>>, Layout, usize) {
-        let (layout, items_offset) = Self::layout(len);
+    fn allocate(length: usize) -> (NonNull<ThinVecInner<Header>>, Layout, usize) {
+        let (layout, items_offset) = Self::layout(length);
         // SAFETY: We always have `len`, so our allocation cannot be zero-sized.
         let ptr = unsafe { std::alloc::alloc(layout).cast::<ThinVecInner<Header>>() };
         let Some(ptr) = NonNull::<ThinVecInner<Header>>::new(ptr) else {
@@ -128,14 +128,14 @@ impl<Header, Item> ThinVecWithHeader<Header, Item> {
     }
 
     #[inline]
-    fn header_and_len(&self) -> &ThinVecInner<Header> {
+    fn header_and_length(&self) -> &ThinVecInner<Header> {
         // SAFETY: By `ptr`'s invariant, it is correctly allocated and initialized.
         unsafe { &*self.ptr.as_ptr() }
     }
 
     #[inline]
     fn items_ptr(&self) -> *mut [Item] {
-        let len = self.header_and_len().len;
+        let length = self.header_and_length().length;
         // SAFETY: `items_offset()` returns the correct offset of the items, where they are allocated.
         let ptr = unsafe {
             self.ptr
@@ -143,13 +143,13 @@ impl<Header, Item> ThinVecWithHeader<Header, Item> {
                 .byte_add(Self::items_offset())
                 .cast::<Item>()
         };
-        slice_from_raw_parts_mut(ptr, len)
+        slice_from_raw_parts_mut(ptr, length)
     }
 
     #[inline]
     #[must_use]
     pub fn header(&self) -> &Header {
-        &self.header_and_len().header
+        &self.header_and_length().header
     }
 
     #[inline]
@@ -173,20 +173,20 @@ impl<Header, Item> ThinVecWithHeader<Header, Item> {
 
     #[inline]
     #[must_use]
-    pub fn len(&self) -> usize {
-        self.header_and_len().len
+    pub fn length(&self) -> usize {
+        self.header_and_length().length
     }
 
     #[inline]
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.header_and_len().len == 0
+        self.header_and_length().length == 0
     }
 
     #[inline]
-    fn layout(len: usize) -> (Layout, usize) {
+    fn layout(length: usize) -> (Layout, usize) {
         let (layout, items_offset) = Layout::new::<ThinVecInner<Header>>()
-            .extend(Layout::array::<Item>(len).expect("too big `ThinVec` requested"))
+            .extend(Layout::array::<Item>(length).expect("too big `ThinVec` requested"))
             .expect("too big `ThinVec` requested");
         let layout = layout.pad_to_align();
         (layout, items_offset)
@@ -219,7 +219,7 @@ impl<Header, Item> Drop for ThinVecWithHeader<Header, Item> {
     #[inline]
     fn drop(&mut self) {
         // This must come before we drop `header`, because after that we cannot make a reference to it in `len()`.
-        let len = self.len();
+        let length = self.length();
 
         // SAFETY: The contents are allocated and initialized.
         unsafe {
@@ -227,7 +227,7 @@ impl<Header, Item> Drop for ThinVecWithHeader<Header, Item> {
             self.items_ptr().drop_in_place();
         };
 
-        let (layout, _) = Self::layout(len);
+        let (layout, _) = Self::layout(length);
         // SAFETY: This was allocated in `new()` with the same layout calculation.
         unsafe {
             dealloc(self.ptr.as_ptr().cast::<u8>(), layout);
@@ -288,8 +288,8 @@ impl<T> ThinVec<T> {
 
     #[inline]
     #[must_use]
-    pub fn len(&self) -> usize {
-        self.0.len()
+    pub fn length(&self) -> usize {
+        self.0.length()
     }
 
     #[inline]
@@ -383,8 +383,8 @@ impl<T> EmptyOptimizedThinVec<T> {
     }
 
     #[inline]
-    pub fn len(&self) -> usize {
-        self.0.as_ref().map_or(0, ThinVec::len)
+    pub fn length(&self) -> usize {
+        self.0.as_ref().map_or(0, ThinVec::length)
     }
 
     #[inline]

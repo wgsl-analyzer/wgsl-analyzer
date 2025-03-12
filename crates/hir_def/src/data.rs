@@ -8,14 +8,14 @@ use crate::{
         StructId, TypeAliasId,
     },
     module_data::Name,
-    type_ref::{AccessMode, StorageClass, TypeRef},
+    type_ref::{AccessMode, StorageClass, TypeReference},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FunctionData {
     pub name: Name,
-    pub params: Vec<(Interned<TypeRef>, Name)>,
-    pub return_type: Option<Interned<TypeRef>>,
+    pub parameters: Vec<(Interned<TypeReference>, Name)>,
+    pub return_type: Option<Interned<TypeReference>>,
 }
 
 impl FunctionData {
@@ -29,12 +29,12 @@ impl FunctionData {
 
         Arc::new(FunctionData {
             name: function.name.clone(),
-            params: function
-                .params
+            parameters: function
+                .parameters
                 .clone()
-                .map(|param| {
-                    let param = &module_info.data[param];
-                    (param.ty, param.name.clone())
+                .map(|parameter| {
+                    let parameter = &module_info.data[parameter];
+                    (parameter.ty, parameter.name.clone())
                 })
                 .collect(),
             return_type: function.return_type,
@@ -59,7 +59,7 @@ pub struct StructData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FieldData {
     pub name: Name,
-    pub ty: Interned<TypeRef>,
+    pub ty: Interned<TypeReference>,
 }
 
 impl StructData {
@@ -107,7 +107,7 @@ impl StructData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TypeAliasData {
     pub name: Name,
-    pub ty: Interned<TypeRef>,
+    pub ty: Interned<TypeReference>,
 }
 
 impl TypeAliasData {
@@ -129,7 +129,7 @@ impl TypeAliasData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GlobalVariableData {
     pub name: Name,
-    pub ty: Option<Interned<TypeRef>>,
+    pub ty: Option<Interned<TypeReference>>,
     pub storage_class: Option<StorageClass>,
     pub access_mode: Option<AccessMode>,
 }
@@ -155,7 +155,7 @@ impl GlobalVariableData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GlobalConstantData {
     pub name: Name,
-    pub ty: Option<Interned<TypeRef>>,
+    pub ty: Option<Interned<TypeReference>>,
 }
 
 impl GlobalConstantData {
@@ -177,7 +177,7 @@ impl GlobalConstantData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OverrideData {
     pub name: Name,
-    pub ty: Option<Interned<TypeRef>>,
+    pub ty: Option<Interned<TypeReference>>,
 }
 
 impl OverrideData {

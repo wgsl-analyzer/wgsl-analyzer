@@ -118,8 +118,8 @@ where
     let mut words = vec![];
 
     // Preserve leading underscores
-    string = string.trim_start_matches(|char: char| {
-        if char == '_' {
+    string = string.trim_start_matches(|character: char| {
+        if character == '_' {
             words.push(String::new());
             true
         } else {
@@ -129,23 +129,23 @@ where
 
     for split in string.split('_') {
         let mut last_upper = false;
-        let mut buf = String::new();
+        let mut buffer = String::new();
 
         if split.is_empty() {
             continue;
         }
 
         for ch in split.chars() {
-            if !buf.is_empty() && buf != "'" && ch.is_uppercase() && !last_upper {
-                words.push(buf);
-                buf = String::new();
+            if !buffer.is_empty() && buffer != "'" && ch.is_uppercase() && !last_upper {
+                words.push(buffer);
+                buffer = String::new();
             }
 
             last_upper = ch.is_uppercase();
-            buf.extend(change_case(ch));
+            buffer.extend(change_case(ch));
         }
 
-        words.push(buf);
+        words.push(buffer);
     }
 
     words.join("_")
@@ -207,8 +207,8 @@ pub fn to_camel_case(ident: &str) -> String {
 // Taken from rustc.
 #[inline]
 #[must_use]
-pub const fn char_has_case(char: char) -> bool {
-    char.is_lowercase() || char.is_uppercase()
+pub const fn char_has_case(character: char) -> bool {
+    character.is_lowercase() || character.is_uppercase()
 }
 
 #[inline]
@@ -216,20 +216,20 @@ pub const fn char_has_case(char: char) -> bool {
 pub fn is_upper_snake_case(string: &str) -> bool {
     string
         .chars()
-        .all(|char| char.is_uppercase() || char == '_' || char.is_numeric())
+        .all(|character| character.is_uppercase() || character == '_' || character.is_numeric())
 }
 
 #[inline]
 pub fn replace(
-    buf: &mut String,
+    buffer: &mut String,
     from: char,
     to: &str,
 ) {
-    if !buf.contains(from) {
+    if !buffer.contains(from) {
         return;
     }
     // FIXME: do this in place.
-    *buf = buf.replace(from, to);
+    *buffer = buffer.replace(from, to);
 }
 
 #[inline]
@@ -264,8 +264,8 @@ where
     F: FnMut(&T) -> Ordering,
 {
     let start = slice.partition_point(|it| key(it) == Ordering::Less);
-    let len = slice[start..].partition_point(|it| key(it) == Ordering::Equal);
-    start..start + len
+    let length = slice[start..].partition_point(|it| key(it) == Ordering::Equal);
+    start..start + length
 }
 
 #[must_use]
@@ -345,12 +345,12 @@ where
     loop {
         let x = match this.next() {
             None => return other.next().is_none(),
-            Some(val) => val,
+            Some(value) => value,
         };
 
         let y = match other.next() {
             None => return false,
-            Some(val) => val,
+            Some(value) => value,
         };
 
         if !eq(x, y) {

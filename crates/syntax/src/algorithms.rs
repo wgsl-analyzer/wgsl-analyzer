@@ -48,8 +48,8 @@ pub fn skip_trivia_token(
 ) -> Option<SyntaxToken> {
     while token.kind().is_trivia() {
         token = match direction {
-            Direction::Next => token.next_token()?,
-            Direction::Prev => token.prev_token()?,
+            Direction::Next => token.next_token()?, // spellchecker:disable-line
+            Direction::Prev => token.prev_token()?, // spellchecker:disable-line
         }
     }
     Some(token)
@@ -63,7 +63,7 @@ pub fn skip_whitespace_token(
     while token.kind() == SyntaxKind::Whitespace {
         token = match direction {
             Direction::Next => token.next_token()?,
-            Direction::Prev => token.prev_token()?,
+            Direction::Prev => token.prev_token()?, // spellchecker:disable-line
         }
     }
     Some(token)
@@ -107,8 +107,10 @@ pub fn least_common_ancestor(
 
     let u_candidates = u.ancestors().skip(u_depth - keep);
     let v_candidates = v.ancestors().skip(v_depth - keep);
-    let (res, _) = u_candidates.zip(v_candidates).find(|(x, y)| x == y)?;
-    Some(res)
+    let (result, _) = u_candidates
+        .zip(v_candidates)
+        .find(|(first, second)| first == second)?;
+    Some(result)
 }
 
 pub fn neighbor<T: AstNode>(

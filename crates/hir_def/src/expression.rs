@@ -6,10 +6,10 @@ use crate::{
     body::BindingId,
     db::Interned,
     module_data::Name,
-    type_ref::{AccessMode, StorageClass, TypeRef, VecDimensionality},
+    type_ref::{AccessMode, StorageClass, TypeReference, VecDimensionality},
 };
 
-pub type ExprId = Idx<Expr>;
+pub type ExpressionId = Idx<Expression>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Literal {
@@ -43,36 +43,36 @@ pub enum Callee {
     InferredComponentVec(VecDimensionality),
     InferredComponentArray,
     Name(Name),
-    Type(Interned<TypeRef>),
+    Type(Interned<TypeReference>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Expr {
+pub enum Expression {
     Missing,
-    BinaryOp {
-        lhs: ExprId,
-        rhs: ExprId,
-        op: BinaryOp,
+    BinaryOperation {
+        left_side: ExpressionId,
+        right_side: ExpressionId,
+        operation: BinaryOperation,
     },
     UnaryOp {
-        expr: ExprId,
+        expression: ExpressionId,
         op: UnaryOp,
     },
     Field {
-        expr: ExprId,
+        expression: ExpressionId,
         name: Name,
     },
     Call {
         callee: Callee,
-        args: Vec<ExprId>,
+        arguments: Vec<ExpressionId>,
     },
     Index {
-        lhs: ExprId,
-        index: ExprId,
+        left_side: ExpressionId,
+        index: ExpressionId,
     },
     Bitcast {
-        expr: ExprId,
-        ty: Interned<TypeRef>,
+        expression: ExpressionId,
+        ty: Interned<TypeReference>,
     },
     Literal(Literal),
     Path(Name),
@@ -88,56 +88,56 @@ pub enum Statement {
     },
     LetStatement {
         binding_id: BindingId,
-        type_ref: Option<Interned<TypeRef>>,
-        initializer: Option<ExprId>,
+        type_ref: Option<Interned<TypeReference>>,
+        initializer: Option<ExpressionId>,
     },
     ConstStatement {
         binding_id: BindingId,
-        type_ref: Option<Interned<TypeRef>>,
-        initializer: Option<ExprId>,
+        type_ref: Option<Interned<TypeReference>>,
+        initializer: Option<ExpressionId>,
     },
     VariableStatement {
         binding_id: BindingId,
-        type_ref: Option<Interned<TypeRef>>,
-        initializer: Option<ExprId>,
+        type_ref: Option<Interned<TypeReference>>,
+        initializer: Option<ExpressionId>,
         storage_class: Option<StorageClass>,
         access_mode: Option<AccessMode>,
     },
     Return {
-        expr: Option<ExprId>,
+        expression: Option<ExpressionId>,
     },
     Assignment {
-        lhs: ExprId,
-        rhs: ExprId,
+        left_side: ExpressionId,
+        right_side: ExpressionId,
     },
     CompoundAssignment {
-        lhs: ExprId,
-        rhs: ExprId,
+        left_side: ExpressionId,
+        right_side: ExpressionId,
         op: CompoundOp,
     },
     IncrDecr {
-        expr: ExprId,
+        expression: ExpressionId,
         op: IncrDecr,
     },
     If {
-        condition: ExprId,
+        condition: ExpressionId,
         block: StatementId,
         else_if_blocks: Vec<StatementId>,
         else_block: Option<StatementId>,
     },
     For {
         initializer: Option<StatementId>,
-        condition: Option<ExprId>,
+        condition: Option<ExpressionId>,
         continuing_part: Option<StatementId>,
         block: StatementId,
     },
     While {
-        condition: ExprId,
+        condition: ExpressionId,
         block: StatementId,
     },
     Switch {
-        expr: ExprId,
-        case_blocks: Vec<(Vec<ExprId>, StatementId)>,
+        expression: ExpressionId,
+        case_blocks: Vec<(Vec<ExpressionId>, StatementId)>,
         default_block: Option<StatementId>,
     },
     Loop {
@@ -150,8 +150,8 @@ pub enum Statement {
         block: StatementId,
     },
     // only function calls are allowed in this position. TODO add diagnostic
-    Expr {
-        expr: ExprId,
+    Expression {
+        expression: ExpressionId,
     },
 }
 
@@ -198,35 +198,39 @@ pub fn parse_literal(lit: ast::LiteralKind) -> Literal {
     }
 }
 
-impl Expr {
-    pub fn walk_child_exprs(
+impl Expression {
+    pub fn walk_child_expressions(
         &self,
-        mut f: impl FnMut(ExprId),
+        mut f: impl FnMut(ExpressionId),
     ) {
         match self {
-            Expr::BinaryOp { lhs, rhs, .. } => {
-                f(*lhs);
-                f(*rhs);
+            Expression::BinaryOperation {
+                left_side,
+                right_side,
+                ..
+            } => {
+                f(*left_side);
+                f(*right_side);
             },
-            Expr::UnaryOp { expr, .. } => {
-                f(*expr);
+            Expression::UnaryOp { expression, .. } => {
+                f(*expression);
             },
-            Expr::Field { expr, .. } => {
-                f(*expr);
+            Expression::Field { expression, .. } => {
+                f(*expression);
             },
-            Expr::Call { args, .. } => {
-                args.iter().copied().for_each(f);
+            Expression::Call { arguments, .. } => {
+                arguments.iter().copied().for_each(f);
             },
-            Expr::Index { lhs, index } => {
-                f(*lhs);
+            Expression::Index { left_side, index } => {
+                f(*left_side);
                 f(*index);
             },
-            Expr::Bitcast { expr, .. } => {
-                f(*expr);
+            Expression::Bitcast { expression, .. } => {
+                f(*expression);
             },
-            Expr::Missing => {},
-            Expr::Literal(_) => {},
-            Expr::Path(_) => {},
+            Expression::Missing => {},
+            Expression::Literal(_) => {},
+            Expression::Path(_) => {},
         }
     }
 }
