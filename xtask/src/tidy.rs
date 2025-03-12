@@ -7,7 +7,7 @@ use xshell::Shell;
 
 use xshell::cmd;
 
-use crate::{flags::Tidy, project_root, util::list_files};
+use crate::{flags::Tidy, project_root, utilities::list_files};
 
 impl Tidy {
     #[expect(clippy::unused_self, reason = "better API")]
@@ -77,7 +77,7 @@ fn check_test_attrs(
     );
 }
 
-fn is_exclude_dir(
+fn is_exclude_directory(
     path: &Path,
     dirs_to_exclude: &[&str],
 ) -> bool {
@@ -134,19 +134,19 @@ fn find_marks(
     mut text: &str,
     mark: &str,
 ) {
-    let mut prev_text = "";
-    while text != prev_text {
-        prev_text = text;
-        if let Some(idx) = text.find(mark) {
-            text = &text[idx + mark.len()..];
+    let mut previous_text = "";
+    while text != previous_text {
+        previous_text = text;
+        if let Some(index) = text.find(mark) {
+            text = &text[index + mark.len()..];
             if let Some(stripped_text) = text.strip_prefix("!(") {
                 text = stripped_text.trim_start();
-                if let Some(idx2) =
+                if let Some(index2) =
                     text.find(|character: char| !(character.is_alphanumeric() || character == '_'))
                 {
-                    let mark_text = &text[..idx2];
+                    let mark_text = &text[..index2];
                     set.insert(mark_text.to_owned());
-                    text = &text[idx2..];
+                    text = &text[index2..];
                 }
             }
         }
