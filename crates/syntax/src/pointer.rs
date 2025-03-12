@@ -43,7 +43,7 @@ impl SyntaxNodePointer {
                 .and_then(|it| it.into_node())
         })
         .find(|it| it.text_range() == self.range && it.kind() == self.kind)
-        .ok_or_else(|| format!("cannot resolve local ptr to SyntaxNode: {:?}", self))
+        .ok_or_else(|| format!("cannot resolve local pointer to SyntaxNode: {:?}", self))
         .unwrap()
     }
 
@@ -119,7 +119,7 @@ impl<Node: AstNode> AstPointer<Node> {
         Node::cast(syntax_node).unwrap()
     }
 
-    pub fn syntax_node_ptr(&self) -> SyntaxNodePointer {
+    pub fn syntax_node_pointer(&self) -> SyntaxNodePointer {
         self.raw.clone()
     }
 
@@ -135,7 +135,7 @@ impl<Node: AstNode> AstPointer<Node> {
 }
 
 impl<N: AstNode> From<AstPointer<N>> for SyntaxNodePointer {
-    fn from(ptr: AstPointer<N>) -> SyntaxNodePointer {
-        ptr.raw
+    fn from(pointer: AstPointer<N>) -> SyntaxNodePointer {
+        pointer.raw
     }
 }

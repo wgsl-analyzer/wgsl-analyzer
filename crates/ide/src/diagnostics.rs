@@ -577,7 +577,7 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::DerefNotPtr { expression, actual } => {
+                AnyDiagnostic::DerefNotPointer { expression, actual } => {
                     let source = expression.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, actual);
                     let frange =

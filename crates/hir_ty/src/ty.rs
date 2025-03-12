@@ -58,7 +58,7 @@ impl Ty {
         }
     }
 
-    /// `ref<inner>` -> `inner`, `ptr<inner>` -> `ptr<inner>`
+    /// `ref<inner>` -> `inner`, `pointer<inner>` -> `pointer<inner>`
     #[must_use]
     pub fn unref(
         self,
@@ -263,7 +263,7 @@ impl TyKind {
             },
             TyKind::Array(array) => array.inner.contains_struct(db, r#struct),
             TyKind::Ref(r) => r.inner.contains_struct(db, r#struct),
-            TyKind::Ptr(ptr) => ptr.inner.contains_struct(db, r#struct),
+            TyKind::Ptr(pointer) => pointer.inner.contains_struct(db, r#struct),
             _ => false,
         }
     }

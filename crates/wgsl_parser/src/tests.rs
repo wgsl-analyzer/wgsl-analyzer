@@ -311,12 +311,12 @@ fn parse_type_generic_comma_recover() {
 }
 
 #[test]
-fn parse_type_generic_ptr() {
+fn parse_type_generic_pointer() {
     check_type(
-        "ptr<uniform, f32, read_write>",
+        "pointer<uniform, f32, read_write>",
         expect![[r#"
             Pointer@0..29
-              Pointer@0..3 "ptr"
+              Pointer@0..3 "pointer"
               GenericArgumentList@3..29
                 LessThan@3..4 "<"
                 Uniform@4..11 "uniform"

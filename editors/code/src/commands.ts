@@ -122,10 +122,10 @@ export function matchingBrace(ctx: CtxInit): Cmd {
 				client.code2ProtocolConverter.asPosition(s.active),
 			),
 		});
-		editor.selections = editor.selections.map((sel, index) => {
+		editor.selections = editor.selections.map((selection, index) => {
 			const position = unwrapUndefinable(response[index]);
 			const active = client.protocol2CodeConverter.asPosition(position);
-			const anchor = sel.isEmpty ? active : sel.anchor;
+			const anchor = selection.isEmpty ? active : selection.anchor;
 			return new vscode.Selection(anchor, active);
 		});
 		editor.revealRange(editor.selection);

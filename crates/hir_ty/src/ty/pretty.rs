@@ -213,12 +213,12 @@ fn write_ty(
         },
         TyKind::Ptr(t) => match verbosity {
             TypeVerbosity::Full => {
-                write!(f, "ptr<{}, ", t.storage_class)?;
+                write!(f, "pointer<{}, ", t.storage_class)?;
                 write_ty(db, t.inner, f, verbosity)?;
                 write!(f, ", {}>", t.access_mode)
             },
             TypeVerbosity::Compact | TypeVerbosity::Inner => {
-                write!(f, "ptr<")?;
+                write!(f, "pointer<")?;
                 write_ty(db, t.inner, f, verbosity)?;
                 write!(f, ">")
             },

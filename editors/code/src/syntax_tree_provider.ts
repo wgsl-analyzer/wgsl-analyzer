@@ -80,25 +80,25 @@ export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement
 					// This is something other than a RawElement.
 					return value;
 				}
-				const [startOffset, startLine, startCol] = value.start;
-				const [endOffset, endLine, endCol] = value.end;
-				const range = new vscode.Range(startLine, startCol, endLine, endCol);
+				const [start_offset, start_line, start_column] = value.start;
+				const [end_offset, end_line, end_column] = value.end;
+				const range = new vscode.Range(start_line, start_column, end_line, end_column);
 				const offsets = {
-					start: startOffset,
-					end: endOffset,
+					start: start_offset,
+					end: end_offset,
 				};
 
 				let inner;
-				if (value.istart && value.iend) {
-					const [istartOffset, istartLine, istartCol] = value.istart;
-					const [iendOffset, iendLine, iendCol] = value.iend;
+				if (value.start_index && value.end_index) {
+					const [start_offset, start_line, start_column] = value.start_index;
+					const [end_offset, end_line, end_column] = value.end_index;
 
 					inner = {
 						offsets: {
-							start: istartOffset,
-							end: iendOffset,
+							start: start_offset,
+							end: end_offset,
 						},
-						range: new vscode.Range(istartLine, istartCol, iendLine, iendCol),
+						range: new vscode.Range(start_line, start_column, end_line, end_column),
 					};
 				}
 
@@ -229,8 +229,8 @@ type RawNode = {
 	kind: string;
 	start: [number, number, number];
 	end: [number, number, number];
-	istart?: [number, number, number];
-	iend?: [number, number, number];
+	start_index?: [number, number, number];
+	end_index?: [number, number, number];
 	children: SyntaxElement[];
 };
 
@@ -239,8 +239,8 @@ type RawToken = {
 	kind: string;
 	start: [number, number, number];
 	end: [number, number, number];
-	istart?: [number, number, number];
-	iend?: [number, number, number];
+	start_index?: [number, number, number];
+	end_index?: [number, number, number];
 };
 
 type RawElement = RawNode | RawToken;

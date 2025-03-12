@@ -42,8 +42,8 @@ impl AstIdMap {
         &self,
         item: &N,
     ) -> FileAstId<N> {
-        let ptr = SyntaxNodePointer::new(item.syntax());
-        let id = match self.arena.iter().find(|(_id, node)| **node == ptr) {
+        let pointer = SyntaxNodePointer::new(item.syntax());
+        let id = match self.arena.iter().find(|(_id, node)| **node == pointer) {
             Some((it, _)) => it,
             None => panic!(
                 "Cannot find {:?} in AstIdMap:\n{:?}",

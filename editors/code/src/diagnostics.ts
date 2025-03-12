@@ -38,16 +38,16 @@ export class TextDocumentProvider implements vscode.TextDocumentContentProvider 
 }
 
 function getRenderedDiagnostic(ctx: Ctx, uri: vscode.Uri): string {
-	const diags = ctx.client?.diagnostics?.get(vscode.Uri.parse(uri.fragment, true));
-	if (!diags) {
+	const diagnostics = ctx.client?.diagnostics?.get(vscode.Uri.parse(uri.fragment, true));
+	if (!diagnostics) {
 		return "Unable to find original diagnostic";
 	}
 
-	const diag = diags[parseInt(uri.query)];
-	if (!diag) {
+	const diagnostic = diagnostics[parseInt(uri.query)];
+	if (!diagnostic) {
 		return "Unable to find original diagnostic";
 	}
-	const rendered = (diag as unknown as { data?: { rendered?: string } }).data?.rendered;
+	const rendered = (diagnostic as unknown as { data?: { rendered?: string } }).data?.rendered;
 
 	if (!rendered) {
 		return "Unable to find original diagnostic";

@@ -50,7 +50,7 @@ impl TryFrom<ast::Type> for TypeReference {
             ast::Type::AtomicType(atomic) => TypeReference::Atomic(atomic.try_into()?),
             ast::Type::ArrayType(array) => TypeReference::Array(array.try_into()?),
             ast::Type::BindingArrayType(array) => TypeReference::Array(array.try_into()?),
-            ast::Type::PtrType(ptr) => TypeReference::Pointer(ptr.try_into()?),
+            ast::Type::PtrType(pointer) => TypeReference::Pointer(pointer.try_into()?),
         };
         Ok(type_ref)
     }
@@ -590,15 +590,15 @@ impl std::fmt::Display for PointerType {
         &self,
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
-        write!(f, "ptr<{}, {}>", self.storage_class, self.inner)
+        write!(f, "pointer<{}, {}>", self.storage_class, self.inner)
     }
 }
 
 impl TryFrom<ast::PtrType> for PointerType {
     type Error = ();
 
-    fn try_from(ptr: ast::PtrType) -> Result<Self, Self::Error> {
-        let mut generics = ptr.generic_arg_list().ok_or(())?.generics();
+    fn try_from(pointer: ast::PtrType) -> Result<Self, Self::Error> {
+        let mut generics = pointer.generic_arg_list().ok_or(())?.generics();
         let storage_class: StorageClass = match generics.next() {
             Some(ast::GenericArg::StorageClass(class)) => class.into(),
             _ => return Err(()),

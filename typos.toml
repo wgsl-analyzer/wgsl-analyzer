@@ -77,7 +77,7 @@ ignore-hidden = false
 # "expr" = "expression"
 "prev" = "previous"
 "sel" = "selection"
-"col" = "column"
+# "col" = "column"
 
 # Be concise
 ":-)" = "be concise"

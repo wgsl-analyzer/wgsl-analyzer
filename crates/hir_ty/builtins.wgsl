@@ -15,7 +15,7 @@ isFinite(f32) -> bool
 isFinite(vecN<f32>) -> vecN<bool>
 isNormal(f32) -> bool
 isNormal(vecN<f32>) -> vecN<bool>
-arrayLength(ptr<array<T>>) -> u32
+arrayLength(pointer<array<T>>) -> u32
 
 // float
 abs(f32) -> f32
@@ -390,17 +390,17 @@ textureStore(texture_storage_2d_array<F;write>, vec2<i32>, u32, F::StorageType)
 textureStore(texture_storage_3d<F;write>, vec3<i32>, F::StorageType)
 
 // TODO atomic
-atomicLoad(ptr<atomic<T>>) -> T
-atomicStore(ptr<atomic<T>>, T)
+atomicLoad(pointer<atomic<T>>) -> T
+atomicStore(pointer<atomic<T>>, T)
 
-atomicAdd(ptr<atomic<T>>, T) -> T
-atomicSub(ptr<atomic<T>>, T) -> T
-atomicMax(ptr<atomic<T>>, T) -> T
-atomicMin(ptr<atomic<T>>, T) -> T
-atomicAnd(ptr<atomic<T>>, T) -> T
-atomicOr(ptr<atomic<T>>, T) -> T
-atomicXor(ptr<atomic<T>>, T) -> T
-atomicExchange(ptr<atomic<T>>, T) -> T
+atomicAdd(pointer<atomic<T>>, T) -> T
+atomicSub(pointer<atomic<T>>, T) -> T
+atomicMax(pointer<atomic<T>>, T) -> T
+atomicMin(pointer<atomic<T>>, T) -> T
+atomicAnd(pointer<atomic<T>>, T) -> T
+atomicOr(pointer<atomic<T>>, T) -> T
+atomicXor(pointer<atomic<T>>, T) -> T
+atomicExchange(pointer<atomic<T>>, T) -> T
 // TODO atomicCompareExchangeWeak
 
 // data packing
@@ -418,7 +418,7 @@ unpack2x16float(u32) -> vec2<f32>
 // synchronization
 storageBarrier()
 workgroupBarrier()
-workgroupUniformLoad(ptr<T>) -> T
+workgroupUniformLoad(pointer<T>) -> T
 
 // TODO: T should only match i32, f32, u32 in a lot of ops
 

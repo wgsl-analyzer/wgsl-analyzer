@@ -53,19 +53,19 @@ export async function createClient(
 		) {
 			const preview = false; // todo simplify
 			const errorCode = false; // todo simplify
-			diagnosticList.forEach((diag, idx) => {
+			diagnosticList.forEach((diagnostic, index) => {
 				const value =
-					typeof diag.code === "string" || typeof diag.code === "number"
-						? diag.code
-						: diag.code?.value;
+					typeof diagnostic.code === "string" || typeof diagnostic.code === "number"
+						? diagnostic.code
+						: diagnostic.code?.value;
 				if (
 					// FIXME: We currently emit this diagnostic way too early, before we have
 					// loaded the project fully
 					// value === "unlinked-file" &&
 					value === "temporary-disabled" &&
 					!unlinkedFiles.includes(uri) &&
-					(diag.message === "file not included in crate hierarchy" ||
-						diag.message.startsWith("This file is not included in any crates"))
+					(diagnostic.message === "file not included in crate hierarchy" ||
+						diagnostic.message.startsWith("This file is not included in any crates"))
 				) {
 					const config = vscode.workspace.getConfiguration("wgsl-analyzer");
 					if (config.get("showUnlinkedFileNotification")) {
@@ -124,22 +124,22 @@ export async function createClient(
 				// the data payload of the lsp diagnostic. If that field exists, overwrite the
 				// diagnostic code such that clicking it opens the diagnostic in a readonly
 				// text editor for easy inspection
-				const rendered = (diag as unknown as { data?: { rendered?: string } }).data
+				const rendered = (diagnostic as unknown as { data?: { rendered?: string } }).data
 					?.rendered;
 				if (rendered) {
 					if (preview) {
 						const decolorized = anser.ansiToText(rendered);
 						const index = decolorized.match(/^(note|help):/m)?.index || rendered.length;
-						diag.message = decolorized
+						diagnostic.message = decolorized
 							.substring(0, index)
 							.replace(/^ -->[^\n]+\n/m, "");
 					}
-					diag.code = {
+					diagnostic.code = {
 						target: vscode.Uri.from({
 							scheme: diagnostics.URI_SCHEME,
-							path: `/diagnostic message [${idx.toString()}]`,
+							path: `/diagnostic message [${index.toString()}]`,
 							fragment: uri.toString(),
-							query: idx.toString(),
+							query: index.toString(),
 						}),
 						value: errorCode && value ? value : "Click for full compiler diagnostic",
 					};

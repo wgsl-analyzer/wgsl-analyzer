@@ -867,7 +867,7 @@ impl<'db> InferenceContext<'db> {
             UnaryOp::BitNot => Builtin::builtin_op_unary_bitnot(self.db).intern(self.db),
             UnaryOp::Ref => {
                 match expression_ty.kind(self.db) {
-                    TyKind::Ref(reference) => return self.ref_to_ptr(reference),
+                    TyKind::Ref(reference) => return self.ref_to_pointer(reference),
                     _ => {
                         self.push_diagnostic(InferenceDiagnostic::AddrOfNotRef {
                             expression,
@@ -880,7 +880,7 @@ impl<'db> InferenceContext<'db> {
             UnaryOp::Deref => {
                 let arg_ty = expression_ty.unref(self.db);
                 match arg_ty.kind(self.db) {
-                    TyKind::Ptr(ptr) => return self.ptr_to_ref(ptr),
+                    TyKind::Ptr(pointer) => return self.ptr_to_ref(pointer),
                     _ => {
                         self.push_diagnostic(InferenceDiagnostic::DerefNotAPtr {
                             expression,
@@ -1517,9 +1517,9 @@ fn unify(
             },
             _ => Err(()),
         },
-        TyKind::Ptr(ptr) => match found_kind {
-            TyKind::Ptr(found_ptr) => {
-                unify(db, table, ptr.inner, found_ptr.inner)?;
+        TyKind::Ptr(pointer) => match found_kind {
+            TyKind::Ptr(found_pointer) => {
+                unify(db, table, pointer.inner, found_pointer.inner)?;
 
                 Ok(())
             },
@@ -1704,7 +1704,7 @@ impl InferenceContext<'_> {
         }))
     }
 
-    fn ref_to_ptr(
+    fn ref_to_pointer(
         &self,
         reference: Ref,
     ) -> Ty {
@@ -1717,12 +1717,12 @@ impl InferenceContext<'_> {
 
     fn ptr_to_ref(
         &self,
-        ptr: Ptr,
+        pointer: Ptr,
     ) -> Ty {
         self.db.intern_ty(TyKind::Ref(Ref {
-            inner: ptr.inner,
-            storage_class: ptr.storage_class,
-            access_mode: ptr.access_mode,
+            inner: pointer.inner,
+            storage_class: pointer.storage_class,
+            access_mode: pointer.access_mode,
         }))
     }
 
@@ -1874,10 +1874,10 @@ impl<'db> TyLoweringContext<'db> {
                     type_ref::ArraySize::Dynamic => ArraySize::Dynamic,
                 },
             }),
-            TypeReference::Pointer(ptr) => TyKind::Ptr(Ptr {
-                storage_class: ptr.storage_class,
-                inner: self.lower_ty(&ptr.inner),
-                access_mode: ptr.access_mode,
+            TypeReference::Pointer(pointer) => TyKind::Ptr(Ptr {
+                storage_class: pointer.storage_class,
+                inner: self.lower_ty(&pointer.inner),
+                access_mode: pointer.access_mode,
             }),
             TypeReference::Path(name) => match self.resolver.resolve_type(name) {
                 Some(ResolveType::Struct(loc)) => {

@@ -403,7 +403,7 @@ impl Collector<'_> {
         &mut self,
         expression: ast::Expr,
     ) -> ExpressionId {
-        let syntax_ptr = AstPointer::new(&expression);
+        let syntax_pointer = AstPointer::new(&expression);
         let expression = match expression {
             ast::Expr::InfixExpression(expression) => {
                 let left_side = self.collect_expression_opt(expression.left_side());
@@ -432,7 +432,7 @@ impl Collector<'_> {
             ast::Expr::ParenethesisExpression(expression) => {
                 let inner = self.collect_expression_opt(expression.inner());
                 // make the paren expression point to the inner expression as well
-                self.source_map.expression_map.insert(syntax_ptr, inner);
+                self.source_map.expression_map.insert(syntax_pointer, inner);
                 self.body.parenthesis_expressions.insert(inner);
                 return inner;
             },
@@ -539,7 +539,7 @@ impl Collector<'_> {
             },
         };
 
-        self.alloc_expression(expression, syntax_ptr)
+        self.alloc_expression(expression, syntax_pointer)
     }
 
     fn alloc_expression(

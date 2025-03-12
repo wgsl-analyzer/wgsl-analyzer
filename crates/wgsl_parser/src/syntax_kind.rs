@@ -202,7 +202,7 @@ pub enum SyntaxKind {
     Mat4x3,
     #[token("mat4x4")]
     Mat4x4,
-    #[token("ptr")]
+    #[token("pointer")]
     Pointer,
     #[token("sampler")]
     Sampler,
