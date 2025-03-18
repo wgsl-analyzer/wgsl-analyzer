@@ -175,9 +175,9 @@
 // }
 
 // impl ops::BitOrAssign<SemanticTokenModifier> for ModifierSet {
-//     fn bitor_assign(&mut self, rhs: SemanticTokenModifier) {
-//         let idx = SUPPORTED_MODIFIERS.iter().position(|it| it == &rhs).unwrap();
-//         self.0 |= 1 << idx;
+//     fn bitor_assign(&mut self, right_side: SemanticTokenModifier) {
+//         let index = SUPPORTED_MODIFIERS.iter().position(|it| it == &right_side).unwrap();
+//         self.0 |= 1 << index;
 //     }
 // }
 
@@ -186,14 +186,14 @@
 // /// This is a direct port of <https://github.com/microsoft/vscode-languageserver-node/blob/f425af9de46a0187adb78ec8a46b9b2ce80c5412/server/src/sematicTokens.proposed.ts#L45>
 // pub(crate) struct SemanticTokensBuilder {
 //     id: String,
-//     prev_line: u32,
-//     prev_char: u32,
+//     previous_line: u32,
+//     previous_character: u32,
 //     data: Vec<SemanticToken>,
 // }
 
 // impl SemanticTokensBuilder {
 //     pub(crate) fn new(id: String) -> Self {
-//         SemanticTokensBuilder { id, prev_line: 0, prev_char: 0, data: Default::default() }
+//         SemanticTokensBuilder { id, previous_line: 0, previous_character: 0, data: Default::default() }
 //     }
 
 //     /// Push a new token onto the builder
@@ -202,27 +202,27 @@
 //         let mut push_char = range.start.character;
 
 //         if !self.data.is_empty() {
-//             push_line -= self.prev_line;
+//             push_line -= self.previous_line;
 //             if push_line == 0 {
-//                 push_char -= self.prev_char;
+//                 push_char -= self.previous_character;
 //             }
 //         }
 
 //         // A token cannot be multiline
-//         let token_len = range.end.character - range.start.character;
+//         let token_length = range.end.character - range.start.character;
 
 //         let token = SemanticToken {
 //             delta_line: push_line,
 //             delta_start: push_char,
-//             length: token_len,
+//             length: token_length,
 //             token_type: token_index,
 //             token_modifiers_bitset: modifier_bitset,
 //         };
 
 //         self.data.push(token);
 
-//         self.prev_line = range.start.line;
-//         self.prev_char = range.start.character;
+//         self.previous_line = range.start.line;
+//         self.previous_character = range.start.character;
 //     }
 
 //     pub(crate) fn build(self) -> SemanticTokens {

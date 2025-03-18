@@ -77,11 +77,11 @@ fn field_types(
     let mut ty_ctx = TyLoweringContext::new(db, &resolver);
 
     let mut map = ArenaMap::default();
-    for (idx, field) in data.fields.iter() {
+    for (index, field) in data.fields.iter() {
         let ty = db.lookup_intern_type_ref(field.ty);
         let ty = ty_ctx.lower_ty(&ty);
 
-        map.insert(idx, ty);
+        map.insert(index, ty);
     }
 
     Arc::new(map)
@@ -103,7 +103,7 @@ fn function_type(
         .return_type
         .map(|type_ref| ty_ctx.lower_ty(&db.lookup_intern_type_ref(type_ref)));
     let parameters = data
-        .params
+        .parameters
         .iter()
         .map(|(type_ref, name)| {
             let ty = ty_ctx.lower_ty(&db.lookup_intern_type_ref(*type_ref));

@@ -148,7 +148,7 @@ impl TyKind {
         db.intern_ty(self)
     }
 
-    pub fn is_err(&self) -> bool {
+    pub fn is_error(&self) -> bool {
         matches!(self, TyKind::Error)
     }
 
@@ -171,7 +171,7 @@ impl TyKind {
                 | TyKind::Vector(_)
                 | TyKind::Matrix(_)
                 | TyKind::Array(ArrayType {
-                    size: ArraySize::Const(_),
+                    size: ArraySize::Constant(_),
                     ..
                 })
                 | TyKind::Struct(_)
@@ -369,7 +369,7 @@ pub struct ArrayType {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ArraySize {
-    Const(u64),
+    Constant(u64),
     Dynamic,
 }
 

@@ -64,7 +64,7 @@
 
 ### Version 0.5.0
 
-- implement `#import`s in function param list
+- implement `#import`s in function parameter list
 
 ### Version 0.4.6
 

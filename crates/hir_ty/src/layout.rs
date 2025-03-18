@@ -141,7 +141,7 @@ impl TyKind {
                 size
             },
             TyKind::Array(array) => match array.size {
-                ArraySize::Const(n) => {
+                ArraySize::Constant(n) => {
                     let stride = array.stride(address_space, db)?;
                     n as Bytes * stride
                 },

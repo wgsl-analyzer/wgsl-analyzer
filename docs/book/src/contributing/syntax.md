@@ -507,7 +507,7 @@ Specifically, `TreeSink` constructs the tree in lockstep with draining the origi
 In the process, it records which tokens of the tree correspond to which tokens of the input, by using text ranges to identify syntax tokens.
 The end result is that parsing an expanded code yields a syntax tree and a mapping of text-ranges of the tree to original tokens.
 
-To deal with precedence in cases like `$expr * 1`, we use special invisible parenthesis, which are explicitly handled by the parser.
+To deal with precedence in cases like `$expression * 1`, we use special invisible parenthesis, which are explicitly handled by the parser.
 
 ### Whitespace & Comments
 

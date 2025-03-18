@@ -7,15 +7,15 @@ pub enum SyntaxKind {
     /// a function
     Function,
     /// ident: type
-    VariableIdentDecl,
+    VariableIdentDeclaration,
     /// the <a, b, c> of a generic
-    GenericArgList,
+    GenericArgumentList,
     /// a function parameter
-    Param,
+    Parameter,
     /// a function parameter or name of a variable statement
     Binding,
     /// a list of function arguments
-    ParamList,
+    ParameterList,
     /// a function return type
     ReturnType,
     /// a group of statements contained in braces
@@ -23,14 +23,14 @@ pub enum SyntaxKind {
     /// a `let` or `var` statement
     VariableStatement,
     /// an expression in statement position. Only function calls are allowed there in WGSL, but we parse it nonetheless
-    ExprStatement,
-    /// `loop { stmts }`
+    ExpressionStatement,
+    /// `loop { statements }`
     LoopStatement,
-    /// `while (expr) { stmts }`
+    /// `while (expression) { statements }`
     WhileStatement,
-    /// `if (expr) { stmts }`
+    /// `if (expression) { statements }`
     IfStatement,
-    /// `switch expr { case 1, 2: {} default: {} }`
+    /// `switch expression { case 1, 2: {} default: {} }`
     SwitchStatement,
     /// The block of a switch statement
     SwitchBlock,
@@ -42,7 +42,7 @@ pub enum SyntaxKind {
     SwitchBodyDefault,
 
     /// `i++`, `i--`
-    IncrDecrStatement,
+    IncrementDecrementStatement,
     ElseIfBlock,
     ElseBlock,
     /// `for(init, cmp, update) {}`
@@ -55,41 +55,41 @@ pub enum SyntaxKind {
     /// a binary operator
     BinaryOperator,
     /// The parameters to a function call
-    FunctionParamList,
+    FunctionParameterList,
     /// `a.b`
-    FieldExpr,
+    FieldExpression,
     /// `pow(2, 3)`
     FunctionCall,
     /// `(pow)(2, 3)`
     InvalidFunctionCall,
     /// `a\[0\]`
-    IndexExpr,
+    IndexExpression,
     /// `vec3<f32>(1.0)`
     TypeInitializer,
     /// `vec3(1.0)`
     InferredInitializer,
     /// `return foo`
-    ReturnStmt,
-    /// an expression of the form `lhs <op> rhs`
-    InfixExpr,
-    /// an expression of the form `<op> rhs`
-    PrefixExpr,
+    ReturnStatement,
+    /// an expression of the form `left_side <op> right_side`
+    InfixExpression,
+    /// an expression of the form `<op> right_side`
+    PrefixExpression,
     /// a literal expression
     Literal,
     /// an expression resolving to a definition
-    PathExpr,
+    PathExpression,
     /// a reference to a definition
-    NameRef,
+    NameReference,
     /// an expression inside parenthesis
-    ParenExpr,
-    /// an expression of the form `bitcast< <type> >(expr)`
-    BitcastExpr,
+    ParenethesisExpression,
+    /// an expression of the form `bitcast< <type> >(expression)`
+    BitcastExpression,
     /// a non-builtin type
     PathType,
     /// `a = b`
-    AssignmentStmt,
+    AssignmentStatement,
     /// `a += b`
-    CompoundAssignmentStmt,
+    CompoundAssignmentStatement,
     /// `[[location(0), interpolate(flat)]]`
     AttributeList,
     /// `location(0, 1, 2)`
@@ -97,21 +97,21 @@ pub enum SyntaxKind {
     /// `(0, 1, ident)`
     AttributeParameters,
     /// the definition of a struct
-    StructDecl,
+    StructDeclaration,
     /// the members of a struct definition inside of braces
     StructDeclBody,
     /// one field of a struct declaration
-    StructDeclField,
+    StructDeclarationField,
     /// `var<uniform> test: u32`
-    GlobalVariableDecl,
+    GlobalVariableDeclaration,
     /// `let global: u32 = 10u`
-    GlobalConstantDecl,
+    GlobalConstantDeclaration,
     /// `override gain: f32;`
-    OverrideDecl,
-    /// `continuing { stmts }`
+    OverrideDeclaration,
+    /// `continuing { statements }`
     ContinuingStatement,
     /// Type alias declaration: `type float4 = vec4<f32>`
-    TypeAliasDecl,
+    TypeAliasDeclaration,
 
     /// `#import foo` or `#import "file.wgsl"`
     Import,
@@ -137,7 +137,7 @@ pub enum SyntaxKind {
     Comment,
 
     #[regex(r#"([_\p{XID_Start}]\p{XID_Continue}*)|(\p{XID_Start})"#)]
-    Ident,
+    Identifier,
 
     // literals
     // These regexes are taken from the spec, with `-?` added to allow negative floats too
@@ -271,7 +271,7 @@ pub enum SyntaxKind {
     #[token("continuing")]
     Continuing,
     #[token("const")]
-    Const,
+    Constant,
     #[token("default")]
     Default,
     #[token("discard")]
@@ -335,11 +335,11 @@ pub enum SyntaxKind {
     #[token("->")]
     Arrow,
     #[token("[[")]
-    AttrLeft,
+    AttributeLeft,
     #[token("]]")]
-    AttrRight,
+    AttributeRight,
     #[token("@")]
-    Attr,
+    AttributeOperator,
     #[token("/")]
     ForwardSlash,
     #[token("!")]
@@ -521,15 +521,18 @@ mod tests {
     }
 
     #[test]
-    fn lex_attr() {
-        check_lex("[[ ]]", expect![[r#"[AttrLeft, Whitespace, AttrRight]"#]]);
+    fn lex_attribute() {
+        check_lex(
+            "[[ ]]",
+            expect![[r#"[AttributeLeft, Whitespace, AttributeRight]"#]],
+        );
     }
 
     #[test]
     fn lex_comment() {
         check_lex(
             "// test asdf\nnot_comment",
-            expect![[r#"[Comment, Whitespace, Ident]"#]],
+            expect![[r#"[Comment, Whitespace, Identifier]"#]],
         );
     }
 }
