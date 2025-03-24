@@ -13,7 +13,7 @@ flate2 = "1.1.0"
 write-json = "0.1.4"
 xshell.workspace = true
 xflags = "0.3.2"
-time = { version = "0.3.39", default-features = false }
+time = { version = "0.3.41", default-features = false }
 zip = { version = "2.5.0", default-features = false, features = [
   "deflate",
   "time",
