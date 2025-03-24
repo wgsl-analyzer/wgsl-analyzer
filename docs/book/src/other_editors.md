@@ -230,17 +230,10 @@ To change `wgsl-analyzer` config options, start from the following example and p
 ```json
 {
   "servers": {
-  "wgsl": {
-    "initializationOptions": {
-    "cachePriming": {
-      "enable": false
-    },
-    "check": {
-      "allTargets": false
-    },
-    "checkOnSave": false
+    "wgsl": {
+      "initializationOptions": {
+      }
     }
-  }
   }
 }
 ```
