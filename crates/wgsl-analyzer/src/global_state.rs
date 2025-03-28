@@ -34,6 +34,11 @@ pub(crate) struct Handle<H, C> {
     pub receiver: C,
 }
 
+pub(crate) struct FetchWorkspaceResponse {
+    pub(crate) workspaces: Vec<anyhow::Result<ProjectWorkspace>>,
+    pub(crate) force_crate_graph_reload: bool,
+}
+
 /// `GlobalState` is the primary mutable state of the language server
 ///
 /// The most interesting components are `vfs`, which stores a consistent
@@ -293,17 +298,14 @@ impl GlobalState {
         response: lsp_server::Response,
     ) {
         if let Some((method, start)) = self.request_queue.incoming.complete(&response.id) {
-            if let Some(error) = &response.error {
-                self.show_message(lsp_types::MessageType::ERROR, error.message.clone());
+            if let Some(err) = &response.error {
+                if err.message.starts_with("server panicked") {
+                    self.poke_wgsl_analyzer_developer(format!("{}, check the log", err.message));
+                }
             }
 
             let duration = start.elapsed();
-            tracing::debug!(
-                "Handled {} - ({}) in {:0.2?}",
-                method,
-                response.id,
-                duration
-            );
+            tracing::debug!(name: "message response", method, %response.id, duration = format_args!("{:0.2?}", duration));
             self.send(response.into());
         }
     }

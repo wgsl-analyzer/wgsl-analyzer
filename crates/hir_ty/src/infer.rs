@@ -17,7 +17,7 @@ use la_arena::ArenaMap;
 use rustc_hash::FxHashMap;
 
 use crate::{
-    HirDatabase,
+    db::HirDatabase,
     builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
     function::{FunctionDetails, ResolvedFunctionId},
     ty::{

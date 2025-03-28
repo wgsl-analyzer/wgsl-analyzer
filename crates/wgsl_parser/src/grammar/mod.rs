@@ -1,7 +1,7 @@
 #![allow(clippy::if_same_then_else, clippy::needless_return)]
 mod expression;
 
-pub(crate) use expr::expression;
+pub(crate) use expression::expression;
 
 use self::expression::TOKENSET_LITERAL;
 use crate::SyntaxKind;

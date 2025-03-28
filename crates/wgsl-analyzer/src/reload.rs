@@ -5,13 +5,13 @@ use vfs::file_set::FileSetConfig;
 
 use ide::base_db::input::SourceRoot;
 
-use crate::{global_state::GlobalState, lsp, main_loop::Task};
+use crate::{global_state::GlobalState, lsp, main_loop::Task, op_queue::Cause};
 
 /// `PackageRoot` describes a package root folder.
 /// Which may be an external dependency, or a member of
 /// the current workspace.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct PackageRoot {
+pub(crate) struct PackageRoot {
     /// Is from the local filesystem and may be edited
     pub is_local: bool,
     pub include: Vec<AbsPathBuf>,
@@ -19,7 +19,7 @@ pub struct PackageRoot {
 }
 
 #[derive(Clone, Debug)]
-pub enum ProjectWorkspace {
+pub(crate) enum ProjectWorkspace {
     Test,
 }
 
@@ -27,16 +27,16 @@ impl ProjectWorkspace {
     /// Returns the roots for the current `ProjectWorkspace`
     /// The return type contains the path and whether or not
     /// the root is a member of the current workspace
-    pub const fn to_roots() -> Vec<PackageRoot> {
+    pub(crate) const fn to_roots() -> Vec<PackageRoot> {
         Vec::new()
     }
 }
 
 #[derive(Debug)]
-pub enum ProjectWorkspaceProgress {
+pub(crate) enum ProjectWorkspaceProgress {
     Begin,
     Report(String),
-    End(Vec<anyhow::Result<ProjectWorkspace>>),
+    End(Vec<anyhow::Result<ProjectWorkspace>>, bool),
 }
 
 impl GlobalState {
@@ -120,7 +120,7 @@ impl GlobalState {
         status
     }
 
-    pub fn fetch_workspaces(&self) {
+    pub(crate) fn fetch_workspaces(&self) {
         self.task_pool
             .handle
             .spawn_with_sender(ThreadIntent::Worker, move |sender| {
@@ -130,13 +130,19 @@ impl GlobalState {
                 let workspaces = vec![Ok(ProjectWorkspace::Test)];
                 sender
                     .send(Task::FetchWorkspace(ProjectWorkspaceProgress::End(
-                        workspaces,
+                        workspaces, false,
                     )))
                     .unwrap();
             });
     }
 
-    pub fn switch_workspaces(&mut self) {
+    pub(crate) fn switch_workspaces(
+        &mut self,
+        cause: &Cause,
+    ) {
+        let _p = tracing::info_span!("GlobalState::switch_workspaces").entered();
+        tracing::info!(%cause, "will switch workspaces");
+
         let glob_pattern = format!("{}/**/*.wgsl", self.config.root_path());
 
         let registration_options = lsp_types::DidChangeWatchedFilesRegistrationOptions {

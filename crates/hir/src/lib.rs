@@ -20,7 +20,7 @@ use hir_def::{
     module_data::{self, ImportValue, ModuleInfo, ModuleItem, Name},
     resolver::{ResolveValue, Resolver},
 };
-pub use hir_ty::HirDatabase;
+pub use hir_ty::db::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Ty};
 use smallvec::SmallVec;
 use syntax::{AstNode, HasName, SyntaxNode, ast, match_ast, pointer::AstPointer};

@@ -6,7 +6,7 @@ pub use hir_def::type_ref::{AccessMode, StorageClass};
 use hir_def::{db::StructId, type_ref};
 use salsa::InternKey;
 
-use crate::HirDatabase;
+use crate::db::HirDatabase;
 
 // TODO:
 // [ ] nesting depth

@@ -1,16 +1,27 @@
+//! Driver for rust-analyzer.
+//!
+//! Based on cli flags, either spawns an LSP server, or runs a batch analysis
+
+#![expect(clippy::print_stdout, clippy::print_stderr, reason = "CLI tool")]
+
 use std::{
     env::{self, args as arguments},
+    fs,
     io::stderr,
     path::PathBuf,
+    process::ExitCode,
+    sync::Arc,
 };
 
+use anyhow::Context as _;
 use lsp_server::Connection;
 use lsp_types::InitializeParams;
 use paths::{AbsPathBuf, Utf8PathBuf};
 use tracing::{info, warn};
-use tracing_subscriber::fmt::Subscriber;
+use tracing_subscriber::fmt::{Subscriber, writer::BoxMakeWriter};
 use wgsl_analyzer::{
     Result,
+    cli::flags,
     config::{Config, ConfigChange, ConfigErrors, TraceConfig},
     from_json,
     main_loop::main_loop,
@@ -26,16 +37,84 @@ fn get_cwd_as_abs_path() -> Result<AbsPathBuf, std::io::Error> {
     ))
 }
 
-fn main() -> Result<()> {
-    if arguments().any(|arg| arg == "--version") {
-        #[expect(clippy::print_stdout, reason = "intended behavior")]
-        {
-            println!("{VERSION}");
-        };
-        return Ok(());
+fn main() -> Result<ExitCode> {
+    let flags = flags::WgslAnalyzer::from_env_or_exit();
+
+    #[cfg(debug_assertions)]
+    if flags.wait_dbg || env::var("WA_WAIT_DBG").is_ok() {
+        wait_for_debugger();
     }
 
-    run_server()
+    if let Err(error) = setup_logging2(flags.log_file.clone()) {
+        eprintln!("Failed to setup logging: {error:#}");
+    }
+
+    let verbosity = flags.verbosity();
+
+    #[expect(clippy::unimplemented, reason = "TODO")]
+    #[expect(
+        clippy::wildcard_enum_match_arm,
+        reason = "future variants are not a current concern"
+    )]
+    match flags.subcommand {
+        flags::WgslAnalyzerCmd::LspServer(command) => 'lsp_server: {
+            if command.print_config_schema {
+                // println!("{:#}", Config::json_schema());
+                break 'lsp_server;
+            }
+            if command.version {
+                println!("wgsl-analyzer {}", wgsl_analyzer::version());
+                break 'lsp_server;
+            }
+
+            // wgsl-analyzer’s “main thread” is actually
+            // a secondary latency-sensitive thread with an increased stack size.
+            // We use this thread intent because any delay in the main loop
+            // will make actions like hitting enter in the editor slow.
+            with_extra_thread(
+                "LspServer",
+                stdx::thread::ThreadIntent::LatencySensitive,
+                run_server,
+            )?;
+        },
+        // flags::WgslAnalyzerCmd::Parse(cmd) => cmd.run()?,
+        // flags::WgslAnalyzerCmd::Symbols(cmd) => cmd.run()?,
+        // flags::WgslAnalyzerCmd::Highlight(cmd) => cmd.run()?,
+        // flags::WgslAnalyzerCmd::AnalysisStats(cmd) => cmd.run(verbosity)?,
+        // flags::WgslAnalyzerCmd::Diagnostics(cmd) => cmd.run()?,
+        // flags::WgslAnalyzerCmd::UnresolvedReferences(cmd) => cmd.run()?,
+        // flags::WgslAnalyzerCmd::Ssr(cmd) => cmd.run()?,
+        // flags::WgslAnalyzerCmd::Search(cmd) => cmd.run()?,
+        // flags::WgslAnalyzerCmd::Lsif(cmd) => {
+        //     cmd.run(&mut std::io::stdout(), Some(project_model::RustLibSource::Discover))?
+        // }
+        // flags::WgslAnalyzerCmd::Scip(cmd) => cmd.run()?,
+        // flags::WgslAnalyzerCmd::RunTests(cmd) => cmd.run()?,
+        // flags::WgslAnalyzerCmd::RustcTests(cmd) => cmd.run()?,
+        _ => unimplemented!("subcommand not implemented"),
+    }
+    Ok(ExitCode::SUCCESS)
+}
+
+#[cfg(debug_assertions)]
+fn wait_for_debugger() {
+    #[cfg(target_os = "windows")]
+    {
+        use windows_sys::Win32::System::Diagnostics::Debug::IsDebuggerPresent;
+        // SAFETY: WinAPI generated code that is defensively marked `unsafe` but
+        // in practice can not be used in an unsafe way.
+        while unsafe { IsDebuggerPresent() } == 0 {
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let mut dummy = 4;
+        while dummy == 4 {
+            dummy = 4;
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+    }
 }
 
 fn run_server() -> anyhow::Result<()> {
@@ -195,7 +274,85 @@ fn patch_path_prefix(path: PathBuf) -> PathBuf {
     }
 }
 
-fn setup_logging(trace: &TraceConfig) {
+fn setup_logging2(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
+    if cfg!(windows) {
+        // This is required so that windows finds our pdb that is placed right beside the exe.
+        // By default it doesn't look at the folder the exe resides in, only in the current working
+        // directory which we set to the project workspace.
+        // https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/general-environment-variables
+        // https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-syminitialize
+        if let Ok(path) = env::current_exe() {
+            if let Some(path) = path.parent() {
+                unsafe {
+                    env::set_var("_NT_SYMBOL_PATH", path);
+                }
+            }
+        }
+    }
+
+    if env::var("WGSL_BACKTRACE").is_err() {
+        unsafe {
+            env::set_var("WGSL_BACKTRACE", "short");
+        }
+    }
+
+    let log_file = env::var("WA_LOG_FILE")
+        .ok()
+        .map(PathBuf::from)
+        .or(log_file_flag);
+    let log_file = match log_file {
+        Some(path) => {
+            if let Some(parent) = path.parent() {
+                fs::create_dir_all(parent);
+            }
+            Some(
+                fs::File::create(&path)
+                    .with_context(|| format!("cannot create log file at {}", path.display()))?,
+            )
+        },
+        None => None,
+    };
+
+    let writer = log_file.map_or_else(
+        || BoxMakeWriter::new(std::io::stderr),
+        |file| BoxMakeWriter::new(Arc::new(file)),
+    );
+
+    wgsl_analyzer::tracing::Config {
+        writer,
+        // Deliberately enable all `error` logs if the user has not set WA_LOG, as there is usually
+        // useful information in there for debugging.
+        filter: env::var("WA_LOG")
+            .ok()
+            .unwrap_or_else(|| "error".to_owned()),
+        chalk_filter: env::var("CHALK_DEBUG").ok(),
+        profile_filter: env::var("WA_PROFILE").ok(),
+        json_profile_filter: std::env::var("WA_PROFILE_JSON").ok(),
+    }
+    .init()?;
+
+    Ok(())
+}
+
+const STACK_SIZE: usize = 1024 * 1024 * 8;
+
+/// Parts of rust-analyzer can use a lot of stack space, and some operating systems only give us
+/// 1 MB by default (eg. Windows), so this spawns a new thread with hopefully sufficient stack
+/// space.
+fn with_extra_thread(
+    thread_name: impl Into<String>,
+    thread_intent: stdx::thread::ThreadIntent,
+    function: impl FnOnce() -> anyhow::Result<()> + Send + 'static,
+) -> anyhow::Result<()> {
+    let handle = stdx::thread::Builder::new(thread_intent)
+        .name(thread_name.into())
+        .stack_size(STACK_SIZE)
+        .spawn(function)?;
+    handle.join()?;
+    Ok(())
+}
+
+fn setup_logging(trace: &TraceConfig) -> anyhow::Result<()> {
     let level = if trace.extension { "debug" } else { "info" };
     let filter = format!(
         "{default},salsa=warn,naga=warn,lsp_server={lsp_server}",
@@ -208,4 +365,5 @@ fn setup_logging(trace: &TraceConfig) {
         .with_writer(stderr)
         .with_env_filter(filter)
         .init();
+    Ok(())
 }

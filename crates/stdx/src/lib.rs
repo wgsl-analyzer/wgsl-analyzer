@@ -163,12 +163,12 @@ pub fn to_camel_case(ident: &str) -> String {
             let mut camel_cased_component = String::with_capacity(component.len());
 
             let mut new_word = true;
-            let mut prev_is_lower_case = true;
+            let mut previous_is_lower_case = true;
 
             for character in component.chars() {
                 // Preserve the case if an uppercase letter follows a lowercase letter, so that
                 // `camelCase` is converted to `CamelCase`.
-                if prev_is_lower_case && character.is_uppercase() {
+                if previous_is_lower_case && character.is_uppercase() {
                     new_word = true;
                 }
 
@@ -178,7 +178,7 @@ pub fn to_camel_case(ident: &str) -> String {
                     camel_cased_component.extend(character.to_lowercase());
                 }
 
-                prev_is_lower_case = character.is_lowercase();
+                previous_is_lower_case = character.is_lowercase();
                 new_word = false;
             }
 
@@ -186,19 +186,19 @@ pub fn to_camel_case(ident: &str) -> String {
         })
         .fold(
             (String::new(), None),
-            |(mut acc, prev): (_, Option<String>), next| {
+            |(mut accumulator, previous): (_, Option<String>), next| {
                 // separate two components with an underscore if their boundary cannot
                 // be distinguished using an uppercase/lowercase case distinction
-                let join = prev
-                    .and_then(|prev| {
+                let join = previous
+                    .and_then(|previous| {
                         let first = next.chars().next()?;
-                        let last = prev.chars().last()?;
+                        let last = previous.chars().last()?;
                         Some(!char_has_case(last) && !char_has_case(first))
                     })
                     .unwrap_or(false);
-                acc.push_str(if join { "_" } else { "" });
-                acc.push_str(&next);
-                (acc, Some(next))
+                accumulator.push_str(if join { "_" } else { "" });
+                accumulator.push_str(&next);
+                (accumulator, Some(next))
             },
         )
         .0

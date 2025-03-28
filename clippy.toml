@@ -9,4 +9,4 @@ disallowed-methods = [
 ]
 
 # TODO
-# disallowed-names = ["res", "err", "alt", "char", "dir"]
+# disallowed-names = ["res", "resp", "msg", "err", "alt", "char", "dir"]

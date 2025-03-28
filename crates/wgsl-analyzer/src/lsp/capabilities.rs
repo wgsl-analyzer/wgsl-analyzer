@@ -150,7 +150,7 @@ impl ClientCapabilities {
             })
     }
 
-    pub fn negotiated_encoding(&self) -> PositionEncoding {
+    pub(crate) fn negotiated_encoding(&self) -> PositionEncoding {
         let client_encodings = self.0.general.as_ref().map_or([].as_slice(), |general| {
             general.position_encodings.as_deref().unwrap_or_default()
         });

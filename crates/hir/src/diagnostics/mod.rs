@@ -6,7 +6,7 @@ use hir_def::{
     HirFileId, InFile, body::BodySourceMap, expression::BinaryOperation, module_data::Name,
 };
 use hir_ty::{
-    HirDatabase,
+    db::HirDatabase,
     builtins::BuiltinId,
     infer::{InferenceDiagnostic, TypeExpectation, TypeLoweringError},
     ty::Ty,

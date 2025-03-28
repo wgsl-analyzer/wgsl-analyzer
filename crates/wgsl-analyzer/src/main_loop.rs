@@ -20,14 +20,7 @@ use tracing::{Level, error, span};
 use crate::{
     config::Config,
     diagnostics::{DiagnosticsGeneration, NativeDiagnosticsFetchKind, fetch_native_diagnostics},
-    global_state::{
-        GlobalState,
-        //  FetchBuildDataResponse,
-        //  FetchWorkspaceRequest,
-        // FetchWorkspaceResponse,
-        file_id_to_url,
-        url_to_file_id,
-    },
+    global_state::{FetchWorkspaceResponse, GlobalState, file_id_to_url, url_to_file_id},
     lsp::{
         from_proto, to_proto,
         utils::{Progress, notification_is},
@@ -230,33 +223,35 @@ impl GlobalState {
         ))
     }
 
-    #[expect(clippy::needless_pass_by_ref_mut, reason = "intentional")]
     fn update_status_or_notify(&mut self) {
         let status = self.current_status();
-        // if self.last_reported_status != status {
-        //     self.last_reported_status = status.clone();
+        if self.last_reported_status != status {
+            self.last_reported_status = status.clone();
 
-        //     if self.config.server_status_notification() {
-        //         self.send_notification::<lsp::ext::ServerStatusNotification>(status);
-        //     } else if let (
-        //         health @ (lsp::ext::Health::Warning | lsp::ext::Health::Error),
-        //         Some(message),
-        //     ) = (status.health, &status.message)
-        //     {
-        //         let open_log_button = tracing::enabled!(tracing::Level::ERROR)
-        //             && (self.fetch_build_data_error().is_err()
-        //                 || self.fetch_workspace_error().is_err());
-        //         self.show_message(
-        //             match health {
-        //                 lsp::ext::Health::Ok => lsp_types::MessageType::INFO,
-        //                 lsp::ext::Health::Warning => lsp_types::MessageType::WARNING,
-        //                 lsp::ext::Health::Error => lsp_types::MessageType::ERROR,
-        //             },
-        //             message.clone(),
-        //             open_log_button,
-        //         );
-        //     }
-        // }
+            if self.config.server_status_notification() {
+                self.send_notification::<lsp::ext::ServerStatusNotification>(status);
+            } else if let (
+                health @ (lsp::ext::Health::Warning | lsp::ext::Health::Error),
+                Some(message),
+            ) = (status.health, &status.message)
+            {
+                let open_log_button = tracing::enabled!(tracing::Level::ERROR)
+                    &&
+					// (self.fetch_build_data_error().is_err() || 
+					self.fetch_workspace_error().is_err()
+					// )
+					;
+                self.show_message(
+                    match health {
+                        lsp::ext::Health::Ok => lsp_types::MessageType::INFO,
+                        lsp::ext::Health::Warning => lsp_types::MessageType::WARNING,
+                        lsp::ext::Health::Error => lsp_types::MessageType::ERROR,
+                    },
+                    message.clone(),
+                    open_log_button,
+                );
+            }
+        }
     }
 
     #[expect(clippy::unused_self, reason = "wip")]
@@ -301,6 +296,8 @@ impl GlobalState {
         .map(Some)
     }
 
+    #[expect(clippy::cognitive_complexity, reason = "")]
+    #[expect(clippy::too_many_lines, reason = "")]
     fn handle_event(
         &mut self,
         event: Event,
@@ -308,23 +305,21 @@ impl GlobalState {
         let loop_start = Instant::now();
         let _p = tracing::info_span!("GlobalState::handle_event", event = %event).entered();
 
-        let event_debug_message = format!("{event:?}");
+        let event_dbg_msg = format!("{event:?}");
         tracing::debug!(?loop_start, ?event, "handle_event");
         if tracing::enabled!(tracing::Level::INFO) {
-            let task_queue_length = self.task_pool.handle.length();
-            if task_queue_length > 0 {
-                tracing::info!("task queue length: {}", task_queue_length);
+            let task_queue_len = self.task_pool.handle.length();
+            if task_queue_len > 0 {
+                tracing::info!("task queue len: {}", task_queue_len);
             }
         }
 
         let was_quiescent = self.is_quiescent();
         match event {
-            Event::Lsp(message) => match message {
-                lsp_server::Message::Request(request) => self.on_new_request(loop_start, request),
-                lsp_server::Message::Response(response) => self.complete_request(response),
-                lsp_server::Message::Notification(notification) => {
-                    self.on_notification(notification);
-                },
+            Event::Lsp(msg) => match msg {
+                lsp_server::Message::Request(req) => self.on_new_request(loop_start, req),
+                lsp_server::Message::Notification(not) => self.on_notification(not),
+                lsp_server::Message::Response(resp) => self.complete_request(resp),
             },
             Event::QueuedTask(task) => {
                 let _p = tracing::info_span!("GlobalState::handle_event/queued_task").entered();
@@ -343,6 +338,8 @@ impl GlobalState {
                 while let Ok(task) = self.task_pool.receiver.try_recv() {
                     self.handle_task(&mut prime_caches_progress, task);
                 }
+
+                for progress in prime_caches_progress {}
             },
             Event::Vfs(message) => {
                 let _p = tracing::info_span!("GlobalState::handle_event/vfs").entered();
@@ -352,70 +349,151 @@ impl GlobalState {
                     self.handle_vfs_message(message);
                 }
             },
+            // Event::Flycheck(message) => {
+            //     let _p = tracing::info_span!("GlobalState::handle_event/flycheck").entered();
+            //     self.handle_flycheck_msg(message);
+            //     // Coalesce many flycheck updates into a single loop turn
+            //     while let Ok(message) = self.flycheck_receiver.try_recv() {
+            //         self.handle_flycheck_msg(message);
+            //     }
+            // },
+            // Event::TestResult(message) => {
+            //     let _p = tracing::info_span!("GlobalState::handle_event/test_result").entered();
+            //     self.handle_cargo_test_msg(message);
+            //     // Coalesce many test result event into a single loop turn
+            //     while let Ok(message) = self.test_run_receiver.try_recv() {
+            //         self.handle_cargo_test_msg(message);
+            //     }
+            // },
+            // Event::DiscoverProject(message) => {
+            //     self.handle_discover_msg(message);
+            //     // Coalesce many project discovery events into a single loop turn.
+            //     while let Ok(message) = self.discover_receiver.try_recv() {
+            //         self.handle_discover_msg(message);
+            //     }
+            // },
         }
+        let event_handling_duration = loop_start.elapsed();
+        let (state_changed, memdocs_added_or_removed) = if self.vfs_done {
+            if let Some(cause) = self.wants_to_switch.take() {
+                self.switch_workspaces(&cause);
+            }
+            (self.process_changes(), self.mem_docs.take_changes())
+        } else {
+            (false, false)
+        };
 
-        let state_changed = self.process_changes();
-        if state_changed {
-            self.update_diagnostics();
-        }
+        if self.is_quiescent() {
+            let became_quiescent = !was_quiescent;
+            // if became_quiescent {
+            //     if self.config.check_on_save(None)
+            //         && self.config.flycheck_workspace(None)
+            //         && !self.fetch_build_data_queue.op_requested()
+            //     {
+            //         // Project has loaded properly, kick off initial flycheck
+            //         self.flycheck
+            //             .iter()
+            //             .for_each(|flycheck| flycheck.restart_workspace(None));
+            //     }
+            //     if self.config.prefill_caches() {
+            //         self.prime_caches_queue
+            //             .request_op("became quiescent".to_owned(), ());
+            //     }
+            // }
 
-        let changes = self.diagnostics.take_changes();
+            let client_refresh = became_quiescent || state_changed;
+            if client_refresh {
+                // Refresh semantic tokens if the client supports it.
+                if self.config.semantic_tokens_refresh() {
+                    // self.semantic_tokens_cache.lock().clear();
+                    self.send_request::<lsp_types::request::SemanticTokensRefresh>((), |_, _| ());
+                }
 
-        if state_changed {
-            // Update import paths?
-            #[expect(
-                clippy::single_match,
-                reason = "changing to if let gives a warning about drop order"
-            )]
-            match changes.as_ref() {
-                Some(changes) => {
-                    for file_id in changes {
-                        let module = self
-                            .analysis_host
-                            .raw_database()
-                            .module_info(HirFileId::from(*file_id));
-                        for item in module.items() {
-                            if let ModuleItem::Import(import) = item {
-                                let import = module.get(*import);
-                                if let ImportValue::Path(path) = &import.value {
-                                    let parent_path = self
-                                        .analysis_host
-                                        .raw_database()
-                                        .file_path(*file_id)
-                                        .parent()
-                                        .unwrap();
-                                    let import_path = parent_path.join(path).unwrap();
+                // Refresh code lens if the client supports it.
+                if self.config.code_lens_refresh() {
+                    self.send_request::<lsp_types::request::CodeLensRefresh>((), |_, _| ());
+                }
 
-                                    let parameters =
-                                        lsp::ext::import_text_document::ImportTextDocumentParameters {
-                                            uri: import_path.to_string(),
-                                        };
+                // Refresh inlay hints if the client supports it.
+                if self.config.inlay_hints_refresh() {
+                    self.send_request::<lsp_types::request::InlayHintRefreshRequest>((), |_, _| ());
+                }
 
-                                    self.send_request::<lsp::ext::ImportTextDocument>(
-                                        parameters,
-                                        |_, _| {},
-                                    );
-                                }
-                            }
-                        }
-                    }
-                },
-                _ => {},
+                if self.config.diagnostics_refresh() {
+                    self.send_request::<lsp_types::request::WorkspaceDiagnosticRefresh>(
+                        (),
+                        |_, _| (),
+                    );
+                }
+            }
+
+            let project_or_mem_docs_changed =
+                became_quiescent || state_changed || memdocs_added_or_removed;
+            if project_or_mem_docs_changed && !self.config.text_document_diagnostic()
+            // && self.config.publish_diagnostics(None)
+            {
+                self.update_diagnostics();
+            }
+            if project_or_mem_docs_changed && self.config.test_explorer() {
+                // self.update_tests();
             }
         }
 
-        if let Some(diagnostic_changes) = changes {
+        if let Some(diagnostic_changes) = self.diagnostics.take_changes() {
             for file_id in diagnostic_changes {
-                let url = file_id_to_url(&self.vfs.read().unwrap().0, file_id);
-                let diagnostics = self.diagnostics.diagnostics_for(file_id).cloned().collect();
-                self.send_notification::<lsp_types::notification::PublishDiagnostics>(
-                    lsp_types::PublishDiagnosticsParams {
-                        uri: url,
-                        diagnostics,
-                        version: None,
-                    },
-                );
+                let uri = file_id_to_url(&self.vfs.read().unwrap().0, file_id);
+                let version = from_proto::vfs_path(&uri)
+                    .ok()
+                    .and_then(|path| self.mem_docs.get(&path).map(|it| it.version));
+
+                let diagnostics = self
+                    .diagnostics
+                    .diagnostics_for(file_id)
+                    .cloned()
+                    .collect::<Vec<_>>();
+                // self.publish_diagnostics(uri, version, diagnostics);
             }
+        }
+
+        // if self.config.cargo_autoreload_config(None)
+        //     || self.config.discover_workspace_config().is_some()
+        // {
+        //     if let Some((
+        //         cause,
+        //         FetchWorkspaceRequest {
+        //             path,
+        //             force_crate_graph_reload,
+        //         },
+        //     )) = self.fetch_workspaces_queue.should_start_op()
+        //     {
+        //         self.fetch_workspaces(cause, path, force_crate_graph_reload);
+        //     }
+        // }
+
+        // if !self.fetch_workspaces_queue.op_in_progress() {
+        //     if let Some((cause, ())) = self.fetch_build_data_queue.should_start_op() {
+        //         self.fetch_build_data(cause);
+        //     } else if let Some((cause, (change, paths))) =
+        //         self.fetch_proc_macros_queue.should_start_op()
+        //     {
+        //         self.fetch_proc_macros(cause, change, paths);
+        //     }
+        // }
+
+        // if let Some((cause, ())) = self.prime_caches_queue.should_start_op() {
+        //     self.prime_caches(cause);
+        // }
+
+        self.update_status_or_notify();
+
+        let loop_duration = loop_start.elapsed();
+        if loop_duration > Duration::from_millis(100) && was_quiescent {
+            tracing::warn!(
+                "overly long loop turn took {loop_duration:?} (event handling took {event_handling_duration:?}): {event_dbg_msg}"
+            );
+            self.poke_wgsl_analyzer_developer(format!(
+                "overly long loop turn took {loop_duration:?} (event handling took {event_handling_duration:?}): {event_dbg_msg}"
+            ));
         }
     }
 
@@ -598,13 +676,22 @@ impl GlobalState {
                 let (state, message) = match progress {
                     ProjectWorkspaceProgress::Begin => (Progress::Begin, None),
                     ProjectWorkspaceProgress::Report(message) => (Progress::Report, Some(message)),
-                    ProjectWorkspaceProgress::End(_) => {
-                        self.switch_workspaces();
+                    ProjectWorkspaceProgress::End(workspaces, force_crate_graph_reload) => {
+                        let response = FetchWorkspaceResponse {
+                            workspaces,
+                            force_crate_graph_reload,
+                        };
+                        // self.fetch_workspaces_queue.op_completed(response);
+                        if let Err(error) = self.fetch_workspace_error() {
+                            error!("FetchWorkspaceError: {error}");
+                        }
+                        self.wants_to_switch = Some("fetched workspace".to_owned());
+                        self.diagnostics.clear_check_all();
                         (Progress::End, None)
                     },
                 };
 
-                self.report_progress("Fetching", &state, message, None);
+                self.report_progress("Fetching", &state, message, None, None);
             },
         }
     }

@@ -267,8 +267,8 @@ fn format_syntax_node(
             remove_if_whitespace(
                 parenthesis_expression
                     .right_parenthesis_token()?
-                    .prev_token()?,
-            ); // spellchecker:disable-line
+                    .prev_token()?, // spellchecker:disable-line
+            );
 
             if parenthesis_expression
                 .syntax()

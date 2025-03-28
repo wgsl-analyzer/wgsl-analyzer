@@ -2,7 +2,7 @@ use hir_def::{
     db::DefWithBodyId,
     expression::{ArithmeticOperation, BinaryOperation, ExpressionId},
 };
-use hir_ty::HirDatabase;
+use hir_ty::db::HirDatabase;
 
 #[derive(Debug)]
 pub enum PrecedenceDiagnostic {

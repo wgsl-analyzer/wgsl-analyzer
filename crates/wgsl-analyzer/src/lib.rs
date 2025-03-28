@@ -10,6 +10,7 @@ mod op_queue;
 mod reload;
 mod task_pool;
 mod version;
+pub mod cli;
 
 pub type Result<T, E = anyhow::Error> = std::result::Result<T, E>;
 
@@ -70,6 +71,13 @@ pub(crate) use try_default_ as try_default;
 
 mod handlers {
     // pub mod dispatch;
-    pub mod notification;
-    pub mod request;
+    pub(crate) mod notification;
+    pub(crate) mod request;
+}
+
+pub mod tracing {
+    pub mod config;
+    pub mod json;
+    pub use config::Config;
+    pub mod hprof;
 }

@@ -21,7 +21,7 @@ export async function createClient(
 	// config: Config,
 	unlinkedFiles: vscode.Uri[],
 ): Promise<lc.LanguageClient> {
-	const raMiddleware: lc.Middleware = {
+	const waMiddleware: lc.Middleware = {
 		workspace: {
 			// HACK: This is a workaround, when the client has been disposed, VSCode
 			// continues to emit events to the client and the default one for this event
@@ -32,7 +32,7 @@ export async function createClient(
 				}
 			},
 			async configuration(
-				parameters: lc.ConfigurationParameters,
+				parameters: lc.ConfigurationParams,
 				token: vscode.CancellationToken,
 				next: lc.ConfigurationRequest.HandlerSignature,
 			) {
@@ -185,7 +185,7 @@ export async function createClient(
 			token: vscode.CancellationToken,
 			_next: lc.ProvideCodeActionsSignature,
 		) {
-			const parameters: lc.CodeActionParameters = {
+			const parameters: lc.CodeActionParams = {
 				textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(document),
 				range: client.code2ProtocolConverter.asRange(range),
 				context: await client.code2ProtocolConverter.asCodeActionContext(context, token),
@@ -277,7 +277,7 @@ export async function createClient(
 		diagnosticCollectionName: "wgsl",
 		traceOutputChannel,
 		outputChannel,
-		middleware: raMiddleware,
+		middleware: waMiddleware,
 		markdown: {
 			supportHtml: true,
 		},

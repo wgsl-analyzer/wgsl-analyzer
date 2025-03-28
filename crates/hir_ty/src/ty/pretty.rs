@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use super::{Ty, TyKind};
 use crate::{
-    HirDatabase,
+    db::HirDatabase,
     function::FunctionDetails,
     infer::{TypeExpectation, TypeExpectationInner},
     ty::{ArraySize, ScalarType, TextureKind},

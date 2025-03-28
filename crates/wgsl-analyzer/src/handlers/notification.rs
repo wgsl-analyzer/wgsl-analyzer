@@ -19,7 +19,7 @@ use crate::{
     reload,
 };
 
-pub fn handle_did_open_text_document(
+pub(crate) fn handle_did_open_text_document(
     state: &mut GlobalState,
     parameters: DidOpenTextDocumentParams,
 ) -> Result<()> {
@@ -77,19 +77,36 @@ pub(crate) fn handle_did_change_text_document(
     Ok(())
 }
 
-pub fn handle_did_close_text_document(
+#[expect(
+    clippy::needless_pass_by_value,
+    reason = "handlers should have this signature"
+)]
+pub(crate) fn handle_did_close_text_document(
     state: &mut GlobalState,
-    parameters: DidCloseTextDocumentParams,
-) -> Result<()> {
-    let _path = from_proto::vfs_path(&parameters.text_document.uri)
-        .context("invalid path in did_change_text_document")?;
+    params: DidCloseTextDocumentParams,
+) -> anyhow::Result<()> {
+    let _p = tracing::info_span!("handle_did_close_text_document").entered();
 
-    state.send_notification::<PublishDiagnostics>(PublishDiagnosticsParams {
-        uri: parameters.text_document.uri,
-        diagnostics: vec![],
-        version: None,
-    });
+    if let Ok(path) = from_proto::vfs_path(&params.text_document.uri) {
+        if state.mem_docs.remove(&path).is_err() {
+            tracing::error!("orphan DidCloseTextDocument: {}", path);
+        }
 
+        // Clear diagnostics also for excluded files, just in case.
+        let value = state.vfs.read().unwrap().0.file_id(&path);
+        if let Some(file_id) = value {
+            state.diagnostics.clear_native_for(file_id);
+        }
+
+        // state
+        //     .semantic_tokens_cache
+        //     .lock()
+        //     .remove(&params.text_document.uri);
+
+        if let Some(path) = path.as_path() {
+            state.loader.handle.invalidate(path.to_path_buf());
+        }
+    }
     Ok(())
 }
 
@@ -97,7 +114,7 @@ pub fn handle_did_close_text_document(
     clippy::needless_pass_by_value,
     reason = "handlers should have this signature"
 )]
-pub fn handle_did_save_text_document(
+pub(crate) fn handle_did_save_text_document(
     state: &mut GlobalState,
     parameters: DidSaveTextDocumentParams,
 ) -> Result<()> {
@@ -159,10 +176,9 @@ pub(crate) fn handle_did_change_watched_files(
     parameters: DidChangeWatchedFilesParams,
 ) -> anyhow::Result<()> {
     for change in parameters.changes.iter().unique_by(|&it| &it.uri) {
-        if let Ok(path) = from_proto::abs_path(&change.uri) {
+        if let Ok(path) = from_proto::absolute_path(&change.uri) {
             state.loader.handle.invalidate(path);
         }
     }
     Ok(())
 }
-absolute_path

@@ -14,7 +14,7 @@ pub(crate) enum PositionEncoding {
     Wide(WideEncoding),
 }
 
-pub enum OffsetEncoding {
+pub(crate) enum OffsetEncoding {
     Utf8,
     Utf16,
 }
