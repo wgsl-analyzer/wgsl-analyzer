@@ -1,62 +1,124 @@
 {
-    "comments": {
-        "blockComment": [
-            "/*",
-            "*/"
-        ],
-        "lineComment": "//"
-    },
-    "brackets": [
-        [
-            "(",
-            ")"
-        ],
-        [
-            "[",
-            "]"
-        ],
-        [
-            "{",
-            "}"
-        ]
-    ],
-    "colorizedBracketPairs": [
-        [
-            "{",
-            "}"
-        ],
-        [
-            "[",
-            "]"
-        ],
-        [
-            "(",
-            ")"
-        ]
-    ],
-    "autoClosingPairs": [
-        {
-            "open": "{",
-            "close": "}"
-        },
-        {
-            "open": "[",
-            "close": "]"
-        },
-        {
-            "open": "(",
-            "close": ")"
-        },
-        {
-            "open": "\"",
-            "close": "\"",
-            "notIn": [
-                "string"
-            ]
-        },
-        {
-            "open": "/*",
-            "close": " */"
-        }
-    ],
+	"comments": {
+		"lineComment": "//",
+		"blockComment": [
+			"/*",
+			"*/"
+		]
+	},
+	"brackets": [
+		[
+			"{",
+			"}"
+		],
+		[
+			"[",
+			"]"
+		],
+		[
+			"(",
+			")"
+		]
+	],
+	"colorizedBracketPairs": [
+		[
+			"{",
+			"}"
+		],
+		[
+			"[",
+			"]"
+		],
+		[
+			"(",
+			")"
+		]
+	],
+	"autoClosingPairs": [
+		{
+			"open": "{",
+			"close": "}"
+		},
+		{
+			"open": "[",
+			"close": "]"
+		},
+		{
+			"open": "(",
+			"close": ")"
+		},
+		{
+			"open": "\"",
+			"close": "\"",
+			"notIn": [
+				"string"
+			]
+		},
+		{
+			"open": "/*",
+			"close": " */",
+			"notIn": [
+				"string"
+			]
+		},
+		{
+			"open": "`",
+			"close": "`",
+			"notIn": [
+				"string"
+			]
+		},
+		{
+			"open": "```",
+			"close": "```",
+			"notIn": [
+				"string"
+			]
+		}
+	],
+	"autoCloseBefore": ";:.,=}])> \n\t",
+	"surroundingPairs": [
+		[
+			"{",
+			"}"
+		],
+		[
+			"[",
+			"]"
+		],
+		[
+			"(",
+			")"
+		],
+		[
+			"<",
+			">"
+		],
+		[
+			"\"",
+			"\""
+		],
+		[
+			"'",
+			"'"
+		],
+		[
+			"`",
+			"`"
+		],
+		[
+			"```",
+			"```"
+		]
+	],
+	"indentationRules": {
+		"increaseIndentPattern": "^.*\\{[^}\"']*$|^.*\\([^\\)\"']*$",
+		"decreaseIndentPattern": "^\\s*(\\s*\\/[*].*[*]\\/\\s*)*[})]"
+	},
+	"folding": {
+		"markers": {
+			"start": "^\\s*#ifn?def\\b",
+			"end": "^\\s*#endif\\b"
+		}
+	}
 }
