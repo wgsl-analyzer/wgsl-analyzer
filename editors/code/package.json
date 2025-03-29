@@ -57,57 +57,31 @@
 		"vscode-languageclient": "^9.0.1"
 	},
 	"devDependencies": {
-		"@eslint/js": "^9.23.0",
-		"@stylistic/eslint-plugin-js": "^4.2.0",
-		"@stylistic/eslint-plugin": "^4.2.0",
+		"@eslint/js": "^9.21.0",
+		"@stylistic/eslint-plugin": "^4.0.1",
+		"@stylistic/eslint-plugin-js": "^4.0.1",
 		"@tsconfig/strictest": "^2.0.5",
-		"@types/node": "~22.13.14",
+		"@types/node": "~22.13.5",
 		"@types/vscode": "~1.97.0",
-		"@typescript-eslint/eslint-plugin": "^8.28.0",
-		"@typescript-eslint/parser": "^8.28.0",
+		"@typescript-eslint/eslint-plugin": "^8.24.1",
+		"@typescript-eslint/parser": "^8.24.1",
 		"@vscode/test-electron": "^2.4.1",
-		"@vscode/vsce": "^3.3.1",
-		"esbuild": "^0.25.1",
-		"eslint-config-prettier": "^10.1.1",
+		"@vscode/vsce": "^3.2.2",
+		"esbuild": "^0.25.0",
+		"eslint": "^9.21.0",
+		"eslint-config-prettier": "^10.0.1",
 		"eslint-define-config": "^2.1.0",
-		"eslint": "^9.23.0",
-		"node-fetch": "^3.3.2",
 		"ovsx": "0.10.1",
-		"prettier": "^3.5.3",
+		"prettier": "^3.5.2",
 		"tslib": "^2.8.1",
-		"typescript-eslint": "^8.28.0",
-		"typescript": "^5.8.2"
+		"typescript": "^5.7.3",
+		"typescript-eslint": "^8.24.1"
 	},
 	"main": "./out/main.js",
 	"activationEvents": [
 		"workspaceContains:*/*.wgsl"
 	],
 	"contributes": {
-		"languages": [
-			{
-				"id": "wgsl",
-				"extensions": [
-					".wgsl"
-				],
-				"aliases": [
-					"WGSL"
-				],
-				"configuration": "./language-configuration.json"
-			},
-			{
-				"id": "wgsl_syntax_tree",
-				"extensions": [
-					".wgslst"
-				]
-			}
-		],
-		"grammars": [
-			{
-				"language": "wgsl",
-				"scopeName": "source.wgsl",
-				"path": "./syntaxes/wgsl.tmLanguage.json"
-			}
-		],
 		"commands": [
 			{
 				"command": "wgsl-analyzer.syntaxTree",
@@ -123,105 +97,831 @@
 				"command": "wgsl-analyzer.fullSource",
 				"title": "Show full WGSL source",
 				"category": "WGSL Analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.viewFileText",
+				"title": "View File Text (as seen by the server)",
+				"category": "wgsl-analyzer (debug command)"
+			},
+			{
+				"command": "wgsl-analyzer.viewItemTree",
+				"title": "Debug ItemTree",
+				"category": "wgsl-analyzer (debug command)"
+			},
+			{
+				"command": "wgsl-analyzer.memoryUsage",
+				"title": "Memory Usage (Clears Database)",
+				"category": "wgsl-analyzer (debug command)"
+			},
+			{
+				"command": "wgsl-analyzer.matchingBrace",
+				"title": "Find matching brace",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.joinLines",
+				"title": "Join lines",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.analyzerStatus",
+				"title": "Status",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.reloadWorkspace",
+				"title": "Reload workspace",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.restartServer",
+				"title": "Restart server",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.startServer",
+				"title": "Start server",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.stopServer",
+				"title": "Stop server",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.onEnter",
+				"title": "Enhanced enter key",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.ssr",
+				"title": "Structural Search Replace",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.serverVersion",
+				"title": "Show RA Version",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.openDocs",
+				"title": "Open Docs",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.openExternalDocs",
+				"title": "Open External Docs",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.moveItemUp",
+				"title": "Move Item Up",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.moveItemDown",
+				"title": "Move Item Down",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.cancelFlycheck",
+				"title": "Cancel running flychecks",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.runFlycheck",
+				"title": "Run flycheck",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.clearFlycheck",
+				"title": "Clear flycheck diagnostics",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.revealImport",
+				"title": "Reveal File",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.syntaxTreeReveal",
+				"title": "Reveal Syntax Element",
+				"icon": "$(search)",
+				"category": "wgsl-analyzer (syntax tree)"
+			},
+			{
+				"command": "wgsl-analyzer.syntaxTreeCopy",
+				"title": "Copy",
+				"icon": "$(copy)",
+				"category": "wgsl-analyzer (syntax tree)"
+			},
+			{
+				"command": "wgsl-analyzer.syntaxTreeHideWhitespace",
+				"title": "Hide Whitespace",
+				"icon": "$(filter)",
+				"category": "wgsl-analyzer (syntax tree)"
+			},
+			{
+				"command": "wgsl-analyzer.syntaxTreeShowWhitespace",
+				"title": "Show Whitespace",
+				"icon": "$(filter-filled)",
+				"category": "wgsl-analyzer (syntax tree)"
+			},
+			{
+				"command": "wgsl-analyzer.viewMemoryLayout",
+				"title": "View Memory Layout",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.toggleCheckOnSave",
+				"title": "Toggle Check on Save",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.toggleLSPLogs",
+				"title": "Toggle LSP Logs",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.openWalkthrough",
+				"title": "Open Walkthrough",
+				"category": "wgsl-analyzer"
 			}
 		],
-		"configuration": {
-			"title": "WGSL analyzer",
-			"properties": {
-				"wgsl-analyzer.server.path": {
-					"type": [
-						"null",
-						"string"
-					],
-					"description": "Path to the wgsl-analyzer executable."
-				},
-				"wgsl-analyzer.diagnostics.typeErrors": {
-					"type": "boolean",
-					"default": true,
-					"description": "Controls whether to show type errors."
-				},
-				"wgsl-analyzer.diagnostics.nagaParsingErrors": {
-					"type": "boolean",
-					"default": false,
-					"description": "Controls whether to show naga's parsing errors."
-				},
-				"wgsl-analyzer.diagnostics.nagaValidationErrors": {
-					"type": "boolean",
-					"default": true,
-					"description": "Controls whether to show naga's validation errors."
-				},
-				"wgsl-analyzer.diagnostics.nagaVersion": {
-					"type": "string",
-					"enum": [
-						"0.14",
-						"0.19",
-						"0.22",
-						"main"
-					],
-					"default": "0.22",
-					"description": "Which version of naga to use for its diagnostics"
-				},
-				"wgsl-analyzer.customImports": {
-					"type": "object",
-					"additionalProperties": {
-						"type": "string"
-					},
-					"default": {},
-					"markdownDescription": "`#import` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports). To use objects from an import, add `#import <name>` to your WGSL."
-				},
-				"wgsl-analyzer.preprocessor.shaderDefs": {
-					"type": "array",
-					"items": {
-						"type": "string"
-					},
-					"default": [],
-					"markdownDescription": "Shader defines used in `#ifdef` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports)."
-				},
-				"wgsl-analyzer.trace.extension": {
-					"type": "boolean",
-					"default": false,
-					"description": "Log debug info in the WGSL Analyzer output pane."
-				},
-				"wgsl-analyzer.trace.server": {
-					"type": "boolean",
-					"default": false,
-					"description": "Log messages between client and server in the WGSL Analyzer output pane."
-				},
-				"wgsl-analyzer.inlayHints.enabled": {
-					"type": "boolean",
-					"default": true,
-					"description": "Whether to show inlay hints"
-				},
-				"wgsl-analyzer.inlayHints.typeHints": {
-					"type": "boolean",
-					"default": true,
-					"description": "Whether to show inlay hints for types of variable declarations"
-				},
-				"wgsl-analyzer.inlayHints.parameterHints": {
-					"type": "boolean",
-					"default": true,
-					"description": "Whether to show inlay hints for the names of function parameters"
-				},
-				"wgsl-analyzer.inlayHints.structLayoutHints": {
-					"type": "boolean",
-					"default": false,
-					"description": "Whether to show inlay hints for the layout of struct fields"
-				},
-				"wgsl-analyzer.inlayHints.typeVerbosity": {
-					"type": "string",
-					"enum": [
-						"full",
-						"compact",
-						"inner"
-					],
-					"enumDescriptions": [
-						"e.g. ref<uniform, f32, read_write>",
-						"e.g. ref<f32>",
-						"e.g. f32"
-					],
-					"default": "compact"
-				}
+		"keybindings": [
+			{
+				"command": "wgsl-analyzer.joinLines",
+				"key": "ctrl+shift+j",
+				"when": "editorTextFocus && editorLangId == wgsl"
 			}
+		],
+		"configuration": [
+			{
+				"title": "WGSL analyzer",
+				"properties": {
+					"wgsl-analyzer.diagnostics.typeErrors": {
+						"type": "boolean",
+						"default": true,
+						"description": "Controls whether to show type errors."
+					},
+					"wgsl-analyzer.diagnostics.nagaParsingErrors": {
+						"type": "boolean",
+						"default": false,
+						"description": "Controls whether to show naga's parsing errors."
+					},
+					"wgsl-analyzer.diagnostics.nagaValidationErrors": {
+						"type": "boolean",
+						"default": true,
+						"description": "Controls whether to show naga's validation errors."
+					},
+					"wgsl-analyzer.diagnostics.nagaVersion": {
+						"type": "string",
+						"enum": [
+							"0.14",
+							"0.19",
+							"0.22",
+							"main"
+						],
+						"default": "0.22",
+						"description": "Which version of naga to use for its diagnostics"
+					},
+					"wgsl-analyzer.customImports": {
+						"type": "object",
+						"additionalProperties": {
+							"type": "string"
+						},
+						"default": {},
+						"markdownDescription": "`#import` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports). To use objects from an import, add `#import <name>` to your WGSL."
+					},
+					"wgsl-analyzer.preprocessor.shaderDefs": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"default": [],
+						"markdownDescription": "Shader defines used in `#ifdef` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports)."
+					},
+					"wgsl-analyzer.inlayHints.enabled": {
+						"type": "boolean",
+						"default": true,
+						"description": "Whether to show inlay hints"
+					},
+					"wgsl-analyzer.inlayHints.typeHints": {
+						"type": "boolean",
+						"default": true,
+						"description": "Whether to show inlay hints for types of variable declarations"
+					},
+					"wgsl-analyzer.inlayHints.parameterHints": {
+						"type": "boolean",
+						"default": true,
+						"description": "Whether to show inlay hints for the names of function parameters"
+					},
+					"wgsl-analyzer.inlayHints.structLayoutHints": {
+						"type": "boolean",
+						"default": false,
+						"description": "Whether to show inlay hints for the layout of struct fields"
+					},
+					"wgsl-analyzer.inlayHints.typeVerbosity": {
+						"type": "string",
+						"enum": [
+							"full",
+							"compact",
+							"inner"
+						],
+						"enumDescriptions": [
+							"e.g. ref<uniform, f32, read_write>",
+							"e.g. ref<f32>",
+							"e.g. f32"
+						],
+						"default": "compact"
+					}
+				}
+			},
+			{
+				"title": "general",
+				"properties": {
+					"wgsl-analyzer.restartServerOnConfigChange": {
+						"markdownDescription": "Whether to restart the server automatically when certain settings that require a restart are changed.",
+						"default": false,
+						"type": "boolean"
+					},
+					"wgsl-analyzer.showUnlinkedFileNotification": {
+						"markdownDescription": "Whether to show a notification for unlinked files asking the user to add the corresponding Cargo.toml to the linked projects setting.",
+						"default": true,
+						"type": "boolean"
+					},
+					"wgsl-analyzer.showRequestFailedErrorNotification": {
+						"markdownDescription": "Whether to show error notifications for failing requests.",
+						"default": true,
+						"type": "boolean"
+					},
+					"wgsl-analyzer.showDependenciesExplorer": {
+						"markdownDescription": "Whether to show the dependencies view.",
+						"default": true,
+						"type": "boolean"
+					},
+					"wgsl-analyzer.showSyntaxTree": {
+						"markdownDescription": "Whether to show the syntax tree view.",
+						"default": false,
+						"type": "boolean"
+					},
+					"wgsl-analyzer.initializeStopped": {
+						"markdownDescription": "Do not start wgsl-analyzer server when the extension is activated.",
+						"default": false,
+						"type": "boolean"
+					}
+				}
+			},
+			{
+				"title": "statusBar",
+				"properties": {
+					"wgsl-analyzer.statusBar.clickAction": {
+						"type": "string",
+						"enum": [
+							"stopServer",
+							"openLogs"
+						],
+						"enumDescriptions": [
+							"Stop Server",
+							"Open Logs"
+						],
+						"default": "openLogs",
+						"markdownDescription": "Action to run when clicking the extension status bar item."
+					},
+					"wgsl-analyzer.statusBar.showStatusBar": {
+						"markdownDescription": "When to show the extension status bar.\n\n`\"always\"` Always show the status bar.\n\n`\"never\"` Never show the status bar.\n\n`{ documentSelector: <DocumentSelector>[] }` Show the status bar if the open file matches any of the given document selectors.\n\nSee [VS Code -- DocumentSelector](https://code.visualstudio.com/api/references/document-selector) for more information.",
+						"anyOf": [
+							{
+								"type": "string",
+								"enum": [
+									"always",
+									"never"
+								]
+							},
+							{
+								"type": "object",
+								"properties": {
+									"documentSelector": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"language": {
+													"type": "string"
+												},
+												"notebookType": {
+													"type": "string"
+												},
+												"scheme": {
+													"type": "string"
+												},
+												"pattern": {
+													"type": "string"
+												}
+											}
+										}
+									}
+								}
+							}
+						],
+						"default": {
+							"documentSelector": [
+								{
+									"language": "wgsl"
+								},
+								{
+									"pattern": "**/*.wgsl"
+								},
+								{
+									"scheme": "output",
+									"pattern": "extension-output-wgsl-analyzer.wgsl-analyzer*"
+								}
+							]
+						}
+					}
+				}
+			},
+			{
+				"title": "server",
+				"properties": {
+					"wgsl-analyzer.server.path": {
+						"type": [
+							"null",
+							"string"
+						],
+						"scope": "machine-overridable",
+						"default": null,
+						"markdownDescription": "Path to wgsl-analyzer executable (points to bundled binary by default)."
+					},
+					"wgsl-analyzer.server.extraEnv": {
+						"type": [
+							"null",
+							"object"
+						],
+						"additionalProperties": {
+							"type": [
+								"string",
+								"number"
+							]
+						},
+						"default": null,
+						"markdownDescription": "Extra environment variables that will be passed to the wgsl-analyzer executable. Useful for passing e.g. `WA_LOG` for debugging."
+					}
+				}
+			},
+			{
+				"title": "trace",
+				"properties": {
+					"wgsl-analyzer.trace.server": {
+						"type": "string",
+						"scope": "window",
+						"enum": [
+							"off",
+							"messages",
+							"verbose"
+						],
+						"enumDescriptions": [
+							"No traces",
+							"Error only",
+							"Full log"
+						],
+						"default": "off",
+						"description": "Trace requests to the wgsl-analyzer (this is usually overly verbose and not recommended for regular users)."
+					},
+					"wgsl-analyzer.trace.extension": {
+						"description": "Enable logging of VS Code extensions itself.",
+						"markdownDeprecationMessage": "Log level is now controlled by the [Developer: Set Log Level...](command:workbench.action.setLogLevel) command. You can set the log level for the current session and also the default log level from there. This is also available by clicking the gear icon on the OUTPUT tab when WGSL Analyzer Client is visible or by passing the --log wgsl-analyzer.wgsl-analyzer:debug parameter to VS Code.",
+						"type": "boolean",
+						"default": false
+					}
+				}
+			},
+			{
+				"title": "typing",
+				"properties": {
+					"wgsl-analyzer.typing.continueCommentsOnNewline": {
+						"markdownDescription": "Whether to prefix newlines after comments with the corresponding comment prefix.",
+						"default": true,
+						"type": "boolean"
+					}
+				}
+			},
+			{
+				"title": "diagnostics",
+				"properties": {
+					"wgsl-analyzer.diagnostics.previewNagaOutput": {
+						"markdownDescription": "Whether to show the main part of the rendered naga output of a diagnostic message.",
+						"default": false,
+						"type": "boolean"
+					},
+					"wgsl-analyzer.diagnostics.useNagaErrorCode": {
+						"markdownDescription": "Whether to show diagnostics using the original naga error code. If this is false, all naga diagnostics will have the code 'naga(Click for full compiler diagnostics)'",
+						"default": false,
+						"type": "boolean"
+					}
+				}
+			},
+			{},
+			{
+				"title": "assist",
+				"properties": {
+					"wgsl-analyzer.assist.termSearch.fuel": {
+						"markdownDescription": "Term search fuel in \"units of work\" for assists (Defaults to 1800).",
+						"default": 1800,
+						"type": "integer",
+						"minimum": 0
+					}
+				}
+			},
+			{
+				"title": "cachePriming",
+				"properties": {
+					"wgsl-analyzer.cachePriming.enable": {
+						"markdownDescription": "Warm up caches on project load.",
+						"default": true,
+						"type": "boolean"
+					}
+				}
+			},
+			{
+				"title": "cachePriming",
+				"properties": {
+					"wgsl-analyzer.cachePriming.numThreads": {
+						"markdownDescription": "How many worker threads to handle priming caches. The default `0` means to pick automatically.",
+						"default": "physical",
+						"anyOf": [
+							{
+								"type": "number",
+								"minimum": 0,
+								"maximum": 255
+							},
+							{
+								"type": "string",
+								"enum": [
+									"physical",
+									"logical"
+								],
+								"enumDescriptions": [
+									"Use the number of physical cores",
+									"Use the number of logical cores"
+								]
+							}
+						]
+					}
+				}
+			},
+			{}
+		],
+		"configurationDefaults": {
+			"explorer.fileNesting.patterns": {}
+		},
+		"languages": [
+			{
+				"id": "wa_syntax_tree",
+				"extensions": [
+					".wast"
+				]
+			},
+			{
+				"id": "wgsl",
+				"extensions": [
+					".wgsl"
+				],
+				"aliases": [
+					"WGSL"
+				],
+				"configuration": "language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "wgsl",
+				"scopeName": "source.wgsl",
+				"path": "./syntaxes/wgsl.tmLanguage.json"
+			},
+			{
+				"language": "wa_syntax_tree",
+				"scopeName": "source.wa_syntax_tree",
+				"path": "wa_syntax_tree.tmGrammar.json"
+			}
+		],
+		"semanticTokenTypes": [
+			{
+				"id": "angle",
+				"description": "Style for < or >",
+				"superType": "punctuation"
+			},
+			{
+				"id": "arithmetic",
+				"description": "Style for arithmetic operators",
+				"superType": "operator"
+			},
+			{
+				"id": "attribute",
+				"description": "Style for attributes"
+			},
+			{
+				"id": "attributeBracket",
+				"description": "Style for attribute invocation brackets, that is the `#[` and `]` tokens",
+				"superType": "punctuation"
+			},
+			{
+				"id": "bitwise",
+				"description": "Style for bitwise operators",
+				"superType": "operator"
+			},
+			{
+				"id": "boolean",
+				"description": "Style for boolean literals",
+				"superType": "keyword"
+			},
+			{
+				"id": "brace",
+				"description": "Style for { or }",
+				"superType": "punctuation"
+			},
+			{
+				"id": "bracket",
+				"description": "Style for [ or ]",
+				"superType": "punctuation"
+			},
+			{
+				"id": "builtinAttribute",
+				"description": "Style for builtin attributes",
+				"superType": "attribute"
+			},
+			{
+				"id": "builtinType",
+				"description": "Style for builtin types",
+				"superType": "type"
+			},
+			{
+				"id": "character",
+				"description": "Style for character literals",
+				"superType": "string"
+			},
+			{
+				"id": "colon",
+				"description": "Style for :",
+				"superType": "punctuation"
+			},
+			{
+				"id": "comma",
+				"description": "Style for ,",
+				"superType": "punctuation"
+			},
+			{
+				"id": "comparison",
+				"description": "Style for comparison operators",
+				"superType": "operator"
+			},
+			{
+				"id": "constParameter",
+				"description": "Style for const generics"
+			},
+			{
+				"id": "const",
+				"description": "Style for consts",
+				"superType": "variable"
+			},
+			{
+				"id": "derive",
+				"description": "Style for derives",
+				"superType": "attribute"
+			},
+			{
+				"id": "deriveHelper",
+				"description": "Style for derive helpers",
+				"superType": "attribute"
+			},
+			{
+				"id": "dot",
+				"description": "Style for .",
+				"superType": "punctuation"
+			},
+			{
+				"id": "escapeSequence",
+				"description": "Style for char or byte escapes in strings"
+			},
+			{
+				"id": "formatSpecifier",
+				"description": "Style for {} placeholders in format strings"
+			},
+			{
+				"id": "invalidEscapeSequence",
+				"description": "Style for invalid char or byte escapes in strings"
+			},
+			{
+				"id": "label",
+				"description": "Style for labels"
+			},
+			{
+				"id": "lifetime",
+				"description": "Style for lifetimes"
+			},
+			{
+				"id": "logical",
+				"description": "Style for logic operators",
+				"superType": "operator"
+			},
+			{
+				"id": "macroBang",
+				"description": "Style for the ! token of macro calls",
+				"superType": "punctuation"
+			},
+			{
+				"id": "parenthesis",
+				"description": "Style for ( or )",
+				"superType": "punctuation"
+			},
+			{
+				"id": "procMacro",
+				"description": "Style for proc macro code",
+				"superType": "macro"
+			},
+			{
+				"id": "punctuation",
+				"description": "Style for generic punctuation"
+			},
+			{
+				"id": "operator",
+				"description": "Style for operators",
+				"superType": "punctuation"
+			},
+			{
+				"id": "selfKeyword",
+				"description": "Style for the self keyword",
+				"superType": "keyword"
+			},
+			{
+				"id": "selfTypeKeyword",
+				"description": "Style for the self type keyword",
+				"superType": "keyword"
+			},
+			{
+				"id": "semicolon",
+				"description": "Style for ;",
+				"superType": "punctuation"
+			},
+			{
+				"id": "static",
+				"description": "Style for statics",
+				"superType": "variable"
+			},
+			{
+				"id": "toolModule",
+				"description": "Style for tool module attributes",
+				"superType": "decorator"
+			},
+			{
+				"id": "typeAlias",
+				"description": "Style for type aliases",
+				"superType": "type"
+			},
+			{
+				"id": "union",
+				"description": "Style for C-style untagged unions",
+				"superType": "type"
+			},
+			{
+				"id": "unresolvedReference",
+				"description": "Style for names which can not be resolved due to compilation errors"
+			}
+		],
+		"semanticTokenModifiers": [],
+		"semanticTokenScopes": [],
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "wgsl-analyzer.viewFileText",
+					"when": "inWgslProject"
+				},
+				{
+					"command": "wgsl-analyzer.matchingBrace",
+					"when": "inWgslProject"
+				},
+				{
+					"command": "wgsl-analyzer.joinLines",
+					"when": "inWgslProject"
+				},
+				{
+					"command": "wgsl-analyzer.analyzerStatus",
+					"when": "inWgslProject"
+				},
+				{
+					"command": "wgsl-analyzer.memoryUsage",
+					"when": "inWgslProject"
+				},
+				{
+					"command": "wgsl-analyzer.reloadWorkspace",
+					"when": "inWgslProject"
+				},
+				{
+					"command": "wgsl-analyzer.restartServer",
+					"when": "inWgslProject"
+				},
+				{
+					"command": "wgsl-analyzer.onEnter",
+					"when": "inWgslProject"
+				},
+				{
+					"command": "wgsl-analyzer.ssr",
+					"when": "inWgslProject"
+				},
+				{
+					"command": "wgsl-analyzer.serverVersion",
+					"when": "inWgslProject"
+				},
+				{
+					"command": "wgsl-analyzer.openDocs",
+					"when": "inWgslProject"
+				},
+				{
+					"command": "wgsl-analyzer.viewMemoryLayout",
+					"when": "inWgslProject"
+				},
+				{
+					"command": "wgsl-analyzer.toggleLSPLogs",
+					"when": "inWgslProject"
+				},
+				{
+					"command": "wgsl-analyzer.openWalkthrough"
+				},
+				{
+					"command": "wgsl-analyzer.syntaxTreeReveal",
+					"when": "false"
+				},
+				{
+					"command": "wgsl-analyzer.syntaxTreeCopy",
+					"when": "false"
+				},
+				{
+					"command": "wgsl-analyzer.syntaxTreeHideWhitespace",
+					"when": "false"
+				},
+				{
+					"command": "wgsl-analyzer.syntaxTreeShowWhitespace",
+					"when": "false"
+				}
+			],
+			"editor/context": [
+				{
+					"command": "wgsl-analyzer.openDocs",
+					"when": "inWgslProject && editorTextFocus && editorLangId == wgsl",
+					"group": "navigation@1001"
+				}
+			],
+			"view/title": [
+				{
+					"command": "wgsl-analyzer.syntaxTreeHideWhitespace",
+					"group": "navigation",
+					"when": "view == wgslSyntaxTree && !wgslSyntaxTree.hideWhitespace"
+				},
+				{
+					"command": "wgsl-analyzer.syntaxTreeShowWhitespace",
+					"group": "navigation",
+					"when": "view == wgslSyntaxTree && wgslSyntaxTree.hideWhitespace"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "wgsl-analyzer.syntaxTreeCopy",
+					"group": "inline",
+					"when": "view == wgslSyntaxTree"
+				},
+				{
+					"command": "wgsl-analyzer.syntaxTreeReveal",
+					"group": "inline",
+					"when": "view == wgslSyntaxTree"
+				}
+			]
+		},
+		"views": {
+			"explorer": [
+				{
+					"icon": "$(package)",
+					"id": "wgslImports",
+					"name": "WGSL Imports",
+					"when": "inWgslProject && config.wgsl-analyzer.showImportsExplorer"
+				}
+			],
+			"wgslSyntaxTreeContainer": [
+				{
+					"icon": "$(file-code)",
+					"id": "wgslSyntaxTree",
+					"name": "Wgsl Syntax Tree",
+					"when": "inWgslProject && config.wgsl-analyzer.showSyntaxTree"
+				}
+			]
+		},
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "wgslSyntaxTreeContainer",
+					"title": "WGSL Syntax Tree",
+					"icon": "$(list-tree)"
+				}
+			]
 		}
 	}
 }
