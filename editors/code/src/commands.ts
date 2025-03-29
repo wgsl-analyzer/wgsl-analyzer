@@ -814,114 +814,279 @@ export function viewMemoryLayout(ctx: CtxInit): Cmd {
             box-sizing: border-box;
         }
 
-        private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent) {
-            if (isWgslDocument(event.document)) {
-                // We need to order this after language server updates, but there's no API for that.
-                // Hence, good old sleep().
-                void sleep(10).then(() => this.eventEmitter.fire(this.uri));
-            }
-        }
-        private onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined) {
-            if (editor && isWgslEditor(editor)) {
-                this.eventEmitter.fire(this.uri);
-            }
-        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            min-height: 100%;
+            height: 100vh;
+            padding: 32px;
+            position: relative;
+            display: block;
 
-        provideTextDocumentContent(uri: vscode.Uri, ct: vscode.CancellationToken): vscode.ProviderResult<string> {
-            const wgslEditor = ctx.activeWgslEditor;
-            if (!wgslEditor) return "";
-            let selection = vscode.window.activeTextEditor.selection;
-            const params = {
-              textDocument: { uri: wgslEditor.document.uri.toString() },
-              range: selection.isEmpty ? null : { start: selection.start, end: selection.end },
-            };
-            return ctx.client.sendRequest(lsp_ext.syntaxTree, params, ct);
+            background-color: var(--vscode-editor-background);
+            font-family: var(--vscode-editor-font-family);
+            font-size: var(--vscode-editor-font-size);
+            color: var(--vscode-editor-foreground);
         }
 
-        get onDidChange(): vscode.Event<vscode.Uri> {
-            return this.eventEmitter.event;
+        .container {
+            position: relative;
         }
-    };
 
-    ctx.pushCleanup(vscode.workspace.registerTextDocumentContentProvider("wgsl-analyzer", tdcp));
-    ctx.pushCleanup(vscode.languages.setLanguageConfiguration("wgsl_syntax_tree", {
-        brackets: [["[", ")"]],
-    }));
+        .trans {
+            transition: all 0.2s ease-in-out;
+        }
 
-    return async () => {
-        const uri = tdcp.uri;
+        .grid {
+            height: 100%;
+            position: relative;
+            color: var(--vscode-commandCenter-activeBorder);
+            pointer-events: none;
+        }
 
-        let document = await vscode.workspace.openTextDocument(uri);
+        .grid-line {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background-color: var(--vscode-commandCenter-activeBorder);
+        }
 
-        tdcp.eventEmitter.fire(uri);
+        #tooltip {
+            position: fixed;
+            display: none;
+            z-index: 1;
+            pointer-events: none;
+            padding: 4px 8px;
+            z-index: 2;
 
-        await vscode.window.showTextDocument(document, {
-            viewColumn: vscode.ViewColumn.Two,
-            preserveFocus: true
-        });
-    };
+            color: var(--vscode-editorHoverWidget-foreground);
+            background-color: var(--vscode-editorHoverWidget-background);
+            border: 1px solid var(--vscode-editorHoverWidget-border);
+        }
 
+        #tooltip b {
+            color: var(--vscode-editorInlayHint-typeForeground);
+        }
+
+        #tooltip ul {
+            margin-left: 0;
+            padding-left: 20px;
+        }
+
+        table {
+            position: absolute;
+            transform: rotateZ(90deg) rotateX(180deg);
+            transform-origin: top left;
+            border-collapse: collapse;
+            table-layout: fixed;
+            left: 48px;
+            top: 0;
+            max-height: calc(100vw - 64px - 48px);
+            z-index: 1;
+        }
+
+        td {
+            border: 1px solid var(--vscode-focusBorder);
+            writing-mode: vertical-rl;
+            text-orientation: sideways-right;
+
+            height: 80px;
+        }
+
+        td p {
+            height: calc(100% - 16px);
+            width: calc(100% - 8px);
+            margin: 8px 4px;
+            display: inline-block;
+            transform: rotateY(180deg);
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        td p * {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            display: inline-block;
+            height: 100%;
+        }
+
+        td p b {
+            color: var(--vscode-editorInlayHint-typeForeground);
+        }
+
+        td:hover {
+            background-color: var(--vscode-editor-hoverHighlightBackground);
+        }
+
+        td:empty {
+            visibility: hidden;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="tooltip"></div>
+</body>
+<script>(function() {
+
+const data = ${JSON.stringify(expanded)}
+
+if (!(data && data.nodes.length)) {
+    document.body.innerText = "Not Available"
+    return
 }
 
-export function debugCommand(ctx: Ctx): Cmd {
-    return () => {
-        const wgslEditor = ctx.activeWgslEditor;
-        if (!wgslEditor) return;
+data.nodes.map(n => {
+    n.typename = n.typename.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', ' & quot; ').replaceAll("'", '&#039;')
+    return n
+})
 
-        let position = wgslEditor.selection.active;
-        const params = { textDocument: { uri: wgslEditor.document.uri.toString() }, position };
-        ctx.client.sendRequest(lsp_ext.debugCommand, params);
-    };
+let height = window.innerHeight - 64
+
+addEventListener("resize", e => {
+    const new_height = window.innerHeight - 64
+    height = new_height
+    container.classList.remove("trans")
+    table.classList.remove("trans")
+    locate()
+    setTimeout(() => { // give delay to redraw, annoying but needed
+        container.classList.add("trans")
+        table.classList.add("trans")
+    }, 0)
+})
+
+const container = document.createElement("div")
+container.classList.add("container")
+container.classList.add("trans")
+document.body.appendChild(container)
+
+const tooltip = document.getElementById("tooltip")
+
+let y = 0
+let zoom = 1.0
+
+const table = document.createElement("table")
+table.classList.add("trans")
+container.appendChild(table)
+const rows = []
+
+function node_t(index, depth, offset) {
+    if (!rows[depth]) {
+        rows[depth] = { el: document.createElement("tr"), offset: 0 }
+    }
+
+    if (rows[depth].offset < offset) {
+        const pad = document.createElement("td")
+        pad.colSpan = offset - rows[depth].offset
+        rows[depth].el.appendChild(pad)
+        rows[depth].offset += offset - rows[depth].offset
+    }
+
+    const td = document.createElement("td")
+    td.innerHTML = '<p><span>' + data.nodes[index].itemName + ':</span> <b>' + data.nodes[index].typename + '</b></p>'
+
+    td.colSpan = data.nodes[index].size
+
+    td.addEventListener("mouseover", e => {
+        const node = data.nodes[index]
+        tooltip.innerHTML = node.itemName + ": <b>" + node.typename + "</b><br/>"
+            + "<ul>"
+            + "<li>size = " + node.size + "</li>"
+            + "<li>align = " + node.alignment + "</li>"
+            + "<li>field offset = " + node.offset + "</li>"
+            + "</ul>"
+            + "<i>double click to focus</i>"
+
+        tooltip.style.display = "block"
+    })
+    td.addEventListener("mouseleave", _ => tooltip.style.display = "none")
+    const total_offset = rows[depth].offset
+    td.addEventListener("dblclick", e => {
+        const node = data.nodes[index]
+        zoom = data.nodes[0].size / node.size
+        y = -(total_offset) / data.nodes[0].size * zoom
+        x = 0
+        locate()
+    })
+
+    rows[depth].el.appendChild(td)
+    rows[depth].offset += data.nodes[index].size
+
+
+    if (data.nodes[index].childrenStart != -1) {
+        for (let i = 0; i < data.nodes[index].childrenLen; i++) {
+            if (data.nodes[data.nodes[index].childrenStart + i].size) {
+                node_t(data.nodes[index].childrenStart + i, depth + 1, offset + data.nodes[data.nodes[index].childrenStart + i].offset)
+            }
+        }
+    }
 }
 
-export function showFullSource(ctx: Ctx): Cmd {
-    const tdcp = new class implements vscode.TextDocumentContentProvider {
-        readonly uri = vscode.Uri.parse("wgsl-analyzer:///fullSource.wgsl");
-        readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
-        constructor() {
-            vscode.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument, this, ctx.subscriptions);
-            vscode.window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor, this, ctx.subscriptions);
-        }
+node_t(0, 0, 0)
 
-        private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent) {
-            if (isWgslDocument(event.document)) {
-                // We need to order this after language server updates, but there's no API for that.
-                // Hence, good old sleep().
-                void sleep(10).then(() => this.eventEmitter.fire(this.uri));
-            }
-        }
-        private onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined) {
-            if (editor && isWgslEditor(editor)) {
-                this.eventEmitter.fire(this.uri);
-            }
-        }
+for (const row of rows) table.appendChild(row.el)
 
-        provideTextDocumentContent(uri: vscode.Uri, ct: vscode.CancellationToken): vscode.ProviderResult<string> {
-            const wgslEditor = ctx.activeWgslEditor;
-            if (!wgslEditor) return "";
+const grid = document.createElement("div")
+grid.classList.add("grid")
+container.appendChild(grid)
 
-            const params = { textDocument: { uri: wgslEditor.document.uri.toString() } };
-            return ctx.client.sendRequest(lsp_ext.fullSource, params, ct);
-        }
+for (let i = 0; i < data.nodes[0].size / 8 + 1; i++) {
+    const el = document.createElement("div")
+    el.classList.add("grid-line")
+    el.style.top = (i / (data.nodes[0].size / 8) * 100) + "%"
+    el.innerText = i * 8
+    grid.appendChild(el)
+}
 
-        get onDidChange(): vscode.Event<vscode.Uri> {
-            return this.eventEmitter.event;
-        }
-    };
+addEventListener("mousemove", e => {
+    tooltip.style.top = e.clientY + 10 + "px"
+    tooltip.style.left = e.clientX + 10 + "px"
+})
 
-    ctx.pushCleanup(vscode.workspace.registerTextDocumentContentProvider("wgsl-analyzer", tdcp));
+function locate() {
+    container.style.top = height * y + "px"
+    container.style.height = (height * zoom) + "px"
 
-    return async () => {
-        const wgslEditor = ctx.activeWgslEditor;
-        if (!wgslEditor) return;
+    table.style.width = container.style.height
+}
 
-        const uri = tdcp.uri;
-        const document = await vscode.workspace.openTextDocument(uri);
-        vscode.languages.setTextDocumentLanguage(document, "wgsl");
+locate()
 
-        await vscode.window.showTextDocument(document, {
-            viewColumn: vscode.ViewColumn.Two,
-            preserveFocus: true
-        });
-    };
+})()
+</script>
+</html>`;
+
+		ctx.pushExtCleanup(document);
+	};
+}
+
+export function toggleCheckOnSave(ctx: Ctx): Cmd {
+	return async () => {
+		await ctx.config.toggleCheckOnSave();
+		ctx.refreshServerStatus();
+	};
+}
+
+export function toggleLSPLogs(ctx: Ctx): Cmd {
+	return async () => {
+		const config = vscode.workspace.getConfiguration("wgsl-analyzer");
+		const targetValue =
+			config.get<string | undefined>("trace.server") === "verbose" ? undefined : "verbose";
+
+		await config.update("trace.server", targetValue, vscode.ConfigurationTarget.Workspace);
+		if (targetValue && ctx.client && ctx.client.traceOutputChannel) {
+			ctx.client.traceOutputChannel.show();
+		}
+	};
+}
+
+export function openWalkthrough(_: Ctx): Cmd {
+	return async () => {
+		await vscode.commands.executeCommand(
+			"workbench.action.openWalkthrough",
+			"wgsl-analyzer.wgsl-analyzer#landing",
+			false,
+		);
+	};
 }

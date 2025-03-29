@@ -7,7 +7,7 @@ import { assert, unwrapUndefinable } from "./util";
 import * as diagnostics from "./diagnostics";
 import { WorkspaceEdit } from "vscode";
 import {
-	// type Config,
+	type Config,
 	prepareVSCodeConfig,
 } from "./config";
 import { sep as pathSeparator } from "path";
@@ -18,10 +18,10 @@ export async function createClient(
 	outputChannel: vscode.OutputChannel,
 	initializationOptions: vscode.WorkspaceConfiguration,
 	serverOptions: lc.ServerOptions,
-	// config: Config,
+	config: Config,
 	unlinkedFiles: vscode.Uri[],
 ): Promise<lc.LanguageClient> {
-	const raMiddleware: lc.Middleware = {
+	const waMiddleware: lc.Middleware = {
 		workspace: {
 			// HACK: This is a workaround, when the client has been disposed, VSCode
 			// continues to emit events to the client and the default one for this event
@@ -32,7 +32,7 @@ export async function createClient(
 				}
 			},
 			async configuration(
-				parameters: lc.ConfigurationParameters,
+				parameters: lc.ConfigurationParams,
 				token: vscode.CancellationToken,
 				next: lc.ConfigurationRequest.HandlerSignature,
 			) {
@@ -185,7 +185,7 @@ export async function createClient(
 			token: vscode.CancellationToken,
 			_next: lc.ProvideCodeActionsSignature,
 		) {
-			const parameters: lc.CodeActionParameters = {
+			const parameters: lc.CodeActionParams = {
 				textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(document),
 				range: client.code2ProtocolConverter.asRange(range),
 				context: await client.code2ProtocolConverter.asCodeActionContext(context, token),
@@ -277,7 +277,7 @@ export async function createClient(
 		diagnosticCollectionName: "wgsl",
 		traceOutputChannel,
 		outputChannel,
-		middleware: raMiddleware,
+		middleware: waMiddleware,
 		markdown: {
 			supportHtml: true,
 		},
@@ -291,13 +291,19 @@ export async function createClient(
 	);
 
 	// To turn on all proposed features use: client.registerProposedFeatures();
-	client.registerFeature(new ExperimentalFeatures());
+	client.registerFeature(new ExperimentalFeatures(config));
 	client.registerFeature(new OverrideFeatures());
 
 	return client;
 }
 
 class ExperimentalFeatures implements lc.StaticFeature {
+    private readonly testExplorer: boolean;
+
+    constructor(config: Config) {
+        this.testExplorer = config.testExplorer || false;
+	}
+	
 	getState(): lc.FeatureState {
 		return { kind: "static" };
 	}
@@ -311,6 +317,7 @@ class ExperimentalFeatures implements lc.StaticFeature {
 			colorDiagnosticOutput: true,
 			openServerLogs: true,
 			localDocs: true,
+            testExplorer: this.testExplorer,
 			commands: {
 				commands: [
 					"wgsl-analyzer.showReferences",
