@@ -10,6 +10,22 @@ on:
       - release
       - trigger-nightly
 
+permissions:
+  actions: none
+  attestations: none
+  checks: none
+  contents: none
+  deployments: none
+  id-token: none
+  issues: none
+  discussions: none
+  packages: none
+  pages: none
+  pull-requests: none
+  repository-projects: none
+  security-events: none
+  statuses: none
+
 env:
   CARGO_INCREMENTAL: 0
   CARGO_NET_RETRY: 10
