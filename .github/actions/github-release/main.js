@@ -112,20 +112,22 @@ async function runOnce() {
   }
 }
 
-async function runWithRetry(f) {
+async function runWithRetry(my_function) {
   const retries = 10;
   const maxDelay = 4000;
   let delay = 1000;
 
-  for (let i = 0; i < retries; i++) {
+  for (let index = 0; index < retries; index++) {
     try {
-      await f();
+      await my_function();
       break;
-    } catch (e) {
-      if (i === retries - 1)
-        throw e;
+    } catch (error) {
+      if (index === retries - 1)
+	  {
+		  throw error;
+	  }
 
-      core.error(e);
+      core.error(error);
       const currentDelay = Math.round(Math.random() * delay);
       core.info(`sleeping ${currentDelay} ms`);
       await sleep(currentDelay);
@@ -138,7 +140,7 @@ async function run() {
   await runWithRetry(runOnce);
 }
 
-run().catch(err => {
-  core.error(err);
-  core.setFailed(err.message);
+run().catch(error => {
+  core.error(error);
+  core.setFailed(error.message);
 });
