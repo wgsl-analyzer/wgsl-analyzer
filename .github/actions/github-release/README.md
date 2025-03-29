@@ -1,7 +1,6 @@
 # github-release
 
-Copy-pasted from
-https://github.com/bytecodealliance/wasmtime/tree/8acfdbdd8aa550d1b84e0ce1e6222a6605d14e38/.github/actions/github-release
+Copy-pasted from <https://github.com/bytecodealliance/wasmtime/tree/8acfdbdd8aa550d1b84e0ce1e6222a6605d14e38/.github/actions/github-release>
 
 An action used to publish GitHub releases for `wasmtime`.
 
