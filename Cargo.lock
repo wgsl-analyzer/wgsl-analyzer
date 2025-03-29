@@ -28,18 +28,12 @@ dependencies = [
 
 [[package]]
 name = "always-assert"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4436e0292ab1bb631b42973c61205e704475fe8126af845c8d923c0996328127"
-dependencies = [
- "log",
-]
-
-[[package]]
-name = "always-assert"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1078fa1ce1e34b1872d8611ad921196d76bdd7027e949fbe31231abde201892"
+dependencies = [
+ "tracing",
+]
 
 [[package]]
 name = "anyhow"
@@ -782,7 +776,7 @@ dependencies = [
 name = "ide-completion"
 version = "0.0.0"
 dependencies = [
- "always-assert 0.2.0",
+ "always-assert",
  "base-db",
  "either",
  "hir",
@@ -839,6 +833,17 @@ dependencies = [
 
 [[package]]
 name = "inotify"
+version = "0.9.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8069d3ec154eb856955c1c0fbffefbf5f3c40a104ec912d4797314c1801abff"
+dependencies = [
+ "bitflags 1.3.2",
+ "inotify-sys",
+ "libc",
+]
+
+[[package]]
+name = "inotify"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f37dccff2791ab604f9babef0ba14fbe0be30bd368dc541e2b08d07c8aa908f3"
@@ -879,9 +884,9 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.10.5"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
+checksum = "ba291022dbbd398a455acf126c1e341954079855bc60dfdda641363bd6922569"
 dependencies = [
  "either",
 ]
@@ -1094,6 +1099,18 @@ dependencies = [
 
 [[package]]
 name = "mio"
+version = "0.8.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4a650543ca06a924e8b371db273b2756685faae30f8487da1b56505a8f78b0c"
+dependencies = [
+ "libc",
+ "log",
+ "wasi",
+ "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "mio"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2886843bf800fba2e3377cff24abf6379b4c4d5c6681eaf9ea5b0d15090450bd"
@@ -1102,15 +1119,6 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "miow"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52ffbca2f655e33c08be35d87278e5b18b89550a37dbd598c20db92f6a471123"
-dependencies = [
- "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -1221,6 +1229,25 @@ checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 
 [[package]]
 name = "notify"
+version = "6.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6205bd8bb1e454ad2e27422015fb5e4f2bcc7e08fa8f27058670d208324a4d2d"
+dependencies = [
+ "bitflags 2.9.0",
+ "crossbeam-channel",
+ "filetime",
+ "fsevent-sys",
+ "inotify 0.9.6",
+ "kqueue",
+ "libc",
+ "log",
+ "mio 0.8.11",
+ "walkdir",
+ "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "notify"
 version = "8.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2fee8403b3d66ac7b26aee6e40a897d85dc5ce26f44da36b8b73e987cc52e943"
@@ -1228,11 +1255,11 @@ dependencies = [
  "bitflags 2.9.0",
  "filetime",
  "fsevent-sys",
- "inotify",
+ "inotify 0.11.0",
  "kqueue",
  "libc",
  "log",
- "mio",
+ "mio 1.0.3",
  "notify-types",
  "walkdir",
  "windows-sys 0.59.0",
@@ -1389,7 +1416,10 @@ dependencies = [
 [[package]]
 name = "paths"
 version = "0.0.0"
-source = "git+https://github.com/rust-lang/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6#7cce80c1738e8576ba715ec87dc8fcf28da0c5c6"
+dependencies = [
+ "camino",
+]
 
 [[package]]
 name = "percent-encoding"
@@ -1802,13 +1832,13 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 name = "stdx"
 version = "0.0.0"
 dependencies = [
- "always-assert 0.2.0",
+ "always-assert",
  "backtrace",
  "crossbeam-channel",
  "itertools 0.14.0",
  "jod-thread",
  "libc",
- "miow 0.6.0",
+ "miow",
  "tracing",
  "windows-sys 0.59.0",
 ]
@@ -1816,14 +1846,15 @@ dependencies = [
 [[package]]
 name = "stdx"
 version = "0.0.0"
-source = "git+https://github.com/rust-lang/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6#7cce80c1738e8576ba715ec87dc8fcf28da0c5c6"
 dependencies = [
- "always-assert 0.1.3",
+ "always-assert",
  "crossbeam-channel",
+ "itertools 0.12.1",
  "jod-thread",
  "libc",
- "miow 0.5.0",
- "winapi",
+ "miow",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -1920,9 +1951,9 @@ dependencies = [
 [[package]]
 name = "text-edit"
 version = "0.0.0"
-source = "git+https://github.com/rust-lang/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6#7cce80c1738e8576ba715ec87dc8fcf28da0c5c6"
 dependencies = [
- "itertools 0.10.5",
+ "itertools 0.12.1",
  "text-size",
 ]
 
@@ -2223,14 +2254,16 @@ checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 [[package]]
 name = "vfs"
 version = "0.0.0"
-source = "git+https://github.com/rust-lang/rust-analyzer?rev=8a23314#8a2331450a2fa269aa60818b224a2beaef7d7198"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6#7cce80c1738e8576ba715ec87dc8fcf28da0c5c6"
 dependencies = [
+ "crossbeam-channel",
  "fst",
  "indexmap 2.8.0",
  "nohash-hasher",
  "paths",
  "rustc-hash 1.1.0",
- "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=8a23314)",
+ "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6)",
+ "tracing",
 ]
 
 [[package]]
@@ -2239,11 +2272,27 @@ version = "0.0.0"
 dependencies = [
  "camino",
  "crossbeam-channel",
- "notify",
+ "notify 8.0.0",
  "paths",
  "rayon",
  "rustc-hash 2.1.1",
  "stdx 0.0.0",
+ "tracing",
+ "vfs",
+ "walkdir",
+]
+
+[[package]]
+name = "vfs-notify"
+version = "0.0.0"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6#7cce80c1738e8576ba715ec87dc8fcf28da0c5c6"
+dependencies = [
+ "crossbeam-channel",
+ "notify 6.1.1",
+ "paths",
+ "rayon",
+ "rustc-hash 1.1.0",
+ "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6)",
  "tracing",
  "vfs",
  "walkdir",
@@ -2269,7 +2318,7 @@ checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
 name = "wgsl-analyzer"
 version = "0.0.0"
 dependencies = [
- "always-assert 0.2.0",
+ "always-assert",
  "anyhow",
  "base-db",
  "base64",
@@ -2317,6 +2366,7 @@ dependencies = [
  "tracing-tree",
  "triomphe",
  "vfs",
+ "vfs-notify 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6)",
  "walkdir",
  "windows-sys 0.59.0",
  "xflags",
@@ -2457,21 +2507,6 @@ dependencies = [
 
 [[package]]
 name = "windows-sys"
-version = "0.42.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a3e1820f08b8513f676f7ab6c1f99ff312fb97b553d30ff4dd86f9f15728aa7"
-dependencies = [
- "windows_aarch64_gnullvm 0.42.2",
- "windows_aarch64_msvc 0.42.2",
- "windows_i686_gnu 0.42.2",
- "windows_i686_msvc 0.42.2",
- "windows_x86_64_gnu 0.42.2",
- "windows_x86_64_gnullvm 0.42.2",
- "windows_x86_64_msvc 0.42.2",
-]
-
-[[package]]
-name = "windows-sys"
 version = "0.48.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "677d2418bec65e3338edb076e806bc1ec15693c5d0104683f2efe857f61056a9"
@@ -2546,12 +2581,6 @@ dependencies = [
 
 [[package]]
 name = "windows_aarch64_gnullvm"
-version = "0.42.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "597a5118570b68bc08d8d59125332c54f1ba9d9adeedeef5b99b02ba2b0698f8"
-
-[[package]]
-name = "windows_aarch64_gnullvm"
 version = "0.48.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b38e32f0abccf9987a4e3079dfb67dcd799fb61361e53e2882c3cbaf0d905d8"
@@ -2570,12 +2599,6 @@ checksum = "86b8d5f90ddd19cb4a147a5fa63ca848db3df085e25fee3cc10b39b6eebae764"
 
 [[package]]
 name = "windows_aarch64_msvc"
-version = "0.42.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e08e8864a60f06ef0d0ff4ba04124db8b0fb3be5776a5cd47641e942e58c4d43"
-
-[[package]]
-name = "windows_aarch64_msvc"
 version = "0.48.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc35310971f3b2dbbf3f0690a219f40e2d9afcf64f9ab7cc1be722937c26b4bc"
@@ -2591,12 +2614,6 @@ name = "windows_aarch64_msvc"
 version = "0.53.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c7651a1f62a11b8cbd5e0d42526e55f2c99886c77e007179efff86c2b137e66c"
-
-[[package]]
-name = "windows_i686_gnu"
-version = "0.42.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c61d927d8da41da96a81f029489353e68739737d3beca43145c8afec9a31a84f"
 
 [[package]]
 name = "windows_i686_gnu"
@@ -2630,12 +2647,6 @@ checksum = "9ce6ccbdedbf6d6354471319e781c0dfef054c81fbc7cf83f338a4296c0cae11"
 
 [[package]]
 name = "windows_i686_msvc"
-version = "0.42.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44d840b6ec649f480a41c8d80f9c65108b92d89345dd94027bfe06ac444d1060"
-
-[[package]]
-name = "windows_i686_msvc"
 version = "0.48.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f55c233f70c4b27f66c523580f78f1004e8b5a8b659e05a4eb49d4166cca406"
@@ -2651,12 +2662,6 @@ name = "windows_i686_msvc"
 version = "0.53.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "581fee95406bb13382d2f65cd4a908ca7b1e4c2f1917f143ba16efe98a589b5d"
-
-[[package]]
-name = "windows_x86_64_gnu"
-version = "0.42.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8de912b8b8feb55c064867cf047dda097f92d51efad5b491dfb98f6bbb70cb36"
 
 [[package]]
 name = "windows_x86_64_gnu"
@@ -2678,12 +2683,6 @@ checksum = "2e55b5ac9ea33f2fc1716d1742db15574fd6fc8dadc51caab1c16a3d3b4190ba"
 
 [[package]]
 name = "windows_x86_64_gnullvm"
-version = "0.42.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26d41b46a36d453748aedef1486d5c7a85db22e56aff34643984ea85514e94a3"
-
-[[package]]
-name = "windows_x86_64_gnullvm"
 version = "0.48.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b7b52767868a23d5bab768e390dc5f5c55825b6d30b86c844ff2dc7414044cc"
@@ -2699,12 +2698,6 @@ name = "windows_x86_64_gnullvm"
 version = "0.53.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0a6e035dd0599267ce1ee132e51c27dd29437f63325753051e71dd9e42406c57"
-
-[[package]]
-name = "windows_x86_64_msvc"
-version = "0.42.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9aec5da331524158c6d1a4ac0ab1541149c0b9505fde06423b02f5ef0106b9f0"
 
 [[package]]
 name = "windows_x86_64_msvc"
