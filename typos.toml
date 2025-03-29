@@ -1,8 +1,10 @@
 [files]
 extend-exclude = [
-  "*.patch", # Automatically generated files that should not be manually modified.
-  "*.bin",   # Binary files
-  ".git/",   # Version control files
+  "*.patch",     # Automatically generated files that should not be manually modified.
+  "*.bin",       # Binary files
+  ".git/",       # Version control files
+  "clippy.toml", # Intentional typos
+  "flake.nix",   # Out of scope
 ]
 ignore-hidden = false
 
@@ -13,11 +15,15 @@ ignore-hidden = false
 
 # Match Whole Word - Case Sensitive
 [default.extend-identifiers]
+"err" = "error"
+"idx" = "index"
 
 # Match Inside a Word - Case Insensitive
 [default.extend-words]
 "jod" = "jod"
 "anser" = "anser"
+# lsp_types
+"typ" = "typ"
 
 # Contractions
 "don't" = "do not"
@@ -79,7 +85,13 @@ ignore-hidden = false
 "is going on" = "happens"
 "take a look at" = "examine"
 
+# "argument" = "input"
+# "response" = "answer"
+
 [default]
 locale = "en-us"
-extend-ignore-re = ["(?Rm)^.*(#|//)\\s*spellchecker:disable-line$"]
+extend-ignore-re = [
+  "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
+  "(?Rm)^.*<!--\\s*spellchecker:disable-line\\s*-->$",
+]
 extend-ignore-identifiers-re = []
