@@ -2,7 +2,7 @@ use hir_def::data::LocalFieldId;
 use la_arena::ArenaMap;
 
 use crate::{
-    HirDatabase,
+    db::HirDatabase,
     ty::{ArraySize, ArrayType, ScalarType, Ty, TyKind, VecSize},
 };
 
@@ -141,7 +141,7 @@ impl TyKind {
                 size
             },
             TyKind::Array(array) => match array.size {
-                ArraySize::Const(n) => {
+                ArraySize::Constant(n) => {
                     let stride = array.stride(address_space, db)?;
                     n as Bytes * stride
                 },

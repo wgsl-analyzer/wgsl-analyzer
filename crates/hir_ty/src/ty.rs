@@ -6,7 +6,7 @@ pub use hir_def::type_ref::{AccessMode, StorageClass};
 use hir_def::{db::StructId, type_ref};
 use salsa::InternKey;
 
-use crate::HirDatabase;
+use crate::db::HirDatabase;
 
 // TODO:
 // [ ] nesting depth
@@ -58,7 +58,7 @@ impl Ty {
         }
     }
 
-    /// `ref<inner>` -> `inner`, `ptr<inner>` -> `ptr<inner>`
+    /// `ref<inner>` -> `inner`, `pointer<inner>` -> `pointer<inner>`
     #[must_use]
     pub fn unref(
         self,
@@ -148,7 +148,7 @@ impl TyKind {
         db.intern_ty(self)
     }
 
-    pub fn is_err(&self) -> bool {
+    pub fn is_error(&self) -> bool {
         matches!(self, TyKind::Error)
     }
 
@@ -171,7 +171,7 @@ impl TyKind {
                 | TyKind::Vector(_)
                 | TyKind::Matrix(_)
                 | TyKind::Array(ArrayType {
-                    size: ArraySize::Const(_),
+                    size: ArraySize::Constant(_),
                     ..
                 })
                 | TyKind::Struct(_)
@@ -263,7 +263,7 @@ impl TyKind {
             },
             TyKind::Array(array) => array.inner.contains_struct(db, r#struct),
             TyKind::Ref(r) => r.inner.contains_struct(db, r#struct),
-            TyKind::Ptr(ptr) => ptr.inner.contains_struct(db, r#struct),
+            TyKind::Ptr(pointer) => pointer.inner.contains_struct(db, r#struct),
             _ => false,
         }
     }
@@ -369,7 +369,7 @@ pub struct ArrayType {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ArraySize {
-    Const(u64),
+    Constant(u64),
     Dynamic,
 }
 

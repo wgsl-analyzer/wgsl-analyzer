@@ -12,27 +12,27 @@ pub struct ParseError<P: ParserDefinition> {
 
 impl<P: ParserDefinition> ParseError<P> {
     pub fn message(&self) -> String {
-        let mut msg = "expected ".to_string();
-        let num_expected = self.expected.len();
-        let is_first = |idx| idx == 0;
-        let is_last = |idx| idx == num_expected - 1;
-        for (idx, expected_kind) in self.expected.iter().enumerate() {
-            if is_first(idx) {
-                let _ = write!(msg, "{:?}", expected_kind);
-            } else if is_last(idx) && num_expected > 2 {
-                let _ = write!(msg, ", or {:?}", expected_kind);
-            } else if is_last(idx) {
-                let _ = write!(msg, " or {:?}", expected_kind);
+        let mut message = "expected ".to_string();
+        let number_expected = self.expected.len();
+        let is_first = |index| index == 0;
+        let is_last = |index| index == number_expected - 1;
+        for (index, expected_kind) in self.expected.iter().enumerate() {
+            if is_first(index) {
+                let _ = write!(message, "{:?}", expected_kind);
+            } else if is_last(index) && number_expected > 2 {
+                let _ = write!(message, ", or {:?}", expected_kind);
+            } else if is_last(index) {
+                let _ = write!(message, " or {:?}", expected_kind);
             } else {
-                let _ = write!(msg, ", {:?}", expected_kind);
+                let _ = write!(message, ", {:?}", expected_kind);
             }
         }
 
         if let Some(found) = self.found {
-            let _ = write!(msg, ", but found {:?}", found);
+            let _ = write!(message, ", but found {:?}", found);
         }
 
-        msg
+        message
     }
 }
 
@@ -71,15 +71,15 @@ impl<P: ParserDefinition> fmt::Display for ParseError<P> {
         )?;
 
         let num_expected = self.expected.len();
-        let is_first = |idx| idx == 0;
-        let is_last = |idx| idx == num_expected - 1;
+        let is_first = |index| index == 0;
+        let is_last = |index| index == num_expected - 1;
 
-        for (idx, expected_kind) in self.expected.iter().enumerate() {
-            if is_first(idx) {
+        for (index, expected_kind) in self.expected.iter().enumerate() {
+            if is_first(index) {
                 write!(f, "{:?}", expected_kind)?;
-            } else if is_last(idx) && num_expected > 2 {
+            } else if is_last(index) && num_expected > 2 {
                 write!(f, ", or {:?}", expected_kind)?;
-            } else if is_last(idx) {
+            } else if is_last(index) {
                 write!(f, " or {:?}", expected_kind)?;
             } else {
                 write!(f, ", {:?}", expected_kind)?;

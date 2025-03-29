@@ -8,6 +8,7 @@ use crate::{
     line_index::{LineEndings, LineIndex, OffsetEncoding},
 };
 use lsp_server::Notification;
+use lsp_types::request::Request as _;
 
 pub(crate) fn is_cancelled(error: &(dyn Error + 'static)) -> bool {
     error.downcast_ref::<salsa::Cancelled>().is_some()
@@ -47,16 +48,93 @@ impl Progress {
 
 impl GlobalState {
     pub(crate) fn show_message(
-        &self,
+        &mut self,
         r#type: lsp_types::MessageType,
         message: String,
+        show_open_log_button: bool,
     ) {
-        self.send_notification::<lsp_types::notification::ShowMessage>(
-            lsp_types::ShowMessageParams {
-                typ: r#type, // spellchecker:disable-line
+        if self.config.open_server_logs() && show_open_log_button {
+            self.send_request::<lsp_types::request::ShowMessageRequest>(
+                lsp_types::ShowMessageRequestParams {
+                    typ: r#type,
+                    message,
+                    actions: Some(vec![lsp_types::MessageActionItem {
+                        title: "Open server logs".to_owned(),
+                        properties: <_>::default(),
+                    }]),
+                },
+                |this, response| {
+                    let lsp_server::Response {
+                        error: None,
+                        result: Some(result),
+                        ..
+                    } = response
+                    else {
+                        return;
+                    };
+                    if let Ok(Some(_item)) = crate::from_json::<
+						<lsp_types::request::ShowMessageRequest as lsp_types::request::Request>::Result
+					>(
+						lsp_types::request::ShowMessageRequest::METHOD, &result) {
+						this.send_notification::<super::ext::OpenServerLogs>(());
+					}
+                },
+            );
+        } else {
+            self.send_notification::<lsp_types::notification::ShowMessage>(
+                lsp_types::ShowMessageParams {
+                    typ: r#type,
+                    message,
+                },
+            );
+        }
+    }
+
+    /// If `additional_info` is [`Some`], appends a note to the notification telling to check the logs.
+    /// This will always log `message` + `additional_info` to the server's error log.
+    pub(crate) fn show_and_log_error(
+        &mut self,
+        message: String,
+        additional_info: Option<String>,
+    ) {
+        if let Some(additional_info) = additional_info {
+            tracing::error!("{message}:\n{additional_info}");
+            self.show_message(
+                lsp_types::MessageType::ERROR,
                 message,
-            },
-        );
+                tracing::enabled!(tracing::Level::ERROR),
+            );
+        } else {
+            tracing::error!("{message}");
+            self.send_notification::<lsp_types::notification::ShowMessage>(
+                lsp_types::ShowMessageParams {
+                    typ: lsp_types::MessageType::ERROR,
+                    message,
+                },
+            );
+        }
+    }
+
+    /// rust-analyzer is resilient -- if it fails, this doesn't usually affect
+    /// the user experience. Part of that is that we deliberately hide panics
+    /// from the user.
+    ///
+    /// We do however want to pester rust-analyzer developers with panics and
+    /// other "you really gotta fix that" messages. The current strategy is to
+    /// be noisy for "from source" builds or when profiling is enabled.
+    ///
+    /// It's unclear if making from source `cargo xtask install` builds more
+    /// panicky is a good idea, let's see if we can keep our awesome bleeding
+    /// edge users from being upset!
+    pub(crate) fn poke_wgsl_analyzer_developer(
+        &mut self,
+        message: String,
+    ) {
+        let from_source_build = option_env!("POKE_RA_DEVS").is_some();
+        let profiling_enabled = std::env::var("RA_PROFILE").is_ok();
+        if from_source_build || profiling_enabled {
+            self.show_and_log_error(message, None);
+        }
     }
 
     pub(crate) fn report_progress(
@@ -65,19 +143,22 @@ impl GlobalState {
         state: &Progress,
         message: Option<String>,
         fraction: Option<f64>,
+        cancel_token: Option<String>,
     ) {
-        /*if !self.config.work_done_progress() {
+        if !self.config.work_done_progress() {
             return;
-        }*/
+        }
+        #[expect(clippy::as_conversions, reason = "")]
+        #[expect(clippy::cast_sign_loss, reason = "")]
         let percentage = fraction.map(|fraction| {
             assert!((0.0..=1.0).contains(&fraction));
-            // TODO can this be done better?
-            #[expect(clippy::cast_sign_loss, clippy::as_conversions, reason = "asserted")]
-            {
-                (fraction * 100.0) as u32
-            }
+            (fraction * 100.0) as u32
         });
-        let token = lsp_types::ProgressToken::String(format!("rustAnalyzer/{title}"));
+        let cancellable = Some(cancel_token.is_some());
+        let token = lsp_types::ProgressToken::String(
+            cancel_token.unwrap_or_else(|| format!("rustAnalyzer/{title}")),
+        );
+        tracing::debug!(?token, ?state, "report_progress {message:?}");
         let work_done_progress = match state {
             Progress::Begin => {
                 self.send_request::<lsp_types::request::WorkDoneProgressCreate>(
@@ -89,14 +170,14 @@ impl GlobalState {
 
                 lsp_types::WorkDoneProgress::Begin(lsp_types::WorkDoneProgressBegin {
                     title: title.into(),
-                    cancellable: None,
+                    cancellable,
                     message,
                     percentage,
                 })
             },
             Progress::Report => {
                 lsp_types::WorkDoneProgress::Report(lsp_types::WorkDoneProgressReport {
-                    cancellable: None,
+                    cancellable,
                     message,
                     percentage,
                 })
@@ -113,14 +194,32 @@ impl GlobalState {
 }
 
 pub(crate) fn apply_document_changes(
-    old_text: &mut String,
-    content_changes: Vec<lsp_types::TextDocumentContentChangeEvent>,
-) {
+    encoding: PositionEncoding,
+    file_contents: &str,
+    mut content_changes: Vec<lsp_types::TextDocumentContentChangeEvent>,
+) -> String {
+    // If at least one of the changes is a full document change, use the last
+    // of them as the starting point and ignore all previous changes.
+    let (mut text, content_changes) = match content_changes
+        .iter()
+        .rposition(|change| change.range.is_none())
+    {
+        Some(index) => {
+            let text = std::mem::take(&mut content_changes[index].text);
+            (text, &content_changes[index + 1..])
+        },
+        None => (file_contents.to_owned(), (&*content_changes)),
+    };
+    if content_changes.is_empty() {
+        return text;
+    }
+
     let mut line_index = LineIndex {
-        index: Arc::new(line_index::LineIndex::new(old_text)),
-        // We do not care about line endings or offset encoding here.
+        // the index will be overwritten in the bottom loop's first iteration
+        index: Arc::new(line_index::LineIndex::new(&text)),
+        // We don't care about line endings here.
         endings: LineEndings::Unix,
-        encoding: PositionEncoding::Utf8,
+        encoding,
     };
 
     // The changes we got must be applied sequentially, but can cross lines so we
@@ -128,41 +227,20 @@ pub(crate) fn apply_document_changes(
     // Some clients (e.g. Code) sort the ranges in reverse. As an optimization, we
     // remember the last valid line in the index and only rebuild it if needed.
     // The VFS will normalize the end of lines to `\n`.
-    enum IndexValid {
-        All,
-        UpToLineExclusive(u32),
-    }
-
-    impl IndexValid {
-        const fn covers(
-            &self,
-            line: u32,
-        ) -> bool {
-            match *self {
-                Self::UpToLineExclusive(to) => to > line,
-                Self::All => true,
-            }
-        }
-    }
-
-    let mut index_valid = IndexValid::All;
+    let mut index_valid = !0_u32;
     for change in content_changes {
+        // The None case can't happen as we have handled it above already
         if let Some(range) = change.range {
-            if !index_valid.covers(range.end.line) {
-                line_index.index = Arc::new(line_index::LineIndex::new(old_text));
+            if index_valid <= range.end.line {
+                *Arc::make_mut(&mut line_index.index) = ide::LineIndex::new(&text);
             }
-            index_valid = IndexValid::UpToLineExclusive(range.start.line);
-            #[expect(clippy::allow_attributes, reason = "only happens on nightly")]
-            #[allow(unfulfilled_lint_expectations, reason = "no longer happens on nightly")]
-            #[expect(if_let_rescope, reason = "conflicting lints")]
+            index_valid = range.start.line;
             if let Ok(range) = from_proto::text_range(&line_index, range) {
-                old_text.replace_range(Range::<usize>::from(range), &change.text);
+                text.replace_range(Range::<usize>::from(range), &change.text);
             }
-        } else {
-            *old_text = change.text;
-            index_valid = IndexValid::UpToLineExclusive(0);
         }
     }
+    text
 }
 
 /// Checks that the edits inside the completion and the additional edits do not overlap.

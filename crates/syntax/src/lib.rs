@@ -1,6 +1,6 @@
-pub mod algo;
+pub mod algorithms;
 pub mod ast;
-pub mod ptr;
+pub mod pointer;
 
 use std::{marker::PhantomData, ops::Deref, sync::Arc};
 
@@ -210,12 +210,12 @@ pub trait HasName: AstNode {
 }
 
 pub trait HasGenerics: AstNode {
-    fn generic_arg_list(&self) -> Option<ast::GenericArgList> {
+    fn generic_arg_list(&self) -> Option<ast::GenericArgumentList> {
         support::child(self.syntax())
     }
 }
 
-pub trait HasAttrs: AstNode {
+pub trait HasAttributes: AstNode {
     fn attribute_list(&self) -> Option<ast::AttributeList> {
         support::child(self.syntax())
     }
@@ -232,10 +232,10 @@ macro_rules! match_ast {
     (match $node:ident { $($tt:tt)* }) => { match_ast!(match ($node) { $($tt)* }) };
 
     (match ($node:expr) {
-        $( ast::$ast:ident($it:ident) => $res:expr, )*
+        $( ast::$ast:ident($it:ident) => $result:expr, )*
         _ => $catch_all:expr $(,)?
     }) => {{
-        $( if let Some($it) = <ast::$ast as $crate::AstNode>::cast($node.clone()) { $res } else )*
+        $( if let Some($it) = <ast::$ast as $crate::AstNode>::cast($node.clone()) { $result } else )*
         { $catch_all }
     }};
 }

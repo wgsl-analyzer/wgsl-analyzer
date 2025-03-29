@@ -52,8 +52,6 @@ pacman -S wgsl-analyzer
 ## Gentoo Linux
 
 <!-- TODO make this real -->
-`wgsl-analyzer` is installed when the `wgsl-analyzer` use flag is set for `dev-lang/WGSL` or `dev-lang/wgsl-bin`.
-You also need to set the `wgsl-src` use flag.
 
 ## macOS
 

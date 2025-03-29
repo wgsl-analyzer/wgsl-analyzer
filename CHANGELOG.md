@@ -64,7 +64,7 @@
 
 ### Version 0.5.0
 
-- implement `#import`s in function param list
+- implement `#import`s in function parameter list
 
 ### Version 0.4.6
 
@@ -145,6 +145,6 @@
 
 ## Version 0.1.1
 
-- implement `ptr` types
+- implement `pointer` types
 - fix `pack2x16` and `textureLoad` builtins
 - add proper README

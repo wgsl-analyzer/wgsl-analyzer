@@ -1,16 +1,17 @@
 use paths::AbsPathBuf;
+use stdx::{format_to, thread::ThreadIntent};
 use tracing::info;
 use vfs::file_set::FileSetConfig;
 
 use ide::base_db::input::SourceRoot;
 
-use crate::{global_state::GlobalState, main_loop::Task};
+use crate::{global_state::GlobalState, lsp, main_loop::Task, op_queue::Cause};
 
 /// `PackageRoot` describes a package root folder.
 /// Which may be an external dependency, or a member of
 /// the current workspace.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct PackageRoot {
+pub(crate) struct PackageRoot {
     /// Is from the local filesystem and may be edited
     pub is_local: bool,
     pub include: Vec<AbsPathBuf>,
@@ -18,7 +19,7 @@ pub struct PackageRoot {
 }
 
 #[derive(Clone, Debug)]
-pub enum ProjectWorkspace {
+pub(crate) enum ProjectWorkspace {
     Test,
 }
 
@@ -26,35 +27,123 @@ impl ProjectWorkspace {
     /// Returns the roots for the current `ProjectWorkspace`
     /// The return type contains the path and whether or not
     /// the root is a member of the current workspace
-    pub const fn to_roots() -> Vec<PackageRoot> {
+    pub(crate) const fn to_roots() -> Vec<PackageRoot> {
         Vec::new()
     }
 }
 
 #[derive(Debug)]
-pub enum ProjectWorkspaceProgress {
+pub(crate) enum ProjectWorkspaceProgress {
     Begin,
     Report(String),
-    End(Vec<anyhow::Result<ProjectWorkspace>>),
+    End(Vec<anyhow::Result<ProjectWorkspace>>, bool),
 }
 
 impl GlobalState {
-    pub(crate) fn fetch_workspaces(&self) {
-        self.task_pool.handle.spawn_with_sender(move |sender| {
-            sender
-                .send(Task::FetchWorkspace(ProjectWorkspaceProgress::Begin))
-                .unwrap();
-            let workspaces = vec![Ok(ProjectWorkspace::Test)];
-            sender
-                .send(Task::FetchWorkspace(ProjectWorkspaceProgress::End(
-                    workspaces,
-                )))
-                .unwrap();
-        });
+    /// Is the server quiescent?
+    ///
+    /// This indicates that we've fully loaded the projects and
+    /// are ready to do semantic work.
+    #[expect(clippy::unused_self, reason = "wip")]
+    pub(crate) const fn is_quiescent(&self) -> bool {
+        true
     }
 
-    pub(crate) fn switch_workspaces(&mut self) {
-        let glob_pattern = format!("{}/**/*.wgsl", self.config.root_path);
+    /// Is the server ready to respond to analysis dependent LSP requests?
+    ///
+    /// Unlike `is_quiescent`, this returns false when we're indexing
+    /// the project, because we're holding the salsa lock and cannot
+    /// respond to LSP requests that depend on salsa data.
+    const fn is_fully_ready(&self) -> bool {
+        self.is_quiescent() && !self.prime_caches_queue.operation_in_progress()
+    }
+
+    pub(crate) fn current_status(&self) -> lsp::ext::ServerStatusParameters {
+        let mut status = lsp::ext::ServerStatusParameters {
+            health: lsp::ext::Health::Ok,
+            quiescent: self.is_fully_ready(),
+            message: None,
+        };
+        let mut message = String::new();
+
+        // if !self.config.cargo_autoreload_config(None)
+        //     && self.is_quiescent()
+        //     && self.fetch_workspaces_queue.op_requested()
+        //     && self.config.discover_workspace_config().is_none()
+        // {
+        //     status.health |= lsp::ext::Health::Warning;
+        //     message.push_str("Auto-reloading is disabled and the workspace has changed, a manual workspace reload is required.\n\n");
+        // }
+
+        // if self.fetch_build_data_error().is_err() {
+        //     status.health |= lsp::ext::Health::Warning;
+        //     message.push_str("Failed to run build scripts of some packages.\n\n");
+        // }
+        // if let Some(error) = &self.config_errors {
+        //     status.health |= lsp::ext::Health::Warning;
+        //     format_to!(message, "{error}\n");
+        // }
+        // if let Some(error) = &self.last_flycheck_error {
+        //     status.health |= lsp::ext::Health::Warning;
+        //     message.push_str(error);
+        //     message.push('\n');
+        // }
+
+        // if self.config.linked_or_discovered_projects().is_empty()
+        //     && self.config.detached_files().is_empty()
+        // {
+        //     status.health |= lsp::ext::Health::Warning;
+        //     message.push_str("Failed to discover workspace.\n");
+        //     message.push_str("Consider adding the `Cargo.toml` of the workspace to the [`linkedProjects`](https://rust-analyzer.github.io/manual.html#rust-analyzer.linkedProjects) setting.\n\n");
+        // }
+        // if self.fetch_workspace_error().is_err() {
+        //     status.health |= lsp::ext::Health::Error;
+        //     message.push_str("Failed to load workspaces.");
+
+        //     if self.config.has_linked_projects() {
+        //         message.push_str(
+        //             "`rust-analyzer.linkedProjects` have been specified, which may be incorrect. Specified project paths:\n",
+        //         );
+        //         message
+        //             .push_str(&format!("    {}", self.config.linked_manifests().format("\n    ")));
+        //         if self.config.has_linked_project_jsons() {
+        //             message.push_str("\nAdditionally, one or more project jsons are specified")
+        //         }
+        //     }
+        //     message.push_str("\n\n");
+        // }
+
+        if !message.is_empty() {
+            status.message = Some(message.trim_end().to_owned());
+        }
+
+        status
+    }
+
+    pub(crate) fn fetch_workspaces(&self) {
+        self.task_pool
+            .handle
+            .spawn_with_sender(ThreadIntent::Worker, move |sender| {
+                sender
+                    .send(Task::FetchWorkspace(ProjectWorkspaceProgress::Begin))
+                    .unwrap();
+                let workspaces = vec![Ok(ProjectWorkspace::Test)];
+                sender
+                    .send(Task::FetchWorkspace(ProjectWorkspaceProgress::End(
+                        workspaces, false,
+                    )))
+                    .unwrap();
+            });
+    }
+
+    pub(crate) fn switch_workspaces(
+        &mut self,
+        cause: &Cause,
+    ) {
+        let _p = tracing::info_span!("GlobalState::switch_workspaces").entered();
+        tracing::info!(%cause, "will switch workspaces");
+
+        let glob_pattern = format!("{}/**/*.wgsl", self.config.root_path());
 
         let registration_options = lsp_types::DidChangeWatchedFilesRegistrationOptions {
             watchers: vec![lsp_types::FileSystemWatcher {
@@ -93,8 +182,8 @@ impl SourceRootConfig {
             .partition(vfs)
             .into_iter()
             .enumerate()
-            .map(|(idx, file_set)| {
-                let is_local = self.local_filesets.contains(&idx);
+            .map(|(index, file_set)| {
+                let is_local = self.local_filesets.contains(&index);
                 if is_local {
                     SourceRoot::new_local(file_set)
                 } else {

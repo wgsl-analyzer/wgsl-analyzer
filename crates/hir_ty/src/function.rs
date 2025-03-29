@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use hir_def::module_data::Name;
 
-use crate::{HirDatabase, ty::Ty};
+use crate::{db::HirDatabase, ty::Ty};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FunctionDetails {
@@ -28,6 +28,7 @@ impl FunctionDetails {
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub struct ResolvedFunctionId(salsa::InternId);
+
 impl salsa::InternKey for ResolvedFunctionId {
     fn from_intern_id(id: salsa::InternId) -> Self {
         ResolvedFunctionId(id)

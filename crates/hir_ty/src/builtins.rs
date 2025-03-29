@@ -1,7 +1,7 @@
 use hir_def::module_data::Name;
 
 use crate::{
-    HirDatabase,
+    db::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
     ty::*,
 };

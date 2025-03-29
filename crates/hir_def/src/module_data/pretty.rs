@@ -41,8 +41,8 @@ fn write_pretty_module_item(
             let function = &module.data[id.index];
 
             let _ = write!(f, "fn {}(", function.name.0);
-            for param in function.params.clone().map(|idx| &module.data[idx]) {
-                let ty = db.lookup_intern_type_ref(param.ty);
+            for parameter in function.parameters.clone().map(|index| &module.data[index]) {
+                let ty = db.lookup_intern_type_ref(parameter.ty);
                 let _ = write!(f, "{}, ", &ty);
             }
             trim_in_place(f, ", ");
@@ -102,6 +102,6 @@ fn trim_in_place(
     s: &mut String,
     pat: &str,
 ) {
-    let new_len = s.trim_end_matches(pat).len();
-    s.truncate(new_len);
+    let new_length = s.trim_end_matches(pat).len();
+    s.truncate(new_length);
 }

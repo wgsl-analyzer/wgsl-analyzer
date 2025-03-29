@@ -1,6 +1,6 @@
 use hir_def::db::{DefWithBodyId, GlobalVariableId};
 use hir_ty::{
-    HirDatabase,
+    db::HirDatabase,
     ty::{ArrayType, TyKind},
     validate::StorageClassError,
 };

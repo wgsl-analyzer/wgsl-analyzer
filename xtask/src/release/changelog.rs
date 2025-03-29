@@ -8,7 +8,7 @@ pub(crate) fn get_changelog(
     sh: &Shell,
     changelog_n: usize,
     commit: &str,
-    prev_tag: &str,
+    previous_tag: &str,
     today: &str,
 ) -> anyhow::Result<String> {
     let Ok(token) = env::var("GITHUB_TOKEN") else {
@@ -17,7 +17,7 @@ pub(crate) fn get_changelog(
         )
     };
 
-    let git_log = cmd!(sh, "git log {prev_tag}..HEAD --reverse").read()?;
+    let git_log = cmd!(sh, "git log {previous_tag}..HEAD --reverse").read()?;
     let mut features = String::new();
     let mut fixes = String::new();
     let mut internal = String::new();
@@ -176,8 +176,7 @@ fn parse_changelog_line(string: &str) -> Option<PrInfo> {
             });
         },
     };
-    let res = PrInfo { message, kind };
-    Some(res)
+    Some(PrInfo { message, kind })
 }
 
 fn parse_title_line(string: &str) -> PrInfo {

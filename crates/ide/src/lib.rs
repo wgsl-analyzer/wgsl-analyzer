@@ -21,7 +21,7 @@ use goto_definition::NavigationTarget;
 use hir::diagnostics::DiagnosticsConfig;
 use hir_def::db::DefDatabase;
 pub use hover::HoverResult;
-use ide_completion::item::CompletionItem;
+use ide_completion::{CompletionConfig, item::CompletionItem};
 use inlay_hints::{InlayHint, InlayHintsConfig};
 pub use line_index::{LineCol, LineIndex};
 use salsa::{Cancelled, ParallelDatabase};
@@ -197,18 +197,11 @@ impl Analysis {
     /// Computes completions at the given position.
     pub fn completions(
         &self,
-        // config: &CompletionConfig<'_>,
+        config: &CompletionConfig<'_>,
         position: FilePosition,
         trigger_character: Option<char>,
     ) -> Cancellable<Option<Vec<CompletionItem>>> {
-        self.with_db(|db| {
-            ide_completion::completions2(
-                db,
-                // config,
-                position,
-                trigger_character,
-            )
-        })
+        self.with_db(|db| ide_completion::completions2(db, config, position, trigger_character))
     }
 
     pub fn format(

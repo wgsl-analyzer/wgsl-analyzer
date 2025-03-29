@@ -2,7 +2,7 @@ use hir_def::type_ref::{AccessMode, StorageClass};
 use itertools::Itertools;
 use smallvec::{SmallVec, smallvec};
 
-use crate::{HirDatabase, ty::TyKind};
+use crate::{db::HirDatabase, ty::TyKind};
 
 pub enum Scope {
     Function,
@@ -64,7 +64,7 @@ pub fn validate_storage_class(
     db: &dyn HirDatabase,
     mut sink: impl FnMut(StorageClassError),
 ) {
-    let ty_is_err = ty.is_err();
+    let ty_is_err = ty.is_error();
 
     match storage_class {
         StorageClass::Function => {
@@ -119,10 +119,10 @@ pub fn validate_storage_class(
                 ]));
             }
 
-            if !ty.is_err() && !ty.is_host_shareable(db) {
+            if !ty.is_error() && !ty.is_host_shareable(db) {
                 sink(StorageClassError::ExpectedHostShareable);
             }
-            if !ty.is_err() && !ty.is_constructable() {
+            if !ty.is_error() && !ty.is_constructable() {
                 sink(StorageClassError::ExpectedConstructable);
             }
         },
@@ -136,7 +136,7 @@ pub fn validate_storage_class(
                 ]));
             }
 
-            if !ty.is_err() && !ty.is_host_shareable(db) {
+            if !ty.is_error() && !ty.is_host_shareable(db) {
                 sink(StorageClassError::ExpectedHostShareable);
             }
         },

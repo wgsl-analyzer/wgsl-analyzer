@@ -375,7 +375,7 @@ fn format_function_call_2() {
 }
 
 #[test]
-fn format_infix_expr() {
+fn format_infix_expression() {
     check(
         "fn main() {
     x+y*z;
@@ -475,7 +475,7 @@ let y = 4;
 }
 
 #[test]
-fn format_expr_shift_right() {
+fn format_expression_shift_right() {
     check(
         "fn main() { let x = 1u >> 3u; }",
         expect![[r#"fn main() { let x = 1u >> 3u; }"#]],
@@ -483,7 +483,7 @@ fn format_expr_shift_right() {
 }
 
 #[test]
-fn format_expr_shift_left() {
+fn format_expression_shift_left() {
     check(
         "fn main() { let x = 1u << 3u; }",
         expect![[r#"fn main() { let x = 1u << 3u; }"#]],
@@ -491,7 +491,7 @@ fn format_expr_shift_left() {
 }
 
 #[test]
-fn format_expr_bitcast() {
+fn format_expression_bitcast() {
     check(
         "fn main() { bitcast   <  vec4<u32>  >  ( x+5 ) }",
         expect!["fn main() { bitcast<vec4<u32>>(x + 5) }"],

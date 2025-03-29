@@ -14,7 +14,7 @@ pub(crate) enum PositionEncoding {
     Wide(WideEncoding),
 }
 
-pub enum OffsetEncoding {
+pub(crate) enum OffsetEncoding {
     Utf8,
     Utf16,
 }
@@ -33,9 +33,9 @@ pub(crate) enum LineEndings {
 
 impl LineEndings {
     /// Replaces `\r\n` with `\n` in-place in `src`.
-    pub(crate) fn normalize(src: String) -> (String, Self) {
-        if !src.as_bytes().contains(&b'\r') {
-            return (src, Self::Unix);
+    pub(crate) fn normalize(source: String) -> (String, Self) {
+        if !source.as_bytes().contains(&b'\r') {
+            return (source, Self::Unix);
         }
 
         // We replace `\r\n` with `\n` in-place, which does not break utf-8 encoding.
@@ -43,30 +43,31 @@ impl LineEndings {
         // directly, prefer to steal the contents of `src`. This makes the code
         // safe even if a panic occurs.
 
-        let mut buf = src.into_bytes();
-        let mut gap_len = 0;
-        let mut tail = buf.as_mut_slice();
+        let mut buffer = source.into_bytes();
+        let mut gap_length = 0;
+        let mut tail = buffer.as_mut_slice();
         loop {
-            let idx = find_crlf(&tail[gap_len..]).map_or(tail.len(), |idx| idx + gap_len);
-            tail.copy_within(gap_len..idx, 0);
-            tail = &mut tail[idx - gap_len..];
-            if tail.len() == gap_len {
+            let index =
+                find_crlf(&tail[gap_length..]).map_or(tail.len(), |index| index + gap_length);
+            tail.copy_within(gap_length..index, 0);
+            tail = &mut tail[index - gap_length..];
+            if tail.len() == gap_length {
                 break;
             }
-            gap_len += 1;
+            gap_length += 1;
         }
 
         // Account for removed `\r`.
-        // After `set_len`, `buf` is guaranteed to contain utf-8 again.
-        let new_len = buf.len() - gap_len;
-        let src = unsafe {
-            buf.set_len(new_len);
-            String::from_utf8_unchecked(buf)
+        // After `set_length`, `buf` is guaranteed to contain utf-8 again.
+        let new_length = buffer.len() - gap_length;
+        let source = unsafe {
+            buffer.set_len(new_length);
+            String::from_utf8_unchecked(buffer)
         };
-        return (src, Self::Dos);
+        return (source, Self::Dos);
 
-        fn find_crlf(src: &[u8]) -> Option<usize> {
-            src.windows(2).position(|it| it == b"\r\n")
+        fn find_crlf(source: &[u8]) -> Option<usize> {
+            source.windows(2).position(|it| it == b"\r\n")
         }
     }
 }
