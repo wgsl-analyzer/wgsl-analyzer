@@ -3,8 +3,8 @@
 /// Appends formatted string to a `String`.
 #[macro_export]
 macro_rules! format_to {
-    ($buf:expr_2021) => ();
-    ($buf:expr_2021, $lit:literal $($arg:tt)*) => {
+    ($buf:expr) => ();
+    ($buf:expr, $lit:literal $($arg:tt)*) => {
         {
             use ::std::fmt::Write as _;
             // We cannot do ::std::fmt::Write::write_fmt($buf, format_args!($lit $($arg)*))
@@ -19,7 +19,7 @@ macro_rules! format_to {
 /// Useful for folding iterators into a `String`.
 #[macro_export]
 macro_rules! format_to_acc {
-    ($buf:expr_2021, $lit:literal $($arg:tt)*) => {
+    ($buf:expr, $lit:literal $($arg:tt)*) => {
         {
             use ::std::fmt::Write as _;
             // We cannot do ::std::fmt::Write::write_fmt($buf, format_args!($lit $($arg)*))

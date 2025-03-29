@@ -121,7 +121,7 @@ impl NotifyActor {
         while let Some(event) = self.next_event(&inbox) {
             tracing::debug!(?event, "vfs-notify event");
             match event {
-                Event::Message(msg) => match msg {
+                Event::Message(message) => match message {
                     Message::Config(config) => {
                         self.watcher = None;
                         if !config.watch.is_empty() {
@@ -293,10 +293,10 @@ impl NotifyActor {
                     (file, contents)
                 })
                 .collect::<Vec<_>>(),
-            loader::Entry::Directories(dirs) => {
-                let mut res = Vec::new();
+            loader::Entry::Directories(directories) => {
+                let mut result = Vec::new();
 
-                for root in &dirs.include {
+                for root in &directories.include {
                     send_message(root.clone());
                     let walkdir = WalkDir::new(root)
                         .follow_links(true)
@@ -312,43 +312,47 @@ impl NotifyActor {
                             }
 
                             // We want to filter out subdirectories that are roots themselves, because they will be visited separately.
-                            dirs.exclude.iter().all(|it| it != path)
-                                && (root == path || dirs.include.iter().all(|it| it != path))
+                            directories.exclude.iter().all(|it| it != path)
+                                && (root == path || directories.include.iter().all(|it| it != path))
                         });
 
                     let files = walkdir
                         .filter_map(std::result::Result::ok)
                         .filter_map(|entry| {
                             let depth = entry.depth();
-                            let is_dir = entry.file_type().is_dir();
+                            let is_directory = entry.file_type().is_dir();
                             #[expect(clippy::filetype_is_file, reason = "intentional")]
                             let is_file = entry.file_type().is_file();
-                            let abs_path = AbsPathBuf::try_from(
+                            let absolute_path = AbsPathBuf::try_from(
                                 Utf8PathBuf::from_path_buf(entry.into_path()).ok()?,
                             )
                             .ok()?;
-                            if depth < 2 && is_dir {
-                                send_message(abs_path.clone());
+                            if depth < 2 && is_directory {
+                                send_message(absolute_path.clone());
                             }
-                            if is_dir && do_watch {
-                                watch(abs_path.as_ref());
+                            if is_directory && do_watch {
+                                watch(absolute_path.as_ref());
                             }
                             if !is_file {
                                 return None;
                             }
-                            let ext = abs_path.extension().unwrap_or_default();
-                            if dirs.extensions.iter().all(|it| it.as_str() != ext) {
+                            let extension = absolute_path.extension().unwrap_or_default();
+                            if directories
+                                .extensions
+                                .iter()
+                                .all(|it| it.as_str() != extension)
+                            {
                                 return None;
                             }
-                            Some(abs_path)
+                            Some(absolute_path)
                         });
 
-                    res.extend(files.map(|file| {
+                    result.extend(files.map(|file| {
                         let contents = read(file.as_path());
                         (file, contents)
                     }));
                 }
-                res
+                result
             },
         }
     }
@@ -365,9 +369,9 @@ impl NotifyActor {
     #[track_caller]
     fn send(
         &self,
-        msg: loader::Message,
+        message: loader::Message,
     ) {
-        self.sender.send(msg).unwrap();
+        self.sender.send(message).unwrap();
     }
 }
 
@@ -375,8 +379,9 @@ fn read(path: &AbsPath) -> Option<Vec<u8>> {
     std::fs::read(path).ok()
 }
 
-fn log_notify_error<T>(res: notify::Result<T>) -> Option<T> {
-    res.map_err(|err| tracing::warn!("notify error: {}", err))
+fn log_notify_error<T>(result: notify::Result<T>) -> Option<T> {
+    result
+        .map_err(|error| tracing::warn!("notify error: {}", error))
         .ok()
 }
 

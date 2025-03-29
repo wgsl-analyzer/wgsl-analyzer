@@ -27,28 +27,28 @@ impl<'t, 'input, P: ParserDefinition> Sink<'t, 'input, P> {
     }
 
     pub(crate) fn finish(mut self) -> Parse<P> {
-        for idx in 0..self.events.len() {
-            match mem::replace(&mut self.events[idx], Event::Placeholder) {
+        for index in 0..self.events.len() {
+            match mem::replace(&mut self.events[index], Event::Placeholder) {
                 Event::StartNode {
                     kind,
                     forward_parent,
                 } => {
                     let mut kinds = vec![kind];
 
-                    let mut idx = idx;
+                    let mut index = index;
                     let mut forward_parent = forward_parent;
 
                     // Walk through the forward parent of the forward parent and the forward parent
                     // of that, and of that, etc. until we reach a StartNode event without a forward
                     // parent.
                     while let Some(fp) = forward_parent {
-                        idx += fp;
+                        index += fp;
 
                         forward_parent = if let Event::StartNode {
                             kind,
                             forward_parent,
                         } =
-                            mem::replace(&mut self.events[idx], Event::Placeholder)
+                            mem::replace(&mut self.events[index], Event::Placeholder)
                         {
                             kinds.push(kind);
                             forward_parent
