@@ -30,7 +30,7 @@ enum Type {
     I32,
     U32,
     RuntimeArray(Box<Type>),
-    Ptr(Box<Type>),
+    Pointer(Box<Type>),
     Atomic(Box<Type>),
     Bound(usize),
     StorageTypeOfTexelFormat(usize),
@@ -113,9 +113,9 @@ enum TextureDimensionality {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("cargo:rerun-if-changed=builtins.wgsl");
 
-    let dir = PathBuf::from(std::env::var("OUT_DIR")?).join("generated");
-    std::fs::create_dir_all(&dir)?;
-    let path = dir.join("builtins.rs");
+    let directory = PathBuf::from(std::env::var("OUT_DIR")?).join("generated");
+    std::fs::create_dir_all(&directory)?;
+    let path = directory.join("builtins.rs");
     let mut file = File::create(path)?;
 
     let mut builtins: BTreeMap<String, Builtin> = BTreeMap::new();
@@ -198,10 +198,10 @@ fn parse_line(line: &str) -> (&str, Overload) {
     let mut generics = BTreeMap::<char, (usize, Generic)>::default();
     let parameters: Vec<_> = parameters
         .split(',')
-        .filter(|param| !param.is_empty())
+        .filter(|parameter| !parameter.is_empty())
         .map(|ty| match ty.find(":") {
-            Some(idx) if !ty[idx..].starts_with("::") => {
-                let (name, ty) = ty.split_at(idx);
+            Some(index) if !ty[index..].starts_with("::") => {
+                let (name, ty) = ty.split_at(index);
                 let ty = &ty[1..];
                 let name = name.trim();
                 let name = (!name.is_empty()).then(|| name.to_string());
@@ -241,8 +241,8 @@ fn parse_vec_size(
         '3' => VecSize::Three,
         '4' => VecSize::Four,
         other => {
-            let len = generics.len();
-            let (i, _) = generics.entry(other).or_insert((len, Generic::VecSize));
+            let length = generics.len();
+            let (i, _) = generics.entry(other).or_insert((length, Generic::VecSize));
             VecSize::Bound(*i)
         },
     }
@@ -255,19 +255,21 @@ fn parse_texel_format(
     match format {
         '_' => TexelFormat::Any,
         other => {
-            let len = generics.len();
-            let (i, _) = generics.entry(other).or_insert((len, Generic::TexelFormat));
+            let length = generics.len();
+            let (i, _) = generics
+                .entry(other)
+                .or_insert((length, Generic::TexelFormat));
             TexelFormat::Bound(*i)
         },
     }
 }
 
 fn only_char(input: &str) -> char {
-    let mut chars = input.chars();
-    let val = chars.next().unwrap();
-    assert!(chars.next().is_none());
+    let mut characters = input.chars();
+    let value = characters.next().unwrap();
+    assert!(characters.next().is_none());
 
-    val
+    value
 }
 
 fn parse_ty(
@@ -310,11 +312,11 @@ fn parse_ty(
             };
             return Type::Texture(texture_type);
         } else if let Some(size) = ty.strip_prefix("mat") {
-            let mut chars = size.chars();
-            let columns = chars.next().unwrap();
-            assert!(chars.next().unwrap() == 'x');
-            let rows = chars.next().unwrap();
-            assert!(chars.next().is_none());
+            let mut characters = size.chars();
+            let columns = characters.next().unwrap();
+            assert!(characters.next().unwrap() == 'x');
+            let rows = characters.next().unwrap();
+            assert!(characters.next().is_none());
 
             let columns = parse_vec_size(generics, columns);
             let rows = parse_vec_size(generics, rows);
@@ -326,7 +328,7 @@ fn parse_ty(
             return Type::RuntimeArray(Box::new(inner));
         } else if ty == "pointer" {
             let inner = parse_ty(generics, inner);
-            return Type::Ptr(Box::new(inner));
+            return Type::Pointer(Box::new(inner));
         } else if ty == "atomic" {
             let inner = parse_ty(generics, inner);
             return Type::Atomic(Box::new(inner));
@@ -351,8 +353,8 @@ fn parse_ty(
 
     if ty.len() == 1 {
         let generic = ty.chars().next().unwrap();
-        let len = generics.len();
-        let (i, _) = generics.entry(generic).or_insert((len, Generic::Type));
+        let length = generics.len();
+        let (i, _) = generics.entry(generic).or_insert((length, Generic::Type));
         return Type::Bound(*i);
     }
 
@@ -435,8 +437,8 @@ fn type_to_rust(ty: &Type) -> String {
         }}).intern(db)",
             type_to_rust(inner)
         ),
-        Type::Ptr(inner) => format!(
-            "TyKind::Ptr(Ptr {{
+        Type::Pointer(inner) => format!(
+            "TyKind::Pointer(Pointer {{
             inner: {},
             access_mode: AccessMode::ReadWrite,
             storage_class: StorageClass::Private,
@@ -488,19 +490,19 @@ fn builtin_to_rust(
             generics = overload
                 .generics
                 .values()
-                .map(|val| match val.1 {
+                .map(|value| match value.1 {
                     Generic::VecSize => "GenericArgKind::VecSize, ",
                     Generic::Type => "GenericArgKind::Type, ",
                     Generic::TexelFormat => "GenericArgKind::TexelFormat, ",
                 })
                 .collect::<String>()
         )?;
-        for (param, name) in &overload.parameters {
+        for (parameter, name) in &overload.parameters {
             write!(
                 f,
                 "
                         ({ty}, {name}),",
-                ty = type_to_rust(param),
+                ty = type_to_rust(parameter),
                 name = match name {
                     Some(name) => format!("Name::from({name:?})"),
                     None => "Name::missing()".to_string(),

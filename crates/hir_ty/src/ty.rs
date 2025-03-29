@@ -6,7 +6,7 @@ pub use hir_def::type_ref::{AccessMode, StorageClass};
 use hir_def::{db::StructId, type_ref};
 use salsa::InternKey;
 
-use crate::HirDatabase;
+use crate::db::HirDatabase;
 
 // TODO:
 // [ ] nesting depth
@@ -53,7 +53,7 @@ impl Ty {
     ) -> Ty {
         match self.kind(db) {
             TyKind::Vector(vec) => vec.inner,
-            TyKind::Ref(r) => r.inner.this_or_vec_inner(db),
+            TyKind::Reference(r) => r.inner.this_or_vec_inner(db),
             _ => self,
         }
     }
@@ -65,7 +65,7 @@ impl Ty {
         db: &dyn HirDatabase,
     ) -> Ty {
         match self.kind(db) {
-            TyKind::Ref(r) => r.inner,
+            TyKind::Reference(r) => r.inner,
             _ => self,
         }
     }
@@ -90,8 +90,8 @@ pub enum TyKind {
     Array(ArrayType),
     Texture(TextureType),
     Sampler(SamplerType),
-    Ref(Ref),
-    Ptr(Ptr),
+    Reference(Reference),
+    Pointer(Pointer),
     BoundVar(BoundVar),
     StorageTypeOfTexelFormat(BoundVar), // e.g. rgba8unorm -> vec4<f32>
 }
@@ -129,7 +129,7 @@ impl TyKind {
         db: &dyn HirDatabase,
     ) -> Cow<'_, TyKind> {
         match self {
-            TyKind::Ref(r) => Cow::Owned(r.inner.kind(db)),
+            TyKind::Reference(r) => Cow::Owned(r.inner.kind(db)),
             _ => Cow::Borrowed(self),
         }
     }
@@ -148,7 +148,7 @@ impl TyKind {
         db.intern_ty(self)
     }
 
-    pub fn is_err(&self) -> bool {
+    pub fn is_error(&self) -> bool {
         matches!(self, TyKind::Error)
     }
 
@@ -171,7 +171,7 @@ impl TyKind {
                 | TyKind::Vector(_)
                 | TyKind::Matrix(_)
                 | TyKind::Array(ArrayType {
-                    size: ArraySize::Const(_),
+                    size: ArraySize::Constant(_),
                     ..
                 })
                 | TyKind::Struct(_)
@@ -262,8 +262,8 @@ impl TyKind {
                     .any(|ty| ty.contains_struct(db, r#struct))
             },
             TyKind::Array(array) => array.inner.contains_struct(db, r#struct),
-            TyKind::Ref(r) => r.inner.contains_struct(db, r#struct),
-            TyKind::Ptr(pointer) => pointer.inner.contains_struct(db, r#struct),
+            TyKind::Reference(r) => r.inner.contains_struct(db, r#struct),
+            TyKind::Pointer(pointer) => pointer.inner.contains_struct(db, r#struct),
             _ => false,
         }
     }
@@ -369,19 +369,19 @@ pub struct ArrayType {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ArraySize {
-    Const(u64),
+    Constant(u64),
     Dynamic,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Ptr {
+pub struct Pointer {
     pub storage_class: StorageClass,
     pub inner: Ty,
     pub access_mode: AccessMode,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Ref {
+pub struct Reference {
     pub storage_class: StorageClass,
     pub inner: Ty,
     pub access_mode: AccessMode,
