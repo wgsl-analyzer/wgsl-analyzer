@@ -199,6 +199,8 @@ jobs:
     if: ${{ github.repository == 'wgsl-analyzer/wgsl-analyzer' || github.event_name == 'workflow_dispatch' }}
     name: publish
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     needs: ["dist", "dist-x86_64-unknown-linux-musl"]
     steps:
       - name: Install Nodejs
