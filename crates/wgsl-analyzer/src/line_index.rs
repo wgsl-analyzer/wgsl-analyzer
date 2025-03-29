@@ -9,7 +9,7 @@ use line_index::WideEncoding;
 use std::sync::Arc;
 
 #[derive(Clone, Copy)]
-pub enum PositionEncoding {
+pub(crate) enum PositionEncoding {
     Utf8,
     Wide(WideEncoding),
 }
@@ -26,7 +26,7 @@ pub(crate) struct LineIndex {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum LineEndings {
+pub(crate) enum LineEndings {
     Unix,
     Dos,
 }

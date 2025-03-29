@@ -2,7 +2,7 @@ use base_db::FilePosition;
 use hir::HirDatabase;
 use syntax::{AstNode, ast};
 
-pub fn debug_command(
+pub(crate) fn debug_command(
     db: &dyn HirDatabase,
     file_position: FilePosition,
 ) -> Option<()> {

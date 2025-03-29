@@ -78,7 +78,7 @@ impl<'a> CompletionContext<'a> {
         Some(ctx)
     }
 
-    pub fn source_range(&self) -> base_db::TextRange {
+    pub(crate) fn source_range(&self) -> base_db::TextRange {
         let kind = self.token.kind();
         if kind == SyntaxKind::Ident
         // || kind.is_keyword()
@@ -91,7 +91,7 @@ impl<'a> CompletionContext<'a> {
 }
 
 #[derive(Debug)]
-pub enum ImmediateLocation {
+pub(crate) enum ImmediateLocation {
     ItemList,
     StmtList,
     InsideStatement,

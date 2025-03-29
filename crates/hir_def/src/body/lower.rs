@@ -11,7 +11,7 @@ use crate::{
     type_ref::{TypeRef, matrix_dimensions, vector_dimensions},
 };
 
-pub fn lower_function_body(
+pub(super) fn lower_function_body(
     db: &dyn DefDatabase,
     file_id: HirFileId,
     param_list: Option<ast::ParamList>,
@@ -26,7 +26,7 @@ pub fn lower_function_body(
     .collect_function(param_list, body)
 }
 
-pub fn lower_global_var_decl(
+pub(super) fn lower_global_var_decl(
     db: &dyn DefDatabase,
     file_id: HirFileId,
     decl: ast::GlobalVariableDecl,
@@ -40,7 +40,7 @@ pub fn lower_global_var_decl(
     .collect_global_var_decl(decl)
 }
 
-pub fn lower_global_constant_decl(
+pub(super) fn lower_global_constant_decl(
     db: &dyn DefDatabase,
     file_id: HirFileId,
     decl: ast::GlobalConstantDecl,
@@ -54,7 +54,7 @@ pub fn lower_global_constant_decl(
     .collect_global_constant_decl(decl)
 }
 
-pub fn lower_override_decl(
+pub(super) fn lower_override_decl(
     db: &dyn DefDatabase,
     file_id: HirFileId,
     decl: ast::OverrideDecl,

@@ -18,7 +18,7 @@ use crate::{
 /// This will only happen when processing windows paths.
 ///
 /// When processing non-windows path, this is essentially the same as `Url::from_file_path`.
-pub fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
+pub(crate) fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
     let url = lsp_types::Url::from_file_path(path).unwrap();
     match path.as_ref().components().next() {
         Some(path::Component::Prefix(prefix))
@@ -50,7 +50,7 @@ pub fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
     lsp_types::Url::parse(&url).unwrap()
 }
 
-pub fn range(
+pub(crate) fn range(
     line_index: &LineIndex,
     range: TextRange,
 ) -> lsp_types::Range {
@@ -73,14 +73,14 @@ pub(crate) fn position(
     }
 }
 
-pub fn url(
+pub(crate) fn url(
     snap: &GlobalStateSnapshot,
     file_id: FileId,
 ) -> lsp_types::Url {
     snap.file_id_to_url(file_id)
 }
 
-pub fn location(
+pub(crate) fn location(
     snap: &GlobalStateSnapshot,
     frange: FileRange,
 ) -> Result<lsp_types::Location> {
@@ -91,7 +91,7 @@ pub fn location(
     Ok(loc)
 }
 
-pub fn completion_items(
+pub(crate) fn completion_items(
     // config: &Config,
     line_index: &LineIndex,
     tdpp: &lsp_types::TextDocumentPositionParams,
@@ -234,7 +234,7 @@ fn completion_item(
     }
 }
 
-pub const fn completion_item_kind(
+pub(crate) const fn completion_item_kind(
     completion_item_kind: CompletionItemKind
 ) -> lsp_types::CompletionItemKind {
     match completion_item_kind {
@@ -251,7 +251,7 @@ pub const fn completion_item_kind(
     }
 }
 
-pub fn text_edit(
+pub(crate) fn text_edit(
     line_index: &LineIndex,
     indel: Indel,
 ) -> lsp_types::TextEdit {
@@ -263,7 +263,7 @@ pub fn text_edit(
     lsp_types::TextEdit { range, new_text }
 }
 
-pub fn text_edit_vec(
+pub(crate) fn text_edit_vec(
     line_index: &LineIndex,
     text_edit: TextEdit,
 ) -> Vec<lsp_types::TextEdit> {
@@ -273,7 +273,7 @@ pub fn text_edit_vec(
         .collect()
 }
 
-pub fn completion_text_edit(
+pub(crate) fn completion_text_edit(
     line_index: &LineIndex,
     insert_replace_support: Option<lsp_types::Position>,
     indel: Indel,
@@ -293,7 +293,7 @@ pub fn completion_text_edit(
     }
 }
 
-pub fn inlay_hint(
+pub(crate) fn inlay_hint(
     render_colons: bool,
     line_index: &LineIndex,
     inlay_hint: &InlayHint,

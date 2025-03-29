@@ -9,26 +9,26 @@ use crate::{
 };
 use lsp_server::Notification;
 
-pub fn is_cancelled(error: &(dyn Error + 'static)) -> bool {
+pub(crate) fn is_cancelled(error: &(dyn Error + 'static)) -> bool {
     error.downcast_ref::<salsa::Cancelled>().is_some()
 }
 
 #[expect(clippy::as_conversions, reason = "valid according to JSON RPC")]
-pub const fn invalid_params_error(message: String) -> LspError {
+pub(crate) const fn invalid_params_error(message: String) -> LspError {
     LspError {
         code: lsp_server::ErrorCode::InvalidParams as i32,
         message,
     }
 }
 
-pub fn notification_is<N: lsp_types::notification::Notification>(
+pub(crate) fn notification_is<N: lsp_types::notification::Notification>(
     notification: &Notification
 ) -> bool {
     notification.method == N::METHOD
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub enum Progress {
+pub(crate) enum Progress {
     Begin,
     Report,
     End,
@@ -112,7 +112,7 @@ impl GlobalState {
     }
 }
 
-pub fn apply_document_changes(
+pub(crate) fn apply_document_changes(
     old_text: &mut String,
     content_changes: Vec<lsp_types::TextDocumentContentChangeEvent>,
 ) {
@@ -167,7 +167,7 @@ pub fn apply_document_changes(
 
 /// Checks that the edits inside the completion and the additional edits do not overlap.
 /// LSP explicitly forbids the additional edits to overlap both with the main edit and themselves.
-pub fn all_edits_are_disjoint(
+pub(crate) fn all_edits_are_disjoint(
     completion: &lsp_types::CompletionItem,
     additional_edits: &[lsp_types::TextEdit],
 ) -> bool {

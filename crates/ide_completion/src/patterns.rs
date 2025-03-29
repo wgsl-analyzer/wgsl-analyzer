@@ -4,7 +4,7 @@ use syntax::{AstNode, SyntaxKind, SyntaxNode, SyntaxToken, ast};
 
 use crate::context::ImmediateLocation;
 
-pub fn determine_location(
+pub(crate) fn determine_location(
     _sema: &Semantics,
     _file: &SyntaxNode,
     _offset: TextSize,

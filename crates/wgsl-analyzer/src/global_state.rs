@@ -25,12 +25,12 @@ type ReqHandler = fn(&mut GlobalState, lsp_server::Response);
 type ReqQueue = lsp_server::ReqQueue<(String, Instant), ReqHandler>;
 
 // Enforces drop order
-pub struct Handle<H, C> {
+pub(crate) struct Handle<H, C> {
     pub handle: H,
     pub receiver: C,
 }
 
-pub struct GlobalState {
+pub(crate) struct GlobalState {
     pub sender: Sender<lsp_server::Message>,
     pub req_queue: ReqQueue,
     pub task_pool: Handle<TaskPool<Task>, Receiver<Task>>,
@@ -47,14 +47,14 @@ pub struct GlobalState {
     // pub workspaces: Arc<Vec<ProjectWorkspace>>,
 }
 
-pub struct GlobalStateSnapshot {
+pub(crate) struct GlobalStateSnapshot {
     pub vfs: Arc<RwLock<(Vfs, FxHashMap<FileId, LineEndings>)>>,
     pub analysis: Analysis,
     pub config: Arc<Config>,
 }
 
 impl GlobalState {
-    pub fn new(
+    pub(crate) fn new(
         sender: Sender<lsp_server::Message>,
         config: Config,
     ) -> Self {
@@ -114,7 +114,7 @@ impl GlobalState {
         true
     }
 
-    pub fn snapshot(&self) -> GlobalStateSnapshot {
+    pub(crate) fn snapshot(&self) -> GlobalStateSnapshot {
         GlobalStateSnapshot {
             vfs: Arc::clone(&self.vfs),
             analysis: self.analysis_host.snapshot(),
@@ -220,7 +220,7 @@ impl GlobalStateSnapshot {
     }
 }
 
-pub fn file_id_to_url(
+pub(crate) fn file_id_to_url(
     vfs: &vfs::Vfs,
     id: FileId,
 ) -> Url {
@@ -229,7 +229,7 @@ pub fn file_id_to_url(
     to_proto::url_from_abs_path(path)
 }
 
-pub fn url_to_file_id(
+pub(crate) fn url_to_file_id(
     vfs: &vfs::Vfs,
     url: &Url,
 ) -> Result<FileId> {

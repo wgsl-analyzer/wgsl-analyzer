@@ -27,13 +27,13 @@ use crate::{
 ///
 /// Read-only requests are wrapped into `catch_unwind` -- they do not modify the
 /// state, so it is OK to recover from their failures.
-pub struct RequestDispatcher<'global_state> {
+pub(crate) struct RequestDispatcher<'global_state> {
     request: Option<lsp_server::Request>,
     global_state: &'global_state mut GlobalState,
 }
 
 impl<'global_state> RequestDispatcher<'global_state> {
-    pub const fn new(
+    pub(crate) const fn new(
         request: Option<lsp_server::Request>,
         global_state: &'global_state mut GlobalState,
     ) -> Self {
@@ -220,13 +220,13 @@ where
     }
 }
 
-pub struct NotificationDispatcher<'global_state> {
+pub(crate) struct NotificationDispatcher<'global_state> {
     pub(crate) not: Option<lsp_server::Notification>,
     pub(crate) global_state: &'global_state mut GlobalState,
 }
 
 impl<'global_state> NotificationDispatcher<'global_state> {
-    pub const fn new(
+    pub(crate) const fn new(
         not: Option<lsp_server::Notification>,
         global_state: &'global_state mut GlobalState,
     ) -> Self {

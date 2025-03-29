@@ -1,16 +1,16 @@
 #![allow(clippy::if_same_then_else, clippy::needless_return)]
 mod expr;
 
-pub use expr::expr;
+pub(crate) use expr::expr;
 
 use self::expr::TOKENSET_LITERAL;
 use crate::SyntaxKind;
 
-pub type Parser<'t, 'input> = parser::Parser<'t, 'input, crate::ParserDefinition>;
-pub type CompletedMarker = parser::marker::CompletedMarker<crate::ParserDefinition>;
-pub type Marker = parser::marker::Marker<crate::ParserDefinition>;
+pub(crate) type Parser<'t, 'input> = parser::Parser<'t, 'input, crate::ParserDefinition>;
+pub(crate) type CompletedMarker = parser::marker::CompletedMarker<crate::ParserDefinition>;
+pub(crate) type Marker = parser::marker::Marker<crate::ParserDefinition>;
 
-pub fn file(p: &mut Parser) {
+pub(crate) fn file(p: &mut Parser) {
     let m = p.start();
 
     while !p.at_end() {
@@ -321,7 +321,7 @@ fn param_list(p: &mut Parser) {
     );
 }
 
-pub fn inner_param_list(p: &mut Parser) {
+pub(crate) fn inner_param_list(p: &mut Parser) {
     let m = p.start();
     while !p.at_end() {
         let location = p.location();
@@ -427,7 +427,7 @@ const TYPE_SET: &[SyntaxKind] = &[
     SyntaxKind::Vec4,
     SyntaxKind::BindingArray,
 ];
-pub fn type_decl(p: &mut Parser) -> Option<CompletedMarker> {
+pub(crate) fn type_decl(p: &mut Parser) -> Option<CompletedMarker> {
     if p.at_set(TYPE_SET) {
         let m_ty = p.start();
         let ty = p.bump();
@@ -497,7 +497,7 @@ const STATEMENT_RECOVER_SET: &[SyntaxKind] = &[
     SyntaxKind::BraceRight,
 ];
 
-pub fn statement(p: &mut Parser) {
+pub(crate) fn statement(p: &mut Parser) {
     /*
     | [x] return_statement SEMICOLON
     | [x] if_statement
@@ -914,13 +914,13 @@ fn access_mode(p: &mut Parser) {
     if_at_set_or(p, ACCESS_MODE_SET, SyntaxKind::Ident);
 }
 
-pub fn attribute_list_opt(p: &mut Parser) {
+pub(crate) fn attribute_list_opt(p: &mut Parser) {
     if p.at(SyntaxKind::Attr) || p.at(SyntaxKind::AttrLeft) {
         attribute_list(p);
     }
 }
 
-pub fn attribute_list(p: &mut Parser) {
+pub(crate) fn attribute_list(p: &mut Parser) {
     if p.at(SyntaxKind::Attr) {
         attribute_list_modern(p);
     } else if p.at(SyntaxKind::AttrLeft) {
