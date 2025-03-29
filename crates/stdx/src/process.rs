@@ -55,10 +55,10 @@ pub fn streaming_output(
     Ok((stdout, stderr))
 }
 
-#[inline]
 /// # Panics
 ///
-/// Panics if job panics
+/// Panics if `cmd` is not configured to have `stdout` and `stderr` as `piped`.
+#[inline]
 pub fn spawn_with_streaming_output(
     mut cmd: Command,
     on_stdout_line: &mut dyn FnMut(&str),
@@ -94,7 +94,7 @@ mod imp {
         process::{ChildStderr, ChildStdout},
     };
 
-    pub fn read2(
+    pub(crate) fn read2(
         mut out_pipe: ChildStdout,
         mut err_pipe: ChildStderr,
         data: &mut dyn FnMut(bool, &mut Vec<u8>, bool),
