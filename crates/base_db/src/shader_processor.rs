@@ -3,12 +3,12 @@ use std::{ops::Range, sync::OnceLock};
 use regex::Regex;
 use rustc_hash::FxHashSet;
 
-pub fn get_shader_processor() -> &'static ShaderProcessor {
+pub(crate) fn get_shader_processor() -> &'static ShaderProcessor {
     static SHADER_PROCESSOR: OnceLock<ShaderProcessor> = OnceLock::new();
     SHADER_PROCESSOR.get_or_init(ShaderProcessor::default)
 }
 
-pub struct ShaderProcessor {
+pub(crate) struct ShaderProcessor {
     ifdef_regex: Regex,
     ifndef_regex: Regex,
     else_regex: Regex,
@@ -29,7 +29,7 @@ impl Default for ShaderProcessor {
 }
 
 impl ShaderProcessor {
-    pub fn process(
+    pub(crate) fn process(
         &self,
         shader_str: &str,
         shader_defs: &FxHashSet<String>,

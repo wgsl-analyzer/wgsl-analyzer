@@ -14,8 +14,10 @@
 
 mod flags;
 
+// mod codegen;
 mod dist;
 mod install;
+// mod metrics;
 mod publish;
 mod release;
 mod tidy;
@@ -37,6 +39,8 @@ fn main() -> anyhow::Result<()> {
         flags::XtaskCmd::Release(cmd) => cmd.run(sh),
         flags::XtaskCmd::Dist(cmd) => cmd.run(sh),
         flags::XtaskCmd::PublishReleaseNotes(cmd) => cmd.run(sh),
+        // flags::XtaskCmd::Metrics(cmd) => cmd.run(sh),
+        // flags::XtaskCmd::Codegen(cmd) => cmd.run(sh),
         flags::XtaskCmd::Bb(cmd) => {
             {
                 let _d = sh.push_dir("./crates/wgsl-analyzer");
@@ -64,7 +68,7 @@ fn run_fuzzer(sh: &Shell) -> anyhow::Result<()> {
     let _e = sh.push_env("RUSTUP_TOOLCHAIN", "nightly");
     if cmd!(sh, "cargo fuzz --help").read().is_err() {
         cmd!(sh, "cargo install cargo-fuzz").run()?;
-    }
+    };
 
     // Expecting nightly rustc
     let out = cmd!(sh, "rustc --version").read()?;
@@ -82,5 +86,5 @@ fn date_iso(sh: &Shell) -> anyhow::Result<String> {
 }
 
 fn is_release_tag(tag: &str) -> bool {
-    tag.len() == "2020-02-24".len() && tag.starts_with(|character: char| character.is_ascii_digit())
+    tag.len() == "yyyy-mm-dd".len() && tag.starts_with(|character: char| character.is_ascii_digit())
 }

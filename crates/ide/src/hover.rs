@@ -8,7 +8,7 @@ pub enum HoverResult {
     Text(String),
 }
 
-pub fn hover(
+pub(crate) fn hover(
     db: &dyn HirDatabase,
     file_range: FileRange,
 ) -> Option<RangeInfo<HoverResult>> {

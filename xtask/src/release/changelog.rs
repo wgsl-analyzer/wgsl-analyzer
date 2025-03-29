@@ -4,7 +4,7 @@ use std::{env, iter};
 use anyhow::bail;
 use xshell::{Shell, cmd};
 
-pub fn get_changelog(
+pub(crate) fn get_changelog(
     sh: &Shell,
     changelog_n: usize,
     commit: &str,
@@ -161,7 +161,7 @@ fn parse_changelog_line(string: &str) -> Option<PrInfo> {
     if parts.len() < 2 || parts[0] != "changelog" {
         return None;
     }
-    let message = parts.get(2).map(|it| (*it).to_owned());
+    let message = parts.get(2).map(std::string::ToString::to_string);
     let kind = match parts[1].trim_end_matches(':') {
         "feature" => PrKind::Feature,
         "fix" => PrKind::Fix,

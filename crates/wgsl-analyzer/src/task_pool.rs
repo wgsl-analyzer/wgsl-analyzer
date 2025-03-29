@@ -2,7 +2,7 @@
 //! properly.
 use crossbeam_channel::Sender;
 
-pub struct TaskPool<T> {
+pub(crate) struct TaskPool<T> {
     sender: Sender<T>,
     inner: threadpool::ThreadPool,
 }
@@ -15,7 +15,7 @@ impl<T> TaskPool<T> {
         }
     }
 
-    pub fn spawn<F>(
+    pub(crate) fn spawn<F>(
         &self,
         task: F,
     ) where
@@ -28,7 +28,7 @@ impl<T> TaskPool<T> {
         });
     }
 
-    pub fn spawn_with_sender<F>(
+    pub(crate) fn spawn_with_sender<F>(
         &self,
         task: F,
     ) where
@@ -41,7 +41,7 @@ impl<T> TaskPool<T> {
         });
     }
 
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.inner.queued_count()
     }
 }

@@ -9,14 +9,14 @@ use crate::{
     line_index::{LineIndex, OffsetEncoding, PositionEncoding},
 };
 
-pub fn abs_path(url: &lsp_types::Url) -> Result<AbsPathBuf> {
+pub(crate) fn abs_path(url: &lsp_types::Url) -> Result<AbsPathBuf> {
     let path = url
         .to_file_path()
         .map_err(|()| anyhow::anyhow!("url is not a file: {}", url.as_str()))?;
     Ok(AbsPathBuf::try_from(path).unwrap())
 }
 
-pub fn vfs_path(url: &lsp_types::Url) -> Result<vfs::VfsPath> {
+pub(crate) fn vfs_path(url: &lsp_types::Url) -> Result<vfs::VfsPath> {
     abs_path(url).map(vfs::VfsPath::from)
 }
 
@@ -57,7 +57,7 @@ pub(crate) fn offset(
     Ok(line_range.start() + clamped_len)
 }
 
-pub fn text_range(
+pub(crate) fn text_range(
     line_index: &LineIndex,
     range: lsp_types::Range,
 ) -> Result<TextRange> {
@@ -67,14 +67,14 @@ pub fn text_range(
     Ok(text_range)
 }
 
-pub fn file_id(
+pub(crate) fn file_id(
     snap: &GlobalStateSnapshot,
     url: &lsp_types::Url,
 ) -> Result<FileId> {
     snap.url_to_file_id(url)
 }
 
-pub fn file_position(
+pub(crate) fn file_position(
     snap: &GlobalStateSnapshot,
     tdpp: &lsp_types::TextDocumentPositionParams,
 ) -> Result<FilePosition> {
@@ -84,7 +84,7 @@ pub fn file_position(
     Ok(FilePosition { file_id, offset })
 }
 
-pub fn file_range(
+pub(crate) fn file_range(
     snap: &GlobalStateSnapshot,
     text_document_identifier: &lsp_types::TextDocumentIdentifier,
     range: lsp_types::Range,

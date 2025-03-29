@@ -26,7 +26,7 @@ impl flags::Install {
 }
 
 #[derive(Clone)]
-pub struct ClientOptions {
+pub(crate) struct ClientOptions {
     pub(crate) code_binary: Option<String>,
 }
 
@@ -38,7 +38,7 @@ const VS_CODES: &[&str] = &[
     "code-oss",
 ];
 
-pub struct ServerOptions {
+pub(crate) struct ServerOptions {
     pub(crate) malloc: Malloc,
     pub(crate) dev_rel: bool,
 }

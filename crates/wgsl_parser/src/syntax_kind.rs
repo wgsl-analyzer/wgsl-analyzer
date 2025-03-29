@@ -447,7 +447,7 @@ impl From<rowan::SyntaxKind> for SyntaxKind {
 }
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub enum WgslLanguage {}
+pub(crate) enum WgslLanguage {}
 
 impl rowan::Language for WgslLanguage {
     type Kind = SyntaxKind;

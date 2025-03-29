@@ -19,7 +19,7 @@ use crate::{
     try_default,
 };
 
-pub fn handle_goto_definition(
+pub(crate) fn handle_goto_definition(
     snap: GlobalStateSnapshot,
     params: lsp_types::GotoDefinitionParams,
 ) -> Result<Option<GotoDefinitionResponse>> {
@@ -39,7 +39,7 @@ pub fn handle_goto_definition(
     Ok(Some(response))
 }
 
-pub fn handle_completion(
+pub(crate) fn handle_completion(
     snap: GlobalStateSnapshot,
     params: lsp_types::CompletionParams,
 ) -> Result<Option<lsp_types::CompletionResponse>> {
@@ -62,7 +62,7 @@ pub fn handle_completion(
     Ok(Some(list.into()))
 }
 
-pub fn handle_formatting(
+pub(crate) fn handle_formatting(
     snap: GlobalStateSnapshot,
     params: lsp_types::DocumentFormattingParams,
 ) -> Result<Option<Vec<lsp_types::TextEdit>>> {
@@ -80,7 +80,7 @@ pub fn handle_formatting(
     Ok(Some(edits))
 }
 
-pub fn handle_hover(
+pub(crate) fn handle_hover(
     snap: GlobalStateSnapshot,
     params: lsp_types::HoverParams,
 ) -> Result<Option<lsp_types::Hover>> {
@@ -115,14 +115,14 @@ pub fn handle_hover(
     clippy::unnecessary_wraps,
     reason = "handlers should have a specific signature"
 )]
-pub fn handle_shutdown(
+pub(crate) fn handle_shutdown(
     _snap: GlobalStateSnapshot,
     _: (),
 ) -> Result<()> {
     Ok(())
 }
 
-pub fn full_source(
+pub(crate) fn full_source(
     snap: GlobalStateSnapshot,
     params: ext::FullSourceParams,
 ) -> Result<String> {
@@ -134,7 +134,7 @@ pub fn full_source(
     Ok(source)
 }
 
-pub fn show_syntax_tree(
+pub(crate) fn show_syntax_tree(
     snap: GlobalStateSnapshot,
     params: ext::SyntaxTreeParams,
 ) -> Result<String> {
@@ -149,7 +149,7 @@ pub fn show_syntax_tree(
     Ok(string)
 }
 
-pub fn debug_command(
+pub(crate) fn debug_command(
     snap: GlobalStateSnapshot,
     params: ext::DebugCommandParams,
 ) -> Result<()> {
@@ -159,7 +159,7 @@ pub fn debug_command(
     Ok(())
 }
 
-pub fn handle_inlay_hints(
+pub(crate) fn handle_inlay_hints(
     snap: GlobalStateSnapshot,
     params: lsp_types::InlayHintParams,
 ) -> Result<Option<Vec<lsp_types::InlayHint>>> {
@@ -182,7 +182,7 @@ pub fn handle_inlay_hints(
     ))
 }
 
-pub fn publish_diagnostics(
+pub(crate) fn publish_diagnostics(
     snap: &GlobalStateSnapshot,
     config: &DiagnosticsConfig,
     file_id: FileId,
@@ -230,7 +230,7 @@ mod diff {
     use dissimilar::Chunk;
     use text_edit::{TextEdit, TextRange, TextSize};
 
-    pub fn diff(
+    pub(super) fn diff(
         left: &str,
         right: &str,
     ) -> TextEdit {

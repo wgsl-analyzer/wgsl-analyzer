@@ -301,7 +301,7 @@ impl GlobalState {
         Ok(())
     }
 
-    pub fn update_configuration(
+    pub(crate) fn update_configuration(
         &mut self,
         config: Config,
     ) {
@@ -341,7 +341,7 @@ mod text_notifications {
         lsp::{from_proto, utils::apply_document_changes},
     };
 
-    pub fn did_open_text_document(
+    pub(super) fn did_open_text_document(
         state: &mut GlobalState,
         params: DidOpenTextDocumentParams,
     ) -> Result<()> {
@@ -368,7 +368,7 @@ mod text_notifications {
         Ok(())
     }
 
-    pub fn did_change_text_document(
+    pub(super) fn did_change_text_document(
         state: &mut GlobalState,
         params: DidChangeTextDocumentParams,
     ) -> Result<()> {
@@ -385,7 +385,7 @@ mod text_notifications {
         Ok(())
     }
 
-    pub fn did_close_text_document(
+    pub(super) fn did_close_text_document(
         state: &mut GlobalState,
         params: DidCloseTextDocumentParams,
     ) -> Result<()> {
@@ -405,7 +405,7 @@ mod text_notifications {
         clippy::needless_pass_by_value,
         reason = "handlers should have this signature"
     )]
-    pub fn did_save_text_document(
+    pub(super) fn did_save_text_document(
         state: &mut GlobalState,
         params: DidSaveTextDocumentParams,
     ) -> Result<()> {

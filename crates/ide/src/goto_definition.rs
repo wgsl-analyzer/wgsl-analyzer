@@ -48,7 +48,7 @@ impl NavigationTarget {
     }
 }
 
-pub fn goto_definition(
+pub(crate) fn goto_definition(
     db: &dyn HirDatabase,
     file_position: FilePosition,
 ) -> Option<NavigationTarget> {

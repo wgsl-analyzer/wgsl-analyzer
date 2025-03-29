@@ -1,7 +1,7 @@
 use base_db::{SourceDatabase, TextRange};
 use vfs::FileId;
 
-pub fn syntax_tree(
+pub(crate) fn syntax_tree(
     db: &dyn SourceDatabase,
     file_id: FileId,
     range: Option<TextRange>,

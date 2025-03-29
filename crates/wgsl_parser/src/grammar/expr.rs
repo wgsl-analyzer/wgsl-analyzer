@@ -2,7 +2,7 @@
 
 use super::*;
 
-pub fn expr(p: &mut Parser) {
+pub(crate) fn expr(p: &mut Parser) {
     if p.at_set(super::STATEMENT_RECOVER_SET) {
         return;
     }
@@ -268,7 +268,7 @@ fn postfix_op(p: &mut Parser) -> Option<PostfixOp> {
     }
 }
 
-pub const TOKENSET_LITERAL: &[SyntaxKind] = &[
+pub(crate) const TOKENSET_LITERAL: &[SyntaxKind] = &[
     SyntaxKind::IntLiteral,
     SyntaxKind::UintLiteral,
     SyntaxKind::HexFloatLiteral,
@@ -276,7 +276,7 @@ pub const TOKENSET_LITERAL: &[SyntaxKind] = &[
     SyntaxKind::True,
     SyntaxKind::False,
 ];
-pub fn literal(p: &mut Parser) -> CompletedMarker {
+pub(crate) fn literal(p: &mut Parser) -> CompletedMarker {
     assert!(p.at_set(TOKENSET_LITERAL));
 
     let m = p.start();

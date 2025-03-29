@@ -17,7 +17,7 @@ use vfs::FileId;
 //     pub warnings_as_hint: Vec<String>,
 // }
 
-pub struct DiagnosticCollection {
+pub(crate) struct DiagnosticCollection {
     // FIXME: should be FxHashMap<FileId, Vec<wa_id::Diagnostic>>
     pub(crate) native: FxHashMap<FileId, Vec<lsp_types::Diagnostic>>,
     changes: FxHashSet<FileId>,

@@ -39,7 +39,7 @@ pub enum ProjectWorkspaceProgress {
 }
 
 impl GlobalState {
-    pub fn fetch_workspaces(&self) {
+    pub(crate) fn fetch_workspaces(&self) {
         self.task_pool.handle.spawn_with_sender(move |sender| {
             sender
                 .send(Task::FetchWorkspace(ProjectWorkspaceProgress::Begin))
@@ -53,7 +53,7 @@ impl GlobalState {
         });
     }
 
-    pub fn switch_workspaces(&mut self) {
+    pub(crate) fn switch_workspaces(&mut self) {
         let glob_pattern = format!("{}/**/*.wgsl", self.config.root_path);
 
         let registration_options = lsp_types::DidChangeWatchedFilesRegistrationOptions {
@@ -78,7 +78,7 @@ impl GlobalState {
 }
 
 #[derive(Default, Debug)]
-pub struct SourceRootConfig {
+pub(crate) struct SourceRootConfig {
     pub fsc: FileSetConfig,
     pub local_filesets: Vec<usize>,
 }
