@@ -6,8 +6,8 @@ import * as fs from "fs";
 import * as util from "util";
 import * as cp from "child_process";
 
-const VERSION = "0.9.10";
-const REV = "2f60c77f2";
+const VERSION = "0.9.11";
+const REV = "962a03";
 
 const fileExists = (path: string) =>
     util
