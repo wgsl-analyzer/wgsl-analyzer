@@ -33,6 +33,7 @@
 	"engines": {
 		"vscode": "^1.97.0"
 	},
+	"enabledApiProposals": [],
 	"scripts": {
 		"vscode:prepublish": "npm run build-base -- --minify",
 		"package": "vsce package -o wgsl-analyzer.vsix",
