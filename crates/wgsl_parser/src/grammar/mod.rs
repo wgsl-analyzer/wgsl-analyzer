@@ -1,29 +1,29 @@
 #![allow(clippy::if_same_then_else, clippy::needless_return)]
-mod expr;
+mod expression;
 
-pub(crate) use expr::expr;
+pub(crate) use expression::expression;
 
-use self::expr::TOKENSET_LITERAL;
+use self::expression::TOKENSET_LITERAL;
 use crate::SyntaxKind;
 
 pub(crate) type Parser<'t, 'input> = parser::Parser<'t, 'input, crate::ParserDefinition>;
 pub(crate) type CompletedMarker = parser::marker::CompletedMarker<crate::ParserDefinition>;
 pub(crate) type Marker = parser::marker::Marker<crate::ParserDefinition>;
 
-pub(crate) fn file(p: &mut Parser) {
-    let m = p.start();
+pub(crate) fn file(parser: &mut Parser) {
+    let marker = parser.start();
 
-    while !p.at_end() {
-        item(p);
+    while !parser.at_end() {
+        item(parser);
     }
 
-    m.complete(p, SyntaxKind::SourceFile);
+    marker.complete(parser, SyntaxKind::SourceFile);
 }
 
 const ITEM_RECOVERY_SET: &[SyntaxKind] = &[
     SyntaxKind::Fn,
     SyntaxKind::Struct,
-    SyntaxKind::AttrLeft,
+    SyntaxKind::AttributeLeft,
     SyntaxKind::Override,
 ];
 
@@ -37,22 +37,22 @@ fn item(p: &mut Parser) {
     } else if p.at(SyntaxKind::Struct) {
         struct_(p, m);
     } else if p.at(SyntaxKind::Var) {
-        global_variable_decl(p, m);
+        global_variable_declaration(p, m);
     } else if p.at(SyntaxKind::Let) {
-        global_constant_decl(p, m, SyntaxKind::Let);
-    } else if p.at(SyntaxKind::Const) {
-        global_constant_decl(p, m, SyntaxKind::Const);
+        global_constant_declaration(p, m, SyntaxKind::Let);
+    } else if p.at(SyntaxKind::Constant) {
+        global_constant_declaration(p, m, SyntaxKind::Constant);
     } else if p.at(SyntaxKind::Alias) || p.at(SyntaxKind::Type) {
-        type_alias_decl(p, m);
+        type_alias_declaration(p, m);
     } else if p.at(SyntaxKind::Override) {
-        override_decl(p, m);
+        override_declaration(p, m);
     } else {
         p.error_expected(&[
             SyntaxKind::Fn,
             SyntaxKind::Struct,
             SyntaxKind::Var,
             SyntaxKind::Let,
-            SyntaxKind::Const,
+            SyntaxKind::Constant,
             SyntaxKind::Alias,
             SyntaxKind::Override,
         ]);
@@ -70,9 +70,9 @@ fn import(
         let m = p.start();
         p.bump();
         m.complete(p, SyntaxKind::ImportPath);
-    } else if p.at(SyntaxKind::Ident) {
+    } else if p.at(SyntaxKind::Identifier) {
         let m = p.start();
-        while p.at(SyntaxKind::Ident) || p.at(SyntaxKind::ColonColon) {
+        while p.at(SyntaxKind::Identifier) || p.at(SyntaxKind::ColonColon) {
             p.bump();
         }
         m.complete(p, SyntaxKind::ImportCustom);
@@ -81,29 +81,29 @@ fn import(
     m.complete(p, SyntaxKind::Import);
 }
 
-fn override_decl(
+fn override_declaration(
     p: &mut Parser,
     m: Marker,
 ) {
-    global_decl(p, m, SyntaxKind::Override, SyntaxKind::OverrideDecl);
+    global_declaration(p, m, SyntaxKind::Override, SyntaxKind::OverrideDeclaration);
 }
 
-fn global_variable_decl(
+fn global_variable_declaration(
     p: &mut Parser,
     m: Marker,
 ) {
-    global_decl(p, m, SyntaxKind::Var, SyntaxKind::GlobalVariableDecl);
+    global_declaration(p, m, SyntaxKind::Var, SyntaxKind::GlobalVariableDeclaration);
 }
 
-fn global_constant_decl(
+fn global_constant_declaration(
     p: &mut Parser,
     m: Marker,
     kind: SyntaxKind,
 ) {
-    global_decl(p, m, kind, SyntaxKind::GlobalConstantDecl);
+    global_declaration(p, m, kind, SyntaxKind::GlobalConstantDeclaration);
 }
 
-fn global_decl(
+fn global_declaration(
     p: &mut Parser,
     m: Marker,
     var_kind: SyntaxKind,
@@ -116,7 +116,7 @@ fn global_decl(
 
     if p.at_set(ITEM_RECOVERY_SET) {
         p.error_no_bump(&[SyntaxKind::Binding]);
-        m.complete(p, SyntaxKind::GlobalVariableDecl);
+        m.complete(p, SyntaxKind::GlobalVariableDeclaration);
         return;
     }
 
@@ -124,7 +124,7 @@ fn global_decl(
 
     if p.at(SyntaxKind::Colon) {
         p.expect(SyntaxKind::Colon);
-        type_decl(p);
+        type_declaration(p);
     }
 
     if p.at(SyntaxKind::Equal) {
@@ -135,8 +135,8 @@ fn global_decl(
             return;
         }
 
-        // const expr
-        expr(p);
+        // const expression
+        expression(p);
     }
 
     p.expect_no_bump(SyntaxKind::Semicolon);
@@ -144,7 +144,7 @@ fn global_decl(
     m.complete(p, kind);
 }
 
-fn type_alias_decl(
+fn type_alias_declaration(
     p: &mut Parser,
     m: Marker,
 ) {
@@ -158,11 +158,11 @@ fn type_alias_decl(
 
     p.expect(SyntaxKind::Equal);
 
-    type_decl(p);
+    type_declaration(p);
 
     p.expect_no_bump(SyntaxKind::Semicolon);
 
-    m.complete(p, SyntaxKind::TypeAliasDecl);
+    m.complete(p, SyntaxKind::TypeAliasDeclaration);
 }
 
 fn struct_(
@@ -192,19 +192,19 @@ fn struct_(
         p.bump();
     }
 
-    m.complete(p, SyntaxKind::StructDecl);
+    m.complete(p, SyntaxKind::StructDeclaration);
 }
 
 fn struct_member(p: &mut Parser) {
     let m = p.start();
     attribute_list_opt(p);
-    variable_ident_decl(p);
+    variable_ident_declaration(p);
 
     if p.at(SyntaxKind::Semicolon) || p.at(SyntaxKind::Comma) {
         p.bump();
     }
 
-    m.complete(p, SyntaxKind::StructDeclField);
+    m.complete(p, SyntaxKind::StructDeclarationField);
 }
 
 fn function(
@@ -213,7 +213,7 @@ fn function(
 ) {
     p.expect(SyntaxKind::Fn);
 
-    if p.at(SyntaxKind::Ident) {
+    if p.at(SyntaxKind::Identifier) {
         name(p);
     } else {
         m.complete(p, SyntaxKind::Function);
@@ -236,7 +236,7 @@ fn function(
             p.error_no_bump(&[SyntaxKind::Type]);
             m.complete(p, SyntaxKind::ReturnType);
         } else {
-            type_decl(p);
+            type_declaration(p);
             m.complete(p, SyntaxKind::ReturnType);
         }
     }
@@ -252,7 +252,7 @@ fn function(
 
 fn name(p: &mut Parser) {
     let m = p.start();
-    p.expect(SyntaxKind::Ident);
+    p.expect(SyntaxKind::Identifier);
     m.complete(p, SyntaxKind::Name);
 }
 
@@ -316,8 +316,8 @@ fn param_list(p: &mut Parser) {
         SyntaxKind::ParenLeft,
         SyntaxKind::ParenRight,
         SyntaxKind::Comma,
-        SyntaxKind::ParamList,
-        param,
+        SyntaxKind::ParameterList,
+        parameter,
     );
 }
 
@@ -325,43 +325,43 @@ pub(crate) fn inner_param_list(p: &mut Parser) {
     let m = p.start();
     while !p.at_end() {
         let location = p.location();
-        param(p);
+        parameter(p);
         if p.location() == location {
             p.error();
         }
         p.eat(SyntaxKind::Comma);
     }
-    m.complete(p, SyntaxKind::ParamList);
+    m.complete(p, SyntaxKind::ParameterList);
 }
 
-fn param(p: &mut Parser) {
+fn parameter(p: &mut Parser) {
     let m = p.start();
 
     if p.at(SyntaxKind::UnofficialPreprocessorImport) {
         let m_import = p.start();
         import(p, m_import);
-        m.complete(p, SyntaxKind::Param);
+        m.complete(p, SyntaxKind::Parameter);
         return;
     }
 
     attribute_list_opt(p);
     if p.at(SyntaxKind::ParenRight) {
-        p.set_expected(vec![SyntaxKind::VariableIdentDecl]);
+        p.set_expected(vec![SyntaxKind::VariableIdentDeclaration]);
         p.error_recovery(&[SyntaxKind::ParenRight]);
-        m.complete(p, SyntaxKind::Param);
+        m.complete(p, SyntaxKind::Parameter);
         return;
     }
-    variable_ident_decl(p);
-    m.complete(p, SyntaxKind::Param);
+    variable_ident_declaration(p);
+    m.complete(p, SyntaxKind::Parameter);
 }
 
-fn variable_ident_decl(p: &mut Parser) {
-    let m_var_ident_decl = p.start();
+fn variable_ident_declaration(p: &mut Parser) {
+    let m_var_ident_declaration = p.start();
     binding(p);
 
     if p.at_set(&[SyntaxKind::ParenRight, SyntaxKind::BraceRight]) {
         p.error_no_bump(&[SyntaxKind::Colon]);
-        m_var_ident_decl.complete(p, SyntaxKind::VariableIdentDecl);
+        m_var_ident_declaration.complete(p, SyntaxKind::VariableIdentDeclaration);
         return;
     }
 
@@ -371,13 +371,13 @@ fn variable_ident_decl(p: &mut Parser) {
 
     if p.at_set(&[SyntaxKind::ParenRight, SyntaxKind::BraceRight]) {
         p.error_no_bump(&[SyntaxKind::Type]);
-        m_var_ident_decl.complete(p, SyntaxKind::VariableIdentDecl);
+        m_var_ident_declaration.complete(p, SyntaxKind::VariableIdentDeclaration);
         return;
     }
 
-    type_decl(p);
+    type_declaration(p);
 
-    m_var_ident_decl.complete(p, SyntaxKind::VariableIdentDecl);
+    m_var_ident_declaration.complete(p, SyntaxKind::VariableIdentDeclaration);
 }
 
 fn binding(p: &mut Parser) {
@@ -427,22 +427,23 @@ const TYPE_SET: &[SyntaxKind] = &[
     SyntaxKind::Vec4,
     SyntaxKind::BindingArray,
 ];
-pub(crate) fn type_decl(p: &mut Parser) -> Option<CompletedMarker> {
+
+pub(crate) fn type_declaration(p: &mut Parser) -> Option<CompletedMarker> {
     if p.at_set(TYPE_SET) {
         let m_ty = p.start();
         let ty = p.bump();
         // We do not validate which types should have generics and which should not here,
-        // because `expr` relies on that (specifically for vec3(1.0) etc., where the
+        // because `expression` relies on that (specifically for vec3(1.0) etc., where the
         // type is inferred)
         if p.at(SyntaxKind::LessThan) {
             type_decl_generics(p);
         }
         Some(m_ty.complete(p, ty))
-    } else if p.at(SyntaxKind::Ident) {
+    } else if p.at(SyntaxKind::Identifier) {
         let m_ty = p.start();
         let m_name_ref = p.start();
         p.bump();
-        m_name_ref.complete(p, SyntaxKind::NameRef);
+        m_name_ref.complete(p, SyntaxKind::NameReference);
         Some(m_ty.complete(p, SyntaxKind::PathType))
     } else {
         p.error();
@@ -456,13 +457,13 @@ pub(crate) fn type_decl_generics(p: &mut Parser) {
         SyntaxKind::LessThan,
         SyntaxKind::GreaterThan,
         SyntaxKind::Comma,
-        SyntaxKind::GenericArgList,
+        SyntaxKind::GenericArgumentList,
         |p| {
             let _ = if_at_set(p, ACCESS_MODE_SET) || if_at_set(p, STORAGE_CLASS_SET) || {
                 if p.at_set(TOKENSET_LITERAL) {
-                    expr::literal(p);
+                    expression::literal(p);
                 } else {
-                    type_decl(p);
+                    type_declaration(p);
                 }
                 true
             };
@@ -482,7 +483,7 @@ fn compound_statement(p: &mut Parser) {
 }
 
 const STATEMENT_RECOVER_SET: &[SyntaxKind] = &[
-    SyntaxKind::Const,
+    SyntaxKind::Constant,
     SyntaxKind::Let,
     SyntaxKind::Var,
     SyntaxKind::Return,
@@ -514,7 +515,7 @@ pub(crate) fn statement(p: &mut Parser) {
     | [x] compound_statement
      */
 
-    if p.at_set(&[SyntaxKind::Const, SyntaxKind::Let, SyntaxKind::Var]) {
+    if p.at_set(&[SyntaxKind::Constant, SyntaxKind::Let, SyntaxKind::Var]) {
         variable_statement(p);
     } else if p.at(SyntaxKind::Return) {
         return_statement(p);
@@ -542,22 +543,22 @@ pub(crate) fn statement(p: &mut Parser) {
         continuing_statement(p);
     } else {
         let m = p.start();
-        expr(p);
+        expression(p);
 
         if p.at(SyntaxKind::Equal) {
             p.expect(SyntaxKind::Equal);
-            expr(p);
-            m.complete(p, SyntaxKind::AssignmentStmt);
+            expression(p);
+            m.complete(p, SyntaxKind::AssignmentStatement);
         } else if p.at_set(&[SyntaxKind::PlusPlus, SyntaxKind::MinusMinus]) {
             p.bump();
-            m.complete(p, SyntaxKind::IncrDecrStatement);
+            m.complete(p, SyntaxKind::IncrementDecrementStatement);
         } else if p.at_set(COMPOUND_ASSIGNMENT_SET) {
             p.bump();
-            expr(p);
-            m.complete(p, SyntaxKind::CompoundAssignmentStmt);
+            expression(p);
+            m.complete(p, SyntaxKind::CompoundAssignmentStatement);
         } else {
             // only function calls are actually allowed as statements in wgsl.
-            m.complete(p, SyntaxKind::ExprStatement);
+            m.complete(p, SyntaxKind::ExpressionStatement);
         }
     }
 }
@@ -603,7 +604,7 @@ fn while_statement(p: &mut Parser) {
         return;
     }
 
-    expr(p);
+    expression(p);
 
     compound_statement(p);
     m.complete(p, SyntaxKind::WhileStatement);
@@ -650,7 +651,7 @@ fn for_header(p: &mut Parser) {
         p.error();
     } else {
         let m = p.start();
-        expr(p);
+        expression(p);
         m.complete(p, SyntaxKind::ForCondition);
         p.eat_set(COMMA_SEMICOLON_SET);
     }
@@ -674,7 +675,7 @@ fn if_statement(p: &mut Parser) {
         // TODO: Better error here
         p.error_expected_no_bump(&[SyntaxKind::Bool]);
     } else {
-        expr(p);
+        expression(p);
     }
 
     compound_statement(p);
@@ -690,7 +691,7 @@ fn if_statement(p: &mut Parser) {
                 // TODO: Better error here
                 p.error_expected_no_bump(&[SyntaxKind::Bool]);
             } else {
-                expr(p);
+                expression(p);
             }
 
             compound_statement(p);
@@ -711,7 +712,7 @@ fn switch_statement(p: &mut Parser) {
     let m = p.start();
     p.expect(SyntaxKind::Switch);
 
-    expr(p);
+    expression(p);
 
     list(
         p,
@@ -740,7 +741,7 @@ fn switch_body(p: &mut Parser) {
             if p.at(SyntaxKind::BraceRight) {
                 break;
             }
-            expr(p); // actually only const_literals are allowed here, but we parse more liberally
+            expression(p); // actually only const_literals are allowed here, but we parse more liberally
             p.eat(SyntaxKind::Comma);
         }
         m_selectors.complete(p, SyntaxKind::SwitchCaseSelectors);
@@ -793,9 +794,9 @@ fn return_statement(p: &mut Parser) {
     let m = p.start();
     p.expect(SyntaxKind::Return);
     if !p.at(SyntaxKind::Semicolon) {
-        expr(p);
+        expression(p);
     }
-    m.complete(p, SyntaxKind::ReturnStmt);
+    m.complete(p, SyntaxKind::ReturnStatement);
 }
 
 fn variable_statement(p: &mut Parser) {
@@ -803,7 +804,7 @@ fn variable_statement(p: &mut Parser) {
 
     if p.at(SyntaxKind::Let) {
         p.bump();
-    } else if p.at(SyntaxKind::Const) {
+    } else if p.at(SyntaxKind::Constant) {
         p.bump();
     } else if p.at(SyntaxKind::Var) {
         p.bump();
@@ -832,13 +833,13 @@ fn variable_statement(p: &mut Parser) {
 
     if p.at(SyntaxKind::Colon) {
         p.expect(SyntaxKind::Colon);
-        type_decl(p);
+        type_declaration(p);
     }
 
     match p.peek() {
         Some(SyntaxKind::Equal) => {
             p.expect(SyntaxKind::Equal);
-            expr(p);
+            expression(p);
 
             m.complete(p, SyntaxKind::VariableStatement);
         },
@@ -905,69 +906,69 @@ fn if_at_set_inner(
 }
 
 fn storage_class(p: &mut Parser) {
-    if_at_set_or(p, STORAGE_CLASS_SET, SyntaxKind::Ident);
+    if_at_set_or(p, STORAGE_CLASS_SET, SyntaxKind::Identifier);
 }
 
 const ACCESS_MODE_SET: &[SyntaxKind] =
     &[SyntaxKind::Read, SyntaxKind::Write, SyntaxKind::ReadWrite];
 fn access_mode(p: &mut Parser) {
-    if_at_set_or(p, ACCESS_MODE_SET, SyntaxKind::Ident);
+    if_at_set_or(p, ACCESS_MODE_SET, SyntaxKind::Identifier);
 }
 
-pub(crate) fn attribute_list_opt(p: &mut Parser) {
-    if p.at(SyntaxKind::Attr) || p.at(SyntaxKind::AttrLeft) {
-        attribute_list(p);
+pub(crate) fn attribute_list_opt(parser: &mut Parser) {
+    if parser.at(SyntaxKind::AttributeOperator) || parser.at(SyntaxKind::AttributeLeft) {
+        attribute_list(parser);
     }
 }
 
-pub(crate) fn attribute_list(p: &mut Parser) {
-    if p.at(SyntaxKind::Attr) {
-        attribute_list_modern(p);
-    } else if p.at(SyntaxKind::AttrLeft) {
-        attribute_list_legacy(p);
+pub(crate) fn attribute_list(parser: &mut Parser) {
+    if parser.at(SyntaxKind::AttributeOperator) {
+        attribute_list_modern(parser);
+    } else if parser.at(SyntaxKind::AttributeLeft) {
+        attribute_list_legacy(parser);
     }
 }
 
-fn attribute_list_modern(p: &mut Parser) {
-    let m = p.start();
-    while p.at(SyntaxKind::Attr) {
-        p.bump();
-        attribute(p);
+fn attribute_list_modern(parser: &mut Parser) {
+    let marker = parser.start();
+    while parser.at(SyntaxKind::AttributeOperator) {
+        parser.bump();
+        attribute(parser);
     }
-    m.complete(p, SyntaxKind::AttributeList);
+    marker.complete(parser, SyntaxKind::AttributeList);
 }
 
-fn attribute_list_legacy(p: &mut Parser) {
+fn attribute_list_legacy(parser: &mut Parser) {
     list(
-        p,
-        SyntaxKind::AttrLeft,
-        SyntaxKind::AttrRight,
+        parser,
+        SyntaxKind::AttributeLeft,
+        SyntaxKind::AttributeRight,
         SyntaxKind::Comma,
         SyntaxKind::AttributeList,
         attribute,
     );
 }
 
-fn attribute(p: &mut Parser) {
-    let m = p.start();
-    if p.at(SyntaxKind::Ident) {
-        p.bump();
+fn attribute(parser: &mut Parser) {
+    let marker = parser.start();
+    if parser.at(SyntaxKind::Identifier) {
+        parser.bump();
     } else {
-        p.error_no_bump(&[SyntaxKind::Ident])
+        parser.error_no_bump(&[SyntaxKind::Identifier])
     }
 
-    if p.at(SyntaxKind::ParenLeft) {
+    if parser.at(SyntaxKind::ParenLeft) {
         list(
-            p,
+            parser,
             SyntaxKind::ParenLeft,
             SyntaxKind::ParenRight,
             SyntaxKind::Comma,
             SyntaxKind::AttributeParameters,
             |p| {
-                if p.at(SyntaxKind::Ident) {
+                if p.at(SyntaxKind::Identifier) {
                     p.bump();
                 } else if p.at_set(TOKENSET_LITERAL) {
-                    expr::literal(p);
+                    expression::literal(p);
                 } else {
                     p.error_recovery(&[SyntaxKind::ParenRight]);
                 }
@@ -975,11 +976,11 @@ fn attribute(p: &mut Parser) {
         );
     }
 
-    m.complete(p, SyntaxKind::Attribute);
+    marker.complete(parser, SyntaxKind::Attribute);
 }
 
-fn name_ref(p: &mut Parser) {
-    let m = p.start();
-    p.expect(SyntaxKind::Ident);
-    m.complete(p, SyntaxKind::NameRef);
+fn name_ref(parser: &mut Parser) {
+    let marker = parser.start();
+    parser.expect(SyntaxKind::Identifier);
+    marker.complete(parser, SyntaxKind::NameReference);
 }

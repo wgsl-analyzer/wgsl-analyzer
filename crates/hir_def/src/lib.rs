@@ -3,7 +3,7 @@ pub mod attrs;
 pub mod body;
 pub mod data;
 pub mod db;
-pub mod expr;
+pub mod expression;
 pub mod hir_file_id;
 pub mod module_data;
 pub mod resolver;
@@ -107,9 +107,9 @@ impl<N: HasTextRange, T: HasTextRange> HasTextRange for NodeOrToken<N, T> {
 pub fn original_file_range<T: HasTextRange>(
     db: &dyn DefDatabase,
     file_id: HirFileId,
-    val: &T,
+    value: &T,
 ) -> FileRange {
-    original_file_range_inner(db, file_id, val.text_range())
+    original_file_range_inner(db, file_id, value.text_range())
 }
 
 fn original_file_range_inner(

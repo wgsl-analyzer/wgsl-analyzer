@@ -27,8 +27,7 @@ dissimilar.workspace = true
 ide-completion.workspace = true
 itertools.workspace = true
 scip.workspace = true
-lsp-types = { version = "=0.95.0" }
-# lsp-types = { version = "=0.95.0", features = ["proposed"] }
+lsp-types = { version = "=0.95.0", features = ["proposed"] }
 parking_lot.workspace = true
 xflags.workspace = true
 threadpool.workspace = true
@@ -71,7 +70,7 @@ stdx.workspace = true
 syntax.workspace = true
 parser.workspace = true
 # toolchain.workspace = true
-# vfs-notify.workspace = true
+vfs-notify.workspace = true
 vfs.workspace = true
 paths.workspace = true
 camino = "1.1.9"

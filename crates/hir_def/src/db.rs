@@ -11,7 +11,7 @@ use vfs::VfsPath;
 use crate::{
     HirFileId, InFile,
     ast_id::AstIdMap,
-    attrs::{Attr, AttrDefId, AttrsWithOwner},
+    attrs::{Attribute, AttributeDefId, AttributesWithOwner},
     body::{Body, BodySourceMap, scope::ExprScopes},
     data::{
         FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, StructData,
@@ -23,7 +23,7 @@ use crate::{
         Struct, TypeAlias,
     },
     resolver::Resolver,
-    type_ref::TypeRef,
+    type_ref::TypeReference,
 };
 
 #[salsa::query_group(DefDatabaseStorage)]
@@ -68,19 +68,19 @@ pub trait DefDatabase: InternDatabase + Upcast<dyn SourceDatabase> {
     #[salsa::invoke(Body::body_with_source_map_query)]
     fn body_with_source_map(
         &self,
-        def: DefWithBodyId,
+        def: DefinitionWithBodyId,
     ) -> (Arc<Body>, Arc<BodySourceMap>);
 
     #[salsa::invoke(Body::body_query)]
     fn body(
         &self,
-        def: DefWithBodyId,
+        def: DefinitionWithBodyId,
     ) -> Arc<Body>;
 
-    #[salsa::invoke(ExprScopes::expr_scopes_query)]
-    fn expr_scopes(
+    #[salsa::invoke(ExprScopes::expression_scopes_query)]
+    fn expression_scopes(
         &self,
-        def: DefWithBodyId,
+        def: DefinitionWithBodyId,
     ) -> Arc<ExprScopes>;
 
     #[salsa::invoke(FunctionData::fn_data_query)]
@@ -119,11 +119,11 @@ pub trait DefDatabase: InternDatabase + Upcast<dyn SourceDatabase> {
         def: OverrideId,
     ) -> Arc<OverrideData>;
 
-    #[salsa::invoke(AttrsWithOwner::attrs_query)]
+    #[salsa::invoke(AttributesWithOwner::attrs_query)]
     fn attrs(
         &self,
-        def: AttrDefId,
-    ) -> Arc<AttrsWithOwner>;
+        def: AttributeDefId,
+    ) -> Arc<AttributesWithOwner>;
 }
 
 fn get_path(
@@ -205,11 +205,11 @@ fn resolve_full_source(
             None => vec![import_source.into()],
         };
 
-        let idx = import.index();
+        let index = import.index();
         import
             .parent()
             .unwrap()
-            .splice_children(idx..idx + 1, to_insert);
+            .splice_children(index..index + 1, to_insert);
     }
 
     Ok(root.syntax().to_string())
@@ -241,7 +241,7 @@ fn text_range_from_full(
             break;
         }
 
-        let import_len = match db.parse_or_resolve(import_file) {
+        let import_length = match db.parse_or_resolve(import_file) {
             Ok(it) => it.syntax().text().len(),
             Err(_) => continue,
         };
@@ -251,7 +251,7 @@ fn text_range_from_full(
             .filter(|token| token.kind().is_whitespace())
             .map_or(0, |ws| ws.text().len());
 
-        let to_remove = import_len + TextSize::from(import_whitespace as u32);
+        let to_remove = import_length + TextSize::from(import_whitespace as u32);
 
         if let Some(new_range) = range.checked_sub(to_remove) {
             range = new_range + import.syntax().text().len();
@@ -281,13 +281,13 @@ pub trait InternDatabase: SourceDatabase {
     #[salsa::interned]
     fn intern_type_ref(
         &self,
-        type_ref: TypeRef,
-    ) -> Interned<TypeRef>;
+        type_reference: TypeReference,
+    ) -> Interned<TypeReference>;
     #[salsa::interned]
-    fn intern_attr(
+    fn intern_attribute(
         &self,
-        attr: Attr,
-    ) -> Interned<Attr>;
+        attribute: Attribute,
+    ) -> Interned<Attribute>;
 
     #[salsa::interned]
     fn intern_function(
@@ -297,7 +297,7 @@ pub trait InternDatabase: SourceDatabase {
     #[salsa::interned]
     fn intern_global_variable(
         &self,
-        loc: Location<GlobalVariable>,
+        location: Location<GlobalVariable>,
     ) -> GlobalVariableId;
     #[salsa::interned]
     fn intern_global_constant(
@@ -429,23 +429,23 @@ intern_id!(ImportId, Location<Import>, lookup_intern_import);
 intern_id!(TypeAliasId, Location<TypeAlias>, lookup_intern_type_alias);
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
-pub enum DefWithBodyId {
+pub enum DefinitionWithBodyId {
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),
     GlobalConstant(GlobalConstantId),
     Override(OverrideId),
 }
 
-impl DefWithBodyId {
+impl DefinitionWithBodyId {
     pub fn file_id(
         &self,
         db: &dyn DefDatabase,
     ) -> HirFileId {
         match self {
-            DefWithBodyId::Function(id) => id.lookup(db).file_id,
-            DefWithBodyId::GlobalVariable(id) => id.lookup(db).file_id,
-            DefWithBodyId::GlobalConstant(id) => id.lookup(db).file_id,
-            DefWithBodyId::Override(id) => id.lookup(db).file_id,
+            DefinitionWithBodyId::Function(id) => id.lookup(db).file_id,
+            DefinitionWithBodyId::GlobalVariable(id) => id.lookup(db).file_id,
+            DefinitionWithBodyId::GlobalConstant(id) => id.lookup(db).file_id,
+            DefinitionWithBodyId::Override(id) => id.lookup(db).file_id,
         }
     }
 

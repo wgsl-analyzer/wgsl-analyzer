@@ -6,12 +6,12 @@ use std::sync::Arc;
 use either::Either;
 use la_arena::{Arena, ArenaMap, Idx};
 use rustc_hash::{FxHashMap, FxHashSet};
-use syntax::{ast, ptr::AstPtr};
+use syntax::{ast, pointer::AstPointer};
 
 use crate::{
     HasSource,
-    db::{DefDatabase, DefWithBodyId, Lookup},
-    expr::{Expr, ExprId, Statement, StatementId},
+    db::{DefDatabase, DefinitionWithBodyId, Lookup},
+    expression::{Expression, ExpressionId, Statement, StatementId},
     module_data::Name,
 };
 
@@ -24,17 +24,17 @@ pub struct Binding {
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct Body {
-    pub exprs: Arena<Expr>,
+    pub exprs: Arena<Expression>,
     pub statements: Arena<Statement>,
     pub bindings: Arena<Binding>,
-    pub paren_exprs: FxHashSet<ExprId>,
+    pub parenthesis_expressions: FxHashSet<ExpressionId>,
 
     // for global declarations
     pub main_binding: Option<BindingId>,
     // for functions
-    pub params: Vec<BindingId>,
+    pub parameters: Vec<BindingId>,
 
-    pub root: Option<Either<StatementId, ExprId>>,
+    pub root: Option<Either<StatementId, ExpressionId>>,
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -47,55 +47,55 @@ pub struct SyntheticSyntax;
 /// file, so that we do not recompute types whenever some whitespace is typed.
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct BodySourceMap {
-    expr_map: FxHashMap<AstPtr<ast::Expr>, ExprId>,
-    expr_map_back: ArenaMap<ExprId, Result<AstPtr<ast::Expr>, SyntheticSyntax>>,
+    expression_map: FxHashMap<AstPointer<ast::Expr>, ExpressionId>,
+    expression_map_back: ArenaMap<ExpressionId, Result<AstPointer<ast::Expr>, SyntheticSyntax>>,
 
-    stmt_map: FxHashMap<AstPtr<ast::Statement>, StatementId>,
-    stmt_map_back: ArenaMap<StatementId, Result<AstPtr<ast::Statement>, SyntheticSyntax>>,
+    statement_map: FxHashMap<AstPointer<ast::Statement>, StatementId>,
+    statement_map_back: ArenaMap<StatementId, Result<AstPointer<ast::Statement>, SyntheticSyntax>>,
 
-    binding_map: FxHashMap<AstPtr<ast::Binding>, BindingId>,
-    binding_map_back: ArenaMap<BindingId, Result<AstPtr<ast::Binding>, SyntheticSyntax>>,
+    binding_map: FxHashMap<AstPointer<ast::Binding>, BindingId>,
+    binding_map_back: ArenaMap<BindingId, Result<AstPointer<ast::Binding>, SyntheticSyntax>>,
 }
 
 impl Body {
     pub fn body_query(
         db: &dyn DefDatabase,
-        def: DefWithBodyId,
+        def: DefinitionWithBodyId,
     ) -> Arc<Body> {
         db.body_with_source_map(def).0
     }
 
     pub fn body_with_source_map_query(
         db: &dyn DefDatabase,
-        def: DefWithBodyId,
+        def: DefinitionWithBodyId,
     ) -> (Arc<Body>, Arc<BodySourceMap>) {
         let file_id = def.file_id(db);
         let (body, source_map) = match def {
-            DefWithBodyId::Function(id) => {
+            DefinitionWithBodyId::Function(id) => {
                 let location = id.lookup(db);
-                let src = location.source(db);
-                let params = src.value.param_list();
-                let body = src.value.body();
+                let source = location.source(db);
+                let parameters = source.value.parameter_list();
+                let body = source.value.body();
 
-                lower::lower_function_body(db, file_id, params, body)
+                lower::lower_function_body(db, file_id, parameters, body)
             },
-            DefWithBodyId::GlobalVariable(id) => {
+            DefinitionWithBodyId::GlobalVariable(id) => {
                 let location = id.lookup(db);
-                let src = location.source(db);
+                let source = location.source(db);
 
-                lower::lower_global_var_decl(db, file_id, src.value)
+                lower::lower_global_var_declaration(db, file_id, source.value)
             },
-            DefWithBodyId::GlobalConstant(id) => {
+            DefinitionWithBodyId::GlobalConstant(id) => {
                 let location = id.lookup(db);
-                let src = location.source(db);
+                let source = location.source(db);
 
-                lower::lower_global_constant_decl(db, file_id, src.value)
+                lower::lower_global_constant_declaration(db, file_id, source.value)
             },
-            DefWithBodyId::Override(id) => {
+            DefinitionWithBodyId::Override(id) => {
                 let location = id.lookup(db);
-                let src = location.source(db);
+                let source = location.source(db);
 
-                lower::lower_override_decl(db, file_id, src.value)
+                lower::lower_override_declaration(db, file_id, source.value)
             },
         };
 
@@ -104,23 +104,23 @@ impl Body {
 }
 
 impl BodySourceMap {
-    pub fn lookup_expr(
+    pub fn lookup_expression(
         &self,
-        source: &AstPtr<ast::Expr>,
-    ) -> Option<ExprId> {
-        self.expr_map.get(source).copied()
+        source: &AstPointer<ast::Expr>,
+    ) -> Option<ExpressionId> {
+        self.expression_map.get(source).copied()
     }
 
     pub fn lookup_statement(
         &self,
-        source: &AstPtr<ast::Statement>,
+        source: &AstPointer<ast::Statement>,
     ) -> Option<StatementId> {
-        self.stmt_map.get(source).copied()
+        self.statement_map.get(source).copied()
     }
 
     pub fn lookup_binding(
         &self,
-        source: &AstPtr<ast::Binding>,
+        source: &AstPointer<ast::Binding>,
     ) -> Option<BindingId> {
         self.binding_map.get(source).copied()
     }
@@ -128,21 +128,21 @@ impl BodySourceMap {
     pub fn binding_to_source(
         &self,
         binding: BindingId,
-    ) -> Result<&AstPtr<ast::Binding>, &SyntheticSyntax> {
+    ) -> Result<&AstPointer<ast::Binding>, &SyntheticSyntax> {
         self.binding_map_back[binding].as_ref()
     }
 
-    pub fn expr_to_source(
+    pub fn expression_to_source(
         &self,
-        expr: ExprId,
-    ) -> Result<&AstPtr<ast::Expr>, &SyntheticSyntax> {
-        self.expr_map_back[expr].as_ref()
+        expression: ExpressionId,
+    ) -> Result<&AstPointer<ast::Expr>, &SyntheticSyntax> {
+        self.expression_map_back[expression].as_ref()
     }
 
-    pub fn stmt_to_source(
+    pub fn statement_to_source(
         &self,
-        stmt: StatementId,
-    ) -> Result<&AstPtr<ast::Statement>, &SyntheticSyntax> {
-        self.stmt_map_back[stmt].as_ref()
+        statement: StatementId,
+    ) -> Result<&AstPointer<ast::Statement>, &SyntheticSyntax> {
+        self.statement_map_back[statement].as_ref()
     }
 }

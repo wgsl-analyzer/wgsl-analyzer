@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use either::Either;
 use syntax::{
-    HasAttrs, HasName,
+    HasAttributes, HasName,
     ast::{self, IdentOrLiteral},
 };
 
@@ -10,79 +10,83 @@ use crate::{
     HasSource,
     data::FieldId,
     db::{DefDatabase, FunctionId, GlobalVariableId, Interned, Lookup, StructId},
-    expr::{Literal, parse_literal},
+    expression::{Literal, parse_literal},
     module_data::Name,
 };
 
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
-pub enum AttrValue {
+pub enum AttributeValue {
     Name(Name),
     Literal(Literal),
 }
 
 // e.g `builtin(position)`, `block`
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
-pub struct Attr {
+pub struct Attribute {
     pub name: Name,
-    pub parameters: smallvec::SmallVec<[AttrValue; 1]>,
+    pub parameters: smallvec::SmallVec<[AttributeValue; 1]>,
 }
 
 // e.g. [[group(0), location(0)]]
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
-pub struct AttrList {
-    pub attrs: Vec<Interned<Attr>>,
+pub struct AttributeList {
+    pub attributes: Vec<Interned<Attribute>>,
 }
 
-impl AttrList {
+impl AttributeList {
     pub fn has(
         &self,
         db: &dyn DefDatabase,
         name: &str,
     ) -> bool {
-        self.attrs.iter().any(|attr| {
-            let attr = db.lookup_intern_attr(*attr);
-            attr.name.as_str() == name
+        self.attributes.iter().any(|attribute| {
+            let attribute = db.lookup_intern_attribute(*attribute);
+            attribute.name.as_str() == name
         })
     }
 }
 
-impl AttrList {
+impl AttributeList {
     pub fn from_src(
         db: &dyn DefDatabase,
-        src: &dyn HasAttrs,
-    ) -> AttrList {
-        let attrs = src
+        source: &dyn HasAttributes,
+    ) -> AttributeList {
+        let attrs = source
             .attributes()
-            .map(|attr| Attr {
-                name: attr
+            .map(|attribute| Attribute {
+                name: attribute
                     .ident_token()
-                    .map_or_else(Name::missing, |attr| Name::from(attr.text())),
-                parameters: attr
-                    .params()
-                    .map(|param| {
-                        param.values().map(|value| match value {
-                            IdentOrLiteral::Ident(ident) => AttrValue::Name(Name::from(ident)),
+                    .map_or_else(Name::missing, |attribute| Name::from(attribute.text())),
+                parameters: attribute
+                    .parameters()
+                    .map(|parameter| {
+                        parameter.values().map(|value| match value {
+                            IdentOrLiteral::Identifier(ident) => {
+                                AttributeValue::Name(Name::from(ident))
+                            },
                             IdentOrLiteral::Literal(lit) => {
-                                AttrValue::Literal(parse_literal(lit.kind()))
+                                AttributeValue::Literal(parse_literal(lit.kind()))
                             },
                         })
                     })
                     .map_or_else(|| Either::Left(std::iter::empty()), Either::Right)
                     .collect(),
             })
-            .map(|attr| db.intern_attr(attr))
+            .map(|attribute| db.intern_attribute(attribute))
             .collect();
 
-        AttrList { attrs }
+        AttributeList { attributes: attrs }
     }
 
-    fn empty() -> AttrList {
-        AttrList { attrs: Vec::new() }
+    fn empty() -> AttributeList {
+        AttributeList {
+            attributes: Vec::new(),
+        }
     }
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub enum AttrDefId {
+pub enum AttributeDefId {
     StructId(StructId),
     FieldId(FieldId),
     FunctionId(FunctionId),
@@ -90,23 +94,25 @@ pub enum AttrDefId {
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub struct AttrsWithOwner {
-    pub attribute_list: AttrList,
-    pub owner: AttrDefId,
+pub struct AttributesWithOwner {
+    pub attribute_list: AttributeList,
+    pub owner: AttributeDefId,
 }
 
-impl AttrsWithOwner {
+impl AttributesWithOwner {
     pub(crate) fn attrs_query(
         db: &dyn DefDatabase,
-        def: AttrDefId,
+        def: AttributeDefId,
     ) -> Arc<Self> {
         let attrs = match def {
-            AttrDefId::StructId(id) => AttrList::from_src(db, &id.lookup(db).source(db).value),
-            AttrDefId::FieldId(id) => {
+            AttributeDefId::StructId(id) => {
+                AttributeList::from_src(db, &id.lookup(db).source(db).value)
+            },
+            AttributeDefId::FieldId(id) => {
                 let location = id.r#struct.lookup(db).source(db);
-                let struct_decl: ast::StructDecl = location.value;
-                let mut fields = struct_decl.body().map_or_else(
-                    || Either::Left(std::iter::empty::<ast::StructDeclField>()),
+                let struct_declaration: ast::StructDeclaration = location.value;
+                let mut fields = struct_declaration.body().map_or_else(
+                    || Either::Left(std::iter::empty::<ast::StructDeclarationField>()),
                     |body| Either::Right(body.fields()),
                 );
 
@@ -116,7 +122,7 @@ impl AttrsWithOwner {
                 // this is ugly but rust-analyzer is more complicated and this should work for now
                 let attrs = fields.find_map(|field| {
                     let name = field
-                        .variable_ident_decl()
+                        .variable_ident_declaration()
                         .and_then(|var| var.binding())
                         .and_then(|binding| binding.name())?;
                     if name.text().as_str() == field_name {
@@ -126,17 +132,19 @@ impl AttrsWithOwner {
                     }
                 });
                 match attrs {
-                    Some(field) => AttrList::from_src(db, &field),
-                    None => AttrList::empty(),
+                    Some(field) => AttributeList::from_src(db, &field),
+                    None => AttributeList::empty(),
                 }
             },
-            AttrDefId::FunctionId(id) => AttrList::from_src(db, &id.lookup(db).source(db).value),
-            AttrDefId::GlobalVariableId(id) => {
-                AttrList::from_src(db, &id.lookup(db).source(db).value)
+            AttributeDefId::FunctionId(id) => {
+                AttributeList::from_src(db, &id.lookup(db).source(db).value)
+            },
+            AttributeDefId::GlobalVariableId(id) => {
+                AttributeList::from_src(db, &id.lookup(db).source(db).value)
             },
         };
 
-        Arc::new(AttrsWithOwner {
+        Arc::new(AttributesWithOwner {
             attribute_list: attrs,
             owner: def,
         })

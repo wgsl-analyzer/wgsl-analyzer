@@ -1,6 +1,6 @@
-use hir_def::db::{DefWithBodyId, GlobalVariableId};
+use hir_def::db::{DefinitionWithBodyId, GlobalVariableId};
 use hir_ty::{
-    HirDatabase,
+    db::HirDatabase,
     ty::{ArrayType, TyKind},
     validate::StorageClassError,
 };
@@ -16,7 +16,7 @@ pub fn collect(
     mut f: impl FnMut(GlobalVariableDiagnostic),
 ) {
     let data = db.global_var_data(var);
-    let infer = db.infer(DefWithBodyId::GlobalVariable(var));
+    let infer = db.infer(DefinitionWithBodyId::GlobalVariable(var));
 
     let ty_kind = infer.return_type.map(|ty| ty.kind(db));
 

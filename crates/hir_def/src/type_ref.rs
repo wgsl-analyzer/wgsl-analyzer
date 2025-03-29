@@ -1,9 +1,9 @@
 use syntax::{HasGenerics, ast};
 
-use crate::{expr::parse_literal, module_data::Name};
+use crate::{expression::parse_literal, module_data::Name};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum TypeRef {
+pub enum TypeReference {
     Error,
     Scalar(ScalarType),
     Vec(VecType),
@@ -13,30 +13,30 @@ pub enum TypeRef {
     Atomic(AtomicType),
     Array(ArrayType),
     Path(Name),
-    Ptr(PtrType),
+    Pointer(PointerType),
 }
 
-impl std::fmt::Display for TypeRef {
+impl std::fmt::Display for TypeReference {
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match self {
-            TypeRef::Error => write!(f, "[error]"),
-            TypeRef::Scalar(val) => write!(f, "{}", val),
-            TypeRef::Vec(val) => write!(f, "{}", val),
-            TypeRef::Matrix(val) => write!(f, "{}", val),
-            TypeRef::Texture(val) => write!(f, "{}", val),
-            TypeRef::Sampler(val) => write!(f, "{}", val),
-            TypeRef::Atomic(val) => write!(f, "{}", val),
-            TypeRef::Array(val) => write!(f, "{}", val),
-            TypeRef::Path(val) => write!(f, "{}", val.as_str()),
-            TypeRef::Ptr(val) => write!(f, "{}", val),
+            TypeReference::Error => write!(f, "[error]"),
+            TypeReference::Scalar(value) => write!(f, "{}", value),
+            TypeReference::Vec(value) => write!(f, "{}", value),
+            TypeReference::Matrix(value) => write!(f, "{}", value),
+            TypeReference::Texture(value) => write!(f, "{}", value),
+            TypeReference::Sampler(value) => write!(f, "{}", value),
+            TypeReference::Atomic(value) => write!(f, "{}", value),
+            TypeReference::Array(value) => write!(f, "{}", value),
+            TypeReference::Path(value) => write!(f, "{}", value.as_str()),
+            TypeReference::Pointer(value) => write!(f, "{}", value),
         }
     }
 }
 
-impl TryFrom<ast::Type> for TypeRef {
+impl TryFrom<ast::Type> for TypeReference {
     type Error = ();
 
     fn try_from(ty: ast::Type) -> Result<Self, ()> {
@@ -92,7 +92,7 @@ impl std::fmt::Display for ScalarType {
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct VecType {
     pub size: VecDimensionality,
-    pub inner: Box<TypeRef>,
+    pub inner: Box<TypeReference>,
 }
 
 impl std::fmt::Display for VecType {
@@ -150,7 +150,7 @@ pub(crate) fn vector_dimensions(ty: &ast::VecType) -> VecDimensionality {
 pub struct MatrixType {
     pub columns: VecDimensionality,
     pub rows: VecDimensionality,
-    pub inner: Box<TypeRef>,
+    pub inner: Box<TypeReference>,
 }
 
 impl TryFrom<ast::MatrixType> for MatrixType {
@@ -256,7 +256,7 @@ impl std::fmt::Display for TextureType {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum TextureKind {
-    Sampled(Box<TypeRef>),
+    Sampled(Box<TypeReference>),
     Storage(String, AccessMode),
     Depth,
     External,
@@ -475,7 +475,7 @@ impl From<ast::SamplerType> for SamplerType {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct AtomicType {
-    pub inner: Box<TypeRef>,
+    pub inner: Box<TypeReference>,
 }
 
 impl std::fmt::Display for AtomicType {
@@ -500,7 +500,7 @@ impl TryFrom<ast::AtomicType> for AtomicType {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ArrayType {
-    pub inner: Box<TypeRef>,
+    pub inner: Box<TypeReference>,
     pub binding_array: bool,
     pub size: ArraySize,
 }
@@ -539,8 +539,8 @@ impl TryFrom<ast::ArrayType> for ArrayType {
         let size = match generics.next() {
             Some(ast::GenericArg::Type(ty)) => ArraySize::Path(Name::from(ty.as_name().ok_or(())?)),
             Some(ast::GenericArg::Literal(lit)) => match parse_literal(lit.kind()) {
-                crate::expr::Literal::Int(val, _) => ArraySize::Int(val),
-                crate::expr::Literal::Uint(val, _) => ArraySize::Uint(val),
+                crate::expression::Literal::Int(value, _) => ArraySize::Int(value),
+                crate::expression::Literal::Uint(value, _) => ArraySize::Uint(value),
                 _ => return Err(()),
             },
             None => ArraySize::Dynamic,
@@ -563,8 +563,8 @@ impl TryFrom<ast::BindingArrayType> for ArrayType {
         let size = match generics.next() {
             Some(ast::GenericArg::Type(ty)) => ArraySize::Path(Name::from(ty.as_name().ok_or(())?)),
             Some(ast::GenericArg::Literal(lit)) => match parse_literal(lit.kind()) {
-                crate::expr::Literal::Int(val, _) => ArraySize::Int(val),
-                crate::expr::Literal::Uint(val, _) => ArraySize::Uint(val),
+                crate::expression::Literal::Int(value, _) => ArraySize::Int(value),
+                crate::expression::Literal::Uint(value, _) => ArraySize::Uint(value),
                 _ => return Err(()),
             },
             None => ArraySize::Dynamic,
@@ -579,13 +579,13 @@ impl TryFrom<ast::BindingArrayType> for ArrayType {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct PtrType {
+pub struct PointerType {
     pub storage_class: StorageClass,
     pub access_mode: AccessMode,
-    pub inner: Box<TypeRef>,
+    pub inner: Box<TypeReference>,
 }
 
-impl std::fmt::Display for PtrType {
+impl std::fmt::Display for PointerType {
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,
@@ -594,7 +594,7 @@ impl std::fmt::Display for PtrType {
     }
 }
 
-impl TryFrom<ast::PtrType> for PtrType {
+impl TryFrom<ast::PtrType> for PointerType {
     type Error = ();
 
     fn try_from(pointer: ast::PtrType) -> Result<Self, Self::Error> {
@@ -611,7 +611,7 @@ impl TryFrom<ast::PtrType> for PtrType {
             _ => return Err(()),
         };
 
-        Ok(PtrType {
+        Ok(PointerType {
             inner: Box::new(inner.try_into()?),
             access_mode,
             storage_class,

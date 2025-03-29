@@ -278,7 +278,7 @@ impl NagaErrorPolicy {
         full_range: TextRange,
         acc: &mut Vec<AnyDiagnostic>,
     ) {
-        let message = err_message_cause_chain("naga: ", &error);
+        let message = error_message_cause_chain("naga: ", &error);
 
         if !error.has_spans() {
             acc.push(AnyDiagnostic::NagaValidationError {
@@ -439,10 +439,11 @@ pub fn diagnostics(
             let file_id = diagnostic.file_id();
             let root = db.parse_or_resolve(file_id).unwrap().syntax();
             match diagnostic {
-                AnyDiagnostic::AssignmentNotAReference { lhs, actual } => {
-                    let source = lhs.value.to_node(&root);
+                AnyDiagnostic::AssignmentNotAReference { left_side, actual } => {
+                    let source = left_side.value.to_node(&root);
                     let actual = ty::pretty::pretty_type(db, actual);
-                    let frange = original_file_range(db.upcast(), lhs.file_id, source.syntax());
+                    let frange =
+                        original_file_range(db.upcast(), left_side.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("1"),
                         format!(
@@ -453,53 +454,62 @@ pub fn diagnostics(
                     )
                 },
                 AnyDiagnostic::TypeMismatch {
-                    expr,
+                    expression,
                     expected,
                     actual,
                 } => {
-                    let source = expr.value.to_node(&root);
+                    let source = expression.value.to_node(&root);
                     let expected = ty::pretty::pretty_type_expectation(db, expected);
                     let actual = ty::pretty::pretty_type(db, actual);
-                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                    let frange =
+                        original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("2"),
                         format!("expected {}, found {}", expected, actual),
                         frange.range,
                     )
                 },
-                AnyDiagnostic::NoSuchField { expr, name, ty } => {
-                    let source = expr.value.to_node(&root).syntax().parent().unwrap();
+                AnyDiagnostic::NoSuchField {
+                    expression,
+                    name,
+                    ty,
+                } => {
+                    let source = expression.value.to_node(&root).syntax().parent().unwrap();
                     let ty = ty::pretty::pretty_type(db, ty);
-                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                    let frange =
+                        original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("3"),
                         format!("no field `{}` on type {}", name.as_ref(), ty),
                         frange.range,
                     )
                 },
-                AnyDiagnostic::ArrayAccessInvalidType { expr, ty } => {
-                    let source = expr.value.to_node(&root);
+                AnyDiagnostic::ArrayAccessInvalidType { expression, ty } => {
+                    let source = expression.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, ty);
-                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                    let frange =
+                        original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("4"),
                         format!("cannot index into type {}", ty),
                         frange.range,
                     )
                 },
-                AnyDiagnostic::UnresolvedName { expr, name } => {
-                    let source = expr.value.to_node(&root);
-                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                AnyDiagnostic::UnresolvedName { expression, name } => {
+                    let source = expression.value.to_node(&root);
+                    let frange =
+                        original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("5"),
                         format!("cannot find `{}` in this scope", name.as_str()),
                         frange.range,
                     )
                 },
-                AnyDiagnostic::InvalidConstructionType { expr, ty } => {
-                    let source = expr.value.to_node(&root);
+                AnyDiagnostic::InvalidConstructionType { expression, ty } => {
+                    let source = expression.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, ty);
-                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                    let frange =
+                        original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("6"),
                         format!("cannot construct value of type {}", ty),
@@ -507,12 +517,13 @@ pub fn diagnostics(
                     )
                 },
                 AnyDiagnostic::FunctionCallArgCountMismatch {
-                    expr,
+                    expression,
                     n_expected,
                     n_actual,
                 } => {
-                    let source = expr.value.to_node(&root).syntax().parent().unwrap();
-                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                    let source = expression.value.to_node(&root).syntax().parent().unwrap();
+                    let frange =
+                        original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("7"),
                         format!("expected {} parameters, found {}", n_expected, n_actual),
@@ -520,12 +531,12 @@ pub fn diagnostics(
                     )
                 },
                 AnyDiagnostic::NoBuiltinOverload {
-                    expr,
+                    expression,
                     builtin,
                     parameters,
                     name,
                 } => {
-                    let source = expr.value.to_node(&root).syntax().parent().unwrap();
+                    let source = expression.value.to_node(&root).syntax().parent().unwrap();
                     let builtin = builtin.lookup(db);
 
                     let parameters = parameters
@@ -543,7 +554,8 @@ pub fn diagnostics(
                         None => builtin.name(),
                     };
 
-                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                    let frange =
+                        original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("8"),
                         format!(
@@ -554,10 +566,11 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::AddrOfNotRef { expr, actual } => {
-                    let source = expr.value.to_node(&root);
+                AnyDiagnostic::AddressOfNotReference { expression, actual } => {
+                    let source = expression.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, actual);
-                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                    let frange =
+                        original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("9"),
                         format!("expected a reference, found {}", ty),
@@ -567,7 +580,8 @@ pub fn diagnostics(
                 AnyDiagnostic::DerefNotPointer { expression, actual } => {
                     let source = expression.value.to_node(&root);
                     let ty = ty::pretty::pretty_type(db, actual);
-                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                    let frange =
+                        original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("10"),
                         format!("cannot dereference expression of type {}", ty),
@@ -621,9 +635,9 @@ pub fn diagnostics(
                     related,
                     ..
                 } => {
-                    let mut msg = Diagnostic::new(DiagnosticCode("15"), message, range);
-                    msg.related = related;
-                    msg
+                    let mut message = Diagnostic::new(DiagnosticCode("15"), message, range);
+                    message.related = related;
+                    message
                 },
                 AnyDiagnostic::ParseError { message, range, .. } => {
                     Diagnostic::new(DiagnosticCode("16"), message, range)
@@ -639,12 +653,12 @@ pub fn diagnostics(
                 .with_severity(Severity::WeakWarning)
                 .unused(),
                 AnyDiagnostic::NoConstructor {
-                    expr,
+                    expression,
                     builtins: [specific, general],
                     ty,
                     parameters,
                 } => {
-                    let source = expr.value.to_node(&root).syntax().clone();
+                    let source = expression.value.to_node(&root).syntax().clone();
 
                     let parameters = parameters
                         .iter()
@@ -675,7 +689,8 @@ pub fn diagnostics(
 
                     let possible = possible.join("\n");
 
-                    let frange = original_file_range(db.upcast(), expr.file_id, source.syntax());
+                    let frange =
+                        original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("18"),
                         format!(
@@ -687,11 +702,11 @@ pub fn diagnostics(
                     )
                 },
                 AnyDiagnostic::PrecedenceParensRequired {
-                    expr,
-                    op,
+                    expression,
+                    operation: op,
                     sequence_permitted,
                 } => {
-                    let source = expr.value.to_node(&root);
+                    let source = expression.value.to_node(&root);
                     let frange = original_file_range(db.upcast(), file_id, source.syntax());
                     let symbol = op.symbol();
                     let message = if sequence_permitted {
@@ -743,21 +758,21 @@ fn convert_compatible(
     }
 }
 
-fn err_message_cause_chain(
+fn error_message_cause_chain(
     prefix: &str,
     error: &dyn std::error::Error,
 ) -> String {
-    let mut msg = format!("{}{}", prefix, error);
+    let mut message = format!("{}{}", prefix, error);
 
     let mut e = error.source();
     if e.is_some() {
-        msg.push_str(": ");
+        message.push_str(": ");
     }
 
     while let Some(source) = e {
-        msg.push_str(&source.to_string());
+        message.push_str(&source.to_string());
         e = source.source();
     }
 
-    msg
+    message
 }

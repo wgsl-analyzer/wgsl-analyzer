@@ -4,13 +4,13 @@ use la_arena::{Arena, Idx};
 use syntax::{
     AstNode, SyntaxNode,
     ast::{self, SourceFile},
-    ptr::{AstPtr, SyntaxNodePtr},
+    pointer::{AstPointer, SyntaxNodePointer},
 };
 
 /// Maps items' `SyntaxNode`s to `ErasedFileAstId`s and back.
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct AstIdMap {
-    arena: Arena<SyntaxNodePtr>,
+    arena: Arena<SyntaxNodePointer>,
 }
 
 impl AstIdMap {
@@ -25,8 +25,11 @@ impl AstIdMap {
                 map.alloc(item.syntax());
 
                 if let ast::Item::Function(function) = item {
-                    if let Some(params) = function.param_list() {
-                        for import in params.params().filter_map(|param| param.import()) {
+                    if let Some(parameters) = function.parameter_list() {
+                        for import in parameters
+                            .parameters()
+                            .filter_map(|parameter| parameter.import())
+                        {
                             map.alloc(import.syntax());
                         }
                     }
@@ -45,7 +48,10 @@ impl AstIdMap {
             None => panic!(
                 "Cannot find {:?} in AstIdMap:\n{:?}",
                 item.syntax(),
-                self.arena.iter().map(|(_id, i)| i).collect::<Vec<_>>(),
+                self.arena
+                    .iter()
+                    .map(|(_id, node)| node)
+                    .collect::<Vec<_>>(),
             ),
         };
 
@@ -58,21 +64,21 @@ impl AstIdMap {
     pub fn get<N: AstNode>(
         &self,
         id: FileAstId<N>,
-    ) -> AstPtr<N> {
+    ) -> AstPointer<N> {
         self.arena[id.id].clone().cast::<N>().unwrap()
     }
 
     fn alloc(
         &mut self,
         item: &SyntaxNode,
-    ) -> Idx<SyntaxNodePtr> {
-        self.arena.alloc(SyntaxNodePtr::new(item))
+    ) -> Idx<SyntaxNodePointer> {
+        self.arena.alloc(SyntaxNodePointer::new(item))
     }
 }
 
 /// `AstId` points to an AST node in a specific file.
 pub struct FileAstId<N: AstNode> {
-    id: Idx<SyntaxNodePtr>,
+    id: Idx<SyntaxNodePointer>,
     _marker: PhantomData<fn() -> N>,
 }
 

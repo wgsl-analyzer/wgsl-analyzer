@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{hash::Hash, marker::PhantomData};
 
 use rowan::TextRange;
 use wgsl_parser::{SyntaxKind, SyntaxNode};
@@ -95,7 +95,7 @@ impl<N: AstNode> PartialEq for AstPointer<N> {
     }
 }
 
-impl<N: AstNode> std::hash::Hash for AstPointer<N> {
+impl<Node: AstNode> std::hash::Hash for AstPointer<Node> {
     fn hash<H: std::hash::Hasher>(
         &self,
         state: &mut H,
@@ -104,8 +104,8 @@ impl<N: AstNode> std::hash::Hash for AstPointer<N> {
     }
 }
 
-impl<N: AstNode> AstPointer<N> {
-    pub fn new(node: &N) -> AstPointer<N> {
+impl<Node: AstNode> AstPointer<Node> {
+    pub fn new(node: &Node) -> AstPointer<Node> {
         AstPointer {
             raw: SyntaxNodePointer::new(node.syntax()),
             _ty: PhantomData,
@@ -116,17 +116,17 @@ impl<N: AstNode> AstPointer<N> {
     pub fn to_node(
         &self,
         root: &SyntaxNode,
-    ) -> N {
+    ) -> Node {
         let syntax_node = self.raw.to_node(root);
-        N::cast(syntax_node).unwrap()
+        Node::cast(syntax_node).unwrap()
     }
 
     pub fn syntax_node_pointer(&self) -> SyntaxNodePointer {
         self.raw.clone()
     }
 
-    pub fn cast<U: AstNode>(self) -> Option<AstPointer<U>> {
-        if !U::can_cast(self.raw.kind) {
+    pub fn cast<TargetNode: AstNode>(self) -> Option<AstPointer<TargetNode>> {
+        if !TargetNode::can_cast(self.raw.kind) {
             return None;
         }
         Some(AstPointer {
@@ -136,8 +136,8 @@ impl<N: AstNode> AstPointer<N> {
     }
 }
 
-impl<N: AstNode> From<AstPointer<N>> for SyntaxNodePointer {
-    fn from(pointer: AstPointer<N>) -> SyntaxNodePointer {
+impl<Node: AstNode> From<AstPointer<Node>> for SyntaxNodePointer {
+    fn from(pointer: AstPointer<Node>) -> SyntaxNodePointer {
         pointer.raw
     }
 }
