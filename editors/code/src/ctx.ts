@@ -4,28 +4,45 @@ import { promisify } from "util";
 import * as lsp_ext from "./lsp_ext";
 import * as vscode from "vscode";
 import { ExtensionContext } from "vscode";
-import { Executable, LanguageClient, LanguageClientOptions, ServerOptions } from "vscode-languageclient/node";
-import { Config, DiagnosticsConfig, InlayHintsConfig, TraceConfig } from "./config";
+import {
+    Executable,
+    LanguageClient,
+    LanguageClientOptions,
+    ServerOptions,
+} from "vscode-languageclient/node";
+import {
+    Config,
+    DiagnosticsConfig,
+    InlayHintsConfig,
+    TraceConfig,
+} from "./config";
 import { isWgslEditor, WgslEditor } from "./util";
 
-
 interface WGSLAnalyzerConfiguration {
-    customImports: Record<string, string>,
-    shaderDefs: [string],
-    trace: TraceConfig,
-    diagnostics: DiagnosticsConfig,
-    inlayHints: InlayHintsConfig,
+    customImports: Record<string, string>;
+    shaderDefs: [string];
+    trace: TraceConfig;
+    diagnostics: DiagnosticsConfig;
+    inlayHints: InlayHintsConfig;
 }
 
 async function lspOptions(config: Config): Promise<WGSLAnalyzerConfiguration> {
     let start = process.hrtime();
-    let customImports = await mapObjectAsync(config.customImports, resolveImport, (name, _, val) => {
-        vscode.window.showErrorMessage(`WGSL-Analyzer: failed to resolve import \`${name}\`: ${val}`);
-    });
+    let customImports = await mapObjectAsync(
+        config.customImports,
+        resolveImport,
+        (name, _, val) => {
+            vscode.window.showErrorMessage(
+                `WGSL-Analyzer: failed to resolve import \`${name}\`: ${val}`,
+            );
+        },
+    );
     let elapsed = process.hrtime(start);
     let millis = elapsed[0] * 1000 + elapsed[1] / 1_000_000;
     if (millis > 1000) {
-        vscode.window.showWarningMessage(`WGSL-Analyzer: Took ${millis.toFixed(0)}ms to resolve imports.`);
+        vscode.window.showWarningMessage(
+            `WGSL-Analyzer: Took ${millis.toFixed(0)}ms to resolve imports.`,
+        );
     }
 
     return {
@@ -38,16 +55,24 @@ async function lspOptions(config: Config): Promise<WGSLAnalyzerConfiguration> {
 }
 
 export class Ctx {
-    private constructor(readonly config: Config, readonly ctx: ExtensionContext, readonly client: LanguageClient) { }
+    private constructor(
+        readonly config: Config,
+        readonly ctx: ExtensionContext,
+        readonly client: LanguageClient,
+    ) {}
 
-    static async create(serverPath: string, ctx: ExtensionContext, config: Config) {
+    static async create(
+        serverPath: string,
+        ctx: ExtensionContext,
+        config: Config,
+    ) {
         const run: Executable = {
             command: serverPath,
             options: {
                 env: {
-                    "RUST_BACKTRACE": "1"
-                }
-            }
+                    RUST_BACKTRACE: "1",
+                },
+            },
         };
         const serverOptions: ServerOptions = {
             run,
@@ -55,16 +80,19 @@ export class Ctx {
         };
 
         const clientOptions: LanguageClientOptions = {
-            documentSelector: [{ language: "wgsl", scheme: "file" }, { scheme: "file", pattern: "*.wgsl" }],
+            documentSelector: [
+                { language: "wgsl", scheme: "file" },
+                { scheme: "file", pattern: "*.wgsl" },
+            ],
             outputChannelName: "WGSL Analyzer",
             initializationOptions: await lspOptions(config),
         };
 
         let client = new LanguageClient(
-            "wgsl_analyzer",
+            "wgsl-analyzer",
             "WGSL Language server",
             serverOptions,
-            clientOptions
+            clientOptions,
         );
 
         client.start();
@@ -77,12 +105,11 @@ export class Ctx {
             client.onRequest(lsp_ext.importTextDocument, async (params, ct) => {
                 vscode.workspace.openTextDocument(params.uri);
                 return;
-            })
+            }),
         );
 
         return new Ctx(config, ctx, client);
     }
-
 
     registerCommand(name: string, factory: (ctx: Ctx) => Cmd) {
         const fullName = `wgsl-analyzer.${name}`;
@@ -95,16 +122,13 @@ export class Ctx {
         this.ctx.subscriptions.push(disposable);
     }
 
-
     get subscriptions(): Disposable[] {
         return this.ctx.subscriptions;
     }
 
     get activeWgslEditor(): WgslEditor | undefined {
         const editor = vscode.window.activeTextEditor;
-        return editor && isWgslEditor(editor)
-            ? editor
-            : undefined;
+        return editor && isWgslEditor(editor) ? editor : undefined;
     }
 }
 
@@ -120,8 +144,10 @@ async function resolveImport(content: string): Promise<string> {
     let content_replaced = content;
     const folders = vscode.workspace.workspaceFolders;
     if (vscode.workspace.workspaceFolders.length == 1) {
-        content_replaced = content_replaced.replace("${workspaceFolder}", folders[0].uri.toString());
-
+        content_replaced = content_replaced.replace(
+            "${workspaceFolder}",
+            folders[0].uri.toString(),
+        );
     }
     let uri = parseUrl(content_replaced);
 
@@ -129,7 +155,7 @@ async function resolveImport(content: string): Promise<string> {
         if (uri.scheme == "file") {
             return promisify(readFile)(uri.fsPath, "utf-8");
         } else if (["http", "https"].includes(uri.scheme)) {
-            return fetch(content).then(res => res.text());
+            return fetch(content).then((res) => res.text());
         } else {
             throw new Error(`unknown scheme \`${uri.scheme}\``);
         }
@@ -138,18 +164,22 @@ async function resolveImport(content: string): Promise<string> {
     }
 }
 
-async function mapObjectAsync<T, U>(object: Record<string, T>, f: (val: T) => Promise<U>, handleError?: (key: string, val: T, error: unknown) => void): Promise<Record<string, U>> {
+async function mapObjectAsync<T, U>(
+    object: Record<string, T>,
+    f: (val: T) => Promise<U>,
+    handleError?: (key: string, val: T, error: unknown) => void,
+): Promise<Record<string, U>> {
     let map = async ([key, value]) => {
         try {
             const mapped = await f(value);
-            return ([key, mapped]);
+            return [key, mapped];
         } catch (e) {
             handleError && handleError(key, value, e);
             return undefined;
         }
     };
     let entries = await Promise.all(Object.entries(object).map(map));
-    return Object.fromEntries(entries.filter(entry => entry !== undefined));
+    return Object.fromEntries(entries.filter((entry) => entry !== undefined));
 }
 
 export interface Disposable {
