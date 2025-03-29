@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-pub fn list_rust_files(dir: &Path) -> Vec<PathBuf> {
+pub(crate) fn list_rust_files(dir: &Path) -> Vec<PathBuf> {
     let mut res = list_files(dir);
     res.retain(|it| {
         std::path::Path::new(
@@ -15,7 +15,7 @@ pub fn list_rust_files(dir: &Path) -> Vec<PathBuf> {
     res
 }
 
-pub fn list_files(dir: &Path) -> Vec<PathBuf> {
+pub(crate) fn list_files(dir: &Path) -> Vec<PathBuf> {
     let mut res = Vec::new();
     let mut work = vec![dir.to_path_buf()];
     while let Some(dir) = work.pop() {
