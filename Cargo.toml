@@ -109,7 +109,7 @@ bitflags = "2.9.0"
 cargo_metadata = "0.19.1"
 camino = "1.1.9"
 dirs = "5.0.1"
-scip = "0.5.1"
+scip = "0.5.2"
 chalk-solve = { version = "0.99.0", default-features = false }
 chalk-ir = "0.99.0"
 chalk-recursive = { version = "0.99.0", default-features = false }
