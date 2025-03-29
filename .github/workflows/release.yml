@@ -81,11 +81,11 @@ jobs:
         working-directory: ./editors/code
       - uses: actions/upload-artifact@v4
         with:
-          name: wgsl-analyzer-${{ matrix.rust_target }}.vsix
-          path: editors/code/wgsl-analyzer-${{ matrix.rust_target }}.vsix
+          name: wgsl-analyzer-${{ env.target }}.vsix
+          path: editors/code/wgsl-analyzer-${{ env.target }}.vsix
       - uses: actions/upload-artifact@v4
         with:
-          name: wgsl-analyzer-${{ matrix.rust_target }}
+          name: wgsl-analyzer-${{ env.target }}
           path: wgsl-analyzer-${{ matrix.platform }}-${{ matrix.arch }}${{ fromJSON('["", ".exe"]')[matrix.platform == 'win32'] }}
 
   build_generic:

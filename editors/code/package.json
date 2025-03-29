@@ -4,7 +4,7 @@
 	"displayName": "wgsl-analyzer",
 	"private": true,
 	"icon": "icon.png",
-	"version": "0.9.9",
+	"version": "0.9.10",
 	"releaseTag": null,
 	"publisher": "wgsl-analyzer",
 	"type": "commonjs",
