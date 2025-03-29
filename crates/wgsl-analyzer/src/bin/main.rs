@@ -15,7 +15,7 @@ use wgsl_analyzer::{
     main_loop::main_loop,
 };
 
-const VERSION: &str = "0.9.8";
+const VERSION: &str = "0.9.9";
 
 fn get_cwd_as_abs_path() -> Result<AbsPathBuf, std::io::Error> {
     info!("Getting current working directory as absolute path");
