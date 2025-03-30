@@ -8,7 +8,7 @@ use vfs::AnchoredPath;
     base_db::SourceDatabaseStorage,
     hir_def::db::DefDatabaseStorage,
     hir_def::db::InternDatabaseStorage,
-    hir_ty::HirDatabaseStorage
+    hir_ty::db::HirDatabaseStorage
 )]
 pub struct RootDatabase {
     // We use `ManuallyDrop` here because every codegen unit that contains a

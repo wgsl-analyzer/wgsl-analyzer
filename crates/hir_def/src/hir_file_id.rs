@@ -56,18 +56,18 @@ pub struct ImportFile {
 }
 
 pub fn relative_file(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     call_id: HirFileId,
     path_str: &str,
 ) -> Option<FileId> {
-    let call_site = call_id.original_file(db)?;
+    let call_site = call_id.original_file(database)?;
     let path = AnchoredPath {
         anchor: call_site,
         path: path_str,
     };
-    match db.resolve_path(path) {
+    match database.resolve_path(path) {
         // Prevent including itself
-        Some(res) if res != call_site => Some(res),
+        Some(result) if result != call_site => Some(result),
         // Possibly file not imported yet
         _ => None,
     }

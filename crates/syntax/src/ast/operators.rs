@@ -1,111 +1,111 @@
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum UnaryOp {
+pub enum UnaryOperator {
     Minus,
     Not,
-    Ref,
-    Deref,
+    Reference,
+    Dereference,
     BitNot,
 }
 
-impl UnaryOp {
+impl UnaryOperator {
     pub fn symbol(self) -> &'static str {
         match self {
-            UnaryOp::Minus => "-",
-            UnaryOp::Not => "!",
-            UnaryOp::Ref => "&",
-            UnaryOp::Deref => "*",
-            UnaryOp::BitNot => "~",
+            UnaryOperator::Minus => "-",
+            UnaryOperator::Not => "!",
+            UnaryOperator::Reference => "&",
+            UnaryOperator::Dereference => "*",
+            UnaryOperator::BitNot => "~",
         }
     }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum BinaryOp {
-    LogicOp(LogicOp),
-    ArithOp(ArithOp),
-    CmpOp(CmpOp),
+pub enum BinaryOperation {
+    Logical(LogicOperation),
+    Arithmetic(ArithmeticOperation),
+    Comparison(ComparisonOperation),
 }
 
-impl BinaryOp {
+impl BinaryOperation {
     pub fn symbol(self) -> &'static str {
         match self {
-            BinaryOp::LogicOp(op) => op.symbol(),
-            BinaryOp::ArithOp(op) => op.symbol(),
-            BinaryOp::CmpOp(op) => op.symbol(),
+            BinaryOperation::Logical(op) => op.symbol(),
+            BinaryOperation::Arithmetic(op) => op.symbol(),
+            BinaryOperation::Comparison(op) => op.symbol(),
         }
     }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum LogicOp {
+pub enum LogicOperation {
     And,
     Or,
 }
 
-impl LogicOp {
+impl LogicOperation {
     pub fn symbol(self) -> &'static str {
         match self {
-            LogicOp::And => "&&",
-            LogicOp::Or => "||",
+            LogicOperation::And => "&&",
+            LogicOperation::Or => "||",
         }
     }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum ArithOp {
+pub enum ArithmeticOperation {
     Add,
-    Mul,
-    Sub,
-    Div,
-    Shl,
-    Shr,
+    Multiply,
+    Subtract,
+    Divide,
+    ShiftLeft,
+    ShiftRight,
     BitXor,
     BitOr,
     BitAnd,
     Modulo,
 }
 
-impl ArithOp {
+impl ArithmeticOperation {
     pub fn symbol(self) -> &'static str {
         match self {
-            ArithOp::Add => "+",
-            ArithOp::Mul => "*",
-            ArithOp::Sub => "-",
-            ArithOp::Div => "/",
-            ArithOp::Shl => "<<",
-            ArithOp::Shr => ">>",
-            ArithOp::BitXor => "^",
-            ArithOp::BitOr => "|",
-            ArithOp::BitAnd => "&",
-            ArithOp::Modulo => "%",
+            ArithmeticOperation::Add => "+",
+            ArithmeticOperation::Multiply => "*",
+            ArithmeticOperation::Subtract => "-",
+            ArithmeticOperation::Divide => "/",
+            ArithmeticOperation::ShiftLeft => "<<",
+            ArithmeticOperation::ShiftRight => ">>",
+            ArithmeticOperation::BitXor => "^",
+            ArithmeticOperation::BitOr => "|",
+            ArithmeticOperation::BitAnd => "&",
+            ArithmeticOperation::Modulo => "%",
         }
     }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum CmpOp {
-    Eq { negated: bool },
-    Ord { ordering: Ordering, strict: bool },
+pub enum ComparisonOperation {
+    Equality { negated: bool },
+    Ordering { ordering: Ordering, strict: bool },
 }
 
-impl CmpOp {
+impl ComparisonOperation {
     pub fn symbol(self) -> &'static str {
         match self {
-            CmpOp::Eq { negated: true } => "==",
-            CmpOp::Eq { negated: false } => "!=",
-            CmpOp::Ord {
+            ComparisonOperation::Equality { negated: true } => "==",
+            ComparisonOperation::Equality { negated: false } => "!=",
+            ComparisonOperation::Ordering {
                 ordering: Ordering::Less,
                 strict: false,
             } => "<=",
-            CmpOp::Ord {
+            ComparisonOperation::Ordering {
                 ordering: Ordering::Less,
                 strict: true,
             } => "<",
-            CmpOp::Ord {
+            ComparisonOperation::Ordering {
                 ordering: Ordering::Greater,
                 strict: false,
             } => ">=",
-            CmpOp::Ord {
+            ComparisonOperation::Ordering {
                 ordering: Ordering::Greater,
                 strict: true,
             } => ">",
@@ -120,32 +120,40 @@ pub enum Ordering {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum CompoundOp {
+pub enum CompoundOperator {
     Add,
-    Mul,
-    Sub,
-    Div,
-    Shl,
-    Shr,
+    Multiply,
+    Subtract,
+    Divide,
+    ShiftLeft,
+    ShiftRight,
     Modulo,
     BitAnd,
     BitOr,
     BitXor,
 }
 
-impl From<CompoundOp> for BinaryOp {
-    fn from(op: CompoundOp) -> Self {
+impl From<CompoundOperator> for BinaryOperation {
+    fn from(op: CompoundOperator) -> Self {
         match op {
-            CompoundOp::Add => BinaryOp::ArithOp(ArithOp::Add),
-            CompoundOp::Mul => BinaryOp::ArithOp(ArithOp::Mul),
-            CompoundOp::Sub => BinaryOp::ArithOp(ArithOp::Sub),
-            CompoundOp::Div => BinaryOp::ArithOp(ArithOp::Div),
-            CompoundOp::Shl => BinaryOp::ArithOp(ArithOp::Shl),
-            CompoundOp::Shr => BinaryOp::ArithOp(ArithOp::Shr),
-            CompoundOp::Modulo => BinaryOp::ArithOp(ArithOp::Modulo),
-            CompoundOp::BitAnd => BinaryOp::ArithOp(ArithOp::BitAnd),
-            CompoundOp::BitOr => BinaryOp::ArithOp(ArithOp::BitOr),
-            CompoundOp::BitXor => BinaryOp::ArithOp(ArithOp::BitXor),
+            CompoundOperator::Add => BinaryOperation::Arithmetic(ArithmeticOperation::Add),
+            CompoundOperator::Multiply => {
+                BinaryOperation::Arithmetic(ArithmeticOperation::Multiply)
+            },
+            CompoundOperator::Subtract => {
+                BinaryOperation::Arithmetic(ArithmeticOperation::Subtract)
+            },
+            CompoundOperator::Divide => BinaryOperation::Arithmetic(ArithmeticOperation::Divide),
+            CompoundOperator::ShiftLeft => {
+                BinaryOperation::Arithmetic(ArithmeticOperation::ShiftLeft)
+            },
+            CompoundOperator::ShiftRight => {
+                BinaryOperation::Arithmetic(ArithmeticOperation::ShiftRight)
+            },
+            CompoundOperator::Modulo => BinaryOperation::Arithmetic(ArithmeticOperation::Modulo),
+            CompoundOperator::BitAnd => BinaryOperation::Arithmetic(ArithmeticOperation::BitAnd),
+            CompoundOperator::BitOr => BinaryOperation::Arithmetic(ArithmeticOperation::BitOr),
+            CompoundOperator::BitXor => BinaryOperation::Arithmetic(ArithmeticOperation::BitXor),
         }
     }
 }

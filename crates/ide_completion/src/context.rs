@@ -1,13 +1,13 @@
 use base_db::{FilePosition, TextRange};
 use either::Either;
 use hir::{HirDatabase, Semantics};
-use hir_def::{HirFileId, db::DefWithBodyId, resolver::Resolver};
+use hir_def::{HirFileId, db::DefinitionWithBodyId, resolver::Resolver};
 use rowan::NodeOrToken;
 use syntax::{AstNode, Direction, SyntaxKind, SyntaxToken, ast};
 
 use crate::{config::CompletionConfig, patterns::determine_location};
 
-type ExprOrStatement = Either<ast::Expr, ast::Statement>;
+type ExprOrStatement = Either<ast::Expression, ast::Statement>;
 
 /// `CompletionContext` is created early during completion to figure out, where
 /// exactly is the cursor, syntax-wise.
@@ -18,7 +18,7 @@ pub(crate) struct CompletionContext<'a> {
     pub position: FilePosition,
     pub token: SyntaxToken,
     pub file: ast::SourceFile,
-    pub container: Option<DefWithBodyId>,
+    pub container: Option<DefinitionWithBodyId>,
     pub completion_location: Option<ImmediateLocation>,
     pub resolver: Resolver,
 }
@@ -27,7 +27,7 @@ impl<'a> CompletionContext<'a> {
     pub(crate) fn new(
         db: &'a dyn HirDatabase,
         position @ FilePosition { file_id, offset }: FilePosition,
-        // config: &'a CompletionConfig<'a>,
+        config: &'a CompletionConfig<'a>,
     ) -> Option<Self> {
         let sema = Semantics::new(db);
         let file = sema.parse(position.file_id);
@@ -49,7 +49,7 @@ impl<'a> CompletionContext<'a> {
         let mut resolver = Resolver::default().push_module_scope(db.upcast(), file_id, module_info);
 
         let nearest_scope = token
-            .siblings_with_tokens(Direction::Prev)
+            .siblings_with_tokens(Direction::Prev) // spellchecker:disable-line
             .find_map(|sib| match sib {
                 NodeOrToken::Node(node) if ExprOrStatement::can_cast(node.kind()) => {
                     ExprOrStatement::cast(node)
@@ -78,9 +78,9 @@ impl<'a> CompletionContext<'a> {
         Some(ctx)
     }
 
-    pub fn source_range(&self) -> base_db::TextRange {
+    pub(crate) fn source_range(&self) -> base_db::TextRange {
         let kind = self.token.kind();
-        if kind == SyntaxKind::Ident
+        if kind == SyntaxKind::Identifier
         // || kind.is_keyword()
         {
             self.token.text_range()
@@ -91,10 +91,10 @@ impl<'a> CompletionContext<'a> {
 }
 
 #[derive(Debug)]
-pub enum ImmediateLocation {
+pub(crate) enum ImmediateLocation {
     ItemList,
-    StmtList,
+    StatementList,
     InsideStatement,
     Import,
-    FieldAccess { expr: ast::FieldExpr },
+    FieldAccess { expression: ast::FieldExpression },
 }

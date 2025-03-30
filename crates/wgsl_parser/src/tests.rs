@@ -18,17 +18,17 @@ fn check_type(
 }
 
 fn check_statement(
-    stmt: &str,
+    statement: &str,
     expected_tree: Expect,
 ) {
-    crate::check_entrypoint(stmt, ParseEntryPoint::Statement, expected_tree);
+    crate::check_entrypoint(statement, ParseEntryPoint::Statement, expected_tree);
 }
 
 fn check_attribute_list(
-    stmt: &str,
+    statement: &str,
     expected_tree: Expect,
 ) {
-    crate::check_entrypoint(stmt, ParseEntryPoint::AttributeList, expected_tree);
+    crate::check_entrypoint(statement, ParseEntryPoint::AttributeList, expected_tree);
 }
 
 #[test]
@@ -46,9 +46,9 @@ fn fn_incomplete() {
                 Fn@0..2 "fn"
                 Whitespace@2..3 " "
                 Name@3..7
-                  Ident@3..7 "name"
+                  Identifier@3..7 "name"
 
-            error at 3..7: expected ParenLeft
+            error at 3..7: expected ParenthesisLeft
             error at 3..7: expected Arrow or BraceLeft"#]],
     );
 }
@@ -63,30 +63,30 @@ fn function() {
                 Fn@0..2 "fn"
                 Whitespace@2..3 " "
                 Name@3..7
-                  Ident@3..7 "name"
-                ParamList@7..24
-                  ParenLeft@7..8 "("
-                  Param@8..14
-                    VariableIdentDecl@8..14
+                  Identifier@3..7 "name"
+                ParameterList@7..24
+                  ParenthesisLeft@7..8 "("
+                  Parameter@8..14
+                    VariableIdentDeclaration@8..14
                       Binding@8..9
                         Name@8..9
-                          Ident@8..9 "a"
+                          Identifier@8..9 "a"
                       Colon@9..10 ":"
                       Whitespace@10..11 " "
                       Float32@11..14
                         Float32@11..14 "f32"
                   Comma@14..15 ","
                   Whitespace@15..16 " "
-                  Param@16..22
-                    VariableIdentDecl@16..22
+                  Parameter@16..22
+                    VariableIdentDeclaration@16..22
                       Binding@16..17
                         Name@16..17
-                          Ident@16..17 "b"
+                          Identifier@16..17 "b"
                       Colon@17..18 ":"
                       Whitespace@18..19 " "
                       Int32@19..22
                         Int32@19..22 "i32"
-                  ParenRight@22..23 ")"
+                  ParenthesisRight@22..23 ")"
                   Whitespace@23..24 " "
                 ReturnType@24..31
                   Arrow@24..26 "->"
@@ -113,10 +113,10 @@ let y: f32 = 2.0;
                 Fn@0..2 "fn"
                 Whitespace@2..3 " "
                 Name@3..7
-                  Ident@3..7 "name"
-                ParamList@7..10
-                  ParenLeft@7..8 "("
-                  ParenRight@8..9 ")"
+                  Identifier@3..7 "name"
+                ParameterList@7..10
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                   Whitespace@9..10 " "
                 CompoundStatement@10..57
                   BraceLeft@10..11 "{"
@@ -126,7 +126,7 @@ let y: f32 = 2.0;
                     Whitespace@15..16 " "
                     Binding@16..17
                       Name@16..17
-                        Ident@16..17 "x"
+                        Identifier@16..17 "x"
                     Colon@17..18 ":"
                     Whitespace@18..19 " "
                     Float32@19..23
@@ -143,7 +143,7 @@ let y: f32 = 2.0;
                     Whitespace@33..34 " "
                     Binding@34..35
                       Name@34..35
-                        Ident@34..35 "y"
+                        Identifier@34..35 "y"
                     Colon@35..36 ":"
                     Whitespace@36..37 " "
                     Float32@37..41
@@ -172,9 +172,9 @@ fn fn_recover() {
                 Fn@3..5 "fn"
                 Whitespace@5..6 " "
                 Name@6..10
-                  Ident@6..10 "name"
+                  Identifier@6..10 "name"
 
-            error at 6..10: expected ParenLeft
+            error at 6..10: expected ParenthesisLeft
             error at 6..10: expected Arrow or BraceLeft"#]],
     );
 }
@@ -190,19 +190,19 @@ fn fn_recover_2() {
                 Fn@0..2 "fn"
                 Whitespace@2..3 " "
                 Name@3..7
-                  Ident@3..7 "name"
-                ParamList@7..18
-                  ParenLeft@7..8 "("
-                  ParenRight@8..9 ")"
+                  Identifier@3..7 "name"
+                ParameterList@7..18
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                   Whitespace@9..18 "\n        "
               Function@18..30
                 Fn@18..20 "fn"
                 Whitespace@20..21 " "
                 Name@21..25
-                  Ident@21..25 "test"
-                ParamList@25..28
-                  ParenLeft@25..26 "("
-                  ParenRight@26..27 ")"
+                  Identifier@21..25 "test"
+                ParameterList@25..28
+                  ParenthesisLeft@25..26 "("
+                  ParenthesisRight@26..27 ")"
                   Whitespace@27..28 " "
                 CompoundStatement@28..30
                   BraceLeft@28..29 "{"
@@ -229,7 +229,7 @@ fn parse_type_generic() {
         expect![[r#"
             Vec3@0..9
               Vec3@0..4 "vec3"
-              GenericArgList@4..9
+              GenericArgumentList@4..9
                 LessThan@4..5 "<"
                 Float32@5..8
                   Float32@5..8 "f32"
@@ -244,18 +244,18 @@ fn parse_type_generic_shift_ambiguity() {
         expect![[r#"
             Array@0..19
               Array@0..5 "array"
-              GenericArgList@5..19
+              GenericArgumentList@5..19
                 LessThan@5..6 "<"
                 Vec3@6..18
                   Vec3@6..10 "vec3"
-                  GenericArgList@10..18
+                  GenericArgumentList@10..18
                     LessThan@10..11 "<"
                     Float32@11..14
                       Float32@11..14 "f32"
                     Comma@14..15 ","
                     Whitespace@15..16 " "
                     Literal@16..17
-                      IntLiteral@16..17 "2"
+                      IntegerLiteral@16..17 "2"
                     GreaterThan@17..18 ">"
                 GreaterThan@18..19 ">""#]],
     );
@@ -268,14 +268,14 @@ fn parse_type_generic_int() {
         expect![[r#"
         Array@0..15
           Array@0..5 "array"
-          GenericArgList@5..15
+          GenericArgumentList@5..15
             LessThan@5..6 "<"
             Float32@6..9
               Float32@6..9 "f32"
             Comma@9..10 ","
             Whitespace@10..11 " "
             Literal@11..14
-              IntLiteral@11..14 "100"
+              IntegerLiteral@11..14 "100"
             GreaterThan@14..15 ">""#]],
     );
 }
@@ -287,7 +287,7 @@ fn parse_type_generic_empty() {
         expect![[r#"
             Vec3@0..6
               Vec3@0..4 "vec3"
-              GenericArgList@4..6
+              GenericArgumentList@4..6
                 LessThan@4..5 "<"
                 GreaterThan@5..6 ">""#]],
     );
@@ -300,13 +300,13 @@ fn parse_type_generic_comma_recover() {
         expect![[r#"
             Vec3@0..7
               Vec3@0..4 "vec3"
-              GenericArgList@4..7
+              GenericArgumentList@4..7
                 LessThan@4..5 "<"
                 Error@5..6
                   Comma@5..6 ","
                 GreaterThan@6..7 ">"
 
-            error at 5..6: expected GreaterThan or Ident, but found Comma"#]],
+            error at 5..6: expected GreaterThan or Identifier, but found Comma"#]],
     );
 }
 
@@ -317,7 +317,7 @@ fn parse_type_generic_ptr() {
         expect![[r#"
             Pointer@0..29
               Pointer@0..3 "ptr"
-              GenericArgList@3..29
+              GenericArgumentList@3..29
                 LessThan@3..4 "<"
                 Uniform@4..11 "uniform"
                 Comma@11..12 ","
@@ -332,7 +332,7 @@ fn parse_type_generic_ptr() {
 }
 
 #[test]
-fn parse_return_stmt() {
+fn parse_return_statement() {
     check(
         r#"fn f() -> u32 {
             return 0;
@@ -343,10 +343,10 @@ fn parse_return_stmt() {
                 Fn@0..2 "fn"
                 Whitespace@2..3 " "
                 Name@3..4
-                  Ident@3..4 "f"
-                ParamList@4..7
-                  ParenLeft@4..5 "("
-                  ParenRight@5..6 ")"
+                  Identifier@3..4 "f"
+                ParameterList@4..7
+                  ParenthesisLeft@4..5 "("
+                  ParenthesisRight@5..6 ")"
                   Whitespace@6..7 " "
                 ReturnType@7..14
                   Arrow@7..9 "->"
@@ -357,11 +357,11 @@ fn parse_return_stmt() {
                 CompoundStatement@14..47
                   BraceLeft@14..15 "{"
                   Whitespace@15..28 "\n            "
-                  ReturnStmt@28..36
+                  ReturnStatement@28..36
                     Return@28..34 "return"
                     Whitespace@34..35 " "
                     Literal@35..36
-                      IntLiteral@35..36 "0"
+                      IntegerLiteral@35..36 "0"
                   Semicolon@36..37 ";"
                   Whitespace@37..46 "\n        "
                   BraceRight@46..47 "}""#]],
@@ -369,7 +369,7 @@ fn parse_return_stmt() {
 }
 
 #[test]
-fn parse_let_stmt_recover() {
+fn parse_let_statement_recover() {
     check(
         r#"fn f() -> u32 {
             let x =
@@ -382,10 +382,10 @@ fn parse_let_stmt_recover() {
                 Fn@0..2 "fn"
                 Whitespace@2..3 " "
                 Name@3..4
-                  Ident@3..4 "f"
-                ParamList@4..7
-                  ParenLeft@4..5 "("
-                  ParenRight@5..6 ")"
+                  Identifier@3..4 "f"
+                ParameterList@4..7
+                  ParenthesisLeft@4..5 "("
+                  ParenthesisRight@5..6 ")"
                   Whitespace@6..7 " "
                 ReturnType@7..14
                   Arrow@7..9 "->"
@@ -401,7 +401,7 @@ fn parse_let_stmt_recover() {
                     Whitespace@31..32 " "
                     Binding@32..34
                       Name@32..34
-                        Ident@32..33 "x"
+                        Identifier@32..33 "x"
                         Whitespace@33..34 " "
                     Equal@34..35 "="
                     Whitespace@35..48 "\n            "
@@ -410,22 +410,22 @@ fn parse_let_stmt_recover() {
                     Whitespace@51..52 " "
                     Binding@52..54
                       Name@52..54
-                        Ident@52..53 "y"
+                        Identifier@52..53 "y"
                         Whitespace@53..54 " "
                     Equal@54..55 "="
                     Whitespace@55..68 "\n            "
-                  ReturnStmt@68..85
+                  ReturnStatement@68..85
                     Return@68..74 "return"
                     Whitespace@74..75 " "
                     Literal@75..85
-                      IntLiteral@75..76 "0"
+                      IntegerLiteral@75..76 "0"
                       Whitespace@76..85 "\n        "
                   BraceRight@85..86 "}""#]],
     );
 }
 
 #[test]
-fn parse_stmt_variable_decl() {
+fn parse_statement_variable_decl() {
     check_statement(
         "let x = 3;",
         expect![[r#"
@@ -434,44 +434,44 @@ fn parse_stmt_variable_decl() {
           Whitespace@3..4 " "
           Binding@4..6
             Name@4..6
-              Ident@4..5 "x"
+              Identifier@4..5 "x"
               Whitespace@5..6 " "
           Equal@6..7 "="
           Whitespace@7..8 " "
           Literal@8..9
-            IntLiteral@8..9 "3""#]],
+            IntegerLiteral@8..9 "3""#]],
     );
 }
 
 #[test]
-fn parse_stmt_return() {
+fn parse_statement_return() {
     check_statement(
         "return 0;",
         expect![[r#"
-            ReturnStmt@0..8
+            ReturnStatement@0..8
               Return@0..6 "return"
               Whitespace@6..7 " "
               Literal@7..8
-                IntLiteral@7..8 "0""#]],
+                IntegerLiteral@7..8 "0""#]],
     );
 }
 
 #[test]
-fn parse_while_stmt() {
+fn parse_while_statement() {
     check_statement(
         r#"while 0 > 3 { let x = 3; }"#,
         expect![[r#"
         WhileStatement@0..26
           While@0..5 "while"
           Whitespace@5..6 " "
-          InfixExpr@6..12
+          InfixExpression@6..12
             Literal@6..8
-              IntLiteral@6..7 "0"
+              IntegerLiteral@6..7 "0"
               Whitespace@7..8 " "
             GreaterThan@8..9 ">"
             Whitespace@9..10 " "
             Literal@10..12
-              IntLiteral@10..11 "3"
+              IntegerLiteral@10..11 "3"
               Whitespace@11..12 " "
           CompoundStatement@12..26
             BraceLeft@12..13 "{"
@@ -481,12 +481,12 @@ fn parse_while_stmt() {
               Whitespace@17..18 " "
               Binding@18..20
                 Name@18..20
-                  Ident@18..19 "x"
+                  Identifier@18..19 "x"
                   Whitespace@19..20 " "
               Equal@20..21 "="
               Whitespace@21..22 " "
               Literal@22..23
-                IntLiteral@22..23 "3"
+                IntegerLiteral@22..23 "3"
             Semicolon@23..24 ";"
             Whitespace@24..25 " "
             BraceRight@25..26 "}""#]],
@@ -494,24 +494,24 @@ fn parse_while_stmt() {
 }
 
 #[test]
-fn parse_if_stmt() {
+fn parse_if_statement() {
     check_statement(
         r#"if (0 > 3) { let x = 3; return x; }"#,
         expect![[r#"
             IfStatement@0..35
               If@0..2 "if"
               Whitespace@2..3 " "
-              ParenExpr@3..11
-                ParenLeft@3..4 "("
-                InfixExpr@4..9
+              ParenthesisExpression@3..11
+                ParenthesisLeft@3..4 "("
+                InfixExpression@4..9
                   Literal@4..6
-                    IntLiteral@4..5 "0"
+                    IntegerLiteral@4..5 "0"
                     Whitespace@5..6 " "
                   GreaterThan@6..7 ">"
                   Whitespace@7..8 " "
                   Literal@8..9
-                    IntLiteral@8..9 "3"
-                ParenRight@9..10 ")"
+                    IntegerLiteral@8..9 "3"
+                ParenthesisRight@9..10 ")"
                 Whitespace@10..11 " "
               CompoundStatement@11..35
                 BraceLeft@11..12 "{"
@@ -521,20 +521,20 @@ fn parse_if_stmt() {
                   Whitespace@16..17 " "
                   Binding@17..19
                     Name@17..19
-                      Ident@17..18 "x"
+                      Identifier@17..18 "x"
                       Whitespace@18..19 " "
                   Equal@19..20 "="
                   Whitespace@20..21 " "
                   Literal@21..22
-                    IntLiteral@21..22 "3"
+                    IntegerLiteral@21..22 "3"
                 Semicolon@22..23 ";"
                 Whitespace@23..24 " "
-                ReturnStmt@24..32
+                ReturnStatement@24..32
                   Return@24..30 "return"
                   Whitespace@30..31 " "
-                  PathExpr@31..32
-                    NameRef@31..32
-                      Ident@31..32 "x"
+                  PathExpression@31..32
+                    NameReference@31..32
+                      Identifier@31..32 "x"
                 Semicolon@32..33 ";"
                 Whitespace@33..34 " "
                 BraceRight@34..35 "}""#]],
@@ -551,10 +551,10 @@ fn parse_if_recover_paren() {
             IfStatement@0..38
               If@0..2 "if"
               Whitespace@2..3 " "
-              ParenExpr@3..6
-                ParenLeft@3..4 "("
+              ParenthesisExpression@3..6
+                ParenthesisLeft@3..4 "("
                 Error@4..4
-                ParenRight@4..5 ")"
+                ParenthesisRight@4..5 ")"
                 Whitespace@5..6 " "
               CompoundStatement@6..38
                 BraceLeft@6..7 "{"
@@ -564,17 +564,17 @@ fn parse_if_recover_paren() {
                   Whitespace@21..22 " "
                   Binding@22..24
                     Name@22..24
-                      Ident@22..23 "x"
+                      Identifier@22..23 "x"
                       Whitespace@23..24 " "
                   Equal@24..25 "="
                   Whitespace@25..26 " "
                   Literal@26..27
-                    IntLiteral@26..27 "3"
+                    IntegerLiteral@26..27 "3"
                 Semicolon@27..28 ";"
                 Whitespace@28..37 "\n        "
                 BraceRight@37..38 "}"
 
-            error at 4..5: expected ParenExpr, but found ParenRight"#]],
+            error at 4..5: expected ParenthesisExpression, but found ParenthesisRight"#]],
     );
 }
 
@@ -599,12 +599,12 @@ fn parse_if_without_paren() {
                   Whitespace@23..24 " "
                   Binding@24..26
                     Name@24..26
-                      Ident@24..25 "x"
+                      Identifier@24..25 "x"
                       Whitespace@25..26 " "
                   Equal@26..27 "="
                   Whitespace@27..28 " "
                   Literal@28..29
-                    IntLiteral@28..29 "3"
+                    IntegerLiteral@28..29 "3"
                 Semicolon@29..30 ";"
                 Whitespace@30..39 "\n        "
                 BraceRight@39..40 "}""#]],
@@ -630,12 +630,12 @@ fn parse_if_recover_empty() {
                   Whitespace@18..19 " "
                   Binding@19..21
                     Name@19..21
-                      Ident@19..20 "x"
+                      Identifier@19..20 "x"
                       Whitespace@20..21 " "
                   Equal@21..22 "="
                   Whitespace@22..23 " "
                   Literal@23..24
-                    IntLiteral@23..24 "3"
+                    IntegerLiteral@23..24 "3"
                 Semicolon@24..25 ";"
                 Whitespace@25..34 "\n        "
                 BraceRight@34..35 "}"
@@ -652,11 +652,11 @@ fn parse_if_else() {
             IfStatement@0..47
               If@0..2 "if"
               Whitespace@2..3 " "
-              ParenExpr@3..7
-                ParenLeft@3..4 "("
+              ParenthesisExpression@3..7
+                ParenthesisLeft@3..4 "("
                 Literal@4..5
-                  IntLiteral@4..5 "0"
-                ParenRight@5..6 ")"
+                  IntegerLiteral@4..5 "0"
+                ParenthesisRight@5..6 ")"
                 Whitespace@6..7 " "
               CompoundStatement@7..10
                 BraceLeft@7..8 "{"
@@ -667,11 +667,11 @@ fn parse_if_else() {
                 Whitespace@14..15 " "
                 If@15..17 "if"
                 Whitespace@17..18 " "
-                ParenExpr@18..22
-                  ParenLeft@18..19 "("
+                ParenthesisExpression@18..22
+                  ParenthesisLeft@18..19 "("
                   Literal@19..20
-                    IntLiteral@19..20 "1"
-                  ParenRight@20..21 ")"
+                    IntegerLiteral@19..20 "1"
+                  ParenthesisRight@20..21 ")"
                   Whitespace@21..22 " "
                 CompoundStatement@22..25
                   BraceLeft@22..23 "{"
@@ -682,11 +682,11 @@ fn parse_if_else() {
                 Whitespace@29..30 " "
                 If@30..32 "if"
                 Whitespace@32..33 " "
-                ParenExpr@33..37
-                  ParenLeft@33..34 "("
+                ParenthesisExpression@33..37
+                  ParenthesisLeft@33..34 "("
                   Literal@34..35
-                    IntLiteral@34..35 "2"
-                  ParenRight@35..36 ")"
+                    IntegerLiteral@34..35 "2"
+                  ParenthesisRight@35..36 ")"
                   Whitespace@36..37 " "
                 CompoundStatement@37..40
                   BraceLeft@37..38 "{"
@@ -709,11 +709,11 @@ fn parse_if_recovery_1() {
             IfStatement@0..24
               If@0..2 "if"
               Whitespace@2..3 " "
-              ParenExpr@3..11
-                ParenLeft@3..4 "("
+              ParenthesisExpression@3..11
+                ParenthesisLeft@3..4 "("
                 Literal@4..9
                   False@4..9 "false"
-                ParenRight@9..10 ")"
+                ParenthesisRight@9..10 ")"
                 Whitespace@10..11 " "
               CompoundStatement@11..14
                 BraceLeft@11..12 "{"
@@ -740,51 +740,51 @@ fn parse_for_statement() {
         expect![[r#"
             ForStatement@0..35
               For@0..3 "for"
-              ParenLeft@3..4 "("
+              ParenthesisLeft@3..4 "("
               ForInitializer@4..13
                 VariableStatement@4..13
                   Let@4..7 "let"
                   Whitespace@7..8 " "
                   Binding@8..10
                     Name@8..10
-                      Ident@8..9 "i"
+                      Identifier@8..9 "i"
                       Whitespace@9..10 " "
                   Equal@10..11 "="
                   Whitespace@11..12 " "
                   Literal@12..13
-                    IntLiteral@12..13 "0"
+                    IntegerLiteral@12..13 "0"
               Semicolon@13..14 ";"
               Whitespace@14..15 " "
               ForCondition@15..20
-                InfixExpr@15..20
-                  PathExpr@15..17
-                    NameRef@15..17
-                      Ident@15..16 "i"
+                InfixExpression@15..20
+                  PathExpression@15..17
+                    NameReference@15..17
+                      Identifier@15..16 "i"
                       Whitespace@16..17 " "
                   LessThan@17..18 "<"
                   Whitespace@18..19 " "
                   Literal@19..20
-                    IntLiteral@19..20 "3"
+                    IntegerLiteral@19..20 "3"
               Semicolon@20..21 ";"
               Whitespace@21..22 " "
               ForContinuingPart@22..31
-                AssignmentStmt@22..31
-                  PathExpr@22..24
-                    NameRef@22..24
-                      Ident@22..23 "i"
+                AssignmentStatement@22..31
+                  PathExpression@22..24
+                    NameReference@22..24
+                      Identifier@22..23 "i"
                       Whitespace@23..24 " "
                   Equal@24..25 "="
                   Whitespace@25..26 " "
-                  InfixExpr@26..31
-                    PathExpr@26..28
-                      NameRef@26..28
-                        Ident@26..27 "i"
+                  InfixExpression@26..31
+                    PathExpression@26..28
+                      NameReference@26..28
+                        Identifier@26..27 "i"
                         Whitespace@27..28 " "
                     Plus@28..29 "+"
                     Whitespace@29..30 " "
                     Literal@30..31
-                      IntLiteral@30..31 "1"
-              ParenRight@31..32 ")"
+                      IntegerLiteral@30..31 "1"
+              ParenthesisRight@31..32 ")"
               Whitespace@32..33 " "
               CompoundStatement@33..35
                 BraceLeft@33..34 "{"
@@ -799,51 +799,51 @@ fn parse_for_statement_comma() {
         expect![[r#"
             ForStatement@0..35
               For@0..3 "for"
-              ParenLeft@3..4 "("
+              ParenthesisLeft@3..4 "("
               ForInitializer@4..13
                 VariableStatement@4..13
                   Let@4..7 "let"
                   Whitespace@7..8 " "
                   Binding@8..10
                     Name@8..10
-                      Ident@8..9 "i"
+                      Identifier@8..9 "i"
                       Whitespace@9..10 " "
                   Equal@10..11 "="
                   Whitespace@11..12 " "
                   Literal@12..13
-                    IntLiteral@12..13 "0"
+                    IntegerLiteral@12..13 "0"
               Comma@13..14 ","
               Whitespace@14..15 " "
               ForCondition@15..20
-                InfixExpr@15..20
-                  PathExpr@15..17
-                    NameRef@15..17
-                      Ident@15..16 "i"
+                InfixExpression@15..20
+                  PathExpression@15..17
+                    NameReference@15..17
+                      Identifier@15..16 "i"
                       Whitespace@16..17 " "
                   LessThan@17..18 "<"
                   Whitespace@18..19 " "
                   Literal@19..20
-                    IntLiteral@19..20 "3"
+                    IntegerLiteral@19..20 "3"
               Comma@20..21 ","
               Whitespace@21..22 " "
               ForContinuingPart@22..31
-                AssignmentStmt@22..31
-                  PathExpr@22..24
-                    NameRef@22..24
-                      Ident@22..23 "i"
+                AssignmentStatement@22..31
+                  PathExpression@22..24
+                    NameReference@22..24
+                      Identifier@22..23 "i"
                       Whitespace@23..24 " "
                   Equal@24..25 "="
                   Whitespace@25..26 " "
-                  InfixExpr@26..31
-                    PathExpr@26..28
-                      NameRef@26..28
-                        Ident@26..27 "i"
+                  InfixExpression@26..31
+                    PathExpression@26..28
+                      NameReference@26..28
+                        Identifier@26..27 "i"
                         Whitespace@27..28 " "
                     Plus@28..29 "+"
                     Whitespace@29..30 " "
                     Literal@30..31
-                      IntLiteral@30..31 "1"
-              ParenRight@31..32 ")"
+                      IntegerLiteral@30..31 "1"
+              ParenthesisRight@31..32 ")"
               Whitespace@32..33 " "
               CompoundStatement@33..35
                 BraceLeft@33..34 "{"
@@ -858,10 +858,10 @@ fn for_statement_incomplete_1() {
         expect![[r#"
             ForStatement@0..7
               For@0..3 "for"
-              ParenLeft@3..4 "("
+              ParenthesisLeft@3..4 "("
               Semicolon@4..5 ";"
               Semicolon@5..6 ";"
-              ParenRight@6..7 ")"
+              ParenthesisRight@6..7 ")"
               CompoundStatement@7..7
 
             error at 6..7: expected BraceLeft
@@ -876,18 +876,18 @@ fn for_statement_incomplete_2() {
         expect![[r#"
             ForStatement@0..10
               For@0..3 "for"
-              ParenLeft@3..4 "("
+              ParenthesisLeft@3..4 "("
               ForInitializer@4..7
-                AssignmentStmt@4..7
-                  PathExpr@4..5
-                    NameRef@4..5
-                      Ident@4..5 "i"
+                AssignmentStatement@4..7
+                  PathExpression@4..5
+                    NameReference@4..5
+                      Identifier@4..5 "i"
                   Equal@5..6 "="
                   Literal@6..7
-                    IntLiteral@6..7 "0"
+                    IntegerLiteral@6..7 "0"
               Semicolon@7..8 ";"
               Semicolon@8..9 ";"
-              ParenRight@9..10 ")"
+              ParenthesisRight@9..10 ")"
               CompoundStatement@10..10
 
             error at 9..10: expected BraceLeft
@@ -902,13 +902,13 @@ fn for_statement_incomplete_3() {
         expect![[r#"
             ForStatement@0..12
               For@0..3 "for"
-              ParenLeft@3..4 "("
+              ParenthesisLeft@3..4 "("
               Semicolon@4..5 ";"
               ForCondition@5..10
                 Literal@5..10
                   False@5..10 "false"
               Semicolon@10..11 ";"
-              ParenRight@11..12 ")"
+              ParenthesisRight@11..12 ")"
               CompoundStatement@12..12
 
             error at 11..12: expected BraceLeft
@@ -923,20 +923,20 @@ fn for_statement_incomplete_4() {
         expect![[r#"
             ForStatement@0..12
               For@0..3 "for"
-              ParenLeft@3..4 "("
+              ParenthesisLeft@3..4 "("
               Semicolon@4..5 ";"
               Semicolon@5..6 ";"
               ForContinuingPart@6..11
-                AssignmentStmt@6..11
-                  PathExpr@6..8
-                    NameRef@6..8
-                      Ident@6..7 "a"
+                AssignmentStatement@6..11
+                  PathExpression@6..8
+                    NameReference@6..8
+                      Identifier@6..7 "a"
                       Whitespace@7..8 " "
                   Equal@8..9 "="
                   Whitespace@9..10 " "
                   Literal@10..11
-                    IntLiteral@10..11 "1"
-              ParenRight@11..12 ")"
+                    IntegerLiteral@10..11 "1"
+              ParenthesisRight@11..12 ")"
               CompoundStatement@12..12
 
             error at 11..12: expected BraceLeft
@@ -951,10 +951,10 @@ fn for_statement_continue_break() {
         expect![[r#"
         ForStatement@0..43
           For@0..3 "for"
-          ParenLeft@3..4 "("
+          ParenthesisLeft@3..4 "("
           Semicolon@4..5 ";"
           Semicolon@5..6 ";"
-          ParenRight@6..7 ")"
+          ParenthesisRight@6..7 ")"
           Whitespace@7..8 " "
           CompoundStatement@8..43
             BraceLeft@8..9 "{"
@@ -978,7 +978,7 @@ fn for_statement_continue_break() {
 }
 
 #[test]
-fn parse_stmt_compound_empty() {
+fn parse_statement_compound_empty() {
     check_statement(
         "{}",
         expect![[r#"
@@ -989,7 +989,7 @@ fn parse_stmt_compound_empty() {
 }
 
 #[test]
-fn parse_stmt_compound() {
+fn parse_statement_compound() {
     check_statement(
         "{ let x = 3; return x; }",
         expect![[r#"
@@ -1001,20 +1001,20 @@ fn parse_stmt_compound() {
                 Whitespace@5..6 " "
                 Binding@6..8
                   Name@6..8
-                    Ident@6..7 "x"
+                    Identifier@6..7 "x"
                     Whitespace@7..8 " "
                 Equal@8..9 "="
                 Whitespace@9..10 " "
                 Literal@10..11
-                  IntLiteral@10..11 "3"
+                  IntegerLiteral@10..11 "3"
               Semicolon@11..12 ";"
               Whitespace@12..13 " "
-              ReturnStmt@13..21
+              ReturnStatement@13..21
                 Return@13..19 "return"
                 Whitespace@19..20 " "
-                PathExpr@20..21
-                  NameRef@20..21
-                    Ident@20..21 "x"
+                PathExpression@20..21
+                  NameReference@20..21
+                    Identifier@20..21 "x"
               Semicolon@21..22 ";"
               Whitespace@22..23 " "
               BraceRight@23..24 "}""#]],
@@ -1022,74 +1022,74 @@ fn parse_stmt_compound() {
 }
 
 #[test]
-fn parse_stmt_assignment() {
+fn parse_statement_assignment() {
     check_statement(
         "a = 3",
         expect![[r#"
-        AssignmentStmt@0..5
-          PathExpr@0..2
-            NameRef@0..2
-              Ident@0..1 "a"
+        AssignmentStatement@0..5
+          PathExpression@0..2
+            NameReference@0..2
+              Identifier@0..1 "a"
               Whitespace@1..2 " "
           Equal@2..3 "="
           Whitespace@3..4 " "
           Literal@4..5
-            IntLiteral@4..5 "3""#]],
+            IntegerLiteral@4..5 "3""#]],
     );
 }
 
 #[test]
-fn parse_stmt_assignment_field() {
+fn parse_statement_assignment_field() {
     check_statement(
         "a.b = a.c * 3",
         expect![[r#"
-            AssignmentStmt@0..13
-              FieldExpr@0..4
-                PathExpr@0..1
-                  NameRef@0..1
-                    Ident@0..1 "a"
+            AssignmentStatement@0..13
+              FieldExpression@0..4
+                PathExpression@0..1
+                  NameReference@0..1
+                    Identifier@0..1 "a"
                 Period@1..2 "."
-                NameRef@2..4
-                  Ident@2..3 "b"
+                NameReference@2..4
+                  Identifier@2..3 "b"
                   Whitespace@3..4 " "
               Equal@4..5 "="
               Whitespace@5..6 " "
-              InfixExpr@6..13
-                FieldExpr@6..10
-                  PathExpr@6..7
-                    NameRef@6..7
-                      Ident@6..7 "a"
+              InfixExpression@6..13
+                FieldExpression@6..10
+                  PathExpression@6..7
+                    NameReference@6..7
+                      Identifier@6..7 "a"
                   Period@7..8 "."
-                  NameRef@8..10
-                    Ident@8..9 "c"
+                  NameReference@8..10
+                    Identifier@8..9 "c"
                     Whitespace@9..10 " "
                 Star@10..11 "*"
                 Whitespace@11..12 " "
                 Literal@12..13
-                  IntLiteral@12..13 "3""#]],
+                  IntegerLiteral@12..13 "3""#]],
     );
 }
 
 #[test]
-fn parse_stmt_assignment_invalid() {
+fn parse_statement_assignment_invalid() {
     check_statement(
         "1+2=3",
         expect![[r#"
-        AssignmentStmt@0..5
-          InfixExpr@0..3
+        AssignmentStatement@0..5
+          InfixExpression@0..3
             Literal@0..1
-              IntLiteral@0..1 "1"
+              IntegerLiteral@0..1 "1"
             Plus@1..2 "+"
             Literal@2..3
-              IntLiteral@2..3 "2"
+              IntegerLiteral@2..3 "2"
           Equal@3..4 "="
           Literal@4..5
-            IntLiteral@4..5 "3""#]],
+            IntegerLiteral@4..5 "3""#]],
     );
 }
 
 #[test]
-fn parse_stmt_recover() {
+fn parse_statement_recover() {
     check_statement(
         "{ { let x = } { return 0 } }",
         expect![[r#"
@@ -1104,7 +1104,7 @@ fn parse_stmt_recover() {
                   Whitespace@7..8 " "
                   Binding@8..10
                     Name@8..10
-                      Ident@8..9 "x"
+                      Identifier@8..9 "x"
                       Whitespace@9..10 " "
                   Equal@10..11 "="
                   Whitespace@11..12 " "
@@ -1113,11 +1113,11 @@ fn parse_stmt_recover() {
               CompoundStatement@14..27
                 BraceLeft@14..15 "{"
                 Whitespace@15..16 " "
-                ReturnStmt@16..25
+                ReturnStatement@16..25
                   Return@16..22 "return"
                   Whitespace@22..23 " "
                   Literal@23..25
-                    IntLiteral@23..24 "0"
+                    IntegerLiteral@23..24 "0"
                     Whitespace@24..25 " "
                 BraceRight@25..26 "}"
                 Whitespace@26..27 " "
@@ -1126,45 +1126,45 @@ fn parse_stmt_recover() {
 }
 
 #[test]
-fn parse_compound_assignment_stmt() {
+fn parse_compound_assignment_statement() {
     check_statement(
         "a += 3",
         expect![[r#"
-            CompoundAssignmentStmt@0..6
-              PathExpr@0..2
-                NameRef@0..2
-                  Ident@0..1 "a"
+            CompoundAssignmentStatement@0..6
+              PathExpression@0..2
+                NameReference@0..2
+                  Identifier@0..1 "a"
                   Whitespace@1..2 " "
               PlusEqual@2..4 "+="
               Whitespace@4..5 " "
               Literal@5..6
-                IntLiteral@5..6 "3""#]],
+                IntegerLiteral@5..6 "3""#]],
     );
 }
 
 #[test]
-fn parse_compound_assignment_stmt_expr() {
+fn parse_compound_assignment_statement_expression() {
     check_statement(
         "*func() += foo()",
         expect![[r#"
-            CompoundAssignmentStmt@0..16
-              PrefixExpr@0..8
+            CompoundAssignmentStatement@0..16
+              PrefixExpression@0..8
                 Star@0..1 "*"
                 FunctionCall@1..8
-                  NameRef@1..5
-                    Ident@1..5 "func"
-                  FunctionParamList@5..8
-                    ParenLeft@5..6 "("
-                    ParenRight@6..7 ")"
+                  NameReference@1..5
+                    Identifier@1..5 "func"
+                  FunctionParameterList@5..8
+                    ParenthesisLeft@5..6 "("
+                    ParenthesisRight@6..7 ")"
                     Whitespace@7..8 " "
               PlusEqual@8..10 "+="
               Whitespace@10..11 " "
               FunctionCall@11..16
-                NameRef@11..14
-                  Ident@11..14 "foo"
-                FunctionParamList@14..16
-                  ParenLeft@14..15 "("
-                  ParenRight@15..16 ")""#]],
+                NameReference@11..14
+                  Identifier@11..14 "foo"
+                FunctionParameterList@14..16
+                  ParenthesisLeft@14..15 "("
+                  ParenthesisRight@15..16 ")""#]],
     );
 }
 
@@ -1178,7 +1178,7 @@ fn parse_var_without_initializer() {
               Whitespace@3..4 " "
               Binding@4..5
                 Name@4..5
-                  Ident@4..5 "x"
+                  Identifier@4..5 "x"
               Colon@5..6 ":"
               Whitespace@6..7 " "
               Uint32@7..10
@@ -1200,7 +1200,7 @@ fn parse_var_with_initializer() {
                 Whitespace@13..14 " "
               Binding@14..15
                 Name@14..15
-                  Ident@14..15 "x"
+                  Identifier@14..15 "x"
               Colon@15..16 ":"
               Whitespace@16..17 " "
               Uint32@17..20
@@ -1214,42 +1214,42 @@ fn attribute_list_modern() {
         "@location(0) @interpolate(flat) @attr(1, 2, 0.0, ident)",
         expect![[r#"
             AttributeList@0..55
-              Attr@0..1 "@"
+              AttributeOperator@0..1 "@"
               Attribute@1..13
-                Ident@1..9 "location"
+                Identifier@1..9 "location"
                 AttributeParameters@9..13
-                  ParenLeft@9..10 "("
+                  ParenthesisLeft@9..10 "("
                   Literal@10..11
-                    IntLiteral@10..11 "0"
-                  ParenRight@11..12 ")"
+                    IntegerLiteral@10..11 "0"
+                  ParenthesisRight@11..12 ")"
                   Whitespace@12..13 " "
-              Attr@13..14 "@"
+              AttributeOperator@13..14 "@"
               Attribute@14..32
-                Ident@14..25 "interpolate"
+                Identifier@14..25 "interpolate"
                 AttributeParameters@25..32
-                  ParenLeft@25..26 "("
-                  Ident@26..30 "flat"
-                  ParenRight@30..31 ")"
+                  ParenthesisLeft@25..26 "("
+                  Identifier@26..30 "flat"
+                  ParenthesisRight@30..31 ")"
                   Whitespace@31..32 " "
-              Attr@32..33 "@"
+              AttributeOperator@32..33 "@"
               Attribute@33..55
-                Ident@33..37 "attr"
+                Identifier@33..37 "attr"
                 AttributeParameters@37..55
-                  ParenLeft@37..38 "("
+                  ParenthesisLeft@37..38 "("
                   Literal@38..39
-                    IntLiteral@38..39 "1"
+                    IntegerLiteral@38..39 "1"
                   Comma@39..40 ","
                   Whitespace@40..41 " "
                   Literal@41..42
-                    IntLiteral@41..42 "2"
+                    IntegerLiteral@41..42 "2"
                   Comma@42..43 ","
                   Whitespace@43..44 " "
                   Literal@44..47
                     DecimalFloatLiteral@44..47 "0.0"
                   Comma@47..48 ","
                   Whitespace@48..49 " "
-                  Ident@49..54 "ident"
-                  ParenRight@54..55 ")""#]],
+                  Identifier@49..54 "ident"
+                  ParenthesisRight@54..55 ")""#]],
     );
 }
 
@@ -1259,21 +1259,21 @@ fn unfinished_attr() {
         "[[stage(fragment)]",
         expect![[r#"
             AttributeList@0..18
-              AttrLeft@0..2 "[["
+              AttributeLeft@0..2 "[["
               Attribute@2..17
-                Ident@2..7 "stage"
+                Identifier@2..7 "stage"
                 AttributeParameters@7..17
-                  ParenLeft@7..8 "("
-                  Ident@8..16 "fragment"
-                  ParenRight@16..17 ")"
+                  ParenthesisLeft@7..8 "("
+                  Identifier@8..16 "fragment"
+                  ParenthesisRight@16..17 ")"
               Attribute@17..17
                 Error@17..17
               Error@17..18
                 BracketRight@17..18 "]"
 
-            error at 17..18: expected Ident, but found BracketRight
-            error at 17..18: expected Comma, AttrRight, Ident, or ParenLeft, but found BracketRight
-            error at 17..18: expected Comma or AttrRight"#]],
+            error at 17..18: expected Identifier, but found BracketRight
+            error at 17..18: expected Comma, AttributeRight, Identifier, or ParenthesisLeft, but found BracketRight
+            error at 17..18: expected Comma or AttributeRight"#]],
     );
 }
 
@@ -1283,43 +1283,43 @@ fn attribute_list() {
         "[[location(0), interpolate(flat), attr(1, 2, 0.0, ident)]]",
         expect![[r#"
             AttributeList@0..58
-              AttrLeft@0..2 "[["
+              AttributeLeft@0..2 "[["
               Attribute@2..13
-                Ident@2..10 "location"
+                Identifier@2..10 "location"
                 AttributeParameters@10..13
-                  ParenLeft@10..11 "("
+                  ParenthesisLeft@10..11 "("
                   Literal@11..12
-                    IntLiteral@11..12 "0"
-                  ParenRight@12..13 ")"
+                    IntegerLiteral@11..12 "0"
+                  ParenthesisRight@12..13 ")"
               Comma@13..14 ","
               Whitespace@14..15 " "
               Attribute@15..32
-                Ident@15..26 "interpolate"
+                Identifier@15..26 "interpolate"
                 AttributeParameters@26..32
-                  ParenLeft@26..27 "("
-                  Ident@27..31 "flat"
-                  ParenRight@31..32 ")"
+                  ParenthesisLeft@26..27 "("
+                  Identifier@27..31 "flat"
+                  ParenthesisRight@31..32 ")"
               Comma@32..33 ","
               Whitespace@33..34 " "
               Attribute@34..56
-                Ident@34..38 "attr"
+                Identifier@34..38 "attr"
                 AttributeParameters@38..56
-                  ParenLeft@38..39 "("
+                  ParenthesisLeft@38..39 "("
                   Literal@39..40
-                    IntLiteral@39..40 "1"
+                    IntegerLiteral@39..40 "1"
                   Comma@40..41 ","
                   Whitespace@41..42 " "
                   Literal@42..43
-                    IntLiteral@42..43 "2"
+                    IntegerLiteral@42..43 "2"
                   Comma@43..44 ","
                   Whitespace@44..45 " "
                   Literal@45..48
                     DecimalFloatLiteral@45..48 "0.0"
                   Comma@48..49 ","
                   Whitespace@49..50 " "
-                  Ident@50..55 "ident"
-                  ParenRight@55..56 ")"
-              AttrRight@56..58 "]]""#]],
+                  Identifier@50..55 "ident"
+                  ParenthesisRight@55..56 ")"
+              AttributeRight@56..58 "]]""#]],
     )
 }
 
@@ -1329,10 +1329,10 @@ fn attribute_list_recover() {
         "[[location]]",
         expect![[r#"
         AttributeList@0..12
-          AttrLeft@0..2 "[["
+          AttributeLeft@0..2 "[["
           Attribute@2..10
-            Ident@2..10 "location"
-          AttrRight@10..12 "]]""#]],
+            Identifier@2..10 "location"
+          AttributeRight@10..12 "]]""#]],
     )
 }
 
@@ -1350,64 +1350,64 @@ fn vert_main([[builtin(position)]] coord_in: vec4<f32>) -> [[location(0)]] vec4<
               Whitespace@0..1 "\n"
               Function@1..150
                 AttributeList@1..21
-                  AttrLeft@1..3 "[["
+                  AttributeLeft@1..3 "[["
                   Attribute@3..18
-                    Ident@3..8 "stage"
+                    Identifier@3..8 "stage"
                     AttributeParameters@8..18
-                      ParenLeft@8..9 "("
-                      Ident@9..17 "fragment"
-                      ParenRight@17..18 ")"
-                  AttrRight@18..20 "]]"
+                      ParenthesisLeft@8..9 "("
+                      Identifier@9..17 "fragment"
+                      ParenthesisRight@17..18 ")"
+                  AttributeRight@18..20 "]]"
                   Whitespace@20..21 "\n"
                 Fn@21..23 "fn"
                 Whitespace@23..24 " "
                 Name@24..33
-                  Ident@24..33 "vert_main"
-                ParamList@33..77
-                  ParenLeft@33..34 "("
-                  Param@34..75
+                  Identifier@24..33 "vert_main"
+                ParameterList@33..77
+                  ParenthesisLeft@33..34 "("
+                  Parameter@34..75
                     AttributeList@34..56
-                      AttrLeft@34..36 "[["
+                      AttributeLeft@34..36 "[["
                       Attribute@36..53
-                        Ident@36..43 "builtin"
+                        Identifier@36..43 "builtin"
                         AttributeParameters@43..53
-                          ParenLeft@43..44 "("
-                          Ident@44..52 "position"
-                          ParenRight@52..53 ")"
-                      AttrRight@53..55 "]]"
+                          ParenthesisLeft@43..44 "("
+                          Identifier@44..52 "position"
+                          ParenthesisRight@52..53 ")"
+                      AttributeRight@53..55 "]]"
                       Whitespace@55..56 " "
-                    VariableIdentDecl@56..75
+                    VariableIdentDeclaration@56..75
                       Binding@56..64
                         Name@56..64
-                          Ident@56..64 "coord_in"
+                          Identifier@56..64 "coord_in"
                       Colon@64..65 ":"
                       Whitespace@65..66 " "
                       Vec4@66..75
                         Vec4@66..70 "vec4"
-                        GenericArgList@70..75
+                        GenericArgumentList@70..75
                           LessThan@70..71 "<"
                           Float32@71..74
                             Float32@71..74 "f32"
                           GreaterThan@74..75 ">"
-                  ParenRight@75..76 ")"
+                  ParenthesisRight@75..76 ")"
                   Whitespace@76..77 " "
                 ReturnType@77..106
                   Arrow@77..79 "->"
                   Whitespace@79..80 " "
                   AttributeList@80..96
-                    AttrLeft@80..82 "[["
+                    AttributeLeft@80..82 "[["
                     Attribute@82..93
-                      Ident@82..90 "location"
+                      Identifier@82..90 "location"
                       AttributeParameters@90..93
-                        ParenLeft@90..91 "("
+                        ParenthesisLeft@90..91 "("
                         Literal@91..92
-                          IntLiteral@91..92 "0"
-                        ParenRight@92..93 ")"
-                    AttrRight@93..95 "]]"
+                          IntegerLiteral@91..92 "0"
+                        ParenthesisRight@92..93 ")"
+                    AttributeRight@93..95 "]]"
                     Whitespace@95..96 " "
                   Vec4@96..106
                     Vec4@96..100 "vec4"
-                    GenericArgList@100..106
+                    GenericArgumentList@100..106
                       LessThan@100..101 "<"
                       Float32@101..104
                         Float32@101..104 "f32"
@@ -1416,19 +1416,19 @@ fn vert_main([[builtin(position)]] coord_in: vec4<f32>) -> [[location(0)]] vec4<
                 CompoundStatement@106..150
                   BraceLeft@106..107 "{"
                   Whitespace@107..110 "\n  "
-                  ReturnStmt@110..146
+                  ReturnStatement@110..146
                     Return@110..116 "return"
                     Whitespace@116..117 " "
                     TypeInitializer@117..146
                       Vec4@117..126
                         Vec4@117..121 "vec4"
-                        GenericArgList@121..126
+                        GenericArgumentList@121..126
                           LessThan@121..122 "<"
                           Float32@122..125
                             Float32@122..125 "f32"
                           GreaterThan@125..126 ">"
-                      FunctionParamList@126..146
-                        ParenLeft@126..127 "("
+                      FunctionParameterList@126..146
+                        ParenthesisLeft@126..127 "("
                         Literal@127..130
                           DecimalFloatLiteral@127..130 "0.0"
                         Comma@130..131 ","
@@ -1443,7 +1443,7 @@ fn vert_main([[builtin(position)]] coord_in: vec4<f32>) -> [[location(0)]] vec4<
                         Whitespace@141..142 " "
                         Literal@142..145
                           DecimalFloatLiteral@142..145 "1.0"
-                        ParenRight@145..146 ")"
+                        ParenthesisRight@145..146 ")"
                   Semicolon@146..147 ";"
                   Whitespace@147..148 "\n"
                   BraceRight@148..149 "}"
@@ -1461,20 +1461,20 @@ fn fn_recover_attr() {
             Fn@0..2 "fn"
             Whitespace@2..3 " "
             Name@3..7
-              Ident@3..7 "main"
-            ParamList@7..14
-              ParenLeft@7..8 "("
-              Param@8..12
+              Identifier@3..7 "main"
+            ParameterList@7..14
+              ParenthesisLeft@7..8 "("
+              Parameter@8..12
                 AttributeList@8..12
-                  AttrLeft@8..10 "[["
-                  AttrRight@10..12 "]]"
-              ParenRight@12..13 ")"
+                  AttributeLeft@8..10 "[["
+                  AttributeRight@10..12 "]]"
+              ParenthesisRight@12..13 ")"
               Whitespace@13..14 " "
             CompoundStatement@14..16
               BraceLeft@14..15 "{"
               BraceRight@15..16 "}"
 
-        error at 12..13: expected VariableIdentDecl, but found ParenRight"#]],
+        error at 12..13: expected VariableIdentDeclaration, but found ParenthesisRight"#]],
     );
 }
 
@@ -1488,11 +1488,11 @@ fn fn_recover_attr_2() {
                 Fn@0..2 "fn"
                 Whitespace@2..3 " "
                 Name@3..7
-                  Ident@3..7 "main"
-                ParamList@7..14
-                  ParenLeft@7..8 "("
-                  Param@8..12
-                    VariableIdentDecl@8..12
+                  Identifier@3..7 "main"
+                ParameterList@7..14
+                  ParenthesisLeft@7..8 "("
+                  Parameter@8..12
+                    VariableIdentDeclaration@8..12
                       Binding@8..9
                         Name@8..9
                           Error@8..9
@@ -1501,15 +1501,15 @@ fn fn_recover_attr_2() {
                         BracketRight@9..10 "]"
                         Whitespace@10..11 " "
                       PathType@11..12
-                        NameRef@11..12
-                          Ident@11..12 "a"
-                  ParenRight@12..13 ")"
+                        NameReference@11..12
+                          Identifier@11..12 "a"
+                  ParenthesisRight@12..13 ")"
                   Whitespace@13..14 " "
                 CompoundStatement@14..16
                   BraceLeft@14..15 "{"
                   BraceRight@15..16 "}"
 
-            error at 8..9: expected ParenRight, UnofficialPreprocessorImport, Attr, AttrLeft, or Ident, but found BracketLeft
+            error at 8..9: expected ParenthesisRight, UnofficialPreprocessorImport, AttributeOperator, AttributeLeft, or Identifier, but found BracketLeft
             error at 9..10: expected Colon, but found BracketRight"#]],
     )
 }
@@ -1524,27 +1524,27 @@ fn fn_recover_incomplete_param() {
                 Fn@0..2 "fn"
                 Whitespace@2..3 " "
                 Name@3..7
-                  Ident@3..7 "main"
-                ParamList@7..11
-                  ParenLeft@7..8 "("
-                  Param@8..9
-                    VariableIdentDecl@8..9
+                  Identifier@3..7 "main"
+                ParameterList@7..11
+                  ParenthesisLeft@7..8 "("
+                  Parameter@8..9
+                    VariableIdentDeclaration@8..9
                       Binding@8..9
                         Name@8..9
-                          Ident@8..9 "p"
+                          Identifier@8..9 "p"
                       Error@9..9
-                  ParenRight@9..10 ")"
+                  ParenthesisRight@9..10 ")"
                   Whitespace@10..11 " "
                 CompoundStatement@11..13
                   BraceLeft@11..12 "{"
                   BraceRight@12..13 "}"
 
-            error at 9..10: expected Colon, but found ParenRight"#]],
+            error at 9..10: expected Colon, but found ParenthesisRight"#]],
     );
 }
 
 #[test]
-fn let_stmt_recover_return_no_eq() {
+fn let_statement_recover_return_no_eq() {
     check(
         "fn main() {
             let x be
@@ -1555,10 +1555,10 @@ fn let_stmt_recover_return_no_eq() {
                 Fn@0..2 "fn"
                 Whitespace@2..3 " "
                 Name@3..7
-                  Ident@3..7 "main"
-                ParamList@7..10
-                  ParenLeft@7..8 "("
-                  ParenRight@8..9 ")"
+                  Identifier@3..7 "main"
+                ParameterList@7..10
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                   Whitespace@9..10 " "
                 CompoundStatement@10..42
                   BraceLeft@10..11 "{"
@@ -1568,19 +1568,19 @@ fn let_stmt_recover_return_no_eq() {
                     Whitespace@27..28 " "
                     Binding@28..30
                       Name@28..30
-                        Ident@28..29 "x"
+                        Identifier@28..29 "x"
                         Whitespace@29..30 " "
                     Error@30..41
-                      Ident@30..32 "be"
+                      Identifier@30..32 "be"
                       Whitespace@32..41 "\n        "
                   BraceRight@41..42 "}"
 
-            error at 30..32: expected Colon, but found Ident"#]],
+            error at 30..32: expected Colon, but found Identifier"#]],
     )
 }
 
 #[test]
-fn let_stmt_recover_return() {
+fn let_statement_recover_return() {
     check(
         "fn main() {
             let
@@ -1592,10 +1592,10 @@ fn let_stmt_recover_return() {
                 Fn@0..2 "fn"
                 Whitespace@2..3 " "
                 Name@3..7
-                  Ident@3..7 "main"
-                ParamList@7..10
-                  ParenLeft@7..8 "("
-                  ParenRight@8..9 ")"
+                  Identifier@3..7 "main"
+                ParameterList@7..10
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                   Whitespace@9..10 " "
                 CompoundStatement@10..59
                   BraceLeft@10..11 "{"
@@ -1604,11 +1604,11 @@ fn let_stmt_recover_return() {
                     Let@24..27 "let"
                     Whitespace@27..40 "\n            "
                     Error@40..40
-                  ReturnStmt@40..48
+                  ReturnStatement@40..48
                     Return@40..46 "return"
                     Whitespace@46..47 " "
                     Literal@47..48
-                      IntLiteral@47..48 "0"
+                      IntegerLiteral@47..48 "0"
                   Semicolon@48..49 ";"
                   Whitespace@49..58 "\n        "
                   BraceRight@58..59 "}"
@@ -1618,7 +1618,7 @@ fn let_stmt_recover_return() {
 }
 
 #[test]
-fn let_stmt_recover_return_2() {
+fn let_statement_recover_return_2() {
     check(
         "fn main() {
             let x
@@ -1630,10 +1630,10 @@ fn let_stmt_recover_return_2() {
                 Fn@0..2 "fn"
                 Whitespace@2..3 " "
                 Name@3..7
-                  Ident@3..7 "main"
-                ParamList@7..10
-                  ParenLeft@7..8 "("
-                  ParenRight@8..9 ")"
+                  Identifier@3..7 "main"
+                ParameterList@7..10
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                   Whitespace@9..10 " "
                 CompoundStatement@10..61
                   BraceLeft@10..11 "{"
@@ -1643,14 +1643,14 @@ fn let_stmt_recover_return_2() {
                     Whitespace@27..28 " "
                     Binding@28..42
                       Name@28..42
-                        Ident@28..29 "x"
+                        Identifier@28..29 "x"
                         Whitespace@29..42 "\n            "
                     Error@42..42
-                  ReturnStmt@42..50
+                  ReturnStatement@42..50
                     Return@42..48 "return"
                     Whitespace@48..49 " "
                     Literal@49..50
-                      IntLiteral@49..50 "0"
+                      IntegerLiteral@49..50 "0"
                   Semicolon@50..51 ";"
                   Whitespace@51..60 "\n        "
                   BraceRight@60..61 "}"
@@ -1660,7 +1660,7 @@ fn let_stmt_recover_return_2() {
 }
 
 #[test]
-fn let_stmt_recover_return_3() {
+fn let_statement_recover_return_3() {
     check(
         "fn main() {
             let x =
@@ -1672,10 +1672,10 @@ fn let_stmt_recover_return_3() {
                 Fn@0..2 "fn"
                 Whitespace@2..3 " "
                 Name@3..7
-                  Ident@3..7 "main"
-                ParamList@7..10
-                  ParenLeft@7..8 "("
-                  ParenRight@8..9 ")"
+                  Identifier@3..7 "main"
+                ParameterList@7..10
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                   Whitespace@9..10 " "
                 CompoundStatement@10..63
                   BraceLeft@10..11 "{"
@@ -1685,15 +1685,15 @@ fn let_stmt_recover_return_3() {
                     Whitespace@27..28 " "
                     Binding@28..30
                       Name@28..30
-                        Ident@28..29 "x"
+                        Identifier@28..29 "x"
                         Whitespace@29..30 " "
                     Equal@30..31 "="
                     Whitespace@31..44 "\n            "
-                  ReturnStmt@44..52
+                  ReturnStatement@44..52
                     Return@44..50 "return"
                     Whitespace@50..51 " "
                     Literal@51..52
-                      IntLiteral@51..52 "0"
+                      IntegerLiteral@51..52 "0"
                   Semicolon@52..53 ";"
                   Whitespace@53..62 "\n        "
                   BraceRight@62..63 "}""#]],
@@ -1701,7 +1701,7 @@ fn let_stmt_recover_return_3() {
 }
 
 #[test]
-fn let_stmt_recover_1() {
+fn let_statement_recover_1() {
     check(
         "fn main() {
             let x
@@ -1712,10 +1712,10 @@ fn let_stmt_recover_1() {
                 Fn@0..2 "fn"
                 Whitespace@2..3 " "
                 Name@3..7
-                  Ident@3..7 "main"
-                ParamList@7..10
-                  ParenLeft@7..8 "("
-                  ParenRight@8..9 ")"
+                  Identifier@3..7 "main"
+                ParameterList@7..10
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                   Whitespace@9..10 " "
                 CompoundStatement@10..39
                   BraceLeft@10..11 "{"
@@ -1725,7 +1725,7 @@ fn let_stmt_recover_1() {
                     Whitespace@27..28 " "
                     Binding@28..38
                       Name@28..38
-                        Ident@28..29 "x"
+                        Identifier@28..29 "x"
                         Whitespace@29..38 "\n        "
                     Error@38..38
                   BraceRight@38..39 "}"
@@ -1735,7 +1735,7 @@ fn let_stmt_recover_1() {
 }
 
 #[test]
-fn let_stmt_recover_2() {
+fn let_statement_recover_2() {
     check(
         "fn main() {
             let x =
@@ -1746,10 +1746,10 @@ fn let_stmt_recover_2() {
                 Fn@0..2 "fn"
                 Whitespace@2..3 " "
                 Name@3..7
-                  Ident@3..7 "main"
-                ParamList@7..10
-                  ParenLeft@7..8 "("
-                  ParenRight@8..9 ")"
+                  Identifier@3..7 "main"
+                ParameterList@7..10
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                   Whitespace@9..10 " "
                 CompoundStatement@10..41
                   BraceLeft@10..11 "{"
@@ -1759,7 +1759,7 @@ fn let_stmt_recover_2() {
                     Whitespace@27..28 " "
                     Binding@28..30
                       Name@28..30
-                        Ident@28..29 "x"
+                        Identifier@28..29 "x"
                         Whitespace@29..30 " "
                     Equal@30..31 "="
                     Whitespace@31..40 "\n        "
@@ -1768,7 +1768,7 @@ fn let_stmt_recover_2() {
 }
 
 #[test]
-fn let_stmt_recover_3() {
+fn let_statement_recover_3() {
     check(
         "fn main() {
             let
@@ -1779,10 +1779,10 @@ fn let_stmt_recover_3() {
                 Fn@0..2 "fn"
                 Whitespace@2..3 " "
                 Name@3..7
-                  Ident@3..7 "main"
-                ParamList@7..10
-                  ParenLeft@7..8 "("
-                  ParenRight@8..9 ")"
+                  Identifier@3..7 "main"
+                ParameterList@7..10
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                   Whitespace@9..10 " "
                 CompoundStatement@10..37
                   BraceLeft@10..11 "{"
@@ -1810,42 +1810,42 @@ struct UBO {
         expect![[r#"
             SourceFile@0..68
               Whitespace@0..1 "\n"
-              StructDecl@1..68
+              StructDeclaration@1..68
                 Struct@1..7 "struct"
                 Whitespace@7..8 " "
                 Name@8..12
-                  Ident@8..11 "UBO"
+                  Identifier@8..11 "UBO"
                   Whitespace@11..12 " "
                 StructDeclBody@12..66
                   BraceLeft@12..13 "{"
                   Whitespace@13..16 "\n  "
-                  StructDeclField@16..42
-                    VariableIdentDecl@16..38
+                  StructDeclarationField@16..42
+                    VariableIdentDeclaration@16..38
                       Binding@16..31
                         Name@16..31
-                          Ident@16..31 "camera_position"
+                          Identifier@16..31 "camera_position"
                       Colon@31..32 ":"
                       Whitespace@32..33 " "
                       PathType@33..38
-                        NameRef@33..38
-                          Ident@33..38 "vec3f"
+                        NameReference@33..38
+                          Identifier@33..38 "vec3f"
                     Comma@38..39 ","
                     Whitespace@39..42 "\n  "
-                  StructDeclField@42..54
-                    VariableIdentDecl@42..54
+                  StructDeclarationField@42..54
+                    VariableIdentDeclaration@42..54
                       Binding@42..46
                         Name@42..46
-                          Ident@42..46 "_pad"
+                          Identifier@42..46 "_pad"
                       Colon@46..47 ":"
                       Whitespace@47..48 " "
                       Uint32@48..54
                         Uint32@48..51 "u32"
                         Whitespace@51..54 "\n  "
-                  StructDeclField@54..65
-                    VariableIdentDecl@54..63
+                  StructDeclarationField@54..65
+                    VariableIdentDeclaration@54..63
                       Binding@54..58
                         Name@54..58
-                          Ident@54..58 "time"
+                          Identifier@54..58 "time"
                       Colon@58..59 ":"
                       Whitespace@59..60 " "
                       Float32@60..63
@@ -1870,36 +1870,36 @@ struct Test {
         expect![[r#"
             SourceFile@0..47
               Whitespace@0..1 "\n"
-              StructDecl@1..47
+              StructDeclaration@1..47
                 Struct@1..7 "struct"
                 Whitespace@7..8 " "
                 Name@8..13
-                  Ident@8..12 "Test"
+                  Identifier@8..12 "Test"
                   Whitespace@12..13 " "
                 StructDeclBody@13..47
                   BraceLeft@13..14 "{"
                   Whitespace@14..19 "\n    "
-                  StructDeclField@19..31
-                    VariableIdentDecl@19..25
+                  StructDeclarationField@19..31
+                    VariableIdentDeclaration@19..25
                       Binding@19..20
                         Name@19..20
-                          Ident@19..20 "a"
+                          Identifier@19..20 "a"
                       Colon@20..21 ":"
                       Whitespace@21..22 " "
                       Float32@22..25
                         Float32@22..25 "f32"
                     Semicolon@25..26 ";"
                     Whitespace@26..31 "\n    "
-                  StructDeclField@31..45
-                    VariableIdentDecl@31..43
+                  StructDeclarationField@31..45
+                    VariableIdentDeclaration@31..43
                       Binding@31..32
                         Name@31..32
-                          Ident@31..32 "b"
+                          Identifier@31..32 "b"
                       Colon@32..33 ":"
                       Whitespace@33..34 " "
                       Vec3@34..43
                         Vec3@34..38 "vec3"
-                        GenericArgList@38..43
+                        GenericArgumentList@38..43
                           LessThan@38..39 "<"
                           Float32@39..42
                             Float32@39..42 "f32"
@@ -1923,36 +1923,36 @@ struct Test {
         expect![[r#"
             SourceFile@0..47
               Whitespace@0..1 "\n"
-              StructDecl@1..47
+              StructDeclaration@1..47
                 Struct@1..7 "struct"
                 Whitespace@7..8 " "
                 Name@8..13
-                  Ident@8..12 "Test"
+                  Identifier@8..12 "Test"
                   Whitespace@12..13 " "
                 StructDeclBody@13..47
                   BraceLeft@13..14 "{"
                   Whitespace@14..19 "\n    "
-                  StructDeclField@19..31
-                    VariableIdentDecl@19..25
+                  StructDeclarationField@19..31
+                    VariableIdentDeclaration@19..25
                       Binding@19..20
                         Name@19..20
-                          Ident@19..20 "a"
+                          Identifier@19..20 "a"
                       Colon@20..21 ":"
                       Whitespace@21..22 " "
                       Float32@22..25
                         Float32@22..25 "f32"
                     Comma@25..26 ","
                     Whitespace@26..31 "\n    "
-                  StructDeclField@31..45
-                    VariableIdentDecl@31..43
+                  StructDeclarationField@31..45
+                    VariableIdentDeclaration@31..43
                       Binding@31..32
                         Name@31..32
-                          Ident@31..32 "b"
+                          Identifier@31..32 "b"
                       Colon@32..33 ":"
                       Whitespace@33..34 " "
                       Vec3@34..43
                         Vec3@34..38 "vec3"
-                        GenericArgList@38..43
+                        GenericArgumentList@38..43
                           LessThan@38..39 "<"
                           Float32@39..42
                             Float32@39..42 "f32"
@@ -1979,63 +1979,63 @@ struct Test {
         expect![[r#"
             SourceFile@0..104
               Whitespace@0..1 "\n"
-              StructDecl@1..104
+              StructDeclaration@1..104
                 AttributeList@1..11
-                  AttrLeft@1..3 "[["
+                  AttributeLeft@1..3 "[["
                   Attribute@3..8
-                    Ident@3..8 "block"
-                  AttrRight@8..10 "]]"
+                    Identifier@3..8 "block"
+                  AttributeRight@8..10 "]]"
                   Whitespace@10..11 "\n"
                 Struct@11..17 "struct"
                 Whitespace@17..18 " "
                 Name@18..23
-                  Ident@18..22 "Test"
+                  Identifier@18..22 "Test"
                   Whitespace@22..23 " "
                 StructDeclBody@23..102
                   BraceLeft@23..24 "{"
                   Whitespace@24..29 "\n    "
-                  StructDeclField@29..61
+                  StructDeclarationField@29..61
                     AttributeList@29..49
-                      AttrLeft@29..31 "[["
+                      AttributeLeft@29..31 "[["
                       Attribute@31..42
-                        Ident@31..39 "location"
+                        Identifier@31..39 "location"
                         AttributeParameters@39..42
-                          ParenLeft@39..40 "("
+                          ParenthesisLeft@39..40 "("
                           Literal@40..41
-                            IntLiteral@40..41 "0"
-                          ParenRight@41..42 ")"
-                      AttrRight@42..44 "]]"
+                            IntegerLiteral@40..41 "0"
+                          ParenthesisRight@41..42 ")"
+                      AttributeRight@42..44 "]]"
                       Whitespace@44..49 "\n    "
-                    VariableIdentDecl@49..55
+                    VariableIdentDeclaration@49..55
                       Binding@49..50
                         Name@49..50
-                          Ident@49..50 "a"
+                          Identifier@49..50 "a"
                       Colon@50..51 ":"
                       Whitespace@51..52 " "
                       Float32@52..55
                         Float32@52..55 "f32"
                     Semicolon@55..56 ";"
                     Whitespace@56..61 "\n    "
-                  StructDeclField@61..101
+                  StructDeclarationField@61..101
                     AttributeList@61..87
-                      AttrLeft@61..63 "[["
+                      AttributeLeft@61..63 "[["
                       Attribute@63..80
-                        Ident@63..70 "builtin"
+                        Identifier@63..70 "builtin"
                         AttributeParameters@70..80
-                          ParenLeft@70..71 "("
-                          Ident@71..79 "position"
-                          ParenRight@79..80 ")"
-                      AttrRight@80..82 "]]"
+                          ParenthesisLeft@70..71 "("
+                          Identifier@71..79 "position"
+                          ParenthesisRight@79..80 ")"
+                      AttributeRight@80..82 "]]"
                       Whitespace@82..87 "\n    "
-                    VariableIdentDecl@87..99
+                    VariableIdentDeclaration@87..99
                       Binding@87..88
                         Name@87..88
-                          Ident@87..88 "b"
+                          Identifier@87..88 "b"
                       Colon@88..89 ":"
                       Whitespace@89..90 " "
                       Vec3@90..99
                         Vec3@90..94 "vec3"
-                        GenericArgList@94..99
+                        GenericArgumentList@94..99
                           LessThan@94..95 "<"
                           Float32@95..98
                             Float32@95..98 "f32"
@@ -2066,10 +2066,10 @@ fn test()
                 Fn@8..10 "fn"
                 Whitespace@10..11 " "
                 Name@11..15
-                  Ident@11..15 "test"
-                ParamList@15..18
-                  ParenLeft@15..16 "("
-                  ParenRight@16..17 ")"
+                  Identifier@11..15 "test"
+                ParameterList@15..18
+                  ParenthesisLeft@15..16 "("
+                  ParenthesisRight@16..17 ")"
                   Whitespace@17..18 "\n"
 
             error at 8..10: expected BraceLeft, but found Fn
@@ -2091,17 +2091,17 @@ fn test()
                 Struct@1..7 "struct"
                 Whitespace@7..8 " "
                 Name@8..13
-                  Ident@8..12 "test"
+                  Identifier@8..12 "test"
                   Whitespace@12..13 "\n"
                 Error@13..13
               Function@13..23
                 Fn@13..15 "fn"
                 Whitespace@15..16 " "
                 Name@16..20
-                  Ident@16..20 "test"
-                ParamList@20..23
-                  ParenLeft@20..21 "("
-                  ParenRight@21..22 ")"
+                  Identifier@16..20 "test"
+                ParameterList@20..23
+                  ParenthesisLeft@20..21 "("
+                  ParenthesisRight@21..22 ")"
                   Whitespace@22..23 "\n"
 
             error at 13..15: expected BraceLeft, but found Fn
@@ -2121,11 +2121,11 @@ fn test()
         expect![[r#"
             SourceFile@0..30
               Whitespace@0..1 "\n"
-              StructDecl@1..17
+              StructDeclaration@1..17
                 Struct@1..7 "struct"
                 Whitespace@7..8 " "
                 Name@8..13
-                  Ident@8..12 "test"
+                  Identifier@8..12 "test"
                   Whitespace@12..13 " "
                 StructDeclBody@13..17
                   BraceLeft@13..14 "{"
@@ -2135,10 +2135,10 @@ fn test()
                 Fn@17..19 "fn"
                 Whitespace@19..20 " "
                 Name@20..24
-                  Ident@20..24 "test"
-                ParamList@24..27
-                  ParenLeft@24..25 "("
-                  ParenRight@25..26 ")"
+                  Identifier@20..24 "test"
+                ParameterList@24..27
+                  ParenthesisLeft@24..25 "("
+                  ParenthesisRight@25..26 ")"
                   Whitespace@26..27 "\n"
                 Error@27..28
                   BraceRight@27..28 "}"
@@ -2148,7 +2148,7 @@ fn test()
                   Whitespace@29..30 "\n"
 
             error at 27..28: expected Arrow or BraceLeft, but found BraceRight
-            error at 28..29: expected Fn, Struct, Var, Let, Const, Alias, or Override, but found Semicolon"#]],
+            error at 28..29: expected Fn, Struct, Var, Let, Constant, Alias, or Override, but found Semicolon"#]],
     );
 }
 
@@ -2168,20 +2168,20 @@ struct
                 Struct@1..7 "struct"
                 Whitespace@7..9 "\n\n"
                 Error@9..9
-              StructDecl@9..26
+              StructDeclaration@9..26
                 AttributeList@9..19
-                  AttrLeft@9..11 "[["
+                  AttributeLeft@9..11 "[["
                   Attribute@11..16
-                    Ident@11..16 "block"
-                  AttrRight@16..18 "]]"
+                    Identifier@11..16 "block"
+                  AttributeRight@16..18 "]]"
                   Whitespace@18..19 "\n"
                 Struct@19..25 "struct"
                 Whitespace@25..26 "\n"
                 Name@26..26
                 StructDeclBody@26..26
 
-            error at 9..11: expected BraceLeft, but found AttrLeft
-            error at 25..26: expected Ident
+            error at 9..11: expected BraceLeft, but found AttributeLeft
+            error at 25..26: expected Identifier
             error at 25..26: expected BraceLeft
             error at 25..26: expected BraceRight"#]],
     );
@@ -2193,7 +2193,7 @@ fn global_variable_decl() {
         "var<uniform> param: Params;",
         expect![[r#"
         SourceFile@0..27
-          GlobalVariableDecl@0..27
+          GlobalVariableDeclaration@0..27
             Var@0..3 "var"
             VariableQualifier@3..13
               LessThan@3..4 "<"
@@ -2202,12 +2202,12 @@ fn global_variable_decl() {
               Whitespace@12..13 " "
             Binding@13..18
               Name@13..18
-                Ident@13..18 "param"
+                Identifier@13..18 "param"
             Colon@18..19 ":"
             Whitespace@19..20 " "
             PathType@20..26
-              NameRef@20..26
-                Ident@20..26 "Params"
+              NameReference@20..26
+                Identifier@20..26 "Params"
             Semicolon@26..27 ";""#]],
     );
 }
@@ -2218,26 +2218,26 @@ fn global_variable_decl_attrs() {
         "[[group(0), binding(0)]] var<storage,read_write> pbuf: PositionsBuffer;",
         expect![[r#"
             SourceFile@0..71
-              GlobalVariableDecl@0..71
+              GlobalVariableDeclaration@0..71
                 AttributeList@0..25
-                  AttrLeft@0..2 "[["
+                  AttributeLeft@0..2 "[["
                   Attribute@2..10
-                    Ident@2..7 "group"
+                    Identifier@2..7 "group"
                     AttributeParameters@7..10
-                      ParenLeft@7..8 "("
+                      ParenthesisLeft@7..8 "("
                       Literal@8..9
-                        IntLiteral@8..9 "0"
-                      ParenRight@9..10 ")"
+                        IntegerLiteral@8..9 "0"
+                      ParenthesisRight@9..10 ")"
                   Comma@10..11 ","
                   Whitespace@11..12 " "
                   Attribute@12..22
-                    Ident@12..19 "binding"
+                    Identifier@12..19 "binding"
                     AttributeParameters@19..22
-                      ParenLeft@19..20 "("
+                      ParenthesisLeft@19..20 "("
                       Literal@20..21
-                        IntLiteral@20..21 "0"
-                      ParenRight@21..22 ")"
-                  AttrRight@22..24 "]]"
+                        IntegerLiteral@20..21 "0"
+                      ParenthesisRight@21..22 ")"
+                  AttributeRight@22..24 "]]"
                   Whitespace@24..25 " "
                 Var@25..28 "var"
                 VariableQualifier@28..49
@@ -2249,12 +2249,12 @@ fn global_variable_decl_attrs() {
                   Whitespace@48..49 " "
                 Binding@49..53
                   Name@49..53
-                    Ident@49..53 "pbuf"
+                    Identifier@49..53 "pbuf"
                 Colon@53..54 ":"
                 Whitespace@54..55 " "
                 PathType@55..70
-                  NameRef@55..70
-                    Ident@55..70 "PositionsBuffer"
+                  NameReference@55..70
+                    Identifier@55..70 "PositionsBuffer"
                 Semicolon@70..71 ";""#]],
     );
 }
@@ -2265,17 +2265,17 @@ fn global_variable_decl_init() {
         "var flags = 0;",
         expect![[r#"
         SourceFile@0..14
-          GlobalVariableDecl@0..14
+          GlobalVariableDeclaration@0..14
             Var@0..3 "var"
             Whitespace@3..4 " "
             Binding@4..10
               Name@4..10
-                Ident@4..9 "flags"
+                Identifier@4..9 "flags"
                 Whitespace@9..10 " "
             Equal@10..11 "="
             Whitespace@11..12 " "
             Literal@12..13
-              IntLiteral@12..13 "0"
+              IntegerLiteral@12..13 "0"
             Semicolon@13..14 ";""#]],
     );
 }
@@ -2286,17 +2286,17 @@ fn global_const_decl() {
         "const constant = 0;",
         expect![[r#"
         SourceFile@0..19
-          GlobalConstantDecl@0..19
-            Const@0..5 "const"
+          GlobalConstantDeclaration@0..19
+            Constant@0..5 "const"
             Whitespace@5..6 " "
             Binding@6..15
               Name@6..15
-                Ident@6..14 "constant"
+                Identifier@6..14 "constant"
                 Whitespace@14..15 " "
             Equal@15..16 "="
             Whitespace@16..17 " "
             Literal@17..18
-              IntLiteral@17..18 "0"
+              IntegerLiteral@17..18 "0"
             Semicolon@18..19 ";""#]],
     );
 }
@@ -2307,11 +2307,11 @@ fn type_alias_decl() {
         "alias float = f32;",
         expect![[r#"
             SourceFile@0..18
-              TypeAliasDecl@0..18
+              TypeAliasDeclaration@0..18
                 Alias@0..5 "alias"
                 Whitespace@5..6 " "
                 Name@6..12
-                  Ident@6..11 "float"
+                  Identifier@6..11 "float"
                   Whitespace@11..12 " "
                 Equal@12..13 "="
                 Whitespace@13..14 " "
@@ -2327,11 +2327,11 @@ fn type_alias_decl_old() {
         "type float = f32;",
         expect![[r#"
         SourceFile@0..17
-          TypeAliasDecl@0..17
+          TypeAliasDeclaration@0..17
             Type@0..4 "type"
             Whitespace@4..5 " "
             Name@5..11
-              Ident@5..10 "float"
+              Identifier@5..10 "float"
               Whitespace@10..11 " "
             Equal@11..12 "="
             Whitespace@12..13 " "
@@ -2347,11 +2347,11 @@ fn type_alias_decl_recover() {
         "type float = f32\ntype other = u32;",
         expect![[r#"
         SourceFile@0..34
-          TypeAliasDecl@0..17
+          TypeAliasDeclaration@0..17
             Type@0..4 "type"
             Whitespace@4..5 " "
             Name@5..11
-              Ident@5..10 "float"
+              Identifier@5..10 "float"
               Whitespace@10..11 " "
             Equal@11..12 "="
             Whitespace@12..13 " "
@@ -2359,11 +2359,11 @@ fn type_alias_decl_recover() {
               Float32@13..16 "f32"
               Whitespace@16..17 "\n"
             Error@17..17
-          TypeAliasDecl@17..34
+          TypeAliasDeclaration@17..34
             Type@17..21 "type"
             Whitespace@21..22 " "
             Name@22..28
-              Ident@22..27 "other"
+              Identifier@22..27 "other"
               Whitespace@27..28 " "
             Equal@28..29 "="
             Whitespace@29..30 " "
@@ -2376,20 +2376,20 @@ fn type_alias_decl_recover() {
 }
 
 #[test]
-fn parse_stmt_expr() {
+fn parse_statement_expression() {
     check_statement(
         "test(args);",
         expect![[r#"
-            ExprStatement@0..10
+            ExpressionStatement@0..10
               FunctionCall@0..10
-                NameRef@0..4
-                  Ident@0..4 "test"
-                FunctionParamList@4..10
-                  ParenLeft@4..5 "("
-                  PathExpr@5..9
-                    NameRef@5..9
-                      Ident@5..9 "args"
-                  ParenRight@9..10 ")""#]],
+                NameReference@0..4
+                  Identifier@0..4 "test"
+                FunctionParameterList@4..10
+                  ParenthesisLeft@4..5 "("
+                  PathExpression@5..9
+                    NameReference@5..9
+                      Identifier@5..9 "args"
+                  ParenthesisRight@9..10 ")""#]],
     );
 }
 
@@ -2405,42 +2405,42 @@ struct PrimeIndices {
         expect![[r#"
             SourceFile@0..72
               Whitespace@0..1 "\n"
-              StructDecl@1..72
+              StructDeclaration@1..72
                 AttributeList@1..11
-                  AttrLeft@1..3 "[["
+                  AttributeLeft@1..3 "[["
                   Attribute@3..8
-                    Ident@3..8 "block"
-                  AttrRight@8..10 "]]"
+                    Identifier@3..8 "block"
+                  AttributeRight@8..10 "]]"
                   Whitespace@10..11 "\n"
                 Struct@11..17 "struct"
                 Whitespace@17..18 " "
                 Name@18..31
-                  Ident@18..30 "PrimeIndices"
+                  Identifier@18..30 "PrimeIndices"
                   Whitespace@30..31 " "
                 StructDeclBody@31..70
                   BraceLeft@31..32 "{"
                   Whitespace@32..37 "\n    "
-                  StructDeclField@37..69
-                    VariableIdentDecl@37..67
+                  StructDeclarationField@37..69
+                    VariableIdentDeclaration@37..67
                       Binding@37..41
                         Name@37..41
-                          Ident@37..41 "data"
+                          Identifier@37..41 "data"
                       Colon@41..42 ":"
                       Whitespace@42..43 " "
                       AttributeList@43..57
-                        AttrLeft@43..45 "[["
+                        AttributeLeft@43..45 "[["
                         Attribute@45..54
-                          Ident@45..51 "stride"
+                          Identifier@45..51 "stride"
                           AttributeParameters@51..54
-                            ParenLeft@51..52 "("
+                            ParenthesisLeft@51..52 "("
                             Literal@52..53
-                              IntLiteral@52..53 "4"
-                            ParenRight@53..54 ")"
-                        AttrRight@54..56 "]]"
+                              IntegerLiteral@52..53 "4"
+                            ParenthesisRight@53..54 ")"
+                        AttributeRight@54..56 "]]"
                         Whitespace@56..57 " "
                       Array@57..67
                         Array@57..62 "array"
-                        GenericArgList@62..67
+                        GenericArgumentList@62..67
                           LessThan@62..63 "<"
                           Uint32@63..66
                             Uint32@63..66 "u32"
@@ -2472,7 +2472,7 @@ fn empty_return_statement() {
     check_statement(
         "return;",
         expect![[r#"
-        ReturnStmt@0..6
+        ReturnStatement@0..6
           Return@0..6 "return""#]],
     );
 }
@@ -2490,20 +2490,20 @@ fn empty_return_statement_no_semi() {
             Whitespace@5..6 " "
             Binding@6..8
               Name@6..8
-                Ident@6..7 "x"
+                Identifier@6..7 "x"
                 Whitespace@7..8 " "
             Equal@8..9 "="
             Whitespace@9..10 " "
             Literal@10..11
-              IntLiteral@10..11 "3"
+              IntegerLiteral@10..11 "3"
           Semicolon@11..12 ";"
           Whitespace@12..13 " "
-          ReturnStmt@13..22
+          ReturnStatement@13..22
             Return@13..19 "return"
             Whitespace@19..20 " "
-            PathExpr@20..22
-              NameRef@20..22
-                Ident@20..21 "x"
+            PathExpression@20..22
+              NameReference@20..22
+                Identifier@20..21 "x"
                 Whitespace@21..22 " "
           BraceRight@22..23 "}"
           Whitespace@23..24 " ""#]],
@@ -2520,7 +2520,7 @@ fn parse_import() {
               UnofficialPreprocessorImport@0..7 "#import"
               Whitespace@7..8 " "
               ImportCustom@8..12
-                Ident@8..12 "test""##]],
+                Identifier@8..12 "test""##]],
     );
 }
 
@@ -2534,9 +2534,9 @@ fn parse_import_colon() {
                 UnofficialPreprocessorImport@0..7 "#import"
                 Whitespace@7..8 " "
                 ImportCustom@8..29
-                  Ident@8..16 "bevy_pbr"
+                  Identifier@8..16 "bevy_pbr"
                   ColonColon@16..18 "::"
-                  Ident@18..29 "mesh_struct""##]],
+                  Identifier@18..29 "mesh_struct""##]],
     );
 }
 
@@ -2571,9 +2571,9 @@ switch i {
               Whitespace@0..1 "\n"
               Switch@1..7 "switch"
               Whitespace@7..8 " "
-              PathExpr@8..10
-                NameRef@8..10
-                  Ident@8..9 "i"
+              PathExpression@8..10
+                NameReference@8..10
+                  Identifier@8..9 "i"
                   Whitespace@9..10 " "
               SwitchBlock@10..92
                 BraceLeft@10..11 "{"
@@ -2583,7 +2583,7 @@ switch i {
                   Whitespace@18..19 " "
                   SwitchCaseSelectors@19..20
                     Literal@19..20
-                      IntLiteral@19..20 "0"
+                      IntegerLiteral@19..20 "0"
                   Colon@20..21 ":"
                   Whitespace@21..22 " "
                   CompoundStatement@22..41
@@ -2599,21 +2599,21 @@ switch i {
                   Whitespace@45..46 " "
                   SwitchCaseSelectors@46..50
                     Literal@46..47
-                      IntLiteral@46..47 "1"
+                      IntegerLiteral@46..47 "1"
                     Comma@47..48 ","
                     Whitespace@48..49 " "
                     Literal@49..50
-                      IntLiteral@49..50 "2"
+                      IntegerLiteral@49..50 "2"
                   Colon@50..51 ":"
                   Whitespace@51..52 " "
                   CompoundStatement@52..69
                     BraceLeft@52..53 "{"
                     Whitespace@53..54 " "
-                    ReturnStmt@54..63
+                    ReturnStatement@54..63
                       Return@54..60 "return"
                       Whitespace@60..61 " "
                       Literal@61..63
-                        IntLiteral@61..63 "42"
+                        IntegerLiteral@61..63 "42"
                     Semicolon@63..64 ";"
                     Whitespace@64..65 " "
                     BraceRight@65..66 "}"
@@ -2645,9 +2645,9 @@ switch i {
               Whitespace@0..1 "\n"
               Switch@1..7 "switch"
               Whitespace@7..8 " "
-              PathExpr@8..10
-                NameRef@8..10
-                  Ident@8..9 "i"
+              PathExpression@8..10
+                NameReference@8..10
+                  Identifier@8..9 "i"
                   Whitespace@9..10 " "
               SwitchBlock@10..29
                 BraceLeft@10..11 "{"
@@ -2674,9 +2674,9 @@ switch i {
               Whitespace@0..1 "\n"
               Switch@1..7 "switch"
               Whitespace@7..8 " "
-              PathExpr@8..10
-                NameRef@8..10
-                  Ident@8..9 "i"
+              PathExpression@8..10
+                NameReference@8..10
+                  Identifier@8..9 "i"
                   Whitespace@9..10 " "
               SwitchBlock@10..31
                 BraceLeft@10..11 "{"
@@ -2686,7 +2686,7 @@ switch i {
                   Whitespace@18..19 " "
                   SwitchCaseSelectors@19..21
                     Literal@19..21
-                      IntLiteral@19..20 "1"
+                      IntegerLiteral@19..20 "1"
                       Whitespace@20..21 "\n"
                 BraceRight@21..22 "}"
                 Whitespace@22..31 "\n        ""#]],
@@ -2713,9 +2713,9 @@ let x = 3;
               SwitchStatement@3..27
                 Switch@3..9 "switch"
                 Whitespace@9..10 " "
-                PathExpr@10..12
-                  NameRef@10..12
-                    Ident@10..11 "i"
+                PathExpression@10..12
+                  NameReference@10..12
+                    Identifier@10..11 "i"
                     Whitespace@11..12 " "
                 SwitchBlock@12..27
                   BraceLeft@12..13 "{"
@@ -2725,7 +2725,7 @@ let x = 3;
                     Whitespace@20..21 " "
                     SwitchCaseSelectors@21..22
                       Literal@21..22
-                        IntLiteral@21..22 "1"
+                        IntegerLiteral@21..22 "1"
                     Colon@22..23 ":"
                     Whitespace@23..24 "\n"
                   BraceRight@24..25 "}"
@@ -2735,12 +2735,12 @@ let x = 3;
                 Whitespace@30..31 " "
                 Binding@31..33
                   Name@31..33
-                    Ident@31..32 "x"
+                    Identifier@31..32 "x"
                     Whitespace@32..33 " "
                 Equal@33..34 "="
                 Whitespace@34..35 " "
                 Literal@35..36
-                  IntLiteral@35..36 "3"
+                  IntegerLiteral@35..36 "3"
               Semicolon@36..37 ";"
               Whitespace@37..38 "\n"
               BraceRight@38..39 "}"
@@ -2767,9 +2767,9 @@ let x = 3;
               SwitchStatement@3..29
                 Switch@3..9 "switch"
                 Whitespace@9..10 " "
-                PathExpr@10..12
-                  NameRef@10..12
-                    Ident@10..11 "i"
+                PathExpression@10..12
+                  NameReference@10..12
+                    Identifier@10..11 "i"
                     Whitespace@11..12 " "
                 SwitchBlock@12..29
                   BraceLeft@12..13 "{"
@@ -2779,11 +2779,11 @@ let x = 3;
                     Whitespace@20..21 " "
                     SwitchCaseSelectors@21..27
                       Literal@21..22
-                        IntLiteral@21..22 "1"
+                        IntegerLiteral@21..22 "1"
                       Comma@22..23 ","
                       Whitespace@23..24 " "
                       Literal@24..25
-                        IntLiteral@24..25 "2"
+                        IntegerLiteral@24..25 "2"
                       Comma@25..26 ","
                       Whitespace@26..27 "\n"
                   BraceRight@27..28 "}"
@@ -2793,12 +2793,12 @@ let x = 3;
                 Whitespace@32..33 " "
                 Binding@33..35
                   Name@33..35
-                    Ident@33..34 "x"
+                    Identifier@33..34 "x"
                     Whitespace@34..35 " "
                 Equal@35..36 "="
                 Whitespace@36..37 " "
                 Literal@37..38
-                  IntLiteral@37..38 "3"
+                  IntegerLiteral@37..38 "3"
               Semicolon@38..39 ";"
               Whitespace@39..40 "\n"
               BraceRight@40..41 "}"

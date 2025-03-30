@@ -1,53 +1,67 @@
-//! A thin wrapper around `ThreadPool` to make sure that we join all things
-//! properly.
-use crossbeam_channel::Sender;
+//! A thin wrapper around [`stdx::thread::Pool`] which threads a sender through spawned jobs.
+//! It is used in [`crate::global_state::GlobalState`] throughout the main loop.
 
-pub struct TaskPool<T> {
+use std::panic::UnwindSafe;
+
+use crossbeam_channel::Sender;
+use stdx::thread::{Pool, ThreadIntent};
+
+use crate::main_loop::QueuedTask;
+
+pub(crate) struct TaskPool<T> {
     sender: Sender<T>,
-    inner: threadpool::ThreadPool,
+    pool: Pool,
 }
 
 impl<T> TaskPool<T> {
-    pub(crate) fn new(sender: Sender<T>) -> Self {
+    pub(crate) fn new_with_threads(
+        sender: Sender<T>,
+        threads: usize,
+    ) -> Self {
         Self {
             sender,
-            inner: threadpool::ThreadPool::default(),
+            pool: Pool::new(threads),
         }
     }
 
-    pub fn spawn<F>(
+    pub(crate) fn spawn<F>(
         &self,
+        intent: ThreadIntent,
         task: F,
     ) where
-        F: FnOnce() -> T + Send + 'static,
+        F: FnOnce() -> T + Send + UnwindSafe + 'static,
         T: Send + 'static,
     {
-        self.inner.execute({
+        self.pool.spawn(intent, {
             let sender = self.sender.clone();
             move || sender.send(task()).unwrap()
         });
     }
 
-    pub fn spawn_with_sender<F>(
+    pub(crate) fn spawn_with_sender<F>(
         &self,
+        intent: ThreadIntent,
         task: F,
     ) where
-        F: FnOnce(Sender<T>) + Send + 'static,
+        F: FnOnce(Sender<T>) + Send + UnwindSafe + 'static,
         T: Send + 'static,
     {
-        self.inner.execute({
+        self.pool.spawn(intent, {
             let sender = self.sender.clone();
             move || task(sender)
         });
     }
 
-    pub fn len(&self) -> usize {
-        self.inner.queued_count()
+    pub(crate) fn length(&self) -> usize {
+        self.pool.length()
     }
 }
 
-impl<T> Drop for TaskPool<T> {
-    fn drop(&mut self) {
-        self.inner.join();
-    }
+/// `TaskQueue`, like its name suggests, queues tasks.
+///
+/// This should only be used if a task must run after [`GlobalState::process_changes`]
+/// has been called.
+pub(crate) struct TaskQueue {
+    pub(crate) sender: crossbeam_channel::Sender<QueuedTask>,
+    pub(crate) receiver: crossbeam_channel::Receiver<QueuedTask>,
 }

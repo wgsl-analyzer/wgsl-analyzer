@@ -41,14 +41,14 @@ impl<P: ParserDefinition> PartialEq for Event<P> {
         match (self, other) {
             (
                 Self::StartNode {
-                    kind: l_kind,
-                    forward_parent: l_forward_parent,
+                    kind: left_kind,
+                    forward_parent: left_forward_parent,
                 },
                 Self::StartNode {
-                    kind: r_kind,
-                    forward_parent: r_forward_parent,
+                    kind: right_kind,
+                    forward_parent: right_forward_parent,
                 },
-            ) => l_kind == r_kind && l_forward_parent == r_forward_parent,
+            ) => left_kind == right_kind && left_forward_parent == right_forward_parent,
             (Self::Error(l0), Self::Error(r0)) => l0 == r0,
             _ => core::mem::discriminant(self) == core::mem::discriminant(other),
         }

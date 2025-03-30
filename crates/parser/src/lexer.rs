@@ -2,13 +2,13 @@ use logos::Logos;
 use rowan::{TextRange, TextSize};
 
 #[derive(Debug, PartialEq)]
-pub struct Token<'a, TokenKind> {
+pub(crate) struct Token<'a, TokenKind> {
     pub kind: TokenKind,
     pub text: &'a str,
     pub range: TextRange,
 }
 
-pub struct Lexer<'a, TokenKind: Logos<'a>> {
+pub(crate) struct Lexer<'a, TokenKind: Logos<'a>> {
     inner: logos::Lexer<'a, TokenKind>,
 }
 
@@ -16,7 +16,7 @@ impl<'a, TokenKind: Logos<'a, Source = str>> Lexer<'a, TokenKind>
 where
     TokenKind::Extras: Default,
 {
-    pub fn new(input: &'a str) -> Self {
+    pub(crate) fn new(input: &'a str) -> Self {
         Self {
             inner: TokenKind::lexer(input),
         }

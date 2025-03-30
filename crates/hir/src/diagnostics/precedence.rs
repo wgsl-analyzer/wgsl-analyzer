@@ -1,41 +1,52 @@
 use hir_def::{
-    db::DefWithBodyId,
-    expr::{ArithOp, BinaryOp, ExprId},
+    db::DefinitionWithBodyId,
+    expression::{ArithmeticOperation, BinaryOperation, ExpressionId},
 };
-use hir_ty::HirDatabase;
+use hir_ty::db::HirDatabase;
 
 #[derive(Debug)]
 pub enum PrecedenceDiagnostic {
-    NeverNested(ExprId, BinaryOp),
-    SequencesAllowed(ExprId, BinaryOp),
+    NeverNested(ExpressionId, BinaryOperation),
+    SequencesAllowed(ExpressionId, BinaryOperation),
 }
 
 pub fn collect(
     db: &dyn HirDatabase,
-    body: DefWithBodyId,
+    body: DefinitionWithBodyId,
     mut f: impl FnMut(PrecedenceDiagnostic),
 ) {
     let (body, _) = db.body_with_source_map(body);
 
-    for (_, expr) in body.exprs.iter() {
+    for (_, expression) in body.exprs.iter() {
         // See https://github.com/gpuweb/gpuweb/issues/1146#issuecomment-714721825
-        let hir_def::expr::Expr::BinaryOp { op, lhs, rhs } = expr else {
+        let hir_def::expression::Expression::BinaryOperation {
+            operation,
+            left_side,
+            right_side,
+        } = expression
+        else {
             continue;
         };
 
-        let not_paren = |v| !body.paren_exprs.contains(v);
+        let not_paren = |v| !body.parenthesis_expressions.contains(v);
 
-        let lhs_op = if let hir_def::expr::Expr::BinaryOp { op, .. } = body.exprs[*lhs] {
-            not_paren(lhs).then_some(op)
-        } else {
-            None
-        };
-        let rhs_op = if let hir_def::expr::Expr::BinaryOp { op, .. } = body.exprs[*rhs] {
-            not_paren(rhs).then_some(op)
-        } else {
-            None
-        };
-        let op = *op;
+        let lhs_op =
+            if let hir_def::expression::Expression::BinaryOperation { operation: op, .. } =
+                body.exprs[*left_side]
+            {
+                not_paren(left_side).then_some(op)
+            } else {
+                None
+            };
+        let rhs_op =
+            if let hir_def::expression::Expression::BinaryOperation { operation: op, .. } =
+                body.exprs[*right_side]
+            {
+                not_paren(right_side).then_some(op)
+            } else {
+                None
+            };
+        let op = *operation;
         // We have validation for the following cases:
         // - &, | and ^ having (different) binary children
         // - >> and << having binary children
@@ -43,49 +54,55 @@ pub fn collect(
         // - && and || being mixed
 
         // &, | and ^ having (different) binary children
-        if let BinaryOp::ArithOp(ArithOp::BitAnd | ArithOp::BitXor | ArithOp::BitOr) = op {
+        if let BinaryOperation::Arithmetic(
+            ArithmeticOperation::BitAnd | ArithmeticOperation::BitXor | ArithmeticOperation::BitOr,
+        ) = op
+        {
             if let Some(lhs_op) = lhs_op {
                 if lhs_op != op {
-                    f(PrecedenceDiagnostic::SequencesAllowed(*lhs, op))
+                    f(PrecedenceDiagnostic::SequencesAllowed(*left_side, op))
                 }
             }
             if let Some(rhs_op) = rhs_op {
                 if rhs_op != op {
-                    f(PrecedenceDiagnostic::SequencesAllowed(*rhs, op))
+                    f(PrecedenceDiagnostic::SequencesAllowed(*right_side, op))
                 }
             }
         }
 
         // >> and << having binary children
-        if let BinaryOp::ArithOp(ArithOp::Shl | ArithOp::Shr) = op {
+        if let BinaryOperation::Arithmetic(
+            ArithmeticOperation::ShiftLeft | ArithmeticOperation::ShiftRight,
+        ) = op
+        {
             if lhs_op.is_some() {
-                f(PrecedenceDiagnostic::NeverNested(*lhs, op))
+                f(PrecedenceDiagnostic::NeverNested(*left_side, op))
             }
             if rhs_op.is_some() {
-                f(PrecedenceDiagnostic::NeverNested(*rhs, op))
+                f(PrecedenceDiagnostic::NeverNested(*right_side, op))
             }
         }
 
         // <, >, <=, >=, ==, != being mixed
-        if let BinaryOp::CmpOp(_) = op {
-            if let Some(BinaryOp::CmpOp(_)) = lhs_op {
-                f(PrecedenceDiagnostic::NeverNested(*lhs, op))
+        if let BinaryOperation::Comparison(_) = op {
+            if let Some(BinaryOperation::Comparison(_)) = lhs_op {
+                f(PrecedenceDiagnostic::NeverNested(*left_side, op))
             }
-            if let Some(BinaryOp::CmpOp(_)) = rhs_op {
-                f(PrecedenceDiagnostic::NeverNested(*rhs, op))
+            if let Some(BinaryOperation::Comparison(_)) = rhs_op {
+                f(PrecedenceDiagnostic::NeverNested(*right_side, op))
             }
         }
 
         // && and || being mixed
-        if let BinaryOp::LogicOp(_) = op {
-            if let Some(lhs_op @ BinaryOp::LogicOp(_)) = lhs_op {
+        if let BinaryOperation::Logical(_) = op {
+            if let Some(lhs_op @ BinaryOperation::Logical(_)) = lhs_op {
                 if lhs_op != op {
-                    f(PrecedenceDiagnostic::SequencesAllowed(*lhs, op))
+                    f(PrecedenceDiagnostic::SequencesAllowed(*left_side, op))
                 }
             }
-            if let Some(rhs_op @ BinaryOp::LogicOp(_)) = rhs_op {
+            if let Some(rhs_op @ BinaryOperation::Logical(_)) = rhs_op {
                 if rhs_op != op {
-                    f(PrecedenceDiagnostic::SequencesAllowed(*rhs, op))
+                    f(PrecedenceDiagnostic::SequencesAllowed(*right_side, op))
                 }
             }
         }

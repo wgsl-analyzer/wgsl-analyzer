@@ -8,7 +8,6 @@ use std::{
 };
 use std::{hash::Hash, io as sio};
 use std::{hash::Hasher, process::Command};
-
 pub mod anymap;
 pub mod assert;
 mod macros;
@@ -118,8 +117,8 @@ where
     let mut words = vec![];
 
     // Preserve leading underscores
-    string = string.trim_start_matches(|char: char| {
-        if char == '_' {
+    string = string.trim_start_matches(|character: char| {
+        if character == '_' {
             words.push(String::new());
             true
         } else {
@@ -129,23 +128,23 @@ where
 
     for split in string.split('_') {
         let mut last_upper = false;
-        let mut buf = String::new();
+        let mut buffer = String::new();
 
         if split.is_empty() {
             continue;
         }
 
         for ch in split.chars() {
-            if !buf.is_empty() && buf != "'" && ch.is_uppercase() && !last_upper {
-                words.push(buf);
-                buf = String::new();
+            if !buffer.is_empty() && buffer != "'" && ch.is_uppercase() && !last_upper {
+                words.push(buffer);
+                buffer = String::new();
             }
 
             last_upper = ch.is_uppercase();
-            buf.extend(change_case(ch));
+            buffer.extend(change_case(ch));
         }
 
-        words.push(buf);
+        words.push(buffer);
     }
 
     words.join("_")
@@ -163,12 +162,12 @@ pub fn to_camel_case(ident: &str) -> String {
             let mut camel_cased_component = String::with_capacity(component.len());
 
             let mut new_word = true;
-            let mut prev_is_lower_case = true;
+            let mut previous_is_lower_case = true;
 
             for character in component.chars() {
                 // Preserve the case if an uppercase letter follows a lowercase letter, so that
                 // `camelCase` is converted to `CamelCase`.
-                if prev_is_lower_case && character.is_uppercase() {
+                if previous_is_lower_case && character.is_uppercase() {
                     new_word = true;
                 }
 
@@ -178,7 +177,7 @@ pub fn to_camel_case(ident: &str) -> String {
                     camel_cased_component.extend(character.to_lowercase());
                 }
 
-                prev_is_lower_case = character.is_lowercase();
+                previous_is_lower_case = character.is_lowercase();
                 new_word = false;
             }
 
@@ -186,19 +185,19 @@ pub fn to_camel_case(ident: &str) -> String {
         })
         .fold(
             (String::new(), None),
-            |(mut acc, prev): (_, Option<String>), next| {
+            |(mut accumulator, previous): (_, Option<String>), next| {
                 // separate two components with an underscore if their boundary cannot
                 // be distinguished using an uppercase/lowercase case distinction
-                let join = prev
-                    .and_then(|prev| {
+                let join = previous
+                    .and_then(|previous| {
                         let first = next.chars().next()?;
-                        let last = prev.chars().last()?;
+                        let last = previous.chars().last()?;
                         Some(!char_has_case(last) && !char_has_case(first))
                     })
                     .unwrap_or(false);
-                acc.push_str(if join { "_" } else { "" });
-                acc.push_str(&next);
-                (acc, Some(next))
+                accumulator.push_str(if join { "_" } else { "" });
+                accumulator.push_str(&next);
+                (accumulator, Some(next))
             },
         )
         .0
@@ -207,8 +206,8 @@ pub fn to_camel_case(ident: &str) -> String {
 // Taken from rustc.
 #[inline]
 #[must_use]
-pub const fn char_has_case(char: char) -> bool {
-    char.is_lowercase() || char.is_uppercase()
+pub const fn char_has_case(character: char) -> bool {
+    character.is_lowercase() || character.is_uppercase()
 }
 
 #[inline]
@@ -216,20 +215,20 @@ pub const fn char_has_case(char: char) -> bool {
 pub fn is_upper_snake_case(string: &str) -> bool {
     string
         .chars()
-        .all(|char| char.is_uppercase() || char == '_' || char.is_numeric())
+        .all(|character| character.is_uppercase() || character == '_' || character.is_numeric())
 }
 
 #[inline]
 pub fn replace(
-    buf: &mut String,
+    buffer: &mut String,
     from: char,
     to: &str,
 ) {
-    if !buf.contains(from) {
+    if !buffer.contains(from) {
         return;
     }
     // FIXME: do this in place.
-    *buf = buf.replace(from, to);
+    *buffer = buffer.replace(from, to);
 }
 
 #[inline]
@@ -264,8 +263,8 @@ where
     F: FnMut(&T) -> Ordering,
 {
     let start = slice.partition_point(|it| key(it) == Ordering::Less);
-    let len = slice[start..].partition_point(|it| key(it) == Ordering::Equal);
-    start..start + len
+    let length = slice[start..].partition_point(|it| key(it) == Ordering::Equal);
+    start..start + length
 }
 
 #[must_use]
@@ -345,12 +344,12 @@ where
     loop {
         let x = match this.next() {
             None => return other.next().is_none(),
-            Some(val) => val,
+            Some(value) => value,
         };
 
         let y = match other.next() {
             None => return false,
-            Some(val) => val,
+            Some(value) => value,
         };
 
         if !eq(x, y) {

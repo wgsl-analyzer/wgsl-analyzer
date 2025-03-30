@@ -14,73 +14,78 @@
 
 mod flags;
 
-mod dist;
+// mod codegen;
+mod distribute;
 mod install;
+// mod metrics;
 mod publish;
 mod release;
 mod tidy;
-mod util;
+mod utilities;
 
-use anyhow::bail;
-use std::{env, path::PathBuf};
-use xshell::{Shell, cmd};
+use anyhow::{Context as _, bail};
+use std::{env as environment, path::PathBuf};
+use xshell::{Shell, cmd as command};
 
 fn main() -> anyhow::Result<()> {
     let flags = flags::Xtask::from_env_or_exit();
 
-    let sh = &Shell::new()?;
-    sh.change_dir(project_root());
+    let shell = &Shell::new()?;
+    shell.change_dir(project_root());
 
     match flags.subcommand {
-        flags::XtaskCmd::Install(cmd) => cmd.run(sh),
-        flags::XtaskCmd::FuzzTests(_) => run_fuzzer(sh),
-        flags::XtaskCmd::Release(cmd) => cmd.run(sh),
-        flags::XtaskCmd::Dist(cmd) => cmd.run(sh),
-        flags::XtaskCmd::PublishReleaseNotes(cmd) => cmd.run(sh),
-        flags::XtaskCmd::Bb(cmd) => {
+        flags::XtaskCmd::Install(command) => command.run(shell),
+        flags::XtaskCmd::FuzzTests(_) => run_fuzzer(shell),
+        flags::XtaskCmd::Release(command) => command.run(shell),
+        flags::XtaskCmd::Dist(command) => command.run(shell),
+        flags::XtaskCmd::PublishReleaseNotes(command) => command.run(shell),
+        // flags::XtaskCommand::Metrics(command) => command.run(shell),
+        // flags::XtaskCommand::Codegen(command) => command.run(shell),
+        flags::XtaskCmd::Bb(command) => {
             {
-                let _d = sh.push_dir("./crates/wgsl-analyzer");
-                cmd!(sh, "cargo build --release --features jemalloc").run()?;
+                let _directory = shell.push_dir("./crates/wgsl-analyzer");
+                command!(shell, "cargo build --release --features jemalloc").run()?;
             }
-            sh.copy_file(
+            shell.copy_file(
                 "./target/release/wgsl-analyzer",
-                format!("./target/wgsl-analyzer-{}", cmd.suffix),
+                format!("./target/wgsl-analyzer-{}", command.suffix),
             )?;
             Ok(())
         },
-        flags::XtaskCmd::Tidy(cmd) => cmd.run(sh),
+        flags::XtaskCmd::Tidy(command) => command.run(shell),
     }
 }
 
 /// Returns the path to the root directory of `wgsl-analyzer` project.
 fn project_root() -> PathBuf {
-    let dir =
-        env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| env!("CARGO_MANIFEST_DIR").to_owned());
-    PathBuf::from(dir).parent().unwrap().to_owned()
+    let directory = environment::var("CARGO_MANIFEST_DIR")
+        .unwrap_or_else(|_| env!("CARGO_MANIFEST_DIR").to_owned());
+    PathBuf::from(directory).parent().unwrap().to_owned()
 }
 
-fn run_fuzzer(sh: &Shell) -> anyhow::Result<()> {
-    let _d = sh.push_dir("./crates/syntax");
-    let _e = sh.push_env("RUSTUP_TOOLCHAIN", "nightly");
-    if cmd!(sh, "cargo fuzz --help").read().is_err() {
-        cmd!(sh, "cargo install cargo-fuzz").run()?;
+fn run_fuzzer(shell: &Shell) -> anyhow::Result<()> {
+    let _d = shell.push_dir("./crates/syntax");
+    let _e = shell.push_env("RUSTUP_TOOLCHAIN", "nightly");
+    if command!(shell, "cargo fuzz --help").read().is_err() {
+        command!(shell, "cargo install cargo-fuzz").run()?;
     }
 
     // Expecting nightly rustc
-    let out = cmd!(sh, "rustc --version").read()?;
+    let out = command!(shell, "rustc --version").read()?;
     if !out.contains("nightly") {
         bail!("fuzz tests require nightly rustc")
     }
 
-    cmd!(sh, "cargo fuzz run parser").run()?;
+    command!(shell, "cargo fuzz run parser").run()?;
     Ok(())
 }
 
-fn date_iso(sh: &Shell) -> anyhow::Result<String> {
-    let res = cmd!(sh, "date -u +%Y-%m-%d").read()?;
-    Ok(res)
+fn date_iso(shell: &Shell) -> anyhow::Result<String> {
+    command!(shell, "date -u +%Y-%m-%d")
+        .read()
+        .context("failed to get current date")
 }
 
 fn is_release_tag(tag: &str) -> bool {
-    tag.len() == "2020-02-24".len() && tag.starts_with(|character: char| character.is_ascii_digit())
+    tag.len() == "yyyy-mm-dd".len() && tag.starts_with(|character: char| character.is_ascii_digit())
 }
