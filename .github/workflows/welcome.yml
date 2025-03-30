@@ -8,11 +8,12 @@ on:
     types:
       - opened
 
+permissions:
+  pull-requests: write
+
 jobs:
   welcome:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
     steps:
       - uses: actions/github-script@v7
         with:
