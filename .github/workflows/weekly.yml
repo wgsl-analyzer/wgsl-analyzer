@@ -5,6 +5,22 @@ on:
     - cron: "0 12 * * 1"
   workflow_dispatch:
 
+permissions:
+  actions: none
+  attestations: none
+  checks: none
+  contents: none
+  deployments: none
+  id-token: none
+  issues: none
+  discussions: none
+  packages: none
+  pages: none
+  pull-requests: none
+  repository-projects: none
+  security-events: none
+  statuses: none
+
 env:
   CARGO_TERM_COLOR: always
 

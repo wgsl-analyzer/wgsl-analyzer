@@ -9,7 +9,7 @@ on:
       - labeled
 
 permissions:
-  pull-requests: 'write'
+  pull-requests: write
 
 jobs:
   comment-on-breaking-change-label:
