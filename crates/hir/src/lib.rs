@@ -12,8 +12,8 @@ use hir_def::{
     body::{BindingId, Body, BodySourceMap},
     data::FieldId,
     db::{
-        DefDatabase, DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, ImportId,
-        Location, Lookup, OverrideId, StructId, TypeAliasId,
+        DefDatabase, DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId,
+        ImportId, Location, Lookup, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
     hir_file_id::{ImportFile, relative_file},
@@ -107,8 +107,9 @@ impl<'db> Semantics<'db> {
         let module_info = self.db.module_info(file_id);
         let expression_scopes = self.db.expression_scopes(def);
         let (_, source_map) = self.db.body_with_source_map(def);
-        let expression_id = source_map
-            .lookup_expression(&AstPointer::new(&ast::Expression::cast(expression.clone())?))?;
+        let expression_id = source_map.lookup_expression(&AstPointer::new(
+            &ast::Expression::cast(expression.clone())?,
+        ))?;
         let scope_id = expression_scopes.scope_for_expression(expression_id)?;
         let mut resolver =
             Resolver::default().push_module_scope(self.db.upcast(), file_id, module_info);
@@ -528,7 +529,9 @@ impl ModuleDef {
         match *self {
             ModuleDef::Function(function) => Some(DefinitionWithBodyId::Function(function.id)),
             ModuleDef::GlobalVariable(var) => Some(DefinitionWithBodyId::GlobalVariable(var.id)),
-            ModuleDef::GlobalConstant(constant) => Some(DefinitionWithBodyId::GlobalConstant(constant.id)),
+            ModuleDef::GlobalConstant(constant) => {
+                Some(DefinitionWithBodyId::GlobalConstant(constant.id))
+            },
             ModuleDef::Override(override_declaration) => {
                 Some(DefinitionWithBodyId::Override(override_declaration.id))
             },
