@@ -47,9 +47,9 @@ impl Verbosity {
 }
 
 fn read_stdin() -> anyhow::Result<String> {
-    let mut buff = String::new();
-    std::io::stdin().read_to_string(&mut buff)?;
-    Ok(buff)
+    let mut buffer = String::new();
+    std::io::stdin().read_to_string(&mut buffer)?;
+    Ok(buffer)
 }
 
 #[expect(clippy::print_stdout, reason = "CLI feature")]

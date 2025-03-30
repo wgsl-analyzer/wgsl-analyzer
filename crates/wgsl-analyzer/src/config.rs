@@ -21,7 +21,7 @@ use crate::{
     line_index::OffsetEncoding,
     lsp::{
         capabilities::ClientCapabilities,
-        ext::{WorkspaceSymbolSearchKind, WorkspaceSymbolSearchScope},
+        extensions::{WorkspaceSymbolSearchKind, WorkspaceSymbolSearchScope},
     },
 };
 use camino::{Utf8Path, Utf8PathBuf};

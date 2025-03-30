@@ -16,11 +16,11 @@ use crate::{
     Result,
     config::{Config, ConfigErrors},
     diagnostics::DiagnosticCollection,
+    in_memory_documents::InMemoryDocuments,
     line_index::{LineEndings, LineIndex, PositionEncoding},
     lsp::{from_proto, to_proto},
     main_loop::Task,
-    mem_docs::MemDocs,
-    op_queue::{Cause, OperationQueue},
+    operation_queue::{Cause, OperationQueue},
     reload::{ProjectWorkspace, SourceRootConfig},
     task_pool::{TaskPool, TaskQueue},
 };
@@ -60,7 +60,7 @@ pub(crate) struct GlobalState {
 
     // status
     pub(crate) shutdown_requested: bool,
-    pub(crate) last_reported_status: crate::lsp::ext::ServerStatusParameters,
+    pub(crate) last_reported_status: crate::lsp::extensions::ServerStatusParameters,
 
     // VFS
     pub(crate) loader: Handle<Box<dyn vfs::loader::Handle>, Receiver<vfs::loader::Message>>,
@@ -76,7 +76,7 @@ pub(crate) struct GlobalState {
     // pub(crate) vfs_config_version: u32,
     pub(crate) analysis_host: AnalysisHost,
     pub(crate) diagnostics: DiagnosticCollection,
-    pub(crate) mem_docs: MemDocs,
+    pub(crate) mem_docs: InMemoryDocuments,
     pub(crate) config: Arc<Config>,
     pub(crate) config_errors: Option<ConfigErrors>,
     pub(crate) source_root_config: SourceRootConfig,
@@ -167,11 +167,11 @@ impl GlobalState {
             config: Arc::new(config.clone()),
             analysis_host,
             diagnostics: DiagnosticCollection::default(),
-            mem_docs: MemDocs::default(),
+            mem_docs: InMemoryDocuments::default(),
             // semantic_tokens_cache: Arc::new(Default::default()),
             shutdown_requested: false,
-            last_reported_status: crate::lsp::ext::ServerStatusParameters {
-                health: crate::lsp::ext::Health::Error,
+            last_reported_status: crate::lsp::extensions::ServerStatusParameters {
+                health: crate::lsp::extensions::Health::Error,
                 quiescent: true,
                 message: None,
             },

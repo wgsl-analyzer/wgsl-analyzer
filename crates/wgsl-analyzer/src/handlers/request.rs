@@ -15,7 +15,7 @@ use vfs::FileId;
 use crate::{
     Result,
     global_state::GlobalStateSnapshot,
-    lsp::{ext, from_proto, to_proto},
+    lsp::{extensions, from_proto, to_proto},
     try_default,
 };
 
@@ -123,7 +123,7 @@ pub(crate) fn handle_shutdown(
 
 pub(crate) fn full_source(
     snap: GlobalStateSnapshot,
-    parameters: ext::FullSourceParameters,
+    parameters: extensions::FullSourceParameters,
 ) -> Result<String> {
     let file_id = from_proto::file_id(&snap, &parameters.text_document.uri)?;
     let source = snap
@@ -135,7 +135,7 @@ pub(crate) fn full_source(
 
 pub(crate) fn show_syntax_tree(
     snap: GlobalStateSnapshot,
-    parameters: ext::SyntaxTreeParameters,
+    parameters: extensions::SyntaxTreeParameters,
 ) -> Result<String> {
     let file_id = from_proto::file_id(&snap, &parameters.text_document.uri)?;
     let line_index = snap.file_line_index(file_id)?;
@@ -150,7 +150,7 @@ pub(crate) fn show_syntax_tree(
 
 pub(crate) fn debug_command(
     snap: GlobalStateSnapshot,
-    parameters: ext::DebugCommandParameters,
+    parameters: extensions::DebugCommandParameters,
 ) -> Result<()> {
     let position = from_proto::file_position(&snap, &parameters.position)?;
     snap.analysis.debug_command(position)?;

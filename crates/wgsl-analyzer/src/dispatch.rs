@@ -13,7 +13,7 @@ use crate::{
     global_state::{GlobalState, GlobalStateSnapshot},
     main_loop::Task,
 };
-use crate::{lsp::utils::is_cancelled, version::version};
+use crate::{lsp::utilities::is_cancelled, version::version};
 
 /// A visitor for routing a raw JSON request to an appropriate handler function.
 ///

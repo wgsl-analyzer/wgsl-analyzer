@@ -14,7 +14,9 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use stdx::iter_eq_by;
 use triomphe::Arc;
 
-use crate::{global_state::GlobalStateSnapshot, lsp, lsp::ext, main_loop::DiagnosticsTaskKind};
+use crate::{
+    global_state::GlobalStateSnapshot, lsp, lsp::extensions, main_loop::DiagnosticsTaskKind,
+};
 
 pub(crate) type CheckFixes =
     Arc<IntMap<usize, FxHashMap<Option<Arc<PackageId>>, IntMap<FileId, Vec<Fix>>>>>;
@@ -52,7 +54,7 @@ pub(crate) struct DiagnosticCollection {
 pub(crate) struct Fix {
     // Fixes may be triggerable from multiple ranges.
     pub(crate) ranges: Vec<lsp_types::Range>,
-    pub(crate) action: lsp::ext::CodeAction,
+    pub(crate) action: lsp::extensions::CodeAction,
 }
 
 impl DiagnosticCollection {

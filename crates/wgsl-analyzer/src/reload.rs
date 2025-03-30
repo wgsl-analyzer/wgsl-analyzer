@@ -5,7 +5,7 @@ use vfs::file_set::FileSetConfig;
 
 use ide::base_db::input::SourceRoot;
 
-use crate::{global_state::GlobalState, lsp, main_loop::Task, op_queue::Cause};
+use crate::{global_state::GlobalState, lsp, main_loop::Task, operation_queue::Cause};
 
 /// `PackageRoot` describes a package root folder.
 /// Which may be an external dependency, or a member of
@@ -62,9 +62,9 @@ impl GlobalState {
         self.is_quiescent() && !self.prime_caches_queue.operation_in_progress()
     }
 
-    pub(crate) fn current_status(&self) -> lsp::ext::ServerStatusParameters {
-        let mut status = lsp::ext::ServerStatusParameters {
-            health: lsp::ext::Health::Ok,
+    pub(crate) fn current_status(&self) -> lsp::extensions::ServerStatusParameters {
+        let mut status = lsp::extensions::ServerStatusParameters {
+            health: lsp::extensions::Health::Ok,
             quiescent: self.is_fully_ready(),
             message: None,
         };

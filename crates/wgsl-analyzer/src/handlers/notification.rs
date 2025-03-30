@@ -14,8 +14,8 @@ use crate::{
     // try_default,
     config::{Config, ConfigChange},
     global_state::GlobalState,
-    lsp::{from_proto, utils::apply_document_changes},
-    mem_docs::DocumentData,
+    in_memory_documents::DocumentData,
+    lsp::{from_proto, utilities::apply_document_changes},
     reload,
 };
 

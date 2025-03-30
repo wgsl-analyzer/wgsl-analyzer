@@ -19,7 +19,7 @@ use serde_json::json;
 use crate::{
     config::{Config, WgslfmtConfig},
     line_index::PositionEncoding,
-    lsp::{ext, semantic_tokens},
+    lsp::{extensions, semantic_tokens},
 };
 
 #[must_use]
@@ -345,7 +345,7 @@ impl ClientCapabilities {
         self.experimental_bool("codeActionGroup")
     }
 
-    pub fn commands(&self) -> Option<ext::ClientCommandOptions> {
+    pub fn commands(&self) -> Option<extensions::ClientCommandOptions> {
         self.experimental("commands")
     }
 

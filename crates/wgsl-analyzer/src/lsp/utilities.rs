@@ -76,7 +76,7 @@ impl GlobalState {
 						<lsp_types::request::ShowMessageRequest as lsp_types::request::Request>::Result
 					>(
 						lsp_types::request::ShowMessageRequest::METHOD, &result) {
-						this.send_notification::<super::ext::OpenServerLogs>(());
+						this.send_notification::<super::extensions::OpenServerLogs>(());
 					}
                 },
             );

@@ -25,13 +25,13 @@ use crate::{
     },
     lsp::{
         from_proto, to_proto,
-        utils::{Progress, notification_is},
+        utilities::{Progress, notification_is},
     },
     reload::ProjectWorkspaceProgress,
 };
 
 use crate::lsp;
-use crate::lsp::utils::is_cancelled;
+use crate::lsp::utilities::is_cancelled;
 use base_db::SourceDatabase as _;
 use std::sync::Arc;
 
@@ -46,7 +46,7 @@ use crate::{
     Result,
     dispatch::{NotificationDispatcher, RequestDispatcher},
     handlers,
-    lsp::ext,
+    lsp::extensions,
 };
 
 #[inline]
@@ -301,9 +301,9 @@ impl GlobalState {
             self.last_reported_status = status.clone();
 
             if self.config.server_status_notification() {
-                self.send_notification::<lsp::ext::ServerStatusNotification>(status);
+                self.send_notification::<lsp::extensions::ServerStatusNotification>(status);
             } else if let (
-                health @ (lsp::ext::Health::Warning | lsp::ext::Health::Error),
+                health @ (lsp::extensions::Health::Warning | lsp::extensions::Health::Error),
                 Some(message),
             ) = (status.health, &status.message)
             {
@@ -315,9 +315,9 @@ impl GlobalState {
 					;
                 self.show_message(
                     match health {
-                        lsp::ext::Health::Ok => lsp_types::MessageType::INFO,
-                        lsp::ext::Health::Warning => lsp_types::MessageType::WARNING,
-                        lsp::ext::Health::Error => lsp_types::MessageType::ERROR,
+                        lsp::extensions::Health::Ok => lsp_types::MessageType::INFO,
+                        lsp::extensions::Health::Warning => lsp_types::MessageType::WARNING,
+                        lsp::extensions::Health::Error => lsp_types::MessageType::ERROR,
                     },
                     message.clone(),
                     open_log_button,
@@ -753,9 +753,9 @@ impl GlobalState {
             .on::<NO_RETRY, lsp_types::request::InlayHintRequest>(
                 handlers::request::handle_inlay_hints,
             )
-            .on::<NO_RETRY, lsp::ext::SyntaxTree>(handlers::request::show_syntax_tree)
-            .on::<NO_RETRY, lsp::ext::DebugCommand>(handlers::request::debug_command)
-            .on::<NO_RETRY, lsp::ext::FullSource>(handlers::request::full_source)
+            .on::<NO_RETRY, lsp::extensions::SyntaxTree>(handlers::request::show_syntax_tree)
+            .on::<NO_RETRY, lsp::extensions::DebugCommand>(handlers::request::debug_command)
+            .on::<NO_RETRY, lsp::extensions::FullSource>(handlers::request::full_source)
             .finish();
     }
 

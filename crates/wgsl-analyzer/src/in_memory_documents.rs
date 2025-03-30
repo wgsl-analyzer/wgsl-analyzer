@@ -10,17 +10,17 @@ use vfs::VfsPath;
 /// For these document, their true contents is maintained by the client. It
 /// might be different from what's on disk.
 #[derive(Default, Clone)]
-pub(crate) struct MemDocs {
-    mem_docs: FxHashMap<VfsPath, DocumentData>,
+pub(crate) struct InMemoryDocuments {
+    in_memory_documents: FxHashMap<VfsPath, DocumentData>,
     added_or_removed: bool,
 }
 
-impl MemDocs {
+impl InMemoryDocuments {
     pub(crate) fn contains(
         &self,
         path: &VfsPath,
     ) -> bool {
-        self.mem_docs.contains_key(path)
+        self.in_memory_documents.contains_key(path)
     }
 
     pub(crate) fn insert(
@@ -29,7 +29,7 @@ impl MemDocs {
         data: DocumentData,
     ) -> Result<(), ()> {
         self.added_or_removed = true;
-        match self.mem_docs.insert(path, data) {
+        match self.in_memory_documents.insert(path, data) {
             Some(_) => Err(()),
             None => Ok(()),
         }
@@ -40,7 +40,7 @@ impl MemDocs {
         path: &VfsPath,
     ) -> Result<(), ()> {
         self.added_or_removed = true;
-        match self.mem_docs.remove(path) {
+        match self.in_memory_documents.remove(path) {
             Some(_) => Ok(()),
             None => Err(()),
         }
@@ -50,7 +50,7 @@ impl MemDocs {
         &self,
         path: &VfsPath,
     ) -> Option<&DocumentData> {
-        self.mem_docs.get(path)
+        self.in_memory_documents.get(path)
     }
 
     pub(crate) fn get_mut(
@@ -59,11 +59,11 @@ impl MemDocs {
     ) -> Option<&mut DocumentData> {
         // NB: don't set `self.added_or_removed` here, as that purposefully only
         // tracks changes to the key set.
-        self.mem_docs.get_mut(path)
+        self.in_memory_documents.get_mut(path)
     }
 
     pub(crate) fn iter(&self) -> impl Iterator<Item = &VfsPath> {
-        self.mem_docs.keys()
+        self.in_memory_documents.keys()
     }
 
     pub(crate) fn take_changes(&mut self) -> bool {
