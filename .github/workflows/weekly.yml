@@ -1,4 +1,4 @@
-name: Weekly beta compile test
+name: Weekly beta CI test
 
 on:
   schedule:
