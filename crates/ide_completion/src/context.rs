@@ -7,7 +7,7 @@ use syntax::{AstNode, Direction, SyntaxKind, SyntaxToken, ast};
 
 use crate::{config::CompletionConfig, patterns::determine_location};
 
-type ExprOrStatement = Either<ast::Expr, ast::Statement>;
+type ExprOrStatement = Either<ast::Expression, ast::Statement>;
 
 /// `CompletionContext` is created early during completion to figure out, where
 /// exactly is the cursor, syntax-wise.

@@ -220,7 +220,7 @@ fn function(
         return;
     }
 
-    if p.at(SyntaxKind::ParenLeft) {
+    if p.at(SyntaxKind::ParenthesisLeft) {
         param_list(p);
     } else {
         p.error_recovery(ITEM_RECOVERY_SET);
@@ -313,8 +313,8 @@ fn list_multisep(
 fn param_list(p: &mut Parser) {
     list(
         p,
-        SyntaxKind::ParenLeft,
-        SyntaxKind::ParenRight,
+        SyntaxKind::ParenthesisLeft,
+        SyntaxKind::ParenthesisRight,
         SyntaxKind::Comma,
         SyntaxKind::ParameterList,
         parameter,
@@ -345,9 +345,9 @@ fn parameter(p: &mut Parser) {
     }
 
     attribute_list_opt(p);
-    if p.at(SyntaxKind::ParenRight) {
+    if p.at(SyntaxKind::ParenthesisRight) {
         p.set_expected(vec![SyntaxKind::VariableIdentDeclaration]);
-        p.error_recovery(&[SyntaxKind::ParenRight]);
+        p.error_recovery(&[SyntaxKind::ParenthesisRight]);
         m.complete(p, SyntaxKind::Parameter);
         return;
     }
@@ -359,7 +359,7 @@ fn variable_ident_declaration(p: &mut Parser) {
     let m_var_ident_declaration = p.start();
     binding(p);
 
-    if p.at_set(&[SyntaxKind::ParenRight, SyntaxKind::BraceRight]) {
+    if p.at_set(&[SyntaxKind::ParenthesisRight, SyntaxKind::BraceRight]) {
         p.error_no_bump(&[SyntaxKind::Colon]);
         m_var_ident_declaration.complete(p, SyntaxKind::VariableIdentDeclaration);
         return;
@@ -369,7 +369,7 @@ fn variable_ident_declaration(p: &mut Parser) {
 
     attribute_list_opt(p);
 
-    if p.at_set(&[SyntaxKind::ParenRight, SyntaxKind::BraceRight]) {
+    if p.at_set(&[SyntaxKind::ParenthesisRight, SyntaxKind::BraceRight]) {
         p.error_no_bump(&[SyntaxKind::Type]);
         m_var_ident_declaration.complete(p, SyntaxKind::VariableIdentDeclaration);
         return;
@@ -616,8 +616,8 @@ fn for_statement(p: &mut Parser) {
 
     surround(
         p,
-        SyntaxKind::ParenLeft,
-        SyntaxKind::ParenRight,
+        SyntaxKind::ParenthesisLeft,
+        SyntaxKind::ParenthesisRight,
         &[SyntaxKind::BraceLeft],
         for_header,
     );
@@ -658,7 +658,7 @@ fn for_header(p: &mut Parser) {
 
     if p.at_set(&[SyntaxKind::Semicolon, SyntaxKind::Comma]) {
         p.error();
-    } else if p.at(SyntaxKind::ParenRight) {
+    } else if p.at(SyntaxKind::ParenthesisRight) {
         return;
     } else {
         let m = p.start();
@@ -776,7 +776,7 @@ fn surround(
     inner: impl Fn(&mut Parser),
 ) {
     if p.at_set(recover) {
-        p.error_expected_no_bump(&[SyntaxKind::ParenLeft]);
+        p.error_expected_no_bump(&[SyntaxKind::ParenthesisLeft]);
         return;
     }
 
@@ -957,11 +957,11 @@ fn attribute(parser: &mut Parser) {
         parser.error_no_bump(&[SyntaxKind::Identifier])
     }
 
-    if parser.at(SyntaxKind::ParenLeft) {
+    if parser.at(SyntaxKind::ParenthesisLeft) {
         list(
             parser,
-            SyntaxKind::ParenLeft,
-            SyntaxKind::ParenRight,
+            SyntaxKind::ParenthesisLeft,
+            SyntaxKind::ParenthesisRight,
             SyntaxKind::Comma,
             SyntaxKind::AttributeParameters,
             |p| {
@@ -970,7 +970,7 @@ fn attribute(parser: &mut Parser) {
                 } else if p.at_set(TOKENSET_LITERAL) {
                     expression::literal(p);
                 } else {
-                    p.error_recovery(&[SyntaxKind::ParenRight]);
+                    p.error_recovery(&[SyntaxKind::ParenthesisRight]);
                 }
             },
         );

@@ -81,8 +81,8 @@ fn expression_binding_power(
 fn function_param_list(p: &mut Parser) {
     list(
         p,
-        SyntaxKind::ParenLeft,
-        SyntaxKind::ParenRight,
+        SyntaxKind::ParenthesisLeft,
+        SyntaxKind::ParenthesisRight,
         SyntaxKind::Comma,
         SyntaxKind::FunctionParameterList,
         |p| {
@@ -103,7 +103,7 @@ fn left_side(p: &mut Parser) -> Option<CompletedMarker> {
     } else if p.at(SyntaxKind::Identifier) {
         let m = p.start();
         name_ref(p);
-        if p.at(SyntaxKind::ParenLeft) {
+        if p.at(SyntaxKind::ParenthesisLeft) {
             function_param_list(p);
             // Function call, may be a type initialiser too
             m.complete(p, SyntaxKind::FunctionCall)
@@ -115,15 +115,15 @@ fn left_side(p: &mut Parser) -> Option<CompletedMarker> {
     } else if p.at_set(TYPE_SET) {
         let m = p.start();
         super::type_declaration(p).unwrap();
-        if p.at(SyntaxKind::ParenLeft) {
+        if p.at(SyntaxKind::ParenthesisLeft) {
             function_param_list(p);
         } else {
-            p.error_no_bump(&[SyntaxKind::ParenLeft]);
+            p.error_no_bump(&[SyntaxKind::ParenthesisLeft]);
         }
         m.complete(p, SyntaxKind::TypeInitializer)
     } else if p.at_set(PREFIX_OP_SET) {
         prefix_expression(p)
-    } else if p.at(SyntaxKind::ParenLeft) {
+    } else if p.at(SyntaxKind::ParenthesisLeft) {
         parenthesis_expression(p)
     } else {
         p.error();
@@ -261,7 +261,7 @@ impl PostfixOp {
 fn postfix_op(p: &mut Parser) -> Option<PostfixOp> {
     if p.at(SyntaxKind::Period) {
         Some(PostfixOp::Field)
-    } else if p.at(SyntaxKind::ParenLeft) {
+    } else if p.at(SyntaxKind::ParenthesisLeft) {
         Some(PostfixOp::Call)
     } else if p.at(SyntaxKind::BracketLeft) {
         Some(PostfixOp::Index)
@@ -292,7 +292,7 @@ fn bitcast_expression(p: &mut Parser) -> CompletedMarker {
     p.bump();
     if !p.eat(SyntaxKind::LessThan) {
         p.error_expected_no_bump(&[SyntaxKind::LessThan]);
-        if p.at(SyntaxKind::ParenLeft) {
+        if p.at(SyntaxKind::ParenthesisLeft) {
             parenthesis_expression(p);
         }
         return m.complete(p, SyntaxKind::BitcastExpression);
@@ -300,8 +300,8 @@ fn bitcast_expression(p: &mut Parser) -> CompletedMarker {
     let _ = super::type_declaration(p);
     p.expect(SyntaxKind::GreaterThan);
 
-    if !p.at(SyntaxKind::ParenLeft) {
-        p.error_expected_no_bump(&[SyntaxKind::ParenLeft]);
+    if !p.at(SyntaxKind::ParenthesisLeft) {
+        p.error_expected_no_bump(&[SyntaxKind::ParenthesisLeft]);
         return m.complete(p, SyntaxKind::BitcastExpression);
     }
     parenthesis_expression(p);
@@ -336,21 +336,21 @@ fn prefix_expression(p: &mut Parser) -> CompletedMarker {
 }
 
 fn parenthesis_expression(p: &mut Parser) -> CompletedMarker {
-    assert!(p.at(SyntaxKind::ParenLeft));
+    assert!(p.at(SyntaxKind::ParenthesisLeft));
 
     let m = p.start();
     p.bump();
-    if p.at(SyntaxKind::ParenRight) {
+    if p.at(SyntaxKind::ParenthesisRight) {
         // TODO: Better kind of error here. Ideally just EXPR
-        p.error_expected_no_bump(&[SyntaxKind::ParenethesisExpression]);
+        p.error_expected_no_bump(&[SyntaxKind::ParenthesisExpression]);
         p.bump();
-        return m.complete(p, SyntaxKind::ParenethesisExpression);
+        return m.complete(p, SyntaxKind::ParenthesisExpression);
     }
 
     expression_binding_power(p, 0);
-    p.expect(SyntaxKind::ParenRight);
+    p.expect(SyntaxKind::ParenthesisRight);
 
-    m.complete(p, SyntaxKind::ParenethesisExpression)
+    m.complete(p, SyntaxKind::ParenthesisExpression)
 }
 
 #[cfg(test)]
@@ -503,15 +503,15 @@ mod tests {
         check(
             "(1+",
             expect![[r#"
-                ParenethesisExpression@0..3
-                  ParenLeft@0..1 "("
+                ParenthesisExpression@0..3
+                  ParenthesisLeft@0..1 "("
                   InfixExpression@1..3
                     Literal@1..2
                       IntLiteral@1..2 "1"
                     Plus@2..3 "+"
 
-                error at 2..3: expected Identifier, Bitcast, or ParenLeft
-                error at 2..3: expected ParenRight"#]],
+                error at 2..3: expected Identifier, Bitcast, or ParenthesisLeft
+                error at 2..3: expected ParenthesisRight"#]],
         );
     }
 
@@ -544,26 +544,26 @@ mod tests {
         check(
             "((((((10))))))",
             expect![[r#"
-                ParenethesisExpression@0..14
-                  ParenLeft@0..1 "("
-                  ParenethesisExpression@1..13
-                    ParenLeft@1..2 "("
-                    ParenethesisExpression@2..12
-                      ParenLeft@2..3 "("
-                      ParenethesisExpression@3..11
-                        ParenLeft@3..4 "("
-                        ParenethesisExpression@4..10
-                          ParenLeft@4..5 "("
-                          ParenethesisExpression@5..9
-                            ParenLeft@5..6 "("
+                ParenthesisExpression@0..14
+                  ParenthesisLeft@0..1 "("
+                  ParenthesisExpression@1..13
+                    ParenthesisLeft@1..2 "("
+                    ParenthesisExpression@2..12
+                      ParenthesisLeft@2..3 "("
+                      ParenthesisExpression@3..11
+                        ParenthesisLeft@3..4 "("
+                        ParenthesisExpression@4..10
+                          ParenthesisLeft@4..5 "("
+                          ParenthesisExpression@5..9
+                            ParenthesisLeft@5..6 "("
                             Literal@6..8
                               IntLiteral@6..8 "10"
-                            ParenRight@8..9 ")"
-                          ParenRight@9..10 ")"
-                        ParenRight@10..11 ")"
-                      ParenRight@11..12 ")"
-                    ParenRight@12..13 ")"
-                  ParenRight@13..14 ")""#]],
+                            ParenthesisRight@8..9 ")"
+                          ParenthesisRight@9..10 ")"
+                        ParenthesisRight@10..11 ")"
+                      ParenthesisRight@11..12 ")"
+                    ParenthesisRight@12..13 ")"
+                  ParenthesisRight@13..14 ")""#]],
         );
     }
 
@@ -576,15 +576,15 @@ mod tests {
                   Literal@0..1
                     IntLiteral@0..1 "5"
                   Star@1..2 "*"
-                  ParenethesisExpression@2..7
-                    ParenLeft@2..3 "("
+                  ParenthesisExpression@2..7
+                    ParenthesisLeft@2..3 "("
                     InfixExpression@3..6
                       Literal@3..4
                         IntLiteral@3..4 "2"
                       Plus@4..5 "+"
                       Literal@5..6
                         IntLiteral@5..6 "1"
-                    ParenRight@6..7 ")""#]],
+                    ParenthesisRight@6..7 ")""#]],
         );
     }
 
@@ -593,13 +593,13 @@ mod tests {
         check(
             "(foo",
             expect![[r#"
-                ParenethesisExpression@0..4
-                  ParenLeft@0..1 "("
+                ParenthesisExpression@0..4
+                  ParenthesisLeft@0..1 "("
                   PathExpression@1..4
                     NameReference@1..4
                       Identifier@1..4 "foo"
 
-                error at 1..4: expected BinaryOperator or ParenRight"#]],
+                error at 1..4: expected BinaryOperator or ParenthesisRight"#]],
         );
     }
 
@@ -709,14 +709,14 @@ mod tests {
                   NameReference@0..3
                     Identifier@0..3 "pow"
                   FunctionParameterList@3..9
-                    ParenLeft@3..4 "("
+                    ParenthesisLeft@3..4 "("
                     Literal@4..5
                       IntLiteral@4..5 "2"
                     Comma@5..6 ","
                     Whitespace@6..7 " "
                     Literal@7..8
                       IntLiteral@7..8 "3"
-                    ParenRight@8..9 ")""#]],
+                    ParenthesisRight@8..9 ")""#]],
         );
     }
 
@@ -730,7 +730,7 @@ mod tests {
                     NameReference@0..3
                       Identifier@0..3 "pow"
                     FunctionParameterList@3..22
-                      ParenLeft@3..4 "("
+                      ParenthesisLeft@3..4 "("
                       InfixExpression@4..15
                         PathExpression@4..9
                           NameReference@4..9
@@ -744,7 +744,7 @@ mod tests {
                       Whitespace@16..17 " "
                       Literal@17..20
                         DecimalFloatLiteral@17..20 "3.0"
-                      ParenRight@20..21 ")"
+                      ParenthesisRight@20..21 ")"
                       Whitespace@21..22 " "
                   Star@22..23 "*"
                   Whitespace@23..24 " "
@@ -767,10 +767,10 @@ mod tests {
                         Float32@5..8 "f32"
                       GreaterThan@8..9 ">"
                   FunctionParameterList@9..14
-                    ParenLeft@9..10 "("
+                    ParenthesisLeft@9..10 "("
                     Literal@10..13
                       DecimalFloatLiteral@10..13 "1.0"
-                    ParenRight@13..14 ")""#]],
+                    ParenthesisRight@13..14 ")""#]],
         );
     }
 
@@ -783,10 +783,10 @@ mod tests {
                   Vec3@0..4
                     Vec3@0..4 "vec3"
                   FunctionParameterList@4..9
-                    ParenLeft@4..5 "("
+                    ParenthesisLeft@4..5 "("
                     Literal@5..8
                       DecimalFloatLiteral@5..8 "1.0"
-                    ParenRight@8..9 ")""#]],
+                    ParenthesisRight@8..9 ")""#]],
         );
     }
 
@@ -896,12 +896,12 @@ mod tests {
                   Uint32@8..11
                     Uint32@8..11 "u32"
                   GreaterThan@11..12 ">"
-                  ParenethesisExpression@12..15
-                    ParenLeft@12..13 "("
+                  ParenthesisExpression@12..15
+                    ParenthesisLeft@12..13 "("
                     PathExpression@13..14
                       NameReference@13..14
                         Identifier@13..14 "x"
-                    ParenRight@14..15 ")""#]],
+                    ParenthesisRight@14..15 ")""#]],
         );
     }
 
@@ -921,12 +921,12 @@ mod tests {
                         Uint32@13..16 "u32"
                       GreaterThan@16..17 ">"
                   GreaterThan@17..18 ">"
-                  ParenethesisExpression@18..21
-                    ParenLeft@18..19 "("
+                  ParenthesisExpression@18..21
+                    ParenthesisLeft@18..19 "("
                     PathExpression@19..20
                       NameReference@19..20
                         Identifier@19..20 "x"
-                    ParenRight@20..21 ")""#]],
+                    ParenthesisRight@20..21 ")""#]],
         );
     }
 
@@ -938,14 +938,14 @@ mod tests {
                 BitcastExpression@0..10
                   Bitcast@0..7 "bitcast"
                   Error@7..7
-                  ParenethesisExpression@7..10
-                    ParenLeft@7..8 "("
+                  ParenthesisExpression@7..10
+                    ParenthesisLeft@7..8 "("
                     PathExpression@8..9
                       NameReference@8..9
                         Identifier@8..9 "x"
-                    ParenRight@9..10 ")"
+                    ParenthesisRight@9..10 ")"
 
-                error at 7..8: expected LessThan, but found ParenLeft"#]],
+                error at 7..8: expected LessThan, but found ParenthesisLeft"#]],
         );
     }
     #[test]
@@ -968,12 +968,12 @@ mod tests {
                         Uint32@13..16
                           Uint32@13..16 "u32"
                         GreaterThan@16..17 ">"
-                        ParenethesisExpression@17..21
-                          ParenLeft@17..18 "("
+                        ParenthesisExpression@17..21
+                          ParenthesisLeft@17..18 "("
                           PathExpression@18..19
                             NameReference@18..19
                               Identifier@18..19 "x"
-                          ParenRight@19..20 ")"
+                          ParenthesisRight@19..20 ")"
                           Whitespace@20..21 " "
                   Plus@21..22 "+"
                   Whitespace@22..23 " "
@@ -1004,14 +1004,14 @@ mod tests {
             "(*a).b",
             expect![[r#"
             FieldExpression@0..6
-              ParenethesisExpression@0..4
-                ParenLeft@0..1 "("
+              ParenthesisExpression@0..4
+                ParenthesisLeft@0..1 "("
                 PrefixExpression@1..3
                   Star@1..2 "*"
                   PathExpression@2..3
                     NameReference@2..3
                       Identifier@2..3 "a"
-                ParenRight@3..4 ")"
+                ParenthesisRight@3..4 ")"
               Period@4..5 "."
               NameReference@5..6
                 Identifier@5..6 "b""#]],

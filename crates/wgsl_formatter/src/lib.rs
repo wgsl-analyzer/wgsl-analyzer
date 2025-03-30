@@ -257,8 +257,8 @@ fn format_syntax_node(
                 },
             }
         },
-        SyntaxKind::ParenethesisExpression => {
-            let parenthesis_expression = ast::ParenethesisExpression::cast(syntax)?;
+        SyntaxKind::ParenthesisExpression => {
+            let parenthesis_expression = ast::ParenthesisExpression::cast(syntax)?;
             remove_if_whitespace(
                 parenthesis_expression
                     .left_parenthesis_token()?

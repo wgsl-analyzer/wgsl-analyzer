@@ -108,7 +108,7 @@ impl<'db> Semantics<'db> {
         let expression_scopes = self.db.expression_scopes(def);
         let (_, source_map) = self.db.body_with_source_map(def);
         let expression_id = source_map
-            .lookup_expression(&AstPointer::new(&ast::Expr::cast(expression.clone())?))?;
+            .lookup_expression(&AstPointer::new(&ast::Expression::cast(expression.clone())?))?;
         let scope_id = expression_scopes.scope_for_expression(expression_id)?;
         let mut resolver =
             Resolver::default().push_module_scope(self.db.upcast(), file_id, module_info);
@@ -279,7 +279,7 @@ impl<'db> SourceAnalyzer<'db> {
 
     pub fn type_of_expression(
         &self,
-        expression: &ast::Expr,
+        expression: &ast::Expression,
     ) -> Option<Ty> {
         let id = self.expression_id(expression)?;
         let ty = *self.infer.type_of_expression.get(id)?;
@@ -299,7 +299,7 @@ impl<'db> SourceAnalyzer<'db> {
         &self,
         field: ast::FieldExpression,
     ) -> Option<Field> {
-        let expression = self.expression_id(&ast::Expr::FieldExpression(field))?;
+        let expression = self.expression_id(&ast::Expression::FieldExpression(field))?;
         let field = self.infer.field_resolution(expression)?;
 
         Some(Field { id: field })
@@ -307,7 +307,7 @@ impl<'db> SourceAnalyzer<'db> {
 
     pub fn resolver_for(
         &self,
-        scope: Either<ast::Expr, ast::Statement>,
+        scope: Either<ast::Expression, ast::Statement>,
     ) -> Resolver {
         let mut resolver = self.owner.resolver(self.db.upcast());
 
@@ -350,7 +350,7 @@ impl<'db> SourceAnalyzer<'db> {
 
     pub fn expression_id(
         &self,
-        source: &ast::Expr,
+        source: &ast::Expression,
     ) -> Option<ExpressionId> {
         self.body_source_map
             .lookup_expression(&AstPointer::new(source))

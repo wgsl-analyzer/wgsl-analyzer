@@ -401,11 +401,11 @@ impl Collector<'_> {
 
     fn collect_expression(
         &mut self,
-        expression: ast::Expr,
+        expression: ast::Expression,
     ) -> ExpressionId {
         let syntax_pointer = AstPointer::new(&expression);
         let expression = match expression {
-            ast::Expr::InfixExpression(expression) => {
+            ast::Expression::InfixExpression(expression) => {
                 let left_side = self.collect_expression_opt(expression.left_side());
                 let right_side = self.collect_expression_opt(expression.right_side());
 
@@ -418,27 +418,27 @@ impl Collector<'_> {
                     })
                     .unwrap_or(Expression::Missing)
             },
-            ast::Expr::PrefixExpression(prefix_expression) => {
+            ast::Expression::PrefixExpression(prefix_expression) => {
                 let expression = self.collect_expression_opt(prefix_expression.expression());
                 prefix_expression
                     .op_kind()
                     .map(|op| Expression::UnaryOp { expression, op })
                     .unwrap_or(Expression::Missing)
             },
-            ast::Expr::Literal(literal) => {
+            ast::Expression::Literal(literal) => {
                 let literal = literal.kind();
                 Expression::Literal(parse_literal(literal))
             },
-            ast::Expr::ParenethesisExpression(expression) => {
+            ast::Expression::ParenthesisExpression(expression) => {
                 let inner = self.collect_expression_opt(expression.inner());
                 // make the paren expression point to the inner expression as well
                 self.source_map.expression_map.insert(syntax_pointer, inner);
                 self.body.parenthesis_expressions.insert(inner);
                 return inner;
             },
-            ast::Expr::BitcastExpression(expression) => {
+            ast::Expression::BitcastExpression(expression) => {
                 let inner = self.collect_expression_opt(
-                    expression.inner().map(ast::Expr::ParenethesisExpression),
+                    expression.inner().map(ast::Expression::ParenthesisExpression),
                 );
 
                 let ty = expression
@@ -452,7 +452,7 @@ impl Collector<'_> {
                     ty,
                 }
             },
-            ast::Expr::FieldExpression(field) => {
+            ast::Expression::FieldExpression(field) => {
                 let expression = self.collect_expression_opt(field.expression());
                 let name = field
                     .name_ref()
@@ -461,7 +461,7 @@ impl Collector<'_> {
 
                 Expression::Field { expression, name }
             },
-            ast::Expr::FunctionCall(call) => {
+            ast::Expression::FunctionCall(call) => {
                 let arguments = call
                     .parameters()
                     .into_iter()
@@ -479,7 +479,7 @@ impl Collector<'_> {
                     arguments,
                 }
             },
-            ast::Expr::InvalidFunctionCall(call) => {
+            ast::Expression::InvalidFunctionCall(call) => {
                 if let Some(expression) = call.expression() {
                     self.collect_expression(expression);
                 }
@@ -492,7 +492,7 @@ impl Collector<'_> {
 
                 Expression::Missing
             },
-            ast::Expr::PathExpression(path) => {
+            ast::Expression::PathExpression(path) => {
                 let name = path
                     .name_ref()
                     .map(Name::from)
@@ -500,12 +500,12 @@ impl Collector<'_> {
 
                 Expression::Path(name)
             },
-            ast::Expr::IndexExpression(index) => {
+            ast::Expression::IndexExpression(index) => {
                 let left_side = self.collect_expression_opt(index.expression());
                 let index = self.collect_expression_opt(index.index());
                 Expression::Index { left_side, index }
             },
-            ast::Expr::TypeInitializer(ty) => {
+            ast::Expression::TypeInitializer(ty) => {
                 let arguments = ty
                     .arguments()
                     .into_iter()
@@ -545,7 +545,7 @@ impl Collector<'_> {
     fn alloc_expression(
         &mut self,
         expression: Expression,
-        source: AstPointer<ast::Expr>,
+        source: AstPointer<ast::Expression>,
     ) -> ExpressionId {
         let id = self.make_expression(expression, Ok(source.clone()));
         self.source_map.expression_map.insert(source, id);
@@ -555,7 +555,7 @@ impl Collector<'_> {
     fn make_expression(
         &mut self,
         expression: Expression,
-        source: Result<AstPointer<ast::Expr>, SyntheticSyntax>,
+        source: Result<AstPointer<ast::Expression>, SyntheticSyntax>,
     ) -> ExpressionId {
         let id = self.body.exprs.alloc(expression);
         self.source_map.expression_map_back.insert(id, source);
@@ -621,7 +621,7 @@ impl Collector<'_> {
 
     fn collect_expression_opt(
         &mut self,
-        expression: Option<ast::Expr>,
+        expression: Option<ast::Expression>,
     ) -> ExpressionId {
         match expression {
             Some(expression) => self.collect_expression(expression),

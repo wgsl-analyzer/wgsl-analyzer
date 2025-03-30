@@ -47,8 +47,9 @@ pub struct SyntheticSyntax;
 /// file, so that we do not recompute types whenever some whitespace is typed.
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct BodySourceMap {
-    expression_map: FxHashMap<AstPointer<ast::Expr>, ExpressionId>,
-    expression_map_back: ArenaMap<ExpressionId, Result<AstPointer<ast::Expr>, SyntheticSyntax>>,
+    expression_map: FxHashMap<AstPointer<ast::Expression>, ExpressionId>,
+    expression_map_back:
+        ArenaMap<ExpressionId, Result<AstPointer<ast::Expression>, SyntheticSyntax>>,
 
     statement_map: FxHashMap<AstPointer<ast::Statement>, StatementId>,
     statement_map_back: ArenaMap<StatementId, Result<AstPointer<ast::Statement>, SyntheticSyntax>>,
@@ -106,7 +107,7 @@ impl Body {
 impl BodySourceMap {
     pub fn lookup_expression(
         &self,
-        source: &AstPointer<ast::Expr>,
+        source: &AstPointer<ast::Expression>,
     ) -> Option<ExpressionId> {
         self.expression_map.get(source).copied()
     }
@@ -135,7 +136,7 @@ impl BodySourceMap {
     pub fn expression_to_source(
         &self,
         expression: ExpressionId,
-    ) -> Result<&AstPointer<ast::Expr>, &SyntheticSyntax> {
+    ) -> Result<&AstPointer<ast::Expression>, &SyntheticSyntax> {
         self.expression_map_back[expression].as_ref()
     }
 

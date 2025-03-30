@@ -81,7 +81,7 @@ pub enum SyntaxKind {
     /// a reference to a definition
     NameReference,
     /// an expression inside parenthesis
-    ParenethesisExpression,
+    ParenthesisExpression,
     /// an expression of the form `bitcast< <type> >(expression)`
     BitcastExpression,
     /// a non-builtin type
@@ -389,9 +389,9 @@ pub enum SyntaxKind {
     #[token("||")]
     OrOr,
     #[token("(")]
-    ParenLeft,
+    ParenthesisLeft,
     #[token(")")]
-    ParenRight,
+    ParenthesisRight,
     #[token(";")]
     Semicolon,
     #[token("*")]

@@ -65,48 +65,48 @@ pub enum AnyDiagnostic {
     },
 
     AssignmentNotAReference {
-        left_side: InFile<AstPointer<ast::Expr>>,
+        left_side: InFile<AstPointer<ast::Expression>>,
         actual: Ty,
     },
     TypeMismatch {
-        expression: InFile<AstPointer<ast::Expr>>,
+        expression: InFile<AstPointer<ast::Expression>>,
         expected: TypeExpectation,
         actual: Ty,
     },
     NoSuchField {
-        expression: InFile<AstPointer<ast::Expr>>,
+        expression: InFile<AstPointer<ast::Expression>>,
         name: Name,
         ty: Ty,
     },
     ArrayAccessInvalidType {
-        expression: InFile<AstPointer<ast::Expr>>,
+        expression: InFile<AstPointer<ast::Expression>>,
         ty: Ty,
     },
     UnresolvedName {
-        expression: InFile<AstPointer<ast::Expr>>,
+        expression: InFile<AstPointer<ast::Expression>>,
         name: Name,
     },
     InvalidConstructionType {
-        expression: InFile<AstPointer<ast::Expr>>,
+        expression: InFile<AstPointer<ast::Expression>>,
         ty: Ty,
     },
     FunctionCallArgCountMismatch {
-        expression: InFile<AstPointer<ast::Expr>>,
+        expression: InFile<AstPointer<ast::Expression>>,
         n_expected: usize,
         n_actual: usize,
     },
     NoBuiltinOverload {
-        expression: InFile<AstPointer<ast::Expr>>,
+        expression: InFile<AstPointer<ast::Expression>>,
         builtin: BuiltinId,
         name: Option<&'static str>,
         parameters: Vec<Ty>,
     },
     AddressOfNotReference {
-        expression: InFile<AstPointer<ast::Expr>>,
+        expression: InFile<AstPointer<ast::Expression>>,
         actual: Ty,
     },
     DerefNotPointer {
-        expression: InFile<AstPointer<ast::Expr>>,
+        expression: InFile<AstPointer<ast::Expression>>,
         actual: Ty,
     },
     MissingStorageClass {
@@ -128,7 +128,7 @@ pub enum AnyDiagnostic {
     },
 
     PrecedenceParensRequired {
-        expression: InFile<AstPointer<ast::Expr>>,
+        expression: InFile<AstPointer<ast::Expression>>,
         operation: BinaryOperation,
         sequence_permitted: bool,
     },
@@ -139,7 +139,7 @@ pub enum AnyDiagnostic {
         related: Vec<(String, FileRange)>,
     },
     NoConstructor {
-        expression: InFile<AstPointer<ast::Expr>>,
+        expression: InFile<AstPointer<ast::Expression>>,
         builtins: [BuiltinId; 2],
         ty: Ty,
         parameters: Vec<Ty>,

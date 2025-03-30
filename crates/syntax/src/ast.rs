@@ -278,7 +278,7 @@ ast_node!(GlobalVariableDeclaration:
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
     ty: Option<Type>;
-    init: Option<Expr>;
+    init: Option<Expression>;
 );
 
 impl HasAttributes for GlobalVariableDeclaration {}
@@ -287,7 +287,7 @@ ast_node!(GlobalConstantDeclaration:
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
     ty: Option<Type>;
-    init: Option<Expr>;
+    init: Option<Expression>;
 );
 
 impl HasAttributes for OverrideDeclaration {}
@@ -296,7 +296,7 @@ ast_node!(OverrideDeclaration:
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
     ty: Option<Type>;
-    init: Option<Expr>;
+    init: Option<Expression>;
 );
 
 ast_node!(TypeAliasDeclaration:
@@ -329,8 +329,8 @@ ast_node!(Parameter:
 );
 
 ast_node!(ParameterList:
-    left_parenthesis_token: Option<SyntaxToken ParenLeft>;
-    right_parenthesis_token: Option<SyntaxToken ParenRight>;
+    left_parenthesis_token: Option<SyntaxToken ParenthesisLeft>;
+    right_parenthesis_token: Option<SyntaxToken ParenthesisRight>;
     parameters: AstChildren<Parameter>;
 );
 
@@ -345,9 +345,9 @@ ast_node!(VariableIdentDeclaration:
 );
 
 ast_node!(FunctionParameterList:
-    left_parenthesis_token: Option<SyntaxToken ParenLeft>;
-    right_parenthesis_token: Option<SyntaxToken ParenRight>;
-    arguments: AstChildren<Expr>;
+    left_parenthesis_token: Option<SyntaxToken ParenthesisLeft>;
+    right_parenthesis_token: Option<SyntaxToken ParenthesisRight>;
+    arguments: AstChildren<Expression>;
 );
 
 ast_node!(ReturnType:
@@ -481,7 +481,7 @@ ast_token_enum! {
 }
 
 ast_node!(PrefixExpression:
-    expression: Option<Expr>;
+    expression: Option<Expression>;
 );
 ast_node!(Literal);
 impl Literal {
@@ -507,20 +507,20 @@ ast_node!(PathExpression:
 ast_node!(NameReference:
     text: TokenText<'_>;
 );
-ast_node!(ParenethesisExpression:
-    left_parenthesis_token: Option<SyntaxToken ParenLeft>;
-    right_parenthesis_token: Option<SyntaxToken ParenRight>;
-    inner: Option<Expr>;
+ast_node!(ParenthesisExpression:
+    left_parenthesis_token: Option<SyntaxToken ParenthesisLeft>;
+    right_parenthesis_token: Option<SyntaxToken ParenthesisRight>;
+    inner: Option<Expression>;
 );
 ast_node!(BitcastExpression:
     bitcast_token: Option<SyntaxToken Bitcast>;
     left_angle_token: Option<SyntaxToken LessThan>;
     right_angle_token: Option<SyntaxToken GreaterThan>;
     ty: Option<Type>;
-    inner: Option<ParenethesisExpression>;
+    inner: Option<ParenthesisExpression>;
 );
 ast_node!(FieldExpression:
-    expression: Option<Expr>;
+    expression: Option<Expression>;
     name_ref: Option<NameReference>;
 );
 ast_node!(FunctionCall:
@@ -528,16 +528,16 @@ ast_node!(FunctionCall:
     parameters: Option<FunctionParameterList>;
 );
 ast_node!(InvalidFunctionCall:
-    expression: Option<Expr>;
+    expression: Option<Expression>;
     parameters: Option<FunctionParameterList>;
 );
 ast_node!(IndexExpression);
 impl IndexExpression {
-    pub fn expression(&self) -> Option<Expr> {
+    pub fn expression(&self) -> Option<Expression> {
         support::children(self.syntax()).next()
     }
 
-    pub fn index(&self) -> Option<Expr> {
+    pub fn index(&self) -> Option<Expression> {
         support::children(self.syntax()).nth(1)
     }
 }
@@ -572,11 +572,11 @@ ast_node!(AssignmentStatement:
     equal_token: Option<SyntaxToken Equal>;
 );
 impl AssignmentStatement {
-    pub fn left_side(&self) -> Option<Expr> {
+    pub fn left_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).next()
     }
 
-    pub fn right_side(&self) -> Option<Expr> {
+    pub fn right_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).nth(1)
     }
 }
@@ -589,7 +589,7 @@ pub enum IncrDecr {
 
 ast_node!(IncrementDecrementStatement);
 impl IncrementDecrementStatement {
-    pub fn expression(&self) -> Option<Expr> {
+    pub fn expression(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).next()
     }
 
@@ -623,11 +623,11 @@ ast_token_enum! {
 ast_node!(CompoundAssignmentStatement);
 
 impl CompoundAssignmentStatement {
-    pub fn left_side(&self) -> Option<Expr> {
+    pub fn left_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).next()
     }
 
-    pub fn right_side(&self) -> Option<Expr> {
+    pub fn right_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).nth(1)
     }
 
@@ -656,7 +656,7 @@ impl CompoundAssignmentStatement {
 ast_node!(ElseIfBlock:
     else_token: Option<SyntaxToken Else>;
     if_token: Option<SyntaxToken If>;
-    condition: Option<Expr>;
+    condition: Option<Expression>;
     block: Option<CompoundStatement>;
 );
 
@@ -667,7 +667,7 @@ ast_node!(ElseBlock:
 
 ast_node!(IfStatement:
     if_token: Option<SyntaxToken If>;
-    condition: Option<Expr>;
+    condition: Option<Expression>;
     block: Option<CompoundStatement>;
     else_if_blocks: AstChildren<ElseIfBlock>;
     else_block: Option<ElseBlock>;
@@ -675,12 +675,12 @@ ast_node!(IfStatement:
 
 ast_node!(WhileStatement:
     while_token: Option<SyntaxToken While>;
-    condition: Option<Expr>;
+    condition: Option<Expression>;
     block: Option<CompoundStatement>;
 );
 
 ast_node!(SwitchStatement:
-    expression: Option<Expr>;
+    expression: Option<Expression>;
     block: Option<SwitchBlock>;
 );
 ast_node!(SwitchBlock:
@@ -692,7 +692,7 @@ ast_node!(SwitchBodyCase:
     block: Option<CompoundStatement>;
 );
 ast_node!(SwitchCaseSelectors:
-    exprs: AstChildren<Expr>;
+    exprs: AstChildren<Expression>;
 );
 ast_node!(SwitchBodyDefault:
     block: Option<CompoundStatement>;
@@ -702,7 +702,7 @@ ast_node!(LoopStatement:
     block: Option<CompoundStatement>;
 );
 ast_node!(ReturnStatement:
-    expression: Option<Expr>;
+    expression: Option<Expression>;
 );
 ast_node!(VariableStatement:
     variable_qualifier: Option<VariableQualifier>;
@@ -710,7 +710,7 @@ ast_node!(VariableStatement:
     colon: Option<SyntaxToken Colon>;
     ty: Option<Type>;
     equal_token: Option<SyntaxToken Equal>;
-    initializer: Option<Expr>;
+    initializer: Option<Expression>;
 );
 impl VariableStatement {
     pub fn kind(&self) -> Option<VariableStatementKind> {
@@ -746,10 +746,10 @@ impl ForStatement {
             .and_then(support::child::<Statement>)
     }
 
-    pub fn condition(&self) -> Option<Expr> {
+    pub fn condition(&self) -> Option<Expression> {
         support::child_syntax(self.syntax(), SyntaxKind::ForCondition)
             .as_ref()
-            .and_then(support::child::<Expr>)
+            .and_then(support::child::<Expression>)
     }
 
     pub fn continuing_part(&self) -> Option<Statement> {
@@ -760,7 +760,7 @@ impl ForStatement {
 }
 
 ast_node!(ExpressionStatement:
-    expression: Option<Expr>;
+    expression: Option<Expression>;
 );
 ast_node!(Discard);
 ast_node!(Break);
@@ -791,11 +791,11 @@ ast_enum! {
 }
 
 ast_enum! {
-    enum Expr {
+    enum Expression {
         InfixExpression,
         PrefixExpression,
         Literal,
-        ParenethesisExpression,
+        ParenthesisExpression,
         FieldExpression,
         FunctionCall,
         TypeInitializer,
@@ -918,11 +918,11 @@ impl HasGenerics for BindingArrayType {}
 impl HasGenerics for PtrType {}
 
 impl InfixExpression {
-    pub fn left_side(&self) -> Option<Expr> {
+    pub fn left_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).next()
     }
 
-    pub fn right_side(&self) -> Option<Expr> {
+    pub fn right_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).nth(1)
     }
 
