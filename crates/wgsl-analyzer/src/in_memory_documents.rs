@@ -66,7 +66,7 @@ impl InMemoryDocuments {
         self.in_memory_documents.keys()
     }
 
-    pub(crate) fn take_changes(&mut self) -> bool {
+    pub(crate) const fn take_changes(&mut self) -> bool {
         mem::replace(&mut self.added_or_removed, false)
     }
 }

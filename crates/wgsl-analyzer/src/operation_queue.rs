@@ -52,7 +52,7 @@ impl<Arguments, Output> OperationQueue<Arguments, Output> {
 
     /// If there was an operation requested, mark this queue as
     /// started and return the request arguments.
-    pub(crate) fn should_start_operation(&mut self) -> Option<(Cause, Arguments)> {
+    pub(crate) const fn should_start_operation(&mut self) -> Option<(Cause, Arguments)> {
         if self.operation_in_progress {
             return None;
         }

@@ -222,7 +222,7 @@ impl DiagnosticCollection {
         self.changes.insert(file_id);
     }
 
-    pub(crate) fn next_generation(&mut self) -> usize {
+    pub(crate) const fn next_generation(&mut self) -> usize {
         self.generation += 1;
         self.generation
     }

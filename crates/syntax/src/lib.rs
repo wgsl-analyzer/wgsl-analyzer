@@ -269,6 +269,5 @@ impl<A: AstNode, B: AstNode> AstNode for Either<A, B> {
 }
 
 pub fn format(file: &ast::SourceFile) -> SyntaxNode {
-    let node = file.syntax().clone_for_update();
-    node
+    file.syntax().clone_for_update()
 }
