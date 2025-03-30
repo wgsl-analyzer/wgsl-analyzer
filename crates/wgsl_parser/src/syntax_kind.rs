@@ -163,12 +163,12 @@ pub enum SyntaxKind {
     #[regex(r"-?0i?")]
     #[regex(r"-?[1-9][0-9]*i?")]
     #[regex(r"-?0[xX][0-9a-fA-F]+i?")]
-    IntLiteral,
+    IntegerLiteral,
     // This is definitely unsigned ints
     #[regex(r"-?0u")]
     #[regex(r"-?[1-9][0-9]*u")]
     #[regex(r"0[xX][0-9a-fA-F]+u")]
-    UintLiteral,
+    UnsignedIntegerLiteral,
 
     #[regex("\"[^\"]*\"")]
     StringLiteral,

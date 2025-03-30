@@ -278,7 +278,7 @@ impl<'a> Ctx<'a> {
                     },
                     crate::module_data::ImportValue::Custom(key) => self
                         .db
-                        .parse_import(key.clone(), syntax::ParseEntryPoint::FnParamList),
+                        .parse_import(key.clone(), syntax::ParseEntryPoint::FunctionParameterList),
                 };
                 if let Ok(parse) = parse {
                     let param_list = ast::ParameterList::cast(parse.syntax())?;

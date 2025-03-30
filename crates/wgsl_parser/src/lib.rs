@@ -45,7 +45,7 @@ pub enum ParseEntryPoint {
     Statement,
     Type,
     AttributeList,
-    FnParamList,
+    FunctionParameterList,
 }
 
 pub fn parse_entrypoint(
@@ -66,8 +66,8 @@ pub fn parse_entrypoint(
         ParseEntryPoint::AttributeList => {
             parser::parse::<ParserDefinition, _>(input, grammar::attribute_list)
         },
-        ParseEntryPoint::FnParamList => {
-            parser::parse::<ParserDefinition, _>(input, grammar::inner_param_list)
+        ParseEntryPoint::FunctionParameterList => {
+            parser::parse::<ParserDefinition, _>(input, grammar::inner_parameter_list)
         },
     }
 }

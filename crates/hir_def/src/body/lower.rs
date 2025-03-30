@@ -121,7 +121,7 @@ impl Collector<'_> {
                                         .db
                                         .parse_import(
                                             key.clone(),
-                                            syntax::ParseEntryPoint::FnParamList,
+                                            syntax::ParseEntryPoint::FunctionParameterList,
                                         )
                                         .ok(),
                                 }
@@ -438,7 +438,9 @@ impl Collector<'_> {
             },
             ast::Expression::BitcastExpression(expression) => {
                 let inner = self.collect_expression_opt(
-                    expression.inner().map(ast::Expression::ParenthesisExpression),
+                    expression
+                        .inner()
+                        .map(ast::Expression::ParenthesisExpression),
                 );
 
                 let ty = expression
