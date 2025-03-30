@@ -920,20 +920,28 @@ impl<'db> InferenceContext<'db> {
                 | ArithmeticOperation::BitXor => {
                     Builtin::builtin_op_binary_bitop(self.db).intern(self.db)
                 },
-                ArithmeticOperation::Mul => Builtin::builtin_op_binary_mul(self.db).intern(self.db),
-                ArithmeticOperation::Div => Builtin::builtin_op_binary_div(self.db).intern(self.db),
+                ArithmeticOperation::Multiply => {
+                    Builtin::builtin_op_binary_mul(self.db).intern(self.db)
+                },
+                ArithmeticOperation::Divide => {
+                    Builtin::builtin_op_binary_div(self.db).intern(self.db)
+                },
                 ArithmeticOperation::Add
-                | ArithmeticOperation::Sub
+                | ArithmeticOperation::Subtract
                 | ArithmeticOperation::Modulo => {
                     Builtin::builtin_op_binary_number(self.db).intern(self.db)
                 },
-                ArithmeticOperation::Shl | ArithmeticOperation::Shr => {
+                ArithmeticOperation::ShiftLeft | ArithmeticOperation::ShiftRight => {
                     Builtin::builtin_op_binary_shift(self.db).intern(self.db)
                 },
             },
             BinaryOperation::Comparison(cmp) => match cmp {
-                ComparisonOperation::Eq { .. } => Builtin::builtin_op_eq(self.db).intern(self.db),
-                ComparisonOperation::Ord { .. } => Builtin::builtin_op_cmp(self.db).intern(self.db),
+                ComparisonOperation::Equality { .. } => {
+                    Builtin::builtin_op_eq(self.db).intern(self.db)
+                },
+                ComparisonOperation::Ordering { .. } => {
+                    Builtin::builtin_op_cmp(self.db).intern(self.db)
+                },
             },
         };
 

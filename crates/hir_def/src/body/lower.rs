@@ -289,7 +289,7 @@ impl Collector<'_> {
             ast::Statement::CompoundAssignmentStatement(ref assignment) => {
                 let left_side = self.collect_expression_opt(assignment.left_side());
                 let right_side = self.collect_expression_opt(assignment.right_side());
-                let op = assignment.op()?;
+                let op = assignment.operator()?;
                 Statement::CompoundAssignment {
                     left_side,
                     right_side,
@@ -298,7 +298,7 @@ impl Collector<'_> {
             },
             ast::Statement::IncrementDecrementStatement(ref statement) => {
                 let expression = self.collect_expression_opt(statement.expression());
-                let op = statement.incr_decr()?;
+                let op = statement.increment_decrement()?;
                 Statement::IncrDecr { expression, op }
             },
             ast::Statement::IfStatement(ref if_statement) => {

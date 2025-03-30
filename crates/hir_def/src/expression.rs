@@ -1,6 +1,6 @@
 use la_arena::Idx;
 pub use syntax::ast::operators::*;
-use syntax::ast::{self, IncrDecr};
+use syntax::ast::{self, IncrementDecrement};
 
 use crate::{
     body::BindingId,
@@ -113,11 +113,11 @@ pub enum Statement {
     CompoundAssignment {
         left_side: ExpressionId,
         right_side: ExpressionId,
-        op: CompoundOp,
+        op: CompoundOperator,
     },
     IncrDecr {
         expression: ExpressionId,
-        op: IncrDecr,
+        op: IncrementDecrement,
     },
     If {
         condition: ExpressionId,

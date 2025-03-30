@@ -300,7 +300,7 @@ fn format_syntax_node(
         },
         SyntaxKind::CompoundAssignmentStatement => {
             let statement = ast::CompoundAssignmentStatement::cast(syntax)?;
-            whitespace_to_single_around(statement.op_token()?);
+            whitespace_to_single_around(statement.operator_token()?);
         },
         SyntaxKind::VariableStatement => {
             let statement = ast::VariableStatement::cast(syntax)?;

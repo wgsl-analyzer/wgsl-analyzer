@@ -71,7 +71,9 @@ pub fn collect(
         }
 
         // >> and << having binary children
-        if let BinaryOperation::Arithmetic(ArithmeticOperation::Shl | ArithmeticOperation::Shr) = op
+        if let BinaryOperation::Arithmetic(
+            ArithmeticOperation::ShiftLeft | ArithmeticOperation::ShiftRight,
+        ) = op
         {
             if lhs_op.is_some() {
                 f(PrecedenceDiagnostic::NeverNested(*left_side, op))
