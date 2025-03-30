@@ -145,14 +145,3 @@ The design is heavily inspired (and in large parts copied from) [rust-analyzer](
 See [wgsl-analyzer architecture](https://wgsl-analyzer.github.io/book/contributing/architecture.html) for a summary of the architecture.
 
 (Also see [rust-analyzer architecture](https://rust-analyzer.github.io/book/contributing/architecture.html) for a summary of the original architecture.)
-
-## Development
-
-### Release process
-
-The extension gets automatically packaged and released to the marketplace in CI.
-
-1. update version in `package.json`
-2. run `./tools/update_version.sh`
-3. commit and tag with `vx.y.z`
-4. `git push && git push --tags`
