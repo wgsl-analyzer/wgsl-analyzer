@@ -1,5 +1,5 @@
-use always_assert::never;
 use base_db::TextRange;
+use stdx::never;
 use text_edit::TextEdit;
 
 /// `CompletionItem` describes a single completion variant in the editor pop-up.
@@ -72,7 +72,7 @@ pub struct CompletionRelevance {
     /// fn f(spam: String) {}
     /// fn main {
     ///     let spam = 92;
-    ///     f($0) // name of local matches the name of param
+    ///     f($0) // name of local matches the name of parameter
     /// }
     /// ```
     pub exact_name_match: bool,
@@ -122,7 +122,7 @@ pub enum CompletionRelevanceTypeMatch {
     /// fn f(spam: String) {}
     /// fn main {
     ///     let foo = String::new();
-    ///     f($0) // type of local matches the type of param
+    ///     f($0) // type of local matches the type of parameter
     /// }
     /// ```
     Exact,

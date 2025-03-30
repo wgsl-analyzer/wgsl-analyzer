@@ -34,18 +34,18 @@ impl flags::Release {
 
         let website_root = project_root().join("../wgsl-analyzer.github.io");
         {
-            let _dir = sh.push_dir(&website_root);
-            cmd!(sh, "git switch src").run()?;
+            let _dir = sh.push_dir(&website_root); // spellchecker:disable-line
+            cmd!(sh, "git switch src").run()?; // spellchecker:disable-line
             cmd!(sh, "git pull").run()?;
         }
-        let changelog_dir = website_root.join("./thisweek/_posts");
+        let changelog_directory = website_root.join("./thisweek/_posts");
 
         let today = date_iso(sh)?;
         let commit = cmd!(sh, "git rev-parse HEAD").read()?;
         #[expect(clippy::as_conversions, reason = "intended")]
         #[expect(clippy::cast_sign_loss, reason = "intended")]
         let changelog_n = sh
-            .read_dir(changelog_dir.as_path())?
+            .read_dir(changelog_directory.as_path())?
             .into_iter()
             .filter_map(|path| {
                 path.file_stem()
@@ -58,14 +58,14 @@ impl flags::Release {
             .unwrap_or_default();
 
         let tags = cmd!(sh, "git tag --list").read()?;
-        let prev_tag = tags
+        let previous_tag = tags
             .lines()
             .filter(|line| is_release_tag(line))
             .next_back()
             .unwrap();
 
-        let contents = changelog::get_changelog(sh, changelog_n, &commit, prev_tag, &today)?;
-        let path = changelog_dir.join(format!("{today}-changelog-{changelog_n}.adoc"));
+        let contents = changelog::get_changelog(sh, changelog_n, &commit, previous_tag, &today)?;
+        let path = changelog_directory.join(format!("{today}-changelog-{changelog_n}.adoc"));
         sh.write_file(path, contents)?;
 
         Ok(())

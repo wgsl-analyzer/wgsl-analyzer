@@ -1,12 +1,18 @@
 {
+	"extends": "@tsconfig/strictest/tsconfig.json",
 	"compilerOptions": {
-		"module": "commonjs",
-		"target": "es2019",
-		"lib": ["ES2019"],
-		"outDir": "out",
-		"rootDir": "src",
-		"sourceMap": true
+		"esModuleInterop": false,
+		"module": "NodeNext",
+		"moduleResolution": "nodenext",
+		"target": "ES2024",
+		"outDir": "out", // spellchecker:disable-line
+		"lib": ["ES2024"],
+		"sourceMap": true,
+		"rootDir": ".", // spellchecker:disable-line
+		"newLine": "lf",
+		// FIXME: https://github.com/rust-lang/rust-analyzer/issues/15253
+		"exactOptionalPropertyTypes": false
 	},
-	"include": ["src"],
-	"exclude": ["node_modules", ".vscode-test"]
+	"exclude": ["node_modules", ".vscode-test", "out"],
+	"include": ["src", "tests"]
 }

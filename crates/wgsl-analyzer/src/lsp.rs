@@ -2,13 +2,13 @@
 
 use core::fmt;
 
-pub mod ext;
+pub mod extensions;
 
 pub(crate) mod capabilities;
 pub(crate) mod from_proto;
 pub(crate) mod semantic_tokens;
 pub(crate) mod to_proto;
-pub(crate) mod utils;
+pub(crate) mod utilities;
 
 #[derive(Debug)]
 pub(crate) struct LspError {

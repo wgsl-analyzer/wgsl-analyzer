@@ -3,10 +3,10 @@ pub mod operators;
 use rowan::NodeOrToken;
 use wgsl_parser::{SyntaxKind, SyntaxNode};
 
-use self::operators::{BinaryOp, CompoundOp, UnaryOp};
+use self::operators::{BinaryOperation, CompoundOperator, UnaryOperator};
 use crate::{
-    AstChildren, AstNode, AstToken, HasAttrs, HasGenerics, HasName, SyntaxToken, TokenText,
-    ast::operators::{ArithOp, CmpOp, LogicOp},
+    AstChildren, AstNode, AstToken, HasAttributes, HasGenerics, HasName, SyntaxToken, TokenText,
+    ast::operators::{ArithmeticOperation, ComparisonOperation, LogicOperation},
     support,
 };
 
@@ -103,8 +103,8 @@ macro_rules! ast_enum {
         }
 
         $(impl From<$variant> for $ty {
-            fn from(val: $variant) -> $ty {
-                $ty::$variant(val)
+            fn from(value: $variant) -> $ty {
+                $ty::$variant(value)
             }
         })*
     };
@@ -224,7 +224,7 @@ impl ImportCustom {
     pub fn key(&self) -> String {
         self.segments().fold(String::new(), |mut acc, segment| {
             match segment {
-                ImportCustomSegment::Ident(ident) => acc.push_str(ident.text()),
+                ImportCustomSegment::Identifier(ident) => acc.push_str(ident.text()),
                 ImportCustomSegment::ColonColon(colon_colon) => acc.push_str(colon_colon.text()),
             };
             acc
@@ -234,7 +234,7 @@ impl ImportCustom {
 
 ast_token_enum! {
     enum ImportCustomSegment {
-        Ident,
+        Identifier,
         ColonColon,
     }
 }
@@ -248,106 +248,106 @@ ast_enum! {
 
 ast_node!(Function:
     fn_token: Option<SyntaxToken Fn>;
-    param_list: Option<ParamList>;
+    parameter_list: Option<ParameterList>;
     return_type: Option<ReturnType>;
     body: Option<CompoundStatement>;
 );
 impl HasName for Function {}
 
-impl HasAttrs for Function {}
+impl HasAttributes for Function {}
 
-ast_node!(StructDecl:
+ast_node!(StructDeclaration:
     struct_token: Option<SyntaxToken Struct>;
     name: Option<Name>;
     body: Option<StructDeclBody>;
 );
 
-impl HasAttrs for StructDecl {}
+impl HasAttributes for StructDeclaration {}
 
 ast_node!(StructDeclBody:
-    fields: AstChildren<StructDeclField>;
+    fields: AstChildren<StructDeclarationField>;
 );
 
-ast_node!(StructDeclField:
-    variable_ident_decl: Option<VariableIdentDecl>;
+ast_node!(StructDeclarationField:
+    variable_ident_declaration: Option<VariableIdentDeclaration>;
 );
-impl HasAttrs for StructDeclField {}
+impl HasAttributes for StructDeclarationField {}
 
-ast_node!(GlobalVariableDecl:
+ast_node!(GlobalVariableDeclaration:
     var_token: Option<SyntaxToken Var>;
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
     ty: Option<Type>;
-    init: Option<Expr>;
+    init: Option<Expression>;
 );
 
-impl HasAttrs for GlobalVariableDecl {}
+impl HasAttributes for GlobalVariableDeclaration {}
 
-ast_node!(GlobalConstantDecl:
+ast_node!(GlobalConstantDeclaration:
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
     ty: Option<Type>;
-    init: Option<Expr>;
+    init: Option<Expression>;
 );
 
-impl HasAttrs for OverrideDecl {}
+impl HasAttributes for OverrideDeclaration {}
 
-ast_node!(OverrideDecl:
+ast_node!(OverrideDeclaration:
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
     ty: Option<Type>;
-    init: Option<Expr>;
+    init: Option<Expression>;
 );
 
-ast_node!(TypeAliasDecl:
+ast_node!(TypeAliasDeclaration:
     alias_token: Option<SyntaxToken Alias>;
     name: Option<Name>;
     equal_token: Option<SyntaxToken Equal>;
-    type_decl: Option<Type>;
+    type_declaration: Option<Type>;
 );
 
 ast_enum! {
     enum Item {
         Function,
-        StructDecl,
-        GlobalVariableDecl,
-        GlobalConstantDecl,
-        OverrideDecl,
+        StructDeclaration,
+        GlobalVariableDeclaration,
+        GlobalConstantDeclaration,
+        OverrideDeclaration,
         Import,
-        TypeAliasDecl,
+        TypeAliasDeclaration,
     }
 }
 
 ast_node!(Name:
-    ident_token: Option<SyntaxToken Ident>;
+    ident_token: Option<SyntaxToken Identifier>;
     text: TokenText<'_>;
 );
 
-ast_node!(Param:
-    variable_ident_declaration: Option<VariableIdentDecl>;
+ast_node!(Parameter:
+    variable_ident_declaration: Option<VariableIdentDeclaration>;
     import: Option<Import>;
 );
 
-ast_node!(ParamList:
-    left_paren_token: Option<SyntaxToken ParenLeft>;
-    right_paren_token: Option<SyntaxToken ParenRight>;
-    params: AstChildren<Param>;
+ast_node!(ParameterList:
+    left_parenthesis_token: Option<SyntaxToken ParenthesisLeft>;
+    right_parenthesis_token: Option<SyntaxToken ParenthesisRight>;
+    parameters: AstChildren<Parameter>;
 );
 
 ast_node!(Binding);
 
 impl HasName for Binding {}
 
-ast_node!(VariableIdentDecl:
+ast_node!(VariableIdentDeclaration:
     colon_token: Option<SyntaxToken Colon>;
     binding: Option<Binding>;
     ty: Option<Type>;
 );
 
-ast_node!(FunctionParamList:
-    left_paren_token: Option<SyntaxToken ParenLeft>;
-    right_paren_token: Option<SyntaxToken ParenRight>;
-    args: AstChildren<Expr>;
+ast_node!(FunctionParameterList:
+    left_parenthesis_token: Option<SyntaxToken ParenthesisLeft>;
+    right_parenthesis_token: Option<SyntaxToken ParenthesisRight>;
+    arguments: AstChildren<Expression>;
 );
 
 ast_node!(ReturnType:
@@ -355,12 +355,12 @@ ast_node!(ReturnType:
     ty: Option<Type>;
 );
 
-ast_node!(GenericArgList:
-    l_angle_token: Option<SyntaxToken LessThan>;
+ast_node!(GenericArgumentList:
+    left_angle_token: Option<SyntaxToken LessThan>;
     t_angle_token: Option<SyntaxToken GreaterThan>;
 );
 
-impl GenericArgList {
+impl GenericArgumentList {
     #[rustfmt::skip]
     pub fn generics(&self) -> impl Iterator<Item = GenericArg> + use<> {
         self.syntax
@@ -434,7 +434,7 @@ impl GenericArg {
 ast_node!(BinaryOperator);
 ast_node!(TypeInitializer:
     ty: Option<Type>;
-    args: Option<FunctionParamList>;
+    arguments: Option<FunctionParameterList>;
 );
 
 ast_node!(VariableQualifier);
@@ -448,9 +448,9 @@ impl VariableQualifier {
     }
 }
 
-ast_node!(InfixExpr);
+ast_node!(InfixExpression);
 ast_token_enum! {
-    enum BinaryOpKind {
+    enum BinaryOperatorKind {
         EqualEqual,
         NotEqual,
         GreaterThan,
@@ -471,7 +471,7 @@ ast_token_enum! {
 }
 
 ast_token_enum! {
-    enum PrefixOpKind {
+    enum PrefixOperatorKind {
         Bang,
         Minus,
         Tilde,
@@ -480,8 +480,8 @@ ast_token_enum! {
     }
 }
 
-ast_node!(PrefixExpr:
-    expr: Option<Expr>;
+ast_node!(PrefixExpression:
+    expression: Option<Expression>;
 );
 ast_node!(Literal);
 impl Literal {
@@ -492,8 +492,8 @@ impl Literal {
 
 ast_token_enum! {
     enum LiteralKind {
-        IntLiteral,
-        UintLiteral,
+        IntegerLiteral,
+        UnsignedIntegerLiteral,
         HexFloatLiteral,
         DecimalFloatLiteral,
         True,
@@ -501,43 +501,43 @@ ast_token_enum! {
     }
 }
 
-ast_node!(PathExpr:
-    name_ref: Option<NameRef>;
+ast_node!(PathExpression:
+    name_ref: Option<NameReference>;
 );
-ast_node!(NameRef:
+ast_node!(NameReference:
     text: TokenText<'_>;
 );
-ast_node!(ParenExpr:
-    left_paren_token: Option<SyntaxToken ParenLeft>;
-    right_paren_token: Option<SyntaxToken ParenRight>;
-    inner: Option<Expr>;
+ast_node!(ParenthesisExpression:
+    left_parenthesis_token: Option<SyntaxToken ParenthesisLeft>;
+    right_parenthesis_token: Option<SyntaxToken ParenthesisRight>;
+    inner: Option<Expression>;
 );
-ast_node!(BitcastExpr:
+ast_node!(BitcastExpression:
     bitcast_token: Option<SyntaxToken Bitcast>;
-    l_angle_token: Option<SyntaxToken LessThan>;
-    r_angle_token: Option<SyntaxToken GreaterThan>;
+    left_angle_token: Option<SyntaxToken LessThan>;
+    right_angle_token: Option<SyntaxToken GreaterThan>;
     ty: Option<Type>;
-    inner: Option<ParenExpr>;
+    inner: Option<ParenthesisExpression>;
 );
-ast_node!(FieldExpr:
-    expr: Option<Expr>;
-    name_ref: Option<NameRef>;
+ast_node!(FieldExpression:
+    expression: Option<Expression>;
+    name_ref: Option<NameReference>;
 );
 ast_node!(FunctionCall:
-    name_ref: Option<NameRef>;
-    params: Option<FunctionParamList>;
+    name_ref: Option<NameReference>;
+    parameters: Option<FunctionParameterList>;
 );
 ast_node!(InvalidFunctionCall:
-    expr: Option<Expr>;
-    params: Option<FunctionParamList>;
+    expression: Option<Expression>;
+    parameters: Option<FunctionParameterList>;
 );
-ast_node!(IndexExpr);
-impl IndexExpr {
-    pub fn expr(&self) -> Option<Expr> {
+ast_node!(IndexExpression);
+impl IndexExpression {
+    pub fn expression(&self) -> Option<Expression> {
         support::children(self.syntax()).next()
     }
 
-    pub fn index(&self) -> Option<Expr> {
+    pub fn index(&self) -> Option<Expression> {
         support::children(self.syntax()).nth(1)
     }
 }
@@ -546,19 +546,19 @@ ast_node!(AttributeList:
     attributes: AstChildren<Attribute>;
 );
 ast_node!(Attribute:
-    ident_token: Option<SyntaxToken Ident>;
-    params: Option<AttributeParameters>;
+    ident_token: Option<SyntaxToken Identifier>;
+    parameters: Option<AttributeParameters>;
 );
 ast_node!(AttributeParameters:
     values: AstChildren<IdentOrLiteral>;
 );
 
-ast_node!(Ident:
+ast_node!(Identifier:
     text: TokenText<'_>;
 );
 ast_enum! {
     enum IdentOrLiteral {
-        Ident,
+        Identifier,
         Literal,
     }
 }
@@ -568,38 +568,38 @@ ast_node!(CompoundStatement:
     right_brace_token: Option<SyntaxToken BraceRight>;
     statements: AstChildren<Statement>;
 );
-ast_node!(AssignmentStmt:
+ast_node!(AssignmentStatement:
     equal_token: Option<SyntaxToken Equal>;
 );
-impl AssignmentStmt {
-    pub fn lhs(&self) -> Option<Expr> {
+impl AssignmentStatement {
+    pub fn left_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).next()
     }
 
-    pub fn rhs(&self) -> Option<Expr> {
+    pub fn right_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).nth(1)
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum IncrDecr {
+pub enum IncrementDecrement {
     Increment,
     Decrement,
 }
 
-ast_node!(IncrDecrStatement);
-impl IncrDecrStatement {
-    pub fn expr(&self) -> Option<Expr> {
+ast_node!(IncrementDecrementStatement);
+impl IncrementDecrementStatement {
+    pub fn expression(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).next()
     }
 
-    pub fn incr_decr(&self) -> Option<IncrDecr> {
+    pub fn increment_decrement(&self) -> Option<IncrementDecrement> {
         self.syntax()
             .children_with_tokens()
             .filter_map(|it| it.into_token())
             .find_map(|token| match token.kind() {
-                SyntaxKind::PlusPlus => Some(IncrDecr::Increment),
-                SyntaxKind::MinusMinus => Some(IncrDecr::Increment),
+                SyntaxKind::PlusPlus => Some(IncrementDecrement::Increment),
+                SyntaxKind::MinusMinus => Some(IncrementDecrement::Increment),
                 _ => None,
             })
     }
@@ -620,43 +620,43 @@ ast_token_enum! {
     }
 }
 
-ast_node!(CompoundAssignmentStmt);
+ast_node!(CompoundAssignmentStatement);
 
-impl CompoundAssignmentStmt {
-    pub fn lhs(&self) -> Option<Expr> {
+impl CompoundAssignmentStatement {
+    pub fn left_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).next()
     }
 
-    pub fn rhs(&self) -> Option<Expr> {
+    pub fn right_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).nth(1)
     }
 
-    pub fn op_token(&self) -> Option<SyntaxToken> {
-        self.lhs()?.syntax().last_token()?.next_token()
+    pub fn operator_token(&self) -> Option<SyntaxToken> {
+        self.left_side()?.syntax().last_token()?.next_token()
     }
 
-    pub fn op(&self) -> Option<CompoundOp> {
+    pub fn operator(&self) -> Option<CompoundOperator> {
         let kind: CompoundAssignmentOperator = support::child_token(self.syntax())?;
-        let op = match kind {
-            CompoundAssignmentOperator::PlusEqual(_) => CompoundOp::Add,
-            CompoundAssignmentOperator::MinusEqual(_) => CompoundOp::Sub,
-            CompoundAssignmentOperator::TimesEqual(_) => CompoundOp::Mul,
-            CompoundAssignmentOperator::DivisionEqual(_) => CompoundOp::Div,
-            CompoundAssignmentOperator::ModuloEqual(_) => CompoundOp::Modulo,
-            CompoundAssignmentOperator::AndEqual(_) => CompoundOp::BitAnd,
-            CompoundAssignmentOperator::OrEqual(_) => CompoundOp::BitOr,
-            CompoundAssignmentOperator::XorEqual(_) => CompoundOp::BitXor,
-            CompoundAssignmentOperator::ShiftRightEqual(_) => CompoundOp::Shr,
-            CompoundAssignmentOperator::ShiftLeftEqual(_) => CompoundOp::Shl,
+        let operator = match kind {
+            CompoundAssignmentOperator::PlusEqual(_) => CompoundOperator::Add,
+            CompoundAssignmentOperator::MinusEqual(_) => CompoundOperator::Subtract,
+            CompoundAssignmentOperator::TimesEqual(_) => CompoundOperator::Multiply,
+            CompoundAssignmentOperator::DivisionEqual(_) => CompoundOperator::Divide,
+            CompoundAssignmentOperator::ModuloEqual(_) => CompoundOperator::Modulo,
+            CompoundAssignmentOperator::AndEqual(_) => CompoundOperator::BitAnd,
+            CompoundAssignmentOperator::OrEqual(_) => CompoundOperator::BitOr,
+            CompoundAssignmentOperator::XorEqual(_) => CompoundOperator::BitXor,
+            CompoundAssignmentOperator::ShiftRightEqual(_) => CompoundOperator::ShiftRight,
+            CompoundAssignmentOperator::ShiftLeftEqual(_) => CompoundOperator::ShiftLeft,
         };
-        Some(op)
+        Some(operator)
     }
 }
 
 ast_node!(ElseIfBlock:
     else_token: Option<SyntaxToken Else>;
     if_token: Option<SyntaxToken If>;
-    condition: Option<Expr>;
+    condition: Option<Expression>;
     block: Option<CompoundStatement>;
 );
 
@@ -667,7 +667,7 @@ ast_node!(ElseBlock:
 
 ast_node!(IfStatement:
     if_token: Option<SyntaxToken If>;
-    condition: Option<Expr>;
+    condition: Option<Expression>;
     block: Option<CompoundStatement>;
     else_if_blocks: AstChildren<ElseIfBlock>;
     else_block: Option<ElseBlock>;
@@ -675,12 +675,12 @@ ast_node!(IfStatement:
 
 ast_node!(WhileStatement:
     while_token: Option<SyntaxToken While>;
-    condition: Option<Expr>;
+    condition: Option<Expression>;
     block: Option<CompoundStatement>;
 );
 
 ast_node!(SwitchStatement:
-    expr: Option<Expr>;
+    expression: Option<Expression>;
     block: Option<SwitchBlock>;
 );
 ast_node!(SwitchBlock:
@@ -692,7 +692,7 @@ ast_node!(SwitchBodyCase:
     block: Option<CompoundStatement>;
 );
 ast_node!(SwitchCaseSelectors:
-    exprs: AstChildren<Expr>;
+    exprs: AstChildren<Expression>;
 );
 ast_node!(SwitchBodyDefault:
     block: Option<CompoundStatement>;
@@ -701,8 +701,8 @@ ast_node!(SwitchBodyDefault:
 ast_node!(LoopStatement:
     block: Option<CompoundStatement>;
 );
-ast_node!(ReturnStmt:
-    expr: Option<Expr>;
+ast_node!(ReturnStatement:
+    expression: Option<Expression>;
 );
 ast_node!(VariableStatement:
     variable_qualifier: Option<VariableQualifier>;
@@ -710,7 +710,7 @@ ast_node!(VariableStatement:
     colon: Option<SyntaxToken Colon>;
     ty: Option<Type>;
     equal_token: Option<SyntaxToken Equal>;
-    initializer: Option<Expr>;
+    initializer: Option<Expression>;
 );
 impl VariableStatement {
     pub fn kind(&self) -> Option<VariableStatementKind> {
@@ -718,7 +718,7 @@ impl VariableStatement {
             .children_with_tokens()
             .filter_map(|it| it.into_token())
             .find_map(|token| match token.kind() {
-                SyntaxKind::Const => Some(VariableStatementKind::Const),
+                SyntaxKind::Constant => Some(VariableStatementKind::Constant),
                 SyntaxKind::Let => Some(VariableStatementKind::Let),
                 SyntaxKind::Var => Some(VariableStatementKind::Var),
                 _ => None,
@@ -727,7 +727,7 @@ impl VariableStatement {
 }
 
 pub enum VariableStatementKind {
-    Const,
+    Constant,
     Let,
     Var,
 }
@@ -746,10 +746,10 @@ impl ForStatement {
             .and_then(support::child::<Statement>)
     }
 
-    pub fn condition(&self) -> Option<Expr> {
+    pub fn condition(&self) -> Option<Expression> {
         support::child_syntax(self.syntax(), SyntaxKind::ForCondition)
             .as_ref()
-            .and_then(support::child::<Expr>)
+            .and_then(support::child::<Expression>)
     }
 
     pub fn continuing_part(&self) -> Option<Statement> {
@@ -759,8 +759,8 @@ impl ForStatement {
     }
 }
 
-ast_node!(ExprStatement:
-    expr: Option<Expr>;
+ast_node!(ExpressionStatement:
+    expression: Option<Expression>;
 );
 ast_node!(Discard);
 ast_node!(Break);
@@ -773,9 +773,9 @@ ast_enum! {
     enum Statement {
         CompoundStatement,
         VariableStatement,
-        ReturnStmt,
-        AssignmentStmt,
-        CompoundAssignmentStmt,
+        ReturnStatement,
+        AssignmentStatement,
+        CompoundAssignmentStatement,
         IfStatement,
         ForStatement,
         SwitchStatement,
@@ -785,23 +785,23 @@ ast_enum! {
         Break,
         Continue,
         ContinuingStatement,
-        ExprStatement,
-        IncrDecrStatement,
+        ExpressionStatement,
+        IncrementDecrementStatement,
     }
 }
 
 ast_enum! {
-    enum Expr {
-        InfixExpr,
-        PrefixExpr,
+    enum Expression {
+        InfixExpression,
+        PrefixExpression,
         Literal,
-        ParenExpr,
-        FieldExpr,
+        ParenthesisExpression,
+        FieldExpression,
         FunctionCall,
         TypeInitializer,
-        IndexExpr,
-        PathExpr,
-        BitcastExpr,
+        IndexExpression,
+        PathExpression,
+        BitcastExpression,
         InvalidFunctionCall,
     }
 }
@@ -867,13 +867,13 @@ ast_enum_raw! {
 }
 
 ast_node!(PathType:
-    name: Option<NameRef>;
+    name: Option<NameReference>;
 );
 
 ast_node!(Atomic AtomicType);
 ast_node!(Array ArrayType);
 ast_node!(BindingArray BindingArrayType);
-ast_node!(Pointer PtrType);
+ast_node!(Pointer PointerType);
 
 ast_enum_compound! {
     enum Type {
@@ -886,12 +886,12 @@ ast_enum_compound! {
         AtomicType,
         ArrayType,
         BindingArrayType,
-        PtrType,
+        PointerType,
     }
 }
 
 impl Type {
-    pub fn as_name(&self) -> Option<NameRef> {
+    pub fn as_name(&self) -> Option<NameReference> {
         match self {
             Type::PathType(path) => path.name(),
             _ => None,
@@ -915,14 +915,14 @@ impl HasGenerics for ArrayType {}
 
 impl HasGenerics for BindingArrayType {}
 
-impl HasGenerics for PtrType {}
+impl HasGenerics for PointerType {}
 
-impl InfixExpr {
-    pub fn lhs(&self) -> Option<Expr> {
+impl InfixExpression {
+    pub fn left_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).next()
     }
 
-    pub fn rhs(&self) -> Option<Expr> {
+    pub fn right_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).nth(1)
     }
 
@@ -935,56 +935,60 @@ impl InfixExpr {
             return Some(NodeOrToken::Node(op));
         }
 
-        if let Some(token) = self.lhs()?.syntax().last_token()?.next_token() {
+        if let Some(token) = self.left_side()?.syntax().last_token()?.next_token() {
             return Some(NodeOrToken::Token(token));
         }
 
         None
     }
 
-    pub fn op_kind(&self) -> Option<BinaryOp> {
-        if let Some(kind) = support::child_token::<BinaryOpKind>(self.syntax()) {
+    pub fn op_kind(&self) -> Option<BinaryOperation> {
+        if let Some(kind) = support::child_token::<BinaryOperatorKind>(self.syntax()) {
             #[rustfmt::skip]
             let op = match kind {
-                BinaryOpKind::EqualEqual(_) => BinaryOp::CmpOp(CmpOp::Eq { negated: false }),
-                BinaryOpKind::NotEqual(_) => BinaryOp::CmpOp(CmpOp::Eq { negated: true }),
-                BinaryOpKind::GreaterThan(_) => BinaryOp::CmpOp(CmpOp::Ord { ordering: operators::Ordering::Greater, strict: true }),
-                BinaryOpKind::GreaterThanEqual(_) => BinaryOp::CmpOp(CmpOp::Ord { ordering: operators::Ordering::Greater, strict: false }),
-                BinaryOpKind::LessThan(_) => BinaryOp::CmpOp(CmpOp::Ord { ordering: operators::Ordering::Less, strict: true }),
-                BinaryOpKind::LessThanEqual(_) => BinaryOp::CmpOp(CmpOp::Ord { ordering: operators::Ordering::Less, strict: false }),
-                BinaryOpKind::Minus(_) => BinaryOp::ArithOp(ArithOp::Sub),
-                BinaryOpKind::Plus(_) => BinaryOp::ArithOp(ArithOp::Add),
-                BinaryOpKind::Star(_) => BinaryOp::ArithOp(ArithOp::Mul),
-                BinaryOpKind::ForwardSlash(_) => BinaryOp::ArithOp(ArithOp::Div),
-                BinaryOpKind::Modulo(_) => BinaryOp::ArithOp(ArithOp::Modulo),
-                BinaryOpKind::Or(_) => BinaryOp::ArithOp(ArithOp::BitOr),
-                BinaryOpKind::And(_) => BinaryOp::ArithOp(ArithOp::BitAnd),
-                BinaryOpKind::Xor(_)=>BinaryOp::ArithOp(ArithOp::BitXor),
-                BinaryOpKind::OrOr(_) => BinaryOp::LogicOp(LogicOp::Or),
-                BinaryOpKind::AndAnd(_) => BinaryOp::LogicOp(LogicOp::And),
+                BinaryOperatorKind::EqualEqual(_) => BinaryOperation::Comparison(ComparisonOperation::Equality { negated: false }),
+                BinaryOperatorKind::NotEqual(_) => BinaryOperation::Comparison(ComparisonOperation::Equality { negated: true }),
+                BinaryOperatorKind::GreaterThan(_) => BinaryOperation::Comparison(ComparisonOperation::Ordering { ordering: operators::Ordering::Greater, strict: true }),
+                BinaryOperatorKind::GreaterThanEqual(_) => BinaryOperation::Comparison(ComparisonOperation::Ordering { ordering: operators::Ordering::Greater, strict: false }),
+                BinaryOperatorKind::LessThan(_) => BinaryOperation::Comparison(ComparisonOperation::Ordering { ordering: operators::Ordering::Less, strict: true }),
+                BinaryOperatorKind::LessThanEqual(_) => BinaryOperation::Comparison(ComparisonOperation::Ordering { ordering: operators::Ordering::Less, strict: false }),
+                BinaryOperatorKind::Minus(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Subtract),
+                BinaryOperatorKind::Plus(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Add),
+                BinaryOperatorKind::Star(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Multiply),
+                BinaryOperatorKind::ForwardSlash(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Divide),
+                BinaryOperatorKind::Modulo(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Modulo),
+                BinaryOperatorKind::Or(_) => BinaryOperation::Arithmetic(ArithmeticOperation::BitOr),
+                BinaryOperatorKind::And(_) => BinaryOperation::Arithmetic(ArithmeticOperation::BitAnd),
+                BinaryOperatorKind::Xor(_)=>BinaryOperation::Arithmetic(ArithmeticOperation::BitXor),
+                BinaryOperatorKind::OrOr(_) => BinaryOperation::Logical(LogicOperation::Or),
+                BinaryOperatorKind::AndAnd(_) => BinaryOperation::Logical(LogicOperation::And),
             };
             Some(op)
         } else {
             self.syntax()
                 .children()
                 .find_map(|child| match child.kind() {
-                    SyntaxKind::ShiftLeft => Some(BinaryOp::ArithOp(ArithOp::Shl)),
-                    SyntaxKind::ShiftRight => Some(BinaryOp::ArithOp(ArithOp::Shr)),
+                    SyntaxKind::ShiftLeft => {
+                        Some(BinaryOperation::Arithmetic(ArithmeticOperation::ShiftLeft))
+                    },
+                    SyntaxKind::ShiftRight => {
+                        Some(BinaryOperation::Arithmetic(ArithmeticOperation::ShiftRight))
+                    },
                     _ => None,
                 })
         }
     }
 }
 
-impl PrefixExpr {
-    pub fn op_kind(&self) -> Option<UnaryOp> {
-        let kind: PrefixOpKind = support::child_token(self.syntax())?;
+impl PrefixExpression {
+    pub fn op_kind(&self) -> Option<UnaryOperator> {
+        let kind: PrefixOperatorKind = support::child_token(self.syntax())?;
         let op = match kind {
-            PrefixOpKind::Minus(_) => UnaryOp::Minus,
-            PrefixOpKind::Bang(_) => UnaryOp::Not,
-            PrefixOpKind::Tilde(_) => UnaryOp::BitNot,
-            PrefixOpKind::Star(_) => UnaryOp::Deref,
-            PrefixOpKind::And(_) => UnaryOp::Ref,
+            PrefixOperatorKind::Minus(_) => UnaryOperator::Minus,
+            PrefixOperatorKind::Bang(_) => UnaryOperator::Not,
+            PrefixOperatorKind::Tilde(_) => UnaryOperator::BitNot,
+            PrefixOperatorKind::Star(_) => UnaryOperator::Dereference,
+            PrefixOperatorKind::And(_) => UnaryOperator::Reference,
         };
         Some(op)
     }
@@ -992,15 +996,15 @@ impl PrefixExpr {
 
 ast_enum! {
     enum NameLike {
-        NameRef,
+        NameReference,
         Name,
     }
 }
 
 impl NameLike {
-    pub fn as_name_ref(&self) -> Option<&NameRef> {
+    pub fn as_name_ref(&self) -> Option<&NameReference> {
         match self {
-            NameLike::NameRef(name_ref) => Some(name_ref),
+            NameLike::NameReference(name_ref) => Some(name_ref),
             NameLike::Name(_) => None,
         }
     }

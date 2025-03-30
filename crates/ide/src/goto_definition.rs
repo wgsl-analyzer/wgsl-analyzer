@@ -58,7 +58,7 @@ pub(crate) fn goto_definition(
     let token = file.syntax().token_at_offset(file_position.offset);
 
     let token = helpers::pick_best_token(token, |token| match token {
-        SyntaxKind::Ident => 2,
+        SyntaxKind::Identifier => 2,
         kind if kind.is_trivia() => 0,
         _ => 1,
     })?;
@@ -92,110 +92,107 @@ impl ToNav for InFile<Definition> {
         &self,
         db: &dyn DefDatabase,
     ) -> Option<NavigationTarget> {
-        let nav = match &self.value {
-            Definition::Local(local) => InFile::new(self.file_id, *local).to_nav(db)?,
-            Definition::ModuleDef(def) => match def {
-                hir::ModuleDef::Function(function) => {
-                    let decl = function.source(db)?;
+        let nav =
+            match &self.value {
+                Definition::Local(local) => InFile::new(self.file_id, *local).to_nav(db)?,
+                Definition::ModuleDef(def) => {
+                    match def {
+                        hir::ModuleDef::Function(function) => {
+                            let declaration = function.source(db)?;
 
-                    let frange = decl.original_file_range(db);
-                    let focus_range = decl
+                            let frange = declaration.original_file_range(db);
+                            let focus_range = declaration.value.name().map(|name| {
+                                declaration.with_value(name).original_file_range(db).range
+                            });
+
+                            NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
+                        },
+                        hir::ModuleDef::GlobalVariable(var) => {
+                            let declaration = var.source(db)?;
+
+                            let frange = declaration.original_file_range(db);
+                            let focus_range = declaration.value.binding().map(|name| {
+                                declaration.with_value(name).original_file_range(db).range
+                            });
+
+                            NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
+                        },
+                        hir::ModuleDef::GlobalConstant(constant) => {
+                            let declaration = constant.source(db)?;
+
+                            let frange = declaration.original_file_range(db);
+                            let focus_range = declaration.value.binding().map(|name| {
+                                declaration.with_value(name).original_file_range(db).range
+                            });
+
+                            NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
+                        },
+                        hir::ModuleDef::Override(override_declaration) => {
+                            let declaration = override_declaration.source(db)?;
+
+                            let frange = declaration.original_file_range(db);
+                            let focus_range = declaration.value.binding().map(|name| {
+                                declaration.with_value(name).original_file_range(db).range
+                            });
+
+                            NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
+                        },
+                        hir::ModuleDef::Struct(r#struct) => {
+                            let declaration = r#struct.source(db)?;
+
+                            let frange = declaration.original_file_range(db);
+                            let focus_range = declaration.value.name().map(|name| {
+                                declaration.with_value(name).original_file_range(db).range
+                            });
+
+                            NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
+                        },
+                        hir::ModuleDef::TypeAlias(type_alias) => {
+                            let declaration = type_alias.source(db)?;
+
+                            let frange = declaration.original_file_range(db);
+                            let focus_range = declaration.value.name().map(|name| {
+                                declaration.with_value(name).original_file_range(db).range
+                            });
+
+                            NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
+                        },
+                    }
+                },
+                Definition::Field(field) => {
+                    let declaration = field.source(db)?;
+
+                    let frange = declaration.original_file_range(db);
+                    let focus_range = declaration
+                        .value
+                        .variable_ident_declaration()
+                        .map(|name| declaration.with_value(name).original_file_range(db).range);
+
+                    NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
+                },
+                Definition::Struct(r#struct) => {
+                    let declaration = r#struct.source(db)?;
+                    let frange = declaration.original_file_range(db);
+
+                    let focus_range = declaration
                         .value
                         .name()
-                        .map(|name| decl.with_value(name).original_file_range(db).range);
+                        .map(|name| declaration.with_value(name).original_file_range(db).range);
 
                     NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
                 },
-                hir::ModuleDef::GlobalVariable(var) => {
-                    let decl = var.source(db)?;
+                Definition::TypeAlias(type_alias) => {
+                    let declaration = type_alias.source(db)?;
+                    let frange = declaration.original_file_range(db);
 
-                    let frange = decl.original_file_range(db);
-                    let focus_range = decl
-                        .value
-                        .binding()
-                        .map(|name| decl.with_value(name).original_file_range(db).range);
-
-                    NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-                },
-                hir::ModuleDef::GlobalConstant(constant) => {
-                    let decl = constant.source(db)?;
-
-                    let frange = decl.original_file_range(db);
-                    let focus_range = decl
-                        .value
-                        .binding()
-                        .map(|name| decl.with_value(name).original_file_range(db).range);
-
-                    NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-                },
-                hir::ModuleDef::Override(override_decl) => {
-                    let decl = override_decl.source(db)?;
-
-                    let frange = decl.original_file_range(db);
-                    let focus_range = decl
-                        .value
-                        .binding()
-                        .map(|name| decl.with_value(name).original_file_range(db).range);
-
-                    NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-                },
-                hir::ModuleDef::Struct(r#struct) => {
-                    let decl = r#struct.source(db)?;
-
-                    let frange = decl.original_file_range(db);
-                    let focus_range = decl
+                    let focus_range = declaration
                         .value
                         .name()
-                        .map(|name| decl.with_value(name).original_file_range(db).range);
+                        .map(|name| declaration.with_value(name).original_file_range(db).range);
 
                     NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
                 },
-                hir::ModuleDef::TypeAlias(type_alias) => {
-                    let decl = type_alias.source(db)?;
-
-                    let frange = decl.original_file_range(db);
-                    let focus_range = decl
-                        .value
-                        .name()
-                        .map(|name| decl.with_value(name).original_file_range(db).range);
-
-                    NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-                },
-            },
-            Definition::Field(field) => {
-                let decl = field.source(db)?;
-
-                let frange = decl.original_file_range(db);
-                let focus_range = decl
-                    .value
-                    .variable_ident_decl()
-                    .map(|name| decl.with_value(name).original_file_range(db).range);
-
-                NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-            },
-            Definition::Struct(r#struct) => {
-                let decl = r#struct.source(db)?;
-                let frange = decl.original_file_range(db);
-
-                let focus_range = decl
-                    .value
-                    .name()
-                    .map(|name| decl.with_value(name).original_file_range(db).range);
-
-                NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-            },
-            Definition::TypeAlias(type_alias) => {
-                let decl = type_alias.source(db)?;
-                let frange = decl.original_file_range(db);
-
-                let focus_range = decl
-                    .value
-                    .name()
-                    .map(|name| decl.with_value(name).original_file_range(db).range);
-
-                NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-            },
-        };
+            };
         Some(nav)
     }
 }

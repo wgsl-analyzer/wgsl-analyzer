@@ -48,13 +48,16 @@ fn fix_path_for_mac(sh: &Shell) -> anyhow::Result<()> {
         const COMMON_APP_PATH: &str =
             "/Applications/Visual Studio Code.app/Contents/Resources/app/bin";
         const ROOT_DIR: &str = "";
-        let home_dir = sh.var("HOME").map_err(|err| {
-            format_err!("Failed getting HOME from environment with error: {}.", err)
+        let home_dir = sh.var("HOME").map_err(|error| {
+            format_err!(
+                "Failed getting HOME from environment with error: {}.",
+                error
+            )
         })?;
         #[expect(clippy::string_add, reason = "more concise")]
         [ROOT_DIR, &home_dir]
             .into_iter()
-            .map(|dir| dir.to_owned() + COMMON_APP_PATH)
+            .map(|directory| directory.to_owned() + COMMON_APP_PATH)
             .map(PathBuf::from)
             .filter(|path| path.exists())
             .collect()
@@ -141,7 +144,7 @@ fn install_client(
         bail!(
             "Could not install the Visual Studio Code extension. \
             Please make sure you have at least Node.js 22 (see https://github.com/wgsl-analyzer/wgsl-analyzer/tree/main/editors/code/package.json#L48) together with the latest version of VS Code installed and try again. \
-            Note that installing via xtask install does not work for VS Code Remote, instead you\u{2019}ll need to install the .vsix manually."
+            Note that installing via xtask install does not work for VS Code Remote, instead you will need to install the .vsix manually."
         );
     }
 

@@ -117,7 +117,7 @@ fn get_struct_layout_hints(
                 // this is only necessary, because the field syntax nodes include the whitespace to the next line...
                 let actual_last_token = std::iter::successors(
                     source.syntax().last_token(),
-                    rowan::SyntaxToken::prev_token,
+                    rowan::SyntaxToken::prev_token, // spellchecker:disable-line
                 )
                 .find(|token| !token.kind().is_trivia())?;
                 let range = TextRange::new(
@@ -148,10 +148,10 @@ fn get_hints(
     config: &InlayHintsConfig,
     node: SyntaxNode,
 ) -> Option<()> {
-    if let Some(expr) = ast::Expr::cast(node.clone()) {
+    if let Some(expression) = ast::Expression::cast(node.clone()) {
         #[allow(clippy::single_match)] // for extendability
-        match &expr {
-            ast::Expr::FunctionCall(function_call_expr) => {
+        match &expression {
+            ast::Expression::FunctionCall(function_call_expression) => {
                 if !config.parameter_hints {
                     return None;
                 }
@@ -159,12 +159,12 @@ fn get_hints(
                     sema,
                     file_id,
                     &node,
-                    &expr,
-                    function_call_expr.params()?.args(),
+                    &expression,
+                    function_call_expression.parameters()?.arguments(),
                     hints,
                 )?;
             },
-            ast::Expr::TypeInitializer(type_initialiser_expr) => {
+            ast::Expression::TypeInitializer(type_initialiser_expression) => {
                 if !config.parameter_hints {
                     return None;
                 }
@@ -175,22 +175,22 @@ fn get_hints(
                     sema,
                     file_id,
                     &node,
-                    &expr,
-                    type_initialiser_expr.args()?.args(),
+                    &expression,
+                    type_initialiser_expression.arguments()?.arguments(),
                     hints,
                 )?;
             },
             _ => {},
         }
     } else if let Some((binding, ty)) = ast::VariableStatement::cast(node.clone())
-        .and_then(|stmt| Some((stmt.binding()?, stmt.ty())))
+        .and_then(|statement| Some((statement.binding()?, statement.ty())))
         .or_else(|| {
-            ast::GlobalConstantDecl::cast(node.clone())
-                .and_then(|stmt| Some((stmt.binding()?, stmt.ty())))
+            ast::GlobalConstantDeclaration::cast(node.clone())
+                .and_then(|statement| Some((statement.binding()?, statement.ty())))
         })
         .or_else(|| {
-            ast::GlobalVariableDecl::cast(node.clone())
-                .and_then(|stmt| Some((stmt.binding()?, stmt.ty())))
+            ast::GlobalVariableDeclaration::cast(node.clone())
+                .and_then(|statement| Some((statement.binding()?, statement.ty())))
         })
     {
         if !config.type_hints {
@@ -216,13 +216,13 @@ fn function_hints(
     sema: &Semantics,
     file_id: FileId,
     node: &SyntaxNode,
-    expr: &ast::Expr,
-    parameter_exprs: AstChildren<ast::Expr>,
+    expression: &ast::Expression,
+    parameter_expressions: AstChildren<ast::Expression>,
     hints: &mut Vec<InlayHint>,
 ) -> Option<()> {
     let container = sema.find_container(file_id.into(), node)?;
     let analyzed = sema.analyze(container);
-    let expression = analyzed.expr_id(expr)?;
+    let expression = analyzed.expression_id(expression)?;
     let resolved = analyzed.infer.call_resolution(expression)?;
     let func = match resolved {
         ResolvedCall::Function(func) => func.lookup(analyzed.db),
@@ -230,11 +230,13 @@ fn function_hints(
     };
     let param_hints = func
         .parameter_names()
-        .zip(parameter_exprs)
+        .zip(parameter_expressions)
         .filter(|&(name, _)| !Name::is_missing(name))
-        .filter(|(param_name, expr)| !should_hide_param_name_hint(&func, param_name, expr))
-        .map(|(param_name, expr)| InlayHint {
-            range: expr.syntax().text_range(),
+        .filter(|(param_name, expression)| {
+            !should_hide_param_name_hint(&func, param_name, expression)
+        })
+        .map(|(param_name, expression)| InlayHint {
+            range: expression.syntax().text_range(),
             kind: InlayKind::ParameterHint,
             label: param_name.into(),
         });
@@ -247,17 +249,17 @@ fn function_hints(
 fn should_hide_param_name_hint(
     func: &FunctionDetails,
     param_name: &str,
-    expr: &ast::Expr,
+    expression: &ast::Expression,
 ) -> bool {
-    is_argument_similar_to_param_name(expr, param_name)
-        || (func.parameters.len() == 1 && is_obvious_param(param_name))
+    is_argument_similar_to_param_name(expression, param_name)
+        || (func.parameters.len() == 1 && is_obvious_parameter(param_name))
 }
 
 fn is_argument_similar_to_param_name(
-    expr: &ast::Expr,
+    expression: &ast::Expression,
     param_name: &str,
 ) -> bool {
-    let argument = match get_string_representation(expr) {
+    let argument = match get_string_representation(expression) {
         Some(argument) => argument,
         None => return false,
     };
@@ -293,7 +295,7 @@ fn is_argument_similar_to_param_name(
     false
 }
 
-fn is_obvious_param(param_name: &str) -> bool {
+fn is_obvious_parameter(param_name: &str) -> bool {
     let is_obvious_param_name = matches!(param_name, "predicate" | "value");
     param_name.len() == 1 || is_obvious_param_name
 }
@@ -309,11 +311,17 @@ fn compare_ignore_case_convention(
         .all(|(a, b)| a.eq_ignore_ascii_case(&b))
 }
 
-fn get_string_representation(expr: &ast::Expr) -> Option<String> {
-    match expr {
-        ast::Expr::PathExpr(expr) => Some(expr.name_ref()?.text().as_str().to_string()),
-        ast::Expr::PrefixExpr(expr) => get_string_representation(&expr.expr()?),
-        ast::Expr::FieldExpr(expr) => Some(expr.name_ref()?.text().as_str().to_string()),
+fn get_string_representation(expression: &ast::Expression) -> Option<String> {
+    match expression {
+        ast::Expression::PathExpression(expression) => {
+            Some(expression.name_ref()?.text().as_str().to_string())
+        },
+        ast::Expression::PrefixExpression(expression) => {
+            get_string_representation(&expression.expression()?)
+        },
+        ast::Expression::FieldExpression(expression) => {
+            Some(expression.name_ref()?.text().as_str().to_string())
+        },
         _ => None,
     }
 }

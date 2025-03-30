@@ -13,7 +13,7 @@ use crate::JodChild;
 #[inline]
 pub fn streaming_output(
     out: ChildStdout,
-    err: ChildStderr,
+    error: ChildStderr,
     on_stdout_line: &mut dyn FnMut(&str),
     on_stderr_line: &mut dyn FnMut(&str),
     on_eof: &mut dyn FnMut(),
@@ -21,8 +21,8 @@ pub fn streaming_output(
     let mut stdout = Vec::new();
     let mut stderr = Vec::new();
 
-    imp::read2(out, err, &mut |is_out, data, eof| {
-        let idx = if eof {
+    implementation::read2(out, error, &mut |is_out, data, eof| {
+        let index = if eof {
             data.len()
         } else {
             match data.iter().rposition(|&byte| byte == b'\n') {
@@ -35,7 +35,7 @@ pub fn streaming_output(
             let new_lines = {
                 let dst = if is_out { &mut stdout } else { &mut stderr };
                 let start = dst.len();
-                let data = data.drain(..idx);
+                let data = data.drain(..index);
                 dst.extend(data);
                 &dst[start..]
             };
@@ -86,7 +86,7 @@ pub fn spawn_with_streaming_output(
 }
 
 #[cfg(unix)]
-mod imp {
+mod implementation {
     use std::{
         io::{self, prelude::*},
         mem,
@@ -96,23 +96,23 @@ mod imp {
 
     pub(crate) fn read2(
         mut out_pipe: ChildStdout,
-        mut err_pipe: ChildStderr,
+        mut error_pipe: ChildStderr,
         data: &mut dyn FnMut(bool, &mut Vec<u8>, bool),
     ) -> io::Result<()> {
         unsafe {
             libc::fcntl(out_pipe.as_raw_fd(), libc::F_SETFL, libc::O_NONBLOCK);
-            libc::fcntl(err_pipe.as_raw_fd(), libc::F_SETFL, libc::O_NONBLOCK);
+            libc::fcntl(error_pipe.as_raw_fd(), libc::F_SETFL, libc::O_NONBLOCK);
         }
 
         let mut out_done = false;
-        let mut err_done = false;
+        let mut error_done = false;
         let mut out = Vec::new();
-        let mut err = Vec::new();
+        let mut error = Vec::new();
 
         let mut fds: [libc::pollfd; 2] = unsafe { mem::zeroed() };
         fds[0].fd = out_pipe.as_raw_fd();
         fds[0].events = libc::POLLIN;
-        fds[1].fd = err_pipe.as_raw_fd();
+        fds[1].fd = error_pipe.as_raw_fd();
         fds[1].events = libc::POLLIN;
         let mut nfds = 2;
         let mut errfd = 1;
@@ -121,11 +121,11 @@ mod imp {
             // wait for either pipe to become readable using `select`
             let return_code = unsafe { libc::poll(fds.as_mut_ptr(), nfds, -1) };
             if return_code == -1 {
-                let err = io::Error::last_os_error();
-                if err.kind() == io::ErrorKind::Interrupted {
+                let error = io::Error::last_os_error();
+                if error.kind() == io::ErrorKind::Interrupted {
                     continue;
                 }
-                return Err(err);
+                return Err(error);
             }
 
             // Read as much as we can from each pipe, ignoring EWOULDBLOCK or
@@ -133,7 +133,7 @@ mod imp {
             // reader will return Ok(0), in which case we will see `Ok` ourselves. In
             // this case we flip the other fd back into blocking mode and read
             // whatever is leftover on that file descriptor.
-            let handle = |res: io::Result<_>| match res {
+            let handle = |result: io::Result<_>| match result {
                 Ok(_) => Ok(true),
                 Err(error) => {
                     if error.kind() == io::ErrorKind::WouldBlock {
@@ -143,14 +143,15 @@ mod imp {
                     }
                 },
             };
-            if !err_done && fds[errfd].revents != 0 && handle(err_pipe.read_to_end(&mut err))? {
-                err_done = true;
+            if !error_done && fds[errfd].revents != 0 && handle(error_pipe.read_to_end(&mut error))?
+            {
+                error_done = true;
                 nfds -= 1;
             }
-            data(false, &mut err, err_done);
+            data(false, &mut error, error_done);
             if !out_done && fds[0].revents != 0 && handle(out_pipe.read_to_end(&mut out))? {
                 out_done = true;
-                fds[0].fd = err_pipe.as_raw_fd();
+                fds[0].fd = error_pipe.as_raw_fd();
                 errfd = 0;
                 nfds -= 1;
             }
@@ -161,7 +162,7 @@ mod imp {
 }
 
 #[cfg(windows)]
-mod imp {
+mod implementation {
     use std::{
         io,
         os::windows::prelude::*,
@@ -185,35 +186,35 @@ mod imp {
 
     pub(crate) fn read2(
         out_pipe: ChildStdout,
-        err_pipe: ChildStderr,
+        error_pipe: ChildStderr,
         data: &mut dyn FnMut(bool, &mut Vec<u8>, bool),
     ) -> io::Result<()> {
         let mut out = Vec::new();
-        let mut err = Vec::new();
+        let mut error = Vec::new();
 
         let port = CompletionPort::new(1)?;
         port.add_handle(0, &out_pipe)?;
-        port.add_handle(1, &err_pipe)?;
+        port.add_handle(1, &error_pipe)?;
 
         unsafe {
             let mut out_pipe = Pipe::new(out_pipe, &mut out);
-            let mut err_pipe = Pipe::new(err_pipe, &mut err);
+            let mut error_pipe = Pipe::new(error_pipe, &mut error);
 
             out_pipe.read()?;
-            err_pipe.read()?;
+            error_pipe.read()?;
 
             let mut status = [CompletionStatus::zero(), CompletionStatus::zero()];
 
-            while !out_pipe.done || !err_pipe.done {
+            while !out_pipe.done || !error_pipe.done {
                 for status in port.get_many(&mut status, None)? {
                     if status.token() == 0 {
                         out_pipe.complete(status);
                         data(true, out_pipe.dst, out_pipe.done);
                         out_pipe.read()?;
                     } else {
-                        err_pipe.complete(status);
-                        data(false, err_pipe.dst, err_pipe.done);
-                        err_pipe.read()?;
+                        error_pipe.complete(status);
+                        data(false, error_pipe.dst, error_pipe.done);
+                        error_pipe.read()?;
                     }
                 }
             }
@@ -255,8 +256,11 @@ mod imp {
             &mut self,
             status: &CompletionStatus,
         ) {
-            let prev = self.dst.len();
-            unsafe { self.dst.set_len(prev + status.bytes_transferred() as usize) };
+            let previous = self.dst.len();
+            unsafe {
+                self.dst
+                    .set_len(previous + status.bytes_transferred() as usize)
+            };
             if status.bytes_transferred() == 0 {
                 self.done = true;
             }
@@ -271,13 +275,13 @@ mod imp {
             v.reserve(1);
         }
         let data = unsafe { v.as_mut_ptr().add(v.len()) };
-        let len = v.capacity() - v.len();
-        unsafe { slice::from_raw_parts_mut(data, len) }
+        let length = v.capacity() - v.len();
+        unsafe { slice::from_raw_parts_mut(data, length) }
     }
 }
 
 #[cfg(target_arch = "wasm32")]
-mod imp {
+mod implementation {
     use std::{
         io,
         process::{ChildStderr, ChildStdout},

@@ -236,12 +236,12 @@ When checking a boolean precondition, prefer `if !invariant` to `if negated_inva
 
 ```rust
 // GOOD
-if !(idx < len) {
+if !(index < length) {
     return None;
 }
 
 // BAD
-if idx >= len {
+if index >= length {
     return None;
 }
 ```
@@ -376,38 +376,47 @@ Note that this concerns only outward API.
 When implementing `do_thing`, it might be very useful to create a context object.
 
 ```rust
-pub fn do_thing(arg1: Arg1, arg2: Arg2) -> Res {
-    let mut ctx = Ctx { arg1, arg2 };
-    ctx.run()
+pub fn do_thing(
+  an_input: Argument1,
+  another_input: Argument2,
+) -> Result {
+    let mut context = Context { an_input, another_input };
+    context.run()
 }
 
-struct Ctx {
-    arg1: Arg1, arg2: Arg2
+struct Context {
+    an_input: Argument1,
+    another_input: Argument2,
 }
 
-impl Ctx {
-    fn run(self) -> Res {
+impl Context {
+    fn run(self) -> Result {
         ...
     }
 }
 ```
 
-The difference is that `Ctx` is an impl detail here.
+The difference is that `Context` is an implementation detail here.
 
 Sometimes a middle ground is acceptable if this can save some busywork:
 
 ```rust
-ThingDoer::do(arg1, arg2);
+ThingDoer::do(an_input, another_input);
 
 pub struct ThingDoer {
-    arg1: Arg1, arg2: Arg2,
+    an_input: Argument1,
+    another_input: Argument2,
 }
 
 impl ThingDoer {
-    pub fn do(arg1: Arg1, arg2: Arg2) -> Res {
-        ThingDoer { arg1, arg2 }.run()
+    pub fn do(
+        an_input: Argument1,
+        another_input: Argument2,
+    ) -> Result {
+        ThingDoer { an_input, another_input }.run()
     }
-    fn run(self) -> Res {
+
+    fn run(self) -> Result {
         ...
     }
 }
@@ -576,9 +585,9 @@ The accumulator goes first in the list of arguments.
 ```rust
 // GOOD
 pub fn reachable_nodes(node: Node) -> FxHashSet<Node> {
-    let mut res = FxHashSet::default();
-    go(&mut res, node);
-    res
+    let mut result = FxHashSet::default();
+    go(&mut result, node);
+    result
 }
 fn go(acc: &mut FxHashSet<Node>, node: Node) {
     acc.insert(node);
@@ -589,12 +598,12 @@ fn go(acc: &mut FxHashSet<Node>, node: Node) {
 
 // BAD
 pub fn reachable_nodes(node: Node) -> FxHashSet<Node> {
-    let mut res = FxHashSet::default();
-    res.insert(node);
+    let mut result = FxHashSet::default();
+    result.insert(node);
     for n in node.neighbors() {
-        res.extend(reachable_nodes(n));
+        result.extend(reachable_nodes(n));
     }
-    res
+    result
 }
 ```
 
@@ -894,7 +903,7 @@ fn foo() -> Option<Bar> {
 
 **Rationale:** reduce cognitive stack usage.
 
-Use `return Err(err)` to "throw" an error:
+Use `return Err(error)` to "throw" an error:
 
 ```rust
 // GOOD
@@ -976,13 +985,13 @@ Use `=> (),` when a match arm is intentionally empty:
 // GOOD
 match result {
     Ok(_) => (),
-    Err(err) => error!("{}", err),
+    Err(error) => error!("{}", error),
 }
 
 // BAD
 match result {
     Ok(_) => {}
-    Err(err) => error!("{}", err),
+    Err(error) => error!("{}", error),
 }
 ```
 
@@ -1053,9 +1062,9 @@ let buf = prepare_buf(&mut arena, item);
 ...
 
 fn prepare_buf(arena: &mut Arena, item: Item) -> ItemBuf {
-    let mut res = get_empty_buf(&mut arena);
-    res.add_item(item);
-    res
+    let mut result = get_empty_buf(&mut arena);
+    result.add_item(item);
+    result
 }
 ```
 

@@ -1,9 +1,9 @@
 mod ast_id;
-pub mod attrs;
+pub mod attributes;
 pub mod body;
 pub mod data;
 pub mod db;
-pub mod expr;
+pub mod expression;
 pub mod hir_file_id;
 pub mod module_data;
 pub mod resolver;
@@ -107,9 +107,9 @@ impl<N: HasTextRange, T: HasTextRange> HasTextRange for NodeOrToken<N, T> {
 pub fn original_file_range<T: HasTextRange>(
     db: &dyn DefDatabase,
     file_id: HirFileId,
-    val: &T,
+    value: &T,
 ) -> FileRange {
-    original_file_range_inner(db, file_id, val.text_range())
+    original_file_range_inner(db, file_id, value.text_range())
 }
 
 fn original_file_range_inner(
@@ -135,8 +135,8 @@ fn import_location(
     let def_map = db.ast_id_map(import_loc.file_id);
     let root = db.parse_or_resolve(import_loc.file_id).unwrap().syntax();
     let import: &Import = module_info.get(import_loc.value);
-    let ptr = def_map.get(import.ast_id);
-    let node = ptr.to_node(&root);
+    let pointer = def_map.get(import.ast_id);
+    let node = pointer.to_node(&root);
 
     import_loc.with_value(node.syntax().text_range())
 }

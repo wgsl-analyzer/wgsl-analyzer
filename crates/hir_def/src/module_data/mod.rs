@@ -24,8 +24,8 @@ impl Name {
         Name(MISSING_NAME_PLACEHOLDER.into())
     }
 
-    pub fn is_missing(val: &str) -> bool {
-        val == MISSING_NAME_PLACEHOLDER
+    pub fn is_missing(value: &str) -> bool {
+        value == MISSING_NAME_PLACEHOLDER
     }
 
     pub fn as_str(&self) -> &str {
@@ -51,14 +51,14 @@ impl From<ast::Name> for Name {
     }
 }
 
-impl From<ast::NameRef> for Name {
-    fn from(name: ast::NameRef) -> Self {
+impl From<ast::NameReference> for Name {
+    fn from(name: ast::NameReference) -> Self {
         Name(name.text().as_str().into())
     }
 }
 
-impl From<ast::Ident> for Name {
-    fn from(ident: ast::Ident) -> Self {
+impl From<ast::Identifier> for Name {
+    fn from(ident: ast::Identifier) -> Self {
         Name(ident.text().as_str().into())
     }
 }
@@ -72,22 +72,22 @@ impl From<&'_ str> for Name {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Function {
     pub name: Name,
-    pub params: IdxRange<Param>,
-    pub return_type: Option<Interned<TypeRef>>,
+    pub parameters: IdxRange<Parameter>,
+    pub return_type: Option<Interned<TypeReference>>,
     pub ast_id: FileAstId<ast::Function>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Param {
-    pub ty: Interned<TypeRef>,
+pub struct Parameter {
+    pub ty: Interned<TypeReference>,
     pub name: Name,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct GlobalVariable {
     pub name: Name,
-    pub ty: Option<Interned<TypeRef>>,
-    pub ast_id: FileAstId<ast::GlobalVariableDecl>,
+    pub ty: Option<Interned<TypeReference>>,
+    pub ast_id: FileAstId<ast::GlobalVariableDeclaration>,
     pub storage_class: Option<StorageClass>,
     pub access_mode: Option<AccessMode>,
 }
@@ -95,34 +95,34 @@ pub struct GlobalVariable {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct GlobalConstant {
     pub name: Name,
-    pub ty: Option<Interned<TypeRef>>,
-    pub ast_id: FileAstId<ast::GlobalConstantDecl>,
+    pub ty: Option<Interned<TypeReference>>,
+    pub ast_id: FileAstId<ast::GlobalConstantDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Override {
     pub name: Name,
-    pub ty: Option<Interned<TypeRef>>,
-    pub ast_id: FileAstId<ast::OverrideDecl>,
+    pub ty: Option<Interned<TypeReference>>,
+    pub ast_id: FileAstId<ast::OverrideDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TypeAlias {
     pub name: Name,
-    pub ty: Interned<TypeRef>,
-    pub ast_id: FileAstId<ast::TypeAliasDecl>,
+    pub ty: Interned<TypeReference>,
+    pub ast_id: FileAstId<ast::TypeAliasDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Struct {
     pub name: Name,
-    pub ast_id: FileAstId<ast::StructDecl>,
+    pub ast_id: FileAstId<ast::StructDeclaration>,
     pub fields: IdxRange<Field>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Field {
-    pub ty: Interned<TypeRef>,
+    pub ty: Interned<TypeReference>,
     pub name: Name,
 }
 
@@ -151,7 +151,7 @@ pub struct ModuleInfo {
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct ModuleData {
     functions: Arena<Function>,
-    params: Arena<Param>,
+    parameters: Arena<Parameter>,
     global_variables: Arena<GlobalVariable>,
     global_constants: Arena<GlobalConstant>,
     overrides: Arena<Override>,
@@ -168,7 +168,7 @@ impl ModuleInfo {
         file_id: HirFileId,
     ) -> Arc<ModuleInfo> {
         let source = match db.parse_or_resolve(file_id) {
-            Ok(val) => val.tree(),
+            Ok(value) => value.tree(),
             Err(_) => return Arc::new(ModuleInfo::default()),
         };
 
@@ -316,25 +316,25 @@ impl std::ops::Index<Idx<Field>> for ModuleData {
     }
 }
 
-impl std::ops::Index<Idx<Param>> for ModuleData {
-    type Output = Param;
+impl std::ops::Index<Idx<Parameter>> for ModuleData {
+    type Output = Parameter;
 
     fn index(
         &self,
-        index: Idx<Param>,
+        index: Idx<Parameter>,
     ) -> &Self::Output {
-        &self.params[index]
+        &self.parameters[index]
     }
 }
 
 mod_items! {
     Function in functions -> ast::Function,
-    Struct in structs -> ast::StructDecl,
-    GlobalVariable in global_variables -> ast::GlobalVariableDecl,
-    GlobalConstant in global_constants -> ast::GlobalConstantDecl,
-    Override in overrides -> ast::OverrideDecl,
+    Struct in structs -> ast::StructDeclaration,
+    GlobalVariable in global_variables -> ast::GlobalVariableDeclaration,
+    GlobalConstant in global_constants -> ast::GlobalConstantDeclaration,
+    Override in overrides -> ast::OverrideDeclaration,
     Import in imports -> ast::Import,
-    TypeAlias in type_aliases -> ast::TypeAliasDecl,
+    TypeAlias in type_aliases -> ast::TypeAliasDeclaration,
 }
 
 pub fn find_item<M: ModuleDataNode>(
@@ -366,8 +366,8 @@ pub fn find_import(
     source: &syntax::ast::Import,
 ) -> Option<ModuleItemId<Import>> {
     let module_info = db.module_info(file_id);
-    let result = module_info.data.imports.iter().find_map(|(idx, data)| {
-        let id = ModuleItemId::from(idx);
+    let result = module_info.data.imports.iter().find_map(|(index, data)| {
+        let id = ModuleItemId::from(index);
         let def_map = db.ast_id_map(file_id);
 
         let source_ast_id = def_map.ast_id(source);

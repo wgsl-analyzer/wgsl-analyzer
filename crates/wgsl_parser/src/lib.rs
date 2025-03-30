@@ -45,7 +45,7 @@ pub enum ParseEntryPoint {
     Statement,
     Type,
     AttributeList,
-    FnParamList,
+    FunctionParameterList,
 }
 
 pub fn parse_entrypoint(
@@ -54,18 +54,20 @@ pub fn parse_entrypoint(
 ) -> Parse {
     match entrypoint {
         ParseEntryPoint::File => parser::parse::<ParserDefinition, _>(input, grammar::file),
-        ParseEntryPoint::Expression => parser::parse::<ParserDefinition, _>(input, grammar::expr),
+        ParseEntryPoint::Expression => {
+            parser::parse::<ParserDefinition, _>(input, grammar::expression)
+        },
         ParseEntryPoint::Statement => {
             parser::parse::<ParserDefinition, _>(input, grammar::statement)
         },
         ParseEntryPoint::Type => parser::parse::<ParserDefinition, _>(input, |p| {
-            grammar::type_decl(p);
+            grammar::type_declaration(p);
         }),
         ParseEntryPoint::AttributeList => {
             parser::parse::<ParserDefinition, _>(input, grammar::attribute_list)
         },
-        ParseEntryPoint::FnParamList => {
-            parser::parse::<ParserDefinition, _>(input, grammar::inner_param_list)
+        ParseEntryPoint::FunctionParameterList => {
+            parser::parse::<ParserDefinition, _>(input, grammar::inner_parameter_list)
         },
     }
 }

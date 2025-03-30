@@ -15,15 +15,15 @@ use vfs::FileId;
 use crate::{
     Result,
     global_state::GlobalStateSnapshot,
-    lsp::{ext, from_proto, to_proto},
+    lsp::{extensions, from_proto, to_proto},
     try_default,
 };
 
 pub(crate) fn handle_goto_definition(
     snap: GlobalStateSnapshot,
-    params: lsp_types::GotoDefinitionParams,
+    parameters: lsp_types::GotoDefinitionParams,
 ) -> Result<Option<GotoDefinitionResponse>> {
-    let position = from_proto::file_position(&snap, &params.text_document_position_params)?;
+    let position = from_proto::file_position(&snap, &parameters.text_document_position_params)?;
     let file_id = position.file_id;
     let Some(nav_target) = snap.analysis.goto_definition(position)? else {
         return Ok(None);
@@ -41,20 +41,19 @@ pub(crate) fn handle_goto_definition(
 
 pub(crate) fn handle_completion(
     snap: GlobalStateSnapshot,
-    params: lsp_types::CompletionParams,
+    parameters: lsp_types::CompletionParams,
 ) -> Result<Option<lsp_types::CompletionResponse>> {
-    let position = from_proto::file_position(&snap, &params.text_document_position)?;
+    let position = from_proto::file_position(&snap, &parameters.text_document_position)?;
     let line_index = snap.file_line_index(position.file_id)?;
     let source_root = snap.analysis.source_root_id(position.file_id)?;
-    // let completion_config = &snap.config.completion(Some(source_root));
-    let Some(items) = snap.analysis.completions(
-        // completion_config,
-        position, None,
-    )?
+    let completion_config = &snap.config.completion(Some(source_root));
+    let Some(items) = snap
+        .analysis
+        .completions(completion_config, position, None)?
     else {
         return Ok(None);
     };
-    let items = to_proto::completion_items(&line_index, &params.text_document_position, &items);
+    let items = to_proto::completion_items(&line_index, &parameters.text_document_position, &items);
     let list = lsp_types::CompletionList {
         is_incomplete: true,
         items,
@@ -64,9 +63,9 @@ pub(crate) fn handle_completion(
 
 pub(crate) fn handle_formatting(
     snap: GlobalStateSnapshot,
-    params: lsp_types::DocumentFormattingParams,
+    parameters: lsp_types::DocumentFormattingParams,
 ) -> Result<Option<Vec<lsp_types::TextEdit>>> {
-    let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
+    let file_id = from_proto::file_id(&snap, &parameters.text_document.uri)?;
     let Some(node) = snap.analysis.format(file_id, None)? else {
         return Ok(None);
     };
@@ -82,9 +81,9 @@ pub(crate) fn handle_formatting(
 
 pub(crate) fn handle_hover(
     snap: GlobalStateSnapshot,
-    params: lsp_types::HoverParams,
+    parameters: lsp_types::HoverParams,
 ) -> Result<Option<lsp_types::Hover>> {
-    let position = from_proto::file_position(&snap, &params.text_document_position_params)?;
+    let position = from_proto::file_position(&snap, &parameters.text_document_position_params)?;
     let line_index = snap.file_line_index(position.file_id)?;
     let range = TextRange::new(position.offset, position.offset);
     let file_range = FileRange {
@@ -124,9 +123,9 @@ pub(crate) fn handle_shutdown(
 
 pub(crate) fn full_source(
     snap: GlobalStateSnapshot,
-    params: ext::FullSourceParams,
+    parameters: extensions::FullSourceParameters,
 ) -> Result<String> {
-    let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
+    let file_id = from_proto::file_id(&snap, &parameters.text_document.uri)?;
     let source = snap
         .analysis
         .resolve_full_source(file_id)?
@@ -136,13 +135,13 @@ pub(crate) fn full_source(
 
 pub(crate) fn show_syntax_tree(
     snap: GlobalStateSnapshot,
-    params: ext::SyntaxTreeParams,
+    parameters: extensions::SyntaxTreeParameters,
 ) -> Result<String> {
-    let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
+    let file_id = from_proto::file_id(&snap, &parameters.text_document.uri)?;
     let line_index = snap.file_line_index(file_id)?;
     let string = snap.analysis.syntax_tree(
         file_id,
-        params
+        parameters
             .range
             .and_then(|range| from_proto::text_range(&line_index, range).ok()),
     )?;
@@ -151,9 +150,9 @@ pub(crate) fn show_syntax_tree(
 
 pub(crate) fn debug_command(
     snap: GlobalStateSnapshot,
-    params: ext::DebugCommandParams,
+    parameters: extensions::DebugCommandParameters,
 ) -> Result<()> {
-    let position = from_proto::file_position(&snap, &params.position)?;
+    let position = from_proto::file_position(&snap, &parameters.position)?;
     snap.analysis.debug_command(position)?;
 
     Ok(())
@@ -161,21 +160,21 @@ pub(crate) fn debug_command(
 
 pub(crate) fn handle_inlay_hints(
     snap: GlobalStateSnapshot,
-    params: lsp_types::InlayHintParams,
+    parameters: lsp_types::InlayHintParams,
 ) -> Result<Option<Vec<lsp_types::InlayHint>>> {
-    let document_uri = &params.text_document.uri;
+    let document_uri = &parameters.text_document.uri;
     let file_id = from_proto::file_id(&snap, document_uri)?;
     let line_index = snap.file_line_index(file_id)?;
 
     let range = from_proto::file_range(
         &snap,
         &TextDocumentIdentifier::new(document_uri.to_owned()),
-        params.range,
+        parameters.range,
     );
 
     Ok(Some(
         snap.analysis
-            .inlay_hints(&snap.config.data.inlay_hints(), file_id, range.ok())?
+            .inlay_hints(&snap.config.data().inlay_hints(), file_id, range.ok())?
             .iter()
             .map(|it| to_proto::inlay_hint(true, &line_index, it))
             .collect(),
@@ -247,9 +246,9 @@ mod diff {
             if let (Chunk::Delete(deleted), Some(&Chunk::Insert(inserted))) = (chunk, chunks.peek())
             {
                 chunks.next().unwrap();
-                let deleted_len = TextSize::of(deleted);
-                builder.replace(TextRange::at(pos, deleted_len), inserted.into());
-                pos += deleted_len;
+                let deleted_length = TextSize::of(deleted);
+                builder.replace(TextRange::at(pos, deleted_length), inserted.into());
+                pos += deleted_length;
                 continue;
             }
 
@@ -258,9 +257,9 @@ mod diff {
                     pos += TextSize::of(text);
                 },
                 Chunk::Delete(deleted) => {
-                    let deleted_len = TextSize::of(deleted);
-                    builder.delete(TextRange::at(pos, deleted_len));
-                    pos += deleted_len;
+                    let deleted_length = TextSize::of(deleted);
+                    builder.delete(TextRange::at(pos, deleted_length));
+                    pos += deleted_length;
                 },
                 Chunk::Insert(inserted) => {
                     builder.insert(pos, inserted.into());

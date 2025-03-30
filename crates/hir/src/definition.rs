@@ -33,7 +33,7 @@ impl Definition {
     ) -> Option<Definition> {
         match_ast! {
             match node {
-                ast::NameRef(name_ref) => {
+                ast::NameReference(name_ref) => {
                     resolve_name_ref(sema, file_id, &name_ref)
                 },
                 _ => {
@@ -48,25 +48,25 @@ impl Definition {
 fn resolve_name_ref(
     sema: &Semantics<'_>,
     file_id: HirFileId,
-    name_ref: &ast::NameRef,
+    name_ref: &ast::NameReference,
 ) -> Option<Definition> {
     let parent = name_ref.syntax().parent()?;
 
-    if let Some(expr) = ast::PathExpr::cast(parent.clone()) {
-        let name = Name::from(expr.name_ref()?);
-        let def = sema.find_container(file_id, expr.syntax())?;
-        let def = sema.resolve_name_in_expr_scope(def, expr.syntax(), name)?;
+    if let Some(expression) = ast::PathExpression::cast(parent.clone()) {
+        let name = Name::from(expression.name_ref()?);
+        let def = sema.find_container(file_id, expression.syntax())?;
+        let def = sema.resolve_name_in_expression_scope(def, expression.syntax(), name)?;
 
         Some(def)
-    } else if let Some(expr) = ast::FieldExpr::cast(parent.clone()) {
-        let def = sema.find_container(file_id, expr.syntax())?;
-        let field = sema.analyze(def).resolve_field(expr)?;
+    } else if let Some(expression) = ast::FieldExpression::cast(parent.clone()) {
+        let def = sema.find_container(file_id, expression.syntax())?;
+        let field = sema.analyze(def).resolve_field(expression)?;
 
         Some(Definition::Field(field))
-    } else if let Some(expr) = ast::FunctionCall::cast(parent.clone()) {
-        let resolver = sema.resolver(file_id, expr.syntax());
+    } else if let Some(expression) = ast::FunctionCall::cast(parent.clone()) {
+        let resolver = sema.resolver(file_id, expression.syntax());
 
-        match resolver.resolve_callable(&expr.name_ref()?.into())? {
+        match resolver.resolve_callable(&expression.name_ref()?.into())? {
             ResolveCallable::Struct(loc) => {
                 let id = sema.db.intern_struct(loc);
                 Some(Definition::Struct(Struct { id }))

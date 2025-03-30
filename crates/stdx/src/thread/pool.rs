@@ -113,7 +113,7 @@ impl Pool {
 
     #[must_use]
     #[inline]
-    pub fn len(&self) -> usize {
+    pub fn length(&self) -> usize {
         self.extant_tasks.load(Ordering::SeqCst)
     }
 

@@ -1,7 +1,7 @@
 use crate::HirFileId;
 use crate::hir_file_id::relative_file;
-use crate::module_data::{Function, ModuleData, ModuleItem, ModuleItemId, Param};
-use crate::{ast_id::AstIdMap, db::DefDatabase, type_ref::TypeRef};
+use crate::module_data::{Function, ModuleData, ModuleItem, ModuleItemId, Parameter};
+use crate::{ast_id::AstIdMap, db::DefDatabase, type_ref::TypeReference};
 use la_arena::{Idx, IdxRange};
 use std::sync::Arc;
 
@@ -51,18 +51,18 @@ impl<'a> Ctx<'a> {
     ) -> Option<()> {
         let item = match item {
             Item::Function(function) => ModuleItem::Function(self.lower_function(&function)?),
-            Item::StructDecl(r#struct) => ModuleItem::Struct(self.lower_struct(&r#struct)?),
-            Item::GlobalVariableDecl(var) => {
+            Item::StructDeclaration(r#struct) => ModuleItem::Struct(self.lower_struct(&r#struct)?),
+            Item::GlobalVariableDeclaration(var) => {
                 ModuleItem::GlobalVariable(self.lower_global_var(&var)?)
             },
-            Item::GlobalConstantDecl(constant) => {
+            Item::GlobalConstantDeclaration(constant) => {
                 ModuleItem::GlobalConstant(self.lower_global_constant(&constant)?)
             },
-            Item::OverrideDecl(override_decl) => {
-                ModuleItem::Override(self.lower_override(&override_decl)?)
+            Item::OverrideDeclaration(override_declaration) => {
+                ModuleItem::Override(self.lower_override(&override_declaration)?)
             },
             Item::Import(import) => ModuleItem::Import(self.lower_import(&import)?),
-            Item::TypeAliasDecl(type_alias) => {
+            Item::TypeAliasDeclaration(type_alias) => {
                 ModuleItem::TypeAlias(self.lower_type_alias(&type_alias)?)
             },
         };
@@ -96,14 +96,14 @@ impl<'a> Ctx<'a> {
 
     fn lower_type_alias(
         &mut self,
-        type_alias: &syntax::ast::TypeAliasDecl,
+        type_alias: &syntax::ast::TypeAliasDeclaration,
     ) -> Option<ModuleItemId<TypeAlias>> {
         let name = type_alias.name()?.text().into();
 
         let ty = type_alias
-            .type_decl()
-            .and_then(|type_decl| self.lower_type_ref(type_decl))
-            .unwrap_or(TypeRef::Error);
+            .type_declaration()
+            .and_then(|type_declaration| self.lower_type_ref(type_declaration))
+            .unwrap_or(TypeReference::Error);
 
         let ty = self.db.intern_type_ref(ty);
 
@@ -118,30 +118,41 @@ impl<'a> Ctx<'a> {
 
     fn lower_override(
         &mut self,
-        override_decl: &syntax::ast::OverrideDecl,
+        override_declaration: &syntax::ast::OverrideDeclaration,
     ) -> Option<ModuleItemId<Override>> {
-        let name = override_decl.binding()?.name()?.text().into();
-        let ast_id = self.source_ast_id_map.ast_id(override_decl);
+        let name = override_declaration.binding()?.name()?.text().into();
+        let ast_id = self.source_ast_id_map.ast_id(override_declaration);
 
-        let ty = override_decl
+        let ty = override_declaration
             .ty()
-            .map(|type_decl| self.lower_type_ref(type_decl).unwrap_or(TypeRef::Error))
+            .map(|type_declaration| {
+                self.lower_type_ref(type_declaration)
+                    .unwrap_or(TypeReference::Error)
+            })
             .map(|ty| self.db.intern_type_ref(ty));
 
-        let override_decl = Override { name, ty, ast_id };
-        Some(self.module_data.overrides.alloc(override_decl).into())
+        let override_declaration = Override { name, ty, ast_id };
+        Some(
+            self.module_data
+                .overrides
+                .alloc(override_declaration)
+                .into(),
+        )
     }
 
     fn lower_global_constant(
         &mut self,
-        constant: &syntax::ast::GlobalConstantDecl,
+        constant: &syntax::ast::GlobalConstantDeclaration,
     ) -> Option<ModuleItemId<GlobalConstant>> {
         let name = constant.binding()?.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(constant);
 
         let ty = constant
             .ty()
-            .map(|type_decl| self.lower_type_ref(type_decl).unwrap_or(TypeRef::Error))
+            .map(|type_declaration| {
+                self.lower_type_ref(type_declaration)
+                    .unwrap_or(TypeReference::Error)
+            })
             .map(|ty| self.db.intern_type_ref(ty));
 
         let constant = GlobalConstant { name, ty, ast_id };
@@ -150,14 +161,14 @@ impl<'a> Ctx<'a> {
 
     fn lower_global_var(
         &mut self,
-        var: &syntax::ast::GlobalVariableDecl,
+        var: &syntax::ast::GlobalVariableDeclaration,
     ) -> Option<ModuleItemId<GlobalVariable>> {
         let name = var.binding()?.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(var);
 
         let ty = var
             .ty()
-            .and_then(|type_decl| self.lower_type_ref(type_decl))
+            .and_then(|type_declaration| self.lower_type_ref(type_declaration))
             .map(|ty| self.db.intern_type_ref(ty));
 
         let storage_class = var
@@ -181,25 +192,27 @@ impl<'a> Ctx<'a> {
 
     fn lower_struct(
         &mut self,
-        r#struct: &syntax::ast::StructDecl,
+        r#struct: &syntax::ast::StructDeclaration,
     ) -> Option<ModuleItemId<Struct>> {
         let name = r#struct.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(r#struct);
 
-        let start_field = self.next_field_idx();
+        let start_field = self.next_field_index();
         r#struct
             .body()?
             .fields()
             .map(|field| {
-                let decl = field.variable_ident_decl()?;
-                let name = Name::from(decl.binding()?.name()?);
-                let ty = self.lower_type_ref(decl.ty()?).unwrap_or(TypeRef::Error);
+                let declaration = field.variable_ident_declaration()?;
+                let name = Name::from(declaration.binding()?.name()?);
+                let ty = self
+                    .lower_type_ref(declaration.ty()?)
+                    .unwrap_or(TypeReference::Error);
                 let ty = self.db.intern_type_ref(ty);
                 self.module_data.fields.alloc(Field { name, ty });
                 Some(())
             })
             .for_each(drop);
-        let end_field = self.next_field_idx();
+        let end_field = self.next_field_index();
 
         let r#struct = Struct {
             name,
@@ -217,20 +230,20 @@ impl<'a> Ctx<'a> {
 
         let ast_id = self.source_ast_id_map.ast_id(function);
 
-        let start_param = self.next_param_idx();
-        self.lower_function_param_list(function.param_list()?);
-        let end_param = self.next_param_idx();
-        let params = IdxRange::new(start_param..end_param);
+        let start_parameter = self.next_param_index();
+        self.lower_function_param_list(function.parameter_list()?);
+        let end_parameter = self.next_param_index();
+        let parameters = IdxRange::new(start_parameter..end_parameter);
 
         let return_type = function
             .return_type()
             .and_then(|ty| ty.ty())
-            .map(|ty| self.lower_type_ref(ty).unwrap_or(TypeRef::Error))
+            .map(|ty| self.lower_type_ref(ty).unwrap_or(TypeReference::Error))
             .map(|ty| self.db.intern_type_ref(ty));
 
         let function = Function {
             name,
-            params,
+            parameters,
             ast_id,
             return_type,
         };
@@ -240,21 +253,21 @@ impl<'a> Ctx<'a> {
 
     fn lower_function_param_list(
         &mut self,
-        function_param_list: ast::ParamList,
+        function_param_list: ast::ParameterList,
     ) -> Option<()> {
-        for param in function_param_list.params() {
-            if let Some(param) = param.variable_ident_declaration() {
-                let ty = param
+        for parameter in function_param_list.parameters() {
+            if let Some(parameter) = parameter.variable_ident_declaration() {
+                let ty = parameter
                     .ty()
                     .and_then(|ty| self.lower_type_ref(ty))
-                    .unwrap_or(TypeRef::Error);
+                    .unwrap_or(TypeReference::Error);
                 let ty = self.db.intern_type_ref(ty);
-                let name = param
+                let name = parameter
                     .binding()
                     .and_then(|binding| binding.name())
                     .map_or_else(Name::missing, Name::from);
-                self.module_data.params.alloc(Param { ty, name });
-            } else if let Some(import) = param.import() {
+                self.module_data.parameters.alloc(Parameter { ty, name });
+            } else if let Some(import) = parameter.import() {
                 let import = self.lower_import(&import)?;
                 let import = &self.module_data.imports[import.index];
                 let parse = match &import.value {
@@ -265,10 +278,10 @@ impl<'a> Ctx<'a> {
                     },
                     crate::module_data::ImportValue::Custom(key) => self
                         .db
-                        .parse_import(key.clone(), syntax::ParseEntryPoint::FnParamList),
+                        .parse_import(key.clone(), syntax::ParseEntryPoint::FunctionParameterList),
                 };
                 if let Ok(parse) = parse {
-                    let param_list = ast::ParamList::cast(parse.syntax())?;
+                    let param_list = ast::ParameterList::cast(parse.syntax())?;
                     self.lower_function_param_list(param_list)?;
                 }
             }
@@ -280,17 +293,17 @@ impl<'a> Ctx<'a> {
     fn lower_type_ref(
         &self,
         ty: ast::Type,
-    ) -> Option<TypeRef> {
+    ) -> Option<TypeReference> {
         ty.try_into().ok()
     }
 
-    fn next_param_idx(&self) -> Idx<Param> {
-        let idx = self.module_data.params.len() as u32;
-        Idx::from_raw(la_arena::RawIdx::from(idx))
+    fn next_param_index(&self) -> Idx<Parameter> {
+        let index = self.module_data.parameters.len() as u32;
+        Idx::from_raw(la_arena::RawIdx::from(index))
     }
 
-    fn next_field_idx(&self) -> Idx<Field> {
-        let idx = self.module_data.fields.len() as u32;
-        Idx::from_raw(la_arena::RawIdx::from(idx))
+    fn next_field_index(&self) -> Idx<Field> {
+        let index = self.module_data.fields.len() as u32;
+        Idx::from_raw(la_arena::RawIdx::from(index))
     }
 }
