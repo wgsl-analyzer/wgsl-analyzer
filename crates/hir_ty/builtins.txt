@@ -1008,7 +1008,7 @@ Overload
 @const @must_use fn dot4I8Packed(e1: u32,
                                  e2: u32) -> i32
 
-Description   e1 and e2 are interpreted as vectors with four 8-bit signed integer components. Return the signed integer dot product of these two vectors. Each component is sign-extended to i32 before performing the multiply, and then the add operations are done in WGSL i32 with wrapping behaviour.
+Description   e1 and e2 are interpreted as vectors with four 8-bit signed integer components. Return the signed integer dot product of these two vectors. Each component is sign-extended to i32 before performing the multiply, and then the add operations are done in WGSL i32 with wrapping behavior.
 17.5.23. exp
 Overload   
 
