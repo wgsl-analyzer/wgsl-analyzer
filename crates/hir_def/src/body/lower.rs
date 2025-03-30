@@ -422,7 +422,7 @@ impl Collector<'_> {
                 let expression = self.collect_expression_opt(prefix_expression.expression());
                 prefix_expression
                     .op_kind()
-                    .map(|op| Expression::UnaryOp { expression, op })
+                    .map(|op| Expression::UnaryOperator { expression, op })
                     .unwrap_or(Expression::Missing)
             },
             ast::Expression::Literal(literal) => {

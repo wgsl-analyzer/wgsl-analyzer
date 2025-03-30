@@ -54,9 +54,9 @@ pub enum Expression {
         right_side: ExpressionId,
         operation: BinaryOperation,
     },
-    UnaryOp {
+    UnaryOperator {
         expression: ExpressionId,
-        op: UnaryOp,
+        op: UnaryOperator,
     },
     Field {
         expression: ExpressionId,
@@ -201,7 +201,7 @@ pub fn parse_literal(lit: ast::LiteralKind) -> Literal {
 impl Expression {
     pub fn walk_child_expressions(
         &self,
-        mut f: impl FnMut(ExpressionId),
+        mut function: impl FnMut(ExpressionId),
     ) {
         match self {
             Expression::BinaryOperation {
@@ -209,24 +209,24 @@ impl Expression {
                 right_side,
                 ..
             } => {
-                f(*left_side);
-                f(*right_side);
+                function(*left_side);
+                function(*right_side);
             },
-            Expression::UnaryOp { expression, .. } => {
-                f(*expression);
+            Expression::UnaryOperator { expression, .. } => {
+                function(*expression);
             },
             Expression::Field { expression, .. } => {
-                f(*expression);
+                function(*expression);
             },
             Expression::Call { arguments, .. } => {
-                arguments.iter().copied().for_each(f);
+                arguments.iter().copied().for_each(function);
             },
             Expression::Index { left_side, index } => {
-                f(*left_side);
-                f(*index);
+                function(*left_side);
+                function(*index);
             },
             Expression::Bitcast { expression, .. } => {
-                f(*expression);
+                function(*expression);
             },
             Expression::Missing => {},
             Expression::Literal(_) => {},

@@ -10,7 +10,7 @@ use hir_def::{
     },
     expression::{
         ArithmeticOperation, BinaryOperation, Callee, ComparisonOperation, Expression,
-        ExpressionId, Statement, StatementId, UnaryOp,
+        ExpressionId, Statement, StatementId, UnaryOperator,
     },
     module_data::Name,
     resolver::{ResolveType, Resolver},
@@ -684,7 +684,7 @@ impl<'db> InferenceContext<'db> {
                 right_side,
                 operation,
             } => self.infer_binary_op(left_side, right_side, operation),
-            Expression::UnaryOp { expression, op } => self.infer_unary_op(expression, op),
+            Expression::UnaryOperator { expression, op } => self.infer_unary_op(expression, op),
             Expression::Field {
                 expression: field_expression,
                 ref name,
@@ -857,7 +857,7 @@ impl<'db> InferenceContext<'db> {
     fn infer_unary_op(
         &mut self,
         expression: ExpressionId,
-        op: UnaryOp,
+        op: UnaryOperator,
     ) -> Ty {
         let expression_ty = self.infer_expression(expression);
         if expression_ty.is_err(self.db) {
@@ -865,10 +865,10 @@ impl<'db> InferenceContext<'db> {
         }
 
         let builtin = match op {
-            UnaryOp::Minus => Builtin::builtin_op_unary_minus(self.db).intern(self.db),
-            UnaryOp::Not => Builtin::builtin_op_unary_not(self.db).intern(self.db),
-            UnaryOp::BitNot => Builtin::builtin_op_unary_bitnot(self.db).intern(self.db),
-            UnaryOp::Reference => {
+            UnaryOperator::Minus => Builtin::builtin_op_unary_minus(self.db).intern(self.db),
+            UnaryOperator::Not => Builtin::builtin_op_unary_not(self.db).intern(self.db),
+            UnaryOperator::BitNot => Builtin::builtin_op_unary_bitnot(self.db).intern(self.db),
+            UnaryOperator::Reference => {
                 match expression_ty.kind(self.db) {
                     TyKind::Reference(reference) => return self.ref_to_pointer(reference),
                     _ => {
@@ -880,7 +880,7 @@ impl<'db> InferenceContext<'db> {
                     },
                 };
             },
-            UnaryOp::Dereference => {
+            UnaryOperator::Dereference => {
                 let arg_ty = expression_ty.unref(self.db);
                 match arg_ty.kind(self.db) {
                     TyKind::Pointer(pointer) => return self.ptr_to_ref(pointer),

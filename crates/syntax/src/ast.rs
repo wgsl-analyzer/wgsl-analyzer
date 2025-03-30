@@ -3,7 +3,7 @@ pub mod operators;
 use rowan::NodeOrToken;
 use wgsl_parser::{SyntaxKind, SyntaxNode};
 
-use self::operators::{BinaryOperation, CompoundOp, UnaryOp};
+use self::operators::{BinaryOperation, CompoundOp, UnaryOperator};
 use crate::{
     AstChildren, AstNode, AstToken, HasAttributes, HasGenerics, HasName, SyntaxToken, TokenText,
     ast::operators::{ArithmeticOperation, ComparisonOperation, LogicOperation},
@@ -981,14 +981,14 @@ impl InfixExpression {
 }
 
 impl PrefixExpression {
-    pub fn op_kind(&self) -> Option<UnaryOp> {
+    pub fn op_kind(&self) -> Option<UnaryOperator> {
         let kind: PrefixOpKind = support::child_token(self.syntax())?;
         let op = match kind {
-            PrefixOpKind::Minus(_) => UnaryOp::Minus,
-            PrefixOpKind::Bang(_) => UnaryOp::Not,
-            PrefixOpKind::Tilde(_) => UnaryOp::BitNot,
-            PrefixOpKind::Star(_) => UnaryOp::Dereference,
-            PrefixOpKind::And(_) => UnaryOp::Reference,
+            PrefixOpKind::Minus(_) => UnaryOperator::Minus,
+            PrefixOpKind::Bang(_) => UnaryOperator::Not,
+            PrefixOpKind::Tilde(_) => UnaryOperator::BitNot,
+            PrefixOpKind::Star(_) => UnaryOperator::Dereference,
+            PrefixOpKind::And(_) => UnaryOperator::Reference,
         };
         Some(op)
     }

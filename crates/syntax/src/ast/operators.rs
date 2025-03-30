@@ -1,5 +1,5 @@
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum UnaryOp {
+pub enum UnaryOperator {
     Minus,
     Not,
     Reference,
@@ -7,14 +7,14 @@ pub enum UnaryOp {
     BitNot,
 }
 
-impl UnaryOp {
+impl UnaryOperator {
     pub fn symbol(self) -> &'static str {
         match self {
-            UnaryOp::Minus => "-",
-            UnaryOp::Not => "!",
-            UnaryOp::Reference => "&",
-            UnaryOp::Dereference => "*",
-            UnaryOp::BitNot => "~",
+            UnaryOperator::Minus => "-",
+            UnaryOperator::Not => "!",
+            UnaryOperator::Reference => "&",
+            UnaryOperator::Dereference => "*",
+            UnaryOperator::BitNot => "~",
         }
     }
 }
