@@ -58,7 +58,7 @@ impl Ty {
         }
     }
 
-    /// `ref<inner>` -> `inner`, `pointer<inner>` -> `pointer<inner>`
+    /// `ref<inner>` -> `inner`, `ptr<inner>` -> `ptr<inner>`
     #[must_use]
     pub fn unref(
         self,

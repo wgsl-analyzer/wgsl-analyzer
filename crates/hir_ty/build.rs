@@ -326,7 +326,7 @@ fn parse_ty(
         } else if ty == "array" {
             let inner = parse_ty(generics, inner);
             return Type::RuntimeArray(Box::new(inner));
-        } else if ty == "pointer" {
+        } else if ty == "ptr" {
             let inner = parse_ty(generics, inner);
             return Type::Pointer(Box::new(inner));
         } else if ty == "atomic" {

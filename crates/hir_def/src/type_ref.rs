@@ -590,7 +590,7 @@ impl std::fmt::Display for PointerType {
         &self,
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
-        write!(f, "pointer<{}, {}>", self.storage_class, self.inner)
+        write!(f, "ptr<{}, {}>", self.storage_class, self.inner)
     }
 }
 
