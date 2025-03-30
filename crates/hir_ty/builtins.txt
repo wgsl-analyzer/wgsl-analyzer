@@ -1,0 +1,3665 @@
+17. Built-in Functions
+
+Certain functions are predeclared, provided by the implementation, and therefore always available for use in a WGSL module. These are called built-in functions.
+
+A built-in function is a family of functions, all with the same name, but distinguished by the number, order, and types of their formal parameters. Each of these distinct function variations is an overload.
+
+Note: Each user-defined function only has one overload.
+
+Each overload is described below via:
+
+    Type parameterizations, if any.
+
+    The built-in function name, a parenthesized list of formal parameters, and optionally a return type.
+
+    The behavior of this overload of the function.
+
+When calling a built-in function, all arguments to the function are evaluated before function evaluation begins. See § 11.2 Function Calls.
+17.1. Constructor Built-in Functions
+
+A value constructor built-in function explicitly creates a value of a given type.
+
+WGSL provides value constructors for all predeclared types and all constructible structure types. The constructor built-in functions have the same spelling as the types. Wherever such a built-in function is used, the identifier must be in scope of the type and the identifier must not resolve to another declaration.
+
+Note: The structure types returned by frexp, modf, and atomicCompareExchangeWeak cannot be written in WGSL modules.
+
+Note: A value declaration of the type needs to be valid at that statement of the WGSL text.
+
+WGSL provides two kinds of value constructors:
+
+    zero value constructors
+
+    value constructors (which also provide conversion)
+
+17.1.1. Zero Value Built-in Functions
+
+Each concrete, constructible T has a unique zero value, and a corresponding built-in function written in WGSL as the type followed by an empty pair of parentheses: T (). Abstract numeric types also have zero values, but there are no built-in functions to access them.
+
+The zero values are as follows:
+
+    bool() is false
+
+    i32() is 0i
+
+    u32() is 0u
+
+    f32() is 0.0f
+
+    f16() is 0.0h
+
+    The zero value for an N-component vector of type T is the N-component vector of the zero value for T.
+
+    The zero value for an C-column R-row matrix of type T is the matrix of those dimensions filled with the zero value for T.
+
+    The zero value for a constructible N-element array with element type E is an array of N elements of the zero value for E.
+
+    The zero value for a constructible structure type S is the structure value S with zero-valued members.
+
+    The zero value of an AbstractInt is 0.
+
+    The zero value of an AbstractFloat is 0.0.
+
+Note: WGSL does not have zero built-in functions for atomic types, runtime-sized arrays, or other types that are not constructible.
+Overload   
+
+@const @must_use fn T() -> T
+
+Parameterization   T is a concrete constructible type.
+Description   Construct zero value of the type T.
+
+Note: Zero-filled vectors of AbstractInt can be written as vec2(), vec3(), and vec4().
+EXAMPLE: Zero-valued vectors
+
+vec2<f32>()                 // The zero-valued vector of two f32 components.
+vec2<f32>(0.0, 0.0)         // The same value, written explicitly.
+
+vec3<i32>()                 // The zero-valued vector of three i32 components.
+vec3<i32>(0, 0, 0)          // The same value, written explicitly.
+
+EXAMPLE: Zero-valued arrays
+
+array<bool, 2>()               // The zero-valued array of two booleans.
+array<bool, 2>(false, false)   // The same value, written explicitly.
+
+EXAMPLE: Zero-valued structures
+
+struct Student {
+  grade: i32,
+  GPA: f32,
+  attendance: array<bool,4>
+}
+
+fn func() {
+  var s: Student;
+
+  // The zero value for Student
+  s = Student();
+
+  // The same value, written explicitly.
+  s = Student(0, 0.0, array<bool,4>(false, false, false, false));
+
+  // The same value, written with zero-valued members.
+  s = Student(i32(), f32(), array<bool,4>());
+}
+
+17.1.2. Value Constructor Built-in Functions
+
+The built-in functions defined in following subsections create a constructible value by:
+
+    Copying an existing value of the same type (i.e. the identity function), or
+
+    Creating a composite value from an explicit list of components.
+
+    Converting from another value type.
+
+The vector and matrix forms construct vector and matrix values from various combinations of components and subvectors with matching component types. There are overloads for constructing vectors and matrices that specify the dimensions of the target type without having to specify the component type; the component type is inferred from the constructor arguments.
+17.1.2.1. array
+Overload   
+
+@const @must_use fn array<T, N>(e1 : T, ..., eN : T) -> array<T, N>
+
+Parameterization   T is concrete and constructible
+Description   Construction of an array from elements.
+
+Note: array<T,N> is constructible because its element count is equal to the number of arguments to the constructor, and hence fully determined at shader-creation time.
+Overload   
+
+@const @must_use fn array(e1 : T, ..., eN : T) -> array<T, N>
+
+Parameterization   T is constructible
+Description   Construction of an array from elements.
+
+The component type is inferred from the elements' type. The size of the array is determined by the number of elements.
+17.1.2.2. bool
+Overload   
+
+@const @must_use fn bool(e : T) -> bool
+
+Parameterization   T is a scalar type.
+Description   Construct a bool value.
+
+If T is bool, this is an identity operation.
+Otherwise this is a boolean coercion. The result is false if e is a zero value (or -0.0 for floating point types) and true otherwise.
+17.1.2.3. f16
+Overload   
+
+@const @must_use fn f16(e : T) -> f16
+
+Parameterization   T is a scalar type
+Description   Construct an f16 value.
+
+If T is f16, this is an identity operation.
+If T is a numeric scalar (other than f16), e is converted to f16 (including invalid conversions).
+If T is bool, the result is 1.0h if e is true and 0.0h otherwise.
+17.1.2.4. f32
+Overload   
+
+@const @must_use fn f32(e : T) -> f32
+
+Parameterization   T is a concrete scalar type
+Description   Construct an f32 value.
+
+If T is f32, this is an identity operation.
+If T is a numeric scalar (other than f32), e is converted to f32 (including invalid conversions).
+If T is bool, the result is 1.0f if e is true and 0.0f otherwise.
+17.1.2.5. i32
+Overload   
+
+@const @must_use fn i32(e : T) -> i32
+
+Parameterization   T is a scalar type
+Description   Construct an i32 value.
+
+If T is i32, this is an identity operation.
+If T is u32, this is a reinterpretation of bits (i.e. the result is the unique value in i32 that has the same bit pattern as e).
+If T is a floating point type, e is converted to i32, rounding towards zero.
+If T is bool, the result is 1i if e is true and 0i otherwise.
+If T is an AbstractInt, this is an identity operation if e can be represented in i32, otherwise it produces a shader-creation error.
+17.1.2.6. mat2x2
+Overload   
+
+@const @must_use fn mat2x2<T>(e : mat2x2<S>) -> mat2x2<T>
+@const @must_use fn mat2x2(e : mat2x2<S>) -> mat2x2<S>
+
+Parameterization   T is f16 or f32
+S is AbstractFloat, f16, or f32
+Description   Constructor for a 2x2 column-major matrix.
+
+If T does not match S, a conversion occurs.
+Overload   
+
+@const @must_use fn mat2x2<T>(v1 : vec2<T>, v2 : vec2<T>) -> mat2x2<T>
+@const @must_use fn mat2x2(v1 : vec2<T>, v2 : vec2<T>) -> mat2x2<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 2x2 column-major matrix from column vectors.
+Overload   
+
+@const @must_use fn mat2x2<T>(e1 : T, e2 : T, e3 : T, e4 : T) -> mat2x2<T>
+@const @must_use fn mat2x2(e1 : T, e2 : T, e3 : T, e4 : T) -> mat2x2<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 2x2 column-major matrix from elements.
+
+Same as mat2x2(vec2(e1,e2), vec2(e3,e4)).
+17.1.2.7. mat2x3
+Overload   
+
+@const @must_use fn mat2x3<T>(e : mat2x3<S>) -> mat2x3<T>
+@const @must_use fn mat2x3(e : mat2x3<S>) -> mat2x3<S>
+
+Parameterization   T is f16 or f32
+S is AbstractFloat, f16, or f32
+Description   Constructor for a 2x3 column-major matrix.
+
+If T does not match S, a conversion occurs.
+Overload   
+
+@const @must_use fn mat2x3<T>(v1 : vec3<T>, v2 : vec3<T>) -> mat2x3<T>
+@const @must_use fn mat2x3(v1 : vec3<T>, v2 : vec3<T>) -> mat2x3<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 2x3 column-major matrix from column vectors.
+Overload   
+
+@const @must_use fn mat2x3<T>(e1 : T, ..., e6 : T) -> mat2x3<T>
+@const @must_use fn mat2x3(e1 : T, ..., e6 : T) -> mat2x3<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 2x3 column-major matrix from elements.
+
+Same as mat2x3(vec3(e1,e2,e3), vec3(e4,e5,e6)).
+17.1.2.8. mat2x4
+Overload   
+
+@const @must_use fn mat2x4<T>(e : mat2x4<S>) -> mat2x4<T>
+@const @must_use fn mat2x4(e : mat2x4<S>) -> mat2x4<S>
+
+Parameterization   T is f16 or f32
+S is AbstractFloat, f16, or f32
+Description   Constructor for a 2x4 column-major matrix.
+
+If T does not match S, a conversion occurs.
+Overload   
+
+@const @must_use fn mat2x4<T>(v1 : vec4<T>, v2 : vec4<T>) -> mat2x4<T>
+@const @must_use fn mat2x4(v1 : vec4<T>, v2 : vec4<T>) -> mat2x4<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 2x4 column-major matrix from column vectors.
+Overload   
+
+@const @must_use fn mat2x4<T>(e1 : T, ..., e8 : T) -> mat2x4<T>
+@const @must_use fn mat2x4(e1 : T, ..., e8 : T) -> mat2x4<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 2x4 column-major matrix from elements.
+
+Same as mat2x4(vec4(e1,e2,e3,e4), vec4(e5,e6,e7,e8)).
+17.1.2.9. mat3x2
+Overload   
+
+@const @must_use fn mat3x2<T>(e : mat3x2<S>) -> mat3x2<T>
+@const @must_use fn mat3x2(e : mat3x2<S>) -> mat3x2<S>
+
+Parameterization   T is f16 or f32
+S is AbstractFloat, f16, or f32
+Description   Constructor for a 3x2 column-major matrix.
+
+If T does not match S, a conversion occurs.
+Overload   
+
+@const @must_use fn mat3x2<T>(v1 : vec2<T>,
+                              v2 : vec2<T>,
+                              v3 : vec2<T>) -> mat3x2<T>
+@const @must_use fn mat3x2(v1 : vec2<T>,
+                           v2 : vec2<T>,
+                           v3 : vec2<T>) -> mat3x2<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 3x2 column-major matrix from column vectors.
+Overload   
+
+@const @must_use fn mat3x2<T>(e1 : T, ..., e6 : T) -> mat3x2<T>
+@const @must_use fn mat3x2(e1 : T, ..., e6 : T) -> mat3x2<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 3x2 column-major matrix from elements.
+
+Same as mat3x2(vec2(e1,e2), vec2(e3,e4), vec2(e5,e6)).
+17.1.2.10. mat3x3
+Overload   
+
+@const @must_use fn mat3x3<T>(e : mat3x3<S>) -> mat3x3<T>
+@const @must_use fn mat3x3(e : mat3x3<S>) -> mat3x3<S>
+
+Parameterization   T is f16 or f32
+S is AbstractFloat, f16, or f32
+Description   Constructor for a 3x3 column-major matrix.
+
+If T does not match S, a conversion occurs.
+Overload   
+
+@const @must_use fn mat3x3<T>(v1 : vec3<T>,
+                              v2 : vec3<T>,
+                              v3 : vec3<T>) -> mat3x3<T>
+@const @must_use fn mat3x3(v1 : vec3<T>,
+                           v2 : vec3<T>,
+                           v3 : vec3<T>) -> mat3x3<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 3x3 column-major matrix from column vectors.
+Overload   
+
+@const @must_use fn mat3x3<T>(e1 : T, ..., e9 : T) -> mat3x3<T>
+@const @must_use fn mat3x3(e1 : T, ..., e9 : T) -> mat3x3<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 3x3 column-major matrix from elements.
+
+Same as mat3x3(vec3(e1,e2,e3), vec3(e4,e5,e6), vec3(e7,e8,e9)).
+17.1.2.11. mat3x4
+Overload   
+
+@const @must_use fn mat3x4<T>(e : mat3x4<S>) -> mat3x4<T>
+@const @must_use fn mat3x4(e : mat3x4<S>) -> mat3x4<S>
+
+Parameterization   T is f16 or f32
+S is AbstractFloat, f16, or f32
+Description   Constructor for a 3x4 column-major matrix.
+
+If T does not match S, a conversion occurs.
+Overload   
+
+@const @must_use fn mat3x4<T>(v1 : vec4<T>,
+                              v2 : vec4<T>,
+                              v3 : vec4<T>) -> mat3x4<T>
+@const @must_use fn mat3x4(v1 : vec4<T>,
+                           v2 : vec4<T>,
+                           v3 : vec4<T>) -> mat3x4<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 3x4 column-major matrix from column vectors.
+Overload   
+
+@const @must_use fn mat3x4<T>(e1 : T, ..., e12 : T) -> mat3x4<T>
+@const @must_use fn mat3x4(e1 : T, ..., e12 : T) -> mat3x4<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 3x4 column-major matrix from elements.
+
+Same as mat3x4(vec4(e1,e2,e3,e4), vec4(e5,e6,e7,e8), vec4(e9,e10,e11,e12)).
+17.1.2.12. mat4x2
+Overload   
+
+@const @must_use fn mat4x2<T>(e : mat4x2<S>) -> mat4x2<T>
+@const @must_use fn mat4x2(e : mat4x2<S>) -> mat4x2<S>
+
+Parameterization   T is f16 or f32
+S is AbstractFloat, f16, or f32
+Description   Constructor for a 4x2 column-major matrix.
+
+If T does not match S, a conversion occurs.
+Overload   
+
+@const @must_use fn mat4x2<T>(v1 : vec2<T>,
+                              v2 : vec2<T>,
+                              v3 : vec2<T>,
+                              v4: vec2<T>) -> mat4x2<T>
+@const @must_use fn mat4x2(v1 : vec2<T>,
+                           v2 : vec2<T>,
+                           v3 : vec2<T>,
+                           v4: vec2<T>) -> mat4x2<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 4x2 column-major matrix from column vectors.
+Overload   
+
+@const @must_use fn mat4x2<T>(e1 : T, ..., e8 : T) -> mat4x2<T>
+@const @must_use fn mat4x2(e1 : T, ..., e8 : T) -> mat4x2<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 4x2 column-major matrix from elements.
+
+Same as mat4x2(vec2(e1,e2), vec2(e3,e4), vec2(e5,e6), vec2(e7,e8)).
+17.1.2.13. mat4x3
+Overload   
+
+@const @must_use fn mat4x3<T>(e : mat4x3<S>) -> mat4x3<T>
+@const @must_use fn mat4x3(e : mat4x3<S>) -> mat4x3<S>
+
+Parameterization   T is f16 or f32
+S is AbstractFloat, f16, or f32
+Description   Constructor for a 4x3 column-major matrix.
+
+If T does not match S, a conversion occurs.
+Overload   
+
+@const @must_use fn mat4x3<T>(v1 : vec3<T>,
+                              v2 : vec3<T>,
+                              v3 : vec3<T>,
+                              v4 : vec3<T>) -> mat4x3<T>
+@const @must_use fn mat4x3(v1 : vec3<T>,
+                           v2 : vec3<T>,
+                           v3 : vec3<T>,
+                           v4 : vec3<T>) -> mat4x3<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 4x3 column-major matrix from column vectors.
+Overload   
+
+@const @must_use fn mat4x3<T>(e1 : T, ..., e12 : T) -> mat4x3<T>
+@const @must_use fn mat4x3(e1 : T, ..., e12 : T) -> mat4x3<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 4x3 column-major matrix from elements.
+
+Same as mat4x3(vec3(e1,e2,e3), vec3(e4,e5,e6), vec3(e7,e8,e9), vec3(e10,e11,e12)).
+17.1.2.14. mat4x4
+Overload   
+
+@const @must_use fn mat4x4<T>(e : mat4x4<S>) -> mat4x4<T>
+@const @must_use fn mat4x4(e : mat4x4<S>) -> mat4x4<S>
+
+Parameterization   T is f16 or f32
+S is AbstractFloat, f16, or f32
+Description   Constructor for a 4x4 column-major matrix.
+
+If T does not match S, a conversion occurs.
+Overload   
+
+@const @must_use fn mat4x4<T>(v1 : vec4<T>,
+                              v2 : vec4<T>,
+                              v3 : vec4<T>,
+                              v4 : vec4<T>) -> mat4x4<T>
+@const @must_use fn mat4x4(v1 : vec4<T>,
+                           v2 : vec4<T>,
+                           v3 : vec4<T>,
+                           v4 : vec4<T>) -> mat4x4<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 4x4 column-major matrix from column vectors.
+Overload   
+
+@const @must_use fn mat4x4<T>(e1 : T, ..., e16 : T) -> mat4x4<T>
+@const @must_use fn mat4x4(e1 : T, ..., e16 : T) -> mat4x4<T>
+
+Parameterization   T is AbstractFloat, f16, or f32
+Description   Construct a 4x4 column-major matrix from elements.
+
+Same as mat4x4(vec4(e1,e2,e3,e4), vec4(e5,e6,e7,e8), vec4(e9,e10,e11,e12), vec4(e13,e14,e15,e16)).
+17.1.2.15. Structures
+Overload   
+
+@const @must_use fn S(e1 : T1, ..., eN : TN) -> S
+
+Parameterization   S is a constructible structure type with members having types T1 ... TN.
+Description   Construct a structure of type S from members.
+17.1.2.16. u32
+Overload   
+
+@const @must_use fn u32(e : T) -> u32
+
+Parameterization   T is a scalar type
+Description   Construct a u32 value.
+
+If T is u32, this is an identity operation.
+If T is i32, this is a reinterpretation of bits (i.e. the result is the unique value in u32 that has the same bit pattern as e).
+If T is a floating point type, e is converted to u32, rounding towards zero.
+If T is bool, the result is 1u if e is true and 0u otherwise.
+If T is AbstractInt, this is an identity operation if the e can be represented in u32, otherwise it produces a shader-creation error.
+  
+Note: The overload from AbstractInt exists so expressions such as u32(4*1000*1000*1000) can create a u32 value that would otherwise overflow the i32 type. If this overload did not exist, overload resolution would select the u32(i32) overload, the AbstractInt expression would automatically convert to i32, and this would cause a shader-creation error due to overflow.
+17.1.2.17. vec2
+Overload   
+
+@const @must_use fn vec2<T>(e : T) -> vec2<T>
+@const @must_use fn vec2(e : S) -> vec2<S>
+
+Parameterization   T is a concrete scalar
+S is scalar
+Description   Construction of a two-component vector with e as both components.
+Overload   
+
+@const @must_use fn vec2<T>(e : vec2<S>) -> vec2<T>
+@const @must_use fn vec2(e : vec2<S>) -> vec2<S>
+
+Parameterization   T is a concrete scalar
+S is scalar
+Description   Component-wise construction of a two-component vector with e.x and e.y as components.
+
+If T does not match S a conversion is used and the components are T(e.x) and T(e.y).
+Overload   
+
+@const @must_use fn vec2<T>(e1 : T, e2 : T) -> vec2<T>
+@const @must_use fn vec2(e1 : T, e2 : T) -> vec2<T>
+
+Parameterization   T is scalar
+Description   Component-wise construction of a two-component vector with e1 and e2 as components.
+Overload   
+
+@const @must_use fn vec2() -> vec2<T>
+
+Parameterization   T is AbstractInt
+Description   Returns the value vec2(0,0).
+17.1.2.18. vec3
+Overload   
+
+@const @must_use fn vec3<T>(e : T) -> vec3<T>
+@const @must_use fn vec3(e : S) -> vec3<S>
+
+Parameterization   T is a concrete scalar
+S is scalar
+Description   Construction of a three-component vector with e as all components.
+Overload   
+
+@const @must_use fn vec3<T>(e : vec3<S>) -> vec3<T>
+@const @must_use fn vec3(e : vec3<S>) -> vec3<S>
+
+Parameterization   T is a concrete scalar
+S is scalar
+Description   Component-wise construction of a three-component vector with e.x, e.y, and e.z as components.
+
+If T does not match S a conversion is used and the components are T(e.x), T(e.y), and T(e.z).
+Overload   
+
+@const @must_use fn vec3<T>(e1 : T, e2 : T, e3 : T) -> vec3<T>
+@const @must_use fn vec3(e1 : T, e2 : T, e3 : T) -> vec3<T>
+
+Parameterization   T is scalar
+Description   Component-wise construction of a three-component vector with e1, e2, and e3 as components.
+Overload   
+
+@const @must_use fn vec3<T>(v1 : vec2<T>, e1 : T) -> vec3<T>
+@const @must_use fn vec3(v1 : vec2<T>, e1 : T) -> vec3<T>
+
+Parameterization   T is scalar
+Description   Component-wise construction of a three-component vector with v1.x, v1.y, and e1 as components.
+Overload   
+
+@const @must_use fn vec3<T>(e1 : T, v1 : vec2<T>) -> vec3<T>
+@const @must_use fn vec3(e1 : T, v1 : vec2<T>) -> vec3<T>
+
+Parameterization   T is scalar
+Description   Component-wise construction of a three-component vector with e1, v1.x, and v1.y as components.
+Overload   
+
+@const @must_use fn vec3() -> vec3<T>
+
+Parameterization   T is AbstractInt
+Description   Returns the value vec3(0,0,0).
+17.1.2.19. vec4
+Overload   
+
+@const @must_use fn vec4<T>(e : T) -> vec4<T>
+@const @must_use fn vec4(e : S) -> vec4<S>
+
+Parameterization   T is a concrete scalar
+S is scalar
+Description   Construction of a four-component vector with e as all components.
+Overload   
+
+@const @must_use fn vec4<T>(e : vec4<S>) -> vec4<T>
+@const @must_use fn vec4(e : vec4<S>) -> vec4<S>
+
+Parameterization   T is a concrete scalar
+S is scalar
+Description   Component-wise construction of a four-component vector with e.x, e.y, e.z, and e.w as components.
+
+If T does not match S a conversion is used and the components are T(e.x), T(e.y), T(e.z) and T(e.w).
+Overload   
+
+@const @must_use fn vec4<T>(e1 : T, e2 : T, e3 : T, e4 : T) -> vec4<T>
+@const @must_use fn vec4(e1 : T, e2 : T, e3 : T, e4 : T) -> vec4<T>
+
+Parameterization   T is scalar
+Description   Component-wise construction of a four-component vector with e1, e2, e3, and e4 as components.
+Overload   
+
+@const @must_use fn vec4<T>(e1 : T, v1 : vec2<T>, e2 : T) -> vec4<T>
+@const @must_use fn vec4(e1 : T, v1 : vec2<T>, e2 : T) -> vec4<T>
+
+Parameterization   T is scalar
+Description   Component-wise construction of a four-component vector with e1, v1.x, v1.y, and e2 as components.
+Overload   
+
+@const @must_use fn vec4<T>(e1 : T, e2 : T, v1 : vec2<T>) -> vec4<T>
+@const @must_use fn vec4(e1 : T, e2 : T, v1 : vec2<T>) -> vec4<T>
+
+Parameterization   T is scalar
+Description   Component-wise construction of a four-component vector with e1, e2, v1.x, and v1.y as components.
+Overload   
+
+@const @must_use fn vec4<T>(v1 : vec2<T>, v2 : vec2<T>) -> vec4<T>
+@const @must_use fn vec4(v1 : vec2<T>, v2 : vec2<T>) -> vec4<T>
+
+Parameterization   T is scalar
+Description   Component-wise construction of a four-component vector with v1.x, v1.y, v2.x, and v2.y as components.
+Overload   
+
+@const @must_use fn vec4<T>(v1 : vec2<T>, e1 : T, e2 : T) -> vec4<T>
+@const @must_use fn vec4(v1 : vec2<T>, e1 : T, e2 : T) -> vec4<T>
+
+Parameterization   T is scalar
+Description   Component-wise construction of a four-component vector with v1.x, v1.y, e1, and e2 as components.
+Overload   
+
+@const @must_use fn vec4<T>(v1 : vec3<T>, e1 : T) -> vec4<T>
+@const @must_use fn vec4(v1 : vec3<T>, e1 : T) -> vec4<T>
+
+Parameterization   T is scalar
+Description   Component-wise construction of a four-component vector with v1.x, v1.y, v1.z, and e1 as components.
+Overload   
+
+@const @must_use fn vec4<T>(e1 : T, v1 : vec3<T>) -> vec4<T>
+@const @must_use fn vec4(e1 : T, v1 : vec3<T>) -> vec4<T>
+
+Parameterization   T is scalar
+Description   Component-wise construction of a four-component vector with e1, v1.x, v1.y, and v1.z as components.
+Overload   
+
+@const @must_use fn vec4() -> vec4<T>
+
+Parameterization   T is AbstractInt
+Description   Returns the value vec4(0,0,0,0).
+17.2. Bit Reinterpretation Built-in Functions
+17.2.1. bitcast
+
+A bitcast built-in function is used to reinterpret the bit representation of a value in one type as a value in another type.
+
+The internal layout rules are described in § 14.4.4 Internal Layout of Values.
+Overload   
+
+@const @must_use fn bitcast<T>(e : T) -> T
+
+Parameterization   T is a concrete numeric scalar or concrete numeric vector
+Description   Identity transform.
+Component-wise when T is a vector.
+The result is e.
+Overload   
+
+@const @must_use fn bitcast<T>(e : S) -> T
+
+Parameterization   S is i32, u32, or f32
+T is not S and is i32, u32, or f32
+Description   Reinterpretation of bits as T.
+The result is the reintepretation of bits in e as a T value.
+Overload   
+
+@const @must_use fn bitcast<vecN<T>>(e : vecN<S>) -> vecN<T>
+
+Parameterization   S is i32, u32, or f32
+T is not S and is i32, u32, or f32
+Description   Component-wise reinterpretation of bits as T.
+The result is the reintepretation of bits in e as a vecN<T> value.
+Overload   
+
+@const @must_use fn bitcast<u32>(e : AbstractInt) -> u32
+@const @must_use fn bitcast<vecN<u32>>(e : vecN<AbstractInt>) -> vecN<u32>
+
+Parameterization   
+Description   The identity operation if e can be represented as u32, otherwise it produces a shader-creation error. That is, produces the same result as u32(e).
+
+Component-wise when e is a vector.
+Overload   
+
+@const @must_use fn bitcast<T>(e : vec2<f16>) -> T
+
+Parameterization   T is i32, u32, or f32
+Description   Component-wise reinterpretation of bits as T.
+The result is the reintepretation of the 32 bits in e as a T value, following the internal layout rules.
+Overload   
+
+@const @must_use fn bitcast<vec2<T>>(e : vec4<f16>) -> vec2<T>
+
+Parameterization   T is i32, u32, or f32
+Description   Component-wise reinterpretation of bits as T.
+The result is the reintepretation of the 64 bits in e as a T value, following the internal layout rules.
+Overload   
+
+@const @must_use fn bitcast<vec2<f16>>(e : T) -> vec2<f16>
+
+Parameterization   T is i32, u32, or f32
+Description   Component-wise reinterpretation of bits as f16.
+The result is the reintepretation of the 32 bits in e as an f16 value, following the internal layout rules.
+Overload   
+
+@const @must_use fn bitcast<vec4<f16>>(e : vec2<T>) -> vec4<f16>
+
+Parameterization   T is i32, u32, or f32
+Description   Component-wise reinterpretation of bits as vec2<f16>.
+The result is the reintepretation of the 64 bits in e as an f16 value, following the internal layout rules.
+17.3. Logical Built-in Functions
+17.3.1. all
+Overload   
+
+@const @must_use fn all(e: vecN<bool>) -> bool
+
+Description   Returns true if each component of e is true.
+Overload   
+
+@const @must_use fn all(e: bool) -> bool
+
+Description   Returns e.
+17.3.2. any
+Overload   
+
+@const @must_use fn any(e: vecN<bool>) -> bool
+
+Description   Returns true if any component of e is true.
+Overload   
+
+@const @must_use fn any(e: bool) -> bool
+
+Description   Returns e.
+17.3.3. select
+Overload   
+
+@const @must_use fn select(f: T,
+                           t: T,
+                           cond: bool) -> T
+
+Parameterization   T is scalar or vector
+Description   Returns t when cond is true, and f otherwise.
+Overload   
+
+@const @must_use fn select(f: vecN<T>,
+                           t: vecN<T>,
+                           cond: vecN<bool>) -> vecN<T>
+
+Parameterization   T is scalar
+Description   Component-wise selection. Result component i is evaluated as select(f[i], t[i], cond[i]).
+17.4. Array Built-in Functions
+17.4.1. arrayLength
+Overload   
+
+@must_use fn arrayLength(p: ptr<storage, array<E>, AM>) -> u32
+
+Parameterization   E is an element type for a runtime-sized array,
+access mode AM is read or read_write
+Description   Returns NRuntime, the number of elements in the runtime-sized array.
+
+See § 13.3.4 Buffer Binding Determines Runtime-Sized Array Element Count
+EXAMPLE: Getting the number of elements in a runtime-sized array
+
+struct PointLight {
+  position : vec3f,
+  color : vec3f,
+}
+
+struct LightStorage {
+  pointCount : u32,
+  point : array<PointLight>,
+}
+
+@group(0) @binding(1) var<storage> lights : LightStorage;
+
+fn num_point_lights() -> u32 {
+  return arrayLength( &lights.point );
+}
+
+17.5. Numeric Built-in Functions
+17.5.1. abs
+Overload   
+
+@const @must_use fn abs(e: T ) -> T
+
+Parameterization   S is AbstractInt, AbstractFloat, i32, u32, f32, or f16
+T is S, or vecN<S>
+Description   The absolute value of e. Component-wise when T is a vector.
+
+If e is a floating-point type, then the result is e with a positive sign bit. If e is an unsigned integer scalar type, then the result is e. If e is a signed integer scalar type and evaluates to the largest negative value, then the result is e.
+17.5.2. acos
+Overload   
+
+@const @must_use fn acos(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the principal value, in radians, of the inverse cosine (cos-1) of e.
+That is, approximates x with 0 ≤ x ≤ π, such that cos(x) = e.
+
+Component-wise when T is a vector.
+Scalar domain   Interval [−1, 1]
+17.5.3. acosh
+Overload   
+
+@const @must_use fn acosh(x: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the inverse hyperbolic cosine (cosh-1) of x, as a hyperbolic angle.
+That is, approximates a with 0 ≤ a ≤ +∞, such that cosh(a) = x.
+
+Component-wise when T is a vector.
+Scalar domain   Interval [1, +∞]
+17.5.4. asin
+Overload   
+
+@const @must_use fn asin(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the principal value, in radians, of the inverse sine (sin-1) of e.
+That is, approximates x with -π/2 ≤ x ≤ π/2, such that sin(x) = e.
+
+Component-wise when T is a vector.
+Scalar domain   Interval [−1, 1]
+17.5.5. asinh
+Overload   
+
+@const @must_use fn asinh(y: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the inverse hyperbolic sine (sinh-1) of y, as a hyperbolic angle.
+That is, approximates a such that sinh(y) = a.
+
+Component-wise when T is a vector.
+17.5.6. atan
+Overload   
+
+@const @must_use fn atan(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the principal value, in radians, of the inverse tangent (tan-1) of e.
+That is, approximates x with − π/2 ≤ x ≤ π/2, such that tan(x) = e.
+
+Component-wise when T is a vector.
+17.5.7. atanh
+Overload   
+
+@const @must_use fn atanh(t: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the inverse hyperbolic tangent (tanh-1) of t, as a hyperbolic angle.
+That is, approximates a such that tanh(a) = t.
+
+Component-wise when T is a vector.
+Scalar domain   Interval [−1, 1]
+17.5.8. atan2
+Overload   
+
+@const @must_use fn atan2(y: T,
+                          x: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns an angle, in radians, in the interval [-π, π] whose tangent is y÷x.
+
+The quadrant selected by the result depends on the signs of y and x. For example, the function may be implemented as:
+
+    atan(y/x) when x > 0
+
+    atan(y/x) + π when (x < 0) and (y > 0)
+
+    atan(y/x) - π when (x < 0) and (y < 0)
+
+Note: The error in the result is unbounded:
+
+    When abs(x) is very small, e.g. subnormal for its type,
+
+    At the origin (x,y) = (0,0), or
+
+    When y is subnormal or infinite.
+
+Component-wise when T is a vector.
+17.5.9. ceil
+Overload   
+
+@const @must_use fn ceil(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the ceiling of e. Component-wise when T is a vector.
+17.5.10. clamp
+Overload   
+
+@const @must_use fn clamp(e: T,
+                          low: T,
+                          high: T) -> T
+
+Parameterization   S is AbstractInt, AbstractFloat, i32, u32, f32, or f16
+T is S, or vecN<S>
+Description   Restricts the value of e within a range.
+
+If T is an integer type, then the result is min(max(e, low), high).
+
+If T is a floating-point type, then the result is either min(max(e, low), high), or the median of the three values e, low, high.
+
+Component-wise when T is a vector.
+
+If low is greater than high, then:
+
+    It is a shader-creation error if low and high are const-expressions.
+
+    It is a pipeline-creation error if low and high are override-expressions.
+
+17.5.11. cos
+Overload   
+
+@const @must_use fn cos(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the cosine of e, where e is in radians. Component-wise when T is a vector.
+Scalar domain   Interval (−∞, +∞)
+17.5.12. cosh
+Overload   
+
+@const @must_use fn cosh(a: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the hyperbolic cosine of a, where a is a hyperbolic angle. Approximates the pure mathematical function (ea + e−a)÷2, but not necessarily computed that way.
+
+Component-wise when T is a vector
+17.5.13. countLeadingZeros
+Overload   
+
+@const @must_use fn countLeadingZeros(e: T) -> T
+
+Parameterization   T is i32, u32, vecN<i32>, or vecN<u32>
+Description   The number of consecutive 0 bits starting from the most significant bit of e, when T is a scalar type.
+Component-wise when T is a vector.
+Also known as "clz" in some languages.
+17.5.14. countOneBits
+Overload   
+
+@const @must_use fn countOneBits(e: T) -> T
+
+Parameterization   T is i32, u32, vecN<i32>, or vecN<u32>
+Description   The number of 1 bits in the representation of e.
+Also known as "population count".
+Component-wise when T is a vector.
+17.5.15. countTrailingZeros
+Overload   
+
+@const @must_use fn countTrailingZeros(e: T) -> T
+
+Parameterization   T is i32, u32, vecN<i32>, or vecN<u32>
+Description   The number of consecutive 0 bits starting from the least significant bit of e, when T is a scalar type.
+Component-wise when T is a vector.
+Also known as "ctz" in some languages.
+17.5.16. cross
+Overload   
+
+@const @must_use fn cross(a: vec3<T>,
+                          b: vec3<T>) -> vec3<T>
+
+Parameterization   T is AbstractFloat, f32, or f16
+Description   Returns the cross product of e1 and e2.
+Domain   Implied from linear terms given by a possible implementation:
+
+    a[1] × b[2] − a[2] × b[1]
+
+    a[2] × b[0] − a[0] × b[2]
+
+    a[0] × b[1] − a[1] × b[0]
+
+17.5.17. degrees
+Overload   
+
+@const @must_use fn degrees(e1: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Converts radians to degrees, approximating e1 × 180 ÷ π. Component-wise when T is a vector
+17.5.18. determinant
+Overload   
+
+@const @must_use fn determinant(e: matCxC<T>) -> T
+
+Parameterization   T is AbstractFloat, f32, or f16
+Description   Returns the determinant of e.
+Domain   Implied from linear terms in a standard mathematical definition of the determinant.
+17.5.19. distance
+Overload   
+
+@const @must_use fn distance(e1: T,
+                             e2: T) -> S
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the distance between e1 and e2 (e.g. length(e1 - e2)).
+
+The domain is all vectors (e1,e2) where the subtraction e1−e2 is valid. That is, the set of all vectors except where e1[i] and e2[i] are the same infinite value, for some component i.
+17.5.20. dot
+Overload   
+
+@const @must_use fn dot(e1: vecN<T>,
+                        e2: vecN<T>) -> T
+
+Parameterization   T is AbstractInt, AbstractFloat, i32, u32, f32, or f16
+Description   Returns the dot product of e1 and e2.
+Domain   Implied from linear terms of the sum over terms e1[i] × e2[i].
+17.5.21. dot4U8Packed
+Overload   
+
+@const @must_use fn dot4U8Packed(e1: u32,
+                                 e2: u32) -> u32
+
+Description   e1 and e2 are interpreted as vectors with four 8-bit unsigned integer components. Return the unsigned integer dot product of these two vectors.
+17.5.22. dot4I8Packed
+Overload   
+
+@const @must_use fn dot4I8Packed(e1: u32,
+                                 e2: u32) -> i32
+
+Description   e1 and e2 are interpreted as vectors with four 8-bit signed integer components. Return the signed integer dot product of these two vectors. Each component is sign-extended to i32 before performing the multiply, and then the add operations are done in WGSL i32 with wrapping behaviour.
+17.5.23. exp
+Overload   
+
+@const @must_use fn exp(e1: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the natural exponentiation of e1 (e.g. ee1). Component-wise when T is a vector.
+17.5.24. exp2
+Overload   
+
+@const @must_use fn exp2(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns 2 raised to the power e (e.g. 2e). Component-wise when T is a vector.
+17.5.25. extractBits (signed)
+Overload   
+
+@const @must_use fn extractBits(e: T,
+                                offset: u32,
+                                count: u32) -> T
+
+Parameterization   T is i32 or vecN<i32>
+Description   Reads bits from an integer, with sign extension.
+
+When T is a scalar type, then:
+
+    w is the bit width of T
+    o = min(offset, w)
+    c = min(count, w - o)
+    The result is 0 if c is 0.
+    Otherwise, bits 0..c - 1 of the result are copied from bits o..o + c - 1 of e. Other bits of the result are the same as bit c - 1 of the result. 
+
+Component-wise when T is a vector.
+
+If count + offset is greater than w, then:
+
+    It is a shader-creation error if count and offset are const-expressions.
+
+    It is a pipeline-creation error if count and offset are override-expressions.
+
+17.5.26. extractBits (unsigned)
+Overload   
+
+@const @must_use fn extractBits(e: T,
+                                offset: u32,
+                                count: u32) -> T
+
+Parameterization   T is u32 or vecN<u32>
+Description   Reads bits from an integer, without sign extension.
+
+When T is a scalar type, then:
+
+    w is the bit width of T
+    o = min(offset, w)
+    c = min(count, w - o)
+    The result is 0 if c is 0.
+    Otherwise, bits 0..c - 1 of the result are copied from bits o..o + c - 1 of e. Other bits of the result are 0. 
+
+Component-wise when T is a vector.
+
+If count + offset is greater than w, then:
+
+    It is a shader-creation error if count and offset are const-expressions.
+
+    It is a pipeline-creation error if count and offset are override-expressions.
+
+17.5.27. faceForward
+Overload   
+
+@const @must_use fn faceForward(e1: T,
+                                e2: T,
+                                e3: T) -> T
+
+Parameterization   T is vecN<AbstractFloat>, vecN<f32>, or vecN<f16>
+Description   Returns e1 if dot(e2, e3) is negative, and -e1 otherwise.
+Domain   The domain restrictions arise from the dot(e2,e3) operation: they are implied from linear terms of the sum over terms e2[i] × e3[i].
+17.5.28. firstLeadingBit (signed)
+Overload   
+
+@const @must_use fn firstLeadingBit(e: T) -> T
+
+Parameterization   T is i32 or vecN<i32>
+Description   For scalar T, the result is:
+
+    -1 if e is 0 or -1.
+    Otherwise the position of the most significant bit in e that is different from e’s sign bit. 
+
+Component-wise when T is a vector.
+  
+Note: Since signed integers use twos-complement representation, the sign bit appears in the most significant bit position.
+17.5.29. firstLeadingBit (unsigned)
+Overload   
+
+@const @must_use fn firstLeadingBit(e: T) -> T
+
+Parameterization   T is u32 or vecN<u32>
+Description   For scalar T, the result is:
+
+    T(-1) if e is zero.
+    Otherwise the position of the most significant 1 bit in e. 
+
+Component-wise when T is a vector.
+17.5.30. firstTrailingBit
+Overload   
+
+@const @must_use fn firstTrailingBit(e: T) -> T
+
+Parameterization   T is i32, u32, vecN<i32>, or vecN<u32>
+Description   For scalar T, the result is:
+
+    T(-1) if e is zero.
+    Otherwise the position of the least significant 1 bit in e. 
+
+Component-wise when T is a vector.
+17.5.31. floor
+Overload   
+
+@const @must_use fn floor(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the floor of e. Component-wise when T is a vector.
+17.5.32. fma
+Overload   
+
+@const @must_use fn fma(e1: T,
+                        e2: T,
+                        e3: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns e1 * e2 + e3. Component-wise when T is a vector.
+
+Note: The name fma is short for "fused multiply add".
+
+Note: The IEEE-754 fusedMultiplyAdd operation computes the intermediate results as if with unbounded range and precision, and only the final result is rounded to a value in the destination type. However, the § 15.7.4 Floating Point Accuracy rule for fma allows an implementation which performs an ordinary multiply to the target type followed by an ordinary addition. In this case the intermediate result values may overflow or lose accuracy, and the overall operation is not "fused" at all.
+Domain   Implied from linear terms of the expressions e2 × e2 + e3.
+17.5.33. fract
+Overload   
+
+@const @must_use fn fract(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the fractional part of e, computed as e - floor(e).
+Component-wise when T is a vector.
+  
+Note: Valid results are in the closed interval [0, 1.0]. For example, if e is a very small negative number, then fract(e) may be 1.0.
+17.5.34. frexp
+Overload   
+
+@const @must_use fn frexp(e: T) -> __frexp_result_f32
+
+Parameterization   T is f32
+Description   Splits e into a fraction and an exponent.
+
+    When e is zero, the fraction is zero.
+
+    When e is non-zero and normal, e = fraction * 2exponent, where the fraction is in the range [0.5, 1.0) or (-1.0, -0.5].
+
+    Otherwise, e is subnormal, NaN, or infinite. The result fraction and exponent are indeterminate values.
+
+Returns the __frexp_result_f32 built-in structure, defined as follows:
+
+struct __frexp_result_f32 {
+  fract : f32, // fraction part
+  exp : i32    // exponent part
+}
+
+Note: A mnemonic for the name frexp is "fraction and exponent".
+  
+EXAMPLE: frexp usage
+
+// Infers result type
+let fraction_and_exponent = frexp(1.5);
+// Sets fraction_only to 0.75
+let fraction_only = frexp(1.5).fract;
+
+Note: A value cannot be explicitly declared with the type __frexp_result_f32, but a value may infer the type.
+Overload   
+
+@const @must_use fn frexp(e: T) -> __frexp_result_f16
+
+Parameterization   T is f16
+Description   Splits e into a fraction and an exponent.
+
+    When e is zero, the fraction is zero.
+
+    When e is non-zero and normal, e = fraction * 2exponent, where the fraction is in the range [0.5, 1.0) or (-1.0, -0.5].
+
+    Otherwise, e is subnormal, NaN, or infinite. The result fraction and exponent are indeterminate values.
+
+Returns the __frexp_result_f16 built-in structure, defined as if as follows:
+
+struct __frexp_result_f16 {
+  fract : f16, // fraction part
+  exp : i32    // exponent part
+}
+
+Note: A mnemonic for the name frexp is "fraction and exponent".
+  
+Note: A value cannot be explicitly declared with the type __frexp_result_f16, but a value may infer the type.
+Overload   
+
+@const @must_use fn frexp(e: T) -> __frexp_result_abstract
+
+Parameterization   T is AbstractFloat
+Description   Splits e into a fraction and an exponent.
+
+    When e is zero, the fraction is zero.
+
+    When e is non-zero and normal, e = fraction * 2exponent, where the fraction is in the range [0.5, 1.0) or (-1.0, -0.5].
+
+    When e is subnormal, the fraction and exponent are have unbounded error. The fraction may be any AbstractFloat value, and the exponent may be any AbstractInt value.
+
+Note: AbstractFloat expressions resulting in infinity or NaN cause a shader-creation error.
+
+Returns the __frexp_result_abstract built-in structure, defined as follows:
+
+struct __frexp_result_abstract {
+  fract : AbstractFloat, // fraction part
+  exp : AbstractInt      // exponent part
+}
+
+Note: A mnemonic for the name frexp is "fraction and exponent".
+  
+EXAMPLE: abstract frexp usage
+
+// Infers result type
+const fraction_and_exponent = frexp(1.5);
+// Sets fraction_only to 0.75
+const fraction_only = frexp(1.5).fract;
+
+Note: A value cannot be explicitly declared with the type __frexp_result_abstract, but a value may infer the type.
+Overload   
+
+@const @must_use fn frexp(e: T) -> __frexp_result_vecN_f32
+
+Parameterization   T is vecN<f32>
+Description   Splits components ei of e into a fraction and an exponent.
+
+    When ei is zero, the fraction is zero.
+
+    When ei is non-zero and normal, ei = fraction * 2exponent, where the fraction is in the range [0.5, 1.0) or (-1.0, -0.5].
+
+    Otherwise, ei is NaN or infinite. The result fraction and exponent are indeterminate values.
+
+Returns the __frexp_result_vecN_f32 built-in structure, defined as follows:
+
+struct __frexp_result_vecN_f32 {
+  fract : vecN<f32>, // fraction part
+  exp : vecN<i32>    // exponent part
+}
+
+Note: A mnemonic for the name frexp is "fraction and exponent".
+  
+Note: A value cannot be explicitly declared with the type __frexp_result_vecN_f32, but a value may infer the type.
+Overload   
+
+@const @must_use fn frexp(e: T) -> __frexp_result_vecN_f16
+
+Parameterization   T is vecN<f16>
+Description   Splits components ei of e into a fraction and an exponent.
+
+    When ei is zero, the fraction is zero.
+
+    When ei is non-zero and normal, ei = fraction * 2exponent, where the fraction is in the range [0.5, 1.0) or (-1.0, -0.5].
+
+    Otherwise, ei is NaN or infinite. The result fraction and exponent are indeterminate values.
+
+Returns the __frexp_result_vecN_f16 built-in structure, defined as if as follows:
+
+struct __frexp_result_vecN_f16 {
+  fract : vecN<f16>, // fraction part
+  exp : vecN<i32>    // exponent part
+}
+
+Note: A mnemonic for the name frexp is "fraction and exponent".
+  
+Note: A value cannot be explicitly declared with the type __frexp_result_vecN_f16, but a value may infer the type.
+Overload   
+
+@const @must_use fn frexp(e: T) -> __frexp_result_vecN_abstract
+
+Parameterization   T is vecN<AbstractFloat>
+Description   Splits components ei of e into a fraction and an exponent.
+
+    When ei is zero, the fraction is zero.
+
+    When ei is non-zero and normal, ei = fraction * 2exponent, where the fraction is in the range [0.5, 1.0) or (-1.0, -0.5].
+
+    When ei is subnormal, the fraction and exponent are have unbounded error. The fraction may be any AbstractFloat value, and the exponent may be any AbstractInt value.
+
+Note: AbstractFloat expressions resulting in infinity or NaN cause a shader-creation error.
+
+Returns the __frexp_result_vecN_abstract built-in structure, defined as follows:
+
+struct __frexp_result_vecN_abstract {
+  fract : vecN<AbstractFloat>, // fraction part
+  exp : vecN<AbstractInt>      // exponent part
+}
+
+Note: A mnemonic for the name frexp is "fraction and exponent".
+  
+Note: A value cannot be explicitly declared with the type __frexp_result_vecN_abstract, but a value may infer the type.
+17.5.35. insertBits
+Overload   
+
+@const @must_use fn insertBits(e: T,
+                              newbits: T,
+                              offset: u32,
+                              count: u32) -> T
+
+Parameterization   T is i32, u32, vecN<i32>, or vecN<u32>
+Description   Sets bits in an integer.
+
+When T is a scalar type, then:
+
+    w is the bit width of T
+    o = min(offset, w)
+    c = min(count, w - o)
+    The result is e if c is 0.
+    Otherwise, bits o..o + c - 1 of the result are copied from bits 0..c - 1 of newbits. Other bits of the result are copied from e. 
+
+Component-wise when T is a vector.
+
+If count + offset is greater than w, then:
+
+    It is a shader-creation error if count and offset are const-expressions.
+
+    It is a pipeline-creation error if count and offset are override-expressions.
+
+17.5.36. inverseSqrt
+Overload   
+
+@const @must_use fn inverseSqrt(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the reciprocal of sqrt(e). Component-wise when T is a vector.
+Scalar domain   Interval [0, +∞]
+17.5.37. ldexp
+Overload   
+
+@const @must_use fn ldexp(e1: T,
+                          e2: I) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+I is AbstractInt, i32, vecN<AbstractInt>, or vecN<i32>
+I is a vector if and only if T is a vector
+T can only be abstract if I is also abstract and vice versa
+
+Note: If either parameter is concrete then the other parameter will undergo automatic conversion to a concrete type (if applicable) and the result will be a concrete type.
+Description   Returns e1 * 2e2, except:
+
+    The result may be zero if e2 + bias ≤ 0.
+
+    If e2 > bias + 1
+
+        It is a shader-creation error if e2 is a const-expression.
+
+        It is a pipeline-creation error if e2 is an override-expression.
+
+        Otherwise the result is an indeterminate value for T.
+
+Here, bias is the exponent bias of the floating point format:
+
+    15 for f16
+
+    127 for f32
+
+    1023 for AbstractFloat, when AbstractFloat is IEEE-754 binary64
+
+If x is zero or a finite normal value for its type, then:
+
+    x = ldexp(frexp(x).fract, frexp(x).exp) 
+
+Component-wise when T is a vector.
+
+Note: A mnemonic for the name ldexp is "load exponent". The name may have been taken from the corresponding instruction in the floating point unit of the PDP-11.
+17.5.38. length
+Overload   
+
+@const @must_use fn length(e: T) -> S
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the length of e.
+Evaluates to the absolute value of e if T is scalar.
+Evaluates to sqrt(e[0]2 + e[1]2 + ...) if T is a vector type.
+
+Note: The scalar case may be evaluated as sqrt(e * e), which may unnecessarily overflow or lose accuracy.
+17.5.39. log
+Overload   
+
+@const @must_use fn log(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the natural logarithm of e. Component-wise when T is a vector.
+Scalar domain   Interval [0, +∞]
+17.5.40. log2
+Overload   
+
+@const @must_use fn log2(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the base-2 logarithm of e. Component-wise when T is a vector.
+Scalar domain   Interval [0, +∞]
+17.5.41. max
+Overload   
+
+@const @must_use fn max(e1: T,
+                        e2: T) -> T
+
+Parameterization   S is AbstractInt, AbstractFloat, i32, u32, f32, or f16
+T is S, or vecN<S>
+Description   Returns e2 if e1 is less than e2, and e1 otherwise. Component-wise when T is a vector.
+
+If e1 and e2 are floating-point values, then:
+
+    If both e1 and e2 are subnormal, then the result may be either value.
+
+    If one operand is a NaN, the other is returned.
+
+    If both operands are NaNs, a NaN is returned.
+
+17.5.42. min
+Overload   
+
+@const @must_use fn min(e1: T,
+                        e2: T) -> T
+
+Parameterization   S is AbstractInt, AbstractFloat, i32, u32, f32, or f16
+T is S, or vecN<S>
+Description   Returns e2 if e2 is less than e1, and e1 otherwise. Component-wise when T is a vector.
+
+If e1 and e2 are floating-point values, then:
+
+    If both e1 and e2 are subnormal, then the result may be either value.
+
+    If one operand is a NaN, the other is returned.
+
+    If both operands are NaNs, a NaN is returned.
+
+17.5.43. mix
+Overload   
+
+@const @must_use fn mix(e1: T,
+                        e2: T,
+                        e3: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the linear blend of e1 and e2 (e.g. e1 *(T(1) - e3) + e2* e3). Component-wise when T is a vector.
+Domain   Implied from linear terms of the expressions: e1[i] × (1 − e3[i]) + e2[i] × e3[i]. e2[i] × e2[i] + e3[i].
+Overload   
+
+@const @must_use fn mix(e1: T2,
+                        e2: T2,
+                        e3: T) -> T2
+
+Parameterization   T is AbstractFloat, f32, or f16
+T2 is vecN<T>
+Description   Returns the component-wise linear blend of e1 and e2, using scalar blending factor e3 for each component.
+Same as mix(e1, e2, T2(e3)).
+Domain   Implied from linear terms of the expressions: e1[i] × (1 − e3) + e2[i] × e3.
+17.5.44. modf
+Overload   
+
+@const @must_use fn modf(e: T) -> __modf_result_f32
+
+Parameterization   T is f32
+Description   Splits e into fractional and whole number parts.
+
+The whole part is trunc(e), and the fractional part is e - trunc(e).
+
+Returns the __modf_result_f32 built-in structure, defined as follows:
+
+struct __modf_result_f32 {
+  fract : f32, // fractional part
+  whole : f32  // whole part
+}
+
+EXAMPLE: modf usage
+
+// Infers result type
+let fract_and_whole = modf(1.5);
+// Sets fract_only to 0.5
+let fract_only = modf(1.5).fract;
+// Sets whole_only to 1.0
+let whole_only = modf(1.5).whole;
+
+Note: A value cannot be explicitly declared with the type __modf_result_f32, but a value may infer the type.
+Overload   
+
+@const @must_use fn modf(e: T) -> __modf_result_f16
+
+Parameterization   T is f16
+Description   Splits e into fractional and whole number parts.
+
+The whole part is trunc(e), and the fractional part is e - trunc(e).
+
+Returns the __modf_result_f16 built-in structure, defined as if as follows:
+
+struct __modf_result_f16 {
+  fract : f16, // fractional part
+  whole : f16  // whole part
+}
+
+Note: A value cannot be explicitly declared with the type __modf_result_f16, but a value may infer the type.
+Overload   
+
+@const @must_use fn modf(e: T) -> __modf_result_abstract
+
+Parameterization   T is AbstractFloat
+Description   Splits e into fractional and whole number parts.
+
+The whole part is trunc(e), and the fractional part is e - trunc(e).
+
+Returns the __modf_result_abstract built-in structure, defined as follows:
+
+struct __modf_result_abstract {
+  fract : AbstractFloat, // fractional part
+  whole : AbstractFloat  // whole part
+}
+
+EXAMPLE: modf abstract usage
+
+// Infers result type
+const fract_and_whole = modf(1.5);
+// Sets fract_only to 0.5
+const fract_only = modf(1.5).fract;
+// Sets whole_only to 1.0
+const whole_only = modf(1.5).whole;
+
+Note: A value cannot be explicitly declared with the type __modf_result_abstract, but a value may infer the type.
+Overload   
+
+@const @must_use fn modf(e: T) -> __modf_result_vecN_f32
+
+Parameterization   T is vecN<f32>
+Description   Splits the components of e into fractional and whole number parts.
+
+The i’th component of the whole and fractional parts equal the whole and fractional parts of modf(e[i]).
+
+Returns the __modf_result_vecN_f32 built-in structure, defined as follows:
+
+struct __modf_result_vecN_f32 {
+  fract : vecN<f32>, // fractional part
+  whole : vecN<f32>  // whole part
+}
+
+Note: A value cannot be explicitly declared with the type __modf_result_vecN_f32, but a value may infer the type.
+Overload   
+
+@const @must_use fn modf(e: T) -> __modf_result_vecN_f16
+
+Parameterization   T is vecN<f16>
+Description   Splits the components of e into fractional and whole number parts.
+
+The i’th component of the whole and fractional parts equal the whole and fractional parts of modf(e[i]).
+
+Returns the __modf_result_vecN_f16 built-in structure, defined as if as follows:
+
+struct __modf_result_vecN_f16 {
+  fract : vecN<f16>, // fractional part
+  whole : vecN<f16>  // whole part
+}
+
+Note: A value cannot be explicitly declared with the type __modf_result_vecN_f16, but a value may infer the type.
+Overload   
+
+@const @must_use fn modf(e: T) -> __modf_result_vecN_abstract
+
+Parameterization   T is vecN<AbstractFloat>
+Description   Splits the components of e into fractional and whole number parts.
+
+The i’th component of the whole and fractional parts equal the whole and fractional parts of modf(e[i]).
+
+Returns the __modf_result_vecN_abstract built-in structure, defined as follows:
+
+struct __modf_result_vecN_abstract {
+  fract : vecN<AbstractFloat>, // fractional part
+  whole : vecN<AbstractFloat>  // whole part
+}
+
+Note: A value cannot be explicitly declared with the type __modf_result_vecN_abstract, but a value may infer the type.
+17.5.45. normalize
+Overload   
+
+@const @must_use fn normalize(e: vecN<T> ) -> vecN<T>
+
+Parameterization   T is AbstractFloat, f32, or f16
+Description   Returns a unit vector in the same direction as e.
+
+The domain is all vectors except the zero vector.
+17.5.46. pow
+Overload   
+
+@const @must_use fn pow(e1: T,
+                        e2: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns e1 raised to the power e2. Component-wise when T is a vector.
+Scalar domain   The set of all pairs of extended reals (x,y) except:
+
+    x < 0.
+
+    x is 1 and y is infinite.
+
+    x is infinite and y is 0.
+
+This rule arises from the fact the result may be computed as exp2(y * log2(x)).
+17.5.47. quantizeToF16
+Overload   
+
+@const @must_use fn quantizeToF16(e: T) -> T
+
+Parameterization   T is f32 or vecN<f32>
+Description   Quantizes a 32-bit floating point value e as if e were converted to a IEEE-754 binary16 value, and then converted back to a IEEE-754 binary32 value.
+
+If e is outside the finite range of binary16, then:
+
+    It is a shader-creation error if e is a const-expression.
+
+    It is a pipeline-creation error if e is an override-expression.
+
+    Otherwise the result is an indeterminate value for T.
+
+The intermediate binary16 value may be flushed to zero, i.e. the final result may be zero if the intermediate binary16 value is subnormal.
+
+See § 15.7.6 Floating Point Conversion.
+
+Component-wise when T is a vector.
+  
+Note: The vec2<f32> case is the same as unpack2x16float(pack2x16float(e)).
+17.5.48. radians
+Overload   
+
+@const @must_use fn radians(e1: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Converts degrees to radians, approximating e1 × π ÷ 180. Component-wise when T is a vector
+17.5.49. reflect
+Overload   
+
+@const @must_use fn reflect(e1: T,
+                            e2: T) -> T
+
+Parameterization   T is vecN<AbstractFloat>, vecN<f32>, or vecN<f16>
+Description   For the incident vector e1 and surface orientation e2, returns the reflection direction e1 - 2 *dot(e2, e1)* e2.
+17.5.50. refract
+Overload   
+
+@const @must_use fn refract(e1: T,
+                            e2: T,
+                            e3: I) -> T
+
+Parameterization   T is vecN<I>
+I is AbstractFloat, f32, or f16
+Description   For the incident vector e1 and surface normal e2, and the ratio of indices of refraction e3, let k = 1.0 - e3 *e3* (1.0 - dot(e2, e1) *dot(e2, e1)). If k < 0.0, returns the refraction vector 0.0, otherwise return the refraction vector e3* e1 - (e3 *dot(e2, e1) + sqrt(k))* e2. The incident vector e1 and the normal e2 should be normalized for desired results according to Snell’s Law; otherwise, the results may not conform to expected physical behavior.
+17.5.51. reverseBits
+Overload   
+
+@const @must_use fn reverseBits(e: T) -> T
+
+Parameterization   T is i32, u32, vecN<i32>, or vecN<u32>
+Description   Reverses the bits in e: The bit at position k of the result equals the bit at position 31 -k of e.
+Component-wise when T is a vector.
+17.5.52. round
+Overload   
+
+@const @must_use fn round(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Result is the integer k nearest to e, as a floating point value.
+When e lies halfway between integers k and k + 1, the result is k when k is even, and k + 1 when k is odd.
+Component-wise when T is a vector.
+17.5.53. saturate
+Overload   
+
+@const @must_use fn saturate(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns clamp(e, 0.0, 1.0). Component-wise when T is a vector.
+17.5.54. sign
+Overload   
+
+@const @must_use fn sign(e: T) -> T
+
+Parameterization   S is AbstractInt, AbstractFloat, i32, f32, or f16
+T is S, or vecN<S>
+Description   Result is:
+
+    1 when e > 0
+    0 when e = 0
+    -1 when e < 0 
+
+Component-wise when T is a vector.
+17.5.55. sin
+Overload   
+
+@const @must_use fn sin(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the sine of e, where e is in radians. Component-wise when T is a vector.
+Scalar domain   Interval (−∞, +∞)
+17.5.56. sinh
+Overload   
+
+@const @must_use fn sinh(a: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the hyperbolic sine of a, where a is a hyperbolic angle. Approximates the pure mathematical function (ea − e−a)÷2, but not necessarily computed that way.
+
+Component-wise when T is a vector.
+17.5.57. smoothstep
+Overload   
+
+@const @must_use fn smoothstep(edge0: T,
+                               edge1: T,
+                               x: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the smooth Hermite interpolation between 0 and 1. Component-wise when T is a vector.
+
+For scalar T, the result is t *t* (3.0 - 2.0 * t),
+where t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0).
+
+Qualitatively:
+
+    When edge0 < edge1, the function is 0 for x below edge0, then smoothly rises until x reaches edge1, and remains at 1 afterward.
+
+    When edge0 > edge1, the function is 1 for x below edge1, then smoothly descends until x reaches edge0, and remains at 0 afterward.
+
+If edge0 = edge1:
+
+    It is a shader-creation error if edge0 and edge1 are const-expressions.
+
+    It is a pipeline-creation error if edge0 and edge1 are override-expressions.
+
+    Otherwise, the result is an indeterminate value for T. In this case the computation performs a floating point division by zero, and the Finite Math Assumption applies.
+
+17.5.58. sqrt
+Overload   
+
+@const @must_use fn sqrt(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the square root of e. Component-wise when T is a vector.
+Scalar domain   Interval [0, +∞]
+17.5.59. step
+Overload   
+
+@const @must_use fn step(edge: T,
+                         x: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns 1.0 if edge ≤ x, and 0.0 otherwise. Component-wise when T is a vector.
+17.5.60. tan
+Overload   
+
+@const @must_use fn tan(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the tangent of e, where e is in radians. Component-wise when T is a vector.
+Scalar domain   Interval (−∞, +∞)
+17.5.61. tanh
+Overload   
+
+@const @must_use fn tanh(a: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns the hyperbolic tangent of a, where a is a hyperbolic angle. Approximates the pure mathematical function (ea − e−a) ÷ (ea + e−a) but not necessarily computed that way.
+
+Component-wise when T is a vector.
+17.5.62. transpose
+Overload   
+
+@const @must_use fn transpose(e: matRxC<T>) -> matCxR<T>
+
+Parameterization   T is AbstractFloat, f32, or f16
+Description   Returns the transpose of e.
+17.5.63. trunc
+Overload   
+
+@const @must_use fn trunc(e: T) -> T
+
+Parameterization   S is AbstractFloat, f32, or f16
+T is S or vecN<S>
+Description   Returns truncate(e), the nearest whole number whose absolute value is less than or equal to the absolute value of e. Component-wise when T is a vector.
+17.6. Derivative Built-in Functions
+
+See § 15.6.2 Derivatives.
+
+Calls to these functions:
+
+    Must only be used in a fragment shader stage.
+
+    Trigger a derivative_uniformity diagnostic if uniformity analysis cannot prove the call is in uniform control flow.
+
+17.6.1. dpdx
+Overload   
+
+@must_use fn dpdx(e: T) -> T
+
+Parameterization   T is f32 or vecN<f32>
+Description   Partial derivative of e with respect to window x coordinates. The result is the same as either dpdxFine(e) or dpdxCoarse(e).
+
+Returns an indeterminate value if called in non-uniform control flow.
+17.6.2. dpdxCoarse
+Overload   
+
+@must_use fn dpdxCoarse(e: T) -> T
+
+Parameterization   T is f32 or vecN<f32>
+Description   Returns the partial derivative of e with respect to window x coordinates using local differences. This may result in fewer unique positions than dpdxFine(e).
+
+Returns an indeterminate value if called in non-uniform control flow.
+17.6.3. dpdxFine
+Overload   
+
+@must_use fn dpdxFine(e: T) -> T
+
+Parameterization   T is f32 or vecN<f32>
+Description   Returns the partial derivative of e with respect to window x coordinates.
+
+Returns an indeterminate value if called in non-uniform control flow.
+17.6.4. dpdy
+Overload   
+
+@must_use fn dpdy(e: T) -> T
+
+Parameterization   T is f32 or vecN<f32>
+Description   Partial derivative of e with respect to window y coordinates. The result is the same as either dpdyFine(e) or dpdyCoarse(e).
+
+Returns an indeterminate value if called in non-uniform control flow.
+17.6.5. dpdyCoarse
+Overload   
+
+@must_use fn dpdyCoarse(e: T) -> T
+
+Parameterization   T is f32 or vecN<f32>
+Description   Returns the partial derivative of e with respect to window y coordinates using local differences. This may result in fewer unique positions than dpdyFine(e).
+
+Returns an indeterminate value if called in non-uniform control flow.
+17.6.6. dpdyFine
+Overload   
+
+@must_use fn dpdyFine(e: T) -> T
+
+Parameterization   T is f32 or vecN<f32>
+Description   Returns the partial derivative of e with respect to window y coordinates.
+
+Returns an indeterminate value if called in non-uniform control flow.
+17.6.7. fwidth
+Overload   
+
+@must_use fn fwidth(e: T) -> T
+
+Parameterization   T is f32 or vecN<f32>
+Description   Returns abs(dpdx(e)) + abs(dpdy(e)).
+
+Returns an indeterminate value if called in non-uniform control flow.
+17.6.8. fwidthCoarse
+Overload   
+
+@must_use fn fwidthCoarse(e: T) -> T
+
+Parameterization   T is f32 or vecN<f32>
+Description   Returns abs(dpdxCoarse(e)) + abs(dpdyCoarse(e)).
+
+Returns an indeterminate value if called in non-uniform control flow.
+17.6.9. fwidthFine
+Overload   
+
+@must_use fn fwidthFine(e: T) -> T
+
+Parameterization   T is f32 or vecN<f32>
+Description   Returns abs(dpdxFine(e)) + abs(dpdyFine(e)).
+
+Returns an indeterminate value if called in non-uniform control flow.
+17.7. Texture Built-in Functions
+
+Parameter values must be valid for the respective texture types.
+17.7.1. textureDimensions
+
+Returns the dimensions of a texture, or texture’s mip level in texels.
+Parameterization   Overload
+ST is i32, u32, or f32
+F is a texel format
+A is an access mode
+
+T is texture_1d<ST> or texture_storage_1d<F,A>   
+
+@must_use fn textureDimensions(t: T) -> u32
+
+ST is i32, u32, or f32
+
+T is texture_1d<ST>
+
+L is i32, or u32
+  
+@must_use fn textureDimensions(t: T,
+                               level: L) -> u32
+
+ST is i32, u32, or f32
+F is a texel format
+A is an access mode
+
+T is texture_2d<ST>, texture_2d_array<ST>, texture_cube<ST>, texture_cube_array<ST>, texture_multisampled_2d<ST>, texture_depth_2d, texture_depth_2d_array, texture_depth_cube, texture_depth_cube_array, texture_depth_multisampled_2d, texture_storage_2d<F,A>, texture_storage_2d_array<F,A>, or texture_external   
+
+@must_use fn textureDimensions(t: T) -> vec2<u32>
+
+ST is i32, u32, or f32
+
+T is texture_2d<ST>, texture_2d_array<ST>, texture_cube<ST>, texture_cube_array<ST>, texture_depth_2d, texture_depth_2d_array, texture_depth_cube, or texture_depth_cube_array
+
+L is i32, or u32
+  
+@must_use fn textureDimensions(t: T,
+                               level: L) -> vec2<u32>
+
+ST is i32, u32, or f32
+F is a texel format
+A is an access mode
+
+T is texture_3d<ST> or texture_storage_3d<F,A>   
+
+@must_use fn textureDimensions(t: T) -> vec3<u32>
+
+ST is i32, u32, or f32
+
+T is texture_3d<ST>
+
+L is i32, or u32
+  
+@must_use fn textureDimensions(t: T,
+                               level: L) -> vec3<u32>
+
+Parameters:
+t   The sampled, multisampled, depth, storage, or external texture.
+level   The mip level, with level 0 containing a full size version of the texture.
+If omitted, the dimensions of level 0 are returned.
+
+Returns:
+
+The coordinate dimensions of the texture.
+
+That is, the result provides the integer bounds on the coordinates of the logical texel address, excluding the mip level count, array size, and sample count.
+
+For textures based on cubes, the results are the dimensions of each face of the cube. Cube faces are square, so the x and y components of the result are equal.
+
+If level is outside the range [0, textureNumLevels(t)) then an indeterminate value for the return type may be returned.
+17.7.2. textureGather
+
+A texture gather operation reads from a 2D, 2D array, cube, or cube array texture, computing a four-component vector as follows:
+
+    Find the four texels that would be used in a sampling operation with linear filtering, from mip level 0:
+
+        Use the specified coordinate, array index (when present), and offset (when present).
+
+        The texels are adjacent, forming a square, when considering their texture space coordinates (u,v).
+
+        Selected texels at the texture edge, cube face edge, or cube corners are handled as in ordinary texture sampling.
+
+    For each texel, read one channel and convert it into a scalar value.
+
+        For non-depth textures, a zero-based component parameter specifies the channel to use.
+
+            If the texture format supports the specified channel, i.e. has more than component channels:
+
+                Yield scalar value v[component] when the texel value is v.
+
+            Otherwise:
+
+                Yield 0.0 when component is 1 or 2.
+
+                Yield 1.0 when component is 3 (the alpha channel).
+
+        For depth textures, yield the texel value. (Depth textures only have one channel.)
+
+    Yield the four-component vector, arranging scalars produced by the previous step into components according to the relative coordinates of the texels, as follows:
+        Result component   Relative texel coordinate
+        x   (umin,vmax)
+        y   (umax,vmax)
+        z   (umax,vmin)
+        w   (umin,vmin)
+
+The four texels form the sampled area as described in the WebGPU sampler descriptor.
+Parameterization   Overload
+C is i32, or u32
+ST is i32, u32, or f32   
+
+@must_use fn textureGather(component: C,
+                           t: texture_2d<ST>,
+                           s: sampler,
+                           coords: vec2<f32>) -> vec4<ST>
+
+C is i32, or u32
+ST is i32, u32, or f32   
+
+@must_use fn textureGather(component: C,
+                           t: texture_2d<ST>,
+                           s: sampler,
+                           coords: vec2<f32>,
+                           offset: vec2<i32>) -> vec4<ST>
+
+C is i32, or u32
+A is i32, or u32
+ST is i32, u32, or f32   
+
+@must_use fn textureGather(component: C,
+                           t: texture_2d_array<ST>,
+                           s: sampler,
+                           coords: vec2<f32>,
+                           array_index: A) -> vec4<ST>
+
+C is i32, or u32
+A is i32, or u32
+ST is i32, u32, or f32   
+
+@must_use fn textureGather(component: C,
+                           t: texture_2d_array<ST>,
+                           s: sampler,
+                           coords: vec2<f32>,
+                           array_index: A,
+                           offset: vec2<i32>) -> vec4<ST>
+
+C is i32, or u32
+ST is i32, u32, or f32   
+
+@must_use fn textureGather(component: C,
+                           t: texture_cube<ST>,
+                           s: sampler,
+                           coords: vec3<f32>) -> vec4<ST>
+
+C is i32, or u32
+A is i32, or u32
+ST is i32, u32, or f32   
+
+@must_use fn textureGather(component: C,
+                           t: texture_cube_array<ST>,
+                           s: sampler,
+                           coords: vec3<f32>,
+                           array_index: A) -> vec4<ST>
+
+@must_use fn textureGather(t: texture_depth_2d,
+                           s: sampler,
+                           coords: vec2<f32>) -> vec4<f32>
+
+@must_use fn textureGather(t: texture_depth_2d,
+                           s: sampler,
+                           coords: vec2<f32>,
+                           offset: vec2<i32>) -> vec4<f32>
+
+@must_use fn textureGather(t: texture_depth_cube,
+                           s: sampler,
+                           coords: vec3<f32>) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureGather(t: texture_depth_2d_array,
+                           s: sampler,
+                           coords: vec2<f32>,
+                           array_index: A) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureGather(t: texture_depth_2d_array,
+                           s: sampler,
+                           coords: vec2<f32>,
+                           array_index: A,
+                           offset: vec2<i32>) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureGather(t: texture_depth_cube_array,
+                           s: sampler,
+                           coords: vec3<f32>,
+                           array_index: A) -> vec4<f32>
+
+Parameters:
+component   Only applies to non-depth textures.
+The index of the channel to read from the selected texels.
+When provided, the component expression must be a const-expression (e.g. 1).
+Its value must be at least 0 and at most 3. Values outside of this range will result in a shader-creation error.
+t   The sampled or depth texture to read from.
+s   The sampler type.
+coords   The texture coordinates.
+array_index   The 0-based texture array index.
+This value will be clamped to the range [0, textureNumLayers(t) - 1].
+offset   The optional texel offset applied to the unnormalized texture coordinate before sampling the texture. This offset is applied before applying any texture wrapping modes.
+The offset expression must be a const-expression (e.g. vec2<i32>(1, 2)).
+Each offset component must be at least -8 and at most 7. Values outside of this range will result in a shader-creation error.
+
+Returns:
+
+A four component vector with components extracted from the specified channel from the selected texels, as described above.
+EXAMPLE: Gather components from texels in 2D texture
+
+@group(0) @binding(0) var t: texture_2d<f32>;
+@group(0) @binding(1) var dt: texture_depth_2d;
+@group(0) @binding(2) var s: sampler;
+
+fn gather_x_components(c: vec2<f32>) -> vec4<f32> {
+  return textureGather(0,t,s,c);
+}
+fn gather_y_components(c: vec2<f32>) -> vec4<f32> {
+  return textureGather(1,t,s,c);
+}
+fn gather_z_components(c: vec2<f32>) -> vec4<f32> {
+  return textureGather(2,t,s,c);
+}
+fn gather_depth_components(c: vec2<f32>) -> vec4<f32> {
+  return textureGather(dt,s,c);
+}
+
+17.7.3. textureGatherCompare
+
+A texture gather compare operation performs a depth comparison on four texels in a depth texture and collects the results into a single vector, as follows:
+
+    Find the four texels that would be used in a depth sampling operation with linear filtering, from mip level 0:
+
+        Use the specified coordinate, array index (when present), and offset (when present).
+
+        The texels are adjacent, forming a square, when considering their texture space coordinates (u,v).
+
+        Selected texels at the texture edge, cube face edge, or cube corners are handled as in ordinary texture sampling.
+
+    For each texel, perform a comparison against the depth reference value, yielding a 0.0 or 1.0 value, as controlled by the comparison sampler parameters.
+
+    Yield the four-component vector where the components are the comparison results with the texels with relative texel coordinates as follows:
+        Result component   Relative texel coordinate
+        x   (umin,vmax)
+        y   (umax,vmax)
+        z   (umax,vmin)
+        w   (umin,vmin)
+
+Parameterization   Overload
+  
+@must_use fn textureGatherCompare(t: texture_depth_2d,
+                                  s: sampler_comparison,
+                                  coords: vec2<f32>,
+                                  depth_ref: f32) -> vec4<f32>
+
+@must_use fn textureGatherCompare(t: texture_depth_2d,
+                                  s: sampler_comparison,
+                                  coords: vec2<f32>,
+                                  depth_ref: f32,
+                                  offset: vec2<i32>) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureGatherCompare(t: texture_depth_2d_array,
+                                  s: sampler_comparison,
+                                  coords: vec2<f32>,
+                                  array_index: A,
+                                  depth_ref: f32) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureGatherCompare(t: texture_depth_2d_array,
+                                  s: sampler_comparison,
+                                  coords: vec2<f32>,
+                                  array_index: A,
+                                  depth_ref: f32,
+                                  offset: vec2<i32>) -> vec4<f32>
+
+@must_use fn textureGatherCompare(t: texture_depth_cube,
+                                  s: sampler_comparison,
+                                  coords: vec3<f32>,
+                                  depth_ref: f32) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureGatherCompare(t: texture_depth_cube_array,
+                                  s: sampler_comparison,
+                                  coords: vec3<f32>,
+                                  array_index: A,
+                                  depth_ref: f32) -> vec4<f32>
+
+Parameters:
+t   The depth texture to read from.
+s   The sampler comparison.
+coords   The texture coordinates.
+array_index   The 0-based texture array index.
+This value will be clamped to the range [0, textureNumLayers(t) - 1].
+depth_ref   The reference value to compare the sampled depth value against.
+offset   The optional texel offset applied to the unnormalized texture coordinate before sampling the texture. This offset is applied before applying any texture wrapping modes.
+The offset expression must be a const-expression (e.g. vec2<i32>(1, 2)).
+Each offset component must be at least -8 and at most 7. Values outside of this range will result in a shader-creation error.
+
+Returns:
+
+A four component vector with comparison result for the selected texels, as described above.
+EXAMPLE: Gather depth comparison
+
+@group(0) @binding(0) var dt: texture_depth_2d;
+@group(0) @binding(1) var s: sampler;
+
+fn gather_depth_compare(c: vec2<f32>, depth_ref: f32) -> vec4<f32> {
+  return textureGatherCompare(dt,s,c,depth_ref);
+}
+
+17.7.4. textureLoad
+
+Reads a single texel from a texture without sampling or filtering.
+Parameterization   Overload
+C is i32, or u32
+L is i32, or u32
+ST is i32, u32, or f32   
+
+@must_use fn textureLoad(t: texture_1d<ST>,
+                         coords: C,
+                         level: L) -> vec4<ST>
+
+C is i32, or u32
+L is i32, or u32
+ST is i32, u32, or f32   
+
+@must_use fn textureLoad(t: texture_2d<ST>,
+                         coords: vec2<C>,
+                         level: L) -> vec4<ST>
+
+C is i32, or u32
+A is i32, or u32
+L is i32, or u32
+ST is i32, u32, or f32   
+
+@must_use fn textureLoad(t: texture_2d_array<ST>,
+                        coords: vec2<C>,
+                        array_index: A,
+                        level: L) -> vec4<ST>
+
+C is i32, or u32
+L is i32, or u32
+ST is i32, u32, or f32   
+
+@must_use fn textureLoad(t: texture_3d<ST>,
+                         coords: vec3<C>,
+                         level: L) -> vec4<ST>
+
+C is i32, or u32
+S is i32, or u32
+ST is i32, u32, or f32   
+
+@must_use fn textureLoad(t: texture_multisampled_2d<ST>,
+                         coords: vec2<C>,
+                         sample_index: S)-> vec4<ST>
+
+C is i32, or u32
+L is i32, or u32   
+
+@must_use fn textureLoad(t: texture_depth_2d,
+                         coords: vec2<C>,
+                         level: L) -> f32
+
+C is i32, or u32
+A is i32, or u32
+L is i32, or u32   
+
+@must_use fn textureLoad(t: texture_depth_2d_array,
+                         coords: vec2<C>,
+                         array_index: A,
+                         level: L) -> f32
+
+C is i32, or u32
+S is i32, or u32   
+
+@must_use fn textureLoad(t: texture_depth_multisampled_2d,
+                         coords: vec2<C>,
+                         sample_index: S)-> f32
+
+C is i32, or u32   
+
+@must_use fn textureLoad(t: texture_external,
+                         coords: vec2<C>) -> vec4<f32>
+
+C is i32, or u32
+AM is read or read_write
+CF depends on the storage texel format F. See the texel format table for the mapping of texel format to channel format.   
+
+@must_use fn textureLoad(t : texture_storage_1d<F, AM>,
+                         coords : C) -> vec4<CF>
+
+C is i32, or u32
+AM is read or read_write
+CF depends on the storage texel format F. See the texel format table for the mapping of texel format to channel format.   
+
+@must_use fn textureLoad(t : texture_storage_2d<F, AM>,
+                         coords : vec2<C>) -> vec4<CF>
+
+C is i32, or u32
+AM is read or read_write
+A is i32 or u32
+CF depends on the storage texel format F. See the texel format table for the mapping of texel format to channel format.   
+
+@must_use fn textureLoad(t : texture_storage_2d_array<F, AM>,
+                         coords : vec2<C>,
+                         array_index : A) -> vec4<CF>
+
+C is i32, or u32
+AM is read or read_write
+CF depends on the storage texel format F. See the texel format table for the mapping of texel format to channel format.   
+
+@must_use fn textureLoad(t : texture_storage_3d<F, AM>,
+                         coords : vec3<C>) -> vec4<CF>
+
+Parameters:
+t   The sampled, multisampled, depth, storage, or external texture
+coords   The 0-based texel coordinate.
+array_index   The 0-based texture array index.
+level   The mip level, with level 0 containing a full size version of the texture.
+sample_index   The 0-based sample index of the multisampled texture.
+
+Returns:
+
+The unfiltered texel data.
+
+The logical texel address is invalid if:
+
+    any element of coords is outside the range [0, textureDimensions(t, level)) for the corresponding element, or
+
+    array_index is outside the range [0, textureNumLayers(t)), or
+
+    level is outside the range [0, textureNumLevels(t)), or
+
+    sample_index is outside the range [0, textureNumSamples(s))
+
+If the logical texel address is invalid, the built-in function returns one of:
+
+    The data for some texel within bounds of the texture
+
+    A vector (0,0,0,0) or (0,0,0,1) of the appropriate type for non-depth textures
+
+    0.0 for depth textures
+
+17.7.5. textureNumLayers
+
+Returns the number of layers (elements) of an arrayed texture.
+Parameterization   Overload
+F is a texel format
+A is an access mode
+ST is i32, u32, or f32
+
+T is texture_2d_array<ST>, texture_cube_array<ST>, texture_depth_2d_array, texture_depth_cube_array, or texture_storage_2d_array<F,A>   
+
+@must_use fn textureNumLayers(t: T) -> u32
+
+Parameters:
+t   The sampled, depth, or storage texture array texture.
+
+Returns:
+
+If the texture is based on cubes, returns the number of cubes in the cube arrayed texture.
+
+Otherwise returns the number of layers (homogeneous grids of texels) in the arrayed texture.
+17.7.6. textureNumLevels
+
+Returns the number of mip levels of a texture.
+Parameterization   Overload
+ST is i32, u32, or f32
+
+T is texture_1d<ST>, texture_2d<ST>, texture_2d_array<ST>, texture_3d<ST>, texture_cube<ST>, texture_cube_array<ST>, texture_depth_2d, texture_depth_2d_array, texture_depth_cube, or texture_depth_cube_array   
+
+@must_use fn textureNumLevels(t: T) -> u32
+
+Parameters:
+t   The sampled or depth texture.
+
+Returns:
+
+The mip level count for the texture.
+17.7.7. textureNumSamples
+
+Returns the number samples per texel in a multisampled texture.
+Parameterization   Overload
+ST is i32, u32, or f32
+
+T is texture_multisampled_2d<ST> or texture_depth_multisampled_2d   
+
+@must_use fn textureNumSamples(t: T) -> u32
+
+Parameters:
+t   The multisampled texture.
+
+Returns:
+
+The sample count for the multisampled texture.
+17.7.8. textureSample
+
+Samples a texture.
+
+Must only be used in a fragment shader stage.
+
+If uniformity analysis cannot prove a call to this function is in uniform control flow, then a derivative_uniformity diagnostic is triggered.
+Parameterization   Overload
+  
+@must_use fn textureSample(t: texture_1d<f32>,
+                           s: sampler,
+                           coords: f32) -> vec4<f32>
+
+@must_use fn textureSample(t: texture_2d<f32>,
+                           s: sampler,
+                           coords: vec2<f32>) -> vec4<f32>
+
+@must_use fn textureSample(t: texture_2d<f32>,
+                           s: sampler,
+                           coords: vec2<f32>,
+                           offset: vec2<i32>) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureSample(t: texture_2d_array<f32>,
+                           s: sampler,
+                           coords: vec2<f32>,
+                           array_index: A) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureSample(t: texture_2d_array<f32>,
+                           s: sampler,
+                           coords: vec2<f32>,
+                           array_index: A,
+                           offset: vec2<i32>) -> vec4<f32>
+
+T is texture_3d<f32>, or texture_cube<f32>   
+
+@must_use fn textureSample(t: T,
+                           s: sampler,
+                           coords: vec3<f32>) -> vec4<f32>
+
+@must_use fn textureSample(t: texture_3d<f32>,
+                           s: sampler,
+                           coords: vec3<f32>,
+                           offset: vec3<i32>) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureSample(t: texture_cube_array<f32>,
+                           s: sampler,
+                           coords: vec3<f32>,
+                           array_index: A) -> vec4<f32>
+
+@must_use fn textureSample(t: texture_depth_2d,
+                           s: sampler,
+                           coords: vec2<f32>) -> f32
+
+@must_use fn textureSample(t: texture_depth_2d,
+                           s: sampler,
+                           coords: vec2<f32>,
+                           offset: vec2<i32>) -> f32
+
+A is i32, or u32   
+
+@must_use fn textureSample(t: texture_depth_2d_array,
+                           s: sampler,
+                           coords: vec2<f32>,
+                           array_index: A) -> f32
+
+A is i32, or u32   
+
+@must_use fn textureSample(t: texture_depth_2d_array,
+                           s: sampler,
+                           coords: vec2<f32>,
+                           array_index: A,
+                           offset: vec2<i32>) -> f32
+
+@must_use fn textureSample(t: texture_depth_cube,
+                           s: sampler,
+                           coords: vec3<f32>) -> f32
+
+A is i32, or u32   
+
+@must_use fn textureSample(t: texture_depth_cube_array,
+                           s: sampler,
+                           coords: vec3<f32>,
+                           array_index: A) -> f32
+
+Parameters:
+t   The sampled or depth texture to sample.
+s   The sampler type.
+coords   The texture coordinates used for sampling.
+array_index   The 0-based texture array index to sample.
+This value will be clamped to the range [0, textureNumLayers(t) - 1].
+offset   The optional texel offset applied to the unnormalized texture coordinate before sampling the texture. This offset is applied before applying any texture wrapping modes.
+The offset expression must be a const-expression (e.g. vec2<i32>(1, 2)).
+Each offset component must be at least -8 and at most 7. Values outside of this range will result in a shader-creation error.
+
+Returns:
+
+The sampled value.
+
+An indeterminate value results if called in non-uniform control flow.
+17.7.9. textureSampleBias
+
+Samples a texture with a bias to the mip level.
+
+Must only be used in a fragment shader stage.
+
+If uniformity analysis cannot prove a call to this function is in uniform control flow, then a derivative_uniformity diagnostic is triggered.
+Parameterization   Overload
+  
+@must_use fn textureSampleBias(t: texture_2d<f32>,
+                               s: sampler,
+                               coords: vec2<f32>,
+                               bias: f32) -> vec4<f32>
+
+@must_use fn textureSampleBias(t: texture_2d<f32>,
+                               s: sampler,
+                               coords: vec2<f32>,
+                               bias: f32,
+                               offset: vec2<i32>) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureSampleBias(t: texture_2d_array<f32>,
+                               s: sampler,
+                               coords: vec2<f32>,
+                               array_index: A,
+                               bias: f32) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureSampleBias(t: texture_2d_array<f32>,
+                               s: sampler,
+                               coords: vec2<f32>,
+                               array_index: A,
+                               bias: f32,
+                               offset: vec2<i32>) -> vec4<f32>
+
+T is texture_3d<f32>, or texture_cube<f32>   
+
+@must_use fn textureSampleBias(t: T,
+                               s: sampler,
+                               coords: vec3<f32>,
+                               bias: f32) -> vec4<f32>
+
+@must_use fn textureSampleBias(t: texture_3d<f32>,
+                               s: sampler,
+                               coords: vec3<f32>,
+                               bias: f32,
+                               offset: vec3<i32>) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureSampleBias(t: texture_cube_array<f32>,
+                               s: sampler,
+                               coords: vec3<f32>,
+                               array_index: A,
+                               bias: f32) -> vec4<f32>
+
+Parameters:
+t   The sampled texture to sample.
+s   The sampler type.
+coords   The texture coordinates used for sampling.
+array_index   The 0-based texture array index to sample.
+This value will be clamped to the range [0, textureNumLayers(t) - 1].
+bias   The bias to apply to the mip level before sampling.
+This value will be clamped in the range [-16.0, 15.99].
+offset   The optional texel offset applied to the unnormalized texture coordinate before sampling the texture. This offset is applied before applying any texture wrapping modes.
+The offset expression must be a const-expression (e.g. vec2<i32>(1, 2)).
+Each offset component must be at least -8 and at most 7. Values outside of this range will result in a shader-creation error.
+
+Returns:
+
+The sampled value.
+17.7.10. textureSampleCompare
+
+Samples a depth texture and compares the sampled depth values against a reference value.
+
+Must only be used in a fragment shader stage.
+
+If uniformity analysis cannot prove a call to this function is in uniform control flow, then a derivative_uniformity diagnostic is triggered.
+Parameterization   Overload
+  
+@must_use fn textureSampleCompare(t: texture_depth_2d,
+                                  s: sampler_comparison,
+                                  coords: vec2<f32>,
+                                  depth_ref: f32) -> f32
+
+@must_use fn textureSampleCompare(t: texture_depth_2d,
+                                  s: sampler_comparison,
+                                  coords: vec2<f32>,
+                                  depth_ref: f32,
+                                  offset: vec2<i32>) -> f32
+
+A is i32, or u32   
+
+@must_use fn textureSampleCompare(t: texture_depth_2d_array,
+                                  s: sampler_comparison,
+                                  coords: vec2<f32>,
+                                  array_index: A,
+                                  depth_ref: f32) -> f32
+
+A is i32, or u32   
+
+@must_use fn textureSampleCompare(t: texture_depth_2d_array,
+                                  s: sampler_comparison,
+                                  coords: vec2<f32>,
+                                  array_index: A,
+                                  depth_ref: f32,
+                                  offset: vec2<i32>) -> f32
+
+@must_use fn textureSampleCompare(t: texture_depth_cube,
+                                  s: sampler_comparison,
+                                  coords: vec3<f32>,
+                                  depth_ref: f32) -> f32
+
+A is i32, or u32   
+
+@must_use fn textureSampleCompare(t: texture_depth_cube_array,
+                                  s: sampler_comparison,
+                                  coords: vec3<f32>,
+                                  array_index: A,
+                                  depth_ref: f32) -> f32
+
+Parameters:
+t   The depth texture to sample.
+s   The sampler_comparison type.
+coords   The texture coordinates used for sampling.
+array_index   The 0-based texture array index to sample.
+This value will be clamped to the range [0, textureNumLayers(t) - 1].
+depth_ref   The reference value to compare the sampled depth value against.
+offset   The optional texel offset applied to the unnormalized texture coordinate before sampling the texture. This offset is applied before applying any texture wrapping modes.
+The offset expression must be a const-expression (e.g. vec2<i32>(1, 2)).
+Each offset component must be at least -8 and at most 7. Values outside of this range will result in a shader-creation error.
+
+Returns:
+
+A value in the range [0.0..1.0].
+
+Each sampled texel is compared against the reference value using the comparison operator defined by the sampler_comparison, resulting in either a 0 or 1 value for each texel.
+
+If the sampler uses bilinear filtering then the returned value is the filtered average of these values, otherwise the comparison result of a single texel is returned.
+
+An indeterminate value results if called in non-uniform control flow.
+17.7.11. textureSampleCompareLevel
+
+Samples a depth texture and compares the sampled depth values against a reference value.
+Parameterization   Overload
+  
+@must_use fn textureSampleCompareLevel(t: texture_depth_2d,
+                                       s: sampler_comparison,
+                                       coords: vec2<f32>,
+                                       depth_ref: f32) -> f32
+
+@must_use fn textureSampleCompareLevel(t: texture_depth_2d,
+                                       s: sampler_comparison,
+                                       coords: vec2<f32>,
+                                       depth_ref: f32,
+                                       offset: vec2<i32>) -> f32
+
+A is i32, or u32   
+
+@must_use fn textureSampleCompareLevel(t: texture_depth_2d_array,
+                                       s: sampler_comparison,
+                                       coords: vec2<f32>,
+                                       array_index: A,
+                                       depth_ref: f32) -> f32
+
+A is i32, or u32   
+
+@must_use fn textureSampleCompareLevel(t: texture_depth_2d_array,
+                                       s: sampler_comparison,
+                                       coords: vec2<f32>,
+                                       array_index: A,
+                                       depth_ref: f32,
+                                       offset: vec2<i32>) -> f32
+
+@must_use fn textureSampleCompareLevel(t: texture_depth_cube,
+                                       s: sampler_comparison,
+                                       coords: vec3<f32>,
+                                       depth_ref: f32) -> f32
+
+A is i32, or u32   
+
+@must_use fn textureSampleCompareLevel(t: texture_depth_cube_array,
+                                       s: sampler_comparison,
+                                       coords: vec3<f32>,
+                                       array_index: A,
+                                       depth_ref: f32) -> f32
+
+Parameters:
+t   The depth texture to sample.
+s   The sampler_comparison type.
+coords   The texture coordinates used for sampling.
+array_index   The 0-based texture array index to sample.
+This value will be clamped to the range [0, textureNumLayers(t) - 1].
+depth_ref   The reference value to compare the sampled depth value against.
+offset   The optional texel offset applied to the unnormalized texture coordinate before sampling the texture. This offset is applied before applying any texture wrapping modes.
+The offset expression must be a const-expression (e.g. vec2<i32>(1, 2)).
+Each offset component must be at least -8 and at most 7. Values outside of this range will result in a shader-creation error.
+
+Returns:
+
+A value in the range [0.0..1.0].
+
+The textureSampleCompareLevel function is the same as textureSampleCompare, except that:
+
+    textureSampleCompareLevel always samples texels from mip level 0.
+
+        The function does not compute derivatives.
+
+        There is no requirement for textureSampleCompareLevel to be invoked in uniform control flow.
+
+    textureSampleCompareLevel may be invoked in any shader stage.
+
+17.7.12. textureSampleGrad
+
+Samples a texture using explicit gradients.
+Parameterization   Overload
+  
+@must_use fn textureSampleGrad(t: texture_2d<f32>,
+                               s: sampler,
+                               coords: vec2<f32>,
+                               ddx: vec2<f32>,
+                               ddy: vec2<f32>) -> vec4<f32>
+
+@must_use fn textureSampleGrad(t: texture_2d<f32>,
+                               s: sampler,
+                               coords: vec2<f32>,
+                               ddx: vec2<f32>,
+                               ddy: vec2<f32>,
+                               offset: vec2<i32>) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureSampleGrad(t: texture_2d_array<f32>,
+                               s: sampler,
+                               coords: vec2<f32>,
+                               array_index: A,
+                               ddx: vec2<f32>,
+                               ddy: vec2<f32>) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureSampleGrad(t: texture_2d_array<f32>,
+                               s: sampler,
+                               coords: vec2<f32>,
+                               array_index: A,
+                               ddx: vec2<f32>,
+                               ddy: vec2<f32>,
+                               offset: vec2<i32>) -> vec4<f32>
+
+T is texture_3d<f32>, or texture_cube<f32>   
+
+@must_use fn textureSampleGrad(t: T,
+                               s: sampler,
+                               coords: vec3<f32>,
+                               ddx: vec3<f32>,
+                               ddy: vec3<f32>) -> vec4<f32>
+
+@must_use fn textureSampleGrad(t: texture_3d<f32>,
+                               s: sampler,
+                               coords: vec3<f32>,
+                               ddx: vec3<f32>,
+                               ddy: vec3<f32>,
+                               offset: vec3<i32>) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureSampleGrad(t: texture_cube_array<f32>,
+                               s: sampler,
+                               coords: vec3<f32>,
+                               array_index: A,
+                               ddx: vec3<f32>,
+                               ddy: vec3<f32>) -> vec4<f32>
+
+Parameters:
+t   The sampled texture to sample.
+s   The sampler.
+coords   The texture coordinates used for sampling.
+array_index   The 0-based texture array index to sample.
+This value will be clamped to the range [0, textureNumLayers(t) - 1].
+ddx   The x direction derivative vector used to compute the sampling locations.
+ddy   The y direction derivative vector used to compute the sampling locations.
+offset   The optional texel offset applied to the unnormalized texture coordinate before sampling the texture. This offset is applied before applying any texture wrapping modes.
+The offset expression must be a const-expression (e.g. vec2<i32>(1, 2)).
+Each offset component must be at least -8 and at most 7. Values outside of this range will result in a shader-creation error.
+
+Returns:
+
+The sampled value.
+17.7.13. textureSampleLevel
+
+Samples a texture using an explicit mip level.
+Parameterization   Overload
+  
+@must_use fn textureSampleLevel(t: texture_2d<f32>,
+                                s: sampler,
+                                coords: vec2<f32>,
+                                level: f32) -> vec4<f32>
+
+@must_use fn textureSampleLevel(t: texture_2d<f32>,
+                                s: sampler,
+                                coords: vec2<f32>,
+                                level: f32,
+                                offset: vec2<i32>) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureSampleLevel(t: texture_2d_array<f32>,
+                                s: sampler,
+                                coords: vec2<f32>,
+                                array_index: A,
+                                level: f32) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureSampleLevel(t: texture_2d_array<f32>,
+                                s: sampler,
+                                coords: vec2<f32>,
+                                array_index: A,
+                                level: f32,
+                                offset: vec2<i32>) -> vec4<f32>
+
+T is texture_3d<f32>, or texture_cube<f32>   
+
+@must_use fn textureSampleLevel(t: T,
+                                s: sampler,
+                                coords: vec3<f32>,
+                                level: f32) -> vec4<f32>
+
+@must_use fn textureSampleLevel(t: texture_3d<f32>,
+                                s: sampler,
+                                coords: vec3<f32>,
+                                level: f32,
+                                offset: vec3<i32>) -> vec4<f32>
+
+A is i32, or u32   
+
+@must_use fn textureSampleLevel(t: texture_cube_array<f32>,
+                                s: sampler,
+                                coords: vec3<f32>,
+                                array_index: A,
+                                level: f32) -> vec4<f32>
+
+L is i32, or u32   
+
+@must_use fn textureSampleLevel(t: texture_depth_2d,
+                                s: sampler,
+                                coords: vec2<f32>,
+                                level: L) -> f32
+
+L is i32, or u32   
+
+@must_use fn textureSampleLevel(t: texture_depth_2d,
+                                s: sampler,
+                                coords: vec2<f32>,
+                                level: L,
+                                offset: vec2<i32>) -> f32
+
+A is i32, or u32
+L is i32, or u32   
+
+@must_use fn textureSampleLevel(t: texture_depth_2d_array,
+                                s: sampler,
+                                coords: vec2<f32>,
+                                array_index: A,
+                                level: L) -> f32
+
+A is i32, or u32
+L is i32, or u32   
+
+@must_use fn textureSampleLevel(t: texture_depth_2d_array,
+                                s: sampler,
+                                coords: vec2<f32>,
+                                array_index: A,
+                                level: L,
+                                offset: vec2<i32>) -> f32
+
+L is i32, or u32   
+
+@must_use fn textureSampleLevel(t: texture_depth_cube,
+                                s: sampler,
+                                coords: vec3<f32>,
+                                level: L) -> f32
+
+A is i32, or u32
+L is i32, or u32   
+
+@must_use fn textureSampleLevel(t: texture_depth_cube_array,
+                                s: sampler,
+                                coords: vec3<f32>,
+                                array_index: A,
+                                level: L) -> f32
+
+Parameters:
+t   The sampled or depth texture to sample.
+s   The sampler type.
+coords   The texture coordinates used for sampling.
+array_index   The 0-based texture array index to sample.
+This value will be clamped to the range [0, textureNumLayers(t) - 1].
+level   The mip level, with level 0 containing a full size version of the texture. For the functions where level is a f32, fractional values may interpolate between two levels if the format is filterable according to the Texture Format Capabilities.
+offset   The optional texel offset applied to the unnormalized texture coordinate before sampling the texture. This offset is applied before applying any texture wrapping modes.
+The offset expression must be a const-expression (e.g. vec2<i32>(1, 2)).
+Each offset component must be at least -8 and at most 7. Values outside of this range will result in a shader-creation error.
+
+Returns:
+
+The sampled value.
+17.7.14. textureSampleBaseClampToEdge
+
+Samples a texture view at its base level, with texture coordinates clamped to the edge as described below.
+Parameterization   Overload
+T is texture_2d<f32> or texture_external   
+
+@must_use fn textureSampleBaseClampToEdge(t: T,
+                                          s: sampler,
+                                          coords: vec2<f32>) -> vec4<f32>
+
+Parameters:
+t   The sampled or external texture to sample.
+s   The sampler type.
+coords   The texture coordinates used for sampling.
+
+Before sampling, the given coordinates will be clamped to the rectangle
+
+    [ half_texel, 1 - half_texel ]
+
+where
+
+    half_texel = vec2(0.5) / vec2<f32>(textureDimensions(t))
+
+Note: The half-texel adjustment ensures that, independent of the sampler’s addressing and filter modes, wrapping will not occur. That is, when sampling near an edge, the sampled texels will be at or adjacent to that edge, and not selected from the opposite edge.
+
+Returns:
+
+The sampled value.
+17.7.15. textureStore
+
+Writes a single texel to a texture.
+Parameterization   Overload
+F is a texel format
+C is i32, or u32
+AM is write or read_write
+CF depends on the storage texel format F. See the texel format table for the mapping of texel format to channel format.   
+
+fn textureStore(t: texture_storage_1d<F,AM>,
+                coords: C,
+                value: vec4<CF>)
+
+F is a texel format
+C is i32, or u32
+AM is write or read_write
+CF depends on the storage texel format F. See the texel format table for the mapping of texel format to channel format.   
+
+fn textureStore(t: texture_storage_2d<F,AM>,
+                coords: vec2<C>,
+                value: vec4<CF>)
+
+F is a texel format
+C is i32, or u32
+AM is write or read_write
+A is i32, or u32
+CF depends on the storage texel format F. See the texel format table for the mapping of texel format to channel format.   
+
+fn textureStore(t: texture_storage_2d_array<F,AM>,
+                coords: vec2<C>,
+                array_index: A,
+                value: vec4<CF>)
+
+F is a texel format
+C is i32, or u32
+AM is write or read_write
+CF depends on the storage texel format F. See the texel format table for the mapping of texel format to channel format.   
+
+fn textureStore(t: texture_storage_3d<F,AM>,
+                coords: vec3<C>,
+                value: vec4<CF>)
+
+Parameters:
+t   The write-only storage texture or read-write storage texture
+coords   The 0-based texel coordinate.
+array_index   The 0-based texture array index.
+value   The new texel value. value is converted using the inverse channel transfer function.
+
+Note:
+
+The logical texel address is invalid if:
+
+    any element of coords is outside the range [0, textureDimensions(t)) for the corresponding element, or
+
+    array_index is outside the range of [0, textureNumLayers(t))
+
+If the logical texel address is invalid, the built-in function will not be executed.
+17.8. Atomic Built-in Functions
+
+Atomic built-in functions can be used to read/write/read-modify-write atomic objects. They are the only operations allowed on § 6.2.8 Atomic Types.
+
+All atomic built-in functions use a relaxed memory ordering. This means synchronization and ordering guarantees only apply among atomic operations acting on the same memory locations. No synchronization or ordering guarantees apply between atomic and non-atomic memory accesses, or between atomic accesses acting on different memory locations.
+
+Atomic built-in functions must not be used in a vertex shader stage.
+
+The address space AS of the atomic_ptr parameter in all atomic built-in functions must be either storage or workgroup.
+
+T must be either u32 or i32
+17.8.1. atomicLoad
+
+fn atomicLoad(atomic_ptr: ptr<AS, atomic<T>, read_write>) -> T
+
+Returns the atomically loaded the value pointed to by atomic_ptr. It does not modify the object.
+17.8.2. atomicStore
+
+fn atomicStore(atomic_ptr: ptr<AS, atomic<T>, read_write>, v: T)
+
+Atomically stores the value v in the atomic object pointed to by atomic_ptr.
+17.8.3. Atomic Read-modify-write Arithmetic and Logical Functions
+
+Each function performs the following steps atomically:
+
+    Load the original value pointed to by atomic_ptr.
+
+    Obtains a new value by performing the operation (e.g. max) from the function name with the value v.
+
+    Store the new value using atomic_ptr.
+
+Each function returns the original value stored in the atomic object before the operation.
+17.8.3.1. atomicAdd
+
+fn atomicAdd(atomic_ptr: ptr<AS, atomic<T>, read_write>, v: T) -> T
+
+Atomically performs an addition operation on the atomic object pointed to by atomic_ptr with the value v, and returns the original value stored in the atomic object before the operation.
+EXAMPLE: Operation of atomic addition as a function
+
+// All operations are performed atomically
+fn atomicAdd(atomic_ptr: ptr<AS, atomic<T>, read_write>, v : T) -> T {
+  let old = *atomic_ptr;
+  *atomic_ptr = old + v;
+  return old;
+}
+
+17.8.3.2. atomicSub
+
+fn atomicSub(atomic_ptr: ptr<AS, atomic<T>, read_write>, v: T) -> T
+
+Atomically performs a subtraction operation on the atomic object pointed to by atomic_ptr with the value v, and returns the original value stored in the atomic object before the operation.
+EXAMPLE: Operation of atomic subtraction as a function
+
+// All operations are performed atomically
+fn atomicSub(atomic_ptr: ptr<AS, atomic<T>, read_write>, v : T) -> T {
+  let old = *atomic_ptr;
+  *atomic_ptr = old - v;
+  return old;
+}
+
+17.8.3.3. atomicMax
+
+fn atomicMax(atomic_ptr: ptr<AS, atomic<T>, read_write>, v: T) -> T
+
+Atomically performs a maximum operation on the atomic object pointed to by atomic_ptr with the value v, and returns the original value stored in the atomic object before the operation.
+EXAMPLE: Operation of atomic maximum as a function
+
+// All operations are performed atomically
+fn atomicMax(atomic_ptr: ptr<AS, atomic<T>, read_write>, v : T) -> T {
+  let old = *atomic_ptr;
+  *atomic_ptr = max(old, v);
+  return old;
+}
+
+17.8.3.4. atomicMin
+
+fn atomicMin(atomic_ptr: ptr<AS, atomic<T>, read_write>, v: T) -> T
+
+Atomically performs a minimum operation on the atomic object pointed to by atomic_ptr with the value v, and returns the original value stored in the atomic object before the operation.
+EXAMPLE: Operation of atomic minimum as a function
+
+// All operations are performed atomically
+fn atomicMin(atomic_ptr: ptr<AS, atomic<T>, read_write>, v : T) -> T {
+  let old = *atomic_ptr;
+  *atomic_ptr = min(old, v);
+  return old;
+}
+
+17.8.3.5. atomicAnd
+
+fn atomicAnd(atomic_ptr: ptr<AS, atomic<T>, read_write>, v: T) -> T
+
+Atomically performs a bitwise AND operation on the atomic object pointed to by atomic_ptr with the value v, and returns the original value stored in the atomic object before the operation.
+EXAMPLE: Operation of atomic bitwise and as a function
+
+// All operations are performed atomically
+fn atomicAnd(atomic_ptr: ptr<AS, atomic<T>, read_write>, v : T) -> T {
+  let old = *atomic_ptr;
+  *atomic_ptr = old & v;
+  return old;
+}
+
+17.8.3.6. atomicOr
+
+fn atomicOr(atomic_ptr: ptr<AS, atomic<T>, read_write>, v: T) -> T
+
+Atomically performs a bitwise OR operation on the atomic object pointed to by atomic_ptr with the value v, and returns the original value stored in the atomic object before the operation.
+EXAMPLE: Operation of atomic bitwise or as a function
+
+// All operations are performed atomically
+fn atomicOr(atomic_ptr: ptr<AS, atomic<T>, read_write>, v : T) -> T {
+  let old = *atomic_ptr;
+  *atomic_ptr = old | v;
+  return old;
+}
+
+17.8.3.7. atomicXor
+
+fn atomicXor(atomic_ptr: ptr<AS, atomic<T>, read_write>, v: T) -> T
+
+Atomically performs a bitwise XOR operation on the atomic object pointed to by atomic_ptr with the value v, and returns the original value stored in the atomic object before the operation.
+EXAMPLE: Operation of atomic bitwise xor as a function
+
+// All operations are performed atomically
+fn atomicXor(atomic_ptr: ptr<AS, atomic<T>, read_write>, v : T) -> T {
+  let old = *atomic_ptr;
+  *atomic_ptr = old ^ v;
+  return old;
+}
+
+17.8.4. atomicExchange
+
+fn atomicExchange(atomic_ptr: ptr<AS, atomic<T>, read_write>, v: T) -> T
+
+Atomically stores the value v in the atomic object pointed to by atomic_ptr and returns the original value stored in the atomic object before the operation.
+EXAMPLE: Operation of atomic exchange as a function
+
+// All operations are performed atomically
+fn atomicExchange(atomic_ptr: ptr<AS, atomic<T>, read_write>, v : T) -> T {
+  let old = *atomic_ptr;
+  *atomic_ptr = v;
+  return old;
+}
+
+17.8.5. atomicCompareExchangeWeak
+
+fn atomicCompareExchangeWeak(
+      atomic_ptr: ptr<AS, atomic<T>, read_write>,
+      cmp: T,
+      v: T) -> __atomic_compare_exchange_result<T>
+
+struct __atomic_compare_exchange_result<T> {
+  old_value : T,   // old value stored in the atomic
+  exchanged : bool // true if the exchange was done
+}
+
+Note: A value cannot be explicitly declared with the type __atomic_compare_exchange_result, but a value may infer the type.
+
+Performs the following steps atomically:
+
+    Load the original value pointed to by atomic_ptr.
+
+    Compare the original value to the value cmp using an equality operation.
+
+    Store the value v only if the result of the equality comparison was true.
+
+Returns a two member structure, where the first member, old_value, is the original value of the atomic object before the operation and the second member, exchanged, is whether or not the comparison succeeded.
+EXAMPLE: Operation of atomic compare exchange as a function
+
+// All operations are performed atomically
+fn atomicCompareExchangeWeak(atomic_ptr: ptr<AS, atomic<T>, read_write>, cmp : T, v : T) ->
+  _atomic_compare_exchange_result<T> {
+  let old = *atomic_ptr;
+  // This comparison may spuriously fail.
+  let comparison = old == cmp;
+  if comparison {
+    *atomic_ptr = v;
+  }
+  return _atomic_compare_exchange_result<T>(old, comparison);
+}
+
+Note: The equality comparison may spuriously fail on some implementations. That is, the second component of the result vector may be false even if the first component of the result vector equals cmp.
+17.9. Data Packing Built-in Functions
+
+Data packing builtin functions can be used to encode values using data formats that do not correspond directly to types in WGSL. This enables a program to write many densely packed values to memory, which can reduce a shader’s memory bandwidth demand.
+
+Each builtin applies the inverse of a channel transfer function to several input values, then combines their results into a single output value.
+
+Note: For packing unorm values, the normalized floating point values are in the interval [0.0, 1.0].
+
+Note: For packing snorm values, the normalized floating point values are in the interval [-1.0, 1.0].
+17.9.1. pack4x8snorm
+Overload   
+
+@const @must_use fn pack4x8snorm(e: vec4<f32>) -> u32
+
+Description   Converts four normalized floating point values to 8-bit signed integers, and then combines them into one u32 value.
+
+Component e[i] of the input is converted to an 8-bit twos complement integer value ⌊ 0.5 + 127 × min(1, max(-1, e[i])) ⌋ which is then placed in bits 8 × i through 8 × i + 7 of the result.
+17.9.2. pack4x8unorm
+Overload   
+
+@const @must_use fn pack4x8unorm(e: vec4<f32>) -> u32
+
+Description   Converts four normalized floating point values to 8-bit unsigned integers, and then combines them into one u32 value.
+
+Component e[i] of the input is converted to an 8-bit unsigned integer value ⌊ 0.5 + 255 × min(1, max(0, e[i])) ⌋ which is then placed in bits 8 × i through 8 × i + 7 of the result.
+17.9.3. pack4xI8
+Overload   
+
+@const @must_use fn pack4xI8(e: vec4<i32>) -> u32
+
+Description   Pack the lower 8 bits of each component of e into a u32 value and drop all the unused bits.
+
+Component e[i] of the input is mapped to bits 8 × i through 8 × i + 7 of the result.
+17.9.4. pack4xU8
+Overload   
+
+@const @must_use fn pack4xU8(e: vec4<u32>) -> u32
+
+Description   Pack the lower 8 bits of each component of e into a u32 value and drop all the unused bits.
+
+Component e[i] of the input is mapped to bits 8 × i through 8 × i + 7 of the result.
+17.9.5. pack4xI8Clamp
+Overload   
+
+@const @must_use fn pack4xI8Clamp(e: vec4<i32>) -> u32
+
+Description   Clamp each component of e in the range [-128, 127] and then pack the lower 8 bits of each component into a u32 value.
+
+Component e[i] of the input is mapped to bits 8 × i through 8 × i + 7 of the result.
+17.9.6. pack4xU8Clamp
+Overload   
+
+@const @must_use fn pack4xU8Clamp(e: vec4<u32>) -> u32
+
+Description   Clamp each component of e in the range of [0, 255] and then pack the lower 8 bits of each component into a u32 value.
+
+Component e[i] of the input is mapped to bits 8 × i through 8 × i + 7 of the result.
+17.9.7. pack2x16snorm
+Overload   
+
+@const @must_use fn pack2x16snorm(e: vec2<f32>) -> u32
+
+Description   Converts two normalized floating point values to 16-bit signed integers, and then combines them into one u32 value.
+Component e[i] of the input is converted to a 16-bit twos complement integer value ⌊ 0.5 + 32767 × min(1, max(-1, e[i])) ⌋ which is then placed in bits 16 × i through 16 × i + 15 of the result.
+17.9.8. pack2x16unorm
+Overload   
+
+@const @must_use fn pack2x16unorm(e: vec2<f32>) -> u32
+
+Description   Converts two normalized floating point values to 16-bit unsigned integers, and then combines them into one u32 value.
+Component e[i] of the input is converted to a 16-bit unsigned integer value ⌊ 0.5 + 65535 × min(1, max(0, e[i])) ⌋ which is then placed in bits 16 × i through 16 × i + 15 of the result.
+17.9.9. pack2x16float
+Overload   
+
+@const @must_use fn pack2x16float(e: vec2<f32>) -> u32
+
+Description   Converts two floating point values to half-precision floating point numbers, and then combines them into one u32 value.
+Component e[i] of the input is converted to a IEEE-754 binary16 value, which is then placed in bits 16 × i through 16 × i + 15 of the result. See § 15.7.6 Floating Point Conversion.
+
+If either e[0] or e[1] is outside the finite range of binary16 then:
+
+    It is a shader-creation error if e is a const-expression.
+
+    It is a pipeline-creation error if e is an override-expression.
+
+    Otherwise the result is an indeterminate value for u32.
+
+17.10. Data Unpacking Built-in Functions
+
+Data unpacking builtin functions can be used to decode values in data formats that do not correspond directly to types in WGSL. This enables a program to read many densely packed values from memory, which can reduce a shader’s memory bandwidth demand.
+
+Each builtin breaks up an input value into channels, then applies a channel transfer function to each.
+
+Note: For unpacking unorm values, the normalized floating point result is in the interval [0.0, 1.0].
+
+Note: For unpacking snorm values, the normalized floating point result is in the interval [-1.0, 1.0].
+17.10.1. unpack4x8snorm
+Overload   
+
+@const @must_use fn unpack4x8snorm(e: u32) -> vec4<f32>
+
+Description   Decomposes a 32-bit value into four 8-bit chunks, then reinterprets each chunk as a signed normalized floating point value.
+Component i of the result is max(v ÷ 127, -1), where v is the interpretation of bits 8×i through 8×i + 7 of e as a twos-complement signed integer.
+17.10.2. unpack4x8unorm
+Overload   
+
+@const @must_use fn unpack4x8unorm(e: u32) -> vec4<f32>
+
+Description   Decomposes a 32-bit value into four 8-bit chunks, then reinterprets each chunk as an unsigned normalized floating point value.
+Component i of the result is v ÷ 255, where v is the interpretation of bits 8×i through 8×i + 7 of e as an unsigned integer.
+17.10.3. unpack4xI8
+Overload   
+
+@const @must_use fn unpack4xI8(e: u32) -> vec4<i32>
+
+Description   e is interpreted as a vector with four 8-bit signed integer components. Unpack e into a vec4<i32> with sign extension.
+17.10.4. unpack4xU8
+Overload   
+
+@const @must_use fn unpack4xU8(e: u32) -> vec4<u32>
+
+Description   e is interpreted as a vector with four 8-bit unsigned integer components. Unpack e into a vec4<u32> with zero extension.
+17.10.5. unpack2x16snorm
+Overload   
+
+@const @must_use fn unpack2x16snorm(e: u32) -> vec2<f32>
+
+Description   Decomposes a 32-bit value into two 16-bit chunks, then reinterprets each chunk as a signed normalized floating point value.
+Component i of the result is max(v ÷ 32767, -1), where v is the interpretation of bits 16×i through 16×i + 15 of e as a twos-complement signed integer.
+17.10.6. unpack2x16unorm
+Overload   
+
+@const @must_use fn unpack2x16unorm(e: u32) -> vec2<f32>
+
+Description   Decomposes a 32-bit value into two 16-bit chunks, then reinterprets each chunk as an unsigned normalized floating point value.
+Component i of the result is v ÷ 65535, where v is the interpretation of bits 16×i through 16×i + 15 of e as an unsigned integer.
+17.10.7. unpack2x16float
+Overload   
+
+@const @must_use fn unpack2x16float(e: u32) -> vec2<f32>
+
+Description   Decomposes a 32-bit value into two 16-bit chunks, and reinterpets each chunk as a floating point value.
+Component i of the result is the f32 representation of v, where v is the interpretation of bits 16×i through 16×i + 15 of e as an IEEE-754 binary16 value. See § 15.7.6 Floating Point Conversion.
+17.11. Synchronization Built-in Functions
+
+All synchronization functions execute a control barrier with Acquire/Release memory ordering. That is, all synchronization functions, and affected memory and atomic operations are ordered in program order relative to the synchronization function. Additionally, the affected memory and atomic operations program-ordered before the synchronization function must be visible to all other threads in the workgroup before any affected memory or atomic operation program-ordered after the synchronization function is executed by a member of the workgroup.
+
+All synchronization functions use the Workgroup memory scope.
+All synchronization functions have a Workgroup execution scope.
+All synchronization functions must only be used in the compute shader stage. All synchronization functions must only be invoked in uniform control flow.
+17.11.1. storageBarrier
+Overload   
+
+fn storageBarrier()
+
+Description   Executes a control barrier synchronization function that affects memory and atomic operations in the storage address space.
+17.11.2. textureBarrier
+Overload   
+
+fn textureBarrier()
+
+Description   Executes a control barrier synchronization function that affects memory operations in the handle address space.
+17.11.3. workgroupBarrier
+Overload   
+
+fn workgroupBarrier()
+
+Description   Executes a control barrier synchronization function that affects memory and atomic operations in the workgroup address space.
+17.11.4. workgroupUniformLoad
+Overload   
+
+@must_use fn workgroupUniformLoad(p : ptr<workgroup, T>) -> T
+
+Parameterization   T is a concrete constructible type.
+Description   Returns the value pointed to by p to all invocations in the workgroup. The return value is uniform. p must be a uniform value.
+
+Executes a control barrier synchronization function that affects memory and atomic operations in the workgroup address space.
+17.12. Subgroup Built-in Functions
+
+See § 15.6.3 Subgroup Operations.
+
+Calls to these functions:
+
+    Must only be used in a fragment or compute shader stage.
+
+    Trigger a subgroup_uniformity diagnostic if uniformity analysis cannot prove the call is in uniform control flow.
+
+Note: For the compute shader stage, the scope of uniform control flow is the workgroup. For the fragment shader stage, the scope of uniform control flow is the draw command. Both of these scopes are larger than subgroup.
+17.12.1. subgroupAdd
+Overload   
+
+@must_use fn subgroupAdd(e : T) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+Description   Reduction operation.
+
+Returns the sum of e among all active invocations in the subgroup.
+17.12.1.1. subgroupExclusiveAdd
+Overload   
+
+@must_use fn subgroupExclusiveAdd(e : T) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+Description   Exclusive prefix scan operation.
+
+Returns the sum of e among all active invocations in the subgroup whose subgroup invocation IDs are less than the current invocation’s id.
+
+The value returned for the invocation with the lowest id among active invocations is T(0).
+17.12.1.2. subgroupInclusiveAdd
+Overload   
+
+@must_use fn subgroupInclusiveAdd(e : T) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+Description   Inclusive prefix scan operation.
+
+Returns the sum of e among all active invocations in the subgroup whose subgroup invocation IDs are less than or equal to the current invocation’s id.
+
+Note: equivalent to subgroupInclusiveAdd(x) + x.
+17.12.2. subgroupAll
+Overload   
+
+@must_use fn subgroupAll(e : bool) -> bool
+
+Description   Returns true if e is true for all active invocations in the subgroup.
+17.12.3. subgroupAnd
+Overload   
+
+@must_use fn subgroupAnd(e : T) -> T
+
+Preconditions   T is i32, u32, vecN<i32>, or vecN<u32>
+Description   Reduction operation.
+
+Returns the bitwise and (&) of e among all active invocations in the subgroup.
+17.12.4. subgroupAny
+Overload   
+
+@must_use fn subgroupAny(e : bool) -> bool
+
+Description   Returns true if e is true for any active invocations in the subgroup.
+17.12.5. subgroupBallot
+Overload   
+
+@must_use fn subgroupBallot(pred : bool) -> vec4<u32>
+
+Description   Returns a bitmask of the active invocations in the subgroup for whom pred is true.
+
+The x component of the return value contains invocations 0 through 31.
+The y component of the return value contains invocations 32 through 63.
+The z component of the return value contains invocations 64 through 95.
+The w component of the return value contains invocations 96 through 127.
+
+Within each component, the IDs are in ascending order by bit position (e.g. ID 32 is at bit position 0 in the y component).
+17.12.6. subgroupBroadcast
+Overload   
+
+@must_use fn subgroupBroadcast(e : T, id : I) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+I is u32 or i32
+Description   Returns the value of e from the invocation whose subgroup invocation ID matches id in the subgroup to all active invocations in the subgroup.
+
+id must be a const-expression in the range [0, 128).
+
+It is a dynamic error if id does not select an active invocation.
+
+Note: If a non-constant version of id is required, use subgroupShuffle instead.
+17.12.6.1. subgroupBroadcastFirst
+Overload   
+
+@must_use fn subgroupBroadcastFirst(e : T) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+Description   Returns the value of e from the invocation that has the lowest subgroup invocation ID among active invocations in the subgroup to all active invocations in the subgroup.
+17.12.7. subgroupElect
+Overload   
+
+@must_use fn subgroupElect() -> bool
+
+Description   Returns true if the current invocation has the lowest subgroup invocation ID among active invocations in the subgroup.
+17.12.8. subgroupMax
+Overload   
+
+@must_use fn subgroupMax(e : T) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+Description   Reduction operation.
+
+Returns the maximum value of e among all active invocations in the subgroup.
+17.12.9. subgroupMin
+Overload   
+
+@must_use fn subgroupMin(e : T) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+Description   Reduction operation.
+
+Returns the minimum value of e among all active invocations in the subgroup.
+17.12.10. subgroupMul
+Overload   
+
+@must_use fn subgroupMul(e : T) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+Description   Reduction operation.
+
+Returns the product of e among all active invocations in the subgroup.
+17.12.10.1. subgroupExclusiveMul
+Overload   
+
+@must_use fn subgroupExclusiveMul(e : T) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+Description   Exclusive prefix scan operation.
+
+Returns the product of e among all active invocations in the subgroup whose subgroup invocation IDs are less than the current invocation’s id.
+
+The value returned for the invocation with the lowest id among active invocations is T(1).
+17.12.10.2. subgroupInclusiveMul
+Overload   
+
+@must_use fn subgroupInclusiveMul(e : T) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+Description   Inclusive prefix scan operation.
+
+Returns the product of e among all active invocations in the subgroup whose subgroup invocation IDs are less than or equal to the current invocation’s id.
+
+Note: equivalent to subgroupExclusiveMul(x) * x.
+17.12.11. subgroupOr
+Overload   
+
+@must_use fn subgroupOr(e : T) -> T
+
+Preconditions   T is i32, u32, vecN<i32>, or vecN<u32>
+Description   Reduction operation.
+
+Returns the bitwise or (|) of e among all active invocations in the subgroup.
+17.12.12. subgroupShuffle
+Overload   
+
+@must_use fn subgroupShuffle(e : T, id : I) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+I is u32 or i32
+Description   Returns e from the invocation whose subgroup invocation ID matches id.
+
+If id is outside the range [0, 128), then:
+
+    It is a shader-creation error if id is a const-expression.
+
+    It is a pipeline-creation error if id is an override-expression.
+
+An indeterminate value is returned if id does not select an active invocation.
+17.12.12.1. subgroupShuffleDown
+Overload   
+
+@must_use fn subgroupShuffleDown(e : T, delta : u32) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+Description   Returns e from the invocation whose subgroup invocation ID matches subgroup_invocation_id + delta for the current invocation.
+
+If delta is greater than 127, then:
+
+    It is a shader-creation error if delta is a const-expression.
+
+    It is a pipeline-creation error if delta is an override-expression.
+
+A subgroup_uniformity diagnostic is triggered if delta is not a uniform value. An indeterminate value is returned if subgroup_invocation_id + delta does not select an active invocation or if delta is a not a uniform value within the subgroup.
+17.12.12.2. subgroupShuffleUp
+Overload   
+
+@must_use fn subgroupShuffleUp(e : T, delta : u32) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+Description   Returns e from the invocation whose subgroup invocation ID matches subgroup_invocation_id - delta for the current invocation.
+
+If delta is greater than 127, then:
+
+    It is a shader-creation error if delta is a const-expression.
+
+    It is a pipeline-creation error if delta is an override-expression.
+
+A subgroup_uniformity diagnostic is triggered if delta is not a uniform value. An indeterminate value is returned if subgroup_invocation_id - delta does not select an active invocation or if delta is not a uniform value within the subgroup.
+17.12.12.3. subgroupShuffleXor
+Overload   
+
+@must_use fn subgroupShuffleXor(e : T,  mask : u32) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+Description   Returns e from the invocation whose subgroup invocation ID matches subgroup_invocation_id ^ mask for the current invocation.
+
+If mask is greater than 127, then:
+
+    It is a shader-creation error if mask is a const-expression.
+
+    It is a pipeline-creation error if mask is an override-expression.
+
+A subgroup_uniformity diagnostic is triggered if mask is not a uniform value. An indeterminate value is returned if mask does not select an active invocation or if mask is not a uniform value within the subgroup.
+17.12.13. subgroupXor
+Overload   
+
+@must_use fn subgroupXor(e : T) -> T
+
+Preconditions   T is i32, u32, vecN<i32>, or vecN<u32>
+Description   Reduction operation.
+
+Returns the bitwise xor (^) of e among all active invocations in the subgroup.
+17.13. Quad Operations
+
+See § 15.6.4 Quad Operations.
+
+Calls to these functions:
+
+    Must only be used in a fragment or compute shader stage.
+
+    Trigger a subgroup_uniformity diagnostic if uniformity analysis cannot prove the call is in uniform control flow.
+
+Note: For the compute shader stage, the scope of uniform control flow is the workgroup. For the fragment shader stage, the scope of uniform control flow is the draw command. Both of these scopes are larger than quad.
+17.13.1. quadBroadcast
+Overload   
+
+@must_use fn quadBroadcast(e : T, id : I) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+I is u32 or i32
+Description   Returns the value of e from the invocation whose quad invocation ID matches id in the quad to all active invocations in the quad.
+
+id must be a const-expression in the range [0, 4).
+
+An indeterminate value is returned if id does not select an active invocation.
+
+Note: Unlike subgroupBroadcast, there is currently no non-constant alternative.
+17.13.2. quadSwapDiagonal
+Overload   
+
+@must_use fn quadSwapDiagonal(e : T) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+Description   Returns the value of e from the invocation in the quad with the opposite coordinates. That is:
+
+    IDs 0 and 3 swap.
+
+    IDs 1 and 2 swap.
+
+17.13.3. quadSwapX
+Overload   
+
+@must_use fn quadSwapX(e : T) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+Description   Returns the value of e from invocation in the quad sharing the same X dimension. That is:
+
+    IDs 0 and 1 swap.
+
+    IDs 2 and 3 swap.
+
+17.13.4. quadSwapY
+Overload   
+
+@must_use fn quadSwapY(e : T) -> T
+
+Preconditions   T is concrete numeric scalar or numeric vector
+Description   Returns the value of e from invocation in the quad sharing the same Y dimension. That is:
+
+    IDs 0 and 2 swap.
+
+    IDs 1 and 3 swap.
