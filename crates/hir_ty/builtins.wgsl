@@ -251,7 +251,6 @@ textureLoad(t: texture_depth_2d, coords: vec2<i32>,  level: i32) -> f32
 textureLoad(t: texture_depth_2d, coords: vec2<i32>,  level: u32) -> f32
 textureLoad(t: texture_depth_2d, coords: vec2<u32>,  level: i32) -> f32
 textureLoad(t: texture_depth_2d, coords: vec2<u32>,  level: u32) -> f32
-textureLoad(t: , coords: vec2<C>,  level: L) -> f32
 textureLoad(t: texture_depth_2d_array, coords: vec2<i32>,  array_index: i32,  sample_index: i32) -> f32
 textureLoad(t: texture_depth_2d_array, coords: vec2<i32>,  array_index: i32,  sample_index: u32) -> f32
 textureLoad(t: texture_depth_2d_array, coords: vec2<i32>,  array_index: u32,  sample_index: i32) -> f32
