@@ -366,7 +366,8 @@ pub fn find_import(
     source: &syntax::ast::Import,
 ) -> Option<ModuleItemId<Import>> {
     let module_info = db.module_info(file_id);
-    let result = module_info.data.imports.iter().find_map(|(index, data)| {
+    
+    module_info.data.imports.iter().find_map(|(index, data)| {
         let id = ModuleItemId::from(index);
         let def_map = db.ast_id_map(file_id);
 
@@ -378,6 +379,5 @@ pub fn find_import(
         } else {
             None
         }
-    });
-    result
+    })
 }

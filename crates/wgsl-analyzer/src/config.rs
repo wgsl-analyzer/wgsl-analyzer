@@ -240,7 +240,7 @@ impl Config {
     }
 
     #[inline]
-    pub fn rediscover_workspaces(&mut self) {
+    pub const fn rediscover_workspaces(&mut self) {
         // let discovered = vec![];
         // tracing::info!("discovered projects: {:?}", discovered);
         // if discovered.is_empty() {
@@ -332,9 +332,9 @@ impl Config {
 
 #[derive(Default, Debug)]
 pub struct ConfigChange {
-    user_config_change: Option<Arc<str>>,
-    client_config_change: Option<serde_json::Value>,
-    source_map_change: Option<Arc<FxHashMap<SourceRootId, SourceRootId>>>,
+    user_config: Option<Arc<str>>,
+    client_config: Option<serde_json::Value>,
+    source_map: Option<Arc<FxHashMap<SourceRootId, SourceRootId>>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -355,8 +355,8 @@ impl ConfigChange {
         &mut self,
         content: Option<Arc<str>>,
     ) {
-        assert!(self.user_config_change.is_none()); // Otherwise it is a double write.
-        self.user_config_change = content;
+        assert!(self.user_config.is_none()); // Otherwise it is a double write.
+        self.user_config = content;
     }
 
     #[inline]
@@ -364,7 +364,7 @@ impl ConfigChange {
         &mut self,
         change: serde_json::Value,
     ) {
-        self.client_config_change = Some(change);
+        self.client_config = Some(change);
     }
 
     /// # Panics
@@ -375,8 +375,8 @@ impl ConfigChange {
         &mut self,
         source_root_map: Arc<FxHashMap<SourceRootId, SourceRootId>>,
     ) {
-        assert!(self.source_map_change.is_none());
-        self.source_map_change = Some(source_root_map);
+        assert!(self.source_map.is_none());
+        self.source_map = Some(source_root_map);
     }
 }
 

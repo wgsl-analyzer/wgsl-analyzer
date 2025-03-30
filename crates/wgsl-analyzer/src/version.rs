@@ -32,7 +32,7 @@ impl fmt::Display for VersionInfo {
 
         if let Some(ci) = &self.commit_info {
             write!(f, " ({} {})", ci.short_commit_hash, ci.commit_date)?;
-        };
+        }
         Ok(())
     }
 }
