@@ -5,7 +5,7 @@ name: CI - PR Comments
 
 # Also requesting write permissions on PR to be able to comment
 permissions:
-  pull-requests: "write"
+  pull-requests: write
 
 on:
   workflow_run:
