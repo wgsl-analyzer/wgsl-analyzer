@@ -1,5 +1,5 @@
 mod ast_id;
-pub mod attrs;
+pub mod attributes;
 pub mod body;
 pub mod data;
 pub mod db;

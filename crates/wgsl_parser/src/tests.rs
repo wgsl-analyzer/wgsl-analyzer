@@ -18,17 +18,17 @@ fn check_type(
 }
 
 fn check_statement(
-    stmt: &str,
+    statement: &str,
     expected_tree: Expect,
 ) {
-    crate::check_entrypoint(stmt, ParseEntryPoint::Statement, expected_tree);
+    crate::check_entrypoint(statement, ParseEntryPoint::Statement, expected_tree);
 }
 
 fn check_attribute_list(
-    stmt: &str,
+    statement: &str,
     expected_tree: Expect,
 ) {
-    crate::check_entrypoint(stmt, ParseEntryPoint::AttributeList, expected_tree);
+    crate::check_entrypoint(statement, ParseEntryPoint::AttributeList, expected_tree);
 }
 
 #[test]
@@ -332,7 +332,7 @@ fn parse_type_generic_ptr() {
 }
 
 #[test]
-fn parse_return_stmt() {
+fn parse_return_statement() {
     check(
         r#"fn f() -> u32 {
             return 0;
@@ -369,7 +369,7 @@ fn parse_return_stmt() {
 }
 
 #[test]
-fn parse_let_stmt_recover() {
+fn parse_let_statement_recover() {
     check(
         r#"fn f() -> u32 {
             let x =
@@ -425,7 +425,7 @@ fn parse_let_stmt_recover() {
 }
 
 #[test]
-fn parse_stmt_variable_decl() {
+fn parse_statement_variable_decl() {
     check_statement(
         "let x = 3;",
         expect![[r#"
@@ -444,7 +444,7 @@ fn parse_stmt_variable_decl() {
 }
 
 #[test]
-fn parse_stmt_return() {
+fn parse_statement_return() {
     check_statement(
         "return 0;",
         expect![[r#"
@@ -457,7 +457,7 @@ fn parse_stmt_return() {
 }
 
 #[test]
-fn parse_while_stmt() {
+fn parse_while_statement() {
     check_statement(
         r#"while 0 > 3 { let x = 3; }"#,
         expect![[r#"
@@ -494,7 +494,7 @@ fn parse_while_stmt() {
 }
 
 #[test]
-fn parse_if_stmt() {
+fn parse_if_statement() {
     check_statement(
         r#"if (0 > 3) { let x = 3; return x; }"#,
         expect![[r#"
@@ -978,7 +978,7 @@ fn for_statement_continue_break() {
 }
 
 #[test]
-fn parse_stmt_compound_empty() {
+fn parse_statement_compound_empty() {
     check_statement(
         "{}",
         expect![[r#"
@@ -989,7 +989,7 @@ fn parse_stmt_compound_empty() {
 }
 
 #[test]
-fn parse_stmt_compound() {
+fn parse_statement_compound() {
     check_statement(
         "{ let x = 3; return x; }",
         expect![[r#"
@@ -1022,7 +1022,7 @@ fn parse_stmt_compound() {
 }
 
 #[test]
-fn parse_stmt_assignment() {
+fn parse_statement_assignment() {
     check_statement(
         "a = 3",
         expect![[r#"
@@ -1039,7 +1039,7 @@ fn parse_stmt_assignment() {
 }
 
 #[test]
-fn parse_stmt_assignment_field() {
+fn parse_statement_assignment_field() {
     check_statement(
         "a.b = a.c * 3",
         expect![[r#"
@@ -1071,7 +1071,7 @@ fn parse_stmt_assignment_field() {
 }
 
 #[test]
-fn parse_stmt_assignment_invalid() {
+fn parse_statement_assignment_invalid() {
     check_statement(
         "1+2=3",
         expect![[r#"
@@ -1089,7 +1089,7 @@ fn parse_stmt_assignment_invalid() {
 }
 
 #[test]
-fn parse_stmt_recover() {
+fn parse_statement_recover() {
     check_statement(
         "{ { let x = } { return 0 } }",
         expect![[r#"
@@ -1126,7 +1126,7 @@ fn parse_stmt_recover() {
 }
 
 #[test]
-fn parse_compound_assignment_stmt() {
+fn parse_compound_assignment_statement() {
     check_statement(
         "a += 3",
         expect![[r#"
@@ -1143,7 +1143,7 @@ fn parse_compound_assignment_stmt() {
 }
 
 #[test]
-fn parse_compound_assignment_stmt_expr() {
+fn parse_compound_assignment_statement_expression() {
     check_statement(
         "*func() += foo()",
         expect![[r#"
@@ -1544,7 +1544,7 @@ fn fn_recover_incomplete_param() {
 }
 
 #[test]
-fn let_stmt_recover_return_no_eq() {
+fn let_statement_recover_return_no_eq() {
     check(
         "fn main() {
             let x be
@@ -1580,7 +1580,7 @@ fn let_stmt_recover_return_no_eq() {
 }
 
 #[test]
-fn let_stmt_recover_return() {
+fn let_statement_recover_return() {
     check(
         "fn main() {
             let
@@ -1618,7 +1618,7 @@ fn let_stmt_recover_return() {
 }
 
 #[test]
-fn let_stmt_recover_return_2() {
+fn let_statement_recover_return_2() {
     check(
         "fn main() {
             let x
@@ -1660,7 +1660,7 @@ fn let_stmt_recover_return_2() {
 }
 
 #[test]
-fn let_stmt_recover_return_3() {
+fn let_statement_recover_return_3() {
     check(
         "fn main() {
             let x =
@@ -1701,7 +1701,7 @@ fn let_stmt_recover_return_3() {
 }
 
 #[test]
-fn let_stmt_recover_1() {
+fn let_statement_recover_1() {
     check(
         "fn main() {
             let x
@@ -1735,7 +1735,7 @@ fn let_stmt_recover_1() {
 }
 
 #[test]
-fn let_stmt_recover_2() {
+fn let_statement_recover_2() {
     check(
         "fn main() {
             let x =
@@ -1768,7 +1768,7 @@ fn let_stmt_recover_2() {
 }
 
 #[test]
-fn let_stmt_recover_3() {
+fn let_statement_recover_3() {
     check(
         "fn main() {
             let
@@ -2376,7 +2376,7 @@ fn type_alias_decl_recover() {
 }
 
 #[test]
-fn parse_stmt_expr() {
+fn parse_statement_expression() {
     check_statement(
         "test(args);",
         expect![[r#"

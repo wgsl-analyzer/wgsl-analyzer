@@ -11,7 +11,7 @@ use vfs::VfsPath;
 use crate::{
     HirFileId, InFile,
     ast_id::AstIdMap,
-    attrs::{Attribute, AttributeDefId, AttributesWithOwner},
+    attributes::{Attribute, AttributeDefId, AttributesWithOwner},
     body::{Body, BodySourceMap, scope::ExprScopes},
     data::{
         FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, StructData,
