@@ -145,7 +145,7 @@ jobs:
         with:
           targets: x86_64-unknown-none
       - name: Check Compile
-        run: cargo check --no-default-features
+        run: cargo check --workspace --no-default-features
 
   markdownlint:
     runs-on: ubuntu-latest
