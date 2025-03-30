@@ -30,7 +30,7 @@ impl flags::Dist {
         let project_root = project_root();
         let target = Target::get(&project_root);
         let allocator = self.allocator();
-        let distribute = project_root.join("distribute");
+        let distribute = project_root.join("dist");
         shell.remove_path(&distribute)?;
         shell.create_dir(&distribute)?;
 
