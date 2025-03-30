@@ -68,7 +68,7 @@ fn run_fuzzer(shell: &Shell) -> anyhow::Result<()> {
     let _e = shell.push_env("RUSTUP_TOOLCHAIN", "nightly");
     if command!(shell, "cargo fuzz --help").read().is_err() {
         command!(shell, "cargo install cargo-fuzz").run()?;
-    };
+    }
 
     // Expecting nightly rustc
     let out = command!(shell, "rustc --version").read()?;
