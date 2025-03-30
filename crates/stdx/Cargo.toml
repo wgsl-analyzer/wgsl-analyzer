@@ -19,7 +19,6 @@ jod-thread.workspace = true
 libc.workspace = true
 crossbeam-channel.workspace = true
 itertools.workspace = true
-always-assert.workspace = true
 tracing.workspace = true
 # Think twice before adding anything here
 

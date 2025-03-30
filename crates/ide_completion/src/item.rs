@@ -1,5 +1,5 @@
-use always_assert::never;
 use base_db::TextRange;
+use stdx::never;
 use text_edit::TextEdit;
 
 /// `CompletionItem` describes a single completion variant in the editor pop-up.

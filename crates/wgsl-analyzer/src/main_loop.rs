@@ -8,7 +8,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-use always_assert::always;
 use crossbeam_channel::{Receiver, select};
 // use ide_db::base_db::{SourceDatabase, SourceRootDatabase, VfsPath};
 use lsp_server::{Connection, Notification, Request};
