@@ -259,7 +259,7 @@ mod implementation {
             let previous = self.dst.len();
             unsafe {
                 self.dst
-                    .set_length(previous + status.bytes_transferred() as usize)
+                    .set_len(previous + status.bytes_transferred() as usize)
             };
             if status.bytes_transferred() == 0 {
                 self.done = true;
