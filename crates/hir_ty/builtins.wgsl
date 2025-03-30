@@ -223,454 +223,67 @@ textureDimensions(texture_storage_2d_array<_;_>) -> vec2<u32>
 textureDimensions(texture_storage_3d<_;_>) -> vec3<u32>
 textureDimensions(texture_external) -> vec2<u32>
 
-textureLoad(t: texture_1d<i32>,  coords: i32,  level: i32) -> vec4<i32>
-textureLoad(t: texture_1d<i32>,  coords: i32,  level: u32) -> vec4<i32>
-textureLoad(t: texture_1d<i32>,  coords: u32,  level: i32) -> vec4<i32>
-textureLoad(t: texture_1d<i32>,  coords: u32,  level: u32) -> vec4<i32>
-textureLoad(t: texture_1d<u32>,  coords: i32,  level: i32) -> vec4<u32>
-textureLoad(t: texture_1d<u32>,  coords: i32,  level: u32) -> vec4<u32>
-textureLoad(t: texture_1d<u32>,  coords: u32,  level: i32) -> vec4<u32>
-textureLoad(t: texture_1d<u32>,  coords: u32,  level: u32) -> vec4<u32>
-textureLoad(t: texture_1d<f32>,  coords: i32,  level: i32) -> vec4<f32>
-textureLoad(t: texture_1d<f32>,  coords: i32,  level: u32) -> vec4<f32>
-textureLoad(t: texture_1d<f32>,  coords: u32,  level: i32) -> vec4<f32>
-textureLoad(t: texture_1d<f32>,  coords: u32,  level: u32) -> vec4<f32>
-
-textureLoad(t: texture_2d<i32>,  coords: vec2<i32>,  level: i32) -> vec4<i32>
-textureLoad(t: texture_2d<i32>,  coords: vec2<i32>,  level: u32) -> vec4<i32>
-textureLoad(t: texture_2d<i32>,  coords: vec2<u32>,  level: i32) -> vec4<i32>
-textureLoad(t: texture_2d<i32>,  coords: vec2<u32>,  level: u32) -> vec4<i32>
-textureLoad(t: texture_2d<u32>,  coords: vec2<i32>,  level: i32) -> vec4<u32>
-textureLoad(t: texture_2d<u32>,  coords: vec2<i32>,  level: u32) -> vec4<u32>
-textureLoad(t: texture_2d<u32>,  coords: vec2<u32>,  level: i32) -> vec4<u32>
-textureLoad(t: texture_2d<u32>,  coords: vec2<u32>,  level: u32) -> vec4<u32>
-textureLoad(t: texture_2d<f32>,  coords: vec2<i32>,  level: i32) -> vec4<f32>
-textureLoad(t: texture_2d<f32>,  coords: vec2<i32>,  level: u32) -> vec4<f32>
-textureLoad(t: texture_2d<f32>,  coords: vec2<u32>,  level: i32) -> vec4<f32>
-textureLoad(t: texture_2d<f32>,  coords: vec2<u32>,  level: u32) -> vec4<f32>
-
-textureLoad(t: texture_2d_array<i32>,  coords: vec2<i32>, array_index: i32,  level: i32) -> vec4<i32>
-textureLoad(t: texture_2d_array<i32>,  coords: vec2<i32>, array_index: u32,  level: i32) -> vec4<i32>
-textureLoad(t: texture_2d_array<i32>,  coords: vec2<i32>, array_index: i32,  level: u32) -> vec4<i32>
-textureLoad(t: texture_2d_array<i32>,  coords: vec2<i32>, array_index: u32,  level: u32) -> vec4<i32>
-textureLoad(t: texture_2d_array<i32>,  coords: vec2<u32>, array_index: i32,  level: i32) -> vec4<i32>
-textureLoad(t: texture_2d_array<i32>,  coords: vec2<u32>, array_index: u32,  level: i32) -> vec4<i32>
-textureLoad(t: texture_2d_array<i32>,  coords: vec2<u32>, array_index: i32,  level: u32) -> vec4<i32>
-textureLoad(t: texture_2d_array<i32>,  coords: vec2<u32>, array_index: u32,  level: u32) -> vec4<i32>
-textureLoad(t: texture_2d_array<u32>,  coords: vec2<i32>, array_index: i32,  level: i32) -> vec4<u32>
-textureLoad(t: texture_2d_array<u32>,  coords: vec2<i32>, array_index: u32,  level: i32) -> vec4<u32>
-textureLoad(t: texture_2d_array<u32>,  coords: vec2<i32>, array_index: i32,  level: u32) -> vec4<u32>
-textureLoad(t: texture_2d_array<u32>,  coords: vec2<i32>, array_index: u32,  level: u32) -> vec4<u32>
-textureLoad(t: texture_2d_array<u32>,  coords: vec2<u32>, array_index: i32,  level: i32) -> vec4<u32>
-textureLoad(t: texture_2d_array<u32>,  coords: vec2<u32>, array_index: u32,  level: i32) -> vec4<u32>
-textureLoad(t: texture_2d_array<u32>,  coords: vec2<u32>, array_index: i32,  level: u32) -> vec4<u32>
-textureLoad(t: texture_2d_array<u32>,  coords: vec2<u32>, array_index: u32,  level: u32) -> vec4<u32>
-textureLoad(t: texture_2d_array<f32>,  coords: vec2<i32>, array_index: i32,  level: i32) -> vec4<f32>
-textureLoad(t: texture_2d_array<f32>,  coords: vec2<i32>, array_index: u32,  level: i32) -> vec4<f32>
-textureLoad(t: texture_2d_array<f32>,  coords: vec2<i32>, array_index: i32,  level: u32) -> vec4<f32>
-textureLoad(t: texture_2d_array<f32>,  coords: vec2<i32>, array_index: u32,  level: u32) -> vec4<f32>
-textureLoad(t: texture_2d_array<f32>,  coords: vec2<u32>, array_index: i32,  level: i32) -> vec4<f32>
-textureLoad(t: texture_2d_array<f32>,  coords: vec2<u32>, array_index: u32,  level: i32) -> vec4<f32>
-textureLoad(t: texture_2d_array<f32>,  coords: vec2<u32>, array_index: i32,  level: u32) -> vec4<f32>
-textureLoad(t: texture_2d_array<f32>,  coords: vec2<u32>, array_index: u32,  level: u32) -> vec4<f32>
-
-textureLoad(t: texture_3d<i32>,  coords: vec3<i32>,  level: i32) -> vec4<i32>
-textureLoad(t: texture_3d<i32>,  coords: vec3<i32>,  level: u32) -> vec4<i32>
-textureLoad(t: texture_3d<i32>,  coords: vec3<u32>,  level: i32) -> vec4<i32>
-textureLoad(t: texture_3d<i32>,  coords: vec3<u32>,  level: u32) -> vec4<i32>
-textureLoad(t: texture_3d<u32>,  coords: vec3<i32>,  level: i32) -> vec4<u32>
-textureLoad(t: texture_3d<u32>,  coords: vec3<i32>,  level: u32) -> vec4<u32>
-textureLoad(t: texture_3d<u32>,  coords: vec3<u32>,  level: i32) -> vec4<u32>
-textureLoad(t: texture_3d<u32>,  coords: vec3<u32>,  level: u32) -> vec4<u32>
-textureLoad(t: texture_3d<f32>,  coords: vec3<i32>,  level: i32) -> vec4<f32>
-textureLoad(t: texture_3d<f32>,  coords: vec3<i32>,  level: u32) -> vec4<f32>
-textureLoad(t: texture_3d<f32>,  coords: vec3<u32>,  level: i32) -> vec4<f32>
-textureLoad(t: texture_3d<f32>,  coords: vec3<u32>,  level: u32) -> vec4<f32>
-
-textureLoad(t: texture_multisampled_2d<i32>,  coords: vec2<i32>,  sample_index: i32) -> vec4<i32>
-textureLoad(t: texture_multisampled_2d<i32>,  coords: vec2<i32>,  sample_index: u32) -> vec4<i32>
-textureLoad(t: texture_multisampled_2d<i32>,  coords: vec2<u32>,  sample_index: i32) -> vec4<i32>
-textureLoad(t: texture_multisampled_2d<i32>,  coords: vec2<u32>,  sample_index: u32) -> vec4<i32>
-textureLoad(t: texture_multisampled_2d<u32>,  coords: vec2<i32>,  sample_index: i32) -> vec4<u32>
-textureLoad(t: texture_multisampled_2d<u32>,  coords: vec2<i32>,  sample_index: u32) -> vec4<u32>
-textureLoad(t: texture_multisampled_2d<u32>,  coords: vec2<u32>,  sample_index: i32) -> vec4<u32>
-textureLoad(t: texture_multisampled_2d<u32>,  coords: vec2<u32>,  sample_index: u32) -> vec4<u32>
-textureLoad(t: texture_multisampled_2d<f32>,  coords: vec2<i32>,  sample_index: i32) -> vec4<f32>
-textureLoad(t: texture_multisampled_2d<f32>,  coords: vec2<i32>,  sample_index: u32) -> vec4<f32>
-textureLoad(t: texture_multisampled_2d<f32>,  coords: vec2<u32>,  sample_index: i32) -> vec4<f32>
-textureLoad(t: texture_multisampled_2d<f32>,  coords: vec2<u32>,  sample_index: u32) -> vec4<f32>
-
-textureLoad(t: texture_depth_2d,  coords: vec2<i32>,  level: i32) -> f32
-textureLoad(t: texture_depth_2d,  coords: vec2<i32>,  level: u32) -> f32
-textureLoad(t: texture_depth_2d,  coords: vec2<u32>,  level: i32) -> f32
-textureLoad(t: texture_depth_2d,  coords: vec2<u32>,  level: u32) -> f32
-
-textureLoad(t: ,  coords: vec2<C>,  level: L) -> f32
-
-textureLoad(t: texture_depth_2d_array,  coords: vec2<i32>,  array_index: i32,  sample_index: i32) -> f32
-textureLoad(t: texture_depth_2d_array,  coords: vec2<i32>,  array_index: i32,  sample_index: u32) -> f32
-textureLoad(t: texture_depth_2d_array,  coords: vec2<i32>,  array_index: u32,  sample_index: i32) -> f32
-textureLoad(t: texture_depth_2d_array,  coords: vec2<i32>,  array_index: u32,  sample_index: u32) -> f32
-textureLoad(t: texture_depth_2d_array,  coords: vec2<i32>,  array_index: i32,  sample_index: i32) -> f32
-textureLoad(t: texture_depth_2d_array,  coords: vec2<i32>,  array_index: i32,  sample_index: u32) -> f32
-textureLoad(t: texture_depth_2d_array,  coords: vec2<u32>,  array_index: u32,  sample_index: i32) -> f32
-textureLoad(t: texture_depth_2d_array,  coords: vec2<u32>,  array_index: u32,  sample_index: u32) -> f32
-textureLoad(t: texture_depth_2d_array,  coords: vec2<u32>,  array_index: i32,  sample_index: i32) -> f32
-textureLoad(t: texture_depth_2d_array,  coords: vec2<u32>,  array_index: i32,  sample_index: u32) -> f32
-textureLoad(t: texture_depth_2d_array,  coords: vec2<u32>,  array_index: u32,  sample_index: i32) -> f32
-textureLoad(t: texture_depth_2d_array,  coords: vec2<u32>,  array_index: u32,  sample_index: u32) -> f32
-
-textureLoad(t: texture_depth_multisampled_2d,  coords: vec2<i32>,  sample_index: i32) -> f32
-textureLoad(t: texture_depth_multisampled_2d,  coords: vec2<u32>,  sample_index: u32) -> f32
-textureLoad(t: texture_depth_multisampled_2d,  coords: vec2<i32>,  sample_index: i32) -> f32
-textureLoad(t: texture_depth_multisampled_2d,  coords: vec2<u32>,  sample_index: u32) -> f32
-
-textureLoad(t: texture_external,  coords: vec2<i32>) -> vec4<f32>
-textureLoad(t: texture_external,  coords: vec2<u32>) -> vec4<f32>
-
-textureLoad(t: texture_storage_1d<rgba8unorm, read>,  coords: i32) -> vec4<8unorm>
-textureLoad(t: texture_storage_1d<rgba8unorm, read>,  coords: u32) -> vec4<8unorm>
-textureLoad(t: texture_storage_1d<rgba8unorm, read_write>,  coords: i32) -> vec4<8unorm>
-textureLoad(t: texture_storage_1d<rgba8unorm, read_write>,  coords: u32) -> vec4<8unorm>
-textureLoad(t: texture_storage_1d<rgba8snorm, read>,  coords: i32) -> vec4<8snorm>
-textureLoad(t: texture_storage_1d<rgba8snorm, read>,  coords: u32) -> vec4<8snorm>
-textureLoad(t: texture_storage_1d<rgba8snorm, read_write>,  coords: i32) -> vec4<8snorm>
-textureLoad(t: texture_storage_1d<rgba8snorm, read_write>,  coords: u32) -> vec4<8snorm>
-textureLoad(t: texture_storage_1d<rgba8uint, read>,  coords: i32) -> vec4<8uint>
-textureLoad(t: texture_storage_1d<rgba8uint, read>,  coords: u32) -> vec4<8uint>
-textureLoad(t: texture_storage_1d<rgba8uint, read_write>,  coords: i32) -> vec4<8uint>
-textureLoad(t: texture_storage_1d<rgba8uint, read_write>,  coords: u32) -> vec4<8uint>
-textureLoad(t: texture_storage_1d<rgba8sint, read>,  coords: i32) -> vec4<8sint>
-textureLoad(t: texture_storage_1d<rgba8sint, read>,  coords: u32) -> vec4<8sint>
-textureLoad(t: texture_storage_1d<rgba8sint, read_write>,  coords: i32) -> vec4<8sint>
-textureLoad(t: texture_storage_1d<rgba8sint, read_write>,  coords: u32) -> vec4<8sint>
-textureLoad(t: texture_storage_1d<rgba16uint, read>,  coords: i32) -> vec4<16uint>
-textureLoad(t: texture_storage_1d<rgba16uint, read>,  coords: u32) -> vec4<16uint>
-textureLoad(t: texture_storage_1d<rgba16uint, read_write>,  coords: i32) -> vec4<16uint>
-textureLoad(t: texture_storage_1d<rgba16uint, read_write>,  coords: u32) -> vec4<16uint>
-textureLoad(t: texture_storage_1d<rgba16sint, read>,  coords: i32) -> vec4<16sint>
-textureLoad(t: texture_storage_1d<rgba16sint, read>,  coords: u32) -> vec4<16sint>
-textureLoad(t: texture_storage_1d<rgba16sint, read_write>,  coords: i32) -> vec4<16sint>
-textureLoad(t: texture_storage_1d<rgba16sint, read_write>,  coords: u32) -> vec4<16sint>
-textureLoad(t: texture_storage_1d<rgba16float, read>,  coords: i32) -> vec4<16float>
-textureLoad(t: texture_storage_1d<rgba16float, read>,  coords: u32) -> vec4<16float>
-textureLoad(t: texture_storage_1d<rgba16float, read_write>,  coords: i32) -> vec4<16float>
-textureLoad(t: texture_storage_1d<rgba16float, read_write>,  coords: u32) -> vec4<16float>
-textureLoad(t: texture_storage_1d<r32uint, read>,  coords: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_1d<r32uint, read>,  coords: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_1d<r32uint, read_write>,  coords: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_1d<r32uint, read_write>,  coords: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_1d<r32sint, read>,  coords: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_1d<r32sint, read>,  coords: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_1d<r32sint, read_write>,  coords: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_1d<r32sint, read_write>,  coords: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_1d<r32float, read>,  coords: i32) -> vec4<32float>
-textureLoad(t: texture_storage_1d<r32float, read>,  coords: u32) -> vec4<32float>
-textureLoad(t: texture_storage_1d<r32float, read_write>,  coords: i32) -> vec4<32float>
-textureLoad(t: texture_storage_1d<r32float, read_write>,  coords: u32) -> vec4<32float>
-textureLoad(t: texture_storage_1d<rg32uint, read>,  coords: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_1d<rg32uint, read>,  coords: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_1d<rg32uint, read_write>,  coords: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_1d<rg32uint, read_write>,  coords: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_1d<rg32sint, read>,  coords: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_1d<rg32sint, read>,  coords: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_1d<rg32sint, read_write>,  coords: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_1d<rg32sint, read_write>,  coords: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_1d<rg32float, read>,  coords: i32) -> vec4<32float>
-textureLoad(t: texture_storage_1d<rg32float, read>,  coords: u32) -> vec4<32float>
-textureLoad(t: texture_storage_1d<rg32float, read_write>,  coords: i32) -> vec4<32float>
-textureLoad(t: texture_storage_1d<rg32float, read_write>,  coords: u32) -> vec4<32float>
-textureLoad(t: texture_storage_1d<rgba32uint, read>,  coords: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_1d<rgba32uint, read>,  coords: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_1d<rgba32uint, read_write>,  coords: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_1d<rgba32uint, read_write>,  coords: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_1d<rgba32sint, read>,  coords: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_1d<rgba32sint, read>,  coords: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_1d<rgba32sint, read_write>,  coords: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_1d<rgba32sint, read_write>,  coords: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_1d<rgba32float, read>,  coords: i32) -> vec4<32float>
-textureLoad(t: texture_storage_1d<rgba32float, read>,  coords: u32) -> vec4<32float>
-textureLoad(t: texture_storage_1d<rgba32float, read_write>,  coords: i32) -> vec4<32float>
-textureLoad(t: texture_storage_1d<rgba32float, read_write>,  coords: u32) -> vec4<32float>
-textureLoad(t: texture_storage_1d<bgra8unorm, read>,  coords: i32) -> vec4<8unorm>
-textureLoad(t: texture_storage_1d<bgra8unorm, read>,  coords: u32) -> vec4<8unorm>
-textureLoad(t: texture_storage_1d<bgra8unorm, read_write>,  coords: i32) -> vec4<8unorm>
-textureLoad(t: texture_storage_1d<bgra8unorm, read_write>,  coords: u32) -> vec4<8unorm>
-
-textureLoad(t: texture_storage_2d<rgba8unorm, read>, coords: vec2<i32>) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d<rgba8unorm, read>, coords: vec2<u32>) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d<rgba8unorm, read_write>, coords: vec2<i32>) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d<rgba8unorm, read_write>, coords: vec2<u32>) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d<rgba8snorm, read>, coords: vec2<i32>) -> vec4<8snorm>
-textureLoad(t: texture_storage_2d<rgba8snorm, read>, coords: vec2<u32>) -> vec4<8snorm>
-textureLoad(t: texture_storage_2d<rgba8snorm, read_write>, coords: vec2<i32>) -> vec4<8snorm>
-textureLoad(t: texture_storage_2d<rgba8snorm, read_write>, coords: vec2<u32>) -> vec4<8snorm>
-textureLoad(t: texture_storage_2d<rgba8uint, read>, coords: vec2<i32>) -> vec4<8uint>
-textureLoad(t: texture_storage_2d<rgba8uint, read>, coords: vec2<u32>) -> vec4<8uint>
-textureLoad(t: texture_storage_2d<rgba8uint, read_write>, coords: vec2<i32>) -> vec4<8uint>
-textureLoad(t: texture_storage_2d<rgba8uint, read_write>, coords: vec2<u32>) -> vec4<8uint>
-textureLoad(t: texture_storage_2d<rgba8sint, read>, coords: vec2<i32>) -> vec4<8sint>
-textureLoad(t: texture_storage_2d<rgba8sint, read>, coords: vec2<u32>) -> vec4<8sint>
-textureLoad(t: texture_storage_2d<rgba8sint, read_write>, coords: vec2<i32>) -> vec4<8sint>
-textureLoad(t: texture_storage_2d<rgba8sint, read_write>, coords: vec2<u32>) -> vec4<8sint>
-textureLoad(t: texture_storage_2d<rgba16uint, read>, coords: vec2<i32>) -> vec4<16uint>
-textureLoad(t: texture_storage_2d<rgba16uint, read>, coords: vec2<u32>) -> vec4<16uint>
-textureLoad(t: texture_storage_2d<rgba16uint, read_write>, coords: vec2<i32>) -> vec4<16uint>
-textureLoad(t: texture_storage_2d<rgba16uint, read_write>, coords: vec2<u32>) -> vec4<16uint>
-textureLoad(t: texture_storage_2d<rgba16sint, read>, coords: vec2<i32>) -> vec4<16sint>
-textureLoad(t: texture_storage_2d<rgba16sint, read>, coords: vec2<u32>) -> vec4<16sint>
-textureLoad(t: texture_storage_2d<rgba16sint, read_write>, coords: vec2<i32>) -> vec4<16sint>
-textureLoad(t: texture_storage_2d<rgba16sint, read_write>, coords: vec2<u32>) -> vec4<16sint>
-textureLoad(t: texture_storage_2d<rgba16float, read>, coords: vec2<i32>) -> vec4<16float>
-textureLoad(t: texture_storage_2d<rgba16float, read>, coords: vec2<u32>) -> vec4<16float>
-textureLoad(t: texture_storage_2d<rgba16float, read_write>, coords: vec2<i32>) -> vec4<16float>
-textureLoad(t: texture_storage_2d<rgba16float, read_write>, coords: vec2<u32>) -> vec4<16float>
-textureLoad(t: texture_storage_2d<r32uint, read>, coords: vec2<i32>) -> vec4<32uint>
-textureLoad(t: texture_storage_2d<r32uint, read>, coords: vec2<u32>) -> vec4<32uint>
-textureLoad(t: texture_storage_2d<r32uint, read_write>, coords: vec2<i32>) -> vec4<32uint>
-textureLoad(t: texture_storage_2d<r32uint, read_write>, coords: vec2<u32>) -> vec4<32uint>
-textureLoad(t: texture_storage_2d<r32sint, read>, coords: vec2<i32>) -> vec4<32sint>
-textureLoad(t: texture_storage_2d<r32sint, read>, coords: vec2<u32>) -> vec4<32sint>
-textureLoad(t: texture_storage_2d<r32sint, read_write>, coords: vec2<i32>) -> vec4<32sint>
-textureLoad(t: texture_storage_2d<r32sint, read_write>, coords: vec2<u32>) -> vec4<32sint>
-textureLoad(t: texture_storage_2d<r32float, read>, coords: vec2<i32>) -> vec4<32float>
-textureLoad(t: texture_storage_2d<r32float, read>, coords: vec2<u32>) -> vec4<32float>
-textureLoad(t: texture_storage_2d<r32float, read_write>, coords: vec2<i32>) -> vec4<32float>
-textureLoad(t: texture_storage_2d<r32float, read_write>, coords: vec2<u32>) -> vec4<32float>
-textureLoad(t: texture_storage_2d<rg32uint, read>, coords: vec2<i32>) -> vec4<32uint>
-textureLoad(t: texture_storage_2d<rg32uint, read>, coords: vec2<u32>) -> vec4<32uint>
-textureLoad(t: texture_storage_2d<rg32uint, read_write>, coords: vec2<i32>) -> vec4<32uint>
-textureLoad(t: texture_storage_2d<rg32uint, read_write>, coords: vec2<u32>) -> vec4<32uint>
-textureLoad(t: texture_storage_2d<rg32sint, read>, coords: vec2<i32>) -> vec4<32sint>
-textureLoad(t: texture_storage_2d<rg32sint, read>, coords: vec2<u32>) -> vec4<32sint>
-textureLoad(t: texture_storage_2d<rg32sint, read_write>, coords: vec2<i32>) -> vec4<32sint>
-textureLoad(t: texture_storage_2d<rg32sint, read_write>, coords: vec2<u32>) -> vec4<32sint>
-textureLoad(t: texture_storage_2d<rg32float, read>, coords: vec2<i32>) -> vec4<32float>
-textureLoad(t: texture_storage_2d<rg32float, read>, coords: vec2<u32>) -> vec4<32float>
-textureLoad(t: texture_storage_2d<rg32float, read_write>, coords: vec2<i32>) -> vec4<32float>
-textureLoad(t: texture_storage_2d<rg32float, read_write>, coords: vec2<u32>) -> vec4<32float>
-textureLoad(t: texture_storage_2d<rgba32uint, read>, coords: vec2<i32>) -> vec4<32uint>
-textureLoad(t: texture_storage_2d<rgba32uint, read>, coords: vec2<u32>) -> vec4<32uint>
-textureLoad(t: texture_storage_2d<rgba32uint, read_write>, coords: vec2<i32>) -> vec4<32uint>
-textureLoad(t: texture_storage_2d<rgba32uint, read_write>, coords: vec2<u32>) -> vec4<32uint>
-textureLoad(t: texture_storage_2d<rgba32sint, read>, coords: vec2<i32>) -> vec4<32sint>
-textureLoad(t: texture_storage_2d<rgba32sint, read>, coords: vec2<u32>) -> vec4<32sint>
-textureLoad(t: texture_storage_2d<rgba32sint, read_write>, coords: vec2<i32>) -> vec4<32sint>
-textureLoad(t: texture_storage_2d<rgba32sint, read_write>, coords: vec2<u32>) -> vec4<32sint>
-textureLoad(t: texture_storage_2d<rgba32float, read>, coords: vec2<i32>) -> vec4<32float>
-textureLoad(t: texture_storage_2d<rgba32float, read>, coords: vec2<u32>) -> vec4<32float>
-textureLoad(t: texture_storage_2d<rgba32float, read_write>, coords: vec2<i32>) -> vec4<32float>
-textureLoad(t: texture_storage_2d<rgba32float, read_write>, coords: vec2<u32>) -> vec4<32float>
-textureLoad(t: texture_storage_2d<bgra8unorm, read>, coords: vec2<i32>) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d<bgra8unorm, read>, coords: vec2<u32>) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d<bgra8unorm, read_write>, coords: vec2<i32>) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d<bgra8unorm, read_write>, coords: vec2<u32>) -> vec4<8unorm>
-
-textureLoad(t: texture_storage_2d_array<rgba8unorm, read>, coords: vec2<i32>, array_index: i32) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d_array<rgba8unorm, read>, coords: vec2<i32>, array_index: u32) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d_array<rgba8unorm, read>, coords: vec2<u32>, array_index: i32) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d_array<rgba8unorm, read>, coords: vec2<u32>, array_index: u32) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d_array<rgba8unorm, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d_array<rgba8unorm, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d_array<rgba8unorm, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d_array<rgba8unorm, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d_array<rgba8snorm, read>, coords: vec2<i32>, array_index: i32) -> vec4<8snorm>
-textureLoad(t: texture_storage_2d_array<rgba8snorm, read>, coords: vec2<i32>, array_index: u32) -> vec4<8snorm>
-textureLoad(t: texture_storage_2d_array<rgba8snorm, read>, coords: vec2<u32>, array_index: i32) -> vec4<8snorm>
-textureLoad(t: texture_storage_2d_array<rgba8snorm, read>, coords: vec2<u32>, array_index: u32) -> vec4<8snorm>
-textureLoad(t: texture_storage_2d_array<rgba8snorm, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<8snorm>
-textureLoad(t: texture_storage_2d_array<rgba8snorm, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<8snorm>
-textureLoad(t: texture_storage_2d_array<rgba8snorm, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<8snorm>
-textureLoad(t: texture_storage_2d_array<rgba8snorm, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<8snorm>
-textureLoad(t: texture_storage_2d_array<rgba8uint, read>, coords: vec2<i32>, array_index: i32) -> vec4<8uint>
-textureLoad(t: texture_storage_2d_array<rgba8uint, read>, coords: vec2<i32>, array_index: u32) -> vec4<8uint>
-textureLoad(t: texture_storage_2d_array<rgba8uint, read>, coords: vec2<u32>, array_index: i32) -> vec4<8uint>
-textureLoad(t: texture_storage_2d_array<rgba8uint, read>, coords: vec2<u32>, array_index: u32) -> vec4<8uint>
-textureLoad(t: texture_storage_2d_array<rgba8uint, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<8uint>
-textureLoad(t: texture_storage_2d_array<rgba8uint, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<8uint>
-textureLoad(t: texture_storage_2d_array<rgba8uint, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<8uint>
-textureLoad(t: texture_storage_2d_array<rgba8uint, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<8uint>
-textureLoad(t: texture_storage_2d_array<rgba8sint, read>, coords: vec2<i32>, array_index: i32) -> vec4<8sint>
-textureLoad(t: texture_storage_2d_array<rgba8sint, read>, coords: vec2<i32>, array_index: u32) -> vec4<8sint>
-textureLoad(t: texture_storage_2d_array<rgba8sint, read>, coords: vec2<u32>, array_index: i32) -> vec4<8sint>
-textureLoad(t: texture_storage_2d_array<rgba8sint, read>, coords: vec2<u32>, array_index: u32) -> vec4<8sint>
-textureLoad(t: texture_storage_2d_array<rgba8sint, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<8sint>
-textureLoad(t: texture_storage_2d_array<rgba8sint, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<8sint>
-textureLoad(t: texture_storage_2d_array<rgba8sint, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<8sint>
-textureLoad(t: texture_storage_2d_array<rgba8sint, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<8sint>
-textureLoad(t: texture_storage_2d_array<rgba16uint, read>, coords: vec2<i32>, array_index: i32) -> vec4<16uint>
-textureLoad(t: texture_storage_2d_array<rgba16uint, read>, coords: vec2<i32>, array_index: u32) -> vec4<16uint>
-textureLoad(t: texture_storage_2d_array<rgba16uint, read>, coords: vec2<u32>, array_index: i32) -> vec4<16uint>
-textureLoad(t: texture_storage_2d_array<rgba16uint, read>, coords: vec2<u32>, array_index: u32) -> vec4<16uint>
-textureLoad(t: texture_storage_2d_array<rgba16uint, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<16uint>
-textureLoad(t: texture_storage_2d_array<rgba16uint, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<16uint>
-textureLoad(t: texture_storage_2d_array<rgba16uint, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<16uint>
-textureLoad(t: texture_storage_2d_array<rgba16uint, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<16uint>
-textureLoad(t: texture_storage_2d_array<rgba16sint, read>, coords: vec2<i32>, array_index: i32) -> vec4<16sint>
-textureLoad(t: texture_storage_2d_array<rgba16sint, read>, coords: vec2<i32>, array_index: u32) -> vec4<16sint>
-textureLoad(t: texture_storage_2d_array<rgba16sint, read>, coords: vec2<u32>, array_index: i32) -> vec4<16sint>
-textureLoad(t: texture_storage_2d_array<rgba16sint, read>, coords: vec2<u32>, array_index: u32) -> vec4<16sint>
-textureLoad(t: texture_storage_2d_array<rgba16sint, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<16sint>
-textureLoad(t: texture_storage_2d_array<rgba16sint, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<16sint>
-textureLoad(t: texture_storage_2d_array<rgba16sint, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<16sint>
-textureLoad(t: texture_storage_2d_array<rgba16sint, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<16sint>
-textureLoad(t: texture_storage_2d_array<rgba16float, read>, coords: vec2<i32>, array_index: i32) -> vec4<16float>
-textureLoad(t: texture_storage_2d_array<rgba16float, read>, coords: vec2<i32>, array_index: u32) -> vec4<16float>
-textureLoad(t: texture_storage_2d_array<rgba16float, read>, coords: vec2<u32>, array_index: i32) -> vec4<16float>
-textureLoad(t: texture_storage_2d_array<rgba16float, read>, coords: vec2<u32>, array_index: u32) -> vec4<16float>
-textureLoad(t: texture_storage_2d_array<rgba16float, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<16float>
-textureLoad(t: texture_storage_2d_array<rgba16float, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<16float>
-textureLoad(t: texture_storage_2d_array<rgba16float, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<16float>
-textureLoad(t: texture_storage_2d_array<rgba16float, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<16float>
-textureLoad(t: texture_storage_2d_array<r32uint, read>, coords: vec2<i32>, array_index: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<r32uint, read>, coords: vec2<i32>, array_index: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<r32uint, read>, coords: vec2<u32>, array_index: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<r32uint, read>, coords: vec2<u32>, array_index: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<r32uint, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<r32uint, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<r32uint, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<r32uint, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<r32sint, read>, coords: vec2<i32>, array_index: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<r32sint, read>, coords: vec2<i32>, array_index: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<r32sint, read>, coords: vec2<u32>, array_index: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<r32sint, read>, coords: vec2<u32>, array_index: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<r32sint, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<r32sint, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<r32sint, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<r32sint, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<r32float, read>, coords: vec2<i32>, array_index: i32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<r32float, read>, coords: vec2<i32>, array_index: u32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<r32float, read>, coords: vec2<u32>, array_index: i32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<r32float, read>, coords: vec2<u32>, array_index: u32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<r32float, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<r32float, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<r32float, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<r32float, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rg32uint, read>, coords: vec2<i32>, array_index: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rg32uint, read>, coords: vec2<i32>, array_index: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rg32uint, read>, coords: vec2<u32>, array_index: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rg32uint, read>, coords: vec2<u32>, array_index: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rg32uint, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rg32uint, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rg32uint, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rg32uint, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rg32sint, read>, coords: vec2<i32>, array_index: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rg32sint, read>, coords: vec2<i32>, array_index: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rg32sint, read>, coords: vec2<u32>, array_index: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rg32sint, read>, coords: vec2<u32>, array_index: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rg32sint, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rg32sint, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rg32sint, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rg32sint, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rg32float, read>, coords: vec2<i32>, array_index: i32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rg32float, read>, coords: vec2<i32>, array_index: u32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rg32float, read>, coords: vec2<u32>, array_index: i32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rg32float, read>, coords: vec2<u32>, array_index: u32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rg32float, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rg32float, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rg32float, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rg32float, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rgba32uint, read>, coords: vec2<i32>, array_index: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rgba32uint, read>, coords: vec2<i32>, array_index: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rgba32uint, read>, coords: vec2<u32>, array_index: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rgba32uint, read>, coords: vec2<u32>, array_index: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rgba32uint, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rgba32uint, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rgba32uint, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rgba32uint, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<32uint>
-textureLoad(t: texture_storage_2d_array<rgba32sint, read>, coords: vec2<i32>, array_index: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rgba32sint, read>, coords: vec2<i32>, array_index: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rgba32sint, read>, coords: vec2<u32>, array_index: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rgba32sint, read>, coords: vec2<u32>, array_index: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rgba32sint, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rgba32sint, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rgba32sint, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rgba32sint, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<32sint>
-textureLoad(t: texture_storage_2d_array<rgba32float, read>, coords: vec2<i32>, array_index: i32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rgba32float, read>, coords: vec2<i32>, array_index: u32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rgba32float, read>, coords: vec2<u32>, array_index: i32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rgba32float, read>, coords: vec2<u32>, array_index: u32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rgba32float, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rgba32float, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rgba32float, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<rgba32float, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<32float>
-textureLoad(t: texture_storage_2d_array<bgra8unorm, read>, coords: vec2<i32>, array_index: i32) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d_array<bgra8unorm, read>, coords: vec2<i32>, array_index: u32) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d_array<bgra8unorm, read>, coords: vec2<u32>, array_index: i32) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d_array<bgra8unorm, read>, coords: vec2<u32>, array_index: u32) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d_array<bgra8unorm, read_write>, coords: vec2<i32>, array_index: i32) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d_array<bgra8unorm, read_write>, coords: vec2<i32>, array_index: u32) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d_array<bgra8unorm, read_write>, coords: vec2<u32>, array_index: i32) -> vec4<8unorm>
-textureLoad(t: texture_storage_2d_array<bgra8unorm, read_write>, coords: vec2<u32>, array_index: u32) -> vec4<8unorm>
-
-textureLoad(t: texture_storage_3d<rgba8unorm, read>, coords: vec3<i32>) -> vec4<8unorm>
-textureLoad(t: texture_storage_3d<rgba8unorm, read>, coords: vec3<u32>) -> vec4<8unorm>
-textureLoad(t: texture_storage_3d<rgba8unorm, read_write>, coords: vec3<i32>) -> vec4<8unorm>
-textureLoad(t: texture_storage_3d<rgba8unorm, read_write>, coords: vec3<u32>) -> vec4<8unorm>
-textureLoad(t: texture_storage_3d<rgba8snorm, read>, coords: vec3<i32>) -> vec4<8snorm>
-textureLoad(t: texture_storage_3d<rgba8snorm, read>, coords: vec3<u32>) -> vec4<8snorm>
-textureLoad(t: texture_storage_3d<rgba8snorm, read_write>, coords: vec3<i32>) -> vec4<8snorm>
-textureLoad(t: texture_storage_3d<rgba8snorm, read_write>, coords: vec3<u32>) -> vec4<8snorm>
-textureLoad(t: texture_storage_3d<rgba8uint, read>, coords: vec3<i32>) -> vec4<8uint>
-textureLoad(t: texture_storage_3d<rgba8uint, read>, coords: vec3<u32>) -> vec4<8uint>
-textureLoad(t: texture_storage_3d<rgba8uint, read_write>, coords: vec3<i32>) -> vec4<8uint>
-textureLoad(t: texture_storage_3d<rgba8uint, read_write>, coords: vec3<u32>) -> vec4<8uint>
-textureLoad(t: texture_storage_3d<rgba8sint, read>, coords: vec3<i32>) -> vec4<8sint>
-textureLoad(t: texture_storage_3d<rgba8sint, read>, coords: vec3<u32>) -> vec4<8sint>
-textureLoad(t: texture_storage_3d<rgba8sint, read_write>, coords: vec3<i32>) -> vec4<8sint>
-textureLoad(t: texture_storage_3d<rgba8sint, read_write>, coords: vec3<u32>) -> vec4<8sint>
-textureLoad(t: texture_storage_3d<rgba16uint, read>, coords: vec3<i32>) -> vec4<16uint>
-textureLoad(t: texture_storage_3d<rgba16uint, read>, coords: vec3<u32>) -> vec4<16uint>
-textureLoad(t: texture_storage_3d<rgba16uint, read_write>, coords: vec3<i32>) -> vec4<16uint>
-textureLoad(t: texture_storage_3d<rgba16uint, read_write>, coords: vec3<u32>) -> vec4<16uint>
-textureLoad(t: texture_storage_3d<rgba16sint, read>, coords: vec3<i32>) -> vec4<16sint>
-textureLoad(t: texture_storage_3d<rgba16sint, read>, coords: vec3<u32>) -> vec4<16sint>
-textureLoad(t: texture_storage_3d<rgba16sint, read_write>, coords: vec3<i32>) -> vec4<16sint>
-textureLoad(t: texture_storage_3d<rgba16sint, read_write>, coords: vec3<u32>) -> vec4<16sint>
-textureLoad(t: texture_storage_3d<rgba16float, read>, coords: vec3<i32>) -> vec4<16float>
-textureLoad(t: texture_storage_3d<rgba16float, read>, coords: vec3<u32>) -> vec4<16float>
-textureLoad(t: texture_storage_3d<rgba16float, read_write>, coords: vec3<i32>) -> vec4<16float>
-textureLoad(t: texture_storage_3d<rgba16float, read_write>, coords: vec3<u32>) -> vec4<16float>
-textureLoad(t: texture_storage_3d<r32uint, read>, coords: vec3<i32>) -> vec4<32uint>
-textureLoad(t: texture_storage_3d<r32uint, read>, coords: vec3<u32>) -> vec4<32uint>
-textureLoad(t: texture_storage_3d<r32uint, read_write>, coords: vec3<i32>) -> vec4<32uint>
-textureLoad(t: texture_storage_3d<r32uint, read_write>, coords: vec3<u32>) -> vec4<32uint>
-textureLoad(t: texture_storage_3d<r32sint, read>, coords: vec3<i32>) -> vec4<32sint>
-textureLoad(t: texture_storage_3d<r32sint, read>, coords: vec3<u32>) -> vec4<32sint>
-textureLoad(t: texture_storage_3d<r32sint, read_write>, coords: vec3<i32>) -> vec4<32sint>
-textureLoad(t: texture_storage_3d<r32sint, read_write>, coords: vec3<u32>) -> vec4<32sint>
-textureLoad(t: texture_storage_3d<r32float, read>, coords: vec3<i32>) -> vec4<32float>
-textureLoad(t: texture_storage_3d<r32float, read>, coords: vec3<u32>) -> vec4<32float>
-textureLoad(t: texture_storage_3d<r32float, read_write>, coords: vec3<i32>) -> vec4<32float>
-textureLoad(t: texture_storage_3d<r32float, read_write>, coords: vec3<u32>) -> vec4<32float>
-textureLoad(t: texture_storage_3d<rg32uint, read>, coords: vec3<i32>) -> vec4<32uint>
-textureLoad(t: texture_storage_3d<rg32uint, read>, coords: vec3<u32>) -> vec4<32uint>
-textureLoad(t: texture_storage_3d<rg32uint, read_write>, coords: vec3<i32>) -> vec4<32uint>
-textureLoad(t: texture_storage_3d<rg32uint, read_write>, coords: vec3<u32>) -> vec4<32uint>
-textureLoad(t: texture_storage_3d<rg32sint, read>, coords: vec3<i32>) -> vec4<32sint>
-textureLoad(t: texture_storage_3d<rg32sint, read>, coords: vec3<u32>) -> vec4<32sint>
-textureLoad(t: texture_storage_3d<rg32sint, read_write>, coords: vec3<i32>) -> vec4<32sint>
-textureLoad(t: texture_storage_3d<rg32sint, read_write>, coords: vec3<u32>) -> vec4<32sint>
-textureLoad(t: texture_storage_3d<rg32float, read>, coords: vec3<i32>) -> vec4<32float>
-textureLoad(t: texture_storage_3d<rg32float, read>, coords: vec3<u32>) -> vec4<32float>
-textureLoad(t: texture_storage_3d<rg32float, read_write>, coords: vec3<i32>) -> vec4<32float>
-textureLoad(t: texture_storage_3d<rg32float, read_write>, coords: vec3<u32>) -> vec4<32float>
-textureLoad(t: texture_storage_3d<rgba32uint, read>, coords: vec3<i32>) -> vec4<32uint>
-textureLoad(t: texture_storage_3d<rgba32uint, read>, coords: vec3<u32>) -> vec4<32uint>
-textureLoad(t: texture_storage_3d<rgba32uint, read_write>, coords: vec3<i32>) -> vec4<32uint>
-textureLoad(t: texture_storage_3d<rgba32uint, read_write>, coords: vec3<u32>) -> vec4<32uint>
-textureLoad(t: texture_storage_3d<rgba32sint, read>, coords: vec3<i32>) -> vec4<32sint>
-textureLoad(t: texture_storage_3d<rgba32sint, read>, coords: vec3<u32>) -> vec4<32sint>
-textureLoad(t: texture_storage_3d<rgba32sint, read_write>, coords: vec3<i32>) -> vec4<32sint>
-textureLoad(t: texture_storage_3d<rgba32sint, read_write>, coords: vec3<u32>) -> vec4<32sint>
-textureLoad(t: texture_storage_3d<rgba32float, read>, coords: vec3<i32>) -> vec4<32float>
-textureLoad(t: texture_storage_3d<rgba32float, read>, coords: vec3<u32>) -> vec4<32float>
-textureLoad(t: texture_storage_3d<rgba32float, read_write>, coords: vec3<i32>) -> vec4<32float>
-textureLoad(t: texture_storage_3d<rgba32float, read_write>, coords: vec3<u32>) -> vec4<32float>
-textureLoad(t: texture_storage_3d<bgra8unorm, read>, coords: vec3<i32>) -> vec4<8unorm>
-textureLoad(t: texture_storage_3d<bgra8unorm, read>, coords: vec3<u32>) -> vec4<8unorm>
-textureLoad(t: texture_storage_3d<bgra8unorm, read_write>, coords: vec3<i32>) -> vec4<8unorm>
-textureLoad(t: texture_storage_3d<bgra8unorm, read_write>, coords: vec3<u32>) -> vec4<8unorm>
+textureLoad(t: texture_1d<T>, coords: i32,  level: i32) -> vec4<T>
+textureLoad(t: texture_1d<T>, coords: i32,  level: u32) -> vec4<T>
+textureLoad(t: texture_1d<T>, coords: u32,  level: i32) -> vec4<T>
+textureLoad(t: texture_1d<T>, coords: u32,  level: u32) -> vec4<T>
+textureLoad(t: texture_2d<T>, coords: vec2<i32>,  level: i32) -> vec4<T>
+textureLoad(t: texture_2d<T>, coords: vec2<i32>,  level: u32) -> vec4<T>
+textureLoad(t: texture_2d<T>, coords: vec2<u32>,  level: i32) -> vec4<T>
+textureLoad(t: texture_2d<T>, coords: vec2<u32>,  level: u32) -> vec4<T>
+textureLoad(t: texture_2d_array<T>, coords: vec2<i32>, array_index: i32,  level: i32) -> vec4<T>
+textureLoad(t: texture_2d_array<T>, coords: vec2<i32>, array_index: u32,  level: i32) -> vec4<T>
+textureLoad(t: texture_2d_array<T>, coords: vec2<i32>, array_index: i32,  level: u32) -> vec4<T>
+textureLoad(t: texture_2d_array<T>, coords: vec2<i32>, array_index: u32,  level: u32) -> vec4<T>
+textureLoad(t: texture_2d_array<T>, coords: vec2<u32>, array_index: i32,  level: i32) -> vec4<T>
+textureLoad(t: texture_2d_array<T>, coords: vec2<u32>, array_index: u32,  level: i32) -> vec4<T>
+textureLoad(t: texture_2d_array<T>, coords: vec2<u32>, array_index: i32,  level: u32) -> vec4<T>
+textureLoad(t: texture_2d_array<T>, coords: vec2<u32>, array_index: u32,  level: u32) -> vec4<T>
+textureLoad(t: texture_3d<T>, coords: vec3<i32>,  level: i32) -> vec4<T>
+textureLoad(t: texture_3d<T>, coords: vec3<i32>,  level: u32) -> vec4<T>
+textureLoad(t: texture_3d<T>, coords: vec3<u32>,  level: i32) -> vec4<T>
+textureLoad(t: texture_3d<T>, coords: vec3<u32>,  level: u32) -> vec4<T>
+textureLoad(t: texture_multisampled_2d<T>, coords: vec2<i32>,  sample_index: i32) -> vec4<T>
+textureLoad(t: texture_multisampled_2d<T>, coords: vec2<i32>,  sample_index: u32) -> vec4<T>
+textureLoad(t: texture_multisampled_2d<T>, coords: vec2<u32>,  sample_index: i32) -> vec4<T>
+textureLoad(t: texture_multisampled_2d<T>, coords: vec2<u32>,  sample_index: u32) -> vec4<T>
+textureLoad(t: texture_depth_2d, coords: vec2<i32>,  level: i32) -> f32
+textureLoad(t: texture_depth_2d, coords: vec2<i32>,  level: u32) -> f32
+textureLoad(t: texture_depth_2d, coords: vec2<u32>,  level: i32) -> f32
+textureLoad(t: texture_depth_2d, coords: vec2<u32>,  level: u32) -> f32
+textureLoad(t: , coords: vec2<C>,  level: L) -> f32
+textureLoad(t: texture_depth_2d_array, coords: vec2<i32>,  array_index: i32,  sample_index: i32) -> f32
+textureLoad(t: texture_depth_2d_array, coords: vec2<i32>,  array_index: i32,  sample_index: u32) -> f32
+textureLoad(t: texture_depth_2d_array, coords: vec2<i32>,  array_index: u32,  sample_index: i32) -> f32
+textureLoad(t: texture_depth_2d_array, coords: vec2<i32>,  array_index: u32,  sample_index: u32) -> f32
+textureLoad(t: texture_depth_2d_array, coords: vec2<u32>,  array_index: u32,  sample_index: i32) -> f32
+textureLoad(t: texture_depth_2d_array, coords: vec2<u32>,  array_index: u32,  sample_index: u32) -> f32
+textureLoad(t: texture_depth_2d_array, coords: vec2<u32>,  array_index: i32,  sample_index: i32) -> f32
+textureLoad(t: texture_depth_2d_array, coords: vec2<u32>,  array_index: i32,  sample_index: u32) -> f32
+textureLoad(t: texture_depth_multisampled_2d, coords: vec2<i32>,  sample_index: i32) -> f32
+textureLoad(t: texture_depth_multisampled_2d, coords: vec2<u32>,  sample_index: u32) -> f32
+textureLoad(t: texture_external, coords: vec2<i32>) -> vec4<f32>
+textureLoad(t: texture_external, coords: vec2<u32>) -> vec4<f32>
+textureLoad(t: texture_storage_1d<F;read>, coords: i32) -> F::StorageType
+textureLoad(t: texture_storage_1d<F;read>, coords: u32) -> F::StorageType
+textureLoad(t: texture_storage_1d<F;read_write>, coords: i32) -> F::StorageType
+textureLoad(t: texture_storage_1d<F;read_write>, coords: u32) -> F::StorageType
+textureLoad(t: texture_storage_2d<F;read>, coords: vec2<i32>) -> F::StorageType
+textureLoad(t: texture_storage_2d<F;read>, coords: vec2<u32>) -> F::StorageType
+textureLoad(t: texture_storage_2d<F;read_write>, coords: vec2<i32>) -> F::StorageType
+textureLoad(t: texture_storage_2d<F;read_write>, coords: vec2<u32>) -> F::StorageType
+textureLoad(t: texture_storage_2d_array<F;read>, coords: vec2<i32>, array_index: i32) -> F::StorageType
+textureLoad(t: texture_storage_2d_array<F;read>, coords: vec2<i32>, array_index: u32) -> F::StorageType
+textureLoad(t: texture_storage_2d_array<F;read>, coords: vec2<u32>, array_index: i32) -> F::StorageType
+textureLoad(t: texture_storage_2d_array<F;read>, coords: vec2<u32>, array_index: u32) -> F::StorageType
+textureLoad(t: texture_storage_2d_array<F;read_write>, coords: vec2<i32>, array_index: i32) -> F::StorageType
+textureLoad(t: texture_storage_2d_array<F;read_write>, coords: vec2<i32>, array_index: u32) -> F::StorageType
+textureLoad(t: texture_storage_2d_array<F;read_write>, coords: vec2<u32>, array_index: i32) -> F::StorageType
+textureLoad(t: texture_storage_2d_array<F;read_write>, coords: vec2<u32>, array_index: u32) -> F::StorageType
+textureLoad(t: texture_storage_3d<F;read>, coords: vec3<i32>) -> F::StorageType
+textureLoad(t: texture_storage_3d<F;read>, coords: vec3<u32>) -> F::StorageType
+textureLoad(t: texture_storage_3d<F;read_write>, coords: vec3<i32>) -> F::StorageType
+textureLoad(t: texture_storage_3d<F;read_write>, coords: vec3<u32>) -> F::StorageType
 
 textureGather(i32, texture_2d<T>, sampler, vec2<f32>) -> vec4<T>
 textureGather(i32, texture_2d<T>, sampler, vec2<f32>, vec2<i32>) -> vec4<T>
