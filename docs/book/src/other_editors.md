@@ -231,8 +231,9 @@ To change `wgsl-analyzer` config options, start from the following example and p
 {
   "servers": {
     "wgsl": {
-      "initializationOptions": {
-      }
+      "command": ["wgsl-analyzer"],
+      "url": "https://github.com/wgsl-analyzer/wgsl-analyzer",
+      "highlightingModeRegex": "^WGSL$"
     }
   }
 }
