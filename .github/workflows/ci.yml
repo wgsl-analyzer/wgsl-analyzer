@@ -38,7 +38,7 @@ jobs:
       typescript: ${{ steps.filter.outputs.typescript }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@1441771bbfdd59dcd748680ee64ebd8faab1a242
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
         id: filter
         with:
           filters: |
@@ -206,7 +206,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check for typos
-        uses: crate-ci/typos@v1.30.2
+        uses: crate-ci/typos@v1.31.0
       - name: Typos info
         if: failure()
         run: |
