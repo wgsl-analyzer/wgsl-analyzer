@@ -18,8 +18,8 @@ hir.workspace = true
 hir-ty.workspace = true
 hir-def.workspace = true
 syntax.workspace = true
-always-assert.workspace = true
 tracing.workspace = true
+stdx.workspace = true
 
 text-edit.workspace = true
 itertools.workspace = true

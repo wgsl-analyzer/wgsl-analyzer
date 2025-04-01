@@ -15,6 +15,6 @@ wgsl-parser.workspace = true
 rowan.workspace = true
 
 [dev-dependencies]
-anyhow.workspace = true
+# anyhow.workspace = true
 expect-test.workspace = true
 dissimilar.workspace = true

@@ -11,7 +11,7 @@ use std::ptr::{NonNull, addr_of_mut, slice_from_raw_parts_mut};
 pub struct ThinVecWithHeader<Header, Item> {
     /// INVARIANT: Points to a valid heap allocation that contains `ThinVecInner<Header>`,
     /// followed by (suitably aligned) `len` `Item`s.
-    ptr: NonNull<ThinVecInner<Header>>,
+    pointer: NonNull<ThinVecInner<Header>>,
     _marker: PhantomData<(Header, Box<[Item]>)>,
 }
 
@@ -22,7 +22,7 @@ unsafe impl<Header: Sync, Item: Sync> Sync for ThinVecWithHeader<Header, Item> {
 #[derive(Clone)]
 struct ThinVecInner<Header> {
     header: Header,
-    len: usize,
+    length: usize,
 }
 
 impl<Header, Item> ThinVecWithHeader<Header, Item> {
@@ -32,10 +32,10 @@ impl<Header, Item> ThinVecWithHeader<Header, Item> {
     #[inline]
     unsafe fn from_trusted_len_iter(
         header: Header,
-        len: usize,
+        length: usize,
         items: impl Iterator<Item = Item>,
     ) -> Self {
-        let (ptr, layout, items_offset) = Self::allocate(len);
+        let (pointer, layout, items_offset) = Self::allocate(length);
 
         struct DeallocGuard(*mut u8, Layout);
         impl Drop for DeallocGuard {
@@ -46,7 +46,7 @@ impl<Header, Item> ThinVecWithHeader<Header, Item> {
                 }
             }
         }
-        let dealloc_guard = DeallocGuard(ptr.as_ptr().cast::<u8>(), layout);
+        let dealloc_guard = DeallocGuard(pointer.as_ptr().cast::<u8>(), layout);
 
         // INVARIANT: Between `0..1` there are only initialized items.
         struct ItemsGuard<Item>(*mut Item, *mut Item);
@@ -60,23 +60,23 @@ impl<Header, Item> ThinVecWithHeader<Header, Item> {
         }
 
         // SAFETY: We allocated enough space.
-        let mut items_ptr = unsafe { ptr.as_ptr().byte_add(items_offset).cast::<Item>() };
+        let mut items_pointer = unsafe { pointer.as_ptr().byte_add(items_offset).cast::<Item>() };
         // INVARIANT: There are zero elements in this range.
-        let mut items_guard = ItemsGuard(items_ptr, items_ptr);
+        let mut items_guard = ItemsGuard(items_pointer, items_pointer);
         items.for_each(|item| {
             // SAFETY: Our precondition guarantee we will not get more than `len` items, and we allocated
             // enough space for `len` items.
             unsafe {
-                items_ptr.write(item);
-                items_ptr = items_ptr.add(1);
+                items_pointer.write(item);
+                items_pointer = items_pointer.add(1);
             };
             // INVARIANT: We just initialized this item.
-            items_guard.1 = items_ptr;
+            items_guard.1 = items_pointer;
         });
 
         // SAFETY: We allocated enough space.
         unsafe {
-            ptr.write(ThinVecInner { header, len });
+            pointer.write(ThinVecInner { header, length });
         };
         #[expect(clippy::mem_forget, reason = "copy pasted")]
         std::mem::forget(items_guard);
@@ -85,20 +85,20 @@ impl<Header, Item> ThinVecWithHeader<Header, Item> {
 
         // INVARIANT: We allocated and initialized all fields correctly.
         Self {
-            ptr,
+            pointer,
             _marker: PhantomData,
         }
     }
 
     #[inline]
-    fn allocate(len: usize) -> (NonNull<ThinVecInner<Header>>, Layout, usize) {
-        let (layout, items_offset) = Self::layout(len);
+    fn allocate(length: usize) -> (NonNull<ThinVecInner<Header>>, Layout, usize) {
+        let (layout, items_offset) = Self::layout(length);
         // SAFETY: We always have `len`, so our allocation cannot be zero-sized.
-        let ptr = unsafe { std::alloc::alloc(layout).cast::<ThinVecInner<Header>>() };
-        let Some(ptr) = NonNull::<ThinVecInner<Header>>::new(ptr) else {
+        let pointer = unsafe { std::alloc::alloc(layout).cast::<ThinVecInner<Header>>() };
+        let Some(pointer) = NonNull::<ThinVecInner<Header>>::new(pointer) else {
             handle_alloc_error(layout);
         };
-        (ptr, layout, items_offset)
+        (pointer, layout, items_offset)
     }
 
     #[inline]
@@ -128,65 +128,65 @@ impl<Header, Item> ThinVecWithHeader<Header, Item> {
     }
 
     #[inline]
-    fn header_and_len(&self) -> &ThinVecInner<Header> {
-        // SAFETY: By `ptr`'s invariant, it is correctly allocated and initialized.
-        unsafe { &*self.ptr.as_ptr() }
+    fn header_and_length(&self) -> &ThinVecInner<Header> {
+        // SAFETY: By `pointer`'s invariant, it is correctly allocated and initialized.
+        unsafe { &*self.pointer.as_ptr() }
     }
 
     #[inline]
-    fn items_ptr(&self) -> *mut [Item] {
-        let len = self.header_and_len().len;
+    fn items_pointer(&self) -> *mut [Item] {
+        let length = self.header_and_length().length;
         // SAFETY: `items_offset()` returns the correct offset of the items, where they are allocated.
-        let ptr = unsafe {
-            self.ptr
+        let pointer = unsafe {
+            self.pointer
                 .as_ptr()
                 .byte_add(Self::items_offset())
                 .cast::<Item>()
         };
-        slice_from_raw_parts_mut(ptr, len)
+        slice_from_raw_parts_mut(pointer, length)
     }
 
     #[inline]
     #[must_use]
     pub fn header(&self) -> &Header {
-        &self.header_and_len().header
+        &self.header_and_length().header
     }
 
     #[inline]
     pub fn header_mut(&mut self) -> &mut Header {
-        // SAFETY: By `ptr`'s invariant, it is correctly allocated and initialized.
-        unsafe { &mut *addr_of_mut!((*self.ptr.as_ptr()).header) }
+        // SAFETY: By `pointer`'s invariant, it is correctly allocated and initialized.
+        unsafe { &mut *addr_of_mut!((*self.pointer.as_ptr()).header) }
     }
 
     #[inline]
     #[must_use]
     pub fn items(&self) -> &[Item] {
         // SAFETY: `items_ptr()` gives a valid pointer.
-        unsafe { &*self.items_ptr() }
+        unsafe { &*self.items_pointer() }
     }
 
     #[inline]
     pub fn items_mut(&mut self) -> &mut [Item] {
         // SAFETY: `items_ptr()` gives a valid pointer.
-        unsafe { &mut *self.items_ptr() }
+        unsafe { &mut *self.items_pointer() }
     }
 
     #[inline]
     #[must_use]
-    pub fn len(&self) -> usize {
-        self.header_and_len().len
+    pub fn length(&self) -> usize {
+        self.header_and_length().length
     }
 
     #[inline]
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.header_and_len().len == 0
+        self.header_and_length().length == 0
     }
 
     #[inline]
-    fn layout(len: usize) -> (Layout, usize) {
+    fn layout(length: usize) -> (Layout, usize) {
         let (layout, items_offset) = Layout::new::<ThinVecInner<Header>>()
-            .extend(Layout::array::<Item>(len).expect("too big `ThinVec` requested"))
+            .extend(Layout::array::<Item>(length).expect("too big `ThinVec` requested"))
             .expect("too big `ThinVec` requested");
         let layout = layout.pad_to_align();
         (layout, items_offset)
@@ -219,18 +219,18 @@ impl<Header, Item> Drop for ThinVecWithHeader<Header, Item> {
     #[inline]
     fn drop(&mut self) {
         // This must come before we drop `header`, because after that we cannot make a reference to it in `len()`.
-        let len = self.len();
+        let length = self.length();
 
         // SAFETY: The contents are allocated and initialized.
         unsafe {
-            addr_of_mut!((*self.ptr.as_ptr()).header).drop_in_place();
-            self.items_ptr().drop_in_place();
+            addr_of_mut!((*self.pointer.as_ptr()).header).drop_in_place();
+            self.items_pointer().drop_in_place();
         };
 
-        let (layout, _) = Self::layout(len);
+        let (layout, _) = Self::layout(length);
         // SAFETY: This was allocated in `new()` with the same layout calculation.
         unsafe {
-            dealloc(self.ptr.as_ptr().cast::<u8>(), layout);
+            dealloc(self.pointer.as_ptr().cast::<u8>(), layout);
         }
     }
 }
@@ -288,8 +288,8 @@ impl<T> ThinVec<T> {
 
     #[inline]
     #[must_use]
-    pub fn len(&self) -> usize {
-        self.0.len()
+    pub fn length(&self) -> usize {
+        self.0.length()
     }
 
     #[inline]
@@ -383,8 +383,8 @@ impl<T> EmptyOptimizedThinVec<T> {
     }
 
     #[inline]
-    pub fn len(&self) -> usize {
-        self.0.as_ref().map_or(0, ThinVec::len)
+    pub fn length(&self) -> usize {
+        self.0.as_ref().map_or(0, ThinVec::length)
     }
 
     #[inline]

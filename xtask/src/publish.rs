@@ -13,10 +13,10 @@ impl flags::PublishReleaseNotes {
             bail!("changelog Markdown should start with `# Changelog`");
         }
         const NEWLINES: &str = "\n\n";
-        let Some(idx) = markdown.find(NEWLINES) else {
+        let Some(index) = markdown.find(NEWLINES) else {
             bail!("missing newlines after changelog title");
         };
-        markdown.replace_range(0..idx + NEWLINES.len(), "");
+        markdown.replace_range(0..index + NEWLINES.len(), "");
 
         let file_name = check_file_name(self.changelog)?;
         let tag_name = &file_name[0..10];
@@ -40,18 +40,18 @@ fn check_file_name<P: AsRef<std::path::Path>>(path: P) -> anyhow::Result<String>
         .ok_or_else(|| anyhow::format_err!("file name is not specified as `changelog`"))?
         .to_string_lossy();
 
-    let mut chars = file_name.chars();
+    let mut characters = file_name.chars();
     if file_name.len() >= 10
-        && chars.next().unwrap().is_ascii_digit()
-        && chars.next().unwrap().is_ascii_digit()
-        && chars.next().unwrap().is_ascii_digit()
-        && chars.next().unwrap().is_ascii_digit()
-        && chars.next().unwrap() == '-'
-        && chars.next().unwrap().is_ascii_digit()
-        && chars.next().unwrap().is_ascii_digit()
-        && chars.next().unwrap() == '-'
-        && chars.next().unwrap().is_ascii_digit()
-        && chars.next().unwrap().is_ascii_digit()
+        && characters.next().unwrap().is_ascii_digit()
+        && characters.next().unwrap().is_ascii_digit()
+        && characters.next().unwrap().is_ascii_digit()
+        && characters.next().unwrap().is_ascii_digit()
+        && characters.next().unwrap() == '-'
+        && characters.next().unwrap().is_ascii_digit()
+        && characters.next().unwrap().is_ascii_digit()
+        && characters.next().unwrap() == '-'
+        && characters.next().unwrap().is_ascii_digit()
+        && characters.next().unwrap().is_ascii_digit()
     {
         Ok(file_name.to_string())
     } else {

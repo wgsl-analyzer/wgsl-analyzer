@@ -37,7 +37,7 @@ impl<'t, 'input, P: ParserDefinition> Source<'t, 'input, P> {
         self.peek_token_raw()
     }
 
-    pub fn location(&mut self) -> impl Eq + use<P> {
+    pub(crate) fn location(&mut self) -> impl Eq + use<P> {
         self.cursor
     }
 

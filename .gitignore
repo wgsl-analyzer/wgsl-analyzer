@@ -1,26 +1,15 @@
 # Rust build artifacts
 
-/target
-crates/*/target
+target/
+
 **/*.rs.bk
 **/*.rs.pending-snap
-/benches/target
-/tools/compile_fail_utils/target
 
 # Cargo
-
-Cargo.lock
-.cargo/config
-.cargo/config.toml
 
 /testfiles
 result
 .vscode/settings.json
-
-# npm
-
-node_modules
-editors/code/wgsl-analyzer.vsix
 
 # other build artifacts
 

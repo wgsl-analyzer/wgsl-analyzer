@@ -14,7 +14,7 @@ use crate::{
         Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItem, Name, Override, Struct,
         TypeAlias,
     },
-    type_ref::{TypeRef, VecDimensionality, VecType},
+    type_ref::{TypeReference, VecDimensionality, VecType},
 };
 
 #[derive(Clone)]
@@ -36,7 +36,7 @@ pub struct ModuleScope {
 #[derive(Clone)]
 pub struct ExprScope {
     owner: FunctionId,
-    expr_scopes: Arc<ExprScopes>,
+    expression_scopes: Arc<ExprScopes>,
     scope_id: ScopeId,
 }
 
@@ -53,7 +53,7 @@ pub enum ResolveType {
     Struct(Location<Struct>),
     TypeAlias(Location<TypeAlias>),
 
-    PredeclaredTypeAlias(TypeRef),
+    PredeclaredTypeAlias(TypeReference),
 }
 
 #[derive(Debug)]
@@ -62,7 +62,7 @@ pub enum ResolveCallable {
     TypeAlias(Location<TypeAlias>),
     Function(Location<Function>),
     // TODO: less special casing pls
-    PredeclaredTypeAlias(TypeRef),
+    PredeclaredTypeAlias(TypeReference),
 }
 
 pub enum ScopeDef {
@@ -129,15 +129,15 @@ impl Resolver {
     }
 
     #[must_use]
-    pub fn push_expr_scope(
+    pub fn push_expression_scope(
         mut self,
         owner: FunctionId,
-        expr_scopes: Arc<ExprScopes>,
+        expression_scopes: Arc<ExprScopes>,
         scope_id: ScopeId,
     ) -> Resolver {
         self.scopes.push(Scope::ExprScope(ExprScope {
             owner,
-            expr_scopes,
+            expression_scopes,
             scope_id,
         }));
         self
@@ -187,12 +187,12 @@ impl Resolver {
                         ModuleItem::TypeAlias(_) => {},
                     });
             },
-            Scope::ExprScope(expr_scope) => {
-                expr_scope
-                    .expr_scopes
-                    .scope_chain(Some(expr_scope.scope_id))
+            Scope::ExprScope(expression_scope) => {
+                expression_scope
+                    .expression_scopes
+                    .scope_chain(Some(expression_scope.scope_id))
                     .for_each(|id| {
-                        let data = &expr_scope.expr_scopes[id];
+                        let data = &expression_scope.expression_scopes[id];
                         data.entries.iter().for_each(|entry| {
                             f(entry.name.clone(), ScopeDef::Local(entry.binding))
                         });
@@ -210,7 +210,7 @@ impl Resolver {
             match scope {
                 Scope::ExprScope(scope) => {
                     let entry = scope
-                        .expr_scopes
+                        .expression_scopes
                         .resolve_name_in_scope(scope.scope_id, name)?;
                     Some(ResolveValue::Local(entry.binding))
                 },
@@ -321,43 +321,43 @@ impl Resolver {
     }
 }
 
-fn vec_alias_typeref(name: &str) -> Option<TypeRef> {
+fn vec_alias_typeref(name: &str) -> Option<TypeReference> {
     match name {
-        "vec2i" => Some(TypeRef::Vec(VecType {
+        "vec2i" => Some(TypeReference::Vec(VecType {
             size: VecDimensionality::Two,
-            inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Int32)),
+            inner: Box::new(TypeReference::Scalar(crate::type_ref::ScalarType::Int32)),
         })),
-        "vec3i" => Some(TypeRef::Vec(VecType {
+        "vec3i" => Some(TypeReference::Vec(VecType {
             size: VecDimensionality::Three,
-            inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Int32)),
+            inner: Box::new(TypeReference::Scalar(crate::type_ref::ScalarType::Int32)),
         })),
-        "vec4i" => Some(TypeRef::Vec(VecType {
+        "vec4i" => Some(TypeReference::Vec(VecType {
             size: VecDimensionality::Four,
-            inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Int32)),
+            inner: Box::new(TypeReference::Scalar(crate::type_ref::ScalarType::Int32)),
         })),
-        "vec2u" => Some(TypeRef::Vec(VecType {
+        "vec2u" => Some(TypeReference::Vec(VecType {
             size: VecDimensionality::Two,
-            inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Uint32)),
+            inner: Box::new(TypeReference::Scalar(crate::type_ref::ScalarType::Uint32)),
         })),
-        "vec3u" => Some(TypeRef::Vec(VecType {
+        "vec3u" => Some(TypeReference::Vec(VecType {
             size: VecDimensionality::Three,
-            inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Uint32)),
+            inner: Box::new(TypeReference::Scalar(crate::type_ref::ScalarType::Uint32)),
         })),
-        "vec4u" => Some(TypeRef::Vec(VecType {
+        "vec4u" => Some(TypeReference::Vec(VecType {
             size: VecDimensionality::Four,
-            inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Uint32)),
+            inner: Box::new(TypeReference::Scalar(crate::type_ref::ScalarType::Uint32)),
         })),
-        "vec2f" => Some(TypeRef::Vec(VecType {
+        "vec2f" => Some(TypeReference::Vec(VecType {
             size: VecDimensionality::Two,
-            inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Float32)),
+            inner: Box::new(TypeReference::Scalar(crate::type_ref::ScalarType::Float32)),
         })),
-        "vec3f" => Some(TypeRef::Vec(VecType {
+        "vec3f" => Some(TypeReference::Vec(VecType {
             size: VecDimensionality::Three,
-            inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Float32)),
+            inner: Box::new(TypeReference::Scalar(crate::type_ref::ScalarType::Float32)),
         })),
-        "vec4f" => Some(TypeRef::Vec(VecType {
+        "vec4f" => Some(TypeReference::Vec(VecType {
             size: VecDimensionality::Four,
-            inner: Box::new(TypeRef::Scalar(crate::type_ref::ScalarType::Float32)),
+            inner: Box::new(TypeReference::Scalar(crate::type_ref::ScalarType::Float32)),
         })),
         // TODO float16
         _ => None,

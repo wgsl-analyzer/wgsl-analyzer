@@ -4,7 +4,7 @@ use base_db::{FileRange, TextRange, TextSize};
 use ide::inlay_hints::{InlayHint, InlayKind};
 use ide_completion::item::{CompletionItem, CompletionItemKind, CompletionRelevance};
 use itertools::Itertools as _;
-use paths::AbsPath;
+use paths::{AbsPath, Utf8Component, Utf8Prefix};
 use text_edit::{Indel, TextEdit};
 use vfs::FileId;
 
@@ -18,13 +18,13 @@ use crate::{
 /// This will only happen when processing windows paths.
 ///
 /// When processing non-windows path, this is essentially the same as `Url::from_file_path`.
-pub fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
+pub(crate) fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
     let url = lsp_types::Url::from_file_path(path).unwrap();
-    match path.as_ref().components().next() {
-        Some(path::Component::Prefix(prefix))
+    match path.components().next() {
+        Some(Utf8Component::Prefix(prefix))
             if matches!(
                 prefix.kind(),
-                path::Prefix::Disk(_) | path::Prefix::VerbatimDisk(_)
+                Utf8Prefix::Disk(_) | Utf8Prefix::VerbatimDisk(_)
             ) =>
         {
             // Need to lowercase driver letter
@@ -32,7 +32,6 @@ pub fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
         _ => return url,
     }
 
-    // TODO find a crate that does this better
     let driver_letter_range = {
         let Some((scheme, drive_letter, _rest)) = url.as_str().splitn(3, ':').collect_tuple()
         else {
@@ -42,7 +41,7 @@ pub fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
         start..(start + drive_letter.len())
     };
 
-    // Note: lowercasing the `path` itself does not help, the `Url::parse`
+    // Note: lowercasing the `path` itself doesn't help, the `Url::parse`
     // machinery *also* canonicalizes the drive letter. So, just massage the
     // string in place.
     let mut url: String = url.into();
@@ -50,7 +49,7 @@ pub fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
     lsp_types::Url::parse(&url).unwrap()
 }
 
-pub fn range(
+pub(crate) fn range(
     line_index: &LineIndex,
     range: TextRange,
 ) -> lsp_types::Range {
@@ -73,14 +72,14 @@ pub(crate) fn position(
     }
 }
 
-pub fn url(
+pub(crate) fn url(
     snap: &GlobalStateSnapshot,
     file_id: FileId,
 ) -> lsp_types::Url {
     snap.file_id_to_url(file_id)
 }
 
-pub fn location(
+pub(crate) fn location(
     snap: &GlobalStateSnapshot,
     frange: FileRange,
 ) -> Result<lsp_types::Location> {
@@ -91,7 +90,7 @@ pub fn location(
     Ok(loc)
 }
 
-pub fn completion_items(
+pub(crate) fn completion_items(
     // config: &Config,
     line_index: &LineIndex,
     tdpp: &lsp_types::TextDocumentPositionParams,
@@ -102,11 +101,11 @@ pub fn completion_items(
         .map(|it| it.relevance().score())
         .min()
         .unwrap_or_default();
-    let mut res = Vec::with_capacity(items.len());
+    let mut result = Vec::with_capacity(items.len());
     for item in items {
-        completion_item(&mut res, line_index, tdpp, max_relevance, item);
+        completion_item(&mut result, line_index, tdpp, max_relevance, item);
     }
-    res
+    result
 }
 
 fn completion_item(
@@ -220,21 +219,21 @@ fn completion_item(
     acc.push(lsp_item);
 
     fn set_score(
-        res: &mut lsp_types::CompletionItem,
+        result: &mut lsp_types::CompletionItem,
         max_relevance: u32,
         relevance: CompletionRelevance,
     ) {
         if relevance.score() == max_relevance {
-            res.preselect = Some(true);
+            result.preselect = Some(true);
         }
         // Zero pad the string to ensure values can be properly sorted
         // by the client. Hex format is used because it is easier to
         // visually compare very large values.
-        res.sort_text = Some(format!("{:08x}", relevance.score()));
+        result.sort_text = Some(format!("{:08x}", relevance.score()));
     }
 }
 
-pub const fn completion_item_kind(
+pub(crate) const fn completion_item_kind(
     completion_item_kind: CompletionItemKind
 ) -> lsp_types::CompletionItemKind {
     match completion_item_kind {
@@ -251,7 +250,7 @@ pub const fn completion_item_kind(
     }
 }
 
-pub fn text_edit(
+pub(crate) fn text_edit(
     line_index: &LineIndex,
     indel: Indel,
 ) -> lsp_types::TextEdit {
@@ -263,7 +262,7 @@ pub fn text_edit(
     lsp_types::TextEdit { range, new_text }
 }
 
-pub fn text_edit_vec(
+pub(crate) fn text_edit_vec(
     line_index: &LineIndex,
     text_edit: TextEdit,
 ) -> Vec<lsp_types::TextEdit> {
@@ -273,7 +272,7 @@ pub fn text_edit_vec(
         .collect()
 }
 
-pub fn completion_text_edit(
+pub(crate) fn completion_text_edit(
     line_index: &LineIndex,
     insert_replace_support: Option<lsp_types::Position>,
     indel: Indel,
@@ -293,7 +292,7 @@ pub fn completion_text_edit(
     }
 }
 
-pub fn inlay_hint(
+pub(crate) fn inlay_hint(
     render_colons: bool,
     line_index: &LineIndex,
     inlay_hint: &InlayHint,

@@ -5,7 +5,7 @@ use wgsl_formatter::FormattingOptions;
 
 use crate::RootDatabase;
 
-pub fn format(
+pub(crate) fn format(
     db: &RootDatabase,
     file_id: FileId,
     range: Option<TextRange>,

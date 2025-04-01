@@ -1,3 +1,5 @@
+#![expect(unreachable_pub, reason = "simpler")]
+
 use std::{fmt, str::FromStr};
 
 use crate::install::{ClientOptions, ServerOptions};
@@ -13,7 +15,7 @@ xflags::xflags! {
             /// Install only VS Code plugin.
             optional --client
             /// One of `code`, `code-exploration`, `code-insiders`, `codium`, or `code-oss`.
-            optional --code-bin name: String
+            optional --code-binary name: String
 
             /// Install only the language server.
             optional --server
@@ -38,6 +40,8 @@ xflags::xflags! {
             /// Use jemalloc allocator for server
             optional --jemalloc
             optional --client-patch-version version: String
+            /// Use cargo-zigbuild
+            optional --zig
         }
         /// Read a changelog AsciiDoc file and update the GitHub Releases entry in Markdown.
         cmd publish-release-notes {
@@ -46,11 +50,18 @@ xflags::xflags! {
             /// Target changelog file.
             required changelog: String
         }
-
+        // cmd metrics {
+        //     optional measurement_type: MeasurementType
+        // }
         /// Builds a benchmark version of wgsl-analyzer and puts it into `./target`.
         cmd bb {
             required suffix: String
         }
+
+        // cmd codegen {
+        //     optional codegen_type: CodegenType
+        //     optional --check
+        // }
 
         cmd tidy {}
     }
@@ -71,7 +82,9 @@ pub enum XtaskCmd {
     Release(Release),
     Dist(Dist),
     PublishReleaseNotes(PublishReleaseNotes),
+    // Metrics(Metrics),
     Bb(Bb),
+    // Codegen(Codegen),
     Tidy(Tidy),
 }
 
@@ -81,7 +94,7 @@ pub struct Tidy;
 #[derive(Debug)]
 pub struct Install {
     pub client: bool,
-    pub code_bin: Option<String>,
+    pub code_binary: Option<String>,
     pub server: bool,
     pub mimalloc: bool,
     pub jemalloc: bool,
@@ -113,6 +126,7 @@ pub struct Dist {
     pub mimalloc: bool,
     pub jemalloc: bool,
     pub client_patch_version: Option<String>,
+    pub zig: bool,
 }
 
 #[derive(Debug)]
@@ -148,8 +162,8 @@ impl Xtask {
         Self::from_env_()
     }
 
-    pub fn from_vec(args: Vec<std::ffi::OsString>) -> xflags::Result<Self> {
-        Self::from_vec_(args)
+    pub fn from_vec(arguments: Vec<std::ffi::OsString>) -> xflags::Result<Self> {
+        Self::from_vec_(arguments)
     }
 }
 // generated end
@@ -243,7 +257,7 @@ impl AsRef<str> for MeasurementType {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub enum Malloc {
+pub(crate) enum Malloc {
     System,
     Mimalloc,
     Jemalloc,
@@ -282,7 +296,7 @@ impl Install {
             return None;
         }
         Some(ClientOptions {
-            code_binary: self.code_bin.clone(),
+            code_binary: self.code_binary.clone(),
         })
     }
 }
