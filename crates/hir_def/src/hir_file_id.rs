@@ -53,7 +53,7 @@ impl HirFileId {
                         } else {
                             None
                         }
-                    }
+                    },
                 }
             },
         }

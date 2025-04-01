@@ -106,7 +106,6 @@ impl Resolver {
                 let import_id = db.intern_import(loc);
                 let import_file = HirFileId::from(ImportFile { import_id });
                 let import_module_info = db.module_info(import_file);
-                
                 // If we can find the original source file for this import, push its scope
                 if let Some(original_file_id) = import_file.original_file(db) {
                     let original_file_id = HirFileId::from(original_file_id);

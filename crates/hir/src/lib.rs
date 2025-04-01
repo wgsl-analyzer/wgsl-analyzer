@@ -232,7 +232,6 @@ fn module_item_to_def(
             let import_id = db.intern_import(loc);
 
             let import_file = HirFileId::from(ImportFile { import_id });
-            
             // Process imported definitions from the original file if available
             if let Some(original_file) = import_file.original_file(db.upcast()) {
                 let original_file = original_file.into();
