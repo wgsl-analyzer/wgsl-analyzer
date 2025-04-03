@@ -68,16 +68,13 @@ impl std::str::FromStr for Edition {
     fn from_str(
         #[expect(clippy::min_ident_chars, reason = "trait impl")] s: &str
     ) -> Result<Self, Self::Err> {
-        let res = match s {
-            "WGSL" => Self::Wgsl,
-            "WESL 0.0.1" => Self::Wesl0_0_1,
-            _ => {
-                return Err(ParseEditionError {
-                    invalid_input: s.to_owned(),
-                });
-            },
-        };
-        Ok(res)
+        match s {
+            "WGSL" => Ok(Self::Wgsl),
+            "WESL 0.0.1" => Ok(Self::Wesl0_0_1),
+            _ => Err(ParseEditionError {
+                invalid_input: s.to_owned(),
+            }),
+        }
     }
 }
 
