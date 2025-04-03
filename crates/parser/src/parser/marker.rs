@@ -3,15 +3,15 @@ use std::marker::PhantomData;
 use drop_bomb::DropBomb;
 
 use super::Parser;
-use crate::{ParserDefinition, event::Event};
+use crate::{SyntaxKind, event::Event};
 
-pub struct Marker<P: ParserDefinition> {
+pub struct Marker {
     pos: usize,
     bomb: DropBomb,
-    _marker: PhantomData<(P::TokenKind, P::SyntaxKind)>,
+    _marker: PhantomData<SyntaxKind>,
 }
 
-impl<P: ParserDefinition> Marker<P> {
+impl Marker {
     pub(crate) fn new(pos: usize) -> Self {
         Self {
             pos,
@@ -22,9 +22,9 @@ impl<P: ParserDefinition> Marker<P> {
 
     pub fn complete(
         mut self,
-        p: &mut Parser<P>,
-        kind: P::SyntaxKind,
-    ) -> CompletedMarker<P> {
+        p: &mut Parser,
+        kind: SyntaxKind,
+    ) -> CompletedMarker {
         self.bomb.defuse();
 
         let event_at_pos = &mut p.events[self.pos];
@@ -44,16 +44,16 @@ impl<P: ParserDefinition> Marker<P> {
     }
 }
 
-pub struct CompletedMarker<P: ParserDefinition> {
+pub struct CompletedMarker {
     pos: usize,
-    _marker: PhantomData<(P::TokenKind, P::SyntaxKind)>,
+    _marker: PhantomData<SyntaxKind>,
 }
 
-impl<P: ParserDefinition> CompletedMarker<P> {
+impl CompletedMarker {
     pub fn precede(
         self,
-        p: &mut Parser<P>,
-    ) -> Marker<P> {
+        p: &mut Parser,
+    ) -> Marker {
         let new_m = p.start();
 
         if let Event::StartNode {

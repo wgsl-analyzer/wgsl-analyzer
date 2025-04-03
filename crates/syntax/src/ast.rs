@@ -1,7 +1,7 @@
 pub mod operators;
 
+use parser::{SyntaxKind, SyntaxNode};
 use rowan::NodeOrToken;
-use wgsl_parser::{SyntaxKind, SyntaxNode};
 
 use self::operators::{BinaryOperation, CompoundOperator, UnaryOperator};
 use crate::{

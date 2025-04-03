@@ -1,7 +1,7 @@
 use std::{hash::Hash, marker::PhantomData};
 
+use parser::{SyntaxKind, SyntaxNode};
 use rowan::TextRange;
-use wgsl_parser::{SyntaxKind, SyntaxNode};
 
 use crate::AstNode;
 

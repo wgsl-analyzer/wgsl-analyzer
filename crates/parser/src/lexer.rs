@@ -2,29 +2,29 @@ use logos::Logos;
 use rowan::{TextRange, TextSize};
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct Token<'a, TokenKind> {
-    pub kind: TokenKind,
-    pub text: &'a str,
+pub(crate) struct Token<'text, SyntaxKind> {
+    pub kind: SyntaxKind,
+    pub text: &'text str,
     pub range: TextRange,
 }
 
-pub(crate) struct Lexer<'a, TokenKind: Logos<'a>> {
-    inner: logos::Lexer<'a, TokenKind>,
+pub(crate) struct Lexer<'source, SyntaxKind: Logos<'source>> {
+    inner: logos::Lexer<'source, SyntaxKind>,
 }
 
-impl<'a, TokenKind: Logos<'a, Source = str>> Lexer<'a, TokenKind>
+impl<'source, SyntaxKind: Logos<'source, Source = str>> Lexer<'source, SyntaxKind>
 where
-    TokenKind::Extras: Default,
+    SyntaxKind::Extras: Default,
 {
-    pub(crate) fn new(input: &'a str) -> Self {
+    pub(crate) fn new(input: &'source str) -> Self {
         Self {
-            inner: TokenKind::lexer(input),
+            inner: SyntaxKind::lexer(input),
         }
     }
 }
 
-impl<'a, TokenKind: Logos<'a, Source = str>> Iterator for Lexer<'a, TokenKind> {
-    type Item = Token<'a, TokenKind>;
+impl<'source, SyntaxKind: Logos<'source, Source = str>> Iterator for Lexer<'source, SyntaxKind> {
+    type Item = Token<'source, SyntaxKind>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let kind = self.inner.next()?;

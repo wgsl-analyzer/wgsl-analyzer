@@ -16,4 +16,4 @@ doctest = false
 either.workspace = true
 itertools.workspace = true
 rowan.workspace = true
-wgsl-parser.workspace = true
+parser.workspace = true

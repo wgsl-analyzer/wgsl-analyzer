@@ -8,7 +8,7 @@ pub fn format_str(
     input: &str,
     options: &FormattingOptions,
 ) -> String {
-    let parse = wgsl_parser::parse_file(input);
+    let parse = parser::parse_file(input);
     let node = parse.syntax().clone_for_update();
     format_recursive(node.clone(), options);
     node.to_string()

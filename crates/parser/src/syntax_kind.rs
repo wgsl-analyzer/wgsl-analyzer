@@ -462,12 +462,6 @@ impl rowan::Language for WgslLanguage {
     }
 }
 
-impl parser::TokenKind for SyntaxKind {
-    fn is_trivia(self) -> bool {
-        SyntaxKind::is_trivia(self)
-    }
-}
-
 impl SyntaxKind {
     pub fn is_whitespace(self) -> bool {
         matches!(self, SyntaxKind::Whitespace)
