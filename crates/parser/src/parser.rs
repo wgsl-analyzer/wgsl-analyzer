@@ -10,15 +10,15 @@ use crate::SyntaxKind;
 
 use super::{event::Event, lexer::Token, source::Source};
 
-pub struct Parser<'t> {
-    source: Source<'t>,
+pub struct Parser<'t, 'input> {
+    source: Source<'t, 'input>,
     events: Vec<Event>,
     pub(crate) expected_kinds: Vec<SyntaxKind>,
     _marker: PhantomData<SyntaxKind>,
 }
 
-impl<'t> Parser<'t> {
-    pub(crate) fn new(source: Source<'t>) -> Self {
+impl<'t, 'input> Parser<'t, 'input> {
+    pub(crate) fn new(source: Source<'t, 'input>) -> Self {
         Self {
             source,
             events: Vec::new(),

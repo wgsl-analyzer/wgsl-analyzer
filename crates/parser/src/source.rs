@@ -3,17 +3,17 @@ use rowan::TextRange;
 use super::lexer::Token;
 use crate::SyntaxKind;
 
-pub(crate) struct Source<'t> {
-    tokens: &'t [Token<'t, SyntaxKind>],
+pub(crate) struct Source<'t, 'input> {
+    tokens: &'t [Token<'input, SyntaxKind>],
     cursor: usize,
 }
 
-impl<'t> Source<'t> {
-    pub(crate) fn new(tokens: &'t [Token<SyntaxKind>]) -> Self {
+impl<'t, 'input> Source<'t, 'input> {
+    pub(crate) fn new(tokens: &'t [Token<'input, SyntaxKind>]) -> Self {
         Self { tokens, cursor: 0 }
     }
 
-    pub(crate) fn next_token(&mut self) -> Option<&'t Token<'t, SyntaxKind>> {
+    pub(crate) fn next_token(&mut self) -> Option<&'t Token<'input, SyntaxKind>> {
         self.eat_trivia();
 
         let token = self.tokens.get(self.cursor)?;
