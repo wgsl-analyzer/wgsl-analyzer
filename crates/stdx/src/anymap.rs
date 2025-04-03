@@ -211,7 +211,6 @@ impl<'map, A: ?Sized + Downcast, V: IntoBox<A>> VacantEntry<'map, A, V> {
 }
 
 #[cfg(test)]
-#[expect(clippy::missing_const_for_fn, reason = "not helpful for testing")]
 mod tests {
     use super::*;
 
