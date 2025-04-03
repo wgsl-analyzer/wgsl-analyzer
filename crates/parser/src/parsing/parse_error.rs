@@ -2,15 +2,15 @@ use std::fmt::{self, Write};
 
 use rowan::TextRange;
 
-use crate::parsing::ParserDefinition;
+use crate::SyntaxKind;
 
-pub struct ParseError<P: ParserDefinition> {
-    pub expected: Vec<P::TokenKind>,
-    pub found: Option<P::TokenKind>,
+pub struct ParseError {
+    pub expected: Vec<SyntaxKind>,
+    pub found: Option<SyntaxKind>,
     pub range: TextRange,
 }
 
-impl<P: ParserDefinition> ParseError<P> {
+impl ParseError {
     pub fn message(&self) -> String {
         let mut message = "expected ".to_string();
         let number_expected = self.expected.len();
@@ -36,7 +36,7 @@ impl<P: ParserDefinition> ParseError<P> {
     }
 }
 
-impl<P: ParserDefinition> fmt::Debug for ParseError<P> {
+impl fmt::Debug for ParseError {
     fn fmt(
         &self,
         f: &mut fmt::Formatter<'_>,
@@ -49,7 +49,7 @@ impl<P: ParserDefinition> fmt::Debug for ParseError<P> {
     }
 }
 
-impl<P: ParserDefinition> PartialEq for ParseError<P> {
+impl PartialEq for ParseError {
     fn eq(
         &self,
         other: &Self,
@@ -58,7 +58,7 @@ impl<P: ParserDefinition> PartialEq for ParseError<P> {
     }
 }
 
-impl<P: ParserDefinition> fmt::Display for ParseError<P> {
+impl fmt::Display for ParseError {
     fn fmt(
         &self,
         f: &mut fmt::Formatter<'_>,

@@ -5,11 +5,11 @@ pub mod pointer;
 use std::{marker::PhantomData, ops::Deref, sync::Arc};
 
 use either::Either;
-pub use rowan::Direction;
-pub use wgsl_parser::{
+pub use parser::{
     ParseEntryPoint, ParseError, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodeChildren,
     SyntaxToken,
 };
+pub use rowan::Direction;
 
 #[derive(Clone, Debug)]
 pub struct Parse {
@@ -50,7 +50,7 @@ pub fn parse_entrypoint(
     input: &str,
     parse_entrypoint: ParseEntryPoint,
 ) -> Parse {
-    let (green_node, errors) = wgsl_parser::parse_entrypoint(input, parse_entrypoint).into_parts();
+    let (green_node, errors) = parser::parse_entrypoint(input, parse_entrypoint).into_parts();
     Parse {
         green_node,
         errors: Arc::new(errors),

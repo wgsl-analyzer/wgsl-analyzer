@@ -1,21 +1,23 @@
-use std::{marker::PhantomData, mem};
+use std::mem;
 
 use rowan::{GreenNodeBuilder, Language};
 
-use super::{Parse, ParserDefinition, TokenKind, event::Event, lexer::Token, parsing::ParseError};
+use crate::WgslLanguage;
 
-pub(crate) struct Sink<'t, 'input, P: ParserDefinition> {
+use super::{Parse, SyntaxKind, event::Event, lexer::Token, parsing::ParseError};
+
+pub(crate) struct Sink<'t, 'input> {
     builder: GreenNodeBuilder<'static>,
-    tokens: &'t [Token<'input, P::TokenKind>],
+    tokens: &'t [Token<'input, SyntaxKind>],
     cursor: usize,
-    events: Vec<Event<P>>,
-    errors: Vec<ParseError<P>>,
+    events: Vec<Event>,
+    errors: Vec<ParseError>,
 }
 
-impl<'t, 'input, P: ParserDefinition> Sink<'t, 'input, P> {
+impl<'t, 'input> Sink<'t, 'input> {
     pub(crate) fn new(
-        tokens: &'t [Token<'input, P::TokenKind>],
-        events: Vec<Event<P>>,
+        tokens: &'t [Token<'input, SyntaxKind>],
+        events: Vec<Event>,
     ) -> Self {
         Self {
             builder: GreenNodeBuilder::new(),
@@ -26,7 +28,7 @@ impl<'t, 'input, P: ParserDefinition> Sink<'t, 'input, P> {
         }
     }
 
-    pub(crate) fn finish(mut self) -> Parse<P> {
+    pub(crate) fn finish(mut self) -> Parse {
         for index in 0..self.events.len() {
             match mem::replace(&mut self.events[index], Event::Placeholder) {
                 Event::StartNode {
@@ -58,7 +60,7 @@ impl<'t, 'input, P: ParserDefinition> Sink<'t, 'input, P> {
                     }
 
                     for kind in kinds.into_iter().rev() {
-                        self.builder.start_node(P::Language::kind_to_raw(kind));
+                        self.builder.start_node(WgslLanguage::kind_to_raw(kind));
                     }
                 },
                 Event::AddToken => self.token(),
@@ -73,7 +75,6 @@ impl<'t, 'input, P: ParserDefinition> Sink<'t, 'input, P> {
         Parse {
             green_node: self.builder.finish(),
             errors: self.errors,
-            _marker: PhantomData,
         }
     }
 
@@ -89,10 +90,7 @@ impl<'t, 'input, P: ParserDefinition> Sink<'t, 'input, P> {
 
     fn token(&mut self) {
         let Token { kind, text, .. } = self.tokens[self.cursor];
-
-        self.builder
-            .token(P::Language::kind_to_raw(kind.into()), text);
-
+        self.builder.token(WgslLanguage::kind_to_raw(kind), text);
         self.cursor += 1;
     }
 }

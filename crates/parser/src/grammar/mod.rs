@@ -4,11 +4,10 @@ mod expression;
 pub(crate) use expression::expression;
 
 use self::expression::TOKENSET_LITERAL;
-use crate::SyntaxKind;
-
-pub(crate) type Parser<'t, 'input> = parser::Parser<'t, 'input, crate::ParserDefinition>;
-pub(crate) type CompletedMarker = parser::marker::CompletedMarker<crate::ParserDefinition>;
-pub(crate) type Marker = parser::marker::Marker<crate::ParserDefinition>;
+use crate::{
+    Parser, SyntaxKind,
+    marker::{CompletedMarker, Marker},
+};
 
 pub(crate) fn file(parser: &mut Parser) {
     let marker = parser.start();

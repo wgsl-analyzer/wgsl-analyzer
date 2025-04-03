@@ -6,17 +6,19 @@ use std::marker::PhantomData;
 use marker::Marker;
 pub use parse_error::ParseError;
 
-use super::{ParserDefinition, event::Event, lexer::Token, source::Source};
+use crate::SyntaxKind;
 
-pub struct Parser<'t, 'input, P: ParserDefinition> {
-    source: Source<'t, 'input, P>,
-    events: Vec<Event<P>>,
-    pub(crate) expected_kinds: Vec<P::TokenKind>,
-    _marker: PhantomData<P::SyntaxKind>,
+use super::{event::Event, lexer::Token, source::Source};
+
+pub struct Parser<'t> {
+    source: Source<'t>,
+    events: Vec<Event>,
+    pub(crate) expected_kinds: Vec<SyntaxKind>,
+    _marker: PhantomData<SyntaxKind>,
 }
 
-impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
-    pub(crate) fn new(source: Source<'t, 'input, P>) -> Self {
+impl<'t> Parser<'t> {
+    pub(crate) fn new(source: Source<'t>) -> Self {
         Self {
             source,
             events: Vec::new(),
@@ -28,12 +30,12 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
     pub(crate) fn parse(
         mut self,
         f: impl Fn(&mut Self),
-    ) -> Vec<Event<P>> {
+    ) -> Vec<Event> {
         f(&mut self);
         self.events
     }
 
-    pub fn start(&mut self) -> Marker<P> {
+    pub fn start(&mut self) -> Marker {
         let pos = self.events.len();
         self.events.push(Event::Placeholder);
 
@@ -42,7 +44,7 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 
     pub fn expect(
         &mut self,
-        kind: P::TokenKind,
+        kind: SyntaxKind,
     ) {
         if self.at(kind) {
             self.bump();
@@ -53,7 +55,7 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 
     pub fn expect_no_bump(
         &mut self,
-        kind: P::TokenKind,
+        kind: SyntaxKind,
     ) {
         if self.at(kind) {
             self.bump();
@@ -64,8 +66,8 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 
     pub fn expect_recover(
         &mut self,
-        kind: P::TokenKind,
-        recovery: &[P::TokenKind],
+        kind: SyntaxKind,
+        recovery: &[SyntaxKind],
     ) -> Result<(), ()> {
         if self.at(kind) {
             self.bump();
@@ -78,7 +80,7 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 
     pub fn eat(
         &mut self,
-        kind: P::TokenKind,
+        kind: SyntaxKind,
     ) -> bool {
         if self.at(kind) {
             self.bump();
@@ -90,7 +92,7 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 
     pub fn eat_set(
         &mut self,
-        set: &[P::TokenKind],
+        set: &[SyntaxKind],
     ) {
         if self.at_set(set) {
             self.bump();
@@ -103,36 +105,36 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 
     pub fn error_expected(
         &mut self,
-        expected: &[P::TokenKind],
+        expected: &[SyntaxKind],
     ) {
         self.error_inner(None, expected, false)
     }
 
     pub fn error_expected_no_bump(
         &mut self,
-        expected: &[P::TokenKind],
+        expected: &[SyntaxKind],
     ) {
         self.error_inner(None, expected, true)
     }
 
     pub fn error_recovery(
         &mut self,
-        recovery: &[P::TokenKind],
+        recovery: &[SyntaxKind],
     ) {
         self.error_inner(Some(recovery), &[], false)
     }
 
     pub fn error_no_bump(
         &mut self,
-        expected: &[P::TokenKind],
+        expected: &[SyntaxKind],
     ) {
         self.error_inner(None, expected, true)
     }
 
     fn error_inner(
         &mut self,
-        recovery: Option<&[P::TokenKind]>,
-        expected: &[P::TokenKind],
+        recovery: Option<&[SyntaxKind]>,
+        expected: &[SyntaxKind],
         no_bump: bool,
     ) {
         let current_token = self.source.peek_token();
@@ -162,11 +164,11 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
             if !no_bump {
                 self.bump();
             }
-            m.complete(self, <P::TokenKind as logos::Logos>::ERROR.into());
+            m.complete(self, <SyntaxKind as logos::Logos>::ERROR);
         }
     }
 
-    pub fn bump(&mut self) -> P::TokenKind {
+    pub fn bump(&mut self) -> SyntaxKind {
         self.expected_kinds.clear();
         let token = self.source.next_token().unwrap();
         self.events.push(Event::AddToken);
@@ -175,7 +177,7 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 
     pub fn bump_compound(
         &mut self,
-        token: P::SyntaxKind,
+        token: SyntaxKind,
     ) {
         self.expected_kinds.clear();
         let m = self.start();
@@ -188,7 +190,7 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 
     pub fn at(
         &mut self,
-        kind: P::TokenKind,
+        kind: SyntaxKind,
     ) -> bool {
         if !self.expected_kinds.contains(&kind) {
             self.expected_kinds.push(kind);
@@ -198,8 +200,8 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 
     pub fn at_compound(
         &mut self,
-        kind_1: P::TokenKind,
-        kind_2: P::TokenKind,
+        kind_1: SyntaxKind,
+        kind_2: SyntaxKind,
     ) -> bool {
         if !self.expected_kinds.contains(&kind_1) {
             self.expected_kinds.push(kind_1);
@@ -213,7 +215,7 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 
     pub fn at_or_end(
         &mut self,
-        kind: P::TokenKind,
+        kind: SyntaxKind,
     ) -> bool {
         self.expected_kinds.push(kind);
         let token = self.peek();
@@ -222,7 +224,7 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
 
     pub fn at_set(
         &mut self,
-        set: &[P::TokenKind],
+        set: &[SyntaxKind],
     ) -> bool {
         self.peek().is_some_and(|k| set.contains(&k))
     }
@@ -231,22 +233,22 @@ impl<'t, 'input, P: ParserDefinition> Parser<'t, 'input, P> {
         self.peek().is_none()
     }
 
-    pub fn peek(&mut self) -> Option<P::TokenKind> {
+    pub fn peek(&mut self) -> Option<SyntaxKind> {
         self.source.peek_kind()
     }
 
-    pub fn peek_compound(&mut self) -> Option<(P::TokenKind, P::TokenKind)> {
+    pub fn peek_compound(&mut self) -> Option<(SyntaxKind, SyntaxKind)> {
         self.source.peek_kind_compound()
     }
 
     pub fn set_expected(
         &mut self,
-        expected: Vec<P::TokenKind>,
+        expected: Vec<SyntaxKind>,
     ) {
         self.expected_kinds = expected;
     }
 
-    pub fn location(&mut self) -> impl Eq + use<P> {
+    pub fn location(&mut self) -> impl Eq + use<> {
         self.source.location()
     }
 }
