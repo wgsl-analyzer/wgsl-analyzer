@@ -14,7 +14,6 @@ mod macros;
 pub mod non_empty_vec;
 pub mod panic_context;
 pub mod process;
-pub mod thin_vec;
 pub mod thread;
 
 pub use itertools;

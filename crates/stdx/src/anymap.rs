@@ -211,14 +211,15 @@ impl<'map, A: ?Sized + Downcast, V: IntoBox<A>> VacantEntry<'map, A, V> {
 }
 
 #[cfg(test)]
+#[expect(clippy::missing_const_for_fn, reason = "not helpful for testing")]
 mod tests {
     use super::*;
 
     #[test]
-    const fn test_varieties() {
-        const fn assert_send<T: Send>() {}
-        const fn assert_sync<T: Sync>() {}
-        const fn assert_debug<T: ::core::fmt::Debug>() {}
+    fn test_varieties() {
+        fn assert_send<T: Send>() {}
+        fn assert_sync<T: Sync>() {}
+        fn assert_debug<T: ::core::fmt::Debug>() {}
         assert_send::<Map<dyn Any + Send>>();
         assert_send::<Map<dyn Any + Send + Sync>>();
         assert_sync::<Map<dyn Any + Send + Sync>>();
