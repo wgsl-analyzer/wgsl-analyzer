@@ -4,7 +4,7 @@
 mod event;
 mod grammar;
 mod lexer;
-mod parsing;
+mod parser;
 mod sink;
 mod source;
 mod syntax_kind;
@@ -12,7 +12,7 @@ mod syntax_kind;
 use std::fmt::Debug;
 
 use lexer::Lexer;
-pub use parsing::{ParseError, Parser, marker};
+pub use parser::{ParseError, Parser, marker};
 use rowan::{GreenNode, SyntaxNode as RowanSyntaxNode};
 use sink::Sink;
 use source::Source;

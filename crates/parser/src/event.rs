@@ -1,4 +1,4 @@
-use crate::{SyntaxKind, parsing::ParseError};
+use crate::{SyntaxKind, parser::ParseError};
 
 pub(crate) enum Event {
     StartNode {

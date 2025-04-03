@@ -4,7 +4,7 @@ use rowan::{GreenNodeBuilder, Language};
 
 use crate::WgslLanguage;
 
-use super::{Parse, SyntaxKind, event::Event, lexer::Token, parsing::ParseError};
+use super::{Parse, SyntaxKind, event::Event, lexer::Token, parser::ParseError};
 
 pub(crate) struct Sink<'t, 'input> {
     builder: GreenNodeBuilder<'static>,
