@@ -39,12 +39,6 @@ impl<T> NonEmptyVec<T> {
     }
 
     #[inline]
-    #[deprecated(note = "you probably did not mean to use this")]
-    pub const fn is_empty(&self) -> bool {
-        false
-    }
-
-    #[inline]
     pub fn into_last(mut self) -> T {
         self.rest.pop().unwrap_or(self.first)
     }

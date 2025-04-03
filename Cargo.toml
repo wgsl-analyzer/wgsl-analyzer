@@ -90,7 +90,7 @@ ra-ap-rustc_pattern_analysis = { version = "0.96.0", default-features = false }
 
 # local crates that are not published to crates.io. These should not have versions.
 
-# in-tree crates that are published separately and follow semver. See lib/README.md
+# crates from rust-analyzer that are published separately
 line-index = "0.1.2"
 la-arena = "0.3.1"
 lsp-server = "0.7.8"

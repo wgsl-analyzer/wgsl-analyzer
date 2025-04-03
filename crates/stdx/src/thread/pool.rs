@@ -120,6 +120,6 @@ impl Pool {
     #[must_use]
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.extant_tasks.load(Ordering::SeqCst) == 0
+        self.length() == 0
     }
 }
