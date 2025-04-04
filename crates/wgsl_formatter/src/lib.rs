@@ -227,7 +227,7 @@ fn format_syntax_node(
         SyntaxKind::TypeInitializer => {
             let type_initialiser = ast::TypeInitializer::cast(syntax)?;
 
-            if let Some(expression) = type_initialiser.rtype() {
+            if let Some(expression) = type_initialiser.ty() {
                 remove_if_whitespace(expression.syntax().last_token()?);
             }
 

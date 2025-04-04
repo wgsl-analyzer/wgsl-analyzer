@@ -234,7 +234,7 @@ impl Collector<'_> {
                     .initializer()
                     .map(|expression| self.collect_expression(expression));
                 let type_ref = variable_statement
-                    .rtype()
+                    .ty()
                     .and_then(|typo| TypeReference::try_from(typo).ok())
                     .map(|type_ref| self.db.intern_type_ref(type_ref));
 
@@ -444,7 +444,7 @@ impl Collector<'_> {
                 );
 
                 let r#type = expression
-                    .rtype()
+                    .ty()
                     .and_then(|r#type| TypeReference::try_from(r#type).ok())
                     .unwrap_or(TypeReference::Error);
                 let r#type = self.db.intern_type_ref(r#type);
@@ -515,7 +515,7 @@ impl Collector<'_> {
                     .map(|expression| self.collect_expression(expression))
                     .collect();
 
-                let r#type = r#type.rtype();
+                let r#type = r#type.ty();
                 if let Some(r#type) = r#type {
                     let has_generic = r#type.generic_arg_list().is_some();
                     let callee = match r#type {

@@ -183,14 +183,14 @@ fn get_hints(
             _ => {},
         }
     } else if let Some((binding, r#type)) = ast::VariableStatement::cast(node.clone())
-        .and_then(|statement| Some((statement.binding()?, statement.rtype())))
+        .and_then(|statement| Some((statement.binding()?, statement.ty())))
         .or_else(|| {
             ast::GlobalConstantDeclaration::cast(node.clone())
-                .and_then(|statement| Some((statement.binding()?, statement.rtype())))
+                .and_then(|statement| Some((statement.binding()?, statement.ty())))
         })
         .or_else(|| {
             ast::GlobalVariableDeclaration::cast(node.clone())
-                .and_then(|statement| Some((statement.binding()?, statement.rtype())))
+                .and_then(|statement| Some((statement.binding()?, statement.ty())))
         })
     {
         if !config.type_hints {

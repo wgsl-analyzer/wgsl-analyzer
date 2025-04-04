@@ -282,7 +282,7 @@ ast_node!(GlobalVariableDeclaration:
     var_token: Option<SyntaxToken Var>;
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
-    rtype: Option<Type>;
+    ty: Option<Type>;
     init: Option<Expression>;
 );
 
@@ -291,7 +291,7 @@ impl HasAttributes for GlobalVariableDeclaration {}
 ast_node!(GlobalConstantDeclaration:
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
-    rtype: Option<Type>;
+    ty: Option<Type>;
     init: Option<Expression>;
 );
 
@@ -300,7 +300,7 @@ impl HasAttributes for OverrideDeclaration {}
 ast_node!(OverrideDeclaration:
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
-    rtype: Option<Type>;
+    ty: Option<Type>;
     init: Option<Expression>;
 );
 
@@ -346,7 +346,7 @@ impl HasName for Binding {}
 ast_node!(VariableIdentDeclaration:
     colon_token: Option<SyntaxToken Colon>;
     binding: Option<Binding>;
-    rtype: Option<Type>;
+    ty: Option<Type>;
 );
 
 ast_node!(FunctionParameterList:
@@ -357,7 +357,7 @@ ast_node!(FunctionParameterList:
 
 ast_node!(ReturnType:
     arrow_token: Option<SyntaxToken Arrow>;
-    rtype: Option<Type>;
+    ty: Option<Type>;
 );
 
 ast_node!(GenericArgumentList:
@@ -438,7 +438,7 @@ impl GenericArg {
 
 ast_node!(BinaryOperator);
 ast_node!(TypeInitializer:
-    rtype: Option<Type>;
+    ty: Option<Type>;
     arguments: Option<FunctionParameterList>;
 );
 
@@ -522,7 +522,7 @@ ast_node!(BitcastExpression:
     bitcast_token: Option<SyntaxToken Bitcast>;
     left_angle_token: Option<SyntaxToken LessThan>;
     right_angle_token: Option<SyntaxToken GreaterThan>;
-    rtype: Option<Type>;
+    ty: Option<Type>;
     inner: Option<ParenthesisExpression>;
 );
 ast_node!(FieldExpression:
@@ -714,7 +714,7 @@ ast_node!(VariableStatement:
     variable_qualifier: Option<VariableQualifier>;
     binding: Option<Binding>;
     colon: Option<SyntaxToken Colon>;
-    rtype: Option<Type>;
+    ty: Option<Type>;
     equal_token: Option<SyntaxToken Equal>;
     initializer: Option<Expression>;
 );

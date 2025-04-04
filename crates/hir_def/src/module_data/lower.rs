@@ -128,7 +128,7 @@ impl<'a> Ctx<'a> {
         let ast_id = self.source_ast_id_map.ast_id(override_declaration);
 
         let r#type = override_declaration
-            .rtype()
+            .ty()
             .map(|type_declaration| {
                 self.lower_type_ref(type_declaration)
                     .unwrap_or(TypeReference::Error)
@@ -156,7 +156,7 @@ impl<'a> Ctx<'a> {
         let ast_id = self.source_ast_id_map.ast_id(constant);
 
         let r#type = constant
-            .rtype()
+            .ty()
             .map(|type_declaration| {
                 self.lower_type_ref(type_declaration)
                     .unwrap_or(TypeReference::Error)
@@ -179,7 +179,7 @@ impl<'a> Ctx<'a> {
         let ast_id = self.source_ast_id_map.ast_id(var);
 
         let r#type = var
-            .rtype()
+            .ty()
             .and_then(|type_declaration| self.lower_type_ref(type_declaration))
             .map(|r#type| self.db.intern_type_ref(r#type));
 
@@ -217,7 +217,7 @@ impl<'a> Ctx<'a> {
                 let declaration = field.variable_ident_declaration()?;
                 let name = Name::from(declaration.binding()?.name()?);
                 let r#type = self
-                    .lower_type_ref(declaration.rtype()?)
+                    .lower_type_ref(declaration.ty()?)
                     .unwrap_or(TypeReference::Error);
                 let r#type = self.db.intern_type_ref(r#type);
                 self.module_data.fields.alloc(Field { name, r#type });
@@ -249,7 +249,7 @@ impl<'a> Ctx<'a> {
 
         let return_type = function
             .return_type()
-            .and_then(|r#type| r#type.rtype())
+            .and_then(|r#type| r#type.ty())
             .map(|r#type| self.lower_type_ref(r#type).unwrap_or(TypeReference::Error))
             .map(|r#type| self.db.intern_type_ref(r#type));
 
@@ -270,7 +270,7 @@ impl<'a> Ctx<'a> {
         for parameter in function_param_list.parameters() {
             if let Some(parameter) = parameter.variable_ident_declaration() {
                 let r#type = parameter
-                    .rtype()
+                    .ty()
                     .and_then(|r#type| self.lower_type_ref(r#type))
                     .unwrap_or(TypeReference::Error);
                 let r#type = self.db.intern_type_ref(r#type);
