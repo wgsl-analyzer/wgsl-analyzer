@@ -67,7 +67,7 @@ fn create_original_changelog_url(file_name: &str) -> String {
     if let Some(stripped) = stem.strip_suffix(".md") {
         stem = stripped;
     }
-    format!("https://rust-analyzer.github.io/thisweek/{year}/{month}/{day}/{stem}.html")
+    format!("https://wgsl-analyzer.github.io/thisweek/{year}/{month}/{day}/{stem}.html")
 }
 
 fn update_release(

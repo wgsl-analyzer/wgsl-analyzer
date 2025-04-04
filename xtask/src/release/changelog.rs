@@ -38,7 +38,6 @@ pub(crate) fn get_changelog(
             let pr_json = match cmd.read() {
                 Ok(pr_json) => pr_json,
                 Err(error) => {
-                    // most likely a rust-lang/rust PR
                     eprintln!("Cannot get info for #{pr}: {error}");
                     continue;
                 },
