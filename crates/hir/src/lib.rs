@@ -21,7 +21,7 @@ use hir_def::{
     resolver::{ResolveValue, Resolver},
 };
 pub use hir_ty::db::HirDatabase;
-use hir_ty::{infer::InferenceResult, ty::Ty};
+use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
 use syntax::{AstNode, HasName, SyntaxNode, ast, match_ast, pointer::AstPointer};
 
@@ -281,7 +281,7 @@ impl<'db> SourceAnalyzer<'db> {
     pub fn type_of_expression(
         &self,
         expression: &ast::Expression,
-    ) -> Option<Ty> {
+    ) -> Option<Type> {
         let id = self.expression_id(expression)?;
         let r#type = *self.infer.type_of_expression.get(id)?;
         Some(r#type)
@@ -290,7 +290,7 @@ impl<'db> SourceAnalyzer<'db> {
     pub fn type_of_binding(
         &self,
         binding: &ast::Binding,
-    ) -> Option<Ty> {
+    ) -> Option<Type> {
         let id = self.binding_id(binding)?;
         let r#type = *self.infer.type_of_binding.get(id)?;
         Some(r#type)
@@ -588,7 +588,7 @@ impl Module {
         &self,
         db: &dyn HirDatabase,
         config: &DiagnosticsConfig,
-        acc: &mut Vec<AnyDiagnostic>,
+        accumulator: &mut Vec<AnyDiagnostic>,
     ) {
         for import in self.imports(db) {
             if import.resolve(db).is_err() {
@@ -599,7 +599,7 @@ impl Module {
 
                 let source = import_loc.map(|id| def_map.get(module_info.get(id).ast_id));
 
-                acc.push(AnyDiagnostic::UnresolvedImport { import: source })
+                accumulator.push(AnyDiagnostic::UnresolvedImport { import: source })
             }
         }
         for item in self.items(db) {
@@ -609,7 +609,7 @@ impl Module {
                     diagnostics::global_variable::collect(db, var.id, |error| {
                         if let Some(source) = var.source(db.upcast()) {
                             let source = source.map(|declaration| AstPointer::new(&declaration));
-                            acc.push(diagnostics::any_diag_from_global_var(error, source));
+                            accumulator.push(diagnostics::any_diag_from_global_var(error, source));
                         }
                     });
                 },
@@ -630,7 +630,7 @@ impl Module {
                             &source_map,
                             file,
                         ) {
-                            Some(diagnostic) => acc.push(diagnostic),
+                            Some(diagnostic) => accumulator.push(diagnostic),
                             None => {
                                 tracing::warn!("could not create diagnostic from {:?}", diagnostic)
                             },
@@ -640,7 +640,7 @@ impl Module {
 
                 diagnostics::precedence::collect(db, def, |diagnostic| {
                     match diagnostics::any_diag_from_shift(&diagnostic, &source_map, file) {
-                        Some(diagnostic) => acc.push(diagnostic),
+                        Some(diagnostic) => accumulator.push(diagnostic),
                         None => {
                             tracing::warn!("could not create diagnostic from {:?}", diagnostic)
                         },

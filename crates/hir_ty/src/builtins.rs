@@ -45,7 +45,7 @@ pub enum GenericArgKind {
 
 pub enum GenericArg {
     VecSize(VecSize),
-    Type(Ty),
+    Type(Type),
     TexelFormat(TexelFormat),
 }
 

@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use super::{Ty, TyKind};
+use super::{TyKind, Type};
 use crate::{
     db::HirDatabase,
     function::FunctionDetails,
@@ -69,14 +69,14 @@ fn write_type_expectation_inner(
 
 pub fn pretty_type(
     db: &dyn HirDatabase,
-    r#type: Ty,
+    r#type: Type,
 ) -> String {
     pretty_type_with_verbosity(db, r#type, TypeVerbosity::default())
 }
 
 pub fn pretty_type_with_verbosity(
     db: &dyn HirDatabase,
-    r#type: Ty,
+    r#type: Type,
     verbosity: TypeVerbosity,
 ) -> String {
     let mut str = String::new();
@@ -124,7 +124,7 @@ fn pretty_fn_inner(
 
 fn write_ty(
     db: &dyn HirDatabase,
-    r#type: Ty,
+    r#type: Type,
     f: &mut String,
     verbosity: TypeVerbosity,
 ) -> std::fmt::Result {

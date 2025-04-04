@@ -25,7 +25,7 @@ use crate::{
     function::{FunctionDetails, ResolvedFunctionId},
     ty::{
         ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Pointer, Reference, SamplerType,
-        ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType, Ty, TyKind,
+        ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType, Type, TyKind,
         VecSize, VectorType,
     },
 };
@@ -59,21 +59,21 @@ pub fn infer_query(
 pub enum InferenceDiagnostic {
     AssignmentNotAReference {
         left_side: ExpressionId,
-        actual: Ty,
+        actual: Type,
     },
     TypeMismatch {
         expression: ExpressionId,
         expected: TypeExpectation,
-        actual: Ty,
+        actual: Type,
     },
     NoSuchField {
         expression: ExpressionId,
         name: Name,
-        r#type: Ty,
+        r#type: Type,
     },
     ArrayAccessInvalidType {
         expression: ExpressionId,
-        r#type: Ty,
+        r#type: Type,
     },
     UnresolvedName {
         expression: ExpressionId,
@@ -81,7 +81,7 @@ pub enum InferenceDiagnostic {
     },
     InvalidConstructionType {
         expression: ExpressionId,
-        r#type: Ty,
+        r#type: Type,
     },
     FunctionCallArgCountMismatch {
         expression: ExpressionId,
@@ -92,22 +92,22 @@ pub enum InferenceDiagnostic {
         expression: ExpressionId,
         builtin: BuiltinId,
         name: Option<&'static str>,
-        parameters: Vec<Ty>,
+        parameters: Vec<Type>,
     },
     NoConstructor {
         expression: ExpressionId,
         builtins: [BuiltinId; 2],
-        r#type: Ty,
-        parameters: Vec<Ty>,
+        r#type: Type,
+        parameters: Vec<Type>,
     },
 
     AddressOfNotReference {
         expression: ExpressionId,
-        actual: Ty,
+        actual: Type,
     },
     DerefNotAPointer {
         expression: ExpressionId,
-        actual: Ty,
+        actual: Type,
     },
 
     InvalidType {
@@ -137,15 +137,15 @@ impl From<ExpressionId> for TypeContainer {
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub enum ResolvedCall {
     Function(ResolvedFunctionId),
-    OtherTypeInitializer(Ty),
+    OtherTypeInitializer(Type),
 }
 
 #[derive(Default, PartialEq, Eq, Debug)]
 pub struct InferenceResult {
-    pub type_of_expression: ArenaMap<ExpressionId, Ty>,
-    pub type_of_binding: ArenaMap<BindingId, Ty>,
+    pub type_of_expression: ArenaMap<ExpressionId, Type>,
+    pub type_of_binding: ArenaMap<BindingId, Type>,
     pub diagnostics: Vec<InferenceDiagnostic>,
-    pub return_type: Option<Ty>,
+    pub return_type: Option<Type>,
     call_resolutions: FxHashMap<ExpressionId, ResolvedCall>,
     field_resolutions: FxHashMap<ExpressionId, FieldId>,
 }
@@ -172,7 +172,7 @@ pub struct InferenceContext<'db> {
     resolver: Resolver,
     body: Arc<Body>,
     result: InferenceResult,
-    return_ty: Option<Ty>,
+    return_ty: Option<Type>,
 }
 
 impl<'db> InferenceContext<'db> {
@@ -194,7 +194,7 @@ impl<'db> InferenceContext<'db> {
     fn set_expression_ty(
         &mut self,
         expression: ExpressionId,
-        r#type: Ty,
+        r#type: Type,
     ) {
         self.result.type_of_expression.insert(expression, r#type);
     }
@@ -202,7 +202,7 @@ impl<'db> InferenceContext<'db> {
     fn set_binding_ty(
         &mut self,
         binding: BindingId,
-        r#type: Ty,
+        r#type: Type,
     ) {
         self.result.type_of_binding.insert(binding, r#type);
     }
@@ -586,7 +586,7 @@ impl<'db> InferenceContext<'db> {
 
     fn expect_ty_inner(
         &mut self,
-        r#type: Ty,
+        r#type: Type,
         expectation: &TypeExpectationInner,
     ) -> Result<(), ()> {
         let ty_kind = r#type.kind(self.db);
@@ -627,8 +627,8 @@ impl<'db> InferenceContext<'db> {
     fn expect_same_type(
         &mut self,
         expression: ExpressionId,
-        expected: Ty,
-        actual: Ty,
+        expected: Type,
+        actual: Type,
     ) {
         let actual_unref = actual.unref(self.db);
         if expected != actual_unref {
@@ -644,7 +644,7 @@ impl<'db> InferenceContext<'db> {
         &mut self,
         expression: ExpressionId,
         expected: TypeExpectation,
-    ) -> Ty {
+    ) -> Type {
         let r#type = self.infer_expression(expression).unref(self.db);
 
         match &expected {
@@ -681,7 +681,7 @@ impl<'db> InferenceContext<'db> {
     fn infer_expression(
         &mut self,
         expression: ExpressionId,
-    ) -> Ty {
+    ) -> Type {
         let body = Arc::clone(&self.body);
         let r#type = match body.exprs[expression] {
             Expression::Missing => self.error_ty(),
@@ -840,10 +840,10 @@ impl<'db> InferenceContext<'db> {
     fn validate_function_call(
         &mut self,
         f: &FunctionDetails,
-        arguments: Vec<Ty>,
+        arguments: Vec<Type>,
         callee: ExpressionId,
         expression: ExpressionId,
-    ) -> Ty {
+    ) -> Type {
         if f.parameters.len() != arguments.len() {
             self.push_diagnostic(InferenceDiagnostic::FunctionCallArgCountMismatch {
                 expression: callee,
@@ -864,7 +864,7 @@ impl<'db> InferenceContext<'db> {
         &mut self,
         expression: ExpressionId,
         op: UnaryOperator,
-    ) -> Ty {
+    ) -> Type {
         let expression_ty = self.infer_expression(expression);
         if expression_ty.is_err(self.db) {
             return self.error_ty();
@@ -910,7 +910,7 @@ impl<'db> InferenceContext<'db> {
         left_side: ExpressionId,
         right_side: ExpressionId,
         op: BinaryOperation,
-    ) -> Ty {
+    ) -> Type {
         let left_ty = self.infer_expression(left_side).unref(self.db);
         let rhs_ty = self.infer_expression(right_side).unref(self.db);
 
@@ -990,7 +990,7 @@ impl<'db> InferenceContext<'db> {
         &self,
         expression: ExpressionId,
         path: &Name,
-    ) -> Option<Ty> {
+    ) -> Option<Type> {
         self.resolve_path_expression_inner(expression, path)
     }
 
@@ -998,7 +998,7 @@ impl<'db> InferenceContext<'db> {
         &self,
         expression: ExpressionId,
         path: &Name,
-    ) -> Option<Ty> {
+    ) -> Option<Type> {
         let resolver = self.resolver_for_expression(expression);
         let resolve = resolver.resolve_value(path)?;
         let r#type = match resolve {
@@ -1033,9 +1033,9 @@ impl<'db> InferenceContext<'db> {
 
     fn ty_from_vec_size(
         &self,
-        inner: Ty,
+        inner: Type,
         vec_size: u8,
-    ) -> Ty {
+    ) -> Type {
         if vec_size == 1 {
             inner
         } else {
@@ -1051,7 +1051,7 @@ impl<'db> InferenceContext<'db> {
         &self,
         vec_type: &VectorType,
         name: &Name,
-    ) -> Result<Ty, ()> {
+    ) -> Result<Type, ()> {
         const SWIZZLES: [[char; 4]; 2] = [['x', 'y', 'z', 'w'], ['r', 'g', 'b', 'a']];
         let max_size = 4;
         let max_swizzle_index = vec_type.size.as_u8();
@@ -1080,9 +1080,9 @@ impl<'db> InferenceContext<'db> {
         &mut self,
         expression: ExpressionId,
         builtin_id: BuiltinId,
-        arguments: &[Ty],
+        arguments: &[Type],
         name: Option<&'static str>,
-    ) -> Ty {
+    ) -> Type {
         self.call_builtin_inner(expression, builtin_id, arguments, name, None)
     }
 
@@ -1090,10 +1090,10 @@ impl<'db> InferenceContext<'db> {
         &mut self,
         expression: ExpressionId,
         builtin_id: BuiltinId,
-        arguments: &[Ty],
+        arguments: &[Type],
         name: Option<&'static str>,
-        r#type: Ty,
-    ) -> Ty {
+        r#type: Type,
+    ) -> Type {
         self.call_builtin_inner(expression, builtin_id, arguments, name, Some(r#type))
     }
 
@@ -1101,10 +1101,10 @@ impl<'db> InferenceContext<'db> {
         &mut self,
         expression: ExpressionId,
         builtin_id: BuiltinId,
-        arguments: &[Ty],
+        arguments: &[Type],
         name: Option<&'static str>,
-        return_ty: Option<Ty>,
-    ) -> Ty {
+        return_ty: Option<Type>,
+    ) -> Type {
         if let Ok((return_ty, overload_id)) =
             self.try_call_builtin(builtin_id, arguments, return_ty)
         {
@@ -1128,9 +1128,9 @@ impl<'db> InferenceContext<'db> {
     fn try_call_builtin(
         &mut self,
         builtin_id: BuiltinId,
-        arguments: &[Ty],
-        return_type: Option<Ty>,
-    ) -> Result<(Ty, BuiltinOverloadId), ()> {
+        arguments: &[Type],
+        return_type: Option<Type>,
+    ) -> Result<(Type, BuiltinOverloadId), ()> {
         let builtin = builtin_id.lookup(self.db);
         for (overload_id, overload) in builtin.overloads() {
             if let Ok(r#type) = self.call_builtin_overload(overload, arguments) {
@@ -1149,8 +1149,8 @@ impl<'db> InferenceContext<'db> {
     fn call_builtin_overload(
         &self,
         signatre: &BuiltinOverload,
-        arguments: &[Ty],
-    ) -> Result<Ty, ()> {
+        arguments: &[Type],
+    ) -> Result<Type, ()> {
         let fn_ty = signatre.r#type.lookup(self.db);
 
         if fn_ty.parameters.len() != arguments.len() {
@@ -1173,8 +1173,8 @@ impl<'db> InferenceContext<'db> {
         &mut self,
         expression: ExpressionId,
         callee: &Callee,
-        arguments: Vec<Ty>,
-    ) -> Ty {
+        arguments: Vec<Type>,
+    ) -> Type {
         match callee {
             Callee::InferredComponentMatrix { rows, columns } => {
                 let builtin_id = self.builtin_matrix_inferred_constructor(columns, rows);
@@ -1261,8 +1261,8 @@ impl<'db> InferenceContext<'db> {
     fn check_ty_initialiser(
         &mut self,
         expression: ExpressionId,
-        r#type: Ty,
-        arguments: Vec<Ty>,
+        r#type: Type,
+        arguments: Vec<Type>,
     ) {
         fn size_to_dimension(size: VecSize) -> VecDimensionality {
             match size {
@@ -1366,7 +1366,7 @@ impl<'db> InferenceContext<'db> {
 
 #[derive(Default)]
 struct UnificationTable {
-    type_vars: FxHashMap<BoundVar, Ty>,
+    type_vars: FxHashMap<BoundVar, Type>,
     vec_size_vars: FxHashMap<BoundVar, VecSize>,
     texel_format_vars: FxHashMap<BoundVar, TexelFormat>,
 }
@@ -1390,7 +1390,7 @@ impl UnificationTable {
     fn set_type(
         &mut self,
         var: BoundVar,
-        r#type: Ty,
+        r#type: Type,
     ) -> Result<(), ()> {
         match self.type_vars.entry(var) {
             Entry::Occupied(entry) if *entry.get() == r#type => Ok(()),
@@ -1420,8 +1420,8 @@ impl UnificationTable {
     fn resolve(
         &self,
         db: &dyn HirDatabase,
-        r#type: Ty,
-    ) -> Ty {
+        r#type: Type,
+    ) -> Type {
         match r#type.kind(db) {
             TyKind::BoundVar(var) => *self.type_vars.get(&var).expect("type var not constrained"),
             TyKind::Vector(VectorType { size, inner }) => {
@@ -1497,8 +1497,8 @@ impl UnificationTable {
 fn unify(
     db: &dyn HirDatabase,
     table: &mut UnificationTable,
-    expected: Ty,
-    found: Ty,
+    expected: Type,
+    found: Type,
 ) -> Result<(), ()> {
     let expected_kind = expected.kind(db);
     let found_kind = found.kind(db);
@@ -1661,7 +1661,7 @@ fn unify(
 fn storage_type_of_texel_format(
     db: &dyn HirDatabase,
     format: TexelFormat,
-) -> Ty {
+) -> Type {
     let channel_type = match format {
         TexelFormat::Rgba8unorm
         | TexelFormat::Rgba8snorm
@@ -1691,7 +1691,7 @@ fn storage_type_of_texel_format(
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeExpectationInner {
-    Exact(Ty),
+    Exact(Type),
     I32OrF32,
     NumericScalar,
     IntegerScalar,
@@ -1705,14 +1705,14 @@ pub enum TypeExpectation {
 }
 
 impl TypeExpectation {
-    fn from_option(option: Option<Ty>) -> Self {
+    fn from_option(option: Option<Type>) -> Self {
         match option {
             Some(r#type) => TypeExpectation::Type(TypeExpectationInner::Exact(r#type)),
             None => TypeExpectation::None,
         }
     }
 
-    fn from_ty(r#type: Ty) -> Self {
+    fn from_ty(r#type: Type) -> Self {
         TypeExpectation::Type(TypeExpectationInner::Exact(r#type))
     }
 }
@@ -1720,10 +1720,10 @@ impl TypeExpectation {
 impl InferenceContext<'_> {
     fn make_ref(
         &self,
-        r#type: Ty,
+        r#type: Type,
         storage_class: StorageClass,
         access_mode: AccessMode,
-    ) -> Ty {
+    ) -> Type {
         self.db.intern_ty(TyKind::Reference(Reference {
             inner: r#type,
             storage_class,
@@ -1734,7 +1734,7 @@ impl InferenceContext<'_> {
     fn ref_to_pointer(
         &self,
         reference: Reference,
-    ) -> Ty {
+    ) -> Type {
         self.db.intern_ty(TyKind::Pointer(Pointer {
             inner: reference.inner,
             storage_class: reference.storage_class,
@@ -1745,7 +1745,7 @@ impl InferenceContext<'_> {
     fn ptr_to_ref(
         &self,
         pointer: Pointer,
-    ) -> Ty {
+    ) -> Type {
         self.db.intern_ty(TyKind::Reference(Reference {
             inner: pointer.inner,
             storage_class: pointer.storage_class,
@@ -1753,18 +1753,18 @@ impl InferenceContext<'_> {
         }))
     }
 
-    fn error_ty(&self) -> Ty {
+    fn error_ty(&self) -> Type {
         self.db.intern_ty(TyKind::Error)
     }
 
-    fn bool_ty(&self) -> Ty {
+    fn bool_ty(&self) -> Type {
         self.db.intern_ty(TyKind::Scalar(ScalarType::Bool))
     }
 
     fn try_lower_ty(
         &mut self,
         type_ref: &TypeReference,
-    ) -> Result<Ty, TypeLoweringError> {
+    ) -> Result<Type, TypeLoweringError> {
         TyLoweringContext::new(self.db, &self.resolver).try_lower_ty(type_ref)
     }
 
@@ -1772,7 +1772,7 @@ impl InferenceContext<'_> {
         &mut self,
         container: impl Into<TypeContainer>,
         type_ref: &TypeReference,
-    ) -> Ty {
+    ) -> Type {
         match self.try_lower_ty(type_ref) {
             Ok(r#type) => r#type,
             Err(error) => {
@@ -1835,7 +1835,7 @@ impl<'db> TyLoweringContext<'db> {
     pub fn lower_ty(
         &mut self,
         type_ref: &TypeReference,
-    ) -> Ty {
+    ) -> Type {
         self.try_lower_ty(type_ref)
             .unwrap_or_else(|_| TyKind::Error.intern(self.db))
     }
@@ -1843,7 +1843,7 @@ impl<'db> TyLoweringContext<'db> {
     pub fn try_lower_ty(
         &mut self,
         type_ref: &TypeReference,
-    ) -> Result<Ty, TypeLoweringError> {
+    ) -> Result<Type, TypeLoweringError> {
         let ty_kind = match type_ref {
             TypeReference::Error => TyKind::Error,
             TypeReference::Scalar(scalar) => {

@@ -7,7 +7,7 @@ use hir::{
 };
 use hir_def::original_file_range;
 use hir_ty::ty::{
-    self, Ty, VecSize,
+    self, Type, VecSize,
     pretty::{pretty_fn, pretty_type},
 };
 use itertools::Itertools;
@@ -276,12 +276,12 @@ impl NagaErrorPolicy {
         error: E,
         file_id: FileId,
         full_range: TextRange,
-        acc: &mut Vec<AnyDiagnostic>,
+        accumulator: &mut Vec<AnyDiagnostic>,
     ) {
         let message = error_message_cause_chain("naga: ", &error);
 
         if !error.has_spans() {
-            acc.push(AnyDiagnostic::NagaValidationError {
+            accumulator.push(AnyDiagnostic::NagaValidationError {
                 file_id: file_id.into(),
                 range: full_range,
                 message,
@@ -306,7 +306,7 @@ impl NagaErrorPolicy {
         match *self {
             NagaErrorPolicy::SeparateSpans => {
                 spans.for_each(|(range, label)| {
-                    acc.push(AnyDiagnostic::NagaValidationError {
+                    accumulator.push(AnyDiagnostic::NagaValidationError {
                         file_id: file_id.into(),
                         range,
                         message: format!("{}: {}", message, label),
@@ -316,7 +316,7 @@ impl NagaErrorPolicy {
             },
             NagaErrorPolicy::SmallestSpan => {
                 if let Some((range, _)) = spans.min_by_key(|(range, _)| range.len()) {
-                    acc.push(AnyDiagnostic::NagaValidationError {
+                    accumulator.push(AnyDiagnostic::NagaValidationError {
                         file_id: file_id.into(),
                         range,
                         message,
@@ -334,7 +334,7 @@ impl NagaErrorPolicy {
                     .min_by_key(|range| range.len())
                     .unwrap_or(full_range);
 
-                acc.push(AnyDiagnostic::NagaValidationError {
+                accumulator.push(AnyDiagnostic::NagaValidationError {
                     file_id: file_id.into(),
                     range: min_range,
                     message,
@@ -349,7 +349,7 @@ fn naga_diagnostics<N: Naga>(
     db: &dyn HirDatabase,
     file_id: FileId,
     config: &DiagnosticsConfig,
-    acc: &mut Vec<AnyDiagnostic>,
+    accumulator: &mut Vec<AnyDiagnostic>,
 ) -> Result<(), ()> {
     let source = match db.resolve_full_source(file_id.into()) {
         Ok(source) => source,
@@ -365,14 +365,14 @@ fn naga_diagnostics<N: Naga>(
                 return Ok(());
             }
             if let Err(error) = N::validate(&module) {
-                policy.emit(db, error, file_id, full_range, acc);
+                policy.emit(db, error, file_id, full_range, accumulator);
             }
         },
         Err(error) => {
             if !config.naga_parsing_errors {
                 return Ok(());
             }
-            policy.emit(db, error, file_id, full_range, acc);
+            policy.emit(db, error, file_id, full_range, accumulator);
         },
     }
 
@@ -739,8 +739,8 @@ fn size_compatible(
 
 fn convert_compatible(
     db: &dyn HirDatabase,
-    target: Ty,
-    overload: Ty,
+    target: Type,
+    overload: Type,
 ) -> bool {
     let target_kind = target.kind(db);
     let overload_kind = overload.kind(db);

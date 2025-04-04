@@ -8,7 +8,7 @@ use crate::{
 };
 
 pub(crate) fn complete_dot(
-    acc: &mut Completions,
+    accumulator: &mut Completions,
     ctx: &CompletionContext,
 ) -> Option<()> {
     let field_expression = match &ctx.completion_location {
@@ -25,7 +25,7 @@ pub(crate) fn complete_dot(
         TyKind::Vector(vec) => {
             let size = vec.size.as_u8() as usize;
             let swizzle = swizzle_items(size, ctx, &[["x", "y", "z", "w"], ["r", "g", "b", "a"]]);
-            acc.add_all(swizzle);
+            accumulator.add_all(swizzle);
         },
         TyKind::Matrix(_) => return None,
         TyKind::Struct(r#struct) => {
@@ -35,7 +35,7 @@ pub(crate) fn complete_dot(
                 .iter()
                 .map(|(_, field)| field.name.as_str())
                 .map(field_completion_item);
-            acc.add_all(items);
+            accumulator.add_all(items);
         },
         _ => return None,
     };

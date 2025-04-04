@@ -214,21 +214,21 @@ impl CompletionFieldsToResolve {
 //     }
 
 //     {
-//         let acc = &mut completions;
+//         let accumulator = &mut completions;
 
 //         match analysis {
-//             CompletionAnalysis::Name(name_ctx) => completions::complete_name(acc, ctx, name_ctx),
+//             CompletionAnalysis::Name(name_ctx) => completions::complete_name(accumulator, ctx, name_ctx),
 //             CompletionAnalysis::NameReference(name_ref_ctx) => {
-//                 completions::complete_name_ref(acc, ctx, name_ref_ctx)
+//                 completions::complete_name_ref(accumulator, ctx, name_ref_ctx)
 //             }
 //             CompletionAnalysis::Lifetime(lifetime_ctx) => {
-//                 completions::lifetime::complete_label(acc, ctx, lifetime_ctx);
-//                 completions::lifetime::complete_lifetime(acc, ctx, lifetime_ctx);
+//                 completions::lifetime::complete_label(accumulator, ctx, lifetime_ctx);
+//                 completions::lifetime::complete_lifetime(accumulator, ctx, lifetime_ctx);
 //             }
 //             CompletionAnalysis::String { original, expanded: Some(expanded) } => {
-//                 completions::extern_abi::complete_extern_abi(acc, ctx, expanded);
-//                 completions::format_string::format_string(acc, ctx, original, expanded);
-//                 completions::env_vars::complete_cargo_env_vars(acc, ctx, original, expanded);
+//                 completions::extern_abi::complete_extern_abi(accumulator, ctx, expanded);
+//                 completions::format_string::format_string(accumulator, ctx, original, expanded);
+//                 completions::env_vars::complete_cargo_env_vars(accumulator, ctx, original, expanded);
 //             }
 //             CompletionAnalysis::UnexpandedAttributeTT {
 //                 colon_prefix,
@@ -236,7 +236,7 @@ impl CompletionFieldsToResolve {
 //                 extern_crate,
 //             } => {
 //                 completions::attribute::complete_known_attribute_input(
-//                     acc,
+//                     accumulator,
 //                     ctx,
 //                     colon_prefix,
 //                     attribute,
@@ -256,14 +256,14 @@ pub fn completions2(
     position: FilePosition,
     _trigger_character: Option<char>,
 ) -> Option<Vec<CompletionItem>> {
-    let mut acc = Completions::default();
+    let mut accumulator = Completions::default();
 
     let ctx = CompletionContext::new(db, position, config)?;
-    completions::import::complete_import(&mut acc, &ctx);
-    completions::dot::complete_dot(&mut acc, &ctx);
-    completions::expression::complete_names_in_scope(&mut acc, &ctx);
+    completions::import::complete_import(&mut accumulator, &ctx);
+    completions::dot::complete_dot(&mut accumulator, &ctx);
+    completions::expression::complete_names_in_scope(&mut accumulator, &ctx);
 
-    Some(acc.into())
+    Some(accumulator.into())
 }
 
 // /// Resolves additional completion data at the position given.

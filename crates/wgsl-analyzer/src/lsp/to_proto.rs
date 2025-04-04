@@ -109,7 +109,7 @@ pub(crate) fn completion_items(
 }
 
 fn completion_item(
-    acc: &mut Vec<lsp_types::CompletionItem>,
+    accumulator: &mut Vec<lsp_types::CompletionItem>,
     // config: &Config,
     line_index: &LineIndex,
     _tdpp: &lsp_types::TextDocumentPositionParams,
@@ -213,10 +213,10 @@ fn completion_item(
             *new_text = format!("&{}{}", mutability.as_keyword_for_ref(), new_text);
         }
 
-        acc.push(lsp_item_with_ref);
+        accumulator.push(lsp_item_with_ref);
     };*/
 
-    acc.push(lsp_item);
+    accumulator.push(lsp_item);
 
     fn set_score(
         result: &mut lsp_types::CompletionItem,

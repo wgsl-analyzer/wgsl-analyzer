@@ -16,13 +16,13 @@ use crate::db::HirDatabase;
 // [ ] storable
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
-pub struct Ty {
+pub struct Type {
     r#type: salsa::InternId,
 }
 
-impl InternKey for Ty {
+impl InternKey for Type {
     fn from_intern_id(r#type: salsa::InternId) -> Self {
-        Ty { r#type }
+        Type { r#type }
     }
 
     fn as_intern_id(&self) -> salsa::InternId {
@@ -30,7 +30,7 @@ impl InternKey for Ty {
     }
 }
 
-impl Ty {
+impl Type {
     pub fn kind(
         self,
         db: &dyn HirDatabase,
@@ -50,7 +50,7 @@ impl Ty {
     pub fn this_or_vec_inner(
         self,
         db: &dyn HirDatabase,
-    ) -> Ty {
+    ) -> Type {
         match self.kind(db) {
             TyKind::Vector(vec) => vec.inner,
             TyKind::Reference(r) => r.inner.this_or_vec_inner(db),
@@ -63,7 +63,7 @@ impl Ty {
     pub fn unref(
         self,
         db: &dyn HirDatabase,
-    ) -> Ty {
+    ) -> Type {
         match self.kind(db) {
             TyKind::Reference(r) => r.inner,
             _ => self,
@@ -144,7 +144,7 @@ impl TyKind {
     pub fn intern(
         self,
         db: &dyn HirDatabase,
-    ) -> Ty {
+    ) -> Type {
         db.intern_ty(self)
     }
 
@@ -345,24 +345,24 @@ impl VecSize {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct VectorType {
     pub size: VecSize,
-    pub inner: Ty,
+    pub inner: Type,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct MatrixType {
     pub columns: VecSize,
     pub rows: VecSize,
-    pub inner: Ty,
+    pub inner: Type,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AtomicType {
-    pub inner: Ty,
+    pub inner: Type,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ArrayType {
-    pub inner: Ty,
+    pub inner: Type,
     pub binding_array: bool,
     pub size: ArraySize,
 }
@@ -376,14 +376,14 @@ pub enum ArraySize {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Pointer {
     pub storage_class: StorageClass,
-    pub inner: Ty,
+    pub inner: Type,
     pub access_mode: AccessMode,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Reference {
     pub storage_class: StorageClass,
-    pub inner: Ty,
+    pub inner: Type,
     pub access_mode: AccessMode,
 }
 
@@ -397,7 +397,7 @@ pub struct TextureType {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TextureKind {
-    Sampled(Ty),
+    Sampled(Type),
     Storage(TexelFormat, AccessMode),
     Depth,
     External,

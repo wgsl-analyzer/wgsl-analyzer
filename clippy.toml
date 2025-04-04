@@ -9,6 +9,7 @@ disallowed-methods = [
 ]
 
 disallowed-names = [
+  "acc",
   "alloc",
   "alt",
   # "args", does not work due to write! macro

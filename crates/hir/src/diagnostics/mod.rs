@@ -9,7 +9,7 @@ use hir_ty::{
     builtins::BuiltinId,
     db::HirDatabase,
     infer::{InferenceDiagnostic, TypeExpectation, TypeLoweringError},
-    ty::Ty,
+    ty::Type,
     validate::StorageClassError,
 };
 use serde::Deserialize;
@@ -66,21 +66,21 @@ pub enum AnyDiagnostic {
 
     AssignmentNotAReference {
         left_side: InFile<AstPointer<ast::Expression>>,
-        actual: Ty,
+        actual: Type,
     },
     TypeMismatch {
         expression: InFile<AstPointer<ast::Expression>>,
         expected: TypeExpectation,
-        actual: Ty,
+        actual: Type,
     },
     NoSuchField {
         expression: InFile<AstPointer<ast::Expression>>,
         name: Name,
-        r#type: Ty,
+        r#type: Type,
     },
     ArrayAccessInvalidType {
         expression: InFile<AstPointer<ast::Expression>>,
-        r#type: Ty,
+        r#type: Type,
     },
     UnresolvedName {
         expression: InFile<AstPointer<ast::Expression>>,
@@ -88,7 +88,7 @@ pub enum AnyDiagnostic {
     },
     InvalidConstructionType {
         expression: InFile<AstPointer<ast::Expression>>,
-        r#type: Ty,
+        r#type: Type,
     },
     FunctionCallArgCountMismatch {
         expression: InFile<AstPointer<ast::Expression>>,
@@ -99,15 +99,15 @@ pub enum AnyDiagnostic {
         expression: InFile<AstPointer<ast::Expression>>,
         builtin: BuiltinId,
         name: Option<&'static str>,
-        parameters: Vec<Ty>,
+        parameters: Vec<Type>,
     },
     AddressOfNotReference {
         expression: InFile<AstPointer<ast::Expression>>,
-        actual: Ty,
+        actual: Type,
     },
     DerefNotPointer {
         expression: InFile<AstPointer<ast::Expression>>,
-        actual: Ty,
+        actual: Type,
     },
     MissingStorageClass {
         var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
@@ -141,8 +141,8 @@ pub enum AnyDiagnostic {
     NoConstructor {
         expression: InFile<AstPointer<ast::Expression>>,
         builtins: [BuiltinId; 2],
-        r#type: Ty,
-        parameters: Vec<Ty>,
+        r#type: Type,
+        parameters: Vec<Type>,
     },
 }
 

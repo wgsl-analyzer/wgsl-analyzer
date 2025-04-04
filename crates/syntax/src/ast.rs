@@ -222,13 +222,18 @@ impl ImportCustom {
     }
 
     pub fn key(&self) -> String {
-        self.segments().fold(String::new(), |mut acc, segment| {
-            match segment {
-                ImportCustomSegment::Identifier(ident) => acc.push_str(ident.text()),
-                ImportCustomSegment::ColonColon(colon_colon) => acc.push_str(colon_colon.text()),
-            };
-            acc
-        })
+        self.segments()
+            .fold(String::new(), |mut accumulator, segment| {
+                match segment {
+                    ImportCustomSegment::Identifier(identifier) => {
+                        accumulator.push_str(identifier.text())
+                    },
+                    ImportCustomSegment::ColonColon(colon_colon) => {
+                        accumulator.push_str(colon_colon.text())
+                    },
+                };
+                accumulator
+            })
     }
 }
 

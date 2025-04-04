@@ -6,7 +6,7 @@ use std::sync::Arc;
 use crate::builtins::{Builtin, BuiltinId};
 use crate::function::{FunctionDetails, ResolvedFunctionId};
 use crate::infer::{InferenceResult, TyLoweringContext};
-use crate::ty::{Ty, TyKind};
+use crate::ty::{TyKind, Type};
 use base_db::Upcast;
 use hir_def::{
     HirFileId, InFile,
@@ -29,7 +29,7 @@ pub trait HirDatabase: DefDatabase + Upcast<dyn DefDatabase> {
     fn field_types(
         &self,
         r#struct: StructId,
-    ) -> Arc<ArenaMap<LocalFieldId, Ty>>;
+    ) -> Arc<ArenaMap<LocalFieldId, Type>>;
     fn function_type(
         &self,
         function: FunctionId,
@@ -45,7 +45,7 @@ pub trait HirDatabase: DefDatabase + Upcast<dyn DefDatabase> {
     fn intern_ty(
         &self,
         r#type: TyKind,
-    ) -> Ty;
+    ) -> Type;
 
     #[salsa::interned]
     fn intern_builtin(
@@ -63,7 +63,7 @@ pub trait HirDatabase: DefDatabase + Upcast<dyn DefDatabase> {
 fn field_types(
     db: &dyn HirDatabase,
     r#struct: StructId,
-) -> Arc<ArenaMap<LocalFieldId, Ty>> {
+) -> Arc<ArenaMap<LocalFieldId, Type>> {
     let data = db.struct_data(r#struct);
 
     let file_id = r#struct.lookup(db.upcast()).file_id;
