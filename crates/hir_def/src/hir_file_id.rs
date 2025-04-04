@@ -43,7 +43,17 @@ impl HirFileId {
 
                 match &import.value {
                     ImportValue::Path(path) => relative_file(db, import_loc.file_id, path),
-                    _ => unimplemented!(),
+                    ImportValue::Custom(key) => {
+                        // Try to resolve the custom import as a file
+                        let imports = db.custom_imports();
+                        if imports.contains_key(key) {
+                            // For custom imports, we might not have a direct file,
+                            // but return the source file that imported it for now
+                            import_loc.file_id.original_file(db)
+                        } else {
+                            None
+                        }
+                    },
                 }
             },
         }

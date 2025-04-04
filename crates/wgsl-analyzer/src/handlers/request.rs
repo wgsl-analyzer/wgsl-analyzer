@@ -30,7 +30,7 @@ pub(crate) fn handle_goto_definition(
     };
 
     let range = FileRange {
-        file_id,
+        file_id: nav_target.file_id,
         range: nav_target.focus_or_full_range(),
     };
     let location = to_proto::location(&snap, range)?;

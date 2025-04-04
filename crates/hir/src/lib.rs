@@ -232,17 +232,23 @@ fn module_item_to_def(
             let import_id = db.intern_import(loc);
 
             let import_file = HirFileId::from(ImportFile { import_id });
-            match import_file.original_file(db.upcast()) {
-                Some(original_file) => {
-                    let original_file = original_file.into();
-                    let module_info = db.module_info(original_file);
-                    return module_info
-                        .items()
-                        .iter()
-                        .flat_map(|item| module_item_to_def(db, original_file, item))
-                        .collect();
-                },
-                _ => return smallvec::smallvec![],
+            // Process imported definitions from the original file if available
+            if let Some(original_file) = import_file.original_file(db.upcast()) {
+                let original_file = original_file.into();
+                let module_info = db.module_info(original_file);
+                return module_info
+                    .items()
+                    .iter()
+                    .flat_map(|item| module_item_to_def(db, original_file, item))
+                    .collect();
+            } else {
+                // For custom imports without a direct file, use the import file's module info
+                let module_info = db.module_info(import_file);
+                return module_info
+                    .items()
+                    .iter()
+                    .flat_map(|item| module_item_to_def(db, import_file, item))
+                    .collect();
             }
         },
         ModuleItem::TypeAlias(type_alias) => {
