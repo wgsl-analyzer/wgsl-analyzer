@@ -11,7 +11,7 @@ use crate::{
 };
 
 pub(crate) fn complete_names_in_scope(
-    acc: &mut Completions,
+    accumulator: &mut Completions,
     ctx: &CompletionContext,
 ) -> Option<()> {
     match ctx.completion_location {
@@ -43,7 +43,7 @@ pub(crate) fn complete_names_in_scope(
                     let inference = ctx.db.infer(def);
                     inference.type_of_binding.get(local).copied()
                 })
-                .map(|ty| pretty_type(ctx.db, ty)),
+                .map(|r#type| pretty_type(ctx.db, r#type)),
             ScopeDef::ModuleItem(file_id, item) => {
                 let module_info = ctx.db.module_info(file_id);
                 let detail = pretty_module_item(&item, &module_info, ctx.db.upcast());
@@ -61,10 +61,10 @@ pub(crate) fn complete_names_in_scope(
             swizzle_index: None,
         });
         completion.set_detail(detail);
-        completion.add_to(acc);
+        completion.add_to(accumulator);
     });
 
-    acc.add_all(Builtin::ALL_BUILTINS.iter().map(|name| {
+    accumulator.add_all(Builtin::ALL_BUILTINS.iter().map(|name| {
         CompletionItem::new(CompletionItemKind::Function, ctx.source_range(), *name)
             .with_relevance(CompletionRelevance {
                 exact_name_match: false,

@@ -4,12 +4,12 @@
 #[macro_export]
 macro_rules! format_to {
     ($buf:expr) => ();
-    ($buf:expr, $lit:literal $($arg:tt)*) => {
+    ($buf:expr, $literal:literal $($arg:tt)*) => {
         {
             use ::std::fmt::Write as _;
-            // We cannot do ::std::fmt::Write::write_fmt($buf, format_args!($lit $($arg)*))
+            // We cannot do ::std::fmt::Write::write_fmt($buf, format_args!($literal $($arg)*))
             // unfortunately, as that loses out on autoref behavior.
-            _ = $buf.write_fmt(format_args!($lit $($arg)*))
+            _ = $buf.write_fmt(format_args!($literal $($arg)*))
         }
     };
 }
@@ -19,12 +19,12 @@ macro_rules! format_to {
 /// Useful for folding iterators into a `String`.
 #[macro_export]
 macro_rules! format_to_acc {
-    ($buf:expr, $lit:literal $($arg:tt)*) => {
+    ($buf:expr, $literal:literal $($arg:tt)*) => {
         {
             use ::std::fmt::Write as _;
-            // We cannot do ::std::fmt::Write::write_fmt($buf, format_args!($lit $($arg)*))
+            // We cannot do ::std::fmt::Write::write_fmt($buf, format_args!($literal $($arg)*))
             // unfortunately, as that loses out on autoref behavior.
-            _ = $buf.write_fmt(format_args!($lit $($arg)*));
+            _ = $buf.write_fmt(format_args!($literal $($arg)*));
             $buf
         }
     };
@@ -34,7 +34,7 @@ macro_rules! format_to_acc {
 ///
 /// # Example
 ///
-/// ```rust,ignore
+/// ```ignore
 /// impl_from!(Struct, Union, Enum for Adt);
 /// ```
 #[macro_export]

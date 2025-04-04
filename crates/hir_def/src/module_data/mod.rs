@@ -58,8 +58,8 @@ impl From<ast::NameReference> for Name {
 }
 
 impl From<ast::Identifier> for Name {
-    fn from(ident: ast::Identifier) -> Self {
-        Name(ident.text().as_str().into())
+    fn from(identifier: ast::Identifier) -> Self {
+        Name(identifier.text().as_str().into())
     }
 }
 
@@ -79,14 +79,14 @@ pub struct Function {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Parameter {
-    pub ty: Interned<TypeReference>,
+    pub r#type: Interned<TypeReference>,
     pub name: Name,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct GlobalVariable {
     pub name: Name,
-    pub ty: Option<Interned<TypeReference>>,
+    pub r#type: Option<Interned<TypeReference>>,
     pub ast_id: FileAstId<ast::GlobalVariableDeclaration>,
     pub storage_class: Option<StorageClass>,
     pub access_mode: Option<AccessMode>,
@@ -95,21 +95,21 @@ pub struct GlobalVariable {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct GlobalConstant {
     pub name: Name,
-    pub ty: Option<Interned<TypeReference>>,
+    pub r#type: Option<Interned<TypeReference>>,
     pub ast_id: FileAstId<ast::GlobalConstantDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Override {
     pub name: Name,
-    pub ty: Option<Interned<TypeReference>>,
+    pub r#type: Option<Interned<TypeReference>>,
     pub ast_id: FileAstId<ast::OverrideDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TypeAlias {
     pub name: Name,
-    pub ty: Interned<TypeReference>,
+    pub r#type: Interned<TypeReference>,
     pub ast_id: FileAstId<ast::TypeAliasDeclaration>,
 }
 
@@ -122,7 +122,7 @@ pub struct Struct {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Field {
-    pub ty: Interned<TypeReference>,
+    pub r#type: Interned<TypeReference>,
     pub name: Name,
 }
 

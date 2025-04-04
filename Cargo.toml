@@ -8,7 +8,7 @@ exclude = ["crates/proc-macro-srv/proc-macro-test/imp"]
 resolver = "2"
 
 [workspace.package]
-rust-version = "1.85"
+rust-version = "1.86"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 authors = ["wgsl-analyzer team"]
@@ -72,10 +72,10 @@ test-utils = { path = "./crates/test-utils", version = "0.0.0" }
 toolchain = { path = "./crates/toolchain", version = "0.0.0" }
 tt = { path = "./crates/tt", version = "0.0.0" }
 # vfs = { path = "./crates/vfs", version = "0.0.0" }
-wgsl-parser = { path = "./crates/wgsl_parser", version = "0.0.0" }
 wgsl-analyzer = { path = "./crates/wgsl-analyzer", version = "0.0.0" }
 wgsl-formatter = { path = "./crates/wgsl_formatter", version = "0.0.0" }
 wgslfmt = { path = "./crates/wgslfmt", version = "0.0.0" }
+edition = { path = "./crates/edition", version = "0.0.0" }
 
 vfs-notify = { git = "https://github.com/rust-lang/rust-analyzer", rev = "7cce80c1738e8576ba715ec87dc8fcf28da0c5c6", version = "0.0.0" }
 vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "7cce80c1738e8576ba715ec87dc8fcf28da0c5c6", version = "0.0.0" }
@@ -90,7 +90,7 @@ ra-ap-rustc_pattern_analysis = { version = "0.96.0", default-features = false }
 
 # local crates that are not published to crates.io. These should not have versions.
 
-# in-tree crates that are published separately and follow semver. See lib/README.md
+# crates from rust-analyzer that are published separately
 line-index = "0.1.2"
 la-arena = "0.3.1"
 lsp-server = "0.7.8"

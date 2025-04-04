@@ -203,8 +203,8 @@ impl NotifyActor {
                                 loader::Entry::Files(files) => {
                                     self.watched_file_entries.extend(files);
                                 },
-                                loader::Entry::Directories(dir) => {
-                                    self.watched_dir_entries.push(dir);
+                                loader::Entry::Directories(directory) => {
+                                    self.watched_dir_entries.push(directory);
                                 },
                             }
                         }
@@ -244,7 +244,7 @@ impl NotifyActor {
                                         && self
                                             .watched_dir_entries
                                             .iter()
-                                            .any(|dir| dir.contains_dir(&path))
+                                            .any(|directory| directory.contains_dir(&path))
                                     {
                                         self.watch(path.as_ref());
                                         return None;
@@ -259,7 +259,7 @@ impl NotifyActor {
                                         || self
                                             .watched_dir_entries
                                             .iter()
-                                            .any(|dir| dir.contains_file(&path)))
+                                            .any(|directory| directory.contains_file(&path)))
                                     {
                                         return None;
                                     }

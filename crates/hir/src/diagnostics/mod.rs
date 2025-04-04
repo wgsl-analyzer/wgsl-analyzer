@@ -9,7 +9,7 @@ use hir_ty::{
     builtins::BuiltinId,
     db::HirDatabase,
     infer::{InferenceDiagnostic, TypeExpectation, TypeLoweringError},
-    ty::Ty,
+    ty::Type,
     validate::StorageClassError,
 };
 use serde::Deserialize;
@@ -66,21 +66,21 @@ pub enum AnyDiagnostic {
 
     AssignmentNotAReference {
         left_side: InFile<AstPointer<ast::Expression>>,
-        actual: Ty,
+        actual: Type,
     },
     TypeMismatch {
         expression: InFile<AstPointer<ast::Expression>>,
         expected: TypeExpectation,
-        actual: Ty,
+        actual: Type,
     },
     NoSuchField {
         expression: InFile<AstPointer<ast::Expression>>,
         name: Name,
-        ty: Ty,
+        r#type: Type,
     },
     ArrayAccessInvalidType {
         expression: InFile<AstPointer<ast::Expression>>,
-        ty: Ty,
+        r#type: Type,
     },
     UnresolvedName {
         expression: InFile<AstPointer<ast::Expression>>,
@@ -88,7 +88,7 @@ pub enum AnyDiagnostic {
     },
     InvalidConstructionType {
         expression: InFile<AstPointer<ast::Expression>>,
-        ty: Ty,
+        r#type: Type,
     },
     FunctionCallArgCountMismatch {
         expression: InFile<AstPointer<ast::Expression>>,
@@ -99,15 +99,15 @@ pub enum AnyDiagnostic {
         expression: InFile<AstPointer<ast::Expression>>,
         builtin: BuiltinId,
         name: Option<&'static str>,
-        parameters: Vec<Ty>,
+        parameters: Vec<Type>,
     },
     AddressOfNotReference {
         expression: InFile<AstPointer<ast::Expression>>,
-        actual: Ty,
+        actual: Type,
     },
     DerefNotPointer {
         expression: InFile<AstPointer<ast::Expression>>,
-        actual: Ty,
+        actual: Type,
     },
     MissingStorageClass {
         var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
@@ -141,8 +141,8 @@ pub enum AnyDiagnostic {
     NoConstructor {
         expression: InFile<AstPointer<ast::Expression>>,
         builtins: [BuiltinId; 2],
-        ty: Ty,
-        parameters: Vec<Ty>,
+        r#type: Type,
+        parameters: Vec<Type>,
     },
 }
 
@@ -203,7 +203,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
         InferenceDiagnostic::NoSuchField {
             expression,
             ref name,
-            ty,
+            r#type,
         } => {
             let pointer = source_map.expression_to_source(expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
@@ -211,16 +211,16 @@ pub(crate) fn any_diag_from_infer_diagnostic(
             AnyDiagnostic::NoSuchField {
                 expression: source,
                 name: name.clone(),
-                ty,
+                r#type,
             }
         },
-        InferenceDiagnostic::ArrayAccessInvalidType { expression, ty } => {
+        InferenceDiagnostic::ArrayAccessInvalidType { expression, r#type } => {
             let pointer = source_map.expression_to_source(expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
 
             AnyDiagnostic::ArrayAccessInvalidType {
                 expression: source,
-                ty,
+                r#type,
             }
         },
         InferenceDiagnostic::UnresolvedName {
@@ -235,18 +235,18 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 name: name.clone(),
             }
         },
-        InferenceDiagnostic::InvalidConstructionType { expression, ty } => {
+        InferenceDiagnostic::InvalidConstructionType { expression, r#type } => {
             let pointer = source_map.expression_to_source(expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
 
             AnyDiagnostic::InvalidConstructionType {
                 expression: source,
-                ty,
+                r#type,
             }
         },
         InferenceDiagnostic::NoConstructor {
             expression,
-            ty,
+            r#type,
             ref builtins,
             ref parameters,
         } => {
@@ -256,7 +256,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
             AnyDiagnostic::NoConstructor {
                 expression: source,
                 builtins: *builtins,
-                ty,
+                r#type,
                 parameters: parameters.clone(),
             }
         },

@@ -81,10 +81,10 @@ fn resolve_name_ref(
             },
             ResolveCallable::PredeclaredTypeAlias(_) => None,
         }
-    } else if let Some(ty) = ast::PathType::cast(parent) {
-        let resolver = sema.resolver(file_id, ty.syntax());
+    } else if let Some(r#type) = ast::PathType::cast(parent) {
+        let resolver = sema.resolver(file_id, r#type.syntax());
 
-        match resolver.resolve_type(&ty.name()?.into())? {
+        match resolver.resolve_type(&r#type.name()?.into())? {
             ResolveType::Struct(loc) => {
                 let id = sema.db.intern_struct(loc);
                 Some(Definition::Struct(Struct { id }))

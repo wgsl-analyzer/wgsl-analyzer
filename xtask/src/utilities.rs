@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
 
-const RUST_FILE_EXTENSION: &str = "rs";
+const WGSL_FILE_EXTENSION: &str = "wgsl";
 
-pub(crate) fn list_rust_files(dir: &Path) -> Vec<PathBuf> {
-    let mut result = list_files(dir);
+pub(crate) fn list_wgsl_files(directory: &Path) -> Vec<PathBuf> {
+    let mut result = list_files(directory);
     result.retain(|it| {
         std::path::Path::new(
             it.file_name()
@@ -12,7 +12,7 @@ pub(crate) fn list_rust_files(dir: &Path) -> Vec<PathBuf> {
                 .unwrap_or_default(),
         )
         .extension()
-        .is_some_and(|ext| ext.eq_ignore_ascii_case(RUST_FILE_EXTENSION))
+        .is_some_and(|ext| ext.eq_ignore_ascii_case(WGSL_FILE_EXTENSION))
     });
     result
 }

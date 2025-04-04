@@ -255,7 +255,7 @@ fn parse_type_generic_shift_ambiguity() {
                     Comma@14..15 ","
                     Whitespace@15..16 " "
                     Literal@16..17
-                      IntegerLiteral@16..17 "2"
+                      DecimalIntLiteral@16..17 "2"
                     GreaterThan@17..18 ">"
                 GreaterThan@18..19 ">""#]],
     );
@@ -275,7 +275,7 @@ fn parse_type_generic_int() {
             Comma@9..10 ","
             Whitespace@10..11 " "
             Literal@11..14
-              IntegerLiteral@11..14 "100"
+              DecimalIntLiteral@11..14 "100"
             GreaterThan@14..15 ">""#]],
     );
 }
@@ -361,7 +361,7 @@ fn parse_return_statement() {
                     Return@28..34 "return"
                     Whitespace@34..35 " "
                     Literal@35..36
-                      IntegerLiteral@35..36 "0"
+                      DecimalIntLiteral@35..36 "0"
                   Semicolon@36..37 ";"
                   Whitespace@37..46 "\n        "
                   BraceRight@46..47 "}""#]],
@@ -418,7 +418,7 @@ fn parse_let_statement_recover() {
                     Return@68..74 "return"
                     Whitespace@74..75 " "
                     Literal@75..85
-                      IntegerLiteral@75..76 "0"
+                      DecimalIntLiteral@75..76 "0"
                       Whitespace@76..85 "\n        "
                   BraceRight@85..86 "}""#]],
     );
@@ -439,7 +439,7 @@ fn parse_statement_variable_decl() {
           Equal@6..7 "="
           Whitespace@7..8 " "
           Literal@8..9
-            IntegerLiteral@8..9 "3""#]],
+            DecimalIntLiteral@8..9 "3""#]],
     );
 }
 
@@ -452,7 +452,7 @@ fn parse_statement_return() {
               Return@0..6 "return"
               Whitespace@6..7 " "
               Literal@7..8
-                IntegerLiteral@7..8 "0""#]],
+                DecimalIntLiteral@7..8 "0""#]],
     );
 }
 
@@ -466,12 +466,12 @@ fn parse_while_statement() {
           Whitespace@5..6 " "
           InfixExpression@6..12
             Literal@6..8
-              IntegerLiteral@6..7 "0"
+              DecimalIntLiteral@6..7 "0"
               Whitespace@7..8 " "
             GreaterThan@8..9 ">"
             Whitespace@9..10 " "
             Literal@10..12
-              IntegerLiteral@10..11 "3"
+              DecimalIntLiteral@10..11 "3"
               Whitespace@11..12 " "
           CompoundStatement@12..26
             BraceLeft@12..13 "{"
@@ -486,7 +486,7 @@ fn parse_while_statement() {
               Equal@20..21 "="
               Whitespace@21..22 " "
               Literal@22..23
-                IntegerLiteral@22..23 "3"
+                DecimalIntLiteral@22..23 "3"
             Semicolon@23..24 ";"
             Whitespace@24..25 " "
             BraceRight@25..26 "}""#]],
@@ -505,12 +505,12 @@ fn parse_if_statement() {
                 ParenthesisLeft@3..4 "("
                 InfixExpression@4..9
                   Literal@4..6
-                    IntegerLiteral@4..5 "0"
+                    DecimalIntLiteral@4..5 "0"
                     Whitespace@5..6 " "
                   GreaterThan@6..7 ">"
                   Whitespace@7..8 " "
                   Literal@8..9
-                    IntegerLiteral@8..9 "3"
+                    DecimalIntLiteral@8..9 "3"
                 ParenthesisRight@9..10 ")"
                 Whitespace@10..11 " "
               CompoundStatement@11..35
@@ -526,7 +526,7 @@ fn parse_if_statement() {
                   Equal@19..20 "="
                   Whitespace@20..21 " "
                   Literal@21..22
-                    IntegerLiteral@21..22 "3"
+                    DecimalIntLiteral@21..22 "3"
                 Semicolon@22..23 ";"
                 Whitespace@23..24 " "
                 ReturnStatement@24..32
@@ -569,7 +569,7 @@ fn parse_if_recover_paren() {
                   Equal@24..25 "="
                   Whitespace@25..26 " "
                   Literal@26..27
-                    IntegerLiteral@26..27 "3"
+                    DecimalIntLiteral@26..27 "3"
                 Semicolon@27..28 ";"
                 Whitespace@28..37 "\n        "
                 BraceRight@37..38 "}"
@@ -604,7 +604,7 @@ fn parse_if_without_paren() {
                   Equal@26..27 "="
                   Whitespace@27..28 " "
                   Literal@28..29
-                    IntegerLiteral@28..29 "3"
+                    DecimalIntLiteral@28..29 "3"
                 Semicolon@29..30 ";"
                 Whitespace@30..39 "\n        "
                 BraceRight@39..40 "}""#]],
@@ -635,7 +635,7 @@ fn parse_if_recover_empty() {
                   Equal@21..22 "="
                   Whitespace@22..23 " "
                   Literal@23..24
-                    IntegerLiteral@23..24 "3"
+                    DecimalIntLiteral@23..24 "3"
                 Semicolon@24..25 ";"
                 Whitespace@25..34 "\n        "
                 BraceRight@34..35 "}"
@@ -655,7 +655,7 @@ fn parse_if_else() {
               ParenthesisExpression@3..7
                 ParenthesisLeft@3..4 "("
                 Literal@4..5
-                  IntegerLiteral@4..5 "0"
+                  DecimalIntLiteral@4..5 "0"
                 ParenthesisRight@5..6 ")"
                 Whitespace@6..7 " "
               CompoundStatement@7..10
@@ -670,7 +670,7 @@ fn parse_if_else() {
                 ParenthesisExpression@18..22
                   ParenthesisLeft@18..19 "("
                   Literal@19..20
-                    IntegerLiteral@19..20 "1"
+                    DecimalIntLiteral@19..20 "1"
                   ParenthesisRight@20..21 ")"
                   Whitespace@21..22 " "
                 CompoundStatement@22..25
@@ -685,7 +685,7 @@ fn parse_if_else() {
                 ParenthesisExpression@33..37
                   ParenthesisLeft@33..34 "("
                   Literal@34..35
-                    IntegerLiteral@34..35 "2"
+                    DecimalIntLiteral@34..35 "2"
                   ParenthesisRight@35..36 ")"
                   Whitespace@36..37 " "
                 CompoundStatement@37..40
@@ -752,7 +752,7 @@ fn parse_for_statement() {
                   Equal@10..11 "="
                   Whitespace@11..12 " "
                   Literal@12..13
-                    IntegerLiteral@12..13 "0"
+                    DecimalIntLiteral@12..13 "0"
               Semicolon@13..14 ";"
               Whitespace@14..15 " "
               ForCondition@15..20
@@ -764,7 +764,7 @@ fn parse_for_statement() {
                   LessThan@17..18 "<"
                   Whitespace@18..19 " "
                   Literal@19..20
-                    IntegerLiteral@19..20 "3"
+                    DecimalIntLiteral@19..20 "3"
               Semicolon@20..21 ";"
               Whitespace@21..22 " "
               ForContinuingPart@22..31
@@ -783,7 +783,7 @@ fn parse_for_statement() {
                     Plus@28..29 "+"
                     Whitespace@29..30 " "
                     Literal@30..31
-                      IntegerLiteral@30..31 "1"
+                      DecimalIntLiteral@30..31 "1"
               ParenthesisRight@31..32 ")"
               Whitespace@32..33 " "
               CompoundStatement@33..35
@@ -811,7 +811,7 @@ fn parse_for_statement_comma() {
                   Equal@10..11 "="
                   Whitespace@11..12 " "
                   Literal@12..13
-                    IntegerLiteral@12..13 "0"
+                    DecimalIntLiteral@12..13 "0"
               Comma@13..14 ","
               Whitespace@14..15 " "
               ForCondition@15..20
@@ -823,7 +823,7 @@ fn parse_for_statement_comma() {
                   LessThan@17..18 "<"
                   Whitespace@18..19 " "
                   Literal@19..20
-                    IntegerLiteral@19..20 "3"
+                    DecimalIntLiteral@19..20 "3"
               Comma@20..21 ","
               Whitespace@21..22 " "
               ForContinuingPart@22..31
@@ -842,7 +842,7 @@ fn parse_for_statement_comma() {
                     Plus@28..29 "+"
                     Whitespace@29..30 " "
                     Literal@30..31
-                      IntegerLiteral@30..31 "1"
+                      DecimalIntLiteral@30..31 "1"
               ParenthesisRight@31..32 ")"
               Whitespace@32..33 " "
               CompoundStatement@33..35
@@ -884,7 +884,7 @@ fn for_statement_incomplete_2() {
                       Identifier@4..5 "i"
                   Equal@5..6 "="
                   Literal@6..7
-                    IntegerLiteral@6..7 "0"
+                    DecimalIntLiteral@6..7 "0"
               Semicolon@7..8 ";"
               Semicolon@8..9 ";"
               ParenthesisRight@9..10 ")"
@@ -935,7 +935,7 @@ fn for_statement_incomplete_4() {
                   Equal@8..9 "="
                   Whitespace@9..10 " "
                   Literal@10..11
-                    IntegerLiteral@10..11 "1"
+                    DecimalIntLiteral@10..11 "1"
               ParenthesisRight@11..12 ")"
               CompoundStatement@12..12
 
@@ -1006,7 +1006,7 @@ fn parse_statement_compound() {
                 Equal@8..9 "="
                 Whitespace@9..10 " "
                 Literal@10..11
-                  IntegerLiteral@10..11 "3"
+                  DecimalIntLiteral@10..11 "3"
               Semicolon@11..12 ";"
               Whitespace@12..13 " "
               ReturnStatement@13..21
@@ -1034,7 +1034,7 @@ fn parse_statement_assignment() {
           Equal@2..3 "="
           Whitespace@3..4 " "
           Literal@4..5
-            IntegerLiteral@4..5 "3""#]],
+            DecimalIntLiteral@4..5 "3""#]],
     );
 }
 
@@ -1066,7 +1066,7 @@ fn parse_statement_assignment_field() {
                 Star@10..11 "*"
                 Whitespace@11..12 " "
                 Literal@12..13
-                  IntegerLiteral@12..13 "3""#]],
+                  DecimalIntLiteral@12..13 "3""#]],
     );
 }
 
@@ -1078,13 +1078,13 @@ fn parse_statement_assignment_invalid() {
         AssignmentStatement@0..5
           InfixExpression@0..3
             Literal@0..1
-              IntegerLiteral@0..1 "1"
+              DecimalIntLiteral@0..1 "1"
             Plus@1..2 "+"
             Literal@2..3
-              IntegerLiteral@2..3 "2"
+              DecimalIntLiteral@2..3 "2"
           Equal@3..4 "="
           Literal@4..5
-            IntegerLiteral@4..5 "3""#]],
+            DecimalIntLiteral@4..5 "3""#]],
     );
 }
 
@@ -1117,7 +1117,7 @@ fn parse_statement_recover() {
                   Return@16..22 "return"
                   Whitespace@22..23 " "
                   Literal@23..25
-                    IntegerLiteral@23..24 "0"
+                    DecimalIntLiteral@23..24 "0"
                     Whitespace@24..25 " "
                 BraceRight@25..26 "}"
                 Whitespace@26..27 " "
@@ -1138,7 +1138,7 @@ fn parse_compound_assignment_statement() {
               PlusEqual@2..4 "+="
               Whitespace@4..5 " "
               Literal@5..6
-                IntegerLiteral@5..6 "3""#]],
+                DecimalIntLiteral@5..6 "3""#]],
     );
 }
 
@@ -1220,7 +1220,7 @@ fn attribute_list_modern() {
                 AttributeParameters@9..13
                   ParenthesisLeft@9..10 "("
                   Literal@10..11
-                    IntegerLiteral@10..11 "0"
+                    DecimalIntLiteral@10..11 "0"
                   ParenthesisRight@11..12 ")"
                   Whitespace@12..13 " "
               AttributeOperator@13..14 "@"
@@ -1237,11 +1237,11 @@ fn attribute_list_modern() {
                 AttributeParameters@37..55
                   ParenthesisLeft@37..38 "("
                   Literal@38..39
-                    IntegerLiteral@38..39 "1"
+                    DecimalIntLiteral@38..39 "1"
                   Comma@39..40 ","
                   Whitespace@40..41 " "
                   Literal@41..42
-                    IntegerLiteral@41..42 "2"
+                    DecimalIntLiteral@41..42 "2"
                   Comma@42..43 ","
                   Whitespace@43..44 " "
                   Literal@44..47
@@ -1289,7 +1289,7 @@ fn attribute_list() {
                 AttributeParameters@10..13
                   ParenthesisLeft@10..11 "("
                   Literal@11..12
-                    IntegerLiteral@11..12 "0"
+                    DecimalIntLiteral@11..12 "0"
                   ParenthesisRight@12..13 ")"
               Comma@13..14 ","
               Whitespace@14..15 " "
@@ -1306,11 +1306,11 @@ fn attribute_list() {
                 AttributeParameters@38..56
                   ParenthesisLeft@38..39 "("
                   Literal@39..40
-                    IntegerLiteral@39..40 "1"
+                    DecimalIntLiteral@39..40 "1"
                   Comma@40..41 ","
                   Whitespace@41..42 " "
                   Literal@42..43
-                    IntegerLiteral@42..43 "2"
+                    DecimalIntLiteral@42..43 "2"
                   Comma@43..44 ","
                   Whitespace@44..45 " "
                   Literal@45..48
@@ -1401,7 +1401,7 @@ fn vert_main([[builtin(position)]] coord_in: vec4<f32>) -> [[location(0)]] vec4<
                       AttributeParameters@90..93
                         ParenthesisLeft@90..91 "("
                         Literal@91..92
-                          IntegerLiteral@91..92 "0"
+                          DecimalIntLiteral@91..92 "0"
                         ParenthesisRight@92..93 ")"
                     AttributeRight@93..95 "]]"
                     Whitespace@95..96 " "
@@ -1608,7 +1608,7 @@ fn let_statement_recover_return() {
                     Return@40..46 "return"
                     Whitespace@46..47 " "
                     Literal@47..48
-                      IntegerLiteral@47..48 "0"
+                      DecimalIntLiteral@47..48 "0"
                   Semicolon@48..49 ";"
                   Whitespace@49..58 "\n        "
                   BraceRight@58..59 "}"
@@ -1650,7 +1650,7 @@ fn let_statement_recover_return_2() {
                     Return@42..48 "return"
                     Whitespace@48..49 " "
                     Literal@49..50
-                      IntegerLiteral@49..50 "0"
+                      DecimalIntLiteral@49..50 "0"
                   Semicolon@50..51 ";"
                   Whitespace@51..60 "\n        "
                   BraceRight@60..61 "}"
@@ -1693,7 +1693,7 @@ fn let_statement_recover_return_3() {
                     Return@44..50 "return"
                     Whitespace@50..51 " "
                     Literal@51..52
-                      IntegerLiteral@51..52 "0"
+                      DecimalIntLiteral@51..52 "0"
                   Semicolon@52..53 ";"
                   Whitespace@53..62 "\n        "
                   BraceRight@62..63 "}""#]],
@@ -2002,7 +2002,7 @@ struct Test {
                         AttributeParameters@39..42
                           ParenthesisLeft@39..40 "("
                           Literal@40..41
-                            IntegerLiteral@40..41 "0"
+                            DecimalIntLiteral@40..41 "0"
                           ParenthesisRight@41..42 ")"
                       AttributeRight@42..44 "]]"
                       Whitespace@44..49 "\n    "
@@ -2226,7 +2226,7 @@ fn global_variable_decl_attrs() {
                     AttributeParameters@7..10
                       ParenthesisLeft@7..8 "("
                       Literal@8..9
-                        IntegerLiteral@8..9 "0"
+                        DecimalIntLiteral@8..9 "0"
                       ParenthesisRight@9..10 ")"
                   Comma@10..11 ","
                   Whitespace@11..12 " "
@@ -2235,7 +2235,7 @@ fn global_variable_decl_attrs() {
                     AttributeParameters@19..22
                       ParenthesisLeft@19..20 "("
                       Literal@20..21
-                        IntegerLiteral@20..21 "0"
+                        DecimalIntLiteral@20..21 "0"
                       ParenthesisRight@21..22 ")"
                   AttributeRight@22..24 "]]"
                   Whitespace@24..25 " "
@@ -2275,7 +2275,7 @@ fn global_variable_decl_init() {
             Equal@10..11 "="
             Whitespace@11..12 " "
             Literal@12..13
-              IntegerLiteral@12..13 "0"
+              DecimalIntLiteral@12..13 "0"
             Semicolon@13..14 ";""#]],
     );
 }
@@ -2296,7 +2296,7 @@ fn global_const_decl() {
             Equal@15..16 "="
             Whitespace@16..17 " "
             Literal@17..18
-              IntegerLiteral@17..18 "0"
+              DecimalIntLiteral@17..18 "0"
             Semicolon@18..19 ";""#]],
     );
 }
@@ -2434,7 +2434,7 @@ struct PrimeIndices {
                           AttributeParameters@51..54
                             ParenthesisLeft@51..52 "("
                             Literal@52..53
-                              IntegerLiteral@52..53 "4"
+                              DecimalIntLiteral@52..53 "4"
                             ParenthesisRight@53..54 ")"
                         AttributeRight@54..56 "]]"
                         Whitespace@56..57 " "
@@ -2495,7 +2495,7 @@ fn empty_return_statement_no_semi() {
             Equal@8..9 "="
             Whitespace@9..10 " "
             Literal@10..11
-              IntegerLiteral@10..11 "3"
+              DecimalIntLiteral@10..11 "3"
           Semicolon@11..12 ";"
           Whitespace@12..13 " "
           ReturnStatement@13..22
@@ -2583,7 +2583,7 @@ switch i {
                   Whitespace@18..19 " "
                   SwitchCaseSelectors@19..20
                     Literal@19..20
-                      IntegerLiteral@19..20 "0"
+                      DecimalIntLiteral@19..20 "0"
                   Colon@20..21 ":"
                   Whitespace@21..22 " "
                   CompoundStatement@22..41
@@ -2599,11 +2599,11 @@ switch i {
                   Whitespace@45..46 " "
                   SwitchCaseSelectors@46..50
                     Literal@46..47
-                      IntegerLiteral@46..47 "1"
+                      DecimalIntLiteral@46..47 "1"
                     Comma@47..48 ","
                     Whitespace@48..49 " "
                     Literal@49..50
-                      IntegerLiteral@49..50 "2"
+                      DecimalIntLiteral@49..50 "2"
                   Colon@50..51 ":"
                   Whitespace@51..52 " "
                   CompoundStatement@52..69
@@ -2613,7 +2613,7 @@ switch i {
                       Return@54..60 "return"
                       Whitespace@60..61 " "
                       Literal@61..63
-                        IntegerLiteral@61..63 "42"
+                        DecimalIntLiteral@61..63 "42"
                     Semicolon@63..64 ";"
                     Whitespace@64..65 " "
                     BraceRight@65..66 "}"
@@ -2686,7 +2686,7 @@ switch i {
                   Whitespace@18..19 " "
                   SwitchCaseSelectors@19..21
                     Literal@19..21
-                      IntegerLiteral@19..20 "1"
+                      DecimalIntLiteral@19..20 "1"
                       Whitespace@20..21 "\n"
                 BraceRight@21..22 "}"
                 Whitespace@22..31 "\n        ""#]],
@@ -2725,7 +2725,7 @@ let x = 3;
                     Whitespace@20..21 " "
                     SwitchCaseSelectors@21..22
                       Literal@21..22
-                        IntegerLiteral@21..22 "1"
+                        DecimalIntLiteral@21..22 "1"
                     Colon@22..23 ":"
                     Whitespace@23..24 "\n"
                   BraceRight@24..25 "}"
@@ -2740,7 +2740,7 @@ let x = 3;
                 Equal@33..34 "="
                 Whitespace@34..35 " "
                 Literal@35..36
-                  IntegerLiteral@35..36 "3"
+                  DecimalIntLiteral@35..36 "3"
               Semicolon@36..37 ";"
               Whitespace@37..38 "\n"
               BraceRight@38..39 "}"
@@ -2779,11 +2779,11 @@ let x = 3;
                     Whitespace@20..21 " "
                     SwitchCaseSelectors@21..27
                       Literal@21..22
-                        IntegerLiteral@21..22 "1"
+                        DecimalIntLiteral@21..22 "1"
                       Comma@22..23 ","
                       Whitespace@23..24 " "
                       Literal@24..25
-                        IntegerLiteral@24..25 "2"
+                        DecimalIntLiteral@24..25 "2"
                       Comma@25..26 ","
                       Whitespace@26..27 "\n"
                   BraceRight@27..28 "}"
@@ -2798,7 +2798,7 @@ let x = 3;
                 Equal@35..36 "="
                 Whitespace@36..37 " "
                 Literal@37..38
-                  IntegerLiteral@37..38 "3"
+                  DecimalIntLiteral@37..38 "3"
               Semicolon@38..39 ";"
               Whitespace@39..40 "\n"
               BraceRight@40..41 "}"

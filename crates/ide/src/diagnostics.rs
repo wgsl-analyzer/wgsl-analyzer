@@ -7,7 +7,7 @@ use hir::{
 };
 use hir_def::original_file_range;
 use hir_ty::ty::{
-    self, Ty, VecSize,
+    self, Type, VecSize,
     pretty::{pretty_fn, pretty_type},
 };
 use itertools::Itertools;
@@ -276,12 +276,12 @@ impl NagaErrorPolicy {
         error: E,
         file_id: FileId,
         full_range: TextRange,
-        acc: &mut Vec<AnyDiagnostic>,
+        accumulator: &mut Vec<AnyDiagnostic>,
     ) {
         let message = error_message_cause_chain("naga: ", &error);
 
         if !error.has_spans() {
-            acc.push(AnyDiagnostic::NagaValidationError {
+            accumulator.push(AnyDiagnostic::NagaValidationError {
                 file_id: file_id.into(),
                 range: full_range,
                 message,
@@ -306,7 +306,7 @@ impl NagaErrorPolicy {
         match *self {
             NagaErrorPolicy::SeparateSpans => {
                 spans.for_each(|(range, label)| {
-                    acc.push(AnyDiagnostic::NagaValidationError {
+                    accumulator.push(AnyDiagnostic::NagaValidationError {
                         file_id: file_id.into(),
                         range,
                         message: format!("{}: {}", message, label),
@@ -316,7 +316,7 @@ impl NagaErrorPolicy {
             },
             NagaErrorPolicy::SmallestSpan => {
                 if let Some((range, _)) = spans.min_by_key(|(range, _)| range.len()) {
-                    acc.push(AnyDiagnostic::NagaValidationError {
+                    accumulator.push(AnyDiagnostic::NagaValidationError {
                         file_id: file_id.into(),
                         range,
                         message,
@@ -334,7 +334,7 @@ impl NagaErrorPolicy {
                     .min_by_key(|range| range.len())
                     .unwrap_or(full_range);
 
-                acc.push(AnyDiagnostic::NagaValidationError {
+                accumulator.push(AnyDiagnostic::NagaValidationError {
                     file_id: file_id.into(),
                     range: min_range,
                     message,
@@ -349,7 +349,7 @@ fn naga_diagnostics<N: Naga>(
     db: &dyn HirDatabase,
     file_id: FileId,
     config: &DiagnosticsConfig,
-    acc: &mut Vec<AnyDiagnostic>,
+    accumulator: &mut Vec<AnyDiagnostic>,
 ) -> Result<(), ()> {
     let source = match db.resolve_full_source(file_id.into()) {
         Ok(source) => source,
@@ -365,14 +365,14 @@ fn naga_diagnostics<N: Naga>(
                 return Ok(());
             }
             if let Err(error) = N::validate(&module) {
-                policy.emit(db, error, file_id, full_range, acc);
+                policy.emit(db, error, file_id, full_range, accumulator);
             }
         },
         Err(error) => {
             if !config.naga_parsing_errors {
                 return Ok(());
             }
-            policy.emit(db, error, file_id, full_range, acc);
+            policy.emit(db, error, file_id, full_range, accumulator);
         },
     }
 
@@ -472,26 +472,26 @@ pub fn diagnostics(
                 AnyDiagnostic::NoSuchField {
                     expression,
                     name,
-                    ty,
+                    r#type,
                 } => {
                     let source = expression.value.to_node(&root).syntax().parent().unwrap();
-                    let ty = ty::pretty::pretty_type(db, ty);
+                    let r#type = ty::pretty::pretty_type(db, r#type);
                     let frange =
                         original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("3"),
-                        format!("no field `{}` on type {}", name.as_ref(), ty),
+                        format!("no field `{}` on type {}", name.as_ref(), r#type),
                         frange.range,
                     )
                 },
-                AnyDiagnostic::ArrayAccessInvalidType { expression, ty } => {
+                AnyDiagnostic::ArrayAccessInvalidType { expression, r#type } => {
                     let source = expression.value.to_node(&root);
-                    let ty = ty::pretty::pretty_type(db, ty);
+                    let r#type = ty::pretty::pretty_type(db, r#type);
                     let frange =
                         original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("4"),
-                        format!("cannot index into type {}", ty),
+                        format!("cannot index into type {}", r#type),
                         frange.range,
                     )
                 },
@@ -505,14 +505,14 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::InvalidConstructionType { expression, ty } => {
+                AnyDiagnostic::InvalidConstructionType { expression, r#type } => {
                     let source = expression.value.to_node(&root);
-                    let ty = ty::pretty::pretty_type(db, ty);
+                    let r#type = ty::pretty::pretty_type(db, r#type);
                     let frange =
                         original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("6"),
-                        format!("cannot construct value of type {}", ty),
+                        format!("cannot construct value of type {}", r#type),
                         frange.range,
                     )
                 },
@@ -541,12 +541,12 @@ pub fn diagnostics(
 
                     let parameters = parameters
                         .iter()
-                        .map(|ty| ty::pretty::pretty_type(db, *ty))
+                        .map(|r#type| ty::pretty::pretty_type(db, *r#type))
                         .join(", ");
 
                     let possible = builtin
                         .overloads()
-                        .map(|(_, overload)| pretty_fn(db, &overload.ty.lookup(db)))
+                        .map(|(_, overload)| pretty_fn(db, &overload.r#type.lookup(db)))
                         .join("\n");
 
                     let name = match name {
@@ -568,23 +568,23 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::AddressOfNotReference { expression, actual } => {
                     let source = expression.value.to_node(&root);
-                    let ty = ty::pretty::pretty_type(db, actual);
+                    let r#type = ty::pretty::pretty_type(db, actual);
                     let frange =
                         original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("9"),
-                        format!("expected a reference, found {}", ty),
+                        format!("expected a reference, found {}", r#type),
                         frange.range,
                     )
                 },
                 AnyDiagnostic::DerefNotPointer { expression, actual } => {
                     let source = expression.value.to_node(&root);
-                    let ty = ty::pretty::pretty_type(db, actual);
+                    let r#type = ty::pretty::pretty_type(db, actual);
                     let frange =
                         original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("10"),
-                        format!("cannot dereference expression of type {}", ty),
+                        format!("cannot dereference expression of type {}", r#type),
                         frange.range,
                     )
                 },
@@ -655,14 +655,14 @@ pub fn diagnostics(
                 AnyDiagnostic::NoConstructor {
                     expression,
                     builtins: [specific, general],
-                    ty,
+                    r#type,
                     parameters,
                 } => {
                     let source = expression.value.to_node(&root).syntax().clone();
 
                     let parameters = parameters
                         .iter()
-                        .map(|ty| ty::pretty::pretty_type(db, *ty))
+                        .map(|r#type| ty::pretty::pretty_type(db, *r#type))
                         .join(", ");
 
                     let mut possible = Vec::with_capacity(32);
@@ -670,21 +670,21 @@ pub fn diagnostics(
                     possible.extend(
                         builtin_specific
                             .overloads()
-                            .map(|(_, overload)| pretty_fn(db, &overload.ty.lookup(db))),
+                            .map(|(_, overload)| pretty_fn(db, &overload.r#type.lookup(db))),
                     );
                     let builtin_general = general.lookup(db);
                     possible.extend(
                         builtin_general
                             .overloads()
                             .filter(|(_, overload)| {
-                                let function = overload.ty.lookup(db);
+                                let function = overload.r#type.lookup(db);
                                 if let Some(return_ty) = function.return_type {
-                                    convert_compatible(db, ty, return_ty)
+                                    convert_compatible(db, r#type, return_ty)
                                 } else {
                                     true
                                 }
                             })
-                            .map(|(_, overload)| pretty_fn(db, &overload.ty.lookup(db))),
+                            .map(|(_, overload)| pretty_fn(db, &overload.r#type.lookup(db))),
                     );
 
                     let possible = possible.join("\n");
@@ -696,7 +696,7 @@ pub fn diagnostics(
                         format!(
                             "no overload of constructor `{}` found for given\
                             arguments. Found ({parameters}), expected one of:\n{possible}",
-                            pretty_type(db, ty),
+                            pretty_type(db, r#type),
                         ),
                         frange.range,
                     )
@@ -739,8 +739,8 @@ fn size_compatible(
 
 fn convert_compatible(
     db: &dyn HirDatabase,
-    target: Ty,
-    overload: Ty,
+    target: Type,
+    overload: Type,
 ) -> bool {
     let target_kind = target.kind(db);
     let overload_kind = overload.kind(db);

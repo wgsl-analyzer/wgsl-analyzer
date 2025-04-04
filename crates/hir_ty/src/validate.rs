@@ -60,11 +60,11 @@ pub fn validate_storage_class(
     storage_class: StorageClass,
     access_mode: AccessMode,
     scope: Scope,
-    ty: TyKind,
+    r#type: TyKind,
     db: &dyn HirDatabase,
     mut sink: impl FnMut(StorageClassError),
 ) {
-    let ty_is_err = ty.is_error();
+    let ty_is_err = r#type.is_error();
 
     match storage_class {
         StorageClass::Function => {
@@ -77,7 +77,7 @@ pub fn validate_storage_class(
                 ]));
             }
 
-            if !ty_is_err && !ty.is_constructable() {
+            if !ty_is_err && !r#type.is_constructable() {
                 sink(StorageClassError::ExpectedConstructable);
             }
         },
@@ -91,7 +91,7 @@ pub fn validate_storage_class(
                 ]));
             }
 
-            if !ty_is_err && !ty.is_constructable() {
+            if !ty_is_err && !r#type.is_constructable() {
                 sink(StorageClassError::ExpectedConstructable);
             }
         },
@@ -105,7 +105,7 @@ pub fn validate_storage_class(
                 ]));
             }
 
-            if !ty_is_err && (!ty.is_plain() || ty.contains_runtime_sized_array(db)) {
+            if !ty_is_err && (!r#type.is_plain() || r#type.contains_runtime_sized_array(db)) {
                 sink(StorageClassError::ExpectedWorkgroupCompatible);
             }
         },
@@ -119,10 +119,10 @@ pub fn validate_storage_class(
                 ]));
             }
 
-            if !ty.is_error() && !ty.is_host_shareable(db) {
+            if !r#type.is_error() && !r#type.is_host_shareable(db) {
                 sink(StorageClassError::ExpectedHostShareable);
             }
-            if !ty.is_error() && !ty.is_constructable() {
+            if !r#type.is_error() && !r#type.is_constructable() {
                 sink(StorageClassError::ExpectedConstructable);
             }
         },
@@ -136,7 +136,7 @@ pub fn validate_storage_class(
                 ]));
             }
 
-            if !ty.is_error() && !ty.is_host_shareable(db) {
+            if !r#type.is_error() && !r#type.is_host_shareable(db) {
                 sink(StorageClassError::ExpectedHostShareable);
             }
         },
@@ -150,7 +150,7 @@ pub fn validate_storage_class(
                 ]));
             }
 
-            match ty {
+            match r#type {
                 TyKind::Sampler(_) | TyKind::Texture(_) => {},
                 _ => sink(StorageClassError::ExpectedHandleOrTexture),
             }

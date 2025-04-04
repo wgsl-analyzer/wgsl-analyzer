@@ -2,27 +2,27 @@ use std::sync::Arc;
 
 use hir_def::module_data::Name;
 
-use crate::{db::HirDatabase, ty::Ty};
+use crate::{db::HirDatabase, ty::Type};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FunctionDetails {
-    pub return_type: Option<Ty>,
-    pub parameters: Vec<(Ty, Name)>,
+    pub return_type: Option<Type>,
+    pub parameters: Vec<(Type, Name)>,
 }
 
 impl FunctionDetails {
-    pub fn parameters(&self) -> impl Iterator<Item = Ty> + '_ {
-        self.parameters.iter().map(|(ty, _)| *ty)
+    pub fn parameters(&self) -> impl Iterator<Item = Type> + '_ {
+        self.parameters.iter().map(|(r#type, _)| *r#type)
     }
 
     pub fn parameter_names(&self) -> impl Iterator<Item = &str> + '_ {
         self.parameters.iter().map(|(_, name)| name.as_str())
     }
 
-    pub fn parameters_with_names(&self) -> impl Iterator<Item = (Ty, &str)> + '_ {
+    pub fn parameters_with_names(&self) -> impl Iterator<Item = (Type, &str)> + '_ {
         self.parameters
             .iter()
-            .map(|(ty, name)| (*ty, name.as_str()))
+            .map(|(r#type, name)| (*r#type, name.as_str()))
     }
 }
 

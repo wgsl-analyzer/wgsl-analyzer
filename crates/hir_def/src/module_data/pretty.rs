@@ -42,8 +42,8 @@ fn write_pretty_module_item(
 
             let _ = write!(f, "fn {}(", function.name.0);
             for parameter in function.parameters.clone().map(|index| &module.data[index]) {
-                let ty = db.lookup_intern_type_ref(parameter.ty);
-                let _ = write!(f, "{}, ", &ty);
+                let r#type = db.lookup_intern_type_ref(parameter.r#type);
+                let _ = write!(f, "{}, ", &r#type);
             }
             trim_in_place(f, ", ");
             let _ = write!(f, ")");
@@ -53,33 +53,37 @@ fn write_pretty_module_item(
             let _ = writeln!(f, "struct {} {{", r#struct.name.0);
             for field in r#struct.fields.clone() {
                 let field = &module.data[field];
-                let ty = db.lookup_intern_type_ref(field.ty);
-                let _ = writeln!(f, "    {}: {};", field.name.0, ty);
+                let r#type = db.lookup_intern_type_ref(field.r#type);
+                let _ = writeln!(f, "    {}: {};", field.name.0, r#type);
             }
             let _ = write!(f, "}}");
         },
         ModuleItem::GlobalVariable(var) => {
             let var = &module.data[var.index];
-            let ty = var.ty.map(|ty| db.lookup_intern_type_ref(ty));
+            let r#type = var.r#type.map(|r#type| db.lookup_intern_type_ref(r#type));
             let _ = write!(f, "var {}", &var.name.0);
-            if let Some(ty) = ty {
-                let _ = write!(f, ": {}", ty);
+            if let Some(r#type) = r#type {
+                let _ = write!(f, ": {}", r#type);
             }
         },
         ModuleItem::GlobalConstant(var) => {
             let constant = &module.data[var.index];
-            let ty = constant.ty.map(|ty| db.lookup_intern_type_ref(ty));
+            let r#type = constant
+                .r#type
+                .map(|r#type| db.lookup_intern_type_ref(r#type));
             let _ = write!(f, "let {}", &constant.name.0);
-            if let Some(ty) = ty {
-                let _ = write!(f, ": {}", ty);
+            if let Some(r#type) = r#type {
+                let _ = write!(f, ": {}", r#type);
             }
         },
         ModuleItem::Override(var) => {
             let override_decl = &module.data[var.index];
-            let ty = override_decl.ty.map(|ty| db.lookup_intern_type_ref(ty));
+            let r#type = override_decl
+                .r#type
+                .map(|r#type| db.lookup_intern_type_ref(r#type));
             let _ = write!(f, "override {}", &override_decl.name.0);
-            if let Some(ty) = ty {
-                let _ = write!(f, ": {}", ty);
+            if let Some(r#type) = r#type {
+                let _ = write!(f, ": {}", r#type);
             }
         },
         ModuleItem::Import(import) => {
@@ -92,8 +96,8 @@ fn write_pretty_module_item(
         ModuleItem::TypeAlias(type_alias) => {
             let type_alias = &module.data[type_alias.index];
             let name = &type_alias.name.0;
-            let ty = db.lookup_intern_type_ref(type_alias.ty);
-            let _ = write!(f, "type {} = {};", name, ty);
+            let r#type = db.lookup_intern_type_ref(type_alias.r#type);
+            let _ = write!(f, "type {} = {};", name, r#type);
         },
     }
 }

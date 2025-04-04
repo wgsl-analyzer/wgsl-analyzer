@@ -61,11 +61,11 @@ impl AttributeList {
                     .parameters()
                     .map(|parameter| {
                         parameter.values().map(|value| match value {
-                            IdentOrLiteral::Identifier(ident) => {
-                                AttributeValue::Name(Name::from(ident))
+                            IdentOrLiteral::Identifier(identifier) => {
+                                AttributeValue::Name(Name::from(identifier))
                             },
-                            IdentOrLiteral::Literal(lit) => {
-                                AttributeValue::Literal(parse_literal(lit.kind()))
+                            IdentOrLiteral::Literal(literal) => {
+                                AttributeValue::Literal(parse_literal(literal.kind()))
                             },
                         })
                     })

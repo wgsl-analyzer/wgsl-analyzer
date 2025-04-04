@@ -1,17 +1,17 @@
-use crate::{ParserDefinition, parsing::ParseError};
+use crate::{SyntaxKind, parser::ParseError};
 
-pub(crate) enum Event<P: ParserDefinition> {
+pub(crate) enum Event {
     StartNode {
-        kind: P::SyntaxKind,
+        kind: SyntaxKind,
         forward_parent: Option<usize>,
     },
     AddToken,
     FinishNode,
-    Error(ParseError<P>),
+    Error(ParseError),
     Placeholder,
 }
 
-impl<P: ParserDefinition> std::fmt::Debug for Event<P> {
+impl std::fmt::Debug for Event {
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,
@@ -33,7 +33,7 @@ impl<P: ParserDefinition> std::fmt::Debug for Event<P> {
     }
 }
 
-impl<P: ParserDefinition> PartialEq for Event<P> {
+impl PartialEq for Event {
     fn eq(
         &self,
         other: &Self,

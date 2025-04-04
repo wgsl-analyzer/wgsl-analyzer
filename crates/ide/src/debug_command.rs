@@ -17,7 +17,10 @@ pub(crate) fn debug_command(
         .ancestors()
         .find_map(ast::Import::cast)?;
 
-    dbg!(&import);
+    #[expect(clippy::disallowed_names)]
+    {
+        dbg!(&import);
+    }
 
     None
 }

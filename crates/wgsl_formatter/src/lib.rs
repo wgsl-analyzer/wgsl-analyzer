@@ -8,7 +8,7 @@ pub fn format_str(
     input: &str,
     options: &FormattingOptions,
 ) -> String {
-    let parse = wgsl_parser::parse_file(input);
+    let parse = parser::parse_file(input);
     let node = parse.syntax().clone_for_update();
     format_recursive(node.clone(), options);
     node.to_string()
@@ -311,8 +311,8 @@ fn format_syntax_node(
             whitespace_to_single_around(statement.equal_token()?);
         },
         _ => {
-            if let Some(ty) = ast::Type::cast(syntax) {
-                let generics = ty.generic_arg_list()?;
+            if let Some(r#type) = ast::Type::cast(syntax) {
+                let generics = r#type.generic_arg_list()?;
                 let left_angle = generics.left_angle_token()?;
                 remove_if_whitespace(left_angle.prev_token()?); // spellchecker:disable-line
                 remove_if_whitespace(left_angle.next_token()?);
