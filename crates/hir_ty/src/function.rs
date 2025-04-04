@@ -12,7 +12,7 @@ pub struct FunctionDetails {
 
 impl FunctionDetails {
     pub fn parameters(&self) -> impl Iterator<Item = Ty> + '_ {
-        self.parameters.iter().map(|(ty, _)| *ty)
+        self.parameters.iter().map(|(r#type, _)| *r#type)
     }
 
     pub fn parameter_names(&self) -> impl Iterator<Item = &str> + '_ {
@@ -22,7 +22,7 @@ impl FunctionDetails {
     pub fn parameters_with_names(&self) -> impl Iterator<Item = (Ty, &str)> + '_ {
         self.parameters
             .iter()
-            .map(|(ty, name)| (*ty, name.as_str()))
+            .map(|(r#type, name)| (*r#type, name.as_str()))
     }
 }
 

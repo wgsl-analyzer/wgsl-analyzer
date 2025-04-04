@@ -76,11 +76,11 @@ pub enum AnyDiagnostic {
     NoSuchField {
         expression: InFile<AstPointer<ast::Expression>>,
         name: Name,
-        ty: Ty,
+        r#type: Ty,
     },
     ArrayAccessInvalidType {
         expression: InFile<AstPointer<ast::Expression>>,
-        ty: Ty,
+        r#type: Ty,
     },
     UnresolvedName {
         expression: InFile<AstPointer<ast::Expression>>,
@@ -88,7 +88,7 @@ pub enum AnyDiagnostic {
     },
     InvalidConstructionType {
         expression: InFile<AstPointer<ast::Expression>>,
-        ty: Ty,
+        r#type: Ty,
     },
     FunctionCallArgCountMismatch {
         expression: InFile<AstPointer<ast::Expression>>,
@@ -141,7 +141,7 @@ pub enum AnyDiagnostic {
     NoConstructor {
         expression: InFile<AstPointer<ast::Expression>>,
         builtins: [BuiltinId; 2],
-        ty: Ty,
+        r#type: Ty,
         parameters: Vec<Ty>,
     },
 }
@@ -203,7 +203,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
         InferenceDiagnostic::NoSuchField {
             expression,
             ref name,
-            ty,
+            r#type,
         } => {
             let pointer = source_map.expression_to_source(expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
@@ -211,16 +211,16 @@ pub(crate) fn any_diag_from_infer_diagnostic(
             AnyDiagnostic::NoSuchField {
                 expression: source,
                 name: name.clone(),
-                ty,
+                r#type,
             }
         },
-        InferenceDiagnostic::ArrayAccessInvalidType { expression, ty } => {
+        InferenceDiagnostic::ArrayAccessInvalidType { expression, r#type } => {
             let pointer = source_map.expression_to_source(expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
 
             AnyDiagnostic::ArrayAccessInvalidType {
                 expression: source,
-                ty,
+                r#type,
             }
         },
         InferenceDiagnostic::UnresolvedName {
@@ -235,18 +235,18 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 name: name.clone(),
             }
         },
-        InferenceDiagnostic::InvalidConstructionType { expression, ty } => {
+        InferenceDiagnostic::InvalidConstructionType { expression, r#type } => {
             let pointer = source_map.expression_to_source(expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
 
             AnyDiagnostic::InvalidConstructionType {
                 expression: source,
-                ty,
+                r#type,
             }
         },
         InferenceDiagnostic::NoConstructor {
             expression,
-            ty,
+            r#type,
             ref builtins,
             ref parameters,
         } => {
@@ -256,7 +256,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
             AnyDiagnostic::NoConstructor {
                 expression: source,
                 builtins: *builtins,
-                ty,
+                r#type,
                 parameters: parameters.clone(),
             }
         },
@@ -319,15 +319,15 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 },
                 hir_ty::infer::TypeContainer::GlobalVar(id) => {
                     let source = GlobalVariable { id }.source(db.upcast())?;
-                    SyntaxNodePointer::new(source.value.ty()?.syntax())
+                    SyntaxNodePointer::new(source.value.rtype()?.syntax())
                 },
                 hir_ty::infer::TypeContainer::GlobalConstant(id) => {
                     let source = GlobalConstant { id }.source(db.upcast())?;
-                    SyntaxNodePointer::new(source.value.ty()?.syntax())
+                    SyntaxNodePointer::new(source.value.rtype()?.syntax())
                 },
                 hir_ty::infer::TypeContainer::Override(id) => {
                     let source = Override { id }.source(db.upcast())?;
-                    SyntaxNodePointer::new(source.value.ty()?.syntax())
+                    SyntaxNodePointer::new(source.value.rtype()?.syntax())
                 },
                 hir_ty::infer::TypeContainer::FunctionParameter(_, binding) => {
                     let binding = source_map.binding_to_source(binding).ok()?;

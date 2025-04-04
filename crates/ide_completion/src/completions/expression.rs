@@ -43,7 +43,7 @@ pub(crate) fn complete_names_in_scope(
                     let inference = ctx.db.infer(def);
                     inference.type_of_binding.get(local).copied()
                 })
-                .map(|ty| pretty_type(ctx.db, ty)),
+                .map(|r#type| pretty_type(ctx.db, r#type)),
             ScopeDef::ModuleItem(file_id, item) => {
                 let module_info = ctx.db.module_info(file_id);
                 let detail = pretty_module_item(&item, &module_info, ctx.db.upcast());

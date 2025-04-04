@@ -100,18 +100,22 @@ impl<'a> Ctx<'a> {
     ) -> Option<ModuleItemId<TypeAlias>> {
         let name = type_alias.name()?.text().into();
 
-        let ty = type_alias
+        let r#type = type_alias
             .type_declaration()
             .and_then(|type_declaration| self.lower_type_ref(type_declaration))
             .unwrap_or(TypeReference::Error);
 
-        let ty = self.db.intern_type_ref(ty);
+        let r#type = self.db.intern_type_ref(r#type);
 
         let ast_id = self.source_ast_id_map.ast_id(type_alias);
         Some(
             self.module_data
                 .type_aliases
-                .alloc(TypeAlias { name, ast_id, ty })
+                .alloc(TypeAlias {
+                    name,
+                    ast_id,
+                    r#type,
+                })
                 .into(),
         )
     }
@@ -123,15 +127,19 @@ impl<'a> Ctx<'a> {
         let name = override_declaration.binding()?.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(override_declaration);
 
-        let ty = override_declaration
-            .ty()
+        let r#type = override_declaration
+            .rtype()
             .map(|type_declaration| {
                 self.lower_type_ref(type_declaration)
                     .unwrap_or(TypeReference::Error)
             })
-            .map(|ty| self.db.intern_type_ref(ty));
+            .map(|r#type| self.db.intern_type_ref(r#type));
 
-        let override_declaration = Override { name, ty, ast_id };
+        let override_declaration = Override {
+            name,
+            r#type,
+            ast_id,
+        };
         Some(
             self.module_data
                 .overrides
@@ -147,15 +155,19 @@ impl<'a> Ctx<'a> {
         let name = constant.binding()?.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(constant);
 
-        let ty = constant
-            .ty()
+        let r#type = constant
+            .rtype()
             .map(|type_declaration| {
                 self.lower_type_ref(type_declaration)
                     .unwrap_or(TypeReference::Error)
             })
-            .map(|ty| self.db.intern_type_ref(ty));
+            .map(|r#type| self.db.intern_type_ref(r#type));
 
-        let constant = GlobalConstant { name, ty, ast_id };
+        let constant = GlobalConstant {
+            name,
+            r#type,
+            ast_id,
+        };
         Some(self.module_data.global_constants.alloc(constant).into())
     }
 
@@ -166,10 +178,10 @@ impl<'a> Ctx<'a> {
         let name = var.binding()?.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(var);
 
-        let ty = var
-            .ty()
+        let r#type = var
+            .rtype()
             .and_then(|type_declaration| self.lower_type_ref(type_declaration))
-            .map(|ty| self.db.intern_type_ref(ty));
+            .map(|r#type| self.db.intern_type_ref(r#type));
 
         let storage_class = var
             .variable_qualifier()
@@ -182,7 +194,7 @@ impl<'a> Ctx<'a> {
 
         let var = GlobalVariable {
             name,
-            ty,
+            r#type,
             ast_id,
             storage_class,
             access_mode,
@@ -204,11 +216,11 @@ impl<'a> Ctx<'a> {
             .map(|field| {
                 let declaration = field.variable_ident_declaration()?;
                 let name = Name::from(declaration.binding()?.name()?);
-                let ty = self
-                    .lower_type_ref(declaration.ty()?)
+                let r#type = self
+                    .lower_type_ref(declaration.rtype()?)
                     .unwrap_or(TypeReference::Error);
-                let ty = self.db.intern_type_ref(ty);
-                self.module_data.fields.alloc(Field { name, ty });
+                let r#type = self.db.intern_type_ref(r#type);
+                self.module_data.fields.alloc(Field { name, r#type });
                 Some(())
             })
             .for_each(drop);
@@ -237,9 +249,9 @@ impl<'a> Ctx<'a> {
 
         let return_type = function
             .return_type()
-            .and_then(|ty| ty.ty())
-            .map(|ty| self.lower_type_ref(ty).unwrap_or(TypeReference::Error))
-            .map(|ty| self.db.intern_type_ref(ty));
+            .and_then(|r#type| r#type.rtype())
+            .map(|r#type| self.lower_type_ref(r#type).unwrap_or(TypeReference::Error))
+            .map(|r#type| self.db.intern_type_ref(r#type));
 
         let function = Function {
             name,
@@ -257,16 +269,18 @@ impl<'a> Ctx<'a> {
     ) -> Option<()> {
         for parameter in function_param_list.parameters() {
             if let Some(parameter) = parameter.variable_ident_declaration() {
-                let ty = parameter
-                    .ty()
-                    .and_then(|ty| self.lower_type_ref(ty))
+                let r#type = parameter
+                    .rtype()
+                    .and_then(|r#type| self.lower_type_ref(r#type))
                     .unwrap_or(TypeReference::Error);
-                let ty = self.db.intern_type_ref(ty);
+                let r#type = self.db.intern_type_ref(r#type);
                 let name = parameter
                     .binding()
                     .and_then(|binding| binding.name())
                     .map_or_else(Name::missing, Name::from);
-                self.module_data.parameters.alloc(Parameter { ty, name });
+                self.module_data
+                    .parameters
+                    .alloc(Parameter { r#type, name });
             } else if let Some(import) = parameter.import() {
                 let import = self.lower_import(&import)?;
                 let import = &self.module_data.imports[import.index];
@@ -292,9 +306,9 @@ impl<'a> Ctx<'a> {
 
     fn lower_type_ref(
         &self,
-        ty: ast::Type,
+        r#type: ast::Type,
     ) -> Option<TypeReference> {
-        ty.try_into().ok()
+        r#type.try_into().ok()
     }
 
     fn next_param_index(&self) -> Idx<Parameter> {

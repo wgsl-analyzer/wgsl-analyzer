@@ -81,7 +81,7 @@ impl Builtin {
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub struct BuiltinOverload {
     pub generics: Vec<GenericArgKind>,
-    pub ty: ResolvedFunctionId,
+    pub r#type: ResolvedFunctionId,
 }
 
 include!(concat!(env!("OUT_DIR"), "/generated/builtins.rs"));

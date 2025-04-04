@@ -283,8 +283,8 @@ impl<'db> SourceAnalyzer<'db> {
         expression: &ast::Expression,
     ) -> Option<Ty> {
         let id = self.expression_id(expression)?;
-        let ty = *self.infer.type_of_expression.get(id)?;
-        Some(ty)
+        let r#type = *self.infer.type_of_expression.get(id)?;
+        Some(r#type)
     }
 
     pub fn type_of_binding(
@@ -292,8 +292,8 @@ impl<'db> SourceAnalyzer<'db> {
         binding: &ast::Binding,
     ) -> Option<Ty> {
         let id = self.binding_id(binding)?;
-        let ty = *self.infer.type_of_binding.get(id)?;
-        Some(ty)
+        let r#type = *self.infer.type_of_binding.get(id)?;
+        Some(r#type)
     }
 
     pub fn resolve_field(

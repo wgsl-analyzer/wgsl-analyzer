@@ -8,5 +8,34 @@ disallowed-methods = [
   { path = "std::process::Command::new", reason = "use `toolchain::command` instead as it forces the choice of a working directory" },
 ]
 
-# TODO
-# disallowed-names = ["res", "resp", "msg", "err", "alt", "char", "dir"]
+disallowed-names = [
+  "alloc",
+  "alt",
+  # "args", does not work due to write! macro
+  "attr",
+  "auth",
+  "btn",
+  "char",
+  "col",
+  "ctrl",
+  "dbg",
+  "dest",
+  "dir",
+  "elem",
+  "err",
+  "expr",
+  "ident",
+  "lit",
+  "msg",
+  "params",
+  "prev",
+  "req",
+  # "res", does not work due to format! macro
+  "resp",
+  "sel",
+  "sig",
+  "src",
+  "stmt",
+  "tmp",
+  "ty",
+] # TODO

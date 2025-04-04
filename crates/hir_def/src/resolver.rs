@@ -269,8 +269,8 @@ impl Resolver {
             Scope::ExprScope(_) => None,
 
             Scope::BuiltinScope => {
-                let ty = vec_alias_typeref(name.as_str());
-                ty.map(ResolveType::PredeclaredTypeAlias)
+                let r#type = vec_alias_typeref(name.as_str());
+                r#type.map(ResolveType::PredeclaredTypeAlias)
             },
         })
     }
@@ -307,8 +307,8 @@ impl Resolver {
             },
             Scope::ExprScope(_) => None,
             Scope::BuiltinScope => {
-                let ty = vec_alias_typeref(name.as_str());
-                ty.map(ResolveCallable::PredeclaredTypeAlias)
+                let r#type = vec_alias_typeref(name.as_str());
+                r#type.map(ResolveCallable::PredeclaredTypeAlias)
             },
         })
     }

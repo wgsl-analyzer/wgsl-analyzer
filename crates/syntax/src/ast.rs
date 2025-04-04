@@ -277,7 +277,7 @@ ast_node!(GlobalVariableDeclaration:
     var_token: Option<SyntaxToken Var>;
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
-    ty: Option<Type>;
+    rtype: Option<Type>;
     init: Option<Expression>;
 );
 
@@ -286,7 +286,7 @@ impl HasAttributes for GlobalVariableDeclaration {}
 ast_node!(GlobalConstantDeclaration:
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
-    ty: Option<Type>;
+    rtype: Option<Type>;
     init: Option<Expression>;
 );
 
@@ -295,7 +295,7 @@ impl HasAttributes for OverrideDeclaration {}
 ast_node!(OverrideDeclaration:
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
-    ty: Option<Type>;
+    rtype: Option<Type>;
     init: Option<Expression>;
 );
 
@@ -341,7 +341,7 @@ impl HasName for Binding {}
 ast_node!(VariableIdentDeclaration:
     colon_token: Option<SyntaxToken Colon>;
     binding: Option<Binding>;
-    ty: Option<Type>;
+    rtype: Option<Type>;
 );
 
 ast_node!(FunctionParameterList:
@@ -352,7 +352,7 @@ ast_node!(FunctionParameterList:
 
 ast_node!(ReturnType:
     arrow_token: Option<SyntaxToken Arrow>;
-    ty: Option<Type>;
+    rtype: Option<Type>;
 );
 
 ast_node!(GenericArgumentList:
@@ -404,14 +404,14 @@ pub enum GenericArg {
 impl GenericArg {
     pub fn as_type(&self) -> Option<Type> {
         match self {
-            GenericArg::Type(ty) => Some(ty.clone()),
+            GenericArg::Type(r#type) => Some(r#type.clone()),
             _ => None,
         }
     }
 
     pub fn as_literal(&self) -> Option<Literal> {
         match self {
-            GenericArg::Literal(ty) => Some(ty.clone()),
+            GenericArg::Literal(r#type) => Some(r#type.clone()),
             _ => None,
         }
     }
@@ -433,7 +433,7 @@ impl GenericArg {
 
 ast_node!(BinaryOperator);
 ast_node!(TypeInitializer:
-    ty: Option<Type>;
+    rtype: Option<Type>;
     arguments: Option<FunctionParameterList>;
 );
 
@@ -517,7 +517,7 @@ ast_node!(BitcastExpression:
     bitcast_token: Option<SyntaxToken Bitcast>;
     left_angle_token: Option<SyntaxToken LessThan>;
     right_angle_token: Option<SyntaxToken GreaterThan>;
-    ty: Option<Type>;
+    rtype: Option<Type>;
     inner: Option<ParenthesisExpression>;
 );
 ast_node!(FieldExpression:
@@ -709,7 +709,7 @@ ast_node!(VariableStatement:
     variable_qualifier: Option<VariableQualifier>;
     binding: Option<Binding>;
     colon: Option<SyntaxToken Colon>;
-    ty: Option<Type>;
+    rtype: Option<Type>;
     equal_token: Option<SyntaxToken Equal>;
     initializer: Option<Expression>;
 );

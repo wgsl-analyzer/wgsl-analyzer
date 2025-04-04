@@ -234,8 +234,8 @@ impl Collector<'_> {
                     .initializer()
                     .map(|expression| self.collect_expression(expression));
                 let type_ref = variable_statement
-                    .ty()
-                    .and_then(|ty| TypeReference::try_from(ty).ok())
+                    .rtype()
+                    .and_then(|typo| TypeReference::try_from(typo).ok())
                     .map(|type_ref| self.db.intern_type_ref(type_ref));
 
                 match variable_statement.kind()? {
@@ -443,15 +443,15 @@ impl Collector<'_> {
                         .map(ast::Expression::ParenthesisExpression),
                 );
 
-                let ty = expression
-                    .ty()
-                    .and_then(|ty| TypeReference::try_from(ty).ok())
+                let r#type = expression
+                    .rtype()
+                    .and_then(|r#type| TypeReference::try_from(r#type).ok())
                     .unwrap_or(TypeReference::Error);
-                let ty = self.db.intern_type_ref(ty);
+                let r#type = self.db.intern_type_ref(r#type);
 
                 Expression::Bitcast {
                     expression: inner,
-                    ty,
+                    r#type,
                 }
             },
             ast::Expression::FieldExpression(field) => {
@@ -507,18 +507,18 @@ impl Collector<'_> {
                 let index = self.collect_expression_opt(index.index());
                 Expression::Index { left_side, index }
             },
-            ast::Expression::TypeInitializer(ty) => {
-                let arguments = ty
+            ast::Expression::TypeInitializer(r#type) => {
+                let arguments = r#type
                     .arguments()
                     .into_iter()
                     .flat_map(|parameters| parameters.arguments())
                     .map(|expression| self.collect_expression(expression))
                     .collect();
 
-                let ty = ty.ty();
-                if let Some(ty) = ty {
-                    let has_generic = ty.generic_arg_list().is_some();
-                    let callee = match ty {
+                let r#type = r#type.rtype();
+                if let Some(r#type) = r#type {
+                    let has_generic = r#type.generic_arg_list().is_some();
+                    let callee = match r#type {
                         ast::Type::VecType(vec) if !has_generic => {
                             let dimensions = vector_dimensions(&vec);
                             Callee::InferredComponentVec(dimensions)
@@ -528,10 +528,11 @@ impl Collector<'_> {
                             Callee::InferredComponentMatrix { rows, columns }
                         },
                         ast::Type::ArrayType(_) if !has_generic => Callee::InferredComponentArray,
-                        ty => {
-                            let ty = TypeReference::try_from(ty).unwrap_or(TypeReference::Error);
-                            let ty = self.db.intern_type_ref(ty);
-                            Callee::Type(ty)
+                        r#type => {
+                            let r#type =
+                                TypeReference::try_from(r#type).unwrap_or(TypeReference::Error);
+                            let r#type = self.db.intern_type_ref(r#type);
+                            Callee::Type(r#type)
                         },
                     };
                     Expression::Call { callee, arguments }

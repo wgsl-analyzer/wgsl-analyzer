@@ -18,7 +18,7 @@ pub fn collect(
     let data = db.global_var_data(var);
     let infer = db.infer(DefinitionWithBodyId::GlobalVariable(var));
 
-    let ty_kind = infer.return_type.map(|ty| ty.kind(db));
+    let ty_kind = infer.return_type.map(|r#type| r#type.kind(db));
 
     if let Some(storage_class) = data.storage_class {
         hir_ty::validate::validate_storage_class(
@@ -30,9 +30,9 @@ pub fn collect(
             db,
             |error| f(GlobalVariableDiagnostic::StorageClassError(error)),
         );
-    } else if let Some(ty) = ty_kind {
+    } else if let Some(r#type) = ty_kind {
         if !matches!(
-            ty,
+            r#type,
             TyKind::Error
                 | TyKind::Sampler(_)
                 | TyKind::Texture(_)

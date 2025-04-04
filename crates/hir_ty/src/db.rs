@@ -44,7 +44,7 @@ pub trait HirDatabase: DefDatabase + Upcast<dyn DefDatabase> {
     #[salsa::interned]
     fn intern_ty(
         &self,
-        ty: TyKind,
+        r#type: TyKind,
     ) -> Ty;
 
     #[salsa::interned]
@@ -74,10 +74,10 @@ fn field_types(
 
     let mut map = ArenaMap::default();
     for (index, field) in data.fields.iter() {
-        let ty = db.lookup_intern_type_ref(field.ty);
-        let ty = ty_ctx.lower_ty(&ty);
+        let r#type = db.lookup_intern_type_ref(field.r#type);
+        let r#type = ty_ctx.lower_ty(&r#type);
 
-        map.insert(index, ty);
+        map.insert(index, r#type);
     }
 
     Arc::new(map)
@@ -102,8 +102,8 @@ fn function_type(
         .parameters
         .iter()
         .map(|(type_ref, name)| {
-            let ty = ty_ctx.lower_ty(&db.lookup_intern_type_ref(*type_ref));
-            (ty, name.clone())
+            let r#type = ty_ctx.lower_ty(&db.lookup_intern_type_ref(*type_ref));
+            (r#type, name.clone())
         })
         .collect();
 
@@ -135,12 +135,12 @@ fn struct_is_used_in_uniform(
             }
 
             let inference = db.infer(DefinitionWithBodyId::GlobalVariable(decl));
-            let ty = match inference.return_type {
-                Some(ty) => ty,
+            let r#type = match inference.return_type {
+                Some(r#type) => r#type,
                 None => return false,
             };
 
-            ty.contains_struct(db, r#struct)
+            r#type.contains_struct(db, r#struct)
         },
         _ => false,
     })

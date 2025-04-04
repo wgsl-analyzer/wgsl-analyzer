@@ -5,6 +5,8 @@ use std::{path::PathBuf, str::FromStr};
 
 use crate::cli::Verbosity;
 
+#![expect(clippy::disallowed_names, reason = "xflags")]
+	
 xflags::xflags! {
     src "./src/cli/flags.rs"
 

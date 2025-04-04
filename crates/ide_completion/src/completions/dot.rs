@@ -16,12 +16,12 @@ pub(crate) fn complete_dot(
         _ => return Some(()),
     };
     let sa = ctx.sema.analyze(ctx.container?);
-    let ty = sa.type_of_expression(&field_expression.expression()?)?;
+    let r#type = sa.type_of_expression(&field_expression.expression()?)?;
 
     let field_completion_item =
         |name| CompletionItem::new(CompletionItemKind::Field, ctx.source_range(), name).build();
 
-    match ty.kind(ctx.db).unref(ctx.db).as_ref() {
+    match r#type.kind(ctx.db).unref(ctx.db).as_ref() {
         TyKind::Vector(vec) => {
             let size = vec.size.as_u8() as usize;
             let swizzle = swizzle_items(size, ctx, &[["x", "y", "z", "w"], ["r", "g", "b", "a"]]);

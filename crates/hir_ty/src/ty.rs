@@ -17,16 +17,16 @@ use crate::db::HirDatabase;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub struct Ty {
-    ty: salsa::InternId,
+    r#type: salsa::InternId,
 }
 
 impl InternKey for Ty {
-    fn from_intern_id(ty: salsa::InternId) -> Self {
-        Ty { ty }
+    fn from_intern_id(r#type: salsa::InternId) -> Self {
+        Ty { r#type }
     }
 
     fn as_intern_id(&self) -> salsa::InternId {
-        self.ty
+        self.r#type
     }
 }
 
@@ -202,7 +202,7 @@ impl TyKind {
             TyKind::Struct(r#struct) => {
                 db.field_types(*r#struct)
                     .iter()
-                    .all(|(_, ty)| match ty.kind(db) {
+                    .all(|(_, r#type)| match r#type.kind(db) {
                         TyKind::Scalar(_) => true,
                         TyKind::Vector(vec) if vec.inner.kind(db).is_numeric_scalar() => true,
                         _ => false,
@@ -224,7 +224,7 @@ impl TyKind {
             TyKind::Struct(r#struct) => db
                 .field_types(*r#struct)
                 .iter()
-                .all(|(_, ty)| ty.kind(db).is_host_shareable(db)),
+                .all(|(_, r#type)| r#type.kind(db).is_host_shareable(db)),
             _ => false,
         }
     }
@@ -241,7 +241,7 @@ impl TyKind {
             TyKind::Struct(r#struct) => db
                 .field_types(*r#struct)
                 .iter()
-                .any(|(_, ty)| ty.kind(db).contains_runtime_sized_array(db)),
+                .any(|(_, r#type)| r#type.kind(db).contains_runtime_sized_array(db)),
             _ => false,
         }
     }
@@ -259,7 +259,7 @@ impl TyKind {
                 }
                 db.field_types(*id)
                     .values()
-                    .any(|ty| ty.contains_struct(db, r#struct))
+                    .any(|r#type| r#type.contains_struct(db, r#struct))
             },
             TyKind::Array(array) => array.inner.contains_struct(db, r#struct),
             TyKind::Reference(r) => r.inner.contains_struct(db, r#struct),

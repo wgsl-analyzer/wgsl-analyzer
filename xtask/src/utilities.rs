@@ -2,8 +2,8 @@ use std::path::{Path, PathBuf};
 
 const WGSL_FILE_EXTENSION: &str = "wgsl";
 
-pub(crate) fn list_wgsl_files(dir: &Path) -> Vec<PathBuf> {
-    let mut result = list_files(dir);
+pub(crate) fn list_wgsl_files(directory: &Path) -> Vec<PathBuf> {
+    let mut result = list_files(directory);
     result.retain(|it| {
         std::path::Path::new(
             it.file_name()

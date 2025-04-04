@@ -18,21 +18,21 @@ pub enum TypeVerbosity {
 
 pub fn pretty_type_expectation(
     db: &dyn HirDatabase,
-    ty: TypeExpectation,
+    r#type: TypeExpectation,
 ) -> String {
-    pretty_type_expectation_with_verbosity(db, ty, TypeVerbosity::default())
+    pretty_type_expectation_with_verbosity(db, r#type, TypeVerbosity::default())
 }
 
 pub fn pretty_type_expectation_with_verbosity(
     db: &dyn HirDatabase,
-    ty: TypeExpectation,
+    r#type: TypeExpectation,
     verbosity: TypeVerbosity,
 ) -> String {
     let mut str = String::new();
 
-    match ty {
-        TypeExpectation::Type(ty) => {
-            let _ = write_type_expectation_inner(db, ty, false, &mut str, verbosity);
+    match r#type {
+        TypeExpectation::Type(r#type) => {
+            let _ = write_type_expectation_inner(db, r#type, false, &mut str, verbosity);
         },
         TypeExpectation::TypeOrVecOf(inner) => {
             let _ = write_type_expectation_inner(db, inner, true, &mut str, verbosity);
@@ -50,11 +50,11 @@ fn write_type_expectation_inner(
     verbosity: TypeVerbosity,
 ) -> std::fmt::Result {
     match inner {
-        TypeExpectationInner::Exact(ty) => {
-            write_ty(db, ty, f, verbosity)?;
+        TypeExpectationInner::Exact(r#type) => {
+            write_ty(db, r#type, f, verbosity)?;
             if or_vec {
                 write!(f, " or vecN<")?;
-                write_ty(db, ty, f, verbosity)?;
+                write_ty(db, r#type, f, verbosity)?;
                 write!(f, ">")?;
             }
         },
@@ -69,18 +69,18 @@ fn write_type_expectation_inner(
 
 pub fn pretty_type(
     db: &dyn HirDatabase,
-    ty: Ty,
+    r#type: Ty,
 ) -> String {
-    pretty_type_with_verbosity(db, ty, TypeVerbosity::default())
+    pretty_type_with_verbosity(db, r#type, TypeVerbosity::default())
 }
 
 pub fn pretty_type_with_verbosity(
     db: &dyn HirDatabase,
-    ty: Ty,
+    r#type: Ty,
     verbosity: TypeVerbosity,
 ) -> String {
     let mut str = String::new();
-    write_ty(db, ty, &mut str, verbosity).unwrap();
+    write_ty(db, r#type, &mut str, verbosity).unwrap();
     str
 }
 
@@ -124,11 +124,11 @@ fn pretty_fn_inner(
 
 fn write_ty(
     db: &dyn HirDatabase,
-    ty: Ty,
+    r#type: Ty,
     f: &mut String,
     verbosity: TypeVerbosity,
 ) -> std::fmt::Result {
-    match ty.kind(db) {
+    match r#type.kind(db) {
         TyKind::Error => write!(f, "[error]"),
         TyKind::Scalar(scalar) => {
             let s = match scalar {
@@ -169,12 +169,12 @@ fn write_ty(
         },
         TyKind::Texture(e) => {
             let value = match e.kind {
-                TextureKind::Sampled(ty) => format!(
+                TextureKind::Sampled(r#type) => format!(
                     "texture_{}{}{}<{}>",
                     if e.multisampled { "multisampled_" } else { "" },
                     e.dimension,
                     if e.arrayed { "_array" } else { "" },
-                    pretty_type(db, ty),
+                    pretty_type(db, r#type),
                 ),
                 TextureKind::Storage(format, mode) => format!(
                     "texture_storage_{}{}{}<{},{}>",
