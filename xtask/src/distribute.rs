@@ -86,8 +86,8 @@ fn dist_client(
             r#""releaseTag": null"#,
             &format!(r#""releaseTag": "{release_tag}""#),
         )
-        // .replace(r#""title": "$generated-start""#, "")
-        // .replace(r#""title": "$generated-end""#, "")
+        .replace(r#""title": "$generated-start""#, "")
+        .replace(r#""title": "$generated-end""#, "")
         .replace(r#""enabledApiProposals": [],"#, "");
     patch.commit(shell)?;
 
