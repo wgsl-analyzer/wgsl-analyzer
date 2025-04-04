@@ -182,7 +182,7 @@ fn get_hints(
             },
             _ => {},
         }
-    } else if let Some((binding, ty)) = ast::VariableStatement::cast(node.clone())
+    } else if let Some((binding, r#type)) = ast::VariableStatement::cast(node.clone())
         .and_then(|statement| Some((statement.binding()?, statement.ty())))
         .or_else(|| {
             ast::GlobalConstantDeclaration::cast(node.clone())
@@ -196,11 +196,11 @@ fn get_hints(
         if !config.type_hints {
             return None;
         }
-        if ty.is_none() {
+        if r#type.is_none() {
             let container = sema.find_container(file_id.into(), &node)?;
-            let ty = sema.analyze(container).type_of_binding(&binding)?;
+            let r#type = sema.analyze(container).type_of_binding(&binding)?;
 
-            let label = pretty_type_with_verbosity(sema.db, ty, config.type_verbosity);
+            let label = pretty_type_with_verbosity(sema.db, r#type, config.type_verbosity);
             hints.push(InlayHint {
                 range: binding.name()?.ident_token()?.text_range(),
                 kind: InlayKind::TypeHint,

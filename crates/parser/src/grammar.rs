@@ -440,14 +440,14 @@ const TYPE_SET: &[SyntaxKind] = &[
 pub(crate) fn type_declaration(parser: &mut Parser) -> Option<CompletedMarker> {
     if parser.at_set(TYPE_SET) {
         let marker_ty = parser.start();
-        let ty = parser.bump();
+        let r#type = parser.bump();
         // We do not validate which types should have generics and which should not here,
         // because `expression` relies on that (specifically for vec3(1.0) etc., where the
         // type is inferred)
         if parser.at(SyntaxKind::LessThan) {
             type_decl_generics(parser);
         }
-        Some(marker_ty.complete(parser, ty))
+        Some(marker_ty.complete(parser, r#type))
     } else if parser.at(SyntaxKind::Identifier) {
         let marker_ty = parser.start();
         let marker_name_reference = parser.start();

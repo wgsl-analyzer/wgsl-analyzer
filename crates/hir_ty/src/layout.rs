@@ -3,7 +3,7 @@ use la_arena::ArenaMap;
 
 use crate::{
     db::HirDatabase,
-    ty::{ArraySize, ArrayType, ScalarType, Ty, TyKind, VecSize},
+    ty::{ArraySize, ArrayType, ScalarType, TyKind, Type, VecSize},
 };
 
 type Bytes = u32;
@@ -47,7 +47,7 @@ impl ArrayType {
     }
 }
 
-impl Ty {
+impl Type {
     pub fn align(
         &self,
         address_space: LayoutAddressSpace,
@@ -160,7 +160,7 @@ pub struct FieldLayout {
 
 /// Returns the (align, size) of the struct, and calls `on_field` for every field
 pub fn struct_member_layout<R>(
-    fields: &ArenaMap<LocalFieldId, Ty>,
+    fields: &ArenaMap<LocalFieldId, Type>,
     db: &dyn HirDatabase,
     address_space: LayoutAddressSpace,
     mut on_field: impl FnMut(LocalFieldId, FieldLayout) -> R,

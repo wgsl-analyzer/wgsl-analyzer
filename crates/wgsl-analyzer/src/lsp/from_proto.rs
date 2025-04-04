@@ -25,7 +25,7 @@ pub(crate) fn offset(
     line_index: &LineIndex,
     position: lsp_types::Position,
 ) -> anyhow::Result<TextSize> {
-    let line_col = match line_index.encoding {
+    let line_column = match line_index.encoding {
         PositionEncoding::Utf8 => LineCol {
             line: position.line,
             col: position.character,
@@ -41,17 +41,17 @@ pub(crate) fn offset(
                 .ok_or_else(|| format_err!("Invalid wide col offset"))?
         },
     };
-    let line_range = line_index.index.line(line_col.line).ok_or_else(|| {
+    let line_range = line_index.index.line(line_column.line).ok_or_else(|| {
         format_err!(
-            "Invalid offset {line_col:?} (line index length: {:?})",
+            "Invalid offset {line_column:?} (line index length: {:?})",
             line_index.index.len()
         )
     })?;
-    let col = TextSize::from(line_col.col);
-    let clamped_length = col.min(line_range.len());
-    if clamped_length < col {
+    let column = TextSize::from(line_column.col);
+    let clamped_length = column.min(line_range.len());
+    if clamped_length < column {
         tracing::error!(
-            "Position {line_col:?} column exceeds line length {}, clamping it",
+            "Position {line_column:?} column exceeds line length {}, clamping it",
             u32::from(line_range.len()),
         );
     }

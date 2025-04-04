@@ -39,8 +39,8 @@ impl std::fmt::Display for TypeReference {
 impl TryFrom<ast::Type> for TypeReference {
     type Error = ();
 
-    fn try_from(ty: ast::Type) -> Result<Self, ()> {
-        let type_ref = match ty {
+    fn try_from(r#type: ast::Type) -> Result<Self, ()> {
+        let type_ref = match r#type {
             ast::Type::PathType(path) => TypeReference::Path(path.name().ok_or(())?.text().into()),
             ast::Type::ScalarType(scalar) => TypeReference::Scalar(scalar.into()),
             ast::Type::VecType(vec) => TypeReference::Vec(vec.try_into()?),
@@ -65,8 +65,8 @@ pub enum ScalarType {
 }
 
 impl From<ast::ScalarType> for ScalarType {
-    fn from(ty: ast::ScalarType) -> Self {
-        match ty {
+    fn from(r#type: ast::ScalarType) -> Self {
+        match r#type {
             ast::ScalarType::Bool(_) => ScalarType::Bool,
             ast::ScalarType::Float32(_) => ScalarType::Float32,
             ast::ScalarType::Int32(_) => ScalarType::Int32,
@@ -127,9 +127,9 @@ impl std::fmt::Display for VecDimensionality {
 impl TryFrom<ast::VecType> for VecType {
     type Error = ();
 
-    fn try_from(ty: ast::VecType) -> Result<Self, ()> {
-        let size = vector_dimensions(&ty);
-        let inner = first_type_generic(&ty)?;
+    fn try_from(r#type: ast::VecType) -> Result<Self, ()> {
+        let size = vector_dimensions(&r#type);
+        let inner = first_type_generic(&r#type)?;
 
         Ok(VecType {
             size,
@@ -138,8 +138,8 @@ impl TryFrom<ast::VecType> for VecType {
     }
 }
 
-pub(crate) fn vector_dimensions(ty: &ast::VecType) -> VecDimensionality {
-    match *ty {
+pub(crate) fn vector_dimensions(r#type: &ast::VecType) -> VecDimensionality {
+    match *r#type {
         ast::VecType::Vec2(_) => VecDimensionality::Two,
         ast::VecType::Vec3(_) => VecDimensionality::Three,
         ast::VecType::Vec4(_) => VecDimensionality::Four,
@@ -156,9 +156,9 @@ pub struct MatrixType {
 impl TryFrom<ast::MatrixType> for MatrixType {
     type Error = ();
 
-    fn try_from(ty: ast::MatrixType) -> Result<Self, ()> {
-        let (columns, rows) = matrix_dimensions(&ty);
-        let inner = first_type_generic(&ty)?;
+    fn try_from(r#type: ast::MatrixType) -> Result<Self, ()> {
+        let (columns, rows) = matrix_dimensions(&r#type);
+        let inner = first_type_generic(&r#type)?;
 
         Ok(MatrixType {
             columns,
@@ -168,8 +168,10 @@ impl TryFrom<ast::MatrixType> for MatrixType {
     }
 }
 
-pub(crate) fn matrix_dimensions(ty: &ast::MatrixType) -> (VecDimensionality, VecDimensionality) {
-    let (columns, rows) = match *ty {
+pub(crate) fn matrix_dimensions(
+    r#type: &ast::MatrixType
+) -> (VecDimensionality, VecDimensionality) {
+    let (columns, rows) = match *r#type {
         ast::MatrixType::Mat2x2(_) => (VecDimensionality::Two, VecDimensionality::Two),
         ast::MatrixType::Mat2x3(_) => (VecDimensionality::Two, VecDimensionality::Three),
         ast::MatrixType::Mat2x4(_) => (VecDimensionality::Two, VecDimensionality::Two),
@@ -192,8 +194,8 @@ impl std::fmt::Display for MatrixType {
     }
 }
 
-fn first_type_generic<T: HasGenerics>(ty: &T) -> Result<ast::Type, ()> {
-    let mut generics = ty.generic_arg_list().ok_or(())?.generics();
+fn first_type_generic<T: HasGenerics>(r#type: &T) -> Result<ast::Type, ()> {
+    let mut generics = r#type.generic_arg_list().ok_or(())?.generics();
     let first_generic = generics.next().ok_or(())?;
     let generic = first_generic.as_type().ok_or(())?;
     Ok(generic)
@@ -213,7 +215,7 @@ impl std::fmt::Display for TextureType {
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match &self.kind {
-            TextureKind::Sampled(ty) => write!(
+            TextureKind::Sampled(r#type) => write!(
                 f,
                 "texture_{}{}{}<{}>",
                 if self.multisampled {
@@ -223,7 +225,7 @@ impl std::fmt::Display for TextureType {
                 },
                 self.dimension,
                 if self.arrayed { "_array" } else { "" },
-                ty
+                r#type
             ),
             TextureKind::Storage(format, mode) => write!(
                 f,
@@ -465,8 +467,8 @@ impl std::fmt::Display for SamplerType {
 }
 
 impl From<ast::SamplerType> for SamplerType {
-    fn from(ty: ast::SamplerType) -> Self {
-        match ty {
+    fn from(r#type: ast::SamplerType) -> Self {
+        match r#type {
             ast::SamplerType::Sampler(_) => SamplerType { comparison: false },
             ast::SamplerType::SamplerComparison(_) => SamplerType { comparison: true },
         }
@@ -537,8 +539,10 @@ impl TryFrom<ast::ArrayType> for ArrayType {
         let mut generics = array.generic_arg_list().ok_or(())?.generics();
         let inner = generics.next().ok_or(())?.as_type().ok_or(())?;
         let size = match generics.next() {
-            Some(ast::GenericArg::Type(ty)) => ArraySize::Path(Name::from(ty.as_name().ok_or(())?)),
-            Some(ast::GenericArg::Literal(lit)) => match parse_literal(lit.kind()) {
+            Some(ast::GenericArg::Type(r#type)) => {
+                ArraySize::Path(Name::from(r#type.as_name().ok_or(())?))
+            },
+            Some(ast::GenericArg::Literal(literal)) => match parse_literal(literal.kind()) {
                 crate::expression::Literal::Int(value, _) => ArraySize::Int(value),
                 crate::expression::Literal::Uint(value, _) => ArraySize::Uint(value),
                 _ => return Err(()),
@@ -561,8 +565,10 @@ impl TryFrom<ast::BindingArrayType> for ArrayType {
         let mut generics = array.generic_arg_list().ok_or(())?.generics();
         let inner = generics.next().ok_or(())?.as_type().ok_or(())?;
         let size = match generics.next() {
-            Some(ast::GenericArg::Type(ty)) => ArraySize::Path(Name::from(ty.as_name().ok_or(())?)),
-            Some(ast::GenericArg::Literal(lit)) => match parse_literal(lit.kind()) {
+            Some(ast::GenericArg::Type(r#type)) => {
+                ArraySize::Path(Name::from(r#type.as_name().ok_or(())?))
+            },
+            Some(ast::GenericArg::Literal(literal)) => match parse_literal(literal.kind()) {
                 crate::expression::Literal::Int(value, _) => ArraySize::Int(value),
                 crate::expression::Literal::Uint(value, _) => ArraySize::Uint(value),
                 _ => return Err(()),

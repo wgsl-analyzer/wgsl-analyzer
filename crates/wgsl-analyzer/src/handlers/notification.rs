@@ -83,11 +83,11 @@ pub(crate) fn handle_did_change_text_document(
 )]
 pub(crate) fn handle_did_close_text_document(
     state: &mut GlobalState,
-    params: DidCloseTextDocumentParams,
+    parameters: DidCloseTextDocumentParams,
 ) -> anyhow::Result<()> {
     let _p = tracing::info_span!("handle_did_close_text_document").entered();
 
-    if let Ok(path) = from_proto::vfs_path(&params.text_document.uri) {
+    if let Ok(path) = from_proto::vfs_path(&parameters.text_document.uri) {
         if state.mem_docs.remove(&path).is_err() {
             tracing::error!("orphan DidCloseTextDocument: {}", path);
         }

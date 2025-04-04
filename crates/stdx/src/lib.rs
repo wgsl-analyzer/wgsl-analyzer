@@ -152,8 +152,8 @@ where
 // Taken from rustc.
 #[inline]
 #[must_use]
-pub fn to_camel_case(ident: &str) -> String {
-    ident
+pub fn to_camel_case(identifier: &str) -> String {
+    identifier
         .trim_matches('_')
         .split('_')
         .filter(|component| !component.is_empty())

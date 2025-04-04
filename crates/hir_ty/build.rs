@@ -199,15 +199,15 @@ fn parse_line(line: &str) -> (&str, Overload) {
     let parameters: Vec<_> = parameters
         .split(',')
         .filter(|parameter| !parameter.is_empty())
-        .map(|ty| match ty.find(":") {
-            Some(index) if !ty[index..].starts_with("::") => {
-                let (name, ty) = ty.split_at(index);
-                let ty = &ty[1..];
+        .map(|r#type| match r#type.find(":") {
+            Some(index) if !r#type[index..].starts_with("::") => {
+                let (name, r#type) = r#type.split_at(index);
+                let r#type = &r#type[1..];
                 let name = name.trim();
                 let name = (!name.is_empty()).then(|| name.to_string());
-                (parse_ty(&mut generics, ty.trim()), name)
+                (parse_ty(&mut generics, r#type.trim()), name)
             },
-            _ => (parse_ty(&mut generics, ty.trim()), None),
+            _ => (parse_ty(&mut generics, r#type.trim()), None),
         })
         .collect();
 
@@ -226,10 +226,10 @@ fn parse_line(line: &str) -> (&str, Overload) {
     )
 }
 
-fn parse_generic(ty: &str) -> Option<(&str, &str)> {
-    let (ty, rest) = ty.split_once('<')?;
+fn parse_generic(r#type: &str) -> Option<(&str, &str)> {
+    let (r#type, rest) = r#type.split_once('<')?;
     let inner = rest.strip_suffix('>')?;
-    Some((ty, inner))
+    Some((r#type, inner))
 }
 
 fn parse_vec_size(
@@ -274,16 +274,16 @@ fn only_char(input: &str) -> char {
 
 fn parse_ty(
     generics: &mut BTreeMap<char, (usize, Generic)>,
-    ty: &str,
+    r#type: &str,
 ) -> Type {
-    if let Some((ty, inner)) = parse_generic(ty) {
-        if let Some(size) = ty.strip_prefix("vec") {
+    if let Some((r#type, inner)) = parse_generic(r#type) {
+        if let Some(size) = r#type.strip_prefix("vec") {
             let size = only_char(size);
 
             let size = parse_vec_size(generics, size);
             let inner = parse_ty(generics, inner);
             return Type::Vec(size, Box::new(inner));
-        } else if let Some(texture) = ty.strip_prefix("texture_storage_") {
+        } else if let Some(texture) = r#type.strip_prefix("texture_storage_") {
             let (format, mode) = inner.split_once(';').unwrap();
             let format = parse_texel_format(generics, only_char(format));
             let mode = mode.parse().unwrap();
@@ -294,10 +294,10 @@ fn parse_ty(
                 "2d" => TextureType { dimension: TextureDimensionality::D2, arrayed: false, multisampled: false, kind: TextureKind::Storage(format, mode) },
                 "2d_array" => TextureType { dimension: TextureDimensionality::D2, arrayed: true, multisampled: false, kind: TextureKind::Storage(format, mode) },
                 "3d" => TextureType { dimension: TextureDimensionality::D3, arrayed: false, multisampled: false, kind: TextureKind::Storage(format, mode) },
-                _ => unimplemented!("{}", ty),
+                _ => unimplemented!("{}", r#type),
             };
             return Type::Texture(texture_type);
-        } else if let Some(texture) = ty.strip_prefix("texture_") {
+        } else if let Some(texture) = r#type.strip_prefix("texture_") {
             let inner = parse_ty(generics, inner);
             #[rustfmt::skip]
             let texture_type = match texture {
@@ -308,10 +308,10 @@ fn parse_ty(
                 "cube" => TextureType { dimension: TextureDimensionality::Cube, arrayed: false, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
                 "cube_array" => TextureType { dimension: TextureDimensionality::Cube, arrayed: true, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
                 "multisampled_2d" => TextureType { dimension: TextureDimensionality::D2, arrayed: false, multisampled: true, kind: TextureKind::Sampled(Box::new(inner)) },
-                _ => unimplemented!("{}", ty),
+                _ => unimplemented!("{}", r#type),
             };
             return Type::Texture(texture_type);
-        } else if let Some(size) = ty.strip_prefix("mat") {
+        } else if let Some(size) = r#type.strip_prefix("mat") {
             let mut characters = size.chars();
             let columns = characters.next().unwrap();
             assert!(characters.next().unwrap() == 'x');
@@ -323,21 +323,21 @@ fn parse_ty(
 
             let inner = parse_ty(generics, inner);
             return Type::Matrix(columns, rows, Box::new(inner));
-        } else if ty == "array" {
+        } else if r#type == "array" {
             let inner = parse_ty(generics, inner);
             return Type::RuntimeArray(Box::new(inner));
-        } else if ty == "ptr" {
+        } else if r#type == "ptr" {
             let inner = parse_ty(generics, inner);
             return Type::Pointer(Box::new(inner));
-        } else if ty == "atomic" {
+        } else if r#type == "atomic" {
             let inner = parse_ty(generics, inner);
             return Type::Atomic(Box::new(inner));
         } else {
-            unimplemented!("{}", ty);
+            unimplemented!("{}", r#type);
         }
     }
 
-    if let Some(texture) = ty.strip_prefix("texture_") {
+    if let Some(texture) = r#type.strip_prefix("texture_") {
         #[rustfmt::skip]
         let texture_type = match texture {
             "depth_2d" => TextureType { dimension: TextureDimensionality::D2, arrayed: false, multisampled: false, kind: TextureKind::Depth },
@@ -346,19 +346,19 @@ fn parse_ty(
             "depth_cube_array" => TextureType { dimension: TextureDimensionality::Cube, arrayed: true, multisampled: false, kind: TextureKind::Depth },
             "depth_multisampled_2d" => TextureType { dimension: TextureDimensionality::D2, arrayed: false, multisampled: true, kind: TextureKind::Depth },
             "external" => TextureType { dimension: TextureDimensionality::D2, arrayed: false, multisampled: false, kind: TextureKind::External },
-            _ => unimplemented!("{}", ty),
+            _ => unimplemented!("{}", r#type),
         };
         return Type::Texture(texture_type);
     }
 
-    if ty.len() == 1 {
-        let generic = ty.chars().next().unwrap();
+    if r#type.len() == 1 {
+        let generic = r#type.chars().next().unwrap();
         let length = generics.len();
         let (i, _) = generics.entry(generic).or_insert((length, Generic::Type));
         return Type::Bound(*i);
     }
 
-    match ty {
+    match r#type {
         "bool" => Type::Bool,
         "f32" => Type::F32,
         "i32" => Type::I32,
@@ -373,8 +373,8 @@ fn parse_ty(
     }
 }
 
-fn type_to_rust(ty: &Type) -> String {
-    match ty {
+fn type_to_rust(r#type: &Type) -> String {
+    match r#type {
         Type::Vec(size, inner) => format!(
             "TyKind::Vector(VectorType {{ size: VecSize::{:?}, inner: {} }}).intern(db)",
             size,
@@ -388,8 +388,8 @@ fn type_to_rust(ty: &Type) -> String {
             type_to_rust(inner)
         ),
 
-        ty @ (Type::Bool | Type::F32 | Type::I32 | Type::U32) => {
-            format!("TyKind::Scalar(ScalarType::{:?}).intern(db)", ty)
+        r#type @ (Type::Bool | Type::F32 | Type::I32 | Type::U32) => {
+            format!("TyKind::Scalar(ScalarType::{:?}).intern(db)", r#type)
         },
         Type::Bound(i) => {
             format!("TyKind::BoundVar(BoundVar {{ index: {} }}).intern(db)", i,)
@@ -479,13 +479,13 @@ fn builtin_to_rust(
             "
             BuiltinOverload {{
                 generics: vec![{generics}],
-                ty: FunctionDetails {{
+                r#type: FunctionDetails {{
                     return_type: {return_ty},
                     parameters: vec![",
             return_ty = overload
                 .return_type
                 .as_ref()
-                .map(|ty| format!("Some({})", type_to_rust(ty)))
+                .map(|r#type| format!("Some({})", type_to_rust(r#type)))
                 .unwrap_or_else(|| "None".to_string()),
             generics = overload
                 .generics

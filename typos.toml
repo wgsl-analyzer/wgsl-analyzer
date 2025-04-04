@@ -63,7 +63,6 @@ ignore-hidden = false
 "resp" = "response"
 "msg" = "message"
 # "dbg" = "debug"
-# "info" = "information"
 # "ctrl" = "control"
 "btn" = "button"
 "elem" = "element"
@@ -78,6 +77,9 @@ ignore-hidden = false
 "prev" = "previous"
 "sel" = "selection"
 # "col" = "column"
+# "lit" = "literal"
+# "ident" = "identifier"
+# "ty" = "type"
 
 # Be concise
 ":-)" = "be concise"

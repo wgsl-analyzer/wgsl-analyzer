@@ -72,7 +72,7 @@ pub enum Expression {
     },
     Bitcast {
         expression: ExpressionId,
-        ty: Interned<TypeReference>,
+        r#type: Interned<TypeReference>,
     },
     Literal(Literal),
     Path(Name),
@@ -155,10 +155,10 @@ pub enum Statement {
     },
 }
 
-pub fn parse_literal(lit: ast::LiteralKind) -> Literal {
-    match lit {
-        ast::LiteralKind::HexIntLiteral(lit) | ast::LiteralKind::DecimalIntLiteral(lit) => {
-            let text = lit.text().trim_end_matches('i');
+pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
+    match literal {
+        ast::LiteralKind::HexIntLiteral(literal) | ast::LiteralKind::DecimalIntLiteral(literal) => {
+            let text = literal.text().trim_end_matches('i');
             let (text, negative) = match text.strip_prefix('-') {
                 Some(new) => (new, true),
                 None => (text, false),
@@ -175,8 +175,8 @@ pub fn parse_literal(lit: ast::LiteralKind) -> Literal {
 
             Literal::Int(value, BuiltinInt::I32)
         },
-        ast::LiteralKind::UnsignedIntLiteral(lit) => {
-            let text = lit.text().trim_end_matches('u');
+        ast::LiteralKind::UnsignedIntLiteral(literal) => {
+            let text = literal.text().trim_end_matches('u');
             let value = match text.strip_prefix("0x") {
                 Some(hex) => u64::from_str_radix(hex, 16),
                 None => text.parse(),
@@ -186,10 +186,10 @@ pub fn parse_literal(lit: ast::LiteralKind) -> Literal {
             Literal::Uint(value, BuiltinUint::U32)
         },
         ast::LiteralKind::HexFloatLiteral(_) => Literal::Float(0, BuiltinFloat::F32),
-        ast::LiteralKind::DecimalFloatLiteral(lit) => {
+        ast::LiteralKind::DecimalFloatLiteral(literal) => {
             use std::str::FromStr;
             // Float suffixes are not accepted by `f32::from_str`. Ignore them
-            let text = lit.text().trim_end_matches(char::is_alphabetic);
+            let text = literal.text().trim_end_matches(char::is_alphabetic);
             let _value = f32::from_str(text).expect("invalid literal");
             Literal::Float(0, BuiltinFloat::F32)
         },

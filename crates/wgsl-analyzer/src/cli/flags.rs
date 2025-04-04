@@ -1,4 +1,7 @@
 //! Grammar for the command-line arguments.
+
+#![expect(clippy::disallowed_names, reason = "xflags")]
+
 use std::{path::PathBuf, str::FromStr};
 
 // use ide_ssr::{SsrPattern, SsrRule};

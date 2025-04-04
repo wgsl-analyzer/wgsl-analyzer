@@ -20,9 +20,9 @@ impl Builder {
     /// without binding it to the variable.
     pub(crate) fn add_to(
         self,
-        acc: &mut Completions,
+        accumulator: &mut Completions,
     ) {
-        acc.add(self.build())
+        accumulator.add(self.build())
     }
 }
 

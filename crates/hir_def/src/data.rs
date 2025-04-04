@@ -34,7 +34,7 @@ impl FunctionData {
                 .clone()
                 .map(|parameter| {
                     let parameter = &module_info.data[parameter];
-                    (parameter.ty, parameter.name.clone())
+                    (parameter.r#type, parameter.name.clone())
                 })
                 .collect(),
             return_type: function.return_type,
@@ -59,7 +59,7 @@ pub struct StructData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FieldData {
     pub name: Name,
-    pub ty: Interned<TypeReference>,
+    pub r#type: Interned<TypeReference>,
 }
 
 impl StructData {
@@ -78,7 +78,7 @@ impl StructData {
             .map(|field| &module_info.data[field])
             .map(|field| FieldData {
                 name: field.name.clone(),
-                ty: field.ty,
+                r#type: field.r#type,
             })
             .for_each(|field| {
                 fields.alloc(field);
@@ -107,7 +107,7 @@ impl StructData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TypeAliasData {
     pub name: Name,
-    pub ty: Interned<TypeReference>,
+    pub r#type: Interned<TypeReference>,
 }
 
 impl TypeAliasData {
@@ -121,7 +121,7 @@ impl TypeAliasData {
 
         Arc::new(TypeAliasData {
             name: type_alias.name.clone(),
-            ty: type_alias.ty,
+            r#type: type_alias.r#type,
         })
     }
 }
@@ -129,7 +129,7 @@ impl TypeAliasData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GlobalVariableData {
     pub name: Name,
-    pub ty: Option<Interned<TypeReference>>,
+    pub r#type: Option<Interned<TypeReference>>,
     pub storage_class: Option<StorageClass>,
     pub access_mode: Option<AccessMode>,
 }
@@ -145,7 +145,7 @@ impl GlobalVariableData {
 
         Arc::new(GlobalVariableData {
             name: var.name.clone(),
-            ty: var.ty,
+            r#type: var.r#type,
             storage_class: var.storage_class,
             access_mode: var.access_mode,
         })
@@ -155,7 +155,7 @@ impl GlobalVariableData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GlobalConstantData {
     pub name: Name,
-    pub ty: Option<Interned<TypeReference>>,
+    pub r#type: Option<Interned<TypeReference>>,
 }
 
 impl GlobalConstantData {
@@ -169,7 +169,7 @@ impl GlobalConstantData {
 
         Arc::new(GlobalConstantData {
             name: constant.name.clone(),
-            ty: constant.ty,
+            r#type: constant.r#type,
         })
     }
 }
@@ -177,7 +177,7 @@ impl GlobalConstantData {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OverrideData {
     pub name: Name,
-    pub ty: Option<Interned<TypeReference>>,
+    pub r#type: Option<Interned<TypeReference>>,
 }
 
 impl OverrideData {
@@ -191,7 +191,7 @@ impl OverrideData {
 
         Arc::new(OverrideData {
             name: constant.name.clone(),
-            ty: constant.ty,
+            r#type: constant.r#type,
         })
     }
 }

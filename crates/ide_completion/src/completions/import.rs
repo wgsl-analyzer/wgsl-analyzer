@@ -5,7 +5,7 @@ use crate::{
 };
 
 pub(crate) fn complete_import(
-    acc: &mut Completions,
+    accumulator: &mut Completions,
     ctx: &CompletionContext,
 ) -> Option<()> {
     match &ctx.completion_location {
@@ -22,7 +22,7 @@ pub(crate) fn complete_import(
         )
         .build()
     });
-    acc.add_all(imports);
+    accumulator.add_all(imports);
 
     Some(())
 }
