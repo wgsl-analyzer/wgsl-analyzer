@@ -16,6 +16,7 @@ doctest = false
 drop_bomb = "0.1.5"
 logos.workspace = true
 rowan.workspace = true
+edition.workspace = true
 
 [dev-dependencies]
 expect-test.workspace = true

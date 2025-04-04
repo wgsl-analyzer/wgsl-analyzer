@@ -492,9 +492,10 @@ impl Literal {
 
 ast_token_enum! {
     enum LiteralKind {
-        IntegerLiteral,
-        UnsignedIntegerLiteral,
+        DecimalIntLiteral,
+        UnsignedIntLiteral,
         HexFloatLiteral,
+        HexIntLiteral,
         DecimalFloatLiteral,
         True,
         False,

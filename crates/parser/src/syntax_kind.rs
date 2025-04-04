@@ -157,18 +157,19 @@ pub enum SyntaxKind {
     #[regex(r"-?0[xX][0-9a-fA-F]+\.[0-9a-fA-F]*([pP][+-]?[0-9]+[fh]?)?")]
     #[regex(r"-?0[xX][0-9a-fA-F]+[pP][+-]?[0-9]+[fh]?")]
     HexFloatLiteral,
+    #[regex(r"-?0[xX][0-9a-fA-F]+[iu]?")]
+    HexIntLiteral,
     // This represents potentially signed ints
     // This is a hack to avoid implementing const evaluation
     // TODO: We really should implement const evaluation
     #[regex(r"-?0i?")]
     #[regex(r"-?[1-9][0-9]*i?")]
-    #[regex(r"-?0[xX][0-9a-fA-F]+i?")]
-    IntegerLiteral,
+    DecimalIntLiteral,
     // This is definitely unsigned ints
     #[regex(r"-?0u")]
     #[regex(r"-?[1-9][0-9]*u")]
     #[regex(r"0[xX][0-9a-fA-F]+u")]
-    UnsignedIntegerLiteral,
+    UnsignedIntLiteral,
 
     #[regex("\"[^\"]*\"")]
     StringLiteral,
