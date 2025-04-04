@@ -96,7 +96,7 @@ fn update_release(
     // note: the GitHub API does not update the target commit if the tag already exists
     write_json::object(&mut patch)
         .string("tag_name", tag_name)
-        .string("target_commitish", "master")
+        .string("target_commitish", "main")
         .string("name", tag_name)
         .string("body", release_notes)
         .bool("draft", false)
