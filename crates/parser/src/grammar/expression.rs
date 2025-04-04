@@ -795,12 +795,126 @@ mod tests {
     }
 
     #[test]
-    fn parse_float_literal() {
+    fn parse_bool_literal() {
         check(
-            "0x1f.2",
+            "true",
             expect![[r#"
-            Literal@0..6
-              HexFloatLiteral@0..6 "0x1f.2""#]],
+                Literal@0..4
+                  True@0..4 "true""#]],
+        );
+        check(
+            "false",
+            expect![[r#"
+                Literal@0..5
+                  False@0..5 "false""#]],
+        );
+    }
+
+    #[test]
+    fn parse_decimal_float_literal() {
+        check(
+            "0.e+4f",
+            expect![[r#"
+                Literal@0..6
+                  DecimalFloatLiteral@0..6 "0.e+4f""#]],
+        );
+        check(
+            "01.",
+            expect![[r#"
+                Literal@0..3
+                  DecimalFloatLiteral@0..3 "01.""#]],
+        );
+        check(
+            ".01",
+            expect![[r#"
+                Literal@0..3
+                  DecimalFloatLiteral@0..3 ".01""#]],
+        );
+        check(
+            "12.34",
+            expect![[r#"
+                Literal@0..5
+                  DecimalFloatLiteral@0..5 "12.34""#]],
+        );
+        check(
+            ".0f",
+            expect![[r#"
+                Literal@0..3
+                  DecimalFloatLiteral@0..3 ".0f""#]],
+        );
+        check(
+            "0h",
+            expect![[r#"
+                Literal@0..2
+                  DecimalFloatLiteral@0..2 "0h""#]],
+        );
+        check(
+            "1e-3",
+            expect![[r#"
+                Literal@0..4
+                  DecimalFloatLiteral@0..4 "1e-3""#]],
+        );
+    }
+
+    #[test]
+    fn parse_hex_int_literal() {
+        check(
+            "0x123",
+            expect![[r#"
+                Literal@0..5
+                  HexIntLiteral@0..5 "0x123""#]],
+        );
+        check(
+            "0X123u",
+            expect![[r#"
+                Literal@0..6
+                  UnsignedIntLiteral@0..6 "0X123u""#]],
+        );
+        check(
+            "0x3f",
+            expect![[r#"
+                Literal@0..4
+                  HexIntLiteral@0..4 "0x3f""#]],
+        );
+    }
+
+    #[test]
+    fn parse_hex_float_literal() {
+        check(
+            "0xa.fp+2",
+            expect![[r#"
+                Literal@0..8
+                  HexFloatLiteral@0..8 "0xa.fp+2""#]],
+        );
+        check(
+            "0x1P+4f",
+            expect![[r#"
+                Literal@0..7
+                  HexFloatLiteral@0..7 "0x1P+4f""#]],
+        );
+        check(
+            "0X.3",
+            expect![[r#"
+                Literal@0..4
+                  HexFloatLiteral@0..4 "0X.3""#]],
+        );
+        check(
+            "0x3p+2h",
+            expect![[r#"
+                Literal@0..7
+                  HexFloatLiteral@0..7 "0x3p+2h""#]],
+        );
+        check(
+            "0X1.fp-4",
+            expect![[r#"
+                Literal@0..8
+                  HexFloatLiteral@0..8 "0X1.fp-4""#]],
+        );
+        check(
+            "0x3.2p+2h",
+            expect![[r#"
+                Literal@0..9
+                  HexFloatLiteral@0..9 "0x3.2p+2h""#]],
         );
     }
 
