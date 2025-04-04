@@ -77,7 +77,7 @@ ignore-hidden = false
 "prev" = "previous"
 "sel" = "selection"
 # "col" = "column"
-"lit" = "literal"
+# "lit" = "literal"
 # "ident" = "identifier"
 # "ty" = "type"
 
