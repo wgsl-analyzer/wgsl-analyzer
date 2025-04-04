@@ -3,7 +3,7 @@ use la_arena::ArenaMap;
 
 use crate::{
     db::HirDatabase,
-    ty::{ArraySize, ArrayType, ScalarType, Type, TyKind, VecSize},
+    ty::{ArraySize, ArrayType, ScalarType, TyKind, Type, VecSize},
 };
 
 type Bytes = u32;

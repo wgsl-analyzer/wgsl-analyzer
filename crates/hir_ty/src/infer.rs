@@ -25,7 +25,7 @@ use crate::{
     function::{FunctionDetails, ResolvedFunctionId},
     ty::{
         ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Pointer, Reference, SamplerType,
-        ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType, Type, TyKind,
+        ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType, TyKind, Type,
         VecSize, VectorType,
     },
 };
