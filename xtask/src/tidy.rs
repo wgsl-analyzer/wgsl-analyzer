@@ -23,7 +23,7 @@ impl Tidy {
 fn check_lsp_extensions_docs(sh: &Shell) {
     let expected_hash = {
         let lsp_ext_rs = sh
-            .read_file(project_root().join("crates/wgsl-analyzer/src/lsp/ext.rs"))
+            .read_file(project_root().join("crates/wgsl-analyzer/src/lsp/extensions.rs"))
             .unwrap();
         stable_hash(lsp_ext_rs.as_str())
     };
@@ -34,7 +34,7 @@ fn check_lsp_extensions_docs(sh: &Shell) {
             .unwrap();
         let text = lsp_extensions_md
             .lines()
-            .find_map(|line| line.strip_prefix("crates/wgsl-analyzer/src/lsp/ext.rs hash:"))
+            .find_map(|line| line.strip_prefix("crates/wgsl-analyzer/src/lsp/extensions.rs hash:"))
             .unwrap()
             .trim();
         u64::from_str_radix(text, 16).unwrap()
@@ -43,7 +43,7 @@ fn check_lsp_extensions_docs(sh: &Shell) {
     assert!(
         (actual_hash == expected_hash),
         "
-crates/wgsl-analyzer/src/lsp/ext.rs was changed without touching lsp-extensions.md.
+crates/wgsl-analyzer/src/lsp/extensions.rs was changed without touching lsp-extensions.md.
 
 Expected hash: {expected_hash:x}
 Actual hash:   {actual_hash:x}
