@@ -1383,7 +1383,7 @@ dependencies = [
 [[package]]
 name = "paths"
 version = "0.0.0"
-source = "git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6#7cce80c1738e8576ba715ec87dc8fcf28da0c5c6"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=80e9d014be07b265e948b7f477da6b21c7d1a417#80e9d014be07b265e948b7f477da6b21c7d1a417"
 dependencies = [
  "camino",
 ]
@@ -1762,7 +1762,7 @@ dependencies = [
 [[package]]
 name = "stdx"
 version = "0.0.0"
-source = "git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6#7cce80c1738e8576ba715ec87dc8fcf28da0c5c6"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=80e9d014be07b265e948b7f477da6b21c7d1a417#80e9d014be07b265e948b7f477da6b21c7d1a417"
 dependencies = [
  "always-assert",
  "crossbeam-channel",
@@ -1861,7 +1861,7 @@ dependencies = [
 [[package]]
 name = "text-edit"
 version = "0.0.0"
-source = "git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6#7cce80c1738e8576ba715ec87dc8fcf28da0c5c6"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=80e9d014be07b265e948b7f477da6b21c7d1a417#80e9d014be07b265e948b7f477da6b21c7d1a417"
 dependencies = [
  "itertools 0.12.1",
  "text-size",
@@ -2121,15 +2121,15 @@ checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 [[package]]
 name = "vfs"
 version = "0.0.0"
-source = "git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6#7cce80c1738e8576ba715ec87dc8fcf28da0c5c6"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=80e9d014be07b265e948b7f477da6b21c7d1a417#80e9d014be07b265e948b7f477da6b21c7d1a417"
 dependencies = [
  "crossbeam-channel",
  "fst",
  "indexmap 2.8.0",
  "nohash-hasher",
  "paths",
- "rustc-hash 1.1.0",
- "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6)",
+ "rustc-hash 2.1.1",
+ "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=80e9d014be07b265e948b7f477da6b21c7d1a417)",
  "tracing",
 ]
 
@@ -2152,14 +2152,14 @@ dependencies = [
 [[package]]
 name = "vfs-notify"
 version = "0.0.0"
-source = "git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6#7cce80c1738e8576ba715ec87dc8fcf28da0c5c6"
+source = "git+https://github.com/rust-lang/rust-analyzer?rev=80e9d014be07b265e948b7f477da6b21c7d1a417#80e9d014be07b265e948b7f477da6b21c7d1a417"
 dependencies = [
  "crossbeam-channel",
  "notify 6.1.1",
  "paths",
  "rayon",
- "rustc-hash 1.1.0",
- "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6)",
+ "rustc-hash 2.1.1",
+ "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=80e9d014be07b265e948b7f477da6b21c7d1a417)",
  "tracing",
  "vfs",
  "walkdir",
@@ -2224,7 +2224,7 @@ dependencies = [
  "tracing-tree",
  "triomphe",
  "vfs",
- "vfs-notify 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=7cce80c1738e8576ba715ec87dc8fcf28da0c5c6)",
+ "vfs-notify 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=80e9d014be07b265e948b7f477da6b21c7d1a417)",
  "walkdir",
  "windows-sys 0.59.0",
  "xflags",
