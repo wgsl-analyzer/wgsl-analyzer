@@ -17,6 +17,8 @@ use rowan::{GreenNode, SyntaxNode as RowanSyntaxNode};
 use sink::Sink;
 use source::Source;
 
+pub use edition::Edition;
+
 pub fn parse<F: Fn(&mut Parser)>(
     input: &str,
     f: F,

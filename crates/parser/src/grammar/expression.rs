@@ -273,13 +273,15 @@ fn postfix_op(p: &mut Parser) -> Option<PostfixOp> {
 }
 
 pub(crate) const TOKENSET_LITERAL: &[SyntaxKind] = &[
-    SyntaxKind::IntegerLiteral,
-    SyntaxKind::UnsignedIntegerLiteral,
+    SyntaxKind::DecimalIntLiteral,
+    SyntaxKind::HexIntLiteral,
+    SyntaxKind::UnsignedIntLiteral,
     SyntaxKind::HexFloatLiteral,
     SyntaxKind::DecimalFloatLiteral,
     SyntaxKind::True,
     SyntaxKind::False,
 ];
+
 pub(crate) fn literal(p: &mut Parser) -> CompletedMarker {
     assert!(p.at_set(TOKENSET_LITERAL));
 
