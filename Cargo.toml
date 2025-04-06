@@ -4,7 +4,7 @@ members = [
   # "lib/*",
   "crates/*",
 ]
-exclude = ["crates/proc-macro-srv/proc-macro-test/imp"]
+exclude = []
 resolver = "2"
 
 [workspace.package]
@@ -62,16 +62,13 @@ proc-macro-srv = { path = "./crates/proc-macro-srv", version = "0.0.0" }
 proc-macro-srv-cli = { path = "./crates/proc-macro-srv-cli", version = "0.0.0" }
 profile = { path = "./crates/profile", version = "0.0.0" }
 # project-model = { path = "./crates/project-model", version = "0.0.0" }
-ra-salsa = { path = "./crates/ra-salsa", package = "salsa", version = "0.0.0" }
 span = { path = "./crates/span", version = "0.0.0" }
 stdx = { path = "./crates/stdx", version = "0.0.0" }
 syntax = { path = "./crates/syntax", version = "0.0.0" }
 syntax-bridge = { path = "./crates/syntax-bridge", version = "0.0.0" }
 # test-fixture = { path = "./crates/test-fixture", version = "0.0.0" }
 test-utils = { path = "./crates/test-utils", version = "0.0.0" }
-toolchain = { path = "./crates/toolchain", version = "0.0.0" }
 tt = { path = "./crates/tt", version = "0.0.0" }
-# vfs = { path = "./crates/vfs", version = "0.0.0" }
 wgsl-analyzer = { path = "./crates/wgsl-analyzer", version = "0.0.0" }
 wgsl-formatter = { path = "./crates/wgsl_formatter", version = "0.0.0" }
 wgslfmt = { path = "./crates/wgslfmt", version = "0.0.0" }
@@ -81,14 +78,6 @@ vfs-notify = { git = "https://github.com/rust-lang/rust-analyzer", rev = "80e9d0
 vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "80e9d014be07b265e948b7f477da6b21c7d1a417", version = "0.0.0" }
 text-edit = { git = "https://github.com/rust-lang/rust-analyzer", rev = "80e9d014be07b265e948b7f477da6b21c7d1a417", version = "0.0.0" }
 paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "80e9d014be07b265e948b7f477da6b21c7d1a417", version = "0.0.0" }
-
-ra-ap-rustc_lexer = { version = "0.96.0", default-features = false }
-ra-ap-rustc_parse_format = { version = "0.96.0", default-features = false }
-ra-ap-rustc_index = { version = "0.96.0", default-features = false }
-ra-ap-rustc_abi = { version = "0.96.0", default-features = false }
-ra-ap-rustc_pattern_analysis = { version = "0.96.0", default-features = false }
-
-# local crates that are not published to crates.io. These should not have versions.
 
 # crates from rust-analyzer that are published separately
 line-index = "0.1.2"
@@ -177,7 +166,7 @@ lexopt = "0.3.0"
 prettydiff = "0.8.0"
 notify = "8.0.0"
 
-# We need to freeze the version of the crate, as the raw-api feature is considered unstable
+# We need to freeze the version of the crate because the raw-api feature is considered unstable
 dashmap = { version = "6.1.0", features = ["raw-api"] }
 
 [workspace.lints.rust]
@@ -206,47 +195,70 @@ restriction = { level = "warn", priority = -2 }
 style = { level = "warn", priority = -2 }
 suspicious = { level = "warn", priority = -2 }
 
-exhaustive_structs = "allow"               # wgsl-analyzer has no stability commitment
-exhaustive_enums = "allow"                 # wgsl-analyzer has no stability commitment
-single_call_fn = "allow"                   # good for organization
-implicit_return = "allow"                  # unidiomatic
-question_mark_used = "allow"               # unidiomatic
-shadow_reuse = "allow"                     # often useful
-pub_use = "allow"                          # often useful
-std_instead_of_alloc = "allow"             # no no_std support
-std_instead_of_core = "allow"              # no no_std support
-cargo_common_metadata = "allow"            # not important
-multiple_crate_versions = "allow"          # not under this crate's control
-blanket_clippy_restriction_lints = "allow" # makes it easier to keep up to date with new lints
-pub_with_shorthand = "allow"               # style preference
-absolute_paths = "allow"                   # often hurts readability
-items_after_statements = "allow"           # incorrect
-shadow_unrelated = "allow"                 # do not care
-missing_trait_methods = "allow"            # antipattern
-float_arithmetic = "allow"                 # is fine
-separated_literal_suffix = "allow"         # style preference
-self_named_module_files = "allow"          # style preference
-semicolon_outside_block = "allow"          # style preference
-else_if_without_else = "allow"             # conflicting with redundant_else
+# wgsl-analyzer has no stability commitment
+exhaustive_structs = "allow"
+# wgsl-analyzer has no stability commitment
+exhaustive_enums = "allow"
+# good for organization
+single_call_fn = "allow"
+# unidiomatic
+implicit_return = "allow"
+# unidiomatic
+question_mark_used = "allow"
+# often useful
+shadow_reuse = "allow"
+# often useful
+pub_use = "allow"
+# no no_std support
+std_instead_of_alloc = "allow"
+# no no_std support
+std_instead_of_core = "allow"
+# not important
+cargo_common_metadata = "allow"
+# not under this crate's control
+multiple_crate_versions = "allow"
+# makes it easier to keep up to date with new lints
+blanket_clippy_restriction_lints = "allow"
+# style preference
+pub_with_shorthand = "allow"
+# often hurts readability
+absolute_paths = "allow"
+# incorrect
+items_after_statements = "allow"
+# do not care
+shadow_unrelated = "allow"
+# antipattern
+missing_trait_methods = "allow"
+# is fine
+float_arithmetic = "allow"
+# style preference
+separated_literal_suffix = "allow"
+# style preference
+self_named_module_files = "allow"
+# style preference
+semicolon_outside_block = "allow"
+# conflicting with redundant_else
+else_if_without_else = "allow"
+# does not allow test module to be at bottom of file
+arbitrary_source_item_ordering = "allow"
+# unwanted restriction
+field_scoped_visibility_modifiers = "allow"
+# unwanted restriction
+redundant_pub_crate = "allow"
 
 # TODOs
 missing_docs_in_private_items = "allow"
-arbitrary_source_item_ordering = "allow"
-field_scoped_visibility_modifiers = "allow"
 module_name_repetitions = "allow"
 struct_excessive_bools = "allow"
 arithmetic_side_effects = "allow"
 indexing_slicing = "allow"
 unwrap_used = "allow"
 unwrap_in_result = "allow"
-undocumented_unsafe_blocks = "allow"
-multiple_unsafe_ops_per_block = "allow"
 pattern_type_mismatch = "allow"
 panic_in_result_fn = "allow"
 panic = "allow"
 missing_errors_doc = "allow"
 missing_assert_message = "allow"
-unnecessary_wraps = "allow"
 cast_precision_loss = "allow"
 multiple_inherent_impl = "allow"
 iter_over_hash_type = "allow"
@@ -254,4 +266,3 @@ expect_used = "allow"
 string_slice = "allow"
 cast_possible_truncation = "allow"
 default_numeric_fallback = "allow"
-redundant_pub_crate = "allow"

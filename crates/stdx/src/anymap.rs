@@ -134,6 +134,7 @@ impl<A: ?Sized + Downcast> Map<A> {
     pub fn get<T: IntoBox<A>>(&self) -> Option<&T> {
         self.raw
             .get(&TypeId::of::<T>())
+        	// SAFETY: T does match the trait object because `T: IntoBox<A>`.
             .map(|any| unsafe { any.downcast_ref_unchecked::<T>() })
     }
 
@@ -190,22 +191,24 @@ impl<'map, A: ?Sized + Downcast, V: IntoBox<A>> Entry<'map, A, V> {
 
 impl<'map, A: ?Sized + Downcast, V: IntoBox<A>> OccupiedEntry<'map, A, V> {
     /// Converts the `OccupiedEntry` into a mutable reference to the value in the entry
-    /// with a lifetime bound to the collection itself
+    /// with a lifetime bound to the collection itself.
     #[inline]
     #[must_use]
     pub fn into_mut(self) -> &'map mut V {
+        // SAFETY: T does match the trait object because `V: IntoBox<A>`.
         unsafe { self.inner.into_mut().downcast_mut_unchecked() }
     }
 }
 
 impl<'map, A: ?Sized + Downcast, V: IntoBox<A>> VacantEntry<'map, A, V> {
     /// Sets the value of the entry with the `VacantEntry`'s key,
-    /// and returns a mutable reference to it
+    /// and returns a mutable reference to it.
     #[inline]
     pub fn insert(
         self,
         value: V,
     ) -> &'map mut V {
+        // SAFETY: T does match the trait object because `V: IntoBox<A>`.
         unsafe { self.inner.insert(value.into_box()).downcast_mut_unchecked() }
     }
 }
@@ -293,13 +296,33 @@ macro_rules! implement {
                 self.type_id()
             }
 
+            /// Returns a reference to the underlying value without checking its type.
+            ///
+            /// # Safety
+            ///
+            /// The caller **must** ensure that the actual type of the underlying object is `T`.
+            /// If the type is incorrect, this will result in undefined behavior due to an invalid cast.
+            ///
+            /// This method performs an unchecked cast from the trait object to the concrete type.
             #[inline]
             unsafe fn downcast_ref_unchecked<T: 'static>(&self) -> &T {
+                // SAFETY:
+                // The caller guarantees that `self` is a `T`. We cast from a trait object to T accordingly.
                 unsafe { &*std::ptr::from_ref::<Self>(self).cast::<T>() }
             }
 
+            /// Returns a mutable reference to the underlying value without checking its type.
+            ///
+            /// # Safety
+            ///
+            /// The caller **must** ensure that the actual type of the underlying object is `T`.
+            /// If the type is incorrect, this will result in undefined behavior due to an invalid cast.
+            ///
+            /// This method performs an unchecked cast from the trait object to the concrete type.
             #[inline]
             unsafe fn downcast_mut_unchecked<T: 'static>(&mut self) -> &mut T {
+                // SAFETY:
+                // The caller guarantees that `self` is a `T`. We cast from a mutable trait object to T accordingly.
                 unsafe { &mut *std::ptr::from_mut::<Self>(self).cast::<T>() }
             }
         }

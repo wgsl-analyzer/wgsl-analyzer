@@ -94,21 +94,32 @@ mod implementation {
         process::{ChildStderr, ChildStdout},
     };
 
+    /// Reads from both stdout and stderr pipes of a child process concurrently,
+    /// using non-blocking I/O and `poll(2)` to multiplex between them.
+    ///
+    /// The provided `data` callback is invoked repeatedly with accumulated output
+    /// until both pipes have reached EOF.
     pub(crate) fn read2(
         mut out_pipe: ChildStdout,
         mut error_pipe: ChildStderr,
         data: &mut dyn FnMut(bool, &mut Vec<u8>, bool),
     ) -> io::Result<()> {
+        // SAFETY: We assume `as_raw_fd()` returns valid file descriptors.
+        // Setting them to non-blocking mode is safe as long as they are valid.
         unsafe {
             libc::fcntl(out_pipe.as_raw_fd(), libc::F_SETFL, libc::O_NONBLOCK);
+        }
+        // SAFETY: We assume `as_raw_fd()` returns valid file descriptors.
+        // Setting them to non-blocking mode is safe as long as they are valid.
+        unsafe {
             libc::fcntl(error_pipe.as_raw_fd(), libc::F_SETFL, libc::O_NONBLOCK);
         }
-
         let mut out_done = false;
         let mut error_done = false;
         let mut out = Vec::new();
         let mut error = Vec::new();
 
+        // SAFETY: `pollfd` is a plain old data type and zero initialization is valid.
         let mut fds: [libc::pollfd; 2] = unsafe { mem::zeroed() };
         fds[0].fd = out_pipe.as_raw_fd();
         fds[0].events = libc::POLLIN;
@@ -118,7 +129,8 @@ mod implementation {
         let mut errfd = 1;
 
         while nfds > 0 {
-            // wait for either pipe to become readable using `select`
+            // SAFETY: `fds` points to two properly initialized pollfd structs.
+            // `poll` will block until one of the fds becomes ready.
             let return_code = unsafe { libc::poll(fds.as_mut_ptr(), nfds, -1) };
             if return_code == -1 {
                 let error = io::Error::last_os_error();
@@ -128,11 +140,7 @@ mod implementation {
                 return Err(error);
             }
 
-            // Read as much as we can from each pipe, ignoring EWOULDBLOCK or
-            // EAGAIN. If we hit EOF, then this will happen because the underlying
-            // reader will return Ok(0), in which case we will see `Ok` ourselves. In
-            // this case we flip the other fd back into blocking mode and read
-            // whatever is leftover on that file descriptor.
+            // Handles partial reads and filtering out non-fatal WouldBlock errors
             let handle = |result: io::Result<_>| match result {
                 Ok(_) => Ok(true),
                 Err(error) => {
@@ -143,20 +151,23 @@ mod implementation {
                     }
                 },
             };
+
             if !error_done && fds[errfd].revents != 0 && handle(error_pipe.read_to_end(&mut error))?
             {
                 error_done = true;
                 nfds -= 1;
             }
             data(false, &mut error, error_done);
+
             if !out_done && fds[0].revents != 0 && handle(out_pipe.read_to_end(&mut out))? {
                 out_done = true;
-                fds[0].fd = error_pipe.as_raw_fd();
+                fds[0].fd = error_pipe.as_raw_fd(); // Switch to monitor stderr only
                 errfd = 0;
                 nfds -= 1;
             }
             data(true, &mut out, out_done);
         }
+
         Ok(())
     }
 }

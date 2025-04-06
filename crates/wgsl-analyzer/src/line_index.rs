@@ -60,9 +60,15 @@ impl LineEndings {
         // Account for removed `\r`.
         // After `set_length`, `buf` is guaranteed to contain utf-8 again.
         let new_length = buffer.len() - gap_length;
-        let source = unsafe {
-            buffer.set_len(new_length);
-            String::from_utf8_unchecked(buffer)
+        let source = {
+            // SAFETY:
+            // `new_length`` is always less than capacity given the above formula.
+            unsafe {
+                buffer.set_len(new_length);
+            }
+            // SAFETY:
+            // `buffer` is calculated to be valid utf8 above.
+            unsafe { String::from_utf8_unchecked(buffer) }
         };
         return (source, Self::Dos);
 

@@ -326,6 +326,7 @@ impl GlobalState {
     }
 
     #[expect(clippy::unused_self, reason = "wip")]
+    #[expect(clippy::unnecessary_wraps, reason = "wip")]
     pub(super) const fn fetch_workspace_error(&self) -> Result<(), String> {
         Ok(())
     }
