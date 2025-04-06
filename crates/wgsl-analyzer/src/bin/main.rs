@@ -284,6 +284,7 @@ fn setup_logging2(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
         // https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-syminitialize
         if let Ok(path) = env::current_exe() {
             if let Some(path) = path.parent() {
+                // SAFETY: This is always safe to call on Windows.
                 unsafe {
                     env::set_var("_NT_SYMBOL_PATH", path);
                 }
@@ -292,6 +293,7 @@ fn setup_logging2(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
     }
 
     if env::var("WGSL_BACKTRACE").is_err() {
+        // SAFETY: Environment locks are used.
         unsafe {
             env::set_var("WGSL_BACKTRACE", "short");
         }
@@ -353,7 +355,7 @@ fn with_extra_thread(
     Ok(())
 }
 
-fn setup_logging(trace: &TraceConfig) -> anyhow::Result<()> {
+fn setup_logging(trace: &TraceConfig) {
     let level = if trace.extension { "debug" } else { "info" };
     let filter = format!(
         "{default},salsa=warn,naga=warn,lsp_server={lsp_server}",
@@ -366,5 +368,4 @@ fn setup_logging(trace: &TraceConfig) -> anyhow::Result<()> {
         .with_writer(stderr)
         .with_env_filter(filter)
         .init();
-    Ok(())
 }

@@ -316,22 +316,14 @@ where
         Ok(response) => lsp_server::Response::new_ok(id, &response),
         Err(error) => match error.downcast::<LspError>() {
             Ok(lsp_error) => lsp_server::Response::new_err(id, lsp_error.code, lsp_error.message),
-            Err(error) => {
-                if is_cancelled(&*error) {
-                    #[expect(clippy::as_conversions, reason = "valid according to JSON RPC")]
-                    lsp_server::Response::new_err(
-                        id,
-                        lsp_server::ErrorCode::ContentModified as i32,
-                        "content modified".to_owned(),
-                    )
-                } else {
-                    #[expect(clippy::as_conversions, reason = "valid according to JSON RPC")]
-                    lsp_server::Response::new_err(
-                        id,
-                        lsp_server::ErrorCode::InternalError as i32,
-                        error.to_string(),
-                    )
-                }
+            Err(error) => match error.downcast::<Cancelled>() {
+                Ok(cancelled) => return Err(HandlerCancelledError::Inner(cancelled)),
+                #[expect(clippy::as_conversions, reason = "valid according to JSON RPC")]
+                Err(error) => lsp_server::Response::new_err(
+                    id,
+                    lsp_server::ErrorCode::InternalError as i32,
+                    error.to_string(),
+                ),
             },
         },
     };

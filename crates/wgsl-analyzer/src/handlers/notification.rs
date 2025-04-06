@@ -1,3 +1,8 @@
+#![expect(
+    clippy::unnecessary_wraps,
+    reason = "handlers must have a specific signature"
+)]
+
 use std::ops::Not as _;
 
 use anyhow::Context as _;

@@ -11,6 +11,10 @@ use crate::{flags::Tidy, project_root, utilities::list_files};
 
 impl Tidy {
     #[expect(clippy::unused_self, reason = "better API")]
+    #[expect(
+        clippy::unnecessary_wraps,
+        reason = "command handlers have a specific signature"
+    )]
     pub(crate) fn run(
         &self,
         sh: &Shell,

@@ -119,10 +119,10 @@ impl ClientCapabilities {
         })() == Some(true)
     }
 
-    fn completion_item(&self) -> Option<CompletionOptionsCompletionItem> {
-        Some(CompletionOptionsCompletionItem {
+    fn completion_item(&self) -> CompletionOptionsCompletionItem {
+        CompletionOptionsCompletionItem {
             label_details_support: Some(self.completion_label_details_support()),
-        })
+        }
     }
 
     fn code_action_capabilities(&self) -> CodeActionProviderCapability {
