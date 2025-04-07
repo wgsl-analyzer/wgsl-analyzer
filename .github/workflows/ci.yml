@@ -24,6 +24,7 @@ env:
   CARGO_TERM_COLOR: always
   # If nightly is breaking CI, modify this variable to target a specific nightly version.
   NIGHTLY_TOOLCHAIN: nightly
+  STABLE_TOOLCHAIN: "1.86.0"
 
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
@@ -62,7 +63,9 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-build-stable-${{ hashFiles('**/Cargo.toml') }}
-      - uses: dtolnay/rust-toolchain@1.86.0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.STABLE_TOOLCHAIN }}
       - name: Build & run tests
         run: cargo test --workspace --lib --bins --tests --benches
         env:
@@ -83,8 +86,9 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-ci-${{ hashFiles('**/Cargo.toml') }}
-      - uses: dtolnay/rust-toolchain@1.86.0
+      - uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: ${{ env.STABLE_TOOLCHAIN }}
           components: rustfmt, clippy
       - name: Check formatting
         run: cargo fmt --all -- --check
@@ -131,7 +135,9 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-check-compiles-${{ hashFiles('**/Cargo.toml') }}
-      - uses: dtolnay/rust-toolchain@1.86.0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.STABLE_TOOLCHAIN }}
       - name: Check Compile
         run: |
           cargo test --target-dir ../../../target
@@ -155,8 +161,9 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-check-compiles-no-std-${{ hashFiles('**/Cargo.toml') }}
-      - uses: dtolnay/rust-toolchain@1.86.0
+      - uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: ${{ env.STABLE_TOOLCHAIN }}
           targets: x86_64-unknown-none
       - name: Check Compile
         run: cargo check --workspace --no-default-features
@@ -183,7 +190,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.86.0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.STABLE_TOOLCHAIN }}
       - name: Install taplo
         run: cargo install taplo-cli --locked
       - name: Run Taplo
