@@ -40,7 +40,7 @@ serde.workspace = true
 serde_derive.workspace = true
 # tenthash.workspace = true
 num_cpus.workspace = true
-mimalloc = { version = "0.1.44", default-features = false, optional = true }
+mimalloc = { version = "0.1.46", default-features = false, optional = true }
 lsp-server.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
