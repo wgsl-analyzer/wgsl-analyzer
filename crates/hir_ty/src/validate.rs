@@ -1,4 +1,4 @@
-use hir_def::type_ref::{AccessMode, StorageClass};
+use hir_def::type_ref::{AccessMode, AddressSpace};
 use itertools::Itertools;
 use smallvec::{SmallVec, smallvec};
 
@@ -21,7 +21,7 @@ impl std::fmt::Debug for Scope {
     }
 }
 
-pub enum StorageClassError {
+pub enum AddressSpaceError {
     ExpectedAccessMode(SmallVec<[AccessMode; 2]>),
     ExpectedScope(Scope),
 
@@ -32,130 +32,130 @@ pub enum StorageClassError {
     ExpectedHandleOrTexture,
 }
 
-impl std::fmt::Display for StorageClassError {
+impl std::fmt::Display for AddressSpaceError {
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match self {
-            StorageClassError::ExpectedAccessMode(mode) => match mode.as_slice() {
+            AddressSpaceError::ExpectedAccessMode(mode) => match mode.as_slice() {
                 &[mode] => write!(f, "expected {} access mode", mode),
                 &[mode1, mode2] => write!(f, "expected {} or {} access mode", mode1, mode2),
                 other => write!(f, "expected {} access mode", other.iter().format(", ")),
             },
-            StorageClassError::ExpectedScope(scope) => {
-                write!(f, "storage class is only valid in {:?}-scope", scope)
+            AddressSpaceError::ExpectedScope(scope) => {
+                write!(f, "address space is only valid in {:?}-scope", scope)
             },
-            StorageClassError::ExpectedConstructable => f.write_str("type is not constructable"),
-            StorageClassError::ExpectedHostShareable => f.write_str("type is not host-shareable"),
-            StorageClassError::ExpectedWorkgroupCompatible => f.write_str(""),
-            StorageClassError::ExpectedHandleOrTexture => {
-                f.write_str("storage class is only valid for handle or texture types")
+            AddressSpaceError::ExpectedConstructable => f.write_str("type is not constructable"),
+            AddressSpaceError::ExpectedHostShareable => f.write_str("type is not host-shareable"),
+            AddressSpaceError::ExpectedWorkgroupCompatible => f.write_str(""),
+            AddressSpaceError::ExpectedHandleOrTexture => {
+                f.write_str("address space is only valid for handle or texture types")
             },
         }
     }
 }
 
-pub fn validate_storage_class(
-    storage_class: StorageClass,
+pub fn validate_address_space(
+    address_space: AddressSpace,
     access_mode: AccessMode,
     scope: Scope,
     r#type: TyKind,
     db: &dyn HirDatabase,
-    mut sink: impl FnMut(StorageClassError),
+    mut sink: impl FnMut(AddressSpaceError),
 ) {
     let ty_is_err = r#type.is_error();
 
-    match storage_class {
-        StorageClass::Function => {
+    match address_space {
+        AddressSpace::Function => {
             if !matches!(scope, Scope::Function) {
-                sink(StorageClassError::ExpectedScope(Scope::Function));
+                sink(AddressSpaceError::ExpectedScope(Scope::Function));
             }
             if !matches!(access_mode, AccessMode::ReadWrite) {
-                sink(StorageClassError::ExpectedAccessMode(smallvec![
+                sink(AddressSpaceError::ExpectedAccessMode(smallvec![
                     AccessMode::ReadWrite
                 ]));
             }
 
             if !ty_is_err && !r#type.is_constructable() {
-                sink(StorageClassError::ExpectedConstructable);
+                sink(AddressSpaceError::ExpectedConstructable);
             }
         },
-        StorageClass::Private => {
+        AddressSpace::Private => {
             if !matches!(scope, Scope::Module) {
-                sink(StorageClassError::ExpectedScope(Scope::Module));
+                sink(AddressSpaceError::ExpectedScope(Scope::Module));
             }
             if !matches!(access_mode, AccessMode::ReadWrite) {
-                sink(StorageClassError::ExpectedAccessMode(smallvec![
+                sink(AddressSpaceError::ExpectedAccessMode(smallvec![
                     AccessMode::ReadWrite
                 ]));
             }
 
             if !ty_is_err && !r#type.is_constructable() {
-                sink(StorageClassError::ExpectedConstructable);
+                sink(AddressSpaceError::ExpectedConstructable);
             }
         },
-        StorageClass::Workgroup => {
+        AddressSpace::Workgroup => {
             if !matches!(scope, Scope::Module) {
-                sink(StorageClassError::ExpectedScope(Scope::Module));
+                sink(AddressSpaceError::ExpectedScope(Scope::Module));
             }
             if !matches!(access_mode, AccessMode::ReadWrite) {
-                sink(StorageClassError::ExpectedAccessMode(smallvec![
+                sink(AddressSpaceError::ExpectedAccessMode(smallvec![
                     AccessMode::ReadWrite
                 ]));
             }
 
             if !ty_is_err && (!r#type.is_plain() || r#type.contains_runtime_sized_array(db)) {
-                sink(StorageClassError::ExpectedWorkgroupCompatible);
+                sink(AddressSpaceError::ExpectedWorkgroupCompatible);
             }
         },
-        StorageClass::Uniform => {
+        AddressSpace::Uniform => {
             if !matches!(scope, Scope::Module) {
-                sink(StorageClassError::ExpectedScope(Scope::Module));
+                sink(AddressSpaceError::ExpectedScope(Scope::Module));
             }
             if !matches!(access_mode, AccessMode::Read) {
-                sink(StorageClassError::ExpectedAccessMode(smallvec![
+                sink(AddressSpaceError::ExpectedAccessMode(smallvec![
                     AccessMode::ReadWrite
                 ]));
             }
 
             if !r#type.is_error() && !r#type.is_host_shareable(db) {
-                sink(StorageClassError::ExpectedHostShareable);
+                sink(AddressSpaceError::ExpectedHostShareable);
             }
             if !r#type.is_error() && !r#type.is_constructable() {
-                sink(StorageClassError::ExpectedConstructable);
+                sink(AddressSpaceError::ExpectedConstructable);
             }
         },
-        StorageClass::Storage => {
+        AddressSpace::Storage => {
             if !matches!(scope, Scope::Module) {
-                sink(StorageClassError::ExpectedScope(Scope::Module));
+                sink(AddressSpaceError::ExpectedScope(Scope::Module));
             }
             if !matches!(access_mode, AccessMode::ReadWrite | AccessMode::Read) {
-                sink(StorageClassError::ExpectedAccessMode(smallvec![
+                sink(AddressSpaceError::ExpectedAccessMode(smallvec![
                     AccessMode::ReadWrite
                 ]));
             }
 
             if !r#type.is_error() && !r#type.is_host_shareable(db) {
-                sink(StorageClassError::ExpectedHostShareable);
+                sink(AddressSpaceError::ExpectedHostShareable);
             }
         },
-        StorageClass::Handle => {
+        AddressSpace::Handle => {
             if !matches!(scope, Scope::Module) {
-                sink(StorageClassError::ExpectedScope(Scope::Module));
+                sink(AddressSpaceError::ExpectedScope(Scope::Module));
             }
             if !matches!(access_mode, AccessMode::Read) {
-                sink(StorageClassError::ExpectedAccessMode(smallvec![
+                sink(AddressSpaceError::ExpectedAccessMode(smallvec![
                     AccessMode::ReadWrite
                 ]));
             }
 
             match r#type {
                 TyKind::Sampler(_) | TyKind::Texture(_) => {},
-                _ => sink(StorageClassError::ExpectedHandleOrTexture),
+                _ => sink(AddressSpaceError::ExpectedHandleOrTexture),
             }
         },
-        StorageClass::PushConstant => {
+        AddressSpace::PushConstant => {
             // TODO: validate push constants
         },
     }

@@ -88,7 +88,7 @@ pub struct GlobalVariable {
     pub name: Name,
     pub r#type: Option<Interned<TypeReference>>,
     pub ast_id: FileAstId<ast::GlobalVariableDeclaration>,
-    pub storage_class: Option<StorageClass>,
+    pub address_space: Option<AddressSpace>,
     pub access_mode: Option<AccessMode>,
 }
 

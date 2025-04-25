@@ -394,57 +394,60 @@ impl From<ast::AccessMode> for AccessMode {
     }
 }
 
+/// https://www.w3.org/TR/WGSL/#address-space
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub enum StorageClass {
+pub enum AddressSpace {
     Function,
     Private,
     Workgroup,
     Uniform,
     Storage,
     Handle,
+    /// WGPU extension
+    /// See: https://docs.rs/wgpu/latest/wgpu/struct.Features.html#associatedconstant.PUSH_CONSTANTS
     PushConstant,
 }
 
-impl std::fmt::Display for StorageClass {
+impl std::fmt::Display for AddressSpace {
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         f.write_str(match self {
-            StorageClass::Function => "function",
-            StorageClass::Private => "private",
-            StorageClass::Workgroup => "workgroup",
-            StorageClass::Uniform => "uniform",
-            StorageClass::Storage => "storage",
-            StorageClass::Handle => "handle",
-            StorageClass::PushConstant => "push_constant",
+            AddressSpace::Function => "function",
+            AddressSpace::Private => "private",
+            AddressSpace::Workgroup => "workgroup",
+            AddressSpace::Uniform => "uniform",
+            AddressSpace::Storage => "storage",
+            AddressSpace::Handle => "handle",
+            AddressSpace::PushConstant => "push_constant",
         })
     }
 }
 
-impl StorageClass {
+impl AddressSpace {
     pub fn default_access_mode(self) -> AccessMode {
         match self {
-            StorageClass::Storage => AccessMode::Read,
-            StorageClass::Function => AccessMode::ReadWrite,
-            StorageClass::Private => AccessMode::ReadWrite,
-            StorageClass::Workgroup => AccessMode::ReadWrite,
-            StorageClass::Uniform => AccessMode::Read,
-            StorageClass::Handle => AccessMode::Read,
-            StorageClass::PushConstant => AccessMode::Read,
+            AddressSpace::Storage => AccessMode::Read,
+            AddressSpace::Function => AccessMode::ReadWrite,
+            AddressSpace::Private => AccessMode::ReadWrite,
+            AddressSpace::Workgroup => AccessMode::ReadWrite,
+            AddressSpace::Uniform => AccessMode::Read,
+            AddressSpace::Handle => AccessMode::Read,
+            AddressSpace::PushConstant => AccessMode::Read,
         }
     }
 }
 
-impl From<ast::StorageClass> for StorageClass {
-    fn from(class: ast::StorageClass) -> Self {
+impl From<ast::AddressSpace> for AddressSpace {
+    fn from(class: ast::AddressSpace) -> Self {
         match class {
-            ast::StorageClass::FunctionClass(_) => StorageClass::Function,
-            ast::StorageClass::Private(_) => StorageClass::Private,
-            ast::StorageClass::Workgroup(_) => StorageClass::Workgroup,
-            ast::StorageClass::Uniform(_) => StorageClass::Uniform,
-            ast::StorageClass::Storage(_) => StorageClass::Storage,
-            ast::StorageClass::PushConstant(_) => StorageClass::PushConstant,
+            ast::AddressSpace::FunctionClass(_) => AddressSpace::Function,
+            ast::AddressSpace::Private(_) => AddressSpace::Private,
+            ast::AddressSpace::Workgroup(_) => AddressSpace::Workgroup,
+            ast::AddressSpace::Uniform(_) => AddressSpace::Uniform,
+            ast::AddressSpace::Storage(_) => AddressSpace::Storage,
+            ast::AddressSpace::PushConstant(_) => AddressSpace::PushConstant,
         }
     }
 }
@@ -586,7 +589,7 @@ impl TryFrom<ast::BindingArrayType> for ArrayType {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct PointerType {
-    pub storage_class: StorageClass,
+    pub address_space: AddressSpace,
     pub access_mode: AccessMode,
     pub inner: Box<TypeReference>,
 }
@@ -596,7 +599,7 @@ impl std::fmt::Display for PointerType {
         &self,
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
-        write!(f, "ptr<{}, {}>", self.storage_class, self.inner)
+        write!(f, "ptr<{}, {}>", self.address_space, self.inner)
     }
 }
 
@@ -605,22 +608,22 @@ impl TryFrom<ast::PointerType> for PointerType {
 
     fn try_from(pointer: ast::PointerType) -> Result<Self, Self::Error> {
         let mut generics = pointer.generic_arg_list().ok_or(())?.generics();
-        let storage_class: StorageClass = match generics.next() {
-            Some(ast::GenericArg::StorageClass(class)) => class.into(),
+        let address_space: AddressSpace = match generics.next() {
+            Some(ast::GenericArg::AddressSpace(class)) => class.into(),
             _ => return Err(()),
         };
         let inner = generics.next().ok_or(())?.as_type().ok_or(())?;
 
         let access_mode = match generics.next() {
             Some(ast::GenericArg::AccessMode(mode)) => mode.into(),
-            None => storage_class.default_access_mode(),
+            None => address_space.default_access_mode(),
             _ => return Err(()),
         };
 
         Ok(PointerType {
             inner: Box::new(inner.try_into()?),
             access_mode,
-            storage_class,
+            address_space,
         })
     }
 }

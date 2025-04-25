@@ -8,7 +8,7 @@ use crate::{
         StructId, TypeAliasId,
     },
     module_data::Name,
-    type_ref::{AccessMode, StorageClass, TypeReference},
+    type_ref::{AccessMode, AddressSpace, TypeReference},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -130,7 +130,7 @@ impl TypeAliasData {
 pub struct GlobalVariableData {
     pub name: Name,
     pub r#type: Option<Interned<TypeReference>>,
-    pub storage_class: Option<StorageClass>,
+    pub address_space: Option<AddressSpace>,
     pub access_mode: Option<AccessMode>,
 }
 
@@ -146,7 +146,7 @@ impl GlobalVariableData {
         Arc::new(GlobalVariableData {
             name: var.name.clone(),
             r#type: var.r#type,
-            storage_class: var.storage_class,
+            address_space: var.address_space,
             access_mode: var.access_mode,
         })
     }

@@ -14,7 +14,7 @@ use hir_def::{
     },
     module_data::Name,
     resolver::{ResolveType, Resolver},
-    type_ref::{self, AccessMode, StorageClass, TypeReference, VecDimensionality},
+    type_ref::{self, AccessMode, AddressSpace, TypeReference, VecDimensionality},
 };
 use la_arena::ArenaMap;
 use rustc_hash::FxHashMap;
@@ -366,7 +366,7 @@ impl<'db> InferenceContext<'db> {
                 binding_id,
                 type_ref,
                 initializer,
-                storage_class,
+                address_space,
                 access_mode,
             } => {
                 let r#type = type_ref.map(|r#type| {
@@ -385,7 +385,7 @@ impl<'db> InferenceContext<'db> {
 
                 let ref_ty = self.make_ref(
                     r#type,
-                    storage_class.unwrap_or(StorageClass::Function),
+                    address_space.unwrap_or(AddressSpace::Function),
                     access_mode.unwrap_or_else(AccessMode::read_write),
                 );
                 self.set_binding_ty(binding_id, ref_ty)
@@ -710,10 +710,10 @@ impl<'db> InferenceContext<'db> {
                                 self.set_field_resolution(expression, FieldId { r#struct, field });
 
                                 let field_ty = field_types[field];
-                                // TODO: correct storage class/access mode
+                                // TODO: correct Address Spaces/access mode
                                 self.make_ref(
                                     field_ty,
-                                    StorageClass::Private,
+                                    AddressSpace::Private,
                                     AccessMode::read_write(),
                                 )
                             },
@@ -808,7 +808,7 @@ impl<'db> InferenceContext<'db> {
                 };
 
                 match is_reference {
-                    true => self.make_ref(r#type, StorageClass::Private, AccessMode::read_write()), // TODO use correct
+                    true => self.make_ref(r#type, AddressSpace::Private, AccessMode::read_write()), // TODO use correct
                     false => r#type,
                 }
             },
@@ -1013,7 +1013,7 @@ impl<'db> InferenceContext<'db> {
                 // TODO use correct defaults
                 self.make_ref(
                     r#type,
-                    data.storage_class.unwrap_or(StorageClass::Private),
+                    data.address_space.unwrap_or(AddressSpace::Private),
                     AccessMode::read_write(),
                 )
             },
@@ -1068,7 +1068,7 @@ impl<'db> InferenceContext<'db> {
                 .all(|character| allowed_chars.contains(&character))
             {
                 let r#type = self.ty_from_vec_size(vec_type.inner, name.as_str().len() as u8);
-                let r = self.make_ref(r#type, StorageClass::Function, AccessMode::read_write()); // TODO is correct?
+                let r = self.make_ref(r#type, AddressSpace::Function, AccessMode::read_write()); // TODO is correct?
                 return Ok(r);
             }
         }
@@ -1721,12 +1721,12 @@ impl InferenceContext<'_> {
     fn make_ref(
         &self,
         r#type: Type,
-        storage_class: StorageClass,
+        address_space: AddressSpace,
         access_mode: AccessMode,
     ) -> Type {
         self.db.intern_ty(TyKind::Reference(Reference {
             inner: r#type,
-            storage_class,
+            address_space,
             access_mode,
         }))
     }
@@ -1737,7 +1737,7 @@ impl InferenceContext<'_> {
     ) -> Type {
         self.db.intern_ty(TyKind::Pointer(Pointer {
             inner: reference.inner,
-            storage_class: reference.storage_class,
+            address_space: reference.address_space,
             access_mode: reference.access_mode,
         }))
     }
@@ -1748,7 +1748,7 @@ impl InferenceContext<'_> {
     ) -> Type {
         self.db.intern_ty(TyKind::Reference(Reference {
             inner: pointer.inner,
-            storage_class: pointer.storage_class,
+            address_space: pointer.address_space,
             access_mode: pointer.access_mode,
         }))
     }
@@ -1904,7 +1904,7 @@ impl<'db> TyLoweringContext<'db> {
                 },
             }),
             TypeReference::Pointer(pointer) => TyKind::Pointer(Pointer {
-                storage_class: pointer.storage_class,
+                address_space: pointer.address_space,
                 inner: self.lower_ty(&pointer.inner),
                 access_mode: pointer.access_mode,
             }),

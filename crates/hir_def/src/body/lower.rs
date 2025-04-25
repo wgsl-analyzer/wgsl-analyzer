@@ -250,9 +250,9 @@ impl Collector<'_> {
                         initializer,
                     },
                     ast::VariableStatementKind::Var => {
-                        let storage_class = variable_statement
+                        let address_space = variable_statement
                             .variable_qualifier()
-                            .and_then(|qualifier| qualifier.storage_class())
+                            .and_then(|qualifier| qualifier.address_space())
                             .map(Into::into);
                         let access_mode = variable_statement
                             .variable_qualifier()
@@ -263,7 +263,7 @@ impl Collector<'_> {
                             binding_id,
                             type_ref,
                             initializer,
-                            storage_class,
+                            address_space,
                             access_mode,
                         }
                     },

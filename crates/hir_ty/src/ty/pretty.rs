@@ -200,7 +200,7 @@ fn write_ty(
         },
         TyKind::Reference(t) => match verbosity {
             TypeVerbosity::Full => {
-                write!(f, "ref<{}, ", t.storage_class)?;
+                write!(f, "ref<{}, ", t.address_space)?;
                 write_ty(db, t.inner, f, verbosity)?;
                 write!(f, ", {}>", t.access_mode)
             },
@@ -213,7 +213,7 @@ fn write_ty(
         },
         TyKind::Pointer(t) => match verbosity {
             TypeVerbosity::Full => {
-                write!(f, "ptr<{}, ", t.storage_class)?;
+                write!(f, "ptr<{}, ", t.address_space)?;
                 write_ty(db, t.inner, f, verbosity)?;
                 write!(f, ", {}>", t.access_mode)
             },

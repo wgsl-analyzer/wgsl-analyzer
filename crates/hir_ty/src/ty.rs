@@ -2,7 +2,7 @@ pub mod pretty;
 
 use std::{borrow::Cow, fmt::Write, str::FromStr};
 
-pub use hir_def::type_ref::{AccessMode, StorageClass};
+pub use hir_def::type_ref::{AccessMode, AddressSpace};
 use hir_def::{db::StructId, type_ref};
 use salsa::InternKey;
 
@@ -375,14 +375,14 @@ pub enum ArraySize {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Pointer {
-    pub storage_class: StorageClass,
+    pub address_space: AddressSpace,
     pub inner: Type,
     pub access_mode: AccessMode,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Reference {
-    pub storage_class: StorageClass,
+    pub address_space: AddressSpace,
     pub inner: Type,
     pub access_mode: AccessMode,
 }

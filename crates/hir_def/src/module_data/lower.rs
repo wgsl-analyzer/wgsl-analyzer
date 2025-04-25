@@ -183,9 +183,9 @@ impl<'a> Ctx<'a> {
             .and_then(|type_declaration| self.lower_type_ref(type_declaration))
             .map(|r#type| self.db.intern_type_ref(r#type));
 
-        let storage_class = var
+        let address_space = var
             .variable_qualifier()
-            .and_then(|qualifier| qualifier.storage_class())
+            .and_then(|qualifier| qualifier.address_space())
             .map(Into::into);
         let access_mode = var
             .variable_qualifier()
@@ -196,7 +196,7 @@ impl<'a> Ctx<'a> {
             name,
             r#type,
             ast_id,
-            storage_class,
+            address_space,
             access_mode,
         };
         Some(self.module_data.global_variables.alloc(var).into())

@@ -10,7 +10,7 @@ use hir_ty::{
     db::HirDatabase,
     infer::{InferenceDiagnostic, TypeExpectation, TypeLoweringError},
     ty::Type,
-    validate::StorageClassError,
+    validate::AddressSpaceError,
 };
 use serde::Deserialize;
 use syntax::{
@@ -109,12 +109,12 @@ pub enum AnyDiagnostic {
         expression: InFile<AstPointer<ast::Expression>>,
         actual: Type,
     },
-    MissingStorageClass {
+    MissingAddressSpace {
         var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
     },
-    InvalidStorageClass {
+    InvalidAddressSpace {
         var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
-        error: StorageClassError,
+        error: AddressSpaceError,
     },
 
     InvalidType {
@@ -159,8 +159,8 @@ impl AnyDiagnostic {
             AnyDiagnostic::NoBuiltinOverload { expression, .. } => expression.file_id,
             AnyDiagnostic::AddressOfNotReference { expression, .. } => expression.file_id,
             AnyDiagnostic::DerefNotPointer { expression, .. } => expression.file_id,
-            AnyDiagnostic::MissingStorageClass { var } => var.file_id,
-            AnyDiagnostic::InvalidStorageClass { var, .. } => var.file_id,
+            AnyDiagnostic::MissingAddressSpace { var } => var.file_id,
+            AnyDiagnostic::InvalidAddressSpace { var, .. } => var.file_id,
             AnyDiagnostic::InvalidType { file_id, .. } => *file_id,
             AnyDiagnostic::UnresolvedImport { import, .. } => import.file_id,
             AnyDiagnostic::NagaValidationError { file_id, .. } => *file_id,
@@ -360,9 +360,9 @@ pub(crate) fn any_diag_from_global_var(
     var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
 ) -> AnyDiagnostic {
     match var_diagnostic {
-        GlobalVariableDiagnostic::MissingStorageClass => AnyDiagnostic::MissingStorageClass { var },
-        GlobalVariableDiagnostic::StorageClassError(error) => {
-            AnyDiagnostic::InvalidStorageClass { var, error }
+        GlobalVariableDiagnostic::MissingAddressSpace => AnyDiagnostic::MissingAddressSpace { var },
+        GlobalVariableDiagnostic::AddressSpaceError(error) => {
+            AnyDiagnostic::InvalidAddressSpace { var, error }
         },
     }
 }

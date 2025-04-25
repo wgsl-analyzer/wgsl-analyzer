@@ -14,7 +14,7 @@ use hir_def::{
     db::{DefDatabase, DefinitionWithBodyId, FunctionId, Lookup, StructId},
     hir_file_id::ImportFile,
     resolver::Resolver,
-    type_ref::StorageClass,
+    type_ref::AddressSpace,
 };
 use la_arena::ArenaMap;
 
@@ -130,7 +130,7 @@ fn struct_is_used_in_uniform(
             let decl = db.intern_global_variable(InFile::new(file_id, decl));
             let data = db.global_var_data(decl);
 
-            if !matches!(data.storage_class, Some(StorageClass::Uniform)) {
+            if !matches!(data.address_space, Some(AddressSpace::Uniform)) {
                 return false;
             }
 

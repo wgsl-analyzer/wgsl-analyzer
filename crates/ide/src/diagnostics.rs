@@ -588,7 +588,7 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::MissingStorageClass { var } => {
+                AnyDiagnostic::MissingAddressSpace { var } => {
                     let var_decl = var.value.to_node(&root);
                     let source = var_decl
                         .var_token()
@@ -598,11 +598,11 @@ pub fn diagnostics(
                     let frange = original_file_range(db.upcast(), var.file_id, &source);
                     Diagnostic::new(
                         DiagnosticCode("11"),
-                        "missing storage class on global variable".to_string(),
+                        "missing address space on global variable".to_string(),
                         frange.range,
                     )
                 },
-                AnyDiagnostic::InvalidStorageClass { var, error } => {
+                AnyDiagnostic::InvalidAddressSpace { var, error } => {
                     let var_decl = var.value.to_node(&root);
                     let source = var_decl
                         .var_token()
