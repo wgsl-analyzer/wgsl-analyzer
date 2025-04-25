@@ -22,7 +22,7 @@ impl Marker {
 
     pub fn complete(
         mut self,
-        p: &mut Parser,
+        p: &mut Parser<'_, '_>,
         kind: SyntaxKind,
     ) -> CompletedMarker {
         self.bomb.defuse();
@@ -52,7 +52,7 @@ pub struct CompletedMarker {
 impl CompletedMarker {
     pub fn precede(
         self,
-        p: &mut Parser,
+        p: &mut Parser<'_, '_>,
     ) -> Marker {
         let new_m = p.start();
 

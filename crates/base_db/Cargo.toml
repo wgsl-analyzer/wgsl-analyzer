@@ -10,17 +10,25 @@ license.workspace = true
 rust-version.workspace = true
 
 [lib]
-doctest = false
 
 [dependencies]
+la-arena.workspace = true
+dashmap.workspace = true
 salsa.workspace = true
-rowan.workspace = true
+query-group.workspace = true
 rustc-hash.workspace = true
-syntax.workspace = true
-regex = { version = "1.11.1", default-features = false, features = ["std"] }
+triomphe.workspace = true
+semver.workspace = true
+tracing.workspace = true
 
-line-index.workspace = true
+# local deps
+syntax.workspace = true
 vfs.workspace = true
+span.workspace = true
+intern.workspace = true
+
+[lints]
+workspace = true
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"

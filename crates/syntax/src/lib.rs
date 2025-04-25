@@ -1,149 +1,143 @@
 pub mod algorithms;
 pub mod ast;
+pub mod parsing;
 pub mod pointer;
+mod syntax_error;
+mod syntax_node;
 
-use std::{marker::PhantomData, ops::Deref, sync::Arc};
+use std::{marker::PhantomData, ops::Range, sync::Arc};
+mod token_text;
 
+use ast::{AstChildren, SourceFile};
 use either::Either;
-pub use parser::{
-    ParseEntryPoint, ParseError, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodeChildren,
-    SyntaxToken,
+pub use parser::Edition;
+pub use parser::{ParseEntryPoint, ParseError, SyntaxKind};
+
+pub use crate::{
+    ast::{AstNode, AstToken},
+    pointer::{AstPointer, SyntaxNodePointer},
+    syntax_error::SyntaxError,
+    syntax_node::{
+        PreorderWithTokens, SyntaxElement, SyntaxElementChildren, SyntaxNode, SyntaxNodeChildren,
+        SyntaxToken, SyntaxTreeBuilder, WgslLanguage,
+    },
+    token_text::TokenText,
 };
-pub use rowan::Direction;
+pub use lexer::unescape;
+pub use rowan::{
+    Direction, GreenNode, NodeOrToken, SyntaxText, TextRange, TextSize, TokenAtOffset, WalkEvent,
+    api::Preorder,
+};
+pub use smol_str::{SmolStr, SmolStrBuilder, ToSmolStr, format_smolstr};
 
-#[derive(Clone, Debug)]
-pub struct Parse {
-    green_node: rowan::GreenNode,
-    errors: Arc<Vec<ParseError>>,
+/// `Parse` is the result of the parsing: a syntax tree and a collection of
+/// errors.
+///
+/// Note that we always produce a syntax tree, even for completely invalid
+/// files.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Parse<T> {
+    green: GreenNode,
+    errors: Option<Arc<[SyntaxError]>>,
+    _ty: PhantomData<fn() -> T>,
 }
 
-impl PartialEq for Parse {
-    fn eq(
+impl<T> Clone for Parse<T> {
+    fn clone(&self) -> Parse<T> {
+        Parse {
+            green: self.green.clone(),
+            errors: self.errors.clone(),
+            _ty: PhantomData,
+        }
+    }
+}
+
+impl<T> Parse<T> {
+    fn new(
+        green: GreenNode,
+        errors: Vec<SyntaxError>,
+    ) -> Parse<T> {
+        Parse {
+            green,
+            errors: if errors.is_empty() {
+                None
+            } else {
+                Some(errors.into())
+            },
+            _ty: PhantomData,
+        }
+    }
+
+    pub fn syntax_node(&self) -> SyntaxNode {
+        SyntaxNode::new_root(self.green.clone())
+    }
+
+    pub fn errors(&self) -> Vec<SyntaxError> {
+        let errors = if let Some(e) = self.errors.as_deref() {
+            e.to_vec()
+        } else {
+            vec![]
+        };
+        // validation::validate(&self.syntax_node(), &mut errors);
+        errors
+    }
+}
+
+impl Parse<SourceFile> {
+    pub fn reparse(
         &self,
-        other: &Self,
-    ) -> bool {
-        self.green_node == other.green_node
-    }
-}
-
-impl Eq for Parse {}
-
-impl Parse {
-    pub fn syntax(&self) -> SyntaxNode {
-        SyntaxNode::new_root(self.green_node.clone())
+        delete: TextRange,
+        insert: &str,
+        edition: Edition,
+    ) -> Parse<SourceFile> {
+        self.incremental_reparse(delete, insert, edition)
+            .unwrap_or_else(|| self.full_reparse(delete, insert, edition))
     }
 
-    pub fn errors(&self) -> &[ParseError] {
-        &self.errors
+    fn incremental_reparse(
+        &self,
+        delete: TextRange,
+        insert: &str,
+        edition: Edition,
+    ) -> Option<Parse<SourceFile>> {
+        // FIXME: validation errors are not handled here
+        parsing::incremental_reparse(
+            self.tree().syntax(),
+            delete,
+            insert,
+            self.errors.as_deref().unwrap_or_default().iter().cloned(),
+            edition,
+        )
+        .map(|(green_node, errors, _reparsed_range)| Parse {
+            green: green_node,
+            errors: if errors.is_empty() {
+                None
+            } else {
+                Some(errors.into())
+            },
+            _ty: PhantomData,
+        })
     }
 
-    pub fn tree(&self) -> ast::SourceFile {
-        ast::SourceFile::cast(self.syntax()).unwrap()
+    fn full_reparse(
+        &self,
+        delete: TextRange,
+        insert: &str,
+        edition: Edition,
+    ) -> Parse<SourceFile> {
+        let mut text = self.tree().syntax().text().to_string();
+        text.replace_range(Range::<usize>::from(delete), insert);
+        SourceFile::parse(&text, edition)
     }
-}
-
-pub fn parse(input: &str) -> Parse {
-    parse_entrypoint(input, ParseEntryPoint::File)
 }
 
 pub fn parse_entrypoint(
     input: &str,
     parse_entrypoint: ParseEntryPoint,
-) -> Parse {
-    let (green_node, errors) = parser::parse_entrypoint(input, parse_entrypoint).into_parts();
-    Parse {
-        green_node,
-        errors: Arc::new(errors),
-    }
-}
-
-/// Conversion from `SyntaxNode` to typed AST
-pub trait AstNode {
-    fn can_cast(kind: SyntaxKind) -> bool
-    where
-        Self: Sized;
-
-    fn cast(syntax: SyntaxNode) -> Option<Self>
-    where
-        Self: Sized;
-
-    fn syntax(&self) -> &SyntaxNode;
-}
-
-pub trait AstToken {
-    fn can_cast(kind: SyntaxToken) -> bool
-    where
-        Self: Sized;
-
-    fn cast(syntax: SyntaxToken) -> Option<Self>
-    where
-        Self: Sized;
-
-    fn syntax(&self) -> &SyntaxToken;
-
-    fn text(&self) -> &str {
-        self.syntax().text()
-    }
-}
-
-impl AstNode for SyntaxNode {
-    fn can_cast(_: SyntaxKind) -> bool {
-        true
-    }
-
-    fn cast(syntax: SyntaxNode) -> Option<Self> {
-        Some(syntax)
-    }
-
-    fn syntax(&self) -> &SyntaxNode {
-        self
-    }
-}
-
-/// An iterator over `SyntaxNode` children of a particular AST type.
-#[derive(Debug, Clone)]
-pub struct AstChildren<N> {
-    inner: SyntaxNodeChildren,
-    ph: PhantomData<N>,
-}
-
-impl<N> AstChildren<N> {
-    pub fn new(parent: &SyntaxNode) -> Self {
-        AstChildren {
-            inner: parent.children(),
-            ph: PhantomData,
-        }
-    }
-}
-
-impl<N: AstNode> Iterator for AstChildren<N> {
-    type Item = N;
-
-    fn next(&mut self) -> Option<N> {
-        self.inner.find_map(N::cast)
-    }
-}
-
-pub enum TokenText<'a> {
-    Borrowed(&'a str),
-    Owned(rowan::GreenToken),
-}
-
-impl<'a> TokenText<'a> {
-    pub fn as_str(&'a self) -> &'a str {
-        match self {
-            TokenText::Borrowed(s) => s,
-            TokenText::Owned(green) => green.text(),
-        }
-    }
-}
-
-impl Deref for TokenText<'_> {
-    type Target = str;
-
-    fn deref(&self) -> &Self::Target {
-        self.as_str()
-    }
+) -> Parse<SourceFile> {
+    let (green, errors) =
+        parser::parse_entrypoint::<WgslLanguage>(input, parse_entrypoint).into_parts();
+    Parse::new(green, errors)
 }
 
 mod support {
@@ -194,11 +188,11 @@ mod support {
 
         match node.green() {
             Cow::Borrowed(green_ref) => {
-                TokenText::Borrowed(first_token(green_ref).map_or("", rowan::GreenTokenData::text))
+                TokenText::borrowed(first_token(green_ref).map_or("", rowan::GreenTokenData::text))
             },
             Cow::Owned(green) => first_token(&green)
                 .map(ToOwned::to_owned)
-                .map_or(TokenText::Borrowed(""), TokenText::Owned),
+                .map_or(TokenText::borrowed(""), TokenText::owned),
         }
     }
 }
@@ -270,4 +264,28 @@ impl<A: AstNode, B: AstNode> AstNode for Either<A, B> {
 
 pub fn format(file: &ast::SourceFile) -> SyntaxNode {
     file.syntax().clone_for_update()
+}
+
+#[cfg(test)]
+mod tests;
+
+#[cfg(test)]
+fn check_entrypoint(
+    input: &str,
+    entry_point: ParseEntryPoint,
+    expected_tree: expect_test::Expect,
+) {
+    let parse = parse_entrypoint(input, entry_point);
+    expected_tree.assert_eq(&parse.debug_tree());
+}
+
+#[cfg(test)]
+use expect_test::Expect;
+
+#[cfg(test)]
+fn check_expression(
+    input: &str,
+    expected_tree: Expect,
+) {
+    check_entrypoint(input, ParseEntryPoint::Expression, expected_tree);
 }

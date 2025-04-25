@@ -1,8 +1,8 @@
 use itertools::Itertools;
-use parser::{SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken};
+use parser::SyntaxKind;
 use rowan::{Direction, NodeOrToken, TextRange, TextSize};
 
-use crate::AstNode;
+use crate::{AstNode, SyntaxElement, SyntaxNode, SyntaxToken};
 
 /// Returns ancestors of the node at the offset, sorted by length. This should
 /// do the right thing at an edge, e.g. when searching for expressions at `{

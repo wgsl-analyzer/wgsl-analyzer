@@ -1,4 +1,6 @@
-#[derive(logos::Logos, Debug, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
+use edition::Edition;
+
+#[derive(logos::Logos, Debug)]
 #[repr(u16)]
 pub enum SyntaxKind {
     SourceFile,
@@ -121,16 +123,22 @@ pub enum SyntaxKind {
     #[regex("[ \n\r\t]+")]
     Whitespace,
     #[regex("#ifdef.*")]
+    #[deprecated = "#182"]
     UnofficialPreprocessorIfDef,
     #[regex("#endif.*")]
+    #[deprecated = "#182"]
     UnofficialPreprocessorEndif,
     #[regex("#else.*")]
+    #[deprecated = "#182"]
     UnofficialPreprocessorElse,
     #[regex("#import")]
+    #[deprecated = "#182"]
     UnofficialPreprocessorImport,
     #[regex("#define_import_path.*")]
+    #[deprecated = "#182"]
     UnofficialPreprocessorDefineImportPath,
     #[regex("#if.*")]
+    #[deprecated = "#182"]
     UnofficialPreprocessIf,
 
     #[regex("//.*")]
@@ -429,38 +437,10 @@ pub enum SyntaxKind {
 
     #[error]
     Error,
-}
 
-impl From<SyntaxKind> for rowan::SyntaxKind {
-    fn from(kind: SyntaxKind) -> Self {
-        Self(kind as u16)
-    }
-}
-
-impl From<rowan::SyntaxKind> for SyntaxKind {
-    fn from(kind: rowan::SyntaxKind) -> Self {
-        let max_element = SyntaxKind::Error as u16;
-        assert!(kind.0 < max_element);
-
-        // Safety: SyntaxKind is #[repr(u16)] and in range
-        unsafe { std::mem::transmute(kind.0) }
-    }
-}
-
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub(crate) enum WgslLanguage {}
-
-impl rowan::Language for WgslLanguage {
-    type Kind = SyntaxKind;
-
-    fn kind_from_raw(raw: rowan::SyntaxKind) -> Self::Kind {
-        assert!(raw.0 <= SyntaxKind::Error as u16);
-        unsafe { std::mem::transmute::<u16, SyntaxKind>(raw.0) }
-    }
-
-    fn kind_to_raw(kind: Self::Kind) -> rowan::SyntaxKind {
-        kind.into()
-    }
+    // Technical kind so that we can cast from u16 safely
+    #[doc(hidden)]
+    __LAST,
 }
 
 impl SyntaxKind {
@@ -479,6 +459,78 @@ impl SyntaxKind {
                 | SyntaxKind::UnofficialPreprocessorDefineImportPath
                 | SyntaxKind::UnofficialPreprocessIf
         )
+    }
+
+    /// Returns true if this is an identifier or a keyword.
+    #[inline]
+    pub fn is_any_identifier(self) -> bool {
+        // Assuming no edition removed keywords...
+        self == SyntaxKind::Identifier
+        //  || self.is_keyword(Edition::LATEST)
+    }
+}
+
+impl ::core::marker::Copy for SyntaxKind {}
+
+impl ::core::clone::Clone for SyntaxKind {
+    #[inline]
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl ::core::cmp::PartialEq for SyntaxKind {
+    #[inline]
+    fn eq(
+        &self,
+        other: &Self,
+    ) -> bool {
+        (*self as u16) == (*other as u16)
+    }
+}
+impl ::core::cmp::Eq for SyntaxKind {}
+
+impl ::core::cmp::PartialOrd for SyntaxKind {
+    #[inline]
+    fn partial_cmp(
+        &self,
+        other: &Self,
+    ) -> core::option::Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl ::core::cmp::Ord for SyntaxKind {
+    #[inline]
+    fn cmp(
+        &self,
+        other: &Self,
+    ) -> core::cmp::Ordering {
+        (*self as u16).cmp(&(*other as u16))
+    }
+}
+
+impl ::core::hash::Hash for SyntaxKind {
+    fn hash<H: ::core::hash::Hasher>(
+        &self,
+        state: &mut H,
+    ) {
+        ::core::mem::discriminant(self).hash(state);
+    }
+}
+
+impl From<u16> for SyntaxKind {
+    #[inline]
+    fn from(d: u16) -> SyntaxKind {
+        assert!(d <= (SyntaxKind::__LAST as u16));
+        unsafe { std::mem::transmute::<u16, SyntaxKind>(d) }
+    }
+}
+
+impl From<SyntaxKind> for u16 {
+    #[inline]
+    fn from(k: SyntaxKind) -> u16 {
+        k as u16
     }
 }
 

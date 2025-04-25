@@ -17,3 +17,9 @@ either.workspace = true
 itertools.workspace = true
 rowan.workspace = true
 parser.workspace = true
+smol_str = "0.3.2"
+lexer.workspace = true
+
+[dev-dependencies]
+expect-test.workspace = true
+test-utils.workspace = true

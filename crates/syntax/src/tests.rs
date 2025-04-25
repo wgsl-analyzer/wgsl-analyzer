@@ -1,9 +1,9 @@
 #![cfg_attr(not(test), allow(unused))]
 use expect_test::{Expect, expect};
 
-use crate::ParseEntryPoint;
+use parser::ParseEntryPoint;
 
-fn check(
+fn check_expression(
     input: &str,
     expected_tree: Expect,
 ) {
@@ -33,12 +33,12 @@ fn check_attribute_list(
 
 #[test]
 fn parse_empty() {
-    check("", expect![[r#"SourceFile@0..0"#]]);
+    check_expression("", expect![[r#"SourceFile@0..0"#]]);
 }
 
 #[test]
 fn fn_incomplete() {
-    check(
+    check_expression(
         "fn name",
         expect![[r#"
             SourceFile@0..7
@@ -55,7 +55,7 @@ fn fn_incomplete() {
 
 #[test]
 fn function() {
-    check(
+    check_expression(
         "fn name(a: f32, b: i32) -> f32 {}",
         expect![[r#"
             SourceFile@0..33
@@ -102,7 +102,7 @@ fn function() {
 
 #[test]
 fn variable_declarations() {
-    check(
+    check_expression(
         r#"fn name() {
 let x: f32 = 1.0;
 let y: f32 = 2.0;
@@ -161,7 +161,7 @@ let y: f32 = 2.0;
 
 #[test]
 fn fn_recover() {
-    check(
+    check_expression(
         "fn\nfn name",
         expect![[r#"
             SourceFile@0..10
@@ -181,7 +181,7 @@ fn fn_recover() {
 
 #[test]
 fn fn_recover_2() {
-    check(
+    check_expression(
         r#"fn name()
         fn test() {}"#,
         expect![[r#"
@@ -333,7 +333,7 @@ fn parse_type_generic_ptr() {
 
 #[test]
 fn parse_return_statement() {
-    check(
+    check_expression(
         r#"fn f() -> u32 {
             return 0;
         }"#,
@@ -370,7 +370,7 @@ fn parse_return_statement() {
 
 #[test]
 fn parse_let_statement_recover() {
-    check(
+    check_expression(
         r#"fn f() -> u32 {
             let x =
             let y =
@@ -1338,7 +1338,7 @@ fn attribute_list_recover() {
 
 #[test]
 fn fn_with_attributes() {
-    check(
+    check_expression(
         r#"
 [[stage(fragment)]]
 fn vert_main([[builtin(position)]] coord_in: vec4<f32>) -> [[location(0)]] vec4<f32> {
@@ -1453,7 +1453,7 @@ fn vert_main([[builtin(position)]] coord_in: vec4<f32>) -> [[location(0)]] vec4<
 
 #[test]
 fn fn_recover_attr() {
-    check(
+    check_expression(
         "fn main([[]]) {}",
         expect![[r#"
         SourceFile@0..16
@@ -1480,7 +1480,7 @@ fn fn_recover_attr() {
 
 #[test]
 fn fn_recover_attr_2() {
-    check(
+    check_expression(
         "fn main([] a) {}",
         expect![[r#"
             SourceFile@0..16
@@ -1516,7 +1516,7 @@ fn fn_recover_attr_2() {
 
 #[test]
 fn fn_recover_incomplete_param() {
-    check(
+    check_expression(
         "fn main(p) {}",
         expect![[r#"
             SourceFile@0..13
@@ -1545,7 +1545,7 @@ fn fn_recover_incomplete_param() {
 
 #[test]
 fn let_statement_recover_return_no_eq() {
-    check(
+    check_expression(
         "fn main() {
             let x be
         }",
@@ -1581,7 +1581,7 @@ fn let_statement_recover_return_no_eq() {
 
 #[test]
 fn let_statement_recover_return() {
-    check(
+    check_expression(
         "fn main() {
             let
             return 0;
@@ -1619,7 +1619,7 @@ fn let_statement_recover_return() {
 
 #[test]
 fn let_statement_recover_return_2() {
-    check(
+    check_expression(
         "fn main() {
             let x
             return 0;
@@ -1661,7 +1661,7 @@ fn let_statement_recover_return_2() {
 
 #[test]
 fn let_statement_recover_return_3() {
-    check(
+    check_expression(
         "fn main() {
             let x =
             return 0;
@@ -1702,7 +1702,7 @@ fn let_statement_recover_return_3() {
 
 #[test]
 fn let_statement_recover_1() {
-    check(
+    check_expression(
         "fn main() {
             let x
         }",
@@ -1736,7 +1736,7 @@ fn let_statement_recover_1() {
 
 #[test]
 fn let_statement_recover_2() {
-    check(
+    check_expression(
         "fn main() {
             let x =
         }",
@@ -1769,7 +1769,7 @@ fn let_statement_recover_2() {
 
 #[test]
 fn let_statement_recover_3() {
-    check(
+    check_expression(
         "fn main() {
             let
         }",
@@ -1799,7 +1799,7 @@ fn let_statement_recover_3() {
 
 #[test]
 fn struct_underscore_field_name() {
-    check(
+    check_expression(
         r#"
 struct UBO {
   camera_position: vec3f,
@@ -1860,7 +1860,7 @@ struct UBO {
 
 #[test]
 fn struct_decl_semi() {
-    check(
+    check_expression(
         r#"
 struct Test {
     a: f32;
@@ -1913,7 +1913,7 @@ struct Test {
 
 #[test]
 fn struct_decl() {
-    check(
+    check_expression(
         r#"
 struct Test {
     a: f32,
@@ -1966,7 +1966,7 @@ struct Test {
 
 #[test]
 fn struct_decl_attributes() {
-    check(
+    check_expression(
         r#"
 [[block]]
 struct Test {
@@ -2050,7 +2050,7 @@ struct Test {
 
 #[test]
 fn struct_recover() {
-    check(
+    check_expression(
         r#"
 struct
 fn test()
@@ -2079,7 +2079,7 @@ fn test()
 
 #[test]
 fn struct_recover_2() {
-    check(
+    check_expression(
         r#"
 struct test
 fn test()
@@ -2111,7 +2111,7 @@ fn test()
 
 #[test]
 fn struct_recover_3() {
-    check(
+    check_expression(
         r#"
 struct test {}
 
@@ -2154,7 +2154,7 @@ fn test()
 
 #[test]
 fn struct_recover_4() {
-    check(
+    check_expression(
         r#"
 struct
 
@@ -2189,7 +2189,7 @@ struct
 
 #[test]
 fn global_variable_decl() {
-    check(
+    check_expression(
         "var<uniform> param: Params;",
         expect![[r#"
         SourceFile@0..27
@@ -2214,7 +2214,7 @@ fn global_variable_decl() {
 
 #[test]
 fn global_variable_decl_attrs() {
-    check(
+    check_expression(
         "[[group(0), binding(0)]] var<storage,read_write> pbuf: PositionsBuffer;",
         expect![[r#"
             SourceFile@0..71
@@ -2261,7 +2261,7 @@ fn global_variable_decl_attrs() {
 
 #[test]
 fn global_variable_decl_init() {
-    check(
+    check_expression(
         "var flags = 0;",
         expect![[r#"
         SourceFile@0..14
@@ -2282,7 +2282,7 @@ fn global_variable_decl_init() {
 
 #[test]
 fn global_const_decl() {
-    check(
+    check_expression(
         "const constant = 0;",
         expect![[r#"
         SourceFile@0..19
@@ -2303,7 +2303,7 @@ fn global_const_decl() {
 
 #[test]
 fn type_alias_decl() {
-    check(
+    check_expression(
         "alias float = f32;",
         expect![[r#"
             SourceFile@0..18
@@ -2323,7 +2323,7 @@ fn type_alias_decl() {
 
 #[test]
 fn type_alias_decl_old() {
-    check(
+    check_expression(
         "type float = f32;",
         expect![[r#"
         SourceFile@0..17
@@ -2343,7 +2343,7 @@ fn type_alias_decl_old() {
 
 #[test]
 fn type_alias_decl_recover() {
-    check(
+    check_expression(
         "type float = f32\ntype other = u32;",
         expect![[r#"
         SourceFile@0..34
@@ -2395,7 +2395,7 @@ fn parse_statement_expression() {
 
 #[test]
 fn parse_struct_attributes() {
-    check(
+    check_expression(
         r#"
 [[block]]
 struct PrimeIndices {
@@ -2512,7 +2512,7 @@ fn empty_return_statement_no_semi() {
 
 #[test]
 fn parse_import() {
-    check(
+    check_expression(
         "#import test",
         expect![[r##"
           SourceFile@0..12
@@ -2526,7 +2526,7 @@ fn parse_import() {
 
 #[test]
 fn parse_import_colon() {
-    check(
+    check_expression(
         "#import bevy_pbr::mesh_struct",
         expect![[r##"
             SourceFile@0..29
@@ -2543,7 +2543,7 @@ fn parse_import_colon() {
 #[test]
 
 fn parse_string_import() {
-    check(
+    check_expression(
         r#"#import "file.wgsl""#,
         expect![[r##"
           SourceFile@0..19
@@ -2803,5 +2803,821 @@ let x = 3;
               Whitespace@39..40 "\n"
               BraceRight@40..41 "}"
               Whitespace@41..50 "\n        ""#]],
+    );
+}
+
+#[test]
+fn parse_number() {
+    check_expression(
+        "123",
+        expect![[r#"
+                Literal@0..3
+                  DecimalIntLiteral@0..3 "123""#]],
+    );
+}
+
+#[test]
+fn parse_number_preceded_by_whitespace() {
+    check_expression(
+        "   9876",
+        expect![[r#"
+                Literal@0..7
+                  Whitespace@0..3 "   "
+                  DecimalIntLiteral@3..7 "9876""#]],
+    );
+}
+
+#[test]
+fn parse_number_followed_by_whitespace() {
+    check_expression(
+        "999   ",
+        expect![[r#"
+                Literal@0..6
+                  DecimalIntLiteral@0..3 "999"
+                  Whitespace@3..6 "   ""#]],
+    );
+}
+
+#[test]
+fn parse_number_surrounded_by_whitespace() {
+    check_expression(
+        " 123     ",
+        expect![[r#"
+                Literal@0..9
+                  Whitespace@0..1 " "
+                  DecimalIntLiteral@1..4 "123"
+                  Whitespace@4..9 "     ""#]],
+    );
+}
+
+#[test]
+fn parse_variable_ref() {
+    check_expression(
+        "counter",
+        expect![[r#"
+                PathExpression@0..7
+                  NameReference@0..7
+                    Identifier@0..7 "counter""#]],
+    );
+}
+
+#[test]
+fn parse_simple_infix_expression() {
+    check_expression(
+        "1+2",
+        expect![[r#"
+                InfixExpression@0..3
+                  Literal@0..1
+                    DecimalIntLiteral@0..1 "1"
+                  Plus@1..2 "+"
+                  Literal@2..3
+                    DecimalIntLiteral@2..3 "2""#]],
+    );
+}
+
+#[test]
+fn parse_left_associative_infix_expression() {
+    check_expression(
+        "1+2+3+4",
+        expect![[r#"
+                InfixExpression@0..7
+                  InfixExpression@0..5
+                    InfixExpression@0..3
+                      Literal@0..1
+                        DecimalIntLiteral@0..1 "1"
+                      Plus@1..2 "+"
+                      Literal@2..3
+                        DecimalIntLiteral@2..3 "2"
+                    Plus@3..4 "+"
+                    Literal@4..5
+                      DecimalIntLiteral@4..5 "3"
+                  Plus@5..6 "+"
+                  Literal@6..7
+                    DecimalIntLiteral@6..7 "4""#]],
+    );
+}
+
+#[test]
+fn parse_infix_expression_with_mixed_binding_power() {
+    check_expression(
+        "1+2*3-4",
+        expect![[r#"
+                InfixExpression@0..5
+                  Literal@0..1
+                    DecimalIntLiteral@0..1 "1"
+                  Plus@1..2 "+"
+                  InfixExpression@2..5
+                    Literal@2..3
+                      DecimalIntLiteral@2..3 "2"
+                    Star@3..4 "*"
+                    Literal@4..5
+                      DecimalIntLiteral@4..5 "3""#]],
+    );
+}
+
+#[test]
+fn parse_infix_expression_with_whitespace() {
+    check_expression(
+        " 1 +   2* 3 ",
+        expect![[r#"
+                InfixExpression@0..12
+                  Literal@0..3
+                    Whitespace@0..1 " "
+                    DecimalIntLiteral@1..2 "1"
+                    Whitespace@2..3 " "
+                  Plus@3..4 "+"
+                  Whitespace@4..7 "   "
+                  InfixExpression@7..12
+                    Literal@7..8
+                      DecimalIntLiteral@7..8 "2"
+                    Star@8..9 "*"
+                    Whitespace@9..10 " "
+                    Literal@10..12
+                      DecimalIntLiteral@10..11 "3"
+                      Whitespace@11..12 " ""#]],
+    );
+}
+
+#[test]
+fn do_not_parse_operator_if_getting_rhs_failed() {
+    check_expression(
+        "(1+",
+        expect![[r#"
+                ParenthesisExpression@0..3
+                  ParenthesisLeft@0..1 "("
+                  InfixExpression@1..3
+                    Literal@1..2
+                      DecimalIntLiteral@1..2 "1"
+                    Plus@2..3 "+"
+
+                error at 2..3: expected Identifier, Bitcast, or ParenthesisLeft
+                error at 2..3: expected ParenthesisRight"#]],
+    );
+}
+
+#[test]
+fn parse_negation() {
+    check_expression(
+        "-10",
+        expect![[r#"
+                Literal@0..3
+                  DecimalIntLiteral@0..3 "-10""#]],
+    );
+}
+
+#[test]
+fn negation_has_higher_binding_power_than_binary_operators() {
+    check_expression(
+        "-20+20",
+        expect![[r#"
+                InfixExpression@0..6
+                  Literal@0..3
+                    DecimalIntLiteral@0..3 "-20"
+                  Plus@3..4 "+"
+                  Literal@4..6
+                    DecimalIntLiteral@4..6 "20""#]],
+    );
+}
+
+#[test]
+fn parse_nested_parentheses() {
+    check_expression(
+        "((((((10))))))",
+        expect![[r#"
+                ParenthesisExpression@0..14
+                  ParenthesisLeft@0..1 "("
+                  ParenthesisExpression@1..13
+                    ParenthesisLeft@1..2 "("
+                    ParenthesisExpression@2..12
+                      ParenthesisLeft@2..3 "("
+                      ParenthesisExpression@3..11
+                        ParenthesisLeft@3..4 "("
+                        ParenthesisExpression@4..10
+                          ParenthesisLeft@4..5 "("
+                          ParenthesisExpression@5..9
+                            ParenthesisLeft@5..6 "("
+                            Literal@6..8
+                              DecimalIntLiteral@6..8 "10"
+                            ParenthesisRight@8..9 ")"
+                          ParenthesisRight@9..10 ")"
+                        ParenthesisRight@10..11 ")"
+                      ParenthesisRight@11..12 ")"
+                    ParenthesisRight@12..13 ")"
+                  ParenthesisRight@13..14 ")""#]],
+    );
+}
+
+#[test]
+fn parentheses_affect_precedence() {
+    check_expression(
+        "5*(2+1)",
+        expect![[r#"
+                InfixExpression@0..7
+                  Literal@0..1
+                    DecimalIntLiteral@0..1 "5"
+                  Star@1..2 "*"
+                  ParenthesisExpression@2..7
+                    ParenthesisLeft@2..3 "("
+                    InfixExpression@3..6
+                      Literal@3..4
+                        DecimalIntLiteral@3..4 "2"
+                      Plus@4..5 "+"
+                      Literal@5..6
+                        DecimalIntLiteral@5..6 "1"
+                    ParenthesisRight@6..7 ")""#]],
+    );
+}
+
+#[test]
+fn parse_unclosed_parentheses() {
+    check_expression(
+        "(foo",
+        expect![[r#"
+                ParenthesisExpression@0..4
+                  ParenthesisLeft@0..1 "("
+                  PathExpression@1..4
+                    NameReference@1..4
+                      Identifier@1..4 "foo"
+
+                error at 1..4: expected BinaryOperator or ParenthesisRight"#]],
+    );
+}
+
+#[test]
+fn parse_expression_complex() {
+    check_expression(
+        "1 + 2 == 3 || 4 < 5 / 2 == 0",
+        expect![[r#"
+                InfixExpression@0..28
+                  InfixExpression@0..11
+                    InfixExpression@0..6
+                      Literal@0..2
+                        DecimalIntLiteral@0..1 "1"
+                        Whitespace@1..2 " "
+                      Plus@2..3 "+"
+                      Whitespace@3..4 " "
+                      Literal@4..6
+                        DecimalIntLiteral@4..5 "2"
+                        Whitespace@5..6 " "
+                    EqualEqual@6..8 "=="
+                    Whitespace@8..9 " "
+                    Literal@9..11
+                      DecimalIntLiteral@9..10 "3"
+                      Whitespace@10..11 " "
+                  OrOr@11..13 "||"
+                  Whitespace@13..14 " "
+                  InfixExpression@14..28
+                    InfixExpression@14..24
+                      Literal@14..16
+                        DecimalIntLiteral@14..15 "4"
+                        Whitespace@15..16 " "
+                      LessThan@16..17 "<"
+                      Whitespace@17..18 " "
+                      InfixExpression@18..24
+                        Literal@18..20
+                          DecimalIntLiteral@18..19 "5"
+                          Whitespace@19..20 " "
+                        ForwardSlash@20..21 "/"
+                        Whitespace@21..22 " "
+                        Literal@22..24
+                          DecimalIntLiteral@22..23 "2"
+                          Whitespace@23..24 " "
+                    EqualEqual@24..26 "=="
+                    Whitespace@26..27 " "
+                    Literal@27..28
+                      DecimalIntLiteral@27..28 "0""#]],
+    );
+}
+
+#[test]
+fn parse_expression_field() {
+    check_expression(
+        "a.b.c",
+        expect![[r#"
+                FieldExpression@0..5
+                  FieldExpression@0..3
+                    PathExpression@0..1
+                      NameReference@0..1
+                        Identifier@0..1 "a"
+                    Period@1..2 "."
+                    NameReference@2..3
+                      Identifier@2..3 "b"
+                  Period@3..4 "."
+                  NameReference@4..5
+                    Identifier@4..5 "c""#]],
+    );
+}
+
+#[test]
+fn parse_expression_field_mix_ops() {
+    check_expression(
+        "vec.xy + 2 * other.zw",
+        expect![[r#"
+                InfixExpression@0..21
+                  FieldExpression@0..7
+                    PathExpression@0..3
+                      NameReference@0..3
+                        Identifier@0..3 "vec"
+                    Period@3..4 "."
+                    NameReference@4..7
+                      Identifier@4..6 "xy"
+                      Whitespace@6..7 " "
+                  Plus@7..8 "+"
+                  Whitespace@8..9 " "
+                  InfixExpression@9..21
+                    Literal@9..11
+                      DecimalIntLiteral@9..10 "2"
+                      Whitespace@10..11 " "
+                    Star@11..12 "*"
+                    Whitespace@12..13 " "
+                    FieldExpression@13..21
+                      PathExpression@13..18
+                        NameReference@13..18
+                          Identifier@13..18 "other"
+                      Period@18..19 "."
+                      NameReference@19..21
+                        Identifier@19..21 "zw""#]],
+    );
+}
+
+#[test]
+fn parse_expression_function_call() {
+    check_expression(
+        "pow(2, 3)",
+        expect![[r#"
+                FunctionCall@0..9
+                  NameReference@0..3
+                    Identifier@0..3 "pow"
+                  FunctionParameterList@3..9
+                    ParenthesisLeft@3..4 "("
+                    Literal@4..5
+                      DecimalIntLiteral@4..5 "2"
+                    Comma@5..6 ","
+                    Whitespace@6..7 " "
+                    Literal@7..8
+                      DecimalIntLiteral@7..8 "3"
+                    ParenthesisRight@8..9 ")""#]],
+    );
+}
+
+#[test]
+fn parse_expression_function_call_mixed() {
+    check_expression(
+        "pow(srgb + 14.0, 3.0) * 2.0",
+        expect![[r#"
+                InfixExpression@0..27
+                  FunctionCall@0..22
+                    NameReference@0..3
+                      Identifier@0..3 "pow"
+                    FunctionParameterList@3..22
+                      ParenthesisLeft@3..4 "("
+                      InfixExpression@4..15
+                        PathExpression@4..9
+                          NameReference@4..9
+                            Identifier@4..8 "srgb"
+                            Whitespace@8..9 " "
+                        Plus@9..10 "+"
+                        Whitespace@10..11 " "
+                        Literal@11..15
+                          DecimalFloatLiteral@11..15 "14.0"
+                      Comma@15..16 ","
+                      Whitespace@16..17 " "
+                      Literal@17..20
+                        DecimalFloatLiteral@17..20 "3.0"
+                      ParenthesisRight@20..21 ")"
+                      Whitespace@21..22 " "
+                  Star@22..23 "*"
+                  Whitespace@23..24 " "
+                  Literal@24..27
+                    DecimalFloatLiteral@24..27 "2.0""#]],
+    );
+}
+
+#[test]
+fn parse_vec3_initializer() {
+    check_expression(
+        "vec3<f32>(1.0)",
+        expect![[r#"
+                TypeInitializer@0..14
+                  Vec3@0..9
+                    Vec3@0..4 "vec3"
+                    GenericArgumentList@4..9
+                      LessThan@4..5 "<"
+                      Float32@5..8
+                        Float32@5..8 "f32"
+                      GreaterThan@8..9 ">"
+                  FunctionParameterList@9..14
+                    ParenthesisLeft@9..10 "("
+                    Literal@10..13
+                      DecimalFloatLiteral@10..13 "1.0"
+                    ParenthesisRight@13..14 ")""#]],
+    );
+}
+
+#[test]
+fn parse_vec3_initializer_inferred() {
+    check_expression(
+        "vec3(1.0)",
+        expect![[r#"
+                TypeInitializer@0..9
+                  Vec3@0..4
+                    Vec3@0..4 "vec3"
+                  FunctionParameterList@4..9
+                    ParenthesisLeft@4..5 "("
+                    Literal@5..8
+                      DecimalFloatLiteral@5..8 "1.0"
+                    ParenthesisRight@8..9 ")""#]],
+    );
+}
+
+#[test]
+fn parse_bool_literal() {
+    check_expression(
+        "true",
+        expect![[r#"
+                Literal@0..4
+                  True@0..4 "true""#]],
+    );
+    check_expression(
+        "false",
+        expect![[r#"
+                Literal@0..5
+                  False@0..5 "false""#]],
+    );
+}
+
+#[test]
+fn parse_decimal_float_literal() {
+    check_expression(
+        "0.e+4f",
+        expect![[r#"
+                Literal@0..6
+                  DecimalFloatLiteral@0..6 "0.e+4f""#]],
+    );
+    check_expression(
+        "01.",
+        expect![[r#"
+                Literal@0..3
+                  DecimalFloatLiteral@0..3 "01.""#]],
+    );
+    check_expression(
+        ".01",
+        expect![[r#"
+                Literal@0..3
+                  DecimalFloatLiteral@0..3 ".01""#]],
+    );
+    check_expression(
+        "12.34",
+        expect![[r#"
+                Literal@0..5
+                  DecimalFloatLiteral@0..5 "12.34""#]],
+    );
+    check_expression(
+        ".0f",
+        expect![[r#"
+                Literal@0..3
+                  DecimalFloatLiteral@0..3 ".0f""#]],
+    );
+    check_expression(
+        "0h",
+        expect![[r#"
+                Literal@0..2
+                  DecimalFloatLiteral@0..2 "0h""#]],
+    );
+    check_expression(
+        "1e-3",
+        expect![[r#"
+                Literal@0..4
+                  DecimalFloatLiteral@0..4 "1e-3""#]],
+    );
+}
+
+#[test]
+fn parse_hex_int_literal() {
+    check_expression(
+        "0x123",
+        expect![[r#"
+                Literal@0..5
+                  HexIntLiteral@0..5 "0x123""#]],
+    );
+    check_expression(
+        "0X123u",
+        expect![[r#"
+                Literal@0..6
+                  UnsignedIntLiteral@0..6 "0X123u""#]],
+    );
+    check_expression(
+        "0x3f",
+        expect![[r#"
+                Literal@0..4
+                  HexIntLiteral@0..4 "0x3f""#]],
+    );
+}
+
+#[test]
+fn parse_hex_float_literal() {
+    check_expression(
+        "0xa.fp+2",
+        expect![[r#"
+                Literal@0..8
+                  HexFloatLiteral@0..8 "0xa.fp+2""#]],
+    );
+    check_expression(
+        "0x1P+4f",
+        expect![[r#"
+                Literal@0..7
+                  HexFloatLiteral@0..7 "0x1P+4f""#]],
+    );
+    check_expression(
+        "0X.3",
+        expect![[r#"
+                Literal@0..4
+                  HexFloatLiteral@0..4 "0X.3""#]],
+    );
+    check_expression(
+        "0x3p+2h",
+        expect![[r#"
+                Literal@0..7
+                  HexFloatLiteral@0..7 "0x3p+2h""#]],
+    );
+    check_expression(
+        "0X1.fp-4",
+        expect![[r#"
+                Literal@0..8
+                  HexFloatLiteral@0..8 "0X1.fp-4""#]],
+    );
+    check_expression(
+        "0x3.2p+2h",
+        expect![[r#"
+                Literal@0..9
+                  HexFloatLiteral@0..9 "0x3.2p+2h""#]],
+    );
+}
+
+#[test]
+fn parse_prefix_expression() {
+    check_expression(
+        "- 3 + 3",
+        expect![[r#"
+                InfixExpression@0..7
+                  PrefixExpression@0..4
+                    Minus@0..1 "-"
+                    Whitespace@1..2 " "
+                    Literal@2..4
+                      DecimalIntLiteral@2..3 "3"
+                      Whitespace@3..4 " "
+                  Plus@4..5 "+"
+                  Whitespace@5..6 " "
+                  Literal@6..7
+                    DecimalIntLiteral@6..7 "3""#]],
+    );
+}
+
+#[test]
+fn parse_index() {
+    check_expression(
+        "a.b[3+2]",
+        expect![[r#"
+                IndexExpression@0..8
+                  FieldExpression@0..3
+                    PathExpression@0..1
+                      NameReference@0..1
+                        Identifier@0..1 "a"
+                    Period@1..2 "."
+                    NameReference@2..3
+                      Identifier@2..3 "b"
+                  BracketLeft@3..4 "["
+                  InfixExpression@4..7
+                    Literal@4..5
+                      DecimalIntLiteral@4..5 "3"
+                    Plus@5..6 "+"
+                    Literal@6..7
+                      DecimalIntLiteral@6..7 "2"
+                  BracketRight@7..8 "]""#]],
+    );
+}
+
+#[test]
+fn parse_modulo_comparison() {
+    check_expression(
+        "n % 2u == 0u",
+        expect![[r#"
+                InfixExpression@0..12
+                  InfixExpression@0..7
+                    PathExpression@0..2
+                      NameReference@0..2
+                        Identifier@0..1 "n"
+                        Whitespace@1..2 " "
+                    Modulo@2..3 "%"
+                    Whitespace@3..4 " "
+                    Literal@4..7
+                      UnsignedIntLiteral@4..6 "2u"
+                      Whitespace@6..7 " "
+                  EqualEqual@7..9 "=="
+                  Whitespace@9..10 " "
+                  Literal@10..12
+                    UnsignedIntLiteral@10..12 "0u""#]],
+    );
+}
+
+#[test]
+fn prefix_expressions() {
+    check_expression(
+        "!~*&foo",
+        expect![[r#"
+            PrefixExpression@0..7
+              Bang@0..1 "!"
+              PrefixExpression@1..7
+                Tilde@1..2 "~"
+                PrefixExpression@2..7
+                  Star@2..3 "*"
+                  PrefixExpression@3..7
+                    And@3..4 "&"
+                    PathExpression@4..7
+                      NameReference@4..7
+                        Identifier@4..7 "foo""#]],
+    );
+}
+
+#[test]
+fn bitcast() {
+    check_expression(
+        "bitcast<u32>(x)",
+        expect![[r#"
+                BitcastExpression@0..15
+                  Bitcast@0..7 "bitcast"
+                  LessThan@7..8 "<"
+                  Uint32@8..11
+                    Uint32@8..11 "u32"
+                  GreaterThan@11..12 ">"
+                  ParenthesisExpression@12..15
+                    ParenthesisLeft@12..13 "("
+                    PathExpression@13..14
+                      NameReference@13..14
+                        Identifier@13..14 "x"
+                    ParenthesisRight@14..15 ")""#]],
+    );
+}
+
+#[test]
+fn bitcast_vector() {
+    check_expression(
+        "bitcast<vec4<u32>>(x)",
+        expect![[r#"
+                BitcastExpression@0..21
+                  Bitcast@0..7 "bitcast"
+                  LessThan@7..8 "<"
+                  Vec4@8..17
+                    Vec4@8..12 "vec4"
+                    GenericArgumentList@12..17
+                      LessThan@12..13 "<"
+                      Uint32@13..16
+                        Uint32@13..16 "u32"
+                      GreaterThan@16..17 ">"
+                  GreaterThan@17..18 ">"
+                  ParenthesisExpression@18..21
+                    ParenthesisLeft@18..19 "("
+                    PathExpression@19..20
+                      NameReference@19..20
+                        Identifier@19..20 "x"
+                    ParenthesisRight@20..21 ")""#]],
+    );
+}
+
+#[test]
+fn bitcast_no_generics() {
+    check_expression(
+        "bitcast(x)",
+        expect![[r#"
+                BitcastExpression@0..10
+                  Bitcast@0..7 "bitcast"
+                  Error@7..7
+                  ParenthesisExpression@7..10
+                    ParenthesisLeft@7..8 "("
+                    PathExpression@8..9
+                      NameReference@8..9
+                        Identifier@8..9 "x"
+                    ParenthesisRight@9..10 ")"
+
+                error at 7..8: expected LessThan, but found ParenthesisLeft"#]],
+    );
+}
+#[test]
+fn bitcast_in_expression() {
+    check_expression(
+        "1 + -bitcast<u32>(x) + 1",
+        expect![[r#"
+                InfixExpression@0..24
+                  InfixExpression@0..21
+                    Literal@0..2
+                      DecimalIntLiteral@0..1 "1"
+                      Whitespace@1..2 " "
+                    Plus@2..3 "+"
+                    Whitespace@3..4 " "
+                    PrefixExpression@4..21
+                      Minus@4..5 "-"
+                      BitcastExpression@5..21
+                        Bitcast@5..12 "bitcast"
+                        LessThan@12..13 "<"
+                        Uint32@13..16
+                          Uint32@13..16 "u32"
+                        GreaterThan@16..17 ">"
+                        ParenthesisExpression@17..21
+                          ParenthesisLeft@17..18 "("
+                          PathExpression@18..19
+                            NameReference@18..19
+                              Identifier@18..19 "x"
+                          ParenthesisRight@19..20 ")"
+                          Whitespace@20..21 " "
+                  Plus@21..22 "+"
+                  Whitespace@22..23 " "
+                  Literal@23..24
+                    DecimalIntLiteral@23..24 "1""#]],
+    );
+}
+
+#[test]
+fn deref_field() {
+    check_expression(
+        "*a.b",
+        expect![[r#"
+                PrefixExpression@0..4
+                  Star@0..1 "*"
+                  FieldExpression@1..4
+                    PathExpression@1..2
+                      NameReference@1..2
+                        Identifier@1..2 "a"
+                    Period@2..3 "."
+                    NameReference@3..4
+                      Identifier@3..4 "b""#]],
+    );
+}
+#[test]
+fn deref_field_paren() {
+    check_expression(
+        "(*a).b",
+        expect![[r#"
+            FieldExpression@0..6
+              ParenthesisExpression@0..4
+                ParenthesisLeft@0..1 "("
+                PrefixExpression@1..3
+                  Star@1..2 "*"
+                  PathExpression@2..3
+                    NameReference@2..3
+                      Identifier@2..3 "a"
+                ParenthesisRight@3..4 ")"
+              Period@4..5 "."
+              NameReference@5..6
+                Identifier@5..6 "b""#]],
+    );
+}
+
+#[test]
+fn shift_right() {
+    check_expression(
+        "2 >> 3",
+        expect![[r#"
+                InfixExpression@0..6
+                  Literal@0..2
+                    DecimalIntLiteral@0..1 "2"
+                    Whitespace@1..2 " "
+                  ShiftRight@2..5
+                    GreaterThan@2..3 ">"
+                    GreaterThan@3..4 ">"
+                    Whitespace@4..5 " "
+                  Literal@5..6
+                    DecimalIntLiteral@5..6 "3""#]],
+    );
+}
+
+#[test]
+fn shift_multiple() {
+    check_expression(
+        "2 >> 3 + 2 << 4",
+        expect![[r#"
+                InfixExpression@0..15
+                  InfixExpression@0..11
+                    Literal@0..2
+                      DecimalIntLiteral@0..1 "2"
+                      Whitespace@1..2 " "
+                    ShiftRight@2..5
+                      GreaterThan@2..3 ">"
+                      GreaterThan@3..4 ">"
+                      Whitespace@4..5 " "
+                    InfixExpression@5..11
+                      Literal@5..7
+                        DecimalIntLiteral@5..6 "3"
+                        Whitespace@6..7 " "
+                      Plus@7..8 "+"
+                      Whitespace@8..9 " "
+                      Literal@9..11
+                        DecimalIntLiteral@9..10 "2"
+                        Whitespace@10..11 " "
+                  ShiftLeft@11..14
+                    LessThan@11..12 "<"
+                    LessThan@12..13 "<"
+                    Whitespace@13..14 " "
+                  Literal@14..15
+                    DecimalIntLiteral@14..15 "4""#]],
     );
 }

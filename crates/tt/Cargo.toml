@@ -1,0 +1,25 @@
+[package]
+name = "tt"
+version = "0.0.0"
+repository.workspace = true
+description = "A `TokenTree` data structure for wgsl-analyzer."
+
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+
+[dependencies]
+arrayvec.workspace = true
+text-size.workspace = true
+
+stdx.workspace = true
+intern.workspace = true
+lexer.workspace = true
+
+[features]
+
+[lints]
+workspace = true

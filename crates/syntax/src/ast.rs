@@ -1,14 +1,83 @@
 pub mod operators;
 
-use parser::{SyntaxKind, SyntaxNode};
+use std::{marker::PhantomData, ops::Deref};
+
+use parser::SyntaxKind;
 use rowan::NodeOrToken;
 
 use self::operators::{BinaryOperation, CompoundOperator, UnaryOperator};
 use crate::{
-    AstChildren, AstNode, AstToken, HasAttributes, HasGenerics, HasName, SyntaxToken, TokenText,
+    HasAttributes, HasGenerics, HasName, SyntaxNode, SyntaxNodeChildren, SyntaxToken, TokenText,
     ast::operators::{ArithmeticOperation, ComparisonOperation, LogicOperation},
     support,
 };
+
+/// Conversion from `SyntaxNode` to typed AST
+pub trait AstNode {
+    fn can_cast(kind: SyntaxKind) -> bool
+    where
+        Self: Sized;
+
+    fn cast(syntax: SyntaxNode) -> Option<Self>
+    where
+        Self: Sized;
+
+    fn syntax(&self) -> &SyntaxNode;
+}
+
+pub trait AstToken {
+    fn can_cast(kind: SyntaxToken) -> bool
+    where
+        Self: Sized;
+
+    fn cast(syntax: SyntaxToken) -> Option<Self>
+    where
+        Self: Sized;
+
+    fn syntax(&self) -> &SyntaxToken;
+
+    fn text(&self) -> &str {
+        self.syntax().text()
+    }
+}
+
+impl AstNode for SyntaxNode {
+    fn can_cast(_: SyntaxKind) -> bool {
+        true
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        Some(syntax)
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        self
+    }
+}
+
+/// An iterator over `SyntaxNode` children of a particular AST type.
+#[derive(Debug, Clone)]
+pub struct AstChildren<N> {
+    inner: SyntaxNodeChildren,
+    ph: PhantomData<N>,
+}
+
+impl<N> AstChildren<N> {
+    pub fn new(parent: &SyntaxNode) -> Self {
+        AstChildren {
+            inner: parent.children(),
+            ph: PhantomData,
+        }
+    }
+}
+
+impl<N: AstNode> Iterator for AstChildren<N> {
+    type Item = N;
+
+    fn next(&mut self) -> Option<N> {
+        self.inner.find_map(N::cast)
+    }
+}
 
 macro_rules! ast_node {
     ($kind:ident $($name:ident)? $(:

@@ -1,6 +1,3 @@
-#![allow(clippy::result_unit_err)]
-//! The parser is mostly copied from <https://github.com/arzg/eldiro/tree/master/crates/parser> with some adaptions and extensions
-
 mod event;
 mod grammar;
 mod lexer;
@@ -9,7 +6,7 @@ mod sink;
 mod source;
 mod syntax_kind;
 
-use std::fmt::Debug;
+use std::{fmt::Debug, marker::PhantomData};
 
 use lexer::Lexer;
 pub use parser::{ParseError, Parser, marker};
@@ -19,10 +16,10 @@ use source::Source;
 
 pub use edition::Edition;
 
-pub fn parse<F: Fn(&mut Parser)>(
+pub fn parse<F: Fn(&mut Parser<'_, '_>), Language: rowan::Language<Kind = SyntaxKind>>(
     input: &str,
     f: F,
-) -> Parse {
+) -> Parse<Language> {
     let tokens: Vec<_> = Lexer::<SyntaxKind>::new(input).collect();
     let source = Source::new(&tokens);
     let parser = Parser::new(source);
@@ -32,12 +29,13 @@ pub fn parse<F: Fn(&mut Parser)>(
     sink.finish()
 }
 
-pub struct Parse {
+pub struct Parse<Language: rowan::Language> {
     green_node: GreenNode,
     errors: Vec<ParseError>,
+    _phantom: PhantomData<Language>,
 }
 
-impl Debug for Parse {
+impl<Language: rowan::Language> Debug for Parse<Language> {
     fn fmt(
         &self,
         f: &mut std::fmt::Formatter<'_>,
@@ -49,7 +47,7 @@ impl Debug for Parse {
     }
 }
 
-impl PartialEq for Parse {
+impl<Language: rowan::Language> PartialEq for Parse<Language> {
     fn eq(
         &self,
         other: &Self,
@@ -58,9 +56,9 @@ impl PartialEq for Parse {
     }
 }
 
-impl Eq for Parse {}
+impl<Language: rowan::Language> Eq for Parse<Language> {}
 
-impl Parse {
+impl<Language: rowan::Language> Parse<Language> {
     pub fn debug_tree(&self) -> String {
         let mut s = String::new();
 
@@ -79,7 +77,7 @@ impl Parse {
         s
     }
 
-    pub fn syntax(&self) -> RowanSyntaxNode<WgslLanguage> {
+    pub fn syntax(&self) -> RowanSyntaxNode<Language> {
         RowanSyntaxNode::new_root(self.green_node.clone())
     }
 
@@ -94,29 +92,6 @@ impl Parse {
 
 pub use syntax_kind::SyntaxKind;
 
-pub type SyntaxNode = rowan::SyntaxNode<WgslLanguage>;
-pub type SyntaxToken = rowan::SyntaxToken<WgslLanguage>;
-pub type SyntaxElement = rowan::SyntaxElement<WgslLanguage>;
-pub type SyntaxNodeChildren = rowan::SyntaxNodeChildren<WgslLanguage>;
-pub type SyntaxElementChildren = rowan::SyntaxElementChildren<WgslLanguage>;
-pub type PreorderWithTokens = rowan::api::PreorderWithTokens<WgslLanguage>;
-
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub enum WgslLanguage {}
-
-impl rowan::Language for WgslLanguage {
-    type Kind = SyntaxKind;
-
-    fn kind_from_raw(raw: rowan::SyntaxKind) -> Self::Kind {
-        assert!(raw.0 <= SyntaxKind::Error as u16);
-        unsafe { std::mem::transmute::<u16, SyntaxKind>(raw.0) }
-    }
-
-    fn kind_to_raw(kind: Self::Kind) -> rowan::SyntaxKind {
-        kind.into()
-    }
-}
-
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]
 pub enum ParseEntryPoint {
     File,
@@ -127,35 +102,24 @@ pub enum ParseEntryPoint {
     FunctionParameterList,
 }
 
-pub fn parse_entrypoint(
+pub fn parse_entrypoint<Language: rowan::Language<Kind = SyntaxKind>>(
     input: &str,
     entrypoint: ParseEntryPoint,
-) -> Parse {
+) -> Parse<Language> {
     match entrypoint {
-        ParseEntryPoint::File => parse::<_>(input, grammar::file),
-        ParseEntryPoint::Expression => parse::<_>(input, grammar::expression),
-        ParseEntryPoint::Statement => parse::<_>(input, grammar::statement),
-        ParseEntryPoint::Type => parse::<_>(input, |p| {
+        ParseEntryPoint::File => parse::<_, _>(input, grammar::file),
+        ParseEntryPoint::Expression => parse::<_, _>(input, grammar::expression),
+        ParseEntryPoint::Statement => parse::<_, _>(input, grammar::statement),
+        ParseEntryPoint::Type => parse::<_, _>(input, |p| {
             grammar::type_declaration(p);
         }),
-        ParseEntryPoint::AttributeList => parse::<_>(input, grammar::attribute_list),
-        ParseEntryPoint::FunctionParameterList => parse::<_>(input, grammar::inner_parameter_list),
+        ParseEntryPoint::AttributeList => parse::<_, _>(input, grammar::attribute_list),
+        ParseEntryPoint::FunctionParameterList => {
+            parse::<_, _>(input, grammar::inner_parameter_list)
+        },
     }
 }
 
-pub fn parse_file(input: &str) -> Parse {
+pub fn parse_file<Language: rowan::Language<Kind = SyntaxKind>>(input: &str) -> Parse<Language> {
     parse_entrypoint(input, ParseEntryPoint::File)
 }
-
-#[cfg(test)]
-fn check_entrypoint(
-    input: &str,
-    entry_point: ParseEntryPoint,
-    expected_tree: expect_test::Expect,
-) {
-    let parse = crate::parse_entrypoint(input, entry_point);
-    expected_tree.assert_eq(&parse.debug_tree());
-}
-
-#[cfg(test)]
-mod tests;

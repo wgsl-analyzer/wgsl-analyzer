@@ -1,20 +1,19 @@
-use std::mem;
+use std::{marker::PhantomData, mem};
 
-use rowan::{GreenNodeBuilder, Language};
-
-use crate::WgslLanguage;
+use rowan::GreenNodeBuilder;
 
 use super::{Parse, SyntaxKind, event::Event, lexer::Token, parser::ParseError};
 
-pub(crate) struct Sink<'t, 'input> {
+pub(crate) struct Sink<'t, 'input, Language: rowan::Language> {
     builder: GreenNodeBuilder<'static>,
     tokens: &'t [Token<'input, SyntaxKind>],
     cursor: usize,
     events: Vec<Event>,
     errors: Vec<ParseError>,
+    _phantom: PhantomData<Language>,
 }
 
-impl<'t, 'input> Sink<'t, 'input> {
+impl<'t, 'input, Language: rowan::Language<Kind = SyntaxKind>> Sink<'t, 'input, Language> {
     pub(crate) fn new(
         tokens: &'t [Token<'input, SyntaxKind>],
         events: Vec<Event>,
@@ -25,10 +24,11 @@ impl<'t, 'input> Sink<'t, 'input> {
             cursor: 0,
             events,
             errors: Vec::new(),
+            _phantom: PhantomData::default(),
         }
     }
 
-    pub(crate) fn finish(mut self) -> Parse {
+    pub(crate) fn finish(mut self) -> Parse<Language> {
         for index in 0..self.events.len() {
             match mem::replace(&mut self.events[index], Event::Placeholder) {
                 Event::StartNode {
@@ -60,7 +60,7 @@ impl<'t, 'input> Sink<'t, 'input> {
                     }
 
                     for kind in kinds.into_iter().rev() {
-                        self.builder.start_node(WgslLanguage::kind_to_raw(kind));
+                        self.builder.start_node(Language::kind_to_raw(kind));
                     }
                 },
                 Event::AddToken => self.token(),
@@ -75,6 +75,7 @@ impl<'t, 'input> Sink<'t, 'input> {
         Parse {
             green_node: self.builder.finish(),
             errors: self.errors,
+            _phantom: PhantomData::default(),
         }
     }
 
@@ -90,7 +91,7 @@ impl<'t, 'input> Sink<'t, 'input> {
 
     fn token(&mut self) {
         let Token { kind, text, .. } = self.tokens[self.cursor];
-        self.builder.token(WgslLanguage::kind_to_raw(kind), text);
+        self.builder.token(Language::kind_to_raw(kind), text);
         self.cursor += 1;
     }
 }
