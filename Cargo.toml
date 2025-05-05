@@ -103,7 +103,7 @@ dot = "0.1.4"
 either = "1.15.0"
 expect-test = "1.5.1"
 fxhash = "0.2.1"
-hashbrown = { version = "0.15.2", features = [
+hashbrown = { version = "0.15.3", features = [
   "inline-more",
 ], default-features = false }
 indexmap = "2.9.0"
