@@ -441,7 +441,7 @@ fn type_to_rust(r#type: &Type) -> String {
             "TyKind::Pointer(Pointer {{
             inner: {},
             access_mode: AccessMode::ReadWrite,
-            storage_class: StorageClass::Private,
+            address_space: AddressSpace::Private,
         }}).intern(db)",
             type_to_rust(inner)
         ),

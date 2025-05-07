@@ -2,12 +2,12 @@ use hir_def::db::{DefinitionWithBodyId, GlobalVariableId};
 use hir_ty::{
     db::HirDatabase,
     ty::{ArrayType, TyKind},
-    validate::StorageClassError,
+    validate::AddressSpaceError,
 };
 
 pub enum GlobalVariableDiagnostic {
-    MissingStorageClass,
-    StorageClassError(StorageClassError),
+    MissingAddressSpace,
+    AddressSpaceError(AddressSpaceError),
 }
 
 pub fn collect(
@@ -20,15 +20,15 @@ pub fn collect(
 
     let ty_kind = infer.return_type.map(|r#type| r#type.kind(db));
 
-    if let Some(storage_class) = data.storage_class {
-        hir_ty::validate::validate_storage_class(
-            storage_class,
+    if let Some(address_space) = data.address_space {
+        hir_ty::validate::validate_address_space(
+            address_space,
             data.access_mode
-                .unwrap_or_else(|| storage_class.default_access_mode()),
+                .unwrap_or_else(|| address_space.default_access_mode()),
             hir_ty::validate::Scope::Module,
             ty_kind.unwrap_or(TyKind::Error),
             db,
-            |error| f(GlobalVariableDiagnostic::StorageClassError(error)),
+            |error| f(GlobalVariableDiagnostic::AddressSpaceError(error)),
         );
     } else if let Some(r#type) = ty_kind {
         if !matches!(
@@ -41,7 +41,7 @@ pub fn collect(
                     ..
                 })
         ) {
-            f(GlobalVariableDiagnostic::MissingStorageClass);
+            f(GlobalVariableDiagnostic::MissingAddressSpace);
         }
     }
 }

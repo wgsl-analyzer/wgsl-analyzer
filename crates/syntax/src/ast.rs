@@ -374,7 +374,7 @@ impl GenericArgumentList {
                 rowan::NodeOrToken::Node(node) if Literal::can_cast(node.kind()) => Literal::cast(node).map(GenericArg::Literal),
                 rowan::NodeOrToken::Node(node) if Type::can_cast(node.kind()) => Type::cast(node).map(GenericArg::Type),
                 rowan::NodeOrToken::Token(token) if AccessMode::can_cast(token.clone()) => AccessMode::cast(token).map(GenericArg::AccessMode),
-                rowan::NodeOrToken::Token(token) if StorageClass::can_cast(token.clone()) => StorageClass::cast(token).map(GenericArg::StorageClass),
+                rowan::NodeOrToken::Token(token) if AddressSpace::can_cast(token.clone()) => AddressSpace::cast(token).map(GenericArg::AddressSpace),
                 _ => None,
             })
     }
@@ -389,7 +389,7 @@ ast_token_enum! {
 }
 
 ast_token_enum! {
-    enum StorageClass {
+    enum AddressSpace {
         FunctionClass,
         Private,
         Workgroup,
@@ -403,7 +403,7 @@ pub enum GenericArg {
     Type(Type),
     Literal(Literal),
     AccessMode(AccessMode),
-    StorageClass(StorageClass),
+    AddressSpace(AddressSpace),
 }
 
 impl GenericArg {
@@ -428,9 +428,9 @@ impl GenericArg {
         }
     }
 
-    pub fn as_storage_class(&self) -> Option<StorageClass> {
+    pub fn as_address_space(&self) -> Option<AddressSpace> {
         match self {
-            GenericArg::StorageClass(class) => Some(class.clone()),
+            GenericArg::AddressSpace(class) => Some(class.clone()),
             _ => None,
         }
     }
@@ -448,8 +448,8 @@ impl VariableQualifier {
         support::child_token::<AccessMode>(self.syntax())
     }
 
-    pub fn storage_class(self) -> Option<StorageClass> {
-        support::child_token::<StorageClass>(self.syntax())
+    pub fn address_space(self) -> Option<AddressSpace> {
+        support::child_token::<AddressSpace>(self.syntax())
     }
 }
 

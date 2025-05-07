@@ -468,7 +468,7 @@ pub(crate) fn type_decl_generics(parser: &mut Parser) {
         SyntaxKind::Comma,
         SyntaxKind::GenericArgumentList,
         |parser| {
-            let _ = if_at_set(parser, ACCESS_MODE_SET) || if_at_set(parser, STORAGE_CLASS_SET) || {
+            let _ = if_at_set(parser, ACCESS_MODE_SET) || if_at_set(parser, ADDRESS_SPACE_SET) || {
                 if parser.at_set(TOKENSET_LITERAL) {
                     expression::literal(parser);
                 } else {
@@ -867,7 +867,7 @@ fn variable_qualifier(parser: &mut Parser) {
     let marker = parser.start();
     parser.expect(SyntaxKind::LessThan);
 
-    storage_class(parser);
+    address_space(parser);
     if parser.at(SyntaxKind::Comma) {
         parser.bump();
         access_mode(parser);
@@ -877,7 +877,7 @@ fn variable_qualifier(parser: &mut Parser) {
     marker.complete(parser, SyntaxKind::VariableQualifier);
 }
 
-const STORAGE_CLASS_SET: &[SyntaxKind] = &[
+const ADDRESS_SPACE_SET: &[SyntaxKind] = &[
     SyntaxKind::FunctionClass,
     SyntaxKind::Private,
     SyntaxKind::Workgroup,
@@ -914,8 +914,8 @@ fn if_at_set_inner(
     }
 }
 
-fn storage_class(parser: &mut Parser) {
-    if_at_set_or(parser, STORAGE_CLASS_SET, SyntaxKind::Identifier);
+fn address_space(parser: &mut Parser) {
+    if_at_set_or(parser, ADDRESS_SPACE_SET, SyntaxKind::Identifier);
 }
 
 const ACCESS_MODE_SET: &[SyntaxKind] =

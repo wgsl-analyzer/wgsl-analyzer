@@ -6,7 +6,7 @@ use crate::{
     body::BindingId,
     db::Interned,
     module_data::Name,
-    type_ref::{AccessMode, StorageClass, TypeReference, VecDimensionality},
+    type_ref::{AccessMode, AddressSpace, TypeReference, VecDimensionality},
 };
 
 pub type ExpressionId = Idx<Expression>;
@@ -100,7 +100,7 @@ pub enum Statement {
         binding_id: BindingId,
         type_ref: Option<Interned<TypeReference>>,
         initializer: Option<ExpressionId>,
-        storage_class: Option<StorageClass>,
+        address_space: Option<AddressSpace>,
         access_mode: Option<AccessMode>,
     },
     Return {
