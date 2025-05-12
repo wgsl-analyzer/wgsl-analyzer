@@ -14,7 +14,7 @@ rust-version.workspace = true
 doctest = false
 
 [dependencies]
-backtrace = { version = "0.3.74", optional = true }
+backtrace = { version = "0.3.75", optional = true }
 jod-thread.workspace = true
 crossbeam-channel.workspace = true
 itertools.workspace = true
