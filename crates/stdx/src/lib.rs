@@ -362,7 +362,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_trim_indent() {
+    fn trim_indent_works() {
         assert_eq!(trim_indent(""), "");
         assert_eq!(
             trim_indent(

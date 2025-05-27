@@ -51,7 +51,6 @@ pub fn streaming_output(
             }
         }
     })?;
-
     Ok((stdout, stderr))
 }
 
@@ -174,6 +173,7 @@ mod implementation {
 
 #[cfg(windows)]
 mod implementation {
+    use core::convert::TryInto as _;
     use std::{
         io,
         os::windows::prelude::*,
@@ -188,10 +188,10 @@ mod implementation {
     };
     use windows_sys::Win32::Foundation::ERROR_BROKEN_PIPE;
 
-    struct Pipe<'a> {
-        dst: &'a mut Vec<u8>,
+    struct Pipe<'buffer> {
+        dst: &'buffer mut Vec<u8>,
         overlapped: Overlapped,
-        pipe: NamedPipe,
+        inner: NamedPipe,
         done: bool,
     }
 
@@ -207,70 +207,93 @@ mod implementation {
         port.add_handle(0, &out_pipe)?;
         port.add_handle(1, &error_pipe)?;
 
-        unsafe {
-            let mut out_pipe = Pipe::new(out_pipe, &mut out);
-            let mut error_pipe = Pipe::new(error_pipe, &mut error);
+        // SAFETY: TODO
+        let mut out_pipe = unsafe { Pipe::new(out_pipe, &mut out) };
+        // SAFETY: TODO
+        let mut error_pipe = unsafe { Pipe::new(error_pipe, &mut error) };
 
-            out_pipe.read()?;
-            error_pipe.read()?;
+        // SAFETY: TODO
+        unsafe { out_pipe.read()?; }
+        // SAFETY: TODO
+        unsafe { error_pipe.read()?; }
 
-            let mut status = [CompletionStatus::zero(), CompletionStatus::zero()];
+        let mut status = [CompletionStatus::zero(), CompletionStatus::zero()];
 
-            while !out_pipe.done || !error_pipe.done {
-                for status in port.get_many(&mut status, None)? {
-                    if status.token() == 0 {
-                        out_pipe.complete(status);
-                        data(true, out_pipe.dst, out_pipe.done);
-                        out_pipe.read()?;
-                    } else {
-                        error_pipe.complete(status);
-                        data(false, error_pipe.dst, error_pipe.done);
-                        error_pipe.read()?;
-                    }
+        while !out_pipe.done || !error_pipe.done {
+            for status in port.get_many(&mut status, None)? {
+                if status.token() == 0 {
+                    // SAFETY: TODO
+                    unsafe { out_pipe.complete(status); }
+                    data(true, out_pipe.dst, out_pipe.done);
+                    // SAFETY: TODO
+                    unsafe { out_pipe.read()?; }
+                } else {
+                    // SAFETY: TODO
+                    unsafe { error_pipe.complete(status); }
+                    data(false, error_pipe.dst, error_pipe.done);
+                    // SAFETY: TODO
+                    unsafe { error_pipe.read()?; }
                 }
             }
-
-            Ok(())
         }
+
+        Ok(())
     }
 
-    impl<'a> Pipe<'a> {
+    impl<'buffer> Pipe<'buffer> {
+        /// # Safety
+        /// `p` must be a valid [`NamedPipe`].
         unsafe fn new<P: IntoRawHandle>(
-            p: P,
-            dst: &'a mut Vec<u8>,
+            pipe: P,
+            dst: &'buffer mut Vec<u8>,
         ) -> Self {
-            let pipe = unsafe { NamedPipe::from_raw_handle(p.into_raw_handle()) };
+            // SAFETY: `p`is required to be a valid `NamedPipe`.
+            let pipe = unsafe { NamedPipe::from_raw_handle(pipe.into_raw_handle()) };
             Pipe {
                 dst,
-                pipe,
+                inner: pipe,
                 overlapped: Overlapped::zero(),
                 done: false,
             }
         }
 
+        /// # Safety
+        /// TODO
         unsafe fn read(&mut self) -> io::Result<()> {
+            // SAFETY: TODO
             let dst = unsafe { slice_to_end(self.dst) };
-            match unsafe { self.pipe.read_overlapped(dst, self.overlapped.raw()) } {
+            // SAFETY: TODO
+            match unsafe { self.inner.read_overlapped(dst, self.overlapped.raw()) } {
                 Ok(_) => Ok(()),
-                Err(e) => {
-                    if e.raw_os_error() == Some(ERROR_BROKEN_PIPE as i32) {
+                Err(error) =>
+                {
+                    #[expect(clippy::cast_possible_wrap, reason = "this is known to be fine")]
+                    #[expect(clippy::as_conversions, reason = "this is known to be fine")]
+                    if error.raw_os_error() == Some(ERROR_BROKEN_PIPE as i32) {
                         self.done = true;
                         Ok(())
                     } else {
-                        Err(e)
+                        Err(error)
                     }
                 },
             }
         }
 
+        /// # Safety
+        /// `self.dst` must have a capacity of at least `self.dst.len() + status.bytes_transferred()`.
         unsafe fn complete(
             &mut self,
             status: &CompletionStatus,
         ) {
-            let previous = self.dst.len();
+            let new_length = self
+                .dst
+                .len()
+                .checked_add(status.bytes_transferred().try_into().unwrap())
+                .unwrap();
+            // SAFETY: the responsibility lies on the callsite to make sure that the vec
+            // has enough capacity to make this a valid operation.
             unsafe {
-                self.dst
-                    .set_len(previous + status.bytes_transferred() as usize);;
+                self.dst.set_len(new_length);
             }
             if status.bytes_transferred() == 0 {
                 self.done = true;
@@ -278,6 +301,8 @@ mod implementation {
         }
     }
 
+    /// # Safety
+    /// Seems safe enough
     unsafe fn slice_to_end(vector: &mut Vec<u8>) -> &mut [u8] {
         if vector.capacity() == 0 {
             vector.reserve(16);

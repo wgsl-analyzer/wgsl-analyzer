@@ -218,7 +218,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_varieties() {
+    fn assert_varieties() {
         fn assert_send<T: Send>() {}
         fn assert_sync<T: Sync>() {}
         fn assert_debug<T: ::core::fmt::Debug>() {}
