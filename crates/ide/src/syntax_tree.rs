@@ -10,10 +10,10 @@ pub(crate) fn syntax_tree(
     if let Some(range) = range {
         let token_or_node = syntax_node.covering_element(range);
         match token_or_node {
-            rowan::NodeOrToken::Node(node) => Some(format!("{:#?}", node)),
+            rowan::NodeOrToken::Node(node) => Some(format!("{node:#?}")),
             rowan::NodeOrToken::Token(token) => Some(format!("{:#?}", token.parent()?)),
         }
     } else {
-        Some(format!("{:#?}", syntax_node))
+        Some(format!("{syntax_node:#?}"))
     }
 }

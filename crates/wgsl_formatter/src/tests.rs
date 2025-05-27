@@ -32,7 +32,7 @@ fn check_with_options(
         .syntax()
         .clone_for_update();
     format_recursive(syntax.clone(), options);
-    eprintln!("{:#?}", syntax);
+    eprintln!("{syntax:#?}");
 
     let new = syntax.to_string();
     after.assert_eq(&new);
@@ -76,8 +76,8 @@ fn format_chunks(chunks: Vec<dissimilar::Chunk>) -> String {
     for chunk in chunks {
         let formatted = match chunk {
             dissimilar::Chunk::Equal(text) => text.into(),
-            dissimilar::Chunk::Delete(text) => format!("\x1b[41m{}\x1b[0m", text),
-            dissimilar::Chunk::Insert(text) => format!("\x1b[42m{}\x1b[0m", text),
+            dissimilar::Chunk::Delete(text) => format!("\x1b[41m{text}\x1b[0m"),
+            dissimilar::Chunk::Insert(text) => format!("\x1b[42m{text}\x1b[0m"),
         };
         buf.push_str(&formatted);
     }

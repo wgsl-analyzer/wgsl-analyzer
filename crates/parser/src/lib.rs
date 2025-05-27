@@ -73,7 +73,7 @@ impl Parse {
             s.push('\n');
         }
         for error in self.errors.iter() {
-            s.push_str(&format!("\n{}", error));
+            s.push_str(&format!("\n{error}"));
         }
 
         s

@@ -494,7 +494,7 @@ mod tests {
         expect: expect_test::Expect,
     ) {
         let tokens: Vec<_> = SyntaxKind::lexer(source).collect();
-        expect.assert_eq(&format!("{:?}", tokens));
+        expect.assert_eq(&format!("{tokens:?}"));
     }
 
     #[test]

@@ -39,12 +39,12 @@ impl std::fmt::Display for AddressSpaceError {
     ) -> std::fmt::Result {
         match self {
             AddressSpaceError::ExpectedAccessMode(mode) => match mode.as_slice() {
-                &[mode] => write!(f, "expected {} access mode", mode),
-                &[mode1, mode2] => write!(f, "expected {} or {} access mode", mode1, mode2),
+                &[mode] => write!(f, "expected {mode} access mode"),
+                &[mode1, mode2] => write!(f, "expected {mode1} or {mode2} access mode"),
                 other => write!(f, "expected {} access mode", other.iter().format(", ")),
             },
             AddressSpaceError::ExpectedScope(scope) => {
-                write!(f, "address space is only valid in {:?}-scope", scope)
+                write!(f, "address space is only valid in {scope:?}-scope")
             },
             AddressSpaceError::ExpectedConstructable => f.write_str("type is not constructable"),
             AddressSpaceError::ExpectedHostShareable => f.write_str("type is not host-shareable"),

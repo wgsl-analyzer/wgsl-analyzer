@@ -23,15 +23,15 @@ impl std::fmt::Display for TypeReference {
     ) -> std::fmt::Result {
         match self {
             TypeReference::Error => write!(f, "[error]"),
-            TypeReference::Scalar(value) => write!(f, "{}", value),
-            TypeReference::Vec(value) => write!(f, "{}", value),
-            TypeReference::Matrix(value) => write!(f, "{}", value),
-            TypeReference::Texture(value) => write!(f, "{}", value),
-            TypeReference::Sampler(value) => write!(f, "{}", value),
-            TypeReference::Atomic(value) => write!(f, "{}", value),
-            TypeReference::Array(value) => write!(f, "{}", value),
+            TypeReference::Scalar(value) => write!(f, "{value}"),
+            TypeReference::Vec(value) => write!(f, "{value}"),
+            TypeReference::Matrix(value) => write!(f, "{value}"),
+            TypeReference::Texture(value) => write!(f, "{value}"),
+            TypeReference::Sampler(value) => write!(f, "{value}"),
+            TypeReference::Atomic(value) => write!(f, "{value}"),
+            TypeReference::Array(value) => write!(f, "{value}"),
             TypeReference::Path(value) => write!(f, "{}", value.as_str()),
-            TypeReference::Pointer(value) => write!(f, "{}", value),
+            TypeReference::Pointer(value) => write!(f, "{value}"),
         }
     }
 }

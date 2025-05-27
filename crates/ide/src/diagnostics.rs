@@ -309,7 +309,7 @@ impl NagaErrorPolicy {
                     accumulator.push(AnyDiagnostic::NagaValidationError {
                         file_id: file_id.into(),
                         range,
-                        message: format!("{}: {}", message, label),
+                        message: format!("{message}: {label}"),
                         related: Vec::new(),
                     });
                 });
@@ -447,8 +447,7 @@ pub fn diagnostics(
                     Diagnostic::new(
                         DiagnosticCode("1"),
                         format!(
-                            "left hand side of assignment should be a reference, found {}",
-                            actual
+                            "left hand side of assignment should be a reference, found {actual}"
                         ),
                         frange.range,
                     )
@@ -465,7 +464,7 @@ pub fn diagnostics(
                         original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("2"),
-                        format!("expected {}, found {}", expected, actual),
+                        format!("expected {expected}, found {actual}"),
                         frange.range,
                     )
                 },
@@ -491,7 +490,7 @@ pub fn diagnostics(
                         original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("4"),
-                        format!("cannot index into type {}", r#type),
+                        format!("cannot index into type {type}"),
                         frange.range,
                     )
                 },
@@ -512,7 +511,7 @@ pub fn diagnostics(
                         original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("6"),
-                        format!("cannot construct value of type {}", r#type),
+                        format!("cannot construct value of type {type}"),
                         frange.range,
                     )
                 },
@@ -526,7 +525,7 @@ pub fn diagnostics(
                         original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("7"),
-                        format!("expected {} parameters, found {}", n_expected, n_actual),
+                        format!("expected {n_expected} parameters, found {n_actual}"),
                         frange.range,
                     )
                 },
@@ -559,9 +558,8 @@ pub fn diagnostics(
                     Diagnostic::new(
                         DiagnosticCode("8"),
                         format!(
-                            "no overload of `{}` found for given arguments.\
-                        Found ({}), expected one of:\n{}",
-                            name, parameters, possible
+                            "no overload of `{name}` found for given arguments.\
+                        Found ({parameters}), expected one of:\n{possible}"
                         ),
                         frange.range,
                     )
@@ -573,7 +571,7 @@ pub fn diagnostics(
                         original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("9"),
-                        format!("expected a reference, found {}", r#type),
+                        format!("expected a reference, found {type}"),
                         frange.range,
                     )
                 },
@@ -584,7 +582,7 @@ pub fn diagnostics(
                         original_file_range(db.upcast(), expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("10"),
-                        format!("cannot dereference expression of type {}", r#type),
+                        format!("cannot dereference expression of type {type}"),
                         frange.range,
                     )
                 },
@@ -609,7 +607,7 @@ pub fn diagnostics(
                         .map(NodeOrToken::Token)
                         .unwrap_or_else(|| NodeOrToken::Node(var_decl.syntax()));
                     let frange = original_file_range(db.upcast(), var.file_id, &source);
-                    Diagnostic::new(DiagnosticCode("12"), format!("{}", error), frange.range)
+                    Diagnostic::new(DiagnosticCode("12"), format!("{error}"), frange.range)
                 },
                 AnyDiagnostic::InvalidType {
                     file_id: _,
@@ -618,7 +616,7 @@ pub fn diagnostics(
                 } => {
                     let source = location.to_node(&root);
                     let frange = original_file_range(db.upcast(), file_id, source.syntax());
-                    Diagnostic::new(DiagnosticCode("13"), format!("{}", error), frange.range)
+                    Diagnostic::new(DiagnosticCode("13"), format!("{error}"), frange.range)
                 },
                 AnyDiagnostic::UnresolvedImport { import } => {
                     let source = import.value.to_node(&root);
@@ -644,10 +642,7 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::UnconfiguredCode { def, range, .. } => Diagnostic::new(
                     DiagnosticCode("17"),
-                    format!(
-                        "code is inactive due to `#ifdef` directives: `{}` is not enabled",
-                        def
-                    ),
+                    format!("code is inactive due to `#ifdef` directives: `{def}` is not enabled"),
                     range,
                 )
                 .with_severity(Severity::WeakWarning)
@@ -762,7 +757,7 @@ fn error_message_cause_chain(
     prefix: &str,
     error: &dyn std::error::Error,
 ) -> String {
-    let mut message = format!("{}{}", prefix, error);
+    let mut message = format!("{prefix}{error}");
 
     let mut e = error.source();
     if e.is_some() {

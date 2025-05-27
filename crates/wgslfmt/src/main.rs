@@ -29,7 +29,7 @@ fn parse_arguments() -> Result<Arguments, lexopt::Error> {
     while let Some(arg) = parser.next()? {
         match arg {
             Short('h') | Long("help") => {
-                print!("{}", HELP_STR);
+                print!("{HELP_STR}");
                 std::process::exit(0);
             },
             Long("check") => arguments.check = true,
@@ -71,7 +71,7 @@ fn main() -> Result<(), anyhow::Error> {
                 std::process::exit(1);
             }
         } else if is_stdin {
-            print!("{}", output);
+            print!("{output}");
         } else {
             std::fs::write(&file, output)
                 .with_context(|| format!("failed to write to {}", file.display()))?;

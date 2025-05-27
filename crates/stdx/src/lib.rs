@@ -341,15 +341,11 @@ where
     let mut this = this.into_iter();
 
     loop {
-        let x = match this.next() {
-            None => return other.next().is_none(),
-            Some(value) => value,
+        let Some(x) = this.next() else {
+            return other.next().is_none();
         };
 
-        let y = match other.next() {
-            None => return false,
-            Some(value) => value,
-        };
+        let Some(y) = other.next() else { return false };
 
         if !eq(x, y) {
             return false;
@@ -368,7 +364,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_trim_indent() {
+    fn trim_indent_works() {
         assert_eq!(trim_indent(""), "");
         assert_eq!(
             trim_indent(

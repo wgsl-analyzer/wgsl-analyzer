@@ -43,7 +43,7 @@ impl SyntaxNodePointer {
                 .and_then(|it| it.into_node())
         })
         .find(|it| it.text_range() == self.range && it.kind() == self.kind)
-        .ok_or_else(|| format!("cannot resolve local pointer to SyntaxNode: {:?}", self))
+        .ok_or_else(|| format!("cannot resolve local pointer to SyntaxNode: {self:?}"))
         .unwrap()
     }
 
