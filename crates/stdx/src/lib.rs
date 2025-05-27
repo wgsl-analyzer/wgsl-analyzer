@@ -341,7 +341,9 @@ where
     let mut this = this.into_iter();
 
     loop {
-        let Some(x) = this.next() else { return other.next().is_none() };
+        let Some(x) = this.next() else {
+            return other.next().is_none();
+        };
 
         let Some(y) = other.next() else { return false };
 

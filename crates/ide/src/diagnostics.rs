@@ -642,9 +642,7 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::UnconfiguredCode { def, range, .. } => Diagnostic::new(
                     DiagnosticCode("17"),
-                    format!(
-                        "code is inactive due to `#ifdef` directives: `{def}` is not enabled"
-                    ),
+                    format!("code is inactive due to `#ifdef` directives: `{def}` is not enabled"),
                     range,
                 )
                 .with_severity(Severity::WeakWarning)

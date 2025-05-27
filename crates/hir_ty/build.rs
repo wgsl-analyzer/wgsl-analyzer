@@ -157,10 +157,7 @@ impl Builtin {{
             continue;
         }
 
-        write!(
-            f,
-            r#""{name}" => Some(Builtin::builtin_{name}(db)),"#
-        )?;
+        write!(f, r#""{name}" => Some(Builtin::builtin_{name}(db)),"#)?;
     }
     write!(
         f,
@@ -411,9 +408,7 @@ fn type_to_rust(r#type: &Type) -> String {
                             },
                         };
 
-                        format!(
-                            "Storage(TexelFormat::{texel_format}, AccessMode::{access_mode:?})"
-                        )
+                        format!("Storage(TexelFormat::{texel_format}, AccessMode::{access_mode:?})")
                     },
                     TextureKind::Depth => "Depth".to_string(),
                     TextureKind::External => "External".to_string(),
@@ -423,9 +418,9 @@ fn type_to_rust(r#type: &Type) -> String {
                 texture.dimension,
             )
         },
-        Type::Sampler { comparison } => format!(
-            "TyKind::Sampler(SamplerType {{ comparison: {comparison}  }}).intern(db)"
-        ),
+        Type::Sampler { comparison } => {
+            format!("TyKind::Sampler(SamplerType {{ comparison: {comparison}  }}).intern(db)")
+        },
         Type::RuntimeArray(inner) => format!(
             "TyKind::Array(ArrayType {{
             size: ArraySize::Dynamic,
@@ -448,9 +443,9 @@ fn type_to_rust(r#type: &Type) -> String {
         }}).intern(db)",
             type_to_rust(inner)
         ),
-        Type::StorageTypeOfTexelFormat(var) => format!(
-            "TyKind::StorageTypeOfTexelFormat(BoundVar {{ index: {var} }}).intern(db)"
-        ),
+        Type::StorageTypeOfTexelFormat(var) => {
+            format!("TyKind::StorageTypeOfTexelFormat(BoundVar {{ index: {var} }}).intern(db)")
+        },
     }
 }
 

@@ -70,10 +70,12 @@ pub fn main_loop(
     {
         use windows_sys::Win32::System::Threading::{GetCurrentThread, SetThreadPriority};
         // SAFETY: The safety of GetCurrentThread is undocumented.
-        let thread = unsafe {GetCurrentThread()};
+        let thread = unsafe { GetCurrentThread() };
         let thread_priority_above_normal = 1;
         // SAFETY: The safety of SetThreadPriority is undocumented.
-        unsafe {SetThreadPriority(thread, thread_priority_above_normal);}
+        unsafe {
+            SetThreadPriority(thread, thread_priority_above_normal);
+        }
     }
 
     GlobalState::new(connection.sender, config).run(connection.receiver)

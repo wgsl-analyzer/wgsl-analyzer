@@ -213,9 +213,13 @@ mod implementation {
         let mut error_pipe = unsafe { Pipe::new(error_pipe, &mut error) };
 
         // SAFETY: TODO
-        unsafe { out_pipe.read()?; }
+        unsafe {
+            out_pipe.read()?;
+        }
         // SAFETY: TODO
-        unsafe { error_pipe.read()?; }
+        unsafe {
+            error_pipe.read()?;
+        }
 
         let mut status = [CompletionStatus::zero(), CompletionStatus::zero()];
 
@@ -223,16 +227,24 @@ mod implementation {
             for status in port.get_many(&mut status, None)? {
                 if status.token() == 0 {
                     // SAFETY: TODO
-                    unsafe { out_pipe.complete(status); }
+                    unsafe {
+                        out_pipe.complete(status);
+                    }
                     data(true, out_pipe.dst, out_pipe.done);
                     // SAFETY: TODO
-                    unsafe { out_pipe.read()?; }
+                    unsafe {
+                        out_pipe.read()?;
+                    }
                 } else {
                     // SAFETY: TODO
-                    unsafe { error_pipe.complete(status); }
+                    unsafe {
+                        error_pipe.complete(status);
+                    }
                     data(false, error_pipe.dst, error_pipe.done);
                     // SAFETY: TODO
-                    unsafe { error_pipe.read()?; }
+                    unsafe {
+                        error_pipe.read()?;
+                    }
                 }
             }
         }
