@@ -238,7 +238,7 @@ mod implementation {
         unsafe fn new<P: IntoRawHandle>(
             p: P,
             dst: &'a mut Vec<u8>,
-        ) -> Pipe<'a> {
+        ) -> Self {
             let pipe = unsafe { NamedPipe::from_raw_handle(p.into_raw_handle()) };
             Pipe {
                 dst,
@@ -270,8 +270,8 @@ mod implementation {
             let previous = self.dst.len();
             unsafe {
                 self.dst
-                    .set_len(previous + status.bytes_transferred() as usize)
-            };
+                    .set_len(previous + status.bytes_transferred() as usize);;
+            }
             if status.bytes_transferred() == 0 {
                 self.done = true;
             }

@@ -1812,8 +1812,7 @@ impl std::fmt::Display for TypeLoweringError {
                 let all_formats = "rgba8unorm,\nrgba8snorm,\nrgba8uint,\nrgba8sint,\nrgba16uint,\nrgba16sint,\nrgba16float,\nr32uint,\nr32sint,\nr32float,\nrg32uint,\nrg32sint,\nrg32float,\nrgba32uint,\nrgba32sint,\nrgba32float";
                 write!(
                     f,
-                    "`{}` is not a valid texel format, expected one of:\n{}",
-                    format, all_formats
+                    "`{format}` is not a valid texel format, expected one of:\n{all_formats}"
                 )
             },
         }

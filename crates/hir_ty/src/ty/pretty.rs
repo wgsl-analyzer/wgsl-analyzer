@@ -137,7 +137,7 @@ fn write_ty(
                 ScalarType::U32 => "u32",
                 ScalarType::F32 => "f32",
             };
-            write!(f, "{}", s)
+            write!(f, "{s}")
         },
         TyKind::Atomic(atomic) => {
             write!(f, "atomic<")?;
@@ -162,7 +162,7 @@ fn write_ty(
             write!(f, "array<")?;
             write_ty(db, t.inner, f, verbosity)?;
             match t.size {
-                ArraySize::Constant(value) => write!(f, ", {}", value)?,
+                ArraySize::Constant(value) => write!(f, ", {value}")?,
                 ArraySize::Dynamic => {},
             }
             write!(f, ">")
@@ -192,7 +192,7 @@ fn write_ty(
                 ),
                 TextureKind::External => "texture_external".into(),
             };
-            write!(f, "{}", value)
+            write!(f, "{value}")
         },
         TyKind::Sampler(sampler) => match sampler.comparison {
             true => write!(f, "sampler_comparison"),

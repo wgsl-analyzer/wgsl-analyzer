@@ -18,18 +18,18 @@ impl ParseError {
         let is_last = |index| index == number_expected - 1;
         for (index, expected_kind) in self.expected.iter().enumerate() {
             if is_first(index) {
-                let _ = write!(message, "{:?}", expected_kind);
+                let _ = write!(message, "{expected_kind:?}");
             } else if is_last(index) && number_expected > 2 {
-                let _ = write!(message, ", or {:?}", expected_kind);
+                let _ = write!(message, ", or {expected_kind:?}");
             } else if is_last(index) {
-                let _ = write!(message, " or {:?}", expected_kind);
+                let _ = write!(message, " or {expected_kind:?}");
             } else {
-                let _ = write!(message, ", {:?}", expected_kind);
+                let _ = write!(message, ", {expected_kind:?}");
             }
         }
 
         if let Some(found) = self.found {
-            let _ = write!(message, ", but found {:?}", found);
+            let _ = write!(message, ", but found {found:?}");
         }
 
         message
@@ -76,18 +76,18 @@ impl fmt::Display for ParseError {
 
         for (index, expected_kind) in self.expected.iter().enumerate() {
             if is_first(index) {
-                write!(f, "{:?}", expected_kind)?;
+                write!(f, "{expected_kind:?}")?;
             } else if is_last(index) && num_expected > 2 {
-                write!(f, ", or {:?}", expected_kind)?;
+                write!(f, ", or {expected_kind:?}")?;
             } else if is_last(index) {
-                write!(f, " or {:?}", expected_kind)?;
+                write!(f, " or {expected_kind:?}")?;
             } else {
-                write!(f, ", {:?}", expected_kind)?;
+                write!(f, ", {expected_kind:?}")?;
             }
         }
 
         if let Some(found) = self.found {
-            write!(f, ", but found {:?}", found)?;
+            write!(f, ", but found {found:?}")?;
         }
 
         Ok(())

@@ -52,7 +52,7 @@ impl std::fmt::Debug for VecSize {
             Self::Two => write!(f, "Two"),
             Self::Three => write!(f, "Three"),
             Self::Four => write!(f, "Four"),
-            Self::Bound(var) => write!(f, "BoundVar(BoundVar {{ index: {} }})", var),
+            Self::Bound(var) => write!(f, "BoundVar(BoundVar {{ index: {var} }})"),
         }
     }
 }
@@ -159,8 +159,7 @@ impl Builtin {{
 
         write!(
             f,
-            r#""{name}" => Some(Builtin::builtin_{name}(db)),"#,
-            name = name
+            r#""{name}" => Some(Builtin::builtin_{name}(db)),"#
         )?;
     }
     write!(
@@ -182,7 +181,7 @@ impl Builtin {{
         if name.starts_with("op") {
             continue;
         }
-        write!(f, r#""{}", "#, name)?;
+        write!(f, r#""{name}", "#)?;
     }
 
     write!(f, "    ];\n}}")?;
@@ -389,10 +388,10 @@ fn type_to_rust(r#type: &Type) -> String {
         ),
 
         r#type @ (Type::Bool | Type::F32 | Type::I32 | Type::U32) => {
-            format!("TyKind::Scalar(ScalarType::{:?}).intern(db)", r#type)
+            format!("TyKind::Scalar(ScalarType::{type:?}).intern(db)")
         },
         Type::Bound(i) => {
-            format!("TyKind::BoundVar(BoundVar {{ index: {} }}).intern(db)", i,)
+            format!("TyKind::BoundVar(BoundVar {{ index: {i} }}).intern(db)",)
         },
         Type::Texture(texture) => {
             format!(
@@ -408,13 +407,12 @@ fn type_to_rust(r#type: &Type) -> String {
                         let texel_format = match texel_format {
                             TexelFormat::Any => "Any".to_string(),
                             TexelFormat::Bound(var) => {
-                                format!("BoundVar(BoundVar {{ index: {} }})", var)
+                                format!("BoundVar(BoundVar {{ index: {var} }})")
                             },
                         };
 
                         format!(
-                            "Storage(TexelFormat::{}, AccessMode::{:?})",
-                            texel_format, access_mode
+                            "Storage(TexelFormat::{texel_format}, AccessMode::{access_mode:?})"
                         )
                     },
                     TextureKind::Depth => "Depth".to_string(),
@@ -426,8 +424,7 @@ fn type_to_rust(r#type: &Type) -> String {
             )
         },
         Type::Sampler { comparison } => format!(
-            "TyKind::Sampler(SamplerType {{ comparison: {}  }}).intern(db)",
-            comparison
+            "TyKind::Sampler(SamplerType {{ comparison: {comparison}  }}).intern(db)"
         ),
         Type::RuntimeArray(inner) => format!(
             "TyKind::Array(ArrayType {{
@@ -452,8 +449,7 @@ fn type_to_rust(r#type: &Type) -> String {
             type_to_rust(inner)
         ),
         Type::StorageTypeOfTexelFormat(var) => format!(
-            "TyKind::StorageTypeOfTexelFormat(BoundVar {{ index: {} }}).intern(db)",
-            var
+            "TyKind::StorageTypeOfTexelFormat(BoundVar {{ index: {var} }}).intern(db)"
         ),
     }
 }
@@ -469,8 +465,7 @@ fn builtin_to_rust(
     #[allow(non_snake_case)]
     pub fn builtin_{name}(db: &dyn HirDatabase) -> Self {{
         let name = Name::from("{name}");
-        let overloads = vec!["#,
-        name = name
+        let overloads = vec!["#
     )?;
 
     for overload in &builtin.overloads {

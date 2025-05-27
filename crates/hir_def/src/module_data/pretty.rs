@@ -63,7 +63,7 @@ fn write_pretty_module_item(
             let r#type = var.r#type.map(|r#type| db.lookup_intern_type_ref(r#type));
             let _ = write!(f, "var {}", &var.name.0);
             if let Some(r#type) = r#type {
-                let _ = write!(f, ": {}", r#type);
+                let _ = write!(f, ": {type}");
             }
         },
         ModuleItem::GlobalConstant(var) => {
@@ -73,7 +73,7 @@ fn write_pretty_module_item(
                 .map(|r#type| db.lookup_intern_type_ref(r#type));
             let _ = write!(f, "let {}", &constant.name.0);
             if let Some(r#type) = r#type {
-                let _ = write!(f, ": {}", r#type);
+                let _ = write!(f, ": {type}");
             }
         },
         ModuleItem::Override(var) => {
@@ -83,21 +83,21 @@ fn write_pretty_module_item(
                 .map(|r#type| db.lookup_intern_type_ref(r#type));
             let _ = write!(f, "override {}", &override_decl.name.0);
             if let Some(r#type) = r#type {
-                let _ = write!(f, ": {}", r#type);
+                let _ = write!(f, ": {type}");
             }
         },
         ModuleItem::Import(import) => {
             let import = &module.data[import.index];
             let _ = match &import.value {
-                ImportValue::Path(path) => write!(f, "#import \"{}\"", path),
-                ImportValue::Custom(key) => write!(f, "#import {}", key),
+                ImportValue::Path(path) => write!(f, "#import \"{path}\""),
+                ImportValue::Custom(key) => write!(f, "#import {key}"),
             };
         },
         ModuleItem::TypeAlias(type_alias) => {
             let type_alias = &module.data[type_alias.index];
             let name = &type_alias.name.0;
             let r#type = db.lookup_intern_type_ref(type_alias.r#type);
-            let _ = write!(f, "type {} = {};", name, r#type);
+            let _ = write!(f, "type {name} = {type};");
         },
     }
 }
