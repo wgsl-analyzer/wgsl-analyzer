@@ -67,11 +67,13 @@ pub fn main_loop(
     // https://docs.microsoft.com/en-us/windows/win32/procthread/priority-boosts
     // https://github.com/rust-lang/rust-analyzer/issues/2835
     #[cfg(windows)]
-    unsafe {
-        use windows_sys::Win32::System::Threading::*;
-        let thread = GetCurrentThread();
+    {
+        use windows_sys::Win32::System::Threading::{GetCurrentThread, SetThreadPriority};
+        // SAFETY: The safety of GetCurrentThread is undocumented.
+        let thread = unsafe {GetCurrentThread()};
         let thread_priority_above_normal = 1;
-        SetThreadPriority(thread, thread_priority_above_normal);
+        // SAFETY: The safety of SetThreadPriority is undocumented.
+        unsafe {SetThreadPriority(thread, thread_priority_above_normal);}
     }
 
     GlobalState::new(connection.sender, config).run(connection.receiver)

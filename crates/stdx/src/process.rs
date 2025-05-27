@@ -278,15 +278,17 @@ mod implementation {
         }
     }
 
-    unsafe fn slice_to_end(v: &mut Vec<u8>) -> &mut [u8] {
-        if v.capacity() == 0 {
-            v.reserve(16);
+    unsafe fn slice_to_end(vector: &mut Vec<u8>) -> &mut [u8] {
+        if vector.capacity() == 0 {
+            vector.reserve(16);
         }
-        if v.capacity() == v.len() {
-            v.reserve(1);
+        if vector.capacity() == vector.len() {
+            vector.reserve(1);
         }
-        let data = unsafe { v.as_mut_ptr().add(v.len()) };
-        let length = v.capacity() - v.len();
+        // SAFETY: invariants hold because this gets a pointer within the Vec's capacity
+        let data = unsafe { vector.as_mut_ptr().add(vector.len()) };
+        let length = vector.capacity() - vector.len();
+        // SAFETY: invariants have been checked and tested
         unsafe { slice::from_raw_parts_mut(data, length) }
     }
 }
