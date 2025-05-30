@@ -165,6 +165,25 @@ fn format_syntax_node(
 
             let name = r#struct.name()?.ident_token()?;
             whitespace_to_single_around(name);
+
+            let body = r#struct.body()?;
+            let l_brace = body.left_brace_token()?;
+            let r_brace = body.right_brace_token()?;
+            let mut fields = body.fields();
+            // indent opening brace
+            indent_after(l_brace.clone(), indentation + 1, options)?;
+            if fields.next().is_none() {
+                // empty struct: no inner indentation
+                set_whitespace_before(r_brace.clone(), create_whitespace(""));
+            } else {
+                // indent each field line
+                for field in fields {
+                    let first = field.syntax().first_token()?;
+                    indent_before(first, indentation + 1, options)?;
+                }
+                // closing brace on its own line
+                indent_before(r_brace.clone(), indentation, options)?;
+            }
         },
         SyntaxKind::IfStatement => {
             let if_statement = ast::IfStatement::cast(syntax)?;
@@ -556,4 +575,22 @@ fn create_syntax_token(
     ))
     .clone_for_update();
     node.first_token().unwrap()
+}
+
+fn indent_after(
+    token: SyntaxToken,
+    indent_level: usize,
+    options: &FormattingOptions,
+) -> Option<()> {
+    let ws = create_whitespace(&format!("\n{}", options.indent_symbol.repeat(indent_level)));
+    set_whitespace_after(token, ws)
+}
+
+fn indent_before(
+    token: SyntaxToken,
+    indent_level: usize,
+    options: &FormattingOptions,
+) -> Option<()> {
+    let ws = create_whitespace(&format!("\n{}", options.indent_symbol.repeat(indent_level)));
+    set_whitespace_before(token, ws)
 }

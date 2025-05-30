@@ -36,14 +36,21 @@ pub(crate) fn handle_did_open_text_document(
         },
     };
 
+    let text_bytes = parameters.text_document.text.into_bytes();
+    state.mem_docs.insert(
+        path.clone(),
+        DocumentData {
+            version: parameters.text_document.version,
+            data: text_bytes.clone(),
+        },
+    );
+
     let file_id = {
         let mut vfs = state.vfs.write().unwrap();
-        vfs.0.set_file_contents(
-            path.clone(),
-            Some(parameters.text_document.text.into_bytes()),
-        );
+        vfs.0.set_file_contents(path.clone(), Some(text_bytes));
         vfs.0.file_id(&path)
     };
+
     // When the file gets closed, we hide the diagnostics, because the LSP does not give a good way to determine when a file has been deleted
     // If there are pre-existing diagnostics, send them now
     if let Some(file_id) = file_id {
@@ -74,10 +81,16 @@ pub(crate) fn handle_did_change_text_document(
             parameters.content_changes,
         )
         .into_bytes();
-        // if *data != new_contents {
-        //     data.clone_from(&new_contents);
-        //     state.vfs.write().0.set_file_contents(path, Some(new_contents));
-        // }
+
+        if *data != new_contents {
+            data.clone_from(&new_contents);
+            state
+                .vfs
+                .write()
+                .unwrap()
+                .0
+                .set_file_contents(path, Some(new_contents));
+        }
     }
     Ok(())
 }
