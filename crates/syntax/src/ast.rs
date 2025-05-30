@@ -270,6 +270,8 @@ ast_node!(StructDeclaration:
 impl HasAttributes for StructDeclaration {}
 
 ast_node!(StructDeclBody:
+    left_brace_token: Option<SyntaxToken BraceLeft>;
+    right_brace_token: Option<SyntaxToken BraceRight>;
     fields: AstChildren<StructDeclarationField>;
 );
 
