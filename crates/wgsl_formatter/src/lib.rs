@@ -169,14 +169,12 @@ fn format_syntax_node(
             let body = r#struct.body()?;
             let l_brace = body.left_brace_token()?;
             let r_brace = body.right_brace_token()?;
-            let fields: Vec<_> = body.fields().collect();
-
+            let mut fields = body.fields();
             // indent opening brace
             indent_after(l_brace.clone(), indentation + 1, options)?;
-
-            if fields.is_empty() {
+            if fields.next().is_none() {
                 // empty struct: no inner indentation
-                indent_before(r_brace.clone(), indentation, options)?;
+                set_whitespace_before(r_brace.clone(), create_whitespace(""));
             } else {
                 // indent each field line
                 for field in fields {
