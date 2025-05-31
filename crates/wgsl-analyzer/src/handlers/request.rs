@@ -8,15 +8,18 @@ use hir::diagnostics::DiagnosticsConfig;
 use ide::{HoverResult, diagnostics::Severity};
 use lsp_types::{
     DiagnosticRelatedInformation, DiagnosticTag, GotoDefinitionResponse, LanguageString,
-    MarkedString, TextDocumentIdentifier,
+    MarkedString, Position, TextDocumentIdentifier, TextDocumentPositionParams,
 };
 use vfs::FileId;
 
 use crate::{
     Result,
     global_state::GlobalStateSnapshot,
-    lsp::{extensions, from_proto, to_proto},
-    try_default,
+    lsp::{
+        self,
+        extensions::{self, PositionOrRange},
+        from_proto, to_proto,
+    },
 };
 
 pub(crate) fn handle_goto_definition(
@@ -81,9 +84,19 @@ pub(crate) fn handle_formatting(
 
 pub(crate) fn handle_hover(
     snap: GlobalStateSnapshot,
-    parameters: lsp_types::HoverParams,
-) -> Result<Option<lsp_types::Hover>> {
-    let position = from_proto::file_position(&snap, &parameters.text_document_position_params)?;
+    parameters: lsp::extensions::HoverParameters,
+) -> Result<Option<lsp::extensions::Hover>> {
+    let position = match parameters.position {
+        PositionOrRange::Position(p) => p,
+        PositionOrRange::Range(r) => r.start,
+    };
+
+    let tdp = TextDocumentPositionParams {
+        text_document: parameters.text_document,
+        position,
+    };
+
+    let position = from_proto::file_position(&snap, &tdp)?;
     let line_index = snap.file_line_index(position.file_id)?;
     let range = TextRange::new(position.offset, position.offset);
     let file_range = FileRange {
@@ -96,18 +109,24 @@ pub(crate) fn handle_hover(
     };
 
     let hover_content = match result.info {
-        HoverResult::SourceCode(code) => MarkedString::LanguageString(LanguageString {
+        HoverResult::SourceCode(code) => MarkedString::LanguageString(lsp_types::LanguageString {
             language: "wgsl".to_owned(),
             value: code,
         }),
         HoverResult::Text(text) => MarkedString::String(text),
     };
-    let hover = lsp_types::Hover {
+
+    let inner_hover = lsp_types::Hover {
         contents: lsp_types::HoverContents::Scalar(hover_content),
         range: Some(to_proto::range(&line_index, result.range)),
     };
 
-    Ok(Some(hover))
+    let extended_hover = lsp::extensions::Hover {
+        hover: inner_hover,
+        actions: Vec::new(),
+    };
+
+    Ok(Some(extended_hover))
 }
 
 #[expect(
