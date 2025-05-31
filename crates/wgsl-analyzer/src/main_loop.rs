@@ -752,7 +752,7 @@ impl GlobalState {
             )
             .on::<RETRY, lsp_types::request::Completion>(handlers::request::handle_completion)
             .on_fmt_thread::<lsp_types::request::Formatting>(handlers::request::handle_formatting)
-            .on::<NO_RETRY, lsp_types::request::HoverRequest>(handlers::request::handle_hover)
+            .on::<NO_RETRY, lsp::extensions::HoverRequest>(handlers::request::handle_hover)
             .on::<NO_RETRY, lsp_types::request::Shutdown>(handlers::request::handle_shutdown)
             .on::<NO_RETRY, lsp_types::request::InlayHintRequest>(
                 handlers::request::handle_inlay_hints,
