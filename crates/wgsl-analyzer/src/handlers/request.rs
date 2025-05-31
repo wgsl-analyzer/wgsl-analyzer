@@ -87,8 +87,8 @@ pub(crate) fn handle_hover(
     parameters: lsp::extensions::HoverParameters,
 ) -> Result<Option<lsp::extensions::Hover>> {
     let position = match parameters.position {
-        PositionOrRange::Position(p) => p,
-        PositionOrRange::Range(r) => r.start,
+        PositionOrRange::Position(position) => position,
+        PositionOrRange::Range(range) => range.start,
     };
 
     let tdp = TextDocumentPositionParams {
