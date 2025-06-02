@@ -3,7 +3,7 @@ use line_index::WideEncoding;
 use lsp_types::{
     CallHierarchyServerCapability, CodeActionKind, CodeActionOptions, CodeActionProviderCapability,
     CodeLensOptions, CompletionOptions, CompletionOptionsCompletionItem, DeclarationCapability,
-    DocumentOnTypeFormattingOptions, FileOperationFilter, FileOperationPattern,
+    DiagnosticOptions, DocumentOnTypeFormattingOptions, FileOperationFilter, FileOperationPattern,
     FileOperationPatternKind, FileOperationRegistrationOptions, FoldingRangeProviderCapability,
     HoverProviderCapability, ImplementationProviderCapability, InlayHintOptions,
     InlayHintServerCapabilities, OneOf, PositionEncodingKind, RenameOptions, SaveOptions,
@@ -45,6 +45,16 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
         // definition_provider: Some(OneOf::Left(true)),
         inlay_hint_provider: Some(OneOf::Left(true)),
         experimental: Some(json!({ "inlayHints": true })),
+        diagnostic_provider: Some(lsp_types::DiagnosticServerCapabilities::Options(
+            DiagnosticOptions {
+                identifier: None,
+                inter_file_dependencies: false,
+                workspace_diagnostics: false,
+                work_done_progress_options: WorkDoneProgressOptions {
+                    work_done_progress: None,
+                },
+            },
+        )),
         ..Default::default()
     }
 }
