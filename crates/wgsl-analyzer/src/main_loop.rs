@@ -744,7 +744,7 @@ impl GlobalState {
             // FIXME: Some of these NO_RETRY could be retries if the file they are interested didn't change.
             // All other request handlers
             .on_with_vfs_default::<lsp_types::request::DocumentDiagnosticRequest>(handlers::request::handle_document_diagnostics, handlers::request::empty_diagnostic_report, || lsp_server::ResponseError {
-                code: lsp_server::ErrorCode::ServerCancelled as i32,
+                code: i32::try_from(lsp_types::error_codes::SERVER_CANCELLED).expect("LSP error code must fit in i32"),
                 message: "server cancelled the request".to_owned(),
                 data: serde_json::to_value(lsp_types::DiagnosticServerCancellationData {
                     retrigger_request: true

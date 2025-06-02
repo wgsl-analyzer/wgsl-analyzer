@@ -193,9 +193,9 @@ pub(crate) fn empty_diagnostic_report() -> lsp_types::DocumentDiagnosticReportRe
 
 pub(crate) fn handle_document_diagnostics(
     snap: GlobalStateSnapshot,
-    params: lsp_types::DocumentDiagnosticParams,
+    parameters: lsp_types::DocumentDiagnosticParams,
 ) -> anyhow::Result<lsp_types::DocumentDiagnosticReportResult> {
-    let file_id = from_proto::file_id(&snap, &params.text_document.uri)?;
+    let file_id = from_proto::file_id(&snap, &parameters.text_document.uri)?;
 
     let source_root = snap.analysis.source_root_id(file_id).ok();
     let config = snap.config.data().diagnostics(source_root);
@@ -211,7 +211,7 @@ pub(crate) fn handle_document_diagnostics(
             related_documents: None,
             full_document_diagnostic_report: lsp_types::FullDocumentDiagnosticReport {
                 result_id: Some(
-                    params
+                    parameters
                         .previous_result_id
                         .unwrap_or_else(|| "wgsl-analyzer".to_owned()),
                 ),

@@ -132,7 +132,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
     /// ready this will return a `default` constructed [`R::Result`].
     pub(crate) fn on_with_vfs_default<R>(
         &mut self,
-        f: fn(GlobalStateSnapshot, R::Params) -> anyhow::Result<R::Result>,
+        function: fn(GlobalStateSnapshot, R::Params) -> anyhow::Result<R::Result>,
         default: impl FnOnce() -> R::Result,
         on_cancelled: fn() -> ResponseError,
     ) -> &mut Self
@@ -151,7 +151,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
             }
             return self;
         }
-        self.on_with_thread_intent::<false, false, R>(ThreadIntent::Worker, f, on_cancelled)
+        self.on_with_thread_intent::<false, false, R>(ThreadIntent::Worker, function, on_cancelled)
     }
 
     /// Formatting requests should never block on waiting a for task thread to open up, editors will wait
