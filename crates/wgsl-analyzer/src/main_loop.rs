@@ -373,7 +373,6 @@ impl GlobalState {
     }
 
     #[expect(clippy::cognitive_complexity, reason = "")]
-    #[expect(clippy::too_many_lines, reason = "")]
     fn handle_event(
         &mut self,
         event: Event,
