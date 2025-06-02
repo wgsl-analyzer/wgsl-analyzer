@@ -51,7 +51,7 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
                 inter_file_dependencies: false,
                 workspace_diagnostics: false,
                 work_done_progress_options: WorkDoneProgressOptions {
-                    work_done_progress: None,
+                    work_done_progress: Some(false),
                 },
             },
         )),
