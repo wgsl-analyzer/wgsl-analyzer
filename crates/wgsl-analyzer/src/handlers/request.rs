@@ -200,13 +200,17 @@ pub(crate) fn handle_document_diagnostics(
     let source_root = snap.analysis.source_root_id(file_id).ok();
     let config = snap.config.data().diagnostics(source_root);
 
-   let items = publish_diagnostics(&snap, &config, file_id).unwrap();
+    let items = publish_diagnostics(&snap, &config, file_id).unwrap();
 
     Ok(lsp_types::DocumentDiagnosticReportResult::Report(
         lsp_types::DocumentDiagnosticReport::Full(lsp_types::RelatedFullDocumentDiagnosticReport {
             related_documents: None,
             full_document_diagnostic_report: lsp_types::FullDocumentDiagnosticReport {
-                result_id: Some(params.previous_result_id.unwrap_or_else(|| "wgsl-analyzer".to_owned())),
+                result_id: Some(
+                    params
+                        .previous_result_id
+                        .unwrap_or_else(|| "wgsl-analyzer".to_owned()),
+                ),
                 items,
             },
         }),
