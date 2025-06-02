@@ -373,7 +373,6 @@ impl GlobalState {
     }
 
     #[expect(clippy::cognitive_complexity, reason = "")]
-    #[expect(clippy::too_many_lines, reason = "")]
     fn handle_event(
         &mut self,
         event: Event,
@@ -514,22 +513,6 @@ impl GlobalState {
             }
             if project_or_mem_docs_changed && self.config.test_explorer() {
                 // self.update_tests();
-            }
-        }
-
-        if let Some(diagnostic_changes) = self.diagnostics.take_changes() {
-            for file_id in diagnostic_changes {
-                let uri = file_id_to_url(&self.vfs.read().unwrap().0, file_id);
-                let version = from_proto::vfs_path(&uri)
-                    .ok()
-                    .and_then(|path| self.mem_docs.get(&path).map(|it| it.version));
-
-                let diagnostics = self
-                    .diagnostics
-                    .diagnostics_for(file_id)
-                    .cloned()
-                    .collect::<Vec<_>>();
-                // self.publish_diagnostics(uri, version, diagnostics);
             }
         }
 
@@ -757,6 +740,15 @@ impl GlobalState {
             .on::<NO_RETRY, lsp_types::request::InlayHintRequest>(
                 handlers::request::handle_inlay_hints,
             )
+            // FIXME: Some of these NO_RETRY could be retries if the file they are interested didn't change.
+            // All other request handlers
+            .on_with_vfs_default::<lsp_types::request::DocumentDiagnosticRequest>(handlers::request::handle_document_diagnostics, handlers::request::empty_diagnostic_report, || lsp_server::ResponseError {
+                code: i32::try_from(lsp_types::error_codes::SERVER_CANCELLED).expect("LSP error code must fit in i32"),
+                message: "server cancelled the request".to_owned(),
+                data: serde_json::to_value(lsp_types::DiagnosticServerCancellationData {
+                    retrigger_request: true
+                }).ok(),
+            })
             .on::<NO_RETRY, lsp::extensions::SyntaxTree>(handlers::request::show_syntax_tree)
             .on::<NO_RETRY, lsp::extensions::DebugCommand>(handlers::request::debug_command)
             .on::<NO_RETRY, lsp::extensions::FullSource>(handlers::request::full_source)

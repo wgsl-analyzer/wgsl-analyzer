@@ -177,6 +177,50 @@ pub(crate) fn debug_command(
     Ok(())
 }
 
+// This is the “empty” fallback if the VFS lookup fails.
+// It returns an “Unchanged” report with the same `previousResultId` the client sent.
+pub(crate) fn empty_diagnostic_report() -> lsp_types::DocumentDiagnosticReportResult {
+    lsp_types::DocumentDiagnosticReportResult::Report(lsp_types::DocumentDiagnosticReport::Full(
+        lsp_types::RelatedFullDocumentDiagnosticReport {
+            related_documents: None,
+            full_document_diagnostic_report: lsp_types::FullDocumentDiagnosticReport {
+                result_id: Some("wgsl-analyzer".to_owned()),
+                items: vec![],
+            },
+        },
+    ))
+}
+
+pub(crate) fn handle_document_diagnostics(
+    snap: GlobalStateSnapshot,
+    parameters: lsp_types::DocumentDiagnosticParams,
+) -> anyhow::Result<lsp_types::DocumentDiagnosticReportResult> {
+    let file_id = from_proto::file_id(&snap, &parameters.text_document.uri)?;
+
+    let source_root = snap.analysis.source_root_id(file_id).ok();
+    let config = snap.config.data().diagnostics(source_root);
+
+    if !config.enabled {
+        return Ok(empty_diagnostic_report());
+    }
+
+    let items = publish_diagnostics(&snap, &config, file_id).unwrap();
+
+    Ok(lsp_types::DocumentDiagnosticReportResult::Report(
+        lsp_types::DocumentDiagnosticReport::Full(lsp_types::RelatedFullDocumentDiagnosticReport {
+            related_documents: None,
+            full_document_diagnostic_report: lsp_types::FullDocumentDiagnosticReport {
+                result_id: Some(
+                    parameters
+                        .previous_result_id
+                        .unwrap_or_else(|| "wgsl-analyzer".to_owned()),
+                ),
+                items,
+            },
+        }),
+    ))
+}
+
 pub(crate) fn handle_inlay_hints(
     snap: GlobalStateSnapshot,
     parameters: lsp_types::InlayHintParams,

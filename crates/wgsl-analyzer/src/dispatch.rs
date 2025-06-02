@@ -128,6 +128,32 @@ impl<'global_state> RequestDispatcher<'global_state> {
         )
     }
 
+    /// Dispatches a non-latency-sensitive request onto the thread pool. When the VFS is marked not
+    /// ready this will return a `default` constructed [`R::Result`].
+    pub(crate) fn on_with_vfs_default<R>(
+        &mut self,
+        function: fn(GlobalStateSnapshot, R::Params) -> anyhow::Result<R::Result>,
+        default: impl FnOnce() -> R::Result,
+        on_cancelled: fn() -> ResponseError,
+    ) -> &mut Self
+    where
+        R: lsp_types::request::Request<
+                Params: DeserializeOwned + panic::UnwindSafe + Send + fmt::Debug,
+                Result: Serialize,
+            > + 'static,
+    {
+        if !self.global_state.vfs_done {
+            if let Some(lsp_server::Request { id, .. }) =
+                self.request.take_if(|it| it.method == R::METHOD)
+            {
+                self.global_state
+                    .respond(lsp_server::Response::new_ok(id, default()));
+            }
+            return self;
+        }
+        self.on_with_thread_intent::<false, false, R>(ThreadIntent::Worker, function, on_cancelled)
+    }
+
     /// Formatting requests should never block on waiting a for task thread to open up, editors will wait
     /// on the response and a late formatting update might mess with the document and user.
     /// We can't run this on the main thread though as we invoke rustfmt which may take arbitrary time to complete!
