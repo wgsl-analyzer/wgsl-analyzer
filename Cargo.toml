@@ -127,7 +127,7 @@ object = { version = "0.36.7", default-features = false, features = [
   "macho",
   "pe",
 ] }
-parking_lot = "0.12.3"
+parking_lot = "0.12.4"
 xflags = "0.3.0"
 threadpool = "1.8.1"
 process-wrap = { version = "8.2.0", features = ["std"] }
