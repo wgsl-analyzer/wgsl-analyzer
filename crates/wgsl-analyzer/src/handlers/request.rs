@@ -200,6 +200,10 @@ pub(crate) fn handle_document_diagnostics(
     let source_root = snap.analysis.source_root_id(file_id).ok();
     let config = snap.config.data().diagnostics(source_root);
 
+    if !config.enabled {
+        return Ok(empty_diagnostic_report());
+    }
+
     let items = publish_diagnostics(&snap, &config, file_id).unwrap();
 
     Ok(lsp_types::DocumentDiagnosticReportResult::Report(
