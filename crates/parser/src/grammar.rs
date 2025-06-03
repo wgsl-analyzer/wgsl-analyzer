@@ -19,11 +19,8 @@ pub(crate) fn file(parser: &mut Parser) {
     marker.complete(parser, SyntaxKind::SourceFile);
 }
 
-const ITEM_RECOVERY_SET: &[SyntaxKind] = &[
-    SyntaxKind::Fn,
-    SyntaxKind::Struct,
-    SyntaxKind::Override,
-];
+const ITEM_RECOVERY_SET: &[SyntaxKind] =
+    &[SyntaxKind::Fn, SyntaxKind::Struct, SyntaxKind::Override];
 
 fn item(parser: &mut Parser) {
     let marker = parser.start();
@@ -932,7 +929,7 @@ pub(crate) fn attribute_list_opt(parser: &mut Parser) {
 pub(crate) fn attribute_list(parser: &mut Parser) {
     if parser.at(SyntaxKind::AttributeOperator) {
         attribute_list_modern(parser);
-    } 
+    }
 }
 
 fn attribute_list_modern(parser: &mut Parser) {
