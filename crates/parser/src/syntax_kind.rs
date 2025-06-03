@@ -335,10 +335,6 @@ pub enum SyntaxKind {
     AndAnd,
     #[token("->")]
     Arrow,
-    #[token("[[")]
-    AttributeLeft,
-    #[token("]]")]
-    AttributeRight,
     #[token("@")]
     AttributeOperator,
     #[token("/")]
@@ -516,18 +512,21 @@ mod tests {
     }
 
     #[test]
-    fn lex_attribute() {
-        check_lex(
-            "[[ ]]",
-            expect![[r#"[AttributeLeft, Whitespace, AttributeRight]"#]],
-        );
-    }
-
-    #[test]
     fn lex_comment() {
         check_lex(
             "// test asdf\nnot_comment",
             expect![[r#"[Comment, Whitespace, Identifier]"#]],
+        );
+    }
+
+    #[test]
+    fn lex_nested_brackets() {
+        // Expect: Identifier (a), [, Identifier (a), [, DecimalIntLiteral (0), ], ]
+        check_lex(
+            "a[a[0]]",
+            expect![[
+                r#"[Identifier, BracketLeft, Identifier, BracketLeft, DecimalIntLiteral, BracketRight, BracketRight]"#
+            ]],
         );
     }
 }

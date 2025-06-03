@@ -19,12 +19,8 @@ pub(crate) fn file(parser: &mut Parser) {
     marker.complete(parser, SyntaxKind::SourceFile);
 }
 
-const ITEM_RECOVERY_SET: &[SyntaxKind] = &[
-    SyntaxKind::Fn,
-    SyntaxKind::Struct,
-    SyntaxKind::AttributeLeft,
-    SyntaxKind::Override,
-];
+const ITEM_RECOVERY_SET: &[SyntaxKind] =
+    &[SyntaxKind::Fn, SyntaxKind::Struct, SyntaxKind::Override];
 
 fn item(parser: &mut Parser) {
     let marker = parser.start();
@@ -925,7 +921,7 @@ fn access_mode(parser: &mut Parser) {
 }
 
 pub(crate) fn attribute_list_opt(parser: &mut Parser) {
-    if parser.at(SyntaxKind::AttributeOperator) || parser.at(SyntaxKind::AttributeLeft) {
+    if parser.at(SyntaxKind::AttributeOperator) {
         attribute_list(parser);
     }
 }
@@ -933,8 +929,6 @@ pub(crate) fn attribute_list_opt(parser: &mut Parser) {
 pub(crate) fn attribute_list(parser: &mut Parser) {
     if parser.at(SyntaxKind::AttributeOperator) {
         attribute_list_modern(parser);
-    } else if parser.at(SyntaxKind::AttributeLeft) {
-        attribute_list_legacy(parser);
     }
 }
 
@@ -945,17 +939,6 @@ fn attribute_list_modern(parser: &mut Parser) {
         attribute(parser);
     }
     marker.complete(parser, SyntaxKind::AttributeList);
-}
-
-fn attribute_list_legacy(parser: &mut Parser) {
-    list(
-        parser,
-        SyntaxKind::AttributeLeft,
-        SyntaxKind::AttributeRight,
-        SyntaxKind::Comma,
-        SyntaxKind::AttributeList,
-        attribute,
-    );
 }
 
 fn attribute(parser: &mut Parser) {
