@@ -44,11 +44,11 @@ fn can_parse_array_declaration() {
               GlobalConstantDeclaration@3..33
                 Constant@3..8 "const"
                 Whitespace@8..9 " "
-                Binding@9..13
-                  Name@9..13
+                Binding@9..12
+                  Name@9..12
                     Identifier@9..12 "dim"
-                    Whitespace@12..13 " "
-                Colon@13..14 ":"
+                Colon@12..13 ":"
+                Whitespace@13..14 " "
                 PathType@14..20
                   NameReference@14..20
                     Identifier@14..19 "vec3u"
