@@ -133,8 +133,13 @@ pub enum SyntaxKind {
     #[regex("#if.*")]
     UnofficialPreprocessIf,
 
+    /// https://gpuweb.github.io/gpuweb/wgsl/#line-ending-comment
     #[regex("//.*")]
-    Comment,
+    LineEndingComment,
+
+    /// https://gpuweb.github.io/gpuweb/wgsl/#block-comment
+    #[regex(r"/\*", lex_block_comment)]
+    BlockComment,
 
     #[regex(r#"([_\p{XID_Start}]\p{XID_Continue}*)|(\p{XID_Start})"#)]
     Identifier,
@@ -468,7 +473,8 @@ impl SyntaxKind {
         matches!(
             self,
             SyntaxKind::Whitespace
-                | SyntaxKind::Comment
+                | SyntaxKind::LineEndingComment
+                | SyntaxKind::BlockComment
                 | SyntaxKind::UnofficialPreprocessorEndif
                 | SyntaxKind::UnofficialPreprocessorIfDef
                 | SyntaxKind::UnofficialPreprocessorElse
@@ -476,6 +482,31 @@ impl SyntaxKind {
                 | SyntaxKind::UnofficialPreprocessIf
         )
     }
+}
+
+fn lex_block_comment(lex: &mut logos::Lexer<SyntaxKind>) -> Option<()> {
+    let mut depth = 1;
+    let slice = lex.remainder();
+    let mut i = 0;
+    let bytes = slice.as_bytes();
+    while i + 1 < bytes.len() {
+        if bytes[i] == b'/' && bytes[i + 1] == b'*' {
+            depth += 1;
+            i += 2;
+        } else if bytes[i] == b'*' && bytes[i + 1] == b'/' {
+            depth -= 1;
+            i += 2;
+            if depth == 0 {
+                lex.bump(i);
+                return Some(());
+            }
+        } else {
+            i += 1;
+        }
+    }
+    // If we reach here, the comment was unterminated; consume the rest.
+    lex.bump(i);
+    Some(())
 }
 
 #[cfg(test)]
