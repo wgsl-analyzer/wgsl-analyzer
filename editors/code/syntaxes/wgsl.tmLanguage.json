@@ -37,10 +37,10 @@
 			"match": "\\s*//.*"
 		},
 		"block_comments": {
-			"applyEndPatternLast": 1,
+			"comment": "Block comment",
+			"name": "comment.block.wgsl",
 			"begin": "/\\*",
 			"end": "\\*/",
-			"name": "comment.block.wgsl",
 			"patterns": [
 				{
 					"include": "#block_comments"
