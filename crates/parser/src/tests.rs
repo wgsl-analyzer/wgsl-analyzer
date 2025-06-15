@@ -206,6 +206,54 @@ fn fn_incomplete() {
 }
 
 #[test]
+fn parse_comments() {
+    check(
+        r#"
+		const f = 1.5; // This is line-ending comment.
+		const g = 2.5; /* This is a block comment
+                that spans lines.
+                /* Block comments can nest.
+                 */
+                But all block comments must terminate.
+               */
+		"#,
+        expect![[r#"
+            SourceFile@0..267
+              Whitespace@0..3 "\n\t\t"
+              GlobalConstantDeclaration@3..52
+                Constant@3..8 "const"
+                Whitespace@8..9 " "
+                Binding@9..11
+                  Name@9..11
+                    Identifier@9..10 "f"
+                    Whitespace@10..11 " "
+                Equal@11..12 "="
+                Whitespace@12..13 " "
+                Literal@13..16
+                  DecimalFloatLiteral@13..16 "1.5"
+                Semicolon@16..17 ";"
+                Whitespace@17..18 " "
+                LineEndingComment@18..49 "// This is line-endin ..."
+                Whitespace@49..52 "\n\t\t"
+              GlobalConstantDeclaration@52..267
+                Constant@52..57 "const"
+                Whitespace@57..58 " "
+                Binding@58..60
+                  Name@58..60
+                    Identifier@58..59 "g"
+                    Whitespace@59..60 " "
+                Equal@60..61 "="
+                Whitespace@61..62 " "
+                Literal@62..65
+                  DecimalFloatLiteral@62..65 "2.5"
+                Semicolon@65..66 ";"
+                Whitespace@66..67 " "
+                BlockComment@67..264 "/* This is a block co ..."
+                Whitespace@264..267 "\n\t\t""#]],
+    );
+}
+
+#[test]
 fn function() {
     check(
         "fn name(a: f32, b: i32) -> f32 {}",
