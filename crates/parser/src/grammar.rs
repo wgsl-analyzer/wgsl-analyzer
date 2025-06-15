@@ -448,7 +448,16 @@ pub(crate) fn type_declaration(parser: &mut Parser) -> Option<CompletedMarker> {
         let marker_ty = parser.start();
         let marker_name_reference = parser.start();
         parser.bump();
-        marker_name_reference.complete(parser, SyntaxKind::NameReference);
+
+        // Support for path expressions like `dim.x`
+        _ = marker_name_reference.complete(parser, SyntaxKind::NameReference);
+        while parser.at(SyntaxKind::Period) {
+            let marker = parser.start();
+            parser.bump();
+            parser.expect(SyntaxKind::Identifier);
+            _ = marker.complete(parser, SyntaxKind::FieldExpression);
+        }
+
         Some(marker_ty.complete(parser, SyntaxKind::PathType))
     } else {
         parser.error();
