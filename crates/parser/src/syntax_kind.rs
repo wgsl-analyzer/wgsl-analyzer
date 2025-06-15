@@ -506,7 +506,7 @@ fn lex_block_comment(lex: &mut logos::Lexer<SyntaxKind>) -> Option<()> {
     }
     // If we reach here, the comment was unterminated; consume the rest.
     lex.bump(i);
-    Some(())
+    None
 }
 
 #[cfg(test)]

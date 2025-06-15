@@ -254,6 +254,27 @@ fn parse_comments() {
 }
 
 #[test]
+fn cannot_parse_unmatched_block_comment() {
+    check(
+        r#"
+		/* This is a block comment that spans lines.
+			/* Block comments can nest.
+			But all block comments must terminate.
+			*/
+		"#,
+        expect![[r#"
+            SourceFile@0..129
+              Whitespace@0..3 "\n\t\t"
+              Error@3..129
+                Error@3..129
+                  Error@3..128 "/* This is a block co ..."
+                  Whitespace@128..129 "\t"
+
+            error at 3..128: expected Fn, Struct, Var, Let, Constant, Alias, or Override, but found Error"#]],
+    );
+}
+
+#[test]
 fn function() {
     check(
         "fn name(a: f32, b: i32) -> f32 {}",
