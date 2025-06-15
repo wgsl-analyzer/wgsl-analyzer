@@ -6,6 +6,9 @@
 			"include": "#line_comments"
 		},
 		{
+			"include": "#block_comments"
+		},
+		{
 			"include": "#keywords"
 		},
 		{
@@ -32,6 +35,17 @@
 			"comment": "single line comment",
 			"name": "comment.line.double-slash.wgsl",
 			"match": "\\s*//.*"
+		},
+		"block_comments": {
+			"applyEndPatternLast": 1,
+			"begin": "/\\*",
+			"end": "\\*/",
+			"name": "comment.block.wgsl",
+			"patterns": [
+				{
+					"include": "#block_comments"
+				}
+			]
 		},
 		"functions": {
 			"patterns": [
