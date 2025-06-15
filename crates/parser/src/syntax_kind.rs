@@ -546,7 +546,7 @@ mod tests {
     fn lex_comment() {
         check_lex(
             "// test asdf\nnot_comment",
-            expect![[r#"[Comment, Whitespace, Identifier]"#]],
+            expect!["[LineEndingComment, Whitespace, Identifier]"],
         );
     }
 
