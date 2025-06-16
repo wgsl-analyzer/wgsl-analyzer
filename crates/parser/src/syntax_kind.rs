@@ -549,7 +549,7 @@ fn is_line_ending_comment_end(c: &char) -> bool {
         '\u{000A}', // line feed
         '\u{000B}', // vertical tab
         '\u{000C}', // form feed
-        '\u{000D}', // carriage return when not also followed by line feed or carriage return followed by line feed (U+000A)
+        '\u{000D}', // carriage return when not also followed by line feed or carriage return followed by line feed
         '\u{0085}', // next line
         '\u{2028}', // line separator
         '\u{2029}', // paragraph separator
