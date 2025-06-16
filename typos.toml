@@ -95,5 +95,6 @@ locale = "en-us"
 extend-ignore-re = [
   "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
   "(?Rm)^.*<!--\\s*spellchecker:disable-line\\s*-->$",
+  "(?Rm) .+ ...\"$",
 ]
 extend-ignore-identifiers-re = []
