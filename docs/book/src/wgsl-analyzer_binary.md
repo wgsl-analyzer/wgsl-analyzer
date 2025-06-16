@@ -39,7 +39,7 @@ On Unix, running the editor from a shell or changing the `.desktop` file to set 
 
 The `wgsl-analyzer` binary can be installed from the repos or AUR (Arch User Repository):
 
-- [`wgsl-analyzer`](https://www.archlinux.org/packages/extra/x86_64/wgsl-analyzer/) (built from latest tagged source)
+- [`wgsl-analyzer`](https://www.archlinux.org/packages/extra/x86_64/wgsl-analyzer) (built from latest tagged source)
 
 - [`wgsl-analyzer-git`](https://aur.archlinux.org/packages/wgsl-analyzer-git) (latest Git version)
 
@@ -57,7 +57,7 @@ pacman -S wgsl-analyzer
 
 <!-- TODO publish to brew -->
 
-The `wgsl-analyzer` binary can be installed via [Homebrew](https://brew.sh/).
+The `wgsl-analyzer` binary can be installed via [Homebrew](https://brew.sh).
 
 ```zsh
 brew install wgsl-analyzer

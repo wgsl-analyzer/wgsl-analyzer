@@ -1,7 +1,7 @@
 # wgsl-analyzer
 
 At its core, `wgsl-analyzer` is a **library** for semantic analysis of WGSL code as it changes over time.
-This manual focuses on a specific usage of the library - running it as part of a server that implements the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) (LSP).
+This manual focuses on a specific usage of the library - running it as part of a server that implements the [Language Server Protocol](https://microsoft.github.io/language-server-protocol) (LSP).
 The LSP allows various code editors, such as VS Code, Emacs, or Vim to implement semantic features such as completion or goto definition by talking to an external language server process.
 
 To improve this document, send a pull request: [https://github.com/wgsl-analyzer/wgsl-analyzer](https://github.com/wgsl-analyzer/wgsl-analyzer/blob/master/docs/book/README.md).

@@ -3,7 +3,7 @@
 	"scopeName": "source.wgsl",
 	"patterns": [
 		{
-			"include": "#line_comments"
+			"include": "#line_ending_comments"
 		},
 		{
 			"include": "#block_comments"
@@ -31,7 +31,7 @@
 		}
 	],
 	"repository": {
-		"line_comments": {
+		"line_ending_comments": {
 			"comment": "single line comment",
 			"name": "comment.line.double-slash.wgsl",
 			"match": "\\s*//.*"

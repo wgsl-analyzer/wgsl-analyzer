@@ -6,9 +6,9 @@
 
 ## What `wgsl-analyzer` is
 
-`wgsl-analyzer` is a [language server](https://microsoft.github.io/language-server-protocol/) plugin for the [WGSL Shading language](https://gpuweb.github.io/gpuweb/wgsl/).
+`wgsl-analyzer` is a [language server](https://microsoft.github.io/language-server-protocol) plugin for the [WGSL Shading language](https://www.w3.org/TR/WGSL).
 
-It comes with a [VS Code](https://code.visualstudio.com/) plugin located in [./editors/code](./editors/code).
+It comes with a [VS Code](https://code.visualstudio.com) plugin located in [./editors/code](./editors/code).
 Due to the nature of the language server protocol, it should be possible to create plugins for other editors as well.
 
 ## Installation

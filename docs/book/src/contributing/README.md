@@ -141,7 +141,7 @@ npm run lint
 
 Logging is done by both `wgsl-analyzer` and VS Code, so it might be tricky to figure out where logs go.
 
-Inside wgsl-analyzer, we use the [`tracing`](https://docs.rs/tracing/) crate for logging, and [`tracing-subscriber`](https://docs.rs/tracing-subscriber) for logging frontend.
+Inside wgsl-analyzer, we use the [`tracing`](https://docs.rs/tracing) crate for logging, and [`tracing-subscriber`](https://docs.rs/tracing-subscriber) for logging frontend.
 By default, log goes to stderr, but the stderr itself is processed by VS Code.
 `--log-file <PATH>` CLI argument allows logging to file.
 Setting the `WA_LOG_FILE=<PATH>` environment variable will also log to file, it will also override `--log-file`.

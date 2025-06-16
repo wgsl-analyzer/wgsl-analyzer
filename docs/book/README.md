@@ -1,6 +1,6 @@
 # `wgsl-analyzer` Documentation
 
-The `wgsl-analyzer` manual uses [mdBook](https://rust-lang.github.io/mdBook/).
+The `wgsl-analyzer` manual uses [mdBook](https://rust-lang.github.io/mdBook).
 
 ## Quick start
 
