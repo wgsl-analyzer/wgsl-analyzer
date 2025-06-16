@@ -1770,28 +1770,25 @@ fn weird_blankspace() {
 #[test]
 fn weird_line_ending_comments() {
     check(
-		"
-		// line feed: \u{000A}// vertical tab: \u{000B}// form feed: \u{000C}// carriage return when not also followed by line feed: \u{000D}// carriage return followed by line feed: \u{000D}\u{000A}// next line: \u{0085}// line separator: \u{2028}// paragraph separator: \u{2029}
-		",
+        "// line feed: \u{000A}// vertical tab: \u{000B}// form feed: \u{000C}// carriage return when not also followed by line feed: \u{000D}// carriage return followed by line feed: \u{000D}\u{000A}// next line: \u{0085}// line separator: \u{2028}// paragraph separator: \u{2029}",
         expect![[r#"
-            SourceFile@0..220
-              Blankspace@0..3 "\n\t\t"
-              LineEndingComment@3..17 "// line feed: "
-              Blankspace@17..18 "\n"
-              LineEndingComment@18..35 "// vertical tab: "
-              Blankspace@35..36 "\u{b}"
-              LineEndingComment@36..50 "// form feed: "
-              Blankspace@50..51 "\u{c}"
-              LineEndingComment@51..107 "// carriage return wh ..."
-              Blankspace@107..108 "\r"
-              LineEndingComment@108..150 "// carriage return fo ..."
-              Blankspace@150..152 "\r\n"
-              LineEndingComment@152..166 "// next line: "
-              Blankspace@166..168 "\u{85}"
-              LineEndingComment@168..187 "// line separator: "
-              Blankspace@187..190 "\u{2028}"
-              LineEndingComment@190..214 "// paragraph separator: "
-              Blankspace@214..220 "\u{2029}\n\t\t""#]],
+            SourceFile@0..214
+              LineEndingComment@0..14 "// line feed: "
+              Blankspace@14..15 "\n"
+              LineEndingComment@15..32 "// vertical tab: "
+              Blankspace@32..33 "\u{b}"
+              LineEndingComment@33..47 "// form feed: "
+              Blankspace@47..48 "\u{c}"
+              LineEndingComment@48..104 "// carriage return wh ..."
+              Blankspace@104..105 "\r"
+              LineEndingComment@105..147 "// carriage return fo ..."
+              Blankspace@147..149 "\r\n"
+              LineEndingComment@149..163 "// next line: "
+              Blankspace@163..165 "\u{85}"
+              LineEndingComment@165..184 "// line separator: "
+              Blankspace@184..187 "\u{2028}"
+              LineEndingComment@187..211 "// paragraph separator: "
+              Blankspace@211..214 "\u{2029}""#]],
     );
 }
 
