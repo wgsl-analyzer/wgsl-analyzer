@@ -531,14 +531,14 @@ fn lex_block_comment(lex: &mut logos::Lexer<SyntaxKind>) -> Option<()> {
 /// - the next line break, or
 /// - the end of the program.
 fn lex_line_ending_comment(lexer: &mut logos::Lexer<SyntaxKind>) -> Option<()> {
-    let remainer = lexer.remainder();
+    let remainder = lexer.remainder();
 
     // see blankspace and line breaks: https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
-    let line_end = remainer
+    let line_end = remainder
         .char_indices()
         .find(|(_, character)| is_line_ending_comment_end(character))
         .map(|(i, _)| i)
-        .unwrap_or(remainer.len());
+        .unwrap_or(remainder.len());
     lexer.bump(line_end);
     Some(())
 }
