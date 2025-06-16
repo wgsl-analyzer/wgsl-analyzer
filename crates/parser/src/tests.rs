@@ -32,6 +32,158 @@ fn check_attribute_list(
 }
 
 #[test]
+fn can_parse_array_declaration() {
+    check(
+        r#"
+		const dim: vec3u = vec3u();
+		fn test(a: array<f32, dim.x>) { }
+		"#,
+        expect![[r#"
+            SourceFile@0..69
+              Whitespace@0..3 "\n\t\t"
+              GlobalConstantDeclaration@3..33
+                Constant@3..8 "const"
+                Whitespace@8..9 " "
+                Binding@9..12
+                  Name@9..12
+                    Identifier@9..12 "dim"
+                Colon@12..13 ":"
+                Whitespace@13..14 " "
+                PathType@14..20
+                  NameReference@14..20
+                    Identifier@14..19 "vec3u"
+                    Whitespace@19..20 " "
+                Equal@20..21 "="
+                Whitespace@21..22 " "
+                FunctionCall@22..29
+                  NameReference@22..27
+                    Identifier@22..27 "vec3u"
+                  FunctionParameterList@27..29
+                    ParenthesisLeft@27..28 "("
+                    ParenthesisRight@28..29 ")"
+                Semicolon@29..30 ";"
+                Whitespace@30..33 "\n\t\t"
+              Function@33..69
+                Fn@33..35 "fn"
+                Whitespace@35..36 " "
+                Name@36..40
+                  Identifier@36..40 "test"
+                ParameterList@40..63
+                  ParenthesisLeft@40..41 "("
+                  Parameter@41..61
+                    VariableIdentDeclaration@41..61
+                      Binding@41..42
+                        Name@41..42
+                          Identifier@41..42 "a"
+                      Colon@42..43 ":"
+                      Whitespace@43..44 " "
+                      Array@44..61
+                        Array@44..49 "array"
+                        GenericArgumentList@49..61
+                          LessThan@49..50 "<"
+                          Float32@50..53
+                            Float32@50..53 "f32"
+                          Comma@53..54 ","
+                          Whitespace@54..55 " "
+                          PathType@55..60
+                            NameReference@55..58
+                              Identifier@55..58 "dim"
+                            FieldExpression@58..60
+                              Period@58..59 "."
+                              Identifier@59..60 "x"
+                          GreaterThan@60..61 ">"
+                  ParenthesisRight@61..62 ")"
+                  Whitespace@62..63 " "
+                CompoundStatement@63..69
+                  BraceLeft@63..64 "{"
+                  Whitespace@64..65 " "
+                  BraceRight@65..66 "}"
+                  Whitespace@66..69 "\n\t\t""#]],
+    );
+}
+
+#[test]
+fn cannot_parse_bad_array_declaration() {
+    check(
+        r#"
+		const dim: vec3u = vec3u();
+		fn test(a: array<f32, dim.>) { }
+		"#,
+        expect![[r#"
+            SourceFile@0..68
+              Whitespace@0..3 "\n\t\t"
+              GlobalConstantDeclaration@3..33
+                Constant@3..8 "const"
+                Whitespace@8..9 " "
+                Binding@9..12
+                  Name@9..12
+                    Identifier@9..12 "dim"
+                Colon@12..13 ":"
+                Whitespace@13..14 " "
+                PathType@14..20
+                  NameReference@14..20
+                    Identifier@14..19 "vec3u"
+                    Whitespace@19..20 " "
+                Equal@20..21 "="
+                Whitespace@21..22 " "
+                FunctionCall@22..29
+                  NameReference@22..27
+                    Identifier@22..27 "vec3u"
+                  FunctionParameterList@27..29
+                    ParenthesisLeft@27..28 "("
+                    ParenthesisRight@28..29 ")"
+                Semicolon@29..30 ";"
+                Whitespace@30..33 "\n\t\t"
+              Function@33..68
+                Fn@33..35 "fn"
+                Whitespace@35..36 " "
+                Name@36..40
+                  Identifier@36..40 "test"
+                ParameterList@40..68
+                  ParenthesisLeft@40..41 "("
+                  Parameter@41..68
+                    VariableIdentDeclaration@41..68
+                      Binding@41..42
+                        Name@41..42
+                          Identifier@41..42 "a"
+                      Colon@42..43 ":"
+                      Whitespace@43..44 " "
+                      Array@44..68
+                        Array@44..49 "array"
+                        GenericArgumentList@49..68
+                          LessThan@49..50 "<"
+                          Float32@50..53
+                            Float32@50..53 "f32"
+                          Comma@53..54 ","
+                          Whitespace@54..55 " "
+                          PathType@55..60
+                            NameReference@55..58
+                              Identifier@55..58 "dim"
+                            FieldExpression@58..60
+                              Period@58..59 "."
+                              Error@59..60
+                                GreaterThan@59..60 ">"
+                          Error@60..62
+                            ParenthesisRight@60..61 ")"
+                            Whitespace@61..62 " "
+                          Error@62..64
+                            BraceLeft@62..63 "{"
+                            Whitespace@63..64 " "
+                          Error@64..68
+                            BraceRight@64..65 "}"
+                            Whitespace@65..68 "\n\t\t"
+
+            error at 59..60: expected Identifier, but found GreaterThan
+            error at 60..61: expected Period, Comma, GreaterThan, or Identifier, but found ParenthesisRight
+            error at 62..63: expected Comma, GreaterThan, or Identifier, but found BraceLeft
+            error at 64..65: expected Comma, GreaterThan, or Identifier, but found BraceRight
+            error at 65..68: expected Comma or GreaterThan
+            error at 65..68: expected Comma or ParenthesisRight
+            error at 65..68: expected Arrow or BraceLeft"#]],
+    );
+}
+
+#[test]
 fn parse_empty() {
     check("", expect![[r#"SourceFile@0..0"#]]);
 }
