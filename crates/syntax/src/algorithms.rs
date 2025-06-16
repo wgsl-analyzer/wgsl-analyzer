@@ -60,7 +60,7 @@ pub fn skip_whitespace_token(
     mut token: SyntaxToken,
     direction: Direction,
 ) -> Option<SyntaxToken> {
-    while token.kind() == SyntaxKind::Whitespace {
+    while token.kind() == SyntaxKind::Blankspace {
         token = match direction {
             Direction::Next => token.next_token()?,
             Direction::Prev => token.prev_token()?, // spellchecker:disable-line

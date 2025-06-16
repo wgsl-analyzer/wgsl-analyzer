@@ -386,7 +386,7 @@ mod tests {
             "   9876",
             expect![[r#"
                 Literal@0..7
-                  Whitespace@0..3 "   "
+                  Blankspace@0..3 "   "
                   DecimalIntLiteral@3..7 "9876""#]],
         );
     }
@@ -398,7 +398,7 @@ mod tests {
             expect![[r#"
                 Literal@0..6
                   DecimalIntLiteral@0..3 "999"
-                  Whitespace@3..6 "   ""#]],
+                  Blankspace@3..6 "   ""#]],
         );
     }
 
@@ -408,9 +408,9 @@ mod tests {
             " 123     ",
             expect![[r#"
                 Literal@0..9
-                  Whitespace@0..1 " "
+                  Blankspace@0..1 " "
                   DecimalIntLiteral@1..4 "123"
-                  Whitespace@4..9 "     ""#]],
+                  Blankspace@4..9 "     ""#]],
         );
     }
 
@@ -486,19 +486,19 @@ mod tests {
             expect![[r#"
                 InfixExpression@0..12
                   Literal@0..3
-                    Whitespace@0..1 " "
+                    Blankspace@0..1 " "
                     DecimalIntLiteral@1..2 "1"
-                    Whitespace@2..3 " "
+                    Blankspace@2..3 " "
                   Plus@3..4 "+"
-                  Whitespace@4..7 "   "
+                  Blankspace@4..7 "   "
                   InfixExpression@7..12
                     Literal@7..8
                       DecimalIntLiteral@7..8 "2"
                     Star@8..9 "*"
-                    Whitespace@9..10 " "
+                    Blankspace@9..10 " "
                     Literal@10..12
                       DecimalIntLiteral@10..11 "3"
-                      Whitespace@11..12 " ""#]],
+                      Blankspace@11..12 " ""#]],
         );
     }
 
@@ -617,37 +617,37 @@ mod tests {
                     InfixExpression@0..6
                       Literal@0..2
                         DecimalIntLiteral@0..1 "1"
-                        Whitespace@1..2 " "
+                        Blankspace@1..2 " "
                       Plus@2..3 "+"
-                      Whitespace@3..4 " "
+                      Blankspace@3..4 " "
                       Literal@4..6
                         DecimalIntLiteral@4..5 "2"
-                        Whitespace@5..6 " "
+                        Blankspace@5..6 " "
                     EqualEqual@6..8 "=="
-                    Whitespace@8..9 " "
+                    Blankspace@8..9 " "
                     Literal@9..11
                       DecimalIntLiteral@9..10 "3"
-                      Whitespace@10..11 " "
+                      Blankspace@10..11 " "
                   OrOr@11..13 "||"
-                  Whitespace@13..14 " "
+                  Blankspace@13..14 " "
                   InfixExpression@14..28
                     InfixExpression@14..24
                       Literal@14..16
                         DecimalIntLiteral@14..15 "4"
-                        Whitespace@15..16 " "
+                        Blankspace@15..16 " "
                       LessThan@16..17 "<"
-                      Whitespace@17..18 " "
+                      Blankspace@17..18 " "
                       InfixExpression@18..24
                         Literal@18..20
                           DecimalIntLiteral@18..19 "5"
-                          Whitespace@19..20 " "
+                          Blankspace@19..20 " "
                         ForwardSlash@20..21 "/"
-                        Whitespace@21..22 " "
+                        Blankspace@21..22 " "
                         Literal@22..24
                           DecimalIntLiteral@22..23 "2"
-                          Whitespace@23..24 " "
+                          Blankspace@23..24 " "
                     EqualEqual@24..26 "=="
-                    Whitespace@26..27 " "
+                    Blankspace@26..27 " "
                     Literal@27..28
                       DecimalIntLiteral@27..28 "0""#]],
         );
@@ -685,15 +685,15 @@ mod tests {
                     Period@3..4 "."
                     NameReference@4..7
                       Identifier@4..6 "xy"
-                      Whitespace@6..7 " "
+                      Blankspace@6..7 " "
                   Plus@7..8 "+"
-                  Whitespace@8..9 " "
+                  Blankspace@8..9 " "
                   InfixExpression@9..21
                     Literal@9..11
                       DecimalIntLiteral@9..10 "2"
-                      Whitespace@10..11 " "
+                      Blankspace@10..11 " "
                     Star@11..12 "*"
-                    Whitespace@12..13 " "
+                    Blankspace@12..13 " "
                     FieldExpression@13..21
                       PathExpression@13..18
                         NameReference@13..18
@@ -717,7 +717,7 @@ mod tests {
                     Literal@4..5
                       DecimalIntLiteral@4..5 "2"
                     Comma@5..6 ","
-                    Whitespace@6..7 " "
+                    Blankspace@6..7 " "
                     Literal@7..8
                       DecimalIntLiteral@7..8 "3"
                     ParenthesisRight@8..9 ")""#]],
@@ -739,19 +739,19 @@ mod tests {
                         PathExpression@4..9
                           NameReference@4..9
                             Identifier@4..8 "srgb"
-                            Whitespace@8..9 " "
+                            Blankspace@8..9 " "
                         Plus@9..10 "+"
-                        Whitespace@10..11 " "
+                        Blankspace@10..11 " "
                         Literal@11..15
                           DecimalFloatLiteral@11..15 "14.0"
                       Comma@15..16 ","
-                      Whitespace@16..17 " "
+                      Blankspace@16..17 " "
                       Literal@17..20
                         DecimalFloatLiteral@17..20 "3.0"
                       ParenthesisRight@20..21 ")"
-                      Whitespace@21..22 " "
+                      Blankspace@21..22 " "
                   Star@22..23 "*"
-                  Whitespace@23..24 " "
+                  Blankspace@23..24 " "
                   Literal@24..27
                     DecimalFloatLiteral@24..27 "2.0""#]],
         );
@@ -926,12 +926,12 @@ mod tests {
                 InfixExpression@0..7
                   PrefixExpression@0..4
                     Minus@0..1 "-"
-                    Whitespace@1..2 " "
+                    Blankspace@1..2 " "
                     Literal@2..4
                       DecimalIntLiteral@2..3 "3"
-                      Whitespace@3..4 " "
+                      Blankspace@3..4 " "
                   Plus@4..5 "+"
-                  Whitespace@5..6 " "
+                  Blankspace@5..6 " "
                   Literal@6..7
                     DecimalIntLiteral@6..7 "3""#]],
         );
@@ -971,14 +971,14 @@ mod tests {
                     PathExpression@0..2
                       NameReference@0..2
                         Identifier@0..1 "n"
-                        Whitespace@1..2 " "
+                        Blankspace@1..2 " "
                     Modulo@2..3 "%"
-                    Whitespace@3..4 " "
+                    Blankspace@3..4 " "
                     Literal@4..7
                       UnsignedIntLiteral@4..6 "2u"
-                      Whitespace@6..7 " "
+                      Blankspace@6..7 " "
                   EqualEqual@7..9 "=="
-                  Whitespace@9..10 " "
+                  Blankspace@9..10 " "
                   Literal@10..12
                     UnsignedIntLiteral@10..12 "0u""#]],
         );
@@ -1075,9 +1075,9 @@ mod tests {
                   InfixExpression@0..21
                     Literal@0..2
                       DecimalIntLiteral@0..1 "1"
-                      Whitespace@1..2 " "
+                      Blankspace@1..2 " "
                     Plus@2..3 "+"
-                    Whitespace@3..4 " "
+                    Blankspace@3..4 " "
                     PrefixExpression@4..21
                       Minus@4..5 "-"
                       BitcastExpression@5..21
@@ -1092,9 +1092,9 @@ mod tests {
                             NameReference@18..19
                               Identifier@18..19 "x"
                           ParenthesisRight@19..20 ")"
-                          Whitespace@20..21 " "
+                          Blankspace@20..21 " "
                   Plus@21..22 "+"
-                  Whitespace@22..23 " "
+                  Blankspace@22..23 " "
                   Literal@23..24
                     DecimalIntLiteral@23..24 "1""#]],
         );
@@ -1144,11 +1144,11 @@ mod tests {
                 InfixExpression@0..6
                   Literal@0..2
                     DecimalIntLiteral@0..1 "2"
-                    Whitespace@1..2 " "
+                    Blankspace@1..2 " "
                   ShiftRight@2..5
                     GreaterThan@2..3 ">"
                     GreaterThan@3..4 ">"
-                    Whitespace@4..5 " "
+                    Blankspace@4..5 " "
                   Literal@5..6
                     DecimalIntLiteral@5..6 "3""#]],
         );
@@ -1163,24 +1163,24 @@ mod tests {
                   InfixExpression@0..11
                     Literal@0..2
                       DecimalIntLiteral@0..1 "2"
-                      Whitespace@1..2 " "
+                      Blankspace@1..2 " "
                     ShiftRight@2..5
                       GreaterThan@2..3 ">"
                       GreaterThan@3..4 ">"
-                      Whitespace@4..5 " "
+                      Blankspace@4..5 " "
                     InfixExpression@5..11
                       Literal@5..7
                         DecimalIntLiteral@5..6 "3"
-                        Whitespace@6..7 " "
+                        Blankspace@6..7 " "
                       Plus@7..8 "+"
-                      Whitespace@8..9 " "
+                      Blankspace@8..9 " "
                       Literal@9..11
                         DecimalIntLiteral@9..10 "2"
-                        Whitespace@10..11 " "
+                        Blankspace@10..11 " "
                   ShiftLeft@11..14
                     LessThan@11..12 "<"
                     LessThan@12..13 "<"
-                    Whitespace@13..14 " "
+                    Blankspace@13..14 " "
                   Literal@14..15
                     DecimalIntLiteral@14..15 "4""#]],
         );
