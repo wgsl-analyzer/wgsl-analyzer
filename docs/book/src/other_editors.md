@@ -1,6 +1,6 @@
 # Other Editors
 
-`wgsl-analyzer` works with any editor that supports the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/).
+`wgsl-analyzer` works with any editor that supports the [Language Server Protocol](https://microsoft.github.io/language-server-protocol).
 
 This page assumes that you have already [installed the `wgsl-analyzer` binary](./wgsl-analyzer_binary.md).
 
@@ -42,11 +42,11 @@ You can install LSP-mode via `M-x package-install` and then run it via the `M-x 
 ```
 
 For more information on how to set up LSP mode and its extension package see the instructions in the [LSP mode manual](https://emacs-lsp.github.io/lsp-mode/page/installation).
-Also see the [`wgsl-analyzer` section](https://emacs-lsp.github.io/lsp-mode/page/lsp-wgsl-analyzer/) for `wgsl-analyzer` specific options and commands, which you can optionally bind to keys.
+Also see the [`wgsl-analyzer` section](https://emacs-lsp.github.io/lsp-mode/page/lsp-wgsl-analyzer) for `wgsl-analyzer` specific options and commands, which you can optionally bind to keys.
 
 <!-- TODO create a guide 
 Note the excellent
-[guide](https://robert.kra.hn/posts/2021-02-07_wgsl-with-emacs/) from
+[guide](https://robert.kra.hn/posts/2021-02-07_wgsl-with-emacs) from
 [@rksm](https://github.com/rksm) on how to set-up Emacs for WGSL
 development with LSP mode and several other packages.
 -->
@@ -247,7 +247,7 @@ Then click on apply, and restart the LSP server for your WGSL project.
 
 ## Kakoune
 
-[Kakoune](https://kakoune.org/) supports LSP with the help of [`kak-lsp`](https://github.com/kak-lsp/kak-lsp).
+[Kakoune](https://kakoune.org) supports LSP with the help of [`kak-lsp`](https://github.com/kak-lsp/kak-lsp).
 Follow the [instructions](https://github.com/kak-lsp/kak-lsp#installation) to install `kak-lsp`.
 To configure `kak-lsp`, refer to the [configuration section](https://github.com/kak-lsp/kak-lsp#configuring-kak-lsp).
 It is about copying the [configuration file](https://github.com/kak-lsp/kak-lsp/blob/master/kak-lsp.toml) to the right place.
@@ -276,7 +276,7 @@ hook global WinSetOption filetype=wgsl %{
 
 ## Helix
 
-[Helix](https://docs.helix-editor.com/) supports LSP by default.
+[Helix](https://docs.helix-editor.com) supports LSP by default.
 However, it will not install `wgsl-analyzer` automatically.
 You can follow instructions for [installing the `wgsl-analyzer` binary](./wgsl-analyzer_binary.md).
 

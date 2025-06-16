@@ -97,7 +97,7 @@ wgslfmt is designed to be very configurable. You can create a TOML file called
 `wgslfmt.toml` or `.wgslfmt.toml`, place it in the project or any other parent
 directory and it will apply the options in that file. See `wgslfmt --help=config`
 for the options which are available, or if you prefer to see visual style previews,
-[GitHub page](https://wgsl-analyzer.github.io/wgslfmt/).
+[GitHub page](https://wgsl-analyzer.github.io/wgslfmt).
 
 By default, wgslfmt uses a style which conforms to the [Rust style guide][style
 guide] that has been formalized through the [style RFC
@@ -105,7 +105,7 @@ process][fmt rfcs].
 
 Configuration options are either stable or unstable. Stable options can always
 be used, while unstable ones are only available on a nightly toolchain, and opt-in.
-See [GitHub page](https://wgsl-analyzer.github.io/wgslfmt/) for details.
+See [GitHub page](https://wgsl-analyzer.github.io/wgslfmt) for details.
 
 ## Tips
 

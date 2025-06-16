@@ -315,7 +315,7 @@ Instead, as much as possible we leverage existing ones.
 Examples:
 
 - The `ide` API of `wgsl-analyzer` is explicitly unstable, but the LSP interface is stable, and here we just implement a stable API managed by someone else.
-- WGSL spec is [almost](https://www.w3.org/standards/history/WGSL/) stable, and it is the primary input to wgsl-analyzer.
+- [WGSL spec](https://www.w3.org/TR/WGSL) is almost stable, and it is the primary input to `wgsl-analyzer`.
 
 Exceptions:
 
@@ -383,7 +383,7 @@ It has a much richer vocabulary of types than `ide`, but the basic testing setup
 For comparisons, we use the `expect` crate for snapshot testing.
 
 To test various analysis corner cases and avoid forgetting about old tests, we use so-called marks.
-See the [cov_mark](https://docs.rs/cov-mark/latest/cov_mark/) crate documentation for more.
+See the [cov_mark](https://docs.rs/cov-mark/latest/cov_mark) crate documentation for more.
 
 **Architecture Invariant:** `wgsl-analyzer` tests do not use `libcore` or `libstd`.
 All required library code must be a part of the tests.

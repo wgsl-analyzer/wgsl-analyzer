@@ -340,7 +340,7 @@ Moreover, it would be cool if editors did not need to implement even basic langu
 
 ### Unresolved Question
 
-- Should we return a nested brace structure, to allow [paredit](https://paredit.org/)-like actions of jump *out* of the current brace pair?
+- Should we return a nested brace structure, to allow [paredit](https://paredit.org)-like actions of jump *out* of the current brace pair?
   This is how `SelectionRange` request works.
 - Alternatively, should we perhaps flag certain `SelectionRange`s as being brace pairs?
 

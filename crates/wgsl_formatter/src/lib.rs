@@ -562,7 +562,7 @@ fn single_whitespace() -> SyntaxToken {
 }
 
 fn create_whitespace(text: &str) -> SyntaxToken {
-    create_syntax_token(SyntaxKind::Whitespace, text)
+    create_syntax_token(SyntaxKind::Blankspace, text)
 }
 
 fn create_syntax_token(

@@ -118,8 +118,25 @@ pub enum SyntaxKind {
     ImportPath,
     ImportCustom,
 
-    #[regex("[ \n\r\t]+")]
-    Whitespace,
+    /// Blankspace is any combination of one or more of code points from the Unicode [`Pattern_White_Space`] property.
+    /// The following is the set of code points in [`Pattern_White_Space`]:
+    /// - space (U+0020)
+    /// - horizontal tab (U+0009)
+    /// - line feed (U+000A)
+    /// - vertical tab (U+000B)
+    /// - form feed (U+000C)
+    /// - carriage return (U+000D)
+    /// - next line (U+0085)
+    /// - left-to-right mark (U+200E)
+    /// - right-to-left mark (U+200F)
+    /// - line separator (U+2028)
+    /// - paragraph separator (U+2029)
+    ///
+    /// Source: https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
+    ///
+    /// [`Pattern_White_Space`]: https://www.unicode.org/reports/tr31/tr31-35.html#unicode-standard-annex-31-for-unicode-version-1400
+    #[regex(r"[\s\u0085\u200e\u200f\u2028\u2029]+")]
+    Blankspace,
     #[regex("#ifdef.*")]
     UnofficialPreprocessorIfDef,
     #[regex("#endif.*")]
@@ -133,8 +150,13 @@ pub enum SyntaxKind {
     #[regex("#if.*")]
     UnofficialPreprocessIf,
 
-    #[regex("//.*")]
-    Comment,
+    /// https://www.w3.org/TR/WGSL
+    #[regex("//", lex_line_ending_comment)]
+    LineEndingComment,
+
+    /// https://www.w3.org/TR/WGSL/#block-comment
+    #[regex(r"/\*", lex_block_comment)]
+    BlockComment,
 
     #[regex(r#"([_\p{XID_Start}]\p{XID_Continue}*)|(\p{XID_Start})"#)]
     Identifier,
@@ -461,14 +483,15 @@ impl rowan::Language for WgslLanguage {
 
 impl SyntaxKind {
     pub fn is_whitespace(self) -> bool {
-        matches!(self, SyntaxKind::Whitespace)
+        matches!(self, SyntaxKind::Blankspace)
     }
 
     pub fn is_trivia(self) -> bool {
         matches!(
             self,
-            SyntaxKind::Whitespace
-                | SyntaxKind::Comment
+            SyntaxKind::Blankspace
+                | SyntaxKind::LineEndingComment
+                | SyntaxKind::BlockComment
                 | SyntaxKind::UnofficialPreprocessorEndif
                 | SyntaxKind::UnofficialPreprocessorIfDef
                 | SyntaxKind::UnofficialPreprocessorElse
@@ -476,6 +499,62 @@ impl SyntaxKind {
                 | SyntaxKind::UnofficialPreprocessIf
         )
     }
+}
+
+fn lex_block_comment(lex: &mut logos::Lexer<SyntaxKind>) -> Option<()> {
+    let mut depth = 1;
+    let slice = lex.remainder();
+    let mut i = 0;
+    let bytes = slice.as_bytes();
+    while i + 1 < bytes.len() {
+        if bytes[i] == b'/' && bytes[i + 1] == b'*' {
+            depth += 1;
+            i += 2;
+        } else if bytes[i] == b'*' && bytes[i + 1] == b'/' {
+            depth -= 1;
+            i += 2;
+            if depth == 0 {
+                lex.bump(i);
+                return Some(());
+            }
+        } else {
+            i += 1;
+        }
+    }
+    // If we reach here, the comment was unterminated; consume the rest.
+    lex.bump(i);
+    None
+}
+
+/// A line-ending comment is a kind of comment consisting of the two code points `//` (U+002F followed by U+002F)
+/// and the code points that follow, up until but not including:
+/// - the next line break, or
+/// - the end of the program.
+fn lex_line_ending_comment(lexer: &mut logos::Lexer<SyntaxKind>) -> Option<()> {
+    let remainder = lexer.remainder();
+
+    // see blankspace and line breaks: https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
+    let line_end = remainder
+        .char_indices()
+        .find(|(_, character)| is_line_ending_comment_end(character))
+        .map(|(i, _)| i)
+        .unwrap_or(remainder.len());
+    lexer.bump(line_end);
+    Some(())
+}
+
+/// See: https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
+fn is_line_ending_comment_end(c: &char) -> bool {
+    [
+        '\u{000A}', // line feed
+        '\u{000B}', // vertical tab
+        '\u{000C}', // form feed
+        '\u{000D}', // carriage return when not also followed by line feed or carriage return followed by line feed
+        '\u{0085}', // next line
+        '\u{2028}', // line separator
+        '\u{2029}', // paragraph separator
+    ]
+    .contains(c)
 }
 
 #[cfg(test)]
@@ -515,7 +594,7 @@ mod tests {
     fn lex_comment() {
         check_lex(
             "// test asdf\nnot_comment",
-            expect![[r#"[Comment, Whitespace, Identifier]"#]],
+            expect!["[LineEndingComment, Blankspace, Identifier]"],
         );
     }
 

@@ -1,6 +1,6 @@
 # wgsl-analyzer
 
-wgsl-analyzer is a [language server](https://microsoft.github.io/language-server-protocol/) plugin for the [WGSL Shading language](https://gpuweb.github.io/gpuweb/wgsl/).
+wgsl-analyzer is a [language server](https://microsoft.github.io/language-server-protocol) plugin for the [WGSL Shading language](https://www.w3.org/TR/WGSL).
 
 ## Features
 
@@ -244,4 +244,4 @@ var x: ref<f32> = 0.0;
 var x: f32 = 0.0;
 ```
 
-respectively. For more information, check out references and the "Load Rule" in the [WGSL Spec](https://gpuweb.github.io/gpuweb/wgsl/#load-rule).
+respectively. For more information, check out references and the "Load Rule" in the [WGSL Spec](https://www.w3.org/TR/WGSL/#load-rule).

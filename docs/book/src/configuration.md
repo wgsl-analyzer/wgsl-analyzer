@@ -12,7 +12,7 @@ For the latter category, it might help to know that the initial configuration is
 The spec says that the field type is `any?`, but `wgsl-analyzer` is looking for a JSON object that is constructed using settings from the list below.
 The name of the setting, ignoring the `wgsl-analyzer.` prefix, is used as a path, and the value of the setting becomes the JSON property value.
 
-Please consult your editor's documentation to learn more about how to configure [LSP servers](https://microsoft.github.io/language-server-protocol/).
+Please consult your editor's documentation to learn more about how to configure [LSP servers](https://microsoft.github.io/language-server-protocol).
 
 To verify which configuration is actually used by `wgsl-analyzer`, set the `WA_LOG` environment variable to `wgsl_analyzer=info` and look for config-related messages.
 Logs should show both the JSON that `wgsl-analyzer` sees as well as the updated config.

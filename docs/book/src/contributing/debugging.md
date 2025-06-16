@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Install [LLDB](https://lldb.llvm.org/) and the [LLDB Extension](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb).
+- Install [LLDB](https://lldb.llvm.org) and the [LLDB Extension](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb).
 - Open the root folder in VS Code. Here you can access the preconfigured debug setups.
 
 ![Debug options view](https://user-images.githubusercontent.com/36276403/74611090-92ec5380-5101-11ea-8a41-598f51f3f3e3.png)
