@@ -53,7 +53,7 @@ impl<'database> Semantics<'database> {
     pub fn analyze(
         &self,
         def: DefinitionWithBodyId,
-    ) -> SourceAnalyzer {
+    ) -> SourceAnalyzer<'_> {
         SourceAnalyzer::new(self.database, def)
     }
 
@@ -111,7 +111,8 @@ impl<'database> Semantics<'database> {
             &ast::Expression::cast(expression.clone())?,
         ))?;
         let scope_id = expression_scopes.scope_for_expression(expression_id)?;
-        let mut resolver = Resolver::default().push_module_scope(self.database, file_id, module_info);
+        let mut resolver =
+            Resolver::default().push_module_scope(self.database, file_id, module_info);
 
         if let DefinitionWithBodyId::Function(function) = def {
             resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
@@ -180,7 +181,9 @@ impl<'database> Semantics<'database> {
     ) -> Option<ImportId> {
         let import = module_data::find_import(self.database, source.file_id, &source.value)?;
 
-        let import_id = self.database.intern_import(Location::new(source.file_id, import));
+        let import_id = self
+            .database
+            .intern_import(Location::new(source.file_id, import));
         Some(import_id)
     }
 
@@ -383,7 +386,8 @@ impl HasSource for Local {
         database: &dyn DefDatabase,
     ) -> Option<InFile<Self::Ast>> {
         let file_id = self.parent.lookup(database).file_id;
-        let (_, source_map) = database.body_with_source_map(DefinitionWithBodyId::Function(self.parent));
+        let (_, source_map) =
+            database.body_with_source_map(DefinitionWithBodyId::Function(self.parent));
         let binding = source_map
             .binding_to_source(self.binding)
             .map_err(drop)

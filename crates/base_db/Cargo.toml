@@ -24,3 +24,6 @@ vfs.workspace = true
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
+
+[lints]
+workspace = true

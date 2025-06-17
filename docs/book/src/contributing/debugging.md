@@ -2,10 +2,12 @@
 
 ## Prerequisites
 
-- Install [LLDB](https://lldb.llvm.org) and the [LLDB Extension](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb).
+- Install [LLDB](https://lldb.llvm.org) and the [LLDB Extension].
 - Open the root folder in VS Code. Here you can access the preconfigured debug setups.
 
 ![Debug options view](https://user-images.githubusercontent.com/36276403/74611090-92ec5380-5101-11ea-8a41-598f51f3f3e3.png)
+
+[LLDB Extension]: <https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb>
 
 - Install all TypeScript dependencies
 
@@ -35,7 +37,8 @@ and run the following command in your `[Extension Development Host]`
 
 ## Debug WGSL LSP server
 
-- When attaching a debugger to an already running `wgsl-analyzer` server on Linux you might need to enable `ptrace` for unrelated processes by running:
+- When attaching a debugger to an already running `wgsl-analyzer` server on Linux,
+  you might need to enable `ptrace` for unrelated processes by running:
 
   ```bash
   echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope

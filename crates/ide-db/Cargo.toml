@@ -59,3 +59,6 @@ nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "b3
 
 [dev-dependencies]
 expect-test = "1.5.1"
+
+[lints]
+workspace = true

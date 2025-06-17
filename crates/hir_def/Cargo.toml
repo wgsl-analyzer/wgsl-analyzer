@@ -24,3 +24,6 @@ either.workspace = true
 smallvec.workspace = true
 rowan.workspace = true
 tracing.workspace = true
+
+[lints]
+workspace = true
