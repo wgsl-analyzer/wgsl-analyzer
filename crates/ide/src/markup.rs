@@ -12,6 +12,7 @@ pub struct Markup {
 }
 
 impl From<Markup> for String {
+    #[inline]
     fn from(markup: Markup) -> Self {
         markup.text
     }
@@ -19,14 +20,14 @@ impl From<Markup> for String {
 
 impl From<String> for Markup {
     fn from(text: String) -> Self {
-        Markup { text }
+        Self { text }
     }
 }
 
 impl fmt::Display for Markup {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         fmt::Display::fmt(&self.text, f)
     }
@@ -36,10 +37,10 @@ impl Markup {
     pub fn as_str(&self) -> &str {
         self.text.as_str()
     }
-    pub fn fenced_block(contents: impl fmt::Display) -> Markup {
+    pub fn fenced_block<Displayable: fmt::Display>(contents: Displayable) -> Self {
         format!("```rust\n{contents}\n```").into()
     }
-    pub fn fenced_block_text(contents: impl fmt::Display) -> Markup {
+    pub fn fenced_block_text<Displayable: fmt::Display>(contents: Displayable) -> Self {
         format!("```text\n{contents}\n```").into()
     }
 }

@@ -6,7 +6,7 @@ use rustc_hash::FxHashMap;
 
 use super::{BindingId, Body};
 use crate::{
-    db::{DefDatabase, DefinitionWithBodyId},
+    database::{DefDatabase, DefinitionWithBodyId},
     expression::{ExpressionId, Statement, StatementId},
     module_data::Name,
 };
@@ -45,10 +45,10 @@ impl Index<ScopeId> for ExprScopes {
 
 impl ExprScopes {
     pub fn expression_scopes_query(
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         def: DefinitionWithBodyId,
     ) -> Arc<ExprScopes> {
-        let body = db.body(def);
+        let body = database.body(def);
         Arc::new(ExprScopes::new(&body))
     }
 
@@ -111,7 +111,7 @@ impl ExprScopes {
         name: &Name,
     ) -> Option<&ScopeEntry> {
         self.scope_chain(Some(scope))
-            .find_map(|scope| self.entries(scope).iter().find(|it| it.name == *name))
+            .find_map(|scope| self.entries(scope).iter().find(|entry| entry.name == *name))
     }
 
     fn root_scope(&mut self) -> ScopeId {

@@ -158,7 +158,6 @@ where
         ctx: Context<'_, S>,
     ) {
         let span = ctx.span(id).unwrap();
-
         let data = Data::new(attrs);
         span.extensions_mut().insert(data);
     }
@@ -173,9 +172,9 @@ where
     fn on_close(
         &self,
         id: Id,
-        ctx: Context<'_, S>,
+        context: Context<'_, S>,
     ) {
-        let span = ctx.span(&id).unwrap();
+        let span = context.span(&id).unwrap();
         let data = span.extensions_mut().remove::<Data>().unwrap();
         let mut node = data.into_node(span.name());
 
@@ -246,7 +245,7 @@ impl Node {
             return;
         }
 
-        self.children.sort_by_key(|it| it.name);
+        self.children.sort_by_key(|node| node.name);
         let mut index = 0;
         for i in 1..self.children.len() {
             if self.children[index].name == self.children[i].name {

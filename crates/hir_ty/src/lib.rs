@@ -2,7 +2,7 @@
 //! information and various assists.
 
 pub mod builtins;
-pub mod db;
+pub mod database;
 pub mod function;
 pub mod infer;
 pub mod layout;

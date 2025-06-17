@@ -208,7 +208,7 @@ impl CompletionRelevance {
     /// it means "least relevant". The score value should only be used
     /// for relative ordering.
     ///
-    /// See is_relevant if you need to make some judgement about score
+    /// See is_relevant if you need to make some judgment about score
     /// in an absolute sense.
     const BASE_SCORE: u32 = u32::MAX / 2;
 
@@ -424,7 +424,7 @@ pub(crate) struct Builder {
 impl fmt::Debug for CompletionItem {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         let mut s = f.debug_struct("CompletionItem");
         s.field("label", &self.label.primary)
@@ -476,7 +476,7 @@ impl fmt::Debug for CompletionItem {
 impl Builder {
     pub(crate) fn build(
         self,
-        db: &RootDatabase,
+        database: &RootDatabase,
     ) -> CompletionItem {
         let _p = tracing::info_span!("item::Builder::build").entered();
 
@@ -514,7 +514,7 @@ impl Builder {
         //         detail_left,
         //         "{}(use {})",
         //         if detail_left.is_empty() { "" } else { " " },
-        //         import_edit.import_path.display(db, self.edition)
+        //         import_edit.import_path.display(database, self.edition)
         //     );
         // } else if let Some(trait_name) = self.trait_name {
         //     let detail_left = detail_left.get_or_insert_with(String::new);
@@ -526,14 +526,14 @@ impl Builder {
         // }
 
         let text_edit = match self.text_edit {
-            Some(it) => it,
+            Some(text_edit) => text_edit,
             None => TextEdit::replace(self.source_range, insert_text),
         };
 
         // let import_to_add = self
         //     .imports_to_add
         //     .into_iter()
-        //     .map(|import| import.import_path.display(db, self.edition).to_string())
+        //     .map(|import| import.import_path.display(database, self.edition).to_string())
         //     .collect();
 
         CompletionItem {

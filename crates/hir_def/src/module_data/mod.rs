@@ -10,7 +10,7 @@ use syntax::{AstNode, TokenText, ast};
 use crate::{
     HirFileId,
     ast_id::FileAstId,
-    db::{DefDatabase, Interned},
+    database::{DefDatabase, Interned},
     type_ref::*,
 };
 
@@ -164,15 +164,15 @@ pub struct ModuleData {
 
 impl ModuleInfo {
     pub fn module_info_query(
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         file_id: HirFileId,
     ) -> Arc<ModuleInfo> {
-        let source = match db.parse_or_resolve(file_id) {
+        let source = match database.parse_or_resolve(file_id) {
             Ok(value) => value.tree(),
             Err(_) => return Arc::new(ModuleInfo::default()),
         };
 
-        let mut lower_ctx = lower::Ctx::new(db, file_id);
+        let mut lower_ctx = lower::Ctx::new(database, file_id);
         lower_ctx.lower_source_file(source);
 
         Arc::new(ModuleInfo {
@@ -338,15 +338,15 @@ mod_items! {
 }
 
 pub fn find_item<M: ModuleDataNode>(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
     source: &M::Source,
 ) -> Option<ModuleItemId<M>> {
-    let module_info = db.module_info(file_id);
+    let module_info = database.module_info(file_id);
     module_info.items().iter().find_map(|item| {
         let id = M::id_from_mod_item(item)?;
         let data = M::lookup(&module_info.data, id.index);
-        let def_map = db.ast_id_map(file_id);
+        let def_map = database.ast_id_map(file_id);
 
         let source_ast_id = def_map.ast_id(source);
         let item_ast_id = M::ast_id(data);
@@ -361,15 +361,15 @@ pub fn find_item<M: ModuleDataNode>(
 
 // imports can be found not just in the items
 pub fn find_import(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
     source: &syntax::ast::Import,
 ) -> Option<ModuleItemId<Import>> {
-    let module_info = db.module_info(file_id);
+    let module_info = database.module_info(file_id);
 
     module_info.data.imports.iter().find_map(|(index, data)| {
         let id = ModuleItemId::from(index);
-        let def_map = db.ast_id_map(file_id);
+        let def_map = database.ast_id_map(file_id);
 
         let source_ast_id = def_map.ast_id(source);
         let item_ast_id = Import::ast_id(data);

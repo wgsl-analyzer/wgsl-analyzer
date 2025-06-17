@@ -1,8 +1,8 @@
 use hir_def::{
-    db::DefinitionWithBodyId,
+    database::DefinitionWithBodyId,
     expression::{ArithmeticOperation, BinaryOperation, ExpressionId},
 };
-use hir_ty::db::HirDatabase;
+use hir_ty::database::HirDatabase;
 
 #[derive(Debug)]
 pub enum PrecedenceDiagnostic {
@@ -11,11 +11,11 @@ pub enum PrecedenceDiagnostic {
 }
 
 pub fn collect(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     body: DefinitionWithBodyId,
     mut f: impl FnMut(PrecedenceDiagnostic),
 ) {
-    let (body, _) = db.body_with_source_map(body);
+    let (body, _) = database.body_with_source_map(body);
 
     for (_, expression) in body.exprs.iter() {
         // See https://github.com/gpuweb/gpuweb/issues/1146#issuecomment-714721825

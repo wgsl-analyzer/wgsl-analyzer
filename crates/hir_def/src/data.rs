@@ -3,7 +3,7 @@ use std::sync::Arc;
 use la_arena::{Arena, Idx};
 
 use crate::{
-    db::{
+    database::{
         DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Interned, Lookup, OverrideId,
         StructId, TypeAliasId,
     },
@@ -20,11 +20,11 @@ pub struct FunctionData {
 
 impl FunctionData {
     pub fn fn_data_query(
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         func: FunctionId,
     ) -> Arc<FunctionData> {
-        let loc = func.lookup(db);
-        let module_info = db.module_info(loc.file_id);
+        let loc = func.lookup(database);
+        let module_info = database.module_info(loc.file_id);
         let function = &module_info.data[loc.value.index];
 
         Arc::new(FunctionData {
@@ -64,11 +64,11 @@ pub struct FieldData {
 
 impl StructData {
     pub fn struct_data_query(
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         func: StructId,
     ) -> Arc<StructData> {
-        let loc = func.lookup(db);
-        let module_info = db.module_info(loc.file_id);
+        let loc = func.lookup(database);
+        let module_info = database.module_info(loc.file_id);
         let r#struct = &module_info.data[loc.value.index];
 
         let mut fields = Arena::new();
@@ -112,11 +112,11 @@ pub struct TypeAliasData {
 
 impl TypeAliasData {
     pub fn type_alias_data_query(
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         func: TypeAliasId,
     ) -> Arc<TypeAliasData> {
-        let loc = func.lookup(db);
-        let module_info = db.module_info(loc.file_id);
+        let loc = func.lookup(database);
+        let module_info = database.module_info(loc.file_id);
         let type_alias = &module_info.data[loc.value.index];
 
         Arc::new(TypeAliasData {
@@ -136,11 +136,11 @@ pub struct GlobalVariableData {
 
 impl GlobalVariableData {
     pub fn global_var_data_query(
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         var: GlobalVariableId,
     ) -> Arc<GlobalVariableData> {
-        let loc = db.lookup_intern_global_variable(var);
-        let module_info = db.module_info(loc.file_id);
+        let loc = database.lookup_intern_global_variable(var);
+        let module_info = database.module_info(loc.file_id);
         let var = &module_info.data[loc.value.index];
 
         Arc::new(GlobalVariableData {
@@ -160,11 +160,11 @@ pub struct GlobalConstantData {
 
 impl GlobalConstantData {
     pub fn global_constant_data_query(
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         constant: GlobalConstantId,
     ) -> Arc<GlobalConstantData> {
-        let loc = db.lookup_intern_global_constant(constant);
-        let module_info = db.module_info(loc.file_id);
+        let loc = database.lookup_intern_global_constant(constant);
+        let module_info = database.module_info(loc.file_id);
         let constant = &module_info.data[loc.value.index];
 
         Arc::new(GlobalConstantData {
@@ -182,11 +182,11 @@ pub struct OverrideData {
 
 impl OverrideData {
     pub fn override_data_query(
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         override_decl: OverrideId,
     ) -> Arc<OverrideData> {
-        let loc = db.lookup_intern_override(override_decl);
-        let module_info = db.module_info(loc.file_id);
+        let loc = database.lookup_intern_override(override_decl);
+        let module_info = database.module_info(loc.file_id);
         let constant = &module_info.data[loc.value.index];
 
         Arc::new(OverrideData {

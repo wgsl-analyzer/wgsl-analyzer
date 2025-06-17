@@ -3,10 +3,10 @@ pub mod pretty;
 use std::{borrow::Cow, fmt::Write, str::FromStr};
 
 pub use hir_def::type_ref::{AccessMode, AddressSpace};
-use hir_def::{db::StructId, type_ref};
+use hir_def::{database::StructId, type_ref};
 use salsa::InternKey;
 
-use crate::db::HirDatabase;
+use crate::database::HirDatabase;
 
 // TODO:
 // [ ] nesting depth
@@ -33,27 +33,27 @@ impl InternKey for Type {
 impl Type {
     pub fn kind(
         self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> TyKind {
-        db.lookup_intern_ty(self)
+        database.lookup_intern_ty(self)
     }
 
     pub fn is_err(
         self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> bool {
-        matches!(db.lookup_intern_ty(self), TyKind::Error)
+        matches!(database.lookup_intern_ty(self), TyKind::Error)
     }
 
     /// `T` -> `T`, `vecN<T>` -> `T`
     #[must_use]
     pub fn this_or_vec_inner(
         self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Type {
-        match self.kind(db) {
+        match self.kind(database) {
             TyKind::Vector(vec) => vec.inner,
-            TyKind::Reference(r) => r.inner.this_or_vec_inner(db),
+            TyKind::Reference(r) => r.inner.this_or_vec_inner(database),
             _ => self,
         }
     }
@@ -62,9 +62,9 @@ impl Type {
     #[must_use]
     pub fn unref(
         self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Type {
-        match self.kind(db) {
+        match self.kind(database) {
             TyKind::Reference(r) => r.inner,
             _ => self,
         }
@@ -72,10 +72,10 @@ impl Type {
 
     pub fn contains_struct(
         self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
         r#struct: StructId,
     ) -> bool {
-        self.kind(db).contains_struct(db, r#struct)
+        self.kind(database).contains_struct(database, r#struct)
     }
 }
 
@@ -126,10 +126,10 @@ impl TyKind {
 impl TyKind {
     pub fn unref(
         &self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Cow<'_, TyKind> {
         match self {
-            TyKind::Reference(r) => Cow::Owned(r.inner.kind(db)),
+            TyKind::Reference(r) => Cow::Owned(r.inner.kind(database)),
             _ => Cow::Borrowed(self),
         }
     }
@@ -143,9 +143,9 @@ impl TyKind {
 
     pub fn intern(
         self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Type {
-        db.intern_ty(self)
+        database.intern_ty(self)
     }
 
     pub fn is_error(&self) -> bool {
@@ -194,17 +194,17 @@ impl TyKind {
 
     pub fn is_io_shareable(
         &self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> bool {
         match self {
             TyKind::Scalar(_) => true,
-            TyKind::Vector(vec) => vec.inner.kind(db).is_numeric_scalar(),
+            TyKind::Vector(vec) => vec.inner.kind(database).is_numeric_scalar(),
             TyKind::Struct(r#struct) => {
-                db.field_types(*r#struct)
+                database.field_types(*r#struct)
                     .iter()
-                    .all(|(_, r#type)| match r#type.kind(db) {
+                    .all(|(_, r#type)| match r#type.kind(database) {
                         TyKind::Scalar(_) => true,
-                        TyKind::Vector(vec) if vec.inner.kind(db).is_numeric_scalar() => true,
+                        TyKind::Vector(vec) if vec.inner.kind(database).is_numeric_scalar() => true,
                         _ => false,
                     })
             },
@@ -214,56 +214,56 @@ impl TyKind {
 
     pub fn is_host_shareable(
         &self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> bool {
         match self {
             TyKind::Scalar(scalar) => scalar.is_numeric(),
-            TyKind::Vector(vec) => vec.inner.kind(db).is_numeric_scalar(),
+            TyKind::Vector(vec) => vec.inner.kind(database).is_numeric_scalar(),
             TyKind::Matrix(_) | TyKind::Atomic(_) => true,
-            TyKind::Array(array) => array.inner.kind(db).is_host_shareable(db),
-            TyKind::Struct(r#struct) => db
+            TyKind::Array(array) => array.inner.kind(database).is_host_shareable(database),
+            TyKind::Struct(r#struct) => database
                 .field_types(*r#struct)
                 .iter()
-                .all(|(_, r#type)| r#type.kind(db).is_host_shareable(db)),
+                .all(|(_, r#type)| r#type.kind(database).is_host_shareable(database)),
             _ => false,
         }
     }
 
     pub fn contains_runtime_sized_array(
         &self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> bool {
         match self {
             TyKind::Array(ArrayType {
                 size: ArraySize::Dynamic,
                 ..
             }) => true,
-            TyKind::Struct(r#struct) => db
+            TyKind::Struct(r#struct) => database
                 .field_types(*r#struct)
                 .iter()
-                .any(|(_, r#type)| r#type.kind(db).contains_runtime_sized_array(db)),
+                .any(|(_, r#type)| r#type.kind(database).contains_runtime_sized_array(database)),
             _ => false,
         }
     }
 
     pub fn contains_struct(
         &self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
         r#struct: StructId,
     ) -> bool {
         match self {
-            TyKind::Atomic(atomic) => atomic.inner.contains_struct(db, r#struct),
+            TyKind::Atomic(atomic) => atomic.inner.contains_struct(database, r#struct),
             TyKind::Struct(id) => {
                 if *id == r#struct {
                     return true;
                 }
-                db.field_types(*id)
+                database.field_types(*id)
                     .values()
-                    .any(|r#type| r#type.contains_struct(db, r#struct))
+                    .any(|r#type| r#type.contains_struct(database, r#struct))
             },
-            TyKind::Array(array) => array.inner.contains_struct(db, r#struct),
-            TyKind::Reference(r) => r.inner.contains_struct(db, r#struct),
-            TyKind::Pointer(pointer) => pointer.inner.contains_struct(db, r#struct),
+            TyKind::Array(array) => array.inner.contains_struct(database, r#struct),
+            TyKind::Reference(r) => r.inner.contains_struct(database, r#struct),
+            TyKind::Pointer(pointer) => pointer.inner.contains_struct(database, r#struct),
             _ => false,
         }
     }

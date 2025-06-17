@@ -60,9 +60,9 @@ impl std::error::Error for LspError {}
 
 #[doc(hidden)]
 macro_rules! try_default_ {
-    ($it:expr $(,)?) => {
-        match $it {
-            Some(it) => it,
+    ($maybe_value:expr $(,)?) => {
+        match $maybe_value {
+            Some(value) => value,
             None => return Ok(Default::default()),
         }
     };

@@ -1,8 +1,8 @@
-use base_db::{FilePosition, FileRange, RangeInfo, SourceDatabase};
+use base_db::{FilePosition, FileRange, RangeInfo, SourceDatabase as _};
 use hir::Semantics;
 use hir_def::InFile;
 use ide_db::RootDatabase;
-use syntax::{AstNode, ast};
+use syntax::{AstNode as _, ast};
 
 use crate::{NavigationTarget, markup::Markup};
 
@@ -64,22 +64,21 @@ pub enum HoverAction {
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct HoverGotoTypeData {
     pub mod_path: String,
-    pub nav: NavigationTarget,
+    pub navigation_target: NavigationTarget,
 }
 
 // Feature: Hover
 //
 // Shows additional information, like the type of an expression or the documentation for a definition when "focusing" code.
 // Focusing is usually hovering with a mouse, but can also be triggered with a shortcut.
-#[allow(unused_variables)]
 pub(crate) fn hover(
-    db: &RootDatabase,
+    database: &RootDatabase,
     file_range @ FileRange { file_id, range }: FileRange,
     config: &HoverConfig,
 ) -> Option<RangeInfo<HoverResult>> {
-    let sema = &Semantics::new(db);
+    let sema = &Semantics::new(database);
 
-    let file = db.parse(file_range.file_id).tree();
+    let file = database.parse(file_range.file_id).tree();
 
     let import = file
         .syntax()
@@ -93,12 +92,12 @@ pub(crate) fn hover(
         let source = InFile::new(file_range.file_id.into(), import);
         let import = sema.resolve_import(source)?;
 
-        if !import.is_path(db) {
+        if !import.is_path(database) {
             return Some(RangeInfo {
                 range: file_range.range,
                 info: HoverResult {
                     actions: vec![],
-                    markup: import.file_text(db)?.into(),
+                    markup: import.file_text(database)?.into(),
                 },
             });
         }

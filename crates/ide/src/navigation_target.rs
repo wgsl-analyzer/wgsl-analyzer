@@ -43,25 +43,27 @@ pub struct NavigationTarget {
 }
 
 impl fmt::Debug for NavigationTarget {
+    #[inline]
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        let mut f = f.debug_struct("NavigationTarget");
+        let mut debug_struct = f.debug_struct("NavigationTarget");
         macro_rules! opt {
             ($($name:ident)*) => {$(
-                if let Some(it) = &self.$name {
-                    f.field(stringify!($name), it);
+                if let Some(value) = &self.$name {
+                    debug_struct.field(stringify!($name), value);
                 }
             )*}
         }
-        f.field("file_id", &self.file_id)
+        debug_struct
+            .field("file_id", &self.file_id)
             .field("full_range", &self.full_range);
         opt!(focus_range);
-        // f.field("name", &self.name);
+        debug_struct.field("name", &self.name);
         // opt!(kind container_name description docs);
         opt!(container_name description);
-        f.finish()
+        debug_struct.finish_non_exhaustive()
     }
 }
 
@@ -86,6 +88,8 @@ impl NavigationTarget {
         }
     }
 
+    #[must_use]
+    #[inline]
     pub fn focus_or_full_range(&self) -> TextRange {
         self.focus_range.unwrap_or(self.full_range)
     }
@@ -126,11 +130,11 @@ impl<T> IntoIterator for UpmappingResult<T> {
 impl<T> UpmappingResult<T> {
     pub(crate) fn map<U>(
         self,
-        f: impl Fn(T) -> U,
+        function: impl Fn(T) -> U,
     ) -> UpmappingResult<U> {
         UpmappingResult {
-            call_site: f(self.call_site),
-            def_site: self.def_site.map(f),
+            call_site: function(self.call_site),
+            def_site: self.def_site.map(function),
         }
     }
 }

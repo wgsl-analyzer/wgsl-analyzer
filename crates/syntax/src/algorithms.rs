@@ -121,5 +121,5 @@ pub fn neighbor<T: AstNode>(
 }
 
 pub fn has_errors(node: &SyntaxNode) -> bool {
-    node.children().any(|it| it.kind() == SyntaxKind::Error)
+    node.children().any(|node| node.kind() == SyntaxKind::Error)
 }

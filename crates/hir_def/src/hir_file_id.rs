@@ -2,7 +2,7 @@ use base_db::FileId;
 use vfs::AnchoredPath;
 
 use crate::{
-    db::{DefDatabase, ImportId},
+    database::{DefDatabase, ImportId},
     module_data::ImportValue,
 };
 
@@ -32,24 +32,24 @@ impl HirFileId {
     /// or `None` if that file has not been opened yet
     pub fn original_file(
         self,
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
     ) -> Option<FileId> {
         match self.0 {
             HirFileIdRepr::FileId(id) => Some(id),
             HirFileIdRepr::MacroFile(ImportFile { import_id }) => {
-                let import_loc = db.lookup_intern_import(import_id);
-                let module_info = db.module_info(import_loc.file_id);
+                let import_loc = database.lookup_intern_import(import_id);
+                let module_info = database.module_info(import_loc.file_id);
                 let import = module_info.get(import_loc.value);
 
                 match &import.value {
-                    ImportValue::Path(path) => relative_file(db, import_loc.file_id, path),
+                    ImportValue::Path(path) => relative_file(database, import_loc.file_id, path),
                     ImportValue::Custom(key) => {
                         // Try to resolve the custom import as a file
-                        let imports = db.custom_imports();
+                        let imports = database.custom_imports();
                         if imports.contains_key(key) {
                             // For custom imports, we might not have a direct file,
                             // but return the source file that imported it for now
-                            import_loc.file_id.original_file(db)
+                            import_loc.file_id.original_file(database)
                         } else {
                             None
                         }

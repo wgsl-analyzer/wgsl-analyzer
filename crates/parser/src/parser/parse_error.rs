@@ -39,7 +39,7 @@ impl ParseError {
 impl fmt::Debug for ParseError {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         f.debug_struct("ParseError")
             .field("expected", &self.expected)
@@ -61,7 +61,7 @@ impl PartialEq for ParseError {
 impl fmt::Display for ParseError {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         write!(
             f,

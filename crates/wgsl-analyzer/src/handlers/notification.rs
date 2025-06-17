@@ -192,7 +192,11 @@ pub(crate) fn handle_did_change_watched_files(
     state: &mut GlobalState,
     parameters: DidChangeWatchedFilesParams,
 ) -> anyhow::Result<()> {
-    for change in parameters.changes.iter().unique_by(|&it| &it.uri) {
+    for change in parameters
+        .changes
+        .iter()
+        .unique_by(|&file_event| &file_event.uri)
+    {
         if let Ok(path) = from_proto::absolute_path(&change.uri) {
             state.loader.handle.invalidate(path);
         }

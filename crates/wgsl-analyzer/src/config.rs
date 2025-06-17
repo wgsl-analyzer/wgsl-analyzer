@@ -248,9 +248,9 @@ impl Config {
             root_path,
             // snippets: Default::default(),
             workspace_roots,
-            client_info: client_info.map(|it| ClientInfo {
-                name: it.name,
-                version: it
+            client_info: client_info.map(|client_info| ClientInfo {
+                name: client_info.name,
+                version: client_info
                     .version
                     .as_deref()
                     .map(Version::parse)
@@ -356,6 +356,8 @@ impl Config {
         }
     }
 
+    #[must_use]
+    #[inline]
     pub fn hover_actions(&self) -> HoverActionsConfig {
         let enable = self.caps.hover_actions();
         HoverActionsConfig {
@@ -368,6 +370,8 @@ impl Config {
         }
     }
 
+    #[must_use]
+    #[inline]
     pub fn hover(&self) -> HoverConfig {
         let mem_kind = |kind| match kind {
             MemoryLayoutHoverRenderKindDef::Both => MemoryLayoutHoverRenderKind::Both,
@@ -438,7 +442,9 @@ impl Config {
         }
     }
 
-    pub fn completion_hide_deprecated(&self) -> bool {
+    #[must_use]
+    #[inline]
+    pub const fn completion_hide_deprecated(&self) -> bool {
         false
     }
 
@@ -460,6 +466,40 @@ impl Config {
                 NagaVersion::NagaMain => NagaVersion::NagaMain,
             },
         }
+    }
+
+    #[must_use]
+    #[inline]
+    pub const fn typing_trigger_chars(&self) -> &'static str {
+        "=.+"
+    }
+
+    // VSCode is our reference implementation, so we allow ourselves to work around issues by
+    // special casing certain versions
+    #[must_use]
+    #[inline]
+    pub fn visual_studio_code_version(&self) -> Option<&Version> {
+        let client_info = self
+            .client_info
+            .as_ref()
+            .filter(|client_info| client_info.name.starts_with("Visual Studio Code"))?;
+        client_info.version.as_ref()
+    }
+
+    #[must_use]
+    #[inline]
+    pub fn client_is_helix(&self) -> bool {
+        self.client_info
+            .as_ref()
+            .is_some_and(|client_info| client_info.name == "helix")
+    }
+
+    #[must_use]
+    #[inline]
+    pub fn client_is_neovim(&self) -> bool {
+        self.client_info
+            .as_ref()
+            .is_some_and(|client_info| client_info.name == "Neovim")
     }
 }
 
@@ -553,15 +593,21 @@ impl HoverActionsConfig {
         goto_type_def: false,
     };
 
-    pub fn any(&self) -> bool {
+    #[must_use]
+    #[inline]
+    pub const fn any(&self) -> bool {
         self.implementations || self.references || self.runnable() || self.goto_type_def
     }
 
-    pub fn none(&self) -> bool {
+    #[must_use]
+    #[inline]
+    pub const fn none(&self) -> bool {
         !self.any()
     }
 
-    pub fn runnable(&self) -> bool {
+    #[must_use]
+    #[inline]
+    pub const fn runnable(&self) -> bool {
         self.run || self.debug || self.update_test
     }
 }

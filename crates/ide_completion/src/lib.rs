@@ -169,12 +169,12 @@ impl CompletionFieldsToResolve {
 // /// correctly, as the underlying infrastructure makes use of contexts to do
 // /// analysis.
 // pub fn completions(
-//     db: &RootDatabase,
+//     database: &RootDatabase,
 //     config: &CompletionConfig<'_>,
 //     position: FilePosition,
 //     trigger_character: Option<char>,
 // ) -> Option<Vec<CompletionItem>> {
-//     let (ctx, analysis) = &CompletionContext::new(db, position, config)?;
+//     let (context, analysis) = &CompletionContext::new(database, position, config)?;
 //     let mut completions = Completions::default();
 
 //     // prevent `(` from triggering unwanted completion noise
@@ -187,7 +187,7 @@ impl CompletionFieldsToResolve {
 //             ..
 //         }) = analysis
 //         {
-//             completions::vis::complete_vis_path(&mut completions, ctx, path_ctx, has_in_token);
+//             completions::vis::complete_vis_path(&mut completions, context, path_ctx, has_in_token);
 //         }
 //         return Some(completions.into());
 //     }
@@ -195,7 +195,7 @@ impl CompletionFieldsToResolve {
 //     // when the user types a bare `_` (that is it does not belong to an identifier)
 //     // the user might just wanted to type a `_` for type inference or pattern discarding
 //     // so try to suppress completions in those cases
-//     if trigger_character == Some('_') && ctx.original_token.kind() == syntax::SyntaxKind::Underscore
+//     if trigger_character == Some('_') && context.original_token.kind() == syntax::SyntaxKind::Underscore
 //     {
 //         if let CompletionAnalysis::NameReference(NameReferenceContext {
 //             kind:
@@ -218,18 +218,18 @@ impl CompletionFieldsToResolve {
 //         let accumulator = &mut completions;
 
 //         match analysis {
-//             CompletionAnalysis::Name(name_ctx) => completions::complete_name(accumulator, ctx, name_ctx),
+//             CompletionAnalysis::Name(name_ctx) => completions::complete_name(accumulator, context, name_ctx),
 //             CompletionAnalysis::NameReference(name_ref_ctx) => {
-//                 completions::complete_name_ref(accumulator, ctx, name_ref_ctx)
+//                 completions::complete_name_ref(accumulator, context, name_ref_ctx)
 //             }
 //             CompletionAnalysis::Lifetime(lifetime_ctx) => {
-//                 completions::lifetime::complete_label(accumulator, ctx, lifetime_ctx);
-//                 completions::lifetime::complete_lifetime(accumulator, ctx, lifetime_ctx);
+//                 completions::lifetime::complete_label(accumulator, context, lifetime_ctx);
+//                 completions::lifetime::complete_lifetime(accumulator, context, lifetime_ctx);
 //             }
 //             CompletionAnalysis::String { original, expanded: Some(expanded) } => {
-//                 completions::extern_abi::complete_extern_abi(accumulator, ctx, expanded);
-//                 completions::format_string::format_string(accumulator, ctx, original, expanded);
-//                 completions::env_vars::complete_cargo_env_vars(accumulator, ctx, original, expanded);
+//                 completions::extern_abi::complete_extern_abi(accumulator, context, expanded);
+//                 completions::format_string::format_string(accumulator, context, original, expanded);
+//                 completions::env_vars::complete_cargo_env_vars(accumulator, context, original, expanded);
 //             }
 //             CompletionAnalysis::UnexpandedAttributeTT {
 //                 colon_prefix,
@@ -238,7 +238,7 @@ impl CompletionFieldsToResolve {
 //             } => {
 //                 completions::attribute::complete_known_attribute_input(
 //                     accumulator,
-//                     ctx,
+//                     context,
 //                     colon_prefix,
 //                     attribute,
 //                     extern_crate.as_ref(),
@@ -252,17 +252,17 @@ impl CompletionFieldsToResolve {
 // }
 
 pub fn completions2(
-    db: &RootDatabase,
+    database: &RootDatabase,
     config: &CompletionConfig<'_>,
     position: FilePosition,
     _trigger_character: Option<char>,
 ) -> Option<Vec<CompletionItem>> {
     let mut accumulator = Completions::default();
 
-    let ctx = CompletionContext::new(db, position, config)?;
-    completions::import::complete_import(&mut accumulator, &ctx);
-    completions::dot::complete_dot(&mut accumulator, &ctx);
-    completions::expression::complete_names_in_scope(&mut accumulator, &ctx);
+    let context = CompletionContext::new(database, position, config)?;
+    completions::import::complete_import(&mut accumulator, &context);
+    completions::dot::complete_dot(&mut accumulator, &context);
+    completions::expression::complete_names_in_scope(&mut accumulator, &context);
 
     Some(accumulator.into())
 }
@@ -270,13 +270,13 @@ pub fn completions2(
 // /// Resolves additional completion data at the position given.
 // /// This is used for import insertion done via completions like flyimport and custom user snippets.
 // pub fn resolve_completion_edits(
-//     db: &RootDatabase,
+//     database: &RootDatabase,
 //     config: &CompletionConfig<'_>,
 //     FilePosition { file_id, offset }: FilePosition,
 //     imports: impl IntoIterator<Item = String>,
 // ) -> Option<Vec<TextEdit>> {
 //     let _p = tracing::info_span!("resolve_completion_edits").entered();
-//     let sema = hir::Semantics::new(db);
+//     let sema = hir::Semantics::new(database);
 
 //     let original_file = sema.parse(file_id);
 //     let original_token =
@@ -286,7 +286,7 @@ pub fn completions2(
 
 //     // let current_module = sema.scope(position_for_import)?.module();
 //     // let current_crate = current_module.krate();
-//     // let current_edition = current_crate.edition(db);
+//     // let current_edition = current_crate.edition(database);
 //     let new_ast = scope.clone_for_update();
 //     let mut import_insert = TextEdit::builder();
 

@@ -10,7 +10,7 @@ use syntax::{ast, pointer::AstPointer};
 
 use crate::{
     HasSource,
-    db::{DefDatabase, DefinitionWithBodyId, Lookup},
+    database::{DefDatabase, DefinitionWithBodyId, Lookup},
     expression::{Expression, ExpressionId, Statement, StatementId},
     module_data::Name,
 };
@@ -60,43 +60,43 @@ pub struct BodySourceMap {
 
 impl Body {
     pub fn body_query(
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         def: DefinitionWithBodyId,
     ) -> Arc<Body> {
-        db.body_with_source_map(def).0
+        database.body_with_source_map(def).0
     }
 
     pub fn body_with_source_map_query(
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         def: DefinitionWithBodyId,
     ) -> (Arc<Body>, Arc<BodySourceMap>) {
-        let file_id = def.file_id(db);
+        let file_id = def.file_id(database);
         let (body, source_map) = match def {
             DefinitionWithBodyId::Function(id) => {
-                let location = id.lookup(db);
-                let source = location.source(db);
+                let location = id.lookup(database);
+                let source = location.source(database);
                 let parameters = source.value.parameter_list();
                 let body = source.value.body();
 
-                lower::lower_function_body(db, file_id, parameters, body)
+                lower::lower_function_body(database, file_id, parameters, body)
             },
             DefinitionWithBodyId::GlobalVariable(id) => {
-                let location = id.lookup(db);
-                let source = location.source(db);
+                let location = id.lookup(database);
+                let source = location.source(database);
 
-                lower::lower_global_var_declaration(db, file_id, source.value)
+                lower::lower_global_var_declaration(database, file_id, source.value)
             },
             DefinitionWithBodyId::GlobalConstant(id) => {
-                let location = id.lookup(db);
-                let source = location.source(db);
+                let location = id.lookup(database);
+                let source = location.source(database);
 
-                lower::lower_global_constant_declaration(db, file_id, source.value)
+                lower::lower_global_constant_declaration(database, file_id, source.value)
             },
             DefinitionWithBodyId::Override(id) => {
-                let location = id.lookup(db);
-                let source = location.source(db);
+                let location = id.lookup(database);
+                let source = location.source(database);
 
-                lower::lower_override_declaration(db, file_id, source.value)
+                lower::lower_override_declaration(database, file_id, source.value)
             },
         };
 

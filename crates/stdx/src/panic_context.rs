@@ -12,7 +12,7 @@ pub struct PanicContext {
 impl Drop for PanicContext {
     #[inline]
     fn drop(&mut self) {
-        with_ctx(|ctx| assert!(ctx.pop().is_some()));
+        with_ctx(|context| assert!(context.pop().is_some()));
     }
 }
 
@@ -22,10 +22,10 @@ pub fn enter(frame: String) -> PanicContext {
     fn set_hook() {
         let default_hook = panic::take_hook();
         panic::set_hook(Box::new(move |panic_info| {
-            with_ctx(|ctx| {
-                if !ctx.is_empty() {
+            with_ctx(|context| {
+                if !context.is_empty() {
                     eprintln!("Panic context:");
-                    for frame in ctx.iter() {
+                    for frame in context.iter() {
                         eprintln!("> {frame}\n");
                     }
                 }
@@ -37,7 +37,7 @@ pub fn enter(frame: String) -> PanicContext {
     static SET_HOOK: Once = Once::new();
     SET_HOOK.call_once(set_hook);
 
-    with_ctx(|ctx| ctx.push(frame));
+    with_ctx(|context| context.push(frame));
     PanicContext { _priv: () }
 }
 
@@ -45,5 +45,5 @@ fn with_ctx(function: impl FnOnce(&mut Vec<String>)) {
     thread_local! {
         static CTX: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
     }
-    CTX.with(|ctx| function(&mut ctx.borrow_mut()));
+    CTX.with(|context| function(&mut context.borrow_mut()));
 }

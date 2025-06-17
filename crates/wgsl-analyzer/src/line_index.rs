@@ -28,51 +28,48 @@ pub(crate) enum LineEndings {
 }
 
 impl LineEndings {
-    /// Replaces `\r\n` with `\n` in-place in `src`.
-    pub(crate) fn normalize(src: String) -> (String, LineEndings) {
+    /// Replaces `\r\n` with `\n` in-place in `source`.
+    pub(crate) fn normalize(source: String) -> (String, Self) {
         // We replace `\r\n` with `\n` in-place, which doesn't break utf-8 encoding.
         // While we *can* call `as_mut_vec` and do surgery on the live string
-        // directly, let's rather steal the contents of `src`. This makes the code
+        // directly, let's rather steal the contents of `source`. This makes the code
         // safe even if a panic occurs.
 
-        let mut buf = src.into_bytes();
-        let mut gap_len = 0;
-        let mut tail = buf.as_mut_slice();
+        let mut buffer = source.into_bytes();
+        let mut gap_length = 0;
+        let mut tail = buffer.as_mut_slice();
         let mut crlf_seen = false;
 
         let finder = memmem::Finder::new(b"\r\n");
 
         loop {
-            let idx = match finder.find(&tail[gap_len..]) {
+            let index = match finder.find(&tail[gap_length..]) {
                 None if crlf_seen => tail.len(),
-                // SAFETY: buf is unchanged and therefore still contains utf8 data
                 None => {
-                    return (
-                        unsafe { String::from_utf8_unchecked(buf) },
-                        LineEndings::Unix,
-                    );
+                    // SAFETY: buf is unchanged and therefore still contains utf8 data
+                    return (unsafe { String::from_utf8_unchecked(buffer) }, Self::Unix);
                 },
-                Some(idx) => {
+                Some(index) => {
                     crlf_seen = true;
-                    idx + gap_len
+                    index + gap_length
                 },
             };
-            tail.copy_within(gap_len..idx, 0);
-            tail = &mut tail[idx - gap_len..];
-            if tail.len() == gap_len {
+            tail.copy_within(gap_length..index, 0);
+            tail = &mut tail[index - gap_length..];
+            if tail.len() == gap_length {
                 break;
             }
-            gap_len += 1;
+            gap_length += 1;
         }
 
-        // Account for removed `\r`.
-        // After `set_len`, `buf` is guaranteed to contain utf-8 again.
-        let src = unsafe {
-            let new_len = buf.len() - gap_len;
-            buf.set_len(new_len);
-            String::from_utf8_unchecked(buf)
-        };
-        (src, LineEndings::Dos)
+        let new_len = buffer.len() - gap_length;
+        // SAFETY: Shrinking the buffer to account for them removed `\r` is safe.
+        unsafe {
+            buffer.set_len(new_len);
+        }
+        // SAFETY: After `set_len`, `buf` is guaranteed to contain utf-8 again.
+        let source = unsafe { String::from_utf8_unchecked(buffer) };
+        (source, Self::Dos)
     }
 }
 
@@ -82,33 +79,33 @@ mod tests {
 
     #[test]
     fn unix() {
-        let src = "a\nb\nc\n\n\n\n";
-        let (res, endings) = LineEndings::normalize(src.into());
+        let source = "a\nb\nc\n\n\n\n";
+        let (result, endings) = LineEndings::normalize(source.into());
         assert_eq!(endings, LineEndings::Unix);
-        assert_eq!(res, src);
+        assert_eq!(result, source);
     }
 
     #[test]
     fn dos() {
-        let src = "\r\na\r\n\r\nb\r\nc\r\n\r\n\r\n\r\n";
-        let (res, endings) = LineEndings::normalize(src.into());
+        let source = "\r\na\r\n\r\nb\r\nc\r\n\r\n\r\n\r\n";
+        let (result, endings) = LineEndings::normalize(source.into());
         assert_eq!(endings, LineEndings::Dos);
-        assert_eq!(res, "\na\n\nb\nc\n\n\n\n");
+        assert_eq!(result, "\na\n\nb\nc\n\n\n\n");
     }
 
     #[test]
     fn mixed() {
-        let src = "a\r\nb\r\nc\r\n\n\r\n\n";
-        let (res, endings) = LineEndings::normalize(src.into());
+        let source = "a\r\nb\r\nc\r\n\n\r\n\n";
+        let (result, endings) = LineEndings::normalize(source.into());
         assert_eq!(endings, LineEndings::Dos);
-        assert_eq!(res, "a\nb\nc\n\n\n\n");
+        assert_eq!(result, "a\nb\nc\n\n\n\n");
     }
 
     #[test]
     fn none() {
-        let src = "abc";
-        let (res, endings) = LineEndings::normalize(src.into());
+        let source = "abc";
+        let (result, endings) = LineEndings::normalize(source.into());
         assert_eq!(endings, LineEndings::Unix);
-        assert_eq!(res, src);
+        assert_eq!(result, source);
     }
 }

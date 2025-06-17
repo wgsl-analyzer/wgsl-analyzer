@@ -107,13 +107,13 @@ pub(crate) struct GlobalState {
 
 /// An immutable snapshot of the world's state at a point in time.
 pub(crate) struct GlobalStateSnapshot {
-    pub config: Arc<Config>,
-    pub analysis: Analysis,
+    pub(crate) config: Arc<Config>,
+    pub(crate) analysis: Analysis,
     // pub(crate) check_fixes: CheckFixes,
-    mem_docs: InMemoryDocuments,
+    in_memory_documents: InMemoryDocuments,
     // pub(crate) semantic_tokens_cache: Arc<Mutex<FxHashMap<Url, SemanticTokens>>>,
     vfs: Arc<RwLock<(vfs::Vfs, FxHashMap<FileId, LineEndings>)>>,
-    pub workspaces: Arc<[ProjectWorkspace]>,
+    pub(crate) workspaces: Arc<[ProjectWorkspace]>,
     // used to signal semantic highlighting to fall back to syntax based highlighting until
     // proc-macros have been loaded
     // FIXME: Can we derive this from somewhere else?
@@ -151,7 +151,7 @@ impl GlobalState {
             TaskQueue { sender, receiver }
         };
 
-        let mut analysis_host = AnalysisHost::new();
+        let mut analysis_host = AnalysisHost::new(None);
         // if let Some(capacities) = config.lru_query_capacities_config() {
         //     analysis_host.update_lru_capacities(capacities);
         // }
@@ -198,7 +198,7 @@ impl GlobalState {
             // discover_handle: None,
             // discover_sender,
             // discover_receiver,
-            vfs: Arc::new(RwLock::new((vfs::Vfs::default(), Default::default()))),
+            vfs: Arc::new(RwLock::new((vfs::Vfs::default(), FxHashMap::default()))),
             vfs_config_version: 0,
             vfs_progress_config_version: 0,
             vfs_span: None,
@@ -264,7 +264,7 @@ impl GlobalState {
             analysis: self.analysis_host.analysis(),
             vfs: Arc::clone(&self.vfs),
             // check_fixes: Arc::clone(&self.diagnostics.check_fixes),
-            mem_docs: self.mem_docs.clone(),
+            in_memory_documents: self.mem_docs.clone(),
             // semantic_tokens_cache: Arc::clone(&self.semantic_tokens_cache),
             // flycheck: self.flycheck.clone(),
         }
@@ -344,7 +344,7 @@ impl GlobalState {
 
 impl GlobalStateSnapshot {
     fn vfs_read(&self) -> MappedRwLockReadGuard<'_, vfs::Vfs> {
-        RwLockReadGuard::map(self.vfs.read(), |(it, _)| it)
+        RwLockReadGuard::map(self.vfs.read(), |(vfs, _)| vfs)
     }
 
     /// Returns `None` if the file was excluded.
@@ -381,7 +381,7 @@ impl GlobalStateSnapshot {
         file_id: FileId,
     ) -> Option<i32> {
         Some(
-            self.mem_docs
+            self.in_memory_documents
                 .get(self.vfs_read().file_path(file_id))?
                 .version,
         )

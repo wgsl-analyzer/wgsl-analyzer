@@ -101,15 +101,10 @@ fn install_client(
     }
 
     // Find the appropriate VS Code binary.
-    let lifetime_extender;
-    #[expect(clippy::option_if_let_else, reason = "lifetime shenanigans")]
-    let candidates: &[&str] = match client_options.code_binary.as_deref() {
-        Some(it) => {
-            lifetime_extender = [it];
-            &lifetime_extender[..]
-        },
-        None => VS_CODES,
-    };
+    let selected_code = client_options.code_binary.as_deref();
+    let candidates: &[&str] = selected_code
+        .as_ref()
+        .map_or(VS_CODES, std::slice::from_ref);
     let code = candidates
         .iter()
         .copied()

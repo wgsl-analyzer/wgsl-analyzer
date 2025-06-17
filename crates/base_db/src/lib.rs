@@ -99,26 +99,26 @@ pub trait SourceDatabase: FileLoader {
 }
 
 fn line_index(
-    db: &dyn SourceDatabase,
+    database: &dyn SourceDatabase,
     file_id: FileId,
 ) -> Arc<LineIndex> {
-    let text = db.file_text(file_id);
+    let text = database.file_text(file_id);
     Arc::new(LineIndex::new(&text))
 }
 
 fn parse_no_preprocessor_query(
-    db: &dyn SourceDatabase,
+    database: &dyn SourceDatabase,
     file_id: FileId,
 ) -> syntax::Parse {
-    let source = db.file_text(file_id);
+    let source = database.file_text(file_id);
     syntax::parse(&source)
 }
 
 fn parse_import_no_preprocessor_query(
-    db: &dyn SourceDatabase,
+    database: &dyn SourceDatabase,
     key: String,
 ) -> Result<syntax::Parse, ()> {
-    let imports = db.custom_imports();
+    let imports = database.custom_imports();
     let source = imports.get(&key).ok_or(())?;
     Ok(syntax::parse(source))
 }
@@ -130,11 +130,11 @@ pub struct UnconfiguredCode {
 }
 
 fn parse_with_unconfigured_query(
-    db: &dyn SourceDatabase,
+    database: &dyn SourceDatabase,
     file_id: FileId,
 ) -> (Parse, Arc<Vec<UnconfiguredCode>>) {
-    let shader_defs = db.shader_defs();
-    let source = db.file_text(file_id);
+    let shader_defs = database.shader_defs();
+    let source = database.file_text(file_id);
 
     let mut unconfigured = Vec::new();
 
@@ -154,19 +154,19 @@ fn parse_with_unconfigured_query(
 }
 
 fn parse_query(
-    db: &dyn SourceDatabase,
+    database: &dyn SourceDatabase,
     file_id: FileId,
 ) -> Parse {
-    db.parse_with_unconfigured(file_id).0
+    database.parse_with_unconfigured(file_id).0
 }
 
 fn parse_import_query(
-    db: &dyn SourceDatabase,
+    database: &dyn SourceDatabase,
     key: String,
     parse_entrypoint: ParseEntryPoint,
 ) -> Result<Parse, ()> {
-    let imports = db.custom_imports();
-    let shader_defs = db.shader_defs();
+    let imports = database.custom_imports();
+    let shader_defs = database.shader_defs();
     let source = imports.get(&key).ok_or(())?;
 
     let processed_source =

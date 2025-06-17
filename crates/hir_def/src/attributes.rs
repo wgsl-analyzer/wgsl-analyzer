@@ -9,7 +9,7 @@ use syntax::{
 use crate::{
     HasSource,
     data::FieldId,
-    db::{DefDatabase, FunctionId, GlobalVariableId, Interned, Lookup, StructId},
+    database::{DefDatabase, FunctionId, GlobalVariableId, Interned, Lookup, StructId},
     expression::{Literal, parse_literal},
     module_data::Name,
 };
@@ -36,11 +36,11 @@ pub struct AttributeList {
 impl AttributeList {
     pub fn has(
         &self,
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         name: &str,
     ) -> bool {
         self.attributes.iter().any(|attribute| {
-            let attribute = db.lookup_intern_attribute(*attribute);
+            let attribute = database.lookup_intern_attribute(*attribute);
             attribute.name.as_str() == name
         })
     }
@@ -48,7 +48,7 @@ impl AttributeList {
 
 impl AttributeList {
     pub fn from_src(
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         source: &dyn HasAttributes,
     ) -> AttributeList {
         let attrs = source
@@ -72,7 +72,7 @@ impl AttributeList {
                     .map_or_else(|| Either::Left(std::iter::empty()), Either::Right)
                     .collect(),
             })
-            .map(|attribute| db.intern_attribute(attribute))
+            .map(|attribute| database.intern_attribute(attribute))
             .collect();
 
         AttributeList { attributes: attrs }
@@ -101,22 +101,22 @@ pub struct AttributesWithOwner {
 
 impl AttributesWithOwner {
     pub(crate) fn attrs_query(
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         def: AttributeDefId,
     ) -> Arc<Self> {
         let attrs = match def {
             AttributeDefId::StructId(id) => {
-                AttributeList::from_src(db, &id.lookup(db).source(db).value)
+                AttributeList::from_src(database, &id.lookup(database).source(database).value)
             },
             AttributeDefId::FieldId(id) => {
-                let location = id.r#struct.lookup(db).source(db);
+                let location = id.r#struct.lookup(database).source(database);
                 let struct_declaration: ast::StructDeclaration = location.value;
                 let mut fields = struct_declaration.body().map_or_else(
                     || Either::Left(std::iter::empty::<ast::StructDeclarationField>()),
                     |body| Either::Right(body.fields()),
                 );
 
-                let strukt_data = db.struct_data(id.r#struct);
+                let strukt_data = database.struct_data(id.r#struct);
                 let field_name = strukt_data.fields[id.field].name.as_str();
 
                 // this is ugly but rust-analyzer is more complicated and this should work for now
@@ -132,15 +132,15 @@ impl AttributesWithOwner {
                     }
                 });
                 match attrs {
-                    Some(field) => AttributeList::from_src(db, &field),
+                    Some(field) => AttributeList::from_src(database, &field),
                     None => AttributeList::empty(),
                 }
             },
             AttributeDefId::FunctionId(id) => {
-                AttributeList::from_src(db, &id.lookup(db).source(db).value)
+                AttributeList::from_src(database, &id.lookup(database).source(database).value)
             },
             AttributeDefId::GlobalVariableId(id) => {
-                AttributeList::from_src(db, &id.lookup(db).source(db).value)
+                AttributeList::from_src(database, &id.lookup(database).source(database).value)
             },
         };
 

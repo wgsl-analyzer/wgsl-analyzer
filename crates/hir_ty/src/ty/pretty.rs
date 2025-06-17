@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use super::{TyKind, Type};
 use crate::{
-    db::HirDatabase,
+    database::HirDatabase,
     function::FunctionDetails,
     infer::{TypeExpectation, TypeExpectationInner},
     ty::{ArraySize, ScalarType, TextureKind},
@@ -17,14 +17,14 @@ pub enum TypeVerbosity {
 }
 
 pub fn pretty_type_expectation(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     r#type: TypeExpectation,
 ) -> String {
-    pretty_type_expectation_with_verbosity(db, r#type, TypeVerbosity::default())
+    pretty_type_expectation_with_verbosity(database, r#type, TypeVerbosity::default())
 }
 
 pub fn pretty_type_expectation_with_verbosity(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     r#type: TypeExpectation,
     verbosity: TypeVerbosity,
 ) -> String {
@@ -32,10 +32,10 @@ pub fn pretty_type_expectation_with_verbosity(
 
     match r#type {
         TypeExpectation::Type(r#type) => {
-            let _ = write_type_expectation_inner(db, r#type, false, &mut str, verbosity);
+            let _ = write_type_expectation_inner(database, r#type, false, &mut str, verbosity);
         },
         TypeExpectation::TypeOrVecOf(inner) => {
-            let _ = write_type_expectation_inner(db, inner, true, &mut str, verbosity);
+            let _ = write_type_expectation_inner(database, inner, true, &mut str, verbosity);
         },
         TypeExpectation::None => unreachable!(),
     }
@@ -43,7 +43,7 @@ pub fn pretty_type_expectation_with_verbosity(
 }
 
 fn write_type_expectation_inner(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     inner: TypeExpectationInner,
     or_vec: bool,
     f: &mut String,
@@ -51,10 +51,10 @@ fn write_type_expectation_inner(
 ) -> std::fmt::Result {
     match inner {
         TypeExpectationInner::Exact(r#type) => {
-            write_ty(db, r#type, f, verbosity)?;
+            write_ty(database, r#type, f, verbosity)?;
             if or_vec {
                 write!(f, " or vecN<")?;
-                write_ty(db, r#type, f, verbosity)?;
+                write_ty(database, r#type, f, verbosity)?;
                 write!(f, ">")?;
             }
         },
@@ -68,41 +68,41 @@ fn write_type_expectation_inner(
 }
 
 pub fn pretty_type(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     r#type: Type,
 ) -> String {
-    pretty_type_with_verbosity(db, r#type, TypeVerbosity::default())
+    pretty_type_with_verbosity(database, r#type, TypeVerbosity::default())
 }
 
 pub fn pretty_type_with_verbosity(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     r#type: Type,
     verbosity: TypeVerbosity,
 ) -> String {
     let mut str = String::new();
-    write_ty(db, r#type, &mut str, verbosity).unwrap();
+    write_ty(database, r#type, &mut str, verbosity).unwrap();
     str
 }
 
 pub fn pretty_fn(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     function: &FunctionDetails,
 ) -> String {
-    pretty_fn_with_verbosity(db, function, TypeVerbosity::default())
+    pretty_fn_with_verbosity(database, function, TypeVerbosity::default())
 }
 
 pub fn pretty_fn_with_verbosity(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     function: &FunctionDetails,
     verbosity: TypeVerbosity,
 ) -> String {
     let mut str = String::new();
-    pretty_fn_inner(db, function, &mut str, verbosity).unwrap();
+    pretty_fn_inner(database, function, &mut str, verbosity).unwrap();
     str
 }
 
 fn pretty_fn_inner(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     function: &FunctionDetails,
     f: &mut String,
     verbosity: TypeVerbosity,
@@ -112,23 +112,23 @@ fn pretty_fn_inner(
         if i != 0 {
             f.push_str(", ");
         }
-        write_ty(db, parameter, f, verbosity)?;
+        write_ty(database, parameter, f, verbosity)?;
     }
     write!(f, ")")?;
     if let Some(return_type) = function.return_type {
         f.push_str(" -> ");
-        write_ty(db, return_type, f, verbosity)?;
+        write_ty(database, return_type, f, verbosity)?;
     }
     Ok(())
 }
 
 fn write_ty(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     r#type: Type,
     f: &mut String,
     verbosity: TypeVerbosity,
 ) -> std::fmt::Result {
-    match r#type.kind(db) {
+    match r#type.kind(database) {
         TyKind::Error => write!(f, "[error]"),
         TyKind::Scalar(scalar) => {
             let s = match scalar {
@@ -141,26 +141,26 @@ fn write_ty(
         },
         TyKind::Atomic(atomic) => {
             write!(f, "atomic<")?;
-            write_ty(db, atomic.inner, f, verbosity)?;
+            write_ty(database, atomic.inner, f, verbosity)?;
             write!(f, ">")
         },
         TyKind::Vector(t) => {
             write!(f, "vec{}<", t.size)?;
-            write_ty(db, t.inner, f, verbosity)?;
+            write_ty(database, t.inner, f, verbosity)?;
             write!(f, ">")
         },
         TyKind::Matrix(t) => {
             write!(f, "mat{}x{}<", t.columns, t.rows)?;
-            write_ty(db, t.inner, f, verbosity)?;
+            write_ty(database, t.inner, f, verbosity)?;
             write!(f, ">")
         },
         TyKind::Struct(r#struct) => {
-            let data = db.struct_data(r#struct);
+            let data = database.struct_data(r#struct);
             write!(f, "{}", data.name.as_str())
         },
         TyKind::Array(t) => {
             write!(f, "array<")?;
-            write_ty(db, t.inner, f, verbosity)?;
+            write_ty(database, t.inner, f, verbosity)?;
             match t.size {
                 ArraySize::Constant(value) => write!(f, ", {value}")?,
                 ArraySize::Dynamic => {},
@@ -174,7 +174,7 @@ fn write_ty(
                     if e.multisampled { "multisampled_" } else { "" },
                     e.dimension,
                     if e.arrayed { "_array" } else { "" },
-                    pretty_type(db, r#type),
+                    pretty_type(database, r#type),
                 ),
                 TextureKind::Storage(format, mode) => format!(
                     "texture_storage_{}{}{}<{},{}>",
@@ -201,25 +201,25 @@ fn write_ty(
         TyKind::Reference(t) => match verbosity {
             TypeVerbosity::Full => {
                 write!(f, "ref<{}, ", t.address_space)?;
-                write_ty(db, t.inner, f, verbosity)?;
+                write_ty(database, t.inner, f, verbosity)?;
                 write!(f, ", {}>", t.access_mode)
             },
             TypeVerbosity::Compact => {
                 write!(f, "ref<")?;
-                write_ty(db, t.inner, f, verbosity)?;
+                write_ty(database, t.inner, f, verbosity)?;
                 write!(f, ">")
             },
-            TypeVerbosity::Inner => write_ty(db, t.inner, f, verbosity),
+            TypeVerbosity::Inner => write_ty(database, t.inner, f, verbosity),
         },
         TyKind::Pointer(t) => match verbosity {
             TypeVerbosity::Full => {
                 write!(f, "ptr<{}, ", t.address_space)?;
-                write_ty(db, t.inner, f, verbosity)?;
+                write_ty(database, t.inner, f, verbosity)?;
                 write!(f, ", {}>", t.access_mode)
             },
             TypeVerbosity::Compact | TypeVerbosity::Inner => {
                 write!(f, "ptr<")?;
-                write_ty(db, t.inner, f, verbosity)?;
+                write_ty(database, t.inner, f, verbosity)?;
                 write!(f, ">")
             },
         },

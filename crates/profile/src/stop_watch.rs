@@ -1,6 +1,6 @@
 //! Like `std::time::Instant`, but also measures memory & CPU cycles.
 
-#![allow(clippy::print_stderr)]
+#![expect(clippy::print_stderr, reason = "this is a debugging utility")]
 
 use std::{
     fmt,
@@ -23,7 +23,8 @@ pub struct StopWatchSpan {
 }
 
 impl StopWatch {
-    pub fn start() -> StopWatch {
+    #[inline]
+    pub fn start() -> Self {
         #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
         let counter = {
             // When debugging rust-analyzer using rr, the perf-related syscalls cause it to abort.
@@ -35,11 +36,11 @@ impl StopWatch {
             if *PERF_ENABLED.get_or_init(|| std::env::var_os("WA_DISABLE_PERF").is_none()) {
                 let mut counter = perf_event::Builder::new()
                     .build()
-                    .map_err(|err| eprintln!("Failed to create perf counter: {err}"))
+                    .map_err(|error| eprintln!("Failed to create perf counter: {error}"))
                     .ok();
                 if let Some(counter) = &mut counter {
-                    if let Err(err) = counter.enable() {
-                        eprintln!("Failed to start perf counter: {err}")
+                    if let Err(error) = counter.enable() {
+                        eprintln!("Failed to start perf counter: {error}");
                     }
                 }
                 counter
@@ -49,7 +50,7 @@ impl StopWatch {
         };
         let memory = MemoryUsage::now();
         let time = Instant::now();
-        StopWatch {
+        Self {
             time,
             #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
             counter,
@@ -57,13 +58,15 @@ impl StopWatch {
         }
     }
 
+    #[inline]
     pub fn elapsed(&mut self) -> StopWatchSpan {
         let time = self.time.elapsed();
 
         #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
-        let instructions = self.counter.as_mut().and_then(|it| {
-            it.read()
-                .map_err(|err| eprintln!("Failed to read perf counter: {err}"))
+        let instructions = self.counter.as_mut().and_then(|counter| {
+            counter
+                .read()
+                .map_err(|error| eprintln!("Failed to read perf counter: {error}"))
                 .ok()
         });
         #[cfg(all(target_os = "linux", target_env = "ohos"))]
@@ -81,26 +84,24 @@ impl StopWatch {
 }
 
 impl fmt::Display for StopWatchSpan {
+    #[inline]
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        write!(f, "{:.2?}", self.time)?;
-        if let Some(mut instructions) = self.instructions {
-            let mut prefix = "";
-            if instructions > 10000 {
-                instructions /= 1000;
-                prefix = "k";
-            }
-            if instructions > 10000 {
-                instructions /= 1000;
-                prefix = "m";
-            }
-            if instructions > 10000 {
-                instructions /= 1000;
-                prefix = "g";
-            }
-            write!(f, ", {instructions}{prefix}instr")?;
+        write!(f, "{:.2}", self.time.as_millis())?;
+
+        if let Some(instructions) = self.instructions {
+            let (value, suffix) = if instructions > 10_000_000_000 {
+                (instructions.saturating_div(1_000_000_000), "g")
+            } else if instructions > 10_000_000 {
+                (instructions.saturating_div(1_000_000), "m")
+            } else if instructions > 10_000 {
+                (instructions.saturating_div(1_000), "k")
+            } else {
+                (instructions, "")
+            };
+            write!(f, ", {value}{suffix}instr")?;
         }
         write!(f, ", {}", self.memory)?;
         Ok(())

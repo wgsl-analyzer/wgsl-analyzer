@@ -80,7 +80,7 @@ pub(crate) fn file_id(
 /// Returns `None` if the file was excluded.
 pub(crate) fn file_position(
     snap: &GlobalStateSnapshot,
-    tdpp: lsp_types::TextDocumentPositionParams,
+    tdpp: &lsp_types::TextDocumentPositionParams,
 ) -> anyhow::Result<Option<FilePosition>> {
     let file_id = try_default!(file_id(snap, &tdpp.text_document.uri)?);
     let line_index = snap.file_line_index(file_id)?;

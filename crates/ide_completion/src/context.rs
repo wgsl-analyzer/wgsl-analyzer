@@ -3,7 +3,7 @@ use either::Either;
 use hir::{HirDatabase, Semantics};
 use hir_def::{
     HirFileId,
-    db::{DefDatabase, DefinitionWithBodyId},
+    database::{DefDatabase, DefinitionWithBodyId},
     resolver::Resolver,
 };
 use ide_db::RootDatabase;
@@ -19,7 +19,7 @@ type ExprOrStatement = Either<ast::Expression, ast::Statement>;
 pub(crate) struct CompletionContext<'a> {
     pub sema: Semantics<'a>,
     pub file_id: HirFileId,
-    pub(crate) db: &'a RootDatabase,
+    pub(crate) database: &'a RootDatabase,
     pub position: FilePosition,
     pub token: SyntaxToken,
     pub file: ast::SourceFile,
@@ -30,11 +30,11 @@ pub(crate) struct CompletionContext<'a> {
 
 impl<'a> CompletionContext<'a> {
     pub(crate) fn new(
-        db: &'a RootDatabase,
+        database: &'a RootDatabase,
         position @ FilePosition { file_id, offset }: FilePosition,
         config: &'a CompletionConfig<'a>,
     ) -> Option<Self> {
-        let sema = Semantics::new(db);
+        let sema = Semantics::new(database);
         let file = sema.parse(position.file_id);
         let token = file
             .syntax()
@@ -50,8 +50,8 @@ impl<'a> CompletionContext<'a> {
         let completion_location =
             determine_location(&sema, file.syntax(), position.offset, token.clone());
 
-        let module_info = db.module_info(file_id);
-        let mut resolver = Resolver::default().push_module_scope(db, file_id, module_info);
+        let module_info = database.module_info(file_id);
+        let mut resolver = Resolver::default().push_module_scope(database, file_id, module_info);
 
         let nearest_scope = token
             .siblings_with_tokens(Direction::Prev) // spellchecker:disable-line
@@ -69,10 +69,10 @@ impl<'a> CompletionContext<'a> {
             }
         }
 
-        let ctx = Self {
+        let context = Self {
             file_id,
             sema,
-            db,
+            database,
             position,
             token,
             file,
@@ -80,7 +80,7 @@ impl<'a> CompletionContext<'a> {
             completion_location,
             resolver,
         };
-        Some(ctx)
+        Some(context)
     }
 
     pub(crate) fn source_range(&self) -> base_db::TextRange {

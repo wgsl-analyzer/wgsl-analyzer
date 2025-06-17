@@ -1,6 +1,6 @@
 use hir::HirDatabase;
 use hir_def::{
-    db::DefDatabase,
+    database::DefDatabase,
     module_data::{ModuleItem, Name, pretty::pretty_module_item},
     resolver::ScopeDef,
 };
@@ -14,14 +14,14 @@ use crate::{
 
 pub(crate) fn complete_names_in_scope(
     accumulator: &mut Completions,
-    ctx: &CompletionContext,
+    context: &CompletionContext,
 ) -> Option<()> {
-    match ctx.completion_location {
+    match context.completion_location {
         Some(ImmediateLocation::InsideStatement) => {},
         _ => return None,
     }
 
-    ctx.resolver.process_value_names(|name, item| {
+    context.resolver.process_value_names(|name, item| {
         if name == Name::missing() {
             return;
         }
@@ -39,21 +39,21 @@ pub(crate) fn complete_names_in_scope(
         };
 
         let detail = match item {
-            ScopeDef::Local(local) => ctx
+            ScopeDef::Local(local) => context
                 .container
                 .and_then(|def| {
-                    let inference = ctx.db.infer(def);
+                    let inference = context.database.infer(def);
                     inference.type_of_binding.get(local).copied()
                 })
-                .map(|r#type| pretty_type(ctx.db, r#type)),
+                .map(|r#type| pretty_type(context.database, r#type)),
             ScopeDef::ModuleItem(file_id, item) => {
-                let module_info = ctx.db.module_info(file_id);
-                let detail = pretty_module_item(&item, &module_info, ctx.db);
+                let module_info = context.database.module_info(file_id);
+                let detail = pretty_module_item(&item, &module_info, context.database);
                 Some(detail)
             },
         };
 
-        let mut completion = CompletionItem::new(kind, ctx.source_range(), name.as_str());
+        let mut completion = CompletionItem::new(kind, context.source_range(), name.as_str());
         completion.set_relevance(CompletionRelevance {
             exact_name_match: false,
             type_match: None,
@@ -68,11 +68,11 @@ pub(crate) fn complete_names_in_scope(
             is_skipping_completion: false,
         });
         completion.set_detail(detail);
-        completion.add_to(accumulator, ctx.db);
+        completion.add_to(accumulator, context.database);
     });
     accumulator.add_all(Builtin::ALL_BUILTINS.iter().map(|name| {
         let mut builder =
-            CompletionItem::new(CompletionItemKind::Function, ctx.source_range(), *name);
+            CompletionItem::new(CompletionItemKind::Function, context.source_range(), *name);
         builder.with_relevance(|r| CompletionRelevance {
             exact_name_match: false,
             type_match: None,
@@ -82,7 +82,7 @@ pub(crate) fn complete_names_in_scope(
             swizzle_index: None,
             ..r
         });
-        builder.build(ctx.db)
+        builder.build(context.database)
     }));
     None
 }

@@ -127,40 +127,40 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
 }
 
 fn get_path(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
 ) -> Result<VfsPath, ()> {
     match file_id.0 {
-        HirFileIdRepr::FileId(file_id) => Ok(db.file_path(file_id)),
+        HirFileIdRepr::FileId(file_id) => Ok(database.file_path(file_id)),
         _ => Err(()),
     }
 }
 
 fn get_file_id(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     path: VfsPath,
 ) -> Result<FileId, ()> {
-    Ok(db.file_id(path))
+    Ok(database.file_id(path))
 }
 
 fn parse_or_resolve(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
 ) -> Result<Parse, ()> {
     match file_id.0 {
-        HirFileIdRepr::FileId(file_id) => Ok(db.parse(file_id)),
+        HirFileIdRepr::FileId(file_id) => Ok(database.parse(file_id)),
         HirFileIdRepr::MacroFile(import_file) => {
-            let import_loc = db.lookup_intern_import(import_file.import_id);
-            let module_info = db.module_info(import_loc.file_id);
+            let import_loc = database.lookup_intern_import(import_file.import_id);
+            let module_info = database.module_info(import_loc.file_id);
             let import: &Import = module_info.get(import_loc.value);
 
             match &import.value {
                 crate::module_data::ImportValue::Path(path) => {
-                    let file_id = relative_file(db, import_loc.file_id, path).ok_or(())?;
-                    Ok(db.parse(file_id))
+                    let file_id = relative_file(database, import_loc.file_id, path).ok_or(())?;
+                    Ok(database.parse(file_id))
                 },
                 crate::module_data::ImportValue::Custom(key) => {
-                    db.parse_import(key.clone(), syntax::ParseEntryPoint::File)
+                    database.parse_import(key.clone(), syntax::ParseEntryPoint::File)
                 },
             }
         },
@@ -169,10 +169,10 @@ fn parse_or_resolve(
 
 #[allow(clippy::needless_collect)] // false positive
 fn resolve_full_source(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
 ) -> Result<String, ()> {
-    let parse = db.parse_or_resolve(file_id)?;
+    let parse = database.parse_or_resolve(file_id)?;
 
     let root = ast::SourceFile::cast(parse.syntax().clone_for_update()).unwrap();
 
@@ -183,8 +183,8 @@ fn resolve_full_source(
             _ => None,
         })
         .filter_map(|import| {
-            let import_mod_id = crate::module_data::find_item(db, file_id, &import)?;
-            let import_id = db.intern_import(Location::new(file_id, import_mod_id));
+            let import_mod_id = crate::module_data::find_item(database, file_id, &import)?;
+            let import_id = database.intern_import(Location::new(file_id, import_mod_id));
             let import_file = HirFileId::from(ImportFile { import_id });
 
             Some((import.syntax().clone(), import_file))
@@ -192,8 +192,8 @@ fn resolve_full_source(
         .collect();
 
     for (import, import_file) in imports.into_iter().rev() {
-        let import_source = match db.parse_or_resolve(import_file) {
-            Ok(it) => it.syntax().clone_for_update(),
+        let import_source = match database.parse_or_resolve(import_file) {
+            Ok(parse) => parse.syntax().clone_for_update(),
             Err(_) => continue,
         };
 
@@ -216,11 +216,11 @@ fn resolve_full_source(
 }
 
 fn text_range_from_full(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
     mut range: TextRange,
 ) -> Result<TextRange, ()> {
-    let root = db.parse_or_resolve(file_id)?.tree();
+    let root = database.parse_or_resolve(file_id)?.tree();
 
     let imports = root
         .items()
@@ -229,8 +229,8 @@ fn text_range_from_full(
             _ => None,
         })
         .filter_map(|import| {
-            let import_mod_id = crate::module_data::find_item(db, file_id, &import)?;
-            let import_id = db.intern_import(Location::new(file_id, import_mod_id));
+            let import_mod_id = crate::module_data::find_item(database, file_id, &import)?;
+            let import_id = database.intern_import(Location::new(file_id, import_mod_id));
             let import_file = HirFileId::from(ImportFile { import_id });
 
             Some((import.syntax().clone(), import_file))
@@ -241,8 +241,8 @@ fn text_range_from_full(
             break;
         }
 
-        let import_length = match db.parse_or_resolve(import_file) {
-            Ok(it) => it.syntax().text().len(),
+        let import_length = match database.parse_or_resolve(import_file) {
+            Ok(parse) => parse.syntax().text().len(),
             Err(_) => continue,
         };
 
@@ -266,10 +266,10 @@ fn text_range_from_full(
 }
 
 fn ast_id_map(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
 ) -> Arc<AstIdMap> {
-    let map = db
+    let map = database
         .parse_or_resolve(file_id)
         .map(|source| AstIdMap::from_source(source.tree()))
         .unwrap_or_default();
@@ -396,9 +396,9 @@ macro_rules! intern_id {
 
             fn lookup(
                 &self,
-                db: &dyn DefDatabase,
+                database: &dyn DefDatabase,
             ) -> $loc {
-                db.$lookup(*self)
+                database.$lookup(*self)
             }
         }
     };
@@ -408,7 +408,7 @@ pub trait Lookup: Sized {
     type Data;
     fn lookup(
         &self,
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
     ) -> Self::Data;
 }
 
@@ -439,22 +439,22 @@ pub enum DefinitionWithBodyId {
 impl DefinitionWithBodyId {
     pub fn file_id(
         &self,
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
     ) -> HirFileId {
         match self {
-            DefinitionWithBodyId::Function(id) => id.lookup(db).file_id,
-            DefinitionWithBodyId::GlobalVariable(id) => id.lookup(db).file_id,
-            DefinitionWithBodyId::GlobalConstant(id) => id.lookup(db).file_id,
-            DefinitionWithBodyId::Override(id) => id.lookup(db).file_id,
+            DefinitionWithBodyId::Function(id) => id.lookup(database).file_id,
+            DefinitionWithBodyId::GlobalVariable(id) => id.lookup(database).file_id,
+            DefinitionWithBodyId::GlobalConstant(id) => id.lookup(database).file_id,
+            DefinitionWithBodyId::Override(id) => id.lookup(database).file_id,
         }
     }
 
     pub fn resolver(
         &self,
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
     ) -> Resolver {
-        let file_id = self.file_id(db);
-        let module_info = db.module_info(file_id);
-        Resolver::default().push_module_scope(db, file_id, module_info)
+        let file_id = self.file_id(database);
+        let module_info = database.module_info(file_id);
+        Resolver::default().push_module_scope(database, file_id, module_info)
     }
 }

@@ -4,7 +4,7 @@ use syntax::ast::{self, IncrementDecrement};
 
 use crate::{
     body::BindingId,
-    db::Interned,
+    database::Interned,
     module_data::Name,
     type_ref::{AccessMode, AddressSpace, TypeReference, VecDimensionality},
 };

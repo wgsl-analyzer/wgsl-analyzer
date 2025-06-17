@@ -26,23 +26,22 @@ use crate::{
 
 pub(crate) fn handle_goto_definition(
     snap: GlobalStateSnapshot,
-    params: lsp_types::GotoDefinitionParams,
+    parameters: lsp_types::GotoDefinitionParams,
 ) -> anyhow::Result<Option<lsp_types::GotoDefinitionResponse>> {
     let _p = tracing::info_span!("handle_goto_definition").entered();
     let position = try_default!(from_proto::file_position(
         &snap,
-        params.text_document_position_params
+        &parameters.text_document_position_params
     )?);
-    let nav_info = match snap.analysis.goto_definition(position)? {
-        None => return Ok(None),
-        Some(it) => it,
+    let Some(navigation_info) = snap.analysis.goto_definition(position)? else {
+        return Ok(None);
     };
-    let src = FileRange {
+    let source = FileRange {
         file_id: position.file_id,
-        range: nav_info.full_range,
+        range: navigation_info.full_range,
     };
-    let res = to_proto::goto_definition_response(&snap, Some(src), vec![nav_info])?;
-    Ok(Some(res))
+    let result = to_proto::goto_definition_response(&snap, Some(source), vec![navigation_info])?;
+    Ok(Some(result))
 }
 
 pub(crate) fn handle_completion(
@@ -54,34 +53,29 @@ pub(crate) fn handle_completion(
     }: lsp_types::CompletionParams,
 ) -> anyhow::Result<Option<lsp_types::CompletionResponse>> {
     let _p = tracing::info_span!("handle_completion").entered();
-    let mut position = try_default!(from_proto::file_position(
-        &snap,
-        text_document_position.clone()
-    )?);
+    let mut position = try_default!(from_proto::file_position(&snap, &text_document_position)?);
     let line_index = snap.file_line_index(position.file_id)?;
     let completion_trigger_character = context
-        .and_then(|ctx| ctx.trigger_character)
-        .and_then(|s| s.chars().next());
+        .and_then(|context| context.trigger_character)
+        .and_then(|string| string.chars().next());
 
     let source_root = snap.analysis.source_root_id(position.file_id)?;
     let completion_config = &snap.config.completion(Some(source_root));
     // FIXME: We should fix up the position when retrying the cancelled request instead
     position.offset = position.offset.min(line_index.index.len());
-    let items = match snap.analysis.completions(
-        completion_config,
-        position,
-        completion_trigger_character,
-    )? {
-        None => return Ok(None),
-        Some(items) => items,
+    let Some(items) =
+        snap.analysis
+            .completions(completion_config, position, completion_trigger_character)?
+    else {
+        return Ok(None);
     };
 
     let items = to_proto::completion_items(
         &snap.config,
-        &completion_config.fields_to_resolve,
+        completion_config.fields_to_resolve,
         &line_index,
         snap.file_version(position.file_id),
-        text_document_position,
+        &text_document_position,
         completion_trigger_character,
         items,
     );
@@ -129,9 +123,8 @@ pub(crate) fn handle_hover(
     )?);
 
     let hover = snap.config.hover();
-    let info = match snap.analysis.hover(&hover, file_range)? {
-        None => return Ok(None),
-        Some(info) => info,
+    let Some(info) = snap.analysis.hover(&hover, file_range)? else {
+        return Ok(None);
     };
 
     let line_index = snap.file_line_index(file_range.file_id)?;
@@ -200,7 +193,7 @@ pub(crate) fn debug_command(
     snap: GlobalStateSnapshot,
     parameters: extensions::DebugCommandParameters,
 ) -> Result<()> {
-    let Some(position) = from_proto::file_position(&snap, parameters.position)? else {
+    let Some(position) = from_proto::file_position(&snap, &parameters.position)? else {
         return Ok(());
     };
     snap.analysis.debug_command(position)?;
@@ -225,9 +218,8 @@ pub(crate) fn handle_document_diagnostics(
     snap: GlobalStateSnapshot,
     parameters: lsp_types::DocumentDiagnosticParams,
 ) -> anyhow::Result<lsp_types::DocumentDiagnosticReportResult> {
-    let file_id = match from_proto::file_id(&snap, &parameters.text_document.uri)? {
-        Some(it) => it,
-        None => return Ok(empty_diagnostic_report()),
+    let Some(file_id) = from_proto::file_id(&snap, &parameters.text_document.uri)? else {
+        return Ok(empty_diagnostic_report());
     };
     let source_root = snap.analysis.source_root_id(file_id).ok();
     let config = snap.config.diagnostics(source_root);
@@ -255,14 +247,14 @@ pub(crate) fn handle_document_diagnostics(
 
 pub(crate) fn handle_inlay_hints(
     snap: GlobalStateSnapshot,
-    params: InlayHintParams,
+    parameters: InlayHintParams,
 ) -> anyhow::Result<Option<Vec<InlayHint>>> {
     let _p = tracing::info_span!("handle_inlay_hints").entered();
-    let document_uri = &params.text_document.uri;
+    let document_uri = &parameters.text_document.uri;
     let FileRange { file_id, range } = try_default!(from_proto::file_range(
         &snap,
         &TextDocumentIdentifier::new(document_uri.to_owned()),
-        params.range,
+        parameters.range,
     )?);
     let line_index = snap.file_line_index(file_id)?;
     let range = TextRange::new(
@@ -275,13 +267,13 @@ pub(crate) fn handle_inlay_hints(
         snap.analysis
             .inlay_hints(&inlay_hints_config, file_id, Some(range))?
             .into_iter()
-            .map(|it| {
+            .map(|inlay_hint| {
                 to_proto::inlay_hint(
                     &snap,
-                    &inlay_hints_config.fields_to_resolve,
+                    inlay_hints_config.fields_to_resolve,
                     &line_index,
                     file_id,
-                    it,
+                    inlay_hint,
                 )
             })
             .collect::<Cancellable<Vec<_>>>()?,
@@ -337,31 +329,31 @@ fn prepare_hover_actions(
 ) -> Vec<lsp::extensions::CommandLinkGroup> {
     actions
         .iter()
-        .filter_map(|it| match it {
-            HoverAction::Implementation(position) => show_impl_command_link(snap, position),
-            HoverAction::Reference(position) => show_ref_command_link(snap, position),
+        .filter_map(|hover_action| match hover_action {
+            HoverAction::Implementation(position) => show_impl_command_link(snap, *position),
+            HoverAction::Reference(position) => show_ref_command_link(snap, *position),
             HoverAction::GoToType(targets) => goto_type_action_links(snap, targets),
         })
         .collect()
 }
 
-fn show_impl_command_link(
+const fn show_impl_command_link(
     snap: &GlobalStateSnapshot,
-    position: &FilePosition,
+    position: FilePosition,
 ) -> Option<lsp::extensions::CommandLinkGroup> {
     None
 }
 
-fn show_ref_command_link(
+const fn show_ref_command_link(
     snap: &GlobalStateSnapshot,
-    position: &FilePosition,
+    position: FilePosition,
 ) -> Option<lsp::extensions::CommandLinkGroup> {
     None
 }
 
-fn goto_type_action_links(
+const fn goto_type_action_links(
     snap: &GlobalStateSnapshot,
-    targets: &Vec<HoverGotoTypeData>,
+    targets: &[HoverGotoTypeData],
 ) -> Option<lsp::extensions::CommandLinkGroup> {
     None
 }

@@ -68,15 +68,15 @@ fn resolve_name_ref(
 
         match resolver.resolve_callable(&expression.name_ref()?.into())? {
             ResolveCallable::Struct(loc) => {
-                let id = sema.db.intern_struct(loc);
+                let id = sema.database.intern_struct(loc);
                 Some(Definition::Struct(Struct { id }))
             },
             ResolveCallable::TypeAlias(loc) => {
-                let id = sema.db.intern_type_alias(loc);
+                let id = sema.database.intern_type_alias(loc);
                 Some(Definition::TypeAlias(TypeAlias { id }))
             },
             ResolveCallable::Function(function) => {
-                let id = sema.db.intern_function(function);
+                let id = sema.database.intern_function(function);
                 Some(Definition::ModuleDef(ModuleDef::Function(Function { id })))
             },
             ResolveCallable::PredeclaredTypeAlias(_) => None,
@@ -86,11 +86,11 @@ fn resolve_name_ref(
 
         match resolver.resolve_type(&r#type.name()?.into())? {
             ResolveType::Struct(loc) => {
-                let id = sema.db.intern_struct(loc);
+                let id = sema.database.intern_struct(loc);
                 Some(Definition::Struct(Struct { id }))
             },
             ResolveType::TypeAlias(loc) => {
-                let id = sema.db.intern_type_alias(loc);
+                let id = sema.database.intern_type_alias(loc);
                 Some(Definition::TypeAlias(TypeAlias { id }))
             },
             ResolveType::PredeclaredTypeAlias(_) => {

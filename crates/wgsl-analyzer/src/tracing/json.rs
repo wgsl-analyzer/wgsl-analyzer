@@ -58,7 +58,6 @@ where
         ctx: Context<'_, S>,
     ) {
         let span = ctx.span(id).unwrap();
-
         let data = JsonData::new(attrs.metadata().name());
         span.extensions_mut().insert(data);
     }
@@ -73,7 +72,7 @@ where
     fn on_close(
         &self,
         id: Id,
-        ctx: Context<'_, S>,
+        context: Context<'_, S>,
     ) {
         #[derive(serde::Serialize)]
         struct JsonDataInner {
@@ -81,7 +80,7 @@ where
             elapsed_ms: u128,
         }
 
-        let span = ctx.span(&id).unwrap();
+        let span = context.span(&id).unwrap();
         let Some(data) = span.extensions_mut().remove::<JsonData>() else {
             return;
         };

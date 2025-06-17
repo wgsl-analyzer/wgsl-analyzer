@@ -1,4 +1,4 @@
-use std::{ops::Not, path};
+use std::{ops::Not as _, path};
 
 use base_db::{FileRange, TextRange, TextSize};
 use ide::{
@@ -16,6 +16,8 @@ use ide_db::text_edit::{Indel, TextEdit};
 use itertools::Itertools as _;
 use paths::{AbsPath, Utf8Component, Utf8Prefix};
 use rustc_hash::FxHasher;
+use semver::VersionReq;
+use serde_json::to_value;
 use vfs::FileId;
 
 use crate::{
@@ -104,10 +106,10 @@ pub(crate) fn location(
 
 pub(crate) fn completion_items(
     config: &Config,
-    fields_to_resolve: &CompletionFieldsToResolve,
+    fields_to_resolve: CompletionFieldsToResolve,
     line_index: &LineIndex,
     version: Option<i32>,
-    tdpp: lsp_types::TextDocumentPositionParams,
+    tdpp: &lsp_types::TextDocumentPositionParams,
     completion_trigger_character: Option<char>,
     mut items: Vec<CompletionItem>,
 ) -> Vec<lsp_types::CompletionItem> {
@@ -117,42 +119,43 @@ pub(crate) fn completion_items(
 
     let max_relevance = items
         .iter()
-        .map(|it| it.relevance.score())
+        .map(|item| item.relevance.score())
         .max()
         .unwrap_or_default();
-    let mut res = Vec::with_capacity(items.len());
+    let mut result = Vec::with_capacity(items.len());
     for item in items {
         completion_item(
-            &mut res,
+            &mut result,
             config,
             fields_to_resolve,
             line_index,
             version,
-            &tdpp,
+            tdpp,
             max_relevance,
             completion_trigger_character,
-            item,
+            &item,
         );
     }
 
     if let Some(limit) = config.completion(None).limit {
-        res.sort_by(|item1, item2| item1.sort_text.cmp(&item2.sort_text));
-        res.truncate(limit);
+        result.sort_by(|item1, item2| item1.sort_text.cmp(&item2.sort_text));
+        result.truncate(limit);
     }
 
-    res
+    result
 }
 
+#[expect(clippy::too_many_arguments, reason = "TODO")]
 fn completion_item(
-    acc: &mut Vec<lsp_types::CompletionItem>,
+    accumulator: &mut Vec<lsp_types::CompletionItem>,
     config: &Config,
-    fields_to_resolve: &CompletionFieldsToResolve,
+    fields_to_resolve: CompletionFieldsToResolve,
     line_index: &LineIndex,
     version: Option<i32>,
     tdpp: &lsp_types::TextDocumentPositionParams,
     max_relevance: u32,
     completion_trigger_character: Option<char>,
-    item: CompletionItem,
+    item: &CompletionItem,
 ) {
     let insert_replace_support = config.insert_replace_support().then_some(tdpp.position);
     // let ref_match = item.ref_match();
@@ -188,7 +191,7 @@ fn completion_item(
                     let indel2 = Indel::replace(range2, indel.insert.clone());
                     additional_text_edits.push(self::text_edit(line_index, indel1));
                     self::completion_text_edit(line_index, insert_replace_support, indel2)
-                })
+                });
             } else {
                 assert!(source_range.intersect(indel.delete).is_none());
                 let text_edit = self::text_edit(line_index, indel.clone());
@@ -322,15 +325,15 @@ fn completion_item(
     // };
 
     // lsp_item.data = resolve_data;
-    acc.push(lsp_item);
+    accumulator.push(lsp_item);
 
     fn set_score(
-        res: &mut lsp_types::CompletionItem,
+        result: &mut lsp_types::CompletionItem,
         max_relevance: u32,
         relevance: CompletionRelevance,
     ) {
         if relevance.is_relevant() && relevance.score() == max_relevance {
-            res.preselect = Some(true);
+            result.preselect = Some(true);
         }
         // The relevance needs to be inverted to come up with a sort score
         // because the client will sort ascending.
@@ -339,7 +342,7 @@ fn completion_item(
         // by the client. Hex format is used because it is easier to
         // visually compare very large values, which the sort text
         // tends to be since it is the opposite of the score.
-        res.sort_text = Some(format!("{sort_score:08x}"));
+        result.sort_text = Some(format!("{sort_score:08x}"));
     }
 }
 
@@ -404,13 +407,50 @@ pub(crate) fn completion_text_edit(
 
 pub(crate) fn inlay_hint(
     snap: &GlobalStateSnapshot,
-    fields_to_resolve: &InlayFieldsToResolve,
+    fields_to_resolve: InlayFieldsToResolve,
     line_index: &LineIndex,
     file_id: FileId,
     mut inlay_hint: InlayHint,
 ) -> Cancellable<lsp_types::InlayHint> {
-    let resolve_range_and_hash: Option<(TextRange, u64)> = None;
+    let hint_needs_resolve = |hint: &InlayHint| -> Option<TextRange> {
+        hint.resolve_parent.filter(|_| {
+            hint.text_edit.as_ref().is_some_and(LazyProperty::is_lazy)
+                || hint.label.parts.iter().any(|part| {
+                    part.linked_location
+                        .as_ref()
+                        .is_some_and(LazyProperty::is_lazy)
+                        || part.tooltip.as_ref().is_some_and(LazyProperty::is_lazy)
+                })
+        })
+    };
+
+    let resolve_range_and_hash = hint_needs_resolve(&inlay_hint).map(|range| {
+        (
+            range,
+            std::hash::BuildHasher::hash_one(
+                &std::hash::BuildHasherDefault::<FxHasher>::default(),
+                &inlay_hint,
+            ),
+        )
+    });
+
     let mut something_to_resolve = false;
+    let text_edits = inlay_hint
+        .text_edit
+        .take()
+        .and_then(|property| match property {
+            LazyProperty::Computed(text_edit) => Some(text_edit),
+            LazyProperty::Lazy => {
+                something_to_resolve |= snap
+                    .config
+                    .visual_studio_code_version()
+                    .is_none_or(|version| VersionReq::parse(">=1.86.0").unwrap().matches(version))
+                    && resolve_range_and_hash.is_some()
+                    && fields_to_resolve.resolve_text_edits;
+                None
+            },
+        })
+        .map(|text_edit| text_edit_vec(line_index, text_edit));
     let (label, tooltip) = inlay_hint_label(
         snap,
         fields_to_resolve,
@@ -418,6 +458,20 @@ pub(crate) fn inlay_hint(
         resolve_range_and_hash.is_some(),
         inlay_hint.label,
     )?;
+
+    let data = match resolve_range_and_hash {
+        Some((resolve_range, hash)) if something_to_resolve => Some(
+            to_value(lsp::extensions::InlayHintResolveData {
+                file_id: file_id.index(),
+                hash: hash.to_string(),
+                version: snap.file_version(file_id),
+                resolve_range: range(line_index, resolve_range),
+            })
+            .unwrap(),
+        ),
+        _ => None,
+    };
+
     Ok(lsp_types::InlayHint {
         position: match inlay_hint.position {
             ide::InlayHintPosition::Before => position(line_index, inlay_hint.range.start()),
@@ -428,18 +482,18 @@ pub(crate) fn inlay_hint(
         kind: match inlay_hint.kind {
             InlayKind::Parameter => Some(lsp_types::InlayHintKind::PARAMETER),
             InlayKind::Type => Some(lsp_types::InlayHintKind::TYPE),
-            _ => None,
+            InlayKind::StructLayout => None,
         },
-        text_edits: None,
-        data: None,
-        tooltip: None,
+        text_edits,
+        data,
+        tooltip,
         label,
     })
 }
 
 fn inlay_hint_label(
     snap: &GlobalStateSnapshot,
-    fields_to_resolve: &InlayFieldsToResolve,
+    fields_to_resolve: InlayFieldsToResolve,
     something_to_resolve: &mut bool,
     needs_resolve: bool,
     mut label: InlayHintLabel,
@@ -447,111 +501,110 @@ fn inlay_hint_label(
     lsp_types::InlayHintLabel,
     Option<lsp_types::InlayHintTooltip>,
 )> {
-    let (label, tooltip) = match &*label.parts {
-        [
-            InlayHintLabelPart {
-                linked_location: None,
-                ..
-            },
-        ] => {
-            let InlayHintLabelPart { text, tooltip, .. } = label.parts.pop().unwrap();
-            let tooltip = tooltip.and_then(|it| match it {
-                LazyProperty::Computed(it) => Some(it),
-                LazyProperty::Lazy => {
-                    *something_to_resolve |=
-                        needs_resolve && fields_to_resolve.resolve_hint_tooltip;
-                    None
-                },
-            });
-            let hint_tooltip = match tooltip {
-                Some(ide::InlayTooltip::String(s)) => Some(lsp_types::InlayHintTooltip::String(s)),
-                Some(ide::InlayTooltip::Markdown(s)) => Some(
-                    lsp_types::InlayHintTooltip::MarkupContent(lsp_types::MarkupContent {
-                        kind: lsp_types::MarkupKind::Markdown,
-                        value: s,
-                    }),
-                ),
-                None => None,
-            };
-            (lsp_types::InlayHintLabel::String(text), hint_tooltip)
+    let (label, tooltip) = if let [
+        InlayHintLabelPart {
+            linked_location: None,
+            ..
         },
-        _ => {
-            let parts = label
-                .parts
-                .into_iter()
-                .map(|part| {
-                    let tooltip = part.tooltip.and_then(|it| match it {
-                        LazyProperty::Computed(it) => Some(it),
+    ] = &*label.parts
+    {
+        let InlayHintLabelPart { text, tooltip, .. } = label.parts.pop().unwrap();
+        let tooltip = tooltip.and_then(|inlay_tooltip| match inlay_tooltip {
+            LazyProperty::Computed(inlay_tooltip) => Some(inlay_tooltip),
+            LazyProperty::Lazy => {
+                *something_to_resolve |= needs_resolve && fields_to_resolve.resolve_hint_tooltip;
+                None
+            },
+        });
+        let hint_tooltip = match tooltip {
+            Some(ide::InlayTooltip::String(string)) => {
+                Some(lsp_types::InlayHintTooltip::String(string))
+            },
+            Some(ide::InlayTooltip::Markdown(string)) => Some(
+                lsp_types::InlayHintTooltip::MarkupContent(lsp_types::MarkupContent {
+                    kind: lsp_types::MarkupKind::Markdown,
+                    value: string,
+                }),
+            ),
+            None => None,
+        };
+        (lsp_types::InlayHintLabel::String(text), hint_tooltip)
+    } else {
+        let parts = label
+            .parts
+            .into_iter()
+            .map(|part| {
+                let tooltip = part.tooltip.and_then(|property| match property {
+                    LazyProperty::Computed(inlay_tooltip) => Some(inlay_tooltip),
+                    LazyProperty::Lazy => {
+                        *something_to_resolve |= fields_to_resolve.resolve_label_tooltip;
+                        None
+                    },
+                });
+                let tooltip = match tooltip {
+                    Some(ide::InlayTooltip::String(string)) => {
+                        Some(lsp_types::InlayHintLabelPartTooltip::String(string))
+                    },
+                    Some(ide::InlayTooltip::Markdown(source)) => {
+                        Some(lsp_types::InlayHintLabelPartTooltip::MarkupContent(
+                            lsp_types::MarkupContent {
+                                kind: lsp_types::MarkupKind::Markdown,
+                                value: source,
+                            },
+                        ))
+                    },
+                    None => None,
+                };
+                let location = part
+                    .linked_location
+                    .and_then(|property| match property {
+                        LazyProperty::Computed(file_range) => Some(file_range),
                         LazyProperty::Lazy => {
-                            *something_to_resolve |= fields_to_resolve.resolve_label_tooltip;
+                            *something_to_resolve |= fields_to_resolve.resolve_label_location;
                             None
                         },
-                    });
-                    let tooltip = match tooltip {
-                        Some(ide::InlayTooltip::String(s)) => {
-                            Some(lsp_types::InlayHintLabelPartTooltip::String(s))
-                        },
-                        Some(ide::InlayTooltip::Markdown(s)) => {
-                            Some(lsp_types::InlayHintLabelPartTooltip::MarkupContent(
-                                lsp_types::MarkupContent {
-                                    kind: lsp_types::MarkupKind::Markdown,
-                                    value: s,
-                                },
-                            ))
-                        },
-                        None => None,
-                    };
-                    let location = part
-                        .linked_location
-                        .and_then(|it| match it {
-                            LazyProperty::Computed(it) => Some(it),
-                            LazyProperty::Lazy => {
-                                *something_to_resolve |= fields_to_resolve.resolve_label_location;
-                                None
-                            },
-                        })
-                        .map(|range| location(snap, range))
-                        .transpose()?;
-                    Ok(lsp_types::InlayHintLabelPart {
-                        value: part.text,
-                        tooltip,
-                        location,
-                        command: None,
                     })
+                    .map(|range| location(snap, range))
+                    .transpose()?;
+                Ok(lsp_types::InlayHintLabelPart {
+                    value: part.text,
+                    tooltip,
+                    location,
+                    command: None,
                 })
-                .collect::<Cancellable<_>>()?;
-            (lsp_types::InlayHintLabel::LabelParts(parts), None)
-        },
+            })
+            .collect::<Cancellable<_>>()?;
+        (lsp_types::InlayHintLabel::LabelParts(parts), None)
     };
     Ok((label, tooltip))
 }
 
 pub(crate) fn location_link(
     snap: &GlobalStateSnapshot,
-    src: Option<FileRange>,
-    target: NavigationTarget,
+    source: Option<FileRange>,
+    target: &NavigationTarget,
 ) -> Cancellable<lsp_types::LocationLink> {
-    let origin_selection_range = match src {
-        Some(src) => {
-            let line_index = snap.file_line_index(src.file_id)?;
-            let range = range(&line_index, src.range);
+    let origin_selection_range = match source {
+        Some(source) => {
+            let line_index = snap.file_line_index(source.file_id)?;
+            let range = range(&line_index, source.range);
             Some(range)
         },
         None => None,
     };
     let (target_uri, target_range, target_selection_range) = location_info(snap, target)?;
-    let res = lsp_types::LocationLink {
+    let result = lsp_types::LocationLink {
         origin_selection_range,
         target_uri,
         target_range,
         target_selection_range,
     };
-    Ok(res)
+    Ok(result)
 }
 
 fn location_info(
     snap: &GlobalStateSnapshot,
-    target: NavigationTarget,
+    target: &NavigationTarget,
 ) -> Cancellable<(lsp_types::Url, lsp_types::Range, lsp_types::Range)> {
     let line_index = snap.file_line_index(target.file_id)?;
 
@@ -559,29 +612,34 @@ fn location_info(
     let target_range = range(&line_index, target.full_range);
     let target_selection_range = target
         .focus_range
-        .map(|it| range(&line_index, it))
-        .unwrap_or(target_range);
+        .map_or(target_range, |text_range| range(&line_index, text_range));
     Ok((target_uri, target_range, target_selection_range))
 }
 
 pub(crate) fn goto_definition_response(
     snap: &GlobalStateSnapshot,
-    src: Option<FileRange>,
+    source: Option<FileRange>,
     targets: Vec<NavigationTarget>,
 ) -> Cancellable<lsp_types::GotoDefinitionResponse> {
     if snap.config.location_link() {
         let links = targets
             .into_iter()
-            .unique_by(|nav| (nav.file_id, nav.full_range, nav.focus_range))
-            .map(|nav| location_link(snap, src, nav))
+            .unique_by(|navigation_target| {
+                (
+                    navigation_target.file_id,
+                    navigation_target.full_range,
+                    navigation_target.focus_range,
+                )
+            })
+            .map(|navigation_target| location_link(snap, source, &navigation_target))
             .collect::<Cancellable<Vec<_>>>()?;
         Ok(links.into())
     } else {
         let locations = targets
             .into_iter()
-            .map(|nav| FileRange {
-                file_id: nav.file_id,
-                range: nav.focus_or_full_range(),
+            .map(|navigation_target| FileRange {
+                file_id: navigation_target.file_id,
+                range: navigation_target.focus_or_full_range(),
             })
             .unique()
             .map(|range| location(snap, range))

@@ -1,7 +1,7 @@
 use crate::HirFileId;
 use crate::hir_file_id::relative_file;
 use crate::module_data::{Function, ModuleData, ModuleItem, ModuleItemId, Parameter};
-use crate::{ast_id::AstIdMap, db::DefDatabase, type_ref::TypeReference};
+use crate::{ast_id::AstIdMap, database::DefDatabase, type_ref::TypeReference};
 use la_arena::{Idx, IdxRange};
 use std::sync::Arc;
 
@@ -15,7 +15,7 @@ use super::{
 };
 
 pub(crate) struct Ctx<'a> {
-    db: &'a dyn DefDatabase,
+    database: &'a dyn DefDatabase,
     file_id: HirFileId,
     source_ast_id_map: Arc<AstIdMap>,
     pub module_data: ModuleData,
@@ -24,13 +24,13 @@ pub(crate) struct Ctx<'a> {
 
 impl<'a> Ctx<'a> {
     pub(crate) fn new(
-        db: &'a dyn DefDatabase,
+        database: &'a dyn DefDatabase,
         file_id: HirFileId,
     ) -> Self {
         Self {
-            db,
+            database,
             file_id,
-            source_ast_id_map: db.ast_id_map(file_id),
+            source_ast_id_map: database.ast_id_map(file_id),
             module_data: ModuleData::default(),
             items: vec![],
         }
@@ -105,7 +105,7 @@ impl<'a> Ctx<'a> {
             .and_then(|type_declaration| self.lower_type_ref(type_declaration))
             .unwrap_or(TypeReference::Error);
 
-        let r#type = self.db.intern_type_ref(r#type);
+        let r#type = self.database.intern_type_ref(r#type);
 
         let ast_id = self.source_ast_id_map.ast_id(type_alias);
         Some(
@@ -133,7 +133,7 @@ impl<'a> Ctx<'a> {
                 self.lower_type_ref(type_declaration)
                     .unwrap_or(TypeReference::Error)
             })
-            .map(|r#type| self.db.intern_type_ref(r#type));
+            .map(|r#type| self.database.intern_type_ref(r#type));
 
         let override_declaration = Override {
             name,
@@ -161,7 +161,7 @@ impl<'a> Ctx<'a> {
                 self.lower_type_ref(type_declaration)
                     .unwrap_or(TypeReference::Error)
             })
-            .map(|r#type| self.db.intern_type_ref(r#type));
+            .map(|r#type| self.database.intern_type_ref(r#type));
 
         let constant = GlobalConstant {
             name,
@@ -181,7 +181,7 @@ impl<'a> Ctx<'a> {
         let r#type = var
             .ty()
             .and_then(|type_declaration| self.lower_type_ref(type_declaration))
-            .map(|r#type| self.db.intern_type_ref(r#type));
+            .map(|r#type| self.database.intern_type_ref(r#type));
 
         let address_space = var
             .variable_qualifier()
@@ -219,7 +219,7 @@ impl<'a> Ctx<'a> {
                 let r#type = self
                     .lower_type_ref(declaration.ty()?)
                     .unwrap_or(TypeReference::Error);
-                let r#type = self.db.intern_type_ref(r#type);
+                let r#type = self.database.intern_type_ref(r#type);
                 self.module_data.fields.alloc(Field { name, r#type });
                 Some(())
             })
@@ -251,7 +251,7 @@ impl<'a> Ctx<'a> {
             .return_type()
             .and_then(|r#type| r#type.ty())
             .map(|r#type| self.lower_type_ref(r#type).unwrap_or(TypeReference::Error))
-            .map(|r#type| self.db.intern_type_ref(r#type));
+            .map(|r#type| self.database.intern_type_ref(r#type));
 
         let function = Function {
             name,
@@ -273,7 +273,7 @@ impl<'a> Ctx<'a> {
                     .ty()
                     .and_then(|r#type| self.lower_type_ref(r#type))
                     .unwrap_or(TypeReference::Error);
-                let r#type = self.db.intern_type_ref(r#type);
+                let r#type = self.database.intern_type_ref(r#type);
                 let name = parameter
                     .binding()
                     .and_then(|binding| binding.name())
@@ -287,11 +287,11 @@ impl<'a> Ctx<'a> {
                 let parse = match &import.value {
                     crate::module_data::ImportValue::Path(path) => {
                         tracing::info!("attempted import {:?}", path);
-                        let file_id = relative_file(self.db, self.file_id, path)?;
-                        Ok(self.db.parse(file_id))
+                        let file_id = relative_file(self.database, self.file_id, path)?;
+                        Ok(self.database.parse(file_id))
                     },
                     crate::module_data::ImportValue::Custom(key) => self
-                        .db
+                        .database
                         .parse_import(key.clone(), syntax::ParseEntryPoint::FunctionParameterList),
                 };
                 if let Ok(parse) = parse {

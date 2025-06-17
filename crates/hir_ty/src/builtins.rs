@@ -1,7 +1,7 @@
 use hir_def::module_data::Name;
 
 use crate::{
-    db::HirDatabase,
+    database::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
     ty::*,
 };
@@ -21,18 +21,18 @@ impl salsa::InternKey for BuiltinId {
 impl BuiltinId {
     pub fn lookup(
         self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Builtin {
-        db.lookup_intern_builtin(self)
+        database.lookup_intern_builtin(self)
     }
 }
 
 impl Builtin {
     pub fn intern(
         self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> BuiltinId {
-        db.intern_builtin(self)
+        database.intern_builtin(self)
     }
 }
 

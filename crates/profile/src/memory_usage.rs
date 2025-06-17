@@ -11,33 +11,42 @@ pub struct MemoryUsage {
 }
 
 impl fmt::Display for MemoryUsage {
+    #[inline]
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         self.allocated.fmt(f)
     }
 }
 
 impl std::ops::Sub for MemoryUsage {
-    type Output = MemoryUsage;
+    type Output = Self;
+    #[inline]
     fn sub(
         self,
-        rhs: MemoryUsage,
-    ) -> MemoryUsage {
-        MemoryUsage {
+        rhs: Self,
+    ) -> Self {
+        Self {
             allocated: self.allocated - rhs.allocated,
         }
     }
 }
 
 impl MemoryUsage {
-    pub fn now() -> MemoryUsage {
+    /// Get the current memory usage.
+    ///
+    /// # Panics
+    ///
+    /// Panics if using jemalloc targeting msvc and advance fails.
+    #[must_use]
+    #[inline]
+    pub fn now() -> Self {
         cfg_if! {
             if #[cfg(all(feature = "jemalloc", not(target_env = "msvc")))] {
                 jemalloc_ctl::epoch::advance().unwrap();
-                MemoryUsage {
-                    allocated: Bytes(jemalloc_ctl::stats::allocated::read().unwrap() as isize),
+                Self {
+                    allocated: Bytes(i32::try_from(jemalloc_ctl::stats::allocated::read().unwrap()).unwrap().try_into().unwrap()),
                 }
             } else if #[cfg(all(target_os = "linux", target_env = "gnu"))] {
                 memusage_linux()
@@ -48,12 +57,15 @@ impl MemoryUsage {
                 use windows_sys::Win32::System::{Threading::*, ProcessStatus::*};
                 use std::mem::MaybeUninit;
 
+                // SAFETY: Windows API safety is undocumented.
                 let proc = unsafe { GetCurrentProcess() };
                 let mut mem_counters = MaybeUninit::uninit();
                 let cb = size_of::<PROCESS_MEMORY_COUNTERS>();
+                // SAFETY: Windows API safety is undocumented.
                 let ret = unsafe { GetProcessMemoryInfo(proc, mem_counters.as_mut_ptr(), cb as u32) };
                 assert!(ret != 0);
 
+                // SAFETY: mem_counters is initialized by GetProcessMemoryInfo.
                 let usage = unsafe { mem_counters.assume_init().PagefileUsage };
                 MemoryUsage { allocated: Bytes(usage as isize) }
             } else {
@@ -101,21 +113,31 @@ fn memusage_linux() -> MemoryUsage {
 pub struct Bytes(isize);
 
 impl Bytes {
-    pub fn new(bytes: isize) -> Bytes {
-        Bytes(bytes)
+    #[must_use]
+    #[inline]
+    pub const fn new(bytes: isize) -> Self {
+        Self(bytes)
     }
 }
 
 impl Bytes {
-    pub fn megabytes(self) -> isize {
+    #[must_use]
+    #[inline]
+    #[expect(
+        clippy::integer_division_remainder_used,
+        reason = "not a security issue"
+    )]
+    #[expect(clippy::integer_division, reason = "precision loss is acceptable")]
+    pub const fn megabytes(self) -> isize {
         self.0 / 1024 / 1024
     }
 }
 
 impl fmt::Display for Bytes {
+    #[inline]
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         let bytes = self.0;
         let mut value = bytes;
@@ -133,20 +155,22 @@ impl fmt::Display for Bytes {
 }
 
 impl std::ops::AddAssign<usize> for Bytes {
+    #[inline]
     fn add_assign(
         &mut self,
-        x: usize,
+        rhs: usize,
     ) {
-        self.0 += x as isize;
+        self.0 = self.0.checked_add_unsigned(rhs).unwrap();
     }
 }
 
 impl std::ops::Sub for Bytes {
-    type Output = Bytes;
+    type Output = Self;
+    #[inline]
     fn sub(
         self,
-        rhs: Bytes,
-    ) -> Bytes {
-        Bytes(self.0 - rhs.0)
+        rhs: Self,
+    ) -> Self {
+        Self(self.0.checked_sub(rhs.0).unwrap())
     }
 }

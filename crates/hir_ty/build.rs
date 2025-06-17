@@ -148,7 +148,7 @@ fn foo(
         f,
         r#"
 impl Builtin {{
-    pub fn for_name(db: &dyn HirDatabase, name: &Name) -> Option<Builtin> {{
+    pub fn for_name(database: &dyn HirDatabase, name: &Name) -> Option<Builtin> {{
         match name.as_str() {{"#
     )?;
 
@@ -157,7 +157,7 @@ impl Builtin {{
             continue;
         }
 
-        write!(f, r#""{name}" => Some(Builtin::builtin_{name}(db)),"#)?;
+        write!(f, r#""{name}" => Some(Builtin::builtin_{name}(database)),"#)?;
     }
     write!(
         f,
@@ -372,23 +372,23 @@ fn parse_ty(
 fn type_to_rust(r#type: &Type) -> String {
     match r#type {
         Type::Vec(size, inner) => format!(
-            "TyKind::Vector(VectorType {{ size: VecSize::{:?}, inner: {} }}).intern(db)",
+            "TyKind::Vector(VectorType {{ size: VecSize::{:?}, inner: {} }}).intern(database)",
             size,
             type_to_rust(inner)
         ),
 
         Type::Matrix(columns, rows, inner) => format!(
-            "TyKind::Matrix(MatrixType {{ columns: VecSize::{:?}, rows: VecSize::{:?}, inner: {} }}).intern(db)",
+            "TyKind::Matrix(MatrixType {{ columns: VecSize::{:?}, rows: VecSize::{:?}, inner: {} }}).intern(database)",
             columns,
             rows,
             type_to_rust(inner)
         ),
 
         r#type @ (Type::Bool | Type::F32 | Type::I32 | Type::U32) => {
-            format!("TyKind::Scalar(ScalarType::{type:?}).intern(db)")
+            format!("TyKind::Scalar(ScalarType::{type:?}).intern(database)")
         },
         Type::Bound(i) => {
-            format!("TyKind::BoundVar(BoundVar {{ index: {i} }}).intern(db)",)
+            format!("TyKind::BoundVar(BoundVar {{ index: {i} }}).intern(database)",)
         },
         Type::Texture(texture) => {
             format!(
@@ -397,7 +397,7 @@ fn type_to_rust(r#type: &Type) -> String {
                             arrayed: {},
                             multisampled: {},
                             dimension: TextureDimensionality::{:?},
-                        }}).intern(db)",
+                        }}).intern(database)",
                 match &texture.kind {
                     TextureKind::Sampled(inner) => format!("Sampled({})", type_to_rust(inner)),
                     TextureKind::Storage(texel_format, access_mode) => {
@@ -419,14 +419,14 @@ fn type_to_rust(r#type: &Type) -> String {
             )
         },
         Type::Sampler { comparison } => {
-            format!("TyKind::Sampler(SamplerType {{ comparison: {comparison}  }}).intern(db)")
+            format!("TyKind::Sampler(SamplerType {{ comparison: {comparison}  }}).intern(database)")
         },
         Type::RuntimeArray(inner) => format!(
             "TyKind::Array(ArrayType {{
             size: ArraySize::Dynamic,
             binding_array: false,
             inner: {}
-        }}).intern(db)",
+        }}).intern(database)",
             type_to_rust(inner)
         ),
         Type::Pointer(inner) => format!(
@@ -434,17 +434,17 @@ fn type_to_rust(r#type: &Type) -> String {
             inner: {},
             access_mode: AccessMode::ReadWrite,
             address_space: AddressSpace::Private,
-        }}).intern(db)",
+        }}).intern(database)",
             type_to_rust(inner)
         ),
         Type::Atomic(inner) => format!(
             "TyKind::Atomic(AtomicType {{
             inner: {},
-        }}).intern(db)",
+        }}).intern(database)",
             type_to_rust(inner)
         ),
         Type::StorageTypeOfTexelFormat(var) => {
-            format!("TyKind::StorageTypeOfTexelFormat(BoundVar {{ index: {var} }}).intern(db)")
+            format!("TyKind::StorageTypeOfTexelFormat(BoundVar {{ index: {var} }}).intern(database)")
         },
     }
 }
@@ -458,7 +458,7 @@ fn builtin_to_rust(
         f,
         r#"impl Builtin {{
     #[allow(non_snake_case)]
-    pub fn builtin_{name}(db: &dyn HirDatabase) -> Self {{
+    pub fn builtin_{name}(database: &dyn HirDatabase) -> Self {{
         let name = Name::from("{name}");
         let overloads = vec!["#
     )?;
@@ -504,7 +504,7 @@ fn builtin_to_rust(
             r#"
                     ],
                 }}
-                .intern(db),
+                .intern(database),
             }},"#,
         )?;
     }

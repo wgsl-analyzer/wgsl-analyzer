@@ -238,8 +238,8 @@ pub fn trim_indent(mut text: &str) -> String {
     }
     let indent = text
         .lines()
-        .filter(|it| !it.trim().is_empty())
-        .map(|it| it.len() - it.trim_start().len())
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| line.len() - line.trim_start().len())
         .min()
         .unwrap_or(0);
     text.split_inclusive('\n')
@@ -261,8 +261,8 @@ pub fn equal_range_by<T, F>(
 where
     F: FnMut(&T) -> Ordering,
 {
-    let start = slice.partition_point(|it| key(it) == Ordering::Less);
-    let length = slice[start..].partition_point(|it| key(it) == Ordering::Equal);
+    let start = slice.partition_point(|item| key(item) == Ordering::Less);
+    let length = slice[start..].partition_point(|item| key(item) == Ordering::Equal);
     start..start + length
 }
 

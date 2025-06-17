@@ -141,13 +141,13 @@ fn run_server() -> anyhow::Result<()> {
         ..
     } = from_json::<lsp_types::InitializeParams>("InitializeParameters", &initialize_parameters)?;
 
-    let root_path = if let Some(it) = root_uri
-        .and_then(|it| it.to_file_path().ok())
+    let root_path = if let Some(path) = root_uri
+        .and_then(|uri| uri.to_file_path().ok())
         .map(patch_path_prefix)
-        .and_then(|it| Utf8PathBuf::from_path_buf(it).ok())
-        .and_then(|it| AbsPathBuf::try_from(it).ok())
+        .and_then(|path| Utf8PathBuf::from_path_buf(path).ok())
+        .and_then(|path| AbsPathBuf::try_from(path).ok())
     {
-        it
+        path
     } else {
         let cwd = env::current_dir()?;
         AbsPathBuf::assert_utf8(cwd)
@@ -165,10 +165,10 @@ fn run_server() -> anyhow::Result<()> {
         .map(|workspaces| {
             workspaces
                 .into_iter()
-                .filter_map(|it| it.uri.to_file_path().ok())
+                .filter_map(|folder| folder.uri.to_file_path().ok())
                 .map(patch_path_prefix)
-                .filter_map(|it| Utf8PathBuf::from_path_buf(it).ok())
-                .filter_map(|it| AbsPathBuf::try_from(it).ok())
+                .filter_map(|path| Utf8PathBuf::from_path_buf(path).ok())
+                .filter_map(|path| AbsPathBuf::try_from(path).ok())
                 .collect::<Vec<_>>()
         })
         .filter(|workspaces| !workspaces.is_empty())

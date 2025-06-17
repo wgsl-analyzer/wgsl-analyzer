@@ -4,7 +4,7 @@ use syntax::{AstNode, HasGenerics, HasName, ast, pointer::AstPointer};
 use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
 use crate::{
     HirFileId, InFile,
-    db::DefDatabase,
+    database::DefDatabase,
     expression::{Callee, Expression, ExpressionId, Statement, StatementId, parse_literal},
     hir_file_id::relative_file,
     module_data::Name,
@@ -12,13 +12,13 @@ use crate::{
 };
 
 pub(super) fn lower_function_body(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
     param_list: Option<ast::ParameterList>,
     body: Option<ast::CompoundStatement>,
 ) -> (Body, BodySourceMap) {
     Collector {
-        db,
+        database,
         body: Body::default(),
         source_map: BodySourceMap::default(),
         file_id,
@@ -27,12 +27,12 @@ pub(super) fn lower_function_body(
 }
 
 pub(super) fn lower_global_var_declaration(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
     declaration: ast::GlobalVariableDeclaration,
 ) -> (Body, BodySourceMap) {
     Collector {
-        db,
+        database,
         body: Body::default(),
         source_map: BodySourceMap::default(),
         file_id,
@@ -41,12 +41,12 @@ pub(super) fn lower_global_var_declaration(
 }
 
 pub(super) fn lower_global_constant_declaration(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
     declaration: ast::GlobalConstantDeclaration,
 ) -> (Body, BodySourceMap) {
     Collector {
-        db,
+        database,
         body: Body::default(),
         source_map: BodySourceMap::default(),
         file_id,
@@ -55,12 +55,12 @@ pub(super) fn lower_global_constant_declaration(
 }
 
 pub(super) fn lower_override_declaration(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
     declaration: ast::OverrideDeclaration,
 ) -> (Body, BodySourceMap) {
     Collector {
-        db,
+        database,
         body: Body::default(),
         source_map: BodySourceMap::default(),
         file_id,
@@ -69,7 +69,7 @@ pub(super) fn lower_override_declaration(
 }
 
 struct Collector<'a> {
-    db: &'a dyn DefDatabase,
+    database: &'a dyn DefDatabase,
     body: Body,
     source_map: BodySourceMap,
     file_id: HirFileId,
@@ -104,21 +104,21 @@ impl Collector<'_> {
                     self.body.parameters.push(binding_id);
                 } else if let Some(import) = p.import() {
                     let import_param_list =
-                        crate::module_data::find_import(self.db, self.file_id, &import)
-                            .map(|import| self.db.intern_import(InFile::new(self.file_id, import)))
+                        crate::module_data::find_import(self.database, self.file_id, &import)
+                            .map(|import| self.database.intern_import(InFile::new(self.file_id, import)))
                             .and_then(|import_id| {
-                                let import_loc = self.db.lookup_intern_import(import_id);
-                                let module_info = self.db.module_info(import_loc.file_id);
+                                let import_loc = self.database.lookup_intern_import(import_id);
+                                let module_info = self.database.module_info(import_loc.file_id);
                                 let import = module_info.get(import_loc.value);
 
                                 match &import.value {
                                     crate::module_data::ImportValue::Path(path) => {
                                         let file_id =
-                                            relative_file(self.db, import_loc.file_id, path)?;
-                                        Some(self.db.parse(file_id))
+                                            relative_file(self.database, import_loc.file_id, path)?;
+                                        Some(self.database.parse(file_id))
                                     },
                                     crate::module_data::ImportValue::Custom(key) => self
-                                        .db
+                                        .database
                                         .parse_import(
                                             key.clone(),
                                             syntax::ParseEntryPoint::FunctionParameterList,
@@ -236,7 +236,7 @@ impl Collector<'_> {
                 let type_ref = variable_statement
                     .ty()
                     .and_then(|typo| TypeReference::try_from(typo).ok())
-                    .map(|type_ref| self.db.intern_type_ref(type_ref));
+                    .map(|type_ref| self.database.intern_type_ref(type_ref));
 
                 match variable_statement.kind()? {
                     ast::VariableStatementKind::Let => Statement::LetStatement {
@@ -447,7 +447,7 @@ impl Collector<'_> {
                     .ty()
                     .and_then(|r#type| TypeReference::try_from(r#type).ok())
                     .unwrap_or(TypeReference::Error);
-                let r#type = self.db.intern_type_ref(r#type);
+                let r#type = self.database.intern_type_ref(r#type);
 
                 Expression::Bitcast {
                     expression: inner,
@@ -531,7 +531,7 @@ impl Collector<'_> {
                         r#type => {
                             let r#type =
                                 TypeReference::try_from(r#type).unwrap_or(TypeReference::Error);
-                            let r#type = self.db.intern_type_ref(r#type);
+                            let r#type = self.database.intern_type_ref(r#type);
                             Callee::Type(r#type)
                         },
                     };

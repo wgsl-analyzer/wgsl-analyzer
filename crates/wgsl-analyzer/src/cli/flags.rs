@@ -1,6 +1,6 @@
 //! Grammar for the command-line arguments.
 
-#![expect(clippy::disallowed_names, reason = "xflags")]
+#![allow(clippy::disallowed_names, reason = "`xflags` macro generates `err`")]
 
 use std::{path::PathBuf, str::FromStr};
 

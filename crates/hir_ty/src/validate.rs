@@ -2,7 +2,7 @@ use hir_def::type_ref::{AccessMode, AddressSpace};
 use itertools::Itertools;
 use smallvec::{SmallVec, smallvec};
 
-use crate::{db::HirDatabase, ty::TyKind};
+use crate::{database::HirDatabase, ty::TyKind};
 
 pub enum Scope {
     Function,
@@ -61,7 +61,7 @@ pub fn validate_address_space(
     access_mode: AccessMode,
     scope: Scope,
     r#type: TyKind,
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     mut sink: impl FnMut(AddressSpaceError),
 ) {
     let ty_is_err = r#type.is_error();
@@ -105,7 +105,7 @@ pub fn validate_address_space(
                 ]));
             }
 
-            if !ty_is_err && (!r#type.is_plain() || r#type.contains_runtime_sized_array(db)) {
+            if !ty_is_err && (!r#type.is_plain() || r#type.contains_runtime_sized_array(database)) {
                 sink(AddressSpaceError::ExpectedWorkgroupCompatible);
             }
         },
@@ -119,7 +119,7 @@ pub fn validate_address_space(
                 ]));
             }
 
-            if !r#type.is_error() && !r#type.is_host_shareable(db) {
+            if !r#type.is_error() && !r#type.is_host_shareable(database) {
                 sink(AddressSpaceError::ExpectedHostShareable);
             }
             if !r#type.is_error() && !r#type.is_constructable() {
@@ -136,7 +136,7 @@ pub fn validate_address_space(
                 ]));
             }
 
-            if !r#type.is_error() && !r#type.is_host_shareable(db) {
+            if !r#type.is_error() && !r#type.is_host_shareable(database) {
                 sink(AddressSpaceError::ExpectedHostShareable);
             }
         },

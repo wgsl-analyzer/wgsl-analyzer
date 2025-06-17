@@ -183,7 +183,7 @@ mod support {
     pub(crate) fn child_token<N: AstToken>(parent: &SyntaxNode) -> Option<N> {
         parent
             .children_with_tokens()
-            .filter_map(|it| it.into_token())
+            .filter_map(|node_or_token| node_or_token.into_token())
             .find_map(N::cast)
     }
 
@@ -193,8 +193,8 @@ mod support {
     ) -> Option<SyntaxToken> {
         parent
             .children_with_tokens()
-            .filter_map(|it| it.into_token())
-            .find(|it| it.kind() == kind)
+            .filter_map(|node_or_token| node_or_token.into_token())
+            .find(|token| token.kind() == kind)
     }
 
     pub(crate) fn text_of_first_token(node: &SyntaxNode) -> TokenText<'_> {

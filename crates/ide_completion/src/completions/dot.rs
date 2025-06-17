@@ -1,4 +1,4 @@
-use hir_def::db::DefDatabase;
+use hir_def::database::DefDatabase;
 use hir_ty::ty::TyKind;
 use itertools::Itertools;
 
@@ -19,8 +19,8 @@ pub(crate) fn complete_dot(
         .sema
         .analyze(context.container?)
         .type_of_expression(&expression.expression()?)?
-        .kind(context.db)
-        .unref(context.db)
+        .kind(context.database)
+        .unref(context.database)
         .as_ref()
     {
         TyKind::Vector(vector) => vector_completions(accumulator, context, expression, vector),
@@ -33,14 +33,14 @@ pub(crate) fn complete_dot(
 fn struct_completions(
     accumulator: &mut Completions,
     context: &CompletionContext<'_>,
-    r#struct: &hir_def::db::StructId,
+    r#struct: &hir_def::database::StructId,
 ) -> Option<()> {
     let field_completion_item = |name| {
         CompletionItem::new(CompletionItemKind::Field, context.source_range(), name)
-            .build(context.db)
+            .build(context.database)
     };
 
-    let r#struct = context.db.struct_data(*r#struct);
+    let r#struct = context.database.struct_data(*r#struct);
     let items = r#struct
         .fields()
         .iter()
@@ -79,7 +79,7 @@ fn vector_completions(
                 })
             	// TODO: remove clone
                 .clone()
-                .build(context.db)
+                .build(context.database)
         });
         accumulator.add_all(suggestions);
     }
@@ -223,14 +223,8 @@ mod tests {
         assert_eq!(swizzles, vec!["aa", "ab", "ac", "ad"]);
 
         let swizzles: Vec<_> = swizzler(&"abcd", "d", 2).unwrap().collect();
-        assert_eq!(swizzles, vec!["da", "db"]);
+        assert_eq!(swizzles, vec!["da", "database"]);
 
         assert!(swizzler(&"abcd", "e", 2).is_none());
     }
 }
-
-// if add_resolution {
-// 	let mut builder = Builder::from_resolution(ctx, path_ctx, name, def);
-// 	builder.with_relevance();
-// 	acc.add(builder.build(ctx.db));
-// }

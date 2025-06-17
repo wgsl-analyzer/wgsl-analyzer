@@ -1,4 +1,4 @@
-//! https://github.com/gperftools/gperftools
+//! <https://github.com/gperftools/gperftools>
 
 use std::{
     ffi::CString,
@@ -8,7 +8,6 @@ use std::{
 };
 
 #[link(name = "profiler")]
-#[allow(non_snake_case)]
 unsafe extern "C" {
     fn ProfilerStart(fname: *const c_char) -> i32;
     fn ProfilerStop();
@@ -30,20 +29,17 @@ fn transition(
 }
 
 pub(crate) fn start(path: &Path) {
-    if !transition(OFF, PENDING) {
-        panic!("profiler already started");
-    }
+    assert!(transition(OFF, PENDING), "profiler already started");
     let path = CString::new(path.display().to_string()).unwrap();
-    if unsafe { ProfilerStart(path.as_ptr()) } == 0 {
-        panic!("profiler failed to start")
-    }
+    // SAFETY: TODO
+    let code = unsafe { ProfilerStart(path.as_ptr()) } != 0;
+    assert!(code, "profiler failed to start");
     assert!(transition(PENDING, ON));
 }
 
 pub(crate) fn stop() {
-    if !transition(ON, PENDING) {
-        panic!("profiler is not started")
-    }
-    unsafe { ProfilerStop() };
+    assert!(transition(ON, PENDING), "profiler is not started");
+    // SAFETY: TODO
+    unsafe { ProfilerStop() }
     assert!(transition(PENDING, OFF));
 }

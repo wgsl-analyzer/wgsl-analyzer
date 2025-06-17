@@ -46,7 +46,8 @@
 				"<node_internals>/**/*.js"
 			],
 			"env": {
-				"__WA_LSP_SERVER_DEBUG": "${workspaceFolder}/target/debug/wgsl-analyzer"
+				"__WA_LSP_SERVER_DEBUG": "${workspaceFolder}/target/debug/wgsl-analyzer",
+				"RUST_BACKTRACE": "1"
 			}
 		},
 		{

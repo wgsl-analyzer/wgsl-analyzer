@@ -1,7 +1,8 @@
 use std::fmt;
 
+use ast::Expression as AstExpression;
 use base_db::{FileId, FileRange, TextRange};
-use hir::{Field, HasSource, Semantics};
+use hir::{Field, HasSource as _, Semantics};
 use hir_def::{InFile, data::FieldId, module_data::Name};
 use hir_ty::{
     function::FunctionDetails,
@@ -9,11 +10,13 @@ use hir_ty::{
     layout::{FieldLayout, LayoutAddressSpace},
     ty::pretty::{TypeVerbosity, pretty_type_with_verbosity},
 };
-use itertools::Itertools;
+use ide_db::text_edit::TextEdit;
+use itertools::Itertools as _;
 use rowan::NodeOrToken;
 use rustc_hash::FxHashSet;
 use smallvec::{SmallVec, smallvec};
-use syntax::{AstChildren, AstNode, HasName, SyntaxNode, ast};
+use std::mem;
+use syntax::{AstChildren, AstNode as _, HasName as _, SyntaxNode, ast};
 
 use crate::RootDatabase;
 
@@ -56,8 +59,8 @@ pub struct InlayHint {
     pub kind: InlayKind,
     /// The actual label to show in the inlay hint.
     pub label: InlayHintLabel,
-    // /// Text edit to apply when "accepting" this inlay hint.
-    // pub text_edit: Option<LazyProperty<TextEdit>>,
+    /// Text edit to apply when "accepting" this inlay hint.
+    pub text_edit: Option<LazyProperty<TextEdit>>,
     /// Range to recompute inlay hints when trying to resolve for this hint. If this is none, the
     /// hint does not support resolving.
     pub resolve_parent: Option<TextRange>,
@@ -70,16 +73,47 @@ pub enum LazyProperty<T> {
     Lazy,
 }
 
+impl<T> LazyProperty<T> {
+    #[inline]
+    pub fn computed(self) -> Option<T> {
+        match self {
+            Self::Computed(value) => Some(value),
+            Self::Computed(_) | Self::Lazy => None,
+        }
+    }
+
+    #[inline]
+    pub const fn is_lazy(&self) -> bool {
+        matches!(self, Self::Lazy)
+    }
+}
+
+impl std::hash::Hash for InlayHint {
+    #[inline]
+    fn hash<H: std::hash::Hasher>(
+        &self,
+        state: &mut H,
+    ) {
+        self.range.hash(state);
+        self.position.hash(state);
+        self.pad_left.hash(state);
+        self.pad_right.hash(state);
+        // self.kind.hash(state);
+        self.label.hash(state);
+        mem::discriminant(&self.text_edit).hash(state);
+    }
+}
+
 impl InlayHint {
     fn closing_paren_after(
         kind: InlayKind,
         range: TextRange,
-    ) -> InlayHint {
-        InlayHint {
+    ) -> Self {
+        Self {
             range,
             kind,
             label: InlayHintLabel::from(")"),
-            // text_edit: None,
+            text_edit: None,
             position: InlayHintPosition::After,
             pad_left: false,
             pad_right: false,
@@ -99,23 +133,25 @@ pub struct InlayHintLabel {
 }
 
 impl InlayHintLabel {
-    pub fn simple(
-        s: impl Into<String>,
+    #[inline]
+    pub fn simple<Stringy: Into<String>>(
+        stringy: Stringy,
         tooltip: Option<LazyProperty<InlayTooltip>>,
         linked_location: Option<LazyProperty<FileRange>>,
-    ) -> InlayHintLabel {
-        InlayHintLabel {
+    ) -> Self {
+        Self {
             parts: smallvec![InlayHintLabelPart {
-                text: s.into(),
+                text: stringy.into(),
                 linked_location,
                 tooltip
             }],
         }
     }
 
+    #[inline]
     pub fn prepend_str(
         &mut self,
-        s: &str,
+        string: &str,
     ) {
         match &mut *self.parts {
             [
@@ -125,11 +161,11 @@ impl InlayHintLabel {
                     tooltip: None,
                 },
                 ..,
-            ] => text.insert_str(0, s),
+            ] => text.insert_str(0, string),
             _ => self.parts.insert(
                 0,
                 InlayHintLabelPart {
-                    text: s.into(),
+                    text: string.into(),
                     linked_location: None,
                     tooltip: None,
                 },
@@ -137,9 +173,10 @@ impl InlayHintLabel {
         }
     }
 
+    #[inline]
     pub fn append_str(
         &mut self,
-        s: &str,
+        string: &str,
     ) {
         match &mut *self.parts {
             [
@@ -149,15 +186,16 @@ impl InlayHintLabel {
                     linked_location: None,
                     tooltip: None,
                 },
-            ] => text.push_str(s),
+            ] => text.push_str(string),
             _ => self.parts.push(InlayHintLabelPart {
-                text: s.into(),
+                text: string.into(),
                 linked_location: None,
                 tooltip: None,
             }),
         }
     }
 
+    #[inline]
     pub fn append_part(
         &mut self,
         part: InlayHintLabelPart,
@@ -178,10 +216,11 @@ impl InlayHintLabel {
 }
 
 impl From<String> for InlayHintLabel {
-    fn from(s: String) -> Self {
+    #[inline]
+    fn from(value: String) -> Self {
         Self {
             parts: smallvec![InlayHintLabelPart {
-                text: s,
+                text: value,
                 linked_location: None,
                 tooltip: None
             }],
@@ -190,10 +229,11 @@ impl From<String> for InlayHintLabel {
 }
 
 impl From<&str> for InlayHintLabel {
-    fn from(s: &str) -> Self {
+    #[inline]
+    fn from(value: &str) -> Self {
         Self {
             parts: smallvec![InlayHintLabelPart {
-                text: s.into(),
+                text: value.into(),
                 linked_location: None,
                 tooltip: None
             }],
@@ -202,18 +242,20 @@ impl From<&str> for InlayHintLabel {
 }
 
 impl fmt::Display for InlayHintLabel {
+    #[inline]
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         write!(f, "{}", self.parts.iter().map(|part| &part.text).format(""))
     }
 }
 
 impl fmt::Debug for InlayHintLabel {
+    #[inline]
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         f.debug_list().entries(&self.parts).finish()
     }
@@ -233,6 +275,7 @@ pub struct InlayHintLabelPart {
 }
 
 impl std::hash::Hash for InlayHintLabelPart {
+    #[inline]
     fn hash<H: std::hash::Hasher>(
         &self,
         state: &mut H,
@@ -244,9 +287,10 @@ impl std::hash::Hash for InlayHintLabelPart {
 }
 
 impl fmt::Debug for InlayHintLabelPart {
+    #[inline]
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
             Self {
@@ -264,10 +308,10 @@ impl fmt::Debug for InlayHintLabelPart {
                 .field("linked_location", linked_location)
                 .field(
                     "tooltip",
-                    &tooltip.as_ref().map_or("", |it| match it {
+                    &tooltip.as_ref().map_or("", |property| match property {
                         LazyProperty::Computed(
-                            InlayTooltip::String(it) | InlayTooltip::Markdown(it),
-                        ) => it,
+                            InlayTooltip::String(text) | InlayTooltip::Markdown(text),
+                        ) => text,
                         LazyProperty::Lazy => "",
                     }),
                 )
@@ -277,12 +321,12 @@ impl fmt::Debug for InlayHintLabelPart {
 }
 
 pub(crate) fn inlay_hints(
-    db: &RootDatabase,
+    database: &RootDatabase,
     file_id: FileId,
     range_limit: Option<TextRange>,
     config: &InlayHintsConfig,
 ) -> Vec<InlayHint> {
-    let sema = Semantics::new(db);
+    let sema = Semantics::new(database);
     let file = sema.parse(file_id);
 
     let mut hints = Vec::new();
@@ -295,7 +339,7 @@ pub(crate) fn inlay_hints(
                     .descendants()
                     .filter(|descendant| range_limit.contains_range(descendant.text_range()))
                 {
-                    get_hints(&mut hints, file_id, &sema, config, node);
+                    get_hints(&mut hints, file_id, &sema, config, &node);
                 }
 
                 get_struct_layout_hints(&mut hints, file_id, &sema, config);
@@ -303,7 +347,7 @@ pub(crate) fn inlay_hints(
         }
     } else {
         for node in file.syntax().descendants() {
-            get_hints(&mut hints, file_id, &sema, config, node);
+            get_hints(&mut hints, file_id, &sema, config, &node);
         }
 
         get_struct_layout_hints(&mut hints, file_id, &sema, config);
@@ -320,13 +364,18 @@ fn get_struct_layout_hints(
 ) -> Option<()> {
     let display_kind = config.struct_layout_hints?;
 
-    let module_info = sema.db.module_info(file_id.into());
+    let module_info = sema.database.module_info(file_id.into());
 
     for r#struct in module_info.structs() {
-        let r#struct = sema.db.intern_struct(InFile::new(file_id.into(), r#struct));
-        let fields = sema.db.field_types(r#struct);
+        let r#struct = sema
+            .database
+            .intern_struct(InFile::new(file_id.into(), r#struct));
+        let fields = sema.database.field_types(r#struct);
 
-        let address_space = if sema.db.struct_is_used_in_uniform(r#struct, file_id.into()) {
+        let address_space = if sema
+            .database
+            .struct_is_used_in_uniform(r#struct, file_id.into())
+        {
             LayoutAddressSpace::Uniform
         } else {
             LayoutAddressSpace::Storage
@@ -334,19 +383,15 @@ fn get_struct_layout_hints(
 
         hir_ty::layout::struct_member_layout(
             &fields,
-            sema.db,
+            sema.database,
             address_space,
             |field, field_layout| {
-                let FieldLayout {
-                    offset,
-                    align: _,
-                    size: _,
-                } = field_layout;
+                let FieldLayout { offset, .. } = field_layout;
                 let field = Field {
                     id: FieldId { r#struct, field },
                 };
 
-                let source = field.source(sema.db)?.value;
+                let source = field.source(sema.database)?.value;
 
                 // this is only necessary, because the field syntax nodes include the whitespace to the next line...
                 let actual_last_token = std::iter::successors(
@@ -368,7 +413,7 @@ fn get_struct_layout_hints(
                     label: match display_kind {
                         StructLayoutHints::Offset => format!("{offset}").into(),
                     },
-                    // text_edit: None,
+                    text_edit: None,
                     resolve_parent: Some(range),
                 });
 
@@ -385,25 +430,24 @@ fn get_hints(
     file_id: FileId,
     sema: &Semantics<'_>,
     config: &InlayHintsConfig,
-    node: SyntaxNode,
+    node: &SyntaxNode,
 ) -> Option<()> {
-    if let Some(expression) = ast::Expression::cast(node.clone()) {
-        #[allow(clippy::single_match)] // for extendability
+    if let Some(expression) = AstExpression::cast(node.clone()) {
         match &expression {
-            ast::Expression::FunctionCall(function_call_expression) => {
+            AstExpression::FunctionCall(function_call_expression) => {
                 if !config.parameter_hints {
                     return None;
                 }
                 function_hints(
                     sema,
                     file_id,
-                    &node,
+                    node,
                     &expression,
                     function_call_expression.parameters()?.arguments(),
                     hints,
                 )?;
             },
-            ast::Expression::TypeInitializer(type_initialiser_expression) => {
+            AstExpression::TypeInitializer(type_initialiser_expression) => {
                 if !config.parameter_hints {
                     return None;
                 }
@@ -413,33 +457,41 @@ fn get_hints(
                 function_hints(
                     sema,
                     file_id,
-                    &node,
+                    node,
                     &expression,
                     type_initialiser_expression.arguments()?.arguments(),
                     hints,
                 )?;
             },
-            _ => {},
+            AstExpression::InfixExpression(_)
+            | AstExpression::PrefixExpression(_)
+            | AstExpression::Literal(_)
+            | AstExpression::ParenthesisExpression(_)
+            | AstExpression::FieldExpression(_)
+            | AstExpression::IndexExpression(_)
+            | AstExpression::PathExpression(_)
+            | AstExpression::BitcastExpression(_)
+            | AstExpression::InvalidFunctionCall(_) => {},
         }
     } else if let Some((binding, r#type)) = ast::VariableStatement::cast(node.clone())
         .and_then(|statement| Some((statement.binding()?, statement.ty())))
         .or_else(|| {
-            ast::GlobalConstantDeclaration::cast(node.clone())
-                .and_then(|statement| Some((statement.binding()?, statement.ty())))
+            let statement = ast::GlobalConstantDeclaration::cast(node.clone())?;
+            Some((statement.binding()?, statement.ty()))
         })
         .or_else(|| {
-            ast::GlobalVariableDeclaration::cast(node.clone())
-                .and_then(|statement| Some((statement.binding()?, statement.ty())))
+            let statement = ast::GlobalVariableDeclaration::cast(node.clone())?;
+            Some((statement.binding()?, statement.ty()))
         })
     {
         if !config.type_hints {
             return None;
         }
         if r#type.is_none() {
-            let container = sema.find_container(file_id.into(), &node)?;
+            let container = sema.find_container(file_id.into(), node)?;
             let r#type = sema.analyze(container).type_of_binding(&binding)?;
 
-            let label = pretty_type_with_verbosity(sema.db, r#type, config.type_verbosity);
+            let label = pretty_type_with_verbosity(sema.database, r#type, config.type_verbosity);
             hints.push(InlayHint {
                 range: binding.name()?.ident_token()?.text_range(),
                 position: InlayHintPosition::After,
@@ -447,7 +499,7 @@ fn get_hints(
                 pad_right: false,
                 kind: InlayKind::Type,
                 label: label.into(),
-                // text_edit: None,
+                text_edit: None,
                 resolve_parent: None,
             });
         }
@@ -460,8 +512,8 @@ fn function_hints(
     sema: &Semantics<'_>,
     file_id: FileId,
     node: &SyntaxNode,
-    expression: &ast::Expression,
-    parameter_expressions: AstChildren<ast::Expression>,
+    expression: &AstExpression,
+    parameter_expressions: AstChildren<AstExpression>,
     hints: &mut Vec<InlayHint>,
 ) -> Option<()> {
     let container = sema.find_container(file_id.into(), node)?;
@@ -469,7 +521,7 @@ fn function_hints(
     let expression = analyzed.expression_id(expression)?;
     let resolved = analyzed.infer.call_resolution(expression)?;
     let func = match resolved {
-        ResolvedCall::Function(func) => func.lookup(analyzed.db),
+        ResolvedCall::Function(func) => func.lookup(analyzed.database),
         ResolvedCall::OtherTypeInitializer(_) => return None,
     };
     let param_hints = func
@@ -486,7 +538,7 @@ fn function_hints(
             pad_right: false,
             kind: InlayKind::Parameter,
             label: param_name.into(),
-            // text_edit: None,
+            text_edit: None,
             resolve_parent: None,
         });
     hints.extend(param_hints);
@@ -498,19 +550,18 @@ fn function_hints(
 fn should_hide_param_name_hint(
     func: &FunctionDetails,
     param_name: &str,
-    expression: &ast::Expression,
+    expression: &AstExpression,
 ) -> bool {
     is_argument_similar_to_param_name(expression, param_name)
         || (func.parameters.len() == 1 && is_obvious_parameter(param_name))
 }
 
 fn is_argument_similar_to_param_name(
-    expression: &ast::Expression,
+    expression: &AstExpression,
     param_name: &str,
 ) -> bool {
-    let argument = match get_string_representation(expression) {
-        Some(argument) => argument,
-        None => return false,
+    let Some(argument) = get_string_representation(expression) else {
+        return false;
     };
 
     // std is honestly too panic happy...
@@ -555,23 +606,30 @@ fn compare_ignore_case_convention(
 ) -> bool {
     argument
         .chars()
-        .filter(|&c| c != '_')
-        .zip(param_name.chars().filter(|&c| c != '_'))
-        .all(|(a, b)| a.eq_ignore_ascii_case(&b))
+        .filter(|&character| character != '_')
+        .zip(param_name.chars().filter(|&character| character != '_'))
+        .all(|(argument, param_name)| argument.eq_ignore_ascii_case(&param_name))
 }
 
-fn get_string_representation(expression: &ast::Expression) -> Option<String> {
+fn get_string_representation(expression: &AstExpression) -> Option<String> {
     match expression {
-        ast::Expression::PathExpression(expression) => {
-            Some(expression.name_ref()?.text().as_str().to_string())
+        AstExpression::PathExpression(expression) => {
+            Some(expression.name_ref()?.text().as_str().to_owned())
         },
-        ast::Expression::PrefixExpression(expression) => {
+        AstExpression::PrefixExpression(expression) => {
             get_string_representation(&expression.expression()?)
         },
-        ast::Expression::FieldExpression(expression) => {
-            Some(expression.name_ref()?.text().as_str().to_string())
+        AstExpression::FieldExpression(expression) => {
+            Some(expression.name_ref()?.text().as_str().to_owned())
         },
-        _ => None,
+        AstExpression::InfixExpression(_)
+        | AstExpression::Literal(_)
+        | AstExpression::ParenthesisExpression(_)
+        | AstExpression::FunctionCall(_)
+        | AstExpression::TypeInitializer(_)
+        | AstExpression::IndexExpression(_)
+        | AstExpression::BitcastExpression(_)
+        | AstExpression::InvalidFunctionCall(_) => None,
     }
 }
 
@@ -585,6 +643,8 @@ pub struct InlayFieldsToResolve {
 }
 
 impl InlayFieldsToResolve {
+    #[must_use]
+    #[inline]
     pub fn from_client_capabilities(client_capability_fields: &FxHashSet<&str>) -> Self {
         Self {
             resolve_text_edits: client_capability_fields.contains("textEdits"),
@@ -595,6 +655,8 @@ impl InlayFieldsToResolve {
         }
     }
 
+    #[must_use]
+    #[inline]
     pub const fn empty() -> Self {
         Self {
             resolve_text_edits: false,

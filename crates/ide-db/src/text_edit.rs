@@ -160,7 +160,7 @@ impl TextEdit {
         &self,
         offset: TextSize,
     ) -> Option<TextSize> {
-        let mut res = offset;
+        let mut result = offset;
         for indel in &self.indels {
             if indel.delete.start() >= offset {
                 break;
@@ -168,10 +168,10 @@ impl TextEdit {
             if offset < indel.delete.end() {
                 return None;
             }
-            res += TextSize::of(&indel.insert);
-            res -= indel.delete.len();
+            result += TextSize::of(&indel.insert);
+            result -= indel.delete.len();
         }
-        Some(res)
+        Some(result)
     }
 
     // pub(crate) fn set_annotation(

@@ -2,7 +2,7 @@ use hir_def::data::LocalFieldId;
 use la_arena::ArenaMap;
 
 use crate::{
-    db::HirDatabase,
+    database::HirDatabase,
     ty::{ArraySize, ArrayType, ScalarType, TyKind, Type, VecSize},
 };
 
@@ -34,11 +34,11 @@ impl ArrayType {
     pub fn stride(
         &self,
         address_space: LayoutAddressSpace,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Option<Bytes> {
         let stride = round_up(
-            self.inner.align(address_space, db)?,
-            self.inner.size(address_space, db)?,
+            self.inner.align(address_space, database)?,
+            self.inner.size(address_space, database)?,
         );
         match address_space {
             LayoutAddressSpace::Storage => Some(stride),
@@ -51,17 +51,17 @@ impl Type {
     pub fn align(
         &self,
         address_space: LayoutAddressSpace,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Option<Bytes> {
-        self.kind(db).align(address_space, db)
+        self.kind(database).align(address_space, database)
     }
 
     pub fn size(
         &self,
         address_space: LayoutAddressSpace,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Option<Bytes> {
-        self.kind(db).size(address_space, db)
+        self.kind(database).size(address_space, database)
     }
 }
 
@@ -69,7 +69,7 @@ impl TyKind {
     pub fn align(
         &self,
         address_space: LayoutAddressSpace,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Option<Bytes> {
         Some(match self {
             TyKind::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => 4,
@@ -88,9 +88,9 @@ impl TyKind {
                 VecSize::BoundVar(_) => return None,
             },
             TyKind::Struct(r#struct) => {
-                let fields = db.field_types(*r#struct);
+                let fields = database.field_types(*r#struct);
                 let (align, _) =
-                    struct_member_layout(&fields, db, LayoutAddressSpace::Storage, |_, _| {})?;
+                    struct_member_layout(&fields, database, LayoutAddressSpace::Storage, |_, _| {})?;
 
                 match address_space {
                     LayoutAddressSpace::Storage => align,
@@ -98,7 +98,7 @@ impl TyKind {
                 }
             },
             TyKind::Array(array) => {
-                let inner_align = array.inner.align(address_space, db)?;
+                let inner_align = array.inner.align(address_space, database)?;
                 match address_space {
                     LayoutAddressSpace::Storage => inner_align,
                     LayoutAddressSpace::Uniform => round_up(16, inner_align),
@@ -111,7 +111,7 @@ impl TyKind {
     pub fn size(
         &self,
         address_space: LayoutAddressSpace,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Option<Bytes> {
         Some(match self {
             TyKind::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => 4,
@@ -135,14 +135,14 @@ impl TyKind {
                 round_up(vec_align, vec_size) * n
             },
             TyKind::Struct(r#struct) => {
-                let fields = db.field_types(*r#struct);
+                let fields = database.field_types(*r#struct);
                 let (_, size) =
-                    struct_member_layout(&fields, db, LayoutAddressSpace::Storage, |_, _| {})?;
+                    struct_member_layout(&fields, database, LayoutAddressSpace::Storage, |_, _| {})?;
                 size
             },
             TyKind::Array(array) => match array.size {
                 ArraySize::Constant(n) => {
-                    let stride = array.stride(address_space, db)?;
+                    let stride = array.stride(address_space, database)?;
                     n as Bytes * stride
                 },
                 ArraySize::Dynamic => return None,
@@ -161,7 +161,7 @@ pub struct FieldLayout {
 /// Returns the (align, size) of the struct, and calls `on_field` for every field
 pub fn struct_member_layout<R>(
     fields: &ArenaMap<LocalFieldId, Type>,
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     address_space: LayoutAddressSpace,
     mut on_field: impl FnMut(LocalFieldId, FieldLayout) -> R,
 ) -> Option<(Bytes, Bytes)> {
@@ -174,8 +174,8 @@ pub fn struct_member_layout<R>(
         let custom_align = None; // TODO handle @align @size
         let custom_size = None;
 
-        let align = custom_align.or_else(|| field.align(address_space, db))?;
-        let size = custom_size.or_else(|| field.align(address_space, db))?;
+        let align = custom_align.or_else(|| field.align(address_space, database))?;
+        let size = custom_size.or_else(|| field.align(address_space, database))?;
 
         struct_align = struct_align.max(align);
 

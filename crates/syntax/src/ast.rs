@@ -97,7 +97,7 @@ macro_rules! ast_enum {
 
             fn syntax(&self) -> &SyntaxNode {
                 match self {
-                    $($ty::$variant(it) => &it.syntax,)*
+                    $($ty::$variant(item) => &item.syntax,)*
                 }
             }
         }
@@ -134,7 +134,7 @@ macro_rules! ast_enum_raw {
 
             fn syntax(&self) -> &SyntaxNode {
                 match self {
-                    $($ty::$variant(it) => &it,)*
+                    $($ty::$variant(item) => &item,)*
                 }
             }
         }
@@ -163,7 +163,7 @@ macro_rules! ast_enum_compound {
 
             fn syntax(&self) -> &SyntaxNode {
                 match self {
-                    $($ty::$variant(it) => it.syntax(),)*
+                    $($ty::$variant(item) => item.syntax(),)*
                 }
             }
         }
@@ -194,7 +194,7 @@ macro_rules! ast_token_enum {
 
             fn syntax(&self) -> &SyntaxToken {
                 match self {
-                    $($ty::$variant(it) => &it,)*
+                    $($ty::$variant(item) => &item,)*
                 }
             }
         }
@@ -372,7 +372,7 @@ impl GenericArgumentList {
     pub fn generics(&self) -> impl Iterator<Item = GenericArg> + use<> {
         self.syntax
             .children_with_tokens()
-            .filter_map(|it| match it {
+            .filter_map(|node_or_token| match node_or_token {
                 rowan::NodeOrToken::Node(node) if Literal::can_cast(node.kind()) => Literal::cast(node).map(GenericArg::Literal),
                 rowan::NodeOrToken::Node(node) if Type::can_cast(node.kind()) => Type::cast(node).map(GenericArg::Type),
                 rowan::NodeOrToken::Token(token) if AccessMode::can_cast(token.clone()) => AccessMode::cast(token).map(GenericArg::AccessMode),
@@ -604,7 +604,7 @@ impl IncrementDecrementStatement {
     pub fn increment_decrement(&self) -> Option<IncrementDecrement> {
         self.syntax()
             .children_with_tokens()
-            .filter_map(|it| it.into_token())
+            .filter_map(|node_or_token| node_or_token.into_token())
             .find_map(|token| match token.kind() {
                 SyntaxKind::PlusPlus => Some(IncrementDecrement::Increment),
                 SyntaxKind::MinusMinus => Some(IncrementDecrement::Increment),
@@ -724,7 +724,7 @@ impl VariableStatement {
     pub fn kind(&self) -> Option<VariableStatementKind> {
         self.syntax()
             .children_with_tokens()
-            .filter_map(|it| it.into_token())
+            .filter_map(|node_or_token| node_or_token.into_token())
             .find_map(|token| match token.kind() {
                 SyntaxKind::Constant => Some(VariableStatementKind::Constant),
                 SyntaxKind::Let => Some(VariableStatementKind::Let),

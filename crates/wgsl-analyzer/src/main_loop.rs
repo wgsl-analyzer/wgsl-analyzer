@@ -35,7 +35,7 @@ use base_db::SourceDatabase as _;
 use triomphe::Arc;
 
 use hir_def::HirFileId;
-use hir_def::db::DefDatabase as _;
+use hir_def::database::DefDatabase as _;
 use hir_def::module_data::{ImportValue, ModuleItem};
 use salsa::{Cancelled, Durability};
 use tracing::info;
@@ -180,10 +180,10 @@ impl fmt::Debug for Event {
             Self::Lsp(_) | Self::Task(_) | Self::QueuedTask(_) | Self::Vfs(_) => (),
         }
         match self {
-            Self::Lsp(it) => fmt::Debug::fmt(it, f),
-            Self::Task(it) => fmt::Debug::fmt(it, f),
-            Self::QueuedTask(it) => fmt::Debug::fmt(it, f),
-            Self::Vfs(it) => fmt::Debug::fmt(it, f),
+            Self::Lsp(message) => fmt::Debug::fmt(message, f),
+            Self::Task(task) => fmt::Debug::fmt(task, f),
+            Self::QueuedTask(task) => fmt::Debug::fmt(task, f),
+            Self::Vfs(message) => fmt::Debug::fmt(message, f),
             // Event::Flycheck(it) => fmt::Debug::fmt(it, f),
             // Event::TestResult(it) => fmt::Debug::fmt(it, f),
             // Event::DiscoverProject(it) => fmt::Debug::fmt(it, f),
@@ -586,7 +586,7 @@ impl GlobalState {
     }
 
     fn update_diagnostics(&mut self) {
-        let db = self.analysis_host.raw_database();
+        let database = self.analysis_host.raw_database();
         let generation = self.diagnostics.next_generation();
         let subscriptions = {
             let vfs = &self.vfs.read().0;
@@ -597,18 +597,18 @@ impl GlobalState {
                 //     (excluded == vfs::FileExcluded::No).then_some(file_id)
                 // })
                 .filter(|&file_id| {
-                    let source_root = db.file_source_root(file_id.0);
+                    let source_root = database.file_source_root(file_id.0);
                     // Only publish diagnostics for files in the workspace, not from crates.io deps
                     // or the sysroot.
                     // While theoretically these should never have errors, we have quite a few false
                     // positives particularly in the stdlib, and those diagnostics would stay around
                     // forever if we emitted them here.
-                    !db.source_root(source_root).is_library
+                    !database.source_root(source_root).is_library
                 })
 				.map(|file_id| {
 					file_id.0
 				})
-                .collect::<std::sync::Arc<_>>()
+                .collect::<Arc<_>>()
         };
         tracing::trace!("updating notifications for {:?}", subscriptions);
         // Split up the work on multiple threads, but we don't wanna fill the entire task pool with

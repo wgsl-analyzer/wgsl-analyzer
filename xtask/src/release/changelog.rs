@@ -58,9 +58,9 @@ pub(crate) fn get_changelog(
                     iter::once(pr_comment.as_str())
                         .chain(pr_comments.lines())
                         .rev()
-                        .find_map(|it| {
-                            let it = unescape(&it[1..it.len() - 1]);
-                            it.lines().find_map(parse_changelog_line)
+                        .find_map(|comment| {
+                            let raw_comment = unescape(&comment[1..comment.len() - 1]);
+                            raw_comment.lines().find_map(parse_changelog_line)
                         })
                         .into_iter()
                         .next()

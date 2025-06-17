@@ -12,7 +12,7 @@ pub struct ChangeAnnotationId(u32);
 impl fmt::Display for ChangeAnnotationId {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         fmt::Display::fmt(&self.0, f)
     }

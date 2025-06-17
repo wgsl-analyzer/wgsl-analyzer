@@ -40,9 +40,9 @@ impl SyntaxNodePointer {
         assert!(root.parent().is_none());
         std::iter::successors(Some(root.clone()), |node| {
             node.child_or_token_at_range(self.range)
-                .and_then(|it| it.into_node())
+                .and_then(|node_or_token| node_or_token.into_node())
         })
-        .find(|it| it.text_range() == self.range && it.kind() == self.kind)
+        .find(|node| node.text_range() == self.range && node.kind() == self.kind)
         .ok_or_else(|| format!("cannot resolve local pointer to SyntaxNode: {self:?}"))
         .unwrap()
     }
