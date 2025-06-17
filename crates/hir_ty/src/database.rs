@@ -10,7 +10,7 @@ use crate::ty::{TyKind, Type};
 use hir_def::{
     HirFileId, InFile,
     data::LocalFieldId,
-    database::{DefDatabase, DefinitionWithBodyId, FunctionId, Lookup, StructId},
+    database::{DefDatabase, DefinitionWithBodyId, FunctionId, Lookup as _, StructId},
     hir_file_id::ImportFile,
     resolver::Resolver,
     type_ref::AddressSpace,

@@ -3,12 +3,12 @@ use either::Either;
 use hir::{HirDatabase, Semantics};
 use hir_def::{
     HirFileId,
-    database::{DefDatabase, DefinitionWithBodyId},
+    database::{DefDatabase as _, DefinitionWithBodyId},
     resolver::Resolver,
 };
 use ide_db::RootDatabase;
 use rowan::NodeOrToken;
-use syntax::{AstNode, Direction, SyntaxKind, SyntaxToken, ast};
+use syntax::{AstNode as _, Direction, SyntaxKind, SyntaxToken, ast};
 
 use crate::{config::CompletionConfig, patterns::determine_location};
 
@@ -70,8 +70,8 @@ impl<'a> CompletionContext<'a> {
         }
 
         let context = Self {
-            file_id,
             sema,
+            file_id,
             database,
             position,
             token,

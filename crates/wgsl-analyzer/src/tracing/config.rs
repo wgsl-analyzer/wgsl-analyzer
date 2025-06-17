@@ -50,7 +50,6 @@ impl<T> Config<T>
 where
     T: for<'writer> MakeWriter<'writer> + Send + Sync + 'static,
 {
-    #[inline]
     pub fn init(self) -> anyhow::Result<()> {
         let targets_filter: Targets = self
             .filter

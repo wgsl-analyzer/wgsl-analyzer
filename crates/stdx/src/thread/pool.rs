@@ -42,7 +42,6 @@ impl Pool {
     ///
     /// Panics if job panics
     #[must_use]
-    #[inline]
     pub fn new(threads: usize) -> Self {
         const STACK_SIZE: usize = 8 * 1024 * 1024;
         const INITIAL_INTENT: ThreadIntent = ThreadIntent::Worker;
@@ -88,7 +87,6 @@ impl Pool {
     /// # Panics
     ///
     /// Panics if job panics
-    #[inline]
     pub fn spawn<Function>(
         &self,
         intent: ThreadIntent,
@@ -112,13 +110,11 @@ impl Pool {
     }
 
     #[must_use]
-    #[inline]
     pub fn length(&self) -> usize {
         self.extant_tasks.load(Ordering::SeqCst)
     }
 
     #[must_use]
-    #[inline]
     pub fn is_empty(&self) -> bool {
         self.length() == 0
     }

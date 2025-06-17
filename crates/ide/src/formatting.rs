@@ -20,6 +20,6 @@ pub(crate) fn format(
         },
     };
 
-    wgsl_formatter::format_recursive(node.clone(), &FormattingOptions::default());
+    wgsl_formatter::format_recursive(&node, &FormattingOptions::default());
     Some(node)
 }

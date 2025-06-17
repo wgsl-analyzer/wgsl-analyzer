@@ -1,6 +1,6 @@
 use std::mem;
 
-use rowan::{GreenNodeBuilder, Language};
+use rowan::{GreenNodeBuilder, Language as _};
 
 use crate::WgslLanguage;
 

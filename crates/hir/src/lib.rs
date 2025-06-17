@@ -13,7 +13,7 @@ use hir_def::{
     data::FieldId,
     database::{
         DefDatabase, DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId,
-        ImportId, Location, Lookup, OverrideId, StructId, TypeAliasId,
+        ImportId, Location, Lookup as _, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
     hir_file_id::{ImportFile, relative_file},
@@ -23,7 +23,7 @@ use hir_def::{
 pub use hir_ty::database::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
-use syntax::{AstNode, HasName, SyntaxNode, ast, match_ast, pointer::AstPointer};
+use syntax::{AstNode as _, HasName as _, SyntaxNode, ast, match_ast, pointer::AstPointer};
 
 pub trait HasSource {
     type Ast;
@@ -39,10 +39,11 @@ pub struct Semantics<'database> {
 }
 
 impl<'database> Semantics<'database> {
-    pub fn new(database: &'database dyn HirDatabase) -> Semantics<'database> {
+    pub fn new(database: &'database dyn HirDatabase) -> Self {
         Semantics { database }
     }
 
+    #[must_use]
     pub fn parse(
         &self,
         file_id: FileId,
@@ -50,6 +51,7 @@ impl<'database> Semantics<'database> {
         self.database.parse(file_id).tree()
     }
 
+    #[must_use]
     pub fn analyze(
         &self,
         def: DefinitionWithBodyId,
@@ -57,6 +59,7 @@ impl<'database> Semantics<'database> {
         SourceAnalyzer::new(self.database, def)
     }
 
+    #[must_use]
     pub fn find_container(
         &self,
         file_id: HirFileId,
@@ -74,20 +77,21 @@ impl<'database> Semantics<'database> {
         })
     }
 
+    #[must_use]
     pub fn resolver(
         &self,
         file_id: HirFileId,
         source: &SyntaxNode,
     ) -> Resolver {
-        match self.find_container(file_id, source) {
-            Some(def) => def.resolver(self.database),
-            None => {
-                let module_info = self.database.module_info(file_id);
-                Resolver::default().push_module_scope(self.database, file_id, module_info)
-            },
+        if let Some(def) = self.find_container(file_id, source) {
+            def.resolver(self.database)
+        } else {
+            let module_info = self.database.module_info(file_id);
+            Resolver::default().push_module_scope(self.database, file_id, module_info)
         }
     }
 
+    #[must_use]
     pub fn module(
         &self,
         file_id: FileId,
@@ -116,7 +120,7 @@ impl<'database> Semantics<'database> {
 
         if let DefinitionWithBodyId::Function(function) = def {
             resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
-        };
+        }
 
         let value = resolver.resolve_value(&name)?;
 
@@ -175,6 +179,7 @@ impl<'database> Semantics<'database> {
         Some(id)
     }
 
+    #[must_use]
     pub fn import_to_def(
         &self,
         source: InFile<ast::Import>,
@@ -187,6 +192,7 @@ impl<'database> Semantics<'database> {
         Some(import_id)
     }
 
+    #[must_use]
     pub fn resolve_import(
         &self,
         source: InFile<ast::Import>,
@@ -284,6 +290,7 @@ impl<'database> SourceAnalyzer<'database> {
         }
     }
 
+    #[must_use]
     pub fn type_of_expression(
         &self,
         expression: &ast::Expression,
@@ -293,6 +300,7 @@ impl<'database> SourceAnalyzer<'database> {
         Some(r#type)
     }
 
+    #[must_use]
     pub fn type_of_binding(
         &self,
         binding: &ast::Binding,
@@ -302,6 +310,7 @@ impl<'database> SourceAnalyzer<'database> {
         Some(r#type)
     }
 
+    #[must_use]
     pub fn resolve_field(
         &self,
         field: ast::FieldExpression,
@@ -312,6 +321,7 @@ impl<'database> SourceAnalyzer<'database> {
         Some(Field { id: field })
     }
 
+    #[must_use]
     pub fn resolver_for(
         &self,
         scope: Either<ast::Expression, ast::Statement>,
@@ -347,6 +357,7 @@ impl<'database> SourceAnalyzer<'database> {
         resolver
     }
 
+    #[must_use]
     pub fn binding_id(
         &self,
         source: &ast::Binding,
@@ -355,6 +366,7 @@ impl<'database> SourceAnalyzer<'database> {
             .lookup_binding(&AstPointer::new(source))
     }
 
+    #[must_use]
     pub fn expression_id(
         &self,
         source: &ast::Expression,
@@ -363,6 +375,7 @@ impl<'database> SourceAnalyzer<'database> {
             .lookup_expression(&AstPointer::new(source))
     }
 
+    #[must_use]
     pub fn statement_id(
         &self,
         source: &ast::Statement,
@@ -532,18 +545,19 @@ pub enum ModuleDef {
 }
 
 impl ModuleDef {
-    pub fn as_def_with_body_id(&self) -> Option<DefinitionWithBodyId> {
+    #[must_use]
+    pub const fn as_def_with_body_id(&self) -> Option<DefinitionWithBodyId> {
         match *self {
-            ModuleDef::Function(function) => Some(DefinitionWithBodyId::Function(function.id)),
-            ModuleDef::GlobalVariable(var) => Some(DefinitionWithBodyId::GlobalVariable(var.id)),
-            ModuleDef::GlobalConstant(constant) => {
+            Self::Function(function) => Some(DefinitionWithBodyId::Function(function.id)),
+            Self::GlobalVariable(var) => Some(DefinitionWithBodyId::GlobalVariable(var.id)),
+            Self::GlobalConstant(constant) => {
                 Some(DefinitionWithBodyId::GlobalConstant(constant.id))
             },
-            ModuleDef::Override(override_declaration) => {
+            Self::Override(override_declaration) => {
                 Some(DefinitionWithBodyId::Override(override_declaration.id))
             },
-            ModuleDef::Struct(_) => None,
-            ModuleDef::TypeAlias(_) => None, // TODO: ?
+            Self::Struct(_) => None,
+            Self::TypeAlias(_) => None, // TODO: ?
         }
     }
 }
@@ -573,7 +587,7 @@ impl Module {
         module_info
             .items()
             .iter()
-            .flat_map(|item| match item {
+            .filter_map(|item| match item {
                 ModuleItem::Import(import) => Some(import),
                 _ => None,
             })
@@ -606,7 +620,7 @@ impl Module {
 
                 let source = import_loc.map(|id| def_map.get(module_info.get(id).ast_id));
 
-                accumulator.push(AnyDiagnostic::UnresolvedImport { import: source })
+                accumulator.push(AnyDiagnostic::UnresolvedImport { import: source });
             }
         }
         for item in self.items(database) {
@@ -639,7 +653,7 @@ impl Module {
                         ) {
                             Some(diagnostic) => accumulator.push(diagnostic),
                             None => {
-                                tracing::warn!("could not create diagnostic from {:?}", diagnostic)
+                                tracing::warn!("could not create diagnostic from {:?}", diagnostic);
                             },
                         }
                     }
@@ -649,7 +663,7 @@ impl Module {
                     match diagnostics::any_diag_from_shift(&diagnostic, &source_map, file) {
                         Some(diagnostic) => accumulator.push(diagnostic),
                         None => {
-                            tracing::warn!("could not create diagnostic from {:?}", diagnostic)
+                            tracing::warn!("could not create diagnostic from {:?}", diagnostic);
                         },
                     }
                 });
@@ -696,7 +710,7 @@ impl Import {
         }
     }
 
-    #[allow(clippy::result_unit_err)]
+    #[expect(clippy::result_unit_err)]
     pub fn resolve(
         &self,
         database: &dyn HirDatabase,

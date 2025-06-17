@@ -3,7 +3,7 @@ use std::{fmt::Debug, marker::PhantomData, sync::Arc};
 use base_db::{FileId, SourceDatabase, TextRange, TextSize};
 use salsa::InternKey;
 use syntax::{
-    AstNode, Parse,
+    AstNode as _, Parse,
     ast::{self, Item},
 };
 use vfs::VfsPath;
@@ -167,7 +167,7 @@ fn parse_or_resolve(
     }
 }
 
-#[allow(clippy::needless_collect)] // false positive
+#[expect(clippy::needless_collect)] // false positive
 fn resolve_full_source(
     database: &dyn DefDatabase,
     file_id: HirFileId,
@@ -194,7 +194,7 @@ fn resolve_full_source(
     for (import, import_file) in imports.into_iter().rev() {
         let import_source = match database.parse_or_resolve(import_file) {
             Ok(parse) => parse.syntax().clone_for_update(),
-            Err(_) => continue,
+            Err(()) => continue,
         };
 
         let import_whitespace = import
@@ -206,6 +206,10 @@ fn resolve_full_source(
         };
 
         let index = import.index();
+        #[expect(
+            clippy::range_plus_one,
+            reason = "rowan does not support generic ranges"
+        )]
         import
             .parent()
             .unwrap()
@@ -243,7 +247,7 @@ fn text_range_from_full(
 
         let import_length = match database.parse_or_resolve(import_file) {
             Ok(parse) => parse.syntax().text().len(),
-            Err(_) => continue,
+            Err(()) => continue,
         };
 
         let import_whitespace = import
@@ -271,7 +275,7 @@ fn ast_id_map(
 ) -> Arc<AstIdMap> {
     let map = database
         .parse_or_resolve(file_id)
-        .map(|source| AstIdMap::from_source(source.tree()))
+        .map(|source| AstIdMap::from_source(&source.tree()))
         .unwrap_or_default();
     Arc::new(map)
 }
@@ -369,7 +373,7 @@ impl<T> std::fmt::Debug for Interned<T> {
 
 impl<T> InternKey for Interned<T> {
     fn from_intern_id(v: salsa::InternId) -> Self {
-        Interned(v, PhantomData)
+        Self(v, PhantomData)
     }
 
     fn as_intern_id(&self) -> salsa::InternId {
@@ -442,10 +446,10 @@ impl DefinitionWithBodyId {
         database: &dyn DefDatabase,
     ) -> HirFileId {
         match self {
-            DefinitionWithBodyId::Function(id) => id.lookup(database).file_id,
-            DefinitionWithBodyId::GlobalVariable(id) => id.lookup(database).file_id,
-            DefinitionWithBodyId::GlobalConstant(id) => id.lookup(database).file_id,
-            DefinitionWithBodyId::Override(id) => id.lookup(database).file_id,
+            Self::Function(id) => id.lookup(database).file_id,
+            Self::GlobalVariable(id) => id.lookup(database).file_id,
+            Self::GlobalConstant(id) => id.lookup(database).file_id,
+            Self::Override(id) => id.lookup(database).file_id,
         }
     }
 

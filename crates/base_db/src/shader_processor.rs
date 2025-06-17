@@ -9,21 +9,21 @@ pub(crate) fn get_shader_processor() -> &'static ShaderProcessor {
 }
 
 pub(crate) struct ShaderProcessor {
-    ifdef_regex: Regex,
-    ifndef_regex: Regex,
-    else_regex: Regex,
-    endif_regex: Regex,
-    define_import_path_regex: Regex,
+    ifdef: Regex,
+    ifndef: Regex,
+    r#else: Regex,
+    endif: Regex,
+    define_import_path: Regex,
 }
 
 impl Default for ShaderProcessor {
     fn default() -> Self {
         Self {
-            ifdef_regex: Regex::new(r"^\s*#\s*ifdef\s*([\w|\d|_]+)").unwrap(),
-            ifndef_regex: Regex::new(r"^\s*#\s*ifndef\s*([\w|\d|_]+)").unwrap(),
-            else_regex: Regex::new(r"^\s*#\s*else").unwrap(),
-            endif_regex: Regex::new(r"^\s*#\s*endif").unwrap(),
-            define_import_path_regex: Regex::new(r"^\s*#\s*define_import_path").unwrap(),
+            ifdef: Regex::new(r"^\s*#\s*ifdef\s*([\w|\d|_]+)").unwrap(),
+            ifndef: Regex::new(r"^\s*#\s*ifndef\s*([\w|\d|_]+)").unwrap(),
+            r#else: Regex::new(r"^\s*#\s*else").unwrap(),
+            endif: Regex::new(r"^\s*#\s*endif").unwrap(),
+            define_import_path: Regex::new(r"^\s*#\s*define_import_path").unwrap(),
         }
     }
 }
@@ -48,7 +48,7 @@ impl ShaderProcessor {
         let mut final_string = String::with_capacity(shader_str.len());
 
         for (line, offset) in lines_with_offsets(shader_str) {
-            let use_line = if let Some(cap) = self.ifdef_regex.captures(line) {
+            let use_line = if let Some(cap) = self.ifdef.captures(line) {
                 let def = cap.get(1).unwrap().as_str();
                 scopes.push((
                     scopes.last().unwrap().0 && shader_defs.contains(def),
@@ -56,7 +56,7 @@ impl ShaderProcessor {
                     def,
                 ));
                 false
-            } else if let Some(cap) = self.ifndef_regex.captures(line) {
+            } else if let Some(cap) = self.ifndef.captures(line) {
                 let def = cap.get(1).unwrap().as_str();
                 scopes.push((
                     scopes.last().unwrap().0 && !shader_defs.contains(def),
@@ -64,11 +64,12 @@ impl ShaderProcessor {
                     def,
                 ));
                 false
-            } else if self.else_regex.is_match(line) {
-                let mut is_parent_scope_truthy = true;
-                if scopes.len() > 1 {
-                    is_parent_scope_truthy = scopes[scopes.len() - 2].0;
-                }
+            } else if self.r#else.is_match(line) {
+                let is_parent_scope_truthy = if scopes.len() > 1 {
+                    scopes[scopes.len() - 2].0
+                } else {
+                    true
+                };
 
                 if let Some((last, start_offset, def)) = scopes.last_mut() {
                     if !*last {
@@ -80,7 +81,7 @@ impl ShaderProcessor {
                     *last = is_parent_scope_truthy && !*last;
                 }
                 false
-            } else if self.endif_regex.is_match(line) {
+            } else if self.endif.is_match(line) {
                 // HACK: Ignore endifs without a corresponding
                 // This does need proper error reporting somewhere, which is not yet implemented
                 // Presumably this would be through a side channel
@@ -93,10 +94,10 @@ impl ShaderProcessor {
                     }
                 }
                 false
-            } else if self.define_import_path_regex.is_match(line) {
+            } else if self.define_import_path.is_match(line) {
                 false
             } else {
-                scopes.last().map(|&(used, _, _)| used).unwrap_or(true)
+                scopes.last().is_none_or(|&(used, _, _)| used)
             };
 
             if use_line {
@@ -126,6 +127,7 @@ fn lines_with_offsets(input: &str) -> impl Iterator<Item = (&str, usize)> {
 }
 
 #[cfg(test)]
+#[expect(clippy::too_many_lines, reason = "long test data")]
 mod tests {
     use rustc_hash::FxHashSet;
 
@@ -137,7 +139,10 @@ mod tests {
         output: &str,
     ) {
         let processor = ShaderProcessor::default();
-        let defs = FxHashSet::from_iter(defs.iter().map(|s| s.to_string()));
+        let defs = defs
+            .iter()
+            .map(|shader| (*shader).to_owned())
+            .collect::<FxHashSet<_>>();
         let result = processor.process(input, &defs, |_, _| {});
 
         pretty_assertions::assert_eq!(result, output);
@@ -146,39 +151,39 @@ mod tests {
     #[test]
     fn test_empty() {
         test_shader(
-            r#"
-"#,
+            "
+",
             &[],
-            r#"
-"#,
+            "
+",
         );
     }
 
     #[test]
     fn test_false_replace_str() {
         test_shader(
-            r#"
+            "
 .
 #ifdef FALSE
 IGNORE
 #endif
 .
-"#,
+",
             &[],
-            r#"
+            "
 .
             
       
       
 .
-"#,
+",
         );
     }
 
     #[test]
     fn pbr_wgsl() {
         test_shader(
-            r#"
+            "
 #define_import_path bevy_pbr::mesh_view_bind_group
 
 struct View {
@@ -301,9 +306,9 @@ var<storage> cluster_light_index_lists: ClusterLightIndexLists;
 [[group(0), binding(8)]]
 var<storage> cluster_offsets_and_counts: ClusterOffsetsAndCounts;
 #endif
-"#,
+",
             &[],
-            r#"
+            "
                                                   
 
 struct View {
@@ -426,7 +431,7 @@ var<storage> cluster_light_index_lists: ClusterLightIndexLists;
 [[group(0), binding(8)]]
 var<storage> cluster_offsets_and_counts: ClusterOffsetsAndCounts;
       
-"#,
-        )
+",
+        );
     }
 }

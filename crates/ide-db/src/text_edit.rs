@@ -4,7 +4,7 @@
 //! so `TextEdit` is the ultimate representation of the work done by
 //! rust-analyzer.
 
-use itertools::Itertools;
+use itertools::Itertools as _;
 use rowan::{TextRange, TextSize};
 use std::cmp::max;
 
@@ -34,20 +34,23 @@ pub struct TextEditBuilder {
 }
 
 impl Indel {
-    pub fn insert(
+    #[must_use]
+    pub const fn insert(
         offset: TextSize,
         text: String,
-    ) -> Indel {
-        Indel::replace(TextRange::empty(offset), text)
+    ) -> Self {
+        Self::replace(TextRange::empty(offset), text)
     }
-    pub fn delete(range: TextRange) -> Indel {
-        Indel::replace(range, String::new())
+    #[must_use]
+    pub const fn delete(range: TextRange) -> Self {
+        Self::replace(range, String::new())
     }
-    pub fn replace(
+    #[must_use]
+    pub const fn replace(
         range: TextRange,
         replace_with: String,
-    ) -> Indel {
-        Indel {
+    ) -> Self {
+        Self {
             delete: range,
             insert: replace_with,
         }
@@ -64,38 +67,44 @@ impl Indel {
 }
 
 impl TextEdit {
+    #[must_use]
     pub fn builder() -> TextEditBuilder {
         TextEditBuilder::default()
     }
 
+    #[must_use]
     pub fn insert(
         offset: TextSize,
         text: String,
-    ) -> TextEdit {
-        let mut builder = TextEdit::builder();
+    ) -> Self {
+        let mut builder = Self::builder();
         builder.insert(offset, text);
         builder.finish()
     }
 
-    pub fn delete(range: TextRange) -> TextEdit {
-        let mut builder = TextEdit::builder();
+    #[must_use]
+    pub fn delete(range: TextRange) -> Self {
+        let mut builder = Self::builder();
         builder.delete(range);
         builder.finish()
     }
 
+    #[must_use]
     pub fn replace(
         range: TextRange,
         replace_with: String,
-    ) -> TextEdit {
-        let mut builder = TextEdit::builder();
+    ) -> Self {
+        let mut builder = Self::builder();
         builder.replace(range, replace_with);
         builder.finish()
     }
 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.indels.len()
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.indels.is_empty()
     }
@@ -139,8 +148,8 @@ impl TextEdit {
 
     pub fn union(
         &mut self,
-        other: TextEdit,
-    ) -> Result<(), TextEdit> {
+        other: Self,
+    ) -> Result<(), Self> {
         let iter_merge = self
             .iter()
             .merge_by(other.iter(), |l, r| l.delete.start() <= r.delete.start());
@@ -156,6 +165,7 @@ impl TextEdit {
         Ok(())
     }
 
+    #[must_use]
     pub fn apply_to_offset(
         &self,
         offset: TextSize,
@@ -181,7 +191,8 @@ impl TextEdit {
     //     self.annotation = conflict_annotation;
     // }
 
-    pub fn change_annotation(&self) -> Option<ChangeAnnotationId> {
+    #[must_use]
+    pub const fn change_annotation(&self) -> Option<ChangeAnnotationId> {
         self.annotation
     }
 }
@@ -205,6 +216,7 @@ impl<'a> IntoIterator for &'a TextEdit {
 }
 
 impl TextEditBuilder {
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.indels.is_empty()
     }
@@ -221,6 +233,7 @@ impl TextEditBuilder {
     ) {
         self.indel(Indel::delete(range));
     }
+
     pub fn insert(
         &mut self,
         offset: TextSize,
@@ -228,8 +241,10 @@ impl TextEditBuilder {
     ) {
         self.indel(Indel::insert(offset, text));
     }
+
+    #[must_use]
     pub fn finish(self) -> TextEdit {
-        let TextEditBuilder {
+        let Self {
             mut indels,
             annotation,
         } = self;
@@ -237,6 +252,8 @@ impl TextEditBuilder {
         indels = coalesce_indels(indels);
         TextEdit { indels, annotation }
     }
+
+    #[must_use]
     pub fn invalidates_offset(
         &self,
         offset: TextSize,
@@ -245,6 +262,7 @@ impl TextEditBuilder {
             .iter()
             .any(|indel| indel.delete.contains_inclusive(offset))
     }
+
     pub fn indel(
         &mut self,
         indel: Indel,
@@ -312,7 +330,7 @@ mod tests {
         let text_edit = builder.finish();
         text_edit.apply(&mut text);
 
-        assert_eq!(text, "_1111_2222_3333_4444_5555_6666")
+        assert_eq!(text, "_1111_2222_3333_4444_5555_6666");
     }
 
     #[test]
@@ -323,7 +341,7 @@ mod tests {
         builder.delete(range(13, 17));
 
         let edit2 = builder.finish();
-        assert!(edit1.union(edit2).is_ok());
+        edit1.union(edit2).unwrap();
         assert_eq!(edit1.indels.len(), 3);
     }
 
@@ -339,7 +357,7 @@ mod tests {
 
         let mut edit1 = builder1.finish();
         let edit2 = builder2.finish();
-        assert!(edit1.union(edit2).is_ok());
+        edit1.union(edit2).unwrap();
         assert_eq!(edit1.indels.len(), 3);
     }
 
@@ -377,7 +395,7 @@ mod tests {
         let mut builder = TextEditBuilder::default();
         builder.replace(range(1, 3), "au".into());
         builder.replace(range(3, 5), "www".into());
-        builder.replace(range(5, 8), "".into());
+        builder.replace(range(5, 8), String::new());
         builder.replace(range(8, 9), "ub".into());
 
         let edit = builder.finish();

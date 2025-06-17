@@ -12,7 +12,6 @@ pub struct Markup {
 }
 
 impl From<Markup> for String {
-    #[inline]
     fn from(markup: Markup) -> Self {
         markup.text
     }

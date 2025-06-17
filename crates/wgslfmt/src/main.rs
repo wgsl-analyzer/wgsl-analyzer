@@ -1,16 +1,16 @@
-use std::{io::Read, path::PathBuf};
+use std::{io::Read as _, path::PathBuf};
 
-use anyhow::Context;
+use anyhow::Context as _;
 use lexopt::prelude::*;
 use wgsl_formatter::FormattingOptions;
 
-const HELP_STR: &str = r#"wgslfmt [options] <file>...
+const HELP_STR: &str = "wgslfmt [options] <file>...
 
 Options:
     --check     Run in 'check' mode. Exists with 0 if input is formatted correctly.
                 Exits with 1 and prints a diff if formatting is required.
     --tabs      Use tabs for indentation (instead of spaces)
-"#;
+";
 
 struct Arguments {
     check: bool,
@@ -45,7 +45,7 @@ fn main() -> Result<(), anyhow::Error> {
     let mut arguments = parse_arguments()?;
 
     if arguments.files.is_empty() {
-        arguments.files.push(PathBuf::from("-"))
+        arguments.files.push(PathBuf::from("-"));
     }
 
     for file in arguments.files {
@@ -58,7 +58,7 @@ fn main() -> Result<(), anyhow::Error> {
 
         let mut formatting_options = FormattingOptions::default();
         if arguments.tab_indent {
-            formatting_options.indent_symbol = "\t".to_string();
+            formatting_options.indent_symbol = "\t".to_owned();
         }
         let output = wgsl_formatter::format_str(&input, &formatting_options);
 

@@ -14,13 +14,13 @@ pub struct AstIdMap {
 }
 
 impl AstIdMap {
-    pub fn from_source(source: SourceFile) -> AstIdMap {
-        let mut map = AstIdMap::default();
+    pub fn from_source(source: &SourceFile) -> Self {
+        let mut map = Self::default();
 
         source
             .syntax()
             .children()
-            .flat_map(ast::Item::cast)
+            .filter_map(ast::Item::cast)
             .for_each(|item| {
                 map.alloc(item.syntax());
 
@@ -38,21 +38,25 @@ impl AstIdMap {
         map
     }
 
+    /// Returns an `AstId` for the given item.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the item is not found in the map.
     pub fn ast_id<N: AstNode>(
         &self,
         item: &N,
     ) -> FileAstId<N> {
         let pointer = SyntaxNodePointer::new(item.syntax());
-        let id = match self.arena.iter().find(|(_id, node)| **node == pointer) {
-            Some((index, _)) => index,
-            None => panic!(
+        let Some((id, _)) = self.arena.iter().find(|(_id, node)| **node == pointer) else {
+            panic!(
                 "Cannot find {:?} in AstIdMap:\n{:?}",
                 item.syntax(),
                 self.arena
                     .iter()
                     .map(|(_id, node)| node)
                     .collect::<Vec<_>>(),
-            ),
+            )
         };
 
         FileAstId {
@@ -61,6 +65,12 @@ impl AstIdMap {
         }
     }
 
+    /// Convert an id to a pointer to the AST.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `N` cannot be cast to the [`SyntaxKind`].
+    #[must_use]
     pub fn get<N: AstNode>(
         &self,
         id: FileAstId<N>,
@@ -104,7 +114,7 @@ impl<N: AstNode> Copy for FileAstId<N> {}
 impl<N: AstNode> std::fmt::Debug for FileAstId<N> {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         f.debug_struct("FileAstId").field("id", &self.id).finish()
     }

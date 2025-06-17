@@ -25,13 +25,11 @@ pub const fn is_ci() -> bool {
     option_env!("CI").is_some()
 }
 
-#[inline]
 pub fn hash_once<AHasher: Hasher + Default, Hashable: Hash>(thing: Hashable) -> u64 {
     BuildHasher::hash_one(&BuildHasherDefault::<AHasher>::default(), thing)
 }
 
 #[must_use]
-#[inline]
 #[expect(clippy::print_stderr, reason = "copy pasted from r-a")]
 pub fn timeit(label: &'static str) -> impl Drop {
     let start = Instant::now();
@@ -40,7 +38,6 @@ pub fn timeit(label: &'static str) -> impl Drop {
 
 /// Prints backtrace to stderr, useful for debugging.
 #[expect(clippy::print_stderr, reason = "copy pasted from r-a")]
-#[inline]
 pub fn print_backtrace() {
     #[cfg(feature = "backtrace")]
     #[expect(clippy::use_debug, reason = "Backtrace does not implement Display")]
@@ -67,12 +64,10 @@ impl<T, U> TupleExt for (T, U) {
     type Head = T;
     type Tail = U;
 
-    #[inline]
     fn head(self) -> Self::Head {
         self.0
     }
 
-    #[inline]
     fn tail(self) -> Self::Tail {
         self.1
     }
@@ -82,23 +77,19 @@ impl<T, U, V> TupleExt for (T, U, V) {
     type Head = T;
     type Tail = V;
 
-    #[inline]
     fn head(self) -> Self::Head {
         self.0
     }
 
-    #[inline]
     fn tail(self) -> Self::Tail {
         self.2
     }
 }
 
-#[inline]
 pub fn to_lower_snake_case(string: &str) -> String {
     to_snake_case(string, char::to_lowercase)
 }
 
-#[inline]
 pub fn to_upper_snake_case(string: &str) -> String {
     to_snake_case(string, char::to_uppercase)
 }
@@ -150,7 +141,6 @@ where
 }
 
 // Taken from rustc.
-#[inline]
 #[must_use]
 pub fn to_camel_case(identifier: &str) -> String {
     identifier
@@ -203,13 +193,11 @@ pub fn to_camel_case(identifier: &str) -> String {
 }
 
 // Taken from rustc.
-#[inline]
 #[must_use]
 pub const fn char_has_case(character: char) -> bool {
     character.is_lowercase() || character.is_uppercase()
 }
 
-#[inline]
 #[must_use]
 pub fn is_upper_snake_case(string: &str) -> bool {
     string
@@ -217,7 +205,6 @@ pub fn is_upper_snake_case(string: &str) -> bool {
         .all(|character| character.is_uppercase() || character == '_' || character.is_numeric())
 }
 
-#[inline]
 pub fn replace(
     buffer: &mut String,
     from: char,
@@ -230,7 +217,6 @@ pub fn replace(
     *buffer = buffer.replace(from, to);
 }
 
-#[inline]
 #[must_use]
 pub fn trim_indent(mut text: &str) -> String {
     if text.starts_with('\n') {
@@ -253,7 +239,6 @@ pub fn trim_indent(mut text: &str) -> String {
         .collect()
 }
 
-#[inline]
 pub fn equal_range_by<T, F>(
     slice: &[T],
     mut key: F,
@@ -267,7 +252,6 @@ where
 }
 
 #[must_use]
-#[inline]
 pub fn defer<Function: FnOnce()>(function: Function) -> impl Drop {
     struct Droppable<Function: FnOnce()>(Option<Function>);
 
@@ -288,21 +272,18 @@ pub struct JodChild(pub std::process::Child);
 
 impl ops::Deref for JodChild {
     type Target = std::process::Child;
-    #[inline]
     fn deref(&self) -> &std::process::Child {
         &self.0
     }
 }
 
 impl ops::DerefMut for JodChild {
-    #[inline]
     fn deref_mut(&mut self) -> &mut std::process::Child {
         &mut self.0
     }
 }
 
 impl Drop for JodChild {
-    #[inline]
     fn drop(&mut self) {
         self.0.kill();
         self.0.wait();
@@ -310,13 +291,11 @@ impl Drop for JodChild {
 }
 
 impl JodChild {
-    #[inline]
     pub fn spawn(mut command: Command) -> sio::Result<Self> {
         command.spawn().map(Self)
     }
 
     #[must_use]
-    #[inline]
     #[cfg(target_arch = "wasm32")]
     pub fn into_inner(self) -> std::process::Child {
         // SAFETY: repr transparent, except on WASM
@@ -326,7 +305,6 @@ impl JodChild {
 
 // feature: iter_order_by
 // Iterator::eq_by
-#[inline]
 pub fn iter_eq_by<I, I2, F>(
     this: I2,
     other: I,
@@ -354,7 +332,6 @@ where
 }
 
 /// Returns all final segments of the argument, longest first.
-#[inline]
 pub fn slice_tails<T>(this: &[T]) -> impl Iterator<Item = &[T]> {
     (0..this.len()).map(|i| &this[i..])
 }

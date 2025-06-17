@@ -26,7 +26,7 @@ impl Builder {
         accumulator: &mut Completions,
         database: &RootDatabase,
     ) {
-        accumulator.add(self.build(database))
+        accumulator.add(self.build(database));
     }
 }
 
@@ -43,7 +43,7 @@ impl Completions {
         item: Option<CompletionItem>,
     ) {
         if let Some(item) = item {
-            self.buffer.push(item)
+            self.buffer.push(item);
         }
     }
 
@@ -54,6 +54,6 @@ impl Completions {
         I: IntoIterator,
         I::Item: Into<CompletionItem>,
     {
-        items.into_iter().for_each(|item| self.add(item.into()))
+        items.into_iter().for_each(|item| self.add(item.into()));
     }
 }

@@ -1,5 +1,5 @@
 use either::Either;
-use syntax::{AstNode, HasGenerics, HasName, ast, pointer::AstPointer};
+use syntax::{AstNode as _, HasGenerics as _, HasName as _, ast, pointer::AstPointer};
 
 use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
 use crate::{
@@ -68,8 +68,8 @@ pub(super) fn lower_override_declaration(
     .collect_override_declaration(declaration)
 }
 
-struct Collector<'a> {
-    database: &'a dyn DefDatabase,
+struct Collector<'database> {
+    database: &'database dyn DefDatabase,
     body: Body,
     source_map: BodySourceMap,
     file_id: HirFileId,
@@ -95,17 +95,20 @@ impl Collector<'_> {
         param_list: Option<ast::ParameterList>,
     ) {
         if let Some(param_list) = param_list {
-            for p in param_list.parameters() {
-                if let Some(binding) = p
+            for parameter in param_list.parameters() {
+                if let Some(binding) = parameter
                     .variable_ident_declaration()
                     .and_then(|declaration| declaration.binding())
                 {
                     let binding_id = self.collect_binding(binding);
                     self.body.parameters.push(binding_id);
-                } else if let Some(import) = p.import() {
+                } else if let Some(import) = parameter.import() {
                     let import_param_list =
                         crate::module_data::find_import(self.database, self.file_id, &import)
-                            .map(|import| self.database.intern_import(InFile::new(self.file_id, import)))
+                            .map(|import| {
+                                self.database
+                                    .intern_import(InFile::new(self.file_id, import))
+                            })
                             .and_then(|import_id| {
                                 let import_loc = self.database.lookup_intern_import(import_id);
                                 let module_info = self.database.module_info(import_loc.file_id);
@@ -186,7 +189,7 @@ impl Collector<'_> {
         binding: ast::Binding,
     ) -> BindingId {
         let source = AstPointer::new(&binding);
-        let name = binding.name().map(Name::from).unwrap_or_else(Name::missing);
+        let name = binding.name().map_or_else(Name::missing, Name::from);
         self.alloc_binding(Binding { name }, source)
     }
 
@@ -204,9 +207,10 @@ impl Collector<'_> {
         &mut self,
         compound_statement: Option<ast::CompoundStatement>,
     ) -> StatementId {
-        compound_statement
-            .map(|statement| self.collect_compound_statement(statement))
-            .unwrap_or_else(|| self.missing_statement())
+        match compound_statement {
+            Some(statement) => self.collect_compound_statement(statement),
+            None => self.missing_statement(),
+        }
     }
 
     fn collect_compound_statement(
@@ -252,7 +256,7 @@ impl Collector<'_> {
                     ast::VariableStatementKind::Var => {
                         let address_space = variable_statement
                             .variable_qualifier()
-                            .and_then(|qualifier| qualifier.address_space())
+                            .and_then(syntax::ast::VariableQualifier::address_space)
                             .map(Into::into);
                         let access_mode = variable_statement
                             .variable_qualifier()
@@ -411,19 +415,20 @@ impl Collector<'_> {
 
                 expression
                     .op_kind()
-                    .map(|op| Expression::BinaryOperation {
+                    .map_or(Expression::Missing, |op| Expression::BinaryOperation {
                         left_side,
                         right_side,
                         operation: op,
                     })
-                    .unwrap_or(Expression::Missing)
             },
             ast::Expression::PrefixExpression(prefix_expression) => {
                 let expression = self.collect_expression_opt(prefix_expression.expression());
                 prefix_expression
                     .op_kind()
-                    .map(|op| Expression::UnaryOperator { expression, op })
-                    .unwrap_or(Expression::Missing)
+                    .map_or(Expression::Missing, |op| Expression::UnaryOperator {
+                        expression,
+                        op,
+                    })
             },
             ast::Expression::Literal(literal) => {
                 let literal = literal.kind();
@@ -456,10 +461,7 @@ impl Collector<'_> {
             },
             ast::Expression::FieldExpression(field) => {
                 let expression = self.collect_expression_opt(field.expression());
-                let name = field
-                    .name_ref()
-                    .map(Name::from)
-                    .unwrap_or_else(Name::missing);
+                let name = field.name_ref().map_or_else(Name::missing, Name::from);
 
                 Expression::Field { expression, name }
             },
@@ -471,10 +473,7 @@ impl Collector<'_> {
                     .map(|expression| self.collect_expression(expression))
                     .collect();
 
-                let name = call
-                    .name_ref()
-                    .map(Name::from)
-                    .unwrap_or_else(Name::missing);
+                let name = call.name_ref().map_or_else(Name::missing, Name::from);
 
                 Expression::Call {
                     callee: Callee::Name(name),
@@ -495,10 +494,7 @@ impl Collector<'_> {
                 Expression::Missing
             },
             ast::Expression::PathExpression(path) => {
-                let name = path
-                    .name_ref()
-                    .map(Name::from)
-                    .unwrap_or_else(Name::missing);
+                let name = path.name_ref().map_or_else(Name::missing, Name::from);
 
                 Expression::Path(name)
             },

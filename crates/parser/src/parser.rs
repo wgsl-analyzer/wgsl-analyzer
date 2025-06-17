@@ -18,7 +18,7 @@ pub struct Parser<'t, 'input> {
 }
 
 impl<'t, 'input> Parser<'t, 'input> {
-    pub(crate) fn new(source: Source<'t, 'input>) -> Self {
+    pub(crate) const fn new(source: Source<'t, 'input>) -> Self {
         Self {
             source,
             events: Vec::new(),
@@ -100,35 +100,35 @@ impl<'t, 'input> Parser<'t, 'input> {
     }
 
     pub fn error(&mut self) {
-        self.error_inner(None, &[], false)
+        self.error_inner(None, &[], false);
     }
 
     pub fn error_expected(
         &mut self,
         expected: &[SyntaxKind],
     ) {
-        self.error_inner(None, expected, false)
+        self.error_inner(None, expected, false);
     }
 
     pub fn error_expected_no_bump(
         &mut self,
         expected: &[SyntaxKind],
     ) {
-        self.error_inner(None, expected, true)
+        self.error_inner(None, expected, true);
     }
 
     pub fn error_recovery(
         &mut self,
         recovery: &[SyntaxKind],
     ) {
-        self.error_inner(Some(recovery), &[], false)
+        self.error_inner(Some(recovery), &[], false);
     }
 
     pub fn error_no_bump(
         &mut self,
         expected: &[SyntaxKind],
     ) {
-        self.error_inner(None, expected, true)
+        self.error_inner(None, expected, true);
     }
 
     fn error_inner(
@@ -147,9 +147,10 @@ impl<'t, 'input> Parser<'t, 'input> {
             (None, self.source.last_token_range().unwrap())
         };
 
-        let expected = match expected.is_empty() {
-            true => std::mem::take(&mut self.expected_kinds),
-            false => expected.to_vec(),
+        let expected = if expected.is_empty() {
+            std::mem::take(&mut self.expected_kinds)
+        } else {
+            expected.to_vec()
         };
 
         self.events.push(Event::Error(ParseError {

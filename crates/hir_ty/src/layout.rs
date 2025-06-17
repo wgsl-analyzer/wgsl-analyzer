@@ -8,7 +8,7 @@ use crate::{
 
 type Bytes = u32;
 
-fn round_up(
+const fn round_up(
     multiple: Bytes,
     num: Bytes,
 ) -> Bytes {
@@ -72,32 +72,36 @@ impl TyKind {
         database: &dyn HirDatabase,
     ) -> Option<Bytes> {
         Some(match self {
-            TyKind::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => 4,
-            TyKind::Scalar(ScalarType::Bool) => return None,
-            TyKind::Atomic(_) => 4,
-            TyKind::Vector(v) => match v.size {
+            Self::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => 4,
+            Self::Scalar(ScalarType::Bool) => return None,
+            Self::Atomic(_) => 4,
+            Self::Vector(v) => match v.size {
                 VecSize::Two => 8,
                 VecSize::Three => 16,
                 VecSize::Four => 16,
                 VecSize::BoundVar(_) => return None,
             },
-            TyKind::Matrix(m) => match m.rows {
+            Self::Matrix(m) => match m.rows {
                 VecSize::Two => 8,
                 VecSize::Three => 16,
                 VecSize::Four => 16,
                 VecSize::BoundVar(_) => return None,
             },
-            TyKind::Struct(r#struct) => {
+            Self::Struct(r#struct) => {
                 let fields = database.field_types(*r#struct);
-                let (align, _) =
-                    struct_member_layout(&fields, database, LayoutAddressSpace::Storage, |_, _| {})?;
+                let (align, _) = struct_member_layout(
+                    &fields,
+                    database,
+                    LayoutAddressSpace::Storage,
+                    |_, _| {},
+                )?;
 
                 match address_space {
                     LayoutAddressSpace::Storage => align,
                     LayoutAddressSpace::Uniform => round_up(16, align),
                 }
             },
-            TyKind::Array(array) => {
+            Self::Array(array) => {
                 let inner_align = array.inner.align(address_space, database)?;
                 match address_space {
                     LayoutAddressSpace::Storage => inner_align,
@@ -114,17 +118,17 @@ impl TyKind {
         database: &dyn HirDatabase,
     ) -> Option<Bytes> {
         Some(match self {
-            TyKind::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => 4,
-            TyKind::Scalar(ScalarType::Bool) => return None,
-            TyKind::Atomic(_) => 4,
-            TyKind::Vector(v) => match v.size {
+            Self::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => 4,
+            Self::Scalar(ScalarType::Bool) => return None,
+            Self::Atomic(_) => 4,
+            Self::Vector(v) => match v.size {
                 VecSize::Two => 8,
                 VecSize::Three => 12,
                 VecSize::Four => 16,
                 VecSize::BoundVar(_) => return None,
             },
-            TyKind::Matrix(m) => {
-                let n = m.columns.as_u8() as Bytes;
+            Self::Matrix(m) => {
+                let n = Bytes::from(m.columns.as_u8());
                 let (vec_align, vec_size) = match m.columns {
                     VecSize::Two => (8, 8),
                     VecSize::Three => (16, 12),
@@ -134,13 +138,17 @@ impl TyKind {
 
                 round_up(vec_align, vec_size) * n
             },
-            TyKind::Struct(r#struct) => {
+            Self::Struct(r#struct) => {
                 let fields = database.field_types(*r#struct);
-                let (_, size) =
-                    struct_member_layout(&fields, database, LayoutAddressSpace::Storage, |_, _| {})?;
+                let (_, size) = struct_member_layout(
+                    &fields,
+                    database,
+                    LayoutAddressSpace::Storage,
+                    |_, _| {},
+                )?;
                 size
             },
-            TyKind::Array(array) => match array.size {
+            Self::Array(array) => match array.size {
                 ArraySize::Constant(n) => {
                     let stride = array.stride(address_space, database)?;
                     n as Bytes * stride

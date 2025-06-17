@@ -34,10 +34,10 @@ fn check_attribute_list(
 #[test]
 fn can_parse_array_declaration() {
     check(
-        r#"
+        "
 		const dim: vec3u = vec3u();
 		fn test(a: array<f32, dim.x>) { }
-		"#,
+		",
         expect![[r#"
             SourceFile@0..69
               Blankspace@0..3 "\n\t\t"
@@ -105,10 +105,10 @@ fn can_parse_array_declaration() {
 #[test]
 fn cannot_parse_bad_array_declaration() {
     check(
-        r#"
+        "
 		const dim: vec3u = vec3u();
 		fn test(a: array<f32, dim.>) { }
-		"#,
+		",
         expect![[r#"
             SourceFile@0..68
               Blankspace@0..3 "\n\t\t"
@@ -185,7 +185,7 @@ fn cannot_parse_bad_array_declaration() {
 
 #[test]
 fn parse_empty() {
-    check("", expect![[r#"SourceFile@0..0"#]]);
+    check("", expect![["SourceFile@0..0"]]);
 }
 
 #[test]
@@ -208,7 +208,7 @@ fn fn_incomplete() {
 #[test]
 fn parse_comments() {
     check(
-        r#"
+        "
 		const f = 1.5; // This is line-ending comment.
 		const g = 2.5; /* This is a block comment
                 that spans lines.
@@ -216,7 +216,7 @@ fn parse_comments() {
                  */
                 But all block comments must terminate.
                */
-		"#,
+		",
         expect![[r#"
             SourceFile@0..267
               Blankspace@0..3 "\n\t\t"
@@ -256,12 +256,12 @@ fn parse_comments() {
 #[test]
 fn cannot_parse_unmatched_block_comment() {
     check(
-        r#"
+        "
 		/* This is a block comment that spans lines.
 			/* Block comments can nest.
 			But all block comments must terminate.
 			*/
-		"#,
+		",
         expect![[r#"
             SourceFile@0..129
               Blankspace@0..3 "\n\t\t"
@@ -324,10 +324,10 @@ fn function() {
 #[test]
 fn variable_declarations() {
     check(
-        r#"fn name() {
+        "fn name() {
 let x: f32 = 1.0;
 let y: f32 = 2.0;
-        }"#,
+        }",
         expect![[r#"
             SourceFile@0..57
               Function@0..57
@@ -403,8 +403,8 @@ fn fn_recover() {
 #[test]
 fn fn_recover_2() {
     check(
-        r#"fn name()
-        fn test() {}"#,
+        "fn name()
+        fn test() {}",
         expect![[r#"
             SourceFile@0..30
               Function@0..18
@@ -555,9 +555,9 @@ fn parse_type_generic_ptr() {
 #[test]
 fn parse_return_statement() {
     check(
-        r#"fn f() -> u32 {
+        "fn f() -> u32 {
             return 0;
-        }"#,
+        }",
         expect![[r#"
             SourceFile@0..47
               Function@0..47
@@ -592,11 +592,11 @@ fn parse_return_statement() {
 #[test]
 fn parse_let_statement_recover() {
     check(
-        r#"fn f() -> u32 {
+        "fn f() -> u32 {
             let x =
             let y =
             return 0
-        }"#,
+        }",
         expect![[r#"
             SourceFile@0..86
               Function@0..86
@@ -680,7 +680,7 @@ fn parse_statement_return() {
 #[test]
 fn parse_while_statement() {
     check_statement(
-        r#"while 0 > 3 { let x = 3; }"#,
+        "while 0 > 3 { let x = 3; }",
         expect![[r#"
             WhileStatement@0..26
               While@0..5 "while"
@@ -717,7 +717,7 @@ fn parse_while_statement() {
 #[test]
 fn parse_if_statement() {
     check_statement(
-        r#"if (0 > 3) { let x = 3; return x; }"#,
+        "if (0 > 3) { let x = 3; return x; }",
         expect![[r#"
             IfStatement@0..35
               If@0..2 "if"
@@ -765,9 +765,9 @@ fn parse_if_statement() {
 #[test]
 fn parse_if_recover_paren() {
     check_statement(
-        r#"if () {
+        "if () {
           let x = 3;
-        }"#,
+        }",
         expect![[r#"
             IfStatement@0..38
               If@0..2 "if"
@@ -802,9 +802,9 @@ fn parse_if_recover_paren() {
 #[test]
 fn parse_if_without_paren() {
     check_statement(
-        r#"if true {
+        "if true {
           let x = 3;
-        }"#,
+        }",
         expect![[r#"
             IfStatement@0..40
               If@0..2 "if"
@@ -835,9 +835,9 @@ fn parse_if_without_paren() {
 #[test]
 fn parse_if_recover_empty() {
     check_statement(
-        r#"if {
+        "if {
           let x = 3;
-        }"#,
+        }",
         expect![[r#"
             IfStatement@0..35
               If@0..2 "if"
@@ -919,7 +919,7 @@ fn parse_if_else() {
                 CompoundStatement@45..47
                   BraceLeft@45..46 "{"
                   BraceRight@46..47 "}""#]],
-    )
+    );
 }
 
 #[test]
@@ -1010,7 +1010,7 @@ fn parse_for_statement() {
               CompoundStatement@33..35
                 BraceLeft@33..34 "{"
                 BraceRight@34..35 "}""#]],
-    )
+    );
 }
 
 #[test]
@@ -1069,7 +1069,7 @@ fn parse_for_statement_comma() {
               CompoundStatement@33..35
                 BraceLeft@33..34 "{"
                 BraceRight@34..35 "}""#]],
-    )
+    );
 }
 
 #[test]
@@ -1404,7 +1404,7 @@ fn parse_var_without_initializer() {
               Blankspace@6..7 " "
               Uint32@7..10
                 Uint32@7..10 "u32""#]],
-    )
+    );
 }
 
 #[test]
@@ -1426,7 +1426,7 @@ fn parse_var_with_initializer() {
               Blankspace@16..17 " "
               Uint32@17..20
                 Uint32@17..20 "u32""#]],
-    )
+    );
 }
 
 #[test]
@@ -1536,7 +1536,7 @@ fn let_statement_recover_return_no_eq() {
                   BraceRight@41..42 "}"
 
             error at 30..32: expected Colon, but found Identifier"#]],
-    )
+    );
 }
 
 #[test]
@@ -1795,13 +1795,13 @@ fn weird_line_ending_comments() {
 #[test]
 fn struct_underscore_field_name() {
     check(
-        r#"
+        "
 struct UBO {
   camera_position: vec3f,
   _pad: u32
   time: f32,
 };
-"#,
+",
         expect![[r#"
             SourceFile@0..68
               Blankspace@0..1 "\n"
@@ -1856,12 +1856,12 @@ struct UBO {
 #[test]
 fn struct_decl_semi() {
     check(
-        r#"
+        "
 struct Test {
     a: f32;
     b: vec3<f32>;
 }
-"#,
+",
         expect![[r#"
             SourceFile@0..47
               Blankspace@0..1 "\n"
@@ -1909,12 +1909,12 @@ struct Test {
 #[test]
 fn struct_decl() {
     check(
-        r#"
+        "
 struct Test {
     a: f32,
     b: vec3<f32>,
 }
-"#,
+",
         expect![[r#"
             SourceFile@0..47
               Blankspace@0..1 "\n"
@@ -1962,10 +1962,10 @@ struct Test {
 #[test]
 fn struct_recover() {
     check(
-        r#"
+        "
 struct
 fn test()
-"#,
+",
         expect![[r#"
             SourceFile@0..18
               Blankspace@0..1 "\n"
@@ -1991,10 +1991,10 @@ fn test()
 #[test]
 fn struct_recover_2() {
     check(
-        r#"
+        "
 struct test
 fn test()
-"#,
+",
         expect![[r#"
             SourceFile@0..23
               Blankspace@0..1 "\n"
@@ -2023,12 +2023,12 @@ fn test()
 #[test]
 fn struct_recover_3() {
     check(
-        r#"
+        "
 struct test {}
 
 fn test()
 };
-"#,
+",
         expect![[r#"
             SourceFile@0..30
               Blankspace@0..1 "\n"
@@ -2303,13 +2303,13 @@ fn parse_string_import() {
 
 fn parse_switch_statement() {
     check_statement(
-        r#"
+        "
 switch i {
   case 0: { fallthrough; }
   case 1, 2: { return 42; }
   default: { }
 }
-        "#,
+        ",
         expect![[r#"
             SwitchStatement@0..92
               Blankspace@0..1 "\n"
@@ -2379,11 +2379,11 @@ switch i {
 #[test]
 fn parse_switch_statement_recover_1() {
     check_statement(
-        r#"
+        "
 switch i {
   case
 }
-        "#,
+        ",
         expect![[r#"
             SwitchStatement@0..29
               Blankspace@0..1 "\n"
@@ -2408,11 +2408,11 @@ switch i {
 #[test]
 fn parse_switch_statement_recover_2() {
     check_statement(
-        r#"
+        "
 switch i {
   case 1
 }
-        "#,
+        ",
         expect![[r#"
             SwitchStatement@0..31
               Blankspace@0..1 "\n"
@@ -2440,7 +2440,7 @@ switch i {
 #[test]
 fn parse_switch_statement_recover_3() {
     check_statement(
-        r#"
+        "
 {
 switch i {
   case 1:
@@ -2448,7 +2448,7 @@ switch i {
 
 let x = 3;
 }
-        "#,
+        ",
         expect![[r#"
             CompoundStatement@0..48
               Blankspace@0..1 "\n"
@@ -2495,14 +2495,14 @@ let x = 3;
 #[test]
 fn parse_switch_statement_recover_4() {
     check_statement(
-        r#"
+        "
 {
 switch i {
   case 1, 2,
 }
 let x = 3;
 }
-        "#,
+        ",
         expect![[r#"
             CompoundStatement@0..50
               Blankspace@0..1 "\n"

@@ -14,12 +14,12 @@ use hir_ty::{
 };
 use serde::Deserialize;
 use syntax::{
-    AstNode, ast,
+    AstNode as _, ast,
     pointer::{AstPointer, SyntaxNodePointer},
 };
 
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
-use crate::{Function, GlobalConstant, GlobalVariable, HasSource, Override, TypeAlias};
+use crate::{Function, GlobalConstant, GlobalVariable, HasSource as _, Override, TypeAlias};
 
 #[derive(Clone, Debug, Deserialize)]
 pub enum NagaVersion {
@@ -34,7 +34,6 @@ pub enum NagaVersion {
 }
 
 impl Default for NagaVersion {
-    #[inline]
     fn default() -> Self {
         Self::Naga14
     }
@@ -147,27 +146,28 @@ pub enum AnyDiagnostic {
 }
 
 impl AnyDiagnostic {
-    pub fn file_id(&self) -> HirFileId {
+    #[must_use]
+    pub const fn file_id(&self) -> HirFileId {
         match self {
-            AnyDiagnostic::AssignmentNotAReference { left_side, .. } => left_side.file_id,
-            AnyDiagnostic::TypeMismatch { expression, .. } => expression.file_id,
-            AnyDiagnostic::NoSuchField { expression, .. } => expression.file_id,
-            AnyDiagnostic::ArrayAccessInvalidType { expression, .. } => expression.file_id,
-            AnyDiagnostic::UnresolvedName { expression, .. } => expression.file_id,
-            AnyDiagnostic::InvalidConstructionType { expression, .. } => expression.file_id,
-            AnyDiagnostic::FunctionCallArgCountMismatch { expression, .. } => expression.file_id,
-            AnyDiagnostic::NoBuiltinOverload { expression, .. } => expression.file_id,
-            AnyDiagnostic::AddressOfNotReference { expression, .. } => expression.file_id,
-            AnyDiagnostic::DerefNotPointer { expression, .. } => expression.file_id,
-            AnyDiagnostic::MissingAddressSpace { var } => var.file_id,
-            AnyDiagnostic::InvalidAddressSpace { var, .. } => var.file_id,
-            AnyDiagnostic::InvalidType { file_id, .. } => *file_id,
-            AnyDiagnostic::UnresolvedImport { import, .. } => import.file_id,
-            AnyDiagnostic::NagaValidationError { file_id, .. } => *file_id,
-            AnyDiagnostic::ParseError { file_id, .. } => *file_id,
-            AnyDiagnostic::UnconfiguredCode { file_id, .. } => *file_id,
-            AnyDiagnostic::NoConstructor { expression, .. } => expression.file_id,
-            AnyDiagnostic::PrecedenceParensRequired { expression, .. } => expression.file_id,
+            Self::AssignmentNotAReference { left_side, .. } => left_side.file_id,
+            Self::TypeMismatch { expression, .. } => expression.file_id,
+            Self::NoSuchField { expression, .. } => expression.file_id,
+            Self::ArrayAccessInvalidType { expression, .. } => expression.file_id,
+            Self::UnresolvedName { expression, .. } => expression.file_id,
+            Self::InvalidConstructionType { expression, .. } => expression.file_id,
+            Self::FunctionCallArgCountMismatch { expression, .. } => expression.file_id,
+            Self::NoBuiltinOverload { expression, .. } => expression.file_id,
+            Self::AddressOfNotReference { expression, .. } => expression.file_id,
+            Self::DerefNotPointer { expression, .. } => expression.file_id,
+            Self::MissingAddressSpace { var } => var.file_id,
+            Self::InvalidAddressSpace { var, .. } => var.file_id,
+            Self::InvalidType { file_id, .. } => *file_id,
+            Self::UnresolvedImport { import, .. } => import.file_id,
+            Self::NagaValidationError { file_id, .. } => *file_id,
+            Self::ParseError { file_id, .. } => *file_id,
+            Self::UnconfiguredCode { file_id, .. } => *file_id,
+            Self::NoConstructor { expression, .. } => expression.file_id,
+            Self::PrecedenceParensRequired { expression, .. } => expression.file_id,
         }
     }
 }

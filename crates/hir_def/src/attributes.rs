@@ -2,14 +2,14 @@ use std::sync::Arc;
 
 use either::Either;
 use syntax::{
-    HasAttributes, HasName,
+    HasAttributes, HasName as _,
     ast::{self, IdentOrLiteral},
 };
 
 use crate::{
-    HasSource,
+    HasSource as _,
     data::FieldId,
-    database::{DefDatabase, FunctionId, GlobalVariableId, Interned, Lookup, StructId},
+    database::{DefDatabase, FunctionId, GlobalVariableId, Interned, Lookup as _, StructId},
     expression::{Literal, parse_literal},
     module_data::Name,
 };
@@ -50,7 +50,7 @@ impl AttributeList {
     pub fn from_src(
         database: &dyn DefDatabase,
         source: &dyn HasAttributes,
-    ) -> AttributeList {
+    ) -> Self {
         let attrs = source
             .attributes()
             .map(|attribute| Attribute {
@@ -75,11 +75,11 @@ impl AttributeList {
             .map(|attribute| database.intern_attribute(attribute))
             .collect();
 
-        AttributeList { attributes: attrs }
+        Self { attributes: attrs }
     }
 
-    fn empty() -> AttributeList {
-        AttributeList {
+    const fn empty() -> Self {
+        Self {
             attributes: Vec::new(),
         }
     }
@@ -125,16 +125,11 @@ impl AttributesWithOwner {
                         .variable_ident_declaration()
                         .and_then(|var| var.binding())
                         .and_then(|binding| binding.name())?;
-                    if name.text().as_str() == field_name {
-                        Some(field)
-                    } else {
-                        None
-                    }
+                    (name.text().as_str() == field_name).then_some(field)
                 });
-                match attrs {
-                    Some(field) => AttributeList::from_src(database, &field),
-                    None => AttributeList::empty(),
-                }
+                attrs.map_or_else(AttributeList::empty, |field| {
+                    AttributeList::from_src(database, &field)
+                })
             },
             AttributeDefId::FunctionId(id) => {
                 AttributeList::from_src(database, &id.lookup(database).source(database).value)
@@ -144,7 +139,7 @@ impl AttributesWithOwner {
             },
         };
 
-        Arc::new(AttributesWithOwner {
+        Arc::new(Self {
             attribute_list: attrs,
             owner: def,
         })

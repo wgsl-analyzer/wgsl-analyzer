@@ -60,12 +60,12 @@ pub fn collect(
         {
             if let Some(lhs_op) = lhs_op {
                 if lhs_op != op {
-                    f(PrecedenceDiagnostic::SequencesAllowed(*left_side, op))
+                    f(PrecedenceDiagnostic::SequencesAllowed(*left_side, op));
                 }
             }
             if let Some(rhs_op) = rhs_op {
                 if rhs_op != op {
-                    f(PrecedenceDiagnostic::SequencesAllowed(*right_side, op))
+                    f(PrecedenceDiagnostic::SequencesAllowed(*right_side, op));
                 }
             }
         }
@@ -76,20 +76,20 @@ pub fn collect(
         ) = op
         {
             if lhs_op.is_some() {
-                f(PrecedenceDiagnostic::NeverNested(*left_side, op))
+                f(PrecedenceDiagnostic::NeverNested(*left_side, op));
             }
             if rhs_op.is_some() {
-                f(PrecedenceDiagnostic::NeverNested(*right_side, op))
+                f(PrecedenceDiagnostic::NeverNested(*right_side, op));
             }
         }
 
         // <, >, <=, >=, ==, != being mixed
         if let BinaryOperation::Comparison(_) = op {
             if let Some(BinaryOperation::Comparison(_)) = lhs_op {
-                f(PrecedenceDiagnostic::NeverNested(*left_side, op))
+                f(PrecedenceDiagnostic::NeverNested(*left_side, op));
             }
             if let Some(BinaryOperation::Comparison(_)) = rhs_op {
-                f(PrecedenceDiagnostic::NeverNested(*right_side, op))
+                f(PrecedenceDiagnostic::NeverNested(*right_side, op));
             }
         }
 
@@ -97,12 +97,12 @@ pub fn collect(
         if let BinaryOperation::Logical(_) = op {
             if let Some(lhs_op @ BinaryOperation::Logical(_)) = lhs_op {
                 if lhs_op != op {
-                    f(PrecedenceDiagnostic::SequencesAllowed(*left_side, op))
+                    f(PrecedenceDiagnostic::SequencesAllowed(*left_side, op));
                 }
             }
             if let Some(rhs_op @ BinaryOperation::Logical(_)) = rhs_op {
                 if rhs_op != op {
-                    f(PrecedenceDiagnostic::SequencesAllowed(*right_side, op))
+                    f(PrecedenceDiagnostic::SequencesAllowed(*right_side, op));
                 }
             }
         }

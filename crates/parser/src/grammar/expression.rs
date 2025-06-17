@@ -2,9 +2,9 @@
 
 use crate::{marker::CompletedMarker, syntax_kind::SyntaxKind};
 
-use super::*;
+use super::{Parser, TYPE_SET, list, name_ref};
 
-pub(crate) fn expression(p: &mut Parser) {
+pub(crate) fn expression(p: &mut Parser<'_, '_>) {
     if p.at_set(super::STATEMENT_RECOVER_SET) {
         return;
     }
@@ -12,7 +12,7 @@ pub(crate) fn expression(p: &mut Parser) {
 }
 
 fn expression_binding_power(
-    p: &mut Parser,
+    p: &mut Parser<'_, '_>,
     minimum_binding_power: u8,
 ) -> Option<CompletedMarker> {
     let mut left_side = left_side(p)?;
@@ -80,7 +80,7 @@ fn expression_binding_power(
     Some(left_side)
 }
 
-fn function_param_list(p: &mut Parser) {
+fn function_param_list(p: &mut Parser<'_, '_>) {
     list(
         p,
         SyntaxKind::ParenthesisLeft,
@@ -93,13 +93,13 @@ fn function_param_list(p: &mut Parser) {
     );
 }
 
-fn array_index(p: &mut Parser) {
+fn array_index(p: &mut Parser<'_, '_>) {
     p.expect(SyntaxKind::BracketLeft);
     expression_binding_power(p, 0);
     p.expect(SyntaxKind::BracketRight);
 }
 
-fn left_side(p: &mut Parser) -> Option<CompletedMarker> {
+fn left_side(p: &mut Parser<'_, '_>) -> Option<CompletedMarker> {
     let cm = if p.at_set(TOKENSET_LITERAL) {
         literal(p)
     } else if p.at(SyntaxKind::Identifier) {
@@ -156,7 +156,7 @@ enum BinaryOperator {
     Modulo,
 }
 
-fn binary_operator(parser: &mut Parser) -> Option<BinaryOperator> {
+fn binary_operator(parser: &mut Parser<'_, '_>) -> Option<BinaryOperator> {
     let operator = if parser.at(SyntaxKind::Plus) {
         Some(BinaryOperator::Add)
     } else if parser.at(SyntaxKind::Minus) {
@@ -201,22 +201,22 @@ fn binary_operator(parser: &mut Parser) -> Option<BinaryOperator> {
 }
 
 impl BinaryOperator {
-    fn binding_power(&self) -> (u8, u8) {
+    const fn binding_power(&self) -> (u8, u8) {
         match self {
-            BinaryOperator::ShortCircuitOr => (0, 1),
-            BinaryOperator::ShortCircuitAnd => (2, 3),
-            BinaryOperator::Or => (4, 5),
-            BinaryOperator::Xor => (5, 6),
-            BinaryOperator::And => (7, 8),
-            BinaryOperator::Equals => (9, 10),
-            BinaryOperator::LessThan
-            | BinaryOperator::GreaterThan
-            | BinaryOperator::LessThanEqual
-            | BinaryOperator::GreaterThanEqual
-            | BinaryOperator::NotEqual => (11, 12),
-            BinaryOperator::ShiftLeft | BinaryOperator::ShiftRight => (13, 14),
-            BinaryOperator::Add | BinaryOperator::Subtract => (15, 16),
-            BinaryOperator::Multiply | BinaryOperator::Divide | BinaryOperator::Modulo => (17, 18),
+            Self::ShortCircuitOr => (0, 1),
+            Self::ShortCircuitAnd => (2, 3),
+            Self::Or => (4, 5),
+            Self::Xor => (5, 6),
+            Self::And => (7, 8),
+            Self::Equals => (9, 10),
+            Self::LessThan
+            | Self::GreaterThan
+            | Self::LessThanEqual
+            | Self::GreaterThanEqual
+            | Self::NotEqual => (11, 12),
+            Self::ShiftLeft | Self::ShiftRight => (13, 14),
+            Self::Add | Self::Subtract => (15, 16),
+            Self::Multiply | Self::Divide | Self::Modulo => (17, 18),
         }
     }
 }
@@ -237,7 +237,7 @@ enum PrefixOp {
 }
 
 impl PrefixOp {
-    fn binding_power(&self) -> ((), u8) {
+    const fn binding_power(&self) -> ((), u8) {
         match self {
             Self::Negate | Self::Not | Self::Reference | Self::Dereference | Self::BitNot => {
                 ((), 20)
@@ -253,14 +253,14 @@ enum PostfixOp {
 }
 
 impl PostfixOp {
-    fn binding_power(&self) -> (u8, ()) {
+    const fn binding_power(&self) -> (u8, ()) {
         match self {
             Self::Call | Self::Field | Self::Index => (21, ()),
         }
     }
 }
 
-fn postfix_op(p: &mut Parser) -> Option<PostfixOp> {
+fn postfix_op(p: &mut Parser<'_, '_>) -> Option<PostfixOp> {
     if p.at(SyntaxKind::Period) {
         Some(PostfixOp::Field)
     } else if p.at(SyntaxKind::ParenthesisLeft) {
@@ -282,7 +282,7 @@ pub(crate) const TOKENSET_LITERAL: &[SyntaxKind] = &[
     SyntaxKind::False,
 ];
 
-pub(crate) fn literal(p: &mut Parser) -> CompletedMarker {
+pub(crate) fn literal(p: &mut Parser<'_, '_>) -> CompletedMarker {
     assert!(p.at_set(TOKENSET_LITERAL));
 
     let m = p.start();
@@ -290,7 +290,7 @@ pub(crate) fn literal(p: &mut Parser) -> CompletedMarker {
     m.complete(p, SyntaxKind::Literal)
 }
 
-fn bitcast_expression(p: &mut Parser) -> CompletedMarker {
+fn bitcast_expression(p: &mut Parser<'_, '_>) -> CompletedMarker {
     assert!(p.at(SyntaxKind::Bitcast));
     let m = p.start();
     p.bump();
@@ -312,7 +312,7 @@ fn bitcast_expression(p: &mut Parser) -> CompletedMarker {
     return m.complete(p, SyntaxKind::BitcastExpression);
 }
 
-fn prefix_expression(p: &mut Parser) -> CompletedMarker {
+fn prefix_expression(p: &mut Parser<'_, '_>) -> CompletedMarker {
     let m = p.start();
     let op = if p.at(SyntaxKind::Minus) {
         PrefixOp::Negate
@@ -339,7 +339,7 @@ fn prefix_expression(p: &mut Parser) -> CompletedMarker {
     m.complete(p, SyntaxKind::PrefixExpression)
 }
 
-fn parenthesis_expression(p: &mut Parser) -> CompletedMarker {
+fn parenthesis_expression(p: &mut Parser<'_, '_>) -> CompletedMarker {
     assert!(p.at(SyntaxKind::ParenthesisLeft));
 
     let m = p.start();
@@ -422,6 +422,32 @@ mod tests {
                 PathExpression@0..7
                   NameReference@0..7
                     Identifier@0..7 "counter""#]],
+        );
+    }
+
+    #[test]
+    fn parse_variable_ref_no_comment() {
+        check(
+            "counter // not part of it",
+            expect![[r#"
+                PathExpression@0..25
+                  NameReference@0..25
+                    Identifier@0..7 "counter"
+                    Blankspace@7..8 " "
+                    LineEndingComment@8..25 "// not part of it""#]],
+        );
+    }
+
+    #[test]
+    fn parse_variable_ref_no_comment2() {
+        check(
+            "counter /* not part of it */",
+            expect![[r#"
+                PathExpression@0..28
+                  NameReference@0..28
+                    Identifier@0..7 "counter"
+                    Blankspace@7..8 " "
+                    BlockComment@8..28 "/* not part of it */""#]],
         );
     }
 

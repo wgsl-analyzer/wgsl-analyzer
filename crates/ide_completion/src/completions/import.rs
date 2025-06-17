@@ -1,4 +1,4 @@
-use base_db::SourceDatabase;
+use base_db::SourceDatabase as _;
 
 use super::Completions;
 use crate::{
@@ -8,12 +8,12 @@ use crate::{
 
 pub(crate) fn complete_import(
     accumulator: &mut Completions,
-    context: &CompletionContext,
+    context: &CompletionContext<'_>,
 ) -> Option<()> {
     match &context.completion_location {
         Some(ImmediateLocation::Import) => {},
         _ => return None,
-    };
+    }
 
     let custom_imports = context.database.custom_imports();
     let imports = custom_imports.keys().map(|import| {

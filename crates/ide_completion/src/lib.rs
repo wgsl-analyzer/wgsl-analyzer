@@ -35,6 +35,7 @@ pub struct CompletionFieldsToResolve {
 }
 
 impl CompletionFieldsToResolve {
+    #[must_use]
     pub fn from_client_capabilities(client_capability_fields: &FxHashSet<&str>) -> Self {
         Self {
             resolve_label_details: client_capability_fields.contains("labelDetails"),
@@ -47,6 +48,7 @@ impl CompletionFieldsToResolve {
         }
     }
 
+    #[must_use]
     pub const fn empty() -> Self {
         Self {
             resolve_label_details: false,
@@ -250,7 +252,6 @@ impl CompletionFieldsToResolve {
 
 //     Some(completions.into())
 // }
-
 pub fn completions2(
     database: &RootDatabase,
     config: &CompletionConfig<'_>,

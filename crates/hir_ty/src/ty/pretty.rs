@@ -1,4 +1,4 @@
-use std::fmt::Write;
+use std::fmt::Write as _;
 
 use super::{TyKind, Type};
 use crate::{
@@ -194,9 +194,12 @@ fn write_ty(
             };
             write!(f, "{value}")
         },
-        TyKind::Sampler(sampler) => match sampler.comparison {
-            true => write!(f, "sampler_comparison"),
-            false => write!(f, "sampler"),
+        TyKind::Sampler(sampler) => {
+            if sampler.comparison {
+                write!(f, "sampler_comparison")
+            } else {
+                write!(f, "sampler")
+            }
         },
         TyKind::Reference(t) => match verbosity {
             TypeVerbosity::Full => {

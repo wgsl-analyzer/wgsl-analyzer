@@ -3,14 +3,18 @@ use hir_def::module_data::Name;
 use crate::{
     database::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
-    ty::*,
+    ty::{
+        AccessMode, AddressSpace, ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Pointer,
+        SamplerType, ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType,
+        TyKind, Type, VecSize, VectorType,
+    },
 };
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub struct BuiltinId(salsa::InternId);
 impl salsa::InternKey for BuiltinId {
     fn from_intern_id(id: salsa::InternId) -> Self {
-        BuiltinId(id)
+        Self(id)
     }
 
     fn as_intern_id(&self) -> salsa::InternId {
@@ -59,6 +63,7 @@ pub struct Builtin {
 pub struct BuiltinOverloadId(usize);
 
 impl Builtin {
+    #[must_use]
     pub fn name(&self) -> &str {
         self.name.as_str()
     }
@@ -70,6 +75,7 @@ impl Builtin {
             .map(|(i, overload)| (BuiltinOverloadId(i), overload))
     }
 
+    #[must_use]
     pub fn overload(
         &self,
         overload_id: BuiltinOverloadId,

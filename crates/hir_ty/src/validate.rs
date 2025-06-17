@@ -1,5 +1,5 @@
 use hir_def::type_ref::{AccessMode, AddressSpace};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use smallvec::{SmallVec, smallvec};
 
 use crate::{database::HirDatabase, ty::TyKind};
@@ -38,18 +38,18 @@ impl std::fmt::Display for AddressSpaceError {
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match self {
-            AddressSpaceError::ExpectedAccessMode(mode) => match mode.as_slice() {
+            Self::ExpectedAccessMode(mode) => match mode.as_slice() {
                 &[mode] => write!(f, "expected {mode} access mode"),
                 &[mode1, mode2] => write!(f, "expected {mode1} or {mode2} access mode"),
                 other => write!(f, "expected {} access mode", other.iter().format(", ")),
             },
-            AddressSpaceError::ExpectedScope(scope) => {
+            Self::ExpectedScope(scope) => {
                 write!(f, "address space is only valid in {scope:?}-scope")
             },
-            AddressSpaceError::ExpectedConstructable => f.write_str("type is not constructable"),
-            AddressSpaceError::ExpectedHostShareable => f.write_str("type is not host-shareable"),
-            AddressSpaceError::ExpectedWorkgroupCompatible => f.write_str(""),
-            AddressSpaceError::ExpectedHandleOrTexture => {
+            Self::ExpectedConstructable => f.write_str("type is not constructable"),
+            Self::ExpectedHostShareable => f.write_str("type is not host-shareable"),
+            Self::ExpectedWorkgroupCompatible => f.write_str(""),
+            Self::ExpectedHandleOrTexture => {
                 f.write_str("address space is only valid for handle or texture types")
             },
         }

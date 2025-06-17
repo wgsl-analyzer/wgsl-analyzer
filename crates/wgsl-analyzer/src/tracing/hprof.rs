@@ -52,7 +52,6 @@ use tracing_subscriber::{
 };
 
 #[must_use]
-#[inline]
 pub fn init(spec: &str) -> tracing::subscriber::DefaultGuard {
     let subscriber = Registry::default().with(SpanTree::new_filtered(spec));
     tracing::subscriber::set_default(subscriber)
@@ -136,7 +135,6 @@ pub struct DataVisitor<'string> {
 }
 
 impl Visit for DataVisitor<'_> {
-    #[inline]
     #[expect(clippy::use_debug, reason = "intentional")]
     fn record_debug(
         &mut self,

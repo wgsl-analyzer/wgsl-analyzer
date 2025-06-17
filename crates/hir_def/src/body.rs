@@ -9,8 +9,8 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::{ast, pointer::AstPointer};
 
 use crate::{
-    HasSource,
-    database::{DefDatabase, DefinitionWithBodyId, Lookup},
+    HasSource as _,
+    database::{DefDatabase, DefinitionWithBodyId, Lookup as _},
     expression::{Expression, ExpressionId, Statement, StatementId},
     module_data::Name,
 };
@@ -41,10 +41,18 @@ pub struct Body {
 pub struct SyntheticSyntax;
 
 /// An item body together with the mapping from syntax nodes to HIR expression
-/// IDs. This is needed to go from e.g. a position in a file to the HIR
+/// IDs.
+///
+/// This is needed to go from e.g. a position in a file to the HIR
 /// expression containing it; but for type inference etc., we want to operate on
 /// a structure that is agnostic to the actual positions of expressions in the
-/// file, so that we do not recompute types whenever some whitespace is typed.
+/// file, so that we don't recompute types whenever some whitespace is typed.
+///
+/// One complication here is that, due to macro expansion, a single `Body` might
+/// be spread across several files. So, for each `ExprId` and `PatId`, we record
+/// both the `HirFileId` and the position inside the file. However, we only store
+/// AST -> `ExprId` mapping for non-macro files, as it is not clear how to handle
+/// this properly for macros.
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct BodySourceMap {
     expression_map: FxHashMap<AstPointer<ast::Expression>, ExpressionId>,
@@ -62,14 +70,14 @@ impl Body {
     pub fn body_query(
         database: &dyn DefDatabase,
         def: DefinitionWithBodyId,
-    ) -> Arc<Body> {
+    ) -> Arc<Self> {
         database.body_with_source_map(def).0
     }
 
     pub fn body_with_source_map_query(
         database: &dyn DefDatabase,
         def: DefinitionWithBodyId,
-    ) -> (Arc<Body>, Arc<BodySourceMap>) {
+    ) -> (Arc<Self>, Arc<BodySourceMap>) {
         let file_id = def.file_id(database);
         let (body, source_map) = match def {
             DefinitionWithBodyId::Function(id) => {
@@ -105,6 +113,7 @@ impl Body {
 }
 
 impl BodySourceMap {
+    #[must_use]
     pub fn lookup_expression(
         &self,
         source: &AstPointer<ast::Expression>,
@@ -112,6 +121,7 @@ impl BodySourceMap {
         self.expression_map.get(source).copied()
     }
 
+    #[must_use]
     pub fn lookup_statement(
         &self,
         source: &AstPointer<ast::Statement>,
@@ -119,6 +129,7 @@ impl BodySourceMap {
         self.statement_map.get(source).copied()
     }
 
+    #[must_use]
     pub fn lookup_binding(
         &self,
         source: &AstPointer<ast::Binding>,

@@ -10,13 +10,11 @@ pub struct PanicContext {
 }
 
 impl Drop for PanicContext {
-    #[inline]
     fn drop(&mut self) {
         with_ctx(|context| assert!(context.pop().is_some()));
     }
 }
 
-#[inline]
 pub fn enter(frame: String) -> PanicContext {
     #[expect(clippy::print_stderr, reason = "not relevant here")]
     fn set_hook() {

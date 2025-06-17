@@ -11,7 +11,7 @@ use crate::{
     HirFileId,
     ast_id::FileAstId,
     database::{DefDatabase, Interned},
-    type_ref::*,
+    type_ref::{AccessMode, AddressSpace, TypeReference},
 };
 
 const MISSING_NAME_PLACEHOLDER: &str = "[missing name]";
@@ -20,14 +20,17 @@ const MISSING_NAME_PLACEHOLDER: &str = "[missing name]";
 pub struct Name(SmolStr);
 
 impl Name {
-    pub fn missing() -> Name {
-        Name(MISSING_NAME_PLACEHOLDER.into())
+    #[must_use]
+    pub fn missing() -> Self {
+        Self(MISSING_NAME_PLACEHOLDER.into())
     }
 
+    #[must_use]
     pub fn is_missing(value: &str) -> bool {
         value == MISSING_NAME_PLACEHOLDER
     }
 
+    #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -41,31 +44,31 @@ impl AsRef<str> for Name {
 
 impl From<TokenText<'_>> for Name {
     fn from(text: TokenText<'_>) -> Self {
-        Name(text.as_str().into())
+        Self(text.as_str().into())
     }
 }
 
 impl From<ast::Name> for Name {
     fn from(name: ast::Name) -> Self {
-        Name(name.text().as_str().into())
+        Self(name.text().as_str().into())
     }
 }
 
 impl From<ast::NameReference> for Name {
     fn from(name: ast::NameReference) -> Self {
-        Name(name.text().as_str().into())
+        Self(name.text().as_str().into())
     }
 }
 
 impl From<ast::Identifier> for Name {
     fn from(identifier: ast::Identifier) -> Self {
-        Name(identifier.text().as_str().into())
+        Self(identifier.text().as_str().into())
     }
 }
 
 impl From<&'_ str> for Name {
     fn from(text: &str) -> Self {
-        Name(text.into())
+        Self(text.into())
     }
 }
 
@@ -166,21 +169,22 @@ impl ModuleInfo {
     pub fn module_info_query(
         database: &dyn DefDatabase,
         file_id: HirFileId,
-    ) -> Arc<ModuleInfo> {
+    ) -> Arc<Self> {
         let source = match database.parse_or_resolve(file_id) {
             Ok(value) => value.tree(),
-            Err(_) => return Arc::new(ModuleInfo::default()),
+            Err(()) => return Arc::new(Self::default()),
         };
 
         let mut lower_ctx = lower::Ctx::new(database, file_id);
         lower_ctx.lower_source_file(source);
 
-        Arc::new(ModuleInfo {
+        Arc::new(Self {
             data: lower_ctx.module_data,
             items: lower_ctx.items,
         })
     }
 
+    #[must_use]
     pub fn items(&self) -> &[ModuleItem] {
         &self.items
     }
@@ -192,6 +196,7 @@ impl ModuleInfo {
         })
     }
 
+    #[must_use]
     pub fn get<M: ModuleDataNode>(
         &self,
         id: ModuleItemId<M>,
@@ -208,7 +213,7 @@ pub struct ModuleItemId<N> {
 
 impl<N> From<Idx<N>> for ModuleItemId<N> {
     fn from(index: Idx<N>) -> Self {
-        ModuleItemId {
+        Self {
             index,
             _marker: PhantomData,
         }
@@ -216,7 +221,7 @@ impl<N> From<Idx<N>> for ModuleItemId<N> {
 }
 
 // If we automatically derive this trait, ModuleItemId<N> where N does not implement Hash cannot compile
-#[allow(clippy::derived_hash_with_manual_eq)]
+#[expect(clippy::derived_hash_with_manual_eq)]
 impl<N> std::hash::Hash for ModuleItemId<N> {
     fn hash<H: std::hash::Hasher>(
         &self,
@@ -288,10 +293,10 @@ macro_rules! mod_items {
                     &data.$fld[index]
                 }
 
+				#[allow(clippy::allow_attributes, unreachable_patterns, reason = "macros should not leak lints")]
                 fn id_from_mod_item(mod_item: &ModuleItem) -> Option<ModuleItemId<Self>> {
                     match mod_item {
                         ModuleItem::$r#type(id) => Some(*id),
-                        #[allow(unreachable_patterns)]
                         _ => None,
                     }
                 }
@@ -351,11 +356,7 @@ pub fn find_item<M: ModuleDataNode>(
         let source_ast_id = def_map.ast_id(source);
         let item_ast_id = M::ast_id(data);
 
-        if source_ast_id == item_ast_id {
-            Some(id)
-        } else {
-            None
-        }
+        (source_ast_id == item_ast_id).then_some(id)
     })
 }
 
@@ -374,10 +375,6 @@ pub fn find_import(
         let source_ast_id = def_map.ast_id(source);
         let item_ast_id = Import::ast_id(data);
 
-        if source_ast_id == item_ast_id {
-            Some(id)
-        } else {
-            None
-        }
+        (source_ast_id == item_ast_id).then_some(id)
     })
 }

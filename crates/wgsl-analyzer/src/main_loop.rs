@@ -48,7 +48,6 @@ use crate::{
     lsp::extensions,
 };
 
-#[inline]
 pub fn main_loop(
     config: Config,
     connection: Connection,
@@ -603,7 +602,7 @@ impl GlobalState {
                     // While theoretically these should never have errors, we have quite a few false
                     // positives particularly in the stdlib, and those diagnostics would stay around
                     // forever if we emitted them here.
-                    !database.source_root(source_root).is_library
+                    !database.source_root(source_root).is_library()
                 })
 				.map(|file_id| {
 					file_id.0

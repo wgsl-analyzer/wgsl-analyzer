@@ -9,7 +9,7 @@ pub(crate) struct Source<'t, 'input> {
 }
 
 impl<'t, 'input> Source<'t, 'input> {
-    pub(crate) fn new(tokens: &'t [Token<'input, SyntaxKind>]) -> Self {
+    pub(crate) const fn new(tokens: &'t [Token<'input, SyntaxKind>]) -> Self {
         Self { tokens, cursor: 0 }
     }
 
@@ -32,7 +32,7 @@ impl<'t, 'input> Source<'t, 'input> {
         self.peek_compound_raw().map(|(a, b)| (a.kind, b.kind))
     }
 
-    pub(crate) fn peek_token(&mut self) -> Option<&Token<SyntaxKind>> {
+    pub(crate) fn peek_token(&mut self) -> Option<&Token<'_, SyntaxKind>> {
         self.eat_trivia();
         self.peek_token_raw()
     }
@@ -59,12 +59,11 @@ impl<'t, 'input> Source<'t, 'input> {
         self.peek_token_raw().map(|Token { kind, .. }| *kind)
     }
 
-    fn peek_token_raw(&self) -> Option<&Token<SyntaxKind>> {
+    fn peek_token_raw(&self) -> Option<&Token<'_, SyntaxKind>> {
         self.tokens.get(self.cursor)
     }
 
-    #[allow(clippy::type_complexity)]
-    fn peek_compound_raw(&self) -> Option<(&Token<SyntaxKind>, &Token<SyntaxKind>)> {
+    fn peek_compound_raw(&self) -> Option<(&Token<'_, SyntaxKind>, &Token<'_, SyntaxKind>)> {
         let a = self.tokens.get(self.cursor)?;
         let b = self.tokens.get(self.cursor + 1)?;
         Some((a, b))

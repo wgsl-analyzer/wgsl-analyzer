@@ -47,13 +47,14 @@ impl ExprScopes {
     pub fn expression_scopes_query(
         database: &dyn DefDatabase,
         def: DefinitionWithBodyId,
-    ) -> Arc<ExprScopes> {
+    ) -> Arc<Self> {
         let body = database.body(def);
-        Arc::new(ExprScopes::new(&body))
+        Arc::new(Self::new(&body))
     }
 
-    pub fn new(body: &Body) -> ExprScopes {
-        let mut scopes = ExprScopes {
+    #[must_use]
+    pub fn new(body: &Body) -> Self {
+        let mut scopes = Self {
             scopes: Arena::default(),
             scope_by_expression: FxHashMap::default(),
             scope_by_statement: FxHashMap::default(),
@@ -69,7 +70,7 @@ impl ExprScopes {
                     let _ = compute_statement_scopes(statement, body, &mut scopes, root);
                 },
                 Either::Right(expression) => {
-                    compute_expression_scopes(expression, body, &mut scopes, root)
+                    compute_expression_scopes(expression, body, &mut scopes, root);
                 },
             }
         }
@@ -77,6 +78,7 @@ impl ExprScopes {
         scopes
     }
 
+    #[must_use]
     pub fn scope_for_expression(
         &self,
         expression: ExpressionId,
@@ -84,6 +86,7 @@ impl ExprScopes {
         self.scope_by_expression.get(&expression).copied()
     }
 
+    #[must_use]
     pub fn scope_for_statement(
         &self,
         statement: StatementId,
@@ -98,6 +101,7 @@ impl ExprScopes {
         std::iter::successors(scope, move |&scope| self.scopes[scope].parent)
     }
 
+    #[must_use]
     pub fn entries(
         &self,
         scope: ScopeId,
@@ -105,6 +109,7 @@ impl ExprScopes {
         &self.scopes[scope].entries
     }
 
+    #[must_use]
     pub fn resolve_name_in_scope(
         &self,
         scope: ScopeId,

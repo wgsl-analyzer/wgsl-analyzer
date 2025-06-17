@@ -39,7 +39,6 @@ impl fmt::Display for VersionInfo {
 
 /// Returns information about wgsl-analyzer's version.
 #[must_use]
-#[inline]
 pub const fn version() -> VersionInfo {
     let version = match option_env!("CFG_RELEASE") {
         Some(x) => x,

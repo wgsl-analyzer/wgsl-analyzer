@@ -18,7 +18,6 @@ use serde::de::DeserializeOwned;
 
 pub use crate::{lsp::capabilities::server_capabilities, main_loop::main_loop, version::version};
 
-#[inline]
 pub fn from_json<T: DeserializeOwned>(
     what: &'static str,
     json: &serde_json::Value,

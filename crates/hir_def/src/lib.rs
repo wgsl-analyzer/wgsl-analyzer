@@ -28,15 +28,15 @@ pub struct InFile<T> {
 }
 
 impl<T> InFile<T> {
-    pub fn new(
+    pub const fn new(
         file_id: HirFileId,
         value: T,
-    ) -> InFile<T> {
-        InFile { file_id, value }
+    ) -> Self {
+        Self { file_id, value }
     }
 
     // Similarly, naming here is stupid...
-    pub fn with_value<U>(
+    pub const fn with_value<U>(
         &self,
         value: U,
     ) -> InFile<U> {
@@ -50,7 +50,7 @@ impl<T> InFile<T> {
         InFile::new(self.file_id, f(self.value))
     }
 
-    pub fn as_ref(&self) -> InFile<&T> {
+    pub const fn as_ref(&self) -> InFile<&T> {
         self.with_value(&self.value)
     }
 
@@ -99,8 +99,8 @@ impl HasTextRange for SyntaxNode {
 impl<N: HasTextRange, T: HasTextRange> HasTextRange for NodeOrToken<N, T> {
     fn text_range(&self) -> TextRange {
         match self {
-            NodeOrToken::Node(n) => n.text_range(),
-            NodeOrToken::Token(t) => t.text_range(),
+            Self::Node(n) => n.text_range(),
+            Self::Token(t) => t.text_range(),
         }
     }
 }

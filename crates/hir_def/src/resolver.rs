@@ -88,7 +88,7 @@ impl Resolver {
     pub fn push_scope(
         mut self,
         scope: Scope,
-    ) -> Resolver {
+    ) -> Self {
         self.scopes.push(scope);
         self
     }
@@ -99,7 +99,7 @@ impl Resolver {
         database: &dyn DefDatabase,
         file_id: HirFileId,
         module_info: Arc<ModuleInfo>,
-    ) -> Resolver {
+    ) -> Self {
         for item in module_info.items() {
             if let ModuleItem::Import(import) = item {
                 let loc = Location::new(file_id, *import);
@@ -133,7 +133,7 @@ impl Resolver {
         owner: FunctionId,
         expression_scopes: Arc<ExprScopes>,
         scope_id: ScopeId,
-    ) -> Resolver {
+    ) -> Self {
         self.scopes.push(Scope::ExprScope(ExprScope {
             owner,
             expression_scopes,
@@ -146,6 +146,7 @@ impl Resolver {
         self.scopes.iter().rev()
     }
 
+    #[must_use]
     pub fn body_owner(&self) -> Option<FunctionId> {
         self.scopes().find_map(|scope| match scope {
             Scope::ExprScope(scope) => Some(scope.owner),
@@ -193,7 +194,7 @@ impl Resolver {
                     .for_each(|id| {
                         let data = &expression_scope.expression_scopes[id];
                         data.entries.iter().for_each(|entry| {
-                            f(entry.name.clone(), ScopeDef::Local(entry.binding))
+                            f(entry.name.clone(), ScopeDef::Local(entry.binding));
                         });
                     });
             },
@@ -201,6 +202,7 @@ impl Resolver {
         });
     }
 
+    #[must_use]
     pub fn resolve_value(
         &self,
         name: &Name,
@@ -248,6 +250,7 @@ impl Resolver {
         })
     }
 
+    #[must_use]
     pub fn resolve_type(
         &self,
         name: &Name,
@@ -281,6 +284,7 @@ impl Resolver {
         })
     }
 
+    #[must_use]
     pub fn resolve_callable(
         &self,
         name: &Name,

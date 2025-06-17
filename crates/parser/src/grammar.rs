@@ -9,7 +9,7 @@ use crate::{
     marker::{CompletedMarker, Marker},
 };
 
-pub(crate) fn file(parser: &mut Parser) {
+pub(crate) fn file(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
 
     while !parser.at_end() {
@@ -22,7 +22,7 @@ pub(crate) fn file(parser: &mut Parser) {
 const ITEM_RECOVERY_SET: &[SyntaxKind] =
     &[SyntaxKind::Fn, SyntaxKind::Struct, SyntaxKind::Override];
 
-fn item(parser: &mut Parser) {
+fn item(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     attribute_list_opt(parser);
     if parser.at(SyntaxKind::UnofficialPreprocessorImport) {
@@ -56,7 +56,7 @@ fn item(parser: &mut Parser) {
 }
 
 fn import(
-    parser: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     marker: Marker,
 ) {
     parser.expect(SyntaxKind::UnofficialPreprocessorImport);
@@ -77,7 +77,7 @@ fn import(
 }
 
 fn override_declaration(
-    parser: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     marker: Marker,
 ) {
     global_declaration(
@@ -89,7 +89,7 @@ fn override_declaration(
 }
 
 fn global_variable_declaration(
-    parser: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     marker: Marker,
 ) {
     global_declaration(
@@ -101,7 +101,7 @@ fn global_variable_declaration(
 }
 
 fn global_constant_declaration(
-    parser: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     marker: Marker,
     kind: SyntaxKind,
 ) {
@@ -109,7 +109,7 @@ fn global_constant_declaration(
 }
 
 fn global_declaration(
-    parser: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     marker: Marker,
     var_kind: SyntaxKind,
     kind: SyntaxKind,
@@ -150,7 +150,7 @@ fn global_declaration(
 }
 
 fn type_alias_declaration(
-    parser: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     marker: Marker,
 ) {
     if parser.at(SyntaxKind::Alias) || parser.at(SyntaxKind::Type) {
@@ -171,7 +171,7 @@ fn type_alias_declaration(
 }
 
 fn struct_(
-    parser: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     marker: Marker,
 ) {
     parser.expect(SyntaxKind::Struct);
@@ -200,7 +200,7 @@ fn struct_(
     marker.complete(parser, SyntaxKind::StructDeclaration);
 }
 
-fn struct_member(parser: &mut Parser) {
+fn struct_member(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     attribute_list_opt(parser);
     variable_ident_declaration(parser);
@@ -213,7 +213,7 @@ fn struct_member(parser: &mut Parser) {
 }
 
 fn function(
-    parser: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     marker: Marker,
 ) {
     parser.expect(SyntaxKind::Fn);
@@ -255,14 +255,14 @@ fn function(
     marker.complete(parser, SyntaxKind::Function);
 }
 
-fn name(parser: &mut Parser) {
+fn name(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     parser.expect(SyntaxKind::Identifier);
     marker.complete(parser, SyntaxKind::Name);
 }
 
 fn name_recover(
-    parser: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     recovery_set: &[SyntaxKind],
 ) {
     if parser.at_set(recovery_set) {
@@ -272,12 +272,12 @@ fn name_recover(
 }
 
 fn list(
-    parser: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     begin: SyntaxKind,
     end: SyntaxKind,
     separator: SyntaxKind,
     kind: SyntaxKind,
-    f: impl Fn(&mut Parser),
+    f: impl Fn(&mut Parser<'_, '_>),
 ) {
     let marker = parser.start();
     parser.expect(begin);
@@ -294,12 +294,12 @@ fn list(
 }
 
 fn list_multisep(
-    parser: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     begin: SyntaxKind,
     end: SyntaxKind,
     separators: &[SyntaxKind],
     kind: SyntaxKind,
-    f: impl Fn(&mut Parser),
+    f: impl Fn(&mut Parser<'_, '_>),
 ) {
     let marker = parser.start();
     parser.expect(begin);
@@ -315,7 +315,7 @@ fn list_multisep(
     marker.complete(parser, kind);
 }
 
-fn paramarker_list(parser: &mut Parser) {
+fn paramarker_list(parser: &mut Parser<'_, '_>) {
     list(
         parser,
         SyntaxKind::ParenthesisLeft,
@@ -326,7 +326,7 @@ fn paramarker_list(parser: &mut Parser) {
     );
 }
 
-pub(crate) fn inner_parameter_list(parser: &mut Parser) {
+pub(crate) fn inner_parameter_list(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     while !parser.at_end() {
         let location = parser.location();
@@ -339,7 +339,7 @@ pub(crate) fn inner_parameter_list(parser: &mut Parser) {
     marker.complete(parser, SyntaxKind::ParameterList);
 }
 
-fn parameter(parser: &mut Parser) {
+fn parameter(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
 
     if parser.at(SyntaxKind::UnofficialPreprocessorImport) {
@@ -360,7 +360,7 @@ fn parameter(parser: &mut Parser) {
     marker.complete(parser, SyntaxKind::Parameter);
 }
 
-fn variable_ident_declaration(parser: &mut Parser) {
+fn variable_ident_declaration(parser: &mut Parser<'_, '_>) {
     let marker_var_ident_declaration = parser.start();
     binding(parser);
 
@@ -385,7 +385,7 @@ fn variable_ident_declaration(parser: &mut Parser) {
     marker_var_ident_declaration.complete(parser, SyntaxKind::VariableIdentDeclaration);
 }
 
-fn binding(parser: &mut Parser) {
+fn binding(parser: &mut Parser<'_, '_>) {
     let marker_binding = parser.start();
     name(parser);
     marker_binding.complete(parser, SyntaxKind::Binding);
@@ -433,7 +433,7 @@ const TYPE_SET: &[SyntaxKind] = &[
     SyntaxKind::BindingArray,
 ];
 
-pub(crate) fn type_declaration(parser: &mut Parser) -> Option<CompletedMarker> {
+pub(crate) fn type_declaration(parser: &mut Parser<'_, '_>) -> Option<CompletedMarker> {
     if parser.at_set(TYPE_SET) {
         let marker_ty = parser.start();
         let r#type = parser.bump();
@@ -465,7 +465,7 @@ pub(crate) fn type_declaration(parser: &mut Parser) -> Option<CompletedMarker> {
     }
 }
 
-pub(crate) fn type_decl_generics(parser: &mut Parser) {
+pub(crate) fn type_decl_generics(parser: &mut Parser<'_, '_>) {
     list(
         parser,
         SyntaxKind::LessThan,
@@ -485,7 +485,7 @@ pub(crate) fn type_decl_generics(parser: &mut Parser) {
     );
 }
 
-fn compound_statement(parser: &mut Parser) {
+fn compound_statement(parser: &mut Parser<'_, '_>) {
     list(
         parser,
         SyntaxKind::BraceLeft,
@@ -512,7 +512,7 @@ const STATEMENT_RECOVER_SET: &[SyntaxKind] = &[
     SyntaxKind::BraceRight,
 ];
 
-pub(crate) fn statement(parser: &mut Parser) {
+pub(crate) fn statement(parser: &mut Parser<'_, '_>) {
     /*
     | [x] return_statement SEMICOLON
     | [x] if_statement
@@ -590,14 +590,14 @@ const COMPOUND_ASSIGNMENT_SET: &[SyntaxKind] = &[
     SyntaxKind::ShiftLeftEqual,
 ];
 
-fn loop_statement(parser: &mut Parser) {
+fn loop_statement(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     parser.expect(SyntaxKind::Loop);
     compound_statement(parser);
     marker.complete(parser, SyntaxKind::LoopStatement);
 }
 
-fn continuing_statement(parser: &mut Parser) {
+fn continuing_statement(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     parser.expect(SyntaxKind::Continuing);
     if !parser.at(SyntaxKind::BraceLeft) {
@@ -608,7 +608,7 @@ fn continuing_statement(parser: &mut Parser) {
     marker.complete(parser, SyntaxKind::ContinuingStatement);
 }
 
-fn while_statement(parser: &mut Parser) {
+fn while_statement(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     parser.expect(SyntaxKind::While);
     if parser.at_set(&[SyntaxKind::BraceLeft]) {
@@ -624,7 +624,7 @@ fn while_statement(parser: &mut Parser) {
     marker.complete(parser, SyntaxKind::WhileStatement);
 }
 
-fn for_statement(parser: &mut Parser) {
+fn for_statement(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     parser.expect(SyntaxKind::For);
 
@@ -647,7 +647,7 @@ fn for_statement(parser: &mut Parser) {
 
 const COMMA_SEMICOLON_SET: &[SyntaxKind] = &[SyntaxKind::Comma, SyntaxKind::Semicolon];
 
-fn for_header(parser: &mut Parser) {
+fn for_header(parser: &mut Parser<'_, '_>) {
     if parser.at(SyntaxKind::Semicolon) {
         parser.bump();
     } else if parser.at(SyntaxKind::Comma) {
@@ -681,7 +681,7 @@ fn for_header(parser: &mut Parser) {
     }
 }
 
-fn if_statement(parser: &mut Parser) {
+fn if_statement(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     parser.expect(SyntaxKind::If);
 
@@ -722,7 +722,7 @@ fn if_statement(parser: &mut Parser) {
     marker.complete(parser, SyntaxKind::IfStatement);
 }
 
-fn switch_statement(parser: &mut Parser) {
+fn switch_statement(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     parser.expect(SyntaxKind::Switch);
 
@@ -740,7 +740,7 @@ fn switch_statement(parser: &mut Parser) {
     marker.complete(parser, SyntaxKind::SwitchStatement);
 }
 
-fn switch_body(parser: &mut Parser) {
+fn switch_body(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     if parser.at(SyntaxKind::Case) {
         parser.expect(SyntaxKind::Case);
@@ -783,11 +783,11 @@ fn switch_body(parser: &mut Parser) {
 }
 
 fn surround(
-    parser: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     before: SyntaxKind,
     after: SyntaxKind,
     recover: &[SyntaxKind],
-    inner: impl Fn(&mut Parser),
+    inner: impl Fn(&mut Parser<'_, '_>),
 ) {
     if parser.at_set(recover) {
         parser.error_expected_no_bump(&[SyntaxKind::ParenthesisLeft]);
@@ -804,7 +804,7 @@ fn surround(
     parser.expect(after);
 }
 
-fn return_statement(parser: &mut Parser) {
+fn return_statement(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     parser.expect(SyntaxKind::Return);
     if !parser.at(SyntaxKind::Semicolon) {
@@ -813,7 +813,7 @@ fn return_statement(parser: &mut Parser) {
     marker.complete(parser, SyntaxKind::ReturnStatement);
 }
 
-fn variable_statement(parser: &mut Parser) {
+fn variable_statement(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
 
     if parser.at(SyntaxKind::Let) {
@@ -868,7 +868,7 @@ fn variable_statement(parser: &mut Parser) {
     }
 }
 
-fn variable_qualifier(parser: &mut Parser) {
+fn variable_qualifier(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     parser.expect(SyntaxKind::LessThan);
 
@@ -892,14 +892,14 @@ const ADDRESS_SPACE_SET: &[SyntaxKind] = &[
 ];
 
 fn if_at_set(
-    parser: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     set: &[SyntaxKind],
 ) -> bool {
     if_at_set_inner(parser, set, None)
 }
 
 fn if_at_set_or(
-    parser: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     set: &[SyntaxKind],
     or: SyntaxKind,
 ) -> bool {
@@ -907,7 +907,7 @@ fn if_at_set_or(
 }
 
 fn if_at_set_inner(
-    parser: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     set: &[SyntaxKind],
     or: Option<SyntaxKind>,
 ) -> bool {
@@ -919,29 +919,29 @@ fn if_at_set_inner(
     }
 }
 
-fn address_space(parser: &mut Parser) {
+fn address_space(parser: &mut Parser<'_, '_>) {
     if_at_set_or(parser, ADDRESS_SPACE_SET, SyntaxKind::Identifier);
 }
 
 const ACCESS_MODE_SET: &[SyntaxKind] =
     &[SyntaxKind::Read, SyntaxKind::Write, SyntaxKind::ReadWrite];
-fn access_mode(parser: &mut Parser) {
+fn access_mode(parser: &mut Parser<'_, '_>) {
     if_at_set_or(parser, ACCESS_MODE_SET, SyntaxKind::Identifier);
 }
 
-pub(crate) fn attribute_list_opt(parser: &mut Parser) {
+pub(crate) fn attribute_list_opt(parser: &mut Parser<'_, '_>) {
     if parser.at(SyntaxKind::AttributeOperator) {
         attribute_list(parser);
     }
 }
 
-pub(crate) fn attribute_list(parser: &mut Parser) {
+pub(crate) fn attribute_list(parser: &mut Parser<'_, '_>) {
     if parser.at(SyntaxKind::AttributeOperator) {
         attribute_list_modern(parser);
     }
 }
 
-fn attribute_list_modern(parser: &mut Parser) {
+fn attribute_list_modern(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     while parser.at(SyntaxKind::AttributeOperator) {
         parser.bump();
@@ -950,12 +950,12 @@ fn attribute_list_modern(parser: &mut Parser) {
     marker.complete(parser, SyntaxKind::AttributeList);
 }
 
-fn attribute(parser: &mut Parser) {
+fn attribute(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     if parser.at(SyntaxKind::Identifier) {
         parser.bump();
     } else {
-        parser.error_no_bump(&[SyntaxKind::Identifier])
+        parser.error_no_bump(&[SyntaxKind::Identifier]);
     }
 
     if parser.at(SyntaxKind::ParenthesisLeft) {
@@ -980,7 +980,7 @@ fn attribute(parser: &mut Parser) {
     marker.complete(parser, SyntaxKind::Attribute);
 }
 
-fn name_ref(parser: &mut Parser) {
+fn name_ref(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     parser.expect(SyntaxKind::Identifier);
     marker.complete(parser, SyntaxKind::NameReference);

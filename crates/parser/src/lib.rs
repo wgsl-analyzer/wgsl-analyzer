@@ -1,4 +1,3 @@
-#![allow(clippy::result_unit_err)]
 //! The parser is mostly copied from <https://github.com/arzg/eldiro/tree/master/crates/parser> with some adaptions and extensions
 
 mod event;
@@ -19,7 +18,7 @@ use source::Source;
 
 pub use edition::Edition;
 
-pub fn parse<F: Fn(&mut Parser)>(
+pub fn parse<F: Fn(&mut Parser<'_, '_>)>(
     input: &str,
     f: F,
 ) -> Parse {
@@ -61,6 +60,7 @@ impl PartialEq for Parse {
 impl Eq for Parse {}
 
 impl Parse {
+    #[must_use]
     pub fn debug_tree(&self) -> String {
         let mut s = String::new();
 
@@ -72,21 +72,24 @@ impl Parse {
         if !self.errors.is_empty() {
             s.push('\n');
         }
-        for error in self.errors.iter() {
+        for error in &self.errors {
             s.push_str(&format!("\n{error}"));
         }
 
         s
     }
 
+    #[must_use]
     pub fn syntax(&self) -> RowanSyntaxNode<WgslLanguage> {
         RowanSyntaxNode::new_root(self.green_node.clone())
     }
 
+    #[must_use]
     pub fn errors(&self) -> &[ParseError] {
         &self.errors
     }
 
+    #[must_use]
     pub fn into_parts(self) -> (GreenNode, Vec<ParseError>) {
         (self.green_node, self.errors)
     }
@@ -143,6 +146,7 @@ pub fn parse_entrypoint(
     }
 }
 
+#[must_use]
 pub fn parse_file(input: &str) -> Parse {
     parse_entrypoint(input, ParseEntryPoint::File)
 }

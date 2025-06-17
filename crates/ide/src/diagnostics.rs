@@ -28,13 +28,11 @@ pub struct DiagnosticCode(&'static str);
 
 impl DiagnosticCode {
     #[must_use]
-    #[inline]
     pub fn url(&self) -> String {
         self.0.to_owned()
     }
 
     #[must_use]
-    #[inline]
     pub const fn as_str(&self) -> &'static str {
         self.0
     }
@@ -48,7 +46,6 @@ pub enum Severity {
 
 impl Diagnostic {
     #[must_use]
-    #[inline]
     pub const fn new(
         code: DiagnosticCode,
         message: String,
@@ -65,7 +62,6 @@ impl Diagnostic {
     }
 
     #[must_use]
-    #[inline]
     pub fn with_severity(
         self,
         severity: Severity,
@@ -74,7 +70,6 @@ impl Diagnostic {
     }
 
     #[must_use]
-    #[inline]
     pub fn unused(self) -> Self {
         Self {
             unused: true,
@@ -391,7 +386,6 @@ fn naga_diagnostics<N: Naga>(
 
 /// # Panics
 /// Panics if the file is not found in the database.
-#[inline]
 #[expect(clippy::too_many_lines, reason = "TODO")]
 pub fn diagnostics(
     database: &dyn HirDatabase,

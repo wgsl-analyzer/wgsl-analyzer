@@ -89,28 +89,24 @@ pub struct AnalysisHost {
 
 impl AnalysisHost {
     #[must_use]
-    #[inline]
     pub fn new(lru_capacity: Option<u16>) -> Self {
         Self {
             database: RootDatabase::new(lru_capacity),
         }
     }
 
-    #[inline]
     pub const fn with_database(database: RootDatabase) -> Self {
         Self { database }
     }
 
-    #[inline]
-    pub fn update_lru_capacity(
+    pub const fn update_lru_capacity(
         &mut self,
         lru_capacity: Option<u16>,
     ) {
         self.database.update_base_query_lru_capacities(lru_capacity);
     }
 
-    #[inline]
-    pub fn update_lru_capacities(
+    pub const fn update_lru_capacities(
         &mut self,
         lru_capacities: &FxHashMap<Box<str>, u16>,
     ) {
@@ -119,7 +115,6 @@ impl AnalysisHost {
 
     /// Returns a snapshot of the current state, which you can query for
     /// semantic information.
-    #[inline]
     pub fn analysis(&self) -> Analysis {
         Analysis {
             database: self.database.snapshot(),
@@ -128,7 +123,6 @@ impl AnalysisHost {
 
     /// Applies changes to the current state of the world. If there are
     /// outstanding snapshots, they will be canceled.
-    #[inline]
     pub fn apply_change(
         &mut self,
         change: Change,
@@ -136,19 +130,16 @@ impl AnalysisHost {
         self.database.apply_change(change);
     }
 
-    #[inline]
     pub const fn raw_database(&self) -> &RootDatabase {
         &self.database
     }
 
-    #[inline]
     pub const fn raw_database_mut(&mut self) -> &mut RootDatabase {
         &mut self.database
     }
 }
 
 impl Default for AnalysisHost {
-    #[inline]
     fn default() -> Self {
         Self::new(None)
     }
@@ -159,7 +150,6 @@ pub struct Analysis {
 }
 
 impl Analysis {
-    #[inline]
     pub fn with_db<Function, T>(
         &self,
         function: Function,
@@ -170,7 +160,6 @@ impl Analysis {
         Cancelled::catch(|| function(&self.database))
     }
 
-    #[inline]
     pub fn source_root_id(
         &self,
         file_id: FileId,
@@ -179,7 +168,6 @@ impl Analysis {
     }
 
     /// Computes the set of parser level diagnostics for the given file.
-    #[inline]
     pub fn syntax_diagnostics(
         &self,
         _config: &DiagnosticsConfig,
@@ -189,7 +177,6 @@ impl Analysis {
     }
 
     /// Computes the set of semantic diagnostics for the given file.
-    #[inline]
     pub fn semantic_diagnostics(
         &self,
         _config: &DiagnosticsConfig,
@@ -200,7 +187,6 @@ impl Analysis {
     }
 
     /// Computes the set of both syntax and semantic diagnostics for the given file.
-    #[inline]
     pub fn full_diagnostics(
         &self,
         _config: &DiagnosticsConfig,
@@ -211,7 +197,6 @@ impl Analysis {
     }
 
     /// Gets the text of the source file.
-    #[inline]
     pub fn file_text(
         &self,
         file_id: FileId,
@@ -220,7 +205,6 @@ impl Analysis {
     }
 
     // Returns the full source code with imports resolved
-    #[inline]
     pub fn resolve_full_source(
         &self,
         file_id: FileId,
@@ -229,7 +213,6 @@ impl Analysis {
     }
 
     /// Gets the syntax tree of the file.
-    #[inline]
     pub fn parse(
         &self,
         file_id: FileId,
@@ -237,7 +220,6 @@ impl Analysis {
         self.with_db(|database| database.parse(file_id))
     }
 
-    #[inline]
     pub fn line_index(
         &self,
         file_id: FileId,
@@ -245,7 +227,6 @@ impl Analysis {
         self.with_db(|database| database.line_index(file_id))
     }
 
-    #[inline]
     pub fn syntax_tree(
         &self,
         file_id: FileId,
@@ -257,7 +238,6 @@ impl Analysis {
     }
 
     /// Returns a list of the places in the file where type hints can be displayed.
-    #[inline]
     pub fn inlay_hints(
         &self,
         config: &InlayHintsConfig,
@@ -267,7 +247,6 @@ impl Analysis {
         self.with_db(|database| inlay_hints::inlay_hints(database, file_id, range, config))
     }
 
-    #[inline]
     pub fn diagnostics(
         &self,
         config: &DiagnosticsConfig,
@@ -276,7 +255,6 @@ impl Analysis {
         self.with_db(|database| diagnostics::diagnostics(database, config, file_id))
     }
 
-    #[inline]
     pub fn goto_definition(
         &self,
         file_position: FilePosition,
@@ -285,7 +263,6 @@ impl Analysis {
     }
 
     /// Computes completions at the given position.
-    #[inline]
     pub fn completions(
         &self,
         config: &CompletionConfig<'_>,
@@ -297,7 +274,6 @@ impl Analysis {
         })
     }
 
-    #[inline]
     pub fn format(
         &self,
         file_id: FileId,
@@ -307,7 +283,6 @@ impl Analysis {
     }
 
     /// Returns a short text describing element at position.
-    #[inline]
     pub fn hover(
         &self,
         config: &HoverConfig,
@@ -319,7 +294,6 @@ impl Analysis {
     /// # Panics
     ///
     /// Panics if the command was cancelled
-    #[inline]
     pub fn debug_command(
         &self,
         file_position: FilePosition,

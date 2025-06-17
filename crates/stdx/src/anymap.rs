@@ -35,7 +35,6 @@ pub struct TypeIdHasher {
 }
 
 impl Hasher for TypeIdHasher {
-    #[inline]
     fn write(
         &mut self,
         bytes: &[u8],
@@ -53,7 +52,6 @@ impl Hasher for TypeIdHasher {
         }
     }
 
-    #[inline]
     fn finish(&self) -> u64 {
         self.value
     }
@@ -111,7 +109,6 @@ pub struct Map<A: ?Sized + Downcast = dyn Any> {
 /// value. It is a bit sad, really. Ah well, I guess this approach will do.
 pub type AnyMap = Map<dyn Any>;
 impl<A: ?Sized + Downcast> Default for Map<A> {
-    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -119,7 +116,6 @@ impl<A: ?Sized + Downcast> Default for Map<A> {
 
 impl<A: ?Sized + Downcast> Map<A> {
     /// Create an empty collection.
-    #[inline]
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -129,7 +125,6 @@ impl<A: ?Sized + Downcast> Map<A> {
 
     /// Returns a reference to the value stored in the collection for the type `T`,
     /// if it exists.
-    #[inline]
     #[must_use]
     pub fn get<T: IntoBox<A>>(&self) -> Option<&T> {
         self.raw
@@ -139,7 +134,6 @@ impl<A: ?Sized + Downcast> Map<A> {
     }
 
     /// Gets the entry for the given type in the collection for in-place manipulation
-    #[inline]
     pub fn entry<T: IntoBox<A>>(&mut self) -> Entry<'_, A, T> {
         match self.raw.entry(TypeId::of::<T>()) {
             hash_map::Entry::Occupied(entry) => Entry::Occupied(OccupiedEntry {
@@ -177,7 +171,6 @@ pub enum Entry<'map, A: ?Sized + Downcast, V> {
 impl<'map, A: ?Sized + Downcast, V: IntoBox<A>> Entry<'map, A, V> {
     /// Ensures a value is in the entry by inserting the result of the default function if
     /// empty, and returns a mutable reference to the value in the entry.
-    #[inline]
     pub fn or_insert_with<F: FnOnce() -> V>(
         self,
         default: F,
@@ -192,7 +185,6 @@ impl<'map, A: ?Sized + Downcast, V: IntoBox<A>> Entry<'map, A, V> {
 impl<'map, A: ?Sized + Downcast, V: IntoBox<A>> OccupiedEntry<'map, A, V> {
     /// Converts the `OccupiedEntry` into a mutable reference to the value in the entry
     /// with a lifetime bound to the collection itself.
-    #[inline]
     #[must_use]
     pub fn into_mut(self) -> &'map mut V {
         // SAFETY: T does match the trait object because `V: IntoBox<A>`.
@@ -203,7 +195,6 @@ impl<'map, A: ?Sized + Downcast, V: IntoBox<A>> OccupiedEntry<'map, A, V> {
 impl<'map, A: ?Sized + Downcast, V: IntoBox<A>> VacantEntry<'map, A, V> {
     /// Sets the value of the entry with the `VacantEntry`'s key,
     /// and returns a mutable reference to it.
-    #[inline]
     pub fn insert(
         self,
         value: V,
@@ -291,8 +282,7 @@ pub trait IntoBox<A: ?Sized + Downcast>: Any {
 macro_rules! implement {
     ($any_trait:ident $(+ $auto_traits:ident)*) => {
         impl Downcast for dyn $any_trait $(+ $auto_traits)* {
-            #[inline]
-            fn type_id(&self) -> TypeId {
+                    fn type_id(&self) -> TypeId {
                 self.type_id()
             }
 
@@ -304,8 +294,7 @@ macro_rules! implement {
             /// If the type is incorrect, this will result in undefined behavior due to an invalid cast.
             ///
             /// This method performs an unchecked cast from the trait object to the concrete type.
-            #[inline]
-            unsafe fn downcast_ref_unchecked<T: 'static>(&self) -> &T {
+                    unsafe fn downcast_ref_unchecked<T: 'static>(&self) -> &T {
                 // SAFETY:
                 // The caller guarantees that `self` is a `T`. We cast from a trait object to T accordingly.
                 unsafe { &*std::ptr::from_ref::<Self>(self).cast::<T>() }
@@ -319,8 +308,7 @@ macro_rules! implement {
             /// If the type is incorrect, this will result in undefined behavior due to an invalid cast.
             ///
             /// This method performs an unchecked cast from the trait object to the concrete type.
-            #[inline]
-            unsafe fn downcast_mut_unchecked<T: 'static>(&mut self) -> &mut T {
+                    unsafe fn downcast_mut_unchecked<T: 'static>(&mut self) -> &mut T {
                 // SAFETY:
                 // The caller guarantees that `self` is a `T`. We cast from a mutable trait object to T accordingly.
                 unsafe { &mut *std::ptr::from_mut::<Self>(self).cast::<T>() }
@@ -328,8 +316,7 @@ macro_rules! implement {
         }
 
         impl<T: $any_trait $(+ $auto_traits)*> IntoBox<dyn $any_trait $(+ $auto_traits)*> for T {
-            #[inline]
-            fn into_box(self) -> Box<dyn $any_trait $(+ $auto_traits)*> {
+                    fn into_box(self) -> Box<dyn $any_trait $(+ $auto_traits)*> {
                 Box::new(self)
             }
         }

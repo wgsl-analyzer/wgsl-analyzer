@@ -36,7 +36,6 @@ enum Message {
 }
 
 impl loader::Handle for NotifyHandle {
-    #[inline]
     fn spawn(sender: loader::Sender) -> Self {
         let actor = NotifyActor::new(sender);
         let (sender, receiver) = unbounded::<Message>();
@@ -49,21 +48,18 @@ impl loader::Handle for NotifyHandle {
             _thread: thread,
         }
     }
-    #[inline]
     fn set_config(
         &mut self,
         config: loader::Config,
     ) {
         self.sender.send(Message::Config(config)).unwrap();
     }
-    #[inline]
     fn invalidate(
         &mut self,
         path: AbsPathBuf,
     ) {
         self.sender.send(Message::Invalidate(path)).unwrap();
     }
-    #[inline]
     fn load_sync(
         &mut self,
         path: &AbsPath,

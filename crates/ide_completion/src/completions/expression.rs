@@ -1,6 +1,6 @@
-use hir::HirDatabase;
+use hir::HirDatabase as _;
 use hir_def::{
-    database::DefDatabase,
+    database::DefDatabase as _,
     module_data::{ModuleItem, Name, pretty::pretty_module_item},
     resolver::ScopeDef,
 };
@@ -14,7 +14,7 @@ use crate::{
 
 pub(crate) fn complete_names_in_scope(
     accumulator: &mut Completions,
-    context: &CompletionContext,
+    context: &CompletionContext<'_>,
 ) -> Option<()> {
     match context.completion_location {
         Some(ImmediateLocation::InsideStatement) => {},
@@ -31,9 +31,10 @@ pub(crate) fn complete_names_in_scope(
             ScopeDef::ModuleItem(_, ModuleItem::GlobalVariable(_)) => CompletionItemKind::Variable,
             ScopeDef::ModuleItem(_, ModuleItem::GlobalConstant(_)) => CompletionItemKind::Constant,
             ScopeDef::ModuleItem(_, ModuleItem::Override(_)) => CompletionItemKind::Constant,
-            ScopeDef::ModuleItem(_, ModuleItem::Struct(_))
-            | ScopeDef::ModuleItem(_, ModuleItem::TypeAlias(_))
-            | ScopeDef::ModuleItem(_, ModuleItem::Import(_)) => {
+            ScopeDef::ModuleItem(
+                _,
+                ModuleItem::Struct(_) | ModuleItem::TypeAlias(_) | ModuleItem::Import(_),
+            ) => {
                 unreachable!()
             },
         };

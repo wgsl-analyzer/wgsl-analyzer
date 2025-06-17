@@ -248,6 +248,8 @@ arbitrary_source_item_ordering = "allow"
 field_scoped_visibility_modifiers = "allow"
 # unwanted restriction
 redundant_pub_crate = "allow"
+# needs to be determined on a case-by-case basis
+default_numeric_fallback = "allow"
 
 # TODOs
 missing_docs_in_private_items = "allow"
@@ -268,4 +270,4 @@ iter_over_hash_type = "allow"
 expect_used = "allow"
 string_slice = "allow"
 cast_possible_truncation = "allow"
-default_numeric_fallback = "allow"
+missing_inline_in_public_items = "allow"

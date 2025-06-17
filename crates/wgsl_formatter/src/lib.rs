@@ -1,16 +1,22 @@
+#![expect(
+    clippy::range_plus_one,
+    reason = "rowan does not accept generic ranges"
+)]
+
 #[cfg(test)]
 mod tests;
 
 use rowan::{GreenNode, GreenToken, NodeOrToken, WalkEvent};
-use syntax::{AstNode, HasGenerics, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, ast};
+use syntax::{AstNode, HasGenerics as _, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, ast};
 
+#[must_use]
 pub fn format_str(
     input: &str,
     options: &FormattingOptions,
 ) -> String {
     let parse = parser::parse_file(input);
     let node = parse.syntax().clone_for_update();
-    format_recursive(node.clone(), options);
+    format_recursive(&node, options);
     node.to_string()
 }
 
@@ -24,7 +30,7 @@ impl Default for FormattingOptions {
     fn default() -> Self {
         Self {
             trailing_commas: Policy::Ignore,
-            indent_symbol: "    ".to_string(),
+            indent_symbol: "    ".to_owned(),
         }
     }
 }
@@ -37,7 +43,7 @@ pub enum Policy {
 }
 
 pub fn format_recursive(
-    syntax: SyntaxNode,
+    syntax: &SyntaxNode,
     options: &FormattingOptions,
 ) {
     let preorder = syntax.preorder();
@@ -47,21 +53,21 @@ pub fn format_recursive(
     for event in preorder {
         match event {
             WalkEvent::Enter(node) => {
-                if is_indent_kind(node.clone()) {
+                if is_indent_kind(&node) {
                     indentation += 1;
                 }
                 format_syntax_node(node, indentation, options);
             },
             WalkEvent::Leave(node) => {
-                if is_indent_kind(node) {
+                if is_indent_kind(&node) {
                     indentation = indentation.saturating_sub(1);
                 }
             },
-        };
+        }
     }
 }
 
-fn is_indent_kind(node: SyntaxNode) -> bool {
+fn is_indent_kind(node: &SyntaxNode) -> bool {
     if matches!(
         node.kind(),
         SyntaxKind::CompoundStatement | SyntaxKind::SwitchBlock
@@ -70,9 +76,10 @@ fn is_indent_kind(node: SyntaxNode) -> bool {
     }
 
     let param_list_left_paren = ast::ParameterList::cast(node.clone())
-        .and_then(|l| l.left_parenthesis_token())
+        .and_then(|list| list.left_parenthesis_token())
         .or_else(|| {
-            ast::FunctionParameterList::cast(node.clone()).and_then(|l| l.left_parenthesis_token())
+            let list = ast::FunctionParameterList::cast(node.clone())?;
+            list.left_parenthesis_token()
         });
 
     if param_list_left_paren
@@ -85,6 +92,11 @@ fn is_indent_kind(node: SyntaxNode) -> bool {
     false
 }
 
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "impractical to list all cases"
+)]
+#[expect(clippy::cognitive_complexity, clippy::too_many_lines, reason = "TODO")]
 fn format_syntax_node(
     syntax: SyntaxNode,
     indentation: usize,
@@ -171,10 +183,10 @@ fn format_syntax_node(
             let r_brace = body.right_brace_token()?;
             let mut fields = body.fields();
             // indent opening brace
-            indent_after(l_brace.clone(), indentation + 1, options)?;
+            indent_after(l_brace, indentation + 1, options)?;
             if fields.next().is_none() {
                 // empty struct: no inner indentation
-                set_whitespace_before(r_brace.clone(), create_whitespace(""));
+                set_whitespace_before(r_brace, create_whitespace(""));
             } else {
                 // indent each field line
                 for field in fields {
@@ -182,7 +194,7 @@ fn format_syntax_node(
                     indent_before(first, indentation + 1, options)?;
                 }
                 // closing brace on its own line
-                indent_before(r_brace.clone(), indentation, options)?;
+                indent_before(r_brace, indentation, options)?;
             }
         },
         SyntaxKind::IfStatement => {
@@ -250,7 +262,7 @@ fn format_syntax_node(
                 remove_if_whitespace(expression.syntax().last_token()?);
             }
 
-            format_parameters(type_initialiser.arguments()?, indentation, options)?;
+            format_parameters(&type_initialiser.arguments()?, indentation, options)?;
         },
         SyntaxKind::FunctionCall => {
             let function_call = ast::FunctionCall::cast(syntax)?;
@@ -261,7 +273,7 @@ fn format_syntax_node(
 
             let param_list = function_call.parameters()?;
 
-            format_parameters(param_list, indentation, options)?;
+            format_parameters(&param_list, indentation, options)?;
         },
         SyntaxKind::InfixExpression => {
             let expression = ast::InfixExpression::cast(syntax)?;
@@ -345,7 +357,7 @@ fn format_syntax_node(
 }
 
 fn format_parameters(
-    param_list: ast::FunctionParameterList,
+    param_list: &ast::FunctionParameterList,
     indentation: usize,
     options: &FormattingOptions,
 ) -> Option<()> {
@@ -366,7 +378,7 @@ fn format_parameters(
         );
     } else {
         remove_if_whitespace(param_list.right_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
-    };
+    }
     Some(())
 }
 
@@ -423,7 +435,7 @@ fn format_param_list<T: AstNode>(
                     create_syntax_token(SyntaxKind::Comma, ","),
                 );
             },
-        };
+        }
 
         first = false;
     }
@@ -469,7 +481,7 @@ fn remove_token(token: SyntaxToken) {
     token
         .parent()
         .unwrap()
-        .splice_children(index..index + 1, Vec::new())
+        .splice_children(index..index + 1, Vec::new());
 }
 
 fn replace_token_with(
@@ -491,7 +503,7 @@ fn insert_after(
     token
         .parent()
         .unwrap()
-        .splice_children(index + 1..index + 1, vec![SyntaxElement::Token(insert)]);
+        .splice_children((index + 1)..index + 1, vec![SyntaxElement::Token(insert)]);
 }
 
 fn insert_after_syntax(
@@ -501,7 +513,7 @@ fn insert_after_syntax(
     let index = node.index();
     node.parent()
         .unwrap()
-        .splice_children(index + 1..index + 1, vec![SyntaxElement::Token(insert)]);
+        .splice_children((index + 1)..index + 1, vec![SyntaxElement::Token(insert)]);
 }
 
 fn insert_before(
@@ -515,10 +527,9 @@ fn insert_before(
         .splice_children(index..index, vec![SyntaxElement::Token(insert)]);
 }
 
-fn whitespace_to_single_around(around: SyntaxToken) -> Option<()> {
+fn whitespace_to_single_around(around: SyntaxToken) {
     set_whitespace_single_before(around.clone());
     set_whitespace_single_after(around);
-    Some(())
 }
 
 fn set_whitespace_after(

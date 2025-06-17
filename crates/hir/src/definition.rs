@@ -3,7 +3,7 @@ use hir_def::{
     module_data::Name,
     resolver::{ResolveCallable, ResolveType},
 };
-use syntax::{AstNode, SyntaxNode, SyntaxToken, ast, match_ast};
+use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast};
 
 use crate::{Field, Function, Local, ModuleDef, Semantics, Struct, TypeAlias};
 
@@ -17,11 +17,12 @@ pub enum Definition {
 }
 
 impl Definition {
+    #[must_use]
     pub fn from_token(
         sema: &Semantics<'_>,
         file_id: HirFileId,
         token: &SyntaxToken,
-    ) -> Option<Definition> {
+    ) -> Option<Self> {
         let parent = token.parent()?;
         Self::from_node(sema, file_id, &parent)
     }
@@ -30,7 +31,7 @@ impl Definition {
         sema: &Semantics<'_>,
         file_id: HirFileId,
         node: &SyntaxNode,
-    ) -> Option<Definition> {
+    ) -> Option<Self> {
         match_ast! {
             match node {
                 ast::NameReference(name_ref) => {

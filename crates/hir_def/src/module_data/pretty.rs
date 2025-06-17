@@ -1,4 +1,4 @@
-use std::fmt::Write;
+use std::fmt::Write as _;
 
 use super::ImportValue;
 use crate::{
@@ -60,7 +60,9 @@ fn write_pretty_module_item(
         },
         ModuleItem::GlobalVariable(var) => {
             let var = &module.data[var.index];
-            let r#type = var.r#type.map(|r#type| database.lookup_intern_type_ref(r#type));
+            let r#type = var
+                .r#type
+                .map(|r#type| database.lookup_intern_type_ref(r#type));
             let _ = write!(f, "var {}", &var.name.0);
             if let Some(r#type) = r#type {
                 let _ = write!(f, ": {type}");

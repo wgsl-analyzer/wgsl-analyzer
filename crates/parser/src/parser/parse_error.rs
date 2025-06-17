@@ -1,4 +1,4 @@
-use std::fmt::{self, Write};
+use std::fmt::{self, Write as _};
 
 use rowan::TextRange;
 
@@ -11,8 +11,9 @@ pub struct ParseError {
 }
 
 impl ParseError {
+    #[must_use]
     pub fn message(&self) -> String {
-        let mut message = "expected ".to_string();
+        let mut message = "expected ".to_owned();
         let number_expected = self.expected.len();
         let is_first = |index| index == 0;
         let is_last = |index| index == number_expected - 1;

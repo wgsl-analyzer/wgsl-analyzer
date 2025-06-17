@@ -11,7 +11,6 @@ pub struct MemoryUsage {
 }
 
 impl fmt::Display for MemoryUsage {
-    #[inline]
     fn fmt(
         &self,
         #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
@@ -22,7 +21,6 @@ impl fmt::Display for MemoryUsage {
 
 impl std::ops::Sub for MemoryUsage {
     type Output = Self;
-    #[inline]
     fn sub(
         self,
         rhs: Self,
@@ -40,7 +38,6 @@ impl MemoryUsage {
     ///
     /// Panics if using jemalloc targeting msvc and advance fails.
     #[must_use]
-    #[inline]
     pub fn now() -> Self {
         cfg_if! {
             if #[cfg(all(feature = "jemalloc", not(target_env = "msvc")))] {
@@ -114,7 +111,6 @@ pub struct Bytes(isize);
 
 impl Bytes {
     #[must_use]
-    #[inline]
     pub const fn new(bytes: isize) -> Self {
         Self(bytes)
     }
@@ -122,7 +118,6 @@ impl Bytes {
 
 impl Bytes {
     #[must_use]
-    #[inline]
     #[expect(
         clippy::integer_division_remainder_used,
         reason = "not a security issue"
@@ -134,7 +129,6 @@ impl Bytes {
 }
 
 impl fmt::Display for Bytes {
-    #[inline]
     fn fmt(
         &self,
         #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
@@ -155,7 +149,6 @@ impl fmt::Display for Bytes {
 }
 
 impl std::ops::AddAssign<usize> for Bytes {
-    #[inline]
     fn add_assign(
         &mut self,
         rhs: usize,
@@ -166,7 +159,6 @@ impl std::ops::AddAssign<usize> for Bytes {
 
 impl std::ops::Sub for Bytes {
     type Output = Self;
-    #[inline]
     fn sub(
         self,
         rhs: Self,

@@ -50,7 +50,6 @@ pub struct CpuSpan {
 }
 
 #[must_use]
-#[inline]
 pub fn cpu_span() -> CpuSpan {
     #[cfg(feature = "cpu_profiler")]
     {
@@ -69,7 +68,6 @@ pub fn cpu_span() -> CpuSpan {
 }
 
 impl Drop for CpuSpan {
-    #[inline]
     fn drop(&mut self) {
         #[cfg(feature = "cpu_profiler")]
         {
@@ -98,7 +96,6 @@ impl Drop for CpuSpan {
 }
 
 #[must_use]
-#[inline]
 pub fn memory_usage() -> MemoryUsage {
     MemoryUsage::now()
 }

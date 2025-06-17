@@ -6,7 +6,7 @@ use la_arena::{Idx, IdxRange};
 use std::sync::Arc;
 
 use syntax::{
-    AstNode, HasName,
+    AstNode as _, HasName as _,
     ast::{self, Item, SourceFile},
 };
 
@@ -42,7 +42,7 @@ impl<'a> Ctx<'a> {
     ) {
         source_file.items().for_each(|item| {
             self.lower_item(item);
-        })
+        });
     }
 
     fn lower_item(
@@ -113,8 +113,8 @@ impl<'a> Ctx<'a> {
                 .type_aliases
                 .alloc(TypeAlias {
                     name,
-                    ast_id,
                     r#type,
+                    ast_id,
                 })
                 .into(),
         )
@@ -185,7 +185,7 @@ impl<'a> Ctx<'a> {
 
         let address_space = var
             .variable_qualifier()
-            .and_then(|qualifier| qualifier.address_space())
+            .and_then(syntax::ast::VariableQualifier::address_space)
             .map(Into::into);
         let access_mode = var
             .variable_qualifier()
@@ -220,7 +220,7 @@ impl<'a> Ctx<'a> {
                     .lower_type_ref(declaration.ty()?)
                     .unwrap_or(TypeReference::Error);
                 let r#type = self.database.intern_type_ref(r#type);
-                self.module_data.fields.alloc(Field { name, r#type });
+                self.module_data.fields.alloc(Field { r#type, name });
                 Some(())
             })
             .for_each(drop);
@@ -256,8 +256,8 @@ impl<'a> Ctx<'a> {
         let function = Function {
             name,
             parameters,
-            ast_id,
             return_type,
+            ast_id,
         };
 
         Some(self.module_data.functions.alloc(function).into())

@@ -31,7 +31,7 @@ pub struct ResolvedFunctionId(salsa::InternId);
 
 impl salsa::InternKey for ResolvedFunctionId {
     fn from_intern_id(id: salsa::InternId) -> Self {
-        ResolvedFunctionId(id)
+        Self(id)
     }
 
     fn as_intern_id(&self) -> salsa::InternId {

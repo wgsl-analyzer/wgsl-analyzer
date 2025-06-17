@@ -4,8 +4,8 @@ use la_arena::{Arena, Idx};
 
 use crate::{
     database::{
-        DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Interned, Lookup, OverrideId,
-        StructId, TypeAliasId,
+        DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Interned, Lookup as _,
+        OverrideId, StructId, TypeAliasId,
     },
     module_data::Name,
     type_ref::{AccessMode, AddressSpace, TypeReference},
@@ -22,12 +22,12 @@ impl FunctionData {
     pub fn fn_data_query(
         database: &dyn DefDatabase,
         func: FunctionId,
-    ) -> Arc<FunctionData> {
+    ) -> Arc<Self> {
         let loc = func.lookup(database);
         let module_info = database.module_info(loc.file_id);
         let function = &module_info.data[loc.value.index];
 
-        Arc::new(FunctionData {
+        Arc::new(Self {
             name: function.name.clone(),
             parameters: function
                 .parameters
@@ -66,7 +66,7 @@ impl StructData {
     pub fn struct_data_query(
         database: &dyn DefDatabase,
         func: StructId,
-    ) -> Arc<StructData> {
+    ) -> Arc<Self> {
         let loc = func.lookup(database);
         let module_info = database.module_info(loc.file_id);
         let r#struct = &module_info.data[loc.value.index];
@@ -84,23 +84,25 @@ impl StructData {
                 fields.alloc(field);
             });
 
-        Arc::new(StructData {
+        Arc::new(Self {
             name: r#struct.name.clone(),
             fields,
         })
     }
 
-    pub fn fields(&self) -> &Arena<FieldData> {
+    #[must_use]
+    pub const fn fields(&self) -> &Arena<FieldData> {
         &self.fields
     }
 
+    #[must_use]
     pub fn field(
         &self,
         name: &Name,
     ) -> Option<LocalFieldId> {
         self.fields()
             .iter()
-            .find_map(|(id, data)| if &data.name == name { Some(id) } else { None })
+            .find_map(|(id, data)| (&data.name == name).then_some(id))
     }
 }
 
@@ -114,12 +116,12 @@ impl TypeAliasData {
     pub fn type_alias_data_query(
         database: &dyn DefDatabase,
         func: TypeAliasId,
-    ) -> Arc<TypeAliasData> {
+    ) -> Arc<Self> {
         let loc = func.lookup(database);
         let module_info = database.module_info(loc.file_id);
         let type_alias = &module_info.data[loc.value.index];
 
-        Arc::new(TypeAliasData {
+        Arc::new(Self {
             name: type_alias.name.clone(),
             r#type: type_alias.r#type,
         })
@@ -138,12 +140,12 @@ impl GlobalVariableData {
     pub fn global_var_data_query(
         database: &dyn DefDatabase,
         var: GlobalVariableId,
-    ) -> Arc<GlobalVariableData> {
+    ) -> Arc<Self> {
         let loc = database.lookup_intern_global_variable(var);
         let module_info = database.module_info(loc.file_id);
         let var = &module_info.data[loc.value.index];
 
-        Arc::new(GlobalVariableData {
+        Arc::new(Self {
             name: var.name.clone(),
             r#type: var.r#type,
             address_space: var.address_space,
@@ -162,12 +164,12 @@ impl GlobalConstantData {
     pub fn global_constant_data_query(
         database: &dyn DefDatabase,
         constant: GlobalConstantId,
-    ) -> Arc<GlobalConstantData> {
+    ) -> Arc<Self> {
         let loc = database.lookup_intern_global_constant(constant);
         let module_info = database.module_info(loc.file_id);
         let constant = &module_info.data[loc.value.index];
 
-        Arc::new(GlobalConstantData {
+        Arc::new(Self {
             name: constant.name.clone(),
             r#type: constant.r#type,
         })
@@ -184,12 +186,12 @@ impl OverrideData {
     pub fn override_data_query(
         database: &dyn DefDatabase,
         override_decl: OverrideId,
-    ) -> Arc<OverrideData> {
+    ) -> Arc<Self> {
         let loc = database.lookup_intern_override(override_decl);
         let module_info = database.module_info(loc.file_id);
         let constant = &module_info.data[loc.value.index];
 
-        Arc::new(OverrideData {
+        Arc::new(Self {
             name: constant.name.clone(),
             r#type: constant.r#type,
         })

@@ -91,13 +91,11 @@ pub struct Config {
 
 impl Config {
     #[must_use]
-    #[inline]
     pub const fn data(&self) -> &ConfigData {
         &self.data
     }
 
     #[must_use]
-    #[inline]
     pub const fn discover_workspace_config(&self) -> Option<&DiscoverWorkspaceConfig> {
         None
     }
@@ -107,7 +105,6 @@ impl Config {
 impl std::ops::Deref for Config {
     type Target = ClientCapabilities;
 
-    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.caps
     }
@@ -148,7 +145,6 @@ pub struct InlayHintsConfig {
 }
 
 impl Default for InlayHintsConfig {
-    #[inline]
     fn default() -> Self {
         Self {
             render_colons: true,
@@ -178,7 +174,6 @@ pub enum ConfigErrorInner {}
 pub struct ConfigErrors(Vec<Arc<ConfigErrorInner>>);
 
 impl ConfigErrors {
-    #[inline]
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
@@ -186,7 +181,6 @@ impl ConfigErrors {
 }
 
 impl fmt::Display for ConfigErrors {
-    #[inline]
     fn fmt(
         &self,
         #[expect(clippy::min_ident_chars, reason = "trait method")] f: &mut fmt::Formatter<'_>,
@@ -222,7 +216,6 @@ impl fmt::Display for ConfigErrors {
 impl std::error::Error for ConfigErrors {}
 
 impl Config {
-    #[inline]
     #[must_use]
     pub fn new(
         root_path: AbsPathBuf,
@@ -266,7 +259,6 @@ impl Config {
         }
     }
 
-    #[inline]
     pub const fn rediscover_workspaces(&mut self) {
         // let discovered = vec![];
         // tracing::info!("discovered projects: {:?}", discovered);
@@ -279,7 +271,6 @@ impl Config {
     /// Given `change` this generates a new `Config`, thereby collecting errors of type `ConfigError`.
     /// If there are changes that have global/client level effect, the last component of the return type
     /// will be set to `true`, which should be used by the `GlobalState` to update itself.
-    #[inline]
     #[must_use]
     pub fn apply_change(
         &self,
@@ -290,19 +281,16 @@ impl Config {
         (config, ConfigErrors(vec![]), should_update)
     }
 
-    #[inline]
     #[must_use]
     pub const fn root_path(&self) -> &AbsPathBuf {
         &self.root_path
     }
 
-    #[inline]
     #[must_use]
     pub const fn caps(&self) -> &ClientCapabilities {
         &self.caps
     }
 
-    #[inline]
     #[must_use]
     pub fn prime_caches_num_threads(&self) -> usize {
         match &self.data.cache_priming_num_threads {
@@ -312,7 +300,6 @@ impl Config {
         }
     }
 
-    #[inline]
     #[must_use]
     pub fn main_loop_num_threads(&self) -> usize {
         match &self.data.num_threads {
@@ -322,7 +309,6 @@ impl Config {
         }
     }
 
-    #[inline]
     #[must_use]
     pub fn completion(
         &self,
@@ -357,7 +343,6 @@ impl Config {
     }
 
     #[must_use]
-    #[inline]
     pub fn hover_actions(&self) -> HoverActionsConfig {
         let enable = self.caps.hover_actions();
         HoverActionsConfig {
@@ -371,7 +356,6 @@ impl Config {
     }
 
     #[must_use]
-    #[inline]
     pub fn hover(&self) -> HoverConfig {
         let mem_kind = |kind| match kind {
             MemoryLayoutHoverRenderKindDef::Both => MemoryLayoutHoverRenderKind::Both,
@@ -396,7 +380,6 @@ impl Config {
         }
     }
 
-    #[inline]
     #[must_use]
     pub fn inlay_hints(&self) -> inlay_hints::InlayHintsConfig {
         let client_capability_fields = self.inlay_hint_resolve_support_properties();
@@ -428,7 +411,6 @@ impl Config {
         Ok(())
     }
 
-    #[inline]
     pub fn update(
         &mut self,
         value: &serde_json::Value,
@@ -443,12 +425,10 @@ impl Config {
     }
 
     #[must_use]
-    #[inline]
     pub const fn completion_hide_deprecated(&self) -> bool {
         false
     }
 
-    #[inline]
     #[must_use]
     pub const fn diagnostics(
         &self,
@@ -469,7 +449,6 @@ impl Config {
     }
 
     #[must_use]
-    #[inline]
     pub const fn typing_trigger_chars(&self) -> &'static str {
         "=.+"
     }
@@ -477,7 +456,6 @@ impl Config {
     // VSCode is our reference implementation, so we allow ourselves to work around issues by
     // special casing certain versions
     #[must_use]
-    #[inline]
     pub fn visual_studio_code_version(&self) -> Option<&Version> {
         let client_info = self
             .client_info
@@ -487,7 +465,6 @@ impl Config {
     }
 
     #[must_use]
-    #[inline]
     pub fn client_is_helix(&self) -> bool {
         self.client_info
             .as_ref()
@@ -495,7 +472,6 @@ impl Config {
     }
 
     #[must_use]
-    #[inline]
     pub fn client_is_neovim(&self) -> bool {
         self.client_info
             .as_ref()
@@ -523,7 +499,6 @@ impl ConfigChange {
     /// # Panics
     ///
     /// Panics if double writing
-    #[inline]
     pub fn change_user_config(
         &mut self,
         content: Option<Arc<str>>,
@@ -532,7 +507,6 @@ impl ConfigChange {
         self.user_config = content;
     }
 
-    #[inline]
     pub fn change_client_config(
         &mut self,
         change: serde_json::Value,
@@ -543,7 +517,6 @@ impl ConfigChange {
     /// # Panics
     ///
     /// Panics if double writing
-    #[inline]
     pub fn change_source_root_parent_map(
         &mut self,
         source_root_map: Arc<FxHashMap<SourceRootId, SourceRootId>>,
@@ -594,19 +567,16 @@ impl HoverActionsConfig {
     };
 
     #[must_use]
-    #[inline]
     pub const fn any(&self) -> bool {
         self.implementations || self.references || self.runnable() || self.goto_type_def
     }
 
     #[must_use]
-    #[inline]
     pub const fn none(&self) -> bool {
         !self.any()
     }
 
     #[must_use]
-    #[inline]
     pub const fn runnable(&self) -> bool {
         self.run || self.debug || self.update_test
     }

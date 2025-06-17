@@ -187,7 +187,7 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
         },
         ast::LiteralKind::HexFloatLiteral(_) => Literal::Float(0, BuiltinFloat::F32),
         ast::LiteralKind::DecimalFloatLiteral(literal) => {
-            use std::str::FromStr;
+            use std::str::FromStr as _;
             // Float suffixes are not accepted by `f32::from_str`. Ignore them
             let text = literal.text().trim_end_matches(char::is_alphabetic);
             let _value = f32::from_str(text).expect("invalid literal");
@@ -204,7 +204,7 @@ impl Expression {
         mut function: impl FnMut(ExpressionId),
     ) {
         match self {
-            Expression::BinaryOperation {
+            Self::BinaryOperation {
                 left_side,
                 right_side,
                 ..
@@ -212,25 +212,25 @@ impl Expression {
                 function(*left_side);
                 function(*right_side);
             },
-            Expression::UnaryOperator { expression, .. } => {
+            Self::UnaryOperator { expression, .. } => {
                 function(*expression);
             },
-            Expression::Field { expression, .. } => {
+            Self::Field { expression, .. } => {
                 function(*expression);
             },
-            Expression::Call { arguments, .. } => {
+            Self::Call { arguments, .. } => {
                 arguments.iter().copied().for_each(function);
             },
-            Expression::Index { left_side, index } => {
+            Self::Index { left_side, index } => {
                 function(*left_side);
                 function(*index);
             },
-            Expression::Bitcast { expression, .. } => {
+            Self::Bitcast { expression, .. } => {
                 function(*expression);
             },
-            Expression::Missing => {},
-            Expression::Literal(_) => {},
-            Expression::Path(_) => {},
+            Self::Missing => {},
+            Self::Literal(_) => {},
+            Self::Path(_) => {},
         }
     }
 }

@@ -3,7 +3,7 @@ use std::fmt;
 use base_db::TextRange;
 use ide_db::text_edit::TextEdit;
 use ide_db::{RootDatabase, SnippetCap};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use smallvec::SmallVec;
 use smol_str::{SmolStr, format_smolstr};
 use std::mem;
@@ -25,10 +25,10 @@ pub struct CompletionItem {
     /// Range of identifier that is being completed.
     ///
     /// It should be used primarily for UI, but we also use this to convert
-    /// generic TextEdit into LSP's completion edit (see conv.rs).
+    /// generic `TextEdit` into LSP's completion edit (see conv.rs).
     ///
     /// `source_range` must contain the completion offset. `text_edit` should
-    /// start with what `source_range` points to, or VSCode will filter out the
+    /// start with what `source_range` points to, or `VSCode` will filter out the
     /// completion silently.
     pub source_range: TextRange,
     /// What happens when user selects this item.
@@ -204,17 +204,18 @@ impl CompletionRelevance {
     /// Provides a relevance score. Higher values are more relevant.
     ///
     /// The absolute value of the relevance score is not meaningful, for
-    /// example a value of BASE_SCORE doesn't mean "not relevant", rather
+    /// example a value of `BASE_SCORE` doesn't mean "not relevant", rather
     /// it means "least relevant". The score value should only be used
     /// for relative ordering.
     ///
-    /// See is_relevant if you need to make some judgment about score
+    /// See `is_relevant` if you need to make some judgment about score
     /// in an absolute sense.
     const BASE_SCORE: u32 = u32::MAX / 2;
 
+    #[must_use]
     pub fn score(self) -> u32 {
         let mut score = Self::BASE_SCORE;
-        let CompletionRelevance {
+        let Self {
             exact_name_match,
             type_match,
             is_local,
@@ -259,7 +260,7 @@ impl CompletionRelevance {
             Some(CompletionRelevancePostfixMatch::Exact) => score += 100,
             Some(CompletionRelevancePostfixMatch::NonExact) => score -= 5,
             None => (),
-        };
+        }
         score += match type_match {
             Some(CompletionRelevanceTypeMatch::Exact) => 18,
             Some(CompletionRelevanceTypeMatch::CouldUnify) => 5,
@@ -276,7 +277,7 @@ impl CompletionRelevance {
                 CompletionRelevanceReturnType::DirectConstructor => 15,
                 CompletionRelevanceReturnType::Builder => 10,
                 CompletionRelevanceReturnType::Constructor => 5,
-                CompletionRelevanceReturnType::Other => 0u32,
+                CompletionRelevanceReturnType::Other => 0_u32,
             };
 
             // When a fn is bumped due to return type:
@@ -291,20 +292,21 @@ impl CompletionRelevance {
             }
 
             score += fn_score;
-        };
+        }
         score
     }
 
     /// Returns true when the score for this threshold is above
     /// some threshold such that we think it is especially likely
     /// to be relevant.
+    #[must_use]
     pub fn is_relevant(&self) -> bool {
         self.score() > Self::BASE_SCORE
     }
 }
 
 impl CompletionItem {
-    #[allow(clippy::new_ret_no_self)]
+    #[expect(clippy::new_ret_no_self)]
     pub(crate) fn new(
         kind: impl Into<CompletionItemKind>,
         source_range: TextRange,
@@ -334,24 +336,29 @@ impl CompletionItem {
     }
 
     /// What user sees in pop-up in the UI.
-    pub fn label(&self) -> &CompletionItemLabel {
+    #[must_use]
+    pub const fn label(&self) -> &CompletionItemLabel {
         &self.label
     }
 
-    pub fn source_range(&self) -> TextRange {
+    #[must_use]
+    pub const fn source_range(&self) -> TextRange {
         self.source_range
     }
 
-    pub fn text_edit(&self) -> &TextEdit {
+    #[must_use]
+    pub const fn text_edit(&self) -> &TextEdit {
         &self.text_edit
     }
 
     /// Whether `text_edit` is a snippet (contains `$0` markers).
-    pub fn is_snippet(&self) -> bool {
+    #[must_use]
+    pub const fn is_snippet(&self) -> bool {
         self.is_snippet
     }
 
     /// Short one-line additional information, like a type
+    #[must_use]
     pub fn detail(&self) -> Option<&str> {
         self.detail.as_deref()
     }
@@ -362,11 +369,13 @@ impl CompletionItem {
     // }
 
     /// What string is used for filtering.
+    #[must_use]
     pub fn lookup(&self) -> &str {
         self.lookup.as_str()
     }
 
-    pub fn kind(&self) -> CompletionItemKind {
+    #[must_use]
+    pub const fn kind(&self) -> CompletionItemKind {
         self.kind
     }
 
@@ -374,7 +383,8 @@ impl CompletionItem {
     //     self.deprecated
     // }
 
-    pub fn relevance(&self) -> CompletionRelevance {
+    #[must_use]
+    pub const fn relevance(&self) -> CompletionRelevance {
         self.relevance
     }
 
@@ -560,7 +570,7 @@ impl Builder {
     pub(crate) fn lookup_by(
         &mut self,
         lookup: impl Into<SmolStr>,
-    ) -> &mut Builder {
+    ) -> &mut Self {
         self.lookup = Some(lookup.into());
         self
     }
@@ -568,7 +578,7 @@ impl Builder {
     pub(crate) fn label(
         &mut self,
         label: impl Into<SmolStr>,
-    ) -> &mut Builder {
+    ) -> &mut Self {
         self.label = label.into();
         self
     }
@@ -576,7 +586,7 @@ impl Builder {
     pub(crate) fn trait_name(
         &mut self,
         trait_name: SmolStr,
-    ) -> &mut Builder {
+    ) -> &mut Self {
         self.trait_name = Some(trait_name);
         self
     }
@@ -584,7 +594,7 @@ impl Builder {
     pub(crate) fn doc_aliases(
         &mut self,
         doc_aliases: Vec<SmolStr>,
-    ) -> &mut Builder {
+    ) -> &mut Self {
         self.doc_aliases = doc_aliases;
         self
     }
@@ -592,7 +602,7 @@ impl Builder {
     pub(crate) fn insert_text(
         &mut self,
         insert_text: impl Into<String>,
-    ) -> &mut Builder {
+    ) -> &mut Self {
         self.insert_text = Some(insert_text.into());
         self
     }
@@ -601,7 +611,7 @@ impl Builder {
         &mut self,
         cap: SnippetCap,
         snippet: impl Into<String>,
-    ) -> &mut Builder {
+    ) -> &mut Self {
         let _ = cap;
         self.is_snippet = true;
         self.insert_text(snippet)
@@ -610,7 +620,7 @@ impl Builder {
     pub(crate) fn text_edit(
         &mut self,
         edit: TextEdit,
-    ) -> &mut Builder {
+    ) -> &mut Self {
         self.text_edit = Some(edit);
         self
     }
@@ -619,7 +629,7 @@ impl Builder {
         &mut self,
         _cap: SnippetCap,
         edit: TextEdit,
-    ) -> &mut Builder {
+    ) -> &mut Self {
         self.is_snippet = true;
         self.text_edit(edit)
     }
@@ -627,14 +637,14 @@ impl Builder {
     pub(crate) fn detail(
         &mut self,
         detail: impl Into<String>,
-    ) -> &mut Builder {
+    ) -> &mut Self {
         self.set_detail(Some(detail))
     }
 
     pub(crate) fn set_detail(
         &mut self,
         detail: Option<impl Into<String>>,
-    ) -> &mut Builder {
+    ) -> &mut Self {
         self.detail = detail.map(Into::into);
         if let Some(detail) = &self.detail {
             if never!(detail.contains('\n'), "multiline detail:\n{}", detail) {
@@ -660,18 +670,18 @@ impl Builder {
     //     self
     // }
 
-    pub(crate) fn set_deprecated(
+    pub(crate) const fn set_deprecated(
         &mut self,
         deprecated: bool,
-    ) -> &mut Builder {
+    ) -> &mut Self {
         self.deprecated = deprecated;
         self
     }
 
-    pub(crate) fn set_relevance(
+    pub(crate) const fn set_relevance(
         &mut self,
         relevance: CompletionRelevance,
-    ) -> &mut Builder {
+    ) -> &mut Self {
         self.relevance = relevance;
         self
     }
@@ -679,12 +689,12 @@ impl Builder {
     pub(crate) fn with_relevance(
         &mut self,
         relevance: impl FnOnce(CompletionRelevance) -> CompletionRelevance,
-    ) -> &mut Builder {
+    ) -> &mut Self {
         self.relevance = relevance(mem::take(&mut self.relevance));
         self
     }
 
-    pub(crate) fn trigger_call_info(&mut self) -> &mut Builder {
+    pub(crate) const fn trigger_call_info(&mut self) -> &mut Self {
         self.trigger_call_info = true;
         self
     }

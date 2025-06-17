@@ -20,7 +20,6 @@ pub enum Tool {
 
 impl Tool {
     #[must_use]
-    #[inline]
     pub fn proxy(self) -> Option<Utf8PathBuf> {
         cargo_proxy(self.name())
     }
@@ -39,7 +38,6 @@ impl Tool {
     ///    first that exists
     /// 4) If all else fails, we just try to use the executable name directly
     #[must_use]
-    #[inline]
     pub fn prefer_proxy(self) -> Utf8PathBuf {
         invoke(
             &[cargo_proxy, lookup_as_env_var, lookup_in_path],
@@ -61,7 +59,6 @@ impl Tool {
     ///    It seems that this is a reasonable place to try for cargo, rustc, and rustup
     /// 4) If all else fails, we just try to use the executable name directly
     #[must_use]
-    #[inline]
     pub fn path(self) -> Utf8PathBuf {
         invoke(
             &[lookup_as_env_var, lookup_in_path, cargo_proxy],
@@ -70,7 +67,6 @@ impl Tool {
     }
 
     #[must_use]
-    #[inline]
     pub fn path_in(
         self,
         path: &Utf8Path,
@@ -79,7 +75,6 @@ impl Tool {
     }
 
     #[must_use]
-    #[inline]
     pub const fn name(self) -> &'static str {
         match self {
             Self::Cargo => "cargo",
@@ -91,7 +86,6 @@ impl Tool {
 }
 
 #[must_use]
-#[inline]
 #[expect(
     clippy::disallowed_types,
     reason = "generic parameter allows for FxHashMap"
@@ -161,7 +155,6 @@ fn lookup_in_path(exec: &str) -> Option<Utf8PathBuf> {
 }
 
 #[must_use]
-#[inline]
 pub fn probe_for_binary(path: Utf8PathBuf) -> Option<Utf8PathBuf> {
     let with_extension = match env::consts::EXE_EXTENSION {
         "" => None,

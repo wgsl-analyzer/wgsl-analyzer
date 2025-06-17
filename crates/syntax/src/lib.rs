@@ -30,23 +30,28 @@ impl PartialEq for Parse {
 impl Eq for Parse {}
 
 impl Parse {
+    #[must_use]
     pub fn syntax(&self) -> SyntaxNode {
         SyntaxNode::new_root(self.green_node.clone())
     }
 
+    #[must_use]
     pub fn errors(&self) -> &[ParseError] {
         &self.errors
     }
 
+    #[must_use]
     pub fn tree(&self) -> ast::SourceFile {
         ast::SourceFile::cast(self.syntax()).unwrap()
     }
 }
 
+#[must_use]
 pub fn parse(input: &str) -> Parse {
     parse_entrypoint(input, ParseEntryPoint::File)
 }
 
+#[must_use]
 pub fn parse_entrypoint(
     input: &str,
     parse_entrypoint: ParseEntryPoint,
@@ -109,8 +114,9 @@ pub struct AstChildren<N> {
 }
 
 impl<N> AstChildren<N> {
+    #[must_use]
     pub fn new(parent: &SyntaxNode) -> Self {
-        AstChildren {
+        Self {
             inner: parent.children(),
             ph: PhantomData,
         }
@@ -131,6 +137,7 @@ pub enum TokenText<'a> {
 }
 
 impl<'a> TokenText<'a> {
+    #[must_use]
     pub fn as_str(&'a self) -> &'a str {
         match self {
             TokenText::Borrowed(s) => s,
@@ -147,7 +154,7 @@ impl From<TokenText<'_>> for String {
 
 impl From<TokenText<'_>> for SmolStr {
     fn from(token_text: TokenText<'_>) -> Self {
-        SmolStr::new(token_text.as_str())
+        Self::new(token_text.as_str())
     }
 }
 
@@ -183,7 +190,7 @@ mod support {
     pub(crate) fn child_token<N: AstToken>(parent: &SyntaxNode) -> Option<N> {
         parent
             .children_with_tokens()
-            .filter_map(|node_or_token| node_or_token.into_token())
+            .filter_map(rowan::NodeOrToken::into_token)
             .find_map(N::cast)
     }
 
@@ -193,7 +200,7 @@ mod support {
     ) -> Option<SyntaxToken> {
         parent
             .children_with_tokens()
-            .filter_map(|node_or_token| node_or_token.into_token())
+            .filter_map(rowan::NodeOrToken::into_token)
             .find(|token| token.kind() == kind)
     }
 
@@ -266,21 +273,22 @@ impl<A: AstNode, B: AstNode> AstNode for Either<A, B> {
         Self: Sized,
     {
         if let Some(a) = A::cast(syntax.clone()) {
-            return Some(Either::Left(a));
+            return Some(Self::Left(a));
         } else if let Some(b) = B::cast(syntax) {
-            return Some(Either::Right(b));
+            return Some(Self::Right(b));
         }
         None
     }
 
     fn syntax(&self) -> &SyntaxNode {
         match self {
-            Either::Left(l) => l.syntax(),
-            Either::Right(r) => r.syntax(),
+            Self::Left(l) => l.syntax(),
+            Self::Right(r) => r.syntax(),
         }
     }
 }
 
+#[must_use]
 pub fn format(file: &ast::SourceFile) -> SyntaxNode {
     file.syntax().clone_for_update()
 }

@@ -34,13 +34,11 @@ pub enum Verbosity {
 
 impl Verbosity {
     #[must_use]
-    #[inline]
     pub const fn is_verbose(self) -> bool {
         matches!(self, Self::Verbose | Self::Spammy)
     }
 
     #[must_use]
-    #[inline]
     pub const fn is_spammy(self) -> bool {
         matches!(self, Self::Spammy)
     }

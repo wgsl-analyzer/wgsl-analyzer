@@ -1,11 +1,11 @@
 use base_db::TextSize;
 use hir::Semantics;
-use syntax::{AstNode, SyntaxKind, SyntaxNode, SyntaxToken, ast};
+use syntax::{AstNode as _, SyntaxKind, SyntaxNode, SyntaxToken, ast};
 
 use crate::context::ImmediateLocation;
 
 pub(crate) fn determine_location(
-    _sema: &Semantics,
+    _sema: &Semantics<'_>,
     _file: &SyntaxNode,
     _offset: TextSize,
     token: SyntaxToken,

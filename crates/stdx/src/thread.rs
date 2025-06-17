@@ -26,7 +26,6 @@ pub use pool::Pool;
 /// # Panics
 ///
 /// Panics if failed to spawn the thread.
-#[inline]
 pub fn spawn<Function, T>(
     intent: ThreadIntent,
     function: Function,
@@ -48,7 +47,6 @@ pub struct Builder {
 
 impl Builder {
     #[must_use]
-    #[inline]
     pub fn new(intent: ThreadIntent) -> Self {
         Self {
             intent,
@@ -58,7 +56,6 @@ impl Builder {
     }
 
     #[must_use]
-    #[inline]
     pub fn name(
         self,
         name: String,
@@ -70,7 +67,6 @@ impl Builder {
     }
 
     #[must_use]
-    #[inline]
     pub fn stack_size(
         self,
         size: usize,
@@ -82,7 +78,6 @@ impl Builder {
     }
 
     #[must_use]
-    #[inline]
     pub fn allow_leak(
         self,
         allow_leak: bool,
@@ -90,7 +85,6 @@ impl Builder {
         Self { allow_leak, ..self }
     }
 
-    #[inline]
     pub fn spawn<Function, T>(
         self,
         function: Function,
@@ -120,7 +114,6 @@ pub struct JoinHandle<T = ()> {
 
 impl<T> JoinHandle<T> {
     #[must_use]
-    #[inline]
     /// # Panics
     ///
     /// If there is no job
@@ -130,7 +123,6 @@ impl<T> JoinHandle<T> {
 }
 
 impl<T> Drop for JoinHandle<T> {
-    #[inline]
     fn drop(&mut self) {
         if !self.allow_leak {
             return;
@@ -142,7 +134,6 @@ impl<T> Drop for JoinHandle<T> {
 }
 
 impl<T> fmt::Debug for JoinHandle<T> {
-    #[inline]
     fn fmt(
         &self,
         #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,

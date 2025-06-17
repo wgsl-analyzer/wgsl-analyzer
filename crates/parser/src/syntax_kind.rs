@@ -132,7 +132,7 @@ pub enum SyntaxKind {
     /// - line separator (U+2028)
     /// - paragraph separator (U+2029)
     ///
-    /// Source: https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
+    /// Source: <https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks>
     ///
     /// [`Pattern_White_Space`]: https://www.unicode.org/reports/tr31/tr31-35.html#unicode-standard-annex-31-for-unicode-version-1400
     #[regex(r"[\s\u0085\u200e\u200f\u2028\u2029]+")]
@@ -150,11 +150,11 @@ pub enum SyntaxKind {
     #[regex("#if.*")]
     UnofficialPreprocessIf,
 
-    /// https://www.w3.org/TR/WGSL
+    /// <https://www.w3.org/TR/WGSL>
     #[regex("//", lex_line_ending_comment)]
     LineEndingComment,
 
-    /// https://www.w3.org/TR/WGSL/#block-comment
+    /// <https://www.w3.org/TR/WGSL/#block-comment>
     #[regex(r"/\*", lex_block_comment)]
     BlockComment,
 
@@ -457,7 +457,7 @@ impl From<SyntaxKind> for rowan::SyntaxKind {
 
 impl From<rowan::SyntaxKind> for SyntaxKind {
     fn from(kind: rowan::SyntaxKind) -> Self {
-        let max_element = SyntaxKind::Error as u16;
+        let max_element = Self::Error as u16;
         assert!(kind.0 < max_element);
 
         // Safety: SyntaxKind is #[repr(u16)] and in range
@@ -482,26 +482,28 @@ impl rowan::Language for WgslLanguage {
 }
 
 impl SyntaxKind {
-    pub fn is_whitespace(self) -> bool {
-        matches!(self, SyntaxKind::Blankspace)
+    #[must_use]
+    pub const fn is_whitespace(self) -> bool {
+        matches!(self, Self::Blankspace)
     }
 
-    pub fn is_trivia(self) -> bool {
+    #[must_use]
+    pub const fn is_trivia(self) -> bool {
         matches!(
             self,
-            SyntaxKind::Blankspace
-                | SyntaxKind::LineEndingComment
-                | SyntaxKind::BlockComment
-                | SyntaxKind::UnofficialPreprocessorEndif
-                | SyntaxKind::UnofficialPreprocessorIfDef
-                | SyntaxKind::UnofficialPreprocessorElse
-                | SyntaxKind::UnofficialPreprocessorDefineImportPath
-                | SyntaxKind::UnofficialPreprocessIf
+            Self::Blankspace
+                | Self::LineEndingComment
+                | Self::BlockComment
+                | Self::UnofficialPreprocessorEndif
+                | Self::UnofficialPreprocessorIfDef
+                | Self::UnofficialPreprocessorElse
+                | Self::UnofficialPreprocessorDefineImportPath
+                | Self::UnofficialPreprocessIf
         )
     }
 }
 
-fn lex_block_comment(lex: &mut logos::Lexer<SyntaxKind>) -> Option<()> {
+fn lex_block_comment(lex: &mut logos::Lexer<'_, SyntaxKind>) -> Option<()> {
     let mut depth = 1;
     let slice = lex.remainder();
     let mut i = 0;
@@ -530,20 +532,19 @@ fn lex_block_comment(lex: &mut logos::Lexer<SyntaxKind>) -> Option<()> {
 /// and the code points that follow, up until but not including:
 /// - the next line break, or
 /// - the end of the program.
-fn lex_line_ending_comment(lexer: &mut logos::Lexer<SyntaxKind>) -> Option<()> {
+fn lex_line_ending_comment(lexer: &mut logos::Lexer<'_, SyntaxKind>) -> Option<()> {
     let remainder = lexer.remainder();
 
     // see blankspace and line breaks: https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
     let line_end = remainder
         .char_indices()
         .find(|(_, character)| is_line_ending_comment_end(character))
-        .map(|(i, _)| i)
-        .unwrap_or(remainder.len());
+        .map_or(remainder.len(), |(i, _)| i);
     lexer.bump(line_end);
     Some(())
 }
 
-/// See: https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
+/// See: <https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks>
 fn is_line_ending_comment_end(c: &char) -> bool {
     [
         '\u{000A}', // line feed
@@ -560,7 +561,7 @@ fn is_line_ending_comment_end(c: &char) -> bool {
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
-    use logos::Logos;
+    use logos::Logos as _;
 
     use super::SyntaxKind;
 
@@ -574,20 +575,20 @@ mod tests {
 
     #[test]
     fn lex_decimal_float() {
-        check_lex("10.0", expect![[r#"[DecimalFloatLiteral]"#]]);
-        check_lex("-10.0", expect![[r#"[DecimalFloatLiteral]"#]]);
-        check_lex("1e9f", expect![[r#"[DecimalFloatLiteral]"#]]);
-        check_lex("-0.0e7", expect![[r#"[DecimalFloatLiteral]"#]]);
-        check_lex(".1", expect![[r#"[DecimalFloatLiteral]"#]]);
-        check_lex("1.", expect![[r#"[DecimalFloatLiteral]"#]]);
+        check_lex("10.0", expect![["[DecimalFloatLiteral]"]]);
+        check_lex("-10.0", expect![["[DecimalFloatLiteral]"]]);
+        check_lex("1e9f", expect![["[DecimalFloatLiteral]"]]);
+        check_lex("-0.0e7", expect![["[DecimalFloatLiteral]"]]);
+        check_lex(".1", expect![["[DecimalFloatLiteral]"]]);
+        check_lex("1.", expect![["[DecimalFloatLiteral]"]]);
     }
 
     #[test]
     fn lex_hex_float() {
-        check_lex("0x0.0", expect![[r#"[HexFloatLiteral]"#]]);
-        check_lex("0X1p9", expect![[r#"[HexFloatLiteral]"#]]);
-        check_lex("-0x0.0", expect![[r#"[HexFloatLiteral]"#]]);
-        check_lex("0xff.13p13", expect![[r#"[HexFloatLiteral]"#]]);
+        check_lex("0x0.0", expect![["[HexFloatLiteral]"]]);
+        check_lex("0X1p9", expect![["[HexFloatLiteral]"]]);
+        check_lex("-0x0.0", expect![["[HexFloatLiteral]"]]);
+        check_lex("0xff.13p13", expect![["[HexFloatLiteral]"]]);
     }
 
     #[test]
@@ -604,7 +605,7 @@ mod tests {
         check_lex(
             "a[a[0]]",
             expect![[
-                r#"[Identifier, BracketLeft, Identifier, BracketLeft, DecimalIntLiteral, BracketRight, BracketRight]"#
+                "[Identifier, BracketLeft, Identifier, BracketLeft, DecimalIntLiteral, BracketRight, BracketRight]"
             ]],
         );
     }

@@ -7,7 +7,6 @@ pub struct NonEmptyVec<T> {
 }
 
 impl<T> NonEmptyVec<T> {
-    #[inline]
     pub const fn new(first: T) -> Self {
         Self {
             first,
@@ -15,17 +14,14 @@ impl<T> NonEmptyVec<T> {
         }
     }
 
-    #[inline]
     pub fn last_mut(&mut self) -> &mut T {
         self.rest.last_mut().unwrap_or(&mut self.first)
     }
 
-    #[inline]
     pub fn pop(&mut self) -> Option<T> {
         self.rest.pop()
     }
 
-    #[inline]
     pub fn push(
         &mut self,
         value: T,
@@ -33,12 +29,10 @@ impl<T> NonEmptyVec<T> {
         self.rest.push(value);
     }
 
-    #[inline]
     pub fn length(&self) -> usize {
         1 + self.rest.len()
     }
 
-    #[inline]
     pub fn into_last(mut self) -> T {
         self.rest.pop().unwrap_or(self.first)
     }

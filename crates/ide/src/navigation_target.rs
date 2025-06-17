@@ -43,7 +43,6 @@ pub struct NavigationTarget {
 }
 
 impl fmt::Debug for NavigationTarget {
-    #[inline]
     fn fmt(
         &self,
         #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
@@ -89,7 +88,6 @@ impl NavigationTarget {
     }
 
     #[must_use]
-    #[inline]
     pub fn focus_or_full_range(&self) -> TextRange {
         self.focus_range.unwrap_or(self.full_range)
     }

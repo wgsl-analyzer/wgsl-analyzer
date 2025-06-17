@@ -23,7 +23,6 @@ use crate::{
 };
 
 #[must_use]
-#[inline]
 pub fn server_capabilities(config: &Config) -> ServerCapabilities {
     ServerCapabilities {
         text_document_sync: Some(TextDocumentSyncCapability::Kind(

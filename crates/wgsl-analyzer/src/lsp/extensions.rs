@@ -686,7 +686,6 @@ pub enum Health {
 }
 
 impl ops::BitOrAssign for Health {
-    #[inline]
     fn bitor_assign(
         &mut self,
         rhs: Self,
@@ -849,7 +848,6 @@ pub enum ExternalDocsResponse {
 }
 
 impl Default for ExternalDocsResponse {
-    #[inline]
     fn default() -> Self {
         Self::Simple(None)
     }

@@ -17,13 +17,13 @@ pub(crate) enum HirFileIdRepr {
 
 impl From<FileId> for HirFileId {
     fn from(id: FileId) -> Self {
-        HirFileId(HirFileIdRepr::FileId(id))
+        Self(HirFileIdRepr::FileId(id))
     }
 }
 
 impl From<ImportFile> for HirFileId {
     fn from(id: ImportFile) -> Self {
-        HirFileId(HirFileIdRepr::MacroFile(id))
+        Self(HirFileIdRepr::MacroFile(id))
     }
 }
 

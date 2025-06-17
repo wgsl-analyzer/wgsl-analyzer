@@ -20,10 +20,10 @@ pub struct RangeInfo<T> {
 }
 
 impl<T> RangeInfo<T> {
-    pub fn new(
+    pub const fn new(
         range: TextRange,
         info: T,
-    ) -> RangeInfo<T> {
-        RangeInfo { range, info }
+    ) -> Self {
+        Self { range, info }
     }
 }

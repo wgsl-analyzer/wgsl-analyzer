@@ -8,13 +8,14 @@ pub enum UnaryOperator {
 }
 
 impl UnaryOperator {
-    pub fn symbol(self) -> &'static str {
+    #[must_use]
+    pub const fn symbol(self) -> &'static str {
         match self {
-            UnaryOperator::Minus => "-",
-            UnaryOperator::Not => "!",
-            UnaryOperator::Reference => "&",
-            UnaryOperator::Dereference => "*",
-            UnaryOperator::BitNot => "~",
+            Self::Minus => "-",
+            Self::Not => "!",
+            Self::Reference => "&",
+            Self::Dereference => "*",
+            Self::BitNot => "~",
         }
     }
 }
@@ -27,11 +28,12 @@ pub enum BinaryOperation {
 }
 
 impl BinaryOperation {
-    pub fn symbol(self) -> &'static str {
+    #[must_use]
+    pub const fn symbol(self) -> &'static str {
         match self {
-            BinaryOperation::Logical(op) => op.symbol(),
-            BinaryOperation::Arithmetic(op) => op.symbol(),
-            BinaryOperation::Comparison(op) => op.symbol(),
+            Self::Logical(op) => op.symbol(),
+            Self::Arithmetic(op) => op.symbol(),
+            Self::Comparison(op) => op.symbol(),
         }
     }
 }
@@ -43,10 +45,11 @@ pub enum LogicOperation {
 }
 
 impl LogicOperation {
-    pub fn symbol(self) -> &'static str {
+    #[must_use]
+    pub const fn symbol(self) -> &'static str {
         match self {
-            LogicOperation::And => "&&",
-            LogicOperation::Or => "||",
+            Self::And => "&&",
+            Self::Or => "||",
         }
     }
 }
@@ -66,18 +69,19 @@ pub enum ArithmeticOperation {
 }
 
 impl ArithmeticOperation {
-    pub fn symbol(self) -> &'static str {
+    #[must_use]
+    pub const fn symbol(self) -> &'static str {
         match self {
-            ArithmeticOperation::Add => "+",
-            ArithmeticOperation::Multiply => "*",
-            ArithmeticOperation::Subtract => "-",
-            ArithmeticOperation::Divide => "/",
-            ArithmeticOperation::ShiftLeft => "<<",
-            ArithmeticOperation::ShiftRight => ">>",
-            ArithmeticOperation::BitXor => "^",
-            ArithmeticOperation::BitOr => "|",
-            ArithmeticOperation::BitAnd => "&",
-            ArithmeticOperation::Modulo => "%",
+            Self::Add => "+",
+            Self::Multiply => "*",
+            Self::Subtract => "-",
+            Self::Divide => "/",
+            Self::ShiftLeft => "<<",
+            Self::ShiftRight => ">>",
+            Self::BitXor => "^",
+            Self::BitOr => "|",
+            Self::BitAnd => "&",
+            Self::Modulo => "%",
         }
     }
 }
@@ -89,23 +93,24 @@ pub enum ComparisonOperation {
 }
 
 impl ComparisonOperation {
-    pub fn symbol(self) -> &'static str {
+    #[must_use]
+    pub const fn symbol(self) -> &'static str {
         match self {
-            ComparisonOperation::Equality { negated: true } => "==",
-            ComparisonOperation::Equality { negated: false } => "!=",
-            ComparisonOperation::Ordering {
+            Self::Equality { negated: true } => "==",
+            Self::Equality { negated: false } => "!=",
+            Self::Ordering {
                 ordering: Ordering::Less,
                 strict: false,
             } => "<=",
-            ComparisonOperation::Ordering {
+            Self::Ordering {
                 ordering: Ordering::Less,
                 strict: true,
             } => "<",
-            ComparisonOperation::Ordering {
+            Self::Ordering {
                 ordering: Ordering::Greater,
                 strict: false,
             } => ">=",
-            ComparisonOperation::Ordering {
+            Self::Ordering {
                 ordering: Ordering::Greater,
                 strict: true,
             } => ">",
@@ -136,24 +141,16 @@ pub enum CompoundOperator {
 impl From<CompoundOperator> for BinaryOperation {
     fn from(op: CompoundOperator) -> Self {
         match op {
-            CompoundOperator::Add => BinaryOperation::Arithmetic(ArithmeticOperation::Add),
-            CompoundOperator::Multiply => {
-                BinaryOperation::Arithmetic(ArithmeticOperation::Multiply)
-            },
-            CompoundOperator::Subtract => {
-                BinaryOperation::Arithmetic(ArithmeticOperation::Subtract)
-            },
-            CompoundOperator::Divide => BinaryOperation::Arithmetic(ArithmeticOperation::Divide),
-            CompoundOperator::ShiftLeft => {
-                BinaryOperation::Arithmetic(ArithmeticOperation::ShiftLeft)
-            },
-            CompoundOperator::ShiftRight => {
-                BinaryOperation::Arithmetic(ArithmeticOperation::ShiftRight)
-            },
-            CompoundOperator::Modulo => BinaryOperation::Arithmetic(ArithmeticOperation::Modulo),
-            CompoundOperator::BitAnd => BinaryOperation::Arithmetic(ArithmeticOperation::BitAnd),
-            CompoundOperator::BitOr => BinaryOperation::Arithmetic(ArithmeticOperation::BitOr),
-            CompoundOperator::BitXor => BinaryOperation::Arithmetic(ArithmeticOperation::BitXor),
+            CompoundOperator::Add => Self::Arithmetic(ArithmeticOperation::Add),
+            CompoundOperator::Multiply => Self::Arithmetic(ArithmeticOperation::Multiply),
+            CompoundOperator::Subtract => Self::Arithmetic(ArithmeticOperation::Subtract),
+            CompoundOperator::Divide => Self::Arithmetic(ArithmeticOperation::Divide),
+            CompoundOperator::ShiftLeft => Self::Arithmetic(ArithmeticOperation::ShiftLeft),
+            CompoundOperator::ShiftRight => Self::Arithmetic(ArithmeticOperation::ShiftRight),
+            CompoundOperator::Modulo => Self::Arithmetic(ArithmeticOperation::Modulo),
+            CompoundOperator::BitAnd => Self::Arithmetic(ArithmeticOperation::BitAnd),
+            CompoundOperator::BitOr => Self::Arithmetic(ArithmeticOperation::BitOr),
+            CompoundOperator::BitXor => Self::Arithmetic(ArithmeticOperation::BitXor),
         }
     }
 }

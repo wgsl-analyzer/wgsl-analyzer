@@ -74,7 +74,6 @@ pub enum LazyProperty<T> {
 }
 
 impl<T> LazyProperty<T> {
-    #[inline]
     pub fn computed(self) -> Option<T> {
         match self {
             Self::Computed(value) => Some(value),
@@ -82,14 +81,12 @@ impl<T> LazyProperty<T> {
         }
     }
 
-    #[inline]
     pub const fn is_lazy(&self) -> bool {
         matches!(self, Self::Lazy)
     }
 }
 
 impl std::hash::Hash for InlayHint {
-    #[inline]
     fn hash<H: std::hash::Hasher>(
         &self,
         state: &mut H,
@@ -133,7 +130,6 @@ pub struct InlayHintLabel {
 }
 
 impl InlayHintLabel {
-    #[inline]
     pub fn simple<Stringy: Into<String>>(
         stringy: Stringy,
         tooltip: Option<LazyProperty<InlayTooltip>>,
@@ -148,7 +144,6 @@ impl InlayHintLabel {
         }
     }
 
-    #[inline]
     pub fn prepend_str(
         &mut self,
         string: &str,
@@ -173,7 +168,6 @@ impl InlayHintLabel {
         }
     }
 
-    #[inline]
     pub fn append_str(
         &mut self,
         string: &str,
@@ -195,7 +189,6 @@ impl InlayHintLabel {
         }
     }
 
-    #[inline]
     pub fn append_part(
         &mut self,
         part: InlayHintLabelPart,
@@ -216,7 +209,6 @@ impl InlayHintLabel {
 }
 
 impl From<String> for InlayHintLabel {
-    #[inline]
     fn from(value: String) -> Self {
         Self {
             parts: smallvec![InlayHintLabelPart {
@@ -229,7 +221,6 @@ impl From<String> for InlayHintLabel {
 }
 
 impl From<&str> for InlayHintLabel {
-    #[inline]
     fn from(value: &str) -> Self {
         Self {
             parts: smallvec![InlayHintLabelPart {
@@ -242,7 +233,6 @@ impl From<&str> for InlayHintLabel {
 }
 
 impl fmt::Display for InlayHintLabel {
-    #[inline]
     fn fmt(
         &self,
         #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
@@ -252,7 +242,6 @@ impl fmt::Display for InlayHintLabel {
 }
 
 impl fmt::Debug for InlayHintLabel {
-    #[inline]
     fn fmt(
         &self,
         #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
@@ -275,7 +264,6 @@ pub struct InlayHintLabelPart {
 }
 
 impl std::hash::Hash for InlayHintLabelPart {
-    #[inline]
     fn hash<H: std::hash::Hasher>(
         &self,
         state: &mut H,
@@ -287,7 +275,6 @@ impl std::hash::Hash for InlayHintLabelPart {
 }
 
 impl fmt::Debug for InlayHintLabelPart {
-    #[inline]
     fn fmt(
         &self,
         #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
@@ -644,7 +631,6 @@ pub struct InlayFieldsToResolve {
 
 impl InlayFieldsToResolve {
     #[must_use]
-    #[inline]
     pub fn from_client_capabilities(client_capability_fields: &FxHashSet<&str>) -> Self {
         Self {
             resolve_text_edits: client_capability_fields.contains("textEdits"),
@@ -656,7 +642,6 @@ impl InlayFieldsToResolve {
     }
 
     #[must_use]
-    #[inline]
     pub const fn empty() -> Self {
         Self {
             resolve_text_edits: false,

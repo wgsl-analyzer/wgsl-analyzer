@@ -23,7 +23,6 @@ pub struct StopWatchSpan {
 }
 
 impl StopWatch {
-    #[inline]
     pub fn start() -> Self {
         #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
         let counter = {
@@ -58,7 +57,6 @@ impl StopWatch {
         }
     }
 
-    #[inline]
     pub fn elapsed(&mut self) -> StopWatchSpan {
         let time = self.time.elapsed();
 
@@ -84,7 +82,6 @@ impl StopWatch {
 }
 
 impl fmt::Display for StopWatchSpan {
-    #[inline]
     fn fmt(
         &self,
         #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,

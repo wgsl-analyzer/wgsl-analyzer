@@ -2,7 +2,7 @@ use rustc_hash::FxHashMap;
 use std::{fmt, mem::ManuallyDrop};
 use triomphe::Arc;
 
-use base_db::{FileId, FileLoader, FileLoaderDelegate, SourceDatabase, change::Change};
+use base_db::{FileId, FileLoader, FileLoaderDelegate, SourceDatabase as _, change::Change};
 use vfs::AnchoredPath;
 
 pub mod source_change;
@@ -30,7 +30,9 @@ impl std::panic::RefUnwindSafe for RootDatabase {}
 
 impl Drop for RootDatabase {
     fn drop(&mut self) {
-        unsafe { ManuallyDrop::drop(&mut self.storage) };
+        unsafe {
+            ManuallyDrop::drop(&mut self.storage);
+        }
     }
 }
 
@@ -46,16 +48,17 @@ impl fmt::Debug for RootDatabase {
 impl salsa::Database for RootDatabase {}
 
 impl salsa::ParallelDatabase for RootDatabase {
-    fn snapshot(&self) -> salsa::Snapshot<RootDatabase> {
-        salsa::Snapshot::new(RootDatabase {
+    fn snapshot(&self) -> salsa::Snapshot<Self> {
+        salsa::Snapshot::new(Self {
             storage: ManuallyDrop::new(self.storage.snapshot()),
         })
     }
 }
 
 impl RootDatabase {
-    pub fn new(lru_capacity: Option<u16>) -> RootDatabase {
-        let mut database = RootDatabase {
+    #[must_use]
+    pub fn new(lru_capacity: Option<u16>) -> Self {
+        let mut database = Self {
             storage: ManuallyDrop::new(salsa::Storage::default()),
             // files: Default::default(),
             // crates_map: Default::default(),
@@ -74,7 +77,7 @@ impl RootDatabase {
         database
     }
 
-    pub fn update_base_query_lru_capacities(
+    pub const fn update_base_query_lru_capacities(
         &mut self,
         _lru_capacity: Option<u16>,
     ) {
@@ -87,7 +90,7 @@ impl RootDatabase {
         // hir::database::BodyWithSourceMapQuery.in_db_mut(self).set_lru_capacity(2048);
     }
 
-    pub fn update_lru_capacities(
+    pub const fn update_lru_capacities(
         &mut self,
         _lru_capacities: &FxHashMap<Box<str>, u16>,
     ) {
@@ -139,9 +142,10 @@ pub struct SnippetCap {
 }
 
 impl SnippetCap {
-    pub const fn new(allow_snippets: bool) -> Option<SnippetCap> {
+    #[must_use]
+    pub const fn new(allow_snippets: bool) -> Option<Self> {
         if allow_snippets {
-            Some(SnippetCap { _private: () })
+            Some(Self { _private: () })
         } else {
             None
         }
