@@ -59,20 +59,20 @@ where
 
         let writer = self.writer;
 
-        let ra_fmt_layer = tracing_subscriber::fmt::layer()
+        let wa_fmt_layer = tracing_subscriber::fmt::layer()
             .with_target(false)
             .with_ansi(false)
             .with_writer(writer);
 
-        let ra_fmt_layer = match time::OffsetTime::local_rfc_3339() {
+        let wa_fmt_layer = match time::OffsetTime::local_rfc_3339() {
             Ok(timer) => {
                 // If we can get the time offset, format logs with the timezone.
-                ra_fmt_layer.with_timer(timer).boxed()
+                wa_fmt_layer.with_timer(timer).boxed()
             },
             Err(_) => {
                 // Use system time if we can't get the time offset. This should
                 // never happen on Linux, but can happen on e.g. OpenBSD.
-                ra_fmt_layer.boxed()
+                wa_fmt_layer.boxed()
             },
         }
         .with_filter(targets_filter);
@@ -120,7 +120,7 @@ where
             },
         );
         let subscriber = Registry::default()
-            .with(ra_fmt_layer)
+            .with(wa_fmt_layer)
             .with(json_profiler_layer)
             .with(profiler_layer)
             .with(chalk_layer);
