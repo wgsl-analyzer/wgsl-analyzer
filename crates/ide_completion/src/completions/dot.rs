@@ -24,8 +24,25 @@ pub(crate) fn complete_dot(
     match r#type.kind(ctx.db).unref(ctx.db).as_ref() {
         TyKind::Vector(vec) => {
             let size = vec.size.as_u8() as usize;
-            let swizzle = swizzle_items(size, ctx, &[["x", "y", "z", "w"], ["r", "g", "b", "a"]]);
-            accumulator.add_all(swizzle);
+            let field_text = field_expression
+                .name_ref()
+                .map(|name| name.text().to_string())
+                .unwrap_or_default();
+
+            let is_swizzle = field_text.is_empty()
+                || field_text
+                    .chars()
+                    .all(|c| matches!(c, 'x' | 'y' | 'z' | 'w' | 'r' | 'g' | 'b' | 'a'));
+
+            if is_swizzle {
+                let swizzle = swizzle_items(
+                    size,
+                    ctx,
+                    &field_text,
+                    &[["x", "y", "z", "w"], ["r", "g", "b", "a"]],
+                );
+                accumulator.add_all(swizzle);
+            }
         },
         TyKind::Matrix(_) => return None,
         TyKind::Struct(r#struct) => {
@@ -46,17 +63,24 @@ pub(crate) fn complete_dot(
 fn swizzle_items<'a>(
     size: usize,
     ctx: &'a CompletionContext,
+    field_text: &'a str,
     sets: &'a [[&'a str; 4]],
 ) -> impl Iterator<Item = CompletionItem> + 'a {
     let swizzle = move |set: &'a [&'a str; 4]| {
-        (1..=4).flat_map(move |n| {
-            (std::iter::repeat_with(|| set[0..size].iter()).take(n))
-                .multi_cartesian_product()
-                .map(|result| result.into_iter().copied().collect::<String>())
-        })
+        // Don't show "rgb" swizzles for "xyz"
+        // And don't suggest further changes for long texts
+        let chars_allowed = field_text.is_empty()
+            || (field_text.len() < 4 && set.iter().any(|v| field_text.contains(v)));
+
+        if chars_allowed {
+            either::Either::Left(set[0..size].iter().map(move |v| format!("{field_text}{v}")))
+        } else {
+            either::Either::Right(std::iter::empty())
+        }
     };
     sets.iter()
         .flat_map(swizzle)
+        .chain(std::iter::once(field_text.to_string()))
         .enumerate()
         .map(move |(i, label)| {
             CompletionItem::new(CompletionItemKind::Field, ctx.source_range(), label)
