@@ -1,8 +1,8 @@
 [package]
-name = "ide"
+name = "ide-db"
 version = "0.0.0"
 repository.workspace = true
-description = "Core data structure representing IDE state for wgsl-analyzer."
+description = "IDE Database of wgsl-analyzer"
 
 authors.workspace = true
 edition.workspace = true
@@ -10,13 +10,14 @@ license.workspace = true
 rust-version.workspace = true
 
 [lib]
+doctest = false
 
 [dependencies]
 cov-mark.workspace = true
 crossbeam-channel.workspace = true
 tracing.workspace = true
 rayon.workspace = true
-fst = { version = "0.4.7", default-features = false }
+fst.workspace = true
 rustc-hash.workspace = true
 either.workspace = true
 itertools.workspace = true
@@ -30,26 +31,17 @@ triomphe.workspace = true
 nohash-hasher.workspace = true
 bitflags.workspace = true
 smol_str.workspace = true
+stdx.workspace = true
 smallvec.workspace = true
 
-# local deps
 base-db.workspace = true
-ide-completion.workspace = true
+hir-def.workspace = true
+hir-ty.workspace = true
+hir.workspace = true
 syntax.workspace = true
 wgsl-formatter.workspace = true
 rowan.workspace = true
-parser.workspace = true
-profile.workspace = true
-ide-db.workspace = true
-stdx.workspace = true
-# span.workspace = true
 vfs.workspace = true
-# ide should depend only on the top-level `hir` package. if you need
-# something from some `hir-xxx` subpackage, reexport the API via `hir`.
-hir.workspace = true
-hir-def.workspace = true # todo
-hir-ty.workspace = true  # todo
-
 line-index.workspace = true
 
 naga14 = { package = "naga", version = "0.14", features = [
@@ -65,13 +57,5 @@ nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "b3
   "wgsl-in",
 ], version = "24.0.0" }
 
-
 [dev-dependencies]
 expect-test = "1.5.1"
-
-# local deps
-# test-utils.workspace = true
-# test-fixture.workspace = true
-
-[lints]
-workspace = true

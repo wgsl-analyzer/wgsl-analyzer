@@ -80,10 +80,10 @@ impl<'db> Semantics<'db> {
         source: &SyntaxNode,
     ) -> Resolver {
         match self.find_container(file_id, source) {
-            Some(def) => def.resolver(self.db.upcast()),
+            Some(def) => def.resolver(self.db),
             None => {
                 let module_info = self.db.module_info(file_id);
-                Resolver::default().push_module_scope(self.db.upcast(), file_id, module_info)
+                Resolver::default().push_module_scope(self.db, file_id, module_info)
             },
         }
     }
@@ -103,7 +103,7 @@ impl<'db> Semantics<'db> {
         expression: &SyntaxNode,
         name: Name,
     ) -> Option<Definition> {
-        let file_id = def.file_id(self.db.upcast());
+        let file_id = def.file_id(self.db);
         let module_info = self.db.module_info(file_id);
         let expression_scopes = self.db.expression_scopes(def);
         let (_, source_map) = self.db.body_with_source_map(def);
@@ -111,8 +111,7 @@ impl<'db> Semantics<'db> {
             &ast::Expression::cast(expression.clone())?,
         ))?;
         let scope_id = expression_scopes.scope_for_expression(expression_id)?;
-        let mut resolver =
-            Resolver::default().push_module_scope(self.db.upcast(), file_id, module_info);
+        let mut resolver = Resolver::default().push_module_scope(self.db, file_id, module_info);
 
         if let DefinitionWithBodyId::Function(function) = def {
             resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
@@ -146,7 +145,7 @@ impl<'db> Semantics<'db> {
         &self,
         source: InFile<ast::Function>,
     ) -> Option<FunctionId> {
-        let function = module_data::find_item(self.db.upcast(), source.file_id, &source.value)?;
+        let function = module_data::find_item(self.db, source.file_id, &source.value)?;
         let function_id = self
             .db
             .intern_function(Location::new(source.file_id, function));
@@ -157,8 +156,7 @@ impl<'db> Semantics<'db> {
         &self,
         source: InFile<ast::GlobalConstantDeclaration>,
     ) -> Option<GlobalConstantId> {
-        let global_constant =
-            module_data::find_item(self.db.upcast(), source.file_id, &source.value)?;
+        let global_constant = module_data::find_item(self.db, source.file_id, &source.value)?;
         let id = self
             .db
             .intern_global_constant(Location::new(source.file_id, global_constant));
@@ -169,8 +167,7 @@ impl<'db> Semantics<'db> {
         &self,
         source: InFile<ast::GlobalVariableDeclaration>,
     ) -> Option<GlobalVariableId> {
-        let global_variable =
-            module_data::find_item(self.db.upcast(), source.file_id, &source.value)?;
+        let global_variable = module_data::find_item(self.db, source.file_id, &source.value)?;
         let id = self
             .db
             .intern_global_variable(Location::new(source.file_id, global_variable));
@@ -181,7 +178,7 @@ impl<'db> Semantics<'db> {
         &self,
         source: InFile<ast::Import>,
     ) -> Option<ImportId> {
-        let import = module_data::find_import(self.db.upcast(), source.file_id, &source.value)?;
+        let import = module_data::find_import(self.db, source.file_id, &source.value)?;
 
         let import_id = self.db.intern_import(Location::new(source.file_id, import));
         Some(import_id)
@@ -233,7 +230,7 @@ fn module_item_to_def(
 
             let import_file = HirFileId::from(ImportFile { import_id });
             // Process imported definitions from the original file if available
-            if let Some(original_file) = import_file.original_file(db.upcast()) {
+            if let Some(original_file) = import_file.original_file(db) {
                 let original_file = original_file.into();
                 let module_info = db.module_info(original_file);
                 return module_info
@@ -316,7 +313,7 @@ impl<'db> SourceAnalyzer<'db> {
         &self,
         scope: Either<ast::Expression, ast::Statement>,
     ) -> Resolver {
-        let mut resolver = self.owner.resolver(self.db.upcast());
+        let mut resolver = self.owner.resolver(self.db);
 
         let expression_scopes = self.db.expression_scopes(self.owner);
 
@@ -598,7 +595,7 @@ impl Module {
     ) {
         for import in self.imports(db) {
             if import.resolve(db).is_err() {
-                let import_loc = import.id.lookup(db.upcast());
+                let import_loc = import.id.lookup(db);
 
                 let module_info = self.module_info(db);
                 let def_map = db.ast_id_map(import_loc.file_id);
@@ -613,7 +610,7 @@ impl Module {
                 ModuleDef::Function(_function) => {},
                 ModuleDef::GlobalVariable(var) => {
                     diagnostics::global_variable::collect(db, var.id, |error| {
-                        if let Some(source) = var.source(db.upcast()) {
+                        if let Some(source) = var.source(db) {
                             let source = source.map(|declaration| AstPointer::new(&declaration));
                             accumulator.push(diagnostics::any_diag_from_global_var(error, source));
                         }
@@ -625,7 +622,7 @@ impl Module {
                 ModuleDef::TypeAlias(_type_alias) => {},
             }
             if let Some(def) = item.as_def_with_body_id() {
-                let file = def.file_id(db.upcast());
+                let file = def.file_id(db);
                 let (_, source_map) = db.body_with_source_map(def);
                 if config.type_errors {
                     let infer = db.infer(def);
@@ -667,7 +664,7 @@ impl Import {
         &self,
         db: &dyn HirDatabase,
     ) -> bool {
-        let import_loc = self.id.lookup(db.upcast());
+        let import_loc = self.id.lookup(db);
         let module_info = db.module_info(import_loc.file_id);
         let import = module_info.get(import_loc.value);
         matches!(import.value, ImportValue::Path(_))
@@ -677,14 +674,14 @@ impl Import {
         &self,
         db: &dyn HirDatabase,
     ) -> Option<String> {
-        let import_loc = self.id.lookup(db.upcast());
+        let import_loc = self.id.lookup(db);
 
         let module_info = db.module_info(import_loc.file_id);
         let import = module_info.get(import_loc.value);
 
         match &import.value {
             ImportValue::Path(path) => {
-                let file_id = relative_file(db.upcast(), import_loc.file_id, path)?;
+                let file_id = relative_file(db, import_loc.file_id, path)?;
                 Some(db.file_text(file_id).to_string())
             },
             ImportValue::Custom(key) => {
@@ -700,16 +697,16 @@ impl Import {
         &self,
         db: &dyn HirDatabase,
     ) -> Result<(), ()> {
-        let import_loc = self.id.lookup(db.upcast());
+        let import_location = self.id.lookup(db);
 
-        let module_info = db.module_info(import_loc.file_id);
-        let import = module_info.get(import_loc.value);
+        let module_info = db.module_info(import_location.file_id);
+        let import = module_info.get(import_location.value);
 
         tracing::info!("resolving import {:?}", import);
 
         match &import.value {
             ImportValue::Path(path) => {
-                relative_file(db.upcast(), import_loc.file_id, path).ok_or(())?;
+                relative_file(db, import_location.file_id, path).ok_or(())?;
                 Ok(())
             },
             ImportValue::Custom(key) => {

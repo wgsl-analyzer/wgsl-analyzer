@@ -1,14 +1,14 @@
 //! Utilities for LSP-related boilerplate code.
-use crate::{line_index::PositionEncoding, lsp::from_proto};
-use std::{error::Error, ops::Range, sync::Arc};
-
 use crate::{
     LspError,
     global_state::GlobalState,
-    line_index::{LineEndings, LineIndex, OffsetEncoding},
+    line_index::{LineEndings, LineIndex},
 };
+use crate::{line_index::PositionEncoding, lsp::from_proto};
 use lsp_server::Notification;
 use lsp_types::request::Request as _;
+use std::{error::Error, ops::Range};
+use triomphe::Arc;
 
 pub(crate) fn is_cancelled(error: &(dyn Error + 'static)) -> bool {
     error.downcast_ref::<salsa::Cancelled>().is_some()

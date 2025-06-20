@@ -56,7 +56,7 @@ cargo_metadata.workspace = true
 hir-def.workspace = true
 hir-ty.workspace = true
 hir.workspace = true
-# ide-db.workspace = true
+ide-db.workspace = true
 # intern.workspace = true
 # This should only be used in CLI
 # ide-ssr.workspace = true
@@ -73,7 +73,6 @@ vfs.workspace = true
 paths.workspace = true
 camino = "1.1.10"
 base-db.workspace = true
-text-edit.workspace = true
 line-index.workspace = true
 
 [target.'cfg(windows)'.dependencies]

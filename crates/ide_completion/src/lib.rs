@@ -13,6 +13,7 @@ mod patterns;
 
 use base_db::FilePosition;
 use hir::HirDatabase;
+use ide_db::RootDatabase;
 use rustc_hash::FxHashSet;
 
 use crate::{completions::Completions, context::CompletionContext};
@@ -251,7 +252,7 @@ impl CompletionFieldsToResolve {
 // }
 
 pub fn completions2(
-    db: &dyn HirDatabase,
+    db: &RootDatabase,
     config: &CompletionConfig<'_>,
     position: FilePosition,
     _trigger_character: Option<char>,

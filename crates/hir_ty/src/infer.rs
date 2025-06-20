@@ -34,7 +34,7 @@ pub fn infer_query(
     db: &dyn HirDatabase,
     def: DefinitionWithBodyId,
 ) -> Arc<InferenceResult> {
-    let resolver = def.resolver(db.upcast());
+    let resolver = def.resolver(db);
     let mut ctx = InferenceContext::new(db, def, resolver);
 
     match def {

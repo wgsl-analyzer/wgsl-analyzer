@@ -9,15 +9,10 @@ use line_index::LineIndex;
 pub use util_types::*;
 use vfs::{AnchoredPath, VfsPath};
 
-use std::sync::Arc;
-
 use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::{Parse, ParseEntryPoint};
+use triomphe::Arc;
 pub use vfs::FileId;
-
-pub trait Upcast<T: ?Sized> {
-    fn upcast(&self) -> &T;
-}
 
 pub trait FileLoader {
     fn resolve_path(

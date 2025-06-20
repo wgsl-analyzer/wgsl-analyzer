@@ -1,6 +1,6 @@
 use std::{fmt::Debug, marker::PhantomData, sync::Arc};
 
-use base_db::{FileId, SourceDatabase, TextRange, TextSize, Upcast};
+use base_db::{FileId, SourceDatabase, TextRange, TextSize};
 use salsa::InternKey;
 use syntax::{
     AstNode, Parse,
@@ -27,7 +27,7 @@ use crate::{
 };
 
 #[salsa::query_group(DefDatabaseStorage)]
-pub trait DefDatabase: InternDatabase + Upcast<dyn SourceDatabase> {
+pub trait DefDatabase: InternDatabase + SourceDatabase {
     fn parse_or_resolve(
         &self,
         file_id: HirFileId,

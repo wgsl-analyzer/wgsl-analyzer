@@ -46,7 +46,7 @@ pub(crate) fn handle_did_open_text_document(
     );
 
     let file_id = {
-        let mut vfs = state.vfs.write().unwrap();
+        let mut vfs = state.vfs.write();
         vfs.0.set_file_contents(path.clone(), Some(text_bytes));
         vfs.0.file_id(&path)
     };
@@ -54,7 +54,7 @@ pub(crate) fn handle_did_open_text_document(
     // When the file gets closed, we hide the diagnostics, because the LSP does not give a good way to determine when a file has been deleted
     // If there are pre-existing diagnostics, send them now
     if let Some(file_id) = file_id {
-        state.diagnostics.make_updated(file_id);
+        state.diagnostics.make_updated(file_id.0);
     }
 
     Ok(())
@@ -87,7 +87,6 @@ pub(crate) fn handle_did_change_text_document(
             state
                 .vfs
                 .write()
-                .unwrap()
                 .0
                 .set_file_contents(path, Some(new_contents));
         }
@@ -111,9 +110,9 @@ pub(crate) fn handle_did_close_text_document(
         }
 
         // Clear diagnostics also for excluded files, just in case.
-        let value = state.vfs.read().unwrap().0.file_id(&path);
+        let value = state.vfs.read().0.file_id(&path);
         if let Some(file_id) = value {
-            state.diagnostics.clear_native_for(file_id);
+            state.diagnostics.clear_native_for(file_id.0);
         }
 
         // state

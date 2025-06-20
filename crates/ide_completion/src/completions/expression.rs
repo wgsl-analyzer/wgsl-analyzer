@@ -1,4 +1,6 @@
+use hir::HirDatabase;
 use hir_def::{
+    db::DefDatabase,
     module_data::{ModuleItem, Name, pretty::pretty_module_item},
     resolver::ScopeDef,
 };
@@ -46,7 +48,7 @@ pub(crate) fn complete_names_in_scope(
                 .map(|r#type| pretty_type(ctx.db, r#type)),
             ScopeDef::ModuleItem(file_id, item) => {
                 let module_info = ctx.db.module_info(file_id);
-                let detail = pretty_module_item(&item, &module_info, ctx.db.upcast());
+                let detail = pretty_module_item(&item, &module_info, ctx.db);
                 Some(detail)
             },
         };
@@ -56,26 +58,31 @@ pub(crate) fn complete_names_in_scope(
             exact_name_match: false,
             type_match: None,
             is_local: matches!(item, ScopeDef::Local(_)),
-            exact_postfix_snippet_match: false,
+            postfix_match: None,
             is_builtin: false,
             swizzle_index: None,
+            function: None,
+            is_name_already_imported: false,
+            requires_import: false,
+            is_private_editable: false,
+            is_skipping_completion: false,
         });
         completion.set_detail(detail);
-        completion.add_to(accumulator);
+        completion.add_to(accumulator, ctx.db);
     });
-
     accumulator.add_all(Builtin::ALL_BUILTINS.iter().map(|name| {
-        CompletionItem::new(CompletionItemKind::Function, ctx.source_range(), *name)
-            .with_relevance(CompletionRelevance {
-                exact_name_match: false,
-                type_match: None,
-                is_local: false,
-                exact_postfix_snippet_match: false,
-                is_builtin: true,
-                swizzle_index: None,
-            })
-            .build()
+        let mut builder =
+            CompletionItem::new(CompletionItemKind::Function, ctx.source_range(), *name);
+        builder.with_relevance(|r| CompletionRelevance {
+            exact_name_match: false,
+            type_match: None,
+            is_local: false,
+            postfix_match: None,
+            is_builtin: true,
+            swizzle_index: None,
+            ..r
+        });
+        builder.build(ctx.db)
     }));
-
     None
 }

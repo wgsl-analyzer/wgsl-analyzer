@@ -62,22 +62,22 @@ proc-macro-srv = { path = "./crates/proc-macro-srv", version = "0.0.0" }
 proc-macro-srv-cli = { path = "./crates/proc-macro-srv-cli", version = "0.0.0" }
 profile = { path = "./crates/profile", version = "0.0.0" }
 # project-model = { path = "./crates/project-model", version = "0.0.0" }
-span = { path = "./crates/span", version = "0.0.0" }
+# span = { path = "./crates/span", version = "0.0.0" }
 stdx = { path = "./crates/stdx", version = "0.0.0" }
 syntax = { path = "./crates/syntax", version = "0.0.0" }
 syntax-bridge = { path = "./crates/syntax-bridge", version = "0.0.0" }
 # test-fixture = { path = "./crates/test-fixture", version = "0.0.0" }
-test-utils = { path = "./crates/test-utils", version = "0.0.0" }
+# test-utils = { path = "./crates/test-utils", version = "0.0.0" }
 tt = { path = "./crates/tt", version = "0.0.0" }
 wgsl-analyzer = { path = "./crates/wgsl-analyzer", version = "0.0.0" }
 wgsl-formatter = { path = "./crates/wgsl_formatter", version = "0.0.0" }
 wgslfmt = { path = "./crates/wgslfmt", version = "0.0.0" }
 edition = { path = "./crates/edition", version = "0.0.0" }
 
-vfs-notify = { git = "https://github.com/rust-lang/rust-analyzer", rev = "80e9d014be07b265e948b7f477da6b21c7d1a417", version = "0.0.0" }
-vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "80e9d014be07b265e948b7f477da6b21c7d1a417", version = "0.0.0" }
-text-edit = { git = "https://github.com/rust-lang/rust-analyzer", rev = "80e9d014be07b265e948b7f477da6b21c7d1a417", version = "0.0.0" }
-paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "80e9d014be07b265e948b7f477da6b21c7d1a417", version = "0.0.0" }
+vfs-notify = { git = "https://github.com/rust-lang/rust-analyzer", rev = "a31e10a2fdc585e9d7ea0857cacfd322dd478070", version = "0.0.0" }
+vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "a31e10a2fdc585e9d7ea0857cacfd322dd478070", version = "0.0.0" }
+paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "a31e10a2fdc585e9d7ea0857cacfd322dd478070", version = "0.0.0" }
+query-group = { package = "query-group-macro", git = "https://github.com/rust-lang/rust-analyzer", rev = "a31e10a2fdc585e9d7ea0857cacfd322dd478070", version = "0.0.0" }
 
 # crates from rust-analyzer that are published separately
 line-index = "0.1.2"
@@ -97,11 +97,13 @@ chalk-solve = { version = "0.99.0", default-features = false }
 chalk-ir = "0.99.0"
 chalk-recursive = { version = "0.99.0", default-features = false }
 chalk-derive = "0.99.0"
+cov-mark = "2.0.0"
 crossbeam-channel = "0.5.15"
 dissimilar = "1.0.9"
 dot = "0.1.4"
 either = "1.15.0"
 expect-test = "1.5.1"
+fst = { version = "0.4.7", default-features = false }
 fxhash = "0.2.1"
 hashbrown = { version = "0.15.4", features = [
   "inline-more",
@@ -137,6 +139,7 @@ rayon = "1.10.0"
 rowan = "0.16.1"
 rustc-hash = "2.1.1"
 salsa = "0.17.0-pre.2"
+salsa-macros = "0.22.0"
 semver = "1.0.25"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"

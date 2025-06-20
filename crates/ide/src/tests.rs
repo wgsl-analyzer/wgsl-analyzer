@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use triomphe::Arc;
 
 use base_db::{FileId, change::Change};
 use expect_test::{Expect, expect};

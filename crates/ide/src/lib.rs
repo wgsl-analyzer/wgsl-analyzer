@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-mod db;
 mod debug_command;
 pub mod diagnostics;
 mod formatting;
@@ -8,21 +7,70 @@ mod goto_definition;
 mod helpers;
 mod hover;
 pub mod inlay_hints;
+mod markup;
+mod navigation_target;
 mod syntax_tree;
 
-use std::sync::Arc;
+use triomphe::Arc;
 
 use base_db::{
     FilePosition, FileRange, RangeInfo, SourceDatabase, TextRange, change::Change,
     input::SourceRootId,
 };
 use diagnostics::Diagnostic;
-use goto_definition::NavigationTarget;
 use hir::diagnostics::DiagnosticsConfig;
 use hir_def::db::DefDatabase;
-pub use hover::HoverResult;
 use ide_completion::{CompletionConfig, item::CompletionItem};
-use inlay_hints::{InlayHint, InlayHintsConfig};
+
+pub use crate::{
+    // annotations::{Annotation, AnnotationConfig, AnnotationKind, AnnotationLocation},
+    // call_hierarchy::{CallHierarchyConfig, CallItem},
+    // expand_macro::ExpandedMacro,
+    // file_structure::{StructureNode, StructureNodeKind},
+    // folding_ranges::{Fold, FoldKind},
+    // highlight_related::{HighlightRelatedConfig, HighlightedRange},
+    hover::{
+        HoverAction, HoverConfig, HoverDocFormat, HoverGotoTypeData, HoverResult,
+        MemoryLayoutHoverConfig, MemoryLayoutHoverRenderKind, SubstTyLen,
+    },
+    inlay_hints::{
+        // AdjustmentHints, AdjustmentHintsMode, ClosureReturnTypeHints, DiscriminantHints,
+        // GenericParameterHints,
+        InlayFieldsToResolve,
+        InlayHint,
+        InlayHintLabel,
+        InlayHintLabelPart,
+        InlayHintPosition,
+        InlayHintsConfig,
+        InlayKind,
+        InlayTooltip,
+        LazyProperty,
+        // LifetimeElisionHints,
+    },
+    // join_lines::JoinLinesConfig,
+    // markup::Markup,
+    // moniker::{
+    //     Moniker, MonikerDescriptorKind, MonikerIdentifier, MonikerKind, MonikerResult,
+    //     PackageInformation, SymbolInformationKind,
+    // },
+    // move_item::Direction,
+    navigation_target::{
+        NavigationTarget,
+        // TryToNav, UpmappingResult
+    },
+    // references::ReferenceSearchResult,
+    // rename::RenameError,
+    // runnables::{Runnable, RunnableKind, TestId, UpdateTest},
+    // signature_help::SignatureHelp,
+    // static_index::{
+    //     StaticIndex, StaticIndexedFile, TokenId, TokenStaticData, VendoredLibrariesConfig,
+    // },
+    // syntax_highlighting::{
+    //     HighlightConfig, HlRange,
+    //     tags::{Highlight, HlMod, HlMods, HlOperator, HlPunct, HlTag},
+    // },
+    // test_explorer::{TestItem, TestItemKind},
+};
 pub use line_index::{LineCol, LineIndex};
 use salsa::{Cancelled, ParallelDatabase};
 use syntax::{Parse, SyntaxNode};
@@ -30,7 +78,7 @@ use vfs::FileId;
 
 pub type Cancellable<T> = Result<T, Cancelled>;
 
-pub use db::RootDatabase;
+pub use ide_db::RootDatabase;
 
 /// `base_db` is normally also needed in places where `ide_db` is used, so this re-export is for convenience.
 pub use base_db;
@@ -170,11 +218,12 @@ impl Analysis {
         self.with_db(|db| syntax_tree::syntax_tree(db, file_id, range).unwrap_or_default())
     }
 
+    /// Returns a list of the places in the file where type hints can be displayed.
     pub fn inlay_hints(
         &self,
         config: &InlayHintsConfig,
         file_id: FileId,
-        range: Option<FileRange>,
+        range: Option<TextRange>,
     ) -> Cancellable<Vec<InlayHint>> {
         self.with_db(|db| inlay_hints::inlay_hints(db, file_id, range, config))
     }
@@ -212,11 +261,13 @@ impl Analysis {
         self.with_db(|db| formatting::format(db, file_id, range))
     }
 
+    /// Returns a short text describing element at position.
     pub fn hover(
         &self,
+        config: &HoverConfig,
         range: FileRange,
     ) -> Cancellable<Option<RangeInfo<HoverResult>>> {
-        self.with_db(|db| hover::hover(db, range))
+        self.with_db(|db| hover::hover(db, range, config))
     }
 
     pub fn debug_command(

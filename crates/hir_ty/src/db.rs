@@ -7,7 +7,6 @@ use crate::builtins::{Builtin, BuiltinId};
 use crate::function::{FunctionDetails, ResolvedFunctionId};
 use crate::infer::{InferenceResult, TyLoweringContext};
 use crate::ty::{TyKind, Type};
-use base_db::Upcast;
 use hir_def::{
     HirFileId, InFile,
     data::LocalFieldId,
@@ -19,7 +18,7 @@ use hir_def::{
 use la_arena::ArenaMap;
 
 #[salsa::query_group(HirDatabaseStorage)]
-pub trait HirDatabase: DefDatabase + Upcast<dyn DefDatabase> {
+pub trait HirDatabase: DefDatabase + std::fmt::Debug {
     #[salsa::invoke(crate::infer::infer_query)]
     fn infer(
         &self,
@@ -66,9 +65,9 @@ fn field_types(
 ) -> Arc<ArenaMap<LocalFieldId, Type>> {
     let data = db.struct_data(r#struct);
 
-    let file_id = r#struct.lookup(db.upcast()).file_id;
+    let file_id = r#struct.lookup(db).file_id;
     let module_info = db.module_info(file_id);
-    let resolver = Resolver::default().push_module_scope(db.upcast(), file_id, module_info);
+    let resolver = Resolver::default().push_module_scope(db, file_id, module_info);
 
     let mut ty_ctx = TyLoweringContext::new(db, &resolver);
 
@@ -89,9 +88,9 @@ fn function_type(
 ) -> ResolvedFunctionId {
     let data = db.fn_data(function);
 
-    let file_id = function.lookup(db.upcast()).file_id;
+    let file_id = function.lookup(db).file_id;
     let module_info = db.module_info(file_id);
-    let resolver = Resolver::default().push_module_scope(db.upcast(), file_id, module_info);
+    let resolver = Resolver::default().push_module_scope(db, file_id, module_info);
 
     let mut ty_ctx = TyLoweringContext::new(db, &resolver);
 

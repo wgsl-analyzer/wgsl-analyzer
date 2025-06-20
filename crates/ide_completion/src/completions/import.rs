@@ -1,3 +1,5 @@
+use base_db::SourceDatabase;
+
 use super::Completions;
 use crate::{
     context::{CompletionContext, ImmediateLocation},
@@ -20,7 +22,7 @@ pub(crate) fn complete_import(
             ctx.source_range(),
             import.to_string(),
         )
-        .build()
+        .build(ctx.db)
     });
     accumulator.add_all(imports);
 

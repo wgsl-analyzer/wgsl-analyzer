@@ -318,15 +318,15 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                     expression.syntax_node_pointer()
                 },
                 hir_ty::infer::TypeContainer::GlobalVar(id) => {
-                    let source = GlobalVariable { id }.source(db.upcast())?;
+                    let source = GlobalVariable { id }.source(db)?;
                     SyntaxNodePointer::new(source.value.ty()?.syntax())
                 },
                 hir_ty::infer::TypeContainer::GlobalConstant(id) => {
-                    let source = GlobalConstant { id }.source(db.upcast())?;
+                    let source = GlobalConstant { id }.source(db)?;
                     SyntaxNodePointer::new(source.value.ty()?.syntax())
                 },
                 hir_ty::infer::TypeContainer::Override(id) => {
-                    let source = Override { id }.source(db.upcast())?;
+                    let source = Override { id }.source(db)?;
                     SyntaxNodePointer::new(source.value.ty()?.syntax())
                 },
                 hir_ty::infer::TypeContainer::FunctionParameter(_, binding) => {
@@ -334,7 +334,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                     binding.syntax_node_pointer()
                 },
                 hir_ty::infer::TypeContainer::FunctionReturn(id) => {
-                    let source = Function { id }.source(db.upcast())?;
+                    let source = Function { id }.source(db)?;
                     SyntaxNodePointer::new(source.value.return_type()?.syntax())
                 },
                 hir_ty::infer::TypeContainer::VariableStatement(statement) => {
@@ -342,7 +342,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                     statement.syntax_node_pointer()
                 },
                 hir_ty::infer::TypeContainer::TypeAlias(id) => {
-                    let source = TypeAlias { id }.source(db.upcast())?;
+                    let source = TypeAlias { id }.source(db)?;
                     SyntaxNodePointer::new(source.value.type_declaration()?.syntax())
                 },
             };

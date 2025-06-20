@@ -17,3 +17,4 @@ either.workspace = true
 itertools.workspace = true
 rowan.workspace = true
 parser.workspace = true
+smol_str.workspace = true

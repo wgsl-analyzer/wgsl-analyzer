@@ -3,12 +3,13 @@
     reason = "handlers should have a specific signature"
 )]
 
-use base_db::{FileRange, TextRange};
+use base_db::{FilePosition, FileRange, TextRange};
 use hir::diagnostics::DiagnosticsConfig;
-use ide::{HoverResult, diagnostics::Severity};
+use ide::{Cancellable, HoverAction, HoverGotoTypeData, HoverResult, diagnostics::Severity};
 use lsp_types::{
-    DiagnosticRelatedInformation, DiagnosticTag, GotoDefinitionResponse, LanguageString,
-    MarkedString, Position, TextDocumentIdentifier, TextDocumentPositionParams,
+    DiagnosticRelatedInformation, DiagnosticTag, GotoDefinitionResponse, HoverContents, InlayHint,
+    InlayHintParams, LanguageString, MarkedString, MarkupContent, MarkupKind, Position, Range,
+    TextDocumentIdentifier, TextDocumentPositionParams,
 };
 use vfs::FileId;
 
@@ -20,55 +21,85 @@ use crate::{
         extensions::{self, PositionOrRange},
         from_proto, to_proto,
     },
+    try_default,
 };
 
 pub(crate) fn handle_goto_definition(
     snap: GlobalStateSnapshot,
-    parameters: lsp_types::GotoDefinitionParams,
-) -> Result<Option<GotoDefinitionResponse>> {
-    let position = from_proto::file_position(&snap, &parameters.text_document_position_params)?;
-    let file_id = position.file_id;
-    let Some(nav_target) = snap.analysis.goto_definition(position)? else {
-        return Ok(None);
+    params: lsp_types::GotoDefinitionParams,
+) -> anyhow::Result<Option<lsp_types::GotoDefinitionResponse>> {
+    let _p = tracing::info_span!("handle_goto_definition").entered();
+    let position = try_default!(from_proto::file_position(
+        &snap,
+        params.text_document_position_params
+    )?);
+    let nav_info = match snap.analysis.goto_definition(position)? {
+        None => return Ok(None),
+        Some(it) => it,
     };
-
-    let range = FileRange {
-        file_id: nav_target.file_id,
-        range: nav_target.focus_or_full_range(),
+    let src = FileRange {
+        file_id: position.file_id,
+        range: nav_info.full_range,
     };
-    let location = to_proto::location(&snap, range)?;
-    let response = GotoDefinitionResponse::Scalar(location);
-
-    Ok(Some(response))
+    let res = to_proto::goto_definition_response(&snap, Some(src), vec![nav_info])?;
+    Ok(Some(res))
 }
 
 pub(crate) fn handle_completion(
     snap: GlobalStateSnapshot,
-    parameters: lsp_types::CompletionParams,
-) -> Result<Option<lsp_types::CompletionResponse>> {
-    let position = from_proto::file_position(&snap, &parameters.text_document_position)?;
+    lsp_types::CompletionParams {
+        text_document_position,
+        context,
+        ..
+    }: lsp_types::CompletionParams,
+) -> anyhow::Result<Option<lsp_types::CompletionResponse>> {
+    let _p = tracing::info_span!("handle_completion").entered();
+    let mut position = try_default!(from_proto::file_position(
+        &snap,
+        text_document_position.clone()
+    )?);
     let line_index = snap.file_line_index(position.file_id)?;
+    let completion_trigger_character = context
+        .and_then(|ctx| ctx.trigger_character)
+        .and_then(|s| s.chars().next());
+
     let source_root = snap.analysis.source_root_id(position.file_id)?;
     let completion_config = &snap.config.completion(Some(source_root));
-    let Some(items) = snap
-        .analysis
-        .completions(completion_config, position, None)?
-    else {
-        return Ok(None);
+    // FIXME: We should fix up the position when retrying the cancelled request instead
+    position.offset = position.offset.min(line_index.index.len());
+    let items = match snap.analysis.completions(
+        completion_config,
+        position,
+        completion_trigger_character,
+    )? {
+        None => return Ok(None),
+        Some(items) => items,
     };
-    let items = to_proto::completion_items(&line_index, &parameters.text_document_position, &items);
-    let list = lsp_types::CompletionList {
+
+    let items = to_proto::completion_items(
+        &snap.config,
+        &completion_config.fields_to_resolve,
+        &line_index,
+        snap.file_version(position.file_id),
+        text_document_position,
+        completion_trigger_character,
+        items,
+    );
+
+    let completion_list = lsp_types::CompletionList {
         is_incomplete: true,
         items,
     };
-    Ok(Some(list.into()))
+    Ok(Some(completion_list.into()))
 }
 
 pub(crate) fn handle_formatting(
     snap: GlobalStateSnapshot,
     parameters: lsp_types::DocumentFormattingParams,
 ) -> Result<Option<Vec<lsp_types::TextEdit>>> {
-    let file_id = from_proto::file_id(&snap, &parameters.text_document.uri)?;
+    let Some(file_id) = from_proto::file_id(&snap, &parameters.text_document.uri)? else {
+        return Ok(None);
+    };
     let Some(node) = snap.analysis.format(file_id, None)? else {
         return Ok(None);
     };
@@ -86,47 +117,45 @@ pub(crate) fn handle_hover(
     snap: GlobalStateSnapshot,
     parameters: lsp::extensions::HoverParameters,
 ) -> Result<Option<lsp::extensions::Hover>> {
-    let position = match parameters.position {
-        PositionOrRange::Position(position) => position,
-        PositionOrRange::Range(range) => range.start,
+    let _p = tracing::info_span!("handle_hover").entered();
+    let range = match parameters.position {
+        PositionOrRange::Position(position) => Range::new(position, position),
+        PositionOrRange::Range(range) => range,
+    };
+    let file_range = try_default!(from_proto::file_range(
+        &snap,
+        &parameters.text_document,
+        range
+    )?);
+
+    let hover = snap.config.hover();
+    let info = match snap.analysis.hover(&hover, file_range)? {
+        None => return Ok(None),
+        Some(info) => info,
     };
 
-    let tdp = TextDocumentPositionParams {
-        text_document: parameters.text_document,
-        position,
+    let line_index = snap.file_line_index(file_range.file_id)?;
+    let range = to_proto::range(&line_index, info.range);
+    let markup_kind = hover.format;
+    let hover = lsp::extensions::Hover {
+        hover: lsp_types::Hover {
+            contents: HoverContents::Markup(MarkupContent {
+                kind: match markup_kind {
+                    ide::HoverDocFormat::Markdown => MarkupKind::Markdown,
+                    ide::HoverDocFormat::PlainText => MarkupKind::PlainText,
+                },
+                value: info.info.markup.to_string(),
+            }),
+            range: Some(range),
+        },
+        actions: if snap.config.hover_actions().none() {
+            Vec::new()
+        } else {
+            prepare_hover_actions(&snap, &info.info.actions)
+        },
     };
 
-    let position = from_proto::file_position(&snap, &tdp)?;
-    let line_index = snap.file_line_index(position.file_id)?;
-    let range = TextRange::new(position.offset, position.offset);
-    let file_range = FileRange {
-        file_id: position.file_id,
-        range,
-    };
-
-    let Some(result) = snap.analysis.hover(file_range)? else {
-        return Ok(None);
-    };
-
-    let hover_content = match result.info {
-        HoverResult::SourceCode(code) => MarkedString::LanguageString(lsp_types::LanguageString {
-            language: "wgsl".to_owned(),
-            value: code,
-        }),
-        HoverResult::Text(text) => MarkedString::String(text),
-    };
-
-    let inner_hover = lsp_types::Hover {
-        contents: lsp_types::HoverContents::Scalar(hover_content),
-        range: Some(to_proto::range(&line_index, result.range)),
-    };
-
-    let extended_hover = lsp::extensions::Hover {
-        hover: inner_hover,
-        actions: Vec::new(),
-    };
-
-    Ok(Some(extended_hover))
+    Ok(Some(hover))
 }
 
 #[expect(
@@ -144,7 +173,7 @@ pub(crate) fn full_source(
     snap: GlobalStateSnapshot,
     parameters: extensions::FullSourceParameters,
 ) -> Result<String> {
-    let file_id = from_proto::file_id(&snap, &parameters.text_document.uri)?;
+    let file_id = try_default!(from_proto::file_id(&snap, &parameters.text_document.uri)?);
     let source = snap
         .analysis
         .resolve_full_source(file_id)?
@@ -156,7 +185,7 @@ pub(crate) fn show_syntax_tree(
     snap: GlobalStateSnapshot,
     parameters: extensions::SyntaxTreeParameters,
 ) -> Result<String> {
-    let file_id = from_proto::file_id(&snap, &parameters.text_document.uri)?;
+    let file_id = try_default!(from_proto::file_id(&snap, &parameters.text_document.uri)?);
     let line_index = snap.file_line_index(file_id)?;
     let string = snap.analysis.syntax_tree(
         file_id,
@@ -171,9 +200,10 @@ pub(crate) fn debug_command(
     snap: GlobalStateSnapshot,
     parameters: extensions::DebugCommandParameters,
 ) -> Result<()> {
-    let position = from_proto::file_position(&snap, &parameters.position)?;
+    let Some(position) = from_proto::file_position(&snap, parameters.position)? else {
+        return Ok(());
+    };
     snap.analysis.debug_command(position)?;
-
     Ok(())
 }
 
@@ -195,10 +225,12 @@ pub(crate) fn handle_document_diagnostics(
     snap: GlobalStateSnapshot,
     parameters: lsp_types::DocumentDiagnosticParams,
 ) -> anyhow::Result<lsp_types::DocumentDiagnosticReportResult> {
-    let file_id = from_proto::file_id(&snap, &parameters.text_document.uri)?;
-
+    let file_id = match from_proto::file_id(&snap, &parameters.text_document.uri)? {
+        Some(it) => it,
+        None => return Ok(empty_diagnostic_report()),
+    };
     let source_root = snap.analysis.source_root_id(file_id).ok();
-    let config = snap.config.data().diagnostics(source_root);
+    let config = snap.config.diagnostics(source_root);
 
     if !config.enabled {
         return Ok(empty_diagnostic_report());
@@ -223,24 +255,36 @@ pub(crate) fn handle_document_diagnostics(
 
 pub(crate) fn handle_inlay_hints(
     snap: GlobalStateSnapshot,
-    parameters: lsp_types::InlayHintParams,
-) -> Result<Option<Vec<lsp_types::InlayHint>>> {
-    let document_uri = &parameters.text_document.uri;
-    let file_id = from_proto::file_id(&snap, document_uri)?;
-    let line_index = snap.file_line_index(file_id)?;
-
-    let range = from_proto::file_range(
+    params: InlayHintParams,
+) -> anyhow::Result<Option<Vec<InlayHint>>> {
+    let _p = tracing::info_span!("handle_inlay_hints").entered();
+    let document_uri = &params.text_document.uri;
+    let FileRange { file_id, range } = try_default!(from_proto::file_range(
         &snap,
         &TextDocumentIdentifier::new(document_uri.to_owned()),
-        parameters.range,
+        params.range,
+    )?);
+    let line_index = snap.file_line_index(file_id)?;
+    let range = TextRange::new(
+        range.start().min(line_index.index.len()),
+        range.end().min(line_index.index.len()),
     );
 
+    let inlay_hints_config = snap.config.inlay_hints();
     Ok(Some(
         snap.analysis
-            .inlay_hints(&snap.config.data().inlay_hints(), file_id, range.ok())?
-            .iter()
-            .map(|it| to_proto::inlay_hint(true, &line_index, it))
-            .collect(),
+            .inlay_hints(&inlay_hints_config, file_id, Some(range))?
+            .into_iter()
+            .map(|it| {
+                to_proto::inlay_hint(
+                    &snap,
+                    &inlay_hints_config.fields_to_resolve,
+                    &line_index,
+                    file_id,
+                    it,
+                )
+            })
+            .collect::<Cancellable<Vec<_>>>()?,
     ))
 }
 
@@ -287,10 +331,46 @@ const fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSeverit
     }
 }
 
+fn prepare_hover_actions(
+    snap: &GlobalStateSnapshot,
+    actions: &[HoverAction],
+) -> Vec<lsp::extensions::CommandLinkGroup> {
+    actions
+        .iter()
+        .filter_map(|it| match it {
+            HoverAction::Implementation(position) => show_impl_command_link(snap, position),
+            HoverAction::Reference(position) => show_ref_command_link(snap, position),
+            HoverAction::GoToType(targets) => goto_type_action_links(snap, targets),
+        })
+        .collect()
+}
+
+fn show_impl_command_link(
+    snap: &GlobalStateSnapshot,
+    position: &FilePosition,
+) -> Option<lsp::extensions::CommandLinkGroup> {
+    None
+}
+
+fn show_ref_command_link(
+    snap: &GlobalStateSnapshot,
+    position: &FilePosition,
+) -> Option<lsp::extensions::CommandLinkGroup> {
+    None
+}
+
+fn goto_type_action_links(
+    snap: &GlobalStateSnapshot,
+    targets: &Vec<HoverGotoTypeData>,
+) -> Option<lsp::extensions::CommandLinkGroup> {
+    None
+}
+
 mod diff {
     //! Generate minimal `TextEdit`s from different text versions
+    use base_db::{TextRange, TextSize};
     use dissimilar::Chunk;
-    use text_edit::{TextEdit, TextRange, TextSize};
+    use ide_db::text_edit::TextEdit;
 
     pub(super) fn diff(
         left: &str,

@@ -78,25 +78,31 @@ impl<'global_state> RequestDispatcher<'global_state> {
     /// Dispatches the request onto the current thread.
     pub(crate) fn on_sync<R>(
         &mut self,
-        function: fn(GlobalStateSnapshot, R::Params) -> Result<R::Result>,
+        f: fn(GlobalStateSnapshot, R::Params) -> anyhow::Result<R::Result>,
     ) -> &mut Self
     where
-        R: lsp_types::request::Request + 'static,
-        R::Params: DeserializeOwned + panic::UnwindSafe + fmt::Debug + 'static,
-        R::Result: Serialize + 'static,
+        R: lsp_types::request::Request,
+        R::Params: DeserializeOwned + panic::UnwindSafe + fmt::Debug,
+        R::Result: Serialize,
     {
-        let Some((request, parameters, panic_context)) = self.parse::<R>() else {
-            return self;
+        let (req, params, panic_context) = match self.parse::<R>() {
+            Some(it) => it,
+            None => return self,
         };
+        let _guard =
+            tracing::info_span!("request", method = ?req.method, "request_id" = ?req.id).entered();
+        tracing::debug!(?params);
         let global_state_snapshot = self.global_state.snapshot();
 
         let result = panic::catch_unwind(move || {
             let _pctx = stdx::panic_context::enter(panic_context);
-            function(global_state_snapshot, parameters)
+            f(global_state_snapshot, params)
         });
-        if let Ok(response) = thread_result_to_response::<R>(request.id, result) {
+
+        if let Ok(response) = thread_result_to_response::<R>(req.id, result) {
             self.global_state.respond(response);
         }
+
         self
     }
 

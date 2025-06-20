@@ -1,55 +1,14 @@
-use base_db::{FilePosition, TextRange};
-use hir::{HasSource, HirDatabase, Local, Semantics, definition::Definition};
-use hir_def::{InFile, db::DefDatabase};
+use base_db::{FilePosition, SourceDatabase};
+use hir::{HasSource, Local, Semantics, definition::Definition};
+use hir_def::InFile;
+use ide_db::RootDatabase;
+use smol_str::SmolStr;
 use syntax::{AstNode, HasName, SyntaxKind};
-use vfs::FileId;
 
-use crate::helpers;
-
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
-pub struct NavigationTarget {
-    pub file_id: FileId,
-    /// Range which encompasses the whole element.
-    ///
-    /// Should include body, doc comments, attributes, etc.
-    ///
-    /// Clients should use this range to answer "is the cursor inside the
-    /// element?" question.
-    pub full_range: TextRange,
-    /// A "most interesting" range within the `full_range`.
-    ///
-    /// Typically, `full_range` is the whole syntax node, including doc
-    /// comments, and `focus_range` is the range of the identifier.
-    ///
-    /// Clients should place the cursor on this range when navigating to this target.
-    pub focus_range: Option<TextRange>,
-    // pub name: SmolStr,
-    // pub kind: Option<SymbolKind>,
-    // pub container_name: Option<SmolStr>,
-    // pub description: Option<String>,
-    // pub docs: Option<Documentation>,
-}
-
-impl NavigationTarget {
-    pub fn from_syntax(
-        file_id: FileId,
-        full_range: TextRange,
-        focus_range: Option<TextRange>,
-    ) -> Self {
-        Self {
-            file_id,
-            full_range,
-            focus_range,
-        }
-    }
-
-    pub fn focus_or_full_range(&self) -> TextRange {
-        self.focus_range.unwrap_or(self.full_range)
-    }
-}
+use crate::{NavigationTarget, helpers};
 
 pub(crate) fn goto_definition(
-    db: &dyn HirDatabase,
+    db: &RootDatabase,
     file_position: FilePosition,
 ) -> Option<NavigationTarget> {
     let sema = &Semantics::new(db);
@@ -64,37 +23,45 @@ pub(crate) fn goto_definition(
     })?;
 
     let definition = Definition::from_token(sema, file_id.into(), &token)?;
-    InFile::new(file_id.into(), definition).to_nav(db.upcast())
+    InFile::new(file_id.into(), definition).try_to_nav(db)
 }
 
-trait ToNav {
+pub(crate) trait ToNav {
     fn to_nav(
         &self,
-        db: &dyn DefDatabase,
+        db: &RootDatabase,
+    ) -> NavigationTarget;
+}
+
+pub trait TryToNav {
+    fn try_to_nav(
+        &self,
+        db: &RootDatabase,
     ) -> Option<NavigationTarget>;
 }
 
-impl ToNav for InFile<Local> {
-    fn to_nav(
+impl TryToNav for InFile<Local> {
+    fn try_to_nav(
         &self,
-        db: &dyn DefDatabase,
+        db: &RootDatabase,
     ) -> Option<NavigationTarget> {
         let binding = self.value.source(db)?;
 
-        let frange = binding.original_file_range(db);
-        let nav = NavigationTarget::from_syntax(frange.file_id, frange.range, None);
+        let file_range = binding.original_file_range(db);
+        // let name: SmolStr = binding.value.name()?.text().into();
+        let nav = NavigationTarget::from_syntax(file_range.file_id, file_range.range, None);
         Some(nav)
     }
 }
 
-impl ToNav for InFile<Definition> {
-    fn to_nav(
+impl TryToNav for InFile<Definition> {
+    fn try_to_nav(
         &self,
-        db: &dyn DefDatabase,
+        db: &RootDatabase,
     ) -> Option<NavigationTarget> {
         let nav =
             match &self.value {
-                Definition::Local(local) => InFile::new(self.file_id, *local).to_nav(db)?,
+                Definition::Local(local) => InFile::new(self.file_id, *local).try_to_nav(db)?,
                 Definition::ModuleDef(def) => {
                     match def {
                         hir::ModuleDef::Function(function) => {

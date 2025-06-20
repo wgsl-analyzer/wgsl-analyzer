@@ -1,7 +1,7 @@
 pub use rowan::{TextRange, TextSize};
 use vfs::FileId;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
 pub struct FilePosition {
     pub file_id: FileId,
     pub offset: TextSize,

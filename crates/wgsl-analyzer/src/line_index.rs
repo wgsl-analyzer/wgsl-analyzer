@@ -6,21 +6,17 @@
 //! convert back to `\r\n` on the way out).
 
 use line_index::WideEncoding;
-use std::sync::Arc;
+use memchr::memmem;
+use triomphe::Arc;
 
 #[derive(Clone, Copy)]
-pub(crate) enum PositionEncoding {
+pub enum PositionEncoding {
     Utf8,
     Wide(WideEncoding),
 }
 
-pub(crate) enum OffsetEncoding {
-    Utf8,
-    Utf16,
-}
-
 pub(crate) struct LineIndex {
-    pub(crate) index: Arc<line_index::LineIndex>,
+    pub(crate) index: Arc<ide::LineIndex>,
     pub(crate) endings: LineEndings,
     pub(crate) encoding: PositionEncoding,
 }
@@ -33,47 +29,86 @@ pub(crate) enum LineEndings {
 
 impl LineEndings {
     /// Replaces `\r\n` with `\n` in-place in `src`.
-    pub(crate) fn normalize(source: String) -> (String, Self) {
-        if !source.as_bytes().contains(&b'\r') {
-            return (source, Self::Unix);
-        }
-
-        // We replace `\r\n` with `\n` in-place, which does not break utf-8 encoding.
+    pub(crate) fn normalize(src: String) -> (String, LineEndings) {
+        // We replace `\r\n` with `\n` in-place, which doesn't break utf-8 encoding.
         // While we *can* call `as_mut_vec` and do surgery on the live string
-        // directly, prefer to steal the contents of `src`. This makes the code
+        // directly, let's rather steal the contents of `src`. This makes the code
         // safe even if a panic occurs.
 
-        let mut buffer = source.into_bytes();
-        let mut gap_length = 0;
-        let mut tail = buffer.as_mut_slice();
+        let mut buf = src.into_bytes();
+        let mut gap_len = 0;
+        let mut tail = buf.as_mut_slice();
+        let mut crlf_seen = false;
+
+        let finder = memmem::Finder::new(b"\r\n");
+
         loop {
-            let index =
-                find_crlf(&tail[gap_length..]).map_or(tail.len(), |index| index + gap_length);
-            tail.copy_within(gap_length..index, 0);
-            tail = &mut tail[index - gap_length..];
-            if tail.len() == gap_length {
+            let idx = match finder.find(&tail[gap_len..]) {
+                None if crlf_seen => tail.len(),
+                // SAFETY: buf is unchanged and therefore still contains utf8 data
+                None => {
+                    return (
+                        unsafe { String::from_utf8_unchecked(buf) },
+                        LineEndings::Unix,
+                    );
+                },
+                Some(idx) => {
+                    crlf_seen = true;
+                    idx + gap_len
+                },
+            };
+            tail.copy_within(gap_len..idx, 0);
+            tail = &mut tail[idx - gap_len..];
+            if tail.len() == gap_len {
                 break;
             }
-            gap_length += 1;
+            gap_len += 1;
         }
 
         // Account for removed `\r`.
-        // After `set_length`, `buf` is guaranteed to contain utf-8 again.
-        let new_length = buffer.len() - gap_length;
-        let source = {
-            // SAFETY:
-            // `new_length`` is always less than capacity given the above formula.
-            unsafe {
-                buffer.set_len(new_length);
-            }
-            // SAFETY:
-            // `buffer` is calculated to be valid utf8 above.
-            unsafe { String::from_utf8_unchecked(buffer) }
+        // After `set_len`, `buf` is guaranteed to contain utf-8 again.
+        let src = unsafe {
+            let new_len = buf.len() - gap_len;
+            buf.set_len(new_len);
+            String::from_utf8_unchecked(buf)
         };
-        return (source, Self::Dos);
+        (src, LineEndings::Dos)
+    }
+}
 
-        fn find_crlf(source: &[u8]) -> Option<usize> {
-            source.windows(2).position(|it| it == b"\r\n")
-        }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unix() {
+        let src = "a\nb\nc\n\n\n\n";
+        let (res, endings) = LineEndings::normalize(src.into());
+        assert_eq!(endings, LineEndings::Unix);
+        assert_eq!(res, src);
+    }
+
+    #[test]
+    fn dos() {
+        let src = "\r\na\r\n\r\nb\r\nc\r\n\r\n\r\n\r\n";
+        let (res, endings) = LineEndings::normalize(src.into());
+        assert_eq!(endings, LineEndings::Dos);
+        assert_eq!(res, "\na\n\nb\nc\n\n\n\n");
+    }
+
+    #[test]
+    fn mixed() {
+        let src = "a\r\nb\r\nc\r\n\n\r\n\n";
+        let (res, endings) = LineEndings::normalize(src.into());
+        assert_eq!(endings, LineEndings::Dos);
+        assert_eq!(res, "a\nb\nc\n\n\n\n");
+    }
+
+    #[test]
+    fn none() {
+        let src = "abc";
+        let (res, endings) = LineEndings::normalize(src.into());
+        assert_eq!(endings, LineEndings::Unix);
+        assert_eq!(res, src);
     }
 }

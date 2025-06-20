@@ -1,3 +1,4 @@
+use hir_def::db::DefDatabase;
 use hir_ty::ty::TyKind;
 use itertools::Itertools;
 
@@ -34,8 +35,10 @@ fn struct_completions(
     context: &CompletionContext<'_>,
     r#struct: &hir_def::db::StructId,
 ) -> Option<()> {
-    let field_completion_item =
-        |name| CompletionItem::new(CompletionItemKind::Field, context.source_range(), name).build();
+    let field_completion_item = |name| {
+        CompletionItem::new(CompletionItemKind::Field, context.source_range(), name)
+            .build(context.db)
+    };
 
     let r#struct = context.db.struct_data(*r#struct);
     let items = r#struct
@@ -66,13 +69,17 @@ fn vector_completions(
             "Invalid vector size: {size}"
         );
         let possible_swizzles = possible_swizzles(size, &field_text);
-        let suggestions = possible_swizzles.enumerate().map(move |(index, label)| {
-            CompletionItem::new(CompletionItemKind::Field, context.source_range(), label)
-                .with_relevance(CompletionRelevance {
+        let suggestions = possible_swizzles.enumerate().map(|(index, label)| {
+            let mut binding =
+                CompletionItem::new(CompletionItemKind::Field, context.source_range(), label);
+            binding
+                .with_relevance(|relevance| CompletionRelevance {
                     swizzle_index: Some(index),
-                    ..Default::default()
+                    ..relevance
                 })
-                .build()
+            	// TODO: remove clone
+                .clone()
+                .build(context.db)
         });
         accumulator.add_all(suggestions);
     }
@@ -221,3 +228,9 @@ mod tests {
         assert!(swizzler(&"abcd", "e", 2).is_none());
     }
 }
+
+// if add_resolution {
+// 	let mut builder = Builder::from_resolution(ctx, path_ctx, name, def);
+// 	builder.with_relevance();
+// 	acc.add(builder.build(ctx.db));
+// }

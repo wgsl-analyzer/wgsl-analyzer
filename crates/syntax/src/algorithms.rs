@@ -48,7 +48,7 @@ pub fn skip_trivia_token(
 ) -> Option<SyntaxToken> {
     while token.kind().is_trivia() {
         token = match direction {
-            Direction::Next => token.next_token()?, // spellchecker:disable-line
+            Direction::Next => token.next_token()?,
             Direction::Prev => token.prev_token()?, // spellchecker:disable-line
         }
     }

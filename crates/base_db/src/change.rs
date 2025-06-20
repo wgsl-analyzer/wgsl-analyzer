@@ -1,6 +1,5 @@
-use std::sync::Arc;
-
 use salsa::Durability;
+use triomphe::Arc;
 use vfs::{FileId, VfsPath};
 
 use crate::{

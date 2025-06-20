@@ -260,7 +260,7 @@ pub(crate) fn fetch_native_diagnostics(
             let line_index = snapshot.file_line_index(file_id).ok()?;
             let source_root = snapshot.analysis.source_root_id(file_id).ok()?;
 
-            let config = &snapshot.config.data().diagnostics(Some(source_root));
+            let config = &snapshot.config.diagnostics(Some(source_root));
             let diagnostics = match kind {
                 NativeDiagnosticsFetchKind::Syntax => {
                     snapshot.analysis.syntax_diagnostics(config, file_id).ok()?

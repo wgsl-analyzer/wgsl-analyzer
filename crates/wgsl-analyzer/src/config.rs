@@ -3,7 +3,10 @@ use std::{default, env, fmt, iter, ops::Not, sync::OnceLock};
 use base_db::input::SourceRootId;
 use hir::diagnostics::{DiagnosticsConfig, NagaVersion};
 use hir_ty::ty::pretty::TypeVerbosity;
-use ide::inlay_hints::{self, StructLayoutHints};
+use ide::{
+    HoverConfig, HoverDocFormat, MemoryLayoutHoverRenderKind,
+    inlay_hints::{self, StructLayoutHints},
+};
 use ide_completion::{CompletionConfig, CompletionFieldsToResolve};
 // use ide::{
 //     AssistConfig, CallHierarchyConfig, CallableSnippets, CompletionConfig,
@@ -18,7 +21,6 @@ use ide_completion::{CompletionConfig, CompletionFieldsToResolve};
 // };
 use crate::{
     diagnostics::DiagnosticsMapConfig,
-    line_index::OffsetEncoding,
     lsp::{
         capabilities::ClientCapabilities,
         extensions::{WorkspaceSymbolSearchKind, WorkspaceSymbolSearchScope},
@@ -40,16 +42,6 @@ use vfs::{AbsPath, AbsPathBuf, VfsPath};
 pub struct TraceConfig {
     pub extension: bool,
     pub server: bool,
-}
-
-#[derive(Default, Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct InlayHintsConfig {
-    pub enabled: bool,
-    pub type_hints: bool,
-    pub parameter_hints: bool,
-    pub struct_layout_hints: bool,
-    pub type_verbosity: InlayHintsTypeVerbosity,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize)]
@@ -142,6 +134,41 @@ pub struct ConfigData {
     pub cache_priming_num_threads: NumThreads,
     /// How many worker threads in the main loop. The default `null` means to pick automatically.
     pub num_threads: Option<NumThreads>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InlayHintsConfig {
+    pub render_colons: bool,
+    pub enabled: bool,
+    pub type_hints: bool,
+    pub parameter_hints: bool,
+    pub struct_layout_hints: bool,
+    pub type_verbosity: InlayHintsTypeVerbosity,
+}
+
+impl Default for InlayHintsConfig {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            render_colons: true,
+            enabled: true,
+            type_hints: true,
+            parameter_hints: true,
+            struct_layout_hints: false,
+            type_verbosity: InlayHintsTypeVerbosity::default(),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InlayFieldsToResolve {
+    pub resolve_text_edits: bool,
+    pub resolve_hint_tooltip: bool,
+    pub resolve_label_tooltip: bool,
+    pub resolve_label_location: bool,
+    pub resolve_label_command: bool,
 }
 
 #[derive(Debug)]
@@ -328,6 +355,112 @@ impl Config {
             exclude_traits: <_>::default(),
         }
     }
+
+    pub fn hover_actions(&self) -> HoverActionsConfig {
+        let enable = self.caps.hover_actions();
+        HoverActionsConfig {
+            implementations: enable,
+            references: enable,
+            run: enable,
+            debug: enable,
+            update_test: enable,
+            goto_type_def: enable,
+        }
+    }
+
+    pub fn hover(&self) -> HoverConfig {
+        let mem_kind = |kind| match kind {
+            MemoryLayoutHoverRenderKindDef::Both => MemoryLayoutHoverRenderKind::Both,
+            MemoryLayoutHoverRenderKindDef::Decimal => MemoryLayoutHoverRenderKind::Decimal,
+            MemoryLayoutHoverRenderKindDef::Hexadecimal => MemoryLayoutHoverRenderKind::Hexadecimal,
+        };
+        HoverConfig {
+            links_in_hover: false,
+            memory_layout: None,
+            documentation: false,
+            format: {
+                if false {
+                    HoverDocFormat::Markdown
+                } else {
+                    HoverDocFormat::PlainText
+                }
+            },
+            keywords: false,
+            max_fields_count: None,
+            max_enum_variants_count: None,
+            max_subst_ty_len: ide::SubstTyLen::LimitTo(20),
+        }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn inlay_hints(&self) -> inlay_hints::InlayHintsConfig {
+        let client_capability_fields = self.inlay_hint_resolve_support_properties();
+        inlay_hints::InlayHintsConfig {
+            render_colons: self.data.inlay_hints.render_colons,
+            enabled: self.data.inlay_hints.enabled,
+            type_hints: self.data.inlay_hints.type_hints,
+            parameter_hints: self.data.inlay_hints.parameter_hints,
+            struct_layout_hints: self
+                .data
+                .inlay_hints
+                .struct_layout_hints
+                .then_some(StructLayoutHints::Offset),
+            type_verbosity: match self.data.inlay_hints.type_verbosity {
+                InlayHintsTypeVerbosity::Full => TypeVerbosity::Full,
+                InlayHintsTypeVerbosity::Compact => TypeVerbosity::Compact,
+                InlayHintsTypeVerbosity::Inner => TypeVerbosity::Inner,
+            },
+            fields_to_resolve: ide::inlay_hints::InlayFieldsToResolve::from_client_capabilities(
+                &client_capability_fields,
+            ),
+        }
+    }
+    fn try_update(
+        &mut self,
+        value: serde_json::Value,
+    ) -> Result<(), serde_json::Error> {
+        self.data = serde_json::from_value(value)?;
+        Ok(())
+    }
+
+    #[inline]
+    pub fn update(
+        &mut self,
+        value: &serde_json::Value,
+    ) {
+        if value.is_null() {
+            return;
+        }
+        if let Err(error) = self.try_update(value.clone()) {
+            tracing::error!("Failed to update config: {:?}", error);
+            tracing::error!("Received JSON: {}", value.to_string());
+        }
+    }
+
+    pub fn completion_hide_deprecated(&self) -> bool {
+        false
+    }
+
+    #[inline]
+    #[must_use]
+    pub const fn diagnostics(
+        &self,
+        source_root: Option<SourceRootId>,
+    ) -> DiagnosticsConfig {
+        DiagnosticsConfig {
+            enabled: true,
+            type_errors: self.data.diagnostics.type_errors,
+            naga_parsing_errors: self.data.diagnostics.naga_parsing_errors,
+            naga_validation_errors: self.data.diagnostics.naga_validation_errors,
+            naga_version: match self.data.diagnostics.naga_version {
+                NagaVersion::Naga14 => NagaVersion::Naga14,
+                NagaVersion::Naga19 => NagaVersion::Naga19,
+                NagaVersion::Naga22 => NagaVersion::Naga22,
+                NagaVersion::NagaMain => NagaVersion::NagaMain,
+            },
+        }
+    }
 }
 
 #[derive(Default, Debug)]
@@ -380,69 +513,6 @@ impl ConfigChange {
     }
 }
 
-impl ConfigData {
-    fn try_update(
-        &mut self,
-        value: serde_json::Value,
-    ) -> Result<(), serde_json::Error> {
-        *self = serde_json::from_value(value)?;
-        Ok(())
-    }
-
-    #[inline]
-    pub fn update(
-        &mut self,
-        value: &serde_json::Value,
-    ) {
-        if value.is_null() {
-            return;
-        }
-        if let Err(error) = self.try_update(value.clone()) {
-            tracing::error!("Failed to update config: {:?}", error);
-            tracing::error!("Received JSON: {}", value.to_string());
-        }
-    }
-
-    #[inline]
-    #[must_use]
-    pub const fn diagnostics(
-        &self,
-        source_root: Option<SourceRootId>,
-    ) -> DiagnosticsConfig {
-        DiagnosticsConfig {
-            enabled: true,
-            type_errors: self.diagnostics.type_errors,
-            naga_parsing_errors: self.diagnostics.naga_parsing_errors,
-            naga_validation_errors: self.diagnostics.naga_validation_errors,
-            naga_version: match self.diagnostics.naga_version {
-                NagaVersion::Naga14 => NagaVersion::Naga14,
-                NagaVersion::Naga19 => NagaVersion::Naga19,
-                NagaVersion::Naga22 => NagaVersion::Naga22,
-                NagaVersion::NagaMain => NagaVersion::NagaMain,
-            },
-        }
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn inlay_hints(&self) -> inlay_hints::InlayHintsConfig {
-        inlay_hints::InlayHintsConfig {
-            enabled: self.inlay_hints.enabled,
-            type_hints: self.inlay_hints.type_hints,
-            parameter_hints: self.inlay_hints.parameter_hints,
-            struct_layout_hints: self
-                .inlay_hints
-                .struct_layout_hints
-                .then_some(StructLayoutHints::Offset),
-            type_verbosity: match self.inlay_hints.type_verbosity {
-                InlayHintsTypeVerbosity::Full => TypeVerbosity::Full,
-                InlayHintsTypeVerbosity::Compact => TypeVerbosity::Compact,
-                InlayHintsTypeVerbosity::Inner => TypeVerbosity::Inner,
-            },
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub enum WgslfmtConfig {
     Wgslfmt {
@@ -453,4 +523,45 @@ pub enum WgslfmtConfig {
         command: String,
         arguments: Vec<String>,
     },
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
+#[serde(rename_all = "snake_case")]
+enum MemoryLayoutHoverRenderKindDef {
+    Decimal,
+    Hexadecimal,
+    Both,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HoverActionsConfig {
+    pub implementations: bool,
+    pub references: bool,
+    pub run: bool,
+    pub debug: bool,
+    pub update_test: bool,
+    pub goto_type_def: bool,
+}
+
+impl HoverActionsConfig {
+    pub const NO_ACTIONS: Self = Self {
+        implementations: false,
+        references: false,
+        run: false,
+        debug: false,
+        update_test: false,
+        goto_type_def: false,
+    };
+
+    pub fn any(&self) -> bool {
+        self.implementations || self.references || self.runnable() || self.goto_type_def
+    }
+
+    pub fn none(&self) -> bool {
+        !self.any()
+    }
+
+    pub fn runnable(&self) -> bool {
+        self.run || self.debug || self.update_test
+    }
 }

@@ -10,6 +10,7 @@ pub use parser::{
     SyntaxToken,
 };
 pub use rowan::Direction;
+use smol_str::SmolStr;
 
 #[derive(Clone, Debug)]
 pub struct Parse {
@@ -135,6 +136,18 @@ impl<'a> TokenText<'a> {
             TokenText::Borrowed(s) => s,
             TokenText::Owned(green) => green.text(),
         }
+    }
+}
+
+impl From<TokenText<'_>> for String {
+    fn from(token_text: TokenText<'_>) -> Self {
+        token_text.as_str().into()
+    }
+}
+
+impl From<TokenText<'_>> for SmolStr {
+    fn from(token_text: TokenText<'_>) -> Self {
+        SmolStr::new(token_text.as_str())
     }
 }
 

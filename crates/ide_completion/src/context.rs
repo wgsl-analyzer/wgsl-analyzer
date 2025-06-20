@@ -1,7 +1,12 @@
 use base_db::{FilePosition, TextRange};
 use either::Either;
 use hir::{HirDatabase, Semantics};
-use hir_def::{HirFileId, db::DefinitionWithBodyId, resolver::Resolver};
+use hir_def::{
+    HirFileId,
+    db::{DefDatabase, DefinitionWithBodyId},
+    resolver::Resolver,
+};
+use ide_db::RootDatabase;
 use rowan::NodeOrToken;
 use syntax::{AstNode, Direction, SyntaxKind, SyntaxToken, ast};
 
@@ -14,7 +19,7 @@ type ExprOrStatement = Either<ast::Expression, ast::Statement>;
 pub(crate) struct CompletionContext<'a> {
     pub sema: Semantics<'a>,
     pub file_id: HirFileId,
-    pub db: &'a dyn HirDatabase,
+    pub(crate) db: &'a RootDatabase,
     pub position: FilePosition,
     pub token: SyntaxToken,
     pub file: ast::SourceFile,
@@ -25,7 +30,7 @@ pub(crate) struct CompletionContext<'a> {
 
 impl<'a> CompletionContext<'a> {
     pub(crate) fn new(
-        db: &'a dyn HirDatabase,
+        db: &'a RootDatabase,
         position @ FilePosition { file_id, offset }: FilePosition,
         config: &'a CompletionConfig<'a>,
     ) -> Option<Self> {
@@ -46,7 +51,7 @@ impl<'a> CompletionContext<'a> {
             determine_location(&sema, file.syntax(), position.offset, token.clone());
 
         let module_info = db.module_info(file_id);
-        let mut resolver = Resolver::default().push_module_scope(db.upcast(), file_id, module_info);
+        let mut resolver = Resolver::default().push_module_scope(db, file_id, module_info);
 
         let nearest_scope = token
             .siblings_with_tokens(Direction::Prev) // spellchecker:disable-line

@@ -1,8 +1,11 @@
-use std::{mem::ManuallyDrop, sync::Arc};
+use std::mem::ManuallyDrop;
+use triomphe::Arc;
 
-use base_db::{FileId, FileLoader, FileLoaderDelegate, SourceDatabase, Upcast, change::Change};
-use hir_def::db::DefDatabase;
+use base_db::{FileId, FileLoader, FileLoaderDelegate, SourceDatabase, change::Change};
 use vfs::AnchoredPath;
+
+pub mod source_change;
+pub mod text_edit;
 
 #[salsa::database(
     base_db::SourceDatabaseStorage,
@@ -64,23 +67,26 @@ impl RootDatabase {
     }
 }
 
-impl Upcast<dyn DefDatabase> for RootDatabase {
-    fn upcast(&self) -> &(dyn DefDatabase + 'static) {
-        self
-    }
-}
-
-impl Upcast<dyn SourceDatabase> for RootDatabase {
-    fn upcast(&self) -> &(dyn SourceDatabase + 'static) {
-        self
-    }
-}
-
 impl FileLoader for RootDatabase {
     fn resolve_path(
         &self,
         path: AnchoredPath<'_>,
     ) -> Option<FileId> {
         FileLoaderDelegate(self).resolve_path(path)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SnippetCap {
+    _private: (),
+}
+
+impl SnippetCap {
+    pub const fn new(allow_snippets: bool) -> Option<SnippetCap> {
+        if allow_snippets {
+            Some(SnippetCap { _private: () })
+        } else {
+            None
+        }
     }
 }
