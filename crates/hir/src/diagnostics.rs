@@ -172,6 +172,7 @@ impl AnyDiagnostic {
     }
 }
 
+#[expect(clippy::too_many_lines, reason = "TODO")]
 pub(crate) fn any_diag_from_infer_diagnostic(
     database: &dyn HirDatabase,
     infer_diagnostic: &InferenceDiagnostic,

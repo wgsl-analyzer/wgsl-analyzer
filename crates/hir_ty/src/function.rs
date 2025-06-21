@@ -30,8 +30,10 @@ impl FunctionDetails {
 pub struct ResolvedFunctionId(salsa::InternId);
 
 impl salsa::InternKey for ResolvedFunctionId {
-    fn from_intern_id(id: salsa::InternId) -> Self {
-        Self(id)
+    fn from_intern_id(
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] v: salsa::InternId
+    ) -> Self {
+        Self(v)
     }
 
     fn as_intern_id(&self) -> salsa::InternId {

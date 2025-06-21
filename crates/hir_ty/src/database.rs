@@ -1,3 +1,5 @@
+#![expect(clippy::empty_structs_with_brackets, reason = "salsa leaks a lint")]
+
 //! The home of `HirDatabase`, which is the Salsa database containing all the
 //! type inference-related queries.
 
@@ -22,21 +24,21 @@ pub trait HirDatabase: DefDatabase + std::fmt::Debug {
     #[salsa::invoke(crate::infer::infer_query)]
     fn infer(
         &self,
-        def: DefinitionWithBodyId,
+        key: DefinitionWithBodyId,
     ) -> Arc<InferenceResult>;
 
     fn field_types(
         &self,
-        r#struct: StructId,
+        key: StructId,
     ) -> Arc<ArenaMap<LocalFieldId, Type>>;
     fn function_type(
         &self,
-        function: FunctionId,
+        key: FunctionId,
     ) -> ResolvedFunctionId;
 
     fn struct_is_used_in_uniform(
         &self,
-        r#struct: StructId,
+        key: StructId,
         file_id: HirFileId,
     ) -> bool;
 
@@ -134,13 +136,15 @@ fn struct_is_used_in_uniform(
             }
 
             let inference = database.infer(DefinitionWithBodyId::GlobalVariable(decl));
-            let r#type = match inference.return_type {
-                Some(r#type) => r#type,
-                None => return false,
+            let Some(r#type) = inference.return_type else {
+                return false;
             };
-
             r#type.contains_struct(database, r#struct)
         },
-        _ => false,
+        hir_def::module_data::ModuleItem::Function(_)
+        | hir_def::module_data::ModuleItem::Struct(_)
+        | hir_def::module_data::ModuleItem::GlobalConstant(_)
+        | hir_def::module_data::ModuleItem::Override(_)
+        | hir_def::module_data::ModuleItem::TypeAlias(_) => false,
     })
 }

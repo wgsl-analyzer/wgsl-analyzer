@@ -398,11 +398,17 @@ impl From<ast::AccessMode> for AccessMode {
 /// <https://www.w3.org/TR/WGSL/#address-space>
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum AddressSpace {
+    /// <https://www.w3.org/TR/WGSL/#address-spaces-function>
     Function,
+    /// <https://www.w3.org/TR/WGSL/#address-spaces-private>
     Private,
+    /// <https://www.w3.org/TR/WGSL/#address-spaces-workgroup>
     Workgroup,
+    /// <https://www.w3.org/TR/WGSL/#address-spaces-uniform>
     Uniform,
+    /// <https://www.w3.org/TR/WGSL/#address-spaces-storage>
     Storage,
+    /// <https://www.w3.org/TR/WGSL/#address-spaces-handle>
     Handle,
     /// WGPU extension
     /// See: <https://docs.rs/wgpu/latest/wgpu/struct.Features.html#associatedconstant.PUSH_CONSTANTS>
@@ -428,15 +434,11 @@ impl std::fmt::Display for AddressSpace {
 
 impl AddressSpace {
     #[must_use]
+    /// Sourced from table at <https://www.w3.org/TR/WGSL/#address-space>
     pub const fn default_access_mode(self) -> AccessMode {
         match self {
-            Self::Storage => AccessMode::Read,
-            Self::Function => AccessMode::ReadWrite,
-            Self::Private => AccessMode::ReadWrite,
-            Self::Workgroup => AccessMode::ReadWrite,
-            Self::Uniform => AccessMode::Read,
-            Self::Handle => AccessMode::Read,
-            Self::PushConstant => AccessMode::Read,
+            Self::Workgroup | Self::Private | Self::Function => AccessMode::ReadWrite,
+            Self::Uniform | Self::Storage | Self::Handle | Self::PushConstant => AccessMode::Read,
         }
     }
 }
@@ -519,10 +521,10 @@ impl std::fmt::Display for ArrayType {
         #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         let prefix = if self.binding_array { "binding_" } else { "" };
-        match self.size {
+        match &self.size {
             ArraySize::Int(size) => write!(f, "{}array<{}, {}>", prefix, self.inner, size),
             ArraySize::Uint(size) => write!(f, "{}array<{}, {}>", prefix, self.inner, size),
-            ArraySize::Path(ref size) => {
+            ArraySize::Path(size) => {
                 write!(f, "{}array<{}, {}>", prefix, self.inner, size.as_str())
             },
             ArraySize::Dynamic => write!(f, "{}array<{}>", prefix, self.inner),
@@ -551,7 +553,9 @@ impl TryFrom<ast::ArrayType> for ArrayType {
             Some(ast::GenericArg::Literal(literal)) => match parse_literal(literal.kind()) {
                 crate::expression::Literal::Int(value, _) => ArraySize::Int(value),
                 crate::expression::Literal::Uint(value, _) => ArraySize::Uint(value),
-                _ => return Err(()),
+                crate::expression::Literal::Float(..) | crate::expression::Literal::Bool(_) => {
+                    return Err(());
+                },
             },
             None => ArraySize::Dynamic,
             _ => return Err(()),
@@ -577,7 +581,9 @@ impl TryFrom<ast::BindingArrayType> for ArrayType {
             Some(ast::GenericArg::Literal(literal)) => match parse_literal(literal.kind()) {
                 crate::expression::Literal::Int(value, _) => ArraySize::Int(value),
                 crate::expression::Literal::Uint(value, _) => ArraySize::Uint(value),
-                _ => return Err(()),
+                crate::expression::Literal::Float(..) | crate::expression::Literal::Bool(_) => {
+                    return Err(());
+                },
             },
             None => ArraySize::Dynamic,
             _ => return Err(()),

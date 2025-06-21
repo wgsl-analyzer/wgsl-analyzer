@@ -270,6 +270,7 @@ fn only_char(input: &str) -> char {
     value
 }
 
+#[expect(clippy::unimplemented, reason = "TODO")]
 fn parse_ty(
     generics: &mut BTreeMap<char, (usize, Generic)>,
     r#type: &str,
@@ -385,7 +386,7 @@ fn type_to_rust(r#type: &Type) -> String {
             type_to_rust(inner)
         ),
 
-        r#type @ (Type::Bool | Type::F32 | Type::I32 | Type::U32) => {
+        (Type::Bool | Type::F32 | Type::I32 | Type::U32) => {
             format!("TyKind::Scalar(ScalarType::{type:?}).intern(database)")
         },
         Type::Bound(i) => {
@@ -453,12 +454,12 @@ fn type_to_rust(r#type: &Type) -> String {
 }
 
 fn builtin_to_rust(
-    f: &mut dyn std::io::Write,
+    sink: &mut dyn std::io::Write,
     name: &str,
     builtin: &Builtin,
 ) -> std::io::Result<()> {
     write!(
-        f,
+        sink,
         r#"impl Builtin {{
     #[allow(non_snake_case)]
     pub fn builtin_{name}(database: &dyn HirDatabase) -> Self {{
@@ -468,7 +469,7 @@ fn builtin_to_rust(
 
     for overload in &builtin.overloads {
         write!(
-            f,
+            sink,
             "
             BuiltinOverload {{
                 generics: vec![{generics}],
@@ -491,7 +492,7 @@ fn builtin_to_rust(
         )?;
         for (parameter, name) in &overload.parameters {
             write!(
-                f,
+                sink,
                 "
                         ({ty}, {name}),",
                 ty = type_to_rust(parameter),
@@ -502,7 +503,7 @@ fn builtin_to_rust(
             )?;
         }
         write!(
-            f,
+            sink,
             "
                     ],
                 }}
@@ -512,7 +513,7 @@ fn builtin_to_rust(
     }
 
     write!(
-        f,
+        sink,
         "
         ];
         Builtin {{ name, overloads }}

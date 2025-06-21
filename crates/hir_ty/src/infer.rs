@@ -38,7 +38,9 @@ pub fn infer_query(
     let mut context = InferenceContext::new(database, def, resolver);
 
     match def {
-        DefinitionWithBodyId::Function(f) => context.collect_fn(f, &database.fn_data(f)),
+        DefinitionWithBodyId::Function(function) => {
+            context.collect_fn(function, &database.fn_data(function));
+        },
         DefinitionWithBodyId::GlobalVariable(var) => {
             context.collect_global_variable(var, &database.global_var_data(var));
         },
@@ -140,6 +142,7 @@ pub enum ResolvedCall {
     OtherTypeInitializer(Type),
 }
 
+#[expect(clippy::partial_pub_fields, reason = "TODO")]
 #[derive(Default, PartialEq, Eq, Debug)]
 pub struct InferenceResult {
     pub type_of_expression: ArenaMap<ExpressionId, Type>,
@@ -295,16 +298,16 @@ impl<'database> InferenceContext<'database> {
     fn collect_fn(
         &mut self,
         function_id: FunctionId,
-        f: &FunctionData,
+        function_data: &FunctionData,
     ) {
         let body = Arc::clone(&self.body);
-        for (&(parameter, _), &id) in f.parameters.iter().zip(&body.parameters) {
+        for (&(parameter, _), &id) in function_data.parameters.iter().zip(&body.parameters) {
             let type_ref = self.database.lookup_intern_type_ref(parameter);
             let param_ty =
                 self.lower_ty(TypeContainer::FunctionParameter(function_id, id), &type_ref);
             self.set_binding_ty(id, param_ty);
         }
-        self.return_ty = f.return_type.map(|type_ref| {
+        self.return_ty = function_data.return_type.map(|type_ref| {
             self.lower_ty(
                 TypeContainer::FunctionReturn(function_id),
                 &self.database.lookup_intern_type_ref(type_ref),
@@ -320,7 +323,7 @@ impl<'database> InferenceContext<'database> {
             Some(Either::Right(expression)) => {
                 let r#type = self.infer_expression_expect(
                     expression,
-                    TypeExpectation::from_option(self.return_ty),
+                    &TypeExpectation::from_option(self.return_ty),
                 );
                 if self.return_ty.is_none() {
                     self.return_ty = Some(r#type);
@@ -345,21 +348,21 @@ impl<'database> InferenceContext<'database> {
                 let scope_id = expression_scopes.scope_for_expression(expression).unwrap();
                 resolver.push_expression_scope(function, expression_scopes, scope_id)
             },
-            DefinitionWithBodyId::GlobalVariable(_) => resolver,
-            DefinitionWithBodyId::GlobalConstant(_) => resolver,
-            DefinitionWithBodyId::Override(_) => resolver,
+            DefinitionWithBodyId::GlobalVariable(_)
+            | DefinitionWithBodyId::GlobalConstant(_)
+            | DefinitionWithBodyId::Override(_) => resolver,
         }
     }
 
+    #[expect(clippy::too_many_lines, reason = "TODO")]
     fn infer_statement(
         &mut self,
         statement: StatementId,
     ) {
         let body = Arc::clone(&self.body);
 
-        match body.statements[statement] {
-            Statement::Missing => {},
-            Statement::Compound { ref statements } => {
+        match &body.statements[statement] {
+            Statement::Compound { statements } => {
                 for statement in statements {
                     self.infer_statement(*statement);
                 }
@@ -379,7 +382,7 @@ impl<'database> InferenceContext<'database> {
                 });
                 let r#type = if let Some(init) = initializer {
                     let expression_ty =
-                        self.infer_expression_expect(init, TypeExpectation::from_option(r#type));
+                        self.infer_expression_expect(*init, &TypeExpectation::from_option(r#type));
                     r#type.unwrap_or(expression_ty)
                 } else {
                     r#type.unwrap_or_else(|| self.error_ty())
@@ -390,7 +393,7 @@ impl<'database> InferenceContext<'database> {
                     address_space.unwrap_or(AddressSpace::Function),
                     access_mode.unwrap_or_else(AccessMode::read_write),
                 );
-                self.set_binding_ty(binding_id, ref_ty);
+                self.set_binding_ty(*binding_id, ref_ty);
             },
             Statement::ConstStatement {
                 binding_id,
@@ -406,13 +409,13 @@ impl<'database> InferenceContext<'database> {
                 });
                 let r#type = if let Some(init) = initializer {
                     let expression_ty =
-                        self.infer_expression_expect(init, TypeExpectation::from_option(r#type));
+                        self.infer_expression_expect(*init, &TypeExpectation::from_option(r#type));
                     r#type.unwrap_or(expression_ty)
                 } else {
                     r#type.unwrap_or_else(|| self.error_ty())
                 };
 
-                self.set_binding_ty(binding_id, r#type);
+                self.set_binding_ty(*binding_id, r#type);
             },
             Statement::LetStatement {
                 binding_id,
@@ -428,20 +431,20 @@ impl<'database> InferenceContext<'database> {
                 });
                 let r#type = if let Some(init) = initializer {
                     let expression_ty =
-                        self.infer_expression_expect(init, TypeExpectation::from_option(r#type));
+                        self.infer_expression_expect(*init, &TypeExpectation::from_option(r#type));
                     r#type.unwrap_or(expression_ty)
                 } else {
                     r#type.unwrap_or_else(|| self.error_ty())
                 };
 
-                self.set_binding_ty(binding_id, r#type);
+                self.set_binding_ty(*binding_id, r#type);
             },
 
             Statement::Return { expression } => {
                 if let Some(expression) = expression {
                     self.infer_expression_expect(
-                        expression,
-                        TypeExpectation::from_option(self.return_ty),
+                        *expression,
+                        &TypeExpectation::from_option(self.return_ty),
                     );
                 }
             },
@@ -449,52 +452,52 @@ impl<'database> InferenceContext<'database> {
                 left_side,
                 right_side,
             } => {
-                let left_ty = self.infer_expression(left_side);
+                let left_ty = self.infer_expression(*left_side);
 
                 let kind = left_ty.kind(self.database);
-                let left_inner = if let TyKind::Reference(r) = kind {
-                    r.inner
+                let left_inner = if let TyKind::Reference(reference) = kind {
+                    reference.inner
                 } else {
                     self.push_diagnostic(InferenceDiagnostic::AssignmentNotAReference {
-                        left_side,
+                        left_side: *left_side,
                         actual: left_ty,
                     });
                     self.error_ty()
                 };
 
-                self.infer_expression_expect(right_side, TypeExpectation::from_ty(left_inner));
+                self.infer_expression_expect(*right_side, &TypeExpectation::from_ty(left_inner));
             },
             Statement::CompoundAssignment {
                 left_side,
                 right_side,
                 op,
             } => {
-                let left_ty = self.infer_expression(left_side);
+                let left_ty = self.infer_expression(*left_side);
 
                 let left_kind = left_ty.kind(self.database);
-                let left_inner = if let TyKind::Reference(r) = left_kind {
-                    r.inner
+                let left_inner = if let TyKind::Reference(reference) = left_kind {
+                    reference.inner
                 } else {
                     self.push_diagnostic(InferenceDiagnostic::AssignmentNotAReference {
-                        left_side,
+                        left_side: *left_side,
                         actual: left_ty,
                     });
                     self.error_ty()
                 };
 
-                let r#type = self.infer_binary_op(left_side, right_side, op.into());
+                let r#type = self.infer_binary_op(*left_side, *right_side, (*op).into());
 
-                self.expect_same_type(left_side, r#type, left_inner);
+                self.expect_same_type(*left_side, r#type, left_inner);
             },
             Statement::IncrDecr { expression, .. } => {
-                let left_ty = self.infer_expression(expression);
+                let left_ty = self.infer_expression(*expression);
 
                 let left_kind = left_ty.kind(self.database);
-                let left_inner = if let TyKind::Reference(r) = left_kind {
-                    r.inner
+                let left_inner = if let TyKind::Reference(reference) = left_kind {
+                    reference.inner
                 } else {
                     self.push_diagnostic(InferenceDiagnostic::AssignmentNotAReference {
-                        left_side: expression,
+                        left_side: *expression,
                         actual: left_ty,
                     });
                     self.error_ty()
@@ -505,7 +508,7 @@ impl<'database> InferenceContext<'database> {
                     .is_err()
                 {
                     self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
-                        expression,
+                        expression: *expression,
                         actual: left_inner,
                         expected: TypeExpectation::Type(TypeExpectationInner::IntegerScalar),
                     });
@@ -514,32 +517,32 @@ impl<'database> InferenceContext<'database> {
             Statement::If {
                 condition,
                 block,
-                ref else_if_blocks,
+                else_if_blocks,
                 else_block,
             } => {
-                self.infer_statement(block);
+                self.infer_statement(*block);
                 for else_if_block in else_if_blocks {
                     self.infer_statement(*else_if_block);
                 }
                 if let Some(else_block) = else_block {
-                    self.infer_statement(else_block);
+                    self.infer_statement(*else_block);
                 }
-                self.infer_expression_expect(condition, TypeExpectation::from_ty(self.bool_ty()));
+                self.infer_expression_expect(*condition, &TypeExpectation::from_ty(self.bool_ty()));
             },
             Statement::While { condition, block } => {
-                self.infer_statement(block);
-                self.infer_expression_expect(condition, TypeExpectation::from_ty(self.bool_ty()));
+                self.infer_statement(*block);
+                self.infer_expression_expect(*condition, &TypeExpectation::from_ty(self.bool_ty()));
             },
             Statement::Switch {
                 expression,
-                ref case_blocks,
-                ref default_block,
+                case_blocks,
+                default_block,
             } => {
-                let r#type = self.infer_expression(expression).unref(self.database);
+                let r#type = self.infer_expression(*expression).unref(self.database);
 
                 for (selectors, case) in case_blocks {
                     for selector in selectors {
-                        self.infer_expression_expect(*selector, TypeExpectation::from_ty(r#type));
+                        self.infer_expression_expect(*selector, &TypeExpectation::from_ty(r#type));
                     }
                     self.infer_statement(*case);
                 }
@@ -555,36 +558,34 @@ impl<'database> InferenceContext<'database> {
                 block,
             } => {
                 if let Some(init) = initializer {
-                    self.infer_statement(init);
+                    self.infer_statement(*init);
                 }
                 if let Some(cont) = continuing_part {
-                    self.infer_statement(cont);
+                    self.infer_statement(*cont);
                 }
 
                 if let Some(condition) = condition {
                     self.infer_expression_expect(
-                        condition,
-                        TypeExpectation::from_ty(self.bool_ty()),
+                        *condition,
+                        &TypeExpectation::from_ty(self.bool_ty()),
                     );
                 }
 
-                self.infer_statement(block);
+                self.infer_statement(*block);
             },
             Statement::Loop { body } => {
-                self.infer_statement(body);
+                self.infer_statement(*body);
             },
-            Statement::Discard => {},
-            Statement::Break => {},
-            Statement::Continue => {},
-            Statement::Continuing { block } => self.infer_statement(block),
+            Statement::Discard | Statement::Break | Statement::Continue | Statement::Missing => {},
+            Statement::Continuing { block } => self.infer_statement(*block),
             Statement::Expression { expression } => {
-                self.infer_expression(expression);
+                self.infer_expression(*expression);
             },
         }
     }
 
     fn expect_ty_inner(
-        &mut self,
+        &self,
         r#type: Type,
         expectation: &TypeExpectationInner,
     ) -> Result<(), ()> {
@@ -594,32 +595,38 @@ impl<'database> InferenceContext<'database> {
         }
 
         match *expectation {
-            TypeExpectationInner::Exact(expected_type) => match expected_type.kind(self.database) {
-                TyKind::Error => Ok(()),
-                _ => {
-                    if r#type == expected_type {
-                        Ok(())
-                    } else {
-                        Err(())
-                    }
-                },
+            TypeExpectationInner::Exact(expected_type) => {
+                if expected_type.kind(self.database) == TyKind::Error || r#type == expected_type {
+                    Ok(())
+                } else {
+                    Err(())
+                }
             },
             TypeExpectationInner::I32OrF32 => {
-                match r#type.kind(self.database).unref(self.database).as_ref() {
-                    TyKind::Scalar(ScalarType::I32 | ScalarType::F32) => Ok(()),
-                    _ => Err(()),
+                if let TyKind::Scalar(ScalarType::I32 | ScalarType::F32) =
+                    r#type.kind(self.database).unref(self.database).as_ref()
+                {
+                    Ok(())
+                } else {
+                    Err(())
                 }
             },
             TypeExpectationInner::NumericScalar => {
-                match r#type.kind(self.database).unref(self.database).as_ref() {
-                    TyKind::Scalar(ScalarType::I32 | ScalarType::F32 | ScalarType::U32) => Ok(()),
-                    _ => Err(()),
+                if let TyKind::Scalar(ScalarType::I32 | ScalarType::F32 | ScalarType::U32) =
+                    r#type.kind(self.database).unref(self.database).as_ref()
+                {
+                    Ok(())
+                } else {
+                    Err(())
                 }
             },
             TypeExpectationInner::IntegerScalar => {
-                match r#type.kind(self.database).unref(self.database).as_ref() {
-                    TyKind::Scalar(ScalarType::I32 | ScalarType::U32) => Ok(()),
-                    _ => Err(()),
+                if let TyKind::Scalar(ScalarType::I32 | ScalarType::U32) =
+                    r#type.kind(self.database).unref(self.database).as_ref()
+                {
+                    Ok(())
+                } else {
+                    Err(())
                 }
             },
         }
@@ -644,7 +651,7 @@ impl<'database> InferenceContext<'database> {
     fn infer_expression_expect(
         &mut self,
         expression: ExpressionId,
-        expected: TypeExpectation,
+        expected: &TypeExpectation,
     ) -> Type {
         let r#type = self.infer_expression(expression).unref(self.database);
 
@@ -677,58 +684,65 @@ impl<'database> InferenceContext<'database> {
         }
     }
 
+    #[expect(clippy::too_many_lines, reason = "TODO")]
     fn infer_expression(
         &mut self,
         expression: ExpressionId,
     ) -> Type {
         let body = Arc::clone(&self.body);
-        let r#type = match body.exprs[expression] {
+        let r#type = match &body.exprs[expression] {
             Expression::Missing => self.error_ty(),
             Expression::BinaryOperation {
                 left_side,
                 right_side,
                 operation,
-            } => self.infer_binary_op(left_side, right_side, operation),
-            Expression::UnaryOperator { expression, op } => self.infer_unary_op(expression, op),
+            } => self.infer_binary_op(*left_side, *right_side, *operation),
+            Expression::UnaryOperator { expression, op } => self.infer_unary_op(*expression, *op),
             Expression::Field {
                 expression: field_expression,
-                ref name,
+                name,
             } => {
-                let expression_ty = self.infer_expression(field_expression);
+                let expression_ty = self.infer_expression(*field_expression);
                 if expression_ty.is_err(self.database) {
                     return self.error_ty();
                 }
 
-                match *expression_ty
+                match expression_ty
                     .kind(self.database)
                     .unref(self.database)
                     .as_ref()
                 {
                     TyKind::Struct(r#struct) => {
-                        let struct_data = self.database.struct_data(r#struct);
-                        let field_types = self.database.field_types(r#struct);
+                        let struct_data = self.database.struct_data(*r#struct);
+                        let field_types = self.database.field_types(*r#struct);
 
-                        if let Some(field) = struct_data.field(name) {
-                            self.set_field_resolution(expression, FieldId { r#struct, field });
+                        if let Some(field) = struct_data.field(&name) {
+                            self.set_field_resolution(
+                                expression,
+                                FieldId {
+                                    r#struct: *r#struct,
+                                    field,
+                                },
+                            );
 
                             let field_ty = field_types[field];
                             // TODO: correct Address Spaces/access mode
                             self.make_ref(field_ty, AddressSpace::Private, AccessMode::read_write())
                         } else {
                             self.push_diagnostic(InferenceDiagnostic::NoSuchField {
-                                expression: field_expression,
+                                expression: *field_expression,
                                 name: name.clone(),
                                 r#type: expression_ty,
                             });
                             self.error_ty()
                         }
                     },
-                    TyKind::Vector(ref vec_type) => {
-                        if let Ok(r#type) = self.vec_swizzle(vec_type, name) {
+                    TyKind::Vector(vec_type) => {
+                        if let Ok(r#type) = self.vec_swizzle(&vec_type, &name) {
                             r#type
                         } else {
                             self.push_diagnostic(InferenceDiagnostic::NoSuchField {
-                                expression: field_expression,
+                                expression: *field_expression,
                                 name: name.clone(),
                                 r#type: expression_ty,
                             });
@@ -737,7 +751,7 @@ impl<'database> InferenceContext<'database> {
                     },
                     TyKind::Matrix(_) => {
                         self.push_diagnostic(InferenceDiagnostic::NoSuchField {
-                            expression: field_expression,
+                            expression: *field_expression,
                             name: name.clone(),
                             r#type: expression_ty,
                         });
@@ -745,7 +759,7 @@ impl<'database> InferenceContext<'database> {
                     },
                     _ => {
                         self.push_diagnostic(InferenceDiagnostic::NoSuchField {
-                            expression: field_expression,
+                            expression: *field_expression,
                             name: name.clone(),
                             r#type: expression_ty,
                         });
@@ -753,10 +767,7 @@ impl<'database> InferenceContext<'database> {
                     },
                 }
             },
-            Expression::Call {
-                ref callee,
-                ref arguments,
-            } => {
+            Expression::Call { callee, arguments } => {
                 let arguments: Vec<_> = arguments
                     .iter()
                     .map(|&arg| self.infer_expression(arg).unref(self.database))
@@ -764,14 +775,14 @@ impl<'database> InferenceContext<'database> {
                 self.infer_call(expression, callee, arguments)
             },
             Expression::Bitcast { r#type, expression } => {
-                self.infer_expression(expression);
+                self.infer_expression(*expression);
 
-                self.try_lower_ty(&self.database.lookup_intern_type_ref(r#type))
+                self.try_lower_ty(&self.database.lookup_intern_type_ref(*r#type))
                     .unwrap_or_else(|_| self.error_ty())
             },
             Expression::Index { left_side, index } => {
-                let left_side = self.infer_expression(left_side);
-                let _index_expression = self.infer_expression(index);
+                let left_side = self.infer_expression(*left_side);
+                let _index_expression = self.infer_expression(*index);
                 // TODO check index expression
 
                 let left_kind = left_side.kind(self.database);
@@ -810,7 +821,7 @@ impl<'database> InferenceContext<'database> {
                     r#type
                 }
             },
-            Expression::Literal(ref literal) => {
+            Expression::Literal(literal) => {
                 let ty_kind = match literal {
                     hir_def::expression::Literal::Int(_, _) => TyKind::Scalar(ScalarType::I32),
                     hir_def::expression::Literal::Uint(_, _) => TyKind::Scalar(ScalarType::U32),
@@ -819,7 +830,7 @@ impl<'database> InferenceContext<'database> {
                 };
                 self.database.intern_ty(ty_kind)
             },
-            Expression::Path(ref name) => self
+            Expression::Path(name) => self
                 .resolve_path_expression(expression, name)
                 .unwrap_or_else(|| {
                     self.push_diagnostic(InferenceDiagnostic::UnresolvedName {
@@ -1505,6 +1516,7 @@ impl UnificationTable {
 }
 
 // found type should not contain bound variables
+#[expect(clippy::too_many_lines, reason = "TODO")]
 fn unify(
     database: &dyn HirDatabase,
     table: &mut UnificationTable,

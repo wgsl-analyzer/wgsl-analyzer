@@ -13,8 +13,10 @@ use crate::{
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub struct BuiltinId(salsa::InternId);
 impl salsa::InternKey for BuiltinId {
-    fn from_intern_id(id: salsa::InternId) -> Self {
-        Self(id)
+    fn from_intern_id(
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] v: salsa::InternId
+    ) -> Self {
+        Self(v)
     }
 
     fn as_intern_id(&self) -> salsa::InternId {
