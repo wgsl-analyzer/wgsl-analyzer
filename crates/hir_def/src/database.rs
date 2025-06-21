@@ -1,3 +1,5 @@
+#![expect(clippy::empty_structs_with_brackets, reason = "salsa leaks a lint")]
+
 use std::{fmt::Debug, marker::PhantomData, sync::Arc};
 
 use base_db::{FileId, SourceDatabase, TextRange, TextSize};
@@ -30,99 +32,99 @@ use crate::{
 pub trait DefDatabase: InternDatabase + SourceDatabase {
     fn parse_or_resolve(
         &self,
-        file_id: HirFileId,
+        key: HirFileId,
     ) -> Result<Parse, ()>;
 
     fn get_path(
         &self,
-        file_id: HirFileId,
+        key: HirFileId,
     ) -> Result<VfsPath, ()>;
 
     fn get_file_id(
         &self,
-        path: VfsPath,
+        key: VfsPath,
     ) -> Result<FileId, ()>;
 
     fn ast_id_map(
         &self,
-        file_id: HirFileId,
+        key: HirFileId,
     ) -> Arc<AstIdMap>;
 
     fn resolve_full_source(
         &self,
-        file_id: HirFileId,
+        key: HirFileId,
     ) -> Result<String, ()>;
 
     fn text_range_from_full(
         &self,
-        file_id: HirFileId,
+        key: HirFileId,
         range: TextRange,
     ) -> Result<TextRange, ()>;
 
     #[salsa::invoke(ModuleInfo::module_info_query)]
     fn module_info(
         &self,
-        file_id: HirFileId,
+        key: HirFileId,
     ) -> Arc<ModuleInfo>;
 
     #[salsa::invoke(Body::body_with_source_map_query)]
     fn body_with_source_map(
         &self,
-        def: DefinitionWithBodyId,
+        key: DefinitionWithBodyId,
     ) -> (Arc<Body>, Arc<BodySourceMap>);
 
     #[salsa::invoke(Body::body_query)]
     fn body(
         &self,
-        def: DefinitionWithBodyId,
+        key: DefinitionWithBodyId,
     ) -> Arc<Body>;
 
     #[salsa::invoke(ExprScopes::expression_scopes_query)]
     fn expression_scopes(
         &self,
-        def: DefinitionWithBodyId,
+        key: DefinitionWithBodyId,
     ) -> Arc<ExprScopes>;
 
     #[salsa::invoke(FunctionData::fn_data_query)]
     fn fn_data(
         &self,
-        def: FunctionId,
+        key: FunctionId,
     ) -> Arc<FunctionData>;
 
     #[salsa::invoke(StructData::struct_data_query)]
     fn struct_data(
         &self,
-        r#struct: StructId,
+        key: StructId,
     ) -> Arc<StructData>;
 
     #[salsa::invoke(TypeAliasData::type_alias_data_query)]
     fn type_alias_data(
         &self,
-        type_alias: TypeAliasId,
+        key: TypeAliasId,
     ) -> Arc<TypeAliasData>;
 
     #[salsa::invoke(GlobalVariableData::global_var_data_query)]
     fn global_var_data(
         &self,
-        def: GlobalVariableId,
+        key: GlobalVariableId,
     ) -> Arc<GlobalVariableData>;
 
     #[salsa::invoke(GlobalConstantData::global_constant_data_query)]
     fn global_constant_data(
         &self,
-        def: GlobalConstantId,
+        key: GlobalConstantId,
     ) -> Arc<GlobalConstantData>;
 
     #[salsa::invoke(OverrideData::override_data_query)]
     fn override_data(
         &self,
-        def: OverrideId,
+        key: OverrideId,
     ) -> Arc<OverrideData>;
 
     #[salsa::invoke(AttributesWithOwner::attrs_query)]
     fn attrs(
         &self,
-        def: AttributeDefId,
+        key: AttributeDefId,
     ) -> Arc<AttributesWithOwner>;
 }
 
@@ -132,10 +134,11 @@ fn get_path(
 ) -> Result<VfsPath, ()> {
     match file_id.0 {
         HirFileIdRepr::FileId(file_id) => Ok(database.file_path(file_id)),
-        _ => Err(()),
+        HirFileIdRepr::MacroFile(_) => Err(()),
     }
 }
 
+#[expect(clippy::unnecessary_wraps, reason = "Needed for salsa")]
 fn get_file_id(
     database: &dyn DefDatabase,
     path: VfsPath,
@@ -167,7 +170,6 @@ fn parse_or_resolve(
     }
 }
 
-#[expect(clippy::needless_collect)] // false positive
 fn resolve_full_source(
     database: &dyn DefDatabase,
     file_id: HirFileId,
@@ -180,7 +182,12 @@ fn resolve_full_source(
         .items()
         .filter_map(|item| match item {
             Item::Import(import) => Some(import),
-            _ => None,
+            Item::Function(_)
+            | Item::StructDeclaration(_)
+            | Item::GlobalVariableDeclaration(_)
+            | Item::GlobalConstantDeclaration(_)
+            | Item::OverrideDeclaration(_)
+            | Item::TypeAliasDeclaration(_) => None,
         })
         .filter_map(|import| {
             let import_mod_id = crate::module_data::find_item(database, file_id, &import)?;
@@ -230,7 +237,12 @@ fn text_range_from_full(
         .items()
         .filter_map(|item| match item {
             Item::Import(import) => Some(import),
-            _ => None,
+            Item::Function(_)
+            | Item::StructDeclaration(_)
+            | Item::GlobalVariableDeclaration(_)
+            | Item::GlobalConstantDeclaration(_)
+            | Item::OverrideDeclaration(_)
+            | Item::TypeAliasDeclaration(_) => None,
         })
         .filter_map(|import| {
             let import_mod_id = crate::module_data::find_item(database, file_id, &import)?;
@@ -255,7 +267,7 @@ fn text_range_from_full(
             .filter(|token| token.kind().is_whitespace())
             .map_or(0, |ws| ws.text().len());
 
-        let to_remove = import_length + TextSize::from(import_whitespace as u32);
+        let to_remove = import_length + TextSize::from(u32::try_from(import_whitespace).unwrap());
 
         if let Some(new_range) = range.checked_sub(to_remove) {
             range = new_range + import.syntax().text().len();
@@ -365,14 +377,16 @@ impl<T> Copy for Interned<T> {}
 impl<T> std::fmt::Debug for Interned<T> {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         f.debug_tuple("Interned").field(&self.0).finish()
     }
 }
 
 impl<T> InternKey for Interned<T> {
-    fn from_intern_id(v: salsa::InternId) -> Self {
+    fn from_intern_id(
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] v: salsa::InternId
+    ) -> Self {
         Self(v, PhantomData)
     }
 
@@ -386,7 +400,9 @@ macro_rules! intern_id {
         #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
         pub struct $id(salsa::InternId);
         impl InternKey for $id {
-            fn from_intern_id(v: salsa::InternId) -> Self {
+            fn from_intern_id(
+                #[expect(clippy::min_ident_chars, reason = "trait impl")] v: salsa::InternId
+            ) -> Self {
                 $id(v)
             }
 

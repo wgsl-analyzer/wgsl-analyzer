@@ -49,7 +49,7 @@ pub(crate) fn complete_names_in_scope(
                 .map(|r#type| pretty_type(context.database, r#type)),
             ScopeDef::ModuleItem(file_id, item) => {
                 let module_info = context.database.module_info(file_id);
-                let detail = pretty_module_item(&item, &module_info, context.database);
+                let detail = pretty_module_item(item, &module_info, context.database);
                 Some(detail)
             },
         };

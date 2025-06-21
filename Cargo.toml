@@ -250,6 +250,8 @@ field_scoped_visibility_modifiers = "allow"
 redundant_pub_crate = "allow"
 # needs to be determined on a case-by-case basis
 default_numeric_fallback = "allow"
+# nursery, ugly suggestions
+option_if_let_else = "allow"
 
 # TODOs
 missing_docs_in_private_items = "allow"

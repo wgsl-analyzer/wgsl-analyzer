@@ -155,6 +155,11 @@ pub enum Statement {
     },
 }
 
+/// Parses a literal from the given `ast::LiteralKind`.
+///
+/// # Panics
+///
+/// Panics if the literal is invalid.
 pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
     match literal {
         ast::LiteralKind::HexIntLiteral(literal) | ast::LiteralKind::DecimalIntLiteral(literal) => {
@@ -199,9 +204,9 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
 }
 
 impl Expression {
-    pub fn walk_child_expressions(
+    pub fn walk_child_expressions<Function: FnMut(ExpressionId)>(
         &self,
-        mut function: impl FnMut(ExpressionId),
+        mut function: Function,
     ) {
         match self {
             Self::BinaryOperation {
@@ -212,10 +217,9 @@ impl Expression {
                 function(*left_side);
                 function(*right_side);
             },
-            Self::UnaryOperator { expression, .. } => {
-                function(*expression);
-            },
-            Self::Field { expression, .. } => {
+            Self::UnaryOperator { expression, .. }
+            | Self::Field { expression, .. }
+            | Self::Bitcast { expression, .. } => {
                 function(*expression);
             },
             Self::Call { arguments, .. } => {
@@ -225,12 +229,7 @@ impl Expression {
                 function(*left_side);
                 function(*index);
             },
-            Self::Bitcast { expression, .. } => {
-                function(*expression);
-            },
-            Self::Missing => {},
-            Self::Literal(_) => {},
-            Self::Path(_) => {},
+            Self::Missing | Self::Literal(_) | Self::Path(_) => {},
         }
     }
 }

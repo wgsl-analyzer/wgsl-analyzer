@@ -10,62 +10,60 @@ pub fn pretty_print_module(
     database: &dyn DefDatabase,
     module: &ModuleInfo,
 ) -> String {
-    let mut f = String::new();
-
-    for item in module.items() {
-        write_pretty_module_item(item, module, &mut f, database);
-        f.push_str(";\n");
+    let mut buffer = String::new();
+    for &item in module.items() {
+        write_pretty_module_item(item, module, &mut buffer, database);
+        buffer.push_str(";\n");
     }
-
-    f
+    buffer
 }
 
 pub fn pretty_module_item(
-    item: &ModuleItem,
+    item: ModuleItem,
     module: &ModuleInfo,
     database: &dyn DefDatabase,
 ) -> String {
-    let mut f = String::new();
-    write_pretty_module_item(item, module, &mut f, database);
-    f
+    let mut buffer = String::new();
+    write_pretty_module_item(item, module, &mut buffer, database);
+    buffer
 }
 
 fn write_pretty_module_item(
-    item: &ModuleItem,
+    item: ModuleItem,
     module: &ModuleInfo,
-    f: &mut String,
+    buffer: &mut String,
     database: &dyn DefDatabase,
 ) {
-    match *item {
+    match item {
         ModuleItem::Function(id) => {
             let function = &module.data[id.index];
 
-            let _ = write!(f, "fn {}(", function.name.0);
+            _ = write!(buffer, "fn {}(", function.name.0);
             for parameter in function.parameters.clone().map(|index| &module.data[index]) {
                 let r#type = database.lookup_intern_type_ref(parameter.r#type);
-                let _ = write!(f, "{}, ", &r#type);
+                _ = write!(buffer, "{}, ", &r#type);
             }
-            trim_in_place(f, ", ");
-            let _ = write!(f, ")");
+            trim_in_place(buffer, ", ");
+            _ = write!(buffer, ")");
         },
         ModuleItem::Struct(id) => {
             let r#struct = &module.data[id.index];
-            let _ = writeln!(f, "struct {} {{", r#struct.name.0);
+            _ = writeln!(buffer, "struct {} {{", r#struct.name.0);
             for field in r#struct.fields.clone() {
                 let field = &module.data[field];
                 let r#type = database.lookup_intern_type_ref(field.r#type);
-                let _ = writeln!(f, "    {}: {};", field.name.0, r#type);
+                _ = writeln!(buffer, "    {}: {};", field.name.0, r#type);
             }
-            let _ = write!(f, "}}");
+            _ = write!(buffer, "}}");
         },
         ModuleItem::GlobalVariable(var) => {
             let var = &module.data[var.index];
             let r#type = var
                 .r#type
                 .map(|r#type| database.lookup_intern_type_ref(r#type));
-            let _ = write!(f, "var {}", &var.name.0);
+            _ = write!(buffer, "var {}", &var.name.0);
             if let Some(r#type) = r#type {
-                let _ = write!(f, ": {type}");
+                _ = write!(buffer, ": {type}");
             }
         },
         ModuleItem::GlobalConstant(var) => {
@@ -73,9 +71,9 @@ fn write_pretty_module_item(
             let r#type = constant
                 .r#type
                 .map(|r#type| database.lookup_intern_type_ref(r#type));
-            let _ = write!(f, "let {}", &constant.name.0);
+            _ = write!(buffer, "let {}", &constant.name.0);
             if let Some(r#type) = r#type {
-                let _ = write!(f, ": {type}");
+                _ = write!(buffer, ": {type}");
             }
         },
         ModuleItem::Override(var) => {
@@ -83,31 +81,31 @@ fn write_pretty_module_item(
             let r#type = override_decl
                 .r#type
                 .map(|r#type| database.lookup_intern_type_ref(r#type));
-            let _ = write!(f, "override {}", &override_decl.name.0);
+            _ = write!(buffer, "override {}", &override_decl.name.0);
             if let Some(r#type) = r#type {
-                let _ = write!(f, ": {type}");
+                _ = write!(buffer, ": {type}");
             }
         },
         ModuleItem::Import(import) => {
             let import = &module.data[import.index];
-            let _ = match &import.value {
-                ImportValue::Path(path) => write!(f, "#import \"{path}\""),
-                ImportValue::Custom(key) => write!(f, "#import {key}"),
+            _ = match &import.value {
+                ImportValue::Path(path) => write!(buffer, "#import \"{path}\""),
+                ImportValue::Custom(key) => write!(buffer, "#import {key}"),
             };
         },
         ModuleItem::TypeAlias(type_alias) => {
             let type_alias = &module.data[type_alias.index];
             let name = &type_alias.name.0;
             let r#type = database.lookup_intern_type_ref(type_alias.r#type);
-            let _ = write!(f, "type {name} = {type};");
+            _ = write!(buffer, "type {name} = {type};");
         },
     }
 }
 
 fn trim_in_place(
-    s: &mut String,
+    string: &mut String,
     pat: &str,
 ) {
-    let new_length = s.trim_end_matches(pat).len();
-    s.truncate(new_length);
+    let new_length = string.trim_end_matches(pat).len();
+    string.truncate(new_length);
 }

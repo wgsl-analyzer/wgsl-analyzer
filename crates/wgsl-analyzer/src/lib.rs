@@ -45,7 +45,7 @@ impl LspError {
 impl std::fmt::Display for LspError {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         write!(
             f,

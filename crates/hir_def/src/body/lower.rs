@@ -29,7 +29,7 @@ pub(super) fn lower_function_body(
 pub(super) fn lower_global_var_declaration(
     database: &dyn DefDatabase,
     file_id: HirFileId,
-    declaration: ast::GlobalVariableDeclaration,
+    declaration: &ast::GlobalVariableDeclaration,
 ) -> (Body, BodySourceMap) {
     Collector {
         database,
@@ -43,7 +43,7 @@ pub(super) fn lower_global_var_declaration(
 pub(super) fn lower_global_constant_declaration(
     database: &dyn DefDatabase,
     file_id: HirFileId,
-    declaration: ast::GlobalConstantDeclaration,
+    declaration: &ast::GlobalConstantDeclaration,
 ) -> (Body, BodySourceMap) {
     Collector {
         database,
@@ -57,7 +57,7 @@ pub(super) fn lower_global_constant_declaration(
 pub(super) fn lower_override_declaration(
     database: &dyn DefDatabase,
     file_id: HirFileId,
-    declaration: ast::OverrideDeclaration,
+    declaration: &ast::OverrideDeclaration,
 ) -> (Body, BodySourceMap) {
     Collector {
         database,
@@ -84,7 +84,7 @@ impl Collector<'_> {
         self.collect_function_param_list(param_list);
 
         self.body.root = body
-            .map(|body| self.collect_compound_statement(body))
+            .map(|body| self.collect_compound_statement(&body))
             .map(Either::Left);
 
         (self.body, self.source_map)
@@ -100,7 +100,7 @@ impl Collector<'_> {
                     .variable_ident_declaration()
                     .and_then(|declaration| declaration.binding())
                 {
-                    let binding_id = self.collect_binding(binding);
+                    let binding_id = self.collect_binding(&binding);
                     self.body.parameters.push(binding_id);
                 } else if let Some(import) = parameter.import() {
                     let import_param_list =
@@ -138,7 +138,7 @@ impl Collector<'_> {
 
     fn collect_global_var_declaration(
         mut self,
-        declaration: ast::GlobalVariableDeclaration,
+        declaration: &ast::GlobalVariableDeclaration,
     ) -> (Body, BodySourceMap) {
         self.body.root = declaration
             .init()
@@ -147,14 +147,14 @@ impl Collector<'_> {
 
         self.body.main_binding = declaration
             .binding()
-            .map(|binding| self.collect_binding(binding));
+            .map(|binding| self.collect_binding(&binding));
 
         (self.body, self.source_map)
     }
 
     fn collect_global_constant_declaration(
         mut self,
-        declaration: ast::GlobalConstantDeclaration,
+        declaration: &ast::GlobalConstantDeclaration,
     ) -> (Body, BodySourceMap) {
         self.body.root = declaration
             .init()
@@ -163,14 +163,14 @@ impl Collector<'_> {
 
         self.body.main_binding = declaration
             .binding()
-            .map(|binding| self.collect_binding(binding));
+            .map(|binding| self.collect_binding(&binding));
 
         (self.body, self.source_map)
     }
 
     fn collect_override_declaration(
         mut self,
-        declaration: ast::OverrideDeclaration,
+        declaration: &ast::OverrideDeclaration,
     ) -> (Body, BodySourceMap) {
         self.body.root = declaration
             .init()
@@ -179,16 +179,16 @@ impl Collector<'_> {
 
         self.body.main_binding = declaration
             .binding()
-            .map(|binding| self.collect_binding(binding));
+            .map(|binding| self.collect_binding(&binding));
 
         (self.body, self.source_map)
     }
 
     fn collect_binding(
         &mut self,
-        binding: ast::Binding,
+        binding: &ast::Binding,
     ) -> BindingId {
-        let source = AstPointer::new(&binding);
+        let source = AstPointer::new(binding);
         let name = binding.name().map_or_else(Name::missing, Name::from);
         self.alloc_binding(Binding { name }, source)
     }
@@ -198,7 +198,7 @@ impl Collector<'_> {
         binding: Option<ast::Binding>,
     ) -> BindingId {
         match binding {
-            Some(binding) => self.collect_binding(binding),
+            Some(binding) => self.collect_binding(&binding),
             None => self.missing_binding(),
         }
     }
@@ -208,18 +208,18 @@ impl Collector<'_> {
         compound_statement: Option<ast::CompoundStatement>,
     ) -> StatementId {
         match compound_statement {
-            Some(statement) => self.collect_compound_statement(statement),
+            Some(statement) => self.collect_compound_statement(&statement),
             None => self.missing_statement(),
         }
     }
 
     fn collect_compound_statement(
         &mut self,
-        compound_statement: ast::CompoundStatement,
+        compound_statement: &ast::CompoundStatement,
     ) -> StatementId {
         let statements = compound_statement
             .statements()
-            .filter_map(|statement| self.collect_statement(statement))
+            .filter_map(|statement| self.collect_statement(&statement))
             .collect();
 
         self.body
@@ -227,12 +227,13 @@ impl Collector<'_> {
             .alloc(Statement::Compound { statements })
     }
 
+    #[expect(clippy::too_many_lines, reason = "TODO")]
     fn collect_statement(
         &mut self,
-        statement: ast::Statement,
+        statement: &ast::Statement,
     ) -> Option<StatementId> {
-        let hir_statement = match statement {
-            ast::Statement::VariableStatement(ref variable_statement) => {
+        let hir_statement = match &statement {
+            ast::Statement::VariableStatement(variable_statement) => {
                 let binding_id = self.collect_binding_opt(variable_statement.binding());
                 let initializer = variable_statement
                     .initializer()
@@ -276,13 +277,13 @@ impl Collector<'_> {
             ast::Statement::CompoundStatement(compound_statement) => {
                 return Some(self.collect_compound_statement(compound_statement));
             },
-            ast::Statement::ReturnStatement(ref ret_statement) => {
+            ast::Statement::ReturnStatement(ret_statement) => {
                 let expression = ret_statement
                     .expression()
                     .map(|expression| self.collect_expression(expression));
                 Statement::Return { expression }
             },
-            ast::Statement::AssignmentStatement(ref assignment) => {
+            ast::Statement::AssignmentStatement(assignment) => {
                 let left_side = self.collect_expression_opt(assignment.left_side());
                 let right_side = self.collect_expression_opt(assignment.right_side());
                 Statement::Assignment {
@@ -290,7 +291,7 @@ impl Collector<'_> {
                     right_side,
                 }
             },
-            ast::Statement::CompoundAssignmentStatement(ref assignment) => {
+            ast::Statement::CompoundAssignmentStatement(assignment) => {
                 let left_side = self.collect_expression_opt(assignment.left_side());
                 let right_side = self.collect_expression_opt(assignment.right_side());
                 let op = assignment.operator()?;
@@ -300,12 +301,12 @@ impl Collector<'_> {
                     op,
                 }
             },
-            ast::Statement::IncrementDecrementStatement(ref statement) => {
+            ast::Statement::IncrementDecrementStatement(statement) => {
                 let expression = self.collect_expression_opt(statement.expression());
                 let op = statement.increment_decrement()?;
                 Statement::IncrDecr { expression, op }
             },
-            ast::Statement::IfStatement(ref if_statement) => {
+            ast::Statement::IfStatement(if_statement) => {
                 let condition = self.collect_expression_opt(if_statement.condition());
                 let block = self.collect_compound_statement_opt(if_statement.block());
                 let else_if_blocks = if_statement
@@ -322,7 +323,7 @@ impl Collector<'_> {
                     else_block,
                 }
             },
-            ast::Statement::SwitchStatement(ref statement) => {
+            ast::Statement::SwitchStatement(statement) => {
                 let expression = self.collect_expression_opt(statement.expression());
 
                 let (case_blocks, default_block) = match statement.block() {
@@ -358,16 +359,16 @@ impl Collector<'_> {
                     default_block,
                 }
             },
-            ast::Statement::ForStatement(ref for_statement) => {
+            ast::Statement::ForStatement(for_statement) => {
                 let initializer = for_statement
                     .initializer()
-                    .and_then(|init| self.collect_statement(init));
+                    .and_then(|initializer| self.collect_statement(&initializer));
                 let condition = for_statement
                     .condition()
                     .map(|init| self.collect_expression(init));
                 let continuing_part = for_statement
                     .continuing_part()
-                    .and_then(|init| self.collect_statement(init));
+                    .and_then(|initializer| self.collect_statement(&initializer));
 
                 let block = self.collect_compound_statement_opt(for_statement.block());
 
@@ -378,7 +379,7 @@ impl Collector<'_> {
                     block,
                 }
             },
-            ast::Statement::WhileStatement(ref while_statement) => {
+            ast::Statement::WhileStatement(while_statement) => {
                 let condition = self.collect_expression_opt(while_statement.condition());
                 let block = self.collect_compound_statement_opt(while_statement.block());
                 Statement::While { condition, block }
@@ -386,23 +387,24 @@ impl Collector<'_> {
             ast::Statement::Discard(_) => Statement::Discard,
             ast::Statement::Break(_) => Statement::Break,
             ast::Statement::Continue(_) => Statement::Continue,
-            ast::Statement::ContinuingStatement(ref continuing) => Statement::Continuing {
+            ast::Statement::ContinuingStatement(continuing) => Statement::Continuing {
                 block: self.collect_compound_statement_opt(continuing.block()),
             },
-            ast::Statement::ExpressionStatement(ref expression) => {
+            ast::Statement::ExpressionStatement(expression) => {
                 let expression = self.collect_expression_opt(expression.expression());
                 Statement::Expression { expression }
             },
-            ast::Statement::LoopStatement(ref statement) => {
+            ast::Statement::LoopStatement(statement) => {
                 let body = self.collect_compound_statement_opt(statement.block());
                 Statement::Loop { body }
             },
         };
 
-        let id = self.allocate_statement(hir_statement, AstPointer::new(&statement));
+        let id = self.allocate_statement(hir_statement, AstPointer::new(statement));
         Some(id)
     }
 
+    #[expect(clippy::too_many_lines, reason = "TODO")]
     fn collect_expression(
         &mut self,
         expression: ast::Expression,
@@ -514,6 +516,10 @@ impl Collector<'_> {
                 let r#type = r#type.ty();
                 if let Some(r#type) = r#type {
                     let has_generic = r#type.generic_arg_list().is_some();
+                    #[expect(
+                        clippy::wildcard_enum_match_arm,
+                        reason = "To many to list, but could be improved."
+                    )]
                     let callee = match r#type {
                         ast::Type::VecType(vec) if !has_generic => {
                             let dimensions = vector_dimensions(&vec);
@@ -524,9 +530,9 @@ impl Collector<'_> {
                             Callee::InferredComponentMatrix { rows, columns }
                         },
                         ast::Type::ArrayType(_) if !has_generic => Callee::InferredComponentArray,
-                        r#type => {
+                        other => {
                             let r#type =
-                                TypeReference::try_from(r#type).unwrap_or(TypeReference::Error);
+                                TypeReference::try_from(other).unwrap_or(TypeReference::Error);
                             let r#type = self.database.intern_type_ref(r#type);
                             Callee::Type(r#type)
                         },

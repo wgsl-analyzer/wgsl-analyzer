@@ -16,14 +16,14 @@ pub type ScopeId = Idx<ScopeData>;
 #[derive(Debug, PartialEq, Eq)]
 pub struct ExprScopes {
     scopes: Arena<ScopeData>,
-    pub scope_by_expression: FxHashMap<ExpressionId, ScopeId>,
+    pub(crate) scope_by_expression: FxHashMap<ExpressionId, ScopeId>,
     scope_by_statement: FxHashMap<StatementId, ScopeId>,
 }
 
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct ScopeData {
     parent: Option<ScopeId>,
-    pub entries: Vec<ScopeEntry>,
+    pub(crate) entries: Vec<ScopeEntry>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -67,7 +67,7 @@ impl ExprScopes {
         if let Some(statement) = body.root {
             match statement {
                 Either::Left(statement) => {
-                    let _ = compute_statement_scopes(statement, body, &mut scopes, root);
+                    compute_statement_scopes(statement, body, &mut scopes, root);
                 },
                 Either::Right(expression) => {
                     compute_expression_scopes(expression, body, &mut scopes, root);
@@ -186,6 +186,7 @@ fn compute_compound_statement_scopes(
     }
 }
 
+#[expect(clippy::too_many_lines, reason = "TODO")]
 fn compute_statement_scopes(
     statement_id: StatementId,
     body: &Body,
@@ -227,11 +228,8 @@ fn compute_statement_scopes(
         Statement::Assignment {
             left_side,
             right_side,
-        } => {
-            compute_expression_scopes(*left_side, body, scopes, scope);
-            compute_expression_scopes(*right_side, body, scopes, scope);
-        },
-        Statement::CompoundAssignment {
+        }
+        | Statement::CompoundAssignment {
             left_side,
             right_side,
             ..
@@ -239,7 +237,7 @@ fn compute_statement_scopes(
             compute_expression_scopes(*left_side, body, scopes, scope);
             compute_expression_scopes(*right_side, body, scopes, scope);
         },
-        Statement::IncrDecr { expression, .. } => {
+        Statement::IncrDecr { expression, .. } | Statement::Expression { expression } => {
             compute_expression_scopes(*expression, body, scopes, scope);
         },
         Statement::If {
@@ -284,18 +282,18 @@ fn compute_statement_scopes(
             continuing_part,
             block,
         } => {
-            let mut scope = scope;
+            let mut new_scope = scope;
             if let Some(init) = initializer {
-                scope = compute_statement_scopes(*init, body, scopes, scope);
+                new_scope = compute_statement_scopes(*init, body, scopes, new_scope);
             }
             if let Some(condition) = condition {
-                compute_expression_scopes(*condition, body, scopes, scope);
+                compute_expression_scopes(*condition, body, scopes, new_scope);
             }
             if let Some(cont) = continuing_part {
                 // Variables produced in the continuing block are not used
-                let _ = compute_statement_scopes(*cont, body, scopes, scope);
+                compute_statement_scopes(*cont, body, scopes, new_scope);
             }
-            let _ = compute_statement_scopes(*block, body, scopes, scope);
+            compute_statement_scopes(*block, body, scopes, new_scope);
         },
         Statement::While { condition, block } => {
             compute_expression_scopes(*condition, body, scopes, scope);
@@ -307,14 +305,8 @@ fn compute_statement_scopes(
             }
         },
         Statement::Missing | Statement::Discard | Statement::Break | Statement::Continue => {},
-        Statement::Continuing { block } => {
+        Statement::Continuing { block } | Statement::Loop { body: block } => {
             compute_statement_scopes(*block, body, scopes, scope);
-        },
-        Statement::Expression { expression } => {
-            compute_expression_scopes(*expression, body, scopes, scope);
-        },
-        Statement::Loop { body: block } => {
-            let _ = compute_statement_scopes(*block, body, scopes, scope);
         },
     }
     scope

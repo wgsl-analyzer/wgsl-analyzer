@@ -327,7 +327,7 @@ impl From<type_ref::VecDimensionality> for VecSize {
 impl std::fmt::Display for VecSize {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match self {
             Self::Two => f.write_str("2"),
@@ -425,7 +425,7 @@ pub enum TextureDimensionality {
 impl std::fmt::Display for TextureDimensionality {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match self {
             Self::D1 => f.write_str("1d"),
@@ -469,7 +469,7 @@ pub enum TexelFormat {
 impl std::fmt::Display for TexelFormat {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         let str = match self {
             Self::Rgba8unorm => "rgba8unorm",

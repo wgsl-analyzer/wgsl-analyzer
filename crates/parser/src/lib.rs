@@ -39,7 +39,7 @@ pub struct Parse {
 impl Debug for Parse {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         f.debug_struct("Parse")
             .field("green_node", &self.green_node)

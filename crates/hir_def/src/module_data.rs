@@ -147,7 +147,7 @@ pub enum ImportValue {
 
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct ModuleInfo {
-    pub data: ModuleData,
+    pub(crate) data: ModuleData,
     items: Vec<ModuleItem>,
 }
 
@@ -176,7 +176,7 @@ impl ModuleInfo {
         };
 
         let mut lower_ctx = lower::Ctx::new(database, file_id);
-        lower_ctx.lower_source_file(source);
+        lower_ctx.lower_source_file(&source);
 
         Arc::new(Self {
             data: lower_ctx.module_data,
@@ -192,7 +192,12 @@ impl ModuleInfo {
     pub fn structs(&self) -> impl Iterator<Item = ModuleItemId<Struct>> + '_ {
         self.items.iter().filter_map(|item| match item {
             ModuleItem::Struct(r#struct) => Some(*r#struct),
-            _ => None,
+            ModuleItem::Function(_)
+            | ModuleItem::GlobalVariable(_)
+            | ModuleItem::GlobalConstant(_)
+            | ModuleItem::Override(_)
+            | ModuleItem::Import(_)
+            | ModuleItem::TypeAlias(_) => None,
         })
     }
 
@@ -221,7 +226,6 @@ impl<N> From<Idx<N>> for ModuleItemId<N> {
 }
 
 // If we automatically derive this trait, ModuleItemId<N> where N does not implement Hash cannot compile
-#[expect(clippy::derived_hash_with_manual_eq)]
 impl<N> std::hash::Hash for ModuleItemId<N> {
     fn hash<H: std::hash::Hasher>(
         &self,

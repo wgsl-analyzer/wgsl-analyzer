@@ -14,17 +14,17 @@ use super::{
     Field, GlobalConstant, GlobalVariable, Import, ImportValue, Name, Override, Struct, TypeAlias,
 };
 
-pub(crate) struct Ctx<'a> {
-    database: &'a dyn DefDatabase,
+pub(crate) struct Ctx<'database> {
+    database: &'database dyn DefDatabase,
     file_id: HirFileId,
     source_ast_id_map: Arc<AstIdMap>,
-    pub module_data: ModuleData,
-    pub items: Vec<ModuleItem>,
+    pub(crate) module_data: ModuleData,
+    pub(crate) items: Vec<ModuleItem>,
 }
 
-impl<'a> Ctx<'a> {
+impl<'database> Ctx<'database> {
     pub(crate) fn new(
-        database: &'a dyn DefDatabase,
+        database: &'database dyn DefDatabase,
         file_id: HirFileId,
     ) -> Self {
         Self {
@@ -38,7 +38,7 @@ impl<'a> Ctx<'a> {
 
     pub(crate) fn lower_source_file(
         &mut self,
-        source_file: SourceFile,
+        source_file: &SourceFile,
     ) {
         source_file.items().for_each(|item| {
             self.lower_item(item);
@@ -82,7 +82,7 @@ impl<'a> Ctx<'a> {
                     .string_literal()?
                     .text()
                     .chars()
-                    .filter(|&c| c != '"')
+                    .filter(|&character| character != '"')
                     .collect();
                 ImportValue::Path(import_path)
             },
@@ -243,7 +243,7 @@ impl<'a> Ctx<'a> {
         let ast_id = self.source_ast_id_map.ast_id(function);
 
         let start_parameter = self.next_param_index();
-        self.lower_function_param_list(function.parameter_list()?);
+        self.lower_function_param_list(&function.parameter_list()?);
         let end_parameter = self.next_param_index();
         let parameters = IdxRange::new(start_parameter..end_parameter);
 
@@ -265,7 +265,7 @@ impl<'a> Ctx<'a> {
 
     fn lower_function_param_list(
         &mut self,
-        function_param_list: ast::ParameterList,
+        function_param_list: &ast::ParameterList,
     ) -> Option<()> {
         for parameter in function_param_list.parameters() {
             if let Some(parameter) = parameter.variable_ident_declaration() {
@@ -296,7 +296,7 @@ impl<'a> Ctx<'a> {
                 };
                 if let Ok(parse) = parse {
                     let param_list = ast::ParameterList::cast(parse.syntax())?;
-                    self.lower_function_param_list(param_list)?;
+                    self.lower_function_param_list(&param_list)?;
                 }
             }
         }
@@ -304,6 +304,7 @@ impl<'a> Ctx<'a> {
         Some(())
     }
 
+    #[expect(clippy::unused_self, reason = "intentional API")]
     fn lower_type_ref(
         &self,
         r#type: ast::Type,
@@ -312,12 +313,12 @@ impl<'a> Ctx<'a> {
     }
 
     fn next_param_index(&self) -> Idx<Parameter> {
-        let index = self.module_data.parameters.len() as u32;
+        let index = u32::try_from(self.module_data.parameters.len()).unwrap();
         Idx::from_raw(la_arena::RawIdx::from(index))
     }
 
     fn next_field_index(&self) -> Idx<Field> {
-        let index = self.module_data.fields.len() as u32;
+        let index = u32::try_from(self.module_data.fields.len()).unwrap();
         Idx::from_raw(la_arena::RawIdx::from(index))
     }
 }

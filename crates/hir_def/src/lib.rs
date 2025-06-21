@@ -43,17 +43,22 @@ impl<T> InFile<T> {
         InFile::new(self.file_id, value)
     }
 
-    pub fn map<F: FnOnce(T) -> U, U>(
+    pub fn map<Function: FnOnce(T) -> U, U>(
         self,
-        f: F,
+        function: Function,
     ) -> InFile<U> {
-        InFile::new(self.file_id, f(self.value))
+        InFile::new(self.file_id, function(self.value))
     }
 
     pub const fn as_ref(&self) -> InFile<&T> {
         self.with_value(&self.value)
     }
 
+    /// Get the syntax of the file.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the file is not found.
     pub fn file_syntax(
         &self,
         database: &dyn database::DefDatabase,
@@ -99,8 +104,8 @@ impl HasTextRange for SyntaxNode {
 impl<N: HasTextRange, T: HasTextRange> HasTextRange for NodeOrToken<N, T> {
     fn text_range(&self) -> TextRange {
         match self {
-            Self::Node(n) => n.text_range(),
-            Self::Token(t) => t.text_range(),
+            Self::Node(node) => node.text_range(),
+            Self::Token(token) => token.text_range(),
         }
     }
 }

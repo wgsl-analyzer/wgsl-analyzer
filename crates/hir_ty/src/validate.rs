@@ -12,7 +12,7 @@ pub enum Scope {
 impl std::fmt::Debug for Scope {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match self {
             Self::Function => write!(f, "function"),
@@ -35,7 +35,7 @@ pub enum AddressSpaceError {
 impl std::fmt::Display for AddressSpaceError {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match self {
             Self::ExpectedAccessMode(mode) => match mode.as_slice() {
