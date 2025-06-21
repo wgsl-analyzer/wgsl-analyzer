@@ -25,12 +25,15 @@ pub(crate) fn complete_names_in_scope(
         if name == Name::missing() {
             return;
         }
+        #[expect(clippy::unreachable, reason = "TODO")]
         let kind = match item {
-            ScopeDef::Local(_) => CompletionItemKind::Variable,
             ScopeDef::ModuleItem(_, ModuleItem::Function(_)) => CompletionItemKind::Function,
-            ScopeDef::ModuleItem(_, ModuleItem::GlobalVariable(_)) => CompletionItemKind::Variable,
-            ScopeDef::ModuleItem(_, ModuleItem::GlobalConstant(_)) => CompletionItemKind::Constant,
-            ScopeDef::ModuleItem(_, ModuleItem::Override(_)) => CompletionItemKind::Constant,
+            ScopeDef::ModuleItem(_, ModuleItem::GlobalVariable(_)) | ScopeDef::Local(_) => {
+                CompletionItemKind::Variable
+            },
+            ScopeDef::ModuleItem(_, ModuleItem::GlobalConstant(_) | ModuleItem::Override(_)) => {
+                CompletionItemKind::Constant
+            },
             ScopeDef::ModuleItem(
                 _,
                 ModuleItem::Struct(_) | ModuleItem::TypeAlias(_) | ModuleItem::Import(_),
@@ -74,14 +77,14 @@ pub(crate) fn complete_names_in_scope(
     accumulator.add_all(Builtin::ALL_BUILTINS.iter().map(|name| {
         let mut builder =
             CompletionItem::new(CompletionItemKind::Function, context.source_range(), *name);
-        builder.with_relevance(|r| CompletionRelevance {
+        builder.with_relevance(|relevance| CompletionRelevance {
             exact_name_match: false,
             type_match: None,
             is_local: false,
             postfix_match: None,
             is_builtin: true,
             swizzle_index: None,
-            ..r
+            ..relevance
         });
         builder.build(context.database)
     }));

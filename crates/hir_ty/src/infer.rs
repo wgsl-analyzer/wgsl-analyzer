@@ -657,31 +657,26 @@ impl<'database> InferenceContext<'database> {
 
         match &expected {
             TypeExpectation::Type(expected_type) => {
-                if self.expect_ty_inner(r#type, expected_type) == Ok(()) {
-                    r#type
-                } else {
+                if self.expect_ty_inner(r#type, expected_type) != Ok(()) {
                     self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
                         expression,
                         actual: r#type,
                         expected: expected.clone(),
                     });
-                    r#type
                 }
             },
             TypeExpectation::TypeOrVecOf(expect) => {
-                if self.expect_ty_inner(r#type.this_or_vec_inner(self.database), expect) == Ok(()) {
-                    r#type
-                } else {
+                if self.expect_ty_inner(r#type.this_or_vec_inner(self.database), expect) != Ok(()) {
                     self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
                         expression,
                         actual: r#type,
                         expected: expected.clone(),
                     });
-                    r#type
                 }
             },
-            TypeExpectation::None => r#type,
+            TypeExpectation::None => {},
         }
+        r#type
     }
 
     #[expect(clippy::too_many_lines, reason = "TODO")]
@@ -749,15 +744,17 @@ impl<'database> InferenceContext<'database> {
                             self.error_ty()
                         }
                     },
-                    TyKind::Matrix(_) => {
-                        self.push_diagnostic(InferenceDiagnostic::NoSuchField {
-                            expression: *field_expression,
-                            name: name.clone(),
-                            r#type: expression_ty,
-                        });
-                        self.error_ty()
-                    },
-                    _ => {
+                    TyKind::Error
+                    | TyKind::Scalar(_)
+                    | TyKind::Atomic(_)
+                    | TyKind::Matrix(_)
+                    | TyKind::Array(_)
+                    | TyKind::Texture(_)
+                    | TyKind::Sampler(_)
+                    | TyKind::Reference(_)
+                    | TyKind::Pointer(_)
+                    | TyKind::BoundVar(_)
+                    | TyKind::StorageTypeOfTexelFormat(_) => {
                         self.push_diagnostic(InferenceDiagnostic::NoSuchField {
                             expression: *field_expression,
                             name: name.clone(),
@@ -806,7 +803,16 @@ impl<'database> InferenceContext<'database> {
                         // TODO out of bounds
                         array.inner
                     },
-                    _ => {
+                    TyKind::Error
+                    | TyKind::Scalar(_)
+                    | TyKind::Atomic(_)
+                    | TyKind::Struct(_)
+                    | TyKind::Texture(_)
+                    | TyKind::Sampler(_)
+                    | TyKind::Reference(_)
+                    | TyKind::Pointer(_)
+                    | TyKind::BoundVar(_)
+                    | TyKind::StorageTypeOfTexelFormat(_) => {
                         self.push_diagnostic(InferenceDiagnostic::ArrayAccessInvalidType {
                             expression,
                             r#type: left_side,
@@ -848,21 +854,21 @@ impl<'database> InferenceContext<'database> {
 
     fn validate_function_call(
         &mut self,
-        f: &FunctionDetails,
-        arguments: Vec<Type>,
+        function: &FunctionDetails,
+        arguments: &[Type],
         callee: ExpressionId,
         expression: ExpressionId,
     ) -> Type {
-        if f.parameters.len() == arguments.len() {
-            for (expected, actual) in f.parameters().zip(arguments.iter().copied()) {
+        if function.parameters.len() == arguments.len() {
+            for (expected, actual) in function.parameters().zip(arguments.iter().copied()) {
                 self.expect_same_type(expression, expected, actual);
             }
 
-            f.return_type.unwrap_or_else(|| self.error_ty())
+            function.return_type.unwrap_or_else(|| self.error_ty())
         } else {
             self.push_diagnostic(InferenceDiagnostic::FunctionCallArgCountMismatch {
                 expression: callee,
-                n_expected: f.parameters.len(),
+                n_expected: function.parameters.len(),
                 n_actual: arguments.len(),
             });
             self.error_ty()
@@ -969,7 +975,7 @@ impl<'database> InferenceContext<'database> {
 
     fn builtin_vector_inferred_constructor(
         &self,
-        size: &VecDimensionality,
+        size: VecDimensionality,
     ) -> BuiltinId {
         match size {
             VecDimensionality::Two => Builtin::builtin_op_vec2_constructor(self.database),
@@ -981,8 +987,8 @@ impl<'database> InferenceContext<'database> {
 
     fn builtin_matrix_inferred_constructor(
         &self,
-        columns: &VecDimensionality,
-        rows: &VecDimensionality,
+        columns: VecDimensionality,
+        rows: VecDimensionality,
     ) -> BuiltinId {
         use type_ref::VecDimensionality::{Four, Three, Two};
         match (columns, rows) {
@@ -1078,15 +1084,17 @@ impl<'database> InferenceContext<'database> {
         }
 
         for swizzle in &SWIZZLES {
-            let allowed_chars = &swizzle[..max_swizzle_index as usize];
+            let allowed_chars = &swizzle[..(usize::from(max_swizzle_index))];
             if name
                 .as_str()
                 .chars()
                 .all(|character| allowed_chars.contains(&character))
             {
-                let r#type = self.ty_from_vec_size(vec_type.inner, name.as_str().len() as u8);
-                let r = self.make_ref(r#type, AddressSpace::Function, AccessMode::read_write()); // TODO is correct?
-                return Ok(r);
+                let r#type = self
+                    .ty_from_vec_size(vec_type.inner, u8::try_from(name.as_str().len()).unwrap());
+                let result_type =
+                    self.make_ref(r#type, AddressSpace::Function, AccessMode::read_write()); // TODO is correct?
+                return Ok(result_type);
             }
         }
 
@@ -1143,7 +1151,7 @@ impl<'database> InferenceContext<'database> {
     }
 
     fn try_call_builtin(
-        &mut self,
+        &self,
         builtin_id: BuiltinId,
         arguments: &[Type],
         return_type: Option<Type>,
@@ -1194,7 +1202,7 @@ impl<'database> InferenceContext<'database> {
     ) -> Type {
         match callee {
             Callee::InferredComponentMatrix { rows, columns } => {
-                let builtin_id = self.builtin_matrix_inferred_constructor(columns, rows);
+                let builtin_id = self.builtin_matrix_inferred_constructor(*columns, *rows);
 
                 self.call_builtin(
                     expression,
@@ -1204,7 +1212,7 @@ impl<'database> InferenceContext<'database> {
                 )
             },
             Callee::InferredComponentVec(size) => {
-                let builtin_id = self.builtin_vector_inferred_constructor(size);
+                let builtin_id = self.builtin_vector_inferred_constructor(*size);
 
                 self.call_builtin(expression, builtin_id, &arguments, Some("vec construction"))
             },
@@ -1246,7 +1254,9 @@ impl<'database> InferenceContext<'database> {
                             self.result
                                 .call_resolutions
                                 .insert(expression, ResolvedCall::Function(resolved));
-                            self.validate_function_call(&details, arguments, expression, expression)
+                            self.validate_function_call(
+                                &details, &arguments, expression, expression,
+                            )
                         },
                         hir_def::resolver::ResolveCallable::PredeclaredTypeAlias(type_ref) => {
                             let r#type = self.lower_ty(expression, &type_ref);
@@ -1285,6 +1295,7 @@ impl<'database> InferenceContext<'database> {
         arguments: Vec<Type>,
     ) {
         fn size_to_dimension(size: VecSize) -> VecDimensionality {
+            #[expect(clippy::unreachable, reason = "TODO")]
             match size {
                 VecSize::Two => VecDimensionality::Two,
                 VecSize::Three => VecDimensionality::Three,
@@ -1308,16 +1319,16 @@ impl<'database> InferenceContext<'database> {
                     r#type,
                 );
             },
-            TyKind::Array(_) => {
+            TyKind::Array(array_type) => {
                 if arguments.is_empty() {}
-                // TODO: Implement checking that all the arguments have the same type (inner)
+                // checking that all the arguments have the same type (inner)
             },
             TyKind::Vector(vec) => {
                 if arguments.is_empty() {
                     return;
                 }
                 let construction_builtin_id =
-                    self.builtin_vector_inferred_constructor(&size_to_dimension(vec.size));
+                    self.builtin_vector_inferred_constructor(size_to_dimension(vec.size));
                 let construction_result =
                     self.try_call_builtin(construction_builtin_id, &arguments, Some(r#type));
                 if construction_result.is_ok() {
@@ -1342,8 +1353,8 @@ impl<'database> InferenceContext<'database> {
                     return;
                 }
                 let construction_builtin_id = self.builtin_matrix_inferred_constructor(
-                    &size_to_dimension(matrix.columns),
-                    &size_to_dimension(matrix.rows),
+                    size_to_dimension(matrix.columns),
+                    size_to_dimension(matrix.rows),
                 );
                 let construction_result =
                     self.try_call_builtin(construction_builtin_id, &arguments, Some(r#type));
@@ -1380,6 +1391,7 @@ impl<'database> InferenceContext<'database> {
                     r#type,
                 });
             },
+            #[expect(clippy::unreachable, reason = "TODO")]
             TyKind::BoundVar(_) | TyKind::Reference(_) => unreachable!(),
             TyKind::Error => {},
         }
@@ -1388,9 +1400,9 @@ impl<'database> InferenceContext<'database> {
 
 #[derive(Default)]
 struct UnificationTable {
-    type_vars: FxHashMap<BoundVar, Type>,
-    vec_size_vars: FxHashMap<BoundVar, VecSize>,
-    texel_format_vars: FxHashMap<BoundVar, TexelFormat>,
+    types: FxHashMap<BoundVar, Type>,
+    vec_sizes: FxHashMap<BoundVar, VecSize>,
+    texel_formats: FxHashMap<BoundVar, TexelFormat>,
 }
 
 impl UnificationTable {
@@ -1399,7 +1411,7 @@ impl UnificationTable {
         var: BoundVar,
         vec_size: VecSize,
     ) -> Result<(), ()> {
-        match self.vec_size_vars.entry(var) {
+        match self.vec_sizes.entry(var) {
             Entry::Occupied(entry) if *entry.get() == vec_size => Ok(()),
             Entry::Occupied(_) => Err(()),
             Entry::Vacant(entry) => {
@@ -1414,7 +1426,7 @@ impl UnificationTable {
         var: BoundVar,
         r#type: Type,
     ) -> Result<(), ()> {
-        match self.type_vars.entry(var) {
+        match self.types.entry(var) {
             Entry::Occupied(entry) if *entry.get() == r#type => Ok(()),
             Entry::Occupied(_) => Err(()),
             Entry::Vacant(entry) => {
@@ -1429,7 +1441,7 @@ impl UnificationTable {
         var: BoundVar,
         format: TexelFormat,
     ) -> Result<(), ()> {
-        match self.texel_format_vars.entry(var) {
+        match self.texel_formats.entry(var) {
             Entry::Occupied(entry) if *entry.get() == format => Ok(()),
             Entry::Occupied(_) => Err(()),
             Entry::Vacant(entry) => {
@@ -1445,26 +1457,26 @@ impl UnificationTable {
         r#type: Type,
     ) -> Type {
         match r#type.kind(database) {
-            TyKind::BoundVar(var) => *self.type_vars.get(&var).expect("type var not constrained"),
+            TyKind::BoundVar(var) => *self.types.get(&var).expect("type var not constrained"),
             TyKind::Vector(VectorType { size, inner }) => {
                 let size = match size {
                     VecSize::BoundVar(size_var) => *self
-                        .vec_size_vars
+                        .vec_sizes
                         .get(&size_var)
                         .expect("vec size var not constrained"),
-                    size => size,
+                    (VecSize::Two | VecSize::Three | VecSize::Four) => size,
                 };
                 let inner = self.resolve(database, inner);
                 TyKind::Vector(VectorType { size, inner }).intern(database)
             },
             TyKind::Matrix(mat) => {
                 let columns = match mat.columns {
-                    VecSize::BoundVar(var) => self.vec_size_vars[&var],
-                    other => other,
+                    VecSize::BoundVar(var) => self.vec_sizes[&var],
+                    other @ (VecSize::Two | VecSize::Three | VecSize::Four) => other,
                 };
                 let rows = match mat.rows {
-                    VecSize::BoundVar(var) => self.vec_size_vars[&var],
-                    other => other,
+                    VecSize::BoundVar(var) => self.vec_sizes[&var],
+                    other @ (VecSize::Two | VecSize::Three | VecSize::Four) => other,
                 };
 
                 let inner = self.resolve(database, mat.inner);
@@ -1481,7 +1493,7 @@ impl UnificationTable {
                 arrayed,
                 multisampled,
             }) => {
-                let format = self.texel_format_vars[&var];
+                let format = self.texel_formats[&var];
 
                 TyKind::Texture(TextureType {
                     kind: TextureKind::Storage(format, mode),
@@ -1507,10 +1519,18 @@ impl UnificationTable {
                 .intern(database)
             },
             TyKind::StorageTypeOfTexelFormat(var) => {
-                let format = self.texel_format_vars[&var];
+                let format = self.texel_formats[&var];
                 storage_type_of_texel_format(database, format)
             },
-            _ => r#type,
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_) => r#type,
         }
     }
 }
@@ -1541,7 +1561,18 @@ fn unify(
                 }
                 Ok(())
             },
-            _ => Err(()),
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
         TyKind::Matrix(MatrixType {
             columns,
@@ -1565,7 +1596,18 @@ fn unify(
 
                 Ok(())
             },
-            _ => Err(()),
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Vector(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
         TyKind::Pointer(pointer) => match found_kind {
             TyKind::Pointer(found_pointer) => {
@@ -1573,7 +1615,18 @@ fn unify(
 
                 Ok(())
             },
-            _ => Err(()),
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Vector(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
         TyKind::Array(array) => match found_kind {
             TyKind::Array(found_array) => {
@@ -1581,7 +1634,18 @@ fn unify(
 
                 Ok(())
             },
-            _ => Err(()),
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Vector(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
         TyKind::Atomic(atomic) => match found_kind {
             TyKind::Atomic(found_atomic) => {
@@ -1589,7 +1653,18 @@ fn unify(
 
                 Ok(())
             },
-            _ => Err(()),
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Vector(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
         TyKind::Texture(TextureType {
             kind: TextureKind::Storage(format, mode),
@@ -1615,20 +1690,34 @@ fn unify(
                     TexelFormat::BoundVar(var) => {
                         table.set_texel_format(var, format_2)?;
                     },
-                    _ => {
+                    TexelFormat::Rgba8unorm
+                    | TexelFormat::Rgba8snorm
+                    | TexelFormat::Rgba8uint
+                    | TexelFormat::Rgba8sint
+                    | TexelFormat::Rgba16uint
+                    | TexelFormat::Rgba16sint
+                    | TexelFormat::Rgba16float
+                    | TexelFormat::Rgba32uint
+                    | TexelFormat::Rgba32sint
+                    | TexelFormat::Rgba32float
+                    | TexelFormat::R32uint
+                    | TexelFormat::R32sint
+                    | TexelFormat::R32float
+                    | TexelFormat::Rg32uint
+                    | TexelFormat::Rg32sint
+                    | TexelFormat::Rg32float => {
                         if format != format_2 {
                             return Err(());
                         }
                     },
                 }
                 match (mode, mode_2) {
-                    (AccessMode::Any, _) => {},
+                    (AccessMode::Any, _)
+                    | (AccessMode::Read, AccessMode::ReadWrite | AccessMode::Read)
+                    | (AccessMode::ReadWrite, AccessMode::ReadWrite)
+                    | (AccessMode::Write, AccessMode::ReadWrite | AccessMode::Write) => {},
+                    #[expect(clippy::unreachable, reason = "TODO")]
                     (_, AccessMode::Any) => unreachable!(),
-
-                    (AccessMode::ReadWrite, AccessMode::ReadWrite) => {},
-                    (AccessMode::Read, AccessMode::ReadWrite | AccessMode::Read) => {},
-                    (AccessMode::Write, AccessMode::ReadWrite | AccessMode::Write) => {},
-
                     (AccessMode::Write | AccessMode::ReadWrite, AccessMode::Read)
                     | (AccessMode::Read | AccessMode::ReadWrite, AccessMode::Write) => {
                         return Err(());
@@ -1637,10 +1726,22 @@ fn unify(
 
                 Ok(())
             },
-            _ => Err(()),
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Vector(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
         TyKind::StorageTypeOfTexelFormat(format) => {
-            let format = table.texel_format_vars[&format];
+            let format = table.texel_formats[&format];
             let storage_type = storage_type_of_texel_format(database, format);
 
             if storage_type != found {
@@ -1673,11 +1774,36 @@ fn unify(
 
                 Ok(())
             },
-            _ => Err(()),
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Vector(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
-
-        _ if expected == found => Ok(()),
-        _ => Err(()),
+        TyKind::Error
+        | TyKind::Scalar(_)
+        | TyKind::Struct(_)
+        | TyKind::Texture(_)
+        | TyKind::Sampler(_)
+        | TyKind::Reference(_)
+            if expected == found =>
+        {
+            Ok(())
+        },
+        TyKind::Error
+        | TyKind::Scalar(_)
+        | TyKind::Struct(_)
+        | TyKind::Texture(_)
+        | TyKind::Sampler(_)
+        | TyKind::Reference(_) => Err(()),
     }
 }
 
@@ -1702,8 +1828,9 @@ fn storage_type_of_texel_format(
         | TexelFormat::Rgba32uint
         | TexelFormat::R32uint
         | TexelFormat::Rg32uint => ScalarType::U32,
-        TexelFormat::BoundVar(_) => unreachable!(),
-        TexelFormat::Any => unreachable!(),
+
+        #[expect(clippy::unreachable, reason = "TODO")]
+        TexelFormat::BoundVar(_) | TexelFormat::Any => unreachable!(),
     };
     TyKind::Vector(VectorType {
         size: VecSize::Four,

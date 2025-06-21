@@ -52,14 +52,14 @@ pub struct CompletedMarker {
 impl CompletedMarker {
     pub fn precede(
         self,
-        p: &mut Parser<'_, '_>,
+        parser: &mut Parser<'_, '_>,
     ) -> Marker {
-        let new_m = p.start();
-
+        let new_m = parser.start();
+        #[expect(clippy::unreachable, reason = "TODO")]
         if let Event::StartNode {
             ref mut forward_parent,
             ..
-        } = p.events[self.pos]
+        } = parser.events[self.pos]
         {
             *forward_parent = Some(new_m.pos - self.pos);
         } else {

@@ -32,11 +32,12 @@ pub fn pretty_type_expectation_with_verbosity(
 
     match r#type {
         TypeExpectation::Type(r#type) => {
-            let _ = write_type_expectation_inner(database, r#type, false, &mut str, verbosity);
+            _ = write_type_expectation_inner(database, &r#type, false, &mut str, verbosity);
         },
         TypeExpectation::TypeOrVecOf(inner) => {
-            let _ = write_type_expectation_inner(database, inner, true, &mut str, verbosity);
+            _ = write_type_expectation_inner(database, &inner, true, &mut str, verbosity);
         },
+        #[expect(clippy::unreachable, reason = "TODO")]
         TypeExpectation::None => unreachable!(),
     }
     str
@@ -44,25 +45,25 @@ pub fn pretty_type_expectation_with_verbosity(
 
 fn write_type_expectation_inner(
     database: &dyn HirDatabase,
-    inner: TypeExpectationInner,
+    inner: &TypeExpectationInner,
     or_vec: bool,
-    f: &mut String,
+    buffer: &mut String,
     verbosity: TypeVerbosity,
 ) -> std::fmt::Result {
     match inner {
         TypeExpectationInner::Exact(r#type) => {
-            write_ty(database, r#type, f, verbosity)?;
+            write_ty(database, *r#type, buffer, verbosity)?;
             if or_vec {
-                write!(f, " or vecN<")?;
-                write_ty(database, r#type, f, verbosity)?;
-                write!(f, ">")?;
+                write!(buffer, " or vecN<")?;
+                write_ty(database, *r#type, buffer, verbosity)?;
+                write!(buffer, ">")?;
             }
         },
         TypeExpectationInner::I32OrF32 => {
-            write!(f, "i32 or f32")?;
+            write!(buffer, "i32 or f32")?;
         },
-        TypeExpectationInner::NumericScalar => write!(f, "i32, u32, or f32")?,
-        TypeExpectationInner::IntegerScalar => write!(f, "i32 or u32")?,
+        TypeExpectationInner::NumericScalar => write!(buffer, "i32, u32, or f32")?,
+        TypeExpectationInner::IntegerScalar => write!(buffer, "i32 or u32")?,
     }
     Ok(())
 }

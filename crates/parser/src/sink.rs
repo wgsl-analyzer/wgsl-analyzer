@@ -6,17 +6,17 @@ use crate::WgslLanguage;
 
 use super::{Parse, SyntaxKind, event::Event, lexer::Token, parser::ParseError};
 
-pub(crate) struct Sink<'t, 'input> {
+pub(crate) struct Sink<'tokens, 'input> {
     builder: GreenNodeBuilder<'static>,
-    tokens: &'t [Token<'input, SyntaxKind>],
+    tokens: &'tokens [Token<'input, SyntaxKind>],
     cursor: usize,
     events: Vec<Event>,
     errors: Vec<ParseError>,
 }
 
-impl<'t, 'input> Sink<'t, 'input> {
+impl<'tokens, 'input> Sink<'tokens, 'input> {
     pub(crate) fn new(
-        tokens: &'t [Token<'input, SyntaxKind>],
+        tokens: &'tokens [Token<'input, SyntaxKind>],
         events: Vec<Event>,
     ) -> Self {
         Self {
@@ -32,25 +32,26 @@ impl<'t, 'input> Sink<'t, 'input> {
         for index in 0..self.events.len() {
             match mem::replace(&mut self.events[index], Event::Placeholder) {
                 Event::StartNode {
-                    kind,
-                    forward_parent,
+                    kind: starting_kind,
+                    forward_parent: starting_forward_parent,
                 } => {
-                    let mut kinds = vec![kind];
+                    let mut kinds = vec![starting_kind];
 
-                    let mut index = index;
-                    let mut forward_parent = forward_parent;
+                    let mut inner_index = index;
+                    let mut forward_parent = starting_forward_parent;
 
                     // Walk through the forward parent of the forward parent and the forward parent
                     // of that, and of that, etc. until we reach a StartNode event without a forward
                     // parent.
+                    #[expect(clippy::unreachable, reason = "TODO")]
                     while let Some(fp) = forward_parent {
-                        index += fp;
+                        inner_index += fp;
 
                         forward_parent = if let Event::StartNode {
                             kind,
                             forward_parent,
                         } =
-                            mem::replace(&mut self.events[index], Event::Placeholder)
+                            mem::replace(&mut self.events[inner_index], Event::Placeholder)
                         {
                             kinds.push(kind);
                             forward_parent
