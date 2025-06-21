@@ -41,7 +41,6 @@ impl LspError {
     }
 }
 
-#[expect(clippy::min_ident_chars, reason = "trait method")]
 impl std::fmt::Display for LspError {
     fn fmt(
         &self,

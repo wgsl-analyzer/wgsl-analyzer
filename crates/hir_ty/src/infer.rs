@@ -716,7 +716,7 @@ impl<'database> InferenceContext<'database> {
                         let struct_data = self.database.struct_data(*r#struct);
                         let field_types = self.database.field_types(*r#struct);
 
-                        if let Some(field) = struct_data.field(&name) {
+                        if let Some(field) = struct_data.field(name) {
                             self.set_field_resolution(
                                 expression,
                                 FieldId {
@@ -738,7 +738,7 @@ impl<'database> InferenceContext<'database> {
                         }
                     },
                     TyKind::Vector(vec_type) => {
-                        if let Ok(r#type) = self.vec_swizzle(&vec_type, &name) {
+                        if let Ok(r#type) = self.vec_swizzle(vec_type, name) {
                             r#type
                         } else {
                             self.push_diagnostic(InferenceDiagnostic::NoSuchField {
