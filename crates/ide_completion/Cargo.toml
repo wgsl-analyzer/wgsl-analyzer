@@ -27,5 +27,8 @@ either.workspace = true
 rowan.workspace = true
 rustc-hash.workspace = true
 
+[dev-dependencies]
+proptest.workspace = true
+
 [lints.rust]
 unused = { level = "allow", priority = 1 }
