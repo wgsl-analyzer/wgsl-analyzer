@@ -75,7 +75,7 @@ where
         id: Id,
         ctx: Context<'_, S>,
     ) {
-        #[derive(serde_derive::Serialize)]
+        #[derive(serde::Serialize)]
         struct JsonDataInner {
             name: &'static str,
             elapsed_ms: u128,
