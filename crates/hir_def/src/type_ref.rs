@@ -174,7 +174,7 @@ pub(crate) fn matrix_dimensions(
     let (columns, rows) = match *r#type {
         ast::MatrixType::Mat2x2(_) => (VecDimensionality::Two, VecDimensionality::Two),
         ast::MatrixType::Mat2x3(_) => (VecDimensionality::Two, VecDimensionality::Three),
-        ast::MatrixType::Mat2x4(_) => (VecDimensionality::Two, VecDimensionality::Two),
+        ast::MatrixType::Mat2x4(_) => (VecDimensionality::Two, VecDimensionality::Four),
         ast::MatrixType::Mat3x2(_) => (VecDimensionality::Three, VecDimensionality::Two),
         ast::MatrixType::Mat3x3(_) => (VecDimensionality::Three, VecDimensionality::Three),
         ast::MatrixType::Mat3x4(_) => (VecDimensionality::Three, VecDimensionality::Four),
