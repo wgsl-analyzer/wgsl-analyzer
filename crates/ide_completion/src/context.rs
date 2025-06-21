@@ -16,23 +16,23 @@ type ExprOrStatement = Either<ast::Expression, ast::Statement>;
 
 /// `CompletionContext` is created early during completion to figure out, where
 /// exactly is the cursor, syntax-wise.
-pub(crate) struct CompletionContext<'a> {
-    pub sema: Semantics<'a>,
-    pub file_id: HirFileId,
-    pub(crate) database: &'a RootDatabase,
-    pub position: FilePosition,
-    pub token: SyntaxToken,
-    pub file: ast::SourceFile,
-    pub container: Option<DefinitionWithBodyId>,
-    pub completion_location: Option<ImmediateLocation>,
-    pub resolver: Resolver,
+pub(crate) struct CompletionContext<'database> {
+    pub(crate) semantics: Semantics<'database>,
+    pub(crate) file_id: HirFileId,
+    pub(crate) database: &'database RootDatabase,
+    pub(crate) position: FilePosition,
+    pub(crate) token: SyntaxToken,
+    pub(crate) file: ast::SourceFile,
+    pub(crate) container: Option<DefinitionWithBodyId>,
+    pub(crate) completion_location: Option<ImmediateLocation>,
+    pub(crate) resolver: Resolver,
 }
 
-impl<'a> CompletionContext<'a> {
+impl<'database> CompletionContext<'database> {
     pub(crate) fn new(
-        database: &'a RootDatabase,
+        database: &'database RootDatabase,
         position @ FilePosition { file_id, offset }: FilePosition,
-        config: &'a CompletionConfig<'a>,
+        config: &'database CompletionConfig<'database>,
     ) -> Option<Self> {
         let sema = Semantics::new(database);
         let file = sema.parse(position.file_id);
@@ -47,8 +47,7 @@ impl<'a> CompletionContext<'a> {
             .parent()
             .and_then(|parent| sema.find_container(file_id, &parent));
 
-        let completion_location =
-            determine_location(&sema, file.syntax(), position.offset, token.clone());
+        let completion_location = determine_location(&sema, file.syntax(), position.offset, &token);
 
         let module_info = database.module_info(file_id);
         let mut resolver = Resolver::default().push_module_scope(database, file_id, module_info);
@@ -59,7 +58,7 @@ impl<'a> CompletionContext<'a> {
                 NodeOrToken::Node(node) if ExprOrStatement::can_cast(node.kind()) => {
                     ExprOrStatement::cast(node)
                 },
-                _ => None,
+                NodeOrToken::Node(_) | NodeOrToken::Token(_) => None,
             })
             .or_else(|| token.parent_ancestors().find_map(ExprOrStatement::cast));
 
@@ -70,7 +69,7 @@ impl<'a> CompletionContext<'a> {
         }
 
         let context = Self {
-            sema,
+            semantics: sema,
             file_id,
             database,
             position,

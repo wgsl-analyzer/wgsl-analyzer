@@ -8,7 +8,7 @@ pub(crate) fn determine_location(
     _sema: &Semantics<'_>,
     _file: &SyntaxNode,
     _offset: TextSize,
-    token: SyntaxToken,
+    token: &SyntaxToken,
 ) -> Option<ImmediateLocation> {
     let node = token.parent()?;
     let parent = node.parent()?;

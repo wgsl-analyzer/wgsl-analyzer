@@ -16,7 +16,7 @@ pub(crate) fn complete_dot(
         return Some(());
     };
     match context
-        .sema
+        .semantics
         .analyze(context.container?)
         .type_of_expression(&expression.expression()?)?
         .kind(context.database)

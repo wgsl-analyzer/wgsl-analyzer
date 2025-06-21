@@ -897,7 +897,7 @@ impl<'database> InferenceContext<'database> {
             },
             UnaryOperator::Reference => {
                 if let TyKind::Reference(reference) = expression_ty.kind(self.database) {
-                    return self.ref_to_pointer(reference);
+                    return self.ref_to_pointer(&reference);
                 }
                 self.push_diagnostic(InferenceDiagnostic::AddressOfNotReference {
                     expression,
@@ -908,7 +908,7 @@ impl<'database> InferenceContext<'database> {
             UnaryOperator::Dereference => {
                 let arg_ty = expression_ty.unref(self.database);
                 if let TyKind::Pointer(pointer) = arg_ty.kind(self.database) {
-                    return self.ptr_to_ref(pointer);
+                    return self.ptr_to_ref(&pointer);
                 }
                 self.push_diagnostic(InferenceDiagnostic::DerefNotAPointer {
                     expression,
@@ -1883,7 +1883,7 @@ impl InferenceContext<'_> {
 
     fn ref_to_pointer(
         &self,
-        reference: Reference,
+        reference: &Reference,
     ) -> Type {
         self.database.intern_ty(TyKind::Pointer(Pointer {
             inner: reference.inner,
@@ -1894,7 +1894,7 @@ impl InferenceContext<'_> {
 
     fn ptr_to_ref(
         &self,
-        pointer: Pointer,
+        pointer: &Pointer,
     ) -> Type {
         self.database.intern_ty(TyKind::Reference(Reference {
             inner: pointer.inner,
@@ -1912,7 +1912,7 @@ impl InferenceContext<'_> {
     }
 
     fn try_lower_ty(
-        &mut self,
+        &self,
         type_ref: &TypeReference,
     ) -> Result<Type, TypeLoweringError> {
         TyLoweringContext::new(self.database, &self.resolver).try_lower_ty(type_ref)
@@ -1940,7 +1940,7 @@ pub struct TyLoweringContext<'database> {
     database: &'database dyn HirDatabase,
     resolver: &'database Resolver,
 
-    pub diagnostics: Vec<TypeLoweringError>,
+    pub(crate) diagnostics: Vec<TypeLoweringError>,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
@@ -2046,8 +2046,13 @@ impl<'database> TyLoweringContext<'database> {
                 binding_array: array.binding_array,
                 inner: self.lower_ty(&array.inner),
                 size: match array.size {
-                    type_ref::ArraySize::Int(i) => ArraySize::Constant(i as u64), // TODO error
-                    type_ref::ArraySize::Uint(u) => ArraySize::Constant(u),
+                    type_ref::ArraySize::Int(integer) => {
+                        // TODO give error instead of panicking
+                        ArraySize::Constant(u64::try_from(integer).unwrap())
+                    },
+                    type_ref::ArraySize::Uint(unsigned_integer) => {
+                        ArraySize::Constant(unsigned_integer)
+                    },
                     type_ref::ArraySize::Path(_) => ArraySize::Constant(0), // TODO: Path array sizes
                     type_ref::ArraySize::Dynamic => ArraySize::Dynamic,
                 },
