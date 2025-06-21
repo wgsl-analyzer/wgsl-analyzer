@@ -59,7 +59,7 @@ impl fmt::Debug for NavigationTarget {
             .field("file_id", &self.file_id)
             .field("full_range", &self.full_range);
         opt!(focus_range);
-        debug_struct.field("name", &self.name);
+        // debug_struct.field("name", &self.name);
         // opt!(kind container_name description docs);
         opt!(container_name description);
         debug_struct.finish_non_exhaustive()
