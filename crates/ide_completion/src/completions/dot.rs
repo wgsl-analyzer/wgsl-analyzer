@@ -14,54 +14,72 @@ pub(crate) fn complete_dot(
     let Some(ImmediateLocation::FieldAccess { expression }) = &context.completion_location else {
         return Some(());
     };
-    let source_analyzer = context.sema.analyze(context.container?);
-    let r#type = source_analyzer.type_of_expression(&expression.expression()?)?;
+    match context
+        .sema
+        .analyze(context.container?)
+        .type_of_expression(&expression.expression()?)?
+        .kind(context.db)
+        .unref(context.db)
+        .as_ref()
+    {
+        TyKind::Vector(vector) => vector_completions(accumulator, context, expression, vector),
+        TyKind::Matrix(_) => None,
+        TyKind::Struct(r#struct) => struct_completions(accumulator, context, r#struct),
+        _ => None,
+    }
+}
 
+fn struct_completions(
+    accumulator: &mut Completions,
+    context: &CompletionContext<'_>,
+    r#struct: &hir_def::db::StructId,
+) -> Option<()> {
     let field_completion_item =
         |name| CompletionItem::new(CompletionItemKind::Field, context.source_range(), name).build();
 
-    match r#type.kind(context.db).unref(context.db).as_ref() {
-        TyKind::Vector(vector) => {
-            let size = vector.size.as_u8() as usize;
-            debug_assert!(
-                (MIN_VECTOR_SIZE..=MAX_VECTOR_SIZE).contains(&size),
-                "Invalid vector size: {size}"
-            );
-            let field_text = expression
-                .name_ref()
-                .map(|name| name.text().to_string())
-				// It should never be `None` because `x.$0` gets parsed as `Some("")`.
-                .unwrap_or_default();
-
-            if is_swizzleable(&field_text) {
-                let possible_swizzles = possible_swizzles(size, &field_text);
-                let suggestions = possible_swizzles.enumerate().map(move |(index, label)| {
-                    CompletionItem::new(CompletionItemKind::Field, context.source_range(), label)
-                        .with_relevance(CompletionRelevance {
-                            swizzle_index: Some(index),
-                            ..Default::default()
-                        })
-                        .build()
-                });
-                accumulator.add_all(suggestions);
-            }
-        },
-        TyKind::Matrix(_) => return None,
-        TyKind::Struct(r#struct) => {
-            let r#struct = context.db.struct_data(*r#struct);
-            let items = r#struct
-                .fields()
-                .iter()
-                .map(|(_, field)| field.name.as_str())
-                .map(field_completion_item);
-            accumulator.add_all(items);
-        },
-        _ => return None,
-    };
-
+    let r#struct = context.db.struct_data(*r#struct);
+    let items = r#struct
+        .fields()
+        .iter()
+        .map(|(_, field)| field.name.as_str())
+        .map(field_completion_item);
+    accumulator.add_all(items);
     Some(())
 }
 
+fn vector_completions(
+    accumulator: &mut Completions,
+    context: &CompletionContext<'_>,
+    expression: &syntax::ast::FieldExpression,
+    vector: &hir_ty::ty::VectorType,
+) -> Option<()> {
+    let field_text = expression
+		.name_ref()
+		.map(|name| name.text().to_string())
+		// It should never be `None` because `x.$0` gets parsed as `Some("")`.
+		.unwrap_or_default();
+
+    if is_swizzleable(&field_text) {
+        let size = vector.size.as_u8() as usize;
+        debug_assert!(
+            (MIN_VECTOR_SIZE..=MAX_VECTOR_SIZE).contains(&size),
+            "Invalid vector size: {size}"
+        );
+        let possible_swizzles = possible_swizzles(size, &field_text);
+        let suggestions = possible_swizzles.enumerate().map(move |(index, label)| {
+            CompletionItem::new(CompletionItemKind::Field, context.source_range(), label)
+                .with_relevance(CompletionRelevance {
+                    swizzle_index: Some(index),
+                    ..Default::default()
+                })
+                .build()
+        });
+        accumulator.add_all(suggestions);
+    }
+    Some(())
+}
+
+/// Tells whether swizzle completions are valid.
 fn is_swizzleable(field_text: &str) -> bool {
     if !(0..=MAX_VECTOR_SIZE).contains(&field_text.len()) {
         return false;
@@ -70,6 +88,7 @@ fn is_swizzleable(field_text: &str) -> bool {
     let is_rgba = field_text
         .chars()
         .all(|c| matches!(c, 'r' | 'g' | 'b' | 'a'));
+
     let is_xyzw = field_text
         .chars()
         .all(|c| matches!(c, 'x' | 'y' | 'z' | 'w'));
@@ -77,12 +96,16 @@ fn is_swizzleable(field_text: &str) -> bool {
     is_rgba || is_xyzw
 }
 
+/// https://www.w3.org/TR/WGSL/#vector
 const MIN_VECTOR_SIZE: usize = 2;
+
+/// https://www.w3.org/TR/WGSL/#vector
 const MAX_VECTOR_SIZE: usize = 4;
 
 /// https://www.w3.org/TR/WGSL/#syntax-swizzle_name
 const SWIZZLE_SETS: &[&str] = &["xyzw", "rgba"];
 
+/// Return all possible valid swizzles that are compatible with what has already been typed.
 fn possible_swizzles(
     max_length: usize,
     field_text: &str,
@@ -95,6 +118,7 @@ fn possible_swizzles(
         .filter(|swizzle| !swizzle.is_empty())
 }
 
+/// Given a set of swizzle characters relevant source info, return valid longer swizzles.
 fn swizzler(
     swizzle: &&str,
     field_text: &str,
