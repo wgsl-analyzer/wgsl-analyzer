@@ -33,7 +33,7 @@ impl fmt::Display for Markup {
 }
 
 impl Markup {
-    pub fn as_str(&self) -> &str {
+    pub const fn as_str(&self) -> &str {
         self.text.as_str()
     }
     pub fn fenced_block<Displayable: fmt::Display>(contents: Displayable) -> Self {

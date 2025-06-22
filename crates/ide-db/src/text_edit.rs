@@ -100,12 +100,12 @@ impl TextEdit {
     }
 
     #[must_use]
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.insert_deletes.len()
     }
 
     #[must_use]
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.insert_deletes.is_empty()
     }
 
@@ -217,7 +217,7 @@ impl<'item> IntoIterator for &'item TextEdit {
 
 impl TextEditBuilder {
     #[must_use]
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.insert_deletes.is_empty()
     }
     pub fn replace(

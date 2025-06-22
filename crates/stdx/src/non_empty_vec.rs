@@ -29,7 +29,7 @@ impl<T> NonEmptyVec<T> {
         self.rest.push(value);
     }
 
-    pub fn length(&self) -> usize {
+    pub const fn length(&self) -> usize {
         1 + self.rest.len()
     }
 
