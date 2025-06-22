@@ -390,7 +390,7 @@ impl Collector<'_> {
             ast::Statement::ContinuingStatement(continuing) => Statement::Continuing {
                 block: self.collect_compound_statement_opt(continuing.block()),
             },
-            ast::Statement::ExpressionStatement(expression) => {
+            ast::Statement::FunctionCallStatement(expression) => {
                 let expression = self.collect_expression_opt(expression.expression());
                 Statement::Expression { expression }
             },

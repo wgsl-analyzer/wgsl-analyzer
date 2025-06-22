@@ -50,6 +50,11 @@ pub struct DiagnosticsConfig {
     pub naga_version: NagaVersion,
 }
 
+// TODO: Refactor into ShaderCreationError, PIpelineCreationError, and DynamicError.
+// https://www.w3.org/TR/WGSL/#shader-creation-error
+// https://www.w3.org/TR/WGSL/#pipeline-creation-error
+// https://www.w3.org/TR/WGSL/#dynamic-error
+
 pub enum AnyDiagnostic {
     ParseError {
         message: String,
@@ -150,24 +155,25 @@ impl AnyDiagnostic {
     pub const fn file_id(&self) -> HirFileId {
         match self {
             Self::AssignmentNotAReference { left_side, .. } => left_side.file_id,
-            Self::TypeMismatch { expression, .. } => expression.file_id,
-            Self::NoSuchField { expression, .. } => expression.file_id,
-            Self::ArrayAccessInvalidType { expression, .. } => expression.file_id,
-            Self::UnresolvedName { expression, .. } => expression.file_id,
-            Self::InvalidConstructionType { expression, .. } => expression.file_id,
-            Self::FunctionCallArgCountMismatch { expression, .. } => expression.file_id,
-            Self::NoBuiltinOverload { expression, .. } => expression.file_id,
-            Self::AddressOfNotReference { expression, .. } => expression.file_id,
-            Self::DerefNotPointer { expression, .. } => expression.file_id,
-            Self::MissingAddressSpace { var } => var.file_id,
-            Self::InvalidAddressSpace { var, .. } => var.file_id,
-            Self::InvalidType { file_id, .. } => *file_id,
+            Self::TypeMismatch { expression, .. }
+            | Self::NoSuchField { expression, .. }
+            | Self::ArrayAccessInvalidType { expression, .. }
+            | Self::UnresolvedName { expression, .. }
+            | Self::InvalidConstructionType { expression, .. }
+            | Self::FunctionCallArgCountMismatch { expression, .. }
+            | Self::NoBuiltinOverload { expression, .. }
+            | Self::AddressOfNotReference { expression, .. }
+            | Self::DerefNotPointer { expression, .. }
+            | Self::NoConstructor { expression, .. }
+            | Self::PrecedenceParensRequired { expression, .. } => expression.file_id,
+            Self::MissingAddressSpace { var } | Self::InvalidAddressSpace { var, .. } => {
+                var.file_id
+            },
             Self::UnresolvedImport { import, .. } => import.file_id,
-            Self::NagaValidationError { file_id, .. } => *file_id,
-            Self::ParseError { file_id, .. } => *file_id,
-            Self::UnconfiguredCode { file_id, .. } => *file_id,
-            Self::NoConstructor { expression, .. } => expression.file_id,
-            Self::PrecedenceParensRequired { expression, .. } => expression.file_id,
+            Self::InvalidType { file_id, .. }
+            | Self::NagaValidationError { file_id, .. }
+            | Self::ParseError { file_id, .. }
+            | Self::UnconfiguredCode { file_id, .. } => *file_id,
         }
     }
 }

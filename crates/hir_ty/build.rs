@@ -26,6 +26,7 @@ enum Type {
     Texture(TextureType),
     Sampler { comparison: bool },
     Bool,
+    F16,
     F32,
     I32,
     U32,
@@ -358,6 +359,7 @@ fn parse_ty(
 
     match r#type {
         "bool" => Type::Bool,
+        "f16" => Type::F16,
         "f32" => Type::F32,
         "i32" => Type::I32,
         "u32" => Type::U32,
@@ -373,20 +375,20 @@ fn parse_ty(
 
 fn type_to_rust(r#type: &Type) -> String {
     match r#type {
-        Type::Vec(size, inner) => format!(
-            "TyKind::Vector(VectorType {{ size: VecSize::{:?}, inner: {} }}).intern(database)",
+        Type::Vec(size, component_type) => format!(
+            "TyKind::Vector(crate::ty::VectorType {{ size: VecSize::{:?}, component_type: {} }}).intern(database)",
             size,
-            type_to_rust(inner)
+            type_to_rust(component_type)
         ),
 
         Type::Matrix(columns, rows, inner) => format!(
-            "TyKind::Matrix(MatrixType {{ columns: VecSize::{:?}, rows: VecSize::{:?}, inner: {} }}).intern(database)",
+            "TyKind::Matrix(crate::ty::MatrixType {{ columns: VecSize::{:?}, rows: VecSize::{:?}, inner: {} }}).intern(database)",
             columns,
             rows,
             type_to_rust(inner)
         ),
 
-        (Type::Bool | Type::F32 | Type::I32 | Type::U32) => {
+        (Type::Bool | Type::F32 | Type::I32 | Type::U32 | Type::F16) => {
             format!("TyKind::Scalar(ScalarType::{type:?}).intern(database)")
         },
         Type::Bound(i) => {

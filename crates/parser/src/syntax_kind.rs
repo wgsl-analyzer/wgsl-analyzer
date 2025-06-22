@@ -19,12 +19,34 @@ pub enum SyntaxKind {
     /// a function return type
     ReturnType,
     /// a group of statements contained in braces
+
+    // Statements https://www.w3.org/TR/WGSL/#statements
+
+    /// [9.1. Compound Statement](https://www.w3.org/TR/WGSL/#compound-statement-section)
+    ///
+    /// ```wgsl
+    /// { }
+    /// ```
     CompoundStatement,
+
+    /// [9.2. Assignment Statement](https://www.w3.org/TR/WGSL/#assignment)
+    ///
+    /// ```wgsl
+    /// a = b
+    /// ```
+    AssignmentStatement,
+
     /// a `let` or `var` statement
     VariableStatement,
-    /// an expression in statement position. Only function calls are allowed there in WGSL, but we parse it nonetheless
-    ExpressionStatement,
-    /// `loop { statements }`
+
+    /// [9.5. Function Call Statement](https://www.w3.org/TR/WGSL/#function-call-statement)
+    FunctionCallStatement,
+
+    /// [9.4.3. Loop Statement](https://www.w3.org/TR/WGSL/#loop-statement)
+    ///
+    /// ```wgsl
+    /// loop { statements }
+    /// ```
     LoopStatement,
     /// `while (expression) { statements }`
     WhileStatement,
@@ -86,8 +108,6 @@ pub enum SyntaxKind {
     BitcastExpression,
     /// a non-builtin type
     PathType,
-    /// `a = b`
-    AssignmentStatement,
     /// `a += b`
     CompoundAssignmentStatement,
     /// `[[location(0), interpolate(flat)]]`
@@ -293,8 +313,11 @@ pub enum SyntaxKind {
     Continue,
     #[token("continuing")]
     Continuing,
+
+    /// <https://www.w3.org/TR/WGSL/#syntax_kw-const>
     #[token("const")]
     Constant,
+
     #[token("default")]
     Default,
     #[token("discard")]
@@ -303,8 +326,6 @@ pub enum SyntaxKind {
     Else,
     #[token("enable")]
     Enable,
-    #[token("fallthrough")]
-    Fallthrough,
     #[token("false")]
     False,
     #[token("fn")]

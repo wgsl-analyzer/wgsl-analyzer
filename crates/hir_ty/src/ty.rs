@@ -1,9 +1,13 @@
 pub mod pretty;
 
-use std::{borrow::Cow, fmt::Write as _, str::FromStr};
+use std::{
+    borrow::Cow,
+    fmt::{self, Write as _},
+    str::FromStr,
+};
 
 pub use hir_def::type_ref::{AccessMode, AddressSpace};
-use hir_def::{database::StructId, type_ref};
+use hir_def::{database::StructId, type_ref::VecDimensionality};
 use salsa::InternKey;
 
 use crate::database::HirDatabase;
@@ -54,7 +58,7 @@ impl Type {
         database: &dyn HirDatabase,
     ) -> Self {
         match self.kind(database) {
-            TyKind::Vector(vec) => vec.inner,
+            TyKind::Vector(vec) => vec.component_type,
             TyKind::Reference(r) => r.inner.this_or_vec_inner(database),
             _ => self,
         }
@@ -86,6 +90,7 @@ pub enum TyKind {
     Error,
     Scalar(ScalarType),
     Atomic(AtomicType),
+    /// <https://www.w3.org/TR/WGSL/#vector-types>
     Vector(VectorType),
     Matrix(MatrixType),
     Struct(StructId),
@@ -210,11 +215,13 @@ impl TyKind {
     ) -> bool {
         match self {
             Self::Scalar(_) => true,
-            Self::Vector(vec) => vec.inner.kind(database).is_numeric_scalar(),
+            Self::Vector(vec) => vec.component_type.kind(database).is_numeric_scalar(),
             Self::Struct(r#struct) => database.field_types(*r#struct).iter().all(|(_, r#type)| {
                 match r#type.kind(database) {
                     Self::Scalar(_) => true,
-                    Self::Vector(vec) if vec.inner.kind(database).is_numeric_scalar() => true,
+                    Self::Vector(vec) if vec.component_type.kind(database).is_numeric_scalar() => {
+                        true
+                    },
                     _ => false,
                 }
             }),
@@ -228,7 +235,7 @@ impl TyKind {
     ) -> bool {
         match self {
             Self::Scalar(scalar) => scalar.is_numeric(),
-            Self::Vector(vec) => vec.inner.kind(database).is_numeric_scalar(),
+            Self::Vector(vec) => vec.component_type.kind(database).is_numeric_scalar(),
             Self::Matrix(_) | Self::Atomic(_) => true,
             Self::Array(array) => array.inner.kind(database).is_host_shareable(database),
             Self::Struct(r#struct) => database
@@ -273,33 +280,83 @@ impl TyKind {
                     .any(|r#type| r#type.contains_struct(database, r#struct))
             },
             Self::Array(array) => array.inner.contains_struct(database, r#struct),
-            Self::Reference(r) => r.inner.contains_struct(database, r#struct),
+            Self::Reference(reference) => reference.inner.contains_struct(database, r#struct),
             Self::Pointer(pointer) => pointer.inner.contains_struct(database, r#struct),
             _ => false,
         }
     }
 }
 
+/// The scalar types are [`bool`], [`AbstractInt`], [`AbstractFloat`], [`i32`], [`u32`], [`f32`], and [`f16`].
+///
+/// <https://www.w3.org/TR/WGSL/#scalar-types>
+///
+/// [`bool`]: <https://www.w3.org/TR/WGSL/#bool>
+/// [`AbstractInt`]: <https://www.w3.org/TR/WGSL/#abstractint>
+/// [`AbstractFloat`]: <https://www.w3.org/TR/WGSL/#abstractfloat>
+/// [`i32`]: <https://www.w3.org/TR/WGSL/#i32>
+/// [`u32`]: <https://www.w3.org/TR/WGSL/#u32>
+/// [`f32`]: <https://www.w3.org/TR/WGSL/#f32>
+/// [`f16`]: <https://www.w3.org/TR/WGSL/#f16>
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ScalarType {
+    /// <https://www.w3.org/TR/WGSL/#bool>
     Bool,
+    /// <https://www.w3.org/TR/WGSL/#abstractint>
+    AbstractInt,
+    /// <https://www.w3.org/TR/WGSL/#abstractfloat>
+    AbstractFloat,
+    /// <https://www.w3.org/TR/WGSL/#i32>
     I32,
+    /// <https://www.w3.org/TR/WGSL/#u32>
     U32,
+    /// <https://www.w3.org/TR/WGSL/#f32>
     F32,
+    /// <https://www.w3.org/TR/WGSL/#f16>
+    F16,
 }
 
 impl ScalarType {
     #[must_use]
+    /// The numeric scalar types are [`AbstractInt`], [`AbstractFloat`], [`i32`], [`u32`], [`f32`], and [`f16`].
+    ///
+    /// <https://www.w3.org/TR/WGSL/#numeric-scalar>
+    ///
+    /// [`AbstractInt`]: <https://www.w3.org/TR/WGSL/#abstractint>
+    /// [`AbstractFloat`]: <https://www.w3.org/TR/WGSL/#abstractfloat>
+    /// [`i32`]: <https://www.w3.org/TR/WGSL/#i32>
+    /// [`u32`]: <https://www.w3.org/TR/WGSL/#u32>
+    /// [`f32`]: <https://www.w3.org/TR/WGSL/#f32>
+    /// [`f16`]: <https://www.w3.org/TR/WGSL/#f16>
     pub const fn is_numeric(&self) -> bool {
-        matches!(self, Self::F32 | Self::U32 | Self::I32)
+        matches!(
+            self,
+            Self::AbstractInt | Self::AbstractFloat | Self::I32 | Self::U32 | Self::F32 | Self::F16
+        )
+    }
+
+    #[must_use]
+    /// The integer scalar types are [`AbstractInt`], [`i32`], and [`u32`].
+    ///
+    /// <https://www.w3.org/TR/WGSL/#integer-scalar>
+    ///
+    /// [`AbstractInt`]: <https://www.w3.org/TR/WGSL/#abstractint>
+    /// [`i32`]: <https://www.w3.org/TR/WGSL/#i32>
+    /// [`u32`]: <https://www.w3.org/TR/WGSL/#u32>
+    pub const fn is_integer(&self) -> bool {
+        matches!(self, Self::AbstractInt | Self::I32 | Self::U32)
     }
 }
 
+/// N must be in {2, 3, 4}
+///
+/// https://www.w3.org/TR/WGSL/#vector-types
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum VecSize {
     Two,
     Three,
     Four,
+    // TODO: Is this spec?
     BoundVar(BoundVar),
 }
 
@@ -316,21 +373,21 @@ impl TryFrom<u8> for VecSize {
     }
 }
 
-impl From<type_ref::VecDimensionality> for VecSize {
-    fn from(dim: type_ref::VecDimensionality) -> Self {
-        match dim {
-            type_ref::VecDimensionality::Two => Self::Two,
-            type_ref::VecDimensionality::Three => Self::Three,
-            type_ref::VecDimensionality::Four => Self::Four,
+impl From<VecDimensionality> for VecSize {
+    fn from(dimensionality: VecDimensionality) -> Self {
+        match dimensionality {
+            VecDimensionality::Two => Self::Two,
+            VecDimensionality::Three => Self::Three,
+            VecDimensionality::Four => Self::Four,
         }
     }
 }
 
-impl std::fmt::Display for VecSize {
+impl fmt::Display for VecSize {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
             Self::Two => f.write_str("2"),
             Self::Three => f.write_str("3"),
@@ -344,6 +401,11 @@ impl std::fmt::Display for VecSize {
 }
 
 impl VecSize {
+    /// Get the dimensionality of the vector (can be `2`, `3`, or `4`) as a [`u8`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if self is the [`BoundVar`] variant.
     #[must_use]
     pub fn as_u8(&self) -> u8 {
         match self {
@@ -355,16 +417,35 @@ impl VecSize {
     }
 }
 
+/// [6.2.6. Vector Types](https://www.w3.org/TR/WGSL/#vector-types)
+///
+/// A vector is a grouped sequence of 2, 3, or 4 [scalar](https://www.w3.org/TR/WGSL/#scalar) components.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct VectorType {
+    /// N must be in {2, 3, 4}
     pub size: VecSize,
-    pub inner: Type,
+    /// T must be one of the [scalar types](https://www.w3.org/TR/WGSL/#scalar).
+    pub component_type: Type,
 }
 
+impl VectorType {
+    // fn is_numeric(&self) -> bool {
+    //     self.component_type.is_numeric()
+    // }
+}
+
+/// [6.2.7. Matrix Types](https://www.w3.org/TR/WGSL/#matrix-types)
+///
+/// A matrix is a grouped sequence of 2, 3, or 4 floating point vectors.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct MatrixType {
     pub columns: VecSize,
     pub rows: VecSize,
+    /// Must be [`f32`], [`f16`], or [`AbstractFloat`]
+    ///
+    /// [`f32`]: <https://www.w3.org/TR/WGSL/#f32>
+    /// [`f16`]: <https://www.w3.org/TR/WGSL/#f16>
+    /// [`AbstractFloat`]: <https://www.w3.org/TR/WGSL/#abstractfloat>
     pub inner: Type,
 }
 
@@ -424,11 +505,11 @@ pub enum TextureDimensionality {
     Cube,
 }
 
-impl std::fmt::Display for TextureDimensionality {
+impl fmt::Display for TextureDimensionality {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
             Self::D1 => f.write_str("1d"),
             Self::D2 => f.write_str("2d"),
@@ -468,11 +549,11 @@ pub enum TexelFormat {
     Any,
 }
 
-impl std::fmt::Display for TexelFormat {
+impl fmt::Display for TexelFormat {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         let str = match self {
             Self::Rgba8unorm => "rgba8unorm",
             Self::Rgba8snorm => "rgba8snorm",

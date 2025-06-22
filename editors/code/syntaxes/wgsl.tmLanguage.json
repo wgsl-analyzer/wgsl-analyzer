@@ -2,33 +2,15 @@
 	"name": "WGSL",
 	"scopeName": "source.wgsl",
 	"patterns": [
-		{
-			"include": "#line_ending_comments"
-		},
-		{
-			"include": "#block_comments"
-		},
-		{
-			"include": "#keywords"
-		},
-		{
-			"include": "#functions"
-		},
-		{
-			"include": "#function_calls"
-		},
-		{
-			"include": "#constants"
-		},
-		{
-			"include": "#types"
-		},
-		{
-			"include": "#variables"
-		},
-		{
-			"include": "#punctuation"
-		}
+		{ "include": "#line_ending_comments" },
+		{ "include": "#block_comments" },
+		{ "include": "#keywords" },
+		{ "include": "#functions" },
+		{ "include": "#function_calls" },
+		{ "include": "#constants" },
+		{ "include": "#types" },
+		{ "include": "#variables" },
+		{ "include": "#punctuation" }
 	],
 	"repository": {
 		"line_ending_comments": {
@@ -41,11 +23,7 @@
 			"name": "comment.block.wgsl",
 			"begin": "/\\*",
 			"end": "\\*/",
-			"patterns": [
-				{
-					"include": "#block_comments"
-				}
-			]
+			"patterns": [ { "include": "#block_comments" } ]
 		},
 		"functions": {
 			"patterns": [
@@ -54,44 +32,20 @@
 					"name": "meta.function.definition.wgsl",
 					"begin": "\\b(fn)\\s+([A-Za-z0-9_]+)((\\()|(<))",
 					"beginCaptures": {
-						"1": {
-							"name": "keyword.other.fn.wgsl"
-						},
-						"2": {
-							"name": "entity.name.function.wgsl"
-						},
-						"4": {
-							"name": "punctuation.brackets.round.wgsl"
-						}
+						"1": { "name": "keyword.other.fn.wgsl" },
+						"2": { "name": "entity.name.function.wgsl" },
+						"4": { "name": "punctuation.brackets.round.wgsl" }
 					},
 					"end": "\\{",
-					"endCaptures": {
-						"0": {
-							"name": "punctuation.brackets.curly.wgsl"
-						}
-					},
+					"endCaptures": { "0": { "name": "punctuation.brackets.curly.wgsl" } },
 					"patterns": [
-						{
-							"include": "#line_comments"
-						},
-						{
-							"include": "#keywords"
-						},
-						{
-							"include": "#function_calls"
-						},
-						{
-							"include": "#constants"
-						},
-						{
-							"include": "#types"
-						},
-						{
-							"include": "#variables"
-						},
-						{
-							"include": "#punctuation"
-						}
+						{ "include": "#line_ending_comments" },
+						{ "include": "#keywords" },
+						{ "include": "#function_calls" },
+						{ "include": "#constants" },
+						{ "include": "#types" },
+						{ "include": "#variables" },
+						{ "include": "#punctuation" }
 					]
 				}
 			]
@@ -103,41 +57,19 @@
 					"name": "meta.function.call.wgsl",
 					"begin": "([A-Za-z0-9_]+)(\\()",
 					"beginCaptures": {
-						"1": {
-							"name": "entity.name.function.wgsl"
-						},
-						"2": {
-							"name": "punctuation.brackets.round.wgsl"
-						}
+						"1": { "name": "entity.name.function.wgsl" },
+						"2": { "name": "punctuation.brackets.round.wgsl" }
 					},
 					"end": "\\)",
-					"endCaptures": {
-						"0": {
-							"name": "punctuation.brackets.round.wgsl"
-						}
-					},
+					"endCaptures": { "0": { "name": "punctuation.brackets.round.wgsl" } },
 					"patterns": [
-						{
-							"include": "#line_comments"
-						},
-						{
-							"include": "#keywords"
-						},
-						{
-							"include": "#function_calls"
-						},
-						{
-							"include": "#constants"
-						},
-						{
-							"include": "#types"
-						},
-						{
-							"include": "#variables"
-						},
-						{
-							"include": "#punctuation"
-						}
+						{ "include": "#line_ending_comments" },
+						{ "include": "#keywords" },
+						{ "include": "#function_calls" },
+						{ "include": "#constants" },
+						{ "include": "#types" },
+						{ "include": "#variables" },
+						{ "include": "#punctuation" }
 					]
 				}
 			]

@@ -68,7 +68,7 @@ fn vector_completions(
     accumulator: &mut Completions,
     context: &CompletionContext<'_>,
     expression: &syntax::ast::FieldExpression,
-    vector: &hir_ty::ty::VectorType,
+    vector_type: &hir_ty::ty::VectorType,
 ) {
     let field_text = expression
 		.name_ref()
@@ -77,7 +77,7 @@ fn vector_completions(
 		.unwrap_or_default();
 
     if is_swizzleable(&field_text) {
-        let size: usize = vector.size.as_u8().into();
+        let size: usize = vector_type.size.as_u8().into();
         debug_assert!(
             (MIN_VECTOR_SIZE..=MAX_VECTOR_SIZE).contains(&size),
             "Invalid vector size: {size}"

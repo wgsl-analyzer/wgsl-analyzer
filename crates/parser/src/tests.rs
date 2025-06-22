@@ -2184,7 +2184,7 @@ fn parse_statement_expression() {
     check_statement(
         "test(args);",
         expect![[r#"
-            ExpressionStatement@0..10
+            FunctionCallStatement@0..10
               FunctionCall@0..10
                 NameReference@0..4
                   Identifier@0..4 "test"
@@ -2305,13 +2305,13 @@ fn parse_switch_statement() {
     check_statement(
         "
 switch i {
-  case 0: { fallthrough; }
+  case 0: { }
   case 1, 2: { return 42; }
   default: { }
 }
         ",
         expect![[r#"
-            SwitchStatement@0..92
+            SwitchStatement@0..79
               Blankspace@0..1 "\n"
               Switch@1..7 "switch"
               Blankspace@7..8 " "
@@ -2319,10 +2319,10 @@ switch i {
                 NameReference@8..10
                   Identifier@8..9 "i"
                   Blankspace@9..10 " "
-              SwitchBlock@10..92
+              SwitchBlock@10..79
                 BraceLeft@10..11 "{"
                 Blankspace@11..14 "\n  "
-                SwitchBodyCase@14..41
+                SwitchBodyCase@14..28
                   Case@14..18 "case"
                   Blankspace@18..19 " "
                   SwitchCaseSelectors@19..20
@@ -2330,49 +2330,46 @@ switch i {
                       DecimalIntLiteral@19..20 "0"
                   Colon@20..21 ":"
                   Blankspace@21..22 " "
-                  CompoundStatement@22..41
+                  CompoundStatement@22..28
                     BraceLeft@22..23 "{"
                     Blankspace@23..24 " "
-                    Fallthrough@24..35 "fallthrough"
-                    Semicolon@35..36 ";"
-                    Blankspace@36..37 " "
-                    BraceRight@37..38 "}"
-                    Blankspace@38..41 "\n  "
-                SwitchBodyCase@41..69
-                  Case@41..45 "case"
-                  Blankspace@45..46 " "
-                  SwitchCaseSelectors@46..50
-                    Literal@46..47
-                      DecimalIntLiteral@46..47 "1"
-                    Comma@47..48 ","
-                    Blankspace@48..49 " "
-                    Literal@49..50
-                      DecimalIntLiteral@49..50 "2"
-                  Colon@50..51 ":"
-                  Blankspace@51..52 " "
-                  CompoundStatement@52..69
-                    BraceLeft@52..53 "{"
-                    Blankspace@53..54 " "
-                    ReturnStatement@54..63
-                      Return@54..60 "return"
-                      Blankspace@60..61 " "
-                      Literal@61..63
-                        DecimalIntLiteral@61..63 "42"
-                    Semicolon@63..64 ";"
-                    Blankspace@64..65 " "
-                    BraceRight@65..66 "}"
-                    Blankspace@66..69 "\n  "
-                SwitchBodyDefault@69..82
-                  Default@69..76 "default"
-                  Colon@76..77 ":"
-                  Blankspace@77..78 " "
-                  CompoundStatement@78..82
-                    BraceLeft@78..79 "{"
-                    Blankspace@79..80 " "
-                    BraceRight@80..81 "}"
-                    Blankspace@81..82 "\n"
-                BraceRight@82..83 "}"
-                Blankspace@83..92 "\n        ""#]],
+                    BraceRight@24..25 "}"
+                    Blankspace@25..28 "\n  "
+                SwitchBodyCase@28..56
+                  Case@28..32 "case"
+                  Blankspace@32..33 " "
+                  SwitchCaseSelectors@33..37
+                    Literal@33..34
+                      DecimalIntLiteral@33..34 "1"
+                    Comma@34..35 ","
+                    Blankspace@35..36 " "
+                    Literal@36..37
+                      DecimalIntLiteral@36..37 "2"
+                  Colon@37..38 ":"
+                  Blankspace@38..39 " "
+                  CompoundStatement@39..56
+                    BraceLeft@39..40 "{"
+                    Blankspace@40..41 " "
+                    ReturnStatement@41..50
+                      Return@41..47 "return"
+                      Blankspace@47..48 " "
+                      Literal@48..50
+                        DecimalIntLiteral@48..50 "42"
+                    Semicolon@50..51 ";"
+                    Blankspace@51..52 " "
+                    BraceRight@52..53 "}"
+                    Blankspace@53..56 "\n  "
+                SwitchBodyDefault@56..69
+                  Default@56..63 "default"
+                  Colon@63..64 ":"
+                  Blankspace@64..65 " "
+                  CompoundStatement@65..69
+                    BraceLeft@65..66 "{"
+                    Blankspace@66..67 " "
+                    BraceRight@67..68 "}"
+                    Blankspace@68..69 "\n"
+                BraceRight@69..70 "}"
+                Blankspace@70..79 "\n        ""#]],
     );
 }
 

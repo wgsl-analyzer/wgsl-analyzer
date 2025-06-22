@@ -6,7 +6,7 @@ use crate::{
     ty::{
         AccessMode, AddressSpace, ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Pointer,
         SamplerType, ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType,
-        TyKind, Type, VecSize, VectorType,
+        TyKind, Type, VecSize,
     },
 };
 

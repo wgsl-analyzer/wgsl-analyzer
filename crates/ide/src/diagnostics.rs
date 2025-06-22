@@ -731,7 +731,7 @@ fn convert_compatible(
     let overload_kind = overload.kind(database);
     match (target_kind, overload_kind) {
         (ty::TyKind::Vector(tg), ty::TyKind::Vector(ov)) => {
-            size_compatible(tg.size, ov.size) && convert_compatible(database, tg.inner, ov.inner)
+            size_compatible(tg.size, ov.size) && convert_compatible(database, tg.component_type, ov.component_type)
         },
         (ty::TyKind::Matrix(tg), ty::TyKind::Matrix(ov)) => {
             size_compatible(tg.columns, ov.columns)

@@ -1,4 +1,3 @@
-#![allow(clippy::if_same_then_else, clippy::needless_return)]
 mod expression;
 
 pub(crate) use expression::expression;
@@ -239,11 +238,10 @@ fn function(
 
         if parser.at(SyntaxKind::BraceLeft) {
             parser.error_no_bump(&[SyntaxKind::Type]);
-            marker.complete(parser, SyntaxKind::ReturnType);
         } else {
             type_declaration(parser);
-            marker.complete(parser, SyntaxKind::ReturnType);
         }
+        marker.complete(parser, SyntaxKind::ReturnType);
     }
 
     if parser.at(SyntaxKind::BraceLeft) {
@@ -277,13 +275,13 @@ fn list(
     end: SyntaxKind,
     separator: SyntaxKind,
     kind: SyntaxKind,
-    f: impl Fn(&mut Parser<'_, '_>),
+    parser_implementation: impl Fn(&mut Parser<'_, '_>),
 ) {
     let marker = parser.start();
     parser.expect(begin);
     while !parser.at_or_end(end) {
         let location = parser.location();
-        f(parser);
+        parser_implementation(parser);
         if parser.location() == location {
             parser.error();
         }
@@ -299,13 +297,13 @@ fn list_multisep(
     end: SyntaxKind,
     separators: &[SyntaxKind],
     kind: SyntaxKind,
-    f: impl Fn(&mut Parser<'_, '_>),
+    parser_implementation: impl Fn(&mut Parser<'_, '_>),
 ) {
     let marker = parser.start();
     parser.expect(begin);
     while !parser.at_or_end(end) {
         parser.peek();
-        f(parser);
+        parser_implementation(parser);
 
         if parser.at_set(separators) {
             parser.bump();
@@ -473,7 +471,7 @@ pub(crate) fn type_decl_generics(parser: &mut Parser<'_, '_>) {
         SyntaxKind::Comma,
         SyntaxKind::GenericArgumentList,
         |parser| {
-            let _ = if_at_set(parser, ACCESS_MODE_SET) || if_at_set(parser, ADDRESS_SPACE_SET) || {
+            _ = if_at_set(parser, ACCESS_MODE_SET) || if_at_set(parser, ADDRESS_SPACE_SET) || {
                 if parser.at_set(TOKENSET_LITERAL) {
                     expression::literal(parser);
                 } else {
@@ -485,50 +483,39 @@ pub(crate) fn type_decl_generics(parser: &mut Parser<'_, '_>) {
     );
 }
 
-fn compound_statement(parser: &mut Parser<'_, '_>) {
-    list(
-        parser,
-        SyntaxKind::BraceLeft,
-        SyntaxKind::BraceRight,
-        SyntaxKind::Semicolon,
-        SyntaxKind::CompoundStatement,
-        statement,
-    );
-}
-
 const STATEMENT_RECOVER_SET: &[SyntaxKind] = &[
+    // SyntaxKind::ReturnStatement,
+    SyntaxKind::Return,
+    // SyntaxKind::IfStatement,
+    SyntaxKind::If,
+    // SyntaxKind::SwitchStatement,
+    SyntaxKind::Switch,
+    // SyntaxKind::LoopStatement,
+    SyntaxKind::Loop,
+    // SyntaxKind::ForStatement,
+    SyntaxKind::For,
+    // TODO: Why is this not included?
+    // SyntaxKind::WhileStatement,
+    // SyntaxKind::While,
+    // TODO: Why is this not included?
+    // SyntaxKind::FunctionCallStatement,
+    // SyntaxKind::FunctionCall,
+    // SyntaxKind::VariableOrValueStatement,
+    SyntaxKind::Var,
     SyntaxKind::Constant,
     SyntaxKind::Let,
-    SyntaxKind::Var,
-    SyntaxKind::Return,
-    SyntaxKind::If,
-    SyntaxKind::Switch,
-    SyntaxKind::Loop,
-    SyntaxKind::For,
+    // TODO: Why does SyntaxKind::BreakStatement not exist?
     SyntaxKind::Break,
+    // TODO: Why does SyntaxKind::ContinueStatement not exist?
     SyntaxKind::Continue,
-    SyntaxKind::Fallthrough,
     SyntaxKind::Discard,
     SyntaxKind::BraceRight,
 ];
 
+/// [9. Statements](https://www.w3.org/TR/WGSL/#statements)
+///
+/// [Grammar](https://www.w3.org/TR/WGSL/#syntax-statement)
 pub(crate) fn statement(parser: &mut Parser<'_, '_>) {
-    /*
-    | [x] return_statement SEMICOLON
-    | [x] if_statement
-    | [x] switch_statement
-    | [x] loop_statement
-    | [x] for_statement
-    | [kinda] func_call_statement SEMICOLON
-    | [x] variable_statement SEMICOLON
-    | [x] break_statement SEMICOLON
-    | [x] continue_statement SEMICOLON
-    | [x] continuing_statement SEMICOLON
-    | [x] DISCARD SEMICOLON
-    | [x] assignment_statement SEMICOLON
-    | [x] compound_statement
-     */
-
     if parser.at_set(&[SyntaxKind::Constant, SyntaxKind::Let, SyntaxKind::Var]) {
         variable_statement(parser);
     } else if parser.at(SyntaxKind::Return) {
@@ -546,141 +533,90 @@ pub(crate) fn statement(parser: &mut Parser<'_, '_>) {
     } else if parser.at(SyntaxKind::For) {
         for_statement(parser);
     } else if parser.at(SyntaxKind::Break) {
-        parser.bump();
+        break_statement(parser);
     } else if parser.at(SyntaxKind::Continue) {
-        parser.bump();
+        continue_statement(parser);
     } else if parser.at(SyntaxKind::Discard) {
-        parser.bump();
-    } else if parser.at(SyntaxKind::Fallthrough) {
-        parser.bump();
+        discard_statement(parser);
     } else if parser.at(SyntaxKind::Continuing) {
         continuing_statement(parser);
     } else {
         let marker = parser.start();
         expression(parser);
 
+        // https://www.w3.org/TR/WGSL/#assignment
+
+        // TODO: phony assignments are not clearly handled
+        // https://www.w3.org/TR/WGSL/#phony-assignment-section
         if parser.at(SyntaxKind::Equal) {
-            parser.expect(SyntaxKind::Equal);
-            expression(parser);
-            marker.complete(parser, SyntaxKind::AssignmentStatement);
+            simple_assignment_statement(parser, marker);
         } else if parser.at_set(&[SyntaxKind::PlusPlus, SyntaxKind::MinusMinus]) {
-            parser.bump();
-            marker.complete(parser, SyntaxKind::IncrementDecrementStatement);
+            increment_decrement_statement(parser, marker);
         } else if parser.at_set(COMPOUND_ASSIGNMENT_SET) {
-            parser.bump();
-            expression(parser);
-            marker.complete(parser, SyntaxKind::CompoundAssignmentStatement);
+            compound_assignment_statement(parser, marker);
         } else {
             // only function calls are actually allowed as statements in wgsl.
-            marker.complete(parser, SyntaxKind::ExpressionStatement);
+            marker.complete(parser, SyntaxKind::FunctionCallStatement);
         }
     }
 }
 
-const COMPOUND_ASSIGNMENT_SET: &[SyntaxKind] = &[
-    SyntaxKind::PlusEqual,
-    SyntaxKind::MinusEqual,
-    SyntaxKind::TimesEqual,
-    SyntaxKind::DivisionEqual,
-    SyntaxKind::ModuloEqual,
-    SyntaxKind::AndEqual,
-    SyntaxKind::OrEqual,
-    SyntaxKind::XorEqual,
-    SyntaxKind::ShiftRightEqual,
-    SyntaxKind::ShiftLeftEqual,
-];
-
-fn loop_statement(parser: &mut Parser<'_, '_>) {
-    let marker = parser.start();
-    parser.expect(SyntaxKind::Loop);
-    compound_statement(parser);
-    marker.complete(parser, SyntaxKind::LoopStatement);
-}
-
-fn continuing_statement(parser: &mut Parser<'_, '_>) {
-    let marker = parser.start();
-    parser.expect(SyntaxKind::Continuing);
-    if !parser.at(SyntaxKind::BraceLeft) {
-        marker.complete(parser, SyntaxKind::ContinuingStatement);
-        return;
-    }
-    compound_statement(parser);
-    marker.complete(parser, SyntaxKind::ContinuingStatement);
-}
-
-fn while_statement(parser: &mut Parser<'_, '_>) {
-    let marker = parser.start();
-    parser.expect(SyntaxKind::While);
-    if parser.at_set(&[SyntaxKind::BraceLeft]) {
-        // TODO: Better error here
-        parser.error_expected_no_bump(&[SyntaxKind::Bool]);
-        marker.complete(parser, SyntaxKind::WhileStatement);
-        return;
-    }
-
-    expression(parser);
-
-    compound_statement(parser);
-    marker.complete(parser, SyntaxKind::WhileStatement);
-}
-
-fn for_statement(parser: &mut Parser<'_, '_>) {
-    let marker = parser.start();
-    parser.expect(SyntaxKind::For);
-
-    surround(
+/// [9.1. Compound Statement](https://www.w3.org/TR/WGSL/#compound-statement-section)
+fn compound_statement(parser: &mut Parser<'_, '_>) {
+    list(
         parser,
-        SyntaxKind::ParenthesisLeft,
-        SyntaxKind::ParenthesisRight,
-        &[SyntaxKind::BraceLeft],
-        for_header,
+        SyntaxKind::BraceLeft,
+        SyntaxKind::BraceRight,
+        SyntaxKind::Semicolon,
+        SyntaxKind::CompoundStatement,
+        statement,
     );
-
-    if parser.at_set(STATEMENT_RECOVER_SET) {
-        marker.complete(parser, SyntaxKind::ForStatement);
-        return;
-    }
-    compound_statement(parser);
-
-    marker.complete(parser, SyntaxKind::ForStatement);
 }
 
-const COMMA_SEMICOLON_SET: &[SyntaxKind] = &[SyntaxKind::Comma, SyntaxKind::Semicolon];
+// 9.2. Assignment Statement
 
-fn for_header(parser: &mut Parser<'_, '_>) {
-    if parser.at(SyntaxKind::Semicolon) {
-        parser.bump();
-    } else if parser.at(SyntaxKind::Comma) {
-        parser.error();
-    } else {
-        let marker = parser.start();
-        statement(parser);
-        marker.complete(parser, SyntaxKind::ForInitializer);
-        parser.eat_set(COMMA_SEMICOLON_SET);
-    }
-
-    if parser.at(SyntaxKind::Semicolon) {
-        parser.bump();
-    } else if parser.at(SyntaxKind::Comma) {
-        parser.error();
-    } else {
-        let marker = parser.start();
-        expression(parser);
-        marker.complete(parser, SyntaxKind::ForCondition);
-        parser.eat_set(COMMA_SEMICOLON_SET);
-    }
-
-    if parser.at_set(&[SyntaxKind::Semicolon, SyntaxKind::Comma]) {
-        parser.error();
-    } else if parser.at(SyntaxKind::ParenthesisRight) {
-        return;
-    } else {
-        let marker = parser.start();
-        statement(parser);
-        marker.complete(parser, SyntaxKind::ForContinuingPart);
-    }
+/// [9.2.1. Simple Assignment](https://www.w3.org/TR/WGSL/#simple-assignment-section)
+fn simple_assignment_statement(
+    parser: &mut Parser<'_, '_>,
+    marker: Marker,
+) {
+    parser.expect(SyntaxKind::Equal);
+    expression(parser);
+    marker.complete(parser, SyntaxKind::AssignmentStatement);
 }
 
+/// [9.2.2. Phony Assignment](https://www.w3.org/TR/WGSL/#phony-assignment-section)
+fn phony_assignment_statement(
+    parser: &mut Parser<'_, '_>,
+    marker: Marker,
+) {
+    parser.bump();
+    expression(parser);
+    marker.complete(parser, SyntaxKind::CompoundAssignmentStatement);
+}
+
+/// [9.2.3. Compound Assignment](https://www.w3.org/TR/WGSL/#compound-assignment-sec)
+fn compound_assignment_statement(
+    parser: &mut Parser<'_, '_>,
+    marker: Marker,
+) {
+    parser.bump();
+    expression(parser);
+    marker.complete(parser, SyntaxKind::CompoundAssignmentStatement);
+}
+
+/// [9.3. Increment and Decrement Statements](https://www.w3.org/TR/WGSL/#increment-decrement)
+fn increment_decrement_statement(
+    parser: &mut Parser<'_, '_>,
+    marker: Marker,
+) {
+    parser.bump();
+    marker.complete(parser, SyntaxKind::IncrementDecrementStatement);
+}
+
+// https://www.w3.org/TR/WGSL/#control-flow
+
+/// [9.4.1. If Statement](https://www.w3.org/TR/WGSL/#if-statement)
 fn if_statement(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     parser.expect(SyntaxKind::If);
@@ -722,6 +658,7 @@ fn if_statement(parser: &mut Parser<'_, '_>) {
     marker.complete(parser, SyntaxKind::IfStatement);
 }
 
+/// [9.4.2. Switch Statement](https://www.w3.org/TR/WGSL/#switch-statement)
 fn switch_statement(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     parser.expect(SyntaxKind::Switch);
@@ -738,6 +675,141 @@ fn switch_statement(parser: &mut Parser<'_, '_>) {
     );
 
     marker.complete(parser, SyntaxKind::SwitchStatement);
+}
+
+/// [9.4.3. Loop Statement](https://www.w3.org/TR/WGSL/#loop-statement)
+fn loop_statement(parser: &mut Parser<'_, '_>) {
+    let marker = parser.start();
+    parser.expect(SyntaxKind::Loop);
+    compound_statement(parser);
+    marker.complete(parser, SyntaxKind::LoopStatement);
+}
+
+/// [9.4.4. For Statement](https://www.w3.org/TR/WGSL/#for-statement)
+fn for_statement(parser: &mut Parser<'_, '_>) {
+    let marker = parser.start();
+    parser.expect(SyntaxKind::For);
+
+    surround(
+        parser,
+        SyntaxKind::ParenthesisLeft,
+        SyntaxKind::ParenthesisRight,
+        &[SyntaxKind::BraceLeft],
+        for_header,
+    );
+
+    if parser.at_set(STATEMENT_RECOVER_SET) {
+        marker.complete(parser, SyntaxKind::ForStatement);
+        return;
+    }
+    compound_statement(parser);
+
+    marker.complete(parser, SyntaxKind::ForStatement);
+}
+
+/// [9.4.5. While Statement](https://www.w3.org/TR/WGSL/#while-statement)
+fn while_statement(parser: &mut Parser<'_, '_>) {
+    let marker = parser.start();
+    parser.expect(SyntaxKind::While);
+    if parser.at_set(&[SyntaxKind::BraceLeft]) {
+        // TODO: Better error here
+        parser.error_expected_no_bump(&[SyntaxKind::Bool]);
+        marker.complete(parser, SyntaxKind::WhileStatement);
+        return;
+    }
+
+    expression(parser);
+
+    compound_statement(parser);
+    marker.complete(parser, SyntaxKind::WhileStatement);
+}
+
+/// [9.4.6. Break Statement](https://www.w3.org/TR/WGSL/#break-statement)
+fn break_statement(parser: &mut Parser<'_, '_>) {
+    parser.bump();
+}
+
+// /// [9.4.7. Break-If Statement](https://www.w3.org/TR/WGSL/#break-if-statement)
+
+/// [9.4.8. Continue Statement](https://www.w3.org/TR/WGSL/#continue-statement)
+fn continue_statement(parser: &mut Parser<'_, '_>) {
+    parser.bump();
+}
+
+/// [9.4.9. Continuing Statement](https://www.w3.org/TR/WGSL/#continuing-statement)
+fn continuing_statement(parser: &mut Parser<'_, '_>) {
+    let marker = parser.start();
+    parser.expect(SyntaxKind::Continuing);
+    if !parser.at(SyntaxKind::BraceLeft) {
+        marker.complete(parser, SyntaxKind::ContinuingStatement);
+        return;
+    }
+    compound_statement(parser);
+    marker.complete(parser, SyntaxKind::ContinuingStatement);
+}
+
+/// [9.4.10. Return Statement](https://www.w3.org/TR/WGSL/#return-statement)
+fn return_statement(parser: &mut Parser<'_, '_>) {
+    let marker = parser.start();
+    parser.expect(SyntaxKind::Return);
+    if !parser.at(SyntaxKind::Semicolon) {
+        expression(parser);
+    }
+    marker.complete(parser, SyntaxKind::ReturnStatement);
+}
+
+/// [9.4.11. Discard Statement](https://www.w3.org/TR/WGSL/#discard-statement)
+fn discard_statement(parser: &mut Parser<'_, '_>) {
+    parser.bump();
+}
+
+const COMPOUND_ASSIGNMENT_SET: &[SyntaxKind] = &[
+    SyntaxKind::PlusEqual,
+    SyntaxKind::MinusEqual,
+    SyntaxKind::TimesEqual,
+    SyntaxKind::DivisionEqual,
+    SyntaxKind::ModuloEqual,
+    SyntaxKind::AndEqual,
+    SyntaxKind::OrEqual,
+    SyntaxKind::XorEqual,
+    SyntaxKind::ShiftRightEqual,
+    SyntaxKind::ShiftLeftEqual,
+];
+
+const COMMA_SEMICOLON_SET: &[SyntaxKind] = &[SyntaxKind::Comma, SyntaxKind::Semicolon];
+
+fn for_header(parser: &mut Parser<'_, '_>) {
+    if parser.at(SyntaxKind::Semicolon) {
+        parser.bump();
+    } else if parser.at(SyntaxKind::Comma) {
+        parser.error();
+    } else {
+        let marker = parser.start();
+        statement(parser);
+        marker.complete(parser, SyntaxKind::ForInitializer);
+        parser.eat_set(COMMA_SEMICOLON_SET);
+    }
+
+    if parser.at(SyntaxKind::Semicolon) {
+        parser.bump();
+    } else if parser.at(SyntaxKind::Comma) {
+        parser.error();
+    } else {
+        let marker = parser.start();
+        expression(parser);
+        marker.complete(parser, SyntaxKind::ForCondition);
+        parser.eat_set(COMMA_SEMICOLON_SET);
+    }
+
+    if parser.at_set(&[SyntaxKind::Semicolon, SyntaxKind::Comma]) {
+        parser.error();
+    } else if parser.at(SyntaxKind::ParenthesisRight) {
+        return;
+    } else {
+        let marker = parser.start();
+        statement(parser);
+        marker.complete(parser, SyntaxKind::ForContinuingPart);
+    }
 }
 
 fn switch_body(parser: &mut Parser<'_, '_>) {
@@ -804,15 +876,6 @@ fn surround(
     parser.expect(after);
 }
 
-fn return_statement(parser: &mut Parser<'_, '_>) {
-    let marker = parser.start();
-    parser.expect(SyntaxKind::Return);
-    if !parser.at(SyntaxKind::Semicolon) {
-        expression(parser);
-    }
-    marker.complete(parser, SyntaxKind::ReturnStatement);
-}
-
 fn variable_statement(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
 
@@ -859,7 +922,6 @@ fn variable_statement(parser: &mut Parser<'_, '_>) {
         },
         Some(SyntaxKind::Semicolon) => {
             marker.complete(parser, SyntaxKind::VariableStatement);
-            return;
         },
         _ => {
             parser.error();

@@ -12,6 +12,7 @@ pub struct ParseError {
 
 impl ParseError {
     #[must_use]
+    #[expect(clippy::use_debug, reason = "TODO: Improve error messages")]
     pub fn message(&self) -> String {
         let mut message = "expected ".to_owned();
         let number_expected = self.expected.len();
@@ -19,18 +20,18 @@ impl ParseError {
         let is_last = |index| index == number_expected - 1;
         for (index, expected_kind) in self.expected.iter().enumerate() {
             if is_first(index) {
-                let _ = write!(message, "{expected_kind:?}");
+                _ = write!(message, "{expected_kind:?}");
             } else if is_last(index) && number_expected > 2 {
-                let _ = write!(message, ", or {expected_kind:?}");
+                _ = write!(message, ", or {expected_kind:?}");
             } else if is_last(index) {
-                let _ = write!(message, " or {expected_kind:?}");
+                _ = write!(message, " or {expected_kind:?}");
             } else {
-                let _ = write!(message, ", {expected_kind:?}");
+                _ = write!(message, ", {expected_kind:?}");
             }
         }
 
         if let Some(found) = self.found {
-            let _ = write!(message, ", but found {found:?}");
+            _ = write!(message, ", but found {found:?}");
         }
 
         message
@@ -60,6 +61,7 @@ impl PartialEq for ParseError {
 }
 
 impl fmt::Display for ParseError {
+    #[expect(clippy::use_debug, reason = "TODO: Improve error messages")]
     fn fmt(
         &self,
         #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,

@@ -1,9 +1,11 @@
+//! <https://www.w3.org/TR/WGSL/#memory-layouts>
+
 use hir_def::data::LocalFieldId;
 use la_arena::ArenaMap;
 
 use crate::{
     database::HirDatabase,
-    ty::{ArraySize, ArrayType, ScalarType, TyKind, Type, VecSize},
+    ty::{ArraySize, ArrayType, ScalarType, TyKind, Type, VecSize, VectorType},
 };
 
 type Bytes = u32;
@@ -15,19 +17,13 @@ const fn round_up(
     num.div_ceil(multiple) * multiple
 }
 
-#[test]
-fn test_round_up() {
-    assert_eq!(round_up(16, 10), 16);
-    assert_eq!(round_up(16, 16), 16);
-    assert_eq!(round_up(32, 17), 32);
-    assert_eq!(round_up(32, 35), 64);
-    assert_eq!(round_up(32, 102), 128);
-}
-
+/// All address spaces except uniform have the same constraints as the storage address space.
+///
+/// <https://www.w3.org/TR/WGSL/#address-space-layout-constraints>
 #[derive(Clone, Copy)]
 pub enum LayoutAddressSpace {
-    Storage,
     Uniform,
+    Other,
 }
 
 impl ArrayType {
@@ -41,7 +37,7 @@ impl ArrayType {
             self.inner.size(address_space, database)?,
         );
         match address_space {
-            LayoutAddressSpace::Storage => Some(stride),
+            LayoutAddressSpace::Other => Some(stride),
             LayoutAddressSpace::Uniform => Some(round_up(16, stride)),
         }
     }
@@ -53,7 +49,7 @@ impl Type {
         address_space: LayoutAddressSpace,
         database: &dyn HirDatabase,
     ) -> Option<Bytes> {
-        self.kind(database).align(address_space, database)
+        self.kind(database).align_of(address_space, database)
     }
 
     pub fn size(
@@ -61,27 +57,44 @@ impl Type {
         address_space: LayoutAddressSpace,
         database: &dyn HirDatabase,
     ) -> Option<Bytes> {
-        self.kind(database).size(address_space, database)
+        self.kind(database).size_of(address_space, database)
     }
 }
 
 impl TyKind {
-    pub fn align(
+    /// <https://www.w3.org/TR/WGSL/#alignof>
+    pub fn align_of(
         &self,
         address_space: LayoutAddressSpace,
         database: &dyn HirDatabase,
     ) -> Option<Bytes> {
+        #[expect(
+            clippy::match_same_arms,
+            reason = "a match arm corresponds to a table row in the specification"
+        )]
         Some(match self {
+            // <https://www.w3.org/TR/WGSL/#why-is-bool-4-bytes>
+            Self::Scalar(ScalarType::Bool) => 4,
             Self::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => 4,
-            Self::Scalar(ScalarType::Bool) => return None,
+            Self::Scalar(ScalarType::F16) => 2,
             Self::Atomic(_) => 4,
-            Self::Vector(v) => match v.size {
-                VecSize::Two => 8,
-                VecSize::Three => 16,
-                VecSize::Four => 16,
-                VecSize::BoundVar(_) => return None,
-            },
-            Self::Matrix(m) => match m.rows {
+            Self::Vector(VectorType {
+                size: VecSize::Two,
+                component_type,
+            }) if component_type.kind(database) == Self::Scalar(ScalarType::F16) => 4,
+            Self::Vector(VectorType {
+                size: VecSize::Two,
+                component_type,
+            }) => 8,
+            Self::Vector(VectorType {
+                size: VecSize::Three,
+                component_type,
+            }) if component_type.kind(database) == Self::Scalar(ScalarType::F16) => 4,
+            Self::Vector(VectorType {
+                size: VecSize::Three,
+                component_type,
+            }) => 16,
+            Self::Matrix(matrix_type) => match matrix_type.rows {
                 VecSize::Two => 8,
                 VecSize::Three => 16,
                 VecSize::Four => 16,
@@ -89,22 +102,18 @@ impl TyKind {
             },
             Self::Struct(r#struct) => {
                 let fields = database.field_types(*r#struct);
-                let (align, _) = struct_member_layout(
-                    &fields,
-                    database,
-                    LayoutAddressSpace::Storage,
-                    |_, _| {},
-                )?;
+                let (align, _) =
+                    struct_member_layout(&fields, database, LayoutAddressSpace::Other, |_, _| {})?;
 
                 match address_space {
-                    LayoutAddressSpace::Storage => align,
+                    LayoutAddressSpace::Other => align,
                     LayoutAddressSpace::Uniform => round_up(16, align),
                 }
             },
             Self::Array(array) => {
                 let inner_align = array.inner.align(address_space, database)?;
                 match address_space {
-                    LayoutAddressSpace::Storage => inner_align,
+                    LayoutAddressSpace::Other => inner_align,
                     LayoutAddressSpace::Uniform => round_up(16, inner_align),
                 }
             },
@@ -112,7 +121,12 @@ impl TyKind {
         })
     }
 
-    pub fn size(
+    /// <https://www.w3.org/TR/WGSL/#sizeof>
+    ///
+    /// # Panics
+    ///
+    /// Panics if the size of the array exceeds.
+    pub fn size_of(
         &self,
         address_space: LayoutAddressSpace,
         database: &dyn HirDatabase,
@@ -121,15 +135,15 @@ impl TyKind {
             Self::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => 4,
             Self::Scalar(ScalarType::Bool) => return None,
             Self::Atomic(_) => 4,
-            Self::Vector(v) => match v.size {
+            Self::Vector(vector_type) => match vector_type.size {
                 VecSize::Two => 8,
                 VecSize::Three => 12,
                 VecSize::Four => 16,
                 VecSize::BoundVar(_) => return None,
             },
-            Self::Matrix(m) => {
-                let n = Bytes::from(m.columns.as_u8());
-                let (vec_align, vec_size) = match m.columns {
+            Self::Matrix(matrix_type) => {
+                let n = Bytes::from(matrix_type.columns.as_u8());
+                let (vec_align, vec_size) = match matrix_type.columns {
                     VecSize::Two => (8, 8),
                     VecSize::Three => (16, 12),
                     VecSize::Four => (16, 16),
@@ -140,22 +154,25 @@ impl TyKind {
             },
             Self::Struct(r#struct) => {
                 let fields = database.field_types(*r#struct);
-                let (_, size) = struct_member_layout(
-                    &fields,
-                    database,
-                    LayoutAddressSpace::Storage,
-                    |_, _| {},
-                )?;
+                let (_, size) =
+                    struct_member_layout(&fields, database, LayoutAddressSpace::Other, |_, _| {})?;
                 size
             },
             Self::Array(array) => match array.size {
                 ArraySize::Constant(n) => {
                     let stride = array.stride(address_space, database)?;
-                    n as Bytes * stride
+                    Bytes::try_from(n).unwrap() * stride
                 },
                 ArraySize::Dynamic => return None,
             },
-            _ => return None,
+            Self::Error
+            | Self::Scalar(_)
+            | Self::Texture(_)
+            | Self::Sampler(_)
+            | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::BoundVar(_)
+            | Self::StorageTypeOfTexelFormat(_) => return None,
         })
     }
 }
@@ -167,11 +184,11 @@ pub struct FieldLayout {
 }
 
 /// Returns the (align, size) of the struct, and calls `on_field` for every field
-pub fn struct_member_layout<R>(
+pub fn struct_member_layout<Result, Function: FnMut(LocalFieldId, FieldLayout) -> Result>(
     fields: &ArenaMap<LocalFieldId, Type>,
     database: &dyn HirDatabase,
     address_space: LayoutAddressSpace,
-    mut on_field: impl FnMut(LocalFieldId, FieldLayout) -> R,
+    mut on_field: Function,
 ) -> Option<(Bytes, Bytes)> {
     let mut struct_align = Bytes::MIN;
 
@@ -205,9 +222,23 @@ pub fn struct_member_layout<R>(
     let struct_size = round_up(struct_align, just_past_last_member);
 
     let struct_align = match address_space {
-        LayoutAddressSpace::Storage => struct_align,
+        LayoutAddressSpace::Other => struct_align,
         LayoutAddressSpace::Uniform => round_up(16, struct_align),
     };
 
     Some((struct_align, struct_size))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_round_up() {
+        assert_eq!(round_up(16, 10), 16);
+        assert_eq!(round_up(16, 16), 16);
+        assert_eq!(round_up(32, 17), 32);
+        assert_eq!(round_up(32, 35), 64);
+        assert_eq!(round_up(32, 102), 128);
+    }
 }

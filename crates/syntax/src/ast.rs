@@ -787,7 +787,7 @@ impl ForStatement {
     }
 }
 
-ast_node!(ExpressionStatement:
+ast_node!(FunctionCallStatement:
     expression: Option<Expression>;
 );
 ast_node!(Discard);
@@ -813,7 +813,7 @@ ast_enum! {
         Break,
         Continue,
         ContinuingStatement,
-        ExpressionStatement,
+        FunctionCallStatement,
         IncrementDecrementStatement,
     }
 }

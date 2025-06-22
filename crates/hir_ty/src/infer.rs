@@ -790,13 +790,13 @@ impl<'database> InferenceContext<'database> {
                 let r#type = match &*left_inner {
                     TyKind::Vector(vec) => {
                         // TODO out of bounds
-                        vec.inner
+                        vec.component_type
                     },
-                    TyKind::Matrix(mat) => {
+                    TyKind::Matrix(matrix_type) => {
                         // TODO out of bounds
                         self.database.intern_ty(TyKind::Vector(VectorType {
-                            inner: mat.inner,
-                            size: mat.rows,
+                            component_type: matrix_type.inner,
+                            size: matrix_type.rows,
                         }))
                     },
                     TyKind::Array(array) => {
@@ -1064,7 +1064,12 @@ impl<'database> InferenceContext<'database> {
         } else {
             let kind = vec_size
                 .try_into()
-                .map(|size| TyKind::Vector(VectorType { size, inner }))
+                .map(|size| {
+                    TyKind::Vector(VectorType {
+                        size,
+                        component_type: inner,
+                    })
+                })
                 .unwrap_or(TyKind::Error);
             self.database.intern_ty(kind)
         }
@@ -1072,12 +1077,12 @@ impl<'database> InferenceContext<'database> {
 
     fn vec_swizzle(
         &self,
-        vec_type: &VectorType,
+        vector_type: &VectorType,
         name: &Name,
     ) -> Result<Type, ()> {
         const SWIZZLES: [[char; 4]; 2] = [['x', 'y', 'z', 'w'], ['r', 'g', 'b', 'a']];
         let max_size = 4;
-        let max_swizzle_index = vec_type.size.as_u8();
+        let max_swizzle_index = vector_type.size.as_u8();
 
         if name.as_str().len() > max_size {
             return Err(());
@@ -1090,8 +1095,10 @@ impl<'database> InferenceContext<'database> {
                 .chars()
                 .all(|character| allowed_chars.contains(&character))
             {
-                let r#type = self
-                    .ty_from_vec_size(vec_type.inner, u8::try_from(name.as_str().len()).unwrap());
+                let r#type = self.ty_from_vec_size(
+                    vector_type.component_type,
+                    u8::try_from(name.as_str().len()).unwrap(),
+                );
                 let result_type =
                     self.make_ref(r#type, AddressSpace::Function, AccessMode::read_write()); // TODO is correct?
                 return Ok(result_type);
@@ -1458,7 +1465,10 @@ impl UnificationTable {
     ) -> Type {
         match r#type.kind(database) {
             TyKind::BoundVar(var) => *self.types.get(&var).expect("type var not constrained"),
-            TyKind::Vector(VectorType { size, inner }) => {
+            TyKind::Vector(VectorType {
+                size,
+                component_type: inner,
+            }) => {
                 let size = match size {
                     VecSize::BoundVar(size_var) => *self
                         .vec_sizes
@@ -1467,7 +1477,11 @@ impl UnificationTable {
                     (VecSize::Two | VecSize::Three | VecSize::Four) => size,
                 };
                 let inner = self.resolve(database, inner);
-                TyKind::Vector(VectorType { size, inner }).intern(database)
+                TyKind::Vector(VectorType {
+                    size,
+                    component_type: inner,
+                })
+                .intern(database)
             },
             TyKind::Matrix(mat) => {
                 let columns = match mat.columns {
@@ -1551,9 +1565,12 @@ fn unify(
             table.set_type(var, found)?;
             Ok(())
         },
-        TyKind::Vector(VectorType { size, inner }) => match found_kind {
+        TyKind::Vector(VectorType {
+            size,
+            component_type: inner,
+        }) => match found_kind {
             TyKind::Vector(found_vec) => {
-                unify(database, table, inner, found_vec.inner)?;
+                unify(database, table, inner, found_vec.component_type)?;
                 if let VecSize::BoundVar(vec_size_var) = size {
                     table.set_vec_size(vec_size_var, found_vec.size)?;
                 } else if size != found_vec.size {
@@ -1834,7 +1851,7 @@ fn storage_type_of_texel_format(
     };
     TyKind::Vector(VectorType {
         size: VecSize::Four,
-        inner: TyKind::Scalar(channel_type).intern(database),
+        component_type: TyKind::Scalar(channel_type).intern(database),
     })
     .intern(database)
 }
@@ -1989,6 +2006,15 @@ impl<'database> TyLoweringContext<'database> {
             .unwrap_or_else(|_| TyKind::Error.intern(self.database))
     }
 
+    /// Convert a [`TypeReference`] into a `[Type]`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if an extreme, probably impossible type is give, such as an array with a size exceeding 64 bits.
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if type is a path and the path is unknown.
     pub fn try_lower_ty(
         &mut self,
         type_ref: &TypeReference,
@@ -2006,7 +2032,7 @@ impl<'database> TyLoweringContext<'database> {
             },
             TypeReference::Vec(vec) => TyKind::Vector(VectorType {
                 size: vec.size.into(),
-                inner: self.lower_ty(&vec.inner),
+                component_type: self.lower_ty(&vec.inner),
             }),
             TypeReference::Matrix(matrix) => TyKind::Matrix(MatrixType {
                 columns: matrix.columns.into(),

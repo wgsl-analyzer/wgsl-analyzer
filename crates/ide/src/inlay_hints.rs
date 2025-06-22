@@ -365,7 +365,7 @@ fn get_struct_layout_hints(
         {
             LayoutAddressSpace::Uniform
         } else {
-            LayoutAddressSpace::Storage
+            LayoutAddressSpace::Other
         };
 
         hir_ty::layout::struct_member_layout(
