@@ -12,10 +12,8 @@ rust-version.workspace = true
 [lib]
 
 [dependencies]
-cov-mark.workspace = true
 crossbeam-channel.workspace = true
 tracing.workspace = true
-rayon.workspace = true
 fst = { version = "0.4.7", default-features = false }
 rustc-hash.workspace = true
 either.workspace = true
@@ -24,8 +22,6 @@ arrayvec.workspace = true
 indexmap.workspace = true
 memchr.workspace = true
 salsa.workspace = true
-salsa-macros.workspace = true
-query-group.workspace = true
 triomphe.workspace = true
 nohash-hasher.workspace = true
 bitflags.workspace = true
@@ -39,7 +35,6 @@ syntax.workspace = true
 wgsl-formatter.workspace = true
 rowan.workspace = true
 parser.workspace = true
-profile.workspace = true
 ide-db.workspace = true
 stdx.workspace = true
 # span.workspace = true

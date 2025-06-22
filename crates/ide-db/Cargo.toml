@@ -13,23 +13,18 @@ rust-version.workspace = true
 doctest = false
 
 [dependencies]
-cov-mark.workspace = true
 crossbeam-channel.workspace = true
 tracing.workspace = true
-rayon.workspace = true
 fst.workspace = true
 rustc-hash.workspace = true
 either.workspace = true
 itertools.workspace = true
-arrayvec.workspace = true
 indexmap.workspace = true
 memchr.workspace = true
 salsa.workspace = true
 salsa-macros.workspace = true
-query-group.workspace = true
 triomphe.workspace = true
 nohash-hasher.workspace = true
-bitflags.workspace = true
 smol_str.workspace = true
 stdx.workspace = true
 smallvec.workspace = true
@@ -37,25 +32,10 @@ smallvec.workspace = true
 base-db.workspace = true
 hir-def.workspace = true
 hir-ty.workspace = true
-hir.workspace = true
 syntax.workspace = true
-wgsl-formatter.workspace = true
 rowan.workspace = true
 vfs.workspace = true
 line-index.workspace = true
-
-naga14 = { package = "naga", version = "0.14", features = [
-  "wgsl-in",
-  "validate",
-  "span",
-] }
-naga19 = { package = "naga", version = "0.19", features = ["wgsl-in"] }
-naga22 = { package = "naga", version = "22.1.0", features = ["wgsl-in"] }
-# naga23 = { package = "naga", version = "23.0.0", features = ["wgsl-in"] }
-# naga24 = { package = "naga", version = "24.0.0", features = ["wgsl-in"] }
-nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "b32cbd4ea6b6b898b27b7837145b3cfe30ac1543", features = [
-  "wgsl-in",
-], version = "24.0.0" }
 
 [dev-dependencies]
 expect-test = "1.5.1"
