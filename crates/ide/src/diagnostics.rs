@@ -1,4 +1,7 @@
-use std::ops::Range;
+use std::{
+    error,
+    ops::{self, Range},
+};
 
 use base_db::{FileRange, TextRange, TextSize};
 use hir::{
@@ -87,7 +90,7 @@ trait Naga {
     fn validate(module: &Self::Module) -> Result<(), Self::ValidationError>;
 }
 
-trait NagaError: std::error::Error {
+trait NagaError: error::Error {
     fn spans(&self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + '_>;
     fn has_spans(&self) -> bool;
 }
@@ -298,7 +301,7 @@ impl NagaErrorPolicy {
             clippy::as_conversions,
             reason = "converting usize to u32 is fine for this project"
         )]
-        let original_range = |range: std::ops::Range<usize>| {
+        let original_range = |range: ops::Range<usize>| {
             let range_in_full = TextRange::new(
                 TextSize::from(range.start as u32),
                 TextSize::from(range.end as u32),
@@ -731,7 +734,8 @@ fn convert_compatible(
     let overload_kind = overload.kind(database);
     match (target_kind, overload_kind) {
         (ty::TyKind::Vector(tg), ty::TyKind::Vector(ov)) => {
-            size_compatible(tg.size, ov.size) && convert_compatible(database, tg.component_type, ov.component_type)
+            size_compatible(tg.size, ov.size)
+                && convert_compatible(database, tg.component_type, ov.component_type)
         },
         (ty::TyKind::Matrix(tg), ty::TyKind::Matrix(ov)) => {
             size_compatible(tg.columns, ov.columns)
@@ -745,7 +749,7 @@ fn convert_compatible(
 
 fn error_message_cause_chain(
     prefix: &str,
-    error: &dyn std::error::Error,
+    error: &dyn error::Error,
 ) -> String {
     let mut message = format!("{prefix}{error}");
 

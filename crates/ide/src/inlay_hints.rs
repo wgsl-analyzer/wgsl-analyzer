@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, hash, iter};
 
 use ast::Expression as AstExpression;
 use base_db::{FileId, FileRange, TextRange};
@@ -86,8 +86,8 @@ impl<T> LazyProperty<T> {
     }
 }
 
-impl std::hash::Hash for InlayHint {
-    fn hash<H: std::hash::Hasher>(
+impl hash::Hash for InlayHint {
+    fn hash<H: hash::Hasher>(
         &self,
         state: &mut H,
     ) {
@@ -263,8 +263,8 @@ pub struct InlayHintLabelPart {
     pub tooltip: Option<LazyProperty<InlayTooltip>>,
 }
 
-impl std::hash::Hash for InlayHintLabelPart {
-    fn hash<H: std::hash::Hasher>(
+impl hash::Hash for InlayHintLabelPart {
+    fn hash<H: hash::Hasher>(
         &self,
         state: &mut H,
     ) {
@@ -381,7 +381,7 @@ fn get_struct_layout_hints(
                 let source = field.source(sema.database)?.value;
 
                 // this is only necessary, because the field syntax nodes include the whitespace to the next line...
-                let actual_last_token = std::iter::successors(
+                let actual_last_token = iter::successors(
                     source.syntax().last_token(),
                     rowan::SyntaxToken::prev_token, // spellchecker:disable-line
                 )

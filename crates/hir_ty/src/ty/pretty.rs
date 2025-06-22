@@ -1,4 +1,4 @@
-use std::fmt::Write as _;
+use std::fmt::{self, Write as _};
 
 use super::{TyKind, Type};
 use crate::{
@@ -49,7 +49,7 @@ fn write_type_expectation_inner(
     or_vec: bool,
     buffer: &mut String,
     verbosity: TypeVerbosity,
-) -> std::fmt::Result {
+) -> fmt::Result {
     match inner {
         TypeExpectationInner::Exact(r#type) => {
             write_ty(database, *r#type, buffer, verbosity)?;
@@ -117,7 +117,7 @@ fn pretty_fn_inner(
     function: &FunctionDetails,
     buffer: &mut String,
     verbosity: TypeVerbosity,
-) -> std::fmt::Result {
+) -> fmt::Result {
     write!(buffer, "fn(")?;
     for (i, parameter) in function.parameters().enumerate() {
         if i != 0 {
@@ -139,7 +139,7 @@ fn write_ty(
     r#type: Type,
     formatter: &mut String,
     verbosity: TypeVerbosity,
-) -> std::fmt::Result {
+) -> fmt::Result {
     match r#type.kind(database) {
         TyKind::Error => write!(formatter, "[error]"),
         TyKind::Scalar(scalar) => {

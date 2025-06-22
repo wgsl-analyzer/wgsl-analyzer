@@ -1,7 +1,7 @@
 mod lower;
 pub mod pretty;
 
-use std::{marker::PhantomData, sync::Arc};
+use std::{hash, marker::PhantomData, ops, sync::Arc};
 
 use la_arena::{Arena, Idx, IdxRange};
 use smol_str::SmolStr;
@@ -226,8 +226,8 @@ impl<N> From<Idx<N>> for ModuleItemId<N> {
 }
 
 // If we automatically derive this trait, ModuleItemId<N> where N does not implement Hash cannot compile
-impl<N> std::hash::Hash for ModuleItemId<N> {
-    fn hash<H: std::hash::Hasher>(
+impl<N> hash::Hash for ModuleItemId<N> {
+    fn hash<H: hash::Hasher>(
         &self,
         state: &mut H,
     ) {
@@ -277,7 +277,7 @@ macro_rules! mod_items {
             }
         })+
 
-        $(impl std::ops::Index<la_arena::Idx<$r#type>> for ModuleData {
+        $(impl core::ops::Index<la_arena::Idx<$r#type>> for ModuleData {
             type Output = $r#type;
 
             fn index(&self, index: la_arena::Idx<$r#type>) -> &Self::Output {
@@ -314,7 +314,7 @@ macro_rules! mod_items {
     };
 }
 
-impl std::ops::Index<Idx<Field>> for ModuleData {
+impl ops::Index<Idx<Field>> for ModuleData {
     type Output = Field;
 
     fn index(
@@ -325,7 +325,7 @@ impl std::ops::Index<Idx<Field>> for ModuleData {
     }
 }
 
-impl std::ops::Index<Idx<Parameter>> for ModuleData {
+impl ops::Index<Idx<Parameter>> for ModuleData {
     type Output = Parameter;
 
     fn index(

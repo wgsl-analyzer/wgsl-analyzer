@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{fmt, marker::PhantomData};
 
 use la_arena::{Arena, Idx};
 use syntax::{
@@ -111,11 +111,11 @@ impl<N: AstNode> Clone for FileAstId<N> {
 
 impl<N: AstNode> Copy for FileAstId<N> {}
 
-impl<N: AstNode> std::fmt::Debug for FileAstId<N> {
+impl<N: AstNode> fmt::Debug for FileAstId<N> {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         f.debug_struct("FileAstId").field("id", &self.id).finish()
     }
 }

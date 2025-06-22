@@ -32,7 +32,7 @@ impl<'database> CompletionContext<'database> {
     pub(crate) fn new(
         database: &'database RootDatabase,
         position @ FilePosition { file_id, offset }: FilePosition,
-        config: &'database CompletionConfig<'database>,
+        config: &'database CompletionConfig,
     ) -> Option<Self> {
         let sema = Semantics::new(database);
         let file = sema.parse(position.file_id);

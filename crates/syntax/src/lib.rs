@@ -15,7 +15,7 @@ use smol_str::SmolStr;
 #[derive(Clone, Debug)]
 pub struct Parse {
     green_node: rowan::GreenNode,
-    errors: Arc<Vec<ParseError>>,
+    errors: Arc<[ParseError]>,
 }
 
 impl PartialEq for Parse {
@@ -40,6 +40,11 @@ impl Parse {
         &self.errors
     }
 
+    /// Returns the syntax tree as a file.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the cast fails.
     #[must_use]
     pub fn tree(&self) -> ast::SourceFile {
         ast::SourceFile::cast(self.syntax()).unwrap()
@@ -59,7 +64,7 @@ pub fn parse_entrypoint(
     let (green_node, errors) = parser::parse_entrypoint(input, parse_entrypoint).into_parts();
     Parse {
         green_node,
-        errors: Arc::new(errors),
+        errors: Arc::from(errors),
     }
 }
 
@@ -131,16 +136,16 @@ impl<N: AstNode> Iterator for AstChildren<N> {
     }
 }
 
-pub enum TokenText<'a> {
-    Borrowed(&'a str),
+pub enum TokenText<'borrow> {
+    Borrowed(&'borrow str),
     Owned(rowan::GreenToken),
 }
 
-impl<'a> TokenText<'a> {
+impl<'borrow> TokenText<'borrow> {
     #[must_use]
-    pub fn as_str(&'a self) -> &'a str {
+    pub fn as_str(&'borrow self) -> &'borrow str {
         match self {
-            TokenText::Borrowed(s) => s,
+            TokenText::Borrowed(string) => string,
             TokenText::Owned(green) => green.text(),
         }
     }
@@ -272,18 +277,18 @@ impl<A: AstNode, B: AstNode> AstNode for Either<A, B> {
     where
         Self: Sized,
     {
-        if let Some(a) = A::cast(syntax.clone()) {
-            return Some(Self::Left(a));
-        } else if let Some(b) = B::cast(syntax) {
-            return Some(Self::Right(b));
+        if let Some(a_node) = A::cast(syntax.clone()) {
+            return Some(Self::Left(a_node));
+        } else if let Some(b_node) = B::cast(syntax) {
+            return Some(Self::Right(b_node));
         }
         None
     }
 
     fn syntax(&self) -> &SyntaxNode {
         match self {
-            Self::Left(l) => l.syntax(),
-            Self::Right(r) => r.syntax(),
+            Self::Left(left) => left.syntax(),
+            Self::Right(right) => right.syntax(),
         }
     }
 }

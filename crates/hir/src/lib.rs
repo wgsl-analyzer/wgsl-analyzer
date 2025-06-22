@@ -68,9 +68,9 @@ impl<'database> Semantics<'database> {
         source.ancestors().find_map(|syntax| {
             match_ast! {
                 match syntax {
-                    ast::Function(function) => self.function_to_def(InFile::new(file_id, function)).map(DefinitionWithBodyId::Function),
-                    ast::GlobalVariableDeclaration(var) => self.global_variable_to_def(InFile::new(file_id, var)).map(DefinitionWithBodyId::GlobalVariable),
-                    ast::GlobalConstantDeclaration(constant) => self.global_constant_to_def(InFile::new(file_id, constant)).map(DefinitionWithBodyId::GlobalConstant),
+                    ast::Function(function) => self.function_to_def(&InFile::new(file_id, function)).map(DefinitionWithBodyId::Function),
+                    ast::GlobalVariableDeclaration(var) => self.global_variable_to_def(&InFile::new(file_id, var)).map(DefinitionWithBodyId::GlobalVariable),
+                    ast::GlobalConstantDeclaration(constant) => self.global_constant_to_def(&InFile::new(file_id, constant)).map(DefinitionWithBodyId::GlobalConstant),
                     _ => None,
                 }
             }
@@ -105,7 +105,7 @@ impl<'database> Semantics<'database> {
         &self,
         def: DefinitionWithBodyId,
         expression: &SyntaxNode,
-        name: Name,
+        name: &Name,
     ) -> Option<Definition> {
         let file_id = def.file_id(self.database);
         let module_info = self.database.module_info(file_id);
@@ -122,7 +122,7 @@ impl<'database> Semantics<'database> {
             resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
         }
 
-        let value = resolver.resolve_value(&name)?;
+        let value = resolver.resolve_value(name)?;
 
         let def = match value {
             ResolveValue::Local(binding) => Definition::Local(Local {
@@ -148,7 +148,7 @@ impl<'database> Semantics<'database> {
 
     fn function_to_def(
         &self,
-        source: InFile<ast::Function>,
+        source: &InFile<ast::Function>,
     ) -> Option<FunctionId> {
         let function = module_data::find_item(self.database, source.file_id, &source.value)?;
         let function_id = self
@@ -159,7 +159,7 @@ impl<'database> Semantics<'database> {
 
     fn global_constant_to_def(
         &self,
-        source: InFile<ast::GlobalConstantDeclaration>,
+        source: &InFile<ast::GlobalConstantDeclaration>,
     ) -> Option<GlobalConstantId> {
         let global_constant = module_data::find_item(self.database, source.file_id, &source.value)?;
         let id = self
@@ -170,7 +170,7 @@ impl<'database> Semantics<'database> {
 
     fn global_variable_to_def(
         &self,
-        source: InFile<ast::GlobalVariableDeclaration>,
+        source: &InFile<ast::GlobalVariableDeclaration>,
     ) -> Option<GlobalVariableId> {
         let global_variable = module_data::find_item(self.database, source.file_id, &source.value)?;
         let id = self
@@ -182,7 +182,7 @@ impl<'database> Semantics<'database> {
     #[must_use]
     pub fn import_to_def(
         &self,
-        source: InFile<ast::Import>,
+        source: &InFile<ast::Import>,
     ) -> Option<ImportId> {
         let import = module_data::find_import(self.database, source.file_id, &source.value)?;
 
@@ -195,7 +195,7 @@ impl<'database> Semantics<'database> {
     #[must_use]
     pub fn resolve_import(
         &self,
-        source: InFile<ast::Import>,
+        source: &InFile<ast::Import>,
     ) -> Option<Import> {
         let id = self.import_to_def(source)?;
         Some(Import { id })
@@ -205,9 +205,9 @@ impl<'database> Semantics<'database> {
 fn module_item_to_def(
     database: &dyn HirDatabase,
     file_id: HirFileId,
-    module_item: &ModuleItem,
+    module_item: ModuleItem,
 ) -> SmallVec<[ModuleDef; 1]> {
-    let def = match *module_item {
+    let def = match module_item {
         ModuleItem::Function(func) => {
             let loc = Location::new(file_id, func);
             let id = database.intern_function(loc);
@@ -245,17 +245,16 @@ fn module_item_to_def(
                 return module_info
                     .items()
                     .iter()
-                    .flat_map(|item| module_item_to_def(database, original_file, item))
-                    .collect();
-            } else {
-                // For custom imports without a direct file, use the import file's module info
-                let module_info = database.module_info(import_file);
-                return module_info
-                    .items()
-                    .iter()
-                    .flat_map(|item| module_item_to_def(database, import_file, item))
+                    .flat_map(|item| module_item_to_def(database, original_file, *item))
                     .collect();
             }
+            // For custom imports without a direct file, use the import file's module info
+            return database
+                .module_info(import_file)
+                .items()
+                .iter()
+                .flat_map(|item| module_item_to_def(database, import_file, *item))
+                .collect();
         },
         ModuleItem::TypeAlias(type_alias) => {
             let loc = Location::new(file_id, type_alias);
@@ -345,9 +344,8 @@ impl<'database> SourceAnalyzer<'database> {
                 expression_scopes.scope_for_statement(id)
             })
             .into_inner();
-        let scope_id = match scope_id {
-            Some(scope_id) => scope_id,
-            None => return resolver,
+        let Some(scope_id) = scope_id else {
+            return resolver;
         };
 
         if let DefinitionWithBodyId::Function(function) = self.owner {
@@ -556,8 +554,7 @@ impl ModuleDef {
             Self::Override(override_declaration) => {
                 Some(DefinitionWithBodyId::Override(override_declaration.id))
             },
-            Self::Struct(_) => None,
-            Self::TypeAlias(_) => None, // TODO: ?
+            Self::Struct(_) | Self::TypeAlias(_) => None,
         }
     }
 }
@@ -575,7 +572,7 @@ impl Module {
         module_info
             .items()
             .iter()
-            .flat_map(|item| module_item_to_def(database, self.file_id, item))
+            .flat_map(|item| module_item_to_def(database, self.file_id, *item))
             .collect()
     }
 
@@ -589,7 +586,12 @@ impl Module {
             .iter()
             .filter_map(|item| match item {
                 ModuleItem::Import(import) => Some(import),
-                _ => None,
+                ModuleItem::Function(_)
+                | ModuleItem::Struct(_)
+                | ModuleItem::GlobalVariable(_)
+                | ModuleItem::GlobalConstant(_)
+                | ModuleItem::Override(_)
+                | ModuleItem::TypeAlias(_) => None,
             })
             .map(|id| {
                 let id = database.intern_import(Location::new(self.file_id, *id));
@@ -710,7 +712,7 @@ impl Import {
         }
     }
 
-    #[expect(clippy::result_unit_err)]
+    #[expect(clippy::result_unit_err, reason = "TODO")]
     pub fn resolve(
         &self,
         database: &dyn HirDatabase,

@@ -138,9 +138,6 @@ pub struct CompletionRelevance {
 
     // builtins are shown with relatively low priority
     pub is_builtin: bool,
-
-    /// swizzles should be displayed in the correct order
-    pub swizzle_index: Option<usize>,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -210,7 +207,11 @@ impl CompletionRelevance {
     ///
     /// See `is_relevant` if you need to make some judgment about score
     /// in an absolute sense.
-    const BASE_SCORE: u32 = u32::MAX / 2;
+    ///
+    /// # Panics
+    ///
+    ///
+    const BASE_SCORE: u32 = u32::MAX.checked_div(2).unwrap();
 
     #[must_use]
     pub fn score(self) -> u32 {
@@ -226,7 +227,6 @@ impl CompletionRelevance {
             function,
             is_skipping_completion,
             is_builtin,
-            swizzle_index,
         } = self;
 
         // only applicable for completions within use items
@@ -266,9 +266,6 @@ impl CompletionRelevance {
             Some(CompletionRelevanceTypeMatch::CouldUnify) => 5,
             None => 0,
         };
-        if let Some(index) = swizzle_index {
-            score += index as u32 + 10;
-        }
         if self.is_builtin {
             score += 100;
         }
@@ -306,7 +303,7 @@ impl CompletionRelevance {
 }
 
 impl CompletionItem {
-    #[expect(clippy::new_ret_no_self)]
+    #[expect(clippy::new_ret_no_self, reason = "builder")]
     pub(crate) fn new(
         kind: impl Into<CompletionItemKind>,
         source_range: TextRange,
@@ -436,34 +433,35 @@ impl fmt::Debug for CompletionItem {
         &self,
         #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        let mut s = f.debug_struct("CompletionItem");
-        s.field("label", &self.label.primary)
+        let mut debug_struct = f.debug_struct("CompletionItem");
+        debug_struct
+            .field("label", &self.label.primary)
             .field("detail_left", &self.label.detail_left)
             .field("detail_right", &self.label.detail_right)
             .field("source_range", &self.source_range);
         if self.text_edit.len() == 1 {
             let atom = self.text_edit.iter().next().unwrap();
-            s.field("delete", &atom.delete);
-            s.field("insert", &atom.insert);
+            debug_struct.field("delete", &atom.delete);
+            debug_struct.field("insert", &atom.insert);
         } else {
-            s.field("text_edit", &self.text_edit);
+            debug_struct.field("text_edit", &self.text_edit);
         }
-        s.field("kind", &self.kind);
+        debug_struct.field("kind", &self.kind);
         if self.lookup() != self.label.primary {
-            s.field("lookup", &self.lookup());
+            debug_struct.field("lookup", &self.lookup());
         }
         if let Some(detail) = &self.detail {
-            s.field("detail", &detail);
+            debug_struct.field("detail", &detail);
         }
         // if let Some(documentation) = &self.documentation {
         //     s.field("documentation", &documentation);
         // }
         if self.deprecated {
-            s.field("deprecated", &true);
+            debug_struct.field("deprecated", &true);
         }
 
         if self.relevance != CompletionRelevance::default() {
-            s.field("relevance", &self.relevance);
+            debug_struct.field("relevance", &self.relevance);
         }
 
         // if let Some((ref_mode, offset)) = self.ref_match {
@@ -477,9 +475,9 @@ impl fmt::Debug for CompletionItem {
         //     s.field("ref_match", &format!("{prefix}@{offset:?}"));
         // }
         if self.trigger_call_info {
-            s.field("trigger_call_info", &true);
+            debug_struct.field("trigger_call_info", &true);
         }
-        s.finish()
+        debug_struct.finish_non_exhaustive()
     }
 }
 
@@ -507,7 +505,7 @@ impl Builder {
                 .filter(|alias| {
                     let mut chars = alias.chars();
                     chars.next().is_some_and(char::is_alphabetic)
-                        && chars.all(|c| c.is_alphanumeric() || c == '_')
+                        && chars.all(|character| character.is_alphanumeric() || character == '_')
                 })
                 // Deliberately concatenated without separators as adding separators e.g.
                 // `alias1, alias2` results in LSP clients continuing to display the completion even
@@ -563,7 +561,7 @@ impl Builder {
             trigger_call_info: self.trigger_call_info,
             relevance: self.relevance,
             // ref_match: self.ref_match,
-            import_to_add: Default::default(),
+            import_to_add: SmallVec::default(),
         }
     }
 
@@ -612,7 +610,6 @@ impl Builder {
         cap: SnippetCap,
         snippet: impl Into<String>,
     ) -> &mut Self {
-        let _ = cap;
         self.is_snippet = true;
         self.insert_text(snippet)
     }

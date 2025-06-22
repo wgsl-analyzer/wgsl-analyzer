@@ -1,3 +1,5 @@
+use std::mem;
+
 #[derive(logos::Logos, Debug, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
 #[repr(u16)]
 pub enum SyntaxKind {
@@ -472,17 +474,15 @@ pub enum SyntaxKind {
 
 impl From<SyntaxKind> for rowan::SyntaxKind {
     fn from(kind: SyntaxKind) -> Self {
-        Self(kind as u16)
+        Self(kind.as_u16())
     }
 }
 
 impl From<rowan::SyntaxKind> for SyntaxKind {
     fn from(kind: rowan::SyntaxKind) -> Self {
-        let max_element = Self::Error as u16;
+        let max_element = Self::Error.as_u16();
         assert!(kind.0 < max_element);
-
-        // Safety: SyntaxKind is #[repr(u16)] and in range
-        unsafe { std::mem::transmute(kind.0) }
+        Self::from_u16(kind.0)
     }
 }
 
@@ -493,8 +493,8 @@ impl rowan::Language for WgslLanguage {
     type Kind = SyntaxKind;
 
     fn kind_from_raw(raw: rowan::SyntaxKind) -> Self::Kind {
-        assert!(raw.0 <= SyntaxKind::Error as u16);
-        unsafe { std::mem::transmute::<u16, SyntaxKind>(raw.0) }
+        assert!(raw.0 <= SyntaxKind::Error.as_u16());
+        SyntaxKind::from_u16(raw.0)
     }
 
     fn kind_to_raw(kind: Self::Kind) -> rowan::SyntaxKind {
@@ -521,6 +521,18 @@ impl SyntaxKind {
                 | Self::UnofficialPreprocessorDefineImportPath
                 | Self::UnofficialPreprocessIf
         )
+    }
+
+    #[must_use]
+    #[expect(clippy::as_conversions, reason = "repr(u16)")]
+    pub const fn as_u16(&self) -> u16 {
+        *self as u16
+    }
+
+    #[must_use]
+    pub const fn from_u16(value: u16) -> Self {
+        // Safety: SyntaxKind is #[repr(u16)] and in range
+        unsafe { mem::transmute::<u16, Self>(value) }
     }
 }
 
@@ -553,20 +565,19 @@ fn lex_block_comment(lex: &mut logos::Lexer<'_, SyntaxKind>) -> Option<()> {
 /// and the code points that follow, up until but not including:
 /// - the next line break, or
 /// - the end of the program.
-fn lex_line_ending_comment(lexer: &mut logos::Lexer<'_, SyntaxKind>) -> Option<()> {
+fn lex_line_ending_comment(lexer: &mut logos::Lexer<'_, SyntaxKind>) {
     let remainder = lexer.remainder();
 
     // see blankspace and line breaks: https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
     let line_end = remainder
         .char_indices()
-        .find(|(_, character)| is_line_ending_comment_end(character))
+        .find(|(_, character)| is_line_ending_comment_end(*character))
         .map_or(remainder.len(), |(i, _)| i);
     lexer.bump(line_end);
-    Some(())
 }
 
 /// See: <https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks>
-fn is_line_ending_comment_end(c: &char) -> bool {
+fn is_line_ending_comment_end(character: char) -> bool {
     [
         '\u{000A}', // line feed
         '\u{000B}', // vertical tab
@@ -576,7 +587,7 @@ fn is_line_ending_comment_end(c: &char) -> bool {
         '\u{2028}', // line separator
         '\u{2029}', // paragraph separator
     ]
-    .contains(c)
+    .contains(&character)
 }
 
 #[cfg(test)]
@@ -586,6 +597,7 @@ mod tests {
 
     use super::SyntaxKind;
 
+    #[expect(clippy::needless_pass_by_value, reason = "intended API")]
     fn check_lex(
         source: &str,
         expect: expect_test::Expect,

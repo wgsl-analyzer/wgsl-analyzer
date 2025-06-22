@@ -313,7 +313,7 @@ impl Config {
     pub fn completion(
         &self,
         source_root: Option<SourceRootId>,
-    ) -> CompletionConfig<'_> {
+    ) -> CompletionConfig {
         let client_capability_fields = self.completion_resolve_support_properties();
         CompletionConfig {
             enable_postfix_completions: false,
@@ -338,7 +338,6 @@ impl Config {
                 &client_capability_fields,
             ),
             exclude_flyimport: <_>::default(),
-            exclude_traits: <_>::default(),
         }
     }
 

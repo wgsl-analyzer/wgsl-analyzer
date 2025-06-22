@@ -3,7 +3,7 @@
 //! The home of `HirDatabase`, which is the Salsa database containing all the
 //! type inference-related queries.
 
-use std::sync::Arc;
+use std::{fmt, sync::Arc};
 
 use crate::builtins::{Builtin, BuiltinId};
 use crate::function::{FunctionDetails, ResolvedFunctionId};
@@ -20,7 +20,7 @@ use hir_def::{
 use la_arena::ArenaMap;
 
 #[salsa::query_group(HirDatabaseStorage)]
-pub trait HirDatabase: DefDatabase + std::fmt::Debug {
+pub trait HirDatabase: DefDatabase + fmt::Debug {
     #[salsa::invoke(crate::infer::infer_query)]
     fn infer(
         &self,

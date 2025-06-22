@@ -377,11 +377,12 @@ mod tests {
 
     use crate::ParseEntryPoint;
 
+    #[expect(clippy::needless_pass_by_value, reason = "intended API")]
     fn check(
         input: &str,
         expected_tree: Expect,
     ) {
-        crate::check_entrypoint(input, ParseEntryPoint::Expression, expected_tree);
+        crate::check_entrypoint(input, ParseEntryPoint::Expression, &expected_tree);
     }
 
     #[test]

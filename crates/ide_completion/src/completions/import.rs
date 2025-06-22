@@ -17,12 +17,8 @@ pub(crate) fn complete_import(
 
     let custom_imports = context.database.custom_imports();
     let imports = custom_imports.keys().map(|import| {
-        CompletionItem::new(
-            CompletionItemKind::Module,
-            context.source_range(),
-            import.to_string(),
-        )
-        .build(context.database)
+        CompletionItem::new(CompletionItemKind::Module, context.source_range(), import)
+            .build(context.database)
     });
     accumulator.add_all(imports);
 

@@ -10,10 +10,10 @@ pub enum GlobalVariableDiagnostic {
     AddressSpaceError(AddressSpaceError),
 }
 
-pub fn collect(
+pub fn collect<Function: FnMut(GlobalVariableDiagnostic)>(
     database: &dyn HirDatabase,
     var: GlobalVariableId,
-    mut f: impl FnMut(GlobalVariableDiagnostic),
+    mut diagnostic_builder: Function,
 ) {
     let data = database.global_var_data(var);
     let infer = database.infer(DefinitionWithBodyId::GlobalVariable(var));
@@ -26,9 +26,9 @@ pub fn collect(
             data.access_mode
                 .unwrap_or_else(|| address_space.default_access_mode()),
             hir_ty::validate::Scope::Module,
-            ty_kind.unwrap_or(TyKind::Error),
+            &ty_kind.unwrap_or(TyKind::Error),
             database,
-            |error| f(GlobalVariableDiagnostic::AddressSpaceError(error)),
+            |error| diagnostic_builder(GlobalVariableDiagnostic::AddressSpaceError(error)),
         );
     } else if let Some(r#type) = ty_kind {
         if !matches!(
@@ -41,7 +41,7 @@ pub fn collect(
                     ..
                 })
         ) {
-            f(GlobalVariableDiagnostic::MissingAddressSpace);
+            diagnostic_builder(GlobalVariableDiagnostic::MissingAddressSpace);
         }
     }
 }

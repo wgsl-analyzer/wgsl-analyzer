@@ -378,7 +378,7 @@ impl GenericArgumentList {
                 rowan::NodeOrToken::Node(node) if Type::can_cast(node.kind()) => Type::cast(node).map(GenericArg::Type),
                 rowan::NodeOrToken::Token(token) if AccessMode::can_cast(token.clone()) => AccessMode::cast(token).map(GenericArg::AccessMode),
                 rowan::NodeOrToken::Token(token) if AddressSpace::can_cast(token.clone()) => AddressSpace::cast(token).map(GenericArg::AddressSpace),
-                _ => None,
+                rowan::NodeOrToken::Node(_) | rowan::NodeOrToken::Token(_) => None,
             })
     }
 }
@@ -414,7 +414,7 @@ impl GenericArg {
     pub fn as_type(&self) -> Option<Type> {
         match self {
             Self::Type(r#type) => Some(r#type.clone()),
-            _ => None,
+            Self::Literal(_) | Self::AccessMode(_) | Self::AddressSpace(_) => None,
         }
     }
 
@@ -422,7 +422,7 @@ impl GenericArg {
     pub fn as_literal(&self) -> Option<Literal> {
         match self {
             Self::Literal(r#type) => Some(r#type.clone()),
-            _ => None,
+            Self::Type(_) | Self::AccessMode(_) | Self::AddressSpace(_) => None,
         }
     }
 
@@ -430,7 +430,7 @@ impl GenericArg {
     pub fn as_access_mode(&self) -> Option<AccessMode> {
         match self {
             Self::AccessMode(access) => Some(access.clone()),
-            _ => None,
+            Self::Type(_) | Self::Literal(_) | Self::AddressSpace(_) => None,
         }
     }
 
@@ -438,7 +438,7 @@ impl GenericArg {
     pub fn as_address_space(&self) -> Option<AddressSpace> {
         match self {
             Self::AddressSpace(class) => Some(class.clone()),
-            _ => None,
+            Self::Type(_) | Self::Literal(_) | Self::AccessMode(_) => None,
         }
     }
 }
@@ -499,6 +499,11 @@ ast_node!(PrefixExpression:
 );
 ast_node!(Literal);
 impl Literal {
+    /// Returns the kind of this [`Literal`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if the literal is invalid.
     #[must_use]
     pub fn kind(&self) -> LiteralKind {
         support::child_token(self.syntax()).expect("invalid literal parsed")
@@ -619,10 +624,12 @@ impl IncrementDecrementStatement {
         self.syntax()
             .children_with_tokens()
             .filter_map(rowan::NodeOrToken::into_token)
-            .find_map(|token| match token.kind() {
-                SyntaxKind::PlusPlus => Some(IncrementDecrement::Increment),
-                SyntaxKind::MinusMinus => Some(IncrementDecrement::Increment),
-                _ => None,
+            .find_map(|token| {
+                if let SyntaxKind::MinusMinus | SyntaxKind::PlusPlus = token.kind() {
+                    Some(IncrementDecrement::Increment)
+                } else {
+                    None
+                }
             })
     }
 }
@@ -738,9 +745,11 @@ ast_node!(VariableStatement:
     equal_token: Option<SyntaxToken Equal>;
     initializer: Option<Expression>;
 );
+
 impl VariableStatement {
     #[must_use]
     pub fn kind(&self) -> Option<VariableStatementKind> {
+        #[expect(clippy::wildcard_enum_match_arm, reason = "not readable")]
         self.syntax()
             .children_with_tokens()
             .filter_map(rowan::NodeOrToken::into_token)
@@ -923,7 +932,15 @@ impl Type {
     pub fn as_name(&self) -> Option<NameReference> {
         match self {
             Self::PathType(path) => path.name(),
-            _ => None,
+            Self::ScalarType(_)
+            | Self::VecType(_)
+            | Self::MatrixType(_)
+            | Self::TextureType(_)
+            | Self::SamplerType(_)
+            | Self::AtomicType(_)
+            | Self::ArrayType(_)
+            | Self::BindingArrayType(_)
+            | Self::PointerType(_) => None,
         }
     }
 }
@@ -998,6 +1015,7 @@ impl InfixExpression {
             };
             Some(op)
         } else {
+            #[expect(clippy::wildcard_enum_match_arm, reason = "not readable")]
             self.syntax()
                 .children()
                 .find_map(|child| match child.kind() {

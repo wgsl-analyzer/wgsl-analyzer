@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{iter, sync::Arc};
 
 use either::Either;
 use syntax::{
@@ -69,7 +69,7 @@ impl AttributeList {
                             },
                         })
                     })
-                    .map_or_else(|| Either::Left(std::iter::empty()), Either::Right)
+                    .map_or_else(|| Either::Left(iter::empty()), Either::Right)
                     .collect(),
             })
             .map(|attribute| database.intern_attribute(attribute))
@@ -112,7 +112,7 @@ impl AttributesWithOwner {
                 let location = id.r#struct.lookup(database).source(database);
                 let struct_declaration: ast::StructDeclaration = location.value;
                 let mut fields = struct_declaration.body().map_or_else(
-                    || Either::Left(std::iter::empty::<ast::StructDeclarationField>()),
+                    || Either::Left(iter::empty::<ast::StructDeclarationField>()),
                     |body| Either::Right(body.fields()),
                 );
 

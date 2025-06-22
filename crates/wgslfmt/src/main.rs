@@ -1,3 +1,10 @@
+#![expect(clippy::print_stderr, reason = "CLI program")]
+#![expect(clippy::print_stdout, reason = "CLI program")]
+#![allow(
+    unfulfilled_lint_expectations,
+    reason = "https://github.com/rust-lang/rust-clippy/issues/15107"
+)]
+
 use std::{io::Read as _, path::PathBuf};
 
 use anyhow::Context as _;
@@ -18,6 +25,7 @@ struct Arguments {
     files: Vec<PathBuf>,
 }
 
+#[expect(clippy::exit, reason = "TODO: use clap")]
 fn parse_arguments() -> Result<Arguments, lexopt::Error> {
     let mut parser = lexopt::Parser::from_env();
     let mut arguments = Arguments {
@@ -35,12 +43,13 @@ fn parse_arguments() -> Result<Arguments, lexopt::Error> {
             Long("check") => arguments.check = true,
             Long("tabs") => arguments.tab_indent = true,
             Value(file) => arguments.files.push(PathBuf::from(file)),
-            _ => return Err(arg.unexpected()),
+            Short(_) | Long(_) => return Err(arg.unexpected()),
         }
     }
     Ok(arguments)
 }
 
+#[expect(clippy::exit, reason = "TODO: use clap")]
 fn main() -> Result<(), anyhow::Error> {
     let mut arguments = parse_arguments()?;
 
@@ -58,7 +67,9 @@ fn main() -> Result<(), anyhow::Error> {
 
         let mut formatting_options = FormattingOptions::default();
         if arguments.tab_indent {
-            formatting_options.indent_symbol = "\t".to_owned();
+            formatting_options
+                .indent_symbol
+                .clone_from(&"\t".to_owned());
         }
         let output = wgsl_formatter::format_str(&input, &formatting_options);
 
@@ -68,7 +79,6 @@ fn main() -> Result<(), anyhow::Error> {
                 let diff = prettydiff::diff_lines(&input, &output);
 
                 println!("Diff in {}\n{}:", file.display(), diff);
-                std::process::exit(1);
             }
         } else if is_stdin {
             print!("{output}");

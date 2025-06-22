@@ -1,3 +1,5 @@
+use std::fmt;
+
 use syntax::{HasGenerics, ast};
 
 use crate::{expression::parse_literal, module_data::Name};
@@ -16,11 +18,11 @@ pub enum TypeReference {
     Pointer(PointerType),
 }
 
-impl std::fmt::Display for TypeReference {
+impl fmt::Display for TypeReference {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
             Self::Error => write!(f, "[error]"),
             Self::Scalar(value) => write!(f, "{value}"),
@@ -75,11 +77,11 @@ impl From<ast::ScalarType> for ScalarType {
     }
 }
 
-impl std::fmt::Display for ScalarType {
+impl fmt::Display for ScalarType {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
             Self::Bool => f.write_str("bool"),
             Self::Float32 => f.write_str("f32"),
@@ -95,11 +97,11 @@ pub struct VecType {
     pub inner: Box<TypeReference>,
 }
 
-impl std::fmt::Display for VecType {
+impl fmt::Display for VecType {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         write!(f, "vec{}<{}>", self.size, &*self.inner)
     }
 }
@@ -111,11 +113,11 @@ pub enum VecDimensionality {
     Four,
 }
 
-impl std::fmt::Display for VecDimensionality {
+impl fmt::Display for VecDimensionality {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
             Self::Two => f.write_str("2"),
             Self::Three => f.write_str("3"),
@@ -185,11 +187,11 @@ pub(crate) const fn matrix_dimensions(
     (columns, rows)
 }
 
-impl std::fmt::Display for MatrixType {
+impl fmt::Display for MatrixType {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         write!(f, "mat{}x{}<{}>", self.columns, self.rows, &*self.inner)
     }
 }
@@ -209,11 +211,11 @@ pub struct TextureType {
     pub kind: TextureKind,
 }
 
-impl std::fmt::Display for TextureType {
+impl fmt::Display for TextureType {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match &self.kind {
             TextureKind::Sampled(r#type) => write!(
                 f,
@@ -272,11 +274,11 @@ pub enum TextureDimension {
     Cube,
 }
 
-impl std::fmt::Display for TextureDimension {
+impl fmt::Display for TextureDimension {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
             Self::D1 => f.write_str("1d"),
             Self::D2 => f.write_str("2d"),
@@ -364,11 +366,11 @@ pub enum AccessMode {
     Any,
 }
 
-impl std::fmt::Display for AccessMode {
+impl fmt::Display for AccessMode {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
             Self::ReadWrite => f.write_str("read_write"),
             Self::Read => f.write_str("read"),
@@ -415,11 +417,11 @@ pub enum AddressSpace {
     PushConstant,
 }
 
-impl std::fmt::Display for AddressSpace {
+impl fmt::Display for AddressSpace {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         f.write_str(match self {
             Self::Function => "function",
             Self::Private => "private",
@@ -461,11 +463,11 @@ pub struct SamplerType {
     pub comparison: bool,
 }
 
-impl std::fmt::Display for SamplerType {
+impl fmt::Display for SamplerType {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         if self.comparison {
             f.write_str("sampler_comparison")
         } else {
@@ -488,11 +490,11 @@ pub struct AtomicType {
     pub inner: Box<TypeReference>,
 }
 
-impl std::fmt::Display for AtomicType {
+impl fmt::Display for AtomicType {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         write!(f, "atomic<{}>", self.inner)
     }
 }
@@ -515,11 +517,11 @@ pub struct ArrayType {
     pub size: ArraySize,
 }
 
-impl std::fmt::Display for ArrayType {
+impl fmt::Display for ArrayType {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         let prefix = if self.binding_array { "binding_" } else { "" };
         match &self.size {
             ArraySize::Int(size) => write!(f, "{}array<{}, {}>", prefix, self.inner, size),
@@ -603,11 +605,11 @@ pub struct PointerType {
     pub inner: Box<TypeReference>,
 }
 
-impl std::fmt::Display for PointerType {
+impl fmt::Display for PointerType {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         write!(f, "ptr<{}, {}>", self.address_space, self.inner)
     }
 }

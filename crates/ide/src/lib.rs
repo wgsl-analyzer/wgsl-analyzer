@@ -9,6 +9,8 @@ mod markup;
 mod navigation_target;
 mod syntax_tree;
 
+use std::panic;
+
 use rustc_hash::FxHashMap;
 use triomphe::Arc;
 
@@ -155,7 +157,7 @@ impl Analysis {
         function: Function,
     ) -> Cancellable<T>
     where
-        Function: FnOnce(&RootDatabase) -> T + std::panic::UnwindSafe,
+        Function: FnOnce(&RootDatabase) -> T + panic::UnwindSafe,
     {
         Cancelled::catch(|| function(&self.database))
     }
@@ -265,7 +267,7 @@ impl Analysis {
     /// Computes completions at the given position.
     pub fn completions(
         &self,
-        config: &CompletionConfig<'_>,
+        config: &CompletionConfig,
         position: FilePosition,
         trigger_character: Option<char>,
     ) -> Cancellable<Option<Vec<CompletionItem>>> {

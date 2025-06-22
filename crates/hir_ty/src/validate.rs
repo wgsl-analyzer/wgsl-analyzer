@@ -1,19 +1,22 @@
+use std::fmt;
+
 use hir_def::type_ref::{AccessMode, AddressSpace};
 use itertools::Itertools as _;
 use smallvec::{SmallVec, smallvec};
 
 use crate::{database::HirDatabase, ty::TyKind};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Scope {
     Function,
     Module,
 }
 
-impl std::fmt::Debug for Scope {
+impl fmt::Display for Scope {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
             Self::Function => write!(f, "function"),
             Self::Module => write!(f, "module"),
@@ -32,11 +35,11 @@ pub enum AddressSpaceError {
     ExpectedHandleOrTexture,
 }
 
-impl std::fmt::Display for AddressSpaceError {
+impl fmt::Display for AddressSpaceError {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
             Self::ExpectedAccessMode(mode) => match mode.as_slice() {
                 &[mode] => write!(f, "expected {mode} access mode"),
@@ -44,7 +47,7 @@ impl std::fmt::Display for AddressSpaceError {
                 other => write!(f, "expected {} access mode", other.iter().format(", ")),
             },
             Self::ExpectedScope(scope) => {
-                write!(f, "address space is only valid in {scope:?}-scope")
+                write!(f, "address space is only valid in {scope}-scope")
             },
             Self::ExpectedConstructable => f.write_str("type is not constructable"),
             Self::ExpectedHostShareable => f.write_str("type is not host-shareable"),
@@ -56,103 +59,116 @@ impl std::fmt::Display for AddressSpaceError {
     }
 }
 
-pub fn validate_address_space(
+#[expect(clippy::cognitive_complexity, reason = "TODO")]
+pub fn validate_address_space<Function: FnMut(AddressSpaceError)>(
     address_space: AddressSpace,
     access_mode: AccessMode,
     scope: Scope,
-    r#type: TyKind,
+    r#type: &TyKind,
     database: &dyn HirDatabase,
-    mut sink: impl FnMut(AddressSpaceError),
+    mut diagnostic_builder: Function,
 ) {
     let ty_is_err = r#type.is_error();
 
     match address_space {
         AddressSpace::Function => {
             if !matches!(scope, Scope::Function) {
-                sink(AddressSpaceError::ExpectedScope(Scope::Function));
+                diagnostic_builder(AddressSpaceError::ExpectedScope(Scope::Function));
             }
             if !matches!(access_mode, AccessMode::ReadWrite) {
-                sink(AddressSpaceError::ExpectedAccessMode(smallvec![
+                diagnostic_builder(AddressSpaceError::ExpectedAccessMode(smallvec![
                     AccessMode::ReadWrite
                 ]));
             }
 
             if !ty_is_err && !r#type.is_constructable() {
-                sink(AddressSpaceError::ExpectedConstructable);
+                diagnostic_builder(AddressSpaceError::ExpectedConstructable);
             }
         },
         AddressSpace::Private => {
             if !matches!(scope, Scope::Module) {
-                sink(AddressSpaceError::ExpectedScope(Scope::Module));
+                diagnostic_builder(AddressSpaceError::ExpectedScope(Scope::Module));
             }
             if !matches!(access_mode, AccessMode::ReadWrite) {
-                sink(AddressSpaceError::ExpectedAccessMode(smallvec![
+                diagnostic_builder(AddressSpaceError::ExpectedAccessMode(smallvec![
                     AccessMode::ReadWrite
                 ]));
             }
 
             if !ty_is_err && !r#type.is_constructable() {
-                sink(AddressSpaceError::ExpectedConstructable);
+                diagnostic_builder(AddressSpaceError::ExpectedConstructable);
             }
         },
         AddressSpace::Workgroup => {
             if !matches!(scope, Scope::Module) {
-                sink(AddressSpaceError::ExpectedScope(Scope::Module));
+                diagnostic_builder(AddressSpaceError::ExpectedScope(Scope::Module));
             }
             if !matches!(access_mode, AccessMode::ReadWrite) {
-                sink(AddressSpaceError::ExpectedAccessMode(smallvec![
+                diagnostic_builder(AddressSpaceError::ExpectedAccessMode(smallvec![
                     AccessMode::ReadWrite
                 ]));
             }
 
             if !ty_is_err && (!r#type.is_plain() || r#type.contains_runtime_sized_array(database)) {
-                sink(AddressSpaceError::ExpectedWorkgroupCompatible);
+                diagnostic_builder(AddressSpaceError::ExpectedWorkgroupCompatible);
             }
         },
         AddressSpace::Uniform => {
             if !matches!(scope, Scope::Module) {
-                sink(AddressSpaceError::ExpectedScope(Scope::Module));
+                diagnostic_builder(AddressSpaceError::ExpectedScope(Scope::Module));
             }
             if !matches!(access_mode, AccessMode::Read) {
-                sink(AddressSpaceError::ExpectedAccessMode(smallvec![
+                diagnostic_builder(AddressSpaceError::ExpectedAccessMode(smallvec![
                     AccessMode::ReadWrite
                 ]));
             }
 
             if !r#type.is_error() && !r#type.is_host_shareable(database) {
-                sink(AddressSpaceError::ExpectedHostShareable);
+                diagnostic_builder(AddressSpaceError::ExpectedHostShareable);
             }
             if !r#type.is_error() && !r#type.is_constructable() {
-                sink(AddressSpaceError::ExpectedConstructable);
+                diagnostic_builder(AddressSpaceError::ExpectedConstructable);
             }
         },
         AddressSpace::Storage => {
             if !matches!(scope, Scope::Module) {
-                sink(AddressSpaceError::ExpectedScope(Scope::Module));
+                diagnostic_builder(AddressSpaceError::ExpectedScope(Scope::Module));
             }
             if !matches!(access_mode, AccessMode::ReadWrite | AccessMode::Read) {
-                sink(AddressSpaceError::ExpectedAccessMode(smallvec![
+                diagnostic_builder(AddressSpaceError::ExpectedAccessMode(smallvec![
                     AccessMode::ReadWrite
                 ]));
             }
 
             if !r#type.is_error() && !r#type.is_host_shareable(database) {
-                sink(AddressSpaceError::ExpectedHostShareable);
+                diagnostic_builder(AddressSpaceError::ExpectedHostShareable);
             }
         },
         AddressSpace::Handle => {
             if !matches!(scope, Scope::Module) {
-                sink(AddressSpaceError::ExpectedScope(Scope::Module));
+                diagnostic_builder(AddressSpaceError::ExpectedScope(Scope::Module));
             }
             if !matches!(access_mode, AccessMode::Read) {
-                sink(AddressSpaceError::ExpectedAccessMode(smallvec![
+                diagnostic_builder(AddressSpaceError::ExpectedAccessMode(smallvec![
                     AccessMode::ReadWrite
                 ]));
             }
 
             match r#type {
                 TyKind::Sampler(_) | TyKind::Texture(_) => {},
-                _ => sink(AddressSpaceError::ExpectedHandleOrTexture),
+                TyKind::Error
+                | TyKind::Scalar(_)
+                | TyKind::Atomic(_)
+                | TyKind::Vector(_)
+                | TyKind::Matrix(_)
+                | TyKind::Struct(_)
+                | TyKind::Array(_)
+                | TyKind::Reference(_)
+                | TyKind::Pointer(_)
+                | TyKind::BoundVar(_)
+                | TyKind::StorageTypeOfTexelFormat(_) => {
+                    diagnostic_builder(AddressSpaceError::ExpectedHandleOrTexture);
+                },
             }
         },
         AddressSpace::PushConstant => {

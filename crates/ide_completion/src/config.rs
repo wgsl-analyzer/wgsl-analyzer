@@ -13,7 +13,7 @@ use crate::{
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CompletionConfig<'a> {
+pub struct CompletionConfig {
     pub enable_postfix_completions: bool,
     pub enable_imports_on_the_fly: bool,
     pub enable_self_on_the_fly: bool,
@@ -34,7 +34,6 @@ pub struct CompletionConfig<'a> {
     pub limit: Option<usize>,
     pub fields_to_resolve: CompletionFieldsToResolve,
     pub exclude_flyimport: Vec<(String, AutoImportExclusionType)>,
-    pub exclude_traits: &'a [String],
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -49,7 +48,7 @@ pub enum CallableSnippets {
     AddParentheses,
 }
 
-impl CompletionConfig<'_> {
+impl CompletionConfig {
     // pub fn postfix_snippets(&self) -> impl Iterator<Item = (&str, &Snippet)> {
     //     self.snippets
     //         .iter()

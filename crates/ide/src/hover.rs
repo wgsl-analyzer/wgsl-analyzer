@@ -90,7 +90,7 @@ pub(crate) fn hover(
 
     if let Some(import) = import {
         let source = InFile::new(file_range.file_id.into(), import);
-        let import = sema.resolve_import(source)?;
+        let import = sema.resolve_import(&source)?;
 
         if !import.is_path(database) {
             return Some(RangeInfo {

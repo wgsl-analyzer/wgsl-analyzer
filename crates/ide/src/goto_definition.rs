@@ -53,8 +53,8 @@ impl TryToNavigationTarget for InFile<Local> {
 
         let file_range = binding.original_file_range(database);
         // let name: SmolStr = binding.value.name()?.text().into();
-        let nav = NavigationTarget::from_syntax(file_range.file_id, file_range.range, None);
-        Some(nav)
+        let navigation = NavigationTarget::from_syntax(file_range.file_id, file_range.range, None);
+        Some(navigation)
     }
 }
 
@@ -64,7 +64,7 @@ impl TryToNavigationTarget for InFile<Definition> {
         &self,
         database: &RootDatabase,
     ) -> Option<NavigationTarget> {
-        let nav = match &self.value {
+        let navigation = match &self.value {
             Definition::Local(local) => {
                 InFile::new(self.file_id, *local).try_to_navigation_target(database)?
             },
@@ -188,6 +188,6 @@ impl TryToNavigationTarget for InFile<Definition> {
                 NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
             },
         };
-        Some(nav)
+        Some(navigation)
     }
 }

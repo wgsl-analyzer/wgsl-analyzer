@@ -1,16 +1,22 @@
+#![expect(clippy::print_stderr, reason = "useful in tests")]
+#![expect(clippy::print_stdout, reason = "useful in tests")]
+#![expect(clippy::use_debug, reason = "useful in tests")]
+
 use std::panic;
 
 use expect_test::{Expect, expect};
 
 use crate::{FormattingOptions, format_recursive};
 
+#[expect(clippy::needless_pass_by_value, reason = "intentional API")]
 fn check(
     before: &str,
     after: Expect,
 ) {
-    check_with_options(before, after, &FormattingOptions::default());
+    check_with_options(before, &after, &FormattingOptions::default());
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "intentional API")]
 fn check_tabs(
     before: &str,
     after: Expect,
@@ -19,13 +25,13 @@ fn check_tabs(
         indent_symbol: "\t".to_owned(),
         ..Default::default()
     };
-    check_with_options(before, after, &options);
+    check_with_options(before, &after, &options);
 }
 
 #[track_caller]
 fn check_with_options(
     before: &str,
-    after: Expect,
+    after: &Expect,
     options: &FormattingOptions,
 ) {
     let syntax = syntax::parse(before.trim_start())

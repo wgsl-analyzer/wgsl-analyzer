@@ -12,7 +12,7 @@ use ide_completion::{
     CompletionFieldsToResolve,
     item::{CompletionItem, CompletionItemKind, CompletionRelevance},
 };
-use ide_db::text_edit::{Indel, TextEdit};
+use ide_db::text_edit::{InsertDelete, TextEdit};
 use itertools::Itertools as _;
 use paths::{AbsPath, Utf8Component, Utf8Prefix};
 use rustc_hash::FxHasher;
@@ -187,8 +187,8 @@ fn completion_item(
                     assert!(source_range.end() == indel.delete.end());
                     let range1 = TextRange::new(indel.delete.start(), source_range.start());
                     let range2 = source_range;
-                    let indel1 = Indel::delete(range1);
-                    let indel2 = Indel::replace(range2, indel.insert.clone());
+                    let indel1 = InsertDelete::delete(range1);
+                    let indel2 = InsertDelete::replace(range2, indel.insert.clone());
                     additional_text_edits.push(self::text_edit(line_index, indel1));
                     self::completion_text_edit(line_index, insert_replace_support, indel2)
                 });
@@ -365,7 +365,7 @@ pub(crate) const fn completion_item_kind(
 
 pub(crate) fn text_edit(
     line_index: &LineIndex,
-    indel: Indel,
+    indel: InsertDelete,
 ) -> lsp_types::TextEdit {
     let range = range(line_index, indel.delete);
     let new_text = match line_index.endings {
@@ -388,7 +388,7 @@ pub(crate) fn text_edit_vec(
 pub(crate) fn completion_text_edit(
     line_index: &LineIndex,
     insert_replace_support: Option<lsp_types::Position>,
-    indel: Indel,
+    indel: InsertDelete,
 ) -> lsp_types::CompletionTextEdit {
     let text_edit = text_edit(line_index, indel);
     match insert_replace_support {

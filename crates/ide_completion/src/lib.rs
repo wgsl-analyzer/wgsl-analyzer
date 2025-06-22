@@ -254,7 +254,7 @@ impl CompletionFieldsToResolve {
 // }
 pub fn completions2(
     database: &RootDatabase,
-    config: &CompletionConfig<'_>,
+    config: &CompletionConfig,
     position: FilePosition,
     _trigger_character: Option<char>,
 ) -> Option<Vec<CompletionItem>> {

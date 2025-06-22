@@ -1,4 +1,4 @@
-use std::{collections::hash_map::Entry, sync::Arc};
+use std::{collections::hash_map::Entry, fmt, sync::Arc};
 
 use either::Either;
 use hir_def::{
@@ -1966,11 +1966,11 @@ pub enum TypeLoweringError {
     InvalidTexelFormat(String),
 }
 
-impl std::fmt::Display for TypeLoweringError {
+impl fmt::Display for TypeLoweringError {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
             Self::UnresolvedName(name) => {
                 write!(f, "type `{}` not found in scope", name.as_str())

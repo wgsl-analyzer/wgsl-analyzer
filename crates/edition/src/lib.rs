@@ -1,7 +1,7 @@
 //! The edition of the shader language.
 //! This should live here in a separate crate because we use it in both actual code and codegen.
 
-use std::fmt;
+use std::{error, fmt, str};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
@@ -46,7 +46,7 @@ pub struct ParseEditionError {
     invalid_input: String,
 }
 
-impl std::error::Error for ParseEditionError {}
+impl error::Error for ParseEditionError {}
 
 impl fmt::Display for ParseEditionError {
     fn fmt(
@@ -57,7 +57,7 @@ impl fmt::Display for ParseEditionError {
     }
 }
 
-impl std::str::FromStr for Edition {
+impl str::FromStr for Edition {
     type Err = ParseEditionError;
 
     fn from_str(

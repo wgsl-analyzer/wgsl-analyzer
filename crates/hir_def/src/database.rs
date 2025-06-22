@@ -1,6 +1,11 @@
 #![expect(clippy::empty_structs_with_brackets, reason = "salsa leaks a lint")]
 
-use std::{fmt::Debug, marker::PhantomData, sync::Arc};
+use std::{
+    fmt::{self, Debug},
+    hash,
+    marker::PhantomData,
+    sync::Arc,
+};
 
 use base_db::{FileId, SourceDatabase, TextRange, TextSize};
 use salsa::InternKey;
@@ -346,8 +351,8 @@ pub type Location<T> = InFile<ModuleItemId<T>>;
 
 pub struct Interned<T>(salsa::InternId, PhantomData<T>);
 
-impl<T> std::hash::Hash for Interned<T> {
-    fn hash<H: std::hash::Hasher>(
+impl<T> hash::Hash for Interned<T> {
+    fn hash<H: hash::Hasher>(
         &self,
         state: &mut H,
     ) {
@@ -374,11 +379,11 @@ impl<T> Clone for Interned<T> {
 
 impl<T> Copy for Interned<T> {}
 
-impl<T> std::fmt::Debug for Interned<T> {
+impl<T> fmt::Debug for Interned<T> {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         f.debug_tuple("Interned").field(&self.0).finish()
     }
 }

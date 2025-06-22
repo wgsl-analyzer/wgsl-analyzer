@@ -1,4 +1,4 @@
-use std::{hash::Hash, marker::PhantomData};
+use std::{hash::Hash, iter, marker::PhantomData};
 
 use parser::{SyntaxKind, SyntaxNode};
 use rowan::TextRange;
@@ -33,14 +33,18 @@ impl SyntaxNodePointer {
     /// The complexity is linear in the depth of the tree and logarithmic in
     /// tree width. Because most trees are shallow, thinking about this as
     /// `O(log(N))` in the size of the tree is not too wrong!
+    ///
+    /// ## Panics
+    ///
+    /// Panics if the node could not be found.
     #[track_caller]
     #[must_use]
     pub fn to_node(
         &self,
         root: &SyntaxNode,
     ) -> SyntaxNode {
-        assert!(root.parent().is_none());
-        std::iter::successors(Some(root.clone()), |node| {
+        debug_assert!(root.parent().is_none());
+        iter::successors(Some(root.clone()), |node| {
             let node_or_token = node.child_or_token_at_range(self.range)?;
             node_or_token.into_node()
         })
@@ -115,6 +119,9 @@ impl<Node: AstNode> AstPointer<Node> {
         }
     }
 
+    /// ## Panics
+    ///
+    /// Panics if the cast failed.
     #[track_caller]
     #[must_use]
     pub fn to_node(

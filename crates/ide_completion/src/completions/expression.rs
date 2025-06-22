@@ -64,7 +64,6 @@ pub(crate) fn complete_names_in_scope(
             is_local: matches!(item, ScopeDef::Local(_)),
             postfix_match: None,
             is_builtin: false,
-            swizzle_index: None,
             function: None,
             is_name_already_imported: false,
             requires_import: false,
@@ -83,7 +82,6 @@ pub(crate) fn complete_names_in_scope(
             is_local: false,
             postfix_match: None,
             is_builtin: true,
-            swizzle_index: None,
             ..relevance
         });
         builder.build(context.database)

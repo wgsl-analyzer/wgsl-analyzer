@@ -56,7 +56,7 @@ fn resolve_name_ref(
     if let Some(expression) = ast::PathExpression::cast(parent.clone()) {
         let name = Name::from(expression.name_ref()?);
         let def = sema.find_container(file_id, expression.syntax())?;
-        let def = sema.resolve_name_in_expression_scope(def, expression.syntax(), name)?;
+        let def = sema.resolve_name_in_expression_scope(def, expression.syntax(), &name)?;
 
         Some(def)
     } else if let Some(expression) = ast::FieldExpression::cast(parent.clone()) {

@@ -1,3 +1,5 @@
+use std::iter;
+
 use hir_def::database::DefDatabase as _;
 use hir_ty::ty::TyKind;
 use itertools::Itertools as _;
@@ -86,14 +88,7 @@ fn vector_completions(
         let suggestions = possible_swizzles.enumerate().map(|(index, label)| {
             let mut binding =
                 CompletionItem::new(CompletionItemKind::Field, context.source_range(), label);
-            binding
-                .with_relevance(|relevance| CompletionRelevance {
-                    swizzle_index: Some(index),
-                    ..relevance
-                })
-            	// TODO: remove clone
-                .clone()
-                .build(context.database)
+            binding.build(context.database)
         });
         accumulator.add_all(suggestions);
     }
@@ -133,8 +128,8 @@ fn possible_swizzles(
     SWIZZLE_SETS
         .iter()
         .filter_map(move |swizzle_set| swizzler(swizzle_set, field_text, max_length))
-        .flat_map(std::iter::IntoIterator::into_iter)
-        .chain(std::iter::once(field_text.to_owned()))
+        .flat_map(iter::IntoIterator::into_iter)
+        .chain(iter::once(field_text.to_owned()))
         .filter(|swizzle| !swizzle.is_empty())
 }
 
@@ -143,7 +138,7 @@ fn swizzler(
     swizzle: &&str,
     field_text: &str,
     max_length: usize,
-) -> Option<impl std::iter::Iterator<Item = String>> {
+) -> Option<impl iter::Iterator<Item = String>> {
     // Do not show "rgb" swizzles for "xyz"
     // and do not suggest further changes for invalid swizzles
     let characters_allowed = field_text.is_empty()
@@ -235,7 +230,7 @@ mod tests {
         assert_eq!(swizzles, vec!["aa", "ab", "ac", "ad"]);
 
         let swizzles: Vec<_> = swizzler(&"abcd", "d", 2).unwrap().collect();
-        assert_eq!(swizzles, vec!["da", "database"]);
+        assert_eq!(swizzles, vec!["da", "db"]);
 
         assert!(swizzler(&"abcd", "e", 2).is_none());
     }

@@ -1,4 +1,11 @@
-use std::{collections::BTreeMap, fs::File, path::PathBuf, str::FromStr};
+use std::{
+    collections::BTreeMap,
+    env, error, fmt,
+    fs::{self, File},
+    io,
+    path::PathBuf,
+    str::FromStr,
+};
 
 #[derive(Default, Debug)]
 struct Builtin {
@@ -44,11 +51,11 @@ enum VecSize {
     Bound(usize),
 }
 
-impl std::fmt::Debug for VecSize {
+impl fmt::Debug for VecSize {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
             Self::Two => write!(f, "Two"),
             Self::Three => write!(f, "Three"),
@@ -110,17 +117,17 @@ enum TextureDimensionality {
     Cube,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn error::Error>> {
     println!("cargo:rerun-if-changed=builtins.wgsl");
 
-    let directory = PathBuf::from(std::env::var("OUT_DIR")?).join("generated");
-    std::fs::create_dir_all(&directory)?;
+    let directory = PathBuf::from(env::var("OUT_DIR")?).join("generated");
+    fs::create_dir_all(&directory)?;
     let path = directory.join("builtins.rs");
     let mut file = File::create(path)?;
 
     let mut builtins: BTreeMap<String, Builtin> = BTreeMap::new();
 
-    let builtins_file = std::fs::read_to_string("builtins.wgsl")?;
+    let builtins_file = fs::read_to_string("builtins.wgsl")?;
     for line in builtins_file.lines() {
         if line.is_empty() || line.starts_with("//") {
             continue;
@@ -141,9 +148,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn foo(
-    destination: &mut dyn std::io::Write,
+    destination: &mut dyn io::Write,
     builtins: &BTreeMap<String, Builtin>,
-) -> std::io::Result<()> {
+) -> io::Result<()> {
     write!(
         destination,
         "
@@ -456,10 +463,10 @@ fn type_to_rust(r#type: &Type) -> String {
 }
 
 fn builtin_to_rust(
-    sink: &mut dyn std::io::Write,
+    sink: &mut dyn io::Write,
     name: &str,
     builtin: &Builtin,
-) -> std::io::Result<()> {
+) -> io::Result<()> {
     write!(
         sink,
         r#"impl Builtin {{

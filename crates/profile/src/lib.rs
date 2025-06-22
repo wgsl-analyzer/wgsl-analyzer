@@ -7,6 +7,7 @@ mod memory_usage;
 mod stop_watch;
 
 use std::cell::RefCell;
+use std::{env, fs, process};
 
 pub use crate::{
     memory_usage::{Bytes, MemoryUsage},
@@ -72,19 +73,19 @@ impl Drop for CpuSpan {
         #[cfg(feature = "cpu_profiler")]
         {
             google_cpu_profiler::stop();
-            let profile_data = std::env::current_dir().unwrap().join("out.profile");
+            let profile_data = env::current_dir().unwrap().join("out.profile");
             eprintln!("Profile data saved to:\n\n    {}\n", profile_data.display());
             #[expect(clippy::disallowed_methods, reason = "this is not a rust tool")]
-            let mut cmd = std::process::Command::new("pprof");
+            let mut cmd = process::Command::new("pprof");
             cmd.arg("-svg")
-                .arg(std::env::current_exe().unwrap())
+                .arg(env::current_exe().unwrap())
                 .arg(&profile_data);
             let out = cmd.output();
             #[expect(clippy::use_debug, reason = "debugging")]
             match out {
                 Ok(out) if out.status.success() => {
                     let svg = profile_data.with_extension("svg");
-                    std::fs::write(&svg, out.stdout).unwrap();
+                    fs::write(&svg, out.stdout).unwrap();
                     eprintln!("Profile rendered to:\n\n    {}\n", svg.display());
                 },
                 _ => {

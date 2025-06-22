@@ -1,4 +1,4 @@
-use std::{ops::Range, sync::OnceLock};
+use std::{iter, ops::Range, sync::OnceLock};
 
 use regex::Regex;
 use rustc_hash::FxHashSet;
@@ -103,7 +103,7 @@ impl ShaderProcessor {
             if use_line {
                 final_string.push_str(line);
             } else {
-                final_string.extend(std::iter::repeat_n(' ', line.len()));
+                final_string.extend(iter::repeat_n(' ', line.len()));
             }
 
             final_string.push('\n');

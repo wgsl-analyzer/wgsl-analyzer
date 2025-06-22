@@ -1,5 +1,5 @@
-use rustc_hash::FxHashMap;
-use std::{fmt, mem::ManuallyDrop};
+use rustc_hash::{FxHashMap, FxHashSet};
+use std::{fmt, mem::ManuallyDrop, panic};
 use triomphe::Arc;
 
 use base_db::{FileId, FileLoader, FileLoaderDelegate, SourceDatabase as _, change::Change};
@@ -26,10 +26,11 @@ pub struct RootDatabase {
     // crates_map: Arc<CratesMap>,
 }
 
-impl std::panic::RefUnwindSafe for RootDatabase {}
+impl panic::RefUnwindSafe for RootDatabase {}
 
 impl Drop for RootDatabase {
     fn drop(&mut self) {
+        // SAFETY: Only dropped once
         unsafe {
             ManuallyDrop::drop(&mut self.storage);
         }
@@ -39,7 +40,7 @@ impl Drop for RootDatabase {
 impl fmt::Debug for RootDatabase {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         f.debug_struct("RootDatabase").finish()
     }
@@ -63,8 +64,8 @@ impl RootDatabase {
             // files: Default::default(),
             // crates_map: Default::default(),
         };
-        database.set_custom_imports(Arc::new(Default::default()));
-        database.set_shader_defs(Arc::new(Default::default()));
+        database.set_custom_imports(Arc::new(FxHashMap::default()));
+        database.set_shader_defs(Arc::new(FxHashSet::default()));
 
         // This needs to be here otherwise `CrateGraphBuilder` will panic.
         // database.set_all_crates(Arc::new(Box::new([])));

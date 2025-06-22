@@ -458,6 +458,7 @@ pub(crate) fn type_declaration(parser: &mut Parser<'_, '_>) -> Option<CompletedM
 
         Some(marker_ty.complete(parser, SyntaxKind::PathType))
     } else {
+        // TODO remove this branch
         parser.error();
         None
     }
@@ -517,7 +518,7 @@ const STATEMENT_RECOVER_SET: &[SyntaxKind] = &[
 /// [Grammar](https://www.w3.org/TR/WGSL/#syntax-statement)
 pub(crate) fn statement(parser: &mut Parser<'_, '_>) {
     if parser.at_set(&[SyntaxKind::Constant, SyntaxKind::Let, SyntaxKind::Var]) {
-        variable_statement(parser);
+        variable_or_value_statement(parser);
     } else if parser.at(SyntaxKind::Return) {
         return_statement(parser);
     } else if parser.at(SyntaxKind::BraceLeft) {
@@ -876,12 +877,11 @@ fn surround(
     parser.expect(after);
 }
 
-fn variable_statement(parser: &mut Parser<'_, '_>) {
+// https://www.w3.org/TR/WGSL/#syntax-variable_or_value_statement
+fn variable_or_value_statement(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
 
-    if parser.at(SyntaxKind::Let) {
-        parser.bump();
-    } else if parser.at(SyntaxKind::Constant) {
+    if parser.at(SyntaxKind::Let) || parser.at(SyntaxKind::Constant) {
         parser.bump();
     } else if parser.at(SyntaxKind::Var) {
         parser.bump();

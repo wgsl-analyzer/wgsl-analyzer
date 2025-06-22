@@ -1,4 +1,4 @@
-use std::{ops::Index, sync::Arc};
+use std::{iter, ops::Index, sync::Arc};
 
 use either::Either;
 use la_arena::{Arena, Idx};
@@ -98,7 +98,7 @@ impl ExprScopes {
         &self,
         scope: Option<ScopeId>,
     ) -> impl Iterator<Item = ScopeId> + '_ {
-        std::iter::successors(scope, move |&scope| self.scopes[scope].parent)
+        iter::successors(scope, move |&scope| self.scopes[scope].parent)
     }
 
     #[must_use]
