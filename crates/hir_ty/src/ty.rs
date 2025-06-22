@@ -58,9 +58,19 @@ impl Type {
         database: &dyn HirDatabase,
     ) -> Self {
         match self.kind(database) {
-            TyKind::Vector(vec) => vec.component_type,
-            TyKind::Reference(r) => r.inner.this_or_vec_inner(database),
-            _ => self,
+            TyKind::Vector(vector) => vector.component_type,
+            TyKind::Reference(reference) => reference.inner.this_or_vec_inner(database),
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => self,
         }
     }
 
@@ -71,8 +81,19 @@ impl Type {
         database: &dyn HirDatabase,
     ) -> Self {
         match self.kind(database) {
-            TyKind::Reference(r) => r.inner,
-            _ => self,
+            TyKind::Reference(reference) => reference.inner,
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Vector(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => self,
         }
     }
 
@@ -141,8 +162,19 @@ impl TyKind {
         database: &dyn HirDatabase,
     ) -> Cow<'_, Self> {
         match self {
-            Self::Reference(r) => Cow::Owned(r.inner.kind(database)),
-            _ => Cow::Borrowed(self),
+            Self::Reference(reference) => Cow::Owned(reference.inner.kind(database)),
+            Self::Error
+            | Self::Scalar(_)
+            | Self::Atomic(_)
+            | Self::Vector(_)
+            | Self::Matrix(_)
+            | Self::Struct(_)
+            | Self::Array(_)
+            | Self::Texture(_)
+            | Self::Sampler(_)
+            | Self::Pointer(_)
+            | Self::BoundVar(_)
+            | Self::StorageTypeOfTexelFormat(_) => Cow::Borrowed(self),
         }
     }
 
@@ -150,7 +182,18 @@ impl TyKind {
     pub const fn is_numeric_scalar(&self) -> bool {
         match self {
             Self::Scalar(scalar) => scalar.is_numeric(),
-            _ => false,
+            Self::Error
+            | Self::Atomic(_)
+            | Self::Vector(_)
+            | Self::Matrix(_)
+            | Self::Struct(_)
+            | Self::Array(_)
+            | Self::Texture(_)
+            | Self::Sampler(_)
+            | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::BoundVar(_)
+            | Self::StorageTypeOfTexelFormat(_) => false,
         }
     }
 
@@ -222,10 +265,30 @@ impl TyKind {
                     Self::Vector(vec) if vec.component_type.kind(database).is_numeric_scalar() => {
                         true
                     },
-                    _ => false,
+                    Self::Error
+                    | Self::Atomic(_)
+                    | Self::Vector(_)
+                    | Self::Matrix(_)
+                    | Self::Struct(_)
+                    | Self::Array(_)
+                    | Self::Texture(_)
+                    | Self::Sampler(_)
+                    | Self::Reference(_)
+                    | Self::Pointer(_)
+                    | Self::BoundVar(_)
+                    | Self::StorageTypeOfTexelFormat(_) => false,
                 }
             }),
-            _ => false,
+            Self::Error
+            | Self::Atomic(_)
+            | Self::Matrix(_)
+            | Self::Array(_)
+            | Self::Texture(_)
+            | Self::Sampler(_)
+            | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::BoundVar(_)
+            | Self::StorageTypeOfTexelFormat(_) => false,
         }
     }
 
@@ -242,7 +305,13 @@ impl TyKind {
                 .field_types(*r#struct)
                 .iter()
                 .all(|(_, r#type)| r#type.kind(database).is_host_shareable(database)),
-            _ => false,
+            Self::Error
+            | Self::Texture(_)
+            | Self::Sampler(_)
+            | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::BoundVar(_)
+            | Self::StorageTypeOfTexelFormat(_) => false,
         }
     }
 
@@ -259,7 +328,18 @@ impl TyKind {
                 .field_types(*r#struct)
                 .iter()
                 .any(|(_, r#type)| r#type.kind(database).contains_runtime_sized_array(database)),
-            _ => false,
+            Self::Error
+            | Self::Scalar(_)
+            | Self::Atomic(_)
+            | Self::Vector(_)
+            | Self::Matrix(_)
+            | Self::Array(_)
+            | Self::Texture(_)
+            | Self::Sampler(_)
+            | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::BoundVar(_)
+            | Self::StorageTypeOfTexelFormat(_) => false,
         }
     }
 
@@ -282,7 +362,14 @@ impl TyKind {
             Self::Array(array) => array.inner.contains_struct(database, r#struct),
             Self::Reference(reference) => reference.inner.contains_struct(database, r#struct),
             Self::Pointer(pointer) => pointer.inner.contains_struct(database, r#struct),
-            _ => false,
+            Self::Error
+            | Self::Scalar(_)
+            | Self::Vector(_)
+            | Self::Matrix(_)
+            | Self::Texture(_)
+            | Self::Sampler(_)
+            | Self::BoundVar(_)
+            | Self::StorageTypeOfTexelFormat(_) => false,
         }
     }
 }
@@ -350,7 +437,7 @@ impl ScalarType {
 
 /// N must be in {2, 3, 4}
 ///
-/// https://www.w3.org/TR/WGSL/#vector-types
+/// <https://www.w3.org/TR/WGSL/#vector-types>
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum VecSize {
     Two,
@@ -581,8 +668,8 @@ impl fmt::Display for TexelFormat {
 impl FromStr for TexelFormat {
     type Err = ();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
+    fn from_str(string: &str) -> Result<Self, Self::Err> {
+        Ok(match string {
             "rgba8unorm" => Self::Rgba8unorm,
             "rgba8snorm" => Self::Rgba8snorm,
             "rgba8uint" => Self::Rgba8uint,
