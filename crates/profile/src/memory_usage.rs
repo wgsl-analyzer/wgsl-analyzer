@@ -73,6 +73,7 @@ impl MemoryUsage {
 }
 
 #[cfg(all(target_os = "linux", target_env = "gnu", not(feature = "jemalloc")))]
+#[expect(clippy::as_conversions, reason = "no better way")]
 fn memusage_linux() -> MemoryUsage {
     // Linux/glibc has 2 APIs for allocator introspection that we can use: mallinfo and mallinfo2.
     // mallinfo uses `int` fields and cannot handle memory usage exceeding 2 GB.
@@ -85,6 +86,7 @@ fn memusage_linux() -> MemoryUsage {
 
     let mut mallinfo2 = MALLINFO2.load(Ordering::Relaxed);
     if mallinfo2 == 1 {
+        // SAFETY: undocumented safety
         mallinfo2 = unsafe { libc::dlsym(libc::RTLD_DEFAULT, c"mallinfo2".as_ptr()) } as usize;
         // NB: races don't matter here, since they'll always store the same value
         MALLINFO2.store(mallinfo2, Ordering::Relaxed);
@@ -92,16 +94,18 @@ fn memusage_linux() -> MemoryUsage {
 
     if mallinfo2 == 0 {
         // mallinfo2 does not exist, use mallinfo.
-        let alloc = unsafe { libc::mallinfo() }.uordblks as isize;
+        // SAFETY: undocumented safety
+        let allocation = isize::try_from(unsafe { libc::mallinfo() }.uordblks).unwrap();
         MemoryUsage {
-            allocated: Bytes(alloc),
+            allocated: Bytes(allocation),
         }
     } else {
+        // SAFETY: tested and correct
         let mallinfo2: extern "C" fn() -> libc::mallinfo2 =
             unsafe { std::mem::transmute(mallinfo2) };
-        let alloc = mallinfo2().uordblks as isize;
+        let allocation = isize::try_from(mallinfo2().uordblks).unwrap();
         MemoryUsage {
-            allocated: Bytes(alloc),
+            allocated: Bytes(allocation),
         }
     }
 }

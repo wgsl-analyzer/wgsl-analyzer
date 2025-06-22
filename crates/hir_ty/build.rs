@@ -153,10 +153,17 @@ fn foo(
 ) -> io::Result<()> {
     write!(
         destination,
-        "
+        r#"
+#[allow(warnings)]
+#[allow(nonstandard_style)]
+#[allow(clippy::all, reason = "generated code")]
+#[allow(clippy::nursery, reason = "generated code")]
+#[allow(clippy::pedantic, reason = "generated code")]
+#[allow(clippy::restriction, reason = "generated code")]
+#[allow(rustc::all, reason = "generated code")]
 impl Builtin {{
     pub fn for_name(database: &dyn HirDatabase, name: &Name) -> Option<Builtin> {{
-        match name.as_str() {{"
+        match name.as_str() {{"#
     )?;
 
     for name in builtins.keys() {
@@ -180,8 +187,16 @@ impl Builtin {{
 
     write!(
         destination,
-        "impl Builtin {{
-    pub const ALL_BUILTINS: &'static [&'static str] = &["
+        r#"
+#[allow(warnings)]
+#[allow(nonstandard_style)]
+#[allow(clippy::all, reason = "generated code")]
+#[allow(clippy::nursery, reason = "generated code")]
+#[allow(clippy::pedantic, reason = "generated code")]
+#[allow(clippy::restriction, reason = "generated code")]
+#[allow(rustc::all, reason = "generated code")]
+impl Builtin {{
+    pub const ALL_BUILTINS: &'static [&'static str] = &["#
     )?;
 
     for name in builtins.keys() {
@@ -469,8 +484,15 @@ fn builtin_to_rust(
 ) -> io::Result<()> {
     write!(
         sink,
-        r#"impl Builtin {{
-    #[allow(non_snake_case)]
+        r#"
+#[allow(warnings)]
+#[allow(nonstandard_style)]
+#[allow(clippy::all, reason = "generated code")]
+#[allow(clippy::nursery, reason = "generated code")]
+#[allow(clippy::pedantic, reason = "generated code")]
+#[allow(clippy::restriction, reason = "generated code")]
+#[allow(rustc::all, reason = "generated code")]
+impl Builtin {{
     pub fn builtin_{name}(database: &dyn HirDatabase) -> Self {{
         let name = Name::from("{name}");
         let overloads = vec!["#

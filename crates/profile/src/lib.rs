@@ -1,6 +1,5 @@
 //! A collection of tools for profiling rust-analyzer.
 
-#![expect(clippy::print_stderr, reason = "this is a debugging utility")]
 #[cfg(feature = "cpu_profiler")]
 mod google_cpu_profiler;
 mod memory_usage;
@@ -58,7 +57,7 @@ pub fn cpu_span() -> CpuSpan {
     }
 
     #[cfg(not(feature = "cpu_profiler"))]
-    #[expect(clippy::print_stderr)]
+    #[expect(clippy::print_stderr, reason = "CLI tool")]
     {
         eprintln!(
             r#"cpu profiling is disabled, uncomment `default = [ "cpu_profiler" ]` in Cargo.toml to enable."#
@@ -68,30 +67,29 @@ pub fn cpu_span() -> CpuSpan {
     CpuSpan { _private: () }
 }
 
+#[cfg(feature = "cpu_profiler")]
 impl Drop for CpuSpan {
+    #[expect(clippy::print_stderr, reason = "this is a debugging utility")]
     fn drop(&mut self) {
-        #[cfg(feature = "cpu_profiler")]
-        {
-            google_cpu_profiler::stop();
-            let profile_data = env::current_dir().unwrap().join("out.profile");
-            eprintln!("Profile data saved to:\n\n    {}\n", profile_data.display());
-            #[expect(clippy::disallowed_methods, reason = "this is not a rust tool")]
-            let mut cmd = process::Command::new("pprof");
-            cmd.arg("-svg")
-                .arg(env::current_exe().unwrap())
-                .arg(&profile_data);
-            let out = cmd.output();
-            #[expect(clippy::use_debug, reason = "debugging")]
-            match out {
-                Ok(out) if out.status.success() => {
-                    let svg = profile_data.with_extension("svg");
-                    fs::write(&svg, out.stdout).unwrap();
-                    eprintln!("Profile rendered to:\n\n    {}\n", svg.display());
-                },
-                _ => {
-                    eprintln!("Failed to run:\n\n   {cmd:?}\n");
-                },
-            }
+        google_cpu_profiler::stop();
+        let profile_data = env::current_dir().unwrap().join("out.profile");
+        eprintln!("Profile data saved to:\n\n    {}\n", profile_data.display());
+        #[expect(clippy::disallowed_methods, reason = "this is not a rust tool")]
+        let mut cmd = process::Command::new("pprof");
+        cmd.arg("-svg")
+            .arg(env::current_exe().unwrap())
+            .arg(&profile_data);
+        let out = cmd.output();
+        #[expect(clippy::use_debug, reason = "debugging")]
+        match out {
+            Ok(out) if out.status.success() => {
+                let svg = profile_data.with_extension("svg");
+                fs::write(&svg, out.stdout).unwrap();
+                eprintln!("Profile rendered to:\n\n    {}\n", svg.display());
+            },
+            _ => {
+                eprintln!("Failed to run:\n\n   {cmd:?}\n");
+            },
         }
     }
 }
