@@ -22,11 +22,9 @@ itertools.workspace = true
 indexmap.workspace = true
 memchr.workspace = true
 salsa.workspace = true
-salsa-macros.workspace = true
 triomphe.workspace = true
 nohash-hasher.workspace = true
 smol_str.workspace = true
-stdx.workspace = true
 smallvec.workspace = true
 
 base-db.workspace = true

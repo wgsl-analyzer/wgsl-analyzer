@@ -796,10 +796,8 @@ dependencies = [
  "rowan",
  "rustc-hash 2.1.1",
  "salsa",
- "salsa-macros 0.22.0",
  "smallvec",
  "smol_str",
- "stdx 0.0.0",
  "syntax",
  "tracing",
  "triomphe",
@@ -1771,7 +1769,7 @@ dependencies = [
  "oorandom",
  "parking_lot 0.11.2",
  "rustc-hash 1.1.0",
- "salsa-macros 0.17.0-pre.2",
+ "salsa-macros",
  "smallvec",
 ]
 
@@ -1785,19 +1783,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "salsa-macros"
-version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ce92025bc160b27814a207cb78d680973af17f863c7f4fc56cf3a535e22f378"
-dependencies = [
- "heck 0.5.0",
- "proc-macro2",
- "quote",
- "syn 2.0.103",
- "synstructure",
 ]
 
 [[package]]
