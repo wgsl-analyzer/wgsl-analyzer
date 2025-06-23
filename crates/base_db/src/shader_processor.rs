@@ -87,11 +87,11 @@ impl ShaderProcessor {
                 // Presumably this would be through a side channel
                 if scopes.len() == 1 {
                     // return Err(ProcessShaderError::TooManyEndIfs);
-                } else if let Some((used, start_offset, def)) = scopes.pop() {
-                    if !used {
-                        let range = start_offset..offset + line.len();
-                        emit_unconfigured(range, def);
-                    }
+                } else if let Some((used, start_offset, def)) = scopes.pop()
+                    && !used
+                {
+                    let range = start_offset..offset + line.len();
+                    emit_unconfigured(range, def);
                 }
                 false
             } else if self.define_import_path.is_match(line) {

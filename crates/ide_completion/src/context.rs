@@ -62,10 +62,10 @@ impl<'database> CompletionContext<'database> {
             })
             .or_else(|| token.parent_ancestors().find_map(ExprOrStatement::cast));
 
-        if let Some(scope) = nearest_scope {
-            if let Some(def) = container {
-                resolver = sema.analyze(def).resolver_for(scope);
-            }
+        if let Some(scope) = nearest_scope
+            && let Some(def) = container
+        {
+            resolver = sema.analyze(def).resolver_for(scope);
         }
 
         let context = Self {

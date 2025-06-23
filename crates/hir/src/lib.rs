@@ -336,10 +336,10 @@ impl<'database> SourceAnalyzer<'database> {
             })
             .map_right(|statement| {
                 let id = self.statement_id(&statement)?;
-                if let Some(Either::Left(root)) = self.body.root {
-                    if root == id {
-                        return expression_scopes.scope_for_statement(id);
-                    }
+                if let Some(Either::Left(root)) = self.body.root
+                    && root == id
+                {
+                    return expression_scopes.scope_for_statement(id);
                 }
                 expression_scopes.scope_for_statement(id)
             })

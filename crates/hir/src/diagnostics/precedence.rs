@@ -58,15 +58,15 @@ pub fn collect<Function: FnMut(PrecedenceDiagnostic)>(
             ArithmeticOperation::BitAnd | ArithmeticOperation::BitXor | ArithmeticOperation::BitOr,
         ) = op
         {
-            if let Some(lhs_op) = left_hand_side_operator {
-                if lhs_op != op {
-                    diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(*left_side, op));
-                }
+            if let Some(lhs_op) = left_hand_side_operator
+                && lhs_op != op
+            {
+                diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(*left_side, op));
             }
-            if let Some(rhs_op) = right_hand_side_operator {
-                if rhs_op != op {
-                    diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(*right_side, op));
-                }
+            if let Some(rhs_op) = right_hand_side_operator
+                && rhs_op != op
+            {
+                diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(*right_side, op));
             }
         }
 
@@ -95,15 +95,15 @@ pub fn collect<Function: FnMut(PrecedenceDiagnostic)>(
 
         // && and || being mixed
         if let BinaryOperation::Logical(_) = op {
-            if let Some(lhs_op @ BinaryOperation::Logical(_)) = left_hand_side_operator {
-                if lhs_op != op {
-                    diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(*left_side, op));
-                }
+            if let Some(lhs_op @ BinaryOperation::Logical(_)) = left_hand_side_operator
+                && lhs_op != op
+            {
+                diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(*left_side, op));
             }
-            if let Some(rhs_op @ BinaryOperation::Logical(_)) = right_hand_side_operator {
-                if rhs_op != op {
-                    diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(*right_side, op));
-                }
+            if let Some(rhs_op @ BinaryOperation::Logical(_)) = right_hand_side_operator
+                && rhs_op != op
+            {
+                diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(*right_side, op));
             }
         }
     }

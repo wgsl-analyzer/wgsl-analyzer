@@ -306,10 +306,10 @@ impl GlobalState {
         response: lsp_server::Response,
     ) {
         if let Some((method, start)) = self.request_queue.incoming.complete(&response.id) {
-            if let Some(error) = &response.error {
-                if error.message.starts_with("server panicked") {
-                    self.poke_wgsl_analyzer_developer(format!("{}, check the log", error.message));
-                }
+            if let Some(error) = &response.error
+                && error.message.starts_with("server panicked")
+            {
+                self.poke_wgsl_analyzer_developer(format!("{}, check the log", error.message));
             }
 
             let duration = start.elapsed();

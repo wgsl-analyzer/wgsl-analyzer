@@ -37,10 +37,10 @@ impl StopWatch {
                     .build()
                     .map_err(|error| eprintln!("Failed to create perf counter: {error}"))
                     .ok();
-                if let Some(counter) = &mut counter {
-                    if let Err(error) = counter.enable() {
-                        eprintln!("Failed to start perf counter: {error}");
-                    }
+                if let Some(counter) = &mut counter
+                    && let Err(error) = counter.enable()
+                {
+                    eprintln!("Failed to start perf counter: {error}");
                 }
                 counter
             } else {

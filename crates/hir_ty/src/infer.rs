@@ -244,10 +244,10 @@ impl<'database> InferenceContext<'database> {
             )
         });
 
-        if let Some(r#type) = r#type {
-            if let Some(binding) = self.body.main_binding {
-                self.set_binding_ty(binding, r#type);
-            }
+        if let Some(r#type) = r#type
+            && let Some(binding) = self.body.main_binding
+        {
+            self.set_binding_ty(binding, r#type);
         }
 
         self.return_ty = r#type;
@@ -265,10 +265,10 @@ impl<'database> InferenceContext<'database> {
             )
         });
 
-        if let Some(r#type) = r#type {
-            if let Some(binding) = self.body.main_binding {
-                self.set_binding_ty(binding, r#type);
-            }
+        if let Some(r#type) = r#type
+            && let Some(binding) = self.body.main_binding
+        {
+            self.set_binding_ty(binding, r#type);
         }
 
         self.return_ty = r#type;
@@ -286,10 +286,10 @@ impl<'database> InferenceContext<'database> {
             )
         });
 
-        if let Some(r#type) = r#type {
-            if let Some(binding) = self.body.main_binding {
-                self.set_binding_ty(binding, r#type);
-            }
+        if let Some(r#type) = r#type
+            && let Some(binding) = self.body.main_binding
+        {
+            self.set_binding_ty(binding, r#type);
         }
 
         self.return_ty = r#type;
