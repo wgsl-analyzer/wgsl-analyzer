@@ -111,7 +111,7 @@ hashbrown = { version = "0.15.4", features = [
 indexmap = "2.9.0"
 itertools = "0.14.0"
 jod-thread = "0.1.2"
-libc = "0.2.173"
+libc = "0.2.174"
 libloading = "0.8.6"
 memchr = "2.7.5"
 logos = "0.12.1"
