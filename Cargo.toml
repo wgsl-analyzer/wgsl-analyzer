@@ -165,7 +165,7 @@ triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
 url = "2.5.4"
 xshell = "0.2.7"
 lexopt = "0.3.0"
-prettydiff = "0.8.0"
+prettydiff = "0.8.1"
 notify = "8.0.0"
 proptest = "1.7.0"
 
