@@ -295,7 +295,7 @@ impl Analysis {
 
     /// # Panics
     ///
-    /// Panics if the command was cancelled
+    /// Panics if the command was cancelled.
     pub fn debug_command(
         &self,
         file_position: FilePosition,

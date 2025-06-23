@@ -16,7 +16,7 @@ pub mod text_edit;
 )]
 pub struct RootDatabase {
     // FIXME: Revisit this commit now that we migrated to the new salsa, given we store arcs in this
-    // db directly now
+    // database directly now
     // We use `ManuallyDrop` here because every codegen unit that contains a
     // `&RootDatabase -> &dyn OtherDatabase` cast will instantiate its drop glue in the vtable,
     // which duplicates `Weak::drop` and `Arc::drop` tens of thousands of times, which makes
