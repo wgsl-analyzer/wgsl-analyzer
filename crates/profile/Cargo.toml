@@ -18,7 +18,7 @@ jemalloc-ctl = { version = "0.6.0", package = "tikv-jemalloc-ctl", optional = tr
 ] }
 
 [target.'cfg(all(target_os = "linux", not(target_env = "ohos")))'.dependencies]
-perf-event = "=0.4.7"
+perf-event = "=0.4.8"
 
 [target.'cfg(all(target_os = "linux", target_env = "gnu"))'.dependencies]
 libc.workspace = true
