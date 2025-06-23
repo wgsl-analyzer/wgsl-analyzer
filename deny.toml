@@ -6,6 +6,8 @@ version = 2
 ignore = [
   # TODO: #157 - Delete this once salsa has been bumped.
   "RUSTSEC-2024-0384",
+  # TODO: # - Delete this once tikv-jemalloc-ctl has been bumped.
+  "RUSTSEC-2024-0436",
 ]
 
 # Ignore warnings about unused license exceptions
