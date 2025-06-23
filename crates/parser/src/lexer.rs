@@ -1,3 +1,5 @@
+use std::ops;
+
 use logos::Logos;
 use rowan::{TextRange, TextSize};
 
@@ -31,7 +33,7 @@ impl<'source, SyntaxKind: Logos<'source, Source = str>> Iterator for Lexer<'sour
         let text = self.inner.slice();
 
         let range = {
-            let std::ops::Range { start, end } = self.inner.span();
+            let ops::Range { start, end } = self.inner.span();
             let start = TextSize::try_from(start).unwrap();
             let end = TextSize::try_from(end).unwrap();
 

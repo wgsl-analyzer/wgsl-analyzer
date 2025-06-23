@@ -20,7 +20,7 @@ use std::io::Read as _;
 use anyhow::Result;
 use hir::Module;
 use hir_def::module_data::Name;
-use hir_ty::db::HirDatabase;
+use hir_ty::database::HirDatabase;
 use itertools::Itertools;
 use vfs::Vfs;
 
@@ -34,13 +34,11 @@ pub enum Verbosity {
 
 impl Verbosity {
     #[must_use]
-    #[inline]
     pub const fn is_verbose(self) -> bool {
         matches!(self, Self::Verbose | Self::Spammy)
     }
 
     #[must_use]
-    #[inline]
     pub const fn is_spammy(self) -> bool {
         matches!(self, Self::Spammy)
     }

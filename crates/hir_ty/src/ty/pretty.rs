@@ -1,8 +1,8 @@
-use std::fmt::Write;
+use std::fmt::{self, Write as _};
 
 use super::{TyKind, Type};
 use crate::{
-    db::HirDatabase,
+    database::HirDatabase,
     function::FunctionDetails,
     infer::{TypeExpectation, TypeExpectationInner},
     ty::{ArraySize, ScalarType, TextureKind},
@@ -17,14 +17,14 @@ pub enum TypeVerbosity {
 }
 
 pub fn pretty_type_expectation(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     r#type: TypeExpectation,
 ) -> String {
-    pretty_type_expectation_with_verbosity(db, r#type, TypeVerbosity::default())
+    pretty_type_expectation_with_verbosity(database, r#type, TypeVerbosity::default())
 }
 
 pub fn pretty_type_expectation_with_verbosity(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     r#type: TypeExpectation,
     verbosity: TypeVerbosity,
 ) -> String {
@@ -32,202 +32,241 @@ pub fn pretty_type_expectation_with_verbosity(
 
     match r#type {
         TypeExpectation::Type(r#type) => {
-            let _ = write_type_expectation_inner(db, r#type, false, &mut str, verbosity);
+            _ = write_type_expectation_inner(database, &r#type, false, &mut str, verbosity);
         },
         TypeExpectation::TypeOrVecOf(inner) => {
-            let _ = write_type_expectation_inner(db, inner, true, &mut str, verbosity);
+            _ = write_type_expectation_inner(database, &inner, true, &mut str, verbosity);
         },
+        #[expect(clippy::unreachable, reason = "TODO")]
         TypeExpectation::None => unreachable!(),
     }
     str
 }
 
 fn write_type_expectation_inner(
-    db: &dyn HirDatabase,
-    inner: TypeExpectationInner,
+    database: &dyn HirDatabase,
+    inner: &TypeExpectationInner,
     or_vec: bool,
-    f: &mut String,
+    buffer: &mut String,
     verbosity: TypeVerbosity,
-) -> std::fmt::Result {
+) -> fmt::Result {
     match inner {
         TypeExpectationInner::Exact(r#type) => {
-            write_ty(db, r#type, f, verbosity)?;
+            write_ty(database, *r#type, buffer, verbosity)?;
             if or_vec {
-                write!(f, " or vecN<")?;
-                write_ty(db, r#type, f, verbosity)?;
-                write!(f, ">")?;
+                write!(buffer, " or vecN<")?;
+                write_ty(database, *r#type, buffer, verbosity)?;
+                write!(buffer, ">")?;
             }
         },
         TypeExpectationInner::I32OrF32 => {
-            write!(f, "i32 or f32")?;
+            write!(buffer, "i32 or f32")?;
         },
-        TypeExpectationInner::NumericScalar => write!(f, "i32, u32, or f32")?,
-        TypeExpectationInner::IntegerScalar => write!(f, "i32 or u32")?,
+        TypeExpectationInner::NumericScalar => write!(buffer, "i32, u32, or f32")?,
+        TypeExpectationInner::IntegerScalar => write!(buffer, "i32 or u32")?,
     }
     Ok(())
 }
 
 pub fn pretty_type(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     r#type: Type,
 ) -> String {
-    pretty_type_with_verbosity(db, r#type, TypeVerbosity::default())
+    pretty_type_with_verbosity(database, r#type, TypeVerbosity::default())
 }
 
+/// Pretty-print a type.
+///
+/// # Panics
+///
+/// Panics if writing to the internal buffer fails.
 pub fn pretty_type_with_verbosity(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     r#type: Type,
     verbosity: TypeVerbosity,
 ) -> String {
     let mut str = String::new();
-    write_ty(db, r#type, &mut str, verbosity).unwrap();
+    write_ty(database, r#type, &mut str, verbosity).unwrap();
     str
 }
 
 pub fn pretty_fn(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     function: &FunctionDetails,
 ) -> String {
-    pretty_fn_with_verbosity(db, function, TypeVerbosity::default())
+    pretty_fn_with_verbosity(database, function, TypeVerbosity::default())
 }
 
+/// Pretty-print a function.
+///
+/// # Panics
+///
+/// Panics if writing into the internal buffer fails.
 pub fn pretty_fn_with_verbosity(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     function: &FunctionDetails,
     verbosity: TypeVerbosity,
 ) -> String {
     let mut str = String::new();
-    pretty_fn_inner(db, function, &mut str, verbosity).unwrap();
+    pretty_fn_inner(database, function, &mut str, verbosity).unwrap();
     str
 }
 
 fn pretty_fn_inner(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     function: &FunctionDetails,
-    f: &mut String,
+    buffer: &mut String,
     verbosity: TypeVerbosity,
-) -> std::fmt::Result {
-    write!(f, "fn(")?;
+) -> fmt::Result {
+    write!(buffer, "fn(")?;
     for (i, parameter) in function.parameters().enumerate() {
         if i != 0 {
-            f.push_str(", ");
+            buffer.push_str(", ");
         }
-        write_ty(db, parameter, f, verbosity)?;
+        write_ty(database, parameter, buffer, verbosity)?;
     }
-    write!(f, ")")?;
+    write!(buffer, ")")?;
     if let Some(return_type) = function.return_type {
-        f.push_str(" -> ");
-        write_ty(db, return_type, f, verbosity)?;
+        buffer.push_str(" -> ");
+        write_ty(database, return_type, buffer, verbosity)?;
     }
     Ok(())
 }
 
+#[expect(clippy::too_many_lines, reason = "TODO")]
 fn write_ty(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     r#type: Type,
-    f: &mut String,
+    formatter: &mut String,
     verbosity: TypeVerbosity,
-) -> std::fmt::Result {
-    match r#type.kind(db) {
-        TyKind::Error => write!(f, "[error]"),
+) -> fmt::Result {
+    match r#type.kind(database) {
+        TyKind::Error => write!(formatter, "[error]"),
         TyKind::Scalar(scalar) => {
-            let s = match scalar {
+            let string = match scalar {
                 ScalarType::Bool => "bool",
+                // TODO: Is this reachable?
+                ScalarType::AbstractInt => "integer",
+                ScalarType::AbstractFloat => "float",
                 ScalarType::I32 => "i32",
                 ScalarType::U32 => "u32",
                 ScalarType::F32 => "f32",
+                ScalarType::F16 => "f16",
             };
-            write!(f, "{s}")
+            write!(formatter, "{string}")
         },
         TyKind::Atomic(atomic) => {
-            write!(f, "atomic<")?;
-            write_ty(db, atomic.inner, f, verbosity)?;
-            write!(f, ">")
+            write!(formatter, "atomic<")?;
+            write_ty(database, atomic.inner, formatter, verbosity)?;
+            write!(formatter, ">")
         },
-        TyKind::Vector(t) => {
-            write!(f, "vec{}<", t.size)?;
-            write_ty(db, t.inner, f, verbosity)?;
-            write!(f, ">")
+        TyKind::Vector(vector_type) => {
+            write!(formatter, "vec{}<", vector_type.size)?;
+            write_ty(database, vector_type.component_type, formatter, verbosity)?;
+            write!(formatter, ">")
         },
-        TyKind::Matrix(t) => {
-            write!(f, "mat{}x{}<", t.columns, t.rows)?;
-            write_ty(db, t.inner, f, verbosity)?;
-            write!(f, ">")
+        TyKind::Matrix(matrix_type) => {
+            write!(
+                formatter,
+                "mat{}x{}<",
+                matrix_type.columns, matrix_type.rows
+            )?;
+            write_ty(database, matrix_type.inner, formatter, verbosity)?;
+            write!(formatter, ">")
         },
         TyKind::Struct(r#struct) => {
-            let data = db.struct_data(r#struct);
-            write!(f, "{}", data.name.as_str())
+            let data = database.struct_data(r#struct);
+            write!(formatter, "{}", data.name.as_str())
         },
-        TyKind::Array(t) => {
-            write!(f, "array<")?;
-            write_ty(db, t.inner, f, verbosity)?;
-            match t.size {
-                ArraySize::Constant(value) => write!(f, ", {value}")?,
+        TyKind::Array(array_type) => {
+            write!(formatter, "array<")?;
+            write_ty(database, array_type.inner, formatter, verbosity)?;
+            match array_type.size {
+                ArraySize::Constant(value) => write!(formatter, ", {value}")?,
                 ArraySize::Dynamic => {},
             }
-            write!(f, ">")
+            write!(formatter, ">")
         },
-        TyKind::Texture(e) => {
-            let value = match e.kind {
+        TyKind::Texture(texture_type) => {
+            let value = match texture_type.kind {
                 TextureKind::Sampled(r#type) => format!(
                     "texture_{}{}{}<{}>",
-                    if e.multisampled { "multisampled_" } else { "" },
-                    e.dimension,
-                    if e.arrayed { "_array" } else { "" },
-                    pretty_type(db, r#type),
+                    if texture_type.multisampled {
+                        "multisampled_"
+                    } else {
+                        ""
+                    },
+                    texture_type.dimension,
+                    if texture_type.arrayed { "_array" } else { "" },
+                    pretty_type(database, r#type),
                 ),
                 TextureKind::Storage(format, mode) => format!(
                     "texture_storage_{}{}{}<{},{}>",
-                    if e.multisampled { "multisampled_" } else { "" },
-                    e.dimension,
-                    if e.arrayed { "_array" } else { "" },
+                    if texture_type.multisampled {
+                        "multisampled_"
+                    } else {
+                        ""
+                    },
+                    texture_type.dimension,
+                    if texture_type.arrayed { "_array" } else { "" },
                     format,
                     mode,
                 ),
                 TextureKind::Depth => format!(
                     "texture_depth_{}{}{}",
-                    if e.multisampled { "multisampled_" } else { "" },
-                    e.dimension,
-                    if e.arrayed { "_array" } else { "" },
+                    if texture_type.multisampled {
+                        "multisampled_"
+                    } else {
+                        ""
+                    },
+                    texture_type.dimension,
+                    if texture_type.arrayed { "_array" } else { "" },
                 ),
                 TextureKind::External => "texture_external".into(),
             };
-            write!(f, "{value}")
+            write!(formatter, "{value}")
         },
-        TyKind::Sampler(sampler) => match sampler.comparison {
-            true => write!(f, "sampler_comparison"),
-            false => write!(f, "sampler"),
+        TyKind::Sampler(sampler) => {
+            if sampler.comparison {
+                write!(formatter, "sampler_comparison")
+            } else {
+                write!(formatter, "sampler")
+            }
         },
-        TyKind::Reference(t) => match verbosity {
+        TyKind::Reference(reference) => match verbosity {
             TypeVerbosity::Full => {
-                write!(f, "ref<{}, ", t.address_space)?;
-                write_ty(db, t.inner, f, verbosity)?;
-                write!(f, ", {}>", t.access_mode)
+                write!(formatter, "ref<{}, ", reference.address_space)?;
+                write_ty(database, reference.inner, formatter, verbosity)?;
+                write!(formatter, ", {}>", reference.access_mode)
             },
             TypeVerbosity::Compact => {
-                write!(f, "ref<")?;
-                write_ty(db, t.inner, f, verbosity)?;
-                write!(f, ">")
+                write!(formatter, "ref<")?;
+                write_ty(database, reference.inner, formatter, verbosity)?;
+                write!(formatter, ">")
             },
-            TypeVerbosity::Inner => write_ty(db, t.inner, f, verbosity),
+            TypeVerbosity::Inner => write_ty(database, reference.inner, formatter, verbosity),
         },
-        TyKind::Pointer(t) => match verbosity {
+        TyKind::Pointer(pointer) => match verbosity {
             TypeVerbosity::Full => {
-                write!(f, "ptr<{}, ", t.address_space)?;
-                write_ty(db, t.inner, f, verbosity)?;
-                write!(f, ", {}>", t.access_mode)
+                write!(formatter, "ptr<{}, ", pointer.address_space)?;
+                write_ty(database, pointer.inner, formatter, verbosity)?;
+                write!(formatter, ", {}>", pointer.access_mode)
             },
             TypeVerbosity::Compact | TypeVerbosity::Inner => {
-                write!(f, "ptr<")?;
-                write_ty(db, t.inner, f, verbosity)?;
-                write!(f, ">")
+                write!(formatter, "ptr<")?;
+                write_ty(database, pointer.inner, formatter, verbosity)?;
+                write!(formatter, ">")
             },
         },
         TyKind::BoundVar(var) => {
-            write!(f, "{}", ('T'..).nth(var.index).unwrap())
+            write!(formatter, "{}", ('T'..).nth(var.index).unwrap())
         },
         TyKind::StorageTypeOfTexelFormat(var) => {
-            write!(f, "{}::StorageType", ('F'..).nth(var.index).unwrap())
+            write!(
+                formatter,
+                "{}::StorageType",
+                ('F'..).nth(var.index).unwrap()
+            )
         },
     }
 }

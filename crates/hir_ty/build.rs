@@ -1,4 +1,11 @@
-use std::{collections::BTreeMap, fs::File, path::PathBuf, str::FromStr};
+use std::{
+    collections::BTreeMap,
+    env, error, fmt,
+    fs::{self, File},
+    io,
+    path::PathBuf,
+    str::FromStr,
+};
 
 #[derive(Default, Debug)]
 struct Builtin {
@@ -26,6 +33,7 @@ enum Type {
     Texture(TextureType),
     Sampler { comparison: bool },
     Bool,
+    F16,
     F32,
     I32,
     U32,
@@ -43,11 +51,11 @@ enum VecSize {
     Bound(usize),
 }
 
-impl std::fmt::Debug for VecSize {
+impl fmt::Debug for VecSize {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
             Self::Two => write!(f, "Two"),
             Self::Three => write!(f, "Three"),
@@ -82,12 +90,12 @@ enum AccessMode {
 impl FromStr for AccessMode {
     type Err = ();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "read_write" => AccessMode::ReadWrite,
-            "read" => AccessMode::Read,
-            "write" => AccessMode::Write,
-            "_" => AccessMode::Any,
+    fn from_str(string: &str) -> Result<Self, Self::Err> {
+        Ok(match string {
+            "read_write" => Self::ReadWrite,
+            "read" => Self::Read,
+            "write" => Self::Write,
+            "_" => Self::Any,
             _ => return Err(()),
         })
     }
@@ -96,7 +104,6 @@ impl FromStr for AccessMode {
 #[derive(Debug)]
 enum TextureKind {
     Sampled(Box<Type>),
-    #[allow(unused)]
     Storage(TexelFormat, AccessMode),
     Depth,
     External,
@@ -110,23 +117,23 @@ enum TextureDimensionality {
     Cube,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn error::Error>> {
     println!("cargo:rerun-if-changed=builtins.wgsl");
 
-    let directory = PathBuf::from(std::env::var("OUT_DIR")?).join("generated");
-    std::fs::create_dir_all(&directory)?;
+    let directory = PathBuf::from(env::var("OUT_DIR")?).join("generated");
+    fs::create_dir_all(&directory)?;
     let path = directory.join("builtins.rs");
     let mut file = File::create(path)?;
 
     let mut builtins: BTreeMap<String, Builtin> = BTreeMap::new();
 
-    let builtins_file = std::fs::read_to_string("builtins.wgsl")?;
+    let builtins_file = fs::read_to_string("builtins.wgsl")?;
     for line in builtins_file.lines() {
         if line.is_empty() || line.starts_with("//") {
             continue;
         }
         let (name, overload) = parse_line(line);
-        let builtin = builtins.entry(name.to_string()).or_default();
+        let builtin = builtins.entry(name.to_owned()).or_default();
         builtin.overloads.push(overload);
     }
 
@@ -141,14 +148,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn foo(
-    f: &mut dyn std::io::Write,
+    destination: &mut dyn io::Write,
     builtins: &BTreeMap<String, Builtin>,
-) -> std::io::Result<()> {
+) -> io::Result<()> {
     write!(
-        f,
+        destination,
         r#"
+#[allow(warnings)]
+#[allow(nonstandard_style)]
+#[allow(clippy::all, reason = "generated code")]
+#[allow(clippy::nursery, reason = "generated code")]
+#[allow(clippy::pedantic, reason = "generated code")]
+#[allow(clippy::restriction, reason = "generated code")]
+#[allow(rustc::all, reason = "generated code")]
 impl Builtin {{
-    pub fn for_name(db: &dyn HirDatabase, name: &Name) -> Option<Builtin> {{
+    pub fn for_name(database: &dyn HirDatabase, name: &Name) -> Option<Builtin> {{
         match name.as_str() {{"#
     )?;
 
@@ -157,31 +171,42 @@ impl Builtin {{
             continue;
         }
 
-        write!(f, r#""{name}" => Some(Builtin::builtin_{name}(db)),"#)?;
+        write!(
+            destination,
+            r#""{name}" => Some(Builtin::builtin_{name}(database)),"#
+        )?;
     }
     write!(
-        f,
-        r#"_ => None,
+        destination,
+        "_ => None,
         }}
     }}
 }}
-    "#
+    "
     )?;
 
     write!(
-        f,
-        "impl Builtin {{
-    pub const ALL_BUILTINS: &'static [&'static str] = &["
+        destination,
+        r#"
+#[allow(warnings)]
+#[allow(nonstandard_style)]
+#[allow(clippy::all, reason = "generated code")]
+#[allow(clippy::nursery, reason = "generated code")]
+#[allow(clippy::pedantic, reason = "generated code")]
+#[allow(clippy::restriction, reason = "generated code")]
+#[allow(rustc::all, reason = "generated code")]
+impl Builtin {{
+    pub const ALL_BUILTINS: &'static [&'static str] = &["#
     )?;
 
     for name in builtins.keys() {
         if name.starts_with("op") {
             continue;
         }
-        write!(f, r#""{name}", "#)?;
+        write!(destination, r#""{name}", "#)?;
     }
 
-    write!(f, "    ];\n}}")?;
+    write!(destination, "    ];\n}}")?;
 
     Ok(())
 }
@@ -195,12 +220,12 @@ fn parse_line(line: &str) -> (&str, Overload) {
     let parameters: Vec<_> = parameters
         .split(',')
         .filter(|parameter| !parameter.is_empty())
-        .map(|r#type| match r#type.find(":") {
+        .map(|r#type| match r#type.find(':') {
             Some(index) if !r#type[index..].starts_with("::") => {
                 let (name, r#type) = r#type.split_at(index);
                 let r#type = &r#type[1..];
                 let name = name.trim();
-                let name = (!name.is_empty()).then(|| name.to_string());
+                let name = (!name.is_empty()).then(|| name.to_owned());
                 (parse_ty(&mut generics, r#type.trim()), name)
             },
             _ => (parse_ty(&mut generics, r#type.trim()), None),
@@ -268,6 +293,7 @@ fn only_char(input: &str) -> char {
     value
 }
 
+#[expect(clippy::unimplemented, reason = "TODO")]
 fn parse_ty(
     generics: &mut BTreeMap<char, (usize, Generic)>,
     r#type: &str,
@@ -328,9 +354,8 @@ fn parse_ty(
         } else if r#type == "atomic" {
             let inner = parse_ty(generics, inner);
             return Type::Atomic(Box::new(inner));
-        } else {
-            unimplemented!("{}", r#type);
         }
+        unimplemented!("{}", r#type);
     }
 
     if let Some(texture) = r#type.strip_prefix("texture_") {
@@ -356,6 +381,7 @@ fn parse_ty(
 
     match r#type {
         "bool" => Type::Bool,
+        "f16" => Type::F16,
         "f32" => Type::F32,
         "i32" => Type::I32,
         "u32" => Type::U32,
@@ -371,24 +397,24 @@ fn parse_ty(
 
 fn type_to_rust(r#type: &Type) -> String {
     match r#type {
-        Type::Vec(size, inner) => format!(
-            "TyKind::Vector(VectorType {{ size: VecSize::{:?}, inner: {} }}).intern(db)",
+        Type::Vec(size, component_type) => format!(
+            "TyKind::Vector(crate::ty::VectorType {{ size: VecSize::{:?}, component_type: {} }}).intern(database)",
             size,
-            type_to_rust(inner)
+            type_to_rust(component_type)
         ),
 
         Type::Matrix(columns, rows, inner) => format!(
-            "TyKind::Matrix(MatrixType {{ columns: VecSize::{:?}, rows: VecSize::{:?}, inner: {} }}).intern(db)",
+            "TyKind::Matrix(crate::ty::MatrixType {{ columns: VecSize::{:?}, rows: VecSize::{:?}, inner: {} }}).intern(database)",
             columns,
             rows,
             type_to_rust(inner)
         ),
 
-        r#type @ (Type::Bool | Type::F32 | Type::I32 | Type::U32) => {
-            format!("TyKind::Scalar(ScalarType::{type:?}).intern(db)")
+        (Type::Bool | Type::F32 | Type::I32 | Type::U32 | Type::F16) => {
+            format!("TyKind::Scalar(ScalarType::{type:?}).intern(database)")
         },
         Type::Bound(i) => {
-            format!("TyKind::BoundVar(BoundVar {{ index: {i} }}).intern(db)",)
+            format!("TyKind::BoundVar(BoundVar {{ index: {i} }}).intern(database)",)
         },
         Type::Texture(texture) => {
             format!(
@@ -397,12 +423,12 @@ fn type_to_rust(r#type: &Type) -> String {
                             arrayed: {},
                             multisampled: {},
                             dimension: TextureDimensionality::{:?},
-                        }}).intern(db)",
+                        }}).intern(database)",
                 match &texture.kind {
                     TextureKind::Sampled(inner) => format!("Sampled({})", type_to_rust(inner)),
                     TextureKind::Storage(texel_format, access_mode) => {
                         let texel_format = match texel_format {
-                            TexelFormat::Any => "Any".to_string(),
+                            TexelFormat::Any => "Any".to_owned(),
                             TexelFormat::Bound(var) => {
                                 format!("BoundVar(BoundVar {{ index: {var} }})")
                             },
@@ -410,8 +436,8 @@ fn type_to_rust(r#type: &Type) -> String {
 
                         format!("Storage(TexelFormat::{texel_format}, AccessMode::{access_mode:?})")
                     },
-                    TextureKind::Depth => "Depth".to_string(),
-                    TextureKind::External => "External".to_string(),
+                    TextureKind::Depth => "Depth".to_owned(),
+                    TextureKind::External => "External".to_owned(),
                 },
                 texture.arrayed,
                 texture.multisampled,
@@ -419,14 +445,14 @@ fn type_to_rust(r#type: &Type) -> String {
             )
         },
         Type::Sampler { comparison } => {
-            format!("TyKind::Sampler(SamplerType {{ comparison: {comparison}  }}).intern(db)")
+            format!("TyKind::Sampler(SamplerType {{ comparison: {comparison}  }}).intern(database)")
         },
         Type::RuntimeArray(inner) => format!(
             "TyKind::Array(ArrayType {{
             size: ArraySize::Dynamic,
             binding_array: false,
             inner: {}
-        }}).intern(db)",
+        }}).intern(database)",
             type_to_rust(inner)
         ),
         Type::Pointer(inner) => format!(
@@ -434,49 +460,57 @@ fn type_to_rust(r#type: &Type) -> String {
             inner: {},
             access_mode: AccessMode::ReadWrite,
             address_space: AddressSpace::Private,
-        }}).intern(db)",
+        }}).intern(database)",
             type_to_rust(inner)
         ),
         Type::Atomic(inner) => format!(
             "TyKind::Atomic(AtomicType {{
             inner: {},
-        }}).intern(db)",
+        }}).intern(database)",
             type_to_rust(inner)
         ),
         Type::StorageTypeOfTexelFormat(var) => {
-            format!("TyKind::StorageTypeOfTexelFormat(BoundVar {{ index: {var} }}).intern(db)")
+            format!(
+                "TyKind::StorageTypeOfTexelFormat(BoundVar {{ index: {var} }}).intern(database)"
+            )
         },
     }
 }
 
 fn builtin_to_rust(
-    f: &mut dyn std::io::Write,
+    sink: &mut dyn io::Write,
     name: &str,
     builtin: &Builtin,
-) -> std::io::Result<()> {
+) -> io::Result<()> {
     write!(
-        f,
-        r#"impl Builtin {{
-    #[allow(non_snake_case)]
-    pub fn builtin_{name}(db: &dyn HirDatabase) -> Self {{
+        sink,
+        r#"
+#[allow(warnings)]
+#[allow(nonstandard_style)]
+#[allow(clippy::all, reason = "generated code")]
+#[allow(clippy::nursery, reason = "generated code")]
+#[allow(clippy::pedantic, reason = "generated code")]
+#[allow(clippy::restriction, reason = "generated code")]
+#[allow(rustc::all, reason = "generated code")]
+impl Builtin {{
+    pub fn builtin_{name}(database: &dyn HirDatabase) -> Self {{
         let name = Name::from("{name}");
         let overloads = vec!["#
     )?;
 
     for overload in &builtin.overloads {
         write!(
-            f,
+            sink,
             "
             BuiltinOverload {{
                 generics: vec![{generics}],
                 r#type: FunctionDetails {{
                     return_type: {return_ty},
                     parameters: vec![",
-            return_ty = overload
-                .return_type
-                .as_ref()
-                .map(|r#type| format!("Some({})", type_to_rust(r#type)))
-                .unwrap_or_else(|| "None".to_string()),
+            return_ty = overload.return_type.as_ref().map_or_else(
+                || "None".to_owned(),
+                |r#type| format!("Some({})", type_to_rust(r#type))
+            ),
             generics = overload
                 .generics
                 .values()
@@ -489,33 +523,33 @@ fn builtin_to_rust(
         )?;
         for (parameter, name) in &overload.parameters {
             write!(
-                f,
+                sink,
                 "
                         ({ty}, {name}),",
                 ty = type_to_rust(parameter),
                 name = match name {
                     Some(name) => format!("Name::from({name:?})"),
-                    None => "Name::missing()".to_string(),
+                    None => "Name::missing()".to_owned(),
                 }
             )?;
         }
         write!(
-            f,
-            r#"
+            sink,
+            "
                     ],
                 }}
-                .intern(db),
-            }},"#,
+                .intern(database),
+            }},",
         )?;
     }
 
     write!(
-        f,
-        r#"
+        sink,
+        "
         ];
         Builtin {{ name, overloads }}
     }}
 }}
-"#,
+",
     )
 }

@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::{SyntaxKind, parser::ParseError};
 
 pub(crate) enum Event {
@@ -11,11 +13,11 @@ pub(crate) enum Event {
     Placeholder,
 }
 
-impl std::fmt::Debug for Event {
+impl fmt::Debug for Event {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
             Self::StartNode {
                 kind,

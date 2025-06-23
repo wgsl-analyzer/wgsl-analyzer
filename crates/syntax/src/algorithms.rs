@@ -1,14 +1,15 @@
-use itertools::Itertools;
+use itertools::Itertools as _;
 use parser::{SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::{Direction, NodeOrToken, TextRange, TextSize};
 
 use crate::AstNode;
 
-/// Returns ancestors of the node at the offset, sorted by length. This should
-/// do the right thing at an edge, e.g. when searching for expressions at `{
-/// $0foo }` we will get the name reference instead of the whole block, which
-/// we would get if we just did `find_token_at_offset(...).flat_map(|t|
-/// t.parent().ancestors())`.
+/// Returns ancestors of the node at the offset, sorted by length.
+///
+/// This should do the right thing at an edge, e.g. when searching
+/// for expressions at `{ $0foo }` we will get the name reference instead
+/// of the whole block, which we would get if we just did
+/// `find_token_at_offset(...).flat_map(|t| t.parent().ancestors())`.
 pub fn ancestors_at_offset(
     node: &SyntaxNode,
     offset: TextSize,
@@ -42,13 +43,14 @@ pub fn find_node_at_range<N: AstNode>(
 }
 
 /// Skip to next non `trivia` token
+#[must_use]
 pub fn skip_trivia_token(
     mut token: SyntaxToken,
     direction: Direction,
 ) -> Option<SyntaxToken> {
     while token.kind().is_trivia() {
         token = match direction {
-            Direction::Next => token.next_token()?, // spellchecker:disable-line
+            Direction::Next => token.next_token()?,
             Direction::Prev => token.prev_token()?, // spellchecker:disable-line
         }
     }
@@ -56,6 +58,7 @@ pub fn skip_trivia_token(
 }
 
 /// Skip to next non `whitespace` token
+#[must_use]
 pub fn skip_whitespace_token(
     mut token: SyntaxToken,
     direction: Direction,
@@ -93,22 +96,23 @@ pub fn non_trivia_sibling(
     }
 }
 
+#[must_use]
 pub fn least_common_ancestor(
-    u: &SyntaxNode,
-    v: &SyntaxNode,
+    first: &SyntaxNode,
+    second: &SyntaxNode,
 ) -> Option<SyntaxNode> {
-    if u == v {
-        return Some(u.clone());
+    if first == second {
+        return Some(first.clone());
     }
 
-    let u_depth = u.ancestors().count();
-    let v_depth = v.ancestors().count();
-    let keep = u_depth.min(v_depth);
+    let first_depth = first.ancestors().count();
+    let second_depth = second.ancestors().count();
+    let keep = first_depth.min(second_depth);
 
-    let u_candidates = u.ancestors().skip(u_depth - keep);
-    let v_candidates = v.ancestors().skip(v_depth - keep);
-    let (result, _) = u_candidates
-        .zip(v_candidates)
+    let first_candidates = first.ancestors().skip(first_depth - keep);
+    let second_candidates = second.ancestors().skip(second_depth - keep);
+    let (result, _) = first_candidates
+        .zip(second_candidates)
         .find(|(first, second)| first == second)?;
     Some(result)
 }
@@ -120,6 +124,7 @@ pub fn neighbor<T: AstNode>(
     me.syntax().siblings(direction).skip(1).find_map(T::cast)
 }
 
+#[must_use]
 pub fn has_errors(node: &SyntaxNode) -> bool {
-    node.children().any(|it| it.kind() == SyntaxKind::Error)
+    node.children().any(|node| node.kind() == SyntaxKind::Error)
 }

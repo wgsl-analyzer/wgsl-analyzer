@@ -14,3 +14,6 @@ wgsl-formatter.workspace = true
 anyhow.workspace = true
 lexopt.workspace = true
 prettydiff.workspace = true
+
+[lints]
+workspace = true

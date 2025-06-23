@@ -8,35 +8,42 @@ disallowed-methods = [
   { path = "std::process::Command::new", reason = "use `toolchain::command` instead as it forces the choice of a working directory" },
 ]
 
+# Things that do not work due to macros can be handled by typos.toml instead.
 disallowed-names = [
-  "acc",
-  "alloc",
-  "alt",
-  # "args", does not work due to write! macro
-  "attr",
-  "auth",
-  "btn",
-  "char",
-  "col",
-  "ctrl",
-  "dbg",
-  "dest",
-  "dir",
-  "elem",
-  "err",
-  "expr",
-  "ident",
-  "lit",
-  "msg",
-  "params",
-  "prev",
-  "req",
-  # "res", does not work due to format! macro
-  "resp",
-  "sel",
-  "sig",
-  "src",
-  "stmt",
-  "tmp",
-  "ty",
-] # TODO
+  "acc",    # accumulator
+  "alloc",  # allocate
+  "alt",    # alternate
+  "attr",   # attribute
+  "auth",   # authentication
+  "btn",    # button
+  "buf",    # buffer
+  "char",   # character
+  "col",    # column
+  "ctrl",   # control
+  "dbg",    # debug
+  "dest",   # destination
+  "dir",    # directory
+  "dirs",   # directories
+  "elem",   # element
+  "err",    # error
+  "expr",   # expression
+  "ident",  # identifier
+  "idx",    # index
+  "it",     # item, inlay_tooltip
+  "len",    # length
+  "lit",    # literal
+  "msg",    # message
+  "params", # parameters
+  "prev",   # previous
+  "req",    # request
+  "resp",   # response
+  "sel",    # selection
+  "sig",    # sign
+  "src",    # source
+  "stmt",   # statement
+  "tmp",    # temporary
+  "ty",     # r#type
+  # "db",   # database  # does not work due to salsa macros
+  # "args", # arguments # does not work due to write! macro
+  # "res",  # result    # does not work due to format! macro
+]

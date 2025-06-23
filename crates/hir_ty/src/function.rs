@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use hir_def::module_data::Name;
 
-use crate::{db::HirDatabase, ty::Type};
+use crate::{database::HirDatabase, ty::Type};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FunctionDetails {
@@ -30,8 +30,10 @@ impl FunctionDetails {
 pub struct ResolvedFunctionId(salsa::InternId);
 
 impl salsa::InternKey for ResolvedFunctionId {
-    fn from_intern_id(id: salsa::InternId) -> Self {
-        ResolvedFunctionId(id)
+    fn from_intern_id(
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] v: salsa::InternId
+    ) -> Self {
+        Self(v)
     }
 
     fn as_intern_id(&self) -> salsa::InternId {
@@ -42,17 +44,17 @@ impl salsa::InternKey for ResolvedFunctionId {
 impl ResolvedFunctionId {
     pub fn lookup(
         self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Arc<FunctionDetails> {
-        db.lookup_intern_resolved_function(self)
+        database.lookup_intern_resolved_function(self)
     }
 }
 
 impl FunctionDetails {
     pub fn intern(
         self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> ResolvedFunctionId {
-        db.intern_resolved_function(Arc::new(self))
+        database.intern_resolved_function(Arc::new(self))
     }
 }

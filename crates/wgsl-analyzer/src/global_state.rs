@@ -1,16 +1,16 @@
-use std::{
-    sync::{Arc, RwLock},
-    time::Instant,
-};
-
 use base_db::change::Change;
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use ide::{Analysis, AnalysisHost, Cancellable};
 use lsp_types::Url;
 use nohash_hasher::IntMap;
-use parking_lot::RwLockWriteGuard;
+use parking_lot::{
+    MappedRwLockReadGuard, Mutex, RwLock, RwLockReadGuard, RwLockUpgradableReadGuard,
+    RwLockWriteGuard,
+};
 use rustc_hash::FxHashMap;
-use vfs::{AbsPathBuf, FileId, Vfs};
+use std::time::Instant;
+use triomphe::Arc;
+use vfs::{AbsPathBuf, FileId, Vfs, VfsPath};
 
 use crate::{
     Result,
@@ -64,7 +64,7 @@ pub(crate) struct GlobalState {
 
     // VFS
     pub(crate) loader: Handle<Box<dyn vfs::loader::Handle>, Receiver<vfs::loader::Message>>,
-    pub(crate) vfs: Arc<RwLock<(vfs::Vfs, IntMap<FileId, LineEndings>)>>,
+    pub(crate) vfs: Arc<RwLock<(vfs::Vfs, FxHashMap<FileId, LineEndings>)>>,
     pub(crate) vfs_config_version: u32,
     pub(crate) vfs_progress_config_version: u32,
     pub(crate) vfs_done: bool,
@@ -107,18 +107,20 @@ pub(crate) struct GlobalState {
 
 /// An immutable snapshot of the world's state at a point in time.
 pub(crate) struct GlobalStateSnapshot {
-    pub config: Arc<Config>,
-    pub analysis: Analysis,
+    pub(crate) config: Arc<Config>,
+    pub(crate) analysis: Analysis,
     // pub(crate) check_fixes: CheckFixes,
-    // mem_docs: MemDocs,
+    in_memory_documents: InMemoryDocuments,
     // pub(crate) semantic_tokens_cache: Arc<Mutex<FxHashMap<Url, SemanticTokens>>>,
-    pub vfs: Arc<RwLock<(vfs::Vfs, IntMap<FileId, LineEndings>)>>,
-    pub workspaces: Arc<[ProjectWorkspace]>,
+    vfs: Arc<RwLock<(vfs::Vfs, FxHashMap<FileId, LineEndings>)>>,
+    pub(crate) workspaces: Arc<[ProjectWorkspace]>,
     // used to signal semantic highlighting to fall back to syntax based highlighting until
     // proc-macros have been loaded
     // FIXME: Can we derive this from somewhere else?
     // pub(crate) flycheck: Arc<[FlycheckHandle]>,
 }
+
+impl std::panic::UnwindSafe for GlobalStateSnapshot {}
 
 impl GlobalState {
     pub(crate) fn new(
@@ -149,7 +151,7 @@ impl GlobalState {
             TaskQueue { sender, receiver }
         };
 
-        let mut analysis_host = AnalysisHost::new();
+        let mut analysis_host = AnalysisHost::new(None);
         // if let Some(capacities) = config.lru_query_capacities_config() {
         //     analysis_host.update_lru_capacities(capacities);
         // }
@@ -196,7 +198,7 @@ impl GlobalState {
             // discover_handle: None,
             // discover_sender,
             // discover_receiver,
-            vfs: Arc::new(RwLock::new((vfs::Vfs::default(), IntMap::default()))),
+            vfs: Arc::new(RwLock::new((vfs::Vfs::default(), FxHashMap::default()))),
             vfs_config_version: 0,
             vfs_progress_config_version: 0,
             vfs_span: None,
@@ -222,7 +224,7 @@ impl GlobalState {
     pub(crate) fn process_changes(&mut self) -> bool {
         let change = {
             let mut change = Change::new();
-            let (vfs, line_endings_map) = &mut *self.vfs.write().unwrap();
+            let (vfs, line_endings_map) = &mut *self.vfs.write();
             let changed_files = vfs.take_changes();
             if changed_files.is_empty() {
                 return false;
@@ -262,7 +264,7 @@ impl GlobalState {
             analysis: self.analysis_host.analysis(),
             vfs: Arc::clone(&self.vfs),
             // check_fixes: Arc::clone(&self.diagnostics.check_fixes),
-            // mem_docs: self.mem_docs.clone(),
+            in_memory_documents: self.mem_docs.clone(),
             // semantic_tokens_cache: Arc::clone(&self.semantic_tokens_cache),
             // flycheck: self.flycheck.clone(),
         }
@@ -341,25 +343,30 @@ impl GlobalState {
 }
 
 impl GlobalStateSnapshot {
+    fn vfs_read(&self) -> MappedRwLockReadGuard<'_, vfs::Vfs> {
+        RwLockReadGuard::map(self.vfs.read(), |(vfs, _)| vfs)
+    }
+
+    /// Returns `None` if the file was excluded.
     pub(crate) fn url_to_file_id(
         &self,
         url: &Url,
-    ) -> Result<FileId> {
-        url_to_file_id(&self.vfs.read().unwrap().0, url)
+    ) -> anyhow::Result<Option<FileId>> {
+        url_to_file_id(&self.vfs_read(), url)
     }
 
     pub(crate) fn file_id_to_url(
         &self,
         id: FileId,
     ) -> Url {
-        file_id_to_url(&self.vfs.read().unwrap().0, id)
+        file_id_to_url(&self.vfs.read().0, id)
     }
 
     pub(crate) fn file_line_index(
         &self,
         file_id: FileId,
     ) -> Cancellable<LineIndex> {
-        let endings = self.vfs.read().unwrap().1[&file_id];
+        let endings = self.vfs.read().1[&file_id];
         let index = self.analysis.line_index(file_id)?;
         let result = LineIndex {
             index,
@@ -367,6 +374,17 @@ impl GlobalStateSnapshot {
             encoding: self.config.caps().negotiated_encoding(),
         };
         Ok(result)
+    }
+
+    pub(crate) fn file_version(
+        &self,
+        file_id: FileId,
+    ) -> Option<i32> {
+        Some(
+            self.in_memory_documents
+                .get(self.vfs_read().file_path(file_id))?
+                .version,
+        )
     }
 }
 
@@ -379,11 +397,25 @@ pub(crate) fn file_id_to_url(
     to_proto::url_from_abs_path(path)
 }
 
+/// Returns `None` if the file was excluded.
 pub(crate) fn url_to_file_id(
     vfs: &vfs::Vfs,
     url: &Url,
-) -> Result<FileId> {
+) -> anyhow::Result<Option<FileId>> {
     let path = from_proto::vfs_path(url)?;
-    vfs.file_id(&path)
-        .ok_or_else(|| anyhow::anyhow!("file not found: {}", path))
+    vfs_path_to_file_id(vfs, &path)
+}
+
+/// Returns `None` if the file was excluded.
+pub(crate) fn vfs_path_to_file_id(
+    vfs: &vfs::Vfs,
+    vfs_path: &VfsPath,
+) -> anyhow::Result<Option<FileId>> {
+    let (file_id, excluded) = vfs
+        .file_id(vfs_path)
+        .ok_or_else(|| anyhow::format_err!("file not found: {vfs_path}"))?;
+    match excluded {
+        vfs::FileExcluded::Yes => Ok(None),
+        vfs::FileExcluded::No => Ok(Some(file_id)),
+    }
 }

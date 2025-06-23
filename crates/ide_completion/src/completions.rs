@@ -1,17 +1,20 @@
+use ide_db::RootDatabase;
+
 use crate::item::{Builder, CompletionItem};
 
 pub(crate) mod dot;
 pub(crate) mod expression;
 pub(crate) mod import;
 
+/// Represents an in-progress set of completions being built.
 #[derive(Debug, Default)]
 pub struct Completions {
-    buf: Vec<CompletionItem>,
+    buffer: Vec<CompletionItem>,
 }
 
 impl From<Completions> for Vec<CompletionItem> {
     fn from(value: Completions) -> Self {
-        value.buf
+        value.buffer
     }
 }
 
@@ -21,8 +24,9 @@ impl Builder {
     pub(crate) fn add_to(
         self,
         accumulator: &mut Completions,
+        database: &RootDatabase,
     ) {
-        accumulator.add(self.build())
+        accumulator.add(self.build(database));
     }
 }
 
@@ -31,7 +35,7 @@ impl Completions {
         &mut self,
         item: CompletionItem,
     ) {
-        self.buf.push(item);
+        self.buffer.push(item);
     }
 
     fn add_opt(
@@ -39,7 +43,7 @@ impl Completions {
         item: Option<CompletionItem>,
     ) {
         if let Some(item) = item {
-            self.buf.push(item)
+            self.buffer.push(item);
         }
     }
 
@@ -50,6 +54,6 @@ impl Completions {
         I: IntoIterator,
         I::Item: Into<CompletionItem>,
     {
-        items.into_iter().for_each(|item| self.add(item.into()))
+        items.into_iter().for_each(|item| self.add(item.into()));
     }
 }

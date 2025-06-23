@@ -1,6 +1,6 @@
-use hir_def::db::{DefinitionWithBodyId, GlobalVariableId};
+use hir_def::database::{DefinitionWithBodyId, GlobalVariableId};
 use hir_ty::{
-    db::HirDatabase,
+    database::HirDatabase,
     ty::{ArrayType, TyKind},
     validate::AddressSpaceError,
 };
@@ -10,15 +10,15 @@ pub enum GlobalVariableDiagnostic {
     AddressSpaceError(AddressSpaceError),
 }
 
-pub fn collect(
-    db: &dyn HirDatabase,
+pub fn collect<Function: FnMut(GlobalVariableDiagnostic)>(
+    database: &dyn HirDatabase,
     var: GlobalVariableId,
-    mut f: impl FnMut(GlobalVariableDiagnostic),
+    mut diagnostic_builder: Function,
 ) {
-    let data = db.global_var_data(var);
-    let infer = db.infer(DefinitionWithBodyId::GlobalVariable(var));
+    let data = database.global_var_data(var);
+    let infer = database.infer(DefinitionWithBodyId::GlobalVariable(var));
 
-    let ty_kind = infer.return_type.map(|r#type| r#type.kind(db));
+    let ty_kind = infer.return_type.map(|r#type| r#type.kind(database));
 
     if let Some(address_space) = data.address_space {
         hir_ty::validate::validate_address_space(
@@ -26,9 +26,9 @@ pub fn collect(
             data.access_mode
                 .unwrap_or_else(|| address_space.default_access_mode()),
             hir_ty::validate::Scope::Module,
-            ty_kind.unwrap_or(TyKind::Error),
-            db,
-            |error| f(GlobalVariableDiagnostic::AddressSpaceError(error)),
+            &ty_kind.unwrap_or(TyKind::Error),
+            database,
+            |error| diagnostic_builder(GlobalVariableDiagnostic::AddressSpaceError(error)),
         );
     } else if let Some(r#type) = ty_kind {
         if !matches!(
@@ -41,7 +41,7 @@ pub fn collect(
                     ..
                 })
         ) {
-            f(GlobalVariableDiagnostic::MissingAddressSpace);
+            diagnostic_builder(GlobalVariableDiagnostic::MissingAddressSpace);
         }
     }
 }

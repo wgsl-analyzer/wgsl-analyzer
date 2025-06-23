@@ -1,10 +1,10 @@
-use std::{collections::hash_map::Entry, sync::Arc};
+use std::{collections::hash_map::Entry, fmt, sync::Arc};
 
 use either::Either;
 use hir_def::{
     body::{BindingId, Body},
     data::{FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData},
-    db::{
+    database::{
         DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, OverrideId,
         TypeAliasId,
     },
@@ -21,7 +21,7 @@ use rustc_hash::FxHashMap;
 
 use crate::{
     builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
-    db::HirDatabase,
+    database::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
     ty::{
         ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Pointer, Reference, SamplerType,
@@ -31,28 +31,30 @@ use crate::{
 };
 
 pub fn infer_query(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     def: DefinitionWithBodyId,
 ) -> Arc<InferenceResult> {
-    let resolver = def.resolver(db.upcast());
-    let mut ctx = InferenceContext::new(db, def, resolver);
+    let resolver = def.resolver(database);
+    let mut context = InferenceContext::new(database, def, resolver);
 
     match def {
-        DefinitionWithBodyId::Function(f) => ctx.collect_fn(f, &db.fn_data(f)),
+        DefinitionWithBodyId::Function(function) => {
+            context.collect_fn(function, &database.fn_data(function));
+        },
         DefinitionWithBodyId::GlobalVariable(var) => {
-            ctx.collect_global_variable(var, &db.global_var_data(var))
+            context.collect_global_variable(var, &database.global_var_data(var));
         },
         DefinitionWithBodyId::GlobalConstant(constant) => {
-            ctx.collect_global_constant(constant, &db.global_constant_data(constant))
+            context.collect_global_constant(constant, &database.global_constant_data(constant));
         },
         DefinitionWithBodyId::Override(override_decl) => {
-            ctx.collect_override(override_decl, &db.override_data(override_decl))
+            context.collect_override(override_decl, &database.override_data(override_decl));
         },
     }
 
-    ctx.infer_body();
+    context.infer_body();
 
-    Arc::new(ctx.resolve_all())
+    Arc::new(context.resolve_all())
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -130,7 +132,7 @@ pub enum TypeContainer {
 
 impl From<ExpressionId> for TypeContainer {
     fn from(id: ExpressionId) -> Self {
-        TypeContainer::Expr(id)
+        Self::Expr(id)
     }
 }
 
@@ -140,6 +142,7 @@ pub enum ResolvedCall {
     OtherTypeInitializer(Type),
 }
 
+#[expect(clippy::partial_pub_fields, reason = "TODO")]
 #[derive(Default, PartialEq, Eq, Debug)]
 pub struct InferenceResult {
     pub type_of_expression: ArenaMap<ExpressionId, Type>,
@@ -151,6 +154,7 @@ pub struct InferenceResult {
 }
 
 impl InferenceResult {
+    #[must_use]
     pub fn field_resolution(
         &self,
         expression: ExpressionId,
@@ -158,6 +162,7 @@ impl InferenceResult {
         self.field_resolutions.get(&expression).copied()
     }
 
+    #[must_use]
     pub fn call_resolution(
         &self,
         expression: ExpressionId,
@@ -166,8 +171,8 @@ impl InferenceResult {
     }
 }
 
-pub struct InferenceContext<'db> {
-    db: &'db dyn HirDatabase,
+pub struct InferenceContext<'database> {
+    database: &'database dyn HirDatabase,
     owner: DefinitionWithBodyId,
     resolver: Resolver,
     body: Arc<Body>,
@@ -175,17 +180,17 @@ pub struct InferenceContext<'db> {
     return_ty: Option<Type>,
 }
 
-impl<'db> InferenceContext<'db> {
+impl<'database> InferenceContext<'database> {
     pub fn new(
-        db: &'db dyn HirDatabase,
+        database: &'database dyn HirDatabase,
         owner: DefinitionWithBodyId,
         resolver: Resolver,
     ) -> Self {
         Self {
-            db,
+            database,
             owner,
             resolver,
-            body: db.body(owner),
+            body: database.body(owner),
             result: InferenceResult::default(),
             return_ty: None,
         }
@@ -235,7 +240,7 @@ impl<'db> InferenceContext<'db> {
         let r#type = var.r#type.map(|r#type| {
             self.lower_ty(
                 TypeContainer::GlobalVar(id),
-                &self.db.lookup_intern_type_ref(r#type),
+                &self.database.lookup_intern_type_ref(r#type),
             )
         });
 
@@ -256,7 +261,7 @@ impl<'db> InferenceContext<'db> {
         let r#type = constant.r#type.map(|r#type| {
             self.lower_ty(
                 TypeContainer::GlobalConstant(id),
-                &self.db.lookup_intern_type_ref(r#type),
+                &self.database.lookup_intern_type_ref(r#type),
             )
         });
 
@@ -277,7 +282,7 @@ impl<'db> InferenceContext<'db> {
         let r#type = constant.r#type.map(|r#type| {
             self.lower_ty(
                 TypeContainer::Override(id),
-                &self.db.lookup_intern_type_ref(r#type),
+                &self.database.lookup_intern_type_ref(r#type),
             )
         });
 
@@ -293,19 +298,19 @@ impl<'db> InferenceContext<'db> {
     fn collect_fn(
         &mut self,
         function_id: FunctionId,
-        f: &FunctionData,
+        function_data: &FunctionData,
     ) {
         let body = Arc::clone(&self.body);
-        for (&(parameter, _), &id) in f.parameters.iter().zip(&body.parameters) {
-            let type_ref = self.db.lookup_intern_type_ref(parameter);
+        for (&(parameter, _), &id) in function_data.parameters.iter().zip(&body.parameters) {
+            let type_ref = self.database.lookup_intern_type_ref(parameter);
             let param_ty =
                 self.lower_ty(TypeContainer::FunctionParameter(function_id, id), &type_ref);
             self.set_binding_ty(id, param_ty);
         }
-        self.return_ty = f.return_type.map(|type_ref| {
+        self.return_ty = function_data.return_type.map(|type_ref| {
             self.lower_ty(
                 TypeContainer::FunctionReturn(function_id),
-                &self.db.lookup_intern_type_ref(type_ref),
+                &self.database.lookup_intern_type_ref(type_ref),
             )
         });
     }
@@ -318,7 +323,7 @@ impl<'db> InferenceContext<'db> {
             Some(Either::Right(expression)) => {
                 let r#type = self.infer_expression_expect(
                     expression,
-                    TypeExpectation::from_option(self.return_ty),
+                    &TypeExpectation::from_option(self.return_ty),
                 );
                 if self.return_ty.is_none() {
                     self.return_ty = Some(r#type);
@@ -339,25 +344,25 @@ impl<'db> InferenceContext<'db> {
         let resolver = self.resolver.clone();
         match self.owner {
             DefinitionWithBodyId::Function(function) => {
-                let expression_scopes = self.db.expression_scopes(self.owner);
+                let expression_scopes = self.database.expression_scopes(self.owner);
                 let scope_id = expression_scopes.scope_for_expression(expression).unwrap();
                 resolver.push_expression_scope(function, expression_scopes, scope_id)
             },
-            DefinitionWithBodyId::GlobalVariable(_) => resolver,
-            DefinitionWithBodyId::GlobalConstant(_) => resolver,
-            DefinitionWithBodyId::Override(_) => resolver,
+            DefinitionWithBodyId::GlobalVariable(_)
+            | DefinitionWithBodyId::GlobalConstant(_)
+            | DefinitionWithBodyId::Override(_) => resolver,
         }
     }
 
+    #[expect(clippy::too_many_lines, reason = "TODO")]
     fn infer_statement(
         &mut self,
         statement: StatementId,
     ) {
         let body = Arc::clone(&self.body);
 
-        match body.statements[statement] {
-            Statement::Missing => {},
-            Statement::Compound { ref statements } => {
+        match &body.statements[statement] {
+            Statement::Compound { statements } => {
                 for statement in statements {
                     self.infer_statement(*statement);
                 }
@@ -372,12 +377,12 @@ impl<'db> InferenceContext<'db> {
                 let r#type = type_ref.map(|r#type| {
                     self.lower_ty(
                         TypeContainer::VariableStatement(statement),
-                        &self.db.lookup_intern_type_ref(r#type),
+                        &self.database.lookup_intern_type_ref(r#type),
                     )
                 });
                 let r#type = if let Some(init) = initializer {
                     let expression_ty =
-                        self.infer_expression_expect(init, TypeExpectation::from_option(r#type));
+                        self.infer_expression_expect(*init, &TypeExpectation::from_option(r#type));
                     r#type.unwrap_or(expression_ty)
                 } else {
                     r#type.unwrap_or_else(|| self.error_ty())
@@ -388,7 +393,7 @@ impl<'db> InferenceContext<'db> {
                     address_space.unwrap_or(AddressSpace::Function),
                     access_mode.unwrap_or_else(AccessMode::read_write),
                 );
-                self.set_binding_ty(binding_id, ref_ty)
+                self.set_binding_ty(*binding_id, ref_ty);
             },
             Statement::ConstStatement {
                 binding_id,
@@ -399,18 +404,18 @@ impl<'db> InferenceContext<'db> {
                 let r#type = type_ref.map(|r#type| {
                     self.lower_ty(
                         TypeContainer::VariableStatement(statement),
-                        &self.db.lookup_intern_type_ref(r#type),
+                        &self.database.lookup_intern_type_ref(r#type),
                     )
                 });
                 let r#type = if let Some(init) = initializer {
                     let expression_ty =
-                        self.infer_expression_expect(init, TypeExpectation::from_option(r#type));
+                        self.infer_expression_expect(*init, &TypeExpectation::from_option(r#type));
                     r#type.unwrap_or(expression_ty)
                 } else {
                     r#type.unwrap_or_else(|| self.error_ty())
                 };
 
-                self.set_binding_ty(binding_id, r#type)
+                self.set_binding_ty(*binding_id, r#type);
             },
             Statement::LetStatement {
                 binding_id,
@@ -421,25 +426,25 @@ impl<'db> InferenceContext<'db> {
                 let r#type = type_ref.map(|r#type| {
                     self.lower_ty(
                         TypeContainer::VariableStatement(statement),
-                        &self.db.lookup_intern_type_ref(r#type),
+                        &self.database.lookup_intern_type_ref(r#type),
                     )
                 });
                 let r#type = if let Some(init) = initializer {
                     let expression_ty =
-                        self.infer_expression_expect(init, TypeExpectation::from_option(r#type));
+                        self.infer_expression_expect(*init, &TypeExpectation::from_option(r#type));
                     r#type.unwrap_or(expression_ty)
                 } else {
                     r#type.unwrap_or_else(|| self.error_ty())
                 };
 
-                self.set_binding_ty(binding_id, r#type)
+                self.set_binding_ty(*binding_id, r#type);
             },
 
             Statement::Return { expression } => {
                 if let Some(expression) = expression {
                     self.infer_expression_expect(
-                        expression,
-                        TypeExpectation::from_option(self.return_ty),
+                        *expression,
+                        &TypeExpectation::from_option(self.return_ty),
                     );
                 }
             },
@@ -447,58 +452,55 @@ impl<'db> InferenceContext<'db> {
                 left_side,
                 right_side,
             } => {
-                let left_ty = self.infer_expression(left_side);
+                let left_ty = self.infer_expression(*left_side);
 
-                let kind = left_ty.kind(self.db);
-                let left_inner = match kind {
-                    TyKind::Reference(r) => r.inner,
-                    _ => {
-                        self.push_diagnostic(InferenceDiagnostic::AssignmentNotAReference {
-                            left_side,
-                            actual: left_ty,
-                        });
-                        self.error_ty()
-                    },
+                let kind = left_ty.kind(self.database);
+                let left_inner = if let TyKind::Reference(reference) = kind {
+                    reference.inner
+                } else {
+                    self.push_diagnostic(InferenceDiagnostic::AssignmentNotAReference {
+                        left_side: *left_side,
+                        actual: left_ty,
+                    });
+                    self.error_ty()
                 };
 
-                self.infer_expression_expect(right_side, TypeExpectation::from_ty(left_inner));
+                self.infer_expression_expect(*right_side, &TypeExpectation::from_ty(left_inner));
             },
             Statement::CompoundAssignment {
                 left_side,
                 right_side,
                 op,
             } => {
-                let left_ty = self.infer_expression(left_side);
+                let left_ty = self.infer_expression(*left_side);
 
-                let left_kind = left_ty.kind(self.db);
-                let left_inner = match left_kind {
-                    TyKind::Reference(r) => r.inner,
-                    _ => {
-                        self.push_diagnostic(InferenceDiagnostic::AssignmentNotAReference {
-                            left_side,
-                            actual: left_ty,
-                        });
-                        self.error_ty()
-                    },
+                let left_kind = left_ty.kind(self.database);
+                let left_inner = if let TyKind::Reference(reference) = left_kind {
+                    reference.inner
+                } else {
+                    self.push_diagnostic(InferenceDiagnostic::AssignmentNotAReference {
+                        left_side: *left_side,
+                        actual: left_ty,
+                    });
+                    self.error_ty()
                 };
 
-                let r#type = self.infer_binary_op(left_side, right_side, op.into());
+                let r#type = self.infer_binary_op(*left_side, *right_side, (*op).into());
 
-                self.expect_same_type(left_side, r#type, left_inner);
+                self.expect_same_type(*left_side, r#type, left_inner);
             },
             Statement::IncrDecr { expression, .. } => {
-                let left_ty = self.infer_expression(expression);
+                let left_ty = self.infer_expression(*expression);
 
-                let left_kind = left_ty.kind(self.db);
-                let left_inner = match left_kind {
-                    TyKind::Reference(r) => r.inner,
-                    _ => {
-                        self.push_diagnostic(InferenceDiagnostic::AssignmentNotAReference {
-                            left_side: expression,
-                            actual: left_ty,
-                        });
-                        self.error_ty()
-                    },
+                let left_kind = left_ty.kind(self.database);
+                let left_inner = if let TyKind::Reference(reference) = left_kind {
+                    reference.inner
+                } else {
+                    self.push_diagnostic(InferenceDiagnostic::AssignmentNotAReference {
+                        left_side: *expression,
+                        actual: left_ty,
+                    });
+                    self.error_ty()
                 };
 
                 if self
@@ -506,7 +508,7 @@ impl<'db> InferenceContext<'db> {
                     .is_err()
                 {
                     self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
-                        expression,
+                        expression: *expression,
                         actual: left_inner,
                         expected: TypeExpectation::Type(TypeExpectationInner::IntegerScalar),
                     });
@@ -515,32 +517,32 @@ impl<'db> InferenceContext<'db> {
             Statement::If {
                 condition,
                 block,
-                ref else_if_blocks,
+                else_if_blocks,
                 else_block,
             } => {
-                self.infer_statement(block);
+                self.infer_statement(*block);
                 for else_if_block in else_if_blocks {
                     self.infer_statement(*else_if_block);
                 }
                 if let Some(else_block) = else_block {
-                    self.infer_statement(else_block);
+                    self.infer_statement(*else_block);
                 }
-                self.infer_expression_expect(condition, TypeExpectation::from_ty(self.bool_ty()));
+                self.infer_expression_expect(*condition, &TypeExpectation::from_ty(self.bool_ty()));
             },
             Statement::While { condition, block } => {
-                self.infer_statement(block);
-                self.infer_expression_expect(condition, TypeExpectation::from_ty(self.bool_ty()));
+                self.infer_statement(*block);
+                self.infer_expression_expect(*condition, &TypeExpectation::from_ty(self.bool_ty()));
             },
             Statement::Switch {
                 expression,
-                ref case_blocks,
-                ref default_block,
+                case_blocks,
+                default_block,
             } => {
-                let r#type = self.infer_expression(expression).unref(self.db);
+                let r#type = self.infer_expression(*expression).unref(self.database);
 
                 for (selectors, case) in case_blocks {
                     for selector in selectors {
-                        self.infer_expression_expect(*selector, TypeExpectation::from_ty(r#type));
+                        self.infer_expression_expect(*selector, &TypeExpectation::from_ty(r#type));
                     }
                     self.infer_statement(*case);
                 }
@@ -556,69 +558,75 @@ impl<'db> InferenceContext<'db> {
                 block,
             } => {
                 if let Some(init) = initializer {
-                    self.infer_statement(init);
+                    self.infer_statement(*init);
                 }
                 if let Some(cont) = continuing_part {
-                    self.infer_statement(cont);
+                    self.infer_statement(*cont);
                 }
 
                 if let Some(condition) = condition {
                     self.infer_expression_expect(
-                        condition,
-                        TypeExpectation::from_ty(self.bool_ty()),
+                        *condition,
+                        &TypeExpectation::from_ty(self.bool_ty()),
                     );
                 }
 
-                self.infer_statement(block);
+                self.infer_statement(*block);
             },
             Statement::Loop { body } => {
-                self.infer_statement(body);
+                self.infer_statement(*body);
             },
-            Statement::Discard => {},
-            Statement::Break => {},
-            Statement::Continue => {},
-            Statement::Continuing { block } => self.infer_statement(block),
+            Statement::Discard | Statement::Break | Statement::Continue | Statement::Missing => {},
+            Statement::Continuing { block } => self.infer_statement(*block),
             Statement::Expression { expression } => {
-                self.infer_expression(expression);
+                self.infer_expression(*expression);
             },
         }
     }
 
     fn expect_ty_inner(
-        &mut self,
+        &self,
         r#type: Type,
         expectation: &TypeExpectationInner,
     ) -> Result<(), ()> {
-        let ty_kind = r#type.kind(self.db);
-        if let TyKind::Error = ty_kind {
+        let ty_kind = r#type.kind(self.database);
+        if ty_kind == TyKind::Error {
             return Ok(());
-        };
+        }
 
         match *expectation {
-            TypeExpectationInner::Exact(expected_type) => match expected_type.kind(self.db) {
-                TyKind::Error => Ok(()),
-                _ => {
-                    if r#type == expected_type {
-                        Ok(())
-                    } else {
-                        Err(())
-                    }
-                },
+            TypeExpectationInner::Exact(expected_type) => {
+                if expected_type.kind(self.database) == TyKind::Error || r#type == expected_type {
+                    Ok(())
+                } else {
+                    Err(())
+                }
             },
-            TypeExpectationInner::I32OrF32 => match r#type.kind(self.db).unref(self.db).as_ref() {
-                TyKind::Scalar(ScalarType::I32 | ScalarType::F32) => Ok(()),
-                _ => Err(()),
+            TypeExpectationInner::I32OrF32 => {
+                if let TyKind::Scalar(ScalarType::I32 | ScalarType::F32) =
+                    r#type.kind(self.database).unref(self.database).as_ref()
+                {
+                    Ok(())
+                } else {
+                    Err(())
+                }
             },
             TypeExpectationInner::NumericScalar => {
-                match r#type.kind(self.db).unref(self.db).as_ref() {
-                    TyKind::Scalar(ScalarType::I32 | ScalarType::F32 | ScalarType::U32) => Ok(()),
-                    _ => Err(()),
+                if let TyKind::Scalar(ScalarType::I32 | ScalarType::F32 | ScalarType::U32) =
+                    r#type.kind(self.database).unref(self.database).as_ref()
+                {
+                    Ok(())
+                } else {
+                    Err(())
                 }
             },
             TypeExpectationInner::IntegerScalar => {
-                match r#type.kind(self.db).unref(self.db).as_ref() {
-                    TyKind::Scalar(ScalarType::I32 | ScalarType::U32) => Ok(()),
-                    _ => Err(()),
+                if let TyKind::Scalar(ScalarType::I32 | ScalarType::U32) =
+                    r#type.kind(self.database).unref(self.database).as_ref()
+                {
+                    Ok(())
+                } else {
+                    Err(())
                 }
             },
         }
@@ -630,7 +638,7 @@ impl<'db> InferenceContext<'db> {
         expected: Type,
         actual: Type,
     ) {
-        let actual_unref = actual.unref(self.db);
+        let actual_unref = actual.unref(self.database);
         if expected != actual_unref {
             self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
                 expression,
@@ -643,112 +651,112 @@ impl<'db> InferenceContext<'db> {
     fn infer_expression_expect(
         &mut self,
         expression: ExpressionId,
-        expected: TypeExpectation,
+        expected: &TypeExpectation,
     ) -> Type {
-        let r#type = self.infer_expression(expression).unref(self.db);
+        let r#type = self.infer_expression(expression).unref(self.database);
 
         match &expected {
             TypeExpectation::Type(expected_type) => {
-                match self.expect_ty_inner(r#type, expected_type) {
-                    Ok(_) => r#type,
-                    Err(_) => {
-                        self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
-                            expression,
-                            actual: r#type,
-                            expected: expected.clone(),
-                        });
-                        r#type
-                    },
+                if self.expect_ty_inner(r#type, expected_type) != Ok(()) {
+                    self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
+                        expression,
+                        actual: r#type,
+                        expected: expected.clone(),
+                    });
                 }
             },
             TypeExpectation::TypeOrVecOf(expect) => {
-                match self.expect_ty_inner(r#type.this_or_vec_inner(self.db), expect) {
-                    Ok(_) => r#type,
-                    Err(_) => {
-                        self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
-                            expression,
-                            actual: r#type,
-                            expected: expected.clone(),
-                        });
-                        r#type
-                    },
+                if self.expect_ty_inner(r#type.this_or_vec_inner(self.database), expect) != Ok(()) {
+                    self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
+                        expression,
+                        actual: r#type,
+                        expected: expected.clone(),
+                    });
                 }
             },
-            TypeExpectation::None => r#type,
+            TypeExpectation::None => {},
         }
+        r#type
     }
 
+    #[expect(clippy::too_many_lines, reason = "TODO")]
     fn infer_expression(
         &mut self,
         expression: ExpressionId,
     ) -> Type {
         let body = Arc::clone(&self.body);
-        let r#type = match body.exprs[expression] {
+        let r#type = match &body.exprs[expression] {
             Expression::Missing => self.error_ty(),
             Expression::BinaryOperation {
                 left_side,
                 right_side,
                 operation,
-            } => self.infer_binary_op(left_side, right_side, operation),
-            Expression::UnaryOperator { expression, op } => self.infer_unary_op(expression, op),
+            } => self.infer_binary_op(*left_side, *right_side, *operation),
+            Expression::UnaryOperator { expression, op } => self.infer_unary_op(*expression, *op),
             Expression::Field {
                 expression: field_expression,
-                ref name,
+                name,
             } => {
-                let expression_ty = self.infer_expression(field_expression);
-                if expression_ty.is_err(self.db) {
+                let expression_ty = self.infer_expression(*field_expression);
+                if expression_ty.is_err(self.database) {
                     return self.error_ty();
                 }
 
-                match *expression_ty.kind(self.db).unref(self.db).as_ref() {
+                match expression_ty
+                    .kind(self.database)
+                    .unref(self.database)
+                    .as_ref()
+                {
                     TyKind::Struct(r#struct) => {
-                        let struct_data = self.db.struct_data(r#struct);
-                        let field_types = self.db.field_types(r#struct);
+                        let struct_data = self.database.struct_data(*r#struct);
+                        let field_types = self.database.field_types(*r#struct);
 
-                        match struct_data.field(name) {
-                            Some(field) => {
-                                self.set_field_resolution(expression, FieldId { r#struct, field });
+                        if let Some(field) = struct_data.field(name) {
+                            self.set_field_resolution(
+                                expression,
+                                FieldId {
+                                    r#struct: *r#struct,
+                                    field,
+                                },
+                            );
 
-                                let field_ty = field_types[field];
-                                // TODO: correct Address Spaces/access mode
-                                self.make_ref(
-                                    field_ty,
-                                    AddressSpace::Private,
-                                    AccessMode::read_write(),
-                                )
-                            },
-                            None => {
-                                self.push_diagnostic(InferenceDiagnostic::NoSuchField {
-                                    expression: field_expression,
-                                    name: name.clone(),
-                                    r#type: expression_ty,
-                                });
-                                self.error_ty()
-                            },
-                        }
-                    },
-                    TyKind::Vector(ref vec_type) => match self.vec_swizzle(vec_type, name) {
-                        Ok(r#type) => r#type,
-                        Err(_) => {
+                            let field_ty = field_types[field];
+                            // TODO: correct Address Spaces/access mode
+                            self.make_ref(field_ty, AddressSpace::Private, AccessMode::read_write())
+                        } else {
                             self.push_diagnostic(InferenceDiagnostic::NoSuchField {
-                                expression: field_expression,
+                                expression: *field_expression,
                                 name: name.clone(),
                                 r#type: expression_ty,
                             });
                             self.error_ty()
-                        },
+                        }
                     },
-                    TyKind::Matrix(_) => {
-                        self.push_diagnostic(InferenceDiagnostic::NoSuchField {
-                            expression: field_expression,
-                            name: name.clone(),
-                            r#type: expression_ty,
-                        });
-                        self.error_ty()
+                    TyKind::Vector(vec_type) => {
+                        if let Ok(r#type) = self.vec_swizzle(vec_type, name) {
+                            r#type
+                        } else {
+                            self.push_diagnostic(InferenceDiagnostic::NoSuchField {
+                                expression: *field_expression,
+                                name: name.clone(),
+                                r#type: expression_ty,
+                            });
+                            self.error_ty()
+                        }
                     },
-                    _ => {
+                    TyKind::Error
+                    | TyKind::Scalar(_)
+                    | TyKind::Atomic(_)
+                    | TyKind::Matrix(_)
+                    | TyKind::Array(_)
+                    | TyKind::Texture(_)
+                    | TyKind::Sampler(_)
+                    | TyKind::Reference(_)
+                    | TyKind::Pointer(_)
+                    | TyKind::BoundVar(_)
+                    | TyKind::StorageTypeOfTexelFormat(_) => {
                         self.push_diagnostic(InferenceDiagnostic::NoSuchField {
-                            expression: field_expression,
+                            expression: *field_expression,
                             name: name.clone(),
                             r#type: expression_ty,
                         });
@@ -756,49 +764,55 @@ impl<'db> InferenceContext<'db> {
                     },
                 }
             },
-            Expression::Call {
-                ref callee,
-                ref arguments,
-            } => {
+            Expression::Call { callee, arguments } => {
                 let arguments: Vec<_> = arguments
                     .iter()
-                    .map(|&arg| self.infer_expression(arg).unref(self.db))
+                    .map(|&arg| self.infer_expression(arg).unref(self.database))
                     .collect();
                 self.infer_call(expression, callee, arguments)
             },
             Expression::Bitcast { r#type, expression } => {
-                self.infer_expression(expression);
+                self.infer_expression(*expression);
 
-                self.try_lower_ty(&self.db.lookup_intern_type_ref(r#type))
+                self.try_lower_ty(&self.database.lookup_intern_type_ref(*r#type))
                     .unwrap_or_else(|_| self.error_ty())
             },
             Expression::Index { left_side, index } => {
-                let left_side = self.infer_expression(left_side);
-                let _index_expression = self.infer_expression(index);
+                let left_side = self.infer_expression(*left_side);
+                let _index_expression = self.infer_expression(*index);
                 // TODO check index expression
 
-                let left_kind = left_side.kind(self.db);
+                let left_kind = left_side.kind(self.database);
                 let is_reference = matches!(left_kind, TyKind::Reference(_));
 
-                let left_inner = left_kind.unref(self.db);
+                let left_inner = left_kind.unref(self.database);
 
                 let r#type = match &*left_inner {
                     TyKind::Vector(vec) => {
                         // TODO out of bounds
-                        vec.inner
+                        vec.component_type
                     },
-                    TyKind::Matrix(mat) => {
+                    TyKind::Matrix(matrix_type) => {
                         // TODO out of bounds
-                        self.db.intern_ty(TyKind::Vector(VectorType {
-                            inner: mat.inner,
-                            size: mat.rows,
+                        self.database.intern_ty(TyKind::Vector(VectorType {
+                            component_type: matrix_type.inner,
+                            size: matrix_type.rows,
                         }))
                     },
                     TyKind::Array(array) => {
                         // TODO out of bounds
                         array.inner
                     },
-                    _ => {
+                    TyKind::Error
+                    | TyKind::Scalar(_)
+                    | TyKind::Atomic(_)
+                    | TyKind::Struct(_)
+                    | TyKind::Texture(_)
+                    | TyKind::Sampler(_)
+                    | TyKind::Reference(_)
+                    | TyKind::Pointer(_)
+                    | TyKind::BoundVar(_)
+                    | TyKind::StorageTypeOfTexelFormat(_) => {
                         self.push_diagnostic(InferenceDiagnostic::ArrayAccessInvalidType {
                             expression,
                             r#type: left_side,
@@ -807,21 +821,22 @@ impl<'db> InferenceContext<'db> {
                     },
                 };
 
-                match is_reference {
-                    true => self.make_ref(r#type, AddressSpace::Private, AccessMode::read_write()), // TODO use correct
-                    false => r#type,
+                if is_reference {
+                    self.make_ref(r#type, AddressSpace::Private, AccessMode::read_write())
+                } else {
+                    r#type
                 }
             },
-            Expression::Literal(ref literal) => {
+            Expression::Literal(literal) => {
                 let ty_kind = match literal {
                     hir_def::expression::Literal::Int(_, _) => TyKind::Scalar(ScalarType::I32),
                     hir_def::expression::Literal::Uint(_, _) => TyKind::Scalar(ScalarType::U32),
                     hir_def::expression::Literal::Float(_, _) => TyKind::Scalar(ScalarType::F32),
                     hir_def::expression::Literal::Bool(_) => TyKind::Scalar(ScalarType::Bool),
                 };
-                self.db.intern_ty(ty_kind)
+                self.database.intern_ty(ty_kind)
             },
-            Expression::Path(ref name) => self
+            Expression::Path(name) => self
                 .resolve_path_expression(expression, name)
                 .unwrap_or_else(|| {
                     self.push_diagnostic(InferenceDiagnostic::UnresolvedName {
@@ -839,24 +854,24 @@ impl<'db> InferenceContext<'db> {
 
     fn validate_function_call(
         &mut self,
-        f: &FunctionDetails,
-        arguments: Vec<Type>,
+        function: &FunctionDetails,
+        arguments: &[Type],
         callee: ExpressionId,
         expression: ExpressionId,
     ) -> Type {
-        if f.parameters.len() != arguments.len() {
-            self.push_diagnostic(InferenceDiagnostic::FunctionCallArgCountMismatch {
-                expression: callee,
-                n_expected: f.parameters.len(),
-                n_actual: arguments.len(),
-            });
-            self.error_ty()
-        } else {
-            for (expected, actual) in f.parameters().zip(arguments.iter().copied()) {
+        if function.parameters.len() == arguments.len() {
+            for (expected, actual) in function.parameters().zip(arguments.iter().copied()) {
                 self.expect_same_type(expression, expected, actual);
             }
 
-            f.return_type.unwrap_or_else(|| self.error_ty())
+            function.return_type.unwrap_or_else(|| self.error_ty())
+        } else {
+            self.push_diagnostic(InferenceDiagnostic::FunctionCallArgCountMismatch {
+                expression: callee,
+                n_expected: function.parameters.len(),
+                n_actual: arguments.len(),
+            });
+            self.error_ty()
         }
     }
 
@@ -866,42 +881,44 @@ impl<'db> InferenceContext<'db> {
         op: UnaryOperator,
     ) -> Type {
         let expression_ty = self.infer_expression(expression);
-        if expression_ty.is_err(self.db) {
+        if expression_ty.is_err(self.database) {
             return self.error_ty();
         }
 
         let builtin = match op {
-            UnaryOperator::Minus => Builtin::builtin_op_unary_minus(self.db).intern(self.db),
-            UnaryOperator::Not => Builtin::builtin_op_unary_not(self.db).intern(self.db),
-            UnaryOperator::BitNot => Builtin::builtin_op_unary_bitnot(self.db).intern(self.db),
+            UnaryOperator::Minus => {
+                Builtin::builtin_op_unary_minus(self.database).intern(self.database)
+            },
+            UnaryOperator::Not => {
+                Builtin::builtin_op_unary_not(self.database).intern(self.database)
+            },
+            UnaryOperator::BitNot => {
+                Builtin::builtin_op_unary_bitnot(self.database).intern(self.database)
+            },
             UnaryOperator::Reference => {
-                match expression_ty.kind(self.db) {
-                    TyKind::Reference(reference) => return self.ref_to_pointer(reference),
-                    _ => {
-                        self.push_diagnostic(InferenceDiagnostic::AddressOfNotReference {
-                            expression,
-                            actual: expression_ty,
-                        });
-                        return self.error_ty();
-                    },
-                };
+                if let TyKind::Reference(reference) = expression_ty.kind(self.database) {
+                    return self.ref_to_pointer(&reference);
+                }
+                self.push_diagnostic(InferenceDiagnostic::AddressOfNotReference {
+                    expression,
+                    actual: expression_ty,
+                });
+                return self.error_ty();
             },
             UnaryOperator::Dereference => {
-                let arg_ty = expression_ty.unref(self.db);
-                match arg_ty.kind(self.db) {
-                    TyKind::Pointer(pointer) => return self.ptr_to_ref(pointer),
-                    _ => {
-                        self.push_diagnostic(InferenceDiagnostic::DerefNotAPointer {
-                            expression,
-                            actual: arg_ty,
-                        });
-                        return self.error_ty();
-                    },
+                let arg_ty = expression_ty.unref(self.database);
+                if let TyKind::Pointer(pointer) = arg_ty.kind(self.database) {
+                    return self.ptr_to_ref(&pointer);
                 }
+                self.push_diagnostic(InferenceDiagnostic::DerefNotAPointer {
+                    expression,
+                    actual: arg_ty,
+                });
+                return self.error_ty();
             },
         };
 
-        let arg_ty = expression_ty.unref(self.db);
+        let arg_ty = expression_ty.unref(self.database);
         self.call_builtin(expression, builtin, &[arg_ty], Some(op.symbol()))
     }
 
@@ -911,42 +928,44 @@ impl<'db> InferenceContext<'db> {
         right_side: ExpressionId,
         op: BinaryOperation,
     ) -> Type {
-        let left_ty = self.infer_expression(left_side).unref(self.db);
-        let rhs_ty = self.infer_expression(right_side).unref(self.db);
+        let left_ty = self.infer_expression(left_side).unref(self.database);
+        let rhs_ty = self.infer_expression(right_side).unref(self.database);
 
-        if left_ty.is_err(self.db) || rhs_ty.is_err(self.db) {
+        if left_ty.is_err(self.database) || rhs_ty.is_err(self.database) {
             return self.error_ty();
         }
 
         let builtin = match op {
-            BinaryOperation::Logical(_) => Builtin::builtin_op_binary_bool(self.db).intern(self.db),
+            BinaryOperation::Logical(_) => {
+                Builtin::builtin_op_binary_bool(self.database).intern(self.database)
+            },
             BinaryOperation::Arithmetic(op) => match op {
                 ArithmeticOperation::BitOr
                 | ArithmeticOperation::BitAnd
                 | ArithmeticOperation::BitXor => {
-                    Builtin::builtin_op_binary_bitop(self.db).intern(self.db)
+                    Builtin::builtin_op_binary_bitop(self.database).intern(self.database)
                 },
                 ArithmeticOperation::Multiply => {
-                    Builtin::builtin_op_binary_mul(self.db).intern(self.db)
+                    Builtin::builtin_op_binary_mul(self.database).intern(self.database)
                 },
                 ArithmeticOperation::Divide => {
-                    Builtin::builtin_op_binary_div(self.db).intern(self.db)
+                    Builtin::builtin_op_binary_div(self.database).intern(self.database)
                 },
                 ArithmeticOperation::Add
                 | ArithmeticOperation::Subtract
                 | ArithmeticOperation::Modulo => {
-                    Builtin::builtin_op_binary_number(self.db).intern(self.db)
+                    Builtin::builtin_op_binary_number(self.database).intern(self.database)
                 },
                 ArithmeticOperation::ShiftLeft | ArithmeticOperation::ShiftRight => {
-                    Builtin::builtin_op_binary_shift(self.db).intern(self.db)
+                    Builtin::builtin_op_binary_shift(self.database).intern(self.database)
                 },
             },
             BinaryOperation::Comparison(cmp) => match cmp {
                 ComparisonOperation::Equality { .. } => {
-                    Builtin::builtin_op_eq(self.db).intern(self.db)
+                    Builtin::builtin_op_eq(self.database).intern(self.database)
                 },
                 ComparisonOperation::Ordering { .. } => {
-                    Builtin::builtin_op_cmp(self.db).intern(self.db)
+                    Builtin::builtin_op_cmp(self.database).intern(self.database)
                 },
             },
         };
@@ -956,34 +975,34 @@ impl<'db> InferenceContext<'db> {
 
     fn builtin_vector_inferred_constructor(
         &self,
-        size: &VecDimensionality,
+        size: VecDimensionality,
     ) -> BuiltinId {
         match size {
-            VecDimensionality::Two => Builtin::builtin_op_vec2_constructor(self.db),
-            VecDimensionality::Three => Builtin::builtin_op_vec3_constructor(self.db),
-            VecDimensionality::Four => Builtin::builtin_op_vec4_constructor(self.db),
+            VecDimensionality::Two => Builtin::builtin_op_vec2_constructor(self.database),
+            VecDimensionality::Three => Builtin::builtin_op_vec3_constructor(self.database),
+            VecDimensionality::Four => Builtin::builtin_op_vec4_constructor(self.database),
         }
-        .intern(self.db)
+        .intern(self.database)
     }
 
     fn builtin_matrix_inferred_constructor(
         &self,
-        columns: &VecDimensionality,
-        rows: &VecDimensionality,
+        columns: VecDimensionality,
+        rows: VecDimensionality,
     ) -> BuiltinId {
-        use type_ref::VecDimensionality::*;
+        use type_ref::VecDimensionality::{Four, Three, Two};
         match (columns, rows) {
-            (Two, Two) => Builtin::builtin_op_mat2x2_constructor(self.db),
-            (Two, Three) => Builtin::builtin_op_mat2x3_constructor(self.db),
-            (Two, Four) => Builtin::builtin_op_mat2x4_constructor(self.db),
-            (Three, Two) => Builtin::builtin_op_mat3x2_constructor(self.db),
-            (Three, Three) => Builtin::builtin_op_mat3x3_constructor(self.db),
-            (Three, Four) => Builtin::builtin_op_mat3x4_constructor(self.db),
-            (Four, Two) => Builtin::builtin_op_mat4x2_constructor(self.db),
-            (Four, Three) => Builtin::builtin_op_mat4x3_constructor(self.db),
-            (Four, Four) => Builtin::builtin_op_mat4x4_constructor(self.db),
+            (Two, Two) => Builtin::builtin_op_mat2x2_constructor(self.database),
+            (Two, Three) => Builtin::builtin_op_mat2x3_constructor(self.database),
+            (Two, Four) => Builtin::builtin_op_mat2x4_constructor(self.database),
+            (Three, Two) => Builtin::builtin_op_mat3x2_constructor(self.database),
+            (Three, Three) => Builtin::builtin_op_mat3x3_constructor(self.database),
+            (Three, Four) => Builtin::builtin_op_mat3x4_constructor(self.database),
+            (Four, Two) => Builtin::builtin_op_mat4x2_constructor(self.database),
+            (Four, Three) => Builtin::builtin_op_mat4x3_constructor(self.database),
+            (Four, Four) => Builtin::builtin_op_mat4x4_constructor(self.database),
         }
-        .intern(self.db)
+        .intern(self.database)
     }
 
     fn resolve_path_expression(
@@ -1006,9 +1025,11 @@ impl<'db> InferenceContext<'db> {
                 *self.result.type_of_binding.get(local)?
             },
             hir_def::resolver::ResolveValue::GlobalVariable(loc) => {
-                let id = self.db.intern_global_variable(loc);
-                let data = self.db.global_var_data(id);
-                let result = self.db.infer(DefinitionWithBodyId::GlobalVariable(id));
+                let id = self.database.intern_global_variable(loc);
+                let data = self.database.global_var_data(id);
+                let result = self
+                    .database
+                    .infer(DefinitionWithBodyId::GlobalVariable(id));
                 let r#type = result.return_type.unwrap_or_else(|| self.error_ty());
                 // TODO use correct defaults
                 self.make_ref(
@@ -1018,13 +1039,15 @@ impl<'db> InferenceContext<'db> {
                 )
             },
             hir_def::resolver::ResolveValue::GlobalConstant(loc) => {
-                let id = self.db.intern_global_constant(loc);
-                let result = self.db.infer(DefinitionWithBodyId::GlobalConstant(id));
+                let id = self.database.intern_global_constant(loc);
+                let result = self
+                    .database
+                    .infer(DefinitionWithBodyId::GlobalConstant(id));
                 result.return_type.unwrap_or_else(|| self.error_ty())
             },
             hir_def::resolver::ResolveValue::Override(loc) => {
-                let id = self.db.intern_override(loc);
-                let result = self.db.infer(DefinitionWithBodyId::Override(id));
+                let id = self.database.intern_override(loc);
+                let result = self.database.infer(DefinitionWithBodyId::Override(id));
                 result.return_type.unwrap_or_else(|| self.error_ty())
             },
         };
@@ -1041,35 +1064,44 @@ impl<'db> InferenceContext<'db> {
         } else {
             let kind = vec_size
                 .try_into()
-                .map(|size| TyKind::Vector(VectorType { inner, size }))
+                .map(|size| {
+                    TyKind::Vector(VectorType {
+                        size,
+                        component_type: inner,
+                    })
+                })
                 .unwrap_or(TyKind::Error);
-            self.db.intern_ty(kind)
+            self.database.intern_ty(kind)
         }
     }
 
     fn vec_swizzle(
         &self,
-        vec_type: &VectorType,
+        vector_type: &VectorType,
         name: &Name,
     ) -> Result<Type, ()> {
         const SWIZZLES: [[char; 4]; 2] = [['x', 'y', 'z', 'w'], ['r', 'g', 'b', 'a']];
         let max_size = 4;
-        let max_swizzle_index = vec_type.size.as_u8();
+        let max_swizzle_index = vector_type.size.as_u8();
 
         if name.as_str().len() > max_size {
             return Err(());
         }
 
         for swizzle in &SWIZZLES {
-            let allowed_chars = &swizzle[..max_swizzle_index as usize];
+            let allowed_chars = &swizzle[..(usize::from(max_swizzle_index))];
             if name
                 .as_str()
                 .chars()
                 .all(|character| allowed_chars.contains(&character))
             {
-                let r#type = self.ty_from_vec_size(vec_type.inner, name.as_str().len() as u8);
-                let r = self.make_ref(r#type, AddressSpace::Function, AccessMode::read_write()); // TODO is correct?
-                return Ok(r);
+                let r#type = self.ty_from_vec_size(
+                    vector_type.component_type,
+                    u8::try_from(name.as_str().len()).unwrap(),
+                );
+                let result_type =
+                    self.make_ref(r#type, AddressSpace::Function, AccessMode::read_write()); // TODO is correct?
+                return Ok(result_type);
             }
         }
 
@@ -1108,7 +1140,7 @@ impl<'db> InferenceContext<'db> {
         if let Ok((return_ty, overload_id)) =
             self.try_call_builtin(builtin_id, arguments, return_ty)
         {
-            let builtin = builtin_id.lookup(self.db);
+            let builtin = builtin_id.lookup(self.database);
             let resolved = builtin.overload(overload_id).r#type;
             self.result
                 .call_resolutions
@@ -1126,12 +1158,12 @@ impl<'db> InferenceContext<'db> {
     }
 
     fn try_call_builtin(
-        &mut self,
+        &self,
         builtin_id: BuiltinId,
         arguments: &[Type],
         return_type: Option<Type>,
     ) -> Result<(Type, BuiltinOverloadId), ()> {
-        let builtin = builtin_id.lookup(self.db);
+        let builtin = builtin_id.lookup(self.database);
         for (overload_id, overload) in builtin.overloads() {
             if let Ok(r#type) = self.call_builtin_overload(overload, arguments) {
                 if let Some(return_type) = return_type {
@@ -1151,7 +1183,7 @@ impl<'db> InferenceContext<'db> {
         signatre: &BuiltinOverload,
         arguments: &[Type],
     ) -> Result<Type, ()> {
-        let fn_ty = signatre.r#type.lookup(self.db);
+        let fn_ty = signatre.r#type.lookup(self.database);
 
         if fn_ty.parameters.len() != arguments.len() {
             return Err(());
@@ -1159,12 +1191,12 @@ impl<'db> InferenceContext<'db> {
 
         let mut unification_table = UnificationTable::default();
         for (expected, &found) in fn_ty.parameters().zip(arguments.iter()) {
-            unify(self.db, &mut unification_table, expected, found)?;
+            unify(self.database, &mut unification_table, expected, found)?;
         }
 
         let return_type = fn_ty
             .return_type
-            .map(|r#type| unification_table.resolve(self.db, r#type));
+            .map(|r#type| unification_table.resolve(self.database, r#type));
 
         Ok(return_type.unwrap_or_else(|| self.error_ty()))
     }
@@ -1177,7 +1209,7 @@ impl<'db> InferenceContext<'db> {
     ) -> Type {
         match callee {
             Callee::InferredComponentMatrix { rows, columns } => {
-                let builtin_id = self.builtin_matrix_inferred_constructor(columns, rows);
+                let builtin_id = self.builtin_matrix_inferred_constructor(*columns, *rows);
 
                 self.call_builtin(
                     expression,
@@ -1187,12 +1219,13 @@ impl<'db> InferenceContext<'db> {
                 )
             },
             Callee::InferredComponentVec(size) => {
-                let builtin_id = self.builtin_vector_inferred_constructor(size);
+                let builtin_id = self.builtin_vector_inferred_constructor(*size);
 
                 self.call_builtin(expression, builtin_id, &arguments, Some("vec construction"))
             },
             Callee::InferredComponentArray => {
-                let builtin_id = Builtin::builtin_op_array_constructor(self.db).intern(self.db);
+                let builtin_id =
+                    Builtin::builtin_op_array_constructor(self.database).intern(self.database);
                 // TODO: Special case calling array initialisers to allow n-ary calls
 
                 self.call_builtin(
@@ -1202,43 +1235,46 @@ impl<'db> InferenceContext<'db> {
                     Some("array construction"),
                 )
             },
-            Callee::Name(name) => match self.resolver.resolve_callable(name) {
-                Some(arg) => match arg {
-                    hir_def::resolver::ResolveCallable::Struct(loc) => {
-                        let r#struct = self.db.intern_struct(loc);
-                        let kind = TyKind::Struct(r#struct);
-                        let r#type = self.db.intern_ty(kind);
-                        self.check_ty_initialiser(expression, r#type, arguments);
-                        r#type
-                    },
-                    hir_def::resolver::ResolveCallable::TypeAlias(alias) => {
-                        let alias = self.db.intern_type_alias(alias);
-                        let data = self.db.type_alias_data(alias);
-                        let type_ref = self.db.lookup_intern_type_ref(data.r#type);
+            Callee::Name(name) => {
+                if let Some(arg) = self.resolver.resolve_callable(name) {
+                    match arg {
+                        hir_def::resolver::ResolveCallable::Struct(loc) => {
+                            let r#struct = self.database.intern_struct(loc);
+                            let kind = TyKind::Struct(r#struct);
+                            let r#type = self.database.intern_ty(kind);
+                            self.check_ty_initialiser(expression, r#type, arguments);
+                            r#type
+                        },
+                        hir_def::resolver::ResolveCallable::TypeAlias(alias) => {
+                            let alias = self.database.intern_type_alias(alias);
+                            let data = self.database.type_alias_data(alias);
+                            let type_ref = self.database.lookup_intern_type_ref(data.r#type);
 
-                        let r#type = self.lower_ty(TypeContainer::TypeAlias(alias), &type_ref);
-                        self.check_ty_initialiser(expression, r#type, arguments);
-                        r#type
-                    },
-                    hir_def::resolver::ResolveCallable::Function(loc) => {
-                        let id = self.db.intern_function(loc);
-                        let resolved = self.db.function_type(id);
-                        let details = resolved.lookup(self.db);
-                        self.result
-                            .call_resolutions
-                            .insert(expression, ResolvedCall::Function(resolved));
-                        self.validate_function_call(&details, arguments, expression, expression)
-                    },
-                    hir_def::resolver::ResolveCallable::PredeclaredTypeAlias(type_ref) => {
-                        let r#type = self.lower_ty(expression, &type_ref);
-                        self.check_ty_initialiser(expression, r#type, arguments);
-                        r#type
-                    },
-                },
-                None => {
-                    let builtin = Builtin::for_name(self.db, name);
+                            let r#type = self.lower_ty(TypeContainer::TypeAlias(alias), &type_ref);
+                            self.check_ty_initialiser(expression, r#type, arguments);
+                            r#type
+                        },
+                        hir_def::resolver::ResolveCallable::Function(loc) => {
+                            let id = self.database.intern_function(loc);
+                            let resolved = self.database.function_type(id);
+                            let details = resolved.lookup(self.database);
+                            self.result
+                                .call_resolutions
+                                .insert(expression, ResolvedCall::Function(resolved));
+                            self.validate_function_call(
+                                &details, &arguments, expression, expression,
+                            )
+                        },
+                        hir_def::resolver::ResolveCallable::PredeclaredTypeAlias(type_ref) => {
+                            let r#type = self.lower_ty(expression, &type_ref);
+                            self.check_ty_initialiser(expression, r#type, arguments);
+                            r#type
+                        },
+                    }
+                } else {
+                    let builtin = Builtin::for_name(self.database, name);
                     if let Some(builtin) = builtin {
-                        let builtin_id = builtin.intern(self.db);
+                        let builtin_id = builtin.intern(self.database);
                         self.call_builtin(expression, builtin_id, &arguments, None)
                     } else {
                         self.push_diagnostic(InferenceDiagnostic::UnresolvedName {
@@ -1247,10 +1283,11 @@ impl<'db> InferenceContext<'db> {
                         });
                         self.error_ty()
                     }
-                },
+                }
             },
             Callee::Type(r#type) => {
-                let r#type = self.lower_ty(expression, &self.db.lookup_intern_type_ref(*r#type));
+                let r#type =
+                    self.lower_ty(expression, &self.database.lookup_intern_type_ref(*r#type));
                 self.check_ty_initialiser(expression, r#type, arguments);
                 // A type initialiser always returns just the returned type
                 r#type
@@ -1265,6 +1302,7 @@ impl<'db> InferenceContext<'db> {
         arguments: Vec<Type>,
     ) {
         fn size_to_dimension(size: VecSize) -> VecDimensionality {
+            #[expect(clippy::unreachable, reason = "TODO")]
             match size {
                 VecSize::Two => VecDimensionality::Two,
                 VecSize::Three => VecDimensionality::Three,
@@ -1273,13 +1311,13 @@ impl<'db> InferenceContext<'db> {
             }
         }
 
-        match r#type.kind(self.db) {
+        match r#type.kind(self.database) {
             TyKind::Scalar(_) => {
                 if arguments.is_empty() {
                     // Permit the zero value
                     return;
                 }
-                let builtin = Builtin::builtin_op_convert(self.db).intern(self.db);
+                let builtin = Builtin::builtin_op_convert(self.database).intern(self.database);
                 self.call_builtin_with_return(
                     expression,
                     builtin,
@@ -1288,22 +1326,23 @@ impl<'db> InferenceContext<'db> {
                     r#type,
                 );
             },
-            TyKind::Array(_) => {
+            TyKind::Array(array_type) => {
                 if arguments.is_empty() {}
-                // TODO: Implement checking that all the arguments have the same type (inner)
+                // checking that all the arguments have the same type (inner)
             },
             TyKind::Vector(vec) => {
                 if arguments.is_empty() {
                     return;
                 }
                 let construction_builtin_id =
-                    self.builtin_vector_inferred_constructor(&size_to_dimension(vec.size));
+                    self.builtin_vector_inferred_constructor(size_to_dimension(vec.size));
                 let construction_result =
                     self.try_call_builtin(construction_builtin_id, &arguments, Some(r#type));
                 if construction_result.is_ok() {
                     return;
                 }
-                let conversion_id = Builtin::builtin_op_convert(self.db).intern(self.db);
+                let conversion_id =
+                    Builtin::builtin_op_convert(self.database).intern(self.database);
                 let conversion_result =
                     self.try_call_builtin(conversion_id, &arguments, Some(r#type));
                 if conversion_result.is_ok() {
@@ -1314,22 +1353,23 @@ impl<'db> InferenceContext<'db> {
                     builtins: [construction_builtin_id, conversion_id],
                     r#type,
                     parameters: arguments,
-                })
+                });
             },
             TyKind::Matrix(matrix) => {
                 if arguments.is_empty() {
                     return;
                 }
                 let construction_builtin_id = self.builtin_matrix_inferred_constructor(
-                    &size_to_dimension(matrix.columns),
-                    &size_to_dimension(matrix.rows),
+                    size_to_dimension(matrix.columns),
+                    size_to_dimension(matrix.rows),
                 );
                 let construction_result =
                     self.try_call_builtin(construction_builtin_id, &arguments, Some(r#type));
                 if construction_result.is_ok() {
                     return;
                 }
-                let conversion_id = Builtin::builtin_op_convert(self.db).intern(self.db);
+                let conversion_id =
+                    Builtin::builtin_op_convert(self.database).intern(self.database);
                 let conversion_result =
                     self.try_call_builtin(conversion_id, &arguments, Some(r#type));
                 if conversion_result.is_ok() {
@@ -1340,7 +1380,7 @@ impl<'db> InferenceContext<'db> {
                     builtins: [construction_builtin_id, conversion_id],
                     r#type,
                     parameters: arguments,
-                })
+                });
             },
             TyKind::Struct(_) => {
                 if arguments.is_empty() {}
@@ -1356,8 +1396,9 @@ impl<'db> InferenceContext<'db> {
                 self.push_diagnostic(InferenceDiagnostic::InvalidConstructionType {
                     expression,
                     r#type,
-                })
+                });
             },
+            #[expect(clippy::unreachable, reason = "TODO")]
             TyKind::BoundVar(_) | TyKind::Reference(_) => unreachable!(),
             TyKind::Error => {},
         }
@@ -1366,9 +1407,9 @@ impl<'db> InferenceContext<'db> {
 
 #[derive(Default)]
 struct UnificationTable {
-    type_vars: FxHashMap<BoundVar, Type>,
-    vec_size_vars: FxHashMap<BoundVar, VecSize>,
-    texel_format_vars: FxHashMap<BoundVar, TexelFormat>,
+    types: FxHashMap<BoundVar, Type>,
+    vec_sizes: FxHashMap<BoundVar, VecSize>,
+    texel_formats: FxHashMap<BoundVar, TexelFormat>,
 }
 
 impl UnificationTable {
@@ -1377,7 +1418,7 @@ impl UnificationTable {
         var: BoundVar,
         vec_size: VecSize,
     ) -> Result<(), ()> {
-        match self.vec_size_vars.entry(var) {
+        match self.vec_sizes.entry(var) {
             Entry::Occupied(entry) if *entry.get() == vec_size => Ok(()),
             Entry::Occupied(_) => Err(()),
             Entry::Vacant(entry) => {
@@ -1392,7 +1433,7 @@ impl UnificationTable {
         var: BoundVar,
         r#type: Type,
     ) -> Result<(), ()> {
-        match self.type_vars.entry(var) {
+        match self.types.entry(var) {
             Entry::Occupied(entry) if *entry.get() == r#type => Ok(()),
             Entry::Occupied(_) => Err(()),
             Entry::Vacant(entry) => {
@@ -1407,7 +1448,7 @@ impl UnificationTable {
         var: BoundVar,
         format: TexelFormat,
     ) -> Result<(), ()> {
-        match self.texel_format_vars.entry(var) {
+        match self.texel_formats.entry(var) {
             Entry::Occupied(entry) if *entry.get() == format => Ok(()),
             Entry::Occupied(_) => Err(()),
             Entry::Vacant(entry) => {
@@ -1419,39 +1460,46 @@ impl UnificationTable {
 
     fn resolve(
         &self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
         r#type: Type,
     ) -> Type {
-        match r#type.kind(db) {
-            TyKind::BoundVar(var) => *self.type_vars.get(&var).expect("type var not constrained"),
-            TyKind::Vector(VectorType { size, inner }) => {
+        match r#type.kind(database) {
+            TyKind::BoundVar(var) => *self.types.get(&var).expect("type var not constrained"),
+            TyKind::Vector(VectorType {
+                size,
+                component_type: inner,
+            }) => {
                 let size = match size {
                     VecSize::BoundVar(size_var) => *self
-                        .vec_size_vars
+                        .vec_sizes
                         .get(&size_var)
                         .expect("vec size var not constrained"),
-                    size => size,
+                    (VecSize::Two | VecSize::Three | VecSize::Four) => size,
                 };
-                let inner = self.resolve(db, inner);
-                TyKind::Vector(VectorType { size, inner }).intern(db)
+                let inner = self.resolve(database, inner);
+                TyKind::Vector(VectorType {
+                    size,
+                    component_type: inner,
+                })
+                .intern(database)
             },
             TyKind::Matrix(mat) => {
                 let columns = match mat.columns {
-                    VecSize::BoundVar(var) => *self.vec_size_vars.get(&var).unwrap(),
-                    other => other,
+                    VecSize::BoundVar(var) => self.vec_sizes[&var],
+                    other @ (VecSize::Two | VecSize::Three | VecSize::Four) => other,
                 };
                 let rows = match mat.rows {
-                    VecSize::BoundVar(var) => *self.vec_size_vars.get(&var).unwrap(),
-                    other => other,
+                    VecSize::BoundVar(var) => self.vec_sizes[&var],
+                    other @ (VecSize::Two | VecSize::Three | VecSize::Four) => other,
                 };
 
-                let inner = self.resolve(db, mat.inner);
+                let inner = self.resolve(database, mat.inner);
                 TyKind::Matrix(MatrixType {
                     columns,
                     rows,
                     inner,
                 })
-                .intern(db)
+                .intern(database)
             },
             TyKind::Texture(TextureType {
                 kind: TextureKind::Storage(TexelFormat::BoundVar(var), mode),
@@ -1459,7 +1507,7 @@ impl UnificationTable {
                 arrayed,
                 multisampled,
             }) => {
-                let format = self.texel_format_vars[&var];
+                let format = self.texel_formats[&var];
 
                 TyKind::Texture(TextureType {
                     kind: TextureKind::Storage(format, mode),
@@ -1467,7 +1515,7 @@ impl UnificationTable {
                     arrayed,
                     multisampled,
                 })
-                .intern(db)
+                .intern(database)
             },
             TyKind::Texture(TextureType {
                 kind: TextureKind::Sampled(sampled_ty),
@@ -1475,42 +1523,54 @@ impl UnificationTable {
                 arrayed,
                 multisampled,
             }) => {
-                let sampled_ty = self.resolve(db, sampled_ty);
+                let sampled_ty = self.resolve(database, sampled_ty);
                 TyKind::Texture(TextureType {
                     kind: TextureKind::Sampled(sampled_ty),
                     dimension,
                     arrayed,
                     multisampled,
                 })
-                .intern(db)
+                .intern(database)
             },
             TyKind::StorageTypeOfTexelFormat(var) => {
-                let format = self.texel_format_vars[&var];
-                storage_type_of_texel_format(db, format)
+                let format = self.texel_formats[&var];
+                storage_type_of_texel_format(database, format)
             },
-            _ => r#type,
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_) => r#type,
         }
     }
 }
 
 // found type should not contain bound variables
+#[expect(clippy::too_many_lines, reason = "TODO")]
 fn unify(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     table: &mut UnificationTable,
     expected: Type,
     found: Type,
 ) -> Result<(), ()> {
-    let expected_kind = expected.kind(db);
-    let found_kind = found.kind(db);
+    let expected_kind = expected.kind(database);
+    let found_kind = found.kind(database);
 
     match expected_kind {
         TyKind::BoundVar(var) => {
             table.set_type(var, found)?;
             Ok(())
         },
-        TyKind::Vector(VectorType { size, inner }) => match found_kind {
+        TyKind::Vector(VectorType {
+            size,
+            component_type: inner,
+        }) => match found_kind {
             TyKind::Vector(found_vec) => {
-                unify(db, table, inner, found_vec.inner)?;
+                unify(database, table, inner, found_vec.component_type)?;
                 if let VecSize::BoundVar(vec_size_var) = size {
                     table.set_vec_size(vec_size_var, found_vec.size)?;
                 } else if size != found_vec.size {
@@ -1518,7 +1578,18 @@ fn unify(
                 }
                 Ok(())
             },
-            _ => Err(()),
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
         TyKind::Matrix(MatrixType {
             columns,
@@ -1526,7 +1597,7 @@ fn unify(
             inner,
         }) => match found_kind {
             TyKind::Matrix(found_mat) => {
-                unify(db, table, inner, found_mat.inner)?;
+                unify(database, table, inner, found_mat.inner)?;
 
                 if let VecSize::BoundVar(var) = columns {
                     table.set_vec_size(var, found_mat.columns)?;
@@ -1542,31 +1613,75 @@ fn unify(
 
                 Ok(())
             },
-            _ => Err(()),
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Vector(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
         TyKind::Pointer(pointer) => match found_kind {
             TyKind::Pointer(found_pointer) => {
-                unify(db, table, pointer.inner, found_pointer.inner)?;
+                unify(database, table, pointer.inner, found_pointer.inner)?;
 
                 Ok(())
             },
-            _ => Err(()),
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Vector(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
         TyKind::Array(array) => match found_kind {
             TyKind::Array(found_array) => {
-                unify(db, table, array.inner, found_array.inner)?;
+                unify(database, table, array.inner, found_array.inner)?;
 
                 Ok(())
             },
-            _ => Err(()),
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Vector(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
         TyKind::Atomic(atomic) => match found_kind {
             TyKind::Atomic(found_atomic) => {
-                unify(db, table, atomic.inner, found_atomic.inner)?;
+                unify(database, table, atomic.inner, found_atomic.inner)?;
 
                 Ok(())
             },
-            _ => Err(()),
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Vector(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
         TyKind::Texture(TextureType {
             kind: TextureKind::Storage(format, mode),
@@ -1592,33 +1707,59 @@ fn unify(
                     TexelFormat::BoundVar(var) => {
                         table.set_texel_format(var, format_2)?;
                     },
-                    _ => {
+                    TexelFormat::Rgba8unorm
+                    | TexelFormat::Rgba8snorm
+                    | TexelFormat::Rgba8uint
+                    | TexelFormat::Rgba8sint
+                    | TexelFormat::Rgba16uint
+                    | TexelFormat::Rgba16sint
+                    | TexelFormat::Rgba16float
+                    | TexelFormat::Rgba32uint
+                    | TexelFormat::Rgba32sint
+                    | TexelFormat::Rgba32float
+                    | TexelFormat::R32uint
+                    | TexelFormat::R32sint
+                    | TexelFormat::R32float
+                    | TexelFormat::Rg32uint
+                    | TexelFormat::Rg32sint
+                    | TexelFormat::Rg32float => {
                         if format != format_2 {
                             return Err(());
                         }
                     },
                 }
                 match (mode, mode_2) {
-                    (AccessMode::Any, _) => {},
+                    (AccessMode::Any, _)
+                    | (AccessMode::Read, AccessMode::ReadWrite | AccessMode::Read)
+                    | (AccessMode::ReadWrite, AccessMode::ReadWrite)
+                    | (AccessMode::Write, AccessMode::ReadWrite | AccessMode::Write) => {},
+                    #[expect(clippy::unreachable, reason = "TODO")]
                     (_, AccessMode::Any) => unreachable!(),
-
-                    (AccessMode::ReadWrite, AccessMode::ReadWrite) => {},
-                    (AccessMode::Read, AccessMode::ReadWrite | AccessMode::Read) => {},
-                    (AccessMode::Write, AccessMode::ReadWrite | AccessMode::Write) => {},
-
-                    (AccessMode::Write, AccessMode::Read)
-                    | (AccessMode::Read, AccessMode::Write)
-                    | (AccessMode::ReadWrite, AccessMode::Read)
-                    | (AccessMode::ReadWrite, AccessMode::Write) => return Err(()),
+                    (AccessMode::Write | AccessMode::ReadWrite, AccessMode::Read)
+                    | (AccessMode::Read | AccessMode::ReadWrite, AccessMode::Write) => {
+                        return Err(());
+                    },
                 }
 
                 Ok(())
             },
-            _ => Err(()),
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Vector(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
         TyKind::StorageTypeOfTexelFormat(format) => {
-            let format = *table.texel_format_vars.get(&format).unwrap();
-            let storage_type = storage_type_of_texel_format(db, format);
+            let format = table.texel_formats[&format];
+            let storage_type = storage_type_of_texel_format(database, format);
 
             if storage_type != found {
                 return Err(());
@@ -1646,20 +1787,45 @@ fn unify(
                     return Err(());
                 }
 
-                unify(db, table, sampled_ty, found_sampled_ty)?;
+                unify(database, table, sampled_ty, found_sampled_ty)?;
 
                 Ok(())
             },
-            _ => Err(()),
+            TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Vector(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
-
-        _ if expected == found => Ok(()),
-        _ => Err(()),
+        TyKind::Error
+        | TyKind::Scalar(_)
+        | TyKind::Struct(_)
+        | TyKind::Texture(_)
+        | TyKind::Sampler(_)
+        | TyKind::Reference(_)
+            if expected == found =>
+        {
+            Ok(())
+        },
+        TyKind::Error
+        | TyKind::Scalar(_)
+        | TyKind::Struct(_)
+        | TyKind::Texture(_)
+        | TyKind::Sampler(_)
+        | TyKind::Reference(_) => Err(()),
     }
 }
 
 fn storage_type_of_texel_format(
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     format: TexelFormat,
 ) -> Type {
     let channel_type = match format {
@@ -1679,14 +1845,15 @@ fn storage_type_of_texel_format(
         | TexelFormat::Rgba32uint
         | TexelFormat::R32uint
         | TexelFormat::Rg32uint => ScalarType::U32,
-        TexelFormat::BoundVar(_) => unreachable!(),
-        TexelFormat::Any => unreachable!(),
+
+        #[expect(clippy::unreachable, reason = "TODO")]
+        TexelFormat::BoundVar(_) | TexelFormat::Any => unreachable!(),
     };
     TyKind::Vector(VectorType {
         size: VecSize::Four,
-        inner: TyKind::Scalar(channel_type).intern(db),
+        component_type: TyKind::Scalar(channel_type).intern(database),
     })
-    .intern(db)
+    .intern(database)
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
@@ -1705,15 +1872,15 @@ pub enum TypeExpectation {
 }
 
 impl TypeExpectation {
-    fn from_option(option: Option<Type>) -> Self {
+    const fn from_option(option: Option<Type>) -> Self {
         match option {
-            Some(r#type) => TypeExpectation::Type(TypeExpectationInner::Exact(r#type)),
-            None => TypeExpectation::None,
+            Some(r#type) => Self::Type(TypeExpectationInner::Exact(r#type)),
+            None => Self::None,
         }
     }
 
-    fn from_ty(r#type: Type) -> Self {
-        TypeExpectation::Type(TypeExpectationInner::Exact(r#type))
+    const fn from_ty(r#type: Type) -> Self {
+        Self::Type(TypeExpectationInner::Exact(r#type))
     }
 }
 
@@ -1724,7 +1891,7 @@ impl InferenceContext<'_> {
         address_space: AddressSpace,
         access_mode: AccessMode,
     ) -> Type {
-        self.db.intern_ty(TyKind::Reference(Reference {
+        self.database.intern_ty(TyKind::Reference(Reference {
             inner: r#type,
             address_space,
             access_mode,
@@ -1733,9 +1900,9 @@ impl InferenceContext<'_> {
 
     fn ref_to_pointer(
         &self,
-        reference: Reference,
+        reference: &Reference,
     ) -> Type {
-        self.db.intern_ty(TyKind::Pointer(Pointer {
+        self.database.intern_ty(TyKind::Pointer(Pointer {
             inner: reference.inner,
             address_space: reference.address_space,
             access_mode: reference.access_mode,
@@ -1744,9 +1911,9 @@ impl InferenceContext<'_> {
 
     fn ptr_to_ref(
         &self,
-        pointer: Pointer,
+        pointer: &Pointer,
     ) -> Type {
-        self.db.intern_ty(TyKind::Reference(Reference {
+        self.database.intern_ty(TyKind::Reference(Reference {
             inner: pointer.inner,
             address_space: pointer.address_space,
             access_mode: pointer.access_mode,
@@ -1754,18 +1921,18 @@ impl InferenceContext<'_> {
     }
 
     fn error_ty(&self) -> Type {
-        self.db.intern_ty(TyKind::Error)
+        self.database.intern_ty(TyKind::Error)
     }
 
     fn bool_ty(&self) -> Type {
-        self.db.intern_ty(TyKind::Scalar(ScalarType::Bool))
+        self.database.intern_ty(TyKind::Scalar(ScalarType::Bool))
     }
 
     fn try_lower_ty(
-        &mut self,
+        &self,
         type_ref: &TypeReference,
     ) -> Result<Type, TypeLoweringError> {
-        TyLoweringContext::new(self.db, &self.resolver).try_lower_ty(type_ref)
+        TyLoweringContext::new(self.database, &self.resolver).try_lower_ty(type_ref)
     }
 
     fn lower_ty(
@@ -1786,11 +1953,11 @@ impl InferenceContext<'_> {
     }
 }
 
-pub struct TyLoweringContext<'db> {
-    db: &'db dyn HirDatabase,
-    resolver: &'db Resolver,
+pub struct TyLoweringContext<'database> {
+    database: &'database dyn HirDatabase,
+    resolver: &'database Resolver,
 
-    pub diagnostics: Vec<TypeLoweringError>,
+    pub(crate) diagnostics: Vec<TypeLoweringError>,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
@@ -1799,16 +1966,16 @@ pub enum TypeLoweringError {
     InvalidTexelFormat(String),
 }
 
-impl std::fmt::Display for TypeLoweringError {
+impl fmt::Display for TypeLoweringError {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
-            TypeLoweringError::UnresolvedName(name) => {
+            Self::UnresolvedName(name) => {
                 write!(f, "type `{}` not found in scope", name.as_str())
             },
-            TypeLoweringError::InvalidTexelFormat(format) => {
+            Self::InvalidTexelFormat(format) => {
                 let all_formats = "rgba8unorm,\nrgba8snorm,\nrgba8uint,\nrgba8sint,\nrgba16uint,\nrgba16sint,\nrgba16float,\nr32uint,\nr32sint,\nr32float,\nrg32uint,\nrg32sint,\nrg32float,\nrgba32uint,\nrgba32sint,\nrgba32float";
                 write!(
                     f,
@@ -1819,13 +1986,13 @@ impl std::fmt::Display for TypeLoweringError {
     }
 }
 
-impl<'db> TyLoweringContext<'db> {
+impl<'database> TyLoweringContext<'database> {
     pub fn new(
-        db: &'db dyn HirDatabase,
-        resolver: &'db Resolver,
+        database: &'database dyn HirDatabase,
+        resolver: &'database Resolver,
     ) -> Self {
         Self {
-            db,
+            database,
             resolver,
             diagnostics: Vec::new(),
         }
@@ -1836,9 +2003,18 @@ impl<'db> TyLoweringContext<'db> {
         type_ref: &TypeReference,
     ) -> Type {
         self.try_lower_ty(type_ref)
-            .unwrap_or_else(|_| TyKind::Error.intern(self.db))
+            .unwrap_or_else(|_| TyKind::Error.intern(self.database))
     }
 
+    /// Convert a [`TypeReference`] into a `[Type]`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if an extreme, probably impossible type is give, such as an array with a size exceeding 64 bits.
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if type is a path and the path is unknown.
     pub fn try_lower_ty(
         &mut self,
         type_ref: &TypeReference,
@@ -1856,7 +2032,7 @@ impl<'db> TyLoweringContext<'db> {
             },
             TypeReference::Vec(vec) => TyKind::Vector(VectorType {
                 size: vec.size.into(),
-                inner: self.lower_ty(&vec.inner),
+                component_type: self.lower_ty(&vec.inner),
             }),
             TypeReference::Matrix(matrix) => TyKind::Matrix(MatrixType {
                 columns: matrix.columns.into(),
@@ -1879,7 +2055,7 @@ impl<'db> TyLoweringContext<'db> {
                     type_ref::TextureKind::Storage(format, mode) => TextureKind::Storage(
                         format
                             .parse()
-                            .map_err(|_| TypeLoweringError::InvalidTexelFormat(format.clone()))?,
+                            .map_err(|()| TypeLoweringError::InvalidTexelFormat(format.clone()))?,
                         *mode,
                     ),
                     type_ref::TextureKind::Depth => TextureKind::Depth,
@@ -1896,8 +2072,13 @@ impl<'db> TyLoweringContext<'db> {
                 binding_array: array.binding_array,
                 inner: self.lower_ty(&array.inner),
                 size: match array.size {
-                    type_ref::ArraySize::Int(i) => ArraySize::Constant(i as u64), // TODO error
-                    type_ref::ArraySize::Uint(u) => ArraySize::Constant(u),
+                    type_ref::ArraySize::Int(integer) => {
+                        // TODO give error instead of panicking
+                        ArraySize::Constant(u64::try_from(integer).unwrap())
+                    },
+                    type_ref::ArraySize::Uint(unsigned_integer) => {
+                        ArraySize::Constant(unsigned_integer)
+                    },
                     type_ref::ArraySize::Path(_) => ArraySize::Constant(0), // TODO: Path array sizes
                     type_ref::ArraySize::Dynamic => ArraySize::Dynamic,
                 },
@@ -1909,13 +2090,13 @@ impl<'db> TyLoweringContext<'db> {
             }),
             TypeReference::Path(name) => match self.resolver.resolve_type(name) {
                 Some(ResolveType::Struct(loc)) => {
-                    let r#struct = self.db.intern_struct(loc);
+                    let r#struct = self.database.intern_struct(loc);
                     TyKind::Struct(r#struct)
                 },
                 Some(ResolveType::TypeAlias(loc)) => {
-                    let alias = self.db.intern_type_alias(loc);
-                    let data = self.db.type_alias_data(alias);
-                    let type_ref = &self.db.lookup_intern_type_ref(data.r#type);
+                    let alias = self.database.intern_type_alias(loc);
+                    let data = self.database.type_alias_data(alias);
+                    let type_ref = &self.database.lookup_intern_type_ref(data.r#type);
 
                     return Ok(self.lower_ty(type_ref));
                 },
@@ -1925,6 +2106,6 @@ impl<'db> TyLoweringContext<'db> {
                 None => return Err(TypeLoweringError::UnresolvedName(name.clone())),
             },
         };
-        Ok(self.db.intern_ty(ty_kind))
+        Ok(self.database.intern_ty(ty_kind))
     }
 }

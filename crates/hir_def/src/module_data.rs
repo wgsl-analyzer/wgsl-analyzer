@@ -1,7 +1,7 @@
 mod lower;
 pub mod pretty;
 
-use std::{marker::PhantomData, sync::Arc};
+use std::{hash, marker::PhantomData, ops, sync::Arc};
 
 use la_arena::{Arena, Idx, IdxRange};
 use smol_str::SmolStr;
@@ -10,8 +10,8 @@ use syntax::{AstNode, TokenText, ast};
 use crate::{
     HirFileId,
     ast_id::FileAstId,
-    db::{DefDatabase, Interned},
-    type_ref::*,
+    database::{DefDatabase, Interned},
+    type_ref::{AccessMode, AddressSpace, TypeReference},
 };
 
 const MISSING_NAME_PLACEHOLDER: &str = "[missing name]";
@@ -20,14 +20,17 @@ const MISSING_NAME_PLACEHOLDER: &str = "[missing name]";
 pub struct Name(SmolStr);
 
 impl Name {
-    pub fn missing() -> Name {
-        Name(MISSING_NAME_PLACEHOLDER.into())
+    #[must_use]
+    pub fn missing() -> Self {
+        Self(MISSING_NAME_PLACEHOLDER.into())
     }
 
+    #[must_use]
     pub fn is_missing(value: &str) -> bool {
         value == MISSING_NAME_PLACEHOLDER
     }
 
+    #[must_use]
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -41,31 +44,31 @@ impl AsRef<str> for Name {
 
 impl From<TokenText<'_>> for Name {
     fn from(text: TokenText<'_>) -> Self {
-        Name(text.as_str().into())
+        Self(text.as_str().into())
     }
 }
 
 impl From<ast::Name> for Name {
     fn from(name: ast::Name) -> Self {
-        Name(name.text().as_str().into())
+        Self(name.text().as_str().into())
     }
 }
 
 impl From<ast::NameReference> for Name {
     fn from(name: ast::NameReference) -> Self {
-        Name(name.text().as_str().into())
+        Self(name.text().as_str().into())
     }
 }
 
 impl From<ast::Identifier> for Name {
     fn from(identifier: ast::Identifier) -> Self {
-        Name(identifier.text().as_str().into())
+        Self(identifier.text().as_str().into())
     }
 }
 
 impl From<&'_ str> for Name {
     fn from(text: &str) -> Self {
-        Name(text.into())
+        Self(text.into())
     }
 }
 
@@ -144,7 +147,7 @@ pub enum ImportValue {
 
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct ModuleInfo {
-    pub data: ModuleData,
+    pub(crate) data: ModuleData,
     items: Vec<ModuleItem>,
 }
 
@@ -164,23 +167,24 @@ pub struct ModuleData {
 
 impl ModuleInfo {
     pub fn module_info_query(
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         file_id: HirFileId,
-    ) -> Arc<ModuleInfo> {
-        let source = match db.parse_or_resolve(file_id) {
+    ) -> Arc<Self> {
+        let source = match database.parse_or_resolve(file_id) {
             Ok(value) => value.tree(),
-            Err(_) => return Arc::new(ModuleInfo::default()),
+            Err(()) => return Arc::new(Self::default()),
         };
 
-        let mut lower_ctx = lower::Ctx::new(db, file_id);
-        lower_ctx.lower_source_file(source);
+        let mut lower_ctx = lower::Ctx::new(database, file_id);
+        lower_ctx.lower_source_file(&source);
 
-        Arc::new(ModuleInfo {
+        Arc::new(Self {
             data: lower_ctx.module_data,
             items: lower_ctx.items,
         })
     }
 
+    #[must_use]
     pub fn items(&self) -> &[ModuleItem] {
         &self.items
     }
@@ -188,10 +192,16 @@ impl ModuleInfo {
     pub fn structs(&self) -> impl Iterator<Item = ModuleItemId<Struct>> + '_ {
         self.items.iter().filter_map(|item| match item {
             ModuleItem::Struct(r#struct) => Some(*r#struct),
-            _ => None,
+            ModuleItem::Function(_)
+            | ModuleItem::GlobalVariable(_)
+            | ModuleItem::GlobalConstant(_)
+            | ModuleItem::Override(_)
+            | ModuleItem::Import(_)
+            | ModuleItem::TypeAlias(_) => None,
         })
     }
 
+    #[must_use]
     pub fn get<M: ModuleDataNode>(
         &self,
         id: ModuleItemId<M>,
@@ -208,7 +218,7 @@ pub struct ModuleItemId<N> {
 
 impl<N> From<Idx<N>> for ModuleItemId<N> {
     fn from(index: Idx<N>) -> Self {
-        ModuleItemId {
+        Self {
             index,
             _marker: PhantomData,
         }
@@ -216,9 +226,8 @@ impl<N> From<Idx<N>> for ModuleItemId<N> {
 }
 
 // If we automatically derive this trait, ModuleItemId<N> where N does not implement Hash cannot compile
-#[allow(clippy::derived_hash_with_manual_eq)]
-impl<N> std::hash::Hash for ModuleItemId<N> {
-    fn hash<H: std::hash::Hasher>(
+impl<N> hash::Hash for ModuleItemId<N> {
+    fn hash<H: hash::Hasher>(
         &self,
         state: &mut H,
     ) {
@@ -268,7 +277,7 @@ macro_rules! mod_items {
             }
         })+
 
-        $(impl std::ops::Index<la_arena::Idx<$r#type>> for ModuleData {
+        $(impl core::ops::Index<la_arena::Idx<$r#type>> for ModuleData {
             type Output = $r#type;
 
             fn index(&self, index: la_arena::Idx<$r#type>) -> &Self::Output {
@@ -288,10 +297,10 @@ macro_rules! mod_items {
                     &data.$fld[index]
                 }
 
+				#[allow(clippy::allow_attributes, unreachable_patterns, reason = "macros should not leak lints")]
                 fn id_from_mod_item(mod_item: &ModuleItem) -> Option<ModuleItemId<Self>> {
                     match mod_item {
                         ModuleItem::$r#type(id) => Some(*id),
-                        #[allow(unreachable_patterns)]
                         _ => None,
                     }
                 }
@@ -305,7 +314,7 @@ macro_rules! mod_items {
     };
 }
 
-impl std::ops::Index<Idx<Field>> for ModuleData {
+impl ops::Index<Idx<Field>> for ModuleData {
     type Output = Field;
 
     fn index(
@@ -316,7 +325,7 @@ impl std::ops::Index<Idx<Field>> for ModuleData {
     }
 }
 
-impl std::ops::Index<Idx<Parameter>> for ModuleData {
+impl ops::Index<Idx<Parameter>> for ModuleData {
     type Output = Parameter;
 
     fn index(
@@ -338,46 +347,38 @@ mod_items! {
 }
 
 pub fn find_item<M: ModuleDataNode>(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
     source: &M::Source,
 ) -> Option<ModuleItemId<M>> {
-    let module_info = db.module_info(file_id);
+    let module_info = database.module_info(file_id);
     module_info.items().iter().find_map(|item| {
         let id = M::id_from_mod_item(item)?;
         let data = M::lookup(&module_info.data, id.index);
-        let def_map = db.ast_id_map(file_id);
+        let def_map = database.ast_id_map(file_id);
 
         let source_ast_id = def_map.ast_id(source);
         let item_ast_id = M::ast_id(data);
 
-        if source_ast_id == item_ast_id {
-            Some(id)
-        } else {
-            None
-        }
+        (source_ast_id == item_ast_id).then_some(id)
     })
 }
 
 // imports can be found not just in the items
 pub fn find_import(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
     source: &syntax::ast::Import,
 ) -> Option<ModuleItemId<Import>> {
-    let module_info = db.module_info(file_id);
+    let module_info = database.module_info(file_id);
 
     module_info.data.imports.iter().find_map(|(index, data)| {
         let id = ModuleItemId::from(index);
-        let def_map = db.ast_id_map(file_id);
+        let def_map = database.ast_id_map(file_id);
 
         let source_ast_id = def_map.ast_id(source);
         let item_ast_id = Import::ast_id(data);
 
-        if source_ast_id == item_ast_id {
-            Some(id)
-        } else {
-            None
-        }
+        (source_ast_id == item_ast_id).then_some(id)
     })
 }

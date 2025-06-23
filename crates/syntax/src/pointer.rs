@@ -1,4 +1,4 @@
-use std::{hash::Hash, marker::PhantomData};
+use std::{hash::Hash, iter, marker::PhantomData};
 
 use parser::{SyntaxKind, SyntaxNode};
 use rowan::TextRange;
@@ -16,8 +16,9 @@ pub struct SyntaxNodePointer {
 }
 
 impl SyntaxNodePointer {
-    pub fn new(node: &SyntaxNode) -> SyntaxNodePointer {
-        SyntaxNodePointer {
+    #[must_use]
+    pub fn new(node: &SyntaxNode) -> Self {
+        Self {
             range: node.text_range(),
             kind: node.kind(),
         }
@@ -32,21 +33,27 @@ impl SyntaxNodePointer {
     /// The complexity is linear in the depth of the tree and logarithmic in
     /// tree width. Because most trees are shallow, thinking about this as
     /// `O(log(N))` in the size of the tree is not too wrong!
+    ///
+    /// ## Panics
+    ///
+    /// Panics if the node could not be found.
     #[track_caller]
+    #[must_use]
     pub fn to_node(
         &self,
         root: &SyntaxNode,
     ) -> SyntaxNode {
-        assert!(root.parent().is_none());
-        std::iter::successors(Some(root.clone()), |node| {
-            node.child_or_token_at_range(self.range)
-                .and_then(|it| it.into_node())
+        debug_assert!(root.parent().is_none());
+        iter::successors(Some(root.clone()), |node| {
+            let node_or_token = node.child_or_token_at_range(self.range)?;
+            node_or_token.into_node()
         })
-        .find(|it| it.text_range() == self.range && it.kind() == self.kind)
+        .find(|node| node.text_range() == self.range && node.kind() == self.kind)
         .ok_or_else(|| format!("cannot resolve local pointer to SyntaxNode: {self:?}"))
         .unwrap()
     }
 
+    #[must_use]
     pub fn cast<N: AstNode>(self) -> Option<AstPointer<N>> {
         if !N::can_cast(self.kind) {
             return None;
@@ -67,7 +74,7 @@ pub struct AstPointer<N: AstNode> {
 impl<N: AstNode> std::fmt::Debug for AstPointer<N> {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         f.debug_struct("AstPointer")
             .field("raw", &self.raw)
@@ -76,8 +83,8 @@ impl<N: AstNode> std::fmt::Debug for AstPointer<N> {
 }
 
 impl<N: AstNode> Clone for AstPointer<N> {
-    fn clone(&self) -> AstPointer<N> {
-        AstPointer {
+    fn clone(&self) -> Self {
+        Self {
             raw: self.raw.clone(),
             _ty: PhantomData,
         }
@@ -89,7 +96,7 @@ impl<N: AstNode> Eq for AstPointer<N> {}
 impl<N: AstNode> PartialEq for AstPointer<N> {
     fn eq(
         &self,
-        other: &AstPointer<N>,
+        other: &Self,
     ) -> bool {
         self.raw == other.raw
     }
@@ -105,14 +112,18 @@ impl<Node: AstNode> std::hash::Hash for AstPointer<Node> {
 }
 
 impl<Node: AstNode> AstPointer<Node> {
-    pub fn new(node: &Node) -> AstPointer<Node> {
-        AstPointer {
+    pub fn new(node: &Node) -> Self {
+        Self {
             raw: SyntaxNodePointer::new(node.syntax()),
             _ty: PhantomData,
         }
     }
 
+    /// ## Panics
+    ///
+    /// Panics if the cast failed.
     #[track_caller]
+    #[must_use]
     pub fn to_node(
         &self,
         root: &SyntaxNode,
@@ -121,10 +132,12 @@ impl<Node: AstNode> AstPointer<Node> {
         Node::cast(syntax_node).unwrap()
     }
 
+    #[must_use]
     pub fn syntax_node_pointer(&self) -> SyntaxNodePointer {
         self.raw.clone()
     }
 
+    #[must_use]
     pub fn cast<TargetNode: AstNode>(self) -> Option<AstPointer<TargetNode>> {
         if !TargetNode::can_cast(self.raw.kind) {
             return None;
@@ -137,7 +150,7 @@ impl<Node: AstNode> AstPointer<Node> {
 }
 
 impl<Node: AstNode> From<AstPointer<Node>> for SyntaxNodePointer {
-    fn from(pointer: AstPointer<Node>) -> SyntaxNodePointer {
+    fn from(pointer: AstPointer<Node>) -> Self {
         pointer.raw
     }
 }

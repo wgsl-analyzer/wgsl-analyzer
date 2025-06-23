@@ -75,9 +75,9 @@ impl DiagnosticCollection {
     pub(crate) fn clear_check_all(&mut self) {
         Arc::make_mut(&mut self.check_fixes).clear();
         self.changes.extend(
-            self.check
-                .values_mut()
-                .flat_map(|it| it.drain().flat_map(|(_, value)| value.into_keys())),
+            self.check.values_mut().flat_map(|check_value| {
+                check_value.drain().flat_map(|(_, value)| value.into_keys())
+            }),
         );
     }
 
@@ -159,7 +159,7 @@ impl DiagnosticCollection {
         };
 
         for (file_id, mut diagnostics) in diagnostics {
-            diagnostics.sort_by_key(|it| (it.range.start, it.range.end));
+            diagnostics.sort_by_key(|diagnostic| (diagnostic.range.start, diagnostic.range.end));
 
             if let Some((old_gen, existing_diagnostics)) = target.get_mut(&file_id) {
                 if existing_diagnostics.len() == diagnostics.len()
@@ -176,7 +176,8 @@ impl DiagnosticCollection {
                     existing_diagnostics.extend(diagnostics);
                     // FIXME: Doing the merge step of a merge sort here would be a bit more performant
                     // but eh
-                    existing_diagnostics.sort_by_key(|it| (it.range.start, it.range.end));
+                    existing_diagnostics
+                        .sort_by_key(|diagnostic| (diagnostic.range.start, diagnostic.range.end));
                 }
             } else {
                 target.insert(file_id, (generation, diagnostics));
@@ -202,8 +203,8 @@ impl DiagnosticCollection {
         let check = self
             .check
             .values()
-            .flat_map(|it| it.values())
-            .filter_map(move |it| it.get(&file_id))
+            .flat_map(|check_value| check_value.values())
+            .filter_map(move |check_value| check_value.get(&file_id))
             .flatten();
         native_syntax.chain(native_semantic).chain(check)
     }
@@ -246,7 +247,7 @@ pub(crate) enum NativeDiagnosticsFetchKind {
 #[expect(clippy::needless_pass_by_value, reason = "wip")]
 pub(crate) fn fetch_native_diagnostics(
     snapshot: &GlobalStateSnapshot,
-    subscriptions: std::sync::Arc<[FileId]>,
+    subscriptions: Arc<[FileId]>,
     slice: std::ops::Range<usize>,
     kind: NativeDiagnosticsFetchKind,
 ) -> Vec<(FileId, Vec<lsp_types::Diagnostic>)> {
@@ -260,7 +261,7 @@ pub(crate) fn fetch_native_diagnostics(
             let line_index = snapshot.file_line_index(file_id).ok()?;
             let source_root = snapshot.analysis.source_root_id(file_id).ok()?;
 
-            let config = &snapshot.config.data().diagnostics(Some(source_root));
+            let config = &snapshot.config.diagnostics(Some(source_root));
             let diagnostics = match kind {
                 NativeDiagnosticsFetchKind::Syntax => {
                     snapshot.analysis.syntax_diagnostics(config, file_id).ok()?

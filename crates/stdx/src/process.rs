@@ -10,7 +10,6 @@ use std::{
 
 use crate::JodChild;
 
-#[inline]
 pub fn streaming_output(
     out: ChildStdout,
     error: ChildStderr,
@@ -57,7 +56,6 @@ pub fn streaming_output(
 /// # Panics
 ///
 /// Panics if `cmd` is not configured to have `stdout` and `stderr` as `piped`.
-#[inline]
 pub fn spawn_with_streaming_output(
     mut cmd: Command,
     on_stdout_line: &mut dyn FnMut(&str),

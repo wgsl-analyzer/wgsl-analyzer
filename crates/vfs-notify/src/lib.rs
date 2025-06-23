@@ -36,7 +36,6 @@ enum Message {
 }
 
 impl loader::Handle for NotifyHandle {
-    #[inline]
     fn spawn(sender: loader::Sender) -> Self {
         let actor = NotifyActor::new(sender);
         let (sender, receiver) = unbounded::<Message>();
@@ -49,21 +48,18 @@ impl loader::Handle for NotifyHandle {
             _thread: thread,
         }
     }
-    #[inline]
     fn set_config(
         &mut self,
         config: loader::Config,
     ) {
         self.sender.send(Message::Config(config)).unwrap();
     }
-    #[inline]
     fn invalidate(
         &mut self,
         path: AbsPathBuf,
     ) {
         self.sender.send(Message::Invalidate(path)).unwrap();
     }
-    #[inline]
     fn load_sync(
         &mut self,
         path: &AbsPath,
@@ -107,8 +103,8 @@ impl NotifyActor {
         };
 
         select! {
-            recv(receiver) -> it => it.ok().map(Event::Message),
-            recv(watcher_receiver) -> it => Some(Event::NotifyEvent(it.unwrap())),
+            recv(receiver) -> result => result.ok().map(Event::Message),
+            recv(watcher_receiver) -> result => Some(Event::NotifyEvent(result.unwrap())),
         }
     }
 
@@ -126,7 +122,7 @@ impl NotifyActor {
                         self.watcher = None;
                         if !config.watch.is_empty() {
                             let (watcher_sender, watcher_receiver) = unbounded();
-                            let watcher = log_notify_error(RecommendedWatcher::new(
+                            let maybe_watcher = log_notify_error(RecommendedWatcher::new(
                                 move |event| {
                                     // we don't care about the error. If sending fails that usually
                                     // means we were dropped, so unwrapping will just add to the
@@ -135,7 +131,7 @@ impl NotifyActor {
                                 },
                                 Config::default(),
                             ));
-                            self.watcher = watcher.map(|it| (it, watcher_receiver));
+                            self.watcher = maybe_watcher.map(|watcher| (watcher, watcher_receiver));
                         }
 
                         let config_version = config.version;
@@ -312,8 +308,15 @@ impl NotifyActor {
                             }
 
                             // We want to filter out subdirectories that are roots themselves, because they will be visited separately.
-                            directories.exclude.iter().all(|it| it != path)
-                                && (root == path || directories.include.iter().all(|it| it != path))
+                            directories
+                                .exclude
+                                .iter()
+                                .all(|absolute_path| absolute_path != path)
+                                && (root == path
+                                    || directories
+                                        .include
+                                        .iter()
+                                        .all(|absolute_path| absolute_path != path))
                         });
 
                     let files = walkdir
@@ -340,7 +343,7 @@ impl NotifyActor {
                             if directories
                                 .extensions
                                 .iter()
-                                .all(|it| it.as_str() != extension)
+                                .all(|found_extensions| found_extensions.as_str() != extension)
                             {
                                 return None;
                             }

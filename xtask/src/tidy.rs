@@ -83,15 +83,15 @@ fn check_test_attrs(
 
 fn is_exclude_directory(
     path: &Path,
-    dirs_to_exclude: &[&str],
+    directories_to_exclude: &[&str],
 ) -> bool {
     path.strip_prefix(project_root())
         .unwrap()
         .components()
         .rev()
         .skip(1)
-        .filter_map(|it| it.as_os_str().to_str())
-        .any(|it| dirs_to_exclude.contains(&it))
+        .filter_map(|component| component.as_os_str().to_str())
+        .any(|directory| directories_to_exclude.contains(&directory))
 }
 
 #[derive(Default)]

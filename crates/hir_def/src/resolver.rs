@@ -8,7 +8,7 @@ use crate::{
         BindingId,
         scope::{ExprScopes, ScopeId},
     },
-    db::{DefDatabase, FunctionId, Location},
+    database::{DefDatabase, FunctionId, Location},
     hir_file_id::ImportFile,
     module_data::{
         Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItem, Name, Override, Struct,
@@ -88,7 +88,7 @@ impl Resolver {
     pub fn push_scope(
         mut self,
         scope: Scope,
-    ) -> Resolver {
+    ) -> Self {
         self.scopes.push(scope);
         self
     }
@@ -96,25 +96,25 @@ impl Resolver {
     #[must_use]
     pub fn push_module_scope(
         mut self,
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         file_id: HirFileId,
         module_info: Arc<ModuleInfo>,
-    ) -> Resolver {
+    ) -> Self {
         for item in module_info.items() {
             if let ModuleItem::Import(import) = item {
                 let loc = Location::new(file_id, *import);
-                let import_id = db.intern_import(loc);
+                let import_id = database.intern_import(loc);
                 let import_file = HirFileId::from(ImportFile { import_id });
-                let import_module_info = db.module_info(import_file);
+                let import_module_info = database.module_info(import_file);
                 // If we can find the original source file for this import, push its scope
-                if let Some(original_file_id) = import_file.original_file(db) {
+                if let Some(original_file_id) = import_file.original_file(database) {
                     let original_file_id = HirFileId::from(original_file_id);
-                    self = self.push_module_scope(db, original_file_id, import_module_info);
+                    self = self.push_module_scope(database, original_file_id, import_module_info);
                 } else {
                     info!("Failed to resolve import file for {file_id:?}");
                     // This import might be a custom import without a direct file
                     // For these cases, we'll use the imported module info with the original file ID
-                    self = self.push_module_scope(db, file_id, import_module_info);
+                    self = self.push_module_scope(database, file_id, import_module_info);
                     info!("Using module_info for import without resolving to a file: {file_id:?}");
                 }
             }
@@ -133,7 +133,7 @@ impl Resolver {
         owner: FunctionId,
         expression_scopes: Arc<ExprScopes>,
         scope_id: ScopeId,
-    ) -> Resolver {
+    ) -> Self {
         self.scopes.push(Scope::ExprScope(ExprScope {
             owner,
             expression_scopes,
@@ -146,17 +146,18 @@ impl Resolver {
         self.scopes.iter().rev()
     }
 
+    #[must_use]
     pub fn body_owner(&self) -> Option<FunctionId> {
         self.scopes().find_map(|scope| match scope {
             Scope::ExprScope(scope) => Some(scope.owner),
-            _ => None,
+            Scope::ModuleScope(_) | Scope::BuiltinScope => None,
         })
     }
 
     /// calls f for every local, function, and global declaration, but not structs
-    pub fn process_value_names(
+    pub fn process_value_names<Function: FnMut(Name, ScopeDef)>(
         &self,
-        mut f: impl FnMut(Name, ScopeDef),
+        mut function: Function,
     ) {
         self.scopes().for_each(|scope| match scope {
             Scope::ModuleScope(scope) => {
@@ -165,25 +166,25 @@ impl Resolver {
                     .items()
                     .iter()
                     .for_each(|item| match item {
-                        ModuleItem::Function(func) => f(
+                        ModuleItem::Function(func) => function(
                             scope.module_info.data[func.index].name.clone(),
                             ScopeDef::ModuleItem(scope.file_id, *item),
                         ),
-                        ModuleItem::GlobalVariable(var) => f(
+                        ModuleItem::GlobalVariable(var) => function(
                             scope.module_info.data[var.index].name.clone(),
                             ScopeDef::ModuleItem(scope.file_id, *item),
                         ),
-                        ModuleItem::GlobalConstant(constant) => f(
+                        ModuleItem::GlobalConstant(constant) => function(
                             scope.module_info.data[constant.index].name.clone(),
                             ScopeDef::ModuleItem(scope.file_id, *item),
                         ),
-                        ModuleItem::Override(override_decl) => f(
+                        ModuleItem::Override(override_decl) => function(
                             scope.module_info.data[override_decl.index].name.clone(),
                             ScopeDef::ModuleItem(scope.file_id, *item),
                         ),
-                        ModuleItem::Struct(_) => {},
-                        ModuleItem::Import(_) => {},
-                        ModuleItem::TypeAlias(_) => {},
+                        ModuleItem::Struct(_)
+                        | ModuleItem::Import(_)
+                        | ModuleItem::TypeAlias(_) => {},
                     });
             },
             Scope::ExprScope(expression_scope) => {
@@ -193,7 +194,7 @@ impl Resolver {
                     .for_each(|id| {
                         let data = &expression_scope.expression_scopes[id];
                         data.entries.iter().for_each(|entry| {
-                            f(entry.name.clone(), ScopeDef::Local(entry.binding))
+                            function(entry.name.clone(), ScopeDef::Local(entry.binding));
                         });
                     });
             },
@@ -201,6 +202,7 @@ impl Resolver {
         });
     }
 
+    #[must_use]
     pub fn resolve_value(
         &self,
         name: &Name,
@@ -219,28 +221,37 @@ impl Resolver {
                         .items()
                         .iter()
                         .find_map(|item| match item {
-                            ModuleItem::GlobalVariable(var)
-                                if &scope.module_info.data[var.index].name == name =>
+                            ModuleItem::GlobalVariable(variable)
+                                if &scope.module_info.data[variable.index].name == name =>
                             {
                                 Some(ResolveValue::GlobalVariable(Location::new(
                                     scope.file_id,
-                                    *var,
+                                    *variable,
                                 )))
                             },
-                            ModuleItem::GlobalConstant(c)
-                                if &scope.module_info.data[c.index].name == name =>
+                            ModuleItem::GlobalConstant(constant)
+                                if &scope.module_info.data[constant.index].name == name =>
                             {
                                 Some(ResolveValue::GlobalConstant(Location::new(
                                     scope.file_id,
-                                    *c,
+                                    *constant,
                                 )))
                             },
-                            ModuleItem::Override(c)
-                                if &scope.module_info.data[c.index].name == name =>
+                            ModuleItem::Override(r#override)
+                                if &scope.module_info.data[r#override.index].name == name =>
                             {
-                                Some(ResolveValue::Override(Location::new(scope.file_id, *c)))
+                                Some(ResolveValue::Override(Location::new(
+                                    scope.file_id,
+                                    *r#override,
+                                )))
                             },
-                            _ => None,
+                            ModuleItem::Function(_)
+                            | ModuleItem::Struct(_)
+                            | ModuleItem::GlobalVariable(_)
+                            | ModuleItem::GlobalConstant(_)
+                            | ModuleItem::Override(_)
+                            | ModuleItem::Import(_)
+                            | ModuleItem::TypeAlias(_) => None,
                         })
                 },
                 Scope::BuiltinScope => None,
@@ -248,6 +259,7 @@ impl Resolver {
         })
     }
 
+    #[must_use]
     pub fn resolve_type(
         &self,
         name: &Name,
@@ -269,7 +281,11 @@ impl Resolver {
                             (&type_alias.name == name)
                                 .then(|| ResolveType::TypeAlias(InFile::new(scope.file_id, *id)))
                         },
-                        _ => None,
+                        ModuleItem::Function(_)
+                        | ModuleItem::GlobalVariable(_)
+                        | ModuleItem::GlobalConstant(_)
+                        | ModuleItem::Override(_)
+                        | ModuleItem::Import(_) => None,
                     })
             },
             Scope::ExprScope(_) => None,
@@ -281,6 +297,7 @@ impl Resolver {
         })
     }
 
+    #[must_use]
     pub fn resolve_callable(
         &self,
         name: &Name,
@@ -308,7 +325,10 @@ impl Resolver {
                             (&function.name == name)
                                 .then(|| ResolveCallable::Function(InFile::new(scope.file_id, *id)))
                         },
-                        _ => None,
+                        ModuleItem::GlobalVariable(_)
+                        | ModuleItem::GlobalConstant(_)
+                        | ModuleItem::Override(_)
+                        | ModuleItem::Import(_) => None,
                     })
             },
             Scope::ExprScope(_) => None,

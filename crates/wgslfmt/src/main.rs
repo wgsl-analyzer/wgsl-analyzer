@@ -1,16 +1,23 @@
-use std::{io::Read, path::PathBuf};
+#![expect(clippy::print_stderr, reason = "CLI program")]
+#![expect(clippy::print_stdout, reason = "CLI program")]
+#![allow(
+    unfulfilled_lint_expectations,
+    reason = "https://github.com/rust-lang/rust-clippy/issues/15107"
+)]
 
-use anyhow::Context;
+use std::{io::Read as _, path::PathBuf};
+
+use anyhow::Context as _;
 use lexopt::prelude::*;
 use wgsl_formatter::FormattingOptions;
 
-const HELP_STR: &str = r#"wgslfmt [options] <file>...
+const HELP_STR: &str = "wgslfmt [options] <file>...
 
 Options:
     --check     Run in 'check' mode. Exists with 0 if input is formatted correctly.
                 Exits with 1 and prints a diff if formatting is required.
     --tabs      Use tabs for indentation (instead of spaces)
-"#;
+";
 
 struct Arguments {
     check: bool,
@@ -18,6 +25,7 @@ struct Arguments {
     files: Vec<PathBuf>,
 }
 
+#[expect(clippy::exit, reason = "TODO: use clap")]
 fn parse_arguments() -> Result<Arguments, lexopt::Error> {
     let mut parser = lexopt::Parser::from_env();
     let mut arguments = Arguments {
@@ -35,17 +43,18 @@ fn parse_arguments() -> Result<Arguments, lexopt::Error> {
             Long("check") => arguments.check = true,
             Long("tabs") => arguments.tab_indent = true,
             Value(file) => arguments.files.push(PathBuf::from(file)),
-            _ => return Err(arg.unexpected()),
+            Short(_) | Long(_) => return Err(arg.unexpected()),
         }
     }
     Ok(arguments)
 }
 
+#[expect(clippy::exit, reason = "TODO: use clap")]
 fn main() -> Result<(), anyhow::Error> {
     let mut arguments = parse_arguments()?;
 
     if arguments.files.is_empty() {
-        arguments.files.push(PathBuf::from("-"))
+        arguments.files.push(PathBuf::from("-"));
     }
 
     for file in arguments.files {
@@ -58,7 +67,9 @@ fn main() -> Result<(), anyhow::Error> {
 
         let mut formatting_options = FormattingOptions::default();
         if arguments.tab_indent {
-            formatting_options.indent_symbol = "\t".to_string();
+            formatting_options
+                .indent_symbol
+                .clone_from(&"\t".to_owned());
         }
         let output = wgsl_formatter::format_str(&input, &formatting_options);
 
@@ -68,7 +79,6 @@ fn main() -> Result<(), anyhow::Error> {
                 let diff = prettydiff::diff_lines(&input, &output);
 
                 println!("Diff in {}\n{}:", file.display(), diff);
-                std::process::exit(1);
             }
         } else if is_stdin {
             print!("{output}");

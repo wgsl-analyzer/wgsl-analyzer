@@ -1,43 +1,48 @@
 #![cfg_attr(not(test), allow(unused))]
+
 use expect_test::{Expect, expect};
 
 use crate::ParseEntryPoint;
 
+#[expect(clippy::needless_pass_by_value, reason = "intended API")]
 fn check(
     input: &str,
     expected_tree: Expect,
 ) {
-    crate::check_entrypoint(input, ParseEntryPoint::File, expected_tree);
+    crate::check_entrypoint(input, ParseEntryPoint::File, &expected_tree);
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "intended API")]
 fn check_type(
     input: &str,
     expected_tree: Expect,
 ) {
-    crate::check_entrypoint(input, ParseEntryPoint::Type, expected_tree);
+    crate::check_entrypoint(input, ParseEntryPoint::Type, &expected_tree);
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "intended API")]
 fn check_statement(
     statement: &str,
     expected_tree: Expect,
 ) {
-    crate::check_entrypoint(statement, ParseEntryPoint::Statement, expected_tree);
+    crate::check_entrypoint(statement, ParseEntryPoint::Statement, &expected_tree);
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "intended API")]
 fn check_attribute_list(
     statement: &str,
     expected_tree: Expect,
 ) {
-    crate::check_entrypoint(statement, ParseEntryPoint::AttributeList, expected_tree);
+    crate::check_entrypoint(statement, ParseEntryPoint::AttributeList, &expected_tree);
 }
 
 #[test]
 fn can_parse_array_declaration() {
     check(
-        r#"
+        "
 		const dim: vec3u = vec3u();
 		fn test(a: array<f32, dim.x>) { }
-		"#,
+		",
         expect![[r#"
             SourceFile@0..69
               Blankspace@0..3 "\n\t\t"
@@ -105,10 +110,10 @@ fn can_parse_array_declaration() {
 #[test]
 fn cannot_parse_bad_array_declaration() {
     check(
-        r#"
+        "
 		const dim: vec3u = vec3u();
 		fn test(a: array<f32, dim.>) { }
-		"#,
+		",
         expect![[r#"
             SourceFile@0..68
               Blankspace@0..3 "\n\t\t"
@@ -185,7 +190,7 @@ fn cannot_parse_bad_array_declaration() {
 
 #[test]
 fn parse_empty() {
-    check("", expect![[r#"SourceFile@0..0"#]]);
+    check("", expect![["SourceFile@0..0"]]);
 }
 
 #[test]
@@ -208,7 +213,7 @@ fn fn_incomplete() {
 #[test]
 fn parse_comments() {
     check(
-        r#"
+        "
 		const f = 1.5; // This is line-ending comment.
 		const g = 2.5; /* This is a block comment
                 that spans lines.
@@ -216,7 +221,7 @@ fn parse_comments() {
                  */
                 But all block comments must terminate.
                */
-		"#,
+		",
         expect![[r#"
             SourceFile@0..267
               Blankspace@0..3 "\n\t\t"
@@ -256,12 +261,12 @@ fn parse_comments() {
 #[test]
 fn cannot_parse_unmatched_block_comment() {
     check(
-        r#"
+        "
 		/* This is a block comment that spans lines.
 			/* Block comments can nest.
 			But all block comments must terminate.
 			*/
-		"#,
+		",
         expect![[r#"
             SourceFile@0..129
               Blankspace@0..3 "\n\t\t"
@@ -324,10 +329,10 @@ fn function() {
 #[test]
 fn variable_declarations() {
     check(
-        r#"fn name() {
+        "fn name() {
 let x: f32 = 1.0;
 let y: f32 = 2.0;
-        }"#,
+        }",
         expect![[r#"
             SourceFile@0..57
               Function@0..57
@@ -403,8 +408,8 @@ fn fn_recover() {
 #[test]
 fn fn_recover_2() {
     check(
-        r#"fn name()
-        fn test() {}"#,
+        "fn name()
+        fn test() {}",
         expect![[r#"
             SourceFile@0..30
               Function@0..18
@@ -555,9 +560,9 @@ fn parse_type_generic_ptr() {
 #[test]
 fn parse_return_statement() {
     check(
-        r#"fn f() -> u32 {
+        "fn f() -> u32 {
             return 0;
-        }"#,
+        }",
         expect![[r#"
             SourceFile@0..47
               Function@0..47
@@ -592,11 +597,11 @@ fn parse_return_statement() {
 #[test]
 fn parse_let_statement_recover() {
     check(
-        r#"fn f() -> u32 {
+        "fn f() -> u32 {
             let x =
             let y =
             return 0
-        }"#,
+        }",
         expect![[r#"
             SourceFile@0..86
               Function@0..86
@@ -680,7 +685,7 @@ fn parse_statement_return() {
 #[test]
 fn parse_while_statement() {
     check_statement(
-        r#"while 0 > 3 { let x = 3; }"#,
+        "while 0 > 3 { let x = 3; }",
         expect![[r#"
             WhileStatement@0..26
               While@0..5 "while"
@@ -717,7 +722,7 @@ fn parse_while_statement() {
 #[test]
 fn parse_if_statement() {
     check_statement(
-        r#"if (0 > 3) { let x = 3; return x; }"#,
+        "if (0 > 3) { let x = 3; return x; }",
         expect![[r#"
             IfStatement@0..35
               If@0..2 "if"
@@ -765,9 +770,9 @@ fn parse_if_statement() {
 #[test]
 fn parse_if_recover_paren() {
     check_statement(
-        r#"if () {
+        "if () {
           let x = 3;
-        }"#,
+        }",
         expect![[r#"
             IfStatement@0..38
               If@0..2 "if"
@@ -802,9 +807,9 @@ fn parse_if_recover_paren() {
 #[test]
 fn parse_if_without_paren() {
     check_statement(
-        r#"if true {
+        "if true {
           let x = 3;
-        }"#,
+        }",
         expect![[r#"
             IfStatement@0..40
               If@0..2 "if"
@@ -835,9 +840,9 @@ fn parse_if_without_paren() {
 #[test]
 fn parse_if_recover_empty() {
     check_statement(
-        r#"if {
+        "if {
           let x = 3;
-        }"#,
+        }",
         expect![[r#"
             IfStatement@0..35
               If@0..2 "if"
@@ -919,7 +924,7 @@ fn parse_if_else() {
                 CompoundStatement@45..47
                   BraceLeft@45..46 "{"
                   BraceRight@46..47 "}""#]],
-    )
+    );
 }
 
 #[test]
@@ -1010,7 +1015,7 @@ fn parse_for_statement() {
               CompoundStatement@33..35
                 BraceLeft@33..34 "{"
                 BraceRight@34..35 "}""#]],
-    )
+    );
 }
 
 #[test]
@@ -1069,7 +1074,7 @@ fn parse_for_statement_comma() {
               CompoundStatement@33..35
                 BraceLeft@33..34 "{"
                 BraceRight@34..35 "}""#]],
-    )
+    );
 }
 
 #[test]
@@ -1404,7 +1409,7 @@ fn parse_var_without_initializer() {
               Blankspace@6..7 " "
               Uint32@7..10
                 Uint32@7..10 "u32""#]],
-    )
+    );
 }
 
 #[test]
@@ -1426,7 +1431,7 @@ fn parse_var_with_initializer() {
               Blankspace@16..17 " "
               Uint32@17..20
                 Uint32@17..20 "u32""#]],
-    )
+    );
 }
 
 #[test]
@@ -1536,7 +1541,7 @@ fn let_statement_recover_return_no_eq() {
                   BraceRight@41..42 "}"
 
             error at 30..32: expected Colon, but found Identifier"#]],
-    )
+    );
 }
 
 #[test]
@@ -1795,13 +1800,13 @@ fn weird_line_ending_comments() {
 #[test]
 fn struct_underscore_field_name() {
     check(
-        r#"
+        "
 struct UBO {
   camera_position: vec3f,
   _pad: u32
   time: f32,
 };
-"#,
+",
         expect![[r#"
             SourceFile@0..68
               Blankspace@0..1 "\n"
@@ -1856,12 +1861,12 @@ struct UBO {
 #[test]
 fn struct_decl_semi() {
     check(
-        r#"
+        "
 struct Test {
     a: f32;
     b: vec3<f32>;
 }
-"#,
+",
         expect![[r#"
             SourceFile@0..47
               Blankspace@0..1 "\n"
@@ -1909,12 +1914,12 @@ struct Test {
 #[test]
 fn struct_decl() {
     check(
-        r#"
+        "
 struct Test {
     a: f32,
     b: vec3<f32>,
 }
-"#,
+",
         expect![[r#"
             SourceFile@0..47
               Blankspace@0..1 "\n"
@@ -1962,10 +1967,10 @@ struct Test {
 #[test]
 fn struct_recover() {
     check(
-        r#"
+        "
 struct
 fn test()
-"#,
+",
         expect![[r#"
             SourceFile@0..18
               Blankspace@0..1 "\n"
@@ -1991,10 +1996,10 @@ fn test()
 #[test]
 fn struct_recover_2() {
     check(
-        r#"
+        "
 struct test
 fn test()
-"#,
+",
         expect![[r#"
             SourceFile@0..23
               Blankspace@0..1 "\n"
@@ -2023,12 +2028,12 @@ fn test()
 #[test]
 fn struct_recover_3() {
     check(
-        r#"
+        "
 struct test {}
 
 fn test()
 };
-"#,
+",
         expect![[r#"
             SourceFile@0..30
               Blankspace@0..1 "\n"
@@ -2184,7 +2189,7 @@ fn parse_statement_expression() {
     check_statement(
         "test(args);",
         expect![[r#"
-            ExpressionStatement@0..10
+            FunctionCallStatement@0..10
               FunctionCall@0..10
                 NameReference@0..4
                   Identifier@0..4 "test"
@@ -2303,15 +2308,15 @@ fn parse_string_import() {
 
 fn parse_switch_statement() {
     check_statement(
-        r#"
+        "
 switch i {
-  case 0: { fallthrough; }
+  case 0: { }
   case 1, 2: { return 42; }
   default: { }
 }
-        "#,
+        ",
         expect![[r#"
-            SwitchStatement@0..92
+            SwitchStatement@0..79
               Blankspace@0..1 "\n"
               Switch@1..7 "switch"
               Blankspace@7..8 " "
@@ -2319,10 +2324,10 @@ switch i {
                 NameReference@8..10
                   Identifier@8..9 "i"
                   Blankspace@9..10 " "
-              SwitchBlock@10..92
+              SwitchBlock@10..79
                 BraceLeft@10..11 "{"
                 Blankspace@11..14 "\n  "
-                SwitchBodyCase@14..41
+                SwitchBodyCase@14..28
                   Case@14..18 "case"
                   Blankspace@18..19 " "
                   SwitchCaseSelectors@19..20
@@ -2330,60 +2335,57 @@ switch i {
                       DecimalIntLiteral@19..20 "0"
                   Colon@20..21 ":"
                   Blankspace@21..22 " "
-                  CompoundStatement@22..41
+                  CompoundStatement@22..28
                     BraceLeft@22..23 "{"
                     Blankspace@23..24 " "
-                    Fallthrough@24..35 "fallthrough"
-                    Semicolon@35..36 ";"
-                    Blankspace@36..37 " "
-                    BraceRight@37..38 "}"
-                    Blankspace@38..41 "\n  "
-                SwitchBodyCase@41..69
-                  Case@41..45 "case"
-                  Blankspace@45..46 " "
-                  SwitchCaseSelectors@46..50
-                    Literal@46..47
-                      DecimalIntLiteral@46..47 "1"
-                    Comma@47..48 ","
-                    Blankspace@48..49 " "
-                    Literal@49..50
-                      DecimalIntLiteral@49..50 "2"
-                  Colon@50..51 ":"
-                  Blankspace@51..52 " "
-                  CompoundStatement@52..69
-                    BraceLeft@52..53 "{"
-                    Blankspace@53..54 " "
-                    ReturnStatement@54..63
-                      Return@54..60 "return"
-                      Blankspace@60..61 " "
-                      Literal@61..63
-                        DecimalIntLiteral@61..63 "42"
-                    Semicolon@63..64 ";"
-                    Blankspace@64..65 " "
-                    BraceRight@65..66 "}"
-                    Blankspace@66..69 "\n  "
-                SwitchBodyDefault@69..82
-                  Default@69..76 "default"
-                  Colon@76..77 ":"
-                  Blankspace@77..78 " "
-                  CompoundStatement@78..82
-                    BraceLeft@78..79 "{"
-                    Blankspace@79..80 " "
-                    BraceRight@80..81 "}"
-                    Blankspace@81..82 "\n"
-                BraceRight@82..83 "}"
-                Blankspace@83..92 "\n        ""#]],
+                    BraceRight@24..25 "}"
+                    Blankspace@25..28 "\n  "
+                SwitchBodyCase@28..56
+                  Case@28..32 "case"
+                  Blankspace@32..33 " "
+                  SwitchCaseSelectors@33..37
+                    Literal@33..34
+                      DecimalIntLiteral@33..34 "1"
+                    Comma@34..35 ","
+                    Blankspace@35..36 " "
+                    Literal@36..37
+                      DecimalIntLiteral@36..37 "2"
+                  Colon@37..38 ":"
+                  Blankspace@38..39 " "
+                  CompoundStatement@39..56
+                    BraceLeft@39..40 "{"
+                    Blankspace@40..41 " "
+                    ReturnStatement@41..50
+                      Return@41..47 "return"
+                      Blankspace@47..48 " "
+                      Literal@48..50
+                        DecimalIntLiteral@48..50 "42"
+                    Semicolon@50..51 ";"
+                    Blankspace@51..52 " "
+                    BraceRight@52..53 "}"
+                    Blankspace@53..56 "\n  "
+                SwitchBodyDefault@56..69
+                  Default@56..63 "default"
+                  Colon@63..64 ":"
+                  Blankspace@64..65 " "
+                  CompoundStatement@65..69
+                    BraceLeft@65..66 "{"
+                    Blankspace@66..67 " "
+                    BraceRight@67..68 "}"
+                    Blankspace@68..69 "\n"
+                BraceRight@69..70 "}"
+                Blankspace@70..79 "\n        ""#]],
     );
 }
 
 #[test]
 fn parse_switch_statement_recover_1() {
     check_statement(
-        r#"
+        "
 switch i {
   case
 }
-        "#,
+        ",
         expect![[r#"
             SwitchStatement@0..29
               Blankspace@0..1 "\n"
@@ -2408,11 +2410,11 @@ switch i {
 #[test]
 fn parse_switch_statement_recover_2() {
     check_statement(
-        r#"
+        "
 switch i {
   case 1
 }
-        "#,
+        ",
         expect![[r#"
             SwitchStatement@0..31
               Blankspace@0..1 "\n"
@@ -2440,7 +2442,7 @@ switch i {
 #[test]
 fn parse_switch_statement_recover_3() {
     check_statement(
-        r#"
+        "
 {
 switch i {
   case 1:
@@ -2448,7 +2450,7 @@ switch i {
 
 let x = 3;
 }
-        "#,
+        ",
         expect![[r#"
             CompoundStatement@0..48
               Blankspace@0..1 "\n"
@@ -2495,14 +2497,14 @@ let x = 3;
 #[test]
 fn parse_switch_statement_recover_4() {
     check_statement(
-        r#"
+        "
 {
 switch i {
   case 1, 2,
 }
 let x = 3;
 }
-        "#,
+        ",
         expect![[r#"
             CompoundStatement@0..50
               Blankspace@0..1 "\n"

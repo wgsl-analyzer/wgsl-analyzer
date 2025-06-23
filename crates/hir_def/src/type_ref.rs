@@ -1,3 +1,5 @@
+use std::fmt;
+
 use syntax::{HasGenerics, ast};
 
 use crate::{expression::parse_literal, module_data::Name};
@@ -16,22 +18,22 @@ pub enum TypeReference {
     Pointer(PointerType),
 }
 
-impl std::fmt::Display for TypeReference {
+impl fmt::Display for TypeReference {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
-            TypeReference::Error => write!(f, "[error]"),
-            TypeReference::Scalar(value) => write!(f, "{value}"),
-            TypeReference::Vec(value) => write!(f, "{value}"),
-            TypeReference::Matrix(value) => write!(f, "{value}"),
-            TypeReference::Texture(value) => write!(f, "{value}"),
-            TypeReference::Sampler(value) => write!(f, "{value}"),
-            TypeReference::Atomic(value) => write!(f, "{value}"),
-            TypeReference::Array(value) => write!(f, "{value}"),
-            TypeReference::Path(value) => write!(f, "{}", value.as_str()),
-            TypeReference::Pointer(value) => write!(f, "{value}"),
+            Self::Error => write!(f, "[error]"),
+            Self::Scalar(value) => write!(f, "{value}"),
+            Self::Vec(value) => write!(f, "{value}"),
+            Self::Matrix(value) => write!(f, "{value}"),
+            Self::Texture(value) => write!(f, "{value}"),
+            Self::Sampler(value) => write!(f, "{value}"),
+            Self::Atomic(value) => write!(f, "{value}"),
+            Self::Array(value) => write!(f, "{value}"),
+            Self::Path(value) => write!(f, "{}", value.as_str()),
+            Self::Pointer(value) => write!(f, "{value}"),
         }
     }
 }
@@ -41,16 +43,16 @@ impl TryFrom<ast::Type> for TypeReference {
 
     fn try_from(r#type: ast::Type) -> Result<Self, ()> {
         let type_ref = match r#type {
-            ast::Type::PathType(path) => TypeReference::Path(path.name().ok_or(())?.text().into()),
-            ast::Type::ScalarType(scalar) => TypeReference::Scalar(scalar.into()),
-            ast::Type::VecType(vec) => TypeReference::Vec(vec.try_into()?),
-            ast::Type::MatrixType(matrix) => TypeReference::Matrix(matrix.try_into()?),
-            ast::Type::TextureType(tex) => TypeReference::Texture(tex.try_into()?),
-            ast::Type::SamplerType(sampler) => TypeReference::Sampler(sampler.into()),
-            ast::Type::AtomicType(atomic) => TypeReference::Atomic(atomic.try_into()?),
-            ast::Type::ArrayType(array) => TypeReference::Array(array.try_into()?),
-            ast::Type::BindingArrayType(array) => TypeReference::Array(array.try_into()?),
-            ast::Type::PointerType(pointer) => TypeReference::Pointer(pointer.try_into()?),
+            ast::Type::PathType(path) => Self::Path(path.name().ok_or(())?.text().into()),
+            ast::Type::ScalarType(scalar) => Self::Scalar(scalar.into()),
+            ast::Type::VecType(vec) => Self::Vec(vec.try_into()?),
+            ast::Type::MatrixType(matrix) => Self::Matrix(matrix.try_into()?),
+            ast::Type::TextureType(tex) => Self::Texture(tex.try_into()?),
+            ast::Type::SamplerType(sampler) => Self::Sampler(sampler.into()),
+            ast::Type::AtomicType(atomic) => Self::Atomic(atomic.try_into()?),
+            ast::Type::ArrayType(array) => Self::Array(array.try_into()?),
+            ast::Type::BindingArrayType(array) => Self::Array(array.try_into()?),
+            ast::Type::PointerType(pointer) => Self::Pointer(pointer.try_into()?),
         };
         Ok(type_ref)
     }
@@ -67,24 +69,24 @@ pub enum ScalarType {
 impl From<ast::ScalarType> for ScalarType {
     fn from(r#type: ast::ScalarType) -> Self {
         match r#type {
-            ast::ScalarType::Bool(_) => ScalarType::Bool,
-            ast::ScalarType::Float32(_) => ScalarType::Float32,
-            ast::ScalarType::Int32(_) => ScalarType::Int32,
-            ast::ScalarType::Uint32(_) => ScalarType::Uint32,
+            ast::ScalarType::Bool(_) => Self::Bool,
+            ast::ScalarType::Float32(_) => Self::Float32,
+            ast::ScalarType::Int32(_) => Self::Int32,
+            ast::ScalarType::Uint32(_) => Self::Uint32,
         }
     }
 }
 
-impl std::fmt::Display for ScalarType {
+impl fmt::Display for ScalarType {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
-            ScalarType::Bool => f.write_str("bool"),
-            ScalarType::Float32 => f.write_str("f32"),
-            ScalarType::Int32 => f.write_str("i32"),
-            ScalarType::Uint32 => f.write_str("u32"),
+            Self::Bool => f.write_str("bool"),
+            Self::Float32 => f.write_str("f32"),
+            Self::Int32 => f.write_str("i32"),
+            Self::Uint32 => f.write_str("u32"),
         }
     }
 }
@@ -95,11 +97,11 @@ pub struct VecType {
     pub inner: Box<TypeReference>,
 }
 
-impl std::fmt::Display for VecType {
+impl fmt::Display for VecType {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         write!(f, "vec{}<{}>", self.size, &*self.inner)
     }
 }
@@ -111,15 +113,15 @@ pub enum VecDimensionality {
     Four,
 }
 
-impl std::fmt::Display for VecDimensionality {
+impl fmt::Display for VecDimensionality {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
-            VecDimensionality::Two => f.write_str("2"),
-            VecDimensionality::Three => f.write_str("3"),
-            VecDimensionality::Four => f.write_str("4"),
+            Self::Two => f.write_str("2"),
+            Self::Three => f.write_str("3"),
+            Self::Four => f.write_str("4"),
         }
     }
 }
@@ -131,14 +133,14 @@ impl TryFrom<ast::VecType> for VecType {
         let size = vector_dimensions(&r#type);
         let inner = first_type_generic(&r#type)?;
 
-        Ok(VecType {
+        Ok(Self {
             size,
             inner: Box::new(inner.try_into()?),
         })
     }
 }
 
-pub(crate) fn vector_dimensions(r#type: &ast::VecType) -> VecDimensionality {
+pub(crate) const fn vector_dimensions(r#type: &ast::VecType) -> VecDimensionality {
     match *r#type {
         ast::VecType::Vec2(_) => VecDimensionality::Two,
         ast::VecType::Vec3(_) => VecDimensionality::Three,
@@ -160,7 +162,7 @@ impl TryFrom<ast::MatrixType> for MatrixType {
         let (columns, rows) = matrix_dimensions(&r#type);
         let inner = first_type_generic(&r#type)?;
 
-        Ok(MatrixType {
+        Ok(Self {
             columns,
             rows,
             inner: Box::new(inner.try_into()?),
@@ -168,7 +170,7 @@ impl TryFrom<ast::MatrixType> for MatrixType {
     }
 }
 
-pub(crate) fn matrix_dimensions(
+pub(crate) const fn matrix_dimensions(
     r#type: &ast::MatrixType
 ) -> (VecDimensionality, VecDimensionality) {
     let (columns, rows) = match *r#type {
@@ -185,11 +187,11 @@ pub(crate) fn matrix_dimensions(
     (columns, rows)
 }
 
-impl std::fmt::Display for MatrixType {
+impl fmt::Display for MatrixType {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         write!(f, "mat{}x{}<{}>", self.columns, self.rows, &*self.inner)
     }
 }
@@ -209,11 +211,11 @@ pub struct TextureType {
     pub kind: TextureKind,
 }
 
-impl std::fmt::Display for TextureType {
+impl fmt::Display for TextureType {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match &self.kind {
             TextureKind::Sampled(r#type) => write!(
                 f,
@@ -272,16 +274,16 @@ pub enum TextureDimension {
     Cube,
 }
 
-impl std::fmt::Display for TextureDimension {
+impl fmt::Display for TextureDimension {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
-            TextureDimension::D1 => f.write_str("1d"),
-            TextureDimension::D2 => f.write_str("2d"),
-            TextureDimension::D3 => f.write_str("3d"),
-            TextureDimension::Cube => f.write_str("cube"),
+            Self::D1 => f.write_str("1d"),
+            Self::D2 => f.write_str("2d"),
+            Self::D3 => f.write_str("3d"),
+            Self::Cube => f.write_str("cube"),
         }
     }
 }
@@ -345,7 +347,7 @@ impl TryFrom<ast::TextureType> for TextureType {
             TextureKindVariant::External => TextureKind::External,
         };
 
-        Ok(TextureType {
+        Ok(Self {
             dimension,
             arrayed,
             multisampled,
@@ -364,77 +366,81 @@ pub enum AccessMode {
     Any,
 }
 
-impl std::fmt::Display for AccessMode {
+impl fmt::Display for AccessMode {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         match self {
-            AccessMode::ReadWrite => f.write_str("read_write"),
-            AccessMode::Read => f.write_str("read"),
-            AccessMode::Write => f.write_str("write"),
-            AccessMode::Any => f.write_str("_"),
+            Self::ReadWrite => f.write_str("read_write"),
+            Self::Read => f.write_str("read"),
+            Self::Write => f.write_str("write"),
+            Self::Any => f.write_str("_"),
         }
     }
 }
 
 impl AccessMode {
-    pub fn read_write() -> AccessMode {
-        AccessMode::ReadWrite
+    #[must_use]
+    pub const fn read_write() -> Self {
+        Self::ReadWrite
     }
 }
 
 impl From<ast::AccessMode> for AccessMode {
     fn from(value: ast::AccessMode) -> Self {
         match value {
-            ast::AccessMode::Read(_) => AccessMode::Read,
-            ast::AccessMode::Write(_) => AccessMode::Write,
-            ast::AccessMode::ReadWrite(_) => AccessMode::ReadWrite,
+            ast::AccessMode::Read(_) => Self::Read,
+            ast::AccessMode::Write(_) => Self::Write,
+            ast::AccessMode::ReadWrite(_) => Self::ReadWrite,
         }
     }
 }
 
-/// https://www.w3.org/TR/WGSL/#address-space
+/// <https://www.w3.org/TR/WGSL/#address-space>
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum AddressSpace {
+    /// <https://www.w3.org/TR/WGSL/#address-spaces-function>
     Function,
+    /// <https://www.w3.org/TR/WGSL/#address-spaces-private>
     Private,
+    /// <https://www.w3.org/TR/WGSL/#address-spaces-workgroup>
     Workgroup,
+    /// <https://www.w3.org/TR/WGSL/#address-spaces-uniform>
     Uniform,
+    /// <https://www.w3.org/TR/WGSL/#address-spaces-storage>
     Storage,
+    /// <https://www.w3.org/TR/WGSL/#address-spaces-handle>
     Handle,
     /// WGPU extension
-    /// See: https://docs.rs/wgpu/latest/wgpu/struct.Features.html#associatedconstant.PUSH_CONSTANTS
+    /// See: <https://docs.rs/wgpu/latest/wgpu/struct.Features.html#associatedconstant.PUSH_CONSTANTS>
     PushConstant,
 }
 
-impl std::fmt::Display for AddressSpace {
+impl fmt::Display for AddressSpace {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         f.write_str(match self {
-            AddressSpace::Function => "function",
-            AddressSpace::Private => "private",
-            AddressSpace::Workgroup => "workgroup",
-            AddressSpace::Uniform => "uniform",
-            AddressSpace::Storage => "storage",
-            AddressSpace::Handle => "handle",
-            AddressSpace::PushConstant => "push_constant",
+            Self::Function => "function",
+            Self::Private => "private",
+            Self::Workgroup => "workgroup",
+            Self::Uniform => "uniform",
+            Self::Storage => "storage",
+            Self::Handle => "handle",
+            Self::PushConstant => "push_constant",
         })
     }
 }
 
 impl AddressSpace {
-    pub fn default_access_mode(self) -> AccessMode {
+    #[must_use]
+    /// Sourced from table at <https://www.w3.org/TR/WGSL/#address-space>
+    pub const fn default_access_mode(self) -> AccessMode {
         match self {
-            AddressSpace::Storage => AccessMode::Read,
-            AddressSpace::Function => AccessMode::ReadWrite,
-            AddressSpace::Private => AccessMode::ReadWrite,
-            AddressSpace::Workgroup => AccessMode::ReadWrite,
-            AddressSpace::Uniform => AccessMode::Read,
-            AddressSpace::Handle => AccessMode::Read,
-            AddressSpace::PushConstant => AccessMode::Read,
+            Self::Workgroup | Self::Private | Self::Function => AccessMode::ReadWrite,
+            Self::Uniform | Self::Storage | Self::Handle | Self::PushConstant => AccessMode::Read,
         }
     }
 }
@@ -442,12 +448,12 @@ impl AddressSpace {
 impl From<ast::AddressSpace> for AddressSpace {
     fn from(class: ast::AddressSpace) -> Self {
         match class {
-            ast::AddressSpace::FunctionClass(_) => AddressSpace::Function,
-            ast::AddressSpace::Private(_) => AddressSpace::Private,
-            ast::AddressSpace::Workgroup(_) => AddressSpace::Workgroup,
-            ast::AddressSpace::Uniform(_) => AddressSpace::Uniform,
-            ast::AddressSpace::Storage(_) => AddressSpace::Storage,
-            ast::AddressSpace::PushConstant(_) => AddressSpace::PushConstant,
+            ast::AddressSpace::FunctionClass(_) => Self::Function,
+            ast::AddressSpace::Private(_) => Self::Private,
+            ast::AddressSpace::Workgroup(_) => Self::Workgroup,
+            ast::AddressSpace::Uniform(_) => Self::Uniform,
+            ast::AddressSpace::Storage(_) => Self::Storage,
+            ast::AddressSpace::PushConstant(_) => Self::PushConstant,
         }
     }
 }
@@ -457,14 +463,15 @@ pub struct SamplerType {
     pub comparison: bool,
 }
 
-impl std::fmt::Display for SamplerType {
+impl fmt::Display for SamplerType {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
-        match self.comparison {
-            true => f.write_str("sampler_comparison"),
-            false => f.write_str("sampler"),
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        if self.comparison {
+            f.write_str("sampler_comparison")
+        } else {
+            f.write_str("sampler")
         }
     }
 }
@@ -472,8 +479,8 @@ impl std::fmt::Display for SamplerType {
 impl From<ast::SamplerType> for SamplerType {
     fn from(r#type: ast::SamplerType) -> Self {
         match r#type {
-            ast::SamplerType::Sampler(_) => SamplerType { comparison: false },
-            ast::SamplerType::SamplerComparison(_) => SamplerType { comparison: true },
+            ast::SamplerType::Sampler(_) => Self { comparison: false },
+            ast::SamplerType::SamplerComparison(_) => Self { comparison: true },
         }
     }
 }
@@ -483,11 +490,11 @@ pub struct AtomicType {
     pub inner: Box<TypeReference>,
 }
 
-impl std::fmt::Display for AtomicType {
+impl fmt::Display for AtomicType {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         write!(f, "atomic<{}>", self.inner)
     }
 }
@@ -497,7 +504,7 @@ impl TryFrom<ast::AtomicType> for AtomicType {
 
     fn try_from(atomic: ast::AtomicType) -> Result<Self, Self::Error> {
         let inner = first_type_generic(&atomic)?;
-        Ok(AtomicType {
+        Ok(Self {
             inner: Box::new(inner.try_into()?),
         })
     }
@@ -510,16 +517,16 @@ pub struct ArrayType {
     pub size: ArraySize,
 }
 
-impl std::fmt::Display for ArrayType {
+impl fmt::Display for ArrayType {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         let prefix = if self.binding_array { "binding_" } else { "" };
-        match self.size {
+        match &self.size {
             ArraySize::Int(size) => write!(f, "{}array<{}, {}>", prefix, self.inner, size),
             ArraySize::Uint(size) => write!(f, "{}array<{}, {}>", prefix, self.inner, size),
-            ArraySize::Path(ref size) => {
+            ArraySize::Path(size) => {
                 write!(f, "{}array<{}, {}>", prefix, self.inner, size.as_str())
             },
             ArraySize::Dynamic => write!(f, "{}array<{}>", prefix, self.inner),
@@ -548,12 +555,14 @@ impl TryFrom<ast::ArrayType> for ArrayType {
             Some(ast::GenericArg::Literal(literal)) => match parse_literal(literal.kind()) {
                 crate::expression::Literal::Int(value, _) => ArraySize::Int(value),
                 crate::expression::Literal::Uint(value, _) => ArraySize::Uint(value),
-                _ => return Err(()),
+                crate::expression::Literal::Float(..) | crate::expression::Literal::Bool(_) => {
+                    return Err(());
+                },
             },
             None => ArraySize::Dynamic,
             _ => return Err(()),
         };
-        Ok(ArrayType {
+        Ok(Self {
             inner: Box::new(inner.try_into()?),
             size,
             binding_array: false,
@@ -574,12 +583,14 @@ impl TryFrom<ast::BindingArrayType> for ArrayType {
             Some(ast::GenericArg::Literal(literal)) => match parse_literal(literal.kind()) {
                 crate::expression::Literal::Int(value, _) => ArraySize::Int(value),
                 crate::expression::Literal::Uint(value, _) => ArraySize::Uint(value),
-                _ => return Err(()),
+                crate::expression::Literal::Float(..) | crate::expression::Literal::Bool(_) => {
+                    return Err(());
+                },
             },
             None => ArraySize::Dynamic,
             _ => return Err(()),
         };
-        Ok(ArrayType {
+        Ok(Self {
             inner: Box::new(inner.try_into()?),
             size,
             binding_array: true,
@@ -594,11 +605,11 @@ pub struct PointerType {
     pub inner: Box<TypeReference>,
 }
 
-impl std::fmt::Display for PointerType {
+impl fmt::Display for PointerType {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         write!(f, "ptr<{}, {}>", self.address_space, self.inner)
     }
 }
@@ -620,7 +631,7 @@ impl TryFrom<ast::PointerType> for PointerType {
             _ => return Err(()),
         };
 
-        Ok(PointerType {
+        Ok(Self {
             inner: Box::new(inner.try_into()?),
             access_mode,
             address_space,

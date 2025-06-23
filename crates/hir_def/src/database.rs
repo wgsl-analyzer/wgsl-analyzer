@@ -1,9 +1,16 @@
-use std::{fmt::Debug, marker::PhantomData, sync::Arc};
+#![expect(clippy::empty_structs_with_brackets, reason = "salsa leaks a lint")]
 
-use base_db::{FileId, SourceDatabase, TextRange, TextSize, Upcast};
+use std::{
+    fmt::{self, Debug},
+    hash,
+    marker::PhantomData,
+    sync::Arc,
+};
+
+use base_db::{FileId, SourceDatabase, TextRange, TextSize};
 use salsa::InternKey;
 use syntax::{
-    AstNode, Parse,
+    AstNode as _, Parse,
     ast::{self, Item},
 };
 use vfs::VfsPath;
@@ -27,152 +34,152 @@ use crate::{
 };
 
 #[salsa::query_group(DefDatabaseStorage)]
-pub trait DefDatabase: InternDatabase + Upcast<dyn SourceDatabase> {
+pub trait DefDatabase: InternDatabase + SourceDatabase {
     fn parse_or_resolve(
         &self,
-        file_id: HirFileId,
+        key: HirFileId,
     ) -> Result<Parse, ()>;
 
     fn get_path(
         &self,
-        file_id: HirFileId,
+        key: HirFileId,
     ) -> Result<VfsPath, ()>;
 
     fn get_file_id(
         &self,
-        path: VfsPath,
+        key: VfsPath,
     ) -> Result<FileId, ()>;
 
     fn ast_id_map(
         &self,
-        file_id: HirFileId,
+        key: HirFileId,
     ) -> Arc<AstIdMap>;
 
     fn resolve_full_source(
         &self,
-        file_id: HirFileId,
+        key: HirFileId,
     ) -> Result<String, ()>;
 
     fn text_range_from_full(
         &self,
-        file_id: HirFileId,
+        key: HirFileId,
         range: TextRange,
     ) -> Result<TextRange, ()>;
 
     #[salsa::invoke(ModuleInfo::module_info_query)]
     fn module_info(
         &self,
-        file_id: HirFileId,
+        key: HirFileId,
     ) -> Arc<ModuleInfo>;
 
     #[salsa::invoke(Body::body_with_source_map_query)]
     fn body_with_source_map(
         &self,
-        def: DefinitionWithBodyId,
+        key: DefinitionWithBodyId,
     ) -> (Arc<Body>, Arc<BodySourceMap>);
 
     #[salsa::invoke(Body::body_query)]
     fn body(
         &self,
-        def: DefinitionWithBodyId,
+        key: DefinitionWithBodyId,
     ) -> Arc<Body>;
 
     #[salsa::invoke(ExprScopes::expression_scopes_query)]
     fn expression_scopes(
         &self,
-        def: DefinitionWithBodyId,
+        key: DefinitionWithBodyId,
     ) -> Arc<ExprScopes>;
 
     #[salsa::invoke(FunctionData::fn_data_query)]
     fn fn_data(
         &self,
-        def: FunctionId,
+        key: FunctionId,
     ) -> Arc<FunctionData>;
 
     #[salsa::invoke(StructData::struct_data_query)]
     fn struct_data(
         &self,
-        r#struct: StructId,
+        key: StructId,
     ) -> Arc<StructData>;
 
     #[salsa::invoke(TypeAliasData::type_alias_data_query)]
     fn type_alias_data(
         &self,
-        type_alias: TypeAliasId,
+        key: TypeAliasId,
     ) -> Arc<TypeAliasData>;
 
     #[salsa::invoke(GlobalVariableData::global_var_data_query)]
     fn global_var_data(
         &self,
-        def: GlobalVariableId,
+        key: GlobalVariableId,
     ) -> Arc<GlobalVariableData>;
 
     #[salsa::invoke(GlobalConstantData::global_constant_data_query)]
     fn global_constant_data(
         &self,
-        def: GlobalConstantId,
+        key: GlobalConstantId,
     ) -> Arc<GlobalConstantData>;
 
     #[salsa::invoke(OverrideData::override_data_query)]
     fn override_data(
         &self,
-        def: OverrideId,
+        key: OverrideId,
     ) -> Arc<OverrideData>;
 
     #[salsa::invoke(AttributesWithOwner::attrs_query)]
     fn attrs(
         &self,
-        def: AttributeDefId,
+        key: AttributeDefId,
     ) -> Arc<AttributesWithOwner>;
 }
 
 fn get_path(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
 ) -> Result<VfsPath, ()> {
     match file_id.0 {
-        HirFileIdRepr::FileId(file_id) => Ok(db.file_path(file_id)),
-        _ => Err(()),
+        HirFileIdRepr::FileId(file_id) => Ok(database.file_path(file_id)),
+        HirFileIdRepr::MacroFile(_) => Err(()),
     }
 }
 
+#[expect(clippy::unnecessary_wraps, reason = "Needed for salsa")]
 fn get_file_id(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     path: VfsPath,
 ) -> Result<FileId, ()> {
-    Ok(db.file_id(path))
+    Ok(database.file_id(path))
 }
 
 fn parse_or_resolve(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
 ) -> Result<Parse, ()> {
     match file_id.0 {
-        HirFileIdRepr::FileId(file_id) => Ok(db.parse(file_id)),
+        HirFileIdRepr::FileId(file_id) => Ok(database.parse(file_id)),
         HirFileIdRepr::MacroFile(import_file) => {
-            let import_loc = db.lookup_intern_import(import_file.import_id);
-            let module_info = db.module_info(import_loc.file_id);
+            let import_loc = database.lookup_intern_import(import_file.import_id);
+            let module_info = database.module_info(import_loc.file_id);
             let import: &Import = module_info.get(import_loc.value);
 
             match &import.value {
                 crate::module_data::ImportValue::Path(path) => {
-                    let file_id = relative_file(db, import_loc.file_id, path).ok_or(())?;
-                    Ok(db.parse(file_id))
+                    let file_id = relative_file(database, import_loc.file_id, path).ok_or(())?;
+                    Ok(database.parse(file_id))
                 },
                 crate::module_data::ImportValue::Custom(key) => {
-                    db.parse_import(key.clone(), syntax::ParseEntryPoint::File)
+                    database.parse_import(key.clone(), syntax::ParseEntryPoint::File)
                 },
             }
         },
     }
 }
 
-#[allow(clippy::needless_collect)] // false positive
 fn resolve_full_source(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
 ) -> Result<String, ()> {
-    let parse = db.parse_or_resolve(file_id)?;
+    let parse = database.parse_or_resolve(file_id)?;
 
     let root = ast::SourceFile::cast(parse.syntax().clone_for_update()).unwrap();
 
@@ -180,11 +187,16 @@ fn resolve_full_source(
         .items()
         .filter_map(|item| match item {
             Item::Import(import) => Some(import),
-            _ => None,
+            Item::Function(_)
+            | Item::StructDeclaration(_)
+            | Item::GlobalVariableDeclaration(_)
+            | Item::GlobalConstantDeclaration(_)
+            | Item::OverrideDeclaration(_)
+            | Item::TypeAliasDeclaration(_) => None,
         })
         .filter_map(|import| {
-            let import_mod_id = crate::module_data::find_item(db, file_id, &import)?;
-            let import_id = db.intern_import(Location::new(file_id, import_mod_id));
+            let import_mod_id = crate::module_data::find_item(database, file_id, &import)?;
+            let import_id = database.intern_import(Location::new(file_id, import_mod_id));
             let import_file = HirFileId::from(ImportFile { import_id });
 
             Some((import.syntax().clone(), import_file))
@@ -192,9 +204,9 @@ fn resolve_full_source(
         .collect();
 
     for (import, import_file) in imports.into_iter().rev() {
-        let import_source = match db.parse_or_resolve(import_file) {
-            Ok(it) => it.syntax().clone_for_update(),
-            Err(_) => continue,
+        let import_source = match database.parse_or_resolve(import_file) {
+            Ok(parse) => parse.syntax().clone_for_update(),
+            Err(()) => continue,
         };
 
         let import_whitespace = import
@@ -206,6 +218,10 @@ fn resolve_full_source(
         };
 
         let index = import.index();
+        #[expect(
+            clippy::range_plus_one,
+            reason = "rowan does not support generic ranges"
+        )]
         import
             .parent()
             .unwrap()
@@ -216,21 +232,26 @@ fn resolve_full_source(
 }
 
 fn text_range_from_full(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
     mut range: TextRange,
 ) -> Result<TextRange, ()> {
-    let root = db.parse_or_resolve(file_id)?.tree();
+    let root = database.parse_or_resolve(file_id)?.tree();
 
     let imports = root
         .items()
         .filter_map(|item| match item {
             Item::Import(import) => Some(import),
-            _ => None,
+            Item::Function(_)
+            | Item::StructDeclaration(_)
+            | Item::GlobalVariableDeclaration(_)
+            | Item::GlobalConstantDeclaration(_)
+            | Item::OverrideDeclaration(_)
+            | Item::TypeAliasDeclaration(_) => None,
         })
         .filter_map(|import| {
-            let import_mod_id = crate::module_data::find_item(db, file_id, &import)?;
-            let import_id = db.intern_import(Location::new(file_id, import_mod_id));
+            let import_mod_id = crate::module_data::find_item(database, file_id, &import)?;
+            let import_id = database.intern_import(Location::new(file_id, import_mod_id));
             let import_file = HirFileId::from(ImportFile { import_id });
 
             Some((import.syntax().clone(), import_file))
@@ -241,9 +262,9 @@ fn text_range_from_full(
             break;
         }
 
-        let import_length = match db.parse_or_resolve(import_file) {
-            Ok(it) => it.syntax().text().len(),
-            Err(_) => continue,
+        let import_length = match database.parse_or_resolve(import_file) {
+            Ok(parse) => parse.syntax().text().len(),
+            Err(()) => continue,
         };
 
         let import_whitespace = import
@@ -251,7 +272,7 @@ fn text_range_from_full(
             .filter(|token| token.kind().is_whitespace())
             .map_or(0, |ws| ws.text().len());
 
-        let to_remove = import_length + TextSize::from(import_whitespace as u32);
+        let to_remove = import_length + TextSize::from(u32::try_from(import_whitespace).unwrap());
 
         if let Some(new_range) = range.checked_sub(to_remove) {
             range = new_range + import.syntax().text().len();
@@ -266,12 +287,12 @@ fn text_range_from_full(
 }
 
 fn ast_id_map(
-    db: &dyn DefDatabase,
+    database: &dyn DefDatabase,
     file_id: HirFileId,
 ) -> Arc<AstIdMap> {
-    let map = db
+    let map = database
         .parse_or_resolve(file_id)
-        .map(|source| AstIdMap::from_source(source.tree()))
+        .map(|source| AstIdMap::from_source(&source.tree()))
         .unwrap_or_default();
     Arc::new(map)
 }
@@ -330,8 +351,8 @@ pub type Location<T> = InFile<ModuleItemId<T>>;
 
 pub struct Interned<T>(salsa::InternId, PhantomData<T>);
 
-impl<T> std::hash::Hash for Interned<T> {
-    fn hash<H: std::hash::Hasher>(
+impl<T> hash::Hash for Interned<T> {
+    fn hash<H: hash::Hasher>(
         &self,
         state: &mut H,
     ) {
@@ -358,18 +379,20 @@ impl<T> Clone for Interned<T> {
 
 impl<T> Copy for Interned<T> {}
 
-impl<T> std::fmt::Debug for Interned<T> {
+impl<T> fmt::Debug for Interned<T> {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         f.debug_tuple("Interned").field(&self.0).finish()
     }
 }
 
 impl<T> InternKey for Interned<T> {
-    fn from_intern_id(v: salsa::InternId) -> Self {
-        Interned(v, PhantomData)
+    fn from_intern_id(
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] v: salsa::InternId
+    ) -> Self {
+        Self(v, PhantomData)
     }
 
     fn as_intern_id(&self) -> salsa::InternId {
@@ -382,7 +405,9 @@ macro_rules! intern_id {
         #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
         pub struct $id(salsa::InternId);
         impl InternKey for $id {
-            fn from_intern_id(v: salsa::InternId) -> Self {
+            fn from_intern_id(
+                #[expect(clippy::min_ident_chars, reason = "trait impl")] v: salsa::InternId
+            ) -> Self {
                 $id(v)
             }
 
@@ -396,9 +421,9 @@ macro_rules! intern_id {
 
             fn lookup(
                 &self,
-                db: &dyn DefDatabase,
+                database: &dyn DefDatabase,
             ) -> $loc {
-                db.$lookup(*self)
+                database.$lookup(*self)
             }
         }
     };
@@ -408,7 +433,7 @@ pub trait Lookup: Sized {
     type Data;
     fn lookup(
         &self,
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
     ) -> Self::Data;
 }
 
@@ -439,22 +464,22 @@ pub enum DefinitionWithBodyId {
 impl DefinitionWithBodyId {
     pub fn file_id(
         &self,
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
     ) -> HirFileId {
         match self {
-            DefinitionWithBodyId::Function(id) => id.lookup(db).file_id,
-            DefinitionWithBodyId::GlobalVariable(id) => id.lookup(db).file_id,
-            DefinitionWithBodyId::GlobalConstant(id) => id.lookup(db).file_id,
-            DefinitionWithBodyId::Override(id) => id.lookup(db).file_id,
+            Self::Function(id) => id.lookup(database).file_id,
+            Self::GlobalVariable(id) => id.lookup(database).file_id,
+            Self::GlobalConstant(id) => id.lookup(database).file_id,
+            Self::Override(id) => id.lookup(database).file_id,
         }
     }
 
     pub fn resolver(
         &self,
-        db: &dyn DefDatabase,
+        database: &dyn DefDatabase,
     ) -> Resolver {
-        let file_id = self.file_id(db);
-        let module_info = db.module_info(file_id);
-        Resolver::default().push_module_scope(db, file_id, module_info)
+        let file_id = self.file_id(database);
+        let module_info = database.module_info(file_id);
+        Resolver::default().push_module_scope(database, file_id, module_info)
     }
 }

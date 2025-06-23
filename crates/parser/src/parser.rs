@@ -1,7 +1,7 @@
 pub mod marker;
 mod parse_error;
 
-use std::marker::PhantomData;
+use std::{marker::PhantomData, mem};
 
 use marker::Marker;
 pub use parse_error::ParseError;
@@ -10,15 +10,15 @@ use crate::SyntaxKind;
 
 use super::{event::Event, lexer::Token, source::Source};
 
-pub struct Parser<'t, 'input> {
-    source: Source<'t, 'input>,
+pub struct Parser<'tokens, 'input> {
+    source: Source<'tokens, 'input>,
     events: Vec<Event>,
     pub(crate) expected_kinds: Vec<SyntaxKind>,
     _marker: PhantomData<SyntaxKind>,
 }
 
-impl<'t, 'input> Parser<'t, 'input> {
-    pub(crate) fn new(source: Source<'t, 'input>) -> Self {
+impl<'tokens, 'input> Parser<'tokens, 'input> {
+    pub(crate) const fn new(source: Source<'tokens, 'input>) -> Self {
         Self {
             source,
             events: Vec::new(),
@@ -27,11 +27,11 @@ impl<'t, 'input> Parser<'t, 'input> {
         }
     }
 
-    pub(crate) fn parse(
+    pub(crate) fn parse<Function: Fn(&mut Self)>(
         mut self,
-        f: impl Fn(&mut Self),
+        parse_implementation: Function,
     ) -> Vec<Event> {
-        f(&mut self);
+        parse_implementation(&mut self);
         self.events
     }
 
@@ -64,6 +64,7 @@ impl<'t, 'input> Parser<'t, 'input> {
         }
     }
 
+    #[expect(clippy::result_unit_err, reason = "TODO")]
     pub fn expect_recover(
         &mut self,
         kind: SyntaxKind,
@@ -100,35 +101,35 @@ impl<'t, 'input> Parser<'t, 'input> {
     }
 
     pub fn error(&mut self) {
-        self.error_inner(None, &[], false)
+        self.error_inner(None, &[], false);
     }
 
     pub fn error_expected(
         &mut self,
         expected: &[SyntaxKind],
     ) {
-        self.error_inner(None, expected, false)
+        self.error_inner(None, expected, false);
     }
 
     pub fn error_expected_no_bump(
         &mut self,
         expected: &[SyntaxKind],
     ) {
-        self.error_inner(None, expected, true)
+        self.error_inner(None, expected, true);
     }
 
     pub fn error_recovery(
         &mut self,
         recovery: &[SyntaxKind],
     ) {
-        self.error_inner(Some(recovery), &[], false)
+        self.error_inner(Some(recovery), &[], false);
     }
 
     pub fn error_no_bump(
         &mut self,
         expected: &[SyntaxKind],
     ) {
-        self.error_inner(None, expected, true)
+        self.error_inner(None, expected, true);
     }
 
     fn error_inner(
@@ -147,9 +148,10 @@ impl<'t, 'input> Parser<'t, 'input> {
             (None, self.source.last_token_range().unwrap())
         };
 
-        let expected = match expected.is_empty() {
-            true => std::mem::take(&mut self.expected_kinds),
-            false => expected.to_vec(),
+        let expected = if expected.is_empty() {
+            mem::take(&mut self.expected_kinds)
+        } else {
+            expected.to_vec()
         };
 
         self.events.push(Event::Error(ParseError {
@@ -160,14 +162,19 @@ impl<'t, 'input> Parser<'t, 'input> {
 
         let at_recovery = recovery.is_some_and(|rec| self.at_set(rec));
         if !at_recovery && !self.at_end() {
-            let m = self.start();
+            let marker = self.start();
             if !no_bump {
                 self.bump();
             }
-            m.complete(self, <SyntaxKind as logos::Logos>::ERROR);
+            marker.complete(self, <SyntaxKind as logos::Logos>::ERROR);
         }
     }
 
+    /// Returns the bump of this [`Parser`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if there is no next token.
     pub fn bump(&mut self) -> SyntaxKind {
         self.expected_kinds.clear();
         let token = self.source.next_token().unwrap();
@@ -175,17 +182,20 @@ impl<'t, 'input> Parser<'t, 'input> {
         token.kind
     }
 
+    /// # Panics
+    ///
+    /// Panics if there are not 2 more tokens.
     pub fn bump_compound(
         &mut self,
         token: SyntaxKind,
     ) {
         self.expected_kinds.clear();
-        let m = self.start();
+        let marker = self.start();
         let _token1 = self.source.next_token().unwrap();
         self.events.push(Event::AddToken);
         let _token2 = self.source.next_token().unwrap();
         self.events.push(Event::AddToken);
-        m.complete(self, token);
+        marker.complete(self, token);
     }
 
     pub fn at(
@@ -206,8 +216,8 @@ impl<'t, 'input> Parser<'t, 'input> {
         if !self.expected_kinds.contains(&kind_1) {
             self.expected_kinds.push(kind_1);
         }
-        if let Some((a, b)) = self.peek_compound() {
-            a == kind_1 && b == kind_2
+        if let Some((current, peek)) = self.peek_compound() {
+            current == kind_1 && peek == kind_2
         } else {
             false
         }
@@ -226,7 +236,7 @@ impl<'t, 'input> Parser<'t, 'input> {
         &mut self,
         set: &[SyntaxKind],
     ) -> bool {
-        self.peek().is_some_and(|k| set.contains(&k))
+        self.peek().is_some_and(|kind| set.contains(&kind))
     }
 
     pub fn at_end(&mut self) -> bool {

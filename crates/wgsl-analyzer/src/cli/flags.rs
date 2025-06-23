@@ -1,6 +1,6 @@
 //! Grammar for the command-line arguments.
 
-#![expect(clippy::disallowed_names, reason = "xflags")]
+#![allow(clippy::disallowed_names, reason = "`xflags` macro")]
 
 use std::{path::PathBuf, str::FromStr};
 
@@ -311,17 +311,14 @@ pub struct Scip {
 
 impl WgslAnalyzer {
     #[must_use]
-    #[inline]
     pub fn from_env_or_exit() -> Self {
         Self::from_env_or_exit_()
     }
 
-    #[inline]
     pub fn from_env() -> xflags::Result<Self> {
         Self::from_env_()
     }
 
-    #[inline]
     pub fn from_vec(args: Vec<std::ffi::OsString>) -> xflags::Result<Self> {
         Self::from_vec_(args)
     }
@@ -335,7 +332,6 @@ pub enum OutputFormat {
 
 impl WgslAnalyzer {
     #[must_use]
-    #[inline]
     pub const fn verbosity(&self) -> Verbosity {
         if self.quiet {
             return Verbosity::Quiet;
@@ -352,7 +348,6 @@ impl FromStr for OutputFormat {
     type Err = String;
 
     #[expect(clippy::min_ident_chars, reason = "trait impl")]
-    #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "csv" => Ok(Self::Csv),

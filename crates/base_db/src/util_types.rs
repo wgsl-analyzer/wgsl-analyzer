@@ -1,7 +1,7 @@
 pub use rowan::{TextRange, TextSize};
 use vfs::FileId;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
 pub struct FilePosition {
     pub file_id: FileId,
     pub offset: TextSize,
@@ -20,10 +20,10 @@ pub struct RangeInfo<T> {
 }
 
 impl<T> RangeInfo<T> {
-    pub fn new(
+    pub const fn new(
         range: TextRange,
         info: T,
-    ) -> RangeInfo<T> {
-        RangeInfo { range, info }
+    ) -> Self {
+        Self { range, info }
     }
 }

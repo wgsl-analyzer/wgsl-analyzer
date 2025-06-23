@@ -52,7 +52,6 @@ use tracing_subscriber::{
 };
 
 #[must_use]
-#[inline]
 pub fn init(spec: &str) -> tracing::subscriber::DefaultGuard {
     let subscriber = Registry::default().with(SpanTree::new_filtered(spec));
     tracing::subscriber::set_default(subscriber)
@@ -136,7 +135,6 @@ pub struct DataVisitor<'string> {
 }
 
 impl Visit for DataVisitor<'_> {
-    #[inline]
     #[expect(clippy::use_debug, reason = "intentional")]
     fn record_debug(
         &mut self,
@@ -158,7 +156,6 @@ where
         ctx: Context<'_, S>,
     ) {
         let span = ctx.span(id).unwrap();
-
         let data = Data::new(attrs);
         span.extensions_mut().insert(data);
     }
@@ -173,9 +170,9 @@ where
     fn on_close(
         &self,
         id: Id,
-        ctx: Context<'_, S>,
+        context: Context<'_, S>,
     ) {
-        let span = ctx.span(&id).unwrap();
+        let span = context.span(&id).unwrap();
         let data = span.extensions_mut().remove::<Data>().unwrap();
         let mut node = data.into_node(span.name());
 
@@ -246,7 +243,7 @@ impl Node {
             return;
         }
 
-        self.children.sort_by_key(|it| it.name);
+        self.children.sort_by_key(|node| node.name);
         let mut index = 0;
         for i in 1..self.children.len() {
             if self.children[index].name == self.children[i].name {

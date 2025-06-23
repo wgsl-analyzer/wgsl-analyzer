@@ -1,3 +1,5 @@
+use base_db::SourceDatabase as _;
+
 use super::Completions;
 use crate::{
     context::{CompletionContext, ImmediateLocation},
@@ -6,21 +8,17 @@ use crate::{
 
 pub(crate) fn complete_import(
     accumulator: &mut Completions,
-    ctx: &CompletionContext,
+    context: &CompletionContext<'_>,
 ) -> Option<()> {
-    match &ctx.completion_location {
+    match &context.completion_location {
         Some(ImmediateLocation::Import) => {},
         _ => return None,
-    };
+    }
 
-    let custom_imports = ctx.db.custom_imports();
+    let custom_imports = context.database.custom_imports();
     let imports = custom_imports.keys().map(|import| {
-        CompletionItem::new(
-            CompletionItemKind::Module,
-            ctx.source_range(),
-            import.to_string(),
-        )
-        .build()
+        CompletionItem::new(CompletionItemKind::Module, context.source_range(), import)
+            .build(context.database)
     });
     accumulator.add_all(imports);
 

@@ -60,8 +60,10 @@ ignore-hidden = false
 "sig" = "signature"
 # handled by clippy due to std using the abbreviation
 # "dir" = "directory"
+# "dirs" = "directories" # Used by dependencies
 "resp" = "response"
 "msg" = "message"
+"nav" = "navigation"
 # "dbg" = "debug"
 # "ctrl" = "control"
 "btn" = "button"

@@ -1,12 +1,12 @@
 use crate::HirFileId;
 use crate::hir_file_id::relative_file;
 use crate::module_data::{Function, ModuleData, ModuleItem, ModuleItemId, Parameter};
-use crate::{ast_id::AstIdMap, db::DefDatabase, type_ref::TypeReference};
+use crate::{ast_id::AstIdMap, database::DefDatabase, type_ref::TypeReference};
 use la_arena::{Idx, IdxRange};
 use std::sync::Arc;
 
 use syntax::{
-    AstNode, HasName,
+    AstNode as _, HasName as _,
     ast::{self, Item, SourceFile},
 };
 
@@ -14,23 +14,23 @@ use super::{
     Field, GlobalConstant, GlobalVariable, Import, ImportValue, Name, Override, Struct, TypeAlias,
 };
 
-pub(crate) struct Ctx<'a> {
-    db: &'a dyn DefDatabase,
+pub(crate) struct Ctx<'database> {
+    database: &'database dyn DefDatabase,
     file_id: HirFileId,
     source_ast_id_map: Arc<AstIdMap>,
-    pub module_data: ModuleData,
-    pub items: Vec<ModuleItem>,
+    pub(crate) module_data: ModuleData,
+    pub(crate) items: Vec<ModuleItem>,
 }
 
-impl<'a> Ctx<'a> {
+impl<'database> Ctx<'database> {
     pub(crate) fn new(
-        db: &'a dyn DefDatabase,
+        database: &'database dyn DefDatabase,
         file_id: HirFileId,
     ) -> Self {
         Self {
-            db,
+            database,
             file_id,
-            source_ast_id_map: db.ast_id_map(file_id),
+            source_ast_id_map: database.ast_id_map(file_id),
             module_data: ModuleData::default(),
             items: vec![],
         }
@@ -38,11 +38,11 @@ impl<'a> Ctx<'a> {
 
     pub(crate) fn lower_source_file(
         &mut self,
-        source_file: SourceFile,
+        source_file: &SourceFile,
     ) {
         source_file.items().for_each(|item| {
             self.lower_item(item);
-        })
+        });
     }
 
     fn lower_item(
@@ -82,7 +82,7 @@ impl<'a> Ctx<'a> {
                     .string_literal()?
                     .text()
                     .chars()
-                    .filter(|&c| c != '"')
+                    .filter(|&character| character != '"')
                     .collect();
                 ImportValue::Path(import_path)
             },
@@ -105,7 +105,7 @@ impl<'a> Ctx<'a> {
             .and_then(|type_declaration| self.lower_type_ref(type_declaration))
             .unwrap_or(TypeReference::Error);
 
-        let r#type = self.db.intern_type_ref(r#type);
+        let r#type = self.database.intern_type_ref(r#type);
 
         let ast_id = self.source_ast_id_map.ast_id(type_alias);
         Some(
@@ -113,8 +113,8 @@ impl<'a> Ctx<'a> {
                 .type_aliases
                 .alloc(TypeAlias {
                     name,
-                    ast_id,
                     r#type,
+                    ast_id,
                 })
                 .into(),
         )
@@ -133,7 +133,7 @@ impl<'a> Ctx<'a> {
                 self.lower_type_ref(type_declaration)
                     .unwrap_or(TypeReference::Error)
             })
-            .map(|r#type| self.db.intern_type_ref(r#type));
+            .map(|r#type| self.database.intern_type_ref(r#type));
 
         let override_declaration = Override {
             name,
@@ -161,7 +161,7 @@ impl<'a> Ctx<'a> {
                 self.lower_type_ref(type_declaration)
                     .unwrap_or(TypeReference::Error)
             })
-            .map(|r#type| self.db.intern_type_ref(r#type));
+            .map(|r#type| self.database.intern_type_ref(r#type));
 
         let constant = GlobalConstant {
             name,
@@ -181,11 +181,11 @@ impl<'a> Ctx<'a> {
         let r#type = var
             .ty()
             .and_then(|type_declaration| self.lower_type_ref(type_declaration))
-            .map(|r#type| self.db.intern_type_ref(r#type));
+            .map(|r#type| self.database.intern_type_ref(r#type));
 
         let address_space = var
             .variable_qualifier()
-            .and_then(|qualifier| qualifier.address_space())
+            .and_then(syntax::ast::VariableQualifier::address_space)
             .map(Into::into);
         let access_mode = var
             .variable_qualifier()
@@ -219,8 +219,8 @@ impl<'a> Ctx<'a> {
                 let r#type = self
                     .lower_type_ref(declaration.ty()?)
                     .unwrap_or(TypeReference::Error);
-                let r#type = self.db.intern_type_ref(r#type);
-                self.module_data.fields.alloc(Field { name, r#type });
+                let r#type = self.database.intern_type_ref(r#type);
+                self.module_data.fields.alloc(Field { r#type, name });
                 Some(())
             })
             .for_each(drop);
@@ -243,7 +243,7 @@ impl<'a> Ctx<'a> {
         let ast_id = self.source_ast_id_map.ast_id(function);
 
         let start_parameter = self.next_param_index();
-        self.lower_function_param_list(function.parameter_list()?);
+        self.lower_function_param_list(&function.parameter_list()?);
         let end_parameter = self.next_param_index();
         let parameters = IdxRange::new(start_parameter..end_parameter);
 
@@ -251,13 +251,13 @@ impl<'a> Ctx<'a> {
             .return_type()
             .and_then(|r#type| r#type.ty())
             .map(|r#type| self.lower_type_ref(r#type).unwrap_or(TypeReference::Error))
-            .map(|r#type| self.db.intern_type_ref(r#type));
+            .map(|r#type| self.database.intern_type_ref(r#type));
 
         let function = Function {
             name,
             parameters,
-            ast_id,
             return_type,
+            ast_id,
         };
 
         Some(self.module_data.functions.alloc(function).into())
@@ -265,7 +265,7 @@ impl<'a> Ctx<'a> {
 
     fn lower_function_param_list(
         &mut self,
-        function_param_list: ast::ParameterList,
+        function_param_list: &ast::ParameterList,
     ) -> Option<()> {
         for parameter in function_param_list.parameters() {
             if let Some(parameter) = parameter.variable_ident_declaration() {
@@ -273,7 +273,7 @@ impl<'a> Ctx<'a> {
                     .ty()
                     .and_then(|r#type| self.lower_type_ref(r#type))
                     .unwrap_or(TypeReference::Error);
-                let r#type = self.db.intern_type_ref(r#type);
+                let r#type = self.database.intern_type_ref(r#type);
                 let name = parameter
                     .binding()
                     .and_then(|binding| binding.name())
@@ -287,16 +287,16 @@ impl<'a> Ctx<'a> {
                 let parse = match &import.value {
                     crate::module_data::ImportValue::Path(path) => {
                         tracing::info!("attempted import {:?}", path);
-                        let file_id = relative_file(self.db, self.file_id, path)?;
-                        Ok(self.db.parse(file_id))
+                        let file_id = relative_file(self.database, self.file_id, path)?;
+                        Ok(self.database.parse(file_id))
                     },
                     crate::module_data::ImportValue::Custom(key) => self
-                        .db
+                        .database
                         .parse_import(key.clone(), syntax::ParseEntryPoint::FunctionParameterList),
                 };
                 if let Ok(parse) = parse {
                     let param_list = ast::ParameterList::cast(parse.syntax())?;
-                    self.lower_function_param_list(param_list)?;
+                    self.lower_function_param_list(&param_list)?;
                 }
             }
         }
@@ -304,6 +304,7 @@ impl<'a> Ctx<'a> {
         Some(())
     }
 
+    #[expect(clippy::unused_self, reason = "intentional API")]
     fn lower_type_ref(
         &self,
         r#type: ast::Type,
@@ -312,12 +313,12 @@ impl<'a> Ctx<'a> {
     }
 
     fn next_param_index(&self) -> Idx<Parameter> {
-        let index = self.module_data.parameters.len() as u32;
+        let index = u32::try_from(self.module_data.parameters.len()).unwrap();
         Idx::from_raw(la_arena::RawIdx::from(index))
     }
 
     fn next_field_index(&self) -> Idx<Field> {
-        let index = self.module_data.fields.len() as u32;
+        let index = u32::try_from(self.module_data.fields.len()).unwrap();
         Idx::from_raw(la_arena::RawIdx::from(index))
     }
 }

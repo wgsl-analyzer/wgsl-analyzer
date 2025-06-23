@@ -4,9 +4,9 @@ const WGSL_FILE_EXTENSION: &str = "wgsl";
 
 pub(crate) fn list_wgsl_files(directory: &Path) -> Vec<PathBuf> {
     let mut result = list_files(directory);
-    result.retain(|it| {
+    result.retain(|path| {
         std::path::Path::new(
-            it.file_name()
+            path.file_name()
                 .unwrap_or_default()
                 .to_str()
                 .unwrap_or_default(),

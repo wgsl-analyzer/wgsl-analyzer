@@ -1,47 +1,43 @@
+//! <https://www.w3.org/TR/WGSL/#memory-layouts>
+
 use hir_def::data::LocalFieldId;
 use la_arena::ArenaMap;
 
 use crate::{
-    db::HirDatabase,
-    ty::{ArraySize, ArrayType, ScalarType, TyKind, Type, VecSize},
+    database::HirDatabase,
+    ty::{ArraySize, ArrayType, ScalarType, TyKind, Type, VecSize, VectorType},
 };
 
 type Bytes = u32;
 
-fn round_up(
+const fn round_up(
     multiple: Bytes,
     num: Bytes,
 ) -> Bytes {
     num.div_ceil(multiple) * multiple
 }
 
-#[test]
-fn test_round_up() {
-    assert_eq!(round_up(16, 10), 16);
-    assert_eq!(round_up(16, 16), 16);
-    assert_eq!(round_up(32, 17), 32);
-    assert_eq!(round_up(32, 35), 64);
-    assert_eq!(round_up(32, 102), 128);
-}
-
+/// All address spaces except uniform have the same constraints as the storage address space.
+///
+/// <https://www.w3.org/TR/WGSL/#address-space-layout-constraints>
 #[derive(Clone, Copy)]
 pub enum LayoutAddressSpace {
-    Storage,
     Uniform,
+    Other,
 }
 
 impl ArrayType {
     pub fn stride(
         &self,
         address_space: LayoutAddressSpace,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Option<Bytes> {
         let stride = round_up(
-            self.inner.align(address_space, db)?,
-            self.inner.size(address_space, db)?,
+            self.inner.align(address_space, database)?,
+            self.inner.size(address_space, database)?,
         );
         match address_space {
-            LayoutAddressSpace::Storage => Some(stride),
+            LayoutAddressSpace::Other => Some(stride),
             LayoutAddressSpace::Uniform => Some(round_up(16, stride)),
         }
     }
@@ -51,104 +47,214 @@ impl Type {
     pub fn align(
         &self,
         address_space: LayoutAddressSpace,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Option<Bytes> {
-        self.kind(db).align(address_space, db)
+        self.kind(database).align_of(address_space, database)
     }
 
     pub fn size(
         &self,
         address_space: LayoutAddressSpace,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Option<Bytes> {
-        self.kind(db).size(address_space, db)
+        self.kind(database).size_of(address_space, database)
     }
 }
 
 impl TyKind {
-    pub fn align(
+    /// <https://www.w3.org/TR/WGSL/#alignof>
+    pub fn align_of(
         &self,
         address_space: LayoutAddressSpace,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Option<Bytes> {
-        Some(match self {
-            TyKind::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => 4,
-            TyKind::Scalar(ScalarType::Bool) => return None,
-            TyKind::Atomic(_) => 4,
-            TyKind::Vector(v) => match v.size {
-                VecSize::Two => 8,
-                VecSize::Three => 16,
-                VecSize::Four => 16,
-                VecSize::BoundVar(_) => return None,
+        #[expect(
+            clippy::match_same_arms,
+            reason = "a match arm corresponds to a table row in the specification"
+        )]
+        match self {
+            // <https://www.w3.org/TR/WGSL/#why-is-bool-4-bytes>
+            Self::Scalar(ScalarType::Bool) => Some(4),
+            Self::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => Some(4),
+            Self::Scalar(ScalarType::F16) => Some(2),
+            Self::Atomic(_) => Some(4),
+            Self::Vector(VectorType {
+                size: VecSize::Two,
+                component_type,
+            }) if matches!(
+                component_type.kind(database),
+                Self::Scalar(
+                    ScalarType::Bool | ScalarType::I32 | ScalarType::U32 | ScalarType::F32
+                )
+            ) =>
+            {
+                Some(8)
             },
-            TyKind::Matrix(m) => match m.rows {
-                VecSize::Two => 8,
-                VecSize::Three => 16,
-                VecSize::Four => 16,
-                VecSize::BoundVar(_) => return None,
+            Self::Vector(VectorType {
+                size: VecSize::Two,
+                component_type,
+            }) if matches!(component_type.kind(database), Self::Scalar(ScalarType::F16)) => Some(4),
+            Self::Vector(VectorType {
+                size: VecSize::Three,
+                component_type,
+            }) if matches!(
+                component_type.kind(database),
+                Self::Scalar(
+                    ScalarType::Bool | ScalarType::I32 | ScalarType::U32 | ScalarType::F32
+                )
+            ) =>
+            {
+                Some(16)
             },
-            TyKind::Struct(r#struct) => {
-                let fields = db.field_types(*r#struct);
+            Self::Vector(VectorType {
+                size: VecSize::Three,
+                component_type,
+            }) if matches!(component_type.kind(database), Self::Scalar(ScalarType::F16)) => Some(8),
+            Self::Vector(VectorType {
+                size: VecSize::Four,
+                component_type,
+            }) if matches!(
+                component_type.kind(database),
+                Self::Scalar(
+                    ScalarType::Bool | ScalarType::I32 | ScalarType::U32 | ScalarType::F32
+                )
+            ) =>
+            {
+                Some(16)
+            },
+            Self::Vector(VectorType {
+                size: VecSize::Four,
+                component_type,
+            }) if matches!(component_type.kind(database), Self::Scalar(ScalarType::F16)) => Some(8),
+            Self::Matrix(matrix_type) => Self::Vector(VectorType {
+                size: matrix_type.rows,
+                component_type: matrix_type.inner,
+            })
+            .align_of(address_space, database),
+            Self::Struct(r#struct) => {
+                let fields = database.field_types(*r#struct);
                 let (align, _) =
-                    struct_member_layout(&fields, db, LayoutAddressSpace::Storage, |_, _| {})?;
+                    struct_member_layout(&fields, database, LayoutAddressSpace::Other, |_, _| {})?;
 
-                match address_space {
-                    LayoutAddressSpace::Storage => align,
+                Some(match address_space {
+                    LayoutAddressSpace::Other => align,
                     LayoutAddressSpace::Uniform => round_up(16, align),
-                }
+                })
             },
-            TyKind::Array(array) => {
-                let inner_align = array.inner.align(address_space, db)?;
-                match address_space {
-                    LayoutAddressSpace::Storage => inner_align,
+            Self::Array(array) => {
+                let inner_align = array.inner.align(address_space, database)?;
+                Some(match address_space {
+                    LayoutAddressSpace::Other => inner_align,
                     LayoutAddressSpace::Uniform => round_up(16, inner_align),
-                }
+                })
             },
-            _ => return None,
-        })
+            Self::Error
+            | Self::Scalar(ScalarType::AbstractFloat | ScalarType::AbstractInt)
+            | Self::Vector(_)
+            | Self::Texture(_)
+            | Self::Sampler(_)
+            | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::BoundVar(_)
+            | Self::StorageTypeOfTexelFormat(_) => None,
+        }
     }
 
-    pub fn size(
+    /// <https://www.w3.org/TR/WGSL/#sizeof>
+    ///
+    /// # Panics
+    ///
+    /// Panics if the size of the array exceeds.
+    pub fn size_of(
         &self,
         address_space: LayoutAddressSpace,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Option<Bytes> {
-        Some(match self {
-            TyKind::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => 4,
-            TyKind::Scalar(ScalarType::Bool) => return None,
-            TyKind::Atomic(_) => 4,
-            TyKind::Vector(v) => match v.size {
-                VecSize::Two => 8,
-                VecSize::Three => 12,
-                VecSize::Four => 16,
-                VecSize::BoundVar(_) => return None,
+        #[expect(
+            clippy::match_same_arms,
+            reason = "a match arm corresponds to a table row in the specification"
+        )]
+        match self {
+            Self::Scalar(ScalarType::Bool) => Some(4),
+            Self::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => Some(4),
+            Self::Scalar(ScalarType::F16) => Some(2),
+            Self::Atomic(_) => Some(4),
+            Self::Vector(VectorType {
+                size: VecSize::Two,
+                component_type,
+            }) if matches!(
+                component_type.kind(database),
+                Self::Scalar(
+                    ScalarType::Bool | ScalarType::I32 | ScalarType::U32 | ScalarType::F32
+                )
+            ) =>
+            {
+                Some(8)
             },
-            TyKind::Matrix(m) => {
-                let n = m.columns.as_u8() as Bytes;
-                let (vec_align, vec_size) = match m.columns {
-                    VecSize::Two => (8, 8),
-                    VecSize::Three => (16, 12),
-                    VecSize::Four => (16, 16),
-                    VecSize::BoundVar(_) => return None,
-                };
-
-                round_up(vec_align, vec_size) * n
+            Self::Vector(VectorType {
+                size: VecSize::Two,
+                component_type,
+            }) if matches!(component_type.kind(database), Self::Scalar(ScalarType::F16)) => Some(4),
+            Self::Vector(VectorType {
+                size: VecSize::Three,
+                component_type,
+            }) if matches!(
+                component_type.kind(database),
+                Self::Scalar(
+                    ScalarType::Bool | ScalarType::I32 | ScalarType::U32 | ScalarType::F32
+                )
+            ) =>
+            {
+                Some(12)
             },
-            TyKind::Struct(r#struct) => {
-                let fields = db.field_types(*r#struct);
+            Self::Vector(VectorType {
+                size: VecSize::Four,
+                component_type,
+            }) if matches!(component_type.kind(database), Self::Scalar(ScalarType::F16)) => Some(6),
+            Self::Vector(VectorType {
+                size: VecSize::Four,
+                component_type,
+            }) if matches!(
+                component_type.kind(database),
+                Self::Scalar(
+                    ScalarType::Bool | ScalarType::I32 | ScalarType::U32 | ScalarType::F32
+                )
+            ) =>
+            {
+                Some(16)
+            },
+            Self::Vector(VectorType {
+                size: VecSize::Three,
+                component_type,
+            }) if matches!(component_type.kind(database), Self::Scalar(ScalarType::F16)) => Some(8),
+            Self::Matrix(matrix_type) => Self::Vector(VectorType {
+                size: matrix_type.rows,
+                component_type: matrix_type.inner,
+            })
+            .size_of(address_space, database),
+            Self::Struct(r#struct) => {
+                let fields = database.field_types(*r#struct);
                 let (_, size) =
-                    struct_member_layout(&fields, db, LayoutAddressSpace::Storage, |_, _| {})?;
-                size
+                    struct_member_layout(&fields, database, LayoutAddressSpace::Other, |_, _| {})?;
+                Some(size)
             },
-            TyKind::Array(array) => match array.size {
+            Self::Array(array) => match array.size {
                 ArraySize::Constant(n) => {
-                    let stride = array.stride(address_space, db)?;
-                    n as Bytes * stride
+                    let stride = array.stride(address_space, database)?;
+                    Some(Bytes::try_from(n).unwrap() * stride)
                 },
-                ArraySize::Dynamic => return None,
+                ArraySize::Dynamic => None,
             },
-            _ => return None,
-        })
+            Self::Error
+            | Self::Scalar(ScalarType::AbstractFloat | ScalarType::AbstractInt)
+            | Self::Vector(_)
+            | Self::Texture(_)
+            | Self::Sampler(_)
+            | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::BoundVar(_)
+            | Self::StorageTypeOfTexelFormat(_) => None,
+        }
     }
 }
 
@@ -159,11 +265,11 @@ pub struct FieldLayout {
 }
 
 /// Returns the (align, size) of the struct, and calls `on_field` for every field
-pub fn struct_member_layout<R>(
+pub fn struct_member_layout<Result, Function: FnMut(LocalFieldId, FieldLayout) -> Result>(
     fields: &ArenaMap<LocalFieldId, Type>,
-    db: &dyn HirDatabase,
+    database: &dyn HirDatabase,
     address_space: LayoutAddressSpace,
-    mut on_field: impl FnMut(LocalFieldId, FieldLayout) -> R,
+    mut on_field: Function,
 ) -> Option<(Bytes, Bytes)> {
     let mut struct_align = Bytes::MIN;
 
@@ -174,8 +280,8 @@ pub fn struct_member_layout<R>(
         let custom_align = None; // TODO handle @align @size
         let custom_size = None;
 
-        let align = custom_align.or_else(|| field.align(address_space, db))?;
-        let size = custom_size.or_else(|| field.align(address_space, db))?;
+        let align = custom_align.or_else(|| field.align(address_space, database))?;
+        let size = custom_size.or_else(|| field.align(address_space, database))?;
 
         struct_align = struct_align.max(align);
 
@@ -197,9 +303,23 @@ pub fn struct_member_layout<R>(
     let struct_size = round_up(struct_align, just_past_last_member);
 
     let struct_align = match address_space {
-        LayoutAddressSpace::Storage => struct_align,
+        LayoutAddressSpace::Other => struct_align,
         LayoutAddressSpace::Uniform => round_up(16, struct_align),
     };
 
     Some((struct_align, struct_size))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_round_up() {
+        assert_eq!(round_up(16, 10), 16);
+        assert_eq!(round_up(16, 16), 16);
+        assert_eq!(round_up(32, 17), 32);
+        assert_eq!(round_up(32, 35), 64);
+        assert_eq!(round_up(32, 102), 128);
+    }
 }

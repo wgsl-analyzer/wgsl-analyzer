@@ -1,14 +1,14 @@
 //! Utilities for LSP-related boilerplate code.
-use crate::{line_index::PositionEncoding, lsp::from_proto};
-use std::{error::Error, ops::Range, sync::Arc};
-
 use crate::{
     LspError,
     global_state::GlobalState,
-    line_index::{LineEndings, LineIndex, OffsetEncoding},
+    line_index::{LineEndings, LineIndex},
 };
+use crate::{line_index::PositionEncoding, lsp::from_proto};
 use lsp_server::Notification;
 use lsp_types::request::Request as _;
+use std::{error::Error, ops::Range};
+use triomphe::Arc;
 
 pub(crate) fn is_cancelled(error: &(dyn Error + 'static)) -> bool {
     error.downcast_ref::<salsa::Cancelled>().is_some()
@@ -130,8 +130,8 @@ impl GlobalState {
         &mut self,
         message: String,
     ) {
-        let from_source_build = option_env!("POKE_RA_DEVS").is_some();
-        let profiling_enabled = std::env::var("RA_PROFILE").is_ok();
+        let from_source_build = option_env!("POKE_WA_DEVS").is_some();
+        let profiling_enabled = std::env::var("WA_PROFILE").is_ok();
         if from_source_build || profiling_enabled {
             self.show_and_log_error(message, None);
         }

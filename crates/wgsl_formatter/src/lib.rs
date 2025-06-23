@@ -1,16 +1,22 @@
+#![expect(
+    clippy::range_plus_one,
+    reason = "rowan does not accept generic ranges"
+)]
+
 #[cfg(test)]
 mod tests;
 
 use rowan::{GreenNode, GreenToken, NodeOrToken, WalkEvent};
-use syntax::{AstNode, HasGenerics, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, ast};
+use syntax::{AstNode, HasGenerics as _, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, ast};
 
+#[must_use]
 pub fn format_str(
     input: &str,
     options: &FormattingOptions,
 ) -> String {
     let parse = parser::parse_file(input);
     let node = parse.syntax().clone_for_update();
-    format_recursive(node.clone(), options);
+    format_recursive(&node, options);
     node.to_string()
 }
 
@@ -24,7 +30,7 @@ impl Default for FormattingOptions {
     fn default() -> Self {
         Self {
             trailing_commas: Policy::Ignore,
-            indent_symbol: "    ".to_string(),
+            indent_symbol: "    ".to_owned(),
         }
     }
 }
@@ -37,7 +43,7 @@ pub enum Policy {
 }
 
 pub fn format_recursive(
-    syntax: SyntaxNode,
+    syntax: &SyntaxNode,
     options: &FormattingOptions,
 ) {
     let preorder = syntax.preorder();
@@ -47,21 +53,21 @@ pub fn format_recursive(
     for event in preorder {
         match event {
             WalkEvent::Enter(node) => {
-                if is_indent_kind(node.clone()) {
+                if is_indent_kind(&node) {
                     indentation += 1;
                 }
                 format_syntax_node(node, indentation, options);
             },
             WalkEvent::Leave(node) => {
-                if is_indent_kind(node) {
+                if is_indent_kind(&node) {
                     indentation = indentation.saturating_sub(1);
                 }
             },
-        };
+        }
     }
 }
 
-fn is_indent_kind(node: SyntaxNode) -> bool {
+fn is_indent_kind(node: &SyntaxNode) -> bool {
     if matches!(
         node.kind(),
         SyntaxKind::CompoundStatement | SyntaxKind::SwitchBlock
@@ -70,13 +76,15 @@ fn is_indent_kind(node: SyntaxNode) -> bool {
     }
 
     let param_list_left_paren = ast::ParameterList::cast(node.clone())
-        .and_then(|l| l.left_parenthesis_token())
+        .and_then(|list| list.left_parenthesis_token())
         .or_else(|| {
-            ast::FunctionParameterList::cast(node.clone()).and_then(|l| l.left_parenthesis_token())
+            let list = ast::FunctionParameterList::cast(node.clone())?;
+            list.left_parenthesis_token()
         });
 
     if param_list_left_paren
         .and_then(|token| token.next_token())
+        .as_ref()
         .is_some_and(is_whitespace_with_newline)
     {
         return true;
@@ -85,6 +93,11 @@ fn is_indent_kind(node: SyntaxNode) -> bool {
     false
 }
 
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "impractical to list all cases"
+)]
+#[expect(clippy::cognitive_complexity, clippy::too_many_lines, reason = "TODO")]
 fn format_syntax_node(
     syntax: SyntaxNode,
     indentation: usize,
@@ -96,11 +109,11 @@ fn format_syntax_node(
     {
         let start = syntax.first_token()?;
 
-        let n_newlines = n_newlines_in_whitespace(start.prev_token()?).unwrap_or(0); // spellchecker:disable-line
+        let n_newlines = n_newlines_in_whitespace(&start.prev_token()?).unwrap_or(0); // spellchecker:disable-line
 
         if n_newlines > 0 {
             set_whitespace_before(
-                syntax.first_token()?,
+                &syntax.first_token()?,
                 create_whitespace(&format!(
                     "{}{}",
                     "\n".repeat(n_newlines),
@@ -119,17 +132,17 @@ fn format_syntax_node(
         SyntaxKind::Function => {
             let function = ast::Function::cast(syntax)?;
 
-            trim_whitespace_before_to_newline(function.fn_token()?);
+            trim_whitespace_before_to_newline(&function.fn_token()?);
 
-            set_whitespace_single_after(function.fn_token()?);
-            set_whitespace_single_before(function.body()?.left_brace_token()?);
+            set_whitespace_single_after(&function.fn_token()?);
+            set_whitespace_single_before(&function.body()?.left_brace_token()?);
 
             let param_list = function.parameter_list()?;
 
-            remove_if_whitespace(param_list.left_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
+            remove_if_whitespace(&param_list.left_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
 
             let has_newline =
-                is_whitespace_with_newline(param_list.left_parenthesis_token()?.next_token()?);
+                is_whitespace_with_newline(&param_list.left_parenthesis_token()?.next_token()?);
 
             format_param_list(
                 param_list.parameters(),
@@ -142,100 +155,100 @@ fn format_syntax_node(
 
             if has_newline {
                 set_whitespace_before(
-                    param_list.right_parenthesis_token()?,
+                    &param_list.right_parenthesis_token()?,
                     create_whitespace("\n"),
                 );
             } else {
-                remove_if_whitespace(param_list.right_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
+                remove_if_whitespace(&param_list.right_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
             }
         },
         SyntaxKind::VariableIdentDeclaration => {
             let param_list = ast::VariableIdentDeclaration::cast(syntax)?;
-            remove_if_whitespace(param_list.colon_token()?.prev_token()?); // spellchecker:disable-line
-            set_whitespace_single_after(param_list.colon_token()?);
+            remove_if_whitespace(&param_list.colon_token()?.prev_token()?); // spellchecker:disable-line
+            set_whitespace_single_after(&param_list.colon_token()?);
         },
         SyntaxKind::ReturnType => {
             let return_type = ast::ReturnType::cast(syntax)?;
-            whitespace_to_single_around(return_type.arrow_token()?);
+            whitespace_to_single_around(&return_type.arrow_token()?);
         },
         SyntaxKind::StructDeclaration => {
             let r#struct = ast::StructDeclaration::cast(syntax)?;
 
-            trim_whitespace_before_to_newline(r#struct.struct_token()?);
+            trim_whitespace_before_to_newline(&r#struct.struct_token()?);
 
             let name = r#struct.name()?.ident_token()?;
-            whitespace_to_single_around(name);
+            whitespace_to_single_around(&name);
 
             let body = r#struct.body()?;
             let l_brace = body.left_brace_token()?;
             let r_brace = body.right_brace_token()?;
             let mut fields = body.fields();
             // indent opening brace
-            indent_after(l_brace.clone(), indentation + 1, options)?;
+            indent_after(&l_brace, indentation + 1, options)?;
             if fields.next().is_none() {
                 // empty struct: no inner indentation
-                set_whitespace_before(r_brace.clone(), create_whitespace(""));
+                set_whitespace_before(&r_brace, create_whitespace(""));
             } else {
                 // indent each field line
                 for field in fields {
                     let first = field.syntax().first_token()?;
-                    indent_before(first, indentation + 1, options)?;
+                    indent_before(&first, indentation + 1, options)?;
                 }
                 // closing brace on its own line
-                indent_before(r_brace.clone(), indentation, options)?;
+                indent_before(&r_brace, indentation, options)?;
             }
         },
         SyntaxKind::IfStatement => {
             let if_statement = ast::IfStatement::cast(syntax)?;
 
-            set_whitespace_single_after(if_statement.if_token()?);
+            set_whitespace_single_after(&if_statement.if_token()?);
 
-            set_whitespace_single_before(if_statement.block()?.left_brace_token()?);
+            set_whitespace_single_before(&if_statement.block()?.left_brace_token()?);
 
             if let Some(else_block) = if_statement.else_block() {
-                whitespace_to_single_around(else_block.else_token()?);
+                whitespace_to_single_around(&else_block.else_token()?);
             }
 
             for else_if_block in if_statement.else_if_blocks() {
-                whitespace_to_single_around(else_if_block.else_token()?);
-                whitespace_to_single_around(else_if_block.if_token()?);
+                whitespace_to_single_around(&else_if_block.else_token()?);
+                whitespace_to_single_around(&else_if_block.if_token()?);
 
-                set_whitespace_single_before(else_if_block.block()?.left_brace_token()?);
+                set_whitespace_single_before(&else_if_block.block()?.left_brace_token()?);
             }
         },
         SyntaxKind::WhileStatement => {
             let while_statement = ast::WhileStatement::cast(syntax)?;
 
-            set_whitespace_single_after(while_statement.while_token()?);
+            set_whitespace_single_after(&while_statement.while_token()?);
 
-            set_whitespace_single_before(while_statement.block()?.left_brace_token()?);
+            set_whitespace_single_before(&while_statement.block()?.left_brace_token()?);
         },
         SyntaxKind::ForStatement => {
             let for_statement = ast::ForStatement::cast(syntax)?;
 
-            set_whitespace_single_after(for_statement.for_token()?);
+            set_whitespace_single_after(&for_statement.for_token()?);
 
-            set_whitespace_single_before(for_statement.block()?.left_brace_token()?);
+            set_whitespace_single_before(&for_statement.block()?.left_brace_token()?);
 
             remove_if_whitespace(
-                for_statement
+                &for_statement
                     .initializer()?
                     .syntax()
                     .first_token()?
                     .prev_token()?, // spellchecker:disable-line
             );
-            set_whitespace_single_before(for_statement.condition()?.syntax().first_token()?);
-            set_whitespace_single_before(for_statement.continuing_part()?.syntax().first_token()?);
-            remove_if_whitespace(for_statement.continuing_part()?.syntax().last_token()?);
+            set_whitespace_single_before(&for_statement.condition()?.syntax().first_token()?);
+            set_whitespace_single_before(&for_statement.continuing_part()?.syntax().first_token()?);
+            remove_if_whitespace(&for_statement.continuing_part()?.syntax().last_token()?);
         },
         SyntaxKind::CompoundStatement => {
             let statement = ast::CompoundStatement::cast(syntax)?;
             let has_newline =
-                is_whitespace_with_newline(statement.left_brace_token()?.next_token()?);
+                is_whitespace_with_newline(&statement.left_brace_token()?.next_token()?);
 
             if has_newline {
                 set_whitespace_before(
-                    statement.right_brace_token()?,
+                    &statement.right_brace_token()?,
                     create_whitespace(&format!(
                         "\n{}",
                         options.indent_symbol.repeat(indentation.saturating_sub(1))
@@ -247,44 +260,44 @@ fn format_syntax_node(
             let type_initialiser = ast::TypeInitializer::cast(syntax)?;
 
             if let Some(expression) = type_initialiser.ty() {
-                remove_if_whitespace(expression.syntax().last_token()?);
+                remove_if_whitespace(&expression.syntax().last_token()?);
             }
 
-            format_parameters(type_initialiser.arguments()?, indentation, options)?;
+            format_parameters(&type_initialiser.arguments()?, indentation, options)?;
         },
         SyntaxKind::FunctionCall => {
             let function_call = ast::FunctionCall::cast(syntax)?;
 
             if let Some(name_ref) = function_call.name_ref() {
-                remove_if_whitespace(name_ref.syntax().last_token()?);
+                remove_if_whitespace(&name_ref.syntax().last_token()?);
             }
 
             let param_list = function_call.parameters()?;
 
-            format_parameters(param_list, indentation, options)?;
+            format_parameters(&param_list, indentation, options)?;
         },
         SyntaxKind::InfixExpression => {
             let expression = ast::InfixExpression::cast(syntax)?;
 
             match expression.op()? {
                 NodeOrToken::Node(node) => {
-                    set_whitespace_single_before(node.first_token()?);
-                    set_whitespace_single_before(node.last_token()?.next_token()?);
+                    set_whitespace_single_before(&node.first_token()?);
+                    set_whitespace_single_before(&node.last_token()?.next_token()?);
                 },
                 NodeOrToken::Token(token) => {
-                    whitespace_to_single_around(token);
+                    whitespace_to_single_around(&token);
                 },
             }
         },
         SyntaxKind::ParenthesisExpression => {
             let parenthesis_expression = ast::ParenthesisExpression::cast(syntax)?;
             remove_if_whitespace(
-                parenthesis_expression
+                &parenthesis_expression
                     .left_parenthesis_token()?
                     .next_token()?,
             );
             remove_if_whitespace(
-                parenthesis_expression
+                &parenthesis_expression
                     .right_parenthesis_token()?
                     .prev_token()?, // spellchecker:disable-line
             );
@@ -300,43 +313,43 @@ fn format_syntax_node(
                     )
                 })
             {
-                remove_token(parenthesis_expression.right_parenthesis_token()?);
-                remove_token(parenthesis_expression.left_parenthesis_token()?);
+                remove_token(&parenthesis_expression.right_parenthesis_token()?);
+                remove_token(&parenthesis_expression.left_parenthesis_token()?);
             }
         },
         SyntaxKind::BitcastExpression => {
             let bitcast_expression = ast::BitcastExpression::cast(syntax)?;
-            remove_if_whitespace(bitcast_expression.bitcast_token()?.next_token()?);
+            remove_if_whitespace(&bitcast_expression.bitcast_token()?.next_token()?);
 
-            remove_if_whitespace(bitcast_expression.left_angle_token()?.next_token()?);
-            remove_if_whitespace(bitcast_expression.right_angle_token()?.prev_token()?); // spellchecker:disable-line
+            remove_if_whitespace(&bitcast_expression.left_angle_token()?.next_token()?);
+            remove_if_whitespace(&bitcast_expression.right_angle_token()?.prev_token()?); // spellchecker:disable-line
 
-            remove_if_whitespace(bitcast_expression.right_angle_token()?.next_token()?);
+            remove_if_whitespace(&bitcast_expression.right_angle_token()?.next_token()?);
         },
         SyntaxKind::AssignmentStatement => {
             let statement = ast::AssignmentStatement::cast(syntax)?;
-            whitespace_to_single_around(statement.equal_token()?);
+            whitespace_to_single_around(&statement.equal_token()?);
         },
         SyntaxKind::CompoundAssignmentStatement => {
             let statement = ast::CompoundAssignmentStatement::cast(syntax)?;
-            whitespace_to_single_around(statement.operator_token()?);
+            whitespace_to_single_around(&statement.operator_token()?);
         },
         SyntaxKind::VariableStatement => {
             let statement = ast::VariableStatement::cast(syntax)?;
             if let Some(colon) = statement.colon() {
-                remove_if_whitespace(colon.prev_token()?); // spellchecker:disable-line
-                set_whitespace_single_after(colon);
+                remove_if_whitespace(&colon.prev_token()?); // spellchecker:disable-line
+                set_whitespace_single_after(&colon);
             }
-            whitespace_to_single_around(statement.equal_token()?);
+            whitespace_to_single_around(&statement.equal_token()?);
         },
         _ => {
             if let Some(r#type) = ast::Type::cast(syntax) {
                 let generics = r#type.generic_arg_list()?;
                 let left_angle = generics.left_angle_token()?;
-                remove_if_whitespace(left_angle.prev_token()?); // spellchecker:disable-line
-                remove_if_whitespace(left_angle.next_token()?);
+                remove_if_whitespace(&left_angle.prev_token()?); // spellchecker:disable-line
+                remove_if_whitespace(&left_angle.next_token()?);
                 let right_angle = generics.left_angle_token()?;
-                remove_if_whitespace(right_angle.prev_token()?); // spellchecker:disable-line
+                remove_if_whitespace(&right_angle.prev_token()?); // spellchecker:disable-line
             }
         },
     }
@@ -345,12 +358,12 @@ fn format_syntax_node(
 }
 
 fn format_parameters(
-    param_list: ast::FunctionParameterList,
+    param_list: &ast::FunctionParameterList,
     indentation: usize,
     options: &FormattingOptions,
 ) -> Option<()> {
     let has_newline =
-        is_whitespace_with_newline(param_list.left_parenthesis_token()?.next_token()?);
+        is_whitespace_with_newline(&param_list.left_parenthesis_token()?.next_token()?);
     format_param_list(
         param_list.arguments(),
         param_list.arguments().count(),
@@ -361,12 +374,12 @@ fn format_parameters(
     );
     if has_newline {
         set_whitespace_before(
-            param_list.right_parenthesis_token()?,
+            &param_list.right_parenthesis_token()?,
             create_whitespace(&format!("\n{}", options.indent_symbol.repeat(indentation))),
         );
     } else {
-        remove_if_whitespace(param_list.right_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
-    };
+        remove_if_whitespace(&param_list.right_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
+    }
     Some(())
 }
 
@@ -393,10 +406,10 @@ fn format_param_list<T: AstNode>(
             (false, false) => create_whitespace(" "),
         };
 
-        set_whitespace_before(first_token, ws);
+        set_whitespace_before(&first_token, ws);
 
         let last_param_token = parameter.syntax().last_token()?;
-        remove_if_whitespace(last_param_token);
+        remove_if_whitespace(&last_param_token);
 
         let token_after_parameter = match parameter.syntax().next_sibling_or_token()? {
             NodeOrToken::Node(node) => node.first_token()?,
@@ -405,10 +418,8 @@ fn format_param_list<T: AstNode>(
         match (last, token_after_parameter.kind() == SyntaxKind::Comma) {
             (true, true) if !has_newline => token_after_parameter.detach(),
             (true, has_comma) => match (trailing_comma_policy, has_comma) {
-                (Policy::Ignore, _) => {},
                 (Policy::Remove, true) => token_after_parameter.detach(),
-                (Policy::Remove, false) => {},
-                (Policy::Insert, true) => {},
+                (Policy::Remove, false) | (Policy::Insert, true) | (Policy::Ignore, _) => {},
                 (Policy::Insert, false) => {
                     insert_after_syntax(
                         parameter.syntax(),
@@ -423,7 +434,7 @@ fn format_param_list<T: AstNode>(
                     create_syntax_token(SyntaxKind::Comma, ","),
                 );
             },
-        };
+        }
 
         first = false;
     }
@@ -432,7 +443,7 @@ fn format_param_list<T: AstNode>(
 }
 
 // "\n  fn" -> "\nfn"
-fn trim_whitespace_before_to_newline(before: SyntaxToken) -> Option<()> {
+fn trim_whitespace_before_to_newline(before: &SyntaxToken) -> Option<()> {
     let maybe_whitespace = before.prev_token()?; // spellchecker:disable-line
     if maybe_whitespace.kind().is_whitespace() {
         let index = maybe_whitespace.index();
@@ -447,33 +458,33 @@ fn trim_whitespace_before_to_newline(before: SyntaxToken) -> Option<()> {
     Some(())
 }
 
-fn is_whitespace_with_newline(maybe_whitespace: SyntaxToken) -> bool {
+fn is_whitespace_with_newline(maybe_whitespace: &SyntaxToken) -> bool {
     maybe_whitespace.kind().is_whitespace() && maybe_whitespace.text().contains('\n')
 }
 
-fn n_newlines_in_whitespace(maybe_whitespace: SyntaxToken) -> Option<usize> {
+fn n_newlines_in_whitespace(maybe_whitespace: &SyntaxToken) -> Option<usize> {
     maybe_whitespace
         .kind()
         .is_whitespace()
         .then(|| maybe_whitespace.text().matches('\n').count())
 }
 
-fn remove_if_whitespace(maybe_whitespace: SyntaxToken) {
+fn remove_if_whitespace(maybe_whitespace: &SyntaxToken) {
     if maybe_whitespace.kind().is_whitespace() {
         remove_token(maybe_whitespace);
     }
 }
 
-fn remove_token(token: SyntaxToken) {
+fn remove_token(token: &SyntaxToken) {
     let index = token.index();
     token
         .parent()
         .unwrap()
-        .splice_children(index..index + 1, Vec::new())
+        .splice_children(index..index + 1, Vec::new());
 }
 
 fn replace_token_with(
-    token: SyntaxToken,
+    token: &SyntaxToken,
     replacement: SyntaxToken,
 ) {
     let index = token.index();
@@ -484,14 +495,14 @@ fn replace_token_with(
 }
 
 fn insert_after(
-    token: SyntaxToken,
+    token: &SyntaxToken,
     insert: SyntaxToken,
 ) {
     let index = token.index();
     token
         .parent()
         .unwrap()
-        .splice_children(index + 1..index + 1, vec![SyntaxElement::Token(insert)]);
+        .splice_children((index + 1)..index + 1, vec![SyntaxElement::Token(insert)]);
 }
 
 fn insert_after_syntax(
@@ -501,11 +512,11 @@ fn insert_after_syntax(
     let index = node.index();
     node.parent()
         .unwrap()
-        .splice_children(index + 1..index + 1, vec![SyntaxElement::Token(insert)]);
+        .splice_children((index + 1)..index + 1, vec![SyntaxElement::Token(insert)]);
 }
 
 fn insert_before(
-    token: SyntaxToken,
+    token: &SyntaxToken,
     insert: SyntaxToken,
 ) {
     let index = token.index();
@@ -515,19 +526,18 @@ fn insert_before(
         .splice_children(index..index, vec![SyntaxElement::Token(insert)]);
 }
 
-fn whitespace_to_single_around(around: SyntaxToken) -> Option<()> {
-    set_whitespace_single_before(around.clone());
+fn whitespace_to_single_around(around: &SyntaxToken) {
+    set_whitespace_single_before(around);
     set_whitespace_single_after(around);
-    Some(())
 }
 
 fn set_whitespace_after(
-    after: SyntaxToken,
+    after: &SyntaxToken,
     to: SyntaxToken,
 ) -> Option<()> {
     let maybe_whitespace = after.next_token()?;
     if maybe_whitespace.kind().is_whitespace() {
-        replace_token_with(maybe_whitespace, to);
+        replace_token_with(&maybe_whitespace, to);
     } else {
         insert_after(after, to);
     }
@@ -536,12 +546,12 @@ fn set_whitespace_after(
 }
 
 fn set_whitespace_before(
-    before: SyntaxToken,
+    before: &SyntaxToken,
     to: SyntaxToken,
 ) -> Option<()> {
     let maybe_whitespace = before.prev_token()?; // spellchecker:disable-line
     if maybe_whitespace.kind().is_whitespace() {
-        replace_token_with(maybe_whitespace, to);
+        replace_token_with(&maybe_whitespace, to);
     } else {
         insert_before(before, to);
     }
@@ -549,11 +559,11 @@ fn set_whitespace_before(
     Some(())
 }
 
-fn set_whitespace_single_after(after: SyntaxToken) -> Option<()> {
+fn set_whitespace_single_after(after: &SyntaxToken) -> Option<()> {
     set_whitespace_after(after, single_whitespace())
 }
 
-fn set_whitespace_single_before(before: SyntaxToken) -> Option<()> {
+fn set_whitespace_single_before(before: &SyntaxToken) -> Option<()> {
     set_whitespace_before(before, single_whitespace())
 }
 
@@ -578,7 +588,7 @@ fn create_syntax_token(
 }
 
 fn indent_after(
-    token: SyntaxToken,
+    token: &SyntaxToken,
     indent_level: usize,
     options: &FormattingOptions,
 ) -> Option<()> {
@@ -587,7 +597,7 @@ fn indent_after(
 }
 
 fn indent_before(
-    token: SyntaxToken,
+    token: &SyntaxToken,
     indent_level: usize,
     options: &FormattingOptions,
 ) -> Option<()> {

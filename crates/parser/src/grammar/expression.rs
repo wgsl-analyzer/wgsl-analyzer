@@ -2,57 +2,56 @@
 
 use crate::{marker::CompletedMarker, syntax_kind::SyntaxKind};
 
-use super::*;
+use super::{Parser, TYPE_SET, list, name_ref};
 
-pub(crate) fn expression(p: &mut Parser) {
-    if p.at_set(super::STATEMENT_RECOVER_SET) {
+pub(crate) fn expression(parser: &mut Parser<'_, '_>) {
+    if parser.at_set(super::STATEMENT_RECOVER_SET) {
         return;
     }
-    expression_binding_power(p, 0);
+    expression_binding_power(parser, 0);
 }
 
 fn expression_binding_power(
-    p: &mut Parser,
+    parser: &mut Parser<'_, '_>,
     minimum_binding_power: u8,
 ) -> Option<CompletedMarker> {
-    let mut left_side = left_side(p)?;
+    let mut left_side = left_side(parser)?;
 
     loop {
         // postfix ops
-        if let Some(postfix_op) = postfix_op(p) {
+        if let Some(postfix_op) = postfix_op(parser) {
             let (left_binding_power, ()) = postfix_op.binding_power();
             if left_binding_power < minimum_binding_power {
                 break;
             }
 
-            let m = left_side.precede(p);
+            let marker = left_side.precede(parser);
             match postfix_op {
                 PostfixOp::Call => {
                     // Calls cannot be made on arbitrary expressions, merely on only a few versions
                     // We have this as an error
-                    function_param_list(p);
-                    left_side = m.complete(p, SyntaxKind::InvalidFunctionCall);
+                    function_param_list(parser);
+                    left_side = marker.complete(parser, SyntaxKind::InvalidFunctionCall);
                 },
                 PostfixOp::Index => {
-                    array_index(p);
-                    left_side = m.complete(p, SyntaxKind::IndexExpression);
+                    array_index(parser);
+                    left_side = marker.complete(parser, SyntaxKind::IndexExpression);
                 },
                 PostfixOp::Field => {
-                    p.bump();
-                    name_ref(p);
-                    left_side = m.complete(p, SyntaxKind::FieldExpression);
+                    parser.bump();
+                    name_ref(parser);
+                    left_side = marker.complete(parser, SyntaxKind::FieldExpression);
                 },
             }
 
             continue;
         }
 
-        let infix_op = match binary_operator(p) {
-            Some(op) => op,
-            None => break,
+        let Some(infix_operator) = binary_operator(parser) else {
+            break;
         };
 
-        let (left_binding_power, right_binding_power) = infix_op.binding_power();
+        let (left_binding_power, right_binding_power) = infix_operator.binding_power();
 
         if left_binding_power < minimum_binding_power {
             break;
@@ -60,17 +59,32 @@ fn expression_binding_power(
 
         // Eat the operator's token.
 
-        match infix_op {
-            BinaryOperator::ShiftLeft => p.bump_compound(SyntaxKind::ShiftLeft),
-            BinaryOperator::ShiftRight => p.bump_compound(SyntaxKind::ShiftRight),
-            _ => {
-                p.bump();
+        match infix_operator {
+            BinaryOperator::ShiftLeft => parser.bump_compound(SyntaxKind::ShiftLeft),
+            BinaryOperator::ShiftRight => parser.bump_compound(SyntaxKind::ShiftRight),
+            BinaryOperator::Add
+            | BinaryOperator::Subtract
+            | BinaryOperator::Multiply
+            | BinaryOperator::Divide
+            | BinaryOperator::Or
+            | BinaryOperator::And
+            | BinaryOperator::Xor
+            | BinaryOperator::ShortCircuitAnd
+            | BinaryOperator::ShortCircuitOr
+            | BinaryOperator::GreaterThan
+            | BinaryOperator::LessThan
+            | BinaryOperator::GreaterThanEqual
+            | BinaryOperator::LessThanEqual
+            | BinaryOperator::NotEqual
+            | BinaryOperator::Equals
+            | BinaryOperator::Modulo => {
+                parser.bump();
             },
         }
 
-        let m = left_side.precede(p);
-        let parsed_rhs = expression_binding_power(p, right_binding_power).is_some();
-        left_side = m.complete(p, SyntaxKind::InfixExpression);
+        let marker = left_side.precede(parser);
+        let parsed_rhs = expression_binding_power(parser, right_binding_power).is_some();
+        left_side = marker.complete(parser, SyntaxKind::InfixExpression);
 
         if !parsed_rhs {
             break;
@@ -80,55 +94,55 @@ fn expression_binding_power(
     Some(left_side)
 }
 
-fn function_param_list(p: &mut Parser) {
+fn function_param_list(parser: &mut Parser<'_, '_>) {
     list(
-        p,
+        parser,
         SyntaxKind::ParenthesisLeft,
         SyntaxKind::ParenthesisRight,
         SyntaxKind::Comma,
         SyntaxKind::FunctionParameterList,
-        |p| {
-            expression_binding_power(p, 0);
+        |parser| {
+            expression_binding_power(parser, 0);
         },
     );
 }
 
-fn array_index(p: &mut Parser) {
-    p.expect(SyntaxKind::BracketLeft);
-    expression_binding_power(p, 0);
-    p.expect(SyntaxKind::BracketRight);
+fn array_index(parser: &mut Parser<'_, '_>) {
+    parser.expect(SyntaxKind::BracketLeft);
+    expression_binding_power(parser, 0);
+    parser.expect(SyntaxKind::BracketRight);
 }
 
-fn left_side(p: &mut Parser) -> Option<CompletedMarker> {
-    let cm = if p.at_set(TOKENSET_LITERAL) {
-        literal(p)
-    } else if p.at(SyntaxKind::Identifier) {
-        let m = p.start();
-        name_ref(p);
-        if p.at(SyntaxKind::ParenthesisLeft) {
-            function_param_list(p);
+fn left_side(parser: &mut Parser<'_, '_>) -> Option<CompletedMarker> {
+    let cm = if parser.at_set(TOKENSET_LITERAL) {
+        literal(parser)
+    } else if parser.at(SyntaxKind::Identifier) {
+        let marker = parser.start();
+        name_ref(parser);
+        if parser.at(SyntaxKind::ParenthesisLeft) {
+            function_param_list(parser);
             // Function call, may be a type initialiser too
-            m.complete(p, SyntaxKind::FunctionCall)
+            marker.complete(parser, SyntaxKind::FunctionCall)
         } else {
-            m.complete(p, SyntaxKind::PathExpression)
+            marker.complete(parser, SyntaxKind::PathExpression)
         }
-    } else if p.at(SyntaxKind::Bitcast) {
-        bitcast_expression(p)
-    } else if p.at_set(TYPE_SET) {
-        let m = p.start();
-        super::type_declaration(p).unwrap();
-        if p.at(SyntaxKind::ParenthesisLeft) {
-            function_param_list(p);
+    } else if parser.at(SyntaxKind::Bitcast) {
+        bitcast_expression(parser)
+    } else if parser.at_set(TYPE_SET) {
+        let marker = parser.start();
+        super::type_declaration(parser).unwrap();
+        if parser.at(SyntaxKind::ParenthesisLeft) {
+            function_param_list(parser);
         } else {
-            p.error_no_bump(&[SyntaxKind::ParenthesisLeft]);
+            parser.error_no_bump(&[SyntaxKind::ParenthesisLeft]);
         }
-        m.complete(p, SyntaxKind::TypeInitializer)
-    } else if p.at_set(PREFIX_OP_SET) {
-        prefix_expression(p)
-    } else if p.at(SyntaxKind::ParenthesisLeft) {
-        parenthesis_expression(p)
+        marker.complete(parser, SyntaxKind::TypeInitializer)
+    } else if parser.at_set(PREFIX_OP_SET) {
+        prefix_expression(parser)
+    } else if parser.at(SyntaxKind::ParenthesisLeft) {
+        parenthesis_expression(parser)
     } else {
-        p.error();
+        parser.error();
         return None;
     };
 
@@ -156,7 +170,7 @@ enum BinaryOperator {
     Modulo,
 }
 
-fn binary_operator(parser: &mut Parser) -> Option<BinaryOperator> {
+fn binary_operator(parser: &mut Parser<'_, '_>) -> Option<BinaryOperator> {
     let operator = if parser.at(SyntaxKind::Plus) {
         Some(BinaryOperator::Add)
     } else if parser.at(SyntaxKind::Minus) {
@@ -201,22 +215,22 @@ fn binary_operator(parser: &mut Parser) -> Option<BinaryOperator> {
 }
 
 impl BinaryOperator {
-    fn binding_power(&self) -> (u8, u8) {
+    const fn binding_power(&self) -> (u8, u8) {
         match self {
-            BinaryOperator::ShortCircuitOr => (0, 1),
-            BinaryOperator::ShortCircuitAnd => (2, 3),
-            BinaryOperator::Or => (4, 5),
-            BinaryOperator::Xor => (5, 6),
-            BinaryOperator::And => (7, 8),
-            BinaryOperator::Equals => (9, 10),
-            BinaryOperator::LessThan
-            | BinaryOperator::GreaterThan
-            | BinaryOperator::LessThanEqual
-            | BinaryOperator::GreaterThanEqual
-            | BinaryOperator::NotEqual => (11, 12),
-            BinaryOperator::ShiftLeft | BinaryOperator::ShiftRight => (13, 14),
-            BinaryOperator::Add | BinaryOperator::Subtract => (15, 16),
-            BinaryOperator::Multiply | BinaryOperator::Divide | BinaryOperator::Modulo => (17, 18),
+            Self::ShortCircuitOr => (0, 1),
+            Self::ShortCircuitAnd => (2, 3),
+            Self::Or => (4, 5),
+            Self::Xor => (5, 6),
+            Self::And => (7, 8),
+            Self::Equals => (9, 10),
+            Self::LessThan
+            | Self::GreaterThan
+            | Self::LessThanEqual
+            | Self::GreaterThanEqual
+            | Self::NotEqual => (11, 12),
+            Self::ShiftLeft | Self::ShiftRight => (13, 14),
+            Self::Add | Self::Subtract => (15, 16),
+            Self::Multiply | Self::Divide | Self::Modulo => (17, 18),
         }
     }
 }
@@ -237,7 +251,7 @@ enum PrefixOp {
 }
 
 impl PrefixOp {
-    fn binding_power(&self) -> ((), u8) {
+    const fn binding_power(&self) -> ((), u8) {
         match self {
             Self::Negate | Self::Not | Self::Reference | Self::Dereference | Self::BitNot => {
                 ((), 20)
@@ -253,19 +267,19 @@ enum PostfixOp {
 }
 
 impl PostfixOp {
-    fn binding_power(&self) -> (u8, ()) {
+    const fn binding_power(&self) -> (u8, ()) {
         match self {
             Self::Call | Self::Field | Self::Index => (21, ()),
         }
     }
 }
 
-fn postfix_op(p: &mut Parser) -> Option<PostfixOp> {
-    if p.at(SyntaxKind::Period) {
+fn postfix_op(parser: &mut Parser<'_, '_>) -> Option<PostfixOp> {
+    if parser.at(SyntaxKind::Period) {
         Some(PostfixOp::Field)
-    } else if p.at(SyntaxKind::ParenthesisLeft) {
+    } else if parser.at(SyntaxKind::ParenthesisLeft) {
         Some(PostfixOp::Call)
-    } else if p.at(SyntaxKind::BracketLeft) {
+    } else if parser.at(SyntaxKind::BracketLeft) {
         Some(PostfixOp::Index)
     } else {
         None
@@ -282,79 +296,79 @@ pub(crate) const TOKENSET_LITERAL: &[SyntaxKind] = &[
     SyntaxKind::False,
 ];
 
-pub(crate) fn literal(p: &mut Parser) -> CompletedMarker {
-    assert!(p.at_set(TOKENSET_LITERAL));
+pub(crate) fn literal(parser: &mut Parser<'_, '_>) -> CompletedMarker {
+    assert!(parser.at_set(TOKENSET_LITERAL));
 
-    let m = p.start();
-    p.bump();
-    m.complete(p, SyntaxKind::Literal)
+    let marker = parser.start();
+    parser.bump();
+    marker.complete(parser, SyntaxKind::Literal)
 }
 
-fn bitcast_expression(p: &mut Parser) -> CompletedMarker {
-    assert!(p.at(SyntaxKind::Bitcast));
-    let m = p.start();
-    p.bump();
-    if !p.eat(SyntaxKind::LessThan) {
-        p.error_expected_no_bump(&[SyntaxKind::LessThan]);
-        if p.at(SyntaxKind::ParenthesisLeft) {
-            parenthesis_expression(p);
+fn bitcast_expression(parser: &mut Parser<'_, '_>) -> CompletedMarker {
+    assert!(parser.at(SyntaxKind::Bitcast));
+    let marker = parser.start();
+    parser.bump();
+    if !parser.eat(SyntaxKind::LessThan) {
+        parser.error_expected_no_bump(&[SyntaxKind::LessThan]);
+        if parser.at(SyntaxKind::ParenthesisLeft) {
+            parenthesis_expression(parser);
         }
-        return m.complete(p, SyntaxKind::BitcastExpression);
+        return marker.complete(parser, SyntaxKind::BitcastExpression);
     }
-    let _ = super::type_declaration(p);
-    p.expect(SyntaxKind::GreaterThan);
+    _ = super::type_declaration(parser);
+    parser.expect(SyntaxKind::GreaterThan);
 
-    if !p.at(SyntaxKind::ParenthesisLeft) {
-        p.error_expected_no_bump(&[SyntaxKind::ParenthesisLeft]);
-        return m.complete(p, SyntaxKind::BitcastExpression);
+    if !parser.at(SyntaxKind::ParenthesisLeft) {
+        parser.error_expected_no_bump(&[SyntaxKind::ParenthesisLeft]);
+        return marker.complete(parser, SyntaxKind::BitcastExpression);
     }
-    parenthesis_expression(p);
-    return m.complete(p, SyntaxKind::BitcastExpression);
+    parenthesis_expression(parser);
+    marker.complete(parser, SyntaxKind::BitcastExpression)
 }
 
-fn prefix_expression(p: &mut Parser) -> CompletedMarker {
-    let m = p.start();
-    let op = if p.at(SyntaxKind::Minus) {
+fn prefix_expression(parser: &mut Parser<'_, '_>) -> CompletedMarker {
+    let marker = parser.start();
+    let op = if parser.at(SyntaxKind::Minus) {
         PrefixOp::Negate
-    } else if p.at(SyntaxKind::Bang) {
+    } else if parser.at(SyntaxKind::Bang) {
         PrefixOp::Not
-    } else if p.at(SyntaxKind::And) {
+    } else if parser.at(SyntaxKind::And) {
         PrefixOp::Reference
-    } else if p.at(SyntaxKind::Star) {
+    } else if parser.at(SyntaxKind::Star) {
         PrefixOp::Dereference
-    } else if p.at(SyntaxKind::Tilde) {
+    } else if parser.at(SyntaxKind::Tilde) {
         PrefixOp::BitNot
     } else {
-        p.error();
-        return m.complete(p, SyntaxKind::PrefixExpression);
+        parser.error();
+        return marker.complete(parser, SyntaxKind::PrefixExpression);
     };
 
     let ((), right_binding_power) = op.binding_power();
 
     // Eat the operator's token.
-    p.bump();
+    parser.bump();
 
-    expression_binding_power(p, right_binding_power);
+    expression_binding_power(parser, right_binding_power);
 
-    m.complete(p, SyntaxKind::PrefixExpression)
+    marker.complete(parser, SyntaxKind::PrefixExpression)
 }
 
-fn parenthesis_expression(p: &mut Parser) -> CompletedMarker {
-    assert!(p.at(SyntaxKind::ParenthesisLeft));
+fn parenthesis_expression(parser: &mut Parser<'_, '_>) -> CompletedMarker {
+    assert!(parser.at(SyntaxKind::ParenthesisLeft));
 
-    let m = p.start();
-    p.bump();
-    if p.at(SyntaxKind::ParenthesisRight) {
+    let marker = parser.start();
+    parser.bump();
+    if parser.at(SyntaxKind::ParenthesisRight) {
         // TODO: Better kind of error here. Ideally just EXPR
-        p.error_expected_no_bump(&[SyntaxKind::ParenthesisExpression]);
-        p.bump();
-        return m.complete(p, SyntaxKind::ParenthesisExpression);
+        parser.error_expected_no_bump(&[SyntaxKind::ParenthesisExpression]);
+        parser.bump();
+        return marker.complete(parser, SyntaxKind::ParenthesisExpression);
     }
 
-    expression_binding_power(p, 0);
-    p.expect(SyntaxKind::ParenthesisRight);
+    expression_binding_power(parser, 0);
+    parser.expect(SyntaxKind::ParenthesisRight);
 
-    m.complete(p, SyntaxKind::ParenthesisExpression)
+    marker.complete(parser, SyntaxKind::ParenthesisExpression)
 }
 
 #[cfg(test)]
@@ -363,11 +377,12 @@ mod tests {
 
     use crate::ParseEntryPoint;
 
+    #[expect(clippy::needless_pass_by_value, reason = "intended API")]
     fn check(
         input: &str,
         expected_tree: Expect,
     ) {
-        crate::check_entrypoint(input, ParseEntryPoint::Expression, expected_tree);
+        crate::check_entrypoint(input, ParseEntryPoint::Expression, &expected_tree);
     }
 
     #[test]
@@ -422,6 +437,32 @@ mod tests {
                 PathExpression@0..7
                   NameReference@0..7
                     Identifier@0..7 "counter""#]],
+        );
+    }
+
+    #[test]
+    fn parse_variable_ref_no_comment() {
+        check(
+            "counter // not part of it",
+            expect![[r#"
+                PathExpression@0..25
+                  NameReference@0..25
+                    Identifier@0..7 "counter"
+                    Blankspace@7..8 " "
+                    LineEndingComment@8..25 "// not part of it""#]],
+        );
+    }
+
+    #[test]
+    fn parse_variable_ref_no_comment2() {
+        check(
+            "counter /* not part of it */",
+            expect![[r#"
+                PathExpression@0..28
+                  NameReference@0..28
+                    Identifier@0..7 "counter"
+                    Blankspace@7..8 " "
+                    BlockComment@8..28 "/* not part of it */""#]],
         );
     }
 

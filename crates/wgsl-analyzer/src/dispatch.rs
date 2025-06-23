@@ -78,50 +78,57 @@ impl<'global_state> RequestDispatcher<'global_state> {
     /// Dispatches the request onto the current thread.
     pub(crate) fn on_sync<R>(
         &mut self,
-        function: fn(GlobalStateSnapshot, R::Params) -> Result<R::Result>,
+        function: fn(GlobalStateSnapshot, R::Params) -> anyhow::Result<R::Result>,
     ) -> &mut Self
     where
-        R: lsp_types::request::Request + 'static,
-        R::Params: DeserializeOwned + panic::UnwindSafe + fmt::Debug + 'static,
-        R::Result: Serialize + 'static,
+        R: lsp_types::request::Request,
+        R::Params: DeserializeOwned + panic::UnwindSafe + fmt::Debug,
+        R::Result: Serialize,
     {
         let Some((request, parameters, panic_context)) = self.parse::<R>() else {
             return self;
         };
+        let _guard =
+            tracing::info_span!("request", method = ?request.method, "request_id" = ?request.id)
+                .entered();
+        tracing::debug!(?parameters);
         let global_state_snapshot = self.global_state.snapshot();
 
         let result = panic::catch_unwind(move || {
             let _pctx = stdx::panic_context::enter(panic_context);
             function(global_state_snapshot, parameters)
         });
+
         if let Ok(response) = thread_result_to_response::<R>(request.id, result) {
             self.global_state.respond(response);
         }
+
         self
     }
 
     /// Dispatches a non-latency-sensitive request onto the thread pool. When the VFS is marked not
     /// ready this will return a default constructed [`R::Result`].
-    pub(crate) fn on<const ALLOW_RETRYING: bool, R>(
+    pub(crate) fn on<const ALLOW_RETRYING: bool, Request>(
         &mut self,
-        function: fn(GlobalStateSnapshot, R::Params) -> anyhow::Result<R::Result>,
+        function: fn(GlobalStateSnapshot, Request::Params) -> anyhow::Result<Request::Result>,
     ) -> &mut Self
     where
-        R: lsp_types::request::Request<
+        Request: lsp_types::request::Request<
                 Params: DeserializeOwned + panic::UnwindSafe + Send + fmt::Debug,
                 Result: Serialize + Default,
             > + 'static,
     {
         if !self.global_state.vfs_done {
-            if let Some(lsp_server::Request { id, .. }) =
-                self.request.take_if(|it| it.method == R::METHOD)
+            if let Some(lsp_server::Request { id, .. }) = self
+                .request
+                .take_if(|request| request.method == Request::METHOD)
             {
                 self.global_state
-                    .respond(lsp_server::Response::new_ok(id, R::Result::default()));
+                    .respond(lsp_server::Response::new_ok(id, Request::Result::default()));
             }
             return self;
         }
-        self.on_with_thread_intent::<false, ALLOW_RETRYING, R>(
+        self.on_with_thread_intent::<false, ALLOW_RETRYING, Request>(
             ThreadIntent::Worker,
             function,
             Self::content_modified_error,
@@ -144,7 +151,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
     {
         if !self.global_state.vfs_done {
             if let Some(lsp_server::Request { id, .. }) =
-                self.request.take_if(|it| it.method == R::METHOD)
+                self.request.take_if(|request| request.method == R::METHOD)
             {
                 self.global_state
                     .respond(lsp_server::Response::new_ok(id, default()));
@@ -238,7 +245,9 @@ impl<'global_state> RequestDispatcher<'global_state> {
         R: lsp_types::request::Request,
         R::Params: DeserializeOwned + fmt::Debug,
     {
-        let request = self.request.take_if(|it| it.method == R::METHOD)?;
+        let request = self
+            .request
+            .take_if(|request| request.method == R::METHOD)?;
         let result = crate::from_json(R::METHOD, &request.params);
         match result {
             Ok(parameters) => {
@@ -374,7 +383,7 @@ impl NotificationDispatcher<'_> {
             return self;
         };
         let parameters = match not.extract::<N::Params>(N::METHOD) {
-            Ok(it) => it,
+            Ok(notification) => notification,
             Err(ExtractError::JsonError { method, error }) => {
                 panic!("Invalid request\nMethod: {method}\n error: {error}",)
             },

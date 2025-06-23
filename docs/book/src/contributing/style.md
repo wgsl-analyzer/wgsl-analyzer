@@ -952,13 +952,13 @@ Avoid `if let ... { } else { }` construct; prefer `match`.
 
 ```rust
 // GOOD
-match ctx.expected_type.as_ref() {
+match context.expected_type.as_ref() {
     Some(expected_type) => completion_ty == expected_type && !expected_type.is_unit(),
     None => false,
 }
 
 // BAD
-if let Some(expected_type) = ctx.expected_type.as_ref() {
+if let Some(expected_type) = context.expected_type.as_ref() {
     completion_ty == expected_type && !expected_type.is_unit()
 } else {
     false

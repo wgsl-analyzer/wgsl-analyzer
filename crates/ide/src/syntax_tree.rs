@@ -2,11 +2,11 @@ use base_db::{SourceDatabase, TextRange};
 use vfs::FileId;
 
 pub(crate) fn syntax_tree(
-    db: &dyn SourceDatabase,
+    database: &dyn SourceDatabase,
     file_id: FileId,
     range: Option<TextRange>,
 ) -> Option<String> {
-    let syntax_node = db.parse(file_id).syntax();
+    let syntax_node = database.parse(file_id).syntax();
     if let Some(range) = range {
         let token_or_node = syntax_node.covering_element(range);
         match token_or_node {

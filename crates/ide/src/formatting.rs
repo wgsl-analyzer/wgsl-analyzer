@@ -1,16 +1,16 @@
-use base_db::{FileId, SourceDatabase, TextRange};
+use base_db::{FileId, SourceDatabase as _, TextRange};
 use rowan::NodeOrToken;
-use syntax::{AstNode, SyntaxNode, ast};
+use syntax::{AstNode as _, SyntaxNode, ast};
 use wgsl_formatter::FormattingOptions;
 
 use crate::RootDatabase;
 
 pub(crate) fn format(
-    db: &RootDatabase,
+    database: &RootDatabase,
     file_id: FileId,
     range: Option<TextRange>,
 ) -> Option<SyntaxNode> {
-    let file: ast::SourceFile = db.parse_no_preprocessor(file_id).tree();
+    let file = database.parse_no_preprocessor(file_id).tree();
 
     let node = match range {
         None => file.syntax().clone_for_update(),
@@ -20,6 +20,6 @@ pub(crate) fn format(
         },
     };
 
-    wgsl_formatter::format_recursive(node.clone(), &FormattingOptions::default());
+    wgsl_formatter::format_recursive(&node, &FormattingOptions::default());
     Some(node)
 }

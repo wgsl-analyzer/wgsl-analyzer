@@ -22,3 +22,6 @@ either.workspace = true
 rustc-hash.workspace = true
 itertools.workspace = true
 smallvec.workspace = true
+
+[lints]
+workspace = true

@@ -23,7 +23,6 @@ use crate::{
 };
 
 #[must_use]
-#[inline]
 pub fn server_capabilities(config: &Config) -> ServerCapabilities {
     ServerCapabilities {
         text_document_sync: Some(TextDocumentSyncCapability::Kind(
@@ -139,8 +138,8 @@ impl ClientCapabilities {
         self.0
             .text_document
             .as_ref()
-            .and_then(|it| it.code_action.as_ref())
-            .and_then(|it| it.code_action_literal_support.as_ref())
+            .and_then(|capabilities| capabilities.code_action.as_ref())
+            .and_then(|capabilities| capabilities.code_action_literal_support.as_ref())
             .map_or(CodeActionProviderCapability::Simple(true), |_| {
                 CodeActionProviderCapability::Options(CodeActionOptions {
                     // Advertise support for all built-in CodeActionKinds.
@@ -317,7 +316,7 @@ impl ClientCapabilities {
         })()
         .unwrap_or_default()
         .iter()
-        .any(|it| it == "edit")
+        .any(|property| property == "edit")
     }
 
     pub fn signature_help_label_offsets(&self) -> bool {

@@ -1,17 +1,31 @@
-use std::path;
+use std::{ops::Not as _, path};
 
 use base_db::{FileRange, TextRange, TextSize};
-use ide::inlay_hints::{InlayHint, InlayKind};
-use ide_completion::item::{CompletionItem, CompletionItemKind, CompletionRelevance};
+use ide::{
+    Cancellable, NavigationTarget,
+    inlay_hints::{
+        InlayFieldsToResolve, InlayHint, InlayHintLabel, InlayHintLabelPart, InlayKind,
+        LazyProperty,
+    },
+};
+use ide_completion::{
+    CompletionFieldsToResolve,
+    item::{CompletionItem, CompletionItemKind, CompletionRelevance},
+};
+use ide_db::text_edit::{InsertDelete, TextEdit};
 use itertools::Itertools as _;
 use paths::{AbsPath, Utf8Component, Utf8Prefix};
-use text_edit::{Indel, TextEdit};
+use rustc_hash::FxHasher;
+use semver::VersionReq;
+use serde_json::to_value;
 use vfs::FileId;
 
 use crate::{
     Result,
+    config::Config,
     global_state::GlobalStateSnapshot,
-    line_index::{LineEndings, LineIndex, OffsetEncoding, PositionEncoding},
+    line_index::{LineEndings, LineIndex, PositionEncoding},
+    lsp,
 };
 
 /// Returns a `Url` object from a given path, will lowercase drive letters if present.
@@ -82,7 +96,7 @@ pub(crate) fn url(
 pub(crate) fn location(
     snap: &GlobalStateSnapshot,
     frange: FileRange,
-) -> Result<lsp_types::Location> {
+) -> Cancellable<lsp_types::Location> {
     let url = url(snap, frange.file_id);
     let line_index = snap.file_line_index(frange.file_id)?;
     let range = range(&line_index, frange.range);
@@ -91,50 +105,90 @@ pub(crate) fn location(
 }
 
 pub(crate) fn completion_items(
-    // config: &Config,
+    config: &Config,
+    fields_to_resolve: CompletionFieldsToResolve,
     line_index: &LineIndex,
+    version: Option<i32>,
     tdpp: &lsp_types::TextDocumentPositionParams,
-    items: &[CompletionItem],
+    completion_trigger_character: Option<char>,
+    mut items: Vec<CompletionItem>,
 ) -> Vec<lsp_types::CompletionItem> {
+    if config.completion_hide_deprecated() {
+        items.retain(|item| !item.deprecated);
+    }
+
     let max_relevance = items
         .iter()
-        .map(|it| it.relevance().score())
-        .min()
+        .map(|item| item.relevance.score())
+        .max()
         .unwrap_or_default();
     let mut result = Vec::with_capacity(items.len());
     for item in items {
-        completion_item(&mut result, line_index, tdpp, max_relevance, item);
+        completion_item(
+            &mut result,
+            config,
+            fields_to_resolve,
+            line_index,
+            version,
+            tdpp,
+            max_relevance,
+            completion_trigger_character,
+            &item,
+        );
     }
+
+    if let Some(limit) = config.completion(None).limit {
+        result.sort_by(|item1, item2| item1.sort_text.cmp(&item2.sort_text));
+        result.truncate(limit);
+    }
+
     result
 }
 
+#[expect(clippy::too_many_arguments, reason = "TODO")]
 fn completion_item(
     accumulator: &mut Vec<lsp_types::CompletionItem>,
-    // config: &Config,
+    config: &Config,
+    fields_to_resolve: CompletionFieldsToResolve,
     line_index: &LineIndex,
-    _tdpp: &lsp_types::TextDocumentPositionParams,
+    version: Option<i32>,
+    tdpp: &lsp_types::TextDocumentPositionParams,
     max_relevance: u32,
+    completion_trigger_character: Option<char>,
     item: &CompletionItem,
 ) {
-    let mut additional_text_edits = Vec::new();
+    let insert_replace_support = config.insert_replace_support().then_some(tdpp.position);
+    // let ref_match = item.ref_match();
 
-    // LSP does not allow arbitrary edits in completion, so we have to do a
-    // non-trivial mapping here.
-    let text_edit = {
+    let mut additional_text_edits = Vec::new();
+    let mut something_to_resolve = false;
+
+    let filter_text = if fields_to_resolve.resolve_filter_text {
+        something_to_resolve |= !item.lookup().is_empty();
+        None
+    } else {
+        Some(item.lookup().to_owned())
+    };
+
+    let text_edit = if fields_to_resolve.resolve_text_edit {
+        something_to_resolve |= true;
+        None
+    } else {
+        // LSP does not allow arbitrary edits in completion, so we have to do a
+        // non-trivial mapping here.
         let mut text_edit = None;
-        let source_range = item.source_range();
-        for indel in item.text_edit() {
+        let source_range = item.source_range;
+        for indel in &item.text_edit {
             if indel.delete.contains_range(source_range) {
-                // let insert_replace_support = config.insert_replace_support().then(|| tdpp.position);
-                let insert_replace_support = None;
+                // Extract this indel as the main edit
                 text_edit = Some(if indel.delete == source_range {
                     self::completion_text_edit(line_index, insert_replace_support, indel.clone())
                 } else {
                     assert!(source_range.end() == indel.delete.end());
                     let range1 = TextRange::new(indel.delete.start(), source_range.start());
                     let range2 = source_range;
-                    let indel1 = Indel::replace(range1, String::new());
-                    let indel2 = Indel::replace(range2, indel.insert.clone());
+                    let indel1 = InsertDelete::delete(range1);
+                    let indel2 = InsertDelete::replace(range2, indel.insert.clone());
                     additional_text_edits.push(self::text_edit(line_index, indel1));
                     self::completion_text_edit(line_index, insert_replace_support, indel2)
                 });
@@ -144,78 +198,133 @@ fn completion_item(
                 additional_text_edits.push(text_edit);
             }
         }
-        text_edit.unwrap()
+        Some(text_edit.unwrap())
     };
 
+    let insert_text_format = item
+        .is_snippet
+        .then_some(lsp_types::InsertTextFormat::SNIPPET);
+    let tags = if fields_to_resolve.resolve_tags {
+        something_to_resolve |= item.deprecated;
+        None
+    } else {
+        item.deprecated
+            .then(|| vec![lsp_types::CompletionItemTag::DEPRECATED])
+    };
+    // let command = if item.trigger_call_info && config.client_commands().trigger_parameter_hints {
+    //     if fields_to_resolve.resolve_command {
+    //         something_to_resolve |= true;
+    //         None
+    //     } else {
+    //         Some(command::trigger_parameter_hints())
+    //     }
+    // } else {
+    //     None
+    // };
+
+    let detail = if fields_to_resolve.resolve_detail {
+        something_to_resolve |= item.detail.is_some();
+        None
+    } else {
+        item.detail.clone()
+    };
+
+    // let documentation = if fields_to_resolve.resolve_documentation {
+    //     something_to_resolve |= item.documentation.is_some();
+    //     None
+    // } else {
+    //     item.documentation.clone().map(documentation)
+    // };
+
     let mut lsp_item = lsp_types::CompletionItem {
-        label: item.label().to_owned(),
-        detail: item.detail().map(std::borrow::ToOwned::to_owned),
-        filter_text: Some(item.lookup().to_owned()),
-        kind: Some(completion_item_kind(item.kind())),
-        text_edit: Some(text_edit),
-        additional_text_edits: Some(additional_text_edits),
-        // documentation: item.documentation().map(documentation),
-        // deprecated: Some(item.deprecated()),
-        documentation: None,
-        deprecated: Some(false),
+        label: item.label.primary.to_string(),
+        detail,
+        filter_text,
+        kind: Some(completion_item_kind(item.kind)),
+        text_edit,
+        additional_text_edits: additional_text_edits
+            .is_empty()
+            .not()
+            .then_some(additional_text_edits),
+        // documentation,
+        deprecated: item.deprecated.then_some(item.deprecated),
+        tags,
+        // command,
+        insert_text_format,
         ..Default::default()
     };
 
-    set_score(&mut lsp_item, max_relevance, item.relevance());
-
-    // if item.deprecated() {
-    //     lsp_item.tags = Some(vec![lsp_types::CompletionItemTag::DEPRECATED])
-    // }
-
-    // if item.trigger_call_info() && config.client_commands().trigger_parameter_hints {
-    //     lsp_item.command = Some(command::trigger_parameter_hints());
-    // }
-
-    if item.is_snippet() {
-        lsp_item.insert_text_format = Some(lsp_types::InsertTextFormat::SNIPPET);
+    if config.completion_label_details_support() {
+        let has_label_details =
+            item.label.detail_left.is_some() || item.label.detail_right.is_some();
+        if fields_to_resolve.resolve_label_details {
+            something_to_resolve |= has_label_details;
+        } else if has_label_details {
+            lsp_item.label_details = Some(lsp_types::CompletionItemLabelDetails {
+                detail: item.label.detail_left.clone(),
+                description: item.label.detail_right.clone(),
+            });
+        }
+    } else if let Some(label_detail) = &item.label.detail_left {
+        lsp_item.label.push_str(label_detail.as_str());
     }
-    /*if config.completion().enable_imports_on_the_fly {
-        if let imports @ [_, ..] = item.imports_to_add() {
-            let imports: Vec<_> = imports
-                .iter()
-                .filter_map(|import_edit| {
-                    let import_path = &import_edit.import.import_path;
-                    let import_name = import_path.segments().last()?;
-                    Some(lsp_ext::CompletionImport {
-                        full_import_path: import_path.to_string(),
-                        imported_name: import_name.to_string(),
-                    })
-                })
-                .collect();
-            if !imports.is_empty() {
-                let data = lsp_ext::CompletionResolveData {
-                    position: tdpp.clone(),
-                    imports,
-                };
-                lsp_item.data = Some(to_value(data).unwrap());
-            }
-        }
-    }*/
 
-    /*if let Some((mutability, relevance)) = item.ref_match() {
-        let mut lsp_item_with_ref = lsp_item.clone();
-        set_score(&mut lsp_item_with_ref, max_relevance, relevance);
-        lsp_item_with_ref.label = format!(
-            "&{}{}",
-            mutability.as_keyword_for_ref(),
-            lsp_item_with_ref.label
-        );
-        if let Some(it) = &mut lsp_item_with_ref.text_edit {
-            let new_text = match it {
-                lsp_types::CompletionTextEdit::Edit(it) => &mut it.new_text,
-                lsp_types::CompletionTextEdit::InsertAndReplace(it) => &mut it.new_text,
-            };
-            *new_text = format!("&{}{}", mutability.as_keyword_for_ref(), new_text);
-        }
+    set_score(&mut lsp_item, max_relevance, item.relevance);
 
-        accumulator.push(lsp_item_with_ref);
-    };*/
+    // let imports =
+    //     if config.completion(None).enable_imports_on_the_fly && !item.import_to_add.is_empty() {
+    //         item.import_to_add
+    //             .clone()
+    //             .into_iter()
+    //             .map(|import_path| lsp::extensions::CompletionImport {
+    //                 full_import_path: import_path,
+    //             })
+    //             .collect()
+    //     } else {
+    //         Vec::new()
+    //     };
+    // let (ref_resolve_data, resolve_data) = if something_to_resolve || !imports.is_empty() {
+    //     let ref_resolve_data = if ref_match.is_some() {
+    //         let ref_resolve_data = lsp::extensions::CompletionResolveData {
+    //             position: tdpp.clone(),
+    //             imports: Vec::new(),
+    //             version,
+    //             trigger_character: completion_trigger_character,
+    //             for_ref: true,
+    //             hash: BASE64_STANDARD.encode(completion_item_hash(&item, true)),
+    //         };
+    //         Some(to_value(ref_resolve_data).unwrap())
+    //     } else {
+    //         None
+    //     };
+    //     let resolve_data = lsp::extensions::CompletionResolveData {
+    //         position: tdpp.clone(),
+    //         imports,
+    //         version,
+    //         trigger_character: completion_trigger_character,
+    //         for_ref: false,
+    //         hash: BASE64_STANDARD.encode(completion_item_hash(&item, false)),
+    //     };
+    //     (ref_resolve_data, Some(to_value(resolve_data).unwrap()))
+    // } else {
+    //     (None, None)
+    // };
 
+    // if let Some((label, indel, relevance)) = ref_match {
+    //     let mut lsp_item_with_ref = lsp_types::CompletionItem {
+    //         label,
+    //         data: ref_resolve_data,
+    //         ..lsp_item.clone()
+    //     };
+    //     lsp_item_with_ref
+    //         .additional_text_edits
+    //         .get_or_insert_with(Default::default)
+    //         .push(self::text_edit(line_index, indel));
+    //     set_score(&mut lsp_item_with_ref, max_relevance, relevance);
+    //     acc.push(lsp_item_with_ref);
+    // };
+
+    // lsp_item.data = resolve_data;
     accumulator.push(lsp_item);
 
     fn set_score(
@@ -223,13 +332,17 @@ fn completion_item(
         max_relevance: u32,
         relevance: CompletionRelevance,
     ) {
-        if relevance.score() == max_relevance {
+        if relevance.is_relevant() && relevance.score() == max_relevance {
             result.preselect = Some(true);
         }
+        // The relevance needs to be inverted to come up with a sort score
+        // because the client will sort ascending.
+        let sort_score = relevance.score() ^ 0xFF_FF_FF_FF;
         // Zero pad the string to ensure values can be properly sorted
         // by the client. Hex format is used because it is easier to
-        // visually compare very large values.
-        result.sort_text = Some(format!("{:08x}", relevance.score()));
+        // visually compare very large values, which the sort text
+        // tends to be since it is the opposite of the score.
+        result.sort_text = Some(format!("{sort_score:08x}"));
     }
 }
 
@@ -252,7 +365,7 @@ pub(crate) const fn completion_item_kind(
 
 pub(crate) fn text_edit(
     line_index: &LineIndex,
-    indel: Indel,
+    indel: InsertDelete,
 ) -> lsp_types::TextEdit {
     let range = range(line_index, indel.delete);
     let new_text = match line_index.endings {
@@ -275,7 +388,7 @@ pub(crate) fn text_edit_vec(
 pub(crate) fn completion_text_edit(
     line_index: &LineIndex,
     insert_replace_support: Option<lsp_types::Position>,
-    indel: Indel,
+    indel: InsertDelete,
 ) -> lsp_types::CompletionTextEdit {
     let text_edit = text_edit(line_index, indel);
     match insert_replace_support {
@@ -293,39 +406,244 @@ pub(crate) fn completion_text_edit(
 }
 
 pub(crate) fn inlay_hint(
-    render_colons: bool,
+    snap: &GlobalStateSnapshot,
+    fields_to_resolve: InlayFieldsToResolve,
     line_index: &LineIndex,
-    inlay_hint: &InlayHint,
-) -> lsp_types::InlayHint {
-    lsp_types::InlayHint {
-        label: lsp_types::InlayHintLabel::String(match inlay_hint.kind {
-            InlayKind::ParameterHint if render_colons => format!("{}:", inlay_hint.label),
-            InlayKind::TypeHint if render_colons => format!(": {}", inlay_hint.label),
-            InlayKind::TypeHint | InlayKind::ParameterHint | InlayKind::StructLayoutHint => {
-                inlay_hint.label.to_string()
+    file_id: FileId,
+    mut inlay_hint: InlayHint,
+) -> Cancellable<lsp_types::InlayHint> {
+    let hint_needs_resolve = |hint: &InlayHint| -> Option<TextRange> {
+        hint.resolve_parent.filter(|_| {
+            hint.text_edit.as_ref().is_some_and(LazyProperty::is_lazy)
+                || hint.label.parts.iter().any(|part| {
+                    part.linked_location
+                        .as_ref()
+                        .is_some_and(LazyProperty::is_lazy)
+                        || part.tooltip.as_ref().is_some_and(LazyProperty::is_lazy)
+                })
+        })
+    };
+
+    let resolve_range_and_hash = hint_needs_resolve(&inlay_hint).map(|range| {
+        (
+            range,
+            std::hash::BuildHasher::hash_one(
+                &std::hash::BuildHasherDefault::<FxHasher>::default(),
+                &inlay_hint,
+            ),
+        )
+    });
+
+    let mut something_to_resolve = false;
+    let text_edits = inlay_hint
+        .text_edit
+        .take()
+        .and_then(|property| match property {
+            LazyProperty::Computed(text_edit) => Some(text_edit),
+            LazyProperty::Lazy => {
+                something_to_resolve |= snap
+                    .config
+                    .visual_studio_code_version()
+                    .is_none_or(|version| VersionReq::parse(">=1.86.0").unwrap().matches(version))
+                    && resolve_range_and_hash.is_some()
+                    && fields_to_resolve.resolve_text_edits;
+                None
             },
-        }),
-        position: match inlay_hint.kind {
-            InlayKind::TypeHint => position(line_index, inlay_hint.range.end()),
-            InlayKind::StructLayoutHint | InlayKind::ParameterHint => {
-                position(line_index, inlay_hint.range.start())
-            },
+        })
+        .map(|text_edit| text_edit_vec(line_index, text_edit));
+    let (label, tooltip) = inlay_hint_label(
+        snap,
+        fields_to_resolve,
+        &mut something_to_resolve,
+        resolve_range_and_hash.is_some(),
+        inlay_hint.label,
+    )?;
+
+    let data = match resolve_range_and_hash {
+        Some((resolve_range, hash)) if something_to_resolve => Some(
+            to_value(lsp::extensions::InlayHintResolveData {
+                file_id: file_id.index(),
+                hash: hash.to_string(),
+                version: snap.file_version(file_id),
+                resolve_range: range(line_index, resolve_range),
+            })
+            .unwrap(),
+        ),
+        _ => None,
+    };
+
+    Ok(lsp_types::InlayHint {
+        position: match inlay_hint.position {
+            ide::InlayHintPosition::Before => position(line_index, inlay_hint.range.start()),
+            ide::InlayHintPosition::After => position(line_index, inlay_hint.range.end()),
         },
-        data: None,
-        text_edits: None,
+        padding_left: Some(inlay_hint.pad_left),
+        padding_right: Some(inlay_hint.pad_right),
         kind: match inlay_hint.kind {
-            InlayKind::ParameterHint => Some(lsp_types::InlayHintKind::PARAMETER),
-            InlayKind::TypeHint => Some(lsp_types::InlayHintKind::TYPE),
-            InlayKind::StructLayoutHint => None,
+            InlayKind::Parameter => Some(lsp_types::InlayHintKind::PARAMETER),
+            InlayKind::Type => Some(lsp_types::InlayHintKind::TYPE),
+            InlayKind::StructLayout => None,
         },
-        tooltip: None,
-        padding_left: Some(match inlay_hint.kind {
-            InlayKind::TypeHint => !render_colons,
-            InlayKind::ParameterHint | InlayKind::StructLayoutHint => false,
-        }),
-        padding_right: Some(match inlay_hint.kind {
-            InlayKind::TypeHint => false,
-            InlayKind::ParameterHint | InlayKind::StructLayoutHint => true,
-        }),
+        text_edits,
+        data,
+        tooltip,
+        label,
+    })
+}
+
+fn inlay_hint_label(
+    snap: &GlobalStateSnapshot,
+    fields_to_resolve: InlayFieldsToResolve,
+    something_to_resolve: &mut bool,
+    needs_resolve: bool,
+    mut label: InlayHintLabel,
+) -> Cancellable<(
+    lsp_types::InlayHintLabel,
+    Option<lsp_types::InlayHintTooltip>,
+)> {
+    let (label, tooltip) = if let [
+        InlayHintLabelPart {
+            linked_location: None,
+            ..
+        },
+    ] = &*label.parts
+    {
+        let InlayHintLabelPart { text, tooltip, .. } = label.parts.pop().unwrap();
+        let tooltip = tooltip.and_then(|inlay_tooltip| match inlay_tooltip {
+            LazyProperty::Computed(inlay_tooltip) => Some(inlay_tooltip),
+            LazyProperty::Lazy => {
+                *something_to_resolve |= needs_resolve && fields_to_resolve.resolve_hint_tooltip;
+                None
+            },
+        });
+        let hint_tooltip = match tooltip {
+            Some(ide::InlayTooltip::String(string)) => {
+                Some(lsp_types::InlayHintTooltip::String(string))
+            },
+            Some(ide::InlayTooltip::Markdown(string)) => Some(
+                lsp_types::InlayHintTooltip::MarkupContent(lsp_types::MarkupContent {
+                    kind: lsp_types::MarkupKind::Markdown,
+                    value: string,
+                }),
+            ),
+            None => None,
+        };
+        (lsp_types::InlayHintLabel::String(text), hint_tooltip)
+    } else {
+        let parts = label
+            .parts
+            .into_iter()
+            .map(|part| {
+                let tooltip = part.tooltip.and_then(|property| match property {
+                    LazyProperty::Computed(inlay_tooltip) => Some(inlay_tooltip),
+                    LazyProperty::Lazy => {
+                        *something_to_resolve |= fields_to_resolve.resolve_label_tooltip;
+                        None
+                    },
+                });
+                let tooltip = match tooltip {
+                    Some(ide::InlayTooltip::String(string)) => {
+                        Some(lsp_types::InlayHintLabelPartTooltip::String(string))
+                    },
+                    Some(ide::InlayTooltip::Markdown(source)) => {
+                        Some(lsp_types::InlayHintLabelPartTooltip::MarkupContent(
+                            lsp_types::MarkupContent {
+                                kind: lsp_types::MarkupKind::Markdown,
+                                value: source,
+                            },
+                        ))
+                    },
+                    None => None,
+                };
+                let location = part
+                    .linked_location
+                    .and_then(|property| match property {
+                        LazyProperty::Computed(file_range) => Some(file_range),
+                        LazyProperty::Lazy => {
+                            *something_to_resolve |= fields_to_resolve.resolve_label_location;
+                            None
+                        },
+                    })
+                    .map(|range| location(snap, range))
+                    .transpose()?;
+                Ok(lsp_types::InlayHintLabelPart {
+                    value: part.text,
+                    tooltip,
+                    location,
+                    command: None,
+                })
+            })
+            .collect::<Cancellable<_>>()?;
+        (lsp_types::InlayHintLabel::LabelParts(parts), None)
+    };
+    Ok((label, tooltip))
+}
+
+pub(crate) fn location_link(
+    snap: &GlobalStateSnapshot,
+    source: Option<FileRange>,
+    target: &NavigationTarget,
+) -> Cancellable<lsp_types::LocationLink> {
+    let origin_selection_range = match source {
+        Some(source) => {
+            let line_index = snap.file_line_index(source.file_id)?;
+            let range = range(&line_index, source.range);
+            Some(range)
+        },
+        None => None,
+    };
+    let (target_uri, target_range, target_selection_range) = location_info(snap, target)?;
+    let result = lsp_types::LocationLink {
+        origin_selection_range,
+        target_uri,
+        target_range,
+        target_selection_range,
+    };
+    Ok(result)
+}
+
+fn location_info(
+    snap: &GlobalStateSnapshot,
+    target: &NavigationTarget,
+) -> Cancellable<(lsp_types::Url, lsp_types::Range, lsp_types::Range)> {
+    let line_index = snap.file_line_index(target.file_id)?;
+
+    let target_uri = url(snap, target.file_id);
+    let target_range = range(&line_index, target.full_range);
+    let target_selection_range = target
+        .focus_range
+        .map_or(target_range, |text_range| range(&line_index, text_range));
+    Ok((target_uri, target_range, target_selection_range))
+}
+
+pub(crate) fn goto_definition_response(
+    snap: &GlobalStateSnapshot,
+    source: Option<FileRange>,
+    targets: Vec<NavigationTarget>,
+) -> Cancellable<lsp_types::GotoDefinitionResponse> {
+    if snap.config.location_link() {
+        let links = targets
+            .into_iter()
+            .unique_by(|navigation_target| {
+                (
+                    navigation_target.file_id,
+                    navigation_target.full_range,
+                    navigation_target.focus_range,
+                )
+            })
+            .map(|navigation_target| location_link(snap, source, &navigation_target))
+            .collect::<Cancellable<Vec<_>>>()?;
+        Ok(links.into())
+    } else {
+        let locations = targets
+            .into_iter()
+            .map(|navigation_target| FileRange {
+                file_id: navigation_target.file_id,
+                range: navigation_target.focus_or_full_range(),
+            })
+            .unique()
+            .map(|range| location(snap, range))
+            .collect::<Cancellable<Vec<_>>>()?;
+        Ok(locations.into())
     }
 }

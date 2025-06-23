@@ -1,16 +1,22 @@
 use hir_def::module_data::Name;
 
 use crate::{
-    db::HirDatabase,
+    database::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
-    ty::*,
+    ty::{
+        AccessMode, AddressSpace, ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Pointer,
+        SamplerType, ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType,
+        TyKind, Type, VecSize,
+    },
 };
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub struct BuiltinId(salsa::InternId);
 impl salsa::InternKey for BuiltinId {
-    fn from_intern_id(id: salsa::InternId) -> Self {
-        BuiltinId(id)
+    fn from_intern_id(
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] v: salsa::InternId
+    ) -> Self {
+        Self(v)
     }
 
     fn as_intern_id(&self) -> salsa::InternId {
@@ -21,18 +27,18 @@ impl salsa::InternKey for BuiltinId {
 impl BuiltinId {
     pub fn lookup(
         self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> Builtin {
-        db.lookup_intern_builtin(self)
+        database.lookup_intern_builtin(self)
     }
 }
 
 impl Builtin {
     pub fn intern(
         self,
-        db: &dyn HirDatabase,
+        database: &dyn HirDatabase,
     ) -> BuiltinId {
-        db.intern_builtin(self)
+        database.intern_builtin(self)
     }
 }
 
@@ -59,6 +65,7 @@ pub struct Builtin {
 pub struct BuiltinOverloadId(usize);
 
 impl Builtin {
+    #[must_use]
     pub fn name(&self) -> &str {
         self.name.as_str()
     }
@@ -70,6 +77,7 @@ impl Builtin {
             .map(|(i, overload)| (BuiltinOverloadId(i), overload))
     }
 
+    #[must_use]
     pub fn overload(
         &self,
         overload_id: BuiltinOverloadId,

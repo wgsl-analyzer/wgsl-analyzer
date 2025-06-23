@@ -18,7 +18,6 @@ use serde::de::DeserializeOwned;
 
 pub use crate::{lsp::capabilities::server_capabilities, main_loop::main_loop, version::version};
 
-#[inline]
 pub fn from_json<T: DeserializeOwned>(
     what: &'static str,
     json: &serde_json::Value,
@@ -42,11 +41,10 @@ impl LspError {
     }
 }
 
-#[expect(clippy::min_ident_chars, reason = "trait method")]
 impl std::fmt::Display for LspError {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         write!(
             f,
@@ -60,9 +58,9 @@ impl std::error::Error for LspError {}
 
 #[doc(hidden)]
 macro_rules! try_default_ {
-    ($it:expr $(,)?) => {
-        match $it {
-            Some(it) => it,
+    ($maybe_value:expr $(,)?) => {
+        match $maybe_value {
+            Some(value) => value,
             None => return Ok(Default::default()),
         }
     };

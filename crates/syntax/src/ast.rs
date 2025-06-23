@@ -18,7 +18,7 @@ macro_rules! ast_node {
         ast_node! { @impl $kind $($name)? }
 
         $(impl $kind {
-            $(pub fn $descendant(&self) -> $amount_ty<$return_ty>  {
+            $(#[must_use] pub fn $descendant(&self) -> $amount_ty<$return_ty>  {
                 ast_node!(@descendant self $amount_ty<$return_ty $($a)?>)
             })*
         })?
@@ -97,7 +97,7 @@ macro_rules! ast_enum {
 
             fn syntax(&self) -> &SyntaxNode {
                 match self {
-                    $($ty::$variant(it) => &it.syntax,)*
+                    $($ty::$variant(item) => &item.syntax,)*
                 }
             }
         }
@@ -134,7 +134,7 @@ macro_rules! ast_enum_raw {
 
             fn syntax(&self) -> &SyntaxNode {
                 match self {
-                    $($ty::$variant(it) => &it,)*
+                    $($ty::$variant(item) => &item,)*
                 }
             }
         }
@@ -163,7 +163,7 @@ macro_rules! ast_enum_compound {
 
             fn syntax(&self) -> &SyntaxNode {
                 match self {
-                    $($ty::$variant(it) => it.syntax(),)*
+                    $($ty::$variant(item) => item.syntax(),)*
                 }
             }
         }
@@ -194,7 +194,7 @@ macro_rules! ast_token_enum {
 
             fn syntax(&self) -> &SyntaxToken {
                 match self {
-                    $($ty::$variant(it) => &it,)*
+                    $($ty::$variant(item) => &item,)*
                 }
             }
         }
@@ -221,17 +221,18 @@ impl ImportCustom {
             .filter_map(|token| ImportCustomSegment::cast(token.as_token()?.clone()))
     }
 
+    #[must_use]
     pub fn key(&self) -> String {
         self.segments()
             .fold(String::new(), |mut accumulator, segment| {
                 match segment {
                     ImportCustomSegment::Identifier(identifier) => {
-                        accumulator.push_str(identifier.text())
+                        accumulator.push_str(identifier.text());
                     },
                     ImportCustomSegment::ColonColon(colon_colon) => {
-                        accumulator.push_str(colon_colon.text())
+                        accumulator.push_str(colon_colon.text());
                     },
-                };
+                }
                 accumulator
             })
     }
@@ -372,12 +373,12 @@ impl GenericArgumentList {
     pub fn generics(&self) -> impl Iterator<Item = GenericArg> + use<> {
         self.syntax
             .children_with_tokens()
-            .filter_map(|it| match it {
+            .filter_map(|node_or_token| match node_or_token {
                 rowan::NodeOrToken::Node(node) if Literal::can_cast(node.kind()) => Literal::cast(node).map(GenericArg::Literal),
                 rowan::NodeOrToken::Node(node) if Type::can_cast(node.kind()) => Type::cast(node).map(GenericArg::Type),
                 rowan::NodeOrToken::Token(token) if AccessMode::can_cast(token.clone()) => AccessMode::cast(token).map(GenericArg::AccessMode),
                 rowan::NodeOrToken::Token(token) if AddressSpace::can_cast(token.clone()) => AddressSpace::cast(token).map(GenericArg::AddressSpace),
-                _ => None,
+                rowan::NodeOrToken::Node(_) | rowan::NodeOrToken::Token(_) => None,
             })
     }
 }
@@ -409,31 +410,35 @@ pub enum GenericArg {
 }
 
 impl GenericArg {
+    #[must_use]
     pub fn as_type(&self) -> Option<Type> {
         match self {
-            GenericArg::Type(r#type) => Some(r#type.clone()),
-            _ => None,
+            Self::Type(r#type) => Some(r#type.clone()),
+            Self::Literal(_) | Self::AccessMode(_) | Self::AddressSpace(_) => None,
         }
     }
 
+    #[must_use]
     pub fn as_literal(&self) -> Option<Literal> {
         match self {
-            GenericArg::Literal(r#type) => Some(r#type.clone()),
-            _ => None,
+            Self::Literal(r#type) => Some(r#type.clone()),
+            Self::Type(_) | Self::AccessMode(_) | Self::AddressSpace(_) => None,
         }
     }
 
+    #[must_use]
     pub fn as_access_mode(&self) -> Option<AccessMode> {
         match self {
-            GenericArg::AccessMode(access) => Some(access.clone()),
-            _ => None,
+            Self::AccessMode(access) => Some(access.clone()),
+            Self::Type(_) | Self::Literal(_) | Self::AddressSpace(_) => None,
         }
     }
 
+    #[must_use]
     pub fn as_address_space(&self) -> Option<AddressSpace> {
         match self {
-            GenericArg::AddressSpace(class) => Some(class.clone()),
-            _ => None,
+            Self::AddressSpace(class) => Some(class.clone()),
+            Self::Type(_) | Self::Literal(_) | Self::AccessMode(_) => None,
         }
     }
 }
@@ -446,10 +451,12 @@ ast_node!(TypeInitializer:
 
 ast_node!(VariableQualifier);
 impl VariableQualifier {
+    #[must_use]
     pub fn access_mode(&self) -> Option<AccessMode> {
         support::child_token::<AccessMode>(self.syntax())
     }
 
+    #[must_use]
     pub fn address_space(self) -> Option<AddressSpace> {
         support::child_token::<AddressSpace>(self.syntax())
     }
@@ -492,6 +499,12 @@ ast_node!(PrefixExpression:
 );
 ast_node!(Literal);
 impl Literal {
+    /// Returns the kind of this [`Literal`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if the literal is invalid.
+    #[must_use]
     pub fn kind(&self) -> LiteralKind {
         support::child_token(self.syntax()).expect("invalid literal parsed")
     }
@@ -541,10 +554,12 @@ ast_node!(InvalidFunctionCall:
 );
 ast_node!(IndexExpression);
 impl IndexExpression {
+    #[must_use]
     pub fn expression(&self) -> Option<Expression> {
         support::children(self.syntax()).next()
     }
 
+    #[must_use]
     pub fn index(&self) -> Option<Expression> {
         support::children(self.syntax()).nth(1)
     }
@@ -580,10 +595,12 @@ ast_node!(AssignmentStatement:
     equal_token: Option<SyntaxToken Equal>;
 );
 impl AssignmentStatement {
+    #[must_use]
     pub fn left_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).next()
     }
 
+    #[must_use]
     pub fn right_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).nth(1)
     }
@@ -597,18 +614,22 @@ pub enum IncrementDecrement {
 
 ast_node!(IncrementDecrementStatement);
 impl IncrementDecrementStatement {
+    #[must_use]
     pub fn expression(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).next()
     }
 
+    #[must_use]
     pub fn increment_decrement(&self) -> Option<IncrementDecrement> {
         self.syntax()
             .children_with_tokens()
-            .filter_map(|it| it.into_token())
-            .find_map(|token| match token.kind() {
-                SyntaxKind::PlusPlus => Some(IncrementDecrement::Increment),
-                SyntaxKind::MinusMinus => Some(IncrementDecrement::Increment),
-                _ => None,
+            .filter_map(rowan::NodeOrToken::into_token)
+            .find_map(|token| {
+                if let SyntaxKind::MinusMinus | SyntaxKind::PlusPlus = token.kind() {
+                    Some(IncrementDecrement::Increment)
+                } else {
+                    None
+                }
             })
     }
 }
@@ -631,18 +652,22 @@ ast_token_enum! {
 ast_node!(CompoundAssignmentStatement);
 
 impl CompoundAssignmentStatement {
+    #[must_use]
     pub fn left_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).next()
     }
 
+    #[must_use]
     pub fn right_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).nth(1)
     }
 
+    #[must_use]
     pub fn operator_token(&self) -> Option<SyntaxToken> {
         self.left_side()?.syntax().last_token()?.next_token()
     }
 
+    #[must_use]
     pub fn operator(&self) -> Option<CompoundOperator> {
         let kind: CompoundAssignmentOperator = support::child_token(self.syntax())?;
         let operator = match kind {
@@ -720,11 +745,14 @@ ast_node!(VariableStatement:
     equal_token: Option<SyntaxToken Equal>;
     initializer: Option<Expression>;
 );
+
 impl VariableStatement {
+    #[must_use]
     pub fn kind(&self) -> Option<VariableStatementKind> {
+        #[expect(clippy::wildcard_enum_match_arm, reason = "not readable")]
         self.syntax()
             .children_with_tokens()
-            .filter_map(|it| it.into_token())
+            .filter_map(rowan::NodeOrToken::into_token)
             .find_map(|token| match token.kind() {
                 SyntaxKind::Constant => Some(VariableStatementKind::Constant),
                 SyntaxKind::Let => Some(VariableStatementKind::Let),
@@ -744,6 +772,7 @@ ast_node!(ForStatement:
     for_token: Option<SyntaxToken For>;
 );
 impl ForStatement {
+    #[must_use]
     pub fn block(&self) -> Option<CompoundStatement> {
         support::child(self.syntax())
     }
@@ -767,7 +796,7 @@ impl ForStatement {
     }
 }
 
-ast_node!(ExpressionStatement:
+ast_node!(FunctionCallStatement:
     expression: Option<Expression>;
 );
 ast_node!(Discard);
@@ -793,7 +822,7 @@ ast_enum! {
         Break,
         Continue,
         ContinuingStatement,
-        ExpressionStatement,
+        FunctionCallStatement,
         IncrementDecrementStatement,
     }
 }
@@ -899,10 +928,19 @@ ast_enum_compound! {
 }
 
 impl Type {
+    #[must_use]
     pub fn as_name(&self) -> Option<NameReference> {
         match self {
-            Type::PathType(path) => path.name(),
-            _ => None,
+            Self::PathType(path) => path.name(),
+            Self::ScalarType(_)
+            | Self::VecType(_)
+            | Self::MatrixType(_)
+            | Self::TextureType(_)
+            | Self::SamplerType(_)
+            | Self::AtomicType(_)
+            | Self::ArrayType(_)
+            | Self::BindingArrayType(_)
+            | Self::PointerType(_) => None,
         }
     }
 }
@@ -926,14 +964,17 @@ impl HasGenerics for BindingArrayType {}
 impl HasGenerics for PointerType {}
 
 impl InfixExpression {
+    #[must_use]
     pub fn left_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).next()
     }
 
+    #[must_use]
     pub fn right_side(&self) -> Option<Expression> {
         crate::support::children(self.syntax()).nth(1)
     }
 
+    #[must_use]
     pub fn op(&self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
         if let Some(op) = self
             .syntax()
@@ -950,6 +991,7 @@ impl InfixExpression {
         None
     }
 
+    #[must_use]
     pub fn op_kind(&self) -> Option<BinaryOperation> {
         if let Some(kind) = support::child_token::<BinaryOperatorKind>(self.syntax()) {
             #[rustfmt::skip]
@@ -973,6 +1015,7 @@ impl InfixExpression {
             };
             Some(op)
         } else {
+            #[expect(clippy::wildcard_enum_match_arm, reason = "not readable")]
             self.syntax()
                 .children()
                 .find_map(|child| match child.kind() {
@@ -989,6 +1032,7 @@ impl InfixExpression {
 }
 
 impl PrefixExpression {
+    #[must_use]
     pub fn op_kind(&self) -> Option<UnaryOperator> {
         let kind: PrefixOperatorKind = support::child_token(self.syntax())?;
         let op = match kind {
@@ -1010,10 +1054,11 @@ ast_enum! {
 }
 
 impl NameLike {
-    pub fn as_name_ref(&self) -> Option<&NameReference> {
+    #[must_use]
+    pub const fn as_name_ref(&self) -> Option<&NameReference> {
         match self {
-            NameLike::NameReference(name_ref) => Some(name_ref),
-            NameLike::Name(_) => None,
+            Self::NameReference(name_ref) => Some(name_ref),
+            Self::Name(_) => None,
         }
     }
 }

@@ -10,11 +10,12 @@ pub use parser::{
     SyntaxToken,
 };
 pub use rowan::Direction;
+use smol_str::SmolStr;
 
 #[derive(Clone, Debug)]
 pub struct Parse {
     green_node: rowan::GreenNode,
-    errors: Arc<Vec<ParseError>>,
+    errors: Arc<[ParseError]>,
 }
 
 impl PartialEq for Parse {
@@ -29,23 +30,33 @@ impl PartialEq for Parse {
 impl Eq for Parse {}
 
 impl Parse {
+    #[must_use]
     pub fn syntax(&self) -> SyntaxNode {
         SyntaxNode::new_root(self.green_node.clone())
     }
 
+    #[must_use]
     pub fn errors(&self) -> &[ParseError] {
         &self.errors
     }
 
+    /// Returns the syntax tree as a file.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the cast fails.
+    #[must_use]
     pub fn tree(&self) -> ast::SourceFile {
         ast::SourceFile::cast(self.syntax()).unwrap()
     }
 }
 
+#[must_use]
 pub fn parse(input: &str) -> Parse {
     parse_entrypoint(input, ParseEntryPoint::File)
 }
 
+#[must_use]
 pub fn parse_entrypoint(
     input: &str,
     parse_entrypoint: ParseEntryPoint,
@@ -53,7 +64,7 @@ pub fn parse_entrypoint(
     let (green_node, errors) = parser::parse_entrypoint(input, parse_entrypoint).into_parts();
     Parse {
         green_node,
-        errors: Arc::new(errors),
+        errors: Arc::from(errors),
     }
 }
 
@@ -108,8 +119,9 @@ pub struct AstChildren<N> {
 }
 
 impl<N> AstChildren<N> {
+    #[must_use]
     pub fn new(parent: &SyntaxNode) -> Self {
-        AstChildren {
+        Self {
             inner: parent.children(),
             ph: PhantomData,
         }
@@ -124,17 +136,30 @@ impl<N: AstNode> Iterator for AstChildren<N> {
     }
 }
 
-pub enum TokenText<'a> {
-    Borrowed(&'a str),
+pub enum TokenText<'borrow> {
+    Borrowed(&'borrow str),
     Owned(rowan::GreenToken),
 }
 
-impl<'a> TokenText<'a> {
-    pub fn as_str(&'a self) -> &'a str {
+impl<'borrow> TokenText<'borrow> {
+    #[must_use]
+    pub fn as_str(&'borrow self) -> &'borrow str {
         match self {
-            TokenText::Borrowed(s) => s,
+            TokenText::Borrowed(string) => string,
             TokenText::Owned(green) => green.text(),
         }
+    }
+}
+
+impl From<TokenText<'_>> for String {
+    fn from(token_text: TokenText<'_>) -> Self {
+        token_text.as_str().into()
+    }
+}
+
+impl From<TokenText<'_>> for SmolStr {
+    fn from(token_text: TokenText<'_>) -> Self {
+        Self::new(token_text.as_str())
     }
 }
 
@@ -170,7 +195,7 @@ mod support {
     pub(crate) fn child_token<N: AstToken>(parent: &SyntaxNode) -> Option<N> {
         parent
             .children_with_tokens()
-            .filter_map(|it| it.into_token())
+            .filter_map(rowan::NodeOrToken::into_token)
             .find_map(N::cast)
     }
 
@@ -180,8 +205,8 @@ mod support {
     ) -> Option<SyntaxToken> {
         parent
             .children_with_tokens()
-            .filter_map(|it| it.into_token())
-            .find(|it| it.kind() == kind)
+            .filter_map(rowan::NodeOrToken::into_token)
+            .find(|token| token.kind() == kind)
     }
 
     pub(crate) fn text_of_first_token(node: &SyntaxNode) -> TokenText<'_> {
@@ -252,22 +277,23 @@ impl<A: AstNode, B: AstNode> AstNode for Either<A, B> {
     where
         Self: Sized,
     {
-        if let Some(a) = A::cast(syntax.clone()) {
-            return Some(Either::Left(a));
-        } else if let Some(b) = B::cast(syntax) {
-            return Some(Either::Right(b));
+        if let Some(a_node) = A::cast(syntax.clone()) {
+            return Some(Self::Left(a_node));
+        } else if let Some(b_node) = B::cast(syntax) {
+            return Some(Self::Right(b_node));
         }
         None
     }
 
     fn syntax(&self) -> &SyntaxNode {
         match self {
-            Either::Left(l) => l.syntax(),
-            Either::Right(r) => r.syntax(),
+            Self::Left(left) => left.syntax(),
+            Self::Right(right) => right.syntax(),
         }
     }
 }
 
+#[must_use]
 pub fn format(file: &ast::SourceFile) -> SyntaxNode {
     file.syntax().clone_for_update()
 }

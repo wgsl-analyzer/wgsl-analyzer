@@ -1,37 +1,43 @@
+#![expect(clippy::print_stderr, reason = "useful in tests")]
+#![expect(clippy::print_stdout, reason = "useful in tests")]
+#![expect(clippy::use_debug, reason = "useful in tests")]
+
 use std::panic;
 
 use expect_test::{Expect, expect};
 
 use crate::{FormattingOptions, format_recursive};
 
+#[expect(clippy::needless_pass_by_value, reason = "intentional API")]
 fn check(
     before: &str,
     after: Expect,
 ) {
-    check_with_options(before, after, &FormattingOptions::default())
+    check_with_options(before, &after, &FormattingOptions::default());
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "intentional API")]
 fn check_tabs(
     before: &str,
     after: Expect,
 ) {
     let options = FormattingOptions {
-        indent_symbol: "\t".to_string(),
+        indent_symbol: "\t".to_owned(),
         ..Default::default()
     };
-    check_with_options(before, after, &options)
+    check_with_options(before, &after, &options);
 }
 
 #[track_caller]
 fn check_with_options(
     before: &str,
-    after: Expect,
+    after: &Expect,
     options: &FormattingOptions,
 ) {
     let syntax = syntax::parse(before.trim_start())
         .syntax()
         .clone_for_update();
-    format_recursive(syntax.clone(), options);
+    format_recursive(&syntax, options);
     eprintln!("{syntax:#?}");
 
     let new = syntax.to_string();
@@ -39,7 +45,7 @@ fn check_with_options(
 
     // Check for idempotence
     let syntax = syntax::parse(new.trim_start()).syntax().clone_for_update();
-    format_recursive(syntax.clone(), options);
+    format_recursive(&syntax, options);
     let new_second = syntax.to_string();
     let diff = dissimilar::diff(&new, &new_second);
     let position = panic::Location::caller();
@@ -71,7 +77,7 @@ fn check_with_options(
     panic::resume_unwind(Box::new(()));
 }
 
-fn format_chunks(chunks: Vec<dissimilar::Chunk>) -> String {
+fn format_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> String {
     let mut buf = String::new();
     for chunk in chunks {
         let formatted = match chunk {
@@ -93,7 +99,7 @@ fn format_empty() {
 fn format_fn_header() {
     check(
         "fn  main ( a :  b )  -> f32   {}",
-        expect![[r#"fn main(a: b) -> f32 {}"#]],
+        expect![["fn main(a: b) -> f32 {}"]],
     );
 }
 
@@ -101,7 +107,7 @@ fn format_fn_header() {
 fn format_fn_header_2() {
     check(
         "fn  main ( a :  b,  c : d )  -> f32   {}",
-        expect![[r#"fn main(a: b, c: d) -> f32 {}"#]],
+        expect![["fn main(a: b, c: d) -> f32 {}"]],
     );
 }
 
@@ -109,7 +115,7 @@ fn format_fn_header_2() {
 fn format_fn_header_comma_oneline() {
     check(
         "fn main(a: b , c: d ,)  -> f32   {}",
-        expect![[r#"fn main(a: b, c: d) -> f32 {}"#]],
+        expect![["fn main(a: b, c: d) -> f32 {}"]],
     );
 }
 
@@ -118,10 +124,10 @@ fn format_fn_header_comma_multiline() {
     check(
         "fn main(
                 a: b , c: d ,)  -> f32   {}",
-        expect![[r#"
+        expect![["
             fn main(
                 a: b, c: d,
-            ) -> f32 {}"#]],
+            ) -> f32 {}"]],
     );
 }
 
@@ -129,16 +135,13 @@ fn format_fn_header_comma_multiline() {
 fn format_fn_header_missing_comma() {
     check(
         "fn main(a: b  c: d) {}",
-        expect![[r#"fn main(a: b, c: d) {}"#]],
+        expect![["fn main(a: b, c: d) {}"]],
     );
 }
 
 #[test]
 fn format_fn_header_no_ws() {
-    check(
-        "fn main(a:b)->f32{}",
-        expect![[r#"fn main(a: b) -> f32 {}"#]],
-    );
+    check("fn main(a:b)->f32{}", expect![["fn main(a: b) -> f32 {}"]]);
 }
 
 #[test]
@@ -147,10 +150,10 @@ fn format_fn_newline() {
         "fn main(
     a:b
 )->f32{}",
-        expect![[r#"
+        expect![["
             fn main(
                 a: b
-            ) -> f32 {}"#]],
+            ) -> f32 {}"]],
     );
 }
 
@@ -159,10 +162,10 @@ fn format_fn_newline_2() {
     check(
         "fn main(
     a:b, c:d)->f32{}",
-        expect![[r#"
+        expect![["
             fn main(
                 a: b, c: d
-            ) -> f32 {}"#]],
+            ) -> f32 {}"]],
     );
 }
 
@@ -173,11 +176,11 @@ fn format_fn_newline_3() {
     a:b,
     c:d
 )->f32{}",
-        expect![[r#"
+        expect![["
             fn main(
                 a: b,
                 c: d
-            ) -> f32 {}"#]],
+            ) -> f32 {}"]],
     );
 }
 
@@ -188,10 +191,10 @@ fn format_multiple_fns() {
  fn  main( a:  b )  -> f32   {}
   fn  main( a:  b )  -> f32   {}
 ",
-        expect![[r#"
+        expect![["
                 fn main(a: b) -> f32 {}
                 fn main(a: b) -> f32 {}
-            "#]],
+            "]],
     );
 }
 
@@ -201,9 +204,9 @@ fn format_struct() {
         "
  struct  Test  {}
 ",
-        expect![[r#"
+        expect![["
                 struct Test {}
-            "#]],
+            "]],
     );
 }
 
@@ -216,12 +219,12 @@ fn format_struct_body() {
         b: f32, 
 
                 }",
-        expect![[r#"
+        expect![["
             struct Test {
                 @location(0) x: i32,
                 a: i32,
                 b: f32,
-            }"#]],
+            }"]],
     );
 }
 
@@ -232,7 +235,7 @@ fn format_bevy_function() {
         expect![[
             "fn directional_light(light: DirectionalLight, roughness: f32, NdotV: f32, normal: vec3<f32>, view: vec3<f32>, R: vec3<f32>, F0: vec3<f32>, diffuseColor: vec3<f32>) -> vec3<f32> {}"
         ]],
-    )
+    );
 }
 
 #[test]
@@ -240,10 +243,10 @@ fn format_bevy_function_2() {
     check(
         "fn specular(f0: vec3<f32>, roughness: f32, h: vec3<f32>, NoV: f32, NoL: f32,
               NoH: f32, LoH: f32, specularIntensity: f32) -> vec3<f32> {",
-        expect![[r#"
+        expect![["
                 fn specular(f0: vec3<f32>, roughness: f32, h: vec3<f32>, NoV: f32, NoL: f32,
-                    NoH: f32, LoH: f32, specularIntensity: f32) -> vec3<f32> {"#]],
-    )
+                    NoH: f32, LoH: f32, specularIntensity: f32) -> vec3<f32> {"]],
+    );
 }
 
 #[test]
@@ -253,11 +256,11 @@ fn format_if() {
     if(x < 1){}
     if  (  x < 1   )  {}
 }",
-        expect![[r#"
+        expect![["
             fn main() {
                 if x < 1 {}
                 if x < 1 {}
-            }"#]],
+            }"]],
     );
 }
 
@@ -270,12 +273,12 @@ fn format_if_2() {
         let a = 3;
     }else     if(  x > 2 ){}
 }",
-        expect![[r#"
+        expect![["
             fn main() {
                 if x < 1 {} else {
                     let a = 3;
                 } else if x > 2 {}
-            }"#]],
+            }"]],
     );
 }
 
@@ -285,10 +288,10 @@ fn format_for() {
         "fn main() {
     for( var i = 0;i < 100;   i = i + 1  ){}
 }",
-        expect![[r#"
+        expect![["
                 fn main() {
                     for (var i = 0; i < 100; i = i + 1) {}
-                }"#]],
+                }"]],
     );
 }
 
@@ -299,11 +302,11 @@ fn format_while() {
         while(x < 1){}
         while  (  x < 1   )  {}
     }",
-        expect![[r#"
+        expect![["
             fn main() {
                 while x < 1 {}
                 while x < 1 {}
-            }"#]],
+            }"]],
     );
 }
 
@@ -313,10 +316,10 @@ fn format_function_call() {
         "fn main() {
     min  (  x,y );
 }",
-        expect![[r#"
+        expect![["
                 fn main() {
                     min(x, y);
-                }"#]],
+                }"]],
     );
 }
 
@@ -327,12 +330,12 @@ fn format_function_call_newline() {
     min  (
         x,y );
 }",
-        expect![[r#"
+        expect![["
             fn main() {
                 min(
                     x, y
                 );
-            }"#]],
+            }"]],
     );
 }
 
@@ -345,14 +348,14 @@ fn format_function_call_newline_indent() {
             x,y );
     }
 }",
-        expect![[r#"
+        expect![["
             fn main() {
                 if false {
                     min(
                         x, y
                     );
                 }
-            }"#]],
+            }"]],
     );
 }
 
@@ -367,7 +370,7 @@ fn format_function_call_newline_nested() {
         )
     )
 }",
-        expect![[r#"
+        expect![["
             fn main() {
                 min(
                     min(
@@ -375,7 +378,7 @@ fn format_function_call_newline_nested() {
                         2,
                     )
                 )
-            }"#]],
+            }"]],
     );
 }
 
@@ -385,10 +388,10 @@ fn format_function_call_2() {
         "fn main() {
     vec3  <f32>  (  x,y,z );
 }",
-        expect![[r#"
+        expect![["
                 fn main() {
                     vec3<f32>(x, y, z);
-                }"#]],
+                }"]],
     );
 }
 
@@ -398,10 +401,10 @@ fn format_infix_expression() {
         "fn main() {
     x+y*z;
 }",
-        expect![[r#"
+        expect![["
                 fn main() {
                     x + y * z;
-                }"#]],
+                }"]],
     );
 }
 
@@ -412,11 +415,11 @@ fn format_assignment() {
     x=0;
     y  +=  x + y;
 }",
-        expect![[r#"
+        expect![["
                 fn main() {
                     x = 0;
                     y += x + y;
-                }"#]],
+                }"]],
     );
 }
 
@@ -426,10 +429,10 @@ fn format_variable() {
         "fn main() {
     var x=0;
 }",
-        expect![[r#"
+        expect![["
                 fn main() {
                     var x = 0;
-                }"#]],
+                }"]],
     );
 }
 
@@ -439,10 +442,10 @@ fn format_statement_indent() {
         "fn main() {
 var x=0;
 }",
-        expect![[r#"
+        expect![["
                 fn main() {
                     var x = 0;
-                }"#]],
+                }"]],
     );
 }
 
@@ -464,14 +467,14 @@ var x = 0;
 }
 }
 }",
-        expect![[r#"
+        expect![["
             fn main() {
                 for () {
                     if y {
                         var x = 0;
                     }
                 }
-            }"#]],
+            }"]],
     );
 }
 
@@ -483,12 +486,12 @@ let x = 3;
 
 let y = 4;
 }",
-        expect![[r#"
+        expect![["
             fn main() {
                 let x = 3;
 
                 let y = 4;
-            }"#]],
+            }"]],
     );
 }
 
@@ -496,7 +499,7 @@ let y = 4;
 fn format_expression_shift_right() {
     check(
         "fn main() { let x = 1u >> 3u; }",
-        expect![[r#"fn main() { let x = 1u >> 3u; }"#]],
+        expect![["fn main() { let x = 1u >> 3u; }"]],
     );
 }
 
@@ -504,7 +507,7 @@ fn format_expression_shift_right() {
 fn format_expression_shift_left() {
     check(
         "fn main() { let x = 1u << 3u; }",
-        expect![[r#"fn main() { let x = 1u << 3u; }"#]],
+        expect![["fn main() { let x = 1u << 3u; }"]],
     );
 }
 
@@ -519,43 +522,43 @@ fn format_expression_bitcast() {
 #[test]
 fn leave_matrix_alone() {
     check(
-        r#"
+        "
 fn main() {
     let x = mat3x3(
         cosR,  0.0, sinR,
         0.0, 1.0, 0.0,
         -sinR, 0.0, cosR,
     );
-}"#,
-        expect![[r#"
+}",
+        expect![["
             fn main() {
                 let x = mat3x3(
                     cosR, 0.0, sinR,
                     0.0, 1.0, 0.0,
                     -sinR, 0.0, cosR,
                 );
-            }"#]],
+            }"]],
     );
 }
 
 #[test]
 fn leave_matrix_alone_tabs() {
     check_tabs(
-        r#"
+        "
 fn main() {
 	let x = mat3x3(
 		cosR,  0.0, sinR,
 		0.0, 1.0, 0.0,
 		-sinR, 0.0, cosR,
 	);
-}"#,
-        expect![[r#"
+}",
+        expect![["
 			fn main() {
 				let x = mat3x3(
 					cosR, 0.0, sinR,
 					0.0, 1.0, 0.0,
 					-sinR, 0.0, cosR,
 				);
-			}"#]],
+			}"]],
     );
 }

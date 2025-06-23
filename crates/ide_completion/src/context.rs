@@ -1,9 +1,14 @@
 use base_db::{FilePosition, TextRange};
 use either::Either;
 use hir::{HirDatabase, Semantics};
-use hir_def::{HirFileId, db::DefinitionWithBodyId, resolver::Resolver};
+use hir_def::{
+    HirFileId,
+    database::{DefDatabase as _, DefinitionWithBodyId},
+    resolver::Resolver,
+};
+use ide_db::RootDatabase;
 use rowan::NodeOrToken;
-use syntax::{AstNode, Direction, SyntaxKind, SyntaxToken, ast};
+use syntax::{AstNode as _, Direction, SyntaxKind, SyntaxToken, ast};
 
 use crate::{config::CompletionConfig, patterns::determine_location};
 
@@ -11,25 +16,25 @@ type ExprOrStatement = Either<ast::Expression, ast::Statement>;
 
 /// `CompletionContext` is created early during completion to figure out, where
 /// exactly is the cursor, syntax-wise.
-pub(crate) struct CompletionContext<'a> {
-    pub sema: Semantics<'a>,
-    pub file_id: HirFileId,
-    pub db: &'a dyn HirDatabase,
-    pub position: FilePosition,
-    pub token: SyntaxToken,
-    pub file: ast::SourceFile,
-    pub container: Option<DefinitionWithBodyId>,
-    pub completion_location: Option<ImmediateLocation>,
-    pub resolver: Resolver,
+pub(crate) struct CompletionContext<'database> {
+    pub(crate) semantics: Semantics<'database>,
+    pub(crate) file_id: HirFileId,
+    pub(crate) database: &'database RootDatabase,
+    pub(crate) position: FilePosition,
+    pub(crate) token: SyntaxToken,
+    pub(crate) file: ast::SourceFile,
+    pub(crate) container: Option<DefinitionWithBodyId>,
+    pub(crate) completion_location: Option<ImmediateLocation>,
+    pub(crate) resolver: Resolver,
 }
 
-impl<'a> CompletionContext<'a> {
+impl<'database> CompletionContext<'database> {
     pub(crate) fn new(
-        db: &'a dyn HirDatabase,
+        database: &'database RootDatabase,
         position @ FilePosition { file_id, offset }: FilePosition,
-        config: &'a CompletionConfig<'a>,
+        config: &'database CompletionConfig,
     ) -> Option<Self> {
-        let sema = Semantics::new(db);
+        let sema = Semantics::new(database);
         let file = sema.parse(position.file_id);
         let token = file
             .syntax()
@@ -42,11 +47,10 @@ impl<'a> CompletionContext<'a> {
             .parent()
             .and_then(|parent| sema.find_container(file_id, &parent));
 
-        let completion_location =
-            determine_location(&sema, file.syntax(), position.offset, token.clone());
+        let completion_location = determine_location(&sema, file.syntax(), position.offset, &token);
 
-        let module_info = db.module_info(file_id);
-        let mut resolver = Resolver::default().push_module_scope(db.upcast(), file_id, module_info);
+        let module_info = database.module_info(file_id);
+        let mut resolver = Resolver::default().push_module_scope(database, file_id, module_info);
 
         let nearest_scope = token
             .siblings_with_tokens(Direction::Prev) // spellchecker:disable-line
@@ -54,7 +58,7 @@ impl<'a> CompletionContext<'a> {
                 NodeOrToken::Node(node) if ExprOrStatement::can_cast(node.kind()) => {
                     ExprOrStatement::cast(node)
                 },
-                _ => None,
+                NodeOrToken::Node(_) | NodeOrToken::Token(_) => None,
             })
             .or_else(|| token.parent_ancestors().find_map(ExprOrStatement::cast));
 
@@ -64,10 +68,10 @@ impl<'a> CompletionContext<'a> {
             }
         }
 
-        let ctx = Self {
+        let context = Self {
+            semantics: sema,
             file_id,
-            sema,
-            db,
+            database,
             position,
             token,
             file,
@@ -75,7 +79,7 @@ impl<'a> CompletionContext<'a> {
             completion_location,
             resolver,
         };
-        Some(ctx)
+        Some(context)
     }
 
     pub(crate) fn source_range(&self) -> base_db::TextRange {

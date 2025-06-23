@@ -1,6 +1,5 @@
-use std::sync::Arc;
-
 use salsa::Durability;
+use triomphe::Arc;
 use vfs::{FileId, VfsPath};
 
 use crate::{
@@ -15,6 +14,7 @@ pub struct Change {
 }
 
 impl Change {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -35,24 +35,33 @@ impl Change {
         self.files_changed.push((file_id, new_text, new_path));
     }
 
+    /// Applies a change to the database.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the number of source roots exceeds `u32::MAX`, as `SourceRootId` holds a `u32`.
     pub fn apply(
         self,
-        db: &mut dyn SourceDatabase,
+        database: &mut dyn SourceDatabase,
     ) {
         if let Some(roots) = self.roots {
             for (root_id, root) in roots.into_iter().enumerate() {
-                let root_id = SourceRootId(root_id as u32);
+                let root_id = SourceRootId(u32::try_from(root_id).unwrap());
                 for file_id in root.iter() {
-                    db.set_file_source_root_with_durability(file_id, root_id, Durability::LOW);
+                    database.set_file_source_root_with_durability(
+                        file_id,
+                        root_id,
+                        Durability::LOW,
+                    );
                 }
-                db.set_source_root_with_durability(root_id, Arc::new(root), Durability::LOW);
+                database.set_source_root_with_durability(root_id, Arc::new(root), Durability::LOW);
             }
         }
 
         for (file_id, text, path) in self.files_changed {
-            db.set_file_text(file_id, text.unwrap_or_default());
-            db.set_file_path(file_id, path.clone());
-            db.set_file_id(path, file_id);
+            database.set_file_text(file_id, text.unwrap_or_default());
+            database.set_file_path(file_id, path.clone());
+            database.set_file_id(path, file_id);
         }
     }
 }

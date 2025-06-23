@@ -3,7 +3,7 @@ use hir_def::{
     module_data::Name,
     resolver::{ResolveCallable, ResolveType},
 };
-use syntax::{AstNode, SyntaxNode, SyntaxToken, ast, match_ast};
+use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast};
 
 use crate::{Field, Function, Local, ModuleDef, Semantics, Struct, TypeAlias};
 
@@ -17,11 +17,12 @@ pub enum Definition {
 }
 
 impl Definition {
+    #[must_use]
     pub fn from_token(
         sema: &Semantics<'_>,
         file_id: HirFileId,
         token: &SyntaxToken,
-    ) -> Option<Definition> {
+    ) -> Option<Self> {
         let parent = token.parent()?;
         Self::from_node(sema, file_id, &parent)
     }
@@ -30,7 +31,7 @@ impl Definition {
         sema: &Semantics<'_>,
         file_id: HirFileId,
         node: &SyntaxNode,
-    ) -> Option<Definition> {
+    ) -> Option<Self> {
         match_ast! {
             match node {
                 ast::NameReference(name_ref) => {
@@ -55,7 +56,7 @@ fn resolve_name_ref(
     if let Some(expression) = ast::PathExpression::cast(parent.clone()) {
         let name = Name::from(expression.name_ref()?);
         let def = sema.find_container(file_id, expression.syntax())?;
-        let def = sema.resolve_name_in_expression_scope(def, expression.syntax(), name)?;
+        let def = sema.resolve_name_in_expression_scope(def, expression.syntax(), &name)?;
 
         Some(def)
     } else if let Some(expression) = ast::FieldExpression::cast(parent.clone()) {
@@ -68,15 +69,15 @@ fn resolve_name_ref(
 
         match resolver.resolve_callable(&expression.name_ref()?.into())? {
             ResolveCallable::Struct(loc) => {
-                let id = sema.db.intern_struct(loc);
+                let id = sema.database.intern_struct(loc);
                 Some(Definition::Struct(Struct { id }))
             },
             ResolveCallable::TypeAlias(loc) => {
-                let id = sema.db.intern_type_alias(loc);
+                let id = sema.database.intern_type_alias(loc);
                 Some(Definition::TypeAlias(TypeAlias { id }))
             },
             ResolveCallable::Function(function) => {
-                let id = sema.db.intern_function(function);
+                let id = sema.database.intern_function(function);
                 Some(Definition::ModuleDef(ModuleDef::Function(Function { id })))
             },
             ResolveCallable::PredeclaredTypeAlias(_) => None,
@@ -86,11 +87,11 @@ fn resolve_name_ref(
 
         match resolver.resolve_type(&r#type.name()?.into())? {
             ResolveType::Struct(loc) => {
-                let id = sema.db.intern_struct(loc);
+                let id = sema.database.intern_struct(loc);
                 Some(Definition::Struct(Struct { id }))
             },
             ResolveType::TypeAlias(loc) => {
-                let id = sema.db.intern_type_alias(loc);
+                let id = sema.database.intern_type_alias(loc);
                 Some(Definition::TypeAlias(TypeAlias { id }))
             },
             ResolveType::PredeclaredTypeAlias(_) => {

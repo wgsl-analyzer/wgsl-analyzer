@@ -182,10 +182,9 @@ pub enum CodegenType {
 }
 
 impl fmt::Display for CodegenType {
-    #[expect(clippy::min_ident_chars, reason = "trait impl")]
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
             Self::All => write!(f, "all"),

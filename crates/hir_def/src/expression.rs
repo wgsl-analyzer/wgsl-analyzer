@@ -4,7 +4,7 @@ use syntax::ast::{self, IncrementDecrement};
 
 use crate::{
     body::BindingId,
-    db::Interned,
+    database::Interned,
     module_data::Name,
     type_ref::{AccessMode, AddressSpace, TypeReference, VecDimensionality},
 };
@@ -155,6 +155,11 @@ pub enum Statement {
     },
 }
 
+/// Parses a literal from the given `ast::LiteralKind`.
+///
+/// # Panics
+///
+/// Panics if the literal is invalid.
 pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
     match literal {
         ast::LiteralKind::HexIntLiteral(literal) | ast::LiteralKind::DecimalIntLiteral(literal) => {
@@ -187,7 +192,7 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
         },
         ast::LiteralKind::HexFloatLiteral(_) => Literal::Float(0, BuiltinFloat::F32),
         ast::LiteralKind::DecimalFloatLiteral(literal) => {
-            use std::str::FromStr;
+            use std::str::FromStr as _;
             // Float suffixes are not accepted by `f32::from_str`. Ignore them
             let text = literal.text().trim_end_matches(char::is_alphabetic);
             let _value = f32::from_str(text).expect("invalid literal");
@@ -199,12 +204,12 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
 }
 
 impl Expression {
-    pub fn walk_child_expressions(
+    pub fn walk_child_expressions<Function: FnMut(ExpressionId)>(
         &self,
-        mut function: impl FnMut(ExpressionId),
+        mut function: Function,
     ) {
         match self {
-            Expression::BinaryOperation {
+            Self::BinaryOperation {
                 left_side,
                 right_side,
                 ..
@@ -212,25 +217,19 @@ impl Expression {
                 function(*left_side);
                 function(*right_side);
             },
-            Expression::UnaryOperator { expression, .. } => {
+            Self::UnaryOperator { expression, .. }
+            | Self::Field { expression, .. }
+            | Self::Bitcast { expression, .. } => {
                 function(*expression);
             },
-            Expression::Field { expression, .. } => {
-                function(*expression);
-            },
-            Expression::Call { arguments, .. } => {
+            Self::Call { arguments, .. } => {
                 arguments.iter().copied().for_each(function);
             },
-            Expression::Index { left_side, index } => {
+            Self::Index { left_side, index } => {
                 function(*left_side);
                 function(*index);
             },
-            Expression::Bitcast { expression, .. } => {
-                function(*expression);
-            },
-            Expression::Missing => {},
-            Expression::Literal(_) => {},
-            Expression::Path(_) => {},
+            Self::Missing | Self::Literal(_) | Self::Path(_) => {},
         }
     }
 }
