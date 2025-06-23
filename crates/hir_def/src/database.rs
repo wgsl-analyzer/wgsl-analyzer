@@ -1,5 +1,3 @@
-#![expect(clippy::empty_structs_with_brackets, reason = "salsa leaks a lint")]
-
 use std::{
     fmt::{self, Debug},
     hash,

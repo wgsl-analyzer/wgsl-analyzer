@@ -36,7 +36,7 @@ env:
   CARGO_TERM_COLOR: always
   # If nightly is breaking CI, modify this variable to target a specific nightly version.
   NIGHTLY_TOOLCHAIN: nightly
-  STABLE_TOOLCHAIN: "1.87.0"
+  STABLE_TOOLCHAIN: "1.88.0"
 
 jobs:
   check-advisories:

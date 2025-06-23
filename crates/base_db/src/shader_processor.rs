@@ -149,7 +149,7 @@ mod tests {
     }
 
     #[test]
-    fn test_empty() {
+    fn empty() {
         test_shader(
             "
 ",
@@ -160,7 +160,7 @@ mod tests {
     }
 
     #[test]
-    fn test_false_replace_str() {
+    fn false_replace_str() {
         test_shader(
             "
 .

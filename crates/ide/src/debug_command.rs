@@ -2,6 +2,7 @@ use base_db::FilePosition;
 use hir::HirDatabase;
 use syntax::{AstNode as _, ast};
 
+#[expect(clippy::dbg_macro, reason = "intended usage")]
 pub(crate) fn debug_command(
     database: &dyn HirDatabase,
     file_position: FilePosition,
@@ -16,11 +17,6 @@ pub(crate) fn debug_command(
         .parent()?
         .ancestors()
         .find_map(ast::Import::cast)?;
-
-    #[expect(clippy::disallowed_names, clippy::dbg_macro, reason = "debugging")]
-    {
-        dbg!(&import);
-    }
-
+    dbg!(&import);
     None
 }

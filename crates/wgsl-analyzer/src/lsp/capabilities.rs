@@ -134,6 +134,10 @@ impl ClientCapabilities {
         }
     }
 
+    #[expect(
+        clippy::return_and_then,
+        reason = "https://github.com/rust-lang/rust-clippy/pull/14950"
+    )]
     fn code_action_capabilities(&self) -> CodeActionProviderCapability {
         self.0
             .text_document
@@ -449,6 +453,10 @@ impl ClientCapabilities {
         .unwrap_or_default()
     }
 
+    #[expect(
+        clippy::return_and_then,
+        reason = "https://github.com/rust-lang/rust-clippy/pull/14950"
+    )]
     pub fn inlay_hint_resolve_support_properties(&self) -> FxHashSet<&str> {
         self.0
             .text_document
@@ -462,6 +470,10 @@ impl ClientCapabilities {
             .collect()
     }
 
+    #[expect(
+        clippy::return_and_then,
+        reason = "https://github.com/rust-lang/rust-clippy/pull/14950"
+    )]
     pub fn completion_resolve_support_properties(&self) -> FxHashSet<&str> {
         self.0
             .text_document
