@@ -40,8 +40,10 @@ pub(crate) fn handle_goto_definition(
         file_id: position.file_id,
         range: navigation_info.focus_or_full_range(),
     };
-    let result = to_proto::goto_definition_response(&snap, Some(source), vec![navigation_info])?;
-    Ok(Some(result))
+    let location = to_proto::location(&snap, source)?;
+    return Ok(Some(GotoDefinitionResponse::Scalar(location)));
+    // let result = to_proto::goto_definition_response(&snap, Some(source), vec![navigation_info])?;
+    // Ok(Some(result))
 }
 
 pub(crate) fn handle_completion(

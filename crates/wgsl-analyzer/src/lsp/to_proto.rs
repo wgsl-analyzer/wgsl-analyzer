@@ -612,7 +612,8 @@ fn location_info(
     let target_range = range(&line_index, target.full_range);
     let target_selection_range = target
         .focus_range
-        .map_or(target_range, |text_range| range(&line_index, text_range));
+        .map(|text_range| range(&line_index, text_range))
+        .unwrap_or(target_range);
     Ok((target_uri, target_range, target_selection_range))
 }
 
