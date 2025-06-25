@@ -92,7 +92,7 @@ For example:
 }
 ```
 
-More about `when` clause contexts [here](https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts).
+More about [`when` clause contexts](https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts).
 
 ### Setting runnable environment variables
 

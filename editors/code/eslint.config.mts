@@ -3,9 +3,8 @@ import stylistic from "@stylistic/eslint-plugin";
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import stylisticJs from "@stylistic/eslint-plugin-js";
-import { type FlatESLintConfig } from "eslint-define-config";
 
-const config: FlatESLintConfig[] = [
+const config = [
 	eslintConfigPrettier,
 	eslint.configs.recommended,
 	stylisticJs.configs["disable-legacy"],

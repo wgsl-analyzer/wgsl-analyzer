@@ -7,7 +7,7 @@ This guide will assume you have Visual Studio Code and Visual Studio Code Inside
 ## Prerequisites
 
 Since `wgsl-analyzer` is a Rust project, you will need to install Rust.
-You can download and install the latest stable version of Rust [here](https://www.rust-lang.org/tools/install).
+You can download and install the latest stable version of [Rust](https://www.rust-lang.org/tools/install).
 
 ## Step-by-Step Setup
 

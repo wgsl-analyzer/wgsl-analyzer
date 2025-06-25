@@ -150,5 +150,13 @@
 	},
 	"ul-style": {
 		"style": "dash"
+	},
+	"descriptive-link-text": {
+		"prohibited_texts": [
+			"click here",
+			"here",
+			"link",
+			"more"
+		]
 	}
 }

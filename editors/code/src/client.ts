@@ -298,12 +298,12 @@ export async function createClient(
 }
 
 class ExperimentalFeatures implements lc.StaticFeature {
-    private readonly testExplorer: boolean;
+	private readonly testExplorer: boolean;
 
-    constructor(config: Config) {
-        this.testExplorer = config.testExplorer || false;
+	constructor(config: Config) {
+		this.testExplorer = config.testExplorer || false;
 	}
-	
+
 	getState(): lc.FeatureState {
 		return { kind: "static" };
 	}
@@ -317,7 +317,7 @@ class ExperimentalFeatures implements lc.StaticFeature {
 			colorDiagnosticOutput: true,
 			openServerLogs: true,
 			localDocs: true,
-            testExplorer: this.testExplorer,
+			testExplorer: this.testExplorer,
 			commands: {
 				commands: [
 					"wgsl-analyzer.showReferences",
@@ -333,10 +333,10 @@ class ExperimentalFeatures implements lc.StaticFeature {
 	initialize(
 		_capabilities: lc.ServerCapabilities,
 		_documentSelector: lc.DocumentSelector | undefined,
-	): void {}
+	): void { }
 
-	dispose(): void {}
-	clear(): void {}
+	dispose(): void { }
+	clear(): void { }
 }
 
 class OverrideFeatures implements lc.StaticFeature {
@@ -356,10 +356,10 @@ class OverrideFeatures implements lc.StaticFeature {
 	initialize(
 		_capabilities: lc.ServerCapabilities,
 		_documentSelector: lc.DocumentSelector | undefined,
-	): void {}
+	): void { }
 
-	dispose(): void {}
-	clear(): void {}
+	dispose(): void { }
+	clear(): void { }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -388,9 +388,7 @@ export let HOVER_REFERENCE_COMMAND: wa.CommandLink[] = [];
 
 function renderCommand(cmd: wa.CommandLink): string {
 	HOVER_REFERENCE_COMMAND.push(cmd);
-	return `[${cmd.title}](command:wgsl-analyzer.hoverRefCommandProxy?${
-		HOVER_REFERENCE_COMMAND.length - 1
-	} '${cmd.tooltip}')`;
+	return `[${cmd.title}](command:wgsl-analyzer.hoverRefCommandProxy?${HOVER_REFERENCE_COMMAND.length - 1} '${cmd.tooltip}')`;
 }
 
 function renderHoverActions(actions: wa.CommandLinkGroup[]): vscode.MarkdownString {
