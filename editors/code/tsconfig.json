@@ -6,13 +6,22 @@
 		"moduleResolution": "nodenext",
 		"target": "ES2024",
 		"outDir": "out", // spellchecker:disable-line
-		"lib": ["ES2024"],
+		"lib": [
+			"ES2024"
+		],
 		"sourceMap": true,
 		"rootDir": ".", // spellchecker:disable-line
 		"newLine": "lf",
 		// FIXME: https://github.com/rust-lang/rust-analyzer/issues/15253
 		"exactOptionalPropertyTypes": false
 	},
-	"exclude": ["node_modules", ".vscode-test", "out"],
-	"include": ["src", "tests"]
+	"exclude": [
+		"node_modules",
+		".vscode-test",
+		"out"
+	],
+	"include": [
+		"src",
+		"tests"
+	]
 }

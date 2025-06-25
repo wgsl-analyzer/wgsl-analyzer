@@ -74,7 +74,7 @@ There are several LSP client implementations for Vim or Neovim:
 
 ### LanguageClient-neovim
 
-1. Install LanguageClient-neovim by following the instructions [here](https://github.com/autozimu/LanguageClient-neovim)
+1. Install LanguageClient-neovim by following the [instructions](https://github.com/autozimu/LanguageClient-neovim)
     - The GitHub project wiki has extra tips on configuration
 
 2. Configure by adding this to your Vim/Neovim config file (replacing the existing WGSL-specific line if it exists):
@@ -87,7 +87,7 @@ There are several LSP client implementations for Vim or Neovim:
 
 ### YouCompleteMe
 
-Install YouCompleteMe by following the instructions [here](https://github.com/ycm-core/YouCompleteMe#installation).
+Install YouCompleteMe by following the [instructions](https://github.com/ycm-core/YouCompleteMe#installation).
 
 `wgsl-analyzer` is the default in ycm, it should work out of the box.
 

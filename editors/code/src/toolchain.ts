@@ -39,7 +39,7 @@ export class Cargo {
 		readonly rootFolder: string,
 		readonly output: vscode.OutputChannel,
 		readonly env: Record<string, string>,
-	) {}
+	) { }
 
 	// Made public for testing purposes
 	static artifactSpec(cargoArgs: string[], executableArgs?: string[]): ArtifactSpec {

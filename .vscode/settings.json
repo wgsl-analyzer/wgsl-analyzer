@@ -1,2 +1,23 @@
 // Do not put anything here unless it should apply to everyone!
-{}
+{
+	"[json]": {
+		"editor.defaultFormatter": "vscode.json-language-features"
+	},
+	"[json-textmate]": {
+		"editor.defaultFormatter": "RedCMD.tmlanguage-syntax-highlighter"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "vscode.json-language-features"
+	},
+	"[markdown]": {
+		"diffEditor.ignoreTrimWhitespace": false,
+		"editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
+	},
+	"[powershell]": {
+		"diffEditor.codeLens": false,
+		"editor.cursorBlinking": "smooth"
+	},
+	"[typescript]": {
+		"editor.defaultFormatter": "vscode.typescript-language-features"
+	},
+}

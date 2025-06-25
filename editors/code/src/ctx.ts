@@ -24,13 +24,8 @@ import { DiagnosticsConfig, InlayHintsConfig, TraceConfig } from "./config";
 
 export type Workspace =
 	| { kind: "Empty" }
-	| {
-			kind: "Workspace Folder";
-	  }
-	| {
-			kind: "Detached Files";
-			files: vscode.TextDocument[];
-	  };
+	| { kind: "Workspace Folder" }
+	| { kind: "Detached Files"; files: vscode.TextDocument[]; };
 
 export function fetchWorkspace(): Workspace {
 	const folders = (vscode.workspace.workspaceFolders || []).filter(
@@ -43,10 +38,7 @@ export function fetchWorkspace(): Workspace {
 	return folders.length === 0
 		? wgslDocuments.length === 0
 			? { kind: "Empty" }
-			: {
-					kind: "Detached Files",
-					files: wgslDocuments,
-				}
+			: { kind: "Detached Files", files: wgslDocuments }
 		: { kind: "Workspace Folder" };
 }
 
@@ -429,7 +421,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		log.info("Disposing language client");
 		this.updateCommands("disable");
 		// we give the server 100ms to stop gracefully
-		await this.client?.stop(100).catch((_) => {});
+		await this.client?.stop(100).catch((_) => { });
 		await this.disposeClient();
 	}
 
@@ -544,15 +536,15 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 
 		const toggleCheckOnSave = this.config.checkOnSave ? "Disable" : "Enable";
 		statusBar.tooltip.appendMarkdown(
-			`[Extension Info](command:wgsl-analyzer.serverVersion "Show version and server binary info"): Version ${this.version}, Server Version ${this._serverVersion}` +
-				"\n\n---\n\n" +
-				'[$(terminal) Open Logs](command:wgsl-analyzer.openLogs "Open the server logs")' +
-				"\n\n" +
-				`[$(settings) ${toggleCheckOnSave} Check on Save](command:wgsl-analyzer.toggleCheckOnSave "Temporarily ${toggleCheckOnSave.toLowerCase()} check on save functionality")` +
-				"\n\n" +
-				'[$(stop-circle) Stop server](command:wgsl-analyzer.stopServer "Stop the server")' +
-				"\n\n" +
-				'[$(debug-restart) Restart server](command:wgsl-analyzer.restartServer "Restart the server")',
+			`[Extension Info](command:wgsl-analyzer.serverVersion "Show version and server binary info"): Version ${this.version}, Server Version ${this._serverVersion}`
+			+ "\n\n---\n\n"
+			+ '[$(terminal) Open Logs](command:wgsl-analyzer.openLogs "Open the server logs")'
+			+ "\n\n"
+			+ `[$(settings) ${toggleCheckOnSave} Check on Save](command:wgsl-analyzer.toggleCheckOnSave "Temporarily ${toggleCheckOnSave.toLowerCase()} check on save functionality")`
+			+ "\n\n"
+			+ '[$(stop-circle) Stop server](command:wgsl-analyzer.stopServer "Stop the server")'
+			+ "\n\n"
+			+ '[$(debug-restart) Restart server](command:wgsl-analyzer.restartServer "Restart the server")',
 		);
 		if (!status.quiescent) icon = "$(loading~spin) ";
 		statusBar.text = `${icon}wgsl-analyzer`;

@@ -8,8 +8,9 @@
 		"dbaeumer.vscode-eslint",
 		"tamasfe.even-better-toml",
 		"esbenp.prettier-vscode",
-		"rust-lang.rust-analyzer",
-		"github.vscode-github-actions"
+		"github.vscode-github-actions",
+		"davidanson.vscode-markdownlint",
+		"redcmd.tmlanguage-syntax-highlighter"
 	],
 	// List of extensions recommended by VS Code that should not be recommended for users of this workspace.
 	"unwantedRecommendations": []

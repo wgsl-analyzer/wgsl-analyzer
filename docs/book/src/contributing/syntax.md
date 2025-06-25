@@ -38,7 +38,7 @@ The syntax tree consists of three layers:
 - AST
 
 Of these, only GreenNodes store the actual data, the other two layers are (non-trivial) views into the green tree.
-Red-green terminology comes from Roslyn ([link](https://ericlippert.com/2012/06/08/red-green-trees)) and gives the name to the `rowan` library.
+Red-green terminology comes from [Roslyn](https://ericlippert.com/2012/06/08/red-green-trees) and gives the name to the `rowan` library.
 Green and syntax nodes are defined in rowan, ast is defined in wgsl-analyzer.
 
 Syntax trees are a semi-transient data structure.

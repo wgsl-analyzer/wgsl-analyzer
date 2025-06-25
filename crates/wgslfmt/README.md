@@ -11,7 +11,7 @@ A tool for formatting Rust code according to style guidelines.
 
 If you'd like to help out, see [Contributing.md](Contributing.md) and our [Code of Conduct](CODE_OF_CONDUCT.md).
 
-You can use wgslfmt in Travis CI builds. We provide a minimal Travis CI configuration (see [here](#checking-style-on-a-ci-server)).
+You can use wgslfmt in Travis CI builds. We provide a minimal see [Travis CI configuration](#checking-style-on-a-ci-server).
 
 ## Quick start
 
