@@ -148,8 +148,9 @@ impl GlobalState {
         if !self.config.work_done_progress() {
             return;
         }
-        #[expect(clippy::as_conversions, reason = "")]
-        #[expect(clippy::cast_sign_loss, reason = "")]
+        #[expect(clippy::as_conversions, reason = "no better helper method")]
+        #[expect(clippy::cast_sign_loss, reason = "asserted to be in-range")]
+        #[expect(clippy::cast_possible_truncation, reason = "asserted to be in-range")]
         let percentage = fraction.map(|fraction| {
             assert!((0.0..=1.0).contains(&fraction));
             (fraction * 100.0) as u32
