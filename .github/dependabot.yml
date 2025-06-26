@@ -12,3 +12,14 @@ updates:
       interval: weekly
     labels:
       - "C-Dependencies"
+
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "chore"
+    allow:
+      - dependency-name: "dtolnay/rust-toolchain"
+    open-pull-requests-limit: 1

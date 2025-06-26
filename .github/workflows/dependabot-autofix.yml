@@ -1,0 +1,40 @@
+name: Dependabot Auto-fix
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - main
+
+jobs:
+  autofix:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          components: clippy, rustfmt
+
+      - name: Install cargo dependencies
+        run: cargo fetch
+
+      - name: Run cargo fmt
+        run: cargo fmt --all
+
+      - name: Run cargo clippy --fix
+        run: cargo clippy --fix --allow-dirty --allow-staged --all-targets --all-features
+
+      - name: Commit and push fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "chore: auto-fix with cargo fmt & clippy" || echo "No changes to commit"
+          git push
