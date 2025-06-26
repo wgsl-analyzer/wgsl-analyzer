@@ -5,7 +5,7 @@ import { type CommandFactory, Ctx, fetchWorkspace } from "./ctx";
 import * as commands from "./commands";
 import { setContextValue } from "./util";
 
-const WGSL_PROJECT_CONTEXT_NAME = "inWgslProject";
+const WESL_PROJECT_CONTEXT_NAME = "inWeslProject";
 
 export interface WgslAnalyzerExtensionApi {
 	// FIXME: this should be non-optional
@@ -13,7 +13,7 @@ export interface WgslAnalyzerExtensionApi {
 }
 
 export async function deactivate() {
-	await setContextValue(WGSL_PROJECT_CONTEXT_NAME, undefined);
+	await setContextValue(WESL_PROJECT_CONTEXT_NAME, undefined);
 }
 
 export async function activate(
@@ -31,7 +31,7 @@ export async function activate(
 		);
 		throw error;
 	});
-	await setContextValue(WGSL_PROJECT_CONTEXT_NAME, true);
+	await setContextValue(WESL_PROJECT_CONTEXT_NAME, true);
 	return api;
 }
 

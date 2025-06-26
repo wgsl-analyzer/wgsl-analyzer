@@ -1,6 +1,7 @@
-# wgsl-analyzer
+# `wgsl-analyzer`
 
-wgsl-analyzer is a [language server](https://microsoft.github.io/language-server-protocol) plugin for the [WGSL Shading language](https://www.w3.org/TR/WGSL).
+`wgsl-analyzer` is a [language server](https://microsoft.github.io/language-server-protocol/) plugin for the [WGSL Shading language](https://www.w3.org/TR/WGSL).
+It also supports [WESL] - a superset of WGSL.
 
 ## Features
 

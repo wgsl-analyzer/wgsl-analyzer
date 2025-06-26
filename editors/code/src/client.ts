@@ -79,10 +79,10 @@ export async function createClient(
 								const path = vscode.Uri.file(parent + pathSeparator + "Cargo.toml");
 								void vscode.workspace.fs.stat(path).then(async () => {
 									const choice = await vscode.window.showInformationMessage(
-										`This wgsl file does not belong to a loaded cargo project. It looks like it might belong to the workspace at ${path.path}, do you want to add it to the linked Projects?`,
+										`This file does not belong to a loaded project. It looks like it might belong to the workspace at ${path.path}, do you want to add it to the linked projects?`,
 										"Yes",
 										"No",
-										"Don't show this again",
+										"Do not show this again",
 									);
 									switch (choice) {
 										case undefined:
@@ -91,10 +91,10 @@ export async function createClient(
 											break;
 										case "Yes": {
 											const pathToInsert =
-												"." +
-												parent.substring(folder.length) +
-												pathSeparator +
-												"Cargo.toml";
+												"."
+												+ parent.substring(folder.length)
+												+ pathSeparator
+												+ "Cargo.toml";
 											const value = config
 												// eslint-disable-next-line @typescript-eslint/no-explicit-any
 												.get<any[]>("linkedProjects")
@@ -102,7 +102,7 @@ export async function createClient(
 											await config.update("linkedProjects", value, false);
 											break;
 										}
-										case "Don't show this again":
+										case "Do not show this again":
 											await config.update(
 												"showUnlinkedFileNotification",
 												false,
@@ -272,9 +272,9 @@ export async function createClient(
 		},
 	};
 	const clientOptions: lc.LanguageClientOptions = {
-		documentSelector: [{ scheme: "file", language: "wgsl" }],
+		documentSelector: [{ scheme: "file", language: "wgsl" }, { scheme: "file", language: "wesl" }],
 		initializationOptions,
-		diagnosticCollectionName: "wgsl",
+		diagnosticCollectionName: "wgsl-analyzer",
 		traceOutputChannel,
 		outputChannel,
 		middleware: waMiddleware,
@@ -285,7 +285,7 @@ export async function createClient(
 
 	const client = new WaLanguageClient(
 		"wgsl-analyzer",
-		"WGSL Analyzer Language Server",
+		"wgsl-analyzer Language Server",
 		serverOptions,
 		clientOptions,
 	);
