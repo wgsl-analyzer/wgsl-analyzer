@@ -12,10 +12,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if dtolnay/rust-toolchain was updated
+        run: |
+          git fetch origin main
+          git diff origin/main...HEAD -- .github/workflows | grep -q 'dtolnay/rust-toolchain' || {
+            echo "Rust toolchain action not updated. Skipping job."
+            exit 78
+          }
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@1.88.0
