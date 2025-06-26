@@ -13,7 +13,7 @@ https://github.com/DavidAnson/markdownlint/blob/main/doc/md036.md
 
 This document describes LSP extensions used by wgsl-analyzer.
 It is a best-effort document; when in doubt, consult the source (and send a PR with clarification).
-We aim to upstream all non-WGSL-specific extensions to the protocol, but this is not a top priority.
+We aim to upstream all non-WESL-specific extensions to the protocol, but this is not a top priority.
 All capabilities are enabled via the `experimental` field of `ClientCapabilities` or `ServerCapabilities`.
 Requests which we hope to upstream live under the `experimental/` namespace.
 Requests, which are likely to always remain specific to `wgsl-analyzer`, are under the `wgsl-analyzer/` namespace.
@@ -110,7 +110,7 @@ Alternatively, selecting `frobnicate` could present a user with an additional me
 
 ### Example
 
-```wgsl
+```wesl
 fn foo() {
     let x: Entry/*cursor here*/ = todo!();
 }
@@ -136,18 +136,6 @@ This request is sent from client to server to handle "Goto Parent Module" editor
 **Request:** `TextDocumentPositionParameters`
 
 **Response:** `Location | Location[] | LocationLink[] | null`
-
-### Example
-
-```wgsl
-// src/foo.wgsl
-mod bar;
-// src/bar.wgsl
-
-/* cursor here*/
-```
-
-`experimental/parentModule` returns a single `Link` to the `mod foo;` declaration.
 
 ### Unresolved Question
 
@@ -181,7 +169,7 @@ interface JoinLinesParameters {
 
 ### Example
 
-```wgsl
+```wesl
 fn main() {
     /*cursor here*/let x = {
         92
@@ -191,7 +179,7 @@ fn main() {
 
 `experimental/joinLines` yields (curly braces are automagically removed)
 
-```wgsl
+```wesl
 fn foo() {
     let x = 92;
 }
@@ -223,7 +211,7 @@ SnippetTextEdit[]
 
 ### Example
 
-```wgsl
+```wesl
 fn foo() {
     // Some /*cursor here*/ docs
     let x = 92;
@@ -232,7 +220,7 @@ fn foo() {
 
 `experimental/onEnter` returns the following snippet
 
-```wgsl
+```wesl
 fn foo() {
     // Some
     // $0 docs
@@ -327,7 +315,7 @@ Position[]
 
 ### Example
 
-```wgsl
+```wesl
 fn main() {
   let x: array<()/*cursor here*/> = array();
 }
@@ -605,7 +593,7 @@ Whenever the client sends a `Range`, it is understood as the current selection a
 
 ### Example
 
-```wgsl
+```wesl
 fn main() {
     let expression = $01 + 2 * 3$0;
 }

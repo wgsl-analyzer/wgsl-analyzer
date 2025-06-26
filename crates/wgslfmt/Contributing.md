@@ -44,8 +44,8 @@ It is possible to run a test using non-default settings in several ways:
 
 - The final option is used when the test source file contains no configuration parameter comments.
     In this case, the test harness looks for a configuration file with the same filename as the test file in the `./tests/config/` directory.
-    A test source file named `test-indent.wgsl` would need a configuration file named `test-indent.toml` in that directory.
-    As an example, the `issue-1111.rs` test file is configured by the file `./tests/config/issue-1111.toml`.
+    A test source file named `test-indent.wesl` would need a configuration file named `test-indent.toml` in that directory.
+    As an example, the `issue-1111.wesl` test file is configured by the file `./tests/config/issue-1111.toml`.
 
 ## Debugging
 
@@ -57,7 +57,7 @@ These traces can be helpful in understanding which part of the code was used and
 
 Here are some [good starting issues].
 
-<!-- [good starting issues]: <https://github.com/wgsl-analyzer/wgslfmt/issues?q=is%3Aopen+is%3Aissue+label%3A%22D-Trivial> -->
+<!-- [good starting issues]: <https://github.com/wgsl-analyzer/wgslfmt/issues?q=is%3Aopen%20is%3Aissue%20label%3AD-Trivial> -->
 [good starting issues]: <https://github.com/wgsl-analyzer/wgsl-analyzer/issues?q=is%3Aopen%20is%3Aissue%20label%3AD-Trivial%20label%3AA-wgslfmt>
 
 If you have found areas which need polish and don not have issues, please submit a PR.
@@ -97,7 +97,7 @@ The AST is a tree view of source code.
 It carries all the semantic information about the code, but not all of the syntax.
 In particular, we lose white space and comments (although doc comments are preserved).
 
-There are different nodes for every kind of item and expression in WGSL.
+There are different nodes for every kind of item and expression in WGSL/WESL.
 For more details, see the source code: [ast.rs].
 
 [ast.rs]: <../../crates/syntax/src/ast.rs>
@@ -142,7 +142,7 @@ We also take a context which contains information used for parsing, the current 
 
 To understand the indents, consider
 
-```wgsl
+```wesl
 fn foo(...) {
     bar(argument_one,
         baz());
@@ -172,7 +172,7 @@ Therefore we use checked subtraction: `available_space = budget.checked_sub(over
 
 ##### Rewrite of list-like expressions
 
-Much of the syntax in WGSL is lists. For example: lists of arguments, lists of fields, and lists of array elements.
+Much of the syntax in WGSL and WESL is lists. For example: lists of arguments, lists of fields, and lists of array elements.
 We have some generic code to handle lists, including how to space them in horizontal and vertical space, indentation, comments between items, and trailing separators.
 However, since there are so many options, the code is a bit complex.
 Look in [src/lists.rs](src/lists.rs).

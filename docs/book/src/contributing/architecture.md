@@ -95,7 +95,7 @@ For example, you can extract the set of names defined in a file (for typo correc
 
 ### `crates/syntax`
 
-WGSL syntax tree structure and parser.
+WESL syntax tree structure and parser.
 
 <!-- https://github.com/gpuweb/gpuweb/tree/main/design -->
 
@@ -236,7 +236,7 @@ The `ide` contains a public API/façade, as well as implementation for a plethor
 
 **Architecture Invariant:** `ide` crate strives to provide a *perfect* API.
 Although at the moment it has only one consumer, the LSP server, LSP *does not* influence its API design.
-Instead, we keep in mind a hypothetical *ideal* client - an IDE tailored specifically for WGSL, every nook and cranny of which is packed with WGSL-specific goodies.
+Instead, we keep in mind a hypothetical *ideal* client - an IDE tailored specifically for WGSL and WESL, every nook and cranny of which is packed with language-specific goodies.
 
 ### `crates/wgsl-analyzer`
 
@@ -340,13 +340,6 @@ In particular, we generate:
 - Documentation tests for assists
 
 See the `xtask\src\codegen\assists_doc_tests.rs` module for details.
-
-<!--  TODO remove this?
-**Architecture Invariant:** we avoid bootstrapping.
-For codegen, we need to parse WGSL code.
-Using wgsl-analyzer for that would work and would be fun, but it would also complicate the build process a lot.
-For that reason, we use syn and manual string parsing.
--->
 
 ### Cancellation
 

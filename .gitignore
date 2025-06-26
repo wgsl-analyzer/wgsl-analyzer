@@ -2,16 +2,21 @@
 
 target/
 
-**/*.rs.bk
-**/*.rs.pending-snap
-
 # Cargo
 
 /testfiles
 result
+
+# IDE-specific
+
+# VS Code
 .vscode/settings.json
 
-# other build artifacts
+# IntelliJ
+.idea/*
+*.iml
+
+# Other build artifacts
 
 /dist/
 /out/
@@ -20,13 +25,8 @@ docs/book/src/assists_generated.md
 docs/book/src/diagnostics_generated.md
 docs/book/src/features_generated.md
 
-.idea/*
-
 # logs
 *.log
-
-# intellij
-*.iml
 
 # mac thing
 .DS_Store

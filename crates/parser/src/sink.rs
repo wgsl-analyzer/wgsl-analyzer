@@ -2,7 +2,7 @@ use std::mem;
 
 use rowan::{GreenNodeBuilder, Language as _};
 
-use crate::WgslLanguage;
+use crate::WeslLanguage;
 
 use super::{Parse, SyntaxKind, event::Event, lexer::Token, parser::ParseError};
 
@@ -61,7 +61,7 @@ impl<'tokens, 'input> Sink<'tokens, 'input> {
                     }
 
                     for kind in kinds.into_iter().rev() {
-                        self.builder.start_node(WgslLanguage::kind_to_raw(kind));
+                        self.builder.start_node(WeslLanguage::kind_to_raw(kind));
                     }
                 },
                 Event::AddToken => self.token(),
@@ -91,7 +91,7 @@ impl<'tokens, 'input> Sink<'tokens, 'input> {
 
     fn token(&mut self) {
         let Token { kind, text, .. } = self.tokens[self.cursor];
-        self.builder.token(WgslLanguage::kind_to_raw(kind), text);
+        self.builder.token(WeslLanguage::kind_to_raw(kind), text);
         self.cursor += 1;
     }
 }

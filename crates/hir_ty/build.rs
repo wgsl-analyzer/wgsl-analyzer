@@ -118,7 +118,7 @@ enum TextureDimensionality {
 }
 
 fn main() -> Result<(), Box<dyn error::Error>> {
-    println!("cargo:rerun-if-changed=builtins.wgsl");
+    println!("cargo:rerun-if-changed=builtins.wgsl.txt");
 
     let directory = PathBuf::from(env::var("OUT_DIR")?).join("generated");
     fs::create_dir_all(&directory)?;
@@ -127,7 +127,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
 
     let mut builtins: BTreeMap<String, Builtin> = BTreeMap::new();
 
-    let builtins_file = fs::read_to_string("builtins.wgsl")?;
+    let builtins_file = fs::read_to_string("builtins.wgsl.txt")?;
     for line in builtins_file.lines() {
         if line.is_empty() || line.starts_with("//") {
             continue;

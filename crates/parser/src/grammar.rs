@@ -556,7 +556,7 @@ pub(crate) fn statement(parser: &mut Parser<'_, '_>) {
         } else if parser.at_set(COMPOUND_ASSIGNMENT_SET) {
             compound_assignment_statement(parser, marker);
         } else {
-            // only function calls are actually allowed as statements in wgsl.
+            // only function calls are actually allowed as statements.
             marker.complete(parser, SyntaxKind::FunctionCallStatement);
         }
     }

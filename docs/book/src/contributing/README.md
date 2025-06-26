@@ -81,7 +81,6 @@ Debugging the language server can be tricky.
 LSP is rather chatty, so driving it from the command line is not really feasible, driving it via VS Code requires interacting with two processes.
 
 For this reason, the best way to see how `wgsl-analyzer` works is to **find a relevant test and execute it**.
-VS Code & Emacs include an action for running a single test.
 
 Launching a VS Code instance with a locally built language server is also possible.
 There is **"Run Extension (Debug Build)"** launch configuration for this in VS Code.
@@ -114,7 +113,7 @@ Note that you should only use the `eprint!` family of macros for debugging: stdo
 If I need to fix something simultaneously in the server and in the client, I feel even more sad.
 I do not have a specific workflow for this case.
 
-Additionally, I use `cargo run --release -p wgsl-analyzer -- analysis-stats path/to/some/wgsl/code` to run a batch analysis.
+Additionally, I use `cargo run --release -p wgsl-analyzer -- analysis-stats path/to/some/wesl/code` to run a batch analysis.
 This is primarily useful for performance optimizations, or for bug minimization.
 
 ### TypeScript Tests
@@ -168,13 +167,13 @@ There are also several VS Code commands which might be of interest:
 
 - `wgsl-analyzer: View Hir` shows the HIR expressions within the function containing the cursor.
 
-- If `wgsl-analyzer.showSyntaxTree` is enabled in settings, `WGSL Syntax Tree: Focus on WGSL Syntax Tree View` shows the syntax tree of the current file.
+- If `wgsl-analyzer.showSyntaxTree` is enabled in settings, `WGSL/WESL Syntax Tree: Focus on WGSL/WESL Syntax Tree View` shows the syntax tree of the current file.
 
-  You can click on nodes in the WGSL editor to go to the corresponding syntax node.
+  You can click on nodes in the WGSL/WESL editor to go to the corresponding syntax node.
 
-  You can click on `Reveal Syntax Element` next to a syntax node to go to the corresponding WGSL code and highlight the proper text range.
+  You can click on `Reveal Syntax Element` next to a syntax node to go to the corresponding code and highlight the proper text range.
 
-  If you trigger Go to Definition in the inspected WGSL source file, the syntax tree view should scroll to and select the appropriate syntax node token.
+  If you trigger Go to Definition in the inspected source file, the syntax tree view should scroll to and select the appropriate syntax node token.
 
   You can click on `Copy` next to a syntax node to copy a text representation of the node.
 
@@ -222,16 +221,14 @@ Look for `fn benchmark_xxx` tests for a quick way to reproduce performance probl
 
 Release process is handled by `release`, `dist`, `publish-release-notes` and `promote` xtasks, `release` being the main one.
 
-`release` assumes that you have checkouts of `wgsl-analyzer`, `wgsl-analyzer.github.io`, and `wgsl-lang/wgsl` in the same directory:
+`release` assumes that you have checkouts of `wgsl-analyzer` and `wgsl-analyzer.github.io` in the same directory:
 
 ```bash
 ./wgsl-analyzer
 ./wgsl-analyzer.github.io
-./wgsl-wgsl-analyzer  # Note the name!
 ```
 
 The remote for `wgsl-analyzer` must be called `upstream` (I use `origin` to point to my fork).
-In addition, for `xtask promote` (see below), `wgsl-wgsl-analyzer` must have a `wgsl-analyzer` remote pointing to this repository on GitHub.
 
 `release` calls the GitHub API calls to scrape pull request comments and categorize them in the changelog.
 This step uses the `curl` and `jq` applications, which need to be available in `PATH`.
@@ -254,11 +251,6 @@ Release steps:
 3. While the release is in progress, fill in the changelog.
 4. Commit & push the changelog.
 5. Run `cargo xtask publish-release-notes <CHANGELOG>` -- this will convert the changelog entry in AsciiDoc to Markdown and update the body of GitHub Releases entry.
-
-Note: besides the `wgsl-wgsl-analyzer` clone, the Josh cache (stored under `~/.cache/wgsl-analyzer-josh`) will contain a bare clone of `wgsl-lang/wgsl`.
-This currently takes about 3.5 GB.
-
-This [HackMD](https://hackmd.io/7pOuxnkdQDaL1Y1FQr65xg) has details about how `josh` syncs work.
 
 If the GitHub Actions release fails because of a transient problem like a timeout, you can re-run the job from the Actions console.
 If it fails because of something that needs to be fixed, remove the release tag (if needed), fix the problem, then start over.

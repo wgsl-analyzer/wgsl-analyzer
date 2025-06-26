@@ -487,9 +487,9 @@ impl From<rowan::SyntaxKind> for SyntaxKind {
 }
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub(crate) enum WgslLanguage {}
+pub(crate) enum WeslLanguage {}
 
-impl rowan::Language for WgslLanguage {
+impl rowan::Language for WeslLanguage {
     type Kind = SyntaxKind;
 
     fn kind_from_raw(raw: rowan::SyntaxKind) -> Self::Kind {

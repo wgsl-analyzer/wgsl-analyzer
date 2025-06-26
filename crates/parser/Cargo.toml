@@ -2,7 +2,7 @@
 name = "parser"
 version = "0.0.0"
 repository.workspace = true
-description = "The WGSL parser for wgsl-analyzer."
+description = "The parser for wgsl-analyzer."
 
 authors.workspace = true
 edition.workspace = true

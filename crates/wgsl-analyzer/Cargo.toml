@@ -3,7 +3,7 @@ name = "wgsl-analyzer"
 version = "0.0.0"
 # homepage = "https://wgsl-analyzer.github.io/"
 repository.workspace = true
-description = "A language server for the WGSL programming language"
+description = "A language server for WGSL and WESL code"
 # documentation = "https://wgsl-analyzer.github.io/manual.html"
 autobins = false
 

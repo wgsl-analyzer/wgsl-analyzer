@@ -81,14 +81,14 @@ For example, use `"[Ayu Light]"` to customize the theme Ayu Light.
 
 ### Special `when` clause context for keybindings
 
-You may use the `inWgslProject` context to configure keybindings for WGSL projects only.
+You may use the `inWeslProject` context to configure keybindings for WGSL/WESL projects only.
 For example:
 
 ```json
 {
   "key": "ctrl+alt+d",
   "command": "wgsl-analyzer.openDocs",
-  "when": "inWgslProject"
+  "when": "inWeslProject"
 }
 ```
 
@@ -155,7 +155,7 @@ If needed, you can set different values for different platforms:
 
 ### Compiler feedback from external commands
 
-You can configure VS Code to run a command in the background and use the `$wgsl-watch` problem matcher to generate inline error markers from its output.
+You can configure VS Code to run a command in the background and use the `$wgsl-analyzer-watch` problem matcher to generate inline error markers from its output.
 To do this, you need to create a new [VS Code Task](https://code.visualstudio.com/docs/editor/tasks) and set `"wgsl-analyzer.checkOnSave": false` in preferences.
 Example `.vscode/tasks.json`:
 
@@ -165,7 +165,7 @@ Example `.vscode/tasks.json`:
   "group": "build",
   "type": "shell",
   "command": "example-tool watch",
-  "problemMatcher": "$wgsl-watch",
+  "problemMatcher": "$wgsl-analyzer-watch",
   "isBackground": true
 }
 ```
