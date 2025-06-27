@@ -712,7 +712,7 @@ dependencies = [
  "hir-ty",
  "ide-completion",
  "ide-db",
- "indexmap 2.9.0",
+ "indexmap 2.10.0",
  "itertools",
  "line-index",
  "memchr",
@@ -767,7 +767,7 @@ dependencies = [
  "fst",
  "hir-def",
  "hir-ty",
- "indexmap 2.9.0",
+ "indexmap 2.10.0",
  "itertools",
  "line-index",
  "memchr",
@@ -816,9 +816,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.9.0"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cea70ddb795996207ad57735b50c5982d8844f38ba9ee5f1aedcfb708a2aa11e"
+checksum = "fe4cd85333e22411419a0bcae1297d25e58c9443848b11dc6a86fefe8c78a661"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.4",
@@ -1111,7 +1111,7 @@ dependencies = [
  "bitflags 2.9.1",
  "codespan-reporting",
  "hexf-parse",
- "indexmap 2.9.0",
+ "indexmap 2.10.0",
  "log",
  "num-traits",
  "rustc-hash 1.1.0",
@@ -1130,7 +1130,7 @@ dependencies = [
  "bitflags 2.9.1",
  "codespan-reporting",
  "hexf-parse",
- "indexmap 2.9.0",
+ "indexmap 2.10.0",
  "log",
  "num-traits",
  "rustc-hash 1.1.0",
@@ -1151,7 +1151,7 @@ dependencies = [
  "cfg_aliases 0.1.1",
  "codespan-reporting",
  "hexf-parse",
- "indexmap 2.9.0",
+ "indexmap 2.10.0",
  "log",
  "rustc-hash 1.1.0",
  "termcolor",
@@ -1171,7 +1171,7 @@ dependencies = [
  "codespan-reporting",
  "hashbrown 0.15.4",
  "hexf-parse",
- "indexmap 2.9.0",
+ "indexmap 2.10.0",
  "log",
  "rustc-hash 1.1.0",
  "strum",
@@ -1797,7 +1797,7 @@ version = "1.0.140"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20068b6e96dc6c9bd23e01df8827e6c7e1f2fddd43c21810382803c136b99373"
 dependencies = [
- "indexmap 2.9.0",
+ "indexmap 2.10.0",
  "itoa",
  "memchr",
  "ryu",
@@ -2262,7 +2262,7 @@ source = "git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7e
 dependencies = [
  "crossbeam-channel",
  "fst",
- "indexmap 2.9.0",
+ "indexmap 2.10.0",
  "nohash-hasher",
  "paths",
  "rustc-hash 2.1.1",
@@ -2838,7 +2838,7 @@ dependencies = [
  "arbitrary",
  "crc32fast",
  "flate2",
- "indexmap 2.9.0",
+ "indexmap 2.10.0",
  "memchr",
  "time",
  "zopfli",
