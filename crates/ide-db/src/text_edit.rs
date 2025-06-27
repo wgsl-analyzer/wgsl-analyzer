@@ -325,7 +325,7 @@ mod tests {
     }
 
     #[test]
-    fn test_apply() {
+    fn apply_is_correct() {
         let mut text = "_11h1_2222_xx3333_4444_6666".to_owned();
         let mut builder = TextEditBuilder::default();
         builder.replace(range(3, 4), "1".to_owned());
@@ -339,7 +339,7 @@ mod tests {
     }
 
     #[test]
-    fn test_union() {
+    fn union_is_correct() {
         let mut edit1 = TextEdit::delete(range(7, 11));
         let mut builder = TextEditBuilder::default();
         builder.delete(range(1, 5));
@@ -351,7 +351,7 @@ mod tests {
     }
 
     #[test]
-    fn test_union_with_duplicates() {
+    fn union_with_duplicates_is_correct() {
         let mut builder1 = TextEditBuilder::default();
         builder1.delete(range(7, 11));
         builder1.delete(range(13, 17));
@@ -367,14 +367,14 @@ mod tests {
     }
 
     #[test]
-    fn test_union_panics() {
+    fn union_panics_is_correct() {
         let mut edit1 = TextEdit::delete(range(7, 11));
         let edit2 = TextEdit::delete(range(9, 13));
         assert!(edit1.union(edit2).is_err());
     }
 
     #[test]
-    fn test_coalesce_disjoint() {
+    fn coalesce_disjoint_is_correct() {
         let mut builder = TextEditBuilder::default();
         builder.replace(range(1, 3), "aa".into());
         builder.replace(range(5, 7), "bb".into());
@@ -384,7 +384,7 @@ mod tests {
     }
 
     #[test]
-    fn test_coalesce_adjacent() {
+    fn coalesce_adjacent_is_correct() {
         let mut builder = TextEditBuilder::default();
         builder.replace(range(1, 3), "aa".into());
         builder.replace(range(3, 5), "bb".into());
@@ -396,7 +396,7 @@ mod tests {
     }
 
     #[test]
-    fn test_coalesce_adjacent_series() {
+    fn coalesce_adjacent_series_is_correct() {
         let mut builder = TextEditBuilder::default();
         builder.replace(range(1, 3), "au".into());
         builder.replace(range(3, 5), "www".into());

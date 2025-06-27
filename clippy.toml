@@ -25,7 +25,6 @@ disallowed-names = [
   "dir",    # directory
   "dirs",   # directories
   "elem",   # element
-  "err",    # error
   "expr",   # expression
   "ident",  # identifier
   "idx",    # index
@@ -41,9 +40,10 @@ disallowed-names = [
   "sig",    # sign
   "src",    # source
   "stmt",   # statement
-  "tmp",    # temporary
   "ty",     # r#type
-  # "db",   # database  # does not work due to salsa macros
+  # "tmp",    # temporary # does not work due to db! macro
+  # "err",    # error
+  # "db",   # database  # does not work due to xflag macro
   # "args", # arguments # does not work due to write! macro
   # "res",  # result    # does not work due to format! macro
 ]

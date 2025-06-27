@@ -8,7 +8,7 @@ exclude = []
 resolver = "2"
 
 [workspace.package]
-rust-version = "1.87"
+rust-version = "1.88"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 authors = ["wgsl-analyzer team"]
@@ -252,13 +252,13 @@ redundant_pub_crate = "allow"
 default_numeric_fallback = "allow"
 # nursery, ugly suggestions
 option_if_let_else = "allow"
+# not a good general rule for the cost it entails
+arithmetic_side_effects = "allow"
 
 # TODOs
 missing_docs_in_private_items = "allow"
 module_name_repetitions = "allow"
 struct_excessive_bools = "allow"
-arithmetic_side_effects = "allow"
-indexing_slicing = "allow"
 unwrap_used = "allow"
 unwrap_in_result = "allow"
 pattern_type_mismatch = "allow"
@@ -271,5 +271,9 @@ multiple_inherent_impl = "allow"
 iter_over_hash_type = "allow"
 expect_used = "allow"
 string_slice = "allow"
-cast_possible_truncation = "allow"
+
+# is this helpful enough?
 missing_inline_in_public_items = "allow"
+
+# prefer get().expect() so that the reason is documented
+indexing_slicing = "allow"

@@ -27,8 +27,6 @@ use wgsl_analyzer::{
     main_loop::main_loop,
 };
 
-const VERSION: &str = "0.9.11";
-
 fn get_cwd_as_abs_path() -> Result<AbsPathBuf, std::io::Error> {
     info!("Getting current working directory as absolute path");
     let cwd = env::current_dir()?;
@@ -282,12 +280,12 @@ fn setup_logging2(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
         // directory which we set to the project workspace.
         // https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/general-environment-variables
         // https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-syminitialize
-        if let Ok(path) = env::current_exe() {
-            if let Some(path) = path.parent() {
-                // SAFETY: This is always safe to call on Windows.
-                unsafe {
-                    env::set_var("_NT_SYMBOL_PATH", path);
-                }
+        if let Ok(path) = env::current_exe()
+            && let Some(path) = path.parent()
+        {
+            // SAFETY: This is always safe to call on Windows.
+            unsafe {
+                env::set_var("_NT_SYMBOL_PATH", path);
             }
         }
     }

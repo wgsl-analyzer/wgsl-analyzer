@@ -315,7 +315,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_round_up() {
+    fn round_up_is_correct() {
         assert_eq!(round_up(16, 10), 16);
         assert_eq!(round_up(16, 16), 16);
         assert_eq!(round_up(32, 17), 32);

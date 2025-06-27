@@ -297,14 +297,10 @@ impl NagaErrorPolicy {
             });
             return;
         }
-        #[expect(
-            clippy::as_conversions,
-            reason = "converting usize to u32 is fine for this project"
-        )]
         let original_range = |range: ops::Range<usize>| {
             let range_in_full = TextRange::new(
-                TextSize::from(range.start as u32),
-                TextSize::from(range.end as u32),
+                TextSize::from(u32::try_from(range.start).expect("indexes are small numbers")),
+                TextSize::from(u32::try_from(range.end).expect("indexes are small numbers")),
             );
             database.text_range_from_full(file_id.into(), range_in_full)
         };

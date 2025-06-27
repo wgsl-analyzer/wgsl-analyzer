@@ -30,8 +30,8 @@ pub fn collect<Function: FnMut(GlobalVariableDiagnostic)>(
             database,
             |error| diagnostic_builder(GlobalVariableDiagnostic::AddressSpaceError(error)),
         );
-    } else if let Some(r#type) = ty_kind {
-        if !matches!(
+    } else if let Some(r#type) = ty_kind
+        && !matches!(
             r#type,
             TyKind::Error
                 | TyKind::Sampler(_)
@@ -40,8 +40,8 @@ pub fn collect<Function: FnMut(GlobalVariableDiagnostic)>(
                     binding_array: true,
                     ..
                 })
-        ) {
-            diagnostic_builder(GlobalVariableDiagnostic::MissingAddressSpace);
-        }
+        )
+    {
+        diagnostic_builder(GlobalVariableDiagnostic::MissingAddressSpace);
     }
 }

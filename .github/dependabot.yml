@@ -1,14 +1,18 @@
 version: 2
 updates:
-  - package-ecosystem: cargo
-    directory: /
+  - package-ecosystem: "cargo"
+    directory: "/"
     schedule:
-      interval: weekly
+      interval: "daily"
+    commit-message:
+      prefix: "internal"
     labels:
       - "C-Dependencies"
-  - package-ecosystem: github-actions
-    directory: /
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: weekly
+      interval: "daily"
+    commit-message:
+      prefix: "internal"
     labels:
       - "C-Dependencies"

@@ -42,8 +42,9 @@ impl flags::Release {
 
         let today = date_iso(sh)?;
         let commit = cmd!(sh, "git rev-parse HEAD").read()?;
-        #[expect(clippy::as_conversions, reason = "intended")]
-        #[expect(clippy::cast_sign_loss, reason = "intended")]
+        #[expect(clippy::as_conversions, reason = "no better helper method")]
+        #[expect(clippy::cast_sign_loss, reason = "asserted to be in-range")]
+        #[expect(clippy::cast_possible_truncation, reason = "asserted to be in-range")]
         let changelog_n = sh
             .read_dir(changelog_directory.as_path())?
             .into_iter()
@@ -53,6 +54,7 @@ impl flags::Release {
             })
             .filter_map(|string| string.splitn(5, '-').last().map(|n| n.replace('-', ".")))
             .filter_map(|string| string.parse::<f32>().ok())
+            .inspect(|n| assert!((0_f32..(usize::MAX as f32)).contains(&n.floor())))
             .map(|n| 1 + n.floor() as usize)
             .max()
             .unwrap_or_default();

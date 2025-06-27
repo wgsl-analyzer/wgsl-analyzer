@@ -805,7 +805,6 @@ fn for_header(parser: &mut Parser<'_, '_>) {
     if parser.at_set(&[SyntaxKind::Semicolon, SyntaxKind::Comma]) {
         parser.error();
     } else if parser.at(SyntaxKind::ParenthesisRight) {
-        return;
     } else {
         let marker = parser.start();
         statement(parser);

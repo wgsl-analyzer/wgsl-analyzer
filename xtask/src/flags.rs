@@ -1,6 +1,3 @@
-#![expect(unreachable_pub, reason = "simpler")]
-#![expect(clippy::disallowed_names, reason = "xflags macro")]
-
 use std::{fmt, str::FromStr};
 
 use crate::install::{ClientOptions, ServerOptions};

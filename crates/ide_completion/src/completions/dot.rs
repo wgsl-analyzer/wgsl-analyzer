@@ -176,7 +176,7 @@ mod tests {
     }
 
     #[test]
-    fn test_possible_swizzles() {
+    fn possible_swizzles_is_correct() {
         // empty
         let swizzles: Vec<_> = possible_swizzles(2, "").collect();
         assert_eq!(swizzles, vec!["x", "y", "r", "g"]);
@@ -219,7 +219,7 @@ mod tests {
     }
 
     #[test]
-    fn test_swizzler() {
+    fn swizzler_is_correct() {
         let swizzles: Vec<_> = swizzler(&"abcd", "a", 2).unwrap().collect();
         assert_eq!(swizzles, vec!["aa", "ab"]);
 
