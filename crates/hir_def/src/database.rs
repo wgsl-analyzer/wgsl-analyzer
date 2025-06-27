@@ -1,3 +1,10 @@
+#![allow(
+    unfulfilled_lint_expectations,
+    clippy::allow_attributes,
+    reason = "CI issue"
+)]
+#![expect(clippy::empty_structs_with_brackets, reason = "CI issue")]
+
 use std::{
     fmt::{self, Debug},
     hash,
