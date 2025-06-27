@@ -78,6 +78,7 @@ impl Parse {
         buffer
     }
 
+    #[must_use]
     pub fn syntax(&self) -> RowanSyntaxNode<WeslLanguage> {
         RowanSyntaxNode::new_root(self.green_node.clone())
     }
