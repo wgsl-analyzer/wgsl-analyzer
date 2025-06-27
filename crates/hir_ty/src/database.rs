@@ -1,3 +1,5 @@
+#![expect(clippy::empty_structs_with_brackets, reason = "salsa leaks a lint")]
+
 //! The home of `HirDatabase`, which is the Salsa database containing all the
 //! type inference-related queries.
 
