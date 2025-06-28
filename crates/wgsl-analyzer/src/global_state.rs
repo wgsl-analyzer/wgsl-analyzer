@@ -342,7 +342,7 @@ impl GlobalState {
     }
 
     pub(crate) fn publish_diagnostics(
-        &mut self,
+        &self,
         uri: Url,
         version: Option<i32>,
         mut diagnostics: Vec<lsp_types::Diagnostic>,
@@ -366,9 +366,9 @@ impl GlobalState {
                     }
                 };
 
-                for d in &mut diagnostics {
-                    patch_empty(&mut d.message);
-                    if let Some(dri) = &mut d.related_information {
+                for diagnostic in &mut diagnostics {
+                    patch_empty(&mut diagnostic.message);
+                    if let Some(dri) = &mut diagnostic.related_information {
                         for dri in dri {
                             patch_empty(&mut dri.message);
                         }
