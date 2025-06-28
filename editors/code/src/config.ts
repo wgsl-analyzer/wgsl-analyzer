@@ -177,6 +177,10 @@ export class Config {
 		this.configureLang = vscode.languages.setLanguageConfiguration("wgsl", {
 			onEnterRules,
 		});
+
+		this.configureLang = vscode.languages.setLanguageConfiguration("wesl", {
+			onEnterRules,
+		});
 	}
 
 	// We do not do runtime config validation here for simplicity. More on stackoverflow:
@@ -313,8 +317,8 @@ export class Config {
 	get debug() {
 		let sourceFileMap = this.get<Record<string, string> | "auto">("debug.sourceFileMap");
 		if (sourceFileMap !== "auto") {
-			// "/wgsl/<id>" used by suggestions only.
-			const { ["/wgsl/<id>"]: _, ...trimmed } =
+			// "/wesl/<id>" used by suggestions only.
+			const { ["/wesl/<id>"]: _, ...trimmed } =
 				this.get<Record<string, string>>("debug.sourceFileMap") ?? {};
 			sourceFileMap = trimmed;
 		}

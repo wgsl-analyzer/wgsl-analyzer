@@ -1,0 +1,10 @@
+{
+	"name": "WESL",
+	"scopeName": "source.wesl",
+	"patterns": [
+		{
+			"comment": "WESL is a superset of WGSL.",
+			"include": "source.wgsl"
+		}
+	]
+}

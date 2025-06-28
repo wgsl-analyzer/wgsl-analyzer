@@ -1,22 +1,5 @@
 use std::path::{Path, PathBuf};
 
-const WGSL_FILE_EXTENSION: &str = "wgsl";
-
-pub(crate) fn list_wgsl_files(directory: &Path) -> Vec<PathBuf> {
-    let mut result = list_files(directory);
-    result.retain(|path| {
-        std::path::Path::new(
-            path.file_name()
-                .unwrap_or_default()
-                .to_str()
-                .unwrap_or_default(),
-        )
-        .extension()
-        .is_some_and(|ext| ext.eq_ignore_ascii_case(WGSL_FILE_EXTENSION))
-    });
-    result
-}
-
 pub(crate) fn list_files(directory: &Path) -> Vec<PathBuf> {
     let mut result = Vec::new();
     let mut work = vec![directory.to_path_buf()];

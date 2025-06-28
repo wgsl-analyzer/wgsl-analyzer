@@ -290,10 +290,10 @@ fn setup_logging2(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
         }
     }
 
-    if env::var("WGSL_BACKTRACE").is_err() {
+    if env::var("RUST_BACKTRACE").is_err() {
         // SAFETY: Environment locks are used.
         unsafe {
-            env::set_var("WGSL_BACKTRACE", "short");
+            env::set_var("RUST_BACKTRACE", "short");
         }
     }
 

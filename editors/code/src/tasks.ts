@@ -61,7 +61,7 @@ class WgslTaskProvider implements vscode.TaskProvider {
 					type: CARGO_TASK_TYPE,
 				} as const;
 				const exec = await targetToExecution(definition, {}, cargo);
-				const vscodeTask = await buildRustTask(
+				const vscodeTask = await buildWgslTask(
 					workspaceTarget,
 					definition,
 					`cargo ${def.command}`,
@@ -82,7 +82,7 @@ class WgslTaskProvider implements vscode.TaskProvider {
 		// a ShellExecution for it.
 		if (isCargoTask(task.definition)) {
 			const exec = await targetToExecution(task.definition, { env: task.definition.env });
-			return buildRustTask(
+			return buildWgslTask(
 				task.scope,
 				task.definition,
 				task.name,
@@ -95,7 +95,7 @@ class WgslTaskProvider implements vscode.TaskProvider {
 	}
 }
 
-export async function buildRustTask(
+export async function buildWgslTask(
 	scope: vscode.WorkspaceFolder | vscode.TaskScope | undefined,
 	definition: TaskDefinition,
 	name: string,

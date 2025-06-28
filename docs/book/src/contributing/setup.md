@@ -57,6 +57,6 @@ eprintln!("Hello, world!");
 
 Now we run `cargo build` and `cargo xtask install --server --code-bin code-insiders --dev-rel` to reinstall the server.
 
-Now on Visual Studio Code Insiders, we should be able to open the Output tab on our terminal and switch to WGSL Analyzer Language Server to see the `eprintln!` statement we just wrote.
+Now on Visual Studio Code Insiders, we should be able to open the Output tab on our terminal and switch to `wgsl-analyzer` Language Server to see the `eprintln!` statement we just wrote.
 
 If you are able to see your output, you now have a complete workflow for debugging `wgsl-analyzer`.

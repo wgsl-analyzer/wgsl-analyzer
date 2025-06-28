@@ -105,7 +105,7 @@ We use Clippy to improve the code, but if some lints annoy you, allow them in th
 
 ### Minimal Tests
 
-Most tests in `wgsl-analyzer` start with a snippet of WGSL code.
+Most tests in `wgsl-analyzer` start with a snippet of WESL code.
 These snippets should be minimal.
 If you copy-paste a snippet of real code into the tests, make sure to remove everything which could be removed.
 It also makes sense to format snippets more compactly (for example, by placing enum definitions like `enum E { Foo, Bar }` on a single line), as long as they are still readable.

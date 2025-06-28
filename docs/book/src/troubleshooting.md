@@ -6,11 +6,11 @@ It is typically activated by <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>) or `
 If the date is more than a week ago, it is better to update your installation of wgsl-analyzer to the newest version.
 
 The next thing to check would be panic messages in `wgsl-analyzer`'s log.
-Log messages are printed to stderr, in VS Code you can see them in the `Output > WGSL Analyzer Language Server` tab of the panel.
+Log messages are printed to stderr, in VS Code you can see them in the `Output > wgsl-analyzer Language Server` tab of the panel.
 To see more logs, set the `WA_LOG=info` environment variable, this can be done either by setting the environment variable manually or by using `wgsl-analyzer.server.extraEnv`.
 Note that both of these approaches require the server to be restarted.
 
-To fully capture LSP messages between the editor and the server, run the `wgsl-analyzer: Toggle LSP Logs` command and check `Output > WGSL Analyzer Language Server Trace`.
+To fully capture LSP messages between the editor and the server, run the `wgsl-analyzer: Toggle LSP Logs` command and check `Output > wgsl-analyzer Language Server Trace`.
 
 The root cause for many "nothing works" problems is that `wgsl-analyzer` fails to understand the project structure.
 To debug that, first note the `wgsl-analyzer` section in the status bar.

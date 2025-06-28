@@ -109,7 +109,8 @@
 			"program": "${workspaceFolder}/target/debug/wgsl-analyzer",
 			"pid": "${command:pickMyProcess}",
 			"sourceLanguages": [
-				"wgsl"
+				"wgsl",
+				"wesl"
 			]
 		},
 		{

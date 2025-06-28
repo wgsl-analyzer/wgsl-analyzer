@@ -20,7 +20,7 @@
 
 - All debug configurations open a new `[Extension Development Host]` VS Code instance
 where **only** the `wgsl-analyzer` extension being debugged is enabled.
-- To activate the extension you need to open any WGSL project folder in `[Extension Development Host]`.
+- To activate the extension you need to open any WESL project's folder in `[Extension Development Host]`.
 
 ## Debug TypeScript VS Code extension
 
@@ -35,7 +35,7 @@ and run the following command in your `[Extension Development Host]`
 > Developer: Reload Window
 ```
 
-## Debug WGSL LSP server
+## Debugging the LSP server
 
 - When attaching a debugger to an already running `wgsl-analyzer` server on Linux,
   you might need to enable `ptrace` for unrelated processes by running:
@@ -72,13 +72,13 @@ while d == 4 { // set a breakpoint here and change the value
 However for this to work, you will need to enable debug_assertions in your build
 
 ```bash
-WGSLFLAGS='--cfg debug_assertions' cargo build --release
+RUSTFLAGS='--cfg debug_assertions' cargo build --release
 ```
 
 ## Demo
 
 - [Debugging TypeScript VScode extension](https://www.youtube.com/watch?v=T-hvpK6s4wM).
-- [Debugging WGSL LSP server](https://www.youtube.com/watch?v=EaNb5rg4E0M).
+- [Debugging the LSP server (rust-analyzer, same advice applies)](https://www.youtube.com/watch?v=EaNb5rg4E0M).
 
 ## Troubleshooting
 
@@ -86,9 +86,7 @@ WGSLFLAGS='--cfg debug_assertions' cargo build --release
 
 It could be a case of just jumping the gun.
 
-The `wgsl-analyzer` is only started once the `onLanguage:wgsl` activation.
-
-Make sure you open a WGSL file in the `[Extension Development Host]` and try again.
+Make sure you open a WGSL or WESL file in the `[Extension Development Host]` and try again.
 
 ### Cannot connect to `wgsl-analyzer`
 

@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import { isWgslEditor, setContextValue } from "./util";
+import { isWeslEditor, setContextValue } from "./util";
 import type { CtxInit } from "./ctx";
 import * as wa from "./lsp_ext";
 
@@ -40,7 +40,7 @@ export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement
 
 		if (editor !== undefined) {
 			const text = editor.document.getText(element.range);
-			item.tooltip = new vscode.MarkdownString().appendCodeblock(text, "wgsl");
+			item.tooltip = new vscode.MarkdownString().appendCodeblock(text, "wesl");
 		}
 
 		return item;
@@ -69,7 +69,7 @@ export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement
 	async refresh(): Promise<void> {
 		const editor = vscode.window.activeTextEditor;
 
-		if (editor && isWgslEditor(editor)) {
+		if (editor && isWeslEditor(editor)) {
 			const parameters = {
 				textDocument: { uri: editor.document.uri.toString() },
 				range: null,
@@ -177,7 +177,7 @@ export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement
 	async toggleWhitespace() {
 		this.hideWhitespace = !this.hideWhitespace;
 		this._onDidChangeTreeData.fire();
-		await setContextValue("wgslSyntaxTree.hideWhitespace", this.hideWhitespace);
+		await setContextValue("weslSyntaxTree.hideWhitespace", this.hideWhitespace);
 	}
 }
 
@@ -189,7 +189,7 @@ export type SyntaxNode = {
 		start: number;
 		end: number;
 	};
-	/** This element's position within a WGSL string literal, if it is inside of one. */
+	/** This element's position within a WESL string literal, if it is inside of one. */
 	inner?: {
 		range: vscode.Range;
 		offsets: {
@@ -210,7 +210,7 @@ type SyntaxToken = {
 		start: number;
 		end: number;
 	};
-	/** This element's position within a WGSL string literal, if it is inside of one. */
+	/** This element's position within a WESL string literal, if it is inside of one. */
 	inner?: {
 		range: vscode.Range;
 		offsets: {

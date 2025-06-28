@@ -4,7 +4,7 @@ import * as wa from "./lsp_ext";
 
 import { Config, prepareVSCodeConfig } from "./config";
 import { createClient } from "./client";
-import { isWgslDocument, isWgslEditor, LazyOutputChannel, log, type WgslEditor } from "./util";
+import { isWeslDocument, isWeslEditor, LazyOutputChannel, log, type WeslEditor } from "./util";
 import type { ServerStatusParameters } from "./lsp_ext";
 
 import { SyntaxTreeProvider, type SyntaxElement } from "./syntax_tree_provider";
@@ -31,14 +31,14 @@ export function fetchWorkspace(): Workspace {
 	const folders = (vscode.workspace.workspaceFolders || []).filter(
 		(folder) => folder.uri.scheme === "file",
 	);
-	const wgslDocuments = vscode.workspace.textDocuments.filter((document) =>
-		isWgslDocument(document),
+	const weslDocuments = vscode.workspace.textDocuments.filter((document) =>
+		isWeslDocument(document),
 	);
 
 	return folders.length === 0
-		? wgslDocuments.length === 0
+		? weslDocuments.length === 0
 			? { kind: "Empty" }
-			: { kind: "Detached Files", files: wgslDocuments }
+			: { kind: "Detached Files", files: weslDocuments }
 		: { kind: "Workspace Folder" };
 }
 
@@ -51,7 +51,7 @@ export type CtxInit = Ctx & {
 	readonly client: lc.LanguageClient;
 };
 
-interface WGSLAnalyzerConfiguration {
+interface WgslAnalyzerConfiguration {
 	customImports: Record<string, string>;
 	shaderDefs: [string];
 	trace: TraceConfig;
@@ -59,7 +59,7 @@ interface WGSLAnalyzerConfiguration {
 	inlayHints: InlayHintsConfig;
 }
 
-async function lspOptions(config: Config): Promise<WGSLAnalyzerConfiguration> {
+async function lspOptions(config: Config): Promise<WgslAnalyzerConfiguration> {
 	const start = process.hrtime();
 	const customImports = await mapObjectAsync(
 		config.customImports!,
@@ -241,11 +241,11 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		}
 
 		if (!this.traceOutputChannel) {
-			this.traceOutputChannel = new LazyOutputChannel("WGSL Analyzer Language Server Trace");
+			this.traceOutputChannel = new LazyOutputChannel("wgsl-analyzer Language Server Trace");
 			this.pushExtCleanup(this.traceOutputChannel);
 		}
 		if (!this.outputChannel) {
-			this.outputChannel = vscode.window.createOutputChannel("WGSL Analyzer Language Server");
+			this.outputChannel = vscode.window.createOutputChannel("wgsl-analyzer Language Server");
 			this.pushExtCleanup(this.outputChannel);
 		}
 
@@ -312,7 +312,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 			let message = "bootstrap error. ";
 
 			message +=
-				'See the logs in "OUTPUT > WGSL Analyzer Client" (should open automatically). ';
+				'See the logs in "OUTPUT > wgsl-analyzer Client" (should open automatically). ';
 			message +=
 				'To enable verbose logs, click the gear icon in the "OUTPUT" tab and select "Debug".';
 
@@ -350,7 +350,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 			client: client,
 		};
 		this._syntaxTreeProvider = new SyntaxTreeProvider(ctxInit);
-		this._syntaxTreeView = vscode.window.createTreeView("wgslSyntaxTree", {
+		this._syntaxTreeView = vscode.window.createTreeView("weslSyntaxTree", {
 			treeDataProvider: this._syntaxTreeProvider,
 			showCollapseAll: true,
 		});
@@ -377,7 +377,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		});
 
 		vscode.window.onDidChangeTextEditorSelection(async (e) => {
-			if (!this.syntaxTreeView?.visible || !isWgslEditor(e.textEditor)) {
+			if (!this.syntaxTreeView?.visible || !isWeslEditor(e.textEditor)) {
 				return;
 			}
 
@@ -433,9 +433,9 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		this._client = undefined;
 	}
 
-	get activeWgslEditor(): WgslEditor | undefined {
+	get activeWeslEditor(): WeslEditor | undefined {
 		const editor = vscode.window.activeTextEditor;
-		return editor && isWgslEditor(editor) ? editor : undefined;
+		return editor && isWeslEditor(editor) ? editor : undefined;
 	}
 
 	get extensionPath(): string {

@@ -63,23 +63,23 @@ export function sleep(ms: number) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export type WgslDocument = vscode.TextDocument & { languageId: "wgsl" };
-export type WgslEditor = vscode.TextEditor & { document: WgslDocument };
+export type WeslDocument = vscode.TextDocument & ({ languageId: "wgsl" } | { languageId: "wesl" });
+export type WeslEditor = vscode.TextEditor & { document: WeslDocument };
 
-export function isWgslDocument(document: vscode.TextDocument): document is WgslDocument {
+export function isWeslDocument(document: vscode.TextDocument): document is WeslDocument {
 	// Prevent corrupted text (particularly via inlay hints) in diff views
 	// by allowing only `file` schemes.
 	// Unfortunately, extensions that use diff views not always set this
 	// to something different than "file".
 	// See: https://github.com/rust-lang/rust-analyzer/issues/4608
-	return document.languageId === "wgsl" && document.uri.scheme === "file";
+	return (document.languageId === "wgsl" || document.languageId === "wesl") && document.uri.scheme === "file";
 }
 
-export function isWgslEditor(editor: vscode.TextEditor): editor is WgslEditor {
-	return isWgslDocument(editor.document);
+export function isWeslEditor(editor: vscode.TextEditor): editor is WeslEditor {
+	return isWeslDocument(editor.document);
 }
 
-export function isDocumentInWorkspace(document: WgslDocument): boolean {
+export function isDocumentInWorkspace(document: WeslDocument): boolean {
 	const workspaceFolders = vscode.workspace.workspaceFolders;
 	if (!workspaceFolders) {
 		return false;

@@ -9,12 +9,12 @@ use std::{error, fmt, str};
 pub enum Edition {
     // The syntax context stuff needs the discriminants to start from 0 and be consecutive.
     Wgsl = 0,
-    Wesl0_0_1,
+    Wesl2025Unstable,
 }
 
 impl Edition {
     pub const DEFAULT: Self = Self::Wgsl;
-    pub const LATEST: Self = Self::Wgsl;
+    pub const LATEST: Self = Self::Wesl2025Unstable;
     pub const CURRENT: Self = Self::Wgsl;
     /// The current latest stable edition, note this is usually not the right choice in code.
     pub const CURRENT_FIXME: Self = Self::Wgsl;
@@ -26,18 +26,18 @@ impl Edition {
     pub fn from_u32(u32: u32) -> Self {
         match u32 {
             0 => Self::Wgsl,
-            1 => Self::Wesl0_0_1,
+            1 => Self::Wesl2025Unstable,
             _ => panic!("invalid edition"),
         }
     }
 
     #[must_use]
     pub fn at_least_wesl_0_0_1(self) -> bool {
-        self >= Self::Wesl0_0_1
+        self >= Self::Wesl2025Unstable
     }
 
     pub fn iter() -> impl Iterator<Item = Self> {
-        [Self::Wgsl, Self::Wesl0_0_1].iter().copied()
+        [Self::Wgsl, Self::Wesl2025Unstable].iter().copied()
     }
 }
 
@@ -65,7 +65,7 @@ impl str::FromStr for Edition {
     ) -> Result<Self, Self::Err> {
         match s {
             "WGSL" => Ok(Self::Wgsl),
-            "WESL 0.0.1" => Ok(Self::Wesl0_0_1),
+            "WESL 2025 (Unstable)" => Ok(Self::Wesl2025Unstable),
             _ => Err(ParseEditionError {
                 invalid_input: s.to_owned(),
             }),
@@ -80,7 +80,7 @@ impl fmt::Display for Edition {
     ) -> fmt::Result {
         f.write_str(match self {
             Self::Wgsl => "WGSL",
-            Self::Wesl0_0_1 => "WESL 0.0.1",
+            Self::Wesl2025Unstable => "WESL 2025 (Unstable)",
         })
     }
 }

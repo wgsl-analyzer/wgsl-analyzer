@@ -176,7 +176,7 @@ impl GlobalState {
         let _p = tracing::info_span!("GlobalState::switch_workspaces").entered();
         tracing::info!(%cause, "will switch workspaces");
 
-        let glob_pattern = format!("{}/**/*.wgsl", self.config.root_path());
+        let glob_pattern = format!("{}/**/*.{{wgsl,wesl}}", self.config.root_path());
 
         let registration_options = lsp_types::DidChangeWatchedFilesRegistrationOptions {
             watchers: vec![lsp_types::FileSystemWatcher {

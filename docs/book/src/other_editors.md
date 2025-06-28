@@ -4,14 +4,25 @@
 
 This page assumes that you have already [installed the `wgsl-analyzer` binary](./wgsl-analyzer_binary.md).
 
-## Emacs
+## Emacs (using lsp-mode)
 
-[Emacs]: <https://www.gnu.org/software/emacs/>
-[Eglot]: <https://github.com/joaotavora/eglot>
-[LSP Mode]: <https://github.com/emacs-lsp/lsp-mode>
+- Assumes you are using `wgsl-mode`: <https://github.com/acowley/wgsl-mode>
 
-To use `wgsl-analyzer`, you need to install and enable one of the two popular LSP client implementations for [Emacs], [Eglot] or [LSP Mode].
-Both enable `wgsl-analyzer` by default in WGSL buffers if it is available.
+1. Install the language server
+
+    ```bash
+    cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
+    ```
+
+2. Add the following to your init.el
+
+    ```emacs-lisp
+    (with-eval-after-load 'lsp-mode
+    (add-to-list 'lsp-language-id-configuration '(wgsl-mode . "wgsl"))
+    (lsp-register-client (make-lsp-client :new-connection (lsp-stdio-connection "wgsl-analyzer")
+                                          :activation-fn (lsp-activate-on "wgsl")
+                                          :server-id 'wgsl-analyzer)))
+    ```
 
 ### [Eglot]
 
@@ -35,7 +46,7 @@ Compared to Eglot it has a larger codebase and supports more features, like LSP 
 With extension packages like [LSP UI](https://github.com/emacs-lsp/lsp-mode) it offers a lot of visual eyecandy.
 Further it integrates well with [DAP mode](https://github.com/emacs-lsp/dap-mode) for support of the Debug Adapter Protocol.
 
-You can install LSP-mode via `M-x package-install` and then run it via the `M-x lsp` command or load it automatically in WGSL buffers with
+You can install LSP-mode via `M-x package-install` and then run it via the `M-x lsp` command or load it automatically in WGSL/WESL buffers with
 
 ```emacs-lisp
 (add-hook 'wgsl-mode-hook 'lsp-deferred)
@@ -44,18 +55,11 @@ You can install LSP-mode via `M-x package-install` and then run it via the `M-x 
 For more information on how to set up LSP mode and its extension package see the instructions in the [LSP mode manual](https://emacs-lsp.github.io/lsp-mode/page/installation).
 Also see the [`wgsl-analyzer` section](https://emacs-lsp.github.io/lsp-mode/page/lsp-wgsl-analyzer) for `wgsl-analyzer` specific options and commands, which you can optionally bind to keys.
 
-<!-- TODO create a guide 
-Note the excellent
-[guide](https://robert.kra.hn/posts/2021-02-07_wgsl-with-emacs) from
-[@rksm](https://github.com/rksm) on how to set-up Emacs for WGSL
-development with LSP mode and several other packages.
--->
-
 ## Vim/Neovim
 
 There are several LSP client implementations for Vim or Neovim:
 
-### `coc-wgsl-analyzer`
+### Using `coc-wgsl-analyzer`
 
 1. Install coc.nvim by following the instructions at [coc.nvim](https://github.com/neoclide/coc.nvim) (Node.js required)
 
@@ -72,22 +76,80 @@ There are several LSP client implementations for Vim or Neovim:
 > [!NOTE]
 > for code actions, use `coc-codeaction-cursor` and `coc-codeaction-selected`; `coc-codeaction` and `coc-codeaction-line` are unlikely to be useful.
 
-### LanguageClient-neovim
+### Using LanguageClient-neovim
 
-1. Install LanguageClient-neovim by following the [instructions](https://github.com/autozimu/LanguageClient-neovim)
+1. Install LanguageClient-neovim by following [the instructions](https://github.com/autozimu/LanguageClient-neovim)
     - The GitHub project wiki has extra tips on configuration
 
-2. Configure by adding this to your Vim/Neovim config file (replacing the existing WGSL-specific line if it exists):
+2. Configure by adding this to your Vim/Neovim config file (replacing the existing WGSL or WESL-specific line if it exists):
 
     ```vim
     let g:LanguageClient_serverCommands = {
     \ 'wgsl': ['wgsl-analyzer'],
+    \ 'wesl': ['wgsl-analyzer'],
     \ }
+    ```
+
+### Using lsp
+
+1. Install the `wgsl-analyzer` language server
+2. Configure the `"wgsl"` filetype
+
+    ```lua
+    vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
+      pattern = {'*.wgsl', '*.wesl'},
+      callback = function()
+        vim.bo.filetype = "WESL"
+      end,
+    })
+    ```
+
+3. Configure the nvim lsp
+
+    ```lua
+    local lspconfig = require('lspconfig')
+    lspconfig.wgsl_analyzer.setup({})
+    ```
+
+### Using coc.nvim
+
+- Requires CoC to be installed: <https://github.com/neoclide/coc.nvim>
+- Requires cargo to be installed to build binaries:
+
+1. Install the language server
+
+    ```bash
+    cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer.git wgsl-analyzer
+    ```
+
+    (if you are not familiar with using and setting up cargo, you might run into problems finding your binary.
+    Ensure that $HOME/.cargo/bin is in your $PATH. More Info about $PATH: <https://linuxconfig.org/linux-path-environment-variable>)
+
+2. open Neovim / Vim and type `:CocConfig` to configure coc.nvim.
+
+3. under `.languageserver: { ... }` create a new field `"wgsl-analyzer-language-server"`. The field should look like this:
+
+    ```jsonc
+    //  {
+    //    "languageserver": {
+            "wgsl-analyzer-language-server": {
+              "command": "wgsl-analyzer", // alternatively you can specify the absolute path to your binary.
+              "filetypes": ["wgsl", "wesl"],
+            },
+    //      ...
+    //  }
+    ```
+
+4. In order for your editor to recognize WGSL files as such, you need to put this into your `vim.rc`
+
+    ```vim
+    " Recognize wgsl
+    au BufNewFile,BufRead *.wgsl set filetype=wgsl
     ```
 
 ### YouCompleteMe
 
-Install YouCompleteMe by following the [instructions](https://github.com/ycm-core/YouCompleteMe#installation).
+Install YouCompleteMe by following [the instructions](https://github.com/ycm-core/YouCompleteMe#installation).
 
 `wgsl-analyzer` is the default in ycm, it should work out of the box.
 
@@ -96,7 +158,7 @@ Install YouCompleteMe by following the [instructions](https://github.com/ycm-cor
 To use the LSP server in [ale](https://github.com/dense-analysis/ale):
 
 ```vim
-let g:ale_linters = {'wgsl': ['analyzer']}
+let g:ale_linters = {'wgsl': ['analyzer'], 'wesl': ['analyzer']}
 ```
 
 ### nvim-lsp
@@ -119,20 +181,7 @@ lspconfig.wgsl_analyzer.setup({
   on_attach = on_attach,
   settings = {
     ["wgsl-analyzer"] = {
-      imports = {
-        granularity = {
-          group = "module",
-        },
-        prefix = "self",
-      },
-      cargo = {
-        buildScripts = {
-          enable = true,
-        },
-      },
-      procMacro = {
-        enable = true
-      },
+      
     }
   }
 })
@@ -166,9 +215,9 @@ If it is available in `$PATH`, you may want to add this to your `.vimrc`:
 ```vim
 if executable('wgsl-analyzer')
   au User lsp_setup call lsp#register_server({
-    \   'name': 'WGSL Language Server',
+    \   'name': 'wgsl-analyzer Language Server',
     \   'cmd': {server_info->['wgsl-analyzer']},
-    \   'whitelist': ['wgsl'],
+    \   'whitelist': ['wgsl', 'wesl'],
     \ })
 endif
 ```
@@ -179,9 +228,9 @@ Here is an example of how to enable the proc-macro support:
 ```vim
 if executable('wgsl-analyzer')
   au User lsp_setup call lsp#register_server({
-    \   'name': 'WGSL Language Server',
+    \   'name': 'wgsl-analyzer Language Server',
     \   'cmd': {server_info->['wgsl-analyzer']},
-    \   'whitelist': ['wgsl'],
+    \   'whitelist': ['wgsl', 'wesl'],
     \   'initialization_options': {
     \     'cargo': {
     \       'buildScripts': {
@@ -234,12 +283,17 @@ To change `wgsl-analyzer` config options, start from the following example and p
       "command": ["wgsl-analyzer"],
       "url": "https://github.com/wgsl-analyzer/wgsl-analyzer",
       "highlightingModeRegex": "^WGSL$"
+    },
+    "wesl": {
+      "command": ["wgsl-analyzer"],
+      "url": "https://github.com/wgsl-analyzer/wgsl-analyzer",
+      "highlightingModeRegex": "^WESL$"
     }
   }
 }
 ```
 
-Then click on apply, and restart the LSP server for your WGSL project.
+Then click on apply, and restart the LSP server for your WGSL code or WESL project.
 
 ## juCi++
 
@@ -259,7 +313,7 @@ The following might help you understand all of this:
 
 ```kakoune
 eval %sh{kak-lsp --kakoune -s $kak_session}  # Not needed if you load it with plug.kak.
-hook global WinSetOption filetype=wgsl %{
+hook global WinSetOption filetype=(wgsl|wesl) %{
   # Enable LSP
   lsp-enable-window
 

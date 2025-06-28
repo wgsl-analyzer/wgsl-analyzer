@@ -10,7 +10,7 @@ import {
 	type SnippetTextDocumentEdit,
 } from "./snippets";
 
-import { isWgslDocument, sleep, isWgslEditor, unwrapUndefinable } from "./util";
+import { isWeslDocument, sleep, isWeslEditor, unwrapUndefinable } from "./util";
 import type { LanguageClient } from "vscode-languageclient/node";
 import { HOVER_REFERENCE_COMMAND } from "./client";
 import { log } from "./util";
@@ -26,7 +26,7 @@ export function analyzerStatus(ctx: CtxInit): Cmd {
 			const client = ctx.client;
 
 			const parameters: wa.AnalyzerStatusParameters = {};
-			const doc = ctx.activeWgslEditor?.document;
+			const doc = ctx.activeWeslEditor?.document;
 			if (doc != null) {
 				parameters.textDocument =
 					client.code2ProtocolConverter.asTextDocumentIdentifier(doc);
@@ -111,7 +111,7 @@ export function openLogs(ctx: CtxInit): Cmd {
 
 export function matchingBrace(ctx: CtxInit): Cmd {
 	return async () => {
-		const editor = ctx.activeWgslEditor;
+		const editor = ctx.activeWeslEditor;
 		if (!editor) return;
 
 		const client = ctx.client;
@@ -134,7 +134,7 @@ export function matchingBrace(ctx: CtxInit): Cmd {
 
 export function joinLines(ctx: CtxInit): Cmd {
 	return async () => {
-		const editor = ctx.activeWgslEditor;
+		const editor = ctx.activeWeslEditor;
 		if (!editor) return;
 
 		const client = ctx.client;
@@ -163,7 +163,7 @@ export function moveItemDown(ctx: CtxInit): Cmd {
 
 export function moveItem(ctx: CtxInit, direction: wa.Direction): Cmd {
 	return async () => {
-		const editor = ctx.activeWgslEditor;
+		const editor = ctx.activeWeslEditor;
 		if (!editor) return;
 		const client = ctx.client;
 
@@ -182,7 +182,7 @@ export function moveItem(ctx: CtxInit, direction: wa.Direction): Cmd {
 
 export function onEnter(ctx: CtxInit): Cmd {
 	async function handleKeypress() {
-		const editor = ctx.activeWgslEditor;
+		const editor = ctx.activeWeslEditor;
 
 		if (!editor) return false;
 
@@ -364,7 +364,7 @@ export function viewFileText(ctx: CtxInit): Cmd {
 		}
 
 		private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent) {
-			if (isWgslDocument(event.document)) {
+			if (isWeslDocument(event.document)) {
 				// We need to order this after language server updates, but there is no API for that.
 				// Hence, good old sleep().
 				void sleep(10).then(() => this.eventEmitter.fire(this.uri));
@@ -372,7 +372,7 @@ export function viewFileText(ctx: CtxInit): Cmd {
 		}
 
 		private onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined) {
-			if (editor && isWgslEditor(editor)) {
+			if (editor && isWeslEditor(editor)) {
 				this.eventEmitter.fire(this.uri);
 			}
 		}
@@ -381,12 +381,12 @@ export function viewFileText(ctx: CtxInit): Cmd {
 			_uri: vscode.Uri,
 			ct: vscode.CancellationToken,
 		): Promise<string> {
-			const wgslEditor = ctx.activeWgslEditor;
-			if (!wgslEditor) return "";
+			const weslEditor = ctx.activeWeslEditor;
+			if (!weslEditor) return "";
 			const client = ctx.client;
 
 			const parameters = client.code2ProtocolConverter.asTextDocumentIdentifier(
-				wgslEditor.document,
+				weslEditor.document,
 			);
 			return client.sendRequest(wa.viewFileText, parameters, ct);
 		}
@@ -428,7 +428,7 @@ export function viewItemTree(ctx: CtxInit): Cmd {
 		}
 
 		private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent) {
-			if (isWgslDocument(event.document)) {
+			if (isWeslDocument(event.document)) {
 				// We need to order this after language server updates, but there is no API for that.
 				// Hence, good old sleep().
 				void sleep(10).then(() => this.eventEmitter.fire(this.uri));
@@ -436,7 +436,7 @@ export function viewItemTree(ctx: CtxInit): Cmd {
 		}
 
 		private onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined) {
-			if (editor && isWgslEditor(editor)) {
+			if (editor && isWeslEditor(editor)) {
 				this.eventEmitter.fire(this.uri);
 			}
 		}
@@ -445,13 +445,13 @@ export function viewItemTree(ctx: CtxInit): Cmd {
 			_uri: vscode.Uri,
 			ct: vscode.CancellationToken,
 		): Promise<string> {
-			const wgslEditor = ctx.activeWgslEditor;
-			if (!wgslEditor) return "";
+			const weslEditor = ctx.activeWeslEditor;
+			if (!weslEditor) return "";
 			const client = ctx.client;
 
 			const parameters = {
 				textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(
-					wgslEditor.document,
+					weslEditor.document,
 				),
 			};
 			return client.sendRequest(wa.viewItemTree, parameters, ct);
@@ -679,7 +679,7 @@ export function clearFlycheck(ctx: CtxInit): Cmd {
 
 export function runFlycheck(ctx: CtxInit): Cmd {
 	return async () => {
-		const editor = ctx.activeWgslEditor;
+		const editor = ctx.activeWeslEditor;
 		const client = ctx.client;
 		const parameters = editor ? { uri: editor.document.uri.toString() } : null;
 
