@@ -39,6 +39,8 @@ For more detailed instructions and options see the [Eglot manual](https://joaota
 Eglot does not support the `wgsl-analyzer` extensions to the language-server protocol and does not aim to do so in the future.
 The [eglot-x](https://github.com/nemethf/eglot-x#wgsl-analyzer-extensions) package adds experimental support for those LSP extensions.
 
+[Eglot]: <https://github.com/joaotavora/eglot>
+
 ### LSP Mode
 
 LSP-mode is the original LSP-client for emacs.
