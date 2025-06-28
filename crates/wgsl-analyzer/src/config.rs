@@ -69,6 +69,7 @@ pub struct Config {
     root_path: AbsPathBuf,
     // snippets: Vec<Snippet>,
     client_info: Option<ClientInfo>,
+    diagnostics_enable: bool,
 
     // default_config: &'static DefaultConfigData,
     // /// Config node that obtains its initial value during the server initialization and
@@ -98,6 +99,13 @@ impl Config {
     #[must_use]
     pub const fn discover_workspace_config(&self) -> Option<&DiscoverWorkspaceConfig> {
         None
+    }
+
+    pub fn publish_diagnostics(
+        &self,
+        source_root: Option<SourceRootId>,
+    ) -> bool {
+        self.diagnostics_enable
     }
 }
 
@@ -240,6 +248,7 @@ impl Config {
             // discovered_projects_from_command: Vec::new(),
             root_path,
             // snippets: Default::default(),
+            diagnostics_enable: true,
             workspace_roots,
             client_info: client_info.map(|client_info| ClientInfo {
                 name: client_info.name,
