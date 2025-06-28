@@ -65,10 +65,11 @@ pub struct Config {
     data: ConfigData,
     /// The workspace roots as registered by the LSP client
     workspace_roots: Vec<AbsPathBuf>,
-    caps: ClientCapabilities,
+    capabilities: ClientCapabilities,
     root_path: AbsPathBuf,
     // snippets: Vec<Snippet>,
     client_info: Option<ClientInfo>,
+    diagnostics_enable: bool,
 
     // default_config: &'static DefaultConfigData,
     // /// Config node that obtains its initial value during the server initialization and
@@ -99,6 +100,14 @@ impl Config {
     pub const fn discover_workspace_config(&self) -> Option<&DiscoverWorkspaceConfig> {
         None
     }
+
+    #[must_use]
+    pub const fn publish_diagnostics(
+        &self,
+        source_root: Option<SourceRootId>,
+    ) -> bool {
+        self.diagnostics_enable
+    }
 }
 
 // Delegate capability fetching methods
@@ -106,7 +115,7 @@ impl std::ops::Deref for Config {
     type Target = ClientCapabilities;
 
     fn deref(&self) -> &Self::Target {
-        &self.caps
+        &self.capabilities
     }
 }
 
@@ -235,11 +244,12 @@ impl Config {
                 cache_priming_num_threads: NumThreads::Physical,
                 num_threads: None,
             },
-            caps: ClientCapabilities::new(caps),
+            capabilities: ClientCapabilities::new(caps),
             // discovered_projects_from_filesystem: Vec::new(),
             // discovered_projects_from_command: Vec::new(),
             root_path,
             // snippets: Default::default(),
+            diagnostics_enable: true,
             workspace_roots,
             client_info: client_info.map(|client_info| ClientInfo {
                 name: client_info.name,
@@ -288,7 +298,7 @@ impl Config {
 
     #[must_use]
     pub const fn caps(&self) -> &ClientCapabilities {
-        &self.caps
+        &self.capabilities
     }
 
     #[must_use]
@@ -343,7 +353,7 @@ impl Config {
 
     #[must_use]
     pub fn hover_actions(&self) -> HoverActionsConfig {
-        let enable = self.caps.hover_actions();
+        let enable = self.capabilities.hover_actions();
         HoverActionsConfig {
             implementations: enable,
             references: enable,

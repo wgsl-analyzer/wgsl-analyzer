@@ -371,7 +371,8 @@ impl GlobalState {
         .map(Some)
     }
 
-    #[expect(clippy::cognitive_complexity, reason = "")]
+    #[expect(clippy::cognitive_complexity, reason = "deprecated lint")]
+    #[expect(clippy::too_many_lines, reason = "TODO")]
     fn handle_event(
         &mut self,
         event: Event,
@@ -505,13 +506,32 @@ impl GlobalState {
 
             let project_or_mem_docs_changed =
                 became_quiescent || state_changed || memdocs_added_or_removed;
-            if project_or_mem_docs_changed && !self.config.text_document_diagnostic()
-            // && self.config.publish_diagnostics(None)
+            if project_or_mem_docs_changed
+                && !self.config.text_document_diagnostic()
+                && self.config.publish_diagnostics(None)
             {
                 self.update_diagnostics();
             }
             if project_or_mem_docs_changed && self.config.test_explorer() {
                 // self.update_tests();
+            }
+        }
+
+        if let Some(diagnostic_changes) = self.diagnostics.take_changes() {
+            for file_id in diagnostic_changes {
+                let uri = file_id_to_url(&self.vfs.read().0, file_id);
+                let version = from_proto::vfs_path(&uri).ok().and_then(|path| {
+                    self.mem_docs
+                        .get(&path)
+                        .map(|document_data| document_data.version)
+                });
+
+                let diagnostics = self
+                    .diagnostics
+                    .diagnostics_for(file_id)
+                    .cloned()
+                    .collect::<Vec<_>>();
+                self.publish_diagnostics(uri, version, diagnostics);
             }
         }
 
