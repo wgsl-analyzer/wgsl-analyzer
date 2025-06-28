@@ -101,7 +101,8 @@ impl Config {
         None
     }
 
-    #[must_use] pub const fn publish_diagnostics(
+    #[must_use]
+    pub const fn publish_diagnostics(
         &self,
         source_root: Option<SourceRootId>,
     ) -> bool {
