@@ -39,7 +39,7 @@ impl Default for NagaVersion {
     }
 }
 
-#[derive(Default, Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DiagnosticsConfig {
     /// Whether native diagnostics are enabled.
@@ -50,7 +50,19 @@ pub struct DiagnosticsConfig {
     pub naga_version: NagaVersion,
 }
 
-// TODO: Refactor into ShaderCreationError, PIpelineCreationError, and DynamicError.
+impl Default for DiagnosticsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            type_errors: true,
+            naga_parsing_errors: true,
+            naga_validation_errors: true,
+            naga_version: NagaVersion::Naga22,
+        }
+    }
+}
+
+// TODO: Refactor into ShaderCreationError, PipelineCreationError, and DynamicError.
 // https://www.w3.org/TR/WGSL/#shader-creation-error
 // https://www.w3.org/TR/WGSL/#pipeline-creation-error
 // https://www.w3.org/TR/WGSL/#dynamic-error

@@ -351,10 +351,10 @@ impl GlobalState {
         self.task_pool.handle.spawn_with_sender(stdx::thread::ThreadIntent::Worker, {
             let sender = self.sender.clone();
             move |_| {
-                // VSCode assumes diagnostic messages to be non-empty strings, so we need to patch
-                // empty diagnostics. Neither the docs of VSCode nor the LSP spec say whether
+                // VS Code assumes diagnostic messages to be non-empty strings, so we need to patch
+                // empty diagnostics. Neither the docs of VS Code nor the LSP spec say whether
                 // diagnostic messages are actually allowed to be empty or not and patching this
-                // in the VSCode client does not work as the assertion happens in the protocol
+                // in the VS Code client does not work as the assertion happens in the protocol
                 // conversion. So this hack is here to stay, and will be considered a hack
                 // until the LSP decides to state that empty messages are allowed.
 
