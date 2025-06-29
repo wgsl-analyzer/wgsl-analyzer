@@ -23,7 +23,7 @@
 				},
 				{
 					"comment": "double colon",
-					"name": "keyword.operator.module.wgsl",
+					"name": "keyword.operator.module.wesl",
 					"match": "::"
 				}
 			]
