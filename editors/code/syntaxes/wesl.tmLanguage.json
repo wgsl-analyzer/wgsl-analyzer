@@ -2,9 +2,31 @@
 	"name": "WESL",
 	"scopeName": "source.wesl",
 	"patterns": [
+		{ "include": "#keywords" },
 		{
 			"comment": "WESL is a superset of WGSL.",
 			"include": "source.wgsl"
 		}
-	]
+	],
+	"repository": {
+		"keywords": {
+			"comment": "WESL specific keywords",
+			"patterns": [
+				{
+					"name": "keyword.control.import.wesl",
+					"match": "\\b(import)\\b"
+				},
+				{
+					"comment": "keywords used in import statements",
+					"name": "keyword.control.wesl",
+					"match": "\\b(package|super|as)\\b"
+				},
+				{
+					"comment": "double colon",
+					"name": "keyword.operator.module.wesl",
+					"match": "::"
+				}
+			]
+		}
+	}
 }
