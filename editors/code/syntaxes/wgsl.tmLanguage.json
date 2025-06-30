@@ -16,8 +16,7 @@
 		{ "include": "#memory_access_modes" },
 		{ "include": "#attribute_names" },
 		{ "include": "#operators" },
-		{ "include": "#built-in_value_names" },
-		{ "include": "#global_directives" }
+		{ "include": "#built-in_value_names" }
 	],
 	"repository": {
 		"line_ending_comments": {
@@ -60,12 +59,12 @@
 		"function_calls": {
 			"patterns": [
 				{
-					"comment": "function/method calls",
+					"comment": "function calls",
 					"name": "meta.function.wgsl",
-					"begin": "([_$[:alpha:]][_$[:alnum:]]*)\\s*((\\()|(<))",
+					"begin": "(?<!@)\\b([_$[:alpha:]][_$[:alnum:]]*)\\s*((\\()|(<))",
 					"beginCaptures": {
-						"1": { "name": "entity.name.function.wgsl" },
-						"2": { "name": "punctuation.brackets.round.wgsl" }
+						"2": { "name": "entity.name.function.wgsl" },
+						"3": { "name": "punctuation.brackets.round.wgsl" }
 					},
 					"end": "\\)",
 					"endCaptures": { "0": { "name": "punctuation.brackets.round.wgsl" } },
@@ -111,20 +110,32 @@
 			]
 		},
 		"types": {
+			"patterns": [
+				{ "include": "#plain_types" },
+				{ "include": "#memory_views" },
+				{ "include": "#texture_and_sampler_types" }
+			]
+		},
+		"plain_types": {
 			"comment": "types: https://www.w3.org/TR/WGSL/#types",
 			"patterns": [
+				{
+					"comment": "boolean type",
+					"name": "storage.type.boolean.wgsl",
+					"match": "\\b(bool)\\b"
+				},
+				{
+					"comment": "integer type",
+					"name": "storage.type.integer.wgsl",
+					"match": "\\b(i32|u32)\\b"
+				},
+				{
+					"comment": "floating point types",
+					"name": "storage.type.floating-point.wgsl",
+					"match": "\\b(f32|f16)\\b"
+				},
 				{ "include": "#vector_types" },
 				{ "include": "#matrix_types" },
-				{
-					"comment": "scalar types",
-					"name": "storage.type.scalar.wgsl",
-					"match": "\\b(bool|i32|u32|f32|f16)\\b"
-				},
-				{
-					"comment": "naga extension types",
-					"name": "storage.type.wgsl",
-					"match": "\\b(i64|u64|f64)\\b"
-				},
 				{
 					"comment": "atomic types",
 					"name": "storage.type.wgsl",
@@ -139,18 +150,23 @@
 					"comment": "Custom type",
 					"name": "entity.name.type.wgsl",
 					"match": "\\b([A-Z][A-Za-z0-9]*)\\b"
+				},
+				{
+					"comment": "naga extension types",
+					"name": "storage.type.wgsl",
+					"match": "\\b(i64|u64|f64)\\b"
 				}
 			]
 		},
 		"vector_types": {
 			"patterns": [
 				{
-					"comment": "vector types: https://www.w3.org/TR/WGSL/#matrix-types",
+					"comment": "vector types: https://www.w3.org/TR/WGSL/#vector-types",
 					"name": "storage.type.vectors.wgsl",
-					"match": "\\b(vec[2-4])\\b"
+					"match": "\\b(vec)([2-4])<(bool|i32|u32|f32|f16)>\\b"
 				},
 				{
-					"comment": "vector type aliases: https://www.w3.org/TR/WGSL/#matrix-types",
+					"comment": "vector type aliases: https://www.w3.org/TR/WGSL/#vector-types",
 					"name": "storage.type.vectors.wgsl",
 					"match": "\\b(vec)([2-4])(i|u|f|h)\\b"
 				}
@@ -170,12 +186,51 @@
 				}
 			]
 		},
+		"memory_views": {
+			"comment": "reference and pointer types",
+			"name": "storage.type.ref-ptr.wgsl",
+			"match": "\\b(ref|ptr)\\b"
+		},
+		"texture_and_sampler_types": {
+			"patterns": [
+				{
+					"comment": "sampled texture types",
+					"name": "storage.type.sampled-texture.wgsl",
+					"match": "\\b(texture_1d|texture_2d|texture_2d_array|texture_3d|texture_cube|texture_cube_array)\\b"
+				},
+				{
+					"comment": "multisampled texture types",
+					"name": "storage.type.sampled-texture.wgsl",
+					"match": "\\b(texture_multisampled_2d|texture_depth_multisampled_2d)\\b"
+				},
+				{
+					"comment": "external sampled texture types",
+					"name": "storage.type.external-sampled-texture.wgsl",
+					"match": "\\b(texture_external)\\b"
+				},
+				{
+					"comment": "storage texture types",
+					"name": "storage.type.external-sampled-texture.wgsl",
+					"match": "\\b(texture_storage_1d|texture_storage_2d|texture_storage_2d_array|texture_storage_3d)\\b"
+				},
+				{
+					"comment": "depth texture types",
+					"name": "storage.type.depth-texture.wgsl",
+					"match": "\\b(texture_depth_2d|texture_depth_2d_array|texture_depth_cube|texture_depth_cube_array)\\b"
+				},
+				{
+					"comment": "sampler types",
+					"name": "storage.type.sampler.wgsl",
+					"match": "\\b(sampler|sampler_comparison)\\b"
+				}
+			]
+		},
 		"variables": {
 			"patterns": [
 				{
 					"comment": "variables",
 					"name": "variable.other.wgsl",
-					"match": "\\b(?<!(?<!\\.)\\.)(?:r#(?!(crate|[Ss]elf|super)))?[a-z0-9_]+\\b"
+					"match": "\\b([_$[:alpha:]][_$[:alnum:]]*)\\b"
 				}
 			]
 		},
@@ -217,203 +272,24 @@
 			"comment": "https://www.w3.org/TR/WGSL/#keyword-summary",
 			"patterns": [
 				{
-					"comment": "alias: https://www.w3.org/TR/WGSL/#syntax_kw-alias",
-					"name": "keyword.alias.wgsl",
-					"match": "\\b(alias)\\b"
+					"comment": "declaration and type keywords: https://www.w3.org/TR/WGSL/#declaration-and-scope, https://www.w3.org/TR/WGSL/#types",
+					"name": "keyword.other.declarations-and-types.wgsl",
+					"match": "\\b(alias|const|fn|let|override|struct|var)\\b"
 				},
 				{
-					"comment": "break: https://www.w3.org/TR/WGSL/#syntax_kw-break",
-					"name": "keyword.control.break.wgsl",
-					"match": "\\b(break)\\b"
+					"comment": "control-flow keywords: https://www.w3.org/TR/WGSL/#control-flow",
+					"name": "keyword.control.wgsl",
+					"match": "\\b(break|case|continue|continuing|default|discard|else|for|if|loop|return|switch|while)\\b"
 				},
 				{
-					"comment": "case: https://www.w3.org/TR/WGSL/#syntax_kw-case",
-					"name": "keyword.control.case.wgsl",
-					"match": "\\b(case)\\b"
-				},
-				{
-					"comment": "const: https://www.w3.org/TR/WGSL/#syntax_kw-const",
-					"name": "keyword.const.wgsl",
-					"match": "\\b(const)\\b"
-				},
-				{
-					"comment": "const_assert: https://www.w3.org/TR/WGSL/#syntax_kw-const_assert",
-					"name": "keyword.const_assert.wgsl",
+					"comment": "assertion keywords: https://www.w3.org/TR/WGSL/#assertions",
+					"name": "keyword.other.assertions.wgsl",
 					"match": "\\b(const_assert)\\b"
 				},
 				{
-					"comment": "continue: https://www.w3.org/TR/WGSL/#syntax_kw-continue",
-					"name": "keyword.control.continue.wgsl",
-					"match": "\\b(continue)\\b"
-				},
-				{
-					"comment": "continuing: https://www.w3.org/TR/WGSL/#syntax_kw-continuing",
-					"name": "keyword.control.continuing.wgsl",
-					"match": "\\b(continuing)\\b"
-				},
-				{
-					"comment": "default: https://www.w3.org/TR/WGSL/#syntax_kw-default",
-					"name": "keyword.control.default.wgsl",
-					"match": "\\b(default)\\b"
-				},
-				{
-					"comment": "diagnostic: https://www.w3.org/TR/WGSL/#syntax_kw-diagnostic",
-					"name": "keyword.diagnostic.wgsl",
-					"match": "\\b(diagnostic)\\b"
-				},
-				{
-					"comment": "discard: https://www.w3.org/TR/WGSL/#syntax_kw-discard",
-					"name": "keyword.discard.wgsl",
-					"match": "\\b(discard)\\b"
-				},
-				{
-					"comment": "else: https://www.w3.org/TR/WGSL/#syntax_kw-else",
-					"name": "keyword.control.else.wgsl",
-					"match": "\\b(else)\\b"
-				},
-				{
-					"comment": "enable: https://www.w3.org/TR/WGSL/#syntax_kw-enable",
-					"name": "keyword.enable.wgsl",
-					"match": "\\b(enable)\\b"
-				},
-				{
-					"comment": "false: https://www.w3.org/TR/WGSL/#syntax_kw-false",
-					"name": "constant.language.false.wgsl",
-					"match": "\\b(false)\\b"
-				},
-				{
-					"comment": "fn: https://www.w3.org/TR/WGSL/#syntax_kw-fn",
-					"name": "keyword.fn.wgsl",
-					"match": "\\b(fn)\\b"
-				},
-				{
-					"comment": "for: https://www.w3.org/TR/WGSL/#syntax_kw-for",
-					"name": "keyword.for.wgsl",
-					"match": "\\b(for)\\b"
-				},
-				{
-					"comment": "if: https://www.w3.org/TR/WGSL/#syntax_kw-if",
-					"name": "keyword.if.wgsl",
-					"match": "\\b(if)\\b"
-				},
-				{
-					"comment": "let: https://www.w3.org/TR/WGSL/#syntax_kw-let",
-					"name": "keyword.let.wgsl",
-					"match": "\\b(let)\\b"
-				},
-				{
-					"comment": "loop: https://www.w3.org/TR/WGSL/#syntax_kw-loop",
-					"name": "keyword.loop.wgsl",
-					"match": "\\b(loop)\\b"
-				},
-				{
-					"comment": "override: https://www.w3.org/TR/WGSL/#syntax_kw-override",
-					"name": "keyword.override.wgsl",
-					"match": "\\b(override)\\b"
-				},
-				{
-					"comment": "requires: https://www.w3.org/TR/WGSL/#syntax_kw-requires",
-					"name": "keyword.requires.wgsl",
-					"match": "\\b(requires)\\b"
-				},
-				{
-					"comment": "return: https://www.w3.org/TR/WGSL/#syntax_kw-return",
-					"name": "keyword.control.return.wgsl",
-					"match": "\\b(return)\\b"
-				},
-				{
-					"comment": "struct: https://www.w3.org/TR/WGSL/#syntax_kw-struct",
-					"name": "storage.type.struct.wgsl",
-					"match": "\\b(struct)\\b"
-				},
-				{
-					"comment": "switch: https://www.w3.org/TR/WGSL/#syntax_kw-switch",
-					"name": "keyword.control.switch.wgsl",
-					"match": "\\b(switch)\\b"
-				},
-				{
-					"comment": "true: https://www.w3.org/TR/WGSL/#syntax_kw-true",
-					"name": "constant.language.true.wgsl",
-					"match": "\\b(true)\\b"
-				},
-				{
-					"comment": "var: https://www.w3.org/TR/WGSL/#syntax_kw-var",
-					"name": "storage.type.var.wgsl",
-					"match": "\\b(var)\\b"
-				},
-				{
-					"comment": "while: https://www.w3.org/TR/WGSL/#syntax_kw-while",
-					"name": "keyword.control.while.wgsl",
-					"match": "\\b(while)\\b"
-				}
-			]
-		},
-		"global_directives": {
-			"patterns": [
-				{ "include": "#diagnostic_directive" },
-				{ "include": "#enable_directive" },
-				{ "include": "#requires_directive" }
-			]
-		},
-		"diagnostic_directive": {
-			"begin": "\\b(diagnostic)\\b\\s*\\(",
-			"beginCaptures": {
-				"1": { "name": "keyword.control.wgsl" },
-				"0": { "name": "punctuation.section.directive.begin.wgsl" }
-			},
-			"end": "\\)",
-			"endCaptures": { "0": { "name": "punctuation.section.directive.end.wgsl" } },
-			"name": "meta.directive.diagnostic.wgsl",
-			"patterns": [
-				{
-					"match": "\\b(error|warning|info|off)\\b",
-					"name": "support.constant.wgsl"
-				},
-				{
-					"match": "\\b(derivative_uniformity|subgroup_uniformity)\\b",
-					"name": "support.constant.wgsl"
-				},
-				{
-					"match": ",",
-					"name": "punctuation.separator.comma.wgsl"
-				},
-				{
-					"match": "\\s+",
-					"name": "text.whitespace.wgsl"
-				}
-			]
-		},
-		"enable_directive": {
-			"name": "keyword.control.enable.wgsl",
-			"begin": "\\benable\\b",
-			"beginCaptures": { "0": { "name": "keyword.control.enable.wgsl" } },
-			"end": ";",
-			"endCaptures": { "0": { "name": "punctuation.terminator.statement.wgsl" } },
-			"patterns": [
-				{
-					"match": "\\b(f16|clip_distances|dual_source_blending|subgroups)\\b",
-					"name": "support.extension.enable.wgsl"
-				},
-				{
-					"match": ",",
-					"name": "punctuation.separator.comma.wgsl"
-				}
-			]
-		},
-		"requires_directive": {
-			"name": "keyword.control.requires.wgsl",
-			"begin": "\\brequires\\b",
-			"beginCaptures": { "0": { "name": "keyword.control.requires.wgsl" } },
-			"end": ";",
-			"endCaptures": { "0": { "name": "punctuation.terminator.statement.wgsl" } },
-			"patterns": [
-				{
-					"match": "\\b(readonly_and_readwrite_storage_textures|packed_4x8_integer_dot_product|unrestricted_pointer_parameters|pointer_composite_access)\\b",
-					"name": "support.extension.software.wgsl"
-				},
-				{
-					"match": ",",
-					"name": "punctuation.separator.comma.wgsl"
+					"comment": "directive keywords: https://www.w3.org/TR/WGSL/#directives",
+					"name": "keyword.other.directive.wgsl",
+					"match": "(?<!@)\\b(diagnostic|enable|requires)\\b"
 				}
 			]
 		},
@@ -425,8 +301,8 @@
 					"match": "(\\^|\\||\\|\\||&&|<<|>>|!)(?!=)"
 				},
 				{
-					"comment": "logical AND, borrow references",
-					"name": "keyword.operator.borrow.and.wgsl",
+					"comment": "logical AND, address-of",
+					"name": "keyword.operator.address-of.and.wgsl",
 					"match": "&(?![&=])"
 				},
 				{
@@ -478,150 +354,13 @@
 		},
 		"attribute_names": {
 			"comment": "https://www.w3.org/TR/WGSL/#attribute-names",
-			"patterns": [
-				{
-					"name": "entity.other.attribute-name.align.wgsl",
-					"match": "\\b(align)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.binding.wgsl",
-					"match": "\\b(binding)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.builtin.wgsl",
-					"match": "\\b(builtin)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.compute.wgsl",
-					"match": "\\b(compute)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.const.wgsl",
-					"match": "\\b(const)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.diagnostic.wgsl",
-					"match": "\\b(diagnostic)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.fragment.wgsl",
-					"match": "\\b(fragment)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.group.wgsl",
-					"match": "\\b(group)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.id.wgsl",
-					"match": "\\b(id)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.interpolate.wgsl",
-					"match": "\\b(interpolate)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.invariant.wgsl",
-					"match": "\\b(invariant)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.location.wgsl",
-					"match": "\\b(location)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.blend_src.wgsl",
-					"match": "\\b(blend_src)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.must_use.wgsl",
-					"match": "\\b(must_use)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.size.wgsl",
-					"match": "\\b(size)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.vertex.wgsl",
-					"match": "\\b(vertex)\\b"
-				},
-				{
-					"name": "entity.other.attribute-name.workgroup_size.wgsl",
-					"match": "\\b(workgroup_size)\\b"
-				}
-			]
+			"name": "entity.other.attribute-names.wgsl",
+			"match": "\\b(align|binding|builtin|compute|const|diagnostic|fragment|group|id|interpolate|invariant|location|blend_src|must_use|size|vertex|workgroup_size)\\b"
 		},
 		"built-in_value_names": {
-			"patterns": [
-				{
-					"comment": "vertex_index: https://www.w3.org/TR/WGSL/#built-in-values-vertex_index",
-					"name": "built-in_value_name.vertex_index.wgsl",
-					"match": "\\b(vertex_index)\\b"
-				},
-				{
-					"comment": "instance_index: https://www.w3.org/TR/WGSL/#built-in-values-instance_index",
-					"name": "built-in_value_name.instance_index.wgsl",
-					"match": "\\b(instance_index)\\b"
-				},
-				{
-					"comment": "position: https://www.w3.org/TR/WGSL/#built-in-values-position",
-					"name": "built-in_value_name.position.wgsl",
-					"match": "\\b(position)\\b"
-				},
-				{
-					"comment": "front_facing: https://www.w3.org/TR/WGSL/#built-in-values-front_facing",
-					"name": "built-in_value_name.front_facing.wgsl",
-					"match": "\\b(front_facing)\\b"
-				},
-				{
-					"comment": "frag_depth: https://www.w3.org/TR/WGSL/#built-in-values-frag_depth",
-					"name": "built-in_value_name.frag_depth.wgsl",
-					"match": "\\b(frag_depth)\\b"
-				},
-				{
-					"comment": "sample_index: https://www.w3.org/TR/WGSL/#built-in-values-sample_index",
-					"name": "built-in_value_name.sample_index.wgsl",
-					"match": "\\b(sample_index)\\b"
-				},
-				{
-					"comment": "sample_mask: https://www.w3.org/TR/WGSL/#built-in-values-sample_mask",
-					"name": "built-in_value_name.sample_mask.wgsl",
-					"match": "\\b(sample_mask)\\b"
-				},
-				{
-					"comment": "local_invocation_id: https://www.w3.org/TR/WGSL/#built-in-values-local_invocation_id",
-					"name": "built-in_value_name.local_invocation_id.wgsl",
-					"match": "\\b(local_invocation_id)\\b"
-				},
-				{
-					"comment": "local_invocation_index: https://www.w3.org/TR/WGSL/#built-in-values-local_invocation_index",
-					"name": "built-in_value_name.local_invocation_index.wgsl",
-					"match": "\\b(local_invocation_index)\\b"
-				},
-				{
-					"comment": "global_invocation_id: https://www.w3.org/TR/WGSL/#built-in-values-global_invocation_id",
-					"name": "built-in_value_name.global_invocation_id.wgsl",
-					"match": "\\b(global_invocation_id)\\b"
-				},
-				{
-					"comment": "workgroup_id: https://www.w3.org/TR/WGSL/#built-in-values-workgroup_id",
-					"name": "built-in_value_name.workgroup_id.wgsl",
-					"match": "\\b(workgroup_id)\\b"
-				},
-				{
-					"comment": "num_workgroups: https://www.w3.org/TR/WGSL/#built-in-values-num_workgroups",
-					"name": "built-in_value_name.num_workgroups.wgsl",
-					"match": "\\b(num_workgroups)\\b"
-				},
-				{
-					"comment": "subgroup_invocation_id: https://www.w3.org/TR/WGSL/#built-in-values-subgroup_invocation_id",
-					"name": "built-in_value_name.subgroup_invocation_id.wgsl",
-					"match": "\\b(subgroup_invocation_id)\\b"
-				},
-				{
-					"comment": "subgroup_size: https://www.w3.org/TR/WGSL/#built-in-values-subgroup_size",
-					"name": "built-in_value_name.subgroup_size.wgsl",
-					"match": "\\b(subgroup_size)\\b"
-				}
-			]
+			"comment": "built-ins: https://www.w3.org/TR/WGSL/#builtin-value-names",
+			"name": "variable.language.built-ins.wgsl",
+			"match": "\\b(vertex_index|instance_index|position|front_facing|frag_depth|sample_index|sample_mask|local_invocation_id|local_invocation_index|global_invocation_id|workgroup_id|num_workgroups|subgroup_invocation_id|subgroup_size)\\b"
 		}
 	}
 }
