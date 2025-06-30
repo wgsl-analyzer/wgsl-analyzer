@@ -16,7 +16,8 @@
 		{ "include": "#memory_access_modes" },
 		{ "include": "#attribute_names" },
 		{ "include": "#operators" },
-		{ "include": "#built-in_value_names" }
+		{ "include": "#built-in_value_names" },
+		{ "include": "#bevy_preprocessor_directives" }
 	],
 	"repository": {
 		"line_ending_comments": {
@@ -61,10 +62,10 @@
 				{
 					"comment": "function calls",
 					"name": "meta.function.wgsl",
-					"begin": "(?<!@)\\b([_$[:alpha:]][_$[:alnum:]]*)\\s*((\\()|(<))",
+					"begin": "(?<!@)\\b([_$[:alpha:]][_$[:alnum:]]*)\\s*(\\()",
 					"beginCaptures": {
-						"2": { "name": "entity.name.function.wgsl" },
-						"3": { "name": "punctuation.brackets.round.wgsl" }
+						"0": { "name": "entity.name.function.wgsl" },
+						"1": { "name": "punctuation.brackets.round.wgsl" }
 					},
 					"end": "\\)",
 					"endCaptures": { "0": { "name": "punctuation.brackets.round.wgsl" } },
@@ -163,7 +164,7 @@
 				{
 					"comment": "vector types: https://www.w3.org/TR/WGSL/#vector-types",
 					"name": "storage.type.vectors.wgsl",
-					"match": "\\b(vec)([2-4])<(bool|i32|u32|f32|f16)>\\b"
+					"match": "\\b(vec)([2-4])\\b"
 				},
 				{
 					"comment": "vector type aliases: https://www.w3.org/TR/WGSL/#vector-types",
@@ -187,9 +188,9 @@
 			]
 		},
 		"memory_views": {
-			"comment": "reference and pointer types",
-			"name": "storage.type.ref-ptr.wgsl",
-			"match": "\\b(ref|ptr)\\b"
+			"comment": "pointer types",
+			"name": "storage.type.ptr.wgsl",
+			"match": "\\b(ptr)\\b"
 		},
 		"texture_and_sampler_types": {
 			"patterns": [
@@ -279,7 +280,7 @@
 				{
 					"comment": "control-flow keywords: https://www.w3.org/TR/WGSL/#control-flow",
 					"name": "keyword.control.wgsl",
-					"match": "\\b(break|case|continue|continuing|default|discard|else|for|if|loop|return|switch|while)\\b"
+					"match": "\\b(break|case|continue|continuing|default|discard|(?<!#)else|for|if|loop|return|switch|while)\\b"
 				},
 				{
 					"comment": "assertion keywords: https://www.w3.org/TR/WGSL/#assertions",
@@ -361,6 +362,11 @@
 			"comment": "built-ins: https://www.w3.org/TR/WGSL/#builtin-value-names",
 			"name": "variable.language.built-ins.wgsl",
 			"match": "\\b(vertex_index|instance_index|position|front_facing|frag_depth|sample_index|sample_mask|local_invocation_id|local_invocation_index|global_invocation_id|workgroup_id|num_workgroups|subgroup_invocation_id|subgroup_size)\\b"
+		},
+		"bevy_preprocessor_directives": {
+			"comment": "bevy preprocessor directives",
+			"name": "invalid.deprecated.wgsl",
+			"match": "^#(ifdef|else|endif|import|define_import_path)\\b"
 		}
 	}
 }
