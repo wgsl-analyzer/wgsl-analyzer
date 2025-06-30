@@ -117,6 +117,8 @@ fn wait_for_debugger() {
 
 #[expect(clippy::too_many_lines, reason = "main")]
 fn run_server() -> anyhow::Result<()> {
+    tracing::info!("server version {} will start", wgsl_analyzer::version());
+
     let (connection, io_threads) = Connection::stdio();
 
     let (initialize_id, initialize_parameters) = match connection.initialize_start() {

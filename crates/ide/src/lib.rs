@@ -8,6 +8,7 @@ pub mod inlay_hints;
 mod markup;
 mod navigation_target;
 mod syntax_tree;
+mod typing;
 
 use std::panic;
 
@@ -152,6 +153,8 @@ pub struct Analysis {
 }
 
 impl Analysis {
+    pub const SUPPORTED_TRIGGER_CHARS: &[char] = typing::TRIGGER_CHARS;
+
     pub fn with_db<Function, T>(
         &self,
         function: Function,
