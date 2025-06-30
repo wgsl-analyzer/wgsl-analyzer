@@ -2,6 +2,7 @@
 	"name": "WESL",
 	"scopeName": "source.wesl",
 	"patterns": [
+		{ "include": "#documentation_comment" },
 		{ "include": "#keywords" },
 		{
 			"comment": "WESL is a superset of WGSL.",
@@ -9,6 +10,11 @@
 		}
 	],
 	"repository": {
+		"documentation_comment": {
+			"comment": "documentation comment",
+			"name": "comment.line.documentation.wgsl",
+			"match": "\\s*///.*"
+		},
 		"keywords": {
 			"comment": "WESL specific keywords",
 			"patterns": [
