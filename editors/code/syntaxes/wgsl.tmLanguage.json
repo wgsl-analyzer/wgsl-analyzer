@@ -113,13 +113,10 @@
 		"types": {
 			"comment": "types: https://www.w3.org/TR/WGSL/#types",
 			"patterns": [
+				{ "include": "#vector_types" },
+				{ "include": "#matrix_types" },
 				{
-					"comment": "Boolean Type",
-					"name": "storage.type.scalar.wgsl",
-					"match": "\\b(true|false)\\b"
-				},
-				{
-					"comment": "scalar Types",
+					"comment": "scalar types",
 					"name": "storage.type.scalar.wgsl",
 					"match": "\\b(bool|i32|u32|f32|f16)\\b"
 				},
@@ -127,11 +124,6 @@
 					"comment": "naga extension types",
 					"name": "storage.type.wgsl",
 					"match": "\\b(i64|u64|f64)\\b"
-				},
-				{
-					"comment": "vector/matrix types",
-					"name": "storage.type.wgsl",
-					"match": "\\b(vec[2-4]|mat[2-4]x[2-4])\\b"
 				},
 				{
 					"comment": "atomic types",
@@ -147,6 +139,34 @@
 					"comment": "Custom type",
 					"name": "entity.name.type.wgsl",
 					"match": "\\b([A-Z][A-Za-z0-9]*)\\b"
+				}
+			]
+		},
+		"vector_types": {
+			"patterns": [
+				{
+					"comment": "vector types: https://www.w3.org/TR/WGSL/#matrix-types",
+					"name": "storage.type.vectors.wgsl",
+					"match": "\\b(vec[2-4])\\b"
+				},
+				{
+					"comment": "vector type aliases: https://www.w3.org/TR/WGSL/#matrix-types",
+					"name": "storage.type.vectors.wgsl",
+					"match": "\\b(vec)([2-4])(i|u|f|h)\\b"
+				}
+			]
+		},
+		"matrix_types": {
+			"patterns": [
+				{
+					"comment": "matrix types: https://www.w3.org/TR/WGSL/#matrix-types",
+					"name": "storage.type.matrixes.wgsl",
+					"match": "\\b(mat[2-4]x[2-4])\\b"
+				},
+				{
+					"comment": "matrix type aliases: https://www.w3.org/TR/WGSL/#matrix-types",
+					"name": "storage.type.matrixes.wgsl",
+					"match": "\\b(mat[2-4]x[2-4])(f|h)\\b"
 				}
 			]
 		},
