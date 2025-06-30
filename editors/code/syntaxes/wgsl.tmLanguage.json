@@ -4,6 +4,7 @@
 	"patterns": [
 		{ "include": "#line_ending_comments" },
 		{ "include": "#block_comments" },
+		{ "include": "#attributes" },
 		{ "include": "#functions" },
 		{ "include": "#keywords" },
 		{ "include": "#function_calls" },
@@ -14,7 +15,6 @@
 		{ "include": "#reserved_words" },
 		{ "include": "#address_spaces" },
 		{ "include": "#memory_access_modes" },
-		{ "include": "#attribute_names" },
 		{ "include": "#operators" },
 		{ "include": "#built-in_value_names" },
 		{ "include": "#bevy_preprocessor_directives" }
@@ -32,6 +32,24 @@
 			"end": "\\*/",
 			"patterns": [ { "include": "#block_comments" } ]
 		},
+		"function_arguments": {
+			"patterns": [
+				{ "include": "#line_ending_comments" },
+				{ "include": "#block_comments" },
+				{ "include": "#attributes" },
+				{ "include": "#keywords" },
+				{ "include": "#function_calls" },
+				{ "include": "#literals" },
+				{ "include": "#types" },
+				{ "include": "#variables" },
+				{ "include": "#punctuation" },
+				{ "include": "#reserved_words" },
+				{ "include": "#address_spaces" },
+				{ "include": "#memory_access_modes" },
+				{ "include": "#operators" },
+				{ "include": "#built-in_value_names" }
+			]
+		},
 		"functions": {
 			"patterns": [
 				{
@@ -45,39 +63,24 @@
 					},
 					"end": "\\{",
 					"endCaptures": { "0": { "name": "punctuation.brackets.curly.wgsl" } },
-					"patterns": [
-						{ "include": "#line_ending_comments" },
-						{ "include": "#keywords" },
-						{ "include": "#function_calls" },
-						{ "include": "#literals" },
-						{ "include": "#types" },
-						{ "include": "#variables" },
-						{ "include": "#punctuation" }
-					]
+					"patterns": [ { "include": "#function_arguments" } ]
 				}
 			]
 		},
 		"function_calls": {
 			"patterns": [
 				{
-					"comment": "function calls",
+					"comment": "function/method calls with best effort generics",
 					"name": "meta.function.wgsl",
-					"begin": "(?<!@)\\b([_$[:alpha:]][_$[:alnum:]]*)\\s*(\\()",
+					"begin": "([_$[:alpha:]][_$[:alnum:]]*)\\s*(<[^|&()]+>)?(\\()",
 					"beginCaptures": {
-						"0": { "name": "entity.name.function.wgsl" },
-						"1": { "name": "punctuation.brackets.round.wgsl" }
+						"1": { "name": "entity.name.function.wgsl" },
+						"2": { "patterns": [ { "include": "#function_arguments" } ] },
+						"3": { "name": "punctuation.brackets.round.wgsl" }
 					},
 					"end": "\\)",
 					"endCaptures": { "0": { "name": "punctuation.brackets.round.wgsl" } },
-					"patterns": [
-						{ "include": "#line_ending_comments" },
-						{ "include": "#keywords" },
-						{ "include": "#function_calls" },
-						{ "include": "#literals" },
-						{ "include": "#types" },
-						{ "include": "#variables" },
-						{ "include": "#punctuation" }
-					]
+					"patterns": [ { "include": "#function_arguments" } ]
 				}
 			]
 		},
@@ -150,7 +153,7 @@
 				{
 					"comment": "Custom type",
 					"name": "entity.name.type.wgsl",
-					"match": "\\b([A-Z][A-Za-z0-9]*)\\b"
+					"match": "\\b([A-Z][_$[:alnum:]]*)\\b"
 				},
 				{
 					"comment": "naga extension types",
@@ -335,6 +338,11 @@
 					"comment": "dashrocket, skinny arrow",
 					"name": "keyword.operator.arrow.skinny.wgsl",
 					"match": "->"
+				},
+				{
+					"comment": "colon",
+					"name": "keyword.operator.type.annotation.wgsl",
+					"match": ":"
 				}
 			]
 		},
@@ -353,10 +361,18 @@
 			"name": "storage.modifier.memory_access_modes.wgsl",
 			"match": "\\b(read|write|read_write)\\b"
 		},
-		"attribute_names": {
+		"attributes": {
 			"comment": "https://www.w3.org/TR/WGSL/#attribute-names",
-			"name": "entity.other.attribute-names.wgsl",
-			"match": "\\b(align|binding|builtin|compute|const|diagnostic|fragment|group|id|interpolate|invariant|location|blend_src|must_use|size|vertex|workgroup_size)\\b"
+			"patterns": [
+				{
+					"comment": "attribute",
+					"match": "(@)\\s*([_$[:alpha:]][_$[:alnum:]]*)\\b",
+					"captures": {
+						"1": { "name": "punctuation.attribute.wgsl" },
+						"2": { "name": "entity.other.attribute.wgsl" }
+					}
+				}
+			]
 		},
 		"built-in_value_names": {
 			"comment": "built-ins: https://www.w3.org/TR/WGSL/#builtin-value-names",
