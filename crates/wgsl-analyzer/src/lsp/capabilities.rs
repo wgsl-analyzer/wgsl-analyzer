@@ -22,13 +22,30 @@ use crate::{
     lsp::{extensions, semantic_tokens},
 };
 
+/// # Panics
+///
+/// Panics if the internally-defined array of characters is empty.
 #[must_use]
 pub fn server_capabilities(config: &Config) -> ServerCapabilities {
     ServerCapabilities {
-        text_document_sync: Some(TextDocumentSyncCapability::Kind(
-            TextDocumentSyncKind::INCREMENTAL,
+        position_encoding: match config.capabilities().negotiated_encoding() {
+            PositionEncoding::Utf8 => Some(PositionEncodingKind::UTF8),
+            PositionEncoding::Wide(wide) => match wide {
+                WideEncoding::Utf16 => Some(PositionEncodingKind::UTF16),
+                WideEncoding::Utf32 => Some(PositionEncodingKind::UTF32),
+                _ => None,
+            },
+        },
+        text_document_sync: Some(TextDocumentSyncCapability::Options(
+            TextDocumentSyncOptions {
+                open_close: Some(true),
+                change: Some(TextDocumentSyncKind::INCREMENTAL),
+                will_save: None,
+                will_save_wait_until: None,
+                save: Some(SaveOptions::default().into()),
+            },
         )),
-        definition_provider: Some(OneOf::Left(true)),
+        hover_provider: Some(HoverProviderCapability::Simple(true)),
         completion_provider: Some(CompletionOptions {
             completion_item: None,
             resolve_provider: None,
@@ -38,23 +55,97 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
                 work_done_progress: None,
             },
         }),
+        declaration_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/339
+        definition_provider: Some(OneOf::Left(true)),
+        type_definition_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/340
+        implementation_provider: None,  // WGSL does not have "implementations"
+        references_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/347
+        document_highlight_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/348
+        document_symbol_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/349
+        workspace_symbol_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/350
+        code_action_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/351
+        code_lens_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/352
         document_formatting_provider: Some(OneOf::Left(true)),
-        hover_provider: Some(HoverProviderCapability::Simple(true)),
-        // rename_provider: Some(OneOf::Left(true)),
-        // definition_provider: Some(OneOf::Left(true)),
-        inlay_hint_provider: Some(OneOf::Left(true)),
-        experimental: Some(json!({ "inlayHints": true })),
+        document_range_formatting_provider: match config.wgslfmt(None) {
+            WgslfmtConfig::Wgslfmt {
+                enable_range_formatting: true,
+                ..
+            } => Some(OneOf::Left(true)),
+            WgslfmtConfig::CustomCommand { .. } | WgslfmtConfig::Wgslfmt { .. } => {
+                Some(OneOf::Left(false))
+            },
+        },
+        document_on_type_formatting_provider: Some({
+            let mut characters = ide::Analysis::SUPPORTED_TRIGGER_CHARS.iter();
+            DocumentOnTypeFormattingOptions {
+                first_trigger_character: characters.next().unwrap().to_string(),
+                more_trigger_character: Some(characters.map(ToString::to_string).collect()),
+            }
+        }),
+        selection_range_provider: Some(SelectionRangeProviderCapability::Simple(true)),
+        folding_range_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/345
+        rename_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/346
+        linked_editing_range_provider: None, // Not relevant
+        document_link_provider: None, // Not relevant
+        color_provider: None,  // Not relevant
+        execute_command_provider: None, // Not relevant
+        workspace: Some(WorkspaceServerCapabilities {
+            workspace_folders: Some(WorkspaceFoldersServerCapabilities {
+                supported: Some(true),
+                change_notifications: Some(OneOf::Left(true)),
+            }),
+            file_operations: Some(WorkspaceFileOperationsServerCapabilities {
+                did_create: None,
+                will_create: None,
+                did_rename: None,
+                will_rename: Some(FileOperationRegistrationOptions {
+                    filters: vec![
+                        FileOperationFilter {
+                            scheme: Some(String::from("file")),
+                            pattern: FileOperationPattern {
+                                glob: String::from("**/*.{wesl,wgsl}"),
+                                matches: Some(FileOperationPatternKind::File),
+                                options: None,
+                            },
+                        },
+                        FileOperationFilter {
+                            scheme: Some(String::from("file")),
+                            pattern: FileOperationPattern {
+                                glob: String::from("**"),
+                                matches: Some(FileOperationPatternKind::Folder),
+                                options: None,
+                            },
+                        },
+                    ],
+                }),
+                did_delete: None,
+                will_delete: None,
+            }),
+        }),
+        call_hierarchy_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/343
+        semantic_tokens_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/342
+        moniker_provider: None,         // Not relevant
+        inlay_hint_provider: Some(OneOf::Right(InlayHintServerCapabilities::Options(
+            InlayHintOptions {
+                work_done_progress_options: WorkDoneProgressOptions::default(),
+                resolve_provider: Some(config.capabilities().inlay_hints_resolve_provider()),
+            },
+        ))),
+        inline_value_provider: None, // Not relevant
+        experimental: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/344
         diagnostic_provider: Some(lsp_types::DiagnosticServerCapabilities::Options(
-            DiagnosticOptions {
-                identifier: None,
-                inter_file_dependencies: false,
+            lsp_types::DiagnosticOptions {
+                identifier: Some("wgsl-analyzer".to_owned()),
+                inter_file_dependencies: true,
+                // FIXME
                 workspace_diagnostics: false,
                 work_done_progress_options: WorkDoneProgressOptions {
-                    work_done_progress: Some(false),
+                    work_done_progress: None,
                 },
             },
         )),
-        ..Default::default()
+        inline_completion_provider: None, // Not relevant
+        signature_help_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/341
     }
 }
 

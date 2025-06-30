@@ -414,7 +414,7 @@ impl GlobalStateSnapshot {
         let result = LineIndex {
             index,
             endings,
-            encoding: self.config.caps().negotiated_encoding(),
+            encoding: self.config.capabilities().negotiated_encoding(),
         };
         Ok(result)
     }

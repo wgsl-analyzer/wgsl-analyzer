@@ -88,6 +88,9 @@ pub struct Config {
     validation_errors: ConfigErrors,
 
     detached_files: Vec<AbsPathBuf>,
+    wgslfmt_override_command: Option<Vec<String>>,
+    wgslfmt_extra_args: Vec<String>,
+    wgslfmt_range_formatting_enable: bool,
 }
 
 impl Config {
@@ -266,6 +269,9 @@ impl Config {
             detached_files: Vec::default(),
             validation_errors: ConfigErrors::default(),
             // watoml_file: Default::default(),
+            wgslfmt_override_command: None,
+            wgslfmt_extra_args: vec![],
+            wgslfmt_range_formatting_enable: false,
         }
     }
 
@@ -297,7 +303,7 @@ impl Config {
     }
 
     #[must_use]
-    pub const fn caps(&self) -> &ClientCapabilities {
+    pub const fn capabilities(&self) -> &ClientCapabilities {
         &self.capabilities
     }
 
@@ -436,6 +442,24 @@ impl Config {
     #[must_use]
     pub const fn completion_hide_deprecated(&self) -> bool {
         false
+    }
+
+    #[must_use]
+    pub fn wgslfmt(
+        &self,
+        source_root_id: Option<SourceRootId>,
+    ) -> WgslfmtConfig {
+        match &self.wgslfmt_override_command {
+            Some(arguments) if !arguments.is_empty() => {
+                let mut arguments = arguments.clone();
+                let command = arguments.remove(0);
+                WgslfmtConfig::CustomCommand { command, arguments }
+            },
+            Some(_) | None => WgslfmtConfig::Wgslfmt {
+                extra_arguments: self.wgslfmt_extra_args.clone(),
+                enable_range_formatting: self.wgslfmt_range_formatting_enable,
+            },
+        }
     }
 
     #[must_use]
