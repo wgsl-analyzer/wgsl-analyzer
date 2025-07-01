@@ -4,13 +4,20 @@
 	"patterns": [
 		{ "include": "#line_ending_comments" },
 		{ "include": "#block_comments" },
-		{ "include": "#keywords" },
 		{ "include": "#functions" },
+		{ "include": "#keywords" },
 		{ "include": "#function_calls" },
-		{ "include": "#constants" },
+		{ "include": "#literals" },
 		{ "include": "#types" },
 		{ "include": "#variables" },
-		{ "include": "#punctuation" }
+		{ "include": "#punctuation" },
+		{ "include": "#reserved_words" },
+		{ "include": "#address_spaces" },
+		{ "include": "#memory_access_modes" },
+		{ "include": "#attribute_names" },
+		{ "include": "#operators" },
+		{ "include": "#built-in_value_names" },
+		{ "include": "#bevy_preprocessor_directives" }
 	],
 	"repository": {
 		"line_ending_comments": {
@@ -30,10 +37,10 @@
 				{
 					"comment": "function definition",
 					"name": "meta.function.definition.wgsl",
-					"begin": "\\b(fn)\\s+([A-Za-z0-9_]+)((\\()|(<))",
+					"begin": "\\b(fn)\\s+([_$[:alpha:]][_$[:alnum:]]*)\\s*((\\()|(<))",
 					"beginCaptures": {
-						"1": { "name": "keyword.other.fn.wgsl" },
-						"2": { "name": "entity.name.function.wgsl" },
+						"1": { "name": "keyword.fn.wgsl" },
+						"2": { "name": "entity.name.function.definition.wgsl" },
 						"4": { "name": "punctuation.brackets.round.wgsl" }
 					},
 					"end": "\\{",
@@ -42,7 +49,7 @@
 						{ "include": "#line_ending_comments" },
 						{ "include": "#keywords" },
 						{ "include": "#function_calls" },
-						{ "include": "#constants" },
+						{ "include": "#literals" },
 						{ "include": "#types" },
 						{ "include": "#variables" },
 						{ "include": "#punctuation" }
@@ -53,12 +60,12 @@
 		"function_calls": {
 			"patterns": [
 				{
-					"comment": "function/method calls",
-					"name": "meta.function.call.wgsl",
-					"begin": "([A-Za-z0-9_]+)(\\()",
+					"comment": "function calls",
+					"name": "meta.function.wgsl",
+					"begin": "(?<!@)\\b([_$[:alpha:]][_$[:alnum:]]*)\\s*(\\()",
 					"beginCaptures": {
-						"1": { "name": "entity.name.function.wgsl" },
-						"2": { "name": "punctuation.brackets.round.wgsl" }
+						"0": { "name": "entity.name.function.wgsl" },
+						"1": { "name": "punctuation.brackets.round.wgsl" }
 					},
 					"end": "\\)",
 					"endCaptures": { "0": { "name": "punctuation.brackets.round.wgsl" } },
@@ -66,7 +73,7 @@
 						{ "include": "#line_ending_comments" },
 						{ "include": "#keywords" },
 						{ "include": "#function_calls" },
-						{ "include": "#constants" },
+						{ "include": "#literals" },
 						{ "include": "#types" },
 						{ "include": "#variables" },
 						{ "include": "#punctuation" }
@@ -74,49 +81,62 @@
 				}
 			]
 		},
-		"constants": {
+		"literals": {
 			"patterns": [
 				{
-					"comment": "decimal float literal",
-					"name": "constant.numeric.float.wgsl",
-					"match": "(-?\\b[0-9][0-9]*\\.[0-9][0-9]*)([eE][+-]?[0-9]+)?\\b"
+					"comment": "decimal_int_literal: https://www.w3.org/TR/WGSL/#syntax-decimal_int_literal",
+					"name": "constant.numeric.decimal.int.wgsl",
+					"match": "\\b(0[iu]?|[1-9][0-9]*[iu]?)\\b"
 				},
 				{
-					"comment": "int literal",
-					"name": "constant.numeric.decimal.wgsl",
-					"match": "-?\\b0x[0-9a-fA-F]+\\b|\\b0\\b|-?\\b[1-9][0-9]*\\b"
+					"comment": "hex_int_literal: https://www.w3.org/TR/WGSL/#syntax-hex_int_literal",
+					"name": "constant.numeric.hex.int.wgsl",
+					"match": "\\b(0[xX][0-9a-fA-F]+[iu]?)\\b"
 				},
 				{
-					"comment": "uint literal",
-					"name": "constant.numeric.decimal.wgsl",
-					"match": "\\b0x[0-9a-fA-F]+u\\b|\\b0u\\b|\\b[1-9][0-9]*u\\b"
+					"comment": "decimal_float_literal: https://www.w3.org/TR/WGSL/#syntax-decimal_float_literal",
+					"name": "constant.numeric.decimal.float.wgsl",
+					"match": "\\b(0[fh]|[1-9][0-9]*[fh]|[0-9]*\\.[0-9]+([eE][+-]?[0-9]+)?[fh]?|[0-9]+\\.[0-9]*([eE][+-]?[0-9]+)?[fh]?|[0-9]+[eE][+-]?[0-9]+[fh]?)\\b"
 				},
 				{
-					"comment": "boolean constant",
+					"comment": "hex_float_literal: https://www.w3.org/TR/WGSL/#syntax-hex_float_literal",
+					"name": "constant.numeric.hex.float.wgsl",
+					"match": "\\b(0[xX][0-9a-fA-F]*\\.[0-9a-fA-F]+([pP][+-]?[0-9]+[fh]?)?|0[xX][0-9a-fA-F]+\\.[0-9a-fA-F]*([pP][+-]?[0-9]+[fh]?)?|0[xX][0-9a-fA-F]+[pP][+-]?[0-9]+[fh]?)\\b"
+				},
+				{
+					"comment": "bool_literal: https://www.w3.org/TR/WGSL/#syntax-bool_literal",
 					"name": "constant.language.boolean.wgsl",
 					"match": "\\b(true|false)\\b"
 				}
 			]
 		},
 		"types": {
-			"comment": "types",
-			"name": "storage.type.wgsl",
+			"patterns": [
+				{ "include": "#plain_types" },
+				{ "include": "#memory_views" },
+				{ "include": "#texture_and_sampler_types" }
+			]
+		},
+		"plain_types": {
+			"comment": "types: https://www.w3.org/TR/WGSL/#types",
 			"patterns": [
 				{
-					"comment": "scalar Types",
-					"name": "storage.type.wgsl",
-					"match": "\\b(bool|i32|u32|f32)\\b"
+					"comment": "boolean type",
+					"name": "storage.type.boolean.wgsl",
+					"match": "\\b(bool)\\b"
 				},
 				{
-					"comment": "reserved scalar Types",
-					"name": "storage.type.wgsl",
-					"match": "\\b(i64|u64|f64)\\b"
+					"comment": "integer type",
+					"name": "storage.type.integer.wgsl",
+					"match": "\\b(i32|u32)\\b"
 				},
 				{
-					"comment": "vector/matrix types",
-					"name": "storage.type.wgsl",
-					"match": "\\b(vec[2-4]|mat[2-4]x[2-4])\\b"
+					"comment": "floating point types",
+					"name": "storage.type.floating-point.wgsl",
+					"match": "\\b(f32|f16)\\b"
 				},
+				{ "include": "#vector_types" },
+				{ "include": "#matrix_types" },
 				{
 					"comment": "atomic types",
 					"name": "storage.type.wgsl",
@@ -131,6 +151,78 @@
 					"comment": "Custom type",
 					"name": "entity.name.type.wgsl",
 					"match": "\\b([A-Z][A-Za-z0-9]*)\\b"
+				},
+				{
+					"comment": "naga extension types",
+					"name": "storage.type.wgsl",
+					"match": "\\b(i64|u64|f64)\\b"
+				}
+			]
+		},
+		"vector_types": {
+			"patterns": [
+				{
+					"comment": "vector types: https://www.w3.org/TR/WGSL/#vector-types",
+					"name": "storage.type.vectors.wgsl",
+					"match": "\\b(vec)([2-4])\\b"
+				},
+				{
+					"comment": "vector type aliases: https://www.w3.org/TR/WGSL/#vector-types",
+					"name": "storage.type.vectors.wgsl",
+					"match": "\\b(vec)([2-4])(i|u|f|h)\\b"
+				}
+			]
+		},
+		"matrix_types": {
+			"patterns": [
+				{
+					"comment": "matrix types: https://www.w3.org/TR/WGSL/#matrix-types",
+					"name": "storage.type.matrixes.wgsl",
+					"match": "\\b(mat[2-4]x[2-4])\\b"
+				},
+				{
+					"comment": "matrix type aliases: https://www.w3.org/TR/WGSL/#matrix-types",
+					"name": "storage.type.matrixes.wgsl",
+					"match": "\\b(mat[2-4]x[2-4])(f|h)\\b"
+				}
+			]
+		},
+		"memory_views": {
+			"comment": "pointer types",
+			"name": "storage.type.ptr.wgsl",
+			"match": "\\b(ptr)\\b"
+		},
+		"texture_and_sampler_types": {
+			"patterns": [
+				{
+					"comment": "sampled texture types",
+					"name": "storage.type.sampled-texture.wgsl",
+					"match": "\\b(texture_1d|texture_2d|texture_2d_array|texture_3d|texture_cube|texture_cube_array)\\b"
+				},
+				{
+					"comment": "multisampled texture types",
+					"name": "storage.type.sampled-texture.wgsl",
+					"match": "\\b(texture_multisampled_2d|texture_depth_multisampled_2d)\\b"
+				},
+				{
+					"comment": "external sampled texture types",
+					"name": "storage.type.external-sampled-texture.wgsl",
+					"match": "\\b(texture_external)\\b"
+				},
+				{
+					"comment": "storage texture types",
+					"name": "storage.type.external-sampled-texture.wgsl",
+					"match": "\\b(texture_storage_1d|texture_storage_2d|texture_storage_2d_array|texture_storage_3d)\\b"
+				},
+				{
+					"comment": "depth texture types",
+					"name": "storage.type.depth-texture.wgsl",
+					"match": "\\b(texture_depth_2d|texture_depth_2d_array|texture_depth_cube|texture_depth_cube_array)\\b"
+				},
+				{
+					"comment": "sampler types",
+					"name": "storage.type.sampler.wgsl",
+					"match": "\\b(sampler|sampler_comparison)\\b"
 				}
 			]
 		},
@@ -139,7 +231,7 @@
 				{
 					"comment": "variables",
 					"name": "variable.other.wgsl",
-					"match": "\\b(?<!(?<!\\.)\\.)(?:r#(?!(crate|[Ss]elf|super)))?[a-z0-9_]+\\b"
+					"match": "\\b([_$[:alpha:]][_$[:alnum:]]*)\\b"
 				}
 			]
 		},
@@ -178,50 +270,40 @@
 			]
 		},
 		"keywords": {
+			"comment": "https://www.w3.org/TR/WGSL/#keyword-summary",
 			"patterns": [
 				{
-					"comment": "other keywords",
+					"comment": "declaration and type keywords: https://www.w3.org/TR/WGSL/#declaration-and-scope, https://www.w3.org/TR/WGSL/#types",
+					"name": "keyword.other.declarations-and-types.wgsl",
+					"match": "\\b(alias|const|fn|let|override|struct|var)\\b"
+				},
+				{
+					"comment": "control-flow keywords: https://www.w3.org/TR/WGSL/#control-flow",
 					"name": "keyword.control.wgsl",
-					"match": "\\b(bitcast|block|break|case|continue|continuing|default|discard|else|elseif|enable|fallthrough|for|function|if|loop|override|private|read|read_write|return|storage|switch|uniform|while|workgroup|write)\\b"
+					"match": "\\b(break|case|continue|continuing|default|discard|(?<!#)else|for|if|loop|return|switch|while)\\b"
 				},
 				{
-					"comment": "reserved keywords",
-					"name": "keyword.control.wgsl",
-					"match": "\\b(asm|const|do|enum|handle|mat|premerge|regardless|typedef|unless|using|vec|void)\\b"
+					"comment": "assertion keywords: https://www.w3.org/TR/WGSL/#assertions",
+					"name": "keyword.other.assertions.wgsl",
+					"match": "\\b(const_assert)\\b"
 				},
 				{
-					"comment": "storage keywords",
-					"name": "keyword.other.wgsl storage.type.wgsl",
-					"match": "\\b(let|var)\\b"
-				},
-				{
-					"comment": "type keyword",
-					"name": "keyword.declaration.type.wgsl storage.type.wgsl",
-					"match": "\\b(type)\\b"
-				},
-				{
-					"comment": "enum keyword",
-					"name": "keyword.declaration.enum.wgsl storage.type.wgsl",
-					"match": "\\b(enum)\\b"
-				},
-				{
-					"comment": "struct keyword",
-					"name": "keyword.declaration.struct.wgsl storage.type.wgsl",
-					"match": "\\b(struct)\\b"
-				},
-				{
-					"comment": "fn",
-					"name": "keyword.other.fn.wgsl",
-					"match": "\\bfn\\b"
-				},
+					"comment": "directive keywords: https://www.w3.org/TR/WGSL/#directives",
+					"name": "keyword.other.directive.wgsl",
+					"match": "(?<!@)\\b(diagnostic|enable|requires)\\b"
+				}
+			]
+		},
+		"operators": {
+			"patterns": [
 				{
 					"comment": "logical operators",
 					"name": "keyword.operator.logical.wgsl",
 					"match": "(\\^|\\||\\|\\||&&|<<|>>|!)(?!=)"
 				},
 				{
-					"comment": "logical AND, borrow references",
-					"name": "keyword.operator.borrow.and.wgsl",
+					"comment": "logical AND, address-of",
+					"name": "keyword.operator.address-of.and.wgsl",
 					"match": "&(?![&=])"
 				},
 				{
@@ -255,6 +337,36 @@
 					"match": "->"
 				}
 			]
+		},
+		"reserved_words": {
+			"comment": "https://www.w3.org/TR/WGSL/#reserved-words",
+			"name": "keyword.other.reserved_words.wgsl",
+			"match": "\\b(aNULL|Self|abstract|active|alignas|alignof|as|asm|asm_fragment|async|attribute|auto|await|become|cast|catch|class|co_await|co_return|co_yield|coherent|column_major|common|compile|compile_fragment|concept|const_cast|consteval|constexpr|constinit|crate|debugger|decltype|delete|demote|demote_to_helper|do|dynamic_cast|enum|explicit|export|extends|extern|external|fallthrough|filter|final|finally|friend|from|fxgroup|get|goto|groupshared|highp|impl|implements|import|inline|instanceof|interface|layout|lowp|macro|macro_rules|match|mediump|meta|mod|module|move|mut|mutable|namespace|new|nil|noexcept|noinline|nointerpolation|non_coherent|noncoherent|noperspective|null|nullptr|of|operator|package|packoffset|partition|pass|patch|pixelfragment|precise|precision|premerge|priv|protected|pub|public|readonly|ref|regardless|register|reinterpret_cast|require|resource|restrict|self|set|shared|sizeof|smooth|snorm|static|static_assert|static_cast|std|subroutine|super|target|template|this|thread_local|throw|trait|try|type|typedef|typeid|typename|typeof|union|unless|unorm|unsafe|unsized|use|using|varying|virtual|volatile|wgsl|where|with|writeonly|yield)\\b"
+		},
+		"address_spaces": {
+			"comment": "https://www.w3.org/TR/WGSL/#address-spaces",
+			"name": "storage.modifier.address_spaces.wgsl",
+			"match": "\\b(function|private|workgroup|uniform|storage|handle)\\b"
+		},
+		"memory_access_modes": {
+			"comment": "https://www.w3.org/TR/WGSL/#memory-access-mode",
+			"name": "storage.modifier.memory_access_modes.wgsl",
+			"match": "\\b(read|write|read_write)\\b"
+		},
+		"attribute_names": {
+			"comment": "https://www.w3.org/TR/WGSL/#attribute-names",
+			"name": "entity.other.attribute-names.wgsl",
+			"match": "\\b(align|binding|builtin|compute|const|diagnostic|fragment|group|id|interpolate|invariant|location|blend_src|must_use|size|vertex|workgroup_size)\\b"
+		},
+		"built-in_value_names": {
+			"comment": "built-ins: https://www.w3.org/TR/WGSL/#builtin-value-names",
+			"name": "variable.language.built-ins.wgsl",
+			"match": "\\b(vertex_index|instance_index|position|front_facing|frag_depth|sample_index|sample_mask|local_invocation_id|local_invocation_index|global_invocation_id|workgroup_id|num_workgroups|subgroup_invocation_id|subgroup_size)\\b"
+		},
+		"bevy_preprocessor_directives": {
+			"comment": "bevy preprocessor directives",
+			"name": "invalid.deprecated.wgsl",
+			"match": "^#(ifdef|else|endif|import|define_import_path)\\b"
 		}
 	}
 }
