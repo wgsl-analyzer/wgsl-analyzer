@@ -166,7 +166,7 @@ url = "2.5.4"
 xshell = "0.2.7"
 lexopt = "0.3.0"
 prettydiff = "0.8.1"
-notify = "8.0.0"
+notify = "8.1.0"
 proptest = "1.7.0"
 
 # We need to freeze the version of the crate because the raw-api feature is considered unstable
