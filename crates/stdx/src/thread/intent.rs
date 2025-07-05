@@ -1,4 +1,4 @@
-//! An opaque façade around platform-specific `QoS` APIs.
+//! An wrapper around platform-specific Quality of Service APIs.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 // Please maintain order from least to most priority for the derived `Ord` impl.
@@ -48,7 +48,7 @@ fn thread_intent_to_qos_class(intent: ThreadIntent) -> QoSClass {
 }
 
 // All Apple platforms use XNU as their kernel
-// and thus have the concept of QoS.
+// and thus have the concept of [QoS](https://developer.apple.com/library/archive/documentation/Performance/Conceptual/EnergyGuide-iOS/PrioritizeWorkWithQoS.html).
 #[cfg(target_vendor = "apple")]
 mod imp {
     use super::ThreadIntent;
@@ -172,14 +172,15 @@ mod imp {
     pub(super) const IS_QOS_AVAILABLE: bool = true;
 
     pub(super) fn set_current_thread_qos_class(class: QoSClass) {
-        let c = match class {
+        let class = match class {
             QoSClass::UserInteractive => libc::qos_class_t::QOS_CLASS_USER_INTERACTIVE,
             QoSClass::UserInitiated => libc::qos_class_t::QOS_CLASS_USER_INITIATED,
             QoSClass::Utility => libc::qos_class_t::QOS_CLASS_UTILITY,
             QoSClass::Background => libc::qos_class_t::QOS_CLASS_BACKGROUND,
         };
 
-        let code = unsafe { libc::pthread_set_qos_class_self_np(c, 0) };
+        // SAFETY: Undocumented
+        let code = unsafe { libc::pthread_set_qos_class_self_np(class, 0) };
 
         if code == 0 {
             return;
@@ -264,7 +265,7 @@ mod imp {
     }
 }
 
-// FIXME: Windows has QoS APIs, we should use them!
+// FIXME: Windows has [QoS APIs](https://learn.microsoft.com/en-us/windows/win32/procthread/quality-of-service), we should use them!
 #[cfg(not(target_vendor = "apple"))]
 #[expect(
     clippy::missing_const_for_fn,
