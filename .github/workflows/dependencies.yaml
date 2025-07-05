@@ -39,8 +39,8 @@ jobs:
         with:
           filters: |
             toml:
-              - **/Cargo.toml
-              - deny.toml
+              - '**/Cargo.toml'
+              - 'deny.toml'
 
   deny:
     needs: changes
