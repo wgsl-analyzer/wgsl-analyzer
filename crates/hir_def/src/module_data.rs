@@ -138,7 +138,7 @@ pub struct Import {
     pub ast_id: FileAstId<ast::Import>,
 }
 
-// PERF: maybe intern string
+// PERFORMANCE: maybe intern string
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ImportValue {
     Path(String),

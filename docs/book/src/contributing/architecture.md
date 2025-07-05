@@ -330,7 +330,6 @@ Generated code is generally committed to the git repository.
 
 In particular, we generate:
 
-- API for working with syntax trees (`syntax::ast`, the [`ungrammar`](https://github.com/rust-analyzer/ungrammar) crate).
 - Various sections of the manual:
 
   - features

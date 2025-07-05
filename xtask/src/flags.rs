@@ -2,12 +2,30 @@ use std::{fmt, str::FromStr};
 
 use crate::install::{ClientOptions, ServerOptions};
 
+#[derive(Debug, Clone)]
+pub enum PgoTrainingCrate {
+    // Use WA's own sources for PGO training
+    WgslAnalyzer,
+    // Download a WGSL/WESL package from `https://github.com/{0}` and use it for PGO training.
+    GitHub(String),
+}
+
+impl FromStr for PgoTrainingCrate {
+    type Err = String;
+
+    fn from_str(shell: &str) -> Result<Self, Self::Err> {
+        match shell {
+            "wgsl-analyzer" => Ok(Self::WgslAnalyzer),
+            url => Ok(Self::GitHub(url.to_owned())),
+        }
+    }
+}
+
 xflags::xflags! {
     src "./src/flags.rs"
 
     /// Run custom build command.
     cmd xtask {
-
         /// Install wgsl-analyzer server or editor plugin.
         cmd install {
             /// Install only VS Code plugin.
@@ -24,6 +42,9 @@ xflags::xflags! {
 
             /// build in release with debug info set to 2.
             optional --dev-rel
+
+            /// Apply PGO optimizations
+            optional --pgo pgo: PgoTrainingCrate
         }
 
         cmd fuzz-tests {}
@@ -40,7 +61,10 @@ xflags::xflags! {
             optional --client-patch-version version: String
             /// Use cargo-zigbuild
             optional --zig
+            /// Apply PGO optimizations
+            optional --pgo pgo: PgoTrainingCrate
         }
+
         /// Read a changelog AsciiDoc file and update the GitHub Releases entry in Markdown.
         cmd publish-release-notes {
             /// Only run conversion and show the result.
@@ -48,18 +72,16 @@ xflags::xflags! {
             /// Target changelog file.
             required changelog: String
         }
-        // cmd metrics {
-        //     optional measurement_type: MeasurementType
-        // }
-        /// Builds a benchmark version of wgsl-analyzer and puts it into `./target`.
+
+        /// Builds a benchmark version of rust-analyzer and puts it into `./target`.
         cmd bb {
             required suffix: String
         }
 
-        // cmd codegen {
-        //     optional codegen_type: CodegenType
-        //     optional --check
-        // }
+        cmd codegen {
+            optional codegen_type: CodegenType
+            optional --check
+        }
 
         cmd tidy {}
     }
@@ -80,14 +102,10 @@ pub enum XtaskCmd {
     Release(Release),
     Dist(Dist),
     PublishReleaseNotes(PublishReleaseNotes),
-    // Metrics(Metrics),
     Bb(Bb),
-    // Codegen(Codegen),
+    Codegen(Codegen),
     Tidy(Tidy),
 }
-
-#[derive(Debug)]
-pub struct Tidy;
 
 #[derive(Debug)]
 pub struct Install {
@@ -97,6 +115,7 @@ pub struct Install {
     pub mimalloc: bool,
     pub jemalloc: bool,
     pub dev_rel: bool,
+    pub pgo: Option<PgoTrainingCrate>,
 }
 
 #[derive(Debug)]
@@ -108,23 +127,12 @@ pub struct Release {
 }
 
 #[derive(Debug)]
-pub struct RustcPull {
-    pub commit: Option<String>,
-}
-
-#[derive(Debug)]
-pub struct RustcPush {
-    pub rust_path: String,
-    pub rust_fork: String,
-    pub branch: Option<String>,
-}
-
-#[derive(Debug)]
 pub struct Dist {
     pub mimalloc: bool,
     pub jemalloc: bool,
     pub client_patch_version: Option<String>,
     pub zig: bool,
+    pub pgo: Option<PgoTrainingCrate>,
 }
 
 #[derive(Debug)]
@@ -132,11 +140,6 @@ pub struct PublishReleaseNotes {
     pub changelog: String,
 
     pub dry_run: bool,
-}
-
-#[derive(Debug)]
-pub struct Metrics {
-    pub measurement_type: Option<MeasurementType>,
 }
 
 #[derive(Debug)]
@@ -150,6 +153,9 @@ pub struct Codegen {
 
     pub check: bool,
 }
+
+#[derive(Debug)]
+pub struct Tidy;
 
 impl Xtask {
     pub fn from_env_or_exit() -> Self {
@@ -170,7 +176,6 @@ impl Xtask {
 pub enum CodegenType {
     #[default]
     All,
-    Grammar,
     AssistsDocTests,
     DiagnosticsDocs,
     LintDefinitions,
@@ -185,7 +190,6 @@ impl fmt::Display for CodegenType {
     ) -> fmt::Result {
         match self {
             Self::All => write!(f, "all"),
-            Self::Grammar => write!(f, "grammar"),
             Self::AssistsDocTests => write!(f, "assists-doc-tests"),
             Self::DiagnosticsDocs => write!(f, "diagnostics-docs"),
             Self::LintDefinitions => write!(f, "lint-definitions"),
@@ -197,11 +201,9 @@ impl fmt::Display for CodegenType {
 
 impl FromStr for CodegenType {
     type Err = String;
-    #[expect(clippy::min_ident_chars, reason = "trait impl")]
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+    fn from_str(string: &str) -> Result<Self, Self::Err> {
+        match string {
             "all" => Ok(Self::All),
-            "grammar" => Ok(Self::Grammar),
             "assists-doc-tests" => Ok(Self::AssistsDocTests),
             "diagnostics-docs" => Ok(Self::DiagnosticsDocs),
             "lint-definitions" => Ok(Self::LintDefinitions),
@@ -214,41 +216,26 @@ impl FromStr for CodegenType {
 
 #[derive(Debug)]
 pub enum MeasurementType {
-    Build,
-    RustcTests,
-    AnalyzeSelf,
-    AnalyzeRipgrep,
-    AnalyzeWebRender,
-    AnalyzeDiesel,
-    AnalyzeHyper,
+    WeslRsTests,
+    AnalyzeBevy,
 }
 
 impl FromStr for MeasurementType {
     type Err = String;
-    #[expect(clippy::min_ident_chars, reason = "trait impl")]
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "build" => Ok(Self::Build),
-            "rustc_tests" => Ok(Self::RustcTests),
-            "self" => Ok(Self::AnalyzeSelf),
-            "ripgrep-13.0.0" => Ok(Self::AnalyzeRipgrep),
-            "webrender-2022" => Ok(Self::AnalyzeWebRender),
-            "diesel-1.4.8" => Ok(Self::AnalyzeDiesel),
-            "hyper-0.14.18" => Ok(Self::AnalyzeHyper),
+    fn from_str(string: &str) -> Result<Self, Self::Err> {
+        match string {
+            "wesl-rs_tests" => Ok(Self::WeslRsTests),
+            "bevy-16.0.0" => Ok(Self::AnalyzeBevy),
             _ => Err("Invalid option".to_owned()),
         }
     }
 }
+
 impl AsRef<str> for MeasurementType {
     fn as_ref(&self) -> &str {
         match self {
-            Self::Build => "build",
-            Self::RustcTests => "rustc_tests",
-            Self::AnalyzeSelf => "self",
-            Self::AnalyzeRipgrep => "ripgrep-13.0.0",
-            Self::AnalyzeWebRender => "webrender-2022",
-            Self::AnalyzeDiesel => "diesel-1.4.8",
-            Self::AnalyzeHyper => "hyper-0.14.18",
+            Self::WeslRsTests => "wesl-rs_tests",
+            Self::AnalyzeBevy => "bevy-16.0.0",
         }
     }
 }
@@ -271,7 +258,7 @@ impl Malloc {
 }
 
 impl Install {
-    pub(crate) const fn server(&self) -> Option<ServerOptions> {
+    pub(crate) fn server(&self) -> Option<ServerOptions> {
         if self.client && !self.server {
             return None;
         }
@@ -285,6 +272,7 @@ impl Install {
         Some(ServerOptions {
             malloc,
             dev_rel: self.dev_rel,
+            pgo: self.pgo.clone(),
         })
     }
 

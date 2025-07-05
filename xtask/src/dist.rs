@@ -1,19 +1,19 @@
+use anyhow::Context as _;
+use flate2::{Compression, write::GzEncoder};
 use std::{
-    env,
     fs::File,
     io::{self, BufWriter},
     path::{Path, PathBuf},
 };
-
-use flate2::{Compression, write::GzEncoder};
 use time::OffsetDateTime;
-use xshell::{Shell, cmd};
+use xshell::{Cmd, Shell, cmd};
 use zip::{DateTime, ZipWriter, write::SimpleFileOptions};
 
 use crate::{
     date_iso,
-    flags::{self, Malloc},
+    flags::{self, Malloc, PgoTrainingCrate},
     project_root,
+    utilities::detect_target,
 };
 
 const VERSION_STABLE: &str = "0.9";
@@ -28,11 +28,11 @@ impl flags::Dist {
         let stable = shell.var("GITHUB_REF").unwrap_or_default().as_str() == "refs/heads/release";
 
         let project_root = project_root();
-        let target = Target::get(&project_root);
+        let target = Target::get(&project_root, shell);
         let allocator = self.allocator();
-        let distribute = project_root.join("dist");
-        shell.remove_path(&distribute)?;
-        shell.create_dir(&distribute)?;
+        let dist = project_root.join("dist");
+        shell.remove_path(&dist)?;
+        shell.create_dir(&dist)?;
 
         if let Some(patch_version) = self.client_patch_version {
             let version = if stable {
@@ -47,6 +47,7 @@ impl flags::Dist {
                 &target,
                 allocator,
                 self.zig,
+                self.pgo,
             )?;
             let release_tag = if stable {
                 date_iso(shell)?
@@ -55,7 +56,14 @@ impl flags::Dist {
             };
             dist_client(shell, &version, &release_tag, &target)?;
         } else {
-            dist_server(shell, "0.0.0-standalone", &target, allocator, self.zig)?;
+            dist_server(
+                shell,
+                "0.0.0-standalone",
+                &target,
+                allocator,
+                self.zig,
+                self.pgo,
+            )?;
         }
         Ok(())
     }
@@ -100,6 +108,7 @@ fn dist_server(
     target: &Target,
     allocator: Malloc,
     zig: bool,
+    pgo: Option<PgoTrainingCrate>,
 ) -> anyhow::Result<()> {
     let _e = shell.push_env("CFG_RELEASE", release);
     let _e = shell.push_env("CARGO_PROFILE_RELEASE_LTO", "thin");
@@ -120,20 +129,51 @@ fn dist_server(
     } else {
         "build"
     };
-    cmd!(shell, "cargo {command} --manifest-path ./crates/wgsl-analyzer/Cargo.toml --bin wgsl-analyzer --target {target_name} {features...} --release").run()?;
 
-    let destination = Path::new("dist").join(&target.artifact_name);
+    let pgo_profile = if let Some(train_crate) = pgo {
+        Some(crate::pgo::gather_pgo_profile(
+            shell,
+            crate::pgo::build_command(shell, command, &target_name, features),
+            &target_name,
+            &train_crate,
+        )?)
+    } else {
+        None
+    };
+
+    let mut cmd = build_command(shell, command, &target_name, features);
+    if let Some(profile) = pgo_profile {
+        cmd = cmd.env(
+            "RUSTFLAGS",
+            format!("-Cprofile-use={}", profile.to_str().unwrap()),
+        );
+    }
+    cmd.run().context("cannot build wgsl-analyzer")?;
+
+    let dst = Path::new("dist").join(&target.artifact_name);
     if target_name.contains("-windows-") {
         zip(
             &target.server_path,
             target.symbols_path.as_ref(),
-            &destination.with_extension("zip"),
+            &dst.with_extension("zip"),
         )?;
     } else {
-        gzip(&target.server_path, &destination.with_extension("gz"))?;
+        gzip(&target.server_path, &dst.with_extension("gz"))?;
     }
 
     Ok(())
+}
+
+fn build_command<'shell>(
+    shell: &'shell Shell,
+    command: &str,
+    target_name: &str,
+    features: &[&str],
+) -> Cmd<'shell> {
+    cmd!(
+        shell,
+        "cargo {command} --manifest-path ./crates/wgsl-analyzer/Cargo.toml --bin wgsl-analyzer --target {target_name} {features...} --release"
+    )
 }
 
 fn gzip(
@@ -148,18 +188,18 @@ fn gzip(
 }
 
 fn zip(
-    source_path: &Path,
+    src_path: &Path,
     symbols_path: Option<&PathBuf>,
-    destination_path: &Path,
+    dest_path: &Path,
 ) -> anyhow::Result<()> {
-    let file = File::create(destination_path)?;
+    let file = File::create(dest_path)?;
     let mut writer = ZipWriter::new(BufWriter::new(file));
     writer.start_file(
-        source_path.file_name().unwrap().to_str().unwrap(),
+        src_path.file_name().unwrap().to_str().unwrap(),
         SimpleFileOptions::default()
             .last_modified_time(
                 DateTime::try_from(OffsetDateTime::from(
-                    std::fs::metadata(source_path)?.modified()?,
+                    std::fs::metadata(src_path)?.modified()?,
                 ))
                 .unwrap(),
             )
@@ -167,7 +207,7 @@ fn zip(
             .compression_method(zip::CompressionMethod::Deflated)
             .compression_level(Some(9)),
     )?;
-    let mut input = io::BufReader::new(File::open(source_path)?);
+    let mut input = io::BufReader::new(File::open(src_path)?);
     io::copy(&mut input, &mut writer)?;
     if let Some(symbols_path) = symbols_path {
         writer.start_file(
@@ -175,7 +215,7 @@ fn zip(
             SimpleFileOptions::default()
                 .last_modified_time(
                     DateTime::try_from(OffsetDateTime::from(
-                        std::fs::metadata(source_path)?.modified()?,
+                        std::fs::metadata(src_path)?.modified()?,
                     ))
                     .unwrap(),
                 )
@@ -198,20 +238,13 @@ struct Target {
 }
 
 impl Target {
-    fn get(project_root: &Path) -> Self {
-        let name = env::var("WA_TARGET").unwrap_or_else(|_| {
-            if cfg!(target_os = "linux") {
-                "x86_64-unknown-linux-gnu".to_owned()
-            } else if cfg!(target_os = "windows") {
-                "x86_64-pc-windows-msvc".to_owned()
-            } else if cfg!(target_os = "macos") {
-                "x86_64-apple-darwin".to_owned()
-            } else {
-                panic!("Unsupported OS, maybe try setting WA_TARGET")
-            }
-        });
+    fn get(
+        project_root: &Path,
+        shell: &Shell,
+    ) -> Self {
+        let name = detect_target(shell);
         let (name, libc_suffix) = match name.split_once('.') {
-            Some((name, libc_suffix)) => (name.to_owned(), Some(libc_suffix.to_owned())),
+            Some((left, right)) => (left.to_owned(), Some(right.to_owned())),
             None => (name, None),
         };
         let out_path = project_root.join("target").join(&name).join("release");
@@ -244,11 +277,11 @@ struct Patch {
 
 impl Patch {
     fn new(
-        sh: &Shell,
+        shell: &Shell,
         path: impl Into<PathBuf>,
     ) -> anyhow::Result<Self> {
         let path = path.into();
-        let contents = sh.read_file(&path)?;
+        let contents = shell.read_file(&path)?;
         Ok(Self {
             path,
             original_contents: contents.clone(),
@@ -268,9 +301,9 @@ impl Patch {
 
     fn commit(
         &self,
-        sh: &Shell,
+        shell: &Shell,
     ) -> anyhow::Result<()> {
-        sh.write_file(&self.path, &self.contents)?;
+        shell.write_file(&self.path, &self.contents)?;
         Ok(())
     }
 }
@@ -278,7 +311,7 @@ impl Patch {
 impl Drop for Patch {
     fn drop(&mut self) {
         // FIXME: find a way to bring this back
-        _ = &self.original_contents;
+        let _: &str = &self.original_contents;
         // write_file(&self.path, &self.original_contents).unwrap();
     }
 }

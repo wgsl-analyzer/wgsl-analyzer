@@ -24,6 +24,7 @@ ignore-hidden = false
 "anser" = "anser"
 # lsp_types
 "typ" = "typ"
+# "perf" = "performance"
 
 # Contractions
 "don't" = "do not"

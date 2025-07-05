@@ -1,15 +1,15 @@
-name: 'wasmtime github releases'
-description: 'wasmtime github releases'
+name: GitHub release
+description: Create a GitHub release
 inputs:
   token:
-    description: ''
+    description: PAT for GitHub with release permission
     required: true
   name:
-    description: ''
+    description: Name/title of the release
     required: true
   files:
-    description: ''
+    description: Files to publish in the release
     required: true
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
+  using: docker
+  image: Dockerfile

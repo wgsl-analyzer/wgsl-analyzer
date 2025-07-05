@@ -1,5 +1,4 @@
 //! The edition of the shader language.
-//! This should live here in a separate crate because we use it in both actual code and codegen.
 
 use std::{error, fmt, str};
 

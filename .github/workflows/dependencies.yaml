@@ -1,0 +1,69 @@
+name: Dependencies
+
+on:
+  pull_request:
+  merge_group:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_NET_RETRY: 10
+  RUST_BACKTRACE: short
+  RUSTUP_MAX_RETRIES: 10
+  RUSTFLAGS: -D warnings
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      toml: ${{ steps.filter.outputs.toml }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Filter by paths
+        uses: dorny/paths-filter@v3.0.2
+        id: filter
+        with:
+          filters: |
+            toml:
+              - **/Cargo.toml
+              - deny.toml
+
+  deny:
+    needs: changes
+    if: needs.changes.outputs.toml == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install stable Rust toolchain
+        uses: dtolnay/rust-toolchain@1.88.0
+
+      - name: Install cargo-deny
+        run: cargo install cargo-deny
+
+      - name: Check for security advisories and unmaintained crates
+        run: cargo deny check advisories
+
+      - name: Check for banned and duplicated or disallowed dependencies
+        run: cargo deny check bans
+
+      - name: Check for unauthorized licenses
+        run: cargo deny check licenses
+
+      - name: Checked for unauthorized crate sources
+        run: cargo deny check sources

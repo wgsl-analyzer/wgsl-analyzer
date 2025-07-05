@@ -5,7 +5,7 @@ use anyhow::bail;
 use xshell::{Shell, cmd};
 
 pub(crate) fn get_changelog(
-    sh: &Shell,
+    shell: &Shell,
     changelog_n: usize,
     commit: &str,
     previous_tag: &str,
@@ -17,7 +17,7 @@ pub(crate) fn get_changelog(
         )
     };
 
-    let git_log = cmd!(sh, "git log {previous_tag}..HEAD --reverse").read()?;
+    let git_log = cmd!(shell, "git log {previous_tag}..HEAD --reverse").read()?;
     let mut features = String::new();
     let mut fixes = String::new();
     let mut internal = String::new();
@@ -32,7 +32,7 @@ pub(crate) fn get_changelog(
             // we do not use an HTTPS client or JSON parser to keep the build times low
             let pr = pr_num.to_string();
             let cmd = &cmd!(
-                sh,
+                shell,
                 "curl --fail -s -H {accept} -H {authorization} {pr_url}/{pr}"
             );
             let pr_json = match cmd.read() {
@@ -43,17 +43,17 @@ pub(crate) fn get_changelog(
                 },
             };
 
-            let pr_title = cmd!(sh, "jq .title").stdin(&pr_json).read()?;
+            let pr_title = cmd!(shell, "jq .title").stdin(&pr_json).read()?;
             let pr_title = unescape(&pr_title[1..pr_title.len() - 1]);
-            let pr_comment = cmd!(sh, "jq .body").stdin(pr_json).read()?;
+            let pr_comment = cmd!(shell, "jq .body").stdin(pr_json).read()?;
 
             let cmd = &cmd!(
-                sh,
+                shell,
                 "curl --fail -s -H {accept} -H {authorization} {pr_url}/{pr}/comments"
             );
             let pr_info = match cmd.read() {
                 Ok(comments_json) => {
-                    let pr_comments = cmd!(sh, "jq .[].body").stdin(comments_json).read()?;
+                    let pr_comments = cmd!(shell, "jq .[].body").stdin(comments_json).read()?;
 
                     iter::once(pr_comment.as_str())
                         .chain(pr_comments.lines())

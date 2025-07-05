@@ -53,94 +53,61 @@ xflags::xflags! {
             optional --rainbow
         }
 
-        /// Batch typecheck project and print summary statistics
-        cmd analysis-stats {
-            /// Directory with Cargo.toml.
-            required path: PathBuf
-
-            optional --output format: OutputFormat
-
-            /// Randomize order in which crates, modules, and items are processed.
-            optional --randomize
-            /// Run type inference in parallel.
-            optional --parallel
-            /// Print the total length of all source and macro files (whitespace is not counted).
-            optional --source-stats
-
-            /// Only analyze items matching this path.
-            optional -o, --only path: String
-            /// Also analyze all dependencies.
-            optional --with-deps
-            /// Don't load sysroot crates (`std`, `core` & friends).
-            optional --no-sysroot
-            /// Don't set #[cfg(test)].
-            optional --no-test
-
-            /// Don't run build scripts or load `OUT_DIR` values by running `cargo check` before analysis.
-            optional --disable-build-scripts
-            /// Don't use expand proc macros.
-            optional --disable-proc-macros
-            /// Run the proc-macro-srv binary at the specified path.
-            optional --proc-macro-srv path: PathBuf
-            /// Skip body lowering.
-            optional --skip-lowering
-            /// Skip type inference.
-            optional --skip-inference
-            /// Skip lowering to mir
-            optional --skip-mir-stats
-            /// Skip data layout calculation
-            optional --skip-data-layout
-            /// Skip const evaluation
-            optional --skip-const-eval
-            /// Runs several IDE features after analysis, including semantics highlighting, diagnostics
-            /// and annotations. This is useful for benchmarking the memory usage on a project that has
-            /// been worked on for a bit in a longer running session.
-            optional --run-all-ide-things
-            /// Run term search on all the tail expressions (of functions, block, if statements etc.)
-            optional --run-term-search
-            /// Validate term search by running `cargo check` on every response.
-            /// Note that this also temporarily modifies the files on disk, use with caution!
-            optional --validate-term-search
-        }
+        // /// Batch typecheck project and print summary statistics
+        // cmd analysis-stats {
+        //     /// Directory with wesl.toml.
+        //     required path: PathBuf
+        //     optional --output format: OutputFormat
+        //     /// Randomize order in which crates, modules, and items are processed.
+        //     optional --randomize
+        //     /// Run type inference in parallel.
+        //     optional --parallel
+        //     /// Print the total length of all source and macro files (whitespace is not counted).
+        //     optional --source-stats
+        //     /// Only analyze items matching this path.
+        //     optional -o, --only path: String
+        //     /// Also analyze all dependencies.
+        //     optional --with-deps
+        //     /// Don't load sysroot crates (`std`, `core` & friends).
+        //     optional --no-sysroot
+        //     /// Don't set #[cfg(test)].
+        //     optional --no-test
+        //     /// Skip body lowering.
+        //     optional --skip-lowering
+        //     /// Skip type inference.
+        //     optional --skip-inference
+        //     /// Skip lowering to mir
+        //     optional --skip-mir-stats
+        //     /// Skip data layout calculation
+        //     optional --skip-data-layout
+        //     /// Skip const evaluation
+        //     optional --skip-const-eval
+        //     /// Runs several IDE features after analysis, including semantics highlighting, diagnostics
+        //     /// and annotations. This is useful for benchmarking the memory usage on a project that has
+        //     /// been worked on for a bit in a longer running session.
+        //     optional --run-all-ide-things
+        //     /// Run term search on all the tail expressions (of functions, block, if statements etc.)
+        //     optional --run-term-search
+        //     /// Validate term search by running `cargo check` on every response.
+        //     /// Note that this also temporarily modifies the files on disk, use with caution!
+        //     optional --validate-term-search
+        // }
 
         /// Run unit tests of the project using mir interpreter
         cmd run-tests {
-            /// Directory with Cargo.toml.
+            /// Directory with wesl.toml.
             required path: PathBuf
-        }
-
-        /// Run unit tests of the project using mir interpreter
-        cmd rustc-tests {
-            /// Directory with Cargo.toml.
-            required rustc_repo: PathBuf
-
-            /// Only run tests with filter as substring
-            optional --filter path: String
         }
 
         cmd diagnostics {
-            /// Directory with Cargo.toml.
+            /// Directory with wesl.toml.
             required path: PathBuf
-
-            /// Don't run build scripts or load `OUT_DIR` values by running `cargo check` before analysis.
-            optional --disable-build-scripts
-            /// Don't use expand proc macros.
-            optional --disable-proc-macros
-            /// Run the proc-macro-srv binary at the specified path.
-            optional --proc-macro-srv path: PathBuf
         }
 
         /// Report unresolved references
         cmd unresolved-references {
-            /// Directory with Cargo.toml.
+            /// Directory with wesl.toml.
             required path: PathBuf
-
-            /// Don't run build scripts or load `OUT_DIR` values by running `cargo check` before analysis.
-            optional --disable-build-scripts
-            /// Don't use expand proc macros.
-            optional --disable-proc-macros
-            /// Run the proc-macro-srv binary at the specified path.
-            optional --proc-macro-srv path: PathBuf
         }
 
         // cmd ssr {
@@ -236,11 +203,7 @@ pub struct AnalysisStats {
     pub source_stats: bool,
     pub only: Option<String>,
     pub with_deps: bool,
-    pub no_sysroot: bool,
     pub no_test: bool,
-    pub disable_build_scripts: bool,
-    pub disable_proc_macros: bool,
-    pub proc_macro_srv: Option<PathBuf>,
     pub skip_lowering: bool,
     pub skip_inference: bool,
     pub skip_mir_stats: bool,
@@ -266,19 +229,11 @@ pub struct RustcTests {
 #[derive(Debug)]
 pub struct Diagnostics {
     pub path: PathBuf,
-
-    pub disable_build_scripts: bool,
-    pub disable_proc_macros: bool,
-    pub proc_macro_srv: Option<PathBuf>,
 }
 
 #[derive(Debug)]
 pub struct UnresolvedReferences {
     pub path: PathBuf,
-
-    pub disable_build_scripts: bool,
-    pub disable_proc_macros: bool,
-    pub proc_macro_srv: Option<PathBuf>,
 }
 
 // #[derive(Debug)]

@@ -40,6 +40,9 @@ disallowed-names = [
   "sig",    # sign
   "src",    # source
   "stmt",   # statement
+  "sh",
+  "opts",
+  "vars",
   "ty",     # r#type
   # "tmp",    # temporary # does not work due to db! macro
   # "err",    # error

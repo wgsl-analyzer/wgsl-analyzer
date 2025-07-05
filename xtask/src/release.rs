@@ -14,12 +14,12 @@ use crate::{date_iso, flags, is_release_tag, project_root};
 impl flags::Release {
     pub(crate) fn run(
         self,
-        sh: &Shell,
+        shell: &Shell,
     ) -> anyhow::Result<()> {
         if !self.dry_run {
-            cmd!(sh, "git switch release").run()?;
-            cmd!(sh, "git fetch upstream --tags --force").run()?;
-            cmd!(sh, "git reset --hard tags/nightly").run()?;
+            cmd!(shell, "git switch release").run()?;
+            cmd!(shell, "git fetch upstream --tags --force").run()?;
+            cmd!(shell, "git reset --hard tags/nightly").run()?;
             // The `release` branch sometimes has a couple of cherry-picked
             // commits for patch releases. If that is the case, just overwrite
             // it. Because we are setting `release` branch to an up-to-date `nightly`
@@ -29,23 +29,23 @@ impl flags::Release {
             // commits -- they will be kept alive by the tag. More generally, we
             // do not care about historic releases all that much, it is fine even
             // to delete old tags.
-            cmd!(sh, "git push --force").run()?;
+            cmd!(shell, "git push --force").run()?;
         }
 
         let website_root = project_root().join("../wgsl-analyzer.github.io");
         {
-            let _dir = sh.push_dir(&website_root); // spellchecker:disable-line
-            cmd!(sh, "git switch src").run()?; // spellchecker:disable-line
-            cmd!(sh, "git pull").run()?;
+            let _dir = shell.push_dir(&website_root); // spellchecker:disable-line
+            cmd!(shell, "git switch src").run()?; // spellchecker:disable-line
+            cmd!(shell, "git pull").run()?;
         }
         let changelog_directory = website_root.join("./thisweek/_posts");
 
-        let today = date_iso(sh)?;
-        let commit = cmd!(sh, "git rev-parse HEAD").read()?;
+        let today = date_iso(shell)?;
+        let commit = cmd!(shell, "git rev-parse HEAD").read()?;
         #[expect(clippy::as_conversions, reason = "no better helper method")]
         #[expect(clippy::cast_sign_loss, reason = "asserted to be in-range")]
         #[expect(clippy::cast_possible_truncation, reason = "asserted to be in-range")]
-        let changelog_n = sh
+        let changelog_n = shell
             .read_dir(changelog_directory.as_path())?
             .into_iter()
             .filter_map(|path| {
@@ -59,16 +59,16 @@ impl flags::Release {
             .max()
             .unwrap_or_default();
 
-        let tags = cmd!(sh, "git tag --list").read()?;
+        let tags = cmd!(shell, "git tag --list").read()?;
         let previous_tag = tags
             .lines()
             .filter(|line| is_release_tag(line))
             .next_back()
             .unwrap();
 
-        let contents = changelog::get_changelog(sh, changelog_n, &commit, previous_tag, &today)?;
+        let contents = changelog::get_changelog(shell, changelog_n, &commit, previous_tag, &today)?;
         let path = changelog_directory.join(format!("{today}-changelog-{changelog_n}.adoc"));
-        sh.write_file(path, contents)?;
+        shell.write_file(path, contents)?;
 
         Ok(())
     }
