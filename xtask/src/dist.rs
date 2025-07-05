@@ -188,18 +188,18 @@ fn gzip(
 }
 
 fn zip(
-    src_path: &Path,
+    source_path: &Path,
     symbols_path: Option<&PathBuf>,
-    dest_path: &Path,
+    destination_path: &Path,
 ) -> anyhow::Result<()> {
-    let file = File::create(dest_path)?;
+    let file = File::create(destination_path)?;
     let mut writer = ZipWriter::new(BufWriter::new(file));
     writer.start_file(
-        src_path.file_name().unwrap().to_str().unwrap(),
+        source_path.file_name().unwrap().to_str().unwrap(),
         SimpleFileOptions::default()
             .last_modified_time(
                 DateTime::try_from(OffsetDateTime::from(
-                    std::fs::metadata(src_path)?.modified()?,
+                    std::fs::metadata(source_path)?.modified()?,
                 ))
                 .unwrap(),
             )
@@ -207,7 +207,7 @@ fn zip(
             .compression_method(zip::CompressionMethod::Deflated)
             .compression_level(Some(9)),
     )?;
-    let mut input = io::BufReader::new(File::open(src_path)?);
+    let mut input = io::BufReader::new(File::open(source_path)?);
     io::copy(&mut input, &mut writer)?;
     if let Some(symbols_path) = symbols_path {
         writer.start_file(
@@ -215,7 +215,7 @@ fn zip(
             SimpleFileOptions::default()
                 .last_modified_time(
                     DateTime::try_from(OffsetDateTime::from(
-                        std::fs::metadata(src_path)?.modified()?,
+                        std::fs::metadata(source_path)?.modified()?,
                     ))
                     .unwrap(),
                 )

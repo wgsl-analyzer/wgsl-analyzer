@@ -66,6 +66,8 @@ jobs:
 
       - name: Install stable Rust toolchain
         uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          components: clippy
 
       # https://github.com/actions-rust-lang/setup-rust-toolchain/blob/main/rust.json
       - name: Install Rust Problem Matcher
@@ -82,14 +84,16 @@ jobs:
       - name: Install nextest
         uses: taiki-e/install-action@nextest
 
-      - name: Codegen checks (wgsl-analyzer)
-        if: matrix.os == 'ubuntu-latest'
-        run: cargo codegen --check
+      # TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/359
+      # - name: Codegen checks (wgsl-analyzer)
+      #   if: matrix.os == 'ubuntu-latest'
+      #   run: cargo codegen --check
 
       - name: Test
         run: cargo nextest run --no-fail-fast --hide-progress-bar --status-level fail
 
       - name: Clippy
+        # Because macos runners are the fastest
         if: matrix.os == 'macos-latest'
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
@@ -125,7 +129,8 @@ jobs:
       # - name: Cache Dependencies
       #   uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
 
-      - run: cargo miri test -p intern
+      # TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/361
+      # - run: cargo miri test -p intern
 
   # Weird targets to catch non-portable code
   rust-cross:

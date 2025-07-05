@@ -293,9 +293,12 @@ as copies of unstable std items we would like to make use of already, like `std:
 
 This crate contains utilities for CPU and memory profiling.
 
+<!--
+TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/361
 ### `crates/intern`
 
 This crate contains infrastructure for globally interning things via `Arc`.
+-->
 
 ### `crates/span`
 
