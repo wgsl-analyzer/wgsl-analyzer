@@ -254,6 +254,8 @@ default_numeric_fallback = "allow"
 option_if_let_else = "allow"
 # not a good general rule for the cost it entails
 arithmetic_side_effects = "allow"
+# always covered by min_ident_chars
+many_single_char_names = "allow"
 
 # TODOs
 missing_docs_in_private_items = "allow"

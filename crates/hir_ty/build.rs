@@ -398,15 +398,12 @@ fn parse_ty(
 fn type_to_rust(r#type: &Type) -> String {
     match r#type {
         Type::Vec(size, component_type) => format!(
-            "TyKind::Vector(crate::ty::VectorType {{ size: VecSize::{:?}, component_type: {} }}).intern(database)",
-            size,
+            "TyKind::Vector(crate::ty::VectorType {{ size: VecSize::{size:?}, component_type: {} }}).intern(database)",
             type_to_rust(component_type)
         ),
 
         Type::Matrix(columns, rows, inner) => format!(
-            "TyKind::Matrix(crate::ty::MatrixType {{ columns: VecSize::{:?}, rows: VecSize::{:?}, inner: {} }}).intern(database)",
-            columns,
-            rows,
+            "TyKind::Matrix(crate::ty::MatrixType {{ columns: VecSize::{columns:?}, rows: VecSize::{rows:?}, inner: {} }}).intern(database)",
             type_to_rust(inner)
         ),
 

@@ -49,19 +49,19 @@ impl ShaderProcessor {
 
         for (line, offset) in lines_with_offsets(shader_str) {
             let use_line = if let Some(cap) = self.ifdef.captures(line) {
-                let def = cap.get(1).unwrap().as_str();
+                let definition = cap.get(1).unwrap().as_str();
                 scopes.push((
-                    scopes.last().unwrap().0 && shader_defs.contains(def),
+                    scopes.last().unwrap().0 && shader_defs.contains(definition),
                     offset,
-                    def,
+                    definition,
                 ));
                 false
             } else if let Some(cap) = self.ifndef.captures(line) {
-                let def = cap.get(1).unwrap().as_str();
+                let definition = cap.get(1).unwrap().as_str();
                 scopes.push((
-                    scopes.last().unwrap().0 && !shader_defs.contains(def),
+                    scopes.last().unwrap().0 && !shader_defs.contains(definition),
                     offset,
-                    def,
+                    definition,
                 ));
                 false
             } else if self.r#else.is_match(line) {
@@ -71,10 +71,10 @@ impl ShaderProcessor {
                     true
                 };
 
-                if let Some((last, start_offset, def)) = scopes.last_mut() {
+                if let Some((last, start_offset, definition)) = scopes.last_mut() {
                     if !*last {
                         let range = *start_offset..offset + line.len();
-                        emit_unconfigured(range, def);
+                        emit_unconfigured(range, definition);
                     }
 
                     *start_offset = offset;
@@ -87,11 +87,11 @@ impl ShaderProcessor {
                 // Presumably this would be through a side channel
                 if scopes.len() == 1 {
                     // return Err(ProcessShaderError::TooManyEndIfs);
-                } else if let Some((used, start_offset, def)) = scopes.pop()
+                } else if let Some((used, start_offset, definition)) = scopes.pop()
                     && !used
                 {
                     let range = start_offset..offset + line.len();
-                    emit_unconfigured(range, def);
+                    emit_unconfigured(range, definition);
                 }
                 false
             } else if self.define_import_path.is_match(line) {

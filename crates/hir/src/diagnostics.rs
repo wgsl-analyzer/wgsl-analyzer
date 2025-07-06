@@ -75,7 +75,7 @@ pub enum AnyDiagnostic {
     },
 
     UnconfiguredCode {
-        def: String,
+        definition: String,
         range: TextRange,
         file_id: HirFileId,
     },

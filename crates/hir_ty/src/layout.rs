@@ -45,7 +45,7 @@ impl ArrayType {
 
 impl Type {
     pub fn align(
-        &self,
+        self,
         address_space: LayoutAddressSpace,
         database: &dyn HirDatabase,
     ) -> Option<Bytes> {
@@ -53,7 +53,7 @@ impl Type {
     }
 
     pub fn size(
-        &self,
+        self,
         address_space: LayoutAddressSpace,
         database: &dyn HirDatabase,
     ) -> Option<Bytes> {
@@ -239,9 +239,9 @@ impl TyKind {
                 Some(size)
             },
             Self::Array(array) => match array.size {
-                ArraySize::Constant(n) => {
+                ArraySize::Constant(size) => {
                     let stride = array.stride(address_space, database)?;
-                    Some(Bytes::try_from(n).unwrap() * stride)
+                    Some(Bytes::try_from(size).unwrap() * stride)
                 },
                 ArraySize::Dynamic => None,
             },
@@ -315,6 +315,10 @@ mod tests {
     use super::*;
 
     #[test]
+    #[expect(
+        clippy::decimal_literal_representation,
+        reason = "literal is more clear"
+    )]
     fn round_up_is_correct() {
         assert_eq!(round_up(16, 10), 16);
         assert_eq!(round_up(16, 16), 16);

@@ -78,9 +78,9 @@ impl Pool {
         }
 
         Self {
+            job_sender,
             _handles: handles.into_boxed_slice(),
             extant_tasks,
-            job_sender,
         }
     }
 

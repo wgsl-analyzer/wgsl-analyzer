@@ -100,6 +100,10 @@ impl Config {
     }
 
     #[must_use]
+    #[expect(
+        clippy::unused_self,
+        reason = "TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/26"
+    )]
     pub const fn discover_workspace_config(&self) -> Option<&DiscoverWorkspaceConfig> {
         None
     }
@@ -218,9 +222,8 @@ impl fmt::Display for ConfigErrors {
             });
         write!(
             formatter,
-            "invalid config value{}:\n{}",
-            if self.0.len() == 1 { "" } else { "s" },
-            errors
+            "invalid config value{}:\n{errors}",
+            if self.0.len() == 1 { "" } else { "s" }
         )
     }
 }
@@ -247,13 +250,12 @@ impl Config {
                 cache_priming_num_threads: NumThreads::Physical,
                 num_threads: None,
             },
-            capabilities: ClientCapabilities::new(caps),
+            workspace_roots,
             // discovered_projects_from_filesystem: Vec::new(),
             // discovered_projects_from_command: Vec::new(),
-            root_path,
+            capabilities: ClientCapabilities::new(caps),
             // snippets: Default::default(),
-            diagnostics_enable: true,
-            workspace_roots,
+            root_path,
             client_info: client_info.map(|client_info| ClientInfo {
                 name: client_info.name,
                 version: client_info
@@ -262,12 +264,13 @@ impl Config {
                     .map(Version::parse)
                     .and_then(Result::ok),
             }),
+            diagnostics_enable: true,
             // client_config: (FullConfigInput::default(), ConfigErrors(vec![])),
             // default_config: DEFAULT_CONFIG_DATA.get_or_init(|| Box::leak(Box::default())),
             // source_root_parent_map: Arc::new(FxHashMap::default()),
             // user_config: None,
-            detached_files: Vec::default(),
             validation_errors: ConfigErrors::default(),
+            detached_files: Vec::default(),
             // watoml_file: Default::default(),
             wgslfmt_override_command: None,
             wgslfmt_extra_args: vec![],
@@ -275,6 +278,11 @@ impl Config {
         }
     }
 
+    #[expect(
+        clippy::unused_self,
+        clippy::needless_pass_by_ref_mut,
+        reason = "TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/26"
+    )]
     pub const fn rediscover_workspaces(&mut self) {
         // let discovered = vec![];
         // tracing::info!("discovered projects: {:?}", discovered);
@@ -308,19 +316,19 @@ impl Config {
     }
 
     #[must_use]
-    pub fn prime_caches_num_threads(&self) -> usize {
-        match &self.data.cache_priming_num_threads {
+    pub fn prime_caches_number_of_threads(&self) -> usize {
+        match self.data.cache_priming_num_threads {
             NumThreads::Concrete(0) | NumThreads::Physical => num_cpus::get_physical(),
-            &NumThreads::Concrete(n) => n,
+            NumThreads::Concrete(number) => number,
             NumThreads::Logical => num_cpus::get(),
         }
     }
 
     #[must_use]
-    pub fn main_loop_num_threads(&self) -> usize {
-        match &self.data.num_threads {
+    pub fn main_loop_number_of_threads(&self) -> usize {
+        match self.data.num_threads {
             Some(NumThreads::Concrete(0) | NumThreads::Physical) | None => num_cpus::get_physical(),
-            &Some(NumThreads::Concrete(n)) => n,
+            Some(NumThreads::Concrete(number)) => number,
             Some(NumThreads::Logical) => num_cpus::get(),
         }
     }
@@ -440,6 +448,10 @@ impl Config {
     }
 
     #[must_use]
+    #[expect(
+        clippy::unused_self,
+        reason = "TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/363"
+    )]
     pub const fn completion_hide_deprecated(&self) -> bool {
         false
     }

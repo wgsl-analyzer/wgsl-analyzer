@@ -463,7 +463,7 @@ pub enum DefinitionWithBodyId {
 
 impl DefinitionWithBodyId {
     pub fn file_id(
-        &self,
+        self,
         database: &dyn DefDatabase,
     ) -> HirFileId {
         match self {
@@ -475,7 +475,7 @@ impl DefinitionWithBodyId {
     }
 
     pub fn resolver(
-        &self,
+        self,
         database: &dyn DefDatabase,
     ) -> Resolver {
         let file_id = self.file_id(database);

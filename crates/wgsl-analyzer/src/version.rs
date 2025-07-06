@@ -41,7 +41,7 @@ impl fmt::Display for VersionInfo {
 #[must_use]
 pub const fn version() -> VersionInfo {
     let version = match option_env!("CFG_RELEASE") {
-        Some(x) => x,
+        Some(version) => version,
         None => "0.0.0",
     };
 

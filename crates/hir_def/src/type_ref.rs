@@ -223,19 +223,18 @@ impl fmt::Display for TextureType {
         match &self.kind {
             TextureKind::Sampled(r#type) => write!(
                 formatter,
-                "texture_{}{}{}<{}>",
+                "texture_{}{}{}<{type}>",
                 if self.multisampled {
                     "multisampled_"
                 } else {
                     ""
                 },
                 self.dimension,
-                if self.arrayed { "_array" } else { "" },
-                r#type
+                if self.arrayed { "_array" } else { "" }
             ),
             TextureKind::Storage(format, mode) => write!(
                 formatter,
-                "texture_storage_{}{}{}<{}, {}>",
+                "texture_storage_{}{}{}<{format}, {mode}>",
                 self.dimension,
                 if self.multisampled {
                     "_multisampled"
@@ -243,8 +242,6 @@ impl fmt::Display for TextureType {
                     ""
                 },
                 if self.arrayed { "_array" } else { "" },
-                format,
-                mode,
             ),
             TextureKind::Depth => write!(
                 formatter,
@@ -528,18 +525,17 @@ impl fmt::Display for ArrayType {
     ) -> fmt::Result {
         let prefix = if self.binding_array { "binding_" } else { "" };
         match &self.size {
-            ArraySize::Int(size) => write!(formatter, "{}array<{}, {}>", prefix, self.inner, size),
-            ArraySize::Uint(size) => write!(formatter, "{}array<{}, {}>", prefix, self.inner, size),
+            ArraySize::Int(size) => write!(formatter, "{prefix}array<{}, {size}>", self.inner),
+            ArraySize::Uint(size) => write!(formatter, "{prefix}array<{}, {size}>", self.inner),
             ArraySize::Path(size) => {
                 write!(
                     formatter,
-                    "{}array<{}, {}>",
-                    prefix,
+                    "{prefix}array<{}, {}>",
                     self.inner,
                     size.as_str()
                 )
             },
-            ArraySize::Dynamic => write!(formatter, "{}array<{}>", prefix, self.inner),
+            ArraySize::Dynamic => write!(formatter, "{prefix}array<{}>", self.inner),
         }
     }
 }
@@ -574,8 +570,8 @@ impl TryFrom<ast::ArrayType> for ArrayType {
         };
         Ok(Self {
             inner: Box::new(inner.try_into()?),
-            size,
             binding_array: false,
+            size,
         })
     }
 }
@@ -602,8 +598,8 @@ impl TryFrom<ast::BindingArrayType> for ArrayType {
         };
         Ok(Self {
             inner: Box::new(inner.try_into()?),
-            size,
             binding_array: true,
+            size,
         })
     }
 }
@@ -642,9 +638,9 @@ impl TryFrom<ast::PointerType> for PointerType {
         };
 
         Ok(Self {
-            inner: Box::new(inner.try_into()?),
-            access_mode,
             address_space,
+            access_mode,
+            inner: Box::new(inner.try_into()?),
         })
     }
 }

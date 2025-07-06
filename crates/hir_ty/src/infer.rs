@@ -32,12 +32,12 @@ use crate::{
 
 pub fn infer_query(
     database: &dyn HirDatabase,
-    def: DefinitionWithBodyId,
+    definition: DefinitionWithBodyId,
 ) -> Arc<InferenceResult> {
-    let resolver = def.resolver(database);
-    let mut context = InferenceContext::new(database, def, resolver);
+    let resolver = definition.resolver(database);
+    let mut context = InferenceContext::new(database, definition, resolver);
 
-    match def {
+    match definition {
         DefinitionWithBodyId::Function(function) => {
             context.collect_fn(function, &database.fn_data(function));
         },
@@ -367,7 +367,7 @@ impl<'database> InferenceContext<'database> {
                     self.infer_statement(*statement);
                 }
             },
-            Statement::VariableStatement {
+            Statement::Variable {
                 binding_id,
                 type_ref,
                 initializer,
@@ -395,7 +395,7 @@ impl<'database> InferenceContext<'database> {
                 );
                 self.set_binding_ty(*binding_id, ref_ty);
             },
-            Statement::ConstStatement {
+            Statement::Const {
                 binding_id,
                 type_ref,
                 initializer,
@@ -417,7 +417,7 @@ impl<'database> InferenceContext<'database> {
 
                 self.set_binding_ty(*binding_id, r#type);
             },
-            Statement::LetStatement {
+            Statement::Let {
                 binding_id,
                 type_ref,
                 initializer,
@@ -795,8 +795,8 @@ impl<'database> InferenceContext<'database> {
                     TyKind::Matrix(matrix_type) => {
                         // TODO out of bounds
                         self.database.intern_ty(TyKind::Vector(VectorType {
-                            component_type: matrix_type.inner,
                             size: matrix_type.rows,
+                            component_type: matrix_type.inner,
                         }))
                     },
                     TyKind::Array(array) => {
@@ -1892,8 +1892,8 @@ impl InferenceContext<'_> {
         access_mode: AccessMode,
     ) -> Type {
         self.database.intern_ty(TyKind::Reference(Reference {
-            inner: r#type,
             address_space,
+            inner: r#type,
             access_mode,
         }))
     }
@@ -1903,8 +1903,8 @@ impl InferenceContext<'_> {
         reference: &Reference,
     ) -> Type {
         self.database.intern_ty(TyKind::Pointer(Pointer {
-            inner: reference.inner,
             address_space: reference.address_space,
+            inner: reference.inner,
             access_mode: reference.access_mode,
         }))
     }
@@ -1914,8 +1914,8 @@ impl InferenceContext<'_> {
         pointer: &Pointer,
     ) -> Type {
         self.database.intern_ty(TyKind::Reference(Reference {
-            inner: pointer.inner,
             address_space: pointer.address_space,
+            inner: pointer.inner,
             access_mode: pointer.access_mode,
         }))
     }
@@ -2040,14 +2040,6 @@ impl<'database> TyLoweringContext<'database> {
                 inner: self.lower_ty(&matrix.inner),
             }),
             TypeReference::Texture(tex) => TyKind::Texture(TextureType {
-                dimension: match tex.dimension {
-                    type_ref::TextureDimension::D1 => TextureDimensionality::D1,
-                    type_ref::TextureDimension::D2 => TextureDimensionality::D2,
-                    type_ref::TextureDimension::D3 => TextureDimensionality::D3,
-                    type_ref::TextureDimension::Cube => TextureDimensionality::Cube,
-                },
-                arrayed: tex.arrayed,
-                multisampled: tex.multisampled,
                 kind: match &tex.kind {
                     type_ref::TextureKind::Sampled(r#type) => {
                         TextureKind::Sampled(self.lower_ty(r#type))
@@ -2061,6 +2053,14 @@ impl<'database> TyLoweringContext<'database> {
                     type_ref::TextureKind::Depth => TextureKind::Depth,
                     type_ref::TextureKind::External => TextureKind::External,
                 },
+                dimension: match tex.dimension {
+                    type_ref::TextureDimension::D1 => TextureDimensionality::D1,
+                    type_ref::TextureDimension::D2 => TextureDimensionality::D2,
+                    type_ref::TextureDimension::D3 => TextureDimensionality::D3,
+                    type_ref::TextureDimension::Cube => TextureDimensionality::Cube,
+                },
+                arrayed: tex.arrayed,
+                multisampled: tex.multisampled,
             }),
             TypeReference::Sampler(sampler) => TyKind::Sampler(SamplerType {
                 comparison: sampler.comparison,
@@ -2069,8 +2069,8 @@ impl<'database> TyLoweringContext<'database> {
                 inner: self.lower_ty(&atomic.inner),
             }),
             TypeReference::Array(array) => TyKind::Array(ArrayType {
-                binding_array: array.binding_array,
                 inner: self.lower_ty(&array.inner),
+                binding_array: array.binding_array,
                 size: match array.size {
                     type_ref::ArraySize::Int(integer) => {
                         // TODO give error instead of panicking

@@ -77,7 +77,7 @@ impl<'database> Ctx<'database> {
         let ast_id = self.source_ast_id_map.ast_id(import);
 
         let value = match import.import()? {
-            ast::ImportKind::ImportPath(path) => {
+            ast::ImportKind::Path(path) => {
                 let import_path = path
                     .string_literal()?
                     .text()
@@ -86,7 +86,7 @@ impl<'database> Ctx<'database> {
                     .collect();
                 ImportValue::Path(import_path)
             },
-            ast::ImportKind::ImportCustom(custom) => ImportValue::Custom(custom.key()),
+            ast::ImportKind::Custom(custom) => ImportValue::Custom(custom.key()),
         };
 
         let import = Import { value, ast_id };
@@ -228,8 +228,8 @@ impl<'database> Ctx<'database> {
 
         let r#struct = Struct {
             name,
-            fields: IdxRange::new(start_field..end_field),
             ast_id,
+            fields: IdxRange::new(start_field..end_field),
         };
         Some(self.module_data.structs.alloc(r#struct).into())
     }

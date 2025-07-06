@@ -52,10 +52,15 @@ impl flags::Release {
                 path.file_stem()
                     .map(|stem| stem.to_string_lossy().to_string())
             })
-            .filter_map(|string| string.splitn(5, '-').last().map(|n| n.replace('-', ".")))
+            .filter_map(|string| {
+                string
+                    .splitn(5, '-')
+                    .last()
+                    .map(|patch| patch.replace('-', "."))
+            })
             .filter_map(|string| string.parse::<f32>().ok())
-            .inspect(|n| assert!((0_f32..(usize::MAX as f32)).contains(&n.floor())))
-            .map(|n| 1 + n.floor() as usize)
+            .inspect(|patch| assert!((0_f32..(usize::MAX as f32)).contains(&patch.floor())))
+            .map(|patch| 1 + patch.floor() as usize)
             .max()
             .unwrap_or_default();
 

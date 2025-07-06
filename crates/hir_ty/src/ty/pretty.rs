@@ -119,8 +119,8 @@ fn pretty_fn_inner(
     verbosity: TypeVerbosity,
 ) -> fmt::Result {
     write!(buffer, "fn(")?;
-    for (i, parameter) in function.parameters().enumerate() {
-        if i != 0 {
+    for (index, parameter) in function.parameters().enumerate() {
+        if index != 0 {
             buffer.push_str(", ");
         }
         write_ty(database, parameter, buffer, verbosity)?;
@@ -201,7 +201,7 @@ fn write_ty(
                     pretty_type(database, r#type),
                 ),
                 TextureKind::Storage(format, mode) => format!(
-                    "texture_storage_{}{}{}<{},{}>",
+                    "texture_storage_{}{}{}<{format},{mode}>",
                     if texture_type.multisampled {
                         "multisampled_"
                     } else {
@@ -209,8 +209,6 @@ fn write_ty(
                     },
                     texture_type.dimension,
                     if texture_type.arrayed { "_array" } else { "" },
-                    format,
-                    mode,
                 ),
                 TextureKind::Depth => format!(
                     "texture_depth_{}{}{}",

@@ -106,9 +106,9 @@ impl fmt::Display for Event {
 }
 
 #[derive(Debug)]
+#[expect(clippy::enum_variant_names, reason = "Not relevant")]
 pub(crate) enum QueuedTask {
     CheckIfIndexed(lsp_types::Url),
-    CheckProcMacroSources(Vec<FileId>),
 }
 
 #[derive(Debug)]
@@ -455,7 +455,10 @@ impl GlobalState {
             if let Some(cause) = self.wants_to_switch.take() {
                 self.switch_workspaces(&cause);
             }
-            (self.process_changes(), self.mem_docs.take_changes())
+            (
+                self.process_changes(),
+                self.in_memory_documents.take_changes(),
+            )
         } else {
             (false, false)
         };
@@ -521,7 +524,7 @@ impl GlobalState {
             for file_id in diagnostic_changes {
                 let uri = file_id_to_url(&self.vfs.read().0, file_id);
                 let version = from_proto::vfs_path(&uri).ok().and_then(|path| {
-                    self.mem_docs
+                    self.in_memory_documents
                         .get(&path)
                         .map(|document_data| document_data.version)
                 });
@@ -584,7 +587,7 @@ impl GlobalState {
         cause: String,
     ) {
         tracing::debug!(%cause, "will prime caches");
-        let num_worker_threads = self.config.prime_caches_num_threads();
+        let num_worker_threads = self.config.prime_caches_number_of_threads();
 
         self.task_pool
             .handle
@@ -609,7 +612,7 @@ impl GlobalState {
         let generation = self.diagnostics.next_generation();
         let subscriptions = {
             let vfs = &self.vfs.read().0;
-            self.mem_docs
+            self.in_memory_documents
                 .iter()
                 .map(|path| vfs.file_id(path).unwrap())
                 // .filter_map(|(file_id, excluded)| {
@@ -632,7 +635,7 @@ impl GlobalState {
         tracing::trace!("updating notifications for {:?}", subscriptions);
         // Split up the work on multiple threads, but we don't wanna fill the entire task pool with
         // diagnostic tasks, so we limit the number of tasks to a quarter of the total thread pool.
-        let max_tasks = self.config.main_loop_num_threads().div(4).max(1);
+        let max_tasks = self.config.main_loop_number_of_threads().div(4).max(1);
         let chunk_length = subscriptions
             .len()
             .checked_div(max_tasks)
@@ -855,7 +858,6 @@ impl GlobalState {
     ) {
         match task {
             QueuedTask::CheckIfIndexed(uri) => {},
-            QueuedTask::CheckProcMacroSources(modified_rust_files) => {},
         }
     }
 

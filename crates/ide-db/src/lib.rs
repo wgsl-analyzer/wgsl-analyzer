@@ -65,6 +65,11 @@ impl RootDatabase {
         database
     }
 
+    #[expect(
+        clippy::unused_self,
+        clippy::needless_pass_by_ref_mut,
+        reason = "TODO impl"
+    )]
     pub const fn update_base_query_lru_capacities(
         &mut self,
         _lru_capacity: Option<u16>,
@@ -78,6 +83,11 @@ impl RootDatabase {
         // hir::database::BodyWithSourceMapQuery.in_db_mut(self).set_lru_capacity(2048);
     }
 
+    #[expect(
+        clippy::unused_self,
+        clippy::needless_pass_by_ref_mut,
+        reason = "TODO impl"
+    )]
     pub const fn update_lru_capacities(
         &mut self,
         _lru_capacities: &FxHashMap<Box<str>, u16>,

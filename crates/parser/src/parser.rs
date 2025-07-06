@@ -258,7 +258,8 @@ impl<'tokens, 'input> Parser<'tokens, 'input> {
         self.expected_kinds = expected;
     }
 
-    pub fn location(&mut self) -> impl Eq + use<> {
+    #[must_use]
+    pub fn location(&self) -> impl Eq + use<> {
         self.source.location()
     }
 }

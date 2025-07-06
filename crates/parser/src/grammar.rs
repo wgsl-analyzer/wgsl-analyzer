@@ -63,13 +63,13 @@ fn import(
     if parser.at(SyntaxKind::StringLiteral) {
         let marker = parser.start();
         parser.bump();
-        marker.complete(parser, SyntaxKind::ImportPath);
+        marker.complete(parser, SyntaxKind::Path);
     } else if parser.at(SyntaxKind::Identifier) {
         let marker = parser.start();
         while parser.at(SyntaxKind::Identifier) || parser.at(SyntaxKind::ColonColon) {
             parser.bump();
         }
-        marker.complete(parser, SyntaxKind::ImportCustom);
+        marker.complete(parser, SyntaxKind::Custom);
     }
 
     marker.complete(parser, SyntaxKind::Import);

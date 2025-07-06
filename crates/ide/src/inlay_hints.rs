@@ -108,12 +108,12 @@ impl InlayHint {
     ) -> Self {
         Self {
             range,
-            kind,
-            label: InlayHintLabel::from(")"),
-            text_edit: None,
             position: InlayHintPosition::After,
             pad_left: false,
             pad_right: false,
+            kind,
+            label: InlayHintLabel::from(")"),
+            text_edit: None,
             resolve_parent: None,
         }
     }
@@ -317,31 +317,31 @@ pub(crate) fn inlay_hints(
     range_limit: Option<TextRange>,
     config: &InlayHintsConfig,
 ) -> Vec<InlayHint> {
-    let sema = Semantics::new(database);
-    let file = sema.parse(file_id);
+    let semantics = Semantics::new(database);
+    let file = semantics.parse(file_id);
 
     let mut hints = Vec::new();
 
     if let Some(range_limit) = range_limit {
         match file.syntax().covering_element(range_limit) {
             NodeOrToken::Token(_) => return hints,
-            NodeOrToken::Node(n) => {
-                for node in n
+            NodeOrToken::Node(node) => {
+                for inner_child_node in node
                     .descendants()
                     .filter(|descendant| range_limit.contains_range(descendant.text_range()))
                 {
-                    get_hints(&mut hints, file_id, &sema, config, &node);
+                    get_hints(&mut hints, file_id, &semantics, config, &inner_child_node);
                 }
 
-                get_struct_layout_hints(&mut hints, file_id, &sema, config);
+                get_struct_layout_hints(&mut hints, file_id, &semantics, config);
             },
         }
     } else {
         for node in file.syntax().descendants() {
-            get_hints(&mut hints, file_id, &sema, config, &node);
+            get_hints(&mut hints, file_id, &semantics, config, &node);
         }
 
-        get_struct_layout_hints(&mut hints, file_id, &sema, config);
+        get_struct_layout_hints(&mut hints, file_id, &semantics, config);
     }
 
     hints
@@ -350,20 +350,20 @@ pub(crate) fn inlay_hints(
 fn get_struct_layout_hints(
     hints: &mut Vec<InlayHint>,
     file_id: FileId,
-    sema: &Semantics<'_>,
+    semantics: &Semantics<'_>,
     config: &InlayHintsConfig,
 ) -> Option<()> {
     let display_kind = config.struct_layout_hints?;
 
-    let module_info = sema.database.module_info(file_id.into());
+    let module_info = semantics.database.module_info(file_id.into());
 
     for r#struct in module_info.structs() {
-        let r#struct = sema
+        let r#struct = semantics
             .database
             .intern_struct(InFile::new(file_id.into(), r#struct));
-        let fields = sema.database.field_types(r#struct);
+        let fields = semantics.database.field_types(r#struct);
 
-        let address_space = if sema
+        let address_space = if semantics
             .database
             .struct_is_used_in_uniform(r#struct, file_id.into())
         {
@@ -374,7 +374,7 @@ fn get_struct_layout_hints(
 
         hir_ty::layout::struct_member_layout(
             &fields,
-            sema.database,
+            semantics.database,
             address_space,
             |field, field_layout| {
                 let FieldLayout { offset, .. } = field_layout;
@@ -382,7 +382,7 @@ fn get_struct_layout_hints(
                     id: FieldId { r#struct, field },
                 };
 
-                let source = field.source(sema.database)?.value;
+                let source = field.source(semantics.database)?.value;
 
                 // this is only necessary, because the field syntax nodes include the whitespace to the next line...
                 let actual_last_token = iter::successors(
@@ -419,7 +419,7 @@ fn get_struct_layout_hints(
 fn get_hints(
     hints: &mut Vec<InlayHint>,
     file_id: FileId,
-    sema: &Semantics<'_>,
+    semantics: &Semantics<'_>,
     config: &InlayHintsConfig,
     node: &SyntaxNode,
 ) -> Option<()> {
@@ -430,7 +430,7 @@ fn get_hints(
                     return None;
                 }
                 function_hints(
-                    sema,
+                    semantics,
                     file_id,
                     node,
                     &expression,
@@ -446,7 +446,7 @@ fn get_hints(
                 // `vec4(xyz: val1, w: val2)` could also be
                 // `vec4(xy: val1, zw: val2)` without hints
                 function_hints(
-                    sema,
+                    semantics,
                     file_id,
                     node,
                     &expression,
@@ -479,10 +479,11 @@ fn get_hints(
             return None;
         }
         if r#type.is_none() {
-            let container = sema.find_container(file_id.into(), node)?;
-            let r#type = sema.analyze(container).type_of_binding(&binding)?;
+            let container = semantics.find_container(file_id.into(), node)?;
+            let r#type = semantics.analyze(container).type_of_binding(&binding)?;
 
-            let label = pretty_type_with_verbosity(sema.database, r#type, config.type_verbosity);
+            let label =
+                pretty_type_with_verbosity(semantics.database, r#type, config.type_verbosity);
             hints.push(InlayHint {
                 range: binding.name()?.ident_token()?.text_range(),
                 position: InlayHintPosition::After,
@@ -500,15 +501,15 @@ fn get_hints(
 }
 
 fn function_hints(
-    sema: &Semantics<'_>,
+    semantics: &Semantics<'_>,
     file_id: FileId,
     node: &SyntaxNode,
     expression: &AstExpression,
     parameter_expressions: AstChildren<AstExpression>,
     hints: &mut Vec<InlayHint>,
 ) -> Option<()> {
-    let container = sema.find_container(file_id.into(), node)?;
-    let analyzed = sema.analyze(container);
+    let container = semantics.find_container(file_id.into(), node)?;
+    let analyzed = semantics.analyze(container);
     let expression = analyzed.expression_id(expression)?;
     let resolved = analyzed.infer.call_resolution(expression)?;
     let func = match resolved {

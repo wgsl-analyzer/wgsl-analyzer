@@ -1,3 +1,8 @@
+#![expect(
+    clippy::enum_variant_names,
+    reason = "The variant names must be clear when self-standing. See the parser snapshot tests."
+)]
+
 pub mod operators;
 
 use parser::{SyntaxKind, SyntaxNode};
@@ -19,7 +24,7 @@ macro_rules! ast_node {
 
         $(impl $kind {
             $(#[must_use] pub fn $descendant(&self) -> $amount_ty<$return_ty>  {
-                ast_node!(@descendant self $amount_ty<$return_ty $($a)?>)
+                ast_node! { @descendant self $amount_ty<$return_ty $($a)?> }
             })*
         })?
     };
@@ -201,20 +206,27 @@ macro_rules! ast_token_enum {
     };
 }
 
-ast_node!(SourceFile:
+ast_node! {
+    SourceFile:
     items: AstChildren<Item>;
-);
+}
 
-ast_node!(Import:
+ast_node! {
+    Import:
     import_token: Option<SyntaxToken UnofficialPreprocessorImport>;
     import: Option<ImportKind>;
-);
+}
 
-ast_node!(ImportPath:
+ast_node! {
+    Path:
     string_literal: Option<SyntaxToken StringLiteral>;
-);
-ast_node!(ImportCustom);
-impl ImportCustom {
+}
+
+ast_node! {
+    Custom
+}
+
+impl Custom {
     pub fn segments(&self) -> impl Iterator<Item = ImportCustomSegment> {
         self.syntax
             .children_with_tokens()
@@ -247,72 +259,82 @@ ast_token_enum! {
 
 ast_enum! {
     enum ImportKind {
-        ImportPath,
-        ImportCustom,
+        Path,
+        Custom,
     }
 }
 
-ast_node!(Function:
+ast_node! {
+    Function:
     fn_token: Option<SyntaxToken Fn>;
     parameter_list: Option<ParameterList>;
     return_type: Option<ReturnType>;
     body: Option<CompoundStatement>;
-);
+}
+
 impl HasName for Function {}
 
 impl HasAttributes for Function {}
 
-ast_node!(StructDeclaration:
+ast_node! {
+    StructDeclaration:
     struct_token: Option<SyntaxToken Struct>;
     name: Option<Name>;
     body: Option<StructDeclBody>;
-);
+}
 
 impl HasAttributes for StructDeclaration {}
 
-ast_node!(StructDeclBody:
+ast_node! {
+    StructDeclBody:
     left_brace_token: Option<SyntaxToken BraceLeft>;
     right_brace_token: Option<SyntaxToken BraceRight>;
     fields: AstChildren<StructDeclarationField>;
-);
+}
 
-ast_node!(StructDeclarationField:
+ast_node! {
+    StructDeclarationField:
     variable_ident_declaration: Option<VariableIdentDeclaration>;
-);
+}
+
 impl HasAttributes for StructDeclarationField {}
 
-ast_node!(GlobalVariableDeclaration:
+ast_node! {
+    GlobalVariableDeclaration:
     var_token: Option<SyntaxToken Var>;
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
     ty: Option<Type>;
     init: Option<Expression>;
-);
+}
 
 impl HasAttributes for GlobalVariableDeclaration {}
 
-ast_node!(GlobalConstantDeclaration:
+ast_node! {
+    GlobalConstantDeclaration:
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
     ty: Option<Type>;
     init: Option<Expression>;
-);
+}
 
 impl HasAttributes for OverrideDeclaration {}
 
-ast_node!(OverrideDeclaration:
+ast_node! {
+    OverrideDeclaration:
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
     ty: Option<Type>;
     init: Option<Expression>;
-);
+}
 
-ast_node!(TypeAliasDeclaration:
+ast_node! {
+    TypeAliasDeclaration:
     alias_token: Option<SyntaxToken Alias>;
     name: Option<Name>;
     equal_token: Option<SyntaxToken Equal>;
     type_declaration: Option<Type>;
-);
+}
 
 ast_enum! {
     enum Item {
@@ -326,47 +348,54 @@ ast_enum! {
     }
 }
 
-ast_node!(Name:
+ast_node! {
+    Name:
     ident_token: Option<SyntaxToken Identifier>;
     text: TokenText<'_>;
-);
+}
 
-ast_node!(Parameter:
+ast_node! {
+    Parameter:
     variable_ident_declaration: Option<VariableIdentDeclaration>;
     import: Option<Import>;
-);
+}
 
-ast_node!(ParameterList:
+ast_node! {
+    ParameterList:
     left_parenthesis_token: Option<SyntaxToken ParenthesisLeft>;
     right_parenthesis_token: Option<SyntaxToken ParenthesisRight>;
     parameters: AstChildren<Parameter>;
-);
+}
 
 ast_node!(Binding);
 
 impl HasName for Binding {}
 
-ast_node!(VariableIdentDeclaration:
+ast_node! {
+    VariableIdentDeclaration:
     colon_token: Option<SyntaxToken Colon>;
     binding: Option<Binding>;
     ty: Option<Type>;
-);
+}
 
-ast_node!(FunctionParameterList:
+ast_node! {
+    FunctionParameterList:
     left_parenthesis_token: Option<SyntaxToken ParenthesisLeft>;
     right_parenthesis_token: Option<SyntaxToken ParenthesisRight>;
     arguments: AstChildren<Expression>;
-);
+}
 
-ast_node!(ReturnType:
+ast_node! {
+    ReturnType:
     arrow_token: Option<SyntaxToken Arrow>;
     ty: Option<Type>;
-);
+}
 
-ast_node!(GenericArgumentList:
+ast_node! {
+    GenericArgumentList:
     left_angle_token: Option<SyntaxToken LessThan>;
     t_angle_token: Option<SyntaxToken GreaterThan>;
-);
+}
 
 impl GenericArgumentList {
     #[rustfmt::skip]
@@ -443,11 +472,15 @@ impl GenericArg {
     }
 }
 
-ast_node!(BinaryOperator);
-ast_node!(TypeInitializer:
+ast_node! {
+    BinaryOperator
+}
+
+ast_node! {
+    TypeInitializer:
     ty: Option<Type>;
     arguments: Option<FunctionParameterList>;
-);
+}
 
 ast_node!(VariableQualifier);
 impl VariableQualifier {
@@ -494,10 +527,15 @@ ast_token_enum! {
     }
 }
 
-ast_node!(PrefixExpression:
+ast_node! {
+    PrefixExpression:
     expression: Option<Expression>;
-);
-ast_node!(Literal);
+}
+
+ast_node! {
+    Literal
+}
+
 impl Literal {
     /// Returns the kind of this [`Literal`].
     ///
@@ -522,37 +560,54 @@ ast_token_enum! {
     }
 }
 
-ast_node!(PathExpression:
+ast_node! {
+    PathExpression:
     name_ref: Option<NameReference>;
-);
-ast_node!(NameReference:
+}
+
+ast_node! {
+    NameReference:
     text: TokenText<'_>;
-);
-ast_node!(ParenthesisExpression:
+}
+
+ast_node! {
+    ParenthesisExpression:
     left_parenthesis_token: Option<SyntaxToken ParenthesisLeft>;
     right_parenthesis_token: Option<SyntaxToken ParenthesisRight>;
     inner: Option<Expression>;
-);
-ast_node!(BitcastExpression:
+}
+
+ast_node! {
+    BitcastExpression:
     bitcast_token: Option<SyntaxToken Bitcast>;
     left_angle_token: Option<SyntaxToken LessThan>;
     right_angle_token: Option<SyntaxToken GreaterThan>;
     ty: Option<Type>;
     inner: Option<ParenthesisExpression>;
-);
-ast_node!(FieldExpression:
+}
+
+ast_node! {
+    FieldExpression:
     expression: Option<Expression>;
     name_ref: Option<NameReference>;
-);
-ast_node!(FunctionCall:
+}
+
+ast_node! {
+    FunctionCall:
     name_ref: Option<NameReference>;
     parameters: Option<FunctionParameterList>;
-);
-ast_node!(InvalidFunctionCall:
+}
+
+ast_node! {
+    InvalidFunctionCall:
     expression: Option<Expression>;
     parameters: Option<FunctionParameterList>;
-);
-ast_node!(IndexExpression);
+}
+
+ast_node! {
+    IndexExpression
+}
+
 impl IndexExpression {
     #[must_use]
     pub fn expression(&self) -> Option<Expression> {
@@ -565,20 +620,23 @@ impl IndexExpression {
     }
 }
 
-ast_node!(AttributeList:
+ast_node! {AttributeList:
     attributes: AstChildren<Attribute>;
-);
-ast_node!(Attribute:
+}
+
+ast_node! {Attribute:
     ident_token: Option<SyntaxToken Identifier>;
     parameters: Option<AttributeParameters>;
-);
-ast_node!(AttributeParameters:
-    values: AstChildren<IdentOrLiteral>;
-);
+}
 
-ast_node!(Identifier:
+ast_node! {AttributeParameters:
+    values: AstChildren<IdentOrLiteral>;
+}
+
+ast_node! {Identifier:
     text: TokenText<'_>;
-);
+}
+
 ast_enum! {
     enum IdentOrLiteral {
         Identifier,
@@ -586,14 +644,18 @@ ast_enum! {
     }
 }
 
-ast_node!(CompoundStatement:
+ast_node! {
+    CompoundStatement:
     left_brace_token: Option<SyntaxToken BraceLeft>;
     right_brace_token: Option<SyntaxToken BraceRight>;
     statements: AstChildren<Statement>;
-);
-ast_node!(AssignmentStatement:
+}
+
+ast_node! {
+    AssignmentStatement:
     equal_token: Option<SyntaxToken Equal>;
-);
+}
+
 impl AssignmentStatement {
     #[must_use]
     pub fn left_side(&self) -> Option<Expression> {
@@ -686,65 +748,83 @@ impl CompoundAssignmentStatement {
     }
 }
 
-ast_node!(ElseIfBlock:
+ast_node! {
+    ElseIfBlock:
     else_token: Option<SyntaxToken Else>;
     if_token: Option<SyntaxToken If>;
     condition: Option<Expression>;
     block: Option<CompoundStatement>;
-);
+}
 
-ast_node!(ElseBlock:
+ast_node! {
+    ElseBlock:
     else_token: Option<SyntaxToken Else>;
     block: Option<CompoundStatement>;
-);
+}
 
-ast_node!(IfStatement:
+ast_node! {
+    IfStatement:
     if_token: Option<SyntaxToken If>;
     condition: Option<Expression>;
     block: Option<CompoundStatement>;
     else_if_blocks: AstChildren<ElseIfBlock>;
     else_block: Option<ElseBlock>;
-);
+}
 
-ast_node!(WhileStatement:
+ast_node! {
+    WhileStatement:
     while_token: Option<SyntaxToken While>;
     condition: Option<Expression>;
     block: Option<CompoundStatement>;
-);
+}
 
-ast_node!(SwitchStatement:
+ast_node! {
+    SwitchStatement:
     expression: Option<Expression>;
     block: Option<SwitchBlock>;
-);
-ast_node!(SwitchBlock:
+}
+
+ast_node! {
+    SwitchBlock:
     cases: AstChildren<SwitchBodyCase>;
     default: AstChildren<SwitchBodyDefault>;
-);
-ast_node!(SwitchBodyCase:
+}
+
+ast_node! {
+    SwitchBodyCase:
     selectors: Option<SwitchCaseSelectors>;
     block: Option<CompoundStatement>;
-);
-ast_node!(SwitchCaseSelectors:
-    exprs: AstChildren<Expression>;
-);
-ast_node!(SwitchBodyDefault:
-    block: Option<CompoundStatement>;
-);
+}
 
-ast_node!(LoopStatement:
+ast_node! {
+    SwitchCaseSelectors:
+    exprs: AstChildren<Expression>;
+}
+
+ast_node! {
+    SwitchBodyDefault:
     block: Option<CompoundStatement>;
-);
-ast_node!(ReturnStatement:
+}
+
+ast_node! {
+    LoopStatement:
+    block: Option<CompoundStatement>;
+}
+
+ast_node! {
+    ReturnStatement:
     expression: Option<Expression>;
-);
-ast_node!(VariableStatement:
+}
+
+ast_node! {
+    VariableStatement:
     variable_qualifier: Option<VariableQualifier>;
     binding: Option<Binding>;
     colon: Option<SyntaxToken Colon>;
     ty: Option<Type>;
     equal_token: Option<SyntaxToken Equal>;
     initializer: Option<Expression>;
-);
+}
 
 impl VariableStatement {
     #[must_use]
@@ -768,9 +848,11 @@ pub enum VariableStatementKind {
     Var,
 }
 
-ast_node!(ForStatement:
+ast_node! {
+    ForStatement:
     for_token: Option<SyntaxToken For>;
-);
+}
+
 impl ForStatement {
     #[must_use]
     pub fn block(&self) -> Option<CompoundStatement> {
@@ -796,15 +878,27 @@ impl ForStatement {
     }
 }
 
-ast_node!(FunctionCallStatement:
+ast_node! {
+    FunctionCallStatement:
     expression: Option<Expression>;
-);
-ast_node!(Discard);
-ast_node!(Break);
-ast_node!(Continue);
-ast_node!(ContinuingStatement:
+}
+
+ast_node! {
+    Discard
+}
+
+ast_node! {
+    Break
+}
+
+ast_node! {
+    Continue
+}
+
+ast_node! {
+    ContinuingStatement:
     block: Option<CompoundStatement>;
-);
+}
 
 ast_enum! {
     enum Statement {
@@ -903,9 +997,10 @@ ast_enum_raw! {
     }
 }
 
-ast_node!(PathType:
+ast_node! {
+    PathType:
     name: Option<NameReference>;
-);
+}
 
 ast_node!(Atomic AtomicType);
 ast_node!(Array ArrayType);

@@ -52,7 +52,7 @@ fn write_pretty_module_item(
             for field in r#struct.fields.clone() {
                 let field = &module.data[field];
                 let r#type = database.lookup_intern_type_ref(field.r#type);
-                _ = writeln!(buffer, "    {}: {};", field.name.0, r#type);
+                _ = writeln!(buffer, "    {}: {type};", field.name.0);
             }
             _ = write!(buffer, "}}");
         },

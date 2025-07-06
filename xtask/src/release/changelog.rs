@@ -170,8 +170,8 @@ fn parse_changelog_line(string: &str) -> Option<PrInfo> {
             let kind = PrKind::Other;
             let message = format!("{} {}", parts[1], message.unwrap_or_default());
             return Some(PrInfo {
-                kind,
                 message: Some(message),
+                kind,
             });
         },
     };
@@ -200,7 +200,7 @@ fn parse_title_line(string: &str) -> PrInfo {
         }
     }
     PrInfo {
-        kind: PrKind::Other,
         message: Some(string.to_owned()),
+        kind: PrKind::Other,
     }
 }

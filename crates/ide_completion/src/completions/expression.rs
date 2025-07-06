@@ -45,8 +45,8 @@ pub(crate) fn complete_names_in_scope(
         let detail = match item {
             ScopeDef::Local(local) => context
                 .container
-                .and_then(|def| {
-                    let inference = context.database.infer(def);
+                .and_then(|definition| {
+                    let inference = context.database.infer(definition);
                     inference.type_of_binding.get(local).copied()
                 })
                 .map(|r#type| pretty_type(context.database, r#type)),
@@ -62,13 +62,13 @@ pub(crate) fn complete_names_in_scope(
             exact_name_match: false,
             type_match: None,
             is_local: matches!(item, ScopeDef::Local(_)),
-            postfix_match: None,
-            is_builtin: false,
-            function: None,
             is_name_already_imported: false,
             requires_import: false,
             is_private_editable: false,
+            postfix_match: None,
+            function: None,
             is_skipping_completion: false,
+            is_builtin: false,
         });
         completion.set_detail(detail);
         completion.add_to(accumulator, context.database);

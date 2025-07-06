@@ -21,18 +21,18 @@ use crate::database::HirDatabase;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub struct Type {
-    r#type: salsa::InternId,
+    id: salsa::InternId,
 }
 
 impl InternKey for Type {
     fn from_intern_id(
         #[expect(clippy::min_ident_chars, reason = "trait impl")] v: salsa::InternId
     ) -> Self {
-        Self { r#type: v }
+        Self { id: v }
     }
 
     fn as_intern_id(&self) -> salsa::InternId {
-        self.r#type
+        self.id
     }
 }
 
@@ -494,7 +494,7 @@ impl VecSize {
     ///
     /// Panics if self is the [`BoundVar`] variant.
     #[must_use]
-    pub fn as_u8(&self) -> u8 {
+    pub fn as_u8(self) -> u8 {
         match self {
             Self::Two => 2,
             Self::Three => 3,

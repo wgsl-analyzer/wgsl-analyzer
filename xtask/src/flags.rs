@@ -79,7 +79,7 @@ xflags::xflags! {
         }
 
         cmd codegen {
-            optional codegen_type: CodegenType
+            optional rtype: CodegenType
             optional --check
         }
 
@@ -149,8 +149,7 @@ pub struct Bb {
 
 #[derive(Debug)]
 pub struct Codegen {
-    pub codegen_type: Option<CodegenType>,
-
+    pub rtype: Option<CodegenType>,
     pub check: bool,
 }
 

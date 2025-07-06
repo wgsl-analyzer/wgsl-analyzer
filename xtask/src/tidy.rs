@@ -75,8 +75,7 @@ fn check_test_attrs(
             || need_panic
                 .iter()
                 .any(|path_segment| path.ends_with(path_segment)),
-        "\ndo not add `#[should_panic]` tests, see:\n\n    {}\n\n   {}\n",
-        panic_rule,
+        "\ndo not add `#[should_panic]` tests, see:\n\n    {panic_rule}\n\n   {}\n",
         path.display(),
     );
 }

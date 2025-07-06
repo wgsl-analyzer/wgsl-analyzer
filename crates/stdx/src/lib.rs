@@ -33,7 +33,7 @@ pub fn hash_once<AHasher: Hasher + Default, Hashable: Hash>(thing: Hashable) -> 
 #[expect(clippy::print_stderr, reason = "copy pasted from r-a")]
 pub fn timeit(label: &'static str) -> impl Drop {
     let start = Instant::now();
-    defer(move || eprintln!("{}: {:.2}", label, start.elapsed().as_nanos()))
+    defer(move || eprintln!("{label}: {:.2}", start.elapsed().as_nanos()))
 }
 
 /// Prints backtrace to stderr, useful for debugging.
@@ -336,7 +336,7 @@ where
 
 /// Returns all final segments of the argument, longest first.
 pub fn slice_tails<T>(this: &[T]) -> impl Iterator<Item = &[T]> {
-    (0..this.len()).map(|i| &this[i..])
+    (0..this.len()).map(|index| &this[index..])
 }
 
 #[cfg(test)]

@@ -297,7 +297,7 @@ impl CompletionRelevance {
     /// some threshold such that we think it is especially likely
     /// to be relevant.
     #[must_use]
-    pub fn is_relevant(&self) -> bool {
+    pub fn is_relevant(self) -> bool {
         self.score() > Self::BASE_SCORE
     }
 }
@@ -313,21 +313,21 @@ impl CompletionItem {
         let label = label.into();
         Builder {
             source_range,
+            trait_name: None,
+            doc_aliases: vec![],
             label,
             insert_text: None,
             is_snippet: false,
-            trait_name: None,
-            detail: None,
             // documentation: None,
+            detail: None,
             lookup: None,
             kind: kind.into(),
             text_edit: None,
             deprecated: false,
             trigger_call_info: false,
-            relevance: CompletionRelevance::default(),
             // ref_match: None,
             // imports_to_add: Default::default(),
-            doc_aliases: vec![],
+            relevance: CompletionRelevance::default(),
             // edition,
         }
     }
@@ -545,18 +545,18 @@ impl Builder {
         //     .collect();
 
         CompletionItem {
-            source_range: self.source_range,
             label: CompletionItemLabel {
                 primary: label,
                 detail_left,
                 detail_right: self.detail.clone(),
             },
+            source_range: self.source_range,
             text_edit,
             is_snippet: self.is_snippet,
-            detail: self.detail,
+            kind: self.kind,
             // documentation: self.documentation,
             lookup,
-            kind: self.kind,
+            detail: self.detail,
             deprecated: self.deprecated,
             trigger_call_info: self.trigger_call_info,
             relevance: self.relevance,

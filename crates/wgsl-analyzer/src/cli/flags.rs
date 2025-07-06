@@ -302,7 +302,6 @@ impl WgslAnalyzer {
 impl FromStr for OutputFormat {
     type Err = String;
 
-    #[expect(clippy::min_ident_chars, reason = "trait impl")]
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         match string {
             "csv" => Ok(Self::Csv),

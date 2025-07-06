@@ -137,8 +137,8 @@ pub enum SyntaxKind {
 
     /// `#import foo` or `#import "file.wgsl"`
     Import,
-    ImportPath,
-    ImportCustom,
+    Path,
+    Custom,
 
     /// Blankspace is any combination of one or more of code points from the Unicode [`Pattern_White_Space`] property.
     /// The following is the set of code points in [`Pattern_White_Space`]:
@@ -525,8 +525,8 @@ impl SyntaxKind {
 
     #[must_use]
     #[expect(clippy::as_conversions, reason = "repr(u16)")]
-    pub const fn as_u16(&self) -> u16 {
-        *self as u16
+    pub const fn as_u16(self) -> u16 {
+        self as u16
     }
 
     #[must_use]
@@ -536,28 +536,28 @@ impl SyntaxKind {
     }
 }
 
-fn lex_block_comment(lex: &mut logos::Lexer<'_, SyntaxKind>) -> Option<()> {
+fn lex_block_comment(lexer: &mut logos::Lexer<'_, SyntaxKind>) -> Option<()> {
     let mut depth = 1;
-    let slice = lex.remainder();
-    let mut i = 0;
+    let slice = lexer.remainder();
+    let mut index = 0;
     let bytes = slice.as_bytes();
-    while i + 1 < bytes.len() {
-        if bytes[i] == b'/' && bytes[i + 1] == b'*' {
+    while index + 1 < bytes.len() {
+        if bytes[index] == b'/' && bytes[index + 1] == b'*' {
             depth += 1;
-            i += 2;
-        } else if bytes[i] == b'*' && bytes[i + 1] == b'/' {
+            index += 2;
+        } else if bytes[index] == b'*' && bytes[index + 1] == b'/' {
             depth -= 1;
-            i += 2;
+            index += 2;
             if depth == 0 {
-                lex.bump(i);
+                lexer.bump(index);
                 return Some(());
             }
         } else {
-            i += 1;
+            index += 1;
         }
     }
     // If we reach here, the comment was unterminated; consume the rest.
-    lex.bump(i);
+    lexer.bump(index);
     None
 }
 
@@ -572,7 +572,7 @@ fn lex_line_ending_comment(lexer: &mut logos::Lexer<'_, SyntaxKind>) {
     let line_end = remainder
         .char_indices()
         .find(|(_, character)| is_line_ending_comment_end(*character))
-        .map_or(remainder.len(), |(i, _)| i);
+        .map_or(remainder.len(), |(index, _)| index);
     lexer.bump(line_end);
 }
 

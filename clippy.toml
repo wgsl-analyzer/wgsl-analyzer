@@ -38,7 +38,7 @@ await-holding-invalid-types = []
 cargo-ignore-publish = false
 check-incompatible-msrv-in-tests = false
 check-inconsistent-struct-field-initializers = true
-check-private-items = true
+check-private-items = false
 cognitive-complexity-threshold = 25
 disallowed-macros = []
 disallowed-methods = [
@@ -57,6 +57,7 @@ disallowed-names = [
   "col",    # column
   "ctrl",   # control
   "dbg",    # debug
+  "def",    # definition
   "dest",   # destination
   "dir",    # directory
   "dirs",   # directories
@@ -73,15 +74,17 @@ disallowed-names = [
   "req",    # request
   "resp",   # response
   "sel",    # selection
+  "sema",   # semantics
   "sig",    # sign
   "src",    # source
   "stmt",   # statement
-  "sh",
-  "opts",
-  "vars",
+  "sh",     # shell
+  "opts",   # options
+  "vars",   # variables
   "ty",     # r#type
-  # "tmp",    # temporary # does not work due to db! macro
-  # "err",    # error
+  # "lex",  # lexer     # does not work due to logos::logos macro
+  # "tmp",  # temporary # does not work due to db! macro
+  # "err",  # error     # does not work due to ?
   # "db",   # database  # does not work due to xflag macro
   # "args", # arguments # does not work due to write! macro
   # "res",  # result    # does not work due to format! macro
@@ -163,8 +166,8 @@ standard-macro-braces = [
   { name = "panic", brace = "(" },
   { name = "print", brace = "(" },
   { name = "println", brace = "(" },
-  { name = "prop_oneof", brace = "(" },
-  { name = "proptest", brace = "(" },
+  { name = "prop_oneof", brace = "[" },
+  { name = "proptest", brace = "{" },
   { name = "select", brace = "{" },
   { name = "smallvec::smallvec", brace = "[" },
   { name = "smallvec", brace = "[" },

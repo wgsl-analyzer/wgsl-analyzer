@@ -464,8 +464,8 @@ pub(crate) fn inlay_hint(
             to_value(lsp::extensions::InlayHintResolveData {
                 file_id: file_id.index(),
                 hash: hash.to_string(),
-                version: snap.file_version(file_id),
                 resolve_range: range(line_index, resolve_range),
+                version: snap.file_version(file_id),
             })
             .unwrap(),
         ),

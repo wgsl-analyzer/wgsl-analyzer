@@ -258,7 +258,7 @@ pub trait ModuleDataNode: Clone {
     ) -> &Self;
 
     /// Downcasts a `ModItem` to a `FileItemTreeId` specific to this type.
-    fn id_from_mod_item(mod_item: &ModuleItem) -> Option<ModuleItemId<Self>>;
+    fn id_from_mod_item(mod_item: ModuleItem) -> Option<ModuleItemId<Self>>;
 
     /// Upcasts a `FileItemTreeId` to a generic `ModuleItem`.
     fn id_to_mod_item(id: ModuleItemId<Self>) -> ModuleItem;
@@ -298,9 +298,9 @@ macro_rules! mod_items {
                 }
 
 				#[allow(clippy::allow_attributes, unreachable_patterns, reason = "macros should not leak lints")]
-                fn id_from_mod_item(mod_item: &ModuleItem) -> Option<ModuleItemId<Self>> {
+                fn id_from_mod_item(mod_item: ModuleItem) -> Option<ModuleItemId<Self>> {
                     match mod_item {
-                        ModuleItem::$r#type(id) => Some(*id),
+                        ModuleItem::$r#type(id) => Some(id),
                         _ => None,
                     }
                 }
@@ -352,7 +352,7 @@ pub fn find_item<M: ModuleDataNode>(
     source: &M::Source,
 ) -> Option<ModuleItemId<M>> {
     let module_info = database.module_info(file_id);
-    module_info.items().iter().find_map(|item| {
+    module_info.items().iter().find_map(|&item| {
         let id = M::id_from_mod_item(item)?;
         let data = M::lookup(&module_info.data, id.index);
         let def_map = database.ast_id_map(file_id);
