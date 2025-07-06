@@ -138,7 +138,7 @@ function createCommands(): Record<string, CommandFactory> {
 					health: "stopped",
 				});
 			},
-			disabled: (_) => async () => { },
+			disabled: (_) => async () => {},
 		},
 
 		analyzerStatus: { enabled: commands.analyzerStatus },
@@ -185,12 +185,12 @@ function checkConflictingExtensions() {
 	if (vscode.extensions.getExtension("polymeilex.wgsl")) {
 		vscode.window
 			.showWarningMessage(
-				"You have both the wgsl-analyzer (wgsl-analyzer.wgsl-analyzer) and WGSL (polymeilex.wgsl) "
-				+ "plugins enabled. These are known to conflict and cause various functions of "
-				+ "both plugins to not work correctly. You should disable one of them.",
+				"You have both the wgsl-analyzer (wgsl-analyzer.wgsl-analyzer) and WGSL (polymeilex.wgsl) " +
+					"plugins enabled. These are known to conflict and cause various functions of " +
+					"both plugins to not work correctly. You should disable one of them.",
 				"Got it",
 			)
 			// eslint-disable-next-line no-console
-			.then(() => { }, console.error);
+			.then(() => {}, console.error);
 	}
 }

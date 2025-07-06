@@ -113,7 +113,7 @@ export const changeTestState = new lc.NotificationType<ChangeTestStateParameters
 
 export type AnalyzerStatusParameters = { textDocument?: lc.TextDocumentIdentifier };
 
-export interface FetchDependencyListParameters { }
+export interface FetchDependencyListParameters {}
 
 export interface FetchDependencyListResult {
 	crates: {
@@ -129,7 +129,7 @@ export const fetchDependencyList = new lc.RequestType<
 	void
 >("wgsl-analyzer/fetchDependencyList");
 
-export interface FetchDependencyGraphParameters { }
+export interface FetchDependencyGraphParameters {}
 
 export interface FetchDependencyGraphResult {
 	crates: {

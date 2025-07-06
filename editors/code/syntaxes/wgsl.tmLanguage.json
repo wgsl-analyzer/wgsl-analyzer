@@ -30,7 +30,7 @@
 			"name": "comment.block.wgsl",
 			"begin": "/\\*",
 			"end": "\\*/",
-			"patterns": [ { "include": "#block_comments" } ]
+			"patterns": [{ "include": "#block_comments" }]
 		},
 		"functions": {
 			"patterns": [

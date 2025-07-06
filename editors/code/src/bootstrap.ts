@@ -13,8 +13,8 @@ export async function bootstrap(
 	const path = await getServer(context, config, state);
 	if (!path) {
 		throw new Error(
-			"wgsl-analyzer Language Server is not available. "
-			+ "Please ensure it is [correctly installed](https://wgsl-analyzer.github.io/manual.html#installation).",
+			"wgsl-analyzer Language Server is not available. " +
+				"Please ensure it is [correctly installed](https://wgsl-analyzer.github.io/manual.html#installation).",
 		);
 	}
 
@@ -22,11 +22,11 @@ export async function bootstrap(
 
 	if (!isValidExecutable(path, config.serverExtraEnv)) {
 		throw new Error(
-			`Failed to execute ${path} --version.`
-			+ (config.serverPath
-				? `\`config.server.path\` or \`config.serverPath\` has been set explicitly.\
+			`Failed to execute ${path} --version.` +
+				(config.serverPath
+					? `\`config.server.path\` or \`config.serverPath\` has been set explicitly.\
 			Consider removing this config or making a valid server binary available at that path.`
-				: ""),
+					: ""),
 		);
 	}
 
@@ -78,12 +78,12 @@ async function getServer(
 	}
 
 	await vscode.window.showErrorMessage(
-		"Unfortunately we do not ship binaries for your platform yet. "
-		+ "You need to manually clone the wgsl-analyzer repository and "
-		+ "run `cargo xtask install --server` to build the language server from sources. "
-		+ "If you feel that your platform should be supported, please create an issue "
-		+ "about that [here](https://github.com/wgsl-analyzer/wgsl-analyzer/issues) and we "
-		+ "will consider it.",
+		"Unfortunately we do not ship binaries for your platform yet. " +
+			"You need to manually clone the wgsl-analyzer repository and " +
+			"run `cargo xtask install --server` to build the language server from sources. " +
+			"If you feel that your platform should be supported, please create an issue " +
+			"about that [here](https://github.com/wgsl-analyzer/wgsl-analyzer/issues) and we " +
+			"will consider it.",
 	);
 	return undefined;
 }

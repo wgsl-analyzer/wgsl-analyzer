@@ -6,10 +6,7 @@ import * as Is from "vscode-languageclient/lib/common/utils/is";
 import { assert, unwrapUndefinable } from "./util";
 import * as diagnostics from "./diagnostics";
 import { WorkspaceEdit } from "vscode";
-import {
-	type Config,
-	prepareVSCodeConfig,
-} from "./config";
+import { type Config, prepareVSCodeConfig } from "./config";
 import { sep as pathSeparator } from "path";
 import { WaLanguageClient } from "./lang_client";
 
@@ -91,10 +88,10 @@ export async function createClient(
 											break;
 										case "Yes": {
 											const pathToInsert =
-												"."
-												+ parent.substring(folder.length)
-												+ pathSeparator
-												+ "Cargo.toml";
+												"." +
+												parent.substring(folder.length) +
+												pathSeparator +
+												"Cargo.toml";
 											const value = config
 												// eslint-disable-next-line @typescript-eslint/no-explicit-any
 												.get<any[]>("linkedProjects")
@@ -272,7 +269,10 @@ export async function createClient(
 		},
 	};
 	const clientOptions: lc.LanguageClientOptions = {
-		documentSelector: [{ scheme: "file", language: "wgsl" }, { scheme: "file", language: "wesl" }],
+		documentSelector: [
+			{ scheme: "file", language: "wgsl" },
+			{ scheme: "file", language: "wesl" },
+		],
 		initializationOptions,
 		diagnosticCollectionName: "wgsl-analyzer",
 		traceOutputChannel,
@@ -333,10 +333,10 @@ class ExperimentalFeatures implements lc.StaticFeature {
 	initialize(
 		_capabilities: lc.ServerCapabilities,
 		_documentSelector: lc.DocumentSelector | undefined,
-	): void { }
+	): void {}
 
-	dispose(): void { }
-	clear(): void { }
+	dispose(): void {}
+	clear(): void {}
 }
 
 class OverrideFeatures implements lc.StaticFeature {
@@ -356,10 +356,10 @@ class OverrideFeatures implements lc.StaticFeature {
 	initialize(
 		_capabilities: lc.ServerCapabilities,
 		_documentSelector: lc.DocumentSelector | undefined,
-	): void { }
+	): void {}
 
-	dispose(): void { }
-	clear(): void { }
+	dispose(): void {}
+	clear(): void {}
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
