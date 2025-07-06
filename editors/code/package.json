@@ -70,7 +70,7 @@
 		"@vscode/vsce": "^3.2.2",
 		"esbuild": "^0.25.0",
 		"eslint": "^9.30.1",
-		"eslint-config-prettier": "^10.0.1",
+		"eslint-config-prettier": "^10.1.5",
 		"eslint-define-config": "^2.1.0",
 		"ovsx": "0.10.4",
 		"prettier": "^3.5.2",
