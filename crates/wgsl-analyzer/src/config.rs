@@ -379,6 +379,10 @@ impl Config {
     }
 
     #[must_use]
+    #[expect(
+        clippy::unused_self,
+        reason = "TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/362"
+    )]
     pub fn hover(&self) -> HoverConfig {
         let mem_kind = |kind| match kind {
             MemoryLayoutHoverRenderKindDef::Both => MemoryLayoutHoverRenderKind::Both,
@@ -494,8 +498,13 @@ impl Config {
     }
 
     #[must_use]
-    pub const fn typing_trigger_chars(&self) -> &'static str {
-        "=.+"
+    #[expect(
+        clippy::unnecessary_wraps,
+        clippy::unused_self,
+        reason = "Intended to be refactored into config macro"
+    )]
+    pub fn typing_trigger_chars(&self) -> Option<String> {
+        Some("=.".to_owned())
     }
 
     // VSCode is our reference implementation, so we allow ourselves to work around issues by

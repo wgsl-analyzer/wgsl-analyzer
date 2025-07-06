@@ -218,15 +218,15 @@ ast_node! {
 }
 
 ast_node! {
-    Path:
+    ImportPath:
     string_literal: Option<SyntaxToken StringLiteral>;
 }
 
 ast_node! {
-    Custom
+    ImportCustom
 }
 
-impl Custom {
+impl ImportCustom {
     pub fn segments(&self) -> impl Iterator<Item = ImportCustomSegment> {
         self.syntax
             .children_with_tokens()
@@ -259,8 +259,8 @@ ast_token_enum! {
 
 ast_enum! {
     enum ImportKind {
-        Path,
-        Custom,
+        ImportPath,
+        ImportCustom,
     }
 }
 

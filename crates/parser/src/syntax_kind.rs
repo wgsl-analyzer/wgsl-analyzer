@@ -137,8 +137,8 @@ pub enum SyntaxKind {
 
     /// `#import foo` or `#import "file.wgsl"`
     Import,
-    Path,
-    Custom,
+    ImportPath,
+    ImportCustom,
 
     /// Blankspace is any combination of one or more of code points from the Unicode [`Pattern_White_Space`] property.
     /// The following is the set of code points in [`Pattern_White_Space`]:
