@@ -1,6 +1,9 @@
 //! Like `std::time::Instant`, but also measures memory & CPU cycles.
 
-#![expect(clippy::print_stderr, reason = "this is a debugging utility")]
+#![cfg_attr(
+    all(target_os = "linux", not(target_env = "ohos")),
+    expect(clippy::print_stderr, reason = "this is a debugging utility")
+)]
 
 use std::{
     fmt,
@@ -23,6 +26,7 @@ pub struct StopWatchSpan {
 }
 
 impl StopWatch {
+    #[must_use]
     pub fn start() -> Self {
         #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
         let counter = {
@@ -59,6 +63,10 @@ impl StopWatch {
         }
     }
 
+    #[cfg_attr(
+        not(all(target_os = "linux", not(target_env = "ohos"))),
+        expect(clippy::needless_pass_by_ref_mut, reason = "platform differences")
+    )]
     pub fn elapsed(&mut self) -> StopWatchSpan {
         let time = self.time.elapsed();
 
