@@ -13,9 +13,7 @@ rust-version.workspace = true
 
 [dependencies]
 cfg-if = "1.0.1"
-jemalloc-ctl = { version = "0.6.0", package = "tikv-jemalloc-ctl", optional = true, features = [
-  "stats",
-] }
+jemalloc-ctl = { version = "0.5.4", package = "tikv-jemalloc-ctl", optional = true }
 
 [target.'cfg(all(target_os = "linux", not(target_env = "ohos")))'.dependencies]
 perf-event = "=0.4.8"
