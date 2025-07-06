@@ -1,3 +1,7 @@
+#![expect(
+    clippy::missing_const_for_fn,
+    reason = "const trait impl is not stable"
+)]
 //! This provides darkfores over platform-specific Quality of Service APIs.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -189,10 +193,10 @@ mod imp {
         // SAFETY: Undocumented
         let errno = unsafe { libc::__error() };
         // SAFETY: Undocumented
-        let errno = unsafe { *errno };
+        let errno_value = unsafe { *errno };
 
         #[expect(clippy::unreachable, reason = "makes sense here")]
-        match errno {
+        match errno_value {
             libc::EPERM => {
                 // This thread has been excluded from the QoS system
                 // due to a previous call to a function such as `pthread_setschedparam`
@@ -200,7 +204,9 @@ mod imp {
                 //
                 // Panic instead of returning an error
                 // to maintain the invariant that we only use QoS APIs.
-                panic!("tried to set QoS of thread which has opted out of QoS (os error {errno})")
+                panic!(
+                    "tried to set QoS of thread which has opted out of QoS (os error {errno_value})"
+                )
             },
 
             libc::EINVAL => {
@@ -216,17 +222,24 @@ mod imp {
             _ => {
                 // `pthread_set_qos_class_self_np`'s documentation
                 // does not mention any other errors.
-                unreachable!("`pthread_set_qos_class_self_np` returned unexpected error {errno}")
+                unreachable!(
+                    "`pthread_set_qos_class_self_np` returned unexpected error {errno_value}"
+                )
             },
         }
     }
 
     pub(super) fn get_current_thread_qos_class() -> Option<QoSClass> {
+        // SAFETY: undocumented
         let current_thread = unsafe { libc::pthread_self() };
         let mut qos_class_raw = libc::qos_class_t::QOS_CLASS_UNSPECIFIED;
         // SAFETY: undocumented
         let code = unsafe {
-            libc::pthread_get_qos_class_np(current_thread, &mut qos_class_raw, std::ptr::null_mut())
+            libc::pthread_get_qos_class_np(
+                current_thread,
+                &raw mut qos_class_raw,
+                std::ptr::null_mut(),
+            )
         };
 
         #[expect(clippy::unreachable, reason = "See comment below")]
@@ -243,8 +256,8 @@ mod imp {
             // SAFETY: undocumented
             let errno = unsafe { libc::__error() };
             // SAFETY: undocumented
-            let errno = unsafe { *errno };
-            unreachable!("`pthread_get_qos_class_np` failed unexpectedly (os error {errno})");
+            let errno_value = unsafe { *errno };
+            unreachable!("`pthread_get_qos_class_np` failed unexpectedly (os error {errno_value})");
         }
 
         match qos_class_raw {
@@ -276,10 +289,6 @@ mod imp {
 
 // FIXME: Windows has [QoS APIs](https://learn.microsoft.com/en-us/windows/win32/procthread/quality-of-service), we should use them!
 #[cfg(not(target_vendor = "apple"))]
-#[expect(
-    clippy::missing_const_for_fn,
-    reason = "const trait impl is not stable"
-)]
 mod imp {
     use super::ThreadIntent;
 
