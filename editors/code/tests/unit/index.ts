@@ -20,8 +20,8 @@ class Suite {
 		this.tests = [];
 	}
 
-	public addTest(name: string, f: () => Promise<void>): void {
-		const test = new Test(name, f());
+	public addTest(name: string, test_function: () => Promise<void>): void {
+		const test = new Test(name, test_function());
 		this.tests.push(test);
 	}
 
@@ -45,9 +45,9 @@ class Suite {
 }
 
 export class Context {
-	public async suite(name: string, f: (ctx: Suite) => void): Promise<void> {
+	public async suite(name: string, fn: (ctx: Suite) => void): Promise<void> {
 		const ctx = new Suite();
-		f(ctx);
+		fn(ctx);
 		try {
 			ok(`⌛︎ ${name}`);
 			await ctx.run();

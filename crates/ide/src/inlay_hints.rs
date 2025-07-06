@@ -235,18 +235,22 @@ impl From<&str> for InlayHintLabel {
 impl fmt::Display for InlayHintLabel {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        write!(f, "{}", self.parts.iter().map(|part| &part.text).format(""))
+        write!(
+            formatter,
+            "{}",
+            self.parts.iter().map(|part| &part.text).format("")
+        )
     }
 }
 
 impl fmt::Debug for InlayHintLabel {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        f.debug_list().entries(&self.parts).finish()
+        formatter.debug_list().entries(&self.parts).finish()
     }
 }
 
@@ -277,19 +281,19 @@ impl hash::Hash for InlayHintLabelPart {
 impl fmt::Debug for InlayHintLabelPart {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
             Self {
                 text,
                 linked_location: None,
                 tooltip: None | Some(LazyProperty::Lazy),
-            } => text.fmt(f),
+            } => text.fmt(formatter),
             Self {
                 text,
                 linked_location,
                 tooltip,
-            } => f
+            } => formatter
                 .debug_struct("InlayHintLabelPart")
                 .field("text", text)
                 .field("linked_location", linked_location)

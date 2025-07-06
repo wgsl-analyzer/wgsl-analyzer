@@ -74,9 +74,9 @@ pub struct AstPointer<N: AstNode> {
 impl<N: AstNode> std::fmt::Debug for AstPointer<N> {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
+        formatter: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
-        f.debug_struct("AstPointer")
+        formatter.debug_struct("AstPointer")
             .field("raw", &self.raw)
             .finish()
     }

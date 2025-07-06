@@ -27,9 +27,9 @@ impl panic::RefUnwindSafe for RootDatabase {}
 impl fmt::Debug for RootDatabase {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        f.debug_struct("RootDatabase").finish()
+        formatter.debug_struct("RootDatabase").finish()
     }
 }
 

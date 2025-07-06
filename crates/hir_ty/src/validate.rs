@@ -15,11 +15,11 @@ pub enum Scope {
 impl fmt::Display for Scope {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
-            Self::Function => write!(f, "function"),
-            Self::Module => write!(f, "module"),
+            Self::Function => write!(formatter, "function"),
+            Self::Module => write!(formatter, "module"),
         }
     }
 }
@@ -38,22 +38,22 @@ pub enum AddressSpaceError {
 impl fmt::Display for AddressSpaceError {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
             Self::ExpectedAccessMode(mode) => match mode.as_slice() {
-                &[mode] => write!(f, "expected {mode} access mode"),
-                &[mode1, mode2] => write!(f, "expected {mode1} or {mode2} access mode"),
-                other => write!(f, "expected {} access mode", other.iter().format(", ")),
+                &[mode] => write!(formatter, "expected {mode} access mode"),
+                &[mode1, mode2] => write!(formatter, "expected {mode1} or {mode2} access mode"),
+                other => write!(formatter, "expected {} access mode", other.iter().format(", ")),
             },
             Self::ExpectedScope(scope) => {
-                write!(f, "address space is only valid in {scope}-scope")
+                write!(formatter, "address space is only valid in {scope}-scope")
             },
-            Self::ExpectedConstructable => f.write_str("type is not constructable"),
-            Self::ExpectedHostShareable => f.write_str("type is not host-shareable"),
-            Self::ExpectedWorkgroupCompatible => f.write_str(""),
+            Self::ExpectedConstructable => formatter.write_str("type is not constructable"),
+            Self::ExpectedHostShareable => formatter.write_str("type is not host-shareable"),
+            Self::ExpectedWorkgroupCompatible => formatter.write_str(""),
             Self::ExpectedHandleOrTexture => {
-                f.write_str("address space is only valid for handle or texture types")
+                formatter.write_str("address space is only valid for handle or texture types")
             },
         }
     }

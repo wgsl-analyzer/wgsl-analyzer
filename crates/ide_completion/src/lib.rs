@@ -133,7 +133,7 @@ impl CompletionFieldsToResolve {
 // /// the caret. In other words, for
 // ///
 // /// ```ignore
-// /// fn f() {
+// /// fn foo() {
 // ///     let foo = 92;
 // ///     let _ = bar$0
 // /// }

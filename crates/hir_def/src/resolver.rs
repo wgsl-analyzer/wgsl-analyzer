@@ -154,7 +154,7 @@ impl Resolver {
         })
     }
 
-    /// calls f for every local, function, and global declaration, but not structs
+    /// calls function for every local, function, and global declaration, but not structs
     pub fn process_value_names<Function: FnMut(Name, ScopeDef)>(
         &self,
         mut function: Function,

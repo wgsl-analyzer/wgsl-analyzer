@@ -382,9 +382,9 @@ impl<T> Copy for Interned<T> {}
 impl<T> fmt::Debug for Interned<T> {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        f.debug_tuple("Interned").field(&self.0).finish()
+        formatter.debug_tuple("Interned").field(&self.0).finish()
     }
 }
 

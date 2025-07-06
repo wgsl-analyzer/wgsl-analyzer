@@ -41,9 +41,9 @@ impl ParseError {
 impl fmt::Debug for ParseError {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        f.debug_struct("ParseError")
+        formatter.debug_struct("ParseError")
             .field("expected", &self.expected)
             .field("found", &self.found)
             .field("range", &self.range)
@@ -64,10 +64,10 @@ impl fmt::Display for ParseError {
     #[expect(clippy::use_debug, reason = "TODO: Improve error messages")]
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         write!(
-            f,
+            formatter,
             "error at {}..{}: expected ",
             u32::from(self.range.start()),
             u32::from(self.range.end()),
@@ -79,18 +79,18 @@ impl fmt::Display for ParseError {
 
         for (index, expected_kind) in self.expected.iter().enumerate() {
             if is_first(index) {
-                write!(f, "{expected_kind:?}")?;
+                write!(formatter, "{expected_kind:?}")?;
             } else if is_last(index) && num_expected > 2 {
-                write!(f, ", or {expected_kind:?}")?;
+                write!(formatter, ", or {expected_kind:?}")?;
             } else if is_last(index) {
-                write!(f, " or {expected_kind:?}")?;
+                write!(formatter, " or {expected_kind:?}")?;
             } else {
-                write!(f, ", {expected_kind:?}")?;
+                write!(formatter, ", {expected_kind:?}")?;
             }
         }
 
         if let Some(found) = self.found {
-            write!(f, ", but found {found:?}")?;
+            write!(formatter, ", but found {found:?}")?;
         }
 
         Ok(())

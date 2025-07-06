@@ -302,9 +302,9 @@ struct Milliseconds(Duration);
 impl std::fmt::Display for Milliseconds {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
+        formatter: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         let n = self.0.as_millis();
-        write!(f, "{n:5}ms")
+        write!(formatter, "{n:5}ms")
     }
 }

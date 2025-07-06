@@ -305,6 +305,7 @@ impl JodChild {
 
 // feature: iter_order_by
 // Iterator::eq_by
+// https://github.com/rust-lang/rust/issues/64295
 pub fn iter_eq_by<I, I2, F>(
     this: I2,
     other: I,
@@ -319,13 +320,15 @@ where
     let mut this = this.into_iter();
 
     loop {
-        let Some(x) = this.next() else {
+        let Some(an_item) = this.next() else {
             return other.next().is_none();
         };
 
-        let Some(y) = other.next() else { return false };
+        let Some(another_item) = other.next() else {
+            return false;
+        };
 
-        if !eq(x, y) {
+        if !eq(an_item, another_item) {
             return false;
         }
     }

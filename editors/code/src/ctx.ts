@@ -113,13 +113,13 @@ async function resolveImport(content: string): Promise<string> {
 
 async function mapObjectAsync<T, U>(
 	object: Record<string, T>,
-	f: (value: T) => Promise<U>,
+	functionn: (value: T) => Promise<U>,
 	handleError?: (key: string, value: T, error: unknown) => void,
 ): Promise<Record<string, U>> {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const map = async ([key, value]: [any, any]) => {
 		try {
-			const mapped = await f(value);
+			const mapped = await functionn(value);
 			return [key, mapped];
 		} catch (e) {
 			if (handleError) {

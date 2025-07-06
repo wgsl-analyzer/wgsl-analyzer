@@ -186,15 +186,15 @@ pub enum CodegenType {
 impl fmt::Display for CodegenType {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
-            Self::All => write!(f, "all"),
-            Self::AssistsDocTests => write!(f, "assists-doc-tests"),
-            Self::DiagnosticsDocs => write!(f, "diagnostics-docs"),
-            Self::LintDefinitions => write!(f, "lint-definitions"),
-            Self::ParserTests => write!(f, "parser-tests"),
-            Self::FeatureDocs => write!(f, "feature-docs"),
+            Self::All => write!(formatter, "all"),
+            Self::AssistsDocTests => write!(formatter, "assists-doc-tests"),
+            Self::DiagnosticsDocs => write!(formatter, "diagnostics-docs"),
+            Self::LintDefinitions => write!(formatter, "lint-definitions"),
+            Self::ParserTests => write!(formatter, "parser-tests"),
+            Self::FeatureDocs => write!(formatter, "feature-docs"),
         }
     }
 }

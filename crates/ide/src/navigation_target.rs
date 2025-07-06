@@ -45,9 +45,9 @@ pub struct NavigationTarget {
 impl fmt::Debug for NavigationTarget {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        let mut debug_struct = f.debug_struct("NavigationTarget");
+        let mut debug_struct = formatter.debug_struct("NavigationTarget");
         macro_rules! opt {
             ($($name:ident)*) => {$(
                 if let Some(value) = &self.$name {

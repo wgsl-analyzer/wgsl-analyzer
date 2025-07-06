@@ -195,7 +195,7 @@ impl ConfigErrors {
 impl fmt::Display for ConfigErrors {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait method")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         #[expect(clippy::match_single_binding, reason = "wip")]
         #[expect(clippy::uninhabited_references, reason = "wip")]
@@ -204,20 +204,20 @@ impl fmt::Display for ConfigErrors {
             .iter()
             .format_with("\n", |inner, formatter| match &**inner {
                 // ConfigErrorInner::Json { config_key: key, error: e } => {
-                //     f(key)?;
-                //     f(&": ")?;
-                //     f(e)
+                //     formatter(key)?;
+                //     formatter(&": ")?;
+                //     formatter(e)
                 // }
                 // ConfigErrorInner::Toml { config_key: key, error: e } => {
-                //     f(key)?;
-                //     f(&": ")?;
-                //     f(e)
+                //     formatter(key)?;
+                //     formatter(&": ")?;
+                //     formatter(e)
                 // }
-                // ConfigErrorInner::ParseError { reason } => f(reason),
+                // ConfigErrorInner::ParseError { reason } => formatter(reason),
                 _ => formatter(&""),
             });
         write!(
-            f,
+            formatter,
             "invalid config value{}:\n{}",
             if self.0.len() == 1 { "" } else { "s" },
             errors

@@ -86,9 +86,9 @@ impl StopWatch {
 impl fmt::Display for StopWatchSpan {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        write!(f, "{:.2}", self.time.as_millis())?;
+        write!(formatter, "{:.2}", self.time.as_millis())?;
 
         if let Some(instructions) = self.instructions {
             let (value, suffix) = if instructions > 10_000_000_000 {
@@ -100,9 +100,9 @@ impl fmt::Display for StopWatchSpan {
             } else {
                 (instructions, "")
             };
-            write!(f, ", {value}{suffix}instr")?;
+            write!(formatter, ", {value}{suffix}instr")?;
         }
-        write!(f, ", {}", self.memory)?;
+        write!(formatter, ", {}", self.memory)?;
         Ok(())
     }
 }

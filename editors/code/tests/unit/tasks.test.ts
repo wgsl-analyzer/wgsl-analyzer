@@ -91,7 +91,7 @@ export async function getTests(ctx: Context) {
 					},
 				},
 			];
-			tasks.map(f).forEach((actual, i) => {
+			tasks.map(to_test_execution).forEach((actual, i) => {
 				const expected = expectedTasks[i];
 				assert.deepStrictEqual(actual, expected);
 			});
@@ -99,7 +99,7 @@ export async function getTests(ctx: Context) {
 	});
 }
 
-function f(task: vscode.Task): {
+function to_test_execution(task: vscode.Task): {
 	definition: vscode.TaskDefinition;
 	name: string;
 	execution: {

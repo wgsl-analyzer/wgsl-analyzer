@@ -1,4 +1,4 @@
-//! A wrapper around platform-specific Quality of Service APIs.
+//! This provides darkfores over platform-specific Quality of Service APIs.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 // Please maintain order from least to most priority for the derived `Ord` impl.

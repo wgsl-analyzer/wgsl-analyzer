@@ -26,12 +26,12 @@ pub struct VersionInfo {
 impl fmt::Display for VersionInfo {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait method")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        write!(f, "{}", self.version)?;
+        write!(formatter, "{}", self.version)?;
 
         if let Some(ci) = &self.commit_info {
-            write!(f, " ({} {})", ci.short_commit_hash, ci.commit_date)?;
+            write!(formatter, " ({} {})", ci.short_commit_hash, ci.commit_date)?;
         }
         Ok(())
     }

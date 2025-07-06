@@ -473,15 +473,15 @@ impl From<VecDimensionality> for VecSize {
 impl fmt::Display for VecSize {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
-            Self::Two => f.write_str("2"),
-            Self::Three => f.write_str("3"),
-            Self::Four => f.write_str("4"),
+            Self::Two => formatter.write_str("2"),
+            Self::Three => formatter.write_str("3"),
+            Self::Four => formatter.write_str("4"),
             Self::BoundVar(var) => {
                 let mut names = "NMOPQRS".chars();
-                write!(f, "{}", names.nth(var.index).unwrap())
+                write!(formatter, "{}", names.nth(var.index).unwrap())
             },
         }
     }
@@ -595,13 +595,13 @@ pub enum TextureDimensionality {
 impl fmt::Display for TextureDimensionality {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
-            Self::D1 => f.write_str("1d"),
-            Self::D2 => f.write_str("2d"),
-            Self::D3 => f.write_str("3d"),
-            Self::Cube => f.write_str("cube"),
+            Self::D1 => formatter.write_str("1d"),
+            Self::D2 => formatter.write_str("2d"),
+            Self::D3 => formatter.write_str("3d"),
+            Self::Cube => formatter.write_str("cube"),
         }
     }
 }
@@ -639,7 +639,7 @@ pub enum TexelFormat {
 impl fmt::Display for TexelFormat {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         let str = match self {
             Self::Rgba8unorm => "rgba8unorm",
@@ -658,10 +658,10 @@ impl fmt::Display for TexelFormat {
             Self::Rg32uint => "rg32uint",
             Self::Rg32sint => "rg32sint",
             Self::Rg32float => "rg32float",
-            Self::BoundVar(var) => return f.write_char(('F'..).nth(var.index).unwrap()),
+            Self::BoundVar(var) => return formatter.write_char(('F'..).nth(var.index).unwrap()),
             Self::Any => "_",
         };
-        f.write_str(str)
+        formatter.write_str(str)
     }
 }
 

@@ -39,9 +39,9 @@ pub struct Parse {
 impl Debug for Parse {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        f.debug_struct("Parse")
+        formatter.debug_struct("Parse")
             .field("green_node", &self.green_node)
             .field("errors", &self.errors)
             .finish()

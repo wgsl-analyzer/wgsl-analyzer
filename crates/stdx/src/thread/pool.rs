@@ -43,7 +43,7 @@ impl Pool {
     /// Panics if job panics
     #[must_use]
     pub fn new(threads: usize) -> Self {
-        const STACK_SIZE: usize = 8 * 1024 * 1024;
+        const STACK_SIZE: usize = 1 << 24;
         const INITIAL_INTENT: ThreadIntent = ThreadIntent::Worker;
 
         let (job_sender, job_receiver) = crossbeam_channel::unbounded();

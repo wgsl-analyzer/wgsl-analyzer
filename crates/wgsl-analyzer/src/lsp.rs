@@ -28,10 +28,10 @@ impl LspError {
 impl fmt::Display for LspError {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         write!(
-            f,
+            formatter,
             "Language Server request failed with {}. ({})",
             self.code, self.message
         )

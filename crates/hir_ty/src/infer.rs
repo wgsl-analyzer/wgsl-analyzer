@@ -1969,16 +1969,16 @@ pub enum TypeLoweringError {
 impl fmt::Display for TypeLoweringError {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
             Self::UnresolvedName(name) => {
-                write!(f, "type `{}` not found in scope", name.as_str())
+                write!(formatter, "type `{}` not found in scope", name.as_str())
             },
             Self::InvalidTexelFormat(format) => {
                 let all_formats = "rgba8unorm,\nrgba8snorm,\nrgba8uint,\nrgba8sint,\nrgba16uint,\nrgba16sint,\nrgba16float,\nr32uint,\nr32sint,\nr32float,\nrg32uint,\nrg32sint,\nrg32float,\nrgba32uint,\nrgba32sint,\nrgba32float";
                 write!(
-                    f,
+                    formatter,
                     "`{format}` is not a valid texel format, expected one of:\n{all_formats}"
                 )
             },

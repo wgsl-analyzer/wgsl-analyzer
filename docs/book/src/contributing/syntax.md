@@ -83,31 +83,41 @@ Points of note:
 - If extra erroneous input is present, it is wrapped into a node with `ERROR` kind and treated just like any other node.
 - Parser errors are not a part of the syntax tree.
 
-An input like `fn f() { 90 + 2 }` might be parsed as:
+An input like `fn foo() -> i32 { return 90 + 2; }` might be parsed as:
 
 ```text
-FN@0..17
-  FN_KW@0..2 "fn"
-  WHITESPACE@2..3 " "
-  NAME@3..4
-    IDENT@3..4 "f"
-  PARAM_LIST@4..6
-    L_PAREN@4..5 "("
-    R_PAREN@5..6 ")"
-  WHITESPACE@6..7 " "
-  BLOCK_EXPR@7..17
-    L_CURLY@7..8 "{"
-    WHITESPACE@8..9 " "
-    BIN_EXPR@9..15
-      LITERAL@9..11
-        INT_NUMBER@9..11 "90"
-      WHITESPACE@11..12 " "
-      PLUS@12..13 "+"
-      WHITESPACE@13..14 " "
-      LITERAL@14..15
-        INT_NUMBER@14..15 "2"
-    WHITESPACE@15..16 " "
-    R_CURLY@16..17 "}"
+Function@0..34
+  Fn@0..2 "fn"
+  Blankspace@2..3 " "
+  Name@3..6
+    Identifier@3..6 "foo"
+  ParameterList@6..9
+    ParenthesisLeft@6..7 "("
+    ParenthesisRight@7..8 ")"
+    Blankspace@8..9 " "
+  ReturnType@9..16
+    Arrow@9..11 "->"
+    Blankspace@11..12 " "
+    Int32@12..16
+      Int32@12..15 "i32"
+      Blankspace@15..16 " "
+  CompoundStatement@16..34
+    BraceLeft@16..17 "{"
+    Blankspace@17..18 " "
+    ReturnStatement@18..31
+      Return@18..24 "return"
+      Blankspace@24..25 " "
+      InfixExpression@25..31
+        Literal@25..28
+          DecimalIntLiteral@25..27 "90"
+          Blankspace@27..28 " "
+        Plus@28..29 "+"
+        Blankspace@29..30 " "
+        Literal@30..31
+          DecimalIntLiteral@30..31 "2"
+    Semicolon@31..32 ";"
+    Blankspace@32..33 " "
+    BraceRight@33..34 "}"
 ```
 
 #### Optimizations

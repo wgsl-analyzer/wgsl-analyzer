@@ -92,15 +92,15 @@ enum Event {
 impl fmt::Display for Event {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait method")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
-            Self::Lsp(_) => write!(f, "Event::Lsp"),
-            Self::Task(_) => write!(f, "Event::Task"),
-            Self::Vfs(_) => write!(f, "Event::Vfs"),
-            // Self::Flycheck(_) => write!(f, "Event::Flycheck"),
-            Self::QueuedTask(_) => write!(f, "Event::QueuedTask"),
-            // Event::TestResult(_) => write!(f, "Event::TestResult"),
+            Self::Lsp(_) => write!(formatter, "Event::Lsp"),
+            Self::Task(_) => write!(formatter, "Event::Task"),
+            Self::Vfs(_) => write!(formatter, "Event::Vfs"),
+            // Self::Flycheck(_) => write!(formatter, "Event::Flycheck"),
+            Self::QueuedTask(_) => write!(formatter, "Event::QueuedTask"),
+            // Event::TestResult(_) => write!(formatter, "Event::TestResult"),
         }
     }
 }
@@ -152,7 +152,7 @@ pub(crate) enum PrimeCachesProgress {
 impl fmt::Debug for Event {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait method")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         let debug_non_verbose = |not: &Notification, formatter: &mut fmt::Formatter<'_>| {
             formatter
@@ -166,11 +166,11 @@ impl fmt::Debug for Event {
                 if notification_is::<lsp_types::notification::DidOpenTextDocument>(not)
                     || notification_is::<lsp_types::notification::DidChangeTextDocument>(not)
                 {
-                    return debug_non_verbose(not, f);
+                    return debug_non_verbose(not, formatter);
                 }
             },
             Self::Task(Task::Response(response)) => {
-                return f
+                return formatter
                     .debug_struct("Response")
                     .field("id", &response.id)
                     .field("error", &response.error)
@@ -179,13 +179,13 @@ impl fmt::Debug for Event {
             Self::Lsp(_) | Self::Task(_) | Self::QueuedTask(_) | Self::Vfs(_) => (),
         }
         match self {
-            Self::Lsp(message) => fmt::Debug::fmt(message, f),
-            Self::Task(task) => fmt::Debug::fmt(task, f),
-            Self::QueuedTask(task) => fmt::Debug::fmt(task, f),
-            Self::Vfs(message) => fmt::Debug::fmt(message, f),
-            // Event::Flycheck(it) => fmt::Debug::fmt(it, f),
-            // Event::TestResult(it) => fmt::Debug::fmt(it, f),
-            // Event::DiscoverProject(it) => fmt::Debug::fmt(it, f),
+            Self::Lsp(message) => fmt::Debug::fmt(message, formatter),
+            Self::Task(task) => fmt::Debug::fmt(task, formatter),
+            Self::QueuedTask(task) => fmt::Debug::fmt(task, formatter),
+            Self::Vfs(message) => fmt::Debug::fmt(message, formatter),
+            // Event::Flycheck(it) => fmt::Debug::fmt(it, formatter),
+            // Event::TestResult(it) => fmt::Debug::fmt(it, formatter),
+            // Event::DiscoverProject(it) => fmt::Debug::fmt(it, formatter),
         }
     }
 }
