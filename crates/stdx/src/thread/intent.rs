@@ -186,8 +186,12 @@ mod imp {
             return;
         }
 
-        let errno = unsafe { *libc::__error() };
+        // SAFETY: Undocumented
+        let errno = unsafe { libc::__error() };
+        // SAFETY: Undocumented
+        let errno = unsafe { *errno };
 
+        #[expect(clippy::unreachable, reason = "makes sense here")]
         match errno {
             libc::EPERM => {
                 // This thread has been excluded from the QoS system
@@ -220,10 +224,12 @@ mod imp {
     pub(super) fn get_current_thread_qos_class() -> Option<QoSClass> {
         let current_thread = unsafe { libc::pthread_self() };
         let mut qos_class_raw = libc::qos_class_t::QOS_CLASS_UNSPECIFIED;
+        // SAFETY: undocumented
         let code = unsafe {
             libc::pthread_get_qos_class_np(current_thread, &mut qos_class_raw, std::ptr::null_mut())
         };
 
+        #[expect(clippy::unreachable, reason = "See comment below")]
         if code != 0 {
             // `pthread_get_qos_class_np`'s documentation states that
             // an error value is placed into errno if the return code is not zero.
@@ -234,7 +240,10 @@ mod imp {
             // ones which we cannot handle anyway
             //
             // 0: https://github.com/apple-oss-distributions/libpthread/blob/67e155c94093be9a204b69637d198eceff2c7c46/src/qos.c#L171-L177
-            let errno = unsafe { *libc::__error() };
+            // SAFETY: undocumented
+            let errno = unsafe { libc::__error() };
+            // SAFETY: undocumented
+            let errno = unsafe { *errno };
             unreachable!("`pthread_get_qos_class_np` failed unexpectedly (os error {errno})");
         }
 
@@ -257,7 +266,7 @@ mod imp {
         }
     }
 
-    pub(super) fn thread_intent_to_qos_class(intent: ThreadIntent) -> QoSClass {
+    pub(super) const fn thread_intent_to_qos_class(intent: ThreadIntent) -> QoSClass {
         match intent {
             ThreadIntent::Worker => QoSClass::Utility,
             ThreadIntent::LatencySensitive => QoSClass::UserInitiated,
