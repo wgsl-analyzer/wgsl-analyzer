@@ -41,7 +41,8 @@ impl Debug for Parse {
         &self,
         formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        formatter.debug_struct("Parse")
+        formatter
+            .debug_struct("Parse")
             .field("green_node", &self.green_node)
             .field("errors", &self.errors)
             .finish()

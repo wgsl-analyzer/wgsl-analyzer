@@ -43,7 +43,8 @@ impl fmt::Debug for ParseError {
         &self,
         formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        formatter.debug_struct("ParseError")
+        formatter
+            .debug_struct("ParseError")
             .field("expected", &self.expected)
             .field("found", &self.found)
             .field("range", &self.range)

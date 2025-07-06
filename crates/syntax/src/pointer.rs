@@ -76,7 +76,8 @@ impl<N: AstNode> std::fmt::Debug for AstPointer<N> {
         &self,
         formatter: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
-        formatter.debug_struct("AstPointer")
+        formatter
+            .debug_struct("AstPointer")
             .field("raw", &self.raw)
             .finish()
     }

@@ -142,8 +142,10 @@ fn parse_with_unconfigured_query(
 
     let mut unconfigured = Vec::new();
 
-    let processed_source =
-        shader_processor::get_shader_processor().process(&source, &shader_defs, |range, definition| {
+    let processed_source = shader_processor::get_shader_processor().process(
+        &source,
+        &shader_defs,
+        |range, definition| {
             let range = TextRange::new(
                 TextSize::from(u32::try_from(range.start).unwrap()),
                 TextSize::from(u32::try_from(range.end).unwrap()),
@@ -152,7 +154,8 @@ fn parse_with_unconfigured_query(
                 range,
                 definition: definition.to_owned(),
             });
-        });
+        },
+    );
     let parse = syntax::parse(&processed_source);
     (parse, Arc::new(unconfigured))
 }
