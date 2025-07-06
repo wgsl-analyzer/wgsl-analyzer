@@ -736,8 +736,8 @@ function asWorkspaceSnippetEdit(
 
 				for (const edit of change.edits) {
 					if (
-						"insertTextFormat" in edit &&
-						edit.insertTextFormat === lc.InsertTextFormat.Snippet
+						"insertTextFormat" in edit
+						&& edit.insertTextFormat === lc.InsertTextFormat.Snippet
 					) {
 						// is a snippet text edit
 						snippetTextEdits.push(

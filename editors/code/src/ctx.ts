@@ -365,8 +365,8 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 
 		vscode.workspace.onDidChangeTextDocument(async (e) => {
 			if (
-				vscode.window.activeTextEditor?.document !== e.document ||
-				e.contentChanges.length === 0
+				vscode.window.activeTextEditor?.document !== e.document
+				|| e.contentChanges.length === 0
 			) {
 				return;
 			}
@@ -536,15 +536,15 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 
 		const toggleCheckOnSave = this.config.checkOnSave ? "Disable" : "Enable";
 		statusBar.tooltip.appendMarkdown(
-			`[Extension Info](command:wgsl-analyzer.serverVersion "Show version and server binary info"): Version ${this.version}, Server Version ${this._serverVersion}` +
-				"\n\n---\n\n" +
-				'[$(terminal) Open Logs](command:wgsl-analyzer.openLogs "Open the server logs")' +
-				"\n\n" +
-				`[$(settings) ${toggleCheckOnSave} Check on Save](command:wgsl-analyzer.toggleCheckOnSave "Temporarily ${toggleCheckOnSave.toLowerCase()} check on save functionality")` +
-				"\n\n" +
-				'[$(stop-circle) Stop server](command:wgsl-analyzer.stopServer "Stop the server")' +
-				"\n\n" +
-				'[$(debug-restart) Restart server](command:wgsl-analyzer.restartServer "Restart the server")',
+			`[Extension Info](command:wgsl-analyzer.serverVersion "Show version and server binary info"): Version ${this.version}, Server Version ${this._serverVersion}`
+				+ "\n\n---\n\n"
+				+ '[$(terminal) Open Logs](command:wgsl-analyzer.openLogs "Open the server logs")'
+				+ "\n\n"
+				+ `[$(settings) ${toggleCheckOnSave} Check on Save](command:wgsl-analyzer.toggleCheckOnSave "Temporarily ${toggleCheckOnSave.toLowerCase()} check on save functionality")`
+				+ "\n\n"
+				+ '[$(stop-circle) Stop server](command:wgsl-analyzer.stopServer "Stop the server")'
+				+ "\n\n"
+				+ '[$(debug-restart) Restart server](command:wgsl-analyzer.restartServer "Restart the server")',
 		);
 		if (!status.quiescent) icon = "$(loading~spin) ";
 		statusBar.text = `${icon}wgsl-analyzer`;

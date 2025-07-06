@@ -234,15 +234,15 @@ export class Config {
 		let target;
 		let value;
 		if (
-			config.workspaceFolderValue !== undefined ||
-			config.workspaceFolderLanguageValue !== undefined
+			config.workspaceFolderValue !== undefined
+			|| config.workspaceFolderLanguageValue !== undefined
 		) {
 			target = vscode.ConfigurationTarget.WorkspaceFolder;
 			overrideInLanguage = config.workspaceFolderLanguageValue;
 			value = config.workspaceFolderValue || config.workspaceFolderLanguageValue;
 		} else if (
-			config.workspaceValue !== undefined ||
-			config.workspaceLanguageValue !== undefined
+			config.workspaceValue !== undefined
+			|| config.workspaceLanguageValue !== undefined
 		) {
 			target = vscode.ConfigurationTarget.Workspace;
 			overrideInLanguage = config.workspaceLanguageValue;
