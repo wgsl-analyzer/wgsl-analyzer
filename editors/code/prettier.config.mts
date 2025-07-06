@@ -12,6 +12,7 @@ const config: Config = {
 	bracketSpacing: true,
 	experimentalOperatorPosition: "start",
 	experimentalTernaries: false,
+	endOfLine: "lf",
 };
 
 export default config;

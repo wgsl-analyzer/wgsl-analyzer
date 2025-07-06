@@ -8,8 +8,18 @@ updates:
       prefix: internal
     labels:
       - C-Dependencies
+
   - package-ecosystem: github-actions
     directory: /
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: internal
+    labels:
+      - C-Dependencies
+
+  - package-ecosystem: npm
+    directory: /editors/code
     schedule:
       interval: daily
     commit-message:
