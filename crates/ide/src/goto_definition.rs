@@ -11,7 +11,7 @@ pub(crate) fn goto_definition(
     database: &RootDatabase,
     file_position: FilePosition,
 ) -> Option<NavigationTarget> {
-    let sema = &Semantics::new(database);
+    let semantics = &Semantics::new(database);
     let file_id = file_position.file_id;
     let file = database.parse(file_id).tree();
     let token = file.syntax().token_at_offset(file_position.offset);
@@ -26,7 +26,7 @@ pub(crate) fn goto_definition(
         _ => 1,
     })?;
 
-    let definition = Definition::from_token(sema, file_id.into(), &token)?;
+    let definition = Definition::from_token(semantics, file_id.into(), &token)?;
     InFile::new(file_id.into(), definition).try_to_navigation_target(database)
 }
 
@@ -68,7 +68,7 @@ impl TryToNavigationTarget for InFile<Definition> {
             Definition::Local(local) => {
                 InFile::new(self.file_id, *local).try_to_navigation_target(database)?
             },
-            Definition::ModuleDef(def) => match def {
+            Definition::ModuleDef(definition) => match definition {
                 hir::ModuleDef::Function(function) => {
                     let declaration = function.source(database)?;
 

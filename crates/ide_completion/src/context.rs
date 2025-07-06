@@ -34,8 +34,8 @@ impl<'database> CompletionContext<'database> {
         position @ FilePosition { file_id, offset }: FilePosition,
         config: &'database CompletionConfig,
     ) -> Option<Self> {
-        let sema = Semantics::new(database);
-        let file = sema.parse(position.file_id);
+        let semantics = Semantics::new(database);
+        let file = semantics.parse(position.file_id);
         let token = file
             .syntax()
             .token_at_offset(position.offset)
@@ -45,9 +45,10 @@ impl<'database> CompletionContext<'database> {
 
         let container = token
             .parent()
-            .and_then(|parent| sema.find_container(file_id, &parent));
+            .and_then(|parent| semantics.find_container(file_id, &parent));
 
-        let completion_location = determine_location(&sema, file.syntax(), position.offset, &token);
+        let completion_location =
+            determine_location(&semantics, file.syntax(), position.offset, &token);
 
         let module_info = database.module_info(file_id);
         let mut resolver = Resolver::default().push_module_scope(database, file_id, module_info);
@@ -63,13 +64,13 @@ impl<'database> CompletionContext<'database> {
             .or_else(|| token.parent_ancestors().find_map(ExprOrStatement::cast));
 
         if let Some(scope) = nearest_scope
-            && let Some(def) = container
+            && let Some(definition) = container
         {
-            resolver = sema.analyze(def).resolver_for(scope);
+            resolver = semantics.analyze(definition).resolver_for(scope);
         }
 
         let context = Self {
-            semantics: sema,
+            semantics,
             file_id,
             database,
             position,

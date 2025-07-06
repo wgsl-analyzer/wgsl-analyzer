@@ -69,17 +69,17 @@ pub struct BodySourceMap {
 impl Body {
     pub fn body_query(
         database: &dyn DefDatabase,
-        def: DefinitionWithBodyId,
+        definition: DefinitionWithBodyId,
     ) -> Arc<Self> {
-        database.body_with_source_map(def).0
+        database.body_with_source_map(definition).0
     }
 
     pub fn body_with_source_map_query(
         database: &dyn DefDatabase,
-        def: DefinitionWithBodyId,
+        definition: DefinitionWithBodyId,
     ) -> (Arc<Self>, Arc<BodySourceMap>) {
-        let file_id = def.file_id(database);
-        let (body, source_map) = match def {
+        let file_id = definition.file_id(database);
+        let (body, source_map) = match definition {
             DefinitionWithBodyId::Function(id) => {
                 let location = id.lookup(database);
                 let source = location.source(database);

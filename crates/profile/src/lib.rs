@@ -13,7 +13,9 @@ pub use crate::{
     stop_watch::{StopWatch, StopWatchSpan},
 };
 
-thread_local!(static IN_SCOPE: RefCell<bool> = const { RefCell::new(false) });
+thread_local! {
+    static IN_SCOPE: RefCell<bool> = const { RefCell::new(false) };
+}
 
 /// A wrapper around `google_cpu_profiler`.
 ///

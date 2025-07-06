@@ -17,23 +17,23 @@ impl Tidy {
     )]
     pub(crate) fn run(
         &self,
-        sh: &Shell,
+        shell: &Shell,
     ) -> anyhow::Result<()> {
-        check_lsp_extensions_docs(sh);
+        check_lsp_extensions_docs(shell);
         Ok(())
     }
 }
 
-fn check_lsp_extensions_docs(sh: &Shell) {
+fn check_lsp_extensions_docs(shell: &Shell) {
     let expected_hash = {
-        let lsp_ext_rs = sh
+        let lsp_ext_rs = shell
             .read_file(project_root().join("crates/wgsl-analyzer/src/lsp/extensions.rs"))
             .unwrap();
         stable_hash(lsp_ext_rs.as_str())
     };
 
     let actual_hash = {
-        let lsp_extensions_md = sh
+        let lsp_extensions_md = shell
             .read_file(project_root().join("docs/book/src/contributing/lsp-extensions.md"))
             .unwrap();
         let text = lsp_extensions_md
@@ -75,8 +75,7 @@ fn check_test_attrs(
             || need_panic
                 .iter()
                 .any(|path_segment| path.ends_with(path_segment)),
-        "\ndo not add `#[should_panic]` tests, see:\n\n    {}\n\n   {}\n",
-        panic_rule,
+        "\ndo not add `#[should_panic]` tests, see:\n\n    {panic_rule}\n\n   {}\n",
         path.display(),
     );
 }

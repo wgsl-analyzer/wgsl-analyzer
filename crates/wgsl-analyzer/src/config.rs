@@ -100,6 +100,10 @@ impl Config {
     }
 
     #[must_use]
+    #[expect(
+        clippy::unused_self,
+        reason = "TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/26"
+    )]
     pub const fn discover_workspace_config(&self) -> Option<&DiscoverWorkspaceConfig> {
         None
     }
@@ -195,7 +199,7 @@ impl ConfigErrors {
 impl fmt::Display for ConfigErrors {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait method")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         #[expect(clippy::match_single_binding, reason = "wip")]
         #[expect(clippy::uninhabited_references, reason = "wip")]
@@ -204,23 +208,22 @@ impl fmt::Display for ConfigErrors {
             .iter()
             .format_with("\n", |inner, formatter| match &**inner {
                 // ConfigErrorInner::Json { config_key: key, error: e } => {
-                //     f(key)?;
-                //     f(&": ")?;
-                //     f(e)
+                //     formatter(key)?;
+                //     formatter(&": ")?;
+                //     formatter(e)
                 // }
                 // ConfigErrorInner::Toml { config_key: key, error: e } => {
-                //     f(key)?;
-                //     f(&": ")?;
-                //     f(e)
+                //     formatter(key)?;
+                //     formatter(&": ")?;
+                //     formatter(e)
                 // }
-                // ConfigErrorInner::ParseError { reason } => f(reason),
+                // ConfigErrorInner::ParseError { reason } => formatter(reason),
                 _ => formatter(&""),
             });
         write!(
-            f,
-            "invalid config value{}:\n{}",
-            if self.0.len() == 1 { "" } else { "s" },
-            errors
+            formatter,
+            "invalid config value{}:\n{errors}",
+            if self.0.len() == 1 { "" } else { "s" }
         )
     }
 }
@@ -247,13 +250,12 @@ impl Config {
                 cache_priming_num_threads: NumThreads::Physical,
                 num_threads: None,
             },
-            capabilities: ClientCapabilities::new(caps),
+            workspace_roots,
             // discovered_projects_from_filesystem: Vec::new(),
             // discovered_projects_from_command: Vec::new(),
-            root_path,
+            capabilities: ClientCapabilities::new(caps),
             // snippets: Default::default(),
-            diagnostics_enable: true,
-            workspace_roots,
+            root_path,
             client_info: client_info.map(|client_info| ClientInfo {
                 name: client_info.name,
                 version: client_info
@@ -262,12 +264,13 @@ impl Config {
                     .map(Version::parse)
                     .and_then(Result::ok),
             }),
+            diagnostics_enable: true,
             // client_config: (FullConfigInput::default(), ConfigErrors(vec![])),
             // default_config: DEFAULT_CONFIG_DATA.get_or_init(|| Box::leak(Box::default())),
             // source_root_parent_map: Arc::new(FxHashMap::default()),
             // user_config: None,
-            detached_files: Vec::default(),
             validation_errors: ConfigErrors::default(),
+            detached_files: Vec::default(),
             // watoml_file: Default::default(),
             wgslfmt_override_command: None,
             wgslfmt_extra_args: vec![],
@@ -275,6 +278,11 @@ impl Config {
         }
     }
 
+    #[expect(
+        clippy::unused_self,
+        clippy::needless_pass_by_ref_mut,
+        reason = "TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/26"
+    )]
     pub const fn rediscover_workspaces(&mut self) {
         // let discovered = vec![];
         // tracing::info!("discovered projects: {:?}", discovered);
@@ -308,19 +316,19 @@ impl Config {
     }
 
     #[must_use]
-    pub fn prime_caches_num_threads(&self) -> usize {
-        match &self.data.cache_priming_num_threads {
+    pub fn prime_caches_number_of_threads(&self) -> usize {
+        match self.data.cache_priming_num_threads {
             NumThreads::Concrete(0) | NumThreads::Physical => num_cpus::get_physical(),
-            &NumThreads::Concrete(n) => n,
+            NumThreads::Concrete(number) => number,
             NumThreads::Logical => num_cpus::get(),
         }
     }
 
     #[must_use]
-    pub fn main_loop_num_threads(&self) -> usize {
-        match &self.data.num_threads {
+    pub fn main_loop_number_of_threads(&self) -> usize {
+        match self.data.num_threads {
             Some(NumThreads::Concrete(0) | NumThreads::Physical) | None => num_cpus::get_physical(),
-            &Some(NumThreads::Concrete(n)) => n,
+            Some(NumThreads::Concrete(number)) => number,
             Some(NumThreads::Logical) => num_cpus::get(),
         }
     }
@@ -371,6 +379,10 @@ impl Config {
     }
 
     #[must_use]
+    #[expect(
+        clippy::unused_self,
+        reason = "TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/362"
+    )]
     pub fn hover(&self) -> HoverConfig {
         let mem_kind = |kind| match kind {
             MemoryLayoutHoverRenderKindDef::Both => MemoryLayoutHoverRenderKind::Both,
@@ -440,6 +452,10 @@ impl Config {
     }
 
     #[must_use]
+    #[expect(
+        clippy::unused_self,
+        reason = "TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/363"
+    )]
     pub const fn completion_hide_deprecated(&self) -> bool {
         false
     }
@@ -482,8 +498,13 @@ impl Config {
     }
 
     #[must_use]
-    pub const fn typing_trigger_chars(&self) -> &'static str {
-        "=.+"
+    #[expect(
+        clippy::unnecessary_wraps,
+        clippy::unused_self,
+        reason = "Intended to be refactored into config macro"
+    )]
+    pub fn typing_trigger_chars(&self) -> Option<String> {
+        Some("=.".to_owned())
     }
 
     // VSCode is our reference implementation, so we allow ourselves to work around issues by

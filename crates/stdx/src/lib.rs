@@ -33,7 +33,7 @@ pub fn hash_once<AHasher: Hasher + Default, Hashable: Hash>(thing: Hashable) -> 
 #[expect(clippy::print_stderr, reason = "copy pasted from r-a")]
 pub fn timeit(label: &'static str) -> impl Drop {
     let start = Instant::now();
-    defer(move || eprintln!("{}: {:.2}", label, start.elapsed().as_nanos()))
+    defer(move || eprintln!("{label}: {:.2}", start.elapsed().as_nanos()))
 }
 
 /// Prints backtrace to stderr, useful for debugging.
@@ -305,6 +305,7 @@ impl JodChild {
 
 // feature: iter_order_by
 // Iterator::eq_by
+// https://github.com/rust-lang/rust/issues/64295
 pub fn iter_eq_by<I, I2, F>(
     this: I2,
     other: I,
@@ -319,13 +320,15 @@ where
     let mut this = this.into_iter();
 
     loop {
-        let Some(x) = this.next() else {
+        let Some(an_item) = this.next() else {
             return other.next().is_none();
         };
 
-        let Some(y) = other.next() else { return false };
+        let Some(another_item) = other.next() else {
+            return false;
+        };
 
-        if !eq(x, y) {
+        if !eq(an_item, another_item) {
             return false;
         }
     }
@@ -333,7 +336,7 @@ where
 
 /// Returns all final segments of the argument, longest first.
 pub fn slice_tails<T>(this: &[T]) -> impl Iterator<Item = &[T]> {
-    (0..this.len()).map(|i| &this[i..])
+    (0..this.len()).map(|index| &this[index..])
 }
 
 #[cfg(test)]

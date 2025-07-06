@@ -299,9 +299,9 @@ impl std::error::Error for HandlerCancelledError {
 impl fmt::Display for HandlerCancelledError {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait method")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        write!(f, "Cancelled")
+        write!(formatter, "Cancelled")
     }
 }
 

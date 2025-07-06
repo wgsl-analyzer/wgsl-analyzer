@@ -141,7 +141,7 @@ impl Visit for DataVisitor<'_> {
         field: &Field,
         value: &dyn std::fmt::Debug,
     ) {
-        write!(self.string, "{} = {:?} ", field.name(), value).unwrap();
+        write!(self.string, "{} = {value:?} ", field.name()).unwrap();
     }
 }
 
@@ -245,16 +245,16 @@ impl Node {
 
         self.children.sort_by_key(|node| node.name);
         let mut index = 0;
-        for i in 1..self.children.len() {
-            if self.children[index].name == self.children[i].name {
-                let child = mem::take(&mut self.children[i]);
+        for inner_index in 1..self.children.len() {
+            if self.children[index].name == self.children[inner_index].name {
+                let child = mem::take(&mut self.children[inner_index]);
                 self.children[index].duration += child.duration;
                 self.children[index].count += child.count;
                 self.children[index].children.extend(child.children);
             } else {
                 index += 1;
-                assert!(index <= i);
-                self.children.swap(index, i);
+                assert!(index <= inner_index);
+                self.children.swap(index, inner_index);
             }
         }
         self.children.truncate(index + 1);
@@ -302,9 +302,9 @@ struct Milliseconds(Duration);
 impl std::fmt::Display for Milliseconds {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut std::fmt::Formatter<'_>,
+        formatter: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
-        let n = self.0.as_millis();
-        write!(f, "{n:5}ms")
+        let milliseconds = self.0.as_millis();
+        write!(formatter, "{milliseconds:5}ms")
     }
 }

@@ -1,4 +1,8 @@
-//! An opaque façade around platform-specific `QoS` APIs.
+#![expect(
+    clippy::missing_const_for_fn,
+    reason = "const trait impl is not stable"
+)]
+//! This provides darkfores over platform-specific Quality of Service APIs.
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 // Please maintain order from least to most priority for the derived `Ord` impl.
@@ -48,7 +52,7 @@ fn thread_intent_to_qos_class(intent: ThreadIntent) -> QoSClass {
 }
 
 // All Apple platforms use XNU as their kernel
-// and thus have the concept of QoS.
+// and thus have the concept of [QoS](https://developer.apple.com/library/archive/documentation/Performance/Conceptual/EnergyGuide-iOS/PrioritizeWorkWithQoS.html).
 #[cfg(target_vendor = "apple")]
 mod imp {
     use super::ThreadIntent;
@@ -172,22 +176,27 @@ mod imp {
     pub(super) const IS_QOS_AVAILABLE: bool = true;
 
     pub(super) fn set_current_thread_qos_class(class: QoSClass) {
-        let c = match class {
+        let class = match class {
             QoSClass::UserInteractive => libc::qos_class_t::QOS_CLASS_USER_INTERACTIVE,
             QoSClass::UserInitiated => libc::qos_class_t::QOS_CLASS_USER_INITIATED,
             QoSClass::Utility => libc::qos_class_t::QOS_CLASS_UTILITY,
             QoSClass::Background => libc::qos_class_t::QOS_CLASS_BACKGROUND,
         };
 
-        let code = unsafe { libc::pthread_set_qos_class_self_np(c, 0) };
+        // SAFETY: Undocumented
+        let code = unsafe { libc::pthread_set_qos_class_self_np(class, 0) };
 
         if code == 0 {
             return;
         }
 
-        let errno = unsafe { *libc::__error() };
+        // SAFETY: Undocumented
+        let errno = unsafe { libc::__error() };
+        // SAFETY: Undocumented
+        let errno_value = unsafe { *errno };
 
-        match errno {
+        #[expect(clippy::unreachable, reason = "makes sense here")]
+        match errno_value {
             libc::EPERM => {
                 // This thread has been excluded from the QoS system
                 // due to a previous call to a function such as `pthread_setschedparam`
@@ -195,7 +204,9 @@ mod imp {
                 //
                 // Panic instead of returning an error
                 // to maintain the invariant that we only use QoS APIs.
-                panic!("tried to set QoS of thread which has opted out of QoS (os error {errno})")
+                panic!(
+                    "tried to set QoS of thread which has opted out of QoS (os error {errno_value})"
+                )
             },
 
             libc::EINVAL => {
@@ -211,18 +222,27 @@ mod imp {
             _ => {
                 // `pthread_set_qos_class_self_np`'s documentation
                 // does not mention any other errors.
-                unreachable!("`pthread_set_qos_class_self_np` returned unexpected error {errno}")
+                unreachable!(
+                    "`pthread_set_qos_class_self_np` returned unexpected error {errno_value}"
+                )
             },
         }
     }
 
     pub(super) fn get_current_thread_qos_class() -> Option<QoSClass> {
+        // SAFETY: undocumented
         let current_thread = unsafe { libc::pthread_self() };
         let mut qos_class_raw = libc::qos_class_t::QOS_CLASS_UNSPECIFIED;
+        // SAFETY: undocumented
         let code = unsafe {
-            libc::pthread_get_qos_class_np(current_thread, &mut qos_class_raw, std::ptr::null_mut())
+            libc::pthread_get_qos_class_np(
+                current_thread,
+                &raw mut qos_class_raw,
+                std::ptr::null_mut(),
+            )
         };
 
+        #[expect(clippy::unreachable, reason = "See comment below")]
         if code != 0 {
             // `pthread_get_qos_class_np`'s documentation states that
             // an error value is placed into errno if the return code is not zero.
@@ -233,8 +253,11 @@ mod imp {
             // ones which we cannot handle anyway
             //
             // 0: https://github.com/apple-oss-distributions/libpthread/blob/67e155c94093be9a204b69637d198eceff2c7c46/src/qos.c#L171-L177
-            let errno = unsafe { *libc::__error() };
-            unreachable!("`pthread_get_qos_class_np` failed unexpectedly (os error {errno})");
+            // SAFETY: undocumented
+            let errno = unsafe { libc::__error() };
+            // SAFETY: undocumented
+            let errno_value = unsafe { *errno };
+            unreachable!("`pthread_get_qos_class_np` failed unexpectedly (os error {errno_value})");
         }
 
         match qos_class_raw {
@@ -256,7 +279,7 @@ mod imp {
         }
     }
 
-    pub(super) fn thread_intent_to_qos_class(intent: ThreadIntent) -> QoSClass {
+    pub(super) const fn thread_intent_to_qos_class(intent: ThreadIntent) -> QoSClass {
         match intent {
             ThreadIntent::Worker => QoSClass::Utility,
             ThreadIntent::LatencySensitive => QoSClass::UserInitiated,
@@ -264,12 +287,8 @@ mod imp {
     }
 }
 
-// FIXME: Windows has QoS APIs, we should use them!
+// FIXME: Windows has [QoS APIs](https://learn.microsoft.com/en-us/windows/win32/procthread/quality-of-service), we should use them!
 #[cfg(not(target_vendor = "apple"))]
-#[expect(
-    clippy::missing_const_for_fn,
-    reason = "const trait impl is not stable"
-)]
 mod imp {
     use super::ThreadIntent;
 

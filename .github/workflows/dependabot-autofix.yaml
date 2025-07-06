@@ -9,6 +9,14 @@ on:
 permissions:
   pull-requests: write
 
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  RUST_BACKTRACE: short
+  RUSTUP_MAX_RETRIES: 10
+  RUSTFLAGS: -D warnings
+
 jobs:
   autofix:
     if: github.actor == 'dependabot[bot]'
@@ -31,7 +39,7 @@ jobs:
             echo "updated=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Set up Rust
+      - name: Install stable Rust toolchain
         if: steps.check_toolchain.outputs.updated == 'true'
         uses: dtolnay/rust-toolchain@1.88.0
         with:

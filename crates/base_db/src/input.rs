@@ -42,9 +42,9 @@ impl SourceRoot {
     #[must_use]
     pub fn path_for_file(
         &self,
-        file: &FileId,
+        file: FileId,
     ) -> Option<&VfsPath> {
-        self.file_set.path_for_file(file)
+        self.file_set.path_for_file(&file)
     }
 
     #[must_use]

@@ -583,12 +583,12 @@ export function showReferences(ctx: CtxInit): Cmd {
 }
 
 export function applyActionGroup(_ctx: CtxInit): Cmd {
-	return async (actions: { label: string; arguments: lc.CodeAction }[]) => {
+	return async (actions: { label: string; args: lc.CodeAction }[]) => {
 		const selectedAction = await vscode.window.showQuickPick(actions);
 		if (!selectedAction) return;
 		await vscode.commands.executeCommand(
 			"wgsl-analyzer.resolveCodeAction",
-			selectedAction.arguments,
+			selectedAction.args,
 		);
 	};
 }
@@ -736,8 +736,8 @@ function asWorkspaceSnippetEdit(
 
 				for (const edit of change.edits) {
 					if (
-						"insertTextFormat" in edit &&
-						edit.insertTextFormat === lc.InsertTextFormat.Snippet
+						"insertTextFormat" in edit
+						&& edit.insertTextFormat === lc.InsertTextFormat.Snippet
 					) {
 						// is a snippet text edit
 						snippetTextEdits.push(

@@ -244,12 +244,12 @@ impl Collector<'_> {
                     .map(|type_ref| self.database.intern_type_ref(type_ref));
 
                 match variable_statement.kind()? {
-                    ast::VariableStatementKind::Let => Statement::LetStatement {
+                    ast::VariableStatementKind::Let => Statement::Let {
                         binding_id,
                         type_ref,
                         initializer,
                     },
-                    ast::VariableStatementKind::Constant => Statement::ConstStatement {
+                    ast::VariableStatementKind::Constant => Statement::Const {
                         binding_id,
                         type_ref,
                         initializer,
@@ -264,7 +264,7 @@ impl Collector<'_> {
                             .and_then(|qualifier| qualifier.access_mode())
                             .map(Into::into);
 
-                        Statement::VariableStatement {
+                        Statement::Variable {
                             binding_id,
                             type_ref,
                             initializer,

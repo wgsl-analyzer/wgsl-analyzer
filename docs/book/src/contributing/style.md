@@ -200,15 +200,15 @@ Avoid splitting precondition check and precondition use across functions:
 ```rust
 // GOOD
 fn main() {
-    let s: &str = ...;
-    if let Some(contents) = string_literal_contents(s) {
+    let string: &str = ...;
+    if let Some(contents) = string_literal_contents(string) {
 
     }
 }
 
-fn string_literal_contents(s: &str) -> Option<&str> {
-    if s.starts_with('"') && s.ends_with('"') {
-        Some(&s[1..s.len() - 1])
+fn string_literal_contents(string: &str) -> Option<&str> {
+    if string.starts_with('"') && string.ends_with('"') {
+        Some(&string[1..string.len() - 1])
     } else {
         None
     }
@@ -216,14 +216,14 @@ fn string_literal_contents(s: &str) -> Option<&str> {
 
 // BAD
 fn main() {
-    let s: &str = ...;
-    if is_string_literal(s) {
-        let contents = &s[1..s.len() - 1];
+    let string: &str = ...;
+    if is_string_literal(string) {
+        let contents = &string[1..string.len() - 1];
     }
 }
 
-fn is_string_literal(s: &str) -> bool {
-    s.starts_with('"') && s.ends_with('"')
+fn is_string_literal(string: &str) -> bool {
+    string.starts_with('"') && string.ends_with('"')
 }
 ```
 
@@ -255,11 +255,17 @@ As a special case of the previous rule, do not hide control flow inside function
 ```rust
 // GOOD
 if cond {
-    f()
+    foo();
+}
+
+fn foo() {
+  ...
 }
 
 // BAD
-fn f() {
+bar();
+
+fn bar() {
     if !cond {
         return;
     }
@@ -557,13 +563,13 @@ If allocation is inevitable, let the caller allocate the resource:
 
 ```rust
 // GOOD
-fn frobnicate(s: String) {
+fn frobnicate(string: String) {
     ...
 }
 
 // BAD
-fn frobnicate(s: &str) {
-    let s = s.to_string();
+fn frobnicate(string: &str) {
+    let string = string.to_string();
     ...
 }
 ```
@@ -615,15 +621,15 @@ Avoid making a lot of code type parametric, *especially* on the boundaries betwe
 
 ```rust
 // GOOD
-fn frobnicate(f: impl FnMut()) {
-    frobnicate_impl(&mut f)
+fn frobnicate(function: impl FnMut()) {
+    frobnicate_impl(&mut function)
 }
-fn frobnicate_impl(f: &mut dyn FnMut()) {
+fn frobnicate_impl(function: &mut dyn FnMut()) {
     // lots of code
 }
 
 // BAD
-fn frobnicate(f: impl FnMut()) {
+fn frobnicate(function: impl FnMut()) {
     // lots of code
 }
 ```
@@ -632,11 +638,11 @@ Avoid `AsRef` polymorphism, it pays back only for widely used libraries:
 
 ```rust
 // GOOD
-fn frobnicate(f: &Path) {
+fn frobnicate(foo: &Path) {
 }
 
 // BAD
-fn frobnicate(f: impl AsRef<Path>) {
+fn frobnicate(foo: impl AsRef<Path>) {
 }
 ```
 
@@ -707,12 +713,12 @@ When implementing traits from `std::fmt` or `std::ops`, import the module:
 use std::fmt;
 
 impl fmt::Display for RenameError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { .. }
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result { .. }
 }
 
 // BAD
 impl std::fmt::Display for RenameError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { .. }
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { .. }
 }
 
 // BAD
@@ -907,7 +913,7 @@ Use `return Err(error)` to "throw" an error:
 
 ```rust
 // GOOD
-fn f() -> Result<(), ()> {
+fn foo() -> Result<(), ()> {
     if condition {
         return Err(());
     }
@@ -915,7 +921,7 @@ fn f() -> Result<(), ()> {
 }
 
 // BAD
-fn f() -> Result<(), ()> {
+fn foo() -> Result<(), ()> {
     if condition {
         Err(())?;
     }

@@ -13,9 +13,9 @@ pub struct MemoryUsage {
 impl fmt::Display for MemoryUsage {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        self.allocated.fmt(f)
+        self.allocated.fmt(formatter)
     }
 }
 
@@ -128,27 +128,27 @@ impl Bytes {
     )]
     #[expect(clippy::integer_division, reason = "precision loss is acceptable")]
     pub const fn megabytes(self) -> isize {
-        self.0 / 1024 / 1024
+        self.0 / 0x0400 / 0x0400
     }
 }
 
 impl fmt::Display for Bytes {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         let bytes = self.0;
         let mut value = bytes;
         let mut suffix = "b";
-        if value.abs() > 4096 {
-            value /= 1024;
+        if value.abs() > 0x1000 {
+            value /= 0x0400;
             suffix = "kb";
-            if value.abs() > 4096 {
-                value /= 1024;
+            if value.abs() > 0x1000 {
+                value /= 0x0400;
                 suffix = "mb";
             }
         }
-        f.pad(&format!("{value}{suffix}"))
+        formatter.pad(&format!("{value}{suffix}"))
     }
 }
 

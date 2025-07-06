@@ -228,8 +228,8 @@ impl<'database> Ctx<'database> {
 
         let r#struct = Struct {
             name,
-            fields: IdxRange::new(start_field..end_field),
             ast_id,
+            fields: IdxRange::new(start_field..end_field),
         };
         Some(self.module_data.structs.alloc(r#struct).into())
     }

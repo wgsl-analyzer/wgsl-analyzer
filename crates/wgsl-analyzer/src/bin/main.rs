@@ -276,19 +276,18 @@ fn patch_path_prefix(path: PathBuf) -> PathBuf {
 }
 
 fn setup_logging2(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
-    if cfg!(windows) {
+    if cfg!(windows)
         // This is required so that windows finds our pdb that is placed right beside the exe.
         // By default it doesn't look at the folder the exe resides in, only in the current working
         // directory which we set to the project workspace.
         // https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/general-environment-variables
         // https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-syminitialize
-        if let Ok(path) = env::current_exe()
+        && let Ok(path) = env::current_exe()
             && let Some(path) = path.parent()
-        {
-            // SAFETY: This is always safe to call on Windows.
-            unsafe {
-                env::set_var("_NT_SYMBOL_PATH", path);
-            }
+    {
+        // SAFETY: This is always safe to call on Windows.
+        unsafe {
+            env::set_var("_NT_SYMBOL_PATH", path);
         }
     }
 
@@ -337,7 +336,7 @@ fn setup_logging2(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
     Ok(())
 }
 
-const STACK_SIZE: usize = 1024 * 1024 * 8;
+const STACK_SIZE: usize = 1 << 24;
 
 /// Parts of rust-analyzer can use a lot of stack space, and some operating systems only give us
 /// 1 MB by default (eg. Windows), so this spawns a new thread with hopefully sufficient stack
@@ -358,8 +357,7 @@ fn with_extra_thread(
 fn setup_logging(trace: &TraceConfig) {
     let level = if trace.extension { "debug" } else { "info" };
     let filter = format!(
-        "{default},salsa=warn,naga=warn,lsp_server={lsp_server}",
-        default = level,
+        "{level},salsa=warn,naga=warn,lsp_server={lsp_server}",
         lsp_server = if trace.server { "debug" } else { "info" }
     );
 

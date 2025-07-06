@@ -39,7 +39,7 @@ type RequestHandler = fn(&mut GlobalState, lsp_server::Response);
 type RequestQueue = lsp_server::ReqQueue<(String, Instant), RequestHandler>;
 
 // Enforces drop order
-pub(crate) struct Handle<H, C> {
+pub(crate) struct HandleReceiver<H, C> {
     pub handle: H,
     pub receiver: C,
 }
@@ -55,15 +55,15 @@ pub(crate) struct Handle<H, C> {
 pub(crate) struct GlobalState {
     pub(crate) sender: Sender<lsp_server::Message>,
     pub(crate) request_queue: RequestQueue,
-    pub(crate) task_pool: Handle<TaskPool<Task>, Receiver<Task>>,
-    pub(crate) fmt_pool: Handle<TaskPool<Task>, Receiver<Task>>,
+    pub(crate) task_pool: HandleReceiver<TaskPool<Task>, Receiver<Task>>,
+    pub(crate) fmt_pool: HandleReceiver<TaskPool<Task>, Receiver<Task>>,
 
     // status
     pub(crate) shutdown_requested: bool,
     pub(crate) last_reported_status: crate::lsp::extensions::ServerStatusParameters,
 
     // VFS
-    pub(crate) loader: Handle<Box<dyn vfs::loader::Handle>, Receiver<vfs::loader::Message>>,
+    pub(crate) loader: HandleReceiver<Box<dyn vfs::loader::Handle>, Receiver<vfs::loader::Message>>,
     pub(crate) vfs: Arc<RwLock<(vfs::Vfs, FxHashMap<FileId, LineEndings>)>>,
     pub(crate) vfs_config_version: u32,
     pub(crate) vfs_progress_config_version: u32,
@@ -76,7 +76,7 @@ pub(crate) struct GlobalState {
     // pub(crate) vfs_config_version: u32,
     pub(crate) analysis_host: AnalysisHost,
     pub(crate) diagnostics: DiagnosticCollection,
-    pub(crate) mem_docs: InMemoryDocuments,
+    pub(crate) in_memory_documents: InMemoryDocuments,
     pub(crate) config: Arc<Config>,
     pub(crate) config_errors: Option<ConfigErrors>,
     pub(crate) source_root_config: SourceRootConfig,
@@ -132,18 +132,18 @@ impl GlobalState {
             let handle: vfs_notify::NotifyHandle = vfs::loader::Handle::spawn(sender);
             #[expect(clippy::as_conversions, reason = "tested to be valid")]
             let handle = Box::new(handle) as Box<dyn vfs::loader::Handle>;
-            Handle { handle, receiver }
+            HandleReceiver { handle, receiver }
         };
 
         let task_pool = {
             let (sender, receiver) = unbounded();
-            let handle = TaskPool::new_with_threads(sender, config.main_loop_num_threads());
-            Handle { handle, receiver }
+            let handle = TaskPool::new_with_threads(sender, config.main_loop_number_of_threads());
+            HandleReceiver { handle, receiver }
         };
         let fmt_pool = {
             let (sender, receiver) = unbounded();
             let handle = TaskPool::new_with_threads(sender, 1);
-            Handle { handle, receiver }
+            HandleReceiver { handle, receiver }
         };
 
         let task_queue = {
@@ -165,21 +165,21 @@ impl GlobalState {
             request_queue: RequestQueue::default(),
             task_pool,
             fmt_pool,
-            loader,
-            config: Arc::new(config.clone()),
-            analysis_host,
-            diagnostics: DiagnosticCollection::default(),
-            mem_docs: InMemoryDocuments::default(),
-            // semantic_tokens_cache: Arc::new(Default::default()),
             shutdown_requested: false,
             last_reported_status: crate::lsp::extensions::ServerStatusParameters {
                 health: crate::lsp::extensions::Health::Error,
                 quiescent: true,
                 message: None,
             },
-            source_root_config: SourceRootConfig::default(),
+            loader,
+            vfs: Arc::new(RwLock::new((vfs::Vfs::default(), FxHashMap::default()))),
+            vfs_config_version: 0,
+            // semantic_tokens_cache: Arc::new(Default::default()),
+            vfs_progress_config_version: 0,
+            vfs_done: true,
+            vfs_span: None,
             // local_roots_parent_map: Arc::new(FxHashMap::default()),
-            config_errors: None,
+            wants_to_switch: None,
 
             // proc_macro_clients: Arc::from_iter([]),
 
@@ -198,12 +198,12 @@ impl GlobalState {
             // discover_handle: None,
             // discover_sender,
             // discover_receiver,
-            vfs: Arc::new(RwLock::new((vfs::Vfs::default(), FxHashMap::default()))),
-            vfs_config_version: 0,
-            vfs_progress_config_version: 0,
-            vfs_span: None,
-            vfs_done: true,
-            wants_to_switch: None,
+            analysis_host,
+            diagnostics: DiagnosticCollection::default(),
+            in_memory_documents: InMemoryDocuments::default(),
+            config: Arc::new(config.clone()),
+            config_errors: None,
+            source_root_config: SourceRootConfig::default(),
 
             workspaces: Arc::from(Vec::new()),
             // crate_graph_file_dependencies: FxHashSet::default(),
@@ -260,11 +260,11 @@ impl GlobalState {
     pub(crate) fn snapshot(&self) -> GlobalStateSnapshot {
         GlobalStateSnapshot {
             config: Arc::clone(&self.config),
-            workspaces: Arc::clone(&self.workspaces),
             analysis: self.analysis_host.analysis(),
+            in_memory_documents: self.in_memory_documents.clone(),
             vfs: Arc::clone(&self.vfs),
             // check_fixes: Arc::clone(&self.diagnostics.check_fixes),
-            in_memory_documents: self.mem_docs.clone(),
+            workspaces: Arc::clone(&self.workspaces),
             // semantic_tokens_cache: Arc::clone(&self.semantic_tokens_cache),
             // flycheck: self.flycheck.clone(),
         }

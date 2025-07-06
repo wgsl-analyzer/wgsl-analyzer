@@ -54,9 +54,9 @@ impl<'database> Semantics<'database> {
     #[must_use]
     pub fn analyze(
         &self,
-        def: DefinitionWithBodyId,
+        definition: DefinitionWithBodyId,
     ) -> SourceAnalyzer<'_> {
-        SourceAnalyzer::new(self.database, def)
+        SourceAnalyzer::new(self.database, definition)
     }
 
     #[must_use]
@@ -83,8 +83,8 @@ impl<'database> Semantics<'database> {
         file_id: HirFileId,
         source: &SyntaxNode,
     ) -> Resolver {
-        if let Some(def) = self.find_container(file_id, source) {
-            def.resolver(self.database)
+        if let Some(definition) = self.find_container(file_id, source) {
+            definition.resolver(self.database)
         } else {
             let module_info = self.database.module_info(file_id);
             Resolver::default().push_module_scope(self.database, file_id, module_info)
@@ -92,8 +92,9 @@ impl<'database> Semantics<'database> {
     }
 
     #[must_use]
+    #[expect(clippy::unused_self, reason = "intentional API")]
     pub fn module(
-        &self,
+        self,
         file_id: FileId,
     ) -> Module {
         Module {
@@ -103,14 +104,14 @@ impl<'database> Semantics<'database> {
 
     fn resolve_name_in_expression_scope(
         &self,
-        def: DefinitionWithBodyId,
+        definition: DefinitionWithBodyId,
         expression: &SyntaxNode,
         name: &Name,
     ) -> Option<Definition> {
-        let file_id = def.file_id(self.database);
+        let file_id = definition.file_id(self.database);
         let module_info = self.database.module_info(file_id);
-        let expression_scopes = self.database.expression_scopes(def);
-        let (_, source_map) = self.database.body_with_source_map(def);
+        let expression_scopes = self.database.expression_scopes(definition);
+        let (_, source_map) = self.database.body_with_source_map(definition);
         let expression_id = source_map.lookup_expression(&AstPointer::new(
             &ast::Expression::cast(expression.clone())?,
         ))?;
@@ -118,13 +119,13 @@ impl<'database> Semantics<'database> {
         let mut resolver =
             Resolver::default().push_module_scope(self.database, file_id, module_info);
 
-        if let DefinitionWithBodyId::Function(function) = def {
+        if let DefinitionWithBodyId::Function(function) = definition {
             resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
         }
 
         let value = resolver.resolve_value(name)?;
 
-        let def = match value {
+        let definition = match value {
             ResolveValue::Local(binding) => Definition::Local(Local {
                 parent: resolver.body_owner()?,
                 binding,
@@ -143,7 +144,7 @@ impl<'database> Semantics<'database> {
             },
         };
 
-        Some(def)
+        Some(definition)
     }
 
     fn function_to_def(
@@ -207,7 +208,7 @@ fn module_item_to_def(
     file_id: HirFileId,
     module_item: ModuleItem,
 ) -> SmallVec<[ModuleDef; 1]> {
-    let def = match module_item {
+    let definition = match module_item {
         ModuleItem::Function(func) => {
             let loc = Location::new(file_id, func);
             let id = database.intern_function(loc);
@@ -262,7 +263,7 @@ fn module_item_to_def(
             ModuleDef::TypeAlias(TypeAlias { id })
         },
     };
-    smallvec::smallvec![def]
+    smallvec::smallvec![definition]
 }
 
 pub struct SourceAnalyzer<'database> {
@@ -276,16 +277,16 @@ pub struct SourceAnalyzer<'database> {
 impl<'database> SourceAnalyzer<'database> {
     fn new(
         database: &'database dyn HirDatabase,
-        def: DefinitionWithBodyId,
+        definition: DefinitionWithBodyId,
     ) -> Self {
-        let (body, body_source_map) = database.body_with_source_map(def);
-        let infer = database.infer(def);
+        let (body, body_source_map) = database.body_with_source_map(definition);
+        let infer = database.infer(definition);
         Self {
             database,
             body,
             body_source_map,
             infer,
-            owner: def,
+            owner: definition,
         }
     }
 
@@ -641,11 +642,11 @@ impl Module {
                 ModuleDef::Struct(_strukt) => {},
                 ModuleDef::TypeAlias(_type_alias) => {},
             }
-            if let Some(def) = item.as_def_with_body_id() {
-                let file = def.file_id(database);
-                let (_, source_map) = database.body_with_source_map(def);
+            if let Some(definition) = item.as_def_with_body_id() {
+                let file = definition.file_id(database);
+                let (_, source_map) = database.body_with_source_map(definition);
                 if config.type_errors {
-                    let infer = database.infer(def);
+                    let infer = database.infer(definition);
                     for diagnostic in &infer.diagnostics {
                         match diagnostics::any_diag_from_infer_diagnostic(
                             database,
@@ -661,7 +662,7 @@ impl Module {
                     }
                 }
 
-                diagnostics::precedence::collect(database, def, |diagnostic| {
+                diagnostics::precedence::collect(database, definition, |diagnostic| {
                     match diagnostics::any_diag_from_shift(&diagnostic, &source_map, file) {
                         Some(diagnostic) => accumulator.push(diagnostic),
                         None => {
@@ -681,7 +682,7 @@ pub struct Import {
 
 impl Import {
     pub fn is_path(
-        &self,
+        self,
         database: &dyn HirDatabase,
     ) -> bool {
         let import_loc = self.id.lookup(database);
@@ -691,7 +692,7 @@ impl Import {
     }
 
     pub fn file_text(
-        &self,
+        self,
         database: &dyn HirDatabase,
     ) -> Option<String> {
         let import_loc = self.id.lookup(database);
@@ -714,7 +715,7 @@ impl Import {
 
     #[expect(clippy::result_unit_err, reason = "TODO")]
     pub fn resolve(
-        &self,
+        self,
         database: &dyn HirDatabase,
     ) -> Result<(), ()> {
         let import_location = self.id.lookup(database);

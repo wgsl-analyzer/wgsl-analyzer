@@ -10,11 +10,11 @@ export async function getTests(ctx: Context) {
 				await targetToExecution({
 					type: "cargo",
 					command: "check",
-					arguments: ["foo"],
+					args: ["foo"],
 				}).then(executionToSimple),
 				{
 					process: "cargo",
-					arguments: ["check", "foo"],
+					args: ["check", "foo"],
 				},
 			);
 		});
@@ -24,11 +24,11 @@ export async function getTests(ctx: Context) {
 				await targetToExecution({
 					type: "shell",
 					command: "thing",
-					arguments: ["foo"],
+					args: ["foo"],
 				}).then(executionToSimple),
 				{
 					process: "thing",
-					arguments: ["foo"],
+					args: ["foo"],
 				},
 			);
 		});
@@ -41,7 +41,7 @@ export async function getTests(ctx: Context) {
 					name: "cargo build",
 					execution: {
 						process: "cargo",
-						arguments: ["build"],
+						args: ["build"],
 					},
 				},
 				{
@@ -52,7 +52,7 @@ export async function getTests(ctx: Context) {
 					name: "cargo check",
 					execution: {
 						process: "cargo",
-						arguments: ["check"],
+						args: ["check"],
 					},
 				},
 				{
@@ -60,7 +60,7 @@ export async function getTests(ctx: Context) {
 					name: "cargo clippy",
 					execution: {
 						process: "cargo",
-						arguments: ["clippy"],
+						args: ["clippy"],
 					},
 				},
 				{
@@ -68,7 +68,7 @@ export async function getTests(ctx: Context) {
 					name: "cargo test",
 					execution: {
 						process: "cargo",
-						arguments: ["test"],
+						args: ["test"],
 					},
 				},
 				{
@@ -79,7 +79,7 @@ export async function getTests(ctx: Context) {
 					name: "cargo clean",
 					execution: {
 						process: "cargo",
-						arguments: ["clean"],
+						args: ["clean"],
 					},
 				},
 				{
@@ -87,11 +87,11 @@ export async function getTests(ctx: Context) {
 					name: "cargo run",
 					execution: {
 						process: "cargo",
-						arguments: ["run"],
+						args: ["run"],
 					},
 				},
 			];
-			tasks.map(f).forEach((actual, i) => {
+			tasks.map(to_test_execution).forEach((actual, i) => {
 				const expected = expectedTasks[i];
 				assert.deepStrictEqual(actual, expected);
 			});
@@ -99,11 +99,11 @@ export async function getTests(ctx: Context) {
 	});
 }
 
-function f(task: vscode.Task): {
+function to_test_execution(task: vscode.Task): {
 	definition: vscode.TaskDefinition;
 	name: string;
 	execution: {
-		arguments: string[];
+		args: string[];
 	} & ({ command: string } | { process: string });
 } {
 	const execution = executionToSimple(task.execution!);
@@ -118,13 +118,13 @@ function f(task: vscode.Task): {
 function executionToSimple(
 	taskExecution: vscode.ProcessExecution | vscode.ShellExecution | vscode.CustomExecution,
 ): {
-	arguments: string[];
+	args: string[];
 } & ({ command: string } | { process: string }) {
 	const exec = taskExecution as vscode.ProcessExecution | vscode.ShellExecution;
 	if (exec instanceof vscode.ShellExecution) {
 		return {
 			command: typeof exec.command === "string" ? exec.command : (exec.command?.value ?? ""),
-			arguments: (exec.args ?? []).map((arg) => {
+			args: (exec.args ?? []).map((arg) => {
 				if (typeof arg === "string") {
 					return arg;
 				}
@@ -134,7 +134,7 @@ function executionToSimple(
 	} else {
 		return {
 			process: exec.process,
-			arguments: exec.args,
+			args: exec.args,
 		};
 	}
 }

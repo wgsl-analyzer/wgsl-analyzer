@@ -78,7 +78,7 @@ fn main() -> Result<(), anyhow::Error> {
             if !same {
                 let diff = prettydiff::diff_lines(&input, &output);
 
-                println!("Diff in {}\n{}:", file.display(), diff);
+                println!("Diff in {}\n{diff}:", file.display());
             }
         } else if is_stdin {
             print!("{output}");

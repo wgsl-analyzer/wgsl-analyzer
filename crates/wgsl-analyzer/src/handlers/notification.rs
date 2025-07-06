@@ -37,7 +37,7 @@ pub(crate) fn handle_did_open_text_document(
     };
 
     let text_bytes = parameters.text_document.text.into_bytes();
-    state.mem_docs.insert(
+    state.in_memory_documents.insert(
         path.clone(),
         DocumentData {
             version: parameters.text_document.version,
@@ -67,7 +67,7 @@ pub(crate) fn handle_did_change_text_document(
     let _p = tracing::info_span!("handle_did_change_text_document").entered();
 
     if let Ok(path) = from_proto::vfs_path(&parameters.text_document.uri) {
-        let Some(DocumentData { version, data }) = state.mem_docs.get_mut(&path) else {
+        let Some(DocumentData { version, data }) = state.in_memory_documents.get_mut(&path) else {
             tracing::error!(?path, "unexpected DidChangeTextDocument");
             return Ok(());
         };
@@ -105,7 +105,7 @@ pub(crate) fn handle_did_close_text_document(
     let _p = tracing::info_span!("handle_did_close_text_document").entered();
 
     if let Ok(path) = from_proto::vfs_path(&parameters.text_document.uri) {
-        if state.mem_docs.remove(&path).is_err() {
+        if state.in_memory_documents.remove(&path).is_err() {
             tracing::error!("orphan DidCloseTextDocument: {}", path);
         }
 

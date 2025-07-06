@@ -382,9 +382,9 @@ impl<T> Copy for Interned<T> {}
 impl<T> fmt::Debug for Interned<T> {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        f.debug_tuple("Interned").field(&self.0).finish()
+        formatter.debug_tuple("Interned").field(&self.0).finish()
     }
 }
 
@@ -463,7 +463,7 @@ pub enum DefinitionWithBodyId {
 
 impl DefinitionWithBodyId {
     pub fn file_id(
-        &self,
+        self,
         database: &dyn DefDatabase,
     ) -> HirFileId {
         match self {
@@ -475,7 +475,7 @@ impl DefinitionWithBodyId {
     }
 
     pub fn resolver(
-        &self,
+        self,
         database: &dyn DefDatabase,
     ) -> Resolver {
         let file_id = self.file_id(database);

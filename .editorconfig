@@ -20,6 +20,8 @@ indent_style = space
 [*.{yaml,yml}]
 indent_size = 2
 indent_style = space
+quote_type = single
+spaces_around_brackets = both
 
 [*.{json,jsonc}]
 

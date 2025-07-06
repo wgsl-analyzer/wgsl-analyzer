@@ -130,7 +130,7 @@ fn parse_import_no_preprocessor_query(
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnconfiguredCode {
     pub range: TextRange,
-    pub def: String,
+    pub definition: String,
 }
 
 fn parse_with_unconfigured_query(
@@ -142,17 +142,20 @@ fn parse_with_unconfigured_query(
 
     let mut unconfigured = Vec::new();
 
-    let processed_source =
-        shader_processor::get_shader_processor().process(&source, &shader_defs, |range, def| {
+    let processed_source = shader_processor::get_shader_processor().process(
+        &source,
+        &shader_defs,
+        |range, definition| {
             let range = TextRange::new(
                 TextSize::from(u32::try_from(range.start).unwrap()),
                 TextSize::from(u32::try_from(range.end).unwrap()),
             );
             unconfigured.push(UnconfiguredCode {
                 range,
-                def: def.to_owned(),
+                definition: definition.to_owned(),
             });
-        });
+        },
+    );
     let parse = syntax::parse(&processed_source);
     (parse, Arc::new(unconfigured))
 }

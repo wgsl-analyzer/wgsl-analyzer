@@ -392,8 +392,8 @@ fn format_param_list<T: AstNode>(
     indent_symbol: &str,
 ) -> Option<()> {
     let mut first = true;
-    for (i, parameter) in parameters.enumerate() {
-        let last = i == count - 1;
+    for (index, parameter) in parameters.enumerate() {
+        let last = index == count - 1;
 
         let first_token = parameter.syntax().first_token()?;
         let previous_had_newline = first_token

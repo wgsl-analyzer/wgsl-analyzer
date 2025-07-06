@@ -133,7 +133,7 @@ impl CompletionFieldsToResolve {
 // /// the caret. In other words, for
 // ///
 // /// ```ignore
-// /// fn f() {
+// /// fn foo() {
 // ///     let foo = 92;
 // ///     let _ = bar$0
 // /// }
@@ -277,15 +277,15 @@ pub fn completions2(
 //     imports: impl IntoIterator<Item = String>,
 // ) -> Option<Vec<TextEdit>> {
 //     let _p = tracing::info_span!("resolve_completion_edits").entered();
-//     let sema = hir::Semantics::new(database);
+//     let semantics = hir::Semantics::new(database);
 
-//     let original_file = sema.parse(file_id);
+//     let original_file = semantics.parse(file_id);
 //     let original_token =
 //         syntax::AstNode::syntax(&original_file).token_at_offset(offset).left_biased()?;
 //     let position_for_import = &original_token.parent()?;
-//     let scope = ImportScope::find_insert_use_container(position_for_import, &sema)?;
+//     let scope = ImportScope::find_insert_use_container(position_for_import, &semantics)?;
 
-//     // let current_module = sema.scope(position_for_import)?.module();
+//     // let current_module = semantics.scope(position_for_import)?.module();
 //     // let current_crate = current_module.krate();
 //     // let current_edition = current_crate.edition(database);
 //     let new_ast = scope.clone_for_update();

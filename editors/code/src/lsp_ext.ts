@@ -113,7 +113,7 @@ export const changeTestState = new lc.NotificationType<ChangeTestStateParameters
 
 export type AnalyzerStatusParameters = { textDocument?: lc.TextDocumentIdentifier };
 
-export interface FetchDependencyListParameters { }
+export interface FetchDependencyListParameters {}
 
 export interface FetchDependencyListResult {
 	crates: {
@@ -129,7 +129,7 @@ export const fetchDependencyList = new lc.RequestType<
 	void
 >("wgsl-analyzer/fetchDependencyList");
 
-export interface FetchDependencyGraphParameters { }
+export interface FetchDependencyGraphParameters {}
 
 export interface FetchDependencyGraphResult {
 	crates: {
@@ -223,12 +223,12 @@ export type Runnable = {
 
 type RunnableCargo = {
 	kind: "cargo";
-	arguments: CargoRunnableArgs;
+	args: CargoRunnableArgs;
 };
 
 type RunnableShell = {
 	kind: "shell";
-	arguments: ShellRunnableArgs;
+	args: ShellRunnableArgs;
 };
 
 export type CommonRunnableArgs = {
@@ -245,7 +245,7 @@ export type CommonRunnableArgs = {
 export type ShellRunnableArgs = {
 	kind: string;
 	program: string;
-	arguments: string[];
+	args: string[];
 } & CommonRunnableArgs;
 
 export type CargoRunnableArgs = {

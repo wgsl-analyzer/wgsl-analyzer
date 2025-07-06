@@ -51,8 +51,8 @@ impl InsertDelete {
         replace_with: String,
     ) -> Self {
         Self {
-            delete: range,
             insert: replace_with,
+            delete: range,
         }
     }
 
