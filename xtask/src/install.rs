@@ -5,21 +5,21 @@ use std::{env, path::PathBuf, str};
 use anyhow::{Context as _, bail, format_err};
 use xshell::{Shell, cmd};
 
-use crate::flags::{self, Malloc};
+use crate::flags::{self, Malloc, PgoTrainingCrate};
 
 impl flags::Install {
     pub(crate) fn run(
         self,
-        sh: &Shell,
+        shell: &Shell,
     ) -> anyhow::Result<()> {
         if cfg!(target_os = "macos") {
-            fix_path_for_mac(sh).context("Fix path for mac")?;
+            fix_path_for_mac(shell).context("Fix path for mac")?;
         }
         if let Some(server) = self.server() {
-            install_server(sh, &server).context("install server")?;
+            install_server(shell, &server).context("install server")?;
         }
         if let Some(client) = self.client() {
-            install_client(sh, &client).context("install client")?;
+            install_client(shell, &client).context("install client")?;
         }
         Ok(())
     }
@@ -41,14 +41,15 @@ const VS_CODES: &[&str] = &[
 pub(crate) struct ServerOptions {
     pub(crate) malloc: Malloc,
     pub(crate) dev_rel: bool,
+    pub(crate) pgo: Option<PgoTrainingCrate>,
 }
 
-fn fix_path_for_mac(sh: &Shell) -> anyhow::Result<()> {
+fn fix_path_for_mac(shell: &Shell) -> anyhow::Result<()> {
     let mut vscode_path: Vec<PathBuf> = {
         const COMMON_APP_PATH: &str =
             "/Applications/Visual Studio Code.app/Contents/Resources/app/bin";
         const ROOT_DIR: &str = "";
-        let home_dir = sh.var("HOME").map_err(|error| {
+        let home_dir = shell.var("HOME").map_err(|error| {
             format_err!(
                 "Failed getting HOME from environment with error: {}.",
                 error
@@ -64,40 +65,40 @@ fn fix_path_for_mac(sh: &Shell) -> anyhow::Result<()> {
     };
 
     if !vscode_path.is_empty() {
-        let vars = sh
+        let variables = shell
             .var_os("PATH")
             .context("Could not get PATH variable from env.")?;
 
-        let mut paths = env::split_paths(&vars).collect::<Vec<_>>();
+        let mut paths = env::split_paths(&variables).collect::<Vec<_>>();
         paths.append(&mut vscode_path);
         let new_paths = env::join_paths(paths).context("build env PATH")?;
-        sh.set_var("PATH", new_paths);
+        shell.set_var("PATH", new_paths);
     }
 
     Ok(())
 }
 
 fn install_client(
-    sh: &Shell,
+    shell: &Shell,
     client_options: &ClientOptions,
 ) -> anyhow::Result<()> {
-    let _dir = sh.push_dir("./editors/code");
+    let _dir = shell.push_dir("./editors/code");
 
     // Package extension.
     if cfg!(unix) {
-        cmd!(sh, "npm --version")
+        cmd!(shell, "npm --version")
             .run()
             .context("`npm` is required to build the VS Code plugin")?;
-        cmd!(sh, "npm ci").run()?;
+        cmd!(shell, "npm ci").run()?;
 
-        cmd!(sh, "npm run package --scripts-prepend-node-path").run()?;
+        cmd!(shell, "npm run package --scripts-prepend-node-path").run()?;
     } else {
-        cmd!(sh, "cmd.exe /c npm --version")
+        cmd!(shell, "cmd.exe /c npm --version")
             .run()
             .context("`npm` is required to build the VS Code plugin")?;
-        cmd!(sh, "cmd.exe /c npm ci").run()?;
+        cmd!(shell, "cmd.exe /c npm ci").run()?;
 
-        cmd!(sh, "cmd.exe /c npm run package").run()?;
+        cmd!(shell, "cmd.exe /c npm run package").run()?;
     }
 
     // Find the appropriate VS Code binary.
@@ -110,9 +111,9 @@ fn install_client(
         .copied()
         .find(|&bin| {
             if cfg!(unix) {
-                cmd!(sh, "{bin} --version").read().is_ok()
+                cmd!(shell, "{bin} --version").read().is_ok()
             } else {
-                cmd!(sh, "cmd.exe /c {bin}.cmd --version").read().is_ok()
+                cmd!(shell, "cmd.exe /c {bin}.cmd --version").read().is_ok()
             }
         })
         .ok_or_else(|| {
@@ -124,15 +125,19 @@ fn install_client(
 
     // Install & verify.
     let installed_extensions = if cfg!(unix) {
-        cmd!(sh, "{code} --install-extension wgsl-analyzer.vsix --force").run()?;
-        cmd!(sh, "{code} --list-extensions").read()?
+        cmd!(
+            shell,
+            "{code} --install-extension wgsl-analyzer.vsix --force"
+        )
+        .run()?;
+        cmd!(shell, "{code} --list-extensions").read()?
     } else {
         cmd!(
-            sh,
+            shell,
             "cmd.exe /c {code}.cmd --install-extension wgsl-analyzer.vsix --force"
         )
         .run()?;
-        cmd!(sh, "cmd.exe /c {code}.cmd --list-extensions").read()?
+        cmd!(shell, "cmd.exe /c {code}.cmd --list-extensions").read()?
     };
 
     if !installed_extensions.contains("wgsl-analyzer") {
@@ -147,14 +152,18 @@ fn install_client(
 }
 
 fn install_server(
-    sh: &Shell,
-    opts: &ServerOptions,
+    shell: &Shell,
+    options: &ServerOptions,
 ) -> anyhow::Result<()> {
-    let features = opts.malloc.to_features();
-    let profile = if opts.dev_rel { "dev-rel" } else { "release" };
+    let features = options.malloc.to_features();
+    let profile = if options.dev_rel {
+        "dev-rel"
+    } else {
+        "release"
+    };
 
     let cmd = cmd!(
-        sh,
+        shell,
         "cargo install --path crates/wgsl-analyzer --profile={profile} --locked --force {features...}"
     );
     cmd.run()?;

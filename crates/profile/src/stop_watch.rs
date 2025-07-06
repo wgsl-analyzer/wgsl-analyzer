@@ -26,21 +26,23 @@ impl StopWatch {
     pub fn start() -> Self {
         #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
         let counter = {
-            // When debugging rust-analyzer using rr, the perf-related syscalls cause it to abort.
-            // We allow disabling perf by setting the env var `WA_DISABLE_PERF`.
+            // When debugging wgsl-analyzer using rr, the performance-related syscalls cause it to abort.
+            // We allow disabling performance by setting the env var `WA_DISABLE_PERFORMANCE`.
 
             use std::sync::OnceLock;
-            static PERF_ENABLED: OnceLock<bool> = OnceLock::new();
+            static PERFORMANCE_ENABLED: OnceLock<bool> = OnceLock::new();
 
-            if *PERF_ENABLED.get_or_init(|| std::env::var_os("WA_DISABLE_PERF").is_none()) {
+            if *PERFORMANCE_ENABLED
+                .get_or_init(|| std::env::var_os("WA_DISABLE_PERFORMANCE").is_none())
+            {
                 let mut counter = perf_event::Builder::new()
                     .build()
-                    .map_err(|error| eprintln!("Failed to create perf counter: {error}"))
+                    .map_err(|error| eprintln!("Failed to create performance counter: {error}"))
                     .ok();
                 if let Some(counter) = &mut counter
                     && let Err(error) = counter.enable()
                 {
-                    eprintln!("Failed to start perf counter: {error}");
+                    eprintln!("Failed to start performance counter: {error}");
                 }
                 counter
             } else {
@@ -64,7 +66,7 @@ impl StopWatch {
         let instructions = self.counter.as_mut().and_then(|counter| {
             counter
                 .read()
-                .map_err(|error| eprintln!("Failed to read perf counter: {error}"))
+                .map_err(|error| eprintln!("Failed to read performance counter: {error}"))
                 .ok()
         });
         #[cfg(all(target_os = "linux", target_env = "ohos"))]

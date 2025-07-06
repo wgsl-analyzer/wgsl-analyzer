@@ -17,25 +17,12 @@ pub mod text_edit;
 pub struct RootDatabase {
     // FIXME: Revisit this commit now that we migrated to the new salsa, given we store arcs in this
     // database directly now
-    // We use `ManuallyDrop` here because every codegen unit that contains a
-    // `&RootDatabase -> &dyn OtherDatabase` cast will instantiate its drop glue in the vtable,
-    // which duplicates `Weak::drop` and `Arc::drop` tens of thousands of times, which makes
-    // compile times of all `ide_*` and downstream crates suffer greatly.
-    storage: ManuallyDrop<salsa::Storage<Self>>,
+    storage: salsa::Storage<Self>,
     // files: Arc<Files>,
     // crates_map: Arc<CratesMap>,
 }
 
 impl panic::RefUnwindSafe for RootDatabase {}
-
-impl Drop for RootDatabase {
-    fn drop(&mut self) {
-        // SAFETY: Only dropped once
-        unsafe {
-            ManuallyDrop::drop(&mut self.storage);
-        }
-    }
-}
 
 impl fmt::Debug for RootDatabase {
     fn fmt(
@@ -51,7 +38,7 @@ impl salsa::Database for RootDatabase {}
 impl salsa::ParallelDatabase for RootDatabase {
     fn snapshot(&self) -> salsa::Snapshot<Self> {
         salsa::Snapshot::new(Self {
-            storage: ManuallyDrop::new(self.storage.snapshot()),
+            storage: self.storage.snapshot(),
         })
     }
 }
@@ -60,7 +47,7 @@ impl RootDatabase {
     #[must_use]
     pub fn new(lru_capacity: Option<u16>) -> Self {
         let mut database = Self {
-            storage: ManuallyDrop::new(salsa::Storage::default()),
+            storage: salsa::Storage::default(),
             // files: Default::default(),
             // crates_map: Default::default(),
         };

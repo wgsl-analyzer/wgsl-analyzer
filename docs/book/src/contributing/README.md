@@ -106,15 +106,15 @@ After I am done with the fix, I use `cargo xtask install --client` to try the ne
 If I need to fix something in the `wgsl-analyzer` crate, I feel sad because it is on the boundary between the two processes, and working there is slow.
 I usually just `cargo xtask install --server` and poke changes from my live environment.
 Note that this uses `--release`, which is usually faster overall, because loading stdlib into debug version of `wgsl-analyzer` takes a lot of time.
-To speed things up, sometimes I open a temporary hello-world project which has `"wgsl-analyzer.cargo.sysroot": null` in `.code/settings.json`.
-This flag causes `wgsl-analyzer` to skip loading the sysroot, which greatly reduces the amount of things `wgsl-analyzer` needs to do, and makes `printf`'s more useful.
 Note that you should only use the `eprint!` family of macros for debugging: stdout is used for LSP communication, and `print!` would break it.
 
 If I need to fix something simultaneously in the server and in the client, I feel even more sad.
 I do not have a specific workflow for this case.
 
-Additionally, I use `cargo run --release -p wgsl-analyzer -- analysis-stats path/to/some/wesl/code` to run a batch analysis.
+<!--
+Additionally, I use `cargo run --release -p wgsl-analyzer -- analysis-stats path/to/some/WESL/code` to run a batch analysis.
 This is primarily useful for performance optimizations, or for bug minimization.
+-->
 
 ### TypeScript Tests
 
@@ -189,7 +189,7 @@ WA_PROFILE=foo|bar|baz   // enabled only selected entries
 WA_PROFILE=*@3>10        // dump everything, up to depth 3, if it takes more than 10 ms
 ```
 
-Some `wgsl-analyzer` contributors have `export WA_PROFILE='*>10'` in my shell profile.
+Some `wgsl-analyzer` contributors have `export WA_PROFILE='*>10'` in their shell profile.
 
 For machine-readable JSON output, we have the `WA_PROFILE_JSON` env variable.
 We support filtering only by span name:
@@ -202,6 +202,7 @@ WA_PROFILE_JSON="vfs_load|parallel_prime_caches|discover_command" // dump select
 We also have a "counting" profiler which counts number of instances of popular structs.
 It is enabled by `WA_COUNT=1`.
 
+<!--
 To measure time for from-scratch analysis, use something like this:
 
 ```bash
@@ -216,6 +217,7 @@ cargo run --release -p wgsl-analyzer -- analysis-bench ../chalk/ --complete ../c
 ```
 
 Look for `fn benchmark_xxx` tests for a quick way to reproduce performance problems.
+-->
 
 ### Release Process
 

@@ -191,7 +191,7 @@ The same syntax may produce several instances of HIR if the crate participates i
 ### `crates/hir`
 
 The top-level `hir` crate is an **API Boundary**.
-If you think about "using wgsl-analyzer as a library", `hir` crate is most likely the façade you will be talking to.
+If you think about "using wgsl-analyzer as a library", `hir` crate is most likely the interface that you will be talking to.
 
 It wraps ECS-style internal API into a more OO-flavored API (with an extra `db` argument for each call).
 
@@ -232,7 +232,7 @@ Shout outs to LSP developers for popularizing the idea that "UI" is a good place
 Internally, `ide` is split across several crates.
 `ide-assists`, `ide-completion`, `ide-diagnostics` and `ide-ssr` implement large isolated features.
 `ide-db` implements common IDE functionality (notably, reference search is implemented here).
-The `ide` contains a public API/façade, as well as implementation for a plethora of smaller features.
+The `ide` contains a public API, as well as implementation for a plethora of smaller features.
 
 **Architecture Invariant:** `ide` crate strives to provide a *perfect* API.
 Although at the moment it has only one consumer, the LSP server, LSP *does not* influence its API design.
@@ -293,9 +293,12 @@ as copies of unstable std items we would like to make use of already, like `std:
 
 This crate contains utilities for CPU and memory profiling.
 
+<!--
+TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/361
 ### `crates/intern`
 
 This crate contains infrastructure for globally interning things via `Arc`.
+-->
 
 ### `crates/span`
 
@@ -330,7 +333,6 @@ Generated code is generally committed to the git repository.
 
 In particular, we generate:
 
-- API for working with syntax trees (`syntax::ast`, the [`ungrammar`](https://github.com/rust-analyzer/ungrammar) crate).
 - Various sections of the manual:
 
   - features

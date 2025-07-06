@@ -1,7 +1,5 @@
 [alias]
 xtask = "run --package xtask --bin xtask --"
-tq = "test -- -q"
-qt = "tq"
 lint = "clippy --all-targets -- --cap-lints warn"
 codegen = "run --package xtask --bin xtask -- codegen"
 dist = "run --package xtask --bin xtask -- dist"

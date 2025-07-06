@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use xshell::{Shell, cmd};
 
 pub(crate) fn list_files(directory: &Path) -> Vec<PathBuf> {
     let mut result = Vec::new();
@@ -25,4 +26,16 @@ pub(crate) fn list_files(directory: &Path) -> Vec<PathBuf> {
         }
     }
     result
+}
+
+pub(crate) fn detect_target(shell: &Shell) -> String {
+    match std::env::var("WA_TARGET") {
+        Ok(target) => target,
+        _ => match cmd!(shell, "rustc --print=host-tuple").read() {
+            Ok(target) => target,
+            Err(error) => {
+                panic!("Failed to detect target: {error}\nPlease set WA_TARGET explicitly")
+            },
+        },
+    }
 }
