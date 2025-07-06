@@ -39,12 +39,12 @@ export class Cargo {
 		readonly rootFolder: string,
 		readonly output: vscode.OutputChannel,
 		readonly env: Record<string, string>,
-	) {}
+	) { }
 
 	// Made public for testing purposes
 	static artifactSpec(cargoArgs: string[], executableArgs?: string[]): ArtifactSpec {
 		cargoArgs = [...cargoArgs, "--message-format=json"];
-		// arguments for a runnable from the quick pick should be updated.
+		// args for a runnable from the quick pick should be updated.
 		// see crates\rust-analyzer\src\handlers\request.rs, handle_code_lens
 		switch (cargoArgs[0]) {
 			case "run":

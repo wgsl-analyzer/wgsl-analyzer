@@ -249,7 +249,7 @@ export async function createClient(
 								items.map((item) => {
 									return {
 										label: item.title,
-										arguments: item.command!.arguments![0],
+										args: item.command!.arguments![0],
 									};
 								}),
 							],
@@ -333,10 +333,10 @@ class ExperimentalFeatures implements lc.StaticFeature {
 	initialize(
 		_capabilities: lc.ServerCapabilities,
 		_documentSelector: lc.DocumentSelector | undefined,
-	): void {}
+	): void { }
 
-	dispose(): void {}
-	clear(): void {}
+	dispose(): void { }
+	clear(): void { }
 }
 
 class OverrideFeatures implements lc.StaticFeature {
@@ -356,10 +356,10 @@ class OverrideFeatures implements lc.StaticFeature {
 	initialize(
 		_capabilities: lc.ServerCapabilities,
 		_documentSelector: lc.DocumentSelector | undefined,
-	): void {}
+	): void { }
 
-	dispose(): void {}
-	clear(): void {}
+	dispose(): void { }
+	clear(): void { }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -376,8 +376,8 @@ function isCodeActionWithoutEditsAndCommands(value: any): boolean {
 	);
 }
 
-// Command URIs have a form of command:command-name?arguments, where
-// arguments is a percent-encoded array of data we want to pass along to
+// Command URIs have a form of command:command-name?args, where
+// args is a percent-encoded array of data we want to pass along to
 // the command function. For "Show References" this is a list of all file
 // URIs with locations of every reference, and it can get quite long.
 // So long in fact that it will fail rendering inside an `a` tag so we need
