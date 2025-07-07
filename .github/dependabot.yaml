@@ -1,4 +1,5 @@
 version: 2
+open-pull-requests-limit: 20
 updates:
   - package-ecosystem: cargo
     directory: /
@@ -7,7 +8,10 @@ updates:
     commit-message:
       prefix: internal
     labels:
+      - A-Language-Server
       - C-Dependencies
+      - D-Trivial
+      - S-Ready-To-Review
 
   - package-ecosystem: github-actions
     directory: /
@@ -16,7 +20,10 @@ updates:
     commit-message:
       prefix: internal
     labels:
+      - A-Build-System
       - C-Dependencies
+      - D-Trivial
+      - S-Ready-To-Review
 
   - package-ecosystem: npm
     directory: /editors/code
@@ -25,4 +32,7 @@ updates:
     commit-message:
       prefix: internal
     labels:
+      - A-Editor
       - C-Dependencies
+      - D-Trivial
+      - S-Ready-To-Review
