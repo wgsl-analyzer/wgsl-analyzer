@@ -65,7 +65,7 @@
 		"@types/node": "~24.0.10",
 		"@types/vscode": "~1.97.0",
 		"@typescript-eslint/eslint-plugin": "^8.24.1",
-		"@typescript-eslint/parser": "^8.24.1",
+		"@typescript-eslint/parser": "^8.36.0",
 		"@vscode/test-electron": "^2.4.1",
 		"@vscode/vsce": "^3.6.0",
 		"esbuild": "^0.25.0",
