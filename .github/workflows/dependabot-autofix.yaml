@@ -2,7 +2,7 @@ name: Dependabot Auto-fix
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, reopened]
     branches:
       - main
 
@@ -18,7 +18,8 @@ env:
   RUSTFLAGS: -D warnings
 
 jobs:
-  autofix:
+  rust-toolchain:
+    name: Apply automatic fixes for updated Rust toolchain
     if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
 
@@ -61,7 +62,49 @@ jobs:
         if: steps.check_toolchain.outputs.updated == 'true'
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "chore: auto-fix with cargo fmt & clippy" || echo "No changes to commit"
-          git push
+          git push origin HEAD:${{ github.head_ref }}
+
+  engines-vscode:
+    name: Sync engines.vscode with @vscode/types
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Read current @vscode/types version
+        id: types-version
+        run: |
+          VERSION=$(node -p "require('./package.json').dependencies?.['@vscode/types'] || require('./package.json').devDependencies?.['@vscode/types']")
+          echo "Found version: $VERSION"
+          CLEANED=$(echo "$VERSION" | sed -E 's/^[^0-9]*//') # remove ^, ~, etc.
+          echo "version=$CLEANED" >> "$GITHUB_OUTPUT"
+
+      - name: Update engines.vscode
+        run: |
+          npx --yes json -I -f package.json -e "this.engines = this.engines || {}; this.engines.vscode = '^${{ steps.types-version.outputs.version }}'"
+
+      - name: Commit and push updated engines.vscode
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git commit -m "chore: align engines.vscode with @vscode/types@${{ steps.types-version.outputs.version }}"
+          git push origin HEAD:${{ github.head_ref }}
