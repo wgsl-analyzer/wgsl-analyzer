@@ -96,6 +96,7 @@ jobs:
       - name: Update engines.vscode
         run: |
           npx --yes json -I -f ./editors/code/package.json -e "this.engines = this.engines || {}; this.engines.vscode = '^${{ steps.types-version.outputs.version }}'"
+          npm --prefix editors/code ci
           npm --prefix editors/code run format
 
       - name: Commit and push updated engines.vscode
