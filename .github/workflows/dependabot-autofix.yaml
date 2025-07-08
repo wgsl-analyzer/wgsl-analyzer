@@ -87,14 +87,14 @@ jobs:
       - name: Read current @vscode/types version
         id: types-version
         run: |
-          VERSION=$(node -p "require('editors/code/package.json').dependencies?.['@vscode/types'] || require('editors/code/package.json').devDependencies?.['@vscode/types']")
+          VERSION=$(node -p "require('./editors/code/package.json').dependencies?.['@vscode/types'] || require('./editors/code/package.json').devDependencies?.['@vscode/types']")
           echo "Found version: $VERSION"
           CLEANED=$(echo "$VERSION" | sed -E 's/^[^0-9]*//') # remove ^, ~, etc.
           echo "version=$CLEANED" >> "$GITHUB_OUTPUT"
 
       - name: Update engines.vscode
         run: |
-          npx --yes json -I -f editors/code/package.json -e "this.engines = this.engines || {}; this.engines.vscode = '^${{ steps.types-version.outputs.version }}'"
+          npx --yes json -I -f ./editors/code/package.json -e "this.engines = this.engines || {}; this.engines.vscode = '^${{ steps.types-version.outputs.version }}'"
 
       - name: Commit and push updated engines.vscode
         run: |
