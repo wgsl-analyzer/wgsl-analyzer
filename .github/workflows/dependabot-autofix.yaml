@@ -2,12 +2,13 @@ name: Dependabot Auto-fix
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize]
     branches:
       - main
 
 permissions:
   pull-requests: write
+  contents: write
 
 env:
   CARGO_TERM_COLOR: always
