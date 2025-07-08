@@ -2,7 +2,7 @@ name: Dependabot Auto-fix
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, reopened]
     branches:
       - main
 
