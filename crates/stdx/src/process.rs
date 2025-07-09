@@ -15,28 +15,28 @@ pub fn streaming_output(
     error: ChildStderr,
     on_stdout_line: &mut dyn FnMut(&str),
     on_stderr_line: &mut dyn FnMut(&str),
-    on_eof: &mut dyn FnMut(),
+    on_end_of_file: &mut dyn FnMut(),
 ) -> io::Result<(Vec<u8>, Vec<u8>)> {
     let mut stdout = Vec::new();
     let mut stderr = Vec::new();
 
-    implementation::read2(out, error, &mut |is_out, data, eof| {
-        let index = if eof {
+    implementation::read2(out, error, &mut |is_out, data, end_of_file| {
+        let index = if end_of_file {
             data.len()
         } else {
             match data.iter().rposition(|&byte| byte == b'\n') {
-                Some(i) => i + 1,
+                Some(index) => index + 1,
                 None => return,
             }
         };
         {
             // scope for new_lines
             let new_lines = {
-                let dst = if is_out { &mut stdout } else { &mut stderr };
-                let start = dst.len();
+                let destination = if is_out { &mut stdout } else { &mut stderr };
+                let start = destination.len();
                 let data = data.drain(..index);
-                dst.extend(data);
-                &dst[start..]
+                destination.extend(data);
+                &destination[start..]
             };
             for line in String::from_utf8_lossy(new_lines).lines() {
                 if is_out {
@@ -45,8 +45,8 @@ pub fn streaming_output(
                     on_stderr_line(line);
                 }
             }
-            if eof {
-                on_eof();
+            if end_of_file {
+                on_end_of_file();
             }
         }
     })?;

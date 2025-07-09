@@ -81,15 +81,15 @@ struct NotifyActor {
 #[derive(Debug)]
 enum Event {
     Message(Message),
-    NotifyEvent(NotifyEvent),
+    Notify(NotifyEvent),
 }
 
 impl NotifyActor {
     fn new(sender: loader::Sender) -> Self {
         Self {
             sender,
-            watched_dir_entries: Vec::new(),
             watched_file_entries: FxHashSet::default(),
+            watched_dir_entries: Vec::new(),
             watcher: None,
         }
     }
@@ -104,7 +104,7 @@ impl NotifyActor {
 
         select! {
             recv(receiver) -> result => result.ok().map(Event::Message),
-            recv(watcher_receiver) -> result => Some(Event::NotifyEvent(result.unwrap())),
+            recv(watcher_receiver) -> result => Some(Event::Notify(result.unwrap())),
         }
     }
 
@@ -155,8 +155,8 @@ impl NotifyActor {
                             .load
                             .into_par_iter()
                             .enumerate()
-                            .for_each(|(i, entry)| {
-                                let do_watch = config.watch.contains(&i);
+                            .for_each(|(index, entry)| {
+                                let do_watch = config.watch.contains(&index);
                                 if do_watch {
                                     drop(entry_tx.send(entry.clone()));
                                 }
@@ -218,7 +218,7 @@ impl NotifyActor {
                         self.send(loader::Message::Changed { files });
                     },
                 },
-                Event::NotifyEvent(event) => {
+                Event::Notify(event) => {
                     if let Some(event) = log_notify_error(event)
                         && let EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_) =
                             event.kind

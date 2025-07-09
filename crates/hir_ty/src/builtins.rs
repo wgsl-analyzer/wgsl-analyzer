@@ -74,7 +74,7 @@ impl Builtin {
         self.overloads
             .iter()
             .enumerate()
-            .map(|(i, overload)| (BuiltinOverloadId(i), overload))
+            .map(|(index, overload)| (BuiltinOverloadId(index), overload))
     }
 
     #[must_use]

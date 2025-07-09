@@ -40,70 +40,70 @@ fn check_attribute_list(
 fn can_parse_array_declaration() {
     check(
         "
-		const dim: vec3u = vec3u();
-		fn test(a: array<f32, dim.x>) { }
-		",
+        const dim: vec3u = vec3u();
+        fn test(a: array<f32, dim.x>) { }
+        ",
         expect![[r#"
-            SourceFile@0..69
-              Blankspace@0..3 "\n\t\t"
-              GlobalConstantDeclaration@3..33
-                Constant@3..8 "const"
-                Blankspace@8..9 " "
-                Binding@9..12
-                  Name@9..12
-                    Identifier@9..12 "dim"
-                Colon@12..13 ":"
-                Blankspace@13..14 " "
-                PathType@14..20
-                  NameReference@14..20
-                    Identifier@14..19 "vec3u"
-                    Blankspace@19..20 " "
-                Equal@20..21 "="
-                Blankspace@21..22 " "
-                FunctionCall@22..29
-                  NameReference@22..27
-                    Identifier@22..27 "vec3u"
-                  FunctionParameterList@27..29
-                    ParenthesisLeft@27..28 "("
-                    ParenthesisRight@28..29 ")"
-                Semicolon@29..30 ";"
-                Blankspace@30..33 "\n\t\t"
-              Function@33..69
-                Fn@33..35 "fn"
-                Blankspace@35..36 " "
-                Name@36..40
-                  Identifier@36..40 "test"
-                ParameterList@40..63
-                  ParenthesisLeft@40..41 "("
-                  Parameter@41..61
-                    VariableIdentDeclaration@41..61
-                      Binding@41..42
-                        Name@41..42
-                          Identifier@41..42 "a"
-                      Colon@42..43 ":"
-                      Blankspace@43..44 " "
-                      Array@44..61
-                        Array@44..49 "array"
-                        GenericArgumentList@49..61
-                          LessThan@49..50 "<"
-                          Float32@50..53
-                            Float32@50..53 "f32"
-                          Comma@53..54 ","
-                          Blankspace@54..55 " "
-                          PathType@55..60
-                            NameReference@55..58
-                              Identifier@55..58 "dim"
-                            FieldExpression@58..60
-                              Period@58..59 "."
-                              Identifier@59..60 "x"
-                          GreaterThan@60..61 ">"
-                  ParenthesisRight@61..62 ")"
-                  Blankspace@62..63 " "
-                CompoundStatement@63..69
-                  BraceLeft@63..64 "{"
-                  Blankspace@64..65 " "
-                  BraceRight@65..66 "}"
-                  Blankspace@66..69 "\n\t\t""#]],
+            SourceFile@0..87
+              Blankspace@0..9 "\n        "
+              GlobalConstantDeclaration@9..45
+                Constant@9..14 "const"
+                Blankspace@14..15 " "
+                Binding@15..18
+                  Name@15..18
+                    Identifier@15..18 "dim"
+                Colon@18..19 ":"
+                Blankspace@19..20 " "
+                PathType@20..26
+                  NameReference@20..26
+                    Identifier@20..25 "vec3u"
+                    Blankspace@25..26 " "
+                Equal@26..27 "="
+                Blankspace@27..28 " "
+                FunctionCall@28..35
+                  NameReference@28..33
+                    Identifier@28..33 "vec3u"
+                  FunctionParameterList@33..35
+                    ParenthesisLeft@33..34 "("
+                    ParenthesisRight@34..35 ")"
+                Semicolon@35..36 ";"
+                Blankspace@36..45 "\n        "
+              Function@45..87
+                Fn@45..47 "fn"
+                Blankspace@47..48 " "
+                Name@48..52
+                  Identifier@48..52 "test"
+                ParameterList@52..75
+                  ParenthesisLeft@52..53 "("
+                  Parameter@53..73
+                    VariableIdentDeclaration@53..73
+                      Binding@53..54
+                        Name@53..54
+                          Identifier@53..54 "a"
+                      Colon@54..55 ":"
+                      Blankspace@55..56 " "
+                      Array@56..73
+                        Array@56..61 "array"
+                        GenericArgumentList@61..73
+                          LessThan@61..62 "<"
+                          Float32@62..65
+                            Float32@62..65 "f32"
+                          Comma@65..66 ","
+                          Blankspace@66..67 " "
+                          PathType@67..72
+                            NameReference@67..70
+                              Identifier@67..70 "dim"
+                            FieldExpression@70..72
+                              Period@70..71 "."
+                              Identifier@71..72 "x"
+                          GreaterThan@72..73 ">"
+                  ParenthesisRight@73..74 ")"
+                  Blankspace@74..75 " "
+                CompoundStatement@75..87
+                  BraceLeft@75..76 "{"
+                  Blankspace@76..77 " "
+                  BraceRight@77..78 "}"
+                  Blankspace@78..87 "\n        ""#]],
     );
 }
 
@@ -111,80 +111,80 @@ fn can_parse_array_declaration() {
 fn cannot_parse_bad_array_declaration() {
     check(
         "
-		const dim: vec3u = vec3u();
-		fn test(a: array<f32, dim.>) { }
-		",
+        const dim: vec3u = vec3u();
+        fn test(a: array<f32, dim.>) { }
+        ",
         expect![[r#"
-            SourceFile@0..68
-              Blankspace@0..3 "\n\t\t"
-              GlobalConstantDeclaration@3..33
-                Constant@3..8 "const"
-                Blankspace@8..9 " "
-                Binding@9..12
-                  Name@9..12
-                    Identifier@9..12 "dim"
-                Colon@12..13 ":"
-                Blankspace@13..14 " "
-                PathType@14..20
-                  NameReference@14..20
-                    Identifier@14..19 "vec3u"
-                    Blankspace@19..20 " "
-                Equal@20..21 "="
-                Blankspace@21..22 " "
-                FunctionCall@22..29
-                  NameReference@22..27
-                    Identifier@22..27 "vec3u"
-                  FunctionParameterList@27..29
-                    ParenthesisLeft@27..28 "("
-                    ParenthesisRight@28..29 ")"
-                Semicolon@29..30 ";"
-                Blankspace@30..33 "\n\t\t"
-              Function@33..68
-                Fn@33..35 "fn"
-                Blankspace@35..36 " "
-                Name@36..40
-                  Identifier@36..40 "test"
-                ParameterList@40..68
-                  ParenthesisLeft@40..41 "("
-                  Parameter@41..68
-                    VariableIdentDeclaration@41..68
-                      Binding@41..42
-                        Name@41..42
-                          Identifier@41..42 "a"
-                      Colon@42..43 ":"
-                      Blankspace@43..44 " "
-                      Array@44..68
-                        Array@44..49 "array"
-                        GenericArgumentList@49..68
-                          LessThan@49..50 "<"
-                          Float32@50..53
-                            Float32@50..53 "f32"
-                          Comma@53..54 ","
-                          Blankspace@54..55 " "
-                          PathType@55..60
-                            NameReference@55..58
-                              Identifier@55..58 "dim"
-                            FieldExpression@58..60
-                              Period@58..59 "."
-                              Error@59..60
-                                GreaterThan@59..60 ">"
-                          Error@60..62
-                            ParenthesisRight@60..61 ")"
-                            Blankspace@61..62 " "
-                          Error@62..64
-                            BraceLeft@62..63 "{"
-                            Blankspace@63..64 " "
-                          Error@64..68
-                            BraceRight@64..65 "}"
-                            Blankspace@65..68 "\n\t\t"
+            SourceFile@0..86
+              Blankspace@0..9 "\n        "
+              GlobalConstantDeclaration@9..45
+                Constant@9..14 "const"
+                Blankspace@14..15 " "
+                Binding@15..18
+                  Name@15..18
+                    Identifier@15..18 "dim"
+                Colon@18..19 ":"
+                Blankspace@19..20 " "
+                PathType@20..26
+                  NameReference@20..26
+                    Identifier@20..25 "vec3u"
+                    Blankspace@25..26 " "
+                Equal@26..27 "="
+                Blankspace@27..28 " "
+                FunctionCall@28..35
+                  NameReference@28..33
+                    Identifier@28..33 "vec3u"
+                  FunctionParameterList@33..35
+                    ParenthesisLeft@33..34 "("
+                    ParenthesisRight@34..35 ")"
+                Semicolon@35..36 ";"
+                Blankspace@36..45 "\n        "
+              Function@45..86
+                Fn@45..47 "fn"
+                Blankspace@47..48 " "
+                Name@48..52
+                  Identifier@48..52 "test"
+                ParameterList@52..86
+                  ParenthesisLeft@52..53 "("
+                  Parameter@53..86
+                    VariableIdentDeclaration@53..86
+                      Binding@53..54
+                        Name@53..54
+                          Identifier@53..54 "a"
+                      Colon@54..55 ":"
+                      Blankspace@55..56 " "
+                      Array@56..86
+                        Array@56..61 "array"
+                        GenericArgumentList@61..86
+                          LessThan@61..62 "<"
+                          Float32@62..65
+                            Float32@62..65 "f32"
+                          Comma@65..66 ","
+                          Blankspace@66..67 " "
+                          PathType@67..72
+                            NameReference@67..70
+                              Identifier@67..70 "dim"
+                            FieldExpression@70..72
+                              Period@70..71 "."
+                              Error@71..72
+                                GreaterThan@71..72 ">"
+                          Error@72..74
+                            ParenthesisRight@72..73 ")"
+                            Blankspace@73..74 " "
+                          Error@74..76
+                            BraceLeft@74..75 "{"
+                            Blankspace@75..76 " "
+                          Error@76..86
+                            BraceRight@76..77 "}"
+                            Blankspace@77..86 "\n        "
 
-            error at 59..60: expected Identifier, but found GreaterThan
-            error at 60..61: expected Period, Comma, GreaterThan, or Identifier, but found ParenthesisRight
-            error at 62..63: expected Comma, GreaterThan, or Identifier, but found BraceLeft
-            error at 64..65: expected Comma, GreaterThan, or Identifier, but found BraceRight
-            error at 65..68: expected Comma or GreaterThan
-            error at 65..68: expected Comma or ParenthesisRight
-            error at 65..68: expected Arrow or BraceLeft"#]],
+            error at 71..72: expected Identifier, but found GreaterThan
+            error at 72..73: expected Period, Comma, GreaterThan, or Identifier, but found ParenthesisRight
+            error at 74..75: expected Comma, GreaterThan, or Identifier, but found BraceLeft
+            error at 76..77: expected Comma, GreaterThan, or Identifier, but found BraceRight
+            error at 77..86: expected Comma or GreaterThan
+            error at 77..86: expected Comma or ParenthesisRight
+            error at 77..86: expected Arrow or BraceLeft"#]],
     );
 }
 
@@ -214,47 +214,47 @@ fn fn_incomplete() {
 fn parse_comments() {
     check(
         "
-		const f = 1.5; // This is line-ending comment.
-		const g = 2.5; /* This is a block comment
+        const foo = 1.5; // This is line-ending comment.
+        const bar = 2.5; /* This is a block comment
                 that spans lines.
                 /* Block comments can nest.
                  */
                 But all block comments must terminate.
                */
-		",
+        ",
         expect![[r#"
-            SourceFile@0..267
-              Blankspace@0..3 "\n\t\t"
-              GlobalConstantDeclaration@3..52
-                Constant@3..8 "const"
-                Blankspace@8..9 " "
-                Binding@9..11
-                  Name@9..11
-                    Identifier@9..10 "f"
-                    Blankspace@10..11 " "
-                Equal@11..12 "="
-                Blankspace@12..13 " "
-                Literal@13..16
-                  DecimalFloatLiteral@13..16 "1.5"
-                Semicolon@16..17 ";"
-                Blankspace@17..18 " "
-                LineEndingComment@18..49 "// This is line-endin ..."
-                Blankspace@49..52 "\n\t\t"
-              GlobalConstantDeclaration@52..267
-                Constant@52..57 "const"
-                Blankspace@57..58 " "
-                Binding@58..60
-                  Name@58..60
-                    Identifier@58..59 "g"
-                    Blankspace@59..60 " "
-                Equal@60..61 "="
-                Blankspace@61..62 " "
-                Literal@62..65
-                  DecimalFloatLiteral@62..65 "2.5"
-                Semicolon@65..66 ";"
-                Blankspace@66..67 " "
-                BlockComment@67..264 "/* This is a block co ..."
-                Blankspace@264..267 "\n\t\t""#]],
+            SourceFile@0..289
+              Blankspace@0..9 "\n        "
+              GlobalConstantDeclaration@9..66
+                Constant@9..14 "const"
+                Blankspace@14..15 " "
+                Binding@15..19
+                  Name@15..19
+                    Identifier@15..18 "foo"
+                    Blankspace@18..19 " "
+                Equal@19..20 "="
+                Blankspace@20..21 " "
+                Literal@21..24
+                  DecimalFloatLiteral@21..24 "1.5"
+                Semicolon@24..25 ";"
+                Blankspace@25..26 " "
+                LineEndingComment@26..57 "// This is line-endin ..."
+                Blankspace@57..66 "\n        "
+              GlobalConstantDeclaration@66..289
+                Constant@66..71 "const"
+                Blankspace@71..72 " "
+                Binding@72..76
+                  Name@72..76
+                    Identifier@72..75 "bar"
+                    Blankspace@75..76 " "
+                Equal@76..77 "="
+                Blankspace@77..78 " "
+                Literal@78..81
+                  DecimalFloatLiteral@78..81 "2.5"
+                Semicolon@81..82 ";"
+                Blankspace@82..83 " "
+                BlockComment@83..280 "/* This is a block co ..."
+                Blankspace@280..289 "\n        ""#]],
     );
 }
 
@@ -262,20 +262,20 @@ fn parse_comments() {
 fn cannot_parse_unmatched_block_comment() {
     check(
         "
-		/* This is a block comment that spans lines.
-			/* Block comments can nest.
-			But all block comments must terminate.
-			*/
-		",
+        /* This is a block comment that spans lines.
+            /* Block comments can nest.
+            But all block comments must terminate.
+            */
+        ",
         expect![[r#"
-            SourceFile@0..129
-              Blankspace@0..3 "\n\t\t"
-              Error@3..129
-                Error@3..129
-                  Error@3..128 "/* This is a block co ..."
-                  Blankspace@128..129 "\t"
+            SourceFile@0..168
+              Blankspace@0..9 "\n        "
+              Error@9..168
+                Error@9..168
+                  Error@9..167 "/* This is a block co ..."
+                  Blankspace@167..168 " "
 
-            error at 3..128: expected Fn, Struct, Var, Let, Constant, Alias, or Override, but found Error"#]],
+            error at 9..167: expected Fn, Struct, Var, Let, Constant, Alias, or Override, but found Error"#]],
     );
 }
 
@@ -382,6 +382,68 @@ let y: f32 = 2.0;
                   Semicolon@46..47 ";"
                   Blankspace@47..56 "\n        "
                   BraceRight@56..57 "}""#]],
+    );
+}
+
+#[test]
+fn trivial_function() {
+    check(
+        "fn test() {}",
+        expect![[r#"
+            SourceFile@0..12
+              Function@0..12
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..7
+                  Identifier@3..7 "test"
+                ParameterList@7..10
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
+                  Blankspace@9..10 " "
+                CompoundStatement@10..12
+                  BraceLeft@10..11 "{"
+                  BraceRight@11..12 "}""#]],
+    );
+}
+
+#[test]
+fn nontrivial_function() {
+    check(
+        "fn foo() -> i32 { return 90 + 2; }",
+        expect![[r#"
+            SourceFile@0..34
+              Function@0..34
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..6
+                  Identifier@3..6 "foo"
+                ParameterList@6..9
+                  ParenthesisLeft@6..7 "("
+                  ParenthesisRight@7..8 ")"
+                  Blankspace@8..9 " "
+                ReturnType@9..16
+                  Arrow@9..11 "->"
+                  Blankspace@11..12 " "
+                  Int32@12..16
+                    Int32@12..15 "i32"
+                    Blankspace@15..16 " "
+                CompoundStatement@16..34
+                  BraceLeft@16..17 "{"
+                  Blankspace@17..18 " "
+                  ReturnStatement@18..31
+                    Return@18..24 "return"
+                    Blankspace@24..25 " "
+                    InfixExpression@25..31
+                      Literal@25..28
+                        DecimalIntLiteral@25..27 "90"
+                        Blankspace@27..28 " "
+                      Plus@28..29 "+"
+                      Blankspace@29..30 " "
+                      Literal@30..31
+                        DecimalIntLiteral@30..31 "2"
+                  Semicolon@31..32 ";"
+                  Blankspace@32..33 " "
+                  BraceRight@33..34 "}""#]],
     );
 }
 
@@ -560,93 +622,93 @@ fn parse_type_generic_ptr() {
 #[test]
 fn parse_return_statement() {
     check(
-        "fn f() -> u32 {
+        "fn foo() -> u32 {
             return 0;
         }",
         expect![[r#"
-            SourceFile@0..47
-              Function@0..47
+            SourceFile@0..49
+              Function@0..49
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Name@3..4
-                  Identifier@3..4 "f"
-                ParameterList@4..7
-                  ParenthesisLeft@4..5 "("
-                  ParenthesisRight@5..6 ")"
-                  Blankspace@6..7 " "
-                ReturnType@7..14
-                  Arrow@7..9 "->"
-                  Blankspace@9..10 " "
-                  Uint32@10..14
-                    Uint32@10..13 "u32"
-                    Blankspace@13..14 " "
-                CompoundStatement@14..47
-                  BraceLeft@14..15 "{"
-                  Blankspace@15..28 "\n            "
-                  ReturnStatement@28..36
-                    Return@28..34 "return"
-                    Blankspace@34..35 " "
-                    Literal@35..36
-                      DecimalIntLiteral@35..36 "0"
-                  Semicolon@36..37 ";"
-                  Blankspace@37..46 "\n        "
-                  BraceRight@46..47 "}""#]],
+                Name@3..6
+                  Identifier@3..6 "foo"
+                ParameterList@6..9
+                  ParenthesisLeft@6..7 "("
+                  ParenthesisRight@7..8 ")"
+                  Blankspace@8..9 " "
+                ReturnType@9..16
+                  Arrow@9..11 "->"
+                  Blankspace@11..12 " "
+                  Uint32@12..16
+                    Uint32@12..15 "u32"
+                    Blankspace@15..16 " "
+                CompoundStatement@16..49
+                  BraceLeft@16..17 "{"
+                  Blankspace@17..30 "\n            "
+                  ReturnStatement@30..38
+                    Return@30..36 "return"
+                    Blankspace@36..37 " "
+                    Literal@37..38
+                      DecimalIntLiteral@37..38 "0"
+                  Semicolon@38..39 ";"
+                  Blankspace@39..48 "\n        "
+                  BraceRight@48..49 "}""#]],
     );
 }
 
 #[test]
 fn parse_let_statement_recover() {
     check(
-        "fn f() -> u32 {
+        "fn foo() -> u32 {
             let x =
             let y =
             return 0
         }",
         expect![[r#"
-            SourceFile@0..86
-              Function@0..86
+            SourceFile@0..88
+              Function@0..88
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Name@3..4
-                  Identifier@3..4 "f"
-                ParameterList@4..7
-                  ParenthesisLeft@4..5 "("
-                  ParenthesisRight@5..6 ")"
-                  Blankspace@6..7 " "
-                ReturnType@7..14
-                  Arrow@7..9 "->"
-                  Blankspace@9..10 " "
-                  Uint32@10..14
-                    Uint32@10..13 "u32"
-                    Blankspace@13..14 " "
-                CompoundStatement@14..86
-                  BraceLeft@14..15 "{"
-                  Blankspace@15..28 "\n            "
-                  VariableStatement@28..48
-                    Let@28..31 "let"
-                    Blankspace@31..32 " "
-                    Binding@32..34
-                      Name@32..34
-                        Identifier@32..33 "x"
-                        Blankspace@33..34 " "
-                    Equal@34..35 "="
-                    Blankspace@35..48 "\n            "
-                  VariableStatement@48..68
-                    Let@48..51 "let"
-                    Blankspace@51..52 " "
-                    Binding@52..54
-                      Name@52..54
-                        Identifier@52..53 "y"
-                        Blankspace@53..54 " "
-                    Equal@54..55 "="
-                    Blankspace@55..68 "\n            "
-                  ReturnStatement@68..85
-                    Return@68..74 "return"
-                    Blankspace@74..75 " "
-                    Literal@75..85
-                      DecimalIntLiteral@75..76 "0"
-                      Blankspace@76..85 "\n        "
-                  BraceRight@85..86 "}""#]],
+                Name@3..6
+                  Identifier@3..6 "foo"
+                ParameterList@6..9
+                  ParenthesisLeft@6..7 "("
+                  ParenthesisRight@7..8 ")"
+                  Blankspace@8..9 " "
+                ReturnType@9..16
+                  Arrow@9..11 "->"
+                  Blankspace@11..12 " "
+                  Uint32@12..16
+                    Uint32@12..15 "u32"
+                    Blankspace@15..16 " "
+                CompoundStatement@16..88
+                  BraceLeft@16..17 "{"
+                  Blankspace@17..30 "\n            "
+                  VariableStatement@30..50
+                    Let@30..33 "let"
+                    Blankspace@33..34 " "
+                    Binding@34..36
+                      Name@34..36
+                        Identifier@34..35 "x"
+                        Blankspace@35..36 " "
+                    Equal@36..37 "="
+                    Blankspace@37..50 "\n            "
+                  VariableStatement@50..70
+                    Let@50..53 "let"
+                    Blankspace@53..54 " "
+                    Binding@54..56
+                      Name@54..56
+                        Identifier@54..55 "y"
+                        Blankspace@55..56 " "
+                    Equal@56..57 "="
+                    Blankspace@57..70 "\n            "
+                  ReturnStatement@70..87
+                    Return@70..76 "return"
+                    Blankspace@76..77 " "
+                    Literal@77..87
+                      DecimalIntLiteral@77..78 "0"
+                      Blankspace@78..87 "\n        "
+                  BraceRight@87..88 "}""#]],
     );
 }
 
@@ -1769,6 +1831,59 @@ fn weird_blankspace() {
         expect![[r#"
             SourceFile@0..20
               Blankspace@0..20 " \t\n\u{b}\u{c}\r\u{85}\u{200e}\u{200f}\u{2028}\u{2029}""#]],
+    );
+}
+
+#[test]
+fn tabs() {
+    check(
+        "
+			fn foo() {}
+            fn bar() {}
+			fn baz() {}
+        ",
+        expect![[r#"
+            SourceFile@0..63
+              Blankspace@0..4 "\n\t\t\t"
+              Function@4..28
+                Fn@4..6 "fn"
+                Blankspace@6..7 " "
+                Name@7..10
+                  Identifier@7..10 "foo"
+                ParameterList@10..13
+                  ParenthesisLeft@10..11 "("
+                  ParenthesisRight@11..12 ")"
+                  Blankspace@12..13 " "
+                CompoundStatement@13..28
+                  BraceLeft@13..14 "{"
+                  BraceRight@14..15 "}"
+                  Blankspace@15..28 "\n            "
+              Function@28..43
+                Fn@28..30 "fn"
+                Blankspace@30..31 " "
+                Name@31..34
+                  Identifier@31..34 "bar"
+                ParameterList@34..37
+                  ParenthesisLeft@34..35 "("
+                  ParenthesisRight@35..36 ")"
+                  Blankspace@36..37 " "
+                CompoundStatement@37..43
+                  BraceLeft@37..38 "{"
+                  BraceRight@38..39 "}"
+                  Blankspace@39..43 "\n\t\t\t"
+              Function@43..63
+                Fn@43..45 "fn"
+                Blankspace@45..46 " "
+                Name@46..49
+                  Identifier@46..49 "baz"
+                ParameterList@49..52
+                  ParenthesisLeft@49..50 "("
+                  ParenthesisRight@50..51 ")"
+                  Blankspace@51..52 " "
+                CompoundStatement@52..63
+                  BraceLeft@52..53 "{"
+                  BraceRight@53..54 "}"
+                  Blankspace@54..63 "\n        ""#]],
     );
 }
 

@@ -6,9 +6,9 @@ use xshell::{Shell, cmd};
 impl flags::PublishReleaseNotes {
     pub(crate) fn run(
         self,
-        sh: &Shell,
+        shell: &Shell,
     ) -> anyhow::Result<()> {
-        let mut markdown = sh.read_file(&self.changelog)?;
+        let mut markdown = shell.read_file(&self.changelog)?;
         if !markdown.starts_with("# Changelog") {
             bail!("changelog Markdown should start with `# Changelog`");
         }
@@ -27,7 +27,7 @@ impl flags::PublishReleaseNotes {
         if self.dry_run {
             println!("{markdown}");
         } else {
-            update_release(sh, tag_name, &markdown)?;
+            update_release(shell, tag_name, &markdown)?;
         }
         Ok(())
     }
@@ -71,7 +71,7 @@ fn create_original_changelog_url(file_name: &str) -> String {
 }
 
 fn update_release(
-    sh: &Shell,
+    shell: &Shell,
     tag_name: &str,
     release_notes: &str,
 ) -> anyhow::Result<()> {
@@ -86,11 +86,11 @@ fn update_release(
     let release_url = "https://api.github.com/repos/wgsl-analyzer/wgsl-analyzer/releases";
 
     let release_json = cmd!(
-        sh,
+        shell,
         "curl -sf -H {accept} -H {authorization} -H {api_version} {release_url}/tags/{tag_name}"
     )
     .read()?;
-    let release_id = cmd!(sh, "jq .id").stdin(release_json).read()?;
+    let release_id = cmd!(shell, "jq .id").stdin(release_json).read()?;
 
     let mut patch = String::new();
     // note: the GitHub API does not update the target commit if the tag already exists
@@ -102,7 +102,7 @@ fn update_release(
         .bool("draft", false)
         .bool("prerelease", false);
     let output = cmd!(
-        sh,
+        shell,
         "curl -sf -X PATCH -H {accept} -H {authorization} -H {api_version} {release_url}/{release_id} -d {patch}"
     )
     .read()?;

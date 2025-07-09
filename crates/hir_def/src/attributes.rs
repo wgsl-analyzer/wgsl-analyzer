@@ -87,10 +87,10 @@ impl AttributeList {
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum AttributeDefId {
-    StructId(StructId),
-    FieldId(FieldId),
-    FunctionId(FunctionId),
-    GlobalVariableId(GlobalVariableId),
+    Struct(StructId),
+    Field(FieldId),
+    Function(FunctionId),
+    GlobalVariable(GlobalVariableId),
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
@@ -102,13 +102,13 @@ pub struct AttributesWithOwner {
 impl AttributesWithOwner {
     pub(crate) fn attrs_query(
         database: &dyn DefDatabase,
-        def: AttributeDefId,
+        definition: AttributeDefId,
     ) -> Arc<Self> {
-        let attrs = match def {
-            AttributeDefId::StructId(id) => {
+        let attrs = match definition {
+            AttributeDefId::Struct(id) => {
                 AttributeList::from_src(database, &id.lookup(database).source(database).value)
             },
-            AttributeDefId::FieldId(id) => {
+            AttributeDefId::Field(id) => {
                 let location = id.r#struct.lookup(database).source(database);
                 let struct_declaration: ast::StructDeclaration = location.value;
                 let mut fields = struct_declaration.body().map_or_else(
@@ -131,17 +131,17 @@ impl AttributesWithOwner {
                     AttributeList::from_src(database, &field)
                 })
             },
-            AttributeDefId::FunctionId(id) => {
+            AttributeDefId::Function(id) => {
                 AttributeList::from_src(database, &id.lookup(database).source(database).value)
             },
-            AttributeDefId::GlobalVariableId(id) => {
+            AttributeDefId::GlobalVariable(id) => {
                 AttributeList::from_src(database, &id.lookup(database).source(database).value)
             },
         };
 
         Arc::new(Self {
             attribute_list: attrs,
-            owner: def,
+            owner: definition,
         })
     }
 }

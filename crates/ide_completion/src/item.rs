@@ -105,10 +105,10 @@ pub struct CompletionRelevance {
     /// like in a function argument.
     ///
     /// ```ignore
-    /// fn f(spam: String) {}
+    /// fn foo(spam: String) {}
     /// fn main() {
     ///     let spam = 92;
-    ///     f($0) // name of local matches the name of param
+    ///     foo($0) // name of local matches the name of param
     /// }
     /// ```
     pub exact_name_match: bool,
@@ -179,19 +179,19 @@ pub enum CompletionRelevanceTypeMatch {
     ///
     /// ```ignore
     /// enum Option<T> { Some(T), None }
-    /// fn f(a: Option<u32>) {}
+    /// fn foo(a: Option<u32>) {}
     /// fn main {
-    ///     f(Option::N$0) // type `Option<T>` could unify with `Option<u32>`
+    ///     foo(Option::N$0) // type `Option<T>` could unify with `Option<u32>`
     /// }
     /// ```
     CouldUnify,
     /// This is set in cases like these:
     ///
     /// ```ignore
-    /// fn f(spam: String) {}
+    /// fn foo(spam: String) {}
     /// fn main {
     ///     let foo = String::new();
-    ///     f($0) // type of local matches the type of parameter
+    ///     foo($0) // type of local matches the type of parameter
     /// }
     /// ```
     Exact,
@@ -297,7 +297,7 @@ impl CompletionRelevance {
     /// some threshold such that we think it is especially likely
     /// to be relevant.
     #[must_use]
-    pub fn is_relevant(&self) -> bool {
+    pub fn is_relevant(self) -> bool {
         self.score() > Self::BASE_SCORE
     }
 }
@@ -313,21 +313,21 @@ impl CompletionItem {
         let label = label.into();
         Builder {
             source_range,
+            trait_name: None,
+            doc_aliases: vec![],
             label,
             insert_text: None,
             is_snippet: false,
-            trait_name: None,
-            detail: None,
             // documentation: None,
+            detail: None,
             lookup: None,
             kind: kind.into(),
             text_edit: None,
             deprecated: false,
             trigger_call_info: false,
-            relevance: CompletionRelevance::default(),
             // ref_match: None,
             // imports_to_add: Default::default(),
-            doc_aliases: vec![],
+            relevance: CompletionRelevance::default(),
             // edition,
         }
     }
@@ -431,9 +431,9 @@ pub(crate) struct Builder {
 impl fmt::Debug for CompletionItem {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        let mut debug_struct = f.debug_struct("CompletionItem");
+        let mut debug_struct = formatter.debug_struct("CompletionItem");
         debug_struct
             .field("label", &self.label.primary)
             .field("detail_left", &self.label.detail_left)
@@ -545,18 +545,18 @@ impl Builder {
         //     .collect();
 
         CompletionItem {
-            source_range: self.source_range,
             label: CompletionItemLabel {
                 primary: label,
                 detail_left,
                 detail_right: self.detail.clone(),
             },
+            source_range: self.source_range,
             text_edit,
             is_snippet: self.is_snippet,
-            detail: self.detail,
+            kind: self.kind,
             // documentation: self.documentation,
             lookup,
-            kind: self.kind,
+            detail: self.detail,
             deprecated: self.deprecated,
             trigger_call_info: self.trigger_call_info,
             relevance: self.relevance,

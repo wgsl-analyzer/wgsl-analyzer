@@ -1,5 +1,4 @@
 //! The edition of the shader language.
-//! This should live here in a separate crate because we use it in both actual code and codegen.
 
 use std::{error, fmt, str};
 
@@ -51,23 +50,21 @@ impl error::Error for ParseEditionError {}
 impl fmt::Display for ParseEditionError {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        write!(f, "invalid edition: {}", self.invalid_input)
+        write!(formatter, "invalid edition: {}", self.invalid_input)
     }
 }
 
 impl str::FromStr for Edition {
     type Err = ParseEditionError;
 
-    fn from_str(
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] s: &str
-    ) -> Result<Self, Self::Err> {
-        match s {
+    fn from_str(string: &str) -> Result<Self, Self::Err> {
+        match string {
             "WGSL" => Ok(Self::Wgsl),
             "WESL 2025 (Unstable)" => Ok(Self::Wesl2025Unstable),
             _ => Err(ParseEditionError {
-                invalid_input: s.to_owned(),
+                invalid_input: string.to_owned(),
             }),
         }
     }
@@ -76,9 +73,9 @@ impl str::FromStr for Edition {
 impl fmt::Display for Edition {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        f.write_str(match self {
+        formatter.write_str(match self {
             Self::Wgsl => "WGSL",
             Self::Wesl2025Unstable => "WESL 2025 (Unstable)",
         })

@@ -26,9 +26,9 @@ impl From<String> for Markup {
 impl fmt::Display for Markup {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        fmt::Display::fmt(&self.text, f)
+        fmt::Display::fmt(&self.text, formatter)
     }
 }
 

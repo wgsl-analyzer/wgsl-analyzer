@@ -54,13 +54,13 @@ enum VecSize {
 impl fmt::Debug for VecSize {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
-            Self::Two => write!(f, "Two"),
-            Self::Three => write!(f, "Three"),
-            Self::Four => write!(f, "Four"),
-            Self::Bound(var) => write!(f, "BoundVar(BoundVar {{ index: {var} }})"),
+            Self::Two => write!(formatter, "Two"),
+            Self::Three => write!(formatter, "Three"),
+            Self::Four => write!(formatter, "Four"),
+            Self::Bound(var) => write!(formatter, "BoundVar(BoundVar {{ index: {var} }})"),
         }
     }
 }
@@ -263,8 +263,8 @@ fn parse_vec_size(
         '4' => VecSize::Four,
         other => {
             let length = generics.len();
-            let (i, _) = generics.entry(other).or_insert((length, Generic::VecSize));
-            VecSize::Bound(*i)
+            let (index, _) = generics.entry(other).or_insert((length, Generic::VecSize));
+            VecSize::Bound(*index)
         },
     }
 }
@@ -277,10 +277,10 @@ fn parse_texel_format(
         '_' => TexelFormat::Any,
         other => {
             let length = generics.len();
-            let (i, _) = generics
+            let (index, _) = generics
                 .entry(other)
                 .or_insert((length, Generic::TexelFormat));
-            TexelFormat::Bound(*i)
+            TexelFormat::Bound(*index)
         },
     }
 }
@@ -375,8 +375,8 @@ fn parse_ty(
     if r#type.len() == 1 {
         let generic = r#type.chars().next().unwrap();
         let length = generics.len();
-        let (i, _) = generics.entry(generic).or_insert((length, Generic::Type));
-        return Type::Bound(*i);
+        let (index, _) = generics.entry(generic).or_insert((length, Generic::Type));
+        return Type::Bound(*index);
     }
 
     match r#type {
@@ -398,23 +398,20 @@ fn parse_ty(
 fn type_to_rust(r#type: &Type) -> String {
     match r#type {
         Type::Vec(size, component_type) => format!(
-            "TyKind::Vector(crate::ty::VectorType {{ size: VecSize::{:?}, component_type: {} }}).intern(database)",
-            size,
+            "TyKind::Vector(crate::ty::VectorType {{ size: VecSize::{size:?}, component_type: {} }}).intern(database)",
             type_to_rust(component_type)
         ),
 
         Type::Matrix(columns, rows, inner) => format!(
-            "TyKind::Matrix(crate::ty::MatrixType {{ columns: VecSize::{:?}, rows: VecSize::{:?}, inner: {} }}).intern(database)",
-            columns,
-            rows,
+            "TyKind::Matrix(crate::ty::MatrixType {{ columns: VecSize::{columns:?}, rows: VecSize::{rows:?}, inner: {} }}).intern(database)",
             type_to_rust(inner)
         ),
 
         (Type::Bool | Type::F32 | Type::I32 | Type::U32 | Type::F16) => {
             format!("TyKind::Scalar(ScalarType::{type:?}).intern(database)")
         },
-        Type::Bound(i) => {
-            format!("TyKind::BoundVar(BoundVar {{ index: {i} }}).intern(database)",)
+        Type::Bound(index) => {
+            format!("TyKind::BoundVar(BoundVar {{ index: {index} }}).intern(database)",)
         },
         Type::Texture(texture) => {
             format!(

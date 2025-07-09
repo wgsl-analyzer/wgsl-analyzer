@@ -787,7 +787,7 @@ pub enum HoverRequest {}
 
 impl Request for HoverRequest {
     type Params = HoverParameters;
-    type Result = Option<Hover>;
+    type Result = Option<HoverResult>;
     const METHOD: &'static str = lsp_types::request::HoverRequest::METHOD;
 }
 
@@ -809,7 +809,7 @@ pub enum PositionOrRange {
 }
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
-pub struct Hover {
+pub struct HoverResult {
     #[serde(flatten)]
     pub hover: lsp_types::Hover,
     #[serde(skip_serializing_if = "Vec::is_empty")]

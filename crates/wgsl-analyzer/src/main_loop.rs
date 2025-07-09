@@ -92,23 +92,23 @@ enum Event {
 impl fmt::Display for Event {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait method")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
-            Self::Lsp(_) => write!(f, "Event::Lsp"),
-            Self::Task(_) => write!(f, "Event::Task"),
-            Self::Vfs(_) => write!(f, "Event::Vfs"),
-            // Self::Flycheck(_) => write!(f, "Event::Flycheck"),
-            Self::QueuedTask(_) => write!(f, "Event::QueuedTask"),
-            // Event::TestResult(_) => write!(f, "Event::TestResult"),
+            Self::Lsp(_) => write!(formatter, "Event::Lsp"),
+            Self::Task(_) => write!(formatter, "Event::Task"),
+            Self::Vfs(_) => write!(formatter, "Event::Vfs"),
+            // Self::Flycheck(_) => write!(formatter, "Event::Flycheck"),
+            Self::QueuedTask(_) => write!(formatter, "Event::QueuedTask"),
+            // Event::TestResult(_) => write!(formatter, "Event::TestResult"),
         }
     }
 }
 
 #[derive(Debug)]
+#[expect(clippy::enum_variant_names, reason = "Not relevant")]
 pub(crate) enum QueuedTask {
     CheckIfIndexed(lsp_types::Url),
-    CheckProcMacroSources(Vec<FileId>),
 }
 
 #[derive(Debug)]
@@ -152,7 +152,7 @@ pub(crate) enum PrimeCachesProgress {
 impl fmt::Debug for Event {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait method")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         let debug_non_verbose = |not: &Notification, formatter: &mut fmt::Formatter<'_>| {
             formatter
@@ -166,11 +166,11 @@ impl fmt::Debug for Event {
                 if notification_is::<lsp_types::notification::DidOpenTextDocument>(not)
                     || notification_is::<lsp_types::notification::DidChangeTextDocument>(not)
                 {
-                    return debug_non_verbose(not, f);
+                    return debug_non_verbose(not, formatter);
                 }
             },
             Self::Task(Task::Response(response)) => {
-                return f
+                return formatter
                     .debug_struct("Response")
                     .field("id", &response.id)
                     .field("error", &response.error)
@@ -179,13 +179,13 @@ impl fmt::Debug for Event {
             Self::Lsp(_) | Self::Task(_) | Self::QueuedTask(_) | Self::Vfs(_) => (),
         }
         match self {
-            Self::Lsp(message) => fmt::Debug::fmt(message, f),
-            Self::Task(task) => fmt::Debug::fmt(task, f),
-            Self::QueuedTask(task) => fmt::Debug::fmt(task, f),
-            Self::Vfs(message) => fmt::Debug::fmt(message, f),
-            // Event::Flycheck(it) => fmt::Debug::fmt(it, f),
-            // Event::TestResult(it) => fmt::Debug::fmt(it, f),
-            // Event::DiscoverProject(it) => fmt::Debug::fmt(it, f),
+            Self::Lsp(message) => fmt::Debug::fmt(message, formatter),
+            Self::Task(task) => fmt::Debug::fmt(task, formatter),
+            Self::QueuedTask(task) => fmt::Debug::fmt(task, formatter),
+            Self::Vfs(message) => fmt::Debug::fmt(message, formatter),
+            // Event::Flycheck(it) => fmt::Debug::fmt(it, formatter),
+            // Event::TestResult(it) => fmt::Debug::fmt(it, formatter),
+            // Event::DiscoverProject(it) => fmt::Debug::fmt(it, formatter),
         }
     }
 }
@@ -455,7 +455,10 @@ impl GlobalState {
             if let Some(cause) = self.wants_to_switch.take() {
                 self.switch_workspaces(&cause);
             }
-            (self.process_changes(), self.mem_docs.take_changes())
+            (
+                self.process_changes(),
+                self.in_memory_documents.take_changes(),
+            )
         } else {
             (false, false)
         };
@@ -521,7 +524,7 @@ impl GlobalState {
             for file_id in diagnostic_changes {
                 let uri = file_id_to_url(&self.vfs.read().0, file_id);
                 let version = from_proto::vfs_path(&uri).ok().and_then(|path| {
-                    self.mem_docs
+                    self.in_memory_documents
                         .get(&path)
                         .map(|document_data| document_data.version)
                 });
@@ -584,7 +587,7 @@ impl GlobalState {
         cause: String,
     ) {
         tracing::debug!(%cause, "will prime caches");
-        let num_worker_threads = self.config.prime_caches_num_threads();
+        let num_worker_threads = self.config.prime_caches_number_of_threads();
 
         self.task_pool
             .handle
@@ -609,7 +612,7 @@ impl GlobalState {
         let generation = self.diagnostics.next_generation();
         let subscriptions = {
             let vfs = &self.vfs.read().0;
-            self.mem_docs
+            self.in_memory_documents
                 .iter()
                 .map(|path| vfs.file_id(path).unwrap())
                 // .filter_map(|(file_id, excluded)| {
@@ -632,7 +635,7 @@ impl GlobalState {
         tracing::trace!("updating notifications for {:?}", subscriptions);
         // Split up the work on multiple threads, but we don't wanna fill the entire task pool with
         // diagnostic tasks, so we limit the number of tasks to a quarter of the total thread pool.
-        let max_tasks = self.config.main_loop_num_threads().div(4).max(1);
+        let max_tasks = self.config.main_loop_number_of_threads().div(4).max(1);
         let chunk_length = subscriptions
             .len()
             .checked_div(max_tasks)
@@ -855,7 +858,6 @@ impl GlobalState {
     ) {
         match task {
             QueuedTask::CheckIfIndexed(uri) => {},
-            QueuedTask::CheckProcMacroSources(modified_rust_files) => {},
         }
     }
 

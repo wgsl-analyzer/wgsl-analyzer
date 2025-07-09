@@ -1,40 +1,25 @@
 name: Release
 on:
   schedule:
-    - cron: "0 0 * * *" # midnight UTC
+    - cron: 0 0 * * * # midnight UTC
 
   workflow_dispatch:
 
   push:
     branches:
       - release
-      - trigger-nightly
 
-permissions:
-  actions: none
-  attestations: none
-  checks: none
-  contents: none
-  deployments: none
-  id-token: none
-  issues: none
-  discussions: none
-  packages: none
-  pages: none
-  pull-requests: none
-  repository-projects: none
-  security-events: none
-  statuses: none
+permissions: {}
 
 env:
-  CARGO_INCREMENTAL: 0
-  CARGO_NET_RETRY: 10
-  RUSTFLAGS: "-D warnings -W unreachable-pub"
-  RUSTUP_MAX_RETRIES: 10
-  FETCH_DEPTH: 0 # pull in the tags for the version string
-  MACOSX_DEPLOYMENT_TARGET: 13.0
-  ZIG_VERSION: 0.13.0
-  ZIGBUILD_VERSION: 0.19.8
+  CARGO_INCREMENTAL: '0'
+  CARGO_NET_RETRY: '10'
+  RUSTFLAGS: -D warnings
+  RUSTUP_MAX_RETRIES: '10'
+  FETCH_DEPTH: '0' # pull in the tags for the version string
+  MACOSX_DEPLOYMENT_TARGET: '13.0'
+  ZIG_VERSION: '0.13.0'
+  ZIGBUILD_VERSION: '0.19.8'
 
 jobs:
   dist:
@@ -45,29 +30,44 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             code-target: win32-x64
+            pgo: bevyengine/bevy@v0.16.1
+
           - os: windows-latest
             target: i686-pc-windows-msvc
+            pgo: bevyengine/bevy@v0.16.1
+
           - os: windows-latest
             target: aarch64-pc-windows-msvc
             code-target: win32-arm64
+
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            zig_target: x86_64-unknown-linux-gnu.2.28
+            # Use a container with glibc 2.28
+            # Zig is not used because it does not work with PGO
+            container: quay.io/pypa/manylinux_2_28_x86_64
             code-target: linux-x64
-          - os: ubuntu-latest
+            pgo: bevyengine/bevy@v0.16.1
+
+          - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
-            zig_target: aarch64-unknown-linux-gnu.2.28
+            container: quay.io/pypa/manylinux_2_28_aarch64
             code-target: linux-arm64
+            pgo: bevyengine/bevy@v0.16.1
+
           - os: ubuntu-latest
             target: arm-unknown-linux-gnueabihf
             zig_target: arm-unknown-linux-gnueabihf.2.28
             code-target: linux-armhf
+
           - os: macos-13
             target: x86_64-apple-darwin
             code-target: darwin-x64
-          - os: macos-13
+            pgo: bevyengine/bevy@v0.16.1
+
+          - os: macos-14
             target: aarch64-apple-darwin
             code-target: darwin-arm64
+            pgo: bevyengine/bevy@v0.16.1
 
     name: dist (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
@@ -87,10 +87,17 @@ jobs:
         with:
           node-version: 22
 
+      - name: Install rustup
+        if: ${{ matrix.container }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
       - name: Install Rust toolchain
         run: |
           rustup update --no-self-update stable
-          # rustup component add rust-src
+          # llvm-tools contain the llvm-profdata tool which is needed for PGO
+          rustup component add rust-src # ${{ matrix.pgo && 'llvm-tools' || '' }}
           rustup target add ${{ matrix.target }}
 
       - name: Install Zig toolchain
@@ -103,11 +110,11 @@ jobs:
 
       - name: Dist (plain)
         if: ${{ !matrix.zig_target }}
-        run: cargo xtask dist --client-patch-version ${{ github.run_number }}
+        run: cargo xtask dist --client-patch-version ${{ github.run_number }} # ${{ matrix.pgo && format('--pgo {0}', matrix.pgo) || ''}}
 
       - name: Dist (using zigbuild)
         if: ${{ matrix.zig_target }}
-        run: WA_TARGET=${{ matrix.zig_target}} cargo xtask dist --client-patch-version ${{ github.run_number }} --zig
+        run: WA_TARGET=${{ matrix.zig_target}} cargo xtask dist --client-patch-version ${{ github.run_number }} --zig # ${{ matrix.pgo && format('--pgo {0}', matrix.pgo) || ''}}
 
       - run: npm ci
         working-directory: editors/code
@@ -133,16 +140,6 @@ jobs:
         run: npx vsce package -o ../../dist/wgsl-analyzer-no-server.vsix --pre-release
         working-directory: editors/code
 
-      # - name: Run analysis-stats on wgsl-analyzer
-      #   if: matrix.target == 'x86_64-unknown-linux-gnu'
-      #   run: target/${{ matrix.target }}/release/wgsl-analyzer analysis-stats .
-
-      # - name: Run analysis-stats on rust std library
-      #   if: matrix.target == 'x86_64-unknown-linux-gnu'
-      #   env:
-      #     RUSTC_BOOTSTRAP: 1
-      #   run: target/${{ matrix.target }}/release/wgsl-analyzer analysis-stats --with-deps $(rustc --print sysroot)/lib/rustlib/src/rust/library/std
-
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -156,7 +153,7 @@ jobs:
     env:
       WA_TARGET: x86_64-unknown-linux-musl
       # For some reason `-crt-static` is not working for clang without lld
-      RUSTFLAGS: "-C link-arg=-fuse-ld=lld -C target-feature=-crt-static"
+      RUSTFLAGS: -C link-arg=-fuse-ld=lld -C target-feature=-crt-static
     container:
       image: rust:alpine
       volumes:
@@ -201,9 +198,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    needs: ["dist", "dist-x86_64-unknown-linux-musl"]
+    needs: ['dist', 'dist-x86_64-unknown-linux-musl']
     steps:
-      - name: Install Nodejs
+      - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -219,51 +216,71 @@ jobs:
         with:
           fetch-depth: ${{ env.FETCH_DEPTH }}
 
-      - run: echo "HEAD_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
-      - run: 'echo "HEAD_SHA: $HEAD_SHA"'
+      - name: Set HEAD_SHA
+        run: |
+          echo "HEAD_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          echo "HEAD_SHA: $HEAD_SHA"
 
-      - uses: actions/download-artifact@v4
+      - name: Download dist-aarch64-apple-darwin artifact
+        uses: actions/download-artifact@v4
         with:
           name: dist-aarch64-apple-darwin
           path: dist
-      - uses: actions/download-artifact@v4
+
+      - name: Download dist-x86_64-apple-darwin artifact
+        uses: actions/download-artifact@v4
         with:
           name: dist-x86_64-apple-darwin
           path: dist
-      - uses: actions/download-artifact@v4
+
+      - name: Download dist-x86_64-unknown-linux-gnu artifact
+        uses: actions/download-artifact@v4
         with:
           name: dist-x86_64-unknown-linux-gnu
           path: dist
-      - uses: actions/download-artifact@v4
+
+      - name: Download dist-x86_64-unknown-linux-musl artifact
+        uses: actions/download-artifact@v4
         with:
           name: dist-x86_64-unknown-linux-musl
           path: dist
-      - uses: actions/download-artifact@v4
+
+      - name: Download dist-aarch64-unknown-linux-gnu artifact
+        uses: actions/download-artifact@v4
         with:
           name: dist-aarch64-unknown-linux-gnu
           path: dist
-      - uses: actions/download-artifact@v4
+
+      - name: Download dist-arm-unknown-linux-gnueabihf artifact
+        uses: actions/download-artifact@v4
         with:
           name: dist-arm-unknown-linux-gnueabihf
           path: dist
-      - uses: actions/download-artifact@v4
+
+      - name: Download dist-x86_64-pc-windows-msvc artifact
+        uses: actions/download-artifact@v4
         with:
           name: dist-x86_64-pc-windows-msvc
           path: dist
-      - uses: actions/download-artifact@v4
+
+      - name: Download dist-i686-pc-windows-msvc artifact
+        uses: actions/download-artifact@v4
         with:
           name: dist-i686-pc-windows-msvc
           path: dist
-      - uses: actions/download-artifact@v4
+
+      - name: Download dist-aarch64-pc-windows-msvc artifact
+        uses: actions/download-artifact@v4
         with:
           name: dist-aarch64-pc-windows-msvc
           path: dist
+
       - run: ls -al ./dist
 
       - name: Publish Release
         uses: ./.github/actions/github-release
         with:
-          files: "dist/*"
+          files: dist/*
           name: ${{ env.TAG }}
           token: ${{ secrets.GITHUB_TOKEN }}
 

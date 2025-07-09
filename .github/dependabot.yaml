@@ -1,0 +1,40 @@
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 20
+    commit-message:
+      prefix: internal
+    labels:
+      - A-Language-Server
+      - C-Dependencies
+      - D-Trivial
+      - S-Ready-to-Review
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 20
+    commit-message:
+      prefix: internal
+    labels:
+      - A-Build-System
+      - C-Dependencies
+      - D-Trivial
+      - S-Ready-to-Review
+
+  - package-ecosystem: npm
+    directory: /editors/code
+    open-pull-requests-limit: 20
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: internal
+    labels:
+      - A-Editor
+      - C-Dependencies
+      - D-Trivial
+      - S-Ready-to-Review

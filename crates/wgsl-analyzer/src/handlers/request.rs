@@ -112,7 +112,7 @@ pub(crate) fn handle_formatting(
 pub(crate) fn handle_hover(
     snap: GlobalStateSnapshot,
     parameters: lsp::extensions::HoverParameters,
-) -> Result<Option<lsp::extensions::Hover>> {
+) -> Result<Option<lsp::extensions::HoverResult>> {
     let _p = tracing::info_span!("handle_hover").entered();
     let range = match parameters.position {
         PositionOrRange::Position(position) => Range::new(position, position),
@@ -132,7 +132,7 @@ pub(crate) fn handle_hover(
     let line_index = snap.file_line_index(file_range.file_id)?;
     let range = to_proto::range(&line_index, info.range);
     let markup_kind = hover.format;
-    let hover = lsp::extensions::Hover {
+    let hover = lsp::extensions::HoverResult {
         hover: lsp_types::Hover {
             contents: HoverContents::Markup(MarkupContent {
                 kind: match markup_kind {

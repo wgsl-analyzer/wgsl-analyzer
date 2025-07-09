@@ -20,11 +20,11 @@ use crate::{
 #[derive(Clone)]
 pub enum Scope {
     /// The items inside a module
-    ModuleScope(ModuleScope),
+    Module(ModuleScope),
     /// Local bindings
-    ExprScope(ExprScope),
+    Expression(ExpressionScope),
 
-    BuiltinScope,
+    Builtin,
 }
 
 #[derive(Clone)]
@@ -34,7 +34,7 @@ pub struct ModuleScope {
 }
 
 #[derive(Clone)]
-pub struct ExprScope {
+pub struct ExpressionScope {
     owner: FunctionId,
     expression_scopes: Arc<ExprScopes>,
     scope_id: ScopeId,
@@ -78,7 +78,7 @@ pub struct Resolver {
 impl Default for Resolver {
     fn default() -> Self {
         Self {
-            scopes: vec![Scope::BuiltinScope],
+            scopes: vec![Scope::Builtin],
         }
     }
 }
@@ -120,7 +120,7 @@ impl Resolver {
             }
         }
 
-        self.scopes.push(Scope::ModuleScope(ModuleScope {
+        self.scopes.push(Scope::Module(ModuleScope {
             module_info,
             file_id,
         }));
@@ -134,7 +134,7 @@ impl Resolver {
         expression_scopes: Arc<ExprScopes>,
         scope_id: ScopeId,
     ) -> Self {
-        self.scopes.push(Scope::ExprScope(ExprScope {
+        self.scopes.push(Scope::Expression(ExpressionScope {
             owner,
             expression_scopes,
             scope_id,
@@ -149,18 +149,18 @@ impl Resolver {
     #[must_use]
     pub fn body_owner(&self) -> Option<FunctionId> {
         self.scopes().find_map(|scope| match scope {
-            Scope::ExprScope(scope) => Some(scope.owner),
-            Scope::ModuleScope(_) | Scope::BuiltinScope => None,
+            Scope::Expression(scope) => Some(scope.owner),
+            Scope::Module(_) | Scope::Builtin => None,
         })
     }
 
-    /// calls f for every local, function, and global declaration, but not structs
+    /// calls function for every local, function, and global declaration, but not structs
     pub fn process_value_names<Function: FnMut(Name, ScopeDef)>(
         &self,
         mut function: Function,
     ) {
         self.scopes().for_each(|scope| match scope {
-            Scope::ModuleScope(scope) => {
+            Scope::Module(scope) => {
                 scope
                     .module_info
                     .items()
@@ -187,7 +187,7 @@ impl Resolver {
                         | ModuleItem::TypeAlias(_) => {},
                     });
             },
-            Scope::ExprScope(expression_scope) => {
+            Scope::Expression(expression_scope) => {
                 expression_scope
                     .expression_scopes
                     .scope_chain(Some(expression_scope.scope_id))
@@ -198,7 +198,7 @@ impl Resolver {
                         });
                     });
             },
-            Scope::BuiltinScope => {},
+            Scope::Builtin => {},
         });
     }
 
@@ -209,13 +209,13 @@ impl Resolver {
     ) -> Option<ResolveValue> {
         self.scopes().find_map(|scope| -> Option<ResolveValue> {
             match scope {
-                Scope::ExprScope(scope) => {
+                Scope::Expression(scope) => {
                     let entry = scope
                         .expression_scopes
                         .resolve_name_in_scope(scope.scope_id, name)?;
                     Some(ResolveValue::Local(entry.binding))
                 },
-                Scope::ModuleScope(scope) => {
+                Scope::Module(scope) => {
                     scope
                         .module_info
                         .items()
@@ -254,7 +254,7 @@ impl Resolver {
                             | ModuleItem::TypeAlias(_) => None,
                         })
                 },
-                Scope::BuiltinScope => None,
+                Scope::Builtin => None,
             }
         })
     }
@@ -265,32 +265,30 @@ impl Resolver {
         name: &Name,
     ) -> Option<ResolveType> {
         self.scopes().find_map(|scope| match scope {
-            Scope::ModuleScope(scope) => {
-                scope
-                    .module_info
-                    .items()
-                    .iter()
-                    .find_map(|item| match item {
-                        ModuleItem::Struct(id) => {
-                            let r#struct = scope.module_info.get(*id);
-                            (&r#struct.name == name)
-                                .then(|| ResolveType::Struct(InFile::new(scope.file_id, *id)))
-                        },
-                        ModuleItem::TypeAlias(id) => {
-                            let type_alias = scope.module_info.get(*id);
-                            (&type_alias.name == name)
-                                .then(|| ResolveType::TypeAlias(InFile::new(scope.file_id, *id)))
-                        },
-                        ModuleItem::Function(_)
-                        | ModuleItem::GlobalVariable(_)
-                        | ModuleItem::GlobalConstant(_)
-                        | ModuleItem::Override(_)
-                        | ModuleItem::Import(_) => None,
-                    })
-            },
-            Scope::ExprScope(_) => None,
+            Scope::Module(scope) => scope
+                .module_info
+                .items()
+                .iter()
+                .find_map(|item| match item {
+                    ModuleItem::Struct(id) => {
+                        let r#struct = scope.module_info.get(*id);
+                        (&r#struct.name == name)
+                            .then(|| ResolveType::Struct(InFile::new(scope.file_id, *id)))
+                    },
+                    ModuleItem::TypeAlias(id) => {
+                        let type_alias = scope.module_info.get(*id);
+                        (&type_alias.name == name)
+                            .then(|| ResolveType::TypeAlias(InFile::new(scope.file_id, *id)))
+                    },
+                    ModuleItem::Function(_)
+                    | ModuleItem::GlobalVariable(_)
+                    | ModuleItem::GlobalConstant(_)
+                    | ModuleItem::Override(_)
+                    | ModuleItem::Import(_) => None,
+                }),
+            Scope::Expression(_) => None,
 
-            Scope::BuiltinScope => {
+            Scope::Builtin => {
                 let r#type = vec_alias_typeref(name.as_str());
                 r#type.map(ResolveType::PredeclaredTypeAlias)
             },
@@ -303,36 +301,33 @@ impl Resolver {
         name: &Name,
     ) -> Option<ResolveCallable> {
         self.scopes().find_map(|scope| match scope {
-            Scope::ModuleScope(scope) => {
-                scope
-                    .module_info
-                    .items()
-                    .iter()
-                    .find_map(|item| match item {
-                        ModuleItem::Struct(id) => {
-                            let r#struct = scope.module_info.get(*id);
-                            (&r#struct.name == name)
-                                .then(|| ResolveCallable::Struct(InFile::new(scope.file_id, *id)))
-                        },
-                        ModuleItem::TypeAlias(id) => {
-                            let type_alias = scope.module_info.get(*id);
-                            (&type_alias.name == name).then(|| {
-                                ResolveCallable::TypeAlias(InFile::new(scope.file_id, *id))
-                            })
-                        },
-                        ModuleItem::Function(id) => {
-                            let function = scope.module_info.get(*id);
-                            (&function.name == name)
-                                .then(|| ResolveCallable::Function(InFile::new(scope.file_id, *id)))
-                        },
-                        ModuleItem::GlobalVariable(_)
-                        | ModuleItem::GlobalConstant(_)
-                        | ModuleItem::Override(_)
-                        | ModuleItem::Import(_) => None,
-                    })
-            },
-            Scope::ExprScope(_) => None,
-            Scope::BuiltinScope => {
+            Scope::Module(scope) => scope
+                .module_info
+                .items()
+                .iter()
+                .find_map(|item| match item {
+                    ModuleItem::Struct(id) => {
+                        let r#struct = scope.module_info.get(*id);
+                        (&r#struct.name == name)
+                            .then(|| ResolveCallable::Struct(InFile::new(scope.file_id, *id)))
+                    },
+                    ModuleItem::TypeAlias(id) => {
+                        let type_alias = scope.module_info.get(*id);
+                        (&type_alias.name == name)
+                            .then(|| ResolveCallable::TypeAlias(InFile::new(scope.file_id, *id)))
+                    },
+                    ModuleItem::Function(id) => {
+                        let function = scope.module_info.get(*id);
+                        (&function.name == name)
+                            .then(|| ResolveCallable::Function(InFile::new(scope.file_id, *id)))
+                    },
+                    ModuleItem::GlobalVariable(_)
+                    | ModuleItem::GlobalConstant(_)
+                    | ModuleItem::Override(_)
+                    | ModuleItem::Import(_) => None,
+                }),
+            Scope::Expression(_) => None,
+            Scope::Builtin => {
                 let r#type = vec_alias_typeref(name.as_str());
                 r#type.map(ResolveCallable::PredeclaredTypeAlias)
             },

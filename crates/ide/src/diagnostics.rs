@@ -58,8 +58,8 @@ impl Diagnostic {
             code,
             message,
             range,
-            severity: Severity::Error,
             unused: false,
+            severity: Severity::Error,
             related: Vec::new(),
         }
     }
@@ -410,16 +410,17 @@ pub fn diagnostics(
         unconfigured
             .iter()
             .map(|unconfigured| AnyDiagnostic::UnconfiguredCode {
-                def: unconfigured.def.clone(),
+                definition: unconfigured.definition.clone(),
                 range: unconfigured.range,
                 file_id: file_id.into(),
             }),
     );
 
-    let sema = Semantics::new(database);
+    let semantics = Semantics::new(database);
 
     if config.type_errors {
-        sema.module(file_id)
+        semantics
+            .module(file_id)
             .diagnostics(database, config, &mut diagnostics);
     }
 
@@ -483,7 +484,7 @@ pub fn diagnostics(
                     let frange = original_file_range(database, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("3"),
-                        format!("no field `{}` on type {}", name.as_ref(), r#type),
+                        format!("no field `{}` on type {type}", name.as_ref()),
                         frange.range,
                     )
                 },
@@ -632,9 +633,13 @@ pub fn diagnostics(
                 AnyDiagnostic::ParseError { message, range, .. } => {
                     Diagnostic::new(DiagnosticCode("16"), message, range)
                 },
-                AnyDiagnostic::UnconfiguredCode { def, range, .. } => Diagnostic::new(
+                AnyDiagnostic::UnconfiguredCode {
+                    definition, range, ..
+                } => Diagnostic::new(
                     DiagnosticCode("17"),
-                    format!("code is inactive due to `#ifdef` directives: `{def}` is not enabled"),
+                    format!(
+                        "code is inactive due to `#ifdef` directives: `{definition}` is not enabled"
+                    ),
                     range,
                 )
                 .with_severity(Severity::WeakWarning)

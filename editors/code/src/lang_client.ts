@@ -14,9 +14,9 @@ export class WaLanguageClient extends lc.LanguageClient {
 			.getConfiguration("wgsl-analyzer")
 			.get("showRequestFailedErrorNotification");
 		if (
-			!showError &&
-			error instanceof lc.ResponseError &&
-			error.code === lc.ErrorCodes.InternalError
+			!showError
+			&& error instanceof lc.ResponseError
+			&& error.code === lc.ErrorCodes.InternalError
 		) {
 			// Do not show notification for internal errors, these are emitted by w-a when a request fails.
 			showNotification = false;

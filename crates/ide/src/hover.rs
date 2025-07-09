@@ -76,7 +76,7 @@ pub(crate) fn hover(
     file_range @ FileRange { file_id, range }: FileRange,
     config: &HoverConfig,
 ) -> Option<RangeInfo<HoverResult>> {
-    let sema = &Semantics::new(database);
+    let semantics = &Semantics::new(database);
 
     let file = database.parse(file_range.file_id).tree();
 
@@ -90,14 +90,14 @@ pub(crate) fn hover(
 
     if let Some(import) = import {
         let source = InFile::new(file_range.file_id.into(), import);
-        let import = sema.resolve_import(&source)?;
+        let import = semantics.resolve_import(&source)?;
 
         if !import.is_path(database) {
             return Some(RangeInfo {
                 range: file_range.range,
                 info: HoverResult {
-                    actions: vec![],
                     markup: import.file_text(database)?.into(),
+                    actions: vec![],
                 },
             });
         }

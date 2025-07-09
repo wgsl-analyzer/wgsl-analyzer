@@ -72,7 +72,10 @@ export function isWeslDocument(document: vscode.TextDocument): document is WeslD
 	// Unfortunately, extensions that use diff views not always set this
 	// to something different than "file".
 	// See: https://github.com/rust-lang/rust-analyzer/issues/4608
-	return (document.languageId === "wgsl" || document.languageId === "wesl") && document.uri.scheme === "file";
+	return (
+		(document.languageId === "wgsl" || document.languageId === "wesl")
+		&& document.uri.scheme === "file"
+	);
 }
 
 export function isWeslEditor(editor: vscode.TextEditor): editor is WeslEditor {

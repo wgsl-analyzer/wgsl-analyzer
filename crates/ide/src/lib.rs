@@ -303,8 +303,7 @@ impl Analysis {
         &self,
         file_position: FilePosition,
     ) -> Cancellable<()> {
-        self.with_db(|database| debug_command::debug_command(database, file_position))
-            .unwrap();
+        self.with_db(|database| debug_command::debug_command(database, file_position))?;
         Ok(())
     }
 }

@@ -6,10 +6,7 @@ import * as Is from "vscode-languageclient/lib/common/utils/is";
 import { assert, unwrapUndefinable } from "./util";
 import * as diagnostics from "./diagnostics";
 import { WorkspaceEdit } from "vscode";
-import {
-	type Config,
-	prepareVSCodeConfig,
-} from "./config";
+import { type Config, prepareVSCodeConfig } from "./config";
 import { sep as pathSeparator } from "path";
 import { WaLanguageClient } from "./lang_client";
 
@@ -62,10 +59,10 @@ export async function createClient(
 					// FIXME: We currently emit this diagnostic way too early, before we have
 					// loaded the project fully
 					// value === "unlinked-file" &&
-					value === "temporary-disabled" &&
-					!unlinkedFiles.includes(uri) &&
-					(diagnostic.message === "file not included in crate hierarchy" ||
-						diagnostic.message.startsWith("This file is not included in any crates"))
+					value === "temporary-disabled"
+					&& !unlinkedFiles.includes(uri)
+					&& (diagnostic.message === "file not included in crate hierarchy"
+						|| diagnostic.message.startsWith("This file is not included in any crates"))
 				) {
 					const config = vscode.workspace.getConfiguration("wgsl-analyzer");
 					if (config.get("showUnlinkedFileNotification")) {
@@ -252,7 +249,7 @@ export async function createClient(
 								items.map((item) => {
 									return {
 										label: item.title,
-										arguments: item.command!.arguments![0],
+										args: item.command!.arguments![0],
 									};
 								}),
 							],
@@ -272,7 +269,10 @@ export async function createClient(
 		},
 	};
 	const clientOptions: lc.LanguageClientOptions = {
-		documentSelector: [{ scheme: "file", language: "wgsl" }, { scheme: "file", language: "wesl" }],
+		documentSelector: [
+			{ scheme: "file", language: "wgsl" },
+			{ scheme: "file", language: "wesl" },
+		],
 		initializationOptions,
 		diagnosticCollectionName: "wgsl-analyzer",
 		traceOutputChannel,
@@ -333,10 +333,10 @@ class ExperimentalFeatures implements lc.StaticFeature {
 	initialize(
 		_capabilities: lc.ServerCapabilities,
 		_documentSelector: lc.DocumentSelector | undefined,
-	): void { }
+	): void {}
 
-	dispose(): void { }
-	clear(): void { }
+	dispose(): void {}
+	clear(): void {}
 }
 
 class OverrideFeatures implements lc.StaticFeature {
@@ -356,28 +356,28 @@ class OverrideFeatures implements lc.StaticFeature {
 	initialize(
 		_capabilities: lc.ServerCapabilities,
 		_documentSelector: lc.DocumentSelector | undefined,
-	): void { }
+	): void {}
 
-	dispose(): void { }
-	clear(): void { }
+	dispose(): void {}
+	clear(): void {}
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isCodeActionWithoutEditsAndCommands(value: any): boolean {
 	const candidate: lc.CodeAction = value;
 	return (
-		candidate &&
-		Is.string(candidate.title) &&
-		(candidate.diagnostics === void 0 ||
-			Is.typedArray(candidate.diagnostics, lc.Diagnostic.is)) &&
-		(candidate.kind === void 0 || Is.string(candidate.kind)) &&
-		candidate.edit === void 0 &&
-		candidate.command === void 0
+		candidate
+		&& Is.string(candidate.title)
+		&& (candidate.diagnostics === void 0
+			|| Is.typedArray(candidate.diagnostics, lc.Diagnostic.is))
+		&& (candidate.kind === void 0 || Is.string(candidate.kind))
+		&& candidate.edit === void 0
+		&& candidate.command === void 0
 	);
 }
 
-// Command URIs have a form of command:command-name?arguments, where
-// arguments is a percent-encoded array of data we want to pass along to
+// Command URIs have a form of command:command-name?args, where
+// args is a percent-encoded array of data we want to pass along to
 // the command function. For "Show References" this is a list of all file
 // URIs with locations of every reference, and it can get quite long.
 // So long in fact that it will fail rendering inside an `a` tag so we need
@@ -397,8 +397,8 @@ function renderHoverActions(actions: wa.CommandLinkGroup[]): vscode.MarkdownStri
 	const text = actions
 		.map(
 			(group) =>
-				(group.title ? group.title + " " : "") +
-				group.commands.map(renderCommand).join(" | "),
+				(group.title ? group.title + " " : "")
+				+ group.commands.map(renderCommand).join(" | "),
 		)
 		.join(" | ");
 

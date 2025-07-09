@@ -1,0 +1,390 @@
+# Please make sure that the `needs` field for the `conclusion` job
+# are updated when adding new jobs!
+
+name: Continuous integration
+
+on:
+  pull_request:
+  merge_group:
+
+permissions: {}
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  CI: 1
+  RUST_BACKTRACE: short
+  RUSTUP_MAX_RETRIES: 10
+  RUSTFLAGS: -D warnings
+  NIGHTLY_TOOLCHAIN: nightly
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      typescript: ${{ steps.filter.outputs.typescript }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Filter by paths
+        uses: dorny/paths-filter@v3.0.2
+        id: filter
+        with:
+          filters: |
+            typescript:
+              - 'editors/code/**'
+
+  rust:
+    name: Rust
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install stable Rust toolchain
+        uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          components: clippy
+
+      # https://github.com/actions-rust-lang/setup-rust-toolchain/blob/main/rust.json
+      - name: Install Rust Problem Matcher
+        if: matrix.os == 'macos-latest'
+        run: echo "::add-matcher::.github/rust.json"
+
+      # - name: Cache Dependencies
+      #   uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+      #   with:
+      #     workspaces: |
+      #       . -> target
+      #       ./crates/proc-macro-srv/proc-macro-test/imp -> target
+
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
+
+      # TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/359
+      # - name: Codegen checks (wgsl-analyzer)
+      #   if: matrix.os == 'ubuntu-latest'
+      #   run: cargo codegen --check
+
+      - name: Test
+        run: cargo nextest run --no-fail-fast --hide-progress-bar --status-level fail
+
+      - name: Clippy
+        # Because macos runners are the fastest
+        if: matrix.os == 'macos-latest'
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+  rustfmt:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: |
+          rustup update --no-self-update stable
+          rustup default stable
+          rustup component add rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+  miri:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: |
+          rustup update --no-self-update nightly
+          rustup default nightly
+          rustup component add miri
+
+      # - name: Cache Dependencies
+      #   uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+
+      # TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/361
+      # - run: cargo miri test -p intern
+
+  # Weird targets to catch non-portable code
+  # rust-cross:
+  #   name: Rust Cross
+  #   runs-on: ubuntu-latest
+
+  #   strategy:
+  #     matrix:
+  #       target:
+  #         [
+  #           powerpc-unknown-linux-gnu,
+  #           x86_64-unknown-linux-musl,
+  #           wasm32-unknown-unknown,
+  #         ]
+  #       include:
+  #         # The wgsl-analyzer binary is not expected to compile on WASM, but the IDE
+  #         # crate should
+  #         - target: wasm32-unknown-unknown
+  #           ide-only: true
+
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+
+  #     - name: Install Rust toolchain
+  #       run: |
+  #         rustup update --no-self-update stable
+  #         rustup target add ${{ matrix.target }}
+
+  #     # - name: Cache Dependencies
+  #     #   uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+
+  #     - run: cargo check --target=${{ matrix.target }} --all-targets -p ide
+  #       if: ${{ matrix.ide-only }}
+  #     - run: cargo check --target=${{ matrix.target }} --all-targets
+  #       if: ${{ !matrix.ide-only }}
+
+  markdown:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v20
+        with:
+          config: .markdownlint.jsonc
+          globs: '**/*.md'
+
+  toml:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install stable Rust toolchain
+        uses: dtolnay/rust-toolchain@1.88.0
+
+      - name: Install taplo
+        run: cargo install taplo-cli --locked
+
+      - name: Run Taplo
+        id: taplo
+        run: taplo fmt --check --diff
+
+      - name: Taplo info
+        if: failure()
+        run: |
+          echo 'To fix toml fmt, please run `taplo fmt`.'
+          echo 'To check for a diff, run `taplo fmt --check --diff`.'
+          echo 'You can find taplo here: https://taplo.tamasfe.dev/.'
+          echo 'Also use the `Even Better Toml` extension.'
+          echo 'You can find the extension here: https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml'
+
+  typos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check for typos
+        uses: crate-ci/typos@v1.34.0
+
+      - name: Typos info
+        if: failure()
+        run: |
+          echo 'To fix typos, please run `typos -w`'
+          echo 'To check for a diff, run `typos`'
+          echo 'You can find typos here: https://crates.io/crates/typos'
+          echo 'if you use VS Code, you can also install `Typos Spell Checker'
+          echo 'You can find the extension here: https://marketplace.visualstudio.com/items?itemName=tekumara.typos-vscode'
+
+  rustdoc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install beta Rust toolchain
+        uses: dtolnay/rust-toolchain@beta
+
+      - name: Build doc
+        run: cargo doc --workspace --all-features --no-deps --document-private-items --keep-going
+        env:
+          CARGO_INCREMENTAL: 0
+          RUSTFLAGS: -C debuginfo=0 -D warnings
+
+      - name: Documentation tests
+        run: cargo test --workspace --doc
+        env:
+          CARGO_INCREMENTAL: 0
+          RUSTFLAGS: -C debuginfo=0 -D warnings
+
+      - name: Installs cargo-deadlinks
+        run: cargo install --force cargo-deadlinks
+
+      - name: Checks dead links
+        run: cargo deadlinks --dir target/doc
+        continue-on-error: true
+
+  check-unused-dependencies:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install nightly Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.NIGHTLY_TOOLCHAIN }}
+
+      - name: Install udeps
+        run: cargo install --locked cargo-udeps
+
+      - name: Run udeps
+        run: cargo udeps
+
+  typescript:
+    needs: changes
+    if: needs.changes.outputs.typescript == 'true'
+    name: TypeScript
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nodejs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install xvfb
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install -y xvfb
+
+      - name: Build
+        run: npm ci
+        working-directory: ./editors/code
+
+      #    - run: npm audit || { sleep 10 && npm audit; } || { sleep 30 && npm audit; }
+      #      if: runner.os == 'Linux'
+      #      working-directory: ./editors/code
+
+      # If this steps fails, your code's type integrity might be wrong at some places at TypeScript level.
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: ./editors/code
+
+      # You may fix the code automatically by running `npm run lint:fix` if this steps fails.
+      - name: Lint
+        run: npm run lint
+        working-directory: ./editors/code
+
+      # If this check fails, please run `npm run format`.
+      - name: Check formatting
+        run: npm run format:check
+        working-directory: ./editors/code
+
+      - name: Run VS Code tests (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          VSCODE_CLI: 1
+        run: xvfb-run npm test
+        working-directory: ./editors/code
+
+      - name: Run VS Code tests (Windows)
+        if: matrix.os == 'windows-latest'
+        env:
+          VSCODE_CLI: 1
+        run: npm test
+        working-directory: ./editors/code
+
+      - name: Package
+        run: npm run package --scripts-prepend-node-path
+        working-directory: ./editors/code
+
+  conclusion:
+    needs: [
+        rust,
+        # rust-cross,
+        markdown,
+        rustfmt,
+        miri,
+        toml,
+        typos,
+        rustdoc,
+        check-unused-dependencies,
+        typescript,
+      ]
+    # We need to ensure this job does *not* get skipped if its dependencies fail,
+    # because a skipped job is considered a success by GitHub. So we have to
+    # overwrite `if:`. We use `!cancelled()` to ensure the job does still not get run
+    # when the workflow is canceled manually.
+    #
+    # ALL THE PREVIOUS JOBS NEED TO BE ADDED TO THE `needs` SECTION OF THIS JOB!
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      # Manually check the status of all dependencies. `if: failure()` does not work.
+      - name: Conclusion
+        run: |
+          # Print the dependent jobs to see them in the CI log
+          jq -C <<< '${{ toJson(needs) }}'
+          # Check if all jobs that we depend on (in the needs array) were successful (or have been skipped).
+          jq --exit-status 'all(.result == "success" or .result == "skipped")' <<< '${{ toJson(needs) }}'
+
+  cancel-if-matrix-failed:
+    needs: rust
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel parallel jobs
+        run: |
+          if jq --exit-status 'all(.result == "success" or .result == "skipped")' <<< '${{ toJson(needs) }}'; then
+            exit 0
+          fi
+          # https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2022-11-28#cancel-a-workflow-run
+          curl -L \
+          -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/cancel

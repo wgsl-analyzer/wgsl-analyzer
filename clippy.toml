@@ -1,13 +1,49 @@
-disallowed-types = [
-  { path = "std::collections::HashMap", reason = "use FxHashMap" },
-  { path = "std::collections::HashSet", reason = "use FxHashSet" },
-  { path = "std::collections::hash_map::RandomState", reason = "use BuildHasherDefault<FxHasher>" },
+absolute-paths-allowed-crates = []
+absolute-paths-max-segments = 2
+accept-comment-above-attributes = true
+accept-comment-above-statement = true
+allow-comparison-to-zero = false
+allow-dbg-in-tests = false
+# allow-exact-repetitions = true
+allow-expect-in-consts = true
+allow-expect-in-tests = false
+allow-indexing-slicing-in-tests = false
+allow-mixed-uninlined-format-args = false
+allow-one-hash-in-raw-strings = false
+allow-panic-in-tests = false
+allow-print-in-tests = false
+allow-private-module-inception = false
+allow-renamed-params-for = [
+  "core::convert::From",
+  "core::convert::TryFrom",
+  "core::fmt::Display",
+  "core::fmt::Debug",
+  "core::str::FromStr",
 ]
-
+allow-unwrap-in-consts = true
+allow-unwrap-in-tests = true
+allow-useless-vec-in-tests = false
+allowed-dotfiles = []
+allowed-duplicate-crates = []
+allowed-idents-below-min-chars = []
+allowed-prefixes = ["to", "as", "into", "from", "try_into", "try_from"]
+allowed-scripts = ["Latin"]
+allowed-wildcard-imports = []
+arithmetic-side-effects-allowed = []
+arithmetic-side-effects-allowed-binary = []
+arithmetic-side-effects-allowed-unary = []
+array-size-threshold = 16384
+avoid-breaking-exported-api = false
+await-holding-invalid-types = []
+cargo-ignore-publish = false
+check-incompatible-msrv-in-tests = false
+check-inconsistent-struct-field-initializers = true
+check-private-items = false
+cognitive-complexity-threshold = 25
+disallowed-macros = []
 disallowed-methods = [
   { path = "std::process::Command::new", reason = "use `toolchain::command` instead as it forces the choice of a working directory" },
 ]
-
 # Things that do not work due to macros can be handled by typos.toml instead.
 disallowed-names = [
   "acc",    # accumulator
@@ -21,6 +57,7 @@ disallowed-names = [
   "col",    # column
   "ctrl",   # control
   "dbg",    # debug
+  "def",    # definition
   "dest",   # destination
   "dir",    # directory
   "dirs",   # directories
@@ -37,13 +74,138 @@ disallowed-names = [
   "req",    # request
   "resp",   # response
   "sel",    # selection
+  "sema",   # semantics
   "sig",    # sign
   "src",    # source
   "stmt",   # statement
+  "sh",     # shell
+  "opts",   # options
+  "vars",   # variables
   "ty",     # r#type
-  # "tmp",    # temporary # does not work due to db! macro
-  # "err",    # error
+  # "lex",  # lexer     # does not work due to logos::logos macro
+  # "tmp",  # temporary # does not work due to db! macro
+  # "err",  # error     # does not work due to ?
   # "db",   # database  # does not work due to xflag macro
   # "args", # arguments # does not work due to write! macro
   # "res",  # result    # does not work due to format! macro
 ]
+disallowed-types = [
+  { path = "std::collections::HashMap", reason = "use FxHashMap" },
+  { path = "std::collections::HashSet", reason = "use FxHashSet" },
+  { path = "std::collections::hash_map::RandomState", reason = "use BuildHasherDefault<FxHasher>" },
+]
+doc-valid-idents = ["..", "QoS"]
+enable-raw-pointer-heuristic-for-send = true
+enforce-iter-loop-reborrow = false
+enforced-import-renames = []
+enum-variant-name-threshold = 0
+enum-variant-size-threshold = 200
+excessive-nesting-threshold = 10
+future-size-threshold = 16384
+ignore-interior-mutability = ["bytes::Bytes"]
+large-error-threshold = 128
+lint-commented-code = true
+literal-representation-threshold = 128
+matches-for-let-else = "AllTypes"
+max-fn-params-bools = 2
+max-include-file-size = 1000000
+max-struct-bools = 3
+max-suggested-slice-pattern-length = 9
+max-trait-bounds = 1
+min-ident-chars-threshold = 1
+# missing-docs-allow-unused = false
+missing-docs-in-crate-items = false
+# module-item-order-groupings = []
+module-items-ordered-within-groupings = "none"
+# msrv = "current version"
+pass-by-value-size-limit = 256
+pub-underscore-fields-behavior = "PubliclyExported"
+semicolon-inside-block-ignore-singleline = false
+semicolon-outside-block-ignore-multiline = false
+single-char-binding-names-threshold = 0
+source-item-ordering = ["enum", "impl", "module", "struct", "trait"]
+stack-size-threshold = 512000
+standard-macro-braces = [
+  { name = "always", brace = "(" },
+  { name = "anyhow::anyhow", brace = "(" },
+  { name = "anyhow::bail", brace = "(" },
+  { name = "anyhow::format_err", brace = "(" },
+  { name = "assert_eq", brace = "(" },
+  { name = "assert", brace = "(" },
+  { name = "ast_enum_compound", brace = "{" },
+  { name = "ast_enum_raw", brace = "{" },
+  { name = "ast_enum", brace = "{" },
+  { name = "ast_node", brace = "{" },
+  { name = "ast_token_enum", brace = "{" },
+  { name = "cfg_if", brace = "{" },
+  { name = "cfg", brace = "(" },
+  { name = "concat", brace = "(" },
+  { name = "count_tts", brace = "(" },
+  { name = "dbg", brace = "(" },
+  { name = "define_semantic_token_modifiers", brace = "[" },
+  { name = "define_semantic_token_types", brace = "[" },
+  { name = "env", brace = "(" },
+  { name = "error", brace = "(" },
+  { name = "expect", brace = "[" },
+  { name = "format_args", brace = "(" },
+  { name = "format_err", brace = "(" },
+  { name = "format_smolstr", brace = "(" },
+  { name = "format_to", brace = "(" },
+  { name = "format", brace = "(" },
+  { name = "impl_from", brace = "(" },
+  { name = "implement", brace = "(" },
+  { name = "include", brace = "(" },
+  { name = "info_span", brace = "(" },
+  { name = "info", brace = "(" },
+  { name = "intern_id", brace = "(" },
+  { name = "match_ast", brace = "{" },
+  { name = "matches", brace = "(" },
+  { name = "mod_items", brace = "{" },
+  { name = "never", brace = "(" },
+  { name = "opt", brace = "(" },
+  { name = "panic", brace = "(" },
+  { name = "print", brace = "(" },
+  { name = "println", brace = "(" },
+  { name = "prop_oneof", brace = "[" },
+  { name = "proptest", brace = "{" },
+  { name = "select", brace = "{" },
+  { name = "smallvec::smallvec", brace = "[" },
+  { name = "smallvec", brace = "[" },
+  { name = "span", brace = "(" },
+  { name = "stringify", brace = "(" },
+  { name = "T", brace = "[" },
+  { name = "thread_local", brace = "{" },
+  { name = "todo", brace = "(" },
+  { name = "trace", brace = "(" },
+  { name = "tracing::debug", brace = "(" },
+  { name = "tracing::enabled", brace = "(" },
+  { name = "tracing::error", brace = "(" },
+  { name = "tracing::info_span", brace = "(" },
+  { name = "tracing::info", brace = "(" },
+  { name = "tracing::trace", brace = "(" },
+  { name = "tracing::warn", brace = "(" },
+  { name = "try_default", brace = "(" },
+  { name = "unimplemented", brace = "(" },
+  { name = "unreachable", brace = "(" },
+  { name = "vec", brace = "[" },
+  { name = "warn", brace = "(" },
+  { name = "write", brace = "(" },
+  { name = "writeln", brace = "(" },
+  { name = "xflags::xflags", brace = "{" },
+  { name = "xflags", brace = "{" },
+]
+struct-field-name-threshold = 0
+suppress-restriction-lint-in-const = false
+too-large-for-stack = 200
+too-many-arguments-threshold = 7
+too-many-lines-threshold = 100
+trait-assoc-item-kinds-order = ["const", "type", "fn"]
+trivial-copy-size-limit = 128
+type-complexity-threshold = 250
+unnecessary-box-size = 128
+unreadable-literal-lint-fractions = true
+upper-case-acronyms-aggressive = true
+vec-box-size-threshold = 4096
+verbose-bit-mask-threshold = 1
+warn-on-all-wildcard-imports = false
+warn-unsafe-macro-metavars-in-private-macros = false

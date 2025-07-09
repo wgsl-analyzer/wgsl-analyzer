@@ -1,6 +1,9 @@
 //! Like `std::time::Instant`, but also measures memory & CPU cycles.
 
-#![expect(clippy::print_stderr, reason = "this is a debugging utility")]
+#![cfg_attr(
+    all(target_os = "linux", not(target_env = "ohos")),
+    expect(clippy::print_stderr, reason = "this is a debugging utility")
+)]
 
 use std::{
     fmt,
@@ -23,24 +26,27 @@ pub struct StopWatchSpan {
 }
 
 impl StopWatch {
+    #[must_use]
     pub fn start() -> Self {
         #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
         let counter = {
-            // When debugging rust-analyzer using rr, the perf-related syscalls cause it to abort.
-            // We allow disabling perf by setting the env var `WA_DISABLE_PERF`.
+            // When debugging wgsl-analyzer using rr, the performance-related syscalls cause it to abort.
+            // We allow disabling performance by setting the env var `WA_DISABLE_PERFORMANCE`.
 
             use std::sync::OnceLock;
-            static PERF_ENABLED: OnceLock<bool> = OnceLock::new();
+            static PERFORMANCE_ENABLED: OnceLock<bool> = OnceLock::new();
 
-            if *PERF_ENABLED.get_or_init(|| std::env::var_os("WA_DISABLE_PERF").is_none()) {
+            if *PERFORMANCE_ENABLED
+                .get_or_init(|| std::env::var_os("WA_DISABLE_PERFORMANCE").is_none())
+            {
                 let mut counter = perf_event::Builder::new()
                     .build()
-                    .map_err(|error| eprintln!("Failed to create perf counter: {error}"))
+                    .map_err(|error| eprintln!("Failed to create performance counter: {error}"))
                     .ok();
                 if let Some(counter) = &mut counter
                     && let Err(error) = counter.enable()
                 {
-                    eprintln!("Failed to start perf counter: {error}");
+                    eprintln!("Failed to start performance counter: {error}");
                 }
                 counter
             } else {
@@ -57,6 +63,10 @@ impl StopWatch {
         }
     }
 
+    #[cfg_attr(
+        not(all(target_os = "linux", not(target_env = "ohos"))),
+        expect(clippy::needless_pass_by_ref_mut, reason = "platform differences")
+    )]
     pub fn elapsed(&mut self) -> StopWatchSpan {
         let time = self.time.elapsed();
 
@@ -64,7 +74,7 @@ impl StopWatch {
         let instructions = self.counter.as_mut().and_then(|counter| {
             counter
                 .read()
-                .map_err(|error| eprintln!("Failed to read perf counter: {error}"))
+                .map_err(|error| eprintln!("Failed to read performance counter: {error}"))
                 .ok()
         });
         #[cfg(all(target_os = "linux", target_env = "ohos"))]
@@ -84,9 +94,9 @@ impl StopWatch {
 impl fmt::Display for StopWatchSpan {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        write!(f, "{:.2}", self.time.as_millis())?;
+        write!(formatter, "{:.2}", self.time.as_millis())?;
 
         if let Some(instructions) = self.instructions {
             let (value, suffix) = if instructions > 10_000_000_000 {
@@ -98,9 +108,9 @@ impl fmt::Display for StopWatchSpan {
             } else {
                 (instructions, "")
             };
-            write!(f, ", {value}{suffix}instr")?;
+            write!(formatter, ", {value}{suffix}instr")?;
         }
-        write!(f, ", {}", self.memory)?;
+        write!(formatter, ", {}", self.memory)?;
         Ok(())
     }
 }

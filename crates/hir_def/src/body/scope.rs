@@ -46,9 +46,9 @@ impl Index<ScopeId> for ExprScopes {
 impl ExprScopes {
     pub fn expression_scopes_query(
         database: &dyn DefDatabase,
-        def: DefinitionWithBodyId,
+        definition: DefinitionWithBodyId,
     ) -> Arc<Self> {
-        let body = database.body(def);
+        let body = database.body(definition);
         Arc::new(Self::new(&body))
     }
 
@@ -203,17 +203,17 @@ fn compute_statement_scopes(
             scopes.set_scope_statement(statement_id, new_scope);
             compute_compound_statement_scopes(statements, body, scopes, new_scope);
         },
-        Statement::VariableStatement {
+        Statement::Variable {
             binding_id,
             initializer,
             ..
         }
-        | Statement::ConstStatement {
+        | Statement::Const {
             binding_id,
             initializer,
             ..
         }
-        | Statement::LetStatement {
+        | Statement::Let {
             binding_id,
             initializer,
             ..

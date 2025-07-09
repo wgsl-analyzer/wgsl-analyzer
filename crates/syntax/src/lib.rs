@@ -189,7 +189,7 @@ mod support {
         parent: &SyntaxNode,
         kind: SyntaxKind,
     ) -> Option<SyntaxNode> {
-        parent.children().find(|n| n.kind() == kind)
+        parent.children().find(|node| node.kind() == kind)
     }
 
     pub(crate) fn child_token<N: AstToken>(parent: &SyntaxNode) -> Option<N> {

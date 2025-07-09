@@ -15,7 +15,7 @@ export const URI_SCHEME = "wgsl-analyzer-diagnostics-view";
 export class TextDocumentProvider implements vscode.TextDocumentContentProvider {
 	private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
 
-	public constructor(private readonly ctx: Ctx) { }
+	public constructor(private readonly ctx: Ctx) {}
 
 	get onDidChange(): vscode.Event<vscode.Uri> {
 		return this._onDidChange.event;
@@ -67,7 +67,7 @@ interface AnserStyle {
 export class AnsiDecorationProvider implements vscode.Disposable {
 	private _decorationTypes = new Map<AnserStyle, TextEditorDecorationType>();
 
-	public constructor(private readonly ctx: Ctx) { }
+	public constructor(private readonly ctx: Ctx) {}
 
 	dispose(): void {
 		for (const decorationType of this._decorationTypes.values()) {

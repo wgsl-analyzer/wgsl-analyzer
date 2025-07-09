@@ -16,21 +16,21 @@ pub(crate) enum Event {
 impl fmt::Debug for Event {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
             Self::StartNode {
                 kind,
                 forward_parent,
-            } => f
+            } => formatter
                 .debug_struct("StartNode")
                 .field("kind", kind)
                 .field("forward_parent", forward_parent)
                 .finish(),
-            Self::AddToken => write!(f, "AddToken"),
-            Self::FinishNode => write!(f, "FinishNode"),
-            Self::Error(arg0) => f.debug_tuple("Error").field(arg0).finish(),
-            Self::Placeholder => write!(f, "Placeholder"),
+            Self::AddToken => write!(formatter, "AddToken"),
+            Self::FinishNode => write!(formatter, "FinishNode"),
+            Self::Error(arg0) => formatter.debug_tuple("Error").field(arg0).finish(),
+            Self::Placeholder => write!(formatter, "Placeholder"),
         }
     }
 }

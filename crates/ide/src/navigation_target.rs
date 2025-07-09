@@ -45,9 +45,9 @@ pub struct NavigationTarget {
 impl fmt::Debug for NavigationTarget {
     fn fmt(
         &self,
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        let mut debug_struct = f.debug_struct("NavigationTarget");
+        let mut debug_struct = formatter.debug_struct("NavigationTarget");
         macro_rules! opt {
             ($($name:ident)*) => {$(
                 if let Some(value) = &self.$name {
@@ -90,49 +90,5 @@ impl NavigationTarget {
     #[must_use]
     pub fn focus_or_full_range(&self) -> TextRange {
         self.focus_range.unwrap_or(self.full_range)
-    }
-}
-
-#[derive(Debug)]
-pub struct UpmappingResult<T> {
-    /// The macro call site.
-    pub call_site: T,
-    /// The macro definition site, if relevant.
-    pub def_site: Option<T>,
-}
-
-impl<T> UpmappingResult<T> {
-    pub fn call_site(self) -> T {
-        self.call_site
-    }
-
-    pub fn collect<FI: FromIterator<T>>(self) -> FI {
-        FI::from_iter(self)
-    }
-}
-
-impl<T> IntoIterator for UpmappingResult<T> {
-    type Item = T;
-
-    type IntoIter = <ArrayVec<T, 2> as IntoIterator>::IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.def_site
-            .into_iter()
-            .chain(Some(self.call_site))
-            .collect::<ArrayVec<_, 2>>()
-            .into_iter()
-    }
-}
-
-impl<T> UpmappingResult<T> {
-    pub(crate) fn map<U>(
-        self,
-        function: impl Fn(T) -> U,
-    ) -> UpmappingResult<U> {
-        UpmappingResult {
-            call_site: function(self.call_site),
-            def_site: self.def_site.map(function),
-        }
     }
 }

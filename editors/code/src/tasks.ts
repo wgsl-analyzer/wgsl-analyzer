@@ -41,7 +41,7 @@ class WgslTaskProvider implements vscode.TaskProvider {
 		// set of tasks that always exist. These tasks cannot be removed in
 		// tasks.json - only tweaked.
 
-		const defs = [
+		const task_definitions = [
 			{ command: "build", group: vscode.TaskGroup.Build },
 			{ command: "check", group: vscode.TaskGroup.Build },
 			{ command: "clippy", group: vscode.TaskGroup.Build },
@@ -55,20 +55,20 @@ class WgslTaskProvider implements vscode.TaskProvider {
 
 		const tasks: vscode.Task[] = [];
 		for (const workspaceTarget of vscode.workspace.workspaceFolders) {
-			for (const def of defs) {
+			for (const task_definition of task_definitions) {
 				const definition = {
-					command: def.command,
+					command: task_definition.command,
 					type: CARGO_TASK_TYPE,
 				} as const;
 				const exec = await targetToExecution(definition, {}, cargo);
 				const vscodeTask = await buildWgslTask(
 					workspaceTarget,
 					definition,
-					`cargo ${def.command}`,
+					`cargo ${task_definition.command}`,
 					this.config.problemMatcher,
 					exec,
 				);
-				vscodeTask.group = def.group;
+				vscodeTask.group = task_definition.group;
 				tasks.push(vscodeTask);
 			}
 		}

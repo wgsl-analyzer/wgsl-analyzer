@@ -86,17 +86,17 @@ pub enum Statement {
     Compound {
         statements: Vec<StatementId>,
     },
-    LetStatement {
+    Let {
         binding_id: BindingId,
         type_ref: Option<Interned<TypeReference>>,
         initializer: Option<ExpressionId>,
     },
-    ConstStatement {
+    Const {
         binding_id: BindingId,
         type_ref: Option<Interned<TypeReference>>,
         initializer: Option<ExpressionId>,
     },
-    VariableStatement {
+    Variable {
         binding_id: BindingId,
         type_ref: Option<Interned<TypeReference>>,
         initializer: Option<ExpressionId>,
@@ -149,7 +149,6 @@ pub enum Statement {
     Continuing {
         block: StatementId,
     },
-    // only function calls are allowed in this position. TODO add diagnostic
     Expression {
         expression: ExpressionId,
     },
