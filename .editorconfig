@@ -9,17 +9,16 @@ spelling_language = en-us
 tab_width = 4
 trim_trailing_whitespace = true
 
+[*.rs]
+
 [*.toml]
-indent_size = 2
-indent_style = space
+tab_width = 2
 
 [*.md]
-indent_size = 2
-indent_style = space
+tab_width = 2
 
 [*.{yaml,yml}]
-indent_size = 2
-indent_style = space
+tab_width = 2
 quote_type = single
 spaces_around_brackets = both
 

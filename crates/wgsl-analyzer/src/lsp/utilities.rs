@@ -73,11 +73,11 @@ impl GlobalState {
                         return;
                     };
                     if let Ok(Some(_item)) = crate::from_json::<
-						<lsp_types::request::ShowMessageRequest as lsp_types::request::Request>::Result
-					>(
-						lsp_types::request::ShowMessageRequest::METHOD, &result) {
-						this.send_notification::<super::extensions::OpenServerLogs>(());
-					}
+                        <lsp_types::request::ShowMessageRequest as lsp_types::request::Request>::Result
+                    >(
+                        lsp_types::request::ShowMessageRequest::METHOD, &result) {
+                        this.send_notification::<super::extensions::OpenServerLogs>(());
+                    }
                 },
             );
         } else {

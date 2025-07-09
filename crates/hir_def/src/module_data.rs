@@ -297,7 +297,7 @@ macro_rules! mod_items {
                     &data.$fld[index]
                 }
 
-				#[allow(clippy::allow_attributes, unreachable_patterns, reason = "macros should not leak lints")]
+                #[allow(clippy::allow_attributes, unreachable_patterns, reason = "macros should not leak lints")]
                 fn id_from_mod_item(mod_item: ModuleItem) -> Option<ModuleItemId<Self>> {
                     match mod_item {
                         ModuleItem::$r#type(id) => Some(id),

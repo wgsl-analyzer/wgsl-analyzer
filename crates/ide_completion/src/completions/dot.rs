@@ -73,10 +73,10 @@ fn vector_completions(
     vector_type: &hir_ty::ty::VectorType,
 ) {
     let field_text = expression
-		.name_ref()
-		.map(|name| name.text().to_string())
-		// It should never be `None` because `x.$0` gets parsed as `Some("")`.
-		.unwrap_or_default();
+        .name_ref()
+        .map(|name| name.text().to_string())
+        // It should never be `None` because `x.$0` gets parsed as `Some("")`.
+        .unwrap_or_default();
 
     if is_swizzleable(&field_text) {
         let size: usize = vector_type.size.as_u8().into();
