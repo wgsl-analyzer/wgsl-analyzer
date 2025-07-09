@@ -311,10 +311,10 @@ impl GlobalState {
             {
                 let open_log_button = tracing::enabled!(tracing::Level::ERROR)
                     &&
-					// (self.fetch_build_data_error().is_err() || 
-					self.fetch_workspace_error().is_err()
-					// )
-					;
+                    // (self.fetch_build_data_error().is_err() || 
+                    self.fetch_workspace_error().is_err()
+                    // )
+                    ;
                 self.show_message(
                     match health {
                         lsp::extensions::Health::Ok => lsp_types::MessageType::INFO,
@@ -627,9 +627,9 @@ impl GlobalState {
                     // forever if we emitted them here.
                     !database.source_root(source_root).is_library()
                 })
-				.map(|file_id| {
-					file_id.0
-				})
+                .map(|file_id| {
+                    file_id.0
+                })
                 .collect::<Arc<_>>()
         };
         tracing::trace!("updating notifications for {:?}", subscriptions);
