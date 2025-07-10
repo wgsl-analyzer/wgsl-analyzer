@@ -106,8 +106,9 @@ There are several LSP client implementations for Vim or Neovim:
     })
     ```
 
-    > [!TIP]
-    > To create separate file associations and a modular setup, create `.config/nvim/ftdetect/wgsl.lua` and `.config/nvim/ftdetect/wesl.lua`.
+> [!TIP]
+> To create separate file associations and a modular setup, create `.config/nvim/ftdetect/wgsl.lua` and `.config/nvim/ftdetect/wesl.lua`.
+
 
     ```lua
     vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, { pattern = "*.wgsl",  command = "setfiletype wgsl" })
