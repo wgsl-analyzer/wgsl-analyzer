@@ -152,7 +152,9 @@ There are several LSP client implementations for Vim or Neovim:
 
 ### Using nvim-cmp/cmp_nvim_lsp
 
-- Requires [nvim-cmp](https://github.com/hrsh7th/nvim-cmp) and [cmp_nvim_lsp](https://github.com/hrsh7th/cmp-nvim-lsp) to be installed. Your existing setup should look similar to this:
+- Requires [nvim-cmp](https://github.com/hrsh7th/nvim-cmp) and [cmp_nvim_lsp](https://github.com/hrsh7th/cmp-nvim-lsp).
+
+1.  Your existing setup should look similar to this:
 
     ```lua
     local capabilities = vim.lsp.protocol.make_client_capabilities()
@@ -161,7 +163,7 @@ There are several LSP client implementations for Vim or Neovim:
     local lspconfig = require("lspconfig")
     ```
 
-- Pass capabilities to the `wgsl-analyzer` setup:
+2. Pass capabilities to the `wgsl-analyzer` setup:
 
     ```lua
     lspconfig.wgsl_analyzer.setup({
