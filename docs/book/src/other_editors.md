@@ -95,15 +95,16 @@ There are several LSP client implementations for Vim or Neovim:
 ### Using lsp
 
 1. Install the `wgsl-analyzer` language server
-2. Configure the `"wgsl"` filetype
+2. Configure the `.wgsl` and `.wesl` filetype
+
+    Create `/ftdetect/wgsl.lua` and `/ftdetect/wesl.lua` in your neovim configuration.
 
     ```lua
-    vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
-      pattern = {'*.wgsl', '*.wesl'},
-      callback = function()
-        vim.bo.filetype = "WESL"
-      end,
-    })
+    vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, { pattern = "*.wgsl",  command = "setfiletype wgsl" })
+    ```
+
+    ```lua
+    vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, { pattern = "*.wesl",  command = "setfiletype wesl" })
     ```
 
 3. Configure the nvim lsp
@@ -147,6 +148,28 @@ There are several LSP client implementations for Vim or Neovim:
     ```vim
     " Recognize wgsl
     au BufNewFile,BufRead *.wgsl set filetype=wgsl
+    ```
+
+### Using nvim-cmp/cmp_nvim_lsp
+
+Requires [nvim-cmp](https://github.com/hrsh7th/nvim-cmp) and [cmp_nvim_lsp](https://github.com/hrsh7th/cmp-nvim-lsp).
+
+1. Your existing setup should look similar to this:
+
+    ```lua
+    local capabilities = vim.lsp.protocol.make_client_capabilities()
+    capabilities = vim.tbl_deep_extend("force", capabilities, require("cmp_nvim_lsp").default_capabilities())
+
+    local lspconfig = require("lspconfig")
+    ```
+
+2. Pass capabilities to the `wgsl-analyzer` setup:
+
+    ```lua
+    lspconfig.wgsl_analyzer.setup({
+       filetypes = { "wgsl", "wesl" },
+       capabilities = capabilities,
+    })
     ```
 
 ### YouCompleteMe
