@@ -169,6 +169,7 @@ There are several LSP client implementations for Vim or Neovim:
        capabilities = capabilities,
     })
     ```
+
 ### YouCompleteMe
 
 Install YouCompleteMe by following [the instructions](https://github.com/ycm-core/YouCompleteMe#installation).
