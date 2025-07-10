@@ -97,19 +97,7 @@ There are several LSP client implementations for Vim or Neovim:
 1. Install the `wgsl-analyzer` language server
 2. Configure the `.wgsl` and `.wesl` filetype
 
-    ```lua
-    vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead" }, {
-      pattern = {'*.wgsl', '*.wesl'},
-      callback = function()
-        vim.bo.filetype = "wesl"
-      end,
-    })
-    ```
-
-> [!TIP]
-> Create separate file associations for a conventional modular setup.
-
-Create `/ftdetect/wgsl.lua` and `/ftdetect/wesl.lua` in your neovim configuration.
+    Create `.config/nvim/ftdetect/wgsl.lua` and `.config/nvim/ftdetect/wesl.lua`.
 
     ```lua
     vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, { pattern = "*.wgsl",  command = "setfiletype wgsl" })
