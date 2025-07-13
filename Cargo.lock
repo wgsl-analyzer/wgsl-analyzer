@@ -907,6 +907,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
+name = "lelwel"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b90908b03bb7678cea38b5364db7483b59031be0529f3ff7c72e3cd9ae0dad54"
+dependencies = [
+ "codespan-reporting",
+ "logos 0.15.0",
+]
+
+[[package]]
 name = "lexopt"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -991,7 +1001,32 @@ version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf8b031682c67a8e3d5446840f9573eb7fe26efe7ec8d195c9ac4c0647c502f1"
 dependencies = [
- "logos-derive",
+ "logos-derive 0.12.1",
+]
+
+[[package]]
+name = "logos"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab6f536c1af4c7cc81edf73da1f8029896e7e1e16a219ef09b184e76a296f3db"
+dependencies = [
+ "logos-derive 0.15.0",
+]
+
+[[package]]
+name = "logos-codegen"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "189bbfd0b61330abea797e5e9276408f2edbe4f822d7ad08685d67419aafb34e"
+dependencies = [
+ "beef",
+ "fnv",
+ "lazy_static",
+ "proc-macro2",
+ "quote",
+ "regex-syntax 0.8.5",
+ "rustc_version",
+ "syn 2.0.104",
 ]
 
 [[package]]
@@ -1006,6 +1041,15 @@ dependencies = [
  "quote",
  "regex-syntax 0.6.29",
  "syn 1.0.109",
+]
+
+[[package]]
+name = "logos-derive"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ebfe8e1a19049ddbfccbd14ac834b215e11b85b90bab0c2dba7c7b92fb5d5cba"
+dependencies = [
+ "logos-codegen",
 ]
 
 [[package]]
@@ -1328,7 +1372,8 @@ dependencies = [
  "drop_bomb",
  "edition",
  "expect-test",
- "logos",
+ "lelwel",
+ "logos 0.12.1",
  "rowan",
 ]
 
@@ -1666,6 +1711,15 @@ name = "rustc-hash"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "357703d41365b4b27c590e3ed91eabb1b663f07c4c084095e60cbed4362dff0d"
+
+[[package]]
+name = "rustc_version"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfcb3a22ef46e85b45de6ee7e79d063319ebb6594faafcf1c225ea92ab6e9b92"
+dependencies = [
+ "semver",
+]
 
 [[package]]
 name = "rustix"

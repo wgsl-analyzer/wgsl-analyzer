@@ -3,7 +3,9 @@
 mod event;
 mod grammar;
 mod lexer;
+mod lexer2;
 mod parser;
+mod parser2;
 mod sink;
 mod source;
 mod syntax_kind;

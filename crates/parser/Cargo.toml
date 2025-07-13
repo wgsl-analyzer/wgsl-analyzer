@@ -21,5 +21,8 @@ edition.workspace = true
 [dev-dependencies]
 expect-test.workspace = true
 
+[build-dependencies]
+lelwel = "0.9.1"
+
 [lints]
 workspace = true
