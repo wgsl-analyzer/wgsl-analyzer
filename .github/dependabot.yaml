@@ -5,6 +5,7 @@ updates:
     schedule:
       interval: daily
     open-pull-requests-limit: 20
+    versioning-strategy: increase
     commit-message:
       prefix: internal
     labels:
@@ -18,6 +19,7 @@ updates:
     schedule:
       interval: daily
     open-pull-requests-limit: 20
+    versioning-strategy: increase
     commit-message:
       prefix: internal
     labels:
@@ -29,6 +31,7 @@ updates:
   - package-ecosystem: npm
     directory: /editors/code
     open-pull-requests-limit: 20
+    versioning-strategy: increase
     schedule:
       interval: daily
     commit-message:
@@ -41,4 +44,4 @@ updates:
     groups:
       ts-eslint:
         patterns:
-          - "@typescript-eslint/*"
+          - '@typescript-eslint/*'
