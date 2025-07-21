@@ -71,7 +71,7 @@
 		"@vscode/vsce": "^3.6.0",
 		"esbuild": "^0.25.8",
 		"eslint": "^9.31.0",
-		"eslint-config-prettier": "^10.1.5",
+		"eslint-config-prettier": "^10.1.8",
 		"eslint-define-config": "^2.1.0",
 		"ovsx": "0.10.5",
 		"prettier": "^3.6.2",
