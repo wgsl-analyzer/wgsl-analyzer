@@ -55,7 +55,7 @@
 		"anser": "^2.3.2",
 		"d3": "^7.9.0",
 		"d3-graphviz": "^5.6.0",
-		"jiti": "^2.4.2",
+		"jiti": "^2.5.0",
 		"vscode-languageclient": "^9.0.1"
 	},
 	"devDependencies": {
