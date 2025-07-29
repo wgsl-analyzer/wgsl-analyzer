@@ -16,9 +16,9 @@ use crate::{
     utilities::detect_target,
 };
 
-const VERSION_STABLE: &str = "0.9";
-const VERSION_NIGHTLY: &str = "0.10";
-const VERSION_DEV: &str = "0.11"; // keep this one in sync with `package.json`
+const VERSION_STABLE: &str = "0.11";
+const VERSION_NIGHTLY: &str = "0.12";
+const VERSION_DEV: &str = "0.13"; // keep this one in sync with `package.json`
 
 impl flags::Dist {
     pub(crate) fn run(
