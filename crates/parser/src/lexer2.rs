@@ -139,7 +139,7 @@ pub enum Token {
     #[token("--")]
     Minus2,
     #[regex(r"([_\p{XID_Start}][\p{XID_Continue}]+)|[\p{XID_Start}]")]
-    Ident,
+    IdentPat,
     #[regex(r"0[fh]")]
     #[regex(r"[1-9][0-9]*[fh]")]
     #[regex(r"[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?[fh]?", priority = 5)]

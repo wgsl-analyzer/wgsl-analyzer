@@ -10,7 +10,7 @@ token Semi=';' LPar='(' RPar=')' Comma=',' Eq='=' Colon=':' LBrace='{' RBrace='}
       Tilde='~' Plus='+' Eq2='==' Pipe='|' And2='&&' Slash='/' Caret='^' Pipe2='||' ExclEq='!='
       Percent='%' Underscore='_' AndEq='&=' StarEq='*=' PlusEq='+=' PipeEq='|=' MinusEq='-='
       SlashEq='/=' CaretEq='^=' PercentEq='%=' Plus2='++' Minus2='--';
-token Ident='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>';
+token IdentPat='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>';
 token Whitespace Comment;
 
 skip Whitespace Comment;
@@ -24,12 +24,12 @@ global_item^: global_directive | global_decl | global_assert;
 global_assert: 'const_assert' expression ';'; // §10
 global_directive:
   'diagnostic' diagnostic_control ';' @diagnostic_directive // §4.2
-| 'enable' Ident (?1 ',' Ident)* [','] ';' @enable_directive // §4.1.1
-| 'requires' Ident (?1 ',' Ident)* [','] ';' @requires_directive // §4.1.2
+| 'enable' IdentPat (?1 ',' IdentPat)* [','] ';' @enable_directive // §4.1.1
+| 'requires' IdentPat (?1 ',' IdentPat)* [','] ';' @requires_directive // §4.1.2
 ;
 diagnostic_control: '(' severity_control_name ',' diagnostic_rule_name [','] ')';
-severity_control_name: Ident;
-diagnostic_rule_name: Ident ['.' Ident];
+severity_control_name: IdentPat;
+diagnostic_rule_name: IdentPat ['.' IdentPat];
 
 global_decl:
   attribute* (
@@ -38,32 +38,40 @@ global_decl:
   | override_decl ';' @global_value_decl
   )
 | const_decl ';' @global_value_decl
-| 'alias' Ident '=' Ident template_list ';' @type_alias_decl
-| 'struct' Ident struct_body @struct_decl
+| 'alias' ident '=' ident template_list ';' @type_alias_decl
+| 'struct' ident struct_body @struct_decl
 ;
-function_header: 'fn' Ident '(' parameters ')' return_type;
+function_header: 'fn' ident '(' parameters ')' return_type;
 parameters: [param (?1 ',' param)* [',']];
-param: attribute* Ident ':' type_specifier;
-return_type: ['->' attribute* Ident template_list];
+param: attribute* ident ':' type_specifier;
+return_type: ['->' attribute* ident template_list];
 struct_body: '{' struct_member (?1 ',' struct_member)* [','] '}';
-struct_member: attribute* Ident ':' type_specifier;
+struct_member: attribute* member_ident ':' type_specifier;
+member_ident: IdentPat;
 
 attribute:
   '@' (
     'diagnostic' diagnostic_control @diagnostic_attr
-  | Ident ['(' [expression (?1 ',' expression)* [',']] ')']
+  | IdentPat ['(' [expression (?1 ',' expression)* [',']] ')']
+    // TODO:
+    // interpolate is special
+    // builtin is special
   )
 ;
-typed_ident: Ident [':' type_specifier];
+typed_ident: ident [':' type_specifier];
+ident: IdentPat;
 
-type_specifier: Ident template_list;
+type_specifier: ident template_list;
 template_list^: [#1 template_args >];
 expr_template_list^: #1 [?1 template_args >template_list];
 template_args^: '<' expression (?1 ',' expression)* [','] '>';
 
+// This is pratt parser, with higher elements having a higher binding power
+// Source: https://github.com/0x2a-42/lelwel/tree/main?tab=readme-ov-file#direct-left-recursion
+// later check for invalid expressions, like a < b < c
 expression:
   expression '[' expression ']' @indexing_expression // §8.5
-| expression '.' (?1 Ident @swizzle_expression | Ident @named_component_expression) // §8.5
+| expression '.' (ident @field_expression) // §8.5, but cannot distinguish swizzles and fields from syntax
 | ('-' | '!' | '~' | '*' | '&') expression @unary_expression // §8.6, §8.7, §8.9, §8.13, §8.14
 | expression ('*' | '/' | '%') expression @binary_expression // §8.7
 | expression ('+' | '-') expression @binary_expression // §8.7
@@ -74,7 +82,7 @@ expression:
 | expression '|' expression @binary_expression // §8.9
 | expression '&&' expression @binary_expression // §8.6
 | expression '||' expression @binary_expression // §8.6
-| Ident expr_template_list @ident_expression [argument_expression_list_expr @call_expression] // §8.10, §8.11
+| ident expr_template_list @ident_expression [argument_expression_list_expr @call_expression] // §8.10, §8.11
 | '(' expression ')' @paren_expression // §8.4
 | IntLiteral @int_expression // §8.3
 | FloatLiteral @float_expression // §8.3
@@ -92,6 +100,7 @@ statement:
   | 'loop' attribute* '{' statement* [continuing_statement] '}' @loop_statement // §9.4.3
   | 'for' '(' [for_init] ';' [expression] ';' [for_update] ')' compound_statement @for_statement // §9.4.4
   | 'while' expression compound_statement @while_statement // §9.4.5
+  // TODO: check if using & here makes it recover better https://github.com/0x2a-42/lelwel/issues/34
   | '{' statement* '}' @compound_statement // §9.1
   )
 | ?2 func_call ';' @func_call_statement // §9.5
@@ -128,7 +137,7 @@ case_selector: 'default' | expression;
 default_alone_clause: 'default' [':'] compound_statement;
 compound_statement: attribute* '{' & statement* '}'; // §9.1
 
-func_call: Ident template_list argument_expression_list;
+func_call: ident template_list argument_expression_list;
 
 variable_or_value^: variable_decl | let_decl | const_decl;
 variable_decl: 'var' template_list typed_ident ['=' expression];
@@ -160,9 +169,9 @@ compound_assignment_operator^:
 ;
 lhs_expression:
   lhs_expression '[' expression ']' @indexing_expression // §8.5
-| lhs_expression '.' (?1 Ident @swizzle_expression | Ident @named_component_expression) // §8.5
+| lhs_expression '.' (ident @field_expression) // §8.5
 | '*' lhs_expression @unary_expression // §8.14
 | '&' lhs_expression @unary_expression // §8.13
 | '(' lhs_expression ')' @paren_expression // §8.4
-| Ident @ident_expression // §8.11
+| ident @ident_expression // §8.11
 ;

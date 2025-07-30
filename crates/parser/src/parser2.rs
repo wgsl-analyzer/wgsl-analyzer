@@ -1,6 +1,6 @@
 #![allow(elided_lifetimes_in_paths)]
 use logos::Logos;
-use rowan::GreenNode;
+use rowan::{GreenNode, GreenNodeBuilder};
 
 use crate::ParseEntryPoint;
 
@@ -53,10 +53,97 @@ pub fn parse_entrypoint(
             todo!("Ask Benjamin what this is for")
         },
     };
-
+    let mut builder = GreenNodeBuilder::new();
+    build_cst(&mut builder, parsed, NodeRef::ROOT);
     Parse2 {
-        green_node: todo!(),
+        green_node: builder.finish(),
         diags,
+    }
+}
+
+fn build_cst(
+    builder: &mut GreenNodeBuilder,
+    cst: Cst<'_>,
+    node_ref: NodeRef,
+) {
+    // TODO: Make the SyntaxKind closely follow the wgsl spec
+    match cst.get(node_ref) {
+        Node::Rule(rule, end_offset) => {},
+        Node::Token(token, index) => match token {
+            Token::EOF => todo!(),
+            Token::Enable => todo!(),
+            Token::Requires => todo!(),
+            Token::Fn => todo!(),
+            Token::Alias => todo!(),
+            Token::Struct => todo!(),
+            Token::Var => todo!(),
+            Token::ConstAssert => todo!(),
+            Token::If => todo!(),
+            Token::For => todo!(),
+            Token::Else => todo!(),
+            Token::Loop => todo!(),
+            Token::Break => todo!(),
+            Token::While => todo!(),
+            Token::Return => todo!(),
+            Token::Switch => todo!(),
+            Token::Discard => todo!(),
+            Token::Continuing => todo!(),
+            Token::Const => todo!(),
+            Token::Case => todo!(),
+            Token::Default => todo!(),
+            Token::Override => todo!(),
+            Token::Continue => todo!(),
+            Token::Let => todo!(),
+            Token::True => todo!(),
+            Token::False => todo!(),
+            Token::Diagnostic => todo!(),
+            Token::Semi => todo!(),
+            Token::LPar => todo!(),
+            Token::RPar => todo!(),
+            Token::Comma => todo!(),
+            Token::Eq => todo!(),
+            Token::Colon => todo!(),
+            Token::LBrace => todo!(),
+            Token::RBrace => todo!(),
+            Token::MinusGt => todo!(),
+            Token::Lt => todo!(),
+            Token::Gt => todo!(),
+            Token::Dot => todo!(),
+            Token::At => todo!(),
+            Token::LBrak => todo!(),
+            Token::RBrak => todo!(),
+            Token::And => todo!(),
+            Token::Excl => todo!(),
+            Token::Star => todo!(),
+            Token::Minus => todo!(),
+            Token::Tilde => todo!(),
+            Token::Plus => todo!(),
+            Token::Eq2 => todo!(),
+            Token::Pipe => todo!(),
+            Token::And2 => todo!(),
+            Token::Slash => todo!(),
+            Token::Caret => todo!(),
+            Token::Pipe2 => todo!(),
+            Token::ExclEq => todo!(),
+            Token::Percent => todo!(),
+            Token::Underscore => todo!(),
+            Token::AndEq => todo!(),
+            Token::StarEq => todo!(),
+            Token::PlusEq => todo!(),
+            Token::PipeEq => todo!(),
+            Token::MinusEq => todo!(),
+            Token::SlashEq => todo!(),
+            Token::CaretEq => todo!(),
+            Token::PercentEq => todo!(),
+            Token::Plus2 => todo!(),
+            Token::Minus2 => todo!(),
+            Token::IdentPat => todo!(),
+            Token::FloatLiteral => todo!(),
+            Token::IntLiteral => todo!(),
+            Token::Whitespace => todo!(),
+            Token::Comment => todo!(),
+            Token::Error => todo!(),
+        },
     }
 }
 
@@ -129,6 +216,7 @@ impl<'a> Parser<'a> {
                 ]
         )
     }
+    /// Implements the template disambiguation algorithm and remembers the results in a hash set
     fn find_template_list(&mut self) {
         if self.context.template_start.contains(&self.pos) {
             return;
@@ -245,9 +333,6 @@ impl<'a> ParserCallbacks for Parser<'a> {
     fn predicate_template_args_1(&self) -> bool {
         self.peek(1) != Token::Gt
     }
-    fn predicate_expression_1(&self) -> bool {
-        self.is_swizzle_name()
-    }
     fn predicate_expression_2(&self) -> bool {
         if self.current == Token::Gt && self.context.template_end.contains(&self.pos) {
             return false;
@@ -286,8 +371,5 @@ impl<'a> ParserCallbacks for Parser<'a> {
     }
     fn predicate_compound_assignment_operator_1(&self) -> bool {
         self.tokens[self.pos + 1] == self.current && self.tokens[self.pos + 2] == Token::Eq
-    }
-    fn predicate_lhs_expression_1(&self) -> bool {
-        self.is_swizzle_name()
     }
 }
