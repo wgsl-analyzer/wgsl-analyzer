@@ -456,7 +456,7 @@ pub(crate) fn type_declaration(parser: &mut Parser<'_, '_>) -> Option<CompletedM
             _ = marker.complete(parser, SyntaxKind::FieldExpression);
         }
 
-        Some(marker_ty.complete(parser, SyntaxKind::PathType))
+        Some(marker_ty.complete(parser, SyntaxKind::TypeExpression))
     } else {
         // TODO remove this branch
         parser.error();

@@ -128,7 +128,7 @@ pub enum ParseEntryPoint {
     Expression,
     Statement,
     Type,
-    AttributeList,
+    Attribute,
     FunctionParameterList,
 }
 
@@ -143,7 +143,7 @@ pub fn parse_entrypoint(
         ParseEntryPoint::Type => parse::<_>(input, |parser| {
             grammar::type_declaration(parser);
         }),
-        ParseEntryPoint::AttributeList => parse::<_>(input, grammar::attribute_list),
+        ParseEntryPoint::Attribute => parse::<_>(input, grammar::attribute_list),
         ParseEntryPoint::FunctionParameterList => parse::<_>(input, grammar::inner_parameter_list),
     }
 }
@@ -159,7 +159,7 @@ fn check_entrypoint(
     entry_point: ParseEntryPoint,
     expected_tree: &expect_test::Expect,
 ) {
-    let parse = crate::parse_entrypoint(input, entry_point);
+    let parse = crate::parser2::parse_entrypoint(input, entry_point);
     expected_tree.assert_eq(&parse.debug_tree());
 }
 

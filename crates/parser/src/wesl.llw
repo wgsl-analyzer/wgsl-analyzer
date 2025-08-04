@@ -5,63 +5,64 @@ token Enable='enable' Requires='requires' Fn='fn' Alias='alias' Struct='struct' 
       While='while' Return='return' Switch='switch' Discard='discard' Continuing='continuing'
       Const='const' Case='case' Default='default' Override='override' Continue='continue'
       Let='let' True='true' False='false' Diagnostic='diagnostic';
-token Semi=';' LPar='(' RPar=')' Comma=',' Eq='=' Colon=':' LBrace='{' RBrace='}' MinusGt='->'
+token Semi=';' LPar='(' RPar=')' Comma=',' Eq='=' Colon=':' LBrace='{' RBrace='}' Arrow='->'
       Lt='<' Gt='>' Dot='.' At='@' LBrak='[' RBrak=']' And='&' Excl='!' Star='*' Minus='-'
       Tilde='~' Plus='+' Eq2='==' Pipe='|' And2='&&' Slash='/' Caret='^' Pipe2='||' ExclEq='!='
       Percent='%' Underscore='_' AndEq='&=' StarEq='*=' PlusEq='+=' PipeEq='|=' MinusEq='-='
       SlashEq='/=' CaretEq='^=' PercentEq='%=' Plus2='++' Minus2='--';
-token IdentPat='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>';
-token Whitespace Comment;
+token Ident='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>' 
+      HexFloatLiteral='<hex floating point literal>' HexIntLiteral='<hex integer literal>';
+token Whitespace LineEndingComment BlockComment;
 
-skip Whitespace Comment;
+skip Whitespace LineEndingComment BlockComment;
 
 start translation_unit;
 
 // later validate that directives come before declarations to improve error messages
 translation_unit: (global_item | ';')*;
-global_item^: global_directive | global_decl | global_assert;
+global_item^: global_directive | global_declaration | global_assert;
 
 global_assert: 'const_assert' expression ';'; // §10
 global_directive:
   'diagnostic' diagnostic_control ';' @diagnostic_directive // §4.2
-| 'enable' IdentPat (?1 ',' IdentPat)* [','] ';' @enable_directive // §4.1.1
-| 'requires' IdentPat (?1 ',' IdentPat)* [','] ';' @requires_directive // §4.1.2
+| 'enable' Ident (?1 ',' Ident)* [','] ';' @enable_directive // §4.1.1
+| 'requires' Ident (?1 ',' Ident)* [','] ';' @requires_directive // §4.1.2
 ;
 diagnostic_control: '(' severity_control_name ',' diagnostic_rule_name [','] ')';
-severity_control_name: IdentPat;
-diagnostic_rule_name: IdentPat ['.' IdentPat];
+severity_control_name: Ident;
+diagnostic_rule_name: Ident ['.' Ident];
 
-global_decl:
+global_declaration:
   attribute* (
-    function_header compound_statement @function_decl
-  | variable_decl ';' @global_variable_decl
-  | override_decl ';' @global_value_decl
+    function_header compound_statement @function_declaration
+  | variable_declaration ';' @global_variable_declaration
+  | override_declaration ';' @global_value_declaration
   )
-| const_decl ';' @global_value_decl
-| 'alias' ident '=' ident template_list ';' @type_alias_decl
-| 'struct' ident struct_body @struct_decl
+| const_declaration ';' @global_value_declaration
+| 'alias' Ident '=' type_expression ';' @type_alias_declaration
+| 'struct' Ident struct_body @struct_declaration
 ;
-function_header: 'fn' ident '(' parameters ')' return_type;
-parameters: [param (?1 ',' param)* [',']];
-param: attribute* ident ':' type_specifier;
-return_type: ['->' attribute* ident template_list];
+function_header: 'fn' Ident '(' parameters ')' return_type;
+parameters: [parameter (?1 ',' parameter)* [',']];
+parameter: attribute* Ident ':' type_expression;
+return_type: ['->' attribute* type_expression];
 struct_body: '{' struct_member (?1 ',' struct_member)* [','] '}';
-struct_member: attribute* member_ident ':' type_specifier;
-member_ident: IdentPat;
+struct_member: attribute* member_ident ':' type_expression;
+member_ident: Ident;
 
 attribute:
   '@' (
     'diagnostic' diagnostic_control @diagnostic_attr
-  | IdentPat ['(' [expression (?1 ',' expression)* [',']] ')']
-    // TODO:
+  | Ident [argument_expression_list]
     // interpolate is special
     // builtin is special
   )
 ;
-typed_ident: ident [':' type_specifier];
-ident: IdentPat;
+typed_ident: Ident [':' type_expression];
+full_ident: Ident; // wesl ident
 
-type_specifier: ident template_list;
+// Corresponds to type_specifier, but used in more places
+type_expression: full_ident template_list;
 template_list^: [#1 template_args >];
 expr_template_list^: #1 [?1 template_args >template_list];
 template_args^: '<' expression (?1 ',' expression)* [','] '>';
@@ -71,7 +72,7 @@ template_args^: '<' expression (?1 ',' expression)* [','] '>';
 // later check for invalid expressions, like a < b < c
 expression:
   expression '[' expression ']' @indexing_expression // §8.5
-| expression '.' (ident @field_expression) // §8.5, but cannot distinguish swizzles and fields from syntax
+| expression '.' (Ident @field_expression) // §8.5, but cannot distinguish swizzles and fields from syntax
 | ('-' | '!' | '~' | '*' | '&') expression @unary_expression // §8.6, §8.7, §8.9, §8.13, §8.14
 | expression ('*' | '/' | '%') expression @binary_expression // §8.7
 | expression ('+' | '-') expression @binary_expression // §8.7
@@ -82,16 +83,22 @@ expression:
 | expression '|' expression @binary_expression // §8.9
 | expression '&&' expression @binary_expression // §8.6
 | expression '||' expression @binary_expression // §8.6
-| ident expr_template_list @ident_expression [argument_expression_list_expr @call_expression] // §8.10, §8.11
+| full_ident expr_template_list @type_expression [argument_expression_list_expr @function_call] // §8.10, §8.11
 | '(' expression ')' @paren_expression // §8.4
-| IntLiteral @int_expression // §8.3
-| FloatLiteral @float_expression // §8.3
-| 'true' @bool_expression // §8.3
-| 'false' @bool_expression // §8.3
+| literal @literal
 ;
-argument_expression_list: '(' [expression (?1 ',' expression)* [',']] ')';
+// §8.3
+literal^:
+  IntLiteral
+| HexIntLiteral
+| FloatLiteral
+| HexFloatLiteral
+| 'true'
+| 'false'
+;
+argument_expression_list: '(' [expression (?1 ',' expression)* [',']] ')' @arguments;
 // extra rule for better error handling
-argument_expression_list_expr: '(' [expression (?1 ',' expression)* [',']] ')' @argument_expression_list;
+argument_expression_list_expr: '(' [expression (?1 ',' expression)* [',']] ')' @arguments;
 
 statement:
   attribute* (
@@ -103,7 +110,7 @@ statement:
   // TODO: check if using & here makes it recover better https://github.com/0x2a-42/lelwel/issues/34
   | '{' statement* '}' @compound_statement // §9.1
   )
-| ?2 func_call ';' @func_call_statement // §9.5
+| ?2 function_call ';' @function_call_statement // §9.5
 | variable_or_value ';' @variable_or_value_statement
 | lhs_expression (
     '=' expression @simple_assignment_statement // §9.2.1
@@ -122,11 +129,11 @@ statement:
 continuing_statement: 'continuing' attribute* '{' (?1 statement)* [break_if_statement] '}'; // §9.4.9
 break_if_statement: 'break' 'if' expression ';'; // §9.4.7
 for_init:
-  ?1 func_call
+  ?1 function_call
 | variable_or_value
 | variable_updating
 ;
-for_update: ?1 func_call | variable_updating;
+for_update: ?1 function_call | variable_updating;
 if_clause: 'if' expression compound_statement;
 else_if_clause: 'else' 'if' expression compound_statement;
 else_clause: 'else' compound_statement;
@@ -137,13 +144,13 @@ case_selector: 'default' | expression;
 default_alone_clause: 'default' [':'] compound_statement;
 compound_statement: attribute* '{' & statement* '}'; // §9.1
 
-func_call: ident template_list argument_expression_list;
+function_call: type_expression argument_expression_list;
 
-variable_or_value^: variable_decl | let_decl | const_decl;
-variable_decl: 'var' template_list typed_ident ['=' expression];
-let_decl: 'let' typed_ident '=' expression;
-const_decl: 'const' typed_ident '=' expression;
-override_decl: 'override' typed_ident ['=' expression];
+variable_or_value^: variable_declaration | let_declaration | const_declaration;
+variable_declaration: 'var' template_list typed_ident ['=' expression];
+let_declaration: 'let' typed_ident '=' expression;
+const_declaration: 'const' typed_ident '=' expression;
+override_declaration: 'override' typed_ident ['=' expression];
 
 // duplicated so it can be used in `for` statement without semicolon
 variable_updating:
@@ -169,9 +176,9 @@ compound_assignment_operator^:
 ;
 lhs_expression:
   lhs_expression '[' expression ']' @indexing_expression // §8.5
-| lhs_expression '.' (ident @field_expression) // §8.5
+| lhs_expression '.' (Ident @field_expression) // §8.5
 | '*' lhs_expression @unary_expression // §8.14
 | '&' lhs_expression @unary_expression // §8.13
 | '(' lhs_expression ')' @paren_expression // §8.4
-| ident @ident_expression // §8.11
+| full_ident
 ;

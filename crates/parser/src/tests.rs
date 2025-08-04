@@ -29,11 +29,11 @@ fn check_statement(
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "intended API")]
-fn check_attribute_list(
+fn check_attribute(
     statement: &str,
     expected_tree: Expect,
 ) {
-    crate::check_entrypoint(statement, ParseEntryPoint::AttributeList, &expected_tree);
+    crate::check_entrypoint(statement, ParseEntryPoint::Attribute, &expected_tree);
 }
 
 #[test]
@@ -1498,46 +1498,55 @@ fn parse_var_with_initializer() {
 
 #[test]
 fn attribute_list_modern() {
-    check_attribute_list(
-        "@location(0) @interpolate(flat) @attr(1, 2, 0.0, ident)",
+    check_attribute(
+        "@location(0)",
         expect![[r#"
-            AttributeList@0..55
+            Attribute@0..12
               AttributeOperator@0..1 "@"
-              Attribute@1..13
-                Identifier@1..9 "location"
-                AttributeParameters@9..13
-                  ParenthesisLeft@9..10 "("
-                  Literal@10..11
-                    DecimalIntLiteral@10..11 "0"
-                  ParenthesisRight@11..12 ")"
-                  Blankspace@12..13 " "
-              AttributeOperator@13..14 "@"
-              Attribute@14..32
-                Identifier@14..25 "interpolate"
-                AttributeParameters@25..32
-                  ParenthesisLeft@25..26 "("
-                  Identifier@26..30 "flat"
-                  ParenthesisRight@30..31 ")"
-                  Blankspace@31..32 " "
-              AttributeOperator@32..33 "@"
-              Attribute@33..55
-                Identifier@33..37 "attr"
-                AttributeParameters@37..55
-                  ParenthesisLeft@37..38 "("
-                  Literal@38..39
-                    DecimalIntLiteral@38..39 "1"
-                  Comma@39..40 ","
-                  Blankspace@40..41 " "
-                  Literal@41..42
-                    DecimalIntLiteral@41..42 "2"
-                  Comma@42..43 ","
-                  Blankspace@43..44 " "
-                  Literal@44..47
-                    DecimalFloatLiteral@44..47 "0.0"
-                  Comma@47..48 ","
-                  Blankspace@48..49 " "
-                  Identifier@49..54 "ident"
-                  ParenthesisRight@54..55 ")""#]],
+              Identifier@1..9 "location"
+              Arguments@9..12
+                ParenthesisLeft@9..10 "("
+                Literal@10..11
+                  DecimalIntLiteral@10..11 "0"
+                ParenthesisRight@11..12 ")""#]],
+    );
+    check_attribute(
+        "@interpolate(flat)",
+        expect![[r#"
+            Attribute@0..18
+              AttributeOperator@0..1 "@"
+              Identifier@1..12 "interpolate"
+              Arguments@12..18
+                ParenthesisLeft@12..13 "("
+                TypeExpression@13..17
+                  Name@13..17
+                    Identifier@13..17 "flat"
+                ParenthesisRight@17..18 ")""#]],
+    );
+    check_attribute(
+        "@attr(1, 2, 0.0, ident)",
+        expect![[r#"
+            Attribute@0..23
+              AttributeOperator@0..1 "@"
+              Identifier@1..5 "attr"
+              Arguments@5..23
+                ParenthesisLeft@5..6 "("
+                Literal@6..7
+                  DecimalIntLiteral@6..7 "1"
+                Comma@7..8 ","
+                Blankspace@8..9 " "
+                Literal@9..10
+                  DecimalIntLiteral@9..10 "2"
+                Comma@10..11 ","
+                Blankspace@11..12 " "
+                Literal@12..15
+                  DecimalFloatLiteral@12..15 "0.0"
+                Comma@15..16 ","
+                Blankspace@16..17 " "
+                TypeExpression@17..22
+                  Name@17..22
+                    Identifier@17..22 "ident"
+                ParenthesisRight@22..23 ")""#]],
     );
 }
 

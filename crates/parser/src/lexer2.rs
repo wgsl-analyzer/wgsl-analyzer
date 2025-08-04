@@ -75,7 +75,7 @@ pub enum Token {
     #[token("}")]
     RBrace,
     #[token("->")]
-    MinusGt,
+    Arrow,
     #[token("<")]
     Lt,
     #[token(">")]
@@ -139,28 +139,32 @@ pub enum Token {
     #[token("--")]
     Minus2,
     #[regex(r"([_\p{XID_Start}][\p{XID_Continue}]+)|[\p{XID_Start}]")]
-    IdentPat,
+    Ident,
     #[regex(r"0[fh]")]
     #[regex(r"[1-9][0-9]*[fh]")]
+    // We need priorities so that we avoid the fact that e.g. 1.2 would match both otherwise
     #[regex(r"[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?[fh]?", priority = 5)]
     #[regex(r"[0-9]+\.[0-9]*([eE][+-]?[0-9]+)?[fh]?")]
     #[regex(r"[0-9]+[eE][+-]?[0-9]+[fh]?")]
+    FloatLiteral,
     #[regex(
         r"0[xX][0-9a-fA-F]*\.[0-9a-fA-F]+([pP][+-]?[0-9]+[fh]?)?",
         priority = 9
     )]
     #[regex(r"0[xX][0-9a-fA-F]+\.[0-9a-fA-F]*([pP][+-]?[0-9]+[fh]?)?")]
     #[regex(r"0[xX][0-9a-fA-F]+[pP][+-]?[0-9]+[fh]?")]
-    FloatLiteral,
+    HexFloatLiteral,
     #[regex(r"0[iu]?")]
     #[regex(r"[1-9][0-9]*[iu]?")]
-    #[regex(r"0[xX][0-9a-fA-F]+[iu]?")]
     IntLiteral,
+    #[regex(r"0[xX][0-9a-fA-F]+[iu]?")]
+    HexIntLiteral,
     #[regex("[\x20\x09\x0A-\x0D\u{0085}\u{200E}\u{200F}\u{2028}\u{2029}]+")]
     Whitespace,
     #[token("//", lex_line_ending_comment)]
+    LineEndingComment,
     #[token("/*", lex_block_comment)]
-    Comment,
+    BlockComment,
 
     #[error]
     Error,

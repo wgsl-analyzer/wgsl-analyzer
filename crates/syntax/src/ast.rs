@@ -998,7 +998,7 @@ ast_enum_raw! {
 }
 
 ast_node! {
-    PathType:
+    TypeExpression:
     name: Option<NameReference>;
 }
 

@@ -4,6 +4,8 @@ use std::mem;
 #[repr(u16)]
 pub enum SyntaxKind {
     SourceFile,
+    /// Arguments in an attribute or in a function call
+    Arguments,
     /// Emergent nodes
     Name,
     /// a function
@@ -108,8 +110,8 @@ pub enum SyntaxKind {
     ParenthesisExpression,
     /// an expression of the form `bitcast< <type> >(expression)`
     BitcastExpression,
-    /// a non-builtin type
-    PathType,
+    /// a type with an optional template `foo<bar>`
+    TypeExpression,
     /// `a += b`
     CompoundAssignmentStatement,
     /// `[[location(0), interpolate(flat)]]`
