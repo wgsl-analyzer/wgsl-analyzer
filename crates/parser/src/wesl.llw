@@ -59,7 +59,7 @@ attribute:
   )
 ;
 typed_ident: Ident [':' type_expression];
-full_ident: Ident; // wesl ident
+full_ident^: Ident; // wesl ident
 
 // Corresponds to type_specifier, but used in more places
 type_expression: full_ident template_list;
@@ -180,5 +180,5 @@ lhs_expression:
 | '*' lhs_expression @unary_expression // §8.14
 | '&' lhs_expression @unary_expression // §8.13
 | '(' lhs_expression ')' @paren_expression // §8.4
-| full_ident
+| full_ident @ident_expression
 ;

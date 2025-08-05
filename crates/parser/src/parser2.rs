@@ -231,6 +231,7 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::ForInit => todo!(),
             Rule::ForStatement => todo!(),
             Rule::ForUpdate => todo!(),
+            Rule::FullIdent => panic!("full idents should be flattened"),
             Rule::FunctionCall => self.start_node(SyntaxKind::FunctionCall),
             Rule::FunctionCallStatement => self.start_node(SyntaxKind::FunctionCallStatement),
             Rule::FunctionDeclaration => todo!(),
@@ -241,9 +242,7 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::GlobalItem => todo!(),
             Rule::GlobalValueDeclaration => todo!(),
             Rule::GlobalVariableDeclaration => todo!(),
-            // TODO: Do we keep the Name node, or does it not add anything of value?
-            // (Defer this decision until we've added the wesl::qualified::idents)
-            Rule::FullIdent => self.start_node(SyntaxKind::Name),
+            Rule::IdentExpression => todo!(),
             Rule::IfClause => todo!(),
             Rule::IfStatement => todo!(),
             Rule::IncrementStatement => todo!(),
@@ -269,7 +268,7 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::SwitchClause => todo!(),
             Rule::SwitchStatement => todo!(),
             Rule::TemplateArgs => todo!(),
-            Rule::TemplateList => todo!(),
+            Rule::TemplateList => self.start_node(SyntaxKind::GenericArgumentList),
             Rule::TranslationUnit => todo!(),
             Rule::TypeAliasDeclaration => self.start_node(SyntaxKind::TypeAliasDeclaration),
             Rule::TypeExpression => self.start_node(SyntaxKind::TypeExpression),

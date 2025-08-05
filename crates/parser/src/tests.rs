@@ -503,24 +503,24 @@ fn fn_recover_2() {
 #[test]
 fn parse_type_primitive() {
     check_type(
-        "f32",
+        "f32;",
         expect![[r#"
-            Float32@0..3
-              Float32@0..3 "f32""#]],
+            TypeExpression@0..3
+              Identifier@0..3 "f32""#]],
     );
 }
 
 #[test]
 fn parse_type_generic() {
     check_type(
-        "vec3<f32>",
+        "vec3<f32>;",
         expect![[r#"
-            Vec3@0..9
-              Vec3@0..4 "vec3"
+            TypeExpression@0..9
+              Identifier@0..4 "vec3"
               GenericArgumentList@4..9
                 LessThan@4..5 "<"
-                Float32@5..8
-                  Float32@5..8 "f32"
+                TypeExpression@5..8
+                  Identifier@5..8 "f32"
                 GreaterThan@8..9 ">""#]],
     );
 }
@@ -530,16 +530,16 @@ fn parse_type_generic_shift_ambiguity() {
     check_type(
         "array<vec3<f32, 2>>",
         expect![[r#"
-            Array@0..19
-              Array@0..5 "array"
+            TypeExpression@0..19
+              Identifier@0..5 "array"
               GenericArgumentList@5..19
                 LessThan@5..6 "<"
-                Vec3@6..18
-                  Vec3@6..10 "vec3"
+                TypeExpression@6..18
+                  Identifier@6..10 "vec3"
                   GenericArgumentList@10..18
                     LessThan@10..11 "<"
-                    Float32@11..14
-                      Float32@11..14 "f32"
+                    TypeExpression@11..14
+                      Identifier@11..14 "f32"
                     Comma@14..15 ","
                     Blankspace@15..16 " "
                     Literal@16..17
@@ -1519,8 +1519,7 @@ fn attribute_list_modern() {
               Arguments@12..18
                 ParenthesisLeft@12..13 "("
                 TypeExpression@13..17
-                  Name@13..17
-                    Identifier@13..17 "flat"
+                  Identifier@13..17 "flat"
                 ParenthesisRight@17..18 ")""#]],
     );
     check_attribute(
@@ -1544,8 +1543,7 @@ fn attribute_list_modern() {
                 Comma@15..16 ","
                 Blankspace@16..17 " "
                 TypeExpression@17..22
-                  Name@17..22
-                    Identifier@17..22 "ident"
+                  Identifier@17..22 "ident"
                 ParenthesisRight@22..23 ")""#]],
     );
 }
