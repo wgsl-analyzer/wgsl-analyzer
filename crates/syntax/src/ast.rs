@@ -995,7 +995,7 @@ ast_enum_raw! {
 }
 
 ast_node! {
-    TypeExpression:
+    TypeSpecifier:
     name: Option<NameReference>;
 }
 

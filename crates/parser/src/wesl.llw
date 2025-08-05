@@ -38,16 +38,15 @@ global_declaration:
   | override_declaration ';' @global_value_declaration
   )
 | const_declaration ';' @global_value_declaration
-| 'alias' Ident '=' type_expression ';' @type_alias_declaration
+| 'alias' Ident '=' type_specifier ';' @type_alias_declaration
 | 'struct' Ident struct_body @struct_declaration
 ;
 function_header: 'fn' Ident '(' parameters ')' return_type;
 parameters: [parameter (?1 ',' parameter)* [',']];
-parameter: attribute* Ident ':' type_expression;
-return_type: ['->' attribute* type_expression];
+parameter: attribute* Ident ':' type_specifier;
+return_type: ['->' attribute* type_specifier];
 struct_body: '{' struct_member (?1 ',' struct_member)* [','] '}';
-struct_member: attribute* member_ident ':' type_expression;
-member_ident: Ident;
+struct_member: attribute* Ident ':' type_specifier;
 
 attribute:
   '@' (
@@ -57,11 +56,11 @@ attribute:
     // builtin is special
   )
 ;
-typed_ident: Ident [':' type_expression];
+typed_ident^: Ident [':' type_specifier];
 full_ident^: Ident; // wesl ident
 
-// Corresponds to type_specifier, but used in more places
-type_expression: full_ident template_list;
+type_specifier: full_ident template_list;
+ident_expression: full_ident expr_template_list;
 template_list^: [#1 template_args >];
 expr_template_list^: #1 [?1 template_args >template_list];
 template_args^: '<' expression (?1 ',' expression)* [','] '>';
@@ -82,10 +81,13 @@ expression:
 | expression '|' expression @binary_expression // §8.9
 | expression '&&' expression @binary_expression // §8.6
 | expression '||' expression @binary_expression // §8.6
-| full_ident expr_template_list @type_expression [argument_expression_list_expr @function_call] // §8.10, §8.11
+| ident_or_function ^ // §8.10, §8.11
 | '(' expression ')' @paren_expression // §8.4
 | literal @literal
 ;
+
+ident_or_function^: 
+ident_expression [argument_expression_list_expr >function_call];
 // §8.3
 literal^:
   IntLiteral
@@ -102,13 +104,13 @@ statement:
     if_clause (?1 else_if_clause)* [else_clause] @if_statement // §9.4.1
   | 'switch' expression attribute* '{' switch_clause * '}' @switch_statement // §9.4.2
   | 'loop' attribute* '{' statement* [continuing_statement] '}' @loop_statement // §9.4.3
-  | 'for' '(' [for_init] ';' [expression] ';' [for_update] ')' compound_statement @for_statement // §9.4.4
+  | 'for' '(' [for_init] ';' [for_condition] ';' [for_update] ')' compound_statement @for_statement // §9.4.4
   | 'while' expression compound_statement @while_statement // §9.4.5
   // TODO: check if using & here makes it recover better https://github.com/0x2a-42/lelwel/issues/34
   | '{' statement* '}' @compound_statement // §9.1
   )
 | ?2 function_call ';' @function_call_statement // §9.5
-| variable_or_value ';' @variable_or_value_statement
+| variable_or_value ';' @variable_statement
 | lhs_expression (
     '=' expression @simple_assignment_statement // §9.2.1
   | compound_assignment_operator expression @compound_assignment_statement // §9.2.3
@@ -130,6 +132,7 @@ for_init:
 | variable_or_value
 | variable_updating
 ;
+for_condition: expression;
 for_update: ?1 function_call | variable_updating;
 if_clause: 'if' expression compound_statement;
 else_if_clause: 'else' 'if' expression compound_statement;
@@ -141,7 +144,7 @@ case_selector: 'default' | expression;
 default_alone_clause: 'default' [':'] compound_statement;
 compound_statement: attribute* '{' & statement* '}'; // §9.1
 
-function_call: type_expression argument_expression_list;
+function_call: ident_expression argument_expression_list;
 
 variable_or_value^: variable_declaration | let_declaration | const_declaration;
 variable_declaration: 'var' template_list typed_ident ['=' expression];

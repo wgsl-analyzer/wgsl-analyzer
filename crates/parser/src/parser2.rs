@@ -135,7 +135,7 @@ pub fn parse_entrypoint(
             Parser::parse_generic(input, &mut diags, Parser::rule_statement)
         },
         ParseEntryPoint::Type => {
-            Parser::parse_generic(input, &mut diags, Parser::rule_type_expression)
+            Parser::parse_generic(input, &mut diags, Parser::rule_type_specifier)
         },
         ParseEntryPoint::Attribute => {
             Parser::parse_generic(input, &mut diags, Parser::rule_attribute)
@@ -200,7 +200,7 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             },
             Rule::AssertStatement => todo!(),
             Rule::Attribute => self.start_node(SyntaxKind::Attribute),
-            Rule::BinaryExpression => todo!(),
+            Rule::BinaryExpression => self.start_node(SyntaxKind::InfixExpression),
             Rule::Literal => self.start_node(SyntaxKind::Literal),
             Rule::BreakIfStatement => todo!(),
             Rule::BreakStatement => todo!(),
@@ -209,11 +209,11 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::CaseSelectors => todo!(),
             Rule::CompoundAssignmentOperator => todo!(),
             Rule::CompoundAssignmentStatement => todo!(),
-            Rule::CompoundStatement => todo!(),
-            Rule::ConstDeclaration => todo!(),
+            Rule::CompoundStatement => self.start_node(SyntaxKind::CompoundStatement),
+            Rule::ConstDeclaration => self.start_node(SyntaxKind::ConstDeclaration),
             Rule::ContinueStatement => todo!(),
-            Rule::ContinuingStatement => todo!(),
-            Rule::DecrementStatement => todo!(),
+            Rule::ContinuingStatement => self.start_node(SyntaxKind::ContinuingStatement),
+            Rule::DecrementStatement => self.start_node(SyntaxKind::IncrementDecrementStatement),
             Rule::DefaultAloneClause => todo!(),
             Rule::DiagnosticAttr => todo!(),
             Rule::DiagnosticControl => todo!(),
@@ -224,13 +224,14 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::ElseIfClause => todo!(),
             Rule::EmptyStatement => todo!(),
             Rule::EnableDirective => todo!(),
-            Rule::Error => todo!(),
+            Rule::Error => self.start_node(SyntaxKind::Error),
             Rule::ExprTemplateList => todo!(),
             Rule::Expression => panic!("expressions should always be a more specific node"),
-            Rule::FieldExpression => todo!(),
-            Rule::ForInit => todo!(),
-            Rule::ForStatement => todo!(),
-            Rule::ForUpdate => todo!(),
+            Rule::FieldExpression => self.start_node(SyntaxKind::FieldExpression),
+            Rule::ForCondition => self.start_node(SyntaxKind::ForCondition),
+            Rule::ForInit => self.start_node(SyntaxKind::ForInitializer),
+            Rule::ForStatement => self.start_node(SyntaxKind::ForStatement),
+            Rule::ForUpdate => self.start_node(SyntaxKind::ForContinuingPart),
             Rule::FullIdent => panic!("full idents should be flattened"),
             Rule::FunctionCall => self.start_node(SyntaxKind::FunctionCall),
             Rule::FunctionCallStatement => self.start_node(SyntaxKind::FunctionCallStatement),
@@ -242,26 +243,26 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::GlobalItem => todo!(),
             Rule::GlobalValueDeclaration => todo!(),
             Rule::GlobalVariableDeclaration => todo!(),
-            Rule::IdentExpression => todo!(),
+            Rule::IdentExpression => self.start_node(SyntaxKind::IdentExpression),
             Rule::IfClause => todo!(),
-            Rule::IfStatement => todo!(),
-            Rule::IncrementStatement => todo!(),
+            Rule::IfStatement => self.start_node(SyntaxKind::IfStatement),
+            Rule::IncrementStatement => self.start_node(SyntaxKind::IncrementDecrementStatement),
             Rule::IndexingExpression => todo!(),
-            Rule::LetDeclaration => todo!(),
+            Rule::IdentOrFunction => panic!("ident-or-function should be flattened"),
+            Rule::LetDeclaration => self.start_node(SyntaxKind::LetDeclaration),
             Rule::LhsExpression => todo!(),
             Rule::LoopStatement => todo!(),
-            Rule::MemberIdent => todo!(),
-            Rule::OverrideDeclaration => todo!(),
+            Rule::OverrideDeclaration => self.start_node(SyntaxKind::OverrideDeclaration),
             Rule::Parameter => self.start_node(SyntaxKind::Parameter),
             Rule::Parameters => todo!(),
             Rule::ParenExpression => todo!(),
             Rule::PhonyAssignmentStatement => todo!(),
             Rule::RequiresDirective => todo!(),
-            Rule::ReturnStatement => todo!(),
-            Rule::ReturnType => todo!(),
+            Rule::ReturnStatement => self.start_node(SyntaxKind::ReturnStatement),
+            Rule::ReturnType => self.start_node(SyntaxKind::ReturnType),
             Rule::SeverityControlName => todo!(),
-            Rule::SimpleAssignmentStatement => todo!(),
-            Rule::Statement => todo!(),
+            Rule::SimpleAssignmentStatement => self.start_node(SyntaxKind::AssignmentStatement),
+            Rule::Statement => panic!("statements should be a more specific node"),
             Rule::StructBody => self.start_node(SyntaxKind::StructDeclBody),
             Rule::StructDeclaration => self.start_node(SyntaxKind::StructDeclaration),
             Rule::StructMember => self.start_node(SyntaxKind::StructDeclarationField),
@@ -269,16 +270,16 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::SwitchStatement => todo!(),
             Rule::TemplateArgs => todo!(),
             Rule::TemplateList => self.start_node(SyntaxKind::GenericArgumentList),
-            Rule::TranslationUnit => todo!(),
+            Rule::TranslationUnit => self.start_node(SyntaxKind::SourceFile),
             Rule::TypeAliasDeclaration => self.start_node(SyntaxKind::TypeAliasDeclaration),
-            Rule::TypeExpression => self.start_node(SyntaxKind::TypeExpression),
-            Rule::TypedIdent => todo!(),
-            Rule::UnaryExpression => todo!(),
-            Rule::VariableDeclaration => todo!(),
-            Rule::VariableOrValue => todo!(),
-            Rule::VariableOrValueStatement => todo!(),
+            Rule::TypeSpecifier => self.start_node(SyntaxKind::TypeSpecifier),
+            Rule::TypedIdent => panic!("typed idents should be flattened"),
+            Rule::UnaryExpression => self.start_node(SyntaxKind::PrefixExpression),
+            Rule::VariableDeclaration => self.start_node(SyntaxKind::VariableDeclaration),
+            Rule::VariableOrValue => panic!("variable or value should be flattened"),
+            Rule::VariableStatement => self.start_node(SyntaxKind::VariableStatement),
             Rule::VariableUpdating => todo!(),
-            Rule::WhileStatement => todo!(),
+            Rule::WhileStatement => self.start_node(SyntaxKind::WhileStatement),
         }
     }
 
@@ -292,7 +293,7 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
     fn end_rule(
         &mut self,
         _node_ref: NodeRef,
-        _rule: Rule,
+        rule: Rule,
     ) {
         self.builder.finish_node();
     }
@@ -434,38 +435,6 @@ impl<'a> Parser<'a> {
         Self::parse_with_context_generic(source, diags, Context::default(), start_rule)
     }
 
-    fn is_swizzle_name(&self) -> bool {
-        let name = self.cst.source[self.span()].as_bytes();
-        matches!(
-            name,
-            [b'r' | b'g' | b'b' | b'a']
-                | [b'r' | b'g' | b'b' | b'a', b'r' | b'g' | b'b' | b'a']
-                | [
-                    b'r' | b'g' | b'b' | b'a',
-                    b'r' | b'g' | b'b' | b'a',
-                    b'r' | b'g' | b'b' | b'a'
-                ]
-                | [
-                    b'r' | b'g' | b'b' | b'a',
-                    b'r' | b'g' | b'b' | b'a',
-                    b'r' | b'g' | b'b' | b'a',
-                    b'r' | b'g' | b'b' | b'a'
-                ]
-                | [b'x' | b'y' | b'z' | b'w']
-                | [b'x' | b'y' | b'z' | b'w', b'x' | b'y' | b'z' | b'w']
-                | [
-                    b'x' | b'y' | b'z' | b'w',
-                    b'x' | b'y' | b'z' | b'w',
-                    b'x' | b'y' | b'z' | b'w'
-                ]
-                | [
-                    b'x' | b'y' | b'z' | b'w',
-                    b'x' | b'y' | b'z' | b'w',
-                    b'x' | b'y' | b'z' | b'w',
-                    b'x' | b'y' | b'z' | b'w'
-                ]
-        )
-    }
     /// Implements the template disambiguation algorithm and remembers the results in a hash set
     fn find_template_list(&mut self) {
         if self.context.template_start.contains(&self.pos) {
@@ -522,9 +491,6 @@ impl<'a> Parser<'a> {
     }
     fn is_func_call(&self) -> bool {
         matches!(self.peek(1), Token::LPar | Token::Lt) && self.peek(2) != Token::Lt
-    }
-    fn is_diagnostic(&self) -> bool {
-        &self.cst.source[self.span()] == "diagnostic"
     }
 }
 

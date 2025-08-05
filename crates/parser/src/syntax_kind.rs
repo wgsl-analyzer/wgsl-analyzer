@@ -40,8 +40,12 @@ pub enum SyntaxKind {
     /// ```
     AssignmentStatement,
 
-    /// a `let` or `var` statement
+    /// a `let` or `var` or `const` statement
     VariableStatement,
+    VariableDeclaration,
+    LetDeclaration,
+    ConstDeclaration,
+    OverrideDeclaration,
 
     /// [9.5. Function Call Statement](https://www.w3.org/TR/WGSL/#function-call-statement)
     FunctionCallStatement,
@@ -86,6 +90,9 @@ pub enum SyntaxKind {
     FieldExpression,
     /// `pow(2, 3)`
     FunctionCall,
+    /// an identifier with an optional template `foo<bar>`
+    /// can refer to a type
+    IdentExpression,
     /// `(pow)(2, 3)`
     InvalidFunctionCall,
     /// `a\[0\]`
@@ -111,7 +118,7 @@ pub enum SyntaxKind {
     /// an expression of the form `bitcast< <type> >(expression)`
     BitcastExpression,
     /// a type with an optional template `foo<bar>`
-    TypeExpression,
+    TypeSpecifier,
     /// `a += b`
     CompoundAssignmentStatement,
     /// `[[location(0), interpolate(flat)]]`
@@ -130,8 +137,6 @@ pub enum SyntaxKind {
     GlobalVariableDeclaration,
     /// `let global: u32 = 10u`
     GlobalConstantDeclaration,
-    /// `override gain: f32;`
-    OverrideDeclaration,
     /// `continuing { statements }`
     ContinuingStatement,
     /// Type alias declaration: `type float4 = vec4<f32>`
