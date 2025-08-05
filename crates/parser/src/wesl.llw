@@ -10,11 +10,10 @@ token Semi=';' LPar='(' RPar=')' Comma=',' Eq='=' Colon=':' LBrace='{' RBrace='}
       Tilde='~' Plus='+' Eq2='==' Pipe='|' And2='&&' Slash='/' Caret='^' Pipe2='||' ExclEq='!='
       Percent='%' Underscore='_' AndEq='&=' StarEq='*=' PlusEq='+=' PipeEq='|=' MinusEq='-='
       SlashEq='/=' CaretEq='^=' PercentEq='%=' Plus2='++' Minus2='--';
-token Ident='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>' 
-      HexFloatLiteral='<hex floating point literal>' HexIntLiteral='<hex integer literal>';
-token Whitespace LineEndingComment BlockComment;
+token Ident='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>';
+token Blankspace LineEndingComment BlockComment;
 
-skip Whitespace LineEndingComment BlockComment;
+skip Blankspace LineEndingComment BlockComment;
 
 start translation_unit;
 
@@ -90,9 +89,7 @@ expression:
 // §8.3
 literal^:
   IntLiteral
-| HexIntLiteral
 | FloatLiteral
-| HexFloatLiteral
 | 'true'
 | 'false'
 ;

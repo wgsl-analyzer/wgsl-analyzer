@@ -287,11 +287,8 @@ fn postfix_op(parser: &mut Parser<'_, '_>) -> Option<PostfixOp> {
 }
 
 pub(crate) const TOKENSET_LITERAL: &[SyntaxKind] = &[
-    SyntaxKind::DecimalIntLiteral,
-    SyntaxKind::HexIntLiteral,
-    SyntaxKind::UnsignedIntLiteral,
-    SyntaxKind::HexFloatLiteral,
-    SyntaxKind::DecimalFloatLiteral,
+    SyntaxKind::IntLiteral,
+    SyntaxKind::FloatLiteral,
     SyntaxKind::True,
     SyntaxKind::False,
 ];
@@ -391,7 +388,7 @@ mod tests {
             "123",
             expect![[r#"
                 Literal@0..3
-                  DecimalIntLiteral@0..3 "123""#]],
+                  IntLiteral@0..3 "123""#]],
         );
     }
 
@@ -402,7 +399,7 @@ mod tests {
             expect![[r#"
                 Literal@0..7
                   Blankspace@0..3 "   "
-                  DecimalIntLiteral@3..7 "9876""#]],
+                  IntLiteral@3..7 "9876""#]],
         );
     }
 
@@ -412,7 +409,7 @@ mod tests {
             "999   ",
             expect![[r#"
                 Literal@0..6
-                  DecimalIntLiteral@0..3 "999"
+                  IntLiteral@0..3 "999"
                   Blankspace@3..6 "   ""#]],
         );
     }
@@ -424,7 +421,7 @@ mod tests {
             expect![[r#"
                 Literal@0..9
                   Blankspace@0..1 " "
-                  DecimalIntLiteral@1..4 "123"
+                  IntLiteral@1..4 "123"
                   Blankspace@4..9 "     ""#]],
         );
     }
@@ -473,10 +470,10 @@ mod tests {
             expect![[r#"
                 InfixExpression@0..3
                   Literal@0..1
-                    DecimalIntLiteral@0..1 "1"
+                    IntLiteral@0..1 "1"
                   Plus@1..2 "+"
                   Literal@2..3
-                    DecimalIntLiteral@2..3 "2""#]],
+                    IntLiteral@2..3 "2""#]],
         );
     }
 
@@ -489,16 +486,16 @@ mod tests {
                   InfixExpression@0..5
                     InfixExpression@0..3
                       Literal@0..1
-                        DecimalIntLiteral@0..1 "1"
+                        IntLiteral@0..1 "1"
                       Plus@1..2 "+"
                       Literal@2..3
-                        DecimalIntLiteral@2..3 "2"
+                        IntLiteral@2..3 "2"
                     Plus@3..4 "+"
                     Literal@4..5
-                      DecimalIntLiteral@4..5 "3"
+                      IntLiteral@4..5 "3"
                   Plus@5..6 "+"
                   Literal@6..7
-                    DecimalIntLiteral@6..7 "4""#]],
+                    IntLiteral@6..7 "4""#]],
         );
     }
 
@@ -509,14 +506,14 @@ mod tests {
             expect![[r#"
                 InfixExpression@0..5
                   Literal@0..1
-                    DecimalIntLiteral@0..1 "1"
+                    IntLiteral@0..1 "1"
                   Plus@1..2 "+"
                   InfixExpression@2..5
                     Literal@2..3
-                      DecimalIntLiteral@2..3 "2"
+                      IntLiteral@2..3 "2"
                     Star@3..4 "*"
                     Literal@4..5
-                      DecimalIntLiteral@4..5 "3""#]],
+                      IntLiteral@4..5 "3""#]],
         );
     }
 
@@ -528,17 +525,17 @@ mod tests {
                 InfixExpression@0..12
                   Literal@0..3
                     Blankspace@0..1 " "
-                    DecimalIntLiteral@1..2 "1"
+                    IntLiteral@1..2 "1"
                     Blankspace@2..3 " "
                   Plus@3..4 "+"
                   Blankspace@4..7 "   "
                   InfixExpression@7..12
                     Literal@7..8
-                      DecimalIntLiteral@7..8 "2"
+                      IntLiteral@7..8 "2"
                     Star@8..9 "*"
                     Blankspace@9..10 " "
                     Literal@10..12
-                      DecimalIntLiteral@10..11 "3"
+                      IntLiteral@10..11 "3"
                       Blankspace@11..12 " ""#]],
         );
     }
@@ -552,7 +549,7 @@ mod tests {
                   ParenthesisLeft@0..1 "("
                   InfixExpression@1..3
                     Literal@1..2
-                      DecimalIntLiteral@1..2 "1"
+                      IntLiteral@1..2 "1"
                     Plus@2..3 "+"
 
                 error at 2..3: expected Identifier, Bitcast, or ParenthesisLeft
@@ -566,7 +563,7 @@ mod tests {
             "-10",
             expect![[r#"
                 Literal@0..3
-                  DecimalIntLiteral@0..3 "-10""#]],
+                  IntLiteral@0..3 "-10""#]],
         );
     }
 
@@ -577,10 +574,10 @@ mod tests {
             expect![[r#"
                 InfixExpression@0..6
                   Literal@0..3
-                    DecimalIntLiteral@0..3 "-20"
+                    IntLiteral@0..3 "-20"
                   Plus@3..4 "+"
                   Literal@4..6
-                    DecimalIntLiteral@4..6 "20""#]],
+                    IntLiteral@4..6 "20""#]],
         );
     }
 
@@ -602,7 +599,7 @@ mod tests {
                           ParenthesisExpression@5..9
                             ParenthesisLeft@5..6 "("
                             Literal@6..8
-                              DecimalIntLiteral@6..8 "10"
+                              IntLiteral@6..8 "10"
                             ParenthesisRight@8..9 ")"
                           ParenthesisRight@9..10 ")"
                         ParenthesisRight@10..11 ")"
@@ -619,16 +616,16 @@ mod tests {
             expect![[r#"
                 InfixExpression@0..7
                   Literal@0..1
-                    DecimalIntLiteral@0..1 "5"
+                    IntLiteral@0..1 "5"
                   Star@1..2 "*"
                   ParenthesisExpression@2..7
                     ParenthesisLeft@2..3 "("
                     InfixExpression@3..6
                       Literal@3..4
-                        DecimalIntLiteral@3..4 "2"
+                        IntLiteral@3..4 "2"
                       Plus@4..5 "+"
                       Literal@5..6
-                        DecimalIntLiteral@5..6 "1"
+                        IntLiteral@5..6 "1"
                     ParenthesisRight@6..7 ")""#]],
         );
     }
@@ -657,40 +654,40 @@ mod tests {
                   InfixExpression@0..11
                     InfixExpression@0..6
                       Literal@0..2
-                        DecimalIntLiteral@0..1 "1"
+                        IntLiteral@0..1 "1"
                         Blankspace@1..2 " "
                       Plus@2..3 "+"
                       Blankspace@3..4 " "
                       Literal@4..6
-                        DecimalIntLiteral@4..5 "2"
+                        IntLiteral@4..5 "2"
                         Blankspace@5..6 " "
                     EqualEqual@6..8 "=="
                     Blankspace@8..9 " "
                     Literal@9..11
-                      DecimalIntLiteral@9..10 "3"
+                      IntLiteral@9..10 "3"
                       Blankspace@10..11 " "
                   OrOr@11..13 "||"
                   Blankspace@13..14 " "
                   InfixExpression@14..28
                     InfixExpression@14..24
                       Literal@14..16
-                        DecimalIntLiteral@14..15 "4"
+                        IntLiteral@14..15 "4"
                         Blankspace@15..16 " "
                       LessThan@16..17 "<"
                       Blankspace@17..18 " "
                       InfixExpression@18..24
                         Literal@18..20
-                          DecimalIntLiteral@18..19 "5"
+                          IntLiteral@18..19 "5"
                           Blankspace@19..20 " "
                         ForwardSlash@20..21 "/"
                         Blankspace@21..22 " "
                         Literal@22..24
-                          DecimalIntLiteral@22..23 "2"
+                          IntLiteral@22..23 "2"
                           Blankspace@23..24 " "
                     EqualEqual@24..26 "=="
                     Blankspace@26..27 " "
                     Literal@27..28
-                      DecimalIntLiteral@27..28 "0""#]],
+                      IntLiteral@27..28 "0""#]],
         );
     }
 
@@ -731,7 +728,7 @@ mod tests {
                   Blankspace@8..9 " "
                   InfixExpression@9..21
                     Literal@9..11
-                      DecimalIntLiteral@9..10 "2"
+                      IntLiteral@9..10 "2"
                       Blankspace@10..11 " "
                     Star@11..12 "*"
                     Blankspace@12..13 " "
@@ -756,11 +753,11 @@ mod tests {
                   FunctionParameterList@3..9
                     ParenthesisLeft@3..4 "("
                     Literal@4..5
-                      DecimalIntLiteral@4..5 "2"
+                      IntLiteral@4..5 "2"
                     Comma@5..6 ","
                     Blankspace@6..7 " "
                     Literal@7..8
-                      DecimalIntLiteral@7..8 "3"
+                      IntLiteral@7..8 "3"
                     ParenthesisRight@8..9 ")""#]],
         );
     }
@@ -784,17 +781,17 @@ mod tests {
                         Plus@9..10 "+"
                         Blankspace@10..11 " "
                         Literal@11..15
-                          DecimalFloatLiteral@11..15 "14.0"
+                          FloatLiteral@11..15 "14.0"
                       Comma@15..16 ","
                       Blankspace@16..17 " "
                       Literal@17..20
-                        DecimalFloatLiteral@17..20 "3.0"
+                        FloatLiteral@17..20 "3.0"
                       ParenthesisRight@20..21 ")"
                       Blankspace@21..22 " "
                   Star@22..23 "*"
                   Blankspace@23..24 " "
                   Literal@24..27
-                    DecimalFloatLiteral@24..27 "2.0""#]],
+                    FloatLiteral@24..27 "2.0""#]],
         );
     }
 
@@ -814,7 +811,7 @@ mod tests {
                   FunctionParameterList@9..14
                     ParenthesisLeft@9..10 "("
                     Literal@10..13
-                      DecimalFloatLiteral@10..13 "1.0"
+                      FloatLiteral@10..13 "1.0"
                     ParenthesisRight@13..14 ")""#]],
         );
     }
@@ -830,7 +827,7 @@ mod tests {
                   FunctionParameterList@4..9
                     ParenthesisLeft@4..5 "("
                     Literal@5..8
-                      DecimalFloatLiteral@5..8 "1.0"
+                      FloatLiteral@5..8 "1.0"
                     ParenthesisRight@8..9 ")""#]],
         );
     }
@@ -857,43 +854,43 @@ mod tests {
             "0.e+4f",
             expect![[r#"
                 Literal@0..6
-                  DecimalFloatLiteral@0..6 "0.e+4f""#]],
+                  FloatLiteral@0..6 "0.e+4f""#]],
         );
         check(
             "01.",
             expect![[r#"
                 Literal@0..3
-                  DecimalFloatLiteral@0..3 "01.""#]],
+                  FloatLiteral@0..3 "01.""#]],
         );
         check(
             ".01",
             expect![[r#"
                 Literal@0..3
-                  DecimalFloatLiteral@0..3 ".01""#]],
+                  FloatLiteral@0..3 ".01""#]],
         );
         check(
             "12.34",
             expect![[r#"
                 Literal@0..5
-                  DecimalFloatLiteral@0..5 "12.34""#]],
+                  FloatLiteral@0..5 "12.34""#]],
         );
         check(
             ".0f",
             expect![[r#"
                 Literal@0..3
-                  DecimalFloatLiteral@0..3 ".0f""#]],
+                  FloatLiteral@0..3 ".0f""#]],
         );
         check(
             "0h",
             expect![[r#"
                 Literal@0..2
-                  DecimalFloatLiteral@0..2 "0h""#]],
+                  FloatLiteral@0..2 "0h""#]],
         );
         check(
             "1e-3",
             expect![[r#"
                 Literal@0..4
-                  DecimalFloatLiteral@0..4 "1e-3""#]],
+                  FloatLiteral@0..4 "1e-3""#]],
         );
     }
 
@@ -903,19 +900,19 @@ mod tests {
             "0x123",
             expect![[r#"
                 Literal@0..5
-                  HexIntLiteral@0..5 "0x123""#]],
+                  IntLiteral@0..5 "0x123""#]],
         );
         check(
             "0X123u",
             expect![[r#"
                 Literal@0..6
-                  UnsignedIntLiteral@0..6 "0X123u""#]],
+                  IntLiteral@0..6 "0X123u""#]],
         );
         check(
             "0x3f",
             expect![[r#"
                 Literal@0..4
-                  HexIntLiteral@0..4 "0x3f""#]],
+                  IntLiteral@0..4 "0x3f""#]],
         );
     }
 
@@ -925,37 +922,37 @@ mod tests {
             "0xa.fp+2",
             expect![[r#"
                 Literal@0..8
-                  HexFloatLiteral@0..8 "0xa.fp+2""#]],
+                  FloatLiteral@0..8 "0xa.fp+2""#]],
         );
         check(
             "0x1P+4f",
             expect![[r#"
                 Literal@0..7
-                  HexFloatLiteral@0..7 "0x1P+4f""#]],
+                  FloatLiteral@0..7 "0x1P+4f""#]],
         );
         check(
             "0X.3",
             expect![[r#"
                 Literal@0..4
-                  HexFloatLiteral@0..4 "0X.3""#]],
+                  FloatLiteral@0..4 "0X.3""#]],
         );
         check(
             "0x3p+2h",
             expect![[r#"
                 Literal@0..7
-                  HexFloatLiteral@0..7 "0x3p+2h""#]],
+                  FloatLiteral@0..7 "0x3p+2h""#]],
         );
         check(
             "0X1.fp-4",
             expect![[r#"
                 Literal@0..8
-                  HexFloatLiteral@0..8 "0X1.fp-4""#]],
+                  FloatLiteral@0..8 "0X1.fp-4""#]],
         );
         check(
             "0x3.2p+2h",
             expect![[r#"
                 Literal@0..9
-                  HexFloatLiteral@0..9 "0x3.2p+2h""#]],
+                  FloatLiteral@0..9 "0x3.2p+2h""#]],
         );
     }
 
@@ -969,12 +966,12 @@ mod tests {
                     Minus@0..1 "-"
                     Blankspace@1..2 " "
                     Literal@2..4
-                      DecimalIntLiteral@2..3 "3"
+                      IntLiteral@2..3 "3"
                       Blankspace@3..4 " "
                   Plus@4..5 "+"
                   Blankspace@5..6 " "
                   Literal@6..7
-                    DecimalIntLiteral@6..7 "3""#]],
+                    IntLiteral@6..7 "3""#]],
         );
     }
 
@@ -994,10 +991,10 @@ mod tests {
                   BracketLeft@3..4 "["
                   InfixExpression@4..7
                     Literal@4..5
-                      DecimalIntLiteral@4..5 "3"
+                      IntLiteral@4..5 "3"
                     Plus@5..6 "+"
                     Literal@6..7
-                      DecimalIntLiteral@6..7 "2"
+                      IntLiteral@6..7 "2"
                   BracketRight@7..8 "]""#]],
         );
     }
@@ -1016,12 +1013,12 @@ mod tests {
                     Modulo@2..3 "%"
                     Blankspace@3..4 " "
                     Literal@4..7
-                      UnsignedIntLiteral@4..6 "2u"
+                      IntLiteral@4..6 "2u"
                       Blankspace@6..7 " "
                   EqualEqual@7..9 "=="
                   Blankspace@9..10 " "
                   Literal@10..12
-                    UnsignedIntLiteral@10..12 "0u""#]],
+                    IntLiteral@10..12 "0u""#]],
         );
     }
 
@@ -1115,7 +1112,7 @@ mod tests {
                 InfixExpression@0..24
                   InfixExpression@0..21
                     Literal@0..2
-                      DecimalIntLiteral@0..1 "1"
+                      IntLiteral@0..1 "1"
                       Blankspace@1..2 " "
                     Plus@2..3 "+"
                     Blankspace@3..4 " "
@@ -1137,7 +1134,7 @@ mod tests {
                   Plus@21..22 "+"
                   Blankspace@22..23 " "
                   Literal@23..24
-                    DecimalIntLiteral@23..24 "1""#]],
+                    IntLiteral@23..24 "1""#]],
         );
     }
 
@@ -1184,14 +1181,14 @@ mod tests {
             expect![[r#"
                 InfixExpression@0..6
                   Literal@0..2
-                    DecimalIntLiteral@0..1 "2"
+                    IntLiteral@0..1 "2"
                     Blankspace@1..2 " "
                   ShiftRight@2..5
                     GreaterThan@2..3 ">"
                     GreaterThan@3..4 ">"
                     Blankspace@4..5 " "
                   Literal@5..6
-                    DecimalIntLiteral@5..6 "3""#]],
+                    IntLiteral@5..6 "3""#]],
         );
     }
 
@@ -1203,7 +1200,7 @@ mod tests {
                 InfixExpression@0..15
                   InfixExpression@0..11
                     Literal@0..2
-                      DecimalIntLiteral@0..1 "2"
+                      IntLiteral@0..1 "2"
                       Blankspace@1..2 " "
                     ShiftRight@2..5
                       GreaterThan@2..3 ">"
@@ -1211,19 +1208,19 @@ mod tests {
                       Blankspace@4..5 " "
                     InfixExpression@5..11
                       Literal@5..7
-                        DecimalIntLiteral@5..6 "3"
+                        IntLiteral@5..6 "3"
                         Blankspace@6..7 " "
                       Plus@7..8 "+"
                       Blankspace@8..9 " "
                       Literal@9..11
-                        DecimalIntLiteral@9..10 "2"
+                        IntLiteral@9..10 "2"
                         Blankspace@10..11 " "
                   ShiftLeft@11..14
                     LessThan@11..12 "<"
                     LessThan@12..13 "<"
                     Blankspace@13..14 " "
                   Literal@14..15
-                    DecimalIntLiteral@14..15 "4""#]],
+                    IntLiteral@14..15 "4""#]],
         );
     }
 }

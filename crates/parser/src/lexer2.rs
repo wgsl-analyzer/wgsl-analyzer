@@ -146,21 +146,19 @@ pub enum Token {
     #[regex(r"[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?[fh]?", priority = 5)]
     #[regex(r"[0-9]+\.[0-9]*([eE][+-]?[0-9]+)?[fh]?")]
     #[regex(r"[0-9]+[eE][+-]?[0-9]+[fh]?")]
-    FloatLiteral,
     #[regex(
         r"0[xX][0-9a-fA-F]*\.[0-9a-fA-F]+([pP][+-]?[0-9]+[fh]?)?",
         priority = 9
     )]
     #[regex(r"0[xX][0-9a-fA-F]+\.[0-9a-fA-F]*([pP][+-]?[0-9]+[fh]?)?")]
     #[regex(r"0[xX][0-9a-fA-F]+[pP][+-]?[0-9]+[fh]?")]
-    HexFloatLiteral,
+    FloatLiteral,
     #[regex(r"0[iu]?")]
     #[regex(r"[1-9][0-9]*[iu]?")]
-    IntLiteral,
     #[regex(r"0[xX][0-9a-fA-F]+[iu]?")]
-    HexIntLiteral,
+    IntLiteral,
     #[regex("[\x20\x09\x0A-\x0D\u{0085}\u{200E}\u{200F}\u{2028}\u{2029}]+")]
-    Whitespace,
+    Blankspace,
     #[token("//", lex_line_ending_comment)]
     LineEndingComment,
     #[token("/*", lex_block_comment)]
@@ -242,20 +240,20 @@ mod tests {
 
     #[test]
     fn lex_decimal_float() {
-        check_lex("10.0", expect![["[DecimalFloatLiteral]"]]);
-        check_lex("-10.0", expect![["[DecimalFloatLiteral]"]]);
-        check_lex("1e9f", expect![["[DecimalFloatLiteral]"]]);
-        check_lex("-0.0e7", expect![["[DecimalFloatLiteral]"]]);
-        check_lex(".1", expect![["[DecimalFloatLiteral]"]]);
-        check_lex("1.", expect![["[DecimalFloatLiteral]"]]);
+        check_lex("10.0", expect![["[FloatLiteral]"]]);
+        check_lex("-10.0", expect![["[Minus, FloatLiteral]"]]);
+        check_lex("1e9f", expect![["[FloatLiteral]"]]);
+        check_lex("-0.0e7", expect![["[FloatLiteral]"]]);
+        check_lex(".1", expect![["[FloatLiteral]"]]);
+        check_lex("1.", expect![["[FloatLiteral]"]]);
     }
 
     #[test]
     fn lex_hex_float() {
-        check_lex("0x0.0", expect![["[HexFloatLiteral]"]]);
-        check_lex("0X1p9", expect![["[HexFloatLiteral]"]]);
-        check_lex("-0x0.0", expect![["[HexFloatLiteral]"]]);
-        check_lex("0xff.13p13", expect![["[HexFloatLiteral]"]]);
+        check_lex("0x0.0", expect![["[FloatLiteral]"]]);
+        check_lex("0X1p9", expect![["[FloatLiteral]"]]);
+        check_lex("-0x0.0", expect![["[Minus, FloatLiteral]"]]);
+        check_lex("0xff.13p13", expect![["[FloatLiteral]"]]);
     }
 
     #[test]
@@ -268,11 +266,11 @@ mod tests {
 
     #[test]
     fn lex_nested_brackets() {
-        // Expect: Identifier (a), [, Identifier (a), [, DecimalIntLiteral (0), ], ]
+        // Expect: Identifier (a), [, Identifier (a), [, IntLiteral (0), ], ]
         check_lex(
             "a[a[0]]",
             expect![[
-                "[Identifier, BracketLeft, Identifier, BracketLeft, DecimalIntLiteral, BracketRight, BracketRight]"
+                "[Identifier, BracketLeft, Identifier, BracketLeft, IntLiteral, BracketRight, BracketRight]"
             ]],
         );
     }

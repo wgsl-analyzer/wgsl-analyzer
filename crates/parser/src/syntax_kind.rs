@@ -185,37 +185,8 @@ pub enum SyntaxKind {
     #[regex(r#"([_\p{XID_Start}]\p{XID_Continue}*)|(\p{XID_Start})"#)]
     Identifier,
 
-    // literals
-    // These regexes are taken from the spec, with `-?` added to allow negative floats too
-    // This is a hack to avoid implementing all the rules around floats and const evaluation
-    #[regex(r"-?0[fh]")]
-    #[regex(r"-?[1-9][0-9]*[fh]")]
-    // We need priorities so that we avoid the fact that e.g. 1.2 would match both otherwise
-    #[regex(r"-?[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?[fh]?", priority = 1)]
-    #[regex(r"-?[0-9]+\.[0-9]*([eE][+-]?[0-9]+)?[fh]?")]
-    #[regex(r"-?[0-9]+[eE][+-]?[0-9]+[fh]?")]
-    DecimalFloatLiteral,
-    // Because above we need priorities here
-    #[regex(
-        r"-?0[xX][0-9a-fA-F]*\.[0-9a-fA-F]+([pP][+-]?[0-9]+[fh]?)?",
-        priority = 1
-    )]
-    #[regex(r"-?0[xX][0-9a-fA-F]+\.[0-9a-fA-F]*([pP][+-]?[0-9]+[fh]?)?")]
-    #[regex(r"-?0[xX][0-9a-fA-F]+[pP][+-]?[0-9]+[fh]?")]
-    HexFloatLiteral,
-    #[regex(r"-?0[xX][0-9a-fA-F]+[iu]?")]
-    HexIntLiteral,
-    // This represents potentially signed ints
-    // This is a hack to avoid implementing const evaluation
-    // TODO: We really should implement const evaluation
-    #[regex(r"-?0i?")]
-    #[regex(r"-?[1-9][0-9]*i?")]
-    DecimalIntLiteral,
-    // This is definitely unsigned ints
-    #[regex(r"-?0u")]
-    #[regex(r"-?[1-9][0-9]*u")]
-    #[regex(r"0[xX][0-9a-fA-F]+u")]
-    UnsignedIntLiteral,
+    FloatLiteral,
+    IntLiteral,
 
     #[regex("\"[^\"]*\"")]
     StringLiteral,
@@ -610,20 +581,20 @@ mod tests {
 
     #[test]
     fn lex_decimal_float() {
-        check_lex("10.0", expect![["[DecimalFloatLiteral]"]]);
-        check_lex("-10.0", expect![["[DecimalFloatLiteral]"]]);
-        check_lex("1e9f", expect![["[DecimalFloatLiteral]"]]);
-        check_lex("-0.0e7", expect![["[DecimalFloatLiteral]"]]);
-        check_lex(".1", expect![["[DecimalFloatLiteral]"]]);
-        check_lex("1.", expect![["[DecimalFloatLiteral]"]]);
+        check_lex("10.0", expect![["[FloatLiteral]"]]);
+        check_lex("-10.0", expect![["[FloatLiteral]"]]);
+        check_lex("1e9f", expect![["[FloatLiteral]"]]);
+        check_lex("-0.0e7", expect![["[FloatLiteral]"]]);
+        check_lex(".1", expect![["[FloatLiteral]"]]);
+        check_lex("1.", expect![["[FloatLiteral]"]]);
     }
 
     #[test]
     fn lex_hex_float() {
-        check_lex("0x0.0", expect![["[HexFloatLiteral]"]]);
-        check_lex("0X1p9", expect![["[HexFloatLiteral]"]]);
-        check_lex("-0x0.0", expect![["[HexFloatLiteral]"]]);
-        check_lex("0xff.13p13", expect![["[HexFloatLiteral]"]]);
+        check_lex("0x0.0", expect![["[FloatLiteral]"]]);
+        check_lex("0X1p9", expect![["[FloatLiteral]"]]);
+        check_lex("-0x0.0", expect![["[FloatLiteral]"]]);
+        check_lex("0xff.13p13", expect![["[FloatLiteral]"]]);
     }
 
     #[test]
@@ -636,11 +607,11 @@ mod tests {
 
     #[test]
     fn lex_nested_brackets() {
-        // Expect: Identifier (a), [, Identifier (a), [, DecimalIntLiteral (0), ], ]
+        // Expect: Identifier (a), [, Identifier (a), [, IntLiteral (0), ], ]
         check_lex(
             "a[a[0]]",
             expect![[
-                "[Identifier, BracketLeft, Identifier, BracketLeft, DecimalIntLiteral, BracketRight, BracketRight]"
+                "[Identifier, BracketLeft, Identifier, BracketLeft, IntLiteral, BracketRight, BracketRight]"
             ]],
         );
     }
