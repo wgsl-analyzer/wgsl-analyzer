@@ -222,55 +222,55 @@ jobs:
           echo "HEAD_SHA: $HEAD_SHA"
 
       - name: Download dist-aarch64-apple-darwin artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist-aarch64-apple-darwin
           path: dist
 
       - name: Download dist-x86_64-apple-darwin artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist-x86_64-apple-darwin
           path: dist
 
       - name: Download dist-x86_64-unknown-linux-gnu artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist-x86_64-unknown-linux-gnu
           path: dist
 
       - name: Download dist-x86_64-unknown-linux-musl artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist-x86_64-unknown-linux-musl
           path: dist
 
       - name: Download dist-aarch64-unknown-linux-gnu artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist-aarch64-unknown-linux-gnu
           path: dist
 
       - name: Download dist-arm-unknown-linux-gnueabihf artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist-arm-unknown-linux-gnueabihf
           path: dist
 
       - name: Download dist-x86_64-pc-windows-msvc artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist-x86_64-pc-windows-msvc
           path: dist
 
       - name: Download dist-i686-pc-windows-msvc artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist-i686-pc-windows-msvc
           path: dist
 
       - name: Download dist-aarch64-pc-windows-msvc artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist-aarch64-pc-windows-msvc
           path: dist
