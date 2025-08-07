@@ -89,11 +89,6 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "wgsl-analyzer.syntaxTree",
-				"title": "Show Syntax Tree",
-				"category": "wgsl-analyzer"
-			},
-			{
 				"command": "wgsl-analyzer.debugCommand",
 				"title": "Debug command",
 				"category": "wgsl-analyzer"
