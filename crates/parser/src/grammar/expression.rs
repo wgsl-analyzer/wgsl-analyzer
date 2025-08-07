@@ -100,7 +100,7 @@ fn function_param_list(parser: &mut Parser<'_, '_>) {
         SyntaxKind::ParenthesisLeft,
         SyntaxKind::ParenthesisRight,
         SyntaxKind::Comma,
-        SyntaxKind::FunctionParameterList,
+        SyntaxKind::FunctionParameters,
         |parser| {
             expression_binding_power(parser, 0);
         },

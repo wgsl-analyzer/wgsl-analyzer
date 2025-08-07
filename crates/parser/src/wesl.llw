@@ -11,21 +11,23 @@ token Semi=';' LPar='(' RPar=')' Comma=',' Eq='=' Colon=':' LBrace='{' RBrace='}
       Percent='%' Underscore='_' AndEq='&=' StarEq='*=' PlusEq='+=' PipeEq='|=' MinusEq='-='
       SlashEq='/=' CaretEq='^=' PercentEq='%=' Plus2='++' Minus2='--';
 token Ident='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>';
-token EntrypointExpression = '<expression entrypoint>' EntrypointStatement = '<statement entrypoint>'
-      EntrypointType = '<type entrypoint>' EntrypointAttribute  = '<attribute entrypoint>';
 token Blankspace LineEndingComment BlockComment;
 
 skip Blankspace LineEndingComment BlockComment;
 
-start start_helper;
+start translation_unit;
 
-start_helper^:
-  translation_unit
-| EntrypointExpression expression
-| EntrypointStatement statement
-| EntrypointType type_specifier
-| EntrypointAttribute attribute
-;
+// Helpers for unit tests
+start start_expression;
+start_expression: expression;
+start start_statement;
+start_statement: statement;
+start start_type_specifier;
+start_type_specifier: type_specifier;
+start start_attribute;
+start_attribute: attribute;
+
+
 
 // later validate that directives come before declarations to improve error messages
 translation_unit: (global_item | ';')*;
@@ -42,20 +44,21 @@ severity_control_name: Ident;
 diagnostic_rule_name: Ident ['.' Ident];
 
 global_declaration:
-  attribute* (
+  attribute* @function_declaration (
     function_header compound_statement @function_declaration
   | variable_declaration ';' @global_variable_declaration
-  | override_declaration ';' @global_value_declaration
+  | override_declaration ';' @global_override_declaration
   )
-| const_declaration ';' @global_value_declaration
+| const_declaration ';' @global_const_declaration // Later evaluate whether we need extra nodes for this
 | 'alias' Ident '=' type_specifier ';' @type_alias_declaration
 | 'struct' Ident struct_body @struct_declaration
 ;
-function_header: 'fn' Ident '(' parameters ')' return_type;
-parameters: [parameter (?1 ',' parameter)* [',']];
+function_header: 'fn' Ident function_parameters [return_type];
+function_parameters: '(' [parameter (?1 ',' parameter)* [',']] ')';
 parameter: attribute* Ident ':' type_specifier;
-return_type: ['->' attribute* type_specifier];
-struct_body: '{' struct_member (?1 ',' struct_member)* [','] '}';
+return_type: '->' attribute* type_specifier;
+// Manual error recovery branches for structs
+struct_body: '{' & struct_member (?1 (','| ';'!1 | !1) struct_member)* [','] '}';
 struct_member: attribute* Ident ':' type_specifier;
 
 attribute:
@@ -70,6 +73,7 @@ typed_ident^: Ident [':' type_specifier];
 full_ident^: Ident; // wesl ident
 
 type_specifier: full_ident template_list;
+// exists because a type can appear in an expression, like in `array<  array<f32,1>  ,1>`
 ident_expression: full_ident expr_template_list;
 template_list^: [#1 template_args >];
 expr_template_list^: #1 [?1 template_args >template_list];
@@ -112,7 +116,7 @@ argument_expression_list_expr: '(' [expression (?1 ',' expression)* [',']] ')' @
 statement:
   attribute* (
     if_clause (?1 else_if_clause)* [else_clause] @if_statement // §9.4.1
-  | 'switch' expression attribute* '{' switch_clause * '}' @switch_statement // §9.4.2
+  | 'switch' expression switch_body @switch_statement // §9.4.2
   | 'loop' attribute* '{' statement* [continuing_statement] '}' @loop_statement // §9.4.3
   | 'for' '(' [for_init] ';' [for_condition] ';' [for_update] ')' compound_statement @for_statement // §9.4.4
   | 'while' expression compound_statement @while_statement // §9.4.5
@@ -121,7 +125,8 @@ statement:
   )
 | ?2 function_call ';' @function_call_statement // §9.5
 | variable_or_value ';' @variable_statement
-| lhs_expression (
+// we need to choose a statement type as the default, so we choose simple_assignment_statement
+| lhs_expression @simple_assignment_statement ( 
     '=' expression @simple_assignment_statement // §9.2.1
   | compound_assignment_operator expression @compound_assignment_statement // §9.2.3
   | '++' @increment_statement // §9.3
@@ -147,6 +152,7 @@ for_update: ?1 function_call | variable_updating;
 if_clause: 'if' expression compound_statement;
 else_if_clause: 'else' 'if' expression compound_statement;
 else_clause: 'else' compound_statement;
+switch_body: attribute* '{' switch_clause * '}';
 switch_clause^: case_clause | default_alone_clause;
 case_clause: 'case' case_selectors [':'] compound_statement;
 case_selectors: case_selector (?1 ',' case_selector)* [','];
@@ -164,7 +170,7 @@ override_declaration: 'override' typed_ident ['=' expression];
 
 // duplicated so it can be used in `for` statement without semicolon
 variable_updating:
-  lhs_expression (
+  lhs_expression @simple_assignment_statement (
     '=' expression @simple_assignment_statement // §9.2.1
   | compound_assignment_operator expression @compound_assignment_statement // §9.2.3
   | '++' @increment_statement // §9.3

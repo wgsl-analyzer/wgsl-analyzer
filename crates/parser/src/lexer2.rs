@@ -164,12 +164,6 @@ pub enum Token {
     #[token("/*", lex_block_comment)]
     BlockComment,
 
-    // Custom entrypoints for testing, see https://github.com/0x2a-42/lelwel/issues/39
-    EntrypointExpression,
-    EntrypointStatement,
-    EntrypointType,
-    EntrypointAttribute,
-
     #[error]
     Error,
 }

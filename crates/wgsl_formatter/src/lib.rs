@@ -70,7 +70,7 @@ pub fn format_recursive(
 fn is_indent_kind(node: &SyntaxNode) -> bool {
     if matches!(
         node.kind(),
-        SyntaxKind::CompoundStatement | SyntaxKind::SwitchBlock
+        SyntaxKind::CompoundStatement | SyntaxKind::SwitchBody
     ) {
         return true;
     }
@@ -129,7 +129,7 @@ fn format_syntax_node(
         //     parameter : type,
         //     parameter : type,
         // ) -> return_ty {}
-        SyntaxKind::Function => {
+        SyntaxKind::FunctionDeclaration => {
             let function = ast::Function::cast(syntax)?;
 
             trim_whitespace_before_to_newline(&function.fn_token()?);

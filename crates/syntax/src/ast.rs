@@ -265,16 +265,16 @@ ast_enum! {
 }
 
 ast_node! {
-    Function:
+    FunctionDeclaration:
     fn_token: Option<SyntaxToken Fn>;
     parameter_list: Option<ParameterList>;
     return_type: Option<ReturnType>;
     body: Option<CompoundStatement>;
 }
 
-impl HasName for Function {}
+impl HasName for FunctionDeclaration {}
 
-impl HasAttributes for Function {}
+impl HasAttributes for FunctionDeclaration {}
 
 ast_node! {
     StructDeclaration:
@@ -286,14 +286,14 @@ ast_node! {
 impl HasAttributes for StructDeclaration {}
 
 ast_node! {
-    StructDeclBody:
+    StructBody:
     left_brace_token: Option<SyntaxToken BraceLeft>;
     right_brace_token: Option<SyntaxToken BraceRight>;
     fields: AstChildren<StructDeclarationField>;
 }
 
 ast_node! {
-    StructDeclarationField:
+    StructMember:
     variable_ident_declaration: Option<VariableIdentDeclaration>;
 }
 
@@ -338,7 +338,7 @@ ast_node! {
 
 ast_enum! {
     enum Item {
-        Function,
+        FunctionDeclaration,
         StructDeclaration,
         GlobalVariableDeclaration,
         GlobalConstantDeclaration,
@@ -379,7 +379,7 @@ ast_node! {
 }
 
 ast_node! {
-    FunctionParameterList:
+    FunctionParameters:
     left_parenthesis_token: Option<SyntaxToken ParenthesisLeft>;
     right_parenthesis_token: Option<SyntaxToken ParenthesisRight>;
     arguments: AstChildren<Expression>;
@@ -479,7 +479,7 @@ ast_node! {
 ast_node! {
     TypeInitializer:
     ty: Option<Type>;
-    arguments: Option<FunctionParameterList>;
+    arguments: Option<FunctionParameters>;
 }
 
 ast_node!(VariableQualifier);
@@ -592,13 +592,13 @@ ast_node! {
 ast_node! {
     FunctionCall:
     name_ref: Option<NameReference>;
-    parameters: Option<FunctionParameterList>;
+    parameters: Option<FunctionParameters>;
 }
 
 ast_node! {
     InvalidFunctionCall:
     expression: Option<Expression>;
-    parameters: Option<FunctionParameterList>;
+    parameters: Option<FunctionParameters>;
 }
 
 ast_node! {
@@ -781,7 +781,7 @@ ast_node! {
 }
 
 ast_node! {
-    SwitchBlock:
+    SwitchBody:
     cases: AstChildren<SwitchBodyCase>;
     default: AstChildren<SwitchBodyDefault>;
 }

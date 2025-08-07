@@ -188,7 +188,7 @@ fn struct_(
         SyntaxKind::BraceLeft,
         SyntaxKind::BraceRight,
         &[SyntaxKind::Semicolon, SyntaxKind::Comma],
-        SyntaxKind::StructDeclBody,
+        SyntaxKind::StructBody,
         struct_member,
     );
 
@@ -208,7 +208,7 @@ fn struct_member(parser: &mut Parser<'_, '_>) {
         parser.bump();
     }
 
-    marker.complete(parser, SyntaxKind::StructDeclarationField);
+    marker.complete(parser, SyntaxKind::StructMember);
 }
 
 fn function(
@@ -220,7 +220,7 @@ fn function(
     if parser.at(SyntaxKind::Identifier) {
         name(parser);
     } else {
-        marker.complete(parser, SyntaxKind::Function);
+        marker.complete(parser, SyntaxKind::FunctionDeclaration);
         return;
     }
 
@@ -250,7 +250,7 @@ fn function(
         parser.error_recovery(&[SyntaxKind::Fn]);
     }
 
-    marker.complete(parser, SyntaxKind::Function);
+    marker.complete(parser, SyntaxKind::FunctionDeclaration);
 }
 
 fn name(parser: &mut Parser<'_, '_>) {
@@ -671,7 +671,7 @@ fn switch_statement(parser: &mut Parser<'_, '_>) {
         SyntaxKind::BraceLeft,
         SyntaxKind::BraceRight,
         SyntaxKind::Semicolon,
-        SyntaxKind::SwitchBlock,
+        SyntaxKind::SwitchBody,
         switch_body,
     );
 

@@ -9,7 +9,8 @@ pub enum SyntaxKind {
     /// Emergent nodes
     Name,
     /// a function
-    Function,
+    FunctionDeclaration,
+
     /// ident: type
     VariableIdentDeclaration,
     /// the <a, b, c> of a generic
@@ -25,6 +26,10 @@ pub enum SyntaxKind {
     /// a group of statements contained in braces
 
     // Statements https://www.w3.org/TR/WGSL/#statements
+
+    /// [10.1. Const Assert Statement](https://www.w3.org/TR/WGSL/#const-assert-statement)
+    /// `const_assert 1 < 2;`
+    AssertStatement,
 
     /// [9.1. Compound Statement](https://www.w3.org/TR/WGSL/#compound-statement-section)
     ///
@@ -47,16 +52,24 @@ pub enum SyntaxKind {
     ConstDeclaration,
     OverrideDeclaration,
 
-    /// `continue;`
-    ContinueStatement,
     /// `break;`
     BreakStatement,
+    /// `break if 4 < 5;`
+    BreakIfStatement,
 
+    /// `continue;`
+    ContinueStatement,
+
+    /// `discard;`
+    DiscardStatement,
+
+    /// A lonely `;`
+    EmptyStatement,
     /// [9.5. Function Call Statement](https://www.w3.org/TR/WGSL/#function-call-statement)
     FunctionCallStatement,
 
     /// [9.4.3. Loop Statement](https://www.w3.org/TR/WGSL/#loop-statement)
-    ///
+    /// Structurally very similar to a compound statement
     /// ```wgsl
     /// loop { statements }
     /// ```
@@ -67,12 +80,14 @@ pub enum SyntaxKind {
     IfStatement,
     /// `switch expression { case 1, 2: {} default: {} }`
     SwitchStatement,
-    /// The block of a switch statement
-    SwitchBlock,
-    /// case 1, 2: {};
+    /// The body of a switch statement
+    SwitchBody,
+    /// `case 1, 2: {};``
     SwitchBodyCase,
-    /// the `1, 2` in `case 1, 2: {}`
+    /// The `1, 2` in `case 1, 2: {}`
     SwitchCaseSelectors,
+    /// The `1` and `2` in `case 1, 2: {}`
+    SwitchCaseSelector,
     /// default: {}
     SwitchBodyDefault,
 
@@ -90,8 +105,10 @@ pub enum SyntaxKind {
     VariableQualifier,
     /// a binary operator
     BinaryOperator,
+    /// The header of a function, including parameters and return type
+    FunctionHeader,
     /// The parameters to a function call
-    FunctionParameterList,
+    FunctionParameters,
     /// `a.b`
     FieldExpression,
     /// `pow(2, 3)`
@@ -136,13 +153,17 @@ pub enum SyntaxKind {
     /// the definition of a struct
     StructDeclaration,
     /// the members of a struct definition inside of braces
-    StructDeclBody,
+    StructBody,
     /// one field of a struct declaration
-    StructDeclarationField,
-    /// `var<uniform> test: u32`
-    GlobalVariableDeclaration,
+    StructMember,
+    /// `const_assert true;`
+    GlobalAssert,
     /// `let global: u32 = 10u`
     GlobalConstantDeclaration,
+    /// `override test: u32`
+    GlobalOverrideDeclaration,
+    /// `var<uniform> test: u32`
+    GlobalVariableDeclaration,
     /// `continuing { statements }`
     ContinuingStatement,
     /// Type alias declaration: `type float4 = vec4<f32>`
@@ -295,6 +316,7 @@ pub enum SyntaxKind {
     Break,
     #[token("case")]
     Case,
+    ConstantAssert,
     #[token("continue")]
     Continue,
     #[token("continuing")]

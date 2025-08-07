@@ -128,16 +128,10 @@ pub fn parse_entrypoint(
     let mut diags = Vec::new();
     let parsed = match entrypoint {
         ParseEntryPoint::File => Parser::parse(input, &mut diags),
-        ParseEntryPoint::Expression => {
-            Parser::parse_custom(input, &mut diags, Token::EntrypointExpression)
-        },
-        ParseEntryPoint::Statement => {
-            Parser::parse_custom(input, &mut diags, Token::EntrypointStatement)
-        },
-        ParseEntryPoint::Type => Parser::parse_custom(input, &mut diags, Token::EntrypointType),
-        ParseEntryPoint::Attribute => {
-            Parser::parse_custom(input, &mut diags, Token::EntrypointAttribute)
-        },
+        ParseEntryPoint::Expression => Parser::parse_start_expression(input, &mut diags),
+        ParseEntryPoint::Statement => Parser::parse_start_statement(input, &mut diags),
+        ParseEntryPoint::Type => Parser::parse_start_type_specifier(input, &mut diags),
+        ParseEntryPoint::Attribute => Parser::parse_start_attribute(input, &mut diags),
         ParseEntryPoint::FunctionParameterList => {
             todo!("Remove this")
         },
@@ -160,6 +154,7 @@ struct CstBuilder<'a, 'cache> {
 impl<'a, 'cache> CstBuilder<'a, 'cache> {
     /// Turn a lelwel syntax tree into a rowan syntax tree
     fn build(mut self) -> GreenNode {
+        println!("{}", self.cst);
         let mut rule_ends = vec![];
         for offset in 0..self.cst.nodes.len() {
             let node_ref = NodeRef(offset);
@@ -195,63 +190,74 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::ArgumentExpressionListExpr => {
                 panic!("should be a Arguments instead")
             },
-            Rule::AssertStatement => todo!(),
+            Rule::AssertStatement => self.start_node(SyntaxKind::AssertStatement),
             Rule::Attribute => self.start_node(SyntaxKind::Attribute),
             Rule::BinaryExpression => self.start_node(SyntaxKind::InfixExpression),
             Rule::Literal => self.start_node(SyntaxKind::Literal),
-            Rule::BreakIfStatement => todo!(),
+            Rule::BreakIfStatement => self.start_node(SyntaxKind::BreakIfStatement),
             Rule::BreakStatement => self.start_node(SyntaxKind::BreakStatement),
-            Rule::CaseClause => todo!(),
-            Rule::CaseSelector => todo!(),
-            Rule::CaseSelectors => todo!(),
-            Rule::CompoundAssignmentOperator => todo!(),
-            Rule::CompoundAssignmentStatement => todo!(),
+            Rule::CaseClause => self.start_node(SyntaxKind::SwitchBodyCase),
+            Rule::CaseSelector => self.start_node(SyntaxKind::SwitchCaseSelector),
+            Rule::CaseSelectors => self.start_node(SyntaxKind::SwitchCaseSelectors),
+            Rule::CompoundAssignmentOperator => panic!("compound_assignment_operator is elided"),
+            Rule::CompoundAssignmentStatement => {
+                self.start_node(SyntaxKind::CompoundAssignmentStatement)
+            },
             Rule::CompoundStatement => self.start_node(SyntaxKind::CompoundStatement),
             Rule::ConstDeclaration => self.start_node(SyntaxKind::ConstDeclaration),
             Rule::ContinueStatement => self.start_node(SyntaxKind::ContinueStatement),
             Rule::ContinuingStatement => self.start_node(SyntaxKind::ContinuingStatement),
             Rule::DecrementStatement => self.start_node(SyntaxKind::IncrementDecrementStatement),
-            Rule::DefaultAloneClause => todo!(),
+            Rule::DefaultAloneClause => self.start_node(SyntaxKind::SwitchBodyDefault),
             Rule::DiagnosticAttr => todo!(),
             Rule::DiagnosticControl => todo!(),
             Rule::DiagnosticDirective => todo!(),
             Rule::DiagnosticRuleName => todo!(),
-            Rule::DiscardStatement => todo!(),
+            Rule::DiscardStatement => self.start_node(SyntaxKind::DiscardStatement),
             Rule::ElseClause => self.start_node(SyntaxKind::ElseClause),
             Rule::ElseIfClause => self.start_node(SyntaxKind::ElseIfClause),
-            Rule::EmptyStatement => todo!(),
+            Rule::EmptyStatement => self.start_node(SyntaxKind::EmptyStatement),
             Rule::EnableDirective => todo!(),
             Rule::Error => self.start_node(SyntaxKind::Error),
-            Rule::ExprTemplateList => todo!(),
+            Rule::ExprTemplateList => panic!("expr_template_list is elided"),
             Rule::Expression => panic!("expressions should always be a more specific node"),
             Rule::FieldExpression => self.start_node(SyntaxKind::FieldExpression),
             Rule::ForCondition => self.start_node(SyntaxKind::ForCondition),
             Rule::ForInit => self.start_node(SyntaxKind::ForInitializer),
             Rule::ForStatement => self.start_node(SyntaxKind::ForStatement),
             Rule::ForUpdate => self.start_node(SyntaxKind::ForContinuingPart),
-            Rule::FullIdent => panic!("full idents should be flattened"),
+            Rule::FullIdent => panic!("full_ident is elided"),
             Rule::FunctionCall => self.start_node(SyntaxKind::FunctionCall),
             Rule::FunctionCallStatement => self.start_node(SyntaxKind::FunctionCallStatement),
-            Rule::FunctionDeclaration => todo!(),
-            Rule::FunctionHeader => todo!(),
-            Rule::GlobalAssert => todo!(),
-            Rule::GlobalDeclaration => todo!(),
-            Rule::GlobalDirective => todo!(),
-            Rule::GlobalItem => todo!(),
-            Rule::GlobalValueDeclaration => todo!(),
-            Rule::GlobalVariableDeclaration => todo!(),
+            Rule::FunctionDeclaration => self.start_node(SyntaxKind::FunctionDeclaration),
+            Rule::FunctionParameters => self.start_node(SyntaxKind::FunctionParameters),
+            Rule::FunctionHeader => self.start_node(SyntaxKind::FunctionHeader),
+            Rule::GlobalAssert => self.start_node(SyntaxKind::GlobalAssert),
+            Rule::GlobalConstDeclaration => self.start_node(SyntaxKind::GlobalConstantDeclaration),
+            Rule::GlobalDeclaration => {
+                panic!("global_declaration should always be a more specific node")
+            },
+            Rule::GlobalDirective => {
+                panic!("global_directive should always be a more specific node")
+            },
+            Rule::GlobalItem => panic!("global_item is elided"),
+            Rule::GlobalOverrideDeclaration => {
+                self.start_node(SyntaxKind::GlobalOverrideDeclaration)
+            },
+            Rule::GlobalVariableDeclaration => {
+                self.start_node(SyntaxKind::GlobalVariableDeclaration)
+            },
             Rule::IdentExpression => self.start_node(SyntaxKind::IdentExpression),
             Rule::IfClause => self.start_node(SyntaxKind::IfClause),
             Rule::IfStatement => self.start_node(SyntaxKind::IfStatement),
             Rule::IncrementStatement => self.start_node(SyntaxKind::IncrementDecrementStatement),
-            Rule::IndexingExpression => todo!(),
-            Rule::IdentOrFunction => panic!("ident-or-function should be flattened"),
+            Rule::IndexingExpression => self.start_node(SyntaxKind::IndexExpression),
+            Rule::IdentOrFunction => panic!("ident_or_function is elided"),
             Rule::LetDeclaration => self.start_node(SyntaxKind::LetDeclaration),
-            Rule::LhsExpression => todo!(),
+            Rule::LhsExpression => panic!("lhs_expression should always be a more specific node"),
             Rule::LoopStatement => self.start_node(SyntaxKind::LoopStatement),
             Rule::OverrideDeclaration => self.start_node(SyntaxKind::OverrideDeclaration),
             Rule::Parameter => self.start_node(SyntaxKind::Parameter),
-            Rule::Parameters => todo!(),
             Rule::ParenExpression => self.start_node(SyntaxKind::ParenthesisExpression),
             Rule::PhonyAssignmentStatement => todo!(),
             Rule::RequiresDirective => todo!(),
@@ -259,26 +265,32 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::ReturnType => self.start_node(SyntaxKind::ReturnType),
             Rule::SeverityControlName => todo!(),
             Rule::SimpleAssignmentStatement => self.start_node(SyntaxKind::AssignmentStatement),
-            Rule::Statement => panic!("statements should be a more specific node"),
-            Rule::StructBody => self.start_node(SyntaxKind::StructDeclBody),
+            Rule::Statement => panic!("statements should always be a more specific node"),
+            Rule::StructBody => self.start_node(SyntaxKind::StructBody),
             Rule::StructDeclaration => self.start_node(SyntaxKind::StructDeclaration),
-            Rule::StructMember => self.start_node(SyntaxKind::StructDeclarationField),
-            Rule::SwitchClause => todo!(),
-            Rule::SwitchStatement => todo!(),
-            Rule::TemplateArgs => todo!(),
+            Rule::StructMember => self.start_node(SyntaxKind::StructMember),
+            Rule::SwitchBody => self.start_node(SyntaxKind::SwitchBody),
+            Rule::SwitchClause => panic!("switch_clause is elided"),
+            Rule::SwitchStatement => self.start_node(SyntaxKind::SwitchStatement),
+            Rule::TemplateArgs => panic!("template_args is elided"),
             Rule::TemplateList => self.start_node(SyntaxKind::GenericArgumentList),
             Rule::TranslationUnit => self.start_node(SyntaxKind::SourceFile),
             Rule::TypeAliasDeclaration => self.start_node(SyntaxKind::TypeAliasDeclaration),
             Rule::TypeSpecifier => self.start_node(SyntaxKind::TypeSpecifier),
-            Rule::TypedIdent => panic!("typed idents should be flattened"),
+            Rule::TypedIdent => panic!("typed_ident is elided"),
             Rule::UnaryExpression => self.start_node(SyntaxKind::PrefixExpression),
             Rule::VariableDeclaration => self.start_node(SyntaxKind::VariableDeclaration),
-            Rule::VariableOrValue => panic!("variable or value should be flattened"),
+            Rule::VariableOrValue => panic!("variable_or_value is elided"),
             Rule::VariableStatement => self.start_node(SyntaxKind::VariableStatement),
-            Rule::VariableUpdating => todo!(),
+            Rule::VariableUpdating => {
+                panic!("variable_updating should always be a more specific node")
+            },
             Rule::WhileStatement => self.start_node(SyntaxKind::WhileStatement),
-            // Helper token for custom parse entrypoints
-            Rule::StartHelper => panic!("start helper should be flattened"),
+            // Custom parsing entrypoints. The extra "SourceFile" exists so that parsing errors are definitely caught in the root node
+            Rule::StartAttribute => self.start_node(SyntaxKind::SourceFile),
+            Rule::StartExpression => self.start_node(SyntaxKind::SourceFile),
+            Rule::StartStatement => self.start_node(SyntaxKind::SourceFile),
+            Rule::StartTypeSpecifier => self.start_node(SyntaxKind::SourceFile),
         }
     }
 
@@ -305,15 +317,6 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
         if token == Token::EOF {
             return; // Ignore
         }
-        if matches!(
-            token,
-            Token::EntrypointExpression
-                | Token::EntrypointStatement
-                | Token::EntrypointType
-                | Token::EntrypointAttribute
-        ) {
-            return; // Ignore
-        }
         let text = &self.cst.source[self.cst.spans[usize::from(index)].clone()];
         let syntax_kind = SyntaxKind::try_from(token)
             .unwrap_or_else(|()| panic!("token {token:?} should be convertible to a SyntaxKind"));
@@ -333,7 +336,7 @@ impl TryFrom<Token> for SyntaxKind {
             Token::Alias => SyntaxKind::Alias,
             Token::Struct => SyntaxKind::Struct,
             Token::Var => SyntaxKind::Var,
-            Token::ConstAssert => todo!(),
+            Token::ConstAssert => SyntaxKind::ConstantAssert,
             Token::If => SyntaxKind::If,
             Token::For => SyntaxKind::For,
             Token::Else => SyntaxKind::Else,
@@ -400,63 +403,12 @@ impl TryFrom<Token> for SyntaxKind {
             Token::LineEndingComment => SyntaxKind::LineEndingComment,
             Token::BlockComment => SyntaxKind::BlockComment,
             Token::Error => SyntaxKind::Error,
-            Token::EntrypointExpression => return Err(()),
-            Token::EntrypointStatement => return Err(()),
-            Token::EntrypointType => return Err(()),
-            Token::EntrypointAttribute => return Err(()),
         };
         Ok(output)
     }
 }
 
 impl<'a> Parser<'a> {
-    /// Returns the CST for a parse with the given `source` file and writes diagnostics to `diags`.
-    ///
-    /// The context can be explicitly defined for the parse.
-    pub fn parse_with_context_custom(
-        source: &'a str,
-        diags: &mut Vec<Diagnostic>,
-        context: Context<'a>,
-        start_token: Token,
-    ) -> Cst<'a> {
-        let (mut tokens, mut spans) = Self::create_tokens(source, diags);
-        tokens.insert(0, start_token);
-        spans.insert(0, 0..0);
-        let max_offset = source.len();
-        let mut parser = Self {
-            current: Token::EOF,
-            cst: Cst::new(source, spans),
-            tokens,
-            pos: 0,
-            last_error_span: Span::default(),
-            max_offset,
-            context,
-            error_cooldown: false,
-            in_ordered_choice: false,
-        };
-        parser.rule_start_helper(diags);
-        // Node 0 is that dummy token
-        let child_count = parser.cst.nodes.len() - 2;
-        // I suspect that this would fail when whitespaces are involved,
-        // but this only exists for unit tests anyways
-        if let Node::Rule(_, cst_index) = &mut parser.cst.nodes[1] {
-            *cst_index = CstIndex::from(child_count);
-        } else {
-            panic!("Node 1 should be a rule")
-        }
-        parser.cst
-    }
-    /// Returns the CST for a parse with the given `source` file and writes diagnostics to `diags`.
-    ///
-    /// The context will be default initialized for the parse.
-    pub fn parse_custom(
-        source: &'a str,
-        diags: &mut Vec<Diagnostic>,
-        start_token: Token,
-    ) -> Cst<'a> {
-        Self::parse_with_context_custom(source, diags, Context::default(), start_token)
-    }
-
     /// Implements the template disambiguation algorithm and remembers the results in a hash set
     fn find_template_list(&mut self) {
         if self.context.template_start.contains(&self.pos) {
@@ -542,10 +494,11 @@ impl<'a> ParserCallbacks for Parser<'a> {
     fn predicate_global_directive_1(&self) -> bool {
         self.peek(1) != Token::Semi
     }
-    fn predicate_parameters_1(&self) -> bool {
+    fn predicate_function_parameters_1(&self) -> bool {
         self.peek(1) != Token::RPar
     }
     fn predicate_struct_body_1(&self) -> bool {
+        println!("{:?}{:?}{:?}", self.peek(0), self.peek(1), self.peek(2));
         self.peek(1) != Token::RBrace
     }
     fn action_template_list_1(
@@ -606,5 +559,9 @@ impl<'a> ParserCallbacks for Parser<'a> {
     }
     fn predicate_compound_assignment_operator_1(&self) -> bool {
         self.tokens[self.pos + 1] == self.current && self.tokens[self.pos + 2] == Token::Eq
+    }
+
+    fn assertion_struct_body_1(&self) -> Option<Diagnostic> {
+        Some(self.create_diagnostic(self.span(), "invalid syntax, expected ','".to_string()))
     }
 }
