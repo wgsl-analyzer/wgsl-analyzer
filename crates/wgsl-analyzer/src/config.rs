@@ -142,11 +142,12 @@ pub struct ConfigData {
     pub trace: TraceConfig,
     pub inlay_hints: InlayHintsConfig,
     pub diagnostics: DiagnosticsConfig,
-
+    
     /// How many worker threads to handle priming caches. The default `0` means to pick automatically.
     pub cache_priming_num_threads: NumThreads,
     /// How many worker threads in the main loop. The default `null` means to pick automatically.
     pub num_threads: Option<NumThreads>,
+    pub naga_extensions: bool,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -249,6 +250,7 @@ impl Config {
                 diagnostics: DiagnosticsConfig::default(),
                 cache_priming_num_threads: NumThreads::Physical,
                 num_threads: None,
+                naga_extensions: true,
             },
             workspace_roots,
             // discovered_projects_from_filesystem: Vec::new(),
