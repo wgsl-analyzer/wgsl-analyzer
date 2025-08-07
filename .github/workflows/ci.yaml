@@ -236,7 +236,7 @@ jobs:
       - name: Install beta Rust toolchain
         uses: dtolnay/rust-toolchain@beta
 
-      - name: Build doc
+      - name: Build documentation
         run: cargo doc --workspace --all-features --no-deps --document-private-items --keep-going
         env:
           CARGO_INCREMENTAL: 0
