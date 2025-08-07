@@ -147,7 +147,8 @@ pub struct ConfigData {
     pub cache_priming_num_threads: NumThreads,
     /// How many worker threads in the main loop. The default `null` means to pick automatically.
     pub num_threads: Option<NumThreads>,
-    pub naga_extensions: bool,
+    // SHADER_INT64
+    pub wide_integers_support: bool,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -250,7 +251,7 @@ impl Config {
                 diagnostics: DiagnosticsConfig::default(),
                 cache_priming_num_threads: NumThreads::Physical,
                 num_threads: None,
-                naga_extensions: true,
+                wide_integers_support: true,
             },
             workspace_roots,
             // discovered_projects_from_filesystem: Vec::new(),

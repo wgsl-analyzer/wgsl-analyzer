@@ -152,6 +152,9 @@ fn write_ty(
                 ScalarType::U32 => "u32",
                 ScalarType::F32 => "f32",
                 ScalarType::F16 => "f16",
+                // SHADER_INT64
+                ScalarType::I64 => "i64",
+                ScalarType::U64 => "u64",
             };
             write!(formatter, "{string}")
         },

@@ -2027,6 +2027,9 @@ impl<'database> TyLoweringContext<'database> {
                     type_ref::ScalarType::Float32 => ScalarType::F32,
                     type_ref::ScalarType::Int32 => ScalarType::I32,
                     type_ref::ScalarType::Uint32 => ScalarType::U32,
+                    // SHADER_INT64
+                    type_ref::ScalarType::Int64 => ScalarType::I64,
+                    type_ref::ScalarType::Uint64 => ScalarType::U64,
                 };
                 TyKind::Scalar(scalar)
             },
