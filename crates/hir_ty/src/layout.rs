@@ -155,7 +155,7 @@ impl TyKind {
             | Self::Sampler(_)
             | Self::Reference(_)
             | Self::Pointer(_)
-            | Self::BoundVar(_)
+            | Self::BoundVariable(_)
             | Self::StorageTypeOfTexelFormat(_) => None,
         }
     }
@@ -252,7 +252,7 @@ impl TyKind {
             | Self::Sampler(_)
             | Self::Reference(_)
             | Self::Pointer(_)
-            | Self::BoundVar(_)
+            | Self::BoundVariable(_)
             | Self::StorageTypeOfTexelFormat(_) => None,
         }
     }

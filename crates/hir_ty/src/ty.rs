@@ -63,7 +63,7 @@ impl Type {
             | TyKind::Texture(_)
             | TyKind::Sampler(_)
             | TyKind::Pointer(_)
-            | TyKind::BoundVar(_)
+            | TyKind::BoundVariable(_)
             | TyKind::StorageTypeOfTexelFormat(_) => self,
         }
     }
@@ -95,7 +95,7 @@ impl Type {
             | TyKind::Texture(_)
             | TyKind::Sampler(_)
             | TyKind::Pointer(_)
-            | TyKind::BoundVar(_)
+            | TyKind::BoundVariable(_)
             | TyKind::StorageTypeOfTexelFormat(_) => self,
         }
     }
@@ -134,12 +134,12 @@ pub enum TyKind {
     Sampler(SamplerType),
     Reference(Reference),
     Pointer(Pointer),
-    BoundVar(BoundVar),
-    StorageTypeOfTexelFormat(BoundVar), // e.g. rgba8unorm -> vec4<f32>
+    BoundVariable(BoundVariable),
+    StorageTypeOfTexelFormat(BoundVariable), // e.g. rgba8unorm -> vec4<f32>
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct BoundVar {
+pub struct BoundVariable {
     pub index: usize,
 }
 
@@ -168,7 +168,7 @@ impl TyKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Pointer(_)
-            | Self::BoundVar(_)
+            | Self::BoundVariable(_)
             | Self::StorageTypeOfTexelFormat(_) => Cow::Borrowed(self),
         }
     }
@@ -235,7 +235,7 @@ impl TyKind {
             | Self::Sampler(_)
             | Self::Reference(_)
             | Self::Pointer(_)
-            | Self::BoundVar(_)
+            | Self::BoundVariable(_)
             | Self::StorageTypeOfTexelFormat(_) => false,
         }
     }
@@ -360,7 +360,7 @@ impl TyKind {
             | Self::Sampler(_)
             | Self::Reference(_)
             | Self::Pointer(_)
-            | Self::BoundVar(_)
+            | Self::BoundVariable(_)
             | Self::StorageTypeOfTexelFormat(_) => false,
         }
     }
@@ -384,7 +384,7 @@ impl TyKind {
             | Self::Sampler(_)
             | Self::Reference(_)
             | Self::Pointer(_)
-            | Self::BoundVar(_)
+            | Self::BoundVariable(_)
             | Self::StorageTypeOfTexelFormat(_) => false,
         }
     }
@@ -413,7 +413,7 @@ impl TyKind {
             | Self::Sampler(_)
             | Self::Reference(_)
             | Self::Pointer(_)
-            | Self::BoundVar(_)
+            | Self::BoundVariable(_)
             | Self::StorageTypeOfTexelFormat(_) => false,
         }
     }
@@ -444,7 +444,7 @@ impl TyKind {
             | Self::Matrix(_)
             | Self::Texture(_)
             | Self::Sampler(_)
-            | Self::BoundVar(_)
+            | Self::BoundVariable(_)
             | Self::StorageTypeOfTexelFormat(_) => false,
         }
     }
@@ -629,9 +629,9 @@ impl fmt::Display for VecSize {
             Self::Two => formatter.write_str("2"),
             Self::Three => formatter.write_str("3"),
             Self::Four => formatter.write_str("4"),
-            Self::BoundVar(var) => {
+            Self::BoundVariable(variable) => {
                 let mut names = "NMOPQRS".chars();
-                write!(formatter, "{}", names.nth(var.index).unwrap())
+                write!(formatter, "{}", names.nth(variable.index).unwrap())
             },
         }
     }
@@ -642,14 +642,14 @@ impl VecSize {
     ///
     /// # Panics
     ///
-    /// Panics if self is the [`BoundVar`] variant.
+    /// Panics if self is the [`BoundVariable`] variant.
     #[must_use]
     pub fn as_u8(self) -> u8 {
         match self {
             Self::Two => 2,
             Self::Three => 3,
             Self::Four => 4,
-            Self::BoundVar(_) => panic!("VecSize::BoundVar cannot be made into an u8"),
+            Self::BoundVariable(_) => panic!("VecSize::BoundVariable cannot be made into an u8"),
         }
     }
 }

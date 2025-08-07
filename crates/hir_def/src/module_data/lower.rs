@@ -52,8 +52,8 @@ impl<'database> Ctx<'database> {
                 ModuleItem::Function(self.lower_function(&function)?)
             },
             Item::StructDeclaration(r#struct) => ModuleItem::Struct(self.lower_struct(&r#struct)?),
-            Item::VariableDeclaration(var) => {
-                ModuleItem::GlobalVariable(self.lower_global_var(&var)?)
+            Item::VariableDeclaration(variable) => {
+                ModuleItem::GlobalVariable(self.lower_global_variable(&variable)?)
             },
             Item::ConstantDeclaration(constant) => {
                 ModuleItem::GlobalConstant(self.lower_global_constant(&constant)?)
@@ -109,14 +109,14 @@ impl<'database> Ctx<'database> {
         Some(self.module_data.global_constants.alloc(constant).into())
     }
 
-    fn lower_global_var(
+    fn lower_global_variable(
         &mut self,
-        var: &syntax::ast::VariableDeclaration,
+        variable: &syntax::ast::VariableDeclaration,
     ) -> Option<ModuleItemId<GlobalVariable>> {
-        let name = var.name()?.text().into();
-        let ast_id = self.source_ast_id_map.ast_id(var);
-        let var = GlobalVariable { name, ast_id };
-        Some(self.module_data.global_variables.alloc(var).into())
+        let name = variable.name()?.text().into();
+        let ast_id = self.source_ast_id_map.ast_id(variable);
+        let variable = GlobalVariable { name, ast_id };
+        Some(self.module_data.global_variables.alloc(variable).into())
     }
 
     fn lower_struct(

@@ -1098,7 +1098,7 @@ impl<'database> InferenceContext<'database> {
                     | TyKind::Sampler(_)
                     | TyKind::Reference(_)
                     | TyKind::Pointer(_)
-                    | TyKind::BoundVar(_)
+                    | TyKind::BoundVariable(_)
                     | TyKind::StorageTypeOfTexelFormat(_) => {
                         self.push_diagnostic(InferenceDiagnostic::NoSuchField {
                             expression: *field_expression,
@@ -1146,7 +1146,7 @@ impl<'database> InferenceContext<'database> {
                     | TyKind::Sampler(_)
                     | TyKind::Reference(_)
                     | TyKind::Pointer(_)
-                    | TyKind::BoundVar(_)
+                    | TyKind::BoundVariable(_)
                     | TyKind::StorageTypeOfTexelFormat(_) => {
                         self.push_diagnostic(InferenceDiagnostic::ArrayAccessInvalidType {
                             expression,
@@ -1800,7 +1800,9 @@ impl<'database> InferenceContext<'database> {
                 VecSize::Two => VecDimensionality::Two,
                 VecSize::Three => VecDimensionality::Three,
                 VecSize::Four => VecDimensionality::Four,
-                VecSize::BoundVar(_) => unreachable!("Can never have unbound type at this point"),
+                VecSize::BoundVariable(_) => {
+                    unreachable!("Can never have unbound type at this point")
+                },
             }
         }
 

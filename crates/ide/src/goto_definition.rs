@@ -81,8 +81,8 @@ impl TryToNavigationTarget for InFile<Definition> {
 
                     NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
                 },
-                hir::ModuleDef::GlobalVariable(var) => {
-                    let declaration = var.source(database)?;
+                hir::ModuleDef::GlobalVariable(variable) => {
+                    let declaration = variable.source(database)?;
 
                     let frange = declaration.original_file_range(database);
                     let focus_range = declaration.value.name().map(|name| {

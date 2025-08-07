@@ -247,14 +247,14 @@ fn write_ty(
                 write!(formatter, ">")
             },
         },
-        TyKind::BoundVar(var) => {
-            write!(formatter, "{}", ('T'..).nth(var.index).unwrap())
+        TyKind::BoundVariable(variable) => {
+            write!(formatter, "{}", ('T'..).nth(variable.index).unwrap())
         },
-        TyKind::StorageTypeOfTexelFormat(var) => {
+        TyKind::StorageTypeOfTexelFormat(variable) => {
             write!(
                 formatter,
                 "{}::StorageType",
-                ('F'..).nth(var.index).unwrap()
+                ('F'..).nth(variable.index).unwrap()
             )
         },
     }

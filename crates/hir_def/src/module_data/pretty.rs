@@ -34,9 +34,9 @@ fn write_pretty_module_item(
             _ = write!(buffer, "struct {} {{ ... }}", r#struct.name.0);
         },
         ModuleItem::GlobalVariable(id) => {
-            let var = &module.data[id.index];
-            print_ast_id(buffer, var.ast_id);
-            _ = write!(buffer, "var {} = _;", &var.name.0);
+            let variable = &module.data[id.index];
+            print_ast_id(buffer, variable.ast_id);
+            _ = write!(buffer, "var {} = _;", &variable.name.0);
         },
         ModuleItem::GlobalConstant(id) => {
             let constant = &module.data[id.index];

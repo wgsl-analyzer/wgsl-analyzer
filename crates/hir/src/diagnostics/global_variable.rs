@@ -12,10 +12,10 @@ pub enum GlobalVariableDiagnostic {
 
 pub fn collect<Function: FnMut(GlobalVariableDiagnostic)>(
     database: &dyn HirDatabase,
-    var: GlobalVariableId,
+    variable: GlobalVariableId,
     mut diagnostic_builder: Function,
 ) {
-    let inference = database.infer(DefinitionWithBodyId::GlobalVariable(var));
+    let inference = database.infer(DefinitionWithBodyId::GlobalVariable(variable));
     let ty_kind = inference.return_type().kind(database);
 
     if let TyKind::Reference(Reference {

@@ -132,9 +132,9 @@ pub struct GlobalVariableData {
 impl GlobalVariableData {
     pub fn global_var_data_query(
         database: &dyn DefDatabase,
-        var: GlobalVariableId,
+        variable: GlobalVariableId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let loc = database.lookup_intern_global_variable(var);
+        let loc = database.lookup_intern_global_variable(variable);
         let source = loc.source(database);
 
         let (global_variable, source_map) = lower_variable(database, &source);

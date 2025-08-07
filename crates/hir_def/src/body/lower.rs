@@ -22,12 +22,12 @@ pub(super) fn lower_function_body(
     Collector::new(database, file_id).collect_function(param_list, body)
 }
 
-pub(super) fn lower_global_var_declaration(
+pub(super) fn lower_global_variable_declaration(
     database: &dyn DefDatabase,
     file_id: HirFileId,
     declaration: &ast::VariableDeclaration,
 ) -> (Body, BodySourceMap) {
-    Collector::new(database, file_id).collect_global_var_declaration(declaration)
+    Collector::new(database, file_id).collect_global_variable_declaration(declaration)
 }
 
 pub(super) fn lower_global_constant_declaration(
@@ -94,7 +94,7 @@ impl Collector<'_> {
         }
     }
 
-    fn collect_global_var_declaration(
+    fn collect_global_variable_declaration(
         mut self,
         declaration: &ast::VariableDeclaration,
     ) -> (Body, BodySourceMap) {

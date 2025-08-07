@@ -567,25 +567,25 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::MissingAddressSpace { var } => {
-                    let var_decl = var.value.to_node(&root);
+                AnyDiagnostic::MissingAddressSpace { variable } => {
+                    let var_decl = variable.value.to_node(&root);
                     let source = var_decl
                         .var_token()
                         .map_or_else(|| NodeOrToken::Node(var_decl.syntax()), NodeOrToken::Token);
 
-                    let frange = original_file_range(database, var.file_id, &source);
+                    let frange = original_file_range(database, variable.file_id, &source);
                     Diagnostic::new(
                         DiagnosticCode("11"),
                         "missing address space on global variable".to_owned(),
                         frange.range,
                     )
                 },
-                AnyDiagnostic::InvalidAddressSpace { var, error } => {
-                    let var_decl = var.value.to_node(&root);
+                AnyDiagnostic::InvalidAddressSpace { variable, error } => {
+                    let var_decl = variable.value.to_node(&root);
                     let source = var_decl
                         .var_token()
                         .map_or_else(|| NodeOrToken::Node(var_decl.syntax()), NodeOrToken::Token);
-                    let frange = original_file_range(database, var.file_id, &source);
+                    let frange = original_file_range(database, variable.file_id, &source);
                     Diagnostic::new(DiagnosticCode("12"), format!("{error}"), frange.range)
                 },
                 AnyDiagnostic::InvalidTypeSpecifier {

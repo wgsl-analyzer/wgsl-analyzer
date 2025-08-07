@@ -46,7 +46,7 @@ pub(crate) fn complete_dot(
         | TyKind::Sampler(_)
         | TyKind::Reference(_)
         | TyKind::Pointer(_)
-        | TyKind::BoundVar(_)
+        | TyKind::BoundVariable(_)
         | TyKind::StorageTypeOfTexelFormat(_) => None,
     }
 }

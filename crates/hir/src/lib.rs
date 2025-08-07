@@ -399,8 +399,8 @@ fn module_item_to_def(
             let id = database.intern_struct(loc);
             ModuleDef::Struct(Struct { id })
         },
-        ModuleItem::GlobalVariable(var) => {
-            let loc = Location::new(file_id, var);
+        ModuleItem::GlobalVariable(variable) => {
+            let loc = Location::new(file_id, variable);
             let id = database.intern_global_variable(loc);
             ModuleDef::GlobalVariable(GlobalVariable { id })
         },
@@ -734,7 +734,9 @@ impl ModuleDef {
     pub const fn as_def_with_body_id(&self) -> Option<DefinitionWithBodyId> {
         match *self {
             Self::Function(function) => Some(DefinitionWithBodyId::Function(function.id)),
-            Self::GlobalVariable(var) => Some(DefinitionWithBodyId::GlobalVariable(var.id)),
+            Self::GlobalVariable(variable) => {
+                Some(DefinitionWithBodyId::GlobalVariable(variable.id))
+            },
             Self::GlobalConstant(constant) => {
                 Some(DefinitionWithBodyId::GlobalConstant(constant.id))
             },
@@ -779,9 +781,9 @@ impl Module {
         for item in self.items(database) {
             match item {
                 ModuleDef::Function(_function) => {},
-                ModuleDef::GlobalVariable(var) => {
-                    diagnostics::global_variable::collect(database, var.id, |error| {
-                        if let Some(source) = var.source(database) {
+                ModuleDef::GlobalVariable(variable) => {
+                    diagnostics::global_variable::collect(database, variable.id, |error| {
+                        if let Some(source) = variable.source(database) {
                             let source = source.map(|declaration| AstPointer::new(&declaration));
                             accumulator.push(diagnostics::any_diag_from_global_var(error, source));
                         }
