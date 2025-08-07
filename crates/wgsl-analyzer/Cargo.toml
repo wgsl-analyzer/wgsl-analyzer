@@ -71,7 +71,7 @@ parser.workspace = true
 vfs-notify.workspace = true
 vfs.workspace = true
 paths.workspace = true
-camino = "1.1.10"
+camino = "1.1.11"
 base-db.workspace = true
 line-index.workspace = true
 
