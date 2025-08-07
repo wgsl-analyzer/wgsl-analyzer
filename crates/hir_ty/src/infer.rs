@@ -24,9 +24,9 @@ use crate::{
     database::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
     ty::{
-        ArraySize, ArrayType, AtomicType, BoundVariable, MatrixType, Pointer, Reference, SamplerType,
-        ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType, TyKind, Type,
-        VecSize, VectorType,
+        ArraySize, ArrayType, AtomicType, BoundVariable, MatrixType, Pointer, Reference,
+        SamplerType, ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType,
+        TyKind, Type, VecSize, VectorType,
     },
 };
 
@@ -1307,7 +1307,9 @@ impl<'database> InferenceContext<'database> {
                 VecSize::Two => VecDimensionality::Two,
                 VecSize::Three => VecDimensionality::Three,
                 VecSize::Four => VecDimensionality::Four,
-                VecSize::BoundVariable(_) => unreachable!("Can never have unbound type at this point"),
+                VecSize::BoundVariable(_) => {
+                    unreachable!("Can never have unbound type at this point")
+                },
             }
         }
 
@@ -1464,7 +1466,9 @@ impl UnificationTable {
         r#type: Type,
     ) -> Type {
         match r#type.kind(database) {
-            TyKind::BoundVariable(variable) => *self.types.get(&variable).expect("type not constrained"),
+            TyKind::BoundVariable(variable) => {
+                *self.types.get(&variable).expect("type not constrained")
+            },
             TyKind::Vector(VectorType {
                 size,
                 component_type: inner,

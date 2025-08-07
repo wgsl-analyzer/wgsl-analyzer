@@ -4,9 +4,9 @@ use crate::{
     database::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
     ty::{
-        AccessMode, AddressSpace, ArraySize, ArrayType, AtomicType, BoundVariable, MatrixType, Pointer,
-        SamplerType, ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType,
-        TyKind, Type, VecSize,
+        AccessMode, AddressSpace, ArraySize, ArrayType, AtomicType, BoundVariable, MatrixType,
+        Pointer, SamplerType, ScalarType, TexelFormat, TextureDimensionality, TextureKind,
+        TextureType, TyKind, Type, VecSize,
     },
 };
 

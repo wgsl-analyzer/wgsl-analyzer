@@ -373,7 +373,9 @@ pub(crate) fn any_diag_from_global_var(
     variable: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
 ) -> AnyDiagnostic {
     match var_diagnostic {
-        GlobalVariableDiagnostic::MissingAddressSpace => AnyDiagnostic::MissingAddressSpace { variable },
+        GlobalVariableDiagnostic::MissingAddressSpace => {
+            AnyDiagnostic::MissingAddressSpace { variable }
+        },
         GlobalVariableDiagnostic::AddressSpaceError(error) => {
             AnyDiagnostic::InvalidAddressSpace { variable, error }
         },

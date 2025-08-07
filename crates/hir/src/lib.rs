@@ -548,7 +548,9 @@ impl ModuleDef {
     pub const fn as_def_with_body_id(&self) -> Option<DefinitionWithBodyId> {
         match *self {
             Self::Function(function) => Some(DefinitionWithBodyId::Function(function.id)),
-            Self::GlobalVariable(variable) => Some(DefinitionWithBodyId::GlobalVariable(variable.id)),
+            Self::GlobalVariable(variable) => {
+                Some(DefinitionWithBodyId::GlobalVariable(variable.id))
+            },
             Self::GlobalConstant(constant) => {
                 Some(DefinitionWithBodyId::GlobalConstant(constant.id))
             },

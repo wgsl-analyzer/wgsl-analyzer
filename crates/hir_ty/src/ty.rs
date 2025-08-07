@@ -658,7 +658,9 @@ impl fmt::Display for TexelFormat {
             Self::Rg32uint => "rg32uint",
             Self::Rg32sint => "rg32sint",
             Self::Rg32float => "rg32float",
-            Self::BoundVariable(variable) => return formatter.write_char(('F'..).nth(variable.index).unwrap()),
+            Self::BoundVariable(variable) => {
+                return formatter.write_char(('F'..).nth(variable.index).unwrap());
+            },
             Self::Any => "_",
         };
         formatter.write_str(str)

@@ -60,7 +60,10 @@ impl fmt::Debug for VecSize {
             Self::Two => write!(formatter, "Two"),
             Self::Three => write!(formatter, "Three"),
             Self::Four => write!(formatter, "Four"),
-            Self::Bound(variable) => write!(formatter, "BoundVariable(BoundVariable {{ index: {variable} }})"),
+            Self::Bound(variable) => write!(
+                formatter,
+                "BoundVariable(BoundVariable {{ index: {variable} }})"
+            ),
         }
     }
 }
