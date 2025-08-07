@@ -90,7 +90,7 @@ arrayvec = "0.7.6"
 base64 = "0.22"
 bitflags = "2.9.1"
 cargo_metadata = "0.19.1"
-camino = "1.1.10"
+camino = "1.1.11"
 dirs = "5.0.1"
 scip = "0.5.2"
 chalk-solve = { version = "0.99.0", default-features = false }
