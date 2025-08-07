@@ -142,7 +142,7 @@ pub struct ConfigData {
     pub trace: TraceConfig,
     pub inlay_hints: InlayHintsConfig,
     pub diagnostics: DiagnosticsConfig,
-    
+
     /// How many worker threads to handle priming caches. The default `0` means to pick automatically.
     pub cache_priming_num_threads: NumThreads,
     /// How many worker threads in the main loop. The default `null` means to pick automatically.
