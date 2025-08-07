@@ -11,11 +11,21 @@ token Semi=';' LPar='(' RPar=')' Comma=',' Eq='=' Colon=':' LBrace='{' RBrace='}
       Percent='%' Underscore='_' AndEq='&=' StarEq='*=' PlusEq='+=' PipeEq='|=' MinusEq='-='
       SlashEq='/=' CaretEq='^=' PercentEq='%=' Plus2='++' Minus2='--';
 token Ident='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>';
+token EntrypointExpression = '<expression entrypoint>' EntrypointStatement = '<statement entrypoint>'
+      EntrypointType = '<type entrypoint>' EntrypointAttribute  = '<attribute entrypoint>';
 token Blankspace LineEndingComment BlockComment;
 
 skip Blankspace LineEndingComment BlockComment;
 
-start translation_unit;
+start start_helper;
+
+start_helper^:
+  translation_unit
+| EntrypointExpression expression
+| EntrypointStatement statement
+| EntrypointType type_specifier
+| EntrypointAttribute attribute
+;
 
 // later validate that directives come before declarations to improve error messages
 translation_unit: (global_item | ';')*;

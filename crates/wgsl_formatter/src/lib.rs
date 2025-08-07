@@ -309,7 +309,7 @@ fn format_syntax_node(
                     matches!(
                         parent.kind(),
                         |SyntaxKind::WhileStatement| SyntaxKind::IfStatement
-                            | SyntaxKind::ElseIfBlock
+                            | SyntaxKind::ElseIfClause
                     )
                 })
             {

@@ -746,7 +746,7 @@ impl CompoundAssignmentStatement {
 }
 
 ast_node! {
-    ElseIfBlock:
+    ElseIfClause:
     else_token: Option<SyntaxToken Else>;
     if_token: Option<SyntaxToken If>;
     condition: Option<Expression>;
@@ -754,7 +754,7 @@ ast_node! {
 }
 
 ast_node! {
-    ElseBlock:
+    ElseClause:
     else_token: Option<SyntaxToken Else>;
     block: Option<CompoundStatement>;
 }
@@ -762,10 +762,9 @@ ast_node! {
 ast_node! {
     IfStatement:
     if_token: Option<SyntaxToken If>;
-    condition: Option<Expression>;
-    block: Option<CompoundStatement>;
-    else_if_blocks: AstChildren<ElseIfBlock>;
-    else_block: Option<ElseBlock>;
+    if_block: AstChildren<IfClause>;
+    else_if_blocks: AstChildren<ElseIfClause>;
+    else_block: Option<ElseClause>;
 }
 
 ast_node! {

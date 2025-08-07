@@ -646,10 +646,10 @@ fn if_statement(parser: &mut Parser<'_, '_>) {
             }
 
             compound_statement(parser);
-            marker_else.complete(parser, SyntaxKind::ElseIfBlock);
+            marker_else.complete(parser, SyntaxKind::ElseIfClause);
         } else if parser.at(SyntaxKind::BraceLeft) {
             compound_statement(parser);
-            marker_else.complete(parser, SyntaxKind::ElseBlock);
+            marker_else.complete(parser, SyntaxKind::ElseClause);
         } else {
             marker_else.complete(parser, SyntaxKind::Error);
             parser.error_recovery(&[SyntaxKind::Else]);

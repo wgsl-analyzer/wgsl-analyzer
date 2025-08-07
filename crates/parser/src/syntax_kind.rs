@@ -47,6 +47,11 @@ pub enum SyntaxKind {
     ConstDeclaration,
     OverrideDeclaration,
 
+    /// `continue;`
+    ContinueStatement,
+    /// `break;`
+    BreakStatement,
+
     /// [9.5. Function Call Statement](https://www.w3.org/TR/WGSL/#function-call-statement)
     FunctionCallStatement,
 
@@ -73,8 +78,9 @@ pub enum SyntaxKind {
 
     /// `i++`, `i--`
     IncrementDecrementStatement,
-    ElseIfBlock,
-    ElseBlock,
+    IfClause,
+    ElseIfClause,
+    ElseClause,
     /// `for(init, cmp, update) {}`
     ForStatement,
     ForInitializer,
@@ -101,7 +107,7 @@ pub enum SyntaxKind {
     TypeInitializer,
     /// `vec3(1.0)`
     InferredInitializer,
-    /// `return foo`
+    /// `return foo;`
     ReturnStatement,
     /// an expression of the form `left_side <op> right_side`
     InfixExpression,

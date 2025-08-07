@@ -129,16 +129,14 @@ pub fn parse_entrypoint(
     let parsed = match entrypoint {
         ParseEntryPoint::File => Parser::parse(input, &mut diags),
         ParseEntryPoint::Expression => {
-            Parser::parse_generic(input, &mut diags, Parser::rule_expression)
+            Parser::parse_custom(input, &mut diags, Token::EntrypointExpression)
         },
         ParseEntryPoint::Statement => {
-            Parser::parse_generic(input, &mut diags, Parser::rule_statement)
+            Parser::parse_custom(input, &mut diags, Token::EntrypointStatement)
         },
-        ParseEntryPoint::Type => {
-            Parser::parse_generic(input, &mut diags, Parser::rule_type_specifier)
-        },
+        ParseEntryPoint::Type => Parser::parse_custom(input, &mut diags, Token::EntrypointType),
         ParseEntryPoint::Attribute => {
-            Parser::parse_generic(input, &mut diags, Parser::rule_attribute)
+            Parser::parse_custom(input, &mut diags, Token::EntrypointAttribute)
         },
         ParseEntryPoint::FunctionParameterList => {
             todo!("Remove this")
@@ -184,7 +182,6 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             }
         }
         assert_eq!(rule_ends.len(), 0, "All rules should have been consumed");
-
         self.builder.finish()
     }
 
@@ -203,7 +200,7 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::BinaryExpression => self.start_node(SyntaxKind::InfixExpression),
             Rule::Literal => self.start_node(SyntaxKind::Literal),
             Rule::BreakIfStatement => todo!(),
-            Rule::BreakStatement => todo!(),
+            Rule::BreakStatement => self.start_node(SyntaxKind::BreakStatement),
             Rule::CaseClause => todo!(),
             Rule::CaseSelector => todo!(),
             Rule::CaseSelectors => todo!(),
@@ -211,7 +208,7 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::CompoundAssignmentStatement => todo!(),
             Rule::CompoundStatement => self.start_node(SyntaxKind::CompoundStatement),
             Rule::ConstDeclaration => self.start_node(SyntaxKind::ConstDeclaration),
-            Rule::ContinueStatement => todo!(),
+            Rule::ContinueStatement => self.start_node(SyntaxKind::ContinueStatement),
             Rule::ContinuingStatement => self.start_node(SyntaxKind::ContinuingStatement),
             Rule::DecrementStatement => self.start_node(SyntaxKind::IncrementDecrementStatement),
             Rule::DefaultAloneClause => todo!(),
@@ -220,8 +217,8 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::DiagnosticDirective => todo!(),
             Rule::DiagnosticRuleName => todo!(),
             Rule::DiscardStatement => todo!(),
-            Rule::ElseClause => todo!(),
-            Rule::ElseIfClause => todo!(),
+            Rule::ElseClause => self.start_node(SyntaxKind::ElseClause),
+            Rule::ElseIfClause => self.start_node(SyntaxKind::ElseIfClause),
             Rule::EmptyStatement => todo!(),
             Rule::EnableDirective => todo!(),
             Rule::Error => self.start_node(SyntaxKind::Error),
@@ -244,18 +241,18 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::GlobalValueDeclaration => todo!(),
             Rule::GlobalVariableDeclaration => todo!(),
             Rule::IdentExpression => self.start_node(SyntaxKind::IdentExpression),
-            Rule::IfClause => todo!(),
+            Rule::IfClause => self.start_node(SyntaxKind::IfClause),
             Rule::IfStatement => self.start_node(SyntaxKind::IfStatement),
             Rule::IncrementStatement => self.start_node(SyntaxKind::IncrementDecrementStatement),
             Rule::IndexingExpression => todo!(),
             Rule::IdentOrFunction => panic!("ident-or-function should be flattened"),
             Rule::LetDeclaration => self.start_node(SyntaxKind::LetDeclaration),
             Rule::LhsExpression => todo!(),
-            Rule::LoopStatement => todo!(),
+            Rule::LoopStatement => self.start_node(SyntaxKind::LoopStatement),
             Rule::OverrideDeclaration => self.start_node(SyntaxKind::OverrideDeclaration),
             Rule::Parameter => self.start_node(SyntaxKind::Parameter),
             Rule::Parameters => todo!(),
-            Rule::ParenExpression => todo!(),
+            Rule::ParenExpression => self.start_node(SyntaxKind::ParenthesisExpression),
             Rule::PhonyAssignmentStatement => todo!(),
             Rule::RequiresDirective => todo!(),
             Rule::ReturnStatement => self.start_node(SyntaxKind::ReturnStatement),
@@ -280,6 +277,8 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::VariableStatement => self.start_node(SyntaxKind::VariableStatement),
             Rule::VariableUpdating => todo!(),
             Rule::WhileStatement => self.start_node(SyntaxKind::WhileStatement),
+            // Helper token for custom parse entrypoints
+            Rule::StartHelper => panic!("start helper should be flattened"),
         }
     }
 
@@ -293,7 +292,7 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
     fn end_rule(
         &mut self,
         _node_ref: NodeRef,
-        rule: Rule,
+        _rule: Rule,
     ) {
         self.builder.finish_node();
     }
@@ -304,6 +303,15 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
         index: CstIndex,
     ) {
         if token == Token::EOF {
+            return; // Ignore
+        }
+        if matches!(
+            token,
+            Token::EntrypointExpression
+                | Token::EntrypointStatement
+                | Token::EntrypointType
+                | Token::EntrypointAttribute
+        ) {
             return; // Ignore
         }
         let text = &self.cst.source[self.cst.spans[usize::from(index)].clone()];
@@ -392,6 +400,10 @@ impl TryFrom<Token> for SyntaxKind {
             Token::LineEndingComment => SyntaxKind::LineEndingComment,
             Token::BlockComment => SyntaxKind::BlockComment,
             Token::Error => SyntaxKind::Error,
+            Token::EntrypointExpression => return Err(()),
+            Token::EntrypointStatement => return Err(()),
+            Token::EntrypointType => return Err(()),
+            Token::EntrypointAttribute => return Err(()),
         };
         Ok(output)
     }
@@ -401,13 +413,15 @@ impl<'a> Parser<'a> {
     /// Returns the CST for a parse with the given `source` file and writes diagnostics to `diags`.
     ///
     /// The context can be explicitly defined for the parse.
-    pub fn parse_with_context_generic<Function: Fn(&mut Parser<'a>, &mut Vec<Diagnostic>)>(
+    pub fn parse_with_context_custom(
         source: &'a str,
         diags: &mut Vec<Diagnostic>,
         context: Context<'a>,
-        start_rule: Function,
+        start_token: Token,
     ) -> Cst<'a> {
-        let (tokens, spans) = Self::create_tokens(source, diags);
+        let (mut tokens, mut spans) = Self::create_tokens(source, diags);
+        tokens.insert(0, start_token);
+        spans.insert(0, 0..0);
         let max_offset = source.len();
         let mut parser = Self {
             current: Token::EOF,
@@ -420,19 +434,27 @@ impl<'a> Parser<'a> {
             error_cooldown: false,
             in_ordered_choice: false,
         };
-        parser.init_skip();
-        start_rule(&mut parser, diags);
+        parser.rule_start_helper(diags);
+        // Node 0 is that dummy token
+        let child_count = parser.cst.nodes.len() - 2;
+        // I suspect that this would fail when whitespaces are involved,
+        // but this only exists for unit tests anyways
+        if let Node::Rule(_, cst_index) = &mut parser.cst.nodes[1] {
+            *cst_index = CstIndex::from(child_count);
+        } else {
+            panic!("Node 1 should be a rule")
+        }
         parser.cst
     }
     /// Returns the CST for a parse with the given `source` file and writes diagnostics to `diags`.
     ///
     /// The context will be default initialized for the parse.
-    pub fn parse_generic<Function: Fn(&mut Parser<'a>, &mut Vec<Diagnostic>)>(
+    pub fn parse_custom(
         source: &'a str,
         diags: &mut Vec<Diagnostic>,
-        start_rule: Function,
+        start_token: Token,
     ) -> Cst<'a> {
-        Self::parse_with_context_generic(source, diags, Context::default(), start_rule)
+        Self::parse_with_context_custom(source, diags, Context::default(), start_token)
     }
 
     /// Implements the template disambiguation algorithm and remembers the results in a hash set
