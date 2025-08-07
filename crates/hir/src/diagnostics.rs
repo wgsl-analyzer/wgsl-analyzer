@@ -126,10 +126,10 @@ pub enum AnyDiagnostic {
         actual: Type,
     },
     MissingAddressSpace {
-        var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
+        variable: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
     },
     InvalidAddressSpace {
-        var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
+        variable: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
         error: AddressSpaceError,
     },
 
@@ -178,8 +178,8 @@ impl AnyDiagnostic {
             | Self::DerefNotPointer { expression, .. }
             | Self::NoConstructor { expression, .. }
             | Self::PrecedenceParensRequired { expression, .. } => expression.file_id,
-            Self::MissingAddressSpace { var } | Self::InvalidAddressSpace { var, .. } => {
-                var.file_id
+            Self::MissingAddressSpace { variable } | Self::InvalidAddressSpace { variable, .. } => {
+                variable.file_id
             },
             Self::UnresolvedImport { import, .. } => import.file_id,
             Self::InvalidType { file_id, .. }
@@ -370,12 +370,12 @@ pub(crate) fn any_diag_from_infer_diagnostic(
 
 pub(crate) fn any_diag_from_global_var(
     var_diagnostic: GlobalVariableDiagnostic,
-    var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
+    variable: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
 ) -> AnyDiagnostic {
     match var_diagnostic {
-        GlobalVariableDiagnostic::MissingAddressSpace => AnyDiagnostic::MissingAddressSpace { var },
+        GlobalVariableDiagnostic::MissingAddressSpace => AnyDiagnostic::MissingAddressSpace { variable },
         GlobalVariableDiagnostic::AddressSpaceError(error) => {
-            AnyDiagnostic::InvalidAddressSpace { var, error }
+            AnyDiagnostic::InvalidAddressSpace { variable, error }
         },
     }
 }

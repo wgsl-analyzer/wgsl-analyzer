@@ -56,18 +56,18 @@ fn write_pretty_module_item(
             }
             _ = write!(buffer, "}}");
         },
-        ModuleItem::GlobalVariable(var) => {
-            let var = &module.data[var.index];
-            let r#type = var
+        ModuleItem::GlobalVariable(variable) => {
+            let variable = &module.data[variable.index];
+            let r#type = variable
                 .r#type
                 .map(|r#type| database.lookup_intern_type_ref(r#type));
-            _ = write!(buffer, "var {}", &var.name.0);
+            _ = write!(buffer, "var {}", &variable.name.0);
             if let Some(r#type) = r#type {
                 _ = write!(buffer, ": {type}");
             }
         },
-        ModuleItem::GlobalConstant(var) => {
-            let constant = &module.data[var.index];
+        ModuleItem::GlobalConstant(variable) => {
+            let constant = &module.data[variable.index];
             let r#type = constant
                 .r#type
                 .map(|r#type| database.lookup_intern_type_ref(r#type));
@@ -76,8 +76,8 @@ fn write_pretty_module_item(
                 _ = write!(buffer, ": {type}");
             }
         },
-        ModuleItem::Override(var) => {
-            let override_decl = &module.data[var.index];
+        ModuleItem::Override(variable) => {
+            let override_decl = &module.data[variable.index];
             let r#type = override_decl
                 .r#type
                 .map(|r#type| database.lookup_intern_type_ref(r#type));

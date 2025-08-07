@@ -60,7 +60,7 @@ impl fmt::Debug for VecSize {
             Self::Two => write!(formatter, "Two"),
             Self::Three => write!(formatter, "Three"),
             Self::Four => write!(formatter, "Four"),
-            Self::Bound(var) => write!(formatter, "BoundVar(BoundVar {{ index: {var} }})"),
+            Self::Bound(variable) => write!(formatter, "BoundVariable(BoundVariable {{ index: {variable} }})"),
         }
     }
 }
@@ -388,8 +388,8 @@ fn parse_ty(
         "sampler" => Type::Sampler { comparison: false },
         "sampler_comparison" => Type::Sampler { comparison: true },
         "F::StorageType" => {
-            let var = generics.get(&'F').unwrap().0;
-            Type::StorageTypeOfTexelFormat(var)
+            let variable = generics.get(&'F').unwrap().0;
+            Type::StorageTypeOfTexelFormat(variable)
         },
         other => unimplemented!("{}", other),
     }
@@ -411,7 +411,7 @@ fn type_to_rust(r#type: &Type) -> String {
             format!("TyKind::Scalar(ScalarType::{type:?}).intern(database)")
         },
         Type::Bound(index) => {
-            format!("TyKind::BoundVar(BoundVar {{ index: {index} }}).intern(database)",)
+            format!("TyKind::BoundVariable(BoundVariable {{ index: {index} }}).intern(database)",)
         },
         Type::Texture(texture) => {
             format!(
@@ -426,8 +426,8 @@ fn type_to_rust(r#type: &Type) -> String {
                     TextureKind::Storage(texel_format, access_mode) => {
                         let texel_format = match texel_format {
                             TexelFormat::Any => "Any".to_owned(),
-                            TexelFormat::Bound(var) => {
-                                format!("BoundVar(BoundVar {{ index: {var} }})")
+                            TexelFormat::Bound(variable) => {
+                                format!("BoundVariable(BoundVariable {{ index: {variable} }})")
                             },
                         };
 
@@ -466,9 +466,9 @@ fn type_to_rust(r#type: &Type) -> String {
         }}).intern(database)",
             type_to_rust(inner)
         ),
-        Type::StorageTypeOfTexelFormat(var) => {
+        Type::StorageTypeOfTexelFormat(variable) => {
             format!(
-                "TyKind::StorageTypeOfTexelFormat(BoundVar {{ index: {var} }}).intern(database)"
+                "TyKind::StorageTypeOfTexelFormat(BoundVariable {{ index: {variable} }}).intern(database)"
             )
         },
     }
