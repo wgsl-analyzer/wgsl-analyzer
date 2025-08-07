@@ -94,8 +94,8 @@ impl fmt::Display for ScalarType {
             Self::Int32 => formatter.write_str("i32"),
             Self::Uint32 => formatter.write_str("u32"),
             // SHADER_INT64
-            Self::Int64 => formatter.write_str("i32"),
-            Self::Uint64 => formatter.write_str("u32"),
+            Self::Int64 => formatter.write_str("i64"),
+            Self::Uint64 => formatter.write_str("u64"),
         }
     }
 }
