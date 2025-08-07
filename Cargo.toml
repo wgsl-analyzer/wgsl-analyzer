@@ -82,7 +82,7 @@ query-group = { package = "query-group-macro", git = "https://github.com/rust-la
 # crates from rust-analyzer that are published separately
 line-index = "0.1.2"
 la-arena = "0.3.1"
-lsp-server = "0.7.8"
+lsp-server = "0.7.9"
 
 # non-local crates
 anyhow = "1.0.98"
