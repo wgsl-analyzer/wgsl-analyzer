@@ -126,10 +126,10 @@ pub enum AnyDiagnostic {
         actual: Type,
     },
     MissingAddressSpace {
-        var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
+        var: InFile<AstPointer<ast::VariableDeclaration>>,
     },
     InvalidAddressSpace {
-        var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
+        var: InFile<AstPointer<ast::VariableDeclaration>>,
         error: AddressSpaceError,
     },
 
@@ -370,7 +370,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
 
 pub(crate) fn any_diag_from_global_var(
     var_diagnostic: GlobalVariableDiagnostic,
-    var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
+    var: InFile<AstPointer<ast::VariableDeclaration>>,
 ) -> AnyDiagnostic {
     match var_diagnostic {
         GlobalVariableDiagnostic::MissingAddressSpace => AnyDiagnostic::MissingAddressSpace { var },

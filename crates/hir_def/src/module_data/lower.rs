@@ -150,7 +150,7 @@ impl<'database> Ctx<'database> {
 
     fn lower_global_constant(
         &mut self,
-        constant: &syntax::ast::GlobalConstantDeclaration,
+        constant: &syntax::ast::ConstantDeclaration,
     ) -> Option<ModuleItemId<GlobalConstant>> {
         let name = constant.binding()?.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(constant);
@@ -173,7 +173,7 @@ impl<'database> Ctx<'database> {
 
     fn lower_global_var(
         &mut self,
-        var: &syntax::ast::GlobalVariableDeclaration,
+        var: &syntax::ast::VariableDeclaration,
     ) -> Option<ModuleItemId<GlobalVariable>> {
         let name = var.binding()?.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(var);
@@ -265,7 +265,7 @@ impl<'database> Ctx<'database> {
 
     fn lower_function_param_list(
         &mut self,
-        function_param_list: &ast::ParameterList,
+        function_param_list: &ast::FunctionParameters,
     ) -> Option<()> {
         for parameter in function_param_list.parameters() {
             if let Some(parameter) = parameter.variable_ident_declaration() {
@@ -295,7 +295,7 @@ impl<'database> Ctx<'database> {
                         .parse_import(key.clone(), syntax::ParseEntryPoint::FunctionParameterList),
                 };
                 if let Ok(parse) = parse {
-                    let param_list = ast::ParameterList::cast(parse.syntax())?;
+                    let param_list = ast::FunctionParameters::cast(parse.syntax())?;
                     self.lower_function_param_list(&param_list)?;
                 }
             }

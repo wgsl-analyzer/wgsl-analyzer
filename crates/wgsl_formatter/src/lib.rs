@@ -75,7 +75,7 @@ fn is_indent_kind(node: &SyntaxNode) -> bool {
         return true;
     }
 
-    let param_list_left_paren = ast::ParameterList::cast(node.clone())
+    let param_list_left_paren = ast::FunctionParameters::cast(node.clone())
         .and_then(|list| list.left_parenthesis_token())
         .or_else(|| {
             let list = ast::FunctionParameterList::cast(node.clone())?;

@@ -467,11 +467,11 @@ fn get_hints(
     } else if let Some((binding, r#type)) = ast::VariableStatement::cast(node.clone())
         .and_then(|statement| Some((statement.binding()?, statement.ty())))
         .or_else(|| {
-            let statement = ast::GlobalConstantDeclaration::cast(node.clone())?;
+            let statement = ast::ConstantDeclaration::cast(node.clone())?;
             Some((statement.binding()?, statement.ty()))
         })
         .or_else(|| {
-            let statement = ast::GlobalVariableDeclaration::cast(node.clone())?;
+            let statement = ast::VariableDeclaration::cast(node.clone())?;
             Some((statement.binding()?, statement.ty()))
         })
     {
@@ -612,7 +612,7 @@ fn get_string_representation(expression: &AstExpression) -> Option<String> {
             get_string_representation(&expression.expression()?)
         },
         AstExpression::FieldExpression(expression) => {
-            Some(expression.name_ref()?.text().as_str().to_owned())
+            Some(expression.field()?.text().as_str().to_owned())
         },
         AstExpression::InfixExpression(_)
         | AstExpression::Literal(_)

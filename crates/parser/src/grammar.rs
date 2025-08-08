@@ -95,7 +95,7 @@ fn global_variable_declaration(
         parser,
         marker,
         SyntaxKind::Var,
-        SyntaxKind::GlobalVariableDeclaration,
+        SyntaxKind::VariableDeclaration,
     );
 }
 
@@ -104,7 +104,7 @@ fn global_constant_declaration(
     marker: Marker,
     kind: SyntaxKind,
 ) {
-    global_declaration(parser, marker, kind, SyntaxKind::GlobalConstantDeclaration);
+    global_declaration(parser, marker, kind, SyntaxKind::ConstantDeclaration);
 }
 
 fn global_declaration(
@@ -120,7 +120,7 @@ fn global_declaration(
 
     if parser.at_set(ITEM_RECOVERY_SET) {
         parser.error_no_bump(&[SyntaxKind::Binding]);
-        marker.complete(parser, SyntaxKind::GlobalVariableDeclaration);
+        marker.complete(parser, SyntaxKind::VariableDeclaration);
         return;
     }
 
@@ -256,7 +256,10 @@ fn function(
 fn name(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     parser.expect(SyntaxKind::Identifier);
-    marker.complete(parser, SyntaxKind::Name);
+    marker.complete(
+        parser,
+        SyntaxKind::IdentExpression, /* used to say SyntaxKind::Name */
+    );
 }
 
 fn name_recover(

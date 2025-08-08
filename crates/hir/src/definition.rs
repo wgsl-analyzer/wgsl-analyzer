@@ -53,7 +53,7 @@ fn resolve_name_ref(
 ) -> Option<Definition> {
     let parent = name_ref.syntax().parent()?;
 
-    if let Some(expression) = ast::PathExpression::cast(parent.clone()) {
+    if let Some(expression) = ast::IdentExpression::cast(parent.clone()) {
         let name = Name::from(expression.name_ref()?);
         let definition = semantics.find_container(file_id, expression.syntax())?;
         let definition =

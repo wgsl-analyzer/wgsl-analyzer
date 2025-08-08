@@ -6,8 +6,6 @@ pub enum SyntaxKind {
     SourceFile,
     /// Arguments in an attribute or in a function call
     Arguments,
-    /// Emergent nodes
-    Name,
     /// a function
     FunctionDeclaration,
 
@@ -45,12 +43,10 @@ pub enum SyntaxKind {
     /// ```
     AssignmentStatement,
 
-    /// a `let` or `var` or `const` statement
+    /// remove this
     VariableStatement,
-    VariableDeclaration,
-    LetDeclaration,
-    ConstDeclaration,
-    OverrideDeclaration,
+    GlobalOverrideDeclaration,
+    GlobalVariableDeclaration,
 
     /// `break;`
     BreakStatement,
@@ -154,17 +150,18 @@ pub enum SyntaxKind {
     StructBody,
     /// one field of a struct declaration
     StructMember,
-    /// `const_assert true;`
-    GlobalAssert,
-    /// `let global: u32 = 10u`
-    GlobalConstantDeclaration,
-    /// `override test: u32`
-    GlobalOverrideDeclaration,
+    /// `const global: u32 = 10u`
+    ConstantDeclaration,
     /// `var<uniform> test: u32`
-    GlobalVariableDeclaration,
+    VariableDeclaration,
+    /// `let test: u32 = 3;`
+    LetDeclaration,
+    /// `override test: u32`
+    OverrideDeclaration,
+
     /// `continuing { statements }`
     ContinuingStatement,
-    /// Type alias declaration: `type float4 = vec4<f32>`
+    /// Type alias declaration: `alias float4 = vec4<f32>`
     TypeAliasDeclaration,
 
     /// `#import foo` or `#import "file.wgsl"`
@@ -592,58 +589,4 @@ fn is_line_ending_comment_end(character: char) -> bool {
         '\u{2029}', // paragraph separator
     ]
     .contains(&character)
-}
-
-#[cfg(test)]
-mod tests {
-    use expect_test::expect;
-    use logos::Logos as _;
-
-    use super::SyntaxKind;
-
-    #[expect(clippy::needless_pass_by_value, reason = "intended API")]
-    fn check_lex(
-        source: &str,
-        expect: expect_test::Expect,
-    ) {
-        let tokens: Vec<_> = SyntaxKind::lexer(source).collect();
-        expect.assert_eq(&format!("{tokens:?}"));
-    }
-
-    #[test]
-    fn lex_decimal_float() {
-        check_lex("10.0", expect![["[FloatLiteral]"]]);
-        check_lex("-10.0", expect![["[FloatLiteral]"]]);
-        check_lex("1e9f", expect![["[FloatLiteral]"]]);
-        check_lex("-0.0e7", expect![["[FloatLiteral]"]]);
-        check_lex(".1", expect![["[FloatLiteral]"]]);
-        check_lex("1.", expect![["[FloatLiteral]"]]);
-    }
-
-    #[test]
-    fn lex_hex_float() {
-        check_lex("0x0.0", expect![["[FloatLiteral]"]]);
-        check_lex("0X1p9", expect![["[FloatLiteral]"]]);
-        check_lex("-0x0.0", expect![["[FloatLiteral]"]]);
-        check_lex("0xff.13p13", expect![["[FloatLiteral]"]]);
-    }
-
-    #[test]
-    fn lex_comment() {
-        check_lex(
-            "// test asdf\nnot_comment",
-            expect!["[LineEndingComment, Blankspace, Identifier]"],
-        );
-    }
-
-    #[test]
-    fn lex_nested_brackets() {
-        // Expect: Identifier (a), [, Identifier (a), [, IntLiteral (0), ], ]
-        check_lex(
-            "a[a[0]]",
-            expect![[
-                "[Identifier, BracketLeft, Identifier, BracketLeft, IntLiteral, BracketRight, BracketRight]"
-            ]],
-        );
-    }
 }

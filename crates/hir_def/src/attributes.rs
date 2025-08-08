@@ -3,7 +3,7 @@ use std::{iter, sync::Arc};
 use either::Either;
 use syntax::{
     HasAttributes, HasName as _,
-    ast::{self, IdentOrLiteral},
+    ast::{self},
 };
 
 use crate::{
