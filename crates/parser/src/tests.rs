@@ -1502,6 +1502,34 @@ fn parse_compound_assignment_statement_expression() {
 }
 
 #[test]
+fn parse_indexed_statement() {
+    check_statement(
+        "a[0] += a[2];",
+        expect![[r#"
+            SourceFile@0..13
+              CompoundAssignmentStatement@0..13
+                IndexExpression@0..4
+                  IdentExpression@0..1
+                    Identifier@0..1 "a"
+                  BracketLeft@1..2 "["
+                  Literal@2..3
+                    IntLiteral@2..3 "0"
+                  BracketRight@3..4 "]"
+                Blankspace@4..5 " "
+                PlusEqual@5..7 "+="
+                Blankspace@7..8 " "
+                IndexExpression@8..12
+                  IdentExpression@8..9
+                    Identifier@8..9 "a"
+                  BracketLeft@9..10 "["
+                  Literal@10..11
+                    IntLiteral@10..11 "2"
+                  BracketRight@11..12 "]"
+                Semicolon@12..13 ";""#]],
+    );
+}
+
+#[test]
 fn parse_var_without_initializer() {
     check_statement(
         "var x: u32;",
@@ -2764,6 +2792,30 @@ fn global_assert_statement() {
                   Literal@17..18
                     IntLiteral@17..18 "1"
                 Semicolon@18..19 ";""#]],
+    );
+}
+
+#[test]
+fn global_override_statement() {
+    check(
+        "override foo: u32 = 3;",
+        expect![[r#"
+            SourceFile@0..22
+              GlobalOverrideDeclaration@0..22
+                OverrideDeclaration@0..21
+                  Override@0..8 "override"
+                  Blankspace@8..9 " "
+                  Identifier@9..12 "foo"
+                  Colon@12..13 ":"
+                  Blankspace@13..14 " "
+                  TypeSpecifier@14..17
+                    Identifier@14..17 "u32"
+                  Blankspace@17..18 " "
+                  Equal@18..19 "="
+                  Blankspace@19..20 " "
+                  Literal@20..21
+                    IntLiteral@20..21 "3"
+                Semicolon@21..22 ";""#]],
     );
 }
 
