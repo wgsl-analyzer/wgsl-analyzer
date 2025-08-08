@@ -18,7 +18,10 @@ use lsp_server::Connection;
 use lsp_types::InitializeParams;
 use paths::{AbsPathBuf, Utf8PathBuf};
 use tracing::{info, warn};
-use tracing_subscriber::fmt::{Subscriber, writer::BoxMakeWriter};
+use tracing_subscriber::{
+    filter::filter_fn,
+    fmt::{Subscriber, writer::BoxMakeWriter},
+};
 use wgsl_analyzer::{
     Result,
     cli::flags,
@@ -43,7 +46,7 @@ fn main() -> Result<ExitCode> {
         wait_for_debugger();
     }
 
-    if let Err(error) = setup_logging2(flags.log_file.clone()) {
+    if let Err(error) = setup_logging(flags.log_file.clone()) {
         eprintln!("Failed to setup logging: {error:#}");
     }
 
@@ -275,7 +278,7 @@ fn patch_path_prefix(path: PathBuf) -> PathBuf {
     }
 }
 
-fn setup_logging2(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
+fn setup_logging(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
     if cfg!(windows)
         // This is required so that windows finds our pdb that is placed right beside the exe.
         // By default it doesn't look at the folder the exe resides in, only in the current working
@@ -352,18 +355,4 @@ fn with_extra_thread(
         .spawn(function)?;
     handle.join()?;
     Ok(())
-}
-
-fn setup_logging(trace: &TraceConfig) {
-    let level = if trace.extension { "debug" } else { "info" };
-    let filter = format!(
-        "{level},salsa=warn,naga=warn,lsp_server={lsp_server}",
-        lsp_server = if trace.server { "debug" } else { "info" }
-    );
-
-    Subscriber::builder()
-        .with_ansi(false)
-        .with_writer(stderr)
-        .with_env_filter(filter)
-        .init();
 }
