@@ -159,7 +159,6 @@ tracing-subscriber = { version = "0.3.18", default-features = false, features = 
   "std",
   "time",
   "tracing-log",
-  "env-filter",
 ] }
 triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
 url = "2.5.4"
