@@ -105,7 +105,7 @@ either = "1.15.0"
 expect-test = "1.5.1"
 fst = { version = "0.4.7", default-features = false }
 fxhash = "0.2.1"
-hashbrown = { version = "0.15.4", features = [
+hashbrown = { version = "0.15.5", features = [
   "inline-more",
 ], default-features = false }
 indexmap = "2.10.0"
