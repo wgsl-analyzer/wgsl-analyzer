@@ -186,9 +186,9 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
     ) {
         match rule {
             Rule::Arguments => self.start_node(SyntaxKind::Arguments),
-            Rule::ArgumentExpressionList => panic!("should be a Arguments instead"),
+            Rule::ArgumentExpressionList => panic!("should be arguments instead"),
             Rule::ArgumentExpressionListExpr => {
-                panic!("should be a Arguments instead")
+                panic!("should be arguments instead")
             },
             Rule::AssertStatement => self.start_node(SyntaxKind::AssertStatement),
             Rule::Attribute => self.start_node(SyntaxKind::Attribute),
@@ -199,12 +199,11 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::CaseClause => self.start_node(SyntaxKind::SwitchBodyCase),
             Rule::CaseSelector => self.start_node(SyntaxKind::SwitchCaseSelector),
             Rule::CaseSelectors => self.start_node(SyntaxKind::SwitchCaseSelectors),
-            Rule::CompoundAssignmentOperator => panic!("compound_assignment_operator is elided"),
             Rule::CompoundAssignmentStatement => {
                 self.start_node(SyntaxKind::CompoundAssignmentStatement)
             },
             Rule::CompoundStatement => self.start_node(SyntaxKind::CompoundStatement),
-            Rule::ConstDeclaration => self.start_node(SyntaxKind::ConstDeclaration),
+            Rule::ConstDeclaration => self.start_node(SyntaxKind::ConstantDeclaration),
             Rule::ContinueStatement => self.start_node(SyntaxKind::ContinueStatement),
             Rule::ContinuingStatement => self.start_node(SyntaxKind::ContinuingStatement),
             Rule::DecrementStatement => self.start_node(SyntaxKind::IncrementDecrementStatement),
@@ -219,41 +218,22 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::EmptyStatement => self.start_node(SyntaxKind::EmptyStatement),
             Rule::EnableDirective => todo!(),
             Rule::Error => self.start_node(SyntaxKind::Error),
-            Rule::ExprTemplateList => panic!("expr_template_list is elided"),
-            Rule::Expression => panic!("expressions should always be a more specific node"),
             Rule::FieldExpression => self.start_node(SyntaxKind::FieldExpression),
             Rule::ForCondition => self.start_node(SyntaxKind::ForCondition),
             Rule::ForInit => self.start_node(SyntaxKind::ForInitializer),
             Rule::ForStatement => self.start_node(SyntaxKind::ForStatement),
             Rule::ForUpdate => self.start_node(SyntaxKind::ForContinuingPart),
-            Rule::FullIdent => panic!("full_ident is elided"),
             Rule::FunctionCall => self.start_node(SyntaxKind::FunctionCall),
             Rule::FunctionCallStatement => self.start_node(SyntaxKind::FunctionCallStatement),
             Rule::FunctionDeclaration => self.start_node(SyntaxKind::FunctionDeclaration),
             Rule::FunctionParameters => self.start_node(SyntaxKind::FunctionParameters),
-            Rule::GlobalAssert => self.start_node(SyntaxKind::GlobalAssert),
-            Rule::GlobalConstDeclaration => self.start_node(SyntaxKind::GlobalConstantDeclaration),
-            Rule::GlobalDeclaration => {
-                panic!("global_declaration should always be a more specific node")
-            },
-            Rule::GlobalDirective => {
-                panic!("global_directive should always be a more specific node")
-            },
-            Rule::GlobalItem => panic!("global_item is elided"),
-            Rule::GlobalOverrideDeclaration => {
-                self.start_node(SyntaxKind::GlobalOverrideDeclaration)
-            },
-            Rule::GlobalVariableDeclaration => {
-                self.start_node(SyntaxKind::GlobalVariableDeclaration)
-            },
+            Rule::GlobalAssert => panic!("should be assert_statement instead"),
             Rule::IdentExpression => self.start_node(SyntaxKind::IdentExpression),
             Rule::IfClause => self.start_node(SyntaxKind::IfClause),
             Rule::IfStatement => self.start_node(SyntaxKind::IfStatement),
             Rule::IncrementStatement => self.start_node(SyntaxKind::IncrementDecrementStatement),
             Rule::IndexingExpression => self.start_node(SyntaxKind::IndexExpression),
-            Rule::IdentOrFunction => panic!("ident_or_function is elided"),
             Rule::LetDeclaration => self.start_node(SyntaxKind::LetDeclaration),
-            Rule::LhsExpression => panic!("lhs_expression should always be a more specific node"),
             Rule::LoopStatement => self.start_node(SyntaxKind::LoopStatement),
             Rule::OverrideDeclaration => self.start_node(SyntaxKind::OverrideDeclaration),
             Rule::Parameter => self.start_node(SyntaxKind::Parameter),
@@ -264,27 +244,40 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::ReturnType => self.start_node(SyntaxKind::ReturnType),
             Rule::SeverityControlName => todo!(),
             Rule::SimpleAssignmentStatement => self.start_node(SyntaxKind::AssignmentStatement),
-            Rule::Statement => panic!("statements should always be a more specific node"),
             Rule::StructBody => self.start_node(SyntaxKind::StructBody),
             Rule::StructDeclaration => self.start_node(SyntaxKind::StructDeclaration),
             Rule::StructMember => self.start_node(SyntaxKind::StructMember),
             Rule::SwitchBody => self.start_node(SyntaxKind::SwitchBody),
-            Rule::SwitchClause => panic!("switch_clause is elided"),
             Rule::SwitchStatement => self.start_node(SyntaxKind::SwitchStatement),
-            Rule::TemplateArgs => panic!("template_args is elided"),
             Rule::TemplateList => self.start_node(SyntaxKind::GenericArgumentList),
             Rule::TranslationUnit => self.start_node(SyntaxKind::SourceFile),
             Rule::TypeAliasDeclaration => self.start_node(SyntaxKind::TypeAliasDeclaration),
             Rule::TypeSpecifier => self.start_node(SyntaxKind::TypeSpecifier),
-            Rule::TypedIdent => panic!("typed_ident is elided"),
             Rule::UnaryExpression => self.start_node(SyntaxKind::PrefixExpression),
             Rule::VariableDeclaration => self.start_node(SyntaxKind::VariableDeclaration),
-            Rule::VariableOrValue => panic!("variable_or_value is elided"),
-            Rule::VariableStatement => self.start_node(SyntaxKind::VariableStatement),
-            Rule::VariableUpdating => {
-                panic!("variable_updating should always be a more specific node")
-            },
             Rule::WhileStatement => self.start_node(SyntaxKind::WhileStatement),
+            Rule::ConstDeclarationSemi
+            | Rule::CompoundAssignmentOperator
+            | Rule::ExprTemplateList
+            | Rule::FullIdent
+            | Rule::GlobalItem
+            | Rule::IdentOrFunction
+            | Rule::LetDeclarationSemi
+            | Rule::OverrideDeclarationSemi
+            | Rule::SwitchClause
+            | Rule::TemplateArgs
+            | Rule::TypedIdent
+            | Rule::VariableDeclarationSemi => {
+                panic!("{:?} is elided", rule)
+            },
+            Rule::Expression
+            | Rule::GlobalDeclaration
+            | Rule::GlobalDirective
+            | Rule::LhsExpression
+            | Rule::Statement
+            | Rule::VariableUpdating => {
+                panic!("{:?} should always be a more specific node", rule)
+            },
             // Custom parsing entrypoints. The extra "SourceFile" exists so that parsing errors are definitely caught in the root node
             Rule::StartAttribute => self.start_node(SyntaxKind::SourceFile),
             Rule::StartExpression => self.start_node(SyntaxKind::SourceFile),

@@ -229,7 +229,7 @@ mod support {
 }
 
 pub trait HasName: AstNode {
-    fn name(&self) -> Option<ast::Name> {
+    fn name(&self) -> Option<ast::Identifier> {
         support::child(self.syntax())
     }
 }
@@ -241,14 +241,8 @@ pub trait HasGenerics: AstNode {
 }
 
 pub trait HasAttributes: AstNode {
-    fn attribute_list(&self) -> Option<ast::AttributeList> {
-        support::child(self.syntax())
-    }
-    fn attributes(&self) -> Either<AstChildren<ast::Attribute>, std::iter::Empty<ast::Attribute>> {
-        match self.attribute_list() {
-            Some(list) => Either::Left(list.attributes()),
-            None => Either::Right(std::iter::empty()),
-        }
+    fn attributes(&self) -> AstChildren<ast::Attribute> {
+        support::children(self.syntax())
     }
 }
 

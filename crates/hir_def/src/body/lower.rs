@@ -14,7 +14,7 @@ use crate::{
 pub(super) fn lower_function_body(
     database: &dyn DefDatabase,
     file_id: HirFileId,
-    param_list: Option<ast::ParameterList>,
+    param_list: Option<ast::FunctionParameters>,
     body: Option<ast::CompoundStatement>,
 ) -> (Body, BodySourceMap) {
     Collector {
@@ -29,7 +29,7 @@ pub(super) fn lower_function_body(
 pub(super) fn lower_global_var_declaration(
     database: &dyn DefDatabase,
     file_id: HirFileId,
-    declaration: &ast::GlobalVariableDeclaration,
+    declaration: &ast::VariableDeclaration,
 ) -> (Body, BodySourceMap) {
     Collector {
         database,
@@ -43,7 +43,7 @@ pub(super) fn lower_global_var_declaration(
 pub(super) fn lower_global_constant_declaration(
     database: &dyn DefDatabase,
     file_id: HirFileId,
-    declaration: &ast::GlobalConstantDeclaration,
+    declaration: &ast::ConstantDeclaration,
 ) -> (Body, BodySourceMap) {
     Collector {
         database,
@@ -78,7 +78,7 @@ struct Collector<'database> {
 impl Collector<'_> {
     fn collect_function(
         mut self,
-        param_list: Option<ast::ParameterList>,
+        param_list: Option<ast::FunctionParameters>,
         body: Option<ast::CompoundStatement>,
     ) -> (Body, BodySourceMap) {
         self.collect_function_param_list(param_list);
@@ -92,7 +92,7 @@ impl Collector<'_> {
 
     fn collect_function_param_list(
         &mut self,
-        param_list: Option<ast::ParameterList>,
+        param_list: Option<ast::FunctionParameters>,
     ) {
         if let Some(param_list) = param_list {
             for parameter in param_list.parameters() {
@@ -129,7 +129,7 @@ impl Collector<'_> {
                                         .ok(),
                                 }
                             })
-                            .and_then(|parse| ast::ParameterList::cast(parse.syntax()));
+                            .and_then(|parse| ast::FunctionParameters::cast(parse.syntax()));
                     self.collect_function_param_list(import_param_list);
                 }
             }
@@ -138,7 +138,7 @@ impl Collector<'_> {
 
     fn collect_global_var_declaration(
         mut self,
-        declaration: &ast::GlobalVariableDeclaration,
+        declaration: &ast::VariableDeclaration,
     ) -> (Body, BodySourceMap) {
         self.body.root = declaration
             .init()
@@ -154,7 +154,7 @@ impl Collector<'_> {
 
     fn collect_global_constant_declaration(
         mut self,
-        declaration: &ast::GlobalConstantDeclaration,
+        declaration: &ast::ConstantDeclaration,
     ) -> (Body, BodySourceMap) {
         self.body.root = declaration
             .init()
@@ -463,7 +463,7 @@ impl Collector<'_> {
             },
             ast::Expression::FieldExpression(field) => {
                 let expression = self.collect_expression_opt(field.expression());
-                let name = field.name_ref().map_or_else(Name::missing, Name::from);
+                let name = field.field().map_or_else(Name::missing, Name::from);
 
                 Expression::Field { expression, name }
             },

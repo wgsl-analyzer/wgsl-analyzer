@@ -46,24 +46,23 @@ fn can_parse_array_declaration() {
         expect![[r#"
             SourceFile@0..87
               Blankspace@0..9 "\n        "
-              GlobalConstantDeclaration@9..36
-                ConstDeclaration@9..35
-                  Constant@9..14 "const"
-                  Blankspace@14..15 " "
-                  Identifier@15..18 "dim"
-                  Colon@18..19 ":"
-                  Blankspace@19..20 " "
-                  TypeSpecifier@20..25
-                    Identifier@20..25 "vec3u"
-                  Blankspace@25..26 " "
-                  Equal@26..27 "="
-                  Blankspace@27..28 " "
-                  FunctionCall@28..35
-                    IdentExpression@28..33
-                      Identifier@28..33 "vec3u"
-                    Arguments@33..35
-                      ParenthesisLeft@33..34 "("
-                      ParenthesisRight@34..35 ")"
+              ConstDeclaration@9..36
+                Constant@9..14 "const"
+                Blankspace@14..15 " "
+                Identifier@15..18 "dim"
+                Colon@18..19 ":"
+                Blankspace@19..20 " "
+                TypeSpecifier@20..25
+                  Identifier@20..25 "vec3u"
+                Blankspace@25..26 " "
+                Equal@26..27 "="
+                Blankspace@27..28 " "
+                FunctionCall@28..35
+                  IdentExpression@28..33
+                    Identifier@28..33 "vec3u"
+                  Arguments@33..35
+                    ParenthesisLeft@33..34 "("
+                    ParenthesisRight@34..35 ")"
                 Semicolon@35..36 ";"
               Blankspace@36..45 "\n        "
               FunctionDeclaration@45..78
@@ -110,24 +109,23 @@ fn cannot_parse_bad_array_declaration() {
         expect![[r#"
             SourceFile@0..86
               Blankspace@0..9 "\n        "
-              GlobalConstantDeclaration@9..36
-                ConstDeclaration@9..35
-                  Constant@9..14 "const"
-                  Blankspace@14..15 " "
-                  Identifier@15..18 "dim"
-                  Colon@18..19 ":"
-                  Blankspace@19..20 " "
-                  TypeSpecifier@20..25
-                    Identifier@20..25 "vec3u"
-                  Blankspace@25..26 " "
-                  Equal@26..27 "="
-                  Blankspace@27..28 " "
-                  FunctionCall@28..35
-                    IdentExpression@28..33
-                      Identifier@28..33 "vec3u"
-                    Arguments@33..35
-                      ParenthesisLeft@33..34 "("
-                      ParenthesisRight@34..35 ")"
+              ConstDeclaration@9..36
+                Constant@9..14 "const"
+                Blankspace@14..15 " "
+                Identifier@15..18 "dim"
+                Colon@18..19 ":"
+                Blankspace@19..20 " "
+                TypeSpecifier@20..25
+                  Identifier@20..25 "vec3u"
+                Blankspace@25..26 " "
+                Equal@26..27 "="
+                Blankspace@27..28 " "
+                FunctionCall@28..35
+                  IdentExpression@28..33
+                    Identifier@28..33 "vec3u"
+                  Arguments@33..35
+                    ParenthesisLeft@33..34 "("
+                    ParenthesisRight@34..35 ")"
                 Semicolon@35..36 ";"
               Blankspace@36..45 "\n        "
               FunctionDeclaration@45..77
@@ -202,30 +200,28 @@ fn parse_comments() {
         expect![[r#"
             SourceFile@0..289
               Blankspace@0..9 "\n        "
-              GlobalConstantDeclaration@9..25
-                ConstDeclaration@9..24
-                  Constant@9..14 "const"
-                  Blankspace@14..15 " "
-                  Identifier@15..18 "foo"
-                  Blankspace@18..19 " "
-                  Equal@19..20 "="
-                  Blankspace@20..21 " "
-                  Literal@21..24
-                    FloatLiteral@21..24 "1.5"
+              ConstDeclaration@9..25
+                Constant@9..14 "const"
+                Blankspace@14..15 " "
+                Identifier@15..18 "foo"
+                Blankspace@18..19 " "
+                Equal@19..20 "="
+                Blankspace@20..21 " "
+                Literal@21..24
+                  FloatLiteral@21..24 "1.5"
                 Semicolon@24..25 ";"
               Blankspace@25..26 " "
               LineEndingComment@26..57 "// This is line-endin ..."
               Blankspace@57..66 "\n        "
-              GlobalConstantDeclaration@66..82
-                ConstDeclaration@66..81
-                  Constant@66..71 "const"
-                  Blankspace@71..72 " "
-                  Identifier@72..75 "bar"
-                  Blankspace@75..76 " "
-                  Equal@76..77 "="
-                  Blankspace@77..78 " "
-                  Literal@78..81
-                    FloatLiteral@78..81 "2.5"
+              ConstDeclaration@66..82
+                Constant@66..71 "const"
+                Blankspace@71..72 " "
+                Identifier@72..75 "bar"
+                Blankspace@75..76 " "
+                Equal@76..77 "="
+                Blankspace@77..78 " "
+                Literal@78..81
+                  FloatLiteral@78..81 "2.5"
                 Semicolon@81..82 ";"
               Blankspace@82..83 " "
               BlockComment@83..280 "/* This is a block co ..."
@@ -310,36 +306,34 @@ let y: f32 = 2.0;
                 CompoundStatement@10..57
                   BraceLeft@10..11 "{"
                   Blankspace@11..12 "\n"
-                  VariableStatement@12..29
-                    LetDeclaration@12..28
-                      Let@12..15 "let"
-                      Blankspace@15..16 " "
-                      Identifier@16..17 "x"
-                      Colon@17..18 ":"
-                      Blankspace@18..19 " "
-                      TypeSpecifier@19..22
-                        Identifier@19..22 "f32"
-                      Blankspace@22..23 " "
-                      Equal@23..24 "="
-                      Blankspace@24..25 " "
-                      Literal@25..28
-                        FloatLiteral@25..28 "1.0"
+                  LetDeclaration@12..29
+                    Let@12..15 "let"
+                    Blankspace@15..16 " "
+                    Identifier@16..17 "x"
+                    Colon@17..18 ":"
+                    Blankspace@18..19 " "
+                    TypeSpecifier@19..22
+                      Identifier@19..22 "f32"
+                    Blankspace@22..23 " "
+                    Equal@23..24 "="
+                    Blankspace@24..25 " "
+                    Literal@25..28
+                      FloatLiteral@25..28 "1.0"
                     Semicolon@28..29 ";"
                   Blankspace@29..30 "\n"
-                  VariableStatement@30..47
-                    LetDeclaration@30..46
-                      Let@30..33 "let"
-                      Blankspace@33..34 " "
-                      Identifier@34..35 "y"
-                      Colon@35..36 ":"
-                      Blankspace@36..37 " "
-                      TypeSpecifier@37..40
-                        Identifier@37..40 "f32"
-                      Blankspace@40..41 " "
-                      Equal@41..42 "="
-                      Blankspace@42..43 " "
-                      Literal@43..46
-                        FloatLiteral@43..46 "2.0"
+                  LetDeclaration@30..47
+                    Let@30..33 "let"
+                    Blankspace@33..34 " "
+                    Identifier@34..35 "y"
+                    Colon@35..36 ":"
+                    Blankspace@36..37 " "
+                    TypeSpecifier@37..40
+                      Identifier@37..40 "f32"
+                    Blankspace@40..41 " "
+                    Equal@41..42 "="
+                    Blankspace@42..43 " "
+                    Literal@43..46
+                      FloatLiteral@43..46 "2.0"
                     Semicolon@46..47 ";"
                   Blankspace@47..56 "\n        "
                   BraceRight@56..57 "}""#]],
@@ -653,21 +647,19 @@ fn parse_let_statement_recover() {
                 CompoundStatement@16..88
                   BraceLeft@16..17 "{"
                   Blankspace@17..30 "\n            "
-                  VariableStatement@30..37
-                    LetDeclaration@30..37
-                      Let@30..33 "let"
-                      Blankspace@33..34 " "
-                      Identifier@34..35 "x"
-                      Blankspace@35..36 " "
-                      Equal@36..37 "="
+                  LetDeclaration@30..37
+                    Let@30..33 "let"
+                    Blankspace@33..34 " "
+                    Identifier@34..35 "x"
+                    Blankspace@35..36 " "
+                    Equal@36..37 "="
                   Blankspace@37..50 "\n            "
-                  VariableStatement@50..57
-                    LetDeclaration@50..57
-                      Let@50..53 "let"
-                      Blankspace@53..54 " "
-                      Identifier@54..55 "y"
-                      Blankspace@55..56 " "
-                      Equal@56..57 "="
+                  LetDeclaration@50..57
+                    Let@50..53 "let"
+                    Blankspace@53..54 " "
+                    Identifier@54..55 "y"
+                    Blankspace@55..56 " "
+                    Equal@56..57 "="
                   Blankspace@57..70 "\n            "
                   ReturnStatement@70..78
                     Return@70..76 "return"
@@ -689,16 +681,15 @@ fn parse_statement_variable_decl() {
         "let x = 3;",
         expect![[r#"
             SourceFile@0..10
-              VariableStatement@0..10
-                LetDeclaration@0..9
-                  Let@0..3 "let"
-                  Blankspace@3..4 " "
-                  Identifier@4..5 "x"
-                  Blankspace@5..6 " "
-                  Equal@6..7 "="
-                  Blankspace@7..8 " "
-                  Literal@8..9
-                    IntLiteral@8..9 "3"
+              LetDeclaration@0..10
+                Let@0..3 "let"
+                Blankspace@3..4 " "
+                Identifier@4..5 "x"
+                Blankspace@5..6 " "
+                Equal@6..7 "="
+                Blankspace@7..8 " "
+                Literal@8..9
+                  IntLiteral@8..9 "3"
                 Semicolon@9..10 ";""#]],
     );
 }
@@ -739,16 +730,15 @@ fn parse_while_statement() {
                 CompoundStatement@12..26
                   BraceLeft@12..13 "{"
                   Blankspace@13..14 " "
-                  VariableStatement@14..24
-                    LetDeclaration@14..23
-                      Let@14..17 "let"
-                      Blankspace@17..18 " "
-                      Identifier@18..19 "x"
-                      Blankspace@19..20 " "
-                      Equal@20..21 "="
-                      Blankspace@21..22 " "
-                      Literal@22..23
-                        IntLiteral@22..23 "3"
+                  LetDeclaration@14..24
+                    Let@14..17 "let"
+                    Blankspace@17..18 " "
+                    Identifier@18..19 "x"
+                    Blankspace@19..20 " "
+                    Equal@20..21 "="
+                    Blankspace@21..22 " "
+                    Literal@22..23
+                      IntLiteral@22..23 "3"
                     Semicolon@23..24 ";"
                   Blankspace@24..25 " "
                   BraceRight@25..26 "}""#]],
@@ -780,16 +770,15 @@ fn parse_if_statement() {
                   CompoundStatement@11..35
                     BraceLeft@11..12 "{"
                     Blankspace@12..13 " "
-                    VariableStatement@13..23
-                      LetDeclaration@13..22
-                        Let@13..16 "let"
-                        Blankspace@16..17 " "
-                        Identifier@17..18 "x"
-                        Blankspace@18..19 " "
-                        Equal@19..20 "="
-                        Blankspace@20..21 " "
-                        Literal@21..22
-                          IntLiteral@21..22 "3"
+                    LetDeclaration@13..23
+                      Let@13..16 "let"
+                      Blankspace@16..17 " "
+                      Identifier@17..18 "x"
+                      Blankspace@18..19 " "
+                      Equal@19..20 "="
+                      Blankspace@20..21 " "
+                      Literal@21..22
+                        IntLiteral@21..22 "3"
                       Semicolon@22..23 ";"
                     Blankspace@23..24 " "
                     ReturnStatement@24..33
@@ -822,16 +811,15 @@ fn parse_if_recover_paren() {
                   CompoundStatement@6..38
                     BraceLeft@6..7 "{"
                     Blankspace@7..18 "\n          "
-                    VariableStatement@18..28
-                      LetDeclaration@18..27
-                        Let@18..21 "let"
-                        Blankspace@21..22 " "
-                        Identifier@22..23 "x"
-                        Blankspace@23..24 " "
-                        Equal@24..25 "="
-                        Blankspace@25..26 " "
-                        Literal@26..27
-                          IntLiteral@26..27 "3"
+                    LetDeclaration@18..28
+                      Let@18..21 "let"
+                      Blankspace@21..22 " "
+                      Identifier@22..23 "x"
+                      Blankspace@23..24 " "
+                      Equal@24..25 "="
+                      Blankspace@25..26 " "
+                      Literal@26..27
+                        IntLiteral@26..27 "3"
                       Semicolon@27..28 ";"
                     Blankspace@28..37 "\n        "
                     BraceRight@37..38 "}"
@@ -858,16 +846,15 @@ fn parse_if_without_paren() {
                   CompoundStatement@8..40
                     BraceLeft@8..9 "{"
                     Blankspace@9..20 "\n          "
-                    VariableStatement@20..30
-                      LetDeclaration@20..29
-                        Let@20..23 "let"
-                        Blankspace@23..24 " "
-                        Identifier@24..25 "x"
-                        Blankspace@25..26 " "
-                        Equal@26..27 "="
-                        Blankspace@27..28 " "
-                        Literal@28..29
-                          IntLiteral@28..29 "3"
+                    LetDeclaration@20..30
+                      Let@20..23 "let"
+                      Blankspace@23..24 " "
+                      Identifier@24..25 "x"
+                      Blankspace@25..26 " "
+                      Equal@26..27 "="
+                      Blankspace@27..28 " "
+                      Literal@28..29
+                        IntLiteral@28..29 "3"
                       Semicolon@29..30 ";"
                     Blankspace@30..39 "\n        "
                     BraceRight@39..40 "}""#]],
@@ -889,16 +876,15 @@ fn parse_if_recover_empty() {
                   CompoundStatement@3..35
                     BraceLeft@3..4 "{"
                     Blankspace@4..15 "\n          "
-                    VariableStatement@15..25
-                      LetDeclaration@15..24
-                        Let@15..18 "let"
-                        Blankspace@18..19 " "
-                        Identifier@19..20 "x"
-                        Blankspace@20..21 " "
-                        Equal@21..22 "="
-                        Blankspace@22..23 " "
-                        Literal@23..24
-                          IntLiteral@23..24 "3"
+                    LetDeclaration@15..25
+                      Let@15..18 "let"
+                      Blankspace@18..19 " "
+                      Identifier@19..20 "x"
+                      Blankspace@20..21 " "
+                      Equal@21..22 "="
+                      Blankspace@22..23 " "
+                      Literal@23..24
+                        IntLiteral@23..24 "3"
                       Semicolon@24..25 ";"
                     Blankspace@25..34 "\n        "
                     BraceRight@34..35 "}"
@@ -1301,16 +1287,15 @@ fn parse_statement_compound() {
               CompoundStatement@0..24
                 BraceLeft@0..1 "{"
                 Blankspace@1..2 " "
-                VariableStatement@2..12
-                  LetDeclaration@2..11
-                    Let@2..5 "let"
-                    Blankspace@5..6 " "
-                    Identifier@6..7 "x"
-                    Blankspace@7..8 " "
-                    Equal@8..9 "="
-                    Blankspace@9..10 " "
-                    Literal@10..11
-                      IntLiteral@10..11 "3"
+                LetDeclaration@2..12
+                  Let@2..5 "let"
+                  Blankspace@5..6 " "
+                  Identifier@6..7 "x"
+                  Blankspace@7..8 " "
+                  Equal@8..9 "="
+                  Blankspace@9..10 " "
+                  Literal@10..11
+                    IntLiteral@10..11 "3"
                   Semicolon@11..12 ";"
                 Blankspace@12..13 " "
                 ReturnStatement@13..22
@@ -1417,13 +1402,12 @@ fn parse_statement_recover() {
                 CompoundStatement@2..13
                   BraceLeft@2..3 "{"
                   Blankspace@3..4 " "
-                  VariableStatement@4..11
-                    LetDeclaration@4..11
-                      Let@4..7 "let"
-                      Blankspace@7..8 " "
-                      Identifier@8..9 "x"
-                      Blankspace@9..10 " "
-                      Equal@10..11 "="
+                  LetDeclaration@4..11
+                    Let@4..7 "let"
+                    Blankspace@7..8 " "
+                    Identifier@8..9 "x"
+                    Blankspace@9..10 " "
+                    Equal@10..11 "="
                   Blankspace@11..12 " "
                   BraceRight@12..13 "}"
                 Blankspace@13..14 " "
@@ -1521,15 +1505,14 @@ fn parse_var_without_initializer() {
         "var x: u32;",
         expect![[r#"
             SourceFile@0..11
-              VariableStatement@0..11
-                VariableDeclaration@0..10
-                  Var@0..3 "var"
-                  Blankspace@3..4 " "
-                  Identifier@4..5 "x"
-                  Colon@5..6 ":"
-                  Blankspace@6..7 " "
-                  TypeSpecifier@7..10
-                    Identifier@7..10 "u32"
+              VariableDeclaration@0..11
+                Var@0..3 "var"
+                Blankspace@3..4 " "
+                Identifier@4..5 "x"
+                Colon@5..6 ":"
+                Blankspace@6..7 " "
+                TypeSpecifier@7..10
+                  Identifier@7..10 "u32"
                 Semicolon@10..11 ";""#]],
     );
 }
@@ -1540,20 +1523,19 @@ fn parse_var_with_initializer() {
         "var<function> x: u32;",
         expect![[r#"
             SourceFile@0..21
-              VariableStatement@0..21
-                VariableDeclaration@0..20
-                  Var@0..3 "var"
-                  GenericArgumentList@3..13
-                    LessThan@3..4 "<"
-                    IdentExpression@4..12
-                      Identifier@4..12 "function"
-                    GreaterThan@12..13 ">"
-                  Blankspace@13..14 " "
-                  Identifier@14..15 "x"
-                  Colon@15..16 ":"
-                  Blankspace@16..17 " "
-                  TypeSpecifier@17..20
-                    Identifier@17..20 "u32"
+              VariableDeclaration@0..21
+                Var@0..3 "var"
+                GenericArgumentList@3..13
+                  LessThan@3..4 "<"
+                  IdentExpression@4..12
+                    Identifier@4..12 "function"
+                  GreaterThan@12..13 ">"
+                Blankspace@13..14 " "
+                Identifier@14..15 "x"
+                Colon@15..16 ":"
+                Blankspace@16..17 " "
+                TypeSpecifier@17..20
+                  Identifier@17..20 "u32"
                 Semicolon@20..21 ";""#]],
     );
 }
@@ -1657,14 +1639,13 @@ fn let_statement_recover_return_no_eq() {
                 CompoundStatement@10..42
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  VariableStatement@24..32
-                    LetDeclaration@24..32
-                      Let@24..27 "let"
-                      Blankspace@27..28 " "
-                      Identifier@28..29 "x"
-                      Blankspace@29..30 " "
-                      IdentExpression@30..32
-                        Identifier@30..32 "be"
+                  LetDeclaration@24..32
+                    Let@24..27 "let"
+                    Blankspace@27..28 " "
+                    Identifier@28..29 "x"
+                    Blankspace@29..30 " "
+                    IdentExpression@30..32
+                      Identifier@30..32 "be"
                   Blankspace@32..41 "\n        "
                   BraceRight@41..42 "}"
 
@@ -1693,9 +1674,8 @@ fn let_statement_recover_return() {
                 CompoundStatement@10..59
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  VariableStatement@24..27
-                    LetDeclaration@24..27
-                      Let@24..27 "let"
+                  LetDeclaration@24..27
+                    Let@24..27 "let"
                   Blankspace@27..40 "\n            "
                   ReturnStatement@40..49
                     Return@40..46 "return"
@@ -1730,11 +1710,10 @@ fn let_statement_recover_return_2() {
                 CompoundStatement@10..61
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  VariableStatement@24..29
-                    LetDeclaration@24..29
-                      Let@24..27 "let"
-                      Blankspace@27..28 " "
-                      Identifier@28..29 "x"
+                  LetDeclaration@24..29
+                    Let@24..27 "let"
+                    Blankspace@27..28 " "
+                    Identifier@28..29 "x"
                   Blankspace@29..42 "\n            "
                   ReturnStatement@42..51
                     Return@42..48 "return"
@@ -1769,13 +1748,12 @@ fn let_statement_recover_return_3() {
                 CompoundStatement@10..63
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  VariableStatement@24..31
-                    LetDeclaration@24..31
-                      Let@24..27 "let"
-                      Blankspace@27..28 " "
-                      Identifier@28..29 "x"
-                      Blankspace@29..30 " "
-                      Equal@30..31 "="
+                  LetDeclaration@24..31
+                    Let@24..27 "let"
+                    Blankspace@27..28 " "
+                    Identifier@28..29 "x"
+                    Blankspace@29..30 " "
+                    Equal@30..31 "="
                   Blankspace@31..44 "\n            "
                   ReturnStatement@44..53
                     Return@44..50 "return"
@@ -1809,11 +1787,10 @@ fn let_statement_recover_1() {
                 CompoundStatement@10..39
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  VariableStatement@24..29
-                    LetDeclaration@24..29
-                      Let@24..27 "let"
-                      Blankspace@27..28 " "
-                      Identifier@28..29 "x"
+                  LetDeclaration@24..29
+                    Let@24..27 "let"
+                    Blankspace@27..28 " "
+                    Identifier@28..29 "x"
                   Blankspace@29..38 "\n        "
                   BraceRight@38..39 "}"
 
@@ -1840,13 +1817,12 @@ fn let_statement_recover_2() {
                 CompoundStatement@10..41
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  VariableStatement@24..31
-                    LetDeclaration@24..31
-                      Let@24..27 "let"
-                      Blankspace@27..28 " "
-                      Identifier@28..29 "x"
-                      Blankspace@29..30 " "
-                      Equal@30..31 "="
+                  LetDeclaration@24..31
+                    Let@24..27 "let"
+                    Blankspace@27..28 " "
+                    Identifier@28..29 "x"
+                    Blankspace@29..30 " "
+                    Equal@30..31 "="
                   Blankspace@31..40 "\n        "
                   BraceRight@40..41 "}"
 
@@ -1873,9 +1849,8 @@ fn let_statement_recover_3() {
                 CompoundStatement@10..37
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  VariableStatement@24..27
-                    LetDeclaration@24..27
-                      Let@24..27 "let"
+                  LetDeclaration@24..27
+                    Let@24..27 "let"
                   Blankspace@27..36 "\n        "
                   BraceRight@36..37 "}"
 
@@ -2224,16 +2199,15 @@ fn global_variable_decl_init() {
         "var flags = 0;",
         expect![[r#"
             SourceFile@0..14
-              GlobalVariableDeclaration@0..14
-                VariableDeclaration@0..13
-                  Var@0..3 "var"
-                  Blankspace@3..4 " "
-                  Identifier@4..9 "flags"
-                  Blankspace@9..10 " "
-                  Equal@10..11 "="
-                  Blankspace@11..12 " "
-                  Literal@12..13
-                    IntLiteral@12..13 "0"
+              VariableDeclaration@0..14
+                Var@0..3 "var"
+                Blankspace@3..4 " "
+                Identifier@4..9 "flags"
+                Blankspace@9..10 " "
+                Equal@10..11 "="
+                Blankspace@11..12 " "
+                Literal@12..13
+                  IntLiteral@12..13 "0"
                 Semicolon@13..14 ";""#]],
     );
 }
@@ -2244,16 +2218,15 @@ fn global_const_decl() {
         "const constant = 0;",
         expect![[r#"
             SourceFile@0..19
-              GlobalConstantDeclaration@0..19
-                ConstDeclaration@0..18
-                  Constant@0..5 "const"
-                  Blankspace@5..6 " "
-                  Identifier@6..14 "constant"
-                  Blankspace@14..15 " "
-                  Equal@15..16 "="
-                  Blankspace@16..17 " "
-                  Literal@17..18
-                    IntLiteral@17..18 "0"
+              ConstDeclaration@0..19
+                Constant@0..5 "const"
+                Blankspace@5..6 " "
+                Identifier@6..14 "constant"
+                Blankspace@14..15 " "
+                Equal@15..16 "="
+                Blankspace@16..17 " "
+                Literal@17..18
+                  IntLiteral@17..18 "0"
                 Semicolon@18..19 ";""#]],
     );
 }
@@ -2390,16 +2363,15 @@ fn empty_return_statement_no_semi() {
               CompoundStatement@0..23
                 BraceLeft@0..1 "{"
                 Blankspace@1..2 " "
-                VariableStatement@2..12
-                  LetDeclaration@2..11
-                    Let@2..5 "let"
-                    Blankspace@5..6 " "
-                    Identifier@6..7 "x"
-                    Blankspace@7..8 " "
-                    Equal@8..9 "="
-                    Blankspace@9..10 " "
-                    Literal@10..11
-                      IntLiteral@10..11 "3"
+                LetDeclaration@2..12
+                  Let@2..5 "let"
+                  Blankspace@5..6 " "
+                  Identifier@6..7 "x"
+                  Blankspace@7..8 " "
+                  Equal@8..9 "="
+                  Blankspace@9..10 " "
+                  Literal@10..11
+                    IntLiteral@10..11 "3"
                   Semicolon@11..12 ";"
                 Blankspace@12..13 " "
                 ReturnStatement@13..21
@@ -2643,16 +2615,15 @@ let x = 3;
                       Error@24..24
                     BraceRight@24..25 "}"
                 Blankspace@25..27 "\n\n"
-                VariableStatement@27..37
-                  LetDeclaration@27..36
-                    Let@27..30 "let"
-                    Blankspace@30..31 " "
-                    Identifier@31..32 "x"
-                    Blankspace@32..33 " "
-                    Equal@33..34 "="
-                    Blankspace@34..35 " "
-                    Literal@35..36
-                      IntLiteral@35..36 "3"
+                LetDeclaration@27..37
+                  Let@27..30 "let"
+                  Blankspace@30..31 " "
+                  Identifier@31..32 "x"
+                  Blankspace@32..33 " "
+                  Equal@33..34 "="
+                  Blankspace@34..35 " "
+                  Literal@35..36
+                    IntLiteral@35..36 "3"
                   Semicolon@36..37 ";"
                 Blankspace@37..38 "\n"
                 BraceRight@38..39 "}"
@@ -2706,16 +2677,15 @@ let x = 3;
                       Error@27..27
                     BraceRight@27..28 "}"
                 Blankspace@28..29 "\n"
-                VariableStatement@29..39
-                  LetDeclaration@29..38
-                    Let@29..32 "let"
-                    Blankspace@32..33 " "
-                    Identifier@33..34 "x"
-                    Blankspace@34..35 " "
-                    Equal@35..36 "="
-                    Blankspace@36..37 " "
-                    Literal@37..38
-                      IntLiteral@37..38 "3"
+                LetDeclaration@29..39
+                  Let@29..32 "let"
+                  Blankspace@32..33 " "
+                  Identifier@33..34 "x"
+                  Blankspace@34..35 " "
+                  Equal@35..36 "="
+                  Blankspace@36..37 " "
+                  Literal@37..38
+                    IntLiteral@37..38 "3"
                   Semicolon@38..39 ";"
                 Blankspace@39..40 "\n"
                 BraceRight@40..41 "}"
@@ -2752,7 +2722,7 @@ fn global_assert_statement() {
         "const_assert 2 > 1;",
         expect![[r#"
             SourceFile@0..19
-              GlobalAssert@0..19
+              AssertStatement@0..19
                 ConstantAssert@0..12 "const_assert"
                 Blankspace@12..13 " "
                 InfixExpression@13..18
@@ -2774,19 +2744,18 @@ fn global_override_statement() {
         expect![[r#"
             SourceFile@0..22
               GlobalOverrideDeclaration@0..22
-                OverrideDeclaration@0..21
-                  Override@0..8 "override"
-                  Blankspace@8..9 " "
-                  Identifier@9..12 "foo"
-                  Colon@12..13 ":"
-                  Blankspace@13..14 " "
-                  TypeSpecifier@14..17
-                    Identifier@14..17 "u32"
-                  Blankspace@17..18 " "
-                  Equal@18..19 "="
-                  Blankspace@19..20 " "
-                  Literal@20..21
-                    IntLiteral@20..21 "3"
+                Override@0..8 "override"
+                Blankspace@8..9 " "
+                Identifier@9..12 "foo"
+                Colon@12..13 ":"
+                Blankspace@13..14 " "
+                TypeSpecifier@14..17
+                  Identifier@14..17 "u32"
+                Blankspace@17..18 " "
+                Equal@18..19 "="
+                Blankspace@19..20 " "
+                Literal@20..21
+                  IntLiteral@20..21 "3"
                 Semicolon@21..22 ";""#]],
     );
 }

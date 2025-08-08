@@ -69,8 +69,8 @@ impl<'database> Semantics<'database> {
             match_ast! {
                 match syntax {
                     ast::Function(function) => self.function_to_def(&InFile::new(file_id, function)).map(DefinitionWithBodyId::Function),
-                    ast::GlobalVariableDeclaration(var) => self.global_variable_to_def(&InFile::new(file_id, var)).map(DefinitionWithBodyId::GlobalVariable),
-                    ast::GlobalConstantDeclaration(constant) => self.global_constant_to_def(&InFile::new(file_id, constant)).map(DefinitionWithBodyId::GlobalConstant),
+                    ast::VariableDeclaration(var) => self.global_variable_to_def(&InFile::new(file_id, var)).map(DefinitionWithBodyId::GlobalVariable),
+                    ast::ConstantDeclaration(constant) => self.global_constant_to_def(&InFile::new(file_id, constant)).map(DefinitionWithBodyId::GlobalConstant),
                     _ => None,
                 }
             }
@@ -160,7 +160,7 @@ impl<'database> Semantics<'database> {
 
     fn global_constant_to_def(
         &self,
-        source: &InFile<ast::GlobalConstantDeclaration>,
+        source: &InFile<ast::ConstantDeclaration>,
     ) -> Option<GlobalConstantId> {
         let global_constant = module_data::find_item(self.database, source.file_id, &source.value)?;
         let id = self
@@ -171,7 +171,7 @@ impl<'database> Semantics<'database> {
 
     fn global_variable_to_def(
         &self,
-        source: &InFile<ast::GlobalVariableDeclaration>,
+        source: &InFile<ast::VariableDeclaration>,
     ) -> Option<GlobalVariableId> {
         let global_variable = module_data::find_item(self.database, source.file_id, &source.value)?;
         let id = self
@@ -432,7 +432,7 @@ pub struct GlobalVariable {
 }
 
 impl HasSource for GlobalVariable {
-    type Ast = ast::GlobalVariableDeclaration;
+    type Ast = ast::VariableDeclaration;
 
     fn source(
         self,
@@ -448,7 +448,7 @@ pub struct GlobalConstant {
 }
 
 impl HasSource for GlobalConstant {
-    type Ast = ast::GlobalConstantDeclaration;
+    type Ast = ast::ConstantDeclaration;
 
     fn source(
         self,
