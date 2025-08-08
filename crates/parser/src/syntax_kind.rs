@@ -105,8 +105,6 @@ pub enum SyntaxKind {
     VariableQualifier,
     /// a binary operator
     BinaryOperator,
-    /// The header of a function, including parameters and return type
-    FunctionHeader,
     /// The parameters to a function call
     FunctionParameters,
     /// `a.b`

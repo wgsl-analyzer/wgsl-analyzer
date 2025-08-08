@@ -214,7 +214,7 @@ impl<'database> Ctx<'database> {
             .body()?
             .fields()
             .map(|field| {
-                let declaration = field.variable_ident_declaration()?;
+                let declaration = field.identifier()?;
                 let name = Name::from(declaration.binding()?.name()?);
                 let r#type = self
                     .lower_type_ref(declaration.ty()?)

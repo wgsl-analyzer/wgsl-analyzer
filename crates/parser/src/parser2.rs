@@ -231,7 +231,6 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::FunctionCallStatement => self.start_node(SyntaxKind::FunctionCallStatement),
             Rule::FunctionDeclaration => self.start_node(SyntaxKind::FunctionDeclaration),
             Rule::FunctionParameters => self.start_node(SyntaxKind::FunctionParameters),
-            Rule::FunctionHeader => self.start_node(SyntaxKind::FunctionHeader),
             Rule::GlobalAssert => self.start_node(SyntaxKind::GlobalAssert),
             Rule::GlobalConstDeclaration => self.start_node(SyntaxKind::GlobalConstantDeclaration),
             Rule::GlobalDeclaration => {

@@ -45,7 +45,7 @@ diagnostic_rule_name: Ident ['.' Ident];
 
 global_declaration:
   attribute* @function_declaration (
-    function_header compound_statement @function_declaration
+    'fn' Ident function_parameters [return_type] compound_statement @function_declaration
   | variable_declaration ';' @global_variable_declaration
   | override_declaration ';' @global_override_declaration
   )
@@ -53,7 +53,6 @@ global_declaration:
 | 'alias' Ident '=' type_specifier ';' @type_alias_declaration
 | 'struct' Ident struct_body @struct_declaration
 ;
-function_header: 'fn' Ident function_parameters [return_type];
 function_parameters: '(' [parameter (?1 ',' parameter)* [',']] ')';
 parameter: attribute* Ident ':' type_specifier;
 return_type: '->' attribute* type_specifier;

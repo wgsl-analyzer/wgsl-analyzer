@@ -280,7 +280,7 @@ ast_node! {
     StructDeclaration:
     struct_token: Option<SyntaxToken Struct>;
     name: Option<Name>;
-    body: Option<StructDeclBody>;
+    body: Option<StructBody>;
 }
 
 impl HasAttributes for StructDeclaration {}
@@ -289,15 +289,18 @@ ast_node! {
     StructBody:
     left_brace_token: Option<SyntaxToken BraceLeft>;
     right_brace_token: Option<SyntaxToken BraceRight>;
-    fields: AstChildren<StructDeclarationField>;
+    fields: AstChildren<StructMember>;
 }
 
 ast_node! {
     StructMember:
-    variable_ident_declaration: Option<VariableIdentDeclaration>;
+    identifier: Option<Identifier>;
+    colon_token: Option<SyntaxToken Colon>;
+    binding: Option<Binding>;
+    ty: Option<Type>;
 }
 
-impl HasAttributes for StructDeclarationField {}
+impl HasAttributes for StructMember {}
 
 ast_node! {
     GlobalVariableDeclaration:

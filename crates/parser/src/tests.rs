@@ -67,31 +67,30 @@ fn can_parse_array_declaration() {
                 Semicolon@35..36 ";"
               Blankspace@36..45 "\n        "
               FunctionDeclaration@45..78
-                FunctionHeader@45..74
-                  Fn@45..47 "fn"
-                  Blankspace@47..48 " "
-                  Identifier@48..52 "test"
-                  FunctionParameters@52..74
-                    ParenthesisLeft@52..53 "("
-                    Parameter@53..73
-                      Identifier@53..54 "a"
-                      Colon@54..55 ":"
-                      Blankspace@55..56 " "
-                      TypeSpecifier@56..73
-                        Identifier@56..61 "array"
-                        GenericArgumentList@61..73
-                          LessThan@61..62 "<"
-                          IdentExpression@62..65
-                            Identifier@62..65 "f32"
-                          Comma@65..66 ","
-                          Blankspace@66..67 " "
-                          FieldExpression@67..72
-                            IdentExpression@67..70
-                              Identifier@67..70 "dim"
-                            Period@70..71 "."
-                            Identifier@71..72 "x"
-                          GreaterThan@72..73 ">"
-                    ParenthesisRight@73..74 ")"
+                Fn@45..47 "fn"
+                Blankspace@47..48 " "
+                Identifier@48..52 "test"
+                FunctionParameters@52..74
+                  ParenthesisLeft@52..53 "("
+                  Parameter@53..73
+                    Identifier@53..54 "a"
+                    Colon@54..55 ":"
+                    Blankspace@55..56 " "
+                    TypeSpecifier@56..73
+                      Identifier@56..61 "array"
+                      GenericArgumentList@61..73
+                        LessThan@61..62 "<"
+                        IdentExpression@62..65
+                          Identifier@62..65 "f32"
+                        Comma@65..66 ","
+                        Blankspace@66..67 " "
+                        FieldExpression@67..72
+                          IdentExpression@67..70
+                            Identifier@67..70 "dim"
+                          Period@70..71 "."
+                          Identifier@71..72 "x"
+                        GreaterThan@72..73 ">"
+                  ParenthesisRight@73..74 ")"
                 Blankspace@74..75 " "
                 CompoundStatement@75..78
                   BraceLeft@75..76 "{"
@@ -132,30 +131,29 @@ fn cannot_parse_bad_array_declaration() {
                 Semicolon@35..36 ";"
               Blankspace@36..45 "\n        "
               FunctionDeclaration@45..77
-                FunctionHeader@45..73
-                  Fn@45..47 "fn"
-                  Blankspace@47..48 " "
-                  Identifier@48..52 "test"
-                  FunctionParameters@52..73
-                    ParenthesisLeft@52..53 "("
-                    Parameter@53..72
-                      Identifier@53..54 "a"
-                      Colon@54..55 ":"
-                      Blankspace@55..56 " "
-                      TypeSpecifier@56..72
-                        Identifier@56..61 "array"
-                        GenericArgumentList@61..72
-                          LessThan@61..62 "<"
-                          IdentExpression@62..65
-                            Identifier@62..65 "f32"
-                          Comma@65..66 ","
-                          Blankspace@66..67 " "
-                          FieldExpression@67..71
-                            IdentExpression@67..70
-                              Identifier@67..70 "dim"
-                            Period@70..71 "."
-                          GreaterThan@71..72 ">"
-                    ParenthesisRight@72..73 ")"
+                Fn@45..47 "fn"
+                Blankspace@47..48 " "
+                Identifier@48..52 "test"
+                FunctionParameters@52..73
+                  ParenthesisLeft@52..53 "("
+                  Parameter@53..72
+                    Identifier@53..54 "a"
+                    Colon@54..55 ":"
+                    Blankspace@55..56 " "
+                    TypeSpecifier@56..72
+                      Identifier@56..61 "array"
+                      GenericArgumentList@61..72
+                        LessThan@61..62 "<"
+                        IdentExpression@62..65
+                          Identifier@62..65 "f32"
+                        Comma@65..66 ","
+                        Blankspace@66..67 " "
+                        FieldExpression@67..71
+                          IdentExpression@67..70
+                            Identifier@67..70 "dim"
+                          Period@70..71 "."
+                        GreaterThan@71..72 ">"
+                  ParenthesisRight@72..73 ")"
                 Blankspace@73..74 " "
                 CompoundStatement@74..77
                   BraceLeft@74..75 "{"
@@ -179,11 +177,10 @@ fn fn_incomplete() {
         expect![[r#"
             SourceFile@0..7
               FunctionDeclaration@0..7
-                FunctionHeader@0..7
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..7 "name"
-                  FunctionParameters@7..7
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..7 "name"
+                FunctionParameters@7..7
                 Error@7..7
 
             error at 7..7: invalid syntax, expected: '('"#]],
@@ -260,33 +257,32 @@ fn function() {
         expect![[r#"
             SourceFile@0..33
               FunctionDeclaration@0..33
-                FunctionHeader@0..30
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..7 "name"
-                  FunctionParameters@7..23
-                    ParenthesisLeft@7..8 "("
-                    Parameter@8..14
-                      Identifier@8..9 "a"
-                      Colon@9..10 ":"
-                      Blankspace@10..11 " "
-                      TypeSpecifier@11..14
-                        Identifier@11..14 "f32"
-                    Comma@14..15 ","
-                    Blankspace@15..16 " "
-                    Parameter@16..22
-                      Identifier@16..17 "b"
-                      Colon@17..18 ":"
-                      Blankspace@18..19 " "
-                      TypeSpecifier@19..22
-                        Identifier@19..22 "i32"
-                    ParenthesisRight@22..23 ")"
-                  Blankspace@23..24 " "
-                  ReturnType@24..30
-                    Arrow@24..26 "->"
-                    Blankspace@26..27 " "
-                    TypeSpecifier@27..30
-                      Identifier@27..30 "f32"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..7 "name"
+                FunctionParameters@7..23
+                  ParenthesisLeft@7..8 "("
+                  Parameter@8..14
+                    Identifier@8..9 "a"
+                    Colon@9..10 ":"
+                    Blankspace@10..11 " "
+                    TypeSpecifier@11..14
+                      Identifier@11..14 "f32"
+                  Comma@14..15 ","
+                  Blankspace@15..16 " "
+                  Parameter@16..22
+                    Identifier@16..17 "b"
+                    Colon@17..18 ":"
+                    Blankspace@18..19 " "
+                    TypeSpecifier@19..22
+                      Identifier@19..22 "i32"
+                  ParenthesisRight@22..23 ")"
+                Blankspace@23..24 " "
+                ReturnType@24..30
+                  Arrow@24..26 "->"
+                  Blankspace@26..27 " "
+                  TypeSpecifier@27..30
+                    Identifier@27..30 "f32"
                 Blankspace@30..31 " "
                 CompoundStatement@31..33
                   BraceLeft@31..32 "{"
@@ -304,13 +300,12 @@ let y: f32 = 2.0;
         expect![[r#"
             SourceFile@0..57
               FunctionDeclaration@0..57
-                FunctionHeader@0..9
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..7 "name"
-                  FunctionParameters@7..9
-                    ParenthesisLeft@7..8 "("
-                    ParenthesisRight@8..9 ")"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..7 "name"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                 Blankspace@9..10 " "
                 CompoundStatement@10..57
                   BraceLeft@10..11 "{"
@@ -358,13 +353,12 @@ fn trivial_function() {
         expect![[r#"
             SourceFile@0..12
               FunctionDeclaration@0..12
-                FunctionHeader@0..9
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..7 "test"
-                  FunctionParameters@7..9
-                    ParenthesisLeft@7..8 "("
-                    ParenthesisRight@8..9 ")"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..7 "test"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                 Blankspace@9..10 " "
                 CompoundStatement@10..12
                   BraceLeft@10..11 "{"
@@ -379,19 +373,18 @@ fn nontrivial_function() {
         expect![[r#"
             SourceFile@0..34
               FunctionDeclaration@0..34
-                FunctionHeader@0..15
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..6 "foo"
-                  FunctionParameters@6..8
-                    ParenthesisLeft@6..7 "("
-                    ParenthesisRight@7..8 ")"
-                  Blankspace@8..9 " "
-                  ReturnType@9..15
-                    Arrow@9..11 "->"
-                    Blankspace@11..12 " "
-                    TypeSpecifier@12..15
-                      Identifier@12..15 "i32"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..6 "foo"
+                FunctionParameters@6..8
+                  ParenthesisLeft@6..7 "("
+                  ParenthesisRight@7..8 ")"
+                Blankspace@8..9 " "
+                ReturnType@9..15
+                  Arrow@9..11 "->"
+                  Blankspace@11..12 " "
+                  TypeSpecifier@12..15
+                    Identifier@12..15 "i32"
                 Blankspace@15..16 " "
                 CompoundStatement@16..34
                   BraceLeft@16..17 "{"
@@ -420,17 +413,15 @@ fn fn_recover() {
         expect![[r#"
             SourceFile@0..10
               FunctionDeclaration@0..3
-                FunctionHeader@0..3
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 "\n"
-                  FunctionParameters@3..3
+                Fn@0..2 "fn"
+                Blankspace@2..3 "\n"
+                FunctionParameters@3..3
                 Error@3..3
               FunctionDeclaration@3..10
-                FunctionHeader@3..10
-                  Fn@3..5 "fn"
-                  Blankspace@5..6 " "
-                  Identifier@6..10 "name"
-                  FunctionParameters@10..10
+                Fn@3..5 "fn"
+                Blankspace@5..6 " "
+                Identifier@6..10 "name"
+                FunctionParameters@10..10
                 Error@10..10
 
             error at 3..5: invalid syntax, expected: <identifier>
@@ -446,23 +437,21 @@ fn fn_recover_2() {
         expect![[r#"
             SourceFile@0..30
               FunctionDeclaration@0..18
-                FunctionHeader@0..9
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..7 "name"
-                  FunctionParameters@7..9
-                    ParenthesisLeft@7..8 "("
-                    ParenthesisRight@8..9 ")"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..7 "name"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                 Blankspace@9..18 "\n        "
                 Error@18..18
               FunctionDeclaration@18..30
-                FunctionHeader@18..27
-                  Fn@18..20 "fn"
-                  Blankspace@20..21 " "
-                  Identifier@21..25 "test"
-                  FunctionParameters@25..27
-                    ParenthesisLeft@25..26 "("
-                    ParenthesisRight@26..27 ")"
+                Fn@18..20 "fn"
+                Blankspace@20..21 " "
+                Identifier@21..25 "test"
+                FunctionParameters@25..27
+                  ParenthesisLeft@25..26 "("
+                  ParenthesisRight@26..27 ")"
                 Blankspace@27..28 " "
                 CompoundStatement@28..30
                   BraceLeft@28..29 "{"
@@ -610,19 +599,18 @@ fn parse_return_statement() {
         expect![[r#"
             SourceFile@0..49
               FunctionDeclaration@0..49
-                FunctionHeader@0..15
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..6 "foo"
-                  FunctionParameters@6..8
-                    ParenthesisLeft@6..7 "("
-                    ParenthesisRight@7..8 ")"
-                  Blankspace@8..9 " "
-                  ReturnType@9..15
-                    Arrow@9..11 "->"
-                    Blankspace@11..12 " "
-                    TypeSpecifier@12..15
-                      Identifier@12..15 "u32"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..6 "foo"
+                FunctionParameters@6..8
+                  ParenthesisLeft@6..7 "("
+                  ParenthesisRight@7..8 ")"
+                Blankspace@8..9 " "
+                ReturnType@9..15
+                  Arrow@9..11 "->"
+                  Blankspace@11..12 " "
+                  TypeSpecifier@12..15
+                    Identifier@12..15 "u32"
                 Blankspace@15..16 " "
                 CompoundStatement@16..49
                   BraceLeft@16..17 "{"
@@ -649,19 +637,18 @@ fn parse_let_statement_recover() {
         expect![[r#"
             SourceFile@0..88
               FunctionDeclaration@0..88
-                FunctionHeader@0..15
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..6 "foo"
-                  FunctionParameters@6..8
-                    ParenthesisLeft@6..7 "("
-                    ParenthesisRight@7..8 ")"
-                  Blankspace@8..9 " "
-                  ReturnType@9..15
-                    Arrow@9..11 "->"
-                    Blankspace@11..12 " "
-                    TypeSpecifier@12..15
-                      Identifier@12..15 "u32"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..6 "foo"
+                FunctionParameters@6..8
+                  ParenthesisLeft@6..7 "("
+                  ParenthesisRight@7..8 ")"
+                Blankspace@8..9 " "
+                ReturnType@9..15
+                  Arrow@9..11 "->"
+                  Blankspace@11..12 " "
+                  TypeSpecifier@12..15
+                    Identifier@12..15 "u32"
                 Blankspace@15..16 " "
                 CompoundStatement@16..88
                   BraceLeft@16..17 "{"
@@ -1392,13 +1379,12 @@ fn parse_statement_assignment_invalid() {
         expect![[r#"
             SourceFile@0..14
               FunctionDeclaration@0..14
-                FunctionHeader@0..6
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..4 "a"
-                  FunctionParameters@4..6
-                    ParenthesisLeft@4..5 "("
-                    ParenthesisRight@5..6 ")"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..4 "a"
+                FunctionParameters@4..6
+                  ParenthesisLeft@4..5 "("
+                  ParenthesisRight@5..6 ")"
                 CompoundStatement@6..14
                   BraceLeft@6..7 "{"
                   Error@7..8
@@ -1634,16 +1620,15 @@ fn fn_recover_incomplete_param() {
         expect![[r#"
             SourceFile@0..13
               FunctionDeclaration@0..13
-                FunctionHeader@0..10
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..7 "main"
-                  FunctionParameters@7..10
-                    ParenthesisLeft@7..8 "("
-                    Parameter@8..9
-                      Identifier@8..9 "p"
-                      TypeSpecifier@9..9
-                    ParenthesisRight@9..10 ")"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..7 "main"
+                FunctionParameters@7..10
+                  ParenthesisLeft@7..8 "("
+                  Parameter@8..9
+                    Identifier@8..9 "p"
+                    TypeSpecifier@9..9
+                  ParenthesisRight@9..10 ")"
                 Blankspace@10..11 " "
                 CompoundStatement@11..13
                   BraceLeft@11..12 "{"
@@ -1662,13 +1647,12 @@ fn let_statement_recover_return_no_eq() {
         expect![[r#"
             SourceFile@0..42
               FunctionDeclaration@0..42
-                FunctionHeader@0..9
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..7 "main"
-                  FunctionParameters@7..9
-                    ParenthesisLeft@7..8 "("
-                    ParenthesisRight@8..9 ")"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                 Blankspace@9..10 " "
                 CompoundStatement@10..42
                   BraceLeft@10..11 "{"
@@ -1699,13 +1683,12 @@ fn let_statement_recover_return() {
         expect![[r#"
             SourceFile@0..59
               FunctionDeclaration@0..59
-                FunctionHeader@0..9
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..7 "main"
-                  FunctionParameters@7..9
-                    ParenthesisLeft@7..8 "("
-                    ParenthesisRight@8..9 ")"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                 Blankspace@9..10 " "
                 CompoundStatement@10..59
                   BraceLeft@10..11 "{"
@@ -1737,13 +1720,12 @@ fn let_statement_recover_return_2() {
         expect![[r#"
             SourceFile@0..61
               FunctionDeclaration@0..61
-                FunctionHeader@0..9
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..7 "main"
-                  FunctionParameters@7..9
-                    ParenthesisLeft@7..8 "("
-                    ParenthesisRight@8..9 ")"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                 Blankspace@9..10 " "
                 CompoundStatement@10..61
                   BraceLeft@10..11 "{"
@@ -1777,13 +1759,12 @@ fn let_statement_recover_return_3() {
         expect![[r#"
             SourceFile@0..63
               FunctionDeclaration@0..63
-                FunctionHeader@0..9
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..7 "main"
-                  FunctionParameters@7..9
-                    ParenthesisLeft@7..8 "("
-                    ParenthesisRight@8..9 ")"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                 Blankspace@9..10 " "
                 CompoundStatement@10..63
                   BraceLeft@10..11 "{"
@@ -1818,13 +1799,12 @@ fn let_statement_recover_1() {
         expect![[r#"
             SourceFile@0..39
               FunctionDeclaration@0..39
-                FunctionHeader@0..9
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..7 "main"
-                  FunctionParameters@7..9
-                    ParenthesisLeft@7..8 "("
-                    ParenthesisRight@8..9 ")"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                 Blankspace@9..10 " "
                 CompoundStatement@10..39
                   BraceLeft@10..11 "{"
@@ -1850,13 +1830,12 @@ fn let_statement_recover_2() {
         expect![[r#"
             SourceFile@0..41
               FunctionDeclaration@0..41
-                FunctionHeader@0..9
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..7 "main"
-                  FunctionParameters@7..9
-                    ParenthesisLeft@7..8 "("
-                    ParenthesisRight@8..9 ")"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                 Blankspace@9..10 " "
                 CompoundStatement@10..41
                   BraceLeft@10..11 "{"
@@ -1884,13 +1863,12 @@ fn let_statement_recover_3() {
         expect![[r#"
             SourceFile@0..37
               FunctionDeclaration@0..37
-                FunctionHeader@0..9
-                  Fn@0..2 "fn"
-                  Blankspace@2..3 " "
-                  Identifier@3..7 "main"
-                  FunctionParameters@7..9
-                    ParenthesisLeft@7..8 "("
-                    ParenthesisRight@8..9 ")"
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
                 Blankspace@9..10 " "
                 CompoundStatement@10..37
                   BraceLeft@10..11 "{"
@@ -1927,39 +1905,36 @@ fn tabs() {
             SourceFile@0..63
               Blankspace@0..4 "\n\t\t\t"
               FunctionDeclaration@4..15
-                FunctionHeader@4..12
-                  Fn@4..6 "fn"
-                  Blankspace@6..7 " "
-                  Identifier@7..10 "foo"
-                  FunctionParameters@10..12
-                    ParenthesisLeft@10..11 "("
-                    ParenthesisRight@11..12 ")"
+                Fn@4..6 "fn"
+                Blankspace@6..7 " "
+                Identifier@7..10 "foo"
+                FunctionParameters@10..12
+                  ParenthesisLeft@10..11 "("
+                  ParenthesisRight@11..12 ")"
                 Blankspace@12..13 " "
                 CompoundStatement@13..15
                   BraceLeft@13..14 "{"
                   BraceRight@14..15 "}"
               Blankspace@15..28 "\n            "
               FunctionDeclaration@28..39
-                FunctionHeader@28..36
-                  Fn@28..30 "fn"
-                  Blankspace@30..31 " "
-                  Identifier@31..34 "bar"
-                  FunctionParameters@34..36
-                    ParenthesisLeft@34..35 "("
-                    ParenthesisRight@35..36 ")"
+                Fn@28..30 "fn"
+                Blankspace@30..31 " "
+                Identifier@31..34 "bar"
+                FunctionParameters@34..36
+                  ParenthesisLeft@34..35 "("
+                  ParenthesisRight@35..36 ")"
                 Blankspace@36..37 " "
                 CompoundStatement@37..39
                   BraceLeft@37..38 "{"
                   BraceRight@38..39 "}"
               Blankspace@39..43 "\n\t\t\t"
               FunctionDeclaration@43..54
-                FunctionHeader@43..51
-                  Fn@43..45 "fn"
-                  Blankspace@45..46 " "
-                  Identifier@46..49 "baz"
-                  FunctionParameters@49..51
-                    ParenthesisLeft@49..50 "("
-                    ParenthesisRight@50..51 ")"
+                Fn@43..45 "fn"
+                Blankspace@45..46 " "
+                Identifier@46..49 "baz"
+                FunctionParameters@49..51
+                  ParenthesisLeft@49..50 "("
+                  ParenthesisRight@50..51 ")"
                 Blankspace@51..52 " "
                 CompoundStatement@52..54
                   BraceLeft@52..53 "{"
@@ -2156,13 +2131,12 @@ fn test()
                 Blankspace@7..8 "\n"
                 Error@8..8
               FunctionDeclaration@8..18
-                FunctionHeader@8..17
-                  Fn@8..10 "fn"
-                  Blankspace@10..11 " "
-                  Identifier@11..15 "test"
-                  FunctionParameters@15..17
-                    ParenthesisLeft@15..16 "("
-                    ParenthesisRight@16..17 ")"
+                Fn@8..10 "fn"
+                Blankspace@10..11 " "
+                Identifier@11..15 "test"
+                FunctionParameters@15..17
+                  ParenthesisLeft@15..16 "("
+                  ParenthesisRight@16..17 ")"
                 Blankspace@17..18 "\n"
                 Error@18..18
 
@@ -2188,13 +2162,12 @@ fn test()
                 Blankspace@12..13 "\n"
                 Error@13..13
               FunctionDeclaration@13..23
-                FunctionHeader@13..22
-                  Fn@13..15 "fn"
-                  Blankspace@15..16 " "
-                  Identifier@16..20 "test"
-                  FunctionParameters@20..22
-                    ParenthesisLeft@20..21 "("
-                    ParenthesisRight@21..22 ")"
+                Fn@13..15 "fn"
+                Blankspace@15..16 " "
+                Identifier@16..20 "test"
+                FunctionParameters@20..22
+                  ParenthesisLeft@20..21 "("
+                  ParenthesisRight@21..22 ")"
                 Blankspace@22..23 "\n"
                 Error@23..23
 
@@ -2227,13 +2200,12 @@ fn test()
                   BraceRight@14..15 "}"
               Blankspace@15..17 "\n\n"
               FunctionDeclaration@17..27
-                FunctionHeader@17..26
-                  Fn@17..19 "fn"
-                  Blankspace@19..20 " "
-                  Identifier@20..24 "test"
-                  FunctionParameters@24..26
-                    ParenthesisLeft@24..25 "("
-                    ParenthesisRight@25..26 ")"
+                Fn@17..19 "fn"
+                Blankspace@19..20 " "
+                Identifier@20..24 "test"
+                FunctionParameters@24..26
+                  ParenthesisLeft@24..25 "("
+                  ParenthesisRight@25..26 ")"
                 Blankspace@26..27 "\n"
                 Error@27..27
               Error@27..28
