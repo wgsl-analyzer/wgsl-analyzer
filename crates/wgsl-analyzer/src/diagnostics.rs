@@ -4,7 +4,7 @@
 
 use std::mem;
 
-use cargo_metadata::PackageId;
+use wesl_metadata::PackageId;
 type FileId = vfs::FileId;
 use ide::diagnostics::{Diagnostic, Severity};
 use itertools::Itertools as _;

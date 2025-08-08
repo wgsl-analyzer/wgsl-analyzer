@@ -25,6 +25,7 @@ ide-completion = { path = "./crates/ide_completion", version = "0.0.0" }
 ide-db = { path = "./crates/ide-db", version = "0.0.0" }
 parser = { path = "./crates/parser", version = "0.0.0" }
 profile = { path = "./crates/profile", version = "0.0.0" }
+project-model = { path = "./crates/project-model", version = "0.0.0" }
 stdx = { path = "./crates/stdx", version = "0.0.0" }
 syntax = { path = "./crates/syntax", version = "0.0.0" }
 test-utils = { path = "./crates/test-utils", version = "0.0.0" }
