@@ -87,18 +87,11 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install rustup
-        if: ${{ matrix.container }}
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-      - name: Install Rust toolchain
-        run: |
-          rustup update --no-self-update stable
-          # llvm-tools contain the llvm-profdata tool which is needed for PGO
-          rustup component add rust-src # ${{ matrix.pgo && 'llvm-tools' || '' }}
-          rustup target add ${{ matrix.target }}
+      - name: Install stable Rust toolchain
+        uses: dtolnay/rust-toolchain@1.89.0
+        with:
+          components: ${{ matrix.pgo && 'llvm-tools' || '' }}
+          target: ${{ matrix.target }}
 
       - name: Install Zig toolchain
         if: ${{ matrix.zig_target }}
