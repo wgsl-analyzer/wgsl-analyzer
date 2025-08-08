@@ -8,7 +8,7 @@ exclude = []
 resolver = "2"
 
 [workspace.package]
-rust-version = "1.88"
+rust-version = "1.89"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 authors = ["wgsl-analyzer team"]
@@ -82,7 +82,7 @@ query-group = { package = "query-group-macro", git = "https://github.com/rust-la
 # crates from rust-analyzer that are published separately
 line-index = "0.1.2"
 la-arena = "0.3.1"
-lsp-server = "0.7.8"
+lsp-server = "0.7.9"
 
 # non-local crates
 anyhow = "1.0.98"
@@ -90,7 +90,7 @@ arrayvec = "0.7.6"
 base64 = "0.22"
 bitflags = "2.9.1"
 cargo_metadata = "0.19.1"
-camino = "1.1.10"
+camino = "1.1.11"
 dirs = "5.0.1"
 scip = "0.5.2"
 chalk-solve = { version = "0.99.0", default-features = false }
@@ -105,7 +105,7 @@ either = "1.15.0"
 expect-test = "1.5.1"
 fst = { version = "0.4.7", default-features = false }
 fxhash = "0.2.1"
-hashbrown = { version = "0.15.4", features = [
+hashbrown = { version = "0.15.5", features = [
   "inline-more",
 ], default-features = false }
 indexmap = "2.10.0"
@@ -142,7 +142,7 @@ salsa = "0.17.0-pre.2"
 salsa-macros = "0.22.0"
 semver = "1.0.25"
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.141"
+serde_json = "1.0.142"
 smallvec = { version = "1.15.1", features = [
   "const_new",
   "union",
@@ -166,7 +166,7 @@ url = "2.5.4"
 xshell = "0.2.7"
 lexopt = "0.3.0"
 prettydiff = "0.8.1"
-notify = "8.1.0"
+notify = "8.2.0"
 proptest = "1.7.0"
 
 # We need to freeze the version of the crate because the raw-api feature is considered unstable
