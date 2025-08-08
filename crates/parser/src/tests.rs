@@ -2732,7 +2732,7 @@ fn assert_statement() {
         expect![[r#"
             SourceFile@0..19
               AssertStatement@0..19
-                ConstAssert@0..12 "const_assert"
+                ConstantAssert@0..12 "const_assert"
                 Blankspace@12..13 " "
                 InfixExpression@13..18
                   Literal@13..14

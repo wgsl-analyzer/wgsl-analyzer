@@ -243,7 +243,7 @@ mod tests {
         check_lex("10.0", expect![["[FloatLiteral]"]]);
         check_lex("-10.0", expect![["[Minus, FloatLiteral]"]]);
         check_lex("1e9f", expect![["[FloatLiteral]"]]);
-        check_lex("-0.0e7", expect![["[FloatLiteral]"]]);
+        check_lex("-0.0e7", expect!["[Minus, FloatLiteral]"]);
         check_lex(".1", expect![["[FloatLiteral]"]]);
         check_lex("1.", expect![["[FloatLiteral]"]]);
     }
@@ -260,7 +260,7 @@ mod tests {
     fn lex_comment() {
         check_lex(
             "// test asdf\nnot_comment",
-            expect!["[LineEndingComment, Blankspace, Identifier]"],
+            expect!["[LineEndingComment, Blankspace, Ident]"],
         );
     }
 
@@ -269,9 +269,7 @@ mod tests {
         // Expect: Identifier (a), [, Identifier (a), [, IntLiteral (0), ], ]
         check_lex(
             "a[a[0]]",
-            expect![[
-                "[Identifier, BracketLeft, Identifier, BracketLeft, IntLiteral, BracketRight, BracketRight]"
-            ]],
+            expect!["[Ident, LBrak, Ident, LBrak, IntLiteral, RBrak, RBrak]"],
         );
     }
 }
