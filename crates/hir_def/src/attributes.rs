@@ -123,7 +123,7 @@ impl AttributesWithOwner {
                 let attrs = fields.find_map(|field| {
                     let name = field
                         .variable_ident_declaration()
-                        .and_then(|var| var.binding())
+                        .and_then(|variable| variable.binding())
                         .and_then(|binding| binding.name())?;
                     (name.text().as_str() == field_name).then_some(field)
                 });
