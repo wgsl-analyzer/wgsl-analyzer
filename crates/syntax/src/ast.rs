@@ -212,59 +212,6 @@ ast_node! {
 }
 
 ast_node! {
-    Import:
-    import_token: Option<SyntaxToken UnofficialPreprocessorImport>;
-    import: Option<ImportKind>;
-}
-
-ast_node! {
-    ImportPath:
-    string_literal: Option<SyntaxToken StringLiteral>;
-}
-
-ast_node! {
-    ImportCustom
-}
-
-impl ImportCustom {
-    pub fn segments(&self) -> impl Iterator<Item = ImportCustomSegment> {
-        self.syntax
-            .children_with_tokens()
-            .filter_map(|token| ImportCustomSegment::cast(token.as_token()?.clone()))
-    }
-
-    #[must_use]
-    pub fn key(&self) -> String {
-        self.segments()
-            .fold(String::new(), |mut accumulator, segment| {
-                match segment {
-                    ImportCustomSegment::Identifier(identifier) => {
-                        accumulator.push_str(identifier.text());
-                    },
-                    ImportCustomSegment::ColonColon(colon_colon) => {
-                        accumulator.push_str(colon_colon.text());
-                    },
-                }
-                accumulator
-            })
-    }
-}
-
-ast_token_enum! {
-    enum ImportCustomSegment {
-        Identifier,
-        ColonColon,
-    }
-}
-
-ast_enum! {
-    enum ImportKind {
-        ImportPath,
-        ImportCustom,
-    }
-}
-
-ast_node! {
     FunctionDeclaration:
     fn_token: Option<SyntaxToken Fn>;
     parameter_list: Option<FunctionParameters>;
@@ -361,7 +308,6 @@ ast_enum! {
         VariableDeclaration,
         ConstantDeclaration,
         OverrideDeclaration,
-        Import,
         TypeAliasDeclaration,
         StructDeclaration,
     }
@@ -393,10 +339,6 @@ ast_node! {
     left_angle_token: Option<SyntaxToken LessThan>;
     generics: AstChildren<Expression>;
     t_angle_token: Option<SyntaxToken GreaterThan>;
-}
-
-ast_node! {
-    BinaryOperator
 }
 
 ast_node!(InfixExpression);

@@ -72,7 +72,7 @@ pub fn format_recursive(
 fn is_indent_kind(node: &SyntaxNode) -> bool {
     if matches!(
         node.kind(),
-        SyntaxKind::CompoundStatement | SyntaxKind::SwitchBody
+        SyntaxKind::LoopStatement | SyntaxKind::CompoundStatement | SyntaxKind::SwitchBody
     ) {
         return true;
     }
