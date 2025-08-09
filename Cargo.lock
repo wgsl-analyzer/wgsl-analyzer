@@ -912,7 +912,7 @@ version = "0.9.1"
 source = "git+https://github.com/stefnotch/lelwel.git?branch=lelwel-dev#b5bb895c89e405a43185796346b16d361df7ef25"
 dependencies = [
  "codespan-reporting",
- "logos 0.15.0",
+ "logos",
 ]
 
 [[package]]
@@ -996,20 +996,11 @@ checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
 
 [[package]]
 name = "logos"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf8b031682c67a8e3d5446840f9573eb7fe26efe7ec8d195c9ac4c0647c502f1"
-dependencies = [
- "logos-derive 0.12.1",
-]
-
-[[package]]
-name = "logos"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab6f536c1af4c7cc81edf73da1f8029896e7e1e16a219ef09b184e76a296f3db"
 dependencies = [
- "logos-derive 0.15.0",
+ "logos-derive",
 ]
 
 [[package]]
@@ -1026,20 +1017,6 @@ dependencies = [
  "regex-syntax 0.8.5",
  "rustc_version",
  "syn 2.0.104",
-]
-
-[[package]]
-name = "logos-derive"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1d849148dbaf9661a6151d1ca82b13bb4c4c128146a88d05253b38d4e2f496c"
-dependencies = [
- "beef",
- "fnv",
- "proc-macro2",
- "quote",
- "regex-syntax 0.6.29",
- "syn 1.0.109",
 ]
 
 [[package]]
@@ -1372,7 +1349,7 @@ dependencies = [
  "edition",
  "expect-test",
  "lelwel",
- "logos 0.12.1",
+ "logos",
  "rowan",
 ]
 
