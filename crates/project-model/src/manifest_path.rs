@@ -5,7 +5,7 @@ use paths::{AbsPath, AbsPathBuf, Utf8Path};
 
 /// More or less [`AbsPathBuf`] with non-None parent.
 ///
-/// We use it to store path to Cargo.toml, as we frequently use the parent dir
+/// We use it to store path to wesl.toml, as we frequently use the parent dir
 /// as a working directory to spawn various commands, and its nice to not have
 /// to `.unwrap()` everywhere.
 ///

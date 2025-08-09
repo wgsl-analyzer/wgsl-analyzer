@@ -28,8 +28,8 @@ const MINIMUM_TOOLCHAIN_VERSION_SUPPORTING_LOCKFILE_PATH: semver::Version = semv
 /// [`WeslWorkspace`] represents the logical structure of, well, a WESL
 /// workspace. It pretty closely mirrors `wesl metadata` output.
 ///
-/// Note that internally, rust-analyzer uses a different structure:
-/// `CrateGraph`. `CrateGraph` is lower-level: it knows only about the crates,
+/// Note that internally, `wgsl-analyzer` uses a different structure:
+/// `PackageGraph`. `PackageGraph` is lower-level: it knows only about the packages,
 /// while this knows about `Packages`, a purely wesl-related
 /// concept.
 ///
@@ -38,35 +38,22 @@ const MINIMUM_TOOLCHAIN_VERSION_SUPPORTING_LOCKFILE_PATH: semver::Version = semv
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct WeslWorkspace {
     packages: Arena<PackageData>,
-    targets: Arena<TargetData>,
     workspace_root: AbsPathBuf,
     target_directory: AbsPathBuf,
     manifest_path: ManifestPath,
     is_virtual_workspace: bool,
-    /// Whether this workspace represents the sysroot workspace.
-    is_sysroot: bool,
     /// Environment variables set in the `.wesl/config` file.
     config_env: Env,
     requires_rustc_private: bool,
 }
 
-impl ops::Index<Package> for WeslWorkspace {
+impl ops::Index<Package2> for WeslWorkspace {
     type Output = PackageData;
     fn index(
         &self,
-        index: Package,
+        index: Package2,
     ) -> &PackageData {
         &self.packages[index]
-    }
-}
-
-impl ops::Index<Target> for WeslWorkspace {
-    type Output = TargetData;
-    fn index(
-        &self,
-        index: Target,
-    ) -> &TargetData {
-        &self.targets[index]
     }
 }
 
@@ -94,9 +81,7 @@ pub struct WeslConfig {
     pub no_deps: bool,
 }
 
-pub type Package = Idx<PackageData>;
-
-pub type Target = Idx<TargetData>;
+pub type Package2 = Idx<PackageData>;
 
 /// Information associated with a WESL package
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -129,7 +114,7 @@ pub struct PackageData {
     pub license_file: Option<Utf8PathBuf>,
     /// Readme file as given in the `wesl.toml`
     pub readme: Option<Utf8PathBuf>,
-    /// The contents of [package.metadata.rust-analyzer]
+    /// The contents of [package.metadata.wgsl-analyzer]
     pub metadata: WgslAnalyzerPackageMetaData,
 }
 
@@ -138,21 +123,8 @@ pub struct WgslAnalyzerPackageMetaData {}
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct PackageDependency {
-    pub pkg: Package,
+    pub pkg: Package2,
     pub name: String,
-}
-
-/// Information associated with a package's target
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct TargetData {
-    /// Package that provided this target
-    pub package: Package,
-    /// Name as given in the `wesl.toml` or generated from the file name
-    pub name: String,
-    /// Path to the main source file of the target
-    pub root: AbsPathBuf,
-    /// Required features of the target without which it won't build
-    pub required_features: Vec<String>,
 }
 
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
@@ -362,18 +334,16 @@ impl WeslWorkspace {
 
         WeslWorkspace {
             packages,
-            targets,
             workspace_root,
             target_directory,
             manifest_path: ws_manifest_path,
             is_virtual_workspace,
             requires_rustc_private,
-            is_sysroot,
             config_env: wesl_config_env,
         }
     }
 
-    pub fn packages(&self) -> impl ExactSizeIterator<Item = Package> + '_ {
+    pub fn packages(&self) -> impl ExactSizeIterator<Item = Package2> + '_ {
         self.packages.iter().map(|(id, _pkg)| id)
     }
 
@@ -446,10 +416,6 @@ impl WeslWorkspace {
 
     pub fn env(&self) -> &Env {
         &self.config_env
-    }
-
-    pub fn is_sysroot(&self) -> bool {
-        self.is_sysroot
     }
 
     pub fn requires_rustc_private(&self) -> bool {

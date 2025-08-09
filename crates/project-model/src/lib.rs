@@ -1,7 +1,7 @@
-//! In rust-analyzer, we maintain a strict separation between pure abstract
+//! In `wgsl-analyzer`, we maintain a strict separation between pure abstract
 //! semantic project model and a concrete model of a particular build system.
 //!
-//! Pure model is represented by the [`base_db::CrateGraph`] from another crate.
+//! Pure model is represented by the [`base_db::PackageGraph`] from another package.
 //!
 //! In this crate, we are concerned with "real world" project models.
 //!
@@ -13,7 +13,7 @@
 //! * Project discovery (where's the relevant wesl.toml for the current dir).
 //! * Custom build steps (`build.rs` code generation and compilation of
 //!   procedural macros).
-//! * Lowering of concrete model to a [`base_db::CrateGraph`]
+//! * Lowering of concrete model to a [`base_db::PackageGraph`]
 
 pub mod project_json;
 pub mod toolchain_info {
@@ -52,7 +52,7 @@ pub use crate::{
     manifest_path::ManifestPath,
     project_json::{ProjectJson, ProjectJsonData},
     wesl_workspace::{
-        Package, PackageData, PackageDependency, WeslConfig, WeslMetadataConfig, WeslWorkspace,
+        Package2, PackageData, PackageDependency, WeslConfig, WeslMetadataConfig, WeslWorkspace,
     },
     workspace::{FileLoader, PackageRoot, ProjectWorkspace, ProjectWorkspaceKind},
 };
