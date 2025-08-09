@@ -229,8 +229,8 @@ mod support {
 }
 
 pub trait HasName: AstNode {
-    fn name(&self) -> Option<ast::Identifier> {
-        support::child(self.syntax())
+    fn name(&self) -> Option<SyntaxToken> {
+        crate::support::token(self.syntax(), SyntaxKind::Identifier)
     }
 }
 

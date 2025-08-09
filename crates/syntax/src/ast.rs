@@ -303,7 +303,9 @@ impl HasAttributes for StructMember {}
 ast_node! {
     VariableDeclaration:
     var_token: Option<SyntaxToken Var>;
+    colon: Option<SyntaxToken Colon>;
     ty: Option<TypeSpecifier>;
+    equal_token: Option<SyntaxToken Equal>;
     init: Option<Expression>;
 }
 impl HasGenerics for VariableDeclaration {}
@@ -312,8 +314,10 @@ impl HasAttributes for VariableDeclaration {}
 
 ast_node! {
     LetDeclaration:
-    var_token: Option<SyntaxToken Let>;
+    let_token: Option<SyntaxToken Let>;
+    colon: Option<SyntaxToken Colon>;
     ty: Option<TypeSpecifier>;
+    equal_token: Option<SyntaxToken Equal>;
     init: Option<Expression>;
 }
 impl HasName for LetDeclaration {}
@@ -321,7 +325,10 @@ impl HasAttributes for LetDeclaration {}
 
 ast_node! {
     ConstantDeclaration:
+    constant_token: Option<SyntaxToken Constant>;
+    colon: Option<SyntaxToken Colon>;
     ty: Option<TypeSpecifier>;
+    equal_token: Option<SyntaxToken Equal>;
     init: Option<Expression>;
 }
 
@@ -330,7 +337,10 @@ impl HasAttributes for ConstantDeclaration {}
 
 ast_node! {
     OverrideDeclaration:
+    override_token: Option<SyntaxToken Override>;
+    colon: Option<SyntaxToken Colon>;
     ty: Option<TypeSpecifier>;
+    equal_token: Option<SyntaxToken Equal>;
     init: Option<Expression>;
 }
 impl HasName for OverrideDeclaration {}

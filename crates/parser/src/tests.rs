@@ -1,8 +1,9 @@
 #![cfg_attr(not(test), allow(unused))]
 
-use expect_test::{Expect, expect};
+mod expression;
 
 use crate::ParseEntryPoint;
+use expect_test::{Expect, expect};
 
 #[expect(clippy::needless_pass_by_value, reason = "intended API")]
 fn check(

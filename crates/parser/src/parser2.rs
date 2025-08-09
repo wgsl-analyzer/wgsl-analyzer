@@ -490,7 +490,6 @@ impl<'a> ParserCallbacks for Parser<'a> {
         self.peek(1) != Token::RPar
     }
     fn predicate_struct_body_1(&self) -> bool {
-        println!("{:?}{:?}{:?}", self.peek(0), self.peek(1), self.peek(2));
         self.peek(1) != Token::RBrace
     }
     fn action_template_list_1(
