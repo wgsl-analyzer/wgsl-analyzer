@@ -95,7 +95,7 @@ fn global_variable_declaration(
         parser,
         marker,
         SyntaxKind::Var,
-        SyntaxKind::GlobalVariableDeclaration,
+        SyntaxKind::VariableDeclaration,
     );
 }
 
@@ -104,7 +104,7 @@ fn global_constant_declaration(
     marker: Marker,
     kind: SyntaxKind,
 ) {
-    global_declaration(parser, marker, kind, SyntaxKind::GlobalConstantDeclaration);
+    global_declaration(parser, marker, kind, SyntaxKind::ConstantDeclaration);
 }
 
 fn global_declaration(
@@ -120,7 +120,7 @@ fn global_declaration(
 
     if parser.at_set(ITEM_RECOVERY_SET) {
         parser.error_no_bump(&[SyntaxKind::Binding]);
-        marker.complete(parser, SyntaxKind::GlobalVariableDeclaration);
+        marker.complete(parser, SyntaxKind::VariableDeclaration);
         return;
     }
 
@@ -188,7 +188,7 @@ fn struct_(
         SyntaxKind::BraceLeft,
         SyntaxKind::BraceRight,
         &[SyntaxKind::Semicolon, SyntaxKind::Comma],
-        SyntaxKind::StructDeclBody,
+        SyntaxKind::StructBody,
         struct_member,
     );
 
@@ -208,7 +208,7 @@ fn struct_member(parser: &mut Parser<'_, '_>) {
         parser.bump();
     }
 
-    marker.complete(parser, SyntaxKind::StructDeclarationField);
+    marker.complete(parser, SyntaxKind::StructMember);
 }
 
 fn function(
@@ -220,7 +220,7 @@ fn function(
     if parser.at(SyntaxKind::Identifier) {
         name(parser);
     } else {
-        marker.complete(parser, SyntaxKind::Function);
+        marker.complete(parser, SyntaxKind::FunctionDeclaration);
         return;
     }
 
@@ -250,13 +250,16 @@ fn function(
         parser.error_recovery(&[SyntaxKind::Fn]);
     }
 
-    marker.complete(parser, SyntaxKind::Function);
+    marker.complete(parser, SyntaxKind::FunctionDeclaration);
 }
 
 fn name(parser: &mut Parser<'_, '_>) {
     let marker = parser.start();
     parser.expect(SyntaxKind::Identifier);
-    marker.complete(parser, SyntaxKind::Name);
+    marker.complete(
+        parser,
+        SyntaxKind::IdentExpression, /* used to say SyntaxKind::Name */
+    );
 }
 
 fn name_recover(
@@ -456,7 +459,7 @@ pub(crate) fn type_declaration(parser: &mut Parser<'_, '_>) -> Option<CompletedM
             _ = marker.complete(parser, SyntaxKind::FieldExpression);
         }
 
-        Some(marker_ty.complete(parser, SyntaxKind::PathType))
+        Some(marker_ty.complete(parser, SyntaxKind::TypeSpecifier))
     } else {
         // TODO remove this branch
         parser.error();
@@ -646,10 +649,10 @@ fn if_statement(parser: &mut Parser<'_, '_>) {
             }
 
             compound_statement(parser);
-            marker_else.complete(parser, SyntaxKind::ElseIfBlock);
+            marker_else.complete(parser, SyntaxKind::ElseIfClause);
         } else if parser.at(SyntaxKind::BraceLeft) {
             compound_statement(parser);
-            marker_else.complete(parser, SyntaxKind::ElseBlock);
+            marker_else.complete(parser, SyntaxKind::ElseClause);
         } else {
             marker_else.complete(parser, SyntaxKind::Error);
             parser.error_recovery(&[SyntaxKind::Else]);
@@ -671,7 +674,7 @@ fn switch_statement(parser: &mut Parser<'_, '_>) {
         SyntaxKind::BraceLeft,
         SyntaxKind::BraceRight,
         SyntaxKind::Semicolon,
-        SyntaxKind::SwitchBlock,
+        SyntaxKind::SwitchBody,
         switch_body,
     );
 

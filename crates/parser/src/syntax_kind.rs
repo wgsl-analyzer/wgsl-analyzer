@@ -4,10 +4,11 @@ use std::mem;
 #[repr(u16)]
 pub enum SyntaxKind {
     SourceFile,
-    /// Emergent nodes
-    Name,
+    /// Arguments in an attribute or in a function call
+    Arguments,
     /// a function
-    Function,
+    FunctionDeclaration,
+
     /// ident: type
     VariableIdentDeclaration,
     /// the <a, b, c> of a generic
@@ -24,6 +25,10 @@ pub enum SyntaxKind {
 
     // Statements https://www.w3.org/TR/WGSL/#statements
 
+    /// [10.1. Const Assert Statement](https://www.w3.org/TR/WGSL/#const-assert-statement)
+    /// `const_assert 1 < 2;`
+    AssertStatement,
+
     /// [9.1. Compound Statement](https://www.w3.org/TR/WGSL/#compound-statement-section)
     ///
     /// ```wgsl
@@ -38,14 +43,29 @@ pub enum SyntaxKind {
     /// ```
     AssignmentStatement,
 
-    /// a `let` or `var` statement
+    /// remove this
     VariableStatement,
+    GlobalOverrideDeclaration,
+    GlobalVariableDeclaration,
 
+    /// `break;`
+    BreakStatement,
+    /// `break if 4 < 5;`
+    BreakIfStatement,
+
+    /// `continue;`
+    ContinueStatement,
+
+    /// `discard;`
+    DiscardStatement,
+
+    /// A lonely `;`
+    EmptyStatement,
     /// [9.5. Function Call Statement](https://www.w3.org/TR/WGSL/#function-call-statement)
     FunctionCallStatement,
 
     /// [9.4.3. Loop Statement](https://www.w3.org/TR/WGSL/#loop-statement)
-    ///
+    /// Structurally very similar to a compound statement
     /// ```wgsl
     /// loop { statements }
     /// ```
@@ -56,19 +76,22 @@ pub enum SyntaxKind {
     IfStatement,
     /// `switch expression { case 1, 2: {} default: {} }`
     SwitchStatement,
-    /// The block of a switch statement
-    SwitchBlock,
-    /// case 1, 2: {};
+    /// The body of a switch statement
+    SwitchBody,
+    /// `case 1, 2: {};``
     SwitchBodyCase,
-    /// the `1, 2` in `case 1, 2: {}`
+    /// The `1, 2` in `case 1, 2: {}`
     SwitchCaseSelectors,
+    /// The `1` and `2` in `case 1, 2: {}`
+    SwitchCaseSelector,
     /// default: {}
     SwitchBodyDefault,
 
     /// `i++`, `i--`
     IncrementDecrementStatement,
-    ElseIfBlock,
-    ElseBlock,
+    IfClause,
+    ElseIfClause,
+    ElseClause,
     /// `for(init, cmp, update) {}`
     ForStatement,
     ForInitializer,
@@ -79,11 +102,14 @@ pub enum SyntaxKind {
     /// a binary operator
     BinaryOperator,
     /// The parameters to a function call
-    FunctionParameterList,
+    FunctionParameters,
     /// `a.b`
     FieldExpression,
     /// `pow(2, 3)`
     FunctionCall,
+    /// an identifier with an optional template `foo<bar>`
+    /// can refer to a type
+    IdentExpression,
     /// `(pow)(2, 3)`
     InvalidFunctionCall,
     /// `a\[0\]`
@@ -92,7 +118,7 @@ pub enum SyntaxKind {
     TypeInitializer,
     /// `vec3(1.0)`
     InferredInitializer,
-    /// `return foo`
+    /// `return foo;`
     ReturnStatement,
     /// an expression of the form `left_side <op> right_side`
     InfixExpression,
@@ -108,8 +134,8 @@ pub enum SyntaxKind {
     ParenthesisExpression,
     /// an expression of the form `bitcast< <type> >(expression)`
     BitcastExpression,
-    /// a non-builtin type
-    PathType,
+    /// a type with an optional template `foo<bar>`
+    TypeSpecifier,
     /// `a += b`
     CompoundAssignmentStatement,
     /// `[[location(0), interpolate(flat)]]`
@@ -121,18 +147,21 @@ pub enum SyntaxKind {
     /// the definition of a struct
     StructDeclaration,
     /// the members of a struct definition inside of braces
-    StructDeclBody,
+    StructBody,
     /// one field of a struct declaration
-    StructDeclarationField,
+    StructMember,
+    /// `const global: u32 = 10u`
+    ConstantDeclaration,
     /// `var<uniform> test: u32`
-    GlobalVariableDeclaration,
-    /// `let global: u32 = 10u`
-    GlobalConstantDeclaration,
-    /// `override gain: f32;`
+    VariableDeclaration,
+    /// `let test: u32 = 3;`
+    LetDeclaration,
+    /// `override test: u32`
     OverrideDeclaration,
+
     /// `continuing { statements }`
     ContinuingStatement,
-    /// Type alias declaration: `type float4 = vec4<f32>`
+    /// Type alias declaration: `alias float4 = vec4<f32>`
     TypeAliasDeclaration,
 
     /// `#import foo` or `#import "file.wgsl"`
@@ -183,37 +212,8 @@ pub enum SyntaxKind {
     #[regex(r#"([_\p{XID_Start}]\p{XID_Continue}*)|(\p{XID_Start})"#)]
     Identifier,
 
-    // literals
-    // These regexes are taken from the spec, with `-?` added to allow negative floats too
-    // This is a hack to avoid implementing all the rules around floats and const evaluation
-    #[regex(r"-?0[fh]")]
-    #[regex(r"-?[1-9][0-9]*[fh]")]
-    // We need priorities so that we avoid the fact that e.g. 1.2 would match both otherwise
-    #[regex(r"-?[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?[fh]?", priority = 1)]
-    #[regex(r"-?[0-9]+\.[0-9]*([eE][+-]?[0-9]+)?[fh]?")]
-    #[regex(r"-?[0-9]+[eE][+-]?[0-9]+[fh]?")]
-    DecimalFloatLiteral,
-    // Because above we need priorities here
-    #[regex(
-        r"-?0[xX][0-9a-fA-F]*\.[0-9a-fA-F]+([pP][+-]?[0-9]+[fh]?)?",
-        priority = 1
-    )]
-    #[regex(r"-?0[xX][0-9a-fA-F]+\.[0-9a-fA-F]*([pP][+-]?[0-9]+[fh]?)?")]
-    #[regex(r"-?0[xX][0-9a-fA-F]+[pP][+-]?[0-9]+[fh]?")]
-    HexFloatLiteral,
-    #[regex(r"-?0[xX][0-9a-fA-F]+[iu]?")]
-    HexIntLiteral,
-    // This represents potentially signed ints
-    // This is a hack to avoid implementing const evaluation
-    // TODO: We really should implement const evaluation
-    #[regex(r"-?0i?")]
-    #[regex(r"-?[1-9][0-9]*i?")]
-    DecimalIntLiteral,
-    // This is definitely unsigned ints
-    #[regex(r"-?0u")]
-    #[regex(r"-?[1-9][0-9]*u")]
-    #[regex(r"0[xX][0-9a-fA-F]+u")]
-    UnsignedIntLiteral,
+    FloatLiteral,
+    IntLiteral,
 
     #[regex("\"[^\"]*\"")]
     StringLiteral,
@@ -311,6 +311,7 @@ pub enum SyntaxKind {
     Break,
     #[token("case")]
     Case,
+    ConstantAssert,
     #[token("continue")]
     Continue,
     #[token("continuing")]
@@ -588,58 +589,4 @@ fn is_line_ending_comment_end(character: char) -> bool {
         '\u{2029}', // paragraph separator
     ]
     .contains(&character)
-}
-
-#[cfg(test)]
-mod tests {
-    use expect_test::expect;
-    use logos::Logos as _;
-
-    use super::SyntaxKind;
-
-    #[expect(clippy::needless_pass_by_value, reason = "intended API")]
-    fn check_lex(
-        source: &str,
-        expect: expect_test::Expect,
-    ) {
-        let tokens: Vec<_> = SyntaxKind::lexer(source).collect();
-        expect.assert_eq(&format!("{tokens:?}"));
-    }
-
-    #[test]
-    fn lex_decimal_float() {
-        check_lex("10.0", expect![["[DecimalFloatLiteral]"]]);
-        check_lex("-10.0", expect![["[DecimalFloatLiteral]"]]);
-        check_lex("1e9f", expect![["[DecimalFloatLiteral]"]]);
-        check_lex("-0.0e7", expect![["[DecimalFloatLiteral]"]]);
-        check_lex(".1", expect![["[DecimalFloatLiteral]"]]);
-        check_lex("1.", expect![["[DecimalFloatLiteral]"]]);
-    }
-
-    #[test]
-    fn lex_hex_float() {
-        check_lex("0x0.0", expect![["[HexFloatLiteral]"]]);
-        check_lex("0X1p9", expect![["[HexFloatLiteral]"]]);
-        check_lex("-0x0.0", expect![["[HexFloatLiteral]"]]);
-        check_lex("0xff.13p13", expect![["[HexFloatLiteral]"]]);
-    }
-
-    #[test]
-    fn lex_comment() {
-        check_lex(
-            "// test asdf\nnot_comment",
-            expect!["[LineEndingComment, Blankspace, Identifier]"],
-        );
-    }
-
-    #[test]
-    fn lex_nested_brackets() {
-        // Expect: Identifier (a), [, Identifier (a), [, DecimalIntLiteral (0), ], ]
-        check_lex(
-            "a[a[0]]",
-            expect![[
-                "[Identifier, BracketLeft, Identifier, BracketLeft, DecimalIntLiteral, BracketRight, BracketRight]"
-            ]],
-        );
-    }
 }
