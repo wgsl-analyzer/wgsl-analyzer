@@ -285,6 +285,11 @@
 						"default": "0.22",
 						"description": "Which version of naga to use for its diagnostics"
 					},
+					"wgsl-analyzer.diagnostics.wideIntegersSupport": {
+						"type": "boolean",
+						"default": true,
+						"description": "Whether to enable SHADER_INT64 capability for i64 and u64 support"
+					},
 					"wgsl-analyzer.customImports": {
 						"type": "object",
 						"additionalProperties": {
