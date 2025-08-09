@@ -216,10 +216,6 @@ fn resolve_full_source(
         };
 
         let index = import.index();
-        #[expect(
-            clippy::range_plus_one,
-            reason = "rowan does not support generic ranges"
-        )]
         import
             .parent()
             .unwrap()
