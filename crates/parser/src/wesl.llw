@@ -6,7 +6,9 @@ token Enable='enable' Requires='requires' Fn='fn' Alias='alias' Struct='struct' 
       Const='const' Case='case' Default='default' Override='override' Continue='continue'
       Let='let' True='true' False='false' Diagnostic='diagnostic';
 token Semi=';' LPar='(' RPar=')' Comma=',' Eq='=' Colon=':' LBrace='{' RBrace='}' Arrow='->'
-      Lt='<' Gt='>' Dot='.' At='@' LBrak='[' RBrak=']' And='&' Excl='!' Star='*' Minus='-'
+      Lt='<' LtEq = '<=' ShiftLeft = '<<' ShiftLeftEq = '<<=' TemplateStart = '<template start>'
+      Gt='>' GtEq = '>=' ShiftRight = '>>' ShiftRightEq = '>>=' TemplateEnd = '<template end>'
+      Dot='.' At='@' LBrak='[' RBrak=']' And='&' Excl='!' Star='*' Minus='-'
       Tilde='~' Plus='+' Eq2='==' Pipe='|' And2='&&' Slash='/' Caret='^' Pipe2='||' ExclEq='!='
       Percent='%' Underscore='_' AndEq='&=' StarEq='*=' PlusEq='+=' PipeEq='|=' MinusEq='-='
       SlashEq='/=' CaretEq='^=' PercentEq='%=' Plus2='++' Minus2='--';
@@ -74,9 +76,9 @@ full_ident^: Ident; // wesl ident
 type_specifier: full_ident template_list;
 // exists because a type can appear in an expression, like in `array<  array<f32,1>  ,1>`
 ident_expression: full_ident expr_template_list;
-template_list^: [#1 template_args >];
-expr_template_list^: #1 [?1 template_args >template_list];
-template_args^: '<' expression (?1 ',' expression)* [','] '>';
+template_list^: [template_args >];
+expr_template_list^: [template_args >template_list];
+template_args^: TemplateStart expression (?1 ',' expression)* [','] TemplateEnd;
 
 // This is pratt parser, with higher elements having a higher binding power
 // Source: https://github.com/0x2a-42/lelwel/tree/main?tab=readme-ov-file#direct-left-recursion
@@ -87,8 +89,8 @@ expression:
 | ('-' | '!' | '~' | '*' | '&') expression @unary_expression // §8.6, §8.7, §8.9, §8.13, §8.14
 | expression ('*' | '/' | '%') expression @binary_expression // §8.7
 | expression ('+' | '-') expression @binary_expression // §8.7
-| ?2 expression ('<' '<' | '>' '>') expression @binary_expression // §8.9
-| ?3 expression (?4 '<' | ?4 '>' | '<' '=' | '>' '=' | '==' | '!=') expression @binary_expression // §8.8
+| expression ('<<' | '>>') expression @binary_expression // §8.9
+| expression ('<' | '>' | '<=' | '>=' | '==' | '!=') expression @binary_expression // §8.8
 | expression '&' expression @binary_expression // §8.9
 | expression '^' expression @binary_expression // §8.9
 | expression '|' expression @binary_expression // §8.9
@@ -172,7 +174,6 @@ let_declaration: 'let' typed_ident '=' expression;
 let_declaration_semi^: 'let' typed_ident '=' expression ';';
 const_declaration: 'const' typed_ident '=' expression;
 const_declaration_semi^: 'const' typed_ident '=' expression ';';
-override_declaration: 'override' typed_ident ['=' expression];
 override_declaration_semi^: 'override' typed_ident ['=' expression] ';';
 
 // duplicated so it can be used in `for` statement without semicolon
@@ -186,8 +187,8 @@ variable_updating:
 | '_' '=' expression @phony_assignment_statement // §9.2.2
 ;
 compound_assignment_operator^:
-  ?1 '<' '<' '='
-| ?1 '>' '>' '='
+  '<<='
+| '>>='
 | '%='
 | '&='
 | '*='

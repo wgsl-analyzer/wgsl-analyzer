@@ -446,20 +446,20 @@ fn parse_vec3_initializer() {
     check(
         "vec3<f32>(1.0)",
         expect![[r#"
-                SourceFile@0..14
-                  FunctionCall@0..14
-                    IdentExpression@0..9
-                      Identifier@0..4 "vec3"
-                      GenericArgumentList@4..9
-                        LessThan@4..5 "<"
-                        IdentExpression@5..8
-                          Identifier@5..8 "f32"
-                        GreaterThan@8..9 ">"
-                    Arguments@9..14
-                      ParenthesisLeft@9..10 "("
-                      Literal@10..13
-                        FloatLiteral@10..13 "1.0"
-                      ParenthesisRight@13..14 ")""#]],
+            SourceFile@0..14
+              FunctionCall@0..14
+                IdentExpression@0..9
+                  Identifier@0..4 "vec3"
+                  GenericArgumentList@4..9
+                    TemplateStart@4..5 "<"
+                    IdentExpression@5..8
+                      Identifier@5..8 "f32"
+                    TemplateEnd@8..9 ">"
+                Arguments@9..14
+                  ParenthesisLeft@9..10 "("
+                  Literal@10..13
+                    FloatLiteral@10..13 "1.0"
+                  ParenthesisRight@13..14 ")""#]],
     );
 }
 
@@ -712,20 +712,20 @@ fn bitcast() {
     check(
         "bitcast<u32>(x)",
         expect![[r#"
-                SourceFile@0..15
-                  FunctionCall@0..15
-                    IdentExpression@0..12
-                      Identifier@0..7 "bitcast"
-                      GenericArgumentList@7..12
-                        LessThan@7..8 "<"
-                        IdentExpression@8..11
-                          Identifier@8..11 "u32"
-                        GreaterThan@11..12 ">"
-                    Arguments@12..15
-                      ParenthesisLeft@12..13 "("
-                      IdentExpression@13..14
-                        Identifier@13..14 "x"
-                      ParenthesisRight@14..15 ")""#]],
+            SourceFile@0..15
+              FunctionCall@0..15
+                IdentExpression@0..12
+                  Identifier@0..7 "bitcast"
+                  GenericArgumentList@7..12
+                    TemplateStart@7..8 "<"
+                    IdentExpression@8..11
+                      Identifier@8..11 "u32"
+                    TemplateEnd@11..12 ">"
+                Arguments@12..15
+                  ParenthesisLeft@12..13 "("
+                  IdentExpression@13..14
+                    Identifier@13..14 "x"
+                  ParenthesisRight@14..15 ")""#]],
     );
 }
 
@@ -734,25 +734,25 @@ fn bitcast_vector() {
     check(
         "bitcast<vec4<u32>>(x)",
         expect![[r#"
-                SourceFile@0..21
-                  FunctionCall@0..21
-                    IdentExpression@0..18
-                      Identifier@0..7 "bitcast"
-                      GenericArgumentList@7..18
-                        LessThan@7..8 "<"
-                        IdentExpression@8..17
-                          Identifier@8..12 "vec4"
-                          GenericArgumentList@12..17
-                            LessThan@12..13 "<"
-                            IdentExpression@13..16
-                              Identifier@13..16 "u32"
-                            GreaterThan@16..17 ">"
-                        GreaterThan@17..18 ">"
-                    Arguments@18..21
-                      ParenthesisLeft@18..19 "("
-                      IdentExpression@19..20
-                        Identifier@19..20 "x"
-                      ParenthesisRight@20..21 ")""#]],
+            SourceFile@0..21
+              FunctionCall@0..21
+                IdentExpression@0..18
+                  Identifier@0..7 "bitcast"
+                  GenericArgumentList@7..18
+                    TemplateStart@7..8 "<"
+                    IdentExpression@8..17
+                      Identifier@8..12 "vec4"
+                      GenericArgumentList@12..17
+                        TemplateStart@12..13 "<"
+                        IdentExpression@13..16
+                          Identifier@13..16 "u32"
+                        TemplateEnd@16..17 ">"
+                    TemplateEnd@17..18 ">"
+                Arguments@18..21
+                  ParenthesisLeft@18..19 "("
+                  IdentExpression@19..20
+                    Identifier@19..20 "x"
+                  ParenthesisRight@20..21 ")""#]],
     );
 }
 
@@ -777,34 +777,34 @@ fn bitcast_in_expression() {
     check(
         "1 + -bitcast<u32>(x) + 1",
         expect![[r#"
-                SourceFile@0..24
-                  InfixExpression@0..24
-                    InfixExpression@0..20
-                      Literal@0..1
-                        IntLiteral@0..1 "1"
-                      Blankspace@1..2 " "
-                      Plus@2..3 "+"
-                      Blankspace@3..4 " "
-                      PrefixExpression@4..20
-                        Minus@4..5 "-"
-                        FunctionCall@5..20
-                          IdentExpression@5..17
-                            Identifier@5..12 "bitcast"
-                            GenericArgumentList@12..17
-                              LessThan@12..13 "<"
-                              IdentExpression@13..16
-                                Identifier@13..16 "u32"
-                              GreaterThan@16..17 ">"
-                          Arguments@17..20
-                            ParenthesisLeft@17..18 "("
-                            IdentExpression@18..19
-                              Identifier@18..19 "x"
-                            ParenthesisRight@19..20 ")"
-                    Blankspace@20..21 " "
-                    Plus@21..22 "+"
-                    Blankspace@22..23 " "
-                    Literal@23..24
-                      IntLiteral@23..24 "1""#]],
+            SourceFile@0..24
+              InfixExpression@0..24
+                InfixExpression@0..20
+                  Literal@0..1
+                    IntLiteral@0..1 "1"
+                  Blankspace@1..2 " "
+                  Plus@2..3 "+"
+                  Blankspace@3..4 " "
+                  PrefixExpression@4..20
+                    Minus@4..5 "-"
+                    FunctionCall@5..20
+                      IdentExpression@5..17
+                        Identifier@5..12 "bitcast"
+                        GenericArgumentList@12..17
+                          TemplateStart@12..13 "<"
+                          IdentExpression@13..16
+                            Identifier@13..16 "u32"
+                          TemplateEnd@16..17 ">"
+                      Arguments@17..20
+                        ParenthesisLeft@17..18 "("
+                        IdentExpression@18..19
+                          Identifier@18..19 "x"
+                        ParenthesisRight@19..20 ")"
+                Blankspace@20..21 " "
+                Plus@21..22 "+"
+                Blankspace@22..23 " "
+                Literal@23..24
+                  IntLiteral@23..24 "1""#]],
     );
 }
 
@@ -847,16 +847,15 @@ fn shift_right() {
     check(
         "2 >> 3",
         expect![[r#"
-                SourceFile@0..6
-                  InfixExpression@0..6
-                    Literal@0..1
-                      IntLiteral@0..1 "2"
-                    Blankspace@1..2 " "
-                    GreaterThan@2..3 ">"
-                    GreaterThan@3..4 ">"
-                    Blankspace@4..5 " "
-                    Literal@5..6
-                      IntLiteral@5..6 "3""#]],
+            SourceFile@0..6
+              InfixExpression@0..6
+                Literal@0..1
+                  IntLiteral@0..1 "2"
+                Blankspace@1..2 " "
+                ShiftRight@2..4 ">>"
+                Blankspace@4..5 " "
+                Literal@5..6
+                  IntLiteral@5..6 "3""#]],
     );
 }
 
@@ -865,28 +864,26 @@ fn shift_multiple() {
     check(
         "2 >> 3 + 2 << 4",
         expect![[r#"
-                SourceFile@0..15
-                  InfixExpression@0..15
-                    InfixExpression@0..10
-                      Literal@0..1
-                        IntLiteral@0..1 "2"
-                      Blankspace@1..2 " "
-                      GreaterThan@2..3 ">"
-                      GreaterThan@3..4 ">"
-                      Blankspace@4..5 " "
-                      InfixExpression@5..10
-                        Literal@5..6
-                          IntLiteral@5..6 "3"
-                        Blankspace@6..7 " "
-                        Plus@7..8 "+"
-                        Blankspace@8..9 " "
-                        Literal@9..10
-                          IntLiteral@9..10 "2"
-                    Blankspace@10..11 " "
-                    LessThan@11..12 "<"
-                    LessThan@12..13 "<"
-                    Blankspace@13..14 " "
-                    Literal@14..15
-                      IntLiteral@14..15 "4""#]],
+            SourceFile@0..15
+              InfixExpression@0..15
+                InfixExpression@0..10
+                  Literal@0..1
+                    IntLiteral@0..1 "2"
+                  Blankspace@1..2 " "
+                  ShiftRight@2..4 ">>"
+                  Blankspace@4..5 " "
+                  InfixExpression@5..10
+                    Literal@5..6
+                      IntLiteral@5..6 "3"
+                    Blankspace@6..7 " "
+                    Plus@7..8 "+"
+                    Blankspace@8..9 " "
+                    Literal@9..10
+                      IntLiteral@9..10 "2"
+                Blankspace@10..11 " "
+                ShiftLeft@11..13 "<<"
+                Blankspace@13..14 " "
+                Literal@14..15
+                  IntLiteral@14..15 "4""#]],
     );
 }

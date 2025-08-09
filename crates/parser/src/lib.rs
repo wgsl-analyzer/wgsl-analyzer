@@ -3,6 +3,7 @@
 mod lexer;
 mod parser;
 mod syntax_kind;
+mod cst_builder;
 
 use std::fmt::{self, Debug};
 

@@ -336,9 +336,9 @@ ast_node! {
 
 ast_node! {
     GenericArgumentList:
-    left_angle_token: Option<SyntaxToken LessThan>;
+    left_angle_token: Option<SyntaxToken TemplateStart>;
     generics: AstChildren<Expression>;
-    t_angle_token: Option<SyntaxToken GreaterThan>;
+    t_angle_token: Option<SyntaxToken TemplateEnd>;
 }
 
 ast_node!(InfixExpression);
@@ -360,6 +360,8 @@ ast_token_enum! {
         Star,
         ForwardSlash,
         Xor,
+        ShiftRight,
+        ShiftLeft,
     }
 }
 
@@ -842,21 +844,12 @@ impl InfixExpression {
                 BinaryOperatorKind::Xor(_)=>BinaryOperation::Arithmetic(ArithmeticOperation::BitXor),
                 BinaryOperatorKind::OrOr(_) => BinaryOperation::Logical(LogicOperation::Or),
                 BinaryOperatorKind::AndAnd(_) => BinaryOperation::Logical(LogicOperation::And),
+                BinaryOperatorKind::ShiftRight(_) => BinaryOperation::Arithmetic(ArithmeticOperation::ShiftRight),
+                BinaryOperatorKind::ShiftLeft(_) => BinaryOperation::Arithmetic(ArithmeticOperation::ShiftLeft),
             };
             Some(op)
         } else {
-            #[expect(clippy::wildcard_enum_match_arm, reason = "not readable")]
-            self.syntax()
-                .children()
-                .find_map(|child| match child.kind() {
-                    SyntaxKind::ShiftLeft => {
-                        Some(BinaryOperation::Arithmetic(ArithmeticOperation::ShiftLeft))
-                    },
-                    SyntaxKind::ShiftRight => {
-                        Some(BinaryOperation::Arithmetic(ArithmeticOperation::ShiftRight))
-                    },
-                    _ => None,
-                })
+            None
         }
     }
 }

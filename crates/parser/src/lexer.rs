@@ -1,5 +1,7 @@
+use std::ops::Range;
+
 use super::parser::{Diagnostic, Span};
-use logos::{Lexer, Logos};
+use logos::Logos;
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(logos::Logos, Debug, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
@@ -78,8 +80,26 @@ pub enum Token {
     Arrow,
     #[token("<")]
     Lt,
+    /// > A template parameter is an expression,
+    /// > and therefore does not start with
+    /// > either a '<' (U+003C) or a '=' (U+003D) code point.
+    /// Source <https://www.w3.org/TR/WGSL/#template-list-discovery>
+    #[token("<=")]
+    LtEq,
+    #[token("<<")]
+    ShiftLeft,
+    #[token("<<=")]
+    ShiftLeftEq,
     #[token(">")]
     Gt,
+    /// Ambiguous with shift right assign
+    GtEq,
+    /// Ambiguous: Can happen in a template `a<b<c>>`
+    ShiftRight,
+    /// Ambiguous: Can happen in a template `a<b> >= 2`
+    ShiftRightEq,
+    TemplateStart,
+    TemplateEnd,
     #[token(".")]
     Dot,
     #[token("@")]
@@ -165,7 +185,6 @@ pub enum Token {
     #[token("/*", lex_block_comment)]
     BlockComment,
 
-    #[error]
     Error,
 }
 
@@ -223,20 +242,170 @@ fn lex_block_comment(lexer: &mut logos::Lexer<'_, Token>) -> Option<()> {
     None
 }
 
+pub fn lex_with_templates(lexer: logos::Lexer<'_, Token>) -> (Vec<Token>, Vec<Range<usize>>) {
+    collect_with_templates(
+        lexer
+            .spanned()
+            .map(|(token, span)| (token.unwrap_or(Token::Error), span)),
+    )
+}
+
+/// Mutate tokens to be templates using <https://www.w3.org/TR/WGSL/#template-list-discovery>.
+/// `<` and `>` tokens can be turned into template starts.
+/// A pair of `>` `>` can start with a template end, or be a right shift.
+/// Same goes for `>` `=` and `>` `>` `=`.
+///
+/// Meanwhile `<<` and `<<=` are unambiguously handled in the lexer,    
+/// since a template cannot start with those.
+fn collect_with_templates(
+    tokens_iter: impl Iterator<Item = (Token, Span)>
+) -> (Vec<Token>, Vec<Range<usize>>) {
+    let mut tokens_iter = tokens_iter.peekable();
+    let mut nesting_depth = 0;
+    let mut pending = vec![];
+    let mut tokens = vec![];
+    let mut spans = vec![];
+
+    while let Some((token, span)) = tokens_iter.next() {
+        tokens.push(token);
+        spans.push(span);
+        match token {
+            (Token::Ident | Token::Var) => {
+                // Skip to next non-whitespace token
+                while let Some((
+                    Token::Blankspace | Token::LineEndingComment | Token::BlockComment,
+                    _,
+                )) = tokens_iter.peek()
+                {
+                    let (next_token, next_span) = tokens_iter.next().unwrap();
+                    tokens.push(next_token);
+                    spans.push(next_span);
+                }
+
+                if let Some((Token::Lt, _)) = tokens_iter.peek() {
+                    let (next_token, next_span) = tokens_iter.next().unwrap();
+                    tokens.push(next_token);
+                    spans.push(next_span);
+
+                    pending.push((tokens.len() - 1, nesting_depth));
+                }
+            },
+            Token::Gt => {
+                if let Some((start_token, _)) = pending.pop_if(|(_, depth)| *depth == nesting_depth)
+                {
+                    // We found templates!
+                    tokens[start_token] = Token::TemplateStart;
+                    *tokens.last_mut().unwrap() = Token::TemplateEnd;
+                } else {
+                    // Patch up >>, >>=, >>==, >=, >==
+                    // Precondition: pending.last().depth != nesting_depth
+                    match tokens_iter.peek() {
+                        Some((Token::Gt, span)) => {
+                            // Might be a `>>`
+                            *tokens.last_mut().unwrap() = Token::ShiftRight;
+                            spans[tokens.len() - 1].end = span.end;
+                            tokens_iter.next();
+                            match tokens_iter.peek() {
+                                Some((Token::Eq, span)) => {
+                                    // Is a >>=
+                                    *tokens.last_mut().unwrap() = Token::ShiftRightEq;
+                                    spans[tokens.len() - 1].end = span.end;
+                                    tokens_iter.next();
+                                },
+                                Some((Token::Eq2, span)) => {
+                                    // Is a >>= =
+                                    *tokens.last_mut().unwrap() = Token::ShiftRightEq;
+                                    let middle = span.start + 1;
+                                    spans[tokens.len() - 1].end = middle;
+                                    tokens.push(Token::Eq);
+                                    spans.push(middle..span.end);
+                                    nesting_depth = 0;
+                                    pending.clear();
+                                    tokens_iter.next();
+                                },
+                                _ => {},
+                            }
+                        },
+                        Some((Token::Eq, span)) => {
+                            // Is a >=
+                            *tokens.last_mut().unwrap() = Token::GtEq;
+                            spans[tokens.len() - 1].end = span.end;
+                            tokens_iter.next();
+                        },
+                        Some((Token::Eq2, span)) => {
+                            // Is a >= =
+                            *tokens.last_mut().unwrap() = Token::GtEq;
+                            let middle = span.start + 1;
+                            spans[tokens.len() - 1].end = middle;
+                            tokens.push(Token::Eq);
+                            spans.push(middle..span.end);
+                            nesting_depth = 0;
+                            pending.clear();
+                            tokens_iter.next();
+                        },
+                        _ => {},
+                    }
+                }
+            },
+            Token::LPar | Token::LBrak => {
+                nesting_depth += 1;
+            },
+            Token::RPar | Token::RBrak => {
+                // Pop Pending stack until its top entry has depth < NestingDepth.
+                while pending
+                    .pop_if(|(_, depth)| !(*depth < nesting_depth))
+                    .is_some()
+                {}
+                nesting_depth = (nesting_depth - 1).max(0);
+            },
+            Token::Eq | Token::Semi | Token::LBrace | Token::Colon => {
+                // These tokens do not appear in expressions,
+                // so they aren't in a template
+                nesting_depth = 0;
+                pending.clear();
+            },
+            Token::And2 | Token::Pipe2 => {
+                while pending
+                    .pop_if(|(_, depth)| !(*depth < nesting_depth))
+                    .is_some()
+                {}
+            },
+            _ => {},
+        }
+    }
+
+    (tokens, spans)
+}
+
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
     use logos::Logos as _;
 
-    use super::Token;
+    use super::{Token, lex_with_templates};
 
     #[expect(clippy::needless_pass_by_value, reason = "intended API")]
     fn check_lex(
         source: &str,
         expect: expect_test::Expect,
     ) {
-        let tokens: Vec<_> = Token::lexer(source).collect();
+        let tokens: Result<Vec<_>, ()> = Token::lexer(source).collect();
+        let tokens = tokens.unwrap();
         expect.assert_eq(&format!("{tokens:?}"));
+    }
+
+    #[expect(clippy::needless_pass_by_value, reason = "intended API")]
+    fn check_lex_templates(
+        source: &str,
+        expect: expect_test::Expect,
+    ) {
+        let (tokens, spans) = lex_with_templates(Token::lexer(source));
+        let tokens_with_spans: String = tokens
+            .into_iter()
+            .zip(spans)
+            .map(|(token, span)| format!("{token:?}@{span:?}\n"))
+            .collect();
+        expect.assert_eq(&tokens_with_spans);
     }
 
     #[test]
@@ -271,6 +440,260 @@ mod tests {
         check_lex(
             "a[a[0]]",
             expect!["[Ident, LBrak, Ident, LBrak, IntLiteral, RBrak, RBrak]"],
+        );
+    }
+
+    #[test]
+    fn lex_nested_templates() {
+        check_lex_templates(
+            "foo<X>",
+            expect![[r#"
+            Ident@0..3
+            TemplateStart@3..4
+            Ident@4..5
+            TemplateEnd@5..6
+        "#]],
+        );
+        check_lex_templates(
+            "foo<X<Y>>",
+            expect![[r#"
+                Ident@0..3
+                TemplateStart@3..4
+                Ident@4..5
+                TemplateStart@5..6
+                Ident@6..7
+                TemplateEnd@7..8
+                TemplateEnd@8..9
+            "#]],
+        );
+        check_lex_templates(
+            "foo<X<Y<Z>>>",
+            expect![[r#"
+                Ident@0..3
+                TemplateStart@3..4
+                Ident@4..5
+                TemplateStart@5..6
+                Ident@6..7
+                TemplateStart@7..8
+                Ident@8..9
+                TemplateEnd@9..10
+                TemplateEnd@10..11
+                TemplateEnd@11..12
+            "#]],
+        );
+    }
+
+    #[test]
+    fn lex_template_with_brackets() {
+        // cases from the WGSL spec
+        check_lex_templates(
+            "foo<i32,select(2,3,a>b)>",
+            expect![[r#"
+                Ident@0..3
+                TemplateStart@3..4
+                Ident@4..7
+                Comma@7..8
+                Ident@8..14
+                LPar@14..15
+                IntLiteral@15..16
+                Comma@16..17
+                IntLiteral@17..18
+                Comma@18..19
+                Ident@19..20
+                Gt@20..21
+                Ident@21..22
+                RPar@22..23
+                TemplateEnd@23..24
+            "#]],
+        );
+        check_lex_templates(
+            "foo<(B>=C)>a",
+            expect![[r#"
+                Ident@0..3
+                TemplateStart@3..4
+                LPar@4..5
+                Ident@5..6
+                GtEq@6..8
+                Ident@8..9
+                RPar@9..10
+                TemplateEnd@10..11
+                Ident@11..12
+            "#]],
+        );
+        check_lex_templates(
+            "foo<(B!=C)>a",
+            expect![[r#"
+                Ident@0..3
+                TemplateStart@3..4
+                LPar@4..5
+                Ident@5..6
+                ExclEq@6..8
+                Ident@8..9
+                RPar@9..10
+                TemplateEnd@10..11
+                Ident@11..12
+            "#]],
+        );
+        check_lex_templates(
+            "foo<(B==C)>a",
+            expect![[r#"
+                Ident@0..3
+                TemplateStart@3..4
+                LPar@4..5
+                Ident@5..6
+                Eq2@6..8
+                Ident@8..9
+                RPar@9..10
+                TemplateEnd@10..11
+                Ident@11..12
+            "#]],
+        );
+    }
+
+    #[test]
+    fn lex_not_templates() {
+        check_lex_templates(
+            "foo<d]>",
+            expect![[r#"
+                Ident@0..3
+                Lt@3..4
+                Ident@4..5
+                RBrak@5..6
+                Gt@6..7
+            "#]],
+        );
+        check_lex_templates(
+            "foo",
+            expect![[r#"
+            Ident@0..3
+        "#]],
+        );
+        check_lex_templates(
+            "foo<b || c>d",
+            expect![[r#"
+            Ident@0..3
+            Lt@3..4
+            Ident@4..5
+            Blankspace@5..6
+            Pipe2@6..8
+            Blankspace@8..9
+            Ident@9..10
+            Gt@10..11
+            Ident@11..12
+        "#]],
+        );
+    }
+
+    #[test]
+    fn lex_templates_with_symbols() {
+        check_lex_templates(
+            "foo<B<<C>",
+            expect![[r#"
+                Ident@0..3
+                TemplateStart@3..4
+                Ident@4..5
+                ShiftLeft@5..7
+                Ident@7..8
+                TemplateEnd@8..9
+            "#]],
+        );
+        check_lex_templates(
+            "foo<B<=C>",
+            expect![[r#"
+            Ident@0..3
+            TemplateStart@3..4
+            Ident@4..5
+            LtEq@5..7
+            Ident@7..8
+            TemplateEnd@8..9
+        "#]],
+        );
+
+        check_lex_templates(
+            "foo<>",
+            expect![[r#"
+            Ident@0..3
+            TemplateStart@3..4
+            TemplateEnd@4..5
+        "#]],
+        );
+    }
+
+    #[test]
+    fn lex_templates_with_ends() {
+        check_lex_templates(
+            "A<B>>C",
+            expect![[r#"
+                Ident@0..1
+                TemplateStart@1..2
+                Ident@2..3
+                TemplateEnd@3..4
+                Gt@4..5
+                Ident@5..6
+            "#]],
+        );
+        check_lex_templates(
+            "A<B>==C",
+            expect![[r#"
+                Ident@0..1
+                TemplateStart@1..2
+                Ident@2..3
+                TemplateEnd@3..4
+                Eq2@4..6
+                Ident@6..7
+            "#]],
+        );
+        check_lex_templates(
+            "C<A<B>=C>",
+            expect![[r#"
+                Ident@0..1
+                Lt@1..2
+                Ident@2..3
+                TemplateStart@3..4
+                Ident@4..5
+                TemplateEnd@5..6
+                Eq@6..7
+                Ident@7..8
+                Gt@8..9
+            "#]],
+        );
+    }
+
+    #[test]
+    fn lex_bitcast_template() {
+        check_lex_templates(
+            "bitcast<vec4<u32>>(x)",
+            expect![[r#"
+                Ident@0..7
+                TemplateStart@7..8
+                Ident@8..12
+                TemplateStart@12..13
+                Ident@13..16
+                TemplateEnd@16..17
+                TemplateEnd@17..18
+                LPar@18..19
+                Ident@19..20
+                RPar@20..21
+            "#]],
+        );
+    }
+
+    #[test]
+    fn lex_var_template() {
+        check_lex_templates(
+            "var<function> x: u32;",
+            expect![[r#"
+                Var@0..3
+                TemplateStart@3..4
+                Ident@4..12
+                TemplateEnd@12..13
+                Blankspace@13..14
+                Ident@14..15
+                Colon@15..16
+                Blankspace@16..17
+                Ident@17..20
+                Semi@20..21
+            "#]],
         );
     }
 }

@@ -47,7 +47,7 @@ fn can_parse_array_declaration() {
         expect![[r#"
             SourceFile@0..87
               Blankspace@0..9 "\n        "
-              ConstDeclaration@9..36
+              ConstantDeclaration@9..36
                 Constant@9..14 "const"
                 Blankspace@14..15 " "
                 Identifier@15..18 "dim"
@@ -79,7 +79,7 @@ fn can_parse_array_declaration() {
                     TypeSpecifier@56..73
                       Identifier@56..61 "array"
                       GenericArgumentList@61..73
-                        LessThan@61..62 "<"
+                        TemplateStart@61..62 "<"
                         IdentExpression@62..65
                           Identifier@62..65 "f32"
                         Comma@65..66 ","
@@ -89,7 +89,7 @@ fn can_parse_array_declaration() {
                             Identifier@67..70 "dim"
                           Period@70..71 "."
                           Identifier@71..72 "x"
-                        GreaterThan@72..73 ">"
+                        TemplateEnd@72..73 ">"
                   ParenthesisRight@73..74 ")"
                 Blankspace@74..75 " "
                 CompoundStatement@75..78
@@ -110,7 +110,7 @@ fn cannot_parse_bad_array_declaration() {
         expect![[r#"
             SourceFile@0..86
               Blankspace@0..9 "\n        "
-              ConstDeclaration@9..36
+              ConstantDeclaration@9..36
                 Constant@9..14 "const"
                 Blankspace@14..15 " "
                 Identifier@15..18 "dim"
@@ -142,7 +142,7 @@ fn cannot_parse_bad_array_declaration() {
                     TypeSpecifier@56..72
                       Identifier@56..61 "array"
                       GenericArgumentList@61..72
-                        LessThan@61..62 "<"
+                        TemplateStart@61..62 "<"
                         IdentExpression@62..65
                           Identifier@62..65 "f32"
                         Comma@65..66 ","
@@ -151,7 +151,7 @@ fn cannot_parse_bad_array_declaration() {
                           IdentExpression@67..70
                             Identifier@67..70 "dim"
                           Period@70..71 "."
-                        GreaterThan@71..72 ">"
+                        TemplateEnd@71..72 ">"
                   ParenthesisRight@72..73 ")"
                 Blankspace@73..74 " "
                 CompoundStatement@74..77
@@ -201,7 +201,7 @@ fn parse_comments() {
         expect![[r#"
             SourceFile@0..289
               Blankspace@0..9 "\n        "
-              ConstDeclaration@9..25
+              ConstantDeclaration@9..25
                 Constant@9..14 "const"
                 Blankspace@14..15 " "
                 Identifier@15..18 "foo"
@@ -214,7 +214,7 @@ fn parse_comments() {
               Blankspace@25..26 " "
               LineEndingComment@26..57 "// This is line-endin ..."
               Blankspace@57..66 "\n        "
-              ConstDeclaration@66..82
+              ConstantDeclaration@66..82
                 Constant@66..71 "const"
                 Blankspace@71..72 " "
                 Identifier@72..75 "bar"
@@ -476,10 +476,10 @@ fn parse_type_generic() {
               TypeSpecifier@0..9
                 Identifier@0..4 "vec3"
                 GenericArgumentList@4..9
-                  LessThan@4..5 "<"
+                  TemplateStart@4..5 "<"
                   IdentExpression@5..8
                     Identifier@5..8 "f32"
-                  GreaterThan@8..9 ">""#]],
+                  TemplateEnd@8..9 ">""#]],
     );
 }
 
@@ -492,19 +492,19 @@ fn parse_type_generic_shift_ambiguity() {
               TypeSpecifier@0..19
                 Identifier@0..5 "array"
                 GenericArgumentList@5..19
-                  LessThan@5..6 "<"
+                  TemplateStart@5..6 "<"
                   IdentExpression@6..18
                     Identifier@6..10 "vec3"
                     GenericArgumentList@10..18
-                      LessThan@10..11 "<"
+                      TemplateStart@10..11 "<"
                       IdentExpression@11..14
                         Identifier@11..14 "f32"
                       Comma@14..15 ","
                       Blankspace@15..16 " "
                       Literal@16..17
                         IntLiteral@16..17 "2"
-                      GreaterThan@17..18 ">"
-                  GreaterThan@18..19 ">""#]],
+                      TemplateEnd@17..18 ">"
+                  TemplateEnd@18..19 ">""#]],
     );
 }
 
@@ -517,14 +517,14 @@ fn parse_type_generic_int() {
               TypeSpecifier@0..15
                 Identifier@0..5 "array"
                 GenericArgumentList@5..15
-                  LessThan@5..6 "<"
+                  TemplateStart@5..6 "<"
                   IdentExpression@6..9
                     Identifier@6..9 "f32"
                   Comma@9..10 ","
                   Blankspace@10..11 " "
                   Literal@11..14
                     IntLiteral@11..14 "100"
-                  GreaterThan@14..15 ">""#]],
+                  TemplateEnd@14..15 ">""#]],
     );
 }
 
@@ -537,8 +537,8 @@ fn parse_type_generic_empty() {
               TypeSpecifier@0..6
                 Identifier@0..4 "vec3"
                 GenericArgumentList@4..6
-                  LessThan@4..5 "<"
-                  GreaterThan@5..6 ">"
+                  TemplateStart@4..5 "<"
+                  TemplateEnd@5..6 ">"
 
             error at 5..6: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
     );
@@ -553,11 +553,12 @@ fn parse_type_generic_comma_recover() {
               TypeSpecifier@0..7
                 Identifier@0..4 "vec3"
                 GenericArgumentList@4..7
-                  LessThan@4..5 "<"
+                  TemplateStart@4..5 "<"
                   Comma@5..6 ","
-                  GreaterThan@6..7 ">"
+                  TemplateEnd@6..7 ">"
 
-            error at 5..6: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 5..6: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'
+            error at 6..7: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
     );
 }
 
@@ -570,7 +571,7 @@ fn parse_type_generic_ptr() {
               TypeSpecifier@0..29
                 Identifier@0..3 "ptr"
                 GenericArgumentList@3..29
-                  LessThan@3..4 "<"
+                  TemplateStart@3..4 "<"
                   IdentExpression@4..11
                     Identifier@4..11 "uniform"
                   Comma@11..12 ","
@@ -581,7 +582,7 @@ fn parse_type_generic_ptr() {
                   Blankspace@17..18 " "
                   IdentExpression@18..28
                     Identifier@18..28 "read_write"
-                  GreaterThan@28..29 ">""#]],
+                  TemplateEnd@28..29 ">""#]],
     );
 }
 
@@ -1254,8 +1255,7 @@ fn loop_statement_break_if() {
                       Literal@29..30
                         IntLiteral@29..30 "5"
                       Blankspace@30..31 " "
-                      GreaterThan@31..32 ">"
-                      Equal@32..33 "="
+                      GreaterThanEqual@31..33 ">="
                       Blankspace@33..34 " "
                       Literal@34..35
                         IntLiteral@34..35 "4"
@@ -1527,10 +1527,10 @@ fn parse_var_with_initializer() {
               VariableDeclaration@0..21
                 Var@0..3 "var"
                 GenericArgumentList@3..13
-                  LessThan@3..4 "<"
+                  TemplateStart@3..4 "<"
                   IdentExpression@4..12
                     Identifier@4..12 "function"
-                  GreaterThan@12..13 ">"
+                  TemplateEnd@12..13 ">"
                 Blankspace@13..14 " "
                 Identifier@14..15 "x"
                 Colon@15..16 ":"
@@ -1651,7 +1651,7 @@ fn let_statement_recover_return_no_eq() {
                   BraceRight@41..42 "}"
 
             error at 30..32: invalid syntax, expected one of: ':', '=', ';'
-            error at 41..42: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', <end of file>, '==', '!=', '>', '{', '[', '(', '<', '-', '%', '|', '||', '+', ']', ')', ';', '/', '*'"#]],
+            error at 41..42: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', <end of file>, '==', '!=', '>', '>=', '{', '[', '(', '<', '<=', '-', '%', '|', '||', '+', ']', ')', ';', '<<', '>>', '/', '*', <template end>, <template start>"#]],
     );
 }
 
@@ -2031,10 +2031,10 @@ struct Test {
                     TypeSpecifier@34..43
                       Identifier@34..38 "vec3"
                       GenericArgumentList@38..43
-                        LessThan@38..39 "<"
+                        TemplateStart@38..39 "<"
                         IdentExpression@39..42
                           Identifier@39..42 "f32"
-                        GreaterThan@42..43 ">"
+                        TemplateEnd@42..43 ">"
                   Error@43..44
                     Semicolon@43..44 ";"
                   Blankspace@44..45 "\n"
@@ -2081,10 +2081,10 @@ struct Test {
                     TypeSpecifier@34..43
                       Identifier@34..38 "vec3"
                       GenericArgumentList@38..43
-                        LessThan@38..39 "<"
+                        TemplateStart@38..39 "<"
                         IdentExpression@39..42
                           Identifier@39..42 "f32"
-                        GreaterThan@42..43 ">"
+                        TemplateEnd@42..43 ">"
                   Comma@43..44 ","
                   Blankspace@44..45 "\n"
                   BraceRight@45..46 "}"
@@ -2219,7 +2219,7 @@ fn global_const_decl() {
         "const constant = 0;",
         expect![[r#"
             SourceFile@0..19
-              ConstDeclaration@0..19
+              ConstantDeclaration@0..19
                 Constant@0..5 "const"
                 Blankspace@5..6 " "
                 Identifier@6..14 "constant"
@@ -2278,7 +2278,7 @@ fn type_alias_decl_recover() {
                   Identifier@32..35 "u32"
                 Semicolon@35..36 ";"
 
-            error at 18..23: invalid syntax, expected one of: '@', ',', <end of file>, '=', <identifier>, '{', '<', '}', ')', ';'"#]],
+            error at 18..23: invalid syntax, expected one of: '@', ',', <end of file>, '=', <identifier>, '{', '}', ')', ';', <template start>"#]],
     );
 }
 
@@ -2317,10 +2317,10 @@ fn parse_statement_nested_functions() {
                       IdentExpression@5..12
                         Identifier@5..9 "args"
                         GenericArgumentList@9..12
-                          LessThan@9..10 "<"
+                          TemplateStart@9..10 "<"
                           IdentExpression@10..11
                             Identifier@10..11 "a"
-                          GreaterThan@11..12 ">"
+                          TemplateEnd@11..12 ">"
                       Arguments@12..14
                         ParenthesisLeft@12..13 "("
                         ParenthesisRight@13..14 ")"
@@ -2384,51 +2384,7 @@ fn empty_return_statement_no_semi() {
                 BraceRight@22..23 "}"
               Blankspace@23..24 " "
 
-            error at 22..23: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', <end of file>, '==', '!=', '>', '{', '[', '(', '<', '-', '%', '|', '||', '+', ']', ')', ';', '/', '*'"#]],
-    );
-}
-
-#[test]
-fn parse_import() {
-    check(
-        "#import test",
-        expect![[r##"
-            SourceFile@0..12
-              Import@0..12
-                UnofficialPreprocessorImport@0..7 "#import"
-                Blankspace@7..8 " "
-                ImportCustom@8..12
-                  Identifier@8..12 "test""##]],
-    );
-}
-
-#[test]
-fn parse_import_colon() {
-    check(
-        "#import bevy_pbr::mesh_struct",
-        expect![[r##"
-            SourceFile@0..29
-              Import@0..29
-                UnofficialPreprocessorImport@0..7 "#import"
-                Blankspace@7..8 " "
-                ImportCustom@8..29
-                  Identifier@8..16 "bevy_pbr"
-                  ColonColon@16..18 "::"
-                  Identifier@18..29 "mesh_struct""##]],
-    );
-}
-
-#[test]
-fn parse_string_import() {
-    check(
-        r#"#import "file.wgsl""#,
-        expect![[r##"
-            SourceFile@0..19
-              Import@0..19
-                UnofficialPreprocessorImport@0..7 "#import"
-                Blankspace@7..8 " "
-                ImportPath@8..19
-                  StringLiteral@8..19 "\"file.wgsl\"""##]],
+            error at 22..23: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', <end of file>, '==', '!=', '>', '>=', '{', '[', '(', '<', '<=', '-', '%', '|', '||', '+', ']', ')', ';', '<<', '>>', '/', '*', <template end>, <template start>"#]],
     );
 }
 
@@ -2744,7 +2700,7 @@ fn global_override_statement() {
         "override foo: u32 = 3;",
         expect![[r#"
             SourceFile@0..22
-              GlobalOverrideDeclaration@0..22
+              OverrideDeclaration@0..22
                 Override@0..8 "override"
                 Blankspace@8..9 " "
                 Identifier@9..12 "foo"

@@ -204,6 +204,7 @@ pub enum SyntaxKind {
     Semicolon,
     Star,
     Tilde,
+    Underscore,
     Xor,
 
     PlusEqual,
@@ -216,10 +217,10 @@ pub enum SyntaxKind {
     XorEqual,
     ShiftRightEqual,
     ShiftLeftEqual,
-
-    // compound tokens
     ShiftLeft,
     ShiftRight,
+    TemplateStart,
+    TemplateEnd,
     Error,
 }
 
