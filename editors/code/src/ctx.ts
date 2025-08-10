@@ -52,8 +52,6 @@ export type CtxInit = Ctx & {
 };
 
 interface WgslAnalyzerConfiguration {
-	customImports: Record<string, string>;
-	shaderDefs: [string];
 	trace: TraceConfig;
 	diagnostics: DiagnosticsConfig;
 	inlayHints: InlayHintsConfig;
@@ -61,15 +59,6 @@ interface WgslAnalyzerConfiguration {
 
 async function lspOptions(config: Config): Promise<WgslAnalyzerConfiguration> {
 	const start = process.hrtime();
-	const customImports = await mapObjectAsync(
-		config.customImports!,
-		resolveImport,
-		(name, _, value) => {
-			vscode.window.showErrorMessage(
-				`WGSL-Analyzer: failed to resolve import \`${name}\`: ${value}`,
-			);
-		},
-	);
 	const elapsed = process.hrtime(start);
 	const millis = elapsed[0] * 1000 + elapsed[1] / 1_000_000;
 	if (millis > 1000) {
@@ -79,57 +68,10 @@ async function lspOptions(config: Config): Promise<WgslAnalyzerConfiguration> {
 	}
 
 	return {
-		customImports,
-		shaderDefs: config.shaderDefs!,
 		diagnostics: config.diagnostics!,
 		trace: config.trace!,
 		inlayHints: config.inlayHints!,
 	};
-}
-
-async function resolveImport(content: string): Promise<string> {
-	let content_replaced = content;
-	const folders = vscode.workspace.workspaceFolders;
-	if (vscode.workspace.workspaceFolders!.length == 1) {
-		content_replaced = content_replaced.replace(
-			"${workspaceFolder}",
-			folders![0]!.uri.toString(),
-		);
-	}
-	const uri = vscode.Uri.parse(content_replaced);
-
-	if (uri !== undefined) {
-		if (uri.scheme == "file") {
-			return promisify(readFile)(uri.fsPath, "utf-8");
-		} else if (["http", "https"].includes(uri.scheme)) {
-			return fetch(content).then((result) => result.text());
-		} else {
-			throw new Error(`unknown scheme \`${uri.scheme}\``);
-		}
-	} else {
-		return content;
-	}
-}
-
-async function mapObjectAsync<T, U>(
-	object: Record<string, T>,
-	functionn: (value: T) => Promise<U>,
-	handleError?: (key: string, value: T, error: unknown) => void,
-): Promise<Record<string, U>> {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const map = async ([key, value]: [any, any]) => {
-		try {
-			const mapped = await functionn(value);
-			return [key, mapped];
-		} catch (e) {
-			if (handleError) {
-				handleError(key, value, e);
-			}
-			return undefined;
-		}
-	};
-	const entries = await Promise.all(Object.entries(object).map(map));
-	return Object.fromEntries(entries.filter((entry) => entry !== undefined));
 }
 
 export class Ctx implements WgslAnalyzerExtensionApi {
@@ -421,7 +363,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		log.info("Disposing language client");
 		this.updateCommands("disable");
 		// we give the server 100ms to stop gracefully
-		await this.client?.stop(100).catch((_) => {});
+		await this.client?.stop(100).catch((_) => { });
 		await this.disposeClient();
 	}
 
@@ -537,14 +479,14 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		const toggleCheckOnSave = this.config.checkOnSave ? "Disable" : "Enable";
 		statusBar.tooltip.appendMarkdown(
 			`[Extension Info](command:wgsl-analyzer.serverVersion "Show version and server binary info"): Version ${this.version}, Server Version ${this._serverVersion}`
-				+ "\n\n---\n\n"
-				+ '[$(terminal) Open Logs](command:wgsl-analyzer.openLogs "Open the server logs")'
-				+ "\n\n"
-				+ `[$(settings) ${toggleCheckOnSave} Check on Save](command:wgsl-analyzer.toggleCheckOnSave "Temporarily ${toggleCheckOnSave.toLowerCase()} check on save functionality")`
-				+ "\n\n"
-				+ '[$(stop-circle) Stop server](command:wgsl-analyzer.stopServer "Stop the server")'
-				+ "\n\n"
-				+ '[$(debug-restart) Restart server](command:wgsl-analyzer.restartServer "Restart the server")',
+			+ "\n\n---\n\n"
+			+ '[$(terminal) Open Logs](command:wgsl-analyzer.openLogs "Open the server logs")'
+			+ "\n\n"
+			+ `[$(settings) ${toggleCheckOnSave} Check on Save](command:wgsl-analyzer.toggleCheckOnSave "Temporarily ${toggleCheckOnSave.toLowerCase()} check on save functionality")`
+			+ "\n\n"
+			+ '[$(stop-circle) Stop server](command:wgsl-analyzer.stopServer "Stop the server")'
+			+ "\n\n"
+			+ '[$(debug-restart) Restart server](command:wgsl-analyzer.restartServer "Restart the server")',
 		);
 		if (!status.quiescent) icon = "$(loading~spin) ";
 		statusBar.text = `${icon}wgsl-analyzer`;

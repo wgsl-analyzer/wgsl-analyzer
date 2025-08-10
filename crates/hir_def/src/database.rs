@@ -22,10 +22,10 @@ use crate::{
         FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, StructData,
         TypeAliasData,
     },
-    hir_file_id::{HirFileIdRepr, ImportFile, relative_file},
+    hir_file_id::{HirFileIdRepr, relative_file},
     module_data::{
-        Function, GlobalConstant, GlobalVariable, Import, ModuleInfo, ModuleItemId, Override,
-        Struct, TypeAlias,
+        Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItemId, Override, Struct,
+        TypeAlias,
     },
     resolver::Resolver,
     type_ref::TypeReference,
@@ -57,12 +57,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         &self,
         key: HirFileId,
     ) -> Result<String, ()>;
-
-    fn text_range_from_full(
-        &self,
-        key: HirFileId,
-        range: TextRange,
-    ) -> Result<TextRange, ()>;
 
     #[salsa::invoke(ModuleInfo::module_info_query)]
     fn module_info(
@@ -137,7 +131,6 @@ fn get_path(
 ) -> Result<VfsPath, ()> {
     match file_id.0 {
         HirFileIdRepr::FileId(file_id) => Ok(database.file_path(file_id)),
-        HirFileIdRepr::MacroFile(_) => Err(()),
     }
 }
 
@@ -155,21 +148,6 @@ fn parse_or_resolve(
 ) -> Result<Parse, ()> {
     match file_id.0 {
         HirFileIdRepr::FileId(file_id) => Ok(database.parse(file_id)),
-        HirFileIdRepr::MacroFile(import_file) => {
-            let import_loc = database.lookup_intern_import(import_file.import_id);
-            let module_info = database.module_info(import_loc.file_id);
-            let import: &Import = module_info.get(import_loc.value);
-
-            match &import.value {
-                crate::module_data::ImportValue::Path(path) => {
-                    let file_id = relative_file(database, import_loc.file_id, path).ok_or(())?;
-                    Ok(database.parse(file_id))
-                },
-                crate::module_data::ImportValue::Custom(key) => {
-                    database.parse_import(key.clone(), syntax::ParseEntryPoint::File)
-                },
-            }
-        },
     }
 }
 
@@ -178,110 +156,8 @@ fn resolve_full_source(
     file_id: HirFileId,
 ) -> Result<String, ()> {
     let parse = database.parse_or_resolve(file_id)?;
-
     let root = ast::SourceFile::cast(parse.syntax().clone_for_update()).unwrap();
-
-    let imports: Vec<_> = root
-        .items()
-        .filter_map(|item| match item {
-            Item::Import(import) => Some(import),
-            Item::Function(_)
-            | Item::StructDeclaration(_)
-            | Item::GlobalVariableDeclaration(_)
-            | Item::GlobalConstantDeclaration(_)
-            | Item::OverrideDeclaration(_)
-            | Item::TypeAliasDeclaration(_) => None,
-        })
-        .filter_map(|import| {
-            let import_mod_id = crate::module_data::find_item(database, file_id, &import)?;
-            let import_id = database.intern_import(Location::new(file_id, import_mod_id));
-            let import_file = HirFileId::from(ImportFile { import_id });
-
-            Some((import.syntax().clone(), import_file))
-        })
-        .collect();
-
-    for (import, import_file) in imports.into_iter().rev() {
-        let import_source = match database.parse_or_resolve(import_file) {
-            Ok(parse) => parse.syntax().clone_for_update(),
-            Err(()) => continue,
-        };
-
-        let import_whitespace = import
-            .last_token()
-            .filter(|token| token.kind().is_whitespace());
-        let to_insert = match import_whitespace {
-            Some(whitespace) => vec![import_source.into(), whitespace.into()],
-            None => vec![import_source.into()],
-        };
-
-        let index = import.index();
-        #[expect(
-            clippy::range_plus_one,
-            reason = "rowan does not support generic ranges"
-        )]
-        import
-            .parent()
-            .unwrap()
-            .splice_children(index..index + 1, to_insert);
-    }
-
     Ok(root.syntax().to_string())
-}
-
-fn text_range_from_full(
-    database: &dyn DefDatabase,
-    file_id: HirFileId,
-    mut range: TextRange,
-) -> Result<TextRange, ()> {
-    let root = database.parse_or_resolve(file_id)?.tree();
-
-    let imports = root
-        .items()
-        .filter_map(|item| match item {
-            Item::Import(import) => Some(import),
-            Item::Function(_)
-            | Item::StructDeclaration(_)
-            | Item::GlobalVariableDeclaration(_)
-            | Item::GlobalConstantDeclaration(_)
-            | Item::OverrideDeclaration(_)
-            | Item::TypeAliasDeclaration(_) => None,
-        })
-        .filter_map(|import| {
-            let import_mod_id = crate::module_data::find_item(database, file_id, &import)?;
-            let import_id = database.intern_import(Location::new(file_id, import_mod_id));
-            let import_file = HirFileId::from(ImportFile { import_id });
-
-            Some((import.syntax().clone(), import_file))
-        });
-
-    for (import, import_file) in imports {
-        if import.text_range().start() > range.end() {
-            break;
-        }
-
-        let import_length = match database.parse_or_resolve(import_file) {
-            Ok(parse) => parse.syntax().text().len(),
-            Err(()) => continue,
-        };
-
-        let import_whitespace = import
-            .last_token()
-            .filter(|token| token.kind().is_whitespace())
-            .map_or(0, |ws| ws.text().len());
-
-        let to_remove = import_length + TextSize::from(u32::try_from(import_whitespace).unwrap());
-
-        if let Some(new_range) = range.checked_sub(to_remove) {
-            range = new_range + import.syntax().text().len();
-        } else {
-            // original range is inside the import
-            range = import.syntax().text_range();
-            break;
-        }
-    }
-
-    Ok(range)
 }
 
 fn ast_id_map(
@@ -333,11 +209,6 @@ pub trait InternDatabase: SourceDatabase {
         &self,
         loc: Location<Struct>,
     ) -> StructId;
-    #[salsa::interned]
-    fn intern_import(
-        &self,
-        loc: Location<Import>,
-    ) -> ImportId;
     #[salsa::interned]
     fn intern_type_alias(
         &self,
@@ -448,7 +319,6 @@ intern_id!(
 );
 intern_id!(OverrideId, Location<Override>, lookup_intern_override);
 intern_id!(StructId, Location<Struct>, lookup_intern_struct);
-intern_id!(ImportId, Location<Import>, lookup_intern_import);
 intern_id!(TypeAliasId, Location<TypeAlias>, lookup_intern_type_alias);
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
@@ -478,6 +348,6 @@ impl DefinitionWithBodyId {
     ) -> Resolver {
         let file_id = self.file_id(database);
         let module_info = database.module_info(file_id);
-        Resolver::default().push_module_scope(database, file_id, module_info)
+        Resolver::default().push_module_scope(file_id, module_info)
     }
 }

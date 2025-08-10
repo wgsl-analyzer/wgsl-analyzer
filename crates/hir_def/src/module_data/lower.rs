@@ -10,9 +10,7 @@ use syntax::{
     ast::{self, Item, SourceFile},
 };
 
-use super::{
-    Field, GlobalConstant, GlobalVariable, Import, ImportValue, Name, Override, Struct, TypeAlias,
-};
+use super::{Field, GlobalConstant, GlobalVariable, Name, Override, Struct, TypeAlias};
 
 pub(crate) struct Ctx<'database> {
     database: &'database dyn DefDatabase,
@@ -50,7 +48,9 @@ impl<'database> Ctx<'database> {
         item: Item,
     ) -> Option<()> {
         let item = match item {
-            Item::Function(function) => ModuleItem::Function(self.lower_function(&function)?),
+            Item::FunctionDeclaration(function) => {
+                ModuleItem::Function(self.lower_function(&function)?)
+            },
             Item::StructDeclaration(r#struct) => ModuleItem::Struct(self.lower_struct(&r#struct)?),
             Item::GlobalVariableDeclaration(var) => {
                 ModuleItem::GlobalVariable(self.lower_global_var(&var)?)
@@ -61,37 +61,12 @@ impl<'database> Ctx<'database> {
             Item::OverrideDeclaration(override_declaration) => {
                 ModuleItem::Override(self.lower_override(&override_declaration)?)
             },
-            Item::Import(import) => ModuleItem::Import(self.lower_import(&import)?),
             Item::TypeAliasDeclaration(type_alias) => {
                 ModuleItem::TypeAlias(self.lower_type_alias(&type_alias)?)
             },
         };
         self.items.push(item);
         Some(())
-    }
-
-    fn lower_import(
-        &mut self,
-        import: &syntax::ast::Import,
-    ) -> Option<ModuleItemId<Import>> {
-        let ast_id = self.source_ast_id_map.ast_id(import);
-
-        let value = match import.import()? {
-            ast::ImportKind::ImportPath(path) => {
-                let import_path = path
-                    .string_literal()?
-                    .text()
-                    .chars()
-                    .filter(|&character| character != '"')
-                    .collect();
-                ImportValue::Path(import_path)
-            },
-            ast::ImportKind::ImportCustom(custom) => ImportValue::Custom(custom.key()),
-        };
-
-        let import = Import { value, ast_id };
-
-        Some(self.module_data.imports.alloc(import).into())
     }
 
     fn lower_type_alias(
@@ -236,7 +211,7 @@ impl<'database> Ctx<'database> {
 
     fn lower_function(
         &mut self,
-        function: &syntax::ast::Function,
+        function: &syntax::ast::FunctionDeclaration,
     ) -> Option<ModuleItemId<Function>> {
         let name = function.name()?.text().into();
 
@@ -281,23 +256,6 @@ impl<'database> Ctx<'database> {
                 self.module_data
                     .parameters
                     .alloc(Parameter { r#type, name });
-            } else if let Some(import) = parameter.import() {
-                let import = self.lower_import(&import)?;
-                let import = &self.module_data.imports[import.index];
-                let parse = match &import.value {
-                    crate::module_data::ImportValue::Path(path) => {
-                        tracing::info!("attempted import {:?}", path);
-                        let file_id = relative_file(self.database, self.file_id, path)?;
-                        Ok(self.database.parse(file_id))
-                    },
-                    crate::module_data::ImportValue::Custom(key) => self
-                        .database
-                        .parse_import(key.clone(), syntax::ParseEntryPoint::FunctionParameterList),
-                };
-                if let Ok(parse) = parse {
-                    let param_list = ast::FunctionParameters::cast(parse.syntax())?;
-                    self.lower_function_param_list(&param_list)?;
-                }
             }
         }
 

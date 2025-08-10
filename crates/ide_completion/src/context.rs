@@ -51,7 +51,7 @@ impl<'database> CompletionContext<'database> {
             determine_location(&semantics, file.syntax(), position.offset, &token);
 
         let module_info = database.module_info(file_id);
-        let mut resolver = Resolver::default().push_module_scope(database, file_id, module_info);
+        let mut resolver = Resolver::default().push_module_scope(file_id, module_info);
 
         let nearest_scope = token
             .siblings_with_tokens(Direction::Prev) // spellchecker:disable-line
@@ -100,6 +100,5 @@ pub(crate) enum ImmediateLocation {
     ItemList,
     StatementList,
     InsideStatement,
-    Import,
     FieldAccess { expression: ast::FieldExpression },
 }

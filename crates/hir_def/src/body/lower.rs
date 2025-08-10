@@ -102,35 +102,6 @@ impl Collector<'_> {
                 {
                     let binding_id = self.collect_binding(&binding);
                     self.body.parameters.push(binding_id);
-                } else if let Some(import) = parameter.import() {
-                    let import_param_list =
-                        crate::module_data::find_import(self.database, self.file_id, &import)
-                            .map(|import| {
-                                self.database
-                                    .intern_import(InFile::new(self.file_id, import))
-                            })
-                            .and_then(|import_id| {
-                                let import_loc = self.database.lookup_intern_import(import_id);
-                                let module_info = self.database.module_info(import_loc.file_id);
-                                let import = module_info.get(import_loc.value);
-
-                                match &import.value {
-                                    crate::module_data::ImportValue::Path(path) => {
-                                        let file_id =
-                                            relative_file(self.database, import_loc.file_id, path)?;
-                                        Some(self.database.parse(file_id))
-                                    },
-                                    crate::module_data::ImportValue::Custom(key) => self
-                                        .database
-                                        .parse_import(
-                                            key.clone(),
-                                            syntax::ParseEntryPoint::FunctionParameterList,
-                                        )
-                                        .ok(),
-                                }
-                            })
-                            .and_then(|parse| ast::FunctionParameters::cast(parse.syntax()));
-                    self.collect_function_param_list(import_param_list);
                 }
             }
         }

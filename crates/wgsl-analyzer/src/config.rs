@@ -137,8 +137,6 @@ pub struct DiscoverWorkspaceConfig {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigData {
-    pub custom_imports: FxHashMap<String, String>,
-    pub shader_defs: FxHashSet<String>,
     pub trace: TraceConfig,
     pub inlay_hints: InlayHintsConfig,
     pub diagnostics: DiagnosticsConfig,
@@ -242,8 +240,6 @@ impl Config {
 
         Self {
             data: ConfigData {
-                custom_imports: FxHashMap::default(),
-                shader_defs: FxHashSet::default(),
                 trace: TraceConfig::default(),
                 inlay_hints: InlayHintsConfig::default(),
                 diagnostics: DiagnosticsConfig::default(),

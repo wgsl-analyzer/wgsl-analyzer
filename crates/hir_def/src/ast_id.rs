@@ -23,17 +23,6 @@ impl AstIdMap {
             .filter_map(ast::Item::cast)
             .for_each(|item| {
                 map.alloc(item.syntax());
-
-                if let ast::Item::FunctionDeclaration(function) = item
-                    && let Some(parameters) = function.parameter_list()
-                {
-                    for import in parameters
-                        .parameters()
-                        .filter_map(|parameter| parameter.import())
-                    {
-                        map.alloc(import.syntax());
-                    }
-                }
             });
         map
     }

@@ -77,7 +77,7 @@ pub struct Function {
     pub name: Name,
     pub parameters: IdxRange<Parameter>,
     pub return_type: Option<Interned<TypeReference>>,
-    pub ast_id: FileAstId<ast::Function>,
+    pub ast_id: FileAstId<ast::FunctionDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -132,19 +132,6 @@ pub struct Field {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Directive;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Import {
-    pub value: ImportValue,
-    pub ast_id: FileAstId<ast::Import>,
-}
-
-// PERFORMANCE: maybe intern string
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub enum ImportValue {
-    Path(String),
-    Custom(String),
-}
-
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct ModuleInfo {
     pub(crate) data: ModuleData,
@@ -162,7 +149,6 @@ pub struct ModuleData {
     structs: Arena<Struct>,
     pub(crate) fields: Arena<Field>,
     directives: Arena<Directive>,
-    imports: Arena<Import>,
 }
 
 impl ModuleInfo {
@@ -196,7 +182,6 @@ impl ModuleInfo {
             | ModuleItem::GlobalVariable(_)
             | ModuleItem::GlobalConstant(_)
             | ModuleItem::Override(_)
-            | ModuleItem::Import(_)
             | ModuleItem::TypeAlias(_) => None,
         })
     }
@@ -337,12 +322,11 @@ impl ops::Index<Idx<Parameter>> for ModuleData {
 }
 
 mod_items! {
-    Function in functions -> ast::Function,
+    Function in functions -> ast::FunctionDeclaration,
     Struct in structs -> ast::StructDeclaration,
     GlobalVariable in global_variables -> ast::GlobalVariableDeclaration,
     GlobalConstant in global_constants -> ast::GlobalConstantDeclaration,
     Override in overrides -> ast::OverrideDeclaration,
-    Import in imports -> ast::Import,
     TypeAlias in type_aliases -> ast::TypeAliasDeclaration,
 }
 
@@ -359,25 +343,6 @@ pub fn find_item<M: ModuleDataNode>(
 
         let source_ast_id = def_map.ast_id(source);
         let item_ast_id = M::ast_id(data);
-
-        (source_ast_id == item_ast_id).then_some(id)
-    })
-}
-
-// imports can be found not just in the items
-pub fn find_import(
-    database: &dyn DefDatabase,
-    file_id: HirFileId,
-    source: &syntax::ast::Import,
-) -> Option<ModuleItemId<Import>> {
-    let module_info = database.module_info(file_id);
-
-    module_info.data.imports.iter().find_map(|(index, data)| {
-        let id = ModuleItemId::from(index);
-        let def_map = database.ast_id_map(file_id);
-
-        let source_ast_id = def_map.ast_id(source);
-        let item_ast_id = Import::ast_id(data);
 
         (source_ast_id == item_ast_id).then_some(id)
     })

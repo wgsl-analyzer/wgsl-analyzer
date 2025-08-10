@@ -1,10 +1,8 @@
-use std::fmt::Write as _;
-
-use super::ImportValue;
 use crate::{
     database::DefDatabase,
     module_data::{ModuleInfo, ModuleItem},
 };
+use std::fmt::Write as _;
 
 pub fn pretty_print_module(
     database: &dyn DefDatabase,
@@ -85,13 +83,6 @@ fn write_pretty_module_item(
             if let Some(r#type) = r#type {
                 _ = write!(buffer, ": {type}");
             }
-        },
-        ModuleItem::Import(import) => {
-            let import = &module.data[import.index];
-            _ = match &import.value {
-                ImportValue::Path(path) => write!(buffer, "#import \"{path}\""),
-                ImportValue::Custom(key) => write!(buffer, "#import {key}"),
-            };
         },
         ModuleItem::TypeAlias(type_alias) => {
             let type_alias = &module.data[type_alias.index];

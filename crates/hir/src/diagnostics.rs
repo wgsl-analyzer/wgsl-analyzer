@@ -74,12 +74,6 @@ pub enum AnyDiagnostic {
         file_id: HirFileId,
     },
 
-    UnconfiguredCode {
-        definition: String,
-        range: TextRange,
-        file_id: HirFileId,
-    },
-
     AssignmentNotAReference {
         left_side: InFile<AstPointer<ast::Expression>>,
         actual: Type,
@@ -139,10 +133,6 @@ pub enum AnyDiagnostic {
         error: TypeLoweringError,
     },
 
-    UnresolvedImport {
-        import: InFile<AstPointer<ast::Import>>,
-    },
-
     PrecedenceParensRequired {
         expression: InFile<AstPointer<ast::Expression>>,
         operation: BinaryOperation,
@@ -181,11 +171,9 @@ impl AnyDiagnostic {
             Self::MissingAddressSpace { var } | Self::InvalidAddressSpace { var, .. } => {
                 var.file_id
             },
-            Self::UnresolvedImport { import, .. } => import.file_id,
             Self::InvalidType { file_id, .. }
             | Self::NagaValidationError { file_id, .. }
-            | Self::ParseError { file_id, .. }
-            | Self::UnconfiguredCode { file_id, .. } => *file_id,
+            | Self::ParseError { file_id, .. } => *file_id,
         }
     }
 }
