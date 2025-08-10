@@ -90,7 +90,7 @@ pub struct Parameter {
 pub struct GlobalVariable {
     pub name: Name,
     pub r#type: Option<Interned<TypeReference>>,
-    pub ast_id: FileAstId<ast::GlobalVariableDeclaration>,
+    pub ast_id: FileAstId<ast::VariableDeclaration>,
     pub address_space: Option<AddressSpace>,
     pub access_mode: Option<AccessMode>,
 }
@@ -99,7 +99,7 @@ pub struct GlobalVariable {
 pub struct GlobalConstant {
     pub name: Name,
     pub r#type: Option<Interned<TypeReference>>,
-    pub ast_id: FileAstId<ast::GlobalConstantDeclaration>,
+    pub ast_id: FileAstId<ast::ConstantDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]

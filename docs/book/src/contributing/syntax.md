@@ -109,12 +109,12 @@ Function@0..34
       Blankspace@24..25 " "
       InfixExpression@25..31
         Literal@25..28
-          DecimalIntLiteral@25..27 "90"
+          IntLiteral@25..27 "90"
           Blankspace@27..28 " "
         Plus@28..29 "+"
         Blankspace@29..30 " "
         Literal@30..31
-          DecimalIntLiteral@30..31 "2"
+          IntLiteral@30..31 "2"
     Semicolon@31..32 ";"
     Blankspace@32..33 " "
     BraceRight@33..34 "}"

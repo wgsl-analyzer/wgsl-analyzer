@@ -73,7 +73,7 @@ fn vector_completions(
     vector_type: &hir_ty::ty::VectorType,
 ) {
     let field_text = expression
-        .name_ref()
+        .field()
         .map(|name| name.text().to_string())
         // It should never be `None` because `x.$0` gets parsed as `Some("")`.
         .unwrap_or_default();
