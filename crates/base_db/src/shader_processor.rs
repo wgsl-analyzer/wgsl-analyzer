@@ -133,6 +133,11 @@ mod tests {
 
     use super::ShaderProcessor;
 
+    #[test]
+    fn regex_compiles() {
+        ShaderProcessor::default();
+    }
+
     fn test_shader(
         input: &str,
         defs: &[&str],

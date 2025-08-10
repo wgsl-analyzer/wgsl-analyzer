@@ -17,7 +17,7 @@ salsa.workspace = true
 rowan.workspace = true
 rustc-hash.workspace = true
 syntax.workspace = true
-regex = { version = "1.11.1", default-features = false, features = ["std"] }
+regex = { version = "1.11.1", default-features = false, features = ["std", "unicode"] }
 triomphe.workspace = true
 line-index.workspace = true
 vfs.workspace = true
