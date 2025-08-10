@@ -105,10 +105,12 @@ fn format_syntax_node(
     indentation: usize,
     options: &FormattingOptions,
 ) -> Option<()> {
-    if syntax
-        .parent()
-        .is_some_and(|parent| parent.kind() == SyntaxKind::CompoundStatement)
-    {
+    if syntax.parent().is_some_and(|parent| {
+        matches!(
+            parent.kind(),
+            SyntaxKind::LoopStatement | SyntaxKind::CompoundStatement | SyntaxKind::SwitchBody
+        )
+    }) {
         let start = syntax.first_token()?;
 
         let n_newlines = n_newlines_in_whitespace(&start.prev_token()?).unwrap_or(0); // spellchecker:disable-line
@@ -287,15 +289,7 @@ fn format_syntax_node(
         SyntaxKind::InfixExpression => {
             let expression = ast::InfixExpression::cast(syntax)?;
 
-            match expression.op()? {
-                NodeOrToken::Node(node) => {
-                    set_whitespace_single_before(&node.first_token()?);
-                    set_whitespace_single_before(&node.last_token()?.next_token()?);
-                },
-                NodeOrToken::Token(token) => {
-                    whitespace_to_single_around(&token);
-                },
-            }
+            whitespace_to_single_around(&dbg!(expression.op())?);
         },
         SyntaxKind::ParenthesisExpression => {
             let parenthesis_expression = ast::ParenthesisExpression::cast(syntax)?;
@@ -316,7 +310,7 @@ fn format_syntax_node(
                 .is_some_and(|parent| {
                     matches!(
                         parent.kind(),
-                        |SyntaxKind::WhileStatement| SyntaxKind::IfStatement
+                        |SyntaxKind::WhileStatement| SyntaxKind::IfClause
                             | SyntaxKind::ElseIfClause
                     )
                 })

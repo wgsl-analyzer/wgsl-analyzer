@@ -112,8 +112,6 @@ pub enum SyntaxKind {
     CompoundAssignmentStatement,
     /// `location(0, 1, 2)`
     Attribute,
-    /// `(0, 1, ident)`
-    AttributeParameters,
     /// the definition of a struct
     StructDeclaration,
     /// the members of a struct definition inside of braces
@@ -164,7 +162,6 @@ pub enum SyntaxKind {
     Loop,
     Override,
     Return,
-    Storage,
     Struct,
     Switch,
     True,

@@ -183,8 +183,8 @@ macro_rules! ast_token_enum {
         }
 
         impl AstToken for $ty {
-            fn can_cast(token: SyntaxToken) -> bool {
-                match token.kind() {
+            fn can_cast(kind: SyntaxKind) -> bool {
+                match kind {
                     $(SyntaxKind::$variant)|* => true,
                     _ => false,
                 }
@@ -807,20 +807,11 @@ impl InfixExpression {
     }
 
     #[must_use]
-    pub fn op(&self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
-        if let Some(op) = self
-            .syntax()
-            .children()
-            .find(|child| matches!(child.kind(), SyntaxKind::ShiftLeft | SyntaxKind::ShiftRight))
-        {
-            return Some(NodeOrToken::Node(op));
-        }
-
-        if let Some(token) = self.left_side()?.syntax().last_token()?.next_token() {
-            return Some(NodeOrToken::Token(token));
-        }
-
-        None
+    pub fn op(&self) -> Option<SyntaxToken> {
+        self.syntax()
+            .children_with_tokens()
+            .filter_map(rowan::NodeOrToken::into_token)
+            .find(|v| BinaryOperatorKind::can_cast(v.kind()))
     }
 
     #[must_use]

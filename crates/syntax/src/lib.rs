@@ -82,7 +82,7 @@ pub trait AstNode {
 }
 
 pub trait AstToken {
-    fn can_cast(kind: SyntaxToken) -> bool
+    fn can_cast(kind: SyntaxKind) -> bool
     where
         Self: Sized;
 
