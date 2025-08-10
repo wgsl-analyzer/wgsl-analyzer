@@ -1,13 +1,17 @@
 import * as vscode from "vscode";
 
-import { isWeslEditor, setContextValue } from "./util";
 import type { CtxInit } from "./ctx";
+
 import * as wa from "./lsp_ext";
+import { isWeslEditor, setContextValue } from "./utilities";
 
 export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement> {
+	// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 	private _onDidChangeTreeData: vscode.EventEmitter<SyntaxElement | undefined | void> =
+		// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 		new vscode.EventEmitter<SyntaxElement | undefined | void>();
 
+	// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
 	readonly onDidChangeTreeData: vscode.Event<SyntaxElement | undefined | void> =
 		this._onDidChangeTreeData.event;
 
@@ -47,23 +51,23 @@ export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement
 	}
 
 	private getRawChildren(element?: SyntaxElement): SyntaxElement[] {
-		if (element?.type === "Node") {
-			if (this.hideWhitespace) {
-				return element.children.filter((e) => e.kind !== "WHITESPACE");
+		switch (element?.type) {
+			case "Node": {
+				if (this.hideWhitespace) {
+					return element.children.filter((e) => e.kind !== "WHITESPACE");
+				}
+				return element.children;
 			}
-
-			return element.children;
+			case "Token":
+				return [];
+			case undefined: {
+				if (this.root !== undefined) {
+					return [this.root];
+				} else {
+					return [];
+				}
+			}
 		}
-
-		if (element?.type === "Token") {
-			return [];
-		}
-
-		if (element === undefined && this.root !== undefined) {
-			return [this.root];
-		}
-
-		return [];
 	}
 
 	async refresh(): Promise<void> {
@@ -75,11 +79,8 @@ export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement
 				range: null,
 			};
 			const fileText = await this.ctx.client.sendRequest(wa.viewSyntaxTree, parameters);
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			this.root = JSON.parse(fileText, (_key, value: RawElement): SyntaxElement => {
-				if (value.type !== "Node" && value.type !== "Token") {
-					// This is something other than a RawElement.
-					return value;
-				}
 				const [start_offset, start_line, start_column] = value.start;
 				const [end_offset, end_line, end_column] = value.end;
 				const range = new vscode.Range(start_line, start_column, end_line, end_column);
@@ -150,28 +151,24 @@ export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement
 		}
 
 		let children = this.getRawChildren(this.root);
+		outer: for (const child of children) {
+			if (child.range.contains(target)) {
+				result = child;
+				if (target.isEmpty && target.start === child.range.end) {
+					// When the cursor is on the very end of a token,
+					// we assume the user wants the next token instead.
+					continue;
+				}
 
-		outer: while (true) {
-			for (const child of children) {
-				if (child.range.contains(target)) {
-					result = child;
-					if (target.isEmpty && target.start === child.range.end) {
-						// When the cursor is on the very end of a token,
-						// we assume the user wants the next token instead.
-						continue;
-					}
-
-					if (child.type === "Token") {
-						return result;
-					} else {
-						children = this.getRawChildren(child);
-						continue outer;
-					}
+				if (child.type === "Token") {
+					return result;
+				} else {
+					children = this.getRawChildren(child);
+					continue outer;
 				}
 			}
-
-			return result;
 		}
+		return result;
 	}
 
 	async toggleWhitespace() {

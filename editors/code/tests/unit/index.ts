@@ -1,5 +1,5 @@
-import * as assert from "node:assert/strict";
 import { readdir } from "fs/promises";
+import * as assert from "node:assert/strict";
 import * as path from "path";
 import { pathToFileURL } from "url";
 
@@ -20,6 +20,11 @@ class Suite {
 		this.tests = [];
 	}
 
+	public addSyncTest(name: string, test_function: () => void): void {
+		const test = new Test(name, new Promise(test_function));
+		this.tests.push(test);
+	}
+
 	public addTest(name: string, test_function: () => Promise<void>): void {
 		const test = new Test(name, test_function());
 		this.tests.push(test);
@@ -31,9 +36,10 @@ class Suite {
 			try {
 				await test.promise;
 				ok(`  ✔ ${test.name}`);
-			} catch (e) {
-				assert.ok(e instanceof Error);
-				error(`  ✖︎ ${test.name}\n  ${e.stack}`);
+			} catch (exception) {
+				assert.ok(exception instanceof Error);
+				assert.ok(exception.stack);
+				error(`  ✖︎ ${test.name}\n  ${exception.stack}`);
 				failed += 1;
 			}
 		}
@@ -52,10 +58,11 @@ export class Context {
 			ok(`⌛︎ ${name}`);
 			await ctx.run();
 			ok(`✔ ${name}`);
-		} catch (e) {
-			assert.ok(e instanceof Error);
-			error(`✖︎ ${name}\n  ${e.stack}`);
-			throw e;
+		} catch (exception) {
+			assert.ok(exception instanceof Error);
+			assert.ok(exception.stack);
+			error(`✖︎ ${name}\n  ${exception.stack}`);
+			throw exception;
 		}
 	}
 }
@@ -68,11 +75,14 @@ export async function run(): Promise<void> {
 	);
 	for (const testFile of testFiles) {
 		try {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			const testModule = await import(pathToFileURL(path.resolve(__dirname, testFile)).href);
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
 			await testModule.getTests(context);
-		} catch (e) {
-			error(`${e}`);
-			throw e;
+		} catch (exception) {
+			assert.ok(exception instanceof Error);
+			error(`${exception}`);
+			throw exception;
 		}
 	}
 }

@@ -1,9 +1,11 @@
-import * as vscode from "vscode";
-import * as os from "os";
-import type { Config } from "./config";
-import { type Env, log, spawnAsync } from "./util";
-import type { PersistentState } from "./persistent_state";
 import { exec } from "child_process";
+import * as os from "os";
+import * as vscode from "vscode";
+
+import type { Config } from "./config";
+import type { PersistentState } from "./persistent_state";
+
+import { type Env, log, spawnAsync } from "./utilities";
 
 export async function bootstrap(
 	context: vscode.ExtensionContext,
@@ -29,7 +31,6 @@ export async function bootstrap(
 					: ""),
 		);
 	}
-
 	return path;
 }
 
@@ -38,6 +39,7 @@ async function getServer(
 	config: Config,
 	state: PersistentState,
 ): Promise<string | undefined> {
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 	const packageJson: {
 		version: string;
 		releaseTag: string | null;

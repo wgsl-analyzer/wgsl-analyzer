@@ -1,7 +1,14 @@
-import * as path from "path";
-import * as fs from "fs";
-
 import { runTests, TestOptions } from "@vscode/test-electron";
+import { fold } from "fp-ts/Either";
+import { pipe } from "fp-ts/function";
+import * as fs from "fs";
+import * as Decoder from "io-ts/Decoder";
+import * as path from "path";
+
+const PackageJson = Decoder.struct({
+	engines: Decoder.struct({ vscode: Decoder.string }),
+});
+type PackageJson = Decoder.TypeOf<typeof PackageJson>;
 
 async function main() {
 	// The folder containing the Extension Manifest package.json
@@ -10,9 +17,20 @@ async function main() {
 
 	// Minimum supported version.
 	const jsonData = fs.readFileSync(path.join(extensionDevelopmentPath, "package.json"));
-	const json = JSON.parse(jsonData.toString());
-	let minimalVersion: string = json.engines.vscode;
-	if (minimalVersion.startsWith("^")) minimalVersion = minimalVersion.slice(1);
+	const minimalVersion = pipe(
+		PackageJson.decode(jsonData.toString()),
+		fold(
+			(errors) => {
+				throw Error(`Invalid package.json: ${JSON.stringify(errors)}`);
+			},
+			(parsed) => {
+				if (parsed.engines.vscode[0] && "~^=".indexOf(parsed.engines.vscode[0])) {
+					return parsed.engines.vscode.slice(1);
+				}
+				return parsed.engines.vscode;
+			},
+		),
+	);
 
 	const launchArgs = ["--disable-extensions", extensionDevelopmentPath];
 
@@ -38,7 +56,7 @@ async function main() {
 	await runTests(test2Options);
 }
 
-main().catch((error) => {
+main().catch((error: unknown) => {
 	// eslint-disable-next-line no-console
 	console.error("Failed to run tests", error);
 	process.exit(1);

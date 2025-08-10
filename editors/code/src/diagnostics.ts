@@ -7,15 +7,17 @@ import {
 	ThemeColor,
 	window,
 } from "vscode";
+
 import type { Ctx } from "./ctx";
-import { unwrapUndefinable } from "./util";
+
+import { unwrapUndefinable } from "./utilities";
 
 export const URI_SCHEME = "wgsl-analyzer-diagnostics-view";
 
 export class TextDocumentProvider implements vscode.TextDocumentContentProvider {
 	private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
 
-	public constructor(private readonly ctx: Ctx) {}
+	public constructor(private readonly ctx: Ctx) { }
 
 	get onDidChange(): vscode.Event<vscode.Uri> {
 		return this._onDidChange.event;
@@ -31,7 +33,7 @@ export class TextDocumentProvider implements vscode.TextDocumentContentProvider 
 		this._onDidChange.dispose();
 	}
 
-	async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
+	provideTextDocumentContent(uri: vscode.Uri): string {
 		const contents = getRenderedDiagnostic(this.ctx, uri);
 		return anser.ansiToText(contents);
 	}
@@ -67,7 +69,7 @@ interface AnserStyle {
 export class AnsiDecorationProvider implements vscode.Disposable {
 	private _decorationTypes = new Map<AnserStyle, TextEditorDecorationType>();
 
-	public constructor(private readonly ctx: Ctx) {}
+	public constructor(private readonly ctx: Ctx) { }
 
 	dispose(): void {
 		for (const decorationType of this._decorationTypes.values()) {
@@ -104,9 +106,7 @@ export class AnsiDecorationProvider implements vscode.Disposable {
 
 		for (const [lineNumber, line] of lines.entries()) {
 			const totalEscapeLength = 0;
-
 			const parsed = anser.ansiToJson(line, { use_classes: true });
-
 			let offset = 0;
 
 			for (const span of parsed) {
@@ -127,6 +127,7 @@ export class AnsiDecorationProvider implements vscode.Disposable {
 					result.set(decorationType, []);
 				}
 
+				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 				result.get(decorationType)!.push(range);
 			}
 		}
@@ -161,23 +162,24 @@ export class AnsiDecorationProvider implements vscode.Disposable {
 	// NOTE: This could just be a kebab-case to camelCase conversion, but I think it is
 	// a short enough list to just write these by hand
 	static readonly _anserToThemeColor: Record<string, ThemeColor> = {
-		"ansi-black": { id: "ansiBlack" },
-		"ansi-white": { id: "ansiWhite" },
-		"ansi-red": { id: "ansiRed" },
-		"ansi-green": { id: "ansiGreen" },
-		"ansi-yellow": { id: "ansiYellow" },
-		"ansi-blue": { id: "ansiBlue" },
-		"ansi-magenta": { id: "ansiMagenta" },
 		"ansi-cyan": { id: "ansiCyan" },
+		"ansi-green": { id: "ansiGreen" },
+		"ansi-magenta": { id: "ansiMagenta" },
+		"ansi-red": { id: "ansiRed" },
+		"ansi-white": { id: "ansiWhite" },
+
+		"ansi-yellow": { id: "ansiYellow" },
+		"ansi-black": { id: "ansiBlack" },
+		"ansi-blue": { id: "ansiBlue" },
 
 		"ansi-bright-black": { id: "ansiBrightBlack" },
-		"ansi-bright-white": { id: "ansiBrightWhite" },
-		"ansi-bright-red": { id: "ansiBrightRed" },
-		"ansi-bright-green": { id: "ansiBrightGreen" },
-		"ansi-bright-yellow": { id: "ansiBrightYellow" },
 		"ansi-bright-blue": { id: "ansiBrightBlue" },
-		"ansi-bright-magenta": { id: "ansiBrightMagenta" },
 		"ansi-bright-cyan": { id: "ansiBrightCyan" },
+		"ansi-bright-green": { id: "ansiBrightGreen" },
+		"ansi-bright-magenta": { id: "ansiBrightMagenta" },
+		"ansi-bright-red": { id: "ansiBrightRed" },
+		"ansi-bright-white": { id: "ansiBrightWhite" },
+		"ansi-bright-yellow": { id: "ansiBrightYellow" },
 	};
 
 	private static _convertColor(
@@ -211,9 +213,8 @@ export class AnsiDecorationProvider implements vscode.Disposable {
 
 		const themeColor = AnsiDecorationProvider._anserToThemeColor[color];
 		if (themeColor) {
-			return new ThemeColor("terminal." + themeColor);
+			return new ThemeColor("terminal." + themeColor.id);
 		}
-
 		return undefined;
 	}
 }

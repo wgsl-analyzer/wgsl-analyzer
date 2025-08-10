@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import { assert, unwrapUndefinable } from "./util";
+import { assert, unwrapUndefinable } from "./utilities";
 
 export type SnippetTextDocumentEdit = [vscode.Uri, (vscode.TextEdit | vscode.SnippetTextEdit)[]];
 

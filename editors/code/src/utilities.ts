@@ -1,7 +1,7 @@
-import * as vscode from "vscode";
 import { strict as nativeAssert } from "assert";
-import { exec, spawn, type SpawnOptionsWithoutStdio, type ExecOptions } from "child_process";
+import { exec, type ExecOptions, spawn, type SpawnOptionsWithoutStdio } from "child_process";
 import { inspect } from "util";
+import * as vscode from "vscode";
 
 export function assert(condition: boolean, explanation: string): asserts condition {
 	try {
@@ -63,7 +63,8 @@ export function sleep(ms: number) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export type WeslDocument = vscode.TextDocument & ({ languageId: "wgsl" } | { languageId: "wesl" });
+export type WeslDocument = vscode.TextDocument & ({ languageId: "wesl" } | { languageId: "wgsl" });
+
 export type WeslEditor = vscode.TextEditor & { document: WeslDocument };
 
 export function isWeslDocument(document: vscode.TextDocument): document is WeslDocument {
@@ -176,10 +177,15 @@ export class LazyOutputChannel implements vscode.OutputChannel {
 	}
 
 	show(preserveFocus?: boolean): void;
-	show(column?: vscode.ViewColumn, preserveFocus?: boolean): void;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	show(column?: any, preserveFocus?: any): void {
-		this.channel.show(column, preserveFocus);
+	show(column: vscode.ViewColumn, preserveFocus?: boolean): void;
+	show(arg1?: boolean | vscode.ViewColumn, arg2?: boolean): void {
+		let preserveFocus: boolean;
+		if (typeof arg1 === "boolean") {
+			preserveFocus = arg1;
+		} else {
+			preserveFocus = arg2 === true;
+		}
+		this.channel.show(preserveFocus);
 	}
 
 	hide(): void {
@@ -197,7 +203,7 @@ export class LazyOutputChannel implements vscode.OutputChannel {
 
 export type NotNull<T> = T extends null ? never : T;
 
-export type Nullable<T> = T | null;
+export type Nullable<T> = null | T;
 
 function isNotNull<T>(input: Nullable<T>): input is NotNull<T> {
 	return input !== null;
@@ -210,12 +216,11 @@ function expectNotNull<T>(input: Nullable<T>, message: string): NotNull<T> {
 
 	throw new TypeError(message);
 }
-
 export function unwrapNullable<T>(input: Nullable<T>): NotNull<T> {
 	return expectNotNull(input, `unwrapping \`null\``);
 }
-export type NotUndefined<T> = T extends undefined ? never : T;
 
+export type NotUndefined<T> = T extends undefined ? never : T;
 export type Undefinable<T> = T | undefined;
 
 function isNotUndefined<T>(input: Undefinable<T>): input is NotUndefined<T> {
@@ -247,27 +252,28 @@ export async function spawnAsync(
 	options?: SpawnOptionsWithoutStdio,
 ): Promise<SpawnAsyncReturns> {
 	const child = spawn(path, inputs, options);
-	const stdout: Array<Buffer> = [];
-	const stderr: Array<Buffer> = [];
+	const stdout: Array<Buffer<any>> = []; // eslint-disable-line @typescript-eslint/no-explicit-any
+	const stderr: Array<Buffer<any>> = []; // eslint-disable-line @typescript-eslint/no-explicit-any
 	try {
-		const result = await new Promise<{ stdout: string; stderr: string; status: number | null }>(
+		const result = await new Promise<{ status: null | number; stderr: string; stdout: string }>(
 			(resolve, reject) => {
 				child.stdout.on("data", (chunk) => stdout.push(Buffer.from(chunk)));
 				child.stderr.on("data", (chunk) => stderr.push(Buffer.from(chunk)));
-				child.on("error", (error) =>
+				child.on("error", (error) => {
+					// eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
 					reject({
 						stdout: Buffer.concat(stdout).toString("utf8"),
 						stderr: Buffer.concat(stderr).toString("utf8"),
 						error,
-					}),
-				);
-				child.on("close", (status) =>
+					});
+				});
+				child.on("close", (status) => {
 					resolve({
 						stdout: Buffer.concat(stdout).toString("utf8"),
 						stderr: Buffer.concat(stderr).toString("utf8"),
 						status,
-					}),
-				);
+					});
+				});
 			},
 		);
 
@@ -276,13 +282,26 @@ export async function spawnAsync(
 			stderr: result.stderr,
 			status: result.status,
 		};
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} catch (e: any) {
+	} catch (exception: unknown) {
+		assertIsStructuredError(exception);
 		return {
-			stdout: e.stdout,
-			stderr: e.stderr,
-			status: e.status,
-			error: e.error,
+			stdout: exception.stdout,
+			stderr: exception.stderr,
+			status: exception.status,
+			error: exception.error,
 		};
+	}
+}
+
+type StructuredError = {
+	error?: Error | undefined;
+	status: null | number;
+	stderr: string;
+	stdout: string;
+};
+
+function assertIsStructuredError(object: unknown): asserts object is StructuredError {
+	if (typeof object !== "object" || object === null || !("error" in object)) {
+		throw new TypeError("Unexpected exception shape");
 	}
 }

@@ -1,9 +1,11 @@
-import * as lc from "vscode-languageclient/node";
 import * as vscode from "vscode";
-import * as diagnostics from "./diagnostics";
-import { type CommandFactory, Ctx, fetchWorkspace } from "./ctx";
+import * as lc from "vscode-languageclient/node";
+
 import * as commands from "./commands";
-import { setContextValue } from "./util";
+import { type CommandFactory, Ctx, fetchWorkspace } from "./ctx";
+import * as diagnostics from "./diagnostics";
+import { setContextValue } from "./utilities";
+import * as assert from "node:assert";
 
 const WESL_PROJECT_CONTEXT_NAME = "inWeslProject";
 
@@ -25,7 +27,8 @@ export async function activate(
 
 	// VS Code does not show a notification when an extension fails to activate
 	// so we do it ourselves.
-	const api = await activateServer(ctx).catch((error) => {
+	const api = await activateServer(ctx).catch((error: unknown) => {
+		assert.ok(error instanceof Error);
 		void vscode.window.showErrorMessage(
 			`Cannot activate wgsl-analyzer extension: ${error.message}`,
 		);
@@ -56,7 +59,9 @@ async function activateServer(ctx: Ctx): Promise<WgslAnalyzerExtensionApi> {
 	}
 
 	vscode.workspace.onDidChangeTextDocument(
-		async (event) => await decorateVisibleEditors(event.document),
+		async (event) => {
+			await decorateVisibleEditors(event.document);
+		},
 		null,
 		ctx.subscriptions,
 	);
@@ -142,15 +147,15 @@ function createCommands(): Record<string, CommandFactory> {
 		},
 
 		analyzerStatus: { enabled: commands.analyzerStatus },
+
 		memoryUsage: { enabled: commands.memoryUsage },
 		reloadWorkspace: { enabled: commands.reloadWorkspace },
-		rebuildProcMacros: { enabled: commands.rebuildProcMacros },
 		matchingBrace: { enabled: commands.matchingBrace },
 		joinLines: { enabled: commands.joinLines },
 		viewFileText: { enabled: commands.viewFileText },
 		viewItemTree: { enabled: commands.viewItemTree },
-		viewCrateGraph: { enabled: commands.viewCrateGraph },
-		viewFullCrateGraph: { enabled: commands.viewFullCrateGraph },
+		viewDependencyGraph: { enabled: commands.viewCrateGraph },
+		viewFullDependencyGraph: { enabled: commands.viewFullDependencyGraph },
 		openDocs: { enabled: commands.openDocs },
 		openExternalDocs: { enabled: commands.openExternalDocs },
 		moveItemUp: { enabled: commands.moveItemUp },

@@ -1,22 +1,30 @@
-import * as vscode from "vscode";
 import type * as lc from "vscode-languageclient/node";
-import * as wa from "./lsp_ext";
 
-import { Config, prepareVSCodeConfig } from "./config";
-import { createClient } from "./client";
-import { isWeslDocument, isWeslEditor, LazyOutputChannel, log, type WeslEditor } from "./util";
-import type { ServerStatusParameters } from "./lsp_ext";
-
-import { SyntaxTreeProvider, type SyntaxElement } from "./syntax_tree_provider";
-import { PersistentState } from "./persistent_state";
-import { bootstrap } from "./bootstrap";
+import { readFile } from "fs";
 import { spawn } from "node:child_process";
 import { text } from "node:stream/consumers";
+import { promisify } from "util";
+import * as vscode from "vscode";
+
+import type { ServerStatusParameters } from "./lsp_ext";
 import type { WgslAnalyzerExtensionApi } from "./main";
 
-import { promisify } from "util";
-import { readFile } from "fs";
+import { bootstrap } from "./bootstrap";
+import { createClient } from "./client";
+import { Config, prepareVSCodeConfig } from "./config";
 import { DiagnosticsConfig, InlayHintsConfig, TraceConfig } from "./config";
+import * as wa from "./lsp_ext";
+import { PersistentState } from "./persistent_state";
+import { type SyntaxElement, SyntaxTreeProvider } from "./syntax_tree_provider";
+import {
+	expectNotUndefined,
+	isWeslDocument,
+	isWeslEditor,
+	LazyOutputChannel,
+	log,
+	type WeslEditor,
+} from "./utilities";
+import * as assert from "node:assert";
 
 // We only support local folders, not eg. Live Share (`vlsl:` scheme), so do not activate if
 // only those are in use. We use "Empty" to represent these scenarios.
@@ -62,11 +70,12 @@ interface WgslAnalyzerConfiguration {
 async function lspOptions(config: Config): Promise<WgslAnalyzerConfiguration> {
 	const start = process.hrtime();
 	const customImports = await mapObjectAsync(
-		config.customImports!,
+		config.customImports,
 		resolveImport,
 		(name, _, value) => {
+			assert.ok(value instanceof Error);
 			vscode.window.showErrorMessage(
-				`WGSL-Analyzer: failed to resolve import \`${name}\`: ${value}`,
+				`wgsl-analyzer: failed to resolve import \`${name}\`: ${value}`,
 			);
 		},
 	);
@@ -74,39 +83,41 @@ async function lspOptions(config: Config): Promise<WgslAnalyzerConfiguration> {
 	const millis = elapsed[0] * 1000 + elapsed[1] / 1_000_000;
 	if (millis > 1000) {
 		vscode.window.showWarningMessage(
-			`WGSL-Analyzer: Took ${millis.toFixed(0)}ms to resolve imports.`,
+			`wgsl-analyzer: Took ${millis.toFixed(0)}ms to resolve imports.`,
 		);
 	}
 
 	return {
 		customImports,
-		shaderDefs: config.shaderDefs!,
-		diagnostics: config.diagnostics!,
-		trace: config.trace!,
-		inlayHints: config.inlayHints!,
+		shaderDefs: expectNotUndefined(config.shaderDefs, "shaderDefs was undefined"),
+		diagnostics: expectNotUndefined(config.diagnostics, "diagnostics was undefined"),
+		trace: expectNotUndefined(config.trace, "trace was undefined"),
+		inlayHints: expectNotUndefined(config.inlayHints, "inlayHints was undefined"),
 	};
 }
 
 async function resolveImport(content: string): Promise<string> {
 	let content_replaced = content;
-	const folders = vscode.workspace.workspaceFolders;
-	if (vscode.workspace.workspaceFolders!.length == 1) {
+	// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+	const folders = vscode.workspace.workspaceFolders!;
+	if (folders.length == 1) {
 		content_replaced = content_replaced.replace(
 			"${workspaceFolder}",
-			folders![0]!.uri.toString(),
+			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+			folders[0]!.uri.toString(),
 		);
 	}
-	const uri = vscode.Uri.parse(content_replaced);
-
-	if (uri !== undefined) {
+	try {
+		const uri = vscode.Uri.parse(content_replaced, true);
 		if (uri.scheme == "file") {
-			return promisify(readFile)(uri.fsPath, "utf-8");
+			return await promisify(readFile)(uri.fsPath, "utf-8");
 		} else if (["http", "https"].includes(uri.scheme)) {
-			return fetch(content).then((result) => result.text());
+			return await fetch(content).then((result) => result.text());
 		} else {
 			throw new Error(`unknown scheme \`${uri.scheme}\``);
 		}
-	} else {
+	} catch (exception: unknown) {
+		log.warn(`Failed to parse URI: ${content_replaced}`, exception);
 		return content;
 	}
 }
@@ -119,16 +130,20 @@ async function mapObjectAsync<T, U>(
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const map = async ([key, value]: [any, any]) => {
 		try {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 			const mapped = await functionn(value);
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 			return [key, mapped];
-		} catch (e) {
+		} catch (exception) {
 			if (handleError) {
-				handleError(key, value, e);
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+				handleError(key, value, exception);
 			}
 			return undefined;
 		}
 	};
 	const entries = await Promise.all(Object.entries(object).map(map));
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 	return Object.fromEntries(entries.filter((entry) => entry !== undefined));
 }
 
@@ -180,14 +195,15 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		workspace: Workspace,
 	) {
 		extCtx.subscriptions.push(this);
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
 		this.version = extCtx.extension.packageJSON.version ?? "<unknown>";
 		this._serverVersion = "<not running>";
 		this.config = new Config(extCtx.subscriptions);
 		this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 		this.updateStatusBarVisibility(vscode.window.activeTextEditor);
-		this.statusBarActiveEditorListener = vscode.window.onDidChangeActiveTextEditor((editor) =>
-			this.updateStatusBarVisibility(editor),
-		);
+		this.statusBarActiveEditorListener = vscode.window.onDidChangeActiveTextEditor((editor) => {
+			this.updateStatusBarVisibility(editor);
+		});
 		this.workspace = workspace;
 		this.clientSubscriptions = [];
 		this.commandDisposables = [];
@@ -207,7 +223,9 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		this.statusBarActiveEditorListener.dispose();
 		this.testController?.dispose();
 		void this.disposeClient();
-		this.commandDisposables.forEach((disposable) => disposable.dispose());
+		this.commandDisposables.forEach((disposable) => {
+			disposable.dispose();
+		});
 	}
 
 	async onWorkspaceFolderChanges() {
@@ -240,15 +258,6 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 			return;
 		}
 
-		if (!this.traceOutputChannel) {
-			this.traceOutputChannel = new LazyOutputChannel("wgsl-analyzer Language Server Trace");
-			this.pushExtCleanup(this.traceOutputChannel);
-		}
-		if (!this.outputChannel) {
-			this.outputChannel = vscode.window.createOutputChannel("wgsl-analyzer Language Server");
-			this.pushExtCleanup(this.outputChannel);
-		}
-
 		if (!this._client) {
 			this._serverPath = await this.bootstrap();
 			text(spawn(this._serverPath, ["--version"]).stdout.setEncoding("utf-8")).then(
@@ -259,7 +268,8 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 						.trim();
 					this.refreshServerStatus();
 				},
-				(_) => {
+				(exception: unknown) => {
+					log.error("Failed to get language server version", exception);
 					this._serverVersion = "<unknown>";
 					this.refreshServerStatus();
 				},
@@ -285,30 +295,46 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 
 			const initializationOptions = prepareVSCodeConfig(rawInitializationOptions);
 
-			this._client = await createClient(
-				this.traceOutputChannel,
-				this.outputChannel,
+			this._client = createClient(
+				this.getTraceOutputChannel(),
+				this.getOutputChannel(),
 				initializationOptions,
 				serverOptions,
 				this.config,
 				this.unlinkedFiles,
 			);
 			this.pushClientCleanup(
-				this._client.onNotification(wa.serverStatus, (parameters) =>
-					this.setServerStatus(parameters),
-				),
+				this._client.onNotification(wa.serverStatus, (parameters) => {
+					this.setServerStatus(parameters);
+				}),
 			);
 			this.pushClientCleanup(
 				this._client.onNotification(wa.openServerLogs, () => {
-					this.outputChannel!.show();
+					this.getOutputChannel().show();
 				}),
 			);
 		}
 		return this._client;
 	}
 
+	private getOutputChannel(): vscode.OutputChannel {
+		if (!this.outputChannel) {
+			this.outputChannel = vscode.window.createOutputChannel("wgsl-analyzer Language Server");
+			this.pushExtCleanup(this.outputChannel);
+		}
+		return this.outputChannel;
+	}
+
+	private getTraceOutputChannel(): vscode.OutputChannel {
+		if (!this.traceOutputChannel) {
+			this.traceOutputChannel = new LazyOutputChannel("wgsl-analyzer Language Server Trace");
+			this.pushExtCleanup(this.traceOutputChannel);
+		}
+		return this.traceOutputChannel;
+	}
+
 	private async bootstrap(): Promise<string> {
-		return bootstrap(this.extCtx, this.config, this.state).catch((error) => {
+		return bootstrap(this.extCtx, this.config, this.state).catch((exception: unknown) => {
 			let message = "bootstrap error. ";
 
 			message +=
@@ -316,7 +342,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 			message +=
 				'To enable verbose logs, click the gear icon in the "OUTPUT" tab and select "Debug".';
 
-			log.error("Bootstrap error", error);
+			log.error("Bootstrap error", exception);
 			throw new Error(message);
 		});
 	}
@@ -333,7 +359,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 				const options = await lspOptions(this.config);
 				return options;
 			}),
-			client.onRequest(wa.importTextDocument, async (parameters, __) => {
+			client.onRequest(wa.importTextDocument, (parameters, __) => {
 				vscode.workspace.openTextDocument(parameters.uri);
 				return;
 			}),
@@ -345,10 +371,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 	}
 
 	private prepareSyntaxTreeView(client: lc.LanguageClient) {
-		const ctxInit: CtxInit = {
-			...this,
-			client: client,
-		};
+		const ctxInit: CtxInit = Object.assign({}, this, { client });
 		this._syntaxTreeProvider = new SyntaxTreeProvider(ctxInit);
 		this._syntaxTreeView = vscode.window.createTreeView("weslSyntaxTree", {
 			treeDataProvider: this._syntaxTreeProvider,
@@ -388,7 +411,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 
 			const result = this.syntaxTreeProvider?.getElementByRange(selection);
 			if (result !== undefined) {
-				await this.syntaxTreeView?.reveal(result);
+				await this.syntaxTreeView.reveal(result);
 			}
 		});
 
@@ -421,12 +444,14 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		log.info("Disposing language client");
 		this.updateCommands("disable");
 		// we give the server 100ms to stop gracefully
-		await this.client?.stop(100).catch((_) => {});
+		await this.client?.stop(100).catch((_: unknown) => { });
 		await this.disposeClient();
 	}
 
 	private async disposeClient() {
-		this.clientSubscriptions?.forEach((disposable) => disposable.dispose());
+		this.clientSubscriptions.forEach((disposable) => {
+			disposable.dispose();
+		});
 		this.clientSubscriptions = [];
 		await this._client?.dispose();
 		this._serverPath = undefined;
@@ -447,7 +472,9 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 	}
 
 	private updateCommands(forceDisable?: "disable") {
-		this.commandDisposables.forEach((disposable) => disposable.dispose());
+		this.commandDisposables.forEach((disposable) => {
+			disposable.dispose();
+		});
 		this.commandDisposables = [];
 
 		const clientRunning = (!forceDisable && this._client?.isRunning()) ?? false;
@@ -470,6 +497,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 						`command ${fullName} failed: wgsl-analyzer server is not running`,
 					);
 			}
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 			this.commandDisposables.push(vscode.commands.registerCommand(fullName, callback));
 		}
 	}
@@ -537,14 +565,14 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		const toggleCheckOnSave = this.config.checkOnSave ? "Disable" : "Enable";
 		statusBar.tooltip.appendMarkdown(
 			`[Extension Info](command:wgsl-analyzer.serverVersion "Show version and server binary info"): Version ${this.version}, Server Version ${this._serverVersion}`
-				+ "\n\n---\n\n"
-				+ '[$(terminal) Open Logs](command:wgsl-analyzer.openLogs "Open the server logs")'
-				+ "\n\n"
-				+ `[$(settings) ${toggleCheckOnSave} Check on Save](command:wgsl-analyzer.toggleCheckOnSave "Temporarily ${toggleCheckOnSave.toLowerCase()} check on save functionality")`
-				+ "\n\n"
-				+ '[$(stop-circle) Stop server](command:wgsl-analyzer.stopServer "Stop the server")'
-				+ "\n\n"
-				+ '[$(debug-restart) Restart server](command:wgsl-analyzer.restartServer "Restart the server")',
+			+ "\n\n---\n\n"
+			+ '[$(terminal) Open Logs](command:wgsl-analyzer.openLogs "Open the server logs")'
+			+ "\n\n"
+			+ `[$(settings) ${toggleCheckOnSave} Check on Save](command:wgsl-analyzer.toggleCheckOnSave "Temporarily ${toggleCheckOnSave.toLowerCase()} check on save functionality")`
+			+ "\n\n"
+			+ '[$(stop-circle) Stop server](command:wgsl-analyzer.stopServer "Stop the server")'
+			+ "\n\n"
+			+ '[$(debug-restart) Restart server](command:wgsl-analyzer.restartServer "Restart the server")',
 		);
 		if (!status.quiescent) icon = "$(loading~spin) ";
 		statusBar.text = `${icon}wgsl-analyzer`;

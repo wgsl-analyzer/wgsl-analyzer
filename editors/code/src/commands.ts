@@ -1,24 +1,25 @@
+import type { LanguageClient } from "vscode-languageclient/node";
+
+import * as path from "path";
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient";
-import * as wa from "./lsp_ext";
-import * as path from "path";
 
-import type { Ctx, Cmd, CtxInit } from "./ctx";
+import type { Cmd, Ctx, CtxInit } from "./ctx";
+import type { SyntaxElement } from "./syntax_tree_provider";
+
+import { HOVER_REFERENCE_COMMAND } from "./client";
+import * as wa from "./lsp_ext";
 import {
-	applySnippetWorkspaceEdit,
 	applySnippetTextEdits,
+	applySnippetWorkspaceEdit,
 	type SnippetTextDocumentEdit,
 } from "./snippets";
-
-import { isWeslDocument, sleep, isWeslEditor, unwrapUndefinable } from "./util";
-import type { LanguageClient } from "vscode-languageclient/node";
-import { HOVER_REFERENCE_COMMAND } from "./client";
-import { log } from "./util";
-import type { SyntaxElement } from "./syntax_tree_provider";
+import { isWeslDocument, isWeslEditor, sleep, unwrapUndefinable } from "./utilities";
+import { log } from "./utilities";
 
 export function analyzerStatus(ctx: CtxInit): Cmd {
 	const tdcp = new (class implements vscode.TextDocumentContentProvider {
-		readonly uri = vscode.Uri.parse("wgsl-analyzer-status://status");
+		readonly uri = vscode.Uri.parse("wgsl-analyzer-status://status", true);
 		readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
 
 		async provideTextDocumentContent(_uri: vscode.Uri): Promise<string> {
@@ -55,7 +56,7 @@ export function analyzerStatus(ctx: CtxInit): Cmd {
 
 export function memoryUsage(ctx: CtxInit): Cmd {
 	const tdcp = new (class implements vscode.TextDocumentContentProvider {
-		readonly uri = vscode.Uri.parse("wgsl-analyzer-memory://memory");
+		readonly uri = vscode.Uri.parse("wgsl-analyzer-memory://memory", true);
 		readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
 
 		provideTextDocumentContent(_uri: vscode.Uri): vscode.ProviderResult<string> {
@@ -348,8 +349,9 @@ export function serverVersion(ctx: CtxInit): Cmd {
 
 export function viewFileText(ctx: CtxInit): Cmd {
 	const tdcp = new (class implements vscode.TextDocumentContentProvider {
-		readonly uri = vscode.Uri.parse("wgsl-analyzer-file-text://viewFileText/file.rs");
+		readonly uri = vscode.Uri.parse("wgsl-analyzer-file-text://viewFileText/file.rs", true);
 		readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
+
 		constructor() {
 			vscode.workspace.onDidChangeTextDocument(
 				this.onDidChangeTextDocument,
@@ -367,7 +369,9 @@ export function viewFileText(ctx: CtxInit): Cmd {
 			if (isWeslDocument(event.document)) {
 				// We need to order this after language server updates, but there is no API for that.
 				// Hence, good old sleep().
-				void sleep(10).then(() => this.eventEmitter.fire(this.uri));
+				void sleep(10).then(() => {
+					this.eventEmitter.fire(this.uri);
+				});
 			}
 		}
 
@@ -412,8 +416,9 @@ export function viewFileText(ctx: CtxInit): Cmd {
 
 export function viewItemTree(ctx: CtxInit): Cmd {
 	const tdcp = new (class implements vscode.TextDocumentContentProvider {
-		readonly uri = vscode.Uri.parse("wgsl-analyzer-item-tree://viewItemTree/itemtree.rs");
+		readonly uri = vscode.Uri.parse("wgsl-analyzer-item-tree://viewItemTree/itemtree.rs", true);
 		readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
+
 		constructor() {
 			vscode.workspace.onDidChangeTextDocument(
 				this.onDidChangeTextDocument,
@@ -431,7 +436,9 @@ export function viewItemTree(ctx: CtxInit): Cmd {
 			if (isWeslDocument(event.document)) {
 				// We need to order this after language server updates, but there is no API for that.
 				// Hence, good old sleep().
-				void sleep(10).then(() => this.eventEmitter.fire(this.uri));
+				void sleep(10).then(() => {
+					this.eventEmitter.fire(this.uri);
+				});
 			}
 		}
 
@@ -548,16 +555,12 @@ export function viewCrateGraph(ctx: CtxInit): Cmd {
 	return crateGraph(ctx, false);
 }
 
-export function viewFullCrateGraph(ctx: CtxInit): Cmd {
+export function viewFullDependencyGraph(ctx: CtxInit): Cmd {
 	return crateGraph(ctx, true);
 }
 
 export function reloadWorkspace(ctx: CtxInit): Cmd {
 	return async () => ctx.client.sendRequest(wa.reloadWorkspace);
-}
-
-export function rebuildProcMacros(ctx: CtxInit): Cmd {
-	return async () => ctx.client.sendRequest(wa.rebuildProcMacros);
 }
 
 async function showReferencesImpl(
@@ -569,7 +572,7 @@ async function showReferencesImpl(
 	if (client) {
 		await vscode.commands.executeCommand(
 			"editor.action.showReferences",
-			vscode.Uri.parse(uri),
+			vscode.Uri.parse(uri, true),
 			client.protocol2CodeConverter.asPosition(position),
 			locations.map(client.protocol2CodeConverter.asLocation),
 		);
@@ -622,7 +625,8 @@ export function openDocs(ctx: CtxInit): Cmd {
 		let fileType = vscode.FileType.Unknown;
 		if (docLinks.local !== undefined) {
 			try {
-				fileType = (await vscode.workspace.fs.stat(vscode.Uri.parse(docLinks.local))).type;
+				fileType = (await vscode.workspace.fs.stat(vscode.Uri.parse(docLinks.local, true)))
+					.type;
 			} catch (e) {
 				log.debug("stat() threw error. Falling back to web version", e);
 			}
@@ -634,7 +638,7 @@ export function openDocs(ctx: CtxInit): Cmd {
 			if (docLink.startsWith("vscode-remote://")) {
 				docLink = docLink.replace("vscode-remote://", "vscode://vscode-remote/");
 			}
-			const docUri = vscode.Uri.parse(docLink);
+			const docUri = vscode.Uri.parse(docLink, true);
 			await vscode.env.openExternal(docUri);
 		}
 	};
@@ -659,7 +663,7 @@ export function openExternalDocs(ctx: CtxInit): Cmd {
 			if (docLink.startsWith("vscode-remote://")) {
 				docLink = docLink.replace("vscode-remote://", "vscode://vscode-remote/");
 			}
-			const docUri = vscode.Uri.parse(docLink);
+			const docUri = vscode.Uri.parse(docLink, true);
 			await vscode.env.openExternal(docUri);
 		}
 	};

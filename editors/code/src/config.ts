@@ -1,10 +1,13 @@
-import * as Is from "vscode-languageclient/lib/common/utils/is";
+import type { Disposable } from "vscode";
+
 import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
-import { expectNotUndefined, log, unwrapUndefinable } from "./util";
-import type { Env } from "./util";
-import type { Disposable } from "vscode";
+import * as Is from "vscode-languageclient/lib/common/utils/is";
+
+import type { Env } from "./utilities";
+
+import { expectNotUndefined, log, unwrapUndefinable } from "./utilities";
 
 export type RunnableEnvCfgItem = {
 	mask?: string;
@@ -12,7 +15,6 @@ export type RunnableEnvCfgItem = {
 	platform?: string | string[];
 };
 export type RunnableEnvCfg = Record<string, string> | RunnableEnvCfgItem[];
-
 type ShowStatusBar = "always" | "never" | { documentSelector: vscode.DocumentSelector };
 
 export interface TraceConfig {
@@ -159,13 +161,13 @@ export class Config {
 				{
 					// Continues a multi-line comment
 					// e.g.  * ...|
-					beforeText: /^(  {2})* \*( ([^*]|\*(?!\/))*)?$/,
+					beforeText: /^( {3})* \*( ([^*]|\*(?!\/))*)?$/,
 					action: { indentAction, appendText: "* " },
 				},
 				{
 					// Dedents after closing a multi-line comment
 					// e.g.  */|
-					beforeText: /^(  {2})* \*\/\s*$/,
+					beforeText: /^( {3})* \*\/\s*$/,
 					action: { indentAction, removeText: 1 },
 				},
 			];
@@ -178,6 +180,14 @@ export class Config {
 		this.configureLang = vscode.languages.setLanguageConfiguration("wesl", {
 			onEnterRules,
 		});
+	}
+
+	get previewWeslRsOutput() {
+		return this.get<boolean>("diagnostics.previewWeslRsOutput");
+	}
+
+	get useWeslRsErrorCode() {
+		return this.get<boolean>("diagnostics.useWeslRsErrorCode");
 	}
 
 	// We do not do runtime config validation here for simplicity. More on stackoverflow:
@@ -414,7 +424,7 @@ export function substituteVariablesInEnv(env: Env): Env {
 	const envWithDeps = Object.fromEntries(
 		Object.entries(env).map(([key, value]) => {
 			const deps = new Set<string>();
-			const depRe = new RegExp(/\${(?<depName>.+?)}/g);
+			const depRe = new RegExp(/\$\{(?<depName>.+?)\}/g);
 			let match = undefined;
 			while ((match = depRe.exec(value))) {
 				const depName = unwrapUndefinable(match.groups?.["depName"]);
@@ -465,10 +475,13 @@ export function substituteVariablesInEnv(env: Env): Env {
 		for (const key of toResolve) {
 			const item = unwrapUndefinable(envWithDeps[key]);
 			if (item.deps.every((dep) => resolved.has(dep))) {
-				item.value = item.value.replace(/\${(?<depName>.+?)}/g, (_wholeMatch, depName) => {
-					const item = unwrapUndefinable(envWithDeps[depName]);
-					return item.value;
-				});
+				item.value = item.value.replace(
+					/\$\{(?<depName>.+?)\}/g,
+					(_wholeMatch, depName) => {
+						const item = unwrapUndefinable(envWithDeps[depName]);
+						return item.value;
+					},
+				);
 				resolved.add(key);
 				toResolve.delete(key);
 			}
@@ -484,6 +497,7 @@ export function substituteVariablesInEnv(env: Env): Env {
 }
 
 const VarRegex = new RegExp(/\$\{(.+?)\}/g);
+
 function substituteVSCodeVariableInString(value: string): string {
 	return value.replace(VarRegex, (substring: string, varName) => {
 		if (Is.string(varName)) {
@@ -503,11 +517,11 @@ function computeVscodeVar(varName: string): string | null {
 			folder === undefined
 				? "" // no workspace opened
 				: // could use currently opened document to detect the correct
-					// workspace. However, that would be determined by the document
-					// user has opened on Editor startup. Could lead to
-					// unpredictable workspace selection in practice.
-					// It is better to pick the first one
-					folder.uri.fsPath;
+				// workspace. However, that would be determined by the document
+				// user has opened on Editor startup. Could lead to
+				// unpredictable workspace selection in practice.
+				// It is better to pick the first one
+				folder.uri.fsPath;
 		return fsPath;
 	};
 	// https://code.visualstudio.com/docs/editor/variables-reference

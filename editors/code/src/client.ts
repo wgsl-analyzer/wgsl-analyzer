@@ -1,23 +1,24 @@
 import * as anser from "anser";
-import * as lc from "vscode-languageclient/node";
-import * as vscode from "vscode";
-import * as wa from "./lsp_ext";
-import * as Is from "vscode-languageclient/lib/common/utils/is";
-import { assert, unwrapUndefinable } from "./util";
-import * as diagnostics from "./diagnostics";
-import { WorkspaceEdit } from "vscode";
-import { type Config, prepareVSCodeConfig } from "./config";
 import { sep as pathSeparator } from "path";
-import { WaLanguageClient } from "./lang_client";
+import * as vscode from "vscode";
+import { WorkspaceEdit } from "vscode";
+import * as Is from "vscode-languageclient/lib/common/utils/is";
+import * as lc from "vscode-languageclient/node";
 
-export async function createClient(
+import { type Config, prepareVSCodeConfig } from "./config";
+import * as diagnostics from "./diagnostics";
+import { WaLanguageClient } from "./lang_client";
+import * as wa from "./lsp_ext";
+import { assert, unwrapUndefinable } from "./utilities";
+
+export function createClient(
 	traceOutputChannel: vscode.OutputChannel,
 	outputChannel: vscode.OutputChannel,
 	initializationOptions: vscode.WorkspaceConfiguration,
 	serverOptions: lc.ServerOptions,
 	config: Config,
 	unlinkedFiles: vscode.Uri[],
-): Promise<lc.LanguageClient> {
+): lc.LanguageClient {
 	const waMiddleware: lc.Middleware = {
 		workspace: {
 			// HACK: This is a workaround, when the client has been disposed, VSCode
@@ -43,13 +44,13 @@ export async function createClient(
 				}
 			},
 		},
-		async handleDiagnostics(
+		handleDiagnostics(
 			uri: vscode.Uri,
 			diagnosticList: vscode.Diagnostic[],
 			next: lc.HandleDiagnosticsSignature,
 		) {
-			const preview = false; // todo simplify
-			const errorCode = false; // todo simplify
+			const preview = config.previewWeslRsOutput;
+			const errorCode = config.useWeslRsErrorCode;
 			diagnosticList.forEach((diagnostic, index) => {
 				const value =
 					typeof diagnostic.code === "string" || typeof diagnostic.code === "number"
@@ -126,7 +127,8 @@ export async function createClient(
 				if (rendered) {
 					if (preview) {
 						const decolorized = anser.ansiToText(rendered);
-						const index = decolorized.match(/^(note|help):/m)?.index || rendered.length;
+						const index =
+							decolorized.match(/^(?:note|help):/m)?.index || rendered.length;
 						diagnostic.message = decolorized
 							.substring(0, index)
 							.replace(/^ -->[^\n]+\n/m, "");
@@ -142,7 +144,7 @@ export async function createClient(
 					};
 				}
 			});
-			return next(uri, diagnosticList);
+			next(uri, diagnosticList);
 		},
 		async provideHover(
 			document: vscode.TextDocument,
@@ -309,6 +311,7 @@ class ExperimentalFeatures implements lc.StaticFeature {
 	}
 
 	fillClientCapabilities(capabilities: lc.ClientCapabilities): void {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		capabilities.experimental = {
 			snippetTextEdit: true,
 			codeActionGroup: true,
@@ -336,6 +339,7 @@ class ExperimentalFeatures implements lc.StaticFeature {
 	): void {}
 
 	dispose(): void {}
+
 	clear(): void {}
 }
 
@@ -358,8 +362,9 @@ class OverrideFeatures implements lc.StaticFeature {
 		_documentSelector: lc.DocumentSelector | undefined,
 	): void {}
 
-	dispose(): void {}
 	clear(): void {}
+
+	dispose(): void {}
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

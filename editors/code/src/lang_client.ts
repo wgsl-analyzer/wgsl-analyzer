@@ -1,5 +1,5 @@
-import * as lc from "vscode-languageclient/node";
 import * as vscode from "vscode";
+import * as lc from "vscode-languageclient/node";
 
 export class WaLanguageClient extends lc.LanguageClient {
 	override handleFailedRequest<T>(
@@ -8,7 +8,7 @@ export class WaLanguageClient extends lc.LanguageClient {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		error: any,
 		defaultValue: T,
-		showNotification?: boolean | undefined,
+		showNotification?: boolean,
 	): T {
 		const showError = vscode.workspace
 			.getConfiguration("wgsl-analyzer")
