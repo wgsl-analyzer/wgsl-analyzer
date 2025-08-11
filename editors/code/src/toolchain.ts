@@ -37,11 +37,7 @@ const getPathForExecutable = memoizeAsync(
 
 		const cargoHome = getCargoHome();
 		if (cargoHome) {
-			const standardPath = vscode.Uri.joinPath(
-				cargoHome,
-				"bin",
-				executableName,
-			);
+			const standardPath = vscode.Uri.joinPath(cargoHome, "bin", executableName);
 			if (await isFileAtUri(standardPath)) return standardPath.fsPath;
 		}
 		return executableName;
@@ -53,9 +49,7 @@ async function lookupInPath(exec: string): Promise<boolean> {
 
 	const candidates = paths.split(path.delimiter).flatMap((directoryInPath) => {
 		const candidate = path.join(directoryInPath, exec);
-		return os.type() === "Windows_NT"
-			? [candidate, `${candidate}.exe`]
-			: [candidate];
+		return os.type() === "Windows_NT" ? [candidate, `${candidate}.exe`] : [candidate];
 	});
 
 	for (const candidate of candidates) {
@@ -85,9 +79,7 @@ function isFileAtPath(path: string): Promise<boolean> {
 
 async function isFileAtUri(uri: vscode.Uri): Promise<boolean> {
 	try {
-		return (
-			((await vscode.workspace.fs.stat(uri)).type & vscode.FileType.File) !== 0
-		);
+		return ((await vscode.workspace.fs.stat(uri)).type & vscode.FileType.File) !== 0;
 	} catch {
 		return false;
 	}

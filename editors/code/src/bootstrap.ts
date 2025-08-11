@@ -46,8 +46,7 @@ async function getServer(
 	} = context.extension.packageJSON;
 
 	// check if the server path is configured explicitly
-	const explicitPath =
-		process.env["__WA_LSP_SERVER_DEBUG"] ?? config.serverPath;
+	const explicitPath = process.env["__WA_LSP_SERVER_DEBUG"] ?? config.serverPath;
 	if (explicitPath) {
 		if (explicitPath.startsWith("~/")) {
 			return os.homedir() + explicitPath.slice("~".length);
@@ -61,11 +60,7 @@ async function getServer(
 
 	// finally, use the bundled one
 	const ext = process.platform === "win32" ? ".exe" : "";
-	const bundled = vscode.Uri.joinPath(
-		context.extensionUri,
-		"server",
-		`wgsl-analyzer${ext}`,
-	);
+	const bundled = vscode.Uri.joinPath(context.extensionUri, "server", `wgsl-analyzer${ext}`);
 	const bundledExists = await fileExists(bundled);
 	if (bundledExists) {
 		let server = bundled;
@@ -101,10 +96,7 @@ async function fileExists(uri: vscode.Uri) {
 	);
 }
 
-export async function isValidExecutable(
-	path: string,
-	extraEnv: Env,
-): Promise<boolean> {
+export async function isValidExecutable(path: string, extraEnv: Env): Promise<boolean> {
 	log.debug("Checking availability of a binary at", path);
 
 	const result = await spawnAsync(path, ["--version"], {
@@ -128,10 +120,7 @@ async function getNixOsServer(
 	server: vscode.Uri,
 ) {
 	await vscode.workspace.fs.createDirectory(globalStorageUri).then();
-	const destination = vscode.Uri.joinPath(
-		globalStorageUri,
-		`wgsl-analyzer${ext}`,
-	);
+	const destination = vscode.Uri.joinPath(globalStorageUri, `wgsl-analyzer${ext}`);
 	let exists = await vscode.workspace.fs.stat(destination).then(
 		() => true,
 		() => false,
@@ -153,8 +142,7 @@ async function isNixOs(): Promise<boolean> {
 		const contents = (
 			await vscode.workspace.fs.readFile(vscode.Uri.file("/etc/os-release"))
 		).toString();
-		const idString =
-			contents.split("\n").find((a) => a.startsWith("ID=")) || "ID=linux";
+		const idString = contents.split("\n").find((a) => a.startsWith("ID=")) || "ID=linux";
 		return idString.indexOf("nixos") !== -1;
 	} catch {
 		return false;

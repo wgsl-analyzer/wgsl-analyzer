@@ -53,8 +53,7 @@ export function createClient(
 			const errorCode = config.useWeslRsErrorCode;
 			diagnosticList.forEach((diagnostic, index) => {
 				const value =
-					typeof diagnostic.code === "string" ||
-					typeof diagnostic.code === "number"
+					typeof diagnostic.code === "string" || typeof diagnostic.code === "number"
 						? diagnostic.code
 						: diagnostic.code?.value;
 				if (
@@ -64,24 +63,18 @@ export function createClient(
 					value === "temporary-disabled" &&
 					!unlinkedFiles.includes(uri) &&
 					(diagnostic.message === "file not included in crate hierarchy" ||
-						diagnostic.message.startsWith(
-							"This file is not included in any crates",
-						))
+						diagnostic.message.startsWith("This file is not included in any crates"))
 				) {
 					const config = vscode.workspace.getConfiguration("wgsl-analyzer");
 					if (config.get("showUnlinkedFileNotification")) {
 						unlinkedFiles.push(uri);
 						const folder = vscode.workspace.getWorkspaceFolder(uri)?.uri.fsPath;
 						if (folder) {
-							const parentBackslash = uri.fsPath.lastIndexOf(
-								pathSeparator + "src",
-							);
+							const parentBackslash = uri.fsPath.lastIndexOf(pathSeparator + "src");
 							const parent = uri.fsPath.substring(0, parentBackslash);
 
 							if (parent.startsWith(folder)) {
-								const path = vscode.Uri.file(
-									parent + pathSeparator + "Cargo.toml",
-								);
+								const path = vscode.Uri.file(parent + pathSeparator + "Cargo.toml");
 								void vscode.workspace.fs.stat(path).then(async () => {
 									const choice = await vscode.window.showInformationMessage(
 										`This file does not belong to a loaded project. It looks like it might belong to the workspace at ${path.path}, do you want to add it to the linked projects?`,
@@ -96,10 +89,7 @@ export function createClient(
 											break;
 										case "Yes": {
 											const pathToInsert =
-												"." +
-												parent.substring(folder.length) +
-												pathSeparator +
-												"Cargo.toml";
+												"." + parent.substring(folder.length) + pathSeparator + "Cargo.toml";
 											const value = config
 												// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 												.get<any[]>("linkedProjects")
@@ -108,11 +98,7 @@ export function createClient(
 											break;
 										}
 										case "Do not show this again":
-											await config.update(
-												"showUnlinkedFileNotification",
-												false,
-												false,
-											);
+											await config.update("showUnlinkedFileNotification", false, false);
 											break;
 									}
 								});
@@ -129,17 +115,12 @@ export function createClient(
 				// the data payload of the lsp diagnostic. If that field exists, overwrite the
 				// diagnostic code such that clicking it opens the diagnostic in a readonly
 				// text editor for easy inspection
-				const rendered = (
-					diagnostic as unknown as { data?: { rendered?: string } }
-				).data?.rendered;
+				const rendered = (diagnostic as unknown as { data?: { rendered?: string } }).data?.rendered;
 				if (rendered) {
 					if (preview) {
 						const decolorized = anser.ansiToText(rendered);
-						const index =
-							decolorized.match(/^(?:note|help):/m)?.index || rendered.length;
-						diagnostic.message = decolorized
-							.substring(0, index)
-							.replace(/^ -->[^\n]+\n/m, "");
+						const index = decolorized.match(/^(?:note|help):/m)?.index || rendered.length;
+						diagnostic.message = decolorized.substring(0, index).replace(/^ -->[^\n]+\n/m, "");
 					}
 					diagnostic.code = {
 						target: vscode.Uri.from({
@@ -148,8 +129,7 @@ export function createClient(
 							fragment: uri.toString(),
 							query: index.toString(),
 						}),
-						value:
-							errorCode && value ? value : "Click for full compiler diagnostic",
+						value: errorCode && value ? value : "Click for full compiler diagnostic",
 					};
 				}
 			});
@@ -166,8 +146,7 @@ export function createClient(
 				? client.code2ProtocolConverter.asRange(editor.selection)
 				: client.code2ProtocolConverter.asPosition(position);
 			const parameters = {
-				textDocument:
-					client.code2ProtocolConverter.asTextDocumentIdentifier(document),
+				textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(document),
 				position: positionOrRange,
 			};
 			return client.sendRequest(wa.hover, parameters, token).then(
@@ -195,34 +174,21 @@ export function createClient(
 			_next: lc.ProvideCodeActionsSignature,
 		) {
 			const parameters: lc.CodeActionParams = {
-				textDocument:
-					client.code2ProtocolConverter.asTextDocumentIdentifier(document),
+				textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(document),
 				range: client.code2ProtocolConverter.asRange(range),
-				context: await client.code2ProtocolConverter.asCodeActionContext(
-					context,
-					token,
-				),
+				context: await client.code2ProtocolConverter.asCodeActionContext(context, token),
 			};
 			const callback = async (
 				values: (lc.Command | lc.CodeAction)[] | null,
 			): Promise<(vscode.Command | vscode.CodeAction)[] | undefined> => {
 				if (values === null) return undefined;
 				const result: (vscode.CodeAction | vscode.Command)[] = [];
-				const groups = new Map<
-					string,
-					{ index: number; items: vscode.CodeAction[] }
-				>();
+				const groups = new Map<string, { index: number; items: vscode.CodeAction[] }>();
 				for (const item of values) {
 					// In our case we expect to get code edits only from diagnostics
 					if (lc.CodeAction.is(item)) {
-						assert(
-							!item.command,
-							"We don't expect to receive commands in CodeActions",
-						);
-						const action = await client.protocol2CodeConverter.asCodeAction(
-							item,
-							token,
-						);
+						assert(!item.command, "We don't expect to receive commands in CodeActions");
+						const action = await client.protocol2CodeConverter.asCodeAction(item, token);
 						result.push(action);
 						continue;
 					}
@@ -407,8 +373,7 @@ function isCodeActionWithoutEditsAndCommands(value: any): boolean {
 	return (
 		candidate &&
 		Is.string(candidate.title) &&
-		(candidate.diagnostics === void 0 ||
-			Is.typedArray(candidate.diagnostics, lc.Diagnostic.is)) &&
+		(candidate.diagnostics === void 0 || Is.typedArray(candidate.diagnostics, lc.Diagnostic.is)) &&
 		(candidate.kind === void 0 || Is.string(candidate.kind)) &&
 		candidate.edit === void 0 &&
 		candidate.command === void 0
@@ -430,16 +395,13 @@ function renderCommand(cmd: wa.CommandLink): string {
 	return `[${cmd.title}](command:wgsl-analyzer.hoverRefCommandProxy?${HOVER_REFERENCE_COMMAND.length - 1} '${cmd.tooltip}')`;
 }
 
-function renderHoverActions(
-	actions: wa.CommandLinkGroup[],
-): vscode.MarkdownString {
+function renderHoverActions(actions: wa.CommandLinkGroup[]): vscode.MarkdownString {
 	// clean up the previous hover ref command
 	HOVER_REFERENCE_COMMAND = [];
 	const text = actions
 		.map(
 			(group) =>
-				(group.title ? group.title + " " : "") +
-				group.commands.map(renderCommand).join(" | "),
+				(group.title ? group.title + " " : "") + group.commands.map(renderCommand).join(" | "),
 		)
 		.join(" | ");
 

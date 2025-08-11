@@ -64,11 +64,7 @@ async function activateServer(ctx: Ctx): Promise<WgslAnalyzerExtensionApi> {
 		null,
 		ctx.subscriptions,
 	);
-	vscode.workspace.onDidOpenTextDocument(
-		decorateVisibleEditors,
-		null,
-		ctx.subscriptions,
-	);
+	vscode.workspace.onDidOpenTextDocument(decorateVisibleEditors, null, ctx.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(
 		async (editor) => {
 			if (editor) {
@@ -97,12 +93,9 @@ async function activateServer(ctx: Ctx): Promise<WgslAnalyzerExtensionApi> {
 	);
 	vscode.workspace.onDidChangeConfiguration(
 		async (_) => {
-			await ctx.client?.sendNotification(
-				lc.DidChangeConfigurationNotification.type,
-				{
-					settings: "",
-				},
-			);
+			await ctx.client?.sendNotification(lc.DidChangeConfigurationNotification.type, {
+				settings: "",
+			});
 		},
 		null,
 		ctx.subscriptions,
@@ -123,8 +116,7 @@ function createCommands(): Record<string, CommandFactory> {
 	return {
 		onEnter: {
 			enabled: commands.onEnter,
-			disabled: (_) => () =>
-				vscode.commands.executeCommand("default:type", { text: "\n" }),
+			disabled: (_) => () => vscode.commands.executeCommand("default:type", { text: "\n" }),
 		},
 		restartServer: {
 			enabled: (ctx) => async () => {

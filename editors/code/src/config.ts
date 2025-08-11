@@ -14,10 +14,7 @@ export type RunnableEnvCfgItem = {
 	platform?: string | string[];
 };
 export type RunnableEnvCfg = Record<string, string> | RunnableEnvCfgItem[];
-type ShowStatusBar =
-	| "always"
-	| "never"
-	| { documentSelector: vscode.DocumentSelector };
+type ShowStatusBar = "always" | "never" | { documentSelector: vscode.DocumentSelector };
 
 export interface TraceConfig {
 	extension: boolean;
@@ -43,19 +40,12 @@ export class Config {
 
 	readonly rootSection = "wgsl-analyzer";
 
-	private readonly requiresServerReloadOpts = [
-		"serverPath",
-		"server",
-		"files",
-		"cfg",
-	].map((opt) => `${this.rootSection}.${opt}`);
+	private readonly requiresServerReloadOpts = ["serverPath", "server", "files", "cfg"].map(
+		(opt) => `${this.rootSection}.${opt}`,
+	);
 
 	constructor(disposables: Disposable[]) {
-		vscode.workspace.onDidChangeConfiguration(
-			this.onDidChangeConfiguration,
-			this,
-			disposables,
-		);
+		vscode.workspace.onDidChangeConfiguration(this.onDidChangeConfiguration, this, disposables);
 		this.refreshLogging();
 		this.configureLanguage();
 	}
@@ -70,15 +60,11 @@ export class Config {
 			vscode.extensions.getExtension(this.extensionId)?.packageJSON.version,
 		);
 
-		const cfg = Object.entries(this.cfg).filter(
-			([_, value]) => !(value instanceof Function),
-		);
+		const cfg = Object.entries(this.cfg).filter(([_, value]) => !(value instanceof Function));
 		log.info("Using configuration", Object.fromEntries(cfg));
 	}
 
-	private async onDidChangeConfiguration(
-		event: vscode.ConfigurationChangeEvent,
-	) {
+	private async onDidChangeConfiguration(event: vscode.ConfigurationChangeEvent) {
 		this.refreshLogging();
 
 		this.configureLanguage();
@@ -95,10 +81,7 @@ export class Config {
 		}
 
 		const message = `Changing "${requiresServerReloadOpt}" requires a server restart`;
-		const userResponse = await vscode.window.showInformationMessage(
-			message,
-			"Restart now",
-		);
+		const userResponse = await vscode.window.showInformationMessage(message, "Restart now");
 
 		if (userResponse) {
 			const command = "wgsl-analyzer.restartServer";
@@ -234,22 +217,14 @@ export class Config {
 	}
 
 	get serverPath() {
-		return (
-			this.get<null | string>("server.path") ??
-			this.get<null | string>("serverPath")
-		);
+		return this.get<null | string>("server.path") ?? this.get<null | string>("serverPath");
 	}
 
 	get serverExtraEnv(): Env {
-		const extraEnv =
-			this.get<{ [key: string]: string | number } | null>("server.extraEnv") ??
-			{};
+		const extraEnv = this.get<{ [key: string]: string | number } | null>("server.extraEnv") ?? {};
 		return substituteVariablesInEnv(
 			Object.fromEntries(
-				Object.entries(extraEnv).map(([k, v]) => [
-					k,
-					typeof v !== "string" ? v.toString() : v,
-				]),
+				Object.entries(extraEnv).map(([k, v]) => [k, typeof v !== "string" ? v.toString() : v]),
 			),
 		);
 	}
@@ -271,35 +246,20 @@ export class Config {
 		) {
 			target = vscode.ConfigurationTarget.WorkspaceFolder;
 			overrideInLanguage = config.workspaceFolderLanguageValue;
-			value =
-				config.workspaceFolderValue || config.workspaceFolderLanguageValue;
-		} else if (
-			config.workspaceValue !== undefined ||
-			config.workspaceLanguageValue !== undefined
-		) {
+			value = config.workspaceFolderValue || config.workspaceFolderLanguageValue;
+		} else if (config.workspaceValue !== undefined || config.workspaceLanguageValue !== undefined) {
 			target = vscode.ConfigurationTarget.Workspace;
 			overrideInLanguage = config.workspaceLanguageValue;
 			value = config.workspaceValue || config.workspaceLanguageValue;
-		} else if (
-			config.globalValue !== undefined ||
-			config.globalLanguageValue !== undefined
-		) {
+		} else if (config.globalValue !== undefined || config.globalLanguageValue !== undefined) {
 			target = vscode.ConfigurationTarget.Global;
 			overrideInLanguage = config.globalLanguageValue;
 			value = config.globalValue || config.globalLanguageValue;
-		} else if (
-			config.defaultValue !== undefined ||
-			config.defaultLanguageValue !== undefined
-		) {
+		} else if (config.defaultValue !== undefined || config.defaultLanguageValue !== undefined) {
 			overrideInLanguage = config.defaultLanguageValue;
 			value = config.defaultValue || config.defaultLanguageValue;
 		}
-		await this.cfg.update(
-			"checkOnSave",
-			!(value || false),
-			target || null,
-			overrideInLanguage,
-		);
+		await this.cfg.update("checkOnSave", !(value || false), target || null, overrideInLanguage);
 	}
 
 	get problemMatcher(): string[] {
@@ -319,9 +279,7 @@ export class Config {
 	}
 
 	get debug() {
-		let sourceFileMap = this.get<Record<string, string> | "auto">(
-			"debug.sourceFileMap",
-		);
+		let sourceFileMap = this.get<Record<string, string> | "auto">("debug.sourceFileMap");
 		if (sourceFileMap !== "auto") {
 			// "/wesl/<id>" used by suggestions only.
 			const { ["/wesl/<id>"]: _, ...trimmed } =
@@ -341,9 +299,7 @@ export class Config {
 	get hoverActions() {
 		return {
 			enable: this.get<boolean>("hover.actions.enable"),
-			implementations: this.get<boolean>(
-				"hover.actions.implementations.enable",
-			),
+			implementations: this.get<boolean>("hover.actions.implementations.enable"),
 			references: this.get<boolean>("hover.actions.references.enable"),
 			run: this.get<boolean>("hover.actions.run.enable"),
 			debug: this.get<boolean>("hover.actions.debug.enable"),
@@ -477,13 +433,10 @@ export function substituteVariablesInEnv(env: Env): Env {
 		for (const key of toResolve) {
 			const item = unwrapUndefinable(envWithDeps[key]);
 			if (item.deps.every((dep) => resolved.has(dep))) {
-				item.value = item.value.replace(
-					/\$\{(?<depName>.+?)\}/g,
-					(_wholeMatch, depName) => {
-						const item = unwrapUndefinable(envWithDeps[depName]);
-						return item.value;
-					},
-				);
+				item.value = item.value.replace(/\$\{(?<depName>.+?)\}/g, (_wholeMatch, depName) => {
+					const item = unwrapUndefinable(envWithDeps[depName]);
+					return item.value;
+				});
 				resolved.add(key);
 				toResolve.delete(key);
 			}

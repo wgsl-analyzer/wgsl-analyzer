@@ -22,12 +22,6 @@ export class WaLanguageClient extends lc.LanguageClient {
 			showNotification = false;
 		}
 
-		return super.handleFailedRequest(
-			type,
-			token,
-			error,
-			defaultValue,
-			showNotification,
-		);
+		return super.handleFailedRequest(type, token, error, defaultValue, showNotification);
 	}
 }
