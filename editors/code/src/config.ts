@@ -1,7 +1,6 @@
-import type { Disposable } from "vscode";
-
 import * as os from "os";
 import * as path from "path";
+import type { Disposable } from "vscode";
 import * as vscode from "vscode";
 import * as Is from "vscode-languageclient/lib/common/utils/is";
 

@@ -1,5 +1,5 @@
-import { readdir } from "fs/promises";
 import * as assert from "node:assert/strict";
+import { readdir } from "fs/promises";
 import * as path from "path";
 import { pathToFileURL } from "url";
 

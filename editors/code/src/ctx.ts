@@ -1,19 +1,22 @@
-import type * as lc from "vscode-languageclient/node";
-
-import { readFile } from "fs";
+import * as assert from "node:assert";
 import { spawn } from "node:child_process";
 import { text } from "node:stream/consumers";
+import { readFile } from "fs";
 import { promisify } from "util";
 import * as vscode from "vscode";
-
-import type { ServerStatusParameters } from "./lsp_ext";
-import type { WgslAnalyzerExtensionApi } from "./main";
-
+import type * as lc from "vscode-languageclient/node";
 import { bootstrap } from "./bootstrap";
 import { createClient } from "./client";
-import { Config, prepareVSCodeConfig } from "./config";
-import { DiagnosticsConfig, InlayHintsConfig, TraceConfig } from "./config";
+import {
+	Config,
+	DiagnosticsConfig,
+	InlayHintsConfig,
+	prepareVSCodeConfig,
+	TraceConfig,
+} from "./config";
+import type { ServerStatusParameters } from "./lsp_ext";
 import * as wa from "./lsp_ext";
+import type { WgslAnalyzerExtensionApi } from "./main";
 import { PersistentState } from "./persistent_state";
 import { type SyntaxElement, SyntaxTreeProvider } from "./syntax_tree_provider";
 import {
@@ -24,7 +27,6 @@ import {
 	log,
 	type WeslEditor,
 } from "./utilities";
-import * as assert from "node:assert";
 
 // We only support local folders, not eg. Live Share (`vlsl:` scheme), so do not activate if
 // only those are in use. We use "Empty" to represent these scenarios.

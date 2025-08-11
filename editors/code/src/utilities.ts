@@ -1,9 +1,9 @@
 import { strict as nativeAssert } from "assert";
 import {
-	exec,
 	type ExecOptions,
-	spawn,
+	exec,
 	type SpawnOptionsWithoutStdio,
+	spawn,
 } from "child_process";
 import { inspect } from "util";
 import * as vscode from "vscode";

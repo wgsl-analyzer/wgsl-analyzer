@@ -1,26 +1,23 @@
-import type { LanguageClient } from "vscode-languageclient/node";
-
 import * as path from "path";
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient";
-
-import type { Cmd, Ctx, CtxInit } from "./ctx";
-import type { SyntaxElement } from "./syntax_tree_provider";
-
+import type { LanguageClient } from "vscode-languageclient/node";
 import { HOVER_REFERENCE_COMMAND } from "./client";
+import type { Cmd, Ctx, CtxInit } from "./ctx";
 import * as wa from "./lsp_ext";
 import {
 	applySnippetTextEdits,
 	applySnippetWorkspaceEdit,
 	type SnippetTextDocumentEdit,
 } from "./snippets";
+import type { SyntaxElement } from "./syntax_tree_provider";
 import {
 	isWeslDocument,
 	isWeslEditor,
+	log,
 	sleep,
 	unwrapUndefinable,
 } from "./utilities";
-import { log } from "./utilities";
 
 export function analyzerStatus(ctx: CtxInit): Cmd {
 	const tdcp = new (class implements vscode.TextDocumentContentProvider {
