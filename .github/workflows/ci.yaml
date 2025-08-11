@@ -313,14 +313,8 @@ jobs:
         run: npm run typecheck
         working-directory: ./editors/code
 
-      # You may fix the code automatically by running `npm run lint:fix` if this steps fails.
-      - name: Lint
-        run: npm run lint
-        working-directory: ./editors/code
-
-      # If this check fails, please run `npm run format`.
-      - name: Check formatting
-        run: npm run format:check
+      - name: Run biome checks
+        run: npm run ci
         working-directory: ./editors/code
 
       - name: Run VS Code tests (Linux)
