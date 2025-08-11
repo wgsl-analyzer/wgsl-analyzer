@@ -2465,6 +2465,55 @@ switch i {
 }
 
 #[test]
+fn parse_switch_statement_with_default_pattern() {
+    check_statement(
+        "
+switch i {
+  case 0, default, 1,: { }
+}
+        ",
+        expect![[r#"
+            SourceFile@0..49
+              Blankspace@0..1 "\n"
+              SwitchStatement@1..40
+                Switch@1..7 "switch"
+                Blankspace@7..8 " "
+                IdentExpression@8..9
+                  Identifier@8..9 "i"
+                Blankspace@9..10 " "
+                SwitchBody@10..40
+                  BraceLeft@10..11 "{"
+                  Blankspace@11..14 "\n  "
+                  SwitchBodyCase@14..38
+                    Case@14..18 "case"
+                    Blankspace@18..19 " "
+                    SwitchCaseSelectors@19..33
+                      SwitchCaseSelector@19..20
+                        Literal@19..20
+                          IntLiteral@19..20 "0"
+                      Comma@20..21 ","
+                      Blankspace@21..22 " "
+                      SwitchCaseSelector@22..29
+                        Default@22..29 "default"
+                      Comma@29..30 ","
+                      Blankspace@30..31 " "
+                      SwitchCaseSelector@31..32
+                        Literal@31..32
+                          IntLiteral@31..32 "1"
+                      Comma@32..33 ","
+                    Colon@33..34 ":"
+                    Blankspace@34..35 " "
+                    CompoundStatement@35..38
+                      BraceLeft@35..36 "{"
+                      Blankspace@36..37 " "
+                      BraceRight@37..38 "}"
+                  Blankspace@38..39 "\n"
+                  BraceRight@39..40 "}"
+              Blankspace@40..49 "\n        ""#]],
+    );
+}
+
+#[test]
 fn parse_switch_statement_recover_1() {
     check_statement(
         "
@@ -2741,5 +2790,40 @@ fn attribute_only_recover() {
                   Identifier@1..9 "fragment"
 
             error at 9..9: invalid syntax, expected one of: 'fn', 'override', 'var'"#]],
+    );
+}
+
+#[test]
+fn expression_in_template() {
+    check(
+        "const data = array<u32, vec.x>();",
+        expect![[r#"
+            SourceFile@0..33
+              ConstantDeclaration@0..33
+                Constant@0..5 "const"
+                Blankspace@5..6 " "
+                Identifier@6..10 "data"
+                Blankspace@10..11 " "
+                Equal@11..12 "="
+                Blankspace@12..13 " "
+                FunctionCall@13..32
+                  IdentExpression@13..30
+                    Identifier@13..18 "array"
+                    GenericArgumentList@18..30
+                      TemplateStart@18..19 "<"
+                      IdentExpression@19..22
+                        Identifier@19..22 "u32"
+                      Comma@22..23 ","
+                      Blankspace@23..24 " "
+                      FieldExpression@24..29
+                        IdentExpression@24..27
+                          Identifier@24..27 "vec"
+                        Period@27..28 "."
+                        Identifier@28..29 "x"
+                      TemplateEnd@29..30 ">"
+                  Arguments@30..32
+                    ParenthesisLeft@30..31 "("
+                    ParenthesisRight@31..32 ")"
+                Semicolon@32..33 ";""#]],
     );
 }

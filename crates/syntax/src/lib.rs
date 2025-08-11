@@ -291,3 +291,6 @@ impl<A: AstNode, B: AstNode> AstNode for Either<A, B> {
 pub fn format(file: &ast::SourceFile) -> SyntaxNode {
     file.syntax().clone_for_update()
 }
+
+#[cfg(test)]
+mod tests;

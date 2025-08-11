@@ -70,10 +70,6 @@ pub enum Expression {
         left_side: ExpressionId,
         index: ExpressionId,
     },
-    Bitcast {
-        expression: ExpressionId,
-        r#type: Interned<TypeReference>,
-    },
     Literal(Literal),
     Path(Name),
 }

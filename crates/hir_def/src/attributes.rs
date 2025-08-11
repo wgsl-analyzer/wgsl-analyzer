@@ -60,7 +60,7 @@ impl AttributeList {
                 parameters: attribute
                     .parameters()
                     .map(|parameter| {
-                        parameter.values().map(|value| match value {
+                        parameter.arguments().map(|value| match value {
                             IdentOrLiteral::Identifier(identifier) => {
                                 AttributeValue::Name(Name::from(identifier))
                             },

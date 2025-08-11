@@ -324,8 +324,8 @@ impl ops::Index<Idx<Parameter>> for ModuleData {
 mod_items! {
     Function in functions -> ast::FunctionDeclaration,
     Struct in structs -> ast::StructDeclaration,
-    GlobalVariable in global_variables -> ast::GlobalVariableDeclaration,
-    GlobalConstant in global_constants -> ast::GlobalConstantDeclaration,
+    GlobalVariable in global_variables -> ast::VariableDeclaration,
+    GlobalConstant in global_constants -> ast::ConstantDeclaration,
     Override in overrides -> ast::OverrideDeclaration,
     TypeAlias in type_aliases -> ast::TypeAliasDeclaration,
 }

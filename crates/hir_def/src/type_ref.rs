@@ -38,10 +38,10 @@ impl fmt::Display for TypeReference {
     }
 }
 
-impl TryFrom<ast::Type> for TypeReference {
+impl TryFrom<ast::TypeSpecifier> for TypeReference {
     type Error = ();
 
-    fn try_from(r#type: ast::Type) -> Result<Self, ()> {
+    fn try_from(r#type: ast::TypeSpecifier) -> Result<Self, ()> {
         let type_ref = match r#type {
             ast::Type::PathType(path) => Self::Path(path.name().ok_or(())?.text().into()),
             ast::Type::ScalarType(scalar) => Self::Scalar(scalar.into()),

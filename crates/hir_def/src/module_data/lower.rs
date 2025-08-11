@@ -52,10 +52,10 @@ impl<'database> Ctx<'database> {
                 ModuleItem::Function(self.lower_function(&function)?)
             },
             Item::StructDeclaration(r#struct) => ModuleItem::Struct(self.lower_struct(&r#struct)?),
-            Item::GlobalVariableDeclaration(var) => {
+            Item::VariableDeclaration(var) => {
                 ModuleItem::GlobalVariable(self.lower_global_var(&var)?)
             },
-            Item::GlobalConstantDeclaration(constant) => {
+            Item::ConstantDeclaration(constant) => {
                 ModuleItem::GlobalConstant(self.lower_global_constant(&constant)?)
             },
             Item::OverrideDeclaration(override_declaration) => {

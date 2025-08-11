@@ -422,7 +422,7 @@ ast_node! {
 ast_node! {
     FieldExpression:
     expression: Option<Expression>;
-    field: Option<Identifier>;
+    field: Option<SyntaxToken Identifier>;
 }
 
 ast_node! {
@@ -457,10 +457,6 @@ impl IndexExpression {
 ast_node! {Attribute:
     ident_token: Option<SyntaxToken Identifier>;
     parameters: Option<Arguments>;
-}
-
-ast_node! {Identifier:
-    text: TokenText<'_>;
 }
 
 ast_node! {

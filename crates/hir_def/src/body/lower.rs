@@ -96,6 +96,9 @@ impl Collector<'_> {
     ) {
         if let Some(param_list) = param_list {
             for parameter in param_list.parameters() {
+                self.alloc_binding(Binding { name: parameter.name() }, source)
+
+                
                 if let Some(binding) = parameter
                     .variable_ident_declaration()
                     .and_then(|declaration| declaration.binding())
@@ -414,24 +417,6 @@ impl Collector<'_> {
                 self.body.parenthesis_expressions.insert(inner);
                 return inner;
             },
-            ast::Expression::BitcastExpression(expression) => {
-                let inner = self.collect_expression_opt(
-                    expression
-                        .inner()
-                        .map(ast::Expression::ParenthesisExpression),
-                );
-
-                let r#type = expression
-                    .ty()
-                    .and_then(|r#type| TypeReference::try_from(r#type).ok())
-                    .unwrap_or(TypeReference::Error);
-                let r#type = self.database.intern_type_ref(r#type);
-
-                Expression::Bitcast {
-                    expression: inner,
-                    r#type,
-                }
-            },
             ast::Expression::FieldExpression(field) => {
                 let expression = self.collect_expression_opt(field.expression());
                 let name = field.field().map_or_else(Name::missing, Name::from);
@@ -452,19 +437,6 @@ impl Collector<'_> {
                     callee: Callee::Name(name),
                     arguments,
                 }
-            },
-            ast::Expression::InvalidFunctionCall(call) => {
-                if let Some(expression) = call.expression() {
-                    self.collect_expression(expression);
-                }
-                call.parameters()
-                    .into_iter()
-                    .flat_map(|parameters| parameters.arguments())
-                    .for_each(|expression| {
-                        self.collect_expression(expression);
-                    });
-
-                Expression::Missing
             },
             ast::Expression::PathExpression(path) => {
                 let name = path.name_ref().map_or_else(Name::missing, Name::from);
@@ -561,7 +533,7 @@ impl Collector<'_> {
     fn alloc_binding(
         &mut self,
         binding: Binding,
-        source: AstPointer<ast::Binding>,
+        source: AstPointer<ast::Identifier>,
     ) -> BindingId {
         let id = self.make_binding(binding, Ok(source.clone()));
         self.source_map.binding_map.insert(source, id);
