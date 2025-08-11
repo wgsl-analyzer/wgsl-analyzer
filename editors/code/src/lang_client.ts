@@ -5,7 +5,7 @@ export class WaLanguageClient extends lc.LanguageClient {
 	override handleFailedRequest<T>(
 		type: lc.MessageSignature,
 		token: vscode.CancellationToken | undefined,
-		// biome-ignore: noExplicitAny
+		// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 		error: any,
 		defaultValue: T,
 		showNotification?: boolean,

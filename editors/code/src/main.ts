@@ -151,7 +151,9 @@ function createCommands(): Record<string, CommandFactory> {
 					health: "stopped",
 				});
 			},
-			disabled: (_) => async () => {},
+			disabled: (_) => async () => {
+				// idempotent
+			},
 		},
 
 		analyzerStatus: { enabled: commands.analyzerStatus },
@@ -205,7 +207,12 @@ function checkConflictingExtensions() {
 					"both plugins to not work correctly. You should disable one of them.",
 				"Got it",
 			)
-			// biome-ignore: noConsole
-			.then(() => {}, console.error);
+			.then(
+				() => {
+					// no action needed
+				},
+				// biome-ignore lint/suspicious/noConsole: nothing else we can do here
+				console.error,
+			);
 	}
 }

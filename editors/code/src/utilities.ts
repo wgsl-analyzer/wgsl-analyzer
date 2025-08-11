@@ -111,7 +111,7 @@ export function isDocumentInWorkspace(document: WeslDocument): boolean {
 }
 
 /** Sets ['when'](https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts) clause contexts */
-// biome-ignore: noExplicitAny
+// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 export function setContextValue(key: string, value: any): Thenable<void> {
 	return vscode.commands.executeCommand("setContext", key, value);
 }
@@ -272,8 +272,10 @@ export async function spawnAsync(
 	options?: SpawnOptionsWithoutStdio,
 ): Promise<SpawnAsyncReturns> {
 	const child = spawn(path, inputs, options);
-	const stdout: Array<Buffer<any>> = []; // biome-ignore: noExplicitAny
-	const stderr: Array<Buffer<any>> = []; // biome-ignore: noExplicitAny
+	// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
+	const stdout: Array<Buffer<any>> = [];
+	// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
+	const stderr: Array<Buffer<any>> = [];
 	try {
 		const result = await new Promise<{
 			status: null | number;

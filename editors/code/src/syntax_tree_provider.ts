@@ -8,15 +8,10 @@ import { isWeslEditor, setContextValue } from "./utilities";
 export class SyntaxTreeProvider
 	implements vscode.TreeDataProvider<SyntaxElement>
 {
-	// biome-ignore: noConfusingVoidType
-	private _onDidChangeTreeData: vscode.EventEmitter<
-		SyntaxElement | undefined | void
-	> =
-		// biome-ignore: noConfusingVoidType
-		new vscode.EventEmitter<SyntaxElement | undefined | void>();
+	private _onDidChangeTreeData: vscode.EventEmitter<SyntaxElement | undefined> =
+		new vscode.EventEmitter<SyntaxElement | undefined>();
 
-	// biome-ignore: noConfusingVoidType
-	readonly onDidChangeTreeData: vscode.Event<SyntaxElement | undefined | void> =
+	readonly onDidChangeTreeData: vscode.Event<SyntaxElement | undefined> =
 		this._onDidChangeTreeData.event;
 
 	ctx: CtxInit;
@@ -156,7 +151,7 @@ export class SyntaxTreeProvider
 			this.root = undefined;
 		}
 
-		this._onDidChangeTreeData.fire();
+		this._onDidChangeTreeData.fire(undefined);
 	}
 
 	getElementByRange(target: vscode.Range): SyntaxElement | undefined {
@@ -193,7 +188,7 @@ export class SyntaxTreeProvider
 
 	async toggleWhitespace() {
 		this.hideWhitespace = !this.hideWhitespace;
-		this._onDidChangeTreeData.fire();
+		this._onDidChangeTreeData.fire(undefined);
 		await setContextValue("weslSyntaxTree.hideWhitespace", this.hideWhitespace);
 	}
 }

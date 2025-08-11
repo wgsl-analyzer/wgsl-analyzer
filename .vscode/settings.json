@@ -1,23 +1,21 @@
 // Do not put anything here unless it should apply to everyone!
 {
 	"[json]": {
-		"editor.defaultFormatter": "vscode.json-language-features"
+		"editor.defaultFormatter": "biomejs.biome"
 	},
 	"[json-textmate]": {
 		"editor.defaultFormatter": "RedCMD.tmlanguage-syntax-highlighter"
 	},
 	"[jsonc]": {
-		"editor.defaultFormatter": "vscode.json-language-features"
+		"editor.defaultFormatter": "biomejs.biome"
 	},
 	"[markdown]": {
 		"diffEditor.ignoreTrimWhitespace": false,
 		"editor.defaultFormatter": "DavidAnson.vscode-markdownlint"
 	},
-	"[powershell]": {
-		"diffEditor.codeLens": false,
-		"editor.cursorBlinking": "smooth"
-	},
 	"[typescript]": {
-		"editor.defaultFormatter": "vscode.typescript-language-features"
+		"editor.defaultFormatter": "biomejs.biome"
 	},
+	"biome.configurationPath": "editors/code/biome.jsonc",
+	"biome.suggestInstallingGlobally": true
 }

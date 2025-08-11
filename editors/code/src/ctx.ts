@@ -112,12 +112,12 @@ async function lspOptions(config: Config): Promise<WgslAnalyzerConfiguration> {
 
 async function resolveImport(content: string): Promise<string> {
 	let content_replaced = content;
-	// biome-ignore: noNonNullAssertion
+	// biome-ignore lint/style/noNonNullAssertion: TODO
 	const folders = vscode.workspace.workspaceFolders!;
 	if (folders.length == 1) {
 		content_replaced = content_replaced.replace(
 			"${workspaceFolder}",
-			// biome-ignore: noNonNullAssertion
+			// biome-ignore lint/style/noNonNullAssertion: TODO
 			folders[0]!.uri.toString(),
 		);
 	}
@@ -141,7 +141,7 @@ async function mapObjectAsync<T, U>(
 	functionn: (value: T) => Promise<U>,
 	handleError?: (key: string, value: T, error: unknown) => void,
 ): Promise<Record<string, U>> {
-	// biome-ignore: noExplicitAny
+	// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 	const map = async ([key, value]: [any, any]) => {
 		try {
 			const mapped = await functionn(value);
@@ -364,7 +364,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		return this.traceOutputChannel;
 	}
 
-	private async bootstrap(): Promise<string> {
+	private bootstrap(): Promise<string> {
 		return bootstrap(this.extCtx, this.config, this.state).catch(
 			(exception: unknown) => {
 				let message = "bootstrap error. ";
@@ -477,7 +477,9 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		log.info("Disposing language client");
 		this.updateCommands("disable");
 		// we give the server 100ms to stop gracefully
-		await this.client?.stop(100).catch((_: unknown) => {});
+		await this.client?.stop(100).catch((_: unknown) => {
+			// failing to stop is not worth handling
+		});
 		await this.disposeClient();
 	}
 
@@ -517,7 +519,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 
 		for (const [name, factory] of Object.entries(this.commandFactories)) {
 			const fullName = `wgsl-analyzer.${name}`;
-			// biome-ignore: noExplicitAny
+			// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 			let callback: any;
 			if (isClientRunning(this)) {
 				// we asserted that `client` is defined
@@ -653,5 +655,5 @@ export interface Disposable {
 	dispose(): void;
 }
 
-// biome-ignore: noExplicitAny
+// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 export type Cmd = (...args: any[]) => unknown;

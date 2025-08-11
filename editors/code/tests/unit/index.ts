@@ -88,11 +88,11 @@ export async function run(): Promise<void> {
 }
 
 function ok(message: string): void {
-	// biome-ignore: noConsole
+	// biome-ignore lint/suspicious/noConsole: needed here
 	console.log(`\x1b[32m${message}\x1b[0m`);
 }
 
 function error(message: string): void {
-	// biome-ignore: noConsole
+	// biome-ignore lint/suspicious/noConsole: needed here
 	console.error(`\x1b[31m${message}\x1b[0m`);
 }

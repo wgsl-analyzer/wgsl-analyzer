@@ -228,7 +228,7 @@ export function onEnter(ctx: CtxInit): Cmd {
 					editor.selection.active,
 				),
 			})
-			// biome-ignore: noExplicitAny
+			// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 			.catch((_error: any) => {
 				// client.handleFailedRequest(OnEnterRequest.type, error, null);
 				return null;
@@ -248,7 +248,7 @@ export function onEnter(ctx: CtxInit): Cmd {
 }
 
 export function syntaxTreeReveal(): Cmd {
-	return async (element: SyntaxElement) => {
+	return (element: SyntaxElement) => {
 		const activeEditor = vscode.window.activeTextEditor;
 
 		if (activeEditor !== undefined) {
@@ -372,7 +372,7 @@ export function ssr(ctx: CtxInit): Cmd {
 }
 
 export function serverVersion(ctx: CtxInit): Cmd {
-	return async () => {
+	return () => {
 		if (!ctx.serverPath) {
 			void vscode.window.showWarningMessage(
 				`wgsl-analyzer server is not running`,
@@ -422,12 +422,14 @@ export function viewFileText(ctx: CtxInit): Cmd {
 			}
 		}
 
-		async provideTextDocumentContent(
+		provideTextDocumentContent(
 			_uri: vscode.Uri,
 			ct: vscode.CancellationToken,
 		): Promise<string> {
 			const weslEditor = ctx.activeWeslEditor;
-			if (!weslEditor) return "";
+			if (!weslEditor) {
+				return Promise.resolve("");
+			}
 			const client = ctx.client;
 
 			const parameters = client.code2ProtocolConverter.asTextDocumentIdentifier(
@@ -495,12 +497,14 @@ export function viewItemTree(ctx: CtxInit): Cmd {
 			}
 		}
 
-		async provideTextDocumentContent(
+		provideTextDocumentContent(
 			_uri: vscode.Uri,
 			ct: vscode.CancellationToken,
 		): Promise<string> {
 			const weslEditor = ctx.activeWeslEditor;
-			if (!weslEditor) return "";
+			if (!weslEditor) {
+				return Promise.resolve("");
+			}
 			const client = ctx.client;
 
 			const parameters = {

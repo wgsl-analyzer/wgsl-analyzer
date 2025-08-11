@@ -101,7 +101,7 @@ export function createClient(
 												pathSeparator +
 												"Cargo.toml";
 											const value = config
-												// biome-ignore: noExplicitAny
+												// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 												.get<any[]>("linkedProjects")
 												?.concat(pathToInsert);
 											await config.update("linkedProjects", value, false);
@@ -155,7 +155,7 @@ export function createClient(
 			});
 			next(uri, diagnosticList);
 		},
-		async provideHover(
+		provideHover(
 			document: vscode.TextDocument,
 			position: vscode.Position,
 			token: vscode.CancellationToken,
@@ -230,12 +230,12 @@ export function createClient(
 						isCodeActionWithoutEditsAndCommands(item),
 						"We do not expect edits or commands here",
 					);
-					// biome-ignore: noExplicitAny
 					const kind = client.protocol2CodeConverter.asCodeActionKind(
+						// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 						(item as any).kind,
 					);
 					const action = new vscode.CodeAction(item.title, kind);
-					// biome-ignore: noExplicitAny
+					// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 					const group = (item as any).group;
 					action.command = {
 						command: "wgsl-analyzer.resolveCodeAction",
@@ -273,6 +273,7 @@ export function createClient(
 								items.map((item) => {
 									return {
 										label: item.title,
+										// biome-ignore lint/style/noNonNullAssertion: TODO
 										args: item.command!.arguments![0],
 									};
 								}),
@@ -357,11 +358,17 @@ class ExperimentalFeatures implements lc.StaticFeature {
 	initialize(
 		_capabilities: lc.ServerCapabilities,
 		_documentSelector: lc.DocumentSelector | undefined,
-	): void {}
+	): void {
+		// nothing needs to be initialized
+	}
 
-	dispose(): void {}
+	dispose(): void {
+		// nothing needs to be disposed
+	}
 
-	clear(): void {}
+	clear(): void {
+		// nothing needs to be cleared
+	}
 }
 
 class OverrideFeatures implements lc.StaticFeature {
@@ -381,14 +388,20 @@ class OverrideFeatures implements lc.StaticFeature {
 	initialize(
 		_capabilities: lc.ServerCapabilities,
 		_documentSelector: lc.DocumentSelector | undefined,
-	): void {}
+	): void {
+		// nothing to initialize
+	}
 
-	clear(): void {}
+	clear(): void {
+		// nothing to clear
+	}
 
-	dispose(): void {}
+	dispose(): void {
+		// nothing to dispose
+	}
 }
 
-// biome-ignore: noExplicitAny
+// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 function isCodeActionWithoutEditsAndCommands(value: any): boolean {
 	const candidate: lc.CodeAction = value;
 	return (

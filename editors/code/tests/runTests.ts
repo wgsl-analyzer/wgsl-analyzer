@@ -8,7 +8,6 @@ import * as path from "path";
 const PackageJson = Decoder.struct({
 	engines: Decoder.struct({ vscode: Decoder.string }),
 });
-type PackageJson = Decoder.TypeOf<typeof PackageJson>;
 
 async function main() {
 	// The folder containing the Extension Manifest package.json
@@ -62,7 +61,7 @@ async function main() {
 }
 
 main().catch((error: unknown) => {
-	// biome-ignore: noConsole
+	// biome-ignore lint/suspicious/noConsole: needed here
 	console.error("Failed to run tests", error);
 	process.exit(1);
 });

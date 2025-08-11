@@ -132,7 +132,7 @@ export class AnsiDecorationProvider implements vscode.Disposable {
 					result.set(decorationType, []);
 				}
 
-				// biome-ignore: noNonNullAssertion
+				// biome-ignore lint/style/noNonNullAssertion: TODO
 				result.get(decorationType)!.push(range);
 			}
 		}

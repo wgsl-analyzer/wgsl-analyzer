@@ -68,7 +68,7 @@ export class Config {
 	private refreshLogging() {
 		log.info(
 			"Extension version:",
-			vscode.extensions.getExtension(this.extensionId)!.packageJSON.version,
+			vscode.extensions.getExtension(this.extensionId)?.packageJSON.version,
 		);
 
 		const cfg = Object.entries(this.cfg).filter(
@@ -311,46 +311,6 @@ export class Config {
 		return this.get<boolean | undefined>("testExplorer");
 	}
 
-	runnablesExtraEnv(label: string): Record<string, string> | undefined {
-		// biome-ignore: noExplicitAny
-		const item =
-			this.get<any>("runnables.extraEnv") ?? this.get<any>("runnableEnv");
-		if (!item) return undefined;
-		// biome-ignore: noExplicitAny
-		const fixRecord = (r: Record<string, any>) => {
-			for (const key in r) {
-				if (typeof r[key] !== "string") {
-					r[key] = String(r[key]);
-				}
-			}
-		};
-
-		const platform = process.platform;
-		const checkPlatform = (it: RunnableEnvCfgItem) => {
-			if (it.platform) {
-				const platforms = Array.isArray(it.platform)
-					? it.platform
-					: [it.platform];
-				return platforms.indexOf(platform) >= 0;
-			}
-			return true;
-		};
-
-		if (item instanceof Array) {
-			const env = {};
-			for (const it of item) {
-				const masked = !it.mask || new RegExp(it.mask).test(label);
-				if (masked && checkPlatform(it)) {
-					Object.assign(env, it.env);
-				}
-			}
-			fixRecord(env);
-			return env;
-		}
-		fixRecord(item);
-		return item;
-	}
-
 	get restartServerOnConfigChange() {
 		return this.get<boolean>("restartServerOnConfigChange");
 	}
@@ -440,13 +400,13 @@ export class Config {
 export function prepareVSCodeConfig<T>(response: T): T {
 	if (Is.string(response)) {
 		return substituteVSCodeVariableInString(response) as T;
-		// biome-ignore: noExplicitAny
+		// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 	} else if (response && Is.array<any>(response)) {
 		return response.map((value) => {
 			return prepareVSCodeConfig(value);
 		}) as T;
 	} else if (response && typeof response === "object") {
-		// biome-ignore: noExplicitAny
+		// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 		const result: { [key: string]: any } = {};
 		for (const key in response) {
 			const value = response[key];
@@ -485,6 +445,7 @@ export function substituteVariablesInEnv(env: Env): Env {
 	for (const dep of missingDeps) {
 		const match = /(?<prefix>.*?):(?<body>.+)/.exec(dep);
 		if (match) {
+			// biome-ignore lint/style/noNonNullAssertion: TODO
 			const { prefix, body } = match.groups!;
 			if (prefix === "env") {
 				const envName = unwrapUndefinable(body);

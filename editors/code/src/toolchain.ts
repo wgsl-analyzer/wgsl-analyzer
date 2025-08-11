@@ -79,7 +79,7 @@ function getCargoHome(): vscode.Uri | null {
 	return null;
 }
 
-async function isFileAtPath(path: string): Promise<boolean> {
+function isFileAtPath(path: string): Promise<boolean> {
 	return isFileAtUri(vscode.Uri.file(path));
 }
 
