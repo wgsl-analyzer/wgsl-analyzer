@@ -23,7 +23,7 @@
 		"exactOptionalPropertyTypes": false,
 		"erasableSyntaxOnly": false,
 		"verbatimModuleSyntax": false,
-		"noEmit": true,
+		"noEmit": false,
 		"types": ["@types/node"]
 	},
 	"exclude": ["node_modules", ".vscode-test", "out"],

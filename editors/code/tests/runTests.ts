@@ -15,18 +15,20 @@ async function main() {
 	const extensionDevelopmentPath = path.resolve(__dirname, "../../");
 
 	// Minimum supported version.
-	const jsonData = fs.readFileSync(path.join(extensionDevelopmentPath, "package.json"));
+	const jsonData = fs.readFileSync(path.join(extensionDevelopmentPath, "package.json"), "utf8");
+
 	const minimalVersion = pipe(
-		PackageJson.decode(jsonData.toString()),
+		PackageJson.decode(JSON.parse(jsonData)),
 		fold(
 			(errors) => {
 				throw Error(`Invalid package.json: ${JSON.stringify(errors)}`);
 			},
 			(parsed) => {
-				if (parsed.engines.vscode[0] && "~^=".indexOf(parsed.engines.vscode[0])) {
-					return parsed.engines.vscode.slice(1);
+				const { vscode } = parsed.engines;
+				if (vscode[0] && "~^=".includes(vscode[0])) {
+					return vscode.slice(1);
 				}
-				return parsed.engines.vscode;
+				return vscode;
 			},
 		),
 	);
