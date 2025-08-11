@@ -98,5 +98,10 @@
 			"allowComments": true,
 			"allowTrailingCommas": true
 		}
+	},
+	"javascript": {
+		"formatter": {
+			"operatorLinebreak": "before"
+		}
 	}
 }
