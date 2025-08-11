@@ -69,16 +69,21 @@ interface WgslAnalyzerConfiguration {
 
 async function lspOptions(config: Config): Promise<WgslAnalyzerConfiguration> {
 	const start = process.hrtime();
-	const customImports = await mapObjectAsync(
-		config.customImports,
-		resolveImport,
-		(name, _, value) => {
-			assert.ok(value instanceof Error);
-			vscode.window.showErrorMessage(
-				`wgsl-analyzer: failed to resolve import \`${name}\`: ${value}`,
-			);
-		},
-	);
+	let customImports;
+	if (config.customImports === undefined) {
+		customImports = {};
+	} else {
+		customImports = await mapObjectAsync(
+			config.customImports,
+			resolveImport,
+			(name, _, value) => {
+				assert.ok(value instanceof Error);
+				vscode.window.showErrorMessage(
+					`wgsl-analyzer: failed to resolve import \`${name}\`: ${value}`,
+				);
+			},
+		);
+	}
 	const elapsed = process.hrtime(start);
 	const millis = elapsed[0] * 1000 + elapsed[1] / 1_000_000;
 	if (millis > 1000) {

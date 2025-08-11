@@ -60,11 +60,12 @@ export function memoryUsage(ctx: CtxInit): Cmd {
 		readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
 
 		provideTextDocumentContent(_uri: vscode.Uri): vscode.ProviderResult<string> {
-			if (!vscode.window.activeTextEditor) return "";
+			if (!vscode.window.activeTextEditor) {
+				return "";
+			}
 
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			return ctx.client.sendRequest(wa.memoryUsage).then((mem: any) => {
-				return "Per-query memory usage:\n" + mem + "\n(note: database has been cleared)";
+			return ctx.client.sendRequest(wa.memoryUsage).then((memory: string) => {
+				return "Per-query memory usage:\n" + memory + "\n(note: database has been cleared)";
 			});
 		}
 
@@ -103,10 +104,8 @@ export function rename(_: CtxInit): Cmd {
 }
 
 export function openLogs(ctx: CtxInit): Cmd {
-	return async () => {
-		if (ctx.client.outputChannel) {
-			ctx.client.outputChannel.show();
-		}
+	return () => {
+		ctx.client.outputChannel.show();
 	};
 }
 
@@ -146,8 +145,7 @@ export function joinLines(ctx: CtxInit): Cmd {
 		});
 		const textEdits = await client.protocol2CodeConverter.asTextEdits(items);
 		await editor.edit((builder) => {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			textEdits.forEach((edit: any) => {
+			textEdits.forEach((edit: vscode.TextEdit) => {
 				builder.replace(edit.range, edit.newText);
 			});
 		});
@@ -174,7 +172,9 @@ export function moveItem(ctx: CtxInit, direction: wa.Direction): Cmd {
 			direction,
 		});
 
-		if (!lcEdits) return;
+		if (lcEdits.length == 0) {
+			return;
+		}
 
 		const edits = await client.protocol2CodeConverter.asTextEdits(lcEdits);
 		await applySnippetTextEdits(editor, edits);
