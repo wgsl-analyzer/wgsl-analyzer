@@ -14,10 +14,12 @@ import { unwrapUndefinable } from "./utilities";
 
 export const URI_SCHEME = "wgsl-analyzer-diagnostics-view";
 
-export class TextDocumentProvider implements vscode.TextDocumentContentProvider {
+export class TextDocumentProvider
+	implements vscode.TextDocumentContentProvider
+{
 	private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
 
-	public constructor(private readonly ctx: Ctx) { }
+	public constructor(private readonly ctx: Ctx) {}
 
 	get onDidChange(): vscode.Event<vscode.Uri> {
 		return this._onDidChange.event;
@@ -40,7 +42,9 @@ export class TextDocumentProvider implements vscode.TextDocumentContentProvider 
 }
 
 function getRenderedDiagnostic(ctx: Ctx, uri: vscode.Uri): string {
-	const diagnostics = ctx.client?.diagnostics?.get(vscode.Uri.parse(uri.fragment, true));
+	const diagnostics = ctx.client?.diagnostics?.get(
+		vscode.Uri.parse(uri.fragment, true),
+	);
 	if (!diagnostics) {
 		return "Unable to find original diagnostic";
 	}
@@ -49,7 +53,8 @@ function getRenderedDiagnostic(ctx: Ctx, uri: vscode.Uri): string {
 	if (!diagnostic) {
 		return "Unable to find original diagnostic";
 	}
-	const rendered = (diagnostic as unknown as { data?: { rendered?: string } }).data?.rendered;
+	const rendered = (diagnostic as unknown as { data?: { rendered?: string } })
+		.data?.rendered;
 
 	if (!rendered) {
 		return "Unable to find original diagnostic";
@@ -69,7 +74,7 @@ interface AnserStyle {
 export class AnsiDecorationProvider implements vscode.Disposable {
 	private _decorationTypes = new Map<AnserStyle, TextEditorDecorationType>();
 
-	public constructor(private readonly ctx: Ctx) { }
+	public constructor(private readonly ctx: Ctx) {}
 
 	dispose(): void {
 		for (const decorationType of this._decorationTypes.values()) {
@@ -147,7 +152,10 @@ export class AnsiDecorationProvider implements vscode.Disposable {
 		const textDecoration = style.decorations.find((s) => s === "underline");
 
 		decorationType = window.createTextEditorDecorationType({
-			backgroundColor: AnsiDecorationProvider._convertColor(style.bg, style.bg_truecolor),
+			backgroundColor: AnsiDecorationProvider._convertColor(
+				style.bg,
+				style.bg_truecolor,
+			),
 			color: AnsiDecorationProvider._convertColor(style.fg, style.fg_truecolor),
 			fontWeight,
 			fontStyle,

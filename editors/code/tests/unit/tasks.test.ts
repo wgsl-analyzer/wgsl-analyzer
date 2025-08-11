@@ -129,7 +129,10 @@ function executionToSimple(
 	const exec = taskExecution as vscode.ProcessExecution | vscode.ShellExecution;
 	if (exec instanceof vscode.ShellExecution) {
 		return {
-			command: typeof exec.command === "string" ? exec.command : (exec.command?.value ?? ""),
+			command:
+				typeof exec.command === "string"
+					? exec.command
+					: (exec.command?.value ?? ""),
 			args: (exec.args ?? []).map((arg) => {
 				if (typeof arg === "string") {
 					return arg;

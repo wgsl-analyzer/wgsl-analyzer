@@ -2,14 +2,14 @@
 	"files": {
 		"includes": [
 			"**",
-			"!**/out/",
-			"!**/.vscode-test/",
-			"!**/node_modules/"
+			"!**/out/**",
+			"!**/.vscode-test/**",
+			"!**/node_modules/**"
 		]
 	},
 	"formatter": {
 		"indentStyle": "tab",
-		"lineWidth": 100
+		"lineWidth": 80
 	},
 	"linter": {
 		"rules": {

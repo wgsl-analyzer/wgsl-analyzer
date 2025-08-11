@@ -94,10 +94,19 @@ async function lspOptions(config: Config): Promise<WgslAnalyzerConfiguration> {
 
 	return {
 		customImports,
-		shaderDefs: expectNotUndefined(config.shaderDefs, "shaderDefs was undefined"),
-		diagnostics: expectNotUndefined(config.diagnostics, "diagnostics was undefined"),
+		shaderDefs: expectNotUndefined(
+			config.shaderDefs,
+			"shaderDefs was undefined",
+		),
+		diagnostics: expectNotUndefined(
+			config.diagnostics,
+			"diagnostics was undefined",
+		),
 		trace: expectNotUndefined(config.trace, "trace was undefined"),
-		inlayHints: expectNotUndefined(config.inlayHints, "inlayHints was undefined"),
+		inlayHints: expectNotUndefined(
+			config.inlayHints,
+			"inlayHints was undefined",
+		),
 	};
 }
 
@@ -135,13 +144,11 @@ async function mapObjectAsync<T, U>(
 	// biome-ignore: noExplicitAny
 	const map = async ([key, value]: [any, any]) => {
 		try {
-
 			const mapped = await functionn(value);
 
 			return [key, mapped];
 		} catch (exception) {
 			if (handleError) {
-
 				handleError(key, value, exception);
 			}
 			return undefined;
@@ -170,7 +177,9 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 	private unlinkedFiles: vscode.Uri[];
 	private _syntaxTreeProvider: SyntaxTreeProvider | undefined;
 	private _syntaxTreeView: vscode.TreeView<SyntaxElement> | undefined;
-	private lastStatus: ServerStatusParameters | { health: "stopped" } = { health: "stopped" };
+	private lastStatus: ServerStatusParameters | { health: "stopped" } = {
+		health: "stopped",
+	};
 	private _serverVersion: string;
 	private statusBarActiveEditorListener: Disposable;
 
@@ -203,11 +212,14 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		this.version = extCtx.extension.packageJSON.version ?? "<unknown>";
 		this._serverVersion = "<not running>";
 		this.config = new Config(extCtx.subscriptions);
-		this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+		this.statusBar = vscode.window.createStatusBarItem(
+			vscode.StatusBarAlignment.Left,
+		);
 		this.updateStatusBarVisibility(vscode.window.activeTextEditor);
-		this.statusBarActiveEditorListener = vscode.window.onDidChangeActiveTextEditor((editor) => {
-			this.updateStatusBarVisibility(editor);
-		});
+		this.statusBarActiveEditorListener =
+			vscode.window.onDidChangeActiveTextEditor((editor) => {
+				this.updateStatusBarVisibility(editor);
+			});
 		this.workspace = workspace;
 		this.clientSubscriptions = [];
 		this.commandDisposables = [];
@@ -234,7 +246,10 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 
 	async onWorkspaceFolderChanges() {
 		const workspace = fetchWorkspace();
-		if (workspace.kind === "Detached Files" && this.workspace.kind === "Detached Files") {
+		if (
+			workspace.kind === "Detached Files" &&
+			this.workspace.kind === "Detached Files"
+		) {
 			if (workspace.files !== this.workspace.files) {
 				if (this.client?.isRunning()) {
 					// Ideally we would not need to tear down the server here, but currently detached files
@@ -245,7 +260,10 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 				return;
 			}
 		}
-		if (workspace.kind === "Workspace Folder" && this.workspace.kind === "Workspace Folder") {
+		if (
+			workspace.kind === "Workspace Folder" &&
+			this.workspace.kind === "Workspace Folder"
+		) {
 			return;
 		}
 		if (workspace.kind === "Empty") {
@@ -264,7 +282,9 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 
 		if (!this._client) {
 			this._serverPath = await this.bootstrap();
-			text(spawn(this._serverPath, ["--version"]).stdout.setEncoding("utf-8")).then(
+			text(
+				spawn(this._serverPath, ["--version"]).stdout.setEncoding("utf-8"),
+			).then(
 				(data) => {
 					const prefix = `wgsl-analyzer `;
 					this._serverVersion = data
@@ -288,7 +308,8 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 				debug: run,
 			};
 
-			let rawInitializationOptions = vscode.workspace.getConfiguration("wgsl-analyzer");
+			let rawInitializationOptions =
+				vscode.workspace.getConfiguration("wgsl-analyzer");
 
 			if (this.workspace.kind === "Detached Files") {
 				rawInitializationOptions = {
@@ -297,7 +318,9 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 				};
 			}
 
-			const initializationOptions = prepareVSCodeConfig(rawInitializationOptions);
+			const initializationOptions = prepareVSCodeConfig(
+				rawInitializationOptions,
+			);
 
 			this._client = createClient(
 				this.getTraceOutputChannel(),
@@ -323,7 +346,9 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 
 	private getOutputChannel(): vscode.OutputChannel {
 		if (!this.outputChannel) {
-			this.outputChannel = vscode.window.createOutputChannel("wgsl-analyzer Language Server");
+			this.outputChannel = vscode.window.createOutputChannel(
+				"wgsl-analyzer Language Server",
+			);
 			this.pushExtCleanup(this.outputChannel);
 		}
 		return this.outputChannel;
@@ -331,24 +356,28 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 
 	private getTraceOutputChannel(): vscode.OutputChannel {
 		if (!this.traceOutputChannel) {
-			this.traceOutputChannel = new LazyOutputChannel("wgsl-analyzer Language Server Trace");
+			this.traceOutputChannel = new LazyOutputChannel(
+				"wgsl-analyzer Language Server Trace",
+			);
 			this.pushExtCleanup(this.traceOutputChannel);
 		}
 		return this.traceOutputChannel;
 	}
 
 	private async bootstrap(): Promise<string> {
-		return bootstrap(this.extCtx, this.config, this.state).catch((exception: unknown) => {
-			let message = "bootstrap error. ";
+		return bootstrap(this.extCtx, this.config, this.state).catch(
+			(exception: unknown) => {
+				let message = "bootstrap error. ";
 
-			message +=
-				'See the logs in "OUTPUT > wgsl-analyzer Client" (should open automatically). ';
-			message +=
-				'To enable verbose logs, click the gear icon in the "OUTPUT" tab and select "Debug".';
+				message +=
+					'See the logs in "OUTPUT > wgsl-analyzer Client" (should open automatically). ';
+				message +=
+					'To enable verbose logs, click the gear icon in the "OUTPUT" tab and select "Debug".';
 
-			log.error("Bootstrap error", exception);
-			throw new Error(message);
-		});
+				log.error("Bootstrap error", exception);
+				throw new Error(message);
+			},
+		);
 	}
 
 	async start() {
@@ -392,8 +421,8 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 
 		vscode.workspace.onDidChangeTextDocument(async (e) => {
 			if (
-				vscode.window.activeTextEditor?.document !== e.document
-				|| e.contentChanges.length === 0
+				vscode.window.activeTextEditor?.document !== e.document ||
+				e.contentChanges.length === 0
 			) {
 				return;
 			}
@@ -448,7 +477,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		log.info("Disposing language client");
 		this.updateCommands("disable");
 		// we give the server 100ms to stop gracefully
-		await this.client?.stop(100).catch((_: unknown) => { });
+		await this.client?.stop(100).catch((_: unknown) => {});
 		await this.disposeClient();
 	}
 
@@ -502,7 +531,9 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 					);
 			}
 
-			this.commandDisposables.push(vscode.commands.registerCommand(fullName, callback));
+			this.commandDisposables.push(
+				vscode.commands.registerCommand(fullName, callback),
+			);
 		}
 	}
 
@@ -533,7 +564,9 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 				void this.syntaxTreeProvider?.refresh();
 				break;
 			case "warning":
-				statusBar.color = new vscode.ThemeColor("statusBarItem.warningForeground");
+				statusBar.color = new vscode.ThemeColor(
+					"statusBarItem.warningForeground",
+				);
 				statusBar.backgroundColor = new vscode.ThemeColor(
 					"statusBarItem.warningBackground",
 				);
@@ -541,8 +574,12 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 				icon = "$(warning) ";
 				break;
 			case "error":
-				statusBar.color = new vscode.ThemeColor("statusBarItem.errorForeground");
-				statusBar.backgroundColor = new vscode.ThemeColor("statusBarItem.errorBackground");
+				statusBar.color = new vscode.ThemeColor(
+					"statusBarItem.errorForeground",
+				);
+				statusBar.backgroundColor = new vscode.ThemeColor(
+					"statusBarItem.errorBackground",
+				);
 				statusBar.command = "wgsl-analyzer.openLogs";
 				icon = "$(error) ";
 				break;
@@ -551,7 +588,9 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 				statusBar.tooltip.appendMarkdown(
 					"\n\n[Start server](command:wgsl-analyzer.startServer)",
 				);
-				statusBar.color = new vscode.ThemeColor("statusBarItem.warningForeground");
+				statusBar.color = new vscode.ThemeColor(
+					"statusBarItem.warningForeground",
+				);
 				statusBar.backgroundColor = new vscode.ThemeColor(
 					"statusBarItem.warningBackground",
 				);
@@ -568,15 +607,15 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 
 		const toggleCheckOnSave = this.config.checkOnSave ? "Disable" : "Enable";
 		statusBar.tooltip.appendMarkdown(
-			`[Extension Info](command:wgsl-analyzer.serverVersion "Show version and server binary info"): Version ${this.version}, Server Version ${this._serverVersion}`
-			+ "\n\n---\n\n"
-			+ '[$(terminal) Open Logs](command:wgsl-analyzer.openLogs "Open the server logs")'
-			+ "\n\n"
-			+ `[$(settings) ${toggleCheckOnSave} Check on Save](command:wgsl-analyzer.toggleCheckOnSave "Temporarily ${toggleCheckOnSave.toLowerCase()} check on save functionality")`
-			+ "\n\n"
-			+ '[$(stop-circle) Stop server](command:wgsl-analyzer.stopServer "Stop the server")'
-			+ "\n\n"
-			+ '[$(debug-restart) Restart server](command:wgsl-analyzer.restartServer "Restart the server")',
+			`[Extension Info](command:wgsl-analyzer.serverVersion "Show version and server binary info"): Version ${this.version}, Server Version ${this._serverVersion}` +
+				"\n\n---\n\n" +
+				'[$(terminal) Open Logs](command:wgsl-analyzer.openLogs "Open the server logs")' +
+				"\n\n" +
+				`[$(settings) ${toggleCheckOnSave} Check on Save](command:wgsl-analyzer.toggleCheckOnSave "Temporarily ${toggleCheckOnSave.toLowerCase()} check on save functionality")` +
+				"\n\n" +
+				'[$(stop-circle) Stop server](command:wgsl-analyzer.stopServer "Stop the server")' +
+				"\n\n" +
+				'[$(debug-restart) Restart server](command:wgsl-analyzer.restartServer "Restart the server")',
 		);
 		if (!status.quiescent) icon = "$(loading~spin) ";
 		statusBar.text = `${icon}wgsl-analyzer`;
@@ -590,7 +629,10 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 			this.statusBar.show();
 		} else {
 			const documentSelector = showStatusBar.documentSelector;
-			if (editor != null && vscode.languages.match(documentSelector, editor.document) > 0) {
+			if (
+				editor != null &&
+				vscode.languages.match(documentSelector, editor.document) > 0
+			) {
 				this.statusBar.show();
 			} else {
 				this.statusBar.hide();

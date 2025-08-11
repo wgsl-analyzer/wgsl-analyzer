@@ -5,9 +5,13 @@ import type { CtxInit } from "./ctx";
 import * as wa from "./lsp_ext";
 import { isWeslEditor, setContextValue } from "./utilities";
 
-export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement> {
+export class SyntaxTreeProvider
+	implements vscode.TreeDataProvider<SyntaxElement>
+{
 	// biome-ignore: noConfusingVoidType
-	private _onDidChangeTreeData: vscode.EventEmitter<SyntaxElement | undefined | void> =
+	private _onDidChangeTreeData: vscode.EventEmitter<
+		SyntaxElement | undefined | void
+	> =
 		// biome-ignore: noConfusingVoidType
 		new vscode.EventEmitter<SyntaxElement | undefined | void>();
 
@@ -78,60 +82,76 @@ export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement
 				textDocument: { uri: editor.document.uri.toString() },
 				range: null,
 			};
-			const fileText = await this.ctx.client.sendRequest(wa.viewSyntaxTree, parameters);
+			const fileText = await this.ctx.client.sendRequest(
+				wa.viewSyntaxTree,
+				parameters,
+			);
 
-			this.root = JSON.parse(fileText, (_key, value: RawElement): SyntaxElement => {
-				const [start_offset, start_line, start_column] = value.start;
-				const [end_offset, end_line, end_column] = value.end;
-				const range = new vscode.Range(start_line, start_column, end_line, end_column);
-				const offsets = {
-					start: start_offset,
-					end: end_offset,
-				};
-
-				let inner;
-				if (value.start_index && value.end_index) {
-					const [start_offset, start_line, start_column] = value.start_index;
-					const [end_offset, end_line, end_column] = value.end_index;
-
-					inner = {
-						offsets: {
-							start: start_offset,
-							end: end_offset,
-						},
-						range: new vscode.Range(start_line, start_column, end_line, end_column),
-					};
-				}
-
-				if (value.type === "Node") {
-					const result = {
-						type: value.type,
-						kind: value.kind,
-						offsets,
-						range,
-						inner,
-						children: value.children,
-						parent: undefined,
-						document: editor.document,
+			this.root = JSON.parse(
+				fileText,
+				(_key, value: RawElement): SyntaxElement => {
+					const [start_offset, start_line, start_column] = value.start;
+					const [end_offset, end_line, end_column] = value.end;
+					const range = new vscode.Range(
+						start_line,
+						start_column,
+						end_line,
+						end_column,
+					);
+					const offsets = {
+						start: start_offset,
+						end: end_offset,
 					};
 
-					for (const child of result.children) {
-						child.parent = result;
+					let inner;
+					if (value.start_index && value.end_index) {
+						const [start_offset, start_line, start_column] = value.start_index;
+						const [end_offset, end_line, end_column] = value.end_index;
+
+						inner = {
+							offsets: {
+								start: start_offset,
+								end: end_offset,
+							},
+							range: new vscode.Range(
+								start_line,
+								start_column,
+								end_line,
+								end_column,
+							),
+						};
 					}
 
-					return result;
-				} else {
-					return {
-						type: value.type,
-						kind: value.kind,
-						offsets,
-						range,
-						inner,
-						parent: undefined,
-						document: editor.document,
-					};
-				}
-			});
+					if (value.type === "Node") {
+						const result = {
+							type: value.type,
+							kind: value.kind,
+							offsets,
+							range,
+							inner,
+							children: value.children,
+							parent: undefined,
+							document: editor.document,
+						};
+
+						for (const child of result.children) {
+							child.parent = result;
+						}
+
+						return result;
+					} else {
+						return {
+							type: value.type,
+							kind: value.kind,
+							offsets,
+							range,
+							inner,
+							parent: undefined,
+							document: editor.document,
+						};
+					}
+				},
+			);
 		} else {
 			this.root = undefined;
 		}
@@ -289,7 +309,10 @@ function getIcon(kind: string): vscode.ThemeIcon | undefined {
 const iconTable: Record<string, vscode.ThemeIcon> = {
 	CALL_EXPR: new vscode.ThemeIcon("call-outgoing"),
 	COMMENT: new vscode.ThemeIcon("comment"),
-	ENUM: new vscode.ThemeIcon("symbol-enum", new vscode.ThemeColor("symbolIcon.enumForeground")),
+	ENUM: new vscode.ThemeIcon(
+		"symbol-enum",
+		new vscode.ThemeColor("symbolIcon.enumForeground"),
+	),
 	FN: new vscode.ThemeIcon(
 		"symbol-function",
 		new vscode.ThemeColor("symbolIcon.functionForeground"),

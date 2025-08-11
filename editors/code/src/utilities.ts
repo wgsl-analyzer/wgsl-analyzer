@@ -1,9 +1,17 @@
 import { strict as nativeAssert } from "assert";
-import { exec, type ExecOptions, spawn, type SpawnOptionsWithoutStdio } from "child_process";
+import {
+	exec,
+	type ExecOptions,
+	spawn,
+	type SpawnOptionsWithoutStdio,
+} from "child_process";
 import { inspect } from "util";
 import * as vscode from "vscode";
 
-export function assert(condition: boolean, explanation: string): asserts condition {
+export function assert(
+	condition: boolean,
+	explanation: string,
+): asserts condition {
 	try {
 		nativeAssert(condition, explanation);
 	} catch (error) {
@@ -17,9 +25,12 @@ export type Env = {
 };
 
 class Log {
-	private readonly output = vscode.window.createOutputChannel("WGSL Analyzer Client", {
-		log: true,
-	});
+	private readonly output = vscode.window.createOutputChannel(
+		"WGSL Analyzer Client",
+		{
+			log: true,
+		},
+	);
 
 	trace(...messages: [unknown, ...unknown[]]): void {
 		this.output.trace(this.stringify(messages));
@@ -63,19 +74,22 @@ export function sleep(ms: number) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export type WeslDocument = vscode.TextDocument & ({ languageId: "wesl" } | { languageId: "wgsl" });
+export type WeslDocument = vscode.TextDocument &
+	({ languageId: "wesl" } | { languageId: "wgsl" });
 
 export type WeslEditor = vscode.TextEditor & { document: WeslDocument };
 
-export function isWeslDocument(document: vscode.TextDocument): document is WeslDocument {
+export function isWeslDocument(
+	document: vscode.TextDocument,
+): document is WeslDocument {
 	// Prevent corrupted text (particularly via inlay hints) in diff views
 	// by allowing only `file` schemes.
 	// Unfortunately, extensions that use diff views not always set this
 	// to something different than "file".
 	// See: https://github.com/rust-lang/rust-analyzer/issues/4608
 	return (
-		(document.languageId === "wgsl" || document.languageId === "wesl")
-		&& document.uri.scheme === "file"
+		(document.languageId === "wgsl" || document.languageId === "wesl") &&
+		document.uri.scheme === "file"
 	);
 }
 
@@ -123,7 +137,10 @@ export function memoizeAsync<Ret, TThis, Parameter extends string>(
 }
 
 /** Awaitable wrapper around `child_process.exec` */
-export function execute(command: string, options: ExecOptions): Promise<string> {
+export function execute(
+	command: string,
+	options: ExecOptions,
+): Promise<string> {
 	log.info(`running command: ${command}`);
 	return new Promise((resolve, reject) => {
 		exec(command, options, (error, stdout, stderr) => {
@@ -227,7 +244,10 @@ function isNotUndefined<T>(input: Undefinable<T>): input is NotUndefined<T> {
 	return input !== undefined;
 }
 
-export function expectNotUndefined<T>(input: Undefinable<T>, message: string): NotUndefined<T> {
+export function expectNotUndefined<T>(
+	input: Undefinable<T>,
+	message: string,
+): NotUndefined<T> {
 	if (isNotUndefined(input)) {
 		return input;
 	}
@@ -255,26 +275,28 @@ export async function spawnAsync(
 	const stdout: Array<Buffer<any>> = []; // biome-ignore: noExplicitAny
 	const stderr: Array<Buffer<any>> = []; // biome-ignore: noExplicitAny
 	try {
-		const result = await new Promise<{ status: null | number; stderr: string; stdout: string }>(
-			(resolve, reject) => {
-				child.stdout.on("data", (chunk) => stdout.push(Buffer.from(chunk)));
-				child.stderr.on("data", (chunk) => stderr.push(Buffer.from(chunk)));
-				child.on("error", (error) => {
-					reject({
-						stdout: Buffer.concat(stdout).toString("utf8"),
-						stderr: Buffer.concat(stderr).toString("utf8"),
-						error,
-					});
+		const result = await new Promise<{
+			status: null | number;
+			stderr: string;
+			stdout: string;
+		}>((resolve, reject) => {
+			child.stdout.on("data", (chunk) => stdout.push(Buffer.from(chunk)));
+			child.stderr.on("data", (chunk) => stderr.push(Buffer.from(chunk)));
+			child.on("error", (error) => {
+				reject({
+					stdout: Buffer.concat(stdout).toString("utf8"),
+					stderr: Buffer.concat(stderr).toString("utf8"),
+					error,
 				});
-				child.on("close", (status) => {
-					resolve({
-						stdout: Buffer.concat(stdout).toString("utf8"),
-						stderr: Buffer.concat(stderr).toString("utf8"),
-						status,
-					});
+			});
+			child.on("close", (status) => {
+				resolve({
+					stdout: Buffer.concat(stdout).toString("utf8"),
+					stderr: Buffer.concat(stderr).toString("utf8"),
+					status,
 				});
-			},
-		);
+			});
+		});
 
 		return {
 			stdout: result.stdout,
@@ -299,7 +321,9 @@ type StructuredError = {
 	stdout: string;
 };
 
-function assertIsStructuredError(object: unknown): asserts object is StructuredError {
+function assertIsStructuredError(
+	object: unknown,
+): asserts object is StructuredError {
 	if (typeof object !== "object" || object === null || !("error" in object)) {
 		throw new TypeError("Unexpected exception shape");
 	}

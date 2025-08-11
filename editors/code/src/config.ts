@@ -15,7 +15,10 @@ export type RunnableEnvCfgItem = {
 	platform?: string | string[];
 };
 export type RunnableEnvCfg = Record<string, string> | RunnableEnvCfgItem[];
-type ShowStatusBar = "always" | "never" | { documentSelector: vscode.DocumentSelector };
+type ShowStatusBar =
+	| "always"
+	| "never"
+	| { documentSelector: vscode.DocumentSelector };
 
 export interface TraceConfig {
 	extension: boolean;
@@ -41,12 +44,19 @@ export class Config {
 
 	readonly rootSection = "wgsl-analyzer";
 
-	private readonly requiresServerReloadOpts = ["serverPath", "server", "files", "cfg"].map(
-		(opt) => `${this.rootSection}.${opt}`,
-	);
+	private readonly requiresServerReloadOpts = [
+		"serverPath",
+		"server",
+		"files",
+		"cfg",
+	].map((opt) => `${this.rootSection}.${opt}`);
 
 	constructor(disposables: Disposable[]) {
-		vscode.workspace.onDidChangeConfiguration(this.onDidChangeConfiguration, this, disposables);
+		vscode.workspace.onDidChangeConfiguration(
+			this.onDidChangeConfiguration,
+			this,
+			disposables,
+		);
 		this.refreshLogging();
 		this.configureLanguage();
 	}
@@ -61,11 +71,15 @@ export class Config {
 			vscode.extensions.getExtension(this.extensionId)!.packageJSON.version,
 		);
 
-		const cfg = Object.entries(this.cfg).filter(([_, value]) => !(value instanceof Function));
+		const cfg = Object.entries(this.cfg).filter(
+			([_, value]) => !(value instanceof Function),
+		);
 		log.info("Using configuration", Object.fromEntries(cfg));
 	}
 
-	private async onDidChangeConfiguration(event: vscode.ConfigurationChangeEvent) {
+	private async onDidChangeConfiguration(
+		event: vscode.ConfigurationChangeEvent,
+	) {
 		this.refreshLogging();
 
 		this.configureLanguage();
@@ -82,7 +96,10 @@ export class Config {
 		}
 
 		const message = `Changing "${requiresServerReloadOpt}" requires a server restart`;
-		const userResponse = await vscode.window.showInformationMessage(message, "Restart now");
+		const userResponse = await vscode.window.showInformationMessage(
+			message,
+			"Restart now",
+		);
 
 		if (userResponse) {
 			const command = "wgsl-analyzer.restartServer";
@@ -218,12 +235,16 @@ export class Config {
 	}
 
 	get serverPath() {
-		return this.get<null | string>("server.path") ?? this.get<null | string>("serverPath");
+		return (
+			this.get<null | string>("server.path") ??
+			this.get<null | string>("serverPath")
+		);
 	}
 
 	get serverExtraEnv(): Env {
 		const extraEnv =
-			this.get<{ [key: string]: string | number } | null>("server.extraEnv") ?? {};
+			this.get<{ [key: string]: string | number } | null>("server.extraEnv") ??
+			{};
 		return substituteVariablesInEnv(
 			Object.fromEntries(
 				Object.entries(extraEnv).map(([k, v]) => [
@@ -239,33 +260,47 @@ export class Config {
 	}
 
 	async toggleCheckOnSave() {
-		const config = this.cfg.inspect<boolean>("checkOnSave") ?? { key: "checkOnSave" };
+		const config = this.cfg.inspect<boolean>("checkOnSave") ?? {
+			key: "checkOnSave",
+		};
 		let overrideInLanguage;
 		let target;
 		let value;
 		if (
-			config.workspaceFolderValue !== undefined
-			|| config.workspaceFolderLanguageValue !== undefined
+			config.workspaceFolderValue !== undefined ||
+			config.workspaceFolderLanguageValue !== undefined
 		) {
 			target = vscode.ConfigurationTarget.WorkspaceFolder;
 			overrideInLanguage = config.workspaceFolderLanguageValue;
-			value = config.workspaceFolderValue || config.workspaceFolderLanguageValue;
+			value =
+				config.workspaceFolderValue || config.workspaceFolderLanguageValue;
 		} else if (
-			config.workspaceValue !== undefined
-			|| config.workspaceLanguageValue !== undefined
+			config.workspaceValue !== undefined ||
+			config.workspaceLanguageValue !== undefined
 		) {
 			target = vscode.ConfigurationTarget.Workspace;
 			overrideInLanguage = config.workspaceLanguageValue;
 			value = config.workspaceValue || config.workspaceLanguageValue;
-		} else if (config.globalValue !== undefined || config.globalLanguageValue !== undefined) {
+		} else if (
+			config.globalValue !== undefined ||
+			config.globalLanguageValue !== undefined
+		) {
 			target = vscode.ConfigurationTarget.Global;
 			overrideInLanguage = config.globalLanguageValue;
 			value = config.globalValue || config.globalLanguageValue;
-		} else if (config.defaultValue !== undefined || config.defaultLanguageValue !== undefined) {
+		} else if (
+			config.defaultValue !== undefined ||
+			config.defaultLanguageValue !== undefined
+		) {
 			overrideInLanguage = config.defaultLanguageValue;
 			value = config.defaultValue || config.defaultLanguageValue;
 		}
-		await this.cfg.update("checkOnSave", !(value || false), target || null, overrideInLanguage);
+		await this.cfg.update(
+			"checkOnSave",
+			!(value || false),
+			target || null,
+			overrideInLanguage,
+		);
 	}
 
 	get problemMatcher(): string[] {
@@ -278,7 +313,8 @@ export class Config {
 
 	runnablesExtraEnv(label: string): Record<string, string> | undefined {
 		// biome-ignore: noExplicitAny
-		const item = this.get<any>("runnables.extraEnv") ?? this.get<any>("runnableEnv");
+		const item =
+			this.get<any>("runnables.extraEnv") ?? this.get<any>("runnableEnv");
 		if (!item) return undefined;
 		// biome-ignore: noExplicitAny
 		const fixRecord = (r: Record<string, any>) => {
@@ -292,7 +328,9 @@ export class Config {
 		const platform = process.platform;
 		const checkPlatform = (it: RunnableEnvCfgItem) => {
 			if (it.platform) {
-				const platforms = Array.isArray(it.platform) ? it.platform : [it.platform];
+				const platforms = Array.isArray(it.platform)
+					? it.platform
+					: [it.platform];
 				return platforms.indexOf(platform) >= 0;
 			}
 			return true;
@@ -322,7 +360,9 @@ export class Config {
 	}
 
 	get debug() {
-		let sourceFileMap = this.get<Record<string, string> | "auto">("debug.sourceFileMap");
+		let sourceFileMap = this.get<Record<string, string> | "auto">(
+			"debug.sourceFileMap",
+		);
 		if (sourceFileMap !== "auto") {
 			// "/wesl/<id>" used by suggestions only.
 			const { ["/wesl/<id>"]: _, ...trimmed } =
@@ -342,7 +382,9 @@ export class Config {
 	get hoverActions() {
 		return {
 			enable: this.get<boolean>("hover.actions.enable"),
-			implementations: this.get<boolean>("hover.actions.implementations.enable"),
+			implementations: this.get<boolean>(
+				"hover.actions.implementations.enable",
+			),
 			references: this.get<boolean>("hover.actions.references.enable"),
 			run: this.get<boolean>("hover.actions.run.enable"),
 			debug: this.get<boolean>("hover.actions.debug.enable"),
@@ -517,11 +559,11 @@ function computeVscodeVar(varName: string): string | null {
 			folder === undefined
 				? "" // no workspace opened
 				: // could use currently opened document to detect the correct
-				// workspace. However, that would be determined by the document
-				// user has opened on Editor startup. Could lead to
-				// unpredictable workspace selection in practice.
-				// It is better to pick the first one
-				folder.uri.fsPath;
+					// workspace. However, that would be determined by the document
+					// user has opened on Editor startup. Could lead to
+					// unpredictable workspace selection in practice.
+					// It is better to pick the first one
+					folder.uri.fsPath;
 		return fsPath;
 	};
 	// https://code.visualstudio.com/docs/editor/variables-reference

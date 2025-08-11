@@ -15,8 +15,8 @@ export async function bootstrap(
 	const path = await getServer(context, config, state);
 	if (!path) {
 		throw new Error(
-			"wgsl-analyzer Language Server is not available. "
-			+ "Please ensure it is [correctly installed](https://wgsl-analyzer.github.io/manual.html#installation).",
+			"wgsl-analyzer Language Server is not available. " +
+				"Please ensure it is [correctly installed](https://wgsl-analyzer.github.io/manual.html#installation).",
 		);
 	}
 
@@ -24,11 +24,11 @@ export async function bootstrap(
 
 	if (!isValidExecutable(path, config.serverExtraEnv)) {
 		throw new Error(
-			`Failed to execute ${path} --version.`
-			+ (config.serverPath
-				? `\`config.server.path\` or \`config.serverPath\` has been set explicitly.\
+			`Failed to execute ${path} --version.` +
+				(config.serverPath
+					? `\`config.server.path\` or \`config.serverPath\` has been set explicitly.\
 			Consider removing this config or making a valid server binary available at that path.`
-				: ""),
+					: ""),
 		);
 	}
 	return path;
@@ -39,7 +39,6 @@ async function getServer(
 	config: Config,
 	state: PersistentState,
 ): Promise<string | undefined> {
-
 	const packageJson: {
 		version: string;
 		releaseTag: string | null;
@@ -47,7 +46,8 @@ async function getServer(
 	} = context.extension.packageJSON;
 
 	// check if the server path is configured explicitly
-	const explicitPath = process.env["__WA_LSP_SERVER_DEBUG"] ?? config.serverPath;
+	const explicitPath =
+		process.env["__WA_LSP_SERVER_DEBUG"] ?? config.serverPath;
 	if (explicitPath) {
 		if (explicitPath.startsWith("~/")) {
 			return os.homedir() + explicitPath.slice("~".length);
@@ -61,7 +61,11 @@ async function getServer(
 
 	// finally, use the bundled one
 	const ext = process.platform === "win32" ? ".exe" : "";
-	const bundled = vscode.Uri.joinPath(context.extensionUri, "server", `wgsl-analyzer${ext}`);
+	const bundled = vscode.Uri.joinPath(
+		context.extensionUri,
+		"server",
+		`wgsl-analyzer${ext}`,
+	);
 	const bundledExists = await fileExists(bundled);
 	if (bundledExists) {
 		let server = bundled;
@@ -80,12 +84,12 @@ async function getServer(
 	}
 
 	await vscode.window.showErrorMessage(
-		"Unfortunately we do not ship binaries for your platform yet. "
-		+ "You need to manually clone the wgsl-analyzer repository and "
-		+ "run `cargo xtask install --server` to build the language server from sources. "
-		+ "If you feel that your platform should be supported, please create an issue "
-		+ "about that [here](https://github.com/wgsl-analyzer/wgsl-analyzer/issues) and we "
-		+ "will consider it.",
+		"Unfortunately we do not ship binaries for your platform yet. " +
+			"You need to manually clone the wgsl-analyzer repository and " +
+			"run `cargo xtask install --server` to build the language server from sources. " +
+			"If you feel that your platform should be supported, please create an issue " +
+			"about that [here](https://github.com/wgsl-analyzer/wgsl-analyzer/issues) and we " +
+			"will consider it.",
 	);
 	return undefined;
 }
@@ -97,7 +101,10 @@ async function fileExists(uri: vscode.Uri) {
 	);
 }
 
-export async function isValidExecutable(path: string, extraEnv: Env): Promise<boolean> {
+export async function isValidExecutable(
+	path: string,
+	extraEnv: Env,
+): Promise<boolean> {
 	log.debug("Checking availability of a binary at", path);
 
 	const result = await spawnAsync(path, ["--version"], {
@@ -121,7 +128,10 @@ async function getNixOsServer(
 	server: vscode.Uri,
 ) {
 	await vscode.workspace.fs.createDirectory(globalStorageUri).then();
-	const destination = vscode.Uri.joinPath(globalStorageUri, `wgsl-analyzer${ext}`);
+	const destination = vscode.Uri.joinPath(
+		globalStorageUri,
+		`wgsl-analyzer${ext}`,
+	);
 	let exists = await vscode.workspace.fs.stat(destination).then(
 		() => true,
 		() => false,
@@ -143,7 +153,8 @@ async function isNixOs(): Promise<boolean> {
 		const contents = (
 			await vscode.workspace.fs.readFile(vscode.Uri.file("/etc/os-release"))
 		).toString();
-		const idString = contents.split("\n").find((a) => a.startsWith("ID=")) || "ID=linux";
+		const idString =
+			contents.split("\n").find((a) => a.startsWith("ID=")) || "ID=linux";
 		return idString.indexOf("nixos") !== -1;
 	} catch {
 		return false;
@@ -171,7 +182,9 @@ async function patchelf(destination: vscode.Uri): Promise<void> {
                 }
             `;
 			const originalFile = vscode.Uri.file(destination.fsPath + "-orig");
-			await vscode.workspace.fs.rename(destination, originalFile, { overwrite: true });
+			await vscode.workspace.fs.rename(destination, originalFile, {
+				overwrite: true,
+			});
 			try {
 				progress.report({ message: "Patching executable", increment: 20 });
 				await new Promise((resolve, reject) => {

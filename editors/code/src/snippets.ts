@@ -2,7 +2,10 @@ import * as vscode from "vscode";
 
 import { assert, unwrapUndefinable } from "./utilities";
 
-export type SnippetTextDocumentEdit = [vscode.Uri, (vscode.TextEdit | vscode.SnippetTextEdit)[]];
+export type SnippetTextDocumentEdit = [
+	vscode.Uri,
+	(vscode.TextEdit | vscode.SnippetTextEdit)[],
+];
 
 export async function applySnippetWorkspaceEdit(
 	edit: vscode.WorkspaceEdit,
@@ -24,9 +27,7 @@ export async function applySnippetWorkspaceEdit(
 				for (const indel of edits) {
 					assert(
 						!(indel instanceof vscode.SnippetTextEdit),
-						`bad ws edit: snippet received with multiple edits: ${JSON.stringify(
-							edit,
-						)}`,
+						`bad ws edit: snippet received with multiple edits: ${JSON.stringify(edit)}`,
 					);
 					builder.replace(indel.range, indel.newText);
 				}
@@ -35,7 +36,9 @@ export async function applySnippetWorkspaceEdit(
 	}
 }
 
-async function editorFromUri(uri: vscode.Uri): Promise<vscode.TextEditor | undefined> {
+async function editorFromUri(
+	uri: vscode.Uri,
+): Promise<vscode.TextEditor | undefined> {
 	if (vscode.window.activeTextEditor?.document.uri !== uri) {
 		// `vscode.window.visibleTextEditors` only contains editors whose contents are being displayed
 		await vscode.window.showTextDocument(uri, {});
@@ -45,7 +48,10 @@ async function editorFromUri(uri: vscode.Uri): Promise<vscode.TextEditor | undef
 	);
 }
 
-export async function applySnippetTextEdits(editor: vscode.TextEditor, edits: vscode.TextEdit[]) {
+export async function applySnippetTextEdits(
+	editor: vscode.TextEditor,
+	edits: vscode.TextEdit[],
+) {
 	const edit = new vscode.WorkspaceEdit();
 	const snippetEdits = toSnippetTextEdits(edits);
 	edit.set(editor.document.uri, removeLeadingWhitespace(editor, snippetEdits));
@@ -110,7 +116,10 @@ function removeLeadingWhitespace(
 					startLine.firstNonWhitespaceCharacterIndex,
 				);
 
-				const [firstLine, rest] = splitAt(snippetEdit.snippet.value, firstLineEnd + 1);
+				const [firstLine, rest] = splitAt(
+					snippetEdit.snippet.value,
+					firstLineEnd + 1,
+				);
 				const unindentedLines = rest
 					.split("\n")
 					.map((line) => line.replace(leadingWhitespace, ""))
@@ -127,7 +136,11 @@ function removeLeadingWhitespace(
 }
 
 // based on https://github.com/microsoft/vscode/blob/main/src/vs/base/common/strings.ts#L284
-function getLeadingWhitespace(str: string, start: number = 0, end: number = str.length): string {
+function getLeadingWhitespace(
+	str: string,
+	start: number = 0,
+	end: number = str.length,
+): string {
 	for (let i = start; i < end; i++) {
 		const chCode = str.charCodeAt(i);
 		if (chCode !== " ".charCodeAt(0) && chCode !== " ".charCodeAt(0)) {

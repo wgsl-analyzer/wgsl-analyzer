@@ -65,7 +65,11 @@ async function activateServer(ctx: Ctx): Promise<WgslAnalyzerExtensionApi> {
 		null,
 		ctx.subscriptions,
 	);
-	vscode.workspace.onDidOpenTextDocument(decorateVisibleEditors, null, ctx.subscriptions);
+	vscode.workspace.onDidOpenTextDocument(
+		decorateVisibleEditors,
+		null,
+		ctx.subscriptions,
+	);
 	vscode.window.onDidChangeActiveTextEditor(
 		async (editor) => {
 			if (editor) {
@@ -94,9 +98,12 @@ async function activateServer(ctx: Ctx): Promise<WgslAnalyzerExtensionApi> {
 	);
 	vscode.workspace.onDidChangeConfiguration(
 		async (_) => {
-			await ctx.client?.sendNotification(lc.DidChangeConfigurationNotification.type, {
-				settings: "",
-			});
+			await ctx.client?.sendNotification(
+				lc.DidChangeConfigurationNotification.type,
+				{
+					settings: "",
+				},
+			);
 		},
 		null,
 		ctx.subscriptions,
@@ -117,7 +124,8 @@ function createCommands(): Record<string, CommandFactory> {
 	return {
 		onEnter: {
 			enabled: commands.onEnter,
-			disabled: (_) => () => vscode.commands.executeCommand("default:type", { text: "\n" }),
+			disabled: (_) => () =>
+				vscode.commands.executeCommand("default:type", { text: "\n" }),
 		},
 		restartServer: {
 			enabled: (ctx) => async () => {
@@ -143,7 +151,7 @@ function createCommands(): Record<string, CommandFactory> {
 					health: "stopped",
 				});
 			},
-			disabled: (_) => async () => { },
+			disabled: (_) => async () => {},
 		},
 
 		analyzerStatus: { enabled: commands.analyzerStatus },
@@ -171,7 +179,9 @@ function createCommands(): Record<string, CommandFactory> {
 		// openWalkthrough: { enabled: commands.openWalkthrough },
 		// Internal commands which are invoked by the server.
 		applyActionGroup: { enabled: commands.applyActionGroup },
-		applySnippetWorkspaceEdit: { enabled: commands.applySnippetWorkspaceEditCommand },
+		applySnippetWorkspaceEdit: {
+			enabled: commands.applySnippetWorkspaceEditCommand,
+		},
 		gotoLocation: { enabled: commands.gotoLocation },
 		hoverRefCommandProxy: { enabled: commands.hoverRefCommandProxy },
 		resolveCodeAction: { enabled: commands.resolveCodeAction },
@@ -190,12 +200,12 @@ function checkConflictingExtensions() {
 	if (vscode.extensions.getExtension("polymeilex.wgsl")) {
 		vscode.window
 			.showWarningMessage(
-				"You have both the wgsl-analyzer (wgsl-analyzer.wgsl-analyzer) and WGSL (polymeilex.wgsl) "
-				+ "plugins enabled. These are known to conflict and cause various functions of "
-				+ "both plugins to not work correctly. You should disable one of them.",
+				"You have both the wgsl-analyzer (wgsl-analyzer.wgsl-analyzer) and WGSL (polymeilex.wgsl) " +
+					"plugins enabled. These are known to conflict and cause various functions of " +
+					"both plugins to not work correctly. You should disable one of them.",
 				"Got it",
 			)
 			// biome-ignore: noConsole
-			.then(() => { }, console.error);
+			.then(() => {}, console.error);
 	}
 }

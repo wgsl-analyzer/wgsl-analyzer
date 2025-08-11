@@ -22,7 +22,9 @@ export type WeslTaskDefinition = TaskDefinition & {
 	type: typeof WESL_TASK_TYPE;
 };
 
-function isWeslTask(definition: vscode.TaskDefinition): definition is WeslTaskDefinition {
+function isWeslTask(
+	definition: vscode.TaskDefinition,
+): definition is WeslTaskDefinition {
 	return definition.type === WESL_TASK_TYPE;
 }
 
@@ -87,7 +89,9 @@ class WeslTaskProvider implements vscode.TaskProvider {
 		// we need to inform VSCode how to execute that command by creating
 		// a ShellExecution for it.
 		if (isWeslTask(task.definition)) {
-			const exec = await targetToExecution(task.definition, { env: task.definition.env });
+			const exec = await targetToExecution(task.definition, {
+				env: task.definition.env,
+			});
 			return buildWeslTask(
 				task.scope,
 				task.definition,
