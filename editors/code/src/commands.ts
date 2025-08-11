@@ -195,7 +195,7 @@ export function onEnter(ctx: CtxInit): Cmd {
 				),
 				position: client.code2ProtocolConverter.asPosition(editor.selection.active),
 			})
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			// biome-ignore: noExplicitAny
 			.catch((_error: any) => {
 				// client.handleFailedRequest(OnEnterRequest.type, error, null);
 				return null;

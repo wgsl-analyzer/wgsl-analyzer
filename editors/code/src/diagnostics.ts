@@ -127,7 +127,7 @@ export class AnsiDecorationProvider implements vscode.Disposable {
 					result.set(decorationType, []);
 				}
 
-				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+				// biome-ignore: noNonNullAssertion
 				result.get(decorationType)!.push(range);
 			}
 		}

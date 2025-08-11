@@ -97,7 +97,7 @@ export function isDocumentInWorkspace(document: WeslDocument): boolean {
 }
 
 /** Sets ['when'](https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts) clause contexts */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore: noExplicitAny
 export function setContextValue(key: string, value: any): Thenable<void> {
 	return vscode.commands.executeCommand("setContext", key, value);
 }
@@ -252,15 +252,14 @@ export async function spawnAsync(
 	options?: SpawnOptionsWithoutStdio,
 ): Promise<SpawnAsyncReturns> {
 	const child = spawn(path, inputs, options);
-	const stdout: Array<Buffer<any>> = []; // eslint-disable-line @typescript-eslint/no-explicit-any
-	const stderr: Array<Buffer<any>> = []; // eslint-disable-line @typescript-eslint/no-explicit-any
+	const stdout: Array<Buffer<any>> = []; // biome-ignore: noExplicitAny
+	const stderr: Array<Buffer<any>> = []; // biome-ignore: noExplicitAny
 	try {
 		const result = await new Promise<{ status: null | number; stderr: string; stdout: string }>(
 			(resolve, reject) => {
 				child.stdout.on("data", (chunk) => stdout.push(Buffer.from(chunk)));
 				child.stderr.on("data", (chunk) => stderr.push(Buffer.from(chunk)));
 				child.on("error", (error) => {
-					// eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
 					reject({
 						stdout: Buffer.concat(stdout).toString("utf8"),
 						stderr: Buffer.concat(stderr).toString("utf8"),

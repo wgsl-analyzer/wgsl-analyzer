@@ -94,7 +94,7 @@ export function createClient(
 												+ pathSeparator
 												+ "Cargo.toml";
 											const value = config
-												// eslint-disable-next-line @typescript-eslint/no-explicit-any
+												// biome-ignore: noExplicitAny
 												.get<any[]>("linkedProjects")
 												?.concat(pathToInsert);
 											await config.update("linkedProjects", value, false);
@@ -210,10 +210,10 @@ export function createClient(
 						isCodeActionWithoutEditsAndCommands(item),
 						"We do not expect edits or commands here",
 					);
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					// biome-ignore: noExplicitAny
 					const kind = client.protocol2CodeConverter.asCodeActionKind((item as any).kind);
 					const action = new vscode.CodeAction(item.title, kind);
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					// biome-ignore: noExplicitAny
 					const group = (item as any).group;
 					action.command = {
 						command: "wgsl-analyzer.resolveCodeAction",
@@ -311,7 +311,7 @@ class ExperimentalFeatures implements lc.StaticFeature {
 	}
 
 	fillClientCapabilities(capabilities: lc.ClientCapabilities): void {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
 		capabilities.experimental = {
 			snippetTextEdit: true,
 			codeActionGroup: true,
@@ -336,11 +336,11 @@ class ExperimentalFeatures implements lc.StaticFeature {
 	initialize(
 		_capabilities: lc.ServerCapabilities,
 		_documentSelector: lc.DocumentSelector | undefined,
-	): void {}
+	): void { }
 
-	dispose(): void {}
+	dispose(): void { }
 
-	clear(): void {}
+	clear(): void { }
 }
 
 class OverrideFeatures implements lc.StaticFeature {
@@ -360,14 +360,14 @@ class OverrideFeatures implements lc.StaticFeature {
 	initialize(
 		_capabilities: lc.ServerCapabilities,
 		_documentSelector: lc.DocumentSelector | undefined,
-	): void {}
+	): void { }
 
-	clear(): void {}
+	clear(): void { }
 
-	dispose(): void {}
+	dispose(): void { }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore: noExplicitAny
 function isCodeActionWithoutEditsAndCommands(value: any): boolean {
 	const candidate: lc.CodeAction = value;
 	return (

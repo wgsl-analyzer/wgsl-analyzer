@@ -277,10 +277,10 @@ export class Config {
 	}
 
 	runnablesExtraEnv(label: string): Record<string, string> | undefined {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// biome-ignore: noExplicitAny
 		const item = this.get<any>("runnables.extraEnv") ?? this.get<any>("runnableEnv");
 		if (!item) return undefined;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// biome-ignore: noExplicitAny
 		const fixRecord = (r: Record<string, any>) => {
 			for (const key in r) {
 				if (typeof r[key] !== "string") {
@@ -398,13 +398,13 @@ export class Config {
 export function prepareVSCodeConfig<T>(response: T): T {
 	if (Is.string(response)) {
 		return substituteVSCodeVariableInString(response) as T;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// biome-ignore: noExplicitAny
 	} else if (response && Is.array<any>(response)) {
 		return response.map((value) => {
 			return prepareVSCodeConfig(value);
 		}) as T;
 	} else if (response && typeof response === "object") {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// biome-ignore: noExplicitAny
 		const result: { [key: string]: any } = {};
 		for (const key in response) {
 			const value = response[key];

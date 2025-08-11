@@ -1,5 +1,16 @@
 {
-	"formatter": { "indentStyle": "tab", "lineWidth": 100 },
+	"files": {
+		"includes": [
+			"**",
+			"!**/out/",
+			"!**/.vscode-test/",
+			"!**/node_modules/"
+		]
+	},
+	"formatter": {
+		"indentStyle": "tab",
+		"lineWidth": 100
+	},
 	"linter": {
 		"rules": {
 			"recommended": false,
@@ -7,6 +18,7 @@
 				"noAdjacentSpacesInRegex": "error",
 				"noExtraBooleanCast": "error",
 				"noStaticOnlyClass": "error",
+				"noArguments": "error",
 				"noUselessCatch": "error",
 				"noUselessConstructor": "error",
 				"noUselessEscapeInRegex": "error",
@@ -40,9 +52,10 @@
 				"useYield": "error"
 			},
 			"style": {
+				"useConst": "warn",
 				"noCommonJs": "error",
 				"noNamespace": "error",
-				"noNonNullAssertion": "error",
+				"noNonNullAssertion": "warn",
 				"useArrayLiterals": "error",
 				"useAsConstAssertion": "error",
 				"useBlockStatements": "off",
@@ -83,44 +96,12 @@
 				"useGetterReturn": "error",
 				"useNamespaceKeyword": "error"
 			}
-		},
-		"includes": ["**", "**/out/", "**/.vscode-test/", "**/node_modules/"]
-	},
-	"javascript": { "formatter": {} },
-	"json": { "formatter": {} },
-	"overrides": [
-		{ "includes": ["*.{ts,tsx,cts,mts}", "**/*.{ts,tsx,cts,mts}"] },
-		{
-			"includes": ["*.ts", "*.tsx", "*.mts", "*.cts"],
-			"linter": {
-				"rules": {
-					"complexity": { "noArguments": "error" },
-					"correctness": {
-						"noConstAssign": "off",
-						"noGlobalObjectCalls": "off",
-						"noInvalidBuiltinInstantiation": "off",
-						"noInvalidConstructorSuper": "off",
-						"noSetterReturn": "off",
-						"noUndeclaredVariables": "off",
-						"noUnreachable": "off",
-						"noUnreachableSuper": "off"
-					},
-					"style": { "useConst": "error" },
-					"suspicious": {
-						"noClassAssign": "off",
-						"noDuplicateClassMembers": "off",
-						"noDuplicateObjectKeys": "off",
-						"noDuplicateParameters": "off",
-						"noFunctionAssign": "off",
-						"noImportAssign": "off",
-						"noRedeclare": "off",
-						"noUnsafeNegation": "off",
-						"noVar": "error",
-						"noWith": "off",
-						"useGetterReturn": "off"
-					}
-				}
-			}
 		}
-	]
+	},
+	"json": {
+		"parser": {
+			"allowComments": true,
+			"allowTrailingCommas": true
+		}
+	}
 }

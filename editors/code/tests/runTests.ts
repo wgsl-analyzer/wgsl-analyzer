@@ -57,7 +57,7 @@ async function main() {
 }
 
 main().catch((error: unknown) => {
-	// eslint-disable-next-line no-console
+	// biome-ignore: noConsole
 	console.error("Failed to run tests", error);
 	process.exit(1);
 });

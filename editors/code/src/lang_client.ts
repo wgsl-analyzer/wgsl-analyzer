@@ -5,7 +5,7 @@ export class WaLanguageClient extends lc.LanguageClient {
 	override handleFailedRequest<T>(
 		type: lc.MessageSignature,
 		token: vscode.CancellationToken | undefined,
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// biome-ignore: noExplicitAny
 		error: any,
 		defaultValue: T,
 		showNotification?: boolean,

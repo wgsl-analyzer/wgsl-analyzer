@@ -103,12 +103,12 @@ async function lspOptions(config: Config): Promise<WgslAnalyzerConfiguration> {
 
 async function resolveImport(content: string): Promise<string> {
 	let content_replaced = content;
-	// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+	// biome-ignore: noNonNullAssertion
 	const folders = vscode.workspace.workspaceFolders!;
 	if (folders.length == 1) {
 		content_replaced = content_replaced.replace(
 			"${workspaceFolder}",
-			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+			// biome-ignore: noNonNullAssertion
 			folders[0]!.uri.toString(),
 		);
 	}
@@ -132,23 +132,23 @@ async function mapObjectAsync<T, U>(
 	functionn: (value: T) => Promise<U>,
 	handleError?: (key: string, value: T, error: unknown) => void,
 ): Promise<Record<string, U>> {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// biome-ignore: noExplicitAny
 	const map = async ([key, value]: [any, any]) => {
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
 			const mapped = await functionn(value);
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
 			return [key, mapped];
 		} catch (exception) {
 			if (handleError) {
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
 				handleError(key, value, exception);
 			}
 			return undefined;
 		}
 	};
 	const entries = await Promise.all(Object.entries(object).map(map));
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
 	return Object.fromEntries(entries.filter((entry) => entry !== undefined));
 }
 
@@ -200,7 +200,6 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		workspace: Workspace,
 	) {
 		extCtx.subscriptions.push(this);
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
 		this.version = extCtx.extension.packageJSON.version ?? "<unknown>";
 		this._serverVersion = "<not running>";
 		this.config = new Config(extCtx.subscriptions);
@@ -489,7 +488,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 
 		for (const [name, factory] of Object.entries(this.commandFactories)) {
 			const fullName = `wgsl-analyzer.${name}`;
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			// biome-ignore: noExplicitAny
 			let callback: any;
 			if (isClientRunning(this)) {
 				// we asserted that `client` is defined
@@ -502,7 +501,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 						`command ${fullName} failed: wgsl-analyzer server is not running`,
 					);
 			}
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
 			this.commandDisposables.push(vscode.commands.registerCommand(fullName, callback));
 		}
 	}
@@ -612,5 +611,5 @@ export interface Disposable {
 	dispose(): void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore: noExplicitAny
 export type Cmd = (...args: any[]) => unknown;

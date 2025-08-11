@@ -75,9 +75,8 @@ export async function run(): Promise<void> {
 	);
 	for (const testFile of testFiles) {
 		try {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
 			const testModule = await import(pathToFileURL(path.resolve(__dirname, testFile)).href);
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
 			await testModule.getTests(context);
 		} catch (exception) {
 			assert.ok(exception instanceof Error);
@@ -88,11 +87,11 @@ export async function run(): Promise<void> {
 }
 
 function ok(message: string): void {
-	// eslint-disable-next-line no-console
+	// biome-ignore: noConsole
 	console.log(`\x1b[32m${message}\x1b[0m`);
 }
 
 function error(message: string): void {
-	// eslint-disable-next-line no-console
+	// biome-ignore: noConsole
 	console.error(`\x1b[31m${message}\x1b[0m`);
 }

@@ -6,12 +6,12 @@ import * as wa from "./lsp_ext";
 import { isWeslEditor, setContextValue } from "./utilities";
 
 export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement> {
-	// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+	// biome-ignore: noConfusingVoidType
 	private _onDidChangeTreeData: vscode.EventEmitter<SyntaxElement | undefined | void> =
-		// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+		// biome-ignore: noConfusingVoidType
 		new vscode.EventEmitter<SyntaxElement | undefined | void>();
 
-	// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+	// biome-ignore: noConfusingVoidType
 	readonly onDidChangeTreeData: vscode.Event<SyntaxElement | undefined | void> =
 		this._onDidChangeTreeData.event;
 
@@ -79,7 +79,7 @@ export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement
 				range: null,
 			};
 			const fileText = await this.ctx.client.sendRequest(wa.viewSyntaxTree, parameters);
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
 			this.root = JSON.parse(fileText, (_key, value: RawElement): SyntaxElement => {
 				const [start_offset, start_line, start_column] = value.start;
 				const [end_offset, end_line, end_column] = value.end;
