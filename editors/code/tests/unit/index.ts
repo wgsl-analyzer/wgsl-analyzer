@@ -20,14 +20,20 @@ class Suite {
 		this.tests = [];
 	}
 
-	public addSyncTest(name: string, test_function: () => void): void {
-		const test = new Test(name, new Promise(test_function));
+	private addTestInternal(name: string, test_function: () => Promise<void>): void {
+		const test = new Test(name, test_function());
 		this.tests.push(test);
 	}
 
+	public addSyncTest(name: string, test_function: () => void): void {
+		this.addTestInternal(name, () => {
+			test_function();
+			return Promise.resolve();
+		});
+	}
+
 	public addTest(name: string, test_function: () => Promise<void>): void {
-		const test = new Test(name, test_function());
-		this.tests.push(test);
+		this.addTestInternal(name, test_function);
 	}
 
 	public async run(): Promise<void> {
