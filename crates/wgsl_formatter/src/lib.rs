@@ -181,7 +181,7 @@ fn format_syntax_node(
             trim_whitespace_before_to_newline(&r#struct.struct_token()?);
 
             let name = r#struct.name()?;
-            whitespace_to_single_around(&name);
+            whitespace_to_single_around(&name.ident_token()?);
 
             let body = r#struct.body()?;
             let l_brace = body.left_brace_token()?;

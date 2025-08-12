@@ -50,17 +50,20 @@ fn can_parse_array_declaration() {
               ConstantDeclaration@9..36
                 Constant@9..14 "const"
                 Blankspace@14..15 " "
-                Identifier@15..18 "dim"
+                Name@15..18
+                  Identifier@15..18 "dim"
                 Colon@18..19 ":"
                 Blankspace@19..20 " "
                 TypeSpecifier@20..25
-                  Identifier@20..25 "vec3u"
+                  NameReference@20..25
+                    Identifier@20..25 "vec3u"
                 Blankspace@25..26 " "
                 Equal@26..27 "="
                 Blankspace@27..28 " "
                 FunctionCall@28..35
                   IdentExpression@28..33
-                    Identifier@28..33 "vec3u"
+                    NameReference@28..33
+                      Identifier@28..33 "vec3u"
                   Arguments@33..35
                     ParenthesisLeft@33..34 "("
                     ParenthesisRight@34..35 ")"
@@ -69,24 +72,29 @@ fn can_parse_array_declaration() {
               FunctionDeclaration@45..78
                 Fn@45..47 "fn"
                 Blankspace@47..48 " "
-                Identifier@48..52 "test"
+                Name@48..52
+                  Identifier@48..52 "test"
                 FunctionParameters@52..74
                   ParenthesisLeft@52..53 "("
                   Parameter@53..73
-                    Identifier@53..54 "a"
+                    Name@53..54
+                      Identifier@53..54 "a"
                     Colon@54..55 ":"
                     Blankspace@55..56 " "
                     TypeSpecifier@56..73
-                      Identifier@56..61 "array"
+                      NameReference@56..61
+                        Identifier@56..61 "array"
                       GenericArgumentList@61..73
                         TemplateStart@61..62 "<"
                         IdentExpression@62..65
-                          Identifier@62..65 "f32"
+                          NameReference@62..65
+                            Identifier@62..65 "f32"
                         Comma@65..66 ","
                         Blankspace@66..67 " "
                         FieldExpression@67..72
                           IdentExpression@67..70
-                            Identifier@67..70 "dim"
+                            NameReference@67..70
+                              Identifier@67..70 "dim"
                           Period@70..71 "."
                           Identifier@71..72 "x"
                         TemplateEnd@72..73 ">"
@@ -113,17 +121,20 @@ fn cannot_parse_bad_array_declaration() {
               ConstantDeclaration@9..36
                 Constant@9..14 "const"
                 Blankspace@14..15 " "
-                Identifier@15..18 "dim"
+                Name@15..18
+                  Identifier@15..18 "dim"
                 Colon@18..19 ":"
                 Blankspace@19..20 " "
                 TypeSpecifier@20..25
-                  Identifier@20..25 "vec3u"
+                  NameReference@20..25
+                    Identifier@20..25 "vec3u"
                 Blankspace@25..26 " "
                 Equal@26..27 "="
                 Blankspace@27..28 " "
                 FunctionCall@28..35
                   IdentExpression@28..33
-                    Identifier@28..33 "vec3u"
+                    NameReference@28..33
+                      Identifier@28..33 "vec3u"
                   Arguments@33..35
                     ParenthesisLeft@33..34 "("
                     ParenthesisRight@34..35 ")"
@@ -132,24 +143,29 @@ fn cannot_parse_bad_array_declaration() {
               FunctionDeclaration@45..77
                 Fn@45..47 "fn"
                 Blankspace@47..48 " "
-                Identifier@48..52 "test"
+                Name@48..52
+                  Identifier@48..52 "test"
                 FunctionParameters@52..73
                   ParenthesisLeft@52..53 "("
                   Parameter@53..72
-                    Identifier@53..54 "a"
+                    Name@53..54
+                      Identifier@53..54 "a"
                     Colon@54..55 ":"
                     Blankspace@55..56 " "
                     TypeSpecifier@56..72
-                      Identifier@56..61 "array"
+                      NameReference@56..61
+                        Identifier@56..61 "array"
                       GenericArgumentList@61..72
                         TemplateStart@61..62 "<"
                         IdentExpression@62..65
-                          Identifier@62..65 "f32"
+                          NameReference@62..65
+                            Identifier@62..65 "f32"
                         Comma@65..66 ","
                         Blankspace@66..67 " "
                         FieldExpression@67..71
                           IdentExpression@67..70
-                            Identifier@67..70 "dim"
+                            NameReference@67..70
+                              Identifier@67..70 "dim"
                           Period@70..71 "."
                         TemplateEnd@71..72 ">"
                   ParenthesisRight@72..73 ")"
@@ -178,7 +194,8 @@ fn fn_incomplete() {
               FunctionDeclaration@0..7
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..7 "name"
+                Name@3..7
+                  Identifier@3..7 "name"
                 FunctionParameters@7..7
                 Error@7..7
 
@@ -204,7 +221,8 @@ fn parse_comments() {
               ConstantDeclaration@9..25
                 Constant@9..14 "const"
                 Blankspace@14..15 " "
-                Identifier@15..18 "foo"
+                Name@15..18
+                  Identifier@15..18 "foo"
                 Blankspace@18..19 " "
                 Equal@19..20 "="
                 Blankspace@20..21 " "
@@ -217,7 +235,8 @@ fn parse_comments() {
               ConstantDeclaration@66..82
                 Constant@66..71 "const"
                 Blankspace@71..72 " "
-                Identifier@72..75 "bar"
+                Name@72..75
+                  Identifier@72..75 "bar"
                 Blankspace@75..76 " "
                 Equal@76..77 "="
                 Blankspace@77..78 " "
@@ -256,30 +275,36 @@ fn function() {
               FunctionDeclaration@0..33
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..7 "name"
+                Name@3..7
+                  Identifier@3..7 "name"
                 FunctionParameters@7..23
                   ParenthesisLeft@7..8 "("
                   Parameter@8..14
-                    Identifier@8..9 "a"
+                    Name@8..9
+                      Identifier@8..9 "a"
                     Colon@9..10 ":"
                     Blankspace@10..11 " "
                     TypeSpecifier@11..14
-                      Identifier@11..14 "f32"
+                      NameReference@11..14
+                        Identifier@11..14 "f32"
                   Comma@14..15 ","
                   Blankspace@15..16 " "
                   Parameter@16..22
-                    Identifier@16..17 "b"
+                    Name@16..17
+                      Identifier@16..17 "b"
                     Colon@17..18 ":"
                     Blankspace@18..19 " "
                     TypeSpecifier@19..22
-                      Identifier@19..22 "i32"
+                      NameReference@19..22
+                        Identifier@19..22 "i32"
                   ParenthesisRight@22..23 ")"
                 Blankspace@23..24 " "
                 ReturnType@24..30
                   Arrow@24..26 "->"
                   Blankspace@26..27 " "
                   TypeSpecifier@27..30
-                    Identifier@27..30 "f32"
+                    NameReference@27..30
+                      Identifier@27..30 "f32"
                 Blankspace@30..31 " "
                 CompoundStatement@31..33
                   BraceLeft@31..32 "{"
@@ -299,7 +324,8 @@ let y: f32 = 2.0;
               FunctionDeclaration@0..57
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..7 "name"
+                Name@3..7
+                  Identifier@3..7 "name"
                 FunctionParameters@7..9
                   ParenthesisLeft@7..8 "("
                   ParenthesisRight@8..9 ")"
@@ -310,11 +336,13 @@ let y: f32 = 2.0;
                   LetDeclaration@12..29
                     Let@12..15 "let"
                     Blankspace@15..16 " "
-                    Identifier@16..17 "x"
+                    Name@16..17
+                      Identifier@16..17 "x"
                     Colon@17..18 ":"
                     Blankspace@18..19 " "
                     TypeSpecifier@19..22
-                      Identifier@19..22 "f32"
+                      NameReference@19..22
+                        Identifier@19..22 "f32"
                     Blankspace@22..23 " "
                     Equal@23..24 "="
                     Blankspace@24..25 " "
@@ -325,11 +353,13 @@ let y: f32 = 2.0;
                   LetDeclaration@30..47
                     Let@30..33 "let"
                     Blankspace@33..34 " "
-                    Identifier@34..35 "y"
+                    Name@34..35
+                      Identifier@34..35 "y"
                     Colon@35..36 ":"
                     Blankspace@36..37 " "
                     TypeSpecifier@37..40
-                      Identifier@37..40 "f32"
+                      NameReference@37..40
+                        Identifier@37..40 "f32"
                     Blankspace@40..41 " "
                     Equal@41..42 "="
                     Blankspace@42..43 " "
@@ -350,7 +380,8 @@ fn trivial_function() {
               FunctionDeclaration@0..12
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..7 "test"
+                Name@3..7
+                  Identifier@3..7 "test"
                 FunctionParameters@7..9
                   ParenthesisLeft@7..8 "("
                   ParenthesisRight@8..9 ")"
@@ -370,7 +401,8 @@ fn nontrivial_function() {
               FunctionDeclaration@0..34
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..6 "foo"
+                Name@3..6
+                  Identifier@3..6 "foo"
                 FunctionParameters@6..8
                   ParenthesisLeft@6..7 "("
                   ParenthesisRight@7..8 ")"
@@ -379,7 +411,8 @@ fn nontrivial_function() {
                   Arrow@9..11 "->"
                   Blankspace@11..12 " "
                   TypeSpecifier@12..15
-                    Identifier@12..15 "i32"
+                    NameReference@12..15
+                      Identifier@12..15 "i32"
                 Blankspace@15..16 " "
                 CompoundStatement@16..34
                   BraceLeft@16..17 "{"
@@ -410,12 +443,14 @@ fn fn_recover() {
               FunctionDeclaration@0..3
                 Fn@0..2 "fn"
                 Blankspace@2..3 "\n"
+                Name@3..3
                 FunctionParameters@3..3
                 Error@3..3
               FunctionDeclaration@3..10
                 Fn@3..5 "fn"
                 Blankspace@5..6 " "
-                Identifier@6..10 "name"
+                Name@6..10
+                  Identifier@6..10 "name"
                 FunctionParameters@10..10
                 Error@10..10
 
@@ -434,7 +469,8 @@ fn fn_recover_2() {
               FunctionDeclaration@0..18
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..7 "name"
+                Name@3..7
+                  Identifier@3..7 "name"
                 FunctionParameters@7..9
                   ParenthesisLeft@7..8 "("
                   ParenthesisRight@8..9 ")"
@@ -443,7 +479,8 @@ fn fn_recover_2() {
               FunctionDeclaration@18..30
                 Fn@18..20 "fn"
                 Blankspace@20..21 " "
-                Identifier@21..25 "test"
+                Name@21..25
+                  Identifier@21..25 "test"
                 FunctionParameters@25..27
                   ParenthesisLeft@25..26 "("
                   ParenthesisRight@26..27 ")"
@@ -463,7 +500,8 @@ fn parse_type_primitive() {
         expect![[r#"
             SourceFile@0..3
               TypeSpecifier@0..3
-                Identifier@0..3 "f32""#]],
+                NameReference@0..3
+                  Identifier@0..3 "f32""#]],
     );
 }
 
@@ -474,11 +512,13 @@ fn parse_type_generic() {
         expect![[r#"
             SourceFile@0..9
               TypeSpecifier@0..9
-                Identifier@0..4 "vec3"
+                NameReference@0..4
+                  Identifier@0..4 "vec3"
                 GenericArgumentList@4..9
                   TemplateStart@4..5 "<"
                   IdentExpression@5..8
-                    Identifier@5..8 "f32"
+                    NameReference@5..8
+                      Identifier@5..8 "f32"
                   TemplateEnd@8..9 ">""#]],
     );
 }
@@ -490,15 +530,18 @@ fn parse_type_generic_shift_ambiguity() {
         expect![[r#"
             SourceFile@0..19
               TypeSpecifier@0..19
-                Identifier@0..5 "array"
+                NameReference@0..5
+                  Identifier@0..5 "array"
                 GenericArgumentList@5..19
                   TemplateStart@5..6 "<"
                   IdentExpression@6..18
-                    Identifier@6..10 "vec3"
+                    NameReference@6..10
+                      Identifier@6..10 "vec3"
                     GenericArgumentList@10..18
                       TemplateStart@10..11 "<"
                       IdentExpression@11..14
-                        Identifier@11..14 "f32"
+                        NameReference@11..14
+                          Identifier@11..14 "f32"
                       Comma@14..15 ","
                       Blankspace@15..16 " "
                       Literal@16..17
@@ -515,11 +558,13 @@ fn parse_type_generic_int() {
         expect![[r#"
             SourceFile@0..15
               TypeSpecifier@0..15
-                Identifier@0..5 "array"
+                NameReference@0..5
+                  Identifier@0..5 "array"
                 GenericArgumentList@5..15
                   TemplateStart@5..6 "<"
                   IdentExpression@6..9
-                    Identifier@6..9 "f32"
+                    NameReference@6..9
+                      Identifier@6..9 "f32"
                   Comma@9..10 ","
                   Blankspace@10..11 " "
                   Literal@11..14
@@ -535,7 +580,8 @@ fn parse_type_generic_empty() {
         expect![[r#"
             SourceFile@0..6
               TypeSpecifier@0..6
-                Identifier@0..4 "vec3"
+                NameReference@0..4
+                  Identifier@0..4 "vec3"
                 GenericArgumentList@4..6
                   TemplateStart@4..5 "<"
                   TemplateEnd@5..6 ">"
@@ -551,7 +597,8 @@ fn parse_type_generic_comma_recover() {
         expect![[r#"
             SourceFile@0..7
               TypeSpecifier@0..7
-                Identifier@0..4 "vec3"
+                NameReference@0..4
+                  Identifier@0..4 "vec3"
                 GenericArgumentList@4..7
                   TemplateStart@4..5 "<"
                   Comma@5..6 ","
@@ -569,19 +616,23 @@ fn parse_type_generic_ptr() {
         expect![[r#"
             SourceFile@0..29
               TypeSpecifier@0..29
-                Identifier@0..3 "ptr"
+                NameReference@0..3
+                  Identifier@0..3 "ptr"
                 GenericArgumentList@3..29
                   TemplateStart@3..4 "<"
                   IdentExpression@4..11
-                    Identifier@4..11 "uniform"
+                    NameReference@4..11
+                      Identifier@4..11 "uniform"
                   Comma@11..12 ","
                   Blankspace@12..13 " "
                   IdentExpression@13..16
-                    Identifier@13..16 "f32"
+                    NameReference@13..16
+                      Identifier@13..16 "f32"
                   Comma@16..17 ","
                   Blankspace@17..18 " "
                   IdentExpression@18..28
-                    Identifier@18..28 "read_write"
+                    NameReference@18..28
+                      Identifier@18..28 "read_write"
                   TemplateEnd@28..29 ">""#]],
     );
 }
@@ -597,7 +648,8 @@ fn parse_return_statement() {
               FunctionDeclaration@0..49
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..6 "foo"
+                Name@3..6
+                  Identifier@3..6 "foo"
                 FunctionParameters@6..8
                   ParenthesisLeft@6..7 "("
                   ParenthesisRight@7..8 ")"
@@ -606,7 +658,8 @@ fn parse_return_statement() {
                   Arrow@9..11 "->"
                   Blankspace@11..12 " "
                   TypeSpecifier@12..15
-                    Identifier@12..15 "u32"
+                    NameReference@12..15
+                      Identifier@12..15 "u32"
                 Blankspace@15..16 " "
                 CompoundStatement@16..49
                   BraceLeft@16..17 "{"
@@ -635,7 +688,8 @@ fn parse_let_statement_recover() {
               FunctionDeclaration@0..88
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..6 "foo"
+                Name@3..6
+                  Identifier@3..6 "foo"
                 FunctionParameters@6..8
                   ParenthesisLeft@6..7 "("
                   ParenthesisRight@7..8 ")"
@@ -644,7 +698,8 @@ fn parse_let_statement_recover() {
                   Arrow@9..11 "->"
                   Blankspace@11..12 " "
                   TypeSpecifier@12..15
-                    Identifier@12..15 "u32"
+                    NameReference@12..15
+                      Identifier@12..15 "u32"
                 Blankspace@15..16 " "
                 CompoundStatement@16..88
                   BraceLeft@16..17 "{"
@@ -652,14 +707,16 @@ fn parse_let_statement_recover() {
                   LetDeclaration@30..37
                     Let@30..33 "let"
                     Blankspace@33..34 " "
-                    Identifier@34..35 "x"
+                    Name@34..35
+                      Identifier@34..35 "x"
                     Blankspace@35..36 " "
                     Equal@36..37 "="
                   Blankspace@37..50 "\n            "
                   LetDeclaration@50..57
                     Let@50..53 "let"
                     Blankspace@53..54 " "
-                    Identifier@54..55 "y"
+                    Name@54..55
+                      Identifier@54..55 "y"
                     Blankspace@55..56 " "
                     Equal@56..57 "="
                   Blankspace@57..70 "\n            "
@@ -686,7 +743,8 @@ fn parse_statement_variable_decl() {
               LetDeclaration@0..10
                 Let@0..3 "let"
                 Blankspace@3..4 " "
-                Identifier@4..5 "x"
+                Name@4..5
+                  Identifier@4..5 "x"
                 Blankspace@5..6 " "
                 Equal@6..7 "="
                 Blankspace@7..8 " "
@@ -735,7 +793,8 @@ fn parse_while_statement() {
                   LetDeclaration@14..24
                     Let@14..17 "let"
                     Blankspace@17..18 " "
-                    Identifier@18..19 "x"
+                    Name@18..19
+                      Identifier@18..19 "x"
                     Blankspace@19..20 " "
                     Equal@20..21 "="
                     Blankspace@21..22 " "
@@ -775,7 +834,8 @@ fn parse_if_statement() {
                     LetDeclaration@13..23
                       Let@13..16 "let"
                       Blankspace@16..17 " "
-                      Identifier@17..18 "x"
+                      Name@17..18
+                        Identifier@17..18 "x"
                       Blankspace@18..19 " "
                       Equal@19..20 "="
                       Blankspace@20..21 " "
@@ -787,7 +847,8 @@ fn parse_if_statement() {
                       Return@24..30 "return"
                       Blankspace@30..31 " "
                       IdentExpression@31..32
-                        Identifier@31..32 "x"
+                        NameReference@31..32
+                          Identifier@31..32 "x"
                       Semicolon@32..33 ";"
                     Blankspace@33..34 " "
                     BraceRight@34..35 "}""#]],
@@ -816,7 +877,8 @@ fn parse_if_recover_paren() {
                     LetDeclaration@18..28
                       Let@18..21 "let"
                       Blankspace@21..22 " "
-                      Identifier@22..23 "x"
+                      Name@22..23
+                        Identifier@22..23 "x"
                       Blankspace@23..24 " "
                       Equal@24..25 "="
                       Blankspace@25..26 " "
@@ -851,7 +913,8 @@ fn parse_if_without_paren() {
                     LetDeclaration@20..30
                       Let@20..23 "let"
                       Blankspace@23..24 " "
-                      Identifier@24..25 "x"
+                      Name@24..25
+                        Identifier@24..25 "x"
                       Blankspace@25..26 " "
                       Equal@26..27 "="
                       Blankspace@27..28 " "
@@ -881,7 +944,8 @@ fn parse_if_recover_empty() {
                     LetDeclaration@15..25
                       Let@15..18 "let"
                       Blankspace@18..19 " "
-                      Identifier@19..20 "x"
+                      Name@19..20
+                        Identifier@19..20 "x"
                       Blankspace@20..21 " "
                       Equal@21..22 "="
                       Blankspace@22..23 " "
@@ -1000,7 +1064,8 @@ fn parse_for_statement() {
                   LetDeclaration@4..13
                     Let@4..7 "let"
                     Blankspace@7..8 " "
-                    Identifier@8..9 "i"
+                    Name@8..9
+                      Identifier@8..9 "i"
                     Blankspace@9..10 " "
                     Equal@10..11 "="
                     Blankspace@11..12 " "
@@ -1011,7 +1076,8 @@ fn parse_for_statement() {
                 ForCondition@15..20
                   InfixExpression@15..20
                     IdentExpression@15..16
-                      Identifier@15..16 "i"
+                      NameReference@15..16
+                        Identifier@15..16 "i"
                     Blankspace@16..17 " "
                     LessThan@17..18 "<"
                     Blankspace@18..19 " "
@@ -1022,13 +1088,15 @@ fn parse_for_statement() {
                 ForContinuingPart@22..31
                   AssignmentStatement@22..31
                     IdentExpression@22..23
-                      Identifier@22..23 "i"
+                      NameReference@22..23
+                        Identifier@22..23 "i"
                     Blankspace@23..24 " "
                     Equal@24..25 "="
                     Blankspace@25..26 " "
                     InfixExpression@26..31
                       IdentExpression@26..27
-                        Identifier@26..27 "i"
+                        NameReference@26..27
+                          Identifier@26..27 "i"
                       Blankspace@27..28 " "
                       Plus@28..29 "+"
                       Blankspace@29..30 " "
@@ -1056,7 +1124,8 @@ fn parse_for_statement_comma() {
                   LetDeclaration@4..13
                     Let@4..7 "let"
                     Blankspace@7..8 " "
-                    Identifier@8..9 "i"
+                    Name@8..9
+                      Identifier@8..9 "i"
                     Blankspace@9..10 " "
                     Equal@10..11 "="
                     Blankspace@11..12 " "
@@ -1122,7 +1191,8 @@ fn for_statement_incomplete_2() {
                 ForInitializer@4..7
                   AssignmentStatement@4..7
                     IdentExpression@4..5
-                      Identifier@4..5 "i"
+                      NameReference@4..5
+                        Identifier@4..5 "i"
                     Equal@5..6 "="
                     Literal@6..7
                       IntLiteral@6..7 "0"
@@ -1170,7 +1240,8 @@ fn for_statement_incomplete_4() {
                 ForContinuingPart@6..11
                   AssignmentStatement@6..11
                     IdentExpression@6..7
-                      Identifier@6..7 "a"
+                      NameReference@6..7
+                        Identifier@6..7 "a"
                     Blankspace@7..8 " "
                     Equal@8..9 "="
                     Blankspace@9..10 " "
@@ -1291,7 +1362,8 @@ fn parse_statement_compound() {
                 LetDeclaration@2..12
                   Let@2..5 "let"
                   Blankspace@5..6 " "
-                  Identifier@6..7 "x"
+                  Name@6..7
+                    Identifier@6..7 "x"
                   Blankspace@7..8 " "
                   Equal@8..9 "="
                   Blankspace@9..10 " "
@@ -1303,7 +1375,8 @@ fn parse_statement_compound() {
                   Return@13..19 "return"
                   Blankspace@19..20 " "
                   IdentExpression@20..21
-                    Identifier@20..21 "x"
+                    NameReference@20..21
+                      Identifier@20..21 "x"
                   Semicolon@21..22 ";"
                 Blankspace@22..23 " "
                 BraceRight@23..24 "}""#]],
@@ -1318,7 +1391,8 @@ fn parse_statement_assignment() {
             SourceFile@0..6
               AssignmentStatement@0..6
                 IdentExpression@0..1
-                  Identifier@0..1 "a"
+                  NameReference@0..1
+                    Identifier@0..1 "a"
                 Blankspace@1..2 " "
                 Equal@2..3 "="
                 Blankspace@3..4 " "
@@ -1337,7 +1411,8 @@ fn parse_statement_assignment_field() {
               AssignmentStatement@0..14
                 FieldExpression@0..3
                   IdentExpression@0..1
-                    Identifier@0..1 "a"
+                    NameReference@0..1
+                      Identifier@0..1 "a"
                   Period@1..2 "."
                   Identifier@2..3 "b"
                 Blankspace@3..4 " "
@@ -1346,7 +1421,8 @@ fn parse_statement_assignment_field() {
                 InfixExpression@6..13
                   FieldExpression@6..9
                     IdentExpression@6..7
-                      Identifier@6..7 "a"
+                      NameReference@6..7
+                        Identifier@6..7 "a"
                     Period@7..8 "."
                     Identifier@8..9 "c"
                   Blankspace@9..10 " "
@@ -1367,7 +1443,8 @@ fn parse_statement_assignment_invalid() {
               FunctionDeclaration@0..14
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..4 "a"
+                Name@3..4
+                  Identifier@3..4 "a"
                 FunctionParameters@4..6
                   ParenthesisLeft@4..5 "("
                   ParenthesisRight@5..6 ")"
@@ -1406,7 +1483,8 @@ fn parse_statement_recover() {
                   LetDeclaration@4..11
                     Let@4..7 "let"
                     Blankspace@7..8 " "
-                    Identifier@8..9 "x"
+                    Name@8..9
+                      Identifier@8..9 "x"
                     Blankspace@9..10 " "
                     Equal@10..11 "="
                   Blankspace@11..12 " "
@@ -1438,7 +1516,8 @@ fn parse_compound_assignment_statement() {
             SourceFile@0..7
               CompoundAssignmentStatement@0..7
                 IdentExpression@0..1
-                  Identifier@0..1 "a"
+                  NameReference@0..1
+                    Identifier@0..1 "a"
                 Blankspace@1..2 " "
                 PlusEqual@2..4 "+="
                 Blankspace@4..5 " "
@@ -1458,13 +1537,15 @@ fn parse_compound_assignment_statement_expression() {
                 PrefixExpression@0..2
                   Star@0..1 "*"
                   IdentExpression@1..2
-                    Identifier@1..2 "a"
+                    NameReference@1..2
+                      Identifier@1..2 "a"
                 Blankspace@2..3 " "
                 PlusEqual@3..5 "+="
                 Blankspace@5..6 " "
                 FunctionCall@6..11
                   IdentExpression@6..9
-                    Identifier@6..9 "foo"
+                    NameReference@6..9
+                      Identifier@6..9 "foo"
                   Arguments@9..11
                     ParenthesisLeft@9..10 "("
                     ParenthesisRight@10..11 ")"
@@ -1481,7 +1562,8 @@ fn parse_indexed_statement() {
               CompoundAssignmentStatement@0..13
                 IndexExpression@0..4
                   IdentExpression@0..1
-                    Identifier@0..1 "a"
+                    NameReference@0..1
+                      Identifier@0..1 "a"
                   BracketLeft@1..2 "["
                   Literal@2..3
                     IntLiteral@2..3 "0"
@@ -1491,7 +1573,8 @@ fn parse_indexed_statement() {
                 Blankspace@7..8 " "
                 IndexExpression@8..12
                   IdentExpression@8..9
-                    Identifier@8..9 "a"
+                    NameReference@8..9
+                      Identifier@8..9 "a"
                   BracketLeft@9..10 "["
                   Literal@10..11
                     IntLiteral@10..11 "2"
@@ -1509,11 +1592,13 @@ fn parse_var_without_initializer() {
               VariableDeclaration@0..11
                 Var@0..3 "var"
                 Blankspace@3..4 " "
-                Identifier@4..5 "x"
+                Name@4..5
+                  Identifier@4..5 "x"
                 Colon@5..6 ":"
                 Blankspace@6..7 " "
                 TypeSpecifier@7..10
-                  Identifier@7..10 "u32"
+                  NameReference@7..10
+                    Identifier@7..10 "u32"
                 Semicolon@10..11 ";""#]],
     );
 }
@@ -1529,14 +1614,17 @@ fn parse_var_with_initializer() {
                 GenericArgumentList@3..13
                   TemplateStart@3..4 "<"
                   IdentExpression@4..12
-                    Identifier@4..12 "function"
+                    NameReference@4..12
+                      Identifier@4..12 "function"
                   TemplateEnd@12..13 ">"
                 Blankspace@13..14 " "
-                Identifier@14..15 "x"
+                Name@14..15
+                  Identifier@14..15 "x"
                 Colon@15..16 ":"
                 Blankspace@16..17 " "
                 TypeSpecifier@17..20
-                  Identifier@17..20 "u32"
+                  NameReference@17..20
+                    Identifier@17..20 "u32"
                 Semicolon@20..21 ";""#]],
     );
 }
@@ -1566,7 +1654,8 @@ fn attribute_list_modern() {
                 Arguments@12..18
                   ParenthesisLeft@12..13 "("
                   IdentExpression@13..17
-                    Identifier@13..17 "flat"
+                    NameReference@13..17
+                      Identifier@13..17 "flat"
                   ParenthesisRight@17..18 ")""#]],
     );
     check_attribute(
@@ -1591,7 +1680,8 @@ fn attribute_list_modern() {
                   Comma@15..16 ","
                   Blankspace@16..17 " "
                   IdentExpression@17..22
-                    Identifier@17..22 "ident"
+                    NameReference@17..22
+                      Identifier@17..22 "ident"
                   ParenthesisRight@22..23 ")""#]],
     );
 }
@@ -1605,12 +1695,15 @@ fn fn_recover_incomplete_param() {
               FunctionDeclaration@0..13
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..7 "main"
+                Name@3..7
+                  Identifier@3..7 "main"
                 FunctionParameters@7..10
                   ParenthesisLeft@7..8 "("
                   Parameter@8..9
-                    Identifier@8..9 "p"
+                    Name@8..9
+                      Identifier@8..9 "p"
                     TypeSpecifier@9..9
+                      NameReference@9..9
                   ParenthesisRight@9..10 ")"
                 Blankspace@10..11 " "
                 CompoundStatement@11..13
@@ -1632,7 +1725,8 @@ fn let_statement_recover_return_no_eq() {
               FunctionDeclaration@0..42
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..7 "main"
+                Name@3..7
+                  Identifier@3..7 "main"
                 FunctionParameters@7..9
                   ParenthesisLeft@7..8 "("
                   ParenthesisRight@8..9 ")"
@@ -1643,10 +1737,12 @@ fn let_statement_recover_return_no_eq() {
                   LetDeclaration@24..32
                     Let@24..27 "let"
                     Blankspace@27..28 " "
-                    Identifier@28..29 "x"
+                    Name@28..29
+                      Identifier@28..29 "x"
                     Blankspace@29..30 " "
                     IdentExpression@30..32
-                      Identifier@30..32 "be"
+                      NameReference@30..32
+                        Identifier@30..32 "be"
                   Blankspace@32..41 "\n        "
                   BraceRight@41..42 "}"
 
@@ -1667,7 +1763,8 @@ fn let_statement_recover_return() {
               FunctionDeclaration@0..59
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..7 "main"
+                Name@3..7
+                  Identifier@3..7 "main"
                 FunctionParameters@7..9
                   ParenthesisLeft@7..8 "("
                   ParenthesisRight@8..9 ")"
@@ -1675,9 +1772,10 @@ fn let_statement_recover_return() {
                 CompoundStatement@10..59
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  LetDeclaration@24..27
+                  LetDeclaration@24..40
                     Let@24..27 "let"
-                  Blankspace@27..40 "\n            "
+                    Blankspace@27..40 "\n            "
+                    Name@40..40
                   ReturnStatement@40..49
                     Return@40..46 "return"
                     Blankspace@46..47 " "
@@ -1703,7 +1801,8 @@ fn let_statement_recover_return_2() {
               FunctionDeclaration@0..61
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..7 "main"
+                Name@3..7
+                  Identifier@3..7 "main"
                 FunctionParameters@7..9
                   ParenthesisLeft@7..8 "("
                   ParenthesisRight@8..9 ")"
@@ -1714,7 +1813,8 @@ fn let_statement_recover_return_2() {
                   LetDeclaration@24..29
                     Let@24..27 "let"
                     Blankspace@27..28 " "
-                    Identifier@28..29 "x"
+                    Name@28..29
+                      Identifier@28..29 "x"
                   Blankspace@29..42 "\n            "
                   ReturnStatement@42..51
                     Return@42..48 "return"
@@ -1741,7 +1841,8 @@ fn let_statement_recover_return_3() {
               FunctionDeclaration@0..63
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..7 "main"
+                Name@3..7
+                  Identifier@3..7 "main"
                 FunctionParameters@7..9
                   ParenthesisLeft@7..8 "("
                   ParenthesisRight@8..9 ")"
@@ -1752,7 +1853,8 @@ fn let_statement_recover_return_3() {
                   LetDeclaration@24..31
                     Let@24..27 "let"
                     Blankspace@27..28 " "
-                    Identifier@28..29 "x"
+                    Name@28..29
+                      Identifier@28..29 "x"
                     Blankspace@29..30 " "
                     Equal@30..31 "="
                   Blankspace@31..44 "\n            "
@@ -1780,7 +1882,8 @@ fn let_statement_recover_1() {
               FunctionDeclaration@0..39
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..7 "main"
+                Name@3..7
+                  Identifier@3..7 "main"
                 FunctionParameters@7..9
                   ParenthesisLeft@7..8 "("
                   ParenthesisRight@8..9 ")"
@@ -1791,7 +1894,8 @@ fn let_statement_recover_1() {
                   LetDeclaration@24..29
                     Let@24..27 "let"
                     Blankspace@27..28 " "
-                    Identifier@28..29 "x"
+                    Name@28..29
+                      Identifier@28..29 "x"
                   Blankspace@29..38 "\n        "
                   BraceRight@38..39 "}"
 
@@ -1810,7 +1914,8 @@ fn let_statement_recover_2() {
               FunctionDeclaration@0..41
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..7 "main"
+                Name@3..7
+                  Identifier@3..7 "main"
                 FunctionParameters@7..9
                   ParenthesisLeft@7..8 "("
                   ParenthesisRight@8..9 ")"
@@ -1821,7 +1926,8 @@ fn let_statement_recover_2() {
                   LetDeclaration@24..31
                     Let@24..27 "let"
                     Blankspace@27..28 " "
-                    Identifier@28..29 "x"
+                    Name@28..29
+                      Identifier@28..29 "x"
                     Blankspace@29..30 " "
                     Equal@30..31 "="
                   Blankspace@31..40 "\n        "
@@ -1842,7 +1948,8 @@ fn let_statement_recover_3() {
               FunctionDeclaration@0..37
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
-                Identifier@3..7 "main"
+                Name@3..7
+                  Identifier@3..7 "main"
                 FunctionParameters@7..9
                   ParenthesisLeft@7..8 "("
                   ParenthesisRight@8..9 ")"
@@ -1850,9 +1957,10 @@ fn let_statement_recover_3() {
                 CompoundStatement@10..37
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  LetDeclaration@24..27
+                  LetDeclaration@24..36
                     Let@24..27 "let"
-                  Blankspace@27..36 "\n        "
+                    Blankspace@27..36 "\n        "
+                    Name@36..36
                   BraceRight@36..37 "}"
 
             error at 36..37: invalid syntax, expected: <identifier>"#]],
@@ -1883,7 +1991,8 @@ fn tabs() {
               FunctionDeclaration@4..15
                 Fn@4..6 "fn"
                 Blankspace@6..7 " "
-                Identifier@7..10 "foo"
+                Name@7..10
+                  Identifier@7..10 "foo"
                 FunctionParameters@10..12
                   ParenthesisLeft@10..11 "("
                   ParenthesisRight@11..12 ")"
@@ -1895,7 +2004,8 @@ fn tabs() {
               FunctionDeclaration@28..39
                 Fn@28..30 "fn"
                 Blankspace@30..31 " "
-                Identifier@31..34 "bar"
+                Name@31..34
+                  Identifier@31..34 "bar"
                 FunctionParameters@34..36
                   ParenthesisLeft@34..35 "("
                   ParenthesisRight@35..36 ")"
@@ -1907,7 +2017,8 @@ fn tabs() {
               FunctionDeclaration@43..54
                 Fn@43..45 "fn"
                 Blankspace@45..46 " "
-                Identifier@46..49 "baz"
+                Name@46..49
+                  Identifier@46..49 "baz"
                 FunctionParameters@49..51
                   ParenthesisLeft@49..50 "("
                   ParenthesisRight@50..51 ")"
@@ -1960,32 +2071,39 @@ struct UBO {
               StructDeclaration@1..66
                 Struct@1..7 "struct"
                 Blankspace@7..8 " "
-                Identifier@8..11 "UBO"
+                Name@8..11
+                  Identifier@8..11 "UBO"
                 Blankspace@11..12 " "
                 StructBody@12..66
                   BraceLeft@12..13 "{"
                   Blankspace@13..16 "\n  "
                   StructMember@16..38
-                    Identifier@16..31 "camera_position"
+                    Name@16..31
+                      Identifier@16..31 "camera_position"
                     Colon@31..32 ":"
                     Blankspace@32..33 " "
                     TypeSpecifier@33..38
-                      Identifier@33..38 "vec3f"
+                      NameReference@33..38
+                        Identifier@33..38 "vec3f"
                   Comma@38..39 ","
                   Blankspace@39..42 "\n  "
                   StructMember@42..51
-                    Identifier@42..46 "_pad"
+                    Name@42..46
+                      Identifier@42..46 "_pad"
                     Colon@46..47 ":"
                     Blankspace@47..48 " "
                     TypeSpecifier@48..51
-                      Identifier@48..51 "u32"
+                      NameReference@48..51
+                        Identifier@48..51 "u32"
                   Blankspace@51..54 "\n  "
                   StructMember@54..63
-                    Identifier@54..58 "time"
+                    Name@54..58
+                      Identifier@54..58 "time"
                     Colon@58..59 ":"
                     Blankspace@59..60 " "
                     TypeSpecifier@60..63
-                      Identifier@60..63 "f32"
+                      NameReference@60..63
+                        Identifier@60..63 "f32"
                   Comma@63..64 ","
                   Blankspace@64..65 "\n"
                   BraceRight@65..66 "}"
@@ -2011,29 +2129,35 @@ struct Test {
               StructDeclaration@1..46
                 Struct@1..7 "struct"
                 Blankspace@7..8 " "
-                Identifier@8..12 "Test"
+                Name@8..12
+                  Identifier@8..12 "Test"
                 Blankspace@12..13 " "
                 StructBody@13..46
                   BraceLeft@13..14 "{"
                   Blankspace@14..19 "\n    "
                   StructMember@19..25
-                    Identifier@19..20 "a"
+                    Name@19..20
+                      Identifier@19..20 "a"
                     Colon@20..21 ":"
                     Blankspace@21..22 " "
                     TypeSpecifier@22..25
-                      Identifier@22..25 "f32"
+                      NameReference@22..25
+                        Identifier@22..25 "f32"
                   Semicolon@25..26 ";"
                   Blankspace@26..31 "\n    "
                   StructMember@31..43
-                    Identifier@31..32 "b"
+                    Name@31..32
+                      Identifier@31..32 "b"
                     Colon@32..33 ":"
                     Blankspace@33..34 " "
                     TypeSpecifier@34..43
-                      Identifier@34..38 "vec3"
+                      NameReference@34..38
+                        Identifier@34..38 "vec3"
                       GenericArgumentList@38..43
                         TemplateStart@38..39 "<"
                         IdentExpression@39..42
-                          Identifier@39..42 "f32"
+                          NameReference@39..42
+                            Identifier@39..42 "f32"
                         TemplateEnd@42..43 ">"
                   Error@43..44
                     Semicolon@43..44 ";"
@@ -2061,29 +2185,35 @@ struct Test {
               StructDeclaration@1..46
                 Struct@1..7 "struct"
                 Blankspace@7..8 " "
-                Identifier@8..12 "Test"
+                Name@8..12
+                  Identifier@8..12 "Test"
                 Blankspace@12..13 " "
                 StructBody@13..46
                   BraceLeft@13..14 "{"
                   Blankspace@14..19 "\n    "
                   StructMember@19..25
-                    Identifier@19..20 "a"
+                    Name@19..20
+                      Identifier@19..20 "a"
                     Colon@20..21 ":"
                     Blankspace@21..22 " "
                     TypeSpecifier@22..25
-                      Identifier@22..25 "f32"
+                      NameReference@22..25
+                        Identifier@22..25 "f32"
                   Comma@25..26 ","
                   Blankspace@26..31 "\n    "
                   StructMember@31..43
-                    Identifier@31..32 "b"
+                    Name@31..32
+                      Identifier@31..32 "b"
                     Colon@32..33 ":"
                     Blankspace@33..34 " "
                     TypeSpecifier@34..43
-                      Identifier@34..38 "vec3"
+                      NameReference@34..38
+                        Identifier@34..38 "vec3"
                       GenericArgumentList@38..43
                         TemplateStart@38..39 "<"
                         IdentExpression@39..42
-                          Identifier@39..42 "f32"
+                          NameReference@39..42
+                            Identifier@39..42 "f32"
                         TemplateEnd@42..43 ">"
                   Comma@43..44 ","
                   Blankspace@44..45 "\n"
@@ -2105,11 +2235,13 @@ fn test()
               StructDeclaration@1..8
                 Struct@1..7 "struct"
                 Blankspace@7..8 "\n"
+                Name@8..8
                 Error@8..8
               FunctionDeclaration@8..18
                 Fn@8..10 "fn"
                 Blankspace@10..11 " "
-                Identifier@11..15 "test"
+                Name@11..15
+                  Identifier@11..15 "test"
                 FunctionParameters@15..17
                   ParenthesisLeft@15..16 "("
                   ParenthesisRight@16..17 ")"
@@ -2134,13 +2266,15 @@ fn test()
               StructDeclaration@1..13
                 Struct@1..7 "struct"
                 Blankspace@7..8 " "
-                Identifier@8..12 "test"
+                Name@8..12
+                  Identifier@8..12 "test"
                 Blankspace@12..13 "\n"
                 Error@13..13
               FunctionDeclaration@13..23
                 Fn@13..15 "fn"
                 Blankspace@15..16 " "
-                Identifier@16..20 "test"
+                Name@16..20
+                  Identifier@16..20 "test"
                 FunctionParameters@20..22
                   ParenthesisLeft@20..21 "("
                   ParenthesisRight@21..22 ")"
@@ -2167,18 +2301,22 @@ fn test()
               StructDeclaration@1..15
                 Struct@1..7 "struct"
                 Blankspace@7..8 " "
-                Identifier@8..12 "test"
+                Name@8..12
+                  Identifier@8..12 "test"
                 Blankspace@12..13 " "
                 StructBody@13..15
                   BraceLeft@13..14 "{"
                   StructMember@14..14
+                    Name@14..14
                     TypeSpecifier@14..14
+                      NameReference@14..14
                   BraceRight@14..15 "}"
               Blankspace@15..17 "\n\n"
               FunctionDeclaration@17..27
                 Fn@17..19 "fn"
                 Blankspace@19..20 " "
-                Identifier@20..24 "test"
+                Name@20..24
+                  Identifier@20..24 "test"
                 FunctionParameters@24..26
                   ParenthesisLeft@24..25 "("
                   ParenthesisRight@25..26 ")"
@@ -2203,7 +2341,8 @@ fn global_variable_decl_init() {
               VariableDeclaration@0..14
                 Var@0..3 "var"
                 Blankspace@3..4 " "
-                Identifier@4..9 "flags"
+                Name@4..9
+                  Identifier@4..9 "flags"
                 Blankspace@9..10 " "
                 Equal@10..11 "="
                 Blankspace@11..12 " "
@@ -2222,7 +2361,8 @@ fn global_const_decl() {
               ConstantDeclaration@0..19
                 Constant@0..5 "const"
                 Blankspace@5..6 " "
-                Identifier@6..14 "constant"
+                Name@6..14
+                  Identifier@6..14 "constant"
                 Blankspace@14..15 " "
                 Equal@15..16 "="
                 Blankspace@16..17 " "
@@ -2241,12 +2381,14 @@ fn type_alias_decl() {
               TypeAliasDeclaration@0..18
                 Alias@0..5 "alias"
                 Blankspace@5..6 " "
-                Identifier@6..11 "float"
+                Name@6..11
+                  Identifier@6..11 "float"
                 Blankspace@11..12 " "
                 Equal@12..13 "="
                 Blankspace@13..14 " "
                 TypeSpecifier@14..17
-                  Identifier@14..17 "f32"
+                  NameReference@14..17
+                    Identifier@14..17 "f32"
                 Semicolon@17..18 ";""#]],
     );
 }
@@ -2260,22 +2402,26 @@ fn type_alias_decl_recover() {
               TypeAliasDeclaration@0..17
                 Alias@0..5 "alias"
                 Blankspace@5..6 " "
-                Identifier@6..11 "float"
+                Name@6..11
+                  Identifier@6..11 "float"
                 Blankspace@11..12 " "
                 Equal@12..13 "="
                 Blankspace@13..14 " "
                 TypeSpecifier@14..17
-                  Identifier@14..17 "f32"
+                  NameReference@14..17
+                    Identifier@14..17 "f32"
               Blankspace@17..18 "\n"
               TypeAliasDeclaration@18..36
                 Alias@18..23 "alias"
                 Blankspace@23..24 " "
-                Identifier@24..29 "other"
+                Name@24..29
+                  Identifier@24..29 "other"
                 Blankspace@29..30 " "
                 Equal@30..31 "="
                 Blankspace@31..32 " "
                 TypeSpecifier@32..35
-                  Identifier@32..35 "u32"
+                  NameReference@32..35
+                    Identifier@32..35 "u32"
                 Semicolon@35..36 ";"
 
             error at 18..23: invalid syntax, expected one of: '@', ',', <end of file>, '=', <identifier>, '{', '}', ')', ';', <template start>"#]],
@@ -2291,11 +2437,13 @@ fn parse_statement_expression() {
               FunctionCallStatement@0..11
                 FunctionCall@0..10
                   IdentExpression@0..4
-                    Identifier@0..4 "test"
+                    NameReference@0..4
+                      Identifier@0..4 "test"
                   Arguments@4..10
                     ParenthesisLeft@4..5 "("
                     IdentExpression@5..9
-                      Identifier@5..9 "args"
+                      NameReference@5..9
+                        Identifier@5..9 "args"
                     ParenthesisRight@9..10 ")"
                 Semicolon@10..11 ";""#]],
     );
@@ -2310,16 +2458,19 @@ fn parse_statement_nested_functions() {
               FunctionCallStatement@0..16
                 FunctionCall@0..15
                   IdentExpression@0..4
-                    Identifier@0..4 "test"
+                    NameReference@0..4
+                      Identifier@0..4 "test"
                   Arguments@4..15
                     ParenthesisLeft@4..5 "("
                     FunctionCall@5..14
                       IdentExpression@5..12
-                        Identifier@5..9 "args"
+                        NameReference@5..9
+                          Identifier@5..9 "args"
                         GenericArgumentList@9..12
                           TemplateStart@9..10 "<"
                           IdentExpression@10..11
-                            Identifier@10..11 "a"
+                            NameReference@10..11
+                              Identifier@10..11 "a"
                           TemplateEnd@11..12 ">"
                       Arguments@12..14
                         ParenthesisLeft@12..13 "("
@@ -2367,7 +2518,8 @@ fn empty_return_statement_no_semi() {
                 LetDeclaration@2..12
                   Let@2..5 "let"
                   Blankspace@5..6 " "
-                  Identifier@6..7 "x"
+                  Name@6..7
+                    Identifier@6..7 "x"
                   Blankspace@7..8 " "
                   Equal@8..9 "="
                   Blankspace@9..10 " "
@@ -2379,7 +2531,8 @@ fn empty_return_statement_no_semi() {
                   Return@13..19 "return"
                   Blankspace@19..20 " "
                   IdentExpression@20..21
-                    Identifier@20..21 "x"
+                    NameReference@20..21
+                      Identifier@20..21 "x"
                 Blankspace@21..22 " "
                 BraceRight@22..23 "}"
               Blankspace@23..24 " "
@@ -2405,7 +2558,8 @@ switch i {
                 Switch@1..7 "switch"
                 Blankspace@7..8 " "
                 IdentExpression@8..9
-                  Identifier@8..9 "i"
+                  NameReference@8..9
+                    Identifier@8..9 "i"
                 Blankspace@9..10 " "
                 SwitchBody@10..70
                   BraceLeft@10..11 "{"
@@ -2479,7 +2633,8 @@ switch i {
                 Switch@1..7 "switch"
                 Blankspace@7..8 " "
                 IdentExpression@8..9
-                  Identifier@8..9 "i"
+                  NameReference@8..9
+                    Identifier@8..9 "i"
                 Blankspace@9..10 " "
                 SwitchBody@10..40
                   BraceLeft@10..11 "{"
@@ -2528,7 +2683,8 @@ switch i {
                 Switch@1..7 "switch"
                 Blankspace@7..8 " "
                 IdentExpression@8..9
-                  Identifier@8..9 "i"
+                  NameReference@8..9
+                    Identifier@8..9 "i"
                 Blankspace@9..10 " "
                 SwitchBody@10..20
                   BraceLeft@10..11 "{"
@@ -2561,7 +2717,8 @@ switch i {
                 Switch@1..7 "switch"
                 Blankspace@7..8 " "
                 IdentExpression@8..9
-                  Identifier@8..9 "i"
+                  NameReference@8..9
+                    Identifier@8..9 "i"
                 Blankspace@9..10 " "
                 SwitchBody@10..22
                   BraceLeft@10..11 "{"
@@ -2604,7 +2761,8 @@ let x = 3;
                   Switch@3..9 "switch"
                   Blankspace@9..10 " "
                   IdentExpression@10..11
-                    Identifier@10..11 "i"
+                    NameReference@10..11
+                      Identifier@10..11 "i"
                   Blankspace@11..12 " "
                   SwitchBody@12..25
                     BraceLeft@12..13 "{"
@@ -2624,7 +2782,8 @@ let x = 3;
                 LetDeclaration@27..37
                   Let@27..30 "let"
                   Blankspace@30..31 " "
-                  Identifier@31..32 "x"
+                  Name@31..32
+                    Identifier@31..32 "x"
                   Blankspace@32..33 " "
                   Equal@33..34 "="
                   Blankspace@34..35 " "
@@ -2660,7 +2819,8 @@ let x = 3;
                   Switch@3..9 "switch"
                   Blankspace@9..10 " "
                   IdentExpression@10..11
-                    Identifier@10..11 "i"
+                    NameReference@10..11
+                      Identifier@10..11 "i"
                   Blankspace@11..12 " "
                   SwitchBody@12..28
                     BraceLeft@12..13 "{"
@@ -2686,7 +2846,8 @@ let x = 3;
                 LetDeclaration@29..39
                   Let@29..32 "let"
                   Blankspace@32..33 " "
-                  Identifier@33..34 "x"
+                  Name@33..34
+                    Identifier@33..34 "x"
                   Blankspace@34..35 " "
                   Equal@35..36 "="
                   Blankspace@36..37 " "
@@ -2752,11 +2913,13 @@ fn global_override_statement() {
               OverrideDeclaration@0..22
                 Override@0..8 "override"
                 Blankspace@8..9 " "
-                Identifier@9..12 "foo"
+                Name@9..12
+                  Identifier@9..12 "foo"
                 Colon@12..13 ":"
                 Blankspace@13..14 " "
                 TypeSpecifier@14..17
-                  Identifier@14..17 "u32"
+                  NameReference@14..17
+                    Identifier@14..17 "u32"
                 Blankspace@17..18 " "
                 Equal@18..19 "="
                 Blankspace@19..20 " "
@@ -2802,22 +2965,26 @@ fn expression_in_template() {
               ConstantDeclaration@0..33
                 Constant@0..5 "const"
                 Blankspace@5..6 " "
-                Identifier@6..10 "data"
+                Name@6..10
+                  Identifier@6..10 "data"
                 Blankspace@10..11 " "
                 Equal@11..12 "="
                 Blankspace@12..13 " "
                 FunctionCall@13..32
                   IdentExpression@13..30
-                    Identifier@13..18 "array"
+                    NameReference@13..18
+                      Identifier@13..18 "array"
                     GenericArgumentList@18..30
                       TemplateStart@18..19 "<"
                       IdentExpression@19..22
-                        Identifier@19..22 "u32"
+                        NameReference@19..22
+                          Identifier@19..22 "u32"
                       Comma@22..23 ","
                       Blankspace@23..24 " "
                       FieldExpression@24..29
                         IdentExpression@24..27
-                          Identifier@24..27 "vec"
+                          NameReference@24..27
+                            Identifier@24..27 "vec"
                         Period@27..28 "."
                         Identifier@28..29 "x"
                       TemplateEnd@29..30 ">"

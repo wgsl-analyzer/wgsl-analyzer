@@ -47,20 +47,20 @@ diagnostic_rule_name: Ident ['.' Ident];
 
 global_declaration:
   attribute* @function_declaration (
-    'fn' Ident function_parameters [return_type] compound_statement @function_declaration
+    'fn' name function_parameters [return_type] compound_statement @function_declaration
   | variable_declaration_semi @variable_declaration
   | override_declaration_semi @override_declaration
   )
 | const_declaration_semi @const_declaration
-| 'alias' Ident '=' type_specifier ';' @type_alias_declaration
-| 'struct' Ident struct_body @struct_declaration
+| 'alias' name '=' type_specifier ';' @type_alias_declaration
+| 'struct' name struct_body @struct_declaration
 ;
 function_parameters: '(' [parameter (?1 ',' parameter)* [',']] ')';
-parameter: attribute* Ident ':' type_specifier;
+parameter: attribute* name ':' type_specifier;
 return_type: '->' attribute* type_specifier;
 // Manual error recovery branches for structs
 struct_body: '{' & struct_member (?1 (','| ';'!1 | !1) struct_member)* [','] '}';
-struct_member: attribute* Ident ':' type_specifier;
+struct_member: attribute* name ':' type_specifier;
 
 attribute:
   '@' (
@@ -70,12 +70,14 @@ attribute:
     // builtin is special
   )
 ;
-typed_ident^: Ident [':' type_specifier];
-full_ident^: Ident; // wesl ident
+typed_ident^: name [':' type_specifier];
+name: Ident; // declares an identifier
+name_ref: Ident; // wesl ident goes here
 
-type_specifier: full_ident template_list;
-// exists because a type can appear in an expression, like in `array<  array<f32,1>  ,1>`
-ident_expression: full_ident expr_template_list;
+type_specifier: name_ref template_list;
+// I want to unify this with the type_specifier. But I need a general name.
+// Note that types can appear in expression, like in `array<  array<f32,1>  ,1>`
+ident_expression: name_ref expr_template_list;
 template_list^: [template_args >];
 expr_template_list^: [template_args >template_list];
 template_args^: TemplateStart expression (?1 ',' expression)* [','] TemplateEnd;
@@ -204,5 +206,5 @@ lhs_expression:
 | '*' lhs_expression @unary_expression // §8.14
 | '&' lhs_expression @unary_expression // §8.13
 | '(' lhs_expression ')' @paren_expression // §8.4
-| full_ident @ident_expression
+| name_ref @ident_expression
 ;

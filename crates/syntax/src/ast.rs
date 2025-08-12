@@ -314,6 +314,18 @@ ast_enum! {
 }
 
 ast_node! {
+    Name:
+    ident_token: Option<SyntaxToken Identifier>;
+    text: TokenText<'_>;
+}
+
+ast_node! {
+    NameReference:
+    ident_token: Option<SyntaxToken Identifier>;
+    text: TokenText<'_>;
+}
+
+ast_node! {
     Parameter:
     colon_token: Option<SyntaxToken Colon>;
     ty: Option<TypeSpecifier>;
@@ -407,9 +419,9 @@ ast_token_enum! {
 
 /// Can be an identifier or a type
 ast_node! {
-    IdentExpression
+    IdentExpression:
+    name_ref: Option<NameReference>;
 }
-impl HasName for IdentExpression {}
 impl HasGenerics for IdentExpression {}
 
 ast_node! {
@@ -785,10 +797,9 @@ ast_enum! {
 }
 
 ast_node! {
-    TypeSpecifier
+    TypeSpecifier:
+    name_ref: Option<NameReference>;
 }
-
-impl HasName for TypeSpecifier {}
 impl HasGenerics for TypeSpecifier {}
 
 impl InfixExpression {

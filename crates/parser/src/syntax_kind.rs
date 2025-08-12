@@ -4,6 +4,8 @@ use std::mem;
 #[repr(u16)]
 pub enum SyntaxKind {
     SourceFile,
+    /// A name that can be referenced by a [`NameReference`]
+    Name,
     /// a function
     FunctionDeclaration,
     /// the <a, b, c> of a generic
@@ -94,6 +96,7 @@ pub enum SyntaxKind {
     /// an identifier with an optional template `foo<bar>`
     /// can refer to a type
     IdentExpression,
+    NameReference,
     /// `a\[0\]`
     IndexExpression,
     /// `return foo;`
@@ -132,6 +135,7 @@ pub enum SyntaxKind {
     /// Type alias declaration: `alias float4 = vec4<f32>`
     TypeAliasDeclaration,
 
+    // Tokens
     Blankspace,
     LineEndingComment,
     BlockComment,
@@ -140,8 +144,6 @@ pub enum SyntaxKind {
     FloatLiteral,
     IntLiteral,
     StringLiteral,
-
-    // Tokens
     Alias,
     Break,
     Case,

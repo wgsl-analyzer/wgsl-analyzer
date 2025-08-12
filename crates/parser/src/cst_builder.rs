@@ -94,6 +94,8 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::IndexingExpression => self.start_node(SyntaxKind::IndexExpression),
             Rule::LetDeclaration => self.start_node(SyntaxKind::LetDeclaration),
             Rule::LoopStatement => self.start_node(SyntaxKind::LoopStatement),
+            Rule::Name => self.start_node(SyntaxKind::Name),
+            Rule::NameRef => self.start_node(SyntaxKind::NameReference),
             Rule::OverrideDeclaration => self.start_node(SyntaxKind::OverrideDeclaration),
             Rule::Parameter => self.start_node(SyntaxKind::Parameter),
             Rule::ParenExpression => self.start_node(SyntaxKind::ParenthesisExpression),
@@ -118,7 +120,6 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::ConstDeclarationSemi
             | Rule::CompoundAssignmentOperator
             | Rule::ExprTemplateList
-            | Rule::FullIdent
             | Rule::GlobalItem
             | Rule::IdentOrFunction
             | Rule::LetDeclarationSemi

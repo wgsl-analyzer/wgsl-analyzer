@@ -62,9 +62,10 @@ fn parse_variable_ref() {
     check(
         "counter",
         expect![[r#"
-                SourceFile@0..7
-                  IdentExpression@0..7
-                    Identifier@0..7 "counter""#]],
+            SourceFile@0..7
+              IdentExpression@0..7
+                NameReference@0..7
+                  Identifier@0..7 "counter""#]],
     );
 }
 
@@ -73,11 +74,12 @@ fn parse_variable_ref_no_comment() {
     check(
         "counter // not part of it",
         expect![[r#"
-                SourceFile@0..25
-                  IdentExpression@0..7
-                    Identifier@0..7 "counter"
-                  Blankspace@7..8 " "
-                  LineEndingComment@8..25 "// not part of it""#]],
+            SourceFile@0..25
+              IdentExpression@0..7
+                NameReference@0..7
+                  Identifier@0..7 "counter"
+              Blankspace@7..8 " "
+              LineEndingComment@8..25 "// not part of it""#]],
     );
 }
 
@@ -86,11 +88,12 @@ fn parse_variable_ref_no_comment2() {
     check(
         "counter /* not part of it */",
         expect![[r#"
-                SourceFile@0..28
-                  IdentExpression@0..7
-                    Identifier@0..7 "counter"
-                  Blankspace@7..8 " "
-                  BlockComment@8..28 "/* not part of it */""#]],
+            SourceFile@0..28
+              IdentExpression@0..7
+                NameReference@0..7
+                  Identifier@0..7 "counter"
+              Blankspace@7..8 " "
+              BlockComment@8..28 "/* not part of it */""#]],
     );
 }
 
@@ -284,13 +287,14 @@ fn parse_unclosed_parentheses() {
     check(
         "(foo",
         expect![[r#"
-                SourceFile@0..4
-                  ParenthesisExpression@0..4
-                    ParenthesisLeft@0..1 "("
-                    IdentExpression@1..4
-                      Identifier@1..4 "foo"
+            SourceFile@0..4
+              ParenthesisExpression@0..4
+                ParenthesisLeft@0..1 "("
+                IdentExpression@1..4
+                  NameReference@1..4
+                    Identifier@1..4 "foo"
 
-                error at 4..4: invalid syntax, expected: ')'"#]],
+            error at 4..4: invalid syntax, expected: ')'"#]],
     );
 }
 
@@ -346,15 +350,16 @@ fn parse_expression_field() {
     check(
         "a.b.c",
         expect![[r#"
-                SourceFile@0..5
-                  FieldExpression@0..5
-                    FieldExpression@0..3
-                      IdentExpression@0..1
-                        Identifier@0..1 "a"
-                      Period@1..2 "."
-                      Identifier@2..3 "b"
-                    Period@3..4 "."
-                    Identifier@4..5 "c""#]],
+            SourceFile@0..5
+              FieldExpression@0..5
+                FieldExpression@0..3
+                  IdentExpression@0..1
+                    NameReference@0..1
+                      Identifier@0..1 "a"
+                  Period@1..2 "."
+                  Identifier@2..3 "b"
+                Period@3..4 "."
+                Identifier@4..5 "c""#]],
     );
 }
 
@@ -363,27 +368,29 @@ fn parse_expression_field_mix_ops() {
     check(
         "vec.xy + 2 * other.zw",
         expect![[r#"
-                SourceFile@0..21
-                  InfixExpression@0..21
-                    FieldExpression@0..6
-                      IdentExpression@0..3
-                        Identifier@0..3 "vec"
-                      Period@3..4 "."
-                      Identifier@4..6 "xy"
-                    Blankspace@6..7 " "
-                    Plus@7..8 "+"
-                    Blankspace@8..9 " "
-                    InfixExpression@9..21
-                      Literal@9..10
-                        IntLiteral@9..10 "2"
-                      Blankspace@10..11 " "
-                      Star@11..12 "*"
-                      Blankspace@12..13 " "
-                      FieldExpression@13..21
-                        IdentExpression@13..18
-                          Identifier@13..18 "other"
-                        Period@18..19 "."
-                        Identifier@19..21 "zw""#]],
+            SourceFile@0..21
+              InfixExpression@0..21
+                FieldExpression@0..6
+                  IdentExpression@0..3
+                    NameReference@0..3
+                      Identifier@0..3 "vec"
+                  Period@3..4 "."
+                  Identifier@4..6 "xy"
+                Blankspace@6..7 " "
+                Plus@7..8 "+"
+                Blankspace@8..9 " "
+                InfixExpression@9..21
+                  Literal@9..10
+                    IntLiteral@9..10 "2"
+                  Blankspace@10..11 " "
+                  Star@11..12 "*"
+                  Blankspace@12..13 " "
+                  FieldExpression@13..21
+                    IdentExpression@13..18
+                      NameReference@13..18
+                        Identifier@13..18 "other"
+                    Period@18..19 "."
+                    Identifier@19..21 "zw""#]],
     );
 }
 
@@ -392,19 +399,20 @@ fn parse_expression_function_call() {
     check(
         "pow(2, 3)",
         expect![[r#"
-                SourceFile@0..9
-                  FunctionCall@0..9
-                    IdentExpression@0..3
-                      Identifier@0..3 "pow"
-                    Arguments@3..9
-                      ParenthesisLeft@3..4 "("
-                      Literal@4..5
-                        IntLiteral@4..5 "2"
-                      Comma@5..6 ","
-                      Blankspace@6..7 " "
-                      Literal@7..8
-                        IntLiteral@7..8 "3"
-                      ParenthesisRight@8..9 ")""#]],
+            SourceFile@0..9
+              FunctionCall@0..9
+                IdentExpression@0..3
+                  NameReference@0..3
+                    Identifier@0..3 "pow"
+                Arguments@3..9
+                  ParenthesisLeft@3..4 "("
+                  Literal@4..5
+                    IntLiteral@4..5 "2"
+                  Comma@5..6 ","
+                  Blankspace@6..7 " "
+                  Literal@7..8
+                    IntLiteral@7..8 "3"
+                  ParenthesisRight@8..9 ")""#]],
     );
 }
 
@@ -413,31 +421,33 @@ fn parse_expression_function_call_mixed() {
     check(
         "pow(srgb + 14.0, 3.0) * 2.0",
         expect![[r#"
-                SourceFile@0..27
-                  InfixExpression@0..27
-                    FunctionCall@0..21
-                      IdentExpression@0..3
-                        Identifier@0..3 "pow"
-                      Arguments@3..21
-                        ParenthesisLeft@3..4 "("
-                        InfixExpression@4..15
-                          IdentExpression@4..8
-                            Identifier@4..8 "srgb"
-                          Blankspace@8..9 " "
-                          Plus@9..10 "+"
-                          Blankspace@10..11 " "
-                          Literal@11..15
-                            FloatLiteral@11..15 "14.0"
-                        Comma@15..16 ","
-                        Blankspace@16..17 " "
-                        Literal@17..20
-                          FloatLiteral@17..20 "3.0"
-                        ParenthesisRight@20..21 ")"
-                    Blankspace@21..22 " "
-                    Star@22..23 "*"
-                    Blankspace@23..24 " "
-                    Literal@24..27
-                      FloatLiteral@24..27 "2.0""#]],
+            SourceFile@0..27
+              InfixExpression@0..27
+                FunctionCall@0..21
+                  IdentExpression@0..3
+                    NameReference@0..3
+                      Identifier@0..3 "pow"
+                  Arguments@3..21
+                    ParenthesisLeft@3..4 "("
+                    InfixExpression@4..15
+                      IdentExpression@4..8
+                        NameReference@4..8
+                          Identifier@4..8 "srgb"
+                      Blankspace@8..9 " "
+                      Plus@9..10 "+"
+                      Blankspace@10..11 " "
+                      Literal@11..15
+                        FloatLiteral@11..15 "14.0"
+                    Comma@15..16 ","
+                    Blankspace@16..17 " "
+                    Literal@17..20
+                      FloatLiteral@17..20 "3.0"
+                    ParenthesisRight@20..21 ")"
+                Blankspace@21..22 " "
+                Star@22..23 "*"
+                Blankspace@23..24 " "
+                Literal@24..27
+                  FloatLiteral@24..27 "2.0""#]],
     );
 }
 
@@ -449,11 +459,13 @@ fn parse_vec3_initializer() {
             SourceFile@0..14
               FunctionCall@0..14
                 IdentExpression@0..9
-                  Identifier@0..4 "vec3"
+                  NameReference@0..4
+                    Identifier@0..4 "vec3"
                   GenericArgumentList@4..9
                     TemplateStart@4..5 "<"
                     IdentExpression@5..8
-                      Identifier@5..8 "f32"
+                      NameReference@5..8
+                        Identifier@5..8 "f32"
                     TemplateEnd@8..9 ">"
                 Arguments@9..14
                   ParenthesisLeft@9..10 "("
@@ -468,15 +480,16 @@ fn parse_vec3_initializer_inferred() {
     check(
         "vec3(1.0)",
         expect![[r#"
-                SourceFile@0..9
-                  FunctionCall@0..9
-                    IdentExpression@0..4
-                      Identifier@0..4 "vec3"
-                    Arguments@4..9
-                      ParenthesisLeft@4..5 "("
-                      Literal@5..8
-                        FloatLiteral@5..8 "1.0"
-                      ParenthesisRight@8..9 ")""#]],
+            SourceFile@0..9
+              FunctionCall@0..9
+                IdentExpression@0..4
+                  NameReference@0..4
+                    Identifier@0..4 "vec3"
+                Arguments@4..9
+                  ParenthesisLeft@4..5 "("
+                  Literal@5..8
+                    FloatLiteral@5..8 "1.0"
+                  ParenthesisRight@8..9 ")""#]],
     );
 }
 
@@ -647,21 +660,22 @@ fn parse_index() {
     check(
         "a.b[3+2]",
         expect![[r#"
-                SourceFile@0..8
-                  IndexExpression@0..8
-                    FieldExpression@0..3
-                      IdentExpression@0..1
-                        Identifier@0..1 "a"
-                      Period@1..2 "."
-                      Identifier@2..3 "b"
-                    BracketLeft@3..4 "["
-                    InfixExpression@4..7
-                      Literal@4..5
-                        IntLiteral@4..5 "3"
-                      Plus@5..6 "+"
-                      Literal@6..7
-                        IntLiteral@6..7 "2"
-                    BracketRight@7..8 "]""#]],
+            SourceFile@0..8
+              IndexExpression@0..8
+                FieldExpression@0..3
+                  IdentExpression@0..1
+                    NameReference@0..1
+                      Identifier@0..1 "a"
+                  Period@1..2 "."
+                  Identifier@2..3 "b"
+                BracketLeft@3..4 "["
+                InfixExpression@4..7
+                  Literal@4..5
+                    IntLiteral@4..5 "3"
+                  Plus@5..6 "+"
+                  Literal@6..7
+                    IntLiteral@6..7 "2"
+                BracketRight@7..8 "]""#]],
     );
 }
 
@@ -670,21 +684,22 @@ fn parse_modulo_comparison() {
     check(
         "n % 2u == 0u",
         expect![[r#"
-                SourceFile@0..12
-                  InfixExpression@0..12
-                    InfixExpression@0..6
-                      IdentExpression@0..1
-                        Identifier@0..1 "n"
-                      Blankspace@1..2 " "
-                      Modulo@2..3 "%"
-                      Blankspace@3..4 " "
-                      Literal@4..6
-                        IntLiteral@4..6 "2u"
-                    Blankspace@6..7 " "
-                    EqualEqual@7..9 "=="
-                    Blankspace@9..10 " "
-                    Literal@10..12
-                      IntLiteral@10..12 "0u""#]],
+            SourceFile@0..12
+              InfixExpression@0..12
+                InfixExpression@0..6
+                  IdentExpression@0..1
+                    NameReference@0..1
+                      Identifier@0..1 "n"
+                  Blankspace@1..2 " "
+                  Modulo@2..3 "%"
+                  Blankspace@3..4 " "
+                  Literal@4..6
+                    IntLiteral@4..6 "2u"
+                Blankspace@6..7 " "
+                EqualEqual@7..9 "=="
+                Blankspace@9..10 " "
+                Literal@10..12
+                  IntLiteral@10..12 "0u""#]],
     );
 }
 
@@ -693,17 +708,18 @@ fn prefix_expressions() {
     check(
         "!~*&foo",
         expect![[r#"
-                SourceFile@0..7
-                  PrefixExpression@0..7
-                    Bang@0..1 "!"
-                    PrefixExpression@1..7
-                      Tilde@1..2 "~"
-                      PrefixExpression@2..7
-                        Star@2..3 "*"
-                        PrefixExpression@3..7
-                          And@3..4 "&"
-                          IdentExpression@4..7
-                            Identifier@4..7 "foo""#]],
+            SourceFile@0..7
+              PrefixExpression@0..7
+                Bang@0..1 "!"
+                PrefixExpression@1..7
+                  Tilde@1..2 "~"
+                  PrefixExpression@2..7
+                    Star@2..3 "*"
+                    PrefixExpression@3..7
+                      And@3..4 "&"
+                      IdentExpression@4..7
+                        NameReference@4..7
+                          Identifier@4..7 "foo""#]],
     );
 }
 
@@ -715,16 +731,19 @@ fn bitcast() {
             SourceFile@0..15
               FunctionCall@0..15
                 IdentExpression@0..12
-                  Identifier@0..7 "bitcast"
+                  NameReference@0..7
+                    Identifier@0..7 "bitcast"
                   GenericArgumentList@7..12
                     TemplateStart@7..8 "<"
                     IdentExpression@8..11
-                      Identifier@8..11 "u32"
+                      NameReference@8..11
+                        Identifier@8..11 "u32"
                     TemplateEnd@11..12 ">"
                 Arguments@12..15
                   ParenthesisLeft@12..13 "("
                   IdentExpression@13..14
-                    Identifier@13..14 "x"
+                    NameReference@13..14
+                      Identifier@13..14 "x"
                   ParenthesisRight@14..15 ")""#]],
     );
 }
@@ -737,21 +756,25 @@ fn bitcast_vector() {
             SourceFile@0..21
               FunctionCall@0..21
                 IdentExpression@0..18
-                  Identifier@0..7 "bitcast"
+                  NameReference@0..7
+                    Identifier@0..7 "bitcast"
                   GenericArgumentList@7..18
                     TemplateStart@7..8 "<"
                     IdentExpression@8..17
-                      Identifier@8..12 "vec4"
+                      NameReference@8..12
+                        Identifier@8..12 "vec4"
                       GenericArgumentList@12..17
                         TemplateStart@12..13 "<"
                         IdentExpression@13..16
-                          Identifier@13..16 "u32"
+                          NameReference@13..16
+                            Identifier@13..16 "u32"
                         TemplateEnd@16..17 ">"
                     TemplateEnd@17..18 ">"
                 Arguments@18..21
                   ParenthesisLeft@18..19 "("
                   IdentExpression@19..20
-                    Identifier@19..20 "x"
+                    NameReference@19..20
+                      Identifier@19..20 "x"
                   ParenthesisRight@20..21 ")""#]],
     );
 }
@@ -761,15 +784,17 @@ fn bitcast_no_generics() {
     check(
         "bitcast(x)",
         expect![[r#"
-                SourceFile@0..10
-                  FunctionCall@0..10
-                    IdentExpression@0..7
-                      Identifier@0..7 "bitcast"
-                    Arguments@7..10
-                      ParenthesisLeft@7..8 "("
-                      IdentExpression@8..9
-                        Identifier@8..9 "x"
-                      ParenthesisRight@9..10 ")""#]],
+            SourceFile@0..10
+              FunctionCall@0..10
+                IdentExpression@0..7
+                  NameReference@0..7
+                    Identifier@0..7 "bitcast"
+                Arguments@7..10
+                  ParenthesisLeft@7..8 "("
+                  IdentExpression@8..9
+                    NameReference@8..9
+                      Identifier@8..9 "x"
+                  ParenthesisRight@9..10 ")""#]],
     );
 }
 #[test]
@@ -789,16 +814,19 @@ fn bitcast_in_expression() {
                     Minus@4..5 "-"
                     FunctionCall@5..20
                       IdentExpression@5..17
-                        Identifier@5..12 "bitcast"
+                        NameReference@5..12
+                          Identifier@5..12 "bitcast"
                         GenericArgumentList@12..17
                           TemplateStart@12..13 "<"
                           IdentExpression@13..16
-                            Identifier@13..16 "u32"
+                            NameReference@13..16
+                              Identifier@13..16 "u32"
                           TemplateEnd@16..17 ">"
                       Arguments@17..20
                         ParenthesisLeft@17..18 "("
                         IdentExpression@18..19
-                          Identifier@18..19 "x"
+                          NameReference@18..19
+                            Identifier@18..19 "x"
                         ParenthesisRight@19..20 ")"
                 Blankspace@20..21 " "
                 Plus@21..22 "+"
@@ -813,14 +841,15 @@ fn deref_field() {
     check(
         "*a.b",
         expect![[r#"
-                SourceFile@0..4
-                  PrefixExpression@0..4
-                    Star@0..1 "*"
-                    FieldExpression@1..4
-                      IdentExpression@1..2
-                        Identifier@1..2 "a"
-                      Period@2..3 "."
-                      Identifier@3..4 "b""#]],
+            SourceFile@0..4
+              PrefixExpression@0..4
+                Star@0..1 "*"
+                FieldExpression@1..4
+                  IdentExpression@1..2
+                    NameReference@1..2
+                      Identifier@1..2 "a"
+                  Period@2..3 "."
+                  Identifier@3..4 "b""#]],
     );
 }
 #[test]
@@ -828,17 +857,18 @@ fn deref_field_paren() {
     check(
         "(*a).b",
         expect![[r#"
-                SourceFile@0..6
-                  FieldExpression@0..6
-                    ParenthesisExpression@0..4
-                      ParenthesisLeft@0..1 "("
-                      PrefixExpression@1..3
-                        Star@1..2 "*"
-                        IdentExpression@2..3
-                          Identifier@2..3 "a"
-                      ParenthesisRight@3..4 ")"
-                    Period@4..5 "."
-                    Identifier@5..6 "b""#]],
+            SourceFile@0..6
+              FieldExpression@0..6
+                ParenthesisExpression@0..4
+                  ParenthesisLeft@0..1 "("
+                  PrefixExpression@1..3
+                    Star@1..2 "*"
+                    IdentExpression@2..3
+                      NameReference@2..3
+                        Identifier@2..3 "a"
+                  ParenthesisRight@3..4 ")"
+                Period@4..5 "."
+                Identifier@5..6 "b""#]],
     );
 }
 
