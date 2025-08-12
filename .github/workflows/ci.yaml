@@ -37,7 +37,7 @@ jobs:
       typescript: ${{ steps.filter.outputs.typescript }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Filter by paths
         uses: dorny/paths-filter@v3.0.2
@@ -58,7 +58,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
@@ -100,7 +100,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Rust toolchain
         run: |
@@ -116,7 +116,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Rust toolchain
         run: |
@@ -151,7 +151,7 @@ jobs:
 
   #   steps:
   #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+  #       uses: actions/checkout@v5
 
   #     - name: Install Rust toolchain
   #       run: |
@@ -171,7 +171,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: markdownlint
         uses: DavidAnson/markdownlint-cli2-action@v20
@@ -184,7 +184,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install stable Rust toolchain
         uses: dtolnay/rust-toolchain@1.89.0
@@ -210,7 +210,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check for typos
         uses: crate-ci/typos@v1.35.3
@@ -229,7 +229,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
@@ -261,7 +261,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
@@ -289,7 +289,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Node.js
         uses: actions/setup-node@v4
