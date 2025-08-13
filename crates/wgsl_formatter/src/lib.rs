@@ -279,7 +279,7 @@ fn format_syntax_node(
         SyntaxKind::FunctionCall => {
             let function_call = ast::FunctionCall::cast(syntax)?;
 
-            if let Some(name_ref) = function_call.name_ref() {
+            if let Some(name_ref) = function_call.ident_expression() {
                 remove_if_whitespace(&name_ref.syntax().next_sibling_or_token()?.into_token()?);
             }
 

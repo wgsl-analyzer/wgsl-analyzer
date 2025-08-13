@@ -439,7 +439,7 @@ ast_node! {
 
 ast_node! {
     FunctionCall:
-    name_ref: Option<IdentExpression>;
+    ident_expression: Option<IdentExpression>;
     parameters: Option<Arguments>;
 }
 

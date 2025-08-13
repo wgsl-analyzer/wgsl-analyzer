@@ -132,8 +132,6 @@ impl TypeAliasData {
 pub struct GlobalVariableData {
     pub name: Name,
     pub r#type: Option<Interned<TypeReference>>,
-    pub address_space: Option<AddressSpace>,
-    pub access_mode: Option<AccessMode>,
 }
 
 impl GlobalVariableData {
@@ -148,8 +146,6 @@ impl GlobalVariableData {
         Arc::new(Self {
             name: var.name.clone(),
             r#type: var.r#type,
-            address_space: var.address_space,
-            access_mode: var.access_mode,
         })
     }
 }

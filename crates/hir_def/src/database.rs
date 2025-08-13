@@ -174,17 +174,6 @@ fn ast_id_map(
 #[salsa::query_group(InternDatabaseStorage)]
 pub trait InternDatabase: SourceDatabase {
     #[salsa::interned]
-    fn intern_type_ref(
-        &self,
-        type_reference: TypeReference,
-    ) -> Interned<TypeReference>;
-    #[salsa::interned]
-    fn intern_attribute(
-        &self,
-        attribute: Attribute,
-    ) -> Interned<Attribute>;
-
-    #[salsa::interned]
     fn intern_function(
         &self,
         loc: Location<Function>,
@@ -327,6 +316,8 @@ pub enum DefinitionWithBodyId {
     GlobalVariable(GlobalVariableId),
     GlobalConstant(GlobalConstantId),
     Override(OverrideId),
+    TypeAlias(TypeAliasId),
+    Struct(StructId),
 }
 
 impl DefinitionWithBodyId {
@@ -339,6 +330,8 @@ impl DefinitionWithBodyId {
             Self::GlobalVariable(id) => id.lookup(database).file_id,
             Self::GlobalConstant(id) => id.lookup(database).file_id,
             Self::Override(id) => id.lookup(database).file_id,
+            Self::TypeAlias(id) => id.lookup(database).file_id,
+            Self::Struct(id) => id.lookup(database).file_id,
         }
     }
 

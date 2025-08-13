@@ -70,43 +70,41 @@ impl From<&'_ str> for Name {
 pub struct Function {
     pub name: Name,
     pub parameters: IdxRange<Parameter>,
-    pub return_type: Option<Interned<TypeReference>>,
+    pub return_type: Option<TypeReference>,
     pub ast_id: FileAstId<ast::FunctionDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Parameter {
-    pub r#type: Interned<TypeReference>,
+    pub r#type: TypeReference,
     pub name: Name,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct GlobalVariable {
     pub name: Name,
-    pub r#type: Option<Interned<TypeReference>>,
+    pub r#type: Option<TypeReference>,
     pub ast_id: FileAstId<ast::VariableDeclaration>,
-    pub address_space: Option<AddressSpace>,
-    pub access_mode: Option<AccessMode>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct GlobalConstant {
     pub name: Name,
-    pub r#type: Option<Interned<TypeReference>>,
+    pub r#type: Option<TypeReference>,
     pub ast_id: FileAstId<ast::ConstantDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Override {
     pub name: Name,
-    pub r#type: Option<Interned<TypeReference>>,
+    pub r#type: Option<TypeReference>,
     pub ast_id: FileAstId<ast::OverrideDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TypeAlias {
     pub name: Name,
-    pub r#type: Interned<TypeReference>,
+    pub r#type: TypeReference,
     pub ast_id: FileAstId<ast::TypeAliasDeclaration>,
 }
 
@@ -119,7 +117,7 @@ pub struct Struct {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Field {
-    pub r#type: Interned<TypeReference>,
+    pub r#type: TypeReference,
     pub name: Name,
 }
 

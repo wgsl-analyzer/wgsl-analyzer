@@ -221,6 +221,7 @@ impl Resolver {
                                     *r#override,
                                 )))
                             },
+                            // TODO: Why can't I resolve the other values?
                             ModuleItem::Function(_)
                             | ModuleItem::Struct(_)
                             | ModuleItem::GlobalVariable(_)

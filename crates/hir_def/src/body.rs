@@ -10,6 +10,7 @@ use syntax::{ast, pointer::AstPointer};
 
 use crate::{
     HasSource as _,
+    attributes::Attribute,
     database::{DefDatabase, DefinitionWithBodyId, Lookup as _},
     expression::{Expression, ExpressionId, Statement, StatementId},
     module_data::Name,
@@ -24,6 +25,7 @@ pub struct Binding {
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct Body {
+    pub attributes: Arena<Attribute>,
     pub exprs: Arena<Expression>,
     pub statements: Arena<Statement>,
     pub bindings: Arena<Binding>,

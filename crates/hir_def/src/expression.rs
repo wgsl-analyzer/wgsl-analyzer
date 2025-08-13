@@ -4,7 +4,6 @@ use syntax::ast::{self, IncrementDecrement};
 
 use crate::{
     body::BindingId,
-    database::Interned,
     module_data::Name,
     type_ref::{AccessMode, AddressSpace, TypeReference, VecDimensionality},
 };
@@ -43,7 +42,7 @@ pub enum Callee {
     InferredComponentVec(VecDimensionality),
     InferredComponentArray,
     Name(Name),
-    Type(Interned<TypeReference>),
+    Type(TypeReference),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -84,20 +83,20 @@ pub enum Statement {
     },
     Let {
         binding_id: BindingId,
-        type_ref: Option<Interned<TypeReference>>,
+        type_ref: Option<TypeReference>,
         initializer: Option<ExpressionId>,
     },
     Const {
         binding_id: BindingId,
-        type_ref: Option<Interned<TypeReference>>,
+        type_ref: Option<TypeReference>,
         initializer: Option<ExpressionId>,
     },
     Variable {
         binding_id: BindingId,
-        type_ref: Option<Interned<TypeReference>>,
+        type_ref: Option<TypeReference>,
         initializer: Option<ExpressionId>,
-        address_space: Option<AddressSpace>,
-        access_mode: Option<AccessMode>,
+        address_space: Option<ExpressionId>,
+        access_mode: Option<ExpressionId>,
     },
     Return {
         expression: Option<ExpressionId>,

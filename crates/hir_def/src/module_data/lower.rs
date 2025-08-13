@@ -80,8 +80,6 @@ impl<'database> Ctx<'database> {
             .and_then(|type_declaration| self.lower_type_ref(type_declaration))
             .unwrap_or(TypeReference::Error);
 
-        let r#type = self.database.intern_type_ref(r#type);
-
         let ast_id = self.source_ast_id_map.ast_id(type_alias);
         Some(
             self.module_data
@@ -102,13 +100,10 @@ impl<'database> Ctx<'database> {
         let name = override_declaration.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(override_declaration);
 
-        let r#type = override_declaration
-            .ty()
-            .map(|type_declaration| {
-                self.lower_type_ref(type_declaration)
-                    .unwrap_or(TypeReference::Error)
-            })
-            .map(|r#type| self.database.intern_type_ref(r#type));
+        let r#type = override_declaration.ty().map(|type_declaration| {
+            self.lower_type_ref(type_declaration)
+                .unwrap_or(TypeReference::Error)
+        });
 
         let override_declaration = Override {
             name,
@@ -130,13 +125,10 @@ impl<'database> Ctx<'database> {
         let name = constant.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(constant);
 
-        let r#type = constant
-            .ty()
-            .map(|type_declaration| {
-                self.lower_type_ref(type_declaration)
-                    .unwrap_or(TypeReference::Error)
-            })
-            .map(|r#type| self.database.intern_type_ref(r#type));
+        let r#type = constant.ty().map(|type_declaration| {
+            self.lower_type_ref(type_declaration)
+                .unwrap_or(TypeReference::Error)
+        });
 
         let constant = GlobalConstant {
             name,
@@ -155,24 +147,12 @@ impl<'database> Ctx<'database> {
 
         let r#type = var
             .ty()
-            .and_then(|type_declaration| self.lower_type_ref(type_declaration))
-            .map(|r#type| self.database.intern_type_ref(r#type));
-
-        let address_space = var
-            .variable_qualifier()
-            .and_then(syntax::ast::VariableQualifier::address_space)
-            .map(Into::into);
-        let access_mode = var
-            .variable_qualifier()
-            .and_then(|qualifier| qualifier.access_mode())
-            .map(Into::into);
+            .and_then(|type_declaration| self.lower_type_ref(type_declaration));
 
         let var = GlobalVariable {
             name,
             r#type,
             ast_id,
-            address_space,
-            access_mode,
         };
         Some(self.module_data.global_variables.alloc(var).into())
     }
@@ -193,7 +173,6 @@ impl<'database> Ctx<'database> {
                 let r#type = self
                     .lower_type_ref(field.ty()?)
                     .unwrap_or(TypeReference::Error);
-                let r#type = self.database.intern_type_ref(r#type);
                 self.module_data.fields.alloc(Field { r#type, name });
                 Some(())
             })
@@ -224,8 +203,7 @@ impl<'database> Ctx<'database> {
         let return_type = function
             .return_type()
             .and_then(|r#type| r#type.ty())
-            .map(|r#type| self.lower_type_ref(r#type).unwrap_or(TypeReference::Error))
-            .map(|r#type| self.database.intern_type_ref(r#type));
+            .map(|r#type| self.lower_type_ref(r#type).unwrap_or(TypeReference::Error));
 
         let function = Function {
             name,
@@ -246,7 +224,6 @@ impl<'database> Ctx<'database> {
                 .ty()
                 .and_then(|r#type| self.lower_type_ref(r#type))
                 .unwrap_or(TypeReference::Error);
-            let r#type = self.database.intern_type_ref(r#type);
             let name = parameter.name().map_or_else(Name::missing, Name::from);
             self.module_data
                 .parameters

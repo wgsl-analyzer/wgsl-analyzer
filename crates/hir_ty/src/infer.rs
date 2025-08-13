@@ -350,7 +350,9 @@ impl<'database> InferenceContext<'database> {
             },
             DefinitionWithBodyId::GlobalVariable(_)
             | DefinitionWithBodyId::GlobalConstant(_)
-            | DefinitionWithBodyId::Override(_) => resolver,
+            | DefinitionWithBodyId::Override(_)
+            | DefinitionWithBodyId::Struct(_)
+            | DefinitionWithBodyId::TypeAlias(_) => resolver,
         }
     }
 

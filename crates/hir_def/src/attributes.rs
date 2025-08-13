@@ -1,6 +1,7 @@
 use std::{iter, sync::Arc};
 
 use either::Either;
+use la_arena::Arena;
 use syntax::{
     HasAttributes, HasName as _,
     ast::{self},
@@ -10,42 +11,37 @@ use crate::{
     HasSource as _,
     data::FieldId,
     database::{DefDatabase, FunctionId, GlobalVariableId, Interned, Lookup as _, StructId},
-    expression::{ExpressionId, Literal, parse_literal},
+    expression::{Expression, ExpressionId, Literal, parse_literal},
     module_data::Name,
 };
 
 // TODO: Properly model the attributes (not all of them have expressions)
-// e.g `builtin(position)`, `block`
-#[derive(PartialEq, Eq, Clone, Debug, Hash)]
+// e.g `@builtin(position)`, `@compute`
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Attribute {
     pub name: Name,
     pub parameters: Vec<ExpressionId>,
 }
 
-// e.g. [[group(0), location(0)]]
-#[derive(PartialEq, Eq, Clone, Debug, Hash)]
+// e.g. @group(0) @location(0)
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct AttributeList {
-    pub attributes: Vec<Interned<Attribute>>,
+    pub attributes: Vec<Attribute>,
 }
 
 impl AttributeList {
     pub fn has(
         &self,
-        database: &dyn DefDatabase,
         name: &str,
     ) -> bool {
-        self.attributes.iter().any(|attribute| {
-            let attribute = database.lookup_intern_attribute(*attribute);
-            attribute.name.as_str() == name
-        })
+        self.attributes
+            .iter()
+            .any(|attribute| attribute.name.as_str() == name)
     }
 }
 
 impl AttributeList {
-    pub fn from_src(
-        database: &dyn DefDatabase,
-        source: &dyn HasAttributes,
-    ) -> Self {
+    pub fn from_src(source: &dyn HasAttributes) -> Self {
         let attrs = source
             .attributes()
             .map(|attribute| Attribute {
@@ -54,20 +50,10 @@ impl AttributeList {
                     .map_or_else(Name::missing, |attribute| Name::from(attribute.text())),
                 parameters: attribute
                     .parameters()
-                    .map(|parameter| {
-                        parameter.arguments().map(|value| match value {
-                            IdentOrLiteral::Identifier(identifier) => {
-                                AttributeValue::Name(Name::from(identifier))
-                            },
-                            IdentOrLiteral::Literal(literal) => {
-                                AttributeValue::Literal(parse_literal(literal.kind()))
-                            },
-                        })
-                    })
+                    .map(|parameter| parameter.arguments().map(|v| v))
                     .map_or_else(|| Either::Left(iter::empty()), Either::Right)
                     .collect(),
             })
-            .map(|attribute| database.intern_attribute(attribute))
             .collect();
 
         Self { attributes: attrs }
@@ -88,9 +74,10 @@ pub enum AttributeDefId {
     GlobalVariable(GlobalVariableId),
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct AttributesWithOwner {
     pub attribute_list: AttributeList,
+    pub exprs: Arena<Expression>,
     pub owner: AttributeDefId,
 }
 
@@ -101,7 +88,7 @@ impl AttributesWithOwner {
     ) -> Arc<Self> {
         let attrs = match definition {
             AttributeDefId::Struct(id) => {
-                AttributeList::from_src(database, &id.lookup(database).source(database).value)
+                AttributeList::from_src(&id.lookup(database).source(database).value)
             },
             AttributeDefId::Field(id) => {
                 let location = id.r#struct.lookup(database).source(database);
@@ -120,20 +107,21 @@ impl AttributesWithOwner {
                     (name.text().as_str() == field_name).then_some(field)
                 });
                 attrs.map_or_else(AttributeList::empty, |field| {
-                    AttributeList::from_src(database, &field)
+                    AttributeList::from_src(&field)
                 })
             },
             AttributeDefId::Function(id) => {
-                AttributeList::from_src(database, &id.lookup(database).source(database).value)
+                AttributeList::from_src(&id.lookup(database).source(database).value)
             },
             AttributeDefId::GlobalVariable(id) => {
-                AttributeList::from_src(database, &id.lookup(database).source(database).value)
+                AttributeList::from_src(&id.lookup(database).source(database).value)
             },
         };
 
         Arc::new(Self {
             attribute_list: attrs,
             owner: definition,
+            exprs: Default::default(),
         })
     }
 }

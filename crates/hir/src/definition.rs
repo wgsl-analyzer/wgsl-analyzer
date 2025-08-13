@@ -68,7 +68,7 @@ fn resolve_name_ref(
     } else if let Some(expression) = ast::FunctionCall::cast(parent.clone()) {
         let resolver = semantics.resolver(file_id, expression.syntax());
 
-        match resolver.resolve_callable(&expression.name_ref()?.into())? {
+        match resolver.resolve_callable(&expression.ident_expression()?.into())? {
             ResolveCallable::Struct(loc) => {
                 let id = semantics.database.intern_struct(loc);
                 Some(Definition::Struct(Struct { id }))

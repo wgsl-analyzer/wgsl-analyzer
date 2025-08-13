@@ -193,45 +193,65 @@ impl Collector<'_> {
         statement: &ast::Statement,
     ) -> Option<StatementId> {
         let hir_statement = match &statement {
-            ast::Statement::VariableStatement(variable_statement) => {
-                let binding_id = self.collect_name_opt(variable_statement.binding());
+            ast::Statement::VariableDeclaration(variable_statement) => {
+                let binding_id = self.collect_name_opt(variable_statement.name());
                 let initializer = variable_statement
-                    .initializer()
+                    .init()
                     .map(|expression| self.collect_expression(expression));
                 let type_ref = variable_statement
                     .ty()
-                    .and_then(|typo| TypeReference::try_from(typo).ok())
-                    .map(|type_ref| self.database.intern_type_ref(type_ref));
+                    .and_then(|typo| TypeReference::try_from(typo).ok());
 
-                match variable_statement.kind()? {
-                    ast::VariableStatementKind::Let => Statement::Let {
-                        binding_id,
-                        type_ref,
-                        initializer,
-                    },
-                    ast::VariableStatementKind::Constant => Statement::Const {
-                        binding_id,
-                        type_ref,
-                        initializer,
-                    },
-                    ast::VariableStatementKind::Var => {
-                        let address_space = variable_statement
-                            .variable_qualifier()
-                            .and_then(syntax::ast::VariableQualifier::address_space)
-                            .map(Into::into);
-                        let access_mode = variable_statement
-                            .variable_qualifier()
-                            .and_then(|qualifier| qualifier.access_mode())
-                            .map(Into::into);
+                let (address_space, access_mode) = variable_statement
+                    .generic_arg_list()
+                    .map(|v| v.generics())
+                    .map(|v| {
+                        (
+                            v.next()
+                                .map(|expression| self.collect_expression(expression)),
+                            v.next()
+                                .map(|expression| self.collect_expression(expression)),
+                        )
+                    })
+                    .unwrap_or_default();
 
-                        Statement::Variable {
-                            binding_id,
-                            type_ref,
-                            initializer,
-                            address_space,
-                            access_mode,
-                        }
-                    },
+                Statement::Variable {
+                    binding_id,
+                    type_ref,
+                    initializer,
+                    address_space,
+                    access_mode,
+                }
+            },
+            ast::Statement::ConstantDeclaration(variable_statement) => {
+                let binding_id = self.collect_name_opt(variable_statement.name());
+                let initializer = variable_statement
+                    .init()
+                    .map(|expression| self.collect_expression(expression));
+                let type_ref = variable_statement
+                    .ty()
+                    .and_then(|typo| TypeReference::try_from(typo).ok());
+
+                Statement::Const {
+                    binding_id,
+                    type_ref,
+                    initializer,
+                }
+            },
+
+            ast::Statement::LetDeclaration(variable_statement) => {
+                let binding_id = self.collect_name_opt(variable_statement.name());
+                let initializer = variable_statement
+                    .init()
+                    .map(|expression| self.collect_expression(expression));
+                let type_ref = variable_statement
+                    .ty()
+                    .and_then(|typo| TypeReference::try_from(typo).ok());
+
+                Statement::Let {
+                    binding_id,
+                    type_ref,
+                    initializer,
                 }
             },
             ast::Statement::CompoundStatement(compound_statement) => {
@@ -408,7 +428,9 @@ impl Collector<'_> {
             },
             ast::Expression::FieldExpression(field) => {
                 let expression = self.collect_expression_opt(field.expression());
-                let name = field.field().map_or_else(Name::missing, Name::from);
+                let name = field
+                    .field()
+                    .map_or_else(Name::missing, |field| Name::from(field.text()));
 
                 Expression::Field { expression, name }
             },
@@ -420,7 +442,10 @@ impl Collector<'_> {
                     .map(|expression| self.collect_expression(expression))
                     .collect();
 
-                let name = call.name_ref().map_or_else(Name::missing, Name::from);
+                let name = call
+                    .ident_expression()
+                    .and_then(|v| v.name_ref())
+                    .map_or_else(Name::missing, Name::from);
 
                 Expression::Call {
                     callee: Callee::Name(name),
@@ -465,7 +490,6 @@ impl Collector<'_> {
                         other => {
                             let r#type =
                                 TypeReference::try_from(other).unwrap_or(TypeReference::Error);
-                            let r#type = self.database.intern_type_ref(r#type);
                             Callee::Type(r#type)
                         },
                     };
@@ -532,7 +556,7 @@ impl Collector<'_> {
     fn make_binding(
         &mut self,
         binding: Binding,
-        source: Result<AstPointer<ast::Binding>, SyntheticSyntax>,
+        source: Result<AstPointer<ast::Name>, SyntheticSyntax>,
     ) -> BindingId {
         let id = self.body.bindings.alloc(binding);
         self.source_map.binding_map_back.insert(id, source);

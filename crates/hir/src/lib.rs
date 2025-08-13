@@ -71,6 +71,9 @@ impl<'database> Semantics<'database> {
                     ast::Function(function) => self.function_to_def(&InFile::new(file_id, function)).map(DefinitionWithBodyId::Function),
                     ast::VariableDeclaration(var) => self.global_variable_to_def(&InFile::new(file_id, var)).map(DefinitionWithBodyId::GlobalVariable),
                     ast::ConstantDeclaration(constant) => self.global_constant_to_def(&InFile::new(file_id, constant)).map(DefinitionWithBodyId::GlobalConstant),
+                    ast::OverrideDeclaration(item) => self.global_override_to_def(&InFile::new(file_id, item)).map(DefinitionWithBodyId::Override),
+                    ast::TypeAliasDeclaration(item) => self.global_type_alias_to_def(&InFile::new(file_id, item)).map(DefinitionWithBodyId::TypeAlias),
+                    ast::StructDeclaration(item) => self.global_struct_to_def(&InFile::new(file_id, item)).map(DefinitionWithBodyId::Struct),
                     _ => None,
                 }
             }
@@ -176,6 +179,39 @@ impl<'database> Semantics<'database> {
         let id = self
             .database
             .intern_global_variable(Location::new(source.file_id, global_variable));
+        Some(id)
+    }
+
+    fn global_override_to_def(
+        &self,
+        source: &InFile<ast::OverrideDeclaration>,
+    ) -> Option<OverrideId> {
+        let item = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let id = self
+            .database
+            .intern_override(Location::new(source.file_id, item));
+        Some(id)
+    }
+
+    fn global_type_alias_to_def(
+        &self,
+        source: &InFile<ast::TypeAliasDeclaration>,
+    ) -> Option<TypeAliasId> {
+        let item = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let id = self
+            .database
+            .intern_type_alias(Location::new(source.file_id, item));
+        Some(id)
+    }
+
+    fn global_struct_to_def(
+        &self,
+        source: &InFile<ast::StructDeclaration>,
+    ) -> Option<StructId> {
+        let item = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let id = self
+            .database
+            .intern_struct(Location::new(source.file_id, item));
         Some(id)
     }
 }
@@ -509,7 +545,12 @@ impl ModuleDef {
             Self::Override(override_declaration) => {
                 Some(DefinitionWithBodyId::Override(override_declaration.id))
             },
-            Self::Struct(_) | Self::TypeAlias(_) => None,
+            Self::Struct(override_declaration) => {
+                Some(DefinitionWithBodyId::Struct(override_declaration.id))
+            },
+            Self::TypeAlias(type_alias_declaration) => {
+                Some(DefinitionWithBodyId::TypeAlias(type_alias_declaration.id))
+            },
         }
     }
 }
