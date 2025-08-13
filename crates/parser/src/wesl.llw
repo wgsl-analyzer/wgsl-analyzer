@@ -20,14 +20,10 @@ skip Blankspace LineEndingComment BlockComment;
 start translation_unit;
 
 // Helpers for unit tests
-start start_expression;
-start_expression: expression;
-start start_statement;
-start_statement: statement;
-start start_type_specifier;
-start_type_specifier: type_specifier;
-start start_attribute;
-start_attribute: attribute;
+part attribute;
+part expression;
+part statement;
+part type_specifier;
 
 
 

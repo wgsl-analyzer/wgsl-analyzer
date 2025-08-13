@@ -138,11 +138,7 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             | Rule::VariableUpdating => {
                 panic!("{:?} should always be a more specific node", rule)
             },
-            // Custom parsing entrypoints. The extra "SourceFile" exists so that parsing errors are definitely caught in the root node
-            Rule::StartAttribute => self.start_node(SyntaxKind::SourceFile),
-            Rule::StartExpression => self.start_node(SyntaxKind::SourceFile),
-            Rule::StartStatement => self.start_node(SyntaxKind::SourceFile),
-            Rule::StartTypeSpecifier => self.start_node(SyntaxKind::SourceFile),
+            Rule::Part => self.start_node(SyntaxKind::SourceFile),
         }
     }
 
@@ -166,7 +162,14 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
         token: Token,
         index: CstIndex,
     ) {
-        if token == Token::EOF {
+        if matches!(
+            token,
+            Token::EOF
+                | Token::EOFAttribute
+                | Token::EOFExpression
+                | Token::EOFStatement
+                | Token::EOFTypeSpecifier
+        ) {
             return; // Ignore
         }
         let text = &self.cst.get_text(index);
@@ -181,7 +184,11 @@ impl TryFrom<Token> for SyntaxKind {
 
     fn try_from(value: Token) -> Result<Self, ()> {
         let output = match value {
-            Token::EOF => return Err(()),
+            Token::EOF
+            | Token::EOFAttribute
+            | Token::EOFExpression
+            | Token::EOFStatement
+            | Token::EOFTypeSpecifier => return Err(()),
             Token::Enable => SyntaxKind::Enable,
             Token::Requires => todo!(),
             Token::Fn => SyntaxKind::Fn,

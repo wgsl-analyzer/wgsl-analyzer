@@ -8,6 +8,10 @@ use logos::Logos;
 #[repr(u16)]
 pub enum Token {
     EOF,
+    EOFAttribute,
+    EOFExpression,
+    EOFStatement,
+    EOFTypeSpecifier,
     #[token("enable")]
     Enable,
     #[token("requires")]

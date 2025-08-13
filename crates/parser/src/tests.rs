@@ -755,6 +755,27 @@ fn parse_statement_variable_decl() {
 }
 
 #[test]
+fn parse_not_statement() {
+    check_statement(
+        "   let a = 3;",
+        expect![[r#"
+            SourceFile@0..13
+              Blankspace@0..3 "   "
+              LetDeclaration@3..13
+                Let@3..6 "let"
+                Blankspace@6..7 " "
+                Name@7..8
+                  Identifier@7..8 "a"
+                Blankspace@8..9 " "
+                Equal@9..10 "="
+                Blankspace@10..11 " "
+                Literal@11..12
+                  IntLiteral@11..12 "3"
+                Semicolon@12..13 ";""#]],
+    );
+}
+
+#[test]
 fn parse_statement_return() {
     check_statement(
         "return 0;",
@@ -1112,12 +1133,11 @@ fn parse_for_statement() {
 
 #[test]
 fn parse_for_statement_comma() {
-    // TODO: I think this test is no longer useful
     check_statement(
         "for(let i = 0, i < 3, i = i + 1) {}",
         expect![[r#"
             SourceFile@0..35
-              ForStatement@0..14
+              ForStatement@0..35
                 For@0..3 "for"
                 ParenthesisLeft@3..4 "("
                 ForInitializer@4..13
@@ -1132,32 +1152,46 @@ fn parse_for_statement_comma() {
                     Literal@12..13
                       IntLiteral@12..13 "0"
                 Error@13..14
-                  Error@13..14
-                    Comma@13..14 ","
-              Blankspace@14..15 " "
-              Error@15..35
-                Identifier@15..16 "i"
-                Blankspace@16..17 " "
-                LessThan@17..18 "<"
-                Blankspace@18..19 " "
-                IntLiteral@19..20 "3"
-                Comma@20..21 ","
+                  Comma@13..14 ","
+                Blankspace@14..15 " "
+                ForCondition@15..20
+                  InfixExpression@15..20
+                    IdentExpression@15..16
+                      NameReference@15..16
+                        Identifier@15..16 "i"
+                    Blankspace@16..17 " "
+                    LessThan@17..18 "<"
+                    Blankspace@18..19 " "
+                    Literal@19..20
+                      IntLiteral@19..20 "3"
+                Error@20..21
+                  Comma@20..21 ","
                 Blankspace@21..22 " "
-                Identifier@22..23 "i"
-                Blankspace@23..24 " "
-                Equal@24..25 "="
-                Blankspace@25..26 " "
-                Identifier@26..27 "i"
-                Blankspace@27..28 " "
-                Plus@28..29 "+"
-                Blankspace@29..30 " "
-                IntLiteral@30..31 "1"
+                ForContinuingPart@22..31
+                  AssignmentStatement@22..31
+                    IdentExpression@22..23
+                      NameReference@22..23
+                        Identifier@22..23 "i"
+                    Blankspace@23..24 " "
+                    Equal@24..25 "="
+                    Blankspace@25..26 " "
+                    InfixExpression@26..31
+                      IdentExpression@26..27
+                        NameReference@26..27
+                          Identifier@26..27 "i"
+                      Blankspace@27..28 " "
+                      Plus@28..29 "+"
+                      Blankspace@29..30 " "
+                      Literal@30..31
+                        IntLiteral@30..31 "1"
                 ParenthesisRight@31..32 ")"
                 Blankspace@32..33 " "
-                BraceLeft@33..34 "{"
-                BraceRight@34..35 "}"
+                CompoundStatement@33..35
+                  BraceLeft@33..34 "{"
+                  BraceRight@34..35 "}"
 
-            error at 13..14: invalid syntax, expected: ';'"#]],
+            error at 13..14: invalid syntax, expected: ';'
+            error at 20..21: invalid syntax, expected: ';'"#]],
     );
 }
 
@@ -1175,7 +1209,7 @@ fn for_statement_incomplete_1() {
                 ParenthesisRight@6..7 ")"
                 Error@7..7
 
-            error at 7..7: invalid syntax, expected: '{'"#]],
+            error at 7..7: invalid syntax, expected one of: '@', '{'"#]],
     );
 }
 
@@ -1201,7 +1235,7 @@ fn for_statement_incomplete_2() {
                 ParenthesisRight@9..10 ")"
                 Error@10..10
 
-            error at 10..10: invalid syntax, expected: '{'"#]],
+            error at 10..10: invalid syntax, expected one of: '@', '{'"#]],
     );
 }
 
@@ -1222,7 +1256,7 @@ fn for_statement_incomplete_3() {
                 ParenthesisRight@11..12 ")"
                 Error@12..12
 
-            error at 12..12: invalid syntax, expected: '{'"#]],
+            error at 12..12: invalid syntax, expected one of: '@', '{'"#]],
     );
 }
 
@@ -1250,7 +1284,7 @@ fn for_statement_incomplete_4() {
                 ParenthesisRight@11..12 ")"
                 Error@12..12
 
-            error at 12..12: invalid syntax, expected: '{'"#]],
+            error at 12..12: invalid syntax, expected one of: '@', '{'"#]],
     );
 }
 
@@ -1450,15 +1484,11 @@ fn parse_statement_assignment_invalid() {
                   ParenthesisRight@5..6 ")"
                 CompoundStatement@6..14
                   BraceLeft@6..7 "{"
-                  Error@7..8
+                  Error@7..12
                     IntLiteral@7..8 "1"
-                  Error@8..9
                     Plus@8..9 "+"
-                  Error@9..10
                     IntLiteral@9..10 "2"
-                  Error@10..11
                     Equal@10..11 "="
-                  Error@11..12
                     IntLiteral@11..12 "3"
                   EmptyStatement@12..13
                     Semicolon@12..13 ";"
@@ -1734,20 +1764,19 @@ fn let_statement_recover_return_no_eq() {
                 CompoundStatement@10..42
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  LetDeclaration@24..32
+                  LetDeclaration@24..42
                     Let@24..27 "let"
                     Blankspace@27..28 " "
                     Name@28..29
                       Identifier@28..29 "x"
                     Blankspace@29..30 " "
-                    IdentExpression@30..32
-                      NameReference@30..32
-                        Identifier@30..32 "be"
-                  Blankspace@32..41 "\n        "
-                  BraceRight@41..42 "}"
+                    Error@30..42
+                      Identifier@30..32 "be"
+                      Blankspace@32..41 "\n        "
+                      BraceRight@41..42 "}"
 
             error at 30..32: invalid syntax, expected one of: ':', '=', ';'
-            error at 41..42: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', <end of file>, '==', '!=', '>', '>=', '{', '[', '(', '<', '<=', '-', '%', '|', '||', '+', ']', ')', ';', '<<', '>>', '/', '*', <template end>, <template start>"#]],
+            error at 42..42: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
     );
 }
 
@@ -1772,20 +1801,20 @@ fn let_statement_recover_return() {
                 CompoundStatement@10..59
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  LetDeclaration@24..40
+                  LetDeclaration@24..49
                     Let@24..27 "let"
                     Blankspace@27..40 "\n            "
                     Name@40..40
-                  ReturnStatement@40..49
-                    Return@40..46 "return"
-                    Blankspace@46..47 " "
-                    Literal@47..48
+                    Error@40..48
+                      Return@40..46 "return"
+                      Blankspace@46..47 " "
                       IntLiteral@47..48 "0"
                     Semicolon@48..49 ";"
                   Blankspace@49..58 "\n        "
                   BraceRight@58..59 "}"
 
-            error at 40..46: invalid syntax, expected: <identifier>"#]],
+            error at 40..46: invalid syntax, expected: <identifier>
+            error at 48..49: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
     );
 }
 
@@ -1810,22 +1839,22 @@ fn let_statement_recover_return_2() {
                 CompoundStatement@10..61
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  LetDeclaration@24..29
+                  LetDeclaration@24..51
                     Let@24..27 "let"
                     Blankspace@27..28 " "
                     Name@28..29
                       Identifier@28..29 "x"
-                  Blankspace@29..42 "\n            "
-                  ReturnStatement@42..51
-                    Return@42..48 "return"
-                    Blankspace@48..49 " "
-                    Literal@49..50
+                    Blankspace@29..42 "\n            "
+                    Error@42..50
+                      Return@42..48 "return"
+                      Blankspace@48..49 " "
                       IntLiteral@49..50 "0"
                     Semicolon@50..51 ";"
                   Blankspace@51..60 "\n        "
                   BraceRight@60..61 "}"
 
-            error at 42..48: invalid syntax, expected one of: ':', '=', ';'"#]],
+            error at 42..48: invalid syntax, expected one of: ':', '=', ';'
+            error at 50..51: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
     );
 }
 
@@ -1891,15 +1920,17 @@ fn let_statement_recover_1() {
                 CompoundStatement@10..39
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  LetDeclaration@24..29
+                  LetDeclaration@24..39
                     Let@24..27 "let"
                     Blankspace@27..28 " "
                     Name@28..29
                       Identifier@28..29 "x"
-                  Blankspace@29..38 "\n        "
-                  BraceRight@38..39 "}"
+                    Blankspace@29..38 "\n        "
+                    Error@38..39
+                      BraceRight@38..39 "}"
 
-            error at 38..39: invalid syntax, expected one of: ':', '=', ';'"#]],
+            error at 38..39: invalid syntax, expected one of: ':', '=', ';'
+            error at 39..39: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
     );
 }
 
@@ -1957,13 +1988,15 @@ fn let_statement_recover_3() {
                 CompoundStatement@10..37
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  LetDeclaration@24..36
+                  LetDeclaration@24..37
                     Let@24..27 "let"
                     Blankspace@27..36 "\n        "
                     Name@36..36
-                  BraceRight@36..37 "}"
+                    Error@36..37
+                      BraceRight@36..37 "}"
 
-            error at 36..37: invalid syntax, expected: <identifier>"#]],
+            error at 36..37: invalid syntax, expected: <identifier>
+            error at 37..37: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
     );
 }
 
@@ -2312,7 +2345,7 @@ fn test()
                       NameReference@14..14
                   BraceRight@14..15 "}"
               Blankspace@15..17 "\n\n"
-              FunctionDeclaration@17..27
+              FunctionDeclaration@17..28
                 Fn@17..19 "fn"
                 Blankspace@19..20 " "
                 Name@20..24
@@ -2321,14 +2354,15 @@ fn test()
                   ParenthesisLeft@24..25 "("
                   ParenthesisRight@25..26 ")"
                 Blankspace@26..27 "\n"
-                Error@27..27
-              Error@27..28
-                BraceRight@27..28 "}"
+                Error@27..28
+                  BraceRight@27..28 "}"
+                Error@28..28
               Semicolon@28..29 ";"
               Blankspace@29..30 "\n"
 
-            error at 14..15: invalid syntax, expected: <identifier>
-            error at 27..28: invalid syntax, expected one of: '->', '@', '{'"#]],
+            error at 14..15: invalid syntax, expected one of: '@', <identifier>
+            error at 27..28: invalid syntax, expected one of: '->', '@', '{'
+            error at 28..29: invalid syntax, expected one of: '@', '{'"#]],
     );
 }
 
@@ -2424,7 +2458,7 @@ fn type_alias_decl_recover() {
                     Identifier@32..35 "u32"
                 Semicolon@35..36 ";"
 
-            error at 18..23: invalid syntax, expected one of: '@', ',', <end of file>, '=', <identifier>, '{', '}', ')', ';', <template start>"#]],
+            error at 18..23: invalid syntax, expected one of: '@', ',', '=', <identifier>, '{', '}', ')', ';', <template start>"#]],
     );
 }
 
@@ -2527,17 +2561,18 @@ fn empty_return_statement_no_semi() {
                     IntLiteral@10..11 "3"
                   Semicolon@11..12 ";"
                 Blankspace@12..13 " "
-                ReturnStatement@13..21
+                ReturnStatement@13..23
                   Return@13..19 "return"
                   Blankspace@19..20 " "
-                  IdentExpression@20..21
+                  IdentExpression@20..23
                     NameReference@20..21
                       Identifier@20..21 "x"
-                Blankspace@21..22 " "
-                BraceRight@22..23 "}"
+                    Blankspace@21..22 " "
+                    Error@22..23
+                      BraceRight@22..23 "}"
               Blankspace@23..24 " "
 
-            error at 22..23: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', <end of file>, '==', '!=', '>', '>=', '{', '[', '(', '<', '<=', '-', '%', '|', '||', '+', ']', ')', ';', '<<', '>>', '/', '*', <template end>, <template start>"#]],
+            error at 22..23: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', '==', '!=', '>', '>=', '{', '[', '(', '<', '<=', '-', '%', '|', '||', '+', ']', ')', ';', '<<', '>>', '/', '*', <template end>, <template start>"#]],
     );
 }
 
@@ -2794,7 +2829,7 @@ let x = 3;
                 BraceRight@38..39 "}"
               Blankspace@39..48 "\n        "
 
-            error at 24..25: invalid syntax, expected: '{'"#]],
+            error at 24..25: invalid syntax, expected one of: '@', '{'"#]],
     );
 }
 
@@ -2952,7 +2987,7 @@ fn attribute_only_recover() {
                   AttributeOperator@0..1 "@"
                   Identifier@1..9 "fragment"
 
-            error at 9..9: invalid syntax, expected one of: 'fn', 'override', 'var'"#]],
+            error at 9..9: invalid syntax, expected one of: '@', 'fn', 'for', <identifier>, 'if', '{', '(', 'loop', 'override', 'switch', 'var', 'while'"#]],
     );
 }
 

@@ -60,11 +60,11 @@ pub fn parse_entrypoint(
 ) -> Parse {
     let mut diags = Vec::new();
     let parsed = match entrypoint {
-        ParseEntryPoint::File => Parser::parse(input, &mut diags),
-        ParseEntryPoint::Expression => Parser::parse_start_expression(input, &mut diags),
-        ParseEntryPoint::Statement => Parser::parse_start_statement(input, &mut diags),
-        ParseEntryPoint::Type => Parser::parse_start_type_specifier(input, &mut diags),
-        ParseEntryPoint::Attribute => Parser::parse_start_attribute(input, &mut diags),
+        ParseEntryPoint::File => Parser::new(&input, &mut diags).parse(&mut diags),
+        ParseEntryPoint::Expression => Parser::new(&input, &mut diags).parse_expression(&mut diags),
+        ParseEntryPoint::Statement => Parser::new(&input, &mut diags).parse_statement(&mut diags),
+        ParseEntryPoint::Type => Parser::new(&input, &mut diags).parse_type_specifier(&mut diags),
+        ParseEntryPoint::Attribute => Parser::new(&input, &mut diags).parse_attribute(&mut diags),
         ParseEntryPoint::FunctionParameterList => {
             todo!("Remove this")
         },
