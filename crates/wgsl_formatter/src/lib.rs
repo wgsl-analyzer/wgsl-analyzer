@@ -431,11 +431,13 @@ fn format_param_list<T: AstNode>(
 
         let last_param_token = parameter.syntax().last_token()?;
         remove_if_whitespace(&last_param_token);
-
+        // TODO: This wrongly inserts bonus commas
+        /*
         let token_after_parameter = match parameter.syntax().next_sibling_or_token()? {
             NodeOrToken::Node(node) => node.first_token()?,
             NodeOrToken::Token(token) => token,
         };
+
         match (last, token_after_parameter.kind() == SyntaxKind::Comma) {
             (true, true) if !has_newline => token_after_parameter.detach(),
             (true, has_comma) => match (trailing_comma_policy, has_comma) {
@@ -455,7 +457,7 @@ fn format_param_list<T: AstNode>(
                     create_syntax_token(SyntaxKind::Comma, ","),
                 );
             },
-        }
+        } */
 
         first = false;
     }
