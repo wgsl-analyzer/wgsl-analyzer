@@ -99,7 +99,7 @@ impl<'database> Ctx<'database> {
         &mut self,
         override_declaration: &syntax::ast::OverrideDeclaration,
     ) -> Option<ModuleItemId<Override>> {
-        let name = override_declaration.binding()?.name()?.text().into();
+        let name = override_declaration.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(override_declaration);
 
         let r#type = override_declaration
@@ -127,7 +127,7 @@ impl<'database> Ctx<'database> {
         &mut self,
         constant: &syntax::ast::ConstantDeclaration,
     ) -> Option<ModuleItemId<GlobalConstant>> {
-        let name = constant.binding()?.name()?.text().into();
+        let name = constant.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(constant);
 
         let r#type = constant
@@ -150,7 +150,7 @@ impl<'database> Ctx<'database> {
         &mut self,
         var: &syntax::ast::VariableDeclaration,
     ) -> Option<ModuleItemId<GlobalVariable>> {
-        let name = var.binding()?.name()?.text().into();
+        let name = var.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(var);
 
         let r#type = var
@@ -189,10 +189,9 @@ impl<'database> Ctx<'database> {
             .body()?
             .fields()
             .map(|field| {
-                let declaration = field.identifier()?;
-                let name = Name::from(declaration.binding()?.name()?);
+                let name = Name::from(field.name()?);
                 let r#type = self
-                    .lower_type_ref(declaration.ty()?)
+                    .lower_type_ref(field.ty()?)
                     .unwrap_or(TypeReference::Error);
                 let r#type = self.database.intern_type_ref(r#type);
                 self.module_data.fields.alloc(Field { r#type, name });
@@ -243,20 +242,15 @@ impl<'database> Ctx<'database> {
         function_param_list: &ast::FunctionParameters,
     ) -> Option<()> {
         for parameter in function_param_list.parameters() {
-            if let Some(parameter) = parameter.variable_ident_declaration() {
-                let r#type = parameter
-                    .ty()
-                    .and_then(|r#type| self.lower_type_ref(r#type))
-                    .unwrap_or(TypeReference::Error);
-                let r#type = self.database.intern_type_ref(r#type);
-                let name = parameter
-                    .binding()
-                    .and_then(|binding| binding.name())
-                    .map_or_else(Name::missing, Name::from);
-                self.module_data
-                    .parameters
-                    .alloc(Parameter { r#type, name });
-            }
+            let r#type = parameter
+                .ty()
+                .and_then(|r#type| self.lower_type_ref(r#type))
+                .unwrap_or(TypeReference::Error);
+            let r#type = self.database.intern_type_ref(r#type);
+            let name = parameter.name().map_or_else(Name::missing, Name::from);
+            self.module_data
+                .parameters
+                .alloc(Parameter { r#type, name });
         }
 
         Some(())
@@ -265,7 +259,7 @@ impl<'database> Ctx<'database> {
     #[expect(clippy::unused_self, reason = "intentional API")]
     fn lower_type_ref(
         &self,
-        r#type: ast::Type,
+        r#type: ast::TypeSpecifier,
     ) -> Option<TypeReference> {
         r#type.try_into().ok()
     }

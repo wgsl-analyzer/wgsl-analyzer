@@ -10,21 +10,16 @@ use crate::{
     HasSource as _,
     data::FieldId,
     database::{DefDatabase, FunctionId, GlobalVariableId, Interned, Lookup as _, StructId},
-    expression::{Literal, parse_literal},
+    expression::{ExpressionId, Literal, parse_literal},
     module_data::Name,
 };
 
-#[derive(PartialEq, Eq, Clone, Debug, Hash)]
-pub enum AttributeValue {
-    Name(Name),
-    Literal(Literal),
-}
-
+// TODO: Properly model the attributes (not all of them have expressions)
 // e.g `builtin(position)`, `block`
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub struct Attribute {
     pub name: Name,
-    pub parameters: smallvec::SmallVec<[AttributeValue; 1]>,
+    pub parameters: Vec<ExpressionId>,
 }
 
 // e.g. [[group(0), location(0)]]
@@ -112,7 +107,7 @@ impl AttributesWithOwner {
                 let location = id.r#struct.lookup(database).source(database);
                 let struct_declaration: ast::StructDeclaration = location.value;
                 let mut fields = struct_declaration.body().map_or_else(
-                    || Either::Left(iter::empty::<ast::StructDeclarationField>()),
+                    || Either::Left(iter::empty::<ast::StructMember>()),
                     |body| Either::Right(body.fields()),
                 );
 
@@ -121,10 +116,7 @@ impl AttributesWithOwner {
 
                 // this is ugly but rust-analyzer is more complicated and this should work for now
                 let attrs = fields.find_map(|field| {
-                    let name = field
-                        .identifier()
-                        .and_then(|var| var.binding())
-                        .and_then(|binding| binding.name())?;
+                    let name = field.name()?;
                     (name.text().as_str() == field_name).then_some(field)
                 });
                 attrs.map_or_else(AttributeList::empty, |field| {

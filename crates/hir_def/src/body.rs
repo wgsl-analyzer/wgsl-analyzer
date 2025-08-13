@@ -62,8 +62,8 @@ pub struct BodySourceMap {
     statement_map: FxHashMap<AstPointer<ast::Statement>, StatementId>,
     statement_map_back: ArenaMap<StatementId, Result<AstPointer<ast::Statement>, SyntheticSyntax>>,
 
-    binding_map: FxHashMap<AstPointer<ast::Binding>, BindingId>,
-    binding_map_back: ArenaMap<BindingId, Result<AstPointer<ast::Binding>, SyntheticSyntax>>,
+    binding_map: FxHashMap<AstPointer<ast::Name>, BindingId>,
+    binding_map_back: ArenaMap<BindingId, Result<AstPointer<ast::Name>, SyntheticSyntax>>,
 }
 
 impl Body {
@@ -132,7 +132,7 @@ impl BodySourceMap {
     #[must_use]
     pub fn lookup_binding(
         &self,
-        source: &AstPointer<ast::Binding>,
+        source: &AstPointer<ast::Name>,
     ) -> Option<BindingId> {
         self.binding_map.get(source).copied()
     }
@@ -140,7 +140,7 @@ impl BodySourceMap {
     pub fn binding_to_source(
         &self,
         binding: BindingId,
-    ) -> Result<&AstPointer<ast::Binding>, &SyntheticSyntax> {
+    ) -> Result<&AstPointer<ast::Name>, &SyntheticSyntax> {
         self.binding_map_back[binding].as_ref()
     }
 

@@ -96,16 +96,8 @@ impl Collector<'_> {
     ) {
         if let Some(param_list) = param_list {
             for parameter in param_list.parameters() {
-                self.alloc_binding(Binding { name: parameter.name() }, source)
-
-                
-                if let Some(binding) = parameter
-                    .variable_ident_declaration()
-                    .and_then(|declaration| declaration.binding())
-                {
-                    let binding_id = self.collect_binding(&binding);
-                    self.body.parameters.push(binding_id);
-                }
+                let binding_id = self.collect_name_opt(parameter.name());
+                self.body.parameters.push(binding_id);
             }
         }
     }
@@ -119,9 +111,7 @@ impl Collector<'_> {
             .map(|expression| self.collect_expression(expression))
             .map(Either::Right);
 
-        self.body.main_binding = declaration
-            .binding()
-            .map(|binding| self.collect_binding(&binding));
+        self.body.main_binding = declaration.name().map(|binding| self.collect_name(binding));
 
         (self.body, self.source_map)
     }
@@ -135,9 +125,7 @@ impl Collector<'_> {
             .map(|expression| self.collect_expression(expression))
             .map(Either::Right);
 
-        self.body.main_binding = declaration
-            .binding()
-            .map(|binding| self.collect_binding(&binding));
+        self.body.main_binding = declaration.name().map(|binding| self.collect_name(binding));
 
         (self.body, self.source_map)
     }
@@ -151,28 +139,26 @@ impl Collector<'_> {
             .map(|expression| self.collect_expression(expression))
             .map(Either::Right);
 
-        self.body.main_binding = declaration
-            .binding()
-            .map(|binding| self.collect_binding(&binding));
+        self.body.main_binding = declaration.name().map(|binding| self.collect_name(binding));
 
         (self.body, self.source_map)
     }
 
-    fn collect_binding(
+    fn collect_name(
         &mut self,
-        binding: &ast::Binding,
+        binding: ast::Name,
     ) -> BindingId {
-        let source = AstPointer::new(binding);
-        let name = binding.name().map_or_else(Name::missing, Name::from);
-        self.alloc_binding(Binding { name }, source)
+        let source = AstPointer::new(&binding);
+        let name = Name::from(binding);
+        self.alloc_name(Binding { name }, source)
     }
 
-    fn collect_binding_opt(
+    fn collect_name_opt(
         &mut self,
-        binding: Option<ast::Binding>,
+        binding: Option<ast::Name>,
     ) -> BindingId {
         match binding {
-            Some(binding) => self.collect_binding(&binding),
+            Some(binding) => self.collect_name(binding),
             None => self.missing_binding(),
         }
     }
@@ -208,7 +194,7 @@ impl Collector<'_> {
     ) -> Option<StatementId> {
         let hir_statement = match &statement {
             ast::Statement::VariableStatement(variable_statement) => {
-                let binding_id = self.collect_binding_opt(variable_statement.binding());
+                let binding_id = self.collect_name_opt(variable_statement.binding());
                 let initializer = variable_statement
                     .initializer()
                     .map(|expression| self.collect_expression(expression));
@@ -281,8 +267,11 @@ impl Collector<'_> {
                 Statement::IncrDecr { expression, op }
             },
             ast::Statement::IfStatement(if_statement) => {
-                let condition = self.collect_expression_opt(if_statement.condition());
-                let block = self.collect_compound_statement_opt(if_statement.block());
+                let condition = self
+                    .collect_expression_opt(if_statement.if_block().and_then(|v| v.condition()));
+                let block = self.collect_compound_statement_opt(
+                    if_statement.if_block().and_then(|v| v.block()),
+                );
                 let else_if_blocks = if_statement
                     .else_if_blocks()
                     .map(|block| self.collect_compound_statement_opt(block.block()))
@@ -530,10 +519,10 @@ impl Collector<'_> {
         id
     }
 
-    fn alloc_binding(
+    fn alloc_name(
         &mut self,
         binding: Binding,
-        source: AstPointer<ast::Identifier>,
+        source: AstPointer<ast::Name>,
     ) -> BindingId {
         let id = self.make_binding(binding, Ok(source.clone()));
         self.source_map.binding_map.insert(source, id);

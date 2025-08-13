@@ -9,12 +9,12 @@ fn smoke_test() {
     };
     let mut function_parameters = function_declaration.parameter_list().unwrap().parameters();
     let a_parameter = function_parameters.next().unwrap();
-    assert_eq!(a_parameter.name().unwrap().text(), "a");
+    assert_eq!(a_parameter.name().unwrap().text().as_str(), "a");
     let body = function_declaration.body().unwrap();
     let ast::Statement::LetDeclaration(let_statement) = body.statements().next().unwrap() else {
         panic!()
     };
-    assert_eq!(let_statement.name().unwrap().text(), "b");
+    assert_eq!(let_statement.name().unwrap().text().as_str(), "b");
     let ast::Expression::InfixExpression(addition) = let_statement.init().unwrap() else {
         panic!();
     };

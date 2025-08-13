@@ -156,26 +156,18 @@ pub enum Statement {
 ///
 /// Panics if the literal is invalid.
 pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
+    // TODO: This is wrong, this doesn't handle abstract numbers
     match literal {
-        ast::LiteralKind::HexIntLiteral(literal) | ast::LiteralKind::DecimalIntLiteral(literal) => {
+        ast::LiteralKind::IntLiteral(literal) if !literal.text().ends_with('u') => {
             let text = literal.text().trim_end_matches('i');
-            let (text, negative) = match text.strip_prefix('-') {
-                Some(new) => (new, true),
-                None => (text, false),
-            };
-            let mut value = match text.strip_prefix("0x") {
+            let value = match text.strip_prefix("0x") {
                 Some(hex) => i64::from_str_radix(hex, 16),
                 None => text.parse(),
             }
             .expect("invalid literal");
-
-            if negative {
-                value = -value;
-            }
-
             Literal::Int(value, BuiltinInt::I32)
         },
-        ast::LiteralKind::UnsignedIntLiteral(literal) => {
+        ast::LiteralKind::IntLiteral(literal) => {
             let text = literal.text().trim_end_matches('u');
             let value = match text.strip_prefix("0x") {
                 Some(hex) => u64::from_str_radix(hex, 16),
@@ -185,8 +177,8 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
 
             Literal::Uint(value, BuiltinUint::U32)
         },
-        ast::LiteralKind::HexFloatLiteral(_) => Literal::Float(0, BuiltinFloat::F32),
-        ast::LiteralKind::DecimalFloatLiteral(literal) => {
+        // TODO: Hex floats need to be handled
+        ast::LiteralKind::FloatLiteral(literal) => {
             use std::str::FromStr as _;
             // Float suffixes are not accepted by `f32::from_str`. Ignore them
             let text = literal.text().trim_end_matches(char::is_alphabetic);
@@ -212,9 +204,7 @@ impl Expression {
                 function(*left_side);
                 function(*right_side);
             },
-            Self::UnaryOperator { expression, .. }
-            | Self::Field { expression, .. }
-            | Self::Bitcast { expression, .. } => {
+            Self::UnaryOperator { expression, .. } | Self::Field { expression, .. } => {
                 function(*expression);
             },
             Self::Call { arguments, .. } => {

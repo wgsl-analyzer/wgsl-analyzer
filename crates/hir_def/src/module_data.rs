@@ -60,12 +60,6 @@ impl From<ast::NameReference> for Name {
     }
 }
 
-impl From<ast::Identifier> for Name {
-    fn from(identifier: ast::Identifier) -> Self {
-        Self(identifier.text().as_str().into())
-    }
-}
-
 impl From<&'_ str> for Name {
     fn from(text: &str) -> Self {
         Self(text.into())
