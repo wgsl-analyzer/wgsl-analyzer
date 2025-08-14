@@ -60,10 +60,10 @@ export function createClient(
 					// FIXME: We currently emit this diagnostic way too early, before we have
 					// loaded the project fully
 					// value === "unlinked-file" &&
-					value === "temporary-disabled" &&
-					!unlinkedFiles.includes(uri) &&
-					(diagnostic.message === "file not included in crate hierarchy" ||
-						diagnostic.message.startsWith("This file is not included in any crates"))
+					value === "temporary-disabled"
+					&& !unlinkedFiles.includes(uri)
+					&& (diagnostic.message === "file not included in crate hierarchy"
+						|| diagnostic.message.startsWith("This file is not included in any crates"))
 				) {
 					const config = vscode.workspace.getConfiguration("wgsl-analyzer");
 					if (config.get("showUnlinkedFileNotification")) {
@@ -371,12 +371,12 @@ class OverrideFeatures implements lc.StaticFeature {
 function isCodeActionWithoutEditsAndCommands(value: any): boolean {
 	const candidate: lc.CodeAction = value;
 	return (
-		candidate &&
-		Is.string(candidate.title) &&
-		(candidate.diagnostics === void 0 || Is.typedArray(candidate.diagnostics, lc.Diagnostic.is)) &&
-		(candidate.kind === void 0 || Is.string(candidate.kind)) &&
-		candidate.edit === void 0 &&
-		candidate.command === void 0
+		candidate
+		&& Is.string(candidate.title)
+		&& (candidate.diagnostics === void 0 || Is.typedArray(candidate.diagnostics, lc.Diagnostic.is))
+		&& (candidate.kind === void 0 || Is.string(candidate.kind))
+		&& candidate.edit === void 0
+		&& candidate.command === void 0
 	);
 }
 

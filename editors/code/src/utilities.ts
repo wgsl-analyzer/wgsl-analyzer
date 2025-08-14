@@ -74,8 +74,8 @@ export function isWeslDocument(document: vscode.TextDocument): document is WeslD
 	// to something different than "file".
 	// See: https://github.com/rust-lang/rust-analyzer/issues/4608
 	return (
-		(document.languageId === "wgsl" || document.languageId === "wesl") &&
-		document.uri.scheme === "file"
+		(document.languageId === "wgsl" || document.languageId === "wesl")
+		&& document.uri.scheme === "file"
 	);
 }
 

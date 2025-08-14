@@ -241,8 +241,8 @@ export class Config {
 		let target;
 		let value;
 		if (
-			config.workspaceFolderValue !== undefined ||
-			config.workspaceFolderLanguageValue !== undefined
+			config.workspaceFolderValue !== undefined
+			|| config.workspaceFolderLanguageValue !== undefined
 		) {
 			target = vscode.ConfigurationTarget.WorkspaceFolder;
 			overrideInLanguage = config.workspaceFolderLanguageValue;
