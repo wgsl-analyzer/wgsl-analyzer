@@ -85,7 +85,7 @@ la-arena = "0.3.1"
 lsp-server = "0.7.9"
 
 # non-local crates
-anyhow = "1.0.98"
+anyhow = "1.0.99"
 arrayvec = "0.7.6"
 base64 = "0.22"
 bitflags = "2.9.1"
@@ -135,7 +135,7 @@ threadpool = "1.8.1"
 process-wrap = { version = "8.2.0", features = ["std"] }
 pulldown-cmark-to-cmark = "21.0.0"
 pulldown-cmark = { version = "0.13.0", default-features = false }
-rayon = "1.10.0"
+rayon = "1.11.0"
 rowan = "0.16.1"
 rustc-hash = "2.1.1"
 salsa = "0.17.0-pre.2"
