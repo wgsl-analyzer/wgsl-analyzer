@@ -20,9 +20,20 @@ class Suite {
 		this.tests = [];
 	}
 
-	public addTest(name: string, test_function: () => Promise<void>): void {
+	private addTestInternal(name: string, test_function: () => Promise<void>): void {
 		const test = new Test(name, test_function());
 		this.tests.push(test);
+	}
+
+	public addSyncTest(name: string, test_function: () => void): void {
+		this.addTestInternal(name, () => {
+			test_function();
+			return Promise.resolve();
+		});
+	}
+
+	public addTest(name: string, test_function: () => Promise<void>): void {
+		this.addTestInternal(name, test_function);
 	}
 
 	public async run(): Promise<void> {
@@ -31,9 +42,10 @@ class Suite {
 			try {
 				await test.promise;
 				ok(`  ✔ ${test.name}`);
-			} catch (e) {
-				assert.ok(e instanceof Error);
-				error(`  ✖︎ ${test.name}\n  ${e.stack}`);
+			} catch (exception) {
+				assert.ok(exception instanceof Error);
+				assert.ok(exception.stack);
+				error(`  ✖︎ ${test.name}\n  ${exception.stack}`);
 				failed += 1;
 			}
 		}
@@ -52,10 +64,11 @@ export class Context {
 			ok(`⌛︎ ${name}`);
 			await ctx.run();
 			ok(`✔ ${name}`);
-		} catch (e) {
-			assert.ok(e instanceof Error);
-			error(`✖︎ ${name}\n  ${e.stack}`);
-			throw e;
+		} catch (exception) {
+			assert.ok(exception instanceof Error);
+			assert.ok(exception.stack);
+			error(`✖︎ ${name}\n  ${exception.stack}`);
+			throw exception;
 		}
 	}
 }
@@ -70,19 +83,20 @@ export async function run(): Promise<void> {
 		try {
 			const testModule = await import(pathToFileURL(path.resolve(__dirname, testFile)).href);
 			await testModule.getTests(context);
-		} catch (e) {
-			error(`${e}`);
-			throw e;
+		} catch (exception) {
+			assert.ok(exception instanceof Error);
+			error(`${exception}`);
+			throw exception;
 		}
 	}
 }
 
 function ok(message: string): void {
-	// eslint-disable-next-line no-console
+	// biome-ignore lint/suspicious/noConsole: needed here
 	console.log(`\x1b[32m${message}\x1b[0m`);
 }
 
 function error(message: string): void {
-	// eslint-disable-next-line no-console
+	// biome-ignore lint/suspicious/noConsole: needed here
 	console.error(`\x1b[31m${message}\x1b[0m`);
 }

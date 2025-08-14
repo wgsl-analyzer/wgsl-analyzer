@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import { assert, unwrapUndefinable } from "./util";
+import { assert, unwrapUndefinable } from "./utilities";
 
 export type SnippetTextDocumentEdit = [vscode.Uri, (vscode.TextEdit | vscode.SnippetTextEdit)[]];
 
@@ -24,9 +24,7 @@ export async function applySnippetWorkspaceEdit(
 				for (const indel of edits) {
 					assert(
 						!(indel instanceof vscode.SnippetTextEdit),
-						`bad ws edit: snippet received with multiple edits: ${JSON.stringify(
-							edit,
-						)}`,
+						`bad ws edit: snippet received with multiple edits: ${JSON.stringify(edit)}`,
 					);
 					builder.replace(indel.range, indel.newText);
 				}
@@ -65,10 +63,7 @@ function toSnippetTextEdits(
 		// being wrapped in a SnippetTextEdit, as otherwise it would be
 		// treated as if it had a tab stop at the end.
 		if (hasSnippet(textEdit.newText)) {
-			return new vscode.SnippetTextEdit(
-				textEdit.range,
-				new vscode.SnippetString(textEdit.newText),
-			);
+			return new vscode.SnippetTextEdit(textEdit.range, new vscode.SnippetString(textEdit.newText));
 		} else {
 			return textEdit;
 		}

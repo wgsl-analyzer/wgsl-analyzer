@@ -1,9 +1,10 @@
-import * as lc from "vscode-languageclient/node";
+import * as assert from "node:assert";
 import * as vscode from "vscode";
-import * as diagnostics from "./diagnostics";
-import { type CommandFactory, Ctx, fetchWorkspace } from "./ctx";
+import * as lc from "vscode-languageclient/node";
 import * as commands from "./commands";
-import { setContextValue } from "./util";
+import { type CommandFactory, Ctx, fetchWorkspace } from "./ctx";
+import * as diagnostics from "./diagnostics";
+import { setContextValue } from "./utilities";
 
 const WESL_PROJECT_CONTEXT_NAME = "inWeslProject";
 
@@ -25,7 +26,8 @@ export async function activate(
 
 	// VS Code does not show a notification when an extension fails to activate
 	// so we do it ourselves.
-	const api = await activateServer(ctx).catch((error) => {
+	const api = await activateServer(ctx).catch((error: unknown) => {
+		assert.ok(error instanceof Error);
 		void vscode.window.showErrorMessage(
 			`Cannot activate wgsl-analyzer extension: ${error.message}`,
 		);
@@ -56,7 +58,9 @@ async function activateServer(ctx: Ctx): Promise<WgslAnalyzerExtensionApi> {
 	}
 
 	vscode.workspace.onDidChangeTextDocument(
-		async (event) => await decorateVisibleEditors(event.document),
+		async (event) => {
+			await decorateVisibleEditors(event.document);
+		},
 		null,
 		ctx.subscriptions,
 	);
@@ -138,19 +142,21 @@ function createCommands(): Record<string, CommandFactory> {
 					health: "stopped",
 				});
 			},
-			disabled: (_) => async () => {},
+			disabled: (_) => async () => {
+				// idempotent
+			},
 		},
 
 		analyzerStatus: { enabled: commands.analyzerStatus },
+
 		memoryUsage: { enabled: commands.memoryUsage },
 		reloadWorkspace: { enabled: commands.reloadWorkspace },
-		rebuildProcMacros: { enabled: commands.rebuildProcMacros },
 		matchingBrace: { enabled: commands.matchingBrace },
 		joinLines: { enabled: commands.joinLines },
 		viewFileText: { enabled: commands.viewFileText },
 		viewItemTree: { enabled: commands.viewItemTree },
-		viewCrateGraph: { enabled: commands.viewCrateGraph },
-		viewFullCrateGraph: { enabled: commands.viewFullCrateGraph },
+		viewDependencyGraph: { enabled: commands.viewCrateGraph },
+		viewFullDependencyGraph: { enabled: commands.viewFullDependencyGraph },
 		openDocs: { enabled: commands.openDocs },
 		openExternalDocs: { enabled: commands.openExternalDocs },
 		moveItemUp: { enabled: commands.moveItemUp },
@@ -166,7 +172,9 @@ function createCommands(): Record<string, CommandFactory> {
 		// openWalkthrough: { enabled: commands.openWalkthrough },
 		// Internal commands which are invoked by the server.
 		applyActionGroup: { enabled: commands.applyActionGroup },
-		applySnippetWorkspaceEdit: { enabled: commands.applySnippetWorkspaceEditCommand },
+		applySnippetWorkspaceEdit: {
+			enabled: commands.applySnippetWorkspaceEditCommand,
+		},
 		gotoLocation: { enabled: commands.gotoLocation },
 		hoverRefCommandProxy: { enabled: commands.hoverRefCommandProxy },
 		resolveCodeAction: { enabled: commands.resolveCodeAction },
@@ -190,7 +198,12 @@ function checkConflictingExtensions() {
 					+ "both plugins to not work correctly. You should disable one of them.",
 				"Got it",
 			)
-			// eslint-disable-next-line no-console
-			.then(() => {}, console.error);
+			.then(
+				() => {
+					// no action needed
+				},
+				// biome-ignore lint/suspicious/noConsole: nothing else we can do here
+				console.error,
+			);
 	}
 }

@@ -1,23 +1,24 @@
 import * as anser from "anser";
-import * as lc from "vscode-languageclient/node";
-import * as vscode from "vscode";
-import * as wa from "./lsp_ext";
-import * as Is from "vscode-languageclient/lib/common/utils/is";
-import { assert, unwrapUndefinable } from "./util";
-import * as diagnostics from "./diagnostics";
-import { WorkspaceEdit } from "vscode";
-import { type Config, prepareVSCodeConfig } from "./config";
 import { sep as pathSeparator } from "path";
-import { WaLanguageClient } from "./lang_client";
+import * as vscode from "vscode";
+import { WorkspaceEdit } from "vscode";
+import * as Is from "vscode-languageclient/lib/common/utils/is";
+import * as lc from "vscode-languageclient/node";
 
-export async function createClient(
+import { type Config, prepareVSCodeConfig } from "./config";
+import * as diagnostics from "./diagnostics";
+import { WaLanguageClient } from "./lang_client";
+import * as wa from "./lsp_ext";
+import { assert, unwrapUndefinable } from "./utilities";
+
+export function createClient(
 	traceOutputChannel: vscode.OutputChannel,
 	outputChannel: vscode.OutputChannel,
 	initializationOptions: vscode.WorkspaceConfiguration,
 	serverOptions: lc.ServerOptions,
 	config: Config,
 	unlinkedFiles: vscode.Uri[],
-): Promise<lc.LanguageClient> {
+): lc.LanguageClient {
 	const waMiddleware: lc.Middleware = {
 		workspace: {
 			// HACK: This is a workaround, when the client has been disposed, VSCode
@@ -43,13 +44,13 @@ export async function createClient(
 				}
 			},
 		},
-		async handleDiagnostics(
+		handleDiagnostics(
 			uri: vscode.Uri,
 			diagnosticList: vscode.Diagnostic[],
 			next: lc.HandleDiagnosticsSignature,
 		) {
-			const preview = false; // todo simplify
-			const errorCode = false; // todo simplify
+			const preview = config.previewWeslRsOutput;
+			const errorCode = config.useWeslRsErrorCode;
 			diagnosticList.forEach((diagnostic, index) => {
 				const value =
 					typeof diagnostic.code === "string" || typeof diagnostic.code === "number"
@@ -88,23 +89,16 @@ export async function createClient(
 											break;
 										case "Yes": {
 											const pathToInsert =
-												"."
-												+ parent.substring(folder.length)
-												+ pathSeparator
-												+ "Cargo.toml";
+												"." + parent.substring(folder.length) + pathSeparator + "Cargo.toml";
 											const value = config
-												// eslint-disable-next-line @typescript-eslint/no-explicit-any
+												// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 												.get<any[]>("linkedProjects")
 												?.concat(pathToInsert);
 											await config.update("linkedProjects", value, false);
 											break;
 										}
 										case "Do not show this again":
-											await config.update(
-												"showUnlinkedFileNotification",
-												false,
-												false,
-											);
+											await config.update("showUnlinkedFileNotification", false, false);
 											break;
 									}
 								});
@@ -121,15 +115,12 @@ export async function createClient(
 				// the data payload of the lsp diagnostic. If that field exists, overwrite the
 				// diagnostic code such that clicking it opens the diagnostic in a readonly
 				// text editor for easy inspection
-				const rendered = (diagnostic as unknown as { data?: { rendered?: string } }).data
-					?.rendered;
+				const rendered = (diagnostic as unknown as { data?: { rendered?: string } }).data?.rendered;
 				if (rendered) {
 					if (preview) {
 						const decolorized = anser.ansiToText(rendered);
-						const index = decolorized.match(/^(note|help):/m)?.index || rendered.length;
-						diagnostic.message = decolorized
-							.substring(0, index)
-							.replace(/^ -->[^\n]+\n/m, "");
+						const index = decolorized.match(/^(?:note|help):/m)?.index || rendered.length;
+						diagnostic.message = decolorized.substring(0, index).replace(/^ -->[^\n]+\n/m, "");
 					}
 					diagnostic.code = {
 						target: vscode.Uri.from({
@@ -142,9 +133,9 @@ export async function createClient(
 					};
 				}
 			});
-			return next(uri, diagnosticList);
+			next(uri, diagnosticList);
 		},
-		async provideHover(
+		provideHover(
 			document: vscode.TextDocument,
 			position: vscode.Position,
 			token: vscode.CancellationToken,
@@ -197,10 +188,7 @@ export async function createClient(
 					// In our case we expect to get code edits only from diagnostics
 					if (lc.CodeAction.is(item)) {
 						assert(!item.command, "We don't expect to receive commands in CodeActions");
-						const action = await client.protocol2CodeConverter.asCodeAction(
-							item,
-							token,
-						);
+						const action = await client.protocol2CodeConverter.asCodeAction(item, token);
 						result.push(action);
 						continue;
 					}
@@ -208,10 +196,12 @@ export async function createClient(
 						isCodeActionWithoutEditsAndCommands(item),
 						"We do not expect edits or commands here",
 					);
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					const kind = client.protocol2CodeConverter.asCodeActionKind((item as any).kind);
+					const kind = client.protocol2CodeConverter.asCodeActionKind(
+						// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
+						(item as any).kind,
+					);
 					const action = new vscode.CodeAction(item.title, kind);
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 					const group = (item as any).group;
 					action.command = {
 						command: "wgsl-analyzer.resolveCodeAction",
@@ -249,6 +239,7 @@ export async function createClient(
 								items.map((item) => {
 									return {
 										label: item.title,
+										// biome-ignore lint/style/noNonNullAssertion: TODO
 										args: item.command!.arguments![0],
 									};
 								}),
@@ -333,10 +324,17 @@ class ExperimentalFeatures implements lc.StaticFeature {
 	initialize(
 		_capabilities: lc.ServerCapabilities,
 		_documentSelector: lc.DocumentSelector | undefined,
-	): void {}
+	): void {
+		// nothing needs to be initialized
+	}
 
-	dispose(): void {}
-	clear(): void {}
+	dispose(): void {
+		// nothing needs to be disposed
+	}
+
+	clear(): void {
+		// nothing needs to be cleared
+	}
 }
 
 class OverrideFeatures implements lc.StaticFeature {
@@ -356,20 +354,26 @@ class OverrideFeatures implements lc.StaticFeature {
 	initialize(
 		_capabilities: lc.ServerCapabilities,
 		_documentSelector: lc.DocumentSelector | undefined,
-	): void {}
+	): void {
+		// nothing to initialize
+	}
 
-	dispose(): void {}
-	clear(): void {}
+	clear(): void {
+		// nothing to clear
+	}
+
+	dispose(): void {
+		// nothing to dispose
+	}
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 function isCodeActionWithoutEditsAndCommands(value: any): boolean {
 	const candidate: lc.CodeAction = value;
 	return (
 		candidate
 		&& Is.string(candidate.title)
-		&& (candidate.diagnostics === void 0
-			|| Is.typedArray(candidate.diagnostics, lc.Diagnostic.is))
+		&& (candidate.diagnostics === void 0 || Is.typedArray(candidate.diagnostics, lc.Diagnostic.is))
 		&& (candidate.kind === void 0 || Is.string(candidate.kind))
 		&& candidate.edit === void 0
 		&& candidate.command === void 0
@@ -397,8 +401,7 @@ function renderHoverActions(actions: wa.CommandLinkGroup[]): vscode.MarkdownStri
 	const text = actions
 		.map(
 			(group) =>
-				(group.title ? group.title + " " : "")
-				+ group.commands.map(renderCommand).join(" | "),
+				(group.title ? group.title + " " : "") + group.commands.map(renderCommand).join(" | "),
 		)
 		.join(" | ");
 

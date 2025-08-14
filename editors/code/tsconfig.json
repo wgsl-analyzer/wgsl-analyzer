@@ -1,5 +1,9 @@
 {
-	"extends": "@tsconfig/strictest/tsconfig.json",
+	"extends": [
+		"@tsconfig/strictest/tsconfig.json",
+		"@tsconfig/node22/tsconfig.json",
+		"@tsconfig/node-ts/tsconfig.json"
+	],
 	"compilerOptions": {
 		"esModuleInterop": false,
 		"module": "NodeNext",
@@ -10,9 +14,18 @@
 		"sourceMap": true,
 		"rootDir": ".", // spellchecker:disable-line
 		"newLine": "lf",
+		"strict": true,
+		"strictBindCallApply": true,
+		"strictFunctionTypes": true,
+		"strictNullChecks": true,
+		"strictPropertyInitialization": true,
 		// FIXME: https://github.com/rust-lang/rust-analyzer/issues/15253
-		"exactOptionalPropertyTypes": false
+		"exactOptionalPropertyTypes": false,
+		"erasableSyntaxOnly": false,
+		"verbatimModuleSyntax": false,
+		"noEmit": false,
+		"types": ["@types/node"]
 	},
 	"exclude": ["node_modules", ".vscode-test", "out"],
-	"include": ["src", "tests"]
+	"include": ["*.config.ts", "*.config.mts", "tests/**/*.ts", "src/**/*.ts"]
 }

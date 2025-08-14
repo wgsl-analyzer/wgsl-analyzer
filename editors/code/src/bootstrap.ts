@@ -1,9 +1,11 @@
-import * as vscode from "vscode";
-import * as os from "os";
-import type { Config } from "./config";
-import { type Env, log, spawnAsync } from "./util";
-import type { PersistentState } from "./persistent_state";
 import { exec } from "child_process";
+import * as os from "os";
+import * as vscode from "vscode";
+
+import type { Config } from "./config";
+import type { PersistentState } from "./persistent_state";
+
+import { type Env, log, spawnAsync } from "./utilities";
 
 export async function bootstrap(
 	context: vscode.ExtensionContext,
@@ -29,7 +31,6 @@ export async function bootstrap(
 					: ""),
 		);
 	}
-
 	return path;
 }
 
@@ -169,7 +170,9 @@ async function patchelf(destination: vscode.Uri): Promise<void> {
                 }
             `;
 			const originalFile = vscode.Uri.file(destination.fsPath + "-orig");
-			await vscode.workspace.fs.rename(destination, originalFile, { overwrite: true });
+			await vscode.workspace.fs.rename(destination, originalFile, {
+				overwrite: true,
+			});
 			try {
 				progress.report({ message: "Patching executable", increment: 20 });
 				await new Promise((resolve, reject) => {

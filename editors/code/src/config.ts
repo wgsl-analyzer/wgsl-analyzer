@@ -1,10 +1,12 @@
-import * as Is from "vscode-languageclient/lib/common/utils/is";
 import * as os from "os";
 import * as path from "path";
-import * as vscode from "vscode";
-import { expectNotUndefined, log, unwrapUndefinable } from "./util";
-import type { Env } from "./util";
 import type { Disposable } from "vscode";
+import * as vscode from "vscode";
+import * as Is from "vscode-languageclient/lib/common/utils/is";
+
+import type { Env } from "./utilities";
+
+import { expectNotUndefined, log, unwrapUndefinable } from "./utilities";
 
 export type RunnableEnvCfgItem = {
 	mask?: string;
@@ -12,7 +14,6 @@ export type RunnableEnvCfgItem = {
 	platform?: string | string[];
 };
 export type RunnableEnvCfg = Record<string, string> | RunnableEnvCfgItem[];
-
 type ShowStatusBar = "always" | "never" | { documentSelector: vscode.DocumentSelector };
 
 export interface TraceConfig {
@@ -56,7 +57,7 @@ export class Config {
 	private refreshLogging() {
 		log.info(
 			"Extension version:",
-			vscode.extensions.getExtension(this.extensionId)!.packageJSON.version,
+			vscode.extensions.getExtension(this.extensionId)?.packageJSON.version,
 		);
 
 		const cfg = Object.entries(this.cfg).filter(([_, value]) => !(value instanceof Function));
@@ -159,13 +160,13 @@ export class Config {
 				{
 					// Continues a multi-line comment
 					// e.g.  * ...|
-					beforeText: /^(  {2})* \*( ([^*]|\*(?!\/))*)?$/,
+					beforeText: /^( {3})* \*( ([^*]|\*(?!\/))*)?$/,
 					action: { indentAction, appendText: "* " },
 				},
 				{
 					// Dedents after closing a multi-line comment
 					// e.g.  */|
-					beforeText: /^(  {2})* \*\/\s*$/,
+					beforeText: /^( {3})* \*\/\s*$/,
 					action: { indentAction, removeText: 1 },
 				},
 			];
@@ -178,6 +179,14 @@ export class Config {
 		this.configureLang = vscode.languages.setLanguageConfiguration("wesl", {
 			onEnterRules,
 		});
+	}
+
+	get previewWeslRsOutput() {
+		return this.get<boolean>("diagnostics.previewWeslRsOutput");
+	}
+
+	get useWeslRsErrorCode() {
+		return this.get<boolean>("diagnostics.useWeslRsErrorCode");
 	}
 
 	// We do not do runtime config validation here for simplicity. More on stackoverflow:
@@ -212,14 +221,10 @@ export class Config {
 	}
 
 	get serverExtraEnv(): Env {
-		const extraEnv =
-			this.get<{ [key: string]: string | number } | null>("server.extraEnv") ?? {};
+		const extraEnv = this.get<{ [key: string]: string | number } | null>("server.extraEnv") ?? {};
 		return substituteVariablesInEnv(
 			Object.fromEntries(
-				Object.entries(extraEnv).map(([k, v]) => [
-					k,
-					typeof v !== "string" ? v.toString() : v,
-				]),
+				Object.entries(extraEnv).map(([k, v]) => [k, typeof v !== "string" ? v.toString() : v]),
 			),
 		);
 	}
@@ -229,7 +234,9 @@ export class Config {
 	}
 
 	async toggleCheckOnSave() {
-		const config = this.cfg.inspect<boolean>("checkOnSave") ?? { key: "checkOnSave" };
+		const config = this.cfg.inspect<boolean>("checkOnSave") ?? {
+			key: "checkOnSave",
+		};
 		let overrideInLanguage;
 		let target;
 		let value;
@@ -240,10 +247,7 @@ export class Config {
 			target = vscode.ConfigurationTarget.WorkspaceFolder;
 			overrideInLanguage = config.workspaceFolderLanguageValue;
 			value = config.workspaceFolderValue || config.workspaceFolderLanguageValue;
-		} else if (
-			config.workspaceValue !== undefined
-			|| config.workspaceLanguageValue !== undefined
-		) {
+		} else if (config.workspaceValue !== undefined || config.workspaceLanguageValue !== undefined) {
 			target = vscode.ConfigurationTarget.Workspace;
 			overrideInLanguage = config.workspaceLanguageValue;
 			value = config.workspaceValue || config.workspaceLanguageValue;
@@ -264,43 +268,6 @@ export class Config {
 
 	get testExplorer() {
 		return this.get<boolean | undefined>("testExplorer");
-	}
-
-	runnablesExtraEnv(label: string): Record<string, string> | undefined {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const item = this.get<any>("runnables.extraEnv") ?? this.get<any>("runnableEnv");
-		if (!item) return undefined;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const fixRecord = (r: Record<string, any>) => {
-			for (const key in r) {
-				if (typeof r[key] !== "string") {
-					r[key] = String(r[key]);
-				}
-			}
-		};
-
-		const platform = process.platform;
-		const checkPlatform = (it: RunnableEnvCfgItem) => {
-			if (it.platform) {
-				const platforms = Array.isArray(it.platform) ? it.platform : [it.platform];
-				return platforms.indexOf(platform) >= 0;
-			}
-			return true;
-		};
-
-		if (item instanceof Array) {
-			const env = {};
-			for (const it of item) {
-				const masked = !it.mask || new RegExp(it.mask).test(label);
-				if (masked && checkPlatform(it)) {
-					Object.assign(env, it.env);
-				}
-			}
-			fixRecord(env);
-			return env;
-		}
-		fixRecord(item);
-		return item;
 	}
 
 	get restartServerOnConfigChange() {
@@ -388,13 +355,13 @@ export class Config {
 export function prepareVSCodeConfig<T>(response: T): T {
 	if (Is.string(response)) {
 		return substituteVSCodeVariableInString(response) as T;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 	} else if (response && Is.array<any>(response)) {
 		return response.map((value) => {
 			return prepareVSCodeConfig(value);
 		}) as T;
 	} else if (response && typeof response === "object") {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 		const result: { [key: string]: any } = {};
 		for (const key in response) {
 			const value = response[key];
@@ -414,7 +381,7 @@ export function substituteVariablesInEnv(env: Env): Env {
 	const envWithDeps = Object.fromEntries(
 		Object.entries(env).map(([key, value]) => {
 			const deps = new Set<string>();
-			const depRe = new RegExp(/\${(?<depName>.+?)}/g);
+			const depRe = new RegExp(/\$\{(?<depName>.+?)\}/g);
 			let match = undefined;
 			while ((match = depRe.exec(value))) {
 				const depName = unwrapUndefinable(match.groups?.["depName"]);
@@ -433,6 +400,7 @@ export function substituteVariablesInEnv(env: Env): Env {
 	for (const dep of missingDeps) {
 		const match = /(?<prefix>.*?):(?<body>.+)/.exec(dep);
 		if (match) {
+			// biome-ignore lint/style/noNonNullAssertion: TODO
 			const { prefix, body } = match.groups!;
 			if (prefix === "env") {
 				const envName = unwrapUndefinable(body);
@@ -465,7 +433,7 @@ export function substituteVariablesInEnv(env: Env): Env {
 		for (const key of toResolve) {
 			const item = unwrapUndefinable(envWithDeps[key]);
 			if (item.deps.every((dep) => resolved.has(dep))) {
-				item.value = item.value.replace(/\${(?<depName>.+?)}/g, (_wholeMatch, depName) => {
+				item.value = item.value.replace(/\$\{(?<depName>.+?)\}/g, (_wholeMatch, depName) => {
 					const item = unwrapUndefinable(envWithDeps[depName]);
 					return item.value;
 				});
@@ -484,6 +452,7 @@ export function substituteVariablesInEnv(env: Env): Env {
 }
 
 const VarRegex = new RegExp(/\$\{(.+?)\}/g);
+
 function substituteVSCodeVariableInString(value: string): string {
 	return value.replace(VarRegex, (substring: string, varName) => {
 		if (Is.string(varName)) {
