@@ -14,6 +14,7 @@
 
 mod format;
 mod util;
+mod tests;
 
 use rowan::WalkEvent;
 use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast};
