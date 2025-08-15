@@ -2,16 +2,41 @@
 #![expect(clippy::print_stdout, reason = "useful in tests")]
 #![expect(clippy::use_debug, reason = "useful in tests")]
 
-use std::panic;
+use std::{ffi::OsString, panic, path::Path};
 
-use expect_test::{Expect, expect};
+use expect_test::{Expect, ExpectFile, expect, expect_file};
 
 use crate::{FormattingOptions, format_recursive};
+
+trait ExpectAssertEq {
+    fn assert_eq(
+        &self,
+        other: &str,
+    );
+}
+
+impl ExpectAssertEq for Expect {
+    fn assert_eq(
+        &self,
+        other: &str,
+    ) {
+        self.assert_eq(other);
+    }
+}
+
+impl ExpectAssertEq for ExpectFile {
+    fn assert_eq(
+        &self,
+        other: &str,
+    ) {
+        self.assert_eq(other);
+    }
+}
 
 #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
 fn check(
     before: &str,
-    after: Expect,
+    after: impl ExpectAssertEq,
 ) {
     check_with_options(before, &after, &FormattingOptions::default());
 }
@@ -19,7 +44,7 @@ fn check(
 #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
 fn check_tabs(
     before: &str,
-    after: Expect,
+    after: impl ExpectAssertEq,
 ) {
     let options = FormattingOptions {
         indent_symbol: "\t".to_owned(),
@@ -31,7 +56,7 @@ fn check_tabs(
 #[track_caller]
 fn check_with_options(
     before: &str,
-    after: &Expect,
+    after: &impl ExpectAssertEq,
     options: &FormattingOptions,
 ) {
     let syntax = syntax::parse(before.trim_start())
@@ -571,4 +596,41 @@ fn main() {
 				);
 			}"]],
     );
+}
+
+#[test]
+fn snapshot_tests() {
+    let source_path = Path::new("./tests/snapshots/source");
+    let output_path = Path::new("./tests/snapshots/output");
+
+    //At this stage, the old formatter is not idempotent on all the tests.
+    // But we want to achieve feature parity first, so we focus on the cases
+    // where the old formatter works first, and generate tests that the new formatter works with.
+    let skip = [OsString::from("old_formatter_idempotence.wgsl")];
+
+    for entry in std::fs::read_dir(source_path).expect("snapshot source directory should exist") {
+        let entry = entry.expect("snapshot source directory should be traversable");
+        let snapshot_source_path = entry.path();
+        if snapshot_source_path.is_file() {
+            let snapshot_name = snapshot_source_path
+                .file_name()
+                .expect("snapshot source should be a normal file.");
+
+            if skip.iter().any(|it| it == snapshot_name) {
+                continue;
+            }
+
+            let snapshot_output_path = std::env::current_dir()
+                .unwrap()
+                .join(output_path)
+                .join(snapshot_name);
+
+            let source = std::fs::read_to_string(snapshot_source_path)
+                .expect("source file should be a readable text file.");
+
+            check(&source, expect_file![snapshot_output_path]);
+        } else {
+            panic!("Expected snapshot directory to not have subdirectories.")
+        }
+    }
 }
