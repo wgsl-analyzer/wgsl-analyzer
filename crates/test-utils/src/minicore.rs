@@ -449,10 +449,10 @@ pub mod mem {
 
     // region:drop
     pub fn drop<T>(_x: T) {}
-    pub const fn replace<T>(dest: &mut T, src: T) -> T {
+    pub const fn replace<T>(destination: &mut T, source: T) -> T {
         unsafe {
-            let result = crate::ptr::read(dest);
-            crate::ptr::write(dest, src);
+            let result = crate::ptr::read(destination);
+            crate::ptr::write(destination, source);
             result
         }
     }
@@ -1314,7 +1314,7 @@ pub mod fmt {
         ($($t:ty)*) => {
             $(
                 impl const Debug for $t {
-                    fn fmt(&self, _f: &mut Formatter<'_>) -> Result {
+                    fn fmt(&self, function: &mut Formatter<'_>) -> Result {
                         Ok(())
                     }
                 }
@@ -1330,7 +1330,7 @@ pub mod fmt {
     }
 
     impl<T: Debug> Debug for [T] {
-        fn fmt(&self, _f: &mut Formatter<'_>) -> Result {
+        fn fmt(&self, function: &mut Formatter<'_>) -> Result {
             Ok(())
         }
     }
@@ -1394,33 +1394,33 @@ pub mod option {
             }
         }
         // region:result
-        pub const fn ok_or<E>(self, err: E) -> Result<T, E> {
+        pub const fn ok_or<E>(self, error: E) -> Result<T, E> {
             match self {
-                Some(v) => Ok(v),
-                None => Err(err),
+                Some(value) => Ok(value),
+                None => Err(error),
             }
         }
         // endregion:result
         // region:fn
-        pub fn and_then<U, F>(self, _f: F) -> Option<U>
+        pub fn and_then<U, F>(self, function: F) -> Option<U>
         where
             F: FnOnce(T) -> Option<U>,
         {
             loop {}
         }
-        pub fn unwrap_or_else<F>(self, _f: F) -> T
+        pub fn unwrap_or_else<F>(self, function: F) -> T
         where
             F: FnOnce() -> T,
         {
             loop {}
         }
-        pub fn map_or<U, F>(self, _default: U, _f: F) -> U
+        pub fn map_or<U, F>(self, _default: U, function: F) -> U
         where
             F: FnOnce(T) -> U,
         {
             loop {}
         }
-        pub fn map_or_else<U, D, F>(self, _default: D, _f: F) -> U
+        pub fn map_or_else<U, D, F>(self, _default: D, function: F) -> U
         where
             D: FnOnce() -> U,
             F: FnOnce(T) -> U,
@@ -1603,7 +1603,7 @@ pub mod iter {
                 {
                     loop {}
                 }
-                fn filter_map<B, F>(self, _f: F) -> crate::iter::FilterMap<Self, F>
+                fn filter_map<B, F>(self, function: F) -> crate::iter::FilterMap<Self, F>
                 where
                     Self: Sized,
                     F: FnMut(Self::Item) -> Option<B>,
@@ -1738,9 +1738,9 @@ mod panicking {
     // This function is used instead of panic_fmt in const eval.
     #[lang = "const_panic_fmt"]
     pub const fn const_panic_fmt(fmt: crate::fmt::Arguments<'_>) -> ! {
-        if let Some(msg) = fmt.as_str() {
+        if let Some(message) = fmt.as_str() {
             // The panic_display function is hooked by const eval.
-            panic_display(&msg);
+            panic_display(&message);
         } else {
             loop {}
         }

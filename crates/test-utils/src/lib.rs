@@ -193,16 +193,16 @@ pub fn extract_tags(
     let open = format!("<{tag}");
     let close = format!("</{tag}>");
     let mut ranges = Vec::new();
-    let mut res = String::new();
+    let mut result = String::new();
     let mut stack = Vec::new();
     loop {
         match text.find('<') {
             None => {
-                res.push_str(text);
+                result.push_str(text);
                 break;
             },
             Some(i) => {
-                res.push_str(&text[..i]);
+                result.push_str(&text[..i]);
                 text = &text[i..];
                 if text.starts_with(&open) {
                     let close_open = text.find('>').unwrap();
@@ -213,16 +213,16 @@ pub fn extract_tags(
                         Some(attribute.to_owned())
                     };
                     text = &text[close_open + '>'.len_utf8()..];
-                    let from = TextSize::of(&res);
+                    let from = TextSize::of(&result);
                     stack.push((from, attribute));
                 } else if text.starts_with(&close) {
                     text = &text[close.len()..];
                     let (from, attribute) =
                         stack.pop().unwrap_or_else(|| panic!("unmatched </{tag}>"));
-                    let to = TextSize::of(&res);
+                    let to = TextSize::of(&result);
                     ranges.push((TextRange::new(from, to), attribute));
                 } else {
-                    res.push('<');
+                    result.push('<');
                     text = &text['<'.len_utf8()..];
                 }
             },
@@ -230,7 +230,7 @@ pub fn extract_tags(
     }
     assert!(stack.is_empty(), "unmatched <{tag}>");
     ranges.sort_by_key(|r| (r.0.start(), r.0.end()));
-    (ranges, res)
+    (ranges, result)
 }
 
 #[cfg(test)]
@@ -258,11 +258,11 @@ pub fn add_cursor(
     offset: TextSize,
 ) -> String {
     let offset: usize = offset.into();
-    let mut res = String::new();
-    res.push_str(&text[..offset]);
-    res.push_str("$0");
-    res.push_str(&text[offset..]);
-    res
+    let mut result = String::new();
+    result.push_str(&text[..offset]);
+    result.push_str("$0");
+    result.push_str(&text[offset..]);
+    result
 }
 
 /// Extracts `//^^^ some text` annotations.
@@ -300,11 +300,11 @@ pub fn add_cursor(
 /// Panics if the internal algorithm is incorrect.
 #[must_use]
 pub fn extract_annotations(text: &str) -> Vec<(TextRange, String)> {
-    let mut res = Vec::new();
+    let mut result = Vec::new();
     // map from line length to beginning of last line that had that length
     let mut line_start_map = BTreeMap::new();
     let mut line_start: TextSize = 0.into();
-    let mut prev_line_annotations: Vec<(TextSize, usize)> = Vec::new();
+    let mut previous_line_annotations: Vec<(TextSize, usize)> = Vec::new();
     for line in text.split_inclusive('\n') {
         let mut this_line_annotations = Vec::new();
         let line_length = if let Some((prefix, suffix)) = line.split_once("//") {
@@ -318,7 +318,7 @@ pub fn extract_annotations(text: &str) -> Vec<(TextRange, String)> {
                         file,
                     } => {
                         range += annotation_offset;
-                        this_line_annotations.push((range.end(), res.len()));
+                        this_line_annotations.push((range.end(), result.len()));
                         let range = if file {
                             TextRange::up_to(TextSize::of(text))
                         } else {
@@ -326,20 +326,20 @@ pub fn extract_annotations(text: &str) -> Vec<(TextRange, String)> {
 
                             range + line_start.1
                         };
-                        res.push((range, content));
+                        result.push((range, content));
                     },
                     LineAnnotation::Continuation {
                         mut offset,
                         content,
                     } => {
                         offset += annotation_offset;
-                        let &(_, index) = prev_line_annotations
+                        let &(_, index) = previous_line_annotations
                             .iter()
                             .find(|&&(off, _idx)| off == offset)
                             .unwrap();
-                        res[index].1.push('\n');
-                        res[index].1.push_str(&content);
-                        res[index].1.push('\n');
+                        result[index].1.push('\n');
+                        result[index].1.push_str(&content);
+                        result[index].1.push('\n');
                     },
                 }
             }
@@ -353,10 +353,9 @@ pub fn extract_annotations(text: &str) -> Vec<(TextRange, String)> {
 
         line_start += TextSize::of(line);
 
-        prev_line_annotations = this_line_annotations;
+        previous_line_annotations = this_line_annotations;
     }
-
-    res
+    result
 }
 
 enum LineAnnotation {
@@ -372,7 +371,7 @@ enum LineAnnotation {
 }
 
 fn extract_line_annotations(mut line: &str) -> Vec<LineAnnotation> {
-    let mut res = Vec::new();
+    let mut result = Vec::new();
     let mut offset: TextSize = 0.into();
     let marker: fn(char) -> bool = if line.contains('^') {
         |c| c == '^'
@@ -429,13 +428,11 @@ fn extract_line_annotations(mut line: &str) -> Vec<LineAnnotation> {
                 file,
             }
         };
-        res.push(annotation);
-
+        result.push(annotation);
         line = &line[next..];
         offset += TextSize::try_from(next).unwrap();
     }
-
-    res
+    result
 }
 
 #[cfg(test)]
@@ -456,20 +453,20 @@ fn main() {
 // ^file
     ",
         );
-        let res = extract_annotations(&text)
+        let result = extract_annotations(&text)
             .into_iter()
             .map(|(range, ann)| (&text[range], ann))
             .collect::<Vec<_>>();
 
         assert_eq!(
-            res[..3],
+            result[..3],
             [
                 ("x", "def".into()),
                 ("y", "def".into()),
                 ("zoo", "type:\ni32\n".into())
             ]
         );
-        assert_eq!(res[3].0.len(), 115);
+        assert_eq!(result[3].0.len(), 115);
     }
 
     #[test]
@@ -483,13 +480,13 @@ fn main() {
   //^^^^^^^^ c
 }",
         );
-        let res = extract_annotations(&text)
+        let result = extract_annotations(&text)
             .into_iter()
             .map(|(range, ann)| (&text[range], ann))
             .collect::<Vec<_>>();
 
         assert_eq!(
-            res,
+            result,
             [
                 ("x", "a".into()),
                 ("y", "b".into()),
