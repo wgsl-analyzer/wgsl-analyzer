@@ -685,7 +685,7 @@ impl<'database> InferenceContext<'database> {
         expression: ExpressionId,
     ) -> Type {
         let body = Arc::clone(&self.body);
-        let r#type = match &body.exprs[expression] {
+        let r#type = match &body.store.exprs[expression] {
             Expression::Missing => self.error_ty(),
             Expression::BinaryOperation {
                 left_side,

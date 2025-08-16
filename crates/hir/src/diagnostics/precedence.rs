@@ -17,7 +17,7 @@ pub fn collect<Function: FnMut(PrecedenceDiagnostic)>(
 ) {
     let (body, _) = database.body_with_source_map(body);
 
-    for (_, expression) in body.exprs.iter() {
+    for (_, expression) in body.store.exprs.iter() {
         // See https://github.com/gpuweb/gpuweb/issues/1146#issuecomment-714721825
         let hir_def::expression::Expression::BinaryOperation {
             operation,
@@ -28,11 +28,11 @@ pub fn collect<Function: FnMut(PrecedenceDiagnostic)>(
             continue;
         };
 
-        let not_parenthesis = |index| !body.parenthesis_expressions.contains(index);
+        let not_parenthesis = |index| !body.store.parenthesis_expressions.contains(index);
 
         let left_hand_side_operator =
             if let hir_def::expression::Expression::BinaryOperation { operation: op, .. } =
-                body.exprs[*left_side]
+                body.store.exprs[*left_side]
             {
                 not_parenthesis(left_side).then_some(op)
             } else {
@@ -40,7 +40,7 @@ pub fn collect<Function: FnMut(PrecedenceDiagnostic)>(
             };
         let right_hand_side_operator =
             if let hir_def::expression::Expression::BinaryOperation { operation: op, .. } =
-                body.exprs[*right_side]
+                body.store.exprs[*right_side]
             {
                 not_parenthesis(right_side).then_some(op)
             } else {

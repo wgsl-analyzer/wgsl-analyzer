@@ -319,7 +319,7 @@ fn compute_expression_scopes(
     scope: ScopeId,
 ) {
     scopes.set_scope_expression(expression, scope);
-    body.exprs[expression].walk_child_expressions(|child| {
+    body.store.exprs[expression].walk_child_expressions(|child| {
         compute_expression_scopes(child, body, scopes, scope);
     });
 }

@@ -4,6 +4,7 @@ pub mod body;
 pub mod data;
 pub mod database;
 pub mod expression;
+pub mod expression_store;
 pub mod hir_file_id;
 pub mod module_data;
 pub mod resolver;
