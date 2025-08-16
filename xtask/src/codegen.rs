@@ -78,7 +78,7 @@ impl CommentBlock {
     }
 
     fn extract_untagged(text: &str) -> Vec<Self> {
-        let mut res = Vec::new();
+        let mut result = Vec::new();
 
         let lines = text.lines().map(str::trim_start);
 
@@ -104,16 +104,16 @@ impl CommentBlock {
                 _ => {
                     if !block.contents.is_empty() {
                         let block = mem::replace(&mut block, dummy_block.clone());
-                        res.push(block);
+                        result.push(block);
                     }
                     block.line = line_num + 2;
                 },
             }
         }
         if !block.contents.is_empty() {
-            res.push(block);
+            result.push(block);
         }
-        res
+        result
     }
 }
 
