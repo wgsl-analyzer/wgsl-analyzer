@@ -2,12 +2,23 @@
 
 use expect_test::expect;
 
-use crate::tests::util::check;
+use crate::test_util::check;
+
 #[test]
-fn format_fn_header() {
+fn format_fn_header_1() {
     check(
         "fn  main ( a :  b )  -> f32   {}",
         expect![["fn main(a: b) -> f32 {}"]],
+    );
+}
+
+#[test]
+fn format_fn_header_long_name() {
+    check(
+        "fn  this_is_a_very_long_name_who_knows_when_it_will_end_because_it_just_goes_on_and_on_and_on( a :  b )  -> f32   {}",
+        expect![[
+            "fn this_is_a_very_long_name_who_knows_when_it_will_end_because_it_just_goes_on_and_on_and_on(a: b) -> f32 {}"
+        ]],
     );
 }
 
@@ -104,4 +115,9 @@ fn format_multiple_fns() {
                 fn main(a: b) -> f32 {}
             "]],
     );
+}
+
+#[test]
+fn format_fn_header_incomplete() {
+    check("fn  main ( a ", expect![["fn  main ( a "]]);
 }

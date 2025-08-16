@@ -11,6 +11,7 @@ license.workspace = true
 rowan = "0.16.1"
 serde = { workspace = true, optional = true }
 syntax.workspace = true
+pretty = "0.12.4"
 
 [dev-dependencies]
 dissimilar = "1.0.11"

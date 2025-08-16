@@ -1,4 +1,4 @@
-use crate::tests::util::{check, check_tabs};
+use crate::test_util::{check, check_tabs};
 use expect_test::expect;
 
 #[test]

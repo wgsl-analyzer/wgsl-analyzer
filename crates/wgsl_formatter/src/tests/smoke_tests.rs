@@ -1,9 +1,8 @@
-#![cfg(test)]
 use std::{ffi::OsString, path::Path};
 
 use expect_test::expect_file;
 
-use crate::tests::util::check;
+use crate::test_util::check;
 
 #[test]
 fn smoke_tests() {
