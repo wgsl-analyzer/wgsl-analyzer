@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::tests::util::{check, check_tabs};
+use crate::test_util::{check, check_tabs};
 
 mod bindings;
 mod code_spacing;
@@ -8,6 +8,7 @@ mod control_structures;
 mod fn_call;
 mod fn_signature;
 mod operators;
+mod resilience;
 mod structs;
 
 #[test]

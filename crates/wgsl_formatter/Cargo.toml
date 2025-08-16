@@ -11,6 +11,7 @@ rust-version.workspace = true
 syntax.workspace = true
 parser.workspace = true
 rowan = "0.16.1"
+pretty = "0.12.4"
 
 [dev-dependencies]
 # anyhow = "1.0.99"
