@@ -10,7 +10,6 @@
 #![expect(clippy::print_stderr, reason = "stderr is useful in testing")]
 
 mod assert_linear;
-pub mod bench_fixture;
 // mod fixture;
 
 use std::{
