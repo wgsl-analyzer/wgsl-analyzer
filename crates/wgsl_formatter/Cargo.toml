@@ -13,6 +13,7 @@ rust-version.workspace = true
 syntax.workspace = true
 parser.workspace = true
 rowan.workspace = true
+pretty.workspace = true
 
 [dev-dependencies]
 # anyhow.workspace = true

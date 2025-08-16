@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::tests::util::{check, check_tabs};
+use crate::test_util::{check, check_tabs};
 #[test]
 fn format_assignment() {
     check(
