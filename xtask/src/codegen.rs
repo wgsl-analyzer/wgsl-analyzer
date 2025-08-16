@@ -26,12 +26,11 @@ impl flags::Codegen {
     ) -> anyhow::Result<()> {
         match self.rtype.unwrap_or_default() {
             flags::CodegenType::All => {
-                // grammar::generate(self.check);
-                // assists_doc_tests::generate(self.check);
-                // parser_inline_tests::generate(self.check);
-                // feature_docs::generate(self.check);
-                // diagnostics_docs::generate(self.check);
-                // lints::generate(self.check) // disabled upstream, so double check this!
+                assists_doc_tests::generate(self.check);
+                parser_inline_tests::generate(self.check);
+                feature_docs::generate(self.check);
+                diagnostics_docs::generate(self.check);
+                // lints::generate(self.check); // disabled upstream, so double check this!
             },
             flags::CodegenType::AssistsDocTests => assists_doc_tests::generate(self.check),
             flags::CodegenType::DiagnosticsDocs => diagnostics_docs::generate(self.check),
