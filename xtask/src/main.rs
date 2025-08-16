@@ -14,7 +14,7 @@
 
 mod flags;
 
-// mod codegen;
+mod codegen;
 mod dist;
 mod install;
 mod pgo;
@@ -33,17 +33,13 @@ fn main() -> anyhow::Result<()> {
     let shell = &Shell::new()?;
     shell.change_dir(project_root());
 
-    #[expect(
-        clippy::unimplemented,
-        reason = "TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/359"
-    )]
     match flags.subcommand {
         flags::XtaskCmd::Install(command) => command.run(shell),
         flags::XtaskCmd::FuzzTests(_) => run_fuzzer(shell),
         flags::XtaskCmd::Release(command) => command.run(shell),
         flags::XtaskCmd::Dist(command) => command.run(shell),
         flags::XtaskCmd::PublishReleaseNotes(command) => command.run(shell),
-        flags::XtaskCmd::Codegen(command) => unimplemented!(),
+        flags::XtaskCmd::Codegen(command) => command.run(shell),
         flags::XtaskCmd::Bb(command) => {
             {
                 let _directory = shell.push_dir("./crates/wgsl-analyzer");
