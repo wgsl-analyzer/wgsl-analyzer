@@ -365,7 +365,7 @@ pub enum SyntaxKind {
     #[token("uniform")]
     Uniform,
     #[token("var")]
-    Var,
+    Variable,
     #[token("while")]
     While,
     #[token("workgroup")]
