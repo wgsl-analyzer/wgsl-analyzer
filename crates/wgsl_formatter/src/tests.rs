@@ -6,7 +6,7 @@ use std::{ffi::OsString, panic, path::Path};
 
 use expect_test::{Expect, ExpectFile, expect, expect_file};
 
-use crate::{FormattingOptions, format_recursive};
+use crate::{FormattingOptions, format_str};
 
 trait ExpectAssertEq {
     fn assert_eq(
@@ -59,19 +59,13 @@ fn check_with_options(
     after: &impl ExpectAssertEq,
     options: &FormattingOptions,
 ) {
-    let syntax = syntax::parse(before.trim_start())
-        .syntax()
-        .clone_for_update();
-    format_recursive(&syntax, options);
-    eprintln!("{syntax:#?}");
+    let new = format_str(before, options);
 
-    let new = syntax.to_string();
     after.assert_eq(&new);
 
     // Check for idempotence
     let syntax = syntax::parse(new.trim_start()).syntax().clone_for_update();
-    format_recursive(&syntax, options);
-    let new_second = syntax.to_string();
+    let new_second = format_str(before, options);
     let diff = dissimilar::diff(&new, &new_second);
     let position = panic::Location::caller();
     if new == new_second {
