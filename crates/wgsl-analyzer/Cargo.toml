@@ -88,7 +88,7 @@ jemallocator = { version = "0.6.0", package = "tikv-jemallocator", optional = tr
 # expect-test.workspace = true
 # xshell.workspace = true
 
-# test-utils.workspace = true
+test-utils.workspace = true
 # test-fixture.workspace = true
 # syntax-bridge.workspace = true
 

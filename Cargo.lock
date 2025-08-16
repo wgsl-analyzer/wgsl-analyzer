@@ -1955,6 +1955,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "test-utils"
+version = "0.0.0"
+dependencies = [
+ "dissimilar",
+ "paths",
+ "profile",
+ "rustc-hash 2.1.1",
+ "stdx 0.0.0",
+ "text-size",
+]
+
+[[package]]
 name = "text-size"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2336,6 +2348,7 @@ dependencies = [
  "serde_json",
  "stdx 0.0.0",
  "syntax",
+ "test-utils",
  "tikv-jemallocator",
  "tracing",
  "tracing-subscriber",

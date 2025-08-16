@@ -67,7 +67,7 @@ stdx = { path = "./crates/stdx", version = "0.0.0" }
 syntax = { path = "./crates/syntax", version = "0.0.0" }
 syntax-bridge = { path = "./crates/syntax-bridge", version = "0.0.0" }
 # test-fixture = { path = "./crates/test-fixture", version = "0.0.0" }
-# test-utils = { path = "./crates/test-utils", version = "0.0.0" }
+test-utils = { path = "./crates/test-utils", version = "0.0.0" }
 tt = { path = "./crates/tt", version = "0.0.0" }
 wgsl-analyzer = { path = "./crates/wgsl-analyzer", version = "0.0.0" }
 wgsl-formatter = { path = "./crates/wgsl_formatter", version = "0.0.0" }
