@@ -10,7 +10,6 @@
 #![expect(clippy::print_stderr, reason = "stderr is useful in testing")]
 
 mod assert_linear;
-// mod fixture;
 
 use std::{
     collections::BTreeMap,
@@ -26,10 +25,7 @@ use text_size::{TextRange, TextSize};
 pub use dissimilar::diff as __diff;
 pub use rustc_hash::FxHashMap;
 
-pub use crate::{
-    assert_linear::AssertLinear,
-    // fixture::{Fixture, FixtureWithProjectMeta, MiniCore},
-};
+pub use crate::assert_linear::AssertLinear;
 
 pub const CURSOR_MARKER: &str = "$0";
 pub const ESCAPED_CURSOR_MARKER: &str = "\\$0";
@@ -523,7 +519,7 @@ pub fn target_dir() -> Utf8PathBuf {
     }
 }
 
-/// Returns the path to the root directory of `rust-analyzer` project.
+/// Returns the path to the root directory of `wgsl-analyzer` project.
 ///
 /// # Panics
 ///
