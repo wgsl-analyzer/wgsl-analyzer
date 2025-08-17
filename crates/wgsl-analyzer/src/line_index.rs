@@ -30,10 +30,10 @@ pub(crate) enum LineEndings {
 impl LineEndings {
     /// Replaces `\r\n` with `\n` in-place in `source`.
     pub(crate) fn normalize(source: String) -> (String, Self) {
-        // We replace `\r\n` with `\n` in-place, which doesn't break utf-8 encoding.
+        // We replace `\r\n` with `\n` in-place, which does not break UTF-8 encoding.
         // While we *can* call `as_mut_vec` and do surgery on the live string
-        // directly, let's rather steal the contents of `source`. This makes the code
-        // safe even if a panic occurs.
+        // directly, let us rather steal the contents of `source`.
+        // This makes the code safe even if a panic occurs.
 
         let mut buffer = source.into_bytes();
         let mut gap_length = 0;
@@ -67,7 +67,7 @@ impl LineEndings {
         unsafe {
             buffer.set_len(new_len);
         }
-        // SAFETY: After `set_len`, `buf` is guaranteed to contain utf-8 again.
+        // SAFETY: After `set_len`, `buf` is guaranteed to contain UTF-8 again.
         let source = unsafe { String::from_utf8_unchecked(buffer) };
         (source, Self::Dos)
     }
