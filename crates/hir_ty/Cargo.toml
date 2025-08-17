@@ -23,5 +23,8 @@ rustc-hash.workspace = true
 itertools.workspace = true
 smallvec.workspace = true
 
+[build-dependencies]
+paths.workspace = true
+
 [lints]
 workspace = true

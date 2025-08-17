@@ -644,6 +644,6 @@ mod tests {
     fn generate_config_documentation() {
         let docs_path = project_root().join("docs/book/src/configuration_generated.md");
         let expected = String::new();
-        ensure_file_contents(docs_path.as_std_path(), &expected);
+        ensure_file_contents(&docs_path, &expected);
     }
 }
