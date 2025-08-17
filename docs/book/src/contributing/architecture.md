@@ -266,19 +266,10 @@ Reloading process should not prevent IDE features from working.
 
 ### `crates/toolchain`, `crates/project-model`, `crates/flycheck`
 
-These crates deal with invoking `cargo` to learn about project structure and get compiler errors for the "check on save" feature.
+These crates deal with invoking [`wesl`](https://github.com/wgsl-tooling-wg/wesl-rs) to learn about project structure and get compiler errors for the "check on save" feature.
 
-They use `crates/paths` heavily instead of `std::path`.
 A single `wgsl-analyzer` process can serve many projects, so it is important that the server's current working directory does not leak.
-
-### `crates/cfg`
-
-This crate is responsible for parsing, evaluation, and general definition of `cfg` attributes.
-
-### `crates/vfs`, `crates/vfs-notify`, `crates/paths`
-
-These crates implement a virtual file system.
-They provide consistent snapshots of the underlying file system and insulate messy OS paths.
+Therefore, these crates especially use `paths` instead of `std::path`.
 
 **Architecture Invariant:** vfs does not assume a single unified file system.
 i.e., a single `wgsl-analyzer` process can act as a remote server for two different machines, where the same `/tmp/foo.rs` path points to different files.
