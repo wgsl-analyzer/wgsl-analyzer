@@ -55,6 +55,31 @@ pub struct ExpressionStoreBuilder {
         ArenaMap<ExpressionId, Result<AstPointer<ast::Expression>, SyntheticSyntax>>,
 }
 
+impl ExpressionStoreBuilder {
+    pub fn finish(self) -> (ExpressionStore, ExpressionSourceMap) {
+        let Self {
+            mut exprs,
+            mut parenthesis_expressions,
+            mut expression_map,
+            mut expression_map_back,
+        } = self;
+        exprs.shrink_to_fit();
+        parenthesis_expressions.shrink_to_fit();
+        expression_map.shrink_to_fit();
+        expression_map_back.shrink_to_fit();
+        (
+            ExpressionStore {
+                exprs,
+                parenthesis_expressions,
+            },
+            ExpressionSourceMap {
+                expression_map,
+                expression_map_back,
+            },
+        )
+    }
+}
+
 impl ExpressionSourceMap {
     #[must_use]
     pub fn lookup_expression(

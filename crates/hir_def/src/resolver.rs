@@ -9,7 +9,6 @@ use crate::{
         scope::{ExprScopes, ScopeId},
     },
     database::{DefDatabase, FunctionId, Location},
-    hir_file_id::ImportFile,
     module_data::{
         Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItem, Name, Override, Struct,
         TypeAlias,
@@ -96,30 +95,9 @@ impl Resolver {
     #[must_use]
     pub fn push_module_scope(
         mut self,
-        database: &dyn DefDatabase,
         file_id: HirFileId,
         module_info: Arc<ModuleInfo>,
     ) -> Self {
-        for item in module_info.items() {
-            if let ModuleItem::Import(import) = item {
-                let loc = Location::new(file_id, *import);
-                let import_id = database.intern_import(loc);
-                let import_file = HirFileId::from(ImportFile { import_id });
-                let import_module_info = database.module_info(import_file);
-                // If we can find the original source file for this import, push its scope
-                if let Some(original_file_id) = import_file.original_file(database) {
-                    let original_file_id = HirFileId::from(original_file_id);
-                    self = self.push_module_scope(database, original_file_id, import_module_info);
-                } else {
-                    info!("Failed to resolve import file for {file_id:?}");
-                    // This import might be a custom import without a direct file
-                    // For these cases, we'll use the imported module info with the original file ID
-                    self = self.push_module_scope(database, file_id, import_module_info);
-                    info!("Using module_info for import without resolving to a file: {file_id:?}");
-                }
-            }
-        }
-
         self.scopes.push(Scope::Module(ModuleScope {
             module_info,
             file_id,
@@ -182,9 +160,7 @@ impl Resolver {
                             scope.module_info.data[override_decl.index].name.clone(),
                             ScopeDef::ModuleItem(scope.file_id, *item),
                         ),
-                        ModuleItem::Struct(_)
-                        | ModuleItem::Import(_)
-                        | ModuleItem::TypeAlias(_) => {},
+                        ModuleItem::Struct(_) | ModuleItem::TypeAlias(_) => {},
                     });
             },
             Scope::Expression(expression_scope) => {
@@ -245,12 +221,12 @@ impl Resolver {
                                     *r#override,
                                 )))
                             },
+                            // TODO: Why can't I resolve the other values?
                             ModuleItem::Function(_)
                             | ModuleItem::Struct(_)
                             | ModuleItem::GlobalVariable(_)
                             | ModuleItem::GlobalConstant(_)
                             | ModuleItem::Override(_)
-                            | ModuleItem::Import(_)
                             | ModuleItem::TypeAlias(_) => None,
                         })
                 },
@@ -283,8 +259,7 @@ impl Resolver {
                     ModuleItem::Function(_)
                     | ModuleItem::GlobalVariable(_)
                     | ModuleItem::GlobalConstant(_)
-                    | ModuleItem::Override(_)
-                    | ModuleItem::Import(_) => None,
+                    | ModuleItem::Override(_) => None,
                 }),
             Scope::Expression(_) => None,
 
@@ -323,8 +298,7 @@ impl Resolver {
                     },
                     ModuleItem::GlobalVariable(_)
                     | ModuleItem::GlobalConstant(_)
-                    | ModuleItem::Override(_)
-                    | ModuleItem::Import(_) => None,
+                    | ModuleItem::Override(_) => None,
                 }),
             Scope::Expression(_) => None,
             Scope::Builtin => {

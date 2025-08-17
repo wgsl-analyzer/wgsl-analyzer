@@ -39,16 +39,16 @@ pub fn infer_query(
 
     match definition {
         DefinitionWithBodyId::Function(function) => {
-            context.collect_fn(function, &database.fn_data(function));
+            context.collect_fn(function, &database.fn_data(function).0);
         },
         DefinitionWithBodyId::GlobalVariable(var) => {
-            context.collect_global_variable(var, &database.global_var_data(var));
+            context.collect_global_variable(var, &database.global_var_data(var).0);
         },
         DefinitionWithBodyId::GlobalConstant(constant) => {
-            context.collect_global_constant(constant, &database.global_constant_data(constant));
+            context.collect_global_constant(constant, &database.global_constant_data(constant).0);
         },
         DefinitionWithBodyId::Override(override_decl) => {
-            context.collect_override(override_decl, &database.override_data(override_decl));
+            context.collect_override(override_decl, &database.override_data(override_decl).0);
         },
     }
 
@@ -350,7 +350,9 @@ impl<'database> InferenceContext<'database> {
             },
             DefinitionWithBodyId::GlobalVariable(_)
             | DefinitionWithBodyId::GlobalConstant(_)
-            | DefinitionWithBodyId::Override(_) => resolver,
+            | DefinitionWithBodyId::Override(_)
+            | DefinitionWithBodyId::Struct(_)
+            | DefinitionWithBodyId::TypeAlias(_) => resolver,
         }
     }
 
@@ -708,7 +710,7 @@ impl<'database> InferenceContext<'database> {
                     .as_ref()
                 {
                     TyKind::Struct(r#struct) => {
-                        let struct_data = self.database.struct_data(*r#struct);
+                        let struct_data = self.database.struct_data(*r#struct).0;
                         let field_types = self.database.field_types(*r#struct);
 
                         if let Some(field) = struct_data.field(name) {
@@ -1026,7 +1028,7 @@ impl<'database> InferenceContext<'database> {
             },
             hir_def::resolver::ResolveValue::GlobalVariable(loc) => {
                 let id = self.database.intern_global_variable(loc);
-                let data = self.database.global_var_data(id);
+                let data = self.database.global_var_data(id).0;
                 let result = self
                     .database
                     .infer(DefinitionWithBodyId::GlobalVariable(id));

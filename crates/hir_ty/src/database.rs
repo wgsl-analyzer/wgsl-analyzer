@@ -11,7 +11,6 @@ use hir_def::{
     HirFileId, InFile,
     data::LocalFieldId,
     database::{DefDatabase, DefinitionWithBodyId, FunctionId, Lookup as _, StructId},
-    hir_file_id::ImportFile,
     resolver::Resolver,
     type_ref::AddressSpace,
 };
@@ -63,11 +62,11 @@ fn field_types(
     database: &dyn HirDatabase,
     r#struct: StructId,
 ) -> Arc<ArenaMap<LocalFieldId, Type>> {
-    let data = database.struct_data(r#struct);
+    let data = database.struct_data(r#struct).0;
 
     let file_id = r#struct.lookup(database).file_id;
     let module_info = database.module_info(file_id);
-    let resolver = Resolver::default().push_module_scope(database, file_id, module_info);
+    let resolver = Resolver::default().push_module_scope(file_id, module_info);
 
     let mut ty_ctx = TyLoweringContext::new(database, &resolver);
 
@@ -86,11 +85,11 @@ fn function_type(
     database: &dyn HirDatabase,
     function: FunctionId,
 ) -> ResolvedFunctionId {
-    let data = database.fn_data(function);
+    let data = database.fn_data(function).0;
 
     let file_id = function.lookup(database).file_id;
     let module_info = database.module_info(file_id);
-    let resolver = Resolver::default().push_module_scope(database, file_id, module_info);
+    let resolver = Resolver::default().push_module_scope(file_id, module_info);
 
     let mut ty_ctx = TyLoweringContext::new(database, &resolver);
 
@@ -120,14 +119,9 @@ fn struct_is_used_in_uniform(
 ) -> bool {
     let module_info = database.module_info(file_id);
     module_info.items().iter().any(|item| match *item {
-        hir_def::module_data::ModuleItem::Import(import) => {
-            let import_id = database.intern_import(InFile::new(file_id, import));
-            let file_id = ImportFile { import_id };
-            database.struct_is_used_in_uniform(r#struct, file_id.into())
-        },
         hir_def::module_data::ModuleItem::GlobalVariable(decl) => {
             let decl = database.intern_global_variable(InFile::new(file_id, decl));
-            let data = database.global_var_data(decl);
+            let data = database.global_var_data(decl).0;
 
             if !matches!(data.address_space, Some(AddressSpace::Uniform)) {
                 return false;

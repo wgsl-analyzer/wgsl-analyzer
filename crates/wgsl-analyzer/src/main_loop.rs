@@ -36,7 +36,7 @@ use triomphe::Arc;
 
 use hir_def::HirFileId;
 use hir_def::database::DefDatabase as _;
-use hir_def::module_data::{ImportValue, ModuleItem};
+use hir_def::module_data::ModuleItem;
 use salsa::{Cancelled, Durability};
 use tracing::info;
 use vfs::{AbsPathBuf, FileId};
@@ -905,24 +905,6 @@ impl GlobalState {
         &mut self,
         config: Config,
     ) {
-        let old_config = std::mem::replace(&mut self.config, Arc::new(config));
-
-        if old_config.data().custom_imports != self.config.data().custom_imports {
-            self.analysis_host
-                .raw_database_mut()
-                .set_custom_imports_with_durability(
-                    Arc::new(self.config.data().custom_imports.clone()),
-                    Durability::HIGH,
-                );
-        }
-
-        if old_config.data().shader_defs != self.config.data().shader_defs {
-            self.analysis_host
-                .raw_database_mut()
-                .set_shader_defs_with_durability(
-                    Arc::new(self.config.data().shader_defs.clone()),
-                    Durability::HIGH,
-                );
-        }
+        let _old_config = std::mem::replace(&mut self.config, Arc::new(config));
     }
 }

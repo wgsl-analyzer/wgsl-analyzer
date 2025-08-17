@@ -34,10 +34,7 @@ pub(crate) fn complete_names_in_scope(
             ScopeDef::ModuleItem(_, ModuleItem::GlobalConstant(_) | ModuleItem::Override(_)) => {
                 CompletionItemKind::Constant
             },
-            ScopeDef::ModuleItem(
-                _,
-                ModuleItem::Struct(_) | ModuleItem::TypeAlias(_) | ModuleItem::Import(_),
-            ) => {
+            ScopeDef::ModuleItem(_, ModuleItem::Struct(_) | ModuleItem::TypeAlias(_)) => {
                 unreachable!()
             },
         };

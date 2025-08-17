@@ -38,43 +38,12 @@ impl fmt::Display for TypeReference {
     }
 }
 
-impl TryFrom<ast::Type> for TypeReference {
-    type Error = ();
-
-    fn try_from(r#type: ast::Type) -> Result<Self, ()> {
-        let type_ref = match r#type {
-            ast::Type::PathType(path) => Self::Path(path.name().ok_or(())?.text().into()),
-            ast::Type::ScalarType(scalar) => Self::Scalar(scalar.into()),
-            ast::Type::VecType(vec) => Self::Vec(vec.try_into()?),
-            ast::Type::MatrixType(matrix) => Self::Matrix(matrix.try_into()?),
-            ast::Type::TextureType(tex) => Self::Texture(tex.try_into()?),
-            ast::Type::SamplerType(sampler) => Self::Sampler(sampler.into()),
-            ast::Type::AtomicType(atomic) => Self::Atomic(atomic.try_into()?),
-            ast::Type::ArrayType(array) => Self::Array(array.try_into()?),
-            ast::Type::BindingArrayType(array) => Self::Array(array.try_into()?),
-            ast::Type::PointerType(pointer) => Self::Pointer(pointer.try_into()?),
-        };
-        Ok(type_ref)
-    }
-}
-
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum ScalarType {
     Bool,
     Float32,
     Int32,
     Uint32,
-}
-
-impl From<ast::ScalarType> for ScalarType {
-    fn from(r#type: ast::ScalarType) -> Self {
-        match r#type {
-            ast::ScalarType::Bool(_) => Self::Bool,
-            ast::ScalarType::Float32(_) => Self::Float32,
-            ast::ScalarType::Int32(_) => Self::Int32,
-            ast::ScalarType::Uint32(_) => Self::Uint32,
-        }
-    }
 }
 
 impl fmt::Display for ScalarType {
@@ -126,65 +95,11 @@ impl fmt::Display for VecDimensionality {
     }
 }
 
-impl TryFrom<ast::VecType> for VecType {
-    type Error = ();
-
-    fn try_from(r#type: ast::VecType) -> Result<Self, ()> {
-        let size = vector_dimensions(&r#type);
-        let inner = first_type_generic(&r#type)?;
-
-        Ok(Self {
-            size,
-            inner: Box::new(inner.try_into()?),
-        })
-    }
-}
-
-pub(crate) const fn vector_dimensions(r#type: &ast::VecType) -> VecDimensionality {
-    match *r#type {
-        ast::VecType::Vec2(_) => VecDimensionality::Two,
-        ast::VecType::Vec3(_) => VecDimensionality::Three,
-        ast::VecType::Vec4(_) => VecDimensionality::Four,
-    }
-}
-
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct MatrixType {
     pub columns: VecDimensionality,
     pub rows: VecDimensionality,
     pub inner: Box<TypeReference>,
-}
-
-impl TryFrom<ast::MatrixType> for MatrixType {
-    type Error = ();
-
-    fn try_from(r#type: ast::MatrixType) -> Result<Self, ()> {
-        let (columns, rows) = matrix_dimensions(&r#type);
-        let inner = first_type_generic(&r#type)?;
-
-        Ok(Self {
-            columns,
-            rows,
-            inner: Box::new(inner.try_into()?),
-        })
-    }
-}
-
-pub(crate) const fn matrix_dimensions(
-    r#type: &ast::MatrixType
-) -> (VecDimensionality, VecDimensionality) {
-    let (columns, rows) = match *r#type {
-        ast::MatrixType::Mat2x2(_) => (VecDimensionality::Two, VecDimensionality::Two),
-        ast::MatrixType::Mat2x3(_) => (VecDimensionality::Two, VecDimensionality::Three),
-        ast::MatrixType::Mat2x4(_) => (VecDimensionality::Two, VecDimensionality::Four),
-        ast::MatrixType::Mat3x2(_) => (VecDimensionality::Three, VecDimensionality::Two),
-        ast::MatrixType::Mat3x3(_) => (VecDimensionality::Three, VecDimensionality::Three),
-        ast::MatrixType::Mat3x4(_) => (VecDimensionality::Three, VecDimensionality::Four),
-        ast::MatrixType::Mat4x2(_) => (VecDimensionality::Four, VecDimensionality::Two),
-        ast::MatrixType::Mat4x3(_) => (VecDimensionality::Four, VecDimensionality::Three),
-        ast::MatrixType::Mat4x4(_) => (VecDimensionality::Four, VecDimensionality::Four),
-    };
-    (columns, rows)
 }
 
 impl fmt::Display for MatrixType {
@@ -198,13 +113,6 @@ impl fmt::Display for MatrixType {
             self.columns, self.rows, &*self.inner
         )
     }
-}
-
-fn first_type_generic<T: HasGenerics>(r#type: &T) -> Result<ast::Type, ()> {
-    let mut generics = r#type.generic_arg_list().ok_or(())?.generics();
-    let first_generic = generics.next().ok_or(())?;
-    let generic = first_generic.as_type().ok_or(())?;
-    Ok(generic)
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -289,74 +197,6 @@ impl fmt::Display for TextureDimension {
     }
 }
 
-impl TryFrom<ast::TextureType> for TextureType {
-    type Error = ();
-
-    fn try_from(texture: ast::TextureType) -> Result<Self, Self::Error> {
-        enum TextureKindVariant {
-            Sampled,
-            Storage,
-            Depth,
-            External,
-        }
-        #[rustfmt::skip]
-        let (kind, dimension, arrayed, multisampled) = match texture {
-            ast::TextureType::Texture1d(_) => (TextureKindVariant::Sampled, TextureDimension::D1, false, false),
-            ast::TextureType::Texture2d(_) => (TextureKindVariant::Sampled, TextureDimension::D2, false, false),
-            ast::TextureType::Texture2dArray(_) => (TextureKindVariant::Sampled, TextureDimension::D2, true, false),
-            ast::TextureType::Texture3d(_) => (TextureKindVariant::Sampled, TextureDimension::D3, false, false),
-            ast::TextureType::TextureCube(_) => (TextureKindVariant::Sampled, TextureDimension::Cube, false, false),
-            ast::TextureType::TextureCubeArray(_) => (TextureKindVariant::Sampled, TextureDimension::Cube, true, false),
-
-            ast::TextureType::TextureMultisampled2d(_) => (TextureKindVariant::Sampled, TextureDimension::D2, false, true),
-            ast::TextureType::TextureExternal(_) => (TextureKindVariant::External, TextureDimension::D1, false, false),
-
-            ast::TextureType::TextureStorage1d(_) => (TextureKindVariant::Storage, TextureDimension::D1, false, false),
-            ast::TextureType::TextureStorage2d(_) => (TextureKindVariant::Storage, TextureDimension::D2, false, false),
-            ast::TextureType::TextureStorage2dArray(_) => (TextureKindVariant::Storage, TextureDimension::D2, true, false),
-            ast::TextureType::TextureStorage3d(_) => (TextureKindVariant::Storage, TextureDimension::D3, false, false),
-
-            ast::TextureType::TextureDepth2d(_) => (TextureKindVariant::Depth, TextureDimension::D2, false, false),
-            ast::TextureType::TextureDepth2dArray(_) => (TextureKindVariant::Depth, TextureDimension::D2, true, false),
-            ast::TextureType::TextureDepthCube(_) => (TextureKindVariant::Depth, TextureDimension::Cube, false, false),
-            ast::TextureType::TextureDepthCubeArray(_) => (TextureKindVariant::Depth, TextureDimension::Cube, true, false),
-            ast::TextureType::TextureDepthMultisampled2d(_) => (TextureKindVariant::Depth, TextureDimension::D2, false, true),
-        };
-
-        let kind = match kind {
-            TextureKindVariant::Sampled => {
-                let inner = first_type_generic(&texture)?;
-                TextureKind::Sampled(Box::new(inner.try_into()?))
-            },
-            TextureKindVariant::Storage => {
-                let mut generics = texture.generic_arg_list().ok_or(())?.generics();
-
-                let texel_format = generics.next().ok_or(())?;
-                let name = texel_format.as_type().ok_or(())?.as_name().ok_or(())?;
-                let texel_format = name.text().to_string();
-
-                let access_mode = generics
-                    .next()
-                    .ok_or(())?
-                    .as_access_mode()
-                    .ok_or(())?
-                    .into();
-
-                TextureKind::Storage(texel_format, access_mode)
-            },
-            TextureKindVariant::Depth => TextureKind::Depth,
-            TextureKindVariant::External => TextureKind::External,
-        };
-
-        Ok(Self {
-            dimension,
-            arrayed,
-            multisampled,
-            kind,
-        })
-    }
-}
-
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub enum AccessMode {
     ReadWrite,
@@ -385,16 +225,6 @@ impl AccessMode {
     #[must_use]
     pub const fn read_write() -> Self {
         Self::ReadWrite
-    }
-}
-
-impl From<ast::AccessMode> for AccessMode {
-    fn from(value: ast::AccessMode) -> Self {
-        match value {
-            ast::AccessMode::Read(_) => Self::Read,
-            ast::AccessMode::Write(_) => Self::Write,
-            ast::AccessMode::ReadWrite(_) => Self::ReadWrite,
-        }
     }
 }
 
@@ -446,19 +276,6 @@ impl AddressSpace {
     }
 }
 
-impl From<ast::AddressSpace> for AddressSpace {
-    fn from(class: ast::AddressSpace) -> Self {
-        match class {
-            ast::AddressSpace::FunctionClass(_) => Self::Function,
-            ast::AddressSpace::Private(_) => Self::Private,
-            ast::AddressSpace::Workgroup(_) => Self::Workgroup,
-            ast::AddressSpace::Uniform(_) => Self::Uniform,
-            ast::AddressSpace::Storage(_) => Self::Storage,
-            ast::AddressSpace::PushConstant(_) => Self::PushConstant,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct SamplerType {
     pub comparison: bool,
@@ -477,15 +294,6 @@ impl fmt::Display for SamplerType {
     }
 }
 
-impl From<ast::SamplerType> for SamplerType {
-    fn from(r#type: ast::SamplerType) -> Self {
-        match r#type {
-            ast::SamplerType::Sampler(_) => Self { comparison: false },
-            ast::SamplerType::SamplerComparison(_) => Self { comparison: true },
-        }
-    }
-}
-
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct AtomicType {
     pub inner: Box<TypeReference>,
@@ -497,17 +305,6 @@ impl fmt::Display for AtomicType {
         formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         write!(formatter, "atomic<{}>", self.inner)
-    }
-}
-
-impl TryFrom<ast::AtomicType> for AtomicType {
-    type Error = ();
-
-    fn try_from(atomic: ast::AtomicType) -> Result<Self, Self::Error> {
-        let inner = first_type_generic(&atomic)?;
-        Ok(Self {
-            inner: Box::new(inner.try_into()?),
-        })
     }
 }
 
@@ -548,62 +345,6 @@ pub enum ArraySize {
     Dynamic,
 }
 
-impl TryFrom<ast::ArrayType> for ArrayType {
-    type Error = ();
-
-    fn try_from(array: ast::ArrayType) -> Result<Self, Self::Error> {
-        let mut generics = array.generic_arg_list().ok_or(())?.generics();
-        let inner = generics.next().ok_or(())?.as_type().ok_or(())?;
-        let size = match generics.next() {
-            Some(ast::GenericArg::Type(r#type)) => {
-                ArraySize::Path(Name::from(r#type.as_name().ok_or(())?))
-            },
-            Some(ast::GenericArg::Literal(literal)) => match parse_literal(literal.kind()) {
-                crate::expression::Literal::Int(value, _) => ArraySize::Int(value),
-                crate::expression::Literal::Uint(value, _) => ArraySize::Uint(value),
-                crate::expression::Literal::Float(..) | crate::expression::Literal::Bool(_) => {
-                    return Err(());
-                },
-            },
-            None => ArraySize::Dynamic,
-            _ => return Err(()),
-        };
-        Ok(Self {
-            inner: Box::new(inner.try_into()?),
-            binding_array: false,
-            size,
-        })
-    }
-}
-
-impl TryFrom<ast::BindingArrayType> for ArrayType {
-    type Error = ();
-
-    fn try_from(array: ast::BindingArrayType) -> Result<Self, Self::Error> {
-        let mut generics = array.generic_arg_list().ok_or(())?.generics();
-        let inner = generics.next().ok_or(())?.as_type().ok_or(())?;
-        let size = match generics.next() {
-            Some(ast::GenericArg::Type(r#type)) => {
-                ArraySize::Path(Name::from(r#type.as_name().ok_or(())?))
-            },
-            Some(ast::GenericArg::Literal(literal)) => match parse_literal(literal.kind()) {
-                crate::expression::Literal::Int(value, _) => ArraySize::Int(value),
-                crate::expression::Literal::Uint(value, _) => ArraySize::Uint(value),
-                crate::expression::Literal::Float(..) | crate::expression::Literal::Bool(_) => {
-                    return Err(());
-                },
-            },
-            None => ArraySize::Dynamic,
-            _ => return Err(()),
-        };
-        Ok(Self {
-            inner: Box::new(inner.try_into()?),
-            binding_array: true,
-            size,
-        })
-    }
-}
-
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct PointerType {
     pub address_space: AddressSpace,
@@ -617,30 +358,5 @@ impl fmt::Display for PointerType {
         formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         write!(formatter, "ptr<{}, {}>", self.address_space, self.inner)
-    }
-}
-
-impl TryFrom<ast::PointerType> for PointerType {
-    type Error = ();
-
-    fn try_from(pointer: ast::PointerType) -> Result<Self, Self::Error> {
-        let mut generics = pointer.generic_arg_list().ok_or(())?.generics();
-        let address_space: AddressSpace = match generics.next() {
-            Some(ast::GenericArg::AddressSpace(class)) => class.into(),
-            _ => return Err(()),
-        };
-        let inner = generics.next().ok_or(())?.as_type().ok_or(())?;
-
-        let access_mode = match generics.next() {
-            Some(ast::GenericArg::AccessMode(mode)) => mode.into(),
-            None => address_space.default_access_mode(),
-            _ => return Err(()),
-        };
-
-        Ok(Self {
-            address_space,
-            access_mode,
-            inner: Box::new(inner.try_into()?),
-        })
     }
 }

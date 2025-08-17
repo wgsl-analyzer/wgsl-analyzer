@@ -281,22 +281,6 @@
 						"default": "0.22",
 						"description": "Which version of naga to use for its diagnostics"
 					},
-					"wgsl-analyzer.customImports": {
-						"type": "object",
-						"additionalProperties": {
-							"type": "string"
-						},
-						"default": {},
-						"markdownDescription": "`#import` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports). To use objects from an import, add `#import <name>` to your WGSL."
-					},
-					"wgsl-analyzer.preprocessor.shaderDefs": {
-						"type": "array",
-						"items": {
-							"type": "string"
-						},
-						"default": [],
-						"markdownDescription": "Shader defines used in `#ifdef` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports)."
-					},
 					"wgsl-analyzer.inlayHints.enabled": {
 						"type": "boolean",
 						"default": true,

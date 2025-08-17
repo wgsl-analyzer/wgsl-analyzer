@@ -5,57 +5,38 @@ use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
 use crate::{
     HirFileId, InFile,
     database::DefDatabase,
+    expression::{
+        Expression, ExpressionId, Statement, StatementId, SwitchCaseSelector, parse_literal,
+    },
     expression_store::{ExpressionStoreBuilder, lower::ExprCollector},
-    expression::{Callee, Expression, ExpressionId, Statement, StatementId, parse_literal},
     hir_file_id::relative_file,
     module_data::Name,
-    type_ref::{TypeReference, matrix_dimensions, vector_dimensions},
+    type_ref::TypeReference,
 };
 
 pub(super) fn lower_function_body(
     database: &dyn DefDatabase,
     file_id: HirFileId,
-    param_list: Option<ast::ParameterList>,
+    param_list: Option<ast::FunctionParameters>,
     body: Option<ast::CompoundStatement>,
 ) -> (Body, BodySourceMap) {
-    Collector {
-        expressions: ExprCollector::new(database),
-        database,
-        body: Body::default(),
-        source_map: BodySourceMap::default(),
-        file_id,
-    }
-    .collect_function(param_list, body)
+    Collector::new(database, file_id).collect_function(param_list, body)
 }
 
 pub(super) fn lower_global_var_declaration(
     database: &dyn DefDatabase,
     file_id: HirFileId,
-    declaration: &ast::GlobalVariableDeclaration,
+    declaration: &ast::VariableDeclaration,
 ) -> (Body, BodySourceMap) {
-    Collector {
-        expressions: ExprCollector::new(database),
-        database,
-        body: Body::default(),
-        source_map: BodySourceMap::default(),
-        file_id,
-    }
-    .collect_global_var_declaration(declaration)
+    Collector::new(database, file_id).collect_global_var_declaration(declaration)
 }
 
 pub(super) fn lower_global_constant_declaration(
     database: &dyn DefDatabase,
     file_id: HirFileId,
-    declaration: &ast::GlobalConstantDeclaration,
+    declaration: &ast::ConstantDeclaration,
 ) -> (Body, BodySourceMap) {
-    Collector {
-        expressions: ExprCollector::new(database),
-        database,
-        body: Body::default(),
-        source_map: BodySourceMap::default(),
-        file_id,
-    }
-    .collect_global_constant_declaration(declaration)
+    Collector::new(database, file_id).collect_global_constant_declaration(declaration)
 }
 
 pub(super) fn lower_override_declaration(
@@ -63,14 +44,7 @@ pub(super) fn lower_override_declaration(
     file_id: HirFileId,
     declaration: &ast::OverrideDeclaration,
 ) -> (Body, BodySourceMap) {
-    Collector {
-        expressions: ExprCollector::new(database),
-        database,
-        body: Body::default(),
-        source_map: BodySourceMap::default(),
-        file_id,
-    }
-    .collect_override_declaration(declaration)
+    Collector::new(database, file_id).collect_override_declaration(declaration)
 }
 
 struct Collector<'database> {
@@ -82,9 +56,21 @@ struct Collector<'database> {
 }
 
 impl Collector<'_> {
+    fn new<'a>(
+        database: &'a dyn DefDatabase,
+        file_id: HirFileId,
+    ) -> Collector<'a> {
+        Collector {
+            expressions: ExprCollector::new(database),
+            database,
+            body: Body::default(),
+            source_map: BodySourceMap::default(),
+            file_id,
+        }
+    }
     fn collect_function(
         mut self,
-        param_list: Option<ast::ParameterList>,
+        param_list: Option<ast::FunctionParameters>,
         body: Option<ast::CompoundStatement>,
     ) -> (Body, BodySourceMap) {
         self.collect_function_param_list(param_list);
@@ -92,84 +78,49 @@ impl Collector<'_> {
         self.body.root = body
             .map(|body| self.collect_compound_statement(&body))
             .map(Either::Left);
+        (self.body.store, self.source_map.expressions) = self.expressions.store.finish();
 
         (self.body, self.source_map)
     }
 
     fn collect_function_param_list(
         &mut self,
-        param_list: Option<ast::ParameterList>,
+        param_list: Option<ast::FunctionParameters>,
     ) {
         if let Some(param_list) = param_list {
             for parameter in param_list.parameters() {
-                if let Some(binding) = parameter
-                    .variable_ident_declaration()
-                    .and_then(|declaration| declaration.binding())
-                {
-                    let binding_id = self.collect_binding(&binding);
-                    self.body.parameters.push(binding_id);
-                } else if let Some(import) = parameter.import() {
-                    let import_param_list =
-                        crate::module_data::find_import(self.database, self.file_id, &import)
-                            .map(|import| {
-                                self.database
-                                    .intern_import(InFile::new(self.file_id, import))
-                            })
-                            .and_then(|import_id| {
-                                let import_loc = self.database.lookup_intern_import(import_id);
-                                let module_info = self.database.module_info(import_loc.file_id);
-                                let import = module_info.get(import_loc.value);
-
-                                match &import.value {
-                                    crate::module_data::ImportValue::Path(path) => {
-                                        let file_id =
-                                            relative_file(self.database, import_loc.file_id, path)?;
-                                        Some(self.database.parse(file_id))
-                                    },
-                                    crate::module_data::ImportValue::Custom(key) => self
-                                        .database
-                                        .parse_import(
-                                            key.clone(),
-                                            syntax::ParseEntryPoint::FunctionParameterList,
-                                        )
-                                        .ok(),
-                                }
-                            })
-                            .and_then(|parse| ast::ParameterList::cast(parse.syntax()));
-                    self.collect_function_param_list(import_param_list);
-                }
+                let binding_id = self.collect_name_opt(parameter.name());
+                self.body.parameters.push(binding_id);
             }
         }
     }
 
     fn collect_global_var_declaration(
         mut self,
-        declaration: &ast::GlobalVariableDeclaration,
+        declaration: &ast::VariableDeclaration,
     ) -> (Body, BodySourceMap) {
         self.body.root = declaration
             .init()
             .map(|expression| self.collect_expression(expression))
             .map(Either::Right);
 
-        self.body.main_binding = declaration
-            .binding()
-            .map(|binding| self.collect_binding(&binding));
+        self.body.main_binding = declaration.name().map(|binding| self.collect_name(binding));
+        (self.body.store, self.source_map.expressions) = self.expressions.store.finish();
 
         (self.body, self.source_map)
     }
 
     fn collect_global_constant_declaration(
         mut self,
-        declaration: &ast::GlobalConstantDeclaration,
+        declaration: &ast::ConstantDeclaration,
     ) -> (Body, BodySourceMap) {
         self.body.root = declaration
             .init()
             .map(|expression| self.collect_expression(expression))
             .map(Either::Right);
 
-        self.body.main_binding = declaration
-            .binding()
-            .map(|binding| self.collect_binding(&binding));
+        self.body.main_binding = declaration.name().map(|binding| self.collect_name(binding));
+        (self.body.store, self.source_map.expressions) = self.expressions.store.finish();
 
         (self.body, self.source_map)
     }
@@ -183,28 +134,26 @@ impl Collector<'_> {
             .map(|expression| self.collect_expression(expression))
             .map(Either::Right);
 
-        self.body.main_binding = declaration
-            .binding()
-            .map(|binding| self.collect_binding(&binding));
+        self.body.main_binding = declaration.name().map(|binding| self.collect_name(binding));
+        (self.body.store, self.source_map.expressions) = self.expressions.store.finish();
 
         (self.body, self.source_map)
     }
-
-    fn collect_binding(
+    fn collect_name(
         &mut self,
-        binding: &ast::Binding,
+        binding: ast::Name,
     ) -> BindingId {
-        let source = AstPointer::new(binding);
-        let name = binding.name().map_or_else(Name::missing, Name::from);
-        self.alloc_binding(Binding { name }, source)
+        let source = AstPointer::new(&binding);
+        let name = Name::from(binding);
+        self.alloc_name(Binding { name }, source)
     }
 
-    fn collect_binding_opt(
+    fn collect_name_opt(
         &mut self,
-        binding: Option<ast::Binding>,
+        binding: Option<ast::Name>,
     ) -> BindingId {
         match binding {
-            Some(binding) => self.collect_binding(&binding),
+            Some(binding) => self.collect_name(binding),
             None => self.missing_binding(),
         }
     }
@@ -239,45 +188,65 @@ impl Collector<'_> {
         statement: &ast::Statement,
     ) -> Option<StatementId> {
         let hir_statement = match &statement {
-            ast::Statement::VariableStatement(variable_statement) => {
-                let binding_id = self.collect_binding_opt(variable_statement.binding());
+            ast::Statement::VariableDeclaration(variable_statement) => {
+                let binding_id = self.collect_name_opt(variable_statement.name());
                 let initializer = variable_statement
-                    .initializer()
+                    .init()
                     .map(|expression| self.collect_expression(expression));
                 let type_ref = variable_statement
                     .ty()
-                    .and_then(|typo| TypeReference::try_from(typo).ok())
-                    .map(|type_ref| self.database.intern_type_ref(type_ref));
+                    .map(|typo| self.expressions.collect_type_specifier(typo));
 
-                match variable_statement.kind()? {
-                    ast::VariableStatementKind::Let => Statement::Let {
-                        binding_id,
-                        type_ref,
-                        initializer,
-                    },
-                    ast::VariableStatementKind::Constant => Statement::Const {
-                        binding_id,
-                        type_ref,
-                        initializer,
-                    },
-                    ast::VariableStatementKind::Var => {
-                        let address_space = variable_statement
-                            .variable_qualifier()
-                            .and_then(syntax::ast::VariableQualifier::address_space)
-                            .map(Into::into);
-                        let access_mode = variable_statement
-                            .variable_qualifier()
-                            .and_then(|qualifier| qualifier.access_mode())
-                            .map(Into::into);
+                let (address_space, access_mode) = variable_statement
+                    .generic_arg_list()
+                    .map(|v| v.generics())
+                    .map(|mut v| {
+                        (
+                            v.next()
+                                .map(|expression| self.collect_expression(expression)),
+                            v.next()
+                                .map(|expression| self.collect_expression(expression)),
+                        )
+                    })
+                    .unwrap_or_default();
 
-                        Statement::Variable {
-                            binding_id,
-                            type_ref,
-                            initializer,
-                            address_space,
-                            access_mode,
-                        }
-                    },
+                Statement::Variable {
+                    binding_id,
+                    type_ref,
+                    initializer,
+                    address_space,
+                    access_mode,
+                }
+            },
+            ast::Statement::ConstantDeclaration(variable_statement) => {
+                let binding_id = self.collect_name_opt(variable_statement.name());
+                let initializer = variable_statement
+                    .init()
+                    .map(|expression| self.collect_expression(expression));
+                let type_ref = variable_statement
+                    .ty()
+                    .map(|typo| self.expressions.collect_type_specifier(typo));
+
+                Statement::Const {
+                    binding_id,
+                    type_ref,
+                    initializer,
+                }
+            },
+
+            ast::Statement::LetDeclaration(variable_statement) => {
+                let binding_id = self.collect_name_opt(variable_statement.name());
+                let initializer = variable_statement
+                    .init()
+                    .map(|expression| self.collect_expression(expression));
+                let type_ref = variable_statement
+                    .ty()
+                    .map(|typo| self.expressions.collect_type_specifier(typo));
+
+                Statement::Let {
+                    binding_id,
+                    type_ref,
+                    initializer,
                 }
             },
             ast::Statement::CompoundStatement(compound_statement) => {
@@ -313,8 +282,11 @@ impl Collector<'_> {
                 Statement::IncrDecr { expression, op }
             },
             ast::Statement::IfStatement(if_statement) => {
-                let condition = self.collect_expression_opt(if_statement.condition());
-                let block = self.collect_compound_statement_opt(if_statement.block());
+                let condition = self
+                    .collect_expression_opt(if_statement.if_block().and_then(|v| v.condition()));
+                let block = self.collect_compound_statement_opt(
+                    if_statement.if_block().and_then(|v| v.block()),
+                );
                 let else_if_blocks = if_statement
                     .else_if_blocks()
                     .map(|block| self.collect_compound_statement_opt(block.block()))
@@ -341,7 +313,16 @@ impl Collector<'_> {
                                     case.selectors().map_or_else(Vec::new, |selectors| {
                                         selectors
                                             .exprs()
-                                            .map(|expression| self.collect_expression(expression))
+                                            .map(|expression| match expression {
+                                                ast::SwitchCaseSelector::Expression(expression) => {
+                                                    SwitchCaseSelector::Expression(
+                                                        self.collect_expression(expression),
+                                                    )
+                                                },
+                                                ast::SwitchCaseSelector::Default(_) => {
+                                                    SwitchCaseSelector::Default
+                                                },
+                                            })
                                             .collect()
                                     });
                                 let block = self.collect_compound_statement_opt(case.block());
@@ -349,6 +330,7 @@ impl Collector<'_> {
                             })
                             .collect();
 
+                        // TODO: What if there are multiple default blocks?
                         let default_block = block
                             .default()
                             .last()
@@ -442,10 +424,10 @@ impl Collector<'_> {
         id
     }
 
-    fn alloc_binding(
+    fn alloc_name(
         &mut self,
         binding: Binding,
-        source: AstPointer<ast::Binding>,
+        source: AstPointer<ast::Name>,
     ) -> BindingId {
         let id = self.make_binding(binding, Ok(source.clone()));
         self.source_map.binding_map.insert(source, id);
@@ -455,7 +437,7 @@ impl Collector<'_> {
     fn make_binding(
         &mut self,
         binding: Binding,
-        source: Result<AstPointer<ast::Binding>, SyntheticSyntax>,
+        source: Result<AstPointer<ast::Name>, SyntheticSyntax>,
     ) -> BindingId {
         let id = self.body.bindings.alloc(binding);
         self.source_map.binding_map_back.insert(id, source);

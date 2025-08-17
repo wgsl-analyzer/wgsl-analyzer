@@ -7,7 +7,7 @@ use rustc_hash::FxHashMap;
 use super::{BindingId, Body};
 use crate::{
     database::{DefDatabase, DefinitionWithBodyId},
-    expression::{ExpressionId, Statement, StatementId},
+    expression::{ExpressionId, Statement, StatementId, SwitchCaseSelector},
     module_data::Name,
 };
 
@@ -264,7 +264,9 @@ fn compute_statement_scopes(
 
             for (selectors, case) in case_blocks {
                 for selector in selectors {
-                    compute_expression_scopes(*selector, body, scopes, scope);
+                    if let SwitchCaseSelector::Expression(selector) = selector {
+                        compute_expression_scopes(*selector, body, scopes, scope);
+                    }
                 }
 
                 let case_scope = scopes.new_block_scope(scope);

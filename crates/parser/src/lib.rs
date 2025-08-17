@@ -1,42 +1,22 @@
 //! The parser is mostly copied from <https://github.com/arzg/eldiro/tree/master/crates/parser> with some adaptions and extensions
 
-mod event;
-mod grammar;
 mod lexer;
 mod parser;
-mod sink;
-mod source;
 mod syntax_kind;
+mod cst_builder;
 
 use std::fmt::{self, Debug};
 
 pub use edition::Edition;
-use lexer::Lexer;
-pub use parser::{ParseError, Parser, marker};
+pub use parser::{Diagnostic as ParseError, parse_entrypoint};
 use rowan::{GreenNode, SyntaxNode as RowanSyntaxNode};
-use sink::Sink;
-use source::Source;
 use std::fmt::Write as _;
-
-pub fn parse<Function: Fn(&mut Parser<'_, '_>)>(
-    input: &str,
-    parser_implementation: Function,
-) -> Parse {
-    let tokens: Vec<_> = Lexer::<SyntaxKind>::new(input).collect();
-    let source = Source::new(&tokens);
-    let parser = Parser::new(source);
-    let events = parser.parse(parser_implementation);
-    let sink = Sink::new(&tokens, events);
-
-    sink.finish()
-}
 
 pub struct Parse {
     green_node: GreenNode,
     errors: Vec<ParseError>,
 }
-
-impl Debug for Parse {
+impl fmt::Debug for Parse {
     fn fmt(
         &self,
         formatter: &mut fmt::Formatter<'_>,
@@ -73,15 +53,15 @@ impl Parse {
         if !self.errors.is_empty() {
             buffer.push('\n');
         }
-        for error in &self.errors {
-            write!(buffer, "\n{error}");
+        for diagnostic in &self.errors {
+            write!(buffer, "\n{diagnostic}");
         }
         buffer
     }
 
     #[must_use]
-    pub fn syntax(&self) -> RowanSyntaxNode<WeslLanguage> {
-        RowanSyntaxNode::new_root(self.green_node.clone())
+    pub fn syntax(&self) -> rowan::SyntaxNode<WeslLanguage> {
+        rowan::SyntaxNode::new_root(self.green_node.clone())
     }
 
     #[must_use]
@@ -126,24 +106,8 @@ pub enum ParseEntryPoint {
     Expression,
     Statement,
     Type,
-    AttributeList,
+    Attribute,
     FunctionParameterList,
-}
-
-pub fn parse_entrypoint(
-    input: &str,
-    entrypoint: ParseEntryPoint,
-) -> Parse {
-    match entrypoint {
-        ParseEntryPoint::File => parse::<_>(input, grammar::file),
-        ParseEntryPoint::Expression => parse::<_>(input, grammar::expression),
-        ParseEntryPoint::Statement => parse::<_>(input, grammar::statement),
-        ParseEntryPoint::Type => parse::<_>(input, |parser| {
-            grammar::type_declaration(parser);
-        }),
-        ParseEntryPoint::AttributeList => parse::<_>(input, grammar::attribute_list),
-        ParseEntryPoint::FunctionParameterList => parse::<_>(input, grammar::inner_parameter_list),
-    }
 }
 
 #[must_use]
@@ -157,7 +121,7 @@ fn check_entrypoint(
     entry_point: ParseEntryPoint,
     expected_tree: &expect_test::Expect,
 ) {
-    let parse = crate::parse_entrypoint(input, entry_point);
+    let parse = crate::parser::parse_entrypoint(input, entry_point);
     expected_tree.assert_eq(&parse.debug_tree());
 }
 

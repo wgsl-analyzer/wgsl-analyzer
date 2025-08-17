@@ -175,7 +175,7 @@ fn write_ty(
             write!(formatter, ">")
         },
         TyKind::Struct(r#struct) => {
-            let data = database.struct_data(r#struct);
+            let data = database.struct_data(r#struct).0;
             write!(formatter, "{}", data.name.as_str())
         },
         TyKind::Array(array_type) => {

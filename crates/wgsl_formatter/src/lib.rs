@@ -7,7 +7,9 @@
 mod tests;
 
 use rowan::{GreenNode, GreenToken, NodeOrToken, WalkEvent};
-use syntax::{AstNode, HasGenerics as _, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, ast};
+use syntax::{
+    AstNode, HasGenerics as _, HasName, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, ast,
+};
 
 #[must_use]
 pub fn format_str(
@@ -70,15 +72,15 @@ pub fn format_recursive(
 fn is_indent_kind(node: &SyntaxNode) -> bool {
     if matches!(
         node.kind(),
-        SyntaxKind::CompoundStatement | SyntaxKind::SwitchBlock
+        SyntaxKind::LoopStatement | SyntaxKind::CompoundStatement | SyntaxKind::SwitchBody
     ) {
         return true;
     }
 
-    let param_list_left_paren = ast::ParameterList::cast(node.clone())
+    let param_list_left_paren = ast::FunctionParameters::cast(node.clone())
         .and_then(|list| list.left_parenthesis_token())
         .or_else(|| {
-            let list = ast::FunctionParameterList::cast(node.clone())?;
+            let list = ast::Arguments::cast(node.clone())?;
             list.left_parenthesis_token()
         });
 
@@ -103,10 +105,12 @@ fn format_syntax_node(
     indentation: usize,
     options: &FormattingOptions,
 ) -> Option<()> {
-    if syntax
-        .parent()
-        .is_some_and(|parent| parent.kind() == SyntaxKind::CompoundStatement)
-    {
+    if syntax.parent().is_some_and(|parent| {
+        matches!(
+            parent.kind(),
+            SyntaxKind::LoopStatement | SyntaxKind::CompoundStatement | SyntaxKind::SwitchBody
+        )
+    }) {
         let start = syntax.first_token()?;
 
         let n_newlines = n_newlines_in_whitespace(&start.prev_token()?).unwrap_or(0); // spellchecker:disable-line
@@ -129,8 +133,8 @@ fn format_syntax_node(
         //     parameter : type,
         //     parameter : type,
         // ) -> return_ty {}
-        SyntaxKind::Function => {
-            let function = ast::Function::cast(syntax)?;
+        SyntaxKind::FunctionDeclaration => {
+            let function = ast::FunctionDeclaration::cast(syntax)?;
 
             trim_whitespace_before_to_newline(&function.fn_token()?);
 
@@ -162,10 +166,10 @@ fn format_syntax_node(
                 remove_if_whitespace(&param_list.right_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
             }
         },
-        SyntaxKind::VariableIdentDeclaration => {
-            let param_list = ast::VariableIdentDeclaration::cast(syntax)?;
-            remove_if_whitespace(&param_list.colon_token()?.prev_token()?); // spellchecker:disable-line
-            set_whitespace_single_after(&param_list.colon_token()?);
+        SyntaxKind::Parameter => {
+            let item = ast::Parameter::cast(syntax)?;
+            remove_if_whitespace(&item.colon_token()?.prev_token()?); // spellchecker:disable-line
+            set_whitespace_single_after(&item.colon_token()?);
         },
         SyntaxKind::ReturnType => {
             let return_type = ast::ReturnType::cast(syntax)?;
@@ -176,8 +180,8 @@ fn format_syntax_node(
 
             trim_whitespace_before_to_newline(&r#struct.struct_token()?);
 
-            let name = r#struct.name()?.ident_token()?;
-            whitespace_to_single_around(&name);
+            let name = r#struct.name()?;
+            whitespace_to_single_around(&name.ident_token()?);
 
             let body = r#struct.body()?;
             let l_brace = body.left_brace_token()?;
@@ -198,12 +202,18 @@ fn format_syntax_node(
                 indent_before(&r_brace, indentation, options)?;
             }
         },
+        SyntaxKind::StructMember => {
+            let item = ast::StructMember::cast(syntax)?;
+            remove_if_whitespace(&item.colon_token()?.prev_token()?); // spellchecker:disable-line
+            set_whitespace_single_after(&item.colon_token()?);
+        },
         SyntaxKind::IfStatement => {
             let if_statement = ast::IfStatement::cast(syntax)?;
 
-            set_whitespace_single_after(&if_statement.if_token()?);
-
-            set_whitespace_single_before(&if_statement.block()?.left_brace_token()?);
+            if let Some(if_block) = if_statement.if_block() {
+                set_whitespace_single_after(&if_block.if_token()?);
+                set_whitespace_single_before(&if_block.block()?.left_brace_token()?);
+            }
 
             if let Some(else_block) = if_statement.else_block() {
                 whitespace_to_single_around(&else_block.else_token()?);
@@ -256,38 +266,30 @@ fn format_syntax_node(
                 );
             }
         },
-        SyntaxKind::TypeInitializer => {
-            let type_initialiser = ast::TypeInitializer::cast(syntax)?;
+        SyntaxKind::IdentExpression => {
+            let ident_expression = ast::IdentExpression::cast(syntax)?;
 
-            if let Some(expression) = type_initialiser.ty() {
-                remove_if_whitespace(&expression.syntax().last_token()?);
-            }
-
-            format_parameters(&type_initialiser.arguments()?, indentation, options)?;
+            let generics = ident_expression.generic_arg_list()?;
+            let left_angle = generics.left_angle_token()?;
+            remove_if_whitespace(&left_angle.prev_token()?); // spellchecker:disable-line
+            remove_if_whitespace(&left_angle.next_token()?);
+            let right_angle = generics.left_angle_token()?;
+            remove_if_whitespace(&right_angle.prev_token()?); // spellchecker:disable-line
         },
         SyntaxKind::FunctionCall => {
             let function_call = ast::FunctionCall::cast(syntax)?;
 
-            if let Some(name_ref) = function_call.name_ref() {
-                remove_if_whitespace(&name_ref.syntax().last_token()?);
+            if let Some(name_ref) = function_call.ident_expression() {
+                remove_if_whitespace(&name_ref.syntax().next_sibling_or_token()?.into_token()?);
             }
 
             let param_list = function_call.parameters()?;
-
             format_parameters(&param_list, indentation, options)?;
         },
         SyntaxKind::InfixExpression => {
             let expression = ast::InfixExpression::cast(syntax)?;
 
-            match expression.op()? {
-                NodeOrToken::Node(node) => {
-                    set_whitespace_single_before(&node.first_token()?);
-                    set_whitespace_single_before(&node.last_token()?.next_token()?);
-                },
-                NodeOrToken::Token(token) => {
-                    whitespace_to_single_around(&token);
-                },
-            }
+            whitespace_to_single_around(&dbg!(expression.op())?);
         },
         SyntaxKind::ParenthesisExpression => {
             let parenthesis_expression = ast::ParenthesisExpression::cast(syntax)?;
@@ -308,23 +310,14 @@ fn format_syntax_node(
                 .is_some_and(|parent| {
                     matches!(
                         parent.kind(),
-                        |SyntaxKind::WhileStatement| SyntaxKind::IfStatement
-                            | SyntaxKind::ElseIfBlock
+                        |SyntaxKind::WhileStatement| SyntaxKind::IfClause
+                            | SyntaxKind::ElseIfClause
                     )
                 })
             {
                 remove_token(&parenthesis_expression.right_parenthesis_token()?);
                 remove_token(&parenthesis_expression.left_parenthesis_token()?);
             }
-        },
-        SyntaxKind::BitcastExpression => {
-            let bitcast_expression = ast::BitcastExpression::cast(syntax)?;
-            remove_if_whitespace(&bitcast_expression.bitcast_token()?.next_token()?);
-
-            remove_if_whitespace(&bitcast_expression.left_angle_token()?.next_token()?);
-            remove_if_whitespace(&bitcast_expression.right_angle_token()?.prev_token()?); // spellchecker:disable-line
-
-            remove_if_whitespace(&bitcast_expression.right_angle_token()?.next_token()?);
         },
         SyntaxKind::AssignmentStatement => {
             let statement = ast::AssignmentStatement::cast(syntax)?;
@@ -334,16 +327,44 @@ fn format_syntax_node(
             let statement = ast::CompoundAssignmentStatement::cast(syntax)?;
             whitespace_to_single_around(&statement.operator_token()?);
         },
-        SyntaxKind::VariableStatement => {
-            let statement = ast::VariableStatement::cast(syntax)?;
+        SyntaxKind::VariableDeclaration => {
+            let statement = ast::VariableDeclaration::cast(syntax)?;
             if let Some(colon) = statement.colon() {
                 remove_if_whitespace(&colon.prev_token()?); // spellchecker:disable-line
                 set_whitespace_single_after(&colon);
             }
             whitespace_to_single_around(&statement.equal_token()?);
         },
+        SyntaxKind::LetDeclaration => {
+            let statement = ast::LetDeclaration::cast(syntax)?;
+            if let Some(colon) = statement.colon() {
+                remove_if_whitespace(&colon.prev_token()?); // spellchecker:disable-line
+                set_whitespace_single_after(&colon);
+            }
+            whitespace_to_single_around(&statement.equal_token()?);
+        },
+        SyntaxKind::ConstantDeclaration => {
+            let statement = ast::ConstantDeclaration::cast(syntax)?;
+            if let Some(colon) = statement.colon() {
+                remove_if_whitespace(&colon.prev_token()?); // spellchecker:disable-line
+                set_whitespace_single_after(&colon);
+            }
+            whitespace_to_single_around(&statement.equal_token()?);
+        },
+        SyntaxKind::OverrideDeclaration => {
+            let statement = ast::OverrideDeclaration::cast(syntax)?;
+            if let Some(colon) = statement.colon() {
+                remove_if_whitespace(&colon.prev_token()?); // spellchecker:disable-line
+                set_whitespace_single_after(&colon);
+            }
+            whitespace_to_single_around(&statement.equal_token()?);
+        },
+        SyntaxKind::TypeAliasDeclaration => {
+            let statement = ast::TypeAliasDeclaration::cast(syntax)?;
+            whitespace_to_single_around(&statement.equal_token()?);
+        },
         _ => {
-            if let Some(r#type) = ast::Type::cast(syntax) {
+            if let Some(r#type) = ast::TypeSpecifier::cast(syntax) {
                 let generics = r#type.generic_arg_list()?;
                 let left_angle = generics.left_angle_token()?;
                 remove_if_whitespace(&left_angle.prev_token()?); // spellchecker:disable-line
@@ -358,7 +379,7 @@ fn format_syntax_node(
 }
 
 fn format_parameters(
-    param_list: &ast::FunctionParameterList,
+    param_list: &ast::Arguments,
     indentation: usize,
     options: &FormattingOptions,
 ) -> Option<()> {
@@ -410,11 +431,13 @@ fn format_param_list<T: AstNode>(
 
         let last_param_token = parameter.syntax().last_token()?;
         remove_if_whitespace(&last_param_token);
-
+        // TODO: This wrongly inserts bonus commas
+        /*
         let token_after_parameter = match parameter.syntax().next_sibling_or_token()? {
             NodeOrToken::Node(node) => node.first_token()?,
             NodeOrToken::Token(token) => token,
         };
+
         match (last, token_after_parameter.kind() == SyntaxKind::Comma) {
             (true, true) if !has_newline => token_after_parameter.detach(),
             (true, has_comma) => match (trailing_comma_policy, has_comma) {
@@ -434,7 +457,7 @@ fn format_param_list<T: AstNode>(
                     create_syntax_token(SyntaxKind::Comma, ","),
                 );
             },
-        }
+        } */
 
         first = false;
     }

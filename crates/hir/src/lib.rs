@@ -13,11 +13,11 @@ use hir_def::{
     data::FieldId,
     database::{
         DefDatabase, DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId,
-        ImportId, Location, Lookup as _, OverrideId, StructId, TypeAliasId,
+        Location, Lookup as _, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
-    hir_file_id::{ImportFile, relative_file},
-    module_data::{self, ImportValue, ModuleInfo, ModuleItem, Name},
+    hir_file_id::relative_file,
+    module_data::{self, ModuleInfo, ModuleItem, Name},
     resolver::{ResolveValue, Resolver},
 };
 pub use hir_ty::database::HirDatabase;
@@ -69,8 +69,9 @@ impl<'database> Semantics<'database> {
             match_ast! {
                 match syntax {
                     ast::Function(function) => self.function_to_def(&InFile::new(file_id, function)).map(DefinitionWithBodyId::Function),
-                    ast::GlobalVariableDeclaration(var) => self.global_variable_to_def(&InFile::new(file_id, var)).map(DefinitionWithBodyId::GlobalVariable),
-                    ast::GlobalConstantDeclaration(constant) => self.global_constant_to_def(&InFile::new(file_id, constant)).map(DefinitionWithBodyId::GlobalConstant),
+                    ast::VariableDeclaration(var) => self.global_variable_to_def(&InFile::new(file_id, var)).map(DefinitionWithBodyId::GlobalVariable),
+                    ast::ConstantDeclaration(constant) => self.global_constant_to_def(&InFile::new(file_id, constant)).map(DefinitionWithBodyId::GlobalConstant),
+                    ast::OverrideDeclaration(item) => self.global_override_to_def(&InFile::new(file_id, item)).map(DefinitionWithBodyId::Override),
                     _ => None,
                 }
             }
@@ -87,7 +88,7 @@ impl<'database> Semantics<'database> {
             definition.resolver(self.database)
         } else {
             let module_info = self.database.module_info(file_id);
-            Resolver::default().push_module_scope(self.database, file_id, module_info)
+            Resolver::default().push_module_scope(file_id, module_info)
         }
     }
 
@@ -116,8 +117,7 @@ impl<'database> Semantics<'database> {
             &ast::Expression::cast(expression.clone())?,
         ))?;
         let scope_id = expression_scopes.scope_for_expression(expression_id)?;
-        let mut resolver =
-            Resolver::default().push_module_scope(self.database, file_id, module_info);
+        let mut resolver = Resolver::default().push_module_scope(file_id, module_info);
 
         if let DefinitionWithBodyId::Function(function) = definition {
             resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
@@ -160,7 +160,7 @@ impl<'database> Semantics<'database> {
 
     fn global_constant_to_def(
         &self,
-        source: &InFile<ast::GlobalConstantDeclaration>,
+        source: &InFile<ast::ConstantDeclaration>,
     ) -> Option<GlobalConstantId> {
         let global_constant = module_data::find_item(self.database, source.file_id, &source.value)?;
         let id = self
@@ -171,7 +171,7 @@ impl<'database> Semantics<'database> {
 
     fn global_variable_to_def(
         &self,
-        source: &InFile<ast::GlobalVariableDeclaration>,
+        source: &InFile<ast::VariableDeclaration>,
     ) -> Option<GlobalVariableId> {
         let global_variable = module_data::find_item(self.database, source.file_id, &source.value)?;
         let id = self
@@ -180,26 +180,37 @@ impl<'database> Semantics<'database> {
         Some(id)
     }
 
-    #[must_use]
-    pub fn import_to_def(
+    fn global_override_to_def(
         &self,
-        source: &InFile<ast::Import>,
-    ) -> Option<ImportId> {
-        let import = module_data::find_import(self.database, source.file_id, &source.value)?;
-
-        let import_id = self
+        source: &InFile<ast::OverrideDeclaration>,
+    ) -> Option<OverrideId> {
+        let item = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let id = self
             .database
-            .intern_import(Location::new(source.file_id, import));
-        Some(import_id)
+            .intern_override(Location::new(source.file_id, item));
+        Some(id)
     }
 
-    #[must_use]
-    pub fn resolve_import(
+    fn global_type_alias_to_def(
         &self,
-        source: &InFile<ast::Import>,
-    ) -> Option<Import> {
-        let id = self.import_to_def(source)?;
-        Some(Import { id })
+        source: &InFile<ast::TypeAliasDeclaration>,
+    ) -> Option<TypeAliasId> {
+        let item = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let id = self
+            .database
+            .intern_type_alias(Location::new(source.file_id, item));
+        Some(id)
+    }
+
+    fn global_struct_to_def(
+        &self,
+        source: &InFile<ast::StructDeclaration>,
+    ) -> Option<StructId> {
+        let item = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let id = self
+            .database
+            .intern_struct(Location::new(source.file_id, item));
+        Some(id)
     }
 }
 
@@ -233,29 +244,6 @@ fn module_item_to_def(
             let loc = Location::new(file_id, constant);
             let id = database.intern_override(loc);
             ModuleDef::Override(Override { id })
-        },
-        ModuleItem::Import(import) => {
-            let loc = Location::new(file_id, import);
-            let import_id = database.intern_import(loc);
-
-            let import_file = HirFileId::from(ImportFile { import_id });
-            // Process imported definitions from the original file if available
-            if let Some(original_file) = import_file.original_file(database) {
-                let original_file = original_file.into();
-                let module_info = database.module_info(original_file);
-                return module_info
-                    .items()
-                    .iter()
-                    .flat_map(|item| module_item_to_def(database, original_file, *item))
-                    .collect();
-            }
-            // For custom imports without a direct file, use the import file's module info
-            return database
-                .module_info(import_file)
-                .items()
-                .iter()
-                .flat_map(|item| module_item_to_def(database, import_file, *item))
-                .collect();
         },
         ModuleItem::TypeAlias(type_alias) => {
             let loc = Location::new(file_id, type_alias);
@@ -432,7 +420,7 @@ pub struct GlobalVariable {
 }
 
 impl HasSource for GlobalVariable {
-    type Ast = ast::GlobalVariableDeclaration;
+    type Ast = ast::VariableDeclaration;
 
     fn source(
         self,
@@ -448,7 +436,7 @@ pub struct GlobalConstant {
 }
 
 impl HasSource for GlobalConstant {
-    type Ast = ast::GlobalConstantDeclaration;
+    type Ast = ast::ConstantDeclaration;
 
     fn source(
         self,
@@ -518,7 +506,7 @@ impl HasSource for Field {
         self,
         database: &dyn DefDatabase,
     ) -> Option<InFile<Self::Ast>> {
-        let struct_data = database.struct_data(self.id.r#struct);
+        let struct_data = database.struct_data(self.id.r#struct).0;
         let field_data = &struct_data.fields()[self.id.field];
         let field_name = &field_data.name;
 
@@ -555,7 +543,12 @@ impl ModuleDef {
             Self::Override(override_declaration) => {
                 Some(DefinitionWithBodyId::Override(override_declaration.id))
             },
-            Self::Struct(_) | Self::TypeAlias(_) => None,
+            Self::Struct(override_declaration) => {
+                Some(DefinitionWithBodyId::Struct(override_declaration.id))
+            },
+            Self::TypeAlias(type_alias_declaration) => {
+                Some(DefinitionWithBodyId::TypeAlias(type_alias_declaration.id))
+            },
         }
     }
 }
@@ -577,30 +570,6 @@ impl Module {
             .collect()
     }
 
-    pub fn imports(
-        &self,
-        database: &dyn HirDatabase,
-    ) -> Vec<Import> {
-        let module_info = database.module_info(self.file_id);
-        module_info
-            .items()
-            .iter()
-            .filter_map(|item| match item {
-                ModuleItem::Import(import) => Some(import),
-                ModuleItem::Function(_)
-                | ModuleItem::Struct(_)
-                | ModuleItem::GlobalVariable(_)
-                | ModuleItem::GlobalConstant(_)
-                | ModuleItem::Override(_)
-                | ModuleItem::TypeAlias(_) => None,
-            })
-            .map(|id| {
-                let id = database.intern_import(Location::new(self.file_id, *id));
-                Import { id }
-            })
-            .collect()
-    }
-
     pub fn module_info(
         &self,
         database: &dyn HirDatabase,
@@ -614,18 +583,6 @@ impl Module {
         config: &DiagnosticsConfig,
         accumulator: &mut Vec<AnyDiagnostic>,
     ) {
-        for import in self.imports(database) {
-            if import.resolve(database).is_err() {
-                let import_loc = import.id.lookup(database);
-
-                let module_info = self.module_info(database);
-                let def_map = database.ast_id_map(import_loc.file_id);
-
-                let source = import_loc.map(|id| def_map.get(module_info.get(id).ast_id));
-
-                accumulator.push(AnyDiagnostic::UnresolvedImport { import: source });
-            }
-        }
         for item in self.items(database) {
             match item {
                 ModuleDef::Function(_function) => {},
@@ -671,73 +628,6 @@ impl Module {
                     }
                 });
             }
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Copy)]
-pub struct Import {
-    id: ImportId,
-}
-
-impl Import {
-    pub fn is_path(
-        self,
-        database: &dyn HirDatabase,
-    ) -> bool {
-        let import_loc = self.id.lookup(database);
-        let module_info = database.module_info(import_loc.file_id);
-        let import = module_info.get(import_loc.value);
-        matches!(import.value, ImportValue::Path(_))
-    }
-
-    pub fn file_text(
-        self,
-        database: &dyn HirDatabase,
-    ) -> Option<String> {
-        let import_loc = self.id.lookup(database);
-
-        let module_info = database.module_info(import_loc.file_id);
-        let import = module_info.get(import_loc.value);
-
-        match &import.value {
-            ImportValue::Path(path) => {
-                let file_id = relative_file(database, import_loc.file_id, path)?;
-                Some(database.file_text(file_id).to_string())
-            },
-            ImportValue::Custom(key) => {
-                let imports = database.custom_imports();
-                let source = imports.get(key)?;
-                Some(source.clone())
-            },
-        }
-    }
-
-    #[expect(clippy::result_unit_err, reason = "TODO")]
-    pub fn resolve(
-        self,
-        database: &dyn HirDatabase,
-    ) -> Result<(), ()> {
-        let import_location = self.id.lookup(database);
-
-        let module_info = database.module_info(import_location.file_id);
-        let import = module_info.get(import_location.value);
-
-        tracing::info!("resolving import {:?}", import);
-
-        match &import.value {
-            ImportValue::Path(path) => {
-                relative_file(database, import_location.file_id, path).ok_or(())?;
-                Ok(())
-            },
-            ImportValue::Custom(key) => {
-                let imports = database.custom_imports();
-                if imports.contains_key(key) {
-                    Ok(())
-                } else {
-                    Err(())
-                }
-            },
         }
     }
 }
