@@ -91,20 +91,20 @@ impl Tool {
     reason = "generic parameter allows for FxHashMap"
 )]
 pub fn command<Hashy, OsStringy: AsRef<OsStr>, Pathy: AsRef<Path>>(
-    cmd: OsStringy,
+    command: OsStringy,
     working_directory: Pathy,
     extra_env: &std::collections::HashMap<String, Option<String>, Hashy>,
 ) -> Command {
     #[expect(clippy::disallowed_methods, reason = "we are `toolchain::command`")]
-    let mut cmd = Command::new(cmd);
-    cmd.current_dir(working_directory);
+    let mut command = Command::new(command);
+    command.current_dir(working_directory);
     for env in extra_env {
         match env {
-            (key, Some(val)) => cmd.env(key, val),
-            (key, None) => cmd.env_remove(key),
+            (key, Some(val)) => command.env(key, val),
+            (key, None) => command.env_remove(key),
         };
     }
-    cmd
+    command
 }
 
 fn invoke(
@@ -117,6 +117,10 @@ fn invoke(
 }
 
 /// Looks up the binary as its SCREAMING upper case in the env variables.
+#[expect(
+    clippy::disallowed_types,
+    reason = "The value of the environment variable may be a relative path"
+)]
 fn lookup_as_env_var(executable_name: &str) -> Option<Utf8PathBuf> {
     env::var_os(executable_name.to_ascii_uppercase())
         .map(PathBuf::from)
@@ -132,6 +136,10 @@ fn cargo_proxy(executable_name: &str) -> Option<Utf8PathBuf> {
     probe_for_binary(path)
 }
 
+#[expect(
+    clippy::disallowed_types,
+    reason = "The value of the environment variable may be a relative path"
+)]
 fn get_cargo_home() -> Option<Utf8PathBuf> {
     if let Some(path) = env::var_os("CARGO_HOME") {
         return Utf8PathBuf::try_from(PathBuf::from(path)).ok();
@@ -145,10 +153,10 @@ fn get_cargo_home() -> Option<Utf8PathBuf> {
     None
 }
 
-fn lookup_in_path(exec: &str) -> Option<Utf8PathBuf> {
+fn lookup_in_path(executable_name: &str) -> Option<Utf8PathBuf> {
     let paths = env::var_os("PATH").unwrap_or_default();
     env::split_paths(&paths)
-        .map(|path| path.join(exec))
+        .map(|path| path.join(executable_name))
         .map(Utf8PathBuf::try_from)
         .filter_map(Result::ok)
         .find_map(probe_for_binary)

@@ -618,6 +618,7 @@ dependencies = [
  "hir-def",
  "itertools",
  "la-arena",
+ "paths",
  "rustc-hash 2.1.1",
  "salsa",
  "smallvec",
@@ -2214,6 +2215,7 @@ version = "0.0.0"
 dependencies = [
  "camino",
  "home",
+ "paths",
 ]
 
 [[package]]
@@ -2368,22 +2370,6 @@ dependencies = [
 [[package]]
 name = "vfs-notify"
 version = "0.0.0"
-dependencies = [
- "camino",
- "crossbeam-channel",
- "notify",
- "paths",
- "rayon",
- "rustc-hash 2.1.1",
- "stdx 0.0.0",
- "tracing",
- "vfs",
- "walkdir",
-]
-
-[[package]]
-name = "vfs-notify"
-version = "0.0.0"
 source = "git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070#a31e10a2fdc585e9d7ea0857cacfd322dd478070"
 dependencies = [
  "crossbeam-channel",
@@ -2474,7 +2460,7 @@ dependencies = [
  "tracing-tree",
  "triomphe",
  "vfs",
- "vfs-notify 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070)",
+ "vfs-notify",
  "walkdir",
  "windows-sys 0.60.2",
  "xflags",
