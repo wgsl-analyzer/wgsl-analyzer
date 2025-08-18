@@ -1770,13 +1770,15 @@ fn let_statement_recover_return_no_eq() {
                     Name@28..29
                       Identifier@28..29 "x"
                     Blankspace@29..30 " "
-                    Error@30..42
-                      Identifier@30..32 "be"
+                    IdentExpression@30..42
+                      NameReference@30..32
+                        Identifier@30..32 "be"
                       Blankspace@32..41 "\n        "
-                      BraceRight@41..42 "}"
+                      Error@41..42
+                        BraceRight@41..42 "}"
 
             error at 30..32: invalid syntax, expected one of: ':', '=', ';'
-            error at 42..42: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 41..42: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', '==', '!=', '>', '>=', '{', '[', '(', '<', '<=', '-', '%', '|', '||', '+', ']', ')', ';', '<<', '>>', '/', '*', <template end>, <template start>"#]],
     );
 }
 
@@ -1801,20 +1803,20 @@ fn let_statement_recover_return() {
                 CompoundStatement@10..59
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  LetDeclaration@24..49
+                  LetDeclaration@24..40
                     Let@24..27 "let"
                     Blankspace@27..40 "\n            "
                     Name@40..40
-                    Error@40..48
-                      Return@40..46 "return"
-                      Blankspace@46..47 " "
+                  ReturnStatement@40..49
+                    Return@40..46 "return"
+                    Blankspace@46..47 " "
+                    Literal@47..48
                       IntLiteral@47..48 "0"
                     Semicolon@48..49 ";"
                   Blankspace@49..58 "\n        "
                   BraceRight@58..59 "}"
 
-            error at 40..46: invalid syntax, expected: <identifier>
-            error at 48..49: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 40..46: invalid syntax, expected: <identifier>"#]],
     );
 }
 
@@ -1839,22 +1841,22 @@ fn let_statement_recover_return_2() {
                 CompoundStatement@10..61
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  LetDeclaration@24..51
+                  LetDeclaration@24..29
                     Let@24..27 "let"
                     Blankspace@27..28 " "
                     Name@28..29
                       Identifier@28..29 "x"
-                    Blankspace@29..42 "\n            "
-                    Error@42..50
-                      Return@42..48 "return"
-                      Blankspace@48..49 " "
+                  Blankspace@29..42 "\n            "
+                  ReturnStatement@42..51
+                    Return@42..48 "return"
+                    Blankspace@48..49 " "
+                    Literal@49..50
                       IntLiteral@49..50 "0"
                     Semicolon@50..51 ";"
                   Blankspace@51..60 "\n        "
                   BraceRight@60..61 "}"
 
-            error at 42..48: invalid syntax, expected one of: ':', '=', ';'
-            error at 50..51: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 42..48: invalid syntax, expected one of: ':', '=', ';'"#]],
     );
 }
 
@@ -1920,17 +1922,15 @@ fn let_statement_recover_1() {
                 CompoundStatement@10..39
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  LetDeclaration@24..39
+                  LetDeclaration@24..29
                     Let@24..27 "let"
                     Blankspace@27..28 " "
                     Name@28..29
                       Identifier@28..29 "x"
-                    Blankspace@29..38 "\n        "
-                    Error@38..39
-                      BraceRight@38..39 "}"
+                  Blankspace@29..38 "\n        "
+                  BraceRight@38..39 "}"
 
-            error at 38..39: invalid syntax, expected one of: ':', '=', ';'
-            error at 39..39: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 38..39: invalid syntax, expected one of: ':', '=', ';'"#]],
     );
 }
 
@@ -1988,15 +1988,13 @@ fn let_statement_recover_3() {
                 CompoundStatement@10..37
                   BraceLeft@10..11 "{"
                   Blankspace@11..24 "\n            "
-                  LetDeclaration@24..37
+                  LetDeclaration@24..36
                     Let@24..27 "let"
                     Blankspace@27..36 "\n        "
                     Name@36..36
-                    Error@36..37
-                      BraceRight@36..37 "}"
+                  BraceRight@36..37 "}"
 
-            error at 36..37: invalid syntax, expected: <identifier>
-            error at 37..37: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 36..37: invalid syntax, expected: <identifier>"#]],
     );
 }
 

@@ -66,7 +66,7 @@ attribute:
     // builtin is special
   )
 ;
-typed_ident^: name [':' type_specifier];
+typed_ident^: name (':' type_specifier | ());
 name: Ident; // declares an identifier
 name_ref: Ident; // wesl ident goes here
 

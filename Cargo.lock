@@ -892,7 +892,7 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 [[package]]
 name = "lelwel"
 version = "0.9.1"
-source = "git+https://github.com/0x2a-42/lelwel.git?branch=parse_partial_grammar#ecc6771569d456e5d319e4716da0ff2182c7a99e"
+source = "git+https://github.com/0x2a-42/lelwel.git#44fa7297603382f76a71086eaa3647ecc2687457"
 dependencies = [
  "codespan-reporting",
  "logos",
