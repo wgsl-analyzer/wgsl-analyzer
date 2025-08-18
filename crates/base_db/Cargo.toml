@@ -21,8 +21,5 @@ triomphe.workspace = true
 line-index.workspace = true
 vfs.workspace = true
 
-[dev-dependencies]
-pretty_assertions = "1.4.1"
-
 [lints]
 workspace = true
