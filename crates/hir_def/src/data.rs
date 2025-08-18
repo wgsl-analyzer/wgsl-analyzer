@@ -8,6 +8,7 @@ use crate::{
         DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Interned, Lookup as _,
         OverrideId, StructId, TypeAliasId,
     },
+    expression::ExpressionId,
     expression_store::{
         ExpressionSourceMap, ExpressionStore,
         lower::{
@@ -16,7 +17,6 @@ use crate::{
         },
     },
     module_data::Name,
-    type_ref::{AccessMode, AddressSpace, TypeReference},
     type_specifier::TypeSpecifier,
 };
 
@@ -34,7 +34,6 @@ impl FunctionData {
         func: FunctionId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let loc = func.lookup(database);
-        let module_info = database.module_info(loc.file_id);
         let source = loc.source(database);
         let (function_data, source_map) = lower_function(database, source);
         (Arc::new(function_data), Arc::new(source_map))
@@ -68,7 +67,6 @@ impl StructData {
         func: StructId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let loc = func.lookup(database);
-        let module_info = database.module_info(loc.file_id);
         let source = loc.source(database);
         let (struct_data, source_map) = lower_struct(database, source);
         (Arc::new(struct_data), Arc::new(source_map))
@@ -103,7 +101,6 @@ impl TypeAliasData {
         func: TypeAliasId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let loc = func.lookup(database);
-        let module_info = database.module_info(loc.file_id);
         let source = loc.source(database);
 
         let (type_alias, source_map) = lower_type_alias(database, source);
@@ -116,6 +113,7 @@ pub struct GlobalVariableData {
     pub name: Name,
     pub store: ExpressionStore,
     pub r#type: Option<TypeSpecifier>,
+    pub generics: Vec<ExpressionId>,
 }
 
 impl GlobalVariableData {
@@ -124,7 +122,6 @@ impl GlobalVariableData {
         var: GlobalVariableId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let loc = database.lookup_intern_global_variable(var);
-        let module_info = database.module_info(loc.file_id);
         let source = loc.source(database);
 
         let (global_variable, source_map) = lower_variable(database, source);
@@ -145,7 +142,6 @@ impl GlobalConstantData {
         constant: GlobalConstantId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let loc = database.lookup_intern_global_constant(constant);
-        let module_info = database.module_info(loc.file_id);
         let source = loc.source(database);
 
         let (global_constant, source_map) = lower_constant(database, source);
@@ -166,7 +162,6 @@ impl OverrideData {
         override_decl: OverrideId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let loc = database.lookup_intern_override(override_decl);
-        let module_info = database.module_info(loc.file_id);
         let source = loc.source(database);
 
         let (global_override, source_map) = lower_override(database, source);

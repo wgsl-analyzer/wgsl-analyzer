@@ -1,9 +1,6 @@
 pub mod lower;
 
-use crate::{
-    expression::{Expression, ExpressionId},
-    type_ref::TypeReference,
-};
+use crate::expression::{Expression, ExpressionId};
 use la_arena::{Arena, ArenaMap};
 use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::{ast, pointer::AstPointer};

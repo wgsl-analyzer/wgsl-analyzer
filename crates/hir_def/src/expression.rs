@@ -2,12 +2,7 @@ use la_arena::Idx;
 pub use syntax::ast::operators::*;
 use syntax::ast::{self, IncrementDecrement};
 
-use crate::{
-    body::BindingId,
-    module_data::Name,
-    type_ref::{AccessMode, AddressSpace, TypeReference, VecDimensionality},
-    type_specifier::TypeSpecifier,
-};
+use crate::{body::BindingId, module_data::Name, type_specifier::TypeSpecifier};
 
 pub type ExpressionId = Idx<Expression>;
 
@@ -51,8 +46,7 @@ pub enum Expression {
         name: Name,
     },
     Call {
-        name: Name,
-        generics: Vec<ExpressionId>,
+        type_specifier: TypeSpecifier,
         arguments: Vec<ExpressionId>,
     },
     Index {
@@ -88,8 +82,7 @@ pub enum Statement {
         binding_id: BindingId,
         type_ref: Option<TypeSpecifier>,
         initializer: Option<ExpressionId>,
-        address_space: Option<ExpressionId>,
-        access_mode: Option<ExpressionId>,
+        generics: Vec<ExpressionId>,
     },
     Return {
         expression: Option<ExpressionId>,
@@ -206,11 +199,12 @@ impl Expression {
                 function(*expression);
             },
             Self::Call {
-                generics,
+                type_specifier,
                 arguments,
                 ..
             } => {
-                generics
+                type_specifier
+                    .generics
                     .iter()
                     .copied()
                     .chain(arguments.iter().copied())
@@ -220,7 +214,7 @@ impl Expression {
                 function(*left_side);
                 function(*index);
             },
-            Self::TypeSpecifier { name, generics } => {
+            Self::TypeSpecifier { generics, .. } => {
                 generics.iter().copied().for_each(function);
             },
             Self::Missing | Self::Literal(_) => {},

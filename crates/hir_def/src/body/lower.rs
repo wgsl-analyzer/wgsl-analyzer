@@ -11,7 +11,6 @@ use crate::{
     expression_store::{ExpressionStoreBuilder, lower::ExprCollector},
     hir_file_id::relative_file,
     module_data::Name,
-    type_ref::TypeReference,
 };
 
 pub(super) fn lower_function_body(
@@ -197,25 +196,20 @@ impl Collector<'_> {
                     .ty()
                     .map(|typo| self.expressions.collect_type_specifier(typo));
 
-                let (address_space, access_mode) = variable_statement
-                    .generic_arg_list()
-                    .map(|v| v.generics())
-                    .map(|mut v| {
-                        (
-                            v.next()
-                                .map(|expression| self.collect_expression(expression)),
-                            v.next()
-                                .map(|expression| self.collect_expression(expression)),
-                        )
-                    })
-                    .unwrap_or_default();
+                let generics = if let Some(generics) = variable_statement.generic_arg_list() {
+                    generics
+                        .generics()
+                        .map(|expression| self.collect_expression(expression))
+                        .collect()
+                } else {
+                    Vec::new()
+                };
 
                 Statement::Variable {
                     binding_id,
                     type_ref,
                     initializer,
-                    address_space,
-                    access_mode,
+                    generics,
                 }
             },
             ast::Statement::ConstantDeclaration(variable_statement) => {

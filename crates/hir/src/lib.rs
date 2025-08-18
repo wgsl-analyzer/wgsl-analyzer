@@ -18,7 +18,7 @@ use hir_def::{
     expression::{ExpressionId, StatementId},
     hir_file_id::relative_file,
     module_data::{self, ModuleInfo, ModuleItem, Name},
-    resolver::{ResolveValue, Resolver},
+    resolver::{ResolveType, Resolver},
 };
 pub use hir_ty::database::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Type};
@@ -126,19 +126,19 @@ impl<'database> Semantics<'database> {
         let value = resolver.resolve_value(name)?;
 
         let definition = match value {
-            ResolveValue::Local(binding) => Definition::Local(Local {
+            ResolveType::Local(binding) => Definition::Local(Local {
                 parent: resolver.body_owner()?,
                 binding,
             }),
-            ResolveValue::GlobalVariable(loc) => {
+            ResolveType::GlobalVariable(loc) => {
                 let id = self.database.intern_global_variable(loc);
                 Definition::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))
             },
-            ResolveValue::GlobalConstant(loc) => {
+            ResolveType::GlobalConstant(loc) => {
                 let id = self.database.intern_global_constant(loc);
                 Definition::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id }))
             },
-            ResolveValue::Override(loc) => {
+            ResolveType::Override(loc) => {
                 let id = self.database.intern_override(loc);
                 Definition::ModuleDef(ModuleDef::Override(Override { id }))
             },

@@ -7,6 +7,8 @@ use crate::builtins::{Builtin, BuiltinId};
 use crate::function::{FunctionDetails, ResolvedFunctionId};
 use crate::infer::{InferenceResult, TyLoweringContext};
 use crate::ty::{TyKind, Type};
+use hir_def::database::GlobalVariableId;
+use hir_def::type_ref::AccessMode;
 use hir_def::{
     HirFileId, InFile,
     data::LocalFieldId,
@@ -19,6 +21,7 @@ use la_arena::ArenaMap;
 #[salsa::query_group(HirDatabaseStorage)]
 pub trait HirDatabase: DefDatabase + fmt::Debug {
     #[salsa::invoke(crate::infer::infer_query)]
+    #[salsa::cycle(crate::infer::infer_cycle_result)]
     fn infer(
         &self,
         key: DefinitionWithBodyId,
@@ -32,7 +35,6 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
         &self,
         key: FunctionId,
     ) -> ResolvedFunctionId;
-
     fn struct_is_used_in_uniform(
         &self,
         key: StructId,
@@ -72,8 +74,7 @@ fn field_types(
 
     let mut map = ArenaMap::default();
     for (index, field) in data.fields.iter() {
-        let r#type = database.lookup_intern_type_ref(field.r#type);
-        let r#type = ty_ctx.lower_ty(&r#type);
+        let r#type = ty_ctx.lower_ty(&field.r#type);
 
         map.insert(index, r#type);
     }
@@ -95,12 +96,13 @@ fn function_type(
 
     let return_type = data
         .return_type
-        .map(|type_ref| ty_ctx.lower_ty(&database.lookup_intern_type_ref(type_ref)));
+        .as_ref()
+        .map(|type_ref| ty_ctx.lower_ty(&type_ref));
     let parameters = data
         .parameters
         .iter()
         .map(|(type_ref, name)| {
-            let r#type = ty_ctx.lower_ty(&database.lookup_intern_type_ref(*type_ref));
+            let r#type = ty_ctx.lower_ty(type_ref);
             (r#type, name.clone())
         })
         .collect();
@@ -121,7 +123,9 @@ fn struct_is_used_in_uniform(
     module_info.items().iter().any(|item| match *item {
         hir_def::module_data::ModuleItem::GlobalVariable(decl) => {
             let decl = database.intern_global_variable(InFile::new(file_id, decl));
-            let data = database.global_var_data(decl).0;
+            // database.global_var_data(decl).0.generics
+            let data = database.infer(DefinitionWithBodyId::GlobalVariable(decl));
+            // data.type_of_expression
 
             if !matches!(data.address_space, Some(AddressSpace::Uniform)) {
                 return false;

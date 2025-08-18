@@ -1,7 +1,7 @@
 use crate::HirFileId;
 use crate::hir_file_id::relative_file;
 use crate::module_data::{Function, ModuleData, ModuleItem, ModuleItemId};
-use crate::{ast_id::AstIdMap, database::DefDatabase, type_ref::TypeReference};
+use crate::{ast_id::AstIdMap, database::DefDatabase};
 use la_arena::{Idx, IdxRange};
 use std::sync::Arc;
 

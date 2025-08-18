@@ -11,7 +11,6 @@ use crate::{
     HirFileId,
     ast_id::FileAstId,
     database::{DefDatabase, Interned},
-    type_ref::{AccessMode, AddressSpace, TypeReference},
 };
 
 const MISSING_NAME_PLACEHOLDER: &str = "[missing name]";

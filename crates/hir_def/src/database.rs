@@ -29,7 +29,6 @@ use crate::{
         TypeAlias,
     },
     resolver::Resolver,
-    type_ref::TypeReference,
 };
 
 #[salsa::query_group(DefDatabaseStorage)]

@@ -9,12 +9,13 @@ use hir_def::{
         TypeAliasId,
     },
     expression::{
-        ArithmeticOperation, BinaryOperation, Callee, ComparisonOperation, Expression,
-        ExpressionId, Statement, StatementId, UnaryOperator,
+        ArithmeticOperation, BinaryOperation, ComparisonOperation, Expression, ExpressionId,
+        Statement, StatementId, SwitchCaseSelector, UnaryOperator,
     },
     module_data::Name,
     resolver::{ResolveType, Resolver},
     type_ref::{self, AccessMode, AddressSpace, TypeReference, VecDimensionality},
+    type_specifier::TypeSpecifier,
 };
 use la_arena::ArenaMap;
 use rustc_hash::FxHashMap;
@@ -55,6 +56,30 @@ pub fn infer_query(
     context.infer_body();
 
     Arc::new(context.resolve_all())
+}
+
+pub fn infer_cycle_result(
+    database: &dyn HirDatabase,
+    _cycle: &[String],
+    definition: &DefinitionWithBodyId,
+) -> Arc<InferenceResult> {
+    let mut inference_result = InferenceResult::default();
+    let name = match *definition {
+        DefinitionWithBodyId::Function(function) => database.fn_data(function).0.name.clone(),
+        DefinitionWithBodyId::GlobalVariable(var) => database.global_var_data(var).0.name.clone(),
+        DefinitionWithBodyId::GlobalConstant(constant) => {
+            database.global_constant_data(constant).0.name.clone()
+        },
+        DefinitionWithBodyId::Override(override_decl) => {
+            database.override_data(override_decl).0.name.clone()
+        },
+    };
+
+    inference_result
+        .diagnostics
+        .push(InferenceDiagnostic::CyclicType { name });
+
+    Arc::new(inference_result)
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -115,6 +140,9 @@ pub enum InferenceDiagnostic {
     InvalidType {
         container: TypeContainer,
         error: TypeLoweringError,
+    },
+    CyclicType {
+        name: Name,
     },
 }
 
@@ -237,12 +265,10 @@ impl<'database> InferenceContext<'database> {
         id: GlobalVariableId,
         var: &GlobalVariableData,
     ) {
-        let r#type = var.r#type.map(|r#type| {
-            self.lower_ty(
-                TypeContainer::GlobalVar(id),
-                &self.database.lookup_intern_type_ref(r#type),
-            )
-        });
+        let r#type = var
+            .r#type
+            .as_ref()
+            .map(|r#type| self.lower_ty(TypeContainer::GlobalVar(id), r#type));
 
         if let Some(r#type) = r#type
             && let Some(binding) = self.body.main_binding
@@ -258,12 +284,10 @@ impl<'database> InferenceContext<'database> {
         id: GlobalConstantId,
         constant: &GlobalConstantData,
     ) {
-        let r#type = constant.r#type.map(|r#type| {
-            self.lower_ty(
-                TypeContainer::GlobalConstant(id),
-                &self.database.lookup_intern_type_ref(r#type),
-            )
-        });
+        let r#type = constant
+            .r#type
+            .as_ref()
+            .map(|r#type| self.lower_ty(TypeContainer::GlobalConstant(id), r#type));
 
         if let Some(r#type) = r#type
             && let Some(binding) = self.body.main_binding
@@ -279,12 +303,10 @@ impl<'database> InferenceContext<'database> {
         id: OverrideId,
         constant: &OverrideData,
     ) {
-        let r#type = constant.r#type.map(|r#type| {
-            self.lower_ty(
-                TypeContainer::Override(id),
-                &self.database.lookup_intern_type_ref(r#type),
-            )
-        });
+        let r#type = constant
+            .r#type
+            .as_ref()
+            .map(|r#type| self.lower_ty(TypeContainer::Override(id), r#type));
 
         if let Some(r#type) = r#type
             && let Some(binding) = self.body.main_binding
@@ -301,20 +323,20 @@ impl<'database> InferenceContext<'database> {
         function_data: &FunctionData,
     ) {
         let body = Arc::clone(&self.body);
-        for (&(parameter, _), &id) in function_data.parameters.iter().zip(&body.parameters) {
-            let type_ref = self.database.lookup_intern_type_ref(parameter);
-            let param_ty =
-                self.lower_ty(TypeContainer::FunctionParameter(function_id, id), &type_ref);
+        for ((parameter, _), &id) in function_data.parameters.iter().zip(&body.parameters) {
+            let param_ty = self.lower_ty(
+                TypeContainer::FunctionParameter(function_id, id),
+                &parameter,
+            );
             self.set_binding_ty(id, param_ty);
         }
-        self.return_ty = function_data.return_type.map(|type_ref| {
-            self.lower_ty(
-                TypeContainer::FunctionReturn(function_id),
-                &self.database.lookup_intern_type_ref(type_ref),
-            )
-        });
+        self.return_ty = function_data
+            .return_type
+            .as_ref()
+            .map(|type_ref| self.lower_ty(TypeContainer::FunctionReturn(function_id), type_ref));
     }
 
+    /// Runs type inference on the body and infer the type for `const`s, `var`s and `override`s
     fn infer_body(&mut self) {
         match self.body.root {
             Some(Either::Left(statement)) => {
@@ -350,9 +372,7 @@ impl<'database> InferenceContext<'database> {
             },
             DefinitionWithBodyId::GlobalVariable(_)
             | DefinitionWithBodyId::GlobalConstant(_)
-            | DefinitionWithBodyId::Override(_)
-            | DefinitionWithBodyId::Struct(_)
-            | DefinitionWithBodyId::TypeAlias(_) => resolver,
+            | DefinitionWithBodyId::Override(_) => resolver,
         }
     }
 
@@ -373,14 +393,10 @@ impl<'database> InferenceContext<'database> {
                 binding_id,
                 type_ref,
                 initializer,
-                address_space,
-                access_mode,
+                generics,
             } => {
-                let r#type = type_ref.map(|r#type| {
-                    self.lower_ty(
-                        TypeContainer::VariableStatement(statement),
-                        &self.database.lookup_intern_type_ref(r#type),
-                    )
+                let r#type = type_ref.as_ref().map(|r#type| {
+                    self.lower_ty(TypeContainer::VariableStatement(statement), &r#type)
                 });
                 let r#type = if let Some(init) = initializer {
                     let expression_ty =
@@ -390,11 +406,23 @@ impl<'database> InferenceContext<'database> {
                     r#type.unwrap_or_else(|| self.error_ty())
                 };
 
-                let ref_ty = self.make_ref(
-                    r#type,
-                    address_space.unwrap_or(AddressSpace::Function),
-                    access_mode.unwrap_or_else(AccessMode::read_write),
+                // TODO: Replace this with a cleaner implementation
+                let nya = self.lower_ty(
+                    TypeContainer::VariableStatement(statement),
+                    &TypeSpecifier {
+                        path: Name::from("ptr"),
+                        generics: generics.clone(),
+                    },
                 );
+
+                let (address_space, access_mode) =
+                    if let TyKind::Pointer(pointer) = nya.kind(self.database) {
+                        (pointer.address_space, pointer.access_mode)
+                    } else {
+                        (AddressSpace::Function, AccessMode::ReadWrite)
+                    };
+
+                let ref_ty = self.make_ref(r#type, address_space, access_mode);
                 self.set_binding_ty(*binding_id, ref_ty);
             },
             Statement::Const {
@@ -403,11 +431,8 @@ impl<'database> InferenceContext<'database> {
                 initializer,
                 ..
             } => {
-                let r#type = type_ref.map(|r#type| {
-                    self.lower_ty(
-                        TypeContainer::VariableStatement(statement),
-                        &self.database.lookup_intern_type_ref(r#type),
-                    )
+                let r#type = type_ref.as_ref().map(|r#type| {
+                    self.lower_ty(TypeContainer::VariableStatement(statement), &r#type)
                 });
                 let r#type = if let Some(init) = initializer {
                     let expression_ty =
@@ -425,11 +450,8 @@ impl<'database> InferenceContext<'database> {
                 initializer,
                 ..
             } => {
-                let r#type = type_ref.map(|r#type| {
-                    self.lower_ty(
-                        TypeContainer::VariableStatement(statement),
-                        &self.database.lookup_intern_type_ref(r#type),
-                    )
+                let r#type = type_ref.as_ref().map(|r#type| {
+                    self.lower_ty(TypeContainer::VariableStatement(statement), &r#type)
                 });
                 let r#type = if let Some(init) = initializer {
                     let expression_ty =
@@ -544,7 +566,12 @@ impl<'database> InferenceContext<'database> {
 
                 for (selectors, case) in case_blocks {
                     for selector in selectors {
-                        self.infer_expression_expect(*selector, &TypeExpectation::from_ty(r#type));
+                        if let SwitchCaseSelector::Expression(selector) = selector {
+                            self.infer_expression_expect(
+                                *selector,
+                                &TypeExpectation::from_ty(r#type),
+                            );
+                        }
                     }
                     self.infer_statement(*case);
                 }
@@ -766,18 +793,15 @@ impl<'database> InferenceContext<'database> {
                     },
                 }
             },
-            Expression::Call { callee, arguments } => {
+            Expression::Call {
+                type_specifier,
+                arguments,
+            } => {
                 let arguments: Vec<_> = arguments
                     .iter()
                     .map(|&arg| self.infer_expression(arg).unref(self.database))
                     .collect();
-                self.infer_call(expression, callee, arguments)
-            },
-            Expression::Bitcast { r#type, expression } => {
-                self.infer_expression(*expression);
-
-                self.try_lower_ty(&self.database.lookup_intern_type_ref(*r#type))
-                    .unwrap_or_else(|_| self.error_ty())
+                self.infer_call(expression, type_specifier, arguments)
             },
             Expression::Index { left_side, index } => {
                 let left_side = self.infer_expression(*left_side);
@@ -838,7 +862,7 @@ impl<'database> InferenceContext<'database> {
                 };
                 self.database.intern_ty(ty_kind)
             },
-            Expression::Path(name) => self
+            Expression::TypeSpecifier { name, generics } => self
                 .resolve_path_expression(expression, name)
                 .unwrap_or_else(|| {
                     self.push_diagnostic(InferenceDiagnostic::UnresolvedName {
@@ -1023,10 +1047,10 @@ impl<'database> InferenceContext<'database> {
         let resolver = self.resolver_for_expression(expression);
         let resolve = resolver.resolve_value(path)?;
         let r#type = match resolve {
-            hir_def::resolver::ResolveValue::Local(local) => {
+            hir_def::resolver::ResolveType::Local(local) => {
                 *self.result.type_of_binding.get(local)?
             },
-            hir_def::resolver::ResolveValue::GlobalVariable(loc) => {
+            hir_def::resolver::ResolveType::GlobalVariable(loc) => {
                 let id = self.database.intern_global_variable(loc);
                 let data = self.database.global_var_data(id).0;
                 let result = self
@@ -1040,14 +1064,14 @@ impl<'database> InferenceContext<'database> {
                     AccessMode::read_write(),
                 )
             },
-            hir_def::resolver::ResolveValue::GlobalConstant(loc) => {
+            hir_def::resolver::ResolveType::GlobalConstant(loc) => {
                 let id = self.database.intern_global_constant(loc);
                 let result = self
                     .database
                     .infer(DefinitionWithBodyId::GlobalConstant(id));
                 result.return_type.unwrap_or_else(|| self.error_ty())
             },
-            hir_def::resolver::ResolveValue::Override(loc) => {
+            hir_def::resolver::ResolveType::Override(loc) => {
                 let id = self.database.intern_override(loc);
                 let result = self.database.infer(DefinitionWithBodyId::Override(id));
                 result.return_type.unwrap_or_else(|| self.error_ty())
@@ -1206,7 +1230,7 @@ impl<'database> InferenceContext<'database> {
     fn infer_call(
         &mut self,
         expression: ExpressionId,
-        callee: &Callee,
+        callee: &TypeSpecifier,
         arguments: Vec<Type>,
     ) -> Type {
         match callee {
@@ -1240,14 +1264,14 @@ impl<'database> InferenceContext<'database> {
             Callee::Name(name) => {
                 if let Some(arg) = self.resolver.resolve_callable(name) {
                     match arg {
-                        hir_def::resolver::ResolveCallable::Struct(loc) => {
+                        hir_def::resolver::ResolveType::Struct(loc) => {
                             let r#struct = self.database.intern_struct(loc);
                             let kind = TyKind::Struct(r#struct);
                             let r#type = self.database.intern_ty(kind);
                             self.check_ty_initialiser(expression, r#type, arguments);
                             r#type
                         },
-                        hir_def::resolver::ResolveCallable::TypeAlias(alias) => {
+                        hir_def::resolver::ResolveType::TypeAlias(alias) => {
                             let alias = self.database.intern_type_alias(alias);
                             let data = self.database.type_alias_data(alias);
                             let type_ref = self.database.lookup_intern_type_ref(data.r#type);
@@ -1256,7 +1280,7 @@ impl<'database> InferenceContext<'database> {
                             self.check_ty_initialiser(expression, r#type, arguments);
                             r#type
                         },
-                        hir_def::resolver::ResolveCallable::Function(loc) => {
+                        hir_def::resolver::ResolveType::Function(loc) => {
                             let id = self.database.intern_function(loc);
                             let resolved = self.database.function_type(id);
                             let details = resolved.lookup(self.database);
@@ -1267,7 +1291,7 @@ impl<'database> InferenceContext<'database> {
                                 &details, &arguments, expression, expression,
                             )
                         },
-                        hir_def::resolver::ResolveCallable::PredeclaredTypeAlias(type_ref) => {
+                        hir_def::resolver::ResolveType::PredeclaredTypeAlias(type_ref) => {
                             let r#type = self.lower_ty(expression, &type_ref);
                             self.check_ty_initialiser(expression, r#type, arguments);
                             r#type
@@ -1932,7 +1956,7 @@ impl InferenceContext<'_> {
 
     fn try_lower_ty(
         &self,
-        type_ref: &TypeReference,
+        type_ref: &TypeSpecifier,
     ) -> Result<Type, TypeLoweringError> {
         TyLoweringContext::new(self.database, &self.resolver).try_lower_ty(type_ref)
     }
@@ -1940,7 +1964,7 @@ impl InferenceContext<'_> {
     fn lower_ty(
         &mut self,
         container: impl Into<TypeContainer>,
-        type_ref: &TypeReference,
+        type_ref: &TypeSpecifier,
     ) -> Type {
         match self.try_lower_ty(type_ref) {
             Ok(r#type) => r#type,
@@ -2002,13 +2026,13 @@ impl<'database> TyLoweringContext<'database> {
 
     pub fn lower_ty(
         &mut self,
-        type_ref: &TypeReference,
+        type_ref: &TypeSpecifier,
     ) -> Type {
         self.try_lower_ty(type_ref)
             .unwrap_or_else(|_| TyKind::Error.intern(self.database))
     }
 
-    /// Convert a [`TypeReference`] into a `[Type]`.
+    /// Convert a [`TypeSpecifier`] into a `[Type]`.
     ///
     /// # Panics
     ///
@@ -2019,8 +2043,56 @@ impl<'database> TyLoweringContext<'database> {
     /// This function will return an error if type is a path and the path is unknown.
     pub fn try_lower_ty(
         &mut self,
-        type_ref: &TypeReference,
+        type_ref: &TypeSpecifier,
     ) -> Result<Type, TypeLoweringError> {
+        let name = &type_ref.path;
+        match self.resolver.resolve_type(&name) {
+            Some(ResolveType::Function(loc)) => {
+                // Functions cannot be used as values
+                // TODO: Use the generics in this case?
+                todo!("")
+            },
+            Some(ResolveType::GlobalConstant(loc)) => {
+                let id = self.database.intern_global_constant(loc);
+                let result = self
+                    .database
+                    .infer(DefinitionWithBodyId::GlobalConstant(id));
+                Ok(result
+                    .return_type
+                    .unwrap_or(TyKind::Error.intern(self.database)))
+            },
+            Some(ResolveType::GlobalVariable(loc)) => {
+                let id = self.database.intern_global_variable(loc);
+                let result = self
+                    .database
+                    .infer(DefinitionWithBodyId::GlobalVariable(id));
+                Ok(result
+                    .return_type
+                    .unwrap_or(TyKind::Error.intern(self.database)))
+            },
+            Some(ResolveType::Override(loc)) => {
+                let id = self.database.intern_override(loc);
+                let result = self.database.infer(DefinitionWithBodyId::Override(id));
+                Ok(result
+                    .return_type
+                    .unwrap_or(TyKind::Error.intern(self.database)))
+
+                // let data = self.database.override_data(id).0;
+                // self.try_lower_ty(&data.r#type)
+            },
+            Some(ResolveType::Struct(loc)) => {
+                let r#struct = self.database.intern_struct(loc);
+                Ok(self.database.intern_ty(TyKind::Struct(r#struct)))
+            },
+            Some(ResolveType::TypeAlias(loc)) => {
+                let alias = self.database.intern_type_alias(loc);
+                let data = self.database.type_alias_data(alias).0;
+                self.try_lower_ty(&data.r#type)
+            },
+            Some(ResolveType::Local(loc)) => {},
+            None => self.lower_predeclared_ty(type_ref),
+        }
+        /*
         let ty_kind = match type_ref {
             TypeReference::Error => TyKind::Error,
             TypeReference::Scalar(scalar) => {
@@ -2067,24 +2139,6 @@ impl<'database> TyLoweringContext<'database> {
             TypeReference::Sampler(sampler) => TyKind::Sampler(SamplerType {
                 comparison: sampler.comparison,
             }),
-            TypeReference::Atomic(atomic) => TyKind::Atomic(AtomicType {
-                inner: self.lower_ty(&atomic.inner),
-            }),
-            TypeReference::Array(array) => TyKind::Array(ArrayType {
-                inner: self.lower_ty(&array.inner),
-                binding_array: array.binding_array,
-                size: match array.size {
-                    type_ref::ArraySize::Int(integer) => {
-                        // TODO give error instead of panicking
-                        ArraySize::Constant(u64::try_from(integer).unwrap())
-                    },
-                    type_ref::ArraySize::Uint(unsigned_integer) => {
-                        ArraySize::Constant(unsigned_integer)
-                    },
-                    type_ref::ArraySize::Path(_) => ArraySize::Constant(0), // TODO: Path array sizes
-                    type_ref::ArraySize::Dynamic => ArraySize::Dynamic,
-                },
-            }),
             TypeReference::Pointer(pointer) => TyKind::Pointer(Pointer {
                 address_space: pointer.address_space,
                 inner: self.lower_ty(&pointer.inner),
@@ -2097,17 +2151,102 @@ impl<'database> TyLoweringContext<'database> {
                 },
                 Some(ResolveType::TypeAlias(loc)) => {
                     let alias = self.database.intern_type_alias(loc);
-                    let data = self.database.type_alias_data(alias);
-                    let type_ref = &self.database.lookup_intern_type_ref(data.r#type);
+                    let data = self.database.type_alias_data(alias).0;
 
-                    return Ok(self.lower_ty(type_ref));
+                    return Ok(self.lower_ty(&data.r#type));
                 },
                 Some(ResolveType::PredeclaredTypeAlias(type_ref)) => {
                     return Ok(self.lower_ty(&type_ref));
                 },
                 None => return Err(TypeLoweringError::UnresolvedName(name.clone())),
             },
+        }; */
+    }
+
+    fn lower_predeclared_ty(
+        &self,
+        type_ref: &TypeSpecifier,
+    ) -> Result<Type, TypeLoweringError> {
+        let name = type_ref.path.as_str();
+        let ty_kind: TyKind = match name {
+            "vec2i" => TyKind::Vector(VectorType {
+                size: VecSize::Two,
+                component_type: TyKind::Scalar(ScalarType::I32).intern(self.database),
+            }),
+            "vec3i" => TyKind::Vector(VectorType {
+                size: VecSize::Three,
+                component_type: TyKind::Scalar(ScalarType::I32).intern(self.database),
+            }),
+            "vec4i" => TyKind::Vector(VectorType {
+                size: VecSize::Four,
+                component_type: TyKind::Scalar(ScalarType::I32).intern(self.database),
+            }),
+            "vec2u" => TyKind::Vector(VectorType {
+                size: VecSize::Two,
+                component_type: TyKind::Scalar(ScalarType::U32).intern(self.database),
+            }),
+            "vec3u" => TyKind::Vector(VectorType {
+                size: VecSize::Three,
+                component_type: TyKind::Scalar(ScalarType::U32).intern(self.database),
+            }),
+            "vec4u" => TyKind::Vector(VectorType {
+                size: VecSize::Four,
+                component_type: TyKind::Scalar(ScalarType::U32).intern(self.database),
+            }),
+            "vec2f" => TyKind::Vector(VectorType {
+                size: VecSize::Two,
+                component_type: TyKind::Scalar(ScalarType::F32).intern(self.database),
+            }),
+            "vec3f" => TyKind::Vector(VectorType {
+                size: VecSize::Three,
+                component_type: TyKind::Scalar(ScalarType::F32).intern(self.database),
+            }),
+            "vec4f" => TyKind::Vector(VectorType {
+                size: VecSize::Four,
+                component_type: TyKind::Scalar(ScalarType::F32).intern(self.database),
+            }),
+            "array" => {
+                TyKind::Array(ArrayType {
+                    inner: self.lower_ty(&array.inner),
+                    binding_array: false,
+                    size: match array.size {
+                        type_ref::ArraySize::Int(integer) => {
+                            // TODO give error instead of panicking
+                            ArraySize::Constant(u64::try_from(integer).unwrap())
+                        },
+                        type_ref::ArraySize::Uint(unsigned_integer) => {
+                            ArraySize::Constant(unsigned_integer)
+                        },
+                        type_ref::ArraySize::Path(_) => ArraySize::Constant(0), // TODO: Path array sizes
+                        type_ref::ArraySize::Dynamic => ArraySize::Dynamic,
+                    },
+                })
+            },
+            "atomic" => TyKind::Atomic(AtomicType {
+                inner: self.lower_ty(&atomic.inner),
+            }),
+            // Naga extension
+            "binding_array" => {
+                TyKind::Array(ArrayType {
+                    inner: self.lower_ty(&array.inner),
+                    binding_array: true,
+                    size: match array.size {
+                        type_ref::ArraySize::Int(integer) => {
+                            // TODO give error instead of panicking
+                            ArraySize::Constant(u64::try_from(integer).unwrap())
+                        },
+                        type_ref::ArraySize::Uint(unsigned_integer) => {
+                            ArraySize::Constant(unsigned_integer)
+                        },
+                        type_ref::ArraySize::Path(_) => ArraySize::Constant(0), // TODO: Path array sizes
+                        type_ref::ArraySize::Dynamic => ArraySize::Dynamic,
+                    },
+                })
+            },
+            // TODO float16
+            _ => return Err(TypeLoweringError::UnresolvedName(type_ref.path.clone())),
         };
+
         Ok(self.database.intern_ty(ty_kind))
     }
 }

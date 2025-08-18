@@ -13,7 +13,6 @@ use crate::{
         ExpressionSourceMap, ExpressionStore, ExpressionStoreBuilder, SyntheticSyntax,
     },
     module_data::Name,
-    type_ref::TypeReference,
     type_specifier::TypeSpecifier,
 };
 
@@ -94,8 +93,10 @@ impl ExprCollector<'_> {
                 );
 
                 Expression::Call {
-                    name,
-                    generics,
+                    type_specifier: TypeSpecifier {
+                        path: name,
+                        generics,
+                    },
                     arguments,
                 }
             },
@@ -279,11 +280,21 @@ pub(crate) fn lower_variable(
         .ty()
         .map(|ty| collector.collect_type_specifier(ty));
 
+    let generics = if let Some(generics) = global_variable.value.generic_arg_list() {
+        generics
+            .generics()
+            .map(|expression| collector.collect_expression(expression))
+            .collect()
+    } else {
+        Vec::new()
+    };
+
     let (store, source_map) = collector.store.finish();
     let specifier = GlobalVariableData {
         name,
         store,
         r#type,
+        generics,
     };
     (specifier, source_map)
 }
