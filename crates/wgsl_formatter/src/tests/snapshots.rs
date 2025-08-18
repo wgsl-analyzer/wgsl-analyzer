@@ -3,6 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_tabs};
 
 mod bindings;
+mod code_indentation;
 mod code_spacing;
 mod control_structures;
 mod fn_call;

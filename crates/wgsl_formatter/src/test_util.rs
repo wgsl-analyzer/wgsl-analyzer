@@ -75,8 +75,6 @@ pub fn check_with_options<E: ExpectAssertEq>(
 
     after.assert_eq(&new);
 
-    println!("[{after:#?}]|[{new:#?}]");
-
     // Check for idempotence
     let syntax = syntax::parse(new.trim_start()).tree();
     let new_second = format_tree(&syntax, options);
