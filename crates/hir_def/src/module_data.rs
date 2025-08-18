@@ -266,8 +266,8 @@ macro_rules! mod_items {
                     ModuleItem::$r#type(id)
                 }
             }
+        )+
         )*
-        )?
     };
 }
 
