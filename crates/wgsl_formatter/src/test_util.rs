@@ -1,5 +1,8 @@
 #![expect(clippy::print_stdout, reason = "useful in tests")]
-
+#![expect(
+    clippy::missing_panics_doc,
+    reason = "we want to be able to use assert!"
+)]
 use std::{ffi::OsString, fmt::Debug, panic, path::Path};
 
 use crate::{FormattingOptions, format_tree};
@@ -52,6 +55,10 @@ pub fn check<E: ExpectAssertEq>(
     check_with_options(before, &after, &FormattingOptions::default());
 }
 
+pub fn check_fail(before: &str) {
+    check_fail_with_options(before, &FormattingOptions::default());
+}
+
 #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
 pub fn check_tabs<E: ExpectAssertEq>(
     before: &str,
@@ -65,21 +72,61 @@ pub fn check_tabs<E: ExpectAssertEq>(
 }
 
 #[track_caller]
+pub fn check_fail_with_options(
+    before: &str,
+    options: &FormattingOptions,
+) {
+    let parse = syntax::parse(before.trim_start());
+    let syntax = parse.tree();
+
+    match format_tree(&syntax, options) {
+        Ok(formatted) => {
+            if parse.errors().is_empty() {
+                println!(
+                    "Expected source to error on format or parse, but formatting and parsing unexpectedly succeeded.\nSource: {before}\nFormatted: {formatted}"
+                );
+                // Use resume_unwind instead of panic!() to prevent a backtrace, which is unnecessary noise.
+                panic::resume_unwind(Box::new(()));
+            }
+        },
+        Err(format_error) => {
+            assert!(
+                !parse.errors().is_empty(),
+                "Expected sources that error on format, to also error on parse",
+            );
+            return;
+        },
+    };
+}
+
+#[track_caller]
 pub fn check_with_options<E: ExpectAssertEq>(
     before: &str,
     after: &E,
     options: &FormattingOptions,
 ) {
-    let syntax = syntax::parse(before.trim_start()).tree();
-    let new = format_tree(&syntax, options);
+    let parse = syntax::parse(before.trim_start());
+    let syntax = parse.tree();
 
-    after.assert_eq(&new);
+    let formatted = match format_tree(&syntax, options) {
+        Ok(formatted) => formatted,
+        Err(format_error) => {
+            assert!(
+                !parse.errors().is_empty(),
+                "Expected sources that parse without errors to also format without errors, but formatting failed with error: {format_error:#?}",
+            );
+            return;
+        },
+    };
+
+    after.assert_eq(&formatted);
 
     // Check for idempotence
-    let syntax = syntax::parse(new.trim_start()).tree();
-    let new_second = format_tree(&syntax, options);
+    let syntax = syntax::parse(formatted.trim_start()).tree();
+    let new_second = format_tree(&syntax, options)
+        .expect("Formatting already formatted sources should never fail with an error");
     let position = panic::Location::caller();
-    if new == new_second {
+    if formatted == new_second {
         return;
     }
 
@@ -89,7 +136,7 @@ pub fn check_with_options<E: ExpectAssertEq>(
 \x1b[1m\x1b[34m-->\x1b[0m {position}
 \x1b[1mExpect\x1b[0m:
 ----
-{new}
+{formatted}
 ----
 
 \x1b[1mActual\x1b[0m:
@@ -101,7 +148,7 @@ pub fn check_with_options<E: ExpectAssertEq>(
     );
     #[cfg(test)]
     {
-        let diff = dissimilar::diff(&new, &new_second);
+        let diff = dissimilar::diff(&formatted, &new_second);
         println!(
             "
 \x1b[1mDiff\x1b[0m:
