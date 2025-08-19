@@ -1,5 +1,6 @@
 #![expect(clippy::print_stderr, reason = "CLI program")]
 #![expect(clippy::print_stdout, reason = "CLI program")]
+#![expect(clippy::disallowed_types, reason = "prototype, TODO")]
 #![allow(
     unfulfilled_lint_expectations,
     reason = "https://github.com/rust-lang/rust-clippy/issues/15107"
