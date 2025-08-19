@@ -7,18 +7,19 @@ use syntax::{
     ast::{self},
 };
 
-use crate::FormattingOptions;
+use crate::{FormattingOptions, format::reporting::FormatDocumentResult};
 
 /// Lays out the children of a node in a way so that
 /// - after every node is exactly 1 or 2 newlines (aka. 0 to 1 blank lines)
 /// - there are no newlines before the first node
-pub fn pretty_spaced_lines<'ann, D, TAnnotation>(
+pub fn pretty_spaced_lines<'ann, D, TAnnotation, F>(
     node: &parser::SyntaxNode,
     allocator: &'ann D,
-    mut pretty_node: impl FnMut(SyntaxNode) -> DocBuilder<'ann, D, TAnnotation>,
-) -> DocBuilder<'ann, D, TAnnotation>
+    mut pretty_node: F,
+) -> FormatDocumentResult<DocBuilder<'ann, D, TAnnotation>>
 where
     D: DocAllocator<'ann, TAnnotation>,
+    F: FnMut(SyntaxNode) -> FormatDocumentResult<DocBuilder<'ann, D, TAnnotation>>,
 {
     let mut result = allocator.nil();
 
@@ -61,7 +62,7 @@ where
                     },
                 }
 
-                result = result.append(pretty_node(node));
+                result = result.append(pretty_node(node)?);
                 new_line_state = NewLineState::NewLinesAfterNode(0);
             },
         }
@@ -75,5 +76,5 @@ where
         },
     }
 
-    result
+    Ok(result)
 }
