@@ -1,4 +1,5 @@
 mod helpers;
+mod reporting;
 
 use std::{alloc::alloc, iter::repeat_with};
 
@@ -9,25 +10,29 @@ use syntax::{
     ast::{self},
 };
 
-use crate::{FormattingOptions, format::helpers::pretty_spaced_lines};
+use crate::{
+    FormattingOptions,
+    format::{
+        helpers::pretty_spaced_lines,
+        reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult},
+    },
+};
 
-#[must_use]
 pub fn format_str(
     input: &str,
     options: &FormattingOptions,
-) -> String {
+) -> FormatDocumentResult<String> {
     let parse = syntax::parse(input);
     let file = parse.tree();
     format_tree(&file, options)
 }
 
-#[must_use]
 pub fn format_tree(
     syntax: &ast::SourceFile,
     options: &FormattingOptions,
-) -> String {
+) -> FormatDocumentResult<String> {
     let allocator = BoxAllocator;
-    let builder: DocBuilder<'_, _, ()> = pretty_source_file(syntax, &allocator);
+    let builder: DocBuilder<'_, _, ()> = pretty_source_file(syntax, &allocator)?;
 
     //TODO: I'm sure that there are better ways to stringify the doc,
     // ways that a) can't panic and b) are more efficient.
@@ -35,13 +40,13 @@ pub fn format_tree(
     // Investigate if render_fmt is at least as performant as a custom Render struct using StringBuilder
     let mut str = String::new();
     builder.render_fmt(options.width, &mut str);
-    str
+    Ok(str)
 }
 
 fn pretty_item<'ann, D, TAnnotation>(
     node: &ast::Item,
     allocator: &'ann D,
-) -> Option<DocBuilder<'ann, D, TAnnotation>>
+) -> FormatDocumentResult<DocBuilder<'ann, D, TAnnotation>>
 where
     D: DocAllocator<'ann, TAnnotation>,
 {
@@ -60,7 +65,7 @@ where
 fn pretty_source_file<'ann, D, TAnnotation>(
     node: &ast::SourceFile,
     allocator: &'ann D,
-) -> DocBuilder<'ann, D, TAnnotation>
+) -> FormatDocumentResult<DocBuilder<'ann, D, TAnnotation>>
 where
     D: DocAllocator<'ann, TAnnotation>,
 {
@@ -69,11 +74,11 @@ where
         // on a failure like std::any::Any (SyntaxNode -> Result<Item, Syntaxnode>)
         if let Some(item) = ast::Item::cast(child.clone()) {
             pretty_item(&item, allocator)
-                .unwrap_or_else(|| unformatable_source(item.syntax(), allocator))
         } else {
-            //TODO There is a case to be made about formatting nonsensical top-level items
-            // for now we just leave them alone as to not to annoy the user with misguided formats.
-            allocator.text(child.to_string())
+            Err(FormatDocumentError {
+                error_kind: reporting::FormatDocumentErrorKind::UnexpectedModuleNode,
+                syntax_node: child,
+            })
         }
     })
 }
@@ -81,29 +86,35 @@ where
 fn pretty_function_declaration<'ann, D, TAnnotation>(
     node: &ast::FunctionDeclaration,
     allocator: &'ann D,
-) -> Option<DocBuilder<'ann, D, TAnnotation>>
+) -> FormatDocumentResult<DocBuilder<'ann, D, TAnnotation>>
 where
     D: DocAllocator<'ann, TAnnotation>,
 {
-    //TODO Don't unwrap but instead:
-    //TODO Check if the function declaration is complete - else reemit verbatim syntax
-    //Both TODOs can be solved by instead of using name(), parsing throug the node syntax, and casting the respective expected elements.
-    let name = node.name()?;
+    let name = node
+        .name()
+        .ok_or_else(|| FormatDocumentErrorKind::MissingFnName.at(node.syntax().clone()))?;
     let name = name.text();
-    let node_params = node.parameter_list()?.parameters();
+    let node_params = node
+        .parameter_list()
+        .ok_or_else(|| FormatDocumentErrorKind::MissingFnParams.at(node.syntax().clone()))?
+        .parameters();
 
     let formatted_params = node_params
         .map(|param| {
-            let p_name = param.name()?;
-            let p_type = param.ty()?;
-            Some((p_name, p_type))
+            let p_name = param.name().ok_or_else(|| {
+                FormatDocumentErrorKind::MissingFnParamName.at(param.syntax().clone())
+            })?;
+            let p_type = param.ty().ok_or_else(|| {
+                FormatDocumentErrorKind::MissingFnParamType.at(param.syntax().clone())
+            })?;
+            Ok((p_name, p_type))
         })
-        .collect::<Option<Vec<_>>>()?;
+        .collect::<FormatDocumentResult<Vec<_>>>()?;
 
-    let return_type = node.return_type()?.ty()?;
+    let return_type = node.return_type().and_then(|return_type| return_type.ty());
 
     //TODO Don't to_owned here, but instead specify smarter lifetimes
-    let built_fn = allocator
+    let mut built_fn = allocator
         .text("fn ")
         .append(allocator.text(name.as_str().to_owned()))
         .append(
@@ -118,12 +129,16 @@ where
                     ", ",
                 )
                 .parens(),
-        )
-        .append(allocator.text(" -> "))
-        .append(pretty_type_specifier(&return_type, allocator))
+        );
+    if let Some(return_type) = return_type {
+        built_fn = built_fn
+            .append(allocator.text(" -> "))
+            .append(pretty_type_specifier(&return_type, allocator));
+    }
+    built_fn = built_fn
         .append(allocator.text(" "))
         .append(allocator.text("{}"));
-    Some(built_fn)
+    Ok(built_fn)
 }
 
 fn pretty_fn_parameters<'ann, D, TAnnotation>(
@@ -148,9 +163,9 @@ where
     allocator.text(type_specifier.syntax().to_string())
 }
 
-/// In cases where there seems to be malformed or incomplete source
-/// we simply output it verbatim.
-fn unformatable_source<'ann, D, TAnnotation>(
+/// In cases where the formatter is not yet complete we simply output source verbatim.
+#[deprecated]
+fn todo_verbatim<'ann, D, TAnnotation>(
     source: &parser::SyntaxNode,
     allocator: &'ann D,
 ) -> DocBuilder<'ann, D, TAnnotation>
