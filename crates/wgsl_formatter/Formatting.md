@@ -51,3 +51,13 @@ TODO Example Doctests
 
 ### Newlines within statements and expressions
 TODO
+
+## Unfinished or Malformed Code
+Wgslfmt does not touch unfinished or malformed code.
+If a file leads to parser-diagnostics, wgslfmt will not attempt to format it.
+
+If wgslfmt encounters unexpected source, that passed the parser without diagnostics,
+it will also bail on the whole file and emit a formatter-error.
+Any formatter-errors are considered bugs in the formatter.
+
+TODO Example Doctests

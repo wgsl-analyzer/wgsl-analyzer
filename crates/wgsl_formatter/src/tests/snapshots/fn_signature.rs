@@ -2,23 +2,45 @@
 
 use expect_test::expect;
 
-use crate::test_util::check;
+use crate::test_util::{check, check_fail};
 
 #[test]
 fn format_fn_header_1() {
     check(
         "fn  main ( a :  b )  -> f32   {}",
-        expect![["fn main(a: b) -> f32 {}"]],
+        expect![["
+            fn main(a: b) -> f32 {}
+        "]],
     );
+}
+
+#[test]
+fn format_fn_header_no_return_1() {
+    check(
+        "fn  main ( a :  b )    {}",
+        expect![["
+            fn main(a: b) {}
+        "]],
+    );
+}
+
+#[test]
+fn format_fn_header_unfinished_return_1() {
+    check_fail("fn  main ( a :  b )       ->     {}");
+}
+
+#[test]
+fn format_fn_header_malformed_return_2() {
+    check_fail("fn  main ( a :  b )  u32  {}");
 }
 
 #[test]
 fn format_fn_header_long_name() {
     check(
         "fn  this_is_a_very_long_name_who_knows_when_it_will_end_because_it_just_goes_on_and_on_and_on( a :  b )  -> f32   {}",
-        expect![[
-            "fn this_is_a_very_long_name_who_knows_when_it_will_end_because_it_just_goes_on_and_on_and_on(a: b) -> f32 {}"
-        ]],
+        expect![["
+            fn this_is_a_very_long_name_who_knows_when_it_will_end_because_it_just_goes_on_and_on_and_on(a: b) -> f32 {}
+            "]],
     );
 }
 
@@ -26,7 +48,9 @@ fn format_fn_header_long_name() {
 fn format_fn_header_2() {
     check(
         "fn  main ( a :  b,  c : d )  -> f32   {}",
-        expect![["fn main(a: b, c: d) -> f32 {}"]],
+        expect![["
+            fn main(a: b, c: d) -> f32 {}
+            "]],
     );
 }
 
@@ -34,7 +58,9 @@ fn format_fn_header_2() {
 fn format_fn_header_comma_oneline() {
     check(
         "fn main(a: b , c: d ,)  -> f32   {}",
-        expect![["fn main(a: b, c: d) -> f32 {}"]],
+        expect![["
+            fn main(a: b, c: d) -> f32 {}
+            "]],
     );
 }
 
