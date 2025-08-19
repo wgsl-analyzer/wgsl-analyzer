@@ -1,14 +1,9 @@
 //! Discovery of `cargo` & `rustc` executables.
 
-use std::{
-    env,
-    ffi::OsStr,
-    iter,
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::{env, ffi::OsStr, iter, process::Command, str::FromStr};
 
 use camino::{Utf8Path, Utf8PathBuf};
+use paths::AbsPath;
 
 #[derive(Copy, Clone)]
 pub enum Tool {
@@ -90,14 +85,14 @@ impl Tool {
     clippy::disallowed_types,
     reason = "generic parameter allows for FxHashMap"
 )]
-pub fn command<Hashy, OsStringy: AsRef<OsStr>, Pathy: AsRef<Path>>(
+pub fn command<Hashy, OsStringy: AsRef<OsStr>, Pathy: AsRef<AbsPath>>(
     command: OsStringy,
     working_directory: Pathy,
     extra_env: &std::collections::HashMap<String, Option<String>, Hashy>,
 ) -> Command {
     #[expect(clippy::disallowed_methods, reason = "we are `toolchain::command`")]
     let mut command = Command::new(command);
-    command.current_dir(working_directory);
+    command.current_dir(working_directory.as_ref());
     for env in extra_env {
         match env {
             (key, Some(val)) => command.env(key, val),
@@ -119,11 +114,11 @@ fn invoke(
 /// Looks up the binary as its SCREAMING upper case in the env variables.
 #[expect(
     clippy::disallowed_types,
-    reason = "The value of the environment variable may be a relative path"
+    reason = "blocked on https://github.com/camino-rs/camino/pull/107"
 )]
 fn lookup_as_env_var(executable_name: &str) -> Option<Utf8PathBuf> {
     env::var_os(executable_name.to_ascii_uppercase())
-        .map(PathBuf::from)
+        .map(std::path::PathBuf::from)
         .map(Utf8PathBuf::try_from)
         .and_then(Result::ok)
 }
@@ -138,11 +133,11 @@ fn cargo_proxy(executable_name: &str) -> Option<Utf8PathBuf> {
 
 #[expect(
     clippy::disallowed_types,
-    reason = "The value of the environment variable may be a relative path"
+    reason = "Blocked on https://github.com/camino-rs/camino/pull/107"
 )]
 fn get_cargo_home() -> Option<Utf8PathBuf> {
     if let Some(path) = env::var_os("CARGO_HOME") {
-        return Utf8PathBuf::try_from(PathBuf::from(path)).ok();
+        return Utf8PathBuf::try_from(std::path::PathBuf::from(path)).ok();
     }
 
     if let Some(mut path) = home::home_dir() {

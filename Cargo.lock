@@ -1484,6 +1484,7 @@ version = "0.0.0"
 dependencies = [
  "cfg-if",
  "libc",
+ "paths",
  "perf-event",
  "tikv-jemalloc-ctl",
  "windows-sys 0.60.2",
