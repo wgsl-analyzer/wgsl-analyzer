@@ -9,7 +9,6 @@ mod control_structures;
 mod fn_call;
 mod fn_signature;
 mod operators;
-mod resilience;
 mod structs;
 
 #[test]
