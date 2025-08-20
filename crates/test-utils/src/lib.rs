@@ -11,13 +11,9 @@
 
 mod assert_linear;
 
-use std::{
-    collections::BTreeMap,
-    env, fs,
-    path::{Path, PathBuf},
-};
+use std::{collections::BTreeMap, env, fs, path, str::FromStr};
 
-use paths::Utf8PathBuf;
+use paths::{AbsPath, AbsPathBuf, Utf8PathBuf};
 use profile::StopWatch;
 use stdx::is_ci;
 use text_size::{TextRange, TextSize};
@@ -505,16 +501,21 @@ pub fn skip_slow_tests() -> bool {
     if should_skip {
         eprintln!("ignoring slow test");
     } else {
-        let path = target_dir().join(".slow_tests_cookie");
+        let path = target_directory().join(".slow_tests_cookie");
         fs::write(path, ".").unwrap();
     }
     should_skip
 }
 
+/// Get the "target" directory.
+///
+/// # Panics
+///
+/// Panics if `CARGO_TARGET_DIR` is empty or getting the current directory fails.
 #[must_use]
-pub fn target_dir() -> Utf8PathBuf {
+pub fn target_directory() -> AbsPathBuf {
     match std::env::var("CARGO_TARGET_DIR") {
-        Ok(target) => Utf8PathBuf::from(target),
+        Ok(target) => AbsPathBuf::assert_utf8(path::absolute(target).unwrap()),
         Err(_) => project_root().join("target"),
     }
 }
@@ -525,17 +526,14 @@ pub fn target_dir() -> Utf8PathBuf {
 ///
 /// Panics if the value of environment variable `CARGO_MANIFEST_DIR` is not a valid path.
 #[must_use]
-pub fn project_root() -> Utf8PathBuf {
-    let directory = env!("CARGO_MANIFEST_DIR");
-    Utf8PathBuf::from_path_buf(
-        PathBuf::from(directory)
-            .parent()
-            .unwrap()
-            .parent()
-            .unwrap()
-            .to_owned(),
-    )
-    .unwrap()
+pub fn project_root() -> AbsPathBuf {
+    AbsPathBuf::try_from(env!("CARGO_MANIFEST_DIR"))
+        .unwrap()
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .to_owned()
 }
 
 #[must_use]
@@ -605,7 +603,7 @@ pub fn bench(label: &'static str) -> impl Drop {
 /// Panics if files are not up to date.
 #[track_caller]
 pub fn ensure_file_contents(
-    file: &Path,
+    file: &AbsPath,
     contents: &str,
 ) {
     assert!(
@@ -622,7 +620,7 @@ pub fn ensure_file_contents(
 /// Panics if the file could not be written.
 #[expect(clippy::result_unit_err, reason = "Simple enough")]
 pub fn try_ensure_file_contents(
-    file: &Path,
+    file: &AbsPath,
     contents: &str,
 ) -> Result<(), ()> {
     match std::fs::read_to_string(file) {
@@ -631,11 +629,10 @@ pub fn try_ensure_file_contents(
         },
         _ => (),
     }
-    let display_path = file.strip_prefix(project_root()).unwrap_or(file);
-    eprintln!(
-        "\n\x1b[31;1merror\x1b[0m: {} was not up-to-date, updating\n",
-        display_path.display()
-    );
+    let display_path = file
+        .strip_prefix(&project_root())
+        .map_or(file.as_ref(), paths::RelPath::as_utf8_path);
+    eprintln!("\n\x1b[31;1merror\x1b[0m: {display_path} was not up-to-date, updating\n");
     if is_ci() {
         eprintln!("    NOTE: run `cargo test` locally and commit the updated files\n");
     }

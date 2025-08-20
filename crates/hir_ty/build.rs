@@ -2,10 +2,11 @@ use std::{
     collections::BTreeMap,
     env, error, fmt,
     fs::{self, File},
-    io,
-    path::PathBuf,
+    io, path,
     str::FromStr,
 };
+
+use paths::AbsPathBuf;
 
 #[derive(Default, Debug)]
 struct Builtin {
@@ -120,7 +121,8 @@ enum TextureDimensionality {
 fn main() -> Result<(), Box<dyn error::Error>> {
     println!("cargo:rerun-if-changed=builtins.wgsl.txt");
 
-    let directory = PathBuf::from(env::var("OUT_DIR")?).join("generated");
+    let out_directory = path::absolute(env::var("OUT_DIR")?)?;
+    let directory = AbsPathBuf::assert_utf8(out_directory).join("generated");
     fs::create_dir_all(&directory)?;
     let path = directory.join("builtins.rs");
     let mut file = File::create(path)?;
