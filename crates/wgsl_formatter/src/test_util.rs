@@ -1,4 +1,5 @@
 #![expect(clippy::print_stdout, reason = "useful in tests")]
+#![expect(clippy::use_debug, reason = "useful in tests")]
 #![expect(
     clippy::missing_panics_doc,
     reason = "we want to be able to use assert!"
@@ -55,10 +56,6 @@ pub fn check<E: ExpectAssertEq>(
     check_with_options(before, &after, &FormattingOptions::default());
 }
 
-pub fn check_fail(before: &str) {
-    check_fail_with_options(before, &FormattingOptions::default());
-}
-
 #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
 pub fn check_tabs<E: ExpectAssertEq>(
     before: &str,
@@ -71,32 +68,27 @@ pub fn check_tabs<E: ExpectAssertEq>(
     check_with_options(before, &after, &options);
 }
 
+/// Checks that the given source raises parsing diagnostics and is
+/// thus out of scope of having to be formatted correctly.
+///
+/// Code that is out of scope would just be left untouched by the formatter
+///
+/// Even tho these tests only test the behavior of the parser,
+/// they are useful to be included in the formatter unit tests,
+/// in order to keep track of the boundaries of what the
+/// formatter is supposed to deal with.
 #[track_caller]
-pub fn check_fail_with_options(
-    before: &str,
-    options: &FormattingOptions,
-) {
+pub fn assert_out_of_scope(before: &str) {
     let parse = syntax::parse(before.trim_start());
     let syntax = parse.tree();
 
-    match format_tree(&syntax, options) {
-        Ok(formatted) => {
-            if parse.errors().is_empty() {
-                println!(
-                    "Expected source to error on format or parse, but formatting and parsing unexpectedly succeeded.\nSource: {before}\nFormatted: {formatted}"
-                );
-                // Use resume_unwind instead of panic!() to prevent a backtrace, which is unnecessary noise.
-                panic::resume_unwind(Box::new(()));
-            }
-        },
-        Err(format_error) => {
-            assert!(
-                !parse.errors().is_empty(),
-                "Expected sources that error on format, to also error on parse",
-            );
-            return;
-        },
-    };
+    if parse.errors().is_empty() {
+        println!(
+            "Expected source to raise parsing diagnostics and as such be out of scope for formatting. However the given source parsed without error. \nSource: {before}"
+        );
+        // Use resume_unwind instead of panic!() to prevent a backtrace, which is unnecessary noise.
+        panic::resume_unwind(Box::new(()));
+    }
 }
 
 #[track_caller]
@@ -111,11 +103,8 @@ pub fn check_with_options<E: ExpectAssertEq>(
     let formatted = match format_tree(&syntax, options) {
         Ok(formatted) => formatted,
         Err(format_error) => {
-            assert!(
-                !parse.errors().is_empty(),
-                "Expected sources that parse without errors to also format without errors, but formatting failed with error: {format_error:#?}",
-            );
-            return;
+            println!("Formatting returned an unexpected error: {format_error:?}");
+            panic::resume_unwind(Box::new(()));
         },
     };
 
