@@ -26,7 +26,7 @@ pub struct FormattingOptions {
 impl Default for FormattingOptions {
     fn default() -> Self {
         Self {
-            trailing_commas: Policy::Ignore,
+            trailing_commas: Policy::Insert,
             indent_symbol: "    ".to_owned(),
             width: 80,
         }

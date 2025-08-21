@@ -2,7 +2,7 @@
 
 use expect_test::expect;
 
-use crate::test_util::{check, check_fail};
+use crate::test_util::{assert_out_of_scope, check, check_with_options};
 
 #[test]
 fn format_fn_header_1() {
@@ -26,20 +26,23 @@ fn format_fn_header_no_return_1() {
 
 #[test]
 fn format_fn_header_unfinished_return_1() {
-    check_fail("fn  main ( a :  b )       ->     {}");
+    assert_out_of_scope("fn  main ( a :  b )       ->     {}");
 }
 
 #[test]
 fn format_fn_header_malformed_return_2() {
-    check_fail("fn  main ( a :  b )  u32  {}");
+    assert_out_of_scope("fn  main ( a :  b )  u32  {}");
 }
 
 #[test]
 fn format_fn_header_long_name() {
     check(
-        "fn  this_is_a_very_long_name_who_knows_when_it_will_end_because_it_just_goes_on_and_on_and_on( a :  b )  -> f32   {}",
+        "fn  this_is_a_very_long_name_who_knows_when_it_will_end_because_it_just_goes_on_and_on_and_on( a :  b,c:d )  -> f32   {}",
         expect![["
-            fn this_is_a_very_long_name_who_knows_when_it_will_end_because_it_just_goes_on_and_on_and_on(a: b) -> f32 {}
+            fn this_is_a_very_long_name_who_knows_when_it_will_end_because_it_just_goes_on_and_on_and_on(
+                a: b,
+                c: d,
+            ) -> f32 {}
             "]],
     );
 }
@@ -66,22 +69,24 @@ fn format_fn_header_comma_oneline() {
 
 #[test]
 fn format_fn_header_comma_multiline() {
-    check(
-        "fn main(
-                a: b , c: d ,)  -> f32   {}",
-        expect![["
+    check_with_options(
+        "fn main(a: b , c: d ,)  -> f32   {}",
+        &expect![["
             fn main(
-                a: b, c: d,
-            ) -> f32 {}"]],
+                a: b,
+                c: d,
+            ) -> f32 {}
+            "]],
+        &crate::FormattingOptions {
+            width: 26, //Just shy of what the fn would be laid out as on a single line
+            ..Default::default()
+        },
     );
 }
 
 #[test]
 fn format_fn_header_missing_comma() {
-    check(
-        "fn main(a: b  c: d) {}",
-        expect![["fn main(a: b, c: d) {}"]],
-    );
+    assert_out_of_scope("fn main(a: b  c: d) {}");
 }
 
 #[test]
@@ -145,5 +150,5 @@ fn format_multiple_fns() {
 
 #[test]
 fn format_fn_header_incomplete() {
-    check("fn  main ( a ", expect![["fn  main ( a "]]);
+    assert_out_of_scope("fn  main ( a ");
 }
