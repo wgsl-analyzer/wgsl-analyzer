@@ -1,23 +1,22 @@
 use parser::SyntaxNode;
 use pretty::{DocAllocator, DocBuilder};
+use rowan::TextRange;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FormatDocumentErrorKind {
-    MissingFnName,
-    MissingFnParams,
-    MissingFnParamName,
-    MissingFnParamType,
+    UnexpectedToken,
     UnexpectedModuleNode,
+    MissingTokens,
 }
 
 impl FormatDocumentErrorKind {
     pub const fn at(
         self,
-        syntax_node: SyntaxNode,
+        text_range: TextRange,
     ) -> FormatDocumentError {
         FormatDocumentError {
             error_kind: self,
-            syntax_node,
+            text_range,
         }
     }
 }
@@ -25,7 +24,7 @@ impl FormatDocumentErrorKind {
 #[derive(Debug, Clone)]
 pub struct FormatDocumentError {
     pub error_kind: FormatDocumentErrorKind,
-    pub syntax_node: SyntaxNode,
+    pub text_range: TextRange,
 }
 
 pub type FormatDocumentResult<T> = Result<T, FormatDocumentError>;
