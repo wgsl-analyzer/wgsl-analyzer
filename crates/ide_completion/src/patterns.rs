@@ -19,8 +19,6 @@ pub(crate) fn determine_location(
         Some(ImmediateLocation::FieldAccess { expression })
     } else if node.kind() == SyntaxKind::SourceFile {
         Some(ImmediateLocation::ItemList)
-    } else if node.kind() == SyntaxKind::Import || parent.kind() == SyntaxKind::Import {
-        Some(ImmediateLocation::Import)
     } else if node.ancestors().find_map(ast::Statement::cast).is_some() {
         Some(ImmediateLocation::InsideStatement)
     } else {

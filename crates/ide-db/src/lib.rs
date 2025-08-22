@@ -51,9 +51,6 @@ impl RootDatabase {
             // files: Default::default(),
             // crates_map: Default::default(),
         };
-        database.set_custom_imports(Arc::new(FxHashMap::default()));
-        database.set_shader_defs(Arc::new(FxHashSet::default()));
-
         // This needs to be here otherwise `CrateGraphBuilder` will panic.
         // database.set_all_crates(Arc::new(Box::new([])));
         // CrateGraphBuilder::default().set_in_db(&mut database);

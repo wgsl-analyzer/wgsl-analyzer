@@ -16,8 +16,7 @@
 		{ "include": "#address_spaces" },
 		{ "include": "#memory_access_modes" },
 		{ "include": "#operators" },
-		{ "include": "#built-in_value_names" },
-		{ "include": "#bevy_preprocessor_directives" }
+		{ "include": "#built-in_value_names" }
 	],
 	"repository": {
 		"line_ending_comments": {
@@ -378,11 +377,6 @@
 			"comment": "built-ins: https://www.w3.org/TR/WGSL/#builtin-value-names",
 			"name": "variable.language.built-ins.wgsl",
 			"match": "\\b(vertex_index|instance_index|position|front_facing|frag_depth|sample_index|sample_mask|local_invocation_id|local_invocation_index|global_invocation_id|workgroup_id|num_workgroups|subgroup_invocation_id|subgroup_size)\\b"
-		},
-		"bevy_preprocessor_directives": {
-			"comment": "bevy preprocessor directives",
-			"name": "invalid.deprecated.wgsl",
-			"match": "^#(ifdef|else|endif|import|define_import_path)\\b"
 		}
 	}
 }

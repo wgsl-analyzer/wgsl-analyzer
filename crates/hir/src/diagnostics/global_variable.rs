@@ -15,7 +15,7 @@ pub fn collect<Function: FnMut(GlobalVariableDiagnostic)>(
     var: GlobalVariableId,
     mut diagnostic_builder: Function,
 ) {
-    let data = database.global_var_data(var);
+    let data = database.global_var_data(var).0;
     let infer = database.infer(DefinitionWithBodyId::GlobalVariable(var));
 
     let ty_kind = infer.return_type.map(|r#type| r#type.kind(database));

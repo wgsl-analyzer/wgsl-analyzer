@@ -2,12 +2,7 @@ use la_arena::Idx;
 pub use syntax::ast::operators::*;
 use syntax::ast::{self, IncrementDecrement};
 
-use crate::{
-    body::BindingId,
-    database::Interned,
-    module_data::Name,
-    type_ref::{AccessMode, AddressSpace, TypeReference, VecDimensionality},
-};
+use crate::{body::BindingId, module_data::Name, type_specifier::TypeSpecifier};
 
 pub type ExpressionId = Idx<Expression>;
 
@@ -35,18 +30,6 @@ pub enum BuiltinUint {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Callee {
-    InferredComponentMatrix {
-        rows: VecDimensionality,
-        columns: VecDimensionality,
-    },
-    InferredComponentVec(VecDimensionality),
-    InferredComponentArray,
-    Name(Name),
-    Type(Interned<TypeReference>),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expression {
     Missing,
     BinaryOperation {
@@ -63,19 +46,18 @@ pub enum Expression {
         name: Name,
     },
     Call {
-        callee: Callee,
+        type_specifier: TypeSpecifier,
         arguments: Vec<ExpressionId>,
     },
     Index {
         left_side: ExpressionId,
         index: ExpressionId,
     },
-    Bitcast {
-        expression: ExpressionId,
-        r#type: Interned<TypeReference>,
-    },
     Literal(Literal),
-    Path(Name),
+    TypeSpecifier {
+        name: Name,
+        generics: Vec<ExpressionId>,
+    },
 }
 
 pub type StatementId = Idx<Statement>;
@@ -88,20 +70,19 @@ pub enum Statement {
     },
     Let {
         binding_id: BindingId,
-        type_ref: Option<Interned<TypeReference>>,
+        type_ref: Option<TypeSpecifier>,
         initializer: Option<ExpressionId>,
     },
     Const {
         binding_id: BindingId,
-        type_ref: Option<Interned<TypeReference>>,
+        type_ref: Option<TypeSpecifier>,
         initializer: Option<ExpressionId>,
     },
     Variable {
         binding_id: BindingId,
-        type_ref: Option<Interned<TypeReference>>,
+        type_ref: Option<TypeSpecifier>,
         initializer: Option<ExpressionId>,
-        address_space: Option<AddressSpace>,
-        access_mode: Option<AccessMode>,
+        generics: Vec<ExpressionId>,
     },
     Return {
         expression: Option<ExpressionId>,
@@ -137,7 +118,7 @@ pub enum Statement {
     },
     Switch {
         expression: ExpressionId,
-        case_blocks: Vec<(Vec<ExpressionId>, StatementId)>,
+        case_blocks: Vec<(Vec<SwitchCaseSelector>, StatementId)>,
         default_block: Option<StatementId>,
     },
     Loop {
@@ -154,32 +135,30 @@ pub enum Statement {
     },
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SwitchCaseSelector {
+    Expression(ExpressionId),
+    Default,
+}
+
 /// Parses a literal from the given `ast::LiteralKind`.
 ///
 /// # Panics
 ///
 /// Panics if the literal is invalid.
 pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
+    // TODO: This is wrong, this doesn't handle abstract numbers
     match literal {
-        ast::LiteralKind::HexIntLiteral(literal) | ast::LiteralKind::DecimalIntLiteral(literal) => {
+        ast::LiteralKind::IntLiteral(literal) if !literal.text().ends_with('u') => {
             let text = literal.text().trim_end_matches('i');
-            let (text, negative) = match text.strip_prefix('-') {
-                Some(new) => (new, true),
-                None => (text, false),
-            };
-            let mut value = match text.strip_prefix("0x") {
+            let value = match text.strip_prefix("0x") {
                 Some(hex) => i64::from_str_radix(hex, 16),
                 None => text.parse(),
             }
             .expect("invalid literal");
-
-            if negative {
-                value = -value;
-            }
-
             Literal::Int(value, BuiltinInt::I32)
         },
-        ast::LiteralKind::UnsignedIntLiteral(literal) => {
+        ast::LiteralKind::IntLiteral(literal) => {
             let text = literal.text().trim_end_matches('u');
             let value = match text.strip_prefix("0x") {
                 Some(hex) => u64::from_str_radix(hex, 16),
@@ -189,8 +168,8 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
 
             Literal::Uint(value, BuiltinUint::U32)
         },
-        ast::LiteralKind::HexFloatLiteral(_) => Literal::Float(0, BuiltinFloat::F32),
-        ast::LiteralKind::DecimalFloatLiteral(literal) => {
+        // TODO: Hex floats need to be handled
+        ast::LiteralKind::FloatLiteral(literal) => {
             use std::str::FromStr as _;
             // Float suffixes are not accepted by `f32::from_str`. Ignore them
             let text = literal.text().trim_end_matches(char::is_alphabetic);
@@ -216,19 +195,29 @@ impl Expression {
                 function(*left_side);
                 function(*right_side);
             },
-            Self::UnaryOperator { expression, .. }
-            | Self::Field { expression, .. }
-            | Self::Bitcast { expression, .. } => {
+            Self::UnaryOperator { expression, .. } | Self::Field { expression, .. } => {
                 function(*expression);
             },
-            Self::Call { arguments, .. } => {
-                arguments.iter().copied().for_each(function);
+            Self::Call {
+                type_specifier,
+                arguments,
+                ..
+            } => {
+                type_specifier
+                    .generics
+                    .iter()
+                    .copied()
+                    .chain(arguments.iter().copied())
+                    .for_each(function);
             },
             Self::Index { left_side, index } => {
                 function(*left_side);
                 function(*index);
             },
-            Self::Missing | Self::Literal(_) | Self::Path(_) => {},
+            Self::TypeSpecifier { generics, .. } => {
+                generics.iter().copied().for_each(function);
+            },
+            Self::Missing | Self::Literal(_) => {},
         }
     }
 }

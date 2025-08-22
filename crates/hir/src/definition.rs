@@ -1,8 +1,4 @@
-use hir_def::{
-    HirFileId,
-    module_data::Name,
-    resolver::{ResolveCallable, ResolveType},
-};
+use hir_def::{HirFileId, module_data::Name, resolver::ResolveType};
 use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast};
 
 use crate::{Field, Function, Local, ModuleDef, Semantics, Struct, TypeAlias};
@@ -53,7 +49,7 @@ fn resolve_name_ref(
 ) -> Option<Definition> {
     let parent = name_ref.syntax().parent()?;
 
-    if let Some(expression) = ast::PathExpression::cast(parent.clone()) {
+    if let Some(expression) = ast::IdentExpression::cast(parent.clone()) {
         let name = Name::from(expression.name_ref()?);
         let definition = semantics.find_container(file_id, expression.syntax())?;
         let definition =
@@ -68,20 +64,20 @@ fn resolve_name_ref(
     } else if let Some(expression) = ast::FunctionCall::cast(parent.clone()) {
         let resolver = semantics.resolver(file_id, expression.syntax());
 
-        match resolver.resolve_callable(&expression.name_ref()?.into())? {
-            ResolveCallable::Struct(loc) => {
+        match resolver.resolve_callable(&expression.ident_expression()?.into())? {
+            ResolveType::Struct(loc) => {
                 let id = semantics.database.intern_struct(loc);
                 Some(Definition::Struct(Struct { id }))
             },
-            ResolveCallable::TypeAlias(loc) => {
+            ResolveType::TypeAlias(loc) => {
                 let id = semantics.database.intern_type_alias(loc);
                 Some(Definition::TypeAlias(TypeAlias { id }))
             },
-            ResolveCallable::Function(function) => {
+            ResolveType::Function(function) => {
                 let id = semantics.database.intern_function(function);
                 Some(Definition::ModuleDef(ModuleDef::Function(Function { id })))
             },
-            ResolveCallable::PredeclaredTypeAlias(_) => None,
+            ResolveType::PredeclaredTypeAlias(_) => None,
         }
     } else if let Some(r#type) = ast::PathType::cast(parent) {
         let resolver = semantics.resolver(file_id, r#type.syntax());

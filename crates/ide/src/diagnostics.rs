@@ -298,16 +298,15 @@ impl NagaErrorPolicy {
             return;
         }
         let original_range = |range: ops::Range<usize>| {
-            let range_in_full = TextRange::new(
+            TextRange::new(
                 TextSize::from(u32::try_from(range.start).expect("indexes are small numbers")),
                 TextSize::from(u32::try_from(range.end).expect("indexes are small numbers")),
-            );
-            database.text_range_from_full(file_id.into(), range_in_full)
+            )
         };
 
-        let spans = error.spans().filter_map(|(span, label)| {
-            let range = original_range(span).ok()?;
-            Some((range, label))
+        let spans = error.spans().map(|(span, label)| {
+            let range = original_range(span);
+            (range, label)
         });
 
         match *self {
@@ -391,7 +390,7 @@ pub fn diagnostics(
     config: &DiagnosticsConfig,
     file_id: FileId,
 ) -> Vec<Diagnostic> {
-    let (parse, unconfigured) = database.parse_with_unconfigured(file_id);
+    let parse = database.parse(file_id);
 
     let mut diagnostics = Vec::new();
 
@@ -400,18 +399,8 @@ pub fn diagnostics(
             .errors()
             .iter()
             .map(|error| AnyDiagnostic::ParseError {
-                message: error.message(),
+                message: error.message.clone(),
                 range: error.range,
-                file_id: file_id.into(),
-            }),
-    );
-
-    diagnostics.extend(
-        unconfigured
-            .iter()
-            .map(|unconfigured| AnyDiagnostic::UnconfiguredCode {
-                definition: unconfigured.definition.clone(),
-                range: unconfigured.range,
                 file_id: file_id.into(),
             }),
     );
@@ -611,15 +600,6 @@ pub fn diagnostics(
                     let frange = original_file_range(database, file_id, source.syntax());
                     Diagnostic::new(DiagnosticCode("13"), format!("{error}"), frange.range)
                 },
-                AnyDiagnostic::UnresolvedImport { import } => {
-                    let source = import.value.to_node(&root);
-                    let frange = original_file_range(database, file_id, source.syntax());
-                    Diagnostic::new(
-                        DiagnosticCode("14"),
-                        "unresolved import".to_owned(),
-                        frange.range,
-                    )
-                },
                 AnyDiagnostic::NagaValidationError {
                     message,
                     range,
@@ -633,17 +613,6 @@ pub fn diagnostics(
                 AnyDiagnostic::ParseError { message, range, .. } => {
                     Diagnostic::new(DiagnosticCode("16"), message, range)
                 },
-                AnyDiagnostic::UnconfiguredCode {
-                    definition, range, ..
-                } => Diagnostic::new(
-                    DiagnosticCode("17"),
-                    format!(
-                        "code is inactive due to `#ifdef` directives: `{definition}` is not enabled"
-                    ),
-                    range,
-                )
-                .with_severity(Severity::WeakWarning)
-                .unused(),
                 AnyDiagnostic::NoConstructor {
                     expression,
                     builtins: [specific, general],
