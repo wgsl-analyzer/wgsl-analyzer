@@ -254,7 +254,7 @@ impl Collector<'_> {
                         type_ref,
                         initializer,
                     },
-                    ast::VariableStatementKind::Var => {
+                    ast::VariableStatementKind::Variable => {
                         let address_space = variable_statement
                             .variable_qualifier()
                             .and_then(syntax::ast::VariableQualifier::address_space)

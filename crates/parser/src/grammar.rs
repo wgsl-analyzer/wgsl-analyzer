@@ -30,7 +30,7 @@ fn item(parser: &mut Parser<'_, '_>) {
         function(parser, marker);
     } else if parser.at(SyntaxKind::Struct) {
         struct_(parser, marker);
-    } else if parser.at(SyntaxKind::Var) {
+    } else if parser.at(SyntaxKind::Variable) {
         global_variable_declaration(parser, marker);
     } else if parser.at(SyntaxKind::Let) {
         global_constant_declaration(parser, marker, SyntaxKind::Let);
@@ -44,7 +44,7 @@ fn item(parser: &mut Parser<'_, '_>) {
         parser.error_expected(&[
             SyntaxKind::Fn,
             SyntaxKind::Struct,
-            SyntaxKind::Var,
+            SyntaxKind::Variable,
             SyntaxKind::Let,
             SyntaxKind::Constant,
             SyntaxKind::Alias,
@@ -94,7 +94,7 @@ fn global_variable_declaration(
     global_declaration(
         parser,
         marker,
-        SyntaxKind::Var,
+        SyntaxKind::Variable,
         SyntaxKind::GlobalVariableDeclaration,
     );
 }
@@ -502,7 +502,7 @@ const STATEMENT_RECOVER_SET: &[SyntaxKind] = &[
     // SyntaxKind::FunctionCallStatement,
     // SyntaxKind::FunctionCall,
     // SyntaxKind::VariableOrValueStatement,
-    SyntaxKind::Var,
+    SyntaxKind::Variable,
     SyntaxKind::Constant,
     SyntaxKind::Let,
     // TODO: Why does SyntaxKind::BreakStatement not exist?
@@ -517,7 +517,7 @@ const STATEMENT_RECOVER_SET: &[SyntaxKind] = &[
 ///
 /// [Grammar](https://www.w3.org/TR/WGSL/#syntax-statement)
 pub(crate) fn statement(parser: &mut Parser<'_, '_>) {
-    if parser.at_set(&[SyntaxKind::Constant, SyntaxKind::Let, SyntaxKind::Var]) {
+    if parser.at_set(&[SyntaxKind::Constant, SyntaxKind::Let, SyntaxKind::Variable]) {
         variable_or_value_statement(parser);
     } else if parser.at(SyntaxKind::Return) {
         return_statement(parser);
@@ -882,7 +882,7 @@ fn variable_or_value_statement(parser: &mut Parser<'_, '_>) {
 
     if parser.at(SyntaxKind::Let) || parser.at(SyntaxKind::Constant) {
         parser.bump();
-    } else if parser.at(SyntaxKind::Var) {
+    } else if parser.at(SyntaxKind::Variable) {
         parser.bump();
         if parser.at(SyntaxKind::LessThan) {
             variable_qualifier(parser);
