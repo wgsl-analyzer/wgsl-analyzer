@@ -1,8 +1,3 @@
-#![expect(
-    clippy::range_plus_one,
-    reason = "rowan does not accept generic ranges"
-)]
-
 #[cfg(test)]
 mod tests;
 
