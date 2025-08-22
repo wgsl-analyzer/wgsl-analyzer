@@ -183,8 +183,8 @@ macro_rules! ast_token_enum {
         }
 
         impl AstToken for $ty {
-            fn can_cast(token: SyntaxToken) -> bool {
-                match token.kind() {
+            fn can_cast(kind: SyntaxKind) -> bool {
+                match kind {
                     $(SyntaxKind::$variant)|* => true,
                     _ => false,
                 }
@@ -212,139 +212,104 @@ ast_node! {
 }
 
 ast_node! {
-    Import:
-    import_token: Option<SyntaxToken UnofficialPreprocessorImport>;
-    import: Option<ImportKind>;
-}
-
-ast_node! {
-    ImportPath:
-    string_literal: Option<SyntaxToken StringLiteral>;
-}
-
-ast_node! {
-    ImportCustom
-}
-
-impl ImportCustom {
-    pub fn segments(&self) -> impl Iterator<Item = ImportCustomSegment> {
-        self.syntax
-            .children_with_tokens()
-            .filter_map(|token| ImportCustomSegment::cast(token.as_token()?.clone()))
-    }
-
-    #[must_use]
-    pub fn key(&self) -> String {
-        self.segments()
-            .fold(String::new(), |mut accumulator, segment| {
-                match segment {
-                    ImportCustomSegment::Identifier(identifier) => {
-                        accumulator.push_str(identifier.text());
-                    },
-                    ImportCustomSegment::ColonColon(colon_colon) => {
-                        accumulator.push_str(colon_colon.text());
-                    },
-                }
-                accumulator
-            })
-    }
-}
-
-ast_token_enum! {
-    enum ImportCustomSegment {
-        Identifier,
-        ColonColon,
-    }
-}
-
-ast_enum! {
-    enum ImportKind {
-        ImportPath,
-        ImportCustom,
-    }
-}
-
-ast_node! {
-    Function:
+    FunctionDeclaration:
     fn_token: Option<SyntaxToken Fn>;
-    parameter_list: Option<ParameterList>;
+    parameter_list: Option<FunctionParameters>;
     return_type: Option<ReturnType>;
     body: Option<CompoundStatement>;
 }
 
-impl HasName for Function {}
-
-impl HasAttributes for Function {}
+impl HasName for FunctionDeclaration {}
+impl HasAttributes for FunctionDeclaration {}
 
 ast_node! {
     StructDeclaration:
     struct_token: Option<SyntaxToken Struct>;
-    name: Option<Name>;
-    body: Option<StructDeclBody>;
+    body: Option<StructBody>;
 }
 
+impl HasName for StructDeclaration {}
 impl HasAttributes for StructDeclaration {}
 
 ast_node! {
-    StructDeclBody:
+    StructBody:
     left_brace_token: Option<SyntaxToken BraceLeft>;
     right_brace_token: Option<SyntaxToken BraceRight>;
-    fields: AstChildren<StructDeclarationField>;
+    fields: AstChildren<StructMember>;
 }
 
 ast_node! {
-    StructDeclarationField:
-    variable_ident_declaration: Option<VariableIdentDeclaration>;
+    StructMember:
+    colon_token: Option<SyntaxToken Colon>;
+    ty: Option<TypeSpecifier>;
 }
 
-impl HasAttributes for StructDeclarationField {}
+impl HasName for StructMember {}
+impl HasAttributes for StructMember {}
 
 ast_node! {
-    GlobalVariableDeclaration:
+    VariableDeclaration:
     var_token: Option<SyntaxToken Var>;
-    binding: Option<Binding>;
-    variable_qualifier: Option<VariableQualifier>;
-    ty: Option<Type>;
+    colon: Option<SyntaxToken Colon>;
+    ty: Option<TypeSpecifier>;
+    equal_token: Option<SyntaxToken Equal>;
     init: Option<Expression>;
 }
-
-impl HasAttributes for GlobalVariableDeclaration {}
+impl HasGenerics for VariableDeclaration {}
+impl HasName for VariableDeclaration {}
+impl HasAttributes for VariableDeclaration {}
 
 ast_node! {
-    GlobalConstantDeclaration:
-    binding: Option<Binding>;
-    variable_qualifier: Option<VariableQualifier>;
-    ty: Option<Type>;
+    LetDeclaration:
+    let_token: Option<SyntaxToken Let>;
+    colon: Option<SyntaxToken Colon>;
+    ty: Option<TypeSpecifier>;
+    equal_token: Option<SyntaxToken Equal>;
+    init: Option<Expression>;
+}
+impl HasName for LetDeclaration {}
+impl HasAttributes for LetDeclaration {}
+
+ast_node! {
+    ConstantDeclaration:
+    constant_token: Option<SyntaxToken Constant>;
+    colon: Option<SyntaxToken Colon>;
+    ty: Option<TypeSpecifier>;
+    equal_token: Option<SyntaxToken Equal>;
     init: Option<Expression>;
 }
 
-impl HasAttributes for OverrideDeclaration {}
+impl HasName for ConstantDeclaration {}
+impl HasAttributes for ConstantDeclaration {}
 
 ast_node! {
     OverrideDeclaration:
-    binding: Option<Binding>;
-    variable_qualifier: Option<VariableQualifier>;
-    ty: Option<Type>;
+    override_token: Option<SyntaxToken Override>;
+    colon: Option<SyntaxToken Colon>;
+    ty: Option<TypeSpecifier>;
+    equal_token: Option<SyntaxToken Equal>;
     init: Option<Expression>;
 }
+impl HasName for OverrideDeclaration {}
+impl HasAttributes for OverrideDeclaration {}
 
 ast_node! {
     TypeAliasDeclaration:
     alias_token: Option<SyntaxToken Alias>;
-    name: Option<Name>;
     equal_token: Option<SyntaxToken Equal>;
-    type_declaration: Option<Type>;
+    type_declaration: Option<TypeSpecifier>;
 }
+impl HasName for TypeAliasDeclaration {}
+impl HasAttributes for TypeAliasDeclaration {}
 
 ast_enum! {
     enum Item {
-        Function,
-        StructDeclaration,
-        GlobalVariableDeclaration,
-        GlobalConstantDeclaration,
+        FunctionDeclaration,
+        VariableDeclaration,
+        ConstantDeclaration,
         OverrideDeclaration,
-        Import,
         TypeAliasDeclaration,
+        StructDeclaration,
     }
 }
 
@@ -355,144 +320,37 @@ ast_node! {
 }
 
 ast_node! {
-    Parameter:
-    variable_ident_declaration: Option<VariableIdentDeclaration>;
-    import: Option<Import>;
+    NameReference:
+    ident_token: Option<SyntaxToken Identifier>;
+    text: TokenText<'_>;
 }
 
 ast_node! {
-    ParameterList:
+    Parameter:
+    colon_token: Option<SyntaxToken Colon>;
+    ty: Option<TypeSpecifier>;
+}
+impl HasName for Parameter {}
+impl HasAttributes for Parameter {}
+
+ast_node! {
+    FunctionParameters:
     left_parenthesis_token: Option<SyntaxToken ParenthesisLeft>;
     right_parenthesis_token: Option<SyntaxToken ParenthesisRight>;
     parameters: AstChildren<Parameter>;
 }
 
-ast_node!(Binding);
-
-impl HasName for Binding {}
-
-ast_node! {
-    VariableIdentDeclaration:
-    colon_token: Option<SyntaxToken Colon>;
-    binding: Option<Binding>;
-    ty: Option<Type>;
-}
-
-ast_node! {
-    FunctionParameterList:
-    left_parenthesis_token: Option<SyntaxToken ParenthesisLeft>;
-    right_parenthesis_token: Option<SyntaxToken ParenthesisRight>;
-    arguments: AstChildren<Expression>;
-}
-
 ast_node! {
     ReturnType:
     arrow_token: Option<SyntaxToken Arrow>;
-    ty: Option<Type>;
+    ty: Option<TypeSpecifier>;
 }
 
 ast_node! {
     GenericArgumentList:
-    left_angle_token: Option<SyntaxToken LessThan>;
-    t_angle_token: Option<SyntaxToken GreaterThan>;
-}
-
-impl GenericArgumentList {
-    #[rustfmt::skip]
-    pub fn generics(&self) -> impl Iterator<Item = GenericArg> + use<> {
-        self.syntax
-            .children_with_tokens()
-            .filter_map(|node_or_token| match node_or_token {
-                rowan::NodeOrToken::Node(node) if Literal::can_cast(node.kind()) => Literal::cast(node).map(GenericArg::Literal),
-                rowan::NodeOrToken::Node(node) if Type::can_cast(node.kind()) => Type::cast(node).map(GenericArg::Type),
-                rowan::NodeOrToken::Token(token) if AccessMode::can_cast(token.clone()) => AccessMode::cast(token).map(GenericArg::AccessMode),
-                rowan::NodeOrToken::Token(token) if AddressSpace::can_cast(token.clone()) => AddressSpace::cast(token).map(GenericArg::AddressSpace),
-                rowan::NodeOrToken::Node(_) | rowan::NodeOrToken::Token(_) => None,
-            })
-    }
-}
-
-ast_token_enum! {
-    enum AccessMode {
-        Read,
-        Write,
-        ReadWrite,
-    }
-}
-
-ast_token_enum! {
-    enum AddressSpace {
-        FunctionClass,
-        Private,
-        Workgroup,
-        Uniform,
-        Storage,
-        PushConstant,
-    }
-}
-
-pub enum GenericArg {
-    Type(Type),
-    Literal(Literal),
-    AccessMode(AccessMode),
-    AddressSpace(AddressSpace),
-}
-
-impl GenericArg {
-    #[must_use]
-    pub fn as_type(&self) -> Option<Type> {
-        match self {
-            Self::Type(r#type) => Some(r#type.clone()),
-            Self::Literal(_) | Self::AccessMode(_) | Self::AddressSpace(_) => None,
-        }
-    }
-
-    #[must_use]
-    pub fn as_literal(&self) -> Option<Literal> {
-        match self {
-            Self::Literal(r#type) => Some(r#type.clone()),
-            Self::Type(_) | Self::AccessMode(_) | Self::AddressSpace(_) => None,
-        }
-    }
-
-    #[must_use]
-    pub fn as_access_mode(&self) -> Option<AccessMode> {
-        match self {
-            Self::AccessMode(access) => Some(access.clone()),
-            Self::Type(_) | Self::Literal(_) | Self::AddressSpace(_) => None,
-        }
-    }
-
-    #[must_use]
-    pub fn as_address_space(&self) -> Option<AddressSpace> {
-        match self {
-            Self::AddressSpace(class) => Some(class.clone()),
-            Self::Type(_) | Self::Literal(_) | Self::AccessMode(_) => None,
-        }
-    }
-}
-
-ast_node! {
-    BinaryOperator
-}
-
-ast_node! {
-    TypeInitializer:
-    ty: Option<Type>;
-    arguments: Option<FunctionParameterList>;
-}
-
-ast_node!(VariableQualifier);
-impl VariableQualifier {
-    #[must_use]
-    pub fn access_mode(&self) -> Option<AccessMode> {
-        support::child_token::<AccessMode>(self.syntax())
-    }
-
-    #[must_use]
-    pub fn address_space(self) -> Option<AddressSpace> {
-        support::child_token::<AddressSpace>(self.syntax())
-    }
+    left_angle_token: Option<SyntaxToken TemplateStart>;
+    generics: AstChildren<Expression>;
+    t_angle_token: Option<SyntaxToken TemplateEnd>;
 }
 
 ast_node!(InfixExpression);
@@ -514,6 +372,8 @@ ast_token_enum! {
         Star,
         ForwardSlash,
         Xor,
+        ShiftRight,
+        ShiftLeft,
     }
 }
 
@@ -550,25 +410,19 @@ impl Literal {
 
 ast_token_enum! {
     enum LiteralKind {
-        DecimalIntLiteral,
-        UnsignedIntLiteral,
-        HexFloatLiteral,
-        HexIntLiteral,
-        DecimalFloatLiteral,
+        IntLiteral,
+        FloatLiteral,
         True,
         False,
     }
 }
 
+/// Can be an identifier or a type
 ast_node! {
-    PathExpression:
+    IdentExpression:
     name_ref: Option<NameReference>;
 }
-
-ast_node! {
-    NameReference:
-    text: TokenText<'_>;
-}
+impl HasGenerics for IdentExpression {}
 
 ast_node! {
     ParenthesisExpression:
@@ -578,30 +432,22 @@ ast_node! {
 }
 
 ast_node! {
-    BitcastExpression:
-    bitcast_token: Option<SyntaxToken Bitcast>;
-    left_angle_token: Option<SyntaxToken LessThan>;
-    right_angle_token: Option<SyntaxToken GreaterThan>;
-    ty: Option<Type>;
-    inner: Option<ParenthesisExpression>;
-}
-
-ast_node! {
     FieldExpression:
     expression: Option<Expression>;
-    name_ref: Option<NameReference>;
+    field: Option<SyntaxToken Identifier>;
 }
 
 ast_node! {
     FunctionCall:
-    name_ref: Option<NameReference>;
-    parameters: Option<FunctionParameterList>;
+    ident_expression: Option<IdentExpression>;
+    parameters: Option<Arguments>;
 }
 
 ast_node! {
-    InvalidFunctionCall:
-    expression: Option<Expression>;
-    parameters: Option<FunctionParameterList>;
+    Arguments:
+    left_parenthesis_token: Option<SyntaxToken ParenthesisLeft>;
+    right_parenthesis_token: Option<SyntaxToken ParenthesisRight>;
+    arguments: AstChildren<Expression>;
 }
 
 ast_node! {
@@ -620,28 +466,9 @@ impl IndexExpression {
     }
 }
 
-ast_node! {AttributeList:
-    attributes: AstChildren<Attribute>;
-}
-
 ast_node! {Attribute:
     ident_token: Option<SyntaxToken Identifier>;
-    parameters: Option<AttributeParameters>;
-}
-
-ast_node! {AttributeParameters:
-    values: AstChildren<IdentOrLiteral>;
-}
-
-ast_node! {Identifier:
-    text: TokenText<'_>;
-}
-
-ast_enum! {
-    enum IdentOrLiteral {
-        Identifier,
-        Literal,
-    }
+    parameters: Option<Arguments>;
 }
 
 ast_node! {
@@ -650,6 +477,7 @@ ast_node! {
     right_brace_token: Option<SyntaxToken BraceRight>;
     statements: AstChildren<Statement>;
 }
+impl HasAttributes for CompoundStatement {}
 
 ast_node! {
     AssignmentStatement:
@@ -749,7 +577,14 @@ impl CompoundAssignmentStatement {
 }
 
 ast_node! {
-    ElseIfBlock:
+    IfClause:
+    if_token: Option<SyntaxToken If>;
+    condition: Option<Expression>;
+    block: Option<CompoundStatement>;
+}
+
+ast_node! {
+    ElseIfClause:
     else_token: Option<SyntaxToken Else>;
     if_token: Option<SyntaxToken If>;
     condition: Option<Expression>;
@@ -757,18 +592,16 @@ ast_node! {
 }
 
 ast_node! {
-    ElseBlock:
+    ElseClause:
     else_token: Option<SyntaxToken Else>;
     block: Option<CompoundStatement>;
 }
 
 ast_node! {
     IfStatement:
-    if_token: Option<SyntaxToken If>;
-    condition: Option<Expression>;
-    block: Option<CompoundStatement>;
-    else_if_blocks: AstChildren<ElseIfBlock>;
-    else_block: Option<ElseBlock>;
+    if_block: Option<IfClause>;
+    else_if_blocks: AstChildren<ElseIfClause>;
+    else_block: Option<ElseClause>;
 }
 
 ast_node! {
@@ -781,11 +614,11 @@ ast_node! {
 ast_node! {
     SwitchStatement:
     expression: Option<Expression>;
-    block: Option<SwitchBlock>;
+    block: Option<SwitchBody>;
 }
 
 ast_node! {
-    SwitchBlock:
+    SwitchBody:
     cases: AstChildren<SwitchBodyCase>;
     default: AstChildren<SwitchBodyDefault>;
 }
@@ -798,7 +631,56 @@ ast_node! {
 
 ast_node! {
     SwitchCaseSelectors:
-    exprs: AstChildren<Expression>;
+    exprs: AstChildren<SwitchCaseSelector>;
+}
+
+#[derive(Debug)]
+pub enum SwitchCaseSelector {
+    Expression(Expression),
+    Default(Default),
+}
+impl AstNode for SwitchCaseSelector {
+    fn can_cast(kind: SyntaxKind) -> bool
+    where
+        Self: Sized,
+    {
+        match kind {
+            SyntaxKind::Default => true,
+            _ => Expression::can_cast(kind),
+        }
+    }
+
+    fn cast(syntax: SyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        match syntax.kind() {
+            SyntaxKind::Default => Some(SwitchCaseSelector::Default(Default { syntax })),
+            _ => Expression::cast(syntax).map(SwitchCaseSelector::Expression),
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        match self {
+            SwitchCaseSelector::Expression(item) => item.syntax(),
+            SwitchCaseSelector::Default(item) => &item.syntax,
+        }
+    }
+}
+
+impl From<Expression> for SwitchCaseSelector {
+    fn from(value: Expression) -> Self {
+        SwitchCaseSelector::Expression(value)
+    }
+}
+impl From<Default> for SwitchCaseSelector {
+    fn from(value: Default) -> Self {
+        SwitchCaseSelector::Default(value)
+    }
+}
+
+ast_node! {
+    Default
 }
 
 ast_node! {
@@ -814,38 +696,6 @@ ast_node! {
 ast_node! {
     ReturnStatement:
     expression: Option<Expression>;
-}
-
-ast_node! {
-    VariableStatement:
-    variable_qualifier: Option<VariableQualifier>;
-    binding: Option<Binding>;
-    colon: Option<SyntaxToken Colon>;
-    ty: Option<Type>;
-    equal_token: Option<SyntaxToken Equal>;
-    initializer: Option<Expression>;
-}
-
-impl VariableStatement {
-    #[must_use]
-    pub fn kind(&self) -> Option<VariableStatementKind> {
-        #[expect(clippy::wildcard_enum_match_arm, reason = "not readable")]
-        self.syntax()
-            .children_with_tokens()
-            .filter_map(rowan::NodeOrToken::into_token)
-            .find_map(|token| match token.kind() {
-                SyntaxKind::Constant => Some(VariableStatementKind::Constant),
-                SyntaxKind::Let => Some(VariableStatementKind::Let),
-                SyntaxKind::Var => Some(VariableStatementKind::Var),
-                _ => None,
-            })
-    }
-}
-
-pub enum VariableStatementKind {
-    Constant,
-    Let,
-    Var,
 }
 
 ast_node! {
@@ -902,161 +752,55 @@ ast_node! {
 
 ast_enum! {
     enum Statement {
-        CompoundStatement,
-        VariableStatement,
-        ReturnStatement,
-        AssignmentStatement,
-        CompoundAssignmentStatement,
         IfStatement,
-        ForStatement,
         SwitchStatement,
         LoopStatement,
+        ForStatement,
         WhileStatement,
-        Discard,
+        CompoundStatement,
+        FunctionCallStatement,
+
+        VariableDeclaration,
+        LetDeclaration,
+        ConstantDeclaration,
+
+        AssignmentStatement,
+        CompoundAssignmentStatement,
+        IncrementDecrementStatement,
+
+        // Phony Assignment goes here
+        // Assert Statement goes here
+
         Break,
         Continue,
+        // Empty statement goes
+        Discard,
+
+        ReturnStatement,
+
         ContinuingStatement,
-        FunctionCallStatement,
-        IncrementDecrementStatement,
+        // Break if statement goes here
     }
 }
 
 ast_enum! {
     enum Expression {
-        InfixExpression,
-        PrefixExpression,
-        Literal,
-        ParenthesisExpression,
-        FieldExpression,
-        FunctionCall,
-        TypeInitializer,
         IndexExpression,
-        PathExpression,
-        BitcastExpression,
-        InvalidFunctionCall,
-    }
-}
-
-ast_enum_raw! {
-    enum MatrixType {
-        Mat2x2,
-        Mat2x3,
-        Mat2x4,
-        Mat3x2,
-        Mat3x3,
-        Mat3x4,
-        Mat4x2,
-        Mat4x3,
-        Mat4x4,
-    }
-}
-
-ast_enum_raw! {
-    enum VecType {
-        Vec2,
-        Vec3,
-        Vec4,
-    }
-}
-
-ast_enum_raw! {
-    enum ScalarType {
-        Bool,
-        Float32,
-        Int32,
-        Uint32,
-    }
-}
-
-ast_enum_raw! {
-    enum TextureType {
-        Texture1d,
-        Texture2d,
-        Texture2dArray,
-        Texture3d,
-        TextureCube,
-        TextureCubeArray,
-        TextureMultisampled2d,
-        TextureExternal,
-        TextureStorage1d,
-        TextureStorage2d,
-        TextureStorage2dArray,
-        TextureStorage3d,
-        TextureDepth2d,
-        TextureDepth2dArray,
-        TextureDepthCube,
-        TextureDepthCubeArray,
-        TextureDepthMultisampled2d,
-    }
-}
-
-ast_enum_raw! {
-    enum SamplerType {
-        Sampler,
-        SamplerComparison,
+        FieldExpression,
+        PrefixExpression,
+        InfixExpression,
+        IdentExpression,
+        FunctionCall,
+        ParenthesisExpression,
+        Literal,
     }
 }
 
 ast_node! {
-    PathType:
-    name: Option<NameReference>;
+    TypeSpecifier:
+    name_ref: Option<NameReference>;
 }
-
-ast_node!(Atomic AtomicType);
-ast_node!(Array ArrayType);
-ast_node!(BindingArray BindingArrayType);
-ast_node!(Pointer PointerType);
-
-ast_enum_compound! {
-    enum Type {
-        PathType,
-        ScalarType,
-        VecType,
-        MatrixType,
-        TextureType,
-        SamplerType,
-        AtomicType,
-        ArrayType,
-        BindingArrayType,
-        PointerType,
-    }
-}
-
-impl Type {
-    #[must_use]
-    pub fn as_name(&self) -> Option<NameReference> {
-        match self {
-            Self::PathType(path) => path.name(),
-            Self::ScalarType(_)
-            | Self::VecType(_)
-            | Self::MatrixType(_)
-            | Self::TextureType(_)
-            | Self::SamplerType(_)
-            | Self::AtomicType(_)
-            | Self::ArrayType(_)
-            | Self::BindingArrayType(_)
-            | Self::PointerType(_) => None,
-        }
-    }
-}
-
-impl HasGenerics for Type {}
-
-impl HasGenerics for VecType {}
-
-impl HasGenerics for MatrixType {}
-
-impl HasGenerics for TextureType {}
-
-impl HasGenerics for ScalarType {}
-
-impl HasGenerics for AtomicType {}
-
-impl HasGenerics for ArrayType {}
-
-impl HasGenerics for BindingArrayType {}
-
-impl HasGenerics for PointerType {}
+impl HasGenerics for TypeSpecifier {}
 
 impl InfixExpression {
     #[must_use]
@@ -1070,20 +814,11 @@ impl InfixExpression {
     }
 
     #[must_use]
-    pub fn op(&self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
-        if let Some(op) = self
-            .syntax()
-            .children()
-            .find(|child| matches!(child.kind(), SyntaxKind::ShiftLeft | SyntaxKind::ShiftRight))
-        {
-            return Some(NodeOrToken::Node(op));
-        }
-
-        if let Some(token) = self.left_side()?.syntax().last_token()?.next_token() {
-            return Some(NodeOrToken::Token(token));
-        }
-
-        None
+    pub fn op(&self) -> Option<SyntaxToken> {
+        self.syntax()
+            .children_with_tokens()
+            .filter_map(rowan::NodeOrToken::into_token)
+            .find(|v| BinaryOperatorKind::can_cast(v.kind()))
     }
 
     #[must_use]
@@ -1107,21 +842,12 @@ impl InfixExpression {
                 BinaryOperatorKind::Xor(_)=>BinaryOperation::Arithmetic(ArithmeticOperation::BitXor),
                 BinaryOperatorKind::OrOr(_) => BinaryOperation::Logical(LogicOperation::Or),
                 BinaryOperatorKind::AndAnd(_) => BinaryOperation::Logical(LogicOperation::And),
+                BinaryOperatorKind::ShiftRight(_) => BinaryOperation::Arithmetic(ArithmeticOperation::ShiftRight),
+                BinaryOperatorKind::ShiftLeft(_) => BinaryOperation::Arithmetic(ArithmeticOperation::ShiftLeft),
             };
             Some(op)
         } else {
-            #[expect(clippy::wildcard_enum_match_arm, reason = "not readable")]
-            self.syntax()
-                .children()
-                .find_map(|child| match child.kind() {
-                    SyntaxKind::ShiftLeft => {
-                        Some(BinaryOperation::Arithmetic(ArithmeticOperation::ShiftLeft))
-                    },
-                    SyntaxKind::ShiftRight => {
-                        Some(BinaryOperation::Arithmetic(ArithmeticOperation::ShiftRight))
-                    },
-                    _ => None,
-                })
+            None
         }
     }
 }
@@ -1138,22 +864,5 @@ impl PrefixExpression {
             PrefixOperatorKind::And(_) => UnaryOperator::Reference,
         };
         Some(op)
-    }
-}
-
-ast_enum! {
-    enum NameLike {
-        NameReference,
-        Name,
-    }
-}
-
-impl NameLike {
-    #[must_use]
-    pub const fn as_name_ref(&self) -> Option<&NameReference> {
-        match self {
-            Self::NameReference(name_ref) => Some(name_ref),
-            Self::Name(_) => None,
-        }
     }
 }

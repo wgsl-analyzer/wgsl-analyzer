@@ -74,12 +74,6 @@ pub enum AnyDiagnostic {
         file_id: HirFileId,
     },
 
-    UnconfiguredCode {
-        definition: String,
-        range: TextRange,
-        file_id: HirFileId,
-    },
-
     AssignmentNotAReference {
         left_side: InFile<AstPointer<ast::Expression>>,
         actual: Type,
@@ -126,10 +120,10 @@ pub enum AnyDiagnostic {
         actual: Type,
     },
     MissingAddressSpace {
-        var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
+        var: InFile<AstPointer<ast::VariableDeclaration>>,
     },
     InvalidAddressSpace {
-        var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
+        var: InFile<AstPointer<ast::VariableDeclaration>>,
         error: AddressSpaceError,
     },
 
@@ -137,10 +131,6 @@ pub enum AnyDiagnostic {
         file_id: HirFileId,
         location: SyntaxNodePointer,
         error: TypeLoweringError,
-    },
-
-    UnresolvedImport {
-        import: InFile<AstPointer<ast::Import>>,
     },
 
     PrecedenceParensRequired {
@@ -181,11 +171,9 @@ impl AnyDiagnostic {
             Self::MissingAddressSpace { var } | Self::InvalidAddressSpace { var, .. } => {
                 var.file_id
             },
-            Self::UnresolvedImport { import, .. } => import.file_id,
             Self::InvalidType { file_id, .. }
             | Self::NagaValidationError { file_id, .. }
-            | Self::ParseError { file_id, .. }
-            | Self::UnconfiguredCode { file_id, .. } => *file_id,
+            | Self::ParseError { file_id, .. } => *file_id,
         }
     }
 }
@@ -370,7 +358,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
 
 pub(crate) fn any_diag_from_global_var(
     var_diagnostic: GlobalVariableDiagnostic,
-    var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
+    var: InFile<AstPointer<ast::VariableDeclaration>>,
 ) -> AnyDiagnostic {
     match var_diagnostic {
         GlobalVariableDiagnostic::MissingAddressSpace => AnyDiagnostic::MissingAddressSpace { var },

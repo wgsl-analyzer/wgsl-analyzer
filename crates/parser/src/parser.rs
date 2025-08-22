@@ -1,265 +1,162 @@
-pub mod marker;
-mod parse_error;
+use crate::{
+    Parse, ParseEntryPoint, SyntaxKind, cst_builder::CstBuilder, lexer::lex_with_templates,
+};
+use logos::Logos;
+use rowan::{GreenNode, GreenNodeBuilder};
+use std::fmt::{self, Write as _};
 
-use std::{marker::PhantomData, mem};
+use super::lexer::Token;
+use std::collections::HashSet;
 
-use marker::Marker;
-pub use parse_error::ParseError;
-
-use crate::SyntaxKind;
-
-use super::{event::Event, lexer::Token, source::Source};
-
-pub struct Parser<'tokens, 'input> {
-    source: Source<'tokens, 'input>,
-    events: Vec<Event>,
-    pub(crate) expected_kinds: Vec<SyntaxKind>,
-    _marker: PhantomData<SyntaxKind>,
+pub struct Context<'a> {
+    marker: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'tokens, 'input> Parser<'tokens, 'input> {
-    pub(crate) const fn new(source: Source<'tokens, 'input>) -> Self {
+impl<'a> Default for Context<'a> {
+    fn default() -> Self {
         Self {
-            source,
-            events: Vec::new(),
-            expected_kinds: Vec::new(),
-            _marker: PhantomData,
+            marker: Default::default(),
         }
     }
+}
 
-    pub(crate) fn parse<Function: Fn(&mut Self)>(
-        mut self,
-        parse_implementation: Function,
-    ) -> Vec<Event> {
-        parse_implementation(&mut self);
-        self.events
+pub struct Diagnostic {
+    pub message: String,
+    pub range: rowan::TextRange,
+}
+
+impl fmt::Debug for Diagnostic {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        f.debug_struct("Diagnostic")
+            .field("message", &self.message)
+            .field("range", &self.range)
+            .finish()
     }
+}
 
-    pub fn start(&mut self) -> Marker {
-        let pos = self.events.len();
-        self.events.push(Event::Placeholder);
-
-        Marker::new(pos)
+impl fmt::Display for Diagnostic {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        write!(
+            f,
+            "error at {}..{}: {}",
+            u32::from(self.range.start()),
+            u32::from(self.range.end()),
+            self.message
+        )
     }
+}
 
-    pub fn expect(
-        &mut self,
-        kind: SyntaxKind,
-    ) {
-        if self.at(kind) {
-            self.bump();
-        } else {
-            self.error();
-        }
+include!(concat!(env!("OUT_DIR"), "/generated.rs"));
+
+pub fn parse_entrypoint(
+    input: &str,
+    entrypoint: ParseEntryPoint,
+) -> Parse {
+    let mut diags = Vec::new();
+    let parsed = match entrypoint {
+        ParseEntryPoint::File => Parser::new(&input, &mut diags).parse(&mut diags),
+        ParseEntryPoint::Expression => Parser::new(&input, &mut diags).parse_expression(&mut diags),
+        ParseEntryPoint::Statement => Parser::new(&input, &mut diags).parse_statement(&mut diags),
+        ParseEntryPoint::Type => Parser::new(&input, &mut diags).parse_type_specifier(&mut diags),
+        ParseEntryPoint::Attribute => Parser::new(&input, &mut diags).parse_attribute(&mut diags),
+        ParseEntryPoint::FunctionParameterList => {
+            todo!("Remove this")
+        },
+    };
+    let green_node = CstBuilder {
+        builder: GreenNodeBuilder::new(),
+        cst: parsed,
     }
-
-    pub fn expect_no_bump(
-        &mut self,
-        kind: SyntaxKind,
-    ) {
-        if self.at(kind) {
-            self.bump();
-        } else {
-            self.error_no_bump(&[]);
-        }
+    .build();
+    Parse {
+        green_node,
+        errors: diags,
     }
+}
 
-    #[expect(clippy::result_unit_err, reason = "TODO")]
-    pub fn expect_recover(
-        &mut self,
-        kind: SyntaxKind,
-        recovery: &[SyntaxKind],
-    ) -> Result<(), ()> {
-        if self.at(kind) {
-            self.bump();
-            Ok(())
-        } else {
-            self.error_recovery(recovery);
-            Err(())
-        }
+impl<'a> Cst<'a> {
+    pub fn nodes_count(&self) -> usize {
+        self.nodes.len()
     }
-
-    pub fn eat(
-        &mut self,
-        kind: SyntaxKind,
-    ) -> bool {
-        if self.at(kind) {
-            self.bump();
-            true
-        } else {
-            false
-        }
+    pub fn get_text(
+        &self,
+        index: CstIndex,
+    ) -> &str {
+        &self.source[self.spans[usize::from(index)].clone()]
     }
+}
 
-    pub fn eat_set(
-        &mut self,
-        set: &[SyntaxKind],
-    ) {
-        if self.at_set(set) {
-            self.bump();
-        }
+impl<'a> Parser<'a> {
+    fn is_func_call(&self) -> bool {
+        matches!(self.peek(1), Token::LPar | Token::Lt) && self.peek(2) != Token::Lt
     }
+}
 
-    pub fn error(&mut self) {
-        self.error_inner(None, &[], false);
+impl<'a> ParserCallbacks for Parser<'a> {
+    fn create_tokens(
+        source: &str,
+        _diags: &mut Vec<Diagnostic>,
+    ) -> (Vec<Token>, Vec<Span>) {
+        lex_with_templates(Token::lexer(source))
     }
+    fn create_diagnostic(
+        &self,
+        span: Span,
+        message: String,
+    ) -> Diagnostic {
+        let range = {
+            let std::ops::Range { start, end } = span;
+            let start = rowan::TextSize::try_from(start).unwrap();
+            let end = rowan::TextSize::try_from(end).unwrap();
 
-    pub fn error_expected(
-        &mut self,
-        expected: &[SyntaxKind],
-    ) {
-        self.error_inner(None, expected, false);
-    }
-
-    pub fn error_expected_no_bump(
-        &mut self,
-        expected: &[SyntaxKind],
-    ) {
-        self.error_inner(None, expected, true);
-    }
-
-    pub fn error_recovery(
-        &mut self,
-        recovery: &[SyntaxKind],
-    ) {
-        self.error_inner(Some(recovery), &[], false);
-    }
-
-    pub fn error_no_bump(
-        &mut self,
-        expected: &[SyntaxKind],
-    ) {
-        self.error_inner(None, expected, true);
-    }
-
-    fn error_inner(
-        &mut self,
-        recovery: Option<&[SyntaxKind]>,
-        expected: &[SyntaxKind],
-        no_bump: bool,
-    ) {
-        let current_token = self.source.peek_token();
-
-        let (found, range) = if let Some(Token { kind, range, .. }) = current_token {
-            (Some(*kind), *range)
-        } else {
-            // If we are at the end of the input we use the range of the very last token in the
-            // input.
-            (None, self.source.last_token_range().unwrap())
+            rowan::TextRange::new(start, end)
         };
 
-        let expected = if expected.is_empty() {
-            mem::take(&mut self.expected_kinds)
-        } else {
-            expected.to_vec()
-        };
-
-        self.events.push(Event::Error(ParseError {
-            expected,
-            found,
-            range,
-        }));
-
-        let at_recovery = recovery.is_some_and(|rec| self.at_set(rec));
-        if !at_recovery && !self.at_end() {
-            let marker = self.start();
-            if !no_bump {
-                self.bump();
-            }
-            marker.complete(self, <SyntaxKind as logos::Logos>::ERROR);
-        }
+        Diagnostic { message, range }
     }
-
-    /// Returns the bump of this [`Parser`].
-    ///
-    /// # Panics
-    ///
-    /// Panics if there is no next token.
-    pub fn bump(&mut self) -> SyntaxKind {
-        self.expected_kinds.clear();
-        let token = self.source.next_token().unwrap();
-        self.events.push(Event::AddToken);
-        token.kind
+    fn predicate_global_directive_1(&self) -> bool {
+        self.peek(1) != Token::Semi
     }
-
-    /// # Panics
-    ///
-    /// Panics if there are not 2 more tokens.
-    pub fn bump_compound(
-        &mut self,
-        token: SyntaxKind,
-    ) {
-        self.expected_kinds.clear();
-        let marker = self.start();
-        let _token1 = self.source.next_token().unwrap();
-        self.events.push(Event::AddToken);
-        let _token2 = self.source.next_token().unwrap();
-        self.events.push(Event::AddToken);
-        marker.complete(self, token);
+    fn predicate_function_parameters_1(&self) -> bool {
+        self.peek(1) != Token::RPar
     }
-
-    pub fn at(
-        &mut self,
-        kind: SyntaxKind,
-    ) -> bool {
-        if !self.expected_kinds.contains(&kind) {
-            self.expected_kinds.push(kind);
-        }
-        self.peek() == Some(kind)
+    fn predicate_struct_body_1(&self) -> bool {
+        self.peek(1) != Token::RBrace
     }
-
-    pub fn at_compound(
-        &mut self,
-        kind_1: SyntaxKind,
-        kind_2: SyntaxKind,
-    ) -> bool {
-        if !self.expected_kinds.contains(&kind_1) {
-            self.expected_kinds.push(kind_1);
-        }
-        if let Some((current, peek)) = self.peek_compound() {
-            current == kind_1 && peek == kind_2
-        } else {
-            false
-        }
+    fn predicate_template_args_1(&self) -> bool {
+        self.peek(1) != Token::Gt
     }
-
-    pub fn at_or_end(
-        &mut self,
-        kind: SyntaxKind,
-    ) -> bool {
-        self.expected_kinds.push(kind);
-        let token = self.peek();
-        token == Some(kind) || token.is_none()
+    fn predicate_argument_expression_list_1(&self) -> bool {
+        self.peek(1) != Token::RPar
     }
-
-    pub fn at_set(
-        &mut self,
-        set: &[SyntaxKind],
-    ) -> bool {
-        self.peek().is_some_and(|kind| set.contains(&kind))
+    fn predicate_argument_expression_list_expr_1(&self) -> bool {
+        self.peek(1) != Token::RPar
     }
-
-    pub fn at_end(&mut self) -> bool {
-        self.peek().is_none()
+    fn predicate_statement_1(&self) -> bool {
+        self.peek(1) == Token::If
     }
-
-    pub fn peek(&mut self) -> Option<SyntaxKind> {
-        self.source.peek_kind()
+    fn predicate_statement_2(&self) -> bool {
+        self.is_func_call()
     }
-
-    pub fn peek_compound(&mut self) -> Option<(SyntaxKind, SyntaxKind)> {
-        self.source.peek_kind_compound()
+    fn predicate_continuing_statement_1(&self) -> bool {
+        self.peek(1) != Token::If
     }
-
-    pub fn set_expected(
-        &mut self,
-        expected: Vec<SyntaxKind>,
-    ) {
-        self.expected_kinds = expected;
+    fn predicate_for_init_1(&self) -> bool {
+        self.is_func_call()
     }
-
-    #[must_use]
-    pub fn location(&self) -> impl Eq + use<> {
-        self.source.location()
+    fn predicate_for_update_1(&self) -> bool {
+        self.is_func_call()
+    }
+    fn predicate_case_selectors_1(&self) -> bool {
+        !matches!(self.peek(1), Token::At | Token::Colon | Token::LBrace)
+    }
+    fn assertion_struct_body_1(&self) -> Option<Diagnostic> {
+        Some(self.create_diagnostic(self.span(), "invalid syntax, expected ','".to_string()))
     }
 }

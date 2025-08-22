@@ -73,34 +73,10 @@ pub struct HoverGotoTypeData {
 // Focusing is usually hovering with a mouse, but can also be triggered with a shortcut.
 pub(crate) fn hover(
     database: &RootDatabase,
-    file_range @ FileRange { file_id, range }: FileRange,
-    config: &HoverConfig,
+    file_range: FileRange,
+    _config: &HoverConfig,
 ) -> Option<RangeInfo<HoverResult>> {
-    let semantics = &Semantics::new(database);
-
-    let file = database.parse(file_range.file_id).tree();
-
-    let import = file
-        .syntax()
-        .token_at_offset(file_range.range.start())
-        .right_biased()?
-        .parent()?
-        .ancestors()
-        .find_map(ast::Import::cast);
-
-    if let Some(import) = import {
-        let source = InFile::new(file_range.file_id.into(), import);
-        let import = semantics.resolve_import(&source)?;
-
-        if !import.is_path(database) {
-            return Some(RangeInfo {
-                range: file_range.range,
-                info: HoverResult {
-                    markup: import.file_text(database)?.into(),
-                    actions: vec![],
-                },
-            });
-        }
-    }
+    let _semantics = &Semantics::new(database);
+    let _file = database.parse(file_range.file_id).tree();
     None
 }
