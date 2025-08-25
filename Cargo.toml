@@ -161,7 +161,7 @@ tracing-subscriber = { version = "0.3.18", default-features = false, features = 
   "tracing-log",
 ] }
 triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
-url = "2.5.6"
+url = "2.5.7"
 xshell = "0.2.7"
 lexopt = "0.3.0"
 prettydiff = "0.8.1"
