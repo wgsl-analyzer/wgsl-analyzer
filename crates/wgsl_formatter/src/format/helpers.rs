@@ -1,7 +1,7 @@
 use std::{alloc::alloc, iter::repeat_with};
 
+use dprint_core::formatting::{PrintItems, PrintOptions, Signal, StringContainer};
 use parser::SyntaxNode;
-use pretty::{BoxAllocator, DocAllocator, DocBuilder};
 use syntax::{
     AstNode as _, HasName as _,
     ast::{self},
@@ -12,21 +12,21 @@ use crate::{FormattingOptions, format::reporting::FormatDocumentResult};
 /// Lays out the children of a node in a way so that
 /// - after every node is exactly 1 or 2 newlines (aka. 0 to 1 blank lines)
 /// - there are no newlines before the first node
-pub fn pretty_spaced_lines<'ann, D, TAnnotation, F>(
+pub fn gen_spaced_lines<F>(
     node: &parser::SyntaxNode,
-    allocator: &'ann D,
     mut pretty_node: F,
-) -> FormatDocumentResult<DocBuilder<'ann, D, TAnnotation>>
+) -> FormatDocumentResult<PrintItems>
 where
-    D: DocAllocator<'ann, TAnnotation>,
-    F: FnMut(SyntaxNode) -> FormatDocumentResult<DocBuilder<'ann, D, TAnnotation>>,
+    F: FnMut(SyntaxNode) -> FormatDocumentResult<PrintItems>,
 {
-    let mut result = allocator.nil();
+    let mut result = PrintItems::new();
 
     enum NewLineState {
         AtStartOfBlock,
         NewLinesAfterNode(usize),
     }
+
+    //TODO Rewrite this using Signal::ExpectNewLine
 
     let mut new_line_state = NewLineState::AtStartOfBlock;
 
@@ -55,14 +55,13 @@ where
                 match new_line_state {
                     NewLineState::AtStartOfBlock => {},
                     NewLineState::NewLinesAfterNode(count) => {
-                        result =
-                            result.append(allocator.concat(
-                                repeat_with(|| allocator.hardline()).take(count.clamp(1, 2)),
-                            ));
+                        for s in (0..count.clamp(1, 2)) {
+                            result.push_signal(Signal::NewLine);
+                        }
                     },
                 }
 
-                result = result.append(pretty_node(node)?);
+                result.extend(pretty_node(node)?);
                 new_line_state = NewLineState::NewLinesAfterNode(0);
             },
         }
@@ -72,9 +71,16 @@ where
         NewLineState::AtStartOfBlock => {},
         NewLineState::NewLinesAfterNode(count) => {
             //There should be a newline at the end of the file
-            result = result.append(allocator.hardline());
+            result.push_signal(Signal::NewLine);
         },
     }
 
     Ok(result)
+}
+
+#[inline]
+pub fn into_items(sc: &'static StringContainer) -> PrintItems {
+    let mut pi = PrintItems::default();
+    pi.push_sc(sc);
+    pi
 }
