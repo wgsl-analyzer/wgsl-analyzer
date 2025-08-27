@@ -20,7 +20,7 @@ pub use format::{format_str, format_tree};
 pub struct FormattingOptions {
     pub trailing_commas: Policy,
     pub indent_symbol: String,
-    pub width: usize,
+    pub width: u32,
 }
 
 impl Default for FormattingOptions {
