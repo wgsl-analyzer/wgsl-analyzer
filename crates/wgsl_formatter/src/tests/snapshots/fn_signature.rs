@@ -91,7 +91,12 @@ fn format_fn_header_missing_comma() {
 
 #[test]
 fn format_fn_header_no_ws() {
-    check("fn main(a:b)->f32{}", expect![["fn main(a: b) -> f32 {}"]]);
+    check(
+        "fn main(a:b)->f32{}",
+        expect![["
+            fn main(a: b) -> f32 {}
+        "]],
+    );
 }
 
 #[test]
@@ -101,9 +106,8 @@ fn format_fn_newline() {
     a:b
 )->f32{}",
         expect![["
-            fn main(
-                a: b
-            ) -> f32 {}"]],
+            fn main(a: b) -> f32 {}
+            "]],
     );
 }
 
@@ -113,9 +117,8 @@ fn format_fn_newline_2() {
         "fn main(
     a:b, c:d)->f32{}",
         expect![["
-            fn main(
-                a: b, c: d
-            ) -> f32 {}"]],
+            fn main(a: b, c: d) -> f32 {}
+            "]],
     );
 }
 
@@ -127,10 +130,8 @@ fn format_fn_newline_3() {
     c:d
 )->f32{}",
         expect![["
-            fn main(
-                a: b,
-                c: d
-            ) -> f32 {}"]],
+            fn main(a: b, c: d) -> f32 {}
+            "]],
     );
 }
 

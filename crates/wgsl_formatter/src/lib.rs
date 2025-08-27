@@ -26,7 +26,7 @@ pub struct FormattingOptions {
     /// The string used for one level of indentation (e.g. `"    "` or `"\t"`).
     #[cfg_attr(feature = "serde", serde(alias = "indentSymbol"))]
     pub indent_symbol: String,
-    pub width: usize,
+    pub width: u32,
 }
 
 impl Default for FormattingOptions {

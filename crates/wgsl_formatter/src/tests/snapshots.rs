@@ -5,6 +5,7 @@ use crate::test_util::{check, check_tabs};
 mod bindings;
 mod code_indentation;
 mod code_spacing;
+mod comments;
 mod control_structures;
 mod fn_call;
 mod fn_signature;

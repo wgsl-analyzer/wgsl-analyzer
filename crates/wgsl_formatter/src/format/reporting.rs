@@ -1,5 +1,4 @@
 use parser::SyntaxNode;
-use pretty::{DocAllocator, DocBuilder};
 use rowan::TextRange;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
