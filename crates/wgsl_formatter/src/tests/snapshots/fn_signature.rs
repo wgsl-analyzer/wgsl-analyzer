@@ -68,7 +68,7 @@ fn format_fn_header_comma_oneline() {
 }
 
 #[test]
-fn format_fn_header_comma_multiline() {
+fn format_fn_header_comma_multiline_wide() {
     check_with_options(
         "fn main(a: b , c: d ,)  -> f32   {}",
         &expect![["
@@ -79,6 +79,23 @@ fn format_fn_header_comma_multiline() {
             "]],
         &crate::FormattingOptions {
             width: 26, //Just shy of what the fn would be laid out as on a single line
+            ..Default::default()
+        },
+    );
+}
+
+#[test]
+fn format_fn_header_comma_multiline_narrow() {
+    check_with_options(
+        "fn main(a: b , c: d ,)  -> f32   {}",
+        &expect![["
+            fn main(
+                a: b,
+                c: d,
+            ) -> f32 {}
+            "]],
+        &crate::FormattingOptions {
+            width: 4, //Just shy of what the fn would be laid out as on a single line
             ..Default::default()
         },
     );
