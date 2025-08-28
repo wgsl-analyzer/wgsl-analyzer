@@ -1,7 +1,8 @@
 use std::{alloc::alloc, iter::repeat_with};
 
 use dprint_core::formatting::{PrintItems, PrintOptions, Signal, StringContainer};
-use parser::SyntaxNode;
+use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
+use rowan::NodeOrToken;
 use syntax::{
     AstNode as _, HasName as _,
     ast::{self},
@@ -9,10 +10,7 @@ use syntax::{
 
 use crate::{
     FormattingOptions,
-    format::{
-        handle_comments,
-        reporting::{FormatDocumentErrorKind, FormatDocumentResult},
-    },
+    format::reporting::{FormatDocumentErrorKind, FormatDocumentResult, err_src},
 };
 
 /// Lays out the children of a node in a way so that
@@ -20,16 +18,16 @@ use crate::{
 /// - there are no newlines before the first node
 pub fn gen_spaced_lines<F>(
     node: &parser::SyntaxNode,
-    mut pretty_node: F,
+    mut pretty_item: F,
 ) -> FormatDocumentResult<PrintItems>
 where
-    F: FnMut(&SyntaxNode) -> FormatDocumentResult<PrintItems>,
+    F: FnMut(&NodeOrToken<SyntaxNode, SyntaxToken>) -> FormatDocumentResult<PrintItems>,
 {
     let mut result = PrintItems::new();
 
     enum NewLineState {
         AtStartOfBlock,
-        NewLinesAfterNode(usize),
+        NewLinesAfterItem(usize),
     }
 
     let mut new_line_state = NewLineState::AtStartOfBlock;
@@ -51,34 +49,28 @@ where
             new_line_state = match new_line_state {
                 //no newlines at start of block
                 NewLineState::AtStartOfBlock => NewLineState::AtStartOfBlock,
-                NewLineState::NewLinesAfterNode(count) => {
-                    NewLineState::NewLinesAfterNode(count + newlines)
+                NewLineState::NewLinesAfterItem(count) => {
+                    NewLineState::NewLinesAfterItem(count + newlines)
                 },
             };
         } else {
             // else the child is something to be formatted, so print out the collapsed newlines
             match new_line_state {
                 NewLineState::AtStartOfBlock => {},
-                NewLineState::NewLinesAfterNode(count) => {
+                NewLineState::NewLinesAfterItem(count) => {
                     for _ in (0..count.clamp(1, 2)) {
                         result.push_signal(Signal::NewLine);
                     }
                 },
             }
-            if let Some(items) = handle_comments(&child, &mut true) {
-                result.extend(items?);
-            } else if let rowan::NodeOrToken::Node(node) = &child {
-                result.extend(pretty_node(node)?);
-            } else {
-                return Err(FormatDocumentErrorKind::UnexpectedToken.at(child.text_range()));
-            }
-            new_line_state = NewLineState::NewLinesAfterNode(0);
+            result.extend(pretty_item(&child)?);
+            new_line_state = NewLineState::NewLinesAfterItem(0);
         }
     }
 
     match new_line_state {
         NewLineState::AtStartOfBlock => {},
-        NewLineState::NewLinesAfterNode(count) => {
+        NewLineState::NewLinesAfterItem(count) => {
             //There should be a newline at the end of the file
             result.push_signal(Signal::NewLine);
         },
