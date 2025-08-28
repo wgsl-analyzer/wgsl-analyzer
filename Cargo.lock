@@ -2454,6 +2454,7 @@ dependencies = [
  "dprint-core",
  "dprint-core-macros",
  "expect-test",
+ "itertools",
  "parser",
  "rowan",
  "serde_json",
