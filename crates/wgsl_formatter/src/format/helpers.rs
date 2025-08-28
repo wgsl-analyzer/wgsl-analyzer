@@ -7,7 +7,13 @@ use syntax::{
     ast::{self},
 };
 
-use crate::{FormattingOptions, format::reporting::FormatDocumentResult};
+use crate::{
+    FormattingOptions,
+    format::{
+        handle_comments,
+        reporting::{FormatDocumentErrorKind, FormatDocumentResult},
+    },
+};
 
 /// Lays out the children of a node in a way so that
 /// - after every node is exactly 1 or 2 newlines (aka. 0 to 1 blank lines)
@@ -17,7 +23,7 @@ pub fn gen_spaced_lines<F>(
     mut pretty_node: F,
 ) -> FormatDocumentResult<PrintItems>
 where
-    F: FnMut(SyntaxNode) -> FormatDocumentResult<PrintItems>,
+    F: FnMut(&SyntaxNode) -> FormatDocumentResult<PrintItems>,
 {
     let mut result = PrintItems::new();
 
@@ -26,44 +32,47 @@ where
         NewLinesAfterNode(usize),
     }
 
-    //TODO Rewrite this using Signal::ExpectNewLine
-
     let mut new_line_state = NewLineState::AtStartOfBlock;
 
     for child in node.children_with_tokens() {
-        match child {
-            rowan::NodeOrToken::Token(token) => {
-                if token.kind() == parser::SyntaxKind::Blankspace {
-                    //TODO Think a bit more about different types of newlines
-                    //TODO child.to_string() here surely is wasteful - there must be a better way.
+        if let rowan::NodeOrToken::Token(token) = &child
+            && token.kind() == parser::SyntaxKind::Blankspace
+        {
+            // if the token is a blankspace, collapse the newlines according to the rules.
 
-                    let newlines = token
-                        .to_string()
-                        .chars()
-                        .filter(|item| *item == '\n')
-                        .count();
-                    new_line_state = match new_line_state {
-                        //no newlines at start of block
-                        NewLineState::AtStartOfBlock => NewLineState::AtStartOfBlock,
-                        NewLineState::NewLinesAfterNode(count) => {
-                            NewLineState::NewLinesAfterNode(count + newlines)
-                        },
-                    };
-                }
-            },
-            rowan::NodeOrToken::Node(node) => {
-                match new_line_state {
-                    NewLineState::AtStartOfBlock => {},
-                    NewLineState::NewLinesAfterNode(count) => {
-                        for s in (0..count.clamp(1, 2)) {
-                            result.push_signal(Signal::NewLine);
-                        }
-                    },
-                }
+            //TODO Think a bit more about different types of newlines (\c\n etc.)
+            //TODO child.to_string() here surely is wasteful - there must be a better way.
 
+            let newlines = token
+                .to_string()
+                .chars()
+                .filter(|item| *item == '\n')
+                .count();
+            new_line_state = match new_line_state {
+                //no newlines at start of block
+                NewLineState::AtStartOfBlock => NewLineState::AtStartOfBlock,
+                NewLineState::NewLinesAfterNode(count) => {
+                    NewLineState::NewLinesAfterNode(count + newlines)
+                },
+            };
+        } else {
+            // else the child is something to be formatted, so print out the collapsed newlines
+            match new_line_state {
+                NewLineState::AtStartOfBlock => {},
+                NewLineState::NewLinesAfterNode(count) => {
+                    for _ in (0..count.clamp(1, 2)) {
+                        result.push_signal(Signal::NewLine);
+                    }
+                },
+            }
+            if let Some(items) = handle_comments(&child, &mut true) {
+                result.extend(items?);
+            } else if let rowan::NodeOrToken::Node(node) = &child {
                 result.extend(pretty_node(node)?);
-                new_line_state = NewLineState::NewLinesAfterNode(0);
-            },
+            } else {
+                return Err(FormatDocumentErrorKind::UnexpectedToken.at(child.text_range()));
+            }
+            new_line_state = NewLineState::NewLinesAfterNode(0);
         }
     }
 
