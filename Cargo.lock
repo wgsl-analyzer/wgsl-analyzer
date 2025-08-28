@@ -1993,6 +1993,7 @@ dependencies = [
  "dprint-core 0.67.4",
  "dprint-core-macros",
  "expect-test",
+ "itertools 0.14.0",
  "pretty",
  "rowan",
  "serde",

@@ -1,4 +1,10 @@
+#![expect(
+    clippy::branches_sharing_code,
+    reason = "Its helpful to explicitly state intent here."
+)]
+mod ast_parse;
 mod helpers;
+
 mod reporting;
 
 use std::{alloc::alloc, iter::repeat_with, rc::Rc};
@@ -9,7 +15,9 @@ use dprint_core::formatting::{
     ir_helpers,
 };
 use dprint_core_macros::sc;
-use parser::{SyntaxKind, SyntaxNode};
+use itertools::{Itertools as _, Position, PutBack, put_back};
+use parser::{SyntaxKind, SyntaxNode, SyntaxToken, WeslLanguage};
+use rowan::{NodeOrToken, SyntaxElementChildren};
 use syntax::{
     AstNode as _, HasName as _,
     ast::{self},
@@ -20,8 +28,12 @@ use crate::{
     FormattingOptions,
     format::{
         self,
+        ast_parse::{
+            parse_end, parse_end_optional, parse_many_comments_and_blankspace, parse_node,
+            parse_node_optional, parse_token, parse_token_optional,
+        },
         helpers::{gen_spaced_lines, into_items},
-        reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult},
+        reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult, err_src},
     },
 };
 
@@ -92,228 +104,243 @@ fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItems> {
     gen_spaced_lines(node.syntax(), |child| {
         //TODO This clone is unnecessary if we had a cast that returned the passed in node
         // on a failure like std::any::Any (SyntaxNode -> Result<Item, Syntaxnode>)
-        if let Some(item) = ast::Item::cast(child.clone()) {
+
+        if let NodeOrToken::Node(child) = child
+            && let Some(item) = ast::Item::cast(child.clone())
+        {
             gen_item(&item)
         } else {
-            Err(FormatDocumentErrorKind::UnexpectedModuleNode.at(child.text_range()))
+            Err(FormatDocumentErrorKind::UnexpectedModuleNode.at(child.text_range(), err_src!()))
         }
     })
 }
 
-#[expect(clippy::too_many_lines, reason = "TODO: Shorten function")]
 fn gen_function_declaration(node: &ast::FunctionDeclaration) -> FormatDocumentResult<PrintItems> {
-    enum FunctionDeclarationState {
-        Init,
-        HasFn,
-        HasName,
-        HasParams,
-        HasReturnType,
-        HasBody,
-    }
+    let mut syntax = put_back(node.syntax().children_with_tokens());
 
-    let mut state = FunctionDeclarationState::Init;
+    let item_fn = parse_token(&mut syntax, SyntaxKind::Fn)?;
+    let item_comments_after_fn = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_name = parse_node::<ast::Name>(&mut syntax)?;
+    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_params = parse_node::<ast::FunctionParameters>(&mut syntax)?;
+    let item_comments_after_params = parse_many_comments_and_blankspace(&mut syntax)?;
+    dbg!(syntax.clone().collect_vec());
+    let item_return = parse_node_optional::<ast::ReturnType>(&mut syntax);
+    dbg!(syntax.clone().collect_vec());
+    let item_comments_after_return = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_body = parse_node::<ast::CompoundStatement>(&mut syntax)?;
+    parse_end(&mut syntax)?;
+
+    //TODO This is very bad spaghetti, unmaintainable, brittle code, remove this asap
+    let mut last_item_was_space_or_newline = false;
+
     let mut formatted = PrintItems::new();
 
-    //TODO This is a *BAD* temporary bandaid, unmaintainable, spaghetti code solution.
-    let mut ended_with_space_or_newline = false;
+    // Fn
+    formatted.push_sc(sc!("fn "));
+    last_item_was_space_or_newline = true;
+    formatted.extend(gen_comments(
+        item_comments_after_fn,
+        &mut last_item_was_space_or_newline,
+    ));
 
-    for child in node.syntax().children_with_tokens() {
-        // Comments are valid everywhere, we don't care about the state for them
-        if let Some(items) = handle_comments(&child, &mut ended_with_space_or_newline) {
-            formatted.extend(items?);
-        } else {
-            match state {
-                FunctionDeclarationState::Init => {
-                    if child.kind() == SyntaxKind::Blankspace {
-                        // Is allowed, we ignore it
-                    } else if child.kind() == SyntaxKind::Fn {
-                        formatted.push_sc(sc!("fn"));
-                        formatted.push_space();
-                        ended_with_space_or_newline = true;
-                        state = FunctionDeclarationState::HasFn;
-                    } else {
-                        return Err(FormatDocumentErrorKind::UnexpectedToken.at(child.text_range()));
-                    }
-                },
-                FunctionDeclarationState::HasFn => {
-                    if child.kind() == SyntaxKind::Blankspace {
-                        // Is allowed, we ignore it
-                    } else if let Some(name) = child.as_node().cloned().and_then(ast::Name::cast) {
-                        if (!ended_with_space_or_newline) {
-                            formatted.push_space();
-                            ended_with_space_or_newline = true;
-                        }
-                        formatted.push_string(name.text().to_string());
-                        ended_with_space_or_newline = false;
-                        state = FunctionDeclarationState::HasName;
-                    } else {
-                        return Err(FormatDocumentErrorKind::UnexpectedToken.at(child.text_range()));
-                    }
-                },
-                FunctionDeclarationState::HasName => {
-                    if child.kind() == SyntaxKind::Blankspace {
-                        // Is allowed, we ignore it
-                    } else if let Some(params) = child
-                        .as_node()
-                        .cloned()
-                        .and_then(ast::FunctionParameters::cast)
-                    {
-                        formatted.extend(gen_fn_parameters(
-                            &params,
-                            &mut ended_with_space_or_newline,
-                        )?);
-                        state = FunctionDeclarationState::HasParams;
-                    } else {
-                        return Err(FormatDocumentErrorKind::UnexpectedToken.at(child.text_range()));
-                    }
-                },
-                FunctionDeclarationState::HasParams => {
-                    if child.kind() == SyntaxKind::Blankspace {
-                        // Is allowed, we ignore it
-                    } else if let Some(return_type) =
-                        child.as_node().cloned().and_then(ast::ReturnType::cast)
-                    {
-                        if (!ended_with_space_or_newline) {
-                            formatted.push_space(); //There is no case where there wouldn't be a space here.
-                            ended_with_space_or_newline = true;
-                        }
-                        formatted.extend(gen_fn_return_type(
-                            &return_type,
-                            &mut ended_with_space_or_newline,
-                        )?);
-                        ended_with_space_or_newline = false;
-                        state = FunctionDeclarationState::HasReturnType;
-                    } else if let Some(body) = child
-                        .as_node()
-                        .cloned()
-                        .and_then(ast::CompoundStatement::cast)
-                    {
-                        if (!ended_with_space_or_newline) {
-                            formatted.push_space(); //There is no case where there wouldn't be a space here.
-                            ended_with_space_or_newline = true;
-                        }
-                        formatted.extend(gen_fn_body(&body)?);
-                        ended_with_space_or_newline = false;
-                        state = FunctionDeclarationState::HasBody;
-                    } else {
-                        return Err(FormatDocumentErrorKind::UnexpectedToken.at(child.text_range()));
-                    }
-                },
-                FunctionDeclarationState::HasReturnType => {
-                    //TODO This is duplication of the second HasParams clause, because the return type is optional
-                    if child.kind() == SyntaxKind::Blankspace {
-                        // Is allowed, we ignore it
-                    } else if let Some(body) = child
-                        .as_node()
-                        .cloned()
-                        .and_then(ast::CompoundStatement::cast)
-                    {
-                        if (!ended_with_space_or_newline) {
-                            formatted.push_space(); //There is no case where there wouldn't be a space here.
-                            ended_with_space_or_newline = true;
-                        }
-                        formatted.extend(gen_fn_body(&body)?);
-                        ended_with_space_or_newline = false;
-                        state = FunctionDeclarationState::HasBody;
-                    } else {
-                        return Err(FormatDocumentErrorKind::UnexpectedToken.at(child.text_range()));
-                    }
-                },
-                FunctionDeclarationState::HasBody => {
-                    return Err(FormatDocumentErrorKind::UnexpectedToken.at(child.text_range()));
-                },
+    // Name
+    if !last_item_was_space_or_newline {
+        formatted.push_space();
+    }
+    formatted.push_string(item_name.text().to_string());
+    last_item_was_space_or_newline = false;
+    formatted.extend(gen_comments(
+        item_comments_after_name,
+        &mut last_item_was_space_or_newline,
+    ));
+
+    // Params
+    formatted.extend(gen_fn_parameters(
+        &item_params,
+        &mut last_item_was_space_or_newline,
+    )?);
+    last_item_was_space_or_newline = false;
+    formatted.extend(gen_comments(
+        item_comments_after_params,
+        &mut last_item_was_space_or_newline,
+    ));
+
+    // Return
+    if let Some(item_return) = item_return {
+        formatted.extend(gen_fn_return_type(
+            &item_return,
+            &mut last_item_was_space_or_newline,
+        )?);
+        last_item_was_space_or_newline = false;
+    }
+    formatted.extend(gen_comments(
+        item_comments_after_return,
+        &mut last_item_was_space_or_newline,
+    ));
+    if !last_item_was_space_or_newline {
+        formatted.push_space();
+        last_item_was_space_or_newline = true;
+    }
+
+    // Body
+    formatted.extend(gen_fn_body(&item_body)?);
+    last_item_was_space_or_newline = false;
+
+    Ok(formatted)
+}
+
+fn gen_comments(
+    comments: Vec<SyntaxToken>,
+    last_item_was_space_or_newline: &mut bool,
+) -> PrintItems {
+    let mut formatted = PrintItems::new();
+    for item in comments {
+        if item.kind() == SyntaxKind::BlockComment {
+            if !*last_item_was_space_or_newline {
+                formatted.push_space();
             }
+            formatted.push_string(item.to_string());
+            *last_item_was_space_or_newline = false;
+        } else if item.kind() == SyntaxKind::LineEndingComment {
+            if !*last_item_was_space_or_newline {
+                formatted.push_space();
+            }
+            formatted.push_string(item.to_string());
+            formatted.push_signal(Signal::ExpectNewLine);
+            *last_item_was_space_or_newline = true;
+        } else {
+            //TODO Make this unrepresentable
+            unreachable!("Non comment entry found in comments Vec");
         }
     }
-
-    if matches!(FunctionDeclarationState::HasBody, state) {
-        Ok(formatted)
-    } else {
-        Err(FormatDocumentErrorKind::MissingTokens.at(node.syntax().text_range()))
-    }
+    formatted
 }
 
 fn gen_fn_parameters(
-    syntax: &ast::FunctionParameters,
-    ended_with_space_or_newline: &mut bool,
+    node: &ast::FunctionParameters,
+    forbid_space: &mut bool,
 ) -> FormatDocumentResult<PrintItems> {
+    // ==== Parse ====
+
+    let mut syntax = put_back(node.syntax().children_with_tokens());
+
+    parse_token(&mut syntax, SyntaxKind::ParenthesisLeft)?;
+    let item_comments_start = parse_many_comments_and_blankspace(&mut syntax)?;
+
+    let mut item_parameters = Vec::new();
+
+    loop {
+        let Some(item_param) = parse_node_optional::<ast::Parameter>(&mut syntax) else {
+            break;
+        };
+        let item_comments_after_param = parse_many_comments_and_blankspace(&mut syntax)?;
+
+        parse_token_optional(&mut syntax, SyntaxKind::Comma); //Optional
+        let item_comments_after_comma = parse_many_comments_and_blankspace(&mut syntax)?;
+
+        item_parameters.push((
+            item_param,
+            item_comments_after_param,
+            item_comments_after_comma,
+        ));
+    }
+
+    let item_comments_after_params = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::ParenthesisRight)?;
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
+
     let start_ln = LineNumber::new("start");
     let end_ln = LineNumber::new("end");
     let is_multiple_lines = create_is_multiple_lines_resolver(start_ln, end_ln);
 
     let mut formatted = PrintItems::new();
 
-    // formatted.extend(actions::if_column_number_changes(move |context| {
-    //     context.clear_info(end_ln);
-    // }));
-
     formatted.push_info(start_ln);
     formatted.push_anchor(LineNumberAnchor::new(end_ln));
 
     formatted.push_sc(sc!("("));
-    let mut start_nl_condition =
-        conditions::if_true("paramStartNewLine", Rc::clone(&is_multiple_lines), {
+    *forbid_space = true;
+
+    formatted.extend(gen_comments(item_comments_start, forbid_space));
+
+    let mut start_nl_condition = conditions::if_true(
+        "paramMultilineStartIndent",
+        Rc::clone(&is_multiple_lines),
+        {
             let mut pi = PrintItems::default();
             pi.push_signal(Signal::NewLine);
             pi.push_signal(Signal::StartIndent);
             pi
-        });
+        },
+    );
     let start_reeval = start_nl_condition.create_reevaluation();
     formatted.push_condition(start_nl_condition);
     formatted.push_signal(Signal::StartNewLineGroup);
 
     let mut queued_comma = false;
 
-    for child in syntax.syntax().children_with_tokens() {
-        if child.kind() == SyntaxKind::Blankspace
-            || child.kind() == SyntaxKind::ParenthesisLeft
-            || child.kind() == SyntaxKind::ParenthesisRight
-        {
-            // Is allowed, we ignore it
-        } else if let Some(items) = handle_comments(&child, ended_with_space_or_newline) {
-            //TODO ended with space or newline is out of date when its passed to hadle_comments
-            if queued_comma {
-                queued_comma = false;
-                formatted.push_sc(sc!(", "));
-                *ended_with_space_or_newline = true;
-            }
-            formatted.extend(items?);
-        } else if child.kind() == SyntaxKind::Comma {
-            //TODO queued_comma = Some(allocator.text(",").append(allocator.line()));
-        } else if let Some(parameter) = child.as_node().cloned().and_then(ast::Parameter::cast) {
-            if queued_comma {
-                queued_comma = false;
-                formatted.push_sc(sc!(","));
-                formatted.push_condition(conditions::if_true_or(
-                    "afterCommaSeparator",
-                    Rc::clone(&is_multiple_lines),
-                    Signal::NewLine.into(),
-                    Signal::SpaceOrNewLine.into(),
-                ));
-            }
-            formatted.extend(gen_fn_parameter(&parameter, ended_with_space_or_newline)?);
-            queued_comma = true;
-        } else {
-            return Err(FormatDocumentErrorKind::UnexpectedToken.at(child.text_range()));
+    for (pos, (item_parameter, item_comments_after_param, item_comments_after_comma)) in
+        item_parameters.into_iter().with_position()
+    {
+        if !*forbid_space {
+            formatted.push_condition(conditions::if_true_or(
+                "paramTrailingComma",
+                is_multiple_lines.clone(),
+                {
+                    let mut pi = PrintItems::default();
+                    pi.push_signal(Signal::NewLine);
+                    pi
+                },
+                {
+                    let mut pi = PrintItems::default();
+                    pi.push_signal(Signal::SpaceOrNewLine);
+                    pi
+                },
+            ));
+            *forbid_space = true;
         }
-    }
 
-    if queued_comma {
-        queued_comma = false;
+        formatted.extend(gen_fn_parameter(&item_parameter, forbid_space)?);
+        if pos == Position::Last || pos == Position::Only {
+            formatted.push_condition(conditions::if_true(
+                "paramTrailingComma",
+                is_multiple_lines.clone(),
+                {
+                    let mut pi = PrintItems::default();
+                    pi.push_sc(sc!(","));
+                    pi
+                },
+            ));
+            *forbid_space = false; //This is a lie, because due to the conditional we don't know... but currently we can't do anything about this.
+        } else {
+            formatted.push_sc(sc!(","));
+            *forbid_space = false;
+        }
+
+        //The comma should be immediately after the parameter, we move the comment back
+        formatted.extend(gen_comments(item_comments_after_param, forbid_space));
+        formatted.extend(gen_comments(item_comments_after_comma, forbid_space));
+    }
+    formatted.extend(gen_comments(item_comments_after_params, forbid_space));
+
+    if !*forbid_space {
         formatted.push_condition(conditions::if_true(
-            "paramTrailingComma",
+            "paramMultilineLastNewline",
             is_multiple_lines.clone(),
             {
                 let mut pi = PrintItems::default();
-                pi.push_sc(sc!(","));
                 pi.push_signal(Signal::NewLine);
                 pi
             },
         ));
+        *forbid_space = true; //TODO This is a lie, but because of the conditional we can't do better currently
     }
 
     formatted.push_condition(conditions::if_true(
-        "paramTrailingComma",
+        "paramMultilineEndIndent",
         is_multiple_lines,
         {
             let mut pi = PrintItems::default();
@@ -326,7 +353,7 @@ fn gen_fn_parameters(
     formatted.push_sc(sc!(")"));
     formatted.push_info(end_ln);
     formatted.push_reevaluation(start_reeval);
-    *ended_with_space_or_newline = false;
+    *forbid_space = false;
 
     Ok(formatted)
 }
@@ -335,96 +362,63 @@ fn gen_fn_parameter(
     syntax: &ast::Parameter,
     ended_with_space_or_newline: &mut bool,
 ) -> FormatDocumentResult<PrintItems> {
-    enum ParameterState {
-        Init,
-        HasName,
-        HasType,
-    }
+    // ==== Parse ====
+    let mut syntax = put_back(syntax.syntax().children_with_tokens());
 
-    let mut state = ParameterState::Init;
+    let item_name = parse_node::<ast::Name>(&mut syntax)?;
+    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::Colon);
+    let item_comments_after_colon = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_type_specifier = parse_node::<ast::TypeSpecifier>(&mut syntax)?;
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
     let mut formatted = PrintItems::default();
 
-    for child in syntax.syntax().children_with_tokens() {
-        if let Some(items) = handle_comments(&child, ended_with_space_or_newline) {
-            formatted.extend(items?);
-        } else {
-            match state {
-                ParameterState::Init => {
-                    if child.kind() == SyntaxKind::Blankspace
-                        || child.kind() == SyntaxKind::ParenthesisLeft
-                    {
-                        // Is allowed, we ignore it
-                    } else if let Some(name) = child.as_node().cloned().and_then(ast::Name::cast) {
-                        formatted.push_string(name.text().to_string());
-                        formatted.push_sc(sc!(": "));
-                        *ended_with_space_or_newline = true;
-                        state = ParameterState::HasName;
-                    } else {
-                        return Err(FormatDocumentErrorKind::UnexpectedToken.at(child.text_range()));
-                    }
-                },
-                ParameterState::HasName => {
-                    if child.kind() == SyntaxKind::Blankspace || child.kind() == SyntaxKind::Colon {
-                        // Is allowed, we ignore it
-                    } else if let Some(type_specifier) =
-                        child.as_node().cloned().and_then(ast::TypeSpecifier::cast)
-                    {
-                        formatted.extend(gen_type_specifier(&type_specifier)?);
-                        state = ParameterState::HasType;
-                    } else {
-                        return Err(FormatDocumentErrorKind::UnexpectedToken.at(child.text_range()));
-                    }
-                },
-                ParameterState::HasType => {
-                    //TODO This duplicates INIT state
-                    if child.kind() == SyntaxKind::Blankspace || child.kind() == SyntaxKind::Comma {
-                        // Is allowed, we ignore it
-                    } else if let Some(name) = child.as_node().cloned().and_then(ast::Name::cast) {
-                        formatted.push_string(name.text().to_string());
-                        formatted.push_sc(sc!(": "));
-                        *ended_with_space_or_newline = true;
-                        state = ParameterState::HasName;
-                    } else {
-                        return Err(FormatDocumentErrorKind::UnexpectedToken.at(child.text_range()));
-                    }
-                },
-            }
-        }
-    }
-
-    if matches!(ParameterState::HasType, state) {
-        Ok(formatted)
-    } else {
-        Err(FormatDocumentErrorKind::MissingTokens.at(syntax.syntax().text_range()))
-    }
+    formatted.push_string(item_name.text().to_string());
+    formatted.push_sc(sc!(": "));
+    *ended_with_space_or_newline = true;
+    //The colon should immediately follow the name, we intentionally move the comment
+    formatted.extend(gen_comments(
+        item_comments_after_name,
+        ended_with_space_or_newline,
+    ));
+    formatted.extend(gen_comments(
+        item_comments_after_colon,
+        ended_with_space_or_newline,
+    ));
+    formatted.extend(gen_type_specifier(&item_type_specifier)?);
+    *ended_with_space_or_newline = false;
+    Ok(formatted)
 }
 
 fn gen_fn_return_type(
     syntax: &ast::ReturnType,
     ended_with_space_or_newline: &mut bool,
 ) -> FormatDocumentResult<PrintItems> {
-    //TODO
+    // ==== Parse ====
+    let mut syntax = put_back(syntax.syntax().children_with_tokens());
+
+    parse_token(&mut syntax, SyntaxKind::Arrow);
+    let item_comments_after_arrow = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_type_specifier = parse_node::<ast::TypeSpecifier>(&mut syntax)?;
+    let item_comments_after_type = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
     let mut formatted = PrintItems::default();
-    for child in syntax.syntax().children_with_tokens() {
-        if let Some(items) = handle_comments(&child, ended_with_space_or_newline) {
-            formatted.extend(items?);
-        } else if child.kind() == SyntaxKind::Blankspace {
-            //Allowed, ignored
-        } else if child.kind() == SyntaxKind::Arrow {
-            if !*ended_with_space_or_newline {
-                formatted.push_space();
-            }
-            formatted.push_sc(sc!("->"));
-            formatted.push_space();
-            *ended_with_space_or_newline = true
-        } else if let Some(type_specifier) =
-            child.as_node().cloned().and_then(ast::TypeSpecifier::cast)
-        {
-            formatted.extend(todo_verbatim(type_specifier.syntax())?);
-        } else {
-            return Err(FormatDocumentErrorKind::UnexpectedToken.at(child.text_range()));
-        }
+
+    if !*ended_with_space_or_newline {
+        formatted.push_space();
     }
+    formatted.push_sc(sc!("-> "));
+    *ended_with_space_or_newline = true;
+    formatted.extend(gen_comments(
+        item_comments_after_arrow,
+        ended_with_space_or_newline,
+    ));
+    formatted.extend(gen_type_specifier(&item_type_specifier)?);
+    *ended_with_space_or_newline = false;
     Ok(formatted)
 }
 
@@ -436,60 +430,6 @@ fn gen_fn_body(syntax: &ast::CompoundStatement) -> FormatDocumentResult<PrintIte
 fn gen_type_specifier(type_specifier: &ast::TypeSpecifier) -> FormatDocumentResult<PrintItems> {
     //TODO
     todo_verbatim(type_specifier.syntax())
-}
-
-fn handle_comments(
-    source: &rowan::NodeOrToken<parser::SyntaxNode, parser::SyntaxToken>,
-    ended_with_space_or_newline: &mut bool,
-) -> Option<FormatDocumentResult<PrintItems>> {
-    if (source.kind() == SyntaxKind::BlockComment) {
-        Some(gen_block_comment(source, ended_with_space_or_newline))
-    } else if (source.kind() == SyntaxKind::LineEndingComment) {
-        Some(gen_line_ending_comment(source, ended_with_space_or_newline))
-    } else {
-        None
-    }
-}
-
-fn gen_block_comment(
-    source: &rowan::NodeOrToken<parser::SyntaxNode, parser::SyntaxToken>,
-    ended_with_space_or_newline: &mut bool,
-) -> FormatDocumentResult<PrintItems> {
-    let mut items = PrintItems::default();
-    if (!*ended_with_space_or_newline) {
-        items.push_space();
-        *ended_with_space_or_newline = true;
-    }
-    items.push_string(source.to_string());
-    items.push_space();
-    *ended_with_space_or_newline = true;
-    Ok(items)
-}
-
-fn gen_line_ending_comment(
-    source: &rowan::NodeOrToken<parser::SyntaxNode, parser::SyntaxToken>,
-    ended_with_space_or_newline: &mut bool,
-) -> FormatDocumentResult<PrintItems> {
-    let mut items = PrintItems::default();
-    // dbg!(source.to_string());
-    // items.push_condition(conditions::if_false(
-    //     "space_if_not_start_of_line",
-    //     condition_resolvers::is_start_of_line_or_is_start_of_line_indented(),
-    //     {
-    //         let mut pi = PrintItems::new();
-    //         pi.push_space();
-    //         pi
-    //     },
-    // ));
-
-    if (!*ended_with_space_or_newline) {
-        items.push_space();
-        *ended_with_space_or_newline = true;
-    }
-    items.push_string(source.to_string());
-    items.push_signal(Signal::ExpectNewLine);
-    *ended_with_space_or_newline = true;
-    Ok(items)
 }
 
 /// In cases where the formatter is not yet complete we simply output source verbatim.
