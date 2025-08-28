@@ -2,6 +2,10 @@
     clippy::wildcard_enum_match_arm,
     reason = "Most match statements require us to put back the unmatched variant"
 )]
+#![expect(
+    clippy::unnecessary_wraps,
+    reason = "It is a conscious API choice that all the parse_* fns return a result, in order to keep a unified api"
+)]
 //! A minimal parser toolbox used by the formatter
 //! to parse the AST into a structure usable for the formatter itself
 

@@ -18,7 +18,8 @@ pub enum PrintItemRequest {
 // * "Cleverly" structure code and where to put spaces, so that these cases are implicitly dealt with
 //   * Cons: "Clever" code that doesn't explicitly state intent, and thus is brittle, new requirements might require big restructurings
 // * Re-parse the AST into a formatting-ast which tracks comments etc.
-//   * Cons: Feels like this just postpones the problem, a lot of boilerplate "if the next printed item is a comment, add a space"
+//   * We already do that. The formatting-ast is built and immediately destroyed by the parse->format structure that
+//     the gen_*_ functions are built with. While it makes the code cleaner, it does not solve the problem.
 //
 // Chosen solution:
 // * Feels like it can most clearly encode the intent behind statements like
