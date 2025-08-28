@@ -1,16 +1,41 @@
 use expect_test::expect;
 
-use crate::test_util::check;
+use crate::{
+    FormattingOptions,
+    test_util::{check, check_with_options},
+};
 
 #[test]
 fn format_fn_header_inline_comments_1() {
-    check(
+    check_with_options(
         "/*000*/ fn /*aaa*/ main /*bbb*/(/*ccc*/ a /*ddd*/ : /*eee*/ b /*fff*/ ) /*ggg*/  -> /*hhh*/ f32 /*iii*/ {} /*jjj*/",
-        expect![[r#"
+        &expect![["
             /*000*/
             fn /*aaa*/ main /*bbb*/ (/*ccc*/ a: /*ddd*/ /*eee*/ b /*fff*/) /*ggg*/ -> /*hhh*/ f32 /*iii*/ {}
             /*jjj*/
-        "#]],
+        "]],
+        &FormattingOptions {
+            width: 10000,
+            ..Default::default()
+        },
+    );
+}
+
+#[test]
+fn format_fn_multiline_header_inline_comments_1() {
+    check_with_options(
+        "/*000*/ fn /*aaa*/ main /*bbb*/(/*ccc*/ a /*ddd*/ : /*eee*/ b /*fff*/ ) /*ggg*/  -> /*hhh*/ f32 /*iii*/ {} /*jjj*/",
+        &expect![["
+            /*000*/
+            fn /*aaa*/ main /*bbb*/(
+                /*ccc*/ a: /*ddd*/ /*eee*/b, /*fff*/
+            ) /*ggg*/ -> /*hhh*/f32 /*iii*/ {}
+            /*jjj*/
+        "]],
+        &FormattingOptions {
+            width: 50,
+            ..Default::default()
+        },
     );
 }
 
