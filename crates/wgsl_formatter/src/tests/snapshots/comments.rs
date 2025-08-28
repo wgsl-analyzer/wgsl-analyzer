@@ -5,9 +5,11 @@ use crate::test_util::check;
 #[test]
 fn format_fn_header_inline_comments_1() {
     check(
-        "fn /*aaa*/ main /*bbb*/(/*ccc*/ a /*ddd*/ : /*eee*/ b /*fff*/ ) /*ggg*/  -> /*hhh*/ f32 /*iii*/ {} /*jjj*/",
+        "/*000*/ fn /*aaa*/ main /*bbb*/(/*ccc*/ a /*ddd*/ : /*eee*/ b /*fff*/ ) /*ggg*/  -> /*hhh*/ f32 /*iii*/ {} /*jjj*/",
         expect![[r#"
+            /*000*/
             fn /*aaa*/ main /*bbb*/ (/*ccc*/ a: /*ddd*/ /*eee*/ b /*fff*/) /*ggg*/ -> /*hhh*/ f32 /*iii*/ {}
+            /*jjj*/
         "#]],
     );
 }
@@ -15,7 +17,9 @@ fn format_fn_header_inline_comments_1() {
 #[test]
 fn format_fn_header_line_comments_1() {
     check(
-        "fn
+        "
+        // 000
+        fn
         // aaa
         main
         // bbb
@@ -33,8 +37,11 @@ fn format_fn_header_line_comments_1() {
         // hhh
         f32
         // iii
-        {}",
+        {} // jjj
+        // kkk
+        ",
         expect![["
+            // 000
             fn // aaa
             main // bbb
             (
@@ -46,6 +53,8 @@ fn format_fn_header_line_comments_1() {
             -> // hhh
             f32 // iii
             {}
+            // jjj
+            // kkk
         "]],
     );
 }
