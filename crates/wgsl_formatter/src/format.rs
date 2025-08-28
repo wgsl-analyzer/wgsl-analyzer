@@ -53,7 +53,7 @@ pub fn format_tree(
     let mut error = None;
 
     let formatted = dprint_core::formatting::format(
-        || match gen_source_file(&syntax) {
+        || match gen_source_file(syntax) {
             Ok(items) => items,
             Err(err) => {
                 //We seem to have to do it this weird way, because
@@ -108,6 +108,11 @@ fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItems> {
             && let Some(item) = ast::Item::cast(child.clone())
         {
             gen_item(&item)
+        } else if let NodeOrToken::Token(child) = child
+            && (child.kind() == SyntaxKind::BlockComment
+                || child.kind() == SyntaxKind::LineEndingComment)
+        {
+            Ok(gen_comment(child, &mut true))
         } else {
             Err(FormatDocumentErrorKind::UnexpectedModuleNode.at(child.text_range(), err_src!()))
         }
@@ -123,9 +128,7 @@ fn gen_function_declaration(node: &ast::FunctionDeclaration) -> FormatDocumentRe
     let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_params = parse_node::<ast::FunctionParameters>(&mut syntax)?;
     let item_comments_after_params = parse_many_comments_and_blankspace(&mut syntax)?;
-    dbg!(syntax.clone().collect_vec());
     let item_return = parse_node_optional::<ast::ReturnType>(&mut syntax);
-    dbg!(syntax.clone().collect_vec());
     let item_comments_after_return = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_body = parse_node::<ast::CompoundStatement>(&mut syntax)?;
     parse_end(&mut syntax)?;
@@ -195,27 +198,36 @@ fn gen_comments(
 ) -> PrintItems {
     let mut formatted = PrintItems::new();
     for item in comments {
-        if item.kind() == SyntaxKind::BlockComment {
-            if !*last_item_was_space_or_newline {
-                formatted.push_space();
-            }
-            formatted.push_string(item.to_string());
-            *last_item_was_space_or_newline = false;
-        } else if item.kind() == SyntaxKind::LineEndingComment {
-            if !*last_item_was_space_or_newline {
-                formatted.push_space();
-            }
-            formatted.push_string(item.to_string());
-            formatted.push_signal(Signal::ExpectNewLine);
-            *last_item_was_space_or_newline = true;
-        } else {
-            //TODO Make this unrepresentable
-            unreachable!("Non comment entry found in comments Vec");
+        formatted.extend(gen_comment(&item, last_item_was_space_or_newline));
+    }
+    formatted
+}
+fn gen_comment(
+    item: &SyntaxToken,
+    last_item_was_space_or_newline: &mut bool,
+) -> PrintItems {
+    let mut formatted = PrintItems::new();
+    if item.kind() == SyntaxKind::BlockComment {
+        if !*last_item_was_space_or_newline {
+            formatted.push_space();
         }
+        formatted.push_string(item.to_string());
+        *last_item_was_space_or_newline = false;
+    } else if item.kind() == SyntaxKind::LineEndingComment {
+        if !*last_item_was_space_or_newline {
+            formatted.push_space();
+        }
+        formatted.push_string(item.to_string());
+        formatted.push_signal(Signal::ExpectNewLine);
+        *last_item_was_space_or_newline = true;
+    } else {
+        //TODO Make this unrepresentable
+        unreachable!("Non comment entry found in comments Vec");
     }
     formatted
 }
 
+#[expect(clippy::too_many_lines, reason = "TODO")]
 fn gen_fn_parameters(
     node: &ast::FunctionParameters,
     forbid_space: &mut bool,
@@ -263,8 +275,6 @@ fn gen_fn_parameters(
     formatted.push_sc(sc!("("));
     *forbid_space = true;
 
-    formatted.extend(gen_comments(item_comments_start, forbid_space));
-
     let mut start_nl_condition = conditions::if_true(
         "paramMultilineStartIndent",
         Rc::clone(&is_multiple_lines),
@@ -279,7 +289,7 @@ fn gen_fn_parameters(
     formatted.push_condition(start_nl_condition);
     formatted.push_signal(Signal::StartNewLineGroup);
 
-    let mut queued_comma = false;
+    formatted.extend(gen_comments(item_comments_start, forbid_space));
 
     for (pos, (item_parameter, item_comments_after_param, item_comments_after_comma)) in
         item_parameters.into_iter().with_position()
@@ -287,7 +297,7 @@ fn gen_fn_parameters(
         if !*forbid_space {
             formatted.push_condition(conditions::if_true_or(
                 "paramTrailingComma",
-                is_multiple_lines.clone(),
+                Rc::clone(&is_multiple_lines),
                 {
                     let mut pi = PrintItems::default();
                     pi.push_signal(Signal::NewLine);
@@ -306,7 +316,7 @@ fn gen_fn_parameters(
         if pos == Position::Last || pos == Position::Only {
             formatted.push_condition(conditions::if_true(
                 "paramTrailingComma",
-                is_multiple_lines.clone(),
+                Rc::clone(&is_multiple_lines),
                 {
                     let mut pi = PrintItems::default();
                     pi.push_sc(sc!(","));
@@ -328,7 +338,7 @@ fn gen_fn_parameters(
     if !*forbid_space {
         formatted.push_condition(conditions::if_true(
             "paramMultilineLastNewline",
-            is_multiple_lines.clone(),
+            Rc::clone(&is_multiple_lines),
             {
                 let mut pi = PrintItems::default();
                 pi.push_signal(Signal::NewLine);
