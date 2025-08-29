@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::check;
+use crate::test_util::{check, check_tabs};
 
 #[test]
 fn leave_matrix_alone() {

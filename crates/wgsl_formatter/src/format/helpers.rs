@@ -1,6 +1,9 @@
-use std::{alloc::alloc, iter::repeat_with};
+use std::{alloc::alloc, iter::repeat_with, rc::Rc};
 
-use dprint_core::formatting::{PrintItems, PrintOptions, Signal, StringContainer};
+use dprint_core::formatting::{
+    ConditionResolver, ConditionResolverContext, LineNumber, PrintItems, PrintOptions, Signal,
+    StringContainer, condition_helpers,
+};
 use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 use syntax::{
@@ -79,4 +82,34 @@ pub fn into_items(sc: &'static StringContainer) -> PrintItemBuffer {
     let mut pi = PrintItemBuffer::new();
     pi.push_sc(sc);
     pi
+}
+
+/// In cases where the formatter is not yet complete we simply output source verbatim.
+#[deprecated]
+pub fn todo_verbatim(source: &parser::SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut items = PrintItemBuffer::default();
+    items.push_string(source.to_string());
+    Ok(items)
+}
+
+pub fn create_is_multiple_lines_resolver(
+    start_ln: LineNumber,
+    end_ln: LineNumber,
+) -> ConditionResolver {
+    Rc::new(
+        move |condition_context: &mut ConditionResolverContext<'_, '_>| {
+            // // no items, so format on the same line
+            // if child_positions.is_empty() {
+            //   return Some(false);
+            // }
+            // // first child is on a different line than the start of the parent
+            // // so format all the children as multi-line
+            // if parent_position.line_number < child_positions[0].line_number {
+            //   return Some(true);
+            // }
+
+            // check if it spans multiple lines, and if it does then make it multi-line
+            condition_helpers::is_multiple_lines(condition_context, start_ln, end_ln)
+        },
+    )
 }
