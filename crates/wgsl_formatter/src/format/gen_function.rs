@@ -26,7 +26,7 @@ use crate::{
         gen_comments::gen_comments,
         gen_types::gen_type_specifier,
         helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, into_items, todo_verbatim},
-        print_item_buffer::{PrintItemBuffer, PrintItemRequest, SeparationPolicy},
+        print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
         reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult, err_src},
     },
 };
@@ -140,7 +140,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
     formatted.push_signal(Signal::StartNewLineGroup);
 
     // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
-    formatted.request(PrintItemRequest::discouraged());
+    formatted.request(SeparationRequest::discouraged());
 
     formatted.extend(gen_comments(item_comments_start));
 
@@ -166,7 +166,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
         formatted.extend(gen_comments(item_comments_after_param));
         formatted.extend(gen_comments(item_comments_after_comma));
 
-        formatted.request(PrintItemRequest {
+        formatted.request(SeparationRequest {
             line_break: SeparationPolicy::ExpectedIf {
                 on_branch: true,
                 of_resolver: Rc::clone(&is_multiple_lines),
@@ -181,7 +181,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
     formatted.extend(gen_comments(item_comments_after_params));
 
     // No trailing spaces
-    formatted.request(PrintItemRequest {
+    formatted.request(SeparationRequest {
         space: SeparationPolicy::Discouraged,
         ..Default::default()
     });

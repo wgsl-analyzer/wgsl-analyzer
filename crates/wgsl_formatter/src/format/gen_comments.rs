@@ -15,7 +15,7 @@ use syntax::{
     match_ast,
 };
 
-use crate::format::print_item_buffer::{PrintItemBuffer, PrintItemRequest, SeparationPolicy};
+use crate::format::print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest};
 
 pub fn gen_comments(comments: Vec<SyntaxToken>) -> PrintItemBuffer {
     let mut formatted = PrintItemBuffer::new();
@@ -34,7 +34,7 @@ pub fn gen_comment(item: &SyntaxToken) -> PrintItemBuffer {
         formatted.request_single_space();
         formatted.push_string(item.to_string());
         //TODO This should be a request, but for now we have no way of encoding a "forced newline no matter what"
-        formatted.request(PrintItemRequest {
+        formatted.request(SeparationRequest {
             line_break: SeparationPolicy::Forced,
             ..Default::default()
         });
