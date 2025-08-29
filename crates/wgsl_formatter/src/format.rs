@@ -4,6 +4,7 @@
 )]
 mod ast_parse;
 mod helpers;
+mod print_item_buffer;
 
 mod reporting;
 
@@ -33,6 +34,7 @@ use crate::{
             parse_node_optional, parse_token, parse_token_optional,
         },
         helpers::{gen_spaced_lines, into_items},
+        print_item_buffer::{PrintItemBuffer, PrintItemRequest, SeparationPolicy},
         reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult, err_src},
     },
 };
@@ -55,7 +57,7 @@ pub fn format_tree(
 
     let formatted = dprint_core::formatting::format(
         || match gen_source_file(syntax) {
-            Ok(items) => items,
+            Ok(items) => items.finish(),
             Err(err) => {
                 //We seem to have to do it this weird way, because
                 // a) We can't return the error from the closure because of dprint's api
@@ -67,9 +69,9 @@ pub fn format_tree(
                 //TODO maybe we should instead output the whole source verbatim
                 // so that if many things go wrong and this value does somehow
                 // reach the user's file, it doesn't just delete it all.
-                let mut items = PrintItems::new();
+                let mut items = PrintItemBuffer::new();
                 items.push_string("ERROR".into());
-                items
+                items.finish()
             },
         },
         PrintOptions {
@@ -87,7 +89,7 @@ pub fn format_tree(
     }
 }
 
-fn gen_item(node: &ast::Item) -> FormatDocumentResult<PrintItems> {
+fn gen_item(node: &ast::Item) -> FormatDocumentResult<PrintItemBuffer> {
     match node {
         ast::Item::FunctionDeclaration(function_declaration) => {
             gen_function_declaration(function_declaration)
@@ -100,7 +102,7 @@ fn gen_item(node: &ast::Item) -> FormatDocumentResult<PrintItems> {
     }
 }
 
-fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItems> {
+fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
     gen_spaced_lines(node.syntax(), |child| {
         //TODO This clone is unnecessary if we had a cast that returned the passed in node
         // on a failure like std::any::Any (SyntaxNode -> Result<Item, Syntaxnode>)
@@ -113,14 +115,16 @@ fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItems> {
             && (child.kind() == SyntaxKind::BlockComment
                 || child.kind() == SyntaxKind::LineEndingComment)
         {
-            Ok(gen_comment(child, &mut true))
+            Ok(gen_comment(child))
         } else {
             Err(FormatDocumentErrorKind::UnexpectedModuleNode.at(child.text_range(), err_src!()))
         }
     })
 }
 
-fn gen_function_declaration(node: &ast::FunctionDeclaration) -> FormatDocumentResult<PrintItems> {
+fn gen_function_declaration(
+    node: &ast::FunctionDeclaration
+) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = put_back(node.syntax().children_with_tokens());
 
     let item_fn = parse_token(&mut syntax, SyntaxKind::Fn)?;
@@ -134,93 +138,56 @@ fn gen_function_declaration(node: &ast::FunctionDeclaration) -> FormatDocumentRe
     let item_body = parse_node::<ast::CompoundStatement>(&mut syntax)?;
     parse_end(&mut syntax)?;
 
-    //TODO This is very bad spaghetti, unmaintainable, brittle code, remove this asap
-    let mut last_item_was_space_or_newline = false;
-
-    let mut formatted = PrintItems::new();
+    let mut formatted = PrintItemBuffer::new();
 
     // Fn
-    formatted.push_sc(sc!("fn "));
-    last_item_was_space_or_newline = true;
-    formatted.extend(gen_comments(
-        item_comments_after_fn,
-        &mut last_item_was_space_or_newline,
-    ));
+    formatted.push_sc(sc!("fn"));
+    formatted.request_single_space();
+    formatted.extend(gen_comments(item_comments_after_fn));
 
     // Name
-    if !last_item_was_space_or_newline {
-        formatted.push_space();
-    }
+    formatted.request_single_space();
     formatted.push_string(item_name.text().to_string());
-    last_item_was_space_or_newline = false;
-    formatted.extend(gen_comments(
-        item_comments_after_name,
-        &mut last_item_was_space_or_newline,
-    ));
+    formatted.extend(gen_comments(item_comments_after_name));
 
     // Params
-    formatted.extend(gen_fn_parameters(
-        &item_params,
-        &mut last_item_was_space_or_newline,
-    )?);
-    last_item_was_space_or_newline = false;
-    formatted.extend(gen_comments(
-        item_comments_after_params,
-        &mut last_item_was_space_or_newline,
-    ));
+    formatted.extend(gen_fn_parameters(&item_params)?);
+    formatted.extend(gen_comments(item_comments_after_params));
 
     // Return
     if let Some(item_return) = item_return {
-        formatted.extend(gen_fn_return_type(
-            &item_return,
-            &mut last_item_was_space_or_newline,
-        )?);
-        last_item_was_space_or_newline = false;
+        formatted.extend(gen_fn_return_type(&item_return)?);
     }
-    formatted.extend(gen_comments(
-        item_comments_after_return,
-        &mut last_item_was_space_or_newline,
-    ));
-    if !last_item_was_space_or_newline {
-        formatted.push_space();
-        last_item_was_space_or_newline = true;
-    }
+    formatted.extend(gen_comments(item_comments_after_return));
 
     // Body
+    formatted.request_single_space();
     formatted.extend(gen_fn_body(&item_body)?);
-    last_item_was_space_or_newline = false;
 
     Ok(formatted)
 }
 
-fn gen_comments(
-    comments: Vec<SyntaxToken>,
-    last_item_was_space_or_newline: &mut bool,
-) -> PrintItems {
-    let mut formatted = PrintItems::new();
+fn gen_comments(comments: Vec<SyntaxToken>) -> PrintItemBuffer {
+    let mut formatted = PrintItemBuffer::new();
     for item in comments {
-        formatted.extend(gen_comment(&item, last_item_was_space_or_newline));
+        formatted.extend(gen_comment(&item));
     }
     formatted
 }
-fn gen_comment(
-    item: &SyntaxToken,
-    last_item_was_space_or_newline: &mut bool,
-) -> PrintItems {
-    let mut formatted = PrintItems::new();
+fn gen_comment(item: &SyntaxToken) -> PrintItemBuffer {
+    let mut formatted = PrintItemBuffer::new();
     if item.kind() == SyntaxKind::BlockComment {
-        if !*last_item_was_space_or_newline {
-            formatted.push_space();
-        }
+        formatted.request_single_space();
         formatted.push_string(item.to_string());
-        *last_item_was_space_or_newline = false;
+        formatted.request_single_space();
     } else if item.kind() == SyntaxKind::LineEndingComment {
-        if !*last_item_was_space_or_newline {
-            formatted.push_space();
-        }
+        formatted.request_single_space();
         formatted.push_string(item.to_string());
-        formatted.push_signal(Signal::ExpectNewLine);
-        *last_item_was_space_or_newline = true;
+        //TODO This should be a request, but for now we have no way of encoding a "forced newline no matter what"
+        formatted.request(PrintItemRequest {
+            line_break: SeparationPolicy::Forced,
+            ..Default::default()
+        });
     } else {
         //TODO Make this unrepresentable
         unreachable!("Non comment entry found in comments Vec");
@@ -229,10 +196,7 @@ fn gen_comment(
 }
 
 #[expect(clippy::too_many_lines, reason = "TODO")]
-fn gen_fn_parameters(
-    node: &ast::FunctionParameters,
-    forbid_space: &mut bool,
-) -> FormatDocumentResult<PrintItems> {
+fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
 
     let mut syntax = put_back(node.syntax().children_with_tokens());
@@ -268,15 +232,14 @@ fn gen_fn_parameters(
     let end_ln = LineNumber::new("end");
     let is_multiple_lines = create_is_multiple_lines_resolver(start_ln, end_ln);
 
-    let mut formatted = PrintItems::new();
+    let mut formatted = PrintItemBuffer::new();
 
     formatted.push_info(start_ln);
     formatted.push_anchor(LineNumberAnchor::new(end_ln));
 
     formatted.push_sc(sc!("("));
-    *forbid_space = true;
 
-    let mut start_nl_condition = conditions::if_true(
+    let mut start_nl_condition = conditions::if_true_or(
         "paramMultilineStartIndent",
         Rc::clone(&is_multiple_lines),
         {
@@ -285,35 +248,25 @@ fn gen_fn_parameters(
             pi.push_signal(Signal::StartIndent);
             pi
         },
+        {
+            let mut pi = PrintItems::default();
+            pi.push_signal(Signal::PossibleNewLine);
+            pi
+        },
     );
     let start_reeval = start_nl_condition.create_reevaluation();
     formatted.push_condition(start_nl_condition);
     formatted.push_signal(Signal::StartNewLineGroup);
 
-    formatted.extend(gen_comments(item_comments_start, forbid_space));
+    // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
+    formatted.request(PrintItemRequest::discouraged());
+
+    formatted.extend(gen_comments(item_comments_start));
 
     for (pos, (item_parameter, item_comments_after_param, item_comments_after_comma)) in
         item_parameters.into_iter().with_position()
     {
-        if !*forbid_space {
-            formatted.push_condition(conditions::if_true_or(
-                "paramTrailingComma",
-                Rc::clone(&is_multiple_lines),
-                {
-                    let mut pi = PrintItems::default();
-                    pi.push_signal(Signal::NewLine);
-                    pi
-                },
-                {
-                    let mut pi = PrintItems::default();
-                    pi.push_signal(Signal::SpaceOrNewLine);
-                    pi
-                },
-            ));
-            *forbid_space = true;
-        }
-
-        formatted.extend(gen_fn_parameter(&item_parameter, forbid_space)?);
+        formatted.extend(gen_fn_parameter(&item_parameter)?);
         if pos == Position::Last || pos == Position::Only {
             formatted.push_condition(conditions::if_true(
                 "paramTrailingComma",
@@ -324,30 +277,33 @@ fn gen_fn_parameters(
                     pi
                 },
             ));
-            *forbid_space = false; //This is a lie, because due to the conditional we don't know... but currently we can't do anything about this.
         } else {
             formatted.push_sc(sc!(","));
-            *forbid_space = false;
         }
 
         //The comma should be immediately after the parameter, we move the comment back
-        formatted.extend(gen_comments(item_comments_after_param, forbid_space));
-        formatted.extend(gen_comments(item_comments_after_comma, forbid_space));
-    }
-    formatted.extend(gen_comments(item_comments_after_params, forbid_space));
+        formatted.extend(gen_comments(item_comments_after_param));
+        formatted.extend(gen_comments(item_comments_after_comma));
 
-    if !*forbid_space {
-        formatted.push_condition(conditions::if_true(
-            "paramMultilineLastNewline",
-            Rc::clone(&is_multiple_lines),
-            {
-                let mut pi = PrintItems::default();
-                pi.push_signal(Signal::NewLine);
-                pi
+        formatted.request(PrintItemRequest {
+            line_break: SeparationPolicy::ExpectedIf {
+                on_branch: true,
+                of_resolver: Rc::clone(&is_multiple_lines),
             },
-        ));
-        *forbid_space = true; //TODO This is a lie, but because of the conditional we can't do better currently
+            space: SeparationPolicy::ExpectedIf {
+                on_branch: false,
+                of_resolver: Rc::clone(&is_multiple_lines),
+            },
+            ..Default::default()
+        });
     }
+    formatted.extend(gen_comments(item_comments_after_params));
+
+    // No trailing spaces
+    formatted.request(PrintItemRequest {
+        space: SeparationPolicy::Discouraged,
+        ..Default::default()
+    });
 
     formatted.push_condition(conditions::if_true(
         "paramMultilineEndIndent",
@@ -359,19 +315,16 @@ fn gen_fn_parameters(
         },
     ));
 
-    formatted.push_signal(Signal::FinishNewLineGroup);
     formatted.push_sc(sc!(")"));
+
+    formatted.push_signal(Signal::FinishNewLineGroup);
     formatted.push_info(end_ln);
     formatted.push_reevaluation(start_reeval);
-    *forbid_space = false;
 
     Ok(formatted)
 }
 
-fn gen_fn_parameter(
-    syntax: &ast::Parameter,
-    ended_with_space_or_newline: &mut bool,
-) -> FormatDocumentResult<PrintItems> {
+fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(syntax.syntax().children_with_tokens());
 
@@ -383,29 +336,19 @@ fn gen_fn_parameter(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItems::default();
+    let mut formatted = PrintItemBuffer::default();
 
     formatted.push_string(item_name.text().to_string());
-    formatted.push_sc(sc!(": "));
-    *ended_with_space_or_newline = true;
+    formatted.push_sc(sc!(":"));
+    formatted.request_single_space();
     //The colon should immediately follow the name, we intentionally move the comment
-    formatted.extend(gen_comments(
-        item_comments_after_name,
-        ended_with_space_or_newline,
-    ));
-    formatted.extend(gen_comments(
-        item_comments_after_colon,
-        ended_with_space_or_newline,
-    ));
+    formatted.extend(gen_comments(item_comments_after_name));
+    formatted.extend(gen_comments(item_comments_after_colon));
     formatted.extend(gen_type_specifier(&item_type_specifier)?);
-    *ended_with_space_or_newline = false;
     Ok(formatted)
 }
 
-fn gen_fn_return_type(
-    syntax: &ast::ReturnType,
-    ended_with_space_or_newline: &mut bool,
-) -> FormatDocumentResult<PrintItems> {
+fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(syntax.syntax().children_with_tokens());
 
@@ -416,36 +359,32 @@ fn gen_fn_return_type(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItems::default();
+    let mut formatted = PrintItemBuffer::default();
 
-    if !*ended_with_space_or_newline {
-        formatted.push_space();
-    }
-    formatted.push_sc(sc!("-> "));
-    *ended_with_space_or_newline = true;
-    formatted.extend(gen_comments(
-        item_comments_after_arrow,
-        ended_with_space_or_newline,
-    ));
+    formatted.request_single_space();
+    formatted.push_sc(sc!("->"));
+    formatted.request_single_space();
+    formatted.extend(gen_comments(item_comments_after_arrow));
     formatted.extend(gen_type_specifier(&item_type_specifier)?);
-    *ended_with_space_or_newline = false;
     Ok(formatted)
 }
 
-fn gen_fn_body(syntax: &ast::CompoundStatement) -> FormatDocumentResult<PrintItems> {
+fn gen_fn_body(syntax: &ast::CompoundStatement) -> FormatDocumentResult<PrintItemBuffer> {
     //TODO
     todo_verbatim(syntax.syntax())
 }
 
-fn gen_type_specifier(type_specifier: &ast::TypeSpecifier) -> FormatDocumentResult<PrintItems> {
+fn gen_type_specifier(
+    type_specifier: &ast::TypeSpecifier
+) -> FormatDocumentResult<PrintItemBuffer> {
     //TODO
     todo_verbatim(type_specifier.syntax())
 }
 
 /// In cases where the formatter is not yet complete we simply output source verbatim.
 #[deprecated]
-fn todo_verbatim(source: &parser::SyntaxNode) -> FormatDocumentResult<PrintItems> {
-    let mut items = PrintItems::default();
+fn todo_verbatim(source: &parser::SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut items = PrintItemBuffer::default();
     items.push_string(source.to_string());
     Ok(items)
 }
