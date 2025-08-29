@@ -70,16 +70,15 @@ impl SeparationPolicy {
 /// has an `ExpectIf`, the lower precedence items are processed nevertheless.
 /// They are expected to have matching opposite conditionals.
 ///
-//TODO Rename this to SeparationRequest
 //TODO Find a better solution for handling conditionals
 #[derive(Default)]
-pub struct PrintItemRequest {
+pub struct SeparationRequest {
     pub empty_line: SeparationPolicy,
     pub line_break: SeparationPolicy,
     pub space: SeparationPolicy,
 }
 
-impl PrintItemRequest {
+impl SeparationRequest {
     pub const fn discouraged() -> Self {
         Self {
             empty_line: SeparationPolicy::Discouraged,
@@ -240,9 +239,9 @@ impl PrintItemRequest {
 ///
 #[derive(Default)]
 pub struct PrintItemBuffer {
-    pub start_request: Option<PrintItemRequest>,
+    pub start_request: Option<SeparationRequest>,
     pub items: PrintItems,
-    pub end_request: Option<PrintItemRequest>,
+    pub end_request: Option<SeparationRequest>,
 }
 
 impl PrintItemBuffer {
@@ -252,7 +251,7 @@ impl PrintItemBuffer {
 
     pub fn request(
         &mut self,
-        incoming_request: PrintItemRequest,
+        incoming_request: SeparationRequest,
     ) {
         let request_tracker = if self.items.is_empty() {
             &mut self.start_request
@@ -307,14 +306,14 @@ impl PrintItemBuffer {
     }
 
     pub fn request_single_space(&mut self) {
-        self.request(PrintItemRequest {
+        self.request(SeparationRequest {
             space: SeparationPolicy::Expected,
             ..Default::default()
         });
     }
 
     pub fn request_line_break(&mut self) {
-        self.request(PrintItemRequest {
+        self.request(SeparationRequest {
             line_break: SeparationPolicy::Expected,
             ..Default::default()
         });

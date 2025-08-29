@@ -14,7 +14,7 @@ use syntax::{
 use crate::{
     FormattingOptions,
     format::{
-        print_item_buffer::{PrintItemBuffer, PrintItemRequest, SeparationPolicy},
+        print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
         reporting::{FormatDocumentErrorKind, FormatDocumentResult, err_src},
     },
 };
@@ -36,7 +36,7 @@ where
         NewLinesAfterItem(usize),
     }
 
-    result.request(PrintItemRequest::discouraged());
+    result.request(SeparationRequest::discouraged());
 
     for child in node.children_with_tokens() {
         if let rowan::NodeOrToken::Token(token) = &child
@@ -54,14 +54,14 @@ where
                 .count();
             if newlines >= 2 {
                 //There was an empty line in the source
-                result.request(PrintItemRequest {
+                result.request(SeparationRequest {
                     empty_line: SeparationPolicy::Expected,
                     ..Default::default()
                 });
             }
         } else {
             result.extend(pretty_item(&child)?);
-            result.request(PrintItemRequest {
+            result.request(SeparationRequest {
                 line_break: SeparationPolicy::Expected,
                 ..Default::default()
             });
@@ -69,7 +69,7 @@ where
     }
 
     //There should be a newline at the end of the file
-    result.request(PrintItemRequest {
+    result.request(SeparationRequest {
         line_break: SeparationPolicy::Expected,
         ..Default::default()
     });

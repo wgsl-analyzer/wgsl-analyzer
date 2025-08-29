@@ -39,7 +39,7 @@ use crate::{
         gen_comments::gen_comment,
         gen_function::gen_function_declaration,
         helpers::{gen_spaced_lines, into_items},
-        print_item_buffer::{PrintItemBuffer, PrintItemRequest, SeparationPolicy},
+        print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
         reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult, err_src},
     },
 };
@@ -125,26 +125,4 @@ fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuff
             Err(FormatDocumentErrorKind::UnexpectedModuleNode.at(child.text_range(), err_src!()))
         }
     })
-}
-
-fn create_is_multiple_lines_resolver(
-    start_ln: LineNumber,
-    end_ln: LineNumber,
-) -> ConditionResolver {
-    Rc::new(
-        move |condition_context: &mut ConditionResolverContext<'_, '_>| {
-            // // no items, so format on the same line
-            // if child_positions.is_empty() {
-            //   return Some(false);
-            // }
-            // // first child is on a different line than the start of the parent
-            // // so format all the children as multi-line
-            // if parent_position.line_number < child_positions[0].line_number {
-            //   return Some(true);
-            // }
-
-            // check if it spans multiple lines, and if it does then make it multi-line
-            condition_helpers::is_multiple_lines(condition_context, start_ln, end_ln)
-        },
-    )
 }
