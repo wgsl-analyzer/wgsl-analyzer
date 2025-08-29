@@ -152,7 +152,7 @@ smol_str = "0.3.2"
 text-size = "1.1.1"
 tracing = "0.1.40"
 tracing-tree = "0.3.0"
-tracing-subscriber = { version = "0.3.18", default-features = false, features = [
+tracing-subscriber = { version = "0.3.20", default-features = false, features = [
   "registry",
   "fmt",
   "local-time",
