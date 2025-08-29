@@ -27,9 +27,9 @@ fn format_fn_multiline_header_inline_comments_1() {
         "/*000*/ fn /*aaa*/ main /*bbb*/(/*ccc*/ a /*ddd*/ : /*eee*/ b /*fff*/ ) /*ggg*/  -> /*hhh*/ f32 /*iii*/ {} /*jjj*/",
         &expect![["
             /*000*/
-            fn /*aaa*/ main /*bbb*/(
-                /*ccc*/ a: /*ddd*/ /*eee*/b, /*fff*/
-            ) /*ggg*/ -> /*hhh*/f32 /*iii*/ {}
+            fn /*aaa*/ main /*bbb*/ (
+                /*ccc*/ a: /*ddd*/ /*eee*/ b, /*fff*/
+            ) /*ggg*/ -> /*hhh*/ f32 /*iii*/ {}
             /*jjj*/
         "]],
         &FormattingOptions {
