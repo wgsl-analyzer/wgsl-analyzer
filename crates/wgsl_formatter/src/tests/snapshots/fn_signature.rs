@@ -5,12 +5,22 @@ use expect_test::expect;
 use crate::test_util::{assert_out_of_scope, check, check_with_options};
 
 #[test]
-fn format_fn_header_1() {
+fn format_fn_header_with_parameters_1() {
     check(
-        "fn  main ( a :  b )  -> f32   {}",
+        "fn        main         (           a    :    b )  -> f32   {}",
         expect![["
             fn main(a: b) -> f32 {}
         "]],
+    );
+}
+
+#[test]
+fn format_fn_header_with_parameters_2() {
+    check(
+        "fn  main ( a :  b,  c : d )  -> f32   {}",
+        expect![["
+            fn main(a: b, c: d) -> f32 {}
+            "]],
     );
 }
 
@@ -43,16 +53,6 @@ fn format_fn_header_long_name() {
                 a: b,
                 c: d,
             ) -> f32 {}
-            "]],
-    );
-}
-
-#[test]
-fn format_fn_header_2() {
-    check(
-        "fn  main ( a :  b,  c : d )  -> f32   {}",
-        expect![["
-            fn main(a: b, c: d) -> f32 {}
             "]],
     );
 }
