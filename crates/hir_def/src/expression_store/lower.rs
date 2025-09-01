@@ -4,8 +4,8 @@ use syntax::{HasGenerics, HasName, ast, pointer::AstPointer};
 use crate::{
     HirFileId, InFile,
     data::{
-        FieldData, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, StructData,
-        TypeAliasData,
+        FieldData, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, ParamData,
+        StructData, TypeAliasData,
     },
     database::DefDatabase,
     expression::{Expression, ExpressionId, parse_literal},
@@ -104,7 +104,10 @@ impl ExprCollector<'_> {
                 let name = as_name_opt(identifier.name_ref());
                 let generics = self.collect_generics(identifier.generic_arg_list());
 
-                Expression::TypeSpecifier { name, generics }
+                Expression::TypeSpecifier(TypeSpecifier {
+                    path: name,
+                    generics,
+                })
             },
             ast::Expression::IndexExpression(index) => {
                 let left_side = self.collect_expression_opt(index.expression());
@@ -153,13 +156,13 @@ impl ExprCollector<'_> {
     pub fn collect_function_param_list(
         &mut self,
         function_param_list: &ast::FunctionParameters,
-    ) -> Vec<(TypeSpecifier, Name)> {
+    ) -> Arena<ParamData> {
         function_param_list
             .parameters()
             .map(|parameter| {
                 let r#type = self.collect_type_specifier_opt(parameter.ty());
                 let name = parameter.name().map_or_else(Name::missing, Name::from);
-                (r#type, name)
+                ParamData { r#type, name }
             })
             .collect()
     }
@@ -207,7 +210,7 @@ pub(crate) fn lower_function(
 
     let mut collector = ExprCollector::new(database);
     let parameters = function.value.parameter_list().map_or_else(
-        || Vec::new(),
+        || Arena::new(),
         |parameters| collector.collect_function_param_list(&parameters),
     );
     let return_type = function

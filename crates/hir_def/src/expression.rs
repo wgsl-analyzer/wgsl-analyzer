@@ -54,10 +54,7 @@ pub enum Expression {
         index: ExpressionId,
     },
     Literal(Literal),
-    TypeSpecifier {
-        name: Name,
-        generics: Vec<ExpressionId>,
-    },
+    TypeSpecifier(TypeSpecifier),
 }
 
 pub type StatementId = Idx<Statement>;
@@ -214,7 +211,7 @@ impl Expression {
                 function(*left_side);
                 function(*index);
             },
-            Self::TypeSpecifier { generics, .. } => {
+            Self::TypeSpecifier(TypeSpecifier { generics, .. }) => {
                 generics.iter().copied().for_each(function);
             },
             Self::Missing | Self::Literal(_) => {},

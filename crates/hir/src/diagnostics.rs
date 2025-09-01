@@ -19,7 +19,7 @@ use syntax::{
 };
 
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
-use crate::{Function, GlobalConstant, GlobalVariable, HasSource as _, Override, TypeAlias};
+use crate::{Field, Function, GlobalConstant, GlobalVariable, HasSource as _, Override, TypeAlias};
 
 #[derive(Clone, Debug, Deserialize)]
 pub enum NagaVersion {
@@ -345,6 +345,10 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 hir_ty::infer::TypeContainer::TypeAlias(id) => {
                     let source = TypeAlias { id }.source(database)?;
                     SyntaxNodePointer::new(source.value.type_declaration()?.syntax())
+                },
+                hir_ty::infer::TypeContainer::StructField(id) => {
+                    let source = Field { id }.source(database)?;
+                    SyntaxNodePointer::new(source.value.ty()?.syntax())
                 },
             };
             AnyDiagnostic::InvalidType {

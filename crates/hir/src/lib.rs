@@ -123,7 +123,7 @@ impl<'database> Semantics<'database> {
             resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
         }
 
-        let value = resolver.resolve_value(name)?;
+        let value = resolver.resolve_type(name)?;
 
         let definition = match value {
             ResolveType::Local(binding) => Definition::Local(Local {
@@ -404,7 +404,7 @@ pub struct Function {
 }
 
 impl HasSource for Function {
-    type Ast = ast::Function;
+    type Ast = ast::FunctionDeclaration;
 
     fn source(
         self,
@@ -500,7 +500,7 @@ pub struct Field {
 }
 
 impl HasSource for Field {
-    type Ast = ast::StructDeclarationField;
+    type Ast = ast::StructMember;
 
     fn source(
         self,
@@ -513,7 +513,7 @@ impl HasSource for Field {
         let r#struct = self.id.r#struct.lookup(database).source(database);
 
         let field = r#struct.value.body()?.fields().find_map(|field| {
-            let name = field.variable_ident_declaration()?.binding()?.name()?;
+            let name = field.name()?;
             (name.ident_token()?.text() == field_name.as_str()).then_some(field)
         })?;
 

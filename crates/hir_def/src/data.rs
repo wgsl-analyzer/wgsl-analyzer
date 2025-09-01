@@ -20,12 +20,26 @@ use crate::{
     type_specifier::TypeSpecifier,
 };
 
+#[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]
+pub struct ParamId {
+    pub function: FunctionId,
+    pub param: LocalParamId,
+}
+
+pub type LocalParamId = Idx<ParamData>;
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct FunctionData {
     pub name: Name,
     pub store: ExpressionStore,
-    pub parameters: Vec<(TypeSpecifier, Name)>,
+    pub parameters: Arena<ParamData>,
     pub return_type: Option<TypeSpecifier>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ParamData {
+    pub name: Name,
+    pub r#type: TypeSpecifier,
 }
 
 impl FunctionData {

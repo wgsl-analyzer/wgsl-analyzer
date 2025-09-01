@@ -5,14 +5,15 @@ use std::{fmt, sync::Arc};
 
 use crate::builtins::{Builtin, BuiltinId};
 use crate::function::{FunctionDetails, ResolvedFunctionId};
-use crate::infer::{InferenceResult, TyLoweringContext};
+use crate::infer::{InferenceContext, InferenceResult, TypeContainer};
 use crate::ty::{TyKind, Type};
+use hir_def::data::FieldId;
 use hir_def::database::GlobalVariableId;
 use hir_def::type_ref::AccessMode;
 use hir_def::{
     HirFileId, InFile,
     data::LocalFieldId,
-    database::{DefDatabase, DefinitionWithBodyId, FunctionId, Lookup as _, StructId},
+    database::{DefDatabase, DefinitionId, FunctionId, Lookup as _, StructId},
     resolver::Resolver,
     type_ref::AddressSpace,
 };
@@ -24,7 +25,7 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
     #[salsa::cycle(crate::infer::infer_cycle_result)]
     fn infer(
         &self,
-        key: DefinitionWithBodyId,
+        key: DefinitionId,
     ) -> Arc<InferenceResult>;
 
     fn field_types(
@@ -70,11 +71,17 @@ fn field_types(
     let module_info = database.module_info(file_id);
     let resolver = Resolver::default().push_module_scope(file_id, module_info);
 
-    let mut ty_ctx = TyLoweringContext::new(database, &resolver);
+    let mut ty_ctx = InferenceContext::new(database, DefinitionId::Struct(r#struct), resolver);
 
     let mut map = ArenaMap::default();
     for (index, field) in data.fields.iter() {
-        let r#type = ty_ctx.lower_ty(&field.r#type);
+        let r#type = ty_ctx.lower_ty(
+            TypeContainer::StructField(FieldId {
+                r#struct,
+                field: index,
+            }),
+            &field.r#type,
+        );
 
         map.insert(index, r#type);
     }
@@ -92,18 +99,19 @@ fn function_type(
     let module_info = database.module_info(file_id);
     let resolver = Resolver::default().push_module_scope(file_id, module_info);
 
-    let mut ty_ctx = TyLoweringContext::new(database, &resolver);
+    let mut ty_ctx = InferenceContext::new(database, DefinitionId::Function(function), resolver);
 
     let return_type = data
         .return_type
         .as_ref()
-        .map(|type_ref| ty_ctx.lower_ty(&type_ref));
+        .map(|type_ref| ty_ctx.lower_ty(TypeContainer::FunctionReturn(function), &type_ref));
+
     let parameters = data
         .parameters
         .iter()
-        .map(|(type_ref, name)| {
-            let r#type = ty_ctx.lower_ty(type_ref);
-            (r#type, name.clone())
+        .map(|(id, param)| {
+            let r#type = ty_ctx.lower_ty(TypeContainer::FunctionParameter(id), &param.r#type);
+            (r#type, param.name.clone())
         })
         .collect();
 
@@ -123,19 +131,16 @@ fn struct_is_used_in_uniform(
     module_info.items().iter().any(|item| match *item {
         hir_def::module_data::ModuleItem::GlobalVariable(decl) => {
             let decl = database.intern_global_variable(InFile::new(file_id, decl));
-            // database.global_var_data(decl).0.generics
-            let data = database.infer(DefinitionWithBodyId::GlobalVariable(decl));
-            // data.type_of_expression
+            let inference = database.infer(DefinitionId::GlobalVariable(decl));
+            let ty_kind = inference.return_type.kind(database);
 
-            if !matches!(data.address_space, Some(AddressSpace::Uniform)) {
+            if let TyKind::Reference(crate::ty::Reference { address_space, .. }) = ty_kind
+                && !matches!(address_space, AddressSpace::Uniform)
+            {
                 return false;
             }
 
-            let inference = database.infer(DefinitionWithBodyId::GlobalVariable(decl));
-            let Some(r#type) = inference.return_type else {
-                return false;
-            };
-            r#type.contains_struct(database, r#struct)
+            inference.return_type.contains_struct(database, r#struct)
         },
         hir_def::module_data::ModuleItem::Function(_)
         | hir_def::module_data::ModuleItem::Struct(_)

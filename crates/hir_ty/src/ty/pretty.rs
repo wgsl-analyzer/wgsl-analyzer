@@ -37,8 +37,6 @@ pub fn pretty_type_expectation_with_verbosity(
         TypeExpectation::TypeOrVecOf(inner) => {
             _ = write_type_expectation_inner(database, &inner, true, &mut str, verbosity);
         },
-        #[expect(clippy::unreachable, reason = "TODO")]
-        TypeExpectation::None => unreachable!(),
     }
     str
 }
