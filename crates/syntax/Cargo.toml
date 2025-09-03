@@ -13,11 +13,11 @@ rust-version.workspace = true
 doctest = false
 
 [dependencies]
-either.workspace = true
-itertools.workspace = true
-rowan.workspace = true
+either = "1.15.0"
+itertools = "0.14.0"
+rowan = "0.16.1"
 parser.workspace = true
-smol_str.workspace = true
+smol_str = "0.3.2"
 
 [lints]
 workspace = true

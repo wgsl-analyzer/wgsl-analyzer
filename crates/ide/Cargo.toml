@@ -12,28 +12,32 @@ rust-version.workspace = true
 [lib]
 
 [dependencies]
-crossbeam-channel.workspace = true
-tracing.workspace = true
+crossbeam-channel = "0.5.15"
+tracing = "0.1.41"
 fst = { version = "0.4.7", default-features = false }
-rustc-hash.workspace = true
-either.workspace = true
-itertools.workspace = true
-arrayvec.workspace = true
-indexmap.workspace = true
-memchr.workspace = true
-salsa.workspace = true
-triomphe.workspace = true
-nohash-hasher.workspace = true
-bitflags.workspace = true
-smol_str.workspace = true
-smallvec.workspace = true
+rustc-hash = "2.1.1"
+either = "1.15.0"
+itertools = "0.14.0"
+arrayvec = "0.7.6"
+indexmap = "2.11.0"
+memchr = "2.7.5"
+salsa = "0.17.0-pre.2"
+triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
+nohash-hasher = "0.2.0"
+bitflags = "2.9.4"
+smol_str = "0.3.2"
+smallvec = { version = "1.15.1", features = [
+  "const_new",
+  "union",
+  "const_generics",
+] }
 
 # local deps
 base-db.workspace = true
 ide-completion.workspace = true
 syntax.workspace = true
 wgsl-formatter.workspace = true
-rowan.workspace = true
+rowan = "0.16.1"
 parser.workspace = true
 ide-db.workspace = true
 stdx.workspace = true
@@ -45,7 +49,7 @@ hir.workspace = true
 hir-def.workspace = true # todo
 hir-ty.workspace = true  # todo
 
-line-index.workspace = true
+line-index = "0.1.2"
 
 naga14 = { package = "naga", version = "0.14", features = [
   "wgsl-in",

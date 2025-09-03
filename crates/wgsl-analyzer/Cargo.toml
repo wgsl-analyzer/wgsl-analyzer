@@ -19,39 +19,46 @@ name = "wgsl-analyzer"
 path = "src/bin/main.rs"
 
 [dependencies]
-anyhow.workspace = true
-# base64.workspace = true
-crossbeam-channel.workspace = true
-# dirs.workspace = true
-dissimilar.workspace = true
+anyhow = "1.0.99"
+# base64 = "0.22"
+crossbeam-channel = "0.5.15"
+# dirs = "5.0.1"
+dissimilar = "1.0.10"
 ide-completion.workspace = true
-itertools.workspace = true
-# scip.workspace = true
+itertools = "0.14.0"
+# scip = "0.5.2"
 lsp-types = { version = "=0.95.0", features = ["proposed"] }
-parking_lot.workspace = true
-xflags.workspace = true
-# threadpool.workspace = true
-salsa.workspace = true
-oorandom.workspace = true
-rayon.workspace = true
-rustc-hash.workspace = true
-serde_json = { workspace = true, features = ["preserve_order"] }
-serde.workspace = true
-# tenthash.workspace = true
-num_cpus.workspace = true
-mimalloc = { version = "0.1.46", default-features = false, optional = true }
-lsp-server.workspace = true
-tracing.workspace = true
-tracing-subscriber.workspace = true
-tracing-tree.workspace = true
-triomphe.workspace = true
-# toml.workspace = true
-nohash-hasher.workspace = true
-walkdir.workspace = true
-semver.workspace = true
-memchr.workspace = true
-cargo_metadata.workspace = true
-# process-wrap.workspace = true
+parking_lot = "0.12.4"
+xflags = "0.3.2"
+# threadpool = "1.8.1"
+salsa = "0.17.0-pre.2"
+oorandom = "11.1.5"
+rayon = "1.11.0"
+rustc-hash = "2.1.1"
+serde_json = { version = "1.0.143", features = ["preserve_order"] }
+serde = { version = "1.0.219", features = ["derive"] }
+# tenthash = "1.0.0"
+num_cpus = "1.17.0"
+mimalloc = { version = "0.1.48", default-features = false, optional = true }
+lsp-server = "0.7.9"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", default-features = false, features = [
+  "registry",
+  "fmt",
+  "local-time",
+  "std",
+  "time",
+  "tracing-log",
+] }
+tracing-tree = "0.4.0"
+triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
+# toml = "0.8.8"
+nohash-hasher = "0.2.0"
+walkdir = "2.5.0"
+semver = "1.0.26"
+memchr = "2.7.5"
+cargo_metadata = "0.22.0"
+# process-wrap = { version = "8.2.0", features = ["std"] }
 # cfg.workspace = true
 hir-def.workspace = true
 hir-ty.workspace = true
@@ -61,7 +68,7 @@ ide-db.workspace = true
 # This should only be used in CLI
 # ide-ssr.workspace = true
 ide.workspace = true
-# load-cargo.workspace = true
+# load-wesl.workspace = true
 # profile.workspace = true
 # project-model.workspace = true
 stdx.workspace = true
@@ -71,9 +78,9 @@ parser.workspace = true
 vfs-notify.workspace = true
 vfs.workspace = true
 paths.workspace = true
-camino = "1.1.11"
+camino = "1.1.12"
 base-db.workspace = true
-line-index.workspace = true
+line-index = "0.1.2"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.60", features = [
@@ -85,8 +92,8 @@ windows-sys = { version = "0.60", features = [
 jemallocator = { version = "0.6.0", package = "tikv-jemallocator", optional = true }
 
 [dev-dependencies]
-# expect-test.workspace = true
-# xshell.workspace = true
+# expect-test = "1.5.1"
+# xshell = "0.2.7"
 
 test-utils.workspace = true
 # test-fixture.workspace = true

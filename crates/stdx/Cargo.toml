@@ -15,14 +15,14 @@ doctest = false
 
 [dependencies]
 backtrace = { version = "0.3.75", optional = true }
-jod-thread.workspace = true
-crossbeam-channel.workspace = true
-itertools.workspace = true
-tracing.workspace = true
+jod-thread = "1.0.0"
+crossbeam-channel = "0.5.15"
+itertools = "0.14.0"
+tracing = "0.1.41"
 # Think twice before adding anything here
 
 [target.'cfg(unix)'.dependencies]
-libc.workspace = true
+libc = "0.2.175"
 
 [target.'cfg(windows)'.dependencies]
 miow = "0.6.0"
