@@ -28,9 +28,9 @@ rowan = "0.16.1"
 rustc-hash = "2.1.1"
 smol_str = "0.3.2"
 smallvec = { version = "1.15.1", features = [
-	"const_new",
-	"union",
-	"const_generics",
+  "const_new",
+  "union",
+  "const_generics",
 ] }
 
 [dev-dependencies]

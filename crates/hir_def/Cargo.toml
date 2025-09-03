@@ -22,9 +22,9 @@ smol_str = "0.3.2"
 rustc-hash = "2.1.1"
 either = "1.15.0"
 smallvec = { version = "1.15.1", features = [
-	"const_new",
-	"union",
-	"const_generics",
+  "const_new",
+  "union",
+  "const_generics",
 ] }
 rowan = "0.16.1"
 tracing = "0.1.41"

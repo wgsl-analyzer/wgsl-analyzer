@@ -26,9 +26,9 @@ triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
 nohash-hasher = "0.2.0"
 smol_str = "0.3.2"
 smallvec = { version = "1.15.1", features = [
-	"const_new",
-	"union",
-	"const_generics",
+  "const_new",
+  "union",
+  "const_generics",
 ] }
 
 base-db.workspace = true
