@@ -92,6 +92,8 @@ disallowed-names = [
 disallowed-types = [
   { path = "std::path::Path", reason = "use AbsolutePath or at least Utf8Path" },
   { path = "std::path::PathBuf", reason = "use AbsolutePathBuf or at least Utf8PathBuf" },
+  { path = "camino::Utf8Path", reason = "prefer AbsolutePath" },
+  { path = "camino::Utf8PathBuf", reason = "prefer AbsolutePathBuf" },
   { path = "std::collections::HashMap", reason = "use FxHashMap" },
   { path = "std::collections::HashSet", reason = "use FxHashSet" },
   { path = "std::collections::hash_map::RandomState", reason = "use BuildHasherDefault<FxHasher>" },

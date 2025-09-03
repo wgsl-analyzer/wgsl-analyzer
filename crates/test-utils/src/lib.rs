@@ -13,7 +13,7 @@ mod assert_linear;
 
 use std::{collections::BTreeMap, env, fs, path, str::FromStr};
 
-use paths::{AbsPath, AbsPathBuf, Utf8PathBuf};
+use paths::{AbsPath, AbsPathBuf};
 use profile::StopWatch;
 use stdx::is_ci;
 use text_size::{TextRange, TextSize};
