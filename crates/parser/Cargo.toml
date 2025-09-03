@@ -14,7 +14,7 @@ doctest = false
 
 [dependencies]
 drop_bomb = "0.1.5"
-logos = "0.12.1"
+logos = "0.15.1"
 rowan = "0.16.1"
 edition.workspace = true
 
