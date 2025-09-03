@@ -154,7 +154,7 @@ fn dist_server(
     if target_name.contains("-windows-") {
         zip(
             &target.server_path,
-            target.symbols_path.as_ref(),
+            target.symbols_path.as_deref(),
             &dst.with_extension("zip"),
         )?;
     } else {
@@ -189,7 +189,7 @@ fn gzip(
 
 fn zip(
     source_path: &Path,
-    symbols_path: Option<&PathBuf>,
+    symbols_path: Option<&Path>,
     destination_path: &Path,
 ) -> anyhow::Result<()> {
     let file = File::create(destination_path)?;
