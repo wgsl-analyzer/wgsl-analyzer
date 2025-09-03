@@ -11,9 +11,9 @@ edition = "2024"
 
 [dependencies]
 wgsl-formatter.workspace = true
-anyhow.workspace = true
-lexopt.workspace = true
-prettydiff.workspace = true
+anyhow = "1.0.99"
+lexopt = "0.3.1"
+prettydiff = "0.8.1"
 
 [lints]
 workspace = true
