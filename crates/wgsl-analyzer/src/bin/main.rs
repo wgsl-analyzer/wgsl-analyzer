@@ -8,7 +8,6 @@ use std::{
     env::{self, args as arguments},
     fs,
     io::stderr,
-    path::PathBuf,
     process::ExitCode,
     sync::Arc,
 };
@@ -16,7 +15,7 @@ use std::{
 use anyhow::Context as _;
 use lsp_server::Connection;
 use lsp_types::InitializeParams;
-use paths::{AbsPathBuf, Utf8PathBuf};
+use paths::{AbsPathBuf, Utf8Component, Utf8PathBuf, Utf8Prefix};
 use tracing::{info, warn};
 use tracing_subscriber::{
     filter::filter_fn,
@@ -46,7 +45,14 @@ fn main() -> Result<ExitCode> {
         wait_for_debugger();
     }
 
-    if let Err(error) = setup_logging(flags.log_file.clone()) {
+    if let Err(error) = setup_logging(
+        flags
+            .log_file
+            .clone()
+            .map(Utf8PathBuf::from_path_buf)
+            .transpose()
+            .unwrap(),
+    ) {
         eprintln!("Failed to setup logging: {error:#}");
     }
 
@@ -146,8 +152,10 @@ fn run_server() -> anyhow::Result<()> {
 
     let root_path = if let Some(path) = root_uri
         .and_then(|uri| uri.to_file_path().ok())
+        .map(Utf8PathBuf::from_path_buf)
+        .transpose()
+        .unwrap()
         .map(patch_path_prefix)
-        .and_then(|path| Utf8PathBuf::from_path_buf(path).ok())
         .and_then(|path| AbsPathBuf::try_from(path).ok())
     {
         path
@@ -169,8 +177,8 @@ fn run_server() -> anyhow::Result<()> {
             workspaces
                 .into_iter()
                 .filter_map(|folder| folder.uri.to_file_path().ok())
-                .map(patch_path_prefix)
                 .filter_map(|path| Utf8PathBuf::from_path_buf(path).ok())
+                .map(patch_path_prefix)
                 .filter_map(|path| AbsPathBuf::try_from(path).ok())
                 .collect::<Vec<_>>()
         })
@@ -246,7 +254,7 @@ fn run_server() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn patch_path_prefix(path: PathBuf) -> PathBuf {
+fn patch_path_prefix(path: Utf8PathBuf) -> Utf8PathBuf {
     use std::path::{Component, Prefix};
     if cfg!(windows) {
         // VS Code might report paths with the file drive in lowercase, but this can mess
@@ -256,20 +264,20 @@ fn patch_path_prefix(path: PathBuf) -> PathBuf {
         // (doing it conditionally is a pain because std::path::Prefix always reports uppercase letters on windows)
         let mut components = path.components();
         match components.next() {
-            Some(Component::Prefix(prefix)) => {
+            Some(Utf8Component::Prefix(prefix)) => {
                 let prefix = match prefix.kind() {
-                    Prefix::Disk(disk_letter) => {
+                    Utf8Prefix::Disk(disk_letter) => {
                         format!("{}:", char::from(disk_letter).to_ascii_uppercase())
                     },
-                    Prefix::VerbatimDisk(disk_letter) => {
+                    Utf8Prefix::VerbatimDisk(disk_letter) => {
                         format!(r"\\?\{}:", char::from(disk_letter).to_ascii_uppercase())
                     },
-                    Prefix::Verbatim(_)
-                    | Prefix::VerbatimUNC(..)
-                    | Prefix::DeviceNS(_)
-                    | Prefix::UNC(..) => return path,
+                    Utf8Prefix::Verbatim(_)
+                    | Utf8Prefix::VerbatimUNC(..)
+                    | Utf8Prefix::DeviceNS(_)
+                    | Utf8Prefix::UNC(..) => return path,
                 };
-                PathBuf::new().join(prefix).join(components)
+                Utf8PathBuf::new().join(prefix).join(components)
             },
             _ => path,
         }
@@ -278,7 +286,7 @@ fn patch_path_prefix(path: PathBuf) -> PathBuf {
     }
 }
 
-fn setup_logging(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
+fn setup_logging(log_file_flag: Option<Utf8PathBuf>) -> anyhow::Result<()> {
     if cfg!(windows)
         // This is required so that windows finds our pdb that is placed right beside the exe.
         // By default it doesn't look at the folder the exe resides in, only in the current working
@@ -303,7 +311,7 @@ fn setup_logging(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
 
     let log_file = env::var("WA_LOG_FILE")
         .ok()
-        .map(PathBuf::from)
+        .map(Utf8PathBuf::from)
         .or(log_file_flag);
     let log_file = match log_file {
         Some(path) => {
@@ -312,7 +320,7 @@ fn setup_logging(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
             }
             Some(
                 fs::File::create(&path)
-                    .with_context(|| format!("cannot create log file at {}", path.display()))?,
+                    .with_context(|| format!("cannot create log file at {path}"))?,
             )
         },
         None => None,

@@ -27,5 +27,8 @@ smallvec = { version = "1.15.1", features = [
   "const_generics",
 ] }
 
+[build-dependencies]
+paths.workspace = true
+
 [lints]
 workspace = true

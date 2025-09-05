@@ -1,5 +1,9 @@
 //! Grammar for the command-line arguments.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "`AbsPathBuf` does not implement From<str>"
+)]
 #![allow(clippy::disallowed_names, reason = "`xflags` macro")]
 
 use std::{path::PathBuf, str::FromStr};
