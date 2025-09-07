@@ -109,6 +109,9 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
 
     // ==== Format ====
 
+    //TODO Once the formatter is in a state where definitive statement can be made,
+    // look at if this formatting of comma seperated items could be sensibly abstracted out
+    // and combined with e.g struct members, fn call arguments, etc.
     let start_ln = LineNumber::new("start");
     let end_ln = LineNumber::new("end");
     let is_multiple_lines = create_is_multiple_lines_resolver(start_ln, end_ln);
