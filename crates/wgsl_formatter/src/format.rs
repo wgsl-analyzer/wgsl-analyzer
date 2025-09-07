@@ -6,6 +6,7 @@ mod ast_parse;
 mod helpers;
 mod print_item_buffer;
 
+mod gen_attributes;
 mod gen_comments;
 mod gen_function;
 mod gen_struct;
