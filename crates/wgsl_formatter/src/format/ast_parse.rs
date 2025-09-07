@@ -14,7 +14,7 @@
 use itertools::PutBack;
 use parser::{SyntaxElementChildren, SyntaxKind, SyntaxToken};
 use rowan::NodeOrToken;
-use syntax::AstNode;
+use syntax::{AstNode, ast::Attribute};
 
 use crate::format::reporting::{FormatDocumentErrorKind, FormatDocumentResult, err_src};
 

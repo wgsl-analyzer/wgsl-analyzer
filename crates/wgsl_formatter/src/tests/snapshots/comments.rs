@@ -101,6 +101,106 @@ fn format_fn_header_line_comments_2() {
 }
 
 #[test]
+fn format_struct_line_comments_1() {
+    check(
+        "
+        // 000
+        struct
+        // aaa
+        Abc
+        // bbb
+        {
+        // ccc
+        a
+        // ddd
+        :
+        // eee
+        b
+        // fff
+        ,
+        // ggg
+        c
+        // hhh
+        :
+        // iii
+        d
+        // jjj
+        }
+        // 111
+        ",
+        expect![[r#"
+            // 000
+            struct // aaa
+            Abc // bbb
+            {
+                // ccc
+                a: // ddd
+                // eee
+                b, // fff
+                // ggg
+                c: // hhh
+                // iii
+                d, // jjj
+            }
+            // 111
+        "#]],
+    );
+}
+
+#[test]
+fn format_struct_with_attributes_line_comments_1() {
+    check(
+        "
+        // 000
+        struct
+        // aaa
+        Abc
+        // bbb
+        {
+        // pre_attr_1
+        @attribute(0)
+        // pre_attr_2
+        @attribute(0)
+        // ccc
+        a
+        // ddd
+        :
+        // eee
+        b
+        // fff
+        ,
+        // ggg
+        c
+        // hhh
+        :
+        // iii
+        d
+        // jjj
+        }
+        // 111
+        ",
+        expect![[r#"
+            // 000
+            struct // aaa
+            Abc // bbb
+            {
+                // pre_attr_1
+                @attribute(0) // pre_attr_2
+                @attribute(0) // ccc
+                a: // ddd
+                // eee
+                b, // fff
+                // ggg
+                c: // hhh
+                // iii
+                d, // jjj
+            }
+            // 111
+        "#]],
+    );
+}
+
+#[test]
 fn format_struct_block_comments_1() {
     check(
         "
@@ -131,6 +231,7 @@ fn format_struct_block_comments_1() {
         expect![[r#"
             /* 000 */
             struct /* aaa */ Abc /* bbb */ {
+                /* ccc */
                 a: /* ddd */ /* eee */ b, /* fff */ /* ggg */
                 c: /* hhh */ /* iii */ d, /* jjj */
             }
@@ -146,10 +247,67 @@ fn format_struct_inline_comments_1() {
         expect![[r#"
             /* 000 */
             struct /* aaa */ Abc /* bbb */ {
+                /* ccc */
                 a: /* ddd */ /* eee */ b, /* fff */ /* ggg */
                 c: /* hhh */ /* iii */ d, /* jjj */
             }
             /* ggg */
+        "#]],
+    );
+}
+
+#[test]
+fn format_struct_with_attribute_inline_comments_1() {
+    check(
+        "/* 000 */struct/* aaa */Abc/* bbb */{/* pre_attr */@attribute(1)/* amidst_attr */@attribute(2)/* ccc */a/* ddd */:/* eee */b/* fff */,/* ggg */c/* hhh */:/* iii */d/* jjj */}/* ggg */",
+        expect![[r#"
+            /* 000 */
+            struct /* aaa */ Abc /* bbb */ {
+                /* pre_attr */
+                @attribute(1) /* amidst_attr */
+                @attribute(2) /* ccc */
+                a: /* ddd */ /* eee */ b, /* fff */ /* ggg */
+                c: /* hhh */ /* iii */ d, /* jjj */
+            }
+            /* ggg */
+        "#]],
+    );
+}
+
+#[test]
+fn format_struct_opening_comments_1() {
+    check(
+        "
+        struct A {
+        // This comment should stick to the member
+        a: i32
+        }
+        ",
+        expect![[r#"
+            struct A {
+                // This comment should stick to the member
+                a: i32,
+            }
+        "#]],
+    );
+}
+
+// Following rustfmt, even if the comment is on the same line as the struct
+// we assume it belongs to the member. If the user wanted to comment on the
+// struct, they should put the comment in front of the struct.
+#[test]
+fn format_struct_opening_comments_2() {
+    check(
+        "
+        struct A { // This comment should stick to the member
+        a: i32
+        }
+        ",
+        expect![[r#"
+            struct A {
+                // This comment should stick to the member
+                a: i32,
+            }
         "#]],
     );
 }
