@@ -8,6 +8,7 @@ mod print_item_buffer;
 
 mod gen_comments;
 mod gen_function;
+mod gen_struct;
 mod gen_types;
 mod reporting;
 
@@ -38,6 +39,7 @@ use crate::{
         },
         gen_comments::gen_comment,
         gen_function::gen_function_declaration,
+        gen_struct::gen_struct_declaration,
         helpers::{gen_spaced_lines, into_items},
         print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
         reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult, err_src},
@@ -99,11 +101,13 @@ fn gen_item(node: &ast::Item) -> FormatDocumentResult<PrintItemBuffer> {
         ast::Item::FunctionDeclaration(function_declaration) => {
             gen_function_declaration(function_declaration)
         },
+        ast::Item::StructDeclaration(struct_declaration) => {
+            gen_struct_declaration(struct_declaration)
+        },
         ast::Item::VariableDeclaration(variable_declaration) => todo!(),
         ast::Item::ConstantDeclaration(constant_declaration) => todo!(),
         ast::Item::OverrideDeclaration(override_declaration) => todo!(),
         ast::Item::TypeAliasDeclaration(type_alias_declaration) => todo!(),
-        ast::Item::StructDeclaration(struct_declaration) => todo!(),
     }
 }
 
