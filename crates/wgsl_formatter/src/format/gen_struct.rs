@@ -103,11 +103,12 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
         for (member, comments_after_member, comments_after_comma) in item_members {
             formatted.extend(gen_struct_member(&member)?);
             formatted.push_sc(sc!(","));
-            formatted.request_line_break();
 
             // Intentionally reorder comments to move them after the comma
             formatted.extend(gen_comments(comments_after_member));
             formatted.extend(gen_comments(comments_after_comma));
+
+            formatted.request_line_break();
         }
     }
 

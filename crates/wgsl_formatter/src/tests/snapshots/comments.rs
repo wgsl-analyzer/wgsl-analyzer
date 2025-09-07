@@ -99,3 +99,57 @@ fn format_fn_header_line_comments_2() {
         "]],
     );
 }
+
+#[test]
+fn format_struct_block_comments_1() {
+    check(
+        "
+        /* 000 */
+        struct
+        /* aaa */
+        Abc
+        /* bbb */
+        {
+        /* ccc */
+        a
+        /* ddd */
+        :
+        /* eee */
+        b
+        /* fff */
+        ,
+        /* ggg */
+        c
+        /* hhh */
+        :
+        /* iii */
+        d
+        /* jjj */
+        }
+        /* ggg */
+        ",
+        expect![[r#"
+            /* 000 */
+            struct /* aaa */ Abc /* bbb */ {
+                a: /* ddd */ /* eee */ b, /* fff */ /* ggg */
+                c: /* hhh */ /* iii */ d, /* jjj */
+            }
+            /* ggg */
+        "#]],
+    );
+}
+
+#[test]
+fn format_struct_inline_comments_1() {
+    check(
+        "/* 000 */struct/* aaa */Abc/* bbb */{/* ccc */a/* ddd */:/* eee */b/* fff */,/* ggg */c/* hhh */:/* iii */d/* jjj */}/* ggg */",
+        expect![[r#"
+            /* 000 */
+            struct /* aaa */ Abc /* bbb */ {
+                a: /* ddd */ /* eee */ b, /* fff */ /* ggg */
+                c: /* hhh */ /* iii */ d, /* jjj */
+            }
+            /* ggg */
+        "#]],
+    );
+}

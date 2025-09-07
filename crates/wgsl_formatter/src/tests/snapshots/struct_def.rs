@@ -15,7 +15,7 @@ fn format_struct_def_empty() {
 }
 
 #[test]
-fn format_struct_def_fields_1() {
+fn format_struct_def_members_1() {
     check(
         "struct Foo {a: i32}",
         expect![["
@@ -27,7 +27,7 @@ fn format_struct_def_fields_1() {
 }
 
 #[test]
-fn format_struct_def_fields_2() {
+fn format_struct_def_members_2() {
     check(
         "struct Foo {a: i32,b:i32}",
         expect![["
@@ -70,5 +70,23 @@ fn format_struct_def_garbled_1() {
                     b: i32,
                 }
                 "]],
+    );
+}
+
+#[test]
+fn format_struct_def_members_with_attributes() {
+    check(
+        "
+        struct  Test
+        {  @location(0) x: i32,                    a: i32,
+        b: f32,
+
+                }",
+        expect![["
+            struct Test {
+                @location(0) x: i32,
+                a: i32,
+                b: f32,
+            }"]],
     );
 }
