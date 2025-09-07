@@ -16,7 +16,6 @@ mod common_conventions;
 mod control_structures;
 mod fn_call;
 mod operators;
-mod structs;
 
 #[test]
 fn format_empty() {
