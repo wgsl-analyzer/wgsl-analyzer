@@ -23,6 +23,7 @@ use crate::{
             parse_end, parse_end_optional, parse_many_comments_and_blankspace, parse_node,
             parse_node_optional, parse_token, parse_token_optional,
         },
+        gen_attributes::gen_attributes,
         gen_comments::gen_comments,
         gen_types::gen_type_specifier,
         helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, into_items, todo_verbatim},
@@ -98,6 +99,13 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
     formatted.push_sc(sc!("{"));
     formatted.push_signal(Signal::StartIndent);
 
+    //TODO This should be handled by gen_comments, and probably
+    // take into account whether the comment was on the same line as the opening brace
+    if !item_comments_after_open_paren.is_empty() {
+        formatted.request_line_break();
+        formatted.extend(gen_comments(item_comments_after_open_paren));
+    }
+
     if !item_members.is_empty() {
         formatted.request_line_break();
         for (member, comments_after_member, comments_after_comma) in item_members {
@@ -122,6 +130,18 @@ fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<PrintIt
     // === Parse ===
     let mut syntax = put_back(member.syntax().children_with_tokens());
 
+    // TODO Think about a clean way to abstract this, to deduplicate code from functions
+    // maybe even a "many with commments" combinator, to also deduplicate code from fn parameters/struct members
+    let mut attributes = Vec::new();
+    loop {
+        let Some(item_attribute) = parse_node_optional::<ast::Attribute>(&mut syntax) else {
+            break;
+        };
+        let item_comments_after_attribute = parse_many_comments_and_blankspace(&mut syntax)?;
+
+        attributes.push((item_attribute, item_comments_after_attribute));
+    }
+    let item_comments_after_attribute = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
     let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::Colon);
@@ -132,6 +152,7 @@ fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<PrintIt
     // === Format ===
     let mut formatted = PrintItemBuffer::new();
 
+    formatted.extend(gen_attributes(attributes)?);
     formatted.push_string(item_name.text().to_string());
     formatted.push_sc(sc!(":"));
     formatted.request_single_space();

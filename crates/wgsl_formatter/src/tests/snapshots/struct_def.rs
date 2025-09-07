@@ -78,15 +78,18 @@ fn format_struct_def_members_with_attributes() {
     check(
         "
         struct  Test
-        {  @location(0) x: i32,                    a: i32,
+        {  @location(0) @attribute(1) x: i32,                    a: i32,
         b: f32,
 
                 }",
-        expect![["
+        expect![[r#"
             struct Test {
-                @location(0) x: i32,
+                @location(0)
+                @attribute(1)
+                x: i32,
                 a: i32,
                 b: f32,
-            }"]],
+            }
+        "#]],
     );
 }
