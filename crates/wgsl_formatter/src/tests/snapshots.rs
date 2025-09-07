@@ -5,6 +5,7 @@ use crate::test_util::{check, check_tabs};
 //TODO Remove this comment == MODULES THAT FULLY PASS ==
 mod comments;
 mod fn_signature;
+mod struct_def;
 
 //TODO Remove this comment == MODULES THAT STILL CONTAIN FAILING TESTS ==
 mod bevy_reference;
