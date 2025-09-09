@@ -19,7 +19,7 @@ rustc-hash = "2.1.1"
 either = "1.15.0"
 itertools = "0.14.0"
 arrayvec = "0.7.6"
-indexmap = "2.11.0"
+indexmap = "2.11.1"
 memchr = "2.7.5"
 salsa = "0.17.0-pre.2"
 triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
