@@ -25,7 +25,7 @@ tracing = "0.1.41"
 libc = "0.2.175"
 
 [target.'cfg(windows)'.dependencies]
-miow = "0.6.0"
+miow = "0.6.1"
 windows-sys = { version = "0.61.0", features = ["Win32_Foundation"] }
 
 [features]
