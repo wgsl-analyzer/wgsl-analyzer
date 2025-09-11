@@ -27,25 +27,43 @@ fn spacing_between_fn_headers_1() {
 }
 
 #[test]
-fn spacing_between_empty_struct_defs() {
+fn spacing_between_struct_defs() {
     check(
         "
-        struct A {}
-        struct B {}
+        struct A {
+          a: i32
+        }
+        struct B {
+          b: i32
+        }
 
-        struct C {}
+        struct C {
+          c: i32
+        }
 
 
-        struct D {}
+
+
+        struct D {
+          d: i32
+        }
         ",
         expect![["
-            struct A {}
-            struct B {}
+            struct A {
+                a: i32,
+            }
+            struct B {
+                b: i32,
+            }
 
-            struct C {}
+            struct C {
+                c: i32,
+            }
 
-            struct D {}
-            "]],
+            struct D {
+                d: i32,
+            }
+        "]],
     );
 }
 

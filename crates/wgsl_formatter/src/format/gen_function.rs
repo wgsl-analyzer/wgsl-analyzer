@@ -24,6 +24,7 @@ use crate::{
             parse_node_optional, parse_token, parse_token_optional,
         },
         gen_comments::gen_comments,
+        gen_statement::gen_compound_statement,
         gen_types::gen_type_specifier,
         helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, into_items, todo_verbatim},
         print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
@@ -254,6 +255,5 @@ pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<Prin
 }
 
 fn gen_fn_body(syntax: &ast::CompoundStatement) -> FormatDocumentResult<PrintItemBuffer> {
-    //TODO
-    todo_verbatim(syntax.syntax())
+    gen_compound_statement(syntax)
 }

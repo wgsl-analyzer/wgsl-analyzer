@@ -36,8 +36,6 @@ where
         NewLinesAfterItem(usize),
     }
 
-    result.request(SeparationRequest::discouraged());
-
     for child in node.children_with_tokens() {
         if let rowan::NodeOrToken::Token(token) = &child
             && token.kind() == parser::SyntaxKind::Blankspace
@@ -67,12 +65,6 @@ where
             });
         }
     }
-
-    //There should be a newline at the end of the file
-    result.request(SeparationRequest {
-        line_break: SeparationPolicy::Expected,
-        ..Default::default()
-    });
 
     Ok(result)
 }
