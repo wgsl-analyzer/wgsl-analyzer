@@ -37,6 +37,20 @@ pub fn parse_token(
     }
 }
 
+pub fn parse_token_any(syntax: &mut SyntaxIter) -> FormatDocumentResult<SyntaxToken> {
+    match syntax.next() {
+        Some(NodeOrToken::Token(child)) => Ok(child),
+        Some(other) => {
+            syntax.put_back(other.clone());
+            Err(FormatDocumentErrorKind::UnexpectedToken { received: other }
+                .without_range(err_src!()))
+        },
+        None => {
+            Err(FormatDocumentErrorKind::MissingTokens { expected: None }.without_range(err_src!()))
+        },
+    }
+}
+
 pub fn parse_token_optional(
     syntax: &mut SyntaxIter,
     expected: SyntaxKind,
@@ -108,7 +122,10 @@ pub fn parse_node<T: AstNode>(syntax: &mut SyntaxIter) -> FormatDocumentResult<T
             Err(FormatDocumentErrorKind::UnexpectedToken { received: other }
                 .without_range(err_src!()))
         },
-        None => Err(FormatDocumentErrorKind::MissingNode.without_range(err_src!())),
+        None => {
+            todo!();
+            Err(FormatDocumentErrorKind::MissingNode.without_range(err_src!()))
+        },
     }
 }
 

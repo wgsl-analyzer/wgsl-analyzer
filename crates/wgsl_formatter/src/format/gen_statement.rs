@@ -1,12 +1,17 @@
-use dprint_core::formatting::Signal;
+use dprint_core::formatting::{ColumnNumber, PrintItems, Signal};
 use dprint_core_macros::sc;
+use itertools::put_back;
 use parser::{SyntaxKind, SyntaxToken};
 use rowan::NodeOrToken;
-use syntax::{AstNode as _, ast};
+use syntax::{
+    AstNode,
+    ast::{self, Literal},
+};
 
 use crate::format::{
-    ast_parse::parse_token,
-    gen_comments::gen_comment,
+    ast_parse::{parse_end, parse_many_comments_and_blankspace, parse_node, parse_token},
+    gen_comments::{gen_comment, gen_comments},
+    gen_expression::gen_expression,
     helpers::{gen_spaced_lines, todo_verbatim},
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult, err_src},
@@ -31,12 +36,17 @@ pub fn gen_compound_statement(
     });
 
     let lines = gen_spaced_lines(syntax.syntax(), |child| {
+        if let NodeOrToken::Node(child) = child {
+            dbg!(&child);
+            dbg!(ast::Discard::cast(child.clone()));
+            dbg!(ast::Statement::cast(child.clone()));
+        }
         //TODO This clone is unnecessary if we had a cast that returned the passed in node
         // on a failure like std::any::Any (SyntaxNode -> Result<Item, Syntaxnode>)
         if let NodeOrToken::Node(child) = child
-            && let Some(stmt) = ast::Statement::cast(child.clone())
+            && let Some(statement) = ast::Statement::cast(child.clone())
         {
-            gen_statement(&stmt)
+            gen_statement(&statement)
         } else if let NodeOrToken::Token(child) = child
             && matches!(
                 child.kind(),
@@ -51,7 +61,11 @@ pub fn gen_compound_statement(
             // but this way is just as fine
             Ok(PrintItemBuffer::new())
         } else {
-            Err(FormatDocumentErrorKind::UnexpectedModuleNode.at(child.text_range(), err_src!()))
+            todo!();
+            Err(FormatDocumentErrorKind::UnexpectedToken {
+                received: child.clone(),
+            }
+            .at(child.text_range(), err_src!()))
         }
     })?;
 
@@ -97,7 +111,9 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
         ast::Statement::VariableDeclaration(variable_declaration) => {
             todo_verbatim(variable_declaration.syntax())
         },
-        ast::Statement::LetDeclaration(let_declaration) => todo_verbatim(let_declaration.syntax()),
+        ast::Statement::LetDeclaration(let_declaration) => {
+            gen_let_declaration_statement(let_declaration)
+        },
         ast::Statement::ConstantDeclaration(constant_declaration) => {
             todo_verbatim(constant_declaration.syntax())
         },
@@ -110,14 +126,100 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
         ast::Statement::IncrementDecrementStatement(increment_decrement_statement) => {
             todo_verbatim(increment_decrement_statement.syntax())
         },
-        ast::Statement::Break(break_statement) => todo_verbatim(break_statement.syntax()),
-        ast::Statement::Continue(continue_statement) => todo_verbatim(continue_statement.syntax()),
-        ast::Statement::Discard(discard) => todo_verbatim(discard.syntax()),
         ast::Statement::ReturnStatement(return_statement) => {
             todo_verbatim(return_statement.syntax())
         },
         ast::Statement::ContinuingStatement(continuing_statement) => {
             todo_verbatim(continuing_statement.syntax())
         },
+
+        // == Keywords ==
+        ast::Statement::BreakStatement(break_statement) => {
+            // ==== Parse ====
+            // We still parse through the discard syntax even tho there is no information for
+            // the formatter to get out of it. This exists to ensure we don't accidentally delete
+            // user's code should future changes to wgsl allow more complex break statements.
+            let mut syntax = put_back(break_statement.syntax().children_with_tokens());
+            parse_token(&mut syntax, SyntaxKind::Break)?;
+            parse_end(&mut syntax);
+
+            // ==== Format ====
+            let mut formatted = PrintItemBuffer::new();
+            formatted.push_sc(sc!("break;"));
+            formatted.request_line_break();
+            Ok(formatted)
+        },
+        ast::Statement::ContinueStatement(continue_statement) => {
+            // ==== Parse ====
+            // We still parse through the discard syntax even tho there is no information for
+            // the formatter to get out of it. This exists to ensure we don't accidentally delete
+            // user's code should future changes to wgsl allow more complex continue statements.
+            let mut syntax = put_back(continue_statement.syntax().children_with_tokens());
+            parse_token(&mut syntax, SyntaxKind::Continue)?;
+            parse_end(&mut syntax);
+
+            // ==== Format ====
+            let mut formatted = PrintItemBuffer::new();
+            formatted.push_sc(sc!("continue;"));
+            formatted.request_line_break();
+            Ok(formatted)
+        },
+        ast::Statement::DiscardStatement(discard) => {
+            // ==== Parse ====
+            // We still parse through the discard syntax even tho there is no information for
+            // the formatter to get out of it. This exists to ensure we don't accidentally delete
+            // user's code should future changes to wgsl allow more complex discard statements.
+            let mut syntax = put_back(discard.syntax().children_with_tokens());
+            parse_token(&mut syntax, SyntaxKind::Discard)?;
+            parse_end(&mut syntax);
+
+            // ==== Format ====
+            let mut formatted = PrintItemBuffer::new();
+            formatted.push_sc(sc!("discard;"));
+            formatted.request_line_break();
+            Ok(formatted)
+        },
     }
+}
+
+fn gen_let_declaration_statement(
+    statement: &ast::LetDeclaration
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    parse_token(&mut syntax, SyntaxKind::Let)?;
+    let item_comments_after_let = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_name = parse_node::<ast::Name>(&mut syntax)?;
+    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::Equal)?;
+    let item_comments_after_equal = parse_many_comments_and_blankspace(&mut syntax)?;
+
+    let value = parse_node::<ast::Expression>(&mut syntax)?;
+    let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
+
+    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
+    parse_end(&mut syntax);
+
+    let mut pi = PrintItems::new();
+    pi.push_info(ColumnNumber::new("start_expr"));
+
+    let mut formatted = PrintItemBuffer::new();
+    // There are no circumstances where a let statement would not be the first item on a line.
+    formatted.request_line_break();
+    formatted.push_sc(sc!("let"));
+    formatted.push_signal(Signal::StartIndent);
+    formatted.request_single_space();
+    formatted.extend(gen_comments(item_comments_after_let));
+    formatted.push_string(item_name.text().to_string());
+    formatted.extend(gen_comments(item_comments_after_name));
+    formatted.request_single_space();
+    formatted.push_sc(sc!("="));
+    formatted.request_single_space();
+    formatted.extend(gen_comments(item_comments_after_equal));
+    formatted.extend(gen_expression(&value)?);
+    formatted.extend(gen_comments(item_comments_after_value));
+    formatted.push_sc(sc!(";"));
+    formatted.push_signal(Signal::FinishIndent);
+
+    Ok(formatted)
 }

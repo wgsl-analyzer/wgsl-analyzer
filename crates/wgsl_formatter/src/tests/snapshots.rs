@@ -6,9 +6,11 @@ use crate::test_util::{check, check_tabs};
 mod comments;
 mod fn_body;
 mod fn_signature;
+mod let_and_var_declarations;
 mod struct_def;
 
 //TODO Remove this comment == MODULES THAT STILL CONTAIN FAILING TESTS ==
+//mod discard_statement;
 //mod bevy_reference;
 //mod bindings;
 //mod code_indentation;
