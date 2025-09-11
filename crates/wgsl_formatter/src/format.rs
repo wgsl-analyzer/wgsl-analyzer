@@ -9,6 +9,7 @@ mod print_item_buffer;
 mod gen_attributes;
 mod gen_comments;
 mod gen_function;
+mod gen_statement;
 mod gen_struct;
 mod gen_types;
 mod reporting;
@@ -113,10 +114,12 @@ fn gen_item(node: &ast::Item) -> FormatDocumentResult<PrintItemBuffer> {
 }
 
 fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_spaced_lines(node.syntax(), |child| {
+    let mut formatted = PrintItemBuffer::new();
+    formatted.request(SeparationRequest::discouraged());
+
+    let lines = gen_spaced_lines(node.syntax(), |child| {
         //TODO This clone is unnecessary if we had a cast that returned the passed in node
         // on a failure like std::any::Any (SyntaxNode -> Result<Item, Syntaxnode>)
-
         if let NodeOrToken::Node(child) = child
             && let Some(item) = ast::Item::cast(child.clone())
         {
@@ -129,5 +132,15 @@ fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuff
         } else {
             Err(FormatDocumentErrorKind::UnexpectedModuleNode.at(child.text_range(), err_src!()))
         }
-    })
+    })?;
+
+    formatted.extend(lines);
+    //There should be a newline, but no empty line at the end of the file
+    formatted.request(SeparationRequest {
+        empty_line: SeparationPolicy::Discouraged,
+        line_break: SeparationPolicy::Expected,
+        ..Default::default()
+    });
+
+    Ok(formatted)
 }
