@@ -8,6 +8,7 @@ mod print_item_buffer;
 
 mod gen_attributes;
 mod gen_comments;
+pub mod gen_expression;
 mod gen_function;
 mod gen_statement;
 mod gen_struct;
@@ -118,20 +119,31 @@ fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuff
     formatted.request(SeparationRequest::discouraged());
 
     let lines = gen_spaced_lines(node.syntax(), |child| {
+        let mut formatted = PrintItemBuffer::new();
+
         //TODO This clone is unnecessary if we had a cast that returned the passed in node
         // on a failure like std::any::Any (SyntaxNode -> Result<Item, Syntaxnode>)
         if let NodeOrToken::Node(child) = child
             && let Some(item) = ast::Item::cast(child.clone())
         {
-            gen_item(&item)
+            formatted.extend(gen_item(&item)?);
         } else if let NodeOrToken::Token(child) = child
             && (child.kind() == SyntaxKind::BlockComment
                 || child.kind() == SyntaxKind::LineEndingComment)
         {
-            Ok(gen_comment(child))
+            formatted.extend(gen_comment(child));
         } else {
-            Err(FormatDocumentErrorKind::UnexpectedModuleNode.at(child.text_range(), err_src!()))
+            return Err(
+                FormatDocumentErrorKind::UnexpectedModuleNode.at(child.text_range(), err_src!())
+            );
         }
+
+        // In a source file there will be a newline after *every* item.
+        formatted.request(SeparationRequest {
+            line_break: SeparationPolicy::Expected,
+            ..Default::default()
+        });
+        Ok(formatted)
     })?;
 
     formatted.extend(lines);

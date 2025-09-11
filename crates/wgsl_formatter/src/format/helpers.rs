@@ -50,7 +50,13 @@ where
                 .chars()
                 .filter(|item| *item == '\n')
                 .count();
-            if newlines >= 2 {
+            if newlines == 1 {
+                //There was a newline in the source
+                result.request(SeparationRequest {
+                    line_break: SeparationPolicy::Expected,
+                    ..Default::default()
+                });
+            } else if newlines >= 2 {
                 //There was an empty line in the source
                 result.request(SeparationRequest {
                     empty_line: SeparationPolicy::Expected,
@@ -59,10 +65,6 @@ where
             }
         } else {
             result.extend(pretty_item(&child)?);
-            result.request(SeparationRequest {
-                line_break: SeparationPolicy::Expected,
-                ..Default::default()
-            });
         }
     }
 
@@ -79,8 +81,19 @@ pub fn into_items(sc: &'static StringContainer) -> PrintItemBuffer {
 /// In cases where the formatter is not yet complete we simply output source verbatim.
 #[deprecated]
 pub fn todo_verbatim(source: &parser::SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
+    let str = source.to_string();
     let mut items = PrintItemBuffer::default();
-    items.push_string(source.to_string());
+
+    for line in source.to_string().split_inclusive('\n') {
+        if line.ends_with('\n') {
+            items.push_string(line[0..(line.len() - 1)].to_owned());
+            items.request(SeparationRequest {
+                line_break: SeparationPolicy::Forced,
+                ..Default::default()
+            });
+        }
+        items.push_string(line.to_owned());
+    }
     Ok(items)
 }
 
