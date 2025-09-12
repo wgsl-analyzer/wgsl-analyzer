@@ -59,7 +59,8 @@ edition = { path = "./crates/edition", version = "0.0.0" }
 # rust-analyzer crates
 vfs-notify = { git = "https://github.com/rust-lang/rust-analyzer", rev = "a31e10a2fdc585e9d7ea0857cacfd322dd478070", version = "0.0.0" }
 vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "a31e10a2fdc585e9d7ea0857cacfd322dd478070", version = "0.0.0" }
-paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "a31e10a2fdc585e9d7ea0857cacfd322dd478070", version = "0.0.0" }
+paths = { path = "../rust-analyzer/crates/paths" }
+# paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "a31e10a2fdc585e9d7ea0857cacfd322dd478070", version = "0.0.0" }
 query-group = { package = "query-group-macro", git = "https://github.com/rust-lang/rust-analyzer", rev = "a31e10a2fdc585e9d7ea0857cacfd322dd478070", version = "0.0.0" }
 
 # We need to freeze the version of the crate because the raw-api feature is considered unstable

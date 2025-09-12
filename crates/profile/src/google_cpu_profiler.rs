@@ -3,9 +3,10 @@
 use std::{
     ffi::CString,
     os::raw::c_char,
-    path::Path,
     sync::atomic::{AtomicUsize, Ordering},
 };
+
+use paths::AbsPath;
 
 #[link(name = "profiler")]
 unsafe extern "C" {
@@ -28,9 +29,9 @@ fn transition(
         .is_ok()
 }
 
-pub(crate) fn start(path: &Path) {
+pub(crate) fn start(path: &AbsPath) {
     assert!(transition(OFF, PENDING), "profiler already started");
-    let path = CString::new(path.display().to_string()).unwrap();
+    let path = CString::new(path.to_string()).unwrap();
     // SAFETY: TODO
     let code = unsafe { ProfilerStart(path.as_ptr()) } != 0;
     assert!(code, "profiler failed to start");

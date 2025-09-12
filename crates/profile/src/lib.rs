@@ -1,4 +1,6 @@
-//! A collection of tools for profiling rust-analyzer.
+//! A collection of tools for profiling wgsl-analyzer.
+
+// #![expect(clippy::disallowed_types, reason = "Not important for this crate")]
 
 #[cfg(feature = "cpu_profiler")]
 mod google_cpu_profiler;
@@ -51,11 +53,18 @@ pub struct CpuSpan {
     _private: (),
 }
 
+/// # Panics
+///
+/// This function may panic if getting the current directory fails.
 #[must_use]
 pub fn cpu_span() -> CpuSpan {
     #[cfg(feature = "cpu_profiler")]
     {
-        google_cpu_profiler::start("./out.profile".as_ref());
+        use paths::{AbsPath, AbsPathBuf};
+        use std::path;
+
+        let absolute_path = path::absolute("./out.profile").unwrap();
+        google_cpu_profiler::start(&AbsPathBuf::assert_utf8(absolute_path));
     }
 
     #[cfg(not(feature = "cpu_profiler"))]

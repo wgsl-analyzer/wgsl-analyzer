@@ -1,14 +1,8 @@
-//! Discovery of `cargo` & `rustc` executables.
+//! Discovery of `wesl` and other executables.
 
-use std::{
-    env,
-    ffi::OsStr,
-    iter,
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::{env, ffi::OsStr, iter, path, process::Command, str::FromStr};
 
-use camino::{Utf8Path, Utf8PathBuf};
+use paths::{AbsPath, AbsPathBuf};
 
 #[derive(Copy, Clone)]
 pub enum Tool {
@@ -20,7 +14,7 @@ pub enum Tool {
 
 impl Tool {
     #[must_use]
-    pub fn proxy(self) -> Option<Utf8PathBuf> {
+    pub fn proxy(self) -> Option<AbsPathBuf> {
         cargo_proxy(self.name())
     }
 
@@ -38,7 +32,7 @@ impl Tool {
     ///    first that exists
     /// 4) If all else fails, we just try to use the executable name directly
     #[must_use]
-    pub fn prefer_proxy(self) -> Utf8PathBuf {
+    pub fn prefer_proxy(self) -> AbsPathBuf {
         invoke(
             &[cargo_proxy, lookup_as_env_var, lookup_in_path],
             self.name(),
@@ -59,19 +53,11 @@ impl Tool {
     ///    It seems that this is a reasonable place to try for cargo, rustc, and rustup
     /// 4) If all else fails, we just try to use the executable name directly
     #[must_use]
-    pub fn path(self) -> Utf8PathBuf {
+    pub fn path(self) -> AbsPathBuf {
         invoke(
             &[lookup_as_env_var, lookup_in_path, cargo_proxy],
             self.name(),
         )
-    }
-
-    #[must_use]
-    pub fn path_in(
-        self,
-        path: &Utf8Path,
-    ) -> Option<Utf8PathBuf> {
-        probe_for_binary(path.join(self.name()))
     }
 
     #[must_use]
@@ -90,77 +76,77 @@ impl Tool {
     clippy::disallowed_types,
     reason = "generic parameter allows for FxHashMap"
 )]
-pub fn command<Hashy, OsStringy: AsRef<OsStr>, Pathy: AsRef<Path>>(
-    cmd: OsStringy,
+pub fn command<Hashy, OsStringy: AsRef<OsStr>, Pathy: AsRef<AbsPath>>(
+    command: OsStringy,
     working_directory: Pathy,
     extra_env: &std::collections::HashMap<String, Option<String>, Hashy>,
 ) -> Command {
     #[expect(clippy::disallowed_methods, reason = "we are `toolchain::command`")]
-    let mut cmd = Command::new(cmd);
-    cmd.current_dir(working_directory);
+    let mut command = Command::new(command);
+    command.current_dir(working_directory.as_ref());
     for env in extra_env {
         match env {
-            (key, Some(val)) => cmd.env(key, val),
-            (key, None) => cmd.env_remove(key),
+            (key, Some(val)) => command.env(key, val),
+            (key, None) => command.env_remove(key),
         };
     }
-    cmd
+    command
 }
 
 fn invoke(
-    list: &[fn(&str) -> Option<Utf8PathBuf>],
+    list: &[fn(&str) -> Option<AbsPathBuf>],
     executable: &str,
-) -> Utf8PathBuf {
+) -> AbsPathBuf {
     list.iter()
         .find_map(|getter| getter(executable))
-        .unwrap_or_else(|| executable.into())
+        .unwrap_or_else(|| AbsPathBuf::make_absolute(&executable).unwrap())
 }
 
 /// Looks up the binary as its SCREAMING upper case in the env variables.
-fn lookup_as_env_var(executable_name: &str) -> Option<Utf8PathBuf> {
-    env::var_os(executable_name.to_ascii_uppercase())
-        .map(PathBuf::from)
-        .map(Utf8PathBuf::try_from)
-        .and_then(Result::ok)
+fn lookup_as_env_var(executable_name: &str) -> Option<AbsPathBuf> {
+    if let Some(os_string) = env::var_os(executable_name.to_ascii_uppercase())
+        && let Ok(absolute) = std::path::absolute(os_string)
+    {
+        Some(AbsPathBuf::assert_utf8(absolute))
+    } else {
+        None
+    }
 }
 
 /// Looks up the binary in the cargo home directory if it exists.
-fn cargo_proxy(executable_name: &str) -> Option<Utf8PathBuf> {
+fn cargo_proxy(executable_name: &str) -> Option<AbsPathBuf> {
     let mut path = get_cargo_home()?;
     path.push("bin");
     path.push(executable_name);
     probe_for_binary(path)
 }
 
-fn get_cargo_home() -> Option<Utf8PathBuf> {
+fn get_cargo_home() -> Option<AbsPathBuf> {
     if let Some(path) = env::var_os("CARGO_HOME") {
-        return Utf8PathBuf::try_from(PathBuf::from(path)).ok();
+        return AbsPathBuf::make_absolute(&path).ok();
     }
-
     if let Some(mut path) = home::home_dir() {
         path.push(".cargo");
-        return Utf8PathBuf::try_from(path).ok();
+        return AbsPathBuf::make_absolute(&path).ok();
     }
-
     None
 }
 
-fn lookup_in_path(exec: &str) -> Option<Utf8PathBuf> {
+fn lookup_in_path(executable_name: &str) -> Option<AbsPathBuf> {
     let paths = env::var_os("PATH").unwrap_or_default();
     env::split_paths(&paths)
-        .map(|path| path.join(exec))
-        .map(Utf8PathBuf::try_from)
-        .filter_map(Result::ok)
+        .map(|path| AbsPathBuf::make_absolute(&path).unwrap())
+        .map(|path| path.join(executable_name))
         .find_map(probe_for_binary)
 }
 
 #[must_use]
-pub fn probe_for_binary(path: Utf8PathBuf) -> Option<Utf8PathBuf> {
+pub fn probe_for_binary(path: AbsPathBuf) -> Option<AbsPathBuf> {
     let with_extension = match env::consts::EXE_EXTENSION {
         "" => None,
         extension => Some(path.with_extension(extension)),
     };
     iter::once(path)
         .chain(with_extension)
-        .find(|path| path.is_file())
+        .find(paths::AbsPathBuf::is_file)
 }

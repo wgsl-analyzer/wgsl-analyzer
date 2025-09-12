@@ -618,6 +618,7 @@ dependencies = [
  "hir-def",
  "itertools",
  "la-arena",
+ "paths 0.0.0",
  "rustc-hash 2.1.1",
  "salsa",
  "smallvec",
@@ -1375,6 +1376,13 @@ checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 [[package]]
 name = "paths"
 version = "0.0.0"
+dependencies = [
+ "camino",
+]
+
+[[package]]
+name = "paths"
+version = "0.0.0"
 source = "git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070#a31e10a2fdc585e9d7ea0857cacfd322dd478070"
 dependencies = [
  "camino",
@@ -1483,6 +1491,7 @@ version = "0.0.0"
 dependencies = [
  "cfg-if",
  "libc",
+ "paths 0.0.0",
  "perf-event",
  "tikv-jemalloc-ctl",
  "windows-sys 0.61.0",
@@ -2032,7 +2041,7 @@ name = "test-utils"
 version = "0.0.0"
 dependencies = [
  "dissimilar",
- "paths",
+ "paths 0.0.0",
  "profile",
  "rustc-hash 2.1.1",
  "stdx 0.0.0",
@@ -2214,6 +2223,7 @@ version = "0.0.0"
 dependencies = [
  "camino",
  "home",
+ "paths 0.0.0",
 ]
 
 [[package]]
@@ -2359,26 +2369,10 @@ dependencies = [
  "fst",
  "indexmap 2.11.1",
  "nohash-hasher",
- "paths",
+ "paths 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070)",
  "rustc-hash 2.1.1",
  "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070)",
  "tracing",
-]
-
-[[package]]
-name = "vfs-notify"
-version = "0.0.0"
-dependencies = [
- "camino",
- "crossbeam-channel",
- "notify",
- "paths",
- "rayon",
- "rustc-hash 2.1.1",
- "stdx 0.0.0",
- "tracing",
- "vfs",
- "walkdir",
 ]
 
 [[package]]
@@ -2388,7 +2382,7 @@ source = "git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7e
 dependencies = [
  "crossbeam-channel",
  "notify",
- "paths",
+ "paths 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070)",
  "rayon",
  "rustc-hash 2.1.1",
  "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070)",
@@ -2458,7 +2452,7 @@ dependencies = [
  "oorandom",
  "parking_lot 0.12.4",
  "parser",
- "paths",
+ "paths 0.0.0",
  "rayon",
  "rustc-hash 2.1.1",
  "salsa",
@@ -2474,7 +2468,7 @@ dependencies = [
  "tracing-tree",
  "triomphe",
  "vfs",
- "vfs-notify 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070)",
+ "vfs-notify",
  "walkdir",
  "windows-sys 0.61.0",
  "xflags",
