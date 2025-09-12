@@ -52,8 +52,8 @@ impl<'database> Ctx<'database> {
         let item = match item {
             Item::Function(function) => ModuleItem::Function(self.lower_function(&function)?),
             Item::StructDeclaration(r#struct) => ModuleItem::Struct(self.lower_struct(&r#struct)?),
-            Item::GlobalVariableDeclaration(var) => {
-                ModuleItem::GlobalVariable(self.lower_global_var(&var)?)
+            Item::GlobalVariableDeclaration(variable) => {
+                ModuleItem::GlobalVariable(self.lower_global_var(&variable)?)
             },
             Item::GlobalConstantDeclaration(constant) => {
                 ModuleItem::GlobalConstant(self.lower_global_constant(&constant)?)
@@ -173,33 +173,33 @@ impl<'database> Ctx<'database> {
 
     fn lower_global_var(
         &mut self,
-        var: &syntax::ast::GlobalVariableDeclaration,
+        variable: &syntax::ast::GlobalVariableDeclaration,
     ) -> Option<ModuleItemId<GlobalVariable>> {
-        let name = var.binding()?.name()?.text().into();
-        let ast_id = self.source_ast_id_map.ast_id(var);
+        let name = variable.binding()?.name()?.text().into();
+        let ast_id = self.source_ast_id_map.ast_id(variable);
 
-        let r#type = var
+        let r#type = variable
             .ty()
             .and_then(|type_declaration| self.lower_type_ref(type_declaration))
             .map(|r#type| self.database.intern_type_ref(r#type));
 
-        let address_space = var
+        let address_space = variable
             .variable_qualifier()
             .and_then(syntax::ast::VariableQualifier::address_space)
             .map(Into::into);
-        let access_mode = var
+        let access_mode = variable
             .variable_qualifier()
             .and_then(|qualifier| qualifier.access_mode())
             .map(Into::into);
 
-        let var = GlobalVariable {
+        let variable = GlobalVariable {
             name,
             r#type,
             ast_id,
             address_space,
             access_mode,
         };
-        Some(self.module_data.global_variables.alloc(var).into())
+        Some(self.module_data.global_variables.alloc(variable).into())
     }
 
     fn lower_struct(
