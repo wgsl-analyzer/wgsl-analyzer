@@ -29,26 +29,24 @@ Discussion happens in this Discord server:
 
 <https://github.com/wgsl-analyzer/wgsl-analyzer/labels>
 
-- [A-Analyzer]: Affects the wgsl-analyzer crate
-- [A-Base-DB]: Affects the base_db crate
 - [A-Build-System]: CI stuff
-- [A-Completion]: Affects the ide_completion crate
 - [A-Cross-Cutting]: Affects many crates
+- [A-Editor]: Affects the front-end extension/plugin
 - [A-Formatter]: Affects the wgsl-formatter crate
-- [A-HIR]: Affects the hir or hir_def crate
-- [A-IDE]: Affects the ide crate
-- [A-Meta]: Affects non-code files such as documentation
+- [A-Language-Server]: Affects the wgsl-analyzer crate
+- [A-Meta]: Is about the repository itself
+- [A-Parsing]: Affects the crates related to parsing
 - [A-wgslfmt]: Affects the wgslfmt crate
-- [C-Bug]: Something isn't working
+- [C-Bug]: Something is not working like it should
+- [C-Chore]: A basic task that falls outside of other categories
 - [C-Dependencies]: Bump and migrate a dependency
 - [C-Documentation]: Improvements or additions to documentation
-- [C-Enhancement]: Improvement over an existing feature
-- [C-Feature]: New feature or request
+- [C-Feature]: New feature or request or an improvement to an existing feature
 - [D-Complex]: Large implications, lots of changes, much thought
 - [D-Modest]: "Normal" difficulty of solving
 - [D-Straightforward]: Relatively easy to solve
 - [D-Trivial]: Good for newcomers
-- [S-Adopt-Me]: Extra attention is needed
+- [S-Adopt-Me]: Attention from another contributor is needed
 - [S-Blocked]: Blocked on something else happening
 - [S-Duplicate]: This issue or pull request already exists
 - [S-Needs-Design]: The way this should be done is not yet clear
@@ -57,7 +55,8 @@ Discussion happens in this Discord server:
 - [S-Ready-to-Implement]: This issue is actionable and a solution can be proposed
 - [S-Ready-to-Review]: This change is in a good state and needs someone (anyone!) to review it
 - [S-Waiting-on-Author]: A change or a response from the author is needed
-- [S-Won't-Fix]: This will not be worked on
+- [S-Will-Not-Fix]: This will not be worked on
+- [Z-*] Relates to a piece of functionality that is deprecated/planned to be removed
 
 ## Code Style & Review Process
 
@@ -73,7 +72,7 @@ If `cargo test` passes locally, that is a good sign that CI will be green as wel
 The only exception is that some long-running tests are skipped locally by default.
 Use `env RUN_SLOW_TESTS=1 cargo test` to run the full suite.
 
-We use bors to enforce the [not rocket science](https://graydon2.dreamwidth.org/1597.html) rule.
+We use required CI checks and merge queues to abide by the [not rocket science](https://graydon2.dreamwidth.org/1597.html) rule.
 
 ### Launching wgsl-analyzer
 
