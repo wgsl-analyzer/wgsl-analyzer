@@ -38,10 +38,55 @@ use stdx::format_to_acc;
 use triomphe::Arc;
 use vfs::{AbsPath, AbsPathBuf, VfsPath};
 
-#[derive(Default, Clone, Debug, Deserialize)]
-pub struct TraceConfig {
-    pub extension: bool,
-    pub server: bool,
+// Defines the server-side configuration of the rust-analyzer. We generate *parts* of VS Code's
+// `package.json` config from this. Run `cargo test` to re-generate that file.
+//
+// However, editor specific config, which the server doesn't know about, should be specified
+// directly in `package.json`.
+//
+// To deprecate an option by replacing it with another name use `new_name` | `old_name` so that we
+// keep parsing the old name.
+config_data! {
+    /// Configs that apply on a workspace-wide scope.
+    /// e.g. Client's own configurations (e.g `settings.json` on VS Code)
+    ///
+    /// A config is searched for by traversing a "config tree" in a bottom up fashion. It is chosen
+    /// by the nearest first principle.
+    global: struct GlobalDefaultConfigData <- GlobalConfigInput -> {
+        // --- tracing ---
+        /// `wgsl-analyzer.trace.extension`
+        trace_extension: bool = false,
+        /// `wgsl-analyzer.trace.server`
+        trace_server: TraceServer = TraceServer::Off,
+
+        // --- inlay hints (`wgsl-analyzer.inlayHints.*`) ---
+        inlayHints_enabled: bool = true,
+        inlayHints_renderColons: bool = true,
+        inlayHints_typeHints: bool = true,
+        inlayHints_parameterHints: bool = true,
+        inlayHints_structLayoutHints: bool = false,
+        /// "full" | "compact" | "inner"
+        inlayHints_typeVerbosity: InlayHintsTypeVerbosity = InlayHintsTypeVerbosity::default(),
+
+        // --- diagnostics (`wgsl-analyzer.diagnostics.*`) ---
+        diagnostics_typeErrors: bool = true,
+        diagnostics_nagaParsingErrors: bool = true,
+        diagnostics_nagaValidationErrors: bool = true,
+        diagnostics_nagaVersion: NagaVersion = NagaVersion::NagaMain,
+
+        // --- misc top-level ---
+        /// `wgsl-analyzer.customImports` (client uses camelCase)
+        customImports | custom_imports: FxHashMap<String, String> = FxHashMap::default(),
+
+        // --- preprocessor (`wgsl-analyzer.preprocessor.shaderDefs`) ---
+        preprocessor_shaderDefs | shader_defs: FxHashSet<String> = FxHashSet::default(),
+
+        // --- threads ---
+        /// `wgsl-analyzer.cachePriming.numThreads`
+        cachePriming_numThreads: NumThreads = NumThreads::Physical,
+        /// `wgsl-analyzer.numThreads`
+        numThreads: Option<NumThreads> = None,
+    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize)]
@@ -54,6 +99,16 @@ pub enum InlayHintsTypeVerbosity {
     Inner, // f32
 }
 
+#[derive(Clone, Copy, Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+#[derive(Default)]
+pub enum TraceServer {
+    #[default]
+    Off,
+    Messages,
+    Verbose
+}
+
 #[derive(Clone, Debug)]
 struct ClientInfo {
     name: String,
@@ -62,7 +117,6 @@ struct ClientInfo {
 
 #[derive(Clone, Debug)]
 pub struct Config {
-    data: ConfigData,
     /// The workspace roots as registered by the LSP client
     workspace_roots: Vec<AbsPathBuf>,
     capabilities: ClientCapabilities,
@@ -71,13 +125,13 @@ pub struct Config {
     client_info: Option<ClientInfo>,
     diagnostics_enable: bool,
 
-    // default_config: &'static DefaultConfigData,
-    // /// Config node that obtains its initial value during the server initialization and
-    // /// by receiving a `lsp_types::notification::DidChangeConfiguration`.
-    // client_config: (FullConfigInput, ConfigErrors),
+    default_config: &'static DefaultConfigData,
+    /// Config node that obtains its initial value during the server initialization and
+    /// by receiving a `lsp_types::notification::DidChangeConfiguration`.
+    client_config: (FullConfigInput, ConfigErrors),
 
-    // /// Config node whose values apply to **every** Rust project.
-    // user_config: Option<(GlobalWorkspaceLocalConfigInput, ConfigErrors)>,
+    /// Config node whose values apply to **every** Rust project.
+    user_config: Option<(GlobalWorkspaceLocalConfigInput, ConfigErrors)>,
 
     // /// Clone of the value that is stored inside a `GlobalState`.
     // source_root_parent_map: Arc<FxHashMap<SourceRootId, SourceRootId>>,
@@ -94,11 +148,6 @@ pub struct Config {
 }
 
 impl Config {
-    #[must_use]
-    pub const fn data(&self) -> &ConfigData {
-        &self.data
-    }
-
     #[must_use]
     #[expect(
         clippy::unused_self,
@@ -139,7 +188,6 @@ pub struct DiscoverWorkspaceConfig {
 pub struct ConfigData {
     pub custom_imports: FxHashMap<String, String>,
     pub shader_defs: FxHashSet<String>,
-    pub trace: TraceConfig,
     pub inlay_hints: InlayHintsConfig,
     pub diagnostics: DiagnosticsConfig,
 
@@ -183,9 +231,6 @@ pub struct InlayFieldsToResolve {
     pub resolve_label_command: bool,
 }
 
-#[derive(Debug)]
-pub enum ConfigErrorInner {}
-
 #[derive(Clone, Debug, Default)]
 pub struct ConfigErrors(Vec<Arc<ConfigErrorInner>>);
 
@@ -207,17 +252,20 @@ impl fmt::Display for ConfigErrors {
             .0
             .iter()
             .format_with("\n", |inner, formatter| match &**inner {
-                // ConfigErrorInner::Json { config_key: key, error: e } => {
-                //     formatter(key)?;
-                //     formatter(&": ")?;
-                //     formatter(e)
-                // }
+                ConfigErrorInner::Json {
+                    config_key: key,
+                    error: e,
+                } => {
+                    formatter(key)?;
+                    formatter(&": ")?;
+                    formatter(e)
+                },
                 // ConfigErrorInner::Toml { config_key: key, error: e } => {
                 //     formatter(key)?;
                 //     formatter(&": ")?;
                 //     formatter(e)
                 // }
-                // ConfigErrorInner::ParseError { reason } => formatter(reason),
+                ConfigErrorInner::ParseError { reason } => formatter(reason),
                 _ => formatter(&""),
             });
         write!(
@@ -238,18 +286,9 @@ impl Config {
         workspace_roots: Vec<AbsPathBuf>,
         client_info: Option<lsp_types::ClientInfo>,
     ) -> Self {
-        // static DEFAULT_CONFIG_DATA: OnceLock<&'static DefaultConfigData> = OnceLock::new();
+        static DEFAULT_CONFIG_DATA: OnceLock<&'static DefaultConfigData> = OnceLock::new();
 
         Self {
-            data: ConfigData {
-                custom_imports: FxHashMap::default(),
-                shader_defs: FxHashSet::default(),
-                trace: TraceConfig::default(),
-                inlay_hints: InlayHintsConfig::default(),
-                diagnostics: DiagnosticsConfig::default(),
-                cache_priming_num_threads: NumThreads::Physical,
-                num_threads: None,
-            },
             workspace_roots,
             // discovered_projects_from_filesystem: Vec::new(),
             // discovered_projects_from_command: Vec::new(),
@@ -265,10 +304,10 @@ impl Config {
                     .and_then(Result::ok),
             }),
             diagnostics_enable: true,
-            // client_config: (FullConfigInput::default(), ConfigErrors(vec![])),
-            // default_config: DEFAULT_CONFIG_DATA.get_or_init(|| Box::leak(Box::default())),
+            client_config: (FullConfigInput::default(), ConfigErrors(vec![])),
+            default_config: DEFAULT_CONFIG_DATA.get_or_init(|| Box::leak(Box::default())),
             // source_root_parent_map: Arc::new(FxHashMap::default()),
-            // user_config: None,
+            user_config: None,
             validation_errors: ConfigErrors::default(),
             detached_files: Vec::default(),
             // watoml_file: Default::default(),
@@ -292,17 +331,79 @@ impl Config {
         // self.discovered_projects_from_filesystem = discovered;
     }
 
+    fn apply_change_with_sink(
+        &self,
+        change: ConfigChange,
+    ) -> (Config, bool) {
+        let mut config = self.clone();
+        let mut should_update = false;
+
+        if let Some(mut json) = change.client_config {
+            tracing::info!("updating WGSL config from JSON: {:#}", json);
+
+            // Empty objects or `null` mean “no changes”
+            if json.is_null() || json.as_object().is_some_and(|it| it.is_empty()) {
+                return (config, should_update);
+            }
+
+            // Parse & validate; collect per-field errors rather than failing the whole blob.
+            let mut json_errors = Vec::<(String, serde_json::Error)>::new();
+            let input = FullConfigInput::from_json(json, &mut json_errors);
+
+            // Stash parsed values and any field-level errors so `apply_change` can surface them.
+            config.client_config = (
+                input,
+                ConfigErrors(
+                    json_errors
+                        .into_iter()
+                        .map(|(config_key, error)| {
+                            Arc::new(ConfigErrorInner::Json { config_key, error })
+                        })
+                        .collect(),
+                ),
+            );
+
+            // If the client changed *anything*, let the caller rebuild derived state (hints, hovers, etc.)
+            should_update = true;
+        }
+
+        (config, should_update)
+    }
+
     /// Given `change` this generates a new `Config`, thereby collecting errors of type `ConfigError`.
     /// If there are changes that have global/client level effect, the last component of the return type
     /// will be set to `true`, which should be used by the `GlobalState` to update itself.
-    #[must_use]
     pub fn apply_change(
         &self,
-        _change: ConfigChange,
-    ) -> (Self, ConfigErrors, bool) {
-        let (config, should_update) = (self.clone(), true);
+        change: ConfigChange,
+    ) -> (Config, ConfigErrors, bool) {
+        let (config, should_update) = self.apply_change_with_sink(change);
+        let e = ConfigErrors(
+            config
+                .client_config
+                .1
+                .0
+                .iter()
+                .chain(
+                    config
+                        .user_config
+                        .as_ref()
+                        .into_iter()
+                        .flat_map(|it| it.1.0.iter()),
+                )
+                .chain(config.validation_errors.0.iter())
+                .cloned()
+                .collect(),
+        );
+        (config, e, should_update)
+    }
 
-        (config, ConfigErrors(vec![]), should_update)
+    pub fn custom_imports(&self) -> &FxHashMap<String, String> {
+        self.customImports()
+    }
+
+    pub fn preprocessor_shader_defs(&self) -> &FxHashSet<String> {
+        self.preprocessor_shaderDefs()
     }
 
     #[must_use]
@@ -317,7 +418,7 @@ impl Config {
 
     #[must_use]
     pub fn prime_caches_number_of_threads(&self) -> usize {
-        match self.data.cache_priming_num_threads {
+        match *self.cachePriming_numThreads() {
             NumThreads::Concrete(0) | NumThreads::Physical => num_cpus::get_physical(),
             NumThreads::Concrete(number) => number,
             NumThreads::Logical => num_cpus::get(),
@@ -326,7 +427,7 @@ impl Config {
 
     #[must_use]
     pub fn main_loop_number_of_threads(&self) -> usize {
-        match self.data.num_threads {
+        match *self.numThreads() {
             Some(NumThreads::Concrete(0) | NumThreads::Physical) | None => num_cpus::get_physical(),
             Some(NumThreads::Concrete(number)) => number,
             Some(NumThreads::Logical) => num_cpus::get(),
@@ -411,16 +512,14 @@ impl Config {
     pub fn inlay_hints(&self) -> inlay_hints::InlayHintsConfig {
         let client_capability_fields = self.inlay_hint_resolve_support_properties();
         inlay_hints::InlayHintsConfig {
-            render_colons: self.data.inlay_hints.render_colons,
-            enabled: self.data.inlay_hints.enabled,
-            type_hints: self.data.inlay_hints.type_hints,
-            parameter_hints: self.data.inlay_hints.parameter_hints,
+            render_colons: *self.inlayHints_renderColons(),
+            enabled: *self.inlayHints_enabled(),
+            type_hints: *self.inlayHints_typeHints(),
+            parameter_hints: *self.inlayHints_parameterHints(),
             struct_layout_hints: self
-                .data
-                .inlay_hints
-                .struct_layout_hints
+                .inlayHints_structLayoutHints()
                 .then_some(StructLayoutHints::Offset),
-            type_verbosity: match self.data.inlay_hints.type_verbosity {
+            type_verbosity: match *self.inlayHints_typeVerbosity() {
                 InlayHintsTypeVerbosity::Full => TypeVerbosity::Full,
                 InlayHintsTypeVerbosity::Compact => TypeVerbosity::Compact,
                 InlayHintsTypeVerbosity::Inner => TypeVerbosity::Inner,
@@ -434,7 +533,6 @@ impl Config {
         &mut self,
         value: serde_json::Value,
     ) -> Result<(), serde_json::Error> {
-        self.data = serde_json::from_value(value)?;
         Ok(())
     }
 
@@ -479,16 +577,16 @@ impl Config {
     }
 
     #[must_use]
-    pub const fn diagnostics(
+    pub fn diagnostics(
         &self,
         source_root: Option<SourceRootId>,
     ) -> DiagnosticsConfig {
         DiagnosticsConfig {
             enabled: true,
-            type_errors: self.data.diagnostics.type_errors,
-            naga_parsing_errors: self.data.diagnostics.naga_parsing_errors,
-            naga_validation_errors: self.data.diagnostics.naga_validation_errors,
-            naga_version: match self.data.diagnostics.naga_version {
+            type_errors: *self.diagnostics_typeErrors(),
+            naga_parsing_errors: *self.diagnostics_nagaParsingErrors(),
+            naga_validation_errors: *self.diagnostics_nagaValidationErrors(),
+            naga_version: match self.diagnostics_nagaVersion() {
                 NagaVersion::Naga14 => NagaVersion::Naga14,
                 NagaVersion::Naga19 => NagaVersion::Naga19,
                 NagaVersion::Naga22 => NagaVersion::Naga22,
@@ -634,6 +732,309 @@ impl HoverActionsConfig {
     pub const fn runnable(&self) -> bool {
         self.run || self.debug || self.update_test
     }
+}
+
+#[derive(Default, Debug, Clone)]
+struct DefaultConfigData {
+    global: GlobalDefaultConfigData,
+    // workspace: WorkspaceDefaultConfigData,
+    // local: LocalDefaultConfigData,
+    // client: ClientDefaultConfigData,
+}
+
+/// All of the config levels, all fields `Option<T>`, to describe fields that are actually set by
+/// some rust-analyzer.toml file or JSON blob. An empty rust-analyzer.toml corresponds to
+/// all fields being None.
+#[derive(Debug, Clone, Default)]
+struct FullConfigInput {
+    global: GlobalConfigInput,
+    // workspace: WorkspaceConfigInput,
+    // local: LocalConfigInput,
+    // client: ClientConfigInput,
+}
+
+impl FullConfigInput {
+    fn from_json(
+        mut json: serde_json::Value,
+        error_sink: &mut Vec<(String, serde_json::Error)>,
+    ) -> FullConfigInput {
+        FullConfigInput {
+            global: GlobalConfigInput::from_json(&mut json, error_sink),
+            // local: LocalConfigInput::from_json(&mut json, error_sink),
+            // client: ClientConfigInput::from_json(&mut json, error_sink),
+            // workspace: WorkspaceConfigInput::from_json(&mut json, error_sink),
+        }
+    }
+}
+
+/// All of the config levels, all fields `Option<T>`, to describe fields that are actually set by
+/// some rust-analyzer.toml file or JSON blob. An empty rust-analyzer.toml corresponds to
+/// all fields being None.
+#[derive(Debug, Clone, Default)]
+struct GlobalWorkspaceLocalConfigInput {
+    global: GlobalConfigInput,
+    // local: LocalConfigInput,
+    // workspace: WorkspaceConfigInput,
+}
+
+fn get_field_json<T: DeserializeOwned>(
+    json: &mut serde_json::Value,
+    error_sink: &mut Vec<(String, serde_json::Error)>,
+    field: &'static str,
+    alias: Option<&'static str>,
+) -> Option<T> {
+    // XXX: check alias first, to work around the VS Code where it pre-fills the
+    // defaults instead of sending an empty object.
+    alias
+        .into_iter()
+        .chain(iter::once(field))
+        .filter_map(move |field| {
+            let mut pointer = field.replace('_', "/");
+            pointer.insert(0, '/');
+            json.pointer_mut(&pointer)
+                .map(|it| serde_json::from_value(it.take()).map_err(|e| (e, pointer)))
+        })
+        .flat_map(|res| match res {
+            Ok(it) => Some(it),
+            Err((e, pointer)) => {
+                tracing::warn!("Failed to deserialize config field at {}: {:?}", pointer, e);
+                error_sink.push((pointer, e));
+                None
+            },
+        })
+        .next()
+}
+
+macro_rules! _default_val {
+    ($default:expr, $ty:ty) => {{
+        let default_: $ty = $default;
+        default_
+    }};
+}
+use _default_val as default_val;
+
+macro_rules! _default_str {
+    ($default:expr, $ty:ty) => {{
+        let val = default_val!($default, $ty);
+        serde_json::to_string_pretty(&val).unwrap()
+    }};
+}
+use _default_str as default_str;
+
+macro_rules! _impl_for_config_data {
+    (local, $(
+            $(#[doc=$doc:literal])*
+            $vis:vis $field:ident : $ty:ty = $default:expr,
+        )*
+    ) => {
+        impl Config {
+            $(
+                $($doc)*
+                #[allow(non_snake_case)]
+                $vis fn $field(&self, source_root: Option<SourceRootId>) -> &$ty {
+                    let mut source_root = source_root.as_ref();
+                    while let Some(sr) = source_root {
+                        if let Some((file, _)) = self.ratoml_file.get(&sr) {
+                            match file {
+                                RatomlFile::Workspace(config) => {
+                                    if let Some(v) = config.local.$field.as_ref() {
+                                        return &v;
+                                    }
+                                },
+                                RatomlFile::Crate(config) => {
+                                    if let Some(value) = config.$field.as_ref() {
+                                        return value;
+                                    }
+                                }
+                            }
+                        }
+                        source_root = self.source_root_parent_map.get(&sr);
+                    }
+
+                    if let Some(v) = self.client_config.0.local.$field.as_ref() {
+                        return &v;
+                    }
+
+                    if let Some((user_config, _)) = self.user_config.as_ref() {
+                        if let Some(v) = user_config.local.$field.as_ref() {
+                            return &v;
+                        }
+                    }
+
+                    &self.default_config.local.$field
+                }
+            )*
+        }
+    };
+    (workspace, $(
+            $(#[doc=$doc:literal])*
+            $vis:vis $field:ident : $ty:ty = $default:expr,
+        )*
+    ) => {
+        impl Config {
+            $(
+                $($doc)*
+                #[allow(non_snake_case)]
+                $vis fn $field(&self, source_root: Option<SourceRootId>) -> &$ty {
+                    let mut source_root = source_root.as_ref();
+                    while let Some(sr) = source_root {
+                        if let Some((RatomlFile::Workspace(config), _)) = self.ratoml_file.get(&sr) {
+                            if let Some(v) = config.workspace.$field.as_ref() {
+                                return &v;
+                            }
+                        }
+                        source_root = self.source_root_parent_map.get(&sr);
+                    }
+
+                    if let Some(v) = self.client_config.0.workspace.$field.as_ref() {
+                        return &v;
+                    }
+
+                    if let Some((user_config, _)) = self.user_config.as_ref() {
+                        if let Some(v) = user_config.workspace.$field.as_ref() {
+                            return &v;
+                        }
+                    }
+
+                    &self.default_config.workspace.$field
+                }
+            )*
+        }
+    };
+    (global, $(
+            $(#[doc=$doc:literal])*
+            $vis:vis $field:ident : $ty:ty = $default:expr,
+        )*
+    ) => {
+        impl Config {
+            $(
+                $($doc)*
+                #[allow(non_snake_case)]
+                $vis fn $field(&self) -> &$ty {
+                    if let Some(v) = self.client_config.0.global.$field.as_ref() {
+                        return &v;
+                    }
+
+                    if let Some((user_config, _)) = self.user_config.as_ref() {
+                        if let Some(v) = user_config.global.$field.as_ref() {
+                            return &v;
+                        }
+                    }
+
+
+                    &self.default_config.global.$field
+                }
+            )*
+        }
+    };
+    (client, $(
+            $(#[doc=$doc:literal])*
+            $vis:vis $field:ident : $ty:ty = $default:expr,
+       )*
+    ) => {
+        impl Config {
+            $(
+                $($doc)*
+                #[allow(non_snake_case)]
+                $vis fn $field(&self) -> &$ty {
+                    if let Some(v) = self.client_config.0.client.$field.as_ref() {
+                        return &v;
+                    }
+
+                    &self.default_config.client.$field
+                }
+            )*
+        }
+    };
+}
+use _impl_for_config_data as impl_for_config_data;
+
+macro_rules! _config_data {
+    // modname is for the tests
+    ($(#[doc=$dox:literal])* $modname:ident: struct $name:ident <- $input:ident -> {
+        $(
+            $(#[doc=$doc:literal])*
+            $vis:vis $field:ident $(| $alias:ident)*: $ty:ty = $default:expr,
+        )*
+    }) => {
+        /// Default config values for this grouping.
+        #[allow(non_snake_case)]
+        #[derive(Debug, Clone)]
+        struct $name { $($field: $ty,)* }
+
+        impl_for_config_data!{
+            $modname,
+            $(
+                $vis $field : $ty = $default,
+            )*
+        }
+
+        /// All fields `Option<T>`, `None` representing fields not set in a particular JSON/TOML blob.
+        #[allow(non_snake_case)]
+        #[derive(Clone, Default)]
+        struct $input { $(
+            $field: Option<$ty>,
+        )* }
+
+        impl std::fmt::Debug for $input {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                let mut s = f.debug_struct(stringify!($input));
+                $(
+                    if let Some(val) = self.$field.as_ref() {
+                        s.field(stringify!($field), val);
+                    }
+                )*
+                s.finish()
+            }
+        }
+
+        impl Default for $name {
+            fn default() -> Self {
+                $name {$(
+                    $field: default_val!($default, $ty),
+                )*}
+            }
+        }
+
+        #[allow(unused, clippy::ptr_arg)]
+        impl $input {
+            const FIELDS: &'static [&'static str] = &[$(stringify!($field)),*];
+
+            fn from_json(json: &mut serde_json::Value, error_sink: &mut Vec<(String, serde_json::Error)>) -> Self {
+                Self {$(
+                    $field: get_field_json(
+                        json,
+                        error_sink,
+                        stringify!($field),
+                        None$(.or(Some(stringify!($alias))))*,
+                    ),
+                )*}
+            }
+        }
+
+        mod $modname {
+            #[test]
+            fn fields_are_sorted() {
+                super::$input::FIELDS.windows(2).for_each(|w| assert!(w[0] <= w[1], "{} <= {} does not hold", w[0], w[1]));
+            }
+        }
+    };
+}
+use _config_data as config_data;
+
+#[derive(Debug)]
+pub enum ConfigErrorInner {
+    Json {
+        config_key: String,
+        error: serde_json::Error,
+    },
+    // Toml {
+    //     config_key: String,
+    //     error: toml::de::Error,
+    // },
+    ParseError {
+        reason: String,
+    },
 }
 
 #[cfg(test)]

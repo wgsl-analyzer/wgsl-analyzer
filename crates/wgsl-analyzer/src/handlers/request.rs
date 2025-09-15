@@ -284,26 +284,30 @@ pub(crate) fn handle_inlay_hints(
 
 pub(crate) fn publish_diagnostics(
     snap: &GlobalStateSnapshot,
-    config: &DiagnosticsConfig,
+    config: &hir::diagnostics::DiagnosticsConfig,
     file_id: FileId,
 ) -> Result<Vec<lsp_types::Diagnostic>> {
     let line_index = snap.file_line_index(file_id)?;
     let diagnostics = snap.analysis.diagnostics(config, file_id)?;
 
-    diagnostics
+    let items: Vec<lsp_types::Diagnostic> = diagnostics
         .into_iter()
         .map(|diagnostic| {
-            let related = diagnostic
+            let related: Vec<DiagnosticRelatedInformation> = diagnostic
                 .related
                 .into_iter()
-                .map(|(message, range)| {
-                    Ok(DiagnosticRelatedInformation {
-                        location: to_proto::location(snap, range)?,
-                        message,
-                    })
+                .filter_map(|(message, range)| {
+                    match to_proto::location(snap, range) {
+                        Ok(location) => Some(DiagnosticRelatedInformation { location, message }),
+                        Err(e) => {
+                            tracing::warn!("publish_diagnostics: dropping related info: {e:#}");
+                            None
+                        }
+                    }
                 })
-                .collect::<Result<Vec<_>>>()?;
-            Ok(lsp_types::Diagnostic {
+                .collect();
+
+            lsp_types::Diagnostic {
                 range: to_proto::range(&line_index, diagnostic.range),
                 severity: Some(diagnostic_severity(diagnostic.severity)),
                 code: None,
@@ -313,11 +317,12 @@ pub(crate) fn publish_diagnostics(
                 related_information: (!related.is_empty()).then_some(related),
                 tags: diagnostic.unused.then(|| vec![DiagnosticTag::UNNECESSARY]),
                 data: None,
-            })
+            }
         })
-        .collect()
-}
+        .collect();
 
+    Ok(items)
+}
 const fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSeverity {
     match severity {
         Severity::Error => lsp_types::DiagnosticSeverity::ERROR,
