@@ -47,45 +47,62 @@ use vfs::{AbsPath, AbsPathBuf, VfsPath};
 // To deprecate an option by replacing it with another name use `new_name` | `old_name` so that we
 // keep parsing the old name.
 config_data! {
-    /// Configs that apply on a workspace-wide scope.
-    /// e.g. Client's own configurations (e.g `settings.json` on VS Code)
+    /// Configs that apply on a workspace-wide scope. There are two levels at which a global
+    /// configuration can be provided:
     ///
-    /// A config is searched for by traversing a "config tree" in a bottom up fashion. It is chosen
-    /// by the nearest first principle.
+    /// 1. Client-specific settings (e.g. `settings.json` in VS Code).
+    /// 2. A user-wide configuration file in this tool's config directory.
+    ///
+    /// A config value is resolved by traversing the "config tree" from the most specific scope
+    /// upward (nearest-first principle). The first level that specifies a value wins.
     global: struct GlobalDefaultConfigData <- GlobalConfigInput -> {
-        // --- tracing ---
-        /// `wgsl-analyzer.trace.extension`
-        trace_extension: bool = false,
-        /// `wgsl-analyzer.trace.server`
-        trace_server: TraceServer = TraceServer::Off,
+        /// Number of worker threads used to warm caches when a project opens.
+        /// Use `0` to let the server choose automatically based on the machine.
+        cachePriming_numThreads: NumThreads = NumThreads::Physical,
 
-        // --- inlay hints (`wgsl-analyzer.inlayHints.*`) ---
-        inlayHints_enabled: bool = true,
-        inlayHints_renderColons: bool = true,
-        inlayHints_typeHints: bool = true,
-        inlayHints_parameterHints: bool = true,
-        inlayHints_structLayoutHints: bool = false,
-        /// "full" | "compact" | "inner"
-        inlayHints_typeVerbosity: InlayHintsTypeVerbosity = InlayHintsTypeVerbosity::default(),
-
-        // --- diagnostics (`wgsl-analyzer.diagnostics.*`) ---
-        diagnostics_typeErrors: bool = true,
-        diagnostics_nagaParsingErrors: bool = true,
-        diagnostics_nagaValidationErrors: bool = true,
-        diagnostics_nagaVersion: NagaVersion = NagaVersion::NagaMain,
-
-        // --- misc top-level ---
-        /// `wgsl-analyzer.customImports` (client uses camelCase)
+        /// Additional import aliases the server should resolve as if they were built-ins.
+        ///
+        /// Keys are the import names as they appear in source; values are their resolved targets.
         customImports | custom_imports: FxHashMap<String, String> = FxHashMap::default(),
 
-        // --- preprocessor (`wgsl-analyzer.preprocessor.shaderDefs`) ---
+        /// Report WGSL parsing errors emitted by Naga.
+        diagnostics_nagaParsingErrors: bool = true,
+        /// Report WGSL validation errors emitted by Naga.
+        diagnostics_nagaValidationErrors: bool = true,
+        /// Naga version used for parsing/validation.
+        diagnostics_nagaVersion: NagaVersion = NagaVersion::NagaMain,
+        /// Report type errors from wgsl-analyzer.
+        diagnostics_typeErrors: bool = true,
+
+        /// Master switch for inlay hints.
+        inlayHints_enabled: bool = true,
+        /// Show function parameter name hints at call sites.
+        inlayHints_parameterHints: bool = true,
+        /// Show colons
+        inlayHints_renderColons: bool = true,
+        /// Show inlay hints for struct/array layout (offsets, sizes).
+        inlayHints_structLayoutHints: bool = false,
+        /// Show inlay type hints for variables, expressions, etc.
+        inlayHints_typeHints: bool = true,
+        /// Verbosity of type hints: `"full"`, `"compact"`, or `"inner"`.
+        inlayHints_typeVerbosity: InlayHintsTypeVerbosity = InlayHintsTypeVerbosity::default(),
+
+        /// Number of worker threads for the main analysis loop.
+        /// `null` lets the server choose automatically.
+        numThreads: Option<NumThreads> = None,
+
+        /// Preprocessor shader `#define`s to apply during analysis.
+        ///
+        /// Each entry enables a conditional compilation symbol as if passed on the command line.
         preprocessor_shaderDefs | shader_defs: FxHashSet<String> = FxHashSet::default(),
 
-        // --- threads ---
-        /// `wgsl-analyzer.cachePriming.numThreads`
-        cachePriming_numThreads: NumThreads = NumThreads::Physical,
-        /// `wgsl-analyzer.numThreads`
-        numThreads: Option<NumThreads> = None,
+        // --- tracing ---
+        /// Emit extension-level trace logs to the client log.
+        trace_extension: bool = false,
+        /// Server trace verbosity.
+        ///
+        /// One of: `"off"`, `"messages"`, or `"verbose"`.
+        trace_server: TraceServer = TraceServer::Off,
     }
 }
 
