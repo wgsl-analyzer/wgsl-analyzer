@@ -284,13 +284,13 @@ pub(crate) fn handle_inlay_hints(
 
 pub(crate) fn publish_diagnostics(
     snap: &GlobalStateSnapshot,
-    config: &hir::diagnostics::DiagnosticsConfig,
+    config: &DiagnosticsConfig,
     file_id: FileId,
 ) -> Result<Vec<lsp_types::Diagnostic>> {
     let line_index = snap.file_line_index(file_id)?;
     let diagnostics = snap.analysis.diagnostics(config, file_id)?;
 
-    let items: Vec<lsp_types::Diagnostic> = diagnostics
+    let items= diagnostics
         .into_iter()
         .map(|diagnostic| {
             let related: Vec<DiagnosticRelatedInformation> = diagnostic
