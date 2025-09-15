@@ -17,7 +17,7 @@ walkdir = "2.5.0"
 crossbeam-channel = "0.5.15"
 notify = "8.2.0"
 rayon = "1.11.0"
-camino = "1.1.12"
+camino = "1.2.0"
 
 stdx.workspace = true
 vfs.workspace = true
