@@ -55,7 +55,7 @@ triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
 # toml = "0.8.8"
 nohash-hasher = "0.2.0"
 walkdir = "2.5.0"
-semver = "1.0.26"
+semver = "1.0.27"
 memchr = "2.7.5"
 cargo_metadata = "0.22.0"
 # process-wrap = { version = "8.2.0", features = ["std"] }
