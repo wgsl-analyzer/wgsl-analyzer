@@ -106,7 +106,7 @@ pub enum TraceServer {
     #[default]
     Off,
     Messages,
-    Verbose
+    Verbose,
 }
 
 #[derive(Clone, Debug)]
@@ -794,7 +794,7 @@ fn get_field_json<T: DeserializeOwned>(
             json.pointer_mut(&pointer)
                 .map(|it| serde_json::from_value(it.take()).map_err(|e| (e, pointer)))
         })
-        .flat_map(|res| match res {
+        .flat_map(|result| match result {
             Ok(it) => Some(it),
             Err((e, pointer)) => {
                 tracing::warn!("Failed to deserialize config field at {}: {:?}", pointer, e);

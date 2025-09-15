@@ -290,20 +290,18 @@ pub(crate) fn publish_diagnostics(
     let line_index = snap.file_line_index(file_id)?;
     let diagnostics = snap.analysis.diagnostics(config, file_id)?;
 
-    let items= diagnostics
+    let items = diagnostics
         .into_iter()
         .map(|diagnostic| {
             let related: Vec<DiagnosticRelatedInformation> = diagnostic
                 .related
                 .into_iter()
-                .filter_map(|(message, range)| {
-                    match to_proto::location(snap, range) {
-                        Ok(location) => Some(DiagnosticRelatedInformation { location, message }),
-                        Err(e) => {
-                            tracing::warn!("publish_diagnostics: dropping related info: {e:#}");
-                            None
-                        }
-                    }
+                .filter_map(|(message, range)| match to_proto::location(snap, range) {
+                    Ok(location) => Some(DiagnosticRelatedInformation { location, message }),
+                    Err(e) => {
+                        tracing::warn!("publish_diagnostics: dropping related info: {e:#}");
+                        None
+                    },
                 })
                 .collect();
 
