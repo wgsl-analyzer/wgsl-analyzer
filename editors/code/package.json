@@ -32,7 +32,7 @@
 		}
 	},
 	"engines": {
-		"vscode": "^1.102.0",
+		"vscode": "^1.103.0",
 		"npm": "^11.2.0"
 	},
 	"enabledApiProposals": [],
@@ -67,7 +67,7 @@
 		"@tsconfig/node22": "^22.0.2",
 		"@tsconfig/strictest": "^2.0.5",
 		"@types/node": "^24.2.1",
-		"@types/vscode": "^1.102.0",
+		"@types/vscode": "^1.103.0",
 		"@vscode/test-electron": "^2.5.2",
 		"@vscode/vsce": "^3.6.0",
 		"esbuild": "^0.25.9",
