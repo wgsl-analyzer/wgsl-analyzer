@@ -43,6 +43,7 @@
 		"ci": "npx @biomejs/biome ci",
 		"format:check": "npx @biomejs/biome format",
 		"format": "npx @biomejs/biome format --write",
+		"fix": "npx @biomejs/biome format --write && npx @biomejs/biome check --write",
 		"lint": "npx @biomejs/biome lint",
 		"package": "vsce package -o wgsl-analyzer.vsix",
 		"pretest": "npm run typecheck && npm run build",

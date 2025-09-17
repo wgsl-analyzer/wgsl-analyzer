@@ -1,4 +1,11 @@
 {
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	},
 	"files": {
 		"includes": ["**", "!**/out/**", "!**/.vscode-test/**", "!**/node_modules/**"]
 	},
