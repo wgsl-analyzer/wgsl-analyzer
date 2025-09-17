@@ -135,7 +135,7 @@ fn get_cargo_home() -> Option<AbsPathBuf> {
 fn lookup_in_path(executable_name: &str) -> Option<AbsPathBuf> {
     let paths = env::var_os("PATH").unwrap_or_default();
     env::split_paths(&paths)
-        .map(|path| AbsPathBuf::make_absolute(&path).unwrap())
+        .filter_map(|path| AbsPathBuf::make_absolute(&path).ok())
         .map(|path| path.join(executable_name))
         .find_map(probe_for_binary)
 }
