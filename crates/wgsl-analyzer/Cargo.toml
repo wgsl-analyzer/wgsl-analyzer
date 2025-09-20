@@ -31,7 +31,7 @@ lsp-types = { version = "=0.95.0", features = ["proposed"] }
 parking_lot = "0.12.4"
 xflags = "0.3.2"
 # threadpool = "1.8.1"
-salsa = "0.17.0-pre.2"
+salsa = "0.23.0"
 oorandom = "11.1.5"
 rayon = "1.11.0"
 rustc-hash = "2.1.1"
