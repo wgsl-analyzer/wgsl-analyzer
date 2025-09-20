@@ -146,7 +146,7 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
             // ==== Format ====
             let mut formatted = PrintItemBuffer::new();
             formatted.push_sc(sc!("break;"));
-            formatted.request_line_break();
+            formatted.expect_line_break();
             Ok(formatted)
         },
         ast::Statement::ContinueStatement(continue_statement) => {
@@ -161,7 +161,7 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
             // ==== Format ====
             let mut formatted = PrintItemBuffer::new();
             formatted.push_sc(sc!("continue;"));
-            formatted.request_line_break();
+            formatted.expect_line_break();
             Ok(formatted)
         },
         ast::Statement::DiscardStatement(discard) => {
@@ -176,7 +176,7 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
             // ==== Format ====
             let mut formatted = PrintItemBuffer::new();
             formatted.push_sc(sc!("discard;"));
-            formatted.request_line_break();
+            formatted.expect_line_break();
             Ok(formatted)
         },
     }
@@ -205,16 +205,16 @@ fn gen_let_declaration_statement(
 
     let mut formatted = PrintItemBuffer::new();
     // There are no circumstances where a let statement would not be the first item on a line.
-    formatted.request_line_break();
+    formatted.expect_line_break();
     formatted.push_sc(sc!("let"));
     formatted.push_signal(Signal::StartIndent);
-    formatted.request_single_space();
+    formatted.expect_single_space();
     formatted.extend(gen_comments(item_comments_after_let));
     formatted.push_string(item_name.text().to_string());
     formatted.extend(gen_comments(item_comments_after_name));
-    formatted.request_single_space();
+    formatted.expect_single_space();
     formatted.push_sc(sc!("="));
-    formatted.request_single_space();
+    formatted.expect_single_space();
     formatted.extend(gen_comments(item_comments_after_equal));
     formatted.extend(gen_expression(&value)?);
     formatted.extend(gen_comments(item_comments_after_value));

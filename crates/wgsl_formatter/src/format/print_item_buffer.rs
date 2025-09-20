@@ -9,6 +9,12 @@ pub enum SeparationPolicy {
     Forced,
     /// The separation will be present - unless it's discouraged
     Expected,
+
+    // TODO Allowed is only used for newlines, split SeparationPolicy for newlines and other types
+    /// If the layout engine wants to have a separation here in order to fulfill its constraints, it will be allowed - unless it gets discouraged elsewhere
+    ///
+    /// Mainly used to signal possible newlines
+    Allowed,
     /// No separation should appear heare - unless it gets forced
     Discouraged,
     /// No statement about wether or not there should be a separation here
@@ -32,6 +38,7 @@ impl SeparationPolicy {
         self,
         other: Self,
     ) -> Self {
+        use SeparationPolicy::Allowed;
         use SeparationPolicy::Discouraged;
         use SeparationPolicy::Expected;
         use SeparationPolicy::ExpectedIf;
@@ -48,8 +55,16 @@ impl SeparationPolicy {
             // If it is not forced, but discouraged, it stays discouraged
             (_, Discouraged) | (Discouraged, _) => Discouraged,
 
+            (Allowed, Allowed) => Allowed,
+
             // If one side says it is expected and the other says it might be expected => it is expected
-            (Expected | ExpectedIf { .. }, Expected) | (Expected, ExpectedIf { .. }) => Expected,
+            (Expected | ExpectedIf { .. }, Expected)
+            | (Expected, ExpectedIf { .. })
+            // Expected ranks higher than allowed
+            // TODO Currently hen there is an ExpectedIf (whose condition is not met) and an allowed.
+            // it will resolve to not being there, instead of being allowed there
+            | (Expected | ExpectedIf { .. }, Allowed)
+            | (Allowed, Expected | ExpectedIf { .. }) => Expected,
             (ExpectedIf { .. }, ExpectedIf { .. }) => {
                 //These would be combined using disjunctions if they are on the true path, and conjunctions on the false path
                 todo!("Implement support for disjuctions and conjunctions")
@@ -149,6 +164,9 @@ impl SeparationRequest {
                 ));
             },
             SeparationPolicy::Discouraged | SeparationPolicy::Ignored => {},
+            SeparationPolicy::Allowed => {
+                todo!("Allowed is only valid for line_breaks, separate the cases");
+            },
         }
         match self.line_break {
             SeparationPolicy::Forced | SeparationPolicy::Expected => {
@@ -169,6 +187,9 @@ impl SeparationRequest {
                         pi
                     },
                 ));
+            },
+            SeparationPolicy::Allowed => {
+                to.push_signal(Signal::PossibleNewLine);
             },
             SeparationPolicy::Discouraged | SeparationPolicy::Ignored => {},
         }
@@ -193,6 +214,9 @@ impl SeparationRequest {
                 ));
             },
             SeparationPolicy::Discouraged | SeparationPolicy::Ignored => {},
+            SeparationPolicy::Allowed => {
+                todo!("Allowed is only valid for line_breaks, separate the cases");
+            },
         }
     }
 }
@@ -305,18 +329,42 @@ impl PrintItemBuffer {
         }
     }
 
-    pub fn request_single_space(&mut self) {
+    pub fn request_space(
+        &mut self,
+        policy: SeparationPolicy,
+    ) {
         self.request(SeparationRequest {
-            space: SeparationPolicy::Expected,
+            space: policy,
             ..Default::default()
         });
     }
 
-    pub fn request_line_break(&mut self) {
+    pub fn request_line_break(
+        &mut self,
+        policy: SeparationPolicy,
+    ) {
         self.request(SeparationRequest {
-            line_break: SeparationPolicy::Expected,
+            line_break: policy,
             ..Default::default()
         });
+    }
+
+    pub fn request_empty_line(
+        &mut self,
+        policy: SeparationPolicy,
+    ) {
+        self.request(SeparationRequest {
+            empty_line: policy,
+            ..Default::default()
+        });
+    }
+
+    pub fn expect_line_break(&mut self) {
+        self.request_line_break(SeparationPolicy::Expected);
+    }
+
+    pub fn expect_single_space(&mut self) {
+        self.request_space(SeparationPolicy::Expected);
     }
 
     pub fn push_string(

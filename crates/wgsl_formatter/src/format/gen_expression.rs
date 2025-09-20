@@ -8,7 +8,7 @@ use crate::format::{
     },
     gen_comments::gen_comments,
     helpers::todo_verbatim,
-    print_item_buffer::PrintItemBuffer,
+    print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::FormatDocumentResult,
 };
 
@@ -62,9 +62,9 @@ pub fn gen_infix_expression(
     let mut formatted = PrintItemBuffer::new();
     formatted.extend(gen_expression(&item_left)?);
     formatted.extend(gen_comments(item_comment_after_left));
-    formatted.request_single_space();
+    formatted.expect_single_space();
     formatted.push_string(item_operator.to_string()); //TODO I don't like to-stringing the operator here, would be better to special case on it... we would need a parse_token(any_of(...)) kind of thing.
-    formatted.request_single_space();
+    formatted.expect_single_space();
     formatted.extend(gen_comments(item_comment_after_operator));
     formatted.extend(gen_expression(&item_right)?);
     formatted.extend(gen_comments(item_comment_after_right));

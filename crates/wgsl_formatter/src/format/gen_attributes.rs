@@ -17,7 +17,7 @@ pub fn gen_attributes(
     for (attribute, comments_after_attribute) in attributes {
         formatted.extend(gen_attribute(&attribute)?);
         formatted.extend(gen_comments(comments_after_attribute));
-        formatted.request_line_break();
+        formatted.expect_line_break();
     }
 
     Ok(formatted)
