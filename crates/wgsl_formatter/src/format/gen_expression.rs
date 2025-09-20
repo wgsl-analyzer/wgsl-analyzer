@@ -1,4 +1,5 @@
 use dprint_core::formatting::{PrintItems, Signal};
+use dprint_core_macros::sc;
 use itertools::put_back;
 use syntax::{AstNode, ast};
 
@@ -31,7 +32,7 @@ pub fn gen_expression(expression: &ast::Expression) -> FormatDocumentResult<Prin
         },
         ast::Expression::FunctionCall(function_call) => todo_verbatim(function_call.syntax()),
         ast::Expression::ParenthesisExpression(parenthesis_expression) => {
-            todo_verbatim(parenthesis_expression.syntax())
+            gen_parenthesis_expression(parenthesis_expression)
         },
         ast::Expression::Literal(literal) => gen_literal_expression(literal),
     }
@@ -43,11 +44,39 @@ pub fn gen_literal_expression(
     todo_verbatim(literal_expression.syntax())
 }
 
+pub fn gen_parenthesis_expression(
+    parenthesis_expression: &ast::ParenthesisExpression
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(parenthesis_expression.syntax().children_with_tokens());
+
+    parse_token(&mut syntax, parser::SyntaxKind::ParenthesisLeft)?;
+    let item_comment_after_left_paren = parse_many_comments_and_blankspace(&mut syntax)?;
+
+    let item_content = parse_node::<ast::Expression>(&mut syntax)?;
+
+    let item_comment_after_content = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, parser::SyntaxKind::ParenthesisRight)?;
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_sc(sc!("("));
+    formatted.push_signal(Signal::StartNewLineGroup);
+    formatted.push_signal(Signal::StartIndent);
+    formatted.extend(gen_comments(item_comment_after_left_paren));
+    formatted.extend(gen_expression(&item_content)?);
+    formatted.extend(gen_comments(item_comment_after_content));
+    formatted.push_signal(Signal::FinishIndent);
+    formatted.push_signal(Signal::FinishNewLineGroup);
+    formatted.push_sc(sc!(")"));
+    Ok(formatted)
+}
+
 pub fn gen_infix_expression(
     infix_expression: &ast::InfixExpression
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    dbg!(&infix_expression);
     let mut syntax = put_back(infix_expression.syntax().children_with_tokens());
 
     let item_left = parse_node::<ast::Expression>(&mut syntax)?;

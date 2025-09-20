@@ -4,10 +4,12 @@ use crate::test_util::{check, check_tabs};
 
 //TODO Remove this comment == MODULES THAT FULLY PASS ==
 mod comments;
+mod expr_spacing;
 mod fn_body;
 mod fn_signature;
-mod infix_expr_spacing;
+mod infix_exprs;
 mod let_and_var_declarations;
+mod paren_exprs;
 mod struct_def;
 
 //TODO Remove this comment == MODULES THAT STILL CONTAIN FAILING TESTS ==
