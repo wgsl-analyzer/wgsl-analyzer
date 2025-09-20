@@ -52,11 +52,11 @@ pub fn gen_function_declaration(
 
     // Fn
     formatted.push_sc(sc!("fn"));
-    formatted.request_single_space();
+    formatted.expect_single_space();
     formatted.extend(gen_comments(item_comments_after_fn));
 
     // Name
-    formatted.request_single_space();
+    formatted.expect_single_space();
     formatted.push_string(item_name.text().to_string());
     formatted.extend(gen_comments(item_comments_after_name));
 
@@ -71,7 +71,7 @@ pub fn gen_function_declaration(
     formatted.extend(gen_comments(item_comments_after_return));
 
     // Body
-    formatted.request_single_space();
+    formatted.expect_single_space();
     formatted.extend(gen_fn_body(&item_body)?);
 
     Ok(formatted)
@@ -225,7 +225,7 @@ pub fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintIt
 
     formatted.push_string(item_name.text().to_string());
     formatted.push_sc(sc!(":"));
-    formatted.request_single_space();
+    formatted.expect_single_space();
     //The colon should immediately follow the name, we intentionally move the comment
     formatted.extend(gen_comments(item_comments_after_name));
     formatted.extend(gen_comments(item_comments_after_colon));
@@ -246,9 +246,9 @@ pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<Prin
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.request_single_space();
+    formatted.expect_single_space();
     formatted.push_sc(sc!("->"));
-    formatted.request_single_space();
+    formatted.expect_single_space();
     formatted.extend(gen_comments(item_comments_after_arrow));
     formatted.extend(gen_type_specifier(&item_type_specifier)?);
     Ok(formatted)
