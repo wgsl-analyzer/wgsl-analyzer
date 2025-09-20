@@ -50,16 +50,16 @@ pub fn gen_struct_declaration(
 
     // Struct
     formatted.push_sc(sc!("struct"));
-    formatted.request_single_space();
+    formatted.expect_single_space();
     formatted.extend(gen_comments(item_comments_after_struct));
 
     // Name
-    formatted.request_single_space();
+    formatted.expect_single_space();
     formatted.push_string(item_name.text().to_string());
     formatted.extend(gen_comments(item_comments_after_name));
 
     // Body
-    formatted.request_single_space();
+    formatted.expect_single_space();
     formatted.extend(gen_struct_body(&item_body)?);
 
     Ok(formatted)
@@ -102,12 +102,12 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
     //TODO This should be handled by gen_comments, and probably
     // take into account whether the comment was on the same line as the opening brace
     if !item_comments_after_open_paren.is_empty() {
-        formatted.request_line_break();
+        formatted.expect_line_break();
         formatted.extend(gen_comments(item_comments_after_open_paren));
     }
 
     if !item_members.is_empty() {
-        formatted.request_line_break();
+        formatted.expect_line_break();
         for (member, comments_after_member, comments_after_comma) in item_members {
             formatted.extend(gen_struct_member(&member)?);
             formatted.push_sc(sc!(","));
@@ -116,7 +116,7 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
             formatted.extend(gen_comments(comments_after_member));
             formatted.extend(gen_comments(comments_after_comma));
 
-            formatted.request_line_break();
+            formatted.expect_line_break();
         }
     }
 
@@ -155,7 +155,7 @@ fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<PrintIt
     formatted.extend(gen_attributes(attributes)?);
     formatted.push_string(item_name.text().to_string());
     formatted.push_sc(sc!(":"));
-    formatted.request_single_space();
+    formatted.expect_single_space();
     //The colon should immediately follow the name, we intentionally move the comment
     formatted.extend(gen_comments(item_comments_after_name));
     formatted.extend(gen_comments(item_comments_after_colon));
