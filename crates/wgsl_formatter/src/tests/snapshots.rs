@@ -6,6 +6,7 @@ use crate::test_util::{check, check_tabs};
 mod comments;
 mod fn_body;
 mod fn_signature;
+mod infix_expr_spacing;
 mod let_and_var_declarations;
 mod struct_def;
 
