@@ -63,6 +63,7 @@ pub fn gen_infix_expression(
     formatted.extend(gen_expression(&item_left)?);
     formatted.extend(gen_comments(item_comment_after_left));
     formatted.expect_single_space();
+    formatted.request_line_break(SeparationPolicy::Allowed);
     formatted.push_string(item_operator.to_string()); //TODO I don't like to-stringing the operator here, would be better to special case on it... we would need a parse_token(any_of(...)) kind of thing.
     formatted.expect_single_space();
     formatted.extend(gen_comments(item_comment_after_operator));
