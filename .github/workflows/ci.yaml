@@ -180,21 +180,17 @@ jobs:
           globs: '**/*.md'
 
   toml:
+    name: Check TOML formatting
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v5
 
-      - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@1.90.0
-
-      - name: Install taplo
-        run: cargo install taplo-cli --locked
-
-      - name: Run Taplo
-        id: taplo
-        run: taplo fmt --check --diff
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check formatting with with Taplo
+        uses: docker://docker.io/tamasfe/taplo:latest
+        with:
+          args: fmt --check --diff
 
       - name: Taplo info
         if: failure()
