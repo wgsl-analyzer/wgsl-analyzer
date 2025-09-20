@@ -261,15 +261,15 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
+      # cargo-udeps requires this toolchain at runtime
       - name: Install nightly Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.NIGHTLY_TOOLCHAIN }}
 
-      - name: Install udeps
-        run: cargo install --locked cargo-udeps
-
-      - name: Run udeps
+      - name: Install cargo-udeps
+        uses: taiki-e/install-action@cargo-udeps
+      - name: Run cargo-udeps
         run: cargo udeps
 
   typescript:
