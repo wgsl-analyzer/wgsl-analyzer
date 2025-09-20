@@ -27,11 +27,11 @@ pub fn gen_comments(comments: Vec<SyntaxToken>) -> PrintItemBuffer {
 pub fn gen_comment(item: &SyntaxToken) -> PrintItemBuffer {
     let mut formatted = PrintItemBuffer::new();
     if item.kind() == SyntaxKind::BlockComment {
-        formatted.request_single_space();
+        formatted.expect_single_space();
         formatted.push_string(item.to_string());
-        formatted.request_single_space();
+        formatted.expect_single_space();
     } else if item.kind() == SyntaxKind::LineEndingComment {
-        formatted.request_single_space();
+        formatted.expect_single_space();
         formatted.push_string(item.to_string());
         //TODO This should be a request, but for now we have no way of encoding a "forced newline no matter what"
         formatted.request(SeparationRequest {
