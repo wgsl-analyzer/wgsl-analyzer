@@ -22,8 +22,10 @@ use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiag
 use crate::{Function, GlobalConstant, GlobalVariable, HasSource as _, Override, TypeAlias};
 
 #[derive(Clone, Debug, Deserialize)]
+#[derive(Default)]
 pub enum NagaVersion {
     #[serde(rename = "0.14")]
+    #[default]
     Naga14,
     #[serde(rename = "0.19")]
     Naga19,
@@ -33,11 +35,6 @@ pub enum NagaVersion {
     NagaMain,
 }
 
-impl Default for NagaVersion {
-    fn default() -> Self {
-        Self::Naga14
-    }
-}
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
