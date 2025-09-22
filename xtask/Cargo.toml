@@ -7,7 +7,7 @@ edition = "2024"
 rust-version.workspace = true
 
 [dependencies]
-anyhow = "1.0.99"
+anyhow = "1.0.100"
 directories = "6.0.0"
 flate2 = "1.1.2"
 write-json = "0.1.4"
