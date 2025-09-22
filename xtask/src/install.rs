@@ -50,10 +50,7 @@ fn fix_path_for_mac(shell: &Shell) -> anyhow::Result<()> {
             "/Applications/Visual Studio Code.app/Contents/Resources/app/bin";
         const ROOT_DIR: &str = "";
         let home_dir = shell.var("HOME").map_err(|error| {
-            format_err!(
-                "Failed getting HOME from environment with error: {}.",
-                error
-            )
+            format_err!("Failed getting HOME from environment with error: {error}.")
         })?;
         #[expect(clippy::string_add, reason = "more concise")]
         [ROOT_DIR, &home_dir]
