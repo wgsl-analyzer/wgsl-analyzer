@@ -19,7 +19,7 @@ name = "wgsl-analyzer"
 path = "src/bin/main.rs"
 
 [dependencies]
-anyhow = "1.0.99"
+anyhow = "1.0.100"
 # base64 = "0.22"
 crossbeam-channel = "0.5.15"
 # dirs = "5.0.1"
