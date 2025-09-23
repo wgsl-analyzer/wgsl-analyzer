@@ -70,7 +70,7 @@
 		"@types/node": "^24.5.2",
 		"@types/vscode": "^1.102.0",
 		"@vscode/test-electron": "^2.5.2",
-		"@vscode/vsce": "^3.6.0",
+		"@vscode/vsce": "^3.6.1",
 		"esbuild": "^0.25.10",
 		"ovsx": "^0.10.5",
 		"tslib": "^2.8.1",
