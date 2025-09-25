@@ -7,8 +7,8 @@ use crate::builtins::{Builtin, BuiltinId};
 use crate::function::{FunctionDetails, ResolvedFunctionId};
 use crate::infer::{InferenceContext, InferenceResult, TypeContainer};
 use crate::ty::{TyKind, Type};
-use hir_def::data::FieldId;
-use hir_def::database::GlobalVariableId;
+use hir_def::data::{FieldId, ParamId};
+use hir_def::database::{DefinitionWithBodyId, GlobalVariableId};
 use hir_def::type_ref::AccessMode;
 use hir_def::{
     HirFileId, InFile,
@@ -25,7 +25,7 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
     #[salsa::cycle(crate::infer::infer_cycle_result)]
     fn infer(
         &self,
-        key: DefinitionId,
+        key: DefinitionWithBodyId,
     ) -> Arc<InferenceResult>;
 
     fn field_types(
@@ -94,12 +94,18 @@ fn function_type(
     function: FunctionId,
 ) -> ResolvedFunctionId {
     let data = database.fn_data(function).0;
+    let body = database.body(DefinitionWithBodyId::Function(function));
 
     let file_id = function.lookup(database).file_id;
     let module_info = database.module_info(file_id);
     let resolver = Resolver::default().push_module_scope(file_id, module_info);
 
-    let mut ty_ctx = InferenceContext::new(database, DefinitionId::Function(function), resolver);
+    let mut ty_ctx = InferenceContext::new(
+        database,
+        body,
+        DefinitionWithBodyId::Function(function),
+        resolver,
+    );
 
     let return_type = data
         .return_type
@@ -110,7 +116,13 @@ fn function_type(
         .parameters
         .iter()
         .map(|(id, param)| {
-            let r#type = ty_ctx.lower_ty(TypeContainer::FunctionParameter(id), &param.r#type);
+            let r#type = ty_ctx.lower_ty(
+                TypeContainer::FunctionParameter(ParamId {
+                    function,
+                    param: id,
+                }),
+                &param.r#type,
+            );
             (r#type, param.name.clone())
         })
         .collect();
@@ -131,7 +143,7 @@ fn struct_is_used_in_uniform(
     module_info.items().iter().any(|item| match *item {
         hir_def::module_data::ModuleItem::GlobalVariable(decl) => {
             let decl = database.intern_global_variable(InFile::new(file_id, decl));
-            let inference = database.infer(DefinitionId::GlobalVariable(decl));
+            let inference = database.infer(DefinitionWithBodyId::GlobalVariable(decl));
             let ty_kind = inference.return_type.kind(database);
 
             if let TyKind::Reference(crate::ty::Reference { address_space, .. }) = ty_kind

@@ -22,7 +22,7 @@ use crate::{
         FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, StructData,
         TypeAliasData,
     },
-    expression_store::ExpressionSourceMap,
+    expression_store::{ExpressionSourceMap, ExpressionStore},
     hir_file_id::{HirFileIdRepr, relative_file},
     module_data::{
         Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItemId, Override, Struct,
@@ -373,16 +373,5 @@ impl DefinitionId {
         let file_id = self.file_id(database);
         let module_info = database.module_info(file_id);
         Resolver::default().push_module_scope(file_id, module_info)
-    }
-
-    pub fn with_body(&self) -> Option<DefinitionWithBodyId> {
-        match self {
-            DefinitionId::Function(id) => Some(DefinitionWithBodyId::Function(*id)),
-            DefinitionId::GlobalVariable(id) => Some(DefinitionWithBodyId::GlobalVariable(*id)),
-            DefinitionId::GlobalConstant(id) => Some(DefinitionWithBodyId::GlobalConstant(*id)),
-            DefinitionId::Override(id) => Some(DefinitionWithBodyId::Override(*id)),
-            DefinitionId::Struct(_) => None,
-            DefinitionId::TypeAlias(_) => None,
-        }
     }
 }

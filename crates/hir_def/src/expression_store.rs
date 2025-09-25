@@ -8,6 +8,10 @@ use syntax::{ast, pointer::AstPointer};
 #[derive(PartialEq, Eq, Debug)]
 pub struct SyntheticSyntax;
 
+/// An arena with expressions.
+/// Used for both signatures, and for bodies.
+/// For example, a `const foo: vec3<f32> = vec3f(1,2,3);` has two stores.
+/// One for the type, and one for the expression. Separating them gives us more fine grained incrementality.
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct ExpressionStore {
     pub exprs: Arena<Expression>,

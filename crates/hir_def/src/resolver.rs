@@ -212,7 +212,10 @@ impl Resolver {
                             .then(|| ResolveType::Function(InFile::new(scope.file_id, *id)))
                     },
                 }),
-            Scope::Builtin => None,
+            Scope::Builtin => {
+                // TODO: Match against "name.as_str()" and then point at a "builtin" file
+                None
+            },
         })
     }
 }

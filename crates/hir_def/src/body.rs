@@ -39,6 +39,14 @@ pub struct Body {
     pub root: Option<Either<StatementId, ExpressionId>>,
 }
 
+impl std::ops::Deref for Body {
+    type Target = ExpressionStore;
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.store
+    }
+}
+
 /// An item body together with the mapping from syntax nodes to HIR expression
 /// IDs.
 ///

@@ -162,7 +162,7 @@ tracing-subscriber = { version = "0.3.18", default-features = false, features = 
 ] }
 triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
 url = "2.5.4"
-wesl-types = { version = "0.2.0", git = "https://github.com/wgsl-tooling-wg/wesl-rs.git", branch = "wesl-types" }
+wgsl-types = { version = "0.2.0", git = "https://github.com/wgsl-tooling-wg/wesl-rs.git" }
 xshell = "0.2.7"
 lexopt = "0.3.0"
 prettydiff = "0.8.1"

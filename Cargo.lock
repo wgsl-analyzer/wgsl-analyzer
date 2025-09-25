@@ -220,15 +220,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "convert_case"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb402b8d4c85569410425650ce3eddc7d698ed96d39a73f941b08fb63082f1e7"
-dependencies = [
- "unicode-segmentation",
-]
-
-[[package]]
 name = "countme"
 version = "3.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -301,28 +292,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.104",
-]
-
-[[package]]
-name = "derive_more"
-version = "2.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "093242cf7570c207c83073cf82f79706fe7b8317e98620a47d5be7c3d8497678"
-dependencies = [
- "derive_more-impl",
-]
-
-[[package]]
-name = "derive_more-impl"
-version = "2.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bda628edc44c4bb645fbe0f758797143e4e07926f7ebf4e9bdfbd3d2ce621df3"
-dependencies = [
- "convert_case",
- "proc-macro2",
- "quote",
- "syn 2.0.104",
- "unicode-xid",
 ]
 
 [[package]]
@@ -618,7 +587,7 @@ dependencies = [
  "rustc-hash 2.1.1",
  "salsa",
  "smallvec",
- "wesl-types",
+ "wgsl-types",
 ]
 
 [[package]]
@@ -2343,19 +2312,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "wesl-types"
-version = "0.2.0"
-source = "git+https://github.com/wgsl-tooling-wg/wesl-rs.git?branch=wesl-types#a38c6bd94499bf16726a487c625ee5954ce20f22"
-dependencies = [
- "derive_more",
- "half",
- "itertools",
- "num-traits",
- "thiserror 2.0.12",
- "wgsl-syntax",
-]
-
-[[package]]
 name = "wgsl-analyzer"
 version = "0.0.0"
 dependencies = [
@@ -2416,11 +2372,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "wgsl-syntax"
+name = "wgsl-types"
 version = "0.2.0"
-source = "git+https://github.com/wgsl-tooling-wg/wesl-rs.git?branch=wesl-types#a38c6bd94499bf16726a487c625ee5954ce20f22"
+source = "git+https://github.com/wgsl-tooling-wg/wesl-rs.git#30148dd61b7c7372b1169db0c8af941aa7e6dd45"
 dependencies = [
- "derive_more",
+ "half",
+ "itertools",
+ "num-traits",
 ]
 
 [[package]]
