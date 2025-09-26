@@ -343,6 +343,7 @@ pub fn unify(
                     | (AccessMode::Read | AccessMode::ReadWrite, AccessMode::Write) => {
                         return Err(());
                     },
+                    (AccessMode::Atomic, _) | (_, AccessMode::Atomic) => todo!("What's this?"),
                 }
 
                 Ok(())

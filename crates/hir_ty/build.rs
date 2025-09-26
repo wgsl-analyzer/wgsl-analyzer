@@ -84,7 +84,6 @@ enum AccessMode {
     ReadWrite,
     Read,
     Write,
-    Any,
 }
 
 impl FromStr for AccessMode {
@@ -95,7 +94,7 @@ impl FromStr for AccessMode {
             "read_write" => Self::ReadWrite,
             "read" => Self::Read,
             "write" => Self::Write,
-            "_" => Self::Any,
+            "_" => Self::ReadWrite,
             _ => return Err(()),
         })
     }

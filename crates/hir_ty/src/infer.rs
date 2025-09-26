@@ -1396,10 +1396,10 @@ impl<'database> InferenceContext<'database> {
                 },
                 hir_def::resolver::ResolveType::TypeAlias(alias) => {
                     let alias = self.database.intern_type_alias(alias);
-                    let data = self.database.type_alias_data(alias);
-                    let type_ref = self.database.lookup_intern_type_ref(data.r#type);
+                    let data = self.database.type_alias_data(alias).0;
 
-                    let r#type = self.lower_ty(TypeContainer::TypeAlias(alias), store, &type_ref);
+                    let r#type =
+                        self.lower_ty(TypeContainer::TypeAlias(alias), &data.store, &data.r#type);
                     self.check_ty_initialiser(expression, r#type, arguments);
                     r#type
                 },
@@ -1902,110 +1902,33 @@ impl<'database> TyLoweringContext<'database> {
     }
 
     fn lower_predeclared_ty(
-        &self,
+        &mut self,
         type_ref: &TypeSpecifier,
     ) -> Result<Type, TypeLoweringError> {
-        // TODO: wesl-rs does have a prelude.rs
-        // We should eventually do something similar
         let name = type_ref.path.as_str();
-        let generics = type_ref
+        let database = self.database;
+        let template_args: Option<Vec<_>> = type_ref
             .generics
             .iter()
             .map(|arg| self.eval_tplt_arg(*arg))
-            .collect::<Vec<_>>();
-        let ty_kind: TyKind = match name {
-            "vec2i" => TyKind::Vector(VectorType {
-                size: VecSize::Two,
-                component_type: TyKind::Scalar(ScalarType::I32).intern(self.database),
-            }),
-            "vec3i" => TyKind::Vector(VectorType {
-                size: VecSize::Three,
-                component_type: TyKind::Scalar(ScalarType::I32).intern(self.database),
-            }),
-            "vec4i" => TyKind::Vector(VectorType {
-                size: VecSize::Four,
-                component_type: TyKind::Scalar(ScalarType::I32).intern(self.database),
-            }),
-            "vec2u" => TyKind::Vector(VectorType {
-                size: VecSize::Two,
-                component_type: TyKind::Scalar(ScalarType::U32).intern(self.database),
-            }),
-            "vec3u" => TyKind::Vector(VectorType {
-                size: VecSize::Three,
-                component_type: TyKind::Scalar(ScalarType::U32).intern(self.database),
-            }),
-            "vec4u" => TyKind::Vector(VectorType {
-                size: VecSize::Four,
-                component_type: TyKind::Scalar(ScalarType::U32).intern(self.database),
-            }),
-            "vec2f" => TyKind::Vector(VectorType {
-                size: VecSize::Two,
-                component_type: TyKind::Scalar(ScalarType::F32).intern(self.database),
-            }),
-            "vec3f" => TyKind::Vector(VectorType {
-                size: VecSize::Three,
-                component_type: TyKind::Scalar(ScalarType::F32).intern(self.database),
-            }),
-            "vec4f" => TyKind::Vector(VectorType {
-                size: VecSize::Four,
-                component_type: TyKind::Scalar(ScalarType::F32).intern(self.database),
-            }),
-            // TODO: Some generics call
-            "vec2" => TyKind::Vector(VectorType {
-                size: VecSize::Two,
-                component_type: TyKind::Scalar(ScalarType::F32).intern(self.database),
-            }),
-            "vec3" => TyKind::Vector(VectorType {
-                size: VecSize::Three,
-                component_type: TyKind::Scalar(ScalarType::F32).intern(self.database),
-            }),
-            "vec4" => TyKind::Vector(VectorType {
-                size: VecSize::Four,
-                component_type: TyKind::Scalar(ScalarType::F32).intern(self.database),
-            }),
-            "array" => {
-                TyKind::Array(ArrayType {
-                    inner: self.eval_expression(&array.inner),
-                    binding_array: false,
-                    size: match array.size {
-                        type_ref::ArraySize::Int(integer) => {
-                            // TODO give error instead of panicking
-                            ArraySize::Constant(u64::try_from(integer).unwrap())
-                        },
-                        type_ref::ArraySize::Uint(unsigned_integer) => {
-                            ArraySize::Constant(unsigned_integer)
-                        },
-                        type_ref::ArraySize::Path(_) => ArraySize::Constant(0), // TODO: Path array sizes
-                        type_ref::ArraySize::Dynamic => ArraySize::Dynamic,
-                    },
-                })
-            },
-            "atomic" => TyKind::Atomic(AtomicType {
-                inner: self.lower_ty(&atomic.inner),
-            }),
-            // Naga extension
-            "binding_array" => {
-                TyKind::Array(ArrayType {
-                    inner: self.lower_ty(&array.inner),
-                    binding_array: true,
-                    size: match array.size {
-                        type_ref::ArraySize::Int(integer) => {
-                            // TODO give error instead of panicking
-                            ArraySize::Constant(u64::try_from(integer).unwrap())
-                        },
-                        type_ref::ArraySize::Uint(unsigned_integer) => {
-                            ArraySize::Constant(unsigned_integer)
-                        },
-                        type_ref::ArraySize::Path(_) => ArraySize::Constant(0), // TODO: Path array sizes
-                        type_ref::ArraySize::Dynamic => ArraySize::Dynamic,
-                    },
-                })
-            },
-            // TODO float16
-            _ => return Err(TypeLoweringError::UnresolvedName(type_ref.path.clone())),
+            .map(|arg| template_parameter_to_wgsl_types(arg, database))
+            .collect();
+
+        let Some(template_args) = template_args else {
+            // One of the template parameters had an error type
+            return todo!("report an error");
+        };
+        let template_args = if template_args.is_empty() {
+            None
+        } else {
+            Some(template_args.as_slice())
         };
 
-        Ok(self.database.intern_ty(ty_kind))
+        let return_type = wgsl_types::builtin::builtin_type(name, template_args);
+        match return_type {
+            Ok(ty) => Ok(ty_from_wgsl_types(ty, self.database)),
+            Err(_) => todo!(),
+        }
     }
 }
 
@@ -2101,8 +2024,11 @@ pub fn ty_from_wgsl_types(
         },
         wgsl_types::Type::I32 => TyKind::Scalar(ScalarType::I32).intern(database),
         wgsl_types::Type::U32 => TyKind::Scalar(ScalarType::U32).intern(database),
-        wgsl_types::Type::F32 => TyKind::Scalar(ScalarType::F32).intern(database),
+        wgsl_types::Type::I64 => todo!("naga extension"),
+        wgsl_types::Type::U64 => todo!("naga extension"),
         wgsl_types::Type::F16 => TyKind::Scalar(ScalarType::F16).intern(database),
+        wgsl_types::Type::F32 => TyKind::Scalar(ScalarType::F32).intern(database),
+        wgsl_types::Type::F64 => todo!("naga extension"),
         wgsl_types::Type::Struct(struct_type) => todo!(),
         wgsl_types::Type::Array(ty, size) => TyKind::Array(ArrayType {
             inner: ty_from_wgsl_types(*ty, database),
@@ -2155,6 +2081,8 @@ pub fn ty_from_wgsl_types(
         wgsl_types::Type::Sampler(sampler_type) => {
             TyKind::Sampler(sampler_type.clone().into()).intern(database)
         },
+        wgsl_types::Type::RayQuery(_) => todo!("naga extension"),
+        wgsl_types::Type::AccelerationStructure(_) => todo!("naga extension"),
     }
 }
 
@@ -2162,15 +2090,18 @@ impl From<wgsl_types::ty::TextureType> for TextureType {
     fn from(value: wgsl_types::ty::TextureType) -> Self {
         match value {
             wgsl_types::ty::TextureType::Sampled1D(sampled_type) => todo!(),
+            wgsl_types::ty::TextureType::Sampled1DArray(sampled_type) => todo!(),
             wgsl_types::ty::TextureType::Sampled2D(sampled_type) => todo!(),
             wgsl_types::ty::TextureType::Sampled2DArray(sampled_type) => todo!(),
             wgsl_types::ty::TextureType::Sampled3D(sampled_type) => todo!(),
             wgsl_types::ty::TextureType::SampledCube(sampled_type) => todo!(),
             wgsl_types::ty::TextureType::SampledCubeArray(sampled_type) => todo!(),
             wgsl_types::ty::TextureType::Multisampled2D(sampled_type) => todo!(),
+            wgsl_types::ty::TextureType::Multisampled2DArray(sampled_type) => todo!(),
             wgsl_types::ty::TextureType::DepthMultisampled2D => todo!(),
             wgsl_types::ty::TextureType::External => todo!(),
             wgsl_types::ty::TextureType::Storage1D(texel_format, access_mode) => todo!(),
+            wgsl_types::ty::TextureType::Storage1DArray(texel_format, access_mode) => todo!(),
             wgsl_types::ty::TextureType::Storage2D(texel_format, access_mode) => todo!(),
             wgsl_types::ty::TextureType::Storage2DArray(texel_format, access_mode) => todo!(),
             wgsl_types::ty::TextureType::Storage3D(texel_format, access_mode) => todo!(),
