@@ -16,7 +16,7 @@ doctest = false
 base-db.workspace = true
 hir-def.workspace = true
 
-salsa = "0.17.0-pre.2"
+salsa = "0.23.0"
 la-arena = "0.3.1"
 either = "1.15.0"
 rustc-hash = "2.1.1"
