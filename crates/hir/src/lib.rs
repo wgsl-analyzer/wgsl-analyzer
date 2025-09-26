@@ -68,7 +68,7 @@ impl<'database> Semantics<'database> {
         source.ancestors().find_map(|syntax| {
             match_ast! {
                 match syntax {
-                    ast::Function(function) => self.function_to_def(&InFile::new(file_id, function)).map(DefinitionWithBodyId::Function),
+                    ast::FunctionDeclaration(function) => self.function_to_def(&InFile::new(file_id, function)).map(DefinitionWithBodyId::Function),
                     ast::VariableDeclaration(var) => self.global_variable_to_def(&InFile::new(file_id, var)).map(DefinitionWithBodyId::GlobalVariable),
                     ast::ConstantDeclaration(constant) => self.global_constant_to_def(&InFile::new(file_id, constant)).map(DefinitionWithBodyId::GlobalConstant),
                     ast::OverrideDeclaration(item) => self.global_override_to_def(&InFile::new(file_id, item)).map(DefinitionWithBodyId::Override),
@@ -142,6 +142,18 @@ impl<'database> Semantics<'database> {
                 let id = self.database.intern_override(loc);
                 Definition::ModuleDef(ModuleDef::Override(Override { id }))
             },
+            ResolveType::Struct(loc) => {
+                let id = self.database.intern_struct(loc);
+                Definition::ModuleDef(ModuleDef::Struct(Struct { id }))
+            },
+            ResolveType::TypeAlias(loc) => {
+                let id = self.database.intern_type_alias(loc);
+                Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id }))
+            },
+            ResolveType::Function(loc) => {
+                let id = self.database.intern_function(loc);
+                Definition::ModuleDef(ModuleDef::Function(Function { id }))
+            },
         };
 
         Some(definition)
@@ -149,7 +161,7 @@ impl<'database> Semantics<'database> {
 
     fn function_to_def(
         &self,
-        source: &InFile<ast::Function>,
+        source: &InFile<ast::FunctionDeclaration>,
     ) -> Option<FunctionId> {
         let function = module_data::find_item(self.database, source.file_id, &source.value)?;
         let function_id = self
@@ -543,12 +555,8 @@ impl ModuleDef {
             Self::Override(override_declaration) => {
                 Some(DefinitionWithBodyId::Override(override_declaration.id))
             },
-            Self::Struct(override_declaration) => {
-                Some(DefinitionWithBodyId::Struct(override_declaration.id))
-            },
-            Self::TypeAlias(type_alias_declaration) => {
-                Some(DefinitionWithBodyId::TypeAlias(type_alias_declaration.id))
-            },
+            Self::Struct(_) => None,
+            Self::TypeAlias(_) => None,
         }
     }
 }
