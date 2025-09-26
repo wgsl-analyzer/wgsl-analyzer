@@ -11,7 +11,10 @@ use wgsl_types::{
 };
 
 use crate::{
-    infer::{InferenceContext, InferenceDiagnostic, TyLoweringContext, TypeContainer},
+    database::HirDatabase,
+    infer::{
+        InferenceContext, InferenceDiagnostic, TyLoweringContext, TypeContainer, ty_into_wgsl_types,
+    },
     ty::Type,
 };
 
@@ -67,7 +70,7 @@ impl<'database> TyLoweringContext<'database> {
                 return None;
             },
             Expression::TypeSpecifier(type_specifier) => {
-                let resolved_ty = self.resolver.resolve_type(&type_specifier.path);
+                let resolved_ty = self.resolver.resolve(&type_specifier.path);
                 match &resolved_ty {
                     // TODO: Do something useful here
                     /*
@@ -127,7 +130,7 @@ impl<'database> TyLoweringContext<'database> {
     ) -> TpltParam {
         let template_param = match &self.store.exprs[tplt] {
             Expression::TypeSpecifier(ty) => {
-                let resolved_ty = self.resolver.resolve_type(&ty.path);
+                let resolved_ty = self.resolver.resolve(&ty.path);
                 match &resolved_ty {
                     Some(ResolveType::Struct(_)) | Some(ResolveType::TypeAlias(_)) => {
                         TpltParam::Type(self.lower_ty(ty))
@@ -161,4 +164,16 @@ pub enum TpltParam {
     /// The error instance is encoded as a None
     Instance(Option<Instance>),
     Enumerant(Enumerant),
+}
+
+/// Returns none if it is an error type
+pub fn template_parameter_to_wgsl_types(
+    param: TpltParam,
+    database: &dyn HirDatabase,
+) -> Option<wgsl_types::tplt::TpltParam> {
+    Some(match param {
+        TpltParam::Type(ty) => wgsl_types::tplt::TpltParam::Type(ty_into_wgsl_types(ty, database)?),
+        TpltParam::Instance(instance) => wgsl_types::tplt::TpltParam::Instance(instance?),
+        TpltParam::Enumerant(enumerant) => wgsl_types::tplt::TpltParam::Enumerant(enumerant),
+    })
 }

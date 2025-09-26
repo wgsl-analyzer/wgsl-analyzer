@@ -123,7 +123,7 @@ impl<'database> Semantics<'database> {
             resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
         }
 
-        let value = resolver.resolve_type(name)?;
+        let value = resolver.resolve(name)?;
 
         let definition = match value {
             ResolveType::Local(binding) => Definition::Local(Local {

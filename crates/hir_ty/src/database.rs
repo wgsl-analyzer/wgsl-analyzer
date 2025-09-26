@@ -5,19 +5,18 @@ use std::{fmt, sync::Arc};
 
 use crate::builtins::{Builtin, BuiltinId};
 use crate::function::{FunctionDetails, ResolvedFunctionId};
-use crate::infer::{InferenceContext, InferenceResult, TypeContainer};
+use crate::infer::{InferenceContext, InferenceResult, TyLoweringContext, TypeContainer};
 use crate::ty::{TyKind, Type};
 use hir_def::data::{FieldId, ParamId};
 use hir_def::database::{DefinitionWithBodyId, GlobalVariableId};
-use hir_def::type_ref::AccessMode;
 use hir_def::{
     HirFileId, InFile,
     data::LocalFieldId,
     database::{DefDatabase, DefinitionId, FunctionId, Lookup as _, StructId},
     resolver::Resolver,
-    type_ref::AddressSpace,
 };
 use la_arena::ArenaMap;
+use wgsl_types::syntax::AddressSpace;
 
 #[salsa::query_group(HirDatabaseStorage)]
 pub trait HirDatabase: DefDatabase + fmt::Debug {
@@ -71,17 +70,11 @@ fn field_types(
     let module_info = database.module_info(file_id);
     let resolver = Resolver::default().push_module_scope(file_id, module_info);
 
-    let mut ty_ctx = InferenceContext::new(database, DefinitionId::Struct(r#struct), resolver);
+    let mut ty_ctx = TyLoweringContext::new(database, &resolver, &data.store);
 
     let mut map = ArenaMap::default();
     for (index, field) in data.fields.iter() {
-        let r#type = ty_ctx.lower_ty(
-            TypeContainer::StructField(FieldId {
-                r#struct,
-                field: index,
-            }),
-            &field.r#type,
-        );
+        let r#type = ty_ctx.lower_ty(&field.r#type);
 
         map.insert(index, r#type);
     }
@@ -94,35 +87,23 @@ fn function_type(
     function: FunctionId,
 ) -> ResolvedFunctionId {
     let data = database.fn_data(function).0;
-    let body = database.body(DefinitionWithBodyId::Function(function));
 
     let file_id = function.lookup(database).file_id;
     let module_info = database.module_info(file_id);
     let resolver = Resolver::default().push_module_scope(file_id, module_info);
 
-    let mut ty_ctx = InferenceContext::new(
-        database,
-        body,
-        DefinitionWithBodyId::Function(function),
-        resolver,
-    );
+    let mut ty_ctx = TyLoweringContext::new(database, &resolver, &data.store);
 
     let return_type = data
         .return_type
         .as_ref()
-        .map(|type_ref| ty_ctx.lower_ty(TypeContainer::FunctionReturn(function), &type_ref));
+        .map(|type_ref| ty_ctx.lower_ty(&type_ref));
 
     let parameters = data
         .parameters
         .iter()
-        .map(|(id, param)| {
-            let r#type = ty_ctx.lower_ty(
-                TypeContainer::FunctionParameter(ParamId {
-                    function,
-                    param: id,
-                }),
-                &param.r#type,
-            );
+        .map(|(_, param)| {
+            let r#type = ty_ctx.lower_ty(&param.r#type);
             (r#type, param.name.clone())
         })
         .collect();

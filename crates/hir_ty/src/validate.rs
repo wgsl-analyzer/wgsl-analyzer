@@ -1,8 +1,8 @@
 use std::fmt;
 
-use hir_def::type_ref::{AccessMode, AddressSpace};
 use itertools::Itertools as _;
 use smallvec::{SmallVec, smallvec};
+use wgsl_types::syntax::{AccessMode, AddressSpace};
 
 use crate::{database::HirDatabase, ty::TyKind};
 

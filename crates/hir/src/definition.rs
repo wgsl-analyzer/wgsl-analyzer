@@ -82,7 +82,7 @@ fn resolve_name_ref(
     } else if let Some(r#type) = ast::PathType::cast(parent) {
         let resolver = semantics.resolver(file_id, r#type.syntax());
 
-        match resolver.resolve_type(&r#type.name()?.into())? {
+        match resolver.resolve(&r#type.name()?.into())? {
             ResolveType::Struct(loc) => {
                 let id = semantics.database.intern_struct(loc);
                 Some(Definition::Struct(Struct { id }))

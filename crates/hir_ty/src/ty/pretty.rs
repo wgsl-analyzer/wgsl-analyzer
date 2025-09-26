@@ -37,6 +37,7 @@ pub fn pretty_type_expectation_with_verbosity(
         TypeExpectation::TypeOrVecOf(inner) => {
             _ = write_type_expectation_inner(database, &inner, true, &mut str, verbosity);
         },
+        TypeExpectation::Any => _ = write!(&mut str, "any"),
     }
     str
 }

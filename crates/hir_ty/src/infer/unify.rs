@@ -1,7 +1,7 @@
 use std::collections::hash_map::Entry;
 
-use hir_def::type_ref::AccessMode;
 use rustc_hash::FxHashMap;
+use wgsl_types::syntax::AccessMode;
 
 use crate::{
     database::HirDatabase,
@@ -335,12 +335,10 @@ pub fn unify(
                     },
                 }
                 match (mode, mode_2) {
-                    (AccessMode::Any, _)
-                    | (AccessMode::Read, AccessMode::ReadWrite | AccessMode::Read)
+                    (AccessMode::Read, AccessMode::ReadWrite | AccessMode::Read)
                     | (AccessMode::ReadWrite, AccessMode::ReadWrite)
                     | (AccessMode::Write, AccessMode::ReadWrite | AccessMode::Write) => {},
                     #[expect(clippy::unreachable, reason = "TODO")]
-                    (_, AccessMode::Any) => unreachable!(),
                     (AccessMode::Write | AccessMode::ReadWrite, AccessMode::Read)
                     | (AccessMode::Read | AccessMode::ReadWrite, AccessMode::Write) => {
                         return Err(());

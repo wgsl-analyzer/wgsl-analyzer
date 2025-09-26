@@ -13,7 +13,6 @@ use crate::{
         Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItem, Name, Override, Struct,
         TypeAlias,
     },
-    type_ref::{TypeReference, VecDimensionality, VecType},
 };
 
 #[derive(Clone)]
@@ -165,7 +164,7 @@ impl Resolver {
     }
 
     #[must_use]
-    pub fn resolve_type(
+    pub fn resolve(
         &self,
         name: &Name,
     ) -> Option<ResolveType> {

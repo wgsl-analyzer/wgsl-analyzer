@@ -6,9 +6,9 @@ use std::{
     str::FromStr,
 };
 
-pub use hir_def::type_ref::{AccessMode, AddressSpace};
 use hir_def::{database::StructId, type_ref::VecDimensionality};
 use salsa::InternKey;
+use wgsl_types::syntax::{AccessMode, AddressSpace};
 
 use crate::database::HirDatabase;
 
