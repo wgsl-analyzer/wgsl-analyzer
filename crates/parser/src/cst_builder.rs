@@ -13,7 +13,6 @@ pub struct CstBuilder<'a, 'cache> {
 impl<'a, 'cache> CstBuilder<'a, 'cache> {
     /// Turn a lelwel syntax tree into a rowan syntax tree
     pub fn build(mut self) -> GreenNode {
-        println!("{}", self.cst);
         let mut rule_ends = vec![];
         for offset in 0..self.cst.nodes_count() {
             let node_ref = NodeRef(offset);
