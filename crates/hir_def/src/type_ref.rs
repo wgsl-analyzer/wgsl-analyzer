@@ -64,6 +64,9 @@ pub enum ScalarType {
     Float32,
     Int32,
     Uint32,
+    // SHADER_INT64
+    Int64,
+    Uint64,
 }
 
 impl From<ast::ScalarType> for ScalarType {
@@ -73,6 +76,9 @@ impl From<ast::ScalarType> for ScalarType {
             ast::ScalarType::Float32(_) => Self::Float32,
             ast::ScalarType::Int32(_) => Self::Int32,
             ast::ScalarType::Uint32(_) => Self::Uint32,
+            // SHADER_INT64
+            ast::ScalarType::Int64(_) => Self::Int64,
+            ast::ScalarType::Uint64(_) => Self::Uint64,
         }
     }
 }
@@ -87,6 +93,9 @@ impl fmt::Display for ScalarType {
             Self::Float32 => formatter.write_str("f32"),
             Self::Int32 => formatter.write_str("i32"),
             Self::Uint32 => formatter.write_str("u32"),
+            // SHADER_INT64
+            Self::Int64 => formatter.write_str("i64"),
+            Self::Uint64 => formatter.write_str("u64"),
         }
     }
 }
