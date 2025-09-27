@@ -366,9 +366,9 @@ impl Collector<'_> {
                 let block = self.collect_compound_statement_opt(while_statement.block());
                 Statement::While { condition, block }
             },
-            ast::Statement::Discard(_) => Statement::Discard,
-            ast::Statement::Break(_) => Statement::Break,
-            ast::Statement::Continue(_) => Statement::Continue,
+            ast::Statement::DiscardStatement(_) => Statement::Discard,
+            ast::Statement::BreakStatement(_) => Statement::Break,
+            ast::Statement::ContinueStatement(_) => Statement::Continue,
             ast::Statement::ContinuingStatement(continuing) => Statement::Continuing {
                 block: self.collect_compound_statement_opt(continuing.block()),
             },

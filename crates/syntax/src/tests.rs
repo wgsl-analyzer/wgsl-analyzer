@@ -25,3 +25,16 @@ fn smoke_test() {
         ))
     );
 }
+
+#[test]
+fn discard_statement() {
+    let ast = parse("fn main() { discard; }").tree();
+
+    let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
+        panic!()
+    };
+    let body = function_declaration.body().unwrap();
+    let ast::Statement::DiscardStatement(_) = body.statements().next().unwrap() else {
+        panic!()
+    };
+}

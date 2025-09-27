@@ -698,6 +698,10 @@ ast_node! {
     expression: Option<Expression>;
 }
 
+ast_node!(BreakStatement);
+ast_node!(ContinueStatement);
+ast_node!(DiscardStatement);
+
 ast_node! {
     ForStatement:
     for_token: Option<SyntaxToken For>;
@@ -771,10 +775,10 @@ ast_enum! {
         // Phony Assignment goes here
         // Assert Statement goes here
 
-        Break,
-        Continue,
+        BreakStatement,
+        ContinueStatement,
         // Empty statement goes
-        Discard,
+        DiscardStatement,
 
         ReturnStatement,
 
