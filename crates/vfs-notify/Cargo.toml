@@ -12,17 +12,17 @@ rust-version.workspace = true
 [lib]
 
 [dependencies]
-tracing.workspace = true
-walkdir.workspace = true
-crossbeam-channel.workspace = true
-notify.workspace = true
-rayon.workspace = true
-camino.workspace = true
+tracing = "0.1.41"
+walkdir = "2.5.0"
+crossbeam-channel = "0.5.15"
+notify = "8.2.0"
+rayon = "1.11.0"
+camino = "1.2.0"
 
 stdx.workspace = true
 vfs.workspace = true
 paths.workspace = true
-rustc-hash.workspace = true
+rustc-hash = "2.1.1"
 
 [lints]
 workspace = true

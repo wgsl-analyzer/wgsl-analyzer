@@ -43,7 +43,7 @@ jobs:
 
       - name: Install stable Rust toolchain
         if: steps.check_toolchain.outputs.updated == 'true'
-        uses: dtolnay/rust-toolchain@1.89.0
+        uses: dtolnay/rust-toolchain@1.90.0
         with:
           components: clippy, rustfmt
 
@@ -81,7 +81,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
 

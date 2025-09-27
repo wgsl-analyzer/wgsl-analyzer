@@ -16,13 +16,17 @@ doctest = false
 base-db.workspace = true
 hir-def.workspace = true
 
-salsa.workspace = true
-la-arena.workspace = true
-either.workspace = true
-rustc-hash.workspace = true
-itertools.workspace = true
-smallvec.workspace = true
-wgsl-types.workspace = true
+salsa = "0.17.0-pre.2"
+la-arena = "0.3.1"
+either = "1.15.0"
+rustc-hash = "2.1.1"
+itertools = "0.14.0"
+smallvec = { version = "1.15.1", features = [
+  "const_new",
+  "union",
+  "const_generics",
+] }
+wgsl-types = { version = "0.2.0", git = "https://github.com/wgsl-tooling-wg/wesl-rs.git", features = ["naga-ext"] }
 
 [lints]
 workspace = true

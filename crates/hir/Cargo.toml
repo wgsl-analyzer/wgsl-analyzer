@@ -14,15 +14,19 @@ doctest = false
 
 [dependencies]
 base-db.workspace = true
-either.workspace = true
+either = "1.15.0"
 hir-def.workspace = true
 hir-ty.workspace = true
 syntax.workspace = true
-tracing.workspace = true
-la-arena.workspace = true
-smallvec.workspace = true
+tracing = "0.1.41"
+la-arena = "0.3.1"
+smallvec = { version = "1.15.1", features = [
+  "const_new",
+  "union",
+  "const_generics",
+] }
 vfs.workspace = true
-serde.workspace = true
+serde = { version = "1.0.227", features = ["derive"] }
 
 [lints]
 workspace = true

@@ -7,14 +7,14 @@ edition = "2024"
 rust-version.workspace = true
 
 [dependencies]
-anyhow.workspace = true
+anyhow = "1.0.100"
 directories = "6.0.0"
 flate2 = "1.1.2"
 write-json = "0.1.4"
-xshell.workspace = true
+xshell = "0.2.7"
 xflags = "0.3.2"
-time = { version = "0.3.41", default-features = false }
-zip = { version = "4.3.0", default-features = false, features = [
+time = { version = "0.3.44", default-features = false }
+zip = { version = "5.1.1", default-features = false, features = [
   "deflate",
   "time",
 ] }
@@ -22,8 +22,8 @@ stdx.workspace = true
 # proc-macro2 = "1.0.93"
 # quote = "1.0.38"
 # ungrammar = "1.16.1"
-either.workspace = true
-itertools.workspace = true
+either = "1.15.0"
+itertools = "0.14.0"
 # Avoid adding more dependencies to this crate
 
 [lints]

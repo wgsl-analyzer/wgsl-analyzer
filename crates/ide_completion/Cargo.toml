@@ -18,19 +18,23 @@ hir.workspace = true
 hir-ty.workspace = true
 hir-def.workspace = true
 syntax.workspace = true
-tracing.workspace = true
+tracing = "0.1.41"
 stdx.workspace = true
 ide-db.workspace = true
 
-itertools.workspace = true
-either.workspace = true
-rowan.workspace = true
-rustc-hash.workspace = true
-smol_str.workspace = true
-smallvec.workspace = true
+itertools = "0.14.0"
+either = "1.15.0"
+rowan = "0.16.1"
+rustc-hash = "2.1.1"
+smol_str = "0.3.2"
+smallvec = { version = "1.15.1", features = [
+  "const_new",
+  "union",
+  "const_generics",
+] }
 
 [dev-dependencies]
-proptest.workspace = true
+proptest = "1.8.0"
 
 [lints]
 workspace = true

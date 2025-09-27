@@ -32,7 +32,7 @@
 		}
 	},
 	"engines": {
-		"vscode": "^1.102.0",
+		"vscode": "^1.103.0",
 		"npm": "^11.2.0"
 	},
 	"enabledApiProposals": [],
@@ -43,6 +43,7 @@
 		"ci": "npx @biomejs/biome ci",
 		"format:check": "npx @biomejs/biome format",
 		"format": "npx @biomejs/biome format --write",
+		"fix": "npx @biomejs/biome format --write && npx @biomejs/biome check --write",
 		"lint": "npx @biomejs/biome lint",
 		"package": "vsce package -o wgsl-analyzer.vsix",
 		"pretest": "npm run typecheck && npm run build",
@@ -52,25 +53,25 @@
 		"watch": "npm run build-base -- --sourcemap --watch"
 	},
 	"dependencies": {
-		"@hpcc-js/wasm": "^2.26.0",
+		"@hpcc-js/wasm": "^2.26.2",
 		"anser": "^2.3.2",
 		"d3": "^7.9.0",
 		"d3-graphviz": "^5.6.0",
-		"fp-ts": "^2.16.10",
+		"fp-ts": "^2.16.11",
 		"io-ts": "^2.2.22",
-		"jiti": "^2.5.1",
+		"jiti": "^2.6.0",
 		"vscode-languageclient": "^9.0.1"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.2.0",
+		"@biomejs/biome": "^2.2.4",
 		"@tsconfig/node-ts": "^23.6.1",
 		"@tsconfig/node22": "^22.0.2",
-		"@tsconfig/strictest": "^2.0.5",
-		"@types/node": "^24.2.1",
-		"@types/vscode": "^1.102.0",
+		"@tsconfig/strictest": "^2.0.6",
+		"@types/node": "^24.5.2",
+		"@types/vscode": "^1.103.0",
 		"@vscode/test-electron": "^2.5.2",
-		"@vscode/vsce": "^3.6.0",
-		"esbuild": "^0.25.9",
+		"@vscode/vsce": "^3.6.2",
+		"esbuild": "^0.25.10",
 		"ovsx": "^0.10.5",
 		"tslib": "^2.8.1",
 		"typescript": "^5.9.2"

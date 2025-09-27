@@ -63,7 +63,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@1.89.0
+        uses: dtolnay/rust-toolchain@1.90.0
         with:
           components: clippy
 
@@ -180,21 +180,17 @@ jobs:
           globs: '**/*.md'
 
   toml:
+    name: Check TOML formatting
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Check out repository
+
+      - name: Checkout
         uses: actions/checkout@v5
-
-      - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@1.89.0
-
-      - name: Install taplo
-        run: cargo install taplo-cli --locked
-
-      - name: Run Taplo
-        id: taplo
-        run: taplo fmt --check --diff
+      - name: Check formatting with with Taplo
+        uses: docker://docker.io/tamasfe/taplo:latest
+        with:
+          args: fmt --check --diff
 
       - name: Taplo info
         if: failure()
@@ -213,7 +209,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Check for typos
-        uses: crate-ci/typos@v1.35.4
+        uses: crate-ci/typos@v1.36.3
 
       - name: Typos info
         if: failure()
@@ -265,15 +261,15 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
+      # cargo-udeps requires this toolchain at runtime
       - name: Install nightly Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.NIGHTLY_TOOLCHAIN }}
 
-      - name: Install udeps
-        run: cargo install --locked cargo-udeps
-
-      - name: Run udeps
+      - name: Install cargo-udeps
+        uses: taiki-e/install-action@cargo-udeps
+      - name: Run cargo-udeps
         run: cargo udeps
 
   typescript:
@@ -292,7 +288,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
 

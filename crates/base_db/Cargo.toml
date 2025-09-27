@@ -13,12 +13,12 @@ rust-version.workspace = true
 doctest = false
 
 [dependencies]
-salsa.workspace = true
-rowan.workspace = true
-rustc-hash.workspace = true
+salsa = "0.17.0-pre.2"
+rowan = "0.16.1"
+rustc-hash = "2.1.1"
 syntax.workspace = true
-triomphe.workspace = true
-line-index.workspace = true
+triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
+line-index = "0.1.2"
 vfs.workspace = true
 
 [lints]
