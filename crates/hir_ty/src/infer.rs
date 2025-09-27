@@ -1702,6 +1702,13 @@ pub struct TyLoweringContext<'database> {
 pub enum TypeLoweringError {
     UnresolvedName(Name),
     InvalidTexelFormat(String),
+    // TODO: Change this to a strongly typed wgsl_types::Error
+    // The challenge here is that wgsl_types::Error doesn't implement Eq,
+    // However the inference result keeps track of all the diagnostics and is cached
+    // wgsl_types::Error cannot trivially implement Eq, because the `Instance` would
+    // need to implement Eq. And it would have to be eq where "floating point NaNs" are
+    // prooobably equal, if their bits are equal?
+    WgslError(String),
 }
 
 impl fmt::Display for TypeLoweringError {
@@ -1719,6 +1726,9 @@ impl fmt::Display for TypeLoweringError {
                     formatter,
                     "`{format}` is not a valid texel format, expected one of:\n{all_formats}"
                 )
+            },
+            Self::WgslError(error) => {
+                write!(formatter, "{error}")
             },
         }
     }
@@ -1787,75 +1797,6 @@ impl<'database> TyLoweringContext<'database> {
             },
             None => self.lower_predeclared_ty(type_ref),
         }
-        /*
-        let ty_kind = match type_ref {
-            TypeReference::Error => TyKind::Error,
-            TypeReference::Scalar(scalar) => {
-                let scalar = match scalar {
-                    type_ref::ScalarType::Bool => ScalarType::Bool,
-                    type_ref::ScalarType::Float32 => ScalarType::F32,
-                    type_ref::ScalarType::Int32 => ScalarType::I32,
-                    type_ref::ScalarType::Uint32 => ScalarType::U32,
-                };
-                TyKind::Scalar(scalar)
-            },
-            TypeReference::Vec(vec) => TyKind::Vector(VectorType {
-                size: vec.size.into(),
-                component_type: self.lower_ty(&vec.inner),
-            }),
-            TypeReference::Matrix(matrix) => TyKind::Matrix(MatrixType {
-                columns: matrix.columns.into(),
-                rows: matrix.rows.into(),
-                inner: self.lower_ty(&matrix.inner),
-            }),
-            TypeReference::Texture(tex) => TyKind::Texture(TextureType {
-                kind: match &tex.kind {
-                    type_ref::TextureKind::Sampled(r#type) => {
-                        TextureKind::Sampled(self.lower_ty(r#type))
-                    },
-                    type_ref::TextureKind::Storage(format, mode) => TextureKind::Storage(
-                        format
-                            .parse()
-                            .map_err(|()| TypeLoweringError::InvalidTexelFormat(format.clone()))?,
-                        *mode,
-                    ),
-                    type_ref::TextureKind::Depth => TextureKind::Depth,
-                    type_ref::TextureKind::External => TextureKind::External,
-                },
-                dimension: match tex.dimension {
-                    type_ref::TextureDimension::D1 => TextureDimensionality::D1,
-                    type_ref::TextureDimension::D2 => TextureDimensionality::D2,
-                    type_ref::TextureDimension::D3 => TextureDimensionality::D3,
-                    type_ref::TextureDimension::Cube => TextureDimensionality::Cube,
-                },
-                arrayed: tex.arrayed,
-                multisampled: tex.multisampled,
-            }),
-            TypeReference::Sampler(sampler) => TyKind::Sampler(SamplerType {
-                comparison: sampler.comparison,
-            }),
-            TypeReference::Pointer(pointer) => TyKind::Pointer(Pointer {
-                address_space: pointer.address_space,
-                inner: self.lower_ty(&pointer.inner),
-                access_mode: pointer.access_mode,
-            }),
-            TypeReference::Path(name) => match self.resolver.resolve_type(name) {
-                Some(ResolveType::Struct(loc)) => {
-                    let r#struct = self.database.intern_struct(loc);
-                    TyKind::Struct(r#struct)
-                },
-                Some(ResolveType::TypeAlias(loc)) => {
-                    let alias = self.database.intern_type_alias(loc);
-                    let data = self.database.type_alias_data(alias).0;
-
-                    return Ok(self.lower_ty(&data.r#type));
-                },
-                Some(ResolveType::PredeclaredTypeAlias(type_ref)) => {
-                    return Ok(self.lower_ty(&type_ref));
-                },
-                None => return Err(TypeLoweringError::UnresolvedName(name.clone())),
-            },
-        }; */
     }
 
     fn is_predeclared_ty(
@@ -1923,7 +1864,7 @@ impl<'database> TyLoweringContext<'database> {
         let return_type = wgsl_types::builtin::builtin_type(name, template_args);
         match return_type {
             Ok(ty) => Ok(ty_from_wgsl_types(ty, self.database)),
-            Err(_) => todo!(),
+            Err(err) => Err(TypeLoweringError::WgslError(err.to_string())),
         }
     }
 }
