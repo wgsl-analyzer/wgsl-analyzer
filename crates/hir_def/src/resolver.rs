@@ -170,8 +170,8 @@ impl Resolver {
                             scope.module_info.data[func.index].name.clone(),
                             ScopeDef::ModuleItem(scope.file_id, *item),
                         ),
-                        ModuleItem::GlobalVariable(var) => function(
-                            scope.module_info.data[var.index].name.clone(),
+                        ModuleItem::GlobalVariable(variable) => function(
+                            scope.module_info.data[variable.index].name.clone(),
                             ScopeDef::ModuleItem(scope.file_id, *item),
                         ),
                         ModuleItem::GlobalConstant(constant) => function(

@@ -169,7 +169,7 @@ pub fn validate_address_space<Function: FnMut(AddressSpaceError)>(
                 | TyKind::Array(_)
                 | TyKind::Reference(_)
                 | TyKind::Pointer(_)
-                | TyKind::BoundVar(_)
+                | TyKind::BoundVariable(_)
                 | TyKind::StorageTypeOfTexelFormat(_) => {
                     diagnostic_builder(AddressSpaceError::HandleOrTexture);
                 },
