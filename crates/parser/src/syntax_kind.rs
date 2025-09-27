@@ -147,12 +147,13 @@ pub enum SyntaxKind {
     Alias,
     Break,
     Case,
+    /// <https://www.w3.org/TR/WGSL/#syntax_kw-const>
+    Constant,
     ConstantAssert,
     Continue,
     Continuing,
-    /// <https://www.w3.org/TR/WGSL/#syntax_kw-const>
-    Constant,
     Default,
+    Diagnostic,
     Discard,
     Else,
     Enable,
@@ -163,6 +164,7 @@ pub enum SyntaxKind {
     Let,
     Loop,
     Override,
+    Requires,
     Return,
     Struct,
     Switch,

@@ -1,9 +1,9 @@
 //! The parser is mostly copied from <https://github.com/arzg/eldiro/tree/master/crates/parser> with some adaptions and extensions
 
+mod cst_builder;
 mod lexer;
 mod parser;
 mod syntax_kind;
-mod cst_builder;
 
 use std::fmt::{self, Debug};
 
@@ -107,7 +107,6 @@ pub enum ParseEntryPoint {
     Statement,
     Type,
     Attribute,
-    FunctionParameterList,
 }
 
 #[must_use]

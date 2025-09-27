@@ -13,7 +13,7 @@ doctest = false
 
 [dependencies]
 drop_bomb = "0.1.5"
-logos = "0.12.1"
+logos = "0.15.1"
 rowan = "0.16.1"
 edition.workspace = true
 
@@ -21,7 +21,7 @@ edition.workspace = true
 expect-test = "1.5.1"
 
 [build-dependencies]
-lelwel = { version = "0.9.1", git = "https://github.com/0x2a-42/lelwel.git" }
+lelwel = { version = "0.10.0", git = "https://github.com/0x2a-42/lelwel.git" }
 
 [lints]
 workspace = true

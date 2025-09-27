@@ -65,9 +65,6 @@ pub fn parse_entrypoint(
         ParseEntryPoint::Statement => Parser::new(&input, &mut diags).parse_statement(&mut diags),
         ParseEntryPoint::Type => Parser::new(&input, &mut diags).parse_type_specifier(&mut diags),
         ParseEntryPoint::Attribute => Parser::new(&input, &mut diags).parse_attribute(&mut diags),
-        ParseEntryPoint::FunctionParameterList => {
-            todo!("Remove this")
-        },
     };
     let green_node = CstBuilder {
         builder: GreenNodeBuilder::new(),
@@ -82,13 +79,13 @@ pub fn parse_entrypoint(
 
 impl<'a> Cst<'a> {
     pub fn nodes_count(&self) -> usize {
-        self.nodes.len()
+        self.data.nodes.len()
     }
     pub fn get_text(
         &self,
         index: CstIndex,
     ) -> &str {
-        &self.source[self.spans[usize::from(index)].clone()]
+        &self.source[self.data.spans[usize::from(index)].clone()]
     }
 }
 
@@ -98,18 +95,22 @@ impl<'a> Parser<'a> {
     }
 }
 
-impl<'a> ParserCallbacks for Parser<'a> {
+impl<'a> ParserCallbacks<'a> for Parser<'a> {
+    type Diagnostic = Diagnostic;
+    type Context = ();
     fn create_tokens(
-        source: &str,
-        _diags: &mut Vec<Diagnostic>,
+        _context: &mut Self::Context,
+        source: &'a str,
+        _diags: &mut Vec<Self::Diagnostic>,
     ) -> (Vec<Token>, Vec<Span>) {
         lex_with_templates(Token::lexer(source))
     }
+
     fn create_diagnostic(
         &self,
         span: Span,
         message: String,
-    ) -> Diagnostic {
+    ) -> Self::Diagnostic {
         let range = {
             let std::ops::Range { start, end } = span;
             let start = rowan::TextSize::try_from(start).unwrap();
@@ -156,7 +157,7 @@ impl<'a> ParserCallbacks for Parser<'a> {
     fn predicate_case_selectors_1(&self) -> bool {
         !matches!(self.peek(1), Token::At | Token::Colon | Token::LBrace)
     }
-    fn assertion_struct_body_1(&self) -> Option<Diagnostic> {
+    fn assertion_struct_body_1(&self) -> Option<Self::Diagnostic> {
         Some(self.create_diagnostic(self.span(), "invalid syntax, expected ','".to_string()))
     }
 }

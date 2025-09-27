@@ -190,7 +190,7 @@ impl TryFrom<Token> for SyntaxKind {
             | Token::EOFStatement
             | Token::EOFTypeSpecifier => return Err(()),
             Token::Enable => SyntaxKind::Enable,
-            Token::Requires => todo!(),
+            Token::Requires => SyntaxKind::Requires,
             Token::Fn => SyntaxKind::Fn,
             Token::Alias => SyntaxKind::Alias,
             Token::Struct => SyntaxKind::Struct,
@@ -214,7 +214,7 @@ impl TryFrom<Token> for SyntaxKind {
             Token::Let => SyntaxKind::Let,
             Token::True => SyntaxKind::True,
             Token::False => SyntaxKind::False,
-            Token::Diagnostic => todo!(),
+            Token::Diagnostic => SyntaxKind::Diagnostic,
             Token::Semi => SyntaxKind::Semicolon,
             Token::LPar => SyntaxKind::ParenthesisLeft,
             Token::RPar => SyntaxKind::ParenthesisRight,
