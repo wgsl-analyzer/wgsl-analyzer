@@ -438,22 +438,6 @@ fn get_hints(
                     hints,
                 )?;
             },
-            AstExpression::TypeInitializer(type_initialiser_expression) => {
-                if !config.parameter_hints {
-                    return None;
-                }
-                // Show hints for the built-in initializers.
-                // `vec4(xyz: val1, w: val2)` could also be
-                // `vec4(xy: val1, zw: val2)` without hints
-                function_hints(
-                    semantics,
-                    file_id,
-                    node,
-                    &expression,
-                    type_initialiser_expression.arguments()?.arguments(),
-                    hints,
-                )?;
-            },
             AstExpression::InfixExpression(_)
             | AstExpression::PrefixExpression(_)
             | AstExpression::Literal(_)
@@ -462,14 +446,18 @@ fn get_hints(
             | AstExpression::IndexExpression(_)
             | AstExpression::IdentExpression(_) => {},
         }
-    } else if let Some((binding, r#type)) = ast::VariableStatement::cast(node.clone())
-        .and_then(|statement| Some((statement.binding()?, statement.ty())))
+    } else if let Some((binding, r#type)) = ast::LetDeclaration::cast(node.clone())
+        .and_then(|statement| Some((statement.name()?, statement.ty())))
         .or_else(|| {
             let statement = ast::ConstantDeclaration::cast(node.clone())?;
             Some((statement.name()?, statement.ty()))
         })
         .or_else(|| {
             let statement = ast::VariableDeclaration::cast(node.clone())?;
+            Some((statement.name()?, statement.ty()))
+        })
+        .or_else(|| {
+            let statement = ast::OverrideDeclaration::cast(node.clone())?;
             Some((statement.name()?, statement.ty()))
         })
     {
