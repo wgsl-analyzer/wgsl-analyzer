@@ -303,7 +303,7 @@ impl<'database> SourceAnalyzer<'database> {
     #[must_use]
     pub fn type_of_binding(
         &self,
-        binding: &ast::Binding,
+        binding: &ast::Name,
     ) -> Option<Type> {
         let id = self.binding_id(binding)?;
         let r#type = *self.infer.type_of_binding.get(id)?;
@@ -359,7 +359,7 @@ impl<'database> SourceAnalyzer<'database> {
     #[must_use]
     pub fn binding_id(
         &self,
-        source: &ast::Binding,
+        source: &ast::Name,
     ) -> Option<BindingId> {
         self.body_source_map
             .lookup_binding(&AstPointer::new(source))
@@ -391,7 +391,7 @@ pub struct Local {
 }
 
 impl HasSource for Local {
-    type Ast = ast::Binding;
+    type Ast = ast::Name;
 
     fn source(
         self,

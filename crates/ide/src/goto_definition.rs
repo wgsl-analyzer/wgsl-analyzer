@@ -86,7 +86,7 @@ impl TryToNavigationTarget for InFile<Definition> {
                     let declaration = var.source(database)?;
 
                     let frange = declaration.original_file_range(database);
-                    let focus_range = declaration.value.binding().map(|name| {
+                    let focus_range = declaration.value.name().map(|name| {
                         declaration
                             .with_value(name)
                             .original_file_range(database)
@@ -99,7 +99,7 @@ impl TryToNavigationTarget for InFile<Definition> {
                     let declaration = constant.source(database)?;
 
                     let frange = declaration.original_file_range(database);
-                    let focus_range = declaration.value.binding().map(|name| {
+                    let focus_range = declaration.value.name().map(|name| {
                         declaration
                             .with_value(name)
                             .original_file_range(database)
@@ -112,7 +112,7 @@ impl TryToNavigationTarget for InFile<Definition> {
                     let declaration = override_declaration.source(database)?;
 
                     let frange = declaration.original_file_range(database);
-                    let focus_range = declaration.value.binding().map(|name| {
+                    let focus_range = declaration.value.name().map(|name| {
                         declaration
                             .with_value(name)
                             .original_file_range(database)
@@ -152,7 +152,7 @@ impl TryToNavigationTarget for InFile<Definition> {
                 let declaration = field.source(database)?;
 
                 let frange = declaration.original_file_range(database);
-                let focus_range = declaration.value.variable_ident_declaration().map(|name| {
+                let focus_range = declaration.value.name().map(|name| {
                     declaration
                         .with_value(name)
                         .original_file_range(database)

@@ -178,7 +178,7 @@ pub enum TypeContainer {
     GlobalConstant(GlobalConstantId),
     Override(OverrideId),
     TypeAlias(TypeAliasId),
-    FunctionParameter(ParamId),
+    FunctionParameter(FunctionId, BindingId),
     StructField(FieldId),
     FunctionReturn(FunctionId),
     VariableStatement(StatementId),
@@ -416,13 +416,9 @@ impl<'database> InferenceContext<'database> {
         function_data: &FunctionData,
     ) {
         let body = self.body.clone();
-        for ((id, parameter), &binding_id) in function_data.parameters.iter().zip(&body.parameters)
-        {
+        for ((_, parameter), &binding_id) in function_data.parameters.iter().zip(&body.parameters) {
             let param_ty = self.lower_ty(
-                TypeContainer::FunctionParameter(ParamId {
-                    function: function_id,
-                    param: id,
-                }),
+                TypeContainer::FunctionParameter(function_id, binding_id),
                 &function_data.store,
                 &parameter.r#type,
             );

@@ -460,19 +460,17 @@ fn get_hints(
             | AstExpression::ParenthesisExpression(_)
             | AstExpression::FieldExpression(_)
             | AstExpression::IndexExpression(_)
-            | AstExpression::PathExpression(_)
-            | AstExpression::BitcastExpression(_)
-            | AstExpression::InvalidFunctionCall(_) => {},
+            | AstExpression::IdentExpression(_) => {},
         }
     } else if let Some((binding, r#type)) = ast::VariableStatement::cast(node.clone())
         .and_then(|statement| Some((statement.binding()?, statement.ty())))
         .or_else(|| {
             let statement = ast::ConstantDeclaration::cast(node.clone())?;
-            Some((statement.binding()?, statement.ty()))
+            Some((statement.name()?, statement.ty()))
         })
         .or_else(|| {
             let statement = ast::VariableDeclaration::cast(node.clone())?;
-            Some((statement.binding()?, statement.ty()))
+            Some((statement.name()?, statement.ty()))
         })
     {
         if !config.type_hints {
@@ -485,7 +483,7 @@ fn get_hints(
             let label =
                 pretty_type_with_verbosity(semantics.database, r#type, config.type_verbosity);
             hints.push(InlayHint {
-                range: binding.name()?.ident_token()?.text_range(),
+                range: binding.ident_token()?.text_range(),
                 position: InlayHintPosition::After,
                 pad_left: !config.render_colons,
                 pad_right: false,
@@ -605,23 +603,18 @@ fn compare_ignore_case_convention(
 
 fn get_string_representation(expression: &AstExpression) -> Option<String> {
     match expression {
-        AstExpression::PathExpression(expression) => {
+        AstExpression::IdentExpression(expression) => {
             Some(expression.name_ref()?.text().as_str().to_owned())
         },
         AstExpression::PrefixExpression(expression) => {
             get_string_representation(&expression.expression()?)
         },
-        AstExpression::FieldExpression(expression) => {
-            Some(expression.field()?.text().as_str().to_owned())
-        },
+        AstExpression::FieldExpression(expression) => Some(expression.field()?.text().to_owned()),
         AstExpression::InfixExpression(_)
         | AstExpression::Literal(_)
         | AstExpression::ParenthesisExpression(_)
         | AstExpression::FunctionCall(_)
-        | AstExpression::TypeInitializer(_)
-        | AstExpression::IndexExpression(_)
-        | AstExpression::BitcastExpression(_)
-        | AstExpression::InvalidFunctionCall(_) => None,
+        | AstExpression::IndexExpression(_) => None,
     }
 }
 

@@ -7,7 +7,7 @@ use crate::builtins::{Builtin, BuiltinId};
 use crate::function::{FunctionDetails, ResolvedFunctionId};
 use crate::infer::{InferenceContext, InferenceResult, TyLoweringContext, TypeContainer};
 use crate::ty::{TyKind, Type};
-use hir_def::data::{FieldId, ParamId};
+use hir_def::data::FieldId;
 use hir_def::database::{DefinitionWithBodyId, GlobalVariableId};
 use hir_def::{
     HirFileId, InFile,

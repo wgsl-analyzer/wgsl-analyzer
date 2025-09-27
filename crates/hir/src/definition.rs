@@ -61,10 +61,10 @@ fn resolve_name_ref(
         let field = semantics.analyze(definition).resolve_field(expression)?;
 
         Some(Definition::Field(field))
-    } else if let Some(expression) = ast::FunctionCall::cast(parent.clone()) {
-        let resolver = semantics.resolver(file_id, expression.syntax());
+    } else if let Some(r#type) = ast::TypeSpecifier::cast(parent) {
+        let resolver = semantics.resolver(file_id, r#type.syntax());
 
-        match resolver.resolve(&expression.ident_expression()?.into()?)? {
+        match resolver.resolve(&r#type.name_ref()?.into())? {
             ResolveType::Struct(loc) => {
                 let id = semantics.database.intern_struct(loc);
                 Some(Definition::Struct(Struct { id }))
@@ -73,31 +73,11 @@ fn resolve_name_ref(
                 let id = semantics.database.intern_type_alias(loc);
                 Some(Definition::TypeAlias(TypeAlias { id }))
             },
-            ResolveType::Function(function) => {
-                let id = semantics.database.intern_function(function);
-                Some(Definition::ModuleDef(ModuleDef::Function(Function { id })))
-            },
-            ResolveType::GlobalConstant(_)
+            ResolveType::Function(_)
+            | ResolveType::GlobalConstant(_)
             | ResolveType::GlobalVariable(_)
             | ResolveType::Override(_)
             | ResolveType::Local(_) => None,
-        }
-    } else if let Some(r#type) = ast::PathType::cast(parent) {
-        let resolver = semantics.resolver(file_id, r#type.syntax());
-
-        match resolver.resolve(&r#type.name()?.into())? {
-            ResolveType::Struct(loc) => {
-                let id = semantics.database.intern_struct(loc);
-                Some(Definition::Struct(Struct { id }))
-            },
-            ResolveType::TypeAlias(loc) => {
-                let id = semantics.database.intern_type_alias(loc);
-                Some(Definition::TypeAlias(TypeAlias { id }))
-            },
-            ResolveType::PredeclaredTypeAlias(_) => {
-                // TODO: should this return something?
-                None
-            },
         }
     } else {
         None

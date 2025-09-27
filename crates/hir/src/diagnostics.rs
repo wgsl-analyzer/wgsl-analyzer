@@ -357,6 +357,8 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 error: error.clone(),
             }
         },
+        InferenceDiagnostic::CyclicType { name } => todo!(),
+        InferenceDiagnostic::UnexpectedTemplateArgument { expression } => todo!(),
     })
 }
 
