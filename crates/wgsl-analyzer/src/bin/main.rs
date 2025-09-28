@@ -10,6 +10,7 @@ use std::{
     io::stderr,
     path::PathBuf,
     process::ExitCode,
+    sync::Arc,
 };
 
 use anyhow::Context as _;
