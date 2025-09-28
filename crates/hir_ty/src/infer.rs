@@ -1,7 +1,7 @@
 mod eval;
 mod unify;
 
-use std::{borrow::Cow, collections::hash_map::Entry, fmt, sync::Arc};
+use std::{borrow::Cow, collections::hash_map::Entry, fmt};
 
 use either::Either;
 use hir_def::{
@@ -26,6 +26,7 @@ use hir_def::{
 };
 use la_arena::ArenaMap;
 use rustc_hash::FxHashMap;
+use triomphe::Arc;
 use wgsl_types::{
     inst::Instance,
     syntax::{AccessMode, AddressSpace},

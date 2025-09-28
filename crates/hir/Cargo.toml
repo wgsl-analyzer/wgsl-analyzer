@@ -19,6 +19,7 @@ hir-def.workspace = true
 hir-ty.workspace = true
 syntax.workspace = true
 tracing = "0.1.41"
+triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
 la-arena = "0.3.1"
 smallvec = { version = "1.15.1", features = [
   "const_new",

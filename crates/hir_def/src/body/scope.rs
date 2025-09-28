@@ -1,8 +1,9 @@
-use std::{iter, ops::Index, sync::Arc};
+use std::{iter, ops::Index};
 
 use either::Either;
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
+use triomphe::Arc;
 
 use super::{BindingId, Body};
 use crate::{

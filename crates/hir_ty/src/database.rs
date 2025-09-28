@@ -1,7 +1,7 @@
 //! The home of `HirDatabase`, which is the Salsa database containing all the
 //! type inference-related queries.
 
-use std::{fmt, sync::Arc};
+use std::fmt;
 
 use crate::builtins::{Builtin, BuiltinId};
 use crate::function::{FunctionDetails, ResolvedFunctionId};
@@ -16,6 +16,7 @@ use hir_def::{
     resolver::Resolver,
 };
 use la_arena::ArenaMap;
+use triomphe::Arc;
 use wgsl_types::syntax::AddressSpace;
 
 #[salsa::query_group(HirDatabaseStorage)]

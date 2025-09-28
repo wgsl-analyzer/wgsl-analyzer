@@ -1,4 +1,4 @@
-use std::{iter, sync::Arc};
+use std::iter;
 
 use either::Either;
 use la_arena::Arena;
@@ -6,6 +6,7 @@ use syntax::{
     HasAttributes, HasName as _,
     ast::{self},
 };
+use triomphe::Arc;
 
 use crate::{
     HasSource as _,

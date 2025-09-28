@@ -589,6 +589,7 @@ dependencies = [
  "smallvec",
  "syntax",
  "tracing",
+ "triomphe",
  "vfs",
 ]
 
@@ -606,6 +607,7 @@ dependencies = [
  "smol_str",
  "syntax",
  "tracing",
+ "triomphe",
  "vfs",
 ]
 
@@ -615,12 +617,17 @@ version = "0.0.0"
 dependencies = [
  "base-db",
  "either",
+ "expect-test",
  "hir-def",
  "itertools",
  "la-arena",
  "rustc-hash 2.1.1",
  "salsa",
  "smallvec",
+ "stdx 0.0.0",
+ "syntax",
+ "triomphe",
+ "vfs",
  "wgsl-types",
 ]
 
@@ -2004,6 +2011,7 @@ dependencies = [
  "parser",
  "rowan",
  "smol_str",
+ "triomphe",
 ]
 
 [[package]]

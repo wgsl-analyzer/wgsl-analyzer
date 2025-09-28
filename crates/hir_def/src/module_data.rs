@@ -1,11 +1,12 @@
 mod lower;
 pub mod pretty;
 
-use std::{hash, marker::PhantomData, ops, sync::Arc};
+use std::{hash, marker::PhantomData, ops};
 
 use la_arena::{Arena, Idx, IdxRange};
 use smol_str::SmolStr;
 use syntax::{AstNode, TokenText, ast};
+use triomphe::Arc;
 
 use crate::{
     HirFileId,

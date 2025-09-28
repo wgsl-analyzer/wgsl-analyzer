@@ -1,6 +1,5 @@
-use std::sync::Arc;
-
 use la_arena::{Arena, Idx};
+use triomphe::Arc;
 
 use crate::{
     HasSource,

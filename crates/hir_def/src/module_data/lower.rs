@@ -3,12 +3,12 @@ use crate::hir_file_id::relative_file;
 use crate::module_data::{Function, ModuleData, ModuleItem, ModuleItemId};
 use crate::{ast_id::AstIdMap, database::DefDatabase};
 use la_arena::{Idx, IdxRange};
-use std::sync::Arc;
 
 use syntax::{
     AstNode as _, HasName as _,
     ast::{self, Item, SourceFile},
 };
+use triomphe::Arc;
 
 use super::{GlobalConstant, GlobalVariable, Name, Override, Struct, TypeAlias};
 

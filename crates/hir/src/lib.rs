@@ -1,8 +1,6 @@
 pub mod definition;
 pub mod diagnostics;
 
-use std::sync::Arc;
-
 use base_db::FileId;
 use definition::Definition;
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
@@ -24,6 +22,7 @@ pub use hir_ty::database::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
 use syntax::{AstNode as _, HasName as _, SyntaxNode, ast, match_ast, pointer::AstPointer};
+use triomphe::Arc;
 
 pub trait HasSource {
     type Ast;

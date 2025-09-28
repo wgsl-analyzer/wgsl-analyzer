@@ -1,6 +1,5 @@
-use std::sync::Arc;
-
 use tracing::info;
+use triomphe::Arc;
 
 use crate::{
     HirFileId, InFile,

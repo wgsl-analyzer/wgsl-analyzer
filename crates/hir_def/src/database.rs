@@ -2,7 +2,6 @@ use std::{
     fmt::{self, Debug},
     hash,
     marker::PhantomData,
-    sync::Arc,
 };
 
 use base_db::{FileId, SourceDatabase, TextRange, TextSize};
@@ -11,6 +10,7 @@ use syntax::{
     AstNode as _, Parse,
     ast::{self, Item},
 };
+use triomphe::Arc;
 use vfs::VfsPath;
 
 use crate::{

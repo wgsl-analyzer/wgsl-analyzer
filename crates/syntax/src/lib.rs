@@ -2,7 +2,7 @@ pub mod algorithms;
 pub mod ast;
 pub mod pointer;
 
-use std::{marker::PhantomData, ops::Deref, sync::Arc};
+use std::{marker::PhantomData, ops::Deref};
 
 use either::Either;
 pub use parser::{
@@ -11,6 +11,7 @@ pub use parser::{
 };
 pub use rowan::Direction;
 use smol_str::SmolStr;
+use triomphe::Arc;
 
 #[derive(Clone, Debug)]
 pub struct Parse {

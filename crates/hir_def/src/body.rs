@@ -1,12 +1,11 @@
 mod lower;
 pub mod scope;
 
-use std::sync::Arc;
-
 use either::Either;
 use la_arena::{Arena, ArenaMap, Idx};
 use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::{ast, pointer::AstPointer};
+use triomphe::Arc;
 
 use crate::{
     HasSource as _,
