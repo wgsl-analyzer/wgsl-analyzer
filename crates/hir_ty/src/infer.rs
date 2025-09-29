@@ -11,7 +11,7 @@ use hir_def::{
         StructData, TypeAliasData,
     },
     database::{
-        DefinitionId, DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId,
+        DefinitionId, DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, Lookup,
         OverrideId, StructId, TypeAliasId,
     },
     expression::{
@@ -89,18 +89,28 @@ pub fn infer_cycle_result(
     definition: &DefinitionWithBodyId,
 ) -> Arc<InferenceResult> {
     let mut inference_result = InferenceResult::new(database);
-    let name = match *definition {
-        DefinitionWithBodyId::Function(id) => database.fn_data(id).0.name.clone(),
-        DefinitionWithBodyId::GlobalVariable(id) => database.global_var_data(id).0.name.clone(),
-        DefinitionWithBodyId::GlobalConstant(id) => {
-            database.global_constant_data(id).0.name.clone()
-        },
-        DefinitionWithBodyId::Override(id) => database.override_data(id).0.name.clone(),
+    let (name, range) = match *definition {
+        DefinitionWithBodyId::Function(id) => (
+            database.fn_data(id).0.name.clone(),
+            id.lookup(database).file_syntax(database).text_range(),
+        ),
+        DefinitionWithBodyId::GlobalVariable(id) => (
+            database.global_var_data(id).0.name.clone(),
+            id.lookup(database).file_syntax(database).text_range(),
+        ),
+        DefinitionWithBodyId::GlobalConstant(id) => (
+            database.global_constant_data(id).0.name.clone(),
+            id.lookup(database).file_syntax(database).text_range(),
+        ),
+        DefinitionWithBodyId::Override(id) => (
+            database.override_data(id).0.name.clone(),
+            id.lookup(database).file_syntax(database).text_range(),
+        ),
     };
 
     inference_result
         .diagnostics
-        .push(InferenceDiagnostic::CyclicType { name });
+        .push(InferenceDiagnostic::CyclicType { name, range });
 
     Arc::new(inference_result)
 }
@@ -165,9 +175,14 @@ pub enum InferenceDiagnostic {
     },
     CyclicType {
         name: Name,
+        range: base_db::TextRange,
     },
     UnexpectedTemplateArgument {
         expression: ExpressionId,
+    },
+    WgslError {
+        expression: ExpressionId,
+        message: String,
     },
 }
 
@@ -1488,7 +1503,6 @@ impl<'database> InferenceContext<'database> {
                 return self.error_ty();
             };
 
-            // TODO: Ask mathis to make the error type for this more specific
             let return_type = if wgsl_types::builtin::is_ctor(callee.path.as_str()) {
                 wgsl_types::builtin::type_ctor(
                     callee.path.as_str(),
@@ -1506,12 +1520,11 @@ impl<'database> InferenceContext<'database> {
 
             match return_type {
                 Ok(Some(ty)) => ty_from_wgsl_types(ty, self.database),
-                // TODO: Or should I introduce a "void" type?
                 Ok(None) => self.error_ty(),
                 Err(err) => {
-                    self.push_diagnostic(InferenceDiagnostic::UnresolvedName {
+                    self.push_diagnostic(InferenceDiagnostic::WgslError {
                         expression,
-                        name: callee.path.clone(),
+                        message: err.to_string(),
                     });
                     self.error_ty()
                 },
@@ -1892,16 +1905,13 @@ impl<'database> TyLoweringContext<'database> {
             .map(|arg| template_parameter_to_wgsl_types(arg, database))
             .collect();
 
-        let Some(template_args) = template_args else {
-            // One of the template parameters had an error type
-            return todo!("report an error");
+        let template_args = match &template_args {
+            Some(args) if args.is_empty() => None,
+            Some(args) => Some(args.as_slice()),
+            // One of the template params has an error
+            // wgsl_types::builtin::builtin_type will output a decent error message
+            None => None,
         };
-        let template_args = if template_args.is_empty() {
-            None
-        } else {
-            Some(template_args.as_slice())
-        };
-
         let return_type = wgsl_types::builtin::builtin_type(name, template_args);
         match return_type {
             Ok(ty) => Ok(ty_from_wgsl_types(ty, self.database)),

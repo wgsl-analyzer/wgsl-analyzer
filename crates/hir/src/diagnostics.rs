@@ -150,6 +150,18 @@ pub enum AnyDiagnostic {
         r#type: Type,
         parameters: Vec<Type>,
     },
+    CyclicType {
+        file_id: HirFileId,
+        name: Name,
+        range: TextRange,
+    },
+    UnexpectedTemplateArgument {
+        expression: InFile<AstPointer<ast::Expression>>,
+    },
+    WgslError {
+        expression: InFile<AstPointer<ast::Expression>>,
+        message: String,
+    },
 }
 
 impl AnyDiagnostic {
@@ -167,13 +179,16 @@ impl AnyDiagnostic {
             | Self::AddressOfNotReference { expression, .. }
             | Self::DerefNotPointer { expression, .. }
             | Self::NoConstructor { expression, .. }
-            | Self::PrecedenceParensRequired { expression, .. } => expression.file_id,
+            | Self::PrecedenceParensRequired { expression, .. }
+            | Self::UnexpectedTemplateArgument { expression, .. }
+            | Self::WgslError { expression, .. } => expression.file_id,
             Self::MissingAddressSpace { var } | Self::InvalidAddressSpace { var, .. } => {
                 var.file_id
             },
             Self::InvalidType { file_id, .. }
             | Self::NagaValidationError { file_id, .. }
-            | Self::ParseError { file_id, .. } => *file_id,
+            | Self::ParseError { file_id, .. }
+            | Self::CyclicType { file_id, .. } => *file_id,
         }
     }
 }
@@ -357,8 +372,27 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 error: error.clone(),
             }
         },
-        InferenceDiagnostic::CyclicType { name } => todo!(),
-        InferenceDiagnostic::UnexpectedTemplateArgument { expression } => todo!(),
+        InferenceDiagnostic::CyclicType { name, range } => AnyDiagnostic::CyclicType {
+            file_id,
+            name: name.clone(),
+            range: range.clone(),
+        },
+        InferenceDiagnostic::UnexpectedTemplateArgument { expression } => {
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::UnexpectedTemplateArgument { expression: source }
+        },
+        InferenceDiagnostic::WgslError {
+            expression,
+            message,
+        } => {
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::WgslError {
+                expression: source,
+                message: message.clone(),
+            }
+        },
     })
 }
 

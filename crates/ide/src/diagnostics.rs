@@ -680,6 +680,28 @@ pub fn diagnostics(
                     };
                     Diagnostic::new(DiagnosticCode("19"), message, frange.range)
                 },
+                AnyDiagnostic::CyclicType { name, range, .. } => Diagnostic::new(
+                    DiagnosticCode("20"),
+                    format!("cyclic type {}", name.as_str()),
+                    range,
+                ),
+                AnyDiagnostic::UnexpectedTemplateArgument { expression } => {
+                    let source = expression.value.to_node(&root);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("21"),
+                        format!("unexpected template argument"),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::WgslError {
+                    expression,
+                    message,
+                } => {
+                    let source = expression.value.to_node(&root);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(DiagnosticCode("22"), format!("{message}"), frange.range)
+                },
             }
         })
         .collect()
