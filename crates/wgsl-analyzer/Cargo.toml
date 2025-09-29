@@ -57,7 +57,7 @@ nohash-hasher = "0.2.0"
 walkdir = "2.5.0"
 semver = "1.0.27"
 memchr = "2.7.6"
-cargo_metadata = "0.22.0"
+cargo_metadata = "0.23.0"
 # process-wrap = { version = "8.2.0", features = ["std"] }
 # cfg.workspace = true
 hir-def.workspace = true
