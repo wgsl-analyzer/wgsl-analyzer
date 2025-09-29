@@ -59,17 +59,17 @@ fn item_tree_types() {
         "
 fn test(a: texture_2d<f32>) {}
 
-let tex_sampled: texture_2d<f32>;
-let tex_sampled_cube_array: texture_cube_array<f32>;
-let tex_storage: texture_storage_2d<rgba8unorm, read_write>;
-let tex_depth: texture_depth;
-let tex_external: texture_external;
-let tex_depth_multisampled: texture_depth_multisampled_2d;
+var tex_sampled: texture_2d<f32>;
+var tex_sampled_cube_array: texture_cube_array<f32>;
+var tex_storage: texture_storage_2d<rgba8unorm, read_write>;
+var tex_depth: texture_depth;
+var tex_external: texture_external;
+var tex_depth_multisampled: texture_depth_multisampled_2d;
 
-let x: sampler_comparison;
-let y: atomic<u32>;
-let z: array<path, 10>;
-let z: array<path, COUNT>;
+var x: sampler_comparison;
+var y: atomic<u32>;
+var z: array<path, 10>;
+var z: array<path, COUNT>;
 
 struct Test {
     a: f32,
@@ -78,16 +78,16 @@ struct Test {
 ",
         expect![["
             fn test(texture_2d<f32>);
-            let tex_sampled: texture_2d<f32>;
-            let tex_sampled_cube_array: texture_cube_array<f32>;
-            let tex_storage: texture_storage_2d<rgba8unorm, read_write>;
-            let tex_depth: texture_depth;
-            let tex_external: texture_external;
-            let tex_depth_multisampled: texture_depth_multisampled_2d;
-            let x: sampler_comparison;
-            let y: atomic<u32>;
-            let z: array<path, 10>;
-            let z: array<path, COUNT>;
+            var tex_sampled: texture_2d<f32>;
+            var tex_sampled_cube_array: texture_cube_array<f32>;
+            var tex_storage: texture_storage_2d<rgba8unorm, read_write>;
+            var tex_depth: texture_depth;
+            var tex_external: texture_external;
+            var tex_depth_multisampled: texture_depth_multisampled_2d;
+            var x: sampler_comparison;
+            var y: atomic<u32>;
+            var z: array<path, 10>;
+            var z: array<path, COUNT>;
             struct Test {
                 a: f32;
                 b: vec3<f32>;

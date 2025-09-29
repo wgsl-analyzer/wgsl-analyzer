@@ -27,7 +27,13 @@ smallvec = { version = "1.15.1", features = [
   "const_generics",
 ] }
 triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
+stdx.workspace = true
+syntax.workspace = true
+vfs.workspace = true
 wgsl-types = { version = "0.2.0", git = "https://github.com/wgsl-tooling-wg/wesl-rs.git", features = ["naga-ext"] }
+
+[dev-dependencies]
+expect-test = "1.5.1"
 
 [lints]
 workspace = true

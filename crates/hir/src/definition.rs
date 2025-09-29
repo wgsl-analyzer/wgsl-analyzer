@@ -8,8 +8,6 @@ pub enum Definition {
     Local(Local),
     Field(Field),
     ModuleDef(ModuleDef),
-    Struct(Struct),
-    TypeAlias(TypeAlias),
 }
 
 impl Definition {
@@ -67,11 +65,13 @@ fn resolve_name_ref(
         match resolver.resolve(&r#type.name_ref()?.into())? {
             ResolveType::Struct(loc) => {
                 let id = semantics.database.intern_struct(loc);
-                Some(Definition::Struct(Struct { id }))
+                Some(Definition::ModuleDef(ModuleDef::Struct(Struct { id })))
             },
             ResolveType::TypeAlias(loc) => {
                 let id = semantics.database.intern_type_alias(loc);
-                Some(Definition::TypeAlias(TypeAlias { id }))
+                Some(Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias {
+                    id,
+                })))
             },
             ResolveType::Function(_)
             | ResolveType::GlobalConstant(_)

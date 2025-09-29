@@ -150,7 +150,6 @@ pub enum InferenceDiagnostic {
         r#type: Type,
         parameters: Vec<Type>,
     },
-
     AddressOfNotReference {
         expression: ExpressionId,
         actual: Type,
