@@ -34,10 +34,11 @@ fn infer(ra_fixture: &str) -> String {
                          body_source_map: Arc<BodySourceMap>| {
         let mut types: Vec<(SyntaxNode, &Type)> = Vec::new();
 
+        let diagnostics = inference_result.diagnostics();
         assert!(
-            inference_result.diagnostics.is_empty(),
+            diagnostics.is_empty(),
             "Type inference failed {:?}",
-            inference_result.diagnostics
+            diagnostics
         );
 
         for (expr, ty) in inference_result.type_of_expression.iter() {

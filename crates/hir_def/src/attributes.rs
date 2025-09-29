@@ -12,7 +12,7 @@ use crate::{
     HasSource as _,
     data::FieldId,
     database::{DefDatabase, FunctionId, GlobalVariableId, Interned, Lookup as _, StructId},
-    expression::{Expression, ExpressionId, Literal, parse_literal},
+    expression::ExpressionId,
     expression_store::{ExpressionSourceMap, ExpressionStore, lower::ExprCollector},
     module_data::Name,
 };

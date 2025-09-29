@@ -1,7 +1,7 @@
 mod eval;
 mod unify;
 
-use std::{borrow::Cow, collections::hash_map::Entry, fmt};
+use std::{borrow::Cow, collections::hash_map::Entry, fmt, ops::Index};
 
 use either::Either;
 use hir_def::{
@@ -196,15 +196,28 @@ pub enum ResolvedCall {
     OtherTypeInitializer(Type),
 }
 
-#[expect(clippy::partial_pub_fields, reason = "TODO")]
+#[derive(Clone, PartialEq, Eq, Debug)]
+struct InternedStandardTypes {
+    unknown: Type,
+}
+
+impl InternedStandardTypes {
+    fn new(database: &dyn HirDatabase) -> Self {
+        InternedStandardTypes {
+            unknown: TyKind::Error.intern(database),
+        }
+    }
+}
+
 #[derive(PartialEq, Eq, Debug)]
 pub struct InferenceResult {
-    pub type_of_expression: ArenaMap<ExpressionId, Type>,
-    pub type_of_binding: ArenaMap<BindingId, Type>,
-    pub diagnostics: Vec<InferenceDiagnostic>,
-    pub return_type: Type,
+    pub(crate) type_of_expression: ArenaMap<ExpressionId, Type>,
+    pub(crate) type_of_binding: ArenaMap<BindingId, Type>,
+    diagnostics: Vec<InferenceDiagnostic>,
+    return_type: Type,
     call_resolutions: FxHashMap<ExpressionId, ResolvedCall>,
     field_resolutions: FxHashMap<ExpressionId, FieldId>,
+    standard_types: InternedStandardTypes,
 }
 
 impl InferenceResult {
@@ -216,6 +229,7 @@ impl InferenceResult {
             return_type: TyKind::Error.intern(database),
             call_resolutions: Default::default(),
             field_resolutions: Default::default(),
+            standard_types: InternedStandardTypes::new(database),
         }
     }
 
@@ -233,6 +247,38 @@ impl InferenceResult {
         expression: ExpressionId,
     ) -> Option<ResolvedCall> {
         self.call_resolutions.get(&expression).copied()
+    }
+
+    pub fn diagnostics(&self) -> &[InferenceDiagnostic] {
+        &self.diagnostics
+    }
+
+    pub fn return_type(&self) -> Type {
+        self.return_type
+    }
+}
+
+impl Index<ExpressionId> for InferenceResult {
+    type Output = Type;
+    fn index(
+        &self,
+        expr: ExpressionId,
+    ) -> &Type {
+        self.type_of_expression
+            .get(expr)
+            .unwrap_or(&self.standard_types.unknown)
+    }
+}
+
+impl Index<BindingId> for InferenceResult {
+    type Output = Type;
+    fn index(
+        &self,
+        binding: BindingId,
+    ) -> &Type {
+        self.type_of_binding
+            .get(binding)
+            .unwrap_or(&self.standard_types.unknown)
     }
 }
 
@@ -281,14 +327,6 @@ impl<'database> InferenceContext<'database> {
         r#type: Type,
     ) {
         self.result.type_of_expression.insert(expression, r#type);
-    }
-
-    // TODO: Will it make sense to store the evaluated expressions, or should we re-compute them whenever we need them?
-    fn set_expression_instance(
-        &mut self,
-        _expression: ExpressionId,
-        _instance: Instance,
-    ) {
     }
 
     fn set_binding_ty(
@@ -999,11 +1037,19 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             Expression::Literal(literal) => {
+                use hir_def::expression::{BuiltinFloat, BuiltinInt, Literal};
                 let ty_kind = match literal {
-                    hir_def::expression::Literal::Int(_, _) => TyKind::Scalar(ScalarType::I32),
-                    hir_def::expression::Literal::Uint(_, _) => TyKind::Scalar(ScalarType::U32),
-                    hir_def::expression::Literal::Float(_, _) => TyKind::Scalar(ScalarType::F32),
-                    hir_def::expression::Literal::Bool(_) => TyKind::Scalar(ScalarType::Bool),
+                    Literal::Int(_, BuiltinInt::I32) => TyKind::Scalar(ScalarType::I32),
+                    Literal::Int(_, BuiltinInt::U32) => TyKind::Scalar(ScalarType::U32),
+                    Literal::Int(_, BuiltinInt::Abstract) => {
+                        TyKind::Scalar(ScalarType::AbstractInt)
+                    },
+                    Literal::Float(_, BuiltinFloat::F16) => TyKind::Scalar(ScalarType::F16),
+                    Literal::Float(_, BuiltinFloat::F32) => TyKind::Scalar(ScalarType::F32),
+                    Literal::Float(_, BuiltinFloat::Abstract) => {
+                        TyKind::Scalar(ScalarType::AbstractFloat)
+                    },
+                    Literal::Bool(_) => TyKind::Scalar(ScalarType::Bool),
                 };
                 self.database.intern_ty(ty_kind)
             },
@@ -1017,7 +1063,7 @@ impl<'database> InferenceContext<'database> {
                             .lookup(self.database)
                             .return_type
                             // TODO: This should be a "void" type instead? Or maybe we should emit a diagnostic?
-                            .unwrap_or_else(|| TyKind::Error.intern(self.database))
+                            .unwrap_or_else(|| self.error_ty())
                     },
                     Some(ResolveType::GlobalConstant(loc)) => {
                         let id = self.database.intern_global_constant(loc);
@@ -1037,12 +1083,7 @@ impl<'database> InferenceContext<'database> {
                             .infer(DefinitionWithBodyId::Override(id))
                             .return_type
                     },
-                    Some(ResolveType::Local(local)) => self
-                        .result
-                        .type_of_binding
-                        .get(local)
-                        .cloned()
-                        .unwrap_or_else(|| TyKind::Error.intern(self.database)),
+                    Some(ResolveType::Local(local)) => self.result.type_of_binding[local],
                     Some(ResolveType::TypeAlias(_id)) => {
                         // A type cannot appear in an expression.
                         // Like `1 + f32` is not valid
@@ -1680,7 +1721,7 @@ impl InferenceContext<'_> {
     }
 
     fn error_ty(&self) -> Type {
-        self.database.intern_ty(TyKind::Error)
+        self.result.standard_types.unknown
     }
 
     fn bool_ty(&self) -> Type {

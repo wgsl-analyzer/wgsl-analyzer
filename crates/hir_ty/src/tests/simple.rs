@@ -16,7 +16,7 @@ fn type_alias_in_struct() {
         "#,
         expect![[r#"
             94..98 'S(5)': S
-            96..97 '5': i32
+            96..97 '5': integer
             120..121 'a': S
             120..123 'a.x': ref<u32>
             120..129 'a.x + 10u': u32

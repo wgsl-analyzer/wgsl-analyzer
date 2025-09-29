@@ -8,25 +8,23 @@ pub type ExpressionId = Idx<Expression>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Literal {
-    Int(i64, BuiltinInt),
-    Uint(u64, BuiltinUint),
-    Float(u32, BuiltinFloat), // FIXME: f32 is not Eq
+    Int(u64, BuiltinInt),
+    Float(u64, BuiltinFloat),
     Bool(bool),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BuiltinFloat {
+    F16,
     F32,
+    Abstract,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BuiltinInt {
     I32,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum BuiltinUint {
     U32,
+    Abstract,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -144,37 +142,52 @@ pub enum SwitchCaseSelector {
 ///
 /// Panics if the literal is invalid.
 pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
-    // TODO: This is wrong, this doesn't handle abstract numbers
     match literal {
-        ast::LiteralKind::IntLiteral(literal) if !literal.text().ends_with('u') => {
-            let text = literal.text().trim_end_matches('i');
-            let value = match text.strip_prefix("0x") {
-                Some(hex) => i64::from_str_radix(hex, 16),
-                None => text.parse(),
-            }
-            .expect("invalid literal");
-            Literal::Int(value, BuiltinInt::I32)
-        },
         ast::LiteralKind::IntLiteral(literal) => {
-            let text = literal.text().trim_end_matches('u');
+            let (text, suffix) = split_number_suffix(literal.text());
             let value = match text.strip_prefix("0x") {
                 Some(hex) => u64::from_str_radix(hex, 16),
-                None => text.parse(),
+                None => text.parse::<u64>(),
             }
             .expect("invalid literal");
-
-            Literal::Uint(value, BuiltinUint::U32)
+            let int_variant = match suffix {
+                Some('u') => BuiltinInt::U32,
+                Some('i') => BuiltinInt::I32,
+                _ => BuiltinInt::Abstract,
+            };
+            Literal::Int(value, int_variant)
         },
-        // TODO: Hex floats need to be handled
         ast::LiteralKind::FloatLiteral(literal) => {
             use std::str::FromStr as _;
             // Float suffixes are not accepted by `f32::from_str`. Ignore them
-            let text = literal.text().trim_end_matches(char::is_alphabetic);
-            let _value = f32::from_str(text).expect("invalid literal");
-            Literal::Float(0, BuiltinFloat::F32)
+            let (text, suffix) = split_number_suffix(literal.text());
+            let value = match text.strip_prefix("0x") {
+                Some(_hex) => Ok(0f64), // TODO: Hex floats need to be handled
+                None => f64::from_str(text),
+            }
+            .expect("invalid literal");
+            let float_variant = match suffix {
+                Some('f') => BuiltinFloat::F32,
+                Some('h') => BuiltinFloat::F16,
+                _ => BuiltinFloat::Abstract,
+            };
+            Literal::Float(value.to_bits(), float_variant)
         },
         ast::LiteralKind::True(_) => Literal::Bool(true),
         ast::LiteralKind::False(_) => Literal::Bool(false),
+    }
+}
+
+fn split_number_suffix(number: &str) -> (&str, Option<char>) {
+    if let Some(last_char) = number.chars().next_back()
+        && last_char.is_alphabetic()
+    {
+        (
+            &number[0..(number.len() - last_char.len_utf8())],
+            Some(last_char),
+        )
+    } else {
+        (number, None)
     }
 }
 

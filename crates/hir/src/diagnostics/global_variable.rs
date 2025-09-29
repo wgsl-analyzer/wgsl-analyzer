@@ -16,7 +16,7 @@ pub fn collect<Function: FnMut(GlobalVariableDiagnostic)>(
     mut diagnostic_builder: Function,
 ) {
     let inference = database.infer(DefinitionWithBodyId::GlobalVariable(var));
-    let ty_kind = inference.return_type.kind(database);
+    let ty_kind = inference.return_type().kind(database);
 
     if let TyKind::Reference(Reference {
         address_space,

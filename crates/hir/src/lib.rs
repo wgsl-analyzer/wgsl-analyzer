@@ -295,8 +295,7 @@ impl<'database> SourceAnalyzer<'database> {
         expression: &ast::Expression,
     ) -> Option<Type> {
         let id = self.expression_id(expression)?;
-        let r#type = *self.infer.type_of_expression.get(id)?;
-        Some(r#type)
+        Some(self.infer[id])
     }
 
     #[must_use]
@@ -305,8 +304,7 @@ impl<'database> SourceAnalyzer<'database> {
         binding: &ast::Name,
     ) -> Option<Type> {
         let id = self.binding_id(binding)?;
-        let r#type = *self.infer.type_of_binding.get(id)?;
-        Some(r#type)
+        Some(self.infer[id])
     }
 
     #[must_use]
@@ -611,7 +609,7 @@ impl Module {
                 let (_, source_map) = database.body_with_source_map(definition);
                 if config.type_errors {
                     let infer = database.infer(definition);
-                    for diagnostic in &infer.diagnostics {
+                    for diagnostic in infer.diagnostics() {
                         match diagnostics::any_diag_from_infer_diagnostic(
                             database,
                             diagnostic,

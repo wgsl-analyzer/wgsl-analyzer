@@ -126,7 +126,7 @@ fn struct_is_used_in_uniform(
         hir_def::module_data::ModuleItem::GlobalVariable(decl) => {
             let decl = database.intern_global_variable(InFile::new(file_id, decl));
             let inference = database.infer(DefinitionWithBodyId::GlobalVariable(decl));
-            let ty_kind = inference.return_type.kind(database);
+            let ty_kind = inference.return_type().kind(database);
 
             if let TyKind::Reference(crate::ty::Reference { address_space, .. }) = ty_kind
                 && !matches!(address_space, AddressSpace::Uniform)
@@ -134,7 +134,7 @@ fn struct_is_used_in_uniform(
                 return false;
             }
 
-            inference.return_type.contains_struct(database, r#struct)
+            inference.return_type().contains_struct(database, r#struct)
         },
         hir_def::module_data::ModuleItem::Function(_)
         | hir_def::module_data::ModuleItem::Struct(_)

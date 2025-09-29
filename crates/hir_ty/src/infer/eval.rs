@@ -44,20 +44,22 @@ impl<'database> TyLoweringContext<'database> {
             },
 
             Expression::Literal(literal) => {
+                use hir_def::expression::{BuiltinInt, Literal};
                 match literal {
-                    hir_def::expression::Literal::Int(value, _) => {
+                    Literal::Int(value, BuiltinInt::I32) => {
                         Instance::Literal(LiteralInstance::I32(*value as i32))
                     },
-                    hir_def::expression::Literal::Uint(value, _) => {
+                    Literal::Int(value, BuiltinInt::U32) => {
                         Instance::Literal(LiteralInstance::U32(*value as u32))
                     },
-                    hir_def::expression::Literal::Float(_, _) => {
+                    Literal::Int(value, BuiltinInt::Abstract) => {
+                        Instance::Literal(LiteralInstance::AbstractInt(*value as i64))
+                    },
+                    Literal::Float(_, _) => {
                         // Not implemented
                         return None;
                     },
-                    hir_def::expression::Literal::Bool(value) => {
-                        Instance::Literal(LiteralInstance::Bool(*value))
-                    },
+                    Literal::Bool(value) => Instance::Literal(LiteralInstance::Bool(*value)),
                 }
             },
             Expression::Call { .. } => {
