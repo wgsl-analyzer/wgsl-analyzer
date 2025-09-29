@@ -1704,6 +1704,18 @@
 				"language": "wa_syntax_tree",
 				"scopeName": "source.wa_syntax_tree",
 				"path": "wa_syntax_tree.tmGrammar.json"
+			},
+			{
+				"injectTo": [
+					"source.js",
+					"source.ts",
+					"source.rust"
+				],
+				"scopeName": "inline.wgsl",
+				"path": "./syntaxes/inline-wgsl.tmLanguage.json",
+				"embeddedLanguages": {
+					"meta.embedded.block.wgsl": "wgsl"
+				}
 			}
 		],
 		"semanticTokenTypes": [
