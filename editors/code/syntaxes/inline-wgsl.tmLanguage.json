@@ -8,7 +8,7 @@
     "injectionSelector": "L:source -comment -string",
     "patterns": [
         {
-            "comment": "Javavscript multi-line strings",
+            "comment": "JavaScript multi-line strings",
             "begin": "(\\s?/\\*\\s?(?i:wgsl)\\s?\\*/\\s*)(`)",
             "beginCaptures": {
                 "1": { "name": "entity.name.function.tagged-template.ts" },
