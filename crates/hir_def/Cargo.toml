@@ -15,7 +15,7 @@ doctest = false
 [dependencies]
 la-arena = "0.3.1"
 vfs.workspace = true
-salsa = "0.17.0-pre.2"
+salsa = "0.23.0"
 syntax.workspace = true
 base-db.workspace = true
 smol_str = "0.3.2"
