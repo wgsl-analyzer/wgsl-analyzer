@@ -39,7 +39,16 @@ const TEXTURED = 1u;
 
 Result:
 
-![syntax highlighting for a Rust string containing WGSL code](image.png)
+![syntax highlighting for a Rust string containing WGSL code](host-code-comment.png)
+
+This also works for Markdown fenced code blocks:
+
+![syntax highlighting for a Markdown fenced code block containing WGSL code](markdown-code-block.png)
+
+<!--
+We do not expect the WGSL string within the Rust string within this literal
+Markdown document to have WGSL syntax highlighting.
+-->
 
 ### Semantic style customizations
 
