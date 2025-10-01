@@ -245,7 +245,7 @@ jobs:
           RUSTFLAGS: -C debuginfo=0 -D warnings
 
       - name: Installs cargo-deadlinks
-        run: cargo install --force cargo-deadlinks
+        uses: taiki-e/install-action@cargo-deadlinks
 
       - name: Checks dead links
         run: cargo deadlinks --dir target/doc
