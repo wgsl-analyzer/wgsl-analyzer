@@ -26,7 +26,7 @@ smallvec = { version = "1.15.1", features = [
   "const_generics",
 ] }
 vfs.workspace = true
-serde = { version = "1.0.225", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 
 [lints]
 workspace = true

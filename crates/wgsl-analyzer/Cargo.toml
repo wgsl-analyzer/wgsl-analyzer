@@ -19,7 +19,7 @@ name = "wgsl-analyzer"
 path = "src/bin/main.rs"
 
 [dependencies]
-anyhow = "1.0.99"
+anyhow = "1.0.100"
 # base64 = "0.22"
 crossbeam-channel = "0.5.15"
 # dirs = "5.0.1"
@@ -36,7 +36,7 @@ oorandom = "11.1.5"
 rayon = "1.11.0"
 rustc-hash = "2.1.1"
 serde_json = { version = "1.0.145", features = ["preserve_order"] }
-serde = { version = "1.0.225", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
 # tenthash = "1.0.0"
 num_cpus = "1.17.0"
 mimalloc = { version = "0.1.48", default-features = false, optional = true }
@@ -50,14 +50,14 @@ tracing-subscriber = { version = "0.3.20", default-features = false, features = 
   "time",
   "tracing-log",
 ] }
-tracing-tree = "0.4.0"
+tracing-tree = "0.4.1"
 triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
 # toml = "0.8.8"
 nohash-hasher = "0.2.0"
 walkdir = "2.5.0"
 semver = "1.0.27"
-memchr = "2.7.5"
-cargo_metadata = "0.22.0"
+memchr = "2.7.6"
+cargo_metadata = "0.23.0"
 # process-wrap = { version = "8.2.0", features = ["std"] }
 # cfg.workspace = true
 hir-def.workspace = true
@@ -78,7 +78,7 @@ parser.workspace = true
 vfs-notify.workspace = true
 vfs.workspace = true
 paths.workspace = true
-camino = "1.2.0"
+camino = "1.2.1"
 base-db.workspace = true
 line-index = "0.1.2"
 
