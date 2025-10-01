@@ -26,6 +26,21 @@ Just add this to your `settings.json`:
 }
 ```
 
+### Embedded language syntax highlighting
+
+Write a comment on the same line as a string to get syntax highlighting for the string.
+Example:
+
+```rust
+/* wgsl */ r#"
+const TEXTURED = 1u;
+"#
+```
+
+Result:
+
+![syntax highlighting for a Rust string containing WGSL code](image.png)
+
 ### Semantic style customizations
 
 You can customize the look of different semantic elements in the source code.
