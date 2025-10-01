@@ -114,7 +114,6 @@ pub enum Statement {
     Switch {
         expression: ExpressionId,
         case_blocks: Vec<(Vec<SwitchCaseSelector>, StatementId)>,
-        default_block: Option<StatementId>,
     },
     Loop {
         body: StatementId,

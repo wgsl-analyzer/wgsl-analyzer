@@ -298,47 +298,35 @@ impl Collector<'_> {
             ast::Statement::SwitchStatement(statement) => {
                 let expression = self.collect_expression_opt(statement.expression());
 
-                let (case_blocks, default_block) = match statement.block() {
-                    Some(block) => {
-                        let case_blocks = block
-                            .cases()
-                            .map(|case| {
-                                let selectors =
-                                    case.selectors().map_or_else(Vec::new, |selectors| {
-                                        selectors
-                                            .exprs()
-                                            .map(|expression| match expression {
-                                                ast::SwitchCaseSelector::Expression(expression) => {
-                                                    SwitchCaseSelector::Expression(
-                                                        self.collect_expression(expression),
-                                                    )
-                                                },
-                                                ast::SwitchCaseSelector::Default(_) => {
-                                                    SwitchCaseSelector::Default
-                                                },
-                                            })
-                                            .collect()
-                                    });
-                                let block = self.collect_compound_statement_opt(case.block());
-                                (selectors, block)
-                            })
-                            .collect();
-
-                        // TODO: What if there are multiple default blocks?
-                        let default_block = block
-                            .default()
-                            .last()
-                            .map(|default| self.collect_compound_statement_opt(default.block()));
-
-                        (case_blocks, default_block)
-                    },
-                    None => (Vec::default(), None),
+                let case_blocks = match statement.block() {
+                    Some(block) => block
+                        .cases()
+                        .map(|case| {
+                            let selectors = case.selectors().map_or_else(Vec::new, |selectors| {
+                                selectors
+                                    .exprs()
+                                    .map(|expression| match expression {
+                                        ast::SwitchCaseSelector::Expression(expression) => {
+                                            SwitchCaseSelector::Expression(
+                                                self.collect_expression(expression),
+                                            )
+                                        },
+                                        ast::SwitchCaseSelector::Default(_) => {
+                                            SwitchCaseSelector::Default
+                                        },
+                                    })
+                                    .collect()
+                            });
+                            let block = self.collect_compound_statement_opt(case.block());
+                            (selectors, block)
+                        })
+                        .collect(),
+                    None => Vec::default(),
                 };
 
                 Statement::Switch {
                     expression,
                     case_blocks,
-                    default_block,
                 }
             },
             ast::Statement::ForStatement(for_statement) => {

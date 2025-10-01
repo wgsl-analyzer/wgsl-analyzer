@@ -2637,7 +2637,7 @@ switch i {
                       Blankspace@51..52 " "
                       BraceRight@52..53 "}"
                   Blankspace@53..56 "\n  "
-                  SwitchBodyDefault@56..68
+                  SwitchBodyCase@56..68
                     Default@56..63 "default"
                     Colon@63..64 ":"
                     Blankspace@64..65 " "

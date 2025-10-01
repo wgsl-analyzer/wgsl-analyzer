@@ -65,7 +65,7 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::ContinueStatement => self.start_node(SyntaxKind::ContinueStatement),
             Rule::ContinuingStatement => self.start_node(SyntaxKind::ContinuingStatement),
             Rule::DecrementStatement => self.start_node(SyntaxKind::IncrementDecrementStatement),
-            Rule::DefaultAloneClause => self.start_node(SyntaxKind::SwitchBodyDefault),
+            Rule::DefaultAloneClause => self.start_node(SyntaxKind::SwitchBodyCase),
             Rule::DiagnosticAttr => todo!(),
             Rule::DiagnosticControl => todo!(),
             Rule::DiagnosticDirective => todo!(),

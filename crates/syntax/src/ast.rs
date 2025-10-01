@@ -620,13 +620,26 @@ ast_node! {
 ast_node! {
     SwitchBody:
     cases: AstChildren<SwitchBodyCase>;
-    default: AstChildren<SwitchBodyDefault>;
 }
 
 ast_node! {
     SwitchBodyCase:
     selectors: Option<SwitchCaseSelectors>;
     block: Option<CompoundStatement>;
+}
+
+ast_token_enum! {
+    enum CaseToken {
+        Case,
+        Default,
+    }
+}
+
+impl SwitchBodyCase {
+    #[must_use]
+    pub fn case_token(&self) -> Option<CaseToken> {
+        support::child_token(self.syntax())
+    }
 }
 
 ast_node! {
@@ -681,11 +694,6 @@ impl From<Default> for SwitchCaseSelector {
 
 ast_node! {
     Default
-}
-
-ast_node! {
-    SwitchBodyDefault:
-    block: Option<CompoundStatement>;
 }
 
 ast_node! {

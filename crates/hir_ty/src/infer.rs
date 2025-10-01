@@ -749,7 +749,6 @@ impl<'database> InferenceContext<'database> {
             Statement::Switch {
                 expression,
                 case_blocks,
-                default_block,
             } => {
                 let r#type = self
                     .infer_expression(*expression, &body.store)
@@ -766,10 +765,6 @@ impl<'database> InferenceContext<'database> {
                         }
                     }
                     self.infer_statement(*case);
-                }
-
-                if let Some(default_block) = *default_block {
-                    self.infer_statement(default_block);
                 }
             },
             Statement::For {

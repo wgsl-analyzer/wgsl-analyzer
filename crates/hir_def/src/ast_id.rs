@@ -7,7 +7,7 @@ use syntax::{
     pointer::{AstPointer, SyntaxNodePointer},
 };
 
-/// Maps items' `SyntaxNode`s to `ErasedFileAstId`s and back.
+/// Maps items' `SyntaxNode`s to `FileAstId`s and back.
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct AstIdMap {
     arena: Arena<SyntaxNodePointer>,
