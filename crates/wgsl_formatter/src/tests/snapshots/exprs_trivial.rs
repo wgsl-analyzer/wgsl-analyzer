@@ -57,7 +57,7 @@ pub fn format_ident_expr_int_literals() {
 }
 
 #[test]
-pub fn format_ident_expr_zero_padded_int_literals() {
+pub fn format_ident_expr_zero_padded_int_literals_out_of_scope() {
     // https://www.w3.org/TR/WGSL/#numeric-literals
     // "A leading zero on a non-zero integer literal (e.g. 012) is forbidden, so as to avoid confusion with other languages' leading-zero-means-octal notation."
     //
