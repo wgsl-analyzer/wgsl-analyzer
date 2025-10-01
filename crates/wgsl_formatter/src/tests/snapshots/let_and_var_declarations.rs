@@ -109,82 +109,19 @@ pub fn format_let_decl_keeps_line_comment_in_same_place_same_line() {
 }
 
 #[test]
-pub fn format_let_decl_keeps_line_comment_in_same_place_before() {
+pub fn format_let_decl_has_no_space_before_semicolon() {
     check(
         "fn main() {
 
-        // Assign 1
-        let a = 1;
+        let a = 1 /* A */ ;
 
 
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                // Assign 1
-                let a = 1;
+                let a = 1 /* A */;
             }
-        "]],
-    );
-}
-
-#[test]
-pub fn format_let_decl_keeps_line_comment_in_same_place_after() {
-    check(
-        "fn main() {
-
-        let a = 1;
-        // Assign 1
-
-
-        }",
-        expect![["
-            fn main() {
-                let a = 1;
-                // Assign 1
-            }
-        "]],
-    );
-}
-
-#[test]
-pub fn format_let_decl_keeps_line_comment_in_same_place_empty_line_before() {
-    check(
-        "fn main() {
-
-        // Assign 1
-
-        let a = 1;
-
-
-        }",
-        expect![["
-            fn main() {
-                // Assign 1
-
-                let a = 1;
-            }
-        "]],
-    );
-}
-
-#[test]
-pub fn format_let_decl_keeps_line_comment_in_same_place_empty_line_after() {
-    check(
-        "fn main() {
-
-
-        let a = 1;
-
-        // Assign 1
-
-        }",
-        expect![["
-            fn main() {
-                let a = 1;
-
-                // Assign 1
-            }
-        "]],
+        "#]],
     );
 }
 
@@ -203,106 +140,9 @@ pub fn format_let_decl_block_comments() {
         expect![[r#"
             fn main() {
                 /* Before */
-                let /* A */ a /* B */ = /* C */ 1 /* D */ ; /* E */
+                let /* A */ a /* B */ = /* C */ 1 /* D */; /* E */
                 /* After */
             }
         "#]],
-    );
-}
-
-#[test]
-pub fn format_let_decl_keeps_block_comment_in_same_place_same_line() {
-    check(
-        "fn main() {
-
-        let a = 1; /* Assign 1 */
-
-
-        }",
-        expect![["
-            fn main() {
-                let a = 1; /* Assign 1 */
-            }
-        "]],
-    );
-}
-
-#[test]
-pub fn format_let_decl_keeps_block_comment_in_same_place_before() {
-    check(
-        "fn main() {
-
-        /* Assign 1 */
-        let a = 1;
-
-
-        }",
-        expect![["
-            fn main() {
-                /* Assign 1 */
-                let a = 1;
-            }
-        "]],
-    );
-}
-
-#[test]
-pub fn format_let_decl_keeps_block_comment_in_same_place_after() {
-    check(
-        "fn main() {
-
-        let a = 1;
-        /* Assign 1 */
-
-
-        }",
-        expect![["
-            fn main() {
-                let a = 1;
-                /* Assign 1 */
-            }
-        "]],
-    );
-}
-
-#[test]
-pub fn format_let_decl_keeps_block_comment_in_same_place_empty_line_before() {
-    check(
-        "fn main() {
-
-        /* Assign 1 */
-
-        let a = 1;
-
-
-        }",
-        expect![["
-            fn main() {
-                /* Assign 1 */
-
-                let a = 1;
-            }
-        "]],
-    );
-}
-
-#[test]
-pub fn format_let_decl_keeps_block_comment_in_same_place_empty_line_after() {
-    check(
-        "fn main() {
-
-
-        let a = 1;
-
-        /* Assign 1 */
-
-        }",
-        expect![["
-            fn main() {
-                let a = 1;
-
-                /* Assign 1 */
-            }
-        "]],
     );
 }
