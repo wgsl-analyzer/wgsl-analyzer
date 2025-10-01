@@ -8,6 +8,7 @@ use crate::format::{
         parse_end, parse_many_comments_and_blankspace, parse_node, parse_token, parse_token_any,
     },
     gen_comments::gen_comments,
+    gen_function_call::gen_function_call_expression,
     helpers::todo_verbatim,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::FormatDocumentResult,
@@ -30,7 +31,7 @@ pub fn gen_expression(expression: &ast::Expression) -> FormatDocumentResult<Prin
         ast::Expression::IdentExpression(ident_expression) => {
             gen_ident_expression(ident_expression)
         },
-        ast::Expression::FunctionCall(function_call) => todo_verbatim(function_call.syntax()),
+        ast::Expression::FunctionCall(function_call) => gen_function_call_expression(function_call),
         ast::Expression::ParenthesisExpression(parenthesis_expression) => {
             gen_parenthesis_expression(parenthesis_expression)
         },
@@ -70,12 +71,9 @@ pub fn gen_parenthesis_expression(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(parenthesis_expression.syntax().children_with_tokens());
-
     parse_token(&mut syntax, parser::SyntaxKind::ParenthesisLeft)?;
     let item_comment_after_left_paren = parse_many_comments_and_blankspace(&mut syntax)?;
-
     let item_content = parse_node::<ast::Expression>(&mut syntax)?;
-
     let item_comment_after_content = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token(&mut syntax, parser::SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
