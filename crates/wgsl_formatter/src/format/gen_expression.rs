@@ -22,7 +22,7 @@ pub fn gen_expression(expression: &ast::Expression) -> FormatDocumentResult<Prin
             todo_verbatim(field_expression.syntax())
         },
         ast::Expression::PrefixExpression(prefix_expression) => {
-            todo_verbatim(prefix_expression.syntax())
+            gen_prefix_expression(prefix_expression)
         },
         ast::Expression::InfixExpression(infix_expression) => {
             gen_infix_expression(infix_expression)
@@ -38,10 +38,17 @@ pub fn gen_expression(expression: &ast::Expression) -> FormatDocumentResult<Prin
     }
 }
 
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "Keep API uniform with other gen functions"
+)]
 pub fn gen_literal_expression(
     literal_expression: &ast::Literal
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    todo_verbatim(literal_expression.syntax())
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_string(literal_expression.syntax().to_string());
+    Ok(formatted)
 }
 
 pub fn gen_ident_expression(
@@ -112,5 +119,26 @@ pub fn gen_infix_expression(
     formatted.extend(gen_comments(item_comment_after_operator));
     formatted.extend(gen_expression(&item_right)?);
     formatted.extend(gen_comments(item_comment_after_right));
+    Ok(formatted)
+}
+
+pub fn gen_prefix_expression(
+    infix_expression: &ast::PrefixExpression
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(infix_expression.syntax().children_with_tokens());
+
+    let item_operator = parse_token_any(&mut syntax)?;
+    let item_comment_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_expr = parse_node::<ast::Expression>(&mut syntax)?;
+    let item_comment_after_expr = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_string(item_operator.to_string()); //TODO I don't like to-stringing the operator here, would be better to match on it... we would need a parse_token(any_of(...)) kind of thing.
+    formatted.extend(gen_comments(item_comment_after_operator));
+    formatted.extend(gen_expression(&item_expr)?);
+    formatted.extend(gen_comments(item_comment_after_expr));
     Ok(formatted)
 }
