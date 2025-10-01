@@ -1704,6 +1704,34 @@
 				"language": "wa_syntax_tree",
 				"scopeName": "source.wa_syntax_tree",
 				"path": "wa_syntax_tree.tmGrammar.json"
+			},
+			{
+				"injectTo": [
+					"source.js",
+					"source.ts",
+					"source.rust"
+				],
+				"scopeName": "source.comment-string.wgsl",
+				"path": "./syntaxes/inline-wgsl.tmLanguage.json",
+				"embeddedLanguages": {
+					"meta.embedded.block.wgsl": "wgsl"
+				}
+			},
+			{
+				"scopeName": "markdown.wgsl.codeblock",
+				"path": "./syntaxes/inline-wgsl.markdown.tmLanguage.json",
+				"injectTo": [
+					"text.html.markdown"
+				],
+				"embeddedLanguages": {
+					"meta.embedded.block.wgsl": "wgsl"
+				},
+				"unbalancedBracketScopes": [
+					"punctuation.definition.tag.begin.wgsl",
+					"punctuation.definition.tag.end.wgsl",
+					"punctuation.definition.tag.range.wgsl",
+					"keyword.other.array-item.wgsl"
+				]
 			}
 		],
 		"semanticTokenTypes": [
