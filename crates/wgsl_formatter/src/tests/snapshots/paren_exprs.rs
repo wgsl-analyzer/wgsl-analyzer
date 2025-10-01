@@ -13,6 +13,7 @@ pub fn format_naked_paren_exprs_out_of_scope() {
         )
         ;
         }",
+        "Top paren expressions outside statements are not valid wgsl.",
     );
 }
 
