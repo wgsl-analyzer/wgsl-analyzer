@@ -1952,7 +1952,27 @@ pub fn ty_into_wgsl_types(
             rows.as_u8(),
             Box::new(ty_into_wgsl_types(inner, database)?),
         ),
-        TyKind::Struct(struct_id) => todo!(),
+        TyKind::Struct(struct_id) => {
+            let data = database.struct_data(struct_id).0;
+            let fields = database.field_types(struct_id);
+            wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
+                name: data.name.as_str().to_string(),
+                members: data
+                    .fields
+                    .iter()
+                    .map(|(id, data)| {
+                        Some(wgsl_types::ty::StructMemberType {
+                            name: data.name.as_str().to_string(),
+                            // Skip broken struct fields
+                            ty: ty_into_wgsl_types(fields[id], database)?,
+                            // Don't bother reconstructing the correct layout
+                            size: None,
+                            align: None,
+                        })
+                    })
+                    .collect::<Option<Vec<_>>>()?,
+            }))
+        },
         TyKind::Array(ArrayType {
             inner,
             binding_array: false,
