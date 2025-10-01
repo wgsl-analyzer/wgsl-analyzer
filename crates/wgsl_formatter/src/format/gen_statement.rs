@@ -36,11 +36,6 @@ pub fn gen_compound_statement(
     });
 
     let lines = gen_spaced_lines(syntax.syntax(), |child| {
-        if let NodeOrToken::Node(child) = child {
-            dbg!(&child);
-            dbg!(ast::Discard::cast(child.clone()));
-            dbg!(ast::Statement::cast(child.clone()));
-        }
         //TODO This clone is unnecessary if we had a cast that returned the passed in node
         // on a failure like std::any::Any (SyntaxNode -> Result<Item, Syntaxnode>)
         if let NodeOrToken::Node(child) = child
