@@ -53,23 +53,47 @@ pub fn format_infix_expr_with_comments() {
         "fn main() {
         let a = /* A */ 1 /* B */ + /* C */ 1 /* D */;
         }",
-        expect![[r#"
+        expect![["
             fn main() {
                 let a = /* A */ 1 /* B */ + /* C */ 1 /* D */;
             }
-        "#]],
+        "]],
     );
 }
 
 #[test]
-pub fn format_prefix_expr_simple() {
+fn format_infix_expr_multiple() {
     check(
         "fn main() {
-        let a = 1+1;
-        }",
+    let a=x+y*z;
+}",
         expect![["
             fn main() {
-                let a = 1 + 1;
+                let a = x + y * z;
+            }
+        "]],
+    );
+}
+
+#[test]
+fn format_infix_expr_shr() {
+    check(
+        "fn main() { let x = 1u >> 3u; }",
+        expect![["
+            fn main() {
+                let x = 1u >> 3u;
+            }
+        "]],
+    );
+}
+
+#[test]
+fn format_infix_expr_shl() {
+    check(
+        "fn main() { let x = 1u << 3u; }",
+        expect![["
+            fn main() {
+                let x = 1u << 3u;
             }
         "]],
     );
