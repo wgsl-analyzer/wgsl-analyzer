@@ -1,4 +1,5 @@
 {
+	"scopeName": "markdown.wgsl.codeblock",
 	"fileTypes": ["md"],
 	"injectionSelector": "L:text.html.markdown",
 	"patterns": [{ "include": "#fenced_code_block_wgsl" }],
@@ -22,6 +23,5 @@
 				}
 			]
 		}
-	},
-	"scopeName": "markdown.wgsl.codeblock"
+	}
 }
