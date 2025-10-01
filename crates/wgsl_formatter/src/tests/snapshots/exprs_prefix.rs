@@ -110,13 +110,12 @@ pub fn format_prefix_expr_with_line_comment_1() {
 
         1;
         }",
-        expect![["
+        expect![[r#"
             fn main() {
                 let a = ~ // A
                     1;
-                let b = ~1;
             }
-        "]],
+        "#]],
     );
 }
 
