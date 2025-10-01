@@ -1,4 +1,5 @@
 {
+	"fileTypes": ["md"],
 	"injectionSelector": "L:text.html.markdown",
 	"patterns": [{ "include": "#fenced_code_block_wgsl" }],
 	"repository": {
