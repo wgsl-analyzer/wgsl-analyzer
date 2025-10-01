@@ -1711,7 +1711,7 @@
 					"source.ts",
 					"source.rust"
 				],
-				"scopeName": "inline.wgsl",
+				"scopeName": "source.comment-string.wgsl",
 				"path": "./syntaxes/inline-wgsl.tmLanguage.json",
 				"embeddedLanguages": {
 					"meta.embedded.block.wgsl": "wgsl"
