@@ -10,8 +10,8 @@
 			"end": "(^|\\G)(\\2|\\s{0,3})(\\3)\\s*$",
 			"beginCaptures": {
 				"3": { "name": "punctuation.definition.markdown" },
-				"5": { "name": "fenced_code.block.language" },
-				"6": { "name": "fenced_code.block.language.attributes" }
+				"4": { "name": "fenced_code.block.language" },
+				"5": { "name": "fenced_code.block.language.attributes" }
 			},
 			"endCaptures": { "3": { "name": "punctuation.definition.markdown" } },
 			"patterns": [
