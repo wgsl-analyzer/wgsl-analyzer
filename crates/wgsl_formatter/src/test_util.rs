@@ -109,6 +109,7 @@ pub fn check_with_options<E: ExpectAssertEq>(
     let parse = syntax::parse(before.trim_start());
     let syntax = parse.tree();
 
+    dbg!(&parse.errors());
     dbg!(&syntax);
     let formatted = match format_tree(&syntax, options) {
         Ok(formatted) => formatted,

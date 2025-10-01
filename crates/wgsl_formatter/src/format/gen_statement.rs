@@ -213,6 +213,7 @@ fn gen_let_declaration_statement(
     formatted.extend(gen_comments(item_comments_after_equal));
     formatted.extend(gen_expression(&value)?);
     formatted.extend(gen_comments(item_comments_after_value));
+    formatted.request_space(SeparationPolicy::Discouraged);
     formatted.push_sc(sc!(";"));
     formatted.push_signal(Signal::FinishIndent);
 
