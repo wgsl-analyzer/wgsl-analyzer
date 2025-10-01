@@ -11,6 +11,7 @@ pub fn format_naked_infix_exprs_out_of_scope() {
         1
         ;
         }",
+        "Wgsl disallows expressions outside statements.",
     );
 }
 

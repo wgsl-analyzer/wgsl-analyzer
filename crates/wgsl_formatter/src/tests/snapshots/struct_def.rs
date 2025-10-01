@@ -11,6 +11,7 @@ fn format_struct_def_empty() {
     assert_out_of_scope(
         "struct Foo {
         }",
+        "Wgsl disallows empty structs.",
     );
 }
 

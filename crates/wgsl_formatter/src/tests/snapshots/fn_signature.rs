@@ -36,12 +36,12 @@ fn format_fn_header_no_return_1() {
 
 #[test]
 fn format_fn_header_unfinished_return_1() {
-    assert_out_of_scope("fn  main ( a :  b )       ->     {}");
+    assert_out_of_scope("fn  main ( a :  b )       ->     {}", "Not valid wgsl.");
 }
 
 #[test]
 fn format_fn_header_malformed_return_2() {
-    assert_out_of_scope("fn  main ( a :  b )  u32  {}");
+    assert_out_of_scope("fn  main ( a :  b )  u32  {}", "Not valild wgsl.");
 }
 
 #[test]
@@ -103,7 +103,10 @@ fn format_fn_header_comma_multiline_narrow() {
 
 #[test]
 fn format_fn_header_missing_comma() {
-    assert_out_of_scope("fn main(a: b  c: d) {}");
+    assert_out_of_scope(
+        "fn main(a: b  c: d) {}",
+        "We don't try to guess missing commas.",
+    );
 }
 
 #[test]
@@ -168,5 +171,5 @@ fn format_multiple_fns() {
 
 #[test]
 fn format_fn_header_incomplete() {
-    assert_out_of_scope("fn  main ( a ");
+    assert_out_of_scope("fn  main ( a ", "We don't try to guess missing code.");
 }

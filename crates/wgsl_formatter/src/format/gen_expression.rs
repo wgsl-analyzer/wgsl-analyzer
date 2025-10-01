@@ -28,7 +28,7 @@ pub fn gen_expression(expression: &ast::Expression) -> FormatDocumentResult<Prin
             gen_infix_expression(infix_expression)
         },
         ast::Expression::IdentExpression(ident_expression) => {
-            todo_verbatim(ident_expression.syntax())
+            gen_ident_expression(ident_expression)
         },
         ast::Expression::FunctionCall(function_call) => todo_verbatim(function_call.syntax()),
         ast::Expression::ParenthesisExpression(parenthesis_expression) => {
@@ -42,6 +42,20 @@ pub fn gen_literal_expression(
     literal_expression: &ast::Literal
 ) -> FormatDocumentResult<PrintItemBuffer> {
     todo_verbatim(literal_expression.syntax())
+}
+
+pub fn gen_ident_expression(
+    ident_expression: &ast::IdentExpression
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(ident_expression.syntax().children_with_tokens());
+    let item_name_reference = parse_node::<ast::NameReference>(&mut syntax)?;
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_string(item_name_reference.text().to_string());
+    Ok(formatted)
 }
 
 pub fn gen_parenthesis_expression(

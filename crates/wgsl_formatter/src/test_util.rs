@@ -76,15 +76,24 @@ pub fn check_tabs<E: ExpectAssertEq>(
 /// Even tho these tests only test the behavior of the parser,
 /// they are useful to be included in the formatter unit tests,
 /// in order to keep track of the boundaries of what the
-/// formatter is supposed to deal with.
+/// formatter is supposed to deal with and to "get notified"
+/// as soon as the parser starts implementing certain new features.
+///
+/// These assertions also exist, to help document certain design decisions,
+/// and prevent people from doing futile work, trying to "complete holes
+/// in the functionality of the formatter", while not realising that there a
+/// reason certain things are intentionally not supported.
 #[track_caller]
-pub fn assert_out_of_scope(before: &str) {
+pub fn assert_out_of_scope(
+    before: &str,
+    reason: &str,
+) {
     let parse = syntax::parse(before.trim_start());
     let syntax = parse.tree();
 
     if parse.errors().is_empty() {
         println!(
-            "Expected source to raise parsing diagnostics and as such be out of scope for formatting. However the given source parsed without error. \nSource: {before}"
+            "Expected source to raise parsing diagnostics and as such be out of scope for formatting. Reason: {reason}\nHowever the given source parsed without error. \nSource: {before}"
         );
         // Use resume_unwind instead of panic!() to prevent a backtrace, which is unnecessary noise.
         panic::resume_unwind(Box::new(()));
@@ -100,6 +109,7 @@ pub fn check_with_options<E: ExpectAssertEq>(
     let parse = syntax::parse(before.trim_start());
     let syntax = parse.tree();
 
+    dbg!(&syntax);
     let formatted = match format_tree(&syntax, options) {
         Ok(formatted) => formatted,
         Err(format_error) => {
