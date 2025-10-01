@@ -424,7 +424,9 @@ Points of note:
 
 ##### Semantic Full AST
 
-In IntelliJ, the AST layer (dubbed **P**rogram **S**tructure **I**nterface) can have semantics attached, and is usually backed by either a syntax tree, indices, or metadata from compiled libraries.
+In IntelliJ, the AST layer
+(dubbed **P**rogram **S**tructure **I**nterface) <!-- spellchecker:disable-line -->
+can have semantics attached, and is usually backed by either a syntax tree, indices, or metadata from compiled libraries.
 The backend for PSI can change dynamically.
 
 ### Syntax Tree Recap
