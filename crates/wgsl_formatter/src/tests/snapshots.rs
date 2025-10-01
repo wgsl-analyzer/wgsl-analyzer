@@ -5,14 +5,14 @@ use crate::test_util::{check, check_tabs};
 //TODO Remove this comment == MODULES THAT FULLY PASS ==
 mod comments;
 mod expr_spacing;
+mod exprs_infix;
+mod exprs_paren;
 mod exprs_prefix;
 mod exprs_trivial;
 mod fn_body;
 mod fn_signature;
-mod infix_exprs;
-mod let_and_var_declarations;
-mod paren_exprs;
 mod statement_spacing;
+mod stmt_let_and_var_declarations;
 mod struct_def;
 
 //TODO Remove this comment == MODULES THAT STILL CONTAIN FAILING TESTS ==
