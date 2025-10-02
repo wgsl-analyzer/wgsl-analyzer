@@ -3,8 +3,6 @@ name = "ide"
 version = "0.0.0"
 repository.workspace = true
 description = "Core data structure representing IDE state for wgsl-analyzer."
-
-authors.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true

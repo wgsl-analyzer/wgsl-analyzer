@@ -3,8 +3,6 @@ name = "ide-db"
 version = "0.0.0"
 repository.workspace = true
 description = "IDE Database of wgsl-analyzer"
-
-authors.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true

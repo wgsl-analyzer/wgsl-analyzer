@@ -3,9 +3,7 @@ name = "stdx"
 version = "0.0.0"
 repository.workspace = true
 description = "Missing batteries for standard libraries for wgsl-analyzer."
-
 publish = false
-authors.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
