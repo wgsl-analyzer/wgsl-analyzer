@@ -6,8 +6,6 @@ repository.workspace = true
 description = "A language server for WGSL and WESL code"
 # documentation = "https://wgsl-analyzer.github.io/manual.html"
 autobins = false
-
-authors.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
