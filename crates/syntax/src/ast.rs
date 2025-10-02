@@ -496,6 +496,18 @@ impl AssignmentStatement {
     }
 }
 
+ast_node! {
+    PhonyAssignmentStatement:
+    equal_token: Option<SyntaxToken Equal>;
+}
+
+impl PhonyAssignmentStatement {
+    #[must_use]
+    pub fn right_side(&self) -> Option<Expression> {
+        crate::support::children(self.syntax()).next()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IncrementDecrement {
     Increment,
@@ -778,6 +790,7 @@ ast_enum! {
 
         AssignmentStatement,
         CompoundAssignmentStatement,
+        PhonyAssignmentStatement,
         IncrementDecrementStatement,
 
         // TODO: Phony Assignment goes here

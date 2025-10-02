@@ -694,6 +694,9 @@ impl<'database> InferenceContext<'database> {
 
                 self.expect_same_type(*left_side, r#type, left_inner);
             },
+            Statement::PhonyAssignment { right_side } => {
+                self.infer_expression(*right_side, &body.store);
+            },
             Statement::IncrDecr { expression, .. } => {
                 let left_ty = self.infer_expression(*expression, &body.store);
 

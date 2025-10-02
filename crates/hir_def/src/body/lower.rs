@@ -270,6 +270,10 @@ impl Collector<'_> {
                     op,
                 }
             },
+            ast::Statement::PhonyAssignmentStatement(assignment) => {
+                let right_side = self.collect_expression_opt(assignment.right_side());
+                Statement::PhonyAssignment { right_side }
+            },
             ast::Statement::IncrementDecrementStatement(statement) => {
                 let expression = self.collect_expression_opt(statement.expression());
                 let op = statement.increment_decrement()?;

@@ -38,6 +38,16 @@ pub enum SyntaxKind {
     /// ```
     AssignmentStatement,
 
+    /// ```wgsl
+    /// _ = b
+    /// ```
+    PhonyAssignmentStatement,
+
+    /// ```wgsl
+    /// a += b
+    /// ```
+    CompoundAssignmentStatement,
+
     /// `break;`
     BreakStatement,
     /// `break if 4 < 5;`
@@ -109,8 +119,6 @@ pub enum SyntaxKind {
     ParenthesisExpression,
     /// a type with an optional template `foo<bar>`
     TypeSpecifier,
-    /// `a += b`
-    CompoundAssignmentStatement,
     /// `location(0, 1, 2)`
     Attribute,
     /// the definition of a struct

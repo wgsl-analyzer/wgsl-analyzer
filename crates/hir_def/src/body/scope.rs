@@ -238,6 +238,9 @@ fn compute_statement_scopes(
             compute_expression_scopes(*left_side, body, scopes, scope);
             compute_expression_scopes(*right_side, body, scopes, scope);
         },
+        Statement::PhonyAssignment { right_side } => {
+            compute_expression_scopes(*right_side, body, scopes, scope);
+        },
         Statement::IncrDecr { expression, .. } | Statement::Expression { expression } => {
             compute_expression_scopes(*expression, body, scopes, scope);
         },

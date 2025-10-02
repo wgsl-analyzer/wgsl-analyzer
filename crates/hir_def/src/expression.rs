@@ -91,6 +91,9 @@ pub enum Statement {
         right_side: ExpressionId,
         op: CompoundOperator,
     },
+    PhonyAssignment {
+        right_side: ExpressionId,
+    },
     IncrDecr {
         expression: ExpressionId,
         op: IncrementDecrement,

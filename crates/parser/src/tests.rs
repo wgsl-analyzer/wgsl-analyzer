@@ -1631,6 +1631,26 @@ fn parse_compound_assignment_statement_expression() {
 }
 
 #[test]
+fn parse_phony_assignment_statement() {
+    check_statement(
+        "_ = *foo;",
+        expect![[r#"
+            SourceFile@0..9
+              PhonyAssignmentStatement@0..9
+                Underscore@0..1 "_"
+                Blankspace@1..2 " "
+                Equal@2..3 "="
+                Blankspace@3..4 " "
+                PrefixExpression@4..8
+                  Star@4..5 "*"
+                  IdentExpression@5..8
+                    NameReference@5..8
+                      Identifier@5..8 "foo"
+                Semicolon@8..9 ";""#]],
+    );
+}
+
+#[test]
 fn parse_indexed_statement() {
     check_statement(
         "a[0] += a[2];",

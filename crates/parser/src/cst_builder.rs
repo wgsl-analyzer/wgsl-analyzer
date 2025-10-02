@@ -98,7 +98,7 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::OverrideDeclaration => self.start_node(SyntaxKind::OverrideDeclaration),
             Rule::Parameter => self.start_node(SyntaxKind::Parameter),
             Rule::ParenExpression => self.start_node(SyntaxKind::ParenthesisExpression),
-            Rule::PhonyAssignmentStatement => todo!(),
+            Rule::PhonyAssignmentStatement => self.start_node(SyntaxKind::PhonyAssignmentStatement),
             Rule::RequiresDirective => todo!(),
             Rule::ReturnStatement => self.start_node(SyntaxKind::ReturnStatement),
             Rule::ReturnType => self.start_node(SyntaxKind::ReturnType),
