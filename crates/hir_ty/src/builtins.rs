@@ -4,11 +4,11 @@ use crate::{
     database::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
     ty::{
-        AccessMode, AddressSpace, ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Pointer,
-        SamplerType, ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType,
-        TyKind, Type, VecSize,
+        ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Pointer, SamplerType, ScalarType,
+        TexelFormat, TextureDimensionality, TextureKind, TextureType, TyKind, Type, VecSize,
     },
 };
+use wgsl_types::syntax::{AccessMode, AddressSpace};
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub struct BuiltinId(salsa::InternId);

@@ -20,6 +20,7 @@ syntax.workspace = true
 base-db.workspace = true
 smol_str = "0.3.2"
 rustc-hash = "2.1.1"
+triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
 either = "1.15.0"
 smallvec = { version = "1.15.1", features = [
   "const_new",
