@@ -1,5 +1,7 @@
 use std::fmt::{self, Write as _};
 
+use wgsl_types::ty::SamplerType;
+
 use super::{TyKind, Type};
 use crate::{
     database::HirDatabase,
@@ -221,12 +223,11 @@ fn write_ty(
             };
             write!(formatter, "{value}")
         },
-        TyKind::Sampler(sampler) => {
-            if sampler.comparison {
-                write!(formatter, "sampler_comparison")
-            } else {
-                write!(formatter, "sampler")
-            }
+        TyKind::Sampler(SamplerType::Sampler) => {
+            write!(formatter, "sampler")
+        },
+        TyKind::Sampler(SamplerType::SamplerComparison) => {
+            write!(formatter, "sampler_comparison")
         },
         TyKind::Reference(reference) => match verbosity {
             TypeVerbosity::Full => {

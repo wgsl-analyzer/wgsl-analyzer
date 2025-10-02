@@ -41,9 +41,9 @@ use crate::{
         unify::{UnificationTable, unify},
     },
     ty::{
-        ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Pointer, Reference, SamplerType,
-        ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType, TyKind, Type,
-        VecSize, VectorType,
+        ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Pointer, Reference, ScalarType,
+        TexelFormat, TextureDimensionality, TextureKind, TextureType, TyKind, Type, VecSize,
+        VectorType,
     },
 };
 
@@ -2084,9 +2084,7 @@ pub fn ty_from_wgsl_types(
         wgsl_types::Type::Texture(texture_type) => {
             TyKind::Texture(texture_type.clone().into()).intern(database)
         },
-        wgsl_types::Type::Sampler(sampler_type) => {
-            TyKind::Sampler(sampler_type.clone().into()).intern(database)
-        },
+        wgsl_types::Type::Sampler(sampler_type) => TyKind::Sampler(sampler_type).intern(database),
         wgsl_types::Type::RayQuery(_) => todo!("naga extension"),
         wgsl_types::Type::AccelerationStructure(_) => todo!("naga extension"),
     }
@@ -2167,25 +2165,6 @@ impl From<TextureType> for wgsl_types::ty::TextureType {
             (TextureKind::External, TextureDimensionality::D3) => todo!(),
             (TextureKind::External, TextureDimensionality::Cube) => todo!(),
             (_, _) => panic!("invalid texture"),
-        }
-    }
-}
-
-impl From<wgsl_types::ty::SamplerType> for SamplerType {
-    fn from(value: wgsl_types::ty::SamplerType) -> Self {
-        match value {
-            wgsl_types::ty::SamplerType::Sampler => SamplerType { comparison: false },
-            wgsl_types::ty::SamplerType::SamplerComparison => SamplerType { comparison: true },
-        }
-    }
-}
-
-impl From<SamplerType> for wgsl_types::ty::SamplerType {
-    fn from(value: SamplerType) -> Self {
-        if value.comparison {
-            wgsl_types::ty::SamplerType::SamplerComparison
-        } else {
-            wgsl_types::ty::SamplerType::Sampler
         }
     }
 }

@@ -440,8 +440,11 @@ fn type_to_rust(r#type: &Type) -> String {
                 texture.dimension,
             )
         },
-        Type::Sampler { comparison } => {
-            format!("TyKind::Sampler(SamplerType {{ comparison: {comparison}  }}).intern(database)")
+        Type::Sampler { comparison: true } => {
+            format!("TyKind::Sampler(SamplerType::SamplerComparison).intern(database)")
+        },
+        Type::Sampler { comparison: false } => {
+            format!("TyKind::Sampler(SamplerType::Sampler).intern(database)")
         },
         Type::RuntimeArray(inner) => format!(
             "TyKind::Array(ArrayType {{
