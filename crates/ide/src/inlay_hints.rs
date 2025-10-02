@@ -430,12 +430,13 @@ fn get_hints(
                     return None;
                 }
                 function_hints(
-                    semantics,
+                    hints,
                     file_id,
+                    semantics,
+                    config,
                     node,
                     &expression,
                     function_call_expression.parameters()?.arguments(),
-                    hints,
                 )?;
             },
             AstExpression::InfixExpression(_)
@@ -487,12 +488,13 @@ fn get_hints(
 }
 
 fn function_hints(
-    semantics: &Semantics<'_>,
+    hints: &mut Vec<InlayHint>,
     file_id: FileId,
+    semantics: &Semantics<'_>,
+    config: &InlayHintsConfig,
     node: &SyntaxNode,
     expression: &AstExpression,
     parameter_expressions: AstChildren<AstExpression>,
-    hints: &mut Vec<InlayHint>,
 ) -> Option<()> {
     let container = semantics.find_container(file_id.into(), node)?;
     let analyzed = semantics.analyze(container);
@@ -509,15 +511,21 @@ fn function_hints(
         .filter(|(param_name, expression)| {
             !should_hide_param_name_hint(&func, param_name, expression)
         })
-        .map(|(param_name, expression)| InlayHint {
-            range: expression.syntax().text_range(),
-            position: InlayHintPosition::After,
-            pad_left: false,
-            pad_right: false,
-            kind: InlayKind::Parameter,
-            label: param_name.into(),
-            text_edit: None,
-            resolve_parent: None,
+        .map(|(param_name, expression)| {
+            let colon = if config.render_colons { ":" } else { "" };
+            let mut label = InlayHintLabel::from(param_name);
+            label.append_str(colon);
+
+            InlayHint {
+                range: expression.syntax().text_range(),
+                position: InlayHintPosition::Before,
+                pad_left: false,
+                pad_right: true,
+                kind: InlayKind::Parameter,
+                label,
+                text_edit: None,
+                resolve_parent: None,
+            }
         });
     hints.extend(param_hints);
     Some(())
