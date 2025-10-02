@@ -1539,6 +1539,53 @@ fn parse_statement_recover() {
 }
 
 #[test]
+fn parse_missing_lhs_recover() {
+    // Amusingly a unary plus is invalid in WGSL
+    check_statement(
+        "let a = +1;",
+        expect![[r#"
+            SourceFile@0..11
+              LetDeclaration@0..11
+                Let@0..3 "let"
+                Blankspace@3..4 " "
+                Name@4..5
+                  Identifier@4..5 "a"
+                Blankspace@5..6 " "
+                Equal@6..7 "="
+                Blankspace@7..8 " "
+                InfixExpression@8..10
+                  Plus@8..9 "+"
+                  Literal@9..10
+                    IntLiteral@9..10 "1"
+                Semicolon@10..11 ";"
+
+            error at 8..9: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+    );
+}
+
+#[test]
+fn parse_unary_minus() {
+    check_statement(
+        "let a = -1;",
+        expect![[r#"
+            SourceFile@0..11
+              LetDeclaration@0..11
+                Let@0..3 "let"
+                Blankspace@3..4 " "
+                Name@4..5
+                  Identifier@4..5 "a"
+                Blankspace@5..6 " "
+                Equal@6..7 "="
+                Blankspace@7..8 " "
+                PrefixExpression@8..10
+                  Minus@8..9 "-"
+                  Literal@9..10
+                    IntLiteral@9..10 "1"
+                Semicolon@10..11 ";""#]],
+    );
+}
+
+#[test]
 fn parse_compound_assignment_statement() {
     check_statement(
         "a += 3;",
