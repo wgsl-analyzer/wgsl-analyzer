@@ -13,29 +13,6 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/wgsl-analyzer/wgsl-analyzer"
 
-[profile.dev]
-debug = 1
-
-[profile.dev.package]
-# These speed up local tests.
-rowan.opt-level = 3
-rustc-hash.opt-level = 3
-smol_str.opt-level = 3
-text-size.opt-level = 3
-serde.opt-level = 3
-salsa.opt-level = 3
-# This speeds up `cargo xtask dist`.
-# miniz_oxide.opt-level = 3
-
-[profile.release]
-incremental = true
-# Set this to 1 or 2 to get more useful backtraces in debugger.
-debug = 0
-
-[profile.dev-rel]
-inherits = "release"
-debug = 2
-
 [workspace.dependencies]
 # local crates
 base-db = { path = "./crates/base_db", version = "0.0.0" }
@@ -171,3 +148,26 @@ missing_inline_in_public_items = "allow"
 
 # prefer get().expect() so that the reason is documented
 indexing_slicing = "allow"
+
+[profile.dev]
+debug = 1
+
+[profile.dev.package]
+# These speed up local tests.
+rowan.opt-level = 3
+rustc-hash.opt-level = 3
+smol_str.opt-level = 3
+text-size.opt-level = 3
+serde.opt-level = 3
+salsa.opt-level = 3
+# This speeds up `cargo xtask dist`.
+# miniz_oxide.opt-level = 3
+
+[profile.release]
+incremental = true
+# Set this to 1 or 2 to get more useful backtraces in debugger.
+debug = 0
+
+[profile.dev-rel]
+inherits = "release"
+debug = 2
