@@ -30,8 +30,8 @@ export interface InlayHintsConfig {
 
 export interface DiagnosticsConfig {
 	typeErrors: boolean;
-	nagaParsing: boolean;
-	nagaValidation: boolean;
+	nagaParsingErrors: boolean;
+	nagaValidationErrors: boolean;
 }
 
 export class Config {
