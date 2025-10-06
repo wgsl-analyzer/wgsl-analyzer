@@ -19,7 +19,7 @@ regex = { version = "1.11.3", default-features = false, features = [
   "std",
   "unicode",
 ] }
-triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
+triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
 line-index = "0.1.2"
 vfs.workspace = true
 
