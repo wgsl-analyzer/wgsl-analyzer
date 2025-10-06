@@ -26,7 +26,7 @@ ide-completion.workspace = true
 itertools = "0.14.0"
 # scip = "0.5.2"
 lsp-types = { version = "=0.95.0", features = ["proposed"] }
-parking_lot = "0.12.4"
+parking_lot = "0.12.5"
 xflags = "0.3.2"
 # threadpool = "1.8.1"
 salsa = "0.17.0-pre.2"
