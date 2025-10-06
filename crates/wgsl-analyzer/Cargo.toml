@@ -49,7 +49,7 @@ tracing-subscriber = { version = "0.3.20", default-features = false, features = 
   "tracing-log",
 ] }
 tracing-tree = "0.4.1"
-triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
+triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
 # toml = "0.8.8"
 nohash-hasher = "0.2.0"
 walkdir = "2.5.0"
