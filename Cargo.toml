@@ -34,6 +34,7 @@ stdx = { path = "./crates/stdx", version = "0.0.0" }
 syntax = { path = "./crates/syntax", version = "0.0.0" }
 test-utils = { path = "./crates/test-utils", version = "0.0.0" }
 vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "a31e10a2fdc585e9d7ea0857cacfd322dd478070", version = "0.0.0" }
+wgsl-types = { version = "0.2.0", git = "https://github.com/wgsl-tooling-wg/wesl-rs", features = ["naga-ext"] }
 # rust-analyzer crates
 vfs-notify = { git = "https://github.com/rust-lang/rust-analyzer", rev = "a31e10a2fdc585e9d7ea0857cacfd322dd478070", version = "0.0.0" }
 wgsl-analyzer = { path = "./crates/wgsl-analyzer", version = "0.0.0" }
