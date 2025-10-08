@@ -3,7 +3,7 @@ use std::rc::Rc;
 use dprint_core::formatting::{LineNumber, LineNumberAnchor, PrintItems, Signal, conditions};
 use dprint_core_macros::sc;
 use itertools::put_back;
-use syntax::{AstNode, ast};
+use syntax::{AstNode as _, ast};
 
 use crate::format::{
     ast_parse::{
@@ -11,7 +11,7 @@ use crate::format::{
     },
     gen_comments::gen_comments,
     gen_function_call::gen_function_call_expression,
-    helpers::{create_is_multiple_lines_resolver, todo_verbatim},
+    helpers::create_is_multiple_lines_resolver,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::FormatDocumentResult,
 };

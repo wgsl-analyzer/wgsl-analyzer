@@ -15,7 +15,8 @@ mod exprs_trivial;
 mod fn_body;
 mod fn_signature;
 mod statement_spacing;
-mod stmt_let_and_var_declarations;
+mod stmt_let_declarations;
+mod stmt_var_declarations;
 mod struct_def;
 
 //TODO Remove this comment == MODULES THAT STILL CONTAIN FAILING TESTS ==
