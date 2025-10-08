@@ -5,7 +5,9 @@ use crate::test_util::{check, check_tabs};
 //TODO Remove this comment == MODULES THAT FULLY PASS ==
 mod comments;
 mod expr_spacing;
+mod exprs_field;
 mod exprs_function_call;
+pub mod exprs_index;
 mod exprs_infix;
 mod exprs_paren;
 mod exprs_prefix;
