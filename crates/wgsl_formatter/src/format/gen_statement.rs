@@ -56,7 +56,6 @@ pub fn gen_compound_statement(
             // but this way is just as fine
             Ok(PrintItemBuffer::new())
         } else {
-            todo!();
             Err(FormatDocumentErrorKind::UnexpectedToken {
                 received: child.clone(),
             }
@@ -104,7 +103,7 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
             todo_verbatim(function_call_statement.syntax())
         },
         ast::Statement::VariableDeclaration(variable_declaration) => {
-            todo_verbatim(variable_declaration.syntax())
+            gen_var_declaration_statement(variable_declaration)
         },
         ast::Statement::LetDeclaration(let_declaration) => {
             gen_let_declaration_statement(let_declaration)
@@ -180,6 +179,13 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
 fn gen_let_declaration_statement(
     statement: &ast::LetDeclaration
 ) -> FormatDocumentResult<PrintItemBuffer> {
+    //
+    // NOTE!! - When changing this function, make sure to also update gen_var_declaration_statement.
+    // This is non-dry code, but when inevitably at some point there will be some differences between
+    // let and var, this should clearly communicate that they should be split up and not
+    // continue to be one function with a whole lot of parameters and ifs.
+    //
+
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::Let)?;
@@ -202,6 +208,56 @@ fn gen_let_declaration_statement(
     // There are no circumstances where a let statement would not be the first item on a line.
     formatted.expect_line_break();
     formatted.push_sc(sc!("let"));
+    formatted.push_signal(Signal::StartIndent);
+    formatted.expect_single_space();
+    formatted.extend(gen_comments(item_comments_after_let));
+    formatted.push_string(item_name.text().to_string());
+    formatted.extend(gen_comments(item_comments_after_name));
+    formatted.expect_single_space();
+    formatted.push_sc(sc!("="));
+    formatted.expect_single_space();
+    formatted.extend(gen_comments(item_comments_after_equal));
+    formatted.extend(gen_expression(&value)?);
+    formatted.extend(gen_comments(item_comments_after_value));
+    formatted.request_space(SeparationPolicy::Discouraged);
+    formatted.push_sc(sc!(";"));
+    formatted.push_signal(Signal::FinishIndent);
+
+    Ok(formatted)
+}
+
+fn gen_var_declaration_statement(
+    statement: &ast::VariableDeclaration
+) -> FormatDocumentResult<PrintItemBuffer> {
+    //
+    // NOTE!! - When changing this function, make sure to also update gen_let_declaration_statement.
+    // This is non-dry code, but when inevitably at some point there will be some differences between
+    // let and var, this should clearly communicate that they should be split up and not
+    // continue to be one function with a whole lot of parameters and ifs.
+    //
+
+    // ==== Parse ====
+    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    parse_token(&mut syntax, SyntaxKind::Var)?;
+    let item_comments_after_let = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_name = parse_node::<ast::Name>(&mut syntax)?;
+    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::Equal)?;
+    let item_comments_after_equal = parse_many_comments_and_blankspace(&mut syntax)?;
+
+    let value = parse_node::<ast::Expression>(&mut syntax)?;
+    let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
+
+    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
+    parse_end(&mut syntax);
+
+    let mut pi = PrintItems::new();
+    pi.push_info(ColumnNumber::new("start_expr"));
+
+    let mut formatted = PrintItemBuffer::new();
+    // There are no circumstances where a let statement would not be the first item on a line.
+    formatted.expect_line_break();
+    formatted.push_sc(sc!("var"));
     formatted.push_signal(Signal::StartIndent);
     formatted.expect_single_space();
     formatted.extend(gen_comments(item_comments_after_let));
