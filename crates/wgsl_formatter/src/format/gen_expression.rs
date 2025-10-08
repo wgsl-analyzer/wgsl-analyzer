@@ -1,4 +1,6 @@
-use dprint_core::formatting::{PrintItems, Signal};
+use std::rc::Rc;
+
+use dprint_core::formatting::{LineNumber, LineNumberAnchor, PrintItems, Signal, conditions};
 use dprint_core_macros::sc;
 use itertools::put_back;
 use syntax::{AstNode, ast};
@@ -9,7 +11,7 @@ use crate::format::{
     },
     gen_comments::gen_comments,
     gen_function_call::gen_function_call_expression,
-    helpers::todo_verbatim,
+    helpers::{create_is_multiple_lines_resolver, todo_verbatim},
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::FormatDocumentResult,
 };
@@ -17,10 +19,10 @@ use crate::format::{
 pub fn gen_expression(expression: &ast::Expression) -> FormatDocumentResult<PrintItemBuffer> {
     match expression {
         ast::Expression::IndexExpression(index_expression) => {
-            todo_verbatim(index_expression.syntax())
+            gen_index_expression(index_expression)
         },
         ast::Expression::FieldExpression(field_expression) => {
-            todo_verbatim(field_expression.syntax())
+            gen_field_expression(field_expression)
         },
         ast::Expression::PrefixExpression(prefix_expression) => {
             gen_prefix_expression(prefix_expression)
@@ -138,5 +140,125 @@ pub fn gen_prefix_expression(
     formatted.extend(gen_comments(item_comment_after_operator));
     formatted.extend(gen_expression(&item_expr)?);
     formatted.extend(gen_comments(item_comment_after_expr));
+    Ok(formatted)
+}
+
+pub fn gen_field_expression(
+    field_expression: &ast::FieldExpression
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(field_expression.syntax().children_with_tokens());
+    let item_ident_expr = parse_node::<ast::IdentExpression>(&mut syntax)?;
+    let comments_after_ident_expr = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, parser::SyntaxKind::Period)?;
+    let comments_after_period = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_target_ident = parse_token(&mut syntax, parser::SyntaxKind::Identifier)?;
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.extend(gen_ident_expression(&item_ident_expr)?);
+    formatted.extend(gen_comments(comments_after_ident_expr));
+    formatted.push_sc(sc!("."));
+    formatted.extend(gen_comments(comments_after_period));
+    formatted.push_string(item_target_ident.text().to_owned());
+    Ok(formatted)
+}
+
+pub fn gen_index_expression(
+    index_expression: &ast::IndexExpression
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(index_expression.syntax().children_with_tokens());
+    let item_ident_expr = parse_node::<ast::IdentExpression>(&mut syntax)?;
+    let comments_after_ident_expr = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, parser::SyntaxKind::BracketLeft)?;
+    let comments_after_open_bracket = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_index_literal = parse_node::<ast::Literal>(&mut syntax)?;
+    let comments_after_index_expr = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, parser::SyntaxKind::BracketRight)?;
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+
+    formatted.extend(gen_ident_expression(&item_ident_expr)?);
+    formatted.extend(gen_comments(comments_after_ident_expr));
+    // formatted.push_sc(sc!("["));
+    // formatted.extend(gen_comments(comments_after_open_bracket));
+    // formatted.extend(gen_literal_expression(&item_index_literal)?);
+    // formatted.extend(gen_comments(comments_after_index_expr));
+    // formatted.push_sc(sc!("]"));
+
+    // TODO Abstract this "fully multiline if at all multiline" functionality from here, index exprs, fn declarations and wherever it also exists
+    let start_ln = LineNumber::new("start");
+    let end_ln = LineNumber::new("end");
+    let is_multiple_lines = create_is_multiple_lines_resolver(start_ln, end_ln);
+
+    formatted.push_info(start_ln);
+    formatted.push_anchor(LineNumberAnchor::new(end_ln));
+    formatted.push_sc(sc!("["));
+
+    let mut start_nl_condition = conditions::if_true_or(
+        "paramMultilineStartIndent",
+        Rc::clone(&is_multiple_lines),
+        {
+            let mut pi = PrintItems::default();
+            pi.push_signal(Signal::NewLine);
+            pi.push_signal(Signal::StartIndent);
+            pi
+        },
+        {
+            let mut pi = PrintItems::default();
+            pi.push_signal(Signal::PossibleNewLine);
+            pi
+        },
+    );
+    let start_reeval = start_nl_condition.create_reevaluation();
+    formatted.push_condition(start_nl_condition);
+    formatted.push_signal(Signal::StartNewLineGroup);
+
+    // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
+    formatted.request(SeparationRequest::discouraged());
+
+    formatted.extend(gen_comments(comments_after_open_bracket));
+
+    formatted.extend(gen_literal_expression(&item_index_literal)?);
+
+    formatted.extend(gen_comments(comments_after_index_expr));
+
+    formatted.request(SeparationRequest {
+        line_break: SeparationPolicy::ExpectedIf {
+            on_branch: true,
+            of_resolver: Rc::clone(&is_multiple_lines),
+        },
+        space: SeparationPolicy::ExpectedIf {
+            on_branch: false,
+            of_resolver: Rc::clone(&is_multiple_lines),
+        },
+        ..Default::default()
+    });
+
+    // No trailing spaces
+    formatted.request(SeparationRequest {
+        space: SeparationPolicy::Discouraged,
+        ..Default::default()
+    });
+
+    formatted.push_condition(conditions::if_true(
+        "paramMultilineEndIndent",
+        is_multiple_lines,
+        {
+            let mut pi = PrintItems::default();
+            pi.push_signal(Signal::FinishIndent);
+            pi
+        },
+    ));
+
+    formatted.push_sc(sc!("]"));
+    formatted.push_signal(Signal::FinishNewLineGroup);
+    formatted.push_info(end_ln);
+    formatted.push_reevaluation(start_reeval);
+
     Ok(formatted)
 }
