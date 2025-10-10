@@ -301,7 +301,7 @@ impl HasAttributes for StructDeclarationField {}
 
 ast_node! {
     GlobalVariableDeclaration:
-    var_token: Option<SyntaxToken Var>;
+    var_token: Option<SyntaxToken Variable>;
     binding: Option<Binding>;
     variable_qualifier: Option<VariableQualifier>;
     ty: Option<Type>;
@@ -836,7 +836,7 @@ impl VariableStatement {
             .find_map(|token| match token.kind() {
                 SyntaxKind::Constant => Some(VariableStatementKind::Constant),
                 SyntaxKind::Let => Some(VariableStatementKind::Let),
-                SyntaxKind::Var => Some(VariableStatementKind::Var),
+                SyntaxKind::Variable => Some(VariableStatementKind::Variable),
                 _ => None,
             })
     }
@@ -845,7 +845,7 @@ impl VariableStatement {
 pub enum VariableStatementKind {
     Constant,
     Let,
-    Var,
+    Variable,
 }
 
 ast_node! {
