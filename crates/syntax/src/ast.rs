@@ -965,6 +965,9 @@ ast_enum_raw! {
         Float32,
         Int32,
         Uint32,
+        // SHADER_INT64
+        Int64,
+        Uint64,
     }
 }
 
