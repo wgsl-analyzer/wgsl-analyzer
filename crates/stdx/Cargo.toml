@@ -20,7 +20,7 @@ tracing = "0.1.41"
 # Think twice before adding anything here
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2.176"
+libc = "0.2.177"
 
 [target.'cfg(windows)'.dependencies]
 miow = "0.6.1"

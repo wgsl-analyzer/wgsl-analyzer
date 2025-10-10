@@ -19,7 +19,7 @@ jemalloc-ctl = { version = "0.6.0", package = "tikv-jemalloc-ctl", optional = tr
 perf-event = "=0.4.8"
 
 [target.'cfg(all(target_os = "linux", target_env = "gnu"))'.dependencies]
-libc = "0.2.176"
+libc = "0.2.177"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = [
