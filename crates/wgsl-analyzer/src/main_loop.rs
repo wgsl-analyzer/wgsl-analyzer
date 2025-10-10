@@ -907,20 +907,20 @@ impl GlobalState {
     ) {
         let old_config = std::mem::replace(&mut self.config, Arc::new(config));
 
-        if old_config.data().custom_imports != self.config.data().custom_imports {
+        if old_config.custom_imports() != self.config.custom_imports() {
             self.analysis_host
                 .raw_database_mut()
                 .set_custom_imports_with_durability(
-                    Arc::new(self.config.data().custom_imports.clone()),
+                    Arc::new(self.config.custom_imports().clone()),
                     Durability::HIGH,
                 );
         }
 
-        if old_config.data().shader_defs != self.config.data().shader_defs {
+        if old_config.preprocessor_shader_defs() != self.config.preprocessor_shader_defs() {
             self.analysis_host
                 .raw_database_mut()
                 .set_shader_defs_with_durability(
-                    Arc::new(self.config.data().shader_defs.clone()),
+                    Arc::new(self.config.preprocessor_shader_defs().clone()),
                     Durability::HIGH,
                 );
         }
