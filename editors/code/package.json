@@ -32,7 +32,7 @@
 		}
 	},
 	"engines": {
-		"vscode": "^1.103.0",
+		"vscode": "^1.105.0",
 		"npm": "^11.2.0"
 	},
 	"enabledApiProposals": [],
