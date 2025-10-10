@@ -36,10 +36,7 @@ use crate::{
     builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
     database::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
-    infer::{
-        eval::template_parameter_to_wgsl_types,
-        unify::{UnificationTable, unify},
-    },
+    infer::unify::{UnificationTable, unify},
     ty::{
         ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Pointer, Reference, ScalarType,
         TexelFormat, TextureDimensionality, TextureKind, TextureType, TyKind, Type, VecSize,
@@ -1469,11 +1466,12 @@ impl<'database> InferenceContext<'database> {
             }
         } else {
             let mut ctx = TyLoweringContext::new(self.database, &resolver, store);
+            let mut converter = WgslTypeConverter::new(self.database);
             let template_args: Option<Vec<_>> = callee
                 .generics
                 .iter()
                 .map(|arg| ctx.eval_tplt_arg(*arg))
-                .map(|arg| template_parameter_to_wgsl_types(arg, self.database))
+                .map(|arg| converter.template_parameter_to_wgsl_types(arg))
                 .collect();
             let Some(template_args) = template_args else {
                 // One of the template parameters had an error type
@@ -1493,7 +1491,7 @@ impl<'database> InferenceContext<'database> {
 
             let converted_arguments: Option<Vec<_>> = arguments
                 .iter()
-                .map(|ty| ty_into_wgsl_types(*ty, self.database))
+                .map(|ty| converter.to_wgsl_types(*ty))
                 .collect();
 
             let Some(converted_arguments) = converted_arguments else {
@@ -1517,7 +1515,7 @@ impl<'database> InferenceContext<'database> {
             };
 
             match return_type {
-                Ok(Some(ty)) => ty_from_wgsl_types(ty, self.database),
+                Ok(Some(ty)) => converter.from_wgsl_types(ty),
                 Ok(None) => self.error_ty(),
                 Err(err) => {
                     self.push_diagnostic(InferenceDiagnostic::WgslError {
@@ -1895,12 +1893,12 @@ impl<'database> TyLoweringContext<'database> {
         type_ref: &TypeSpecifier,
     ) -> Result<Type, TypeLoweringError> {
         let name = type_ref.path.as_str();
-        let database = self.database;
+        let mut converter = WgslTypeConverter::new(self.database);
         let template_args: Option<Vec<_>> = type_ref
             .generics
             .iter()
             .map(|arg| self.eval_tplt_arg(*arg))
-            .map(|arg| template_parameter_to_wgsl_types(arg, database))
+            .map(|arg| converter.template_parameter_to_wgsl_types(arg))
             .collect();
 
         let template_args = match &template_args {
@@ -1912,181 +1910,235 @@ impl<'database> TyLoweringContext<'database> {
         };
         let return_type = wgsl_types::builtin::builtin_type(name, template_args);
         match return_type {
-            Ok(ty) => Ok(ty_from_wgsl_types(ty, self.database)),
+            Ok(ty) => Ok(converter.from_wgsl_types(ty)),
             Err(err) => Err(TypeLoweringError::WgslError(err.to_string())),
         }
     }
 }
 
-pub fn ty_into_wgsl_types(
-    ty: Type,
-    database: &dyn HirDatabase,
-) -> Option<wgsl_types::Type> {
-    Some(match ty.kind(database) {
-        TyKind::Error => return None,
-        TyKind::Scalar(ScalarType::AbstractFloat) => wgsl_types::Type::AbstractFloat,
-        TyKind::Scalar(ScalarType::AbstractInt) => wgsl_types::Type::AbstractInt,
-        TyKind::Scalar(ScalarType::Bool) => wgsl_types::Type::Bool,
-        TyKind::Scalar(ScalarType::F16) => wgsl_types::Type::F16,
-        TyKind::Scalar(ScalarType::F32) => wgsl_types::Type::F32,
-        TyKind::Scalar(ScalarType::I32) => wgsl_types::Type::I32,
-        TyKind::Scalar(ScalarType::U32) => wgsl_types::Type::U32,
-        TyKind::Atomic(AtomicType { inner }) => {
-            wgsl_types::Type::Atomic(Box::new(ty_into_wgsl_types(inner, database)?))
-        },
-        TyKind::Vector(VectorType {
-            size,
-            component_type,
-        }) => wgsl_types::Type::Vec(
-            size.as_u8(),
-            Box::new(ty_into_wgsl_types(component_type, database)?),
-        ),
-        TyKind::Matrix(MatrixType {
-            columns,
-            rows,
-            inner,
-        }) => wgsl_types::Type::Mat(
-            columns.as_u8(),
-            rows.as_u8(),
-            Box::new(ty_into_wgsl_types(inner, database)?),
-        ),
-        TyKind::Struct(struct_id) => {
-            let data = database.struct_data(struct_id).0;
-            let fields = database.field_types(struct_id);
-            wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
-                name: data.name.as_str().to_string(),
-                members: data
-                    .fields
-                    .iter()
-                    .map(|(id, data)| {
-                        Some(wgsl_types::ty::StructMemberType {
-                            name: data.name.as_str().to_string(),
-                            // Skip broken struct fields
-                            ty: ty_into_wgsl_types(fields[id], database)?,
-                            // Don't bother reconstructing the correct layout
-                            size: None,
-                            align: None,
-                        })
-                    })
-                    .collect::<Option<Vec<_>>>()?,
-            }))
-        },
-        TyKind::Array(ArrayType {
-            inner,
-            binding_array: false,
-            size,
-        }) => wgsl_types::Type::Array(
-            Box::new(ty_into_wgsl_types(inner, database)?),
-            match size {
-                ArraySize::Constant(size) => Some(size as usize),
-                ArraySize::Dynamic => None,
-            },
-        ),
-        TyKind::Array(ArrayType {
-            inner,
-            binding_array: true,
-            size,
-        }) => wgsl_types::Type::BindingArray(
-            Box::new(ty_into_wgsl_types(inner, database)?),
-            match size {
-                ArraySize::Constant(size) => Some(size as usize),
-                ArraySize::Dynamic => None,
-            },
-        ),
-        TyKind::Texture(texture_type) => wgsl_types::Type::Texture(texture_type.into()),
-        TyKind::Sampler(sampler_type) => wgsl_types::Type::Sampler(sampler_type.into()),
-        TyKind::Reference(Reference {
-            address_space,
-            inner,
-            access_mode,
-        }) => wgsl_types::Type::Ref(
-            address_space,
-            Box::new(ty_into_wgsl_types(inner, database)?),
-            access_mode,
-        ),
-        TyKind::Pointer(Pointer {
-            address_space,
-            inner,
-            access_mode,
-        }) => wgsl_types::Type::Ptr(
-            address_space,
-            Box::new(ty_into_wgsl_types(inner, database)?),
-            access_mode,
-        ),
-        TyKind::BoundVar(_) => return None,
-        TyKind::StorageTypeOfTexelFormat(_) => return None,
-    })
+struct WgslTypeConverter<'a> {
+    database: &'a dyn HirDatabase,
+    interned_structs: Vec<StructId>,
 }
 
-pub fn ty_from_wgsl_types(
-    ty: wgsl_types::Type,
-    database: &dyn HirDatabase,
-) -> Type {
-    match ty {
-        wgsl_types::Type::Bool => TyKind::Scalar(ScalarType::Bool).intern(database),
-        wgsl_types::Type::AbstractInt => TyKind::Scalar(ScalarType::AbstractInt).intern(database),
-        wgsl_types::Type::AbstractFloat => {
-            TyKind::Scalar(ScalarType::AbstractFloat).intern(database)
-        },
-        wgsl_types::Type::I32 => TyKind::Scalar(ScalarType::I32).intern(database),
-        wgsl_types::Type::U32 => TyKind::Scalar(ScalarType::U32).intern(database),
-        wgsl_types::Type::I64 => todo!("naga extension"),
-        wgsl_types::Type::U64 => todo!("naga extension"),
-        wgsl_types::Type::F16 => TyKind::Scalar(ScalarType::F16).intern(database),
-        wgsl_types::Type::F32 => TyKind::Scalar(ScalarType::F32).intern(database),
-        wgsl_types::Type::F64 => todo!("naga extension"),
-        wgsl_types::Type::Struct(struct_type) => todo!(),
-        wgsl_types::Type::Array(ty, size) => TyKind::Array(ArrayType {
-            inner: ty_from_wgsl_types(*ty, database),
-            binding_array: false,
-            size: match size {
-                Some(size) => ArraySize::Constant(size as u64),
-                None => ArraySize::Dynamic,
+impl<'a> WgslTypeConverter<'a> {
+    fn new(database: &'a dyn HirDatabase) -> Self {
+        Self {
+            database,
+            interned_structs: Default::default(),
+        }
+    }
+    fn to_wgsl_types(
+        &mut self,
+        ty: Type,
+    ) -> Option<wgsl_types::Type> {
+        Some(match ty.kind(self.database) {
+            TyKind::Error => return None,
+            TyKind::Scalar(ScalarType::AbstractFloat) => wgsl_types::Type::AbstractFloat,
+            TyKind::Scalar(ScalarType::AbstractInt) => wgsl_types::Type::AbstractInt,
+            TyKind::Scalar(ScalarType::Bool) => wgsl_types::Type::Bool,
+            TyKind::Scalar(ScalarType::F16) => wgsl_types::Type::F16,
+            TyKind::Scalar(ScalarType::F32) => wgsl_types::Type::F32,
+            TyKind::Scalar(ScalarType::I32) => wgsl_types::Type::I32,
+            TyKind::Scalar(ScalarType::U32) => wgsl_types::Type::U32,
+            TyKind::Atomic(AtomicType { inner }) => {
+                wgsl_types::Type::Atomic(Box::new(self.to_wgsl_types(inner)?))
+            },
+            TyKind::Vector(VectorType {
+                size,
+                component_type,
+            }) => {
+                wgsl_types::Type::Vec(size.as_u8(), Box::new(self.to_wgsl_types(component_type)?))
+            },
+            TyKind::Matrix(MatrixType {
+                columns,
+                rows,
+                inner,
+            }) => wgsl_types::Type::Mat(
+                columns.as_u8(),
+                rows.as_u8(),
+                Box::new(self.to_wgsl_types(inner)?),
+            ),
+            TyKind::Struct(struct_id) => {
+                let data = self.database.struct_data(struct_id).0;
+                let fields = self.database.field_types(struct_id);
+                let name = self.intern_struct(struct_id);
+                wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
+                    name,
+                    members: data
+                        .fields
+                        .iter()
+                        .map(|(id, data)| {
+                            Some(wgsl_types::ty::StructMemberType {
+                                name: data.name.as_str().to_string(),
+                                // Skip broken struct fields
+                                ty: self.to_wgsl_types(fields[id])?,
+                                // Don't bother reconstructing the correct layout
+                                size: None,
+                                align: None,
+                            })
+                        })
+                        .collect::<Option<Vec<_>>>()?,
+                }))
+            },
+            TyKind::Array(ArrayType {
+                inner,
+                binding_array: false,
+                size,
+            }) => wgsl_types::Type::Array(
+                Box::new(self.to_wgsl_types(inner)?),
+                match size {
+                    ArraySize::Constant(size) => Some(size as usize),
+                    ArraySize::Dynamic => None,
+                },
+            ),
+            TyKind::Array(ArrayType {
+                inner,
+                binding_array: true,
+                size,
+            }) => wgsl_types::Type::BindingArray(
+                Box::new(self.to_wgsl_types(inner)?),
+                match size {
+                    ArraySize::Constant(size) => Some(size as usize),
+                    ArraySize::Dynamic => None,
+                },
+            ),
+            TyKind::Texture(texture_type) => wgsl_types::Type::Texture(texture_type.into()),
+            TyKind::Sampler(sampler_type) => wgsl_types::Type::Sampler(sampler_type.into()),
+            TyKind::Reference(Reference {
+                address_space,
+                inner,
+                access_mode,
+            }) => wgsl_types::Type::Ref(
+                address_space,
+                Box::new(self.to_wgsl_types(inner)?),
+                access_mode,
+            ),
+            TyKind::Pointer(Pointer {
+                address_space,
+                inner,
+                access_mode,
+            }) => wgsl_types::Type::Ptr(
+                address_space,
+                Box::new(self.to_wgsl_types(inner)?),
+                access_mode,
+            ),
+            TyKind::BoundVar(_) => return None,
+            TyKind::StorageTypeOfTexelFormat(_) => return None,
+        })
+    }
+
+    /// Returns none if it is an error type
+    fn template_parameter_to_wgsl_types(
+        &mut self,
+        param: eval::TpltParam,
+    ) -> Option<wgsl_types::tplt::TpltParam> {
+        Some(match param {
+            eval::TpltParam::Type(ty) => wgsl_types::tplt::TpltParam::Type(self.to_wgsl_types(ty)?),
+            eval::TpltParam::Instance(instance) => wgsl_types::tplt::TpltParam::Instance(instance?),
+            eval::TpltParam::Enumerant(enumerant) => {
+                wgsl_types::tplt::TpltParam::Enumerant(enumerant)
             },
         })
-        .intern(database),
-        wgsl_types::Type::BindingArray(ty, size) => TyKind::Array(ArrayType {
-            inner: ty_from_wgsl_types(*ty, database),
-            binding_array: true,
-            size: match size {
-                Some(size) => ArraySize::Constant(size as u64),
-                None => ArraySize::Dynamic,
+    }
+
+    fn from_wgsl_types(
+        &self,
+        ty: wgsl_types::Type,
+    ) -> Type {
+        match ty {
+            wgsl_types::Type::Bool => TyKind::Scalar(ScalarType::Bool).intern(self.database),
+            wgsl_types::Type::AbstractInt => {
+                TyKind::Scalar(ScalarType::AbstractInt).intern(self.database)
             },
-        })
-        .intern(database),
-        wgsl_types::Type::Vec(size, ty) => TyKind::Vector(VectorType {
-            size: VecSize::try_from(size).unwrap(),
-            component_type: ty_from_wgsl_types(*ty, database),
-        })
-        .intern(database),
-        wgsl_types::Type::Mat(columns, rows, ty) => TyKind::Matrix(MatrixType {
-            columns: VecSize::try_from(columns).unwrap(),
-            rows: VecSize::try_from(rows).unwrap(),
-            inner: ty_from_wgsl_types(*ty, database),
-        })
-        .intern(database),
-        wgsl_types::Type::Atomic(ty) => TyKind::Atomic(AtomicType {
-            inner: ty_from_wgsl_types(*ty, database),
-        })
-        .intern(database),
-        wgsl_types::Type::Ptr(address_space, ty, access_mode) => TyKind::Pointer(Pointer {
-            address_space,
-            inner: ty_from_wgsl_types(*ty, database),
-            access_mode,
-        })
-        .intern(database),
-        wgsl_types::Type::Ref(address_space, ty, access_mode) => TyKind::Reference(Reference {
-            address_space,
-            inner: ty_from_wgsl_types(*ty, database),
-            access_mode,
-        })
-        .intern(database),
-        wgsl_types::Type::Texture(texture_type) => {
-            TyKind::Texture(texture_type.clone().into()).intern(database)
-        },
-        wgsl_types::Type::Sampler(sampler_type) => TyKind::Sampler(sampler_type).intern(database),
-        wgsl_types::Type::RayQuery(_) => todo!("naga extension"),
-        wgsl_types::Type::AccelerationStructure(_) => todo!("naga extension"),
+            wgsl_types::Type::AbstractFloat => {
+                TyKind::Scalar(ScalarType::AbstractFloat).intern(self.database)
+            },
+            wgsl_types::Type::I32 => TyKind::Scalar(ScalarType::I32).intern(self.database),
+            wgsl_types::Type::U32 => TyKind::Scalar(ScalarType::U32).intern(self.database),
+            wgsl_types::Type::I64 => todo!("naga extension"),
+            wgsl_types::Type::U64 => todo!("naga extension"),
+            wgsl_types::Type::F16 => TyKind::Scalar(ScalarType::F16).intern(self.database),
+            wgsl_types::Type::F32 => TyKind::Scalar(ScalarType::F32).intern(self.database),
+            wgsl_types::Type::F64 => todo!("naga extension"),
+            wgsl_types::Type::Struct(struct_type) => {
+                let struct_id = self
+                    .get_interned_struct(&struct_type.name)
+                    // I think this doesn't hold true when calling `atomicCompareExchangeWeak`
+                    .expect("Only struct types that have been passed in should be returned");
+                TyKind::Struct(struct_id).intern(self.database)
+            },
+            wgsl_types::Type::Array(ty, size) => TyKind::Array(ArrayType {
+                inner: self.from_wgsl_types(*ty),
+                binding_array: false,
+                size: match size {
+                    Some(size) => ArraySize::Constant(size as u64),
+                    None => ArraySize::Dynamic,
+                },
+            })
+            .intern(self.database),
+            wgsl_types::Type::BindingArray(ty, size) => TyKind::Array(ArrayType {
+                inner: self.from_wgsl_types(*ty),
+                binding_array: true,
+                size: match size {
+                    Some(size) => ArraySize::Constant(size as u64),
+                    None => ArraySize::Dynamic,
+                },
+            })
+            .intern(self.database),
+            wgsl_types::Type::Vec(size, ty) => TyKind::Vector(VectorType {
+                size: VecSize::try_from(size).unwrap(),
+                component_type: self.from_wgsl_types(*ty),
+            })
+            .intern(self.database),
+            wgsl_types::Type::Mat(columns, rows, ty) => TyKind::Matrix(MatrixType {
+                columns: VecSize::try_from(columns).unwrap(),
+                rows: VecSize::try_from(rows).unwrap(),
+                inner: self.from_wgsl_types(*ty),
+            })
+            .intern(self.database),
+            wgsl_types::Type::Atomic(ty) => TyKind::Atomic(AtomicType {
+                inner: self.from_wgsl_types(*ty),
+            })
+            .intern(self.database),
+            wgsl_types::Type::Ptr(address_space, ty, access_mode) => TyKind::Pointer(Pointer {
+                address_space,
+                inner: self.from_wgsl_types(*ty),
+                access_mode,
+            })
+            .intern(self.database),
+            wgsl_types::Type::Ref(address_space, ty, access_mode) => TyKind::Reference(Reference {
+                address_space,
+                inner: self.from_wgsl_types(*ty),
+                access_mode,
+            })
+            .intern(self.database),
+            wgsl_types::Type::Texture(texture_type) => {
+                TyKind::Texture(texture_type.clone().into()).intern(self.database)
+            },
+            wgsl_types::Type::Sampler(sampler_type) => {
+                TyKind::Sampler(sampler_type).intern(self.database)
+            },
+            wgsl_types::Type::RayQuery(_) => todo!("naga extension"),
+            wgsl_types::Type::AccelerationStructure(_) => todo!("naga extension"),
+        }
+    }
+
+    fn intern_struct(
+        &mut self,
+        struct_id: StructId,
+    ) -> String {
+        let index = self.interned_structs.len();
+        self.interned_structs.push(struct_id);
+        format!("struct{}", index)
+    }
+
+    fn get_interned_struct(
+        &self,
+        name: &str,
+    ) -> Option<StructId> {
+        let index = name.strip_prefix("struct")?.parse::<usize>().ok()?;
+        self.interned_structs.get(index).copied()
     }
 }
 
