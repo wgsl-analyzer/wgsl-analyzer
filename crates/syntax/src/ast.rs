@@ -753,8 +753,17 @@ impl ForStatement {
 }
 
 ast_node! {
-    FunctionCallStatement:
-    expression: Option<Expression>;
+    FunctionCallStatement
+}
+
+impl FunctionCallStatement {
+    #[must_use]
+    pub fn expression(&self) -> Option<FunctionCall> {
+        match crate::support::child::<Expression>(&self.syntax)? {
+            crate::ast::Expression::FunctionCall(function_call) => Some(function_call),
+            _ => None,
+        }
+    }
 }
 
 ast_node! {

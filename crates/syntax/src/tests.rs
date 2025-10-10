@@ -38,3 +38,28 @@ fn discard_statement() {
         panic!()
     };
 }
+
+#[test]
+fn function_call_statement() {
+    let ast = parse("fn main() { foo(); }").tree();
+
+    let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
+        panic!()
+    };
+    let body = function_declaration.body().unwrap();
+    let ast::Statement::FunctionCallStatement(function_call) = body.statements().next().unwrap()
+    else {
+        panic!()
+    };
+    let expression: ast::FunctionCall = function_call.expression().unwrap();
+    assert_eq!(
+        expression
+            .ident_expression()
+            .unwrap()
+            .name_ref()
+            .unwrap()
+            .text()
+            .as_str(),
+        "foo"
+    );
+}
