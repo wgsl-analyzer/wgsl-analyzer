@@ -1564,6 +1564,20 @@ fn parse_missing_lhs_recover() {
 }
 
 #[test]
+fn var_recover_elided_name() {
+    check(
+        "var",
+        expect![[r#"
+            SourceFile@0..3
+              VariableDeclaration@0..3
+                Var@0..3 "var"
+                Name@3..3
+
+            error at 3..3: invalid syntax, expected one of: '@', ',', '=', <identifier>, '{', '}', ')', ';', <template start>"#]],
+    );
+}
+
+#[test]
 fn parse_unary_minus() {
     check_statement(
         "let a = -1;",
@@ -2668,9 +2682,8 @@ switch i {
                     Case@14..18 "case"
                     Blankspace@18..19 " "
                     SwitchCaseSelectors@19..20
-                      SwitchCaseSelector@19..20
-                        Literal@19..20
-                          IntLiteral@19..20 "0"
+                      Literal@19..20
+                        IntLiteral@19..20 "0"
                     Colon@20..21 ":"
                     Blankspace@21..22 " "
                     CompoundStatement@22..25
@@ -2682,14 +2695,12 @@ switch i {
                     Case@28..32 "case"
                     Blankspace@32..33 " "
                     SwitchCaseSelectors@33..37
-                      SwitchCaseSelector@33..34
-                        Literal@33..34
-                          IntLiteral@33..34 "1"
+                      Literal@33..34
+                        IntLiteral@33..34 "1"
                       Comma@34..35 ","
                       Blankspace@35..36 " "
-                      SwitchCaseSelector@36..37
-                        Literal@36..37
-                          IntLiteral@36..37 "2"
+                      Literal@36..37
+                        IntLiteral@36..37 "2"
                     Colon@37..38 ":"
                     Blankspace@38..39 " "
                     CompoundStatement@39..53
@@ -2743,18 +2754,16 @@ switch i {
                     Case@14..18 "case"
                     Blankspace@18..19 " "
                     SwitchCaseSelectors@19..33
-                      SwitchCaseSelector@19..20
-                        Literal@19..20
-                          IntLiteral@19..20 "0"
+                      Literal@19..20
+                        IntLiteral@19..20 "0"
                       Comma@20..21 ","
                       Blankspace@21..22 " "
-                      SwitchCaseSelector@22..29
+                      SwitchDefaultSelector@22..29
                         Default@22..29 "default"
                       Comma@29..30 ","
                       Blankspace@30..31 " "
-                      SwitchCaseSelector@31..32
-                        Literal@31..32
-                          IntLiteral@31..32 "1"
+                      Literal@31..32
+                        IntLiteral@31..32 "1"
                       Comma@32..33 ","
                     Colon@33..34 ":"
                     Blankspace@34..35 " "
@@ -2793,7 +2802,6 @@ switch i {
                     Case@14..18 "case"
                     Blankspace@18..19 "\n"
                     SwitchCaseSelectors@19..19
-                      SwitchCaseSelector@19..19
                     Error@19..19
                   BraceRight@19..20 "}"
               Blankspace@20..29 "\n        "
@@ -2827,9 +2835,8 @@ switch i {
                     Case@14..18 "case"
                     Blankspace@18..19 " "
                     SwitchCaseSelectors@19..20
-                      SwitchCaseSelector@19..20
-                        Literal@19..20
-                          IntLiteral@19..20 "1"
+                      Literal@19..20
+                        IntLiteral@19..20 "1"
                     Blankspace@20..21 "\n"
                     Error@21..21
                   BraceRight@21..22 "}"
@@ -2871,9 +2878,8 @@ let x = 3;
                       Case@16..20 "case"
                       Blankspace@20..21 " "
                       SwitchCaseSelectors@21..22
-                        SwitchCaseSelector@21..22
-                          Literal@21..22
-                            IntLiteral@21..22 "1"
+                        Literal@21..22
+                          IntLiteral@21..22 "1"
                       Colon@22..23 ":"
                       Blankspace@23..24 "\n"
                       Error@24..24
@@ -2928,18 +2934,15 @@ let x = 3;
                     SwitchBodyCase@16..27
                       Case@16..20 "case"
                       Blankspace@20..21 " "
-                      SwitchCaseSelectors@21..27
-                        SwitchCaseSelector@21..22
-                          Literal@21..22
-                            IntLiteral@21..22 "1"
+                      SwitchCaseSelectors@21..26
+                        Literal@21..22
+                          IntLiteral@21..22 "1"
                         Comma@22..23 ","
                         Blankspace@23..24 " "
-                        SwitchCaseSelector@24..25
-                          Literal@24..25
-                            IntLiteral@24..25 "2"
+                        Literal@24..25
+                          IntLiteral@24..25 "2"
                         Comma@25..26 ","
-                        Blankspace@26..27 "\n"
-                        SwitchCaseSelector@27..27
+                      Blankspace@26..27 "\n"
                       Error@27..27
                     BraceRight@27..28 "}"
                 Blankspace@28..29 "\n"

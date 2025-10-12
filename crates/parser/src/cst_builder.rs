@@ -55,7 +55,6 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::BreakIfStatement => self.start_node(SyntaxKind::BreakIfStatement),
             Rule::BreakStatement => self.start_node(SyntaxKind::BreakStatement),
             Rule::CaseClause => self.start_node(SyntaxKind::SwitchBodyCase),
-            Rule::CaseSelector => self.start_node(SyntaxKind::SwitchCaseSelector),
             Rule::CaseSelectors => self.start_node(SyntaxKind::SwitchCaseSelectors),
             Rule::CompoundAssignmentStatement => {
                 self.start_node(SyntaxKind::CompoundAssignmentStatement)
@@ -66,6 +65,7 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::ContinuingStatement => self.start_node(SyntaxKind::ContinuingStatement),
             Rule::DecrementStatement => self.start_node(SyntaxKind::IncrementDecrementStatement),
             Rule::DefaultAloneClause => self.start_node(SyntaxKind::SwitchBodyCase),
+            Rule::DefaultCaseSelector => self.start_node(SyntaxKind::SwitchDefaultSelector),
             Rule::DiagnosticAttr => todo!(),
             Rule::DiagnosticControl => todo!(),
             Rule::DiagnosticDirective => todo!(),
@@ -124,6 +124,7 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             | Rule::LetDeclarationSemi
             | Rule::OverrideDeclarationSemi
             | Rule::SwitchClause
+            | Rule::CaseSelector
             | Rule::TemplateArgs
             | Rule::TypedIdent
             | Rule::VariableDeclarationSemi => {

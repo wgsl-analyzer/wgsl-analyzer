@@ -82,8 +82,8 @@ pub enum SyntaxKind {
     SwitchBodyCase,
     /// The `1, 2` in `case 1, 2: {}`
     SwitchCaseSelectors,
-    /// The `1` and `2` in `case 1, 2: {}`
-    SwitchCaseSelector,
+    /// `default` when it appears in a `case default`
+    SwitchDefaultSelector,
 
     /// `i++`, `i--`
     IncrementDecrementStatement,

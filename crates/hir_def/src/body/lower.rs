@@ -364,8 +364,12 @@ impl Collector<'_> {
             ast::Statement::ContinuingStatement(continuing) => Statement::Continuing {
                 block: self.collect_compound_statement_opt(continuing.block()),
             },
-            ast::Statement::FunctionCallStatement(expression) => {
-                let expression = self.collect_expression_opt(expression.expression());
+            ast::Statement::FunctionCallStatement(function_call) => {
+                let expression = self.collect_expression_opt(
+                    function_call
+                        .expression()
+                        .map(ast::Expression::FunctionCall),
+                );
                 Statement::Expression { expression }
             },
             ast::Statement::LoopStatement(statement) => {

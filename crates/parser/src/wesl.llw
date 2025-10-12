@@ -159,7 +159,8 @@ switch_body: attribute* '{' switch_clause * '}';
 switch_clause^: case_clause | default_alone_clause;
 case_clause: 'case' case_selectors [':'] compound_statement;
 case_selectors: case_selector (?1 ',' case_selector)* [','];
-case_selector: 'default' | expression;
+case_selector^: default_case_selector | expression;
+default_case_selector: 'default';
 default_alone_clause: 'default' [':'] compound_statement;
 compound_statement: attribute* '{' & statement* '}'; // §9.1
 

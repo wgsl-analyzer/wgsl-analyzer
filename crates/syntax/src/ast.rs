@@ -662,50 +662,35 @@ ast_node! {
 #[derive(Debug)]
 pub enum SwitchCaseSelector {
     Expression(Expression),
-    Default(Default),
+    SwitchDefaultSelector(SwitchDefaultSelector),
 }
+
 impl AstNode for SwitchCaseSelector {
-    fn can_cast(kind: SyntaxKind) -> bool
-    where
-        Self: Sized,
-    {
+    fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            SyntaxKind::Default => true,
+            SyntaxKind::SwitchDefaultSelector => true,
             _ => Expression::can_cast(kind),
         }
     }
-
-    fn cast(syntax: SyntaxNode) -> Option<Self>
-    where
-        Self: Sized,
-    {
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
         match syntax.kind() {
-            SyntaxKind::Default => Some(SwitchCaseSelector::Default(Default { syntax })),
+            SyntaxKind::SwitchDefaultSelector => Some(SwitchCaseSelector::SwitchDefaultSelector(
+                SwitchDefaultSelector { syntax },
+            )),
             _ => Expression::cast(syntax).map(SwitchCaseSelector::Expression),
         }
     }
-
     fn syntax(&self) -> &SyntaxNode {
         match self {
+            SwitchCaseSelector::SwitchDefaultSelector(item) => &item.syntax,
             SwitchCaseSelector::Expression(item) => item.syntax(),
-            SwitchCaseSelector::Default(item) => &item.syntax,
         }
-    }
-}
-
-impl From<Expression> for SwitchCaseSelector {
-    fn from(value: Expression) -> Self {
-        SwitchCaseSelector::Expression(value)
-    }
-}
-impl From<Default> for SwitchCaseSelector {
-    fn from(value: Default) -> Self {
-        SwitchCaseSelector::Default(value)
     }
 }
 
 ast_node! {
-    Default
+    SwitchDefaultSelector:
+    default_token: Option<SyntaxToken Default>;
 }
 
 ast_node! {
@@ -764,18 +749,6 @@ impl FunctionCallStatement {
             _ => None,
         }
     }
-}
-
-ast_node! {
-    Discard
-}
-
-ast_node! {
-    Break
-}
-
-ast_node! {
-    Continue
 }
 
 ast_node! {
