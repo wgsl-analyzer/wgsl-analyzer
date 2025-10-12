@@ -9,12 +9,12 @@ rust-version.workspace = true
 [dependencies]
 anyhow = "1.0.100"
 directories = "6.0.0"
-flate2 = "1.1.2"
+flate2 = "1.1.4"
 write-json = "0.1.4"
 xshell = "0.2.7"
 xflags = "0.3.2"
 time = { version = "0.3.44", default-features = false }
-zip = { version = "5.1.1", default-features = false, features = [
+zip = { version = "6.0.0", default-features = false, features = [
   "deflate",
   "time",
 ] }

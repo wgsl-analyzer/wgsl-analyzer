@@ -209,7 +209,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Check for typos
-        uses: crate-ci/typos@v1.36.3
+        uses: crate-ci/typos@v1.38.1
 
       - name: Typos info
         if: failure()
@@ -245,7 +245,7 @@ jobs:
           RUSTFLAGS: -C debuginfo=0 -D warnings
 
       - name: Installs cargo-deadlinks
-        run: cargo install --force cargo-deadlinks
+        uses: taiki-e/install-action@cargo-deadlinks
 
       - name: Checks dead links
         run: cargo deadlinks --dir target/doc
