@@ -304,6 +304,12 @@ fn compute_statement_scopes(
                 compute_expression_scopes(*expression, body, scopes, scope);
             }
         },
+        Statement::Assert { expression } => {
+            compute_expression_scopes(*expression, body, scopes, scope)
+        },
+        Statement::BreakIf { condition } => {
+            compute_expression_scopes(*condition, body, scopes, scope);
+        },
         Statement::Missing | Statement::Discard | Statement::Break | Statement::Continue => {},
         Statement::Continuing { block } | Statement::Loop { body: block } => {
             compute_statement_scopes(*block, body, scopes, scope);

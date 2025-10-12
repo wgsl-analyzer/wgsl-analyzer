@@ -127,6 +127,12 @@ pub enum Statement {
     Continuing {
         block: StatementId,
     },
+    BreakIf {
+        condition: ExpressionId,
+    },
+    Assert {
+        expression: ExpressionId,
+    },
     Expression {
         expression: ExpressionId,
     },

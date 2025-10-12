@@ -793,8 +793,22 @@ impl<'database> InferenceContext<'database> {
             Statement::Loop { body } => {
                 self.infer_statement(*body);
             },
+            Statement::Assert { expression } => {
+                self.infer_expression_expect(
+                    *expression,
+                    &TypeExpectation::from_ty(self.bool_ty()),
+                    &body.store,
+                );
+            },
             Statement::Discard | Statement::Break | Statement::Continue | Statement::Missing => {},
             Statement::Continuing { block } => self.infer_statement(*block),
+            Statement::BreakIf { condition } => {
+                self.infer_expression_expect(
+                    *condition,
+                    &TypeExpectation::from_ty(self.bool_ty()),
+                    &body.store,
+                );
+            },
             Statement::Expression { expression } => {
                 self.infer_expression(*expression, &body.store);
             },

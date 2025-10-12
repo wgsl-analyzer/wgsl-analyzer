@@ -536,6 +536,11 @@ impl IncrementDecrementStatement {
     }
 }
 
+ast_node! {
+    AssertStatement:
+        expression: Option<Expression>;
+}
+
 ast_token_enum! {
     enum CompoundAssignmentOperator {
         PlusEqual,
@@ -756,6 +761,11 @@ ast_node! {
     block: Option<CompoundStatement>;
 }
 
+ast_node! {
+    BreakIfStatement:
+    condition: Option<Expression>;
+}
+
 ast_enum! {
     enum Statement {
         IfStatement,
@@ -775,18 +785,14 @@ ast_enum! {
         PhonyAssignmentStatement,
         IncrementDecrementStatement,
 
-        // TODO: Phony Assignment goes here
-        // Assert Statement goes here
-
+        AssertStatement,
         BreakStatement,
         ContinueStatement,
-        // Empty statement goes
+        // Empty statements are ignored
         DiscardStatement,
-
         ReturnStatement,
-
         ContinuingStatement,
-        // Break if statement goes here
+        BreakIfStatement,
     }
 }
 
