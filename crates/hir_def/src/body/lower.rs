@@ -315,7 +315,7 @@ impl Collector<'_> {
                                                 self.collect_expression(expression),
                                             )
                                         },
-                                        ast::SwitchCaseSelector::Default(_) => {
+                                        ast::SwitchCaseSelector::SwitchDefaultSelector(_) => {
                                             SwitchCaseSelector::Default
                                         },
                                     })
