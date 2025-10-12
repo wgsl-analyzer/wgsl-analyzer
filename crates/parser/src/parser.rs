@@ -145,7 +145,7 @@ impl<'a> ParserCallbacks<'a> for Parser<'a> {
     fn predicate_statement_2(&self) -> bool {
         self.is_func_call()
     }
-    fn predicate_continuing_statement_1(&self) -> bool {
+    fn predicate_continuing_compound_statement_1(&self) -> bool {
         self.peek(1) != Token::If
     }
     fn predicate_for_init_1(&self) -> bool {

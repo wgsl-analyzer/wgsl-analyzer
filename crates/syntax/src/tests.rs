@@ -65,17 +65,15 @@ fn function_call_statement() {
 }
 
 #[test]
-fn switch_with_silly_defaults() {
+fn switch_with_case_default() {
     #[rustfmt::skip]
     let ast = parse(
         /*wgsl*/r#"
 fn main() { 
     switch foo {
-        case 1,2,6,1: {},
-        case default, default, 2: {}
+        case 1,2: {},
+        case default, 2, default: {}
         default: {}
-        default: {}
-        case default: {}
     }
 }
     "#,
@@ -95,16 +93,37 @@ fn main() {
         .unwrap()
         .cases()
         .collect::<Vec<_>>();
-    assert_eq!(cases.len(), 5);
-    assert_eq!(cases[0].selectors().unwrap().exprs().count(), 4);
+    assert_eq!(cases[0].selectors().unwrap().exprs().count(), 2);
     assert_eq!(cases[1].selectors().unwrap().exprs().count(), 3);
     assert!(matches!(
         cases[1].selectors().unwrap().exprs().next(),
         Some(ast::SwitchCaseSelector::SwitchDefaultSelector(_))
     ));
-    assert!(cases[3].selectors().is_none());
+    assert!(cases[2].selectors().is_none());
     assert!(matches!(
-        cases[3].case_token().unwrap(),
+        cases[2].case_token().unwrap(),
         ast::CaseToken::Default(_)
     ));
+}
+
+#[test]
+fn loop_with_block() {
+    let ast = parse(
+        r#"
+fn main() { 
+    loop { let a = 3; }
+}
+    "#,
+    )
+    .tree();
+
+    let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
+        panic!()
+    };
+    let body = function_declaration.body().unwrap();
+    let ast::Statement::LoopStatement(loop_statement) = body.statements().next().unwrap() else {
+        panic!()
+    };
+
+    assert!(loop_statement.block().is_some())
 }

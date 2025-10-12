@@ -1324,15 +1324,17 @@ fn loop_statement_continuing() {
               LoopStatement@0..22
                 Loop@0..4 "loop"
                 Blankspace@4..5 " "
-                BraceLeft@5..6 "{"
-                Blankspace@6..7 " "
-                ContinuingStatement@7..20
-                  Continuing@7..17 "continuing"
-                  Blankspace@17..18 " "
-                  BraceLeft@18..19 "{"
-                  BraceRight@19..20 "}"
-                Blankspace@20..21 " "
-                BraceRight@21..22 "}""#]],
+                CompoundStatement@5..22
+                  BraceLeft@5..6 "{"
+                  Blankspace@6..7 " "
+                  ContinuingStatement@7..20
+                    Continuing@7..17 "continuing"
+                    Blankspace@17..18 " "
+                    CompoundStatement@18..20
+                      BraceLeft@18..19 "{"
+                      BraceRight@19..20 "}"
+                  Blankspace@20..21 " "
+                  BraceRight@21..22 "}""#]],
     );
 }
 #[test]
@@ -1344,31 +1346,33 @@ fn loop_statement_break_if() {
               LoopStatement@0..40
                 Loop@0..4 "loop"
                 Blankspace@4..5 " "
-                BraceLeft@5..6 "{"
-                Blankspace@6..7 " "
-                ContinuingStatement@7..38
-                  Continuing@7..17 "continuing"
-                  Blankspace@17..18 " "
-                  BraceLeft@18..19 "{"
-                  Blankspace@19..20 " "
-                  BreakIfStatement@20..36
-                    Break@20..25 "break"
-                    Blankspace@25..26 " "
-                    If@26..28 "if"
-                    Blankspace@28..29 " "
-                    InfixExpression@29..35
-                      Literal@29..30
-                        IntLiteral@29..30 "5"
-                      Blankspace@30..31 " "
-                      GreaterThanEqual@31..33 ">="
-                      Blankspace@33..34 " "
-                      Literal@34..35
-                        IntLiteral@34..35 "4"
-                    Semicolon@35..36 ";"
-                  Blankspace@36..37 " "
-                  BraceRight@37..38 "}"
-                Blankspace@38..39 " "
-                BraceRight@39..40 "}""#]],
+                CompoundStatement@5..40
+                  BraceLeft@5..6 "{"
+                  Blankspace@6..7 " "
+                  ContinuingStatement@7..38
+                    Continuing@7..17 "continuing"
+                    Blankspace@17..18 " "
+                    CompoundStatement@18..38
+                      BraceLeft@18..19 "{"
+                      Blankspace@19..20 " "
+                      BreakIfStatement@20..36
+                        Break@20..25 "break"
+                        Blankspace@25..26 " "
+                        If@26..28 "if"
+                        Blankspace@28..29 " "
+                        InfixExpression@29..35
+                          Literal@29..30
+                            IntLiteral@29..30 "5"
+                          Blankspace@30..31 " "
+                          GreaterThanEqual@31..33 ">="
+                          Blankspace@33..34 " "
+                          Literal@34..35
+                            IntLiteral@34..35 "4"
+                        Semicolon@35..36 ";"
+                      Blankspace@36..37 " "
+                      BraceRight@37..38 "}"
+                  Blankspace@38..39 " "
+                  BraceRight@39..40 "}""#]],
     );
 }
 
@@ -2602,8 +2606,9 @@ fn loop_statement() {
               LoopStatement@0..7
                 Loop@0..4 "loop"
                 Blankspace@4..5 " "
-                BraceLeft@5..6 "{"
-                BraceRight@6..7 "}""#]],
+                CompoundStatement@5..7
+                  BraceLeft@5..6 "{"
+                  BraceRight@6..7 "}""#]],
     );
 }
 

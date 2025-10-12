@@ -24,3 +24,21 @@ fn type_alias_in_struct() {
         "#]],
     );
 }
+
+#[test]
+fn break_if_bool() {
+    check_infer(
+        r#"
+        fn foo() {
+            let a = 3;
+            loop { continuing { break if a > 2; } }
+        }
+        "#,
+        expect![[r#"
+            40..41 '3': integer
+            84..85 'a': integer
+            84..89 'a > 2': bool
+            88..89 '2': integer
+        "#]],
+    );
+}

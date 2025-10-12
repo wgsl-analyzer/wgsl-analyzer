@@ -116,7 +116,7 @@ statement:
   attribute* (
     if_clause (?1 else_if_clause)* [else_clause] @if_statement // §9.4.1
   | 'switch' expression switch_body @switch_statement // §9.4.2
-  | 'loop' attribute* '{' statement* [continuing_statement] '}' @loop_statement // §9.4.3
+  | 'loop' loop_compound_statement @loop_statement // §9.4.3
   | 'for' '(' [for_init] ';' [for_condition] ';' [for_update] ')' compound_statement @for_statement // §9.4.4
   | 'while' expression compound_statement @while_statement // §9.4.5
   // TODO: check if using & here makes it recover better https://github.com/0x2a-42/lelwel/issues/34
@@ -141,7 +141,9 @@ statement:
 | 'discard' ';' @discard_statement // §9.4.11
 | 'return' [expression] ';' @return_statement // §9.4.10
 ;
-continuing_statement: 'continuing' attribute* '{' (?1 statement)* [break_if_statement] '}'; // §9.4.9
+loop_compound_statement: attribute* '{' statement* [continuing_statement] '}' @compound_statement;
+continuing_statement: 'continuing' continuing_compound_statement; // §9.4.9
+continuing_compound_statement: attribute* '{' (?1 statement)* [break_if_statement] '}' @compound_statement;
 break_if_statement: 'break' 'if' expression ';'; // §9.4.7
 for_init:
   ?1 function_call
