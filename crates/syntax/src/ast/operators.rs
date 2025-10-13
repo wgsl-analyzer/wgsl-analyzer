@@ -1,9 +1,14 @@
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum UnaryOperator {
+    /// `-`
     Minus,
+    /// `!`
     Not,
+    /// `&`
     Reference,
+    /// `*`
     Dereference,
+    /// `~`
     BitNot,
 }
 

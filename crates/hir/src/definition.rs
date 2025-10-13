@@ -1,8 +1,4 @@
-use hir_def::{
-    HirFileId,
-    module_data::Name,
-    resolver::{ResolveCallable, ResolveType},
-};
+use hir_def::{HirFileId, module_data::Name, resolver::ResolveType};
 use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast};
 
 use crate::{Field, Function, Local, ModuleDef, Semantics, Struct, TypeAlias};
@@ -12,8 +8,6 @@ pub enum Definition {
     Local(Local),
     Field(Field),
     ModuleDef(ModuleDef),
-    Struct(Struct),
-    TypeAlias(TypeAlias),
 }
 
 impl Definition {
@@ -53,7 +47,7 @@ fn resolve_name_ref(
 ) -> Option<Definition> {
     let parent = name_ref.syntax().parent()?;
 
-    if let Some(expression) = ast::PathExpression::cast(parent.clone()) {
+    if let Some(expression) = ast::IdentExpression::cast(parent.clone()) {
         let name = Name::from(expression.name_ref()?);
         let definition = semantics.find_container(file_id, expression.syntax())?;
         let definition =
@@ -65,40 +59,25 @@ fn resolve_name_ref(
         let field = semantics.analyze(definition).resolve_field(expression)?;
 
         Some(Definition::Field(field))
-    } else if let Some(expression) = ast::FunctionCall::cast(parent.clone()) {
-        let resolver = semantics.resolver(file_id, expression.syntax());
-
-        match resolver.resolve_callable(&expression.name_ref()?.into())? {
-            ResolveCallable::Struct(loc) => {
-                let id = semantics.database.intern_struct(loc);
-                Some(Definition::Struct(Struct { id }))
-            },
-            ResolveCallable::TypeAlias(loc) => {
-                let id = semantics.database.intern_type_alias(loc);
-                Some(Definition::TypeAlias(TypeAlias { id }))
-            },
-            ResolveCallable::Function(function) => {
-                let id = semantics.database.intern_function(function);
-                Some(Definition::ModuleDef(ModuleDef::Function(Function { id })))
-            },
-            ResolveCallable::PredeclaredTypeAlias(_) => None,
-        }
-    } else if let Some(r#type) = ast::PathType::cast(parent) {
+    } else if let Some(r#type) = ast::TypeSpecifier::cast(parent) {
         let resolver = semantics.resolver(file_id, r#type.syntax());
 
-        match resolver.resolve_type(&r#type.name()?.into())? {
+        match resolver.resolve(&r#type.name_ref()?.into())? {
             ResolveType::Struct(loc) => {
                 let id = semantics.database.intern_struct(loc);
-                Some(Definition::Struct(Struct { id }))
+                Some(Definition::ModuleDef(ModuleDef::Struct(Struct { id })))
             },
             ResolveType::TypeAlias(loc) => {
                 let id = semantics.database.intern_type_alias(loc);
-                Some(Definition::TypeAlias(TypeAlias { id }))
+                Some(Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias {
+                    id,
+                })))
             },
-            ResolveType::PredeclaredTypeAlias(_) => {
-                // TODO: should this return something?
-                None
-            },
+            ResolveType::Function(_)
+            | ResolveType::GlobalConstant(_)
+            | ResolveType::GlobalVariable(_)
+            | ResolveType::Override(_)
+            | ResolveType::Local(_) => None,
         }
     } else {
         None

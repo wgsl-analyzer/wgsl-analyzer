@@ -6,9 +6,12 @@ use std::{
     str::FromStr,
 };
 
-pub use hir_def::type_ref::{AccessMode, AddressSpace};
 use hir_def::{database::StructId, type_ref::VecDimensionality};
 use salsa::InternKey;
+use wgsl_types::{
+    syntax::{AccessMode, AddressSpace},
+    ty::SamplerType,
+};
 
 use crate::database::HirDatabase;
 
@@ -604,11 +607,6 @@ impl fmt::Display for TextureDimensionality {
             Self::Cube => formatter.write_str("cube"),
         }
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SamplerType {
-    pub comparison: bool,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]

@@ -399,12 +399,12 @@ fn format_function_call_2() {
 fn format_infix_expression() {
     check(
         "fn main() {
-    x+y*z;
+    let a=x+y*z;
 }",
-        expect![["
-                fn main() {
-                    x + y * z;
-                }"]],
+        expect![[r#"
+            fn main() {
+                let a = x + y * z;
+            }"#]],
     );
 }
 

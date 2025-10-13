@@ -19,7 +19,7 @@ use syntax::{
 };
 
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
-use crate::{Function, GlobalConstant, GlobalVariable, HasSource as _, Override, TypeAlias};
+use crate::{Field, Function, GlobalConstant, GlobalVariable, HasSource as _, Override, TypeAlias};
 
 #[derive(Clone, Debug, Deserialize)]
 pub enum NagaVersion {
@@ -74,12 +74,6 @@ pub enum AnyDiagnostic {
         file_id: HirFileId,
     },
 
-    UnconfiguredCode {
-        definition: String,
-        range: TextRange,
-        file_id: HirFileId,
-    },
-
     AssignmentNotAReference {
         left_side: InFile<AstPointer<ast::Expression>>,
         actual: Type,
@@ -126,10 +120,10 @@ pub enum AnyDiagnostic {
         actual: Type,
     },
     MissingAddressSpace {
-        var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
+        var: InFile<AstPointer<ast::VariableDeclaration>>,
     },
     InvalidAddressSpace {
-        var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
+        var: InFile<AstPointer<ast::VariableDeclaration>>,
         error: AddressSpaceError,
     },
 
@@ -137,10 +131,6 @@ pub enum AnyDiagnostic {
         file_id: HirFileId,
         location: SyntaxNodePointer,
         error: TypeLoweringError,
-    },
-
-    UnresolvedImport {
-        import: InFile<AstPointer<ast::Import>>,
     },
 
     PrecedenceParensRequired {
@@ -160,6 +150,18 @@ pub enum AnyDiagnostic {
         r#type: Type,
         parameters: Vec<Type>,
     },
+    CyclicType {
+        file_id: HirFileId,
+        name: Name,
+        range: TextRange,
+    },
+    UnexpectedTemplateArgument {
+        expression: InFile<AstPointer<ast::Expression>>,
+    },
+    WgslError {
+        expression: InFile<AstPointer<ast::Expression>>,
+        message: String,
+    },
 }
 
 impl AnyDiagnostic {
@@ -177,15 +179,16 @@ impl AnyDiagnostic {
             | Self::AddressOfNotReference { expression, .. }
             | Self::DerefNotPointer { expression, .. }
             | Self::NoConstructor { expression, .. }
-            | Self::PrecedenceParensRequired { expression, .. } => expression.file_id,
+            | Self::PrecedenceParensRequired { expression, .. }
+            | Self::UnexpectedTemplateArgument { expression, .. }
+            | Self::WgslError { expression, .. } => expression.file_id,
             Self::MissingAddressSpace { var } | Self::InvalidAddressSpace { var, .. } => {
                 var.file_id
             },
-            Self::UnresolvedImport { import, .. } => import.file_id,
             Self::InvalidType { file_id, .. }
             | Self::NagaValidationError { file_id, .. }
             | Self::ParseError { file_id, .. }
-            | Self::UnconfiguredCode { file_id, .. } => *file_id,
+            | Self::CyclicType { file_id, .. } => *file_id,
         }
     }
 }
@@ -358,6 +361,10 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                     let source = TypeAlias { id }.source(database)?;
                     SyntaxNodePointer::new(source.value.type_declaration()?.syntax())
                 },
+                hir_ty::infer::TypeContainer::StructField(id) => {
+                    let source = Field { id }.source(database)?;
+                    SyntaxNodePointer::new(source.value.ty()?.syntax())
+                },
             };
             AnyDiagnostic::InvalidType {
                 file_id,
@@ -365,12 +372,33 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 error: error.clone(),
             }
         },
+        InferenceDiagnostic::CyclicType { name, range } => AnyDiagnostic::CyclicType {
+            file_id,
+            name: name.clone(),
+            range: range.clone(),
+        },
+        InferenceDiagnostic::UnexpectedTemplateArgument { expression } => {
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::UnexpectedTemplateArgument { expression: source }
+        },
+        InferenceDiagnostic::WgslError {
+            expression,
+            message,
+        } => {
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::WgslError {
+                expression: source,
+                message: message.clone(),
+            }
+        },
     })
 }
 
 pub(crate) fn any_diag_from_global_var(
     var_diagnostic: GlobalVariableDiagnostic,
-    var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
+    var: InFile<AstPointer<ast::VariableDeclaration>>,
 ) -> AnyDiagnostic {
     match var_diagnostic {
         GlobalVariableDiagnostic::MissingAddressSpace => AnyDiagnostic::MissingAddressSpace { var },
