@@ -27,7 +27,7 @@ part type_specifier;
 
 
 
-// later validate that directives come before declarations to improve error messages
+// TODO: validate that directives come before declarations to improve error messages
 translation_unit: (global_item | ';')*;
 global_item^: global_directive | global_declaration | global_assert;
 
@@ -64,7 +64,7 @@ attribute:
   '@' (
     'diagnostic' diagnostic_control @diagnostic_attr
   | Ident [argument_expression_list]
-    // interpolate is special
+    // TODO: interpolate is special
     // builtin is special
   )
 ;
@@ -82,7 +82,7 @@ template_args^: TemplateStart expression (?1 ',' expression)* [','] TemplateEnd;
 
 // This is pratt parser, with higher elements having a higher binding power
 // Source: https://github.com/0x2a-42/lelwel/tree/main?tab=readme-ov-file#direct-left-recursion
-// later check for invalid expressions, like a < b < c
+// TODO: check for invalid expressions, like a < b < c
 expression:
   expression '[' expression ']' @indexing_expression // §8.5
 | expression '.' (Ident @field_expression) // §8.5, but cannot distinguish swizzles and fields from syntax
