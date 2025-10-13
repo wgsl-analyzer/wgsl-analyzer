@@ -465,24 +465,47 @@ fn get_hints(
         if !config.type_hints {
             return None;
         }
-        if r#type.is_none() {
-            let container = semantics.find_container(file_id.into(), node)?;
-            let r#type = semantics.analyze(container).type_of_binding(&binding)?;
 
-            let label =
-                pretty_type_with_verbosity(semantics.database, r#type, config.type_verbosity);
-            hints.push(InlayHint {
-                range: binding.ident_token()?.text_range(),
-                position: InlayHintPosition::After,
-                pad_left: !config.render_colons,
-                pad_right: false,
-                kind: InlayKind::Type,
-                label: label.into(),
-                text_edit: None,
-                resolve_parent: None,
-            });
-        }
+        declaration_type_hints(hints, file_id, semantics, config, node, binding, r#type)?;
     }
+
+    Some(())
+}
+
+fn declaration_type_hints(
+    hints: &mut Vec<InlayHint>,
+    file_id: FileId,
+    semantics: &Semantics<'_>,
+    config: &InlayHintsConfig,
+    node: &rowan::SyntaxNode<parser::WeslLanguage>,
+    binding: ast::Name,
+    r#type: Option<ast::TypeSpecifier>,
+) -> Option<()> {
+    // Don't display the hint if the user wrote a type
+    if r#type.is_some() {
+        return None;
+    }
+    let container = semantics.find_container(file_id.into(), node)?;
+    let r#type = semantics.analyze(container).type_of_binding(&binding)?;
+
+    let mut label = InlayHintLabel::from(pretty_type_with_verbosity(
+        semantics.database,
+        r#type,
+        config.type_verbosity,
+    ));
+    if config.render_colons {
+        label.prepend_str(": ");
+    }
+    hints.push(InlayHint {
+        range: binding.ident_token()?.text_range(),
+        position: InlayHintPosition::After,
+        pad_left: !config.render_colons,
+        pad_right: false,
+        kind: InlayKind::Type,
+        label,
+        text_edit: None,
+        resolve_parent: None,
+    });
 
     Some(())
 }
@@ -512,10 +535,10 @@ fn function_hints(
             !should_hide_param_name_hint(&func, param_name, expression)
         })
         .map(|(param_name, expression)| {
-            let colon = if config.render_colons { ":" } else { "" };
             let mut label = InlayHintLabel::from(param_name);
-            label.append_str(colon);
-
+            if config.render_colons {
+                label.append_str(":");
+            }
             InlayHint {
                 range: expression.syntax().text_range(),
                 position: InlayHintPosition::Before,
