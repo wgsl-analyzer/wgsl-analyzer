@@ -2172,6 +2172,43 @@ fn weird_line_ending_comments() {
 }
 
 #[test]
+fn enable_directive() {
+    check(
+        "enable f16,clip_distances,  dual_source_blending;",
+        expect![[r#"
+            SourceFile@0..49
+              EnableDirective@0..49
+                Enable@0..6 "enable"
+                Blankspace@6..7 " "
+                EnableExtensionName@7..10
+                  Identifier@7..10 "f16"
+                Comma@10..11 ","
+                EnableExtensionName@11..25
+                  Identifier@11..25 "clip_distances"
+                Comma@25..26 ","
+                Blankspace@26..28 "  "
+                EnableExtensionName@28..48
+                  Identifier@28..48 "dual_source_blending"
+                Semicolon@48..49 ";""#]],
+    )
+}
+
+#[test]
+fn requires_directive() {
+    check(
+        "requires packed_4x8_integer_dot_product;",
+        expect![[r#"
+            SourceFile@0..40
+              RequiresDirective@0..40
+                Requires@0..8 "requires"
+                Blankspace@8..9 " "
+                LanguageExtensionName@9..39
+                  Identifier@9..39 "packed_4x8_integer_do ..."
+                Semicolon@39..40 ";""#]],
+    )
+}
+
+#[test]
 fn struct_underscore_field_name() {
     check(
         "

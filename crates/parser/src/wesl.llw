@@ -34,12 +34,14 @@ global_item^: global_directive | global_declaration | global_assert;
 global_assert: 'const_assert' expression ';' @assert_statement; // §10
 global_directive:
   'diagnostic' diagnostic_control ';' @diagnostic_directive // §4.2
-| 'enable' Ident (?1 ',' Ident)* [','] ';' @enable_directive // §4.1.1
-| 'requires' Ident (?1 ',' Ident)* [','] ';' @requires_directive // §4.1.2
+| 'enable' enable_extension_name (?1 ',' enable_extension_name)* [','] ';' @enable_directive // §4.1.1
+| 'requires' language_extension_name (?1 ',' language_extension_name)* [','] ';' @requires_directive // §4.1.2
 ;
 diagnostic_control: '(' severity_control_name ',' diagnostic_rule_name [','] ')';
 severity_control_name: Ident;
 diagnostic_rule_name: Ident ['.' Ident];
+enable_extension_name: Ident;
+language_extension_name: Ident;
 
 global_declaration:
   attribute* @function_declaration (

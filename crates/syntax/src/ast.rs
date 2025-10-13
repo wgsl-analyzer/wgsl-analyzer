@@ -208,6 +208,7 @@ macro_rules! ast_token_enum {
 
 ast_node! {
     SourceFile:
+    directives: AstChildren<Directive>;
     items: AstChildren<Item>;
 }
 
@@ -310,6 +311,84 @@ ast_enum! {
         OverrideDeclaration,
         TypeAliasDeclaration,
         StructDeclaration,
+    }
+}
+
+ast_node! {
+    EnableDirective:
+    enable_extensions: AstChildren<EnableExtensionName>;
+}
+
+ast_node! {
+    EnableExtensionName:
+    ident_token: Option<SyntaxToken Identifier>;
+    text: TokenText<'_>;
+}
+
+impl EnableExtensionName {
+    pub fn extension(&self) -> Result<EnableExtension, ()> {
+        match self.text().as_str() {
+            "f16" => Ok(EnableExtension::F16),
+            "clip_distances" => Ok(EnableExtension::ClipDistances),
+            "dual_source_blending" => Ok(EnableExtension::DualSourceBlending),
+            "subgroups" => Ok(EnableExtension::Subgroups),
+            "primitive_index" => Ok(EnableExtension::PrimitiveIndex),
+            _ => Err(()),
+        }
+    }
+}
+
+/// Names that can be `enable`d https://www.w3.org/TR/WGSL/#syntax-enable_extension_name
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum EnableExtension {
+    F16,
+    ClipDistances,
+    DualSourceBlending,
+    Subgroups,
+    PrimitiveIndex,
+}
+
+ast_node! {
+    RequiresDirective:
+    enable_extensions: AstChildren<LanguageExtensionName>;
+}
+
+ast_node! {
+    LanguageExtensionName:
+    ident_token: Option<SyntaxToken Identifier>;
+    text: TokenText<'_>;
+}
+
+impl LanguageExtensionName {
+    pub fn extension(&self) -> Result<LanguageExtension, ()> {
+        match self.text().as_str() {
+            "readonly_and_readwrite_storage_textures" => {
+                Ok(LanguageExtension::ReadonlyAndReadwriteStorageTextures)
+            },
+            "packed_4x8_integer_dot_product" => Ok(LanguageExtension::Packed4x8IntegerDotProduct),
+            "unrestricted_pointer_parameters" => {
+                Ok(LanguageExtension::UnrestrictedPointerParameters)
+            },
+            "pointer_composite_access" => Ok(LanguageExtension::PointerCompositeAccess),
+            _ => Err(()),
+        }
+    }
+}
+
+/// Language extensions that can be `require`d https://www.w3.org/TR/WGSL/#syntax-enable_extension_name
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum LanguageExtension {
+    ReadonlyAndReadwriteStorageTextures,
+    Packed4x8IntegerDotProduct,
+    UnrestrictedPointerParameters,
+    PointerCompositeAccess,
+}
+
+ast_enum! {
+    enum Directive {
+        // Diagnostic directive goes here
+        EnableDirective,
+        RequiresDirective,
     }
 }
 
@@ -466,7 +545,8 @@ impl IndexExpression {
     }
 }
 
-ast_node! {Attribute:
+ast_node! {
+    Attribute:
     ident_token: Option<SyntaxToken Identifier>;
     parameters: Option<Arguments>;
 }

@@ -141,6 +141,13 @@ pub enum SyntaxKind {
     /// Type alias declaration: `alias float4 = vec4<f32>`
     TypeAliasDeclaration,
 
+    /// `enable f16`
+    EnableDirective,
+    EnableExtensionName,
+    /// `requires unrestricted_pointer_parameters`
+    RequiresDirective,
+    LanguageExtensionName,
+
     // Tokens
     Blankspace,
     LineEndingComment,
