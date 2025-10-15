@@ -77,6 +77,15 @@ impl Type {
         }
     }
 
+    pub fn is_convertible_to(
+        &self,
+        r#type: Type,
+        database: &dyn HirDatabase,
+    ) -> bool {
+        self.kind(database)
+            .is_convertible_to(&r#type.kind(database), database)
+    }
+
     /// `ref<inner>` -> `inner`, `ptr<inner>` -> `ptr<inner>`
     #[must_use]
     pub fn unref(
@@ -97,6 +106,16 @@ impl Type {
             | TyKind::Pointer(_)
             | TyKind::BoundVar(_)
             | TyKind::StorageTypeOfTexelFormat(_) => self,
+        }
+    }
+
+    pub fn concretize(
+        self,
+        database: &dyn HirDatabase,
+    ) -> Self {
+        match self.kind(database).concretize(database) {
+            Some(v) => v.intern(database),
+            None => self,
         }
     }
 
@@ -133,33 +152,14 @@ pub struct BoundVar {
 }
 
 impl TyKind {
-    #[must_use]
-    pub const fn bool() -> Self {
-        Self::Scalar(ScalarType::Bool)
+    pub fn is_convertible_to(
+        &self,
+        r#type: &TyKind,
+        database: &dyn HirDatabase,
+    ) -> bool {
+        conversion_rank(self, r#type, database).is_some()
     }
 
-    #[must_use]
-    pub const fn f32() -> Self {
-        Self::Scalar(ScalarType::Bool)
-    }
-
-    #[must_use]
-    pub const fn i32() -> Self {
-        Self::Scalar(ScalarType::Bool)
-    }
-
-    #[must_use]
-    pub const fn u32() -> Self {
-        Self::Scalar(ScalarType::Bool)
-    }
-
-    #[must_use]
-    pub const fn vec_of() -> Self {
-        Self::Scalar(ScalarType::Bool)
-    }
-}
-
-impl TyKind {
     pub fn unref(
         &self,
         database: &dyn HirDatabase,
@@ -181,6 +181,44 @@ impl TyKind {
         }
     }
 
+    pub fn concretize(
+        &self,
+        database: &dyn HirDatabase,
+    ) -> Option<Self> {
+        Some(match self {
+            Self::Scalar(ScalarType::AbstractInt) => TyKind::Scalar(ScalarType::I32),
+            Self::Scalar(ScalarType::AbstractFloat) => TyKind::Scalar(ScalarType::F32),
+            Self::Array(ArrayType {
+                inner,
+                binding_array,
+                size,
+            }) => TyKind::Array(ArrayType {
+                inner: inner.kind(database).concretize(database)?.intern(database),
+                binding_array: *binding_array,
+                size: size.clone(),
+            }),
+            Self::Vector(VectorType {
+                size,
+                component_type,
+            }) => TyKind::Vector(VectorType {
+                component_type: component_type
+                    .kind(database)
+                    .concretize(database)?
+                    .intern(database),
+                size: *size,
+            }),
+            Self::Matrix(MatrixType {
+                inner,
+                rows,
+                columns,
+            }) => TyKind::Matrix(MatrixType {
+                inner: inner.kind(database).concretize(database)?.intern(database),
+                rows: *rows,
+                columns: *columns,
+            }),
+            _ => return None,
+        })
+    }
     #[must_use]
     pub const fn is_numeric_scalar(&self) -> bool {
         match self {
@@ -374,6 +412,79 @@ impl TyKind {
             | Self::BoundVar(_)
             | Self::StorageTypeOfTexelFormat(_) => false,
         }
+    }
+}
+
+/// Implements the [conversion rank algorithm](https://www.w3.org/TR/WGSL/#conversion-rank)
+/// Taken from wesl-rs.
+fn conversion_rank(
+    ty1: &TyKind,
+    ty2: &TyKind,
+    database: &dyn HirDatabase,
+) -> Option<u32> {
+    // reference: <https://www.w3.org/TR/WGSL/#conversion-rank>
+    match (ty1, ty2) {
+        (_, _) if ty1 == ty2 => Some(0),
+        (
+            TyKind::Reference(Reference {
+                inner: ty1,
+                access_mode: AccessMode::Read | AccessMode::ReadWrite,
+                ..
+            }),
+            ty2,
+        ) if &ty1.kind(database) == ty2 => Some(0),
+        (TyKind::Scalar(ScalarType::AbstractInt), TyKind::Scalar(ScalarType::AbstractFloat)) => {
+            Some(5)
+        },
+        (TyKind::Scalar(ScalarType::AbstractInt), TyKind::Scalar(ScalarType::I32)) => Some(3),
+        (TyKind::Scalar(ScalarType::AbstractInt), TyKind::Scalar(ScalarType::U32)) => Some(4),
+        (TyKind::Scalar(ScalarType::AbstractInt), TyKind::Scalar(ScalarType::F32)) => Some(6),
+        (TyKind::Scalar(ScalarType::AbstractInt), TyKind::Scalar(ScalarType::F16)) => Some(7),
+        (TyKind::Scalar(ScalarType::AbstractFloat), TyKind::Scalar(ScalarType::F32)) => Some(1),
+        (TyKind::Scalar(ScalarType::AbstractFloat), TyKind::Scalar(ScalarType::F16)) => Some(2),
+        // frexp and modf
+        (TyKind::Struct(_), TyKind::Struct(_)) => {
+            None
+            // TODO: frexp and modf
+            // https://github.com/wgsl-tooling-wg/wesl-rs/blob/fea56c869ba2ee8825b7b06e4d9d0d2876b2bc77/crates/wgsl-types/src/conv.rs#L312
+        },
+        (
+            TyKind::Array(ArrayType {
+                inner: ty1,
+                size: n1,
+                ..
+            }),
+            TyKind::Array(ArrayType {
+                inner: ty2,
+                size: n2,
+                ..
+            }),
+        ) if n1 == n2 => conversion_rank(&ty1.kind(database), &ty2.kind(database), database),
+        (
+            TyKind::Vector(VectorType {
+                size: n1,
+                component_type: ty1,
+            }),
+            TyKind::Vector(VectorType {
+                size: n2,
+                component_type: ty2,
+            }),
+        ) if n1 == n2 => conversion_rank(&ty1.kind(database), &ty2.kind(database), database),
+        (
+            TyKind::Matrix(MatrixType {
+                columns: c1,
+                rows: r1,
+                inner: ty1,
+            }),
+            TyKind::Matrix(MatrixType {
+                columns: c2,
+                rows: r2,
+                inner: ty2,
+            }),
+        ) if c1 == c2 && r1 == r2 => {
+            conversion_rank(&ty1.kind(database), &ty2.kind(database), database)
+        },
+        _ => None,
     }
 }
 

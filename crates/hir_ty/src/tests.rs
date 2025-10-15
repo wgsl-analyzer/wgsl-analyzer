@@ -64,6 +64,8 @@ fn infer(ra_fixture: &str) -> String {
             );
         }
 
+        // It'd be nicer if the diagnostics were sorted with the types.
+        // But this is good enough for unit tests
         for diagnostic in inference_result.diagnostics() {
             match diagnostic {
                 crate::infer::InferenceDiagnostic::TypeMismatch {

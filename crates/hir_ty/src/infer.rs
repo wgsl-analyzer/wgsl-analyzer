@@ -57,25 +57,26 @@ pub fn infer_query(
 
     match definition {
         DefinitionWithBodyId::Function(function) => {
-            context.collect_fn(function, &database.fn_data(function).0);
+            let return_type = context.collect_fn(function, &database.fn_data(function).0);
+            context.infer_body(return_type, AbstractHandling::Concretize);
         },
         DefinitionWithBodyId::GlobalVariable(var) => {
-            context.collect_global_variable(var, &database.global_var_data(var).0);
+            let variable_data = database.global_var_data(var).0;
+            let return_type = context.collect_global_variable(var, &variable_data);
+            context.infer_body(return_type, AbstractHandling::Concretize);
+            context.infer_variables(&variable_data);
         },
         DefinitionWithBodyId::GlobalConstant(constant) => {
-            context.collect_global_constant(constant, &database.global_constant_data(constant).0);
+            let return_type = context
+                .collect_global_constant(constant, &database.global_constant_data(constant).0);
+            context.infer_body(return_type, AbstractHandling::Abstract);
         },
         DefinitionWithBodyId::Override(override_decl) => {
-            context.collect_override(override_decl, &database.override_data(override_decl).0);
-        },
-        DefinitionWithBodyId::Override(override_decl) => {
-            context.collect_override(override_decl, &database.override_data(override_decl).0);
+            let return_type =
+                context.collect_override(override_decl, &database.override_data(override_decl).0);
+            context.infer_body(return_type, AbstractHandling::Concretize);
         },
     }
-
-    context.infer_body();
-
-    context.infer_variables();
 
     Arc::new(context.resolve_all())
 }
@@ -386,27 +387,27 @@ impl<'database> InferenceContext<'database> {
         &mut self,
         id: GlobalVariableId,
         var: &GlobalVariableData,
-    ) {
+    ) -> Option<Type> {
         let r#type = var
             .r#type
             .as_ref()
             .map(|r#type| self.lower_ty(TypeContainer::GlobalVar(id), &var.store, r#type));
 
         self.bind_return_ty(r#type);
+        r#type
     }
 
-    fn infer_variables(&mut self) {
-        if let DefinitionWithBodyId::GlobalVariable(var) = self.owner {
-            let var = self.database.global_var_data(var).0;
-            let (address_space, access_mode) =
-                self.infer_variable_template(&var.generics, &var.store);
+    fn infer_variables(
+        &mut self,
+        var: &GlobalVariableData,
+    ) {
+        let (address_space, access_mode) = self.infer_variable_template(&var.generics, &var.store);
 
-            self.bind_return_ty(Some(self.make_ref(
-                self.return_ty,
-                address_space,
-                access_mode,
-            )));
-        }
+        self.bind_return_ty(Some(self.make_ref(
+            self.return_ty,
+            address_space,
+            access_mode,
+        )));
     }
 
     fn infer_variable_template(
@@ -439,32 +440,34 @@ impl<'database> InferenceContext<'database> {
         &mut self,
         id: GlobalConstantId,
         constant: &GlobalConstantData,
-    ) {
+    ) -> Option<Type> {
         let r#type = constant.r#type.as_ref().map(|r#type| {
             self.lower_ty(TypeContainer::GlobalConstant(id), &constant.store, r#type)
         });
 
         self.bind_return_ty(r#type);
+        r#type
     }
 
     fn collect_override(
         &mut self,
         id: OverrideId,
         override_data: &OverrideData,
-    ) {
+    ) -> Option<Type> {
         let r#type = override_data
             .r#type
             .as_ref()
             .map(|r#type| self.lower_ty(TypeContainer::Override(id), &override_data.store, r#type));
 
         self.bind_return_ty(r#type);
+        r#type
     }
 
     fn collect_fn(
         &mut self,
         function_id: FunctionId,
         function_data: &FunctionData,
-    ) {
+    ) -> Option<Type> {
         let body = self.body.clone();
         for ((_, parameter), &binding_id) in function_data.parameters.iter().zip(&body.parameters) {
             let param_ty = self.lower_ty(
@@ -474,33 +477,34 @@ impl<'database> InferenceContext<'database> {
             );
             self.set_binding_ty(binding_id, param_ty);
         }
-        self.return_ty = function_data
-            .return_type
-            .as_ref()
-            .map(|type_ref| {
-                self.lower_ty(
-                    TypeContainer::FunctionReturn(function_id),
-                    &function_data.store,
-                    type_ref,
-                )
-            })
-            .unwrap_or_else(|| self.error_ty());
+        let r#type = function_data.return_type.as_ref().map(|type_ref| {
+            self.lower_ty(
+                TypeContainer::FunctionReturn(function_id),
+                &function_data.store,
+                type_ref,
+            )
+        });
+        self.return_ty = r#type.unwrap_or_else(|| self.error_ty());
+        r#type
     }
 
     /// Runs type inference on the body and infer the type for `const`s, `var`s and `override`s
-    fn infer_body(&mut self) {
+    fn infer_body(
+        &mut self,
+        return_type: Option<Type>,
+        abstract_handling: AbstractHandling,
+    ) {
         match self.body.root {
             Some(Either::Left(statement)) => {
                 self.infer_statement(statement);
             },
             Some(Either::Right(expression)) => {
                 let body = self.body.clone();
-                let r#type = self.infer_expression_expect(
-                    expression,
-                    &TypeExpectation::from_ty(self.return_ty),
-                    &body.store,
-                );
-                if self.return_ty.is_err(self.database) {
+
+                let r#type =
+                    self.infer_initializer(&body, Some(expression), return_type, abstract_handling);
+
+                if return_type.is_none() {
                     self.bind_return_ty(Some(r#type));
                 }
             },
@@ -566,20 +570,15 @@ impl<'database> InferenceContext<'database> {
                         &r#type,
                     )
                 });
-                let r#type = if let Some(init) = initializer {
-                    let expression_ty = self.infer_expression_expect(
-                        *init,
-                        &TypeExpectation::from_option(r#type),
-                        &body.store,
-                    );
-                    r#type.unwrap_or(expression_ty)
-                } else {
-                    r#type.unwrap_or_else(|| self.error_ty())
-                };
+                let r#type = self.infer_initializer(
+                    &body,
+                    *initializer,
+                    r#type,
+                    AbstractHandling::Concretize,
+                );
 
                 let (address_space, access_mode) =
                     self.infer_variable_template(generics, &body.store);
-
                 let ref_ty = self.make_ref(r#type, address_space, access_mode);
                 self.set_binding_ty(*binding_id, ref_ty);
             },
@@ -596,17 +595,8 @@ impl<'database> InferenceContext<'database> {
                         &r#type,
                     )
                 });
-                let r#type = if let Some(init) = initializer {
-                    let expression_ty = self.infer_expression_expect(
-                        *init,
-                        &TypeExpectation::from_option(r#type),
-                        &body.store,
-                    );
-                    r#type.unwrap_or(expression_ty)
-                } else {
-                    r#type.unwrap_or_else(|| self.error_ty())
-                };
-
+                let r#type =
+                    self.infer_initializer(&body, *initializer, r#type, AbstractHandling::Abstract);
                 self.set_binding_ty(*binding_id, r#type);
             },
             Statement::Let {
@@ -622,17 +612,12 @@ impl<'database> InferenceContext<'database> {
                         &r#type,
                     )
                 });
-                let r#type = if let Some(init) = initializer {
-                    let expression_ty = self.infer_expression_expect(
-                        *init,
-                        &TypeExpectation::from_option(r#type),
-                        &body.store,
-                    );
-                    r#type.unwrap_or(expression_ty)
-                } else {
-                    r#type.unwrap_or_else(|| self.error_ty())
-                };
-
+                let r#type = self.infer_initializer(
+                    &body,
+                    *initializer,
+                    r#type,
+                    AbstractHandling::Concretize,
+                );
                 self.set_binding_ty(*binding_id, r#type);
             },
 
@@ -815,6 +800,32 @@ impl<'database> InferenceContext<'database> {
         }
     }
 
+    fn infer_initializer(
+        &mut self,
+        store: &ExpressionStore,
+        initializer: Option<ExpressionId>,
+        r#type: Option<Type>,
+        abstract_handling: AbstractHandling,
+    ) -> Type {
+        match (r#type, initializer) {
+            (Some(r#type), Some(initializer)) => {
+                self.infer_expression_expect(initializer, &TypeExpectation::from_ty(r#type), store)
+            },
+            (Some(r#type), None) => r#type,
+            (None, Some(initializer)) => {
+                let r#type = self
+                    .infer_expression(initializer, store)
+                    .unref(self.database);
+                if abstract_handling == AbstractHandling::Concretize {
+                    r#type.concretize(self.database)
+                } else {
+                    r#type
+                }
+            },
+            (None, None) => self.error_ty(),
+        }
+    }
+
     fn expect_ty_inner(
         &self,
         r#type: Type,
@@ -827,24 +838,8 @@ impl<'database> InferenceContext<'database> {
 
         match *expectation {
             TypeExpectationInner::Exact(expected_type) => {
-                if expected_type.kind(self.database) == TyKind::Error || r#type == expected_type {
-                    Ok(())
-                } else {
-                    Err(())
-                }
-            },
-            TypeExpectationInner::I32OrF32 => {
-                if let TyKind::Scalar(ScalarType::I32 | ScalarType::F32) =
-                    r#type.kind(self.database).unref(self.database).as_ref()
-                {
-                    Ok(())
-                } else {
-                    Err(())
-                }
-            },
-            TypeExpectationInner::NumericScalar => {
-                if let TyKind::Scalar(ScalarType::I32 | ScalarType::F32 | ScalarType::U32) =
-                    r#type.kind(self.database).unref(self.database).as_ref()
+                if expected_type.kind(self.database) == TyKind::Error
+                    || r#type.is_convertible_to(expected_type, self.database)
                 {
                     Ok(())
                 } else {
@@ -889,18 +884,9 @@ impl<'database> InferenceContext<'database> {
             .infer_expression(expression, store)
             .unref(self.database);
 
-        match &expected {
+        match expected {
             TypeExpectation::Type(expected_type) => {
                 if self.expect_ty_inner(r#type, expected_type) != Ok(()) {
-                    self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
-                        expression,
-                        actual: r#type,
-                        expected: expected.clone(),
-                    });
-                }
-            },
-            TypeExpectation::TypeOrVecOf(expect) => {
-                if self.expect_ty_inner(r#type.this_or_vec_inner(self.database), expect) != Ok(()) {
                     self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
                         expression,
                         actual: r#type,
@@ -1682,15 +1668,12 @@ impl<'database> InferenceContext<'database> {
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeExpectationInner {
     Exact(Type),
-    I32OrF32,
-    NumericScalar,
     IntegerScalar,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeExpectation {
     Type(TypeExpectationInner),
-    TypeOrVecOf(TypeExpectationInner),
     Any,
 }
 
@@ -2233,4 +2216,10 @@ impl From<TextureType> for wgsl_types::ty::TextureType {
             (_, _) => panic!("invalid texture"),
         }
     }
+}
+
+#[derive(PartialEq, Eq)]
+enum AbstractHandling {
+    Concretize,
+    Abstract,
 }
