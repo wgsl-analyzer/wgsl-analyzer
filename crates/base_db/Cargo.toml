@@ -15,7 +15,7 @@ salsa = "0.17.0-pre.2"
 rowan = "0.16.1"
 rustc-hash = "2.1.1"
 syntax.workspace = true
-regex = { version = "1.12.1", default-features = false, features = [
+regex = { version = "1.12.2", default-features = false, features = [
   "std",
   "unicode",
 ] }
