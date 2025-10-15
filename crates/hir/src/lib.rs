@@ -71,14 +71,7 @@ impl<'database> Semantics<'database> {
             match_ast! {
                 match syntax {
                     ast::FunctionDeclaration(function) => self.function_to_def(&InFile::new(file_id, function)).map(DefinitionWithBodyId::Function),
-                    ast::VariableDeclaration(var) => {
-                        let is_global = var.syntax().ancestors().find(|syntax| matches!(syntax.kind(), SyntaxKind::FunctionDeclaration)).is_none();
-                        if is_global {
-                            self.global_variable_to_def(&InFile::new(file_id, var)).map(DefinitionWithBodyId::GlobalVariable)
-                        } else {
-                            None
-                        }
-                    },
+                    ast::VariableDeclaration(var) => self.global_variable_to_def(&InFile::new(file_id, var)).map(DefinitionWithBodyId::GlobalVariable),
                     ast::ConstantDeclaration(constant) => self.global_constant_to_def(&InFile::new(file_id, constant)).map(DefinitionWithBodyId::GlobalConstant),
                     ast::OverrideDeclaration(item) => self.global_override_to_def(&InFile::new(file_id, item)).map(DefinitionWithBodyId::Override),
                     _ => None,

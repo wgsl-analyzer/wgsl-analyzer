@@ -291,7 +291,7 @@ pub fn find_item<M: ModuleDataNode>(
         let data = M::lookup(&module_info.data, id.index);
         let def_map = database.ast_id_map(file_id);
 
-        let source_ast_id = def_map.ast_id(source);
+        let source_ast_id = def_map.try_ast_id(source)?;
         let item_ast_id = M::ast_id(data);
 
         (source_ast_id == item_ast_id).then_some(id)
