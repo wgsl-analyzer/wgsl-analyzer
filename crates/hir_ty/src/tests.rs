@@ -18,7 +18,10 @@ use crate::{
     database::HirDatabase,
     infer::InferenceResult,
     test_db::{TestDB, single_file_db},
-    ty::{Type, pretty::pretty_type_with_verbosity},
+    ty::{
+        Type,
+        pretty::{pretty_type_expectation_with_verbosity, pretty_type_with_verbosity},
+    },
 };
 
 fn infer(ra_fixture: &str) -> String {
@@ -33,13 +36,6 @@ fn infer(ra_fixture: &str) -> String {
                          _body: Arc<Body>,
                          body_source_map: Arc<BodySourceMap>| {
         let mut types: Vec<(SyntaxNode, &Type)> = Vec::new();
-
-        let diagnostics = inference_result.diagnostics();
-        assert!(
-            diagnostics.is_empty(),
-            "Type inference failed {:?}",
-            diagnostics
-        );
 
         for (expr, ty) in inference_result.type_of_expression.iter() {
             let node = match body_source_map.expression_to_source(expr) {
@@ -66,6 +62,44 @@ fn infer(ra_fixture: &str) -> String {
                 ellipsize(text, 15),
                 pretty_type_with_verbosity(&db, *ty, crate::ty::pretty::TypeVerbosity::Compact)
             );
+        }
+
+        for diagnostic in inference_result.diagnostics() {
+            match diagnostic {
+                crate::infer::InferenceDiagnostic::TypeMismatch {
+                    expression,
+                    expected,
+                    actual,
+                } => {
+                    let node = match body_source_map.expression_to_source(*expression) {
+                        Ok(sp) => sp.to_node(&root).syntax().clone(),
+                        Err(SyntheticSyntax) => continue,
+                    };
+                    let (range, text) = (
+                        node.text_range(),
+                        node.text().to_string().replace('\n', " "),
+                    );
+                    format_to!(
+                        buf,
+                        "{:?} '{}': expected {} but got {}\n",
+                        range,
+                        ellipsize(text, 15),
+                        pretty_type_expectation_with_verbosity(
+                            &db,
+                            expected.clone(),
+                            crate::ty::pretty::TypeVerbosity::Compact
+                        ),
+                        pretty_type_with_verbosity(
+                            &db,
+                            *actual,
+                            crate::ty::pretty::TypeVerbosity::Compact
+                        )
+                    );
+                },
+                _ => {
+                    format_to!(buf, "{:?}", diagnostic);
+                },
+            }
         }
     };
 
@@ -122,6 +156,7 @@ fn infer(ra_fixture: &str) -> String {
     }
 
     buf.truncate(buf.trim_end().len());
+
     buf
 }
 
