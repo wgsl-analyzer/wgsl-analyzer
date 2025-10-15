@@ -10,7 +10,7 @@ rust-version.workspace = true
 [lib]
 
 [dependencies]
-cfg-if = "1.0.3"
+cfg-if = "1.0.4"
 jemalloc-ctl = { version = "0.6.0", package = "tikv-jemalloc-ctl", optional = true, features = [
   "stats",
 ] }
