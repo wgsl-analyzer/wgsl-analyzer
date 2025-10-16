@@ -12,7 +12,7 @@ use hir_def::database::{DefinitionWithBodyId, GlobalVariableId};
 use hir_def::{
     HirFileId, InFile,
     data::LocalFieldId,
-    database::{DefDatabase, DefinitionId, FunctionId, Lookup as _, StructId},
+    database::{DefDatabase, FunctionId, Lookup as _, StructId},
     resolver::Resolver,
 };
 use la_arena::ArenaMap;

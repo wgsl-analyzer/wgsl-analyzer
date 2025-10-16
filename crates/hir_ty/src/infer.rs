@@ -11,8 +11,8 @@ use hir_def::{
         StructData, TypeAliasData,
     },
     database::{
-        DefinitionId, DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, Lookup,
-        OverrideId, StructId, TypeAliasId,
+        DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, Lookup, OverrideId,
+        StructId, TypeAliasId,
     },
     expression::{
         ArithmeticOperation, BinaryOperation, ComparisonOperation, Expression, ExpressionId,
