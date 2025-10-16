@@ -107,7 +107,7 @@ fn infer(ra_fixture: &str) -> String {
                     );
                 },
                 _ => {
-                    format_to!(buf, "{:?}", diagnostic);
+                    format_to!(buf, "{:?}\n", diagnostic);
                 },
             }
         }

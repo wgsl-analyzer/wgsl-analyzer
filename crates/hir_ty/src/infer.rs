@@ -1851,7 +1851,14 @@ impl<'database> TyLoweringContext<'database> {
         name: &Name,
     ) -> bool {
         match name.as_str() {
-            "vec2"
+            "bool"
+            | "i32"
+            | "u32"
+            | "f32"
+            | "f16"
+            | "array"
+            | "binding_array"
+            | "vec2"
             | "vec3"
             | "vec4"
             | "vec2i"
@@ -1867,9 +1874,8 @@ impl<'database> TyLoweringContext<'database> {
             | "mat4x3" | "mat4x4")
             | ("mat2x2f" | "mat2x3f" | "mat2x4f" | "mat3x2f" | "mat3x3f" | "mat3x4f" | "mat4x2f"
             | "mat4x3f" | "mat4x4f")
-            | "atomic"
-            | "binding_array"
             | "ptr"
+            | "atomic"
             | "texture_1d"
             | "texture_2d"
             | "texture_2d_array"
@@ -1880,7 +1886,15 @@ impl<'database> TyLoweringContext<'database> {
             | "texture_storage_1d"
             | "texture_storage_2d"
             | "texture_storage_2d_array"
-            | "texture_storage_3d" => true,
+            | "texture_storage_3d"
+            | "texture_depth_multisampled_2d"
+            | "texture_external"
+            | "texture_depth_2d"
+            | "texture_depth_2d_array"
+            | "texture_depth_cube"
+            | "texture_depth_cube_array"
+            | "sampler"
+            | "sampler_comparison" => true,
             _ => false,
         }
     }
