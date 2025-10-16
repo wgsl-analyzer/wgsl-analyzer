@@ -196,8 +196,6 @@ fn fn_incomplete() {
                 Blankspace@2..3 " "
                 Name@3..7
                   Identifier@3..7 "name"
-                FunctionParameters@7..7
-                Error@7..7
 
             error at 7..7: invalid syntax, expected: '('"#]],
     );
@@ -443,16 +441,11 @@ fn fn_recover() {
               FunctionDeclaration@0..3
                 Fn@0..2 "fn"
                 Blankspace@2..3 "\n"
-                Name@3..3
-                FunctionParameters@3..3
-                Error@3..3
               FunctionDeclaration@3..10
                 Fn@3..5 "fn"
                 Blankspace@5..6 " "
                 Name@6..10
                   Identifier@6..10 "name"
-                FunctionParameters@10..10
-                Error@10..10
 
             error at 3..5: invalid syntax, expected: <identifier>
             error at 10..10: invalid syntax, expected: '('"#]],
@@ -475,7 +468,6 @@ fn fn_recover_2() {
                   ParenthesisLeft@7..8 "("
                   ParenthesisRight@8..9 ")"
                 Blankspace@9..18 "\n        "
-                Error@18..18
               FunctionDeclaration@18..30
                 Fn@18..20 "fn"
                 Blankspace@20..21 " "
@@ -1207,7 +1199,6 @@ fn for_statement_incomplete_1() {
                 Semicolon@4..5 ";"
                 Semicolon@5..6 ";"
                 ParenthesisRight@6..7 ")"
-                Error@7..7
 
             error at 7..7: invalid syntax, expected one of: '@', '{'"#]],
     );
@@ -1233,7 +1224,6 @@ fn for_statement_incomplete_2() {
                 Semicolon@7..8 ";"
                 Semicolon@8..9 ";"
                 ParenthesisRight@9..10 ")"
-                Error@10..10
 
             error at 10..10: invalid syntax, expected one of: '@', '{'"#]],
     );
@@ -1254,7 +1244,6 @@ fn for_statement_incomplete_3() {
                     False@5..10 "false"
                 Semicolon@10..11 ";"
                 ParenthesisRight@11..12 ")"
-                Error@12..12
 
             error at 12..12: invalid syntax, expected one of: '@', '{'"#]],
     );
@@ -1282,7 +1271,6 @@ fn for_statement_incomplete_4() {
                     Literal@10..11
                       IntLiteral@10..11 "1"
                 ParenthesisRight@11..12 ")"
-                Error@12..12
 
             error at 12..12: invalid syntax, expected one of: '@', '{'"#]],
     );
@@ -1575,7 +1563,6 @@ fn var_recover_elided_name() {
             SourceFile@0..3
               VariableDeclaration@0..3
                 Var@0..3 "var"
-                Name@3..3
 
             error at 3..3: invalid syntax, expected one of: '@', ',', '=', <identifier>, '{', '}', ')', ';', <template start>"#]],
     );
@@ -1818,7 +1805,6 @@ fn fn_recover_incomplete_param() {
                     Name@8..9
                       Identifier@8..9 "p"
                     TypeSpecifier@9..9
-                      NameReference@9..9
                   ParenthesisRight@9..10 ")"
                 Blankspace@10..11 " "
                 CompoundStatement@11..13
@@ -1891,7 +1877,6 @@ fn let_statement_recover_return() {
                   LetDeclaration@24..40
                     Let@24..27 "let"
                     Blankspace@27..40 "\n            "
-                    Name@40..40
                   ReturnStatement@40..49
                     Return@40..46 "return"
                     Blankspace@46..47 " "
@@ -2076,7 +2061,6 @@ fn let_statement_recover_3() {
                   LetDeclaration@24..36
                     Let@24..27 "let"
                     Blankspace@27..36 "\n        "
-                    Name@36..36
                   BraceRight@36..37 "}"
 
             error at 36..37: invalid syntax, expected: <identifier>"#]],
@@ -2388,8 +2372,6 @@ fn test()
               StructDeclaration@1..8
                 Struct@1..7 "struct"
                 Blankspace@7..8 "\n"
-                Name@8..8
-                Error@8..8
               FunctionDeclaration@8..18
                 Fn@8..10 "fn"
                 Blankspace@10..11 " "
@@ -2399,7 +2381,6 @@ fn test()
                   ParenthesisLeft@15..16 "("
                   ParenthesisRight@16..17 ")"
                 Blankspace@17..18 "\n"
-                Error@18..18
 
             error at 8..10: invalid syntax, expected: <identifier>
             error at 18..18: invalid syntax, expected one of: '->', '@', '{'"#]],
@@ -2422,7 +2403,6 @@ fn test()
                 Name@8..12
                   Identifier@8..12 "test"
                 Blankspace@12..13 "\n"
-                Error@13..13
               FunctionDeclaration@13..23
                 Fn@13..15 "fn"
                 Blankspace@15..16 " "
@@ -2432,7 +2412,6 @@ fn test()
                   ParenthesisLeft@20..21 "("
                   ParenthesisRight@21..22 ")"
                 Blankspace@22..23 "\n"
-                Error@23..23
 
             error at 13..15: invalid syntax, expected: '{'
             error at 23..23: invalid syntax, expected one of: '->', '@', '{'"#]],
@@ -2460,9 +2439,7 @@ fn test()
                 StructBody@13..15
                   BraceLeft@13..14 "{"
                   StructMember@14..14
-                    Name@14..14
                     TypeSpecifier@14..14
-                      NameReference@14..14
                   BraceRight@14..15 "}"
               Blankspace@15..17 "\n\n"
               FunctionDeclaration@17..28
@@ -2476,7 +2453,6 @@ fn test()
                 Blankspace@26..27 "\n"
                 Error@27..28
                   BraceRight@27..28 "}"
-                Error@28..28
               Semicolon@28..29 ";"
               Blankspace@29..30 "\n"
 
@@ -2843,8 +2819,6 @@ switch i {
                   SwitchBodyCase@14..19
                     Case@14..18 "case"
                     Blankspace@18..19 "\n"
-                    SwitchCaseSelectors@19..19
-                    Error@19..19
                   BraceRight@19..20 "}"
               Blankspace@20..29 "\n        "
 
@@ -2880,7 +2854,6 @@ switch i {
                       Literal@19..20
                         IntLiteral@19..20 "1"
                     Blankspace@20..21 "\n"
-                    Error@21..21
                   BraceRight@21..22 "}"
               Blankspace@22..31 "\n        "
 
@@ -2924,7 +2897,6 @@ let x = 3;
                           IntLiteral@21..22 "1"
                       Colon@22..23 ":"
                       Blankspace@23..24 "\n"
-                      Error@24..24
                     BraceRight@24..25 "}"
                 Blankspace@25..27 "\n\n"
                 LetDeclaration@27..37
@@ -2985,7 +2957,6 @@ let x = 3;
                           IntLiteral@24..25 "2"
                         Comma@25..26 ","
                       Blankspace@26..27 "\n"
-                      Error@27..27
                     BraceRight@27..28 "}"
                 Blankspace@28..29 "\n"
                 LetDeclaration@29..39

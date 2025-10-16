@@ -11,20 +11,26 @@ pub struct CstBuilder<'a, 'cache> {
     pub cst: Cst<'a>,
 }
 impl<'a, 'cache> CstBuilder<'a, 'cache> {
-    /// Turn a lelwel syntax tree into a rowan syntax tree
+    /// Turn a lelwel syntax tree into a rowan syntax tree.
+    /// Empty nodes will be omitted.
     pub fn build(mut self) -> GreenNode {
         let mut rule_ends = vec![];
         for offset in 0..self.cst.nodes_count() {
             let node_ref = NodeRef(offset);
             let node = self.cst.get(node_ref);
             match node {
-                Node::Rule(rule, end_offset) => {
-                    self.start_rule(rule);
+                Node::Rule(rule @ (Rule::Part | Rule::TranslationUnit), end_offset) => {
                     let end_offset = usize::from(end_offset);
+                    // Unconditionally include the root
+                    self.start_rule(rule);
+                    rule_ends.push((node_ref, rule, offset + end_offset));
+                },
+                Node::Rule(rule, end_offset) => {
+                    let end_offset = usize::from(end_offset);
+                    // Omit nodes with a size of 0
                     if end_offset > 0 {
+                        self.start_rule(rule);
                         rule_ends.push((node_ref, rule, offset + end_offset));
-                    } else {
-                        self.end_rule(node_ref, rule);
                     }
                 },
                 Node::Token(token, index) => self.token(token, index),
