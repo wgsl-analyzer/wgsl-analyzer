@@ -72,6 +72,8 @@ pub fn validate_address_space<Function: FnMut(AddressSpaceError)>(
     database: &dyn HirDatabase,
     mut diagnostic_builder: Function,
 ) {
+    // We only care about the inner type here
+    let r#type = r#type.unref(database);
     let ty_is_err = r#type.is_error();
 
     match address_space {
@@ -158,7 +160,7 @@ pub fn validate_address_space<Function: FnMut(AddressSpaceError)>(
                 ]));
             }
 
-            match r#type {
+            match r#type.as_ref() {
                 TyKind::Sampler(_) | TyKind::Texture(_) => {},
                 TyKind::Error
                 | TyKind::Scalar(_)
