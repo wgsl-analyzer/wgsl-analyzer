@@ -15,8 +15,10 @@ fn type_alias_in_struct() {
         }
         "#,
         expect![[r#"
+            90..91 'a': S
             94..98 'S(5)': S
             96..97 '5': integer
+            116..117 'b': u32
             120..121 'a': S
             120..123 'a.x': ref<u32>
             120..129 'a.x + 10u': u32
@@ -35,10 +37,12 @@ fn break_if_bool() {
         }
         "#,
         expect![[r#"
+            36..37 'a': i32
             40..41 '3': integer
-            84..85 'a': integer
-            84..89 'a > 2': bool
+            84..85 'a': i32
+            84..89 'a > 2': [error]
             88..89 '2': integer
+            NoBuiltinOverload { expression: Idx::<Expression>(1), builtin: BuiltinId(0), name: Some(">"), parameters: [Type { id: 2 }, Type { id: 1 }] }
         "#]],
     );
 }

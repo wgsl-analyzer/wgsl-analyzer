@@ -37,6 +37,14 @@ fn infer(ra_fixture: &str) -> String {
                          body_source_map: Arc<BodySourceMap>| {
         let mut types: Vec<(SyntaxNode, &Type)> = Vec::new();
 
+        for (binding, ty) in inference_result.type_of_binding.iter() {
+            let node = match body_source_map.binding_to_source(binding) {
+                Ok(sp) => sp.to_node(&root).syntax().clone(),
+                Err(SyntheticSyntax) => continue,
+            };
+            types.push((node.clone(), ty));
+        }
+
         for (expr, ty) in inference_result.type_of_expression.iter() {
             let node = match body_source_map.expression_to_source(expr) {
                 Ok(sp) => sp.to_node(&root).syntax().clone(),
