@@ -5,6 +5,7 @@ use std::{borrow::Cow, collections::hash_map::Entry, fmt, ops::Index};
 
 use either::Either;
 use hir_def::{
+    HasSource,
     body::{BindingId, Body},
     data::{
         FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, ParamId,
@@ -89,23 +90,36 @@ pub fn infer_cycle_result(
     _cycle: &[String],
     definition: &DefinitionWithBodyId,
 ) -> Arc<InferenceResult> {
-    let mut inference_result = InferenceResult::new(database);
+    let mut inference_result: InferenceResult = InferenceResult::new(database);
+
     let (name, range) = match *definition {
         DefinitionWithBodyId::Function(id) => (
             database.fn_data(id).0.name.clone(),
-            id.lookup(database).file_syntax(database).text_range(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
         ),
         DefinitionWithBodyId::GlobalVariable(id) => (
             database.global_var_data(id).0.name.clone(),
-            id.lookup(database).file_syntax(database).text_range(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
         ),
         DefinitionWithBodyId::GlobalConstant(id) => (
             database.global_constant_data(id).0.name.clone(),
-            id.lookup(database).file_syntax(database).text_range(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
         ),
         DefinitionWithBodyId::Override(id) => (
             database.override_data(id).0.name.clone(),
-            id.lookup(database).file_syntax(database).text_range(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
         ),
     };
 
@@ -169,7 +183,6 @@ pub enum InferenceDiagnostic {
         expression: ExpressionId,
         actual: Type,
     },
-
     InvalidType {
         container: TypeContainer,
         error: TypeLoweringError,
