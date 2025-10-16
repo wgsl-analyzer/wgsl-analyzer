@@ -28,6 +28,33 @@ fn type_alias_in_struct() {
 }
 
 #[test]
+fn const_array() {
+    check_infer(
+        r#"
+        const a: array<f32> = array(1);
+        "#,
+        expect![[r#"
+            15..16 'a': array<f32>
+            31..39 'array(1)': array<integer, 1>
+            37..38 '1': integer
+            31..39 'array(1)': expected array<f32> but got array<integer, 1>
+        "#]],
+    );
+}
+
+#[test]
+fn var_array() {
+    check_infer(
+        r#"
+        @group(0) @binding(0) var<storage, read_write> data: array<f32>;
+        "#,
+        expect![[r#"
+            56..60 'data': ref<array<f32>>
+        "#]],
+    );
+}
+
+#[test]
 fn break_if_bool() {
     check_infer(
         r#"

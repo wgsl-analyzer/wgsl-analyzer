@@ -29,14 +29,17 @@ use rustc_hash::FxHashMap;
 use triomphe::Arc;
 use wgsl_types::{
     inst::Instance,
-    syntax::{AccessMode, AddressSpace},
+    syntax::{AccessMode, AddressSpace, Enumerant},
 };
 
 use crate::{
     builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
     database::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
-    infer::unify::{UnificationTable, unify},
+    infer::{
+        eval::TpltParam,
+        unify::{UnificationTable, unify},
+    },
     ty::{
         ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Pointer, Reference, ScalarType,
         TexelFormat, TextureDimensionality, TextureKind, TextureType, TyKind, Type, VecSize,
@@ -415,23 +418,37 @@ impl<'database> InferenceContext<'database> {
         template: &[ExpressionId],
         store: &ExpressionStore,
     ) -> (AddressSpace, AccessMode) {
-        let mut var_template = template
-            .iter()
-            .map(|expression| self.infer_expression(*expression, store));
-        let address_space = var_template
-            .next() // TODO: infer_expression should be able to return those predeclared types
-            .map(|r#type| AddressSpace::Function)
-            .unwrap_or(AddressSpace::Function);
-        let access_mode = var_template
-            .next()
-            .map(|r#type| AccessMode::ReadWrite)
-            .unwrap_or(AccessMode::ReadWrite);
+        let mut ctx = TyLoweringContext::new(self.database, &self.resolver, store);
+        let template_args: Vec<_> = template.iter().map(|arg| ctx.eval_tplt_arg(*arg)).collect();
+
+        let address_space = match template_args.get(0) {
+            Some(TpltParam::Enumerant(Enumerant::AddressSpace(address_space))) => *address_space,
+            None => AddressSpace::Function,
+            _ => {
+                self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
+                    expression: template[0],
+                });
+                AddressSpace::Function
+            },
+        };
+        let access_mode = match template_args.get(1) {
+            Some(TpltParam::Enumerant(Enumerant::AccessMode(access_mode))) => *access_mode,
+            None => AccessMode::ReadWrite,
+            _ => {
+                self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
+                    expression: template[0],
+                });
+                AccessMode::ReadWrite
+            },
+        };
 
         // Mark extra template arguments as errors
-        for expression in template.iter().skip(2) {
-            self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
-                expression: *expression,
-            });
+        if template.len() > 2 {
+            for expression in template[2..].iter() {
+                self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
+                    expression: *expression,
+                });
+            }
         }
         (address_space, access_mode)
     }
@@ -1749,6 +1766,7 @@ pub struct TyLoweringContext<'database> {
 pub enum TypeLoweringError {
     UnresolvedName(Name),
     InvalidTexelFormat(String),
+    // TemplateArgumentError { expression: ExpressionId },
     // TODO: Change this to a strongly typed wgsl_types::Error
     // The challenge here is that wgsl_types::Error doesn't implement Eq,
     // However the inference result keeps track of all the diagnostics and is cached
@@ -1908,15 +1926,20 @@ impl<'database> TyLoweringContext<'database> {
         let template_args: Option<Vec<_>> = type_ref
             .generics
             .iter()
-            .map(|arg| self.eval_tplt_arg(*arg))
-            .map(|arg| converter.template_parameter_to_wgsl_types(arg))
+            .map(|arg| {
+                let template_argument = self.eval_tplt_arg(*arg);
+                let a = format!("{:?}", template_argument);
+                let converted = converter.template_parameter_to_wgsl_types(template_argument);
+                if converted.is_none() {
+                    self.diagnostics.push(TypeLoweringError::WgslError(a));
+                }
+                converted
+            })
             .collect();
 
         let template_args = match &template_args {
             Some(args) if args.is_empty() => None,
             Some(args) => Some(args.as_slice()),
-            // One of the template params has an error
-            // wgsl_types::builtin::builtin_type will output a decent error message
             None => None,
         };
         let return_type = wgsl_types::builtin::builtin_type(name, template_args);
