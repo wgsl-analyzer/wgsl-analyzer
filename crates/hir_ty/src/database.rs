@@ -34,7 +34,7 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
     fn field_types(
         &self,
         key: StructId,
-    ) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<InferenceDiagnostic>)>;
+    ) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<FieldInferenceDiagnostic>)>;
     fn function_type(
         &self,
         key: FunctionId,
@@ -67,7 +67,7 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
 fn field_types(
     database: &dyn HirDatabase,
     r#struct: StructId,
-) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<InferenceDiagnostic>)> {
+) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<FieldInferenceDiagnostic>)> {
     let data = database.struct_data(r#struct).0;
 
     let file_id = r#struct.lookup(database).file_id;
@@ -80,15 +80,18 @@ fn field_types(
     let mut map = ArenaMap::default();
     for (index, field) in data.fields.iter() {
         let r#type = ty_ctx.lower_ty(&field.r#type);
-        diagnostics.extend(ty_ctx.diagnostics.drain(..).map(|error| {
-            InferenceDiagnostic::InvalidType {
-                container: TypeContainer::StructField(FieldId {
-                    r#struct,
-                    field: index,
+        diagnostics.extend(
+            ty_ctx
+                .diagnostics
+                .drain(..)
+                .map(|error| FieldInferenceDiagnostic {
+                    field: FieldId {
+                        r#struct,
+                        field: index,
+                    },
+                    error,
                 }),
-                error,
-            }
-        }));
+        );
 
         map.insert(index, r#type);
     }
@@ -96,11 +99,17 @@ fn field_types(
     Arc::new((map, diagnostics))
 }
 
+#[derive(PartialEq, Eq, Debug)]
+pub struct FieldInferenceDiagnostic {
+    pub field: FieldId,
+    pub error: TypeLoweringError,
+}
+
 fn function_type(
     database: &dyn HirDatabase,
     function: FunctionId,
 ) -> ResolvedFunctionId {
-    let data = database.fn_data(function).0;
+    let data = database.function_data(function).0;
 
     let file_id = function.lookup(database).file_id;
     let module_info = database.module_info(file_id);

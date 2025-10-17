@@ -83,7 +83,7 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
     ) -> Arc<ExprScopes>;
 
     #[salsa::invoke(FunctionData::query)]
-    fn fn_data(
+    fn function_data(
         &self,
         key: FunctionId,
     ) -> (Arc<FunctionData>, Arc<ExpressionSourceMap>);

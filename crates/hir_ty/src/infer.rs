@@ -8,7 +8,7 @@ use hir_def::{
     HasSource,
     body::{BindingId, Body},
     data::{
-        FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, ParamId,
+        FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, ParameterId,
         StructData, TypeAliasData,
     },
     database::{
@@ -61,7 +61,7 @@ pub fn infer_query(
 
     match definition {
         DefinitionWithBodyId::Function(function) => {
-            let return_type = context.collect_fn(function, &database.fn_data(function).0);
+            let return_type = context.collect_fn(function, &database.function_data(function).0);
             context.infer_body(return_type, AbstractHandling::Concretize);
         },
         DefinitionWithBodyId::GlobalVariable(var) => {
@@ -94,7 +94,7 @@ pub fn infer_cycle_result(
 
     let (name, range) = match *definition {
         DefinitionWithBodyId::Function(id) => (
-            database.fn_data(id).0.name.clone(),
+            database.function_data(id).0.name.clone(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
@@ -207,7 +207,7 @@ pub enum TypeContainer {
     GlobalConstant(GlobalConstantId),
     Override(OverrideId),
     TypeAlias(TypeAliasId),
-    FunctionParameter(FunctionId, BindingId),
+    FunctionParameter(ParameterId),
     StructField(FieldId),
     FunctionReturn(FunctionId),
     VariableStatement(StatementId),
@@ -499,9 +499,14 @@ impl<'database> InferenceContext<'database> {
         function_data: &FunctionData,
     ) -> Option<Type> {
         let body = self.body.clone();
-        for ((_, parameter), &binding_id) in function_data.parameters.iter().zip(&body.parameters) {
+        for ((parameter_id, parameter), &binding_id) in
+            function_data.parameters.iter().zip(&body.parameters)
+        {
             let param_ty = self.lower_ty(
-                TypeContainer::FunctionParameter(function_id, binding_id),
+                TypeContainer::FunctionParameter(ParameterId {
+                    function: function_id,
+                    param: parameter_id,
+                }),
                 &function_data.store,
                 &parameter.r#type,
             );
@@ -962,7 +967,7 @@ impl<'database> InferenceContext<'database> {
                 {
                     TyKind::Struct(r#struct) => {
                         let struct_data = self.database.struct_data(*r#struct).0;
-                        let field_types = self.database.field_types(*r#struct);
+                        let field_types = &self.database.field_types(*r#struct).0;
 
                         if let Some(field) = struct_data.field(name) {
                             self.set_field_resolution(
@@ -2009,7 +2014,7 @@ impl<'a> WgslTypeConverter<'a> {
             ),
             TyKind::Struct(struct_id) => {
                 let data = self.database.struct_data(struct_id).0;
-                let fields = self.database.field_types(struct_id);
+                let fields = &self.database.field_types(struct_id).0;
                 let name = self.intern_struct(struct_id);
                 wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
                     name,

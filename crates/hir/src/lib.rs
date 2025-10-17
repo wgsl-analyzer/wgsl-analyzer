@@ -8,7 +8,7 @@ use either::Either;
 use hir_def::{
     HasSource as _, HirFileId, InFile,
     body::{BindingId, Body, BodySourceMap},
-    data::FieldId,
+    data::{FieldId, ParameterId},
     database::{
         DefDatabase, DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId,
         Location, Lookup as _, OverrideId, StructId, TypeAliasId,
@@ -411,6 +411,37 @@ impl HasSource for Local {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
+pub struct Parameter {
+    pub id: ParameterId,
+}
+
+impl HasSource for Parameter {
+    type Ast = ast::Parameter;
+
+    fn source(
+        self,
+        database: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
+        let function_data = database.function_data(self.id.function).0;
+        let parameter_data = &function_data.parameters[self.id.param];
+        let parameter_name = &parameter_data.name;
+
+        let function = self.id.function.lookup(database).source(database);
+
+        let parameter = function
+            .value
+            .parameter_list()?
+            .parameters()
+            .find_map(|parameter| {
+                let name = parameter.name()?;
+                (name.ident_token()?.text() == parameter_name.as_str()).then_some(parameter)
+            })?;
+
+        Some(InFile::new(function.file_id, parameter))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub struct Function {
     id: FunctionId,
 }
@@ -606,14 +637,10 @@ impl Module {
                 ModuleDef::Override(_constant) => {},
                 ModuleDef::Struct(strukt) => {
                     let file = strukt.id.lookup(database).file_id;
-                    let (_, source_map) = database.struct_data(strukt.id);
                     let diagnostics = &database.field_types(strukt.id).1;
                     for diagnostic in diagnostics {
-                        match diagnostics::any_diag_from_infer_diagnostic(
-                            database,
-                            diagnostic,
-                            &source_map,
-                            file,
+                        match diagnostics::any_diag_from_field_infer_diagnostic(
+                            database, diagnostic, file,
                         ) {
                             Some(diagnostic) => accumulator.push(diagnostic),
                             None => {

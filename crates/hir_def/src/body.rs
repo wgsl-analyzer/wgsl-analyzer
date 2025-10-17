@@ -53,12 +53,6 @@ impl std::ops::Deref for Body {
 /// expression containing it; but for type inference etc., we want to operate on
 /// a structure that is agnostic to the actual positions of expressions in the
 /// file, so that we do not recompute types whenever some whitespace is typed.
-///
-/// One complication here is that, due to macro expansion, a single `Body` might
-/// be spread across several files. So, for each `ExprId` and `PatId`, we record
-/// both the `HirFileId` and the position inside the file. However, we only store
-/// AST -> `ExprId` mapping for non-macro files, as it is not clear how to handle
-/// this properly for macros.
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct BodySourceMap {
     expressions: ExpressionSourceMap,
