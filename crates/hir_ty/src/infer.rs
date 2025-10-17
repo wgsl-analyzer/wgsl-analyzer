@@ -1419,11 +1419,14 @@ impl<'database> InferenceContext<'database> {
         &self,
         builtin_id: BuiltinId,
         arguments: &[Type],
+        // TODO: Why is it selecting based on a return type?
         return_type: Option<Type>,
     ) -> Result<(Type, BuiltinOverloadId), ()> {
         let builtin = builtin_id.lookup(self.database);
         for (overload_id, overload) in builtin.overloads() {
-            if let Ok(r#type) = self.call_builtin_overload(overload, arguments) {
+            // TODO: Pick overload with lowest rank
+            if let Ok((r#type, _conversion_rank)) = self.call_builtin_overload(overload, arguments)
+            {
                 if let Some(return_type) = return_type {
                     if return_type == r#type {
                         return Ok((r#type, overload_id));
@@ -1440,13 +1443,15 @@ impl<'database> InferenceContext<'database> {
         &self,
         signatre: &BuiltinOverload,
         arguments: &[Type],
-    ) -> Result<Type, ()> {
+    ) -> Result<(Type, u32), ()> {
         let fn_ty = signatre.r#type.lookup(self.database);
 
         if fn_ty.parameters.len() != arguments.len() {
             return Err(());
         }
 
+        // TODO: Do the conversion rank computation
+        let conversion_rank = 0;
         let mut unification_table = UnificationTable::default();
         for (expected, &found) in fn_ty.parameters().zip(arguments.iter()) {
             unify(self.database, &mut unification_table, expected, found)?;
@@ -1456,7 +1461,10 @@ impl<'database> InferenceContext<'database> {
             .return_type
             .map(|r#type| unification_table.resolve(self.database, r#type));
 
-        Ok(return_type.unwrap_or_else(|| self.error_ty()))
+        Ok((
+            return_type.unwrap_or_else(|| self.error_ty()),
+            conversion_rank,
+        ))
     }
 
     fn infer_call(
