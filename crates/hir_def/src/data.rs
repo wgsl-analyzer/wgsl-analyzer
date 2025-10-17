@@ -139,17 +139,17 @@ pub struct GlobalVariableData {
 impl GlobalVariableData {
     pub fn global_var_data_query(
         database: &dyn DefDatabase,
-        var: GlobalVariableId,
+        variable: GlobalVariableId,
     ) -> Arc<Self> {
-        let loc = database.lookup_intern_global_variable(var);
+        let loc = database.lookup_intern_global_variable(variable);
         let module_info = database.module_info(loc.file_id);
-        let var = &module_info.data[loc.value.index];
+        let variable = &module_info.data[loc.value.index];
 
         Arc::new(Self {
-            name: var.name.clone(),
-            r#type: var.r#type,
-            address_space: var.address_space,
-            access_mode: var.access_mode,
+            name: variable.name.clone(),
+            r#type: variable.r#type,
+            address_space: variable.address_space,
+            access_mode: variable.access_mode,
         })
     }
 }
