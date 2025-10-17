@@ -839,7 +839,8 @@ impl<'database> InferenceContext<'database> {
     ) -> Type {
         match (r#type, initializer) {
             (Some(r#type), Some(initializer)) => {
-                self.infer_expression_expect(initializer, &TypeExpectation::from_ty(r#type), store)
+                self.infer_expression_expect(initializer, &TypeExpectation::from_ty(r#type), store);
+                r#type
             },
             (Some(r#type), None) => r#type,
             (None, Some(initializer)) => {
