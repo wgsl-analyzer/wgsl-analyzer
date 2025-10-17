@@ -5,7 +5,10 @@ use std::fmt;
 
 use crate::builtins::{Builtin, BuiltinId};
 use crate::function::{FunctionDetails, ResolvedFunctionId};
-use crate::infer::{InferenceContext, InferenceResult, TyLoweringContext, TypeContainer};
+use crate::infer::{
+    InferenceContext, InferenceDiagnostic, InferenceResult, TyLoweringContext, TypeContainer,
+    TypeLoweringError,
+};
 use crate::ty::{TyKind, Type};
 use hir_def::data::FieldId;
 use hir_def::database::{DefinitionWithBodyId, GlobalVariableId};
@@ -31,7 +34,7 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
     fn field_types(
         &self,
         key: StructId,
-    ) -> Arc<ArenaMap<LocalFieldId, Type>>;
+    ) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<InferenceDiagnostic>)>;
     fn function_type(
         &self,
         key: FunctionId,
@@ -64,7 +67,7 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
 fn field_types(
     database: &dyn HirDatabase,
     r#struct: StructId,
-) -> Arc<ArenaMap<LocalFieldId, Type>> {
+) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<InferenceDiagnostic>)> {
     let data = database.struct_data(r#struct).0;
 
     let file_id = r#struct.lookup(database).file_id;
@@ -73,14 +76,24 @@ fn field_types(
 
     let mut ty_ctx = TyLoweringContext::new(database, &resolver, &data.store);
 
+    let mut diagnostics = vec![];
     let mut map = ArenaMap::default();
     for (index, field) in data.fields.iter() {
         let r#type = ty_ctx.lower_ty(&field.r#type);
+        diagnostics.extend(ty_ctx.diagnostics.drain(..).map(|error| {
+            InferenceDiagnostic::InvalidType {
+                container: TypeContainer::StructField(FieldId {
+                    r#struct,
+                    field: index,
+                }),
+                error,
+            }
+        }));
 
         map.insert(index, r#type);
     }
 
-    Arc::new(map)
+    Arc::new((map, diagnostics))
 }
 
 fn function_type(

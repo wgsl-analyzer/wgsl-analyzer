@@ -373,7 +373,7 @@ fn get_struct_layout_hints(
         };
 
         hir_ty::layout::struct_member_layout(
-            &fields,
+            &fields.0,
             semantics.database,
             address_space,
             |field, field_layout| {

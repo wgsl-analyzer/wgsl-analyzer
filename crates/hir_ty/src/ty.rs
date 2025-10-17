@@ -300,26 +300,30 @@ impl TyKind {
         match self {
             Self::Scalar(_) => true,
             Self::Vector(vec) => vec.component_type.kind(database).is_numeric_scalar(),
-            Self::Struct(r#struct) => database.field_types(*r#struct).iter().all(|(_, r#type)| {
-                match r#type.kind(database) {
-                    Self::Scalar(_) => true,
-                    Self::Vector(vec) if vec.component_type.kind(database).is_numeric_scalar() => {
-                        true
-                    },
-                    Self::Error
-                    | Self::Atomic(_)
-                    | Self::Vector(_)
-                    | Self::Matrix(_)
-                    | Self::Struct(_)
-                    | Self::Array(_)
-                    | Self::Texture(_)
-                    | Self::Sampler(_)
-                    | Self::Reference(_)
-                    | Self::Pointer(_)
-                    | Self::BoundVar(_)
-                    | Self::StorageTypeOfTexelFormat(_) => false,
-                }
-            }),
+            Self::Struct(r#struct) => {
+                database.field_types(*r#struct).0.iter().all(|(_, r#type)| {
+                    match r#type.kind(database) {
+                        Self::Scalar(_) => true,
+                        Self::Vector(vec)
+                            if vec.component_type.kind(database).is_numeric_scalar() =>
+                        {
+                            true
+                        },
+                        Self::Error
+                        | Self::Atomic(_)
+                        | Self::Vector(_)
+                        | Self::Matrix(_)
+                        | Self::Struct(_)
+                        | Self::Array(_)
+                        | Self::Texture(_)
+                        | Self::Sampler(_)
+                        | Self::Reference(_)
+                        | Self::Pointer(_)
+                        | Self::BoundVar(_)
+                        | Self::StorageTypeOfTexelFormat(_) => false,
+                    }
+                })
+            },
             Self::Error
             | Self::Atomic(_)
             | Self::Matrix(_)
@@ -344,6 +348,7 @@ impl TyKind {
             Self::Array(array) => array.inner.kind(database).is_host_shareable(database),
             Self::Struct(r#struct) => database
                 .field_types(*r#struct)
+                .0
                 .iter()
                 .all(|(_, r#type)| r#type.kind(database).is_host_shareable(database)),
             Self::Error
@@ -367,6 +372,7 @@ impl TyKind {
             }) => true,
             Self::Struct(r#struct) => database
                 .field_types(*r#struct)
+                .0
                 .iter()
                 .any(|(_, r#type)| r#type.kind(database).contains_runtime_sized_array(database)),
             Self::Error
@@ -397,6 +403,7 @@ impl TyKind {
                 }
                 database
                     .field_types(*id)
+                    .0
                     .values()
                     .any(|r#type| r#type.contains_struct(database, r#struct))
             },

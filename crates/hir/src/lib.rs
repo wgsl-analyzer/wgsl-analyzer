@@ -604,7 +604,24 @@ impl Module {
                 },
                 ModuleDef::GlobalConstant(_constant) => {},
                 ModuleDef::Override(_constant) => {},
-                ModuleDef::Struct(_strukt) => {},
+                ModuleDef::Struct(strukt) => {
+                    let file = strukt.id.lookup(database).file_id;
+                    let (_, source_map) = database.struct_data(strukt.id);
+                    let diagnostics = &database.field_types(strukt.id).1;
+                    for diagnostic in diagnostics {
+                        match diagnostics::any_diag_from_infer_diagnostic(
+                            database,
+                            diagnostic,
+                            &source_map,
+                            file,
+                        ) {
+                            Some(diagnostic) => accumulator.push(diagnostic),
+                            None => {
+                                tracing::warn!("could not create diagnostic from {:?}", diagnostic);
+                            },
+                        }
+                    }
+                },
                 ModuleDef::TypeAlias(_type_alias) => {},
             }
             if let Some(definition) = item.as_def_with_body_id() {
