@@ -2216,7 +2216,12 @@ impl From<wgsl_types::ty::TextureType> for TextureType {
             wgsl_types::ty::TextureType::Multisampled2D(sampled_type) => todo!(),
             wgsl_types::ty::TextureType::Multisampled2DArray(sampled_type) => todo!(),
             wgsl_types::ty::TextureType::DepthMultisampled2D => todo!(),
-            wgsl_types::ty::TextureType::External => todo!(),
+            wgsl_types::ty::TextureType::External => TextureType {
+                kind: TextureKind::External,
+                dimension: TextureDimensionality::D2,
+                arrayed: false,
+                multisampled: false,
+            },
             wgsl_types::ty::TextureType::Storage1D(texel_format, access_mode) => todo!(),
             wgsl_types::ty::TextureType::Storage1DArray(texel_format, access_mode) => todo!(),
             wgsl_types::ty::TextureType::Storage2D(texel_format, access_mode) => todo!(),
@@ -2273,10 +2278,7 @@ impl From<TextureType> for wgsl_types::ty::TextureType {
             (TextureKind::Depth, TextureDimensionality::Cube) => {
                 wgsl_types::ty::TextureType::DepthCube
             },
-            (TextureKind::External, TextureDimensionality::D1) => todo!(),
-            (TextureKind::External, TextureDimensionality::D2) => todo!(),
-            (TextureKind::External, TextureDimensionality::D3) => todo!(),
-            (TextureKind::External, TextureDimensionality::Cube) => todo!(),
+            (TextureKind::External, _) => wgsl_types::ty::TextureType::External,
             (_, _) => panic!("invalid texture"),
         }
     }
