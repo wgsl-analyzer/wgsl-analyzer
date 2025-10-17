@@ -424,9 +424,20 @@ textureSampleLevel(texture_external, sampler, vec2<f32>) -> vec4<f32>
 
 textureStore(texture_storage_1d<F;write>, i32, F::StorageType)
 textureStore(texture_storage_2d<F;write>, vec2<i32>, F::StorageType)
-textureStore(texture_storage_2d_array<F;write>, vec2<i32>, i32, F::StorageType)
-textureStore(texture_storage_2d_array<F;write>, vec2<i32>, u32, F::StorageType)
+textureStore(texture_storage_2d_array<F;write>, vec2<i32>, A, F::StorageType)
 textureStore(texture_storage_3d<F;write>, vec3<i32>, F::StorageType)
+textureStore(texture_storage_1d<F;read_write>, i32, F::StorageType)
+textureStore(texture_storage_2d<F;read_write>, vec2<i32>, F::StorageType)
+textureStore(texture_storage_2d_array<F;read_write>, vec2<i32>, A, F::StorageType)
+textureStore(texture_storage_3d<F;read_write>, vec3<i32>, F::StorageType)
+textureStore(texture_storage_1d<F;write>, u32, F::StorageType)
+textureStore(texture_storage_2d<F;write>, vec2<u32>, F::StorageType)
+textureStore(texture_storage_2d_array<F;write>, vec2<u32>, A, F::StorageType)
+textureStore(texture_storage_3d<F;write>, vec3<u32>, F::StorageType)
+textureStore(texture_storage_1d<F;read_write>, u32, F::StorageType)
+textureStore(texture_storage_2d<F;read_write>, vec2<u32>, F::StorageType)
+textureStore(texture_storage_2d_array<F;read_write>, vec2<u32>, A, F::StorageType)
+textureStore(texture_storage_3d<F;read_write>, vec3<u32>, F::StorageType)
 
 // TODO atomic
 atomicLoad(ptr<atomic<T>>) -> T
