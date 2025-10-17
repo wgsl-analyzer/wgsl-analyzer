@@ -31,13 +31,12 @@ fn type_alias_in_struct() {
 fn const_array() {
     check_infer(
         r#"
-        const a: array<f32> = array(1);
+        const a: array<f32, 1> = array(1);
         "#,
         expect![[r#"
-            15..16 'a': array<f32>
-            31..39 'array(1)': array<integer, 1>
-            37..38 '1': integer
-            31..39 'array(1)': expected array<f32> but got array<integer, 1>
+            15..16 'a': array<f32, 1>
+            34..42 'array(1)': array<integer, 1>
+            40..41 '1': integer
         "#]],
     );
 }
@@ -82,7 +81,9 @@ const some_integer = 1;
 const some_i32: i32 = 1;
         "#,
         expect![[r#"
+            7..19 'some_integer': integer
             22..23 '1': integer
+            31..39 'some_i32': i32
             47..48 '1': integer
         "#]],
     );
@@ -92,141 +93,152 @@ const some_i32: i32 = 1;
 fn assign_abstract_number() {
     check_infer(
         r#"
+var i32_from_type : i32 = 3;
+
 fn main() {
 let some_i32 = 2;
-
+let some_u32: u32 = 2;
 var i32_from_type : i32 = 3;
-var u32_from_type : u32 = 4;
 var f32_promotion : f32 = 5;
 }
         "#,
         expect![[r#"
-            28..29 '2': integer
-            58..59 '3': integer
-            87..88 '4': integer
-            116..117 '5': integer
+            5..18 'i32_from_type': ref<i32>
+            27..28 '3': integer
+            47..55 'some_i32': i32
+            58..59 '2': integer
+            65..73 'some_u32': u32
+            81..82 '2': integer
+            88..101 'i32_from_type': ref<i32>
+            110..111 '3': integer
+            117..130 'f32_promotion': ref<f32>
+            139..140 '5': integer
         "#]],
     );
 }
 
 #[test]
-fn add_nested_abstract_numbers() {
+fn negate_abstract_number() {
+    check_infer(
+        r#"
+const a = -4;
+const b: f32 = -3.5;
+        "#,
+        expect![[r#"
+            7..8 'a': [error]
+            11..13 '-4': [error]
+            12..13 '4': integer
+            NoBuiltinOverload { expression: Idx::<Expression>(0), builtin: BuiltinId(0), name: Some("-"), parameters: [Type { id: 1 }] }
+            21..22 'b': f32
+            30..34 '-3.5': [error]
+            31..34 '3.5': float
+            NoBuiltinOverload { expression: Idx::<Expression>(0), builtin: BuiltinId(0), name: Some("-"), parameters: [Type { id: 6 }] }
+        "#]],
+    );
+}
+
+#[test]
+fn add_abstract_integers() {
     check_infer(
         r#"
 fn main() {
-var u32_from_expr = 6 + u32_1;
-var i32_from_expr = 7 + i32_1;
+var u32_expr1 = 6 + 1u;
+var u32_expr2 = 1u + (1 + 2);
+}   
+    "#,
+        expect![[r#"
+            17..26 'u32_expr1': ref<[error]>
+            29..30 '6': integer
+            29..35 '6 + 1u': [error]
+            33..35 '1u': u32
+            41..50 'u32_expr2': ref<[error]>
+            53..55 '1u': u32
+            53..65 '1u + (1 + 2)': [error]
+            59..60 '1': integer
+            59..64 '1 + 2': integer
+            63..64 '2': integer
+            NoBuiltinOverload { expression: Idx::<Expression>(0), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 1 }, Type { id: 2 }] }
+            NoBuiltinOverload { expression: Idx::<Expression>(3), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 2 }, Type { id: 1 }] }
+        "#]],
+    );
+}
 
-var u32_expr1 = (1 + (1 + (1 + (1 + 1)))) + 1u;
-var u32_expr2 = 1u + (1 + (1 + (1 + (1 + 1))));
-var u32_expr3 = (1 + (1 + (1 + (1u + 1)))) + 1;
-var u32_expr4 = 1 + (1 + (1 + (1 + (1u + 1))));
-
-// Inference based on built-in function parameters.
-
-let i32_clamp = clamp(1, -5, 5);
-let u32_clamp = clamp(5, 0, u32_from_expr);
-let f32_clamp = clamp(0, f32_1, 1);
-
-let f32_promotion1 = 1.0 + 2 + 3 + 4;
-let f32_promotion2 = 2 + 1.0 + 3 + 4;
+#[test]
+fn add_abstract_floats() {
+    check_infer(
+        r#"
+fn main() {
+let f32_promotion1 = 1.0 + 2 + 3;
+let f32_promotion2 = 2 + 1.0 + 3;
 let f32_promotion3 = 1f + ((2 + 3) + 4);
 let f32_promotion4 = ((2 + (3 + 1f)) + 4);
 }   
     "#,
         expect![[r#"
-            33..34 '6': integer
-            33..42 '6 + u32_1': [error]
-            37..42 'u32_1': [error]
-            64..65 '7': integer
-            64..73 '7 + i32_1': [error]
-            68..73 'i32_1': [error]
-            92..122 '(1 + (...) + 1u': [error]
-            93..94 '1': integer
-            93..116 '1 + (1...+ 1)))': integer
-            98..99 '1': integer
-            98..115 '1 + (1... + 1))': integer
-            103..104 '1': integer
-            103..114 '1 + (1 + 1)': integer
+            17..31 'f32_promotion1': [error]
+            34..37 '1.0': float
+            34..41 '1.0 + 2': [error]
+            34..45 '1.0 + 2 + 3': [error]
+            40..41 '2': integer
+            44..45 '3': integer
+            51..65 'f32_promotion2': [error]
+            68..69 '2': integer
+            68..75 '2 + 1.0': [error]
+            68..79 '2 + 1.0 + 3': [error]
+            72..75 '1.0': float
+            78..79 '3': integer
+            85..99 'f32_promotion3': [error]
+            102..104 '1f': f32
+            102..120 '1f + (...) + 4)': [error]
+            108..119 '(2 + 3) + 4': integer
+            109..110 '2': integer
+            109..114 '2 + 3': integer
+            113..114 '3': integer
+            118..119 '4': integer
+            126..140 'f32_promotion4': [error]
+            144..162 '(2 + (...)) + 4': [error]
+            145..146 '2': integer
+            145..157 '2 + (3 + 1f)': [error]
+            150..151 '3': integer
+            150..156 '3 + 1f': [error]
+            154..156 '1f': f32
+            161..162 '4': integer
+            NoBuiltinOverload { expression: Idx::<Expression>(0), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 1 }, Type { id: 2 }] }
+            NoBuiltinOverload { expression: Idx::<Expression>(5), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 2 }, Type { id: 1 }] }
+            NoBuiltinOverload { expression: Idx::<Expression>(10), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 7 }, Type { id: 2 }] }
+            NoBuiltinOverload { expression: Idx::<Expression>(18), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 2 }, Type { id: 7 }] }
+        "#]],
+    );
+}
+
+#[test]
+fn call_with_abstract_numbers() {
+    check_infer(
+        r#"
+fn main() {
+let i32_clamp = clamp(1, -5, 5);
+let u32_clamp = clamp(5, 0, 1u);
+let f32_clamp = clamp(0, 1f, 1);
+}   
+    "#,
+        expect![[r#"
+            17..26 'i32_clamp': [error]
+            29..44 'clamp(1, -5, 5)': [error]
+            35..36 '1': integer
+            38..40 '-5': [error]
+            39..40 '5': integer
+            42..43 '5': integer
+            50..59 'u32_clamp': u32
+            62..77 'clamp(5, 0, 1u)': u32
+            68..69 '5': integer
+            71..72 '0': integer
+            74..76 '1u': u32
+            83..92 'f32_clamp': f32
+            95..110 'clamp(0, 1f, 1)': f32
+            101..102 '0': integer
+            104..106 '1f': f32
             108..109 '1': integer
-            108..113 '1 + 1': integer
-            112..113 '1': integer
-            120..122 '1u': u32
-            140..142 '1u': u32
-            140..170 '1u + (... 1))))': [error]
-            146..147 '1': integer
-            146..169 '1 + (1...+ 1)))': integer
-            151..152 '1': integer
-            151..168 '1 + (1... + 1))': integer
-            156..157 '1': integer
-            156..167 '1 + (1 + 1)': integer
-            161..162 '1': integer
-            161..166 '1 + 1': integer
-            165..166 '1': integer
-            188..218 '(1 + (...)) + 1': [error]
-            189..190 '1': integer
-            189..213 '1 + (1...+ 1)))': [error]
-            194..195 '1': integer
-            194..212 '1 + (1... + 1))': [error]
-            199..200 '1': integer
-            199..211 '1 + (1u + 1)': [error]
-            204..206 '1u': u32
-            204..210 '1u + 1': [error]
-            209..210 '1': integer
-            217..218 '1': integer
-            236..237 '1': integer
-            236..266 '1 + (1... 1))))': [error]
-            241..242 '1': integer
-            241..265 '1 + (1...+ 1)))': [error]
-            246..247 '1': integer
-            246..264 '1 + (1... + 1))': [error]
-            251..252 '1': integer
-            251..263 '1 + (1u + 1)': [error]
-            256..258 '1u': u32
-            256..262 '1u + 1': [error]
-            261..262 '1': integer
-            338..353 'clamp(1, -5, 5)': [error]
-            344..345 '1': integer
-            347..349 '-5': [error]
-            348..349 '5': integer
-            351..352 '5': integer
-            371..397 'clamp(..._expr)': [error]
-            377..378 '5': integer
-            380..381 '0': integer
-            383..396 'u32_from_expr': ref<[error]>
-            415..433 'clamp(..._1, 1)': [error]
-            421..422 '0': integer
-            424..429 'f32_1': [error]
-            431..432 '1': integer
-            457..460 '1.0': float
-            457..464 '1.0 + 2': [error]
-            457..468 '1.0 + 2 + 3': [error]
-            457..472 '1.0 + 2 + 3 + 4': [error]
-            463..464 '2': integer
-            467..468 '3': integer
-            471..472 '4': integer
-            495..496 '2': integer
-            495..502 '2 + 1.0': [error]
-            495..506 '2 + 1.0 + 3': [error]
-            495..510 '2 + 1.0 + 3 + 4': [error]
-            499..502 '1.0': float
-            505..506 '3': integer
-            509..510 '4': integer
-            533..535 '1f': f32
-            533..551 '1f + (...) + 4)': [error]
-            539..550 '(2 + 3) + 4': integer
-            540..541 '2': integer
-            540..545 '2 + 3': integer
-            544..545 '3': integer
-            549..550 '4': integer
-            575..593 '(2 + (...)) + 4': [error]
-            576..577 '2': integer
-            576..588 '2 + (3 + 1f)': [error]
-            581..582 '3': integer
-            581..587 '3 + 1f': [error]
-            585..587 '1f': f32
-            592..593 '4': integer
-            NoBuiltinOverload { expression: Idx::<Expression>(14), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 1 }, Type { id: 9 }] }NoBuiltinOverload { expression: Idx::<Expression>(17), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 9 }, Type { id: 1 }] }NoBuiltinOverload { expression: Idx::<Expression>(31), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 9 }, Type { id: 1 }] }NoBuiltinOverload { expression: Idx::<Expression>(43), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 9 }, Type { id: 1 }] }NoBuiltinOverload { expression: Idx::<Expression>(51), builtin: BuiltinId(1), name: Some("-"), parameters: [Type { id: 1 }] }NoBuiltinOverload { expression: Idx::<Expression>(63), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 13 }, Type { id: 1 }] }NoBuiltinOverload { expression: Idx::<Expression>(70), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 1 }, Type { id: 13 }] }NoBuiltinOverload { expression: Idx::<Expression>(77), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 7 }, Type { id: 1 }] }NoBuiltinOverload { expression: Idx::<Expression>(85), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 1 }, Type { id: 7 }] }
+            NoBuiltinOverload { expression: Idx::<Expression>(1), builtin: BuiltinId(0), name: Some("-"), parameters: [Type { id: 1 }] }
         "#]],
     );
 }
