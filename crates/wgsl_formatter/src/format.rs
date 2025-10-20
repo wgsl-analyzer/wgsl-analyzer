@@ -7,6 +7,7 @@ mod gen_comments;
 mod gen_expression;
 mod gen_function;
 mod gen_function_call;
+mod gen_if_statement;
 mod gen_statement;
 mod gen_struct;
 mod gen_types;
