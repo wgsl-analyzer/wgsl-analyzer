@@ -21,6 +21,7 @@ mod stmt_continuing;
 mod stmt_discard;
 mod stmt_let_declarations;
 mod stmt_loop;
+mod stmt_return;
 mod stmt_var_declarations;
 mod stmt_while;
 mod struct_def;
