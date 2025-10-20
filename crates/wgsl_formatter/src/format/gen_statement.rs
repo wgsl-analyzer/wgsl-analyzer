@@ -5,7 +5,10 @@ use parser::{SyntaxKind, SyntaxToken};
 use rowan::NodeOrToken;
 use syntax::{
     AstNode,
-    ast::{self, CompoundStatement, Expression, Literal, ParenthesisExpression},
+    ast::{
+        self, CompoundStatement, ElseClause, ElseIfClause, Expression, IfClause, Literal,
+        ParenthesisExpression,
+    },
 };
 
 use crate::format::{
@@ -15,6 +18,7 @@ use crate::format::{
     },
     gen_comments::{gen_comment, gen_comments},
     gen_expression::{gen_expression, gen_parenthesis_expression},
+    gen_if_statement::gen_if_statement,
     helpers::{gen_spaced_lines, todo_verbatim},
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult, err_src},
@@ -90,7 +94,7 @@ pub fn gen_compound_statement(
 
 fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumentError> {
     match item {
-        ast::Statement::IfStatement(if_statement) => todo_verbatim(if_statement.syntax()),
+        ast::Statement::IfStatement(if_statement) => gen_if_statement(if_statement),
         ast::Statement::SwitchStatement(switch_statement) => {
             todo_verbatim(switch_statement.syntax())
         },

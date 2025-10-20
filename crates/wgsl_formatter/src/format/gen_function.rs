@@ -26,7 +26,7 @@ use crate::{
         gen_comments::gen_comments,
         gen_statement::gen_compound_statement,
         gen_types::gen_type_specifier,
-        helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, into_items, todo_verbatim},
+        helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, into_items},
         print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
         reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult, err_src},
     },
@@ -77,7 +77,6 @@ pub fn gen_function_declaration(
     Ok(formatted)
 }
 
-#[expect(clippy::too_many_lines, reason = "TODO")]
 pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
 
