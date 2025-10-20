@@ -85,9 +85,17 @@ pub fn gen_parenthesis_expression(
     formatted.push_sc(sc!("("));
     formatted.push_signal(Signal::StartNewLineGroup);
     formatted.push_signal(Signal::StartIndent);
+    formatted.request(SeparationRequest {
+        space: SeparationPolicy::Discouraged,
+        ..Default::default()
+    });
     formatted.extend(gen_comments(item_comment_after_left_paren));
     formatted.extend(gen_expression(&item_content)?);
     formatted.extend(gen_comments(item_comment_after_content));
+    formatted.request(SeparationRequest {
+        space: SeparationPolicy::Discouraged,
+        ..Default::default()
+    });
     formatted.push_signal(Signal::FinishIndent);
     formatted.push_signal(Signal::FinishNewLineGroup);
     formatted.push_sc(sc!(")"));

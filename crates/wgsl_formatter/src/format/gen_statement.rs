@@ -5,13 +5,13 @@ use parser::{SyntaxKind, SyntaxToken};
 use rowan::NodeOrToken;
 use syntax::{
     AstNode,
-    ast::{self, Literal},
+    ast::{self, CompoundStatement, Literal, ParenthesisExpression},
 };
 
 use crate::format::{
     ast_parse::{parse_end, parse_many_comments_and_blankspace, parse_node, parse_token},
     gen_comments::{gen_comment, gen_comments},
-    gen_expression::gen_expression,
+    gen_expression::{gen_expression, gen_parenthesis_expression},
     helpers::{gen_spaced_lines, todo_verbatim},
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult, err_src},
@@ -95,9 +95,9 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
         },
         ast::Statement::LoopStatement(loop_statement) => todo_verbatim(loop_statement.syntax()),
         ast::Statement::ForStatement(for_statement) => todo_verbatim(for_statement.syntax()),
-        ast::Statement::WhileStatement(while_statement) => todo_verbatim(while_statement.syntax()),
+        ast::Statement::WhileStatement(while_statement) => gen_while_statement(while_statement),
         ast::Statement::CompoundStatement(compound_statement) => {
-            todo_verbatim(compound_statement.syntax())
+            gen_compound_statement(compound_statement)
         },
         ast::Statement::FunctionCallStatement(function_call_statement) => {
             todo_verbatim(function_call_statement.syntax())
@@ -150,12 +150,14 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
             // user's code should future changes to wgsl allow more complex continue statements.
             let mut syntax = put_back(continue_statement.syntax().children_with_tokens());
             parse_token(&mut syntax, SyntaxKind::Continue)?;
+            let comments_after_continue = parse_many_comments_and_blankspace(&mut syntax)?;
             parse_end(&mut syntax);
 
             // ==== Format ====
             let mut formatted = PrintItemBuffer::new();
             formatted.push_sc(sc!("continue;"));
             formatted.expect_line_break();
+            formatted.extend(gen_comments(comments_after_continue));
             Ok(formatted)
         },
         ast::Statement::DiscardStatement(discard) => {
@@ -165,15 +167,42 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
             // user's code should future changes to wgsl allow more complex discard statements.
             let mut syntax = put_back(discard.syntax().children_with_tokens());
             parse_token(&mut syntax, SyntaxKind::Discard)?;
+            let comments_after_discard = parse_many_comments_and_blankspace(&mut syntax)?;
             parse_end(&mut syntax);
 
             // ==== Format ====
             let mut formatted = PrintItemBuffer::new();
             formatted.push_sc(sc!("discard;"));
             formatted.expect_line_break();
+            formatted.extend(gen_comments(comments_after_discard));
             Ok(formatted)
         },
     }
+}
+
+fn gen_while_statement(statement: &ast::WhileStatement) -> FormatDocumentResult<PrintItemBuffer> {
+    dbg!(statement.syntax());
+
+    // ==== Parse ====
+    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    parse_token(&mut syntax, SyntaxKind::While)?;
+    let comments_after_while = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_condition = parse_node::<ParenthesisExpression>(&mut syntax)?;
+    let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
+    parse_end(&mut syntax);
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_sc(sc!("while"));
+    formatted.extend(gen_comments(comments_after_while));
+    formatted.extend(gen_parenthesis_expression(&item_condition)?);
+    formatted.expect_single_space();
+    formatted.extend(gen_comments(comments_after_condition));
+    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.expect_line_break();
+
+    Ok(formatted)
 }
 
 fn gen_let_declaration_statement(
@@ -201,6 +230,7 @@ fn gen_let_declaration_statement(
     parse_token(&mut syntax, SyntaxKind::Semicolon)?;
     parse_end(&mut syntax);
 
+    // ==== Format ====
     let mut pi = PrintItems::new();
     pi.push_info(ColumnNumber::new("start_expr"));
 
@@ -251,6 +281,7 @@ fn gen_var_declaration_statement(
     parse_token(&mut syntax, SyntaxKind::Semicolon)?;
     parse_end(&mut syntax);
 
+    // ==== Format ====
     let mut pi = PrintItems::new();
     pi.push_info(ColumnNumber::new("start_expr"));
 
