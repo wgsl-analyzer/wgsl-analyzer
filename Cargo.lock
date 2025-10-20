@@ -523,6 +523,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "hashbrown"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5419bdc4f6a9207fbeba6d11b604d481addf78ecd10c11ad51e76c2f6482748d"
+
+[[package]]
 name = "heck"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -707,7 +713,7 @@ dependencies = [
  "hir-ty",
  "ide-completion",
  "ide-db",
- "indexmap 2.11.4",
+ "indexmap 2.12.0",
  "itertools",
  "line-index",
  "memchr",
@@ -762,7 +768,7 @@ dependencies = [
  "fst",
  "hir-def",
  "hir-ty",
- "indexmap 2.11.4",
+ "indexmap 2.12.0",
  "itertools",
  "line-index",
  "memchr",
@@ -811,12 +817,12 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.11.4"
+version = "2.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b0f83760fb341a774ed326568e19f5a863af4a952def8c39f9ab92fd95b88e5"
+checksum = "6717a8d2a5a929a1a2eb43a12812498ed141a0bcfb7e8f7844fbdbe4303bba9f"
 dependencies = [
  "equivalent",
- "hashbrown 0.15.5",
+ "hashbrown 0.16.0",
  "serde",
  "serde_core",
 ]
@@ -1097,7 +1103,7 @@ dependencies = [
  "bitflags 2.9.4",
  "codespan-reporting",
  "hexf-parse",
- "indexmap 2.11.4",
+ "indexmap 2.12.0",
  "log",
  "num-traits",
  "rustc-hash 1.1.0",
@@ -1116,7 +1122,7 @@ dependencies = [
  "bitflags 2.9.4",
  "codespan-reporting",
  "hexf-parse",
- "indexmap 2.11.4",
+ "indexmap 2.12.0",
  "log",
  "num-traits",
  "rustc-hash 1.1.0",
@@ -1137,7 +1143,7 @@ dependencies = [
  "cfg_aliases 0.1.1",
  "codespan-reporting",
  "hexf-parse",
- "indexmap 2.11.4",
+ "indexmap 2.12.0",
  "log",
  "rustc-hash 1.1.0",
  "termcolor",
@@ -1157,7 +1163,7 @@ dependencies = [
  "codespan-reporting",
  "hashbrown 0.15.5",
  "hexf-parse",
- "indexmap 2.11.4",
+ "indexmap 2.12.0",
  "log",
  "rustc-hash 1.1.0",
  "strum",
@@ -1784,7 +1790,7 @@ version = "1.0.145"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "402a6f66d8c709116cf22f558eab210f5a50187f702eb4d7e5ef38d9a7f1c79c"
 dependencies = [
- "indexmap 2.11.4",
+ "indexmap 2.12.0",
  "itoa",
  "memchr",
  "ryu",
@@ -2258,7 +2264,7 @@ source = "git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7e
 dependencies = [
  "crossbeam-channel",
  "fst",
- "indexmap 2.11.4",
+ "indexmap 2.12.0",
  "nohash-hasher",
  "paths",
  "rustc-hash 2.1.1",
@@ -2788,7 +2794,7 @@ dependencies = [
  "arbitrary",
  "crc32fast",
  "flate2",
- "indexmap 2.11.4",
+ "indexmap 2.12.0",
  "memchr",
  "time",
  "zopfli",
