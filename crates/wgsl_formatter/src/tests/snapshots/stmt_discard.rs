@@ -22,13 +22,14 @@ discard;
 pub fn format_discard_statement_with_weird_comment() {
     check(
         "fn main() {
-discard;
+/* A */ discard /* B */; /* C */
 
 
         }",
         expect![["
             fn main() {
-                discard;
+                /* A */ discard;
+                /* B */ /* C */
             }
         "]],
     );
