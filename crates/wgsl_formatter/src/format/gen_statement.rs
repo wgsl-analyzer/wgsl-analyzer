@@ -25,8 +25,6 @@ pub fn gen_compound_statement(
     syntax: &ast::CompoundStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    //let mut syntax = put_back(node.syntax().children_with_tokens());
-
     //TODO I don't really like this, but its an easy way for now
     let body_empty = syntax.syntax().children_with_tokens().all(|child| {
         matches!(
@@ -93,7 +91,7 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
         ast::Statement::SwitchStatement(switch_statement) => {
             todo_verbatim(switch_statement.syntax())
         },
-        ast::Statement::LoopStatement(loop_statement) => todo_verbatim(loop_statement.syntax()),
+        ast::Statement::LoopStatement(loop_statement) => gen_loop_statement(loop_statement),
         ast::Statement::ForStatement(for_statement) => todo_verbatim(for_statement.syntax()),
         ast::Statement::WhileStatement(while_statement) => gen_while_statement(while_statement),
         ast::Statement::CompoundStatement(compound_statement) => {
@@ -124,7 +122,7 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
             todo_verbatim(return_statement.syntax())
         },
         ast::Statement::ContinuingStatement(continuing_statement) => {
-            todo_verbatim(continuing_statement.syntax())
+            gen_continuing_statement(continuing_statement)
         },
         ast::Statement::BreakStatement(break_statement) => {
             // ==== Parse ====
@@ -187,9 +185,46 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
     }
 }
 
-fn gen_while_statement(statement: &ast::WhileStatement) -> FormatDocumentResult<PrintItemBuffer> {
-    dbg!(statement.syntax());
+fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    parse_token(&mut syntax, SyntaxKind::Loop)?;
+    let comments_after_loop = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
+    parse_end(&mut syntax);
 
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_sc(sc!("loop"));
+    formatted.extend(gen_comments(comments_after_loop));
+    formatted.expect_single_space();
+    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.expect_line_break();
+
+    Ok(formatted)
+}
+
+fn gen_continuing_statement(
+    statement: &ast::ContinuingStatement
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    parse_token(&mut syntax, SyntaxKind::Continuing)?;
+    let comments_after_continuing = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
+    parse_end(&mut syntax);
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_sc(sc!("continuing"));
+    formatted.extend(gen_comments(comments_after_continuing));
+    formatted.expect_single_space();
+    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.expect_line_break();
+
+    Ok(formatted)
+}
+fn gen_while_statement(statement: &ast::WhileStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::While)?;
