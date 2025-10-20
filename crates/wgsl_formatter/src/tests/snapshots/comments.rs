@@ -128,7 +128,7 @@ fn format_struct_line_comments_1() {
         }
         // 111
         ",
-        expect![[r#"
+        expect![["
             // 000
             struct // aaa
             Abc // bbb
@@ -143,7 +143,7 @@ fn format_struct_line_comments_1() {
                 d, // jjj
             }
             // 111
-        "#]],
+        "]],
     );
 }
 
@@ -179,7 +179,7 @@ fn format_struct_with_attributes_line_comments_1() {
         }
         // 111
         ",
-        expect![[r#"
+        expect![["
             // 000
             struct // aaa
             Abc // bbb
@@ -196,7 +196,7 @@ fn format_struct_with_attributes_line_comments_1() {
                 d, // jjj
             }
             // 111
-        "#]],
+        "]],
     );
 }
 
@@ -228,7 +228,7 @@ fn format_struct_block_comments_1() {
         }
         /* ggg */
         ",
-        expect![[r#"
+        expect![["
             /* 000 */
             struct /* aaa */ Abc /* bbb */ {
                 /* ccc */
@@ -236,7 +236,7 @@ fn format_struct_block_comments_1() {
                 c: /* hhh */ /* iii */ d, /* jjj */
             }
             /* ggg */
-        "#]],
+        "]],
     );
 }
 
@@ -244,7 +244,7 @@ fn format_struct_block_comments_1() {
 fn format_struct_inline_comments_1() {
     check(
         "/* 000 */struct/* aaa */Abc/* bbb */{/* ccc */a/* ddd */:/* eee */b/* fff */,/* ggg */c/* hhh */:/* iii */d/* jjj */}/* ggg */",
-        expect![[r#"
+        expect![["
             /* 000 */
             struct /* aaa */ Abc /* bbb */ {
                 /* ccc */
@@ -252,7 +252,7 @@ fn format_struct_inline_comments_1() {
                 c: /* hhh */ /* iii */ d, /* jjj */
             }
             /* ggg */
-        "#]],
+        "]],
     );
 }
 
@@ -260,7 +260,7 @@ fn format_struct_inline_comments_1() {
 fn format_struct_with_attribute_inline_comments_1() {
     check(
         "/* 000 */struct/* aaa */Abc/* bbb */{/* pre_attr */@attribute(1)/* amidst_attr */@attribute(2)/* ccc */a/* ddd */:/* eee */b/* fff */,/* ggg */c/* hhh */:/* iii */d/* jjj */}/* ggg */",
-        expect![[r#"
+        expect![["
             /* 000 */
             struct /* aaa */ Abc /* bbb */ {
                 /* pre_attr */
@@ -270,7 +270,7 @@ fn format_struct_with_attribute_inline_comments_1() {
                 c: /* hhh */ /* iii */ d, /* jjj */
             }
             /* ggg */
-        "#]],
+        "]],
     );
 }
 
@@ -283,12 +283,12 @@ fn format_struct_opening_comments_1() {
         a: i32
         }
         ",
-        expect![[r#"
+        expect![["
             struct A {
                 // This comment should stick to the member
                 a: i32,
             }
-        "#]],
+        "]],
     );
 }
 
@@ -303,11 +303,11 @@ fn format_struct_opening_comments_2() {
         a: i32
         }
         ",
-        expect![[r#"
+        expect![["
             struct A {
                 // This comment should stick to the member
                 a: i32,
             }
-        "#]],
+        "]],
     );
 }

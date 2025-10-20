@@ -17,6 +17,10 @@ pub fn format_ident_expr_1() {
 }
 
 #[test]
+#[expect(
+    clippy::non_ascii_literal,
+    reason = "This is more readable and demonstrates the test better. I don't think not being able to open up this test file will be much trouble to editors that don't support unicode"
+)]
 pub fn format_ident_expr_unicode_fun_2() {
     check(
         "fn main() {
