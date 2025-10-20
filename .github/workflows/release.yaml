@@ -83,12 +83,12 @@ jobs:
           fetch-depth: ${{ env.FETCH_DEPTH }}
 
       - name: Install Node.js toolchain
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 22
 
       - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@1.89.0
+        uses: dtolnay/rust-toolchain@1.90.0
         with:
           components: ${{ matrix.pgo && 'llvm-tools' || '' }}
           target: ${{ matrix.target }}
@@ -194,7 +194,7 @@ jobs:
     needs: ['dist', 'dist-x86_64-unknown-linux-musl']
     steps:
       - name: Install Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 22
 

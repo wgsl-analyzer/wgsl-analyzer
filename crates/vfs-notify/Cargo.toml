@@ -3,8 +3,6 @@ name = "vfs-notify"
 version = "0.0.0"
 repository.workspace = true
 description = "Implementation of `loader::Handle` for wgsl-analyzer."
-
-authors.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
@@ -17,7 +15,7 @@ walkdir = "2.5.0"
 crossbeam-channel = "0.5.15"
 notify = "8.2.0"
 rayon = "1.11.0"
-camino = "1.2.0"
+camino = "1.2.1"
 
 stdx.workspace = true
 vfs.workspace = true
