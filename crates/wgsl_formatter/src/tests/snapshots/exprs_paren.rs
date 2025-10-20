@@ -109,3 +109,65 @@ pub fn format_paren_expr_very_long() {
         "]],
     );
 }
+
+#[test]
+pub fn format_paren_expr_block_comments() {
+    check(
+        "fn main() {
+        let a =
+        /* A */
+        (
+        /* B */
+        1
+        /* C */
+        +
+        /* D */
+        1
+        /* E */
+        )
+        /* F */
+        ;
+        /* G */
+        }",
+        expect![["
+            fn main() {
+                let a = /* A */ (/* B */ 1 /* C */ + /* D */ 1 /* E */) /* F */;
+                /* G */
+            }
+        "]],
+    );
+}
+
+#[test]
+pub fn format_paren_expr_line_comments() {
+    check(
+        "fn main() {
+        let a =
+        // A
+        (
+        // B
+        1
+        // C
+        +
+        // D
+        1
+        // E
+        )
+        // F
+        ;
+        // G
+        }",
+        expect![["
+            fn main() {
+                let a = // A
+                    (// B
+                        1 // C
+                        + // D
+                        1 // E
+                    ) // F
+                    ;
+                // G
+            }
+        "]],
+    );
+}

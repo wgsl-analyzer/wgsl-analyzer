@@ -56,8 +56,9 @@ pub fn format_index_expr_with_line_comments_simple() {
             fn main() {
                 let a = // A
                     foo // B
-                    [ // C
-                    0 // D
+                    [
+                        // C
+                        0 // D
                     ] // E
                     ;
                 // F
@@ -85,7 +86,7 @@ pub fn format_index_expr_with_block_comments_simple() {
         }",
         expect![["
             fn main() {
-                let a = /* A */ foo /* B */ [ /* C */ 0 /* D */ ] /* E */;
+                let a = /* A */ foo /* B */ [/* C */ 0 /* D */] /* E */;
                 /* F */
             }
         "]],
