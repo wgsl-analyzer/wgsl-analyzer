@@ -8,7 +8,7 @@ mod print_item_buffer;
 
 mod gen_attributes;
 mod gen_comments;
-pub mod gen_expression;
+mod gen_expression;
 mod gen_function;
 mod gen_function_call;
 mod gen_statement;
