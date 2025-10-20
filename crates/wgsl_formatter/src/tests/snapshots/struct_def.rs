@@ -1,11 +1,6 @@
 use crate::test_util::{assert_out_of_scope, check, check_tabs};
 use expect_test::expect;
 
-struct A {
-    a: i32,
-    b: i32,
-}
-
 #[test]
 fn format_struct_def_empty() {
     assert_out_of_scope(
@@ -83,7 +78,7 @@ fn format_struct_def_members_with_attributes() {
         b: f32,
 
                 }",
-        expect![[r#"
+        expect![["
             struct Test {
                 @location(0)
                 @attribute(1)
@@ -91,6 +86,6 @@ fn format_struct_def_members_with_attributes() {
                 a: i32,
                 b: f32,
             }
-        "#]],
+        "]],
     );
 }

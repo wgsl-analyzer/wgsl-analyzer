@@ -15,6 +15,7 @@ mod exprs_trivial;
 mod fn_body;
 mod fn_signature;
 mod statement_spacing;
+mod stmt_break_if;
 mod stmt_continue;
 mod stmt_continuing;
 mod stmt_discard;

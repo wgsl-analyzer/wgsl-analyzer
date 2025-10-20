@@ -5,7 +5,7 @@ use parser::{SyntaxKind, SyntaxToken};
 use rowan::NodeOrToken;
 use syntax::{
     AstNode,
-    ast::{self, CompoundStatement, Literal, ParenthesisExpression},
+    ast::{self, CompoundStatement, Expression, Literal, ParenthesisExpression},
 };
 
 use crate::format::{
@@ -180,9 +180,38 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
             todo_verbatim(assert_statement.syntax())
         },
         ast::Statement::BreakIfStatement(break_if_statement) => {
-            todo_verbatim(break_if_statement.syntax())
+            gen_break_if_statement(break_if_statement)
         },
     }
+}
+
+fn gen_break_if_statement(
+    statement: &ast::BreakIfStatement
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    parse_token(&mut syntax, SyntaxKind::Break)?;
+    let comments_after_break = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::If)?;
+    let comments_after_if = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_condition = parse_node::<Expression>(&mut syntax)?;
+    let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_end(&mut syntax);
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_sc(sc!("break"));
+    formatted.expect_single_space();
+    formatted.extend(gen_comments(comments_after_break));
+    formatted.push_sc(sc!("if"));
+    formatted.expect_single_space();
+    formatted.extend(gen_comments(comments_after_if));
+    formatted.extend(gen_expression(&item_condition)?);
+    formatted.extend(gen_comments(comments_after_condition));
+    formatted.request_space(SeparationPolicy::Discouraged);
+    formatted.push_sc(sc!(";"));
+
+    Ok(formatted)
 }
 
 fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<PrintItemBuffer> {
