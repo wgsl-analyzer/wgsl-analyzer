@@ -9,7 +9,10 @@ use syntax::{
 };
 
 use crate::format::{
-    ast_parse::{parse_end, parse_many_comments_and_blankspace, parse_node, parse_token},
+    self,
+    ast_parse::{
+        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional, parse_token,
+    },
     gen_comments::{gen_comment, gen_comments},
     gen_expression::{gen_expression, gen_parenthesis_expression},
     helpers::{gen_spaced_lines, todo_verbatim},
@@ -118,15 +121,13 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
         ast::Statement::IncrementDecrementStatement(increment_decrement_statement) => {
             todo_verbatim(increment_decrement_statement.syntax())
         },
-        ast::Statement::ReturnStatement(return_statement) => {
-            todo_verbatim(return_statement.syntax())
-        },
         ast::Statement::ContinuingStatement(continuing_statement) => {
             gen_continuing_statement(continuing_statement)
         },
+        ast::Statement::ReturnStatement(return_statement) => gen_return_statement(return_statement),
         ast::Statement::BreakStatement(break_statement) => {
             // ==== Parse ====
-            // We still parse through the discard syntax even tho there is no information for
+            // We still parse through the break syntax even tho there is no information for
             // the formatter to get out of it. This exists to ensure we don't accidentally delete
             // user's code should future changes to wgsl allow more complex break statements.
             let mut syntax = put_back(break_statement.syntax().children_with_tokens());
@@ -183,6 +184,29 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
             gen_break_if_statement(break_if_statement)
         },
     }
+}
+
+fn gen_return_statement(statement: &ast::ReturnStatement) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    parse_token(&mut syntax, SyntaxKind::Return)?;
+    let comments_after_return = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_expression = parse_node_optional::<Expression>(&mut syntax);
+    let comments_after_expression = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_end(&mut syntax);
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_sc(sc!("return"));
+    formatted.extend(gen_comments(comments_after_return));
+    if let Some(item_expression) = item_expression {
+        formatted.expect_single_space();
+        formatted.extend(gen_expression(&item_expression)?);
+    }
+    formatted.extend(gen_comments(comments_after_expression));
+    formatted.request_space(SeparationPolicy::Discouraged);
+    formatted.push_sc(sc!(";"));
+    Ok(formatted)
 }
 
 fn gen_break_if_statement(
