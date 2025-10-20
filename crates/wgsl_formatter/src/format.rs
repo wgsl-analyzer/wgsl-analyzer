@@ -1,7 +1,3 @@
-#![expect(
-    clippy::branches_sharing_code,
-    reason = "Its helpful to explicitly state intent here."
-)]
 mod ast_parse;
 mod helpers;
 mod print_item_buffer;
