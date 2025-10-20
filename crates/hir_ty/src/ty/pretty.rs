@@ -1,5 +1,7 @@
 use std::fmt::{self, Write as _};
 
+use wgsl_types::ty::SamplerType;
+
 use super::{TyKind, Type};
 use crate::{
     database::HirDatabase,
@@ -34,9 +36,6 @@ pub fn pretty_type_expectation_with_verbosity(
         TypeExpectation::Type(r#type) => {
             _ = write_type_expectation_inner(database, &r#type, false, &mut str, verbosity);
         },
-        TypeExpectation::TypeOrVecOf(inner) => {
-            _ = write_type_expectation_inner(database, &inner, true, &mut str, verbosity);
-        },
         TypeExpectation::Any => _ = write!(&mut str, "any"),
     }
     str
@@ -58,10 +57,6 @@ fn write_type_expectation_inner(
                 write!(buffer, ">")?;
             }
         },
-        TypeExpectationInner::I32OrF32 => {
-            write!(buffer, "i32 or f32")?;
-        },
-        TypeExpectationInner::NumericScalar => write!(buffer, "i32, u32, or f32")?,
         TypeExpectationInner::IntegerScalar => write!(buffer, "i32 or u32")?,
     }
     Ok(())
@@ -221,12 +216,11 @@ fn write_ty(
             };
             write!(formatter, "{value}")
         },
-        TyKind::Sampler(sampler) => {
-            if sampler.comparison {
-                write!(formatter, "sampler_comparison")
-            } else {
-                write!(formatter, "sampler")
-            }
+        TyKind::Sampler(SamplerType::Sampler) => {
+            write!(formatter, "sampler")
+        },
+        TyKind::Sampler(SamplerType::SamplerComparison) => {
+            write!(formatter, "sampler_comparison")
         },
         TyKind::Reference(reference) => match verbosity {
             TypeVerbosity::Full => {

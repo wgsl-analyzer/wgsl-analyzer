@@ -5,14 +5,17 @@ use std::fmt;
 
 use crate::builtins::{Builtin, BuiltinId};
 use crate::function::{FunctionDetails, ResolvedFunctionId};
-use crate::infer::{InferenceContext, InferenceResult, TyLoweringContext, TypeContainer};
+use crate::infer::{
+    InferenceContext, InferenceDiagnostic, InferenceResult, TyLoweringContext, TypeContainer,
+    TypeLoweringError,
+};
 use crate::ty::{TyKind, Type};
 use hir_def::data::FieldId;
 use hir_def::database::{DefinitionWithBodyId, GlobalVariableId};
 use hir_def::{
     HirFileId, InFile,
     data::LocalFieldId,
-    database::{DefDatabase, DefinitionId, FunctionId, Lookup as _, StructId},
+    database::{DefDatabase, FunctionId, Lookup as _, StructId},
     resolver::Resolver,
 };
 use la_arena::ArenaMap;
@@ -31,7 +34,7 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
     fn field_types(
         &self,
         key: StructId,
-    ) -> Arc<ArenaMap<LocalFieldId, Type>>;
+    ) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<FieldInferenceDiagnostic>)>;
     fn function_type(
         &self,
         key: FunctionId,
@@ -64,7 +67,7 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
 fn field_types(
     database: &dyn HirDatabase,
     r#struct: StructId,
-) -> Arc<ArenaMap<LocalFieldId, Type>> {
+) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<FieldInferenceDiagnostic>)> {
     let data = database.struct_data(r#struct).0;
 
     let file_id = r#struct.lookup(database).file_id;
@@ -73,21 +76,40 @@ fn field_types(
 
     let mut ty_ctx = TyLoweringContext::new(database, &resolver, &data.store);
 
+    let mut diagnostics = vec![];
     let mut map = ArenaMap::default();
     for (index, field) in data.fields.iter() {
         let r#type = ty_ctx.lower_ty(&field.r#type);
+        diagnostics.extend(
+            ty_ctx
+                .diagnostics
+                .drain(..)
+                .map(|error| FieldInferenceDiagnostic {
+                    field: FieldId {
+                        r#struct,
+                        field: index,
+                    },
+                    error,
+                }),
+        );
 
         map.insert(index, r#type);
     }
 
-    Arc::new(map)
+    Arc::new((map, diagnostics))
+}
+
+#[derive(PartialEq, Eq, Debug)]
+pub struct FieldInferenceDiagnostic {
+    pub field: FieldId,
+    pub error: TypeLoweringError,
 }
 
 fn function_type(
     database: &dyn HirDatabase,
     function: FunctionId,
 ) -> ResolvedFunctionId {
-    let data = database.fn_data(function).0;
+    let data = database.function_data(function).0;
 
     let file_id = function.lookup(database).file_id;
     let module_info = database.module_info(file_id);

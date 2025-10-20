@@ -373,7 +373,7 @@ fn get_struct_layout_hints(
         };
 
         hir_ty::layout::struct_member_layout(
-            &fields,
+            &fields.0,
             semantics.database,
             address_space,
             |field, field_layout| {
@@ -430,12 +430,13 @@ fn get_hints(
                     return None;
                 }
                 function_hints(
-                    semantics,
+                    hints,
                     file_id,
+                    semantics,
+                    config,
                     node,
                     &expression,
                     function_call_expression.parameters()?.arguments(),
-                    hints,
                 )?;
             },
             AstExpression::InfixExpression(_)
@@ -464,35 +465,59 @@ fn get_hints(
         if !config.type_hints {
             return None;
         }
-        if r#type.is_none() {
-            let container = semantics.find_container(file_id.into(), node)?;
-            let r#type = semantics.analyze(container).type_of_binding(&binding)?;
 
-            let label =
-                pretty_type_with_verbosity(semantics.database, r#type, config.type_verbosity);
-            hints.push(InlayHint {
-                range: binding.ident_token()?.text_range(),
-                position: InlayHintPosition::After,
-                pad_left: !config.render_colons,
-                pad_right: false,
-                kind: InlayKind::Type,
-                label: label.into(),
-                text_edit: None,
-                resolve_parent: None,
-            });
-        }
+        declaration_type_hints(hints, file_id, semantics, config, node, binding, r#type)?;
     }
 
     Some(())
 }
 
-fn function_hints(
-    semantics: &Semantics<'_>,
+fn declaration_type_hints(
+    hints: &mut Vec<InlayHint>,
     file_id: FileId,
+    semantics: &Semantics<'_>,
+    config: &InlayHintsConfig,
+    node: &rowan::SyntaxNode<parser::WeslLanguage>,
+    binding: ast::Name,
+    r#type: Option<ast::TypeSpecifier>,
+) -> Option<()> {
+    // Don't display the hint if the user wrote a type
+    if r#type.is_some() {
+        return None;
+    }
+    let container = semantics.find_container(file_id.into(), node)?;
+    let r#type = semantics.analyze(container).type_of_binding(&binding)?;
+
+    let mut label = InlayHintLabel::from(pretty_type_with_verbosity(
+        semantics.database,
+        r#type,
+        config.type_verbosity,
+    ));
+    if config.render_colons {
+        label.prepend_str(": ");
+    }
+    hints.push(InlayHint {
+        range: binding.ident_token()?.text_range(),
+        position: InlayHintPosition::After,
+        pad_left: !config.render_colons,
+        pad_right: false,
+        kind: InlayKind::Type,
+        label,
+        text_edit: None,
+        resolve_parent: None,
+    });
+
+    Some(())
+}
+
+fn function_hints(
+    hints: &mut Vec<InlayHint>,
+    file_id: FileId,
+    semantics: &Semantics<'_>,
+    config: &InlayHintsConfig,
     node: &SyntaxNode,
     expression: &AstExpression,
     parameter_expressions: AstChildren<AstExpression>,
-    hints: &mut Vec<InlayHint>,
 ) -> Option<()> {
     let container = semantics.find_container(file_id.into(), node)?;
     let analyzed = semantics.analyze(container);
@@ -509,15 +534,21 @@ fn function_hints(
         .filter(|(param_name, expression)| {
             !should_hide_param_name_hint(&func, param_name, expression)
         })
-        .map(|(param_name, expression)| InlayHint {
-            range: expression.syntax().text_range(),
-            position: InlayHintPosition::After,
-            pad_left: false,
-            pad_right: false,
-            kind: InlayKind::Parameter,
-            label: param_name.into(),
-            text_edit: None,
-            resolve_parent: None,
+        .map(|(param_name, expression)| {
+            let mut label = InlayHintLabel::from(param_name);
+            if config.render_colons {
+                label.append_str(":");
+            }
+            InlayHint {
+                range: expression.syntax().text_range(),
+                position: InlayHintPosition::Before,
+                pad_left: false,
+                pad_right: true,
+                kind: InlayKind::Parameter,
+                label,
+                text_edit: None,
+                resolve_parent: None,
+            }
         });
     hints.extend(param_hints);
     Some(())

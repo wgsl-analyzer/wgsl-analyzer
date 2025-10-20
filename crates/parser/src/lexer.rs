@@ -208,6 +208,7 @@ fn lex_line_ending_comment(lexer: &mut logos::Lexer<'_, Token>) {
 }
 
 /// See: <https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks>
+/// The comment does not include the line break.
 fn is_line_ending_comment_end(character: char) -> bool {
     [
         '\u{000A}', // line feed
@@ -399,7 +400,7 @@ mod tests {
     }
 
     #[expect(clippy::needless_pass_by_value, reason = "intended API")]
-    fn check_lex_templates(
+    fn check_lex_spanned(
         source: &str,
         expect: expect_test::Expect,
     ) {
@@ -434,7 +435,24 @@ mod tests {
     fn lex_comment() {
         check_lex(
             "// test asdf\nnot_comment",
-            expect!["[LineEndingComment, Blankspace, Ident]"],
+            expect![["[LineEndingComment, Blankspace, Ident]"]],
+        );
+    }
+
+    #[test]
+    fn lex_odd_whitespace_comment() {
+        check_lex_spanned(
+            "\n\r//\r\nnot_comment\r\n//foo\n\ra",
+            expect![[r#"
+                Blankspace@0..2
+                LineEndingComment@2..4
+                Blankspace@4..6
+                Ident@6..17
+                Blankspace@17..19
+                LineEndingComment@19..24
+                Blankspace@24..26
+                Ident@26..27
+            "#]],
         );
     }
 
@@ -449,7 +467,7 @@ mod tests {
 
     #[test]
     fn lex_nested_templates() {
-        check_lex_templates(
+        check_lex_spanned(
             "foo<X>",
             expect![[r#"
             Ident@0..3
@@ -458,7 +476,7 @@ mod tests {
             TemplateEnd@5..6
         "#]],
         );
-        check_lex_templates(
+        check_lex_spanned(
             "foo<X<Y>>",
             expect![[r#"
                 Ident@0..3
@@ -470,7 +488,7 @@ mod tests {
                 TemplateEnd@8..9
             "#]],
         );
-        check_lex_templates(
+        check_lex_spanned(
             "foo<X<Y<Z>>>",
             expect![[r#"
                 Ident@0..3
@@ -490,7 +508,7 @@ mod tests {
     #[test]
     fn lex_template_with_brackets() {
         // cases from the WGSL spec
-        check_lex_templates(
+        check_lex_spanned(
             "foo<i32,select(2,3,a>b)>",
             expect![[r#"
                 Ident@0..3
@@ -510,7 +528,7 @@ mod tests {
                 TemplateEnd@23..24
             "#]],
         );
-        check_lex_templates(
+        check_lex_spanned(
             "foo<(B>=C)>a",
             expect![[r#"
                 Ident@0..3
@@ -524,7 +542,7 @@ mod tests {
                 Ident@11..12
             "#]],
         );
-        check_lex_templates(
+        check_lex_spanned(
             "foo<(B!=C)>a",
             expect![[r#"
                 Ident@0..3
@@ -538,7 +556,7 @@ mod tests {
                 Ident@11..12
             "#]],
         );
-        check_lex_templates(
+        check_lex_spanned(
             "foo<(B==C)>a",
             expect![[r#"
                 Ident@0..3
@@ -556,7 +574,7 @@ mod tests {
 
     #[test]
     fn lex_not_templates() {
-        check_lex_templates(
+        check_lex_spanned(
             "foo<d]>",
             expect![[r#"
                 Ident@0..3
@@ -566,13 +584,13 @@ mod tests {
                 Gt@6..7
             "#]],
         );
-        check_lex_templates(
+        check_lex_spanned(
             "foo",
             expect![[r#"
             Ident@0..3
         "#]],
         );
-        check_lex_templates(
+        check_lex_spanned(
             "foo<b || c>d",
             expect![[r#"
             Ident@0..3
@@ -590,7 +608,7 @@ mod tests {
 
     #[test]
     fn lex_templates_with_symbols() {
-        check_lex_templates(
+        check_lex_spanned(
             "foo<B<<C>",
             expect![[r#"
                 Ident@0..3
@@ -601,7 +619,7 @@ mod tests {
                 TemplateEnd@8..9
             "#]],
         );
-        check_lex_templates(
+        check_lex_spanned(
             "foo<B<=C>",
             expect![[r#"
             Ident@0..3
@@ -613,7 +631,7 @@ mod tests {
         "#]],
         );
 
-        check_lex_templates(
+        check_lex_spanned(
             "foo<>",
             expect![[r#"
             Ident@0..3
@@ -625,7 +643,7 @@ mod tests {
 
     #[test]
     fn lex_templates_with_ends() {
-        check_lex_templates(
+        check_lex_spanned(
             "A<B>>C",
             expect![[r#"
                 Ident@0..1
@@ -636,7 +654,7 @@ mod tests {
                 Ident@5..6
             "#]],
         );
-        check_lex_templates(
+        check_lex_spanned(
             "A<B>==C",
             expect![[r#"
                 Ident@0..1
@@ -647,7 +665,7 @@ mod tests {
                 Ident@6..7
             "#]],
         );
-        check_lex_templates(
+        check_lex_spanned(
             "C<A<B>=C>",
             expect![[r#"
                 Ident@0..1
@@ -665,7 +683,7 @@ mod tests {
 
     #[test]
     fn lex_bitcast_template() {
-        check_lex_templates(
+        check_lex_spanned(
             "bitcast<vec4<u32>>(x)",
             expect![[r#"
                 Ident@0..7
@@ -684,7 +702,7 @@ mod tests {
 
     #[test]
     fn lex_var_template() {
-        check_lex_templates(
+        check_lex_spanned(
             "var<function> x: u32;",
             expect![[r#"
                 Var@0..3

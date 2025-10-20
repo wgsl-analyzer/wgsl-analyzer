@@ -3,9 +3,7 @@ name = "stdx"
 version = "0.0.0"
 repository.workspace = true
 description = "Missing batteries for standard libraries for wgsl-analyzer."
-
 publish = false
-authors.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
@@ -22,11 +20,11 @@ tracing = "0.1.41"
 # Think twice before adding anything here
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2.176"
+libc = "0.2.177"
 
 [target.'cfg(windows)'.dependencies]
 miow = "0.6.1"
-windows-sys = { version = "0.61.1", features = ["Win32_Foundation"] }
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation"] }
 
 [features]
 # Uncomment to enable for the whole crate graph

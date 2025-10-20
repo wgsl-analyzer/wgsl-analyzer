@@ -208,6 +208,7 @@ macro_rules! ast_token_enum {
 
 ast_node! {
     SourceFile:
+    directives: AstChildren<Directive>;
     items: AstChildren<Item>;
 }
 
@@ -310,6 +311,84 @@ ast_enum! {
         OverrideDeclaration,
         TypeAliasDeclaration,
         StructDeclaration,
+    }
+}
+
+ast_node! {
+    EnableDirective:
+    enable_extensions: AstChildren<EnableExtensionName>;
+}
+
+ast_node! {
+    EnableExtensionName:
+    ident_token: Option<SyntaxToken Identifier>;
+    text: TokenText<'_>;
+}
+
+impl EnableExtensionName {
+    pub fn extension(&self) -> Result<EnableExtension, ()> {
+        match self.text().as_str() {
+            "f16" => Ok(EnableExtension::F16),
+            "clip_distances" => Ok(EnableExtension::ClipDistances),
+            "dual_source_blending" => Ok(EnableExtension::DualSourceBlending),
+            "subgroups" => Ok(EnableExtension::Subgroups),
+            "primitive_index" => Ok(EnableExtension::PrimitiveIndex),
+            _ => Err(()),
+        }
+    }
+}
+
+/// Names that can be `enable`d https://www.w3.org/TR/WGSL/#syntax-enable_extension_name
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum EnableExtension {
+    F16,
+    ClipDistances,
+    DualSourceBlending,
+    Subgroups,
+    PrimitiveIndex,
+}
+
+ast_node! {
+    RequiresDirective:
+    enable_extensions: AstChildren<LanguageExtensionName>;
+}
+
+ast_node! {
+    LanguageExtensionName:
+    ident_token: Option<SyntaxToken Identifier>;
+    text: TokenText<'_>;
+}
+
+impl LanguageExtensionName {
+    pub fn extension(&self) -> Result<LanguageExtension, ()> {
+        match self.text().as_str() {
+            "readonly_and_readwrite_storage_textures" => {
+                Ok(LanguageExtension::ReadonlyAndReadwriteStorageTextures)
+            },
+            "packed_4x8_integer_dot_product" => Ok(LanguageExtension::Packed4x8IntegerDotProduct),
+            "unrestricted_pointer_parameters" => {
+                Ok(LanguageExtension::UnrestrictedPointerParameters)
+            },
+            "pointer_composite_access" => Ok(LanguageExtension::PointerCompositeAccess),
+            _ => Err(()),
+        }
+    }
+}
+
+/// Language extensions that can be `require`d https://www.w3.org/TR/WGSL/#syntax-enable_extension_name
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub enum LanguageExtension {
+    ReadonlyAndReadwriteStorageTextures,
+    Packed4x8IntegerDotProduct,
+    UnrestrictedPointerParameters,
+    PointerCompositeAccess,
+}
+
+ast_enum! {
+    enum Directive {
+        // Diagnostic directive goes here
+        EnableDirective,
+        RequiresDirective,
     }
 }
 
@@ -466,7 +545,8 @@ impl IndexExpression {
     }
 }
 
-ast_node! {Attribute:
+ast_node! {
+    Attribute:
     ident_token: Option<SyntaxToken Identifier>;
     parameters: Option<Arguments>;
 }
@@ -496,6 +576,18 @@ impl AssignmentStatement {
     }
 }
 
+ast_node! {
+    PhonyAssignmentStatement:
+    equal_token: Option<SyntaxToken Equal>;
+}
+
+impl PhonyAssignmentStatement {
+    #[must_use]
+    pub fn right_side(&self) -> Option<Expression> {
+        crate::support::children(self.syntax()).next()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IncrementDecrement {
     Increment,
@@ -522,6 +614,11 @@ impl IncrementDecrementStatement {
                 }
             })
     }
+}
+
+ast_node! {
+    AssertStatement:
+        expression: Option<Expression>;
 }
 
 ast_token_enum! {
@@ -650,50 +747,35 @@ ast_node! {
 #[derive(Debug)]
 pub enum SwitchCaseSelector {
     Expression(Expression),
-    Default(Default),
+    SwitchDefaultSelector(SwitchDefaultSelector),
 }
+
 impl AstNode for SwitchCaseSelector {
-    fn can_cast(kind: SyntaxKind) -> bool
-    where
-        Self: Sized,
-    {
+    fn can_cast(kind: SyntaxKind) -> bool {
         match kind {
-            SyntaxKind::Default => true,
+            SyntaxKind::SwitchDefaultSelector => true,
             _ => Expression::can_cast(kind),
         }
     }
-
-    fn cast(syntax: SyntaxNode) -> Option<Self>
-    where
-        Self: Sized,
-    {
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
         match syntax.kind() {
-            SyntaxKind::Default => Some(SwitchCaseSelector::Default(Default { syntax })),
+            SyntaxKind::SwitchDefaultSelector => Some(SwitchCaseSelector::SwitchDefaultSelector(
+                SwitchDefaultSelector { syntax },
+            )),
             _ => Expression::cast(syntax).map(SwitchCaseSelector::Expression),
         }
     }
-
     fn syntax(&self) -> &SyntaxNode {
         match self {
+            SwitchCaseSelector::SwitchDefaultSelector(item) => &item.syntax,
             SwitchCaseSelector::Expression(item) => item.syntax(),
-            SwitchCaseSelector::Default(item) => &item.syntax,
         }
-    }
-}
-
-impl From<Expression> for SwitchCaseSelector {
-    fn from(value: Expression) -> Self {
-        SwitchCaseSelector::Expression(value)
-    }
-}
-impl From<Default> for SwitchCaseSelector {
-    fn from(value: Default) -> Self {
-        SwitchCaseSelector::Default(value)
     }
 }
 
 ast_node! {
-    Default
+    SwitchDefaultSelector:
+    default_token: Option<SyntaxToken Default>;
 }
 
 ast_node! {
@@ -741,25 +823,27 @@ impl ForStatement {
 }
 
 ast_node! {
-    FunctionCallStatement:
-    expression: Option<Expression>;
+    FunctionCallStatement
 }
 
-ast_node! {
-    Discard
-}
-
-ast_node! {
-    Break
-}
-
-ast_node! {
-    Continue
+impl FunctionCallStatement {
+    #[must_use]
+    pub fn expression(&self) -> Option<FunctionCall> {
+        match crate::support::child::<Expression>(&self.syntax)? {
+            crate::ast::Expression::FunctionCall(function_call) => Some(function_call),
+            _ => None,
+        }
+    }
 }
 
 ast_node! {
     ContinuingStatement:
     block: Option<CompoundStatement>;
+}
+
+ast_node! {
+    BreakIfStatement:
+    condition: Option<Expression>;
 }
 
 ast_enum! {
@@ -778,20 +862,17 @@ ast_enum! {
 
         AssignmentStatement,
         CompoundAssignmentStatement,
+        PhonyAssignmentStatement,
         IncrementDecrementStatement,
 
-        // TODO: Phony Assignment goes here
-        // Assert Statement goes here
-
+        AssertStatement,
         BreakStatement,
         ContinueStatement,
-        // Empty statement goes
+        // Empty statements are ignored
         DiscardStatement,
-
         ReturnStatement,
-
         ContinuingStatement,
-        // Break if statement goes here
+        BreakIfStatement,
     }
 }
 

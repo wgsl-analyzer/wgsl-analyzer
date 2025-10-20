@@ -20,12 +20,12 @@ use crate::{
 };
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]
-pub struct ParamId {
+pub struct ParameterId {
     pub function: FunctionId,
-    pub param: LocalParamId,
+    pub param: LocalParameterId,
 }
 
-pub type LocalParamId = Idx<ParamData>;
+pub type LocalParameterId = Idx<ParamData>;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct FunctionData {

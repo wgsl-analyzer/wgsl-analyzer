@@ -196,8 +196,6 @@ fn fn_incomplete() {
                 Blankspace@2..3 " "
                 Name@3..7
                   Identifier@3..7 "name"
-                FunctionParameters@7..7
-                Error@7..7
 
             error at 7..7: invalid syntax, expected: '('"#]],
     );
@@ -443,16 +441,11 @@ fn fn_recover() {
               FunctionDeclaration@0..3
                 Fn@0..2 "fn"
                 Blankspace@2..3 "\n"
-                Name@3..3
-                FunctionParameters@3..3
-                Error@3..3
               FunctionDeclaration@3..10
                 Fn@3..5 "fn"
                 Blankspace@5..6 " "
                 Name@6..10
                   Identifier@6..10 "name"
-                FunctionParameters@10..10
-                Error@10..10
 
             error at 3..5: invalid syntax, expected: <identifier>
             error at 10..10: invalid syntax, expected: '('"#]],
@@ -475,7 +468,6 @@ fn fn_recover_2() {
                   ParenthesisLeft@7..8 "("
                   ParenthesisRight@8..9 ")"
                 Blankspace@9..18 "\n        "
-                Error@18..18
               FunctionDeclaration@18..30
                 Fn@18..20 "fn"
                 Blankspace@20..21 " "
@@ -1207,7 +1199,6 @@ fn for_statement_incomplete_1() {
                 Semicolon@4..5 ";"
                 Semicolon@5..6 ";"
                 ParenthesisRight@6..7 ")"
-                Error@7..7
 
             error at 7..7: invalid syntax, expected one of: '@', '{'"#]],
     );
@@ -1233,7 +1224,6 @@ fn for_statement_incomplete_2() {
                 Semicolon@7..8 ";"
                 Semicolon@8..9 ";"
                 ParenthesisRight@9..10 ")"
-                Error@10..10
 
             error at 10..10: invalid syntax, expected one of: '@', '{'"#]],
     );
@@ -1254,7 +1244,6 @@ fn for_statement_incomplete_3() {
                     False@5..10 "false"
                 Semicolon@10..11 ";"
                 ParenthesisRight@11..12 ")"
-                Error@12..12
 
             error at 12..12: invalid syntax, expected one of: '@', '{'"#]],
     );
@@ -1282,7 +1271,6 @@ fn for_statement_incomplete_4() {
                     Literal@10..11
                       IntLiteral@10..11 "1"
                 ParenthesisRight@11..12 ")"
-                Error@12..12
 
             error at 12..12: invalid syntax, expected one of: '@', '{'"#]],
     );
@@ -1324,15 +1312,17 @@ fn loop_statement_continuing() {
               LoopStatement@0..22
                 Loop@0..4 "loop"
                 Blankspace@4..5 " "
-                BraceLeft@5..6 "{"
-                Blankspace@6..7 " "
-                ContinuingStatement@7..20
-                  Continuing@7..17 "continuing"
-                  Blankspace@17..18 " "
-                  BraceLeft@18..19 "{"
-                  BraceRight@19..20 "}"
-                Blankspace@20..21 " "
-                BraceRight@21..22 "}""#]],
+                CompoundStatement@5..22
+                  BraceLeft@5..6 "{"
+                  Blankspace@6..7 " "
+                  ContinuingStatement@7..20
+                    Continuing@7..17 "continuing"
+                    Blankspace@17..18 " "
+                    CompoundStatement@18..20
+                      BraceLeft@18..19 "{"
+                      BraceRight@19..20 "}"
+                  Blankspace@20..21 " "
+                  BraceRight@21..22 "}""#]],
     );
 }
 #[test]
@@ -1344,31 +1334,33 @@ fn loop_statement_break_if() {
               LoopStatement@0..40
                 Loop@0..4 "loop"
                 Blankspace@4..5 " "
-                BraceLeft@5..6 "{"
-                Blankspace@6..7 " "
-                ContinuingStatement@7..38
-                  Continuing@7..17 "continuing"
-                  Blankspace@17..18 " "
-                  BraceLeft@18..19 "{"
-                  Blankspace@19..20 " "
-                  BreakIfStatement@20..36
-                    Break@20..25 "break"
-                    Blankspace@25..26 " "
-                    If@26..28 "if"
-                    Blankspace@28..29 " "
-                    InfixExpression@29..35
-                      Literal@29..30
-                        IntLiteral@29..30 "5"
-                      Blankspace@30..31 " "
-                      GreaterThanEqual@31..33 ">="
-                      Blankspace@33..34 " "
-                      Literal@34..35
-                        IntLiteral@34..35 "4"
-                    Semicolon@35..36 ";"
-                  Blankspace@36..37 " "
-                  BraceRight@37..38 "}"
-                Blankspace@38..39 " "
-                BraceRight@39..40 "}""#]],
+                CompoundStatement@5..40
+                  BraceLeft@5..6 "{"
+                  Blankspace@6..7 " "
+                  ContinuingStatement@7..38
+                    Continuing@7..17 "continuing"
+                    Blankspace@17..18 " "
+                    CompoundStatement@18..38
+                      BraceLeft@18..19 "{"
+                      Blankspace@19..20 " "
+                      BreakIfStatement@20..36
+                        Break@20..25 "break"
+                        Blankspace@25..26 " "
+                        If@26..28 "if"
+                        Blankspace@28..29 " "
+                        InfixExpression@29..35
+                          Literal@29..30
+                            IntLiteral@29..30 "5"
+                          Blankspace@30..31 " "
+                          GreaterThanEqual@31..33 ">="
+                          Blankspace@33..34 " "
+                          Literal@34..35
+                            IntLiteral@34..35 "4"
+                        Semicolon@35..36 ";"
+                      Blankspace@36..37 " "
+                      BraceRight@37..38 "}"
+                  Blankspace@38..39 " "
+                  BraceRight@39..40 "}""#]],
     );
 }
 
@@ -1539,6 +1531,66 @@ fn parse_statement_recover() {
 }
 
 #[test]
+fn parse_missing_lhs_recover() {
+    // Amusingly a unary plus is invalid in WGSL
+    check_statement(
+        "let a = +1;",
+        expect![[r#"
+            SourceFile@0..11
+              LetDeclaration@0..11
+                Let@0..3 "let"
+                Blankspace@3..4 " "
+                Name@4..5
+                  Identifier@4..5 "a"
+                Blankspace@5..6 " "
+                Equal@6..7 "="
+                Blankspace@7..8 " "
+                InfixExpression@8..10
+                  Plus@8..9 "+"
+                  Literal@9..10
+                    IntLiteral@9..10 "1"
+                Semicolon@10..11 ";"
+
+            error at 8..9: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+    );
+}
+
+#[test]
+fn var_recover_elided_name() {
+    check(
+        "var",
+        expect![[r#"
+            SourceFile@0..3
+              VariableDeclaration@0..3
+                Var@0..3 "var"
+
+            error at 3..3: invalid syntax, expected one of: '@', ',', '=', <identifier>, '{', '}', ')', ';', <template start>"#]],
+    );
+}
+
+#[test]
+fn parse_unary_minus() {
+    check_statement(
+        "let a = -1;",
+        expect![[r#"
+            SourceFile@0..11
+              LetDeclaration@0..11
+                Let@0..3 "let"
+                Blankspace@3..4 " "
+                Name@4..5
+                  Identifier@4..5 "a"
+                Blankspace@5..6 " "
+                Equal@6..7 "="
+                Blankspace@7..8 " "
+                PrefixExpression@8..10
+                  Minus@8..9 "-"
+                  Literal@9..10
+                    IntLiteral@9..10 "1"
+                Semicolon@10..11 ";""#]],
+    );
+}
+
+#[test]
 fn parse_compound_assignment_statement() {
     check_statement(
         "a += 3;",
@@ -1580,6 +1632,26 @@ fn parse_compound_assignment_statement_expression() {
                     ParenthesisLeft@9..10 "("
                     ParenthesisRight@10..11 ")"
                 Semicolon@11..12 ";""#]],
+    );
+}
+
+#[test]
+fn parse_phony_assignment_statement() {
+    check_statement(
+        "_ = *foo;",
+        expect![[r#"
+            SourceFile@0..9
+              PhonyAssignmentStatement@0..9
+                Underscore@0..1 "_"
+                Blankspace@1..2 " "
+                Equal@2..3 "="
+                Blankspace@3..4 " "
+                PrefixExpression@4..8
+                  Star@4..5 "*"
+                  IdentExpression@5..8
+                    NameReference@5..8
+                      Identifier@5..8 "foo"
+                Semicolon@8..9 ";""#]],
     );
 }
 
@@ -1733,7 +1805,6 @@ fn fn_recover_incomplete_param() {
                     Name@8..9
                       Identifier@8..9 "p"
                     TypeSpecifier@9..9
-                      NameReference@9..9
                   ParenthesisRight@9..10 ")"
                 Blankspace@10..11 " "
                 CompoundStatement@11..13
@@ -1806,7 +1877,6 @@ fn let_statement_recover_return() {
                   LetDeclaration@24..40
                     Let@24..27 "let"
                     Blankspace@27..40 "\n            "
-                    Name@40..40
                   ReturnStatement@40..49
                     Return@40..46 "return"
                     Blankspace@46..47 " "
@@ -1991,7 +2061,6 @@ fn let_statement_recover_3() {
                   LetDeclaration@24..36
                     Let@24..27 "let"
                     Blankspace@27..36 "\n        "
-                    Name@36..36
                   BraceRight@36..37 "}"
 
             error at 36..37: invalid syntax, expected: <identifier>"#]],
@@ -2084,6 +2153,43 @@ fn weird_line_ending_comments() {
               LineEndingComment@187..211 "// paragraph separator: "
               Blankspace@211..214 "\u{2029}""#]],
     );
+}
+
+#[test]
+fn enable_directive() {
+    check(
+        "enable f16,clip_distances,  dual_source_blending;",
+        expect![[r#"
+            SourceFile@0..49
+              EnableDirective@0..49
+                Enable@0..6 "enable"
+                Blankspace@6..7 " "
+                EnableExtensionName@7..10
+                  Identifier@7..10 "f16"
+                Comma@10..11 ","
+                EnableExtensionName@11..25
+                  Identifier@11..25 "clip_distances"
+                Comma@25..26 ","
+                Blankspace@26..28 "  "
+                EnableExtensionName@28..48
+                  Identifier@28..48 "dual_source_blending"
+                Semicolon@48..49 ";""#]],
+    )
+}
+
+#[test]
+fn requires_directive() {
+    check(
+        "requires packed_4x8_integer_dot_product;",
+        expect![[r#"
+            SourceFile@0..40
+              RequiresDirective@0..40
+                Requires@0..8 "requires"
+                Blankspace@8..9 " "
+                LanguageExtensionName@9..39
+                  Identifier@9..39 "packed_4x8_integer_do ..."
+                Semicolon@39..40 ";""#]],
+    )
 }
 
 #[test]
@@ -2266,8 +2372,6 @@ fn test()
               StructDeclaration@1..8
                 Struct@1..7 "struct"
                 Blankspace@7..8 "\n"
-                Name@8..8
-                Error@8..8
               FunctionDeclaration@8..18
                 Fn@8..10 "fn"
                 Blankspace@10..11 " "
@@ -2277,7 +2381,6 @@ fn test()
                   ParenthesisLeft@15..16 "("
                   ParenthesisRight@16..17 ")"
                 Blankspace@17..18 "\n"
-                Error@18..18
 
             error at 8..10: invalid syntax, expected: <identifier>
             error at 18..18: invalid syntax, expected one of: '->', '@', '{'"#]],
@@ -2300,7 +2403,6 @@ fn test()
                 Name@8..12
                   Identifier@8..12 "test"
                 Blankspace@12..13 "\n"
-                Error@13..13
               FunctionDeclaration@13..23
                 Fn@13..15 "fn"
                 Blankspace@15..16 " "
@@ -2310,7 +2412,6 @@ fn test()
                   ParenthesisLeft@20..21 "("
                   ParenthesisRight@21..22 ")"
                 Blankspace@22..23 "\n"
-                Error@23..23
 
             error at 13..15: invalid syntax, expected: '{'
             error at 23..23: invalid syntax, expected one of: '->', '@', '{'"#]],
@@ -2338,9 +2439,7 @@ fn test()
                 StructBody@13..15
                   BraceLeft@13..14 "{"
                   StructMember@14..14
-                    Name@14..14
                     TypeSpecifier@14..14
-                      NameReference@14..14
                   BraceRight@14..15 "}"
               Blankspace@15..17 "\n\n"
               FunctionDeclaration@17..28
@@ -2354,7 +2453,6 @@ fn test()
                 Blankspace@26..27 "\n"
                 Error@27..28
                   BraceRight@27..28 "}"
-                Error@28..28
               Semicolon@28..29 ";"
               Blankspace@29..30 "\n"
 
@@ -2521,8 +2619,9 @@ fn loop_statement() {
               LoopStatement@0..7
                 Loop@0..4 "loop"
                 Blankspace@4..5 " "
-                BraceLeft@5..6 "{"
-                BraceRight@6..7 "}""#]],
+                CompoundStatement@5..7
+                  BraceLeft@5..6 "{"
+                  BraceRight@6..7 "}""#]],
     );
 }
 
@@ -2601,9 +2700,8 @@ switch i {
                     Case@14..18 "case"
                     Blankspace@18..19 " "
                     SwitchCaseSelectors@19..20
-                      SwitchCaseSelector@19..20
-                        Literal@19..20
-                          IntLiteral@19..20 "0"
+                      Literal@19..20
+                        IntLiteral@19..20 "0"
                     Colon@20..21 ":"
                     Blankspace@21..22 " "
                     CompoundStatement@22..25
@@ -2615,14 +2713,12 @@ switch i {
                     Case@28..32 "case"
                     Blankspace@32..33 " "
                     SwitchCaseSelectors@33..37
-                      SwitchCaseSelector@33..34
-                        Literal@33..34
-                          IntLiteral@33..34 "1"
+                      Literal@33..34
+                        IntLiteral@33..34 "1"
                       Comma@34..35 ","
                       Blankspace@35..36 " "
-                      SwitchCaseSelector@36..37
-                        Literal@36..37
-                          IntLiteral@36..37 "2"
+                      Literal@36..37
+                        IntLiteral@36..37 "2"
                     Colon@37..38 ":"
                     Blankspace@38..39 " "
                     CompoundStatement@39..53
@@ -2676,18 +2772,16 @@ switch i {
                     Case@14..18 "case"
                     Blankspace@18..19 " "
                     SwitchCaseSelectors@19..33
-                      SwitchCaseSelector@19..20
-                        Literal@19..20
-                          IntLiteral@19..20 "0"
+                      Literal@19..20
+                        IntLiteral@19..20 "0"
                       Comma@20..21 ","
                       Blankspace@21..22 " "
-                      SwitchCaseSelector@22..29
+                      SwitchDefaultSelector@22..29
                         Default@22..29 "default"
                       Comma@29..30 ","
                       Blankspace@30..31 " "
-                      SwitchCaseSelector@31..32
-                        Literal@31..32
-                          IntLiteral@31..32 "1"
+                      Literal@31..32
+                        IntLiteral@31..32 "1"
                       Comma@32..33 ","
                     Colon@33..34 ":"
                     Blankspace@34..35 " "
@@ -2725,9 +2819,6 @@ switch i {
                   SwitchBodyCase@14..19
                     Case@14..18 "case"
                     Blankspace@18..19 "\n"
-                    SwitchCaseSelectors@19..19
-                      SwitchCaseSelector@19..19
-                    Error@19..19
                   BraceRight@19..20 "}"
               Blankspace@20..29 "\n        "
 
@@ -2760,11 +2851,9 @@ switch i {
                     Case@14..18 "case"
                     Blankspace@18..19 " "
                     SwitchCaseSelectors@19..20
-                      SwitchCaseSelector@19..20
-                        Literal@19..20
-                          IntLiteral@19..20 "1"
+                      Literal@19..20
+                        IntLiteral@19..20 "1"
                     Blankspace@20..21 "\n"
-                    Error@21..21
                   BraceRight@21..22 "}"
               Blankspace@22..31 "\n        "
 
@@ -2804,12 +2893,10 @@ let x = 3;
                       Case@16..20 "case"
                       Blankspace@20..21 " "
                       SwitchCaseSelectors@21..22
-                        SwitchCaseSelector@21..22
-                          Literal@21..22
-                            IntLiteral@21..22 "1"
+                        Literal@21..22
+                          IntLiteral@21..22 "1"
                       Colon@22..23 ":"
                       Blankspace@23..24 "\n"
-                      Error@24..24
                     BraceRight@24..25 "}"
                 Blankspace@25..27 "\n\n"
                 LetDeclaration@27..37
@@ -2861,19 +2948,15 @@ let x = 3;
                     SwitchBodyCase@16..27
                       Case@16..20 "case"
                       Blankspace@20..21 " "
-                      SwitchCaseSelectors@21..27
-                        SwitchCaseSelector@21..22
-                          Literal@21..22
-                            IntLiteral@21..22 "1"
+                      SwitchCaseSelectors@21..26
+                        Literal@21..22
+                          IntLiteral@21..22 "1"
                         Comma@22..23 ","
                         Blankspace@23..24 " "
-                        SwitchCaseSelector@24..25
-                          Literal@24..25
-                            IntLiteral@24..25 "2"
+                        Literal@24..25
+                          IntLiteral@24..25 "2"
                         Comma@25..26 ","
-                        Blankspace@26..27 "\n"
-                        SwitchCaseSelector@27..27
-                      Error@27..27
+                      Blankspace@26..27 "\n"
                     BraceRight@27..28 "}"
                 Blankspace@28..29 "\n"
                 LetDeclaration@29..39

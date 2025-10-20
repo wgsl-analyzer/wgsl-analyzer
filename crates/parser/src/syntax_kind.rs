@@ -38,6 +38,16 @@ pub enum SyntaxKind {
     /// ```
     AssignmentStatement,
 
+    /// ```wgsl
+    /// _ = b
+    /// ```
+    PhonyAssignmentStatement,
+
+    /// ```wgsl
+    /// a += b
+    /// ```
+    CompoundAssignmentStatement,
+
     /// `break;`
     BreakStatement,
     /// `break if 4 < 5;`
@@ -72,8 +82,8 @@ pub enum SyntaxKind {
     SwitchBodyCase,
     /// The `1, 2` in `case 1, 2: {}`
     SwitchCaseSelectors,
-    /// The `1` and `2` in `case 1, 2: {}`
-    SwitchCaseSelector,
+    /// `default` when it appears in a `case default`
+    SwitchDefaultSelector,
 
     /// `i++`, `i--`
     IncrementDecrementStatement,
@@ -109,8 +119,6 @@ pub enum SyntaxKind {
     ParenthesisExpression,
     /// a type with an optional template `foo<bar>`
     TypeSpecifier,
-    /// `a += b`
-    CompoundAssignmentStatement,
     /// `location(0, 1, 2)`
     Attribute,
     /// the definition of a struct
@@ -132,6 +140,13 @@ pub enum SyntaxKind {
     ContinuingStatement,
     /// Type alias declaration: `alias float4 = vec4<f32>`
     TypeAliasDeclaration,
+
+    /// `enable f16`
+    EnableDirective,
+    EnableExtensionName,
+    /// `requires unrestricted_pointer_parameters`
+    RequiresDirective,
+    LanguageExtensionName,
 
     // Tokens
     Blankspace,

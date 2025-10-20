@@ -12,9 +12,7 @@ use wgsl_types::{
 
 use crate::{
     database::HirDatabase,
-    infer::{
-        InferenceContext, InferenceDiagnostic, TyLoweringContext, TypeContainer, ty_into_wgsl_types,
-    },
+    infer::{InferenceContext, InferenceDiagnostic, TyLoweringContext, TypeContainer},
     ty::Type,
 };
 
@@ -166,16 +164,4 @@ pub enum TpltParam {
     /// The error instance is encoded as a None
     Instance(Option<Instance>),
     Enumerant(Enumerant),
-}
-
-/// Returns none if it is an error type
-pub fn template_parameter_to_wgsl_types(
-    param: TpltParam,
-    database: &dyn HirDatabase,
-) -> Option<wgsl_types::tplt::TpltParam> {
-    Some(match param {
-        TpltParam::Type(ty) => wgsl_types::tplt::TpltParam::Type(ty_into_wgsl_types(ty, database)?),
-        TpltParam::Instance(instance) => wgsl_types::tplt::TpltParam::Instance(instance?),
-        TpltParam::Enumerant(enumerant) => wgsl_types::tplt::TpltParam::Enumerant(enumerant),
-    })
 }

@@ -7,7 +7,7 @@ use hir_def::{
 };
 use hir_ty::{
     builtins::BuiltinId,
-    database::HirDatabase,
+    database::{FieldInferenceDiagnostic, HirDatabase},
     infer::{InferenceDiagnostic, TypeExpectation, TypeLoweringError},
     ty::Type,
     validate::AddressSpaceError,
@@ -19,7 +19,9 @@ use syntax::{
 };
 
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
-use crate::{Field, Function, GlobalConstant, GlobalVariable, HasSource as _, Override, TypeAlias};
+use crate::{
+    Field, Function, GlobalConstant, GlobalVariable, HasSource as _, Override, Parameter, TypeAlias,
+};
 
 #[derive(Clone, Debug, Deserialize)]
 pub enum NagaVersion {
@@ -345,9 +347,9 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                     let source = Override { id }.source(database)?;
                     SyntaxNodePointer::new(source.value.ty()?.syntax())
                 },
-                hir_ty::infer::TypeContainer::FunctionParameter(_, binding) => {
-                    let binding = source_map.binding_to_source(binding).ok()?;
-                    binding.syntax_node_pointer()
+                hir_ty::infer::TypeContainer::FunctionParameter(id) => {
+                    let source = Parameter { id }.source(database)?;
+                    SyntaxNodePointer::new(source.value.ty()?.syntax())
                 },
                 hir_ty::infer::TypeContainer::FunctionReturn(id) => {
                     let source = Function { id }.source(database)?;
@@ -433,4 +435,21 @@ pub(crate) fn any_diag_from_shift(
             })
         },
     }
+}
+
+pub(crate) fn any_diag_from_field_infer_diagnostic(
+    database: &dyn HirDatabase,
+    diagnostic: &FieldInferenceDiagnostic,
+    file_id: HirFileId,
+) -> Option<AnyDiagnostic> {
+    let source = Field {
+        id: diagnostic.field,
+    }
+    .source(database)?;
+    let location = SyntaxNodePointer::new(source.value.ty()?.syntax());
+    Some(AnyDiagnostic::InvalidType {
+        file_id,
+        location,
+        error: diagnostic.error.clone(),
+    })
 }

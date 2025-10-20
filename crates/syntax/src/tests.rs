@@ -38,3 +38,92 @@ fn discard_statement() {
         panic!()
     };
 }
+
+#[test]
+fn function_call_statement() {
+    let ast = parse("fn main() { foo(); }").tree();
+
+    let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
+        panic!()
+    };
+    let body = function_declaration.body().unwrap();
+    let ast::Statement::FunctionCallStatement(function_call) = body.statements().next().unwrap()
+    else {
+        panic!()
+    };
+    let expression: ast::FunctionCall = function_call.expression().unwrap();
+    assert_eq!(
+        expression
+            .ident_expression()
+            .unwrap()
+            .name_ref()
+            .unwrap()
+            .text()
+            .as_str(),
+        "foo"
+    );
+}
+
+#[test]
+fn switch_with_case_default() {
+    #[rustfmt::skip]
+    let ast = parse(
+        /*wgsl*/r#"
+fn main() { 
+    switch foo {
+        case 1,2: {},
+        case default, 2, default: {}
+        default: {}
+    }
+}
+    "#,
+    )
+    .tree();
+
+    let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
+        panic!()
+    };
+    let body = function_declaration.body().unwrap();
+    let ast::Statement::SwitchStatement(switch_statement) = body.statements().next().unwrap()
+    else {
+        panic!()
+    };
+    let cases = switch_statement
+        .block()
+        .unwrap()
+        .cases()
+        .collect::<Vec<_>>();
+    assert_eq!(cases[0].selectors().unwrap().exprs().count(), 2);
+    assert_eq!(cases[1].selectors().unwrap().exprs().count(), 3);
+    assert!(matches!(
+        cases[1].selectors().unwrap().exprs().next(),
+        Some(ast::SwitchCaseSelector::SwitchDefaultSelector(_))
+    ));
+    assert!(cases[2].selectors().is_none());
+    assert!(matches!(
+        cases[2].case_token().unwrap(),
+        ast::CaseToken::Default(_)
+    ));
+}
+
+#[test]
+fn loop_with_block() {
+    let ast = parse(
+        r#"
+fn main() { 
+    loop { let a = 3; }
+}
+    "#,
+    )
+    .tree();
+
+    let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
+        panic!()
+    };
+    let body = function_declaration.body().unwrap();
+    let ast::Statement::LoopStatement(loop_statement) = body.statements().next().unwrap() else {
+        panic!()
+    };
+
+    assert!(loop_statement.block().is_some())
+}

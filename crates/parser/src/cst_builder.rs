@@ -11,20 +11,26 @@ pub struct CstBuilder<'a, 'cache> {
     pub cst: Cst<'a>,
 }
 impl<'a, 'cache> CstBuilder<'a, 'cache> {
-    /// Turn a lelwel syntax tree into a rowan syntax tree
+    /// Turn a lelwel syntax tree into a rowan syntax tree.
+    /// Empty nodes will be omitted.
     pub fn build(mut self) -> GreenNode {
         let mut rule_ends = vec![];
         for offset in 0..self.cst.nodes_count() {
             let node_ref = NodeRef(offset);
             let node = self.cst.get(node_ref);
             match node {
-                Node::Rule(rule, end_offset) => {
-                    self.start_rule(rule);
+                Node::Rule(rule @ (Rule::Part | Rule::TranslationUnit), end_offset) => {
                     let end_offset = usize::from(end_offset);
+                    // Unconditionally include the root
+                    self.start_rule(rule);
+                    rule_ends.push((node_ref, rule, offset + end_offset));
+                },
+                Node::Rule(rule, end_offset) => {
+                    let end_offset = usize::from(end_offset);
+                    // Omit nodes with a size of 0
                     if end_offset > 0 {
+                        self.start_rule(rule);
                         rule_ends.push((node_ref, rule, offset + end_offset));
-                    } else {
-                        self.end_rule(node_ref, rule);
                     }
                 },
                 Node::Token(token, index) => self.token(token, index),
@@ -55,7 +61,6 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::BreakIfStatement => self.start_node(SyntaxKind::BreakIfStatement),
             Rule::BreakStatement => self.start_node(SyntaxKind::BreakStatement),
             Rule::CaseClause => self.start_node(SyntaxKind::SwitchBodyCase),
-            Rule::CaseSelector => self.start_node(SyntaxKind::SwitchCaseSelector),
             Rule::CaseSelectors => self.start_node(SyntaxKind::SwitchCaseSelectors),
             Rule::CompoundAssignmentStatement => {
                 self.start_node(SyntaxKind::CompoundAssignmentStatement)
@@ -64,8 +69,10 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::ConstDeclaration => self.start_node(SyntaxKind::ConstantDeclaration),
             Rule::ContinueStatement => self.start_node(SyntaxKind::ContinueStatement),
             Rule::ContinuingStatement => self.start_node(SyntaxKind::ContinuingStatement),
+            Rule::ContinuingCompoundStatement => self.start_node(SyntaxKind::CompoundStatement),
             Rule::DecrementStatement => self.start_node(SyntaxKind::IncrementDecrementStatement),
             Rule::DefaultAloneClause => self.start_node(SyntaxKind::SwitchBodyCase),
+            Rule::DefaultCaseSelector => self.start_node(SyntaxKind::SwitchDefaultSelector),
             Rule::DiagnosticAttr => todo!(),
             Rule::DiagnosticControl => todo!(),
             Rule::DiagnosticDirective => todo!(),
@@ -74,7 +81,8 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::ElseClause => self.start_node(SyntaxKind::ElseClause),
             Rule::ElseIfClause => self.start_node(SyntaxKind::ElseIfClause),
             Rule::EmptyStatement => self.start_node(SyntaxKind::EmptyStatement),
-            Rule::EnableDirective => todo!(),
+            Rule::EnableDirective => self.start_node(SyntaxKind::EnableDirective),
+            Rule::EnableExtensionName => self.start_node(SyntaxKind::EnableExtensionName),
             Rule::Error => self.start_node(SyntaxKind::Error),
             Rule::FieldExpression => self.start_node(SyntaxKind::FieldExpression),
             Rule::ForCondition => self.start_node(SyntaxKind::ForCondition),
@@ -93,13 +101,15 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::IndexingExpression => self.start_node(SyntaxKind::IndexExpression),
             Rule::LetDeclaration => self.start_node(SyntaxKind::LetDeclaration),
             Rule::LoopStatement => self.start_node(SyntaxKind::LoopStatement),
+            Rule::LoopCompoundStatement => self.start_node(SyntaxKind::CompoundStatement),
             Rule::Name => self.start_node(SyntaxKind::Name),
             Rule::NameRef => self.start_node(SyntaxKind::NameReference),
             Rule::OverrideDeclaration => self.start_node(SyntaxKind::OverrideDeclaration),
             Rule::Parameter => self.start_node(SyntaxKind::Parameter),
             Rule::ParenExpression => self.start_node(SyntaxKind::ParenthesisExpression),
-            Rule::PhonyAssignmentStatement => todo!(),
-            Rule::RequiresDirective => todo!(),
+            Rule::PhonyAssignmentStatement => self.start_node(SyntaxKind::PhonyAssignmentStatement),
+            Rule::RequiresDirective => self.start_node(SyntaxKind::RequiresDirective),
+            Rule::LanguageExtensionName => self.start_node(SyntaxKind::LanguageExtensionName),
             Rule::ReturnStatement => self.start_node(SyntaxKind::ReturnStatement),
             Rule::ReturnType => self.start_node(SyntaxKind::ReturnType),
             Rule::SeverityControlName => todo!(),
@@ -124,6 +134,7 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             | Rule::LetDeclarationSemi
             | Rule::OverrideDeclarationSemi
             | Rule::SwitchClause
+            | Rule::CaseSelector
             | Rule::TemplateArgs
             | Rule::TypedIdent
             | Rule::VariableDeclarationSemi => {

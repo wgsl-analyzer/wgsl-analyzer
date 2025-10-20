@@ -8,7 +8,7 @@ use either::Either;
 use hir_def::{
     HasSource as _, HirFileId, InFile,
     body::{BindingId, Body, BodySourceMap},
-    data::FieldId,
+    data::{FieldId, ParameterId},
     database::{
         DefDatabase, DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId,
         Location, Lookup as _, OverrideId, StructId, TypeAliasId,
@@ -21,7 +21,9 @@ use hir_def::{
 pub use hir_ty::database::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
-use syntax::{AstNode as _, HasName as _, SyntaxNode, ast, match_ast, pointer::AstPointer};
+use syntax::{
+    AstNode as _, HasName as _, SyntaxKind, SyntaxNode, ast, match_ast, pointer::AstPointer,
+};
 use triomphe::Arc;
 
 pub trait HasSource {
@@ -58,6 +60,7 @@ impl<'database> Semantics<'database> {
         SourceAnalyzer::new(self.database, definition)
     }
 
+    /// Finds the root level container for a given node
     #[must_use]
     pub fn find_container(
         &self,
@@ -408,6 +411,37 @@ impl HasSource for Local {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]
+pub struct Parameter {
+    pub id: ParameterId,
+}
+
+impl HasSource for Parameter {
+    type Ast = ast::Parameter;
+
+    fn source(
+        self,
+        database: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
+        let function_data = database.function_data(self.id.function).0;
+        let parameter_data = &function_data.parameters[self.id.param];
+        let parameter_name = &parameter_data.name;
+
+        let function = self.id.function.lookup(database).source(database);
+
+        let parameter = function
+            .value
+            .parameter_list()?
+            .parameters()
+            .find_map(|parameter| {
+                let name = parameter.name()?;
+                (name.ident_token()?.text() == parameter_name.as_str()).then_some(parameter)
+            })?;
+
+        Some(InFile::new(function.file_id, parameter))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub struct Function {
     id: FunctionId,
 }
@@ -601,7 +635,20 @@ impl Module {
                 },
                 ModuleDef::GlobalConstant(_constant) => {},
                 ModuleDef::Override(_constant) => {},
-                ModuleDef::Struct(_strukt) => {},
+                ModuleDef::Struct(strukt) => {
+                    let file = strukt.id.lookup(database).file_id;
+                    let diagnostics = &database.field_types(strukt.id).1;
+                    for diagnostic in diagnostics {
+                        match diagnostics::any_diag_from_field_infer_diagnostic(
+                            database, diagnostic, file,
+                        ) {
+                            Some(diagnostic) => accumulator.push(diagnostic),
+                            None => {
+                                tracing::warn!("could not create diagnostic from {:?}", diagnostic);
+                            },
+                        }
+                    }
+                },
                 ModuleDef::TypeAlias(_type_alias) => {},
             }
             if let Some(definition) = item.as_def_with_body_id() {

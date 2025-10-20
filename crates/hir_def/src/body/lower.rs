@@ -270,6 +270,10 @@ impl Collector<'_> {
                     op,
                 }
             },
+            ast::Statement::PhonyAssignmentStatement(assignment) => {
+                let right_side = self.collect_expression_opt(assignment.right_side());
+                Statement::PhonyAssignment { right_side }
+            },
             ast::Statement::IncrementDecrementStatement(statement) => {
                 let expression = self.collect_expression_opt(statement.expression());
                 let op = statement.increment_decrement()?;
@@ -311,7 +315,7 @@ impl Collector<'_> {
                                                 self.collect_expression(expression),
                                             )
                                         },
-                                        ast::SwitchCaseSelector::Default(_) => {
+                                        ast::SwitchCaseSelector::SwitchDefaultSelector(_) => {
                                             SwitchCaseSelector::Default
                                         },
                                     })
@@ -354,14 +358,25 @@ impl Collector<'_> {
                 let block = self.collect_compound_statement_opt(while_statement.block());
                 Statement::While { condition, block }
             },
+            ast::Statement::AssertStatement(assert_statement) => Statement::Assert {
+                expression: self.collect_expression_opt(assert_statement.expression()),
+            },
             ast::Statement::DiscardStatement(_) => Statement::Discard,
             ast::Statement::BreakStatement(_) => Statement::Break,
             ast::Statement::ContinueStatement(_) => Statement::Continue,
             ast::Statement::ContinuingStatement(continuing) => Statement::Continuing {
                 block: self.collect_compound_statement_opt(continuing.block()),
             },
-            ast::Statement::FunctionCallStatement(expression) => {
-                let expression = self.collect_expression_opt(expression.expression());
+            ast::Statement::BreakIfStatement(break_if_statement) => {
+                let condition = self.collect_expression_opt(break_if_statement.condition());
+                Statement::BreakIf { condition }
+            },
+            ast::Statement::FunctionCallStatement(function_call) => {
+                let expression = self.collect_expression_opt(
+                    function_call
+                        .expression()
+                        .map(ast::Expression::FunctionCall),
+                );
                 Statement::Expression { expression }
             },
             ast::Statement::LoopStatement(statement) => {

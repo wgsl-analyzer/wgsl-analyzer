@@ -126,8 +126,6 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
         ast::Statement::ContinuingStatement(continuing_statement) => {
             todo_verbatim(continuing_statement.syntax())
         },
-
-        // == Keywords ==
         ast::Statement::BreakStatement(break_statement) => {
             // ==== Parse ====
             // We still parse through the discard syntax even tho there is no information for
@@ -176,6 +174,15 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
             formatted.expect_line_break();
             formatted.extend(gen_comments(comments_after_discard));
             Ok(formatted)
+        },
+        ast::Statement::PhonyAssignmentStatement(phony_assignment_statement) => {
+            todo_verbatim(phony_assignment_statement.syntax())
+        },
+        ast::Statement::AssertStatement(assert_statement) => {
+            todo_verbatim(assert_statement.syntax())
+        },
+        ast::Statement::BreakIfStatement(break_if_statement) => {
+            todo_verbatim(break_if_statement.syntax())
         },
     }
 }

@@ -83,7 +83,7 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
     ) -> Arc<ExprScopes>;
 
     #[salsa::invoke(FunctionData::query)]
-    fn fn_data(
+    fn function_data(
         &self,
         key: FunctionId,
     ) -> (Arc<FunctionData>, Arc<ExpressionSourceMap>);
@@ -328,41 +328,6 @@ impl DefinitionWithBodyId {
             Self::GlobalVariable(id) => id.lookup(database).file_id,
             Self::GlobalConstant(id) => id.lookup(database).file_id,
             Self::Override(id) => id.lookup(database).file_id,
-        }
-    }
-
-    pub fn resolver(
-        self,
-        database: &dyn DefDatabase,
-    ) -> Resolver {
-        let file_id = self.file_id(database);
-        let module_info = database.module_info(file_id);
-        Resolver::default().push_module_scope(file_id, module_info)
-    }
-}
-
-#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
-pub enum DefinitionId {
-    Function(FunctionId),
-    GlobalVariable(GlobalVariableId),
-    GlobalConstant(GlobalConstantId),
-    Override(OverrideId),
-    Struct(StructId),
-    TypeAlias(TypeAliasId),
-}
-
-impl DefinitionId {
-    pub fn file_id(
-        self,
-        database: &dyn DefDatabase,
-    ) -> HirFileId {
-        match self {
-            Self::Function(id) => id.lookup(database).file_id,
-            Self::GlobalVariable(id) => id.lookup(database).file_id,
-            Self::GlobalConstant(id) => id.lookup(database).file_id,
-            Self::Override(id) => id.lookup(database).file_id,
-            Self::Struct(id) => id.lookup(database).file_id,
-            Self::TypeAlias(id) => id.lookup(database).file_id,
         }
     }
 

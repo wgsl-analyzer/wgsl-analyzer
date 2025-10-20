@@ -416,7 +416,7 @@ pub fn unify(
         | TyKind::Texture(_)
         | TyKind::Sampler(_)
         | TyKind::Reference(_)
-            if expected == found =>
+            if found.is_convertible_to(expected, database) =>
         {
             Ok(())
         },

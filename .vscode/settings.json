@@ -4,7 +4,7 @@
 		"editor.defaultFormatter": "biomejs.biome"
 	},
 	"[json-textmate]": {
-		"editor.defaultFormatter": "RedCMD.tmlanguage-syntax-highlighter"
+		"editor.defaultFormatter": "biomejs.biome"
 	},
 	"[jsonc]": {
 		"editor.defaultFormatter": "biomejs.biome"
