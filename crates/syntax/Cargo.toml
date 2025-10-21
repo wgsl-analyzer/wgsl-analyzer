@@ -3,8 +3,6 @@ name = "syntax"
 version = "0.0.0"
 repository.workspace = true
 description = "Concrete syntax tree definitions for wgsl-analyzer."
-
-authors.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
@@ -13,11 +11,11 @@ rust-version.workspace = true
 doctest = false
 
 [dependencies]
-either.workspace = true
-itertools.workspace = true
-rowan.workspace = true
+either = "1.15.0"
+itertools = "0.14.0"
+rowan = "0.16.1"
 parser.workspace = true
-smol_str.workspace = true
+smol_str = "0.3.2"
 
 [lints]
 workspace = true

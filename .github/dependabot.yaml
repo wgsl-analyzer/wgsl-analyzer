@@ -38,7 +38,3 @@ updates:
       - C-Dependencies
       - D-Trivial
       - S-Ready-to-Review
-    groups:
-      ts-eslint:
-        patterns:
-          - '@typescript-eslint/*'

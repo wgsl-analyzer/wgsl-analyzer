@@ -3,16 +3,8 @@
 		"lineComment": "//",
 		"blockComment": ["/*", "*/"]
 	},
-	"brackets": [
-		["{", "}"],
-		["[", "]"],
-		["(", ")"]
-	],
-	"colorizedBracketPairs": [
-		["{", "}"],
-		["[", "]"],
-		["(", ")"]
-	],
+	"brackets": [["{", "}"], ["[", "]"], ["(", ")"]],
+	"colorizedBracketPairs": [["{", "}"], ["[", "]"], ["(", ")"]],
 	"autoClosingPairs": [
 		{
 			"open": "{",

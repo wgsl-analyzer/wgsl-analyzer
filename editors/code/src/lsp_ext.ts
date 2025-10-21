@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
-
-import * as lc from "vscode-languageclient";
 import { InlayHint } from "vscode";
+import * as lc from "vscode-languageclient";
 
 // wgsl-analyzer overrides
 
@@ -35,16 +33,12 @@ export const analyzerStatus = new lc.RequestType<AnalyzerStatusParameters, strin
 );
 export const cancelFlycheck = new lc.NotificationType0("wgsl-analyzer/cancelFlycheck");
 export const clearFlycheck = new lc.NotificationType0("wgsl-analyzer/clearFlycheck");
-export const expandMacro = new lc.RequestType<ExpandMacroParameters, ExpandedMacro | null, void>(
-	"wgsl-analyzer/expandMacro",
-);
 export const memoryUsage = new lc.RequestType0<string, void>("wgsl-analyzer/memoryUsage");
 export const openServerLogs = new lc.NotificationType0("wgsl-analyzer/openServerLogs");
 export const relatedTests = new lc.RequestType<lc.TextDocumentPositionParams, TestInfo[], void>(
 	"wgsl-analyzer/relatedTests",
 );
 export const reloadWorkspace = new lc.RequestType0<null, void>("wgsl-analyzer/reloadWorkspace");
-export const rebuildProcMacros = new lc.RequestType0<null, void>("wgsl-analyzer/rebuildProcMacros");
 
 export const runFlycheck = new lc.NotificationType<{
 	textDocument: lc.TextDocumentIdentifier | null;
@@ -111,7 +105,9 @@ export const changeTestState = new lc.NotificationType<ChangeTestStateParameters
 	"experimental/changeTestState",
 );
 
-export type AnalyzerStatusParameters = { textDocument?: lc.TextDocumentIdentifier };
+export type AnalyzerStatusParameters = {
+	textDocument?: lc.TextDocumentIdentifier;
+};
 
 export interface FetchDependencyListParameters {}
 
@@ -144,55 +140,60 @@ export const fetchDependencyGraph = new lc.RequestType<
 	FetchDependencyGraphResult,
 	void
 >("wgsl-analyzer/fetchDependencyGraph");
-
-export type ExpandMacroParameters = {
-	textDocument: lc.TextDocumentIdentifier;
-	position: lc.Position;
-};
-export type ExpandedMacro = {
-	name: string;
-	expansion: string;
-};
 export type TestInfo = { runnable: Runnable };
 export type SyntaxTreeParameters = {
 	textDocument: lc.TextDocumentIdentifier;
 	range: lc.Range | null;
 };
-export type ViewSyntaxTreeParameters = { textDocument: lc.TextDocumentIdentifier };
+export type ViewSyntaxTreeParameters = {
+	textDocument: lc.TextDocumentIdentifier;
+};
 export type ViewCrateGraphParameters = { full: boolean };
-export type ViewItemTreeParameters = { textDocument: lc.TextDocumentIdentifier };
+export type ViewItemTreeParameters = {
+	textDocument: lc.TextDocumentIdentifier;
+};
 
 // experimental extensions
 
 export const joinLines = new lc.RequestType<JoinLinesParameters, lc.TextEdit[], void>(
 	"experimental/joinLines",
 );
+
 export const matchingBrace = new lc.RequestType<MatchingBraceParameters, lc.Position[], void>(
 	"experimental/matchingBrace",
 );
+
 export const moveItem = new lc.RequestType<MoveItemParameters, lc.TextEdit[], void>(
 	"experimental/moveItem",
 );
+
 export const onEnter = new lc.RequestType<lc.TextDocumentPositionParams, lc.TextEdit[], void>(
 	"experimental/onEnter",
 );
-export const openCargoToml = new lc.RequestType<OpenCargoTomlParameters, lc.Location, void>(
+
+export const openCargoToml = new lc.RequestType<OpenWeslTomlParameters, lc.Location, void>(
 	"experimental/openCargoToml",
 );
+
 export interface DocsUrls {
 	local?: string;
 	web?: string;
 }
+
 export const openDocs = new lc.RequestType<lc.TextDocumentPositionParams, DocsUrls, void>(
 	"experimental/externalDocs",
 );
+
 export const runnables = new lc.RequestType<RunnablesParameters, Runnable[], void>(
 	"experimental/runnables",
 );
+
 export const serverStatus = new lc.NotificationType<ServerStatusParameters>(
 	"experimental/serverStatus",
 );
+
 export const ssr = new lc.RequestType<SsrParameters, lc.WorkspaceEdit, void>("experimental/ssr");
+
 export const viewRecursiveMemoryLayout = new lc.RequestType<
 	lc.TextDocumentPositionParams,
 	RecursiveMemoryLayout | null,
@@ -203,27 +204,32 @@ export type JoinLinesParameters = {
 	textDocument: lc.TextDocumentIdentifier;
 	ranges: lc.Range[];
 };
+
 export type MatchingBraceParameters = {
 	textDocument: lc.TextDocumentIdentifier;
 	positions: lc.Position[];
 };
+
 export type MoveItemParameters = {
 	textDocument: lc.TextDocumentIdentifier;
 	range: lc.Range;
 	direction: Direction;
 };
+
 export type Direction = "Up" | "Down";
-export type OpenCargoTomlParameters = {
+
+export type OpenWeslTomlParameters = {
 	textDocument: lc.TextDocumentIdentifier;
 };
-export type Runnable = {
+
+export type Runnable = (RunnableCargo | RunnableShell) & {
 	label: string;
 	location?: lc.LocationLink;
-} & (RunnableCargo | RunnableShell);
+};
 
 type RunnableCargo = {
 	kind: "cargo";
-	args: CargoRunnableArgs;
+	args: WeslRunnableArgs;
 };
 
 type RunnableShell = {
@@ -242,13 +248,13 @@ export type CommonRunnableArgs = {
 	cwd: string;
 };
 
-export type ShellRunnableArgs = {
+export type ShellRunnableArgs = CommonRunnableArgs & {
 	kind: string;
 	program: string;
 	args: string[];
-} & CommonRunnableArgs;
+};
 
-export type CargoRunnableArgs = {
+export type WeslRunnableArgs = CommonRunnableArgs & {
 	/**
 	 * The workspace root directory of the cargo project.
 	 */
@@ -258,7 +264,7 @@ export type CargoRunnableArgs = {
 	 */
 	executableArguments: string[];
 	/**
-	 * Arguments to pass to cargo.
+	 * Arguments to pass to wesl-rs.
 	 */
 	cargoArguments: string[];
 	/**
@@ -267,12 +273,13 @@ export type CargoRunnableArgs = {
 	// This is supplied by the user via config. We could pull this through the client config in the
 	// extension directly, but that would prevent us from honoring the wgsl-analyzer.toml for it.
 	overrideCargo?: string;
-} & CommonRunnableArgs;
+};
 
 export type RunnablesParameters = {
 	textDocument: lc.TextDocumentIdentifier;
 	position: lc.Position | null;
 };
+
 export type ServerStatusParameters = {
 	health: "ok" | "warning" | "error";
 	quiescent: boolean;
@@ -296,6 +303,7 @@ export type RecursiveMemoryLayoutNode = {
 	children_start: number;
 	children_len: number;
 };
+
 export type RecursiveMemoryLayout = {
 	nodes: RecursiveMemoryLayoutNode[];
 };

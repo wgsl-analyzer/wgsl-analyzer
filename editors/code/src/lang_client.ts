@@ -1,14 +1,14 @@
-import * as lc from "vscode-languageclient/node";
 import * as vscode from "vscode";
+import * as lc from "vscode-languageclient/node";
 
 export class WaLanguageClient extends lc.LanguageClient {
 	override handleFailedRequest<T>(
 		type: lc.MessageSignature,
 		token: vscode.CancellationToken | undefined,
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 		error: any,
 		defaultValue: T,
-		showNotification?: boolean | undefined,
+		showNotification?: boolean,
 	): T {
 		const showError = vscode.workspace
 			.getConfiguration("wgsl-analyzer")

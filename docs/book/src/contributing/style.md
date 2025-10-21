@@ -50,15 +50,6 @@ That said, adding an innocent-looking `pub use` is a very simple way to break en
 
 Note: if you enjoyed this abstract hand-waving about boundaries, you might appreciate <https://www.tedinski.com/2018/02/06/system-boundaries.html>.
 
-### Crates.io Dependencies
-
-We try to be very conservative with the usage of crates.io dependencies.
-Do not use small "helper" crates (exception: `itertools` and `either` are allowed).
-If there is some general reusable bit of code you need, consider adding it to the `stdx` crate.
-A useful exercise is to read Cargo.lock and see if some *transitive* dependencies do not make sense for `wgsl-analyzer`.
-
-**Rationale:** keep compile times low, create ecosystem pressure for faster compiles, reduce the number of things which might break.
-
 ### Commit Style
 
 We do not have specific rules around git history hygiene.
@@ -66,7 +57,7 @@ Maintaining clean git history is strongly encouraged, but not enforced.
 Use rebase workflow, it is OK to rewrite history during the PR review process.
 After you are happy with the state of the code, please use [interactive rebase](https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History) to squash fixup commits.
 
-Avoid @mentioning people in commit messages and pull request descriptions (they are added to commit messages by bors).
+Avoid @mentioning people in commit messages and pull request descriptions.
 Such messages create a lot of duplicate notification traffic during rebases.
 
 If possible, write Pull Request titles and descriptions from the user's perspective:
@@ -87,8 +78,9 @@ To make writing the release notes easier, you can mark a pull request as a featu
 Minor changes are excluded from the release notes, while the other types are distributed in their corresponding sections.
 There are two ways to mark this:
 
-- use a `feat:`, `feature:`, `fix:`, `internal:`, or `minor:` prefix in the PR title
-- write `changelog [feature|fix|internal|skip] [description]` in a comment or in the PR description; the description is optional and will replace the title if included.
+Use a `feature:`, `fix:`, `internal:`, or `minor:` prefix in the PR title OR write `changelog [feature|fix|internal|skip] [description]` in a comment or in the PR description;
+the description is optional and will replace the title if included.
+This is picked up by tooling to create the changelog.
 
 These comments do not have to be added by the PR author.
 Editing a comment or the PR description or title is also fine, as long as it happens before the release.
@@ -108,25 +100,25 @@ We use Clippy to improve the code, but if some lints annoy you, allow them in th
 Most tests in `wgsl-analyzer` start with a snippet of WESL code.
 These snippets should be minimal.
 If you copy-paste a snippet of real code into the tests, make sure to remove everything which could be removed.
-It also makes sense to format snippets more compactly (for example, by placing enum definitions like `enum E { Foo, Bar }` on a single line), as long as they are still readable.
+It also makes sense to format snippets more compactly so long as they are still readable.
 When using multiline fixtures, use unindented raw string literals:
 
-```rust
+```wgsl
     #[test]
-    fn inline_field_shorthand() {
+    fn inline_local_variable() {
         check_assist(
             inline_local_variable,
             r#"
-struct S { foo: i32}
-fn main() {
-    let $0foo = 92;
-    S { foo }
+@fragment
+fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
+    let $0x = 1.0;
+    return vec4(x, 0.0, 0.0, 1.0);
 }
 "#,
             r#"
-struct S { foo: i32}
-fn main() {
-    S { foo: 92 }
+@fragment
+fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
+    return vec4(1.0, 0.0, 0.0, 1.0);
 }
 "#,
         );
@@ -232,22 +224,6 @@ In the "Good" version, the precondition check and usage are checked in the same 
 
 **Rationale:** non-local code properties degrade under change.
 
-When checking a boolean precondition, prefer `if !invariant` to `if negated_invariant`:
-
-```rust
-// GOOD
-if !(index < length) {
-    return None;
-}
-
-// BAD
-if index >= length {
-    return None;
-}
-```
-
-**Rationale:** it is useful to see the invariant relied upon by the rest of the function clearly spelled out.
-
 ### Control Flow
 
 As a special case of the previous rule, do not hide control flow inside functions, push it to the caller:
@@ -329,6 +305,7 @@ Option<&T>   &Option<T>
 
 **Rationale:** types on the left are strictly more general.
 Even when generality is not required, consistency is important.
+Use the least powerful tool that gets the job done.
 
 ### Constructors
 
@@ -519,13 +496,13 @@ fn caller_b() {
 fn foo(bar: Option<Bar>) { ... }
 ```
 
-**Rationale:** more often than not, such functions display "`false sharing`" -- they have additional `if` branching inside for two different cases.
+**Rationale:** more often than not, such functions display "false sharing" - they have additional `if` branching inside for two different cases.
 Splitting the two different control flows into two functions simplifies each path, and remove cross-dependencies between the two paths.
 If there is common code between `foo` and `foo_with_bar`, extract *that* into a common helper.
 
 ### Appropriate String Types
 
-When interfacing with OS APIs, use `OsString`, even if the original source of data is utf-8 encoded.
+When interfacing with OS APIs, use `OsString`, even if the original source of data is UTF-8 encoded.
 **Rationale:** cleanly delineates the boundary when the data goes into the OS-land.
 
 Use `AbsPathBuf` and `AbsPath` over `std::Path`.

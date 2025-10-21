@@ -297,7 +297,7 @@ pub(crate) fn convert_diagnostic(
         code_description: Some(lsp_types::CodeDescription {
             href: lsp_types::Url::parse(&diagnostic.code.url()).unwrap(),
         }),
-        source: Some("rust-analyzer".to_owned()),
+        source: Some("wgsl-analyzer".to_owned()),
         message: diagnostic.message,
         related_information: None,
         tags: diagnostic

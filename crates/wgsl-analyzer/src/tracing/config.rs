@@ -20,17 +20,6 @@ use crate::tracing::json;
 pub struct Config<T> {
     pub writer: T,
     pub filter: String,
-    /// The meaning of `CHALK_DEBUG` is to tell chalk crates
-    /// (i.e. chalk-solve, chalk-ir, chalk-recursive) how to filter tracing
-    /// logs. But now we can only have just one filter, which means we have to
-    /// merge chalk filter to our main filter (from `WA_LOG` env).
-    ///
-    /// The acceptable syntax of `CHALK_DEBUG` is `target[span{field=value}]=level`.
-    /// As the value should only affect chalk crates, we'd better manually
-    /// specify the target. And for simplicity, `CHALK_DEBUG` only accept the value
-    /// that specify level.
-    pub chalk_filter: Option<String>,
-
     /// Filtering syntax, set in a shell:
     /// ```text
     /// env WA_PROFILE=*             // dump everything
@@ -76,29 +65,6 @@ where
         }
         .with_filter(targets_filter);
 
-        let chalk_layer = match self.chalk_filter {
-            Some(chalk_filter) => {
-                let level: LevelFilter = chalk_filter
-                    .parse()
-                    .with_context(|| "invalid chalk log filter")?;
-
-                let chalk_filter = Targets::new()
-                    .with_target("chalk_solve", level)
-                    .with_target("chalk_ir", level)
-                    .with_target("chalk_recursive", level);
-                // TODO: remove `.with_filter(LevelFilter::OFF)` on the `None` branch.
-                HierarchicalLayer::default()
-                    .with_indent_lines(true)
-                    .with_ansi(false)
-                    .with_indent_amount(2)
-                    .with_writer(io::stderr)
-                    .with_filter(chalk_filter)
-                    .boxed()
-            },
-            None => None::<HierarchicalLayer>
-                .with_filter(LevelFilter::OFF)
-                .boxed(),
-        };
         // TODO: remove `.with_filter(LevelFilter::OFF)` on the `None` branch.
         let profiler_layer = self.profile_filter.map_or_else(
             || None.with_filter(LevelFilter::OFF),
@@ -121,8 +87,7 @@ where
         let subscriber = Registry::default()
             .with(wa_fmt_layer)
             .with(json_profiler_layer)
-            .with(profiler_layer)
-            .with(chalk_layer);
+            .with(profiler_layer);
         tracing::subscriber::set_global_default(subscriber)?;
         Ok(())
     }

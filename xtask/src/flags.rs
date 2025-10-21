@@ -73,7 +73,7 @@ xflags::xflags! {
             required changelog: String
         }
 
-        /// Builds a benchmark version of rust-analyzer and puts it into `./target`.
+        /// Builds a benchmark version of wgsl-analyzer and puts it into `./target`.
         cmd bb {
             required suffix: String
         }
@@ -171,7 +171,7 @@ impl Xtask {
 }
 // generated end
 
-#[derive(Debug, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub enum CodegenType {
     #[default]
     All,

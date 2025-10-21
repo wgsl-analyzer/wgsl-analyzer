@@ -1,9 +1,10 @@
 # Troubleshooting
 
 Start with looking at the `wgsl-analyzer` version.
-Try the **wgsl-analyzer: Show WA Version** in VS Code (using **Command Palette** feature.
-It is typically activated by <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>) or `wgsl-analyzer --version` in the command line. <!-- spellchecker:disable-line -->
-If the date is more than a week ago, it is better to update your installation of wgsl-analyzer to the newest version.
+Try the **wgsl-analyzer: Show WA Version** command in the **Command Palette**.
+(Open the command pallete with  <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>)  <!-- spellchecker:disable-line -->
+You can also run `wgsl-analyzer --version` in the command line.
+If the date is more than a week ago, it is better to update your installation of `wgsl-analyzer` to the newest version.
 
 The next thing to check would be panic messages in `wgsl-analyzer`'s log.
 Log messages are printed to stderr, in VS Code you can see them in the `Output > wgsl-analyzer Language Server` tab of the panel.
@@ -18,12 +19,11 @@ If it has an error icon and red, that is the problem (hover will have somewhat h
 **wgsl-analyzer: Status** prints dependency information for the current file.
 Finally, `WA_LOG=project_model=debug` enables verbose logs during project loading.
 
-If wgsl-analyzer outright crashes, try running `wgsl-analyzer analysis-stats /path/to/project/directory/` on the command line.
+If `wgsl-analyzer` outright crashes, try running `wgsl-analyzer analysis-stats /path/to/project/directory/` on the command line.
 This command type checks the whole project in batch mode bypassing LSP machinery.
 
 When filing issues, it is useful (but not necessary) to try to minimize examples.
 
-<!--
 An ideal bug reproduction looks like this:
 
 ```bash
@@ -35,6 +35,5 @@ $ wgsl-analyzer analysis-stats .
 ```
 
 It is especially useful when the `repo` does not use external crates or the standard library.
--->
 
 If you want to go as far as to modify the source code to debug the problem, be sure to take a look at the [dev docs](https://github.com/wgsl-analyzer/wgsl-analyzer/tree/master/docs/dev)!

@@ -5,7 +5,7 @@ It also supports [WESL] - a superset of WGSL.
 
 ## Features
 
-Currently, wgsl-analyzer supports
+Currently, `wgsl-analyzer` supports
 
 - syntax highlighting
 - basic autocomplete
@@ -29,7 +29,7 @@ In the `wgsl-analyzer` section in the vscode settings you can specify the follow
 
 ### Custom imports
 
-wgsl-analyzer supports `#import` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports).
+`wgsl-analyzer` supports `#import` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports).
 You can define custom import snippet in the `wgsl-analyzer.customImports` section.
 
 If you provide a URL with a `http`, `https` or `file` scheme that resource will be downloaded and used.
@@ -201,7 +201,7 @@ For faster startup:
 
 ### Preprocessor defines
 
-wgsl-analyzer supports `#ifdef`, `#ifndef`, `#else`, `#endif` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports).
+`wgsl-analyzer` supports `#ifdef`, `#ifndef`, `#else`, `#endif` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports).
 
 ```json
 {
@@ -211,7 +211,7 @@ wgsl-analyzer supports `#ifdef`, `#ifndef`, `#else`, `#endif` directives in the 
 
 ### Diagnostics
 
-wgsl-analyzer will support diagnostics for parsing errors, and optionally (by default yes) type errors and naga-reported validation errors.
+`wgsl-analyzer` will support diagnostics for parsing errors, and optionally (by default yes) type errors and naga-reported validation errors.
 You can also additionally enable diagnostics for naga parsing errors.
 
 ```json
@@ -225,7 +225,7 @@ You can also additionally enable diagnostics for naga parsing errors.
 
 ### Inlay hints
 
-wgsl-analyzer can display read-only virtual text snippets interspersed with code, used to display the inferred types of variable declarations or the names of function parameters at the call site.
+`wgsl-analyzer` can display read-only virtual text snippets interspersed with code, used to display the inferred types of variable declarations or the names of function parameters at the call site.
 
 ```json
 {

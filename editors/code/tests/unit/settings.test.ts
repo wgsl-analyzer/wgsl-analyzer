@@ -1,10 +1,10 @@
 import * as assert from "assert";
-import type { Context } from ".";
 import { substituteVariablesInEnv } from "../../src/config";
+import type { Context } from ".";
 
 export async function getTests(ctx: Context) {
 	await ctx.suite("Server Env Settings", (suite) => {
-		suite.addTest("Replacing Env Variables", async () => {
+		suite.addSyncTest("Replacing Env Variables", () => {
 			const envJson = {
 				USING_MY_VAR: "${env:MY_VAR} test ${env:MY_VAR}",
 				MY_VAR: "test",
@@ -17,7 +17,7 @@ export async function getTests(ctx: Context) {
 			assert.deepStrictEqual(actualEnv, expectedEnv);
 		});
 
-		suite.addTest("Circular dependencies remain as is", async () => {
+		suite.addSyncTest("Circular dependencies remain as is", () => {
 			const envJson = {
 				A_USES_B: "${env:B_USES_A}",
 				B_USES_A: "${env:A_USES_B}",
@@ -38,7 +38,7 @@ export async function getTests(ctx: Context) {
 			assert.deepStrictEqual(actualEnv, expectedEnv);
 		});
 
-		suite.addTest("Should support external variables", async () => {
+		suite.addSyncTest("Should support external variables", () => {
 			process.env["TEST_VARIABLE"] = "test";
 			const envJson = {
 				USING_EXTERNAL_VAR: "${env:TEST_VARIABLE} test ${env:TEST_VARIABLE}",
@@ -52,7 +52,7 @@ export async function getTests(ctx: Context) {
 			delete process.env["TEST_VARIABLE"];
 		});
 
-		suite.addTest("should support VSCode variables", async () => {
+		suite.addSyncTest("should support VSCode variables", () => {
 			const envJson = {
 				USING_VSCODE_VAR: "${workspaceFolderBasename}",
 			};

@@ -635,3 +635,15 @@ impl HoverActionsConfig {
         self.run || self.debug || self.update_test
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use test_utils::{ensure_file_contents, project_root};
+
+    #[test]
+    fn generate_config_documentation() {
+        let docs_path = project_root().join("docs/book/src/configuration_generated.md");
+        let expected = String::new();
+        ensure_file_contents(docs_path.as_std_path(), &expected);
+    }
+}

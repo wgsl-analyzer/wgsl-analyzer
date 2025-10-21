@@ -1,19 +1,19 @@
-import type { Context } from ".";
-import * as vscode from "vscode";
 import * as assert from "assert";
+import * as vscode from "vscode";
 import { targetToExecution } from "../../src/tasks";
+import type { Context } from ".";
 
 export async function getTests(ctx: Context) {
 	await ctx.suite("Tasks", (suite) => {
-		suite.addTest("cargo targetToExecution", async () => {
+		suite.addTest("wesl targetToExecution", async () => {
 			assert.deepStrictEqual(
 				await targetToExecution({
-					type: "cargo",
+					type: "wesl",
 					command: "check",
 					args: ["foo"],
 				}).then(executionToSimple),
 				{
-					process: "cargo",
+					process: "wesl",
 					args: ["check", "foo"],
 				},
 			);
@@ -34,60 +34,60 @@ export async function getTests(ctx: Context) {
 		});
 
 		suite.addTest("base tasks", async () => {
-			const tasks = await vscode.tasks.fetchTasks({ type: "cargo" });
+			const tasks = await vscode.tasks.fetchTasks({ type: "wesl" });
 			const expectedTasks = [
 				{
-					definition: { type: "cargo", command: "build" },
-					name: "cargo build",
+					definition: { command: "compile", type: "wesl" },
+					name: "wesl compile",
 					execution: {
-						process: "cargo",
-						args: ["build"],
+						process: "wesl",
+						args: ["compile"],
 					},
 				},
 				{
 					definition: {
-						type: "cargo",
+						type: "wesl",
 						command: "check",
 					},
-					name: "cargo check",
+					name: "wesl check",
 					execution: {
-						process: "cargo",
+						process: "wesl",
 						args: ["check"],
 					},
 				},
 				{
-					definition: { type: "cargo", command: "clippy" },
-					name: "cargo clippy",
+					definition: { command: "clippy", type: "wesl" },
+					name: "wesl clippy",
 					execution: {
-						process: "cargo",
+						process: "wesl",
 						args: ["clippy"],
 					},
 				},
 				{
-					definition: { type: "cargo", command: "test" },
-					name: "cargo test",
+					definition: { command: "test", type: "wesl" },
+					name: "wesl test",
 					execution: {
-						process: "cargo",
+						process: "wesl",
 						args: ["test"],
 					},
 				},
 				{
 					definition: {
-						type: "cargo",
+						type: "wesl",
 						command: "clean",
 					},
-					name: "cargo clean",
+					name: "wesl clean",
 					execution: {
-						process: "cargo",
+						process: "wesl",
 						args: ["clean"],
 					},
 				},
 				{
-					definition: { type: "cargo", command: "run" },
-					name: "cargo run",
+					definition: { command: "exec", type: "wesl" },
+					name: "wesl exec",
 					execution: {
-						process: "cargo",
-						args: ["run"],
+						process: "wesl",
+						args: ["exec"],
 					},
 				},
 			];
@@ -106,7 +106,7 @@ function to_test_execution(task: vscode.Task): {
 		args: string[];
 	} & ({ command: string } | { process: string });
 } {
-	const execution = executionToSimple(task.execution!);
+	const execution = executionToSimple(task.execution);
 
 	return {
 		definition: task.definition,
@@ -116,7 +116,11 @@ function to_test_execution(task: vscode.Task): {
 }
 
 function executionToSimple(
-	taskExecution: vscode.ProcessExecution | vscode.ShellExecution | vscode.CustomExecution,
+	taskExecution:
+		| vscode.ProcessExecution
+		| vscode.ShellExecution
+		| vscode.CustomExecution
+		| undefined,
 ): {
 	args: string[];
 } & ({ command: string } | { process: string }) {

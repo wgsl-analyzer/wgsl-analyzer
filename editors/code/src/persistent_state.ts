@@ -1,5 +1,6 @@
 import type * as vscode from "vscode";
-import { log } from "./util";
+
+import { log } from "./utilities";
 
 export class PersistentState {
 	constructor(private readonly globalState: vscode.Memento) {

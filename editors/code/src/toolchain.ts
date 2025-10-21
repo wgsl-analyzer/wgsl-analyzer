@@ -1,10 +1,8 @@
-import * as cp from "child_process";
 import * as os from "os";
 import * as path from "path";
-import * as readline from "readline";
 import * as vscode from "vscode";
-import { log, memoizeAsync, unwrapUndefinable } from "./util";
-import type { CargoRunnableArgs as CargoRunnableArguments } from "./lsp_ext";
+
+import { log, memoizeAsync } from "./utilities";
 
 interface CompilationArtifact {
 	fileName: string;
@@ -18,156 +16,18 @@ export interface ArtifactSpec {
 	filter?: (artifacts: CompilationArtifact[]) => CompilationArtifact[];
 }
 
-interface CompilerMessage {
-	reason: string;
-	executable?: string;
-	target: {
-		crate_types: [string, ...string[]];
-		kind: [string, ...string[]];
-		name: string;
-	};
-	profile: {
-		test: boolean;
-	};
-	message: {
-		rendered: string;
-	};
-}
-
-export class Cargo {
-	constructor(
-		readonly rootFolder: string,
-		readonly output: vscode.OutputChannel,
-		readonly env: Record<string, string>,
-	) {}
-
-	// Made public for testing purposes
-	static artifactSpec(cargoArgs: string[], executableArgs?: string[]): ArtifactSpec {
-		cargoArgs = [...cargoArgs, "--message-format=json"];
-		// args for a runnable from the quick pick should be updated.
-		// see crates\rust-analyzer\src\handlers\request.rs, handle_code_lens
-		switch (cargoArgs[0]) {
-			case "run":
-				cargoArgs[0] = "build";
-				break;
-			case "test": {
-				if (!cargoArgs.includes("--no-run")) {
-					cargoArgs.push("--no-run");
-				}
-				break;
-			}
-		}
-
-		const result: ArtifactSpec = { cargoArgs: cargoArgs };
-		if (cargoArgs[0] === "test" || cargoArgs[0] === "bench") {
-			// for instance, `crates\rust-analyzer\tests\heavy_tests\main.rs` tests
-			// produce 2 artifacts: {"kind": "bin"} and {"kind": "test"}
-			result.filter = (artifacts) => artifacts.filter((it) => it.isTest);
-		}
-		if (executableArgs) {
-			cargoArgs.push("--", ...executableArgs);
-		}
-
-		return result;
-	}
-
-	private async getArtifacts(
-		spec: ArtifactSpec,
-		env?: Record<string, string>,
-	): Promise<CompilationArtifact[]> {
-		const artifacts: CompilationArtifact[] = [];
-
-		try {
-			await this.runCargo(
-				spec.cargoArgs,
-				(message) => {
-					if (message.reason === "compiler-artifact" && message.executable) {
-						const isBinary = message.target.crate_types.includes("bin");
-						const isBuildScript = message.target.kind.includes("custom-build");
-						if ((isBinary && !isBuildScript) || message.profile.test) {
-							artifacts.push({
-								fileName: message.executable,
-								name: message.target.name,
-								kind: message.target.kind[0],
-								isTest: message.profile.test,
-							});
-						}
-					} else if (message.reason === "compiler-message") {
-						this.output.append(message.message.rendered);
-					}
-				},
-				(stderr) => this.output.append(stderr),
-				env,
-			);
-		} catch (error) {
-			this.output.show(true);
-			throw new Error(`Cargo invocation has failed: ${error}`);
-		}
-
-		return spec.filter?.(artifacts) ?? artifacts;
-	}
-
-	async executableFromArgs(runnableArgs: CargoRunnableArguments): Promise<string> {
-		const artifacts = await this.getArtifacts(
-			Cargo.artifactSpec(runnableArgs.cargoArguments, runnableArgs.executableArguments),
-			runnableArgs.environment,
-		);
-
-		if (artifacts.length === 0) {
-			throw new Error("No compilation artifacts");
-		} else if (artifacts.length > 1) {
-			throw new Error("Multiple compilation artifacts are not supported.");
-		}
-
-		const artifact = unwrapUndefinable(artifacts[0]);
-		return artifact.fileName;
-	}
-
-	private async runCargo(
-		cargoArgs: string[],
-		onStdoutJson: (obj: CompilerMessage) => void,
-		onStderrString: (data: string) => void,
-		env?: Record<string, string>,
-	): Promise<number> {
-		const path = await cargoPath(env);
-		return await new Promise((resolve, reject) => {
-			const cargo = cp.spawn(path, cargoArgs, {
-				stdio: ["ignore", "pipe", "pipe"],
-				cwd: this.rootFolder,
-				env: this.env,
-			});
-
-			cargo.on("error", (error) => reject(new Error(`could not launch cargo: ${error}`)));
-
-			cargo.stderr.on("data", (chunk) => onStderrString(chunk.toString()));
-
-			const rl = readline.createInterface({ input: cargo.stdout });
-			rl.on("line", (line) => {
-				const message = JSON.parse(line);
-				onStdoutJson(message);
-			});
-
-			cargo.on("exit", (exitCode) => {
-				if (exitCode === 0) resolve(exitCode);
-				else reject(new Error(`exit code: ${exitCode}.`));
-			});
-		});
-	}
-}
-
-/** Mirrors `toolchain::cargo()` implementation */
 // FIXME: The server should provide this
-export function cargoPath(env?: Record<string, string>): Promise<string> {
-	if (env?.["RUSTC_TOOLCHAIN"]) {
-		return Promise.resolve("cargo");
+export function weslPath(env?: Record<string, string>): Promise<string> {
+	if (env?.["WESLRS_TOOLCHAIN"]) {
+		return Promise.resolve("wesl");
 	}
-	return getPathForExecutable("cargo");
+	return getPathForExecutable("wesl");
 }
 
 /** Mirrors `toolchain::get_path_for_executable()` implementation */
 const getPathForExecutable = memoizeAsync(
 	// We apply caching to decrease file-system interactions
-	async (executableName: "cargo" | "rustc" | "rustup"): Promise<string> => {
+	async (executableName: "wesl"): Promise<string> => {
 		{
 			const envVar = process.env[executableName.toUpperCase()];
 			if (envVar) return envVar;
@@ -192,8 +52,8 @@ async function lookupInPath(exec: string): Promise<boolean> {
 		return os.type() === "Windows_NT" ? [candidate, `${candidate}.exe`] : [candidate];
 	});
 
-	for await (const isFile of candidates.map(isFileAtPath)) {
-		if (isFile) {
+	for (const candidate of candidates) {
+		if (await isFileAtPath(candidate)) {
 			return true;
 		}
 	}
@@ -203,7 +63,6 @@ async function lookupInPath(exec: string): Promise<boolean> {
 function getCargoHome(): vscode.Uri | null {
 	const envVar = process.env["CARGO_HOME"];
 	if (envVar) return vscode.Uri.file(envVar);
-
 	try {
 		// hmm, `os.homedir()` seems to be infallible
 		// it is not mentioned in docs and cannot be inferred by the type signature...
@@ -211,11 +70,10 @@ function getCargoHome(): vscode.Uri | null {
 	} catch (error) {
 		log.error("Failed to read the fs info", error);
 	}
-
 	return null;
 }
 
-async function isFileAtPath(path: string): Promise<boolean> {
+function isFileAtPath(path: string): Promise<boolean> {
 	return isFileAtUri(vscode.Uri.file(path));
 }
 
