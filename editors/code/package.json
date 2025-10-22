@@ -1732,6 +1732,34 @@
 					"punctuation.definition.tag.range.wgsl",
 					"keyword.other.array-item.wgsl"
 				]
+			},
+			{
+				"injectTo": [
+					"source.js",
+					"source.ts",
+					"source.rust"
+				],
+				"scopeName": "source.comment-string.wesl",
+				"path": "./syntaxes/inline-wesl.tmLanguage.json",
+				"embeddedLanguages": {
+					"meta.embedded.block.wesl": "wesl"
+				}
+			},
+			{
+				"scopeName": "markdown.wesl.codeblock",
+				"path": "./syntaxes/inline-wesl.markdown.tmLanguage.json",
+				"injectTo": [
+					"text.html.markdown"
+				],
+				"embeddedLanguages": {
+					"meta.embedded.block.wesl": "wesl"
+				},
+				"unbalancedBracketScopes": [
+					"punctuation.definition.tag.begin.wgsl",
+					"punctuation.definition.tag.end.wgsl",
+					"punctuation.definition.tag.range.wgsl",
+					"keyword.other.array-item.wgsl"
+				]
 			}
 		],
 		"semanticTokenTypes": [
