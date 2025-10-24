@@ -15,7 +15,7 @@ either = "1.15.0"
 itertools = "0.14.0"
 rowan = "0.16.1"
 parser.workspace = true
-smol_str = "0.3.2"
+smol_str = "0.3.4"
 
 [lints]
 workspace = true
