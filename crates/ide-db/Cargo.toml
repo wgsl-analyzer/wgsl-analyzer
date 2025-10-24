@@ -22,7 +22,7 @@ memchr = "2.7.6"
 salsa = "0.17.0-pre.2"
 triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
 nohash-hasher = "0.2.0"
-smol_str = "0.3.2"
+smol_str = "0.3.4"
 smallvec = { version = "1.15.1", features = [
   "const_new",
   "union",
