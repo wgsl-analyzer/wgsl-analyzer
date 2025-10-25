@@ -59,7 +59,6 @@ config_data! {
         cachePriming_numThreads: NumThreads = NumThreads::Physical,
 
         /// Additional import aliases the server should resolve as if they were built-ins.
-        ///
         /// Keys are the import names as they appear in source; values are their resolved targets.
         customImports | custom_imports: FxHashMap<String, String> = FxHashMap::default(),
 
@@ -67,7 +66,7 @@ config_data! {
         diagnostics_nagaParsingErrors: bool = true,
         /// Report WGSL validation errors emitted by Naga.
         diagnostics_nagaValidationErrors: bool = true,
-        /// Naga version used for parsing/validation.
+        /// Naga version used for validation.
         diagnostics_nagaVersion: NagaVersion = NagaVersion::NagaMain,
         /// Report type errors from wgsl-analyzer.
         diagnostics_typeErrors: bool = true,
@@ -80,25 +79,22 @@ config_data! {
         inlayHints_renderColons: bool = true,
         /// Show inlay hints for struct/array layout (offsets, sizes).
         inlayHints_structLayoutHints: bool = false,
-        /// Show inlay type hints for variables, expressions, etc.
+        /// Show inlay type hints for variables.
         inlayHints_typeHints: bool = true,
         /// Verbosity of type hints: `"full"`, `"compact"`, or `"inner"`.
         inlayHints_typeVerbosity: InlayHintsTypeVerbosity = InlayHintsTypeVerbosity::default(),
 
         /// Number of worker threads for the main analysis loop.
-        /// `null` lets the server choose automatically.
+        /// `None` lets the server choose automatically.
         numThreads: Option<NumThreads> = None,
 
         /// Preprocessor shader `#define`s to apply during analysis.
-        ///
         /// Each entry enables a conditional compilation symbol as if passed on the command line.
         preprocessor_shaderDefs | shader_defs: FxHashSet<String> = FxHashSet::default(),
 
-        // --- tracing ---
         /// Emit extension-level trace logs to the client log.
         trace_extension: bool = false,
         /// Server trace verbosity.
-        ///
         /// One of: `"off"`, `"messages"`, or `"verbose"`.
         trace_server: TraceServer = TraceServer::Off,
     }
