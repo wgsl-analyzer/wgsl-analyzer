@@ -788,13 +788,13 @@ fn get_field_json<T: serde::de::DeserializeOwned>(
 
             match serde_json::from_value(value.take()) {
                 Ok(parsed) => Some(parsed),
-                Err(err) => {
+                Err(error) => {
                     tracing::warn!(
                         "Failed to deserialize config field at {}: {:?}",
                         pointer,
-                        err
+                        error
                     );
-                    error_sink.push((pointer, err));
+                    error_sink.push((pointer, error));
                     None
                 },
             }
