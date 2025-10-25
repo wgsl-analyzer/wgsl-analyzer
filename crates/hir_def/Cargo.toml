@@ -16,7 +16,7 @@ vfs.workspace = true
 salsa = "0.17.0-pre.2"
 syntax.workspace = true
 base-db.workspace = true
-smol_str = "0.3.2"
+smol_str = "0.3.4"
 rustc-hash = "2.1.1"
 either = "1.15.0"
 smallvec = { version = "1.15.1", features = [

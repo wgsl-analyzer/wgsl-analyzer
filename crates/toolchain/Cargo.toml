@@ -10,7 +10,7 @@ rust-version.workspace = true
 [lib]
 
 [dependencies]
-home = "0.5.11"
+home = "0.5.12"
 camino = "1.2.1"
 
 [lints]

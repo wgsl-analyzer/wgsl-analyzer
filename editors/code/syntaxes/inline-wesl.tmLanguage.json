@@ -1,0 +1,46 @@
+{
+	"scopeName": "source.comment-string.wesl",
+	"fileTypes": ["js", "ts", "rs"],
+	"injectionSelector": "L:source -comment -string",
+	"patterns": [
+		{
+			"comment": "JavaScript multi-line strings",
+			"begin": "(\\s?/\\*\\s?(?i:wesl)\\s?\\*/\\s*)(`)",
+			"beginCaptures": {
+				"1": { "name": "entity.name.function.tagged-template.ts" },
+				"2": { "name": "string.template.ts, punctuation.definition.string.template.begin.ts" }
+			},
+			"end": "(`)",
+			"endCaptures": {
+				"0": { "name": "string.template.ts, punctuation.definition.string.template.end.ts" }
+			},
+			"patterns": [
+				{ "include": "source.ts#template-substitution-element" },
+				{ "include": "source.wesl" }
+			]
+		},
+		{
+			"comment": "Rust multi-line raw/byte strings",
+			"begin": "(\\s?/\\*\\s?(?i:wesl)\\s?\\*/\\s*)(b?r?)(#*)(\")",
+			"beginCaptures": {
+				"1": { "name": "entity.name.function.rust" },
+				"2": { "name": "string.quoted.byte.raw.rust" },
+				"3": { "name": "string.raw.rust" },
+				"4": { "name": "string.rust" }
+			},
+			"end": "(\")(\\3)",
+			"endCaptures": {
+				"1": { "name": "string.rust" },
+				"2": { "name": "string.raw.rust" }
+			},
+			"patterns": [{ "include": "source.wesl" }]
+		},
+		{
+			"comment": "Standard strings",
+			"begin": "(\\s?/\\*\\s?(?i:wesl)\\s?\\*/\\s*)(\")",
+			"beginCaptures": { "1": { "name": "entity.name.function" } },
+			"end": "(\")",
+			"patterns": [{ "include": "source.wesl" }]
+		}
+	]
+}

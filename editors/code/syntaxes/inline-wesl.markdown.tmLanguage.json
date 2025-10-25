@@ -1,0 +1,27 @@
+{
+	"scopeName": "markdown.wesl.codeblock",
+	"fileTypes": ["md"],
+	"injectionSelector": "L:text.html.markdown",
+	"patterns": [{ "include": "#fenced_code_block_wesl" }],
+	"repository": {
+		"fenced_code_block_wesl": {
+			"begin": "(^|\\G)(\\s*)(`{3,}|~{3,})\\s*(?i:(wesl)(\\s+[^`~]*)?$)",
+			"name": "markup.fenced_code.block.markdown",
+			"end": "(^|\\G)(\\2|\\s{0,3})(\\3)\\s*$",
+			"beginCaptures": {
+				"3": { "name": "punctuation.definition.markdown" },
+				"4": { "name": "fenced_code.block.language" },
+				"5": { "name": "fenced_code.block.language.attributes" }
+			},
+			"endCaptures": { "3": { "name": "punctuation.definition.markdown" } },
+			"patterns": [
+				{
+					"begin": "(^|\\G)(\\s*)(.*)",
+					"while": "(^|\\G)(?!\\s*([`~]{3,})\\s*$)",
+					"contentName": "meta.embedded.block.wesl",
+					"patterns": [{ "include": "source.wesl" }]
+				}
+			]
+		}
+	}
+}
