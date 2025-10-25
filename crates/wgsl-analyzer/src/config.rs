@@ -38,13 +38,69 @@ use stdx::format_to_acc;
 use triomphe::Arc;
 use vfs::{AbsPath, AbsPathBuf, VfsPath};
 
-#[derive(Default, Clone, Debug, Deserialize)]
-pub struct TraceConfig {
-    pub extension: bool,
-    pub server: bool,
+// Defines the server-side configuration of the wgsl-analyzer. We generate *parts* of VS Code's
+// `package.json` config from this. Run `cargo test` to re-generate that file.
+//
+// However, editor specific config, which the server doesn't know about, should be specified
+// directly in `package.json`.
+//
+// To deprecate an option by replacing it with another name use `new_name` | `old_name` so that we
+// keep parsing the old name.
+config_data! {
+    /// Configs that apply on a workspace-wide scope. There are two levels at which a global
+    /// configuration can be provided:
+    /// 1. Client-specific settings (e.g. `settings.json` in VS Code).
+    /// 2. A user-wide configuration file in this tool's config directory.
+    /// A config value is resolved by traversing the "config tree" from the most specific scope
+    /// upward (nearest-first principle). The first level that specifies a value wins.
+    global: struct GlobalDefaultConfigData <- GlobalConfigInput -> {
+        /// Number of worker threads used to warm caches when a project opens.
+        /// Use `0` to let the server choose automatically based on the machine.
+        cachePriming_numThreads: NumThreads = NumThreads::Physical,
+
+        /// Additional import aliases the server should resolve as if they were built-ins.
+        /// Keys are the import names as they appear in source; values are their resolved targets.
+        customImports | custom_imports: FxHashMap<String, String> = FxHashMap::default(),
+
+        /// Report WGSL parsing errors emitted by Naga.
+        diagnostics_nagaParsingErrors: bool = true,
+        /// Report WGSL validation errors emitted by Naga.
+        diagnostics_nagaValidationErrors: bool = true,
+        /// Naga version used for validation.
+        diagnostics_nagaVersion: NagaVersion = NagaVersion::NagaMain,
+        /// Report type errors from wgsl-analyzer.
+        diagnostics_typeErrors: bool = true,
+
+        /// Master switch for inlay hints.
+        inlayHints_enabled: bool = true,
+        /// Show function parameter name hints at call sites.
+        inlayHints_parameterHints: bool = true,
+        /// Show colons
+        inlayHints_renderColons: bool = true,
+        /// Show inlay hints for struct/array layout (offsets, sizes).
+        inlayHints_structLayoutHints: bool = false,
+        /// Show inlay type hints for variables.
+        inlayHints_typeHints: bool = true,
+        /// Verbosity of type hints: `"full"`, `"compact"`, or `"inner"`.
+        inlayHints_typeVerbosity: InlayHintsTypeVerbosity = InlayHintsTypeVerbosity::default(),
+
+        /// Number of worker threads for the main analysis loop.
+        /// `None` lets the server choose automatically.
+        numThreads: Option<NumThreads> = None,
+
+        /// Preprocessor shader `#define`s to apply during analysis.
+        /// Each entry enables a conditional compilation symbol as if passed on the command line.
+        preprocessor_shaderDefs | shader_defs: FxHashSet<String> = FxHashSet::default(),
+
+        /// Emit extension-level trace logs to the client log.
+        trace_extension: bool = false,
+        /// Server trace verbosity.
+        /// One of: `"off"`, `"messages"`, or `"verbose"`.
+        trace_server: TraceServer = TraceServer::Off,
+    }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 #[derive(Default)]
 pub enum InlayHintsTypeVerbosity {
@@ -52,6 +108,16 @@ pub enum InlayHintsTypeVerbosity {
     #[default]
     Compact, // ref<f32>,
     Inner, // f32
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+#[derive(Default)]
+pub enum TraceServer {
+    #[default]
+    Off,
+    Messages,
+    Verbose,
 }
 
 #[derive(Clone, Debug)]
@@ -62,7 +128,6 @@ struct ClientInfo {
 
 #[derive(Clone, Debug)]
 pub struct Config {
-    data: ConfigData,
     /// The workspace roots as registered by the LSP client
     workspace_roots: Vec<AbsPathBuf>,
     capabilities: ClientCapabilities,
@@ -71,13 +136,13 @@ pub struct Config {
     client_info: Option<ClientInfo>,
     diagnostics_enable: bool,
 
-    // default_config: &'static DefaultConfigData,
-    // /// Config node that obtains its initial value during the server initialization and
-    // /// by receiving a `lsp_types::notification::DidChangeConfiguration`.
-    // client_config: (FullConfigInput, ConfigErrors),
+    default: &'static DefaultConfigData,
+    /// Config node that obtains its initial value during the server initialization and
+    /// by receiving a `lsp_types::notification::DidChangeConfiguration`.
+    client: (FullConfigInput, ConfigErrors),
 
-    // /// Config node whose values apply to **every** Rust project.
-    // user_config: Option<(GlobalWorkspaceLocalConfigInput, ConfigErrors)>,
+    /// Config node whose values apply to **every** wgsl project.
+    user: Option<(GlobalWorkspaceLocalConfigInput, ConfigErrors)>,
 
     // /// Clone of the value that is stored inside a `GlobalState`.
     // source_root_parent_map: Arc<FxHashMap<SourceRootId, SourceRootId>>,
@@ -94,11 +159,6 @@ pub struct Config {
 }
 
 impl Config {
-    #[must_use]
-    pub const fn data(&self) -> &ConfigData {
-        &self.data
-    }
-
     #[must_use]
     #[expect(
         clippy::unused_self,
@@ -139,7 +199,6 @@ pub struct DiscoverWorkspaceConfig {
 pub struct ConfigData {
     pub custom_imports: FxHashMap<String, String>,
     pub shader_defs: FxHashSet<String>,
-    pub trace: TraceConfig,
     pub inlay_hints: InlayHintsConfig,
     pub diagnostics: DiagnosticsConfig,
 
@@ -183,9 +242,6 @@ pub struct InlayFieldsToResolve {
     pub resolve_label_command: bool,
 }
 
-#[derive(Debug)]
-pub enum ConfigErrorInner {}
-
 #[derive(Clone, Debug, Default)]
 pub struct ConfigErrors(Vec<Arc<ConfigErrorInner>>);
 
@@ -201,23 +257,21 @@ impl fmt::Display for ConfigErrors {
         &self,
         formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        #[expect(clippy::match_single_binding, reason = "wip")]
-        #[expect(clippy::uninhabited_references, reason = "wip")]
         let errors = self
             .0
             .iter()
             .format_with("\n", |inner, formatter| match &**inner {
-                // ConfigErrorInner::Json { config_key: key, error: e } => {
-                //     formatter(key)?;
-                //     formatter(&": ")?;
-                //     formatter(e)
-                // }
+                ConfigErrorInner::Json { config_key, error } => {
+                    formatter(config_key)?;
+                    formatter(&": ")?;
+                    formatter(error)
+                },
                 // ConfigErrorInner::Toml { config_key: key, error: e } => {
                 //     formatter(key)?;
                 //     formatter(&": ")?;
                 //     formatter(e)
                 // }
-                // ConfigErrorInner::ParseError { reason } => formatter(reason),
+                ConfigErrorInner::ParseError { reason } => formatter(reason),
                 _ => formatter(&""),
             });
         write!(
@@ -238,18 +292,9 @@ impl Config {
         workspace_roots: Vec<AbsPathBuf>,
         client_info: Option<lsp_types::ClientInfo>,
     ) -> Self {
-        // static DEFAULT_CONFIG_DATA: OnceLock<&'static DefaultConfigData> = OnceLock::new();
+        static DEFAULT_CONFIG_DATA: OnceLock<&'static DefaultConfigData> = OnceLock::new();
 
         Self {
-            data: ConfigData {
-                custom_imports: FxHashMap::default(),
-                shader_defs: FxHashSet::default(),
-                trace: TraceConfig::default(),
-                inlay_hints: InlayHintsConfig::default(),
-                diagnostics: DiagnosticsConfig::default(),
-                cache_priming_num_threads: NumThreads::Physical,
-                num_threads: None,
-            },
             workspace_roots,
             // discovered_projects_from_filesystem: Vec::new(),
             // discovered_projects_from_command: Vec::new(),
@@ -265,10 +310,10 @@ impl Config {
                     .and_then(Result::ok),
             }),
             diagnostics_enable: true,
-            // client_config: (FullConfigInput::default(), ConfigErrors(vec![])),
-            // default_config: DEFAULT_CONFIG_DATA.get_or_init(|| Box::leak(Box::default())),
+            default: DEFAULT_CONFIG_DATA.get_or_init(|| Box::leak(Box::default())),
+            client: (FullConfigInput::default(), ConfigErrors(vec![])),
             // source_root_parent_map: Arc::new(FxHashMap::default()),
-            // user_config: None,
+            user: None,
             validation_errors: ConfigErrors::default(),
             detached_files: Vec::default(),
             // watoml_file: Default::default(),
@@ -292,17 +337,80 @@ impl Config {
         // self.discovered_projects_from_filesystem = discovered;
     }
 
+    fn apply_change_with_sink(
+        &self,
+        change: ConfigChange,
+    ) -> (Self, bool) {
+        let mut config = self.clone();
+        let mut should_update = false;
+
+        if let Some(mut json) = change.client_config {
+            tracing::info!("updating WGSL config from JSON: {:#}", json);
+
+            if json.is_null() || json.as_object().is_some_and(serde_json::Map::is_empty) {
+                return (config, should_update);
+            }
+
+            let mut json_errors = Vec::<(String, serde_json::Error)>::new();
+            let input = FullConfigInput::from_json(json, &mut json_errors);
+
+            // Stash parsed values and any field-level errors so `apply_change` can surface them.
+            config.client = (
+                input,
+                ConfigErrors(
+                    json_errors
+                        .into_iter()
+                        .map(|(config_key, error)| {
+                            Arc::new(ConfigErrorInner::Json { config_key, error })
+                        })
+                        .collect(),
+                ),
+            );
+
+            // If the client changed anything, let the caller rebuild derived state (hints, hovers, etc.)
+            should_update = true;
+        }
+
+        (config, should_update)
+    }
+
     /// Given `change` this generates a new `Config`, thereby collecting errors of type `ConfigError`.
     /// If there are changes that have global/client level effect, the last component of the return type
     /// will be set to `true`, which should be used by the `GlobalState` to update itself.
     #[must_use]
     pub fn apply_change(
         &self,
-        _change: ConfigChange,
+        change: ConfigChange,
     ) -> (Self, ConfigErrors, bool) {
-        let (config, should_update) = (self.clone(), true);
+        let (config, should_update) = self.apply_change_with_sink(change);
+        let errors = ConfigErrors(
+            config
+                .client
+                .1
+                .0
+                .iter()
+                .chain(
+                    config
+                        .user
+                        .as_ref()
+                        .into_iter()
+                        .flat_map(|pair| pair.1.0.iter()),
+                )
+                .chain(config.validation_errors.0.iter())
+                .cloned()
+                .collect(),
+        );
+        (config, errors, should_update)
+    }
 
-        (config, ConfigErrors(vec![]), should_update)
+    #[must_use]
+    pub fn custom_imports(&self) -> &FxHashMap<String, String> {
+        self.customImports()
+    }
+
+    #[must_use]
+    pub fn preprocessor_shader_defs(&self) -> &FxHashSet<String> {
+        self.preprocessor_shaderDefs()
     }
 
     #[must_use]
@@ -317,18 +425,18 @@ impl Config {
 
     #[must_use]
     pub fn prime_caches_number_of_threads(&self) -> usize {
-        match self.data.cache_priming_num_threads {
+        match self.cachePriming_numThreads() {
             NumThreads::Concrete(0) | NumThreads::Physical => num_cpus::get_physical(),
-            NumThreads::Concrete(number) => number,
+            NumThreads::Concrete(number) => *number,
             NumThreads::Logical => num_cpus::get(),
         }
     }
 
     #[must_use]
     pub fn main_loop_number_of_threads(&self) -> usize {
-        match self.data.num_threads {
+        match self.numThreads() {
             Some(NumThreads::Concrete(0) | NumThreads::Physical) | None => num_cpus::get_physical(),
-            Some(NumThreads::Concrete(number)) => number,
+            Some(NumThreads::Concrete(number)) => *number,
             Some(NumThreads::Logical) => num_cpus::get(),
         }
     }
@@ -411,16 +519,14 @@ impl Config {
     pub fn inlay_hints(&self) -> inlay_hints::InlayHintsConfig {
         let client_capability_fields = self.inlay_hint_resolve_support_properties();
         inlay_hints::InlayHintsConfig {
-            render_colons: self.data.inlay_hints.render_colons,
-            enabled: self.data.inlay_hints.enabled,
-            type_hints: self.data.inlay_hints.type_hints,
-            parameter_hints: self.data.inlay_hints.parameter_hints,
+            render_colons: *self.inlayHints_renderColons(),
+            enabled: *self.inlayHints_enabled(),
+            type_hints: *self.inlayHints_typeHints(),
+            parameter_hints: *self.inlayHints_parameterHints(),
             struct_layout_hints: self
-                .data
-                .inlay_hints
-                .struct_layout_hints
+                .inlayHints_structLayoutHints()
                 .then_some(StructLayoutHints::Offset),
-            type_verbosity: match self.data.inlay_hints.type_verbosity {
+            type_verbosity: match self.inlayHints_typeVerbosity() {
                 InlayHintsTypeVerbosity::Full => TypeVerbosity::Full,
                 InlayHintsTypeVerbosity::Compact => TypeVerbosity::Compact,
                 InlayHintsTypeVerbosity::Inner => TypeVerbosity::Inner,
@@ -428,26 +534,6 @@ impl Config {
             fields_to_resolve: ide::inlay_hints::InlayFieldsToResolve::from_client_capabilities(
                 &client_capability_fields,
             ),
-        }
-    }
-    fn try_update(
-        &mut self,
-        value: serde_json::Value,
-    ) -> Result<(), serde_json::Error> {
-        self.data = serde_json::from_value(value)?;
-        Ok(())
-    }
-
-    pub fn update(
-        &mut self,
-        value: &serde_json::Value,
-    ) {
-        if value.is_null() {
-            return;
-        }
-        if let Err(error) = self.try_update(value.clone()) {
-            tracing::error!("Failed to update config: {:?}", error);
-            tracing::error!("Received JSON: {}", value.to_string());
         }
     }
 
@@ -479,16 +565,16 @@ impl Config {
     }
 
     #[must_use]
-    pub const fn diagnostics(
+    pub fn diagnostics(
         &self,
         source_root: Option<SourceRootId>,
     ) -> DiagnosticsConfig {
         DiagnosticsConfig {
             enabled: true,
-            type_errors: self.data.diagnostics.type_errors,
-            naga_parsing_errors: self.data.diagnostics.naga_parsing_errors,
-            naga_validation_errors: self.data.diagnostics.naga_validation_errors,
-            naga_version: match self.data.diagnostics.naga_version {
+            type_errors: *self.diagnostics_typeErrors(),
+            naga_parsing_errors: *self.diagnostics_nagaParsingErrors(),
+            naga_validation_errors: *self.diagnostics_nagaValidationErrors(),
+            naga_version: match self.diagnostics_nagaVersion() {
                 NagaVersion::Naga14 => NagaVersion::Naga14,
                 NagaVersion::Naga19 => NagaVersion::Naga19,
                 NagaVersion::Naga22 => NagaVersion::Naga22,
@@ -540,7 +626,7 @@ pub struct ConfigChange {
     source_map: Option<Arc<FxHashMap<SourceRootId, SourceRootId>>>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Copy, Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum NumThreads {
     Physical,
@@ -636,14 +722,600 @@ impl HoverActionsConfig {
     }
 }
 
+#[derive(Default, Debug, Clone)]
+struct DefaultConfigData {
+    global: GlobalDefaultConfigData,
+    // workspace: WorkspaceDefaultConfigData,
+    // local: LocalDefaultConfigData,
+    // client: ClientDefaultConfigData,
+}
+
+/// All of the config levels, all fields `Option<T>`, to describe fields that are actually set by
+/// some JSON blob.
+#[derive(Debug, Clone, Default)]
+struct FullConfigInput {
+    global: GlobalConfigInput,
+    // workspace: WorkspaceConfigInput,
+    // local: LocalConfigInput,
+    // client: ClientConfigInput,
+}
+
+impl FullConfigInput {
+    fn from_json(
+        mut json: serde_json::Value,
+        error_sink: &mut Vec<(String, serde_json::Error)>,
+    ) -> Self {
+        Self {
+            global: GlobalConfigInput::from_json(&mut json, error_sink),
+            // local: LocalConfigInput::from_json(&mut json, error_sink),
+            // client: ClientConfigInput::from_json(&mut json, error_sink),
+            // workspace: WorkspaceConfigInput::from_json(&mut json, error_sink),
+        }
+    }
+
+    fn schema_fields() -> Vec<SchemaField> {
+        let mut fields = Vec::new();
+        GlobalConfigInput::schema_fields(&mut fields);
+        fields.sort_by_key(|&(key, ..)| key);
+        fields
+            .iter()
+            .tuple_windows()
+            .for_each(|(field_a, field_b)| {
+                assert!(field_a.0 != field_b.0, "{field_a:?} duplicate field");
+            });
+        fields
+    }
+
+    fn json_schema() -> serde_json::Value {
+        schema(&Self::schema_fields())
+    }
+
+    #[cfg(test)]
+    fn manual() -> String {
+        manual(&Self::schema_fields())
+    }
+}
+
+/// All of the config levels, all fields `Option<T>`, to describe fields that are actually set by
+/// some JSON blob.
+#[derive(Debug, Clone, Default)]
+struct GlobalWorkspaceLocalConfigInput {
+    global: GlobalConfigInput,
+    // local: LocalConfigInput,
+    // workspace: WorkspaceConfigInput,
+}
+
+fn get_field_json<T: serde::de::DeserializeOwned>(
+    json: &mut serde_json::Value,
+    error_sink: &mut Vec<(String, serde_json::Error)>,
+    field: &'static str,
+    alias: Option<&'static str>,
+) -> Option<T> {
+    // XXX: check alias first, to work around the VS Code issue where it pre-fills defaults
+    // instead of sending an empty object.
+    alias
+        .into_iter()
+        .chain(std::iter::once(field))
+        .find_map(|field_name| {
+            let mut pointer = field_name.replace('_', "/");
+            pointer.insert(0, '/');
+
+            let value = json.pointer_mut(&pointer)?;
+
+            match serde_json::from_value(value.take()) {
+                Ok(parsed) => Some(parsed),
+                Err(error) => {
+                    tracing::warn!(
+                        "Failed to deserialize config field at {}: {:?}",
+                        pointer,
+                        error
+                    );
+                    error_sink.push((pointer, error));
+                    None
+                },
+            }
+        })
+}
+
+type SchemaField = (&'static str, &'static str, &'static [&'static str], String);
+
+fn schema(fields: &[SchemaField]) -> serde_json::Value {
+    let map = fields
+        .iter()
+        .map(|(field, field_type, doc, default)| {
+            let name = field.replace('_', ".");
+            let category = name.split_once('.').map_or_else(
+                || "wgsl-analyzer".into(),
+                |(category, _name)| to_title_case(category),
+            );
+            let name = format!("wgsl-analyzer.{name}");
+            let props = field_props(field, field_type, doc, default);
+            serde_json::json!({
+                "title": category,
+                "properties": {
+                    name: props
+                }
+            })
+        })
+        .collect::<Vec<_>>();
+    map.into()
+}
+
+/// Translate a field name to a title case string suitable for use in the category names on the
+/// vscode settings page.
+///
+/// First letter of word should be uppercase, if an uppercase letter is encountered, add a space
+/// before it e.g. "fooBar" -> "Foo Bar", "fooBarBaz" -> "Foo Bar Baz", "foo" -> "Foo"
+///
+/// This likely should be in stdx (or just use heck instead), but it doesn't handle any edge cases
+/// and is intentionally simple.
+fn to_title_case(string: &str) -> String {
+    let mut result = String::with_capacity(string.len());
+    let mut chars = string.chars();
+    if let Some(first) = chars.next() {
+        result.push(first.to_ascii_uppercase());
+        for character in chars {
+            if character.is_uppercase() {
+                result.push(' ');
+            }
+            result.push(character);
+        }
+    }
+    result
+}
+
+fn field_props(
+    field: &str,
+    field_type: &str,
+    doc: &[&str],
+    default: &str,
+) -> serde_json::Value {
+    let doc = doc_comment_to_string(doc);
+    let doc = doc.trim_end_matches('\n');
+    assert!(
+        doc.ends_with('.') && doc.starts_with(char::is_uppercase),
+        "bad docs for {field}: {doc:?}"
+    );
+    let default = default.parse::<serde_json::Value>().unwrap();
+
+    let mut map = serde_json::Map::default();
+    macro_rules! set {
+        ($($key:literal: $value:tt),*$(,)?) => {{$(
+            map.insert($key.into(), serde_json::json!($value));
+        )*}};
+    }
+    set!("markdownDescription": doc);
+    set!("default": default);
+
+    match field_type {
+        "bool" => set!("type": "boolean"),
+        "usize" => set!("type": "integer", "minimum": 0),
+        "String" => set!("type": "string"),
+        "Vec<String>" | "Vec<Utf8PathBuf>" => set! {
+            "type": "array",
+            "items": { "type": "string" },
+        },
+        "FxHashMap<Box<str>, Box<[Box<str>]>>"
+        | "FxHashMap<String, String>"
+        | "FxHashMap<Box<str>, u16>" => set! {
+            "type": "object",
+        },
+        "Option<usize>" => set! {
+            "type": ["null", "integer"],
+            "minimum": 0,
+        },
+        "Option<u16>" => set! {
+            "type": ["null", "integer"],
+            "minimum": 0,
+            "maximum": 0xFFFF,
+        },
+        "Option<bool>" => set! {
+            "type": ["null", "boolean"],
+        },
+        "NumThreads" => set! {
+            "anyOf": [
+                {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 0x00FF
+                },
+                {
+                    "type": "string",
+                    "enum": ["physical", "logical", ],
+                    "enumDescriptions": [
+                        "Use the number of physical cores",
+                        "Use the number of logical cores",
+                    ],
+                },
+            ],
+        },
+        "Option<NumThreads>" => set! {
+            "anyOf": [
+                {
+                    "type": "null"
+                },
+                {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 0x00FF
+                },
+                {
+                    "type": "string",
+                    "enum": ["physical", "logical", ],
+                    "enumDescriptions": [
+                        "Use the number of physical cores",
+                        "Use the number of logical cores",
+                    ],
+                },
+            ],
+        },
+        "NagaVersion" => set! {
+            "anyOf": [
+                {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 0x00FF
+                },
+                {
+                    "type": "string",
+                    "enum": ["naga14", "naga19", "naga22", "nagaMain"],
+                    "enumDescriptions": [
+                        "Naga version 14",
+                        "Naga version 19",
+                        "Naga version 22",
+                        "Version of Naga on main (most recent stable version)"
+                    ],
+                },
+            ],
+        },
+        _ => panic!("missing entry for {field_type}: {default} (field {field})"),
+    }
+
+    map.into()
+}
+
+macro_rules! _default_val {
+    ($default:expr, $ty:ty) => {{
+        let default_: $ty = $default;
+        default_
+    }};
+}
+use _default_val as default_val;
+
+macro_rules! _default_str {
+    ($default:expr, $ty:ty) => {{
+        let val = default_val!($default, $ty);
+        serde_json::to_string_pretty(&val).unwrap()
+    }};
+}
+use _default_str as default_str;
+
+macro_rules! _impl_for_config_data {
+    (local, $(
+            $(#[doc=$doc:literal])*
+            $vis:vis $field:ident : $ty:ty = $default:expr,
+        )*
+    ) => {
+        impl Config {
+            $(
+                $($doc)*
+                #[allow(non_snake_case)]
+                $vis fn $field(&self, source_root: Option<SourceRootId>) -> &$ty {
+                    let mut source_root = source_root.as_ref();
+                    while let Some(sr) = source_root {
+                        if let Some((file, _)) = self.ratoml_file.get(&sr) {
+                            match file {
+                                RatomlFile::Workspace(config) => {
+                                    if let Some(v) = config.local.$field.as_ref() {
+                                        return &v;
+                                    }
+                                },
+                                RatomlFile::Crate(config) => {
+                                    if let Some(value) = config.$field.as_ref() {
+                                        return value;
+                                    }
+                                }
+                            }
+                        }
+                        source_root = self.source_root_parent_map.get(&sr);
+                    }
+
+                    if let Some(v) = self.client_config.0.local.$field.as_ref() {
+                        return &v;
+                    }
+
+                    if let Some((user_config, _)) = self.user_config.as_ref() {
+                        if let Some(v) = user_config.local.$field.as_ref() {
+                            return &v;
+                        }
+                    }
+
+                    &self.default_config.local.$field
+                }
+            )*
+        }
+    };
+    (workspace, $(
+            $(#[doc=$doc:literal])*
+            $vis:vis $field:ident : $ty:ty = $default:expr,
+        )*
+    ) => {
+        impl Config {
+            $(
+                $($doc)*
+                #[allow(non_snake_case)]
+                $vis fn $field(&self, source_root: Option<SourceRootId>) -> &$ty {
+                    let mut source_root = source_root.as_ref();
+                    while let Some(sr) = source_root {
+                        if let Some((RatomlFile::Workspace(config), _)) = self.ratoml_file.get(&sr) {
+                            if let Some(v) = config.workspace.$field.as_ref() {
+                                return &v;
+                            }
+                        }
+                        source_root = self.source_root_parent_map.get(&sr);
+                    }
+
+                    if let Some(v) = self.client_config.0.workspace.$field.as_ref() {
+                        return &v;
+                    }
+
+                    if let Some((user_config, _)) = self.user_config.as_ref() {
+                        if let Some(v) = user_config.workspace.$field.as_ref() {
+                            return &v;
+                        }
+                    }
+
+                    &self.default_config.workspace.$field
+                }
+            )*
+        }
+    };
+    (global, $(
+            $(#[doc=$doc:literal])*
+            $vis:vis $field:ident : $ty:ty = $default:expr,
+        )*
+    ) => {
+        #[expect(non_snake_case, reason="Generated accessor mirrors user-facing schema keys.")]
+        #[expect(clippy::ref_option, reason="Accessors intentionally return &Option<T> to avoid cloning.")]
+        impl Config {
+            $(
+                $($doc)*
+                $vis fn $field(&self) -> &$ty {
+                    if let Some(value) = self.client.0.global.$field.as_ref() {
+                        return value;
+                    }
+
+                    if let Some((user_config, _)) = self.user.as_ref() {
+                        if let Some(value) = user_config.global.$field.as_ref() {
+                            return value;
+                        }
+                    }
+
+
+                    &self.default.global.$field
+                }
+            )*
+        }
+    };
+    (client, $(
+            $(#[doc=$doc:literal])*
+            $vis:vis $field:ident : $ty:ty = $default:expr,
+       )*
+    ) => {
+        impl Config {
+            $(
+                $($doc)*
+                #[allow(non_snake_case)]
+                $vis fn $field(&self) -> &$ty {
+                    if let Some(v) = self.client_config.0.client.$field.as_ref() {
+                        return &v;
+                    }
+
+                    &self.default_config.client.$field
+                }
+            )*
+        }
+    };
+}
+use _impl_for_config_data as impl_for_config_data;
+
+macro_rules! _config_data {
+    // modname is for the tests
+    ($(#[doc=$dox:literal])* $modname:ident: struct $name:ident <- $input:ident -> {
+        $(
+            $(#[doc=$doc:literal])*
+            $vis:vis $field:ident $(| $alias:ident)*: $ty:ty = $default:expr,
+        )*
+    }) => {
+        /// Default config values for this grouping.
+        #[expect(non_snake_case, reason = "Generated accessor mirrors user-facing schema keys.")]
+        #[derive(Debug, Clone)]
+        struct $name { $($field: $ty,)* }
+
+        impl_for_config_data!{
+            $modname,
+            $(
+                $vis $field : $ty = $default,
+            )*
+        }
+
+        /// All fields `Option<T>`, `None` representing fields not set in a particular JSON blob.
+        #[expect(non_snake_case, reason = "Fields mirror user-facing camelCase keys.")]
+        #[derive(Clone, Default)]
+        struct $input { $(
+            $field: Option<$ty>,
+        )* }
+
+        impl std::fmt::Debug for $input {
+            fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                let mut debug_struct = formatter.debug_struct(stringify!($input));
+                $(
+                    if let Some(val) = self.$field.as_ref() {
+                        debug_struct.field(stringify!($field), val);
+                    }
+                )*
+                debug_struct.finish()
+            }
+        }
+
+        impl Default for $name {
+            fn default() -> Self {
+                $name {$(
+                    $field: default_val!($default, $ty),
+                )*}
+            }
+        }
+
+        impl $input {
+            const FIELDS: &'static [&'static str] = &[$(stringify!($field)),*];
+
+            fn from_json(json: &mut serde_json::Value, error_sink: &mut Vec<(String, serde_json::Error)>) -> Self {
+                Self {$(
+                    $field: get_field_json(
+                        json,
+                        error_sink,
+                        stringify!($field),
+                        None$(.or(Some(stringify!($alias))))*,
+                    ),
+                )*}
+            }
+
+            fn schema_fields(sink: &mut Vec<SchemaField>) {
+                sink.extend_from_slice(&[
+                    $({
+                        let field = stringify!($field);
+                        let ty = stringify!($ty);
+                        let default = default_str!($default, $ty);
+
+                        (field, ty, &[$($doc),*], default)
+                    },)*
+                ])
+            }
+        }
+
+        #[cfg(test)]
+        mod $modname {
+            #[test]
+             fn fields_are_sorted() {
+                let fields = super::$input::FIELDS;
+                fields.iter().zip(fields.iter().skip(1)).for_each(|(left, right)| {
+                    assert!(left <= right, "{} <= {} does not hold", left, right);
+                });
+             }
+         }
+    };
+}
+use _config_data as config_data;
+
+#[derive(Debug)]
+pub enum ConfigErrorInner {
+    Json {
+        config_key: String,
+        error: serde_json::Error,
+    },
+    ParseError {
+        reason: String,
+    },
+}
+
+#[cfg(test)]
+fn manual(fields: &[SchemaField]) -> String {
+    fields
+        .iter()
+        .fold(String::new(), |mut acc, (field, _ty, doc, default)| {
+            let id = field.replace('_', ".");
+            let name = format!("wgsl-analyzer.{id}");
+            let doc = doc_comment_to_string(doc);
+            if default.contains('\n') {
+                format_to_acc!(
+                    acc,
+                    "## {name} \n\nDefault:\n```json\n{default}\n```\n\n{doc}\n"
+                )
+            } else {
+                format_to_acc!(acc, "## {name}\n\nDefault: `{default}`\n\n{doc}\n")
+            }
+        })
+}
+
+fn doc_comment_to_string(doc: &[&str]) -> String {
+    doc.iter()
+        .map(|iterator| iterator.strip_prefix(' ').unwrap_or(iterator))
+        .fold(String::new(), |mut out, line| {
+            format_to_acc!(out, "{line}\n")
+        })
+}
+
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
+    use crate::config::{Config, FullConfigInput};
     use test_utils::{ensure_file_contents, project_root};
+
+    #[test]
+    fn generate_package_json_config() {
+        let schema = FullConfigInput::json_schema();
+
+        let mut schema = format!("{schema:#}");
+        let mut schema = schema
+            .trim_start_matches('[')
+            .trim_end_matches(']')
+            .replace("  ", "    ")
+            .replace('\n', "\n        ")
+            .trim_start_matches('\n')
+            .trim_end()
+            .to_owned();
+        schema.push_str(",\n");
+
+        // Transform the asciidoc form link to markdown style.
+        //
+        // https://link[text] => [text](https://link)
+        let url_matches = schema.match_indices("https://");
+        let mut url_offsets = url_matches.map(|(index, _)| index).collect::<Vec<usize>>();
+        url_offsets.reverse();
+        for index in url_offsets {
+            let link = &schema[index..];
+            // matching on whitespace to ignore normal links
+            if let Some(link_end) = link.find([' ', '['])
+                && link.chars().nth(link_end) == Some('[')
+                && let Some(link_text_end) = link.find(']')
+            {
+                let link_text = link[link_end..=link_text_end].to_string();
+
+                schema.replace_range(((index + link_end)..=(index + link_text_end)), "");
+                schema.insert(index, '(');
+                schema.insert(index + link_end + 1, ')');
+                schema.insert_str(index, &link_text);
+            }
+        }
+
+        let package_json_path = project_root().join("editors/code/package.json");
+        let mut package_json = fs::read_to_string(&package_json_path).unwrap();
+
+        let start_marker =
+            "            {\n                \"title\": \"$generated-start\"\n            },\n";
+        let end_marker =
+            "            {\n                \"title\": \"$generated-end\"\n            }\n";
+
+        let start = package_json.find(start_marker).unwrap() + start_marker.len();
+        let end = package_json.find(end_marker).unwrap();
+
+        let package = remove_ws(&package_json[start..end]);
+        let schema = remove_ws(&schema);
+        if !package.contains(&schema) {
+            package_json.replace_range(start..end, &schema);
+            ensure_file_contents(package_json_path.as_std_path(), &package_json);
+        }
+    }
 
     #[test]
     fn generate_config_documentation() {
         let docs_path = project_root().join("docs/book/src/configuration_generated.md");
-        let expected = String::new();
+        let expected = FullConfigInput::manual();
         ensure_file_contents(docs_path.as_std_path(), &expected);
+    }
+
+    fn remove_ws(text: &str) -> String {
+        text.replace(char::is_whitespace, "")
     }
 }
