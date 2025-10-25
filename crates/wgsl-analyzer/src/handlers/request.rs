@@ -298,8 +298,8 @@ pub(crate) fn publish_diagnostics(
                 .into_iter()
                 .filter_map(|(message, range)| match to_proto::location(snap, range) {
                     Ok(location) => Some(DiagnosticRelatedInformation { location, message }),
-                    Err(e) => {
-                        tracing::warn!("publish_diagnostics: dropping related info: {e:#}");
+                    Err(error) => {
+                        tracing::warn!("publish_diagnostics: dropping related info: {error:#}");
                         None
                     },
                 })

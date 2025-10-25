@@ -49,10 +49,8 @@ use vfs::{AbsPath, AbsPathBuf, VfsPath};
 config_data! {
     /// Configs that apply on a workspace-wide scope. There are two levels at which a global
     /// configuration can be provided:
-    ///
     /// 1. Client-specific settings (e.g. `settings.json` in VS Code).
     /// 2. A user-wide configuration file in this tool's config directory.
-    ///
     /// A config value is resolved by traversing the "config tree" from the most specific scope
     /// upward (nearest-first principle). The first level that specifies a value wins.
     global: struct GlobalDefaultConfigData <- GlobalConfigInput -> {
@@ -142,13 +140,13 @@ pub struct Config {
     client_info: Option<ClientInfo>,
     diagnostics_enable: bool,
 
-    default_config: &'static DefaultConfigData,
+    default: &'static DefaultConfigData,
     /// Config node that obtains its initial value during the server initialization and
     /// by receiving a `lsp_types::notification::DidChangeConfiguration`.
-    client_config: (FullConfigInput, ConfigErrors),
+    client: (FullConfigInput, ConfigErrors),
 
     /// Config node whose values apply to **every** Rust project.
-    user_config: Option<(GlobalWorkspaceLocalConfigInput, ConfigErrors)>,
+    user: Option<(GlobalWorkspaceLocalConfigInput, ConfigErrors)>,
 
     // /// Clone of the value that is stored inside a `GlobalState`.
     // source_root_parent_map: Arc<FxHashMap<SourceRootId, SourceRootId>>,
@@ -263,19 +261,14 @@ impl fmt::Display for ConfigErrors {
         &self,
         formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        #[expect(clippy::match_single_binding, reason = "wip")]
-        #[expect(clippy::uninhabited_references, reason = "wip")]
         let errors = self
             .0
             .iter()
             .format_with("\n", |inner, formatter| match &**inner {
-                ConfigErrorInner::Json {
-                    config_key: key,
-                    error: e,
-                } => {
-                    formatter(key)?;
+                ConfigErrorInner::Json { config_key, error } => {
+                    formatter(config_key)?;
                     formatter(&": ")?;
-                    formatter(e)
+                    formatter(error)
                 },
                 // ConfigErrorInner::Toml { config_key: key, error: e } => {
                 //     formatter(key)?;
@@ -321,10 +314,10 @@ impl Config {
                     .and_then(Result::ok),
             }),
             diagnostics_enable: true,
-            client_config: (FullConfigInput::default(), ConfigErrors(vec![])),
-            default_config: DEFAULT_CONFIG_DATA.get_or_init(|| Box::leak(Box::default())),
+            default: DEFAULT_CONFIG_DATA.get_or_init(|| Box::leak(Box::default())),
+            client: (FullConfigInput::default(), ConfigErrors(vec![])),
             // source_root_parent_map: Arc::new(FxHashMap::default()),
-            user_config: None,
+            user: None,
             validation_errors: ConfigErrors::default(),
             detached_files: Vec::default(),
             // watoml_file: Default::default(),
@@ -351,24 +344,22 @@ impl Config {
     fn apply_change_with_sink(
         &self,
         change: ConfigChange,
-    ) -> (Config, bool) {
+    ) -> (Self, bool) {
         let mut config = self.clone();
         let mut should_update = false;
 
         if let Some(mut json) = change.client_config {
             tracing::info!("updating WGSL config from JSON: {:#}", json);
 
-            // Empty objects or `null` mean “no changes”
-            if json.is_null() || json.as_object().is_some_and(|it| it.is_empty()) {
+            if json.is_null() || json.as_object().is_some_and(serde_json::Map::is_empty) {
                 return (config, should_update);
             }
 
-            // Parse & validate; collect per-field errors rather than failing the whole blob.
             let mut json_errors = Vec::<(String, serde_json::Error)>::new();
             let input = FullConfigInput::from_json(json, &mut json_errors);
 
             // Stash parsed values and any field-level errors so `apply_change` can surface them.
-            config.client_config = (
+            config.client = (
                 input,
                 ConfigErrors(
                     json_errors
@@ -380,7 +371,7 @@ impl Config {
                 ),
             );
 
-            // If the client changed *anything*, let the caller rebuild derived state (hints, hovers, etc.)
+            // If the client changed anything, let the caller rebuild derived state (hints, hovers, etc.)
             should_update = true;
         }
 
@@ -390,35 +381,38 @@ impl Config {
     /// Given `change` this generates a new `Config`, thereby collecting errors of type `ConfigError`.
     /// If there are changes that have global/client level effect, the last component of the return type
     /// will be set to `true`, which should be used by the `GlobalState` to update itself.
+    #[must_use]
     pub fn apply_change(
         &self,
         change: ConfigChange,
-    ) -> (Config, ConfigErrors, bool) {
+    ) -> (Self, ConfigErrors, bool) {
         let (config, should_update) = self.apply_change_with_sink(change);
-        let e = ConfigErrors(
+        let errors = ConfigErrors(
             config
-                .client_config
+                .client
                 .1
                 .0
                 .iter()
                 .chain(
                     config
-                        .user_config
+                        .user
                         .as_ref()
                         .into_iter()
-                        .flat_map(|it| it.1.0.iter()),
+                        .flat_map(|pair| pair.1.0.iter()),
                 )
                 .chain(config.validation_errors.0.iter())
                 .cloned()
                 .collect(),
         );
-        (config, e, should_update)
+        (config, errors, should_update)
     }
 
+    #[must_use]
     pub fn custom_imports(&self) -> &FxHashMap<String, String> {
         self.customImports()
     }
 
+    #[must_use]
     pub fn preprocessor_shader_defs(&self) -> &FxHashSet<String> {
         self.preprocessor_shaderDefs()
     }
@@ -435,18 +429,18 @@ impl Config {
 
     #[must_use]
     pub fn prime_caches_number_of_threads(&self) -> usize {
-        match *self.cachePriming_numThreads() {
+        match self.cachePriming_numThreads() {
             NumThreads::Concrete(0) | NumThreads::Physical => num_cpus::get_physical(),
-            NumThreads::Concrete(number) => number,
+            NumThreads::Concrete(number) => *number,
             NumThreads::Logical => num_cpus::get(),
         }
     }
 
     #[must_use]
     pub fn main_loop_number_of_threads(&self) -> usize {
-        match *self.numThreads() {
+        match self.numThreads() {
             Some(NumThreads::Concrete(0) | NumThreads::Physical) | None => num_cpus::get_physical(),
-            Some(NumThreads::Concrete(number)) => number,
+            Some(NumThreads::Concrete(number)) => *number,
             Some(NumThreads::Logical) => num_cpus::get(),
         }
     }
@@ -536,7 +530,7 @@ impl Config {
             struct_layout_hints: self
                 .inlayHints_structLayoutHints()
                 .then_some(StructLayoutHints::Offset),
-            type_verbosity: match *self.inlayHints_typeVerbosity() {
+            type_verbosity: match self.inlayHints_typeVerbosity() {
                 InlayHintsTypeVerbosity::Full => TypeVerbosity::Full,
                 InlayHintsTypeVerbosity::Compact => TypeVerbosity::Compact,
                 InlayHintsTypeVerbosity::Inner => TypeVerbosity::Inner,
@@ -544,25 +538,6 @@ impl Config {
             fields_to_resolve: ide::inlay_hints::InlayFieldsToResolve::from_client_capabilities(
                 &client_capability_fields,
             ),
-        }
-    }
-    fn try_update(
-        &mut self,
-        value: serde_json::Value,
-    ) -> Result<(), serde_json::Error> {
-        Ok(())
-    }
-
-    pub fn update(
-        &mut self,
-        value: &serde_json::Value,
-    ) {
-        if value.is_null() {
-            return;
-        }
-        if let Err(error) = self.try_update(value.clone()) {
-            tracing::error!("Failed to update config: {:?}", error);
-            tracing::error!("Received JSON: {}", value.to_string());
         }
     }
 
@@ -655,7 +630,7 @@ pub struct ConfigChange {
     source_map: Option<Arc<FxHashMap<SourceRootId, SourceRootId>>>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Copy, Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum NumThreads {
     Physical,
@@ -774,8 +749,8 @@ impl FullConfigInput {
     fn from_json(
         mut json: serde_json::Value,
         error_sink: &mut Vec<(String, serde_json::Error)>,
-    ) -> FullConfigInput {
-        FullConfigInput {
+    ) -> Self {
+        Self {
             global: GlobalConfigInput::from_json(&mut json, error_sink),
             // local: LocalConfigInput::from_json(&mut json, error_sink),
             // client: ClientConfigInput::from_json(&mut json, error_sink),
@@ -794,32 +769,36 @@ struct GlobalWorkspaceLocalConfigInput {
     // workspace: WorkspaceConfigInput,
 }
 
-fn get_field_json<T: DeserializeOwned>(
+fn get_field_json<T: serde::de::DeserializeOwned>(
     json: &mut serde_json::Value,
     error_sink: &mut Vec<(String, serde_json::Error)>,
     field: &'static str,
     alias: Option<&'static str>,
 ) -> Option<T> {
-    // XXX: check alias first, to work around the VS Code where it pre-fills the
-    // defaults instead of sending an empty object.
+    // XXX: check alias first, to work around the VS Code issue where it pre-fills defaults
+    // instead of sending an empty object.
     alias
         .into_iter()
-        .chain(iter::once(field))
-        .filter_map(move |field| {
-            let mut pointer = field.replace('_', "/");
+        .chain(std::iter::once(field))
+        .find_map(|field_name| {
+            let mut pointer = field_name.replace('_', "/");
             pointer.insert(0, '/');
-            json.pointer_mut(&pointer)
-                .map(|it| serde_json::from_value(it.take()).map_err(|e| (e, pointer)))
+
+            let value = json.pointer_mut(&pointer)?;
+
+            match serde_json::from_value(value.take()) {
+                Ok(parsed) => Some(parsed),
+                Err(err) => {
+                    tracing::warn!(
+                        "Failed to deserialize config field at {}: {:?}",
+                        pointer,
+                        err
+                    );
+                    error_sink.push((pointer, err));
+                    None
+                },
+            }
         })
-        .flat_map(|result| match result {
-            Ok(it) => Some(it),
-            Err((e, pointer)) => {
-                tracing::warn!("Failed to deserialize config field at {}: {:?}", pointer, e);
-                error_sink.push((pointer, e));
-                None
-            },
-        })
-        .next()
 }
 
 macro_rules! _default_val {
@@ -923,23 +902,24 @@ macro_rules! _impl_for_config_data {
             $vis:vis $field:ident : $ty:ty = $default:expr,
         )*
     ) => {
+        #[expect(non_snake_case, reason="Generated accessor mirrors user-facing schema keys.")]
+        #[expect(clippy::ref_option, reason="Accessors intentionally return &Option<T> to avoid cloning.")]
         impl Config {
             $(
                 $($doc)*
-                #[allow(non_snake_case)]
                 $vis fn $field(&self) -> &$ty {
-                    if let Some(v) = self.client_config.0.global.$field.as_ref() {
-                        return &v;
+                    if let Some(value) = self.client.0.global.$field.as_ref() {
+                        return value;
                     }
 
-                    if let Some((user_config, _)) = self.user_config.as_ref() {
-                        if let Some(v) = user_config.global.$field.as_ref() {
-                            return &v;
+                    if let Some((user_config, _)) = self.user.as_ref() {
+                        if let Some(value) = user_config.global.$field.as_ref() {
+                            return value;
                         }
                     }
 
 
-                    &self.default_config.global.$field
+                    &self.default.global.$field
                 }
             )*
         }
@@ -975,7 +955,7 @@ macro_rules! _config_data {
         )*
     }) => {
         /// Default config values for this grouping.
-        #[allow(non_snake_case)]
+        #[expect(non_snake_case, reason = "Generated accessor mirrors user-facing schema keys.")]
         #[derive(Debug, Clone)]
         struct $name { $($field: $ty,)* }
 
@@ -986,22 +966,22 @@ macro_rules! _config_data {
             )*
         }
 
-        /// All fields `Option<T>`, `None` representing fields not set in a particular JSON/TOML blob.
-        #[allow(non_snake_case)]
+        /// All fields `Option<T>`, `None` representing fields not set in a particular JSON blob.
+        #[expect(non_snake_case, reason = "Fields mirror user-facing camelCase keys.")]
         #[derive(Clone, Default)]
         struct $input { $(
             $field: Option<$ty>,
         )* }
 
         impl std::fmt::Debug for $input {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                let mut s = f.debug_struct(stringify!($input));
+            fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                let mut debug_struct = formatter.debug_struct(stringify!($input));
                 $(
                     if let Some(val) = self.$field.as_ref() {
-                        s.field(stringify!($field), val);
+                        debug_struct.field(stringify!($field), val);
                     }
                 )*
-                s.finish()
+                debug_struct.finish()
             }
         }
 
@@ -1013,7 +993,6 @@ macro_rules! _config_data {
             }
         }
 
-        #[allow(unused, clippy::ptr_arg)]
         impl $input {
             const FIELDS: &'static [&'static str] = &[$(stringify!($field)),*];
 
@@ -1029,12 +1008,16 @@ macro_rules! _config_data {
             }
         }
 
+        #[cfg(test)]
         mod $modname {
             #[test]
-            fn fields_are_sorted() {
-                super::$input::FIELDS.windows(2).for_each(|w| assert!(w[0] <= w[1], "{} <= {} does not hold", w[0], w[1]));
-            }
-        }
+             fn fields_are_sorted() {
+                let fields = super::$input::FIELDS;
+                fields.iter().zip(fields.iter().skip(1)).for_each(|(left, right)| {
+                    assert!(left <= right, "{} <= {} does not hold", left, right);
+                });
+             }
+         }
     };
 }
 use _config_data as config_data;
@@ -1045,10 +1028,6 @@ pub enum ConfigErrorInner {
         config_key: String,
         error: serde_json::Error,
     },
-    // Toml {
-    //     config_key: String,
-    //     error: toml::de::Error,
-    // },
     ParseError {
         reason: String,
     },
