@@ -429,6 +429,9 @@ const TYPE_SET: &[SyntaxKind] = &[
     SyntaxKind::Vec3,
     SyntaxKind::Vec4,
     SyntaxKind::BindingArray,
+    // SHADER_INT64
+    SyntaxKind::Int64,
+    SyntaxKind::Uint64,
 ];
 
 pub(crate) fn type_declaration(parser: &mut Parser<'_, '_>) -> Option<CompletedMarker> {

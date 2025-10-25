@@ -468,6 +468,12 @@ pub enum SyntaxKind {
     ShiftLeft,
     ShiftRight,
 
+    // SHADER_INT64
+    #[token("i64")]
+    Int64,
+    #[token("u64")]
+    Uint64,
+
     #[error]
     Error,
 }
