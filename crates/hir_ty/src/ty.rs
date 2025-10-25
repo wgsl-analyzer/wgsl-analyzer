@@ -25,9 +25,7 @@ pub struct Type {
 }
 
 impl InternKey for Type {
-    fn from_intern_id(
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] v: salsa::InternId
-    ) -> Self {
+    fn from_intern_id(v: salsa::InternId) -> Self {
         Self { id: v }
     }
 
