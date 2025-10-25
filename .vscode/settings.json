@@ -7,7 +7,7 @@
 		"editor.defaultFormatter": "biomejs.biome"
 	},
 	"[jsonc]": {
-		"editor.defaultFormatter": "esbenp.prettier-vscode"
+		"editor.defaultFormatter": "biomejs.biome"
 	},
 	"[markdown]": {
 		"diffEditor.ignoreTrimWhitespace": false,
