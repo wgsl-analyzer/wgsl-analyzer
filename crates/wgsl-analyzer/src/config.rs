@@ -1271,10 +1271,10 @@ mod tests {
         //
         // https://link[text] => [text](https://link)
         let url_matches = schema.match_indices("https://");
-        let mut url_offsets = url_matches.map(|(idx, _)| idx).collect::<Vec<usize>>();
+        let mut url_offsets = url_matches.map(|(index, _)| index).collect::<Vec<usize>>();
         url_offsets.reverse();
-        for idx in url_offsets {
-            let link = &schema[idx..];
+        for index in url_offsets {
+            let link = &schema[index..];
             // matching on whitespace to ignore normal links
             if let Some(link_end) = link.find([' ', '['])
                 && link.chars().nth(link_end) == Some('[')
@@ -1282,10 +1282,10 @@ mod tests {
             {
                 let link_text = link[link_end..=link_text_end].to_string();
 
-                schema.replace_range(((idx + link_end)..=(idx + link_text_end)), "");
-                schema.insert(idx, '(');
-                schema.insert(idx + link_end + 1, ')');
-                schema.insert_str(idx, &link_text);
+                schema.replace_range(((index + link_end)..=(index + link_text_end)), "");
+                schema.insert(index, '(');
+                schema.insert(index + link_end + 1, ')');
+                schema.insert_str(index, &link_text);
             }
         }
 
