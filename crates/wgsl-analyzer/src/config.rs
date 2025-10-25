@@ -38,7 +38,7 @@ use stdx::format_to_acc;
 use triomphe::Arc;
 use vfs::{AbsPath, AbsPathBuf, VfsPath};
 
-// Defines the server-side configuration of the rust-analyzer. We generate *parts* of VS Code's
+// Defines the server-side configuration of the wgsl-analyzer. We generate *parts* of VS Code's
 // `package.json` config from this. Run `cargo test` to re-generate that file.
 //
 // However, editor specific config, which the server doesn't know about, should be specified
@@ -100,7 +100,7 @@ config_data! {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 #[derive(Default)]
 pub enum InlayHintsTypeVerbosity {
@@ -110,7 +110,7 @@ pub enum InlayHintsTypeVerbosity {
     Inner, // f32
 }
 
-#[derive(Clone, Copy, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 #[derive(Default)]
 pub enum TraceServer {
@@ -141,7 +141,7 @@ pub struct Config {
     /// by receiving a `lsp_types::notification::DidChangeConfiguration`.
     client: (FullConfigInput, ConfigErrors),
 
-    /// Config node whose values apply to **every** Rust project.
+    /// Config node whose values apply to **every** wgsl project.
     user: Option<(GlobalWorkspaceLocalConfigInput, ConfigErrors)>,
 
     // /// Clone of the value that is stored inside a `GlobalState`.
@@ -731,8 +731,7 @@ struct DefaultConfigData {
 }
 
 /// All of the config levels, all fields `Option<T>`, to describe fields that are actually set by
-/// some rust-analyzer.toml file or JSON blob. An empty rust-analyzer.toml corresponds to
-/// all fields being None.
+/// some JSON blob.
 #[derive(Debug, Clone, Default)]
 struct FullConfigInput {
     global: GlobalConfigInput,
@@ -753,11 +752,32 @@ impl FullConfigInput {
             // workspace: WorkspaceConfigInput::from_json(&mut json, error_sink),
         }
     }
+
+    fn schema_fields() -> Vec<SchemaField> {
+        let mut fields = Vec::new();
+        GlobalConfigInput::schema_fields(&mut fields);
+        fields.sort_by_key(|&(key, ..)| key);
+        fields
+            .iter()
+            .tuple_windows()
+            .for_each(|(field_a, field_b)| {
+                assert!(field_a.0 != field_b.0, "{field_a:?} duplicate field");
+            });
+        fields
+    }
+
+    fn json_schema() -> serde_json::Value {
+        schema(&Self::schema_fields())
+    }
+
+    #[cfg(test)]
+    fn manual() -> String {
+        manual(&Self::schema_fields())
+    }
 }
 
 /// All of the config levels, all fields `Option<T>`, to describe fields that are actually set by
-/// some rust-analyzer.toml file or JSON blob. An empty rust-analyzer.toml corresponds to
-/// all fields being None.
+/// some JSON blob.
 #[derive(Debug, Clone, Default)]
 struct GlobalWorkspaceLocalConfigInput {
     global: GlobalConfigInput,
@@ -795,6 +815,163 @@ fn get_field_json<T: serde::de::DeserializeOwned>(
                 },
             }
         })
+}
+
+type SchemaField = (&'static str, &'static str, &'static [&'static str], String);
+
+fn schema(fields: &[SchemaField]) -> serde_json::Value {
+    let map = fields
+        .iter()
+        .map(|(field, field_type, doc, default)| {
+            let name = field.replace('_', ".");
+            let category = name.split_once('.').map_or_else(
+                || "wgsl-analyzer".into(),
+                |(category, _name)| to_title_case(category),
+            );
+            let name = format!("wgsl-analyzer.{name}");
+            let props = field_props(field, field_type, doc, default);
+            serde_json::json!({
+                "title": category,
+                "properties": {
+                    name: props
+                }
+            })
+        })
+        .collect::<Vec<_>>();
+    map.into()
+}
+
+/// Translate a field name to a title case string suitable for use in the category names on the
+/// vscode settings page.
+///
+/// First letter of word should be uppercase, if an uppercase letter is encountered, add a space
+/// before it e.g. "fooBar" -> "Foo Bar", "fooBarBaz" -> "Foo Bar Baz", "foo" -> "Foo"
+///
+/// This likely should be in stdx (or just use heck instead), but it doesn't handle any edge cases
+/// and is intentionally simple.
+fn to_title_case(string: &str) -> String {
+    let mut result = String::with_capacity(string.len());
+    let mut chars = string.chars();
+    if let Some(first) = chars.next() {
+        result.push(first.to_ascii_uppercase());
+        for character in chars {
+            if character.is_uppercase() {
+                result.push(' ');
+            }
+            result.push(character);
+        }
+    }
+    result
+}
+
+fn field_props(
+    field: &str,
+    field_type: &str,
+    doc: &[&str],
+    default: &str,
+) -> serde_json::Value {
+    let doc = doc_comment_to_string(doc);
+    let doc = doc.trim_end_matches('\n');
+    assert!(
+        doc.ends_with('.') && doc.starts_with(char::is_uppercase),
+        "bad docs for {field}: {doc:?}"
+    );
+    let default = default.parse::<serde_json::Value>().unwrap();
+
+    let mut map = serde_json::Map::default();
+    macro_rules! set {
+        ($($key:literal: $value:tt),*$(,)?) => {{$(
+            map.insert($key.into(), serde_json::json!($value));
+        )*}};
+    }
+    set!("markdownDescription": doc);
+    set!("default": default);
+
+    match field_type {
+        "bool" => set!("type": "boolean"),
+        "usize" => set!("type": "integer", "minimum": 0),
+        "String" => set!("type": "string"),
+        "Vec<String>" | "Vec<Utf8PathBuf>" => set! {
+            "type": "array",
+            "items": { "type": "string" },
+        },
+        "FxHashMap<Box<str>, Box<[Box<str>]>>"
+        | "FxHashMap<String, String>"
+        | "FxHashMap<Box<str>, u16>" => set! {
+            "type": "object",
+        },
+        "Option<usize>" => set! {
+            "type": ["null", "integer"],
+            "minimum": 0,
+        },
+        "Option<u16>" => set! {
+            "type": ["null", "integer"],
+            "minimum": 0,
+            "maximum": 0xFFFF,
+        },
+        "Option<bool>" => set! {
+            "type": ["null", "boolean"],
+        },
+        "NumThreads" => set! {
+            "anyOf": [
+                {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 0x00FF
+                },
+                {
+                    "type": "string",
+                    "enum": ["physical", "logical", ],
+                    "enumDescriptions": [
+                        "Use the number of physical cores",
+                        "Use the number of logical cores",
+                    ],
+                },
+            ],
+        },
+        "Option<NumThreads>" => set! {
+            "anyOf": [
+                {
+                    "type": "null"
+                },
+                {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 0x00FF
+                },
+                {
+                    "type": "string",
+                    "enum": ["physical", "logical", ],
+                    "enumDescriptions": [
+                        "Use the number of physical cores",
+                        "Use the number of logical cores",
+                    ],
+                },
+            ],
+        },
+        "NagaVersion" => set! {
+            "anyOf": [
+                {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 0x00FF
+                },
+                {
+                    "type": "string",
+                    "enum": ["naga14", "naga19", "naga22", "nagaMain"],
+                    "enumDescriptions": [
+                        "Naga version 14",
+                        "Naga version 19",
+                        "Naga version 22",
+                        "Version of Naga on main (most recent stable version)"
+                    ],
+                },
+            ],
+        },
+        _ => panic!("missing entry for {field_type}: {default} (field {field})"),
+    }
+
+    map.into()
 }
 
 macro_rules! _default_val {
@@ -1002,6 +1179,18 @@ macro_rules! _config_data {
                     ),
                 )*}
             }
+
+            fn schema_fields(sink: &mut Vec<SchemaField>) {
+                sink.extend_from_slice(&[
+                    $({
+                        let field = stringify!($field);
+                        let ty = stringify!($ty);
+                        let default = default_str!($default, $ty);
+
+                        (field, ty, &[$($doc),*], default)
+                    },)*
+                ])
+            }
         }
 
         #[cfg(test)]
@@ -1030,13 +1219,103 @@ pub enum ConfigErrorInner {
 }
 
 #[cfg(test)]
+fn manual(fields: &[SchemaField]) -> String {
+    fields
+        .iter()
+        .fold(String::new(), |mut acc, (field, _ty, doc, default)| {
+            let id = field.replace('_', ".");
+            let name = format!("wgsl-analyzer.{id}");
+            let doc = doc_comment_to_string(doc);
+            if default.contains('\n') {
+                format_to_acc!(
+                    acc,
+                    "## {name} \n\nDefault:\n```json\n{default}\n```\n\n{doc}\n"
+                )
+            } else {
+                format_to_acc!(acc, "## {name}\n\nDefault: `{default}`\n\n{doc}\n")
+            }
+        })
+}
+
+fn doc_comment_to_string(doc: &[&str]) -> String {
+    doc.iter()
+        .map(|iterator| iterator.strip_prefix(' ').unwrap_or(iterator))
+        .fold(String::new(), |mut out, line| {
+            format_to_acc!(out, "{line}\n")
+        })
+}
+
+#[cfg(test)]
 mod tests {
+    use std::fs;
+
+    use crate::config::{Config, FullConfigInput};
     use test_utils::{ensure_file_contents, project_root};
+
+    #[test]
+    fn generate_package_json_config() {
+        let schema = FullConfigInput::json_schema();
+
+        let mut schema = format!("{schema:#}");
+        let mut schema = schema
+            .trim_start_matches('[')
+            .trim_end_matches(']')
+            .replace("  ", "    ")
+            .replace('\n', "\n        ")
+            .trim_start_matches('\n')
+            .trim_end()
+            .to_owned();
+        schema.push_str(",\n");
+
+        // Transform the asciidoc form link to markdown style.
+        //
+        // https://link[text] => [text](https://link)
+        let url_matches = schema.match_indices("https://");
+        let mut url_offsets = url_matches.map(|(idx, _)| idx).collect::<Vec<usize>>();
+        url_offsets.reverse();
+        for idx in url_offsets {
+            let link = &schema[idx..];
+            // matching on whitespace to ignore normal links
+            if let Some(link_end) = link.find([' ', '['])
+                && link.chars().nth(link_end) == Some('[')
+                && let Some(link_text_end) = link.find(']')
+            {
+                let link_text = link[link_end..=link_text_end].to_string();
+
+                schema.replace_range(((idx + link_end)..=(idx + link_text_end)), "");
+                schema.insert(idx, '(');
+                schema.insert(idx + link_end + 1, ')');
+                schema.insert_str(idx, &link_text);
+            }
+        }
+
+        let package_json_path = project_root().join("editors/code/package.json");
+        let mut package_json = fs::read_to_string(&package_json_path).unwrap();
+
+        let start_marker =
+            "            {\n                \"title\": \"$generated-start\"\n            },\n";
+        let end_marker =
+            "            {\n                \"title\": \"$generated-end\"\n            }\n";
+
+        let start = package_json.find(start_marker).unwrap() + start_marker.len();
+        let end = package_json.find(end_marker).unwrap();
+
+        let package = remove_ws(&package_json[start..end]);
+        let schema = remove_ws(&schema);
+        if !package.contains(&schema) {
+            package_json.replace_range(start..end, &schema);
+            ensure_file_contents(package_json_path.as_std_path(), &package_json);
+        }
+    }
 
     #[test]
     fn generate_config_documentation() {
         let docs_path = project_root().join("docs/book/src/configuration_generated.md");
-        let expected = String::new();
+        let expected = FullConfigInput::manual();
         ensure_file_contents(docs_path.as_std_path(), &expected);
+    }
+
+    fn remove_ws(text: &str) -> String {
+        text.replace(char::is_whitespace, "")
     }
 }
