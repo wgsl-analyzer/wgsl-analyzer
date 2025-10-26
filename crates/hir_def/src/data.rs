@@ -16,7 +16,7 @@ use crate::{
         },
     },
     module_data::Name,
-    type_specifier::TypeSpecifier,
+    type_specifier::{TypeSpecifier, TypeSpecifierId},
 };
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]
@@ -30,15 +30,15 @@ pub type LocalParameterId = Idx<ParamData>;
 #[derive(Debug, PartialEq, Eq)]
 pub struct FunctionData {
     pub name: Name,
-    pub store: ExpressionStore,
+    pub store: Arc<ExpressionStore>,
     pub parameters: Arena<ParamData>,
-    pub return_type: Option<TypeSpecifier>,
+    pub return_type: Option<TypeSpecifierId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParamData {
     pub name: Name,
-    pub r#type: TypeSpecifier,
+    pub r#type: TypeSpecifierId,
 }
 
 impl FunctionData {
@@ -64,14 +64,14 @@ pub type LocalFieldId = Idx<FieldData>;
 #[derive(Debug, PartialEq, Eq)]
 pub struct StructData {
     pub name: Name,
-    pub store: ExpressionStore,
+    pub store: Arc<ExpressionStore>,
     pub fields: Arena<FieldData>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FieldData {
     pub name: Name,
-    pub r#type: TypeSpecifier,
+    pub r#type: TypeSpecifierId,
 }
 
 impl StructData {
@@ -104,8 +104,8 @@ impl StructData {
 #[derive(Debug, PartialEq, Eq)]
 pub struct TypeAliasData {
     pub name: Name,
-    pub store: ExpressionStore,
-    pub r#type: TypeSpecifier,
+    pub store: Arc<ExpressionStore>,
+    pub r#type: TypeSpecifierId,
 }
 
 impl TypeAliasData {
@@ -124,8 +124,8 @@ impl TypeAliasData {
 #[derive(Debug, PartialEq, Eq)]
 pub struct GlobalVariableData {
     pub name: Name,
-    pub store: ExpressionStore,
-    pub r#type: Option<TypeSpecifier>,
+    pub store: Arc<ExpressionStore>,
+    pub r#type: Option<TypeSpecifierId>,
     pub generics: Vec<ExpressionId>,
 }
 
@@ -145,8 +145,8 @@ impl GlobalVariableData {
 #[derive(Debug, PartialEq, Eq)]
 pub struct GlobalConstantData {
     pub name: Name,
-    pub store: ExpressionStore,
-    pub r#type: Option<TypeSpecifier>,
+    pub store: Arc<ExpressionStore>,
+    pub r#type: Option<TypeSpecifierId>,
 }
 
 impl GlobalConstantData {
@@ -165,8 +165,8 @@ impl GlobalConstantData {
 #[derive(Debug, PartialEq, Eq)]
 pub struct OverrideData {
     pub name: Name,
-    pub store: ExpressionStore,
-    pub r#type: Option<TypeSpecifier>,
+    pub store: Arc<ExpressionStore>,
+    pub r#type: Option<TypeSpecifierId>,
 }
 
 impl OverrideData {

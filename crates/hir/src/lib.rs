@@ -637,10 +637,14 @@ impl Module {
                 ModuleDef::Override(_constant) => {},
                 ModuleDef::Struct(strukt) => {
                     let file = strukt.id.lookup(database).file_id;
+                    let (_, signature_map) = database.struct_data(strukt.id);
                     let diagnostics = &database.field_types(strukt.id).1;
                     for diagnostic in diagnostics {
-                        match diagnostics::any_diag_from_field_infer_diagnostic(
-                            database, diagnostic, file,
+                        match diagnostics::any_diag_from_infer_diagnostic(
+                            diagnostic,
+                            &signature_map,
+                            &signature_map,
+                            file,
                         ) {
                             Some(diagnostic) => accumulator.push(diagnostic),
                             None => {
@@ -649,18 +653,36 @@ impl Module {
                         }
                     }
                 },
-                ModuleDef::TypeAlias(_type_alias) => {},
+                ModuleDef::TypeAlias(type_alias) => {
+                    let file = type_alias.id.lookup(database).file_id;
+                    let (_, signature_map) = database.type_alias_data(type_alias.id);
+                    let diagnostics = &database.type_alias_type(type_alias.id).1;
+                    for diagnostic in diagnostics {
+                        match diagnostics::any_diag_from_infer_diagnostic(
+                            diagnostic,
+                            &signature_map,
+                            &signature_map,
+                            file,
+                        ) {
+                            Some(diagnostic) => accumulator.push(diagnostic),
+                            None => {
+                                tracing::warn!("could not create diagnostic from {:?}", diagnostic);
+                            },
+                        }
+                    }
+                },
             }
             if let Some(definition) = item.as_def_with_body_id() {
                 let file = definition.file_id(database);
+                let (_, signature_map) = database.signature_with_source_map(definition);
                 let (_, source_map) = database.body_with_source_map(definition);
                 if config.type_errors {
                     let infer = database.infer(definition);
                     for diagnostic in infer.diagnostics() {
                         match diagnostics::any_diag_from_infer_diagnostic(
-                            database,
                             diagnostic,
-                            &source_map,
+                            &signature_map,
+                            source_map.expression_source_map(),
                             file,
                         ) {
                             Some(diagnostic) => accumulator.push(diagnostic),
@@ -672,7 +694,11 @@ impl Module {
                 }
 
                 diagnostics::precedence::collect(database, definition, |diagnostic| {
-                    match diagnostics::any_diag_from_shift(&diagnostic, &source_map, file) {
+                    match diagnostics::any_diag_from_shift(
+                        &diagnostic,
+                        &source_map.expression_source_map(),
+                        file,
+                    ) {
                         Some(diagnostic) => accumulator.push(diagnostic),
                         None => {
                             tracing::warn!("could not create diagnostic from {:?}", diagnostic);

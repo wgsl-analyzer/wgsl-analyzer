@@ -82,6 +82,12 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         key: DefinitionWithBodyId,
     ) -> Arc<ExprScopes>;
 
+    #[salsa::invoke(signature_with_source_map)]
+    fn signature_with_source_map(
+        &self,
+        key: DefinitionWithBodyId,
+    ) -> (Arc<ExpressionStore>, Arc<ExpressionSourceMap>);
+
     #[salsa::invoke(FunctionData::query)]
     fn function_data(
         &self,
@@ -123,6 +129,30 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         &self,
         key: AttributeDefId,
     ) -> (Arc<AttributesWithOwner>, Arc<ExpressionSourceMap>);
+}
+
+fn signature_with_source_map(
+    database: &dyn DefDatabase,
+    key: DefinitionWithBodyId,
+) -> (Arc<ExpressionStore>, Arc<ExpressionSourceMap>) {
+    match key {
+        DefinitionWithBodyId::Function(id) => {
+            let (data, source_map) = database.function_data(id);
+            (data.store.clone(), source_map)
+        },
+        DefinitionWithBodyId::GlobalVariable(id) => {
+            let (data, source_map) = database.global_var_data(id);
+            (data.store.clone(), source_map)
+        },
+        DefinitionWithBodyId::GlobalConstant(id) => {
+            let (data, source_map) = database.global_constant_data(id);
+            (data.store.clone(), source_map)
+        },
+        DefinitionWithBodyId::Override(id) => {
+            let (data, source_map) = database.override_data(id);
+            (data.store.clone(), source_map)
+        },
+    }
 }
 
 fn get_path(

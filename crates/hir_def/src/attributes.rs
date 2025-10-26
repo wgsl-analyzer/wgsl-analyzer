@@ -29,7 +29,7 @@ pub struct Attribute {
 #[derive(PartialEq, Eq, Debug)]
 pub struct AttributeList {
     pub attributes: Vec<Attribute>,
-    pub store: ExpressionStore,
+    pub store: Arc<ExpressionStore>,
 }
 
 impl AttributeList {
@@ -48,7 +48,7 @@ impl AttributeList {
         database: &dyn DefDatabase,
         source: &dyn HasAttributes,
     ) -> (Self, ExpressionSourceMap) {
-        let mut collector = ExprCollector::new(database);
+        let mut collector = ExprCollector::new(database, false);
         let attributes = source
             .attributes()
             .map(|attribute| Attribute {
@@ -67,14 +67,20 @@ impl AttributeList {
             })
             .collect();
         let (store, source_map) = collector.store.finish();
-        (Self { attributes, store }, source_map)
+        (
+            Self {
+                attributes,
+                store: Arc::new(store),
+            },
+            source_map,
+        )
     }
 
     fn empty() -> (Self, ExpressionSourceMap) {
         (
             Self {
                 attributes: Vec::new(),
-                store: ExpressionStore::default(),
+                store: Arc::new(ExpressionStore::default()),
             },
             ExpressionSourceMap::default(),
         )

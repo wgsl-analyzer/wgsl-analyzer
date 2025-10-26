@@ -328,7 +328,8 @@ pub fn unify(
                     | TexelFormat::R32float
                     | TexelFormat::Rg32uint
                     | TexelFormat::Rg32sint
-                    | TexelFormat::Rg32float => {
+                    | TexelFormat::Rg32float
+                    | TexelFormat::Bgra8unorm => {
                         if format != format_2 {
                             return Err(());
                         }
@@ -439,7 +440,8 @@ fn storage_type_of_texel_format(
         | TexelFormat::Rgba16float
         | TexelFormat::Rgba32float
         | TexelFormat::R32float
-        | TexelFormat::Rg32float => ScalarType::F32,
+        | TexelFormat::Rg32float
+        | TexelFormat::Bgra8unorm => ScalarType::F32,
         TexelFormat::Rgba8sint
         | TexelFormat::Rgba16sint
         | TexelFormat::Rgba32sint

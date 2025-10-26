@@ -72,8 +72,9 @@ typed_ident^: name (':' type_specifier | ());
 name: Ident; // declares an identifier
 name_ref: Ident; // wesl ident goes here
 
+// Used in places where it's guaranteed to be a type
 type_specifier: name_ref template_list;
-// I want to unify this with the type_specifier. But I need a general name.
+// Used in places where it might be a type.
 // Note that types can appear in expression, like in `array<  array<f32,1>  ,1>`
 ident_expression: name_ref expr_template_list;
 template_list^: [template_args >];

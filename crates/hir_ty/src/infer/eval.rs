@@ -1,9 +1,10 @@
-use std::str::FromStr;
+use std::{collections::VecDeque, str::FromStr};
 
 use hir_def::{
     expression::{BinaryOperation, Expression, ExpressionId, UnaryOperator},
     expression_store::ExpressionStore,
     resolver::ResolveType,
+    type_specifier::TypeSpecifier,
 };
 use wgsl_types::{
     inst::{Instance, LiteralInstance},
@@ -12,8 +13,11 @@ use wgsl_types::{
 
 use crate::{
     database::HirDatabase,
-    infer::{InferenceContext, InferenceDiagnostic, TyLoweringContext, TypeContainer},
-    ty::Type,
+    infer::{
+        InferenceContext, InferenceDiagnostic, Lowered, TyLoweringContext, TypeContainer,
+        TypeLoweringError, TypeLoweringErrorKind,
+    },
+    ty::{TyKind, Type},
 };
 
 impl<'database> TyLoweringContext<'database> {
@@ -25,7 +29,7 @@ impl<'database> TyLoweringContext<'database> {
         &mut self,
         expression: ExpressionId,
     ) -> Option<Instance> {
-        let instance: Instance = match &self.store.exprs[expression] {
+        let instance: Instance = match &self.store[expression] {
             Expression::Missing => {
                 // TODO: self.push_diagnostic(InferenceDiagnostic::...)
                 return None;
@@ -69,8 +73,8 @@ impl<'database> TyLoweringContext<'database> {
                 .collect(); */
                 return None;
             },
-            Expression::TypeSpecifier(type_specifier) => {
-                let resolved_ty = self.resolver.resolve(&type_specifier.path);
+            Expression::IdentExpression(ident_expression) => {
+                let resolved_ty = self.resolver.resolve(&ident_expression.path);
                 match &resolved_ty {
                     // TODO: Do something useful here
                     /*
@@ -128,32 +132,50 @@ impl<'database> TyLoweringContext<'database> {
         &mut self,
         tplt: ExpressionId,
     ) -> TpltParam {
-        let template_param = match &self.store.exprs[tplt] {
-            Expression::TypeSpecifier(ty) => {
-                let resolved_ty = self.resolver.resolve(&ty.path);
-                match &resolved_ty {
-                    Some(ResolveType::Struct(_)) | Some(ResolveType::TypeAlias(_)) => {
-                        TpltParam::Type(self.lower_ty(ty))
+        let template_param = match &self.store[tplt] {
+            Expression::IdentExpression(ident_expression) => {
+                let resolved_ty = self.lower(
+                    TypeContainer::Expression(tplt),
+                    &ident_expression.path,
+                    &ident_expression.generics,
+                );
+                match resolved_ty {
+                    Lowered::Type(r#type) => TpltParam::Type(r#type),
+                    Lowered::Enumerant(enumerant) => TpltParam::Enumerant(enumerant),
+                    Lowered::Function(_) => {
+                        // TODO: Report an error "function needs to be called"
+                        TpltParam::Type(self.database.intern_ty(TyKind::Error))
                     },
-                    None => {
-                        if self.is_predeclared_ty(&ty.path) {
-                            TpltParam::Type(self.lower_ty(ty))
-                        } else if let Ok(enum_value) = Enumerant::from_str(ty.path.as_str()) {
-                            if !ty.generics.is_empty() {
-                                // TODO: Report error for such enumerants. Maybe return an error_ty?
-                            }
-                            TpltParam::Enumerant(enum_value)
-                        } else {
-                            TpltParam::Instance(self.eval_expression(tplt))
-                        }
+                    Lowered::BuiltinFunction => {
+                        // TODO: Report an error "function needs to be called"
+                        TpltParam::Type(self.database.intern_ty(TyKind::Error))
                     },
-                    _ => TpltParam::Instance(self.eval_expression(tplt)),
+                    Lowered::GlobalConstant(_)
+                    | Lowered::GlobalVariable(_)
+                    | Lowered::Override(_)
+                    | Lowered::Local(_) => TpltParam::Instance(self.eval_expression(tplt)),
                 }
             },
             _ => TpltParam::Instance(self.eval_expression(tplt)),
         };
 
         template_param
+    }
+
+    pub fn eval_template_args(
+        &mut self,
+        container: TypeContainer,
+        generics: &[ExpressionId],
+    ) -> TemplateParameters {
+        let template_parameters: VecDeque<_> = generics
+            .iter()
+            .map(|arg| (self.eval_tplt_arg(*arg), *arg))
+            .collect();
+        TemplateParameters {
+            container,
+            len: template_parameters.len(),
+            template_parameters,
+        }
     }
 }
 
@@ -164,4 +186,64 @@ pub enum TpltParam {
     /// The error instance is encoded as a None
     Instance(Option<Instance>),
     Enumerant(Enumerant),
+}
+
+pub struct TemplateParameters {
+    pub container: TypeContainer,
+    template_parameters: VecDeque<(TpltParam, ExpressionId)>,
+    len: usize,
+}
+
+impl TemplateParameters {
+    pub fn has_next(&self) -> bool {
+        self.template_parameters.len() > 0
+    }
+    pub fn next(&mut self) -> Option<(TpltParam, ExpressionId)> {
+        self.template_parameters.pop_front()
+    }
+    pub fn next_as_type(&mut self) -> Result<(Type, ExpressionId), TypeLoweringError> {
+        match self.next() {
+            Some((TpltParam::Type(r#type), id)) => Ok((r#type, id)),
+            Some((_, id)) => Err(TypeLoweringError {
+                container: TypeContainer::Expression(id),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("a type".to_string()),
+            }),
+            None => Err(TypeLoweringError {
+                container: self.container.clone(),
+                kind: TypeLoweringErrorKind::MissingTemplateArgument("a type".to_string()),
+            }),
+        }
+    }
+    pub fn next_as_instance(
+        &mut self
+    ) -> Result<(Option<Instance>, ExpressionId), TypeLoweringError> {
+        match self.next() {
+            Some((TpltParam::Instance(instance), id)) => Ok((instance, id)),
+            Some((_, id)) => Err(TypeLoweringError {
+                container: TypeContainer::Expression(id),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("an instance".to_string()),
+            }),
+            None => Err(TypeLoweringError {
+                container: self.container.clone(),
+                kind: TypeLoweringErrorKind::MissingTemplateArgument("an instance".to_string()),
+            }),
+        }
+    }
+    pub fn next_as_enumerant(&mut self) -> Result<(Enumerant, ExpressionId), TypeLoweringError> {
+        match self.next() {
+            Some((TpltParam::Enumerant(enumerant), id)) => Ok((enumerant, id)),
+            Some((_, id)) => Err(TypeLoweringError {
+                container: TypeContainer::Expression(id),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("an enum".to_string()),
+            }),
+            None => Err(TypeLoweringError {
+                container: self.container.clone(),
+                kind: TypeLoweringErrorKind::MissingTemplateArgument("an enum".to_string()),
+            }),
+        }
+    }
+
+    pub(crate) fn len(&self) -> usize {
+        self.len
+    }
 }

@@ -73,6 +73,7 @@ fn resolve_name_ref(
                     id,
                 })))
             },
+            // TODO: Why is it not doing anything here?
             ResolveType::Function(_)
             | ResolveType::GlobalConstant(_)
             | ResolveType::GlobalVariable(_)

@@ -219,6 +219,7 @@ impl TyKind {
             _ => return None,
         })
     }
+
     #[must_use]
     pub const fn is_numeric_scalar(&self) -> bool {
         match self {
@@ -229,6 +230,32 @@ impl TyKind {
             | Self::Matrix(_)
             | Self::Struct(_)
             | Self::Array(_)
+            | Self::Texture(_)
+            | Self::Sampler(_)
+            | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::BoundVar(_)
+            | Self::StorageTypeOfTexelFormat(_) => false,
+        }
+    }
+
+    #[must_use]
+    pub fn is_abstract(
+        &self,
+        database: &dyn HirDatabase,
+    ) -> bool {
+        match self {
+            Self::Scalar(ScalarType::AbstractInt | ScalarType::AbstractFloat) => true,
+            Self::Array(ArrayType { inner, .. })
+            | Self::Vector(VectorType {
+                component_type: inner,
+                ..
+            })
+            | Self::Matrix(MatrixType { inner, .. }) => inner.kind(database).is_abstract(database),
+            Self::Scalar(_) => false,
+            Self::Error
+            | Self::Atomic(_)
+            | Self::Struct(_)
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
@@ -705,6 +732,25 @@ pub enum TextureKind {
     External,
 }
 
+impl TextureKind {
+    pub fn from_sampled(
+        sampled: wgsl_types::syntax::SampledType,
+        database: &dyn HirDatabase,
+    ) -> TextureKind {
+        match sampled {
+            wgsl_types::syntax::SampledType::I32 => {
+                TextureKind::Sampled(TyKind::Scalar(ScalarType::I32).intern(database))
+            },
+            wgsl_types::syntax::SampledType::U32 => {
+                TextureKind::Sampled(TyKind::Scalar(ScalarType::U32).intern(database))
+            },
+            wgsl_types::syntax::SampledType::F32 => {
+                TextureKind::Sampled(TyKind::Scalar(ScalarType::F32).intern(database))
+            },
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TextureDimensionality {
     D1,
@@ -747,6 +793,8 @@ pub enum TexelFormat {
     Rg32sint,
     Rg32float,
 
+    Bgra8unorm,
+
     BoundVar(BoundVar),
     // this is only used for builtins which do not care about the format
     Any,
@@ -774,6 +822,7 @@ impl fmt::Display for TexelFormat {
             Self::Rg32uint => "rg32uint",
             Self::Rg32sint => "rg32sint",
             Self::Rg32float => "rg32float",
+            Self::Bgra8unorm => "bgra8unorm",
             Self::BoundVar(var) => return formatter.write_char(('F'..).nth(var.index).unwrap()),
             Self::Any => "_",
         };

@@ -1,7 +1,8 @@
+mod builtin;
 mod eval;
 mod unify;
 
-use std::{borrow::Cow, collections::hash_map::Entry, fmt, ops::Index};
+use std::{borrow::Cow, collections::hash_map::Entry, fmt, ops::Index, str::FromStr};
 
 use either::Either;
 use hir_def::{
@@ -23,7 +24,7 @@ use hir_def::{
     module_data::Name,
     resolver::{ResolveType, Resolver},
     type_ref::{self, VecDimensionality},
-    type_specifier::TypeSpecifier,
+    type_specifier::{IdentExpression, TypeSpecifier, TypeSpecifierId},
 };
 use la_arena::ArenaMap;
 use rustc_hash::FxHashMap;
@@ -61,26 +62,27 @@ pub fn infer_query(
 
     match definition {
         DefinitionWithBodyId::Function(function) => {
-            let return_type = context.collect_fn(function, &database.function_data(function).0);
+            let data = database.function_data(function).0;
+            let return_type = context.collect_fn(function, &data);
             context.infer_body(return_type, AbstractHandling::Concretize);
         },
         DefinitionWithBodyId::GlobalVariable(var) => {
-            let variable_data = database.global_var_data(var).0;
-            let return_type = context.collect_global_variable(var, &variable_data);
+            let data = database.global_var_data(var).0;
+            let return_type = context.collect_global_variable(var, &data);
             context.infer_body(return_type, AbstractHandling::Concretize);
-            context.infer_variables(&variable_data);
+            context.infer_variables(&data);
         },
         DefinitionWithBodyId::GlobalConstant(constant) => {
-            let return_type = context
-                .collect_global_constant(constant, &database.global_constant_data(constant).0);
+            let data = database.global_constant_data(constant).0;
+            let return_type = context.collect_global_constant(constant, &data);
             context.infer_body(return_type, AbstractHandling::Abstract);
         },
         DefinitionWithBodyId::Override(override_decl) => {
-            let return_type =
-                context.collect_override(override_decl, &database.override_data(override_decl).0);
+            let data = database.override_data(override_decl).0;
+            let return_type = context.collect_override(override_decl, &data);
             context.infer_body(return_type, AbstractHandling::Concretize);
         },
-    }
+    };
 
     Arc::new(context.resolve_all())
 }
@@ -184,7 +186,7 @@ pub enum InferenceDiagnostic {
         actual: Type,
     },
     InvalidType {
-        container: TypeContainer,
+        source: InferenceTypeDiagnosticSource,
         error: TypeLoweringError,
     },
     CyclicType {
@@ -200,22 +202,23 @@ pub enum InferenceDiagnostic {
     },
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum InferenceTypeDiagnosticSource {
+    /// Diagnostics that come from types in the body.
+    Body,
+    /// Diagnostics that come from types in fn parameters/return type, or static & const types.
+    Signature,
+}
+
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeContainer {
-    Expr(ExpressionId),
-    GlobalVar(GlobalVariableId),
-    GlobalConstant(GlobalConstantId),
-    Override(OverrideId),
-    TypeAlias(TypeAliasId),
-    FunctionParameter(ParameterId),
-    StructField(FieldId),
-    FunctionReturn(FunctionId),
-    VariableStatement(StatementId),
+    Expression(ExpressionId),
+    TypeSpecifier(TypeSpecifierId),
 }
 
 impl From<ExpressionId> for TypeContainer {
     fn from(id: ExpressionId) -> Self {
-        Self::Expr(id)
+        Self::Expression(id)
     }
 }
 
@@ -394,6 +397,24 @@ impl<'database> InferenceContext<'database> {
         self.result.diagnostics.push(diagnostic);
     }
 
+    fn push_lowering_diagnostics(
+        &mut self,
+        diagnostics: &mut Vec<TypeLoweringError>,
+        store: &ExpressionStore,
+    ) {
+        let source = if store.is_body_store {
+            InferenceTypeDiagnosticSource::Body
+        } else {
+            InferenceTypeDiagnosticSource::Signature
+        };
+        for diagnostic in diagnostics.drain(..) {
+            self.push_diagnostic(InferenceDiagnostic::InvalidType {
+                source,
+                error: diagnostic,
+            });
+        }
+    }
+
     fn resolve_all(mut self) -> InferenceResult {
         self.result.return_type = self.return_ty;
         self.result
@@ -404,10 +425,10 @@ impl<'database> InferenceContext<'database> {
         id: GlobalVariableId,
         var: &GlobalVariableData,
     ) -> Option<Type> {
-        let r#type = var
-            .r#type
-            .as_ref()
-            .map(|r#type| self.lower_ty(TypeContainer::GlobalVar(id), &var.store, r#type));
+        let r#type = var.r#type.map(|r#type| {
+            self.lower_ty(r#type, &self.resolver, &var.store)
+                .apply(self)
+        });
 
         self.bind_return_ty(r#type);
         r#type
@@ -471,8 +492,9 @@ impl<'database> InferenceContext<'database> {
         id: GlobalConstantId,
         constant: &GlobalConstantData,
     ) -> Option<Type> {
-        let r#type = constant.r#type.as_ref().map(|r#type| {
-            self.lower_ty(TypeContainer::GlobalConstant(id), &constant.store, r#type)
+        let r#type = constant.r#type.map(|r#type| {
+            self.lower_ty(r#type, &self.resolver, &constant.store)
+                .apply(self)
         });
 
         self.bind_return_ty(r#type);
@@ -484,10 +506,10 @@ impl<'database> InferenceContext<'database> {
         id: OverrideId,
         override_data: &OverrideData,
     ) -> Option<Type> {
-        let r#type = override_data
-            .r#type
-            .as_ref()
-            .map(|r#type| self.lower_ty(TypeContainer::Override(id), &override_data.store, r#type));
+        let r#type = override_data.r#type.map(|r#type| {
+            self.lower_ty(r#type, &self.resolver, &override_data.store)
+                .apply(self)
+        });
 
         self.bind_return_ty(r#type);
         r#type
@@ -499,25 +521,15 @@ impl<'database> InferenceContext<'database> {
         function_data: &FunctionData,
     ) -> Option<Type> {
         let body = self.body.clone();
-        for ((parameter_id, parameter), &binding_id) in
-            function_data.parameters.iter().zip(&body.parameters)
-        {
-            let param_ty = self.lower_ty(
-                TypeContainer::FunctionParameter(ParameterId {
-                    function: function_id,
-                    param: parameter_id,
-                }),
-                &function_data.store,
-                &parameter.r#type,
-            );
+        for ((_, parameter), &binding_id) in function_data.parameters.iter().zip(&body.parameters) {
+            let param_ty = self
+                .lower_ty(parameter.r#type, &self.resolver, &function_data.store)
+                .apply(self);
             self.set_binding_ty(binding_id, param_ty);
         }
-        let r#type = function_data.return_type.as_ref().map(|type_ref| {
-            self.lower_ty(
-                TypeContainer::FunctionReturn(function_id),
-                &function_data.store,
-                type_ref,
-            )
+        let r#type = function_data.return_type.map(|type_ref| {
+            self.lower_ty(type_ref, &self.resolver, &function_data.store)
+                .apply(self)
         });
         self.return_ty = r#type.unwrap_or_else(|| self.error_ty());
         r#type
@@ -547,36 +559,44 @@ impl<'database> InferenceContext<'database> {
         }
     }
 
-    fn resolver_for(
+    fn resolver_for_expression(
         &self,
-        container: &TypeContainer,
-    ) -> Cow<'_, Resolver> {
-        if let DefinitionWithBodyId::Function(function) = self.owner {
-            let expression_scopes = self
-                .database
-                .expression_scopes(DefinitionWithBodyId::Function(function));
+        expression: ExpressionId,
+    ) -> Option<Resolver> {
+        let DefinitionWithBodyId::Function(function) = self.owner else {
+            return None;
+        };
+        let expression_scopes = self
+            .database
+            .expression_scopes(DefinitionWithBodyId::Function(function));
 
-            let scope_id = match container {
-                TypeContainer::Expr(expression) => {
-                    expression_scopes.scope_for_expression(*expression)
-                },
-                TypeContainer::VariableStatement(statement) => {
-                    expression_scopes.scope_for_statement(*statement)
-                },
-                _ => None,
-            };
+        let scope_id = expression_scopes.scope_for_expression(expression)?;
 
-            match scope_id {
-                Some(id) => Cow::Owned(self.resolver.clone().push_expression_scope(
-                    function,
-                    expression_scopes,
-                    id,
-                )),
-                None => Cow::Borrowed(&self.resolver),
-            }
-        } else {
-            Cow::Borrowed(&self.resolver)
-        }
+        Some(
+            self.resolver
+                .clone()
+                .push_expression_scope(function, expression_scopes, scope_id),
+        )
+    }
+
+    fn resolver_for_statement(
+        &self,
+        statement: StatementId,
+    ) -> Option<Resolver> {
+        let DefinitionWithBodyId::Function(function) = self.owner else {
+            return None;
+        };
+
+        let expression_scopes = self
+            .database
+            .expression_scopes(DefinitionWithBodyId::Function(function));
+
+        let scope_id = expression_scopes.scope_for_statement(statement)?;
+        Some(
+            self.resolver
+                .clone()
+                .push_expression_scope(function, expression_scopes, scope_id),
+        )
     }
 
     #[expect(clippy::too_many_lines, reason = "TODO")]
@@ -585,6 +605,7 @@ impl<'database> InferenceContext<'database> {
         statement: StatementId,
     ) {
         let body = self.body.clone();
+        let resolver = self.resolver_for_statement(statement);
 
         match &body.statements[statement] {
             Statement::Compound { statements } => {
@@ -598,12 +619,9 @@ impl<'database> InferenceContext<'database> {
                 initializer,
                 generics,
             } => {
-                let r#type = type_ref.as_ref().map(|r#type| {
-                    self.lower_ty(
-                        TypeContainer::VariableStatement(statement),
-                        &body.store,
-                        &r#type,
-                    )
+                let r#type = type_ref.map(|r#type| {
+                    self.lower_ty(r#type, resolver.as_ref().unwrap_or(&self.resolver), &body)
+                        .apply(self)
                 });
                 let r#type = self.infer_initializer(
                     &body,
@@ -623,12 +641,9 @@ impl<'database> InferenceContext<'database> {
                 initializer,
                 ..
             } => {
-                let r#type = type_ref.as_ref().map(|r#type| {
-                    self.lower_ty(
-                        TypeContainer::VariableStatement(statement),
-                        &body.store,
-                        &r#type,
-                    )
+                let r#type = type_ref.map(|r#type| {
+                    self.lower_ty(r#type, resolver.as_ref().unwrap_or(&self.resolver), &body)
+                        .apply(self)
                 });
                 let r#type =
                     self.infer_initializer(&body, *initializer, r#type, AbstractHandling::Abstract);
@@ -640,12 +655,9 @@ impl<'database> InferenceContext<'database> {
                 initializer,
                 ..
             } => {
-                let r#type = type_ref.as_ref().map(|r#type| {
-                    self.lower_ty(
-                        TypeContainer::VariableStatement(statement),
-                        &body.store,
-                        &r#type,
-                    )
+                let r#type = type_ref.map(|r#type| {
+                    self.lower_ty(r#type, resolver.as_ref().unwrap_or(&self.resolver), &body)
+                        .apply(self)
                 });
                 let r#type = self.infer_initializer(
                     &body,
@@ -941,7 +953,7 @@ impl<'database> InferenceContext<'database> {
         expression: ExpressionId,
         store: &ExpressionStore,
     ) -> Type {
-        let r#type = match &store.exprs[expression] {
+        let r#type = match &store[expression] {
             Expression::Missing => self.error_ty(),
             Expression::BinaryOperation {
                 left_side,
@@ -1023,14 +1035,14 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             Expression::Call {
-                type_specifier,
+                ident_expression,
                 arguments,
             } => {
                 let arguments: Vec<_> = arguments
                     .iter()
                     .map(|&arg| self.infer_expression(arg, store).unref(self.database))
                     .collect();
-                self.infer_call(expression, type_specifier, arguments, store)
+                self.infer_call(expression, ident_expression, arguments, store)
             },
             Expression::Index { left_side, index } => {
                 let left_side = self.infer_expression(*left_side, store);
@@ -1099,54 +1111,8 @@ impl<'database> InferenceContext<'database> {
                 };
                 self.database.intern_ty(ty_kind)
             },
-            Expression::TypeSpecifier(type_specifier) => {
-                let resolver = self.resolver_for(&TypeContainer::Expr(expression));
-                match resolver.resolve(&type_specifier.path) {
-                    Some(ResolveType::Function(loc)) => {
-                        let id = self.database.intern_function(loc);
-                        self.database
-                            .function_type(id)
-                            .lookup(self.database)
-                            .return_type
-                            // TODO: This should be a "void" type instead? Or maybe we should emit a diagnostic?
-                            .unwrap_or_else(|| self.error_ty())
-                    },
-                    Some(ResolveType::GlobalConstant(loc)) => {
-                        let id = self.database.intern_global_constant(loc);
-                        self.database
-                            .infer(DefinitionWithBodyId::GlobalConstant(id))
-                            .return_type
-                    },
-                    Some(ResolveType::GlobalVariable(loc)) => {
-                        let id = self.database.intern_global_variable(loc);
-                        self.database
-                            .infer(DefinitionWithBodyId::GlobalVariable(id))
-                            .return_type
-                    },
-                    Some(ResolveType::Override(loc)) => {
-                        let id = self.database.intern_override(loc);
-                        self.database
-                            .infer(DefinitionWithBodyId::Override(id))
-                            .return_type
-                    },
-                    Some(ResolveType::Local(local)) => self.result.type_of_binding[local],
-                    Some(ResolveType::TypeAlias(_id)) => {
-                        // A type cannot appear in an expression.
-                        // Like `1 + f32` is not valid
-                        // TODO: self.push_diagnostic(..);
-                        self.error_ty()
-                    },
-                    Some(ResolveType::Struct(_id)) => {
-                        // A type cannot appear in an expression.
-                        // Like `1 + f32` is not valid
-                        // TODO: self.push_diagnostic(..);
-                        self.error_ty()
-                    },
-                    None => {
-                        // If WGSL had predeclared constants (like PI), then this could be one
-                        self.error_ty()
-                    },
-                }
+            Expression::IdentExpression(ident_expression) => {
+                self.infer_ident_expression(expression, ident_expression, store)
             },
         };
 
@@ -1278,6 +1244,67 @@ impl<'database> InferenceContext<'database> {
         };
 
         self.call_builtin(left_side, builtin, &[left_ty, rhs_ty], Some(op.symbol()))
+    }
+
+    fn infer_ident_expression(
+        &mut self,
+        expression: ExpressionId,
+        ident_expression: &IdentExpression,
+        store: &ExpressionStore,
+    ) -> Type {
+        let resolver = self.resolver_for_expression(expression);
+        let mut ctx = TyLoweringContext::new(
+            self.database,
+            resolver.as_ref().unwrap_or(&self.resolver),
+            store,
+        );
+        let lowered = ctx.lower(
+            TypeContainer::Expression(expression),
+            &ident_expression.path,
+            &ident_expression.generics,
+        );
+        self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
+
+        match lowered {
+            (Lowered::GlobalConstant(id)) => {
+                self.database
+                    .infer(DefinitionWithBodyId::GlobalConstant(id))
+                    .return_type
+            },
+            (Lowered::GlobalVariable(id)) => {
+                self.database
+                    .infer(DefinitionWithBodyId::GlobalVariable(id))
+                    .return_type
+            },
+            (Lowered::Override(id)) => {
+                self.database
+                    .infer(DefinitionWithBodyId::Override(id))
+                    .return_type
+            },
+            (Lowered::Local(id)) => self.result.type_of_binding[id],
+            (Lowered::Type(_id)) => {
+                // A type cannot appear in an expression.
+                // Like `1 + f32` is not valid
+                // TODO: self.push_diagnostic(..);
+                self.error_ty()
+            },
+            (Lowered::Function(_id)) => {
+                // A function name must be called
+                // TODO: self.push_diagnostic(..);
+                self.error_ty()
+            },
+            (Lowered::BuiltinFunction) => {
+                // A function name must be called
+                // TODO: self.push_diagnostic(..);
+                self.error_ty()
+            },
+            (Lowered::Enumerant(_id)) => {
+                // An enumerant cannot appear in an expression.
+                // Like `1 + f32` is not valid
+                // TODO: self.push_diagnostic(..);
+                self.error_ty()
+            },
+        }
     }
 
     fn builtin_vector_inferred_constructor(
@@ -1470,105 +1497,105 @@ impl<'database> InferenceContext<'database> {
     fn infer_call(
         &mut self,
         expression: ExpressionId,
-        callee: &TypeSpecifier,
+        callee: &IdentExpression,
         arguments: Vec<Type>,
         store: &ExpressionStore,
     ) -> Type {
-        let resolver = self.resolver_for(&TypeContainer::Expr(expression));
+        let resolver = self.resolver_for_expression(expression);
+        let mut ctx = TyLoweringContext::new(
+            self.database,
+            resolver.as_ref().unwrap_or(&self.resolver),
+            store,
+        );
 
-        if let Some(arg) = resolver.resolve(&callee.path) {
-            match arg {
-                hir_def::resolver::ResolveType::Struct(loc) => {
-                    let r#struct = self.database.intern_struct(loc);
-                    let kind = TyKind::Struct(r#struct);
-                    let r#type = self.database.intern_ty(kind);
-                    self.check_ty_initialiser(expression, r#type, arguments);
-                    r#type
-                },
-                hir_def::resolver::ResolveType::TypeAlias(alias) => {
-                    let alias = self.database.intern_type_alias(alias);
-                    let data = self.database.type_alias_data(alias).0;
+        match ctx.try_lower(
+            TypeContainer::Expression(expression),
+            &callee.path,
+            &callee.generics,
+        ) {
+            Ok(Lowered::Type(r#type)) => {
+                self.check_ty_initialiser(expression, r#type, arguments);
+                r#type
+            },
+            Ok(Lowered::Function(id)) => {
+                let details = id.lookup(self.database);
+                self.result
+                    .call_resolutions
+                    .insert(expression, ResolvedCall::Function(id));
+                self.validate_function_call(&details, &arguments, expression, expression)
+            },
+            Ok(Lowered::BuiltinFunction) => {
+                self.call_builtin_function(expression, callee, arguments, store, ctx)
+            },
+            Ok(
+                Lowered::Enumerant(_)
+                | Lowered::GlobalConstant(_)
+                | Lowered::GlobalVariable(_)
+                | Lowered::Override(_)
+                | Lowered::Local(_),
+            ) => {
+                // TODO: everything else is an invalid function call. So do self.push_diagnostic(..);
+                self.error_ty()
+            },
+            Err(error) => {
+                self.push_lowering_diagnostics(&mut vec![error], store);
+                self.error_ty()
+            },
+        }
+    }
 
-                    let r#type =
-                        self.lower_ty(TypeContainer::TypeAlias(alias), &data.store, &data.r#type);
-                    self.check_ty_initialiser(expression, r#type, arguments);
-                    r#type
-                },
-                hir_def::resolver::ResolveType::Function(loc) => {
-                    let id = self.database.intern_function(loc);
-                    let resolved = self.database.function_type(id);
-                    let details = resolved.lookup(self.database);
-                    self.result
-                        .call_resolutions
-                        .insert(expression, ResolvedCall::Function(resolved));
-                    self.validate_function_call(&details, &arguments, expression, expression)
-                },
-                _ => {
-                    // TODO: everything else is an invalid function call. So do self.push_diagnostic(..);
-                    self.error_ty()
-                },
-            }
+    fn call_builtin_function(
+        &self,
+        expression: la_arena::Idx<Expression>,
+        callee: &IdentExpression,
+        arguments: Vec<Type>,
+        store: &ExpressionStore,
+        mut ctx: TyLoweringContext<'_>,
+    ) -> Type {
+        let mut converter = WgslTypeConverter::new(self.database);
+        let template_args: Option<Vec<_>> = callee
+            .generics
+            .iter()
+            .map(|arg| ctx.eval_tplt_arg(*arg))
+            .map(|arg| converter.template_parameter_to_wgsl_types(arg))
+            .collect();
+        let Some(template_args) = template_args else {
+            // One of the template parameters had an error type
+            return self.error_ty();
+        };
+        let template_args = if template_args.is_empty() {
+            None
         } else {
-            let mut ctx = TyLoweringContext::new(self.database, &resolver, store);
-            let mut converter = WgslTypeConverter::new(self.database);
-            let template_args: Option<Vec<_>> = callee
-                .generics
-                .iter()
-                .map(|arg| ctx.eval_tplt_arg(*arg))
-                .map(|arg| converter.template_parameter_to_wgsl_types(arg))
-                .collect();
-            let Some(template_args) = template_args else {
-                // One of the template parameters had an error type
-                return self.error_ty();
-            };
-            let template_args = if template_args.is_empty() {
-                None
-            } else {
-                Some(template_args.as_slice())
-            };
-            for error in ctx.diagnostics {
-                self.push_diagnostic(InferenceDiagnostic::InvalidType {
-                    container: TypeContainer::Expr(expression),
-                    error,
+            Some(template_args.as_slice())
+        };
+        self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
+
+        let converted_arguments: Option<Vec<_>> = arguments
+            .iter()
+            .map(|ty| converter.to_wgsl_types(*ty))
+            .collect();
+
+        let Some(converted_arguments) = converted_arguments else {
+            // One of the arguments had an error type
+            return self.error_ty();
+        };
+
+        let return_type = wgsl_types::builtin::type_builtin_fn(
+            callee.path.as_str(),
+            template_args,
+            &converted_arguments,
+        );
+
+        match return_type {
+            Ok(Some(ty)) => converter.from_wgsl_types(ty),
+            Ok(None) => self.error_ty(),
+            Err(err) => {
+                self.push_diagnostic(InferenceDiagnostic::WgslError {
+                    expression,
+                    message: err.to_string(),
                 });
-            }
-
-            let converted_arguments: Option<Vec<_>> = arguments
-                .iter()
-                .map(|ty| converter.to_wgsl_types(*ty))
-                .collect();
-
-            let Some(converted_arguments) = converted_arguments else {
-                // One of the arguments had an error type
-                return self.error_ty();
-            };
-
-            let return_type = if wgsl_types::builtin::is_ctor(callee.path.as_str()) {
-                wgsl_types::builtin::type_ctor(
-                    callee.path.as_str(),
-                    template_args,
-                    &converted_arguments,
-                )
-                .map(Some)
-            } else {
-                wgsl_types::builtin::type_builtin_fn(
-                    callee.path.as_str(),
-                    template_args,
-                    &converted_arguments,
-                )
-            };
-
-            match return_type {
-                Ok(Some(ty)) => converter.from_wgsl_types(ty),
-                Ok(None) => self.error_ty(),
-                Err(err) => {
-                    self.push_diagnostic(InferenceDiagnostic::WgslError {
-                        expression,
-                        message: err.to_string(),
-                    });
-                    self.error_ty()
-                },
-            }
+                self.error_ty()
+            },
         }
     }
 
@@ -1682,30 +1709,44 @@ impl<'database> InferenceContext<'database> {
     }
 
     fn lower_ty(
-        &mut self,
-        container: impl Into<TypeContainer>,
+        &self,
+        type_ref: TypeSpecifierId,
+        resolver: &Resolver,
         store: &ExpressionStore,
-        type_ref: &TypeSpecifier,
-    ) -> Type {
-        let container = container.into();
-        let resolver = self.resolver_for(&container);
-
+    ) -> TyLoweringResult {
         let mut ctx = TyLoweringContext::new(self.database, &resolver, store);
-        let result = ctx.try_lower_ty(type_ref);
-        for error in ctx.diagnostics {
-            self.push_diagnostic(InferenceDiagnostic::InvalidType {
-                container: container.clone(),
+        let r#type = ctx.lower_ty(type_ref);
+        let source = if store.is_body_store {
+            InferenceTypeDiagnosticSource::Body
+        } else {
+            InferenceTypeDiagnosticSource::Signature
+        };
+        TyLoweringResult {
+            r#type,
+            source,
+            diagnostics: ctx.diagnostics,
+        }
+    }
+}
+
+struct TyLoweringResult {
+    r#type: Type,
+    source: InferenceTypeDiagnosticSource,
+    diagnostics: Vec<TypeLoweringError>,
+}
+
+impl TyLoweringResult {
+    fn apply<'database>(
+        self,
+        context: &mut InferenceContext<'database>,
+    ) -> Type {
+        for error in self.diagnostics {
+            context.push_diagnostic(InferenceDiagnostic::InvalidType {
+                source: self.source,
                 error,
             });
         }
-
-        match result {
-            Ok(r#type) => r#type,
-            Err(error) => {
-                self.push_diagnostic(InferenceDiagnostic::InvalidType { container, error });
-                self.error_ty()
-            },
-        }
+        self.r#type
     }
 }
 
@@ -1790,10 +1831,22 @@ pub struct TyLoweringContext<'database> {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
-pub enum TypeLoweringError {
+pub struct TypeLoweringError {
+    pub container: TypeContainer,
+    pub kind: TypeLoweringErrorKind,
+}
+
+#[derive(PartialEq, Eq, Debug, Clone)]
+pub enum TypeLoweringErrorKind {
     UnresolvedName(Name),
     InvalidTexelFormat(String),
-    // TemplateArgumentError { expression: ExpressionId },
+    UnexpectedTemplateArgument(String),
+    MissingTemplateArgument(String),
+    WrongNumberOfTemplateArguments {
+        expected: std::ops::Range<usize>,
+        actual: usize,
+    },
+    ExpectedType(Name),
     // TODO: Change this to a strongly typed wgsl_types::Error
     // The challenge here is that wgsl_types::Error doesn't implement Eq,
     // However the inference result keeps track of all the diagnostics and is cached
@@ -1803,27 +1856,68 @@ pub enum TypeLoweringError {
     WgslError(String),
 }
 
-impl fmt::Display for TypeLoweringError {
+impl fmt::Display for TypeLoweringErrorKind {
     fn fmt(
         &self,
         formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
-            Self::UnresolvedName(name) => {
+            TypeLoweringErrorKind::UnresolvedName(name) => {
                 write!(formatter, "type `{}` not found in scope", name.as_str())
             },
-            Self::InvalidTexelFormat(format) => {
+            TypeLoweringErrorKind::InvalidTexelFormat(format) => {
                 let all_formats = "rgba8unorm,\nrgba8snorm,\nrgba8uint,\nrgba8sint,\nrgba16uint,\nrgba16sint,\nrgba16float,\nr32uint,\nr32sint,\nr32float,\nrg32uint,\nrg32sint,\nrg32float,\nrgba32uint,\nrgba32sint,\nrgba32float";
                 write!(
                     formatter,
                     "`{format}` is not a valid texel format, expected one of:\n{all_formats}"
                 )
             },
-            Self::WgslError(error) => {
+            TypeLoweringErrorKind::WgslError(error) => {
                 write!(formatter, "{error}")
+            },
+            TypeLoweringErrorKind::UnexpectedTemplateArgument(expected) => {
+                write!(
+                    formatter,
+                    "unexpected template argument, expected {expected}"
+                )
+            },
+            TypeLoweringErrorKind::MissingTemplateArgument(expected) => {
+                write!(formatter, "missing template argument, expected {expected}")
+            },
+            TypeLoweringErrorKind::WrongNumberOfTemplateArguments { expected, actual }
+                if expected.start == expected.end =>
+            {
+                write!(
+                    formatter,
+                    "expected {} template arguments, but got {actual}",
+                    expected.start
+                )
+            },
+            TypeLoweringErrorKind::WrongNumberOfTemplateArguments { expected, actual } => {
+                write!(
+                    formatter,
+                    "expected {} to {} template arguments, but got {actual}",
+                    expected.start, expected.end
+                )
+            },
+            TypeLoweringErrorKind::ExpectedType(name) => {
+                write!(formatter, "{} is not a type", name.as_str())
             },
         }
     }
+}
+
+/// A lowered type, or the definition of an item
+/// Also covers built-ins
+pub enum Lowered {
+    Type(Type),
+    Function(ResolvedFunctionId),
+    GlobalConstant(GlobalConstantId),
+    GlobalVariable(GlobalVariableId),
+    Override(OverrideId),
+    Local(BindingId),
+    Enumerant(Enumerant),
+    BuiltinFunction,
 }
 
 impl<'database> TyLoweringContext<'database> {
@@ -1839,140 +1933,136 @@ impl<'database> TyLoweringContext<'database> {
             diagnostics: Vec::new(),
         }
     }
+
+    pub fn lower(
+        &mut self,
+        type_container: TypeContainer,
+        path: &Name,
+        generics: &[ExpressionId],
+    ) -> Lowered {
+        match self.try_lower(type_container, path, generics) {
+            Ok(lowered) => lowered,
+            Err(error) => {
+                self.diagnostics.push(error);
+                Lowered::Type(self.database.intern_ty(TyKind::Error))
+            },
+        }
+    }
+
+    /// Will lower types, and resolve the definition of other items.
+    pub fn try_lower(
+        &mut self,
+        type_container: TypeContainer,
+        path: &Name,
+        generics: &[ExpressionId],
+    ) -> Result<Lowered, TypeLoweringError> {
+        let resolved_ty = self.resolver.resolve(path);
+
+        match resolved_ty {
+            // User-defined types currently cannot have generics
+            Some(_) => {
+                self.expect_no_template(generics);
+            },
+            _ => {},
+        }
+
+        match resolved_ty {
+            Some(ResolveType::TypeAlias(loc)) => {
+                let id = self.database.intern_type_alias(loc);
+                Ok(Lowered::Type(self.database.type_alias_type(id).0))
+            },
+            Some(ResolveType::Struct(loc)) => {
+                let id = self.database.intern_struct(loc);
+                Ok(Lowered::Type(self.database.intern_ty(TyKind::Struct(id))))
+            },
+            Some(ResolveType::Function(loc)) => {
+                let id = self.database.intern_function(loc);
+                Ok(Lowered::Function(self.database.function_type(id)))
+            },
+            Some(ResolveType::GlobalConstant(loc)) => {
+                let id = self.database.intern_global_constant(loc);
+                Ok(Lowered::GlobalConstant(id))
+            },
+            Some(ResolveType::GlobalVariable(loc)) => {
+                let id = self.database.intern_global_variable(loc);
+                Ok(Lowered::GlobalVariable(id))
+            },
+            Some(ResolveType::Override(loc)) => {
+                let id = self.database.intern_override(loc);
+                Ok(Lowered::Override(id))
+            },
+            Some(ResolveType::Local(local)) => Ok(Lowered::Local(local)),
+            None => self.lower_predeclared(type_container, path, generics),
+        }
+    }
+
+    fn expect_no_template(
+        &mut self,
+        generics: &[ExpressionId],
+    ) {
+        if generics.is_empty() {
+            return;
+        }
+        for template_expression in generics {
+            self.diagnostics.push(TypeLoweringError {
+                container: TypeContainer::Expression(*template_expression),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("nothing".to_string()),
+            });
+        }
+    }
+
+    fn expect_n_templates(
+        &mut self,
+        template_parameters: &eval::TemplateParameters,
+        expected: std::ops::Range<usize>,
+    ) -> bool {
+        if expected.contains(&template_parameters.len()) {
+            true
+        } else {
+            self.diagnostics.push(TypeLoweringError {
+                container: template_parameters.container.clone(),
+                kind: TypeLoweringErrorKind::WrongNumberOfTemplateArguments {
+                    expected,
+                    actual: template_parameters.len(),
+                },
+            });
+
+            false
+        }
+    }
+
     pub fn lower_ty(
         &mut self,
-        type_ref: &TypeSpecifier,
+        type_specifier_id: TypeSpecifierId,
     ) -> Type {
-        match self.try_lower_ty(type_ref) {
-            Ok(r#type) => r#type,
+        let type_specifier = &self.store[type_specifier_id];
+        let lowered = self.try_lower(
+            TypeContainer::TypeSpecifier(type_specifier_id),
+            &type_specifier.path,
+            &type_specifier.generics,
+        );
+        match lowered {
+            Ok(Lowered::Type(r#type)) => r#type,
+            Ok(
+                Lowered::Enumerant(_)
+                | Lowered::Function(_)
+                | Lowered::BuiltinFunction
+                | Lowered::GlobalConstant(_)
+                | Lowered::GlobalVariable(_)
+                | Lowered::Override(_)
+                | Lowered::Local(_),
+            ) => {
+                // TODO: Report a better error along the lines of "foo is a local variable, not a type"
+                self.diagnostics.push(TypeLoweringError {
+                    container: TypeContainer::TypeSpecifier(type_specifier_id),
+                    kind: TypeLoweringErrorKind::ExpectedType(type_specifier.path.clone()),
+                });
+                self.database.intern_ty(TyKind::Error)
+            },
             Err(error) => {
                 self.diagnostics.push(error);
                 self.database.intern_ty(TyKind::Error)
             },
-        }
-    }
-
-    /// Convert a [`TypeSpecifier`] into a `[Type]`, if it refers to a type.
-    ///
-    /// # Panics
-    ///
-    /// Panics if an extreme, probably impossible type is give, such as an array with a size exceeding 64 bits.
-    ///
-    /// # Errors
-    ///
-    /// This function will return an error if type is a path and the path is unknown.
-    pub fn try_lower_ty(
-        &mut self,
-        type_ref: &TypeSpecifier,
-    ) -> Result<Type, TypeLoweringError> {
-        let resolved_ty = self.resolver.resolve(&type_ref.path);
-        let name = &type_ref.path;
-        match resolved_ty {
-            Some(ResolveType::TypeAlias(loc)) => {
-                let id = self.database.intern_type_alias(loc);
-                let data = self.database.type_alias_data(id).0;
-
-                let module_info = self.database.module_info(loc.file_id);
-                let resolver = Resolver::default().push_module_scope(loc.file_id, module_info);
-                let mut ctx = TyLoweringContext::new(self.database, &resolver, &data.store);
-                let result = ctx.try_lower_ty(&data.r#type);
-                self.diagnostics.append(&mut ctx.diagnostics);
-                result
-            },
-            Some(ResolveType::Struct(loc)) => {
-                let r#struct = self.database.intern_struct(loc);
-                Ok(self.database.intern_ty(TyKind::Struct(r#struct)))
-            },
-            Some(_ty) => {
-                // TODO: Report a better error along the lines of "foo is a local variable, not a type"
-                Err(TypeLoweringError::UnresolvedName(name.clone()))
-            },
-            None => self.lower_predeclared_ty(type_ref),
-        }
-    }
-
-    fn is_predeclared_ty(
-        &self,
-        name: &Name,
-    ) -> bool {
-        match name.as_str() {
-            "bool"
-            | "i32"
-            | "u32"
-            | "f32"
-            | "f16"
-            | "array"
-            | "binding_array"
-            | "vec2"
-            | "vec3"
-            | "vec4"
-            | "vec2i"
-            | "vec3i"
-            | "vec4i"
-            | "vec2u"
-            | "vec3u"
-            | "vec4u"
-            | "vec2f"
-            | "vec3f"
-            | "vec4f"
-            | ("mat2x2" | "mat2x3" | "mat2x4" | "mat3x2" | "mat3x3" | "mat3x4" | "mat4x2"
-            | "mat4x3" | "mat4x4")
-            | ("mat2x2f" | "mat2x3f" | "mat2x4f" | "mat3x2f" | "mat3x3f" | "mat3x4f" | "mat4x2f"
-            | "mat4x3f" | "mat4x4f")
-            | "ptr"
-            | "atomic"
-            | "texture_1d"
-            | "texture_2d"
-            | "texture_2d_array"
-            | "texture_3d"
-            | "texture_cube"
-            | "texture_cube_array"
-            | "texture_multisampled_2d"
-            | "texture_storage_1d"
-            | "texture_storage_2d"
-            | "texture_storage_2d_array"
-            | "texture_storage_3d"
-            | "texture_depth_multisampled_2d"
-            | "texture_external"
-            | "texture_depth_2d"
-            | "texture_depth_2d_array"
-            | "texture_depth_cube"
-            | "texture_depth_cube_array"
-            | "sampler"
-            | "sampler_comparison" => true,
-            _ => false,
-        }
-    }
-
-    fn lower_predeclared_ty(
-        &mut self,
-        type_ref: &TypeSpecifier,
-    ) -> Result<Type, TypeLoweringError> {
-        let name = type_ref.path.as_str();
-        let mut converter = WgslTypeConverter::new(self.database);
-        let template_args: Option<Vec<_>> = type_ref
-            .generics
-            .iter()
-            .map(|arg| {
-                let template_argument = self.eval_tplt_arg(*arg);
-                let a = format!("{:?}", template_argument);
-                let converted = converter.template_parameter_to_wgsl_types(template_argument);
-                if converted.is_none() {
-                    self.diagnostics.push(TypeLoweringError::WgslError(a));
-                }
-                converted
-            })
-            .collect();
-
-        let template_args = match &template_args {
-            Some(args) if args.is_empty() => None,
-            Some(args) => Some(args.as_slice()),
-            None => None,
-        };
-        let return_type = wgsl_types::builtin::builtin_type(name, template_args);
-        match return_type {
-            Ok(ty) => Ok(converter.from_wgsl_types(ty)),
-            Err(err) => Err(TypeLoweringError::WgslError(err.to_string())),
         }
     }
 }

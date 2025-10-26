@@ -1,5 +1,6 @@
 use la_arena::Arena;
 use syntax::{HasGenerics, HasName, ast, pointer::AstPointer};
+use triomphe::Arc;
 
 use crate::{
     HirFileId, InFile,
@@ -9,11 +10,9 @@ use crate::{
     },
     database::DefDatabase,
     expression::{Expression, ExpressionId, parse_literal},
-    expression_store::{
-        ExpressionSourceMap, ExpressionStore, ExpressionStoreBuilder, SyntheticSyntax,
-    },
+    expression_store::{ExpressionSourceMap, ExpressionStoreBuilder, SyntheticSyntax},
     module_data::Name,
-    type_specifier::TypeSpecifier,
+    type_specifier::{IdentExpression, TypeSpecifier, TypeSpecifierId},
 };
 
 pub struct ExprCollector<'database> {
@@ -22,11 +21,13 @@ pub struct ExprCollector<'database> {
 }
 
 impl ExprCollector<'_> {
-    pub fn new<'a>(database: &'a dyn DefDatabase) -> ExprCollector<'a> {
-        ExprCollector {
-            database,
-            store: ExpressionStoreBuilder::default(),
-        }
+    pub fn new<'a>(
+        database: &'a dyn DefDatabase,
+        is_body_store: bool,
+    ) -> ExprCollector<'a> {
+        let mut store = ExpressionStoreBuilder::default();
+        store.is_body_store = is_body_store;
+        ExprCollector { database, store }
     }
 
     #[expect(clippy::too_many_lines, reason = "TODO")]
@@ -93,7 +94,7 @@ impl ExprCollector<'_> {
                 );
 
                 Expression::Call {
-                    type_specifier: TypeSpecifier {
+                    ident_expression: IdentExpression {
                         path: name,
                         generics,
                     },
@@ -104,7 +105,7 @@ impl ExprCollector<'_> {
                 let name = as_name_opt(identifier.name_ref());
                 let generics = self.collect_generics(identifier.generic_arg_list());
 
-                Expression::TypeSpecifier(TypeSpecifier {
+                Expression::IdentExpression(IdentExpression {
                     path: name,
                     generics,
                 })
@@ -121,12 +122,14 @@ impl ExprCollector<'_> {
 
     pub fn collect_type_specifier(
         &mut self,
-        expression: ast::TypeSpecifier,
-    ) -> TypeSpecifier {
-        TypeSpecifier {
-            path: as_name_opt(expression.name_ref()),
-            generics: self.collect_generics(expression.generic_arg_list()),
-        }
+        type_specifier: ast::TypeSpecifier,
+    ) -> TypeSpecifierId {
+        let syntax_pointer = AstPointer::new(&type_specifier);
+        let type_specifier = TypeSpecifier {
+            path: as_name_opt(type_specifier.name_ref()),
+            generics: self.collect_generics(type_specifier.generic_arg_list()),
+        };
+        self.alloc_type_specifier(type_specifier, syntax_pointer)
     }
     pub fn collect_generics(
         &mut self,
@@ -138,19 +141,6 @@ impl ExprCollector<'_> {
                 .map(|g| self.collect_expression(g))
                 .collect()
         })
-    }
-
-    pub fn collect_type_specifier_opt(
-        &mut self,
-        expression: Option<ast::TypeSpecifier>,
-    ) -> TypeSpecifier {
-        match expression {
-            Some(v) => self.collect_type_specifier(v),
-            None => TypeSpecifier {
-                path: Name::missing(),
-                generics: vec![],
-            },
-        }
     }
 
     pub fn collect_function_param_list(
@@ -177,6 +167,16 @@ impl ExprCollector<'_> {
         id
     }
 
+    fn alloc_type_specifier(
+        &mut self,
+        type_specifier: TypeSpecifier,
+        source: AstPointer<ast::TypeSpecifier>,
+    ) -> TypeSpecifierId {
+        let id = self.make_type_specifier(type_specifier, Ok(source.clone()));
+        self.store.type_map.insert(source, id);
+        id
+    }
+
     fn make_expression(
         &mut self,
         expression: Expression,
@@ -187,8 +187,28 @@ impl ExprCollector<'_> {
         id
     }
 
+    fn make_type_specifier(
+        &mut self,
+        type_specifier: TypeSpecifier,
+        source: Result<AstPointer<ast::TypeSpecifier>, SyntheticSyntax>,
+    ) -> TypeSpecifierId {
+        let id = self.store.types.alloc(type_specifier);
+        self.store.type_map_back.insert(id, source);
+        id
+    }
+
     fn missing_expression(&mut self) -> ExpressionId {
         self.make_expression(Expression::Missing, Err(SyntheticSyntax))
+    }
+
+    fn missing_type_specifier(&mut self) -> TypeSpecifierId {
+        self.make_type_specifier(
+            TypeSpecifier {
+                path: Name::missing(),
+                generics: vec![],
+            },
+            Err(SyntheticSyntax),
+        )
     }
 
     pub fn collect_expression_opt(
@@ -200,6 +220,16 @@ impl ExprCollector<'_> {
             None => self.missing_expression(),
         }
     }
+
+    pub fn collect_type_specifier_opt(
+        &mut self,
+        type_specifier: Option<ast::TypeSpecifier>,
+    ) -> TypeSpecifierId {
+        match type_specifier {
+            Some(v) => self.collect_type_specifier(v),
+            None => self.missing_type_specifier(),
+        }
+    }
 }
 
 pub(crate) fn lower_function(
@@ -208,7 +238,7 @@ pub(crate) fn lower_function(
 ) -> (FunctionData, ExpressionSourceMap) {
     let name = as_name_opt(function.value.name());
 
-    let mut collector = ExprCollector::new(database);
+    let mut collector = ExprCollector::new(database, false);
     let parameters = function.value.parameter_list().map_or_else(
         || Arena::new(),
         |parameters| collector.collect_function_param_list(&parameters),
@@ -222,7 +252,7 @@ pub(crate) fn lower_function(
     let (store, source_map) = collector.store.finish();
     let specifier = FunctionData {
         name,
-        store,
+        store: Arc::new(store),
         parameters,
         return_type,
     };
@@ -235,7 +265,7 @@ pub(crate) fn lower_struct(
 ) -> (StructData, ExpressionSourceMap) {
     let name = as_name_opt(struct_declaration.value.name());
 
-    let mut collector = ExprCollector::new(database);
+    let mut collector = ExprCollector::new(database, false);
     let mut fields = Arena::new();
     if let Some(body) = struct_declaration.value.body() {
         fields.alloc_many(body.fields().map(|field| FieldData {
@@ -247,7 +277,7 @@ pub(crate) fn lower_struct(
     let (store, source_map) = collector.store.finish();
     let specifier = StructData {
         name,
-        store,
+        store: Arc::new(store),
         fields,
     };
     (specifier, source_map)
@@ -259,13 +289,13 @@ pub(crate) fn lower_type_alias(
 ) -> (TypeAliasData, ExpressionSourceMap) {
     let name = as_name_opt(type_alias.value.name());
 
-    let mut collector = ExprCollector::new(database);
+    let mut collector = ExprCollector::new(database, false);
     let r#type = collector.collect_type_specifier_opt(type_alias.value.type_declaration());
 
     let (store, source_map) = collector.store.finish();
     let specifier = TypeAliasData {
         name,
-        store,
+        store: Arc::new(store),
         r#type,
     };
     (specifier, source_map)
@@ -277,7 +307,7 @@ pub(crate) fn lower_variable(
 ) -> (GlobalVariableData, ExpressionSourceMap) {
     let name = as_name_opt(global_variable.value.name());
 
-    let mut collector = ExprCollector::new(database);
+    let mut collector = ExprCollector::new(database, false);
     let r#type = global_variable
         .value
         .ty()
@@ -295,7 +325,7 @@ pub(crate) fn lower_variable(
     let (store, source_map) = collector.store.finish();
     let specifier = GlobalVariableData {
         name,
-        store,
+        store: Arc::new(store),
         r#type,
         generics,
     };
@@ -308,7 +338,7 @@ pub(crate) fn lower_constant(
 ) -> (GlobalConstantData, ExpressionSourceMap) {
     let name = as_name_opt(global_constant.value.name());
 
-    let mut collector = ExprCollector::new(database);
+    let mut collector = ExprCollector::new(database, false);
     let r#type = global_constant
         .value
         .ty()
@@ -317,7 +347,7 @@ pub(crate) fn lower_constant(
     let (store, source_map) = collector.store.finish();
     let specifier = GlobalConstantData {
         name,
-        store,
+        store: Arc::new(store),
         r#type,
     };
     (specifier, source_map)
@@ -328,7 +358,7 @@ pub(crate) fn lower_override(
 ) -> (OverrideData, ExpressionSourceMap) {
     let name = as_name_opt(global_override.value.name());
 
-    let mut collector = ExprCollector::new(database);
+    let mut collector = ExprCollector::new(database, false);
     let r#type = global_override
         .value
         .ty()
@@ -337,7 +367,7 @@ pub(crate) fn lower_override(
     let (store, source_map) = collector.store.finish();
     let specifier = OverrideData {
         name,
-        store,
+        store: Arc::new(store),
         r#type,
     };
     (specifier, source_map)

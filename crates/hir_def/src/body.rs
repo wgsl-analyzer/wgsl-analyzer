@@ -155,4 +155,8 @@ impl BodySourceMap {
     ) -> Result<&AstPointer<ast::Statement>, &SyntheticSyntax> {
         self.statement_map_back[statement].as_ref()
     }
+
+    pub fn expression_source_map(&self) -> &ExpressionSourceMap {
+        &self.expressions
+    }
 }

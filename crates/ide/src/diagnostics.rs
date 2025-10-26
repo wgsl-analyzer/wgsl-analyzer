@@ -591,14 +591,19 @@ pub fn diagnostics(
                     let frange = original_file_range(database, var.file_id, &source);
                     Diagnostic::new(DiagnosticCode("12"), format!("{error}"), frange.range)
                 },
-                AnyDiagnostic::InvalidType {
-                    file_id,
-                    location,
+                AnyDiagnostic::InvalidTypeSpecifier {
+                    type_specifier,
                     error,
                 } => {
-                    let source = location.to_node(&root);
-                    let frange = original_file_range(database, file_id, source.syntax());
+                    let source = type_specifier.value.to_node(&root);
+                    let frange =
+                        original_file_range(database, type_specifier.file_id, source.syntax());
                     Diagnostic::new(DiagnosticCode("13"), format!("{error}"), frange.range)
+                },
+                AnyDiagnostic::InvalidIdentExpression { expression, error } => {
+                    let source = expression.value.to_node(&root);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(DiagnosticCode("14"), format!("{error}"), frange.range)
                 },
                 AnyDiagnostic::NagaValidationError {
                     message,

@@ -32,7 +32,7 @@ pub fn collect<Function: FnMut(PrecedenceDiagnostic)>(
 
         let left_hand_side_operator =
             if let hir_def::expression::Expression::BinaryOperation { operation: op, .. } =
-                body.store.exprs[*left_side]
+                body.store[*left_side]
             {
                 not_parenthesis(left_side).then_some(op)
             } else {
@@ -40,7 +40,7 @@ pub fn collect<Function: FnMut(PrecedenceDiagnostic)>(
             };
         let right_hand_side_operator =
             if let hir_def::expression::Expression::BinaryOperation { operation: op, .. } =
-                body.store.exprs[*right_side]
+                body.store[*right_side]
             {
                 not_parenthesis(right_side).then_some(op)
             } else {

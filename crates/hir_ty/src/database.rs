@@ -11,7 +11,7 @@ use crate::infer::{
 };
 use crate::ty::{TyKind, Type};
 use hir_def::data::FieldId;
-use hir_def::database::{DefinitionWithBodyId, GlobalVariableId};
+use hir_def::database::{DefinitionWithBodyId, GlobalVariableId, TypeAliasId};
 use hir_def::{
     HirFileId, InFile,
     data::LocalFieldId,
@@ -34,11 +34,15 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
     fn field_types(
         &self,
         key: StructId,
-    ) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<FieldInferenceDiagnostic>)>;
+    ) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<InferenceDiagnostic>)>;
     fn function_type(
         &self,
         key: FunctionId,
     ) -> ResolvedFunctionId;
+    fn type_alias_type(
+        &self,
+        key: TypeAliasId,
+    ) -> Arc<(Type, Vec<InferenceDiagnostic>)>;
     fn struct_is_used_in_uniform(
         &self,
         key: StructId,
@@ -64,10 +68,16 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
     ) -> ResolvedFunctionId;
 }
 
+#[derive(PartialEq, Eq, Debug)]
+pub struct FieldInferenceDiagnostic {
+    pub field: FieldId,
+    pub error: TypeLoweringError,
+}
+
 fn field_types(
     database: &dyn HirDatabase,
     r#struct: StructId,
-) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<FieldInferenceDiagnostic>)> {
+) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<InferenceDiagnostic>)> {
     let data = database.struct_data(r#struct).0;
 
     let file_id = r#struct.lookup(database).file_id;
@@ -79,19 +89,13 @@ fn field_types(
     let mut diagnostics = vec![];
     let mut map = ArenaMap::default();
     for (index, field) in data.fields.iter() {
-        let r#type = ty_ctx.lower_ty(&field.r#type);
-        diagnostics.extend(
-            ty_ctx
-                .diagnostics
-                .drain(..)
-                .map(|error| FieldInferenceDiagnostic {
-                    field: FieldId {
-                        r#struct,
-                        field: index,
-                    },
-                    error,
-                }),
-        );
+        let r#type = ty_ctx.lower_ty(field.r#type);
+        diagnostics.extend(ty_ctx.diagnostics.drain(..).map(|error| {
+            InferenceDiagnostic::InvalidType {
+                source: crate::infer::InferenceTypeDiagnosticSource::Signature,
+                error,
+            }
+        }));
 
         map.insert(index, r#type);
     }
@@ -99,10 +103,28 @@ fn field_types(
     Arc::new((map, diagnostics))
 }
 
-#[derive(PartialEq, Eq, Debug)]
-pub struct FieldInferenceDiagnostic {
-    pub field: FieldId,
-    pub error: TypeLoweringError,
+fn type_alias_type(
+    database: &dyn HirDatabase,
+    type_alias: TypeAliasId,
+) -> Arc<(Type, Vec<InferenceDiagnostic>)> {
+    let data = database.type_alias_data(type_alias).0;
+
+    let file_id = type_alias.lookup(database).file_id;
+    let module_info = database.module_info(file_id);
+    let resolver = Resolver::default().push_module_scope(file_id, module_info);
+
+    let mut ty_ctx = TyLoweringContext::new(database, &resolver, &data.store);
+    let result = ty_ctx.lower_ty(data.r#type);
+    let diagnostics = ty_ctx
+        .diagnostics
+        .into_iter()
+        .map(|error| InferenceDiagnostic::InvalidType {
+            source: crate::infer::InferenceTypeDiagnosticSource::Signature,
+            error,
+        })
+        .collect();
+
+    Arc::new((result, diagnostics))
 }
 
 fn function_type(
@@ -117,16 +139,13 @@ fn function_type(
 
     let mut ty_ctx = TyLoweringContext::new(database, &resolver, &data.store);
 
-    let return_type = data
-        .return_type
-        .as_ref()
-        .map(|type_ref| ty_ctx.lower_ty(&type_ref));
+    let return_type = data.return_type.map(|type_ref| ty_ctx.lower_ty(type_ref));
 
     let parameters = data
         .parameters
         .iter()
         .map(|(_, param)| {
-            let r#type = ty_ctx.lower_ty(&param.r#type);
+            let r#type = ty_ctx.lower_ty(param.r#type);
             (r#type, param.name.clone())
         })
         .collect();

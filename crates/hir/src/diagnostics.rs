@@ -3,12 +3,13 @@ pub mod precedence;
 
 use base_db::{FileRange, TextRange};
 use hir_def::{
-    HirFileId, InFile, body::BodySourceMap, expression::BinaryOperation, module_data::Name,
+    HirFileId, InFile, body::BodySourceMap, expression::BinaryOperation,
+    expression_store::ExpressionSourceMap, module_data::Name,
 };
 use hir_ty::{
     builtins::BuiltinId,
     database::{FieldInferenceDiagnostic, HirDatabase},
-    infer::{InferenceDiagnostic, TypeExpectation, TypeLoweringError},
+    infer::{InferenceDiagnostic, TypeExpectation, TypeLoweringError, TypeLoweringErrorKind},
     ty::Type,
     validate::AddressSpaceError,
 };
@@ -128,13 +129,14 @@ pub enum AnyDiagnostic {
         var: InFile<AstPointer<ast::VariableDeclaration>>,
         error: AddressSpaceError,
     },
-
-    InvalidType {
-        file_id: HirFileId,
-        location: SyntaxNodePointer,
-        error: TypeLoweringError,
+    InvalidTypeSpecifier {
+        type_specifier: InFile<AstPointer<ast::TypeSpecifier>>,
+        error: TypeLoweringErrorKind,
     },
-
+    InvalidIdentExpression {
+        expression: InFile<AstPointer<ast::Expression>>,
+        error: TypeLoweringErrorKind,
+    },
     PrecedenceParensRequired {
         expression: InFile<AstPointer<ast::Expression>>,
         operation: BinaryOperation,
@@ -183,12 +185,13 @@ impl AnyDiagnostic {
             | Self::NoConstructor { expression, .. }
             | Self::PrecedenceParensRequired { expression, .. }
             | Self::UnexpectedTemplateArgument { expression, .. }
-            | Self::WgslError { expression, .. } => expression.file_id,
+            | Self::WgslError { expression, .. }
+            | Self::InvalidIdentExpression { expression, .. } => expression.file_id,
             Self::MissingAddressSpace { var } | Self::InvalidAddressSpace { var, .. } => {
                 var.file_id
             },
-            Self::InvalidType { file_id, .. }
-            | Self::NagaValidationError { file_id, .. }
+            Self::InvalidTypeSpecifier { type_specifier, .. } => type_specifier.file_id,
+            Self::NagaValidationError { file_id, .. }
             | Self::ParseError { file_id, .. }
             | Self::CyclicType { file_id, .. } => *file_id,
         }
@@ -197,9 +200,9 @@ impl AnyDiagnostic {
 
 #[expect(clippy::too_many_lines, reason = "TODO")]
 pub(crate) fn any_diag_from_infer_diagnostic(
-    database: &dyn HirDatabase,
     infer_diagnostic: &InferenceDiagnostic,
-    source_map: &BodySourceMap,
+    signature_map: &ExpressionSourceMap,
+    source_map: &ExpressionSourceMap,
     file_id: HirFileId,
 ) -> Option<AnyDiagnostic> {
     Some(match infer_diagnostic {
@@ -329,49 +332,35 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 actual: *actual,
             }
         },
-        InferenceDiagnostic::InvalidType { container, error } => {
-            let location = match *container {
-                hir_ty::infer::TypeContainer::Expr(expression) => {
-                    let expression = source_map.expression_to_source(expression).ok()?;
-                    expression.syntax_node_pointer()
-                },
-                hir_ty::infer::TypeContainer::GlobalVar(id) => {
-                    let source = GlobalVariable { id }.source(database)?;
-                    SyntaxNodePointer::new(source.value.ty()?.syntax())
-                },
-                hir_ty::infer::TypeContainer::GlobalConstant(id) => {
-                    let source = GlobalConstant { id }.source(database)?;
-                    SyntaxNodePointer::new(source.value.ty()?.syntax())
-                },
-                hir_ty::infer::TypeContainer::Override(id) => {
-                    let source = Override { id }.source(database)?;
-                    SyntaxNodePointer::new(source.value.ty()?.syntax())
-                },
-                hir_ty::infer::TypeContainer::FunctionParameter(id) => {
-                    let source = Parameter { id }.source(database)?;
-                    SyntaxNodePointer::new(source.value.ty()?.syntax())
-                },
-                hir_ty::infer::TypeContainer::FunctionReturn(id) => {
-                    let source = Function { id }.source(database)?;
-                    SyntaxNodePointer::new(source.value.return_type()?.syntax())
-                },
-                hir_ty::infer::TypeContainer::VariableStatement(statement) => {
-                    let statement = source_map.statement_to_source(statement).ok()?;
-                    statement.syntax_node_pointer()
-                },
-                hir_ty::infer::TypeContainer::TypeAlias(id) => {
-                    let source = TypeAlias { id }.source(database)?;
-                    SyntaxNodePointer::new(source.value.type_declaration()?.syntax())
-                },
-                hir_ty::infer::TypeContainer::StructField(id) => {
-                    let source = Field { id }.source(database)?;
-                    SyntaxNodePointer::new(source.value.ty()?.syntax())
-                },
+        InferenceDiagnostic::InvalidType {
+            source,
+            error: TypeLoweringError { container, kind },
+        } => {
+            let source_map = match source {
+                hir_ty::infer::InferenceTypeDiagnosticSource::Body => source_map,
+                hir_ty::infer::InferenceTypeDiagnosticSource::Signature => signature_map,
             };
-            AnyDiagnostic::InvalidType {
-                file_id,
-                location,
-                error: error.clone(),
+            match container {
+                hir_ty::infer::TypeContainer::Expression(expression) => {
+                    let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+                    let source = InFile::new(file_id, pointer);
+
+                    AnyDiagnostic::InvalidIdentExpression {
+                        expression: source,
+                        error: kind.clone(),
+                    }
+                },
+                hir_ty::infer::TypeContainer::TypeSpecifier(type_specifier) => {
+                    let pointer = source_map
+                        .type_specifier_to_source(*type_specifier)
+                        .ok()?
+                        .clone();
+                    let source = InFile::new(file_id, pointer);
+                    AnyDiagnostic::InvalidTypeSpecifier {
+                        type_specifier: source,
+                        error: kind.clone(),
+                    }
+                },
             }
         },
         InferenceDiagnostic::CyclicType { name, range } => AnyDiagnostic::CyclicType {
@@ -412,7 +401,7 @@ pub(crate) fn any_diag_from_global_var(
 
 pub(crate) fn any_diag_from_shift(
     error: &PrecedenceDiagnostic,
-    source_map: &BodySourceMap,
+    source_map: &ExpressionSourceMap,
     file_id: HirFileId,
 ) -> Option<AnyDiagnostic> {
     match error {
@@ -435,21 +424,4 @@ pub(crate) fn any_diag_from_shift(
             })
         },
     }
-}
-
-pub(crate) fn any_diag_from_field_infer_diagnostic(
-    database: &dyn HirDatabase,
-    diagnostic: &FieldInferenceDiagnostic,
-    file_id: HirFileId,
-) -> Option<AnyDiagnostic> {
-    let source = Field {
-        id: diagnostic.field,
-    }
-    .source(database)?;
-    let location = SyntaxNodePointer::new(source.value.ty()?.syntax());
-    Some(AnyDiagnostic::InvalidType {
-        file_id,
-        location,
-        error: diagnostic.error.clone(),
-    })
 }

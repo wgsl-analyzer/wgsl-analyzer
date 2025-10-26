@@ -2,7 +2,11 @@ use la_arena::Idx;
 pub use syntax::ast::operators::*;
 use syntax::ast::{self, IncrementDecrement};
 
-use crate::{body::BindingId, module_data::Name, type_specifier::TypeSpecifier};
+use crate::{
+    body::BindingId,
+    module_data::Name,
+    type_specifier::{IdentExpression, TypeSpecifier, TypeSpecifierId},
+};
 
 pub type ExpressionId = Idx<Expression>;
 
@@ -44,7 +48,7 @@ pub enum Expression {
         name: Name,
     },
     Call {
-        type_specifier: TypeSpecifier,
+        ident_expression: IdentExpression,
         arguments: Vec<ExpressionId>,
     },
     Index {
@@ -52,7 +56,7 @@ pub enum Expression {
         index: ExpressionId,
     },
     Literal(Literal),
-    TypeSpecifier(TypeSpecifier),
+    IdentExpression(IdentExpression),
 }
 
 pub type StatementId = Idx<Statement>;
@@ -65,17 +69,17 @@ pub enum Statement {
     },
     Let {
         binding_id: BindingId,
-        type_ref: Option<TypeSpecifier>,
+        type_ref: Option<TypeSpecifierId>,
         initializer: Option<ExpressionId>,
     },
     Const {
         binding_id: BindingId,
-        type_ref: Option<TypeSpecifier>,
+        type_ref: Option<TypeSpecifierId>,
         initializer: Option<ExpressionId>,
     },
     Variable {
         binding_id: BindingId,
-        type_ref: Option<TypeSpecifier>,
+        type_ref: Option<TypeSpecifierId>,
         initializer: Option<ExpressionId>,
         generics: Vec<ExpressionId>,
     },
@@ -217,11 +221,11 @@ impl Expression {
                 function(*expression);
             },
             Self::Call {
-                type_specifier,
+                ident_expression,
                 arguments,
                 ..
             } => {
-                type_specifier
+                ident_expression
                     .generics
                     .iter()
                     .copied()
@@ -232,7 +236,7 @@ impl Expression {
                 function(*left_side);
                 function(*index);
             },
-            Self::TypeSpecifier(TypeSpecifier { generics, .. }) => {
+            Self::IdentExpression(IdentExpression { generics, .. }) => {
                 generics.iter().copied().for_each(function);
             },
             Self::Missing | Self::Literal(_) => {},
