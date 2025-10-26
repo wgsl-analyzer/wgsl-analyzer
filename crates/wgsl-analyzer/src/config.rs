@@ -933,7 +933,7 @@ fn field_props(
                 },
                 {
                     "type": "string",
-                    "enum": ["physical", "logical", ],
+                    "enum": ["physical", "logical"],
                     "enumDescriptions": [
                         "Use the number of physical cores",
                         "Use the number of logical cores",
@@ -947,13 +947,8 @@ fn field_props(
                     "type": "null"
                 },
                 {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 0x00FF
-                },
-                {
                     "type": "string",
-                    "enum": ["physical", "logical", ],
+                    "enum": ["physical", "logical"],
                     "enumDescriptions": [
                         "Use the number of physical cores",
                         "Use the number of logical cores",
@@ -962,58 +957,31 @@ fn field_props(
             ],
         },
         "NagaVersion" => set! {
-            "anyOf": [
-                {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 0x00FF
-                },
-                {
-                    "type": "string",
-                    "enum": ["naga14", "naga19", "naga22", "main"],
-                    "enumDescriptions": [
-                        "Naga version 14",
-                        "Naga version 19",
-                        "Naga version 22",
-                        "Version of Naga on main (most recent stable version)"
-                    ],
-                },
+            "type": "string",
+            "enum": ["0.14", "0.19", "0.22", "main"],
+            "enumDescriptions": [
+                "Naga version 14",
+                "Naga version 19",
+                "Naga version 22",
+                "Version of Naga on main (most recent stable version)"
             ],
         },
         "InlayHintsTypeVerbosity" => set! {
-            "anyOf": [
-                {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 0x00FF
-                },
-                {
-                    "type": "string",
-                    "enum": ["full", "compact", "inner"],
-                    "enumDescriptions": [
-                        "`ref<uniform, f32, read_write>`",
-                        "`ref<f32>`",
-                        "`f32`"
-                    ]
-                }
+            "type": "string",
+            "enum": ["full", "compact", "inner"],
+            "enumDescriptions": [
+                "`ref<uniform, f32, read_write>`",
+                "`ref<f32>`",
+                "`f32`"
             ]
         },
         "TraceServer" => set! {
-            "anyOf": [
-                {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 0x00FF
-                },
-                {
-                    "type": "string",
-                    "enum": ["off", "messages", "verbose"],
-                    "enumDescriptions": [
-                        "No traces",
-                        "Error only",
-                        "Full log"
-                    ]
-                },
+            "type": "string",
+            "enum": ["off", "messages", "verbose"],
+            "enumDescriptions": [
+                "No traces",
+                "Error only",
+                "Full log"
             ]
         },
         _ => panic!("missing entry for {field_type}: {default} (field {field})"),

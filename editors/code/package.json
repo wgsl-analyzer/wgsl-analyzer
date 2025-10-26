@@ -464,27 +464,18 @@
 					"wgsl-analyzer.diagnostics.nagaVersion": {
 						"markdownDescription": "Naga version used for validation.",
 						"default": "main",
-						"anyOf": [
-							{
-								"type": "number",
-								"minimum": 0,
-								"maximum": 255
-							},
-							{
-								"type": "string",
-								"enum": [
-									"naga14",
-									"naga19",
-									"naga22",
-									"main"
-								],
-								"enumDescriptions": [
-									"Naga version 14",
-									"Naga version 19",
-									"Naga version 22",
-									"Version of Naga on main (most recent stable version)"
-								]
-							}
+						"type": "string",
+						"enum": [
+							"0.14",
+							"0.19",
+							"0.22",
+							"main"
+						],
+						"enumDescriptions": [
+							"Naga version 14",
+							"Naga version 19",
+							"Naga version 22",
+							"Version of Naga on main (most recent stable version)"
 						]
 					}
 				}
@@ -555,25 +546,16 @@
 					"wgsl-analyzer.inlayHints.typeVerbosity": {
 						"markdownDescription": "Verbosity of type hints: `\"full\"`, `\"compact\"`, or `\"inner\"`.",
 						"default": "compact",
-						"anyOf": [
-							{
-								"type": "number",
-								"minimum": 0,
-								"maximum": 255
-							},
-							{
-								"type": "string",
-								"enum": [
-									"full",
-									"compact",
-									"inner"
-								],
-								"enumDescriptions": [
-									"`ref<uniform, f32, read_write>`",
-									"`ref<f32>`",
-									"`f32`"
-								]
-							}
+						"type": "string",
+						"enum": [
+							"full",
+							"compact",
+							"inner"
+						],
+						"enumDescriptions": [
+							"`ref<uniform, f32, read_write>`",
+							"`ref<f32>`",
+							"`f32`"
 						]
 					}
 				}
@@ -587,11 +569,6 @@
 						"anyOf": [
 							{
 								"type": "null"
-							},
-							{
-								"type": "number",
-								"minimum": 0,
-								"maximum": 255
 							},
 							{
 								"type": "string",
@@ -638,25 +615,16 @@
 					"wgsl-analyzer.trace.server": {
 						"markdownDescription": "Server trace verbosity.\nOne of: `\"off\"`, `\"messages\"`, or `\"verbose\"`.",
 						"default": "off",
-						"anyOf": [
-							{
-								"type": "number",
-								"minimum": 0,
-								"maximum": 255
-							},
-							{
-								"type": "string",
-								"enum": [
-									"off",
-									"messages",
-									"verbose"
-								],
-								"enumDescriptions": [
-									"No traces",
-									"Error only",
-									"Full log"
-								]
-							}
+						"type": "string",
+						"enum": [
+							"off",
+							"messages",
+							"verbose"
+						],
+						"enumDescriptions": [
+							"No traces",
+							"Error only",
+							"Full log"
 						]
 					}
 				}
