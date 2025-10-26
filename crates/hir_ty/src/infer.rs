@@ -455,15 +455,21 @@ impl<'database> InferenceContext<'database> {
         let template_args: Vec<_> = template.iter().map(|arg| ctx.eval_tplt_arg(*arg)).collect();
         self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
 
+        let default_address_space = if store.is_body_store {
+            AddressSpace::Function
+        } else {
+            // TODO: Is this the correct default
+            AddressSpace::Handle
+        };
+
         let address_space = match template_args.get(0) {
             Some(TpltParam::Enumerant(Enumerant::AddressSpace(address_space))) => *address_space,
-            // TODO: Is that a good default address space?
-            None => AddressSpace::Function,
+            None => default_address_space,
             _ => {
                 self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
                     expression: template[0],
                 });
-                AddressSpace::Function
+                default_address_space
             },
         };
         let access_mode = match template_args.get(1) {
