@@ -76,7 +76,7 @@ Verbosity of type hints: `"full"`, `"compact"`, or `"inner"`.
 Default: `null`
 
 Number of worker threads for the main analysis loop.
-`None` lets the server choose automatically.
+`null` lets the server choose automatically.
 
 ## wgsl-analyzer.preprocessor.shaderDefs
 

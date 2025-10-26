@@ -84,7 +84,7 @@ config_data! {
         inlayHints_typeVerbosity: InlayHintsTypeVerbosity = InlayHintsTypeVerbosity::default(),
 
         /// Number of worker threads for the main analysis loop.
-        /// `None` lets the server choose automatically.
+        /// `null` lets the server choose automatically.
         numThreads: Option<NumThreads> = None,
 
         /// Shader defines used in `#ifdef` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports).
@@ -1328,7 +1328,7 @@ mod tests {
             .trim_start_matches('[')
             .trim_end_matches(']')
             .replace("  ", "\t")
-            .replace('\n', "\n\t")
+            .replace('\n', "\n\t\t")
             .trim_start_matches('\n')
             .trim_end()
             .to_owned();

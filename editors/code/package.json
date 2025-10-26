@@ -582,7 +582,7 @@
 				"title": "wgsl-analyzer",
 				"properties": {
 					"wgsl-analyzer.numThreads": {
-						"markdownDescription": "Number of worker threads for the main analysis loop.\n`None` lets the server choose automatically.",
+						"markdownDescription": "Number of worker threads for the main analysis loop.\n`null` lets the server choose automatically.",
 						"default": null,
 						"anyOf": [
 							{
