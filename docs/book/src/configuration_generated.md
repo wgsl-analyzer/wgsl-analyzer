@@ -9,20 +9,19 @@ Use `0` to let the server choose automatically based on the machine.
 
 Default: `{}`
 
-Additional import aliases the server should resolve as if they were built-ins.
-Keys are the import names as they appear in source; values are their resolved targets.
+Custom `#import` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports). To use objects from an import, add `#import <name>` to your WGSL.
 
 ## wgsl-analyzer.diagnostics.nagaParsingErrors
 
 Default: `true`
 
-Report WGSL parsing errors emitted by Naga.
+Controls whether to show naga's parsing errors.
 
 ## wgsl-analyzer.diagnostics.nagaValidationErrors
 
 Default: `true`
 
-Report WGSL validation errors emitted by Naga.
+Controls whether to show naga's validation errors.
 
 ## wgsl-analyzer.diagnostics.nagaVersion
 
@@ -34,37 +33,37 @@ Naga version used for validation.
 
 Default: `true`
 
-Report type errors from wgsl-analyzer.
+Controls whether to show type errors.
 
 ## wgsl-analyzer.inlayHints.enabled
 
 Default: `true`
 
-Master switch for inlay hints.
+Whether to show inlay hints.
 
 ## wgsl-analyzer.inlayHints.parameterHints
 
 Default: `true`
 
-Show function parameter name hints at call sites.
+Whether to show inlay hints for the names of function parameters.
 
 ## wgsl-analyzer.inlayHints.renderColons
 
 Default: `true`
 
-Show colons
+Show colons.
 
 ## wgsl-analyzer.inlayHints.structLayoutHints
 
 Default: `false`
 
-Show inlay hints for struct/array layout (offsets, sizes).
+Whether to show inlay hints for the layout of struct fields.
 
 ## wgsl-analyzer.inlayHints.typeHints
 
 Default: `true`
 
-Show inlay type hints for variables.
+Whether to show inlay hints for types of variable declarations.
 
 ## wgsl-analyzer.inlayHints.typeVerbosity
 
@@ -83,8 +82,7 @@ Number of worker threads for the main analysis loop.
 
 Default: `[]`
 
-Preprocessor shader `#define`s to apply during analysis.
-Each entry enables a conditional compilation symbol as if passed on the command line.
+Shader defines used in `#ifdef` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports).
 
 ## wgsl-analyzer.trace.extension
 

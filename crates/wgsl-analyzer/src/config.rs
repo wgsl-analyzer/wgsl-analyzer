@@ -58,28 +58,27 @@ config_data! {
         /// Use `0` to let the server choose automatically based on the machine.
         cachePriming_numThreads: NumThreads = NumThreads::Physical,
 
-        /// Additional import aliases the server should resolve as if they were built-ins.
-        /// Keys are the import names as they appear in source; values are their resolved targets.
+        /// Custom `#import` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports). To use objects from an import, add `#import <name>` to your WGSL.
         customImports | custom_imports: FxHashMap<String, String> = FxHashMap::default(),
 
-        /// Report WGSL parsing errors emitted by Naga.
+        /// Controls whether to show naga's parsing errors.
         diagnostics_nagaParsingErrors: bool = true,
-        /// Report WGSL validation errors emitted by Naga.
+        /// Controls whether to show naga's validation errors.
         diagnostics_nagaValidationErrors: bool = true,
         /// Naga version used for validation.
         diagnostics_nagaVersion: NagaVersion = NagaVersion::NagaMain,
-        /// Report type errors from wgsl-analyzer.
+        /// Controls whether to show type errors.
         diagnostics_typeErrors: bool = true,
 
-        /// Master switch for inlay hints.
+        /// Whether to show inlay hints.
         inlayHints_enabled: bool = true,
-        /// Show function parameter name hints at call sites.
+        /// Whether to show inlay hints for the names of function parameters.
         inlayHints_parameterHints: bool = true,
-        /// Show colons
+        /// Show colons.
         inlayHints_renderColons: bool = true,
-        /// Show inlay hints for struct/array layout (offsets, sizes).
+        /// Whether to show inlay hints for the layout of struct fields.
         inlayHints_structLayoutHints: bool = false,
-        /// Show inlay type hints for variables.
+        /// Whether to show inlay hints for types of variable declarations.
         inlayHints_typeHints: bool = true,
         /// Verbosity of type hints: `"full"`, `"compact"`, or `"inner"`.
         inlayHints_typeVerbosity: InlayHintsTypeVerbosity = InlayHintsTypeVerbosity::default(),
@@ -88,8 +87,7 @@ config_data! {
         /// `None` lets the server choose automatically.
         numThreads: Option<NumThreads> = None,
 
-        /// Preprocessor shader `#define`s to apply during analysis.
-        /// Each entry enables a conditional compilation symbol as if passed on the command line.
+        /// Shader defines used in `#ifdef` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports).
         preprocessor_shaderDefs | shader_defs: FxHashSet<String> = FxHashSet::default(),
 
         /// Emit extension-level trace logs to the client log.
@@ -104,10 +102,13 @@ config_data! {
 #[serde(rename_all = "lowercase")]
 #[derive(Default)]
 pub enum InlayHintsTypeVerbosity {
-    Full, // ref<uniform, f32, read_write>,
+    /// `ref<uniform, f32, read_write>`
+    Full,
     #[default]
-    Compact, // ref<f32>,
-    Inner, // f32
+    /// `ref<f32>`
+    Compact,
+    /// `f32`
+    Inner,
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -335,6 +336,25 @@ impl Config {
         //     tracing::error!("failed to find any projects in {:?}", &self.workspace_roots);
         // }
         // self.discovered_projects_from_filesystem = discovered;
+    }
+
+    #[must_use]
+    pub fn json_schema() -> serde_json::Value {
+        let mut schema = FullConfigInput::json_schema();
+
+        fn sort_objects_by_field(json: &mut serde_json::Value) {
+            if let serde_json::Value::Object(object) = json {
+                let old = std::mem::take(object);
+                old.into_iter()
+                    .sorted_by(|(key, _), (key2, _)| key.cmp(key2))
+                    .for_each(|(key, mut value)| {
+                        sort_objects_by_field(&mut value);
+                        object.insert(key, value);
+                    });
+            }
+        }
+        sort_objects_by_field(&mut schema);
+        schema
     }
 
     fn apply_change_with_sink(
@@ -864,6 +884,10 @@ fn to_title_case(string: &str) -> String {
     result
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "Schema mapping table: many simple cases; splitting would obscure structure"
+)]
 fn field_props(
     field: &str,
     field_type: &str,
@@ -873,7 +897,7 @@ fn field_props(
     let doc = doc_comment_to_string(doc);
     let doc = doc.trim_end_matches('\n');
     assert!(
-        doc.ends_with('.') && doc.starts_with(char::is_uppercase),
+        doc.ends_with('.') && (doc.starts_with(char::is_uppercase)),
         "bad docs for {field}: {doc:?}"
     );
     let default = default.parse::<serde_json::Value>().unwrap();
@@ -899,6 +923,11 @@ fn field_props(
         | "FxHashMap<String, String>"
         | "FxHashMap<Box<str>, u16>" => set! {
             "type": "object",
+        },
+        "FxHashSet<String>" => set! {
+            "type": "array",
+            "items": { "type": "string" },
+            "uniqueItems": true,
         },
         "Option<usize>" => set! {
             "type": ["null", "integer"],
@@ -967,6 +996,35 @@ fn field_props(
                     ],
                 },
             ],
+        },
+        "InlayHintsTypeVerbosity" => set! {
+            "anyOf": [
+                {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 0x00FF
+                },
+                {
+                    "type": "string",
+                    "enum": ["full", "compact", "inner"],
+                    "enumDescriptions": [
+        "`ref<uniform, f32, read_write>`", "`ref<f32>`", "`f32`"
+                    ]
+                }
+            ]
+        },
+        "TraceServer" => set! {
+            "anyOf": [
+                {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 0x00FF
+                },
+                {
+                    "type": "string",
+                    "enum": ["off", "messages", "verbose"]
+                },
+                ]
         },
         _ => panic!("missing entry for {field_type}: {default} (field {field})"),
     }
@@ -1254,9 +1312,9 @@ mod tests {
 
     #[test]
     fn generate_package_json_config() {
-        let schema = FullConfigInput::json_schema();
+        let config_schema = Config::json_schema();
 
-        let mut schema = format!("{schema:#}");
+        let schema = format!("{config_schema:#}");
         let mut schema = schema
             .trim_start_matches('[')
             .trim_end_matches(']')
@@ -1271,10 +1329,10 @@ mod tests {
         //
         // https://link[text] => [text](https://link)
         let url_matches = schema.match_indices("https://");
-        let mut url_offsets = url_matches.map(|(index, _)| index).collect::<Vec<usize>>();
+        let mut url_offsets = url_matches.map(|(idx, _)| idx).collect::<Vec<usize>>();
         url_offsets.reverse();
-        for index in url_offsets {
-            let link = &schema[index..];
+        for idx in url_offsets {
+            let link = &schema[idx..];
             // matching on whitespace to ignore normal links
             if let Some(link_end) = link.find([' ', '['])
                 && link.chars().nth(link_end) == Some('[')
@@ -1282,27 +1340,25 @@ mod tests {
             {
                 let link_text = link[link_end..=link_text_end].to_string();
 
-                schema.replace_range(((index + link_end)..=(index + link_text_end)), "");
-                schema.insert(index, '(');
-                schema.insert(index + link_end + 1, ')');
-                schema.insert_str(index, &link_text);
+                schema.replace_range(((idx + link_end)..=(idx + link_text_end)), "");
+                schema.insert(idx, '(');
+                schema.insert(idx + link_end + 1, ')');
+                schema.insert_str(idx, &link_text);
             }
         }
 
         let package_json_path = project_root().join("editors/code/package.json");
         let mut package_json = fs::read_to_string(&package_json_path).unwrap();
 
-        let start_marker =
-            "            {\n                \"title\": \"$generated-start\"\n            },\n";
-        let end_marker =
-            "            {\n                \"title\": \"$generated-end\"\n            }\n";
+        let start_marker = "\t\t\t\"title\": \"$generated-start\"\n\t\t\t},\n";
+        let end_marker = "\t\t\t\t\"title\": \"$generated-end\"\n\t\t\t}\n";
 
         let start = package_json.find(start_marker).unwrap() + start_marker.len();
         let end = package_json.find(end_marker).unwrap();
 
-        let package = remove_ws(&package_json[start..end]);
-        let schema = remove_ws(&schema);
-        if !package.contains(&schema) {
+        let cleaned_package = remove_ws(&package_json[start..end]);
+        let cleaned_schema = remove_ws(&schema);
+        if !cleaned_package.contains(&cleaned_schema) {
             package_json.replace_range(start..end, &schema);
             ensure_file_contents(package_json_path.as_std_path(), &package_json);
         }
