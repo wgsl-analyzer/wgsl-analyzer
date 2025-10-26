@@ -63,23 +63,23 @@ pub fn infer_query(
     match definition {
         DefinitionWithBodyId::Function(function) => {
             let data = database.function_data(function).0;
-            let return_type = context.collect_fn(function, &data);
+            let return_type = context.collect_fn(&data);
             context.infer_body(return_type, AbstractHandling::Concretize);
         },
         DefinitionWithBodyId::GlobalVariable(var) => {
             let data = database.global_var_data(var).0;
-            let return_type = context.collect_global_variable(var, &data);
+            let return_type = context.collect_global_variable(&data);
             context.infer_body(return_type, AbstractHandling::Concretize);
             context.infer_variables(&data);
         },
         DefinitionWithBodyId::GlobalConstant(constant) => {
             let data = database.global_constant_data(constant).0;
-            let return_type = context.collect_global_constant(constant, &data);
+            let return_type = context.collect_global_constant(&data);
             context.infer_body(return_type, AbstractHandling::Abstract);
         },
         DefinitionWithBodyId::Override(override_decl) => {
             let data = database.override_data(override_decl).0;
-            let return_type = context.collect_override(override_decl, &data);
+            let return_type = context.collect_override(&data);
             context.infer_body(return_type, AbstractHandling::Concretize);
         },
     };
@@ -422,7 +422,6 @@ impl<'database> InferenceContext<'database> {
 
     fn collect_global_variable(
         &mut self,
-        id: GlobalVariableId,
         var: &GlobalVariableData,
     ) -> Option<Type> {
         let r#type = var.r#type.map(|r#type| {
@@ -491,7 +490,6 @@ impl<'database> InferenceContext<'database> {
 
     fn collect_global_constant(
         &mut self,
-        id: GlobalConstantId,
         constant: &GlobalConstantData,
     ) -> Option<Type> {
         let r#type = constant.r#type.map(|r#type| {
@@ -505,7 +503,6 @@ impl<'database> InferenceContext<'database> {
 
     fn collect_override(
         &mut self,
-        id: OverrideId,
         override_data: &OverrideData,
     ) -> Option<Type> {
         let r#type = override_data.r#type.map(|r#type| {
@@ -519,7 +516,6 @@ impl<'database> InferenceContext<'database> {
 
     fn collect_fn(
         &mut self,
-        function_id: FunctionId,
         function_data: &FunctionData,
     ) -> Option<Type> {
         let body = self.body.clone();
@@ -994,6 +990,7 @@ impl<'database> InferenceContext<'database> {
 
                             let field_ty = field_types[field];
                             // TODO: correct Address Spaces/access mode
+                            // Implement it like this https://github.com/wgsl-tooling-wg/wesl-rs/blob/fea56c869ba2ee8825b7b06e4d9d0d2876b2bc77/crates/wesl/src/eval/ty.rs#L163
                             self.make_ref(field_ty, AddressSpace::Private, AccessMode::ReadWrite)
                         } else {
                             self.push_diagnostic(InferenceDiagnostic::NoSuchField {
