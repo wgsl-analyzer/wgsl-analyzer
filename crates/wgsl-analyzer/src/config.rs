@@ -199,20 +199,6 @@ pub struct DiscoverWorkspaceConfig {
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ConfigData {
-    pub custom_imports: FxHashMap<String, String>,
-    pub shader_defs: FxHashSet<String>,
-    pub inlay_hints: InlayHintsConfig,
-    pub diagnostics: DiagnosticsConfig,
-
-    /// How many worker threads to handle priming caches. The default `0` means to pick automatically.
-    pub cache_priming_num_threads: NumThreads,
-    /// How many worker threads in the main loop. The default `null` means to pick automatically.
-    pub num_threads: Option<NumThreads>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct InlayHintsConfig {
     pub render_colons: bool,
     pub enabled: bool,
@@ -596,12 +582,7 @@ impl Config {
             type_errors: *self.diagnostics_typeErrors(),
             naga_parsing_errors: *self.diagnostics_nagaParsingErrors(),
             naga_validation_errors: *self.diagnostics_nagaValidationErrors(),
-            naga_version: match self.diagnostics_nagaVersion() {
-                NagaVersion::Naga14 => NagaVersion::Naga14,
-                NagaVersion::Naga19 => NagaVersion::Naga19,
-                NagaVersion::Naga22 => NagaVersion::Naga22,
-                NagaVersion::NagaMain => NagaVersion::NagaMain,
-            },
+            naga_version: *self.diagnostics_nagaVersion(),
         }
     }
 
@@ -1069,24 +1050,6 @@ macro_rules! _impl_for_config_data {
                 #[allow(non_snake_case)]
                 $vis fn $field(&self, source_root: Option<SourceRootId>) -> &$ty {
                     let mut source_root = source_root.as_ref();
-                    while let Some(sr) = source_root {
-                        if let Some((file, _)) = self.ratoml_file.get(&sr) {
-                            match file {
-                                RatomlFile::Workspace(config) => {
-                                    if let Some(v) = config.local.$field.as_ref() {
-                                        return &v;
-                                    }
-                                },
-                                RatomlFile::Crate(config) => {
-                                    if let Some(value) = config.$field.as_ref() {
-                                        return value;
-                                    }
-                                }
-                            }
-                        }
-                        source_root = self.source_root_parent_map.get(&sr);
-                    }
-
                     if let Some(v) = self.client_config.0.local.$field.as_ref() {
                         return &v;
                     }
@@ -1113,15 +1076,6 @@ macro_rules! _impl_for_config_data {
                 #[allow(non_snake_case)]
                 $vis fn $field(&self, source_root: Option<SourceRootId>) -> &$ty {
                     let mut source_root = source_root.as_ref();
-                    while let Some(sr) = source_root {
-                        if let Some((RatomlFile::Workspace(config), _)) = self.ratoml_file.get(&sr) {
-                            if let Some(v) = config.workspace.$field.as_ref() {
-                                return &v;
-                            }
-                        }
-                        source_root = self.source_root_parent_map.get(&sr);
-                    }
-
                     if let Some(v) = self.client_config.0.workspace.$field.as_ref() {
                         return &v;
                     }
@@ -1157,7 +1111,6 @@ macro_rules! _impl_for_config_data {
                             return value;
                         }
                     }
-
 
                     &self.default.global.$field
                 }
