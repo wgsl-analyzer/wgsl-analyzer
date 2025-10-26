@@ -90,7 +90,9 @@ config_data! {
         /// Shader defines used in `#ifdef` directives in the flavor of [Bevy Engine](https://bevyengine.org)'s [shader preprocessor](https://bevyengine.org/news/bevy-0-6/#shader-imports).
         preprocessor_shaderDefs | shader_defs: FxHashSet<String> = FxHashSet::default(),
 
-        /// Emit extension-level trace logs to the client log.
+        /// Enable logging of VS Code extensions itself.
+        /// This settings is now deprecated.
+        /// Log level is now controlled by the [Developer: Set Log Level...](command:workbench.action.setLogLevel) command. You can set the log level for the current session and also the default log level from there. This is also available by clicking the gear icon on the OUTPUT tab when wgsl-analyzer Client is visible or by passing the --log wgsl-analyzer.wgsl-analyzer:debug parameter to VS Code.
         trace_extension: bool = false,
         /// Server trace verbosity.
         /// One of: `"off"`, `"messages"`, or `"verbose"`.
@@ -987,7 +989,7 @@ fn field_props(
                 },
                 {
                     "type": "string",
-                    "enum": ["naga14", "naga19", "naga22", "nagaMain"],
+                    "enum": ["naga14", "naga19", "naga22", "main"],
                     "enumDescriptions": [
                         "Naga version 14",
                         "Naga version 19",
@@ -1008,7 +1010,9 @@ fn field_props(
                     "type": "string",
                     "enum": ["full", "compact", "inner"],
                     "enumDescriptions": [
-        "`ref<uniform, f32, read_write>`", "`ref<f32>`", "`f32`"
+                        "`ref<uniform, f32, read_write>`",
+                        "`ref<f32>`",
+                        "`f32`"
                     ]
                 }
             ]
@@ -1022,9 +1026,14 @@ fn field_props(
                 },
                 {
                     "type": "string",
-                    "enum": ["off", "messages", "verbose"]
+                    "enum": ["off", "messages", "verbose"],
+                    "enumDescriptions": [
+                        "No traces",
+                        "Error only",
+                        "Full log"
+                    ]
                 },
-                ]
+            ]
         },
         _ => panic!("missing entry for {field_type}: {default} (field {field})"),
     }
@@ -1318,8 +1327,8 @@ mod tests {
         let mut schema = schema
             .trim_start_matches('[')
             .trim_end_matches(']')
-            .replace("  ", "    ")
-            .replace('\n', "\n        ")
+            .replace("  ", "\t")
+            .replace('\n', "\n\t")
             .trim_start_matches('\n')
             .trim_end()
             .to_owned();
@@ -1329,10 +1338,10 @@ mod tests {
         //
         // https://link[text] => [text](https://link)
         let url_matches = schema.match_indices("https://");
-        let mut url_offsets = url_matches.map(|(idx, _)| idx).collect::<Vec<usize>>();
+        let mut url_offsets = url_matches.map(|(index, _)| index).collect::<Vec<usize>>();
         url_offsets.reverse();
-        for idx in url_offsets {
-            let link = &schema[idx..];
+        for index in url_offsets {
+            let link = &schema[index..];
             // matching on whitespace to ignore normal links
             if let Some(link_end) = link.find([' ', '['])
                 && link.chars().nth(link_end) == Some('[')
@@ -1340,10 +1349,10 @@ mod tests {
             {
                 let link_text = link[link_end..=link_text_end].to_string();
 
-                schema.replace_range(((idx + link_end)..=(idx + link_text_end)), "");
-                schema.insert(idx, '(');
-                schema.insert(idx + link_end + 1, ')');
-                schema.insert_str(idx, &link_text);
+                schema.replace_range(((index + link_end)..=(index + link_text_end)), "");
+                schema.insert(index, '(');
+                schema.insert(index + link_end + 1, ')');
+                schema.insert_str(index, &link_text);
             }
         }
 
@@ -1351,7 +1360,7 @@ mod tests {
         let mut package_json = fs::read_to_string(&package_json_path).unwrap();
 
         let start_marker = "\t\t\t\"title\": \"$generated-start\"\n\t\t\t},\n";
-        let end_marker = "\t\t\t\t\"title\": \"$generated-end\"\n\t\t\t}\n";
+        let end_marker = "\t\t\t{\n\t\t\t\t\"title\": \"$generated-end\"\n\t\t\t}\n";
 
         let start = package_json.find(start_marker).unwrap() + start_marker.len();
         let end = package_json.find(end_marker).unwrap();

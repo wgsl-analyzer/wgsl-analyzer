@@ -88,7 +88,9 @@ Shader defines used in `#ifdef` directives in the flavor of [Bevy Engine](https:
 
 Default: `false`
 
-Emit extension-level trace logs to the client log.
+Enable logging of VS Code extensions itself.
+This settings is now deprecated.
+Log level is now controlled by the [Developer: Set Log Level...](command:workbench.action.setLogLevel) command. You can set the log level for the current session and also the default log level from there. This is also available by clicking the gear icon on the OUTPUT tab when wgsl-analyzer Client is visible or by passing the --log wgsl-analyzer.wgsl-analyzer:debug parameter to VS Code.
 
 ## wgsl-analyzer.trace.server
 
