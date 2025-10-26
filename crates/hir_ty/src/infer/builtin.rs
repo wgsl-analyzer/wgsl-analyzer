@@ -12,6 +12,7 @@ use crate::{
         Lowered, TyLoweringContext, TypeContainer, TypeLoweringError, TypeLoweringErrorKind,
         WgslTypeConverter,
         eval::{TemplateParameters, TpltParam},
+        from_wgsl_texel_format,
     },
     ty::{
         ArraySize, ArrayType, AtomicType, MatrixType, Pointer, ScalarType, TextureDimensionality,
@@ -837,27 +838,4 @@ struct PointerTemplate {
 struct StorageTextureTemplate {
     texel_format: TexelFormat,
     access_mode: AccessMode,
-}
-
-fn from_wgsl_texel_format(texel_format: TexelFormat) -> crate::ty::TexelFormat {
-    match texel_format {
-        TexelFormat::Rgba8Unorm => crate::ty::TexelFormat::Rgba8unorm,
-        TexelFormat::Rgba8Snorm => crate::ty::TexelFormat::Rgba8snorm,
-        TexelFormat::Rgba8Uint => crate::ty::TexelFormat::Rgba8uint,
-        TexelFormat::Rgba8Sint => crate::ty::TexelFormat::Rgba8sint,
-        TexelFormat::Rgba16Uint => crate::ty::TexelFormat::Rgba16uint,
-        TexelFormat::Rgba16Sint => crate::ty::TexelFormat::Rgba16sint,
-        TexelFormat::Rgba16Float => crate::ty::TexelFormat::Rgba16float,
-        TexelFormat::R32Uint => crate::ty::TexelFormat::R32uint,
-        TexelFormat::R32Sint => crate::ty::TexelFormat::R32sint,
-        TexelFormat::R32Float => crate::ty::TexelFormat::R32float,
-        TexelFormat::Rg32Uint => crate::ty::TexelFormat::Rg32uint,
-        TexelFormat::Rg32Sint => crate::ty::TexelFormat::Rg32sint,
-        TexelFormat::Rg32Float => crate::ty::TexelFormat::Rg32float,
-        TexelFormat::Rgba32Uint => crate::ty::TexelFormat::Rgba32uint,
-        TexelFormat::Rgba32Sint => crate::ty::TexelFormat::Rgba32sint,
-        TexelFormat::Rgba32Float => crate::ty::TexelFormat::Rgba32float,
-        TexelFormat::Bgra8Unorm => crate::ty::TexelFormat::Bgra8unorm,
-        _ => panic!("not yet supported naga extension"),
-    }
 }
