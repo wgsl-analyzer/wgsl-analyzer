@@ -80,10 +80,7 @@ impl<'database> TyLoweringContext<'database> {
         generics: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
         // Lower predeclared types
-        if let Ok(enum_value) = Enumerant::from_str(path.as_str()) {
-            self.expect_no_template(generics);
-            Ok(Lowered::Enumerant(enum_value))
-        } else if self.is_predeclared_ty(&path) {
+        if self.is_predeclared_ty(&path) {
             match self.lower_predeclared_ty(type_container.clone(), &path, &generics) {
                 Ok(r#type) => Ok(Lowered::Type(r#type)),
                 Err(kind) => Err(TypeLoweringError {
@@ -93,6 +90,9 @@ impl<'database> TyLoweringContext<'database> {
             }
         } else if crate::builtins::Builtin::ALL_BUILTINS.contains(&path.as_str()) {
             Ok(Lowered::BuiltinFunction)
+        } else if let Ok(enum_value) = Enumerant::from_str(path.as_str()) {
+            self.expect_no_template(generics);
+            Ok(Lowered::Enumerant(enum_value))
         } else {
             self.diagnostics.push(TypeLoweringError {
                 container: type_container,
@@ -522,7 +522,7 @@ impl<'database> TyLoweringContext<'database> {
         &mut self,
         mut template_parameters: TemplateParameters,
     ) -> ArrayTemplate {
-        self.expect_n_templates(&template_parameters, 1..2);
+        self.expect_n_templates(&template_parameters, 1..=2);
         let r#type = match template_parameters.next_as_type() {
             Ok((r#type, _)) => r#type,
             Err(error) => {
@@ -573,7 +573,7 @@ impl<'database> TyLoweringContext<'database> {
         &mut self,
         mut template_parameters: TemplateParameters,
     ) -> Type {
-        self.expect_n_templates(&template_parameters, 1..1);
+        self.expect_n_templates(&template_parameters, 1..=1);
         let r#type = match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let ty_kind = r#type.kind(self.database);
@@ -601,7 +601,7 @@ impl<'database> TyLoweringContext<'database> {
         &mut self,
         mut template_parameters: TemplateParameters,
     ) -> Type {
-        self.expect_n_templates(&template_parameters, 1..1);
+        self.expect_n_templates(&template_parameters, 1..=1);
         let r#type = match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let ty_kind = r#type.kind(self.database);
@@ -629,7 +629,7 @@ impl<'database> TyLoweringContext<'database> {
         &mut self,
         mut template_parameters: TemplateParameters,
     ) -> PointerTemplate {
-        self.expect_n_templates(&template_parameters, 2..3);
+        self.expect_n_templates(&template_parameters, 2..=3);
         let address_space = match template_parameters.next_as_enumerant() {
             Ok((Enumerant::AddressSpace(address_space), _)) => address_space,
             Ok((_, expression)) => {
@@ -716,7 +716,7 @@ impl<'database> TyLoweringContext<'database> {
         &mut self,
         mut template_parameters: TemplateParameters,
     ) -> Type {
-        self.expect_n_templates(&template_parameters, 1..1);
+        self.expect_n_templates(&template_parameters, 1..=1);
         let r#type = match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let ty_kind = r#type.kind(self.database);
@@ -746,7 +746,7 @@ impl<'database> TyLoweringContext<'database> {
         &mut self,
         mut template_parameters: TemplateParameters,
     ) -> SampledType {
-        self.expect_n_templates(&template_parameters, 1..1);
+        self.expect_n_templates(&template_parameters, 1..=1);
         let sampled_type = match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let ty_kind = r#type.kind(self.database);
@@ -779,7 +779,7 @@ impl<'database> TyLoweringContext<'database> {
         &mut self,
         mut template_parameters: TemplateParameters,
     ) -> StorageTextureTemplate {
-        self.expect_n_templates(&template_parameters, 1..1);
+        self.expect_n_templates(&template_parameters, 1..=1);
         let texel_format = match template_parameters.next_as_enumerant() {
             Ok((Enumerant::TexelFormat(texel_format), _)) => texel_format,
             Ok((_, expression)) => {

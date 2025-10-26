@@ -657,7 +657,7 @@ pub fn diagnostics(
                     Diagnostic::new(
                         DiagnosticCode("18"),
                         format!(
-                            "no overload of constructor `{}` found for given\
+                            "no overload of constructor `{}` found for given \
                             arguments. Found ({parameters}), expected one of:\n{possible}",
                             pretty_type(database, r#type),
                         ),

@@ -39,7 +39,7 @@ use crate::{
     database::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
     infer::{
-        eval::TpltParam,
+        eval::{TemplateParameters, TpltParam},
         unify::{UnificationTable, unify},
     },
     ty::{
@@ -454,9 +454,11 @@ impl<'database> InferenceContext<'database> {
     ) -> (AddressSpace, AccessMode) {
         let mut ctx = TyLoweringContext::new(self.database, &self.resolver, store);
         let template_args: Vec<_> = template.iter().map(|arg| ctx.eval_tplt_arg(*arg)).collect();
+        self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
 
         let address_space = match template_args.get(0) {
             Some(TpltParam::Enumerant(Enumerant::AddressSpace(address_space))) => *address_space,
+            // TODO: Is that a good default address space?
             None => AddressSpace::Function,
             _ => {
                 self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
@@ -467,12 +469,12 @@ impl<'database> InferenceContext<'database> {
         };
         let access_mode = match template_args.get(1) {
             Some(TpltParam::Enumerant(Enumerant::AccessMode(access_mode))) => *access_mode,
-            None => AccessMode::ReadWrite,
+            None => address_space.default_access_mode(),
             _ => {
                 self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
                     expression: template[0],
                 });
-                AccessMode::ReadWrite
+                address_space.default_access_mode()
             },
         };
 
@@ -1525,7 +1527,10 @@ impl<'database> InferenceContext<'database> {
                 self.validate_function_call(&details, &arguments, expression, expression)
             },
             Ok(Lowered::BuiltinFunction) => {
-                self.call_builtin_function(expression, callee, arguments, store, ctx)
+                let template_args =
+                    ctx.eval_template_args(TypeContainer::Expression(expression), &callee.generics);
+                self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
+                self.call_builtin_function(expression, callee, template_args, &arguments)
             },
             Ok(
                 Lowered::Enumerant(_)
@@ -1545,30 +1550,28 @@ impl<'database> InferenceContext<'database> {
     }
 
     fn call_builtin_function(
-        &self,
-        expression: la_arena::Idx<Expression>,
+        &mut self,
+        expression: ExpressionId,
         callee: &IdentExpression,
-        arguments: Vec<Type>,
-        store: &ExpressionStore,
-        mut ctx: TyLoweringContext<'_>,
+        mut template_parameters: TemplateParameters,
+        arguments: &[Type],
     ) -> Type {
         let mut converter = WgslTypeConverter::new(self.database);
-        let template_args: Option<Vec<_>> = callee
-            .generics
-            .iter()
-            .map(|arg| ctx.eval_tplt_arg(*arg))
-            .map(|arg| converter.template_parameter_to_wgsl_types(arg))
-            .collect();
-        let Some(template_args) = template_args else {
-            // One of the template parameters had an error type
-            return self.error_ty();
-        };
+        let mut template_args = vec![];
+        while let Some((template_parameter, _)) = template_parameters.next() {
+            match converter.template_parameter_to_wgsl_types(template_parameter) {
+                Some(p) => template_args.push(p),
+                None => {
+                    // TODO: Proper error reporting
+                    return self.error_ty();
+                },
+            }
+        }
         let template_args = if template_args.is_empty() {
             None
         } else {
             Some(template_args.as_slice())
         };
-        self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
 
         let converted_arguments: Option<Vec<_>> = arguments
             .iter()
@@ -1843,7 +1846,7 @@ pub enum TypeLoweringErrorKind {
     UnexpectedTemplateArgument(String),
     MissingTemplateArgument(String),
     WrongNumberOfTemplateArguments {
-        expected: std::ops::Range<usize>,
+        expected: std::ops::RangeInclusive<usize>,
         actual: usize,
     },
     ExpectedType(Name),
@@ -1885,19 +1888,20 @@ impl fmt::Display for TypeLoweringErrorKind {
                 write!(formatter, "missing template argument, expected {expected}")
             },
             TypeLoweringErrorKind::WrongNumberOfTemplateArguments { expected, actual }
-                if expected.start == expected.end =>
+                if expected.start() == expected.end() =>
             {
                 write!(
                     formatter,
                     "expected {} template arguments, but got {actual}",
-                    expected.start
+                    expected.start()
                 )
             },
             TypeLoweringErrorKind::WrongNumberOfTemplateArguments { expected, actual } => {
                 write!(
                     formatter,
                     "expected {} to {} template arguments, but got {actual}",
-                    expected.start, expected.end
+                    expected.start(),
+                    expected.end()
                 )
             },
             TypeLoweringErrorKind::ExpectedType(name) => {
@@ -2014,7 +2018,7 @@ impl<'database> TyLoweringContext<'database> {
     fn expect_n_templates(
         &mut self,
         template_parameters: &eval::TemplateParameters,
-        expected: std::ops::Range<usize>,
+        expected: std::ops::RangeInclusive<usize>,
     ) -> bool {
         if expected.contains(&template_parameters.len()) {
             true
@@ -2052,7 +2056,6 @@ impl<'database> TyLoweringContext<'database> {
                 | Lowered::Override(_)
                 | Lowered::Local(_),
             ) => {
-                // TODO: Report a better error along the lines of "foo is a local variable, not a type"
                 self.diagnostics.push(TypeLoweringError {
                     container: TypeContainer::TypeSpecifier(type_specifier_id),
                     kind: TypeLoweringErrorKind::ExpectedType(type_specifier.path.clone()),
