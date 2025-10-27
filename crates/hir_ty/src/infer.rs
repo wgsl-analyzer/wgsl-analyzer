@@ -1296,6 +1296,7 @@ impl<'database> InferenceContext<'database> {
             },
             Lowered::Local(id) => self.result.type_of_binding[id],
             Lowered::Type(_)
+            | Lowered::TypeWithoutTemplate(_)
             | Lowered::Function(_)
             | Lowered::BuiltinFunction
             | Lowered::Enumerant(_) => {
@@ -1495,9 +1496,9 @@ impl<'database> InferenceContext<'database> {
         self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
 
         match lowered {
-            Lowered::Type(r#type) => {
-                self.check_ty_initialiser(expression, r#type, arguments);
-                r#type
+            Lowered::Type(r#type) => self.call_type_constructor(expression, r#type, arguments),
+            Lowered::TypeWithoutTemplate(r#type) => {
+                self.call_type_constructor(expression, r#type, arguments)
             },
             Lowered::Function(id) => {
                 let details = id.lookup(self.database);
@@ -1581,12 +1582,12 @@ impl<'database> InferenceContext<'database> {
         }
     }
 
-    fn check_ty_initialiser(
+    fn call_type_constructor(
         &mut self,
         expression: ExpressionId,
         r#type: Type,
         arguments: Vec<Type>,
-    ) {
+    ) -> Type {
         fn size_to_dimension(size: VecSize) -> VecDimensionality {
             #[expect(clippy::unreachable, reason = "TODO")]
             match size {
@@ -1601,7 +1602,7 @@ impl<'database> InferenceContext<'database> {
             TyKind::Scalar(scalar_type) => {
                 if arguments.is_empty() {
                     // Permit the zero value
-                    return;
+                    return r#type;
                 }
                 let construction_builtin_id = match scalar_type {
                     ScalarType::Bool => {
@@ -1627,41 +1628,51 @@ impl<'database> InferenceContext<'database> {
 
                 let construction_result =
                     self.try_call_builtin(construction_builtin_id, &arguments);
-                if construction_result.is_ok() {
-                    return;
+                match construction_result {
+                    Ok((r#type, _)) => r#type,
+                    Err(()) => {
+                        self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                            expression,
+                            builtins: construction_builtin_id,
+                            r#type,
+                            parameters: arguments,
+                        });
+                        self.error_ty()
+                    },
                 }
-                self.push_diagnostic(InferenceDiagnostic::NoConstructor {
-                    expression,
-                    builtins: construction_builtin_id,
-                    r#type,
-                    parameters: arguments,
-                });
             },
             TyKind::Array(array_type) => {
-                if arguments.is_empty() {}
-                // checking that all the arguments have the same type (inner)
+                if arguments.is_empty() {
+                    return r#type;
+                }
+                // TODO: checking that all the arguments have the same type (inner)
+                r#type
             },
             TyKind::Vector(vec) => {
                 if arguments.is_empty() {
-                    return;
+                    return r#type;
                 }
                 let construction_builtin_id =
                     self.builtin_vector_inferred_constructor(size_to_dimension(vec.size));
                 let construction_result =
                     self.try_call_builtin(construction_builtin_id, &arguments);
-                if construction_result.is_ok() {
-                    return;
+
+                match construction_result {
+                    Ok((r#type, _)) => r#type,
+                    Err(()) => {
+                        self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                            expression,
+                            builtins: construction_builtin_id,
+                            r#type,
+                            parameters: arguments,
+                        });
+                        self.error_ty()
+                    },
                 }
-                self.push_diagnostic(InferenceDiagnostic::NoConstructor {
-                    expression,
-                    builtins: construction_builtin_id,
-                    r#type,
-                    parameters: arguments,
-                });
             },
             TyKind::Matrix(matrix) => {
                 if arguments.is_empty() {
-                    return;
+                    return r#type;
                 }
                 let construction_builtin_id = self.builtin_matrix_inferred_constructor(
                     size_to_dimension(matrix.columns),
@@ -1669,20 +1680,23 @@ impl<'database> InferenceContext<'database> {
                 );
                 let construction_result =
                     self.try_call_builtin(construction_builtin_id, &arguments);
-                if construction_result.is_ok() {
-                    return;
+                match construction_result {
+                    Ok((r#type, _)) => r#type,
+                    Err(()) => {
+                        self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                            expression,
+                            builtins: construction_builtin_id,
+                            r#type,
+                            parameters: arguments,
+                        });
+                        self.error_ty()
+                    },
                 }
-
-                self.push_diagnostic(InferenceDiagnostic::NoConstructor {
-                    expression,
-                    builtins: construction_builtin_id,
-                    r#type,
-                    parameters: arguments,
-                });
             },
             TyKind::Struct(_) => {
                 if arguments.is_empty() {}
                 // TODO: Implement checking field types
+                r#type
             },
 
             // Never constructible
@@ -1695,10 +1709,11 @@ impl<'database> InferenceContext<'database> {
                     expression,
                     r#type,
                 });
+                self.error_ty()
             },
             #[expect(clippy::unreachable, reason = "TODO")]
             TyKind::BoundVar(_) | TyKind::Reference(_) => unreachable!(),
-            TyKind::Error => {},
+            TyKind::Error => r#type,
         }
     }
 
@@ -1836,6 +1851,7 @@ pub enum TypeLoweringErrorKind {
     InvalidTexelFormat(String),
     UnexpectedTemplateArgument(String),
     MissingTemplateArgument(String),
+    MissingTemplate,
     WrongNumberOfTemplateArguments {
         expected: std::ops::RangeInclusive<usize>,
         actual: usize,
@@ -1878,6 +1894,9 @@ impl fmt::Display for TypeLoweringErrorKind {
             TypeLoweringErrorKind::MissingTemplateArgument(expected) => {
                 write!(formatter, "missing template argument, expected {expected}")
             },
+            TypeLoweringErrorKind::MissingTemplate => {
+                write!(formatter, "missing template arguments")
+            },
             TypeLoweringErrorKind::WrongNumberOfTemplateArguments { expected, actual }
                 if expected.start() == expected.end() =>
             {
@@ -1906,6 +1925,7 @@ impl fmt::Display for TypeLoweringErrorKind {
 /// Also covers built-ins
 pub enum Lowered {
     Type(Type),
+    TypeWithoutTemplate(Type),
     Function(ResolvedFunctionId),
     GlobalConstant(GlobalConstantId),
     GlobalVariable(GlobalVariableId),
@@ -1919,6 +1939,7 @@ impl Lowered {
     pub fn kind(&self) -> LoweredKind {
         match self {
             Lowered::Type(_) => LoweredKind::Type,
+            Lowered::TypeWithoutTemplate(_) => LoweredKind::Type,
             Lowered::Function(_) => LoweredKind::Function,
             Lowered::GlobalConstant(_) => LoweredKind::Constant,
             Lowered::GlobalVariable(_) => LoweredKind::Variable,
@@ -2081,6 +2102,13 @@ impl<'database> TyLoweringContext<'database> {
         );
         match lowered {
             Ok(Lowered::Type(r#type)) => r#type,
+            Ok(Lowered::TypeWithoutTemplate(_)) => {
+                self.diagnostics.push(TypeLoweringError {
+                    container: TypeContainer::TypeSpecifier(type_specifier_id),
+                    kind: TypeLoweringErrorKind::MissingTemplate,
+                });
+                self.database.intern_ty(TyKind::Error)
+            },
             Ok(
                 Lowered::Enumerant(_)
                 | Lowered::Function(_)

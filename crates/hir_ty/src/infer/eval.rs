@@ -141,6 +141,13 @@ impl<'database> TyLoweringContext<'database> {
                 );
                 match resolved_ty {
                     Lowered::Type(r#type) => TpltParam::Type(r#type),
+                    Lowered::TypeWithoutTemplate(_) => {
+                        self.diagnostics.push(TypeLoweringError {
+                            container: TypeContainer::Expression(tplt),
+                            kind: TypeLoweringErrorKind::MissingTemplate,
+                        });
+                        TpltParam::Type(TyKind::Error.intern(self.database))
+                    },
                     Lowered::Enumerant(enumerant) => TpltParam::Enumerant(enumerant),
                     Lowered::Function(_) => {
                         // TODO: Report an error "function needs to be called"

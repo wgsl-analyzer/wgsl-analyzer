@@ -83,7 +83,7 @@ impl<'database> TyLoweringContext<'database> {
         // Lower predeclared types
         if self.is_predeclared_ty(&path) {
             match self.lower_predeclared_ty(type_container.clone(), &path, &generics) {
-                Ok(r#type) => Ok(Lowered::Type(r#type)),
+                Ok(r#type) => Ok(r#type),
                 Err(kind) => Err(TypeLoweringError {
                     container: type_container,
                     kind,
@@ -108,7 +108,7 @@ impl<'database> TyLoweringContext<'database> {
         type_container: TypeContainer,
         path: &Name,
         generics: &[ExpressionId],
-    ) -> Result<Type, TypeLoweringErrorKind> {
+    ) -> Result<Lowered, TypeLoweringErrorKind> {
         let template_parameters = self.eval_template_args(type_container, generics);
 
         let ty_kind = match path.as_str() {
@@ -133,6 +133,16 @@ impl<'database> TyLoweringContext<'database> {
                 TyKind::Scalar(ScalarType::F16)
             },
             "array" => {
+                if generics.is_empty() {
+                    return Ok(Lowered::TypeWithoutTemplate(
+                        TyKind::Array(ArrayType {
+                            inner: TyKind::Error.intern(self.database),
+                            binding_array: false,
+                            size: ArraySize::Dynamic,
+                        })
+                        .intern(self.database),
+                    ));
+                }
                 let array_template = self.array_template(template_parameters);
                 TyKind::Array(ArrayType {
                     inner: array_template.r#type,
@@ -141,6 +151,16 @@ impl<'database> TyLoweringContext<'database> {
                 })
             },
             "binding_array" => {
+                if generics.is_empty() {
+                    return Ok(Lowered::TypeWithoutTemplate(
+                        TyKind::Array(ArrayType {
+                            inner: TyKind::Error.intern(self.database),
+                            binding_array: true,
+                            size: ArraySize::Dynamic,
+                        })
+                        .intern(self.database),
+                    ));
+                }
                 let array_template = self.array_template(template_parameters);
                 TyKind::Array(ArrayType {
                     inner: array_template.r#type,
@@ -149,6 +169,15 @@ impl<'database> TyLoweringContext<'database> {
                 })
             },
             "vec2" => {
+                if generics.is_empty() {
+                    return Ok(Lowered::TypeWithoutTemplate(
+                        TyKind::Vector(VectorType {
+                            size: VecSize::Two,
+                            component_type: TyKind::Error.intern(self.database),
+                        })
+                        .intern(self.database),
+                    ));
+                }
                 let component_type = self.vector_template(template_parameters);
                 TyKind::Vector(VectorType {
                     size: VecSize::Two,
@@ -156,6 +185,15 @@ impl<'database> TyLoweringContext<'database> {
                 })
             },
             "vec3" => {
+                if generics.is_empty() {
+                    return Ok(Lowered::TypeWithoutTemplate(
+                        TyKind::Vector(VectorType {
+                            size: VecSize::Three,
+                            component_type: TyKind::Error.intern(self.database),
+                        })
+                        .intern(self.database),
+                    ));
+                }
                 let component_type = self.vector_template(template_parameters);
                 TyKind::Vector(VectorType {
                     size: VecSize::Three,
@@ -163,6 +201,15 @@ impl<'database> TyLoweringContext<'database> {
                 })
             },
             "vec4" => {
+                if generics.is_empty() {
+                    return Ok(Lowered::TypeWithoutTemplate(
+                        TyKind::Vector(VectorType {
+                            size: VecSize::Four,
+                            component_type: TyKind::Error.intern(self.database),
+                        })
+                        .intern(self.database),
+                    ));
+                }
                 let component_type = self.vector_template(template_parameters);
                 TyKind::Vector(VectorType {
                     size: VecSize::Four,
@@ -249,6 +296,17 @@ impl<'database> TyLoweringContext<'database> {
                     "mat4x4" => (VecSize::Four, VecSize::Four),
                     _ => unreachable!(),
                 };
+
+                if generics.is_empty() {
+                    return Ok(Lowered::TypeWithoutTemplate(
+                        TyKind::Matrix(MatrixType {
+                            columns,
+                            rows,
+                            inner: TyKind::Error.intern(self.database),
+                        })
+                        .intern(self.database),
+                    ));
+                }
                 let inner = self.matrix_template(template_parameters);
                 TyKind::Matrix(MatrixType {
                     columns,
@@ -516,7 +574,7 @@ impl<'database> TyLoweringContext<'database> {
             _ => return Err(TypeLoweringErrorKind::UnresolvedName(path.clone())),
         };
 
-        Ok(ty_kind.intern(self.database))
+        Ok(Lowered::Type(ty_kind.intern(self.database)))
     }
 
     fn array_template(
