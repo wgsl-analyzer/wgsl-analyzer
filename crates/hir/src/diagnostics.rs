@@ -150,7 +150,7 @@ pub enum AnyDiagnostic {
     },
     NoConstructor {
         expression: InFile<AstPointer<ast::Expression>>,
-        builtins: [BuiltinId; 2],
+        builtins: BuiltinId,
         r#type: Type,
         parameters: Vec<Type>,
     },

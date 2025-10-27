@@ -173,7 +173,7 @@ pub enum InferenceDiagnostic {
     },
     NoConstructor {
         expression: ExpressionId,
-        builtins: [BuiltinId; 2],
+        builtins: BuiltinId,
         r#type: Type,
         parameters: Vec<Type>,
     },
@@ -1405,18 +1405,7 @@ impl<'database> InferenceContext<'database> {
         arguments: &[Type],
         name: Option<&'static str>,
     ) -> Type {
-        self.call_builtin_inner(expression, builtin_id, arguments, name, None)
-    }
-
-    fn call_builtin_with_return(
-        &mut self,
-        expression: ExpressionId,
-        builtin_id: BuiltinId,
-        arguments: &[Type],
-        name: Option<&'static str>,
-        r#type: Type,
-    ) -> Type {
-        self.call_builtin_inner(expression, builtin_id, arguments, name, Some(r#type))
+        self.call_builtin_inner(expression, builtin_id, arguments, name)
     }
 
     fn call_builtin_inner(
@@ -1425,11 +1414,8 @@ impl<'database> InferenceContext<'database> {
         builtin_id: BuiltinId,
         arguments: &[Type],
         name: Option<&'static str>,
-        return_ty: Option<Type>,
     ) -> Type {
-        if let Ok((return_ty, overload_id)) =
-            self.try_call_builtin(builtin_id, arguments, return_ty)
-        {
+        if let Ok((return_ty, overload_id)) = self.try_call_builtin(builtin_id, arguments) {
             let builtin = builtin_id.lookup(self.database);
             let resolved = builtin.overload(overload_id).r#type;
             self.result
@@ -1451,21 +1437,13 @@ impl<'database> InferenceContext<'database> {
         &self,
         builtin_id: BuiltinId,
         arguments: &[Type],
-        // TODO: Why is it selecting based on a return type?
-        return_type: Option<Type>,
     ) -> Result<(Type, BuiltinOverloadId), ()> {
         let builtin = builtin_id.lookup(self.database);
         for (overload_id, overload) in builtin.overloads() {
             // TODO: Pick overload with lowest rank
             if let Ok((r#type, _conversion_rank)) = self.call_builtin_overload(overload, arguments)
             {
-                if let Some(return_type) = return_type {
-                    if return_type == r#type {
-                        return Ok((r#type, overload_id));
-                    }
-                } else {
-                    return Ok((r#type, overload_id));
-                }
+                return Ok((r#type, overload_id));
             }
         }
         Err(())
@@ -1473,10 +1451,10 @@ impl<'database> InferenceContext<'database> {
 
     fn call_builtin_overload(
         &self,
-        signatre: &BuiltinOverload,
+        signature: &BuiltinOverload,
         arguments: &[Type],
     ) -> Result<(Type, u32), ()> {
-        let fn_ty = signatre.r#type.lookup(self.database);
+        let fn_ty = signature.r#type.lookup(self.database);
 
         if fn_ty.parameters.len() != arguments.len() {
             return Err(());
@@ -1622,19 +1600,44 @@ impl<'database> InferenceContext<'database> {
         }
 
         match r#type.kind(self.database) {
-            TyKind::Scalar(_) => {
+            TyKind::Scalar(scalar_type) => {
                 if arguments.is_empty() {
                     // Permit the zero value
                     return;
                 }
-                let builtin = Builtin::builtin_op_convert(self.database).intern(self.database);
-                self.call_builtin_with_return(
+                let construction_builtin_id = match scalar_type {
+                    ScalarType::Bool => {
+                        Builtin::builtin_op_bool_constructor(self.database).intern(self.database)
+                    },
+                    ScalarType::I32 => {
+                        Builtin::builtin_op_i32_constructor(self.database).intern(self.database)
+                    },
+                    ScalarType::U32 => {
+                        Builtin::builtin_op_u32_constructor(self.database).intern(self.database)
+                    },
+                    ScalarType::F32 => {
+                        Builtin::builtin_op_f32_constructor(self.database).intern(self.database)
+                    },
+                    ScalarType::F16 => {
+                        Builtin::builtin_op_f16_constructor(self.database).intern(self.database)
+                    },
+                    ScalarType::AbstractInt | ScalarType::AbstractFloat => {
+                        // Panic is correct here, since it should be impossible to enter this branch
+                        panic!("cannot construct abstract types")
+                    },
+                };
+
+                let construction_result =
+                    self.try_call_builtin(construction_builtin_id, &arguments);
+                if construction_result.is_ok() {
+                    return;
+                }
+                self.push_diagnostic(InferenceDiagnostic::NoConstructor {
                     expression,
-                    builtin,
-                    &arguments,
-                    Some("conversion"),
+                    builtins: construction_builtin_id,
                     r#type,
-                );
+                    parameters: arguments,
+                });
             },
             TyKind::Array(array_type) => {
                 if arguments.is_empty() {}
@@ -1647,20 +1650,13 @@ impl<'database> InferenceContext<'database> {
                 let construction_builtin_id =
                     self.builtin_vector_inferred_constructor(size_to_dimension(vec.size));
                 let construction_result =
-                    self.try_call_builtin(construction_builtin_id, &arguments, Some(r#type));
+                    self.try_call_builtin(construction_builtin_id, &arguments);
                 if construction_result.is_ok() {
-                    return;
-                }
-                let conversion_id =
-                    Builtin::builtin_op_convert(self.database).intern(self.database);
-                let conversion_result =
-                    self.try_call_builtin(conversion_id, &arguments, Some(r#type));
-                if conversion_result.is_ok() {
                     return;
                 }
                 self.push_diagnostic(InferenceDiagnostic::NoConstructor {
                     expression,
-                    builtins: [construction_builtin_id, conversion_id],
+                    builtins: construction_builtin_id,
                     r#type,
                     parameters: arguments,
                 });
@@ -1674,20 +1670,14 @@ impl<'database> InferenceContext<'database> {
                     size_to_dimension(matrix.rows),
                 );
                 let construction_result =
-                    self.try_call_builtin(construction_builtin_id, &arguments, Some(r#type));
+                    self.try_call_builtin(construction_builtin_id, &arguments);
                 if construction_result.is_ok() {
                     return;
                 }
-                let conversion_id =
-                    Builtin::builtin_op_convert(self.database).intern(self.database);
-                let conversion_result =
-                    self.try_call_builtin(conversion_id, &arguments, Some(r#type));
-                if conversion_result.is_ok() {
-                    return;
-                }
+
                 self.push_diagnostic(InferenceDiagnostic::NoConstructor {
                     expression,
-                    builtins: [construction_builtin_id, conversion_id],
+                    builtins: construction_builtin_id,
                     r#type,
                     parameters: arguments,
                 });

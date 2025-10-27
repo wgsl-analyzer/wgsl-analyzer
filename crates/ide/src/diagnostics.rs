@@ -620,7 +620,7 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::NoConstructor {
                     expression,
-                    builtins: [specific, general],
+                    builtins,
                     r#type,
                     parameters,
                 } => {
@@ -632,24 +632,10 @@ pub fn diagnostics(
                         .join(", ");
 
                     let mut possible = Vec::with_capacity(32);
-                    let builtin_specific = specific.lookup(database);
+                    let builtin_specific = builtins.lookup(database);
                     possible.extend(builtin_specific.overloads().map(|(_, overload)| {
                         pretty_fn(database, &overload.r#type.lookup(database))
                     }));
-                    let builtin_general = general.lookup(database);
-                    possible.extend(
-                        builtin_general
-                            .overloads()
-                            .filter(|(_, overload)| {
-                                let function = overload.r#type.lookup(database);
-                                function.return_type.is_none_or(|return_ty| {
-                                    convert_compatible(database, r#type, return_ty)
-                                })
-                            })
-                            .map(|(_, overload)| {
-                                pretty_fn(database, &overload.r#type.lookup(database))
-                            }),
-                    );
 
                     let possible = possible.join("\n");
 
@@ -710,38 +696,6 @@ pub fn diagnostics(
             }
         })
         .collect()
-}
-
-fn size_compatible(
-    target: VecSize,
-    overload: VecSize,
-) -> bool {
-    match overload {
-        VecSize::Two | VecSize::Three | VecSize::Four => overload == target,
-        VecSize::BoundVar(_) => true,
-    }
-}
-
-fn convert_compatible(
-    database: &dyn HirDatabase,
-    target: Type,
-    overload: Type,
-) -> bool {
-    let target_kind = target.kind(database);
-    let overload_kind = overload.kind(database);
-    match (target_kind, overload_kind) {
-        (ty::TyKind::Vector(tg), ty::TyKind::Vector(ov)) => {
-            size_compatible(tg.size, ov.size)
-                && convert_compatible(database, tg.component_type, ov.component_type)
-        },
-        (ty::TyKind::Matrix(tg), ty::TyKind::Matrix(ov)) => {
-            size_compatible(tg.columns, ov.columns)
-                && size_compatible(tg.rows, ov.rows)
-                && convert_compatible(database, tg.inner, ov.inner)
-        },
-        (ty::TyKind::Scalar(s1), ty::TyKind::Scalar(s2)) => s1 == s2,
-        _ => false,
-    }
 }
 
 fn error_message_cause_chain(
