@@ -38,10 +38,21 @@ impl UnificationTable {
         &mut self,
         var: BoundVar,
         r#type: Type,
+        database: &dyn HirDatabase,
     ) -> Result<(), ()> {
         match self.types.entry(var) {
             Entry::Occupied(entry) if *entry.get() == r#type => Ok(()),
-            Entry::Occupied(_) => Err(()),
+            Entry::Occupied(mut entry) => {
+                // abstract number conversions
+                if entry.get().is_convertible_to(r#type, database) {
+                    *entry.get_mut() = r#type;
+                    Ok(())
+                } else if r#type.is_convertible_to(*entry.get(), database) {
+                    Ok(())
+                } else {
+                    Err(())
+                }
+            },
             Entry::Vacant(entry) => {
                 entry.insert(r#type);
                 Ok(())
@@ -168,7 +179,7 @@ pub fn unify(
 
     match expected_kind {
         TyKind::BoundVar(var) => {
-            table.set_type(var, found)?;
+            table.set_type(var, found, database)?;
             Ok(())
         },
         TyKind::Vector(VectorType {
@@ -416,17 +427,16 @@ pub fn unify(
         | TyKind::Struct(_)
         | TyKind::Texture(_)
         | TyKind::Sampler(_)
-        | TyKind::Reference(_)
-            if found.is_convertible_to(expected, database) =>
-        {
-            Ok(())
+        | TyKind::Reference(_) => {
+            // Only 1 direction is checked for now
+            // Since "expected" cannot be an abstract type,
+            // nor can it contain type variables
+            if found.is_convertible_to(expected, database) {
+                Ok(())
+            } else {
+                Err(())
+            }
         },
-        TyKind::Error
-        | TyKind::Scalar(_)
-        | TyKind::Struct(_)
-        | TyKind::Texture(_)
-        | TyKind::Sampler(_)
-        | TyKind::Reference(_) => Err(()),
     }
 }
 

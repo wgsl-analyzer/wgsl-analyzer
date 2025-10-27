@@ -35,8 +35,9 @@ fn const_array() {
         "#,
         expect![[r#"
             15..16 'a': array<f32, 1>
-            34..42 'array(1)': array<integer, 1>
+            34..42 'array(1)': array<[error]>
             40..41 '1': integer
+            34..42 'array(1)': expected array<f32, 1> but got array<[error]>
         "#]],
     );
 }
@@ -66,9 +67,8 @@ fn break_if_bool() {
             36..37 'a': i32
             40..41 '3': integer
             84..85 'a': i32
-            84..89 'a > 2': [error]
+            84..89 'a > 2': bool
             88..89 '2': integer
-            NoBuiltinOverload { expression: Idx::<Expression>(1), builtin: BuiltinId(0), name: Some(">"), parameters: [Type { id: 2 }, Type { id: 1 }] }
         "#]],
     );
 }
@@ -125,14 +125,12 @@ const a = -4;
 const b: f32 = -3.5;
         "#,
         expect![[r#"
-            7..8 'a': [error]
-            11..13 '-4': [error]
+            7..8 'a': f32
+            11..13 '-4': f32
             12..13 '4': integer
-            NoBuiltinOverload { expression: Idx::<Expression>(0), builtin: BuiltinId(0), name: Some("-"), parameters: [Type { id: 1 }] }
             21..22 'b': f32
-            30..34 '-3.5': [error]
+            30..34 '-3.5': f32
             31..34 '3.5': float
-            NoBuiltinOverload { expression: Idx::<Expression>(0), builtin: BuiltinId(0), name: Some("-"), parameters: [Type { id: 6 }] }
         "#]],
     );
 }
@@ -147,18 +145,16 @@ var u32_expr2 = 1u + (1 + 2);
 }   
     "#,
         expect![[r#"
-            17..26 'u32_expr1': ref<[error]>
+            17..26 'u32_expr1': ref<u32>
             29..30 '6': integer
-            29..35 '6 + 1u': [error]
+            29..35 '6 + 1u': u32
             33..35 '1u': u32
-            41..50 'u32_expr2': ref<[error]>
+            41..50 'u32_expr2': ref<u32>
             53..55 '1u': u32
-            53..65 '1u + (1 + 2)': [error]
+            53..65 '1u + (1 + 2)': u32
             59..60 '1': integer
             59..64 '1 + 2': integer
             63..64 '2': integer
-            NoBuiltinOverload { expression: Idx::<Expression>(0), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 1 }, Type { id: 2 }] }
-            NoBuiltinOverload { expression: Idx::<Expression>(3), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 2 }, Type { id: 1 }] }
         "#]],
     );
 }
@@ -175,38 +171,34 @@ let f32_promotion4 = ((2 + (3 + 1f)) + 4);
 }   
     "#,
         expect![[r#"
-            17..31 'f32_promotion1': [error]
+            17..31 'f32_promotion1': f32
             34..37 '1.0': float
-            34..41 '1.0 + 2': [error]
-            34..45 '1.0 + 2 + 3': [error]
+            34..41 '1.0 + 2': float
+            34..45 '1.0 + 2 + 3': float
             40..41 '2': integer
             44..45 '3': integer
-            51..65 'f32_promotion2': [error]
+            51..65 'f32_promotion2': f32
             68..69 '2': integer
-            68..75 '2 + 1.0': [error]
-            68..79 '2 + 1.0 + 3': [error]
+            68..75 '2 + 1.0': float
+            68..79 '2 + 1.0 + 3': float
             72..75 '1.0': float
             78..79 '3': integer
-            85..99 'f32_promotion3': [error]
+            85..99 'f32_promotion3': f32
             102..104 '1f': f32
-            102..120 '1f + (...) + 4)': [error]
+            102..120 '1f + (...) + 4)': f32
             108..119 '(2 + 3) + 4': integer
             109..110 '2': integer
             109..114 '2 + 3': integer
             113..114 '3': integer
             118..119 '4': integer
-            126..140 'f32_promotion4': [error]
-            144..162 '(2 + (...)) + 4': [error]
+            126..140 'f32_promotion4': f32
+            144..162 '(2 + (...)) + 4': f32
             145..146 '2': integer
-            145..157 '2 + (3 + 1f)': [error]
+            145..157 '2 + (3 + 1f)': f32
             150..151 '3': integer
-            150..156 '3 + 1f': [error]
+            150..156 '3 + 1f': f32
             154..156 '1f': f32
             161..162 '4': integer
-            NoBuiltinOverload { expression: Idx::<Expression>(0), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 1 }, Type { id: 2 }] }
-            NoBuiltinOverload { expression: Idx::<Expression>(5), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 2 }, Type { id: 1 }] }
-            NoBuiltinOverload { expression: Idx::<Expression>(10), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 7 }, Type { id: 2 }] }
-            NoBuiltinOverload { expression: Idx::<Expression>(18), builtin: BuiltinId(0), name: Some("+"), parameters: [Type { id: 2 }, Type { id: 7 }] }
         "#]],
     );
 }
@@ -222,10 +214,10 @@ let f32_clamp = clamp(0, 1f, 1);
 }   
     "#,
         expect![[r#"
-            17..26 'i32_clamp': [error]
-            29..44 'clamp(1, -5, 5)': [error]
+            17..26 'i32_clamp': f32
+            29..44 'clamp(1, -5, 5)': f32
             35..36 '1': integer
-            38..40 '-5': [error]
+            38..40 '-5': f32
             39..40 '5': integer
             42..43 '5': integer
             50..59 'u32_clamp': u32
@@ -238,7 +230,25 @@ let f32_clamp = clamp(0, 1f, 1);
             101..102 '0': integer
             104..106 '1f': f32
             108..109 '1': integer
-            NoBuiltinOverload { expression: Idx::<Expression>(1), builtin: BuiltinId(0), name: Some("-"), parameters: [Type { id: 1 }] }
+        "#]],
+    );
+}
+
+#[test]
+fn vec4f_constructor() {
+    //
+    check_infer(
+        r#"
+fn main() {
+let a = vec4(vec3f(1f), 1f);
+}   
+    "#,
+        expect![[r#"
+            17..18 'a': vec4<[error]>
+            21..40 'vec4(v...), 1f)': vec4<[error]>
+            26..35 'vec3f(1f)': vec3<f32>
+            32..34 '1f': f32
+            37..39 '1f': f32
         "#]],
     );
 }
