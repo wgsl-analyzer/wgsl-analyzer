@@ -9,7 +9,9 @@ use hir_def::{
 use hir_ty::{
     builtins::BuiltinId,
     database::{FieldInferenceDiagnostic, HirDatabase},
-    infer::{InferenceDiagnostic, TypeExpectation, TypeLoweringError, TypeLoweringErrorKind},
+    infer::{
+        InferenceDiagnostic, LoweredKind, TypeExpectation, TypeLoweringError, TypeLoweringErrorKind,
+    },
     ty::Type,
     validate::AddressSpaceError,
 };
@@ -166,6 +168,12 @@ pub enum AnyDiagnostic {
         expression: InFile<AstPointer<ast::Expression>>,
         message: String,
     },
+    ExpectedLoweredKind {
+        expression: InFile<AstPointer<ast::Expression>>,
+        expected: LoweredKind,
+        actual: LoweredKind,
+        name: Name,
+    },
 }
 
 impl AnyDiagnostic {
@@ -186,7 +194,8 @@ impl AnyDiagnostic {
             | Self::PrecedenceParensRequired { expression, .. }
             | Self::UnexpectedTemplateArgument { expression, .. }
             | Self::WgslError { expression, .. }
-            | Self::InvalidIdentExpression { expression, .. } => expression.file_id,
+            | Self::InvalidIdentExpression { expression, .. }
+            | Self::ExpectedLoweredKind { expression, .. } => expression.file_id,
             Self::MissingAddressSpace { var } | Self::InvalidAddressSpace { var, .. } => {
                 var.file_id
             },
@@ -382,6 +391,21 @@ pub(crate) fn any_diag_from_infer_diagnostic(
             AnyDiagnostic::WgslError {
                 expression: source,
                 message: message.clone(),
+            }
+        },
+        InferenceDiagnostic::ExpectedLoweredKind {
+            expression,
+            expected,
+            actual,
+            name,
+        } => {
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::ExpectedLoweredKind {
+                expression: source,
+                name: name.clone(),
+                expected: *expected,
+                actual: *actual,
             }
         },
     })

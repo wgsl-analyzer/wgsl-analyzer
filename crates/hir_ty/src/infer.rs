@@ -2,7 +2,9 @@ mod builtin;
 mod eval;
 mod unify;
 
-use std::{borrow::Cow, collections::hash_map::Entry, fmt, ops::Index, str::FromStr};
+use std::{
+    borrow::Cow, collections::hash_map::Entry, ffi::os_str::Display, fmt, ops::Index, str::FromStr,
+};
 
 use either::Either;
 use hir_def::{
@@ -199,6 +201,12 @@ pub enum InferenceDiagnostic {
     WgslError {
         expression: ExpressionId,
         message: String,
+    },
+    ExpectedLoweredKind {
+        expression: ExpressionId,
+        expected: LoweredKind,
+        actual: LoweredKind,
+        name: Name,
     },
 }
 
@@ -1271,42 +1279,32 @@ impl<'database> InferenceContext<'database> {
         self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
 
         match lowered {
-            (Lowered::GlobalConstant(id)) => {
+            Lowered::GlobalConstant(id) => {
                 self.database
                     .infer(DefinitionWithBodyId::GlobalConstant(id))
                     .return_type
             },
-            (Lowered::GlobalVariable(id)) => {
+            Lowered::GlobalVariable(id) => {
                 self.database
                     .infer(DefinitionWithBodyId::GlobalVariable(id))
                     .return_type
             },
-            (Lowered::Override(id)) => {
+            Lowered::Override(id) => {
                 self.database
                     .infer(DefinitionWithBodyId::Override(id))
                     .return_type
             },
-            (Lowered::Local(id)) => self.result.type_of_binding[id],
-            (Lowered::Type(_id)) => {
-                // A type cannot appear in an expression.
-                // Like `1 + f32` is not valid
-                // TODO: self.push_diagnostic(..);
-                self.error_ty()
-            },
-            (Lowered::Function(_id)) => {
-                // A function name must be called
-                // TODO: self.push_diagnostic(..);
-                self.error_ty()
-            },
-            (Lowered::BuiltinFunction) => {
-                // A function name must be called
-                // TODO: self.push_diagnostic(..);
-                self.error_ty()
-            },
-            (Lowered::Enumerant(_id)) => {
-                // An enumerant cannot appear in an expression.
-                // Like `1 + f32` is not valid
-                // TODO: self.push_diagnostic(..);
+            Lowered::Local(id) => self.result.type_of_binding[id],
+            Lowered::Type(_)
+            | Lowered::Function(_)
+            | Lowered::BuiltinFunction
+            | Lowered::Enumerant(_) => {
+                self.push_diagnostic(InferenceDiagnostic::ExpectedLoweredKind {
+                    expression,
+                    expected: LoweredKind::Variable,
+                    actual: lowered.kind(),
+                    name: ident_expression.path.clone(),
+                });
                 self.error_ty()
             },
         }
@@ -1484,47 +1482,47 @@ impl<'database> InferenceContext<'database> {
         arguments: Vec<Type>,
         store: &ExpressionStore,
     ) -> Type {
-        let resolver = self.resolver_for_expression(expression);
-        let mut ctx = TyLoweringContext::new(
-            self.database,
-            resolver.as_ref().unwrap_or(&self.resolver),
-            store,
-        );
-
-        match ctx.try_lower(
+        // TODO: It'd be nice if we got a resolver without cloning
+        let resolver = self
+            .resolver_for_expression(expression)
+            .unwrap_or_else(|| self.resolver.clone());
+        let mut ctx = TyLoweringContext::new(self.database, &resolver, store);
+        let lowered = ctx.lower(
             TypeContainer::Expression(expression),
             &callee.path,
             &callee.generics,
-        ) {
-            Ok(Lowered::Type(r#type)) => {
+        );
+        self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
+
+        match lowered {
+            Lowered::Type(r#type) => {
                 self.check_ty_initialiser(expression, r#type, arguments);
                 r#type
             },
-            Ok(Lowered::Function(id)) => {
+            Lowered::Function(id) => {
                 let details = id.lookup(self.database);
                 self.result
                     .call_resolutions
                     .insert(expression, ResolvedCall::Function(id));
                 self.validate_function_call(&details, &arguments, expression, expression)
             },
-            Ok(Lowered::BuiltinFunction) => {
+            Lowered::BuiltinFunction => {
                 let template_args =
                     ctx.eval_template_args(TypeContainer::Expression(expression), &callee.generics);
                 self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
                 self.call_builtin_function(expression, callee, template_args, &arguments)
             },
-            Ok(
-                Lowered::Enumerant(_)
-                | Lowered::GlobalConstant(_)
-                | Lowered::GlobalVariable(_)
-                | Lowered::Override(_)
-                | Lowered::Local(_),
-            ) => {
-                // TODO: everything else is an invalid function call. So do self.push_diagnostic(..);
-                self.error_ty()
-            },
-            Err(error) => {
-                self.push_lowering_diagnostics(&mut vec![error], store);
+            Lowered::Enumerant(_)
+            | Lowered::GlobalConstant(_)
+            | Lowered::GlobalVariable(_)
+            | Lowered::Override(_)
+            | Lowered::Local(_) => {
+                self.push_diagnostic(InferenceDiagnostic::ExpectedLoweredKind {
+                    expression,
+                    expected: LoweredKind::Function,
+                    actual: lowered.kind(),
+                    name: callee.path.clone(),
+                });
                 self.error_ty()
             },
         }
@@ -1915,6 +1913,49 @@ pub enum Lowered {
     Local(BindingId),
     Enumerant(Enumerant),
     BuiltinFunction,
+}
+
+impl Lowered {
+    pub fn kind(&self) -> LoweredKind {
+        match self {
+            Lowered::Type(_) => LoweredKind::Type,
+            Lowered::Function(_) => LoweredKind::Function,
+            Lowered::GlobalConstant(_) => LoweredKind::Constant,
+            Lowered::GlobalVariable(_) => LoweredKind::Variable,
+            Lowered::Override(_) => LoweredKind::Override,
+            Lowered::Local(_) => LoweredKind::Local,
+            Lowered::Enumerant(_) => LoweredKind::Enumerant,
+            Lowered::BuiltinFunction => LoweredKind::Function,
+        }
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum LoweredKind {
+    Type,
+    Function,
+    Constant,
+    Variable,
+    Override,
+    Local,
+    Enumerant,
+}
+
+impl std::fmt::Display for LoweredKind {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        match self {
+            LoweredKind::Type => write!(f, "type"),
+            LoweredKind::Function => write!(f, "function"),
+            LoweredKind::Constant => write!(f, "constant"),
+            LoweredKind::Variable => write!(f, "variable"),
+            LoweredKind::Override => write!(f, "override"),
+            LoweredKind::Local => write!(f, "local variable"),
+            LoweredKind::Enumerant => write!(f, "enumerant"),
+        }
+    }
 }
 
 impl<'database> TyLoweringContext<'database> {

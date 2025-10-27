@@ -693,6 +693,20 @@ pub fn diagnostics(
                     let frange = original_file_range(database, expression.file_id, source.syntax());
                     Diagnostic::new(DiagnosticCode("22"), format!("{message}"), frange.range)
                 },
+                AnyDiagnostic::ExpectedLoweredKind {
+                    expression,
+                    expected,
+                    actual,
+                    name,
+                } => {
+                    let source = expression.value.to_node(&root);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("23"),
+                        format!("{actual} {} is not a {expected}", name.as_str()),
+                        frange.range,
+                    )
+                },
             }
         })
         .collect()
