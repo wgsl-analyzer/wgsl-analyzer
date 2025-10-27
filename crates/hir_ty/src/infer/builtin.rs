@@ -24,32 +24,20 @@ impl<'database> TyLoweringContext<'database> {
     fn is_predeclared_ty(
         &self,
         name: &Name,
+        generics: &[ExpressionId],
     ) -> bool {
+        // Many builtin types have a magical constructor with the same name
+        // And that constructor doesn't need the generics
         match name.as_str() {
-            "bool"
-            | "i32"
-            | "u32"
-            | "f32"
-            | "f16"
-            | "array"
-            | "binding_array"
-            | "vec2"
-            | "vec3"
-            | "vec4"
-            | "vec2i"
-            | "vec3i"
-            | "vec4i"
-            | "vec2u"
-            | "vec3u"
-            | "vec4u"
-            | "vec2f"
-            | "vec3f"
-            | "vec4f"
-            | ("mat2x2" | "mat2x3" | "mat2x4" | "mat3x2" | "mat3x3" | "mat3x4" | "mat4x2"
-            | "mat4x3" | "mat4x4")
-            | ("mat2x2f" | "mat2x3f" | "mat2x4f" | "mat3x2f" | "mat3x3f" | "mat3x4f" | "mat4x2f"
-            | "mat4x3f" | "mat4x4f")
-            | "ptr"
+            ("bool" | "i32" | "u32" | "f32" | "f16") => true,
+            ("array" | "binding_array" | "vec2" | "vec3" | "vec4") => generics.len() > 0,
+            "vec2i" | "vec3i" | "vec4i" | "vec2u" | "vec3u" | "vec4u" | "vec2f" | "vec3f"
+            | "vec4f" => true,
+            ("mat2x2" | "mat2x3" | "mat2x4" | "mat3x2" | "mat3x3" | "mat3x4" | "mat4x2"
+            | "mat4x3" | "mat4x4") => generics.len() > 0,
+            ("mat2x2f" | "mat2x3f" | "mat2x4f" | "mat3x2f" | "mat3x3f" | "mat3x4f" | "mat4x2f"
+            | "mat4x3f" | "mat4x4f") => true,
+            "ptr"
             | "atomic"
             | "texture_1d"
             | "texture_2d"
@@ -81,7 +69,7 @@ impl<'database> TyLoweringContext<'database> {
         generics: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
         // Lower predeclared types
-        if self.is_predeclared_ty(&path) {
+        if self.is_predeclared_ty(&path, generics) {
             match self.lower_predeclared_ty(type_container.clone(), &path, &generics) {
                 Ok(r#type) => Ok(Lowered::Type(r#type)),
                 Err(kind) => Err(TypeLoweringError {
