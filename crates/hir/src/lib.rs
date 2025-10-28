@@ -16,7 +16,7 @@ use hir_def::{
     expression::{ExpressionId, StatementId},
     hir_file_id::relative_file,
     module_data::{self, ModuleInfo, ModuleItem, Name},
-    resolver::{ResolveType, Resolver},
+    resolver::{ResolveKind, Resolver},
 };
 pub use hir_ty::database::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Type};
@@ -128,31 +128,31 @@ impl<'database> Semantics<'database> {
         let value = resolver.resolve(name)?;
 
         let definition = match value {
-            ResolveType::Local(binding) => Definition::Local(Local {
+            ResolveKind::Local(binding) => Definition::Local(Local {
                 parent: resolver.body_owner()?,
                 binding,
             }),
-            ResolveType::GlobalVariable(loc) => {
+            ResolveKind::GlobalVariable(loc) => {
                 let id = self.database.intern_global_variable(loc);
                 Definition::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))
             },
-            ResolveType::GlobalConstant(loc) => {
+            ResolveKind::GlobalConstant(loc) => {
                 let id = self.database.intern_global_constant(loc);
                 Definition::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id }))
             },
-            ResolveType::Override(loc) => {
+            ResolveKind::Override(loc) => {
                 let id = self.database.intern_override(loc);
                 Definition::ModuleDef(ModuleDef::Override(Override { id }))
             },
-            ResolveType::Struct(loc) => {
+            ResolveKind::Struct(loc) => {
                 let id = self.database.intern_struct(loc);
                 Definition::ModuleDef(ModuleDef::Struct(Struct { id }))
             },
-            ResolveType::TypeAlias(loc) => {
+            ResolveKind::TypeAlias(loc) => {
                 let id = self.database.intern_type_alias(loc);
                 Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id }))
             },
-            ResolveType::Function(loc) => {
+            ResolveKind::Function(loc) => {
                 let id = self.database.intern_function(loc);
                 Definition::ModuleDef(ModuleDef::Function(Function { id }))
             },

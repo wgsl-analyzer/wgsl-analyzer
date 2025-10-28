@@ -38,7 +38,7 @@ pub struct ExpressionScope {
 }
 
 #[derive(Debug)]
-pub enum ResolveType {
+pub enum ResolveKind {
     Local(BindingId),
     Struct(Location<Struct>),
     TypeAlias(Location<TypeAlias>),
@@ -166,13 +166,13 @@ impl Resolver {
     pub fn resolve(
         &self,
         name: &Name,
-    ) -> Option<ResolveType> {
+    ) -> Option<ResolveKind> {
         self.scopes().find_map(|scope| match scope {
             Scope::Expression(scope) => {
                 let entry = scope
                     .expression_scopes
                     .resolve_name_in_scope(scope.scope_id, name)?;
-                Some(ResolveType::Local(entry.binding))
+                Some(ResolveKind::Local(entry.binding))
             },
             Scope::Module(scope) => scope
                 .module_info
@@ -182,32 +182,32 @@ impl Resolver {
                     ModuleItem::Struct(id) => {
                         let r#struct = scope.module_info.get(*id);
                         (&r#struct.name == name)
-                            .then(|| ResolveType::Struct(InFile::new(scope.file_id, *id)))
+                            .then(|| ResolveKind::Struct(InFile::new(scope.file_id, *id)))
                     },
                     ModuleItem::TypeAlias(id) => {
                         let type_alias = scope.module_info.get(*id);
                         (&type_alias.name == name)
-                            .then(|| ResolveType::TypeAlias(InFile::new(scope.file_id, *id)))
+                            .then(|| ResolveKind::TypeAlias(InFile::new(scope.file_id, *id)))
                     },
                     ModuleItem::GlobalVariable(id) => {
                         let variable = scope.module_info.get(*id);
                         (&variable.name == name)
-                            .then(|| ResolveType::GlobalVariable(Location::new(scope.file_id, *id)))
+                            .then(|| ResolveKind::GlobalVariable(Location::new(scope.file_id, *id)))
                     },
                     ModuleItem::GlobalConstant(id) => {
                         let constant = scope.module_info.get(*id);
                         (&constant.name == name)
-                            .then(|| ResolveType::GlobalConstant(Location::new(scope.file_id, *id)))
+                            .then(|| ResolveKind::GlobalConstant(Location::new(scope.file_id, *id)))
                     },
                     ModuleItem::Override(id) => {
                         let r#override = scope.module_info.get(*id);
                         (&r#override.name == name)
-                            .then(|| ResolveType::Override(Location::new(scope.file_id, *id)))
+                            .then(|| ResolveKind::Override(Location::new(scope.file_id, *id)))
                     },
                     ModuleItem::Function(id) => {
                         let function = scope.module_info.get(*id);
                         (&function.name == name)
-                            .then(|| ResolveType::Function(InFile::new(scope.file_id, *id)))
+                            .then(|| ResolveKind::Function(InFile::new(scope.file_id, *id)))
                     },
                 }),
             Scope::Builtin => {

@@ -1,4 +1,4 @@
-use hir_def::{HirFileId, module_data::Name, resolver::ResolveType};
+use hir_def::{HirFileId, module_data::Name, resolver::ResolveKind};
 use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast};
 
 use crate::{Field, Function, Local, ModuleDef, Semantics, Struct, TypeAlias};
@@ -63,22 +63,22 @@ fn resolve_name_ref(
         let resolver = semantics.resolver(file_id, r#type.syntax());
 
         match resolver.resolve(&r#type.name_ref()?.into())? {
-            ResolveType::Struct(loc) => {
+            ResolveKind::Struct(loc) => {
                 let id = semantics.database.intern_struct(loc);
                 Some(Definition::ModuleDef(ModuleDef::Struct(Struct { id })))
             },
-            ResolveType::TypeAlias(loc) => {
+            ResolveKind::TypeAlias(loc) => {
                 let id = semantics.database.intern_type_alias(loc);
                 Some(Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias {
                     id,
                 })))
             },
             // TODO: Why is it not doing anything here?
-            ResolveType::Function(_)
-            | ResolveType::GlobalConstant(_)
-            | ResolveType::GlobalVariable(_)
-            | ResolveType::Override(_)
-            | ResolveType::Local(_) => None,
+            ResolveKind::Function(_)
+            | ResolveKind::GlobalConstant(_)
+            | ResolveKind::GlobalVariable(_)
+            | ResolveKind::Override(_)
+            | ResolveKind::Local(_) => None,
         }
     } else {
         None

@@ -24,7 +24,7 @@ use hir_def::{
     },
     expression_store::ExpressionStore,
     module_data::Name,
-    resolver::{ResolveType, Resolver},
+    resolver::{ResolveKind, Resolver},
     type_ref::{self, VecDimensionality},
     type_specifier::{IdentExpression, TypeSpecifier, TypeSpecifierId},
 };
@@ -2026,31 +2026,31 @@ impl<'database> TyLoweringContext<'database> {
         }
 
         match resolved_ty {
-            Some(ResolveType::TypeAlias(loc)) => {
+            Some(ResolveKind::TypeAlias(loc)) => {
                 let id = self.database.intern_type_alias(loc);
                 Ok(Lowered::Type(self.database.type_alias_type(id).0))
             },
-            Some(ResolveType::Struct(loc)) => {
+            Some(ResolveKind::Struct(loc)) => {
                 let id = self.database.intern_struct(loc);
                 Ok(Lowered::Type(self.database.intern_ty(TyKind::Struct(id))))
             },
-            Some(ResolveType::Function(loc)) => {
+            Some(ResolveKind::Function(loc)) => {
                 let id = self.database.intern_function(loc);
                 Ok(Lowered::Function(self.database.function_type(id)))
             },
-            Some(ResolveType::GlobalConstant(loc)) => {
+            Some(ResolveKind::GlobalConstant(loc)) => {
                 let id = self.database.intern_global_constant(loc);
                 Ok(Lowered::GlobalConstant(id))
             },
-            Some(ResolveType::GlobalVariable(loc)) => {
+            Some(ResolveKind::GlobalVariable(loc)) => {
                 let id = self.database.intern_global_variable(loc);
                 Ok(Lowered::GlobalVariable(id))
             },
-            Some(ResolveType::Override(loc)) => {
+            Some(ResolveKind::Override(loc)) => {
                 let id = self.database.intern_override(loc);
                 Ok(Lowered::Override(id))
             },
-            Some(ResolveType::Local(local)) => Ok(Lowered::Local(local)),
+            Some(ResolveKind::Local(local)) => Ok(Lowered::Local(local)),
             None => self.lower_predeclared(type_container, path, generics),
         }
     }

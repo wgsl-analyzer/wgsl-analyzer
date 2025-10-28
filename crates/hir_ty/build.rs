@@ -118,7 +118,6 @@ enum TextureDimensionality {
 
 fn main() -> Result<(), Box<dyn error::Error>> {
     println!("cargo::rerun-if-changed=builtins.wgsl.txt");
-    println!("cargo::rerun-if-changed=build.rs");
 
     let directory = PathBuf::from(env::var("OUT_DIR")?).join("generated");
     fs::create_dir_all(&directory)?;

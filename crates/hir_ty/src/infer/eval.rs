@@ -3,7 +3,7 @@ use std::{collections::VecDeque, str::FromStr};
 use hir_def::{
     expression::{BinaryOperation, Expression, ExpressionId, UnaryOperator},
     expression_store::ExpressionStore,
-    resolver::ResolveType,
+    resolver::ResolveKind,
     type_specifier::TypeSpecifier,
 };
 use wgsl_types::{
