@@ -40,7 +40,9 @@ query-group = { package = "query-group-macro", git = "https://github.com/rust-la
 
 # We need to freeze the version of the crate because the raw-api feature is considered unstable
 dashmap = { version = "6.1.0", features = ["raw-api"] }
-wgsl-types = { version = "0.2.0", git = "https://github.com/wgsl-tooling-wg/wesl-rs", features = ["naga-ext"] }
+wgsl-types = { version = "0.2.0", git = "https://github.com/wgsl-tooling-wg/wesl-rs", features = [
+  "naga-ext"
+] }
 
 [workspace.lints.rust]
 warnings = { level = "warn", priority = -2 }

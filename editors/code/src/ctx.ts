@@ -1,8 +1,5 @@
-import * as assert from "node:assert";
 import { spawn } from "node:child_process";
 import { text } from "node:stream/consumers";
-import { readFile } from "fs";
-import { promisify } from "util";
 import * as vscode from "vscode";
 import type * as lc from "vscode-languageclient/node";
 import { bootstrap } from "./bootstrap";

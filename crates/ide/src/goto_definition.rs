@@ -160,7 +160,7 @@ impl TryToNavigationTarget for InFile<Definition> {
                 });
 
                 NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-            }
+            },
         };
         Some(navigation)
     }

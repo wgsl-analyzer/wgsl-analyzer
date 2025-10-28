@@ -1572,10 +1572,10 @@ impl<'database> InferenceContext<'database> {
         match return_type {
             Ok(Some(ty)) => converter.from_wgsl_types(ty),
             Ok(None) => self.error_ty(),
-            Err(err) => {
+            Err(error) => {
                 self.push_diagnostic(InferenceDiagnostic::WgslError {
                     expression,
-                    message: err.to_string(),
+                    message: error.to_string(),
                 });
                 self.error_ty()
             },
