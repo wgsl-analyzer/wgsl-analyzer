@@ -24,7 +24,7 @@ smallvec = { version = "1.15.1", features = [
   "union",
   "const_generics",
 ] }
-triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
+triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
 stdx.workspace = true
 syntax.workspace = true
 vfs.workspace = true

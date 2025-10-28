@@ -1,11 +1,11 @@
 [package]
 name = "syntax"
 version = "0.0.0"
-repository.workspace = true
-description = "Concrete syntax tree definitions for wgsl-analyzer."
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+description = "Concrete syntax tree definitions for wgsl-analyzer."
+repository.workspace = true
+license.workspace = true
 
 [lib]
 doctest = false
@@ -13,10 +13,10 @@ doctest = false
 [dependencies]
 either = "1.15.0"
 itertools = "0.14.0"
-rowan = "0.16.1"
 parser.workspace = true
-smol_str = "0.3.2"
-triomphe = { version = "0.1.14", default-features = false, features = ["std"] }
+rowan = "0.16.1"
+smol_str = "0.3.4"
+triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
 
 [lints]
 workspace = true

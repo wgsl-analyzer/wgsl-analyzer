@@ -1,22 +1,22 @@
 [package]
 name = "base-db"
 version = "0.0.0"
-repository.workspace = true
-description = "Basic database traits for wgsl-analyzer. The concrete DB is defined by `ide` (aka `wa_ap_ide`)."
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+description = "Basic database traits for wgsl-analyzer. The concrete DB is defined by `ide` (aka `wa_ap_ide`)."
+repository.workspace = true
+license.workspace = true
 
 [lib]
 doctest = false
 
 [dependencies]
-salsa = "0.17.0-pre.2"
+line-index = "0.1.2"
 rowan = "0.16.1"
 rustc-hash = "2.1.1"
+salsa = "0.17.0-pre.2"
 syntax.workspace = true
 triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
-line-index = "0.1.2"
 vfs.workspace = true
 
 [lints]

@@ -32,7 +32,7 @@
 		}
 	},
 	"engines": {
-		"vscode": "^1.103.0",
+		"vscode": "^1.105.0",
 		"npm": "^11.2.0"
 	},
 	"enabledApiProposals": [],
@@ -53,7 +53,7 @@
 		"watch": "npm run build-base -- --sourcemap --watch"
 	},
 	"dependencies": {
-		"@hpcc-js/wasm": "^2.26.3",
+		"@hpcc-js/wasm": "^2.28.0",
 		"anser": "^2.3.2",
 		"d3": "^7.9.0",
 		"d3-graphviz": "^5.6.0",
@@ -63,15 +63,15 @@
 		"vscode-languageclient": "^9.0.1"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.2.5",
+		"@biomejs/biome": "^2.3.1",
 		"@tsconfig/node-ts": "^23.6.1",
 		"@tsconfig/node22": "^22.0.2",
 		"@tsconfig/strictest": "^2.0.6",
-		"@types/node": "^24.7.1",
-		"@types/vscode": "^1.103.0",
+		"@types/node": "^24.9.1",
+		"@types/vscode": "^1.105.0",
 		"@vscode/test-electron": "^2.5.2",
 		"@vscode/vsce": "^3.6.2",
-		"esbuild": "^0.25.10",
+		"esbuild": "^0.25.11",
 		"ovsx": "^0.10.6",
 		"tslib": "^2.8.1",
 		"typescript": "^5.9.3"
@@ -1709,6 +1709,34 @@
 				],
 				"embeddedLanguages": {
 					"meta.embedded.block.wgsl": "wgsl"
+				},
+				"unbalancedBracketScopes": [
+					"punctuation.definition.tag.begin.wgsl",
+					"punctuation.definition.tag.end.wgsl",
+					"punctuation.definition.tag.range.wgsl",
+					"keyword.other.array-item.wgsl"
+				]
+			},
+			{
+				"injectTo": [
+					"source.js",
+					"source.ts",
+					"source.rust"
+				],
+				"scopeName": "source.comment-string.wesl",
+				"path": "./syntaxes/inline-wesl.tmLanguage.json",
+				"embeddedLanguages": {
+					"meta.embedded.block.wesl": "wesl"
+				}
+			},
+			{
+				"scopeName": "markdown.wesl.codeblock",
+				"path": "./syntaxes/inline-wesl.markdown.tmLanguage.json",
+				"injectTo": [
+					"text.html.markdown"
+				],
+				"embeddedLanguages": {
+					"meta.embedded.block.wesl": "wesl"
 				},
 				"unbalancedBracketScopes": [
 					"punctuation.definition.tag.begin.wgsl",
