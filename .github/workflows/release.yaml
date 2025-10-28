@@ -134,7 +134,7 @@ jobs:
         working-directory: editors/code
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dist-${{ matrix.target }}
           path: ./dist
@@ -180,7 +180,7 @@ jobs:
       - run: rm -rf editors/code/server
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: dist-x86_64-unknown-linux-musl
           path: ./dist
