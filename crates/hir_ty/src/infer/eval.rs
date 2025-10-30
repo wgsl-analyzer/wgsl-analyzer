@@ -23,7 +23,7 @@ use crate::{
 impl<'database> TyLoweringContext<'database> {
     /// Used for template checking.
     /// There, many expressions are guaranteed to evaluate to a type, or a scalar.
-    /// e.g. `array<(f32), 3 + 5>`
+    /// e.g. `array<f32, 3 + 5>`
     /// `None` is returned for the "error" instance
     fn eval_expression(
         &mut self,
