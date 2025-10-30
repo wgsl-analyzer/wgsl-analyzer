@@ -84,7 +84,7 @@ fn can_parse_array_declaration() {
                     TypeSpecifier@56..73
                       NameReference@56..61
                         Identifier@56..61 "array"
-                      GenericArgumentList@61..73
+                      TemplateList@61..73
                         TemplateStart@61..62 "<"
                         IdentExpression@62..65
                           NameReference@62..65
@@ -155,7 +155,7 @@ fn cannot_parse_bad_array_declaration() {
                     TypeSpecifier@56..72
                       NameReference@56..61
                         Identifier@56..61 "array"
-                      GenericArgumentList@61..72
+                      TemplateList@61..72
                         TemplateStart@61..62 "<"
                         IdentExpression@62..65
                           NameReference@62..65
@@ -498,7 +498,7 @@ fn parse_type_primitive() {
 }
 
 #[test]
-fn parse_type_generic() {
+fn parse_type_with_template() {
     check_type(
         "vec3<f32>",
         expect![[r#"
@@ -506,7 +506,7 @@ fn parse_type_generic() {
               TypeSpecifier@0..9
                 NameReference@0..4
                   Identifier@0..4 "vec3"
-                GenericArgumentList@4..9
+                TemplateList@4..9
                   TemplateStart@4..5 "<"
                   IdentExpression@5..8
                     NameReference@5..8
@@ -516,7 +516,7 @@ fn parse_type_generic() {
 }
 
 #[test]
-fn parse_type_generic_shift_ambiguity() {
+fn parse_type_template_shift_ambiguity() {
     check_type(
         "array<vec3<f32, 2>>",
         expect![[r#"
@@ -524,12 +524,12 @@ fn parse_type_generic_shift_ambiguity() {
               TypeSpecifier@0..19
                 NameReference@0..5
                   Identifier@0..5 "array"
-                GenericArgumentList@5..19
+                TemplateList@5..19
                   TemplateStart@5..6 "<"
                   IdentExpression@6..18
                     NameReference@6..10
                       Identifier@6..10 "vec3"
-                    GenericArgumentList@10..18
+                    TemplateList@10..18
                       TemplateStart@10..11 "<"
                       IdentExpression@11..14
                         NameReference@11..14
@@ -544,7 +544,7 @@ fn parse_type_generic_shift_ambiguity() {
 }
 
 #[test]
-fn parse_type_generic_int() {
+fn parse_type_template_with_int() {
     check_type(
         "array<f32, 100>",
         expect![[r#"
@@ -552,7 +552,7 @@ fn parse_type_generic_int() {
               TypeSpecifier@0..15
                 NameReference@0..5
                   Identifier@0..5 "array"
-                GenericArgumentList@5..15
+                TemplateList@5..15
                   TemplateStart@5..6 "<"
                   IdentExpression@6..9
                     NameReference@6..9
@@ -566,7 +566,7 @@ fn parse_type_generic_int() {
 }
 
 #[test]
-fn parse_type_generic_empty() {
+fn parse_type_empty_template() {
     check_type(
         "vec3<>",
         expect![[r#"
@@ -574,7 +574,7 @@ fn parse_type_generic_empty() {
               TypeSpecifier@0..6
                 NameReference@0..4
                   Identifier@0..4 "vec3"
-                GenericArgumentList@4..6
+                TemplateList@4..6
                   TemplateStart@4..5 "<"
                   TemplateEnd@5..6 ">"
 
@@ -583,7 +583,7 @@ fn parse_type_generic_empty() {
 }
 
 #[test]
-fn parse_type_generic_comma_recover() {
+fn parse_type_template_comma_recover() {
     check_type(
         "vec3<,>",
         expect![[r#"
@@ -591,7 +591,7 @@ fn parse_type_generic_comma_recover() {
               TypeSpecifier@0..7
                 NameReference@0..4
                   Identifier@0..4 "vec3"
-                GenericArgumentList@4..7
+                TemplateList@4..7
                   TemplateStart@4..5 "<"
                   Comma@5..6 ","
                   TemplateEnd@6..7 ">"
@@ -602,7 +602,7 @@ fn parse_type_generic_comma_recover() {
 }
 
 #[test]
-fn parse_type_generic_ptr() {
+fn parse_ptr_template() {
     check_type(
         "ptr<uniform, f32, read_write>",
         expect![[r#"
@@ -610,7 +610,7 @@ fn parse_type_generic_ptr() {
               TypeSpecifier@0..29
                 NameReference@0..3
                   Identifier@0..3 "ptr"
-                GenericArgumentList@3..29
+                TemplateList@3..29
                   TemplateStart@3..4 "<"
                   IdentExpression@4..11
                     NameReference@4..11
@@ -1713,7 +1713,7 @@ fn parse_var_with_initializer() {
             SourceFile@0..21
               VariableDeclaration@0..21
                 Var@0..3 "var"
-                GenericArgumentList@3..13
+                TemplateList@3..13
                   TemplateStart@3..4 "<"
                   IdentExpression@4..12
                     NameReference@4..12
@@ -2290,7 +2290,7 @@ struct Test {
                     TypeSpecifier@34..43
                       NameReference@34..38
                         Identifier@34..38 "vec3"
-                      GenericArgumentList@38..43
+                      TemplateList@38..43
                         TemplateStart@38..39 "<"
                         IdentExpression@39..42
                           NameReference@39..42
@@ -2346,7 +2346,7 @@ struct Test {
                     TypeSpecifier@34..43
                       NameReference@34..38
                         Identifier@34..38 "vec3"
-                      GenericArgumentList@38..43
+                      TemplateList@38..43
                         TemplateStart@38..39 "<"
                         IdentExpression@39..42
                           NameReference@39..42
@@ -2596,7 +2596,7 @@ fn parse_statement_nested_functions() {
                       IdentExpression@5..12
                         NameReference@5..9
                           Identifier@5..9 "args"
-                        GenericArgumentList@9..12
+                        TemplateList@9..12
                           TemplateStart@9..10 "<"
                           IdentExpression@10..11
                             NameReference@10..11
@@ -3090,7 +3090,7 @@ fn expression_in_template() {
                   IdentExpression@13..30
                     NameReference@13..18
                       Identifier@13..18 "array"
-                    GenericArgumentList@18..30
+                    TemplateList@18..30
                       TemplateStart@18..19 "<"
                       IdentExpression@19..22
                         NameReference@19..22

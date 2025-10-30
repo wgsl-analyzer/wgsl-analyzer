@@ -119,7 +119,7 @@ impl<'a, 'cache> CstBuilder<'a, 'cache> {
             Rule::StructMember => self.start_node(SyntaxKind::StructMember),
             Rule::SwitchBody => self.start_node(SyntaxKind::SwitchBody),
             Rule::SwitchStatement => self.start_node(SyntaxKind::SwitchStatement),
-            Rule::TemplateList => self.start_node(SyntaxKind::GenericArgumentList),
+            Rule::TemplateList => self.start_node(SyntaxKind::TemplateList),
             Rule::TranslationUnit => self.start_node(SyntaxKind::SourceFile),
             Rule::TypeAliasDeclaration => self.start_node(SyntaxKind::TypeAliasDeclaration),
             Rule::TypeSpecifier => self.start_node(SyntaxKind::TypeSpecifier),

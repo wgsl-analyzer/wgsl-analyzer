@@ -235,8 +235,8 @@ pub trait HasName: AstNode {
     }
 }
 
-pub trait HasGenerics: AstNode {
-    fn generic_arg_list(&self) -> Option<ast::GenericArgumentList> {
+pub trait HasTemplateParameters: AstNode {
+    fn template_parameters(&self) -> Option<ast::TemplateList> {
         support::child(self.syntax())
     }
 }

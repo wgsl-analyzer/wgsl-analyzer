@@ -3,7 +3,8 @@ mod tests;
 
 use rowan::{GreenNode, GreenToken, NodeOrToken, WalkEvent};
 use syntax::{
-    AstNode, HasGenerics as _, HasName, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, ast,
+    AstNode, HasName, HasTemplateParameters as _, SyntaxElement, SyntaxKind, SyntaxNode,
+    SyntaxToken, ast,
 };
 
 #[must_use]
@@ -264,11 +265,11 @@ fn format_syntax_node(
         SyntaxKind::IdentExpression => {
             let ident_expression = ast::IdentExpression::cast(syntax)?;
 
-            let generics = ident_expression.generic_arg_list()?;
-            let left_angle = generics.left_angle_token()?;
+            let template_parameters = ident_expression.template_parameters()?;
+            let left_angle = template_parameters.left_angle_token()?;
             remove_if_whitespace(&left_angle.prev_token()?); // spellchecker:disable-line
             remove_if_whitespace(&left_angle.next_token()?);
-            let right_angle = generics.left_angle_token()?;
+            let right_angle = template_parameters.left_angle_token()?;
             remove_if_whitespace(&right_angle.prev_token()?); // spellchecker:disable-line
         },
         SyntaxKind::FunctionCall => {
@@ -360,11 +361,11 @@ fn format_syntax_node(
         },
         _ => {
             if let Some(r#type) = ast::TypeSpecifier::cast(syntax) {
-                let generics = r#type.generic_arg_list()?;
-                let left_angle = generics.left_angle_token()?;
+                let template_parameters = r#type.template_parameters()?;
+                let left_angle = template_parameters.left_angle_token()?;
                 remove_if_whitespace(&left_angle.prev_token()?); // spellchecker:disable-line
                 remove_if_whitespace(&left_angle.next_token()?);
-                let right_angle = generics.left_angle_token()?;
+                let right_angle = template_parameters.left_angle_token()?;
                 remove_if_whitespace(&right_angle.prev_token()?); // spellchecker:disable-line
             }
         },

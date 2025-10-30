@@ -8,8 +8,8 @@ pub enum SyntaxKind {
     Name,
     /// a function
     FunctionDeclaration,
-    /// the <a, b, c> of a generic
-    GenericArgumentList,
+    /// the <a, b, c> of a template
+    TemplateList,
     /// The parameters to a function call
     FunctionParameters,
     /// a function parameter

@@ -461,7 +461,7 @@ fn parse_vec3_initializer() {
                 IdentExpression@0..9
                   NameReference@0..4
                     Identifier@0..4 "vec3"
-                  GenericArgumentList@4..9
+                  TemplateList@4..9
                     TemplateStart@4..5 "<"
                     IdentExpression@5..8
                       NameReference@5..8
@@ -733,7 +733,7 @@ fn bitcast() {
                 IdentExpression@0..12
                   NameReference@0..7
                     Identifier@0..7 "bitcast"
-                  GenericArgumentList@7..12
+                  TemplateList@7..12
                     TemplateStart@7..8 "<"
                     IdentExpression@8..11
                       NameReference@8..11
@@ -758,12 +758,12 @@ fn bitcast_vector() {
                 IdentExpression@0..18
                   NameReference@0..7
                     Identifier@0..7 "bitcast"
-                  GenericArgumentList@7..18
+                  TemplateList@7..18
                     TemplateStart@7..8 "<"
                     IdentExpression@8..17
                       NameReference@8..12
                         Identifier@8..12 "vec4"
-                      GenericArgumentList@12..17
+                      TemplateList@12..17
                         TemplateStart@12..13 "<"
                         IdentExpression@13..16
                           NameReference@13..16
@@ -780,7 +780,7 @@ fn bitcast_vector() {
 }
 
 #[test]
-fn bitcast_no_generics() {
+fn bitcast_no_template() {
     check(
         "bitcast(x)",
         expect![[r#"
@@ -816,7 +816,7 @@ fn bitcast_in_expression() {
                       IdentExpression@5..17
                         NameReference@5..12
                           Identifier@5..12 "bitcast"
-                        GenericArgumentList@12..17
+                        TemplateList@12..17
                           TemplateStart@12..13 "<"
                           IdentExpression@13..16
                             NameReference@13..16

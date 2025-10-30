@@ -81,7 +81,7 @@ pub enum Statement {
         binding_id: BindingId,
         type_ref: Option<TypeSpecifierId>,
         initializer: Option<ExpressionId>,
-        generics: Vec<ExpressionId>,
+        template_parameters: Vec<ExpressionId>,
     },
     Return {
         expression: Option<ExpressionId>,
@@ -178,6 +178,7 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
                 None => f64::from_str(text),
             }
             .expect("invalid literal");
+            // future reference: naga has li and lu suffix for 64bits literals.
             let float_variant = match suffix {
                 Some('f') => BuiltinFloat::F32,
                 Some('h') => BuiltinFloat::F16,
@@ -226,7 +227,7 @@ impl Expression {
                 ..
             } => {
                 ident_expression
-                    .generics
+                    .template_parameters
                     .iter()
                     .copied()
                     .chain(arguments.iter().copied())
@@ -236,8 +237,11 @@ impl Expression {
                 function(*left_side);
                 function(*index);
             },
-            Self::IdentExpression(IdentExpression { generics, .. }) => {
-                generics.iter().copied().for_each(function);
+            Self::IdentExpression(IdentExpression {
+                template_parameters,
+                ..
+            }) => {
+                template_parameters.iter().copied().for_each(function);
             },
             Self::Missing | Self::Literal(_) => {},
         }

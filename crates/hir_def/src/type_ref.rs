@@ -1,6 +1,6 @@
 use std::fmt;
 
-use syntax::{HasGenerics, ast};
+use syntax::{HasTemplateParameters, ast};
 
 use crate::{expression::parse_literal, module_data::Name};
 

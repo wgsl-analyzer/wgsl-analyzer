@@ -139,7 +139,7 @@ impl<'database> TyLoweringContext<'database> {
                 let resolved_ty = self.lower(
                     TypeContainer::Expression(tplt),
                     &ident_expression.path,
-                    &ident_expression.generics,
+                    &ident_expression.template_parameters,
                 );
                 match resolved_ty {
                     Lowered::Type(r#type) => TpltParam::Type(r#type),
@@ -174,9 +174,9 @@ impl<'database> TyLoweringContext<'database> {
     pub fn eval_template_args(
         &mut self,
         container: TypeContainer,
-        generics: &[ExpressionId],
+        template_parameters: &[ExpressionId],
     ) -> TemplateParameters {
-        let template_parameters: VecDeque<_> = generics
+        let template_parameters: VecDeque<_> = template_parameters
             .iter()
             .map(|arg| (self.eval_tplt_arg(*arg), *arg))
             .collect();

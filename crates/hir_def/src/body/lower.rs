@@ -1,5 +1,5 @@
 use either::Either;
-use syntax::{AstNode as _, HasGenerics as _, HasName as _, ast, pointer::AstPointer};
+use syntax::{AstNode as _, HasName as _, HasTemplateParameters as _, ast, pointer::AstPointer};
 
 use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
 use crate::{
@@ -196,20 +196,21 @@ impl Collector<'_> {
                     .ty()
                     .map(|typo| self.expressions.collect_type_specifier(typo));
 
-                let generics = if let Some(generics) = variable_statement.generic_arg_list() {
-                    generics
-                        .generics()
-                        .map(|expression| self.collect_expression(expression))
-                        .collect()
-                } else {
-                    Vec::new()
-                };
+                let template_parameters =
+                    if let Some(template_parameters) = variable_statement.template_parameters() {
+                        template_parameters
+                            .parameters()
+                            .map(|expression| self.collect_expression(expression))
+                            .collect()
+                    } else {
+                        Vec::new()
+                    };
 
                 Statement::Variable {
                     binding_id,
                     type_ref,
                     initializer,
-                    generics,
+                    template_parameters,
                 }
             },
             ast::Statement::ConstantDeclaration(variable_statement) => {

@@ -1,5 +1,5 @@
 use la_arena::Arena;
-use syntax::{HasGenerics, HasName, ast, pointer::AstPointer};
+use syntax::{HasName, HasTemplateParameters, ast, pointer::AstPointer};
 use triomphe::Arc;
 
 use crate::{
@@ -90,26 +90,27 @@ impl ExprCollector<'_> {
                     call.ident_expression()
                         .and_then(|identifier| identifier.name_ref()),
                 );
-                let generics = self.collect_generics(
+                let template_parameters = self.collect_template_parameters(
                     call.ident_expression()
-                        .and_then(|identifier| (identifier.generic_arg_list())),
+                        .and_then(|identifier| (identifier.template_parameters())),
                 );
 
                 Expression::Call {
                     ident_expression: IdentExpression {
                         path: name,
-                        generics,
+                        template_parameters,
                     },
                     arguments,
                 }
             },
             ast::Expression::IdentExpression(identifier) => {
                 let name = as_name_opt(identifier.name_ref());
-                let generics = self.collect_generics(identifier.generic_arg_list());
+                let template_parameters =
+                    self.collect_template_parameters(identifier.template_parameters());
 
                 Expression::IdentExpression(IdentExpression {
                     path: name,
-                    generics,
+                    template_parameters,
                 })
             },
             ast::Expression::IndexExpression(index) => {
@@ -129,17 +130,18 @@ impl ExprCollector<'_> {
         let syntax_pointer = AstPointer::new(&type_specifier);
         let type_specifier = TypeSpecifier {
             path: as_name_opt(type_specifier.name_ref()),
-            generics: self.collect_generics(type_specifier.generic_arg_list()),
+            template_parameters: self
+                .collect_template_parameters(type_specifier.template_parameters()),
         };
         self.alloc_type_specifier(type_specifier, syntax_pointer)
     }
-    pub fn collect_generics(
+    pub fn collect_template_parameters(
         &mut self,
-        generics: Option<ast::GenericArgumentList>,
+        template_parameters: Option<ast::TemplateList>,
     ) -> Vec<ExpressionId> {
-        generics.map_or_else(Vec::new, |generics| {
-            generics
-                .generics()
+        template_parameters.map_or_else(Vec::new, |template_parameters| {
+            template_parameters
+                .parameters()
                 .map(|g| self.collect_expression(g))
                 .collect()
         })
@@ -207,7 +209,7 @@ impl ExprCollector<'_> {
         self.make_type_specifier(
             TypeSpecifier {
                 path: Name::missing(),
-                generics: vec![],
+                template_parameters: vec![],
             },
             Err(SyntheticSyntax),
         )
@@ -315,21 +317,22 @@ pub(crate) fn lower_variable(
         .ty()
         .map(|ty| collector.collect_type_specifier(ty));
 
-    let generics = if let Some(generics) = global_variable.value.generic_arg_list() {
-        generics
-            .generics()
-            .map(|expression| collector.collect_expression(expression))
-            .collect()
-    } else {
-        Vec::new()
-    };
+    let template_parameters =
+        if let Some(template_parameters) = global_variable.value.template_parameters() {
+            template_parameters
+                .parameters()
+                .map(|expression| collector.collect_expression(expression))
+                .collect()
+        } else {
+            Vec::new()
+        };
 
     let (store, source_map) = collector.store.finish();
     let specifier = GlobalVariableData {
         name,
         store: Arc::new(store),
         r#type,
-        generics,
+        template_parameters,
     };
     (specifier, source_map)
 }

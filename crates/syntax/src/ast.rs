@@ -10,7 +10,8 @@ use rowan::NodeOrToken;
 
 use self::operators::{AssignmentOperator, BinaryOperation, UnaryOperator};
 use crate::{
-    AstChildren, AstNode, AstToken, HasAttributes, HasGenerics, HasName, SyntaxToken, TokenText,
+    AstChildren, AstNode, AstToken, HasAttributes, HasName, HasTemplateParameters, SyntaxToken,
+    TokenText,
     ast::operators::{ArithmeticOperation, ComparisonOperation, LogicOperation},
     support,
 };
@@ -256,7 +257,7 @@ ast_node! {
     equal_token: Option<SyntaxToken Equal>;
     init: Option<Expression>;
 }
-impl HasGenerics for VariableDeclaration {}
+impl HasTemplateParameters for VariableDeclaration {}
 impl HasName for VariableDeclaration {}
 impl HasAttributes for VariableDeclaration {}
 
@@ -426,9 +427,9 @@ ast_node! {
 }
 
 ast_node! {
-    GenericArgumentList:
+    TemplateList:
     left_angle_token: Option<SyntaxToken TemplateStart>;
-    generics: AstChildren<Expression>;
+    parameters: AstChildren<Expression>;
     t_angle_token: Option<SyntaxToken TemplateEnd>;
 }
 
@@ -501,7 +502,7 @@ ast_node! {
     IdentExpression:
     name_ref: Option<NameReference>;
 }
-impl HasGenerics for IdentExpression {}
+impl HasTemplateParameters for IdentExpression {}
 
 ast_node! {
     ParenthesisExpression:
@@ -893,7 +894,7 @@ ast_node! {
     TypeSpecifier:
     name_ref: Option<NameReference>;
 }
-impl HasGenerics for TypeSpecifier {}
+impl HasTemplateParameters for TypeSpecifier {}
 
 impl InfixExpression {
     #[must_use]

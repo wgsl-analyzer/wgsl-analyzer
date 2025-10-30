@@ -431,7 +431,8 @@ impl<'database> InferenceContext<'database> {
         &mut self,
         var: &GlobalVariableData,
     ) {
-        let (address_space, access_mode) = self.infer_variable_template(&var.generics, &var.store);
+        let (address_space, access_mode) =
+            self.infer_variable_template(&var.template_parameters, &var.store);
 
         self.bind_return_ty(Some(self.make_ref(
             self.return_ty,
@@ -614,7 +615,7 @@ impl<'database> InferenceContext<'database> {
                 binding_id,
                 type_ref,
                 initializer,
-                generics,
+                template_parameters,
             } => {
                 let r#type = type_ref.map(|r#type| self.lower_ty(r#type, &resolver, &body));
                 let r#type = self.infer_initializer(
@@ -625,7 +626,7 @@ impl<'database> InferenceContext<'database> {
                 );
 
                 let (address_space, access_mode) =
-                    self.infer_variable_template(generics, &body.store);
+                    self.infer_variable_template(template_parameters, &body.store);
                 let ref_ty = self.make_ref(r#type, address_space, access_mode);
                 self.set_binding_ty(*binding_id, ref_ty);
             },
@@ -1253,7 +1254,7 @@ impl<'database> InferenceContext<'database> {
         let lowered = ctx.lower(
             TypeContainer::Expression(expression),
             &ident_expression.path,
-            &ident_expression.generics,
+            &ident_expression.template_parameters,
         );
         self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
 
@@ -1469,7 +1470,7 @@ impl<'database> InferenceContext<'database> {
         let lowered = ctx.lower(
             TypeContainer::Expression(expression),
             &callee.path,
-            &callee.generics,
+            &callee.template_parameters,
         );
         self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
 
@@ -1486,8 +1487,10 @@ impl<'database> InferenceContext<'database> {
                 self.validate_function_call(&details, &arguments, expression, expression)
             },
             Lowered::BuiltinFunction => {
-                let template_args =
-                    ctx.eval_template_args(TypeContainer::Expression(expression), &callee.generics);
+                let template_args = ctx.eval_template_args(
+                    TypeContainer::Expression(expression),
+                    &callee.template_parameters,
+                );
                 self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
                 self.call_builtin_function(expression, callee, template_args, &arguments)
             },
@@ -1946,9 +1949,9 @@ impl<'database> TyLoweringContext<'database> {
         &mut self,
         type_container: TypeContainer,
         path: &Name,
-        generics: &[ExpressionId],
+        template_parameters: &[ExpressionId],
     ) -> Lowered {
-        match self.try_lower(type_container, path, generics) {
+        match self.try_lower(type_container, path, template_parameters) {
             Ok(lowered) => lowered,
             Err(error) => {
                 self.diagnostics.push(error);
@@ -1962,14 +1965,14 @@ impl<'database> TyLoweringContext<'database> {
         &mut self,
         type_container: TypeContainer,
         path: &Name,
-        generics: &[ExpressionId],
+        template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
         let resolved_ty = self.resolver.resolve(path);
 
         match resolved_ty {
-            // User-defined types currently cannot have generics
+            // User-defined types currently cannot have template parameters
             Some(_) => {
-                self.expect_no_template(generics);
+                self.expect_no_template(template_parameters);
             },
             _ => {},
         }
@@ -2000,18 +2003,18 @@ impl<'database> TyLoweringContext<'database> {
                 Ok(Lowered::Override(id))
             },
             Some(ResolveKind::Local(local)) => Ok(Lowered::Local(local)),
-            None => self.lower_predeclared(type_container, path, generics),
+            None => self.lower_predeclared(type_container, path, template_parameters),
         }
     }
 
     fn expect_no_template(
         &mut self,
-        generics: &[ExpressionId],
+        template_parameters: &[ExpressionId],
     ) {
-        if generics.is_empty() {
+        if template_parameters.is_empty() {
             return;
         }
-        for template_expression in generics {
+        for template_expression in template_parameters {
             self.diagnostics.push(TypeLoweringError {
                 container: TypeContainer::Expression(*template_expression),
                 kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("nothing".to_string()),
@@ -2047,7 +2050,7 @@ impl<'database> TyLoweringContext<'database> {
         let lowered = self.try_lower(
             TypeContainer::TypeSpecifier(type_specifier_id),
             &type_specifier.path,
-            &type_specifier.generics,
+            &type_specifier.template_parameters,
         );
         match lowered {
             Ok(Lowered::Type(r#type)) => r#type,

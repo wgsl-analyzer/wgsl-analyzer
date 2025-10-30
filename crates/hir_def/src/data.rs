@@ -126,7 +126,7 @@ pub struct GlobalVariableData {
     pub name: Name,
     pub store: Arc<ExpressionStore>,
     pub r#type: Option<TypeSpecifierId>,
-    pub generics: Vec<ExpressionId>,
+    pub template_parameters: Vec<ExpressionId>,
 }
 
 impl GlobalVariableData {
