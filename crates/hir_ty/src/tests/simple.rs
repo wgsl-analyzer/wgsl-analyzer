@@ -37,8 +37,6 @@ fn const_array() {
             15..16 'a': array<f32, 1>
             34..42 'array(1)': array<[error]>
             40..41 '1': integer
-            InvalidType { source: Body, error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: WrongNumberOfTemplateArguments { expected: 1..=2, actual: 0 } } }
-            InvalidType { source: Body, error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: MissingTemplateArgument("a type") } }
             34..42 'array(1)': expected array<f32, 1> but got array<[error]>
         "#]],
     );
@@ -247,20 +245,16 @@ let b = vec4(vec3f(1f), 1f);
 }   
     "#,
         expect![[r#"
-            7..8 'a': vec3<[error]>
-            11..27 'vec3(1...f, 3f)': vec3<[error]>
+            7..8 'a': vec3<f32>
+            11..27 'vec3(1...f, 3f)': vec3<f32>
             16..18 '1f': f32
             20..22 '2f': f32
             24..26 '3f': f32
-            InvalidType { source: Body, error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: WrongNumberOfTemplateArguments { expected: 1..=1, actual: 0 } } }
-            InvalidType { source: Body, error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: MissingTemplateArgument("a type") } }
-            45..46 'b': vec4<[error]>
-            49..68 'vec4(v...), 1f)': vec4<[error]>
+            45..46 'b': vec4<f32>
+            49..68 'vec4(v...), 1f)': vec4<f32>
             54..63 'vec3f(1f)': vec3<f32>
             60..62 '1f': f32
             65..67 '1f': f32
-            InvalidType { source: Body, error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: WrongNumberOfTemplateArguments { expected: 1..=1, actual: 0 } } }
-            InvalidType { source: Body, error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: MissingTemplateArgument("a type") } }
         "#]],
     );
 }
