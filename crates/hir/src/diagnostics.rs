@@ -21,8 +21,7 @@ use syntax::{
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
 use crate::{Function, GlobalConstant, GlobalVariable, HasSource as _, Override, TypeAlias};
 
-#[derive(Clone, Debug, Deserialize)]
-#[derive(Default)]
+#[derive(Clone, Debug, Deserialize, Default)]
 pub enum NagaVersion {
     #[serde(rename = "0.14")]
     #[default]
@@ -34,7 +33,6 @@ pub enum NagaVersion {
     #[serde(rename = "main")]
     NagaMain,
 }
-
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
