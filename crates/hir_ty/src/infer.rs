@@ -1223,10 +1223,13 @@ impl<'database> InferenceContext<'database> {
                 },
             },
             BinaryOperation::Comparison(cmp) => match cmp {
-                ComparisonOperation::Equality { .. } => {
+                ComparisonOperation::Equality | ComparisonOperation::Inequality => {
                     Builtin::builtin_op_eq(self.database).intern(self.database)
                 },
-                ComparisonOperation::Ordering { .. } => {
+                ComparisonOperation::LessThan
+                | ComparisonOperation::LessThanEqual
+                | ComparisonOperation::GreaterThan
+                | ComparisonOperation::GreaterThanEqual => {
                     Builtin::builtin_op_cmp(self.database).intern(self.database)
                 },
             },

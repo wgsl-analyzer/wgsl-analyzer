@@ -93,40 +93,26 @@ impl ArithmeticOperation {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum ComparisonOperation {
-    Equality { negated: bool },
-    Ordering { ordering: Ordering, strict: bool },
+    Equality,
+    Inequality,
+    LessThan,
+    LessThanEqual,
+    GreaterThan,
+    GreaterThanEqual,
 }
 
 impl ComparisonOperation {
     #[must_use]
     pub const fn symbol(self) -> &'static str {
         match self {
-            Self::Equality { negated: true } => "==",
-            Self::Equality { negated: false } => "!=",
-            Self::Ordering {
-                ordering: Ordering::Less,
-                strict: false,
-            } => "<=",
-            Self::Ordering {
-                ordering: Ordering::Less,
-                strict: true,
-            } => "<",
-            Self::Ordering {
-                ordering: Ordering::Greater,
-                strict: false,
-            } => ">=",
-            Self::Ordering {
-                ordering: Ordering::Greater,
-                strict: true,
-            } => ">",
+            Self::Equality => "==",
+            Self::Inequality => "!=",
+            Self::LessThanEqual => "<=",
+            Self::LessThan => "<",
+            Self::GreaterThanEqual => ">=",
+            Self::GreaterThan => ">",
         }
     }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum Ordering {
-    Less,
-    Greater,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
