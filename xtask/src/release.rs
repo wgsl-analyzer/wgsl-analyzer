@@ -66,9 +66,7 @@ impl flags::Release {
 
         let tags = cmd!(shell, "git tag --list").read()?;
         let previous_tag = tags
-            .lines()
-            .filter(|line| is_release_tag(line))
-            .next_back()
+            .lines().rfind(|line| is_release_tag(line))
             .unwrap();
 
         let contents = changelog::get_changelog(shell, changelog_n, &commit, previous_tag, &today)?;
