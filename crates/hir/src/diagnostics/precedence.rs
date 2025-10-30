@@ -55,7 +55,9 @@ pub fn collect<Function: FnMut(PrecedenceDiagnostic)>(
 
         // &, | and ^ having (different) binary children
         if let BinaryOperation::Arithmetic(
-            ArithmeticOperation::BitAnd | ArithmeticOperation::BitXor | ArithmeticOperation::BitOr,
+            ArithmeticOperation::BitwiseAnd
+            | ArithmeticOperation::BitwiseXor
+            | ArithmeticOperation::BitwiseOr,
         ) = op
         {
             if let Some(lhs_op) = left_hand_side_operator

@@ -8,7 +8,7 @@ pub mod operators;
 use parser::{SyntaxKind, SyntaxNode};
 use rowan::NodeOrToken;
 
-use self::operators::{BinaryOperation, CompoundOperator, UnaryOperator};
+use self::operators::{AssignmentOperator, BinaryOperation, UnaryOperator};
 use crate::{
     AstChildren, AstNode, AstToken, HasAttributes, HasGenerics, HasName, SyntaxToken, TokenText,
     ast::operators::{ArithmeticOperation, ComparisonOperation, LogicOperation},
@@ -655,19 +655,19 @@ impl CompoundAssignmentStatement {
     }
 
     #[must_use]
-    pub fn operator(&self) -> Option<CompoundOperator> {
+    pub fn operator(&self) -> Option<AssignmentOperator> {
         let kind: CompoundAssignmentOperator = support::child_token(self.syntax())?;
         let operator = match kind {
-            CompoundAssignmentOperator::PlusEqual(_) => CompoundOperator::Add,
-            CompoundAssignmentOperator::MinusEqual(_) => CompoundOperator::Subtract,
-            CompoundAssignmentOperator::TimesEqual(_) => CompoundOperator::Multiply,
-            CompoundAssignmentOperator::DivisionEqual(_) => CompoundOperator::Divide,
-            CompoundAssignmentOperator::ModuloEqual(_) => CompoundOperator::Modulo,
-            CompoundAssignmentOperator::AndEqual(_) => CompoundOperator::BitAnd,
-            CompoundAssignmentOperator::OrEqual(_) => CompoundOperator::BitOr,
-            CompoundAssignmentOperator::XorEqual(_) => CompoundOperator::BitXor,
-            CompoundAssignmentOperator::ShiftRightEqual(_) => CompoundOperator::ShiftRight,
-            CompoundAssignmentOperator::ShiftLeftEqual(_) => CompoundOperator::ShiftLeft,
+            CompoundAssignmentOperator::PlusEqual(_) => AssignmentOperator::PlusEqual,
+            CompoundAssignmentOperator::MinusEqual(_) => AssignmentOperator::MinusEqual,
+            CompoundAssignmentOperator::TimesEqual(_) => AssignmentOperator::TimesEqual,
+            CompoundAssignmentOperator::DivisionEqual(_) => AssignmentOperator::DivisionEqual,
+            CompoundAssignmentOperator::ModuloEqual(_) => AssignmentOperator::ModuloEqual,
+            CompoundAssignmentOperator::AndEqual(_) => AssignmentOperator::AndEqual,
+            CompoundAssignmentOperator::OrEqual(_) => AssignmentOperator::OrEqual,
+            CompoundAssignmentOperator::XorEqual(_) => AssignmentOperator::XorEqual,
+            CompoundAssignmentOperator::ShiftRightEqual(_) => AssignmentOperator::ShiftRightAssign,
+            CompoundAssignmentOperator::ShiftLeftEqual(_) => AssignmentOperator::ShiftLeftAssign,
         };
         Some(operator)
     }
@@ -925,16 +925,16 @@ impl InfixExpression {
                 BinaryOperatorKind::GreaterThanEqual(_) => BinaryOperation::Comparison(ComparisonOperation::Ordering { ordering: operators::Ordering::Greater, strict: false }),
                 BinaryOperatorKind::LessThan(_) => BinaryOperation::Comparison(ComparisonOperation::Ordering { ordering: operators::Ordering::Less, strict: true }),
                 BinaryOperatorKind::LessThanEqual(_) => BinaryOperation::Comparison(ComparisonOperation::Ordering { ordering: operators::Ordering::Less, strict: false }),
-                BinaryOperatorKind::Minus(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Subtract),
-                BinaryOperatorKind::Plus(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Add),
-                BinaryOperatorKind::Star(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Multiply),
-                BinaryOperatorKind::ForwardSlash(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Divide),
-                BinaryOperatorKind::Modulo(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Modulo),
-                BinaryOperatorKind::Or(_) => BinaryOperation::Arithmetic(ArithmeticOperation::BitOr),
-                BinaryOperatorKind::And(_) => BinaryOperation::Arithmetic(ArithmeticOperation::BitAnd),
-                BinaryOperatorKind::Xor(_)=>BinaryOperation::Arithmetic(ArithmeticOperation::BitXor),
-                BinaryOperatorKind::OrOr(_) => BinaryOperation::Logical(LogicOperation::Or),
-                BinaryOperatorKind::AndAnd(_) => BinaryOperation::Logical(LogicOperation::And),
+                BinaryOperatorKind::Minus(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Subtraction),
+                BinaryOperatorKind::Plus(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Addition),
+                BinaryOperatorKind::Star(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Multiplication),
+                BinaryOperatorKind::ForwardSlash(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Division),
+                BinaryOperatorKind::Modulo(_) => BinaryOperation::Arithmetic(ArithmeticOperation::Remainder),
+                BinaryOperatorKind::Or(_) => BinaryOperation::Arithmetic(ArithmeticOperation::BitwiseOr),
+                BinaryOperatorKind::And(_) => BinaryOperation::Arithmetic(ArithmeticOperation::BitwiseAnd),
+                BinaryOperatorKind::Xor(_)=>BinaryOperation::Arithmetic(ArithmeticOperation::BitwiseXor),
+                BinaryOperatorKind::OrOr(_) => BinaryOperation::Logical(LogicOperation::ShortCircuitOr),
+                BinaryOperatorKind::AndAnd(_) => BinaryOperation::Logical(LogicOperation::ShortCircuitAnd),
                 BinaryOperatorKind::ShiftRight(_) => BinaryOperation::Arithmetic(ArithmeticOperation::ShiftRight),
                 BinaryOperatorKind::ShiftLeft(_) => BinaryOperation::Arithmetic(ArithmeticOperation::ShiftLeft),
             };
@@ -950,11 +950,11 @@ impl PrefixExpression {
     pub fn op_kind(&self) -> Option<UnaryOperator> {
         let kind: PrefixOperatorKind = support::child_token(self.syntax())?;
         let op = match kind {
-            PrefixOperatorKind::Minus(_) => UnaryOperator::Minus,
-            PrefixOperatorKind::Bang(_) => UnaryOperator::Not,
-            PrefixOperatorKind::Tilde(_) => UnaryOperator::BitNot,
-            PrefixOperatorKind::Star(_) => UnaryOperator::Dereference,
-            PrefixOperatorKind::And(_) => UnaryOperator::Reference,
+            PrefixOperatorKind::Minus(_) => UnaryOperator::Negation,
+            PrefixOperatorKind::Bang(_) => UnaryOperator::LogicalNegation,
+            PrefixOperatorKind::Tilde(_) => UnaryOperator::BitwiseComplement,
+            PrefixOperatorKind::Star(_) => UnaryOperator::Indirection,
+            PrefixOperatorKind::And(_) => UnaryOperator::AddressOf,
         };
         Some(op)
     }

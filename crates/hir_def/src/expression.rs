@@ -93,7 +93,7 @@ pub enum Statement {
     CompoundAssignment {
         left_side: ExpressionId,
         right_side: ExpressionId,
-        op: CompoundOperator,
+        op: AssignmentOperator,
     },
     PhonyAssignment {
         right_side: ExpressionId,

@@ -1,26 +1,26 @@
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum UnaryOperator {
     /// `-`
-    Minus,
+    Negation,
     /// `!`
-    Not,
+    LogicalNegation,
     /// `&`
-    Reference,
+    AddressOf,
     /// `*`
-    Dereference,
+    Indirection,
     /// `~`
-    BitNot,
+    BitwiseComplement,
 }
 
 impl UnaryOperator {
     #[must_use]
     pub const fn symbol(self) -> &'static str {
         match self {
-            Self::Minus => "-",
-            Self::Not => "!",
-            Self::Reference => "&",
-            Self::Dereference => "*",
-            Self::BitNot => "~",
+            Self::Negation => "-",
+            Self::LogicalNegation => "!",
+            Self::AddressOf => "&",
+            Self::Indirection => "*",
+            Self::BitwiseComplement => "~",
         }
     }
 }
@@ -45,48 +45,48 @@ impl BinaryOperation {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum LogicOperation {
-    And,
-    Or,
+    ShortCircuitAnd,
+    ShortCircuitOr,
 }
 
 impl LogicOperation {
     #[must_use]
     pub const fn symbol(self) -> &'static str {
         match self {
-            Self::And => "&&",
-            Self::Or => "||",
+            Self::ShortCircuitAnd => "&&",
+            Self::ShortCircuitOr => "||",
         }
     }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum ArithmeticOperation {
-    Add,
-    Multiply,
-    Subtract,
-    Divide,
+    Addition,
+    Multiplication,
+    Subtraction,
+    Division,
     ShiftLeft,
     ShiftRight,
-    BitXor,
-    BitOr,
-    BitAnd,
-    Modulo,
+    BitwiseXor,
+    BitwiseOr,
+    BitwiseAnd,
+    Remainder,
 }
 
 impl ArithmeticOperation {
     #[must_use]
     pub const fn symbol(self) -> &'static str {
         match self {
-            Self::Add => "+",
-            Self::Multiply => "*",
-            Self::Subtract => "-",
-            Self::Divide => "/",
+            Self::Addition => "+",
+            Self::Multiplication => "*",
+            Self::Subtraction => "-",
+            Self::Division => "/",
             Self::ShiftLeft => "<<",
             Self::ShiftRight => ">>",
-            Self::BitXor => "^",
-            Self::BitOr => "|",
-            Self::BitAnd => "&",
-            Self::Modulo => "%",
+            Self::BitwiseXor => "^",
+            Self::BitwiseOr => "|",
+            Self::BitwiseAnd => "&",
+            Self::Remainder => "%",
         }
     }
 }
@@ -130,32 +130,34 @@ pub enum Ordering {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub enum CompoundOperator {
-    Add,
-    Multiply,
-    Subtract,
-    Divide,
-    ShiftLeft,
-    ShiftRight,
-    Modulo,
-    BitAnd,
-    BitOr,
-    BitXor,
+pub enum AssignmentOperator {
+    PlusEqual,
+    TimesEqual,
+    MinusEqual,
+    DivisionEqual,
+    ShiftLeftAssign,
+    ShiftRightAssign,
+    ModuloEqual,
+    AndEqual,
+    OrEqual,
+    XorEqual,
 }
 
-impl From<CompoundOperator> for BinaryOperation {
-    fn from(op: CompoundOperator) -> Self {
+impl From<AssignmentOperator> for BinaryOperation {
+    fn from(op: AssignmentOperator) -> Self {
         match op {
-            CompoundOperator::Add => Self::Arithmetic(ArithmeticOperation::Add),
-            CompoundOperator::Multiply => Self::Arithmetic(ArithmeticOperation::Multiply),
-            CompoundOperator::Subtract => Self::Arithmetic(ArithmeticOperation::Subtract),
-            CompoundOperator::Divide => Self::Arithmetic(ArithmeticOperation::Divide),
-            CompoundOperator::ShiftLeft => Self::Arithmetic(ArithmeticOperation::ShiftLeft),
-            CompoundOperator::ShiftRight => Self::Arithmetic(ArithmeticOperation::ShiftRight),
-            CompoundOperator::Modulo => Self::Arithmetic(ArithmeticOperation::Modulo),
-            CompoundOperator::BitAnd => Self::Arithmetic(ArithmeticOperation::BitAnd),
-            CompoundOperator::BitOr => Self::Arithmetic(ArithmeticOperation::BitOr),
-            CompoundOperator::BitXor => Self::Arithmetic(ArithmeticOperation::BitXor),
+            AssignmentOperator::PlusEqual => Self::Arithmetic(ArithmeticOperation::Addition),
+            AssignmentOperator::TimesEqual => Self::Arithmetic(ArithmeticOperation::Multiplication),
+            AssignmentOperator::MinusEqual => Self::Arithmetic(ArithmeticOperation::Subtraction),
+            AssignmentOperator::DivisionEqual => Self::Arithmetic(ArithmeticOperation::Division),
+            AssignmentOperator::ShiftLeftAssign => Self::Arithmetic(ArithmeticOperation::ShiftLeft),
+            AssignmentOperator::ShiftRightAssign => {
+                Self::Arithmetic(ArithmeticOperation::ShiftRight)
+            },
+            AssignmentOperator::ModuloEqual => Self::Arithmetic(ArithmeticOperation::Remainder),
+            AssignmentOperator::AndEqual => Self::Arithmetic(ArithmeticOperation::BitwiseAnd),
+            AssignmentOperator::OrEqual => Self::Arithmetic(ArithmeticOperation::BitwiseOr),
+            AssignmentOperator::XorEqual => Self::Arithmetic(ArithmeticOperation::BitwiseXor),
         }
     }
 }

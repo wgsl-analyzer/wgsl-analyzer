@@ -110,11 +110,13 @@ impl<'database> TyLoweringContext<'database> {
         operator: UnaryOperator,
     ) -> Option<Instance> {
         let operator: wgsl_types::syntax::UnaryOperator = match operator {
-            UnaryOperator::Minus => wgsl_types::syntax::UnaryOperator::Negation,
-            UnaryOperator::Not => wgsl_types::syntax::UnaryOperator::LogicalNegation,
-            UnaryOperator::Reference => wgsl_types::syntax::UnaryOperator::AddressOf,
-            UnaryOperator::Dereference => wgsl_types::syntax::UnaryOperator::Indirection,
-            UnaryOperator::BitNot => wgsl_types::syntax::UnaryOperator::BitwiseComplement,
+            UnaryOperator::Negation => wgsl_types::syntax::UnaryOperator::Negation,
+            UnaryOperator::LogicalNegation => wgsl_types::syntax::UnaryOperator::LogicalNegation,
+            UnaryOperator::AddressOf => wgsl_types::syntax::UnaryOperator::AddressOf,
+            UnaryOperator::Indirection => wgsl_types::syntax::UnaryOperator::Indirection,
+            UnaryOperator::BitwiseComplement => {
+                wgsl_types::syntax::UnaryOperator::BitwiseComplement
+            },
         };
 
         // Copied from wesl-rs

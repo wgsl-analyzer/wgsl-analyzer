@@ -21,7 +21,7 @@ fn smoke_test() {
     assert_eq!(
         addition.op_kind(),
         Some(ast::operators::BinaryOperation::Arithmetic(
-            ast::operators::ArithmeticOperation::Add
+            ast::operators::ArithmeticOperation::Addition
         ))
     );
 }

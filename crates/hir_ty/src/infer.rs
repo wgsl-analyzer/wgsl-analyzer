@@ -1145,16 +1145,16 @@ impl<'database> InferenceContext<'database> {
         }
 
         let builtin = match op {
-            UnaryOperator::Minus => {
+            UnaryOperator::Negation => {
                 Builtin::builtin_op_unary_minus(self.database).intern(self.database)
             },
-            UnaryOperator::Not => {
+            UnaryOperator::LogicalNegation => {
                 Builtin::builtin_op_unary_not(self.database).intern(self.database)
             },
-            UnaryOperator::BitNot => {
+            UnaryOperator::BitwiseComplement => {
                 Builtin::builtin_op_unary_bitnot(self.database).intern(self.database)
             },
-            UnaryOperator::Reference => {
+            UnaryOperator::AddressOf => {
                 if let TyKind::Reference(reference) = expression_ty.kind(self.database) {
                     return self.ref_to_pointer(&reference);
                 }
@@ -1164,7 +1164,7 @@ impl<'database> InferenceContext<'database> {
                 });
                 return self.error_ty();
             },
-            UnaryOperator::Dereference => {
+            UnaryOperator::Indirection => {
                 let arg_ty = expression_ty.unref(self.database);
                 if let TyKind::Pointer(pointer) = arg_ty.kind(self.database) {
                     return self.ptr_to_ref(&pointer);
@@ -1202,20 +1202,20 @@ impl<'database> InferenceContext<'database> {
                 Builtin::builtin_op_binary_bool(self.database).intern(self.database)
             },
             BinaryOperation::Arithmetic(op) => match op {
-                ArithmeticOperation::BitOr
-                | ArithmeticOperation::BitAnd
-                | ArithmeticOperation::BitXor => {
+                ArithmeticOperation::BitwiseOr
+                | ArithmeticOperation::BitwiseAnd
+                | ArithmeticOperation::BitwiseXor => {
                     Builtin::builtin_op_binary_bitop(self.database).intern(self.database)
                 },
-                ArithmeticOperation::Multiply => {
+                ArithmeticOperation::Multiplication => {
                     Builtin::builtin_op_binary_mul(self.database).intern(self.database)
                 },
-                ArithmeticOperation::Divide => {
+                ArithmeticOperation::Division => {
                     Builtin::builtin_op_binary_div(self.database).intern(self.database)
                 },
-                ArithmeticOperation::Add
-                | ArithmeticOperation::Subtract
-                | ArithmeticOperation::Modulo => {
+                ArithmeticOperation::Addition
+                | ArithmeticOperation::Subtraction
+                | ArithmeticOperation::Remainder => {
                     Builtin::builtin_op_binary_number(self.database).intern(self.database)
                 },
                 ArithmeticOperation::ShiftLeft | ArithmeticOperation::ShiftRight => {
