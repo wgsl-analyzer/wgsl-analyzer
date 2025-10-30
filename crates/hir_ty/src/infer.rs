@@ -452,7 +452,6 @@ impl<'database> InferenceContext<'database> {
 
         let default_address_space = match store.store_source {
             ExpressionStoreSource::Body => AddressSpace::Function,
-            // TODO: Is this the correct default
             ExpressionStoreSource::Signature => AddressSpace::Handle,
         };
 
