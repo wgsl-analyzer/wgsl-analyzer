@@ -92,7 +92,7 @@ fn field_types(
         let r#type = ty_ctx.lower_ty(field.r#type);
         diagnostics.extend(ty_ctx.diagnostics.drain(..).map(|error| {
             InferenceDiagnostic::InvalidType {
-                source: crate::infer::InferenceTypeDiagnosticSource::Signature,
+                source: data.store.store_source,
                 error,
             }
         }));
@@ -119,7 +119,7 @@ fn type_alias_type(
         .diagnostics
         .into_iter()
         .map(|error| InferenceDiagnostic::InvalidType {
-            source: crate::infer::InferenceTypeDiagnosticSource::Signature,
+            source: data.store.store_source,
             error,
         })
         .collect();

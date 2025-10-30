@@ -22,10 +22,17 @@ pub struct ExpressionStore {
     /// For example, a `const foo: vec3<f32> = vec3f(1,2,3);` will have two stores.
     /// One for the `const foo: vec3<f32>` part and another one for `vec3f(1,2,3);`.
     /// Separating them gives us more fine grained incrementality.
-    pub is_body_store: bool,
+    pub store_source: ExpressionStoreSource,
 
     // TODO: Get rid of this (move the checks to the syntax tree)
     pub parenthesis_expressions: FxHashSet<ExpressionId>,
+}
+
+#[derive(Default, Debug, PartialEq, Eq, Copy, Clone)]
+pub enum ExpressionStoreSource {
+    #[default]
+    Body,
+    Signature,
 }
 
 impl Index<ExpressionId> for ExpressionStore {
@@ -86,7 +93,7 @@ impl PartialEq for ExpressionSourceMap {
 pub struct ExpressionStoreBuilder {
     exprs: Arena<Expression>,
     types: Arena<TypeSpecifier>,
-    is_body_store: bool,
+    store_source: ExpressionStoreSource,
     parenthesis_expressions: FxHashSet<ExpressionId>,
 
     expression_map: FxHashMap<AstPointer<ast::Expression>, ExpressionId>,
@@ -102,7 +109,7 @@ impl ExpressionStoreBuilder {
         let Self {
             mut exprs,
             mut types,
-            is_body_store,
+            store_source,
             mut parenthesis_expressions,
             mut expression_map,
             mut expression_map_back,
@@ -121,7 +128,7 @@ impl ExpressionStoreBuilder {
                 exprs,
                 types,
                 parenthesis_expressions,
-                is_body_store,
+                store_source,
             },
             ExpressionSourceMap {
                 expression_map,

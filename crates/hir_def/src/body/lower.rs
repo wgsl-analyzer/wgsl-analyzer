@@ -8,7 +8,7 @@ use crate::{
     expression::{
         Expression, ExpressionId, Statement, StatementId, SwitchCaseSelector, parse_literal,
     },
-    expression_store::lower::ExprCollector,
+    expression_store::{ExpressionStoreSource, lower::ExprCollector},
     hir_file_id::relative_file,
     module_data::Name,
 };
@@ -60,7 +60,7 @@ impl Collector<'_> {
         file_id: HirFileId,
     ) -> Collector<'a> {
         Collector {
-            expressions: ExprCollector::new(database, true),
+            expressions: ExprCollector::new(database, ExpressionStoreSource::Body),
             database,
             body: Body::default(),
             source_map: BodySourceMap::default(),

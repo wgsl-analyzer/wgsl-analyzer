@@ -3,8 +3,11 @@ pub mod precedence;
 
 use base_db::{FileRange, TextRange};
 use hir_def::{
-    HirFileId, InFile, body::BodySourceMap, expression::BinaryOperation,
-    expression_store::ExpressionSourceMap, module_data::Name,
+    HirFileId, InFile,
+    body::BodySourceMap,
+    expression::BinaryOperation,
+    expression_store::{ExpressionSourceMap, ExpressionStoreSource},
+    module_data::Name,
 };
 use hir_ty::{
     builtins::BuiltinId,
@@ -346,8 +349,8 @@ pub(crate) fn any_diag_from_infer_diagnostic(
             error: TypeLoweringError { container, kind },
         } => {
             let source_map = match source {
-                hir_ty::infer::InferenceTypeDiagnosticSource::Body => source_map,
-                hir_ty::infer::InferenceTypeDiagnosticSource::Signature => signature_map,
+                ExpressionStoreSource::Body => source_map,
+                ExpressionStoreSource::Signature => signature_map,
             };
             match container {
                 hir_ty::infer::TypeContainer::Expression(expression) => {

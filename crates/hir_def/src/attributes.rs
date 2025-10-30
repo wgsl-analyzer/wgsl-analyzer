@@ -13,7 +13,9 @@ use crate::{
     data::FieldId,
     database::{DefDatabase, FunctionId, GlobalVariableId, Interned, Lookup as _, StructId},
     expression::ExpressionId,
-    expression_store::{ExpressionSourceMap, ExpressionStore, lower::ExprCollector},
+    expression_store::{
+        ExpressionSourceMap, ExpressionStore, ExpressionStoreSource, lower::ExprCollector,
+    },
     module_data::Name,
 };
 
@@ -48,7 +50,7 @@ impl AttributeList {
         database: &dyn DefDatabase,
         source: &dyn HasAttributes,
     ) -> (Self, ExpressionSourceMap) {
-        let mut collector = ExprCollector::new(database, false);
+        let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
         let attributes = source
             .attributes()
             .map(|attribute| Attribute {

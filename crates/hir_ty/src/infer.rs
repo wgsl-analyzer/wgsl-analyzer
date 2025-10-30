@@ -22,7 +22,7 @@ use hir_def::{
         ArithmeticOperation, BinaryOperation, ComparisonOperation, Expression, ExpressionId,
         Statement, StatementId, SwitchCaseSelector, UnaryOperator,
     },
-    expression_store::ExpressionStore,
+    expression_store::{ExpressionStore, ExpressionStoreSource},
     module_data::Name,
     resolver::{ResolveKind, Resolver},
     type_ref::{self, VecDimensionality},
@@ -188,7 +188,7 @@ pub enum InferenceDiagnostic {
         actual: Type,
     },
     InvalidType {
-        source: InferenceTypeDiagnosticSource,
+        source: ExpressionStoreSource,
         error: TypeLoweringError,
     },
     CyclicType {
@@ -208,14 +208,6 @@ pub enum InferenceDiagnostic {
         actual: LoweredKind,
         name: Name,
     },
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum InferenceTypeDiagnosticSource {
-    /// Diagnostics that come from types in the body.
-    Body,
-    /// Diagnostics that come from types in fn parameters/return type, or static & const types.
-    Signature,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
@@ -410,14 +402,9 @@ impl<'database> InferenceContext<'database> {
         diagnostics: &mut Vec<TypeLoweringError>,
         store: &ExpressionStore,
     ) {
-        let source = if store.is_body_store {
-            InferenceTypeDiagnosticSource::Body
-        } else {
-            InferenceTypeDiagnosticSource::Signature
-        };
         for diagnostic in diagnostics.drain(..) {
             self.push_diagnostic(InferenceDiagnostic::InvalidType {
-                source,
+                source: store.store_source,
                 error: diagnostic,
             });
         }
@@ -463,11 +450,10 @@ impl<'database> InferenceContext<'database> {
         let template_args: Vec<_> = template.iter().map(|arg| ctx.eval_tplt_arg(*arg)).collect();
         self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
 
-        let default_address_space = if store.is_body_store {
-            AddressSpace::Function
-        } else {
+        let default_address_space = match store.store_source {
+            ExpressionStoreSource::Body => AddressSpace::Function,
             // TODO: Is this the correct default
-            AddressSpace::Handle
+            ExpressionStoreSource::Signature => AddressSpace::Handle,
         };
 
         let address_space = match template_args.get(0) {
@@ -1725,14 +1711,10 @@ impl<'database> InferenceContext<'database> {
     ) -> TyLoweringResult {
         let mut ctx = TyLoweringContext::new(self.database, &resolver, store);
         let r#type = ctx.lower_ty(type_ref);
-        let source = if store.is_body_store {
-            InferenceTypeDiagnosticSource::Body
-        } else {
-            InferenceTypeDiagnosticSource::Signature
-        };
+
         TyLoweringResult {
             r#type,
-            source,
+            source: store.store_source,
             diagnostics: ctx.diagnostics,
         }
     }
@@ -1740,7 +1722,7 @@ impl<'database> InferenceContext<'database> {
 
 struct TyLoweringResult {
     r#type: Type,
-    source: InferenceTypeDiagnosticSource,
+    source: ExpressionStoreSource,
     diagnostics: Vec<TypeLoweringError>,
 }
 

@@ -10,7 +10,9 @@ use crate::{
     },
     database::DefDatabase,
     expression::{Expression, ExpressionId, parse_literal},
-    expression_store::{ExpressionSourceMap, ExpressionStoreBuilder, SyntheticSyntax},
+    expression_store::{
+        ExpressionSourceMap, ExpressionStoreBuilder, ExpressionStoreSource, SyntheticSyntax,
+    },
     module_data::Name,
     type_specifier::{IdentExpression, TypeSpecifier, TypeSpecifierId},
 };
@@ -23,10 +25,10 @@ pub struct ExprCollector<'database> {
 impl ExprCollector<'_> {
     pub fn new<'a>(
         database: &'a dyn DefDatabase,
-        is_body_store: bool,
+        store_source: ExpressionStoreSource,
     ) -> ExprCollector<'a> {
         let mut store = ExpressionStoreBuilder::default();
-        store.is_body_store = is_body_store;
+        store.store_source = store_source;
         ExprCollector { database, store }
     }
 
@@ -238,7 +240,7 @@ pub(crate) fn lower_function(
 ) -> (FunctionData, ExpressionSourceMap) {
     let name = as_name_opt(function.value.name());
 
-    let mut collector = ExprCollector::new(database, false);
+    let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
     let parameters = function.value.parameter_list().map_or_else(
         || Arena::new(),
         |parameters| collector.collect_function_param_list(&parameters),
@@ -265,7 +267,7 @@ pub(crate) fn lower_struct(
 ) -> (StructData, ExpressionSourceMap) {
     let name = as_name_opt(struct_declaration.value.name());
 
-    let mut collector = ExprCollector::new(database, false);
+    let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
     let mut fields = Arena::new();
     if let Some(body) = struct_declaration.value.body() {
         fields.alloc_many(body.fields().map(|field| FieldData {
@@ -289,7 +291,7 @@ pub(crate) fn lower_type_alias(
 ) -> (TypeAliasData, ExpressionSourceMap) {
     let name = as_name_opt(type_alias.value.name());
 
-    let mut collector = ExprCollector::new(database, false);
+    let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
     let r#type = collector.collect_type_specifier_opt(type_alias.value.type_declaration());
 
     let (store, source_map) = collector.store.finish();
@@ -307,7 +309,7 @@ pub(crate) fn lower_variable(
 ) -> (GlobalVariableData, ExpressionSourceMap) {
     let name = as_name_opt(global_variable.value.name());
 
-    let mut collector = ExprCollector::new(database, false);
+    let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
     let r#type = global_variable
         .value
         .ty()
@@ -338,7 +340,7 @@ pub(crate) fn lower_constant(
 ) -> (GlobalConstantData, ExpressionSourceMap) {
     let name = as_name_opt(global_constant.value.name());
 
-    let mut collector = ExprCollector::new(database, false);
+    let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
     let r#type = global_constant
         .value
         .ty()
@@ -358,7 +360,7 @@ pub(crate) fn lower_override(
 ) -> (OverrideData, ExpressionSourceMap) {
     let name = as_name_opt(global_override.value.name());
 
-    let mut collector = ExprCollector::new(database, false);
+    let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
     let r#type = global_override
         .value
         .ty()
