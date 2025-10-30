@@ -63,7 +63,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@1.90.0
+        uses: dtolnay/rust-toolchain@1.91.0
         with:
           components: clippy
 
@@ -177,14 +177,13 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v20
         with:
           config: .markdownlint.jsonc
-          globs: '**/*.md'
+          globs: "**/*.md"
 
   toml:
     name: Check TOML formatting
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-
       - name: Checkout
         uses: actions/checkout@v5
       - name: Check formatting with with Taplo
