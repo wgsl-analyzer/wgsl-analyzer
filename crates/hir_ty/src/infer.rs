@@ -419,10 +419,9 @@ impl<'database> InferenceContext<'database> {
         &mut self,
         var: &GlobalVariableData,
     ) -> Option<Type> {
-        let r#type = var.r#type.map(|r#type| {
-            self.lower_ty(r#type, &self.resolver, &var.store)
-                .apply(self)
-        });
+        let r#type = var
+            .r#type
+            .map(|r#type| self.lower_ty(r#type, &self.resolver.clone(), &var.store));
 
         self.bind_return_ty(r#type);
         r#type
@@ -492,10 +491,9 @@ impl<'database> InferenceContext<'database> {
         &mut self,
         constant: &GlobalConstantData,
     ) -> Option<Type> {
-        let r#type = constant.r#type.map(|r#type| {
-            self.lower_ty(r#type, &self.resolver, &constant.store)
-                .apply(self)
-        });
+        let r#type = constant
+            .r#type
+            .map(|r#type| self.lower_ty(r#type, &self.resolver.clone(), &constant.store));
 
         self.bind_return_ty(r#type);
         r#type
@@ -505,10 +503,9 @@ impl<'database> InferenceContext<'database> {
         &mut self,
         override_data: &OverrideData,
     ) -> Option<Type> {
-        let r#type = override_data.r#type.map(|r#type| {
-            self.lower_ty(r#type, &self.resolver, &override_data.store)
-                .apply(self)
-        });
+        let r#type = override_data
+            .r#type
+            .map(|r#type| self.lower_ty(r#type, &self.resolver.clone(), &override_data.store));
 
         self.bind_return_ty(r#type);
         r#type
@@ -520,15 +517,16 @@ impl<'database> InferenceContext<'database> {
     ) -> Option<Type> {
         let body = self.body.clone();
         for ((_, parameter), &binding_id) in function_data.parameters.iter().zip(&body.parameters) {
-            let param_ty = self
-                .lower_ty(parameter.r#type, &self.resolver, &function_data.store)
-                .apply(self);
+            let param_ty = self.lower_ty(
+                parameter.r#type,
+                &self.resolver.clone(),
+                &function_data.store,
+            );
             self.set_binding_ty(binding_id, param_ty);
         }
-        let r#type = function_data.return_type.map(|type_ref| {
-            self.lower_ty(type_ref, &self.resolver, &function_data.store)
-                .apply(self)
-        });
+        let r#type = function_data
+            .return_type
+            .map(|type_ref| self.lower_ty(type_ref, &self.resolver.clone(), &function_data.store));
         self.return_ty = r#type.unwrap_or_else(|| self.error_ty());
         r#type
     }
@@ -580,21 +578,22 @@ impl<'database> InferenceContext<'database> {
     fn resolver_for_statement(
         &self,
         statement: StatementId,
-    ) -> Option<Resolver> {
+    ) -> Resolver {
         let DefinitionWithBodyId::Function(function) = self.owner else {
-            return None;
+            return self.resolver.clone();
         };
 
         let expression_scopes = self
             .database
             .expression_scopes(DefinitionWithBodyId::Function(function));
 
-        let scope_id = expression_scopes.scope_for_statement(statement)?;
-        Some(
+        if let Some(scope_id) = expression_scopes.scope_for_statement(statement) {
             self.resolver
                 .clone()
-                .push_expression_scope(function, expression_scopes, scope_id),
-        )
+                .push_expression_scope(function, expression_scopes, scope_id)
+        } else {
+            self.resolver.clone()
+        }
     }
 
     #[expect(clippy::too_many_lines, reason = "TODO")]
@@ -617,10 +616,7 @@ impl<'database> InferenceContext<'database> {
                 initializer,
                 generics,
             } => {
-                let r#type = type_ref.map(|r#type| {
-                    self.lower_ty(r#type, resolver.as_ref().unwrap_or(&self.resolver), &body)
-                        .apply(self)
-                });
+                let r#type = type_ref.map(|r#type| self.lower_ty(r#type, &resolver, &body));
                 let r#type = self.infer_initializer(
                     &body,
                     *initializer,
@@ -639,10 +635,7 @@ impl<'database> InferenceContext<'database> {
                 initializer,
                 ..
             } => {
-                let r#type = type_ref.map(|r#type| {
-                    self.lower_ty(r#type, resolver.as_ref().unwrap_or(&self.resolver), &body)
-                        .apply(self)
-                });
+                let r#type = type_ref.map(|r#type| self.lower_ty(r#type, &resolver, &body));
                 let r#type =
                     self.infer_initializer(&body, *initializer, r#type, AbstractHandling::Abstract);
                 self.set_binding_ty(*binding_id, r#type);
@@ -653,10 +646,7 @@ impl<'database> InferenceContext<'database> {
                 initializer,
                 ..
             } => {
-                let r#type = type_ref.map(|r#type| {
-                    self.lower_ty(r#type, resolver.as_ref().unwrap_or(&self.resolver), &body)
-                        .apply(self)
-                });
+                let r#type = type_ref.map(|r#type| self.lower_ty(r#type, &resolver, &body));
                 let r#type = self.infer_initializer(
                     &body,
                     *initializer,
@@ -1469,7 +1459,6 @@ impl<'database> InferenceContext<'database> {
         arguments: Vec<Type>,
         store: &ExpressionStore,
     ) -> Type {
-        // TODO: It'd be nice if we got a resolver without cloning
         let resolver = self
             .resolver_for_expression(expression)
             .unwrap_or_else(|| self.resolver.clone());
@@ -1704,40 +1693,15 @@ impl<'database> InferenceContext<'database> {
     }
 
     fn lower_ty(
-        &self,
+        &mut self,
         type_ref: TypeSpecifierId,
         resolver: &Resolver,
         store: &ExpressionStore,
-    ) -> TyLoweringResult {
+    ) -> Type {
         let mut ctx = TyLoweringContext::new(self.database, &resolver, store);
         let r#type = ctx.lower_ty(type_ref);
-
-        TyLoweringResult {
-            r#type,
-            source: store.store_source,
-            diagnostics: ctx.diagnostics,
-        }
-    }
-}
-
-struct TyLoweringResult {
-    r#type: Type,
-    source: ExpressionStoreSource,
-    diagnostics: Vec<TypeLoweringError>,
-}
-
-impl TyLoweringResult {
-    fn apply<'database>(
-        self,
-        context: &mut InferenceContext<'database>,
-    ) -> Type {
-        for error in self.diagnostics {
-            context.push_diagnostic(InferenceDiagnostic::InvalidType {
-                source: self.source,
-                error,
-            });
-        }
-        self.r#type
+        self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
+        r#type
     }
 }
 
