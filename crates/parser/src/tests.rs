@@ -275,7 +275,7 @@ fn cannot_parse_unmatched_block_comment() {
                   Error@9..167 "/* This is a block co ..."
                   Blankspace@167..168 " "
 
-            error at 9..167: expected Fn, Struct, Var, Let, Constant, Alias, or Override, but found Error"#]],
+            error at 9..167: expected Fn, Struct, Variable, Let, Constant, Alias, or Override, but found Error"#]],
     );
 }
 
@@ -1462,7 +1462,7 @@ fn parse_var_without_initializer() {
         "var x: u32;",
         expect![[r#"
             VariableStatement@0..10
-              Var@0..3 "var"
+              Variable@0..3 "var"
               Blankspace@3..4 " "
               Binding@4..5
                 Name@4..5
@@ -1480,7 +1480,7 @@ fn parse_var_with_initializer() {
         "var<function> x: u32;",
         expect![[r#"
             VariableStatement@0..20
-              Var@0..3 "var"
+              Variable@0..3 "var"
               VariableQualifier@3..14
                 LessThan@3..4 "<"
                 FunctionClass@4..12 "function"
@@ -2179,7 +2179,7 @@ fn test()
                   Blankspace@29..30 "\n"
 
             error at 27..28: expected Arrow or BraceLeft, but found BraceRight
-            error at 28..29: expected Fn, Struct, Var, Let, Constant, Alias, or Override, but found Semicolon"#]],
+            error at 28..29: expected Fn, Struct, Variable, Let, Constant, Alias, or Override, but found Semicolon"#]],
     );
 }
 
@@ -2190,7 +2190,7 @@ fn global_variable_decl_init() {
         expect![[r#"
             SourceFile@0..14
               GlobalVariableDeclaration@0..14
-                Var@0..3 "var"
+                Variable@0..3 "var"
                 Blankspace@3..4 " "
                 Binding@4..10
                   Name@4..10

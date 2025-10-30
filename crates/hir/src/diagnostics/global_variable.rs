@@ -12,11 +12,11 @@ pub enum GlobalVariableDiagnostic {
 
 pub fn collect<Function: FnMut(GlobalVariableDiagnostic)>(
     database: &dyn HirDatabase,
-    var: GlobalVariableId,
+    variable: GlobalVariableId,
     mut diagnostic_builder: Function,
 ) {
-    let data = database.global_var_data(var);
-    let infer = database.infer(DefinitionWithBodyId::GlobalVariable(var));
+    let data = database.global_var_data(variable);
+    let infer = database.infer(DefinitionWithBodyId::GlobalVariable(variable));
 
     let ty_kind = infer.return_type.map(|r#type| r#type.kind(database));
 
