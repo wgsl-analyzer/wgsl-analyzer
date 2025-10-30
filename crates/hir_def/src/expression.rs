@@ -157,7 +157,7 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
     match literal {
         ast::LiteralKind::IntLiteral(literal) => {
             let (text, suffix) = split_number_suffix(literal.text());
-            let value = match text.strip_prefix("0x") {
+            let value = match text.strip_prefix("0x").or_else(|| text.strip_prefix("0X")) {
                 Some(hex) => u64::from_str_radix(hex, 16),
                 None => text.parse::<u64>(),
             }
@@ -173,7 +173,7 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
             use std::str::FromStr as _;
             // Float suffixes are not accepted by `f32::from_str`. Ignore them
             let (text, suffix) = split_number_suffix(literal.text());
-            let value = match text.strip_prefix("0x") {
+            let value = match text.strip_prefix("0x").or_else(|| text.strip_prefix("0X")) {
                 Some(_hex) => Ok(0f64), // TODO: Hex floats need to be handled
                 None => f64::from_str(text),
             }
