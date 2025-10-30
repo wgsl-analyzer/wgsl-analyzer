@@ -12,7 +12,7 @@ use hir_ty::{
     ty::Type,
     validate::AddressSpaceError,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use syntax::{
     AstNode as _, ast,
     pointer::{AstPointer, SyntaxNodePointer},
@@ -21,7 +21,7 @@ use syntax::{
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
 use crate::{Function, GlobalConstant, GlobalVariable, HasSource as _, Override, TypeAlias};
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum NagaVersion {
     #[serde(rename = "0.14")]
     Naga14,
