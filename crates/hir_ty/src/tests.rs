@@ -1,5 +1,4 @@
 mod simple;
-
 use base_db::SourceDatabase;
 use expect_test::Expect;
 use hir_def::{
@@ -9,7 +8,7 @@ use hir_def::{
     expression_store::SyntheticSyntax,
     module_data::ModuleItem,
 };
-use stdx::format_to;
+use std::fmt::Write as _;
 use syntax::{AstNode, SyntaxNode};
 use triomphe::Arc;
 use wgsl_types::ty::Ty;
@@ -63,7 +62,7 @@ fn infer(ra_fixture: &str) -> String {
                 node.text_range(),
                 node.text().to_string().replace('\n', " "),
             );
-            format_to!(
+            write!(
                 buf,
                 "{:?} '{}': {}\n",
                 range,
@@ -89,7 +88,7 @@ fn infer(ra_fixture: &str) -> String {
                         node.text_range(),
                         node.text().to_string().replace('\n', " "),
                     );
-                    format_to!(
+                    write!(
                         buf,
                         "{:?} '{}': expected {} but got {}\n",
                         range,
@@ -107,7 +106,7 @@ fn infer(ra_fixture: &str) -> String {
                     );
                 },
                 _ => {
-                    format_to!(buf, "{:?}\n", diagnostic);
+                    write!(buf, "{:?}\n", diagnostic);
                 },
             }
         }

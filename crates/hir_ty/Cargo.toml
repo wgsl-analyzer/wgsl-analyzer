@@ -25,7 +25,6 @@ smallvec = { version = "1.15.1", features = [
   "const_generics",
 ] }
 triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
-stdx.workspace = true
 syntax.workspace = true
 vfs.workspace = true
 wgsl-types.workspace = true
