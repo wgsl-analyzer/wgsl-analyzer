@@ -116,8 +116,8 @@ impl Resolver {
         })
     }
 
-    /// calls function for every local, function, and global declaration, but not structs
-    pub fn process_value_names<Function: FnMut(Name, ScopeDef)>(
+    /// Calls the passed closure `function` on all names in scope.
+    pub fn process_all_names<Function: FnMut(Name, ScopeDef)>(
         &self,
         mut function: Function,
     ) {
@@ -128,23 +128,30 @@ impl Resolver {
                     .items()
                     .iter()
                     .for_each(|item| match item {
-                        ModuleItem::Function(func) => function(
-                            scope.module_info.data[func.index].name.clone(),
+                        ModuleItem::Function(id) => function(
+                            scope.module_info.get(*id).name.clone(),
                             ScopeDef::ModuleItem(scope.file_id, *item),
                         ),
-                        ModuleItem::GlobalVariable(var) => function(
-                            scope.module_info.data[var.index].name.clone(),
+                        ModuleItem::GlobalVariable(id) => function(
+                            scope.module_info.get(*id).name.clone(),
                             ScopeDef::ModuleItem(scope.file_id, *item),
                         ),
-                        ModuleItem::GlobalConstant(constant) => function(
-                            scope.module_info.data[constant.index].name.clone(),
+                        ModuleItem::GlobalConstant(id) => function(
+                            scope.module_info.get(*id).name.clone(),
                             ScopeDef::ModuleItem(scope.file_id, *item),
                         ),
-                        ModuleItem::Override(override_decl) => function(
-                            scope.module_info.data[override_decl.index].name.clone(),
+                        ModuleItem::Override(id) => function(
+                            scope.module_info.get(*id).name.clone(),
                             ScopeDef::ModuleItem(scope.file_id, *item),
                         ),
-                        ModuleItem::Struct(_) | ModuleItem::TypeAlias(_) => {},
+                        ModuleItem::Struct(id) => function(
+                            scope.module_info.get(*id).name.clone(),
+                            ScopeDef::ModuleItem(scope.file_id, *item),
+                        ),
+                        ModuleItem::TypeAlias(id) => function(
+                            scope.module_info.get(*id).name.clone(),
+                            ScopeDef::ModuleItem(scope.file_id, *item),
+                        ),
                     });
             },
             Scope::Expression(expression_scope) => {
