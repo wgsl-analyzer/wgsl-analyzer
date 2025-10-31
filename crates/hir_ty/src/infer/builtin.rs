@@ -45,6 +45,9 @@ impl<'database> TyLoweringContext<'database> {
             | "vec2f"
             | "vec3f"
             | "vec4f"
+            | "vec2h"
+            | "vec3h"
+            | "vec4h"
             | ("mat2x2" | "mat2x3" | "mat2x4" | "mat3x2" | "mat3x3" | "mat3x4" | "mat4x2"
             | "mat4x3" | "mat4x4")
             | ("mat2x2f" | "mat2x3f" | "mat2x4f" | "mat3x2f" | "mat3x3f" | "mat3x4f" | "mat4x2f"
@@ -280,6 +283,28 @@ impl<'database> TyLoweringContext<'database> {
                     component_type: TyKind::Scalar(ScalarType::F32).intern(self.database),
                 })
             },
+
+            "vec2h" => {
+                self.expect_no_template(template_parameters);
+                TyKind::Vector(VectorType {
+                    size: VecSize::Two,
+                    component_type: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                })
+            },
+            "vec3h" => {
+                self.expect_no_template(template_parameters);
+                TyKind::Vector(VectorType {
+                    size: VecSize::Three,
+                    component_type: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                })
+            },
+            "vec4h" => {
+                self.expect_no_template(template_parameters);
+                TyKind::Vector(VectorType {
+                    size: VecSize::Four,
+                    component_type: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                })
+            },
             name @ ("mat2x2" | "mat2x3" | "mat2x4" | "mat3x2" | "mat3x3" | "mat3x4" | "mat4x2"
             | "mat4x3" | "mat4x4") => {
                 let (columns, rows) = match name {
@@ -384,6 +409,78 @@ impl<'database> TyLoweringContext<'database> {
                     columns: VecSize::Four,
                     rows: VecSize::Four,
                     inner: TyKind::Scalar(ScalarType::F32).intern(self.database),
+                })
+            },
+            "mat2x2h" => {
+                self.expect_no_template(template_parameters);
+                TyKind::Matrix(MatrixType {
+                    columns: VecSize::Two,
+                    rows: VecSize::Two,
+                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                })
+            },
+            "mat2x3h" => {
+                self.expect_no_template(template_parameters);
+                TyKind::Matrix(MatrixType {
+                    columns: VecSize::Two,
+                    rows: VecSize::Three,
+                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                })
+            },
+            "mat2x4h" => {
+                self.expect_no_template(template_parameters);
+                TyKind::Matrix(MatrixType {
+                    columns: VecSize::Two,
+                    rows: VecSize::Four,
+                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                })
+            },
+            "mat3x2h" => {
+                self.expect_no_template(template_parameters);
+                TyKind::Matrix(MatrixType {
+                    columns: VecSize::Three,
+                    rows: VecSize::Two,
+                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                })
+            },
+            "mat3x3h" => {
+                self.expect_no_template(template_parameters);
+                TyKind::Matrix(MatrixType {
+                    columns: VecSize::Three,
+                    rows: VecSize::Three,
+                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                })
+            },
+            "mat3x4h" => {
+                self.expect_no_template(template_parameters);
+                TyKind::Matrix(MatrixType {
+                    columns: VecSize::Three,
+                    rows: VecSize::Four,
+                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                })
+            },
+            "mat4x2h" => {
+                self.expect_no_template(template_parameters);
+                TyKind::Matrix(MatrixType {
+                    columns: VecSize::Four,
+                    rows: VecSize::Two,
+                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                })
+            },
+            "mat4x3h" => {
+                self.expect_no_template(template_parameters);
+                TyKind::Matrix(MatrixType {
+                    columns: VecSize::Four,
+                    rows: VecSize::Three,
+                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                })
+            },
+            "mat4x4h" => {
+                self.expect_no_template(template_parameters);
+                TyKind::Matrix(MatrixType {
+                    columns: VecSize::Four,
+                    rows: VecSize::Four,
+                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
                 })
             },
             "ptr" => {
