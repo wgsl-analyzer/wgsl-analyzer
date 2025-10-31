@@ -78,5 +78,6 @@ pub(crate) fn hover(
 ) -> Option<RangeInfo<HoverResult>> {
     let _semantics = &Semantics::new(database);
     let _file = database.parse(file_range.file_id).tree();
+    // TODO: Implement hovering and https://github.com/wgsl-analyzer/wgsl-analyzer/issues/362
     None
 }
