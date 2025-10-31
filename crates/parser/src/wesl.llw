@@ -171,7 +171,7 @@ compound_statement: attribute* '{' & statement* '}'; // §9.1
 
 function_call: ident_expression argument_expression_list;
 
-// Avoids nesting just for a semicolon
+// duplicated so it can be used with and without a semicolon
 variable_declaration: 'var' template_list typed_ident ['=' expression];
 variable_declaration_semi^: 'var' template_list typed_ident ['=' expression] ';';
 let_declaration: 'let' typed_ident '=' expression;
