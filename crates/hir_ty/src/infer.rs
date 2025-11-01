@@ -8,14 +8,14 @@ use std::{
 
 use either::Either;
 use hir_def::{
-    HasSource,
+    HasSource as _,
     body::{BindingId, Body},
     data::{
         FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, ParameterId,
         StructData, TypeAliasData,
     },
     database::{
-        DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, Lookup, OverrideId, StructId,
+        DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, Lookup as _, OverrideId, StructId,
     },
     expression::{
         ArithmeticOperation, BinaryOperation, ComparisonOperation, Expression, ExpressionId,
@@ -83,7 +83,7 @@ pub fn infer_query(
             let return_type = context.collect_override(&data);
             context.infer_body(return_type, AbstractHandling::Concretize);
         },
-    };
+    }
 
     Arc::new(context.resolve_all())
 }
@@ -234,7 +234,7 @@ struct InternedStandardTypes {
 
 impl InternedStandardTypes {
     fn new(database: &dyn HirDatabase) -> Self {
-        InternedStandardTypes {
+        Self {
             unknown: TyKind::Error.intern(database),
         }
     }
@@ -280,11 +280,13 @@ impl InferenceResult {
         self.call_resolutions.get(&expression).copied()
     }
 
+    #[must_use]
     pub fn diagnostics(&self) -> &[InferenceDiagnostic] {
         &self.diagnostics
     }
 
-    pub fn return_type(&self) -> Type {
+    #[must_use]
+    pub const fn return_type(&self) -> Type {
         self.return_type
     }
 }
@@ -293,10 +295,10 @@ impl Index<ExpressionId> for InferenceResult {
     type Output = Type;
     fn index(
         &self,
-        expr: ExpressionId,
+        expression: ExpressionId,
     ) -> &Type {
         self.type_of_expression
-            .get(expr)
+            .get(expression)
             .unwrap_or(&self.standard_types.unknown)
     }
 }
@@ -460,7 +462,7 @@ impl<'database> InferenceContext<'database> {
             ExpressionStoreSource::Signature => AddressSpace::Handle,
         };
 
-        let address_space = match template_args.get(0) {
+        let address_space = match template_args.first() {
             Some(TpltParam::Enumerant(Enumerant::AddressSpace(address_space))) => *address_space,
             None => default_address_space,
             _ => {
@@ -493,7 +495,7 @@ impl<'database> InferenceContext<'database> {
 
         // Mark extra template arguments as errors
         if template.len() > 2 {
-            for expression in template[2..].iter() {
+            for expression in &template[2..] {
                 self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
                     expression: *expression,
                 });
@@ -1556,7 +1558,7 @@ impl<'database> InferenceContext<'database> {
 
         let converted_arguments: Option<Vec<_>> = arguments
             .iter()
-            .map(|ty| converter.to_wgsl_types(*ty))
+            .map(|r#type| converter.to_wgsl_types(*r#type))
             .collect();
 
         let Some(converted_arguments) = converted_arguments else {
@@ -1629,17 +1631,16 @@ impl<'database> InferenceContext<'database> {
 
                 let construction_result =
                     self.try_call_builtin(construction_builtin_id, &arguments);
-                match construction_result {
-                    Ok((r#type, _)) => r#type,
-                    Err(()) => {
-                        self.push_diagnostic(InferenceDiagnostic::NoConstructor {
-                            expression,
-                            builtins: construction_builtin_id,
-                            r#type,
-                            parameters: arguments,
-                        });
-                        self.error_ty()
-                    },
+                if let Ok((r#type, _)) = construction_result {
+                    r#type
+                } else {
+                    self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                        expression,
+                        builtins: construction_builtin_id,
+                        r#type,
+                        parameters: arguments,
+                    });
+                    self.error_ty()
                 }
             },
             TyKind::Array(array_type) => {
@@ -1658,17 +1659,16 @@ impl<'database> InferenceContext<'database> {
                 let construction_result =
                     self.try_call_builtin(construction_builtin_id, &arguments);
 
-                match construction_result {
-                    Ok((r#type, _)) => r#type,
-                    Err(()) => {
-                        self.push_diagnostic(InferenceDiagnostic::NoConstructor {
-                            expression,
-                            builtins: construction_builtin_id,
-                            r#type,
-                            parameters: arguments,
-                        });
-                        self.error_ty()
-                    },
+                if let Ok((r#type, _)) = construction_result {
+                    r#type
+                } else {
+                    self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                        expression,
+                        builtins: construction_builtin_id,
+                        r#type,
+                        parameters: arguments,
+                    });
+                    self.error_ty()
                 }
             },
             TyKind::Matrix(matrix) => {
@@ -1681,21 +1681,22 @@ impl<'database> InferenceContext<'database> {
                 );
                 let construction_result =
                     self.try_call_builtin(construction_builtin_id, &arguments);
-                match construction_result {
-                    Ok((r#type, _)) => r#type,
-                    Err(()) => {
-                        self.push_diagnostic(InferenceDiagnostic::NoConstructor {
-                            expression,
-                            builtins: construction_builtin_id,
-                            r#type,
-                            parameters: arguments,
-                        });
-                        self.error_ty()
-                    },
+                if let Ok((r#type, _)) = construction_result {
+                    r#type
+                } else {
+                    self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                        expression,
+                        builtins: construction_builtin_id,
+                        r#type,
+                        parameters: arguments,
+                    });
+                    self.error_ty()
                 }
             },
             TyKind::Struct(_) => {
-                if arguments.is_empty() {}
+                if arguments.is_empty() {
+                    // TODO: do something
+                }
                 // TODO: Implement checking field types
                 r#type
             },
@@ -1724,7 +1725,7 @@ impl<'database> InferenceContext<'database> {
         resolver: &Resolver,
         store: &ExpressionStore,
     ) -> Type {
-        let mut ctx = TyLoweringContext::new(self.database, &resolver, store);
+        let mut ctx = TyLoweringContext::new(self.database, resolver, store);
         let r#type = ctx.lower_ty(type_ref);
         self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
         r#type
@@ -1792,7 +1793,7 @@ impl InferenceContext<'_> {
         }))
     }
 
-    fn error_ty(&self) -> Type {
+    const fn error_ty(&self) -> Type {
         self.result.standard_types.unknown
     }
 
@@ -1988,7 +1989,7 @@ impl<'database> TyLoweringContext<'database> {
     ) -> Result<Lowered, TypeLoweringError> {
         let resolved_ty = self.resolver.resolve(path);
 
-        if let Some(_) = resolved_ty {
+        if resolved_ty.is_some() {
             self.expect_no_template(template_parameters);
         }
 
@@ -2099,18 +2100,18 @@ impl<'database> TyLoweringContext<'database> {
     }
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 enum AbstractHandling {
     Concretize,
     Abstract,
 }
-struct WgslTypeConverter<'a> {
-    database: &'a dyn HirDatabase,
+struct WgslTypeConverter<'database> {
+    database: &'database dyn HirDatabase,
     interned_structs: Vec<StructId>,
 }
 
-impl<'a> WgslTypeConverter<'a> {
-    fn new(database: &'a dyn HirDatabase) -> Self {
+impl<'database> WgslTypeConverter<'database> {
+    fn new(database: &'database dyn HirDatabase) -> Self {
         Self {
             database,
             interned_structs: Vec::default(),
@@ -2160,7 +2161,7 @@ impl<'a> WgslTypeConverter<'a> {
                         .iter()
                         .map(|(id, data)| {
                             Some(wgsl_types::ty::StructMemberType {
-                                name: data.name.as_str().to_string(),
+                                name: data.name.as_str().to_owned(),
                                 // Skip broken struct fields
                                 ty: self.to_wgsl_types(fields[id])?,
                                 // Don't bother reconstructing the correct layout
@@ -2196,7 +2197,7 @@ impl<'a> WgslTypeConverter<'a> {
             TyKind::Texture(texture_type) => {
                 wgsl_types::Type::Texture(self.to_wgsl_texture_type(texture_type))
             },
-            TyKind::Sampler(sampler_type) => wgsl_types::Type::Sampler(sampler_type.into()),
+            TyKind::Sampler(sampler_type) => wgsl_types::Type::Sampler(sampler_type),
             TyKind::Reference(Reference {
                 address_space,
                 inner,
@@ -2236,9 +2237,9 @@ impl<'a> WgslTypeConverter<'a> {
 
     fn from_wgsl_types(
         &self,
-        ty: wgsl_types::Type,
+        r#type: wgsl_types::Type,
     ) -> Type {
-        match ty {
+        match r#type {
             wgsl_types::Type::Bool => TyKind::Scalar(ScalarType::Bool).intern(self.database),
             wgsl_types::Type::AbstractInt => {
                 TyKind::Scalar(ScalarType::AbstractInt).intern(self.database)
@@ -2525,7 +2526,7 @@ impl<'a> WgslTypeConverter<'a> {
     ) -> String {
         let index = self.interned_structs.len();
         self.interned_structs.push(struct_id);
-        format!("struct{}", index)
+        format!("struct{index}")
     }
 
     fn get_interned_struct(
@@ -2549,6 +2550,7 @@ impl<'a> WgslTypeConverter<'a> {
     }
 }
 
+#[must_use]
 pub fn from_wgsl_texel_format(
     texel_format: wgsl_types::syntax::TexelFormat
 ) -> crate::ty::TexelFormat {
@@ -2574,6 +2576,7 @@ pub fn from_wgsl_texel_format(
     }
 }
 
+#[must_use]
 pub fn to_wgsl_texel_format(
     texel_format: crate::ty::TexelFormat
 ) -> wgsl_types::syntax::TexelFormat {

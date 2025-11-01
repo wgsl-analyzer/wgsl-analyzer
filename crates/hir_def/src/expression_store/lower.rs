@@ -1,5 +1,5 @@
 use la_arena::Arena;
-use syntax::{HasName, HasTemplateParameters, ast, pointer::AstPointer};
+use syntax::{HasName as _, HasTemplateParameters as _, ast, pointer::AstPointer};
 use triomphe::Arc;
 
 use crate::{
@@ -156,7 +156,7 @@ impl ExprCollector<'_> {
             .map(|parameter| {
                 let r#type = self.collect_type_specifier_opt(parameter.ty());
                 let name = parameter.name().map_or_else(Name::missing, Name::from);
-                ParamData { r#type, name }
+                ParamData { name, r#type }
             })
             .collect()
     }
@@ -235,6 +235,7 @@ impl ExprCollector<'_> {
         }
     }
 
+    #[must_use] 
     pub fn finish(self) -> (super::ExpressionStore, ExpressionSourceMap) {
         self.store.finish()
     }
@@ -248,7 +249,7 @@ pub(crate) fn lower_function(
 
     let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
     let parameters = function.value.parameter_list().map_or_else(
-        || Arena::new(),
+        Arena::new,
         |parameters| collector.collect_function_param_list(&parameters),
     );
     let return_type = function

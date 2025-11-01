@@ -12,7 +12,7 @@ use wgsl_types::{
 };
 
 use crate::{
-    database::HirDatabase,
+    database::HirDatabase as _,
     infer::{
         InferenceContext, InferenceDiagnostic, Lowered, TyLoweringContext, TypeContainer,
         TypeLoweringError, TypeLoweringErrorKind,
@@ -20,7 +20,7 @@ use crate::{
     ty::{TyKind, Type},
 };
 
-impl<'database> TyLoweringContext<'database> {
+impl TyLoweringContext<'_> {
     /// Used for template checking.
     /// There, many expressions are guaranteed to evaluate to a type, or a scalar.
     /// e.g. `array<f32, 3 + 5>`
@@ -94,7 +94,7 @@ impl<'database> TyLoweringContext<'database> {
         Some(instance)
     }
 
-    fn eval_binary_op(
+    const fn eval_binary_op(
         &mut self,
         _left: ExpressionId,
         _right: ExpressionId,
@@ -102,7 +102,7 @@ impl<'database> TyLoweringContext<'database> {
     ) -> Option<Instance> {
         // Not implemented
         // TODO: Implement according to `impl Eval for BinaryExpression` in wesl-rs
-        return None;
+        None
     }
     fn eval_unary_op(
         &mut self,
@@ -134,7 +134,7 @@ impl<'database> TyLoweringContext<'database> {
         &mut self,
         tplt: ExpressionId,
     ) -> TpltParam {
-        let template_param = match &self.store[tplt] {
+        match &self.store[tplt] {
             Expression::IdentExpression(ident_expression) => {
                 let resolved_ty = self.lower(
                     TypeContainer::Expression(tplt),
@@ -166,9 +166,7 @@ impl<'database> TyLoweringContext<'database> {
                 }
             },
             _ => TpltParam::Instance(self.eval_expression(tplt)),
-        };
-
-        template_param
+        }
     }
 
     pub fn eval_template_args(
@@ -205,7 +203,7 @@ pub struct TemplateParameters {
 
 impl TemplateParameters {
     pub fn has_next(&self) -> bool {
-        self.template_parameters.len() > 0
+        !self.template_parameters.is_empty()
     }
     pub fn next(&mut self) -> Option<(TpltParam, ExpressionId)> {
         self.template_parameters.pop_front()
@@ -215,11 +213,11 @@ impl TemplateParameters {
             Some((TpltParam::Type(r#type), id)) => Ok((r#type, id)),
             Some((_, id)) => Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
-                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("a type".to_string()),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("a type".to_owned()),
             }),
             None => Err(TypeLoweringError {
                 container: self.container.clone(),
-                kind: TypeLoweringErrorKind::MissingTemplateArgument("a type".to_string()),
+                kind: TypeLoweringErrorKind::MissingTemplateArgument("a type".to_owned()),
             }),
         }
     }
@@ -230,11 +228,11 @@ impl TemplateParameters {
             Some((TpltParam::Instance(instance), id)) => Ok((instance, id)),
             Some((_, id)) => Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
-                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("an instance".to_string()),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("an instance".to_owned()),
             }),
             None => Err(TypeLoweringError {
                 container: self.container.clone(),
-                kind: TypeLoweringErrorKind::MissingTemplateArgument("an instance".to_string()),
+                kind: TypeLoweringErrorKind::MissingTemplateArgument("an instance".to_owned()),
             }),
         }
     }
@@ -243,16 +241,16 @@ impl TemplateParameters {
             Some((TpltParam::Enumerant(enumerant), id)) => Ok((enumerant, id)),
             Some((_, id)) => Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
-                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("an enum".to_string()),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("an enum".to_owned()),
             }),
             None => Err(TypeLoweringError {
                 container: self.container.clone(),
-                kind: TypeLoweringErrorKind::MissingTemplateArgument("an enum".to_string()),
+                kind: TypeLoweringErrorKind::MissingTemplateArgument("an enum".to_owned()),
             }),
         }
     }
 
-    pub(crate) fn len(&self) -> usize {
+    pub(crate) const fn len(&self) -> usize {
         self.len
     }
 }

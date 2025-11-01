@@ -494,7 +494,7 @@ fn declaration_type_hints(
         return None;
     }
     let container = semantics.find_container(file_id.into(), node)?;
-    let r#type = semantics.analyze(container).type_of_binding(&binding)?;
+    let r#type = semantics.analyze(container).type_of_binding(binding)?;
 
     let mut label = InlayHintLabel::from(pretty_type_with_verbosity(
         semantics.database,

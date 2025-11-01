@@ -5,11 +5,12 @@ use crate::{
 };
 use std::fmt::Write as _;
 
+#[must_use] 
 pub fn pretty_print_module(module: &ModuleInfo) -> String {
     let mut buffer = String::new();
     for &item in module.items() {
         write_pretty_module_item(item, module, &mut buffer);
-        buffer.push_str("\n");
+        buffer.push('\n');
     }
     buffer
 }

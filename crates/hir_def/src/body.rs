@@ -156,7 +156,8 @@ impl BodySourceMap {
         self.statement_map_back[statement].as_ref()
     }
 
-    pub fn expression_source_map(&self) -> &ExpressionSourceMap {
+    #[must_use] 
+    pub const fn expression_source_map(&self) -> &ExpressionSourceMap {
         &self.expressions
     }
 }

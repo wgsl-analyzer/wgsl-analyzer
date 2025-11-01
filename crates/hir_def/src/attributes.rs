@@ -108,7 +108,7 @@ impl AttributesWithOwner {
     pub(crate) fn attrs_query(
         database: &dyn DefDatabase,
         definition: AttributeDefId,
-    ) -> (Arc<AttributesWithOwner>, Arc<ExpressionSourceMap>) {
+    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let (attrs, source_map) = match definition {
             AttributeDefId::Struct(id) => {
                 AttributeList::from_src(database, &id.lookup(database).source(database).value)

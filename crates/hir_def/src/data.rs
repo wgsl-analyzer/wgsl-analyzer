@@ -2,7 +2,7 @@ use la_arena::{Arena, Idx};
 use triomphe::Arc;
 
 use crate::{
-    HasSource,
+    HasSource as _,
     database::{
         DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Interned, Lookup as _,
         OverrideId, StructId, TypeAliasId,

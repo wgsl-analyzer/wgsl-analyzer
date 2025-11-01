@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::str::FromStr as _;
 
 use hir_def::{expression::ExpressionId, module_data::Name};
 use wgsl_types::{
@@ -20,7 +20,7 @@ use crate::{
     },
 };
 
-impl<'database> TyLoweringContext<'database> {
+impl TyLoweringContext<'_> {
     fn is_predeclared_ty(
         &self,
         name: &Name,
@@ -48,12 +48,33 @@ impl<'database> TyLoweringContext<'database> {
             | "vec2h"
             | "vec3h"
             | "vec4h"
-            | ("mat2x2" | "mat2x3" | "mat2x4" | "mat3x2" | "mat3x3" | "mat3x4" | "mat4x2"
-            | "mat4x3" | "mat4x4")
-            | ("mat2x2f" | "mat2x3f" | "mat2x4f" | "mat3x2f" | "mat3x3f" | "mat3x4f" | "mat4x2f"
-            | "mat4x3f" | "mat4x4f")
-            | ("mat2x2h" | "mat2x3h" | "mat2x4h" | "mat3x2h" | "mat3x3h" | "mat3x4h" | "mat4x2h"
-            | "mat4x3h" | "mat4x4h")
+            | "mat2x2"
+            | "mat2x3"
+            | "mat2x4"
+            | "mat3x2"
+            | "mat3x3"
+            | "mat3x4"
+            | "mat4x2"
+            | "mat4x3"
+            | "mat4x4"
+            | "mat2x2f"
+            | "mat2x3f"
+            | "mat2x4f"
+            | "mat3x2f"
+            | "mat3x3f"
+            | "mat3x4f"
+            | "mat4x2f"
+            | "mat4x3f"
+            | "mat4x4f"
+            | "mat2x2h"
+            | "mat2x3h"
+            | "mat2x4h"
+            | "mat3x2h"
+            | "mat3x3h"
+            | "mat3x4h"
+            | "mat4x2h"
+            | "mat4x3h"
+            | "mat4x4h"
             | "ptr"
             | "atomic"
             | "texture_1d"
@@ -86,8 +107,8 @@ impl<'database> TyLoweringContext<'database> {
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
         // Lower predeclared types
-        if self.is_predeclared_ty(&path) {
-            match self.lower_predeclared_ty(type_container.clone(), &path, &template_parameters) {
+        if self.is_predeclared_ty(path) {
+            match self.lower_predeclared_ty(type_container.clone(), path, template_parameters) {
                 Ok(r#type) => Ok(r#type),
                 Err(kind) => Err(TypeLoweringError {
                     container: type_container,
@@ -698,19 +719,19 @@ impl<'database> TyLoweringContext<'database> {
                     ArraySize::Constant(n as u64)
                 },
                 Ok((Some(Instance::Literal(LiteralInstance::U32(n))), _)) if n > 0 => {
-                    ArraySize::Constant(n as u64)
+                    ArraySize::Constant(u64::from(n))
                 },
                 Ok((Some(Instance::Literal(LiteralInstance::I64(n))), _)) if n > 0 => {
                     ArraySize::Constant(n as u64)
                 },
                 Ok((Some(Instance::Literal(LiteralInstance::U64(n))), _)) if n > 0 => {
-                    ArraySize::Constant(n as u64)
+                    ArraySize::Constant(n)
                 },
                 Ok((_, expression)) => {
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "`u32` or a `i32` greater than `0`".to_string(),
+                            "`u32` or a `i32` greater than `0`".to_owned(),
                         ),
                     });
                     ArraySize::Dynamic
@@ -732,7 +753,8 @@ impl<'database> TyLoweringContext<'database> {
         mut template_parameters: TemplateParameters,
     ) -> Type {
         self.expect_n_templates(&template_parameters, 1..=1);
-        let r#type = match template_parameters.next_as_type() {
+
+        match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let ty_kind = r#type.kind(self.database);
                 if matches!(ty_kind, TyKind::Scalar(_)) && !ty_kind.is_abstract(self.database) {
@@ -741,7 +763,7 @@ impl<'database> TyLoweringContext<'database> {
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "a scalar".to_string(),
+                            "a scalar".to_owned(),
                         ),
                     });
                     TyKind::Error.intern(self.database)
@@ -751,8 +773,7 @@ impl<'database> TyLoweringContext<'database> {
                 self.diagnostics.push(error);
                 TyKind::Error.intern(self.database)
             },
-        };
-        r#type
+        }
     }
 
     fn matrix_template(
@@ -760,7 +781,8 @@ impl<'database> TyLoweringContext<'database> {
         mut template_parameters: TemplateParameters,
     ) -> Type {
         self.expect_n_templates(&template_parameters, 1..=1);
-        let r#type = match template_parameters.next_as_type() {
+
+        match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let ty_kind = r#type.kind(self.database);
                 if matches!(ty_kind, TyKind::Scalar(ScalarType::F16 | ScalarType::F32)) {
@@ -769,7 +791,7 @@ impl<'database> TyLoweringContext<'database> {
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "f32 or f16".to_string(),
+                            "f32 or f16".to_owned(),
                         ),
                     });
                     TyKind::Error.intern(self.database)
@@ -779,8 +801,7 @@ impl<'database> TyLoweringContext<'database> {
                 self.diagnostics.push(error);
                 TyKind::Error.intern(self.database)
             },
-        };
-        r#type
+        }
     }
 
     fn pointer_template(
@@ -794,7 +815,7 @@ impl<'database> TyLoweringContext<'database> {
                 self.diagnostics.push(TypeLoweringError {
                     container: TypeContainer::Expression(expression),
                     kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                        "an address space".to_string(),
+                        "an address space".to_owned(),
                     ),
                 });
                 // Fallback
@@ -815,7 +836,7 @@ impl<'database> TyLoweringContext<'database> {
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "a storable type".to_string(),
+                            "a storable type".to_owned(),
                         ),
                     });
                     TyKind::Error.intern(self.database)
@@ -837,7 +858,7 @@ impl<'database> TyLoweringContext<'database> {
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "`read` access mode for uniforms".to_string(),
+                            "`read` access mode for uniforms".to_owned(),
                         ),
                     });
                     AccessMode::Read
@@ -848,7 +869,7 @@ impl<'database> TyLoweringContext<'database> {
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "an access mode".to_string(),
+                            "an access mode".to_owned(),
                         ),
                     });
                     address_space.default_access_mode()
@@ -875,7 +896,8 @@ impl<'database> TyLoweringContext<'database> {
         mut template_parameters: TemplateParameters,
     ) -> Type {
         self.expect_n_templates(&template_parameters, 1..=1);
-        let r#type = match template_parameters.next_as_type() {
+
+        match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let ty_kind = r#type.kind(self.database);
                 if matches!(ty_kind, TyKind::Scalar(ScalarType::I32 | ScalarType::U32)) {
@@ -886,7 +908,7 @@ impl<'database> TyLoweringContext<'database> {
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "i32 or u32".to_string(),
+                            "i32 or u32".to_owned(),
                         ),
                     });
                     TyKind::Error.intern(self.database)
@@ -896,8 +918,7 @@ impl<'database> TyLoweringContext<'database> {
                 self.diagnostics.push(error);
                 TyKind::Error.intern(self.database)
             },
-        };
-        r#type
+        }
     }
 
     fn texture_sampled_template(
@@ -905,7 +926,8 @@ impl<'database> TyLoweringContext<'database> {
         mut template_parameters: TemplateParameters,
     ) -> SampledType {
         self.expect_n_templates(&template_parameters, 1..=1);
-        let sampled_type = match template_parameters.next_as_type() {
+
+        match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let ty_kind = r#type.kind(self.database);
                 match ty_kind {
@@ -916,7 +938,7 @@ impl<'database> TyLoweringContext<'database> {
                         self.diagnostics.push(TypeLoweringError {
                             container: TypeContainer::Expression(expression),
                             kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                                "i32 or u32 or f32".to_string(),
+                                "i32 or u32 or f32".to_owned(),
                             ),
                         });
                         // TODO: Is that a reasonable fallback?
@@ -929,8 +951,7 @@ impl<'database> TyLoweringContext<'database> {
                 // Fallback hmm
                 SampledType::U32
             },
-        };
-        sampled_type
+        }
     }
 
     fn storage_texture_template(
@@ -944,7 +965,7 @@ impl<'database> TyLoweringContext<'database> {
                 self.diagnostics.push(TypeLoweringError {
                     container: TypeContainer::Expression(expression),
                     kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                        "a texel format".to_string(),
+                        "a texel format".to_owned(),
                     ),
                 });
                 // TODO: Is that a reasonable fallback?
@@ -962,7 +983,7 @@ impl<'database> TyLoweringContext<'database> {
                 self.diagnostics.push(TypeLoweringError {
                     container: TypeContainer::Expression(expression),
                     kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                        "an access mode".to_string(),
+                        "an access mode".to_owned(),
                     ),
                 });
                 // TODO: Is that a reasonable fallback?

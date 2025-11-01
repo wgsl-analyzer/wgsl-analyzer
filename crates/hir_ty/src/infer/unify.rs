@@ -350,7 +350,6 @@ pub fn unify(
                     (AccessMode::Read, AccessMode::ReadWrite | AccessMode::Read)
                     | (AccessMode::ReadWrite, AccessMode::ReadWrite)
                     | (AccessMode::Write, AccessMode::ReadWrite | AccessMode::Write) => {},
-                    #[expect(clippy::unreachable, reason = "TODO")]
                     (AccessMode::Write | AccessMode::ReadWrite, AccessMode::Read)
                     | (AccessMode::Read | AccessMode::ReadWrite, AccessMode::Write) => {
                         return Err(());

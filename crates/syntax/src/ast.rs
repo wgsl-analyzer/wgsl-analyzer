@@ -339,7 +339,7 @@ impl EnableExtensionName {
     }
 }
 
-/// Names that can be `enable`d https://www.w3.org/TR/WGSL/#syntax-enable_extension_name
+/// Names that can be `enable`d <https://www.w3.org/TR/WGSL/#syntax-enable_extension_name>
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum EnableExtension {
     F16,
@@ -376,7 +376,7 @@ impl LanguageExtensionName {
     }
 }
 
-/// Language extensions that can be `require`d https://www.w3.org/TR/WGSL/#syntax-enable_extension_name
+/// Language extensions that can be `require`d <https://www.w3.org/TR/WGSL/#syntax-enable_extension_name>
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum LanguageExtension {
     ReadonlyAndReadwriteStorageTextures,
@@ -760,7 +760,7 @@ impl AstNode for SwitchCaseSelector {
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         match syntax.kind() {
-            SyntaxKind::SwitchDefaultSelector => Some(SwitchCaseSelector::SwitchDefaultSelector(
+            SyntaxKind::SwitchDefaultSelector => Some(Self::SwitchDefaultSelector(
                 SwitchDefaultSelector { syntax },
             )),
             _ => Expression::cast(syntax).map(SwitchCaseSelector::Expression),
@@ -768,8 +768,8 @@ impl AstNode for SwitchCaseSelector {
     }
     fn syntax(&self) -> &SyntaxNode {
         match self {
-            SwitchCaseSelector::SwitchDefaultSelector(item) => &item.syntax,
-            SwitchCaseSelector::Expression(item) => item.syntax(),
+            Self::SwitchDefaultSelector(item) => &item.syntax,
+            Self::Expression(item) => item.syntax(),
         }
     }
 }

@@ -305,7 +305,7 @@ fn compute_statement_scopes(
             }
         },
         Statement::Assert { expression } => {
-            compute_expression_scopes(*expression, body, scopes, scope)
+            compute_expression_scopes(*expression, body, scopes, scope);
         },
         Statement::BreakIf { condition } => {
             compute_expression_scopes(*condition, body, scopes, scope);

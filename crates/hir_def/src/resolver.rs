@@ -7,7 +7,7 @@ use crate::{
         BindingId,
         scope::{ExprScopes, ScopeId},
     },
-    database::{DefDatabase, FunctionId, Location},
+    database::{DefDatabase as _, FunctionId, Location},
     module_data::{
         Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItem, Name, Override, Struct,
         TypeAlias,

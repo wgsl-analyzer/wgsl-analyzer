@@ -76,8 +76,8 @@ impl Type {
     }
 
     pub fn is_convertible_to(
-        &self,
-        r#type: Type,
+        self,
+        r#type: Self,
         database: &dyn HirDatabase,
     ) -> bool {
         self.kind(database)
@@ -107,12 +107,13 @@ impl Type {
         }
     }
 
+    #[must_use]
     pub fn concretize(
         self,
         database: &dyn HirDatabase,
     ) -> Self {
         match self.kind(database).concretize(database) {
-            Some(v) => v.intern(database),
+            Some(ty_kind) => ty_kind.intern(database),
             None => self,
         }
     }
@@ -152,7 +153,7 @@ pub struct BoundVar {
 impl TyKind {
     pub fn is_convertible_to(
         &self,
-        r#type: &TyKind,
+        r#type: &Self,
         database: &dyn HirDatabase,
     ) -> bool {
         conversion_rank(self, r#type, database).is_some()
@@ -184,13 +185,13 @@ impl TyKind {
         database: &dyn HirDatabase,
     ) -> Option<Self> {
         Some(match self {
-            Self::Scalar(ScalarType::AbstractInt) => TyKind::Scalar(ScalarType::I32),
-            Self::Scalar(ScalarType::AbstractFloat) => TyKind::Scalar(ScalarType::F32),
+            Self::Scalar(ScalarType::AbstractInt) => Self::Scalar(ScalarType::I32),
+            Self::Scalar(ScalarType::AbstractFloat) => Self::Scalar(ScalarType::F32),
             Self::Array(ArrayType {
                 inner,
                 binding_array,
                 size,
-            }) => TyKind::Array(ArrayType {
+            }) => Self::Array(ArrayType {
                 inner: inner.kind(database).concretize(database)?.intern(database),
                 binding_array: *binding_array,
                 size: size.clone(),
@@ -198,21 +199,21 @@ impl TyKind {
             Self::Vector(VectorType {
                 size,
                 component_type,
-            }) => TyKind::Vector(VectorType {
+            }) => Self::Vector(VectorType {
+                size: *size,
                 component_type: component_type
                     .kind(database)
                     .concretize(database)?
                     .intern(database),
-                size: *size,
             }),
             Self::Matrix(MatrixType {
-                inner,
-                rows,
                 columns,
-            }) => TyKind::Matrix(MatrixType {
-                inner: inner.kind(database).concretize(database)?.intern(database),
-                rows: *rows,
+                rows,
+                inner,
+            }) => Self::Matrix(MatrixType {
                 columns: *columns,
+                rows: *rows,
+                inner: inner.kind(database).concretize(database)?.intern(database),
             }),
             _ => return None,
         })
@@ -734,16 +735,16 @@ impl TextureKind {
     pub fn from_sampled(
         sampled: wgsl_types::syntax::SampledType,
         database: &dyn HirDatabase,
-    ) -> TextureKind {
+    ) -> Self {
         match sampled {
             wgsl_types::syntax::SampledType::I32 => {
-                TextureKind::Sampled(TyKind::Scalar(ScalarType::I32).intern(database))
+                Self::Sampled(TyKind::Scalar(ScalarType::I32).intern(database))
             },
             wgsl_types::syntax::SampledType::U32 => {
-                TextureKind::Sampled(TyKind::Scalar(ScalarType::U32).intern(database))
+                Self::Sampled(TyKind::Scalar(ScalarType::U32).intern(database))
             },
             wgsl_types::syntax::SampledType::F32 => {
-                TextureKind::Sampled(TyKind::Scalar(ScalarType::F32).intern(database))
+                Self::Sampled(TyKind::Scalar(ScalarType::F32).intern(database))
             },
         }
     }

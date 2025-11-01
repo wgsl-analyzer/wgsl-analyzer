@@ -235,7 +235,7 @@ impl TyKind {
             Self::Struct(r#struct) => {
                 let fields = &database.field_types(*r#struct).0;
                 let (_, size) =
-                    struct_member_layout(&fields, database, LayoutAddressSpace::Other, |_, _| {})?;
+                    struct_member_layout(fields, database, LayoutAddressSpace::Other, |_, _| {})?;
                 Some(size)
             },
             Self::Array(array) => match array.size {

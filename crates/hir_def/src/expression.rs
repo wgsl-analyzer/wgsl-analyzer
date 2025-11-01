@@ -153,6 +153,7 @@ pub enum SwitchCaseSelector {
 /// # Panics
 ///
 /// Panics if the literal is invalid.
+#[must_use] 
 pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
     match literal {
         ast::LiteralKind::IntLiteral(literal) => {
@@ -174,7 +175,7 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
             // Float suffixes are not accepted by `f32::from_str`. Ignore them
             let (text, suffix) = split_number_suffix(literal.text());
             let value = match text.strip_prefix("0x").or_else(|| text.strip_prefix("0X")) {
-                Some(_hex) => Ok(0f64), // TODO: Hex floats need to be handled
+                Some(_hex) => Ok(0_f64), // TODO: Hex floats need to be handled
                 None => f64::from_str(text),
             }
             .expect("invalid literal");

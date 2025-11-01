@@ -63,7 +63,7 @@ impl CstBuilder<'_, '_> {
             Rule::CaseClause => self.start_node(SyntaxKind::SwitchBodyCase),
             Rule::CaseSelectors => self.start_node(SyntaxKind::SwitchCaseSelectors),
             Rule::CompoundAssignmentStatement => {
-                self.start_node(SyntaxKind::CompoundAssignmentStatement)
+                self.start_node(SyntaxKind::CompoundAssignmentStatement);
             },
             Rule::CompoundStatement => self.start_node(SyntaxKind::CompoundStatement),
             Rule::ConstDeclaration => self.start_node(SyntaxKind::ConstantDeclaration),

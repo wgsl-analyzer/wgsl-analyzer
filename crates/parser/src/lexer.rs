@@ -360,7 +360,7 @@ fn collect_with_templates(
             Token::RPar | Token::RBrak => {
                 // Pop Pending stack until its top entry has depth < NestingDepth.
                 while pending
-                    .pop_if(|(_, depth)| !(*depth < nesting_depth))
+                    .pop_if(|(_, depth)| (*depth >= nesting_depth))
                     .is_some()
                 {}
                 nesting_depth = (nesting_depth - 1).max(0);
@@ -373,7 +373,7 @@ fn collect_with_templates(
             },
             Token::And2 | Token::Pipe2 => {
                 while pending
-                    .pop_if(|(_, depth)| !(*depth < nesting_depth))
+                    .pop_if(|(_, depth)| (*depth >= nesting_depth))
                     .is_some()
                 {}
             },

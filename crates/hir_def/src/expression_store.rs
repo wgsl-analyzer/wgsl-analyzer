@@ -105,6 +105,7 @@ pub struct ExpressionStoreBuilder {
 }
 
 impl ExpressionStoreBuilder {
+    #[must_use] 
     pub fn finish(self) -> (ExpressionStore, ExpressionSourceMap) {
         let Self {
             mut exprs,
@@ -127,8 +128,8 @@ impl ExpressionStoreBuilder {
             ExpressionStore {
                 exprs,
                 types,
-                parenthesis_expressions,
                 store_source,
+                parenthesis_expressions,
             },
             ExpressionSourceMap {
                 expression_map,

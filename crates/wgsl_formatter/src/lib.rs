@@ -3,7 +3,7 @@ mod tests;
 
 use rowan::{GreenNode, GreenToken, NodeOrToken, WalkEvent};
 use syntax::{
-    AstNode, HasName, HasTemplateParameters as _, SyntaxElement, SyntaxKind, SyntaxNode,
+    AstNode, HasName as _, HasTemplateParameters as _, SyntaxElement, SyntaxKind, SyntaxNode,
     SyntaxToken, ast,
 };
 
@@ -285,7 +285,7 @@ fn format_syntax_node(
         SyntaxKind::InfixExpression => {
             let expression = ast::InfixExpression::cast(syntax)?;
 
-            whitespace_to_single_around(&dbg!(expression.op())?);
+            whitespace_to_single_around(&expression.op()?);
         },
         SyntaxKind::ParenthesisExpression => {
             let parenthesis_expression = ast::ParenthesisExpression::cast(syntax)?;
