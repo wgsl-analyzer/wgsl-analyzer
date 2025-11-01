@@ -31,6 +31,9 @@ impl Definition {
                 ast::NameReference(name_ref) => {
                     resolve_name_ref(semantics, file_id, name_ref)
                 },
+                ast::FieldExpression(field_expression) => {
+                    resolve_field(semantics, file_id, field_expression)
+                },
                 _ => {
                     tracing::warn!("attempted to go to definition {:?}", node);
                     None
@@ -62,10 +65,7 @@ fn resolve_name_ref(
 
         Some(definition)
     } else if let Some(expression) = ast::FieldExpression::cast(parent.clone()) {
-        let definition = semantics.find_container(file_id, expression.syntax())?;
-        let field = semantics.analyze(definition).resolve_field(expression)?;
-
-        Some(Definition::Field(field))
+        resolve_field(semantics, file_id, expression)
     } else if let Some(r#type) = ast::TypeSpecifier::cast(parent) {
         let resolver = semantics.resolver(file_id, r#type.syntax());
 
@@ -90,4 +90,16 @@ fn resolve_name_ref(
     } else {
         None
     }
+}
+
+fn resolve_field(
+    semantics: &Semantics<'_>,
+    file_id: HirFileId,
+    field_expression: ast::FieldExpression,
+) -> Option<Definition> {
+    let definition = semantics.find_container(file_id, field_expression.syntax())?;
+    let field = semantics
+        .analyze(definition)
+        .resolve_field(field_expression)?;
+    Some(Definition::Field(field))
 }
