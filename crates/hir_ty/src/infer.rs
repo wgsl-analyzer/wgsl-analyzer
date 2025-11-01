@@ -71,7 +71,7 @@ pub fn infer_query(
             let data = database.global_var_data(var).0;
             let return_type = context.collect_global_variable(&data);
             context.infer_body(return_type, AbstractHandling::Concretize);
-            context.infer_variables(&data);
+            context.infer_global_variable(&data);
         },
         DefinitionWithBodyId::GlobalConstant(constant) => {
             let data = database.global_constant_data(constant).0;
@@ -426,12 +426,18 @@ impl<'database> InferenceContext<'database> {
         r#type
     }
 
-    fn infer_variables(
+    fn infer_global_variable(
         &mut self,
         var: &GlobalVariableData,
     ) {
         let (address_space, access_mode) =
             self.infer_variable_template(&var.template_parameters, &var.store);
+        if address_space == AddressSpace::Function {
+            // Function address space is not allowed at the module level
+            self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
+                expression: var.template_parameters[0],
+            });
+        }
 
         self.bind_return_ty(Some(self.make_ref(
             self.return_ty,
@@ -465,7 +471,17 @@ impl<'database> InferenceContext<'database> {
             },
         };
         let access_mode = match template_args.get(1) {
-            Some(TpltParam::Enumerant(Enumerant::AccessMode(access_mode))) => *access_mode,
+            Some(TpltParam::Enumerant(Enumerant::AccessMode(access_mode))) => {
+                if address_space == AddressSpace::Storage {
+                    *access_mode
+                } else {
+                    // Only the storage address space allows for an access mode
+                    self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
+                        expression: template[0],
+                    });
+                    address_space.default_access_mode()
+                }
+            },
             None => address_space.default_access_mode(),
             _ => {
                 self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
@@ -625,6 +641,12 @@ impl<'database> InferenceContext<'database> {
 
                 let (address_space, access_mode) =
                     self.infer_variable_template(template_parameters, &body.store);
+                if address_space != AddressSpace::Function {
+                    // Only function address space is allowed
+                    self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
+                        expression: template_parameters[0],
+                    });
+                }
                 let ref_ty = self.make_ref(r#type, address_space, access_mode);
                 self.set_binding_ty(*binding_id, ref_ty);
             },
