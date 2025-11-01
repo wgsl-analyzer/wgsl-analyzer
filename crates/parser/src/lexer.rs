@@ -723,4 +723,28 @@ mod tests {
             "#]],
         );
     }
+
+    #[test]
+    fn lex_nested_comment() {
+        check_lex_spanned(
+            "foo /* bar /* // */ baz */",
+            expect![[r#"
+                Ident@0..3
+                Blankspace@3..4
+                BlockComment@4..26
+            "#]],
+        );
+    }
+
+    #[test]
+    fn lex_unclosed_comment() {
+        check_lex_spanned(
+            "foo /*",
+            expect![[r#"
+                Ident@0..3
+                Blankspace@3..4
+                Error@4..6
+            "#]],
+        );
+    }
 }
