@@ -28,8 +28,8 @@ struct Overload {
 
 #[derive(Debug)]
 enum Type {
-    Vec(VecSize, Box<Type>),
-    Matrix(VecSize, VecSize, Box<Type>),
+    Vec(VecSize, Box<Self>),
+    Matrix(VecSize, VecSize, Box<Self>),
     Texture(TextureType),
     Sampler { comparison: bool },
     Bool,
@@ -37,9 +37,9 @@ enum Type {
     F32,
     I32,
     U32,
-    RuntimeArray(Box<Type>),
-    Pointer(Box<Type>),
-    Atomic(Box<Type>),
+    RuntimeArray(Box<Self>),
+    Pointer(Box<Self>),
+    Atomic(Box<Self>),
     Bound(usize),
     StorageTypeOfTexelFormat(usize),
 }

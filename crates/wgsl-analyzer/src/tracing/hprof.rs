@@ -198,7 +198,7 @@ struct Node {
     fields: String,
     count: u32,
     duration: Duration,
-    children: Vec<Node>,
+    children: Vec<Self>,
 }
 
 impl Node {

@@ -277,9 +277,7 @@ impl<T> fmt::Debug for Interned<T> {
 }
 
 impl<T> InternKey for Interned<T> {
-    fn from_intern_id(
-        #[expect(clippy::min_ident_chars, reason = "trait impl")] v: salsa::InternId
-    ) -> Self {
+    fn from_intern_id(v: salsa::InternId) -> Self {
         Self(v, PhantomData)
     }
 
@@ -293,9 +291,7 @@ macro_rules! intern_id {
         #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
         pub struct $id(salsa::InternId);
         impl InternKey for $id {
-            fn from_intern_id(
-                #[expect(clippy::min_ident_chars, reason = "trait impl")] v: salsa::InternId
-            ) -> Self {
+            fn from_intern_id(v: salsa::InternId) -> Self {
                 $id(v)
             }
 

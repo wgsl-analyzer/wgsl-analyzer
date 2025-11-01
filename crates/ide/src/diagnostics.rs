@@ -538,7 +538,7 @@ pub fn diagnostics(
                         .map(|(_, overload)| pretty_fn(database, &overload.r#type.lookup(database)))
                         .join("\n");
 
-                    let name = name.map_or_else(|| builtin.name(), |name| name);
+                    let name = name.unwrap_or_else(|| builtin.name());
 
                     let frange = original_file_range(database, expression.file_id, source.syntax());
                     Diagnostic::new(

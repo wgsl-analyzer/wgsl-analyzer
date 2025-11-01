@@ -29,9 +29,10 @@ use crate::{
     Field, Function, GlobalConstant, GlobalVariable, HasSource as _, Override, Parameter, TypeAlias,
 };
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Default)]
 pub enum NagaVersion {
     #[serde(rename = "0.14")]
+    #[default]
     Naga14,
     #[serde(rename = "0.19")]
     Naga19,
@@ -39,12 +40,6 @@ pub enum NagaVersion {
     Naga22,
     #[serde(rename = "main")]
     NagaMain,
-}
-
-impl Default for NagaVersion {
-    fn default() -> Self {
-        Self::Naga14
-    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
