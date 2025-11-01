@@ -1,23 +1,25 @@
 [package]
 name = "parser"
 version = "0.0.0"
-repository.workspace = true
-description = "The parser for wgsl-analyzer."
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+description = "The parser for wgsl-analyzer."
+repository.workspace = true
+license.workspace = true
 
 [lib]
 doctest = false
 
 [dependencies]
-drop_bomb = "0.1.5"
-logos = "0.12.1"
-rowan = "0.16.1"
 edition.workspace = true
+logos = "0.15.1"
+rowan = "0.16.1"
 
 [dev-dependencies]
 expect-test = "1.5.1"
+
+[build-dependencies]
+lelwel = { git = "https://github.com/0x2a-42/lelwel.git", version = "0.10.0" }
 
 [lints]
 workspace = true

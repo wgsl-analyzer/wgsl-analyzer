@@ -132,9 +132,9 @@ impl TyKind {
             })
             .align_of(address_space, database),
             Self::Struct(r#struct) => {
-                let fields = database.field_types(*r#struct);
+                let fields = &database.field_types(*r#struct).0;
                 let (align, _) =
-                    struct_member_layout(&fields, database, LayoutAddressSpace::Other, |_, _| {})?;
+                    struct_member_layout(fields, database, LayoutAddressSpace::Other, |_, _| {})?;
 
                 Some(match address_space {
                     LayoutAddressSpace::Other => align,
@@ -233,9 +233,9 @@ impl TyKind {
             })
             .size_of(address_space, database),
             Self::Struct(r#struct) => {
-                let fields = database.field_types(*r#struct);
+                let fields = &database.field_types(*r#struct).0;
                 let (_, size) =
-                    struct_member_layout(&fields, database, LayoutAddressSpace::Other, |_, _| {})?;
+                    struct_member_layout(fields, database, LayoutAddressSpace::Other, |_, _| {})?;
                 Some(size)
             },
             Self::Array(array) => match array.size {

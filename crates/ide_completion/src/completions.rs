@@ -4,7 +4,6 @@ use crate::item::{Builder, CompletionItem};
 
 pub(crate) mod dot;
 pub(crate) mod expression;
-pub(crate) mod import;
 
 /// Represents an in-progress set of completions being built.
 #[derive(Debug, Default)]

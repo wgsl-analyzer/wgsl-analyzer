@@ -261,7 +261,6 @@ pub fn completions2(
     let mut accumulator = Completions::default();
 
     let context = CompletionContext::new(database, position, config)?;
-    completions::import::complete_import(&mut accumulator, &context);
     completions::dot::complete_dot(&mut accumulator, &context);
     completions::expression::complete_names_in_scope(&mut accumulator, &context);
 

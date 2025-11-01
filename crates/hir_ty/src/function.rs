@@ -1,6 +1,5 @@
-use std::sync::Arc;
-
 use hir_def::module_data::Name;
+use triomphe::Arc;
 
 use crate::{database::HirDatabase, ty::Type};
 

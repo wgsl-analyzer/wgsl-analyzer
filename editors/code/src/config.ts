@@ -335,14 +335,6 @@ export class Config {
 		return this.get<DiagnosticsConfig>("diagnostics");
 	}
 
-	get customImports(): Record<string, string> | undefined {
-		return this.get("customImports");
-	}
-
-	get shaderDefs(): [string] | undefined {
-		return this.get<[string]>("preprocessor.shaderDefs");
-	}
-
 	get trace(): TraceConfig | undefined {
 		return this.get("trace");
 	}
