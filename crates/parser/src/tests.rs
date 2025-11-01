@@ -727,6 +727,58 @@ fn parse_let_statement_recover() {
 }
 
 #[test]
+fn parse_recover_covers_whole_file() {
+    check(
+        "fn count() {
+    let b = a
+    let c = b.x;
+}",
+        expect![[r#"
+            SourceFile@0..45
+              FunctionDeclaration@0..45
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..8
+                  Identifier@3..8 "count"
+                FunctionParameters@8..10
+                  ParenthesisLeft@8..9 "("
+                  ParenthesisRight@9..10 ")"
+                Blankspace@10..11 " "
+                CompoundStatement@11..45
+                  BraceLeft@11..12 "{"
+                  Blankspace@12..17 "\n    "
+                  LetDeclaration@17..43
+                    Let@17..20 "let"
+                    Blankspace@20..21 " "
+                    Name@21..22
+                      Identifier@21..22 "b"
+                    Blankspace@22..23 " "
+                    Equal@23..24 "="
+                    Blankspace@24..25 " "
+                    FieldExpression@25..42
+                      IdentExpression@25..40
+                        NameReference@25..26
+                          Identifier@25..26 "a"
+                        Error@26..40
+                          Error@26..31 "     "
+                          Let@31..34 "let"
+                          Blankspace@34..35 " "
+                          Identifier@35..36 "c"
+                          Blankspace@36..37 " "
+                          Equal@37..38 "="
+                          Blankspace@38..39 " "
+                          Identifier@39..40 "b"
+                      Period@40..41 "."
+                      Identifier@41..42 "x"
+                    Semicolon@42..43 ";"
+                  Blankspace@43..44 "\n"
+                  BraceRight@44..45 "}"
+
+            error at 31..34: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', '==', '!=', '>', '>=', '{', '[', '(', '<', '<=', '-', '%', '|', '||', '+', ']', ')', ';', '<<', '>>', '/', '*', <template end>, <template start>"#]],
+    );
+}
+
+#[test]
 fn parse_statement_variable_decl() {
     check_statement(
         "let x = 3;",

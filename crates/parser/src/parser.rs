@@ -87,6 +87,7 @@ pub fn parse_entrypoint(
     };
     let green_node = CstBuilder {
         builder: GreenNodeBuilder::new(),
+        token_start_index: 0,
         cst: parsed,
     }
     .build();
@@ -104,7 +105,13 @@ impl Cst<'_> {
         &self,
         index: CstIndex,
     ) -> &str {
-        &self.source[self.data.spans[usize::from(index)].clone()]
+        &self.source[self.get_span(index)]
+    }
+    pub fn get_span(
+        &self,
+        index: CstIndex,
+    ) -> std::ops::Range<usize> {
+        self.data.spans[usize::from(index)].clone()
     }
 }
 

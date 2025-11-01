@@ -108,16 +108,14 @@ impl<'database> Semantics<'database> {
     fn resolve_name_in_expression_scope(
         &self,
         definition: DefinitionWithBodyId,
-        expression: &SyntaxNode,
+        expression: &ast::Expression,
         name: &Name,
     ) -> Option<Definition> {
         let file_id = definition.file_id(self.database);
         let module_info = self.database.module_info(file_id);
         let expression_scopes = self.database.expression_scopes(definition);
         let (_, source_map) = self.database.body_with_source_map(definition);
-        let expression_id = source_map.lookup_expression(&AstPointer::new(
-            &ast::Expression::cast(expression.clone())?,
-        ))?;
+        let expression_id = source_map.lookup_expression(&AstPointer::new(expression))?;
         let scope_id = expression_scopes.scope_for_expression(expression_id)?;
         let mut resolver = Resolver::default().push_module_scope(file_id, module_info);
 

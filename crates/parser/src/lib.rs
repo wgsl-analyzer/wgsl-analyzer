@@ -120,7 +120,15 @@ fn check_entrypoint(
     entry_point: ParseEntryPoint,
     expected_tree: &expect_test::Expect,
 ) {
+    use rowan::TextSize;
+
     let parse = crate::parser::parse_entrypoint(input, entry_point);
+    assert_eq!(parse.syntax().text_range().start(), TextSize::new(0));
+    assert_eq!(
+        parse.syntax().text_range().end(),
+        TextSize::try_from(input.len()).unwrap(),
+        "Syntax tree should cover entire file"
+    );
     expected_tree.assert_eq(&parse.debug_tree());
 }
 

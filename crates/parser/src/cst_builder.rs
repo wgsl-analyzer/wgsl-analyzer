@@ -8,6 +8,7 @@ use crate::{
 
 pub struct CstBuilder<'source, 'cache> {
     pub builder: GreenNodeBuilder<'cache>,
+    pub token_start_index: usize,
     pub cst: Cst<'source>,
 }
 impl CstBuilder<'_, '_> {
@@ -183,6 +184,15 @@ impl CstBuilder<'_, '_> {
         ) {
             return; // Ignore
         }
+        let token_span = self.cst.get_span(index);
+        // Due to https://github.com/0x2a-42/lelwel/issues/61 , lelwel can sometimes produce tokens that are not contiguous
+        if token_span.start > self.token_start_index {
+            let delta = token_span.start - self.token_start_index;
+            self.builder
+                .token(SyntaxKind::Error.into(), &" ".repeat(delta));
+        }
+        self.token_start_index = token_span.end;
+
         let text = &self.cst.get_text(index);
         let syntax_kind = SyntaxKind::try_from(token)
             .unwrap_or_else(|()| panic!("token {token:?} should be convertible to a SyntaxKind"));

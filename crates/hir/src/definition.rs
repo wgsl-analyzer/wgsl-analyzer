@@ -29,7 +29,7 @@ impl Definition {
         match_ast! {
             match node {
                 ast::NameReference(name_ref) => {
-                    resolve_name_ref(semantics, file_id, &name_ref)
+                    resolve_name_ref(semantics, file_id, name_ref)
                 },
                 _ => {
                     tracing::warn!("attempted to go to definition {:?}", node);
@@ -43,15 +43,22 @@ impl Definition {
 fn resolve_name_ref(
     semantics: &Semantics<'_>,
     file_id: HirFileId,
-    name_ref: &ast::NameReference,
+    name_ref: ast::NameReference,
 ) -> Option<Definition> {
     let parent = name_ref.syntax().parent()?;
 
     if let Some(expression) = ast::IdentExpression::cast(parent.clone()) {
-        let name = Name::from(expression.name_ref()?);
+        let name = Name::from(name_ref);
         let definition = semantics.find_container(file_id, expression.syntax())?;
+        let expression_node = if let Some(function_call) =
+            ast::FunctionCall::cast(expression.syntax().parent()?.clone())
+        {
+            ast::Expression::cast(function_call.syntax().clone())?
+        } else {
+            ast::Expression::cast(expression.syntax().clone())?
+        };
         let definition =
-            semantics.resolve_name_in_expression_scope(definition, expression.syntax(), &name)?;
+            semantics.resolve_name_in_expression_scope(definition, &expression_node, &name)?;
 
         Some(definition)
     } else if let Some(expression) = ast::FieldExpression::cast(parent.clone()) {
@@ -73,7 +80,7 @@ fn resolve_name_ref(
                     id,
                 })))
             },
-            // TODO: Why is it not doing anything here?
+            // Type specifiers always represent types
             ResolveKind::Function(_)
             | ResolveKind::GlobalConstant(_)
             | ResolveKind::GlobalVariable(_)
