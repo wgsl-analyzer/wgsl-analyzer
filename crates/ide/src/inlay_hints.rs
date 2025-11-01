@@ -494,7 +494,9 @@ fn declaration_type_hints(
         return None;
     }
     let container = semantics.find_container(file_id.into(), node)?;
-    let r#type = semantics.analyze(container).type_of_binding(binding)?;
+    let r#type = semantics
+        .analyze(container.as_def_with_body_id()?)
+        .type_of_binding(binding)?;
 
     let mut label = InlayHintLabel::from(pretty_type_with_verbosity(
         semantics.database,
@@ -528,7 +530,7 @@ fn function_hints(
     parameter_expressions: AstChildren<AstExpression>,
 ) -> Option<()> {
     let container = semantics.find_container(file_id.into(), node)?;
-    let analyzed = semantics.analyze(container);
+    let analyzed = semantics.analyze(container.as_def_with_body_id()?);
     let expression = analyzed.expression_id(expression)?;
     let resolved = analyzed.infer.call_resolution(expression)?;
     let func = match resolved {

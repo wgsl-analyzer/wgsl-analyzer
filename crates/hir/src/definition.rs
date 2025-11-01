@@ -61,7 +61,7 @@ fn resolve_name_ref(
             ast::Expression::cast(expression.syntax().clone())?
         };
         let definition =
-            semantics.resolve_name_in_expression_scope(definition, &expression_node, &name)?;
+            semantics.resolve_name_in_container(definition, &expression_node, &name)?;
 
         Some(definition)
     } else if let Some(expression) = ast::FieldExpression::cast(parent.clone()) {
@@ -99,7 +99,7 @@ fn resolve_field(
 ) -> Option<Definition> {
     let definition = semantics.find_container(file_id, field_expression.syntax())?;
     let field = semantics
-        .analyze(definition)
+        .analyze(definition.as_def_with_body_id()?)
         .resolve_field(field_expression)?;
     Some(Definition::Field(field))
 }

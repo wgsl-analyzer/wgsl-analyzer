@@ -21,6 +21,7 @@ use hir_def::{
 pub use hir_ty::database::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
+use stdx::impl_from;
 use syntax::{
     AstNode as _, HasName as _, SyntaxKind, SyntaxNode, ast, match_ast, pointer::AstPointer,
 };
@@ -66,18 +67,92 @@ impl<'database> Semantics<'database> {
         &self,
         file_id: HirFileId,
         source: &SyntaxNode,
-    ) -> Option<DefinitionWithBodyId> {
-        source.ancestors().find_map(|syntax| {
-            match_ast! {
-                match syntax {
-                    ast::FunctionDeclaration(function) => self.function_to_def(&InFile::new(file_id, function)).map(DefinitionWithBodyId::Function),
-                    ast::VariableDeclaration(var) => self.global_variable_to_def(&InFile::new(file_id, var)).map(DefinitionWithBodyId::GlobalVariable),
-                    ast::ConstantDeclaration(constant) => self.global_constant_to_def(&InFile::new(file_id, constant)).map(DefinitionWithBodyId::GlobalConstant),
-                    ast::OverrideDeclaration(item) => self.global_override_to_def(&InFile::new(file_id, item)).map(DefinitionWithBodyId::Override),
-                    _ => None,
+    ) -> Option<ChildContainer> {
+        source
+            .ancestors()
+            .find_map(|syntax| -> Option<ChildContainer> {
+                if let Some(item) = ast::Item::cast(syntax.clone()) {
+                    let container: ChildContainer = match item {
+                        ast::Item::FunctionDeclaration(function_declaration) => {
+                            let child_offset = source.text_range().start();
+                            let is_in_body = function_declaration
+                                .body()
+                                .is_some_and(|it| it.syntax().text_range().contains(child_offset));
+
+                            let definition =
+                                self.function_to_def(&InFile::new(file_id, function_declaration))?;
+                            if is_in_body {
+                                DefinitionWithBodyId::Function(definition).into()
+                            } else {
+                                ChildContainer::FunctionId(definition)
+                            }
+                        },
+                        ast::Item::VariableDeclaration(variable_declaration) => {
+                            let child_offset = source.text_range().start();
+                            let is_in_body = variable_declaration
+                                .init()
+                                .is_some_and(|it| it.syntax().text_range().contains(child_offset));
+
+                            let definition = self.global_variable_to_def(&InFile::new(
+                                file_id,
+                                variable_declaration,
+                            ))?;
+                            if is_in_body {
+                                DefinitionWithBodyId::GlobalVariable(definition).into()
+                            } else {
+                                ChildContainer::GlobalVariableId(definition)
+                            }
+                        },
+                        ast::Item::ConstantDeclaration(constant_declaration) => {
+                            let child_offset = source.text_range().start();
+                            let is_in_body = constant_declaration
+                                .init()
+                                .is_some_and(|it| it.syntax().text_range().contains(child_offset));
+
+                            let definition = self.global_constant_to_def(&InFile::new(
+                                file_id,
+                                constant_declaration,
+                            ))?;
+                            if is_in_body {
+                                DefinitionWithBodyId::GlobalConstant(definition).into()
+                            } else {
+                                ChildContainer::GlobalConstantId(definition)
+                            }
+                        },
+                        ast::Item::OverrideDeclaration(override_declaration) => {
+                            let child_offset = source.text_range().start();
+                            let is_in_body = override_declaration
+                                .init()
+                                .is_some_and(|it| it.syntax().text_range().contains(child_offset));
+
+                            let definition = self.global_override_to_def(&InFile::new(
+                                file_id,
+                                override_declaration,
+                            ))?;
+                            if is_in_body {
+                                DefinitionWithBodyId::Override(definition).into()
+                            } else {
+                                ChildContainer::OverrideId(definition)
+                            }
+                        },
+                        ast::Item::TypeAliasDeclaration(type_alias_declaration) => {
+                            let definition = self.global_type_alias_to_def(&InFile::new(
+                                file_id,
+                                type_alias_declaration,
+                            ))?;
+                            ChildContainer::TypeAliasId(definition)
+                        },
+                        ast::Item::StructDeclaration(struct_declaration) => {
+                            let definition = self
+                                .global_struct_to_def(&InFile::new(file_id, struct_declaration))?;
+                            ChildContainer::StructId(definition)
+                        },
+                    };
+                    Some(container)
+                } else {
+                    None
                 }
-            }
-        })
+            })
     }
 
     #[must_use]
@@ -105,21 +180,25 @@ impl<'database> Semantics<'database> {
         }
     }
 
-    fn resolve_name_in_expression_scope(
+    fn resolve_name_in_container(
         &self,
-        definition: DefinitionWithBodyId,
+        container: ChildContainer,
         expression: &ast::Expression,
         name: &Name,
     ) -> Option<Definition> {
-        let file_id = definition.file_id(self.database);
-        let module_info = self.database.module_info(file_id);
-        let expression_scopes = self.database.expression_scopes(definition);
-        let (_, source_map) = self.database.body_with_source_map(definition);
-        let expression_id = source_map.lookup_expression(&AstPointer::new(expression))?;
-        let scope_id = expression_scopes.scope_for_expression(expression_id)?;
-        let mut resolver = Resolver::default().push_module_scope(file_id, module_info);
+        let mut resolver = container.resolver(self.database);
 
-        if let DefinitionWithBodyId::Function(function) = definition {
+        if let ChildContainer::DefinitionWithBodyId(DefinitionWithBodyId::Function(function)) =
+            container
+        {
+            let (_, source_map) = self
+                .database
+                .body_with_source_map(DefinitionWithBodyId::Function(function));
+            let expression_id = source_map.lookup_expression(&AstPointer::new(expression))?;
+            let expression_scopes = self
+                .database
+                .expression_scopes(DefinitionWithBodyId::Function(function));
+            let scope_id = expression_scopes.scope_for_expression(expression_id)?;
             resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
         }
 
@@ -223,6 +302,72 @@ impl<'database> Semantics<'database> {
             .database
             .intern_struct(Location::new(source.file_id, item));
         Some(id)
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub enum ChildContainer {
+    /// This variant is for when the expression is inside the body
+    DefinitionWithBodyId(DefinitionWithBodyId),
+    FunctionId(FunctionId),
+    GlobalVariableId(GlobalVariableId),
+    GlobalConstantId(GlobalConstantId),
+    OverrideId(OverrideId),
+    StructId(StructId),
+    TypeAliasId(TypeAliasId),
+}
+impl_from! {
+    DefinitionWithBodyId,
+    FunctionId,
+    GlobalVariableId,
+    GlobalConstantId,
+    OverrideId,
+    StructId,
+    TypeAliasId
+    for ChildContainer
+}
+
+impl ChildContainer {
+    pub fn file_id(
+        self,
+        database: &dyn DefDatabase,
+    ) -> HirFileId {
+        match self {
+            Self::DefinitionWithBodyId(id) => id.file_id(database),
+            Self::FunctionId(id) => id.lookup(database).file_id,
+            Self::GlobalVariableId(id) => id.lookup(database).file_id,
+            Self::GlobalConstantId(id) => id.lookup(database).file_id,
+            Self::OverrideId(id) => id.lookup(database).file_id,
+            Self::StructId(id) => id.lookup(database).file_id,
+            Self::TypeAliasId(id) => id.lookup(database).file_id,
+        }
+    }
+
+    pub fn resolver(
+        self,
+        database: &dyn HirDatabase,
+    ) -> Resolver {
+        match self {
+            Self::DefinitionWithBodyId(id) => id.resolver(database),
+            Self::FunctionId(_)
+            | Self::GlobalVariableId(_)
+            | Self::GlobalConstantId(_)
+            | Self::OverrideId(_)
+            | Self::StructId(_)
+            | Self::TypeAliasId(_) => {
+                let file_id = self.file_id(database);
+                let module_info = database.module_info(file_id);
+                Resolver::default().push_module_scope(file_id, module_info)
+            },
+        }
+    }
+
+    pub const fn as_def_with_body_id(&self) -> Option<DefinitionWithBodyId> {
+        if let Self::DefinitionWithBodyId(id) = *self {
+            Some(id)
+        } else {
+            None
+        }
     }
 }
 

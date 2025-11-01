@@ -15,7 +15,8 @@ use hir_def::{
         StructData, TypeAliasData,
     },
     database::{
-        DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, Lookup as _, OverrideId, StructId,
+        DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, Lookup as _, ModuleDefinitionId,
+        OverrideId, StructId,
     },
     expression::{
         ArithmeticOperation, BinaryOperation, ComparisonOperation, Expression, ExpressionId,
@@ -59,29 +60,29 @@ pub fn infer_query(
 ) -> Arc<InferenceResult> {
     let resolver = definition.resolver(database);
     let body = database.body(definition);
-    let mut context = InferenceContext::new(database, body, definition, resolver);
+    let mut context = InferenceContext::new(database, definition.into(), resolver);
 
     match definition {
         DefinitionWithBodyId::Function(function) => {
             let data = database.function_data(function).0;
-            let return_type = context.collect_fn(&data);
-            context.infer_body(return_type, AbstractHandling::Concretize);
+            let return_type = context.collect_fn(&data, &body);
+            context.infer_body(&body, return_type, AbstractHandling::Concretize);
         },
         DefinitionWithBodyId::GlobalVariable(var) => {
             let data = database.global_var_data(var).0;
-            let return_type = context.collect_global_variable(&data);
-            context.infer_body(return_type, AbstractHandling::Concretize);
-            context.infer_global_variable(&data);
+            let return_type = context.collect_global_variable(&data, &body);
+            context.infer_body(&body, return_type, AbstractHandling::Concretize);
+            context.infer_global_variable(&data, &body);
         },
         DefinitionWithBodyId::GlobalConstant(constant) => {
             let data = database.global_constant_data(constant).0;
-            let return_type = context.collect_global_constant(&data);
-            context.infer_body(return_type, AbstractHandling::Abstract);
+            let return_type = context.collect_global_constant(&data, &body);
+            context.infer_body(&body, return_type, AbstractHandling::Abstract);
         },
         DefinitionWithBodyId::Override(override_decl) => {
             let data = database.override_data(override_decl).0;
-            let return_type = context.collect_override(&data);
-            context.infer_body(return_type, AbstractHandling::Concretize);
+            let return_type = context.collect_override(&data, &body);
+            context.infer_body(&body, return_type, AbstractHandling::Concretize);
         },
     }
 
@@ -94,43 +95,99 @@ pub fn infer_cycle_result(
     definition: &DefinitionWithBodyId,
 ) -> Arc<InferenceResult> {
     let mut inference_result: InferenceResult = InferenceResult::new(database);
-
-    let (name, range) = match *definition {
-        DefinitionWithBodyId::Function(id) => (
-            database.function_data(id).0.name.clone(),
-            id.lookup(database)
-                .source(database)
-                .original_file_range(database)
-                .range,
-        ),
-        DefinitionWithBodyId::GlobalVariable(id) => (
-            database.global_var_data(id).0.name.clone(),
-            id.lookup(database)
-                .source(database)
-                .original_file_range(database)
-                .range,
-        ),
-        DefinitionWithBodyId::GlobalConstant(id) => (
-            database.global_constant_data(id).0.name.clone(),
-            id.lookup(database)
-                .source(database)
-                .original_file_range(database)
-                .range,
-        ),
-        DefinitionWithBodyId::Override(id) => (
-            database.override_data(id).0.name.clone(),
-            id.lookup(database)
-                .source(database)
-                .original_file_range(database)
-                .range,
-        ),
-    };
+    let (name, range) = get_name_and_range(database, &ModuleDefinitionId::from(*definition));
 
     inference_result
         .diagnostics
         .push(InferenceDiagnostic::CyclicType { name, range });
 
     Arc::new(inference_result)
+}
+
+/// Infers the type of a global item's signature.
+/// The [`InferenceResult`] will contain [`ExpressionId`]s from the signature expression store.
+/// The return type is purposefully left as the error type.
+/// For example, for `const a = 3` it depends on the initializer, which we do not access here.
+pub fn infer_signature_query(
+    database: &dyn HirDatabase,
+    definition: ModuleDefinitionId,
+) -> Option<Arc<InferenceResult>> {
+    let resolver = definition.resolver(database);
+    let context = InferenceContext::new(database, definition, resolver);
+
+    // TODO: Match the definition and deal with the generic types in the signature.
+    // Those can contain expressions, which need to land in the inference results.
+
+    let result = context.resolve_all();
+    if result.is_empty() {
+        None
+    } else {
+        Some(Arc::new(result))
+    }
+}
+
+pub fn infer_signature_cycle_result(
+    database: &dyn HirDatabase,
+    _cycle: &[String],
+    definition: &ModuleDefinitionId,
+) -> Option<Arc<InferenceResult>> {
+    let mut inference_result: InferenceResult = InferenceResult::new(database);
+    let (name, range) = get_name_and_range(database, definition);
+    inference_result
+        .diagnostics
+        .push(InferenceDiagnostic::CyclicType { name, range });
+
+    Some(Arc::new(inference_result))
+}
+
+fn get_name_and_range(
+    database: &dyn HirDatabase,
+    definition: &ModuleDefinitionId,
+) -> (Name, base_db::TextRange) {
+    match *definition {
+        ModuleDefinitionId::Function(id) => (
+            database.function_data(id).0.name.clone(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
+        ),
+        ModuleDefinitionId::GlobalVariable(id) => (
+            database.global_var_data(id).0.name.clone(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
+        ),
+        ModuleDefinitionId::GlobalConstant(id) => (
+            database.global_constant_data(id).0.name.clone(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
+        ),
+        ModuleDefinitionId::Override(id) => (
+            database.override_data(id).0.name.clone(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
+        ),
+        ModuleDefinitionId::Struct(id) => (
+            database.struct_data(id).0.name.clone(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
+        ),
+        ModuleDefinitionId::TypeAlias(id) => (
+            database.type_alias_data(id).0.name.clone(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
+        ),
+    }
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -289,6 +346,14 @@ impl InferenceResult {
     pub const fn return_type(&self) -> Type {
         self.return_type
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.type_of_expression.values().next().is_none()
+            && self.type_of_binding.values().next().is_none()
+            && self.diagnostics.is_empty()
+            && self.call_resolutions.is_empty()
+            && self.field_resolutions.is_empty()
+    }
 }
 
 impl Index<ExpressionId> for InferenceResult {
@@ -318,10 +383,9 @@ impl Index<BindingId> for InferenceResult {
 /// Runs inference for items that have a body, such as functions
 pub struct InferenceContext<'database> {
     database: &'database dyn HirDatabase,
-    owner: DefinitionWithBodyId,
+    owner: ModuleDefinitionId,
     /// Root resolver for the entire module
     resolver: Resolver,
-    body: Arc<Body>,
     result: InferenceResult, // set in collect_* calls
     return_ty: Type,
 }
@@ -329,15 +393,13 @@ pub struct InferenceContext<'database> {
 impl<'database> InferenceContext<'database> {
     pub fn new(
         database: &'database dyn HirDatabase,
-        body: Arc<Body>,
-        owner: DefinitionWithBodyId,
+        owner: ModuleDefinitionId,
         resolver: Resolver,
     ) -> Self {
         Self {
             database,
             owner,
             resolver,
-            body,
             result: InferenceResult::new(database),
             return_ty: TyKind::Error.intern(database),
         }
@@ -373,9 +435,10 @@ impl<'database> InferenceContext<'database> {
     fn bind_return_ty(
         &mut self,
         r#type: Option<Type>,
+        body: &Body,
     ) {
         if let Some(r#type) = r#type
-            && let Some(binding) = self.body.main_binding
+            && let Some(binding) = body.main_binding
         {
             self.set_binding_ty(binding, r#type);
         }
@@ -419,18 +482,20 @@ impl<'database> InferenceContext<'database> {
     fn collect_global_variable(
         &mut self,
         var: &GlobalVariableData,
+        body: &Body,
     ) -> Option<Type> {
         let r#type = var
             .r#type
             .map(|r#type| self.lower_ty(r#type, &self.resolver.clone(), &var.store));
 
-        self.bind_return_ty(r#type);
+        self.bind_return_ty(r#type, body);
         r#type
     }
 
     fn infer_global_variable(
         &mut self,
         var: &GlobalVariableData,
+        body: &Body,
     ) {
         let (address_space, access_mode) =
             self.infer_variable_template(&var.template_parameters, &var.store);
@@ -441,11 +506,10 @@ impl<'database> InferenceContext<'database> {
             });
         }
 
-        self.bind_return_ty(Some(self.make_ref(
-            self.return_ty,
-            address_space,
-            access_mode,
-        )));
+        self.bind_return_ty(
+            Some(self.make_ref(self.return_ty, address_space, access_mode)),
+            body,
+        );
     }
 
     fn infer_variable_template(
@@ -507,32 +571,34 @@ impl<'database> InferenceContext<'database> {
     fn collect_global_constant(
         &mut self,
         constant: &GlobalConstantData,
+        body: &Body,
     ) -> Option<Type> {
         let r#type = constant
             .r#type
             .map(|r#type| self.lower_ty(r#type, &self.resolver.clone(), &constant.store));
 
-        self.bind_return_ty(r#type);
+        self.bind_return_ty(r#type, body);
         r#type
     }
 
     fn collect_override(
         &mut self,
         override_data: &OverrideData,
+        body: &Body,
     ) -> Option<Type> {
         let r#type = override_data
             .r#type
             .map(|r#type| self.lower_ty(r#type, &self.resolver.clone(), &override_data.store));
 
-        self.bind_return_ty(r#type);
+        self.bind_return_ty(r#type, body);
         r#type
     }
 
     fn collect_fn(
         &mut self,
         function_data: &FunctionData,
+        body: &Body,
     ) -> Option<Type> {
-        let body = self.body.clone();
         for ((_, parameter), &binding_id) in function_data.parameters.iter().zip(&body.parameters) {
             let param_ty = self.lower_ty(
                 parameter.r#type,
@@ -551,21 +617,20 @@ impl<'database> InferenceContext<'database> {
     /// Runs type inference on the body and infer the type for `const`s, `var`s and `override`s
     fn infer_body(
         &mut self,
+        body: &Body,
         return_type: Option<Type>,
         abstract_handling: AbstractHandling,
     ) {
-        match self.body.root {
+        match body.root {
             Some(Either::Left(statement)) => {
-                self.infer_statement(statement);
+                self.infer_statement(statement, body);
             },
             Some(Either::Right(expression)) => {
-                let body = self.body.clone();
-
                 let r#type =
                     self.infer_initializer(&body, Some(expression), return_type, abstract_handling);
 
                 if return_type.is_none() {
-                    self.bind_return_ty(Some(r#type));
+                    self.bind_return_ty(Some(r#type), body);
                 }
             },
             None => (),
@@ -576,7 +641,7 @@ impl<'database> InferenceContext<'database> {
         &self,
         expression: ExpressionId,
     ) -> Option<Resolver> {
-        let DefinitionWithBodyId::Function(function) = self.owner else {
+        let ModuleDefinitionId::Function(function) = self.owner else {
             return None;
         };
         let expression_scopes = self
@@ -596,7 +661,7 @@ impl<'database> InferenceContext<'database> {
         &self,
         statement: StatementId,
     ) -> Resolver {
-        let DefinitionWithBodyId::Function(function) = self.owner else {
+        let ModuleDefinitionId::Function(function) = self.owner else {
             return self.resolver.clone();
         };
 
@@ -617,14 +682,14 @@ impl<'database> InferenceContext<'database> {
     fn infer_statement(
         &mut self,
         statement: StatementId,
+        body: &Body,
     ) {
-        let body = self.body.clone();
         let resolver = self.resolver_for_statement(statement);
 
         match &body.statements[statement] {
             Statement::Compound { statements } => {
                 for statement in statements {
-                    self.infer_statement(*statement);
+                    self.infer_statement(*statement, body);
                 }
             },
             Statement::Variable {
@@ -768,12 +833,12 @@ impl<'database> InferenceContext<'database> {
                 else_if_blocks,
                 else_block,
             } => {
-                self.infer_statement(*block);
+                self.infer_statement(*block, body);
                 for else_if_block in else_if_blocks {
-                    self.infer_statement(*else_if_block);
+                    self.infer_statement(*else_if_block, body);
                 }
                 if let Some(else_block) = else_block {
-                    self.infer_statement(*else_block);
+                    self.infer_statement(*else_block, body);
                 }
                 self.infer_expression_expect(
                     *condition,
@@ -782,7 +847,7 @@ impl<'database> InferenceContext<'database> {
                 );
             },
             Statement::While { condition, block } => {
-                self.infer_statement(*block);
+                self.infer_statement(*block, body);
                 self.infer_expression_expect(
                     *condition,
                     &TypeExpectation::from_ty(self.bool_ty()),
@@ -807,7 +872,7 @@ impl<'database> InferenceContext<'database> {
                             );
                         }
                     }
-                    self.infer_statement(*case);
+                    self.infer_statement(*case, body);
                 }
             },
             Statement::For {
@@ -817,10 +882,10 @@ impl<'database> InferenceContext<'database> {
                 block,
             } => {
                 if let Some(init) = initializer {
-                    self.infer_statement(*init);
+                    self.infer_statement(*init, body);
                 }
                 if let Some(cont) = continuing_part {
-                    self.infer_statement(*cont);
+                    self.infer_statement(*cont, body);
                 }
 
                 if let Some(condition) = condition {
@@ -831,10 +896,10 @@ impl<'database> InferenceContext<'database> {
                     );
                 }
 
-                self.infer_statement(*block);
+                self.infer_statement(*block, body);
             },
-            Statement::Loop { body } => {
-                self.infer_statement(*body);
+            Statement::Loop { body: loop_body } => {
+                self.infer_statement(*loop_body, body);
             },
             Statement::Assert { expression } => {
                 self.infer_expression_expect(
@@ -844,7 +909,7 @@ impl<'database> InferenceContext<'database> {
                 );
             },
             Statement::Discard | Statement::Break | Statement::Continue | Statement::Missing => {},
-            Statement::Continuing { block } => self.infer_statement(*block),
+            Statement::Continuing { block } => self.infer_statement(*block, body),
             Statement::BreakIf { condition } => {
                 self.infer_expression_expect(
                     *condition,

@@ -561,6 +561,7 @@ dependencies = [
  "la-arena",
  "serde",
  "smallvec",
+ "stdx 0.0.0",
  "syntax",
  "tracing",
  "triomphe",

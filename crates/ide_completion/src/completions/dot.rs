@@ -19,7 +19,11 @@ pub(crate) fn complete_dot(
     };
     match context
         .semantics
-        .analyze(context.container?)
+        .analyze(
+            context
+                .container
+                .and_then(|container| container.as_def_with_body_id())?,
+        )
         .type_of_expression(&expression.expression()?)?
         .kind(context.database)
         .unref(context.database)
@@ -85,7 +89,7 @@ fn vector_completions(
             "Invalid vector size: {size}"
         );
         let possible_swizzles = possible_swizzles(size, &field_text);
-        let suggestions = possible_swizzles.enumerate().map(|(index, label)| {
+        let suggestions = possible_swizzles.enumerate().map(|(_, label)| {
             let binding =
                 CompletionItem::new(CompletionItemKind::Field, context.source_range(), label);
             binding.build(context.database)

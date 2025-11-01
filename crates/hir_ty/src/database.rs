@@ -11,7 +11,7 @@ use crate::infer::{
 };
 use crate::ty::{TyKind, Type};
 use hir_def::data::FieldId;
-use hir_def::database::{DefinitionWithBodyId, GlobalVariableId, TypeAliasId};
+use hir_def::database::{DefinitionWithBodyId, GlobalVariableId, ModuleDefinitionId, TypeAliasId};
 use hir_def::{
     HirFileId, InFile,
     data::LocalFieldId,
@@ -30,6 +30,13 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
         &self,
         key: DefinitionWithBodyId,
     ) -> Arc<InferenceResult>;
+
+    #[salsa::invoke(crate::infer::infer_signature_query)]
+    #[salsa::cycle(crate::infer::infer_signature_cycle_result)]
+    fn infer_signature(
+        &self,
+        key: ModuleDefinitionId,
+    ) -> Option<Arc<InferenceResult>>;
 
     fn field_types(
         &self,

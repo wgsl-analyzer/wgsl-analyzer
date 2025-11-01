@@ -336,6 +336,7 @@ intern_id!(OverrideId, Location<Override>, lookup_intern_override);
 intern_id!(StructId, Location<Struct>, lookup_intern_struct);
 intern_id!(TypeAliasId, Location<TypeAlias>, lookup_intern_type_alias);
 
+/// Module items with a body.
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
 pub enum DefinitionWithBodyId {
     Function(FunctionId),
@@ -364,5 +365,52 @@ impl DefinitionWithBodyId {
         let file_id = self.file_id(database);
         let module_info = database.module_info(file_id);
         Resolver::default().push_module_scope(file_id, module_info)
+    }
+}
+
+/// All module items.
+#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
+pub enum ModuleDefinitionId {
+    Function(FunctionId),
+    GlobalVariable(GlobalVariableId),
+    GlobalConstant(GlobalConstantId),
+    Override(OverrideId),
+    Struct(StructId),
+    TypeAlias(TypeAliasId),
+}
+
+impl ModuleDefinitionId {
+    pub fn file_id(
+        self,
+        database: &dyn DefDatabase,
+    ) -> HirFileId {
+        match self {
+            Self::Function(id) => id.lookup(database).file_id,
+            Self::GlobalVariable(id) => id.lookup(database).file_id,
+            Self::GlobalConstant(id) => id.lookup(database).file_id,
+            Self::Override(id) => id.lookup(database).file_id,
+            Self::Struct(id) => id.lookup(database).file_id,
+            Self::TypeAlias(id) => id.lookup(database).file_id,
+        }
+    }
+
+    pub fn resolver(
+        self,
+        database: &dyn DefDatabase,
+    ) -> Resolver {
+        let file_id = self.file_id(database);
+        let module_info = database.module_info(file_id);
+        Resolver::default().push_module_scope(file_id, module_info)
+    }
+}
+
+impl From<DefinitionWithBodyId> for ModuleDefinitionId {
+    fn from(value: DefinitionWithBodyId) -> Self {
+        match value {
+            DefinitionWithBodyId::Function(id) => Self::Function(id),
+            DefinitionWithBodyId::GlobalVariable(id) => Self::GlobalVariable(id),
+            DefinitionWithBodyId::GlobalConstant(id) => Self::GlobalConstant(id),
+            DefinitionWithBodyId::Override(id) => Self::Override(id),
+        }
     }
 }

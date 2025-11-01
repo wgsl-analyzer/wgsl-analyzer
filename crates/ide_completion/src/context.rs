@@ -1,6 +1,6 @@
 use base_db::{FilePosition, TextRange};
 use either::Either;
-use hir::{HirDatabase, Semantics};
+use hir::{ChildContainer, HirDatabase, Semantics};
 use hir_def::{
     HirFileId,
     database::{DefDatabase as _, DefinitionWithBodyId},
@@ -23,7 +23,7 @@ pub(crate) struct CompletionContext<'database> {
     pub(crate) position: FilePosition,
     pub(crate) token: SyntaxToken,
     pub(crate) file: ast::SourceFile,
-    pub(crate) container: Option<DefinitionWithBodyId>,
+    pub(crate) container: Option<ChildContainer>,
     pub(crate) completion_location: Option<ImmediateLocation>,
     pub(crate) resolver: Resolver,
 }
@@ -65,6 +65,7 @@ impl<'database> CompletionContext<'database> {
 
         if let Some(scope) = nearest_scope
             && let Some(definition) = container
+            && let Some(definition) = definition.as_def_with_body_id()
         {
             resolver = semantics.analyze(definition).resolver_for(scope);
         }

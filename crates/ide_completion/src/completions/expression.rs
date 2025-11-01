@@ -45,6 +45,7 @@ pub(crate) fn complete_names_in_scope(
         let detail = match item {
             ScopeDef::Local(local) => context
                 .container
+                .and_then(|container| container.as_def_with_body_id())
                 .map(|definition| {
                     let inference = context.database.infer(definition);
                     inference[local]
