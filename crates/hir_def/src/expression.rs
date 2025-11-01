@@ -153,7 +153,7 @@ pub enum SwitchCaseSelector {
 /// # Panics
 ///
 /// Panics if the literal is invalid.
-#[must_use] 
+#[must_use]
 pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
     match literal {
         ast::LiteralKind::IntLiteral(literal) => {

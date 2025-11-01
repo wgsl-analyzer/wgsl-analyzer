@@ -60,18 +60,22 @@ impl CstBuilder<'_, '_> {
             Rule::Literal => self.start_node(SyntaxKind::Literal),
             Rule::BreakIfStatement => self.start_node(SyntaxKind::BreakIfStatement),
             Rule::BreakStatement => self.start_node(SyntaxKind::BreakStatement),
-            Rule::CaseClause => self.start_node(SyntaxKind::SwitchBodyCase),
+            Rule::CaseClause | Rule::DefaultAloneClause => {
+                self.start_node(SyntaxKind::SwitchBodyCase)
+            },
             Rule::CaseSelectors => self.start_node(SyntaxKind::SwitchCaseSelectors),
             Rule::CompoundAssignmentStatement => {
                 self.start_node(SyntaxKind::CompoundAssignmentStatement);
             },
-            Rule::CompoundStatement => self.start_node(SyntaxKind::CompoundStatement),
+            Rule::CompoundStatement
+            | Rule::ContinuingCompoundStatement
+            | Rule::LoopCompoundStatement => self.start_node(SyntaxKind::CompoundStatement),
             Rule::ConstDeclaration => self.start_node(SyntaxKind::ConstantDeclaration),
             Rule::ContinueStatement => self.start_node(SyntaxKind::ContinueStatement),
             Rule::ContinuingStatement => self.start_node(SyntaxKind::ContinuingStatement),
-            Rule::ContinuingCompoundStatement => self.start_node(SyntaxKind::CompoundStatement),
-            Rule::DecrementStatement => self.start_node(SyntaxKind::IncrementDecrementStatement),
-            Rule::DefaultAloneClause => self.start_node(SyntaxKind::SwitchBodyCase),
+            Rule::DecrementStatement | Rule::IncrementStatement => {
+                self.start_node(SyntaxKind::IncrementDecrementStatement)
+            },
             Rule::DefaultCaseSelector => self.start_node(SyntaxKind::SwitchDefaultSelector),
             Rule::DiagnosticAttr => todo!(),
             Rule::DiagnosticControl => todo!(),
@@ -97,11 +101,9 @@ impl CstBuilder<'_, '_> {
             Rule::IdentExpression => self.start_node(SyntaxKind::IdentExpression),
             Rule::IfClause => self.start_node(SyntaxKind::IfClause),
             Rule::IfStatement => self.start_node(SyntaxKind::IfStatement),
-            Rule::IncrementStatement => self.start_node(SyntaxKind::IncrementDecrementStatement),
             Rule::IndexingExpression => self.start_node(SyntaxKind::IndexExpression),
             Rule::LetDeclaration => self.start_node(SyntaxKind::LetDeclaration),
             Rule::LoopStatement => self.start_node(SyntaxKind::LoopStatement),
-            Rule::LoopCompoundStatement => self.start_node(SyntaxKind::CompoundStatement),
             Rule::Name => self.start_node(SyntaxKind::Name),
             Rule::NameRef => self.start_node(SyntaxKind::NameReference),
             Rule::OverrideDeclaration => self.start_node(SyntaxKind::OverrideDeclaration),

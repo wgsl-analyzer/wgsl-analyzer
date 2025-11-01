@@ -235,7 +235,7 @@ impl ExprCollector<'_> {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn finish(self) -> (super::ExpressionStore, ExpressionSourceMap) {
         self.store.finish()
     }
@@ -248,10 +248,12 @@ pub(crate) fn lower_function(
     let name = as_name_opt(function.value.name());
 
     let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
-    let parameters = function.value.parameter_list().map_or_else(
-        Arena::new,
-        |parameters| collector.collect_function_param_list(&parameters),
-    );
+    let parameters = function
+        .value
+        .parameter_list()
+        .map_or_else(Arena::new, |parameters| {
+            collector.collect_function_param_list(&parameters)
+        });
     let return_type = function
         .value
         .return_type()

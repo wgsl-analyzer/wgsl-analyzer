@@ -5,7 +5,7 @@ use crate::{
 };
 use std::fmt::Write as _;
 
-#[must_use] 
+#[must_use]
 pub fn pretty_print_module(module: &ModuleInfo) -> String {
     let mut buffer = String::new();
     for &item in module.items() {
