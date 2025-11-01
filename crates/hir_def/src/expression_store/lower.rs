@@ -19,14 +19,14 @@ use crate::{
 
 pub struct ExprCollector<'database> {
     database: &'database dyn DefDatabase,
-    pub store: ExpressionStoreBuilder,
+    store: ExpressionStoreBuilder,
 }
 
 impl ExprCollector<'_> {
-    pub fn new<'a>(
-        database: &'a dyn DefDatabase,
+    pub fn new(
+        database: &dyn DefDatabase,
         store_source: ExpressionStoreSource,
-    ) -> ExprCollector<'a> {
+    ) -> ExprCollector<'_> {
         let mut store = ExpressionStoreBuilder::default();
         store.store_source = store_source;
         ExprCollector { database, store }
@@ -234,6 +234,10 @@ impl ExprCollector<'_> {
             None => self.missing_type_specifier(),
         }
     }
+
+    pub fn finish(self) -> (super::ExpressionStore, ExpressionSourceMap) {
+        self.store.finish()
+    }
 }
 
 pub(crate) fn lower_function(
@@ -253,7 +257,7 @@ pub(crate) fn lower_function(
         .and_then(|r#type| r#type.ty())
         .map(|r#type| collector.collect_type_specifier(r#type));
 
-    let (store, source_map) = collector.store.finish();
+    let (store, source_map) = collector.finish();
     let specifier = FunctionData {
         name,
         store: Arc::new(store),
@@ -278,7 +282,7 @@ pub(crate) fn lower_struct(
         }));
     }
 
-    let (store, source_map) = collector.store.finish();
+    let (store, source_map) = collector.finish();
     let specifier = StructData {
         name,
         store: Arc::new(store),
@@ -296,7 +300,7 @@ pub(crate) fn lower_type_alias(
     let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
     let r#type = collector.collect_type_specifier_opt(type_alias.value.type_declaration());
 
-    let (store, source_map) = collector.store.finish();
+    let (store, source_map) = collector.finish();
     let specifier = TypeAliasData {
         name,
         store: Arc::new(store),
@@ -327,7 +331,7 @@ pub(crate) fn lower_variable(
             Vec::new()
         };
 
-    let (store, source_map) = collector.store.finish();
+    let (store, source_map) = collector.finish();
     let specifier = GlobalVariableData {
         name,
         store: Arc::new(store),
@@ -349,7 +353,7 @@ pub(crate) fn lower_constant(
         .ty()
         .map(|ty| collector.collect_type_specifier(ty));
 
-    let (store, source_map) = collector.store.finish();
+    let (store, source_map) = collector.finish();
     let specifier = GlobalConstantData {
         name,
         store: Arc::new(store),
@@ -369,7 +373,7 @@ pub(crate) fn lower_override(
         .ty()
         .map(|ty| collector.collect_type_specifier(ty));
 
-    let (store, source_map) = collector.store.finish();
+    let (store, source_map) = collector.finish();
     let specifier = OverrideData {
         name,
         store: Arc::new(store),

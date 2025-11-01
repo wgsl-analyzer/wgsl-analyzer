@@ -59,7 +59,6 @@ impl TryToNavigationTarget for InFile<Local> {
 }
 
 impl TryToNavigationTarget for InFile<Definition> {
-    #[expect(clippy::too_many_lines, reason = "TODO")]
     fn try_to_navigation_target(
         &self,
         database: &RootDatabase,

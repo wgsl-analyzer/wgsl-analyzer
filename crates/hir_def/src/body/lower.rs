@@ -55,10 +55,10 @@ struct Collector<'database> {
 }
 
 impl Collector<'_> {
-    fn new<'a>(
-        database: &'a dyn DefDatabase,
+    fn new(
+        database: &dyn DefDatabase,
         file_id: HirFileId,
-    ) -> Collector<'a> {
+    ) -> Collector<'_> {
         Collector {
             expressions: ExprCollector::new(database, ExpressionStoreSource::Body),
             database,
@@ -77,7 +77,7 @@ impl Collector<'_> {
         self.body.root = body
             .map(|body| self.collect_compound_statement(&body))
             .map(Either::Left);
-        (self.body.store, self.source_map.expressions) = self.expressions.store.finish();
+        (self.body.store, self.source_map.expressions) = self.expressions.finish();
 
         (self.body, self.source_map)
     }
@@ -104,7 +104,7 @@ impl Collector<'_> {
             .map(Either::Right);
 
         self.body.main_binding = declaration.name().map(|binding| self.collect_name(binding));
-        (self.body.store, self.source_map.expressions) = self.expressions.store.finish();
+        (self.body.store, self.source_map.expressions) = self.expressions.finish();
 
         (self.body, self.source_map)
     }
@@ -119,7 +119,7 @@ impl Collector<'_> {
             .map(Either::Right);
 
         self.body.main_binding = declaration.name().map(|binding| self.collect_name(binding));
-        (self.body.store, self.source_map.expressions) = self.expressions.store.finish();
+        (self.body.store, self.source_map.expressions) = self.expressions.finish();
 
         (self.body, self.source_map)
     }
@@ -134,7 +134,7 @@ impl Collector<'_> {
             .map(Either::Right);
 
         self.body.main_binding = declaration.name().map(|binding| self.collect_name(binding));
-        (self.body.store, self.source_map.expressions) = self.expressions.store.finish();
+        (self.body.store, self.source_map.expressions) = self.expressions.finish();
 
         (self.body, self.source_map)
     }

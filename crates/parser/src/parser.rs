@@ -1,23 +1,43 @@
+// For some reason allow(clippy::all) gets ignored
+#![allow(
+    clippy::wildcard_enum_match_arm,
+    clippy::min_ident_chars,
+    clippy::use_self,
+    clippy::equatable_if_let,
+    clippy::needless_pass_by_ref_mut,
+    clippy::cognitive_complexity,
+    clippy::too_many_lines,
+    clippy::redundant_closure_for_method_calls,
+    clippy::use_debug,
+    clippy::doc_markdown,
+    clippy::inconsistent_struct_constructor,
+    clippy::missing_const_for_fn,
+    clippy::unused_self,
+    clippy::disallowed_names,
+    clippy::uninlined_format_args,
+    clippy::range_plus_one,
+    clippy::needless_pass_by_value,
+    clippy::little_endian_bytes,
+    clippy::single_char_lifetime_names,
+    clippy::allow_attributes,
+    clippy::allow_attributes_without_reason,
+    clippy::nonstandard_macro_braces,
+    clippy::needless_continue,
+    reason = "Lelwel generated code"
+)]
+use super::lexer::Token;
 use crate::{
     Parse, ParseEntryPoint, SyntaxKind, cst_builder::CstBuilder, lexer::lex_with_templates,
 };
-use logos::Logos;
+use logos::Logos as _;
 use rowan::{GreenNode, GreenNodeBuilder};
 use std::fmt::{self, Write as _};
 
-use super::lexer::Token;
-use std::collections::HashSet;
+include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
+#[derive(Default)]
 pub struct Context<'a> {
     marker: std::marker::PhantomData<&'a ()>,
-}
-
-impl<'a> Default for Context<'a> {
-    fn default() -> Self {
-        Self {
-            marker: Default::default(),
-        }
-    }
 }
 
 pub struct Diagnostic {
@@ -52,19 +72,18 @@ impl fmt::Display for Diagnostic {
     }
 }
 
-include!(concat!(env!("OUT_DIR"), "/generated.rs"));
-
+#[must_use]
 pub fn parse_entrypoint(
     input: &str,
     entrypoint: ParseEntryPoint,
 ) -> Parse {
     let mut diags = Vec::new();
     let parsed = match entrypoint {
-        ParseEntryPoint::File => Parser::new(&input, &mut diags).parse(&mut diags),
-        ParseEntryPoint::Expression => Parser::new(&input, &mut diags).parse_expression(&mut diags),
-        ParseEntryPoint::Statement => Parser::new(&input, &mut diags).parse_statement(&mut diags),
-        ParseEntryPoint::Type => Parser::new(&input, &mut diags).parse_type_specifier(&mut diags),
-        ParseEntryPoint::Attribute => Parser::new(&input, &mut diags).parse_attribute(&mut diags),
+        ParseEntryPoint::File => Parser::new(input, &mut diags).parse(&mut diags),
+        ParseEntryPoint::Expression => Parser::new(input, &mut diags).parse_expression(&mut diags),
+        ParseEntryPoint::Statement => Parser::new(input, &mut diags).parse_statement(&mut diags),
+        ParseEntryPoint::Type => Parser::new(input, &mut diags).parse_type_specifier(&mut diags),
+        ParseEntryPoint::Attribute => Parser::new(input, &mut diags).parse_attribute(&mut diags),
     };
     let green_node = CstBuilder {
         builder: GreenNodeBuilder::new(),
@@ -77,8 +96,8 @@ pub fn parse_entrypoint(
     }
 }
 
-impl<'a> Cst<'a> {
-    pub fn nodes_count(&self) -> usize {
+impl Cst<'_> {
+    pub const fn nodes_count(&self) -> usize {
         self.data.nodes.len()
     }
     pub fn get_text(
@@ -89,18 +108,18 @@ impl<'a> Cst<'a> {
     }
 }
 
-impl<'a> Parser<'a> {
+impl Parser<'_> {
     fn is_func_call(&self) -> bool {
         matches!(self.peek(1), Token::LPar | Token::Lt) && self.peek(2) != Token::Lt
     }
 }
 
-impl<'a> ParserCallbacks<'a> for Parser<'a> {
+impl<'source> ParserCallbacks<'source> for Parser<'source> {
     type Diagnostic = Diagnostic;
     type Context = ();
     fn create_tokens(
         _context: &mut Self::Context,
-        source: &'a str,
+        source: &'source str,
         _diags: &mut Vec<Self::Diagnostic>,
     ) -> (Vec<Token>, Vec<Span>) {
         lex_with_templates(Token::lexer(source))
@@ -158,6 +177,6 @@ impl<'a> ParserCallbacks<'a> for Parser<'a> {
         !matches!(self.peek(1), Token::At | Token::Colon | Token::LBrace)
     }
     fn assertion_struct_body_1(&self) -> Option<Self::Diagnostic> {
-        Some(self.create_diagnostic(self.span(), "invalid syntax, expected ','".to_string()))
+        Some(self.create_diagnostic(self.span(), "invalid syntax, expected ','".to_owned()))
     }
 }

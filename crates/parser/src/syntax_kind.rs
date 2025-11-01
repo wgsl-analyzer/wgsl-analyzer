@@ -78,7 +78,7 @@ pub enum SyntaxKind {
     SwitchStatement,
     /// The body of a switch statement
     SwitchBody,
-    /// `case 1, 2: {};``
+    /// `case 1, 2: {};`
     SwitchBodyCase,
     /// The `1, 2` in `case 1, 2: {}`
     SwitchCaseSelectors,

@@ -35,6 +35,7 @@ pub struct AttributeList {
 }
 
 impl AttributeList {
+    #[must_use]
     pub fn has(
         &self,
         name: &str,
@@ -62,13 +63,13 @@ impl AttributeList {
                     .map(|parameter| {
                         parameter
                             .arguments()
-                            .map(|v| collector.collect_expression(v))
+                            .map(|expression| collector.collect_expression(expression))
                     })
                     .map_or_else(|| Either::Left(iter::empty()), Either::Right)
                     .collect(),
             })
             .collect();
-        let (store, source_map) = collector.store.finish();
+        let (store, source_map) = collector.finish();
         (
             Self {
                 attributes,

@@ -91,10 +91,9 @@ impl FromStr for AccessMode {
 
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         Ok(match string {
-            "read_write" => Self::ReadWrite,
+            "read_write" | "_" => Self::ReadWrite,
             "read" => Self::Read,
             "write" => Self::Write,
-            "_" => Self::ReadWrite,
             _ => return Err(()),
         })
     }
@@ -441,10 +440,10 @@ fn type_to_rust(r#type: &Type) -> String {
             )
         },
         Type::Sampler { comparison: true } => {
-            format!("TyKind::Sampler(SamplerType::SamplerComparison).intern(database)")
+            "TyKind::Sampler(SamplerType::SamplerComparison).intern(database)".to_owned()
         },
         Type::Sampler { comparison: false } => {
-            format!("TyKind::Sampler(SamplerType::Sampler).intern(database)")
+            "TyKind::Sampler(SamplerType::Sampler).intern(database)".to_owned()
         },
         Type::RuntimeArray(inner) => format!(
             "TyKind::Array(ArrayType {{

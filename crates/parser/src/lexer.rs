@@ -1,9 +1,11 @@
-use std::ops::Range;
-
 use super::parser::{Diagnostic, Span};
 use logos::Logos;
+use std::ops::Range;
 
-#[allow(clippy::upper_case_acronyms)]
+#[expect(
+    clippy::upper_case_acronyms,
+    reason = "Lelwel generated code emits Token::EOF"
+)]
 #[derive(logos::Logos, Debug, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
 #[repr(u16)]
 pub enum Token {
@@ -87,7 +89,7 @@ pub enum Token {
     /// > A template parameter is an expression,
     /// > and therefore does not start with
     /// > either a '<' (U+003C) or a '=' (U+003D) code point.
-    /// Source <https://www.w3.org/TR/WGSL/#template-list-discovery>
+    /// > Source <https://www.w3.org/TR/WGSL/#template-list-discovery>
     #[token("<=")]
     LtEq,
     #[token("<<")]
@@ -260,7 +262,7 @@ pub fn lex_with_templates(lexer: logos::Lexer<'_, Token>) -> (Vec<Token>, Vec<Ra
 /// A pair of `>` `>` can start with a template end, or be a right shift.
 /// Same goes for `>` `=` and `>` `>` `=`.
 ///
-/// Meanwhile `<<` and `<<=` are unambiguously handled in the lexer,    
+/// Meanwhile `<<` and `<<=` are unambiguously handled in the lexer,
 /// since a template cannot start with those.
 fn collect_with_templates(
     tokens_iter: impl Iterator<Item = (Token, Span)>
@@ -384,10 +386,10 @@ fn collect_with_templates(
 
 #[cfg(test)]
 mod tests {
+    use super::{Token, lex_with_templates};
     use expect_test::expect;
     use logos::Logos as _;
-
-    use super::{Token, lex_with_templates};
+    use std::fmt::Write as _;
 
     #[expect(clippy::needless_pass_by_value, reason = "intended API")]
     fn check_lex(
@@ -405,11 +407,14 @@ mod tests {
         expect: expect_test::Expect,
     ) {
         let (tokens, spans) = lex_with_templates(Token::lexer(source));
-        let tokens_with_spans: String = tokens
-            .into_iter()
-            .zip(spans)
-            .map(|(token, span)| format!("{token:?}@{span:?}\n"))
-            .collect();
+        let tokens_with_spans: String =
+            tokens
+                .into_iter()
+                .zip(spans)
+                .fold(String::new(), |mut output, (token, span)| {
+                    _ = writeln!(output, "{token:?}@{}..{}", span.start, span.end);
+                    output
+                });
         expect.assert_eq(&tokens_with_spans);
     }
 

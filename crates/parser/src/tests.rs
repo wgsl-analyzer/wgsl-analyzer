@@ -2174,7 +2174,7 @@ fn enable_directive() {
                 EnableExtensionName@28..48
                   Identifier@28..48 "dual_source_blending"
                 Semicolon@48..49 ";""#]],
-    )
+    );
 }
 
 #[test]
@@ -2189,7 +2189,7 @@ fn requires_directive() {
                 LanguageExtensionName@9..39
                   Identifier@9..39 "packed_4x8_integer_do ..."
                 Semicolon@39..40 ";""#]],
-    )
+    );
 }
 
 #[test]
