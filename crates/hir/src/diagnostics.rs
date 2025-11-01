@@ -378,7 +378,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
         InferenceDiagnostic::CyclicType { name, range } => AnyDiagnostic::CyclicType {
             file_id,
             name: name.clone(),
-            range: range.clone(),
+            range: *range,
         },
         InferenceDiagnostic::UnexpectedTemplateArgument { expression } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();

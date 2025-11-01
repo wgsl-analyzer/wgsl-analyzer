@@ -466,7 +466,15 @@ fn get_hints(
             return None;
         }
 
-        declaration_type_hints(hints, file_id, semantics, config, node, binding, r#type)?;
+        declaration_type_hints(
+            hints,
+            file_id,
+            semantics,
+            config,
+            node,
+            &binding,
+            r#type.as_ref(),
+        )?;
     }
 
     Some(())
@@ -478,8 +486,8 @@ fn declaration_type_hints(
     semantics: &Semantics<'_>,
     config: &InlayHintsConfig,
     node: &rowan::SyntaxNode<parser::WeslLanguage>,
-    binding: ast::Name,
-    r#type: Option<ast::TypeSpecifier>,
+    binding: &ast::Name,
+    r#type: Option<&ast::TypeSpecifier>,
 ) -> Option<()> {
     // Don't display the hint if the user wrote a type
     if r#type.is_some() {

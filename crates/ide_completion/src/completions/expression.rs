@@ -1,6 +1,6 @@
 use hir::HirDatabase as _;
 use hir_def::{
-    database::{DefDatabase as _, DefinitionWithBodyId, InternDatabase, Location},
+    database::{DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location},
     module_data::{ModuleItem, Name},
     resolver::ScopeDef,
 };
@@ -93,7 +93,7 @@ fn render_detail(
     file_id: hir_def::HirFileId,
     item: ModuleItem,
 ) -> String {
-    let detail = match item {
+    match item {
         ModuleItem::Function(id) => {
             let function_id = context.database.intern_function(Location::new(file_id, id));
             let function_type = context.database.function_type(function_id);
@@ -167,6 +167,5 @@ fn render_detail(
             let module_info = context.database.module_info(file_id);
             format!("alias {}", module_info.get(id).name.as_str())
         },
-    };
-    detail
+    }
 }

@@ -681,7 +681,7 @@ pub fn diagnostics(
                     let frange = original_file_range(database, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("21"),
-                        format!("unexpected template argument"),
+                        "unexpected template argument".to_owned(),
                         frange.range,
                     )
                 },
@@ -691,7 +691,7 @@ pub fn diagnostics(
                 } => {
                     let source = expression.value.to_node(&root);
                     let frange = original_file_range(database, expression.file_id, source.syntax());
-                    Diagnostic::new(DiagnosticCode("22"), format!("{message}"), frange.range)
+                    Diagnostic::new(DiagnosticCode("22"), message, frange.range)
                 },
                 AnyDiagnostic::ExpectedLoweredKind {
                     expression,

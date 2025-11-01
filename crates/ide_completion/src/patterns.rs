@@ -15,7 +15,7 @@ pub(crate) fn determine_location(
 
     if let Some(expression) = ast::FieldExpression::cast(node.clone()) {
         Some(ImmediateLocation::FieldAccess { expression })
-    } else if let Some(expression) = ast::FieldExpression::cast(parent.clone()) {
+    } else if let Some(expression) = ast::FieldExpression::cast(parent) {
         Some(ImmediateLocation::FieldAccess { expression })
     } else if node.kind() == SyntaxKind::SourceFile {
         Some(ImmediateLocation::ItemList)

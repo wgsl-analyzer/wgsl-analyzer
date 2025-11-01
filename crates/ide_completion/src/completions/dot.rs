@@ -74,7 +74,7 @@ fn vector_completions(
 ) {
     let field_text = expression
         .field()
-        .map(|name| name.text().to_string())
+        .map(|name| name.text().to_owned())
         // It should never be `None` because `x.$0` gets parsed as `Some("")`.
         .unwrap_or_default();
 
@@ -86,7 +86,7 @@ fn vector_completions(
         );
         let possible_swizzles = possible_swizzles(size, &field_text);
         let suggestions = possible_swizzles.enumerate().map(|(index, label)| {
-            let mut binding =
+            let binding =
                 CompletionItem::new(CompletionItemKind::Field, context.source_range(), label);
             binding.build(context.database)
         });

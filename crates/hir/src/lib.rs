@@ -586,8 +586,7 @@ impl ModuleDef {
             Self::Override(override_declaration) => {
                 Some(DefinitionWithBodyId::Override(override_declaration.id))
             },
-            Self::Struct(_) => None,
-            Self::TypeAlias(_) => None,
+            Self::Struct(_) | Self::TypeAlias(_) => None,
         }
     }
 }
@@ -696,7 +695,7 @@ impl Module {
                 diagnostics::precedence::collect(database, definition, |diagnostic| {
                     match diagnostics::any_diag_from_shift(
                         &diagnostic,
-                        &source_map.expression_source_map(),
+                        source_map.expression_source_map(),
                         file,
                     ) {
                         Some(diagnostic) => accumulator.push(diagnostic),
