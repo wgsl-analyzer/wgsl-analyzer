@@ -464,11 +464,11 @@ function computeVscodeVar(varName: string): string | null {
 			folder === undefined
 				? "" // no workspace opened
 				: // could use currently opened document to detect the correct
-				// workspace. However, that would be determined by the document
-				// user has opened on Editor startup. Could lead to
-				// unpredictable workspace selection in practice.
-				// It is better to pick the first one
-				folder.uri.fsPath;
+					// workspace. However, that would be determined by the document
+					// user has opened on Editor startup. Could lead to
+					// unpredictable workspace selection in practice.
+					// It is better to pick the first one
+					folder.uri.fsPath;
 		return fsPath;
 	};
 	// https://code.visualstudio.com/docs/editor/variables-reference

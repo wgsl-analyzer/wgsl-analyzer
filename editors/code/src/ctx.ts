@@ -64,7 +64,7 @@ interface WgslAnalyzerConfiguration {
 	inlayHints: InlayHintsConfig;
 }
 
-async function lspOptions(config: Config): Promise<WgslAnalyzerConfiguration> {
+function lspOptions(config: Config): WgslAnalyzerConfiguration {
 	const start = process.hrtime();
 	const elapsed = process.hrtime(start);
 	const millis = elapsed[0] * 1000 + elapsed[1] / 1_000_000;
@@ -287,8 +287,8 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		}
 		await client.start();
 		this.subscriptions.push(
-			client.onRequest(wa.requestConfiguration, async (_, __) => {
-				const options = await lspOptions(this.config);
+			client.onRequest(wa.requestConfiguration, (_, __) => {
+				const options = lspOptions(this.config);
 				return options;
 			}),
 			client.onRequest(wa.importTextDocument, (parameters, __) => {
@@ -493,14 +493,14 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		const toggleCheckOnSave = this.config.checkOnSave ? "Disable" : "Enable";
 		statusBar.tooltip.appendMarkdown(
 			`[Extension Info](command:wgsl-analyzer.serverVersion "Show version and server binary info"): Version ${this.version}, Server Version ${this._serverVersion}`
-			+ "\n\n---\n\n"
-			+ '[$(terminal) Open Logs](command:wgsl-analyzer.openLogs "Open the server logs")'
-			+ "\n\n"
-			+ `[$(settings) ${toggleCheckOnSave} Check on Save](command:wgsl-analyzer.toggleCheckOnSave "Temporarily ${toggleCheckOnSave.toLowerCase()} check on save functionality")`
-			+ "\n\n"
-			+ '[$(stop-circle) Stop server](command:wgsl-analyzer.stopServer "Stop the server")'
-			+ "\n\n"
-			+ '[$(debug-restart) Restart server](command:wgsl-analyzer.restartServer "Restart the server")',
+				+ "\n\n---\n\n"
+				+ '[$(terminal) Open Logs](command:wgsl-analyzer.openLogs "Open the server logs")'
+				+ "\n\n"
+				+ `[$(settings) ${toggleCheckOnSave} Check on Save](command:wgsl-analyzer.toggleCheckOnSave "Temporarily ${toggleCheckOnSave.toLowerCase()} check on save functionality")`
+				+ "\n\n"
+				+ '[$(stop-circle) Stop server](command:wgsl-analyzer.stopServer "Stop the server")'
+				+ "\n\n"
+				+ '[$(debug-restart) Restart server](command:wgsl-analyzer.restartServer "Restart the server")',
 		);
 		if (!status.quiescent) icon = "$(loading~spin) ";
 		statusBar.text = `${icon}wgsl-analyzer`;
