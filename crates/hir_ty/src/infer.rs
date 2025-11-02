@@ -1912,7 +1912,7 @@ impl fmt::Display for TypeLoweringErrorKind {
     ) -> fmt::Result {
         match self {
             Self::UnresolvedName(name) => {
-                write!(formatter, "type `{}` not found in scope", name.as_str())
+                write!(formatter, "`{}` not found in scope", name.as_str())
             },
             Self::InvalidTexelFormat(format) => {
                 let all_formats = "rgba8unorm,\nrgba8snorm,\nrgba8uint,\nrgba8sint,\nrgba16uint,\nrgba16sint,\nrgba16float,\nr32uint,\nr32sint,\nr32float,\nrg32uint,\nrg32sint,\nrg32float,\nrgba32uint,\nrgba32sint,\nrgba32float";
