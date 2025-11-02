@@ -48,6 +48,7 @@ global_declaration:
     'fn' name function_parameters [return_type] compound_statement @function_declaration
   | variable_declaration_semi @variable_declaration
   | override_declaration_semi @override_declaration
+  | let_declaration_semi @global_let_declaration
   )
 | const_declaration_semi @const_declaration
 | 'alias' name '=' type_specifier ';' @type_alias_declaration

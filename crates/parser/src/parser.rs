@@ -72,6 +72,12 @@ impl fmt::Display for Diagnostic {
     }
 }
 
+pub(crate) fn to_range(span: Span) -> rowan::TextRange {
+    let start = rowan::TextSize::try_from(span.start).unwrap();
+    let end = rowan::TextSize::try_from(span.end).unwrap();
+    rowan::TextRange::new(start, end)
+}
+
 #[must_use]
 pub fn parse_entrypoint(
     input: &str,
@@ -135,9 +141,9 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     fn create_tokens(
         _context: &mut Self::Context,
         source: &'source str,
-        diagnostics: &mut Vec<Self::Diagnostic>,
+        diags: &mut Vec<Self::Diagnostic>,
     ) -> (Vec<Token>, Vec<Span>) {
-        lex_with_templates(Token::lexer(source), diagnostics)
+        lex_with_templates(Token::lexer(source), diags)
     }
 
     fn create_diagnostic(
@@ -145,15 +151,10 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         span: Span,
         message: String,
     ) -> Self::Diagnostic {
-        let range = {
-            let std::ops::Range { start, end } = span;
-            let start = rowan::TextSize::try_from(start).unwrap();
-            let end = rowan::TextSize::try_from(end).unwrap();
-
-            rowan::TextRange::new(start, end)
-        };
-
-        Diagnostic { message, range }
+        Diagnostic {
+            message,
+            range: to_range(span),
+        }
     }
     fn predicate_global_directive_1(&self) -> bool {
         self.peek(1) != Token::Semi
@@ -193,5 +194,16 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     }
     fn assertion_struct_body_1(&self) -> Option<Self::Diagnostic> {
         Some(self.create_diagnostic(self.span(), "invalid syntax, expected ','".to_owned()))
+    }
+    /// This node exists for better error messages. It also improves the lelwel error recovery quality.
+    fn create_node_global_let_declaration(
+        &mut self,
+        node_ref: NodeRef,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        diags.push(self.create_diagnostic(
+            self.cst.span(node_ref),
+            "global let declarations are not allowed".to_owned(),
+        ));
     }
 }

@@ -926,7 +926,7 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 [[package]]
 name = "lelwel"
 version = "0.10.0"
-source = "git+https://github.com/0x2a-42/lelwel.git#a30c4f5355667cbfa6fd32d63d4ebbb63b2888d0"
+source = "git+https://github.com/0x2a-42/lelwel.git?branch=close_error_before_open#2b6ec542bdc179296f900940df02edf6c5f8540d"
 dependencies = [
  "codespan-reporting",
  "logos",

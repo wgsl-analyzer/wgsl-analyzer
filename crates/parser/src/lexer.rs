@@ -1,3 +1,5 @@
+use crate::parser::to_range;
+
 use super::parser::{Diagnostic, Span};
 use logos::Logos;
 use std::ops::Range;
@@ -253,20 +255,16 @@ pub fn lex_with_templates(
     lexer: logos::Lexer<'_, Token>,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> (Vec<Token>, Vec<Range<usize>>) {
-    collect_with_templates(lexer.spanned().map(|(token, span)| match token {
-        Ok(token) => (token, span),
-        Err(()) => {
-            let range = {
-                let start = rowan::TextSize::try_from(span.start).unwrap();
-                let end = rowan::TextSize::try_from(span.end).unwrap();
-                rowan::TextRange::new(start, end)
-            };
+    collect_with_templates(lexer.spanned().map(|(token, span)| {
+        if let Ok(token) = token {
+            (token, span)
+        } else {
             diagnostics.push(Diagnostic {
                 message: "unexpected tokens".to_owned(),
-                range,
+                range: to_range(span.clone()),
             });
             (Token::Error, span)
-        },
+        }
     }))
 }
 

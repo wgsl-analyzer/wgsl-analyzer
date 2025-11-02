@@ -1,4 +1,4 @@
-use rowan::{GreenNode, GreenNodeBuilder, TextRange};
+use rowan::{GreenNode, GreenNodeBuilder};
 
 use crate::{
     Diagnostic, SyntaxKind,
@@ -106,6 +106,7 @@ impl CstBuilder<'_, '_> {
             Rule::FunctionDeclaration => self.start_node(SyntaxKind::FunctionDeclaration),
             Rule::FunctionParameters => self.start_node(SyntaxKind::FunctionParameters),
             Rule::GlobalAssert => panic!("should be assert_statement instead"),
+            Rule::GlobalLetDeclaration => self.start_node(SyntaxKind::Error),
             Rule::IdentExpression => self.start_node(SyntaxKind::IdentExpression),
             Rule::IfClause => self.start_node(SyntaxKind::IfClause),
             Rule::IfStatement => self.start_node(SyntaxKind::IfStatement),
@@ -195,12 +196,10 @@ impl CstBuilder<'_, '_> {
             return; // Ignore
         }
         let token_span = self.cst.get_span(index);
-        // Due to https://github.com/0x2a-42/lelwel/issues/61 , lelwel can sometimes produce tokens that are not contiguous
-        if token_span.start > self.token_start_index {
-            let delta = token_span.start - self.token_start_index;
-            self.builder
-                .token(SyntaxKind::Error.into(), &" ".repeat(delta));
-        }
+        assert_eq!(
+            token_span.start, self.token_start_index,
+            "Parser must produce contiguous tokens"
+        );
         self.token_start_index = token_span.end;
 
         let text = &self.cst.get_text(index);

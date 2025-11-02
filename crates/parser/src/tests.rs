@@ -682,6 +682,28 @@ fn parse_return_statement() {
 }
 
 #[test]
+fn parse_invalid_global_let_statement() {
+    check(
+        "let foo = 3;",
+        expect![[r#"
+            SourceFile@0..12
+              Error@0..12
+                Let@0..3 "let"
+                Blankspace@3..4 " "
+                Name@4..7
+                  Identifier@4..7 "foo"
+                Blankspace@7..8 " "
+                Equal@8..9 "="
+                Blankspace@9..10 " "
+                Literal@10..11
+                  IntLiteral@10..11 "3"
+                Semicolon@11..12 ";"
+
+            error at 0..12: global let declarations are not allowed"#]],
+    );
+}
+
+#[test]
 fn parse_let_statement_recover() {
     check(
         "fn foo() -> u32 {
@@ -761,7 +783,7 @@ fn parse_recover_covers_whole_file() {
                 CompoundStatement@11..45
                   BraceLeft@11..12 "{"
                   Blankspace@12..17 "\n    "
-                  LetDeclaration@17..43
+                  LetDeclaration@17..26
                     Let@17..20 "let"
                     Blankspace@20..21 " "
                     Name@21..22
@@ -769,18 +791,21 @@ fn parse_recover_covers_whole_file() {
                     Blankspace@22..23 " "
                     Equal@23..24 "="
                     Blankspace@24..25 " "
-                    FieldExpression@25..42
-                      IdentExpression@25..40
-                        NameReference@25..26
-                          Identifier@25..26 "a"
-                        Error@26..40
-                          Error@26..31 "     "
-                          Let@31..34 "let"
-                          Blankspace@34..35 " "
-                          Identifier@35..36 "c"
-                          Blankspace@36..37 " "
-                          Equal@37..38 "="
-                          Blankspace@38..39 " "
+                    IdentExpression@25..26
+                      NameReference@25..26
+                        Identifier@25..26 "a"
+                  Blankspace@26..31 "\n    "
+                  LetDeclaration@31..43
+                    Let@31..34 "let"
+                    Blankspace@34..35 " "
+                    Name@35..36
+                      Identifier@35..36 "c"
+                    Blankspace@36..37 " "
+                    Equal@37..38 "="
+                    Blankspace@38..39 " "
+                    FieldExpression@39..42
+                      IdentExpression@39..40
+                        NameReference@39..40
                           Identifier@39..40 "b"
                       Period@40..41 "."
                       Identifier@41..42 "x"
@@ -3134,7 +3159,7 @@ fn attribute_only_recover() {
                   AttributeOperator@0..1 "@"
                   Identifier@1..9 "fragment"
 
-            error at 9..9: invalid syntax, expected one of: '@', 'fn', 'for', <identifier>, 'if', '{', '(', 'loop', 'override', 'switch', 'var', 'while'"#]],
+            error at 9..9: invalid syntax, expected one of: '@', 'fn', 'for', <identifier>, 'if', '{', '(', 'let', 'loop', 'override', 'switch', 'var', 'while'"#]],
     );
 }
 
