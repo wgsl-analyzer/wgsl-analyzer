@@ -249,12 +249,25 @@ fn lex_block_comment(lexer: &mut logos::Lexer<'_, Token>) -> Option<()> {
     None
 }
 
-pub fn lex_with_templates(lexer: logos::Lexer<'_, Token>) -> (Vec<Token>, Vec<Range<usize>>) {
-    collect_with_templates(
-        lexer
-            .spanned()
-            .map(|(token, span)| (token.unwrap_or(Token::Error), span)),
-    )
+pub fn lex_with_templates(
+    lexer: logos::Lexer<'_, Token>,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> (Vec<Token>, Vec<Range<usize>>) {
+    collect_with_templates(lexer.spanned().map(|(token, span)| match token {
+        Ok(token) => (token, span),
+        Err(()) => {
+            let range = {
+                let start = rowan::TextSize::try_from(span.start).unwrap();
+                let end = rowan::TextSize::try_from(span.end).unwrap();
+                rowan::TextRange::new(start, end)
+            };
+            diagnostics.push(Diagnostic {
+                message: "unexpected tokens".to_owned(),
+                range,
+            });
+            (Token::Error, span)
+        },
+    }))
 }
 
 /// Mutate tokens to be templates using <https://www.w3.org/TR/WGSL/#template-list-discovery>.
@@ -410,8 +423,9 @@ mod tests {
         source: &str,
         expect: expect_test::Expect,
     ) {
-        let (tokens, spans) = lex_with_templates(Token::lexer(source));
-        let tokens_with_spans: String =
+        let mut diagnostics = Vec::new();
+        let (tokens, spans) = lex_with_templates(Token::lexer(source), &mut diagnostics);
+        let mut tokens_with_spans: String =
             tokens
                 .into_iter()
                 .zip(spans)
@@ -419,6 +433,15 @@ mod tests {
                     _ = writeln!(output, "{token:?}@{}..{}", span.start, span.end);
                     output
                 });
+        for diagnostic in diagnostics {
+            _ = writeln!(
+                tokens_with_spans,
+                "Error: {}@{}..{}",
+                diagnostic.message,
+                u32::from(diagnostic.range.start()),
+                u32::from(diagnostic.range.end())
+            );
+        }
         expect.assert_eq(&tokens_with_spans);
     }
 
@@ -748,6 +771,7 @@ mod tests {
                 Ident@0..3
                 Blankspace@3..4
                 Error@4..6
+                Error: unexpected tokens@4..6
             "#]],
         );
     }

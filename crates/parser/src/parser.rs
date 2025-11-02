@@ -97,7 +97,6 @@ pub fn parse_entrypoint(
         builder: GreenNodeBuilder::new(),
         token_start_index: 0,
         cst: parsed,
-        diagnostics: &mut diagnostics,
     }
     .build();
     Parse {
@@ -136,9 +135,9 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     fn create_tokens(
         _context: &mut Self::Context,
         source: &'source str,
-        _diags: &mut Vec<Self::Diagnostic>,
+        diagnostics: &mut Vec<Self::Diagnostic>,
     ) -> (Vec<Token>, Vec<Span>) {
-        lex_with_templates(Token::lexer(source))
+        lex_with_templates(Token::lexer(source), diagnostics)
     }
 
     fn create_diagnostic(
