@@ -6,7 +6,7 @@ use std::{marker::PhantomData, ops::Deref};
 
 use either::Either;
 pub use parser::{
-    ParseEntryPoint, ParseError, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodeChildren,
+    Diagnostic, ParseEntryPoint, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodeChildren,
     SyntaxToken,
 };
 pub use rowan::Direction;
@@ -16,7 +16,7 @@ use triomphe::Arc;
 #[derive(Clone, Debug)]
 pub struct Parse {
     green_node: rowan::GreenNode,
-    errors: Arc<[ParseError]>,
+    errors: Arc<[Diagnostic]>,
 }
 
 impl PartialEq for Parse {
@@ -37,7 +37,7 @@ impl Parse {
     }
 
     #[must_use]
-    pub fn errors(&self) -> &[ParseError] {
+    pub fn errors(&self) -> &[Diagnostic] {
         &self.errors
     }
 

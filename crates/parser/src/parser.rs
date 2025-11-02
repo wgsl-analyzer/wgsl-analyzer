@@ -77,23 +77,32 @@ pub fn parse_entrypoint(
     input: &str,
     entrypoint: ParseEntryPoint,
 ) -> Parse {
-    let mut diags = Vec::new();
+    let mut diagnostics = Vec::new();
     let parsed = match entrypoint {
-        ParseEntryPoint::File => Parser::new(input, &mut diags).parse(&mut diags),
-        ParseEntryPoint::Expression => Parser::new(input, &mut diags).parse_expression(&mut diags),
-        ParseEntryPoint::Statement => Parser::new(input, &mut diags).parse_statement(&mut diags),
-        ParseEntryPoint::Type => Parser::new(input, &mut diags).parse_type_specifier(&mut diags),
-        ParseEntryPoint::Attribute => Parser::new(input, &mut diags).parse_attribute(&mut diags),
+        ParseEntryPoint::File => Parser::new(input, &mut diagnostics).parse(&mut diagnostics),
+        ParseEntryPoint::Expression => {
+            Parser::new(input, &mut diagnostics).parse_expression(&mut diagnostics)
+        },
+        ParseEntryPoint::Statement => {
+            Parser::new(input, &mut diagnostics).parse_statement(&mut diagnostics)
+        },
+        ParseEntryPoint::Type => {
+            Parser::new(input, &mut diagnostics).parse_type_specifier(&mut diagnostics)
+        },
+        ParseEntryPoint::Attribute => {
+            Parser::new(input, &mut diagnostics).parse_attribute(&mut diagnostics)
+        },
     };
     let green_node = CstBuilder {
         builder: GreenNodeBuilder::new(),
         token_start_index: 0,
         cst: parsed,
+        diagnostics: &mut diagnostics,
     }
     .build();
     Parse {
         green_node,
-        errors: diags,
+        errors: diagnostics,
     }
 }
 

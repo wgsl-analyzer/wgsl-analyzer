@@ -1,7 +1,7 @@
-use rowan::{GreenNode, GreenNodeBuilder};
+use rowan::{GreenNode, GreenNodeBuilder, TextRange};
 
 use crate::{
-    SyntaxKind,
+    Diagnostic, SyntaxKind,
     lexer::Token,
     parser::{Cst, CstIndex, Node, NodeRef, Rule},
 };
@@ -10,6 +10,7 @@ pub struct CstBuilder<'source, 'cache> {
     pub builder: GreenNodeBuilder<'cache>,
     pub token_start_index: usize,
     pub cst: Cst<'source>,
+    pub diagnostics: &'source mut Vec<Diagnostic>,
 }
 impl CstBuilder<'_, '_> {
     /// Turn a lelwel syntax tree into a rowan syntax tree.
@@ -204,6 +205,17 @@ impl CstBuilder<'_, '_> {
         self.token_start_index = token_span.end;
 
         let text = &self.cst.get_text(index);
+        if token == Token::Error {
+            let range = {
+                let start = rowan::TextSize::try_from(token_span.start).unwrap();
+                let end = rowan::TextSize::try_from(token_span.end).unwrap();
+                rowan::TextRange::new(start, end)
+            };
+            self.diagnostics.push(Diagnostic {
+                message: "unexpected tokens".to_owned(),
+                range,
+            });
+        }
         let syntax_kind = SyntaxKind::try_from(token)
             .unwrap_or_else(|()| panic!("token {token:?} should be convertible to a SyntaxKind"));
         self.builder.token(syntax_kind.into(), text);

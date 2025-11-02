@@ -8,13 +8,13 @@ mod syntax_kind;
 use std::fmt::{self, Debug};
 
 pub use edition::Edition;
-pub use parser::{Diagnostic as ParseError, parse_entrypoint};
+pub use parser::{Diagnostic, parse_entrypoint};
 use rowan::{GreenNode, SyntaxNode as RowanSyntaxNode};
 use std::fmt::Write as _;
 
 pub struct Parse {
     green_node: GreenNode,
-    errors: Vec<ParseError>,
+    errors: Vec<Diagnostic>,
 }
 impl fmt::Debug for Parse {
     fn fmt(
@@ -65,12 +65,12 @@ impl Parse {
     }
 
     #[must_use]
-    pub fn errors(&self) -> &[ParseError] {
+    pub fn errors(&self) -> &[Diagnostic] {
         &self.errors
     }
 
     #[must_use]
-    pub fn into_parts(self) -> (GreenNode, Vec<ParseError>) {
+    pub fn into_parts(self) -> (GreenNode, Vec<Diagnostic>) {
         (self.green_node, self.errors)
     }
 }

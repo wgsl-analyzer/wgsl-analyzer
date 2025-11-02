@@ -260,7 +260,21 @@ fn cannot_parse_unmatched_block_comment() {
             SourceFile@0..168
               Blankspace@0..9 "\n        "
               Error@9..167 "/* This is a block co ..."
-              Blankspace@167..168 " ""#]],
+              Blankspace@167..168 " "
+
+            error at 9..167: unexpected tokens"#]],
+    );
+}
+
+#[test]
+fn parse_unfinished_block_comment() {
+    check(
+        "/*",
+        expect![[r#"
+            SourceFile@0..2
+              Error@0..2 "/*"
+
+            error at 0..2: unexpected tokens"#]],
     );
 }
 
