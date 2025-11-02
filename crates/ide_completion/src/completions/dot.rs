@@ -22,7 +22,7 @@ pub(crate) fn complete_dot(
         .analyze(
             context
                 .container
-                .and_then(|container| container.as_def_with_body_id())?,
+                .and_then(hir::ChildContainer::as_def_with_body_id)?,
         )
         .type_of_expression(&expression.expression()?)?
         .kind(context.database)

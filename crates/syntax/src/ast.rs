@@ -753,14 +753,14 @@ pub enum SwitchCaseSelector {
 
 impl AstNode for SwitchCaseSelector {
     fn can_cast(kind: SyntaxKind) -> bool {
-        if let SyntaxKind::SwitchDefaultSelector = kind {
+        if kind == SyntaxKind::SwitchDefaultSelector {
             true
         } else {
             Expression::can_cast(kind)
         }
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
-        if let SyntaxKind::SwitchDefaultSelector = syntax.kind() {
+        if syntax.kind() == SyntaxKind::SwitchDefaultSelector {
             Some(Self::SwitchDefaultSelector(SwitchDefaultSelector {
                 syntax,
             }))

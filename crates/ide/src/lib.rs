@@ -210,12 +210,12 @@ impl Analysis {
     }
 
     /// Returns the full source code with imports resolved
-    /// TODO: Hook up wesl-rs over here https://github.com/wgsl-analyzer/wgsl-analyzer/issues/324
+    /// TODO: Hook up wesl-rs over here <https://github.com/wgsl-analyzer/wgsl-analyzer/issues/324>
     pub fn resolve_full_source(
         &self,
         file_id: FileId,
     ) -> Cancellable<Result<String, ()>> {
-        self.with_db(|database| Ok(database.file_text(file_id.into()).to_string()))
+        self.with_db(|database| Ok(database.file_text(file_id).to_string()))
     }
 
     /// Gets the syntax tree of the file.
