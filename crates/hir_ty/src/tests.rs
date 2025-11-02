@@ -27,7 +27,7 @@ fn infer(ra_fixture: &str) -> String {
     let (db, file_id) = single_file_db(ra_fixture);
     let file_id = HirFileId::from(file_id);
 
-    let root = db.parse_or_resolve(file_id).unwrap().syntax();
+    let root = db.parse_or_resolve(file_id).syntax();
 
     let mut buf = String::new();
 

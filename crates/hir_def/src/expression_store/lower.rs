@@ -27,9 +27,13 @@ impl ExprCollector<'_> {
         database: &dyn DefDatabase,
         store_source: ExpressionStoreSource,
     ) -> ExprCollector<'_> {
-        let mut store = ExpressionStoreBuilder::default();
-        store.store_source = store_source;
-        ExprCollector { database, store }
+        ExprCollector {
+            database,
+            store: ExpressionStoreBuilder {
+                store_source,
+                ..Default::default()
+            },
+        }
     }
 
     #[expect(clippy::too_many_lines, reason = "TODO")]
@@ -142,7 +146,7 @@ impl ExprCollector<'_> {
         template_parameters.map_or_else(Vec::new, |template_parameters| {
             template_parameters
                 .parameters()
-                .map(|g| self.collect_expression(g))
+                .map(|expression| self.collect_expression(expression))
                 .collect()
         })
     }
@@ -230,7 +234,7 @@ impl ExprCollector<'_> {
         type_specifier: Option<ast::TypeSpecifier>,
     ) -> TypeSpecifierId {
         match type_specifier {
-            Some(v) => self.collect_type_specifier(v),
+            Some(type_specifier) => self.collect_type_specifier(type_specifier),
             None => self.missing_type_specifier(),
         }
     }
@@ -322,7 +326,7 @@ pub(crate) fn lower_variable(
     let r#type = global_variable
         .value
         .ty()
-        .map(|ty| collector.collect_type_specifier(ty));
+        .map(|r#type| collector.collect_type_specifier(r#type));
 
     let template_parameters =
         if let Some(template_parameters) = global_variable.value.template_parameters() {
@@ -354,7 +358,7 @@ pub(crate) fn lower_constant(
     let r#type = global_constant
         .value
         .ty()
-        .map(|ty| collector.collect_type_specifier(ty));
+        .map(|r#type| collector.collect_type_specifier(r#type));
 
     let (store, source_map) = collector.finish();
     let specifier = GlobalConstantData {
@@ -374,7 +378,7 @@ pub(crate) fn lower_override(
     let r#type = global_override
         .value
         .ty()
-        .map(|ty| collector.collect_type_specifier(ty));
+        .map(|r#type| collector.collect_type_specifier(r#type));
 
     let (store, source_map) = collector.finish();
     let specifier = OverrideData {

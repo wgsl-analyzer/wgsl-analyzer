@@ -41,9 +41,9 @@ impl Index<ExpressionId> for ExpressionStore {
     #[inline]
     fn index(
         &self,
-        expr: ExpressionId,
+        index: ExpressionId,
     ) -> &Expression {
-        &self.exprs[expr]
+        &self.exprs[index]
     }
 }
 
@@ -53,9 +53,9 @@ impl Index<TypeSpecifierId> for ExpressionStore {
     #[inline]
     fn index(
         &self,
-        expr: TypeSpecifierId,
+        index: TypeSpecifierId,
     ) -> &TypeSpecifier {
-        &self.types[expr]
+        &self.types[index]
     }
 }
 

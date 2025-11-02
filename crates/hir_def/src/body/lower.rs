@@ -281,10 +281,15 @@ impl Collector<'_> {
                 Statement::IncrDecr { expression, op }
             },
             ast::Statement::IfStatement(if_statement) => {
-                let condition = self
-                    .collect_expression_opt(if_statement.if_block().and_then(|v| v.condition()));
+                let condition = self.collect_expression_opt(
+                    if_statement
+                        .if_block()
+                        .and_then(|if_clause| if_clause.condition()),
+                );
                 let block = self.collect_compound_statement_opt(
-                    if_statement.if_block().and_then(|v| v.block()),
+                    if_statement
+                        .if_block()
+                        .and_then(|if_clause| if_clause.block()),
                 );
                 let else_if_blocks = if_statement
                     .else_if_blocks()

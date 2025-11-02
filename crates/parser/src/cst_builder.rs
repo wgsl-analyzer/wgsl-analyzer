@@ -45,6 +45,10 @@ impl CstBuilder<'_, '_> {
         self.builder.finish()
     }
 
+    #[allow(
+        clippy::too_many_lines,
+        reason = "Exhaustively covering all SyntaxKind variants. There is no obvious way of splitting this."
+    )]
     fn start_rule(
         &mut self,
         rule: Rule,
@@ -62,7 +66,7 @@ impl CstBuilder<'_, '_> {
             Rule::BreakIfStatement => self.start_node(SyntaxKind::BreakIfStatement),
             Rule::BreakStatement => self.start_node(SyntaxKind::BreakStatement),
             Rule::CaseClause | Rule::DefaultAloneClause => {
-                self.start_node(SyntaxKind::SwitchBodyCase)
+                self.start_node(SyntaxKind::SwitchBodyCase);
             },
             Rule::CaseSelectors => self.start_node(SyntaxKind::SwitchCaseSelectors),
             Rule::CompoundAssignmentStatement => {
@@ -75,13 +79,16 @@ impl CstBuilder<'_, '_> {
             Rule::ContinueStatement => self.start_node(SyntaxKind::ContinueStatement),
             Rule::ContinuingStatement => self.start_node(SyntaxKind::ContinuingStatement),
             Rule::DecrementStatement | Rule::IncrementStatement => {
-                self.start_node(SyntaxKind::IncrementDecrementStatement)
+                self.start_node(SyntaxKind::IncrementDecrementStatement);
             },
             Rule::DefaultCaseSelector => self.start_node(SyntaxKind::SwitchDefaultSelector),
-            Rule::DiagnosticAttr => todo!(),
-            Rule::DiagnosticControl => todo!(),
-            Rule::DiagnosticDirective => todo!(),
-            Rule::DiagnosticRuleName => todo!(),
+            Rule::DiagnosticAttr
+            | Rule::DiagnosticControl
+            | Rule::DiagnosticDirective
+            | Rule::DiagnosticRuleName => {
+                // TODO: Parse diagnostic controls https://github.com/wgsl-analyzer/wgsl-analyzer/issues/613
+                self.start_node(SyntaxKind::Error);
+            },
             Rule::DiscardStatement => self.start_node(SyntaxKind::DiscardStatement),
             Rule::ElseClause => self.start_node(SyntaxKind::ElseClause),
             Rule::ElseIfClause => self.start_node(SyntaxKind::ElseIfClause),
@@ -115,7 +122,10 @@ impl CstBuilder<'_, '_> {
             Rule::LanguageExtensionName => self.start_node(SyntaxKind::LanguageExtensionName),
             Rule::ReturnStatement => self.start_node(SyntaxKind::ReturnStatement),
             Rule::ReturnType => self.start_node(SyntaxKind::ReturnType),
-            Rule::SeverityControlName => todo!(),
+            Rule::SeverityControlName => {
+                // TODO: Parse severity controls https://github.com/wgsl-analyzer/wgsl-analyzer/issues/613
+                self.start_node(SyntaxKind::Error);
+            },
             Rule::SimpleAssignmentStatement => self.start_node(SyntaxKind::AssignmentStatement),
             Rule::StructBody => self.start_node(SyntaxKind::StructBody),
             Rule::StructDeclaration => self.start_node(SyntaxKind::StructDeclaration),

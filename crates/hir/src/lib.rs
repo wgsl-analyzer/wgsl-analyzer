@@ -71,7 +71,7 @@ impl<'database> Semantics<'database> {
         source
             .ancestors()
             .find_map(|syntax| -> Option<ChildContainer> {
-                if let Some(item) = ast::Item::cast(syntax.clone()) {
+                if let Some(item) = ast::Item::cast(syntax) {
                     let container: ChildContainer = match item {
                         ast::Item::FunctionDeclaration(function_declaration) => {
                             let child_offset = source.text_range().start();
@@ -316,7 +316,8 @@ pub enum ChildContainer {
     StructId(StructId),
     TypeAliasId(TypeAliasId),
 }
-impl_from! {
+
+impl_from!(
     DefinitionWithBodyId,
     FunctionId,
     GlobalVariableId,
@@ -325,7 +326,7 @@ impl_from! {
     StructId,
     TypeAliasId
     for ChildContainer
-}
+);
 
 impl ChildContainer {
     pub fn file_id(
@@ -362,8 +363,9 @@ impl ChildContainer {
         }
     }
 
-    pub const fn as_def_with_body_id(&self) -> Option<DefinitionWithBodyId> {
-        if let Self::DefinitionWithBodyId(id) = *self {
+    #[must_use]
+    pub const fn as_def_with_body_id(self) -> Option<DefinitionWithBodyId> {
+        if let Self::DefinitionWithBodyId(id) = self {
             Some(id)
         } else {
             None
@@ -548,7 +550,7 @@ impl HasSource for Local {
             .map_err(drop)
             .ok()?;
 
-        let root = database.parse_or_resolve(file_id).unwrap().syntax();
+        let root = database.parse_or_resolve(file_id).syntax();
         Some(InFile::new(file_id, binding.to_node(&root)))
     }
 }

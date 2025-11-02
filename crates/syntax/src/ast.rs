@@ -753,19 +753,19 @@ pub enum SwitchCaseSelector {
 
 impl AstNode for SwitchCaseSelector {
     fn can_cast(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::SwitchDefaultSelector => true,
-            _ => Expression::can_cast(kind),
+        if let SyntaxKind::SwitchDefaultSelector = kind {
+            true
+        } else {
+            Expression::can_cast(kind)
         }
     }
     fn cast(syntax: SyntaxNode) -> Option<Self> {
-        match syntax.kind() {
-            SyntaxKind::SwitchDefaultSelector => {
-                Some(Self::SwitchDefaultSelector(SwitchDefaultSelector {
-                    syntax,
-                }))
-            },
-            _ => Expression::cast(syntax).map(SwitchCaseSelector::Expression),
+        if let SyntaxKind::SwitchDefaultSelector = syntax.kind() {
+            Some(Self::SwitchDefaultSelector(SwitchDefaultSelector {
+                syntax,
+            }))
+        } else {
+            Expression::cast(syntax).map(SwitchCaseSelector::Expression)
         }
     }
     fn syntax(&self) -> &SyntaxNode {
@@ -832,9 +832,12 @@ ast_node! {
 impl FunctionCallStatement {
     #[must_use]
     pub fn expression(&self) -> Option<FunctionCall> {
-        match crate::support::child::<Expression>(&self.syntax)? {
-            crate::ast::Expression::FunctionCall(function_call) => Some(function_call),
-            _ => None,
+        if let crate::ast::Expression::FunctionCall(function_call) =
+            crate::support::child::<Expression>(&self.syntax)?
+        {
+            Some(function_call)
+        } else {
+            None
         }
     }
 }
@@ -914,7 +917,7 @@ impl InfixExpression {
         self.syntax()
             .children_with_tokens()
             .filter_map(rowan::NodeOrToken::into_token)
-            .find(|v| BinaryOperatorKind::can_cast(v.kind()))
+            .find(|operator| BinaryOperatorKind::can_cast(operator.kind()))
     }
 
     #[must_use]

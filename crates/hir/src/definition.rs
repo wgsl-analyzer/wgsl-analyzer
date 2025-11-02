@@ -53,13 +53,12 @@ fn resolve_name_ref(
     if let Some(expression) = ast::IdentExpression::cast(parent.clone()) {
         let name = Name::from(name_ref);
         let definition = semantics.find_container(file_id, expression.syntax())?;
-        let expression_node = if let Some(function_call) =
-            ast::FunctionCall::cast(expression.syntax().parent()?.clone())
-        {
-            ast::Expression::cast(function_call.syntax().clone())?
-        } else {
-            ast::Expression::cast(expression.syntax().clone())?
-        };
+        let expression_node =
+            if let Some(function_call) = ast::FunctionCall::cast(expression.syntax().parent()?) {
+                ast::Expression::cast(function_call.syntax().clone())?
+            } else {
+                ast::Expression::cast(expression.syntax().clone())?
+            };
         let definition =
             semantics.resolve_name_in_container(definition, &expression_node, &name)?;
 

@@ -178,10 +178,11 @@ impl TyLoweringContext<'_> {
             .iter()
             .map(|arg| (self.eval_tplt_arg(*arg), *arg))
             .collect();
+        let len = template_parameters.len();
         TemplateParameters {
             container,
-            len: template_parameters.len(),
             template_parameters,
+            len,
         }
     }
 }

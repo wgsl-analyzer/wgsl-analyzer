@@ -357,11 +357,8 @@ fn naga_diagnostics<N: Naga>(
     config: &DiagnosticsConfig,
     accumulator: &mut Vec<AnyDiagnostic>,
 ) {
-    let Ok(source) = database.resolve_full_source(file_id.into()) else {
-        return;
-    };
-
-    let full_range = TextRange::up_to(TextSize::of(&source));
+    let source = database.file_text(file_id);
+    let full_range = TextRange::up_to(TextSize::of(source.as_str()));
 
     let policy = NagaErrorPolicy::Related;
     match N::parse(&source) {
@@ -434,7 +431,7 @@ pub fn diagnostics(
         .into_iter()
         .map(|diagnostic| {
             let file_id = diagnostic.file_id();
-            let root = database.parse_or_resolve(file_id).unwrap().syntax();
+            let root = database.parse_or_resolve(file_id).syntax();
             match diagnostic {
                 AnyDiagnostic::AssignmentNotAReference { left_side, actual } => {
                     let source = left_side.value.to_node(&root);

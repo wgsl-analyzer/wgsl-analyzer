@@ -36,12 +36,12 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
     fn parse_or_resolve(
         &self,
         key: HirFileId,
-    ) -> Result<Parse, ()>;
+    ) -> Parse;
 
     fn get_path(
         &self,
         key: HirFileId,
-    ) -> Result<VfsPath, ()>;
+    ) -> VfsPath;
 
     fn get_file_id(
         &self,
@@ -52,11 +52,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         &self,
         key: HirFileId,
     ) -> Arc<AstIdMap>;
-
-    fn resolve_full_source(
-        &self,
-        key: HirFileId,
-    ) -> Result<String, ()>;
 
     #[salsa::invoke(ModuleInfo::module_info_query)]
     fn module_info(
@@ -158,9 +153,9 @@ fn signature_with_source_map(
 fn get_path(
     database: &dyn DefDatabase,
     file_id: HirFileId,
-) -> Result<VfsPath, ()> {
+) -> VfsPath {
     match file_id.0 {
-        HirFileIdRepr::FileId(file_id) => Ok(database.file_path(file_id)),
+        HirFileIdRepr::FileId(file_id) => database.file_path(file_id),
     }
 }
 
@@ -175,29 +170,18 @@ fn get_file_id(
 fn parse_or_resolve(
     database: &dyn DefDatabase,
     file_id: HirFileId,
-) -> Result<Parse, ()> {
+) -> Parse {
     match file_id.0 {
-        HirFileIdRepr::FileId(file_id) => Ok(database.parse(file_id)),
+        HirFileIdRepr::FileId(file_id) => database.parse(file_id),
     }
-}
-
-fn resolve_full_source(
-    database: &dyn DefDatabase,
-    file_id: HirFileId,
-) -> Result<String, ()> {
-    let parse = database.parse_or_resolve(file_id)?;
-    let root = ast::SourceFile::cast(parse.syntax().clone_for_update()).unwrap();
-    Ok(root.syntax().to_string())
 }
 
 fn ast_id_map(
     database: &dyn DefDatabase,
     file_id: HirFileId,
 ) -> Arc<AstIdMap> {
-    let map = database
-        .parse_or_resolve(file_id)
-        .map(|source| AstIdMap::from_source(&source.tree()))
-        .unwrap_or_default();
+    let parsed = database.parse_or_resolve(file_id);
+    let map = AstIdMap::from_source(&parsed.tree());
     Arc::new(map)
 }
 

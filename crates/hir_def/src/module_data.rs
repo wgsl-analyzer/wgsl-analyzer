@@ -128,10 +128,7 @@ impl ModuleInfo {
         database: &dyn DefDatabase,
         file_id: HirFileId,
     ) -> Arc<Self> {
-        let source = match database.parse_or_resolve(file_id) {
-            Ok(value) => value.tree(),
-            Err(()) => return Arc::new(Self::default()),
-        };
+        let source = database.parse_or_resolve(file_id).tree();
 
         let mut lower_ctx = lower::Ctx::new(database, file_id);
         lower_ctx.lower_source_file(&source);
