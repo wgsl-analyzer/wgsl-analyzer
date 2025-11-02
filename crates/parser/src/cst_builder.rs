@@ -45,7 +45,7 @@ impl CstBuilder<'_, '_> {
         self.builder.finish()
     }
 
-    #[allow(
+    #[expect(
         clippy::too_many_lines,
         reason = "Exhaustively covering all SyntaxKind variants. There is no obvious way of splitting this."
     )]

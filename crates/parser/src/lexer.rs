@@ -264,7 +264,7 @@ pub fn lex_with_templates(lexer: logos::Lexer<'_, Token>) -> (Vec<Token>, Vec<Ra
 ///
 /// Meanwhile `<<` and `<<=` are unambiguously handled in the lexer,
 /// since a template cannot start with those.
-#[allow(
+#[expect(
     clippy::wildcard_enum_match_arm,
     reason = "Tries to mirror the algorithm as specified in the spec. Listing all tokens makes it less clear."
 )]
