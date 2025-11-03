@@ -592,7 +592,8 @@ pub enum VecSize {
     Two,
     Three,
     Four,
-    // TODO: Is this spec?
+    // TODO: Maybe clean this up during builtin refactor
+    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
     BoundVar(BoundVar),
 }
 
