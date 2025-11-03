@@ -1131,6 +1131,8 @@ impl<'database> InferenceContext<'database> {
             Expression::Index { left_side, index } => {
                 let left_side = self.infer_expression(*left_side, store);
                 let _index_expression = self.infer_expression(*index, store);
+                // TODO: check that the type of the index expression makes sense. Can't index with a f32, for example.
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/671
                 let left_kind = left_side.kind(self.database);
                 let is_reference = matches!(left_kind, TyKind::Reference(_));
 
