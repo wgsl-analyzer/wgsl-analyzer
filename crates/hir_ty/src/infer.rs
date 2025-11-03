@@ -117,13 +117,9 @@ pub fn infer_signature_query(
 ) -> Option<Arc<InferenceResult>> {
     let resolver = definition.resolver(database);
     let context = InferenceContext::new(database, definition, resolver);
-
-    todo!(
-        "
-    Match the definition and deal with the generic types in the signature.
-    Those can contain expressions, which need to land in the inference results.
-    "
-    );
+    // TODO: Match the definition and deal with the generic types in the signature.
+    // Those can contain expressions, which need to land in the inference results.
+    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/657
 
     let result = context.resolve_all();
     if result.is_empty() {
