@@ -28,6 +28,7 @@ part type_specifier;
 
 
 // TODO: validate that directives come before declarations to improve error messages
+// See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/683
 translation_unit: (global_item | ';')*;
 global_item^: global_directive | global_declaration | global_assert;
 
@@ -66,6 +67,7 @@ attribute:
     'diagnostic' diagnostic_control @diagnostic_attr
   | Ident [argument_expression_list]
     // TODO: interpolate is special
+    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/614
     // builtin is special
   )
 ;
@@ -85,6 +87,7 @@ template_args^: TemplateStart expression (?1 ',' expression)* [','] TemplateEnd;
 // This is pratt parser, with higher elements having a higher binding power
 // Source: https://github.com/0x2a-42/lelwel/tree/main?tab=readme-ov-file#direct-left-recursion
 // TODO: check for invalid expressions, like a < b < c
+// See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/616
 expression:
   expression '[' expression ']' @indexing_expression // §8.5
 | expression '.' (Ident @field_expression) // §8.5, but cannot distinguish swizzles and fields from syntax
@@ -124,6 +127,7 @@ statement:
   | 'for' '(' [for_init] ';' [for_condition] ';' [for_update] ')' compound_statement @for_statement // §9.4.4
   | 'while' expression compound_statement @while_statement // §9.4.5
   // TODO: check if using & here makes it recover better https://github.com/0x2a-42/lelwel/issues/34
+  // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/684
   | '{' statement* '}' @compound_statement // §9.1
   )
 | ?2 function_call ';' @function_call_statement // §9.5
