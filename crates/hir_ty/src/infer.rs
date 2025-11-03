@@ -1074,10 +1074,8 @@ impl<'database> InferenceContext<'database> {
                             );
 
                             let field_ty = field_types[field];
-                            todo!("
-                            correct Address Spaces/access mode
-                            Implement it like this https://github.com/wgsl-tooling-wg/wesl-rs/blob/fea56c869ba2ee8825b7b06e4d9d0d2876b2bc77/crates/wesl/src/eval/ty.rs#L163
-                            ");
+                            // TODO: correct Address Spaces/access mode
+                            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
                             self.make_ref(field_ty, AddressSpace::Private, AccessMode::ReadWrite)
                         } else {
                             self.push_diagnostic(InferenceDiagnostic::NoSuchField {
