@@ -1131,28 +1131,20 @@ impl<'database> InferenceContext<'database> {
             Expression::Index { left_side, index } => {
                 let left_side = self.infer_expression(*left_side, store);
                 let _index_expression = self.infer_expression(*index, store);
-                todo!("check index expression");
                 let left_kind = left_side.kind(self.database);
                 let is_reference = matches!(left_kind, TyKind::Reference(_));
 
                 let left_inner = left_kind.unref(self.database);
 
                 let r#type = match &*left_inner {
-                    TyKind::Vector(vec) => {
-                        todo!("out of bounds");
-                        vec.component_type
-                    },
+                    TyKind::Vector(vec) => vec.component_type,
                     TyKind::Matrix(matrix_type) => {
-                        todo!("out of bounds");
                         self.database.intern_ty(TyKind::Vector(VectorType {
                             size: matrix_type.rows,
                             component_type: matrix_type.inner,
                         }))
                     },
-                    TyKind::Array(array) => {
-                        todo!("out of bounds");
-                        array.inner
-                    },
+                    TyKind::Array(array) => array.inner,
                     TyKind::Error
                     | TyKind::Scalar(_)
                     | TyKind::Atomic(_)
