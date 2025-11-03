@@ -291,16 +291,6 @@ impl TyKind {
         )
     }
 
-    // For a composite type T, the nesting depth of T, written NestDepth(T) is:
-    // 1 for a vector type
-    // 2 for a matrix type
-    // 1 + NestDepth(E) for an array type with element type E
-    // 1 + max(NestDepth(M1),..., NestDepth(MN)) if T is a structure type with member types M1,...,MN
-
-    fn nesting_depth(&self) -> u8 {
-        todo!();
-    }
-
     #[must_use]
     pub const fn is_constructable(&self) -> bool {
         matches!(
