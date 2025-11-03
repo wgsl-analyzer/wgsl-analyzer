@@ -68,7 +68,8 @@ impl TyLoweringContext<'_> {
                         Instance::Literal(LiteralInstance::AbstractInt(*value as i64))
                     },
                     Literal::Float(_, _) => {
-                        // Not implemented
+                        // TODO: Not implemented
+                        // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/670
                         return None;
                     },
                     Literal::Bool(value) => Instance::Literal(LiteralInstance::Bool(*value)),
