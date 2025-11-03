@@ -2926,6 +2926,10 @@ pub fn from_wgsl_texel_format(
 /// # Panics
 ///
 /// Panics if `texel_format` is `BoundVar` or `Any`.
+#[expect(
+    deprecated,
+    reason = "TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
+)]
 #[must_use]
 pub fn to_wgsl_texel_format(
     texel_format: crate::ty::TexelFormat

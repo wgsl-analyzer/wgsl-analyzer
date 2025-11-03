@@ -810,8 +810,15 @@ pub enum TexelFormat {
 
     Bgra8unorm,
 
+    #[deprecated(
+        note = "Intended to be refactored and removed in https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
+    )]
+    /// this is only used for builtins which care a little bit about the format
     BoundVar(BoundVar),
-    // this is only used for builtins which do not care about the format
+    /// this is only used for builtins which do not care about the format
+    #[deprecated(
+        note = "Intended to be refactored and removed in https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
+    )]
     Any,
 }
 

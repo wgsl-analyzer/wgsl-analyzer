@@ -118,6 +118,10 @@ impl UnificationTable {
                 })
                 .intern(database)
             },
+            #[expect(
+                deprecated,
+                reason = "TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
+            )]
             TyKind::Texture(TextureType {
                 kind: TextureKind::Storage(TexelFormat::BoundVar(var), mode),
                 dimension,
@@ -322,6 +326,10 @@ pub fn unify(
                     return Err(());
                 }
 
+                #[expect(
+                    deprecated,
+                    reason = "TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
+                )]
                 match format {
                     TexelFormat::Any => {},
                     TexelFormat::BoundVar(var) => {
@@ -465,7 +473,11 @@ fn storage_type_of_texel_format(
         | TexelFormat::Rgba32uint
         | TexelFormat::R32uint
         | TexelFormat::Rg32uint => ScalarType::U32,
-
+        #[expect(
+            deprecated,
+            clippy::unreachable,
+            reason = "TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
+        )]
         TexelFormat::BoundVar(_) | TexelFormat::Any => unreachable!("why is this unreachable?"),
     };
     TyKind::Vector(VectorType {
