@@ -244,8 +244,8 @@ impl TyLoweringContext<'_> {
                 })
             },
             // TODO: Move those aliases to a separate file
+            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
             "vec2i" => {
-                todo!("Move those aliases to a separate file");
                 self.expect_no_template(template_parameters);
                 TyKind::Vector(VectorType {
                     size: VecSize::Two,
