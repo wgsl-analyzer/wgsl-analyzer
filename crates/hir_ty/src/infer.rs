@@ -2514,6 +2514,10 @@ impl<'database> WgslTypeConverter<'database> {
         &self,
         r#type: wgsl_types::Type,
     ) -> Type {
+        #[expect(
+            clippy::todo,
+            reason = "See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/442"
+        )]
         match r#type {
             wgsl_types::Type::Bool => TyKind::Scalar(ScalarType::Bool).intern(self.database),
             wgsl_types::Type::AbstractInt => {
@@ -2540,7 +2544,15 @@ impl<'database> WgslTypeConverter<'database> {
                 inner: self.from_wgsl_types(*r#type),
                 binding_array: false,
                 size: match size {
-                    Some(size) => ArraySize::Constant(size as u32),
+                    Some(size) => {
+                        debug_assert!(u32::try_from(size).is_ok());
+                        #[expect(
+                            clippy::cast_possible_truncation,
+                            clippy::as_conversions,
+                            reason = "externally defined"
+                        )]
+                        ArraySize::Constant(size as u32)
+                    },
                     None => ArraySize::Dynamic,
                 },
             })
@@ -2549,7 +2561,15 @@ impl<'database> WgslTypeConverter<'database> {
                 inner: self.from_wgsl_types(*r#type),
                 binding_array: true,
                 size: match size {
-                    Some(size) => ArraySize::Constant(size as u32),
+                    Some(size) => {
+                        debug_assert!(u32::try_from(size).is_ok());
+                        #[expect(
+                            clippy::cast_possible_truncation,
+                            clippy::as_conversions,
+                            reason = "externally defined"
+                        )]
+                        ArraySize::Constant(size as u32)
+                    },
                     None => ArraySize::Dynamic,
                 },
             })
