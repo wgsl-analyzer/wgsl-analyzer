@@ -327,3 +327,15 @@ let b = vec4(vec3f(1f), 1f);
         "]],
     );
 }
+
+#[test]
+fn texture_storage_2d_template() {
+    check_infer(
+        "
+var framebuffer : texture_storage_2d<rgba16float, write>;
+    ",
+        expect![[r#"
+            5..16 'framebuffer': ref<texture_storage_2d<rgba16float,write>>
+        "#]],
+    );
+}

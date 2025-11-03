@@ -132,6 +132,8 @@ many_single_char_names = "allow"
 unneeded_field_pattern = "allow"
 # this is not a cryptographic context
 integer_division_remainder_used = "allow"
+# expect-test has a special integration with raw string
+needless_raw_strings = "allow"
 
 # TODOs
 missing_docs_in_private_items = "allow"

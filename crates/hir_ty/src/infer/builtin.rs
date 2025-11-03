@@ -994,7 +994,7 @@ impl TyLoweringContext<'_> {
         &mut self,
         mut template_parameters: TemplateParameters,
     ) -> Result<StorageTextureTemplate, TypeLoweringError> {
-        self.expect_n_templates(&template_parameters, 1..=1);
+        self.expect_n_templates(&template_parameters, 1..=2);
         let texel_format = match template_parameters.next_as_enumerant() {
             Ok((Enumerant::TexelFormat(texel_format), _)) => texel_format,
             Ok((_, expression)) => {
