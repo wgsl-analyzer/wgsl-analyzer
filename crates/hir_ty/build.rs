@@ -291,7 +291,10 @@ fn only_char(input: &str) -> char {
     value
 }
 
-#[expect(clippy::unimplemented, reason = "TODO")]
+#[expect(
+    clippy::unimplemented,
+    reason = "builtin refactor https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
+)]
 fn parse_ty(
     generics: &mut BTreeMap<char, (usize, Generic)>,
     r#type: &str,
