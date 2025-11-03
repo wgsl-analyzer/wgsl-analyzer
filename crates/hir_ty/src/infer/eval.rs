@@ -49,6 +49,12 @@ impl TyLoweringContext<'_> {
                 return None;
             },
 
+            #[expect(
+                clippy::cast_possible_truncation,
+                clippy::cast_possible_wrap,
+                clippy::as_conversions,
+                reason = "TODO: make invalid state unrepresentable; see: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/675"
+            )]
             Expression::Literal(literal) => {
                 use hir_def::expression::{BuiltinInt, Literal};
                 match literal {
