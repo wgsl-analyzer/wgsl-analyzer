@@ -179,6 +179,7 @@ pub fn validate_address_space<Function: FnMut(AddressSpaceError)>(
         },
         AddressSpace::PushConstant => {
             // TODO: validate push constants
+            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/682
         },
     }
 }
