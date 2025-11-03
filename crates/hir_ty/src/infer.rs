@@ -2088,7 +2088,10 @@ pub enum TypeLoweringErrorKind {
         expected: std::ops::RangeInclusive<usize>,
         actual: usize,
     },
+    // A value was provided where a type was expected.
     ExpectedType(Name),
+    // A function was provided but not called.
+    ExpectedFunctionToBeCalled(Name),
     // TODO: Change this to a strongly typed wgsl_types::Error
     // The challenge here is that wgsl_types::Error doesn't implement Eq,
     // However the inference result keeps track of all the diagnostics and is cached
@@ -2148,6 +2151,13 @@ impl fmt::Display for TypeLoweringErrorKind {
             },
             Self::ExpectedType(name) => {
                 write!(formatter, "{} is not a type", name.as_str())
+            },
+            Self::ExpectedFunctionToBeCalled(name) => {
+                write!(
+                    formatter,
+                    "{0:} was written, write {0:}() instead",
+                    name.as_str()
+                )
             },
         }
     }

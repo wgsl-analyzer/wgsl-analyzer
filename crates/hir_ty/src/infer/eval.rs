@@ -147,12 +147,14 @@ impl TyLoweringContext<'_> {
                         TemplateParameter::Type(TyKind::Error.intern(self.database))
                     },
                     Lowered::Enumerant(enumerant) => TemplateParameter::Enumerant(enumerant),
-                    Lowered::Function(_) => {
-                        todo!(r#"Report an error "function needs to be called""#);
-                        TemplateParameter::Type(self.database.intern_ty(TyKind::Error))
-                    },
-                    Lowered::BuiltinFunction => {
-                        todo!(r#"Report an error "function needs to be called""#);
+                    Lowered::Function(_) | Lowered::BuiltinFunction => {
+                        // function<another_function>()
+                        self.diagnostics.push(TypeLoweringError {
+                            container: TypeContainer::Expression(tplt),
+                            kind: TypeLoweringErrorKind::ExpectedFunctionToBeCalled(
+                                ident_expression.path.clone(),
+                            ),
+                        });
                         TemplateParameter::Type(self.database.intern_ty(TyKind::Error))
                     },
                     Lowered::GlobalConstant(_)
