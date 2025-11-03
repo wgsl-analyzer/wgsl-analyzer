@@ -1037,7 +1037,7 @@ impl<'database> InferenceContext<'database> {
         store: &ExpressionStore,
     ) -> Type {
         let r#type = match &store[expression] {
-            Expression::Missing => self.error_ty(),
+            Expression::Missing => self.error_ty(), // this would be a parser error
             Expression::BinaryOperation {
                 left_side,
                 right_side,

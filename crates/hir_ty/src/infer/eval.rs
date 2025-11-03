@@ -30,13 +30,8 @@ impl TyLoweringContext<'_> {
         expression: ExpressionId,
     ) -> Option<Instance> {
         let instance: Instance = match &self.store[expression] {
-            #[expect(
-                clippy::match_same_arms,
-                reason = "TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/659"
-            )]
             Expression::Missing => {
-                // TODO: self.push_diagnostic(InferenceDiagnostic::...)
-                return None;
+                return None; // missing expression are a parser error
             },
             Expression::BinaryOperation {
                 left_side,
@@ -44,12 +39,14 @@ impl TyLoweringContext<'_> {
                 operation,
             } => self.eval_binary_op(*left_side, *right_side, *operation)?,
             Expression::UnaryOperator { expression, op } => self.eval_unary_op(*expression, *op)?,
+            #[expect(
+                clippy::match_same_arms,
+                reason = "TODO: const evaluation not implemented, see https://github.com/wgsl-analyzer/wgsl-analyzer/issues/670"
+            )]
             Expression::Field { .. }
             | Expression::Index { .. }
             | Expression::Call { .. }
             | Expression::IdentExpression(_) => {
-                // TODO: const evaluation not implemented
-                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/670
                 return None;
             },
             #[expect(
