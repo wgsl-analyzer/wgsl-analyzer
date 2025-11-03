@@ -493,11 +493,8 @@ op_eq(T, T) -> bool
 op_cmp(vecN<T>, vecN<T>) -> vecN<bool>
 op_cmp(T, T) -> bool
 
-
-op_binary_bitop(vecN<u32>, vecN<u32>) -> vecN<u32>
-op_binary_bitop(u32, u32) -> u32
-op_binary_bitop(vecN<i32>, vecN<i32>) -> vecN<i32>
-op_binary_bitop(i32, i32) -> i32
+op_binary_bitop(vecN<T>, vecN<T>) -> vecN<T>
+op_binary_bitop(T, T) -> T
 
 op_binary_shift(vecN<u32>, vecN<u32>) -> vecN<u32>
 op_binary_shift(u32, u32) -> u32
