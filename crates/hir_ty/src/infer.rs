@@ -1794,7 +1794,10 @@ impl<'database> InferenceContext<'database> {
         arguments: Vec<Type>,
     ) -> Type {
         fn size_to_dimension(size: VecSize) -> VecDimensionality {
-            #[expect(clippy::unreachable, reason = "TODO")]
+            #[expect(
+                clippy::unreachable,
+                reason = "this is by far the easiest way to handle it, at least for now"
+            )]
             match size {
                 VecSize::Two => VecDimensionality::Two,
                 VecSize::Three => VecDimensionality::Three,
