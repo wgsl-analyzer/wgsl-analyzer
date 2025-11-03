@@ -1508,7 +1508,8 @@ impl<'database> InferenceContext<'database> {
     ) -> Result<(Type, BuiltinOverloadId), ()> {
         let builtin = builtin_id.lookup(self.database);
         for (overload_id, overload) in builtin.overloads() {
-            todo!("pick overload with lowest rank");
+            // Hack: overload resolution algorithm is not implemented here or used
+            // here because it is the same as just picking the first valid overload.
             if let Ok((r#type, _conversion_rank)) = self.call_builtin_overload(overload, arguments)
             {
                 return Ok((r#type, overload_id));
@@ -1528,7 +1529,6 @@ impl<'database> InferenceContext<'database> {
             return Err(());
         }
 
-        todo!("Do the conversion rank computation");
         let conversion_rank = 0;
         let mut unification_table = UnificationTable::default();
         for (expected, &found) in fn_ty.parameters().zip(arguments.iter()) {
