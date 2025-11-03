@@ -929,11 +929,12 @@ impl TyLoweringContext<'_> {
                 if matches!(ty_kind, TyKind::Scalar(ScalarType::I32 | ScalarType::U32)) {
                     r#type
                 } else {
-                    todo!("Naga supports more types (f32, i64, u64) here");
+                    // TODO: improve the error message and support naga atomics
+                    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/677
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "i32 or u32".to_owned(),
+                            "i32 or u32".to_owned(), // Naga supports more types (f32, i64, u64) here
                         ),
                     });
                     TyKind::Error.intern(self.database)
