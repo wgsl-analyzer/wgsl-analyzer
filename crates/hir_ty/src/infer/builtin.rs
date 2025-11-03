@@ -718,19 +718,22 @@ impl TyLoweringContext<'_> {
         let size = if template_parameters.has_next() {
             match template_parameters.next_as_instance() {
                 Ok((Some(Instance::Literal(LiteralInstance::I32(number))), _)) if number > 0 => {
-                    ArraySize::Constant(number as u64)
+                    ArraySize::Constant(number as u32)
                 },
                 Ok((Some(Instance::Literal(LiteralInstance::U32(number))), _)) if number > 0 => {
-                    ArraySize::Constant(u64::from(number))
+                    ArraySize::Constant(u32::from(number))
                 },
                 Ok((
                     Some(Instance::Literal(
                         LiteralInstance::AbstractInt(number) | LiteralInstance::I64(number),
                     )),
                     _,
-                )) if number > 0 => ArraySize::Constant(number as u64),
+                )) if number > 0 => {
+                    // lots of places where we should report an error instead of truncating
+                    ArraySize::Constant(number as u32)
+                },
                 Ok((Some(Instance::Literal(LiteralInstance::U64(number))), _)) if number > 0 => {
-                    ArraySize::Constant(number)
+                    ArraySize::Constant(number as u32)
                 },
                 Ok((_, expression)) => {
                     self.diagnostics.push(TypeLoweringError {

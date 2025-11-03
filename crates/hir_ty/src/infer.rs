@@ -1660,6 +1660,10 @@ impl<'database> InferenceContext<'database> {
         }
     }
 
+    #[expect(
+        clippy::too_many_lines,
+        reason = "large bug not complex match expression"
+    )]
     /// Constructor for a type with a fully specified template
     fn call_templated_type_constructor(
         &mut self,
@@ -1672,6 +1676,10 @@ impl<'database> InferenceContext<'database> {
                 VecSize::Two => VecDimensionality::Two,
                 VecSize::Three => VecDimensionality::Three,
                 VecSize::Four => VecDimensionality::Four,
+                #[expect(
+                    clippy::unreachable,
+                    reason = "this is by far the easiest way to handle it, at least for now"
+                )]
                 VecSize::BoundVar(_) => unreachable!("Can never have unbound type at this point"),
             }
         }
@@ -1692,8 +1700,12 @@ impl<'database> InferenceContext<'database> {
                         });
                     }
                 }
+                #[expect(
+                    clippy::as_conversions,
+                    reason = "constructing an array with too many parameters is an error anyway"
+                )]
                 if let ArraySize::Constant(size) = array_type.size
-                    && (arguments.len() as u64) != size
+                    && arguments.len() != size as usize
                 {
                     self.push_diagnostic(InferenceDiagnostic::FunctionCallArgCountMismatch {
                         expression,
@@ -1748,6 +1760,7 @@ impl<'database> InferenceContext<'database> {
             },
             TyKind::Struct(_) => {
                 // TODO: Implement checking field types
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/674
                 r#type
             },
 
@@ -1769,6 +1782,10 @@ impl<'database> InferenceContext<'database> {
         }
     }
 
+    #[expect(
+        clippy::too_many_lines,
+        reason = "large bug not complex match expression"
+    )]
     /// Constructor for just a type name
     fn call_type_without_template_constructor(
         &mut self,
@@ -1816,13 +1833,27 @@ impl<'database> InferenceContext<'database> {
                         });
                     }
                 }
-
-                TyKind::Array(ArrayType {
-                    inner: expected_type,
-                    binding_array: array_type.binding_array,
-                    size: ArraySize::Constant(arguments.len() as u64),
-                })
-                .intern(self.database)
+                if let Ok(validated_length) = u32::try_from(arguments.len()) {
+                    TyKind::Array(ArrayType {
+                        inner: expected_type,
+                        binding_array: array_type.binding_array,
+                        size: ArraySize::Constant(validated_length),
+                    })
+                    .intern(self.database)
+                } else {
+                    self.push_diagnostic(InferenceDiagnostic::FunctionCallArgCountMismatch {
+                        expression,
+                        #[expect(clippy::as_conversions, reason = "usize always holds a u32")]
+                        n_expected: ArraySize::MAX as usize,
+                        n_actual: arguments.len(),
+                    });
+                    TyKind::Array(ArrayType {
+                        inner: expected_type,
+                        binding_array: array_type.binding_array,
+                        size: ArraySize::Constant(ArraySize::MAX),
+                    })
+                    .intern(self.database)
+                }
             },
             TyKind::Vector(vec) => {
                 if arguments.is_empty() {
@@ -2498,7 +2529,7 @@ impl<'database> WgslTypeConverter<'database> {
                 inner: self.from_wgsl_types(*r#type),
                 binding_array: false,
                 size: match size {
-                    Some(size) => ArraySize::Constant(size as u64),
+                    Some(size) => ArraySize::Constant(size as u32),
                     None => ArraySize::Dynamic,
                 },
             })
@@ -2507,7 +2538,7 @@ impl<'database> WgslTypeConverter<'database> {
                 inner: self.from_wgsl_types(*r#type),
                 binding_array: true,
                 size: match size {
-                    Some(size) => ArraySize::Constant(size as u64),
+                    Some(size) => ArraySize::Constant(size as u32),
                     None => ArraySize::Dynamic,
                 },
             })

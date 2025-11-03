@@ -709,8 +709,12 @@ pub struct ArrayType {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ArraySize {
-    Constant(u64),
+    Constant(u32),
     Dynamic,
+}
+
+impl ArraySize {
+    pub const MAX: u32 = u32::MAX;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
