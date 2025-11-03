@@ -176,7 +176,8 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
             let (text, suffix) = split_number_suffix(literal.text());
             let value = match text.strip_prefix("0x").or_else(|| text.strip_prefix("0X")) {
                 Some(_hex) => {
-                    // TODO: Hex floats need to be handled https://github.com/wgsl-analyzer/wgsl-analyzer/issues/617
+                    // TODO: Hex floats need to be handled
+                    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/617
                     Ok(0_f64)
                 },
                 None => f64::from_str(text),
