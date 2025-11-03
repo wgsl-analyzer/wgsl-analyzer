@@ -848,7 +848,8 @@ impl TyLoweringContext<'_> {
             },
             Err(error) => {
                 self.diagnostics.push(error);
-                todo!("Should we have a fallback here, and what should it be?");
+                // Hack: provide a fallback value for the error path so that the type checker can continue evaluating
+                // "type checker error recovery"
                 AddressSpace::Function
             },
         };
@@ -901,7 +902,7 @@ impl TyLoweringContext<'_> {
                 },
                 Err(error) => {
                     self.diagnostics.push(error);
-                    todo!("Should we have a fallback here, and what should it be?");
+                    // type checker error recovery
                     address_space.default_access_mode()
                 },
             }
