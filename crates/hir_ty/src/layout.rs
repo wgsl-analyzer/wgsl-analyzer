@@ -277,7 +277,8 @@ pub fn struct_member_layout<Result, Function: FnMut(LocalFieldId, FieldLayout) -
     let mut last_member_size = None;
 
     for (field_id, &field) in fields.iter() {
-        todo!("handle @align and @size");
+        // TODO: handle @align and @size
+        // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/678
         let custom_align = None;
         let custom_size = None;
 
