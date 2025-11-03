@@ -2918,7 +2918,13 @@ pub fn from_wgsl_texel_format(
         | wgsl_types::syntax::TexelFormat::R64Uint
         | wgsl_types::syntax::TexelFormat::Rgba16Unorm
         | wgsl_types::syntax::TexelFormat::Rgba16Snorm => {
-            unimplemented!("not yet supported naga extension")
+            #[expect(
+                clippy::unimplemented,
+                reason = "TODO: support naga texture formats, see: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/675"
+            )]
+            {
+                unimplemented!("not yet supported naga extension")
+            }
         },
     }
 }
