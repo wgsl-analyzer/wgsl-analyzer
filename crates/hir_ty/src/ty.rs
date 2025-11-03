@@ -564,7 +564,7 @@ impl ScalarType {
     /// [`u32`]: <https://www.w3.org/TR/WGSL/#u32>
     /// [`f32`]: <https://www.w3.org/TR/WGSL/#f32>
     /// [`f16`]: <https://www.w3.org/TR/WGSL/#f16>
-    pub const fn is_numeric(&self) -> bool {
+    pub const fn is_numeric(self) -> bool {
         matches!(
             self,
             Self::AbstractInt | Self::AbstractFloat | Self::I32 | Self::U32 | Self::F32 | Self::F16
@@ -579,7 +579,7 @@ impl ScalarType {
     /// [`AbstractInt`]: <https://www.w3.org/TR/WGSL/#abstractint>
     /// [`i32`]: <https://www.w3.org/TR/WGSL/#i32>
     /// [`u32`]: <https://www.w3.org/TR/WGSL/#u32>
-    pub const fn is_integer(&self) -> bool {
+    pub const fn is_integer(self) -> bool {
         matches!(self, Self::AbstractInt | Self::I32 | Self::U32)
     }
 }
@@ -817,6 +817,10 @@ impl fmt::Display for TexelFormat {
         &self,
         formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
+        #[expect(
+            deprecated,
+            reason = "TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
+        )]
         let str = match self {
             Self::Rgba8unorm => "rgba8unorm",
             Self::Rgba8snorm => "rgba8snorm",
