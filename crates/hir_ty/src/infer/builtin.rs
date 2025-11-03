@@ -717,22 +717,42 @@ impl TyLoweringContext<'_> {
 
         let size = if template_parameters.has_next() {
             match template_parameters.next_as_instance() {
-                Ok((Some(Instance::Literal(LiteralInstance::I32(number))), _)) if number > 0 => {
+                Ok((Some(Instance::Literal(LiteralInstance::I32(number))), _)) if number > 0 =>
+                {
+                    #[expect(
+                        clippy::cast_sign_loss,
+                        clippy::as_conversions,
+                        reason = "this is checked, could refactor into `if let Ok(validated) = u32::try_from(number)` once that is stable"
+                    )]
                     ArraySize::Constant(number as u32)
                 },
                 Ok((Some(Instance::Literal(LiteralInstance::U32(number))), _)) if number > 0 => {
-                    ArraySize::Constant(u32::from(number))
+                    ArraySize::Constant(number)
                 },
                 Ok((
                     Some(Instance::Literal(
                         LiteralInstance::AbstractInt(number) | LiteralInstance::I64(number),
                     )),
                     _,
-                )) if number > 0 => {
-                    // lots of places where we should report an error instead of truncating
+                )) if number > 0 && number <= ArraySize::MAX.into() => {
+                    // skips handling array<E, 1li64>() or array<E, 99999999999999999999999999>()
+                    #[expect(
+                        clippy::cast_possible_truncation,
+                        clippy::cast_sign_loss,
+                        clippy::as_conversions,
+                        reason = "this is checked, could refactor into `if let Ok(validated) = u32::try_from(number)` once that is stable"
+                    )]
                     ArraySize::Constant(number as u32)
                 },
-                Ok((Some(Instance::Literal(LiteralInstance::U64(number))), _)) if number > 0 => {
+                Ok((Some(Instance::Literal(LiteralInstance::U64(number))), _))
+                    if number > 0 && number <= ArraySize::MAX.into() =>
+                {
+                    // skips handling array<E, 1lu64>() or array<E, 99999999999999999999999999lu64>()
+                    #[expect(
+                        clippy::cast_possible_truncation,
+                        clippy::as_conversions,
+                        reason = "this is checked, could refactor into `if let Ok(validated) = u32::try_from(number)` once that is stable"
+                    )]
                     ArraySize::Constant(number as u32)
                 },
                 Ok((_, expression)) => {
