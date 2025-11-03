@@ -1909,7 +1909,8 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             TyKind::Struct(_) => {
-                todo!("Implement checking field types");
+                // TODO: Implement checking fields' types
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/674
                 r#type
             },
             // Never constructible
