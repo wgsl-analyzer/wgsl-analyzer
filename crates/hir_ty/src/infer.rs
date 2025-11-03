@@ -271,7 +271,7 @@ pub enum InferenceDiagnostic {
     },
 }
 
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum TypeContainer {
     Expression(ExpressionId),
     TypeSpecifier(TypeSpecifierId),
@@ -2080,7 +2080,6 @@ pub struct TypeLoweringError {
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeLoweringErrorKind {
     UnresolvedName(Name),
-    InvalidTexelFormat(String),
     UnexpectedTemplateArgument(String),
     MissingTemplateArgument(String),
     MissingTemplate,
@@ -2109,13 +2108,6 @@ impl fmt::Display for TypeLoweringErrorKind {
         match self {
             Self::UnresolvedName(name) => {
                 write!(formatter, "`{}` not found in scope", name.as_str())
-            },
-            Self::InvalidTexelFormat(format) => {
-                let all_formats = "rgba8unorm,\nrgba8snorm,\nrgba8uint,\nrgba8sint,\nrgba16uint,\nrgba16sint,\nrgba16float,\nr32uint,\nr32sint,\nr32float,\nrg32uint,\nrg32sint,\nrg32float,\nrgba32uint,\nrgba32sint,\nrgba32float";
-                write!(
-                    formatter,
-                    "`{format}` is not a valid texel format, expected one of:\n{all_formats}"
-                )
             },
             Self::WgslError(error) => {
                 write!(formatter, "{error}")
@@ -2316,7 +2308,7 @@ impl<'database> TyLoweringContext<'database> {
             true
         } else {
             self.diagnostics.push(TypeLoweringError {
-                container: template_parameters.container().clone(),
+                container: *template_parameters.container(),
                 kind: TypeLoweringErrorKind::WrongNumberOfTemplateArguments {
                     expected,
                     actual: template_parameters.len(),

@@ -105,13 +105,7 @@ impl TyLoweringContext<'_> {
     ) -> Result<Lowered, TypeLoweringError> {
         // Lower predeclared types
         if Self::is_predeclared_ty(path) {
-            match self.lower_predeclared_ty(type_container.clone(), path, template_parameters) {
-                Ok(r#type) => Ok(r#type),
-                Err(kind) => Err(TypeLoweringError {
-                    container: type_container,
-                    kind,
-                }),
-            }
+            self.lower_predeclared_ty(type_container, path, template_parameters)
         } else if crate::builtins::Builtin::ALL_BUILTINS.contains(&path.as_str()) {
             Ok(Lowered::BuiltinFunction)
         } else if let Ok(enum_value) = Enumerant::from_str(path.as_str()) {
@@ -135,7 +129,7 @@ impl TyLoweringContext<'_> {
         type_container: TypeContainer,
         path: &Name,
         template_parameters: &[ExpressionId],
-    ) -> Result<Lowered, TypeLoweringErrorKind> {
+    ) -> Result<Lowered, TypeLoweringError> {
         let evaluated_parameters = self.eval_template_args(type_container, template_parameters);
 
         let ty_kind = match path.as_str() {
@@ -170,7 +164,7 @@ impl TyLoweringContext<'_> {
                         .intern(self.database),
                     ));
                 }
-                let array_template = self.array_template(evaluated_parameters);
+                let array_template = self.array_template(evaluated_parameters)?;
                 TyKind::Array(ArrayType {
                     inner: array_template.r#type,
                     binding_array: false,
@@ -188,7 +182,7 @@ impl TyLoweringContext<'_> {
                         .intern(self.database),
                     ));
                 }
-                let array_template = self.array_template(evaluated_parameters);
+                let array_template = self.array_template(evaluated_parameters)?;
                 TyKind::Array(ArrayType {
                     inner: array_template.r#type,
                     binding_array: true,
@@ -510,7 +504,7 @@ impl TyLoweringContext<'_> {
                 })
             },
             "ptr" => {
-                let pointer_template = self.pointer_template(evaluated_parameters);
+                let pointer_template = self.pointer_template(evaluated_parameters)?;
                 TyKind::Pointer(Pointer {
                     address_space: pointer_template.address_space,
                     inner: pointer_template.inner,
@@ -522,7 +516,7 @@ impl TyLoweringContext<'_> {
                 TyKind::Atomic(AtomicType { inner })
             },
             "texture_1d" => {
-                let sampled = self.texture_sampled_template(evaluated_parameters);
+                let sampled = self.texture_sampled_template(evaluated_parameters)?;
                 TyKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.database),
                     dimension: TextureDimensionality::D1,
@@ -531,7 +525,7 @@ impl TyLoweringContext<'_> {
                 })
             },
             "texture_2d" => {
-                let sampled = self.texture_sampled_template(evaluated_parameters);
+                let sampled = self.texture_sampled_template(evaluated_parameters)?;
                 TyKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.database),
                     dimension: TextureDimensionality::D2,
@@ -540,7 +534,7 @@ impl TyLoweringContext<'_> {
                 })
             },
             "texture_2d_array" => {
-                let sampled = self.texture_sampled_template(evaluated_parameters);
+                let sampled = self.texture_sampled_template(evaluated_parameters)?;
                 TyKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.database),
                     dimension: TextureDimensionality::D2,
@@ -549,7 +543,7 @@ impl TyLoweringContext<'_> {
                 })
             },
             "texture_3d" => {
-                let sampled = self.texture_sampled_template(evaluated_parameters);
+                let sampled = self.texture_sampled_template(evaluated_parameters)?;
                 TyKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.database),
                     dimension: TextureDimensionality::D3,
@@ -558,7 +552,7 @@ impl TyLoweringContext<'_> {
                 })
             },
             "texture_cube" => {
-                let sampled = self.texture_sampled_template(evaluated_parameters);
+                let sampled = self.texture_sampled_template(evaluated_parameters)?;
                 TyKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.database),
                     dimension: TextureDimensionality::Cube,
@@ -567,7 +561,7 @@ impl TyLoweringContext<'_> {
                 })
             },
             "texture_cube_array" => {
-                let sampled = self.texture_sampled_template(evaluated_parameters);
+                let sampled = self.texture_sampled_template(evaluated_parameters)?;
                 TyKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.database),
                     dimension: TextureDimensionality::Cube,
@@ -576,7 +570,7 @@ impl TyLoweringContext<'_> {
                 })
             },
             "texture_multisampled_2d" => {
-                let sampled = self.texture_sampled_template(evaluated_parameters);
+                let sampled = self.texture_sampled_template(evaluated_parameters)?;
                 TyKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.database),
                     dimension: TextureDimensionality::D2,
@@ -585,7 +579,7 @@ impl TyLoweringContext<'_> {
                 })
             },
             "texture_storage_1d" => {
-                let storage_template = self.storage_texture_template(evaluated_parameters);
+                let storage_template = self.storage_texture_template(evaluated_parameters)?;
                 TyKind::Texture(TextureType {
                     kind: TextureKind::Storage(
                         from_wgsl_texel_format(storage_template.texel_format),
@@ -597,7 +591,7 @@ impl TyLoweringContext<'_> {
                 })
             },
             "texture_storage_2d" => {
-                let storage_template = self.storage_texture_template(evaluated_parameters);
+                let storage_template = self.storage_texture_template(evaluated_parameters)?;
                 TyKind::Texture(TextureType {
                     kind: TextureKind::Storage(
                         from_wgsl_texel_format(storage_template.texel_format),
@@ -609,7 +603,7 @@ impl TyLoweringContext<'_> {
                 })
             },
             "texture_storage_2d_array" => {
-                let storage_template = self.storage_texture_template(evaluated_parameters);
+                let storage_template = self.storage_texture_template(evaluated_parameters)?;
                 TyKind::Texture(TextureType {
                     kind: TextureKind::Storage(
                         from_wgsl_texel_format(storage_template.texel_format),
@@ -621,7 +615,7 @@ impl TyLoweringContext<'_> {
                 })
             },
             "texture_storage_3d" => {
-                let storage_template = self.storage_texture_template(evaluated_parameters);
+                let storage_template = self.storage_texture_template(evaluated_parameters)?;
                 TyKind::Texture(TextureType {
                     kind: TextureKind::Storage(
                         from_wgsl_texel_format(storage_template.texel_format),
@@ -694,7 +688,12 @@ impl TyLoweringContext<'_> {
                 self.expect_no_template(template_parameters);
                 TyKind::Sampler(wgsl_types::ty::SamplerType::SamplerComparison)
             },
-            _ => return Err(TypeLoweringErrorKind::UnresolvedName(path.clone())),
+            _ => {
+                return Err(TypeLoweringError {
+                    container: type_container,
+                    kind: TypeLoweringErrorKind::UnresolvedName(path.clone()),
+                });
+            },
         };
         Ok(Lowered::Type(ty_kind.intern(self.database)))
     }
@@ -702,7 +701,7 @@ impl TyLoweringContext<'_> {
     fn array_template(
         &mut self,
         mut template_parameters: TemplateParameters,
-    ) -> ArrayTemplate {
+    ) -> Result<ArrayTemplate, TypeLoweringError> {
         self.expect_n_templates(&template_parameters, 1..=2);
         let r#type = match template_parameters.next_as_type() {
             Ok((r#type, _)) => r#type,
@@ -753,24 +752,25 @@ impl TyLoweringContext<'_> {
                     ArraySize::Constant(number as u32)
                 },
                 Ok((_, expression)) => {
-                    self.diagnostics.push(TypeLoweringError {
+                    let error = TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "`u32` or a `i32` greater than `0`".to_owned(),
+                            "a `u32` or a `i32` greater than `0`".to_owned(),
                         ),
-                    });
-                    ArraySize::Dynamic
+                    };
+                    self.diagnostics.push(error.clone());
+                    return Err(error);
                 },
                 Err(error) => {
-                    self.diagnostics.push(error);
-                    ArraySize::Dynamic
+                    self.diagnostics.push(error.clone());
+                    return Err(error);
                 },
             }
         } else {
             ArraySize::Dynamic
         };
 
-        ArrayTemplate { r#type, size }
+        Ok(ArrayTemplate { r#type, size })
     }
 
     fn vector_template(
@@ -816,7 +816,7 @@ impl TyLoweringContext<'_> {
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "f32 or f16".to_owned(),
+                            "one of: f32 or f16".to_owned(),
                         ),
                     });
                     TyKind::Error.intern(self.database)
@@ -832,25 +832,23 @@ impl TyLoweringContext<'_> {
     fn pointer_template(
         &mut self,
         mut template_parameters: TemplateParameters,
-    ) -> PointerTemplate {
+    ) -> Result<PointerTemplate, TypeLoweringError> {
         self.expect_n_templates(&template_parameters, 2..=3);
         let address_space = match template_parameters.next_as_enumerant() {
             Ok((Enumerant::AddressSpace(address_space), _)) => address_space,
             Ok((_, expression)) => {
-                self.diagnostics.push(TypeLoweringError {
+                let error = TypeLoweringError {
                     container: TypeContainer::Expression(expression),
                     kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
                         "an address space".to_owned(),
                     ),
-                });
-                // Fallback
-                AddressSpace::Function
+                };
+                self.diagnostics.push(error.clone());
+                return Err(error);
             },
             Err(error) => {
-                self.diagnostics.push(error);
-                // Hack: provide a fallback value for the error path so that the type checker can continue evaluating
-                // "type checker error recovery"
-                AddressSpace::Function
+                self.diagnostics.push(error.clone());
+                return Err(error);
             },
         };
         let inner = match template_parameters.next_as_type() {
@@ -892,29 +890,29 @@ impl TyLoweringContext<'_> {
                 // everything else has no such constraints
                 Ok((Enumerant::AccessMode(access_mode), _)) => access_mode,
                 Ok((_, expression)) => {
-                    self.diagnostics.push(TypeLoweringError {
+                    let error = TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "an access mode".to_owned(),
+                            "on of: (read, read_write, write)".to_owned(),
                         ),
-                    });
-                    address_space.default_access_mode()
+                    };
+                    self.diagnostics.push(error.clone());
+                    return Err(error);
                 },
                 Err(error) => {
-                    self.diagnostics.push(error);
-                    // type checker error recovery
-                    address_space.default_access_mode()
+                    self.diagnostics.push(error.clone());
+                    return Err(error);
                 },
             }
         } else {
             address_space.default_access_mode()
         };
 
-        PointerTemplate {
+        Ok(PointerTemplate {
             address_space,
             inner,
             access_mode,
-        }
+        })
     }
 
     fn atomic_template(
@@ -950,16 +948,16 @@ impl TyLoweringContext<'_> {
     fn texture_sampled_template(
         &mut self,
         mut template_parameters: TemplateParameters,
-    ) -> SampledType {
+    ) -> Result<SampledType, TypeLoweringError> {
         self.expect_n_templates(&template_parameters, 1..=1);
 
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let ty_kind = r#type.kind(self.database);
                 match ty_kind {
-                    TyKind::Scalar(ScalarType::I32) => SampledType::I32,
-                    TyKind::Scalar(ScalarType::U32) => SampledType::U32,
-                    TyKind::Scalar(ScalarType::F32) => SampledType::F32,
+                    TyKind::Scalar(ScalarType::I32) => Ok(SampledType::I32),
+                    TyKind::Scalar(ScalarType::U32) => Ok(SampledType::U32),
+                    TyKind::Scalar(ScalarType::F32) => Ok(SampledType::F32),
                     TyKind::Error
                     | TyKind::Scalar(_)
                     | TyKind::Atomic(_)
@@ -973,21 +971,21 @@ impl TyLoweringContext<'_> {
                     | TyKind::Pointer(_)
                     | TyKind::BoundVar(_)
                     | TyKind::StorageTypeOfTexelFormat(_) => {
-                        self.diagnostics.push(TypeLoweringError {
+                        // texture_2d<invalid>()
+                        let error = TypeLoweringError {
                             container: TypeContainer::Expression(expression),
                             kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
                                 "i32 or u32 or f32".to_owned(),
                             ),
-                        });
-                        todo!("Is that a reasonable fallback?");
-                        SampledType::U32
+                        };
+                        self.diagnostics.push(error.clone());
+                        Err(error)
                     },
                 }
             },
             Err(error) => {
-                self.diagnostics.push(error);
-                // Fallback hmm
-                SampledType::U32
+                self.diagnostics.push(error.clone());
+                Err(error)
             },
         }
     }
@@ -995,48 +993,46 @@ impl TyLoweringContext<'_> {
     fn storage_texture_template(
         &mut self,
         mut template_parameters: TemplateParameters,
-    ) -> StorageTextureTemplate {
+    ) -> Result<StorageTextureTemplate, TypeLoweringError> {
         self.expect_n_templates(&template_parameters, 1..=1);
         let texel_format = match template_parameters.next_as_enumerant() {
             Ok((Enumerant::TexelFormat(texel_format), _)) => texel_format,
             Ok((_, expression)) => {
-                self.diagnostics.push(TypeLoweringError {
+                let error = TypeLoweringError {
                     container: TypeContainer::Expression(expression),
                     kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                        "a texel format".to_owned(),
+                        "a texel format (`rgba8unorm`, `rgba8snorm`, ...)".to_owned(),
                     ),
-                });
-                todo!("Is that a reasonable fallback?");
-                TexelFormat::Rgba8Unorm
+                };
+                self.diagnostics.push(error.clone());
+                return Err(error);
             },
             Err(error) => {
-                self.diagnostics.push(error);
-                // Fallback
-                TexelFormat::Rgba8Unorm
+                self.diagnostics.push(error.clone());
+                return Err(error);
             },
         };
         let access_mode = match template_parameters.next_as_enumerant() {
             Ok((Enumerant::AccessMode(access_mode), _)) => access_mode,
             Ok((_, expression)) => {
-                self.diagnostics.push(TypeLoweringError {
+                let error = TypeLoweringError {
                     container: TypeContainer::Expression(expression),
                     kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                        "an access mode".to_owned(),
+                        "one of: read, write, read_write".to_owned(),
                     ),
-                });
-                todo!("Is that a reasonable fallback?");
-                AccessMode::ReadWrite
+                };
+                self.diagnostics.push(error.clone());
+                return Err(error);
             },
             Err(error) => {
-                self.diagnostics.push(error);
-                // Fallback
-                AccessMode::ReadWrite
+                self.diagnostics.push(error.clone());
+                return Err(error);
             },
         };
-        StorageTextureTemplate {
+        Ok(StorageTextureTemplate {
             texel_format,
             access_mode,
-        }
+        })
     }
 }
 

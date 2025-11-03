@@ -221,7 +221,7 @@ impl TemplateParameters {
                 kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("a type".to_owned()),
             }),
             None => Err(TypeLoweringError {
-                container: self.container.clone(),
+                container: self.container,
                 kind: TypeLoweringErrorKind::MissingTemplateArgument("a type".to_owned()),
             }),
         }
@@ -236,7 +236,7 @@ impl TemplateParameters {
                 kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("an instance".to_owned()),
             }),
             None => Err(TypeLoweringError {
-                container: self.container.clone(),
+                container: self.container,
                 kind: TypeLoweringErrorKind::MissingTemplateArgument("an instance".to_owned()),
             }),
         }
@@ -249,7 +249,7 @@ impl TemplateParameters {
                 kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("an enum".to_owned()),
             }),
             None => Err(TypeLoweringError {
-                container: self.container.clone(),
+                container: self.container,
                 kind: TypeLoweringErrorKind::MissingTemplateArgument("an enum".to_owned()),
             }),
         }
