@@ -2446,6 +2446,7 @@ impl<'database> WgslTypeConverter<'database> {
             }) => wgsl_types::Type::Array(
                 Box::new(self.to_wgsl_types(inner)?),
                 match size {
+                    #[expect(clippy::as_conversions, reason = "externally defined")]
                     ArraySize::Constant(size) => Some(size as usize),
                     ArraySize::Dynamic => None,
                 },
@@ -2457,6 +2458,7 @@ impl<'database> WgslTypeConverter<'database> {
             }) => wgsl_types::Type::BindingArray(
                 Box::new(self.to_wgsl_types(inner)?),
                 match size {
+                    #[expect(clippy::as_conversions, reason = "externally defined")]
                     ArraySize::Constant(size) => Some(size as usize),
                     ArraySize::Dynamic => None,
                 },
