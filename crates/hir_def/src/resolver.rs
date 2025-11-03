@@ -218,7 +218,8 @@ impl Resolver {
                     },
                 }),
             Scope::Builtin => {
-                todo!(r#"Match against "name.as_str()" and then point at a "builtin" file"#);
+                // TODO: Match against "name.as_str()" and then point at a "builtin" file
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
                 None
             },
         })
