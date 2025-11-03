@@ -1563,9 +1563,11 @@ impl<'database> InferenceContext<'database> {
         self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
 
         match lowered {
-            Lowered::Type(r#type) => self.call_type_constructor(expression, r#type, arguments),
+            Lowered::Type(r#type) => {
+                self.call_templated_type_constructor(expression, r#type, arguments)
+            },
             Lowered::TypeWithoutTemplate(r#type) => {
-                self.call_type_constructor(expression, r#type, arguments)
+                self.call_type_without_template_constructor(expression, r#type, arguments)
             },
             Lowered::Function(id) => {
                 let details = id.lookup(self.database);
@@ -1651,7 +1653,8 @@ impl<'database> InferenceContext<'database> {
         }
     }
 
-    fn call_type_constructor(
+    /// Constructor for a type with a fully specified template
+    fn call_templated_type_constructor(
         &mut self,
         expression: ExpressionId,
         r#type: Type,
@@ -1669,51 +1672,29 @@ impl<'database> InferenceContext<'database> {
 
         match r#type.kind(self.database) {
             TyKind::Scalar(scalar_type) => {
-                if arguments.is_empty() {
-                    // Permit the zero value
-                    return r#type;
-                }
-                let construction_builtin_id = match scalar_type {
-                    ScalarType::Bool => {
-                        Builtin::builtin_op_bool_constructor(self.database).intern(self.database)
-                    },
-                    ScalarType::I32 => {
-                        Builtin::builtin_op_i32_constructor(self.database).intern(self.database)
-                    },
-                    ScalarType::U32 => {
-                        Builtin::builtin_op_u32_constructor(self.database).intern(self.database)
-                    },
-                    ScalarType::F32 => {
-                        Builtin::builtin_op_f32_constructor(self.database).intern(self.database)
-                    },
-                    ScalarType::F16 => {
-                        Builtin::builtin_op_f16_constructor(self.database).intern(self.database)
-                    },
-                    ScalarType::AbstractInt | ScalarType::AbstractFloat => {
-                        // Panic is correct here, since it should be impossible to enter this branch
-                        panic!("cannot construct abstract types")
-                    },
-                };
-
-                let construction_result =
-                    self.try_call_builtin(construction_builtin_id, &arguments);
-                if let Ok((r#type, _)) = construction_result {
-                    r#type
-                } else {
-                    self.push_diagnostic(InferenceDiagnostic::NoConstructor {
-                        expression,
-                        builtins: construction_builtin_id,
-                        r#type,
-                        parameters: arguments,
-                    });
-                    self.error_ty()
-                }
+                self.call_scalar_constructor(scalar_type, expression, r#type, arguments)
             },
             TyKind::Array(array_type) => {
-                if arguments.is_empty() {
-                    return r#type;
+                for argument in &arguments {
+                    if !argument.is_convertible_to(array_type.inner, self.database) {
+                        self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
+                            expression,
+                            expected: TypeExpectation::Type(TypeExpectationInner::Exact(
+                                array_type.inner,
+                            )),
+                            actual: *argument,
+                        });
+                    }
                 }
-                // TODO: checking that all the arguments have the same type (inner)
+                if let ArraySize::Constant(size) = array_type.size
+                    && (arguments.len() as u64) != size
+                {
+                    self.push_diagnostic(InferenceDiagnostic::FunctionCallArgCountMismatch {
+                        expression,
+                        n_expected: size as usize,
+                        n_actual: arguments.len(),
+                    });
+                }
                 r#type
             },
             TyKind::Vector(vec) => {
@@ -1725,7 +1706,7 @@ impl<'database> InferenceContext<'database> {
                 let construction_result =
                     self.try_call_builtin(construction_builtin_id, &arguments);
 
-                if let Ok((r#type, _)) = construction_result {
+                if construction_result.is_ok() {
                     r#type
                 } else {
                     self.push_diagnostic(InferenceDiagnostic::NoConstructor {
@@ -1747,6 +1728,137 @@ impl<'database> InferenceContext<'database> {
                 );
                 let construction_result =
                     self.try_call_builtin(construction_builtin_id, &arguments);
+                if construction_result.is_ok() {
+                    r#type
+                } else {
+                    self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                        expression,
+                        builtins: construction_builtin_id,
+                        r#type,
+                        parameters: arguments,
+                    });
+                    self.error_ty()
+                }
+            },
+            TyKind::Struct(_) => {
+                // TODO: Implement checking field types
+                r#type
+            },
+
+            // Never constructible
+            TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Pointer(_)
+            | TyKind::Atomic(_)
+            | TyKind::StorageTypeOfTexelFormat(_)
+            | TyKind::BoundVar(_)
+            | TyKind::Reference(_) => {
+                self.push_diagnostic(InferenceDiagnostic::InvalidConstructionType {
+                    expression,
+                    r#type,
+                });
+                self.error_ty()
+            },
+            TyKind::Error => r#type,
+        }
+    }
+
+    /// Constructor for just a type name
+    fn call_type_without_template_constructor(
+        &mut self,
+        expression: ExpressionId,
+        r#type: Type,
+        arguments: Vec<Type>,
+    ) -> Type {
+        fn size_to_dimension(size: VecSize) -> VecDimensionality {
+            #[expect(clippy::unreachable, reason = "TODO")]
+            match size {
+                VecSize::Two => VecDimensionality::Two,
+                VecSize::Three => VecDimensionality::Three,
+                VecSize::Four => VecDimensionality::Four,
+                VecSize::BoundVar(_) => unreachable!("Can never have unbound type at this point"),
+            }
+        }
+
+        match r#type.kind(self.database) {
+            TyKind::Scalar(scalar_type) => {
+                self.call_scalar_constructor(scalar_type, expression, r#type, arguments)
+            },
+            TyKind::Array(array_type) => {
+                let Some(mut expected_type) = arguments.first().copied() else {
+                    self.push_diagnostic(InferenceDiagnostic::FunctionCallArgCountMismatch {
+                        expression,
+                        n_expected: 1,
+                        n_actual: arguments.len(),
+                    });
+                    return self.error_ty();
+                };
+
+                for argument_type in &arguments[1..] {
+                    if argument_type.is_convertible_to(expected_type, self.database) {
+                        // Everything is as intended
+                    } else if expected_type.is_convertible_to(*argument_type, self.database) {
+                        // Narrowing the expected type
+                        expected_type = *argument_type;
+                    } else {
+                        self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
+                            expression,
+                            expected: TypeExpectation::Type(TypeExpectationInner::Exact(
+                                expected_type,
+                            )),
+                            actual: *argument_type,
+                        });
+                    }
+                }
+
+                TyKind::Array(ArrayType {
+                    inner: expected_type,
+                    binding_array: array_type.binding_array,
+                    size: ArraySize::Constant(arguments.len() as u64),
+                })
+                .intern(self.database)
+            },
+            TyKind::Vector(vec) => {
+                if arguments.is_empty() {
+                    return TyKind::Vector(VectorType {
+                        size: vec.size,
+                        component_type: TyKind::Scalar(ScalarType::AbstractInt)
+                            .intern(self.database),
+                    })
+                    .intern(self.database);
+                }
+                let construction_builtin_id =
+                    self.builtin_vector_inferred_constructor(size_to_dimension(vec.size));
+                let construction_result =
+                    self.try_call_builtin(construction_builtin_id, &arguments);
+
+                if let Ok((r#type, _)) = construction_result {
+                    r#type
+                } else {
+                    self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                        expression,
+                        builtins: construction_builtin_id,
+                        r#type,
+                        parameters: arguments,
+                    });
+                    self.error_ty()
+                }
+            },
+            TyKind::Matrix(matrix) => {
+                if arguments.is_empty() {
+                    self.push_diagnostic(InferenceDiagnostic::FunctionCallArgCountMismatch {
+                        expression,
+                        n_expected: 1,
+                        n_actual: arguments.len(),
+                    });
+                    return self.error_ty();
+                }
+                let construction_builtin_id = self.builtin_matrix_inferred_constructor(
+                    size_to_dimension(matrix.columns),
+                    size_to_dimension(matrix.rows),
+                );
+                let construction_result =
+                    self.try_call_builtin(construction_builtin_id, &arguments);
                 if let Ok((r#type, _)) = construction_result {
                     r#type
                 } else {
@@ -1760,28 +1872,71 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             TyKind::Struct(_) => {
-                if arguments.is_empty() {
-                    // TODO: do something
-                }
                 // TODO: Implement checking field types
                 r#type
             },
-
             // Never constructible
             TyKind::Texture(_)
             | TyKind::Sampler(_)
             | TyKind::Pointer(_)
             | TyKind::Atomic(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => {
+            | TyKind::StorageTypeOfTexelFormat(_)
+            | TyKind::BoundVar(_)
+            | TyKind::Reference(_) => {
                 self.push_diagnostic(InferenceDiagnostic::InvalidConstructionType {
                     expression,
                     r#type,
                 });
                 self.error_ty()
             },
-            #[expect(clippy::unreachable, reason = "TODO")]
-            TyKind::BoundVar(_) | TyKind::Reference(_) => unreachable!(),
             TyKind::Error => r#type,
+        }
+    }
+
+    fn call_scalar_constructor(
+        &mut self,
+        scalar_type: ScalarType,
+        expression: ExpressionId,
+        r#type: Type,
+        arguments: Vec<Type>,
+    ) -> Type {
+        if arguments.is_empty() {
+            // Permit the zero value
+            return r#type;
+        }
+        let construction_builtin_id = match scalar_type {
+            ScalarType::Bool => {
+                Builtin::builtin_op_bool_constructor(self.database).intern(self.database)
+            },
+            ScalarType::I32 => {
+                Builtin::builtin_op_i32_constructor(self.database).intern(self.database)
+            },
+            ScalarType::U32 => {
+                Builtin::builtin_op_u32_constructor(self.database).intern(self.database)
+            },
+            ScalarType::F32 => {
+                Builtin::builtin_op_f32_constructor(self.database).intern(self.database)
+            },
+            ScalarType::F16 => {
+                Builtin::builtin_op_f16_constructor(self.database).intern(self.database)
+            },
+            ScalarType::AbstractInt | ScalarType::AbstractFloat => {
+                // Panic is correct here, since it should be impossible to enter this branch
+                panic!("cannot construct abstract types")
+            },
+        };
+
+        let construction_result = self.try_call_builtin(construction_builtin_id, &arguments);
+        if let Ok((r#type, _)) = construction_result {
+            r#type
+        } else {
+            self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                expression,
+                builtins: construction_builtin_id,
+                r#type,
+                parameters: arguments,
+            });
+            self.error_ty()
         }
     }
 

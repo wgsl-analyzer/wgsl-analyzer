@@ -608,12 +608,6 @@ op_mat2x4_constructor(col1: vec4<T>, col2: vec4<T>) -> mat2x4<T>
 op_mat3x4_constructor(col1: vec4<T>, col2: vec4<T>, col3: vec4<T>) -> mat3x4<T>
 op_mat4x4_constructor(col1: vec4<T>, col2: vec4<T>, col3: vec4<T>, col4: vec4<T>) -> mat4x4<T>
 
-op_array_constructor(T) -> array<T>
-op_array_constructor(T, T) -> array<T>
-op_array_constructor(T, T, T) -> array<T>
-op_array_constructor(T, T, T, T) -> array<T>
-op_array_constructor(T, T, T, T, T) -> array<T>
-
 op_bool_constructor(bool) -> bool
 op_bool_constructor(u32) -> bool
 op_bool_constructor(i32) -> bool

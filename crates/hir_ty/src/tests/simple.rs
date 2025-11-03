@@ -32,12 +32,81 @@ fn const_array() {
     check_infer(
         r#"
         const a: array<f32, 1> = array(1);
+        const b = array(1,2,3);
         "#,
         expect![[r#"
             15..16 'a': array<f32, 1>
-            34..42 'array(1)': array<[error]>
+            34..42 'array(1)': array<integer, 1>
             40..41 '1': integer
-            34..42 'array(1)': expected array<f32, 1> but got array<[error]>
+            58..59 'b': array<integer, 3>
+            62..74 'array(1,2,3)': array<integer, 3>
+            68..69 '1': integer
+            70..71 '2': integer
+            72..73 '3': integer
+        "#]],
+    );
+}
+
+#[test]
+fn const_vec() {
+    check_infer(
+        r#"
+        const a: vec3<u32> = vec3(1);
+        const b = vec2f();
+        const c = vec2();
+        "#,
+        expect![[r#"
+            15..16 'a': vec3<u32>
+            30..37 'vec3(1)': vec3<integer>
+            35..36 '1': integer
+            53..54 'b': vec2<f32>
+            57..64 'vec2f()': vec2<f32>
+            80..81 'c': vec2<integer>
+            84..90 'vec2()': vec2<integer>
+        "#]],
+    );
+}
+
+#[test]
+fn const_array_of_vec() {
+    check_infer(
+        r#"
+        const pos = array(vec2(1.0,  1.0), vec2(1.0, -1.0));
+        const pos_explicit = array<vec2f, 1>(vec2(-1.0, -1.0));
+        "#,
+        expect![[r#"
+            15..18 'pos': array<vec2<f32>, 2>
+            21..60 'array(...-1.0))': array<vec2<f32>, 2>
+            27..42 'vec2(1.0,  1.0)': vec2<float>
+            32..35 '1.0': float
+            38..41 '1.0': float
+            44..59 'vec2(1.0, -1.0)': vec2<f32>
+            49..52 '1.0': float
+            54..58 '-1.0': f32
+            55..58 '1.0': float
+            76..88 'pos_explicit': array<vec2<f32>, 1>
+            91..124 'array<...-1.0))': array<vec2<f32>, 1>
+            107..123 'vec2(-... -1.0)': vec2<f32>
+            112..116 '-1.0': f32
+            113..116 '1.0': float
+            118..122 '-1.0': f32
+            119..122 '1.0': float
+        "#]],
+    );
+}
+
+#[test]
+fn const_u32_as_array_size() {
+    check_infer(
+        r#"
+        const maxLayers = 12u;
+        var layers: array<f32, maxLayers>;
+        "#,
+        expect![[r#"
+            15..24 'maxLayers': u32
+            27..30 '12u': u32
+            44..50 'layers': ref<array<f32>>
+            InvalidType { source: Signature, error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("`u32` or a `i32` greater than `0`") } }
         "#]],
     );
 }
