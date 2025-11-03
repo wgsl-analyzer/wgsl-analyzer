@@ -74,24 +74,24 @@ fn const_array_of_vec() {
         const pos = array(vec2(1.0,  1.0), vec2(1.0, -1.0));
         const pos_explicit = array<vec2f, 1>(vec2(-1.0, -1.0));
         ",
-        expect![["
-            15..18 'pos': array<vec2<f32>, 2>
-            21..60 'array(...-1.0))': array<vec2<f32>, 2>
+        expect![[r#"
+            15..18 'pos': array<vec2<float>, 2>
+            21..60 'array(...-1.0))': array<vec2<float>, 2>
             27..42 'vec2(1.0,  1.0)': vec2<float>
             32..35 '1.0': float
             38..41 '1.0': float
-            44..59 'vec2(1.0, -1.0)': vec2<f32>
+            44..59 'vec2(1.0, -1.0)': vec2<float>
             49..52 '1.0': float
-            54..58 '-1.0': f32
+            54..58 '-1.0': float
             55..58 '1.0': float
             76..88 'pos_explicit': array<vec2<f32>, 1>
             91..124 'array<...-1.0))': array<vec2<f32>, 1>
-            107..123 'vec2(-... -1.0)': vec2<f32>
-            112..116 '-1.0': f32
+            107..123 'vec2(-... -1.0)': vec2<float>
+            112..116 '-1.0': float
             113..116 '1.0': float
-            118..122 '-1.0': f32
+            118..122 '-1.0': float
             119..122 '1.0': float
-        "]],
+        "#]],
     );
 }
 
@@ -105,8 +105,28 @@ fn const_u32_as_array_size() {
         expect![[r#"
             15..24 'maxLayers': u32
             27..30 '12u': u32
-            44..50 'layers': ref<array<f32>>
-            InvalidType { source: Signature, error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("`u32` or a `i32` greater than `0`") } }
+            44..50 'layers': ref<[error]>
+            InvalidType { source: Signature, error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } }
+            InvalidType { source: Signature, error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } }
+        "#]],
+    );
+}
+
+#[test]
+fn multiply_with_minus_one() {
+    check_infer(
+        r#"
+    const x: i32 = 1;
+    const y = x * -1;
+        "#,
+        expect![[r#"
+            11..12 'x': i32
+            20..21 '1': integer
+            33..34 'y': i32
+            37..38 'x': i32
+            37..43 'x * -1': i32
+            41..43 '-1': integer
+            42..43 '1': integer
         "#]],
     );
 }
@@ -193,14 +213,14 @@ fn negate_abstract_number() {
 const a = -4;
 const b: f32 = -3.5;
         ",
-        expect![["
-            7..8 'a': f32
-            11..13 '-4': f32
+        expect![[r#"
+            7..8 'a': integer
+            11..13 '-4': integer
             12..13 '4': integer
             21..22 'b': f32
-            30..34 '-3.5': f32
+            30..34 '-3.5': float
             31..34 '3.5': float
-        "]],
+        "#]],
     );
 }
 
@@ -282,11 +302,11 @@ let u32_clamp = clamp(5, 0, 1u);
 let f32_clamp = clamp(0, 1f, 1);
 }   
     ",
-        expect![["
-            17..26 'i32_clamp': f32
-            29..44 'clamp(1, -5, 5)': f32
+        expect![[r#"
+            17..26 'i32_clamp': i32
+            29..44 'clamp(1, -5, 5)': integer
             35..36 '1': integer
-            38..40 '-5': f32
+            38..40 '-5': integer
             39..40 '5': integer
             42..43 '5': integer
             50..59 'u32_clamp': u32
@@ -299,7 +319,7 @@ let f32_clamp = clamp(0, 1f, 1);
             101..102 '0': integer
             104..106 '1f': f32
             108..109 '1': integer
-        "]],
+        "#]],
     );
 }
 

@@ -476,10 +476,8 @@ workgroupUniformLoad(ptr<T>) -> T
 
 // TODO: T should only match i32, f32, u32 in a lot of ops
 
-op_unary_minus(f32) -> f32
-op_unary_minus(i32) -> i32
-op_unary_minus(vecN<f32>) -> vecN<f32>
-op_unary_minus(vecN<i32>) -> vecN<i32>
+op_unary_minus(vecN<T>) -> vecN<T>
+op_unary_minus(T) -> T
 
 op_unary_not(bool) -> bool
 op_unary_not(vecN<bool>) -> vecN<bool>
