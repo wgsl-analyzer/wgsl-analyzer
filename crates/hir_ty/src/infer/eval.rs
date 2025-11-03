@@ -44,11 +44,14 @@ impl TyLoweringContext<'_> {
                 operation,
             } => self.eval_binary_op(*left_side, *right_side, *operation)?,
             Expression::UnaryOperator { expression, op } => self.eval_unary_op(*expression, *op)?,
-            Expression::Field { .. } | Expression::Index { .. } => {
-                // Not implemented
+            Expression::Field { .. }
+            | Expression::Index { .. }
+            | Expression::Call { .. }
+            | Expression::IdentExpression(_) => {
+                // TODO: const evaluation not implemented
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/670
                 return None;
             },
-
             #[expect(
                 clippy::cast_possible_truncation,
                 clippy::cast_possible_wrap,
@@ -68,36 +71,11 @@ impl TyLoweringContext<'_> {
                         Instance::Literal(LiteralInstance::AbstractInt(*value as i64))
                     },
                     Literal::Float(_, _) => {
-                        // TODO: Not implemented
+                        // TODO: const evaluation not implemented
                         // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/670
                         return None;
                     },
                     Literal::Bool(value) => Instance::Literal(LiteralInstance::Bool(*value)),
-                }
-            },
-            Expression::Call { .. } => {
-                unimplemented!();
-                /*let template_args = type_specifier
-                .generics
-                .iter()
-                .map(|arg| self.eval_tplt_arg(*arg))
-                .collect(); */
-                return None;
-            },
-            Expression::IdentExpression(ident_expression) => {
-                let resolved_ty = self.resolver.resolve(&ident_expression.path);
-                todo!("do something useful here");
-                match &resolved_ty {
-                    /*
-                    Some(ResolveType::GlobalConstant(_)) => todo!(),
-                    Some(ResolveType::GlobalVariable(_)) => todo!(),
-                    Some(ResolveType::Override(_)) => todo!(),
-                    Some(ResolveType::Local(_)) => todo!(),
-                    None => todo!("search for predeclared idents"), */
-                    _ => {
-                        // self.push_diagnostic(InferenceDiagnostic::...);
-                        return None;
-                    },
                 }
             },
         };
@@ -108,6 +86,7 @@ impl TyLoweringContext<'_> {
     #[expect(
         clippy::needless_pass_by_ref_mut,
         clippy::unused_self,
+        clippy::missing_const_for_fn,
         reason = "TODO, see below"
     )]
     fn eval_binary_op(
@@ -116,8 +95,9 @@ impl TyLoweringContext<'_> {
         _right: ExpressionId,
         _operation: BinaryOperation,
     ) -> Option<Instance> {
-        todo!(r#"Implement according to `impl Eval for BinaryExpression` in wesl-rs""#);
-        unimplemented!();
+        // TODO: const evaluation not implemented
+        // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/670
+        // Implement according to `impl Eval for BinaryExpression` in wesl-rs
         None
     }
 
