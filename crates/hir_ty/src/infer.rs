@@ -1616,7 +1616,12 @@ impl<'database> InferenceContext<'database> {
             {
                 template_args.push(template_parameter);
             } else {
-                todo!("proper error reporting");
+                self.push_diagnostic(InferenceDiagnostic::WgslError {
+                    expression,
+                    message:
+                        "internal error: wgsl-types did not align with wgsl-analyzer's type system"
+                            .to_owned(),
+                });
                 return self.error_ty();
             }
         }
@@ -2350,6 +2355,8 @@ impl<'database> WgslTypeConverter<'database> {
         r#type: Type,
     ) -> Option<wgsl_types::Type> {
         Some(match r#type.kind(self.database) {
+            // TODO: This should not be necessary because the types should align 1:1
+            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/672
             TyKind::Error | TyKind::BoundVar(_) | TyKind::StorageTypeOfTexelFormat(_) => {
                 return None;
             },
