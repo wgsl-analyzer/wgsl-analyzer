@@ -401,6 +401,8 @@ fn collect_with_templates(
 
 #[cfg(test)]
 mod tests {
+    #![expect(clippy::use_debug, reason = "tests can use debug formatting")]
+
     use super::{Token, lex_with_templates};
     use expect_test::expect;
     use logos::Logos as _;
