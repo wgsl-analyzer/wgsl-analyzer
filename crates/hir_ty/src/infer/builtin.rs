@@ -21,10 +21,7 @@ use crate::{
 };
 
 impl TyLoweringContext<'_> {
-    fn is_predeclared_ty(
-        &self,
-        name: &Name,
-    ) -> bool {
+    fn is_predeclared_ty(name: &Name) -> bool {
         matches!(
             name.as_str(),
             "bool"
@@ -107,7 +104,7 @@ impl TyLoweringContext<'_> {
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
         // Lower predeclared types
-        if self.is_predeclared_ty(path) {
+        if Self::is_predeclared_ty(path) {
             match self.lower_predeclared_ty(type_container.clone(), path, template_parameters) {
                 Ok(r#type) => Ok(r#type),
                 Err(kind) => Err(TypeLoweringError {
