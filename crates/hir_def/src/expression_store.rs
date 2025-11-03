@@ -25,6 +25,7 @@ pub struct ExpressionStore {
     pub store_source: ExpressionStoreSource,
 
     // TODO: Get rid of this (move the checks to the syntax tree)
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/616
     pub parenthesis_expressions: FxHashSet<ExpressionId>,
 }
 
@@ -82,7 +83,7 @@ impl PartialEq for ExpressionSourceMap {
             expression_map_back,
             type_map: _,
             type_map_back,
-        } = self;
+        }: &Self = self;
 
         *expression_map_back == other.expression_map_back && *type_map_back == other.type_map_back
     }

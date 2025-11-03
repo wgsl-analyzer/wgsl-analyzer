@@ -15,13 +15,6 @@ use wgsl_types::{
 
 use crate::database::HirDatabase;
 
-// TODO:
-// [ ] nesting depth
-// [ ] constructable
-// [ ] io-shareable
-// [ ] host-shareable
-// [ ] storable
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub struct Type {
     id: salsa::InternId,
@@ -215,7 +208,16 @@ impl TyKind {
                 rows: *rows,
                 inner: inner.kind(database).concretize(database)?.intern(database),
             }),
-            _ => return None,
+            Self::Error
+            | Self::Scalar(_)
+            | Self::Atomic(_)
+            | Self::Struct(_)
+            | Self::Texture(_)
+            | Self::Sampler(_)
+            | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::BoundVar(_)
+            | Self::StorageTypeOfTexelFormat(_) => return None,
         })
     }
 
@@ -251,8 +253,8 @@ impl TyKind {
                 ..
             })
             | Self::Matrix(MatrixType { inner, .. }) => inner.kind(database).is_abstract(database),
-            Self::Scalar(_) => false,
-            Self::Error
+            Self::Scalar(_)
+            | Self::Error
             | Self::Atomic(_)
             | Self::Struct(_)
             | Self::Texture(_)
@@ -287,6 +289,16 @@ impl TyKind {
                 | Self::Array(_)
                 | Self::Struct(_)
         )
+    }
+
+    // For a composite type T, the nesting depth of T, written NestDepth(T) is:
+    // 1 for a vector type
+    // 2 for a matrix type
+    // 1 + NestDepth(E) for an array type with element type E
+    // 1 + max(NestDepth(M1),..., NestDepth(MN)) if T is a structure type with member types M1,...,MN
+
+    fn nesting_depth(&self) -> u8 {
+        todo!();
     }
 
     #[must_use]
@@ -477,9 +489,9 @@ fn conversion_rank(
         (TyKind::Scalar(ScalarType::AbstractFloat), TyKind::Scalar(ScalarType::F16)) => Some(2),
         // frexp and modf
         (TyKind::Struct(_), TyKind::Struct(_)) => {
-            None
-            // TODO: frexp and modf
+            todo!("frexp and modf");
             // https://github.com/wgsl-tooling-wg/wesl-rs/blob/fea56c869ba2ee8825b7b06e4d9d0d2876b2bc77/crates/wgsl-types/src/conv.rs#L312
+            None
         },
         (
             TyKind::Array(ArrayType {
@@ -532,7 +544,7 @@ fn conversion_rank(
 /// [`u32`]: <https://www.w3.org/TR/WGSL/#u32>
 /// [`f32`]: <https://www.w3.org/TR/WGSL/#f32>
 /// [`f16`]: <https://www.w3.org/TR/WGSL/#f16>
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum ScalarType {
     /// <https://www.w3.org/TR/WGSL/#bool>
     Bool,

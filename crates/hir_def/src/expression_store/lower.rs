@@ -36,7 +36,6 @@ impl ExprCollector<'_> {
         }
     }
 
-    #[expect(clippy::too_many_lines, reason = "TODO")]
     pub fn collect_expression(
         &mut self,
         expression: ast::Expression,
@@ -129,9 +128,9 @@ impl ExprCollector<'_> {
 
     pub fn collect_type_specifier(
         &mut self,
-        type_specifier: ast::TypeSpecifier,
+        type_specifier: &ast::TypeSpecifier,
     ) -> TypeSpecifierId {
-        let syntax_pointer = AstPointer::new(&type_specifier);
+        let syntax_pointer = AstPointer::new(type_specifier);
         let type_specifier = TypeSpecifier {
             path: as_name_opt(type_specifier.name_ref()),
             template_parameters: self
@@ -234,7 +233,7 @@ impl ExprCollector<'_> {
         type_specifier: Option<ast::TypeSpecifier>,
     ) -> TypeSpecifierId {
         match type_specifier {
-            Some(type_specifier) => self.collect_type_specifier(type_specifier),
+            Some(type_specifier) => self.collect_type_specifier(&type_specifier),
             None => self.missing_type_specifier(),
         }
     }
@@ -247,7 +246,7 @@ impl ExprCollector<'_> {
 
 pub(crate) fn lower_function(
     database: &dyn DefDatabase,
-    function: InFile<ast::FunctionDeclaration>,
+    function: &InFile<ast::FunctionDeclaration>,
 ) -> (FunctionData, ExpressionSourceMap) {
     let name = as_name_opt(function.value.name());
 
@@ -262,7 +261,7 @@ pub(crate) fn lower_function(
         .value
         .return_type()
         .and_then(|r#type| r#type.ty())
-        .map(|r#type| collector.collect_type_specifier(r#type));
+        .map(|r#type| collector.collect_type_specifier(&r#type));
 
     let (store, source_map) = collector.finish();
     let specifier = FunctionData {
@@ -276,7 +275,7 @@ pub(crate) fn lower_function(
 
 pub(crate) fn lower_struct(
     database: &dyn DefDatabase,
-    struct_declaration: InFile<ast::StructDeclaration>,
+    struct_declaration: &InFile<ast::StructDeclaration>,
 ) -> (StructData, ExpressionSourceMap) {
     let name = as_name_opt(struct_declaration.value.name());
 
@@ -300,7 +299,7 @@ pub(crate) fn lower_struct(
 
 pub(crate) fn lower_type_alias(
     database: &dyn DefDatabase,
-    type_alias: InFile<ast::TypeAliasDeclaration>,
+    type_alias: &InFile<ast::TypeAliasDeclaration>,
 ) -> (TypeAliasData, ExpressionSourceMap) {
     let name = as_name_opt(type_alias.value.name());
 
@@ -318,7 +317,7 @@ pub(crate) fn lower_type_alias(
 
 pub(crate) fn lower_variable(
     database: &dyn DefDatabase,
-    global_variable: InFile<ast::VariableDeclaration>,
+    global_variable: &InFile<ast::VariableDeclaration>,
 ) -> (GlobalVariableData, ExpressionSourceMap) {
     let name = as_name_opt(global_variable.value.name());
 
@@ -326,7 +325,7 @@ pub(crate) fn lower_variable(
     let r#type = global_variable
         .value
         .ty()
-        .map(|r#type| collector.collect_type_specifier(r#type));
+        .map(|r#type| collector.collect_type_specifier(&r#type));
 
     let template_parameters =
         if let Some(template_parameters) = global_variable.value.template_parameters() {
@@ -350,7 +349,7 @@ pub(crate) fn lower_variable(
 
 pub(crate) fn lower_constant(
     database: &dyn DefDatabase,
-    global_constant: InFile<ast::ConstantDeclaration>,
+    global_constant: &InFile<ast::ConstantDeclaration>,
 ) -> (GlobalConstantData, ExpressionSourceMap) {
     let name = as_name_opt(global_constant.value.name());
 
@@ -358,7 +357,7 @@ pub(crate) fn lower_constant(
     let r#type = global_constant
         .value
         .ty()
-        .map(|r#type| collector.collect_type_specifier(r#type));
+        .map(|r#type| collector.collect_type_specifier(&r#type));
 
     let (store, source_map) = collector.finish();
     let specifier = GlobalConstantData {
@@ -370,7 +369,7 @@ pub(crate) fn lower_constant(
 }
 pub(crate) fn lower_override(
     database: &dyn DefDatabase,
-    global_override: InFile<ast::OverrideDeclaration>,
+    global_override: &InFile<ast::OverrideDeclaration>,
 ) -> (OverrideData, ExpressionSourceMap) {
     let name = as_name_opt(global_override.value.name());
 
@@ -378,7 +377,7 @@ pub(crate) fn lower_override(
     let r#type = global_override
         .value
         .ty()
-        .map(|r#type| collector.collect_type_specifier(r#type));
+        .map(|r#type| collector.collect_type_specifier(&r#type));
 
     let (store, source_map) = collector.finish();
     let specifier = OverrideData {

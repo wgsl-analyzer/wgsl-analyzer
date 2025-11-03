@@ -65,11 +65,6 @@ impl Default for DiagnosticsConfig {
     }
 }
 
-// TODO: Refactor into ShaderCreationError, PipelineCreationError, and DynamicError.
-// https://www.w3.org/TR/WGSL/#shader-creation-error
-// https://www.w3.org/TR/WGSL/#pipeline-creation-error
-// https://www.w3.org/TR/WGSL/#dynamic-error
-
 pub enum AnyDiagnostic {
     ParseError {
         message: String,
@@ -205,7 +200,7 @@ impl AnyDiagnostic {
     }
 }
 
-#[expect(clippy::too_many_lines, reason = "TODO")]
+#[expect(clippy::too_many_lines, reason = "long but simple match")]
 pub(crate) fn any_diag_from_infer_diagnostic(
     infer_diagnostic: &InferenceDiagnostic,
     signature_map: &ExpressionSourceMap,

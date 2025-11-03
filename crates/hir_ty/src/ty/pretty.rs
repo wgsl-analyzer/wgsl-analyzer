@@ -127,7 +127,7 @@ fn pretty_fn_inner(
     Ok(())
 }
 
-#[expect(clippy::too_many_lines, reason = "TODO")]
+#[expect(clippy::too_many_lines, reason = "long but simple (recursive) match")]
 fn write_ty(
     database: &dyn HirDatabase,
     r#type: Type,

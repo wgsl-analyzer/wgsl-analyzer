@@ -187,7 +187,7 @@ fn compute_compound_statement_scopes(
     }
 }
 
-#[expect(clippy::too_many_lines, reason = "TODO")]
+#[expect(clippy::too_many_lines, reason = "Long but simple match")]
 fn compute_statement_scopes(
     statement_id: StatementId,
     body: &Body,
@@ -241,7 +241,9 @@ fn compute_statement_scopes(
         Statement::PhonyAssignment { right_side } => {
             compute_expression_scopes(*right_side, body, scopes, scope);
         },
-        Statement::IncrDecr { expression, .. } | Statement::Expression { expression } => {
+        Statement::IncrDecr { expression, .. }
+        | Statement::Expression { expression }
+        | Statement::Assert { expression } => {
             compute_expression_scopes(*expression, body, scopes, scope);
         },
         Statement::If {
@@ -303,9 +305,6 @@ fn compute_statement_scopes(
             if let Some(expression) = expression {
                 compute_expression_scopes(*expression, body, scopes, scope);
             }
-        },
-        Statement::Assert { expression } => {
-            compute_expression_scopes(*expression, body, scopes, scope);
         },
         Statement::BreakIf { condition } => {
             compute_expression_scopes(*condition, body, scopes, scope);

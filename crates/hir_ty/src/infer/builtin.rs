@@ -11,7 +11,7 @@ use crate::{
     infer::{
         Lowered, TyLoweringContext, TypeContainer, TypeLoweringError, TypeLoweringErrorKind,
         WgslTypeConverter,
-        eval::{TemplateParameters, TpltParam},
+        eval::{TemplateParameter, TemplateParameters},
         from_wgsl_texel_format,
     },
     ty::{
@@ -25,79 +25,79 @@ impl TyLoweringContext<'_> {
         &self,
         name: &Name,
     ) -> bool {
-        match name.as_str() {
+        matches!(
+            name.as_str(),
             "bool"
-            | "i32"
-            | "u32"
-            | "f32"
-            | "f16"
-            | "array"
-            | "binding_array"
-            | "vec2"
-            | "vec3"
-            | "vec4"
-            | "vec2i"
-            | "vec3i"
-            | "vec4i"
-            | "vec2u"
-            | "vec3u"
-            | "vec4u"
-            | "vec2f"
-            | "vec3f"
-            | "vec4f"
-            | "vec2h"
-            | "vec3h"
-            | "vec4h"
-            | "mat2x2"
-            | "mat2x3"
-            | "mat2x4"
-            | "mat3x2"
-            | "mat3x3"
-            | "mat3x4"
-            | "mat4x2"
-            | "mat4x3"
-            | "mat4x4"
-            | "mat2x2f"
-            | "mat2x3f"
-            | "mat2x4f"
-            | "mat3x2f"
-            | "mat3x3f"
-            | "mat3x4f"
-            | "mat4x2f"
-            | "mat4x3f"
-            | "mat4x4f"
-            | "mat2x2h"
-            | "mat2x3h"
-            | "mat2x4h"
-            | "mat3x2h"
-            | "mat3x3h"
-            | "mat3x4h"
-            | "mat4x2h"
-            | "mat4x3h"
-            | "mat4x4h"
-            | "ptr"
-            | "atomic"
-            | "texture_1d"
-            | "texture_2d"
-            | "texture_2d_array"
-            | "texture_3d"
-            | "texture_cube"
-            | "texture_cube_array"
-            | "texture_multisampled_2d"
-            | "texture_storage_1d"
-            | "texture_storage_2d"
-            | "texture_storage_2d_array"
-            | "texture_storage_3d"
-            | "texture_depth_multisampled_2d"
-            | "texture_external"
-            | "texture_depth_2d"
-            | "texture_depth_2d_array"
-            | "texture_depth_cube"
-            | "texture_depth_cube_array"
-            | "sampler"
-            | "sampler_comparison" => true,
-            _ => false,
-        }
+                | "i32"
+                | "u32"
+                | "f32"
+                | "f16"
+                | "array"
+                | "binding_array"
+                | "vec2"
+                | "vec3"
+                | "vec4"
+                | "vec2i"
+                | "vec3i"
+                | "vec4i"
+                | "vec2u"
+                | "vec3u"
+                | "vec4u"
+                | "vec2f"
+                | "vec3f"
+                | "vec4f"
+                | "vec2h"
+                | "vec3h"
+                | "vec4h"
+                | "mat2x2"
+                | "mat2x3"
+                | "mat2x4"
+                | "mat3x2"
+                | "mat3x3"
+                | "mat3x4"
+                | "mat4x2"
+                | "mat4x3"
+                | "mat4x4"
+                | "mat2x2f"
+                | "mat2x3f"
+                | "mat2x4f"
+                | "mat3x2f"
+                | "mat3x3f"
+                | "mat3x4f"
+                | "mat4x2f"
+                | "mat4x3f"
+                | "mat4x4f"
+                | "mat2x2h"
+                | "mat2x3h"
+                | "mat2x4h"
+                | "mat3x2h"
+                | "mat3x3h"
+                | "mat3x4h"
+                | "mat4x2h"
+                | "mat4x3h"
+                | "mat4x4h"
+                | "ptr"
+                | "atomic"
+                | "texture_1d"
+                | "texture_2d"
+                | "texture_2d_array"
+                | "texture_3d"
+                | "texture_cube"
+                | "texture_cube_array"
+                | "texture_multisampled_2d"
+                | "texture_storage_1d"
+                | "texture_storage_2d"
+                | "texture_storage_2d_array"
+                | "texture_storage_3d"
+                | "texture_depth_multisampled_2d"
+                | "texture_external"
+                | "texture_depth_2d"
+                | "texture_depth_2d_array"
+                | "texture_depth_cube"
+                | "texture_depth_cube_array"
+                | "sampler"
+                | "sampler_comparison"
+        )
     }
 
     pub fn lower_predeclared(
@@ -129,6 +129,10 @@ impl TyLoweringContext<'_> {
         }
     }
 
+    #[expect(
+        clippy::too_many_lines,
+        reason = "it is just a big match and each arm is not complex at all"
+    )]
     fn lower_predeclared_ty(
         &mut self,
         type_container: TypeContainer,
@@ -244,6 +248,7 @@ impl TyLoweringContext<'_> {
             },
             // TODO: Move those aliases to a separate file
             "vec2i" => {
+                todo!("Move those aliases to a separate file");
                 self.expect_no_template(template_parameters);
                 TyKind::Vector(VectorType {
                     size: VecSize::Two,
@@ -342,6 +347,7 @@ impl TyLoweringContext<'_> {
                     "mat4x2" => (VecSize::Four, VecSize::Two),
                     "mat4x3" => (VecSize::Four, VecSize::Three),
                     "mat4x4" => (VecSize::Four, VecSize::Four),
+                    #[expect(clippy::unreachable, reason = "no type patterns 😔")]
                     _ => unreachable!(),
                 };
 
@@ -693,7 +699,6 @@ impl TyLoweringContext<'_> {
             },
             _ => return Err(TypeLoweringErrorKind::UnresolvedName(path.clone())),
         };
-
         Ok(Lowered::Type(ty_kind.intern(self.database)))
     }
 
@@ -712,20 +717,20 @@ impl TyLoweringContext<'_> {
 
         let size = if template_parameters.has_next() {
             match template_parameters.next_as_instance() {
-                Ok((Some(Instance::Literal(LiteralInstance::AbstractInt(n))), _)) if n > 0 => {
-                    ArraySize::Constant(n as u64)
+                Ok((Some(Instance::Literal(LiteralInstance::I32(number))), _)) if number > 0 => {
+                    ArraySize::Constant(number as u64)
                 },
-                Ok((Some(Instance::Literal(LiteralInstance::I32(n))), _)) if n > 0 => {
-                    ArraySize::Constant(n as u64)
+                Ok((Some(Instance::Literal(LiteralInstance::U32(number))), _)) if number > 0 => {
+                    ArraySize::Constant(u64::from(number))
                 },
-                Ok((Some(Instance::Literal(LiteralInstance::U32(n))), _)) if n > 0 => {
-                    ArraySize::Constant(u64::from(n))
-                },
-                Ok((Some(Instance::Literal(LiteralInstance::I64(n))), _)) if n > 0 => {
-                    ArraySize::Constant(n as u64)
-                },
-                Ok((Some(Instance::Literal(LiteralInstance::U64(n))), _)) if n > 0 => {
-                    ArraySize::Constant(n)
+                Ok((
+                    Some(Instance::Literal(
+                        LiteralInstance::AbstractInt(number) | LiteralInstance::I64(number),
+                    )),
+                    _,
+                )) if number > 0 => ArraySize::Constant(number as u64),
+                Ok((Some(Instance::Literal(LiteralInstance::U64(number))), _)) if number > 0 => {
+                    ArraySize::Constant(number)
                 },
                 Ok((_, expression)) => {
                     self.diagnostics.push(TypeLoweringError {
@@ -823,7 +828,7 @@ impl TyLoweringContext<'_> {
             },
             Err(error) => {
                 self.diagnostics.push(error);
-                // TODO: Should we have a fallback here, and what should it be?
+                todo!("Should we have a fallback here, and what should it be?");
                 AddressSpace::Function
             },
         };
@@ -876,7 +881,7 @@ impl TyLoweringContext<'_> {
                 },
                 Err(error) => {
                     self.diagnostics.push(error);
-                    // TODO: Should we have a fallback here, and what should it be?
+                    todo!("Should we have a fallback here, and what should it be?");
                     address_space.default_access_mode()
                 },
             }
@@ -903,8 +908,7 @@ impl TyLoweringContext<'_> {
                 if matches!(ty_kind, TyKind::Scalar(ScalarType::I32 | ScalarType::U32)) {
                     r#type
                 } else {
-                    // TODO: Naga supports more types (f32, i64, u64) here
-
+                    todo!("Naga supports more types (f32, i64, u64) here");
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
@@ -934,14 +938,26 @@ impl TyLoweringContext<'_> {
                     TyKind::Scalar(ScalarType::I32) => SampledType::I32,
                     TyKind::Scalar(ScalarType::U32) => SampledType::U32,
                     TyKind::Scalar(ScalarType::F32) => SampledType::F32,
-                    _ => {
+                    TyKind::Error
+                    | TyKind::Scalar(_)
+                    | TyKind::Atomic(_)
+                    | TyKind::Vector(_)
+                    | TyKind::Matrix(_)
+                    | TyKind::Struct(_)
+                    | TyKind::Array(_)
+                    | TyKind::Texture(_)
+                    | TyKind::Sampler(_)
+                    | TyKind::Reference(_)
+                    | TyKind::Pointer(_)
+                    | TyKind::BoundVar(_)
+                    | TyKind::StorageTypeOfTexelFormat(_) => {
                         self.diagnostics.push(TypeLoweringError {
                             container: TypeContainer::Expression(expression),
                             kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
                                 "i32 or u32 or f32".to_owned(),
                             ),
                         });
-                        // TODO: Is that a reasonable fallback?
+                        todo!("Is that a reasonable fallback?");
                         SampledType::U32
                     },
                 }
@@ -968,7 +984,7 @@ impl TyLoweringContext<'_> {
                         "a texel format".to_owned(),
                     ),
                 });
-                // TODO: Is that a reasonable fallback?
+                todo!("Is that a reasonable fallback?");
                 TexelFormat::Rgba8Unorm
             },
             Err(error) => {
@@ -986,7 +1002,7 @@ impl TyLoweringContext<'_> {
                         "an access mode".to_owned(),
                     ),
                 });
-                // TODO: Is that a reasonable fallback?
+                todo!("Is that a reasonable fallback?");
                 AccessMode::ReadWrite
             },
             Err(error) => {

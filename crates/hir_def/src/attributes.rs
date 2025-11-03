@@ -20,6 +20,7 @@ use crate::{
 };
 
 // TODO: Properly model the attributes (not all of them have expressions)
+// https://github.com/wgsl-analyzer/wgsl-analyzer/issues/614
 // e.g `@builtin(position)`, `@compute`
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Attribute {

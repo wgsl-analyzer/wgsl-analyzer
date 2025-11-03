@@ -1,5 +1,5 @@
+use crate::database::DefDatabase;
 use base_db::{FileLoader, FileLoaderDelegate, SourceDatabase, TextRange, change::Change};
-use hir_def::database::DefDatabase;
 use rustc_hash::FxHashMap;
 use std::{fmt, panic, sync::Mutex};
 use triomphe::Arc;
@@ -7,9 +7,8 @@ use vfs::{AnchoredPath, FileId, VfsPath};
 
 #[salsa::database(
     base_db::SourceDatabaseStorage,
-    hir_def::database::DefDatabaseStorage,
-    hir_def::database::InternDatabaseStorage,
-    crate::database::HirDatabaseStorage
+    crate::database::DefDatabaseStorage,
+    crate::database::InternDatabaseStorage
 )]
 #[derive(Default)]
 pub(crate) struct TestDatabase {

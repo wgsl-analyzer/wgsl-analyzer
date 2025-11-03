@@ -277,7 +277,8 @@ pub fn struct_member_layout<Result, Function: FnMut(LocalFieldId, FieldLayout) -
     let mut last_member_size = None;
 
     for (field_id, &field) in fields.iter() {
-        let custom_align = None; // TODO handle @align @size
+        todo!("handle @align and @size");
+        let custom_align = None;
         let custom_size = None;
 
         let align = custom_align.or_else(|| field.align(address_space, database))?;

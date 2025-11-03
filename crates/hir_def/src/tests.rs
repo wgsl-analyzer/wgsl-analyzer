@@ -1,14 +1,12 @@
 use triomphe::Arc;
 
+use crate::{database::DefDatabase as _, test_db::TestDatabase};
 use base_db::{FileId, change::Change};
 use expect_test::{Expect, expect};
-use hir_def::database::DefDatabase as _;
 use vfs::VfsPath;
 
-use crate::RootDatabase;
-
-fn single_file_db(source: &str) -> (RootDatabase, FileId) {
-    let mut database = RootDatabase::new(None);
+pub(crate) fn single_file_db(source: &str) -> (TestDatabase, FileId) {
+    let mut database = TestDatabase::default();
     let mut change = Change::new();
     let file_id = FileId::from_raw(0);
     change.change_file(
@@ -21,7 +19,6 @@ fn single_file_db(source: &str) -> (RootDatabase, FileId) {
     (database, file_id)
 }
 
-// TODO: Move those tests to hir-def
 #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
 fn check_item_tree(
     source: &str,
@@ -30,7 +27,7 @@ fn check_item_tree(
     let (database, file_id) = single_file_db(source);
 
     let module_info = database.module_info(file_id.into());
-    expect.assert_eq(&hir_def::module_data::pretty::pretty_print_module(
+    expect.assert_eq(&crate::module_data::pretty::pretty_print_module(
         &module_info,
     ));
 }
@@ -45,14 +42,14 @@ fn test2(b: vec3<u32>, c: vec4<test>) {}
 
 fn error(d: ?) {}
 ",
-        expect![[r#"
+        expect![["
             // FileAstId { id: Idx::<SyntaxNodePointer>(0) }
             fn test;
             // FileAstId { id: Idx::<SyntaxNodePointer>(1) }
             fn test2;
             // FileAstId { id: Idx::<SyntaxNodePointer>(2) }
             fn error;
-        "#]],
+        "]],
     );
 }
 
@@ -79,7 +76,7 @@ struct Test {
     b: vec3<f32>;
 };
 ",
-        expect![[r#"
+        expect![["
             // FileAstId { id: Idx::<SyntaxNodePointer>(0) }
             fn test;
             // FileAstId { id: Idx::<SyntaxNodePointer>(1) }
@@ -104,6 +101,6 @@ struct Test {
             var z = _;
             // FileAstId { id: Idx::<SyntaxNodePointer>(11) }
             struct Test { ... }
-        "#]],
+        "]],
     );
 }

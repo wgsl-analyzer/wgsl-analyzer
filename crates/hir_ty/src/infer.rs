@@ -3,7 +3,8 @@ mod eval;
 mod unify;
 
 use std::{
-    borrow::Cow, collections::hash_map::Entry, ffi::os_str::Display, fmt, ops::Index, str::FromStr,
+    borrow::Cow, collections::hash_map::Entry, ffi::os_str::Display, fmt, ops::Index,
+    str::FromStr as _,
 };
 
 use either::Either;
@@ -41,7 +42,7 @@ use crate::{
     database::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
     infer::{
-        eval::{TemplateParameters, TpltParam},
+        eval::{TemplateParameter, TemplateParameters},
         unify::{UnificationTable, unify},
     },
     ty::{
@@ -89,12 +90,13 @@ pub fn infer_query(
     Arc::new(context.resolve_all())
 }
 
+#[expect(clippy::trivially_copy_pass_by_ref, reason = "must match salsa")]
 pub fn infer_cycle_result(
     database: &dyn HirDatabase,
     _cycle: &[String],
     definition: &DefinitionWithBodyId,
 ) -> Arc<InferenceResult> {
-    let mut inference_result: InferenceResult = InferenceResult::new(database);
+    let mut inference_result = InferenceResult::new(database);
     let (name, range) = get_name_and_range(database, ModuleDefinitionId::from(*definition));
 
     inference_result
@@ -116,8 +118,12 @@ pub fn infer_signature_query(
     let resolver = definition.resolver(database);
     let context = InferenceContext::new(database, definition, resolver);
 
-    // TODO: Match the definition and deal with the generic types in the signature.
-    // Those can contain expressions, which need to land in the inference results.
+    todo!(
+        "
+    Match the definition and deal with the generic types in the signature.
+    Those can contain expressions, which need to land in the inference results.
+    "
+    );
 
     let result = context.resolve_all();
     if result.is_empty() {
@@ -127,6 +133,8 @@ pub fn infer_signature_query(
     }
 }
 
+#[expect(clippy::trivially_copy_pass_by_ref, reason = "must match salsa")]
+#[expect(clippy::unnecessary_wraps, reason = "must match salsa")]
 pub fn infer_signature_cycle_result(
     database: &dyn HirDatabase,
     _cycle: &[String],
@@ -529,7 +537,9 @@ impl<'database> InferenceContext<'database> {
         };
 
         let address_space = match template_args.first() {
-            Some(TpltParam::Enumerant(Enumerant::AddressSpace(address_space))) => *address_space,
+            Some(TemplateParameter::Enumerant(Enumerant::AddressSpace(address_space))) => {
+                *address_space
+            },
             None => default_address_space,
             _ => {
                 self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
@@ -539,7 +549,7 @@ impl<'database> InferenceContext<'database> {
             },
         };
         let access_mode = match template_args.get(1) {
-            Some(TpltParam::Enumerant(Enumerant::AccessMode(access_mode))) => {
+            Some(TemplateParameter::Enumerant(Enumerant::AccessMode(access_mode))) => {
                 if address_space == AddressSpace::Storage {
                     *access_mode
                 } else {
@@ -680,7 +690,7 @@ impl<'database> InferenceContext<'database> {
         }
     }
 
-    #[expect(clippy::too_many_lines, reason = "TODO")]
+    #[expect(clippy::too_many_lines, reason = "match with many small cases")]
     fn infer_statement(
         &mut self,
         statement: StatementId,
@@ -1024,7 +1034,7 @@ impl<'database> InferenceContext<'database> {
         r#type
     }
 
-    #[expect(clippy::too_many_lines, reason = "TODO")]
+    #[expect(clippy::too_many_lines, reason = "match with many small cases")]
     fn infer_expression(
         &mut self,
         expression: ExpressionId,
@@ -1068,8 +1078,10 @@ impl<'database> InferenceContext<'database> {
                             );
 
                             let field_ty = field_types[field];
-                            // TODO: correct Address Spaces/access mode
-                            // Implement it like this https://github.com/wgsl-tooling-wg/wesl-rs/blob/fea56c869ba2ee8825b7b06e4d9d0d2876b2bc77/crates/wesl/src/eval/ty.rs#L163
+                            todo!("
+                            correct Address Spaces/access mode
+                            Implement it like this https://github.com/wgsl-tooling-wg/wesl-rs/blob/fea56c869ba2ee8825b7b06e4d9d0d2876b2bc77/crates/wesl/src/eval/ty.rs#L163
+                            ");
                             self.make_ref(field_ty, AddressSpace::Private, AccessMode::ReadWrite)
                         } else {
                             self.push_diagnostic(InferenceDiagnostic::NoSuchField {
@@ -1125,8 +1137,7 @@ impl<'database> InferenceContext<'database> {
             Expression::Index { left_side, index } => {
                 let left_side = self.infer_expression(*left_side, store);
                 let _index_expression = self.infer_expression(*index, store);
-                // TODO check index expression
-
+                todo!("check index expression");
                 let left_kind = left_side.kind(self.database);
                 let is_reference = matches!(left_kind, TyKind::Reference(_));
 
@@ -1134,18 +1145,18 @@ impl<'database> InferenceContext<'database> {
 
                 let r#type = match &*left_inner {
                     TyKind::Vector(vec) => {
-                        // TODO out of bounds
+                        todo!("out of bounds");
                         vec.component_type
                     },
                     TyKind::Matrix(matrix_type) => {
-                        // TODO out of bounds
+                        todo!("out of bounds");
                         self.database.intern_ty(TyKind::Vector(VectorType {
                             size: matrix_type.rows,
                             component_type: matrix_type.inner,
                         }))
                     },
                     TyKind::Array(array) => {
-                        // TODO out of bounds
+                        todo!("out of bounds");
                         array.inner
                     },
                     TyKind::Error
@@ -1456,8 +1467,9 @@ impl<'database> InferenceContext<'database> {
                     vector_type.component_type,
                     u8::try_from(name.as_str().len()).unwrap(),
                 );
+                todo!("is this correct?");
                 let result_type =
-                    self.make_ref(r#type, AddressSpace::Function, AccessMode::ReadWrite); // TODO is correct?
+                    self.make_ref(r#type, AddressSpace::Function, AccessMode::ReadWrite);
                 return Ok(result_type);
             }
         }
@@ -1507,7 +1519,7 @@ impl<'database> InferenceContext<'database> {
     ) -> Result<(Type, BuiltinOverloadId), ()> {
         let builtin = builtin_id.lookup(self.database);
         for (overload_id, overload) in builtin.overloads() {
-            // TODO: Pick overload with lowest rank
+            todo!("pick overload with lowest rank");
             if let Ok((r#type, _conversion_rank)) = self.call_builtin_overload(overload, arguments)
             {
                 return Ok((r#type, overload_id));
@@ -1527,7 +1539,7 @@ impl<'database> InferenceContext<'database> {
             return Err(());
         }
 
-        // TODO: Do the conversion rank computation
+        todo!("Do the conversion rank computation");
         let conversion_rank = 0;
         let mut unification_table = UnificationTable::default();
         for (expected, &found) in fn_ty.parameters().zip(arguments.iter()) {
@@ -1610,12 +1622,13 @@ impl<'database> InferenceContext<'database> {
         let mut converter = WgslTypeConverter::new(self.database);
         let mut template_args = vec![];
         while let Some((template_parameter, _)) = template_parameters.next() {
-            match converter.template_parameter_to_wgsl_types(template_parameter) {
-                Some(template_parameter) => template_args.push(template_parameter),
-                None => {
-                    // TODO: Proper error reporting
-                    return self.error_ty();
-                },
+            if let Some(template_parameter) =
+                converter.template_parameter_to_wgsl_types(template_parameter)
+            {
+                template_args.push(template_parameter);
+            } else {
+                todo!("proper error reporting");
+                return self.error_ty();
             }
         }
         let template_args = if template_args.is_empty() {
@@ -1653,6 +1666,10 @@ impl<'database> InferenceContext<'database> {
         }
     }
 
+    #[expect(
+        clippy::too_many_lines,
+        reason = "big match, not worth splitting all the arms out"
+    )]
     /// Constructor for a type with a fully specified template
     fn call_templated_type_constructor(
         &mut self,
@@ -1661,7 +1678,6 @@ impl<'database> InferenceContext<'database> {
         arguments: Vec<Type>,
     ) -> Type {
         fn size_to_dimension(size: VecSize) -> VecDimensionality {
-            #[expect(clippy::unreachable, reason = "TODO")]
             match size {
                 VecSize::Two => VecDimensionality::Two,
                 VecSize::Three => VecDimensionality::Three,
@@ -1872,7 +1888,7 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             TyKind::Struct(_) => {
-                // TODO: Implement checking field types
+                todo!("Implement checking field types");
                 r#type
             },
             // Never constructible
@@ -2268,7 +2284,7 @@ impl<'database> TyLoweringContext<'database> {
             true
         } else {
             self.diagnostics.push(TypeLoweringError {
-                container: template_parameters.container.clone(),
+                container: template_parameters.container().clone(),
                 kind: TypeLoweringErrorKind::WrongNumberOfTemplateArguments {
                     expected,
                     actual: template_parameters.len(),
@@ -2326,6 +2342,7 @@ enum AbstractHandling {
     Concretize,
     Abstract,
 }
+
 struct WgslTypeConverter<'database> {
     database: &'database dyn HirDatabase,
     interned_structs: Vec<StructId>,
@@ -2338,6 +2355,7 @@ impl<'database> WgslTypeConverter<'database> {
             interned_structs: Vec::default(),
         }
     }
+
     fn to_wgsl_types(
         &mut self,
         r#type: Type,
@@ -2443,14 +2461,16 @@ impl<'database> WgslTypeConverter<'database> {
     /// Returns none if it is an error type
     fn template_parameter_to_wgsl_types(
         &mut self,
-        param: eval::TpltParam,
+        param: eval::TemplateParameter,
     ) -> Option<wgsl_types::tplt::TpltParam> {
         Some(match param {
-            eval::TpltParam::Type(r#type) => {
+            eval::TemplateParameter::Type(r#type) => {
                 wgsl_types::tplt::TpltParam::Type(self.to_wgsl_types(r#type)?)
             },
-            eval::TpltParam::Instance(instance) => wgsl_types::tplt::TpltParam::Instance(instance?),
-            eval::TpltParam::Enumerant(enumerant) => {
+            eval::TemplateParameter::Instance(instance) => {
+                wgsl_types::tplt::TpltParam::Instance(instance?)
+            },
+            eval::TemplateParameter::Enumerant(enumerant) => {
                 wgsl_types::tplt::TpltParam::Enumerant(enumerant)
             },
         })
@@ -2530,7 +2550,7 @@ impl<'database> WgslTypeConverter<'database> {
                 .intern(self.database)
             },
             wgsl_types::Type::Texture(texture_type) => {
-                TyKind::Texture(self.from_wgsl_texture_type(texture_type)).intern(self.database)
+                TyKind::Texture(self.from_wgsl_texture_type(&texture_type)).intern(self.database)
             },
             wgsl_types::Type::Sampler(sampler_type) => {
                 TyKind::Sampler(sampler_type).intern(self.database)
@@ -2540,11 +2560,12 @@ impl<'database> WgslTypeConverter<'database> {
         }
     }
 
+    #[expect(clippy::too_many_lines, reason = "long but simple match")]
     fn from_wgsl_texture_type(
         &self,
-        value: wgsl_types::ty::TextureType,
+        value: &wgsl_types::ty::TextureType,
     ) -> TextureType {
-        match value {
+        match *value {
             wgsl_types::ty::TextureType::Sampled1D(sampled_type) => TextureType {
                 kind: TextureKind::from_sampled(sampled_type, self.database),
                 dimension: TextureDimensionality::D1,
@@ -2766,7 +2787,19 @@ impl<'database> WgslTypeConverter<'database> {
             TyKind::Scalar(ScalarType::I32) => wgsl_types::syntax::SampledType::I32,
             TyKind::Scalar(ScalarType::U32) => wgsl_types::syntax::SampledType::U32,
             TyKind::Scalar(ScalarType::F32) => wgsl_types::syntax::SampledType::F32,
-            kind => panic!("invalid sampled type {kind:?}"),
+            kind @ (TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Vector(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_)) => panic!("invalid sampled type {kind:?}"),
         }
     }
 }
@@ -2793,10 +2826,40 @@ pub fn from_wgsl_texel_format(
         wgsl_types::syntax::TexelFormat::Rgba32Sint => crate::ty::TexelFormat::Rgba32sint,
         wgsl_types::syntax::TexelFormat::Rgba32Float => crate::ty::TexelFormat::Rgba32float,
         wgsl_types::syntax::TexelFormat::Bgra8Unorm => crate::ty::TexelFormat::Bgra8unorm,
-        _ => panic!("not yet supported naga extension"),
+        wgsl_types::syntax::TexelFormat::R8Unorm
+        | wgsl_types::syntax::TexelFormat::R8Snorm
+        | wgsl_types::syntax::TexelFormat::R8Uint
+        | wgsl_types::syntax::TexelFormat::R8Sint
+        | wgsl_types::syntax::TexelFormat::R16Unorm
+        | wgsl_types::syntax::TexelFormat::R16Snorm
+        | wgsl_types::syntax::TexelFormat::R16Uint
+        | wgsl_types::syntax::TexelFormat::R16Sint
+        | wgsl_types::syntax::TexelFormat::R16Float
+        | wgsl_types::syntax::TexelFormat::Rg8Unorm
+        | wgsl_types::syntax::TexelFormat::Rg8Snorm
+        | wgsl_types::syntax::TexelFormat::Rg8Uint
+        | wgsl_types::syntax::TexelFormat::Rg8Sint
+        | wgsl_types::syntax::TexelFormat::Rg16Unorm
+        | wgsl_types::syntax::TexelFormat::Rg16Snorm
+        | wgsl_types::syntax::TexelFormat::Rg16Uint
+        | wgsl_types::syntax::TexelFormat::Rg16Sint
+        | wgsl_types::syntax::TexelFormat::Rg16Float
+        | wgsl_types::syntax::TexelFormat::Rgb10a2Uint
+        | wgsl_types::syntax::TexelFormat::Rgb10a2Unorm
+        | wgsl_types::syntax::TexelFormat::Rg11b10Float
+        | wgsl_types::syntax::TexelFormat::R64Uint
+        | wgsl_types::syntax::TexelFormat::Rgba16Unorm
+        | wgsl_types::syntax::TexelFormat::Rgba16Snorm => {
+            unimplemented!("not yet supported naga extension")
+        },
     }
 }
 
+/// Convert a [`crate::ty::TexelFormat`] into a [`wgsl_types::syntax::TexelFormat`].
+///
+/// # Panics
+///
+/// Panics if `texel_format` is `BoundVar` or `Any`.
 #[must_use]
 pub fn to_wgsl_texel_format(
     texel_format: crate::ty::TexelFormat

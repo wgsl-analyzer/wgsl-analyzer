@@ -407,10 +407,10 @@ fn format_infix_expression() {
         "fn main() {
     let a=x+y*z;
 }",
-        expect![[r#"
+        expect![["
             fn main() {
                 let a = x + y * z;
-            }"#]],
+            }"]],
     );
 }
 

@@ -95,6 +95,7 @@ impl CstBuilder<'_, '_> {
             Rule::EmptyStatement => self.start_node(SyntaxKind::EmptyStatement),
             Rule::EnableDirective => self.start_node(SyntaxKind::EnableDirective),
             Rule::EnableExtensionName => self.start_node(SyntaxKind::EnableExtensionName),
+            #[expect(clippy::match_same_arms, reason = "Reasons might be different")]
             Rule::Error => self.start_node(SyntaxKind::Error),
             Rule::FieldExpression => self.start_node(SyntaxKind::FieldExpression),
             Rule::ForCondition => self.start_node(SyntaxKind::ForCondition),
@@ -106,10 +107,8 @@ impl CstBuilder<'_, '_> {
             Rule::FunctionDeclaration => self.start_node(SyntaxKind::FunctionDeclaration),
             Rule::FunctionParameters => self.start_node(SyntaxKind::FunctionParameters),
             Rule::GlobalAssert => panic!("should be assert_statement instead"),
-            Rule::GlobalLetDeclaration => {
-                // This node exists purely for better parser error messages.
-                self.start_node(SyntaxKind::Error)
-            },
+            // This node exists purely for better parser error messages.
+            Rule::GlobalLetDeclaration => self.start_node(SyntaxKind::Error),
             Rule::IdentExpression => self.start_node(SyntaxKind::IdentExpression),
             Rule::IfClause => self.start_node(SyntaxKind::IfClause),
             Rule::IfStatement => self.start_node(SyntaxKind::IfStatement),

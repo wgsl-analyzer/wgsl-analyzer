@@ -28,5 +28,8 @@ tracing = "0.1.41"
 triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
 vfs.workspace = true
 
+[dev-dependencies]
+expect-test = "1.5.1"
+
 [lints]
 workspace = true

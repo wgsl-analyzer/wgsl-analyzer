@@ -55,7 +55,7 @@ pub enum ScopeDef {
 
 #[derive(Clone)]
 pub struct Resolver {
-    scopes: Vec<Scope>, // TODO: smallvec<2>
+    scopes: Vec<Scope>,
 }
 
 impl Default for Resolver {
@@ -218,7 +218,7 @@ impl Resolver {
                     },
                 }),
             Scope::Builtin => {
-                // TODO: Match against "name.as_str()" and then point at a "builtin" file
+                todo!(r#"Match against "name.as_str()" and then point at a "builtin" file"#);
                 None
             },
         })

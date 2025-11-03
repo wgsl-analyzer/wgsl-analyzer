@@ -167,7 +167,10 @@ impl UnificationTable {
 }
 
 // found type should not contain bound variables
-#[expect(clippy::too_many_lines, reason = "TODO")]
+#[expect(
+    clippy::too_many_lines,
+    reason = "This long match is not easily broken up"
+)]
 pub fn unify(
     database: &dyn HirDatabase,
     table: &mut UnificationTable,
@@ -383,7 +386,6 @@ pub fn unify(
 
             Ok(())
         },
-
         TyKind::Texture(TextureType {
             kind: TextureKind::Sampled(sampled_ty),
             arrayed,
@@ -462,8 +464,7 @@ fn storage_type_of_texel_format(
         | TexelFormat::R32uint
         | TexelFormat::Rg32uint => ScalarType::U32,
 
-        #[expect(clippy::unreachable, reason = "TODO")]
-        TexelFormat::BoundVar(_) | TexelFormat::Any => unreachable!(),
+        TexelFormat::BoundVar(_) | TexelFormat::Any => unreachable!("why is this unreachable?"),
     };
     TyKind::Vector(VectorType {
         size: VecSize::Four,

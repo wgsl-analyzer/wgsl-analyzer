@@ -1,3 +1,5 @@
+#![expect(clippy::use_debug, reason = "debug formatting in unit tests is ok")]
+
 use crate::{
     FileAstId,
     database::DefDatabase,

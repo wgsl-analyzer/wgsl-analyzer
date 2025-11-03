@@ -181,7 +181,10 @@ impl Collector<'_> {
             .alloc(Statement::Compound { statements })
     }
 
-    #[expect(clippy::too_many_lines, reason = "TODO")]
+    #[expect(
+        clippy::too_many_lines,
+        reason = "match with many cases. maybe split arms into functions later."
+    )]
     fn collect_statement(
         &mut self,
         statement: &ast::Statement,
@@ -194,7 +197,7 @@ impl Collector<'_> {
                     .map(|expression| self.collect_expression(expression));
                 let type_ref = variable_statement
                     .ty()
-                    .map(|typo| self.expressions.collect_type_specifier(typo));
+                    .map(|type_specifier| self.expressions.collect_type_specifier(&type_specifier));
 
                 let template_parameters =
                     if let Some(template_parameters) = variable_statement.template_parameters() {
@@ -220,7 +223,7 @@ impl Collector<'_> {
                     .map(|expression| self.collect_expression(expression));
                 let type_ref = variable_statement
                     .ty()
-                    .map(|typo| self.expressions.collect_type_specifier(typo));
+                    .map(|type_specifier| self.expressions.collect_type_specifier(&type_specifier));
 
                 Statement::Const {
                     binding_id,
@@ -236,7 +239,7 @@ impl Collector<'_> {
                     .map(|expression| self.collect_expression(expression));
                 let type_ref = variable_statement
                     .ty()
-                    .map(|typo| self.expressions.collect_type_specifier(typo));
+                    .map(|type_specifier| self.expressions.collect_type_specifier(&type_specifier));
 
                 Statement::Let {
                     binding_id,

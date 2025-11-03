@@ -473,7 +473,7 @@ mod tests {
     fn lex_odd_whitespace_comment() {
         check_lex_spanned(
             "\n\r//\r\nnot_comment\r\n//foo\n\ra",
-            expect![[r#"
+            expect![["
                 Blankspace@0..2
                 LineEndingComment@2..4
                 Blankspace@4..6
@@ -482,7 +482,7 @@ mod tests {
                 LineEndingComment@19..24
                 Blankspace@24..26
                 Ident@26..27
-            "#]],
+            "]],
         );
     }
 
@@ -499,16 +499,16 @@ mod tests {
     fn lex_nested_templates() {
         check_lex_spanned(
             "foo<X>",
-            expect![[r#"
+            expect![["
             Ident@0..3
             TemplateStart@3..4
             Ident@4..5
             TemplateEnd@5..6
-        "#]],
+        "]],
         );
         check_lex_spanned(
             "foo<X<Y>>",
-            expect![[r#"
+            expect![["
                 Ident@0..3
                 TemplateStart@3..4
                 Ident@4..5
@@ -516,11 +516,11 @@ mod tests {
                 Ident@6..7
                 TemplateEnd@7..8
                 TemplateEnd@8..9
-            "#]],
+            "]],
         );
         check_lex_spanned(
             "foo<X<Y<Z>>>",
-            expect![[r#"
+            expect![["
                 Ident@0..3
                 TemplateStart@3..4
                 Ident@4..5
@@ -531,7 +531,7 @@ mod tests {
                 TemplateEnd@9..10
                 TemplateEnd@10..11
                 TemplateEnd@11..12
-            "#]],
+            "]],
         );
     }
 
@@ -540,7 +540,7 @@ mod tests {
         // cases from the WGSL spec
         check_lex_spanned(
             "foo<i32,select(2,3,a>b)>",
-            expect![[r#"
+            expect![["
                 Ident@0..3
                 TemplateStart@3..4
                 Ident@4..7
@@ -556,11 +556,11 @@ mod tests {
                 Ident@21..22
                 RPar@22..23
                 TemplateEnd@23..24
-            "#]],
+            "]],
         );
         check_lex_spanned(
             "foo<(B>=C)>a",
-            expect![[r#"
+            expect![["
                 Ident@0..3
                 TemplateStart@3..4
                 LPar@4..5
@@ -570,11 +570,11 @@ mod tests {
                 RPar@9..10
                 TemplateEnd@10..11
                 Ident@11..12
-            "#]],
+            "]],
         );
         check_lex_spanned(
             "foo<(B!=C)>a",
-            expect![[r#"
+            expect![["
                 Ident@0..3
                 TemplateStart@3..4
                 LPar@4..5
@@ -584,11 +584,11 @@ mod tests {
                 RPar@9..10
                 TemplateEnd@10..11
                 Ident@11..12
-            "#]],
+            "]],
         );
         check_lex_spanned(
             "foo<(B==C)>a",
-            expect![[r#"
+            expect![["
                 Ident@0..3
                 TemplateStart@3..4
                 LPar@4..5
@@ -598,7 +598,7 @@ mod tests {
                 RPar@9..10
                 TemplateEnd@10..11
                 Ident@11..12
-            "#]],
+            "]],
         );
     }
 
@@ -606,23 +606,23 @@ mod tests {
     fn lex_not_templates() {
         check_lex_spanned(
             "foo<d]>",
-            expect![[r#"
+            expect![["
                 Ident@0..3
                 Lt@3..4
                 Ident@4..5
                 RBrak@5..6
                 Gt@6..7
-            "#]],
+            "]],
         );
         check_lex_spanned(
             "foo",
-            expect![[r#"
+            expect![["
             Ident@0..3
-        "#]],
+        "]],
         );
         check_lex_spanned(
             "foo<b || c>d",
-            expect![[r#"
+            expect![["
             Ident@0..3
             Lt@3..4
             Ident@4..5
@@ -632,7 +632,7 @@ mod tests {
             Ident@9..10
             Gt@10..11
             Ident@11..12
-        "#]],
+        "]],
         );
     }
 
@@ -640,34 +640,34 @@ mod tests {
     fn lex_templates_with_symbols() {
         check_lex_spanned(
             "foo<B<<C>",
-            expect![[r#"
+            expect![["
                 Ident@0..3
                 TemplateStart@3..4
                 Ident@4..5
                 ShiftLeft@5..7
                 Ident@7..8
                 TemplateEnd@8..9
-            "#]],
+            "]],
         );
         check_lex_spanned(
             "foo<B<=C>",
-            expect![[r#"
+            expect![["
             Ident@0..3
             TemplateStart@3..4
             Ident@4..5
             LtEq@5..7
             Ident@7..8
             TemplateEnd@8..9
-        "#]],
+        "]],
         );
 
         check_lex_spanned(
             "foo<>",
-            expect![[r#"
+            expect![["
             Ident@0..3
             TemplateStart@3..4
             TemplateEnd@4..5
-        "#]],
+        "]],
         );
     }
 
@@ -675,29 +675,29 @@ mod tests {
     fn lex_templates_with_ends() {
         check_lex_spanned(
             "A<B>>C",
-            expect![[r#"
+            expect![["
                 Ident@0..1
                 TemplateStart@1..2
                 Ident@2..3
                 TemplateEnd@3..4
                 Gt@4..5
                 Ident@5..6
-            "#]],
+            "]],
         );
         check_lex_spanned(
             "A<B>==C",
-            expect![[r#"
+            expect![["
                 Ident@0..1
                 TemplateStart@1..2
                 Ident@2..3
                 TemplateEnd@3..4
                 Eq2@4..6
                 Ident@6..7
-            "#]],
+            "]],
         );
         check_lex_spanned(
             "C<A<B>=C>",
-            expect![[r#"
+            expect![["
                 Ident@0..1
                 Lt@1..2
                 Ident@2..3
@@ -707,7 +707,7 @@ mod tests {
                 Eq@6..7
                 Ident@7..8
                 Gt@8..9
-            "#]],
+            "]],
         );
     }
 
@@ -715,7 +715,7 @@ mod tests {
     fn lex_bitcast_template() {
         check_lex_spanned(
             "bitcast<vec4<u32>>(x)",
-            expect![[r#"
+            expect![["
                 Ident@0..7
                 TemplateStart@7..8
                 Ident@8..12
@@ -726,7 +726,7 @@ mod tests {
                 LPar@18..19
                 Ident@19..20
                 RPar@20..21
-            "#]],
+            "]],
         );
     }
 
@@ -734,7 +734,7 @@ mod tests {
     fn lex_var_template() {
         check_lex_spanned(
             "var<function> x: u32;",
-            expect![[r#"
+            expect![["
                 Var@0..3
                 TemplateStart@3..4
                 Ident@4..12
@@ -745,7 +745,7 @@ mod tests {
                 Blankspace@16..17
                 Ident@17..20
                 Semi@20..21
-            "#]],
+            "]],
         );
     }
 
@@ -753,11 +753,11 @@ mod tests {
     fn lex_nested_comment() {
         check_lex_spanned(
             "foo /* bar /* // */ baz */",
-            expect![[r#"
+            expect![["
                 Ident@0..3
                 Blankspace@3..4
                 BlockComment@4..26
-            "#]],
+            "]],
         );
     }
 
@@ -765,12 +765,12 @@ mod tests {
     fn lex_unclosed_comment() {
         check_lex_spanned(
             "foo /*",
-            expect![[r#"
+            expect![["
                 Ident@0..3
                 Blankspace@3..4
                 Error@4..6
                 Error: unexpected tokens@4..6
-            "#]],
+            "]],
         );
     }
 }

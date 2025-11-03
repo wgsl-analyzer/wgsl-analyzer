@@ -326,15 +326,17 @@ ast_node! {
     text: TokenText<'_>;
 }
 
+pub struct UnknownExtension;
+
 impl EnableExtensionName {
-    pub fn extension(&self) -> Result<EnableExtension, ()> {
+    pub fn extension(&self) -> Result<EnableExtension, UnknownExtension> {
         match self.text().as_str() {
             "f16" => Ok(EnableExtension::F16),
             "clip_distances" => Ok(EnableExtension::ClipDistances),
             "dual_source_blending" => Ok(EnableExtension::DualSourceBlending),
             "subgroups" => Ok(EnableExtension::Subgroups),
             "primitive_index" => Ok(EnableExtension::PrimitiveIndex),
-            _ => Err(()),
+            _ => Err(UnknownExtension),
         }
     }
 }
@@ -361,7 +363,7 @@ ast_node! {
 }
 
 impl LanguageExtensionName {
-    pub fn extension(&self) -> Result<LanguageExtension, ()> {
+    pub fn extension(&self) -> Result<LanguageExtension, UnknownExtension> {
         match self.text().as_str() {
             "readonly_and_readwrite_storage_textures" => {
                 Ok(LanguageExtension::ReadonlyAndReadwriteStorageTextures)
@@ -371,7 +373,7 @@ impl LanguageExtensionName {
                 Ok(LanguageExtension::UnrestrictedPointerParameters)
             },
             "pointer_composite_access" => Ok(LanguageExtension::PointerCompositeAccess),
-            _ => Err(()),
+            _ => Err(UnknownExtension),
         }
     }
 }

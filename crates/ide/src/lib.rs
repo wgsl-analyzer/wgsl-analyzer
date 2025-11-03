@@ -308,6 +308,3 @@ impl Analysis {
         Ok(())
     }
 }
-
-#[cfg(test)]
-mod tests;

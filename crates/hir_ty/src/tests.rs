@@ -1,55 +1,58 @@
+#![expect(clippy::use_debug, reason = "tests")]
+
 mod simple;
 use base_db::SourceDatabase;
 use expect_test::Expect;
 use hir_def::{
-    AstIdMap, HasSource, HirFileId, InFile,
+    AstIdMap, HasSource as _, HirFileId, InFile,
     body::{Body, BodySourceMap},
-    database::{DefDatabase, DefinitionWithBodyId, InternDatabase, Location, Lookup},
+    database::{
+        DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, Lookup as _,
+    },
     expression_store::SyntheticSyntax,
     module_data::ModuleItem,
 };
 use std::fmt::Write as _;
-use syntax::{AstNode, SyntaxNode};
+use syntax::{AstNode as _, SyntaxNode};
 use triomphe::Arc;
 use wgsl_types::ty::Ty;
 
 use crate::{
-    database::HirDatabase,
-    infer::InferenceResult,
-    test_db::{TestDB, single_file_db},
+    database::HirDatabase as _,
+    infer::{InferenceDiagnostic, InferenceResult},
+    test_db::{TestDatabase, single_file_db},
     ty::{
         Type,
-        pretty::{pretty_type_expectation_with_verbosity, pretty_type_with_verbosity},
+        pretty::{
+            TypeVerbosity, pretty_type_expectation_with_verbosity, pretty_type_with_verbosity,
+        },
     },
 };
 
 fn infer(ra_fixture: &str) -> String {
-    let (db, file_id) = single_file_db(ra_fixture);
+    let (database, file_id) = single_file_db(ra_fixture);
     let file_id = HirFileId::from(file_id);
-
-    let root = db.parse_or_resolve(file_id).syntax();
-
-    let mut buf = String::new();
-
+    let root = database.parse_or_resolve(file_id).syntax();
+    let mut buffer = String::new();
     let mut infer_def = |inference_result: Arc<InferenceResult>,
                          _body: Arc<Body>,
                          body_source_map: Arc<BodySourceMap>| {
         let mut types: Vec<(SyntaxNode, &Type)> = Vec::new();
 
-        for (binding, ty) in inference_result.type_of_binding.iter() {
+        for (binding, r#type) in inference_result.type_of_binding.iter() {
             let node = match body_source_map.binding_to_source(binding) {
                 Ok(sp) => sp.to_node(&root).syntax().clone(),
                 Err(SyntheticSyntax) => continue,
             };
-            types.push((node.clone(), ty));
+            types.push((node.clone(), r#type));
         }
 
-        for (expr, ty) in inference_result.type_of_expression.iter() {
+        for (expr, r#type) in inference_result.type_of_expression.iter() {
             let node = match body_source_map.expression_to_source(expr) {
                 Ok(sp) => sp.to_node(&root).syntax().clone(),
                 Err(SyntheticSyntax) => continue,
             };
-            types.push((node.clone(), ty));
+            types.push((node.clone(), r#type));
         }
 
         // sort ranges for consistency
@@ -57,25 +60,20 @@ fn infer(ra_fixture: &str) -> String {
             let range = node.text_range();
             (range.start(), range.end())
         });
-        for (node, ty) in types {
+        for (node, r#type) in types {
             let (range, text) = (
                 node.text_range(),
                 node.text().to_string().replace('\n', " "),
             );
-            write!(
-                buf,
-                "{:?} '{}': {}\n",
-                range,
-                ellipsize(text, 15),
-                pretty_type_with_verbosity(&db, *ty, crate::ty::pretty::TypeVerbosity::Compact)
-            );
+            let pretty = pretty_type_with_verbosity(&database, *r#type, TypeVerbosity::Compact);
+            writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15));
         }
 
         // It'd be nicer if the diagnostics were sorted with the types.
         // But this is good enough for unit tests
         for diagnostic in inference_result.diagnostics() {
             match diagnostic {
-                crate::infer::InferenceDiagnostic::TypeMismatch {
+                InferenceDiagnostic::TypeMismatch {
                     expression,
                     expected,
                     actual,
@@ -88,33 +86,92 @@ fn infer(ra_fixture: &str) -> String {
                         node.text_range(),
                         node.text().to_string().replace('\n', " "),
                     );
-                    write!(
-                        buf,
-                        "{:?} '{}': expected {} but got {}\n",
-                        range,
+                    writeln!(
+                        buffer,
+                        "{range:?} '{}': expected {} but got {}",
                         ellipsize(text, 15),
                         pretty_type_expectation_with_verbosity(
-                            &db,
+                            &database,
                             expected.clone(),
-                            crate::ty::pretty::TypeVerbosity::Compact
+                            TypeVerbosity::Compact
                         ),
-                        pretty_type_with_verbosity(
-                            &db,
-                            *actual,
-                            crate::ty::pretty::TypeVerbosity::Compact
-                        )
+                        pretty_type_with_verbosity(&database, *actual, TypeVerbosity::Compact)
                     );
                 },
-                _ => {
-                    write!(buf, "{:?}\n", diagnostic);
+                InferenceDiagnostic::AssignmentNotAReference { .. }
+                | InferenceDiagnostic::NoSuchField { .. }
+                | InferenceDiagnostic::ArrayAccessInvalidType { .. }
+                | InferenceDiagnostic::UnresolvedName { .. }
+                | InferenceDiagnostic::InvalidConstructionType { .. }
+                | InferenceDiagnostic::FunctionCallArgCountMismatch { .. }
+                | InferenceDiagnostic::NoBuiltinOverload { .. }
+                | InferenceDiagnostic::NoConstructor { .. }
+                | InferenceDiagnostic::AddressOfNotReference { .. }
+                | InferenceDiagnostic::DerefNotAPointer { .. }
+                | InferenceDiagnostic::InvalidType { .. }
+                | InferenceDiagnostic::CyclicType { .. }
+                | InferenceDiagnostic::UnexpectedTemplateArgument { .. }
+                | InferenceDiagnostic::WgslError { .. }
+                | InferenceDiagnostic::ExpectedLoweredKind { .. } => {
+                    writeln!(buffer, "{diagnostic:?}");
                 },
             }
         }
     };
+    let module_info = database.module_info(file_id);
+    let mut definitions = module_definitions(&database, file_id, &module_info);
+    definitions.sort_by_key(|definition| text_size(*definition, &database));
+    for definition in definitions {
+        let (body, source_map) = database.body_with_source_map(definition);
+        let infer = database.infer(definition);
+        infer_def(infer, body, source_map);
+    }
+    buffer.truncate(buffer.trim_end().len());
+    buffer
+}
 
-    let module_info = db.module_info(file_id);
+fn text_size(
+    definition: DefinitionWithBodyId,
+    database: &TestDatabase,
+) -> base_db::TextSize {
+    match definition {
+        DefinitionWithBodyId::Function(item) => item
+            .lookup(database)
+            .source(database)
+            .value
+            .syntax()
+            .text_range()
+            .start(),
+        DefinitionWithBodyId::GlobalConstant(item) => item
+            .lookup(database)
+            .source(database)
+            .value
+            .syntax()
+            .text_range()
+            .start(),
+        DefinitionWithBodyId::GlobalVariable(item) => item
+            .lookup(database)
+            .source(database)
+            .value
+            .syntax()
+            .text_range()
+            .start(),
+        DefinitionWithBodyId::Override(item) => item
+            .lookup(database)
+            .source(database)
+            .value
+            .syntax()
+            .text_range()
+            .start(),
+    }
+}
 
-    let mut defs: Vec<DefinitionWithBodyId> = module_info
+fn module_definitions(
+    db: &TestDatabase,
+    file_id: HirFileId,
+    module_info: &Arc<hir_def::module_data::ModuleInfo>,
+) -> Vec<DefinitionWithBodyId> {
+    module_info
         .items()
         .iter()
         .filter_map(|item| {
@@ -138,58 +195,32 @@ fn infer(ra_fixture: &str) -> String {
                 ModuleItem::TypeAlias(_) | ModuleItem::Struct(_) => return None,
             })
         })
-        .collect();
-
-    defs.sort_by_key(|def| match def {
-        DefinitionWithBodyId::Function(it) => {
-            let loc = it.lookup(&db);
-            loc.source(&db).value.syntax().text_range().start()
-        },
-        DefinitionWithBodyId::GlobalConstant(it) => {
-            let loc = it.lookup(&db);
-            loc.source(&db).value.syntax().text_range().start()
-        },
-        DefinitionWithBodyId::GlobalVariable(it) => {
-            let loc = it.lookup(&db);
-            loc.source(&db).value.syntax().text_range().start()
-        },
-        DefinitionWithBodyId::Override(it) => {
-            let loc = it.lookup(&db);
-            loc.source(&db).value.syntax().text_range().start()
-        },
-    });
-    for def in defs {
-        let (body, source_map) = db.body_with_source_map(def);
-        let infer = db.infer(def);
-        infer_def(infer, body, source_map);
-    }
-
-    buf.truncate(buf.trim_end().len());
-
-    buf
+        .collect()
 }
 
 fn ellipsize(
     mut text: String,
-    max_len: usize,
+    max_length: usize,
 ) -> String {
-    if text.len() <= max_len {
+    if text.len() <= max_length {
         return text;
     }
-    let ellipsis = "...";
-    let e_len = ellipsis.len();
-    let mut prefix_len = (max_len - e_len) / 2;
-    while !text.is_char_boundary(prefix_len) {
-        prefix_len += 1;
+    const ELLIPSIS: &str = "...";
+    let e_length = ELLIPSIS.len();
+    #[expect(clippy::integer_division, reason = "precision loss is not a concern")]
+    let mut prefix_length = (max_length - e_length) / 2;
+    while !text.is_char_boundary(prefix_length) {
+        prefix_length += 1;
     }
-    let mut suffix_len = max_len - e_len - prefix_len;
-    while !text.is_char_boundary(text.len() - suffix_len) {
-        suffix_len += 1;
+    let mut suffix_length = max_length - e_length - prefix_length;
+    while !text.is_char_boundary(text.len() - suffix_length) {
+        suffix_length += 1;
     }
-    text.replace_range(prefix_len..text.len() - suffix_len, ellipsis);
+    text.replace_range(prefix_length..text.len() - suffix_length, ELLIPSIS);
     text
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
 fn check_infer(
     ra_fixture: &str,
     expect: Expect,

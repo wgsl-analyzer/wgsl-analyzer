@@ -82,12 +82,13 @@ disallowed-names = [
   "opts",   # options
   "vars",   # variables
   "ty",     # r#type
-  # "lex",  # lexer     # does not work due to logos::logos macro
-  # "tmp",  # temporary # does not work due to db! macro
-  # "err",  # error     # does not work due to ?
-  # "db",   # database  # does not work due to xflag macro
-  # "args", # arguments # does not work due to write! macro
-  # "res",  # result    # does not work due to format! macro
+  # "lex",  # lexer
+  # "tmp",  # temporary
+  # "err",  # error
+  # "db",   # database
+  # "args", # arguments
+  # "res",  # result
+  # "var",  # variable
 ]
 disallowed-types = [
   { path = "std::collections::HashMap", reason = "use FxHashMap" },

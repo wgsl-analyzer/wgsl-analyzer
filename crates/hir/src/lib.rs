@@ -75,9 +75,15 @@ impl<'database> Semantics<'database> {
                     let container: ChildContainer = match item {
                         ast::Item::FunctionDeclaration(function_declaration) => {
                             let child_offset = source.text_range().start();
-                            let is_in_body = function_declaration
-                                .body()
-                                .is_some_and(|it| it.syntax().text_range().contains(child_offset));
+                            let is_in_body =
+                                function_declaration
+                                    .body()
+                                    .is_some_and(|compound_statement| {
+                                        compound_statement
+                                            .syntax()
+                                            .text_range()
+                                            .contains(child_offset)
+                                    });
 
                             let definition =
                                 self.function_to_def(&InFile::new(file_id, function_declaration))?;
@@ -89,9 +95,10 @@ impl<'database> Semantics<'database> {
                         },
                         ast::Item::VariableDeclaration(variable_declaration) => {
                             let child_offset = source.text_range().start();
-                            let is_in_body = variable_declaration
-                                .init()
-                                .is_some_and(|it| it.syntax().text_range().contains(child_offset));
+                            let is_in_body =
+                                variable_declaration.init().is_some_and(|expression| {
+                                    expression.syntax().text_range().contains(child_offset)
+                                });
 
                             let definition = self.global_variable_to_def(&InFile::new(
                                 file_id,
@@ -105,9 +112,10 @@ impl<'database> Semantics<'database> {
                         },
                         ast::Item::ConstantDeclaration(constant_declaration) => {
                             let child_offset = source.text_range().start();
-                            let is_in_body = constant_declaration
-                                .init()
-                                .is_some_and(|it| it.syntax().text_range().contains(child_offset));
+                            let is_in_body =
+                                constant_declaration.init().is_some_and(|expression| {
+                                    expression.syntax().text_range().contains(child_offset)
+                                });
 
                             let definition = self.global_constant_to_def(&InFile::new(
                                 file_id,
@@ -121,9 +129,10 @@ impl<'database> Semantics<'database> {
                         },
                         ast::Item::OverrideDeclaration(override_declaration) => {
                             let child_offset = source.text_range().start();
-                            let is_in_body = override_declaration
-                                .init()
-                                .is_some_and(|it| it.syntax().text_range().contains(child_offset));
+                            let is_in_body =
+                                override_declaration.init().is_some_and(|expression| {
+                                    expression.syntax().text_range().contains(child_offset)
+                                });
 
                             let definition = self.global_override_to_def(&InFile::new(
                                 file_id,
@@ -306,6 +315,7 @@ impl<'database> Semantics<'database> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[expect(clippy::enum_variant_names, reason = "Suffix makes sense")]
 pub enum ChildContainer {
     /// This variant is for when the expression is inside the body
     DefinitionWithBodyId(DefinitionWithBodyId),

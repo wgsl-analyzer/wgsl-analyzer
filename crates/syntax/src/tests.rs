@@ -1,4 +1,4 @@
-use crate::{HasName, ast, parse};
+use crate::{HasName as _, ast, parse};
 
 #[test]
 fn smoke_test() {
@@ -66,9 +66,8 @@ fn function_call_statement() {
 
 #[test]
 fn switch_with_case_default() {
-    #[rustfmt::skip]
     let ast = parse(
-        /*wgsl*/r#"
+        "
 fn main() { 
     switch foo {
         case 1,2: {},
@@ -76,7 +75,7 @@ fn main() {
         default: {}
     }
 }
-    "#,
+    ",
     )
     .tree();
 
@@ -109,11 +108,11 @@ fn main() {
 #[test]
 fn loop_with_block() {
     let ast = parse(
-        r#"
+        "
 fn main() { 
     loop { let a = 3; }
 }
-    "#,
+    ",
     )
     .tree();
 
@@ -124,6 +123,5 @@ fn main() {
     let ast::Statement::LoopStatement(loop_statement) = body.statements().next().unwrap() else {
         panic!()
     };
-
-    assert!(loop_statement.block().is_some())
+    assert!(loop_statement.block().is_some());
 }

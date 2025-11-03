@@ -1,4 +1,6 @@
 mod lower;
+
+#[cfg(test)]
 pub mod pretty;
 
 use std::{hash, marker::PhantomData, ops};

@@ -128,6 +128,10 @@ option_if_let_else = "allow"
 arithmetic_side_effects = "allow"
 # always covered by min_ident_chars
 many_single_char_names = "allow"
+# poor general recommendation/style
+unneeded_field_pattern = "allow"
+# this is not a cryptographic context
+integer_division_remainder_used = "allow"
 
 # TODOs
 missing_docs_in_private_items = "allow"

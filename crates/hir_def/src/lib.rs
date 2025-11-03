@@ -8,6 +8,10 @@ pub mod expression_store;
 pub mod hir_file_id;
 pub mod module_data;
 pub mod resolver;
+#[cfg(test)]
+mod test_db;
+#[cfg(test)]
+mod tests;
 pub mod type_ref;
 pub mod type_specifier;
 pub use ast_id::*;
