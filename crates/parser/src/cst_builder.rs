@@ -160,10 +160,12 @@ impl CstBuilder<'_, '_> {
             | Rule::GlobalDeclaration
             | Rule::GlobalDirective
             | Rule::LhsExpression
-            | Rule::Statement
             | Rule::VariableUpdating => {
                 panic!("{rule:?} should always be a more specific node")
             },
+            // This is reachable when an attribute is parsed, but no statement variant applies
+            #[expect(clippy::match_same_arms, reason = "Reasons might be different")]
+            Rule::Statement => self.start_node(SyntaxKind::Error),
         }
     }
 

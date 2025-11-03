@@ -2159,6 +2159,94 @@ fn let_statement_recover_3() {
 }
 
 #[test]
+fn annotation_with_invalid_statement_recover() {
+    check(
+        "fn foo() {
+    @if(MIXOKLAB_SRGB)
+    let colorA = srgb2rgb(colA);
+    @else
+    let colorA = colA;
+}
+}",
+        expect![[r#"
+            SourceFile@0..103
+              FunctionDeclaration@0..72
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..6
+                  Identifier@3..6 "foo"
+                FunctionParameters@6..8
+                  ParenthesisLeft@6..7 "("
+                  ParenthesisRight@7..8 ")"
+                Blankspace@8..9 " "
+                CompoundStatement@9..72
+                  BraceLeft@9..10 "{"
+                  Blankspace@10..15 "\n    "
+                  IfStatement@15..38
+                    Attribute@15..16
+                      AttributeOperator@15..16 "@"
+                    IfClause@16..38
+                      If@16..18 "if"
+                      ParenthesisExpression@18..33
+                        ParenthesisLeft@18..19 "("
+                        IdentExpression@19..32
+                          NameReference@19..32
+                            Identifier@19..32 "MIXOKLAB_SRGB"
+                        ParenthesisRight@32..33 ")"
+                      Blankspace@33..38 "\n    "
+                  LetDeclaration@38..66
+                    Let@38..41 "let"
+                    Blankspace@41..42 " "
+                    Name@42..48
+                      Identifier@42..48 "colorA"
+                    Blankspace@48..49 " "
+                    Equal@49..50 "="
+                    Blankspace@50..51 " "
+                    FunctionCall@51..65
+                      IdentExpression@51..59
+                        NameReference@51..59
+                          Identifier@51..59 "srgb2rgb"
+                      Arguments@59..65
+                        ParenthesisLeft@59..60 "("
+                        IdentExpression@60..64
+                          NameReference@60..64
+                            Identifier@60..64 "colA"
+                        ParenthesisRight@64..65 ")"
+                    Semicolon@65..66 ";"
+                  Blankspace@66..71 "\n    "
+                  Error@71..72
+                    Attribute@71..72
+                      AttributeOperator@71..72 "@"
+              Error@72..76
+                Else@72..76 "else"
+              Blankspace@76..81 "\n    "
+              Error@81..99
+                Let@81..84 "let"
+                Blankspace@84..85 " "
+                Name@85..91
+                  Identifier@85..91 "colorA"
+                Blankspace@91..92 " "
+                Equal@92..93 "="
+                Blankspace@93..94 " "
+                IdentExpression@94..98
+                  NameReference@94..98
+                    Identifier@94..98 "colA"
+                Semicolon@98..99 ";"
+              Blankspace@99..100 "\n"
+              Error@100..103
+                BraceRight@100..101 "}"
+                Blankspace@101..102 "\n"
+                BraceRight@102..103 "}"
+
+            error at 16..18: invalid syntax, expected one of: 'diagnostic', <identifier>
+            error at 38..41: invalid syntax, expected one of: '@', '{'
+            error at 72..76: invalid syntax, expected one of: 'diagnostic', <identifier>
+            error at 81..99: global let declarations are not allowed
+            error at 100..101: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
+    );
+}
+
+#[test]
 fn weird_blankspace() {
     check(
         "\u{0020}\u{0009}\u{000A}\u{000B}\u{000C}\u{000D}\u{0085}\u{200E}\u{200F}\u{2028}\u{2029}",
