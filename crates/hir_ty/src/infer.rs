@@ -1455,7 +1455,8 @@ impl<'database> InferenceContext<'database> {
                     vector_type.component_type,
                     u8::try_from(name.as_str().len()).unwrap(),
                 );
-                todo!("is this correct?");
+                // TODO: check correctness
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
                 let result_type =
                     self.make_ref(r#type, AddressSpace::Function, AccessMode::ReadWrite);
                 return Ok(result_type);
