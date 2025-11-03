@@ -2625,6 +2625,10 @@ impl<'database> WgslTypeConverter<'database> {
     }
 
     #[expect(clippy::too_many_lines, reason = "long but simple match")]
+    #[expect(
+        clippy::wrong_self_convention,
+        reason = "naming things is hard and this is probably changing in the future"
+    )]
     fn from_wgsl_texture_type(
         &self,
         value: &wgsl_types::ty::TextureType,
