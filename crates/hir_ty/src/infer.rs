@@ -2378,6 +2378,10 @@ impl<'database> WgslTypeConverter<'database> {
         }
     }
 
+    #[expect(
+        clippy::wrong_self_convention,
+        reason = "naming things is hard and this is probably changing in the future"
+    )]
     fn to_wgsl_types(
         &mut self,
         r#type: Type,
