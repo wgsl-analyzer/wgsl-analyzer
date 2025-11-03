@@ -1660,10 +1660,6 @@ impl<'database> InferenceContext<'database> {
         }
     }
 
-    #[expect(
-        clippy::too_many_lines,
-        reason = "big match, not worth splitting all the arms out"
-    )]
     /// Constructor for a type with a fully specified template
     fn call_templated_type_constructor(
         &mut self,
