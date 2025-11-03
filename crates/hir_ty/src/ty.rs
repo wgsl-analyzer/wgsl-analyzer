@@ -477,9 +477,9 @@ fn conversion_rank(
         (TyKind::Scalar(ScalarType::AbstractInt), TyKind::Scalar(ScalarType::F16)) => Some(7),
         (TyKind::Scalar(ScalarType::AbstractFloat), TyKind::Scalar(ScalarType::F32)) => Some(1),
         (TyKind::Scalar(ScalarType::AbstractFloat), TyKind::Scalar(ScalarType::F16)) => Some(2),
-        // frexp and modf
         (TyKind::Struct(_), TyKind::Struct(_)) => {
-            todo!("frexp and modf");
+            // TODO: special consideration for frexp and modf for correctness
+            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/680
             // https://github.com/wgsl-tooling-wg/wesl-rs/blob/fea56c869ba2ee8825b7b06e4d9d0d2876b2bc77/crates/wgsl-types/src/conv.rs#L312
             None
         },
