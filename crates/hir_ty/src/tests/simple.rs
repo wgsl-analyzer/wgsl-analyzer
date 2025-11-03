@@ -324,6 +324,30 @@ let f32_clamp = clamp(0, 1f, 1);
 }
 
 #[test]
+fn call_user_defined_with_abstract_numbers() {
+    check_infer(
+        "
+fn make_one(x: f32) -> u32 {
+  return 1u;
+}
+
+fn main() {
+    let a = make_one(0.333);
+}
+
+
+",
+        expect![[r#"
+            13..14 'x': f32
+            39..41 '1u': u32
+            66..67 'a': u32
+            70..85 'make_one(0.333)': u32
+            79..84 '0.333': float
+        "#]],
+    );
+}
+
+#[test]
 fn vec_constructors() {
     //
     check_infer(

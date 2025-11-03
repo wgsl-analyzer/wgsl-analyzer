@@ -804,7 +804,13 @@ impl<'database> InferenceContext<'database> {
 
                 let r#type = self.infer_binary_op(*left_side, *right_side, (*op).into(), body);
 
-                self.expect_same_type(*left_side, r#type, left_inner);
+                if !r#type.is_convertible_to(left_inner, self.database) {
+                    self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
+                        expression: *right_side,
+                        actual: r#type,
+                        expected: TypeExpectation::Type(TypeExpectationInner::Exact(left_inner)),
+                    });
+                }
             },
             Statement::PhonyAssignment { right_side } => {
                 self.infer_expression(*right_side, body);
@@ -986,22 +992,6 @@ impl<'database> InferenceContext<'database> {
                     Err(())
                 }
             },
-        }
-    }
-
-    fn expect_same_type(
-        &mut self,
-        expression: ExpressionId,
-        expected: Type,
-        actual: Type,
-    ) {
-        let actual_unref = actual.unref(self.database);
-        if expected != actual_unref {
-            self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
-                expression,
-                actual: actual_unref,
-                expected: TypeExpectation::Type(TypeExpectationInner::Exact(expected)),
-            });
         }
     }
 
@@ -1207,7 +1197,13 @@ impl<'database> InferenceContext<'database> {
     ) -> Type {
         if function.parameters.len() == arguments.len() {
             for (expected, actual) in function.parameters().zip(arguments.iter().copied()) {
-                self.expect_same_type(expression, expected, actual);
+                if !actual.is_convertible_to(expected, self.database) {
+                    self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
+                        expression,
+                        actual,
+                        expected: TypeExpectation::Type(TypeExpectationInner::Exact(expected)),
+                    });
+                }
             }
 
             function.return_type.unwrap_or_else(|| self.error_ty())
