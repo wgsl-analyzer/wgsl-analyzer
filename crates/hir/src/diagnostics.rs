@@ -18,7 +18,6 @@ use hir_ty::{
     ty::Type,
     validate::AddressSpaceError,
 };
-use serde::Deserialize;
 use syntax::{
     AstNode as _, ast,
     pointer::{AstPointer, SyntaxNodePointer},
@@ -29,21 +28,16 @@ use crate::{
     Field, Function, GlobalConstant, GlobalVariable, HasSource as _, Override, Parameter, TypeAlias,
 };
 
-#[derive(Clone, Debug, Deserialize, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub enum NagaVersion {
-    #[serde(rename = "0.14")]
-    #[default]
     Naga14,
-    #[serde(rename = "0.19")]
     Naga19,
-    #[serde(rename = "0.22")]
+    #[default]
     Naga22,
-    #[serde(rename = "main")]
     NagaMain,
 }
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, Debug)]
 pub struct DiagnosticsConfig {
     /// Whether native diagnostics are enabled.
     pub enabled: bool,
