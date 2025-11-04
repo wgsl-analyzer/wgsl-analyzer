@@ -190,7 +190,7 @@ pub trait InternDatabase: SourceDatabase {
     #[salsa::interned]
     fn intern_function(
         &self,
-        loc: Location<Function>,
+        location: Location<Function>,
     ) -> FunctionId;
     #[salsa::interned]
     fn intern_global_variable(
@@ -200,22 +200,22 @@ pub trait InternDatabase: SourceDatabase {
     #[salsa::interned]
     fn intern_global_constant(
         &self,
-        loc: Location<GlobalConstant>,
+        location: Location<GlobalConstant>,
     ) -> GlobalConstantId;
     #[salsa::interned]
     fn intern_override(
         &self,
-        loc: Location<Override>,
+        location: Location<Override>,
     ) -> OverrideId;
     #[salsa::interned]
     fn intern_struct(
         &self,
-        loc: Location<Struct>,
+        location: Location<Struct>,
     ) -> StructId;
     #[salsa::interned]
     fn intern_type_alias(
         &self,
-        loc: Location<TypeAlias>,
+        location: Location<TypeAlias>,
     ) -> TypeAliasId;
 }
 

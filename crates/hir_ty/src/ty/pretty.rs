@@ -2,7 +2,7 @@ use std::fmt::{self, Write as _};
 
 use wgsl_types::ty::SamplerType;
 
-use super::{TyKind, Type};
+use super::{Type, TypeKind};
 use crate::{
     database::HirDatabase,
     function::FunctionDetails,
@@ -135,25 +135,25 @@ fn write_ty(
     verbosity: TypeVerbosity,
 ) -> fmt::Result {
     match r#type.kind(database) {
-        TyKind::Error => write!(formatter, "[error]"),
-        TyKind::Scalar(ScalarType::Bool) => write!(formatter, "bool"),
-        TyKind::Scalar(ScalarType::AbstractInt) => write!(formatter, "integer"),
-        TyKind::Scalar(ScalarType::AbstractFloat) => write!(formatter, "float"),
-        TyKind::Scalar(ScalarType::I32) => write!(formatter, "i32"),
-        TyKind::Scalar(ScalarType::U32) => write!(formatter, "u32"),
-        TyKind::Scalar(ScalarType::F32) => write!(formatter, "f32"),
-        TyKind::Scalar(ScalarType::F16) => write!(formatter, "f16"),
-        TyKind::Atomic(atomic) => {
+        TypeKind::Error => write!(formatter, "[error]"),
+        TypeKind::Scalar(ScalarType::Bool) => write!(formatter, "bool"),
+        TypeKind::Scalar(ScalarType::AbstractInt) => write!(formatter, "integer"),
+        TypeKind::Scalar(ScalarType::AbstractFloat) => write!(formatter, "float"),
+        TypeKind::Scalar(ScalarType::I32) => write!(formatter, "i32"),
+        TypeKind::Scalar(ScalarType::U32) => write!(formatter, "u32"),
+        TypeKind::Scalar(ScalarType::F32) => write!(formatter, "f32"),
+        TypeKind::Scalar(ScalarType::F16) => write!(formatter, "f16"),
+        TypeKind::Atomic(atomic) => {
             write!(formatter, "atomic<")?;
             write_ty(database, atomic.inner, formatter, verbosity)?;
             write!(formatter, ">")
         },
-        TyKind::Vector(vector_type) => {
+        TypeKind::Vector(vector_type) => {
             write!(formatter, "vec{}<", vector_type.size)?;
             write_ty(database, vector_type.component_type, formatter, verbosity)?;
             write!(formatter, ">")
         },
-        TyKind::Matrix(matrix_type) => {
+        TypeKind::Matrix(matrix_type) => {
             write!(
                 formatter,
                 "mat{}x{}<",
@@ -162,11 +162,11 @@ fn write_ty(
             write_ty(database, matrix_type.inner, formatter, verbosity)?;
             write!(formatter, ">")
         },
-        TyKind::Struct(r#struct) => {
+        TypeKind::Struct(r#struct) => {
             let data = database.struct_data(r#struct).0;
             write!(formatter, "{}", data.name.as_str())
         },
-        TyKind::Array(array_type) => {
+        TypeKind::Array(array_type) => {
             if array_type.binding_array {
                 write!(formatter, "binding_array<")?;
             } else {
@@ -179,7 +179,7 @@ fn write_ty(
             }
             write!(formatter, ">")
         },
-        TyKind::Texture(texture_type) => {
+        TypeKind::Texture(texture_type) => {
             let value = match texture_type.kind {
                 TextureKind::Sampled(r#type) => format!(
                     "texture_{}{}{}<{}>",
@@ -216,13 +216,13 @@ fn write_ty(
             };
             write!(formatter, "{value}")
         },
-        TyKind::Sampler(SamplerType::Sampler) => {
+        TypeKind::Sampler(SamplerType::Sampler) => {
             write!(formatter, "sampler")
         },
-        TyKind::Sampler(SamplerType::SamplerComparison) => {
+        TypeKind::Sampler(SamplerType::SamplerComparison) => {
             write!(formatter, "sampler_comparison")
         },
-        TyKind::Reference(reference) => match verbosity {
+        TypeKind::Reference(reference) => match verbosity {
             TypeVerbosity::Full => {
                 write!(formatter, "ref<{}, ", reference.address_space)?;
                 write_ty(database, reference.inner, formatter, verbosity)?;
@@ -235,7 +235,7 @@ fn write_ty(
             },
             TypeVerbosity::Inner => write_ty(database, reference.inner, formatter, verbosity),
         },
-        TyKind::Pointer(pointer) => match verbosity {
+        TypeKind::Pointer(pointer) => match verbosity {
             TypeVerbosity::Full => {
                 write!(formatter, "ptr<{}, ", pointer.address_space)?;
                 write_ty(database, pointer.inner, formatter, verbosity)?;
@@ -247,10 +247,10 @@ fn write_ty(
                 write!(formatter, ">")
             },
         },
-        TyKind::BoundVariable(variable) => {
+        TypeKind::BoundVariable(variable) => {
             write!(formatter, "{}", ('T'..).nth(variable.index).unwrap())
         },
-        TyKind::StorageTypeOfTexelFormat(variable) => {
+        TypeKind::StorageTypeOfTexelFormat(variable) => {
             write!(
                 formatter,
                 "{}::StorageType",

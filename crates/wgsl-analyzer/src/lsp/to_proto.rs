@@ -100,8 +100,8 @@ pub(crate) fn location(
     let url = url(snap, frange.file_id);
     let line_index = snap.file_line_index(frange.file_id)?;
     let range = range(&line_index, frange.range);
-    let loc = lsp_types::Location::new(url, range);
-    Ok(loc)
+    let location = lsp_types::Location::new(url, range);
+    Ok(location)
 }
 
 pub(crate) fn completion_items(

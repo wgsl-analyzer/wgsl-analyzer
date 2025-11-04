@@ -69,12 +69,12 @@ fn resolve_name_ref(
         let resolver = semantics.resolver(file_id, r#type.syntax());
 
         match resolver.resolve(&r#type.name_ref()?.into())? {
-            ResolveKind::Struct(loc) => {
-                let id = semantics.database.intern_struct(loc);
+            ResolveKind::Struct(location) => {
+                let id = semantics.database.intern_struct(location);
                 Some(Definition::ModuleDef(ModuleDef::Struct(Struct { id })))
             },
-            ResolveKind::TypeAlias(loc) => {
-                let id = semantics.database.intern_type_alias(loc);
+            ResolveKind::TypeAlias(location) => {
+                let id = semantics.database.intern_type_alias(location);
                 Some(Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias {
                     id,
                 })))

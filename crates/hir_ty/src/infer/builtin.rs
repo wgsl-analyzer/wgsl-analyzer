@@ -16,7 +16,7 @@ use crate::{
     },
     ty::{
         ArraySize, ArrayType, AtomicType, MatrixType, Pointer, ScalarType, TextureDimensionality,
-        TextureKind, TextureType, TyKind, Type, VecSize, VectorType,
+        TextureKind, TextureType, Type, TypeKind, VecSize, VectorType,
     },
 };
 
@@ -116,7 +116,7 @@ impl TyLoweringContext<'_> {
                 container: type_container,
                 kind: TypeLoweringErrorKind::UnresolvedName(path.clone()),
             });
-            Ok(Lowered::Type(TyKind::Error.intern(self.database)))
+            Ok(Lowered::Type(TypeKind::Error.intern(self.database)))
         }
     }
 
@@ -135,29 +135,29 @@ impl TyLoweringContext<'_> {
         let ty_kind = match path.as_str() {
             "bool" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Scalar(ScalarType::Bool)
+                TypeKind::Scalar(ScalarType::Bool)
             },
             "i32" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Scalar(ScalarType::I32)
+                TypeKind::Scalar(ScalarType::I32)
             },
             "u32" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Scalar(ScalarType::U32)
+                TypeKind::Scalar(ScalarType::U32)
             },
             "f32" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Scalar(ScalarType::F32)
+                TypeKind::Scalar(ScalarType::F32)
             },
             "f16" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Scalar(ScalarType::F16)
+                TypeKind::Scalar(ScalarType::F16)
             },
             "array" => {
                 if template_parameters.is_empty() {
                     return Ok(Lowered::TypeWithoutTemplate(
-                        TyKind::Array(ArrayType {
-                            inner: TyKind::Error.intern(self.database),
+                        TypeKind::Array(ArrayType {
+                            inner: TypeKind::Error.intern(self.database),
                             binding_array: false,
                             size: ArraySize::Dynamic,
                         })
@@ -165,7 +165,7 @@ impl TyLoweringContext<'_> {
                     ));
                 }
                 let array_template = self.array_template(evaluated_parameters)?;
-                TyKind::Array(ArrayType {
+                TypeKind::Array(ArrayType {
                     inner: array_template.r#type,
                     binding_array: false,
                     size: array_template.size,
@@ -174,8 +174,8 @@ impl TyLoweringContext<'_> {
             "binding_array" => {
                 if template_parameters.is_empty() {
                     return Ok(Lowered::TypeWithoutTemplate(
-                        TyKind::Array(ArrayType {
-                            inner: TyKind::Error.intern(self.database),
+                        TypeKind::Array(ArrayType {
+                            inner: TypeKind::Error.intern(self.database),
                             binding_array: true,
                             size: ArraySize::Dynamic,
                         })
@@ -183,7 +183,7 @@ impl TyLoweringContext<'_> {
                     ));
                 }
                 let array_template = self.array_template(evaluated_parameters)?;
-                TyKind::Array(ArrayType {
+                TypeKind::Array(ArrayType {
                     inner: array_template.r#type,
                     binding_array: true,
                     size: array_template.size,
@@ -192,15 +192,15 @@ impl TyLoweringContext<'_> {
             "vec2" => {
                 if template_parameters.is_empty() {
                     return Ok(Lowered::TypeWithoutTemplate(
-                        TyKind::Vector(VectorType {
+                        TypeKind::Vector(VectorType {
                             size: VecSize::Two,
-                            component_type: TyKind::Error.intern(self.database),
+                            component_type: TypeKind::Error.intern(self.database),
                         })
                         .intern(self.database),
                     ));
                 }
                 let component_type = self.vector_template(evaluated_parameters);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size: VecSize::Two,
                     component_type,
                 })
@@ -208,15 +208,15 @@ impl TyLoweringContext<'_> {
             "vec3" => {
                 if template_parameters.is_empty() {
                     return Ok(Lowered::TypeWithoutTemplate(
-                        TyKind::Vector(VectorType {
+                        TypeKind::Vector(VectorType {
                             size: VecSize::Three,
-                            component_type: TyKind::Error.intern(self.database),
+                            component_type: TypeKind::Error.intern(self.database),
                         })
                         .intern(self.database),
                     ));
                 }
                 let component_type = self.vector_template(evaluated_parameters);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size: VecSize::Three,
                     component_type,
                 })
@@ -224,15 +224,15 @@ impl TyLoweringContext<'_> {
             "vec4" => {
                 if template_parameters.is_empty() {
                     return Ok(Lowered::TypeWithoutTemplate(
-                        TyKind::Vector(VectorType {
+                        TypeKind::Vector(VectorType {
                             size: VecSize::Four,
-                            component_type: TyKind::Error.intern(self.database),
+                            component_type: TypeKind::Error.intern(self.database),
                         })
                         .intern(self.database),
                     ));
                 }
                 let component_type = self.vector_template(evaluated_parameters);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size: VecSize::Four,
                     component_type,
                 })
@@ -241,87 +241,87 @@ impl TyLoweringContext<'_> {
             // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
             "vec2i" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size: VecSize::Two,
-                    component_type: TyKind::Scalar(ScalarType::I32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::I32).intern(self.database),
                 })
             },
             "vec3i" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size: VecSize::Three,
-                    component_type: TyKind::Scalar(ScalarType::I32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::I32).intern(self.database),
                 })
             },
             "vec4i" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size: VecSize::Four,
-                    component_type: TyKind::Scalar(ScalarType::I32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::I32).intern(self.database),
                 })
             },
             "vec2u" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size: VecSize::Two,
-                    component_type: TyKind::Scalar(ScalarType::U32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::U32).intern(self.database),
                 })
             },
             "vec3u" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size: VecSize::Three,
-                    component_type: TyKind::Scalar(ScalarType::U32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::U32).intern(self.database),
                 })
             },
             "vec4u" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size: VecSize::Four,
-                    component_type: TyKind::Scalar(ScalarType::U32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::U32).intern(self.database),
                 })
             },
             "vec2f" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size: VecSize::Two,
-                    component_type: TyKind::Scalar(ScalarType::F32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::F32).intern(self.database),
                 })
             },
             "vec3f" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size: VecSize::Three,
-                    component_type: TyKind::Scalar(ScalarType::F32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::F32).intern(self.database),
                 })
             },
             "vec4f" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size: VecSize::Four,
-                    component_type: TyKind::Scalar(ScalarType::F32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::F32).intern(self.database),
                 })
             },
 
             "vec2h" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size: VecSize::Two,
-                    component_type: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::F16).intern(self.database),
                 })
             },
             "vec3h" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size: VecSize::Three,
-                    component_type: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::F16).intern(self.database),
                 })
             },
             "vec4h" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size: VecSize::Four,
-                    component_type: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::F16).intern(self.database),
                 })
             },
             name @ ("mat2x2" | "mat2x3" | "mat2x4" | "mat3x2" | "mat3x3" | "mat3x4" | "mat4x2"
@@ -344,16 +344,16 @@ impl TyLoweringContext<'_> {
 
                 if template_parameters.is_empty() {
                     return Ok(Lowered::TypeWithoutTemplate(
-                        TyKind::Matrix(MatrixType {
+                        TypeKind::Matrix(MatrixType {
                             columns,
                             rows,
-                            inner: TyKind::Error.intern(self.database),
+                            inner: TypeKind::Error.intern(self.database),
                         })
                         .intern(self.database),
                     ));
                 }
                 let inner = self.matrix_template(evaluated_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns,
                     rows,
                     inner,
@@ -361,151 +361,151 @@ impl TyLoweringContext<'_> {
             },
             "mat2x2f" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Two,
                     rows: VecSize::Two,
-                    inner: TyKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
                 })
             },
             "mat2x3f" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Two,
                     rows: VecSize::Three,
-                    inner: TyKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
                 })
             },
             "mat2x4f" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Two,
                     rows: VecSize::Four,
-                    inner: TyKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
                 })
             },
             "mat3x2f" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Three,
                     rows: VecSize::Two,
-                    inner: TyKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
                 })
             },
             "mat3x3f" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Three,
                     rows: VecSize::Three,
-                    inner: TyKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
                 })
             },
             "mat3x4f" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Three,
                     rows: VecSize::Four,
-                    inner: TyKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
                 })
             },
             "mat4x2f" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Four,
                     rows: VecSize::Two,
-                    inner: TyKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
                 })
             },
             "mat4x3f" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Four,
                     rows: VecSize::Three,
-                    inner: TyKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
                 })
             },
             "mat4x4f" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Four,
                     rows: VecSize::Four,
-                    inner: TyKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
                 })
             },
             "mat2x2h" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Two,
                     rows: VecSize::Two,
-                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
                 })
             },
             "mat2x3h" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Two,
                     rows: VecSize::Three,
-                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
                 })
             },
             "mat2x4h" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Two,
                     rows: VecSize::Four,
-                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
                 })
             },
             "mat3x2h" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Three,
                     rows: VecSize::Two,
-                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
                 })
             },
             "mat3x3h" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Three,
                     rows: VecSize::Three,
-                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
                 })
             },
             "mat3x4h" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Three,
                     rows: VecSize::Four,
-                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
                 })
             },
             "mat4x2h" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Four,
                     rows: VecSize::Two,
-                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
                 })
             },
             "mat4x3h" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Four,
                     rows: VecSize::Three,
-                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
                 })
             },
             "mat4x4h" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Matrix(MatrixType {
+                TypeKind::Matrix(MatrixType {
                     columns: VecSize::Four,
                     rows: VecSize::Four,
-                    inner: TyKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
                 })
             },
             "ptr" => {
                 let pointer_template = self.pointer_template(evaluated_parameters)?;
-                TyKind::Pointer(Pointer {
+                TypeKind::Pointer(Pointer {
                     address_space: pointer_template.address_space,
                     inner: pointer_template.inner,
                     access_mode: pointer_template.access_mode,
@@ -513,11 +513,11 @@ impl TyLoweringContext<'_> {
             },
             "atomic" => {
                 let inner = self.atomic_template(evaluated_parameters);
-                TyKind::Atomic(AtomicType { inner })
+                TypeKind::Atomic(AtomicType { inner })
             },
             "texture_1d" => {
                 let sampled = self.texture_sampled_template(evaluated_parameters)?;
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.database),
                     dimension: TextureDimensionality::D1,
                     arrayed: false,
@@ -526,7 +526,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_2d" => {
                 let sampled = self.texture_sampled_template(evaluated_parameters)?;
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.database),
                     dimension: TextureDimensionality::D2,
                     arrayed: false,
@@ -535,7 +535,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_2d_array" => {
                 let sampled = self.texture_sampled_template(evaluated_parameters)?;
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.database),
                     dimension: TextureDimensionality::D2,
                     arrayed: true,
@@ -544,7 +544,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_3d" => {
                 let sampled = self.texture_sampled_template(evaluated_parameters)?;
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.database),
                     dimension: TextureDimensionality::D3,
                     arrayed: false,
@@ -553,7 +553,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_cube" => {
                 let sampled = self.texture_sampled_template(evaluated_parameters)?;
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.database),
                     dimension: TextureDimensionality::Cube,
                     arrayed: false,
@@ -562,7 +562,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_cube_array" => {
                 let sampled = self.texture_sampled_template(evaluated_parameters)?;
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.database),
                     dimension: TextureDimensionality::Cube,
                     arrayed: true,
@@ -571,7 +571,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_multisampled_2d" => {
                 let sampled = self.texture_sampled_template(evaluated_parameters)?;
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.database),
                     dimension: TextureDimensionality::D2,
                     arrayed: false,
@@ -580,7 +580,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_storage_1d" => {
                 let storage_template = self.storage_texture_template(evaluated_parameters)?;
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::Storage(
                         from_wgsl_texel_format(storage_template.texel_format),
                         storage_template.access_mode,
@@ -592,7 +592,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_storage_2d" => {
                 let storage_template = self.storage_texture_template(evaluated_parameters)?;
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::Storage(
                         from_wgsl_texel_format(storage_template.texel_format),
                         storage_template.access_mode,
@@ -604,7 +604,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_storage_2d_array" => {
                 let storage_template = self.storage_texture_template(evaluated_parameters)?;
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::Storage(
                         from_wgsl_texel_format(storage_template.texel_format),
                         storage_template.access_mode,
@@ -616,7 +616,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_storage_3d" => {
                 let storage_template = self.storage_texture_template(evaluated_parameters)?;
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::Storage(
                         from_wgsl_texel_format(storage_template.texel_format),
                         storage_template.access_mode,
@@ -628,7 +628,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_depth_multisampled_2d" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::Depth,
                     dimension: TextureDimensionality::D2,
                     arrayed: false,
@@ -637,7 +637,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_external" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::External,
                     dimension: TextureDimensionality::D2,
                     arrayed: false,
@@ -646,7 +646,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_depth_2d" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::Depth,
                     dimension: TextureDimensionality::D2,
                     arrayed: false,
@@ -655,7 +655,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_depth_2d_array" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::Depth,
                     dimension: TextureDimensionality::D2,
                     arrayed: true,
@@ -664,7 +664,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_depth_cube" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::Depth,
                     dimension: TextureDimensionality::Cube,
                     arrayed: false,
@@ -673,7 +673,7 @@ impl TyLoweringContext<'_> {
             },
             "texture_depth_cube_array" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::Depth,
                     dimension: TextureDimensionality::Cube,
                     arrayed: true,
@@ -682,11 +682,11 @@ impl TyLoweringContext<'_> {
             },
             "sampler" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Sampler(wgsl_types::ty::SamplerType::Sampler)
+                TypeKind::Sampler(wgsl_types::ty::SamplerType::Sampler)
             },
             "sampler_comparison" => {
                 self.expect_no_template(template_parameters);
-                TyKind::Sampler(wgsl_types::ty::SamplerType::SamplerComparison)
+                TypeKind::Sampler(wgsl_types::ty::SamplerType::SamplerComparison)
             },
             _ => {
                 return Err(TypeLoweringError {
@@ -707,7 +707,7 @@ impl TyLoweringContext<'_> {
             Ok((r#type, _)) => r#type,
             Err(error) => {
                 self.diagnostics.push(error);
-                TyKind::Error.intern(self.database)
+                TypeKind::Error.intern(self.database)
             },
         };
 
@@ -782,7 +782,7 @@ impl TyLoweringContext<'_> {
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let ty_kind = r#type.kind(self.database);
-                if matches!(ty_kind, TyKind::Scalar(_)) && !ty_kind.is_abstract(self.database) {
+                if matches!(ty_kind, TypeKind::Scalar(_)) && !ty_kind.is_abstract(self.database) {
                     r#type
                 } else {
                     self.diagnostics.push(TypeLoweringError {
@@ -791,12 +791,12 @@ impl TyLoweringContext<'_> {
                             "a scalar".to_owned(),
                         ),
                     });
-                    TyKind::Error.intern(self.database)
+                    TypeKind::Error.intern(self.database)
                 }
             },
             Err(error) => {
                 self.diagnostics.push(error);
-                TyKind::Error.intern(self.database)
+                TypeKind::Error.intern(self.database)
             },
         }
     }
@@ -810,7 +810,7 @@ impl TyLoweringContext<'_> {
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let ty_kind = r#type.kind(self.database);
-                if matches!(ty_kind, TyKind::Scalar(ScalarType::F16 | ScalarType::F32)) {
+                if matches!(ty_kind, TypeKind::Scalar(ScalarType::F16 | ScalarType::F32)) {
                     r#type
                 } else {
                     self.diagnostics.push(TypeLoweringError {
@@ -819,12 +819,12 @@ impl TyLoweringContext<'_> {
                             "one of: f32 or f16".to_owned(),
                         ),
                     });
-                    TyKind::Error.intern(self.database)
+                    TypeKind::Error.intern(self.database)
                 }
             },
             Err(error) => {
                 self.diagnostics.push(error);
-                TyKind::Error.intern(self.database)
+                TypeKind::Error.intern(self.database)
             },
         }
     }
@@ -863,12 +863,12 @@ impl TyLoweringContext<'_> {
                             "a storable type".to_owned(),
                         ),
                     });
-                    TyKind::Error.intern(self.database)
+                    TypeKind::Error.intern(self.database)
                 }
             },
             Err(error) => {
                 self.diagnostics.push(error);
-                TyKind::Error.intern(self.database)
+                TypeKind::Error.intern(self.database)
             },
         };
 
@@ -924,7 +924,7 @@ impl TyLoweringContext<'_> {
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let ty_kind = r#type.kind(self.database);
-                if matches!(ty_kind, TyKind::Scalar(ScalarType::I32 | ScalarType::U32)) {
+                if matches!(ty_kind, TypeKind::Scalar(ScalarType::I32 | ScalarType::U32)) {
                     r#type
                 } else {
                     // TODO: improve the error message and support naga atomics
@@ -935,12 +935,12 @@ impl TyLoweringContext<'_> {
                             "i32 or u32".to_owned(), // Naga supports more types (f32, i64, u64) here
                         ),
                     });
-                    TyKind::Error.intern(self.database)
+                    TypeKind::Error.intern(self.database)
                 }
             },
             Err(error) => {
                 self.diagnostics.push(error);
-                TyKind::Error.intern(self.database)
+                TypeKind::Error.intern(self.database)
             },
         }
     }
@@ -955,22 +955,22 @@ impl TyLoweringContext<'_> {
             Ok((r#type, expression)) => {
                 let ty_kind = r#type.kind(self.database);
                 match ty_kind {
-                    TyKind::Scalar(ScalarType::I32) => Ok(SampledType::I32),
-                    TyKind::Scalar(ScalarType::U32) => Ok(SampledType::U32),
-                    TyKind::Scalar(ScalarType::F32) => Ok(SampledType::F32),
-                    TyKind::Error
-                    | TyKind::Scalar(_)
-                    | TyKind::Atomic(_)
-                    | TyKind::Vector(_)
-                    | TyKind::Matrix(_)
-                    | TyKind::Struct(_)
-                    | TyKind::Array(_)
-                    | TyKind::Texture(_)
-                    | TyKind::Sampler(_)
-                    | TyKind::Reference(_)
-                    | TyKind::Pointer(_)
-                    | TyKind::BoundVar(_)
-                    | TyKind::StorageTypeOfTexelFormat(_) => {
+                    TypeKind::Scalar(ScalarType::I32) => Ok(SampledType::I32),
+                    TypeKind::Scalar(ScalarType::U32) => Ok(SampledType::U32),
+                    TypeKind::Scalar(ScalarType::F32) => Ok(SampledType::F32),
+                    TypeKind::Error
+                    | TypeKind::Scalar(_)
+                    | TypeKind::Atomic(_)
+                    | TypeKind::Vector(_)
+                    | TypeKind::Matrix(_)
+                    | TypeKind::Struct(_)
+                    | TypeKind::Array(_)
+                    | TypeKind::Texture(_)
+                    | TypeKind::Sampler(_)
+                    | TypeKind::Reference(_)
+                    | TypeKind::Pointer(_)
+                    | TypeKind::BoundVariable(_)
+                    | TypeKind::StorageTypeOfTexelFormat(_) => {
                         // texture_2d<invalid>()
                         let error = TypeLoweringError {
                             container: TypeContainer::Expression(expression),

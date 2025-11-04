@@ -5,7 +5,7 @@ use la_arena::ArenaMap;
 
 use crate::{
     database::HirDatabase,
-    ty::{ArraySize, ArrayType, ScalarType, TyKind, Type, VecSize, VectorType},
+    ty::{ArraySize, ArrayType, ScalarType, Type, TypeKind, VecSize, VectorType},
 };
 
 type Bytes = u32;
@@ -61,7 +61,7 @@ impl Type {
     }
 }
 
-impl TyKind {
+impl TypeKind {
     /// <https://www.w3.org/TR/WGSL/#alignof>
     pub fn align_of(
         &self,

@@ -67,6 +67,7 @@ ignore-hidden = false
 "nav" = "navigation"
 # "dbg" = "debug"
 # "ctrl" = "control"
+"decl" = "declaration"
 "btn" = "button"
 "elem" = "element"
 # "attr" = "attribute"

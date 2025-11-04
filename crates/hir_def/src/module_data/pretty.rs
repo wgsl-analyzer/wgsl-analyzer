@@ -44,9 +44,9 @@ fn write_pretty_module_item(
             _ = write!(buffer, "const {} = _;", &constant.name.0);
         },
         ModuleItem::Override(id) => {
-            let override_decl = &module.data[id.index];
-            print_ast_id(buffer, override_decl.ast_id);
-            _ = write!(buffer, "override {} = _;", &override_decl.name.0);
+            let override_declaration = &module.data[id.index];
+            print_ast_id(buffer, override_declaration.ast_id);
+            _ = write!(buffer, "override {} = _;", &override_declaration.name.0);
         },
         ModuleItem::TypeAlias(id) => {
             let type_alias = &module.data[id.index];

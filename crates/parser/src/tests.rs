@@ -818,7 +818,7 @@ fn parse_recover_covers_whole_file() {
 }
 
 #[test]
-fn parse_statement_variable_decl() {
+fn parse_statement_variable_declaration() {
     check_statement(
         "let x = 3;",
         expect![[r#"
@@ -2431,7 +2431,7 @@ struct UBO {
 }
 
 #[test]
-fn struct_decl_semi() {
+fn struct_declaration_semicolon() {
     check(
         "
 struct Test {
@@ -2487,7 +2487,7 @@ struct Test {
 }
 
 #[test]
-fn struct_decl() {
+fn struct_declaration() {
     check(
         "
 struct Test {
@@ -2642,7 +2642,7 @@ fn test()
 }
 
 #[test]
-fn global_variable_decl_init() {
+fn global_variable_declaration_init() {
     check(
         "var flags = 0;",
         expect![[r#"
@@ -2662,7 +2662,7 @@ fn global_variable_decl_init() {
 }
 
 #[test]
-fn global_const_decl() {
+fn global_constant_declaration() {
     check(
         "const constant = 0;",
         expect![[r#"
@@ -2682,7 +2682,7 @@ fn global_const_decl() {
 }
 
 #[test]
-fn type_alias_decl() {
+fn type_alias_declaration() {
     check(
         "alias float = f32;",
         expect![[r#"
@@ -2703,7 +2703,7 @@ fn type_alias_decl() {
 }
 
 #[test]
-fn type_alias_decl_recover() {
+fn type_alias_declaration_recover() {
     check(
         "alias float = f32\nalias other = u32;",
         expect![[r#"

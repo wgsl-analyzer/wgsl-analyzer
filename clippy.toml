@@ -60,6 +60,7 @@ disallowed-names = [
   "ctrl",   # control
   "db",     # database
   "dbg",    # debug
+  "decl",   # declaration
   "def",    # definition
   "dest",   # destination
   "dir",    # directory
@@ -67,6 +68,7 @@ disallowed-names = [
   "elem",   # element
   "err",    # error
   "expr",   # expression
+  "func",   # function
   "ident",  # identifier
   "idx",    # index
   "it",     # item, inlay_tooltip

@@ -1,7 +1,7 @@
 use std::iter;
 
 use hir_def::database::DefDatabase as _;
-use hir_ty::ty::TyKind;
+use hir_ty::ty::TypeKind;
 use itertools::Itertools as _;
 
 use super::Completions;
@@ -29,25 +29,25 @@ pub(crate) fn complete_dot(
         .unref(context.database)
         .as_ref()
     {
-        TyKind::Vector(vector) => {
+        TypeKind::Vector(vector) => {
             vector_completions(accumulator, context, expression, vector);
             Some(())
         },
-        TyKind::Struct(r#struct) => {
+        TypeKind::Struct(r#struct) => {
             struct_completions(accumulator, context, *r#struct);
             Some(())
         },
-        TyKind::Error
-        | TyKind::Scalar(_)
-        | TyKind::Atomic(_)
-        | TyKind::Matrix(_)
-        | TyKind::Array(_)
-        | TyKind::Texture(_)
-        | TyKind::Sampler(_)
-        | TyKind::Reference(_)
-        | TyKind::Pointer(_)
-        | TyKind::BoundVariable(_)
-        | TyKind::StorageTypeOfTexelFormat(_) => None,
+        TypeKind::Error
+        | TypeKind::Scalar(_)
+        | TypeKind::Atomic(_)
+        | TypeKind::Matrix(_)
+        | TypeKind::Array(_)
+        | TypeKind::Texture(_)
+        | TypeKind::Sampler(_)
+        | TypeKind::Reference(_)
+        | TypeKind::Pointer(_)
+        | TypeKind::BoundVariable(_)
+        | TypeKind::StorageTypeOfTexelFormat(_) => None,
     }
 }
 

@@ -568,10 +568,11 @@ pub fn diagnostics(
                     )
                 },
                 AnyDiagnostic::MissingAddressSpace { variable } => {
-                    let var_decl = variable.value.to_node(&root);
-                    let source = var_decl
-                        .var_token()
-                        .map_or_else(|| NodeOrToken::Node(var_decl.syntax()), NodeOrToken::Token);
+                    let variable_declaration = variable.value.to_node(&root);
+                    let source = variable_declaration.var_token().map_or_else(
+                        || NodeOrToken::Node(variable_declaration.syntax()),
+                        NodeOrToken::Token,
+                    );
 
                     let frange = original_file_range(database, variable.file_id, &source);
                     Diagnostic::new(
@@ -581,10 +582,11 @@ pub fn diagnostics(
                     )
                 },
                 AnyDiagnostic::InvalidAddressSpace { variable, error } => {
-                    let var_decl = variable.value.to_node(&root);
-                    let source = var_decl
-                        .var_token()
-                        .map_or_else(|| NodeOrToken::Node(var_decl.syntax()), NodeOrToken::Token);
+                    let variable_declaration = variable.value.to_node(&root);
+                    let source = variable_declaration.var_token().map_or_else(
+                        || NodeOrToken::Node(variable_declaration.syntax()),
+                        NodeOrToken::Token,
+                    );
                     let frange = original_file_range(database, variable.file_id, &source);
                     Diagnostic::new(DiagnosticCode("12"), format!("{error}"), frange.range)
                 },

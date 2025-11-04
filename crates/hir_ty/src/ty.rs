@@ -34,7 +34,7 @@ impl Type {
     pub fn kind(
         self,
         database: &dyn HirDatabase,
-    ) -> TyKind {
+    ) -> TypeKind {
         database.lookup_intern_ty(self)
     }
 
@@ -42,7 +42,7 @@ impl Type {
         self,
         database: &dyn HirDatabase,
     ) -> bool {
-        matches!(database.lookup_intern_ty(self), TyKind::Error)
+        matches!(database.lookup_intern_ty(self), TypeKind::Error)
     }
 
     /// `T` -> `T`, `vecN<T>` -> `T`
@@ -52,19 +52,19 @@ impl Type {
         database: &dyn HirDatabase,
     ) -> Self {
         match self.kind(database) {
-            TyKind::Vector(vector) => vector.component_type,
-            TyKind::Reference(reference) => reference.inner.this_or_vec_inner(database),
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Matrix(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Pointer(_)
-            | TyKind::BoundVariable(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => self,
+            TypeKind::Vector(vector) => vector.component_type,
+            TypeKind::Reference(reference) => reference.inner.this_or_vec_inner(database),
+            TypeKind::Error
+            | TypeKind::Scalar(_)
+            | TypeKind::Atomic(_)
+            | TypeKind::Matrix(_)
+            | TypeKind::Struct(_)
+            | TypeKind::Array(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::Pointer(_)
+            | TypeKind::BoundVariable(_)
+            | TypeKind::StorageTypeOfTexelFormat(_) => self,
         }
     }
 
@@ -84,19 +84,19 @@ impl Type {
         database: &dyn HirDatabase,
     ) -> Self {
         match self.kind(database) {
-            TyKind::Reference(reference) => reference.inner,
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Vector(_)
-            | TyKind::Matrix(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Pointer(_)
-            | TyKind::BoundVariable(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => self,
+            TypeKind::Reference(reference) => reference.inner,
+            TypeKind::Error
+            | TypeKind::Scalar(_)
+            | TypeKind::Atomic(_)
+            | TypeKind::Vector(_)
+            | TypeKind::Matrix(_)
+            | TypeKind::Struct(_)
+            | TypeKind::Array(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::Pointer(_)
+            | TypeKind::BoundVariable(_)
+            | TypeKind::StorageTypeOfTexelFormat(_) => self,
         }
     }
 
@@ -121,7 +121,7 @@ impl Type {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum TyKind {
+pub enum TypeKind {
     Error,
     Scalar(ScalarType),
     Atomic(AtomicType),
@@ -143,7 +143,7 @@ pub struct BoundVariable {
     pub index: usize,
 }
 
-impl TyKind {
+impl TypeKind {
     pub fn is_convertible_to(
         &self,
         r#type: &Self,
@@ -216,7 +216,7 @@ impl TyKind {
             | Self::Sampler(_)
             | Self::Reference(_)
             | Self::Pointer(_)
-            | Self::BoundVar(_)
+            | Self::BoundVariable(_)
             | Self::StorageTypeOfTexelFormat(_) => return None,
         })
     }
@@ -261,7 +261,7 @@ impl TyKind {
             | Self::Sampler(_)
             | Self::Reference(_)
             | Self::Pointer(_)
-            | Self::BoundVar(_)
+            | Self::BoundVariable(_)
             | Self::StorageTypeOfTexelFormat(_) => false,
         }
     }
@@ -347,7 +347,7 @@ impl TyKind {
                         | Self::Sampler(_)
                         | Self::Reference(_)
                         | Self::Pointer(_)
-                        | Self::BoundVar(_)
+                        | Self::BoundVariable(_)
                         | Self::StorageTypeOfTexelFormat(_) => false,
                     }
                 })
@@ -453,65 +453,66 @@ impl TyKind {
 /// Implements the [conversion rank algorithm](https://www.w3.org/TR/WGSL/#conversion-rank)
 /// Taken from wesl-rs.
 fn conversion_rank(
-    ty1: &TyKind,
-    ty2: &TyKind,
+    ty1: &TypeKind,
+    ty2: &TypeKind,
     database: &dyn HirDatabase,
 ) -> Option<u32> {
     // reference: <https://www.w3.org/TR/WGSL/#conversion-rank>
     match (ty1, ty2) {
         (_, _) if ty1 == ty2 => Some(0),
         (
-            TyKind::Reference(Reference {
+            TypeKind::Reference(Reference {
                 inner: ty1,
                 access_mode: AccessMode::Read | AccessMode::ReadWrite,
                 ..
             }),
             ty2,
         ) if &ty1.kind(database) == ty2 => Some(0),
-        (TyKind::Scalar(ScalarType::AbstractInt), TyKind::Scalar(ScalarType::AbstractFloat)) => {
-            Some(5)
-        },
-        (TyKind::Scalar(ScalarType::AbstractInt), TyKind::Scalar(ScalarType::I32)) => Some(3),
-        (TyKind::Scalar(ScalarType::AbstractInt), TyKind::Scalar(ScalarType::U32)) => Some(4),
-        (TyKind::Scalar(ScalarType::AbstractInt), TyKind::Scalar(ScalarType::F32)) => Some(6),
-        (TyKind::Scalar(ScalarType::AbstractInt), TyKind::Scalar(ScalarType::F16)) => Some(7),
-        (TyKind::Scalar(ScalarType::AbstractFloat), TyKind::Scalar(ScalarType::F32)) => Some(1),
-        (TyKind::Scalar(ScalarType::AbstractFloat), TyKind::Scalar(ScalarType::F16)) => Some(2),
-        (TyKind::Struct(_), TyKind::Struct(_)) => {
+        (
+            TypeKind::Scalar(ScalarType::AbstractInt),
+            TypeKind::Scalar(ScalarType::AbstractFloat),
+        ) => Some(5),
+        (TypeKind::Scalar(ScalarType::AbstractInt), TypeKind::Scalar(ScalarType::I32)) => Some(3),
+        (TypeKind::Scalar(ScalarType::AbstractInt), TypeKind::Scalar(ScalarType::U32)) => Some(4),
+        (TypeKind::Scalar(ScalarType::AbstractInt), TypeKind::Scalar(ScalarType::F32)) => Some(6),
+        (TypeKind::Scalar(ScalarType::AbstractInt), TypeKind::Scalar(ScalarType::F16)) => Some(7),
+        (TypeKind::Scalar(ScalarType::AbstractFloat), TypeKind::Scalar(ScalarType::F32)) => Some(1),
+        (TypeKind::Scalar(ScalarType::AbstractFloat), TypeKind::Scalar(ScalarType::F16)) => Some(2),
+        (TypeKind::Struct(_), TypeKind::Struct(_)) => {
             // TODO: special consideration for frexp and modf for correctness
             // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/680
             // https://github.com/wgsl-tooling-wg/wesl-rs/blob/fea56c869ba2ee8825b7b06e4d9d0d2876b2bc77/crates/wgsl-types/src/conv.rs#L312
             None
         },
         (
-            TyKind::Array(ArrayType {
+            TypeKind::Array(ArrayType {
                 inner: ty1,
                 size: n1,
                 ..
             }),
-            TyKind::Array(ArrayType {
+            TypeKind::Array(ArrayType {
                 inner: ty2,
                 size: n2,
                 ..
             }),
         ) if n1 == n2 => conversion_rank(&ty1.kind(database), &ty2.kind(database), database),
         (
-            TyKind::Vector(VectorType {
+            TypeKind::Vector(VectorType {
                 size: n1,
                 component_type: ty1,
             }),
-            TyKind::Vector(VectorType {
+            TypeKind::Vector(VectorType {
                 size: n2,
                 component_type: ty2,
             }),
         ) if n1 == n2 => conversion_rank(&ty1.kind(database), &ty2.kind(database), database),
         (
-            TyKind::Matrix(MatrixType {
+            TypeKind::Matrix(MatrixType {
                 columns: c1,
                 rows: r1,
                 inner: ty1,
             }),
-            TyKind::Matrix(MatrixType {
+            TypeKind::Matrix(MatrixType {
                 columns: c2,
                 rows: r2,
                 inner: ty2,
@@ -594,7 +595,7 @@ pub enum VecSize {
     Four,
     // TODO: Maybe clean this up during builtin refactor
     // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
-    BoundVar(BoundVar),
+    BoundVariable(BoundVariable),
 }
 
 impl TryFrom<u8> for VecSize {
@@ -745,13 +746,13 @@ impl TextureKind {
     ) -> Self {
         match sampled {
             wgsl_types::syntax::SampledType::I32 => {
-                Self::Sampled(TyKind::Scalar(ScalarType::I32).intern(database))
+                Self::Sampled(TypeKind::Scalar(ScalarType::I32).intern(database))
             },
             wgsl_types::syntax::SampledType::U32 => {
-                Self::Sampled(TyKind::Scalar(ScalarType::U32).intern(database))
+                Self::Sampled(TypeKind::Scalar(ScalarType::U32).intern(database))
             },
             wgsl_types::syntax::SampledType::F32 => {
-                Self::Sampled(TyKind::Scalar(ScalarType::F32).intern(database))
+                Self::Sampled(TypeKind::Scalar(ScalarType::F32).intern(database))
             },
         }
     }
@@ -805,7 +806,7 @@ pub enum TexelFormat {
         note = "Intended to be refactored and removed in https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
     )]
     /// this is only used for builtins which care a little bit about the format
-    BoundVar(BoundVar),
+    BoundVariable(BoundVariable),
     /// this is only used for builtins which do not care about the format
     #[deprecated(
         note = "Intended to be refactored and removed in https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
@@ -840,7 +841,9 @@ impl fmt::Display for TexelFormat {
             Self::Rg32sint => "rg32sint",
             Self::Rg32float => "rg32float",
             Self::Bgra8unorm => "bgra8unorm",
-            Self::BoundVar(var) => return formatter.write_char(('F'..).nth(var.index).unwrap()),
+            Self::BoundVariable(variable) => {
+                return formatter.write_char(('F'..).nth(variable.index).unwrap());
+            },
             Self::Any => "_",
         };
         formatter.write_str(str)

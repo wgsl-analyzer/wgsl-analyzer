@@ -4,7 +4,7 @@ use itertools::Itertools as _;
 use smallvec::{SmallVec, smallvec};
 use wgsl_types::syntax::{AccessMode, AddressSpace};
 
-use crate::{database::HirDatabase, ty::TyKind};
+use crate::{database::HirDatabase, ty::TypeKind};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Scope {
@@ -68,7 +68,7 @@ pub fn validate_address_space<Function: FnMut(AddressSpaceError)>(
     address_space: AddressSpace,
     access_mode: AccessMode,
     scope: Scope,
-    r#type: &TyKind,
+    r#type: &TypeKind,
     database: &dyn HirDatabase,
     mut diagnostic_builder: Function,
 ) {
@@ -161,18 +161,18 @@ pub fn validate_address_space<Function: FnMut(AddressSpaceError)>(
             }
 
             match r#type.as_ref() {
-                TyKind::Sampler(_) | TyKind::Texture(_) => {},
-                TyKind::Error
-                | TyKind::Scalar(_)
-                | TyKind::Atomic(_)
-                | TyKind::Vector(_)
-                | TyKind::Matrix(_)
-                | TyKind::Struct(_)
-                | TyKind::Array(_)
-                | TyKind::Reference(_)
-                | TyKind::Pointer(_)
-                | TyKind::BoundVariable(_)
-                | TyKind::StorageTypeOfTexelFormat(_) => {
+                TypeKind::Sampler(_) | TypeKind::Texture(_) => {},
+                TypeKind::Error
+                | TypeKind::Scalar(_)
+                | TypeKind::Atomic(_)
+                | TypeKind::Vector(_)
+                | TypeKind::Matrix(_)
+                | TypeKind::Struct(_)
+                | TypeKind::Array(_)
+                | TypeKind::Reference(_)
+                | TypeKind::Pointer(_)
+                | TypeKind::BoundVariable(_)
+                | TypeKind::StorageTypeOfTexelFormat(_) => {
                     diagnostic_builder(AddressSpaceError::HandleOrTexture);
                 },
             }

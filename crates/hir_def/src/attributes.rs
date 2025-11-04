@@ -110,7 +110,7 @@ impl AttributesWithOwner {
         database: &dyn DefDatabase,
         definition: AttributeDefId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let (attrs, source_map) = match definition {
+        let (attributes, source_map) = match definition {
             AttributeDefId::Struct(id) => {
                 AttributeList::from_src(database, &id.lookup(database).source(database).value)
             },
@@ -126,11 +126,11 @@ impl AttributesWithOwner {
                 let field_name = strukt_data.fields[id.field].name.as_str();
 
                 // this is ugly but rust-analyzer is more complicated and this should work for now
-                let attrs = fields.find_map(|field| {
+                let attributes = fields.find_map(|field| {
                     let name = field.name()?;
                     (name.text().as_str() == field_name).then_some(field)
                 });
-                attrs.map_or_else(AttributeList::empty, |field| {
+                attributes.map_or_else(AttributeList::empty, |field| {
                     AttributeList::from_src(database, &field)
                 })
             },
@@ -144,7 +144,7 @@ impl AttributesWithOwner {
 
         (
             Arc::new(Self {
-                attribute_list: attrs,
+                attribute_list: attributes,
                 owner: definition,
             }),
             Arc::new(source_map),

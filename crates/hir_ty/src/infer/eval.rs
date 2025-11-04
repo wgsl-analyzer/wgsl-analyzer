@@ -17,7 +17,7 @@ use crate::{
         InferenceContext, InferenceDiagnostic, Lowered, TyLoweringContext, TypeContainer,
         TypeLoweringError, TypeLoweringErrorKind,
     },
-    ty::{TyKind, Type},
+    ty::{Type, TypeKind},
 };
 
 impl TyLoweringContext<'_> {
@@ -141,7 +141,7 @@ impl TyLoweringContext<'_> {
                             container: TypeContainer::Expression(tplt),
                             kind: TypeLoweringErrorKind::MissingTemplate,
                         });
-                        TemplateParameter::Type(TyKind::Error.intern(self.database))
+                        TemplateParameter::Type(TypeKind::Error.intern(self.database))
                     },
                     Lowered::Enumerant(enumerant) => TemplateParameter::Enumerant(enumerant),
                     Lowered::Function(_) | Lowered::BuiltinFunction => {
@@ -152,7 +152,7 @@ impl TyLoweringContext<'_> {
                                 ident_expression.path.clone(),
                             ),
                         });
-                        TemplateParameter::Type(self.database.intern_ty(TyKind::Error))
+                        TemplateParameter::Type(self.database.intern_ty(TypeKind::Error))
                     },
                     Lowered::GlobalConstant(_)
                     | Lowered::GlobalVariable(_)

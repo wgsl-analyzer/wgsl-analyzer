@@ -15,7 +15,6 @@ use hir_def::{
 use std::fmt::Write as _;
 use syntax::{AstNode as _, SyntaxNode};
 use triomphe::Arc;
-use wgsl_types::ty::Ty;
 
 use crate::{
     database::HirDatabase as _,

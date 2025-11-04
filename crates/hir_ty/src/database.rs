@@ -9,7 +9,7 @@ use crate::infer::{
     InferenceContext, InferenceDiagnostic, InferenceResult, TyLoweringContext, TypeContainer,
     TypeLoweringError,
 };
-use crate::ty::{TyKind, Type};
+use crate::ty::{Type, TypeKind};
 use hir_def::data::FieldId;
 use hir_def::database::{DefinitionWithBodyId, GlobalVariableId, ModuleDefinitionId, TypeAliasId};
 use hir_def::{
@@ -59,7 +59,7 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
     #[salsa::interned]
     fn intern_ty(
         &self,
-        r#type: TyKind,
+        r#type: TypeKind,
     ) -> Type;
 
     #[salsa::interned]
@@ -171,12 +171,12 @@ fn struct_is_used_in_uniform(
 ) -> bool {
     let module_info = database.module_info(file_id);
     module_info.items().iter().any(|item| match *item {
-        hir_def::module_data::ModuleItem::GlobalVariable(decl) => {
-            let decl = database.intern_global_variable(InFile::new(file_id, decl));
-            let inference = database.infer(DefinitionWithBodyId::GlobalVariable(decl));
+        hir_def::module_data::ModuleItem::GlobalVariable(declaration) => {
+            let declaration = database.intern_global_variable(InFile::new(file_id, declaration));
+            let inference = database.infer(DefinitionWithBodyId::GlobalVariable(declaration));
             let ty_kind = inference.return_type().kind(database);
 
-            if let TyKind::Reference(crate::ty::Reference { address_space, .. }) = ty_kind
+            if let TypeKind::Reference(crate::ty::Reference { address_space, .. }) = ty_kind
                 && !matches!(address_space, AddressSpace::Uniform)
             {
                 return false;

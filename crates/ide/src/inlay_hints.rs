@@ -533,16 +533,16 @@ fn function_hints(
     let analyzed = semantics.analyze(container.as_def_with_body_id()?);
     let expression = analyzed.expression_id(expression)?;
     let resolved = analyzed.infer.call_resolution(expression)?;
-    let func = match resolved {
-        ResolvedCall::Function(func) => func.lookup(analyzed.database),
+    let function = match resolved {
+        ResolvedCall::Function(function) => function.lookup(analyzed.database),
         ResolvedCall::OtherTypeInitializer(_) => return None,
     };
-    let param_hints = func
+    let param_hints = function
         .parameter_names()
         .zip(parameter_expressions)
         .filter(|&(name, _)| !Name::is_missing(name))
-        .filter(|(param_name, expression)| {
-            !should_hide_param_name_hint(&func, param_name, expression)
+        .filter(|(parameter_name, expression)| {
+            !should_hide_param_name_hint(&function, parameter_name, expression)
         })
         .map(|(param_name, expression)| {
             let mut label = InlayHintLabel::from(param_name);
@@ -567,15 +567,15 @@ fn function_hints(
 // taken from https://github.com/rust-lang/rust-analyzer/blob/7308b3ef413cad8c211e239d32c9fab29ae2e664/crates/ide/src/inlay_hints.rs#L422
 
 fn should_hide_param_name_hint(
-    func: &FunctionDetails,
+    function: &FunctionDetails,
     param_name: &str,
     expression: &AstExpression,
 ) -> bool {
-    is_argument_similar_to_param_name(expression, param_name)
-        || (func.parameters.len() == 1 && is_obvious_parameter(param_name))
+    is_argument_similar_to_parameter_name(expression, param_name)
+        || (function.parameters.len() == 1 && is_obvious_parameter(param_name))
 }
 
-fn is_argument_similar_to_param_name(
+fn is_argument_similar_to_parameter_name(
     expression: &AstExpression,
     param_name: &str,
 ) -> bool {
@@ -584,7 +584,10 @@ fn is_argument_similar_to_param_name(
     };
 
     // std is honestly too panic happy...
-    let str_split_at = |str: &str, at| str.is_char_boundary(at).then(|| argument.split_at(at));
+    let str_split_at = |str: &str, index| {
+        str.is_char_boundary(index)
+            .then(|| argument.split_at(index))
+    };
 
     let param_name = param_name.trim_start_matches('_');
     let argument = argument.trim_start_matches('_');

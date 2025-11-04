@@ -46,6 +46,7 @@ impl<S, W> TimingLayer<S, W> {
     }
 }
 
+#[expect(clippy::renamed_function_params, reason = "abbreviations")]
 impl<S, W> Layer<S> for TimingLayer<S, W>
 where
     S: Subscriber + for<'span> LookupSpan<'span>,
@@ -53,19 +54,19 @@ where
 {
     fn on_new_span(
         &self,
-        attrs: &Attributes<'_>,
+        attributes: &Attributes<'_>,
         id: &Id,
-        ctx: Context<'_, S>,
+        context: Context<'_, S>,
     ) {
-        let span = ctx.span(id).unwrap();
-        let data = JsonData::new(attrs.metadata().name());
+        let span = context.span(id).unwrap();
+        let data = JsonData::new(attributes.metadata().name());
         span.extensions_mut().insert(data);
     }
 
     fn on_event(
         &self,
         _event: &Event<'_>,
-        _ctx: Context<'_, S>,
+        _context: Context<'_, S>,
     ) {
     }
 

@@ -90,7 +90,7 @@ impl Body {
                 let location = id.lookup(database);
                 let source = location.source(database);
 
-                lower::lower_global_var_declaration(database, file_id, &source.value)
+                lower::lower_global_variable_declaration(database, file_id, &source.value)
             },
             DefinitionWithBodyId::GlobalConstant(id) => {
                 let location = id.lookup(database);

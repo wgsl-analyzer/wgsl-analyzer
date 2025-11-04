@@ -402,24 +402,24 @@ fn parse_ty(
 fn type_to_rust(r#type: &Type) -> String {
     match r#type {
         Type::Vec(size, component_type) => format!(
-            "TyKind::Vector(crate::ty::VectorType {{ size: VecSize::{size:?}, component_type: {} }}).intern(database)",
+            "TypeKind::Vector(crate::ty::VectorType {{ size: VecSize::{size:?}, component_type: {} }}).intern(database)",
             type_to_rust(component_type)
         ),
 
         Type::Matrix(columns, rows, inner) => format!(
-            "TyKind::Matrix(crate::ty::MatrixType {{ columns: VecSize::{columns:?}, rows: VecSize::{rows:?}, inner: {} }}).intern(database)",
+            "TypeKind::Matrix(crate::ty::MatrixType {{ columns: VecSize::{columns:?}, rows: VecSize::{rows:?}, inner: {} }}).intern(database)",
             type_to_rust(inner)
         ),
 
         (Type::Bool | Type::F32 | Type::I32 | Type::U32 | Type::F16) => {
-            format!("TyKind::Scalar(ScalarType::{type:?}).intern(database)")
+            format!("TypeKind::Scalar(ScalarType::{type:?}).intern(database)")
         },
         Type::Bound(index) => {
-            format!("TyKind::BoundVariable(BoundVariable {{ index: {index} }}).intern(database)",)
+            format!("TypeKind::BoundVariable(BoundVariable {{ index: {index} }}).intern(database)",)
         },
         Type::Texture(texture) => {
             format!(
-                "TyKind::Texture(TextureType {{
+                "TypeKind::Texture(TextureType {{
                             kind: TextureKind::{},
                             arrayed: {},
                             multisampled: {},
@@ -446,13 +446,13 @@ fn type_to_rust(r#type: &Type) -> String {
             )
         },
         Type::Sampler { comparison: true } => {
-            "TyKind::Sampler(SamplerType::SamplerComparison).intern(database)".to_owned()
+            "TypeKind::Sampler(SamplerType::SamplerComparison).intern(database)".to_owned()
         },
         Type::Sampler { comparison: false } => {
-            "TyKind::Sampler(SamplerType::Sampler).intern(database)".to_owned()
+            "TypeKind::Sampler(SamplerType::Sampler).intern(database)".to_owned()
         },
         Type::RuntimeArray(inner) => format!(
-            "TyKind::Array(ArrayType {{
+            "TypeKind::Array(ArrayType {{
             size: ArraySize::Dynamic,
             binding_array: false,
             inner: {}
@@ -460,7 +460,7 @@ fn type_to_rust(r#type: &Type) -> String {
             type_to_rust(inner)
         ),
         Type::Pointer(inner) => format!(
-            "TyKind::Pointer(Pointer {{
+            "TypeKind::Pointer(Pointer {{
             inner: {},
             access_mode: AccessMode::ReadWrite,
             address_space: AddressSpace::Private,
@@ -468,14 +468,14 @@ fn type_to_rust(r#type: &Type) -> String {
             type_to_rust(inner)
         ),
         Type::Atomic(inner) => format!(
-            "TyKind::Atomic(AtomicType {{
+            "TypeKind::Atomic(AtomicType {{
             inner: {},
         }}).intern(database)",
             type_to_rust(inner)
         ),
         Type::StorageTypeOfTexelFormat(variable) => {
             format!(
-                "TyKind::StorageTypeOfTexelFormat(BoundVariable {{ index: {variable} }}).intern(database)"
+                "TypeKind::StorageTypeOfTexelFormat(BoundVariable {{ index: {variable} }}).intern(database)"
             )
         },
     }
