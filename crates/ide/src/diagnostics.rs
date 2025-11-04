@@ -115,8 +115,8 @@ trait Naga {
 }
 
 trait NagaError: error::Error {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + '_>;
-    fn has_spans(&self) -> bool;
+    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_>;
+    fn location(&self) -> Option<Range<usize>>;
 }
 
 struct Naga22;
@@ -138,28 +138,27 @@ impl Naga for Naga22 {
 }
 
 impl NagaError for naga22::front::wgsl::ParseError {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + '_> {
+    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.labels()
-                .filter_map(|(range, label)| Some((range.to_range()?, label.to_owned()))),
+                .filter_map(|(span, label)| Some((span.to_range(), label.to_owned()))),
         )
     }
 
-    fn has_spans(&self) -> bool {
-        self.labels().len() > 0
+    fn location(&self) -> Option<Range<usize>> {
+        self.labels().next().and_then(|(range, _)| range.to_range())
     }
 }
 
 impl NagaError for naga22::WithSpan<naga22::valid::ValidationError> {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + '_> {
+    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.spans()
-                .filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
+                .filter_map(move |(span, label)| Some((span.to_range(), label.clone()))),
         )
     }
-
-    fn has_spans(&self) -> bool {
-        self.spans().len() > 0
+    fn location(&self) -> Option<Range<usize>> {
+        self.spans().next().and_then(|(span, _)| span.to_range())
     }
 }
 
@@ -182,28 +181,26 @@ impl Naga for Naga27 {
 }
 
 impl NagaError for naga27::front::wgsl::ParseError {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + '_> {
+    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.labels()
-                .filter_map(|(range, label)| Some((range.to_range()?, label.to_owned()))),
+                .filter_map(|(span, label)| Some((span.to_range(), label.to_owned()))),
         )
     }
-
-    fn has_spans(&self) -> bool {
-        self.labels().len() > 0
+    fn location(&self) -> Option<Range<usize>> {
+        self.labels().next().and_then(|(span, _)| span.to_range())
     }
 }
 
 impl NagaError for naga27::WithSpan<naga27::valid::ValidationError> {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + '_> {
+    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.spans()
-                .filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
+                .filter_map(move |(span, label)| Some((span.to_range(), label.clone()))),
         )
     }
-
-    fn has_spans(&self) -> bool {
-        self.spans().len() > 0
+    fn location(&self) -> Option<Range<usize>> {
+        self.spans().next().and_then(|(span, _)| span.to_range())
     }
 }
 
@@ -226,109 +223,59 @@ impl Naga for NagaMain {
 }
 
 impl NagaError for nagamain::front::wgsl::ParseError {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + '_> {
+    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.labels()
-                .filter_map(|(range, label)| Some((range.to_range()?, label.to_owned()))),
+                .filter_map(|(span, label)| Some((span.to_range(), label.to_owned()))),
         )
     }
-
-    fn has_spans(&self) -> bool {
-        self.labels().len() > 0
+    fn location(&self) -> Option<Range<usize>> {
+        self.labels().next().and_then(|(span, _)| span.to_range())
     }
 }
 
 impl NagaError for nagamain::WithSpan<nagamain::valid::ValidationError> {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Range<usize>, String)> + '_> {
+    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.spans()
-                .filter_map(move |(span, label)| Some((span.to_range()?, label.clone()))),
+                .filter_map(move |(span, label)| Some((span.to_range(), label.clone()))),
         )
     }
-
-    fn has_spans(&self) -> bool {
-        self.spans().len() > 0
+    fn location(&self) -> Option<Range<usize>> {
+        self.spans().next().and_then(|(span, _)| span.to_range())
     }
 }
 
-enum NagaErrorPolicy {
-    SeparateSpans,
-    SmallestSpan,
-    Related,
-}
+fn emit<Error: NagaError>(
+    error: &Error,
+    file_id: FileId,
+    full_range: TextRange,
+    accumulator: &mut Vec<AnyDiagnostic>,
+) {
+    let message = error_message_cause_chain(&error);
+    let original_range = |range: ops::Range<usize>| {
+        TextRange::new(
+            TextSize::from(u32::try_from(range.start).expect("indexes are small numbers")),
+            TextSize::from(u32::try_from(range.end).expect("indexes are small numbers")),
+        )
+    };
+    let location = error.location().map(original_range).unwrap_or(full_range);
 
-impl NagaErrorPolicy {
-    fn emit<Error: NagaError>(
-        &self,
-        database: &dyn HirDatabase,
-        error: &Error,
-        file_id: FileId,
-        full_range: TextRange,
-        accumulator: &mut Vec<AnyDiagnostic>,
-    ) {
-        let message = error_message_cause_chain("", &error);
+    let spans = error.spans().filter_map(|(span, label)| {
+        let range = original_range(span?);
+        Some((range, label))
+    });
 
-        if !error.has_spans() {
-            accumulator.push(AnyDiagnostic::NagaValidationError {
-                file_id: file_id.into(),
-                range: full_range,
-                message,
-                related: Vec::new(),
-            });
-            return;
-        }
-        let original_range = |range: ops::Range<usize>| {
-            TextRange::new(
-                TextSize::from(u32::try_from(range.start).expect("indexes are small numbers")),
-                TextSize::from(u32::try_from(range.end).expect("indexes are small numbers")),
-            )
-        };
+    let related: Vec<_> = spans
+        .map(|(range, message)| (message, FileRange { range, file_id }))
+        .collect();
 
-        let spans = error.spans().map(|(span, label)| {
-            let range = original_range(span);
-            (range, label)
-        });
-
-        match *self {
-            Self::SeparateSpans => {
-                spans.for_each(|(range, label)| {
-                    accumulator.push(AnyDiagnostic::NagaValidationError {
-                        file_id: file_id.into(),
-                        range,
-                        message: format!("{message}: {label}"),
-                        related: Vec::new(),
-                    });
-                });
-            },
-            Self::SmallestSpan => {
-                if let Some((range, _)) = spans.min_by_key(|(range, _)| range.len()) {
-                    accumulator.push(AnyDiagnostic::NagaValidationError {
-                        file_id: file_id.into(),
-                        range,
-                        message,
-                        related: Vec::new(),
-                    });
-                }
-            },
-            Self::Related => {
-                let related: Vec<_> = spans
-                    .map(|(range, message)| (message, FileRange { range, file_id }))
-                    .collect();
-                let min_range = related
-                    .iter()
-                    .map(|(_, frange)| frange.range)
-                    .min_by_key(|range| range.len())
-                    .unwrap_or(full_range);
-
-                accumulator.push(AnyDiagnostic::NagaValidationError {
-                    file_id: file_id.into(),
-                    range: min_range,
-                    message,
-                    related,
-                });
-            },
-        }
-    }
+    accumulator.push(AnyDiagnostic::NagaValidationError {
+        file_id: file_id.into(),
+        range: location,
+        message,
+        related,
+    });
 }
 
 fn naga_diagnostics<N: Naga>(
@@ -340,21 +287,20 @@ fn naga_diagnostics<N: Naga>(
     let source = database.file_text(file_id);
     let full_range = TextRange::up_to(TextSize::of(source.as_str()));
 
-    let policy = NagaErrorPolicy::Related;
     match N::parse(&source) {
         Ok(module) => {
             if !config.naga_validation_errors {
                 return;
             }
             if let Err(error) = N::validate(&module) {
-                policy.emit(database, &error, file_id, full_range, accumulator);
+                emit(&error, file_id, full_range, accumulator);
             }
         },
         Err(error) => {
             if !config.naga_parsing_errors {
                 return;
             }
-            policy.emit(database, &error, file_id, full_range, accumulator);
+            emit(&error, file_id, full_range, accumulator);
         },
     }
 }
@@ -687,11 +633,8 @@ More complex operands must be this with parenthesized `()`"
         .collect()
 }
 
-fn error_message_cause_chain(
-    prefix: &str,
-    error: &dyn error::Error,
-) -> String {
-    let mut message = format!("{prefix}{error}");
+fn error_message_cause_chain(error: &dyn error::Error) -> String {
+    let mut message = error.to_string();
 
     let mut error = error.source();
     if error.is_some() {
