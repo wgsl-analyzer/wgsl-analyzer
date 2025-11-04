@@ -380,8 +380,8 @@ function isCodeActionWithoutEditsAndCommands(value: any): boolean {
 	);
 }
 
-// Command URIs have a form of command:command-name?args, where
-// args is a percent-encoded array of data we want to pass along to
+// Command URIs have a form of `command:command-name?args`, where
+// `args` is a percent-encoded array of data we want to pass along to
 // the command function. For "Show References" this is a list of all file
 // URIs with locations of every reference, and it can get quite long.
 // So long in fact that it will fail rendering inside an `a` tag so we need

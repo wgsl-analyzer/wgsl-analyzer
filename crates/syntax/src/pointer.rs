@@ -60,7 +60,7 @@ impl SyntaxNodePointer {
         }
         Some(AstPointer {
             raw: self,
-            _ty: PhantomData,
+            _type: PhantomData,
         })
     }
 }
@@ -68,7 +68,7 @@ impl SyntaxNodePointer {
 /// Like `SyntaxNodePointer`, but remembers the type of node
 pub struct AstPointer<N: AstNode> {
     raw: SyntaxNodePointer,
-    _ty: PhantomData<fn() -> N>,
+    _type: PhantomData<fn() -> N>,
 }
 
 impl<N: AstNode> std::fmt::Debug for AstPointer<N> {
@@ -87,7 +87,7 @@ impl<N: AstNode> Clone for AstPointer<N> {
     fn clone(&self) -> Self {
         Self {
             raw: self.raw.clone(),
-            _ty: PhantomData,
+            _type: PhantomData,
         }
     }
 }
@@ -116,7 +116,7 @@ impl<Node: AstNode> AstPointer<Node> {
     pub fn new(node: &Node) -> Self {
         Self {
             raw: SyntaxNodePointer::new(node.syntax()),
-            _ty: PhantomData,
+            _type: PhantomData,
         }
     }
 
@@ -145,7 +145,7 @@ impl<Node: AstNode> AstPointer<Node> {
         }
         Some(AstPointer {
             raw: self.raw,
-            _ty: PhantomData,
+            _type: PhantomData,
         })
     }
 }

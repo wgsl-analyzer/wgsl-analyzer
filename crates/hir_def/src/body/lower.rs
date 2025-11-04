@@ -195,7 +195,7 @@ impl Collector<'_> {
                     .init()
                     .map(|expression| self.collect_expression(expression));
                 let type_ref = variable_statement
-                    .ty()
+                    .r#type()
                     .map(|type_specifier| self.expressions.collect_type_specifier(&type_specifier));
 
                 let template_parameters =
@@ -221,7 +221,7 @@ impl Collector<'_> {
                     .init()
                     .map(|expression| self.collect_expression(expression));
                 let type_ref = variable_statement
-                    .ty()
+                    .r#type()
                     .map(|type_specifier| self.expressions.collect_type_specifier(&type_specifier));
 
                 Statement::Const {
@@ -237,7 +237,7 @@ impl Collector<'_> {
                     .init()
                     .map(|expression| self.collect_expression(expression));
                 let type_ref = variable_statement
-                    .ty()
+                    .r#type()
                     .map(|type_specifier| self.expressions.collect_type_specifier(&type_specifier));
 
                 Statement::Let {
@@ -266,11 +266,11 @@ impl Collector<'_> {
             ast::Statement::CompoundAssignmentStatement(assignment) => {
                 let left_side = self.collect_expression_opt(assignment.left_side());
                 let right_side = self.collect_expression_opt(assignment.right_side());
-                let op = assignment.operator()?;
+                let operator = assignment.operator()?;
                 Statement::CompoundAssignment {
                     left_side,
                     right_side,
-                    op,
+                    operator,
                 }
             },
             ast::Statement::PhonyAssignmentStatement(assignment) => {
@@ -279,8 +279,11 @@ impl Collector<'_> {
             },
             ast::Statement::IncrementDecrementStatement(statement) => {
                 let expression = self.collect_expression_opt(statement.expression());
-                let op = statement.increment_decrement()?;
-                Statement::IncrDecr { expression, op }
+                let operator = statement.increment_decrement()?;
+                Statement::IncrDecr {
+                    expression,
+                    operator,
+                }
             },
             ast::Statement::IfStatement(if_statement) => {
                 let condition = self.collect_expression_opt(

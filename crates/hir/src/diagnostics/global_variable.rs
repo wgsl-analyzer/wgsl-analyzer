@@ -16,24 +16,24 @@ pub fn collect<Function: FnMut(GlobalVariableDiagnostic)>(
     mut diagnostic_builder: Function,
 ) {
     let inference = database.infer(DefinitionWithBodyId::GlobalVariable(variable));
-    let ty_kind = inference.return_type().kind(database);
+    let type_kind = inference.return_type().kind(database);
 
     if let TypeKind::Reference(Reference {
         address_space,
         access_mode,
         ..
-    }) = ty_kind
+    }) = type_kind
     {
         hir_ty::validate::validate_address_space(
             address_space,
             access_mode,
             hir_ty::validate::Scope::Module,
-            &ty_kind,
+            &type_kind,
             database,
             |error| diagnostic_builder(GlobalVariableDiagnostic::AddressSpaceError(error)),
         );
     } else if !matches!(
-        ty_kind,
+        type_kind,
         TypeKind::Error
             | TypeKind::Sampler(_)
             | TypeKind::Texture(_)

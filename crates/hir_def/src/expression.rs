@@ -41,7 +41,7 @@ pub enum Expression {
     },
     UnaryOperator {
         expression: ExpressionId,
-        op: UnaryOperator,
+        operator: UnaryOperator,
     },
     Field {
         expression: ExpressionId,
@@ -93,14 +93,14 @@ pub enum Statement {
     CompoundAssignment {
         left_side: ExpressionId,
         right_side: ExpressionId,
-        op: AssignmentOperator,
+        operator: AssignmentOperator,
     },
     PhonyAssignment {
         right_side: ExpressionId,
     },
     IncrDecr {
         expression: ExpressionId,
-        op: IncrementDecrement,
+        operator: IncrementDecrement,
     },
     If {
         condition: ExpressionId,

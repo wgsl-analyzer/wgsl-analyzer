@@ -447,18 +447,18 @@ fn get_hints(
             | AstExpression::IdentExpression(_) => {},
         }
     } else if let Some((binding, r#type)) = ast::LetDeclaration::cast(node.clone())
-        .and_then(|statement| Some((statement.name()?, statement.ty())))
+        .and_then(|statement| Some((statement.name()?, statement.r#type())))
         .or_else(|| {
             let statement = ast::ConstantDeclaration::cast(node.clone())?;
-            Some((statement.name()?, statement.ty()))
+            Some((statement.name()?, statement.r#type()))
         })
         .or_else(|| {
             let statement = ast::VariableDeclaration::cast(node.clone())?;
-            Some((statement.name()?, statement.ty()))
+            Some((statement.name()?, statement.r#type()))
         })
         .or_else(|| {
             let statement = ast::OverrideDeclaration::cast(node.clone())?;
-            Some((statement.name()?, statement.ty()))
+            Some((statement.name()?, statement.r#type()))
         })
     {
         if !config.type_hints {

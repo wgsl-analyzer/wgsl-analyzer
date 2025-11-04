@@ -13,11 +13,11 @@ pub struct HoverConfig {
     pub format: HoverDocFormat,
     pub max_fields_count: Option<usize>,
     pub max_enum_variants_count: Option<usize>,
-    pub max_subst_ty_len: SubstTyLen,
+    pub max_substitution_type_length: SubstitutionTypeLength,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum SubstTyLen {
+pub enum SubstitutionTypeLength {
     Unlimited,
     LimitTo(usize),
     Hide,

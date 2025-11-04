@@ -4,12 +4,12 @@
 #[macro_export]
 macro_rules! format_to {
     ($buf:expr) => ();
-    ($buf:expr, $literal:literal $($arg:tt)*) => {
+    ($buf:expr, $literal:literal $($argument:tt)*) => {
         {
             use ::std::fmt::Write as _;
-            // We cannot do ::std::fmt::Write::write_fmt($buf, format_args!($literal $($arg)*))
+            // We cannot do ::std::fmt::Write::write_fmt($buf, format_args!($literal $($argument)*))
             // unfortunately, as that loses out on autoref behavior.
-            _ = $buf.write_fmt(format_args!($literal $($arg)*))
+            _ = $buf.write_fmt(format_args!($literal $($argument)*))
         }
     };
 }
@@ -19,12 +19,12 @@ macro_rules! format_to {
 /// Useful for folding iterators into a `String`.
 #[macro_export]
 macro_rules! format_to_accumulator {
-    ($buf:expr, $literal:literal $($arg:tt)*) => {
+    ($buf:expr, $literal:literal $($argument:tt)*) => {
         {
             use ::std::fmt::Write as _;
-            // We cannot do ::std::fmt::Write::write_fmt($buf, format_args!($literal $($arg)*))
+            // We cannot do ::std::fmt::Write::write_fmt($buf, format_args!($literal $($argument)*))
             // unfortunately, as that loses out on autoref behavior.
-            _ = $buf.write_fmt(format_args!($literal $($arg)*));
+            _ = $buf.write_fmt(format_args!($literal $($argument)*));
             $buf
         }
     };

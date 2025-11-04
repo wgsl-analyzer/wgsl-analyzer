@@ -17,14 +17,14 @@ use crate::{
 
 macro_rules! ast_node {
     ($kind:ident $($name:ident)? $(:
-        $($descendant:ident: $amount_ty:ident < $return_ty:tt $($a:ident)? >;)+
+        $($descendant:ident: $amount_type:ident < $return_type:tt $($a:ident)? >;)+
     )?) => {
         ast_node! { @structdef $kind $($name)? }
         ast_node! { @impl $kind $($name)? }
 
         $(impl $kind {
-            $(#[must_use] pub fn $descendant(&self) -> $amount_ty<$return_ty>  {
-                ast_node! { @descendant self $amount_ty<$return_ty $($a)?> }
+            $(#[must_use] pub fn $descendant(&self) -> $amount_type<$return_type>  {
+                ast_node! { @descendant self $amount_type<$return_type $($a)?> }
             })*
         })?
     };
@@ -79,13 +79,13 @@ macro_rules! ast_node {
 }
 
 macro_rules! ast_enum {
-    (enum $ty:ident { $($variant:ident,)* }) => {
+    (enum $enum_type:ident { $($variant:ident,)* }) => {
         #[derive(Debug)]
-        pub enum $ty {
+        pub enum $enum_type {
             $($variant($variant),)*
         }
 
-        impl AstNode for $ty {
+        impl AstNode for $enum_type {
             fn can_cast(kind: SyntaxKind) -> bool {
                 match kind {
                     $(SyntaxKind::$variant)|* => true,
@@ -95,34 +95,34 @@ macro_rules! ast_enum {
 
             fn cast(syntax: SyntaxNode) -> Option<Self> {
                 match syntax.kind() {
-                    $(SyntaxKind::$variant => Some($ty::$variant($variant { syntax })),)*
+                    $(SyntaxKind::$variant => Some($enum_type::$variant($variant { syntax })),)*
                     _ => None,
                 }
             }
 
             fn syntax(&self) -> &SyntaxNode {
                 match self {
-                    $($ty::$variant(item) => &item.syntax,)*
+                    $($enum_type::$variant(item) => &item.syntax,)*
                 }
             }
         }
 
-        $(impl From<$variant> for $ty {
-            fn from(value: $variant) -> $ty {
-                $ty::$variant(value)
+        $(impl From<$variant> for $enum_type {
+            fn from(value: $variant) -> $enum_type {
+                $enum_type::$variant(value)
             }
         })*
     };
 }
 
 macro_rules! ast_enum_raw {
-    (enum $ty:ident { $($variant:ident,)* }) => {
+    (enum $enum_type:ident { $($variant:ident,)* }) => {
         #[derive(Clone, Debug)]
-        pub enum $ty {
+        pub enum $enum_type {
             $($variant(SyntaxNode),)*
         }
 
-        impl AstNode for $ty {
+        impl AstNode for $enum_type {
             fn can_cast(kind: SyntaxKind) -> bool {
                 match kind {
                     $(SyntaxKind::$variant)|* => true,
@@ -132,14 +132,14 @@ macro_rules! ast_enum_raw {
 
             fn cast(syntax: SyntaxNode) -> Option<Self> {
                 match syntax.kind() {
-                    $(SyntaxKind::$variant => Some($ty::$variant(syntax)),)*
+                    $(SyntaxKind::$variant => Some($enum_type::$variant(syntax)),)*
                     _ => None,
                 }
             }
 
             fn syntax(&self) -> &SyntaxNode {
                 match self {
-                    $($ty::$variant(item) => &item,)*
+                    $($enum_type::$variant(item) => &item,)*
                 }
             }
         }
@@ -147,13 +147,13 @@ macro_rules! ast_enum_raw {
 }
 
 macro_rules! ast_enum_compound {
-    (enum $ty:ident { $($variant:ident,)* }) => {
+    (enum $enum_type:ident { $($variant:ident,)* }) => {
         #[derive(Clone, Debug)]
-        pub enum $ty {
+        pub enum $enum_type {
             $($variant($variant),)*
         }
 
-        impl AstNode for $ty {
+        impl AstNode for $enum_type {
             fn can_cast(kind: SyntaxKind) -> bool {
                 $($variant::can_cast(kind))||*
             }
@@ -168,7 +168,7 @@ macro_rules! ast_enum_compound {
 
             fn syntax(&self) -> &SyntaxNode {
                 match self {
-                    $($ty::$variant(item) => item.syntax(),)*
+                    $($enum_type::$variant(item) => item.syntax(),)*
                 }
             }
         }
@@ -176,13 +176,13 @@ macro_rules! ast_enum_compound {
 }
 
 macro_rules! ast_token_enum {
-    (enum $ty:ident { $($variant:ident,)* }) => {
+    (enum $enum_type:ident { $($variant:ident,)* }) => {
         #[derive(Clone)]
-        pub enum $ty {
+        pub enum $enum_type {
             $($variant(SyntaxToken),)*
         }
 
-        impl AstToken for $ty {
+        impl AstToken for $enum_type {
             fn can_cast(kind: SyntaxKind) -> bool {
                 match kind {
                     $(SyntaxKind::$variant)|* => true,
@@ -192,14 +192,14 @@ macro_rules! ast_token_enum {
 
             fn cast(syntax: SyntaxToken) -> Option<Self> {
                 match syntax.kind() {
-                    $(SyntaxKind::$variant => Some($ty::$variant(syntax)),)*
+                    $(SyntaxKind::$variant => Some($enum_type::$variant(syntax)),)*
                     _ => None,
                 }
             }
 
             fn syntax(&self) -> &SyntaxToken {
                 match self {
-                    $($ty::$variant(item) => &item,)*
+                    $($enum_type::$variant(item) => &item,)*
                 }
             }
         }
@@ -242,7 +242,7 @@ ast_node! {
 ast_node! {
     StructMember:
     colon_token: Option<SyntaxToken Colon>;
-    ty: Option<TypeSpecifier>;
+    r#type: Option<TypeSpecifier>;
 }
 
 impl HasName for StructMember {}
@@ -252,7 +252,7 @@ ast_node! {
     VariableDeclaration:
     var_token: Option<SyntaxToken Var>;
     colon: Option<SyntaxToken Colon>;
-    ty: Option<TypeSpecifier>;
+    r#type: Option<TypeSpecifier>;
     equal_token: Option<SyntaxToken Equal>;
     init: Option<Expression>;
 }
@@ -264,7 +264,7 @@ ast_node! {
     LetDeclaration:
     let_token: Option<SyntaxToken Let>;
     colon: Option<SyntaxToken Colon>;
-    ty: Option<TypeSpecifier>;
+    r#type: Option<TypeSpecifier>;
     equal_token: Option<SyntaxToken Equal>;
     init: Option<Expression>;
 }
@@ -275,7 +275,7 @@ ast_node! {
     ConstantDeclaration:
     constant_token: Option<SyntaxToken Constant>;
     colon: Option<SyntaxToken Colon>;
-    ty: Option<TypeSpecifier>;
+    r#type: Option<TypeSpecifier>;
     equal_token: Option<SyntaxToken Equal>;
     init: Option<Expression>;
 }
@@ -287,7 +287,7 @@ ast_node! {
     OverrideDeclaration:
     override_token: Option<SyntaxToken Override>;
     colon: Option<SyntaxToken Colon>;
-    ty: Option<TypeSpecifier>;
+    r#type: Option<TypeSpecifier>;
     equal_token: Option<SyntaxToken Equal>;
     init: Option<Expression>;
 }
@@ -409,7 +409,7 @@ ast_node! {
 ast_node! {
     Parameter:
     colon_token: Option<SyntaxToken Colon>;
-    ty: Option<TypeSpecifier>;
+    r#type: Option<TypeSpecifier>;
 }
 impl HasName for Parameter {}
 impl HasAttributes for Parameter {}
@@ -424,7 +424,7 @@ ast_node! {
 ast_node! {
     ReturnType:
     arrow_token: Option<SyntaxToken Arrow>;
-    ty: Option<TypeSpecifier>;
+    r#type: Option<TypeSpecifier>;
 }
 
 ast_node! {
@@ -916,7 +916,7 @@ impl InfixExpression {
     }
 
     #[must_use]
-    pub fn op(&self) -> Option<SyntaxToken> {
+    pub fn operator(&self) -> Option<SyntaxToken> {
         self.syntax()
             .children_with_tokens()
             .filter_map(rowan::NodeOrToken::into_token)
@@ -927,7 +927,7 @@ impl InfixExpression {
     pub fn op_kind(&self) -> Option<BinaryOperation> {
         if let Some(kind) = support::child_token::<BinaryOperatorKind>(self.syntax()) {
             #[rustfmt::skip]
-            let op = match kind {
+            let operation = match kind {
                 BinaryOperatorKind::EqualEqual(_) => BinaryOperation::Comparison(ComparisonOperation::Equality),
                 BinaryOperatorKind::NotEqual(_) => BinaryOperation::Comparison(ComparisonOperation::Inequality),
                 BinaryOperatorKind::GreaterThan(_) => BinaryOperation::Comparison(ComparisonOperation::GreaterThan),
@@ -947,7 +947,7 @@ impl InfixExpression {
                 BinaryOperatorKind::ShiftRight(_) => BinaryOperation::Arithmetic(ArithmeticOperation::ShiftRight),
                 BinaryOperatorKind::ShiftLeft(_) => BinaryOperation::Arithmetic(ArithmeticOperation::ShiftLeft),
             };
-            Some(op)
+            Some(operation)
         } else {
             None
         }
@@ -956,15 +956,15 @@ impl InfixExpression {
 
 impl PrefixExpression {
     #[must_use]
-    pub fn op_kind(&self) -> Option<UnaryOperator> {
+    pub fn operator_kind(&self) -> Option<UnaryOperator> {
         let kind: PrefixOperatorKind = support::child_token(self.syntax())?;
-        let op = match kind {
+        let operator = match kind {
             PrefixOperatorKind::Minus(_) => UnaryOperator::Negation,
             PrefixOperatorKind::Bang(_) => UnaryOperator::LogicalNegation,
             PrefixOperatorKind::Tilde(_) => UnaryOperator::BitwiseComplement,
             PrefixOperatorKind::Star(_) => UnaryOperator::Indirection,
             PrefixOperatorKind::And(_) => UnaryOperator::AddressOf,
         };
-        Some(op)
+        Some(operator)
     }
 }

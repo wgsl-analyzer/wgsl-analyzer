@@ -128,11 +128,11 @@ function executionToSimple(
 	if (exec instanceof vscode.ShellExecution) {
 		return {
 			command: typeof exec.command === "string" ? exec.command : (exec.command?.value ?? ""),
-			args: (exec.args ?? []).map((arg) => {
-				if (typeof arg === "string") {
-					return arg;
+			args: (exec.args ?? []).map((argument) => {
+				if (typeof argument === "string") {
+					return argument;
 				}
-				return arg.value;
+				return argument.value;
 			}),
 		};
 	} else {

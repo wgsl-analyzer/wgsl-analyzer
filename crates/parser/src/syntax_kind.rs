@@ -109,9 +109,9 @@ pub enum SyntaxKind {
     IndexExpression,
     /// `return foo;`
     ReturnStatement,
-    /// an expression of the form `left_side <op> right_side`
+    /// an expression of the form `left_side <operator> right_side`
     InfixExpression,
-    /// an expression of the form `<op> right_side`
+    /// an expression of the form `<operator> right_side`
     PrefixExpression,
     /// a literal expression
     Literal,

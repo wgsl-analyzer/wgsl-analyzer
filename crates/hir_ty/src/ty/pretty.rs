@@ -50,10 +50,10 @@ fn write_type_expectation_inner(
 ) -> fmt::Result {
     match inner {
         TypeExpectationInner::Exact(r#type) => {
-            write_ty(database, *r#type, buffer, verbosity)?;
+            write_type(database, *r#type, buffer, verbosity)?;
             if or_vec {
                 write!(buffer, " or vecN<")?;
-                write_ty(database, *r#type, buffer, verbosity)?;
+                write_type(database, *r#type, buffer, verbosity)?;
                 write!(buffer, ">")?;
             }
         },
@@ -80,7 +80,7 @@ pub fn pretty_type_with_verbosity(
     verbosity: TypeVerbosity,
 ) -> String {
     let mut str = String::new();
-    write_ty(database, r#type, &mut str, verbosity).unwrap();
+    write_type(database, r#type, &mut str, verbosity).unwrap();
     str
 }
 
@@ -117,18 +117,18 @@ fn pretty_fn_inner(
         if index != 0 {
             buffer.push_str(", ");
         }
-        write_ty(database, parameter, buffer, verbosity)?;
+        write_type(database, parameter, buffer, verbosity)?;
     }
     write!(buffer, ")")?;
     if let Some(return_type) = function.return_type {
         buffer.push_str(" -> ");
-        write_ty(database, return_type, buffer, verbosity)?;
+        write_type(database, return_type, buffer, verbosity)?;
     }
     Ok(())
 }
 
 #[expect(clippy::too_many_lines, reason = "long but simple (recursive) match")]
-fn write_ty(
+fn write_type(
     database: &dyn HirDatabase,
     r#type: Type,
     formatter: &mut String,
@@ -145,12 +145,12 @@ fn write_ty(
         TypeKind::Scalar(ScalarType::F16) => write!(formatter, "f16"),
         TypeKind::Atomic(atomic) => {
             write!(formatter, "atomic<")?;
-            write_ty(database, atomic.inner, formatter, verbosity)?;
+            write_type(database, atomic.inner, formatter, verbosity)?;
             write!(formatter, ">")
         },
         TypeKind::Vector(vector_type) => {
             write!(formatter, "vec{}<", vector_type.size)?;
-            write_ty(database, vector_type.component_type, formatter, verbosity)?;
+            write_type(database, vector_type.component_type, formatter, verbosity)?;
             write!(formatter, ">")
         },
         TypeKind::Matrix(matrix_type) => {
@@ -159,7 +159,7 @@ fn write_ty(
                 "mat{}x{}<",
                 matrix_type.columns, matrix_type.rows
             )?;
-            write_ty(database, matrix_type.inner, formatter, verbosity)?;
+            write_type(database, matrix_type.inner, formatter, verbosity)?;
             write!(formatter, ">")
         },
         TypeKind::Struct(r#struct) => {
@@ -172,7 +172,7 @@ fn write_ty(
             } else {
                 write!(formatter, "array<")?;
             }
-            write_ty(database, array_type.inner, formatter, verbosity)?;
+            write_type(database, array_type.inner, formatter, verbosity)?;
             match array_type.size {
                 ArraySize::Constant(value) => write!(formatter, ", {value}")?,
                 ArraySize::Dynamic => {},
@@ -225,25 +225,25 @@ fn write_ty(
         TypeKind::Reference(reference) => match verbosity {
             TypeVerbosity::Full => {
                 write!(formatter, "ref<{}, ", reference.address_space)?;
-                write_ty(database, reference.inner, formatter, verbosity)?;
+                write_type(database, reference.inner, formatter, verbosity)?;
                 write!(formatter, ", {}>", reference.access_mode)
             },
             TypeVerbosity::Compact => {
                 write!(formatter, "ref<")?;
-                write_ty(database, reference.inner, formatter, verbosity)?;
+                write_type(database, reference.inner, formatter, verbosity)?;
                 write!(formatter, ">")
             },
-            TypeVerbosity::Inner => write_ty(database, reference.inner, formatter, verbosity),
+            TypeVerbosity::Inner => write_type(database, reference.inner, formatter, verbosity),
         },
         TypeKind::Pointer(pointer) => match verbosity {
             TypeVerbosity::Full => {
                 write!(formatter, "ptr<{}, ", pointer.address_space)?;
-                write_ty(database, pointer.inner, formatter, verbosity)?;
+                write_type(database, pointer.inner, formatter, verbosity)?;
                 write!(formatter, ", {}>", pointer.access_mode)
             },
             TypeVerbosity::Compact | TypeVerbosity::Inner => {
                 write!(formatter, "ptr<")?;
-                write_ty(database, pointer.inner, formatter, verbosity)?;
+                write_type(database, pointer.inner, formatter, verbosity)?;
                 write!(formatter, ">")
             },
         },

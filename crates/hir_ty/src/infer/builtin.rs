@@ -9,7 +9,7 @@ use wgsl_types::{
 
 use crate::{
     infer::{
-        Lowered, TyLoweringContext, TypeContainer, TypeLoweringError, TypeLoweringErrorKind,
+        Lowered, TypeContainer, TypeLoweringContext, TypeLoweringError, TypeLoweringErrorKind,
         eval::TemplateParameters, from_wgsl_texel_format,
     },
     ty::{
@@ -18,8 +18,8 @@ use crate::{
     },
 };
 
-impl TyLoweringContext<'_> {
-    fn is_predeclared_ty(name: &Name) -> bool {
+impl TypeLoweringContext<'_> {
+    fn is_predeclared_type(name: &Name) -> bool {
         matches!(
             name.as_str(),
             "bool"
@@ -102,8 +102,8 @@ impl TyLoweringContext<'_> {
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
         // Lower predeclared types
-        if Self::is_predeclared_ty(path) {
-            self.lower_predeclared_ty(type_container, path, template_parameters)
+        if Self::is_predeclared_type(path) {
+            self.lower_predeclared_type(type_container, path, template_parameters)
         } else if crate::builtins::Builtin::ALL_BUILTINS.contains(&path.as_str()) {
             Ok(Lowered::BuiltinFunction)
         } else if let Ok(enum_value) = Enumerant::from_str(path.as_str()) {
@@ -122,7 +122,7 @@ impl TyLoweringContext<'_> {
         clippy::too_many_lines,
         reason = "it is just a big match and each arm is not complex at all"
     )]
-    fn lower_predeclared_ty(
+    fn lower_predeclared_type(
         &mut self,
         type_container: TypeContainer,
         path: &Name,
@@ -130,7 +130,7 @@ impl TyLoweringContext<'_> {
     ) -> Result<Lowered, TypeLoweringError> {
         let evaluated_parameters = self.eval_template_args(type_container, template_parameters);
 
-        let ty_kind = match path.as_str() {
+        let type_kind = match path.as_str() {
             "bool" => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::Bool)
@@ -693,7 +693,7 @@ impl TyLoweringContext<'_> {
                 });
             },
         };
-        Ok(Lowered::Type(ty_kind.intern(self.database)))
+        Ok(Lowered::Type(type_kind.intern(self.database)))
     }
 
     fn array_template(
@@ -779,8 +779,9 @@ impl TyLoweringContext<'_> {
 
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
-                let ty_kind = r#type.kind(self.database);
-                if matches!(ty_kind, TypeKind::Scalar(_)) && !ty_kind.is_abstract(self.database) {
+                let type_kind = r#type.kind(self.database);
+                if matches!(type_kind, TypeKind::Scalar(_)) && !type_kind.is_abstract(self.database)
+                {
                     r#type
                 } else {
                     self.diagnostics.push(TypeLoweringError {
@@ -807,8 +808,11 @@ impl TyLoweringContext<'_> {
 
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
-                let ty_kind = r#type.kind(self.database);
-                if matches!(ty_kind, TypeKind::Scalar(ScalarType::F16 | ScalarType::F32)) {
+                let type_kind = r#type.kind(self.database);
+                if matches!(
+                    type_kind,
+                    TypeKind::Scalar(ScalarType::F16 | ScalarType::F32)
+                ) {
                     r#type
                 } else {
                     self.diagnostics.push(TypeLoweringError {
@@ -851,8 +855,8 @@ impl TyLoweringContext<'_> {
         };
         let inner = match template_parameters.next_as_type() {
             Ok((inner, expression)) => {
-                let ty_kind = inner.kind(self.database);
-                if ty_kind.is_storable() {
+                let type_kind = inner.kind(self.database);
+                if type_kind.is_storable() {
                     inner
                 } else {
                     self.diagnostics.push(TypeLoweringError {
@@ -921,8 +925,11 @@ impl TyLoweringContext<'_> {
 
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
-                let ty_kind = r#type.kind(self.database);
-                if matches!(ty_kind, TypeKind::Scalar(ScalarType::I32 | ScalarType::U32)) {
+                let type_kind = r#type.kind(self.database);
+                if matches!(
+                    type_kind,
+                    TypeKind::Scalar(ScalarType::I32 | ScalarType::U32)
+                ) {
                     r#type
                 } else {
                     // TODO: improve the error message and support naga atomics
@@ -951,8 +958,8 @@ impl TyLoweringContext<'_> {
 
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
-                let ty_kind = r#type.kind(self.database);
-                match ty_kind {
+                let type_kind = r#type.kind(self.database);
+                match type_kind {
                     TypeKind::Scalar(ScalarType::I32) => Ok(SampledType::I32),
                     TypeKind::Scalar(ScalarType::U32) => Ok(SampledType::U32),
                     TypeKind::Scalar(ScalarType::F32) => Ok(SampledType::F32),

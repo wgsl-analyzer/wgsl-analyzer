@@ -36,9 +36,9 @@ impl BinaryOperation {
     #[must_use]
     pub const fn symbol(self) -> &'static str {
         match self {
-            Self::Logical(op) => op.symbol(),
-            Self::Arithmetic(op) => op.symbol(),
-            Self::Comparison(op) => op.symbol(),
+            Self::Logical(operation) => operation.symbol(),
+            Self::Arithmetic(operation) => operation.symbol(),
+            Self::Comparison(operation) => operation.symbol(),
         }
     }
 }
@@ -130,8 +130,8 @@ pub enum AssignmentOperator {
 }
 
 impl From<AssignmentOperator> for BinaryOperation {
-    fn from(op: AssignmentOperator) -> Self {
-        match op {
+    fn from(operator: AssignmentOperator) -> Self {
+        match operator {
             AssignmentOperator::PlusEqual => Self::Arithmetic(ArithmeticOperation::Addition),
             AssignmentOperator::TimesEqual => Self::Arithmetic(ArithmeticOperation::Multiplication),
             AssignmentOperator::MinusEqual => Self::Arithmetic(ArithmeticOperation::Subtraction),

@@ -31,22 +31,22 @@ pub fn collect<Function: FnMut(PrecedenceDiagnostic)>(
         let not_parenthesis = |index| !body.store.parenthesis_expressions.contains(index);
 
         let left_hand_side_operator =
-            if let hir_def::expression::Expression::BinaryOperation { operation: op, .. } =
+            if let hir_def::expression::Expression::BinaryOperation { operation, .. } =
                 body.store[*left_side]
             {
-                not_parenthesis(left_side).then_some(op)
+                not_parenthesis(left_side).then_some(operation)
             } else {
                 None
             };
         let right_hand_side_operator =
-            if let hir_def::expression::Expression::BinaryOperation { operation: op, .. } =
+            if let hir_def::expression::Expression::BinaryOperation { operation, .. } =
                 body.store[*right_side]
             {
-                not_parenthesis(right_side).then_some(op)
+                not_parenthesis(right_side).then_some(operation)
             } else {
                 None
             };
-        let op = *operation;
+        let operation = *operation;
         // We have validation for the following cases:
         // - &, | and ^ having (different) binary children
         // - >> and << having binary children
@@ -58,54 +58,64 @@ pub fn collect<Function: FnMut(PrecedenceDiagnostic)>(
             ArithmeticOperation::BitwiseAnd
             | ArithmeticOperation::BitwiseXor
             | ArithmeticOperation::BitwiseOr,
-        ) = op
+        ) = operation
         {
             if let Some(lhs_op) = left_hand_side_operator
-                && lhs_op != op
+                && lhs_op != operation
             {
-                diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(*left_side, op));
+                diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(
+                    *left_side, operation,
+                ));
             }
             if let Some(rhs_op) = right_hand_side_operator
-                && rhs_op != op
+                && rhs_op != operation
             {
-                diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(*right_side, op));
+                diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(
+                    *right_side,
+                    operation,
+                ));
             }
         }
 
         // >> and << having binary children
         if let BinaryOperation::Arithmetic(
             ArithmeticOperation::ShiftLeft | ArithmeticOperation::ShiftRight,
-        ) = op
+        ) = operation
         {
             if left_hand_side_operator.is_some() {
-                diagnostic_builder(PrecedenceDiagnostic::NeverNested(*left_side, op));
+                diagnostic_builder(PrecedenceDiagnostic::NeverNested(*left_side, operation));
             }
             if right_hand_side_operator.is_some() {
-                diagnostic_builder(PrecedenceDiagnostic::NeverNested(*right_side, op));
+                diagnostic_builder(PrecedenceDiagnostic::NeverNested(*right_side, operation));
             }
         }
 
         // <, >, <=, >=, ==, != being mixed
-        if let BinaryOperation::Comparison(_) = op {
+        if let BinaryOperation::Comparison(_) = operation {
             if let Some(BinaryOperation::Comparison(_)) = left_hand_side_operator {
-                diagnostic_builder(PrecedenceDiagnostic::NeverNested(*left_side, op));
+                diagnostic_builder(PrecedenceDiagnostic::NeverNested(*left_side, operation));
             }
             if let Some(BinaryOperation::Comparison(_)) = right_hand_side_operator {
-                diagnostic_builder(PrecedenceDiagnostic::NeverNested(*right_side, op));
+                diagnostic_builder(PrecedenceDiagnostic::NeverNested(*right_side, operation));
             }
         }
 
         // && and || being mixed
-        if let BinaryOperation::Logical(_) = op {
+        if let BinaryOperation::Logical(_) = operation {
             if let Some(lhs_op @ BinaryOperation::Logical(_)) = left_hand_side_operator
-                && lhs_op != op
+                && lhs_op != operation
             {
-                diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(*left_side, op));
+                diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(
+                    *left_side, operation,
+                ));
             }
             if let Some(rhs_op @ BinaryOperation::Logical(_)) = right_hand_side_operator
-                && rhs_op != op
+                && rhs_op != operation
             {
-                diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(*right_side, op));
+                diagnostic_builder(PrecedenceDiagnostic::SequencesAllowed(
+                    *right_side,
+                    operation,
+                ));
             }
         }
     }

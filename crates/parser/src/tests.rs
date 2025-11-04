@@ -2741,7 +2741,7 @@ fn type_alias_declaration_recover() {
 #[test]
 fn parse_statement_expression() {
     check_statement(
-        "test(args);",
+        "test(arguments);",
         expect![[r#"
             SourceFile@0..11
               FunctionCallStatement@0..11
@@ -2753,7 +2753,7 @@ fn parse_statement_expression() {
                     ParenthesisLeft@4..5 "("
                     IdentExpression@5..9
                       NameReference@5..9
-                        Identifier@5..9 "args"
+                        Identifier@5..9 "arguments"
                     ParenthesisRight@9..10 ")"
                 Semicolon@10..11 ";""#]],
     );
@@ -2762,7 +2762,7 @@ fn parse_statement_expression() {
 #[test]
 fn parse_statement_nested_functions() {
     check_statement(
-        "test(args<a>());",
+        "test(arguments<a>());",
         expect![[r#"
             SourceFile@0..16
               FunctionCallStatement@0..16
@@ -2775,7 +2775,7 @@ fn parse_statement_nested_functions() {
                     FunctionCall@5..14
                       IdentExpression@5..12
                         NameReference@5..9
-                          Identifier@5..9 "args"
+                          Identifier@5..9 "arguments"
                         TemplateList@9..12
                           TemplateStart@9..10 "<"
                           IdentExpression@10..11

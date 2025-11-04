@@ -7,11 +7,13 @@ use wgsl_types::{
 };
 
 use crate::{
-    infer::{Lowered, TyLoweringContext, TypeContainer, TypeLoweringError, TypeLoweringErrorKind},
+    infer::{
+        Lowered, TypeContainer, TypeLoweringContext, TypeLoweringError, TypeLoweringErrorKind,
+    },
     ty::{Type, TypeKind},
 };
 
-impl TyLoweringContext<'_> {
+impl TypeLoweringContext<'_> {
     /// Used for template checking.
     /// There, many expressions are guaranteed to evaluate to a type, or a scalar.
     /// e.g. `array<f32, 3 + 5>`
@@ -29,7 +31,10 @@ impl TyLoweringContext<'_> {
                 right_side,
                 operation,
             } => self.eval_binary_op(*left_side, *right_side, *operation)?,
-            Expression::UnaryOperator { expression, op } => self.eval_unary_op(*expression, *op)?,
+            Expression::UnaryOperator {
+                expression,
+                operator,
+            } => self.eval_unary_op(*expression, *operator)?,
             #[expect(
                 clippy::match_same_arms,
                 reason = "TODO: const evaluation not implemented, see https://github.com/wgsl-analyzer/wgsl-analyzer/issues/670"
@@ -114,22 +119,22 @@ impl TyLoweringContext<'_> {
         }
     }
 
-    pub fn eval_tplt_arg(
+    pub fn evaluate_template_argument(
         &mut self,
-        tplt: ExpressionId,
+        template_argument: ExpressionId,
     ) -> TemplateParameter {
-        match &self.store[tplt] {
+        match &self.store[template_argument] {
             Expression::IdentExpression(ident_expression) => {
-                let resolved_ty = self.lower(
-                    TypeContainer::Expression(tplt),
+                let resolved_type = self.lower(
+                    TypeContainer::Expression(template_argument),
                     &ident_expression.path,
                     &ident_expression.template_parameters,
                 );
-                match resolved_ty {
+                match resolved_type {
                     Lowered::Type(r#type) => TemplateParameter::Type(r#type),
                     Lowered::TypeWithoutTemplate(_) => {
                         self.diagnostics.push(TypeLoweringError {
-                            container: TypeContainer::Expression(tplt),
+                            container: TypeContainer::Expression(template_argument),
                             kind: TypeLoweringErrorKind::MissingTemplate,
                         });
                         TemplateParameter::Type(TypeKind::Error.intern(self.database))
@@ -138,17 +143,19 @@ impl TyLoweringContext<'_> {
                     Lowered::Function(_) | Lowered::BuiltinFunction => {
                         // function<another_function>()
                         self.diagnostics.push(TypeLoweringError {
-                            container: TypeContainer::Expression(tplt),
+                            container: TypeContainer::Expression(template_argument),
                             kind: TypeLoweringErrorKind::ExpectedFunctionToBeCalled(
                                 ident_expression.path.clone(),
                             ),
                         });
-                        TemplateParameter::Type(self.database.intern_ty(TypeKind::Error))
+                        TemplateParameter::Type(self.database.intern_type(TypeKind::Error))
                     },
                     Lowered::GlobalConstant(_)
                     | Lowered::GlobalVariable(_)
                     | Lowered::Override(_)
-                    | Lowered::Local(_) => TemplateParameter::Instance(self.eval_expression(tplt)),
+                    | Lowered::Local(_) => {
+                        TemplateParameter::Instance(self.eval_expression(template_argument))
+                    },
                 }
             },
             Expression::Missing
@@ -157,7 +164,9 @@ impl TyLoweringContext<'_> {
             | Expression::Field { .. }
             | Expression::Call { .. }
             | Expression::Index { .. }
-            | Expression::Literal(_) => TemplateParameter::Instance(self.eval_expression(tplt)),
+            | Expression::Literal(_) => {
+                TemplateParameter::Instance(self.eval_expression(template_argument))
+            },
         }
     }
 
@@ -168,7 +177,7 @@ impl TyLoweringContext<'_> {
     ) -> TemplateParameters {
         let template_parameters: VecDeque<_> = template_parameters
             .iter()
-            .map(|arg| (self.eval_tplt_arg(*arg), *arg))
+            .map(|argument| (self.evaluate_template_argument(*argument), *argument))
             .collect();
         let length = template_parameters.len();
         TemplateParameters {
