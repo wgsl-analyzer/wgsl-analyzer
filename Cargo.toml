@@ -56,8 +56,7 @@ rust-2018-compatibility = { level = "deny", priority = -1 }
 rust-2018-idioms = { level = "deny", priority = -1 }
 rust-2021-compatibility = { level = "deny", priority = -1 }
 rust-2024-compatibility = { level = "deny", priority = -1 }
-# TODO still prototyping
-unused = { level = "allow", priority = 1 }
+unused = { level = "warn", priority = 1 }
 
 [workspace.lints.clippy]
 cargo = { level = "warn", priority = -2 }
