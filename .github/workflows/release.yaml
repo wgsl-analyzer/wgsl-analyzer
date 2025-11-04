@@ -59,12 +59,7 @@ jobs:
             zig_target: arm-unknown-linux-gnueabihf.2.28
             code-target: linux-armhf
 
-          - os: macos-13
-            target: x86_64-apple-darwin
-            code-target: darwin-x64
-            pgo: bevyengine/bevy@v0.16.1
-
-          - os: macos-14
+          - os: macos-latest
             target: aarch64-apple-darwin
             code-target: darwin-arm64
             pgo: bevyengine/bevy@v0.16.1
@@ -218,12 +213,6 @@ jobs:
         uses: actions/download-artifact@v6
         with:
           name: dist-aarch64-apple-darwin
-          path: dist
-
-      - name: Download dist-x86_64-apple-darwin artifact
-        uses: actions/download-artifact@v6
-        with:
-          name: dist-x86_64-apple-darwin
           path: dist
 
       - name: Download dist-x86_64-unknown-linux-gnu artifact
