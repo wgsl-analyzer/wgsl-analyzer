@@ -124,7 +124,8 @@
 			"WGSL",
 			"wgsl-src",
 			"wgsl-bin",
-			"WESL"
+			"WESL",
+			"wesl-rs"
 		]
 	},
 	"reference-links-images": {
