@@ -180,9 +180,9 @@ pub enum Token {
     #[regex(r"0[xX][0-9a-fA-F]+\.[0-9a-fA-F]*([pP][+-]?[0-9]+[fh]?)?")]
     #[regex(r"0[xX][0-9a-fA-F]+[pP][+-]?[0-9]+[fh]?")]
     FloatLiteral,
-    #[regex(r"0[iu]?")]
-    #[regex(r"[1-9][0-9]*[iu]?")]
-    #[regex(r"0[xX][0-9a-fA-F]+[iu]?")]
+    #[regex(r"0(i|u|L|uL)?")]
+    #[regex(r"[1-9][0-9]*(i|u|L|uL)?")]
+    #[regex(r"0[xX][0-9a-fA-F]+(i|u|L|uL)?")]
     IntLiteral,
     /// Source: <https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks>
     #[regex("[\x20\x09\x0A-\x0D\u{0085}\u{200E}\u{200F}\u{2028}\u{2029}]+")]

@@ -55,6 +55,12 @@ impl TyLoweringContext<'_> {
                     Literal::Int(value, BuiltinInt::U32) => {
                         Instance::Literal(LiteralInstance::U32(*value as u32))
                     },
+                    Literal::Int(value, BuiltinInt::I64) => {
+                        Instance::Literal(LiteralInstance::I64(*value as i64))
+                    },
+                    Literal::Int(value, BuiltinInt::U64) => {
+                        Instance::Literal(LiteralInstance::U64(*value))
+                    },
                     Literal::Int(value, BuiltinInt::Abstract) => {
                         Instance::Literal(LiteralInstance::AbstractInt(*value as i64))
                     },

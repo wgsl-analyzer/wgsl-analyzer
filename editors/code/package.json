@@ -549,6 +549,16 @@
 				}
 			},
 			{
+				"title": "Naga Extensions",
+				"properties": {
+					"wgsl-analyzer.nagaExtensions.shaderInt64": {
+						"markdownDescription": "Whether to enable u64 and i64 scalar types.",
+						"default": true,
+						"type": "boolean"
+					}
+				}
+			},
+			{
 				"title": "wgsl-analyzer",
 				"properties": {
 					"wgsl-analyzer.numThreads": {

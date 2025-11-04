@@ -65,6 +65,12 @@ Default: `"compact"`
 
 Verbosity of type hints: `"full"`, `"compact"`, or `"inner"`.
 
+## wgsl-analyzer.nagaExtensions.shaderInt64
+
+Default: `true`
+
+Whether to enable u64 and i64 scalar types.
+
 ## wgsl-analyzer.numThreads
 
 Default: `null`

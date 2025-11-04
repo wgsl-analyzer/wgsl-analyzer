@@ -160,7 +160,15 @@ impl UnificationTable {
                 storage_type_of_texel_format(database, format)
             },
             TypeKind::Error
-            | TypeKind::Scalar(_)
+            | TypeKind::Scalar(
+                ScalarType::AbstractFloat
+                | ScalarType::AbstractInt
+                | ScalarType::Bool
+                | ScalarType::F16
+                | ScalarType::F32
+                | ScalarType::I32
+                | ScalarType::U32,
+            )
             | TypeKind::Atomic(_)
             | TypeKind::Struct(_)
             | TypeKind::Array(_)
@@ -168,6 +176,13 @@ impl UnificationTable {
             | TypeKind::Sampler(_)
             | TypeKind::Reference(_)
             | TypeKind::Pointer(_) => r#type,
+            TypeKind::Scalar(ScalarType::I64 | ScalarType::U64) => {
+                if todo!("self.???.config.naga_extensions.shader_int64()") {
+                    r#type
+                } else {
+                    todo!("error")
+                }
+            },
         }
     }
 }

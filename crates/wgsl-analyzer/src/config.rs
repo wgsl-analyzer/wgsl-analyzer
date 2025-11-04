@@ -71,6 +71,9 @@ config_data! {
         /// Verbosity of type hints: `"full"`, `"compact"`, or `"inner"`.
         inlayHints_typeVerbosity: InlayHintsTypeVerbosity = InlayHintsTypeVerbosity::default(),
 
+        /// Whether to enable u64 and i64 scalar types.
+        nagaExtensions_shaderInt64: bool = true,
+
         /// Number of worker threads for the main analysis loop.
         /// `null` lets the server choose automatically.
         numThreads: Option<NumThreads> = None,

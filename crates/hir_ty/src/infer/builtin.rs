@@ -143,6 +143,14 @@ impl TyLoweringContext<'_> {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::U32)
             },
+            "i64" if todo!("self.???.config.naga_extensions.shader_int64()") => {
+                self.expect_no_template(template_parameters);
+                TypeKind::Scalar(ScalarType::I64)
+            },
+            "u64" if todo!("self.???.config.naga_extensions.shader_int64()") => {
+                self.expect_no_template(template_parameters);
+                TypeKind::Scalar(ScalarType::U64)
+            },
             "f32" => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::F32)
@@ -729,7 +737,7 @@ impl TyLoweringContext<'_> {
                     )),
                     _,
                 )) if number > 0 && number <= ArraySize::MAX.into() => {
-                    // skips handling array<E, 1li64>() or array<E, 99999999999999999999999999>()
+                    // skips handling array<E, 1L>() or array<E, 99999999999999999999999999>()
                     #[expect(
                         clippy::cast_possible_truncation,
                         clippy::cast_sign_loss,
@@ -741,7 +749,7 @@ impl TyLoweringContext<'_> {
                 Ok((Some(Instance::Literal(LiteralInstance::U64(number))), _))
                     if number > 0 && number <= ArraySize::MAX.into() =>
                 {
-                    // skips handling array<E, 1lu64>() or array<E, 99999999999999999999999999lu64>()
+                    // skips handling array<E, 1uL64>() or array<E, 99999999999999999999999999uL64>()
                     #[expect(
                         clippy::cast_possible_truncation,
                         clippy::as_conversions,
@@ -922,16 +930,20 @@ impl TyLoweringContext<'_> {
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let ty_kind = r#type.kind(self.database);
-                if matches!(ty_kind, TypeKind::Scalar(ScalarType::I32 | ScalarType::U32)) {
+                if matches!(ty_kind, TypeKind::Scalar(ScalarType::I32 | ScalarType::U32))
+                    || (todo!("self.???.config.naga_extensions.shader_int64()")
+                        && matches!(ty_kind, TypeKind::Scalar(ScalarType::I64 | ScalarType::U64)))
+                {
                     r#type
                 } else {
                     // TODO: improve the error message and support naga atomics
                     // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/677
+                    let possible_types = "i32 or u32".to_owned();
+                    // Naga supports more types (f32, i64, u64) here
+                    todo!("self.???.config.naga_extensions.shader_int64()");
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
-                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "i32 or u32".to_owned(), // Naga supports more types (f32, i64, u64) here
-                        ),
+                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(possible_types),
                     });
                     TypeKind::Error.intern(self.database)
                 }

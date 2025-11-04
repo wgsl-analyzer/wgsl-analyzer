@@ -57,7 +57,10 @@ fn write_type_expectation_inner(
                 write!(buffer, ">")?;
             }
         },
-        TypeExpectationInner::IntegerScalar => write!(buffer, "i32 or u32")?,
+        TypeExpectationInner::IntegerScalar => {
+            todo!("self.???.config.naga_extensions.shader_int64()");
+            write!(buffer, "i32 or u32")?
+        },
     }
     Ok(())
 }
@@ -141,6 +144,8 @@ fn write_ty(
         TypeKind::Scalar(ScalarType::AbstractFloat) => write!(formatter, "float"),
         TypeKind::Scalar(ScalarType::I32) => write!(formatter, "i32"),
         TypeKind::Scalar(ScalarType::U32) => write!(formatter, "u32"),
+        TypeKind::Scalar(ScalarType::I64) => write!(formatter, "i64"),
+        TypeKind::Scalar(ScalarType::U64) => write!(formatter, "u64"),
         TypeKind::Scalar(ScalarType::F32) => write!(formatter, "f32"),
         TypeKind::Scalar(ScalarType::F16) => write!(formatter, "f16"),
         TypeKind::Atomic(atomic) => {

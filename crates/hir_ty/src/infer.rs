@@ -980,6 +980,7 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             TypeExpectationInner::IntegerScalar => {
+                // why only these two types?
                 if let TypeKind::Scalar(ScalarType::I32 | ScalarType::U32) =
                     r#type.kind(self.database).unref(self.database).as_ref()
                 {
@@ -1162,6 +1163,8 @@ impl<'database> InferenceContext<'database> {
                 let ty_kind = match literal {
                     Literal::Int(_, BuiltinInt::I32) => TypeKind::Scalar(ScalarType::I32),
                     Literal::Int(_, BuiltinInt::U32) => TypeKind::Scalar(ScalarType::U32),
+                    Literal::Int(_, BuiltinInt::I64) => TypeKind::Scalar(ScalarType::I64),
+                    Literal::Int(_, BuiltinInt::U64) => TypeKind::Scalar(ScalarType::U64),
                     Literal::Int(_, BuiltinInt::Abstract) => {
                         TypeKind::Scalar(ScalarType::AbstractInt)
                     },
@@ -1960,7 +1963,19 @@ impl<'database> InferenceContext<'database> {
             },
             ScalarType::AbstractInt | ScalarType::AbstractFloat => {
                 // Panic is correct here, since it should be impossible to enter this branch
-                panic!("cannot construct abstract types")
+                #[expect(
+                    clippy::unreachable,
+                    reason = "TODO: Refactor to make this not representable"
+                )]
+                {
+                    unreachable!("cannot construct abstract types")
+                }
+            },
+            ScalarType::I64 => {
+                Builtin::builtin_op_i64_constructor(self.database).intern(self.database)
+            },
+            ScalarType::U64 => {
+                Builtin::builtin_op_u64_constructor(self.database).intern(self.database)
             },
         };
 
@@ -2403,6 +2418,8 @@ impl<'database> WgslTypeConverter<'database> {
             TypeKind::Scalar(ScalarType::F32) => wgsl_types::Type::F32,
             TypeKind::Scalar(ScalarType::I32) => wgsl_types::Type::I32,
             TypeKind::Scalar(ScalarType::U32) => wgsl_types::Type::U32,
+            TypeKind::Scalar(ScalarType::I64) => wgsl_types::Type::I64,
+            TypeKind::Scalar(ScalarType::U64) => wgsl_types::Type::U64,
             TypeKind::Atomic(AtomicType { inner }) => {
                 wgsl_types::Type::Atomic(Box::new(self.to_wgsl_types(inner)?))
             },
@@ -2532,8 +2549,8 @@ impl<'database> WgslTypeConverter<'database> {
             },
             wgsl_types::Type::I32 => TypeKind::Scalar(ScalarType::I32).intern(self.database),
             wgsl_types::Type::U32 => TypeKind::Scalar(ScalarType::U32).intern(self.database),
-            wgsl_types::Type::I64 => todo!("naga extension"),
-            wgsl_types::Type::U64 => todo!("naga extension"),
+            wgsl_types::Type::I64 => TypeKind::Scalar(ScalarType::I64).intern(self.database),
+            wgsl_types::Type::U64 => TypeKind::Scalar(ScalarType::U64).intern(self.database),
             wgsl_types::Type::F16 => TypeKind::Scalar(ScalarType::F16).intern(self.database),
             wgsl_types::Type::F32 => TypeKind::Scalar(ScalarType::F32).intern(self.database),
             wgsl_types::Type::F64 => todo!("naga extension"),

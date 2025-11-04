@@ -31,7 +31,9 @@ enum Type {
     Vec(VecSize, Box<Self>),
     Matrix(VecSize, VecSize, Box<Self>),
     Texture(TextureType),
-    Sampler { comparison: bool },
+    Sampler {
+        comparison: bool,
+    },
     Bool,
     F16,
     F32,
@@ -42,6 +44,12 @@ enum Type {
     Atomic(Box<Self>),
     Bound(usize),
     StorageTypeOfTexelFormat(usize),
+
+    // naga extensions
+    /// naga `SHADER_INT64`
+    I64,
+    /// naga `SHADER_INT64`
+    U64,
 }
 
 enum VecSize {
@@ -389,6 +397,8 @@ fn parse_ty(
         "f32" => Type::F32,
         "i32" => Type::I32,
         "u32" => Type::U32,
+        "i64" => Type::I64,
+        "u64" => Type::U64,
         "sampler" => Type::Sampler { comparison: false },
         "sampler_comparison" => Type::Sampler { comparison: true },
         "F::StorageType" => {
@@ -411,7 +421,7 @@ fn type_to_rust(r#type: &Type) -> String {
             type_to_rust(inner)
         ),
 
-        Type::Bool | Type::F32 | Type::I32 | Type::U32 | Type::F16 => {
+        Type::Bool | Type::F32 | Type::I32 | Type::U32 | Type::F16 | Type::U64 | Type::I64 => {
             format!("TypeKind::Scalar(ScalarType::{type:?}).intern(database)")
         },
         Type::Bound(index) => {

@@ -76,6 +76,8 @@ impl TypeKind {
             // <https://www.w3.org/TR/WGSL/#why-is-bool-4-bytes>
             Self::Scalar(ScalarType::Bool) => Some(4),
             Self::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => Some(4),
+            // SHADER_INT64
+            Self::Scalar(ScalarType::I64 | ScalarType::U64) => Some(8),
             Self::Scalar(ScalarType::F16) => Some(2),
             Self::Atomic(_) => Some(4),
             Self::Vector(VectorType {
@@ -164,7 +166,7 @@ impl TypeKind {
     ///
     /// # Panics
     ///
-    /// Panics if the size of the array exceeds.
+    /// Panics if the size of the array exceeds u32.
     pub fn size_of(
         &self,
         address_space: LayoutAddressSpace,
@@ -177,6 +179,8 @@ impl TypeKind {
         match self {
             Self::Scalar(ScalarType::Bool) => Some(4),
             Self::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => Some(4),
+            // SHADER_INT64
+            Self::Scalar(ScalarType::I64 | ScalarType::U64) => Some(8),
             Self::Scalar(ScalarType::F16) => Some(2),
             Self::Atomic(_) => Some(4),
             Self::Vector(VectorType {
@@ -241,7 +245,7 @@ impl TypeKind {
             Self::Array(array) => match array.size {
                 ArraySize::Constant(size) => {
                     let stride = array.stride(address_space, database)?;
-                    Some(Bytes::try_from(size).unwrap() * stride)
+                    Some(size.checked_mul(stride).unwrap())
                 },
                 ArraySize::Dynamic => None,
             },
