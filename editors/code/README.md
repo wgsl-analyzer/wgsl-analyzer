@@ -1,66 +1,51 @@
-# `wgsl-analyzer`
+# wgsl-analyzer
 
-`wgsl-analyzer` is a [language server](https://microsoft.github.io/language-server-protocol/) plugin for the [WGSL Shading language](https://www.w3.org/TR/WGSL).
-It also supports [WESL] - a superset of WGSL.
+This extension provides support for the [WebGPU Shading Language (WGSL)](https://www.w3.org/TR/WGSL/).
+
+It comes bundled with a language server of the same name: [wgsl-analyzer](https://github.com/wgsl-analyzer/wgsl-analyzer).
 
 ## Features
 
-Currently, `wgsl-analyzer` supports
-
-- syntax highlighting
-- basic autocomplete
-- type checking
+- code completion
+<!-- - [code completion][magic completions] with [imports insertion][completion with autoimport] -->
 - go to definition
-- basic formatting
+<!-- - go to [definition][go to definition], [implementation][go to implementation], [type definition][go to type definition] -->
+<!-- - [find all references][find all references], [workspace symbol search][workspace symbol], [symbol renaming][rename] -->
+<!-- - [types and documentation on hover][hover] -->
+- inlay hints for types
+<!-- - [inlay hints][inlay hints] for types and parameter names --> -->
+- syntax highlighting (also in host languages' strings and Markdown fenced code blocks!)
+<!-- - [semantic syntax highlighting][semantic syntax highlighting] -->
+<!-- - a lot of [assists (code actions)][assists] -->
+<!-- - apply suggestions from errors -->
+- ... and many more, check out the [manual](https://wgsl-analyzer.github.io/book/features.html) to see them all
 
-If you have any suggestions or bug reports, feel free to open an issue at <https://github.com/wgsl-analyzer/wgsl-analyzer/issues>.
+## Quick start
+
+Simply install the [wgsl-analyzer extension](https://marketplace.visualstudio.com/items?itemName=rust-lang.wgsl-analyzer).
 
 ## Configuration
 
-In the `wgsl-analyzer` section in the vscode settings you can specify the following configuration options:
+This extension provides configurations through VS Code's configuration settings (`settings.json`). All configurations are under `wgsl-analyzer.*`.
 
-### Custom server path
+See [the manual](https://wgsl-analyzer.github.io/book/editor_features.html#vs-code) for more information on VS Code-specific configurations.
 
-```json
-{
-	"wgsl-analyzer.server.path": "~/.cargo/bin/wgsl-analyzer"
-}
-```
+## Communication
 
-### Diagnostics
+For usage questions and troubleshooting requests, please visit our [Discord server](https://discord.gg/3QUGyyz984).
 
-`wgsl-analyzer` will support diagnostics for parsing errors, and optionally (by default yes) type errors and naga-reported validation errors.
-You can also additionally enable diagnostics for naga parsing errors.
+## Documentation
 
-```json
-{
-	"wgsl-analyzer.diagnostics.typeErrors": true,
-	"wgsl-analyzer.diagnostics.nagaParsing": false,
-	"wgsl-analyzer.diagnostics.nagaValidation": true,
-	"wgsl-analyzer.diagnostics.nagaVersion": "0.22" // one of the supported versions or 'main'
-}
-```
+See [wgsl-analyzer.github.io](https://wgsl-analyzer.github.io/) for more information.
 
-### Inlay hints
-
-`wgsl-analyzer` can display read-only virtual text snippets interspersed with code, used to display the inferred types of variable declarations or the names of function parameters at the call site.
-
-```json
-{
-	"wgsl-analyzer.inlayHints.enabled": true,
-	"wgsl-analyzer.inlayHints.typeHints": true,
-	"wgsl-analyzer.inlayHints.parameterHints": true,
-	"wgsl-analyzer.inlayHints.structLayoutHints": false,
-	"wgsl-analyzer.inlayHints.typeVerbosity": "compact"
-}
-```
-
-The `typeVerbosity` argument can be either `full`, `compact` or `inner`, which will correspond to
-
-```rust
-var x: ref<function, f32, read_write> = 0.0;
-var x: ref<f32> = 0.0;
-var x: f32 = 0.0;
-```
-
-respectively. For more information, check out references and the "Load Rule" in the [WGSL Spec](https://www.w3.org/TR/WGSL/#load-rule).
+<!-- [magic completions]: https://wgsl-analyzer.github.io/book/features.html#magic-completions -->
+<!-- [completion with autoimport]: https://wgsl-analyzer.github.io/book/features.html#completion-with-autoimport -->
+<!-- [go to definition]: https://wgsl-analyzer.github.io/book/features.html#go-to-definition
+[go to implementation]: https://wgsl-analyzer.github.io/book/features.html#go-to-implementation
+[go to type definition]: https://wgsl-analyzer.github.io/book/features.html#go-to-type-definition -->
+<!-- [find all references]: https://wgsl-analyzer.github.io/book/features.html#find-all-references -->
+<!-- [workspace symbol]: https://wgsl-analyzer.github.io/book/features.html#workspace-symbol -->
+<!-- [rename]: https://wgsl-analyzer.github.io/book/features.html#rename -->
+<!-- [hover]: https://wgsl-analyzer.github.io/book/features.html#hover -->
+<!-- [semantic syntax highlighting]: https://wgsl-analyzer.github.io/book/features.html#semantic-syntax-highlighting -->
+<!-- [assists]: https://wgsl-analyzer.github.io/book/assists.html -->
