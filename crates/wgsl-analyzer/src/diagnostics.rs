@@ -295,9 +295,7 @@ pub(crate) fn convert_diagnostic(
         code: Some(lsp_types::NumberOrString::String(
             diagnostic.code.as_str().to_owned(),
         )),
-        code_description: Some(lsp_types::CodeDescription {
-            href: lsp_types::Url::parse(&diagnostic.code.url()).unwrap(),
-        }),
+        code_description: None,
         source: Some(diagnostic.source.to_string()),
         message: diagnostic.message,
         related_information: None,
