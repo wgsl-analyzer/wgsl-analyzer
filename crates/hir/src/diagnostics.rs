@@ -4,29 +4,21 @@ pub mod precedence;
 use base_db::{FileRange, TextRange};
 use hir_def::{
     HirFileId, InFile,
-    body::BodySourceMap,
     expression::BinaryOperation,
     expression_store::{ExpressionSourceMap, ExpressionStoreSource},
     module_data::Name,
 };
 use hir_ty::{
     builtins::BuiltinId,
-    database::{FieldInferenceDiagnostic, HirDatabase},
     infer::{
         InferenceDiagnostic, LoweredKind, TypeExpectation, TypeLoweringError, TypeLoweringErrorKind,
     },
     ty::Type,
     validate::AddressSpaceError,
 };
-use syntax::{
-    AstNode as _, ast,
-    pointer::{AstPointer, SyntaxNodePointer},
-};
+use syntax::{ast, pointer::AstPointer};
 
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
-use crate::{
-    Field, Function, GlobalConstant, GlobalVariable, HasSource as _, Override, Parameter, TypeAlias,
-};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub enum NagaVersion {
@@ -111,10 +103,10 @@ pub enum AnyDiagnostic {
         actual: Type,
     },
     MissingAddressSpace {
-        var: InFile<AstPointer<ast::VariableDeclaration>>,
+        variable: InFile<AstPointer<ast::VariableDeclaration>>,
     },
     InvalidAddressSpace {
-        var: InFile<AstPointer<ast::VariableDeclaration>>,
+        variable: InFile<AstPointer<ast::VariableDeclaration>>,
         error: AddressSpaceError,
     },
     InvalidTypeSpecifier {
@@ -182,8 +174,8 @@ impl AnyDiagnostic {
             | Self::WgslError { expression, .. }
             | Self::InvalidIdentExpression { expression, .. }
             | Self::ExpectedLoweredKind { expression, .. } => expression.file_id,
-            Self::MissingAddressSpace { var } | Self::InvalidAddressSpace { var, .. } => {
-                var.file_id
+            Self::MissingAddressSpace { variable } | Self::InvalidAddressSpace { variable, .. } => {
+                variable.file_id
             },
             Self::InvalidTypeSpecifier { type_specifier, .. } => type_specifier.file_id,
             Self::NagaValidationError { file_id, .. }
@@ -398,13 +390,15 @@ pub(crate) fn any_diag_from_infer_diagnostic(
 }
 
 pub(crate) fn any_diag_from_global_var(
-    var_diagnostic: GlobalVariableDiagnostic,
-    var: InFile<AstPointer<ast::VariableDeclaration>>,
+    variable_diagnostic: GlobalVariableDiagnostic,
+    variable: InFile<AstPointer<ast::VariableDeclaration>>,
 ) -> AnyDiagnostic {
-    match var_diagnostic {
-        GlobalVariableDiagnostic::MissingAddressSpace => AnyDiagnostic::MissingAddressSpace { var },
+    match variable_diagnostic {
+        GlobalVariableDiagnostic::MissingAddressSpace => {
+            AnyDiagnostic::MissingAddressSpace { variable }
+        },
         GlobalVariableDiagnostic::AddressSpaceError(error) => {
-            AnyDiagnostic::InvalidAddressSpace { var, error }
+            AnyDiagnostic::InvalidAddressSpace { variable, error }
         },
     }
 }

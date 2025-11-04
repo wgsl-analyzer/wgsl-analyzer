@@ -1,4 +1,4 @@
-//! The main loop of `rust-analyzer` responsible for dispatching LSP
+//! The main loop of `wgsl-analyzer` responsible for dispatching LSP
 //! requests/replies and notifications back to the client.
 
 use std::{
@@ -8,44 +8,36 @@ use std::{
     time::{Duration, Instant},
 };
 
+use base_db::SourceDatabase as _;
 use crossbeam_channel::{Receiver, select};
 // use ide_db::base_db::{SourceDatabase, SourceRootDatabase, VfsPath};
 use lsp_server::{Connection, Notification, Request};
-use lsp_types::{TextDocumentIdentifier, notification::Notification as _};
+use lsp_types as lt;
+use lt::notification::Notification as _;
+use salsa::Cancelled;
 use stdx::thread::ThreadIntent;
 use tracing::{Level, error, span};
-// use vfs::{loader::LoadingProgress, AbsPathBuf, FileId};
+use triomphe::Arc;
+use vfs::{AbsPathBuf, FileId};
 
+// use vfs::{loader::LoadingProgress, AbsPathBuf, FileId};
+use crate::handlers::notification::{
+    handle_did_change_configuration, handle_did_change_text_document,
+    handle_did_change_watched_files, handle_did_close_text_document, handle_did_open_text_document,
+    handle_did_save_text_document,
+};
 use crate::{
+    Result,
     config::Config,
     diagnostics::{DiagnosticsGeneration, NativeDiagnosticsFetchKind, fetch_native_diagnostics},
-    global_state::{
-        FetchWorkspaceRequest, FetchWorkspaceResponse, GlobalState, file_id_to_url, url_to_file_id,
-    },
+    dispatch::{NotificationDispatcher, RequestDispatcher},
+    global_state::{FetchWorkspaceResponse, GlobalState, file_id_to_url},
+    handlers, lsp,
     lsp::{
-        from_proto, to_proto,
+        from_proto,
         utilities::{Progress, notification_is},
     },
     reload::ProjectWorkspaceProgress,
-};
-
-use crate::lsp;
-use crate::lsp::utilities::is_cancelled;
-use base_db::SourceDatabase as _;
-use triomphe::Arc;
-
-use hir_def::HirFileId;
-use hir_def::database::DefDatabase as _;
-use hir_def::module_data::ModuleItem;
-use salsa::{Cancelled, Durability};
-use tracing::info;
-use vfs::{AbsPathBuf, FileId};
-
-use crate::{
-    Result,
-    dispatch::{NotificationDispatcher, RequestDispatcher},
-    handlers,
-    lsp::extensions,
 };
 
 pub fn main_loop(
@@ -108,14 +100,14 @@ impl fmt::Display for Event {
 #[derive(Debug)]
 #[expect(clippy::enum_variant_names, reason = "Not relevant")]
 pub(crate) enum QueuedTask {
-    CheckIfIndexed(lsp_types::Url),
+    CheckIfIndexed(lt::Url),
 }
 
 #[derive(Debug)]
 pub(crate) enum Task {
     Response(lsp_server::Response),
     Diagnostics(DiagnosticsTaskKind),
-    // Diagnostics(Vec<(FileId, Vec<lsp_types::Diagnostic>)>),
+    // Diagnostics(Vec<(FileId, Vec<lt::Diagnostic>)>),
     FetchWorkspace(ProjectWorkspaceProgress),
 
     // DiscoverLinkedProjects(DiscoverProjectParameter),
@@ -126,14 +118,8 @@ pub(crate) enum Task {
 
 #[derive(Debug)]
 pub(crate) enum DiagnosticsTaskKind {
-    Syntax(
-        DiagnosticsGeneration,
-        Vec<(FileId, Vec<lsp_types::Diagnostic>)>,
-    ),
-    Semantic(
-        DiagnosticsGeneration,
-        Vec<(FileId, Vec<lsp_types::Diagnostic>)>,
-    ),
+    Syntax(DiagnosticsGeneration, Vec<(FileId, Vec<lt::Diagnostic>)>),
+    Semantic(DiagnosticsGeneration, Vec<(FileId, Vec<lt::Diagnostic>)>),
 }
 
 #[derive(Debug)]
@@ -154,19 +140,20 @@ impl fmt::Debug for Event {
         &self,
         formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        let debug_non_verbose = |not: &Notification, formatter: &mut fmt::Formatter<'_>| {
-            formatter
-                .debug_struct("Notification")
-                .field("method", &not.method)
-                .finish()
-        };
+        let debug_non_verbose =
+            |notification: &Notification, formatter: &mut fmt::Formatter<'_>| {
+                formatter
+                    .debug_struct("Notification")
+                    .field("method", &notification.method)
+                    .finish()
+            };
 
         match self {
-            Self::Lsp(lsp_server::Message::Notification(not)) => {
-                if notification_is::<lsp_types::notification::DidOpenTextDocument>(not)
-                    || notification_is::<lsp_types::notification::DidChangeTextDocument>(not)
+            Self::Lsp(lsp_server::Message::Notification(notification)) => {
+                if notification_is::<lt::notification::DidOpenTextDocument>(notification)
+                    || notification_is::<lt::notification::DidChangeTextDocument>(notification)
                 {
-                    return debug_non_verbose(not, formatter);
+                    return debug_non_verbose(notification, formatter);
                 }
             },
             Self::Task(Task::Response(response)) => {
@@ -236,7 +223,7 @@ impl GlobalState {
             if matches!(
                 &event,
                 Event::Lsp(lsp_server::Message::Notification(Notification { method, .. }))
-                if method == lsp_types::notification::Exit::METHOD
+                if method == lt::notification::Exit::METHOD
             ) {
                 return Ok(());
             }
@@ -252,24 +239,24 @@ impl GlobalState {
         &mut self,
         additional_patterns: impl Iterator<Item = String>,
     ) {
-        let additional_filters = additional_patterns.map(|pattern| lsp_types::DocumentFilter {
+        let additional_filters = additional_patterns.map(|pattern| lt::DocumentFilter {
             language: None,
             scheme: None,
             pattern: (Some(pattern)),
         });
 
         let mut selectors = vec![
-            lsp_types::DocumentFilter {
+            lt::DocumentFilter {
                 language: None,
                 scheme: None,
                 pattern: Some("**/*.rs".into()),
             },
-            lsp_types::DocumentFilter {
+            lt::DocumentFilter {
                 language: None,
                 scheme: None,
                 pattern: Some("**/Cargo.toml".into()),
             },
-            lsp_types::DocumentFilter {
+            lt::DocumentFilter {
                 language: None,
                 scheme: None,
                 pattern: Some("**/Cargo.lock".into()),
@@ -277,20 +264,20 @@ impl GlobalState {
         ];
         selectors.extend(additional_filters);
 
-        let save_registration_options = lsp_types::TextDocumentSaveRegistrationOptions {
+        let save_registration_options = lt::TextDocumentSaveRegistrationOptions {
             include_text: Some(false),
-            text_document_registration_options: lsp_types::TextDocumentRegistrationOptions {
+            text_document_registration_options: lt::TextDocumentRegistrationOptions {
                 document_selector: Some(selectors),
             },
         };
 
-        let registration = lsp_types::Registration {
+        let registration = lt::Registration {
             id: "textDocument/didSave".to_owned(),
             method: "textDocument/didSave".to_owned(),
             register_options: Some(serde_json::to_value(save_registration_options).unwrap()),
         };
-        self.send_request::<lsp_types::request::RegisterCapability>(
-            lsp_types::RegistrationParams {
+        self.send_request::<lt::request::RegisterCapability>(
+            lt::RegistrationParams {
                 registrations: vec![registration],
             },
             |_, _| (),
@@ -317,9 +304,9 @@ impl GlobalState {
                     ;
                 self.show_message(
                     match health {
-                        lsp::extensions::Health::Ok => lsp_types::MessageType::INFO,
-                        lsp::extensions::Health::Warning => lsp_types::MessageType::WARNING,
-                        lsp::extensions::Health::Error => lsp_types::MessageType::ERROR,
+                        lsp::extensions::Health::Ok => lt::MessageType::INFO,
+                        lsp::extensions::Health::Warning => lt::MessageType::WARNING,
+                        lsp::extensions::Health::Error => lt::MessageType::ERROR,
                     },
                     message.clone(),
                     open_log_button,
@@ -486,24 +473,21 @@ impl GlobalState {
                 // Refresh semantic tokens if the client supports it.
                 if self.config.semantic_tokens_refresh() {
                     // self.semantic_tokens_cache.lock().clear();
-                    self.send_request::<lsp_types::request::SemanticTokensRefresh>((), |_, _| ());
+                    self.send_request::<lt::request::SemanticTokensRefresh>((), |_, _| ());
                 }
 
                 // Refresh code lens if the client supports it.
                 if self.config.code_lens_refresh() {
-                    self.send_request::<lsp_types::request::CodeLensRefresh>((), |_, _| ());
+                    self.send_request::<lt::request::CodeLensRefresh>((), |_, _| ());
                 }
 
                 // Refresh inlay hints if the client supports it.
                 if self.config.inlay_hints_refresh() {
-                    self.send_request::<lsp_types::request::InlayHintRefreshRequest>((), |_, _| ());
+                    self.send_request::<lt::request::InlayHintRefreshRequest>((), |_, _| ());
                 }
 
                 if self.config.diagnostics_refresh() {
-                    self.send_request::<lsp_types::request::WorkspaceDiagnosticRefresh>(
-                        (),
-                        |_, _| (),
-                    );
+                    self.send_request::<lt::request::WorkspaceDiagnosticRefresh>((), |_, _| ());
                 }
             }
 
@@ -730,7 +714,7 @@ impl GlobalState {
             request: Some(request),
             global_state: self,
         };
-        dispatcher.on_sync_mut::<lsp_types::request::Shutdown>(|state, ()| {
+        dispatcher.on_sync_mut::<lt::request::Shutdown>(|state, ()| {
             state.shutdown_requested = true;
             Ok(())
         });
@@ -754,26 +738,33 @@ impl GlobalState {
         const RETRY: bool = true;
         const NO_RETRY: bool = false;
 
+        // FIXME: Some of these NO_RETRY could be retries if the file they are interested didn't change.
+        // All other request handlers
         dispatcher
-            .on::<NO_RETRY, lsp_types::request::GotoDefinition>(
-                handlers::request::handle_goto_definition,
-            )
-            .on::<RETRY, lsp_types::request::Completion>(handlers::request::handle_completion)
-            .on_fmt_thread::<lsp_types::request::Formatting>(handlers::request::handle_formatting)
+            .on::<NO_RETRY, lt::request::GotoDefinition>(handlers::request::handle_goto_definition)
+            .on::<RETRY, lt::request::Completion>(handlers::request::handle_completion)
+            .on_fmt_thread::<lt::request::Formatting>(handlers::request::handle_formatting)
             .on::<NO_RETRY, lsp::extensions::HoverRequest>(handlers::request::handle_hover)
-            .on::<NO_RETRY, lsp_types::request::Shutdown>(handlers::request::handle_shutdown)
-            .on::<NO_RETRY, lsp_types::request::InlayHintRequest>(
-                handlers::request::handle_inlay_hints,
+            .on::<NO_RETRY, lt::request::Shutdown>(handlers::request::handle_shutdown)
+            .on::<NO_RETRY, lt::request::InlayHintRequest>(handlers::request::handle_inlay_hints)
+            .on_with_vfs_default::<lt::request::DocumentDiagnosticRequest>(
+                handlers::request::handle_document_diagnostics,
+                handlers::request::empty_diagnostic_report,
+                || {
+                    let code = i32::try_from(lt::error_codes::SERVER_CANCELLED)
+                        .expect("LSP error code must fit in i32");
+                    let message = "server cancelled the request".to_owned();
+                    let value = lt::DiagnosticServerCancellationData {
+                        retrigger_request: true,
+                    };
+                    let data = serde_json::to_value(value).ok();
+                    lsp_server::ResponseError {
+                        code,
+                        message,
+                        data,
+                    }
+                },
             )
-            // FIXME: Some of these NO_RETRY could be retries if the file they are interested didn't change.
-            // All other request handlers
-            .on_with_vfs_default::<lsp_types::request::DocumentDiagnosticRequest>(handlers::request::handle_document_diagnostics, handlers::request::empty_diagnostic_report, || lsp_server::ResponseError {
-                code: i32::try_from(lsp_types::error_codes::SERVER_CANCELLED).expect("LSP error code must fit in i32"),
-                message: "server cancelled the request".to_owned(),
-                data: serde_json::to_value(lsp_types::DiagnosticServerCancellationData {
-                    retrigger_request: true
-                }).ok(),
-            })
             .on::<NO_RETRY, lsp::extensions::SyntaxTree>(handlers::request::show_syntax_tree)
             .on::<NO_RETRY, lsp::extensions::DebugCommand>(handlers::request::debug_command)
             .on::<NO_RETRY, lsp::extensions::FullSource>(handlers::request::full_source)
@@ -880,24 +871,16 @@ impl GlobalState {
     ) {
         let _p =
             span!(Level::INFO, "GlobalState::on_notification", notification.method = ?notification.method).entered();
-        use crate::handlers::notification as handlers;
-        use lsp_types::notification;
         NotificationDispatcher {
-            not: Some(notification),
+            notification: Some(notification),
             global_state: self,
         }
-        .on_sync_mut::<notification::DidOpenTextDocument>(handlers::handle_did_open_text_document)
-        .on_sync_mut::<notification::DidChangeTextDocument>(
-            handlers::handle_did_change_text_document,
-        )
-        .on_sync_mut::<notification::DidCloseTextDocument>(handlers::handle_did_close_text_document)
-        .on_sync_mut::<notification::DidSaveTextDocument>(handlers::handle_did_save_text_document)
-        .on_sync_mut::<lsp_types::notification::DidChangeConfiguration>(
-            handlers::handle_did_change_configuration,
-        )
-        .on_sync_mut::<lsp_types::notification::DidChangeWatchedFiles>(
-            handlers::handle_did_change_watched_files,
-        )
+        .on_sync_mut::<lt::notification::DidOpenTextDocument>(handle_did_open_text_document)
+        .on_sync_mut::<lt::notification::DidChangeTextDocument>(handle_did_change_text_document)
+        .on_sync_mut::<lt::notification::DidCloseTextDocument>(handle_did_close_text_document)
+        .on_sync_mut::<lt::notification::DidSaveTextDocument>(handle_did_save_text_document)
+        .on_sync_mut::<lt::notification::DidChangeConfiguration>(handle_did_change_configuration)
+        .on_sync_mut::<lt::notification::DidChangeWatchedFiles>(handle_did_change_watched_files)
         .finish();
     }
 

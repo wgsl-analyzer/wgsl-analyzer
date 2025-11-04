@@ -355,7 +355,7 @@ The outermost boundary is the `wgsl-analyzer` crate, which defines an LSP interf
 We do integration testing of this component, by feeding it with a stream of LSP requests and checking responses.
 These tests are known as "heavy", because they interact with Cargo and read real files from disk.
 For this reason, we try to avoid writing too many tests on this boundary: in a statically typed language, it is hard to make an error in the protocol itself if messages are themselves typed.
-Heavy tests are only run when `RUN_SLOW_TESTS` env var is set.
+Heavy tests are only run when `RUN_SLOW_TESTS` environment variable is set.
 
 The middle, and most important, boundary is `ide`.
 
@@ -433,7 +433,7 @@ Rather than spawning futures or scheduling callbacks (open), the event loop acce
 It is easy to see all the things that trigger `wgsl-analyzer` processing together with their performance.
 
 `wgsl-analyzer` includes a simple hierarchical profiler (`hprof`).
-It is enabled with `WA_PROFILE='*>50'` env var (log all (`*`) actions which take more than `50` ms) and produces output like:
+It is enabled with `WA_PROFILE='*>50'` environment variable (log all (`*`) actions which take more than `50` ms) and produces output like:
 
 <!-- TODO replace with real example -->
 ```text

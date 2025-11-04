@@ -1,6 +1,5 @@
 use std::fmt;
 
-use arrayvec::ArrayVec;
 use base_db::TextRange;
 use smol_str::SmolStr;
 use vfs::FileId;

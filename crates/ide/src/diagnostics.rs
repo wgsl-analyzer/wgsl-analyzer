@@ -11,7 +11,7 @@ use hir::{
 };
 use hir_def::original_file_range;
 use hir_ty::ty::{
-    self, Type, VecSize,
+    self,
     pretty::{pretty_fn, pretty_type},
 };
 use itertools::Itertools as _;
@@ -490,25 +490,27 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::MissingAddressSpace { var } => {
-                    let var_decl = var.value.to_node(&root);
-                    let source = var_decl
-                        .var_token()
-                        .map_or_else(|| NodeOrToken::Node(var_decl.syntax()), NodeOrToken::Token);
+                AnyDiagnostic::MissingAddressSpace { variable } => {
+                    let variable_declaration = variable.value.to_node(&root);
+                    let source = variable_declaration.var_token().map_or_else(
+                        || NodeOrToken::Node(variable_declaration.syntax()),
+                        NodeOrToken::Token,
+                    );
 
-                    let frange = original_file_range(database, var.file_id, &source);
+                    let frange = original_file_range(database, variable.file_id, &source);
                     Diagnostic::new(
                         DiagnosticCode("11"),
                         "missing address space on global variable".to_owned(),
                         frange.range,
                     )
                 },
-                AnyDiagnostic::InvalidAddressSpace { var, error } => {
-                    let var_decl = var.value.to_node(&root);
-                    let source = var_decl
-                        .var_token()
-                        .map_or_else(|| NodeOrToken::Node(var_decl.syntax()), NodeOrToken::Token);
-                    let frange = original_file_range(database, var.file_id, &source);
+                AnyDiagnostic::InvalidAddressSpace { variable, error } => {
+                    let variable_declaration = variable.value.to_node(&root);
+                    let source = variable_declaration.var_token().map_or_else(
+                        || NodeOrToken::Node(variable_declaration.syntax()),
+                        NodeOrToken::Token,
+                    );
+                    let frange = original_file_range(database, variable.file_id, &source);
                     Diagnostic::new(DiagnosticCode("12"), format!("{error}"), frange.range)
                 },
                 AnyDiagnostic::InvalidTypeSpecifier {

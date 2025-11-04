@@ -200,6 +200,7 @@ impl fmt::Display for CodegenType {
 
 impl FromStr for CodegenType {
     type Err = String;
+
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         match string {
             "all" => Ok(Self::All),
@@ -221,6 +222,7 @@ pub enum MeasurementType {
 
 impl FromStr for MeasurementType {
     type Err = String;
+
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         match string {
             "wesl-rs_tests" => Ok(Self::WeslRsTests),

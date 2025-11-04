@@ -1,11 +1,11 @@
 #![expect(clippy::use_debug, reason = "debug formatting in unit tests is ok")]
 
+use std::fmt::Write as _;
+
 use crate::{
     FileAstId,
-    database::DefDatabase,
     module_data::{ModuleInfo, ModuleItem},
 };
-use std::fmt::Write as _;
 
 #[must_use]
 pub fn pretty_print_module(module: &ModuleInfo) -> String {
@@ -34,9 +34,9 @@ fn write_pretty_module_item(
             _ = write!(buffer, "struct {} {{ ... }}", r#struct.name.0);
         },
         ModuleItem::GlobalVariable(id) => {
-            let var = &module.data[id.index];
-            print_ast_id(buffer, var.ast_id);
-            _ = write!(buffer, "var {} = _;", &var.name.0);
+            let variable = &module.data[id.index];
+            print_ast_id(buffer, variable.ast_id);
+            _ = write!(buffer, "var {} = _;", &variable.name.0);
         },
         ModuleItem::GlobalConstant(id) => {
             let constant = &module.data[id.index];
@@ -44,9 +44,9 @@ fn write_pretty_module_item(
             _ = write!(buffer, "const {} = _;", &constant.name.0);
         },
         ModuleItem::Override(id) => {
-            let override_decl = &module.data[id.index];
-            print_ast_id(buffer, override_decl.ast_id);
-            _ = write!(buffer, "override {} = _;", &override_decl.name.0);
+            let override_declaration = &module.data[id.index];
+            print_ast_id(buffer, override_declaration.ast_id);
+            _ = write!(buffer, "override {} = _;", &override_declaration.name.0);
         },
         ModuleItem::TypeAlias(id) => {
             let type_alias = &module.data[id.index];
@@ -60,7 +60,7 @@ fn print_ast_id<T: syntax::AstNode>(
     buffer: &mut String,
     ast_id: FileAstId<T>,
 ) {
-    writeln!(buffer, "// {ast_id:?}");
+    writeln!(buffer, "// {ast_id:?}").unwrap();
 }
 
 fn trim_in_place(

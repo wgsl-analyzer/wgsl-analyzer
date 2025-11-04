@@ -4,8 +4,8 @@ use triomphe::Arc;
 use crate::{
     HasSource as _,
     database::{
-        DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Interned, Lookup as _,
-        OverrideId, StructId, TypeAliasId,
+        DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Lookup as _, OverrideId,
+        StructId, TypeAliasId,
     },
     expression::ExpressionId,
     expression_store::{
@@ -16,7 +16,7 @@ use crate::{
         },
     },
     module_data::Name,
-    type_specifier::{TypeSpecifier, TypeSpecifierId},
+    type_specifier::TypeSpecifierId,
 };
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]
@@ -44,10 +44,10 @@ pub struct ParamData {
 impl FunctionData {
     pub fn query(
         database: &dyn DefDatabase,
-        func: FunctionId,
+        function: FunctionId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let loc = func.lookup(database);
-        let source = loc.source(database);
+        let location = function.lookup(database);
+        let source = location.source(database);
         let (function_data, source_map) = lower_function(database, &source);
         (Arc::new(function_data), Arc::new(source_map))
     }
@@ -77,10 +77,10 @@ pub struct FieldData {
 impl StructData {
     pub fn query(
         database: &dyn DefDatabase,
-        func: StructId,
+        function: StructId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let loc = func.lookup(database);
-        let source = loc.source(database);
+        let location = function.lookup(database);
+        let source = location.source(database);
         let (struct_data, source_map) = lower_struct(database, &source);
         (Arc::new(struct_data), Arc::new(source_map))
     }
@@ -111,10 +111,10 @@ pub struct TypeAliasData {
 impl TypeAliasData {
     pub fn type_alias_data_query(
         database: &dyn DefDatabase,
-        func: TypeAliasId,
+        function: TypeAliasId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let loc = func.lookup(database);
-        let source = loc.source(database);
+        let location = function.lookup(database);
+        let source = location.source(database);
 
         let (type_alias, source_map) = lower_type_alias(database, &source);
         (Arc::new(type_alias), Arc::new(source_map))
@@ -132,10 +132,10 @@ pub struct GlobalVariableData {
 impl GlobalVariableData {
     pub fn global_var_data_query(
         database: &dyn DefDatabase,
-        var: GlobalVariableId,
+        variable: GlobalVariableId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let loc = database.lookup_intern_global_variable(var);
-        let source = loc.source(database);
+        let location = database.lookup_intern_global_variable(variable);
+        let source = location.source(database);
 
         let (global_variable, source_map) = lower_variable(database, &source);
         (Arc::new(global_variable), Arc::new(source_map))
@@ -154,8 +154,8 @@ impl GlobalConstantData {
         database: &dyn DefDatabase,
         constant: GlobalConstantId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let loc = database.lookup_intern_global_constant(constant);
-        let source = loc.source(database);
+        let location = database.lookup_intern_global_constant(constant);
+        let source = location.source(database);
 
         let (global_constant, source_map) = lower_constant(database, &source);
         (Arc::new(global_constant), Arc::new(source_map))
@@ -172,10 +172,10 @@ pub struct OverrideData {
 impl OverrideData {
     pub fn override_data_query(
         database: &dyn DefDatabase,
-        override_decl: OverrideId,
+        override_declaration: OverrideId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let loc = database.lookup_intern_override(override_decl);
-        let source = loc.source(database);
+        let location = database.lookup_intern_override(override_declaration);
+        let source = location.source(database);
 
         let (global_override, source_map) = lower_override(database, &source);
         (Arc::new(global_override), Arc::new(source_map))

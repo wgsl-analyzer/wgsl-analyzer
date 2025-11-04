@@ -31,7 +31,7 @@ impl StopWatch {
         #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
         let counter = {
             // When debugging wgsl-analyzer using rr, the performance-related syscalls cause it to abort.
-            // We allow disabling performance by setting the env var `WA_DISABLE_PERFORMANCE`.
+            // We allow disabling performance by setting the environment variable `WA_DISABLE_PERFORMANCE`.
 
             use std::sync::OnceLock;
             static PERFORMANCE_ENABLED: OnceLock<bool> = OnceLock::new();

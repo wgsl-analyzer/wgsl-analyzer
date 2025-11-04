@@ -4,31 +4,18 @@
 
 #![expect(clippy::print_stdout, clippy::print_stderr, reason = "CLI tool")]
 
-use std::{
-    env::{self, args as arguments},
-    fmt::Debug,
-    fs,
-    io::stderr,
-    path::PathBuf,
-    process::ExitCode,
-    sync::Arc,
-};
+use std::{env, fs, path::PathBuf, process::ExitCode, sync::Arc};
 
 use anyhow::Context as _;
 use lsp_server::Connection;
-use lsp_types::InitializeParams;
 use paths::{AbsPathBuf, Utf8PathBuf};
-use tracing::{info, warn};
-use tracing_subscriber::{
-    filter::filter_fn,
-    fmt::{Subscriber, writer::BoxMakeWriter},
-};
+use tracing::info;
+use tracing_subscriber::fmt::writer::BoxMakeWriter;
 use wgsl_analyzer::{
     Result,
     cli::flags,
     config::{Config, ConfigChange, ConfigErrors},
     from_json,
-    main_loop::main_loop,
 };
 
 fn get_cwd_as_abs_path() -> Result<AbsPathBuf, std::io::Error> {
@@ -190,7 +177,7 @@ fn run_server() -> anyhow::Result<()> {
                 MessageType, ShowMessageParams,
                 notification::{Notification as _, ShowMessage},
             };
-            let not = lsp_server::Notification::new(
+            let notification = lsp_server::Notification::new(
                 ShowMessage::METHOD.to_owned(),
                 ShowMessageParams {
                     typ: MessageType::WARNING,
@@ -199,7 +186,7 @@ fn run_server() -> anyhow::Result<()> {
             );
             connection
                 .sender
-                .send(lsp_server::Message::Notification(not))
+                .send(lsp_server::Message::Notification(notification))
                 .unwrap();
         }
     }
@@ -309,7 +296,7 @@ fn setup_logging(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
     let log_file = match log_file {
         Some(path) => {
             if let Some(parent) = path.parent() {
-                fs::create_dir_all(parent);
+                drop(fs::create_dir_all(parent));
             }
             Some(
                 fs::File::create(&path)

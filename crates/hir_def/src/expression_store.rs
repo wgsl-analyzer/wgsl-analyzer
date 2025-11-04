@@ -2,13 +2,14 @@ pub mod lower;
 
 use std::ops::Index;
 
+use la_arena::{Arena, ArenaMap};
+use rustc_hash::{FxHashMap, FxHashSet};
+use syntax::{ast, pointer::AstPointer};
+
 use crate::{
     expression::{Expression, ExpressionId},
     type_specifier::{TypeSpecifier, TypeSpecifierId},
 };
-use la_arena::{Arena, ArenaMap};
-use rustc_hash::{FxHashMap, FxHashSet};
-use syntax::{ast, pointer::AstPointer};
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct SyntheticSyntax;
@@ -157,6 +158,7 @@ impl ExpressionSourceMap {
     ) -> Result<&AstPointer<ast::Expression>, &SyntheticSyntax> {
         self.expression_map_back[expression].as_ref()
     }
+
     #[must_use]
     pub fn lookup_type_specifier(
         &self,

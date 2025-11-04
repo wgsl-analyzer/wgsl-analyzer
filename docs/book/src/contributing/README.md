@@ -182,7 +182,7 @@ There are also several VS Code commands which might be of interest:
 
 ### Profiling
 
-We have a built-in hierarchical profiler, you can enable it by using `WA_PROFILE` env-var:
+We have a built-in hierarchical profiler, you can enable it by using `WA_PROFILE` environment variable:
 
 ```bash
 WA_PROFILE=*             // dump everything

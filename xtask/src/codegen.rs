@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use xshell::{Shell, cmd};
+use xshell::Shell;
 
 use crate::{
     flags::{self, CodegenType},
@@ -190,7 +190,7 @@ fn ensure_file_contents(
         );
 
         if let Some(parent) = file.parent() {
-            fs::create_dir_all(parent);
+            fs::create_dir_all(parent).unwrap();
         }
         fs::write(file, contents).unwrap();
         true

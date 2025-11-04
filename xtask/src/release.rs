@@ -1,12 +1,5 @@
 mod changelog;
 
-use std::process::{Command, Stdio};
-use std::thread;
-use std::time::Duration;
-
-use anyhow::{Context as _, bail};
-use directories::ProjectDirs;
-use stdx::JodChild;
 use xshell::{Shell, cmd};
 
 use crate::{date_iso, flags, is_release_tag, project_root};

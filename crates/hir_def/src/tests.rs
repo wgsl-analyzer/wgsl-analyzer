@@ -1,9 +1,9 @@
-use triomphe::Arc;
-
-use crate::{database::DefDatabase as _, test_db::TestDatabase};
 use base_db::{FileId, change::Change};
 use expect_test::{Expect, expect};
+use triomphe::Arc;
 use vfs::VfsPath;
+
+use crate::{database::DefDatabase as _, test_db::TestDatabase};
 
 pub(crate) fn single_file_db(source: &str) -> (TestDatabase, FileId) {
     let mut database = TestDatabase::default();

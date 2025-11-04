@@ -5,7 +5,6 @@
 use std::{path::PathBuf, str::FromStr};
 
 // use ide_ssr::{SsrPattern, SsrRule};
-
 use crate::cli::Verbosity;
 
 xflags::xflags! {

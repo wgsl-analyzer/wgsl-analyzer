@@ -1,25 +1,21 @@
 use ide_completion::CompletionFieldsToResolve;
 use line_index::WideEncoding;
 use lsp_types::{
-    CallHierarchyServerCapability, CodeActionKind, CodeActionOptions, CodeActionProviderCapability,
-    CodeLensOptions, CompletionOptions, CompletionOptionsCompletionItem, DeclarationCapability,
-    DiagnosticOptions, DocumentOnTypeFormattingOptions, FileOperationFilter, FileOperationPattern,
-    FileOperationPatternKind, FileOperationRegistrationOptions, FoldingRangeProviderCapability,
-    HoverProviderCapability, ImplementationProviderCapability, InlayHintOptions,
-    InlayHintServerCapabilities, OneOf, PositionEncodingKind, RenameOptions, SaveOptions,
-    SelectionRangeProviderCapability, SemanticTokensFullOptions, SemanticTokensLegend,
-    SemanticTokensOptions, ServerCapabilities, SignatureHelpOptions, TextDocumentSyncCapability,
-    TextDocumentSyncKind, TextDocumentSyncOptions, TypeDefinitionProviderCapability,
+    CodeActionKind, CodeActionOptions, CodeActionProviderCapability, CompletionOptions,
+    CompletionOptionsCompletionItem, DocumentOnTypeFormattingOptions, FileOperationFilter,
+    FileOperationPattern, FileOperationPatternKind, FileOperationRegistrationOptions,
+    HoverProviderCapability, InlayHintOptions, InlayHintServerCapabilities, OneOf,
+    PositionEncodingKind, SaveOptions, SelectionRangeProviderCapability, ServerCapabilities,
+    TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
     WorkDoneProgressOptions, WorkspaceFileOperationsServerCapabilities,
     WorkspaceFoldersServerCapabilities, WorkspaceServerCapabilities,
 };
 use rustc_hash::FxHashSet;
-use serde_json::json;
 
 use crate::{
     config::{Config, WgslfmtConfig},
     line_index::PositionEncoding,
-    lsp::{extensions, semantic_tokens},
+    lsp::extensions,
 };
 
 /// # Panics

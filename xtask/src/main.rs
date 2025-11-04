@@ -23,8 +23,9 @@ mod release;
 mod tidy;
 mod utilities;
 
-use anyhow::{Context as _, bail};
 use std::{env as environment, path::PathBuf};
+
+use anyhow::{Context as _, bail};
 use xshell::{Shell, cmd as command};
 
 fn main() -> anyhow::Result<()> {
