@@ -141,7 +141,7 @@ impl NagaError for naga22::front::wgsl::ParseError {
     fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.labels()
-                .filter_map(|(span, label)| Some((span.to_range(), label.to_owned()))),
+                .map(|(span, label)| (span.to_range(), label.to_owned())),
         )
     }
 
@@ -155,7 +155,7 @@ impl NagaError for naga22::WithSpan<naga22::valid::ValidationError> {
     fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.spans()
-                .filter_map(move |(span, label)| Some((span.to_range(), label.clone()))),
+                .map(move |(span, label)| (span.to_range(), label.clone())),
         )
     }
     fn location(&self) -> Option<Range<usize>> {
@@ -185,7 +185,7 @@ impl NagaError for naga27::front::wgsl::ParseError {
     fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.labels()
-                .filter_map(|(span, label)| Some((span.to_range(), label.to_owned()))),
+                .map(|(span, label)| (span.to_range(), label.to_owned())),
         )
     }
     fn location(&self) -> Option<Range<usize>> {
@@ -198,7 +198,7 @@ impl NagaError for naga27::WithSpan<naga27::valid::ValidationError> {
     fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.spans()
-                .filter_map(move |(span, label)| Some((span.to_range(), label.clone()))),
+                .map(move |(span, label)| (span.to_range(), label.clone())),
         )
     }
     fn location(&self) -> Option<Range<usize>> {
@@ -228,7 +228,7 @@ impl NagaError for nagamain::front::wgsl::ParseError {
     fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.labels()
-                .filter_map(|(span, label)| Some((span.to_range(), label.to_owned()))),
+                .map(|(span, label)| (span.to_range(), label.to_owned())),
         )
     }
     fn location(&self) -> Option<Range<usize>> {
@@ -241,7 +241,7 @@ impl NagaError for nagamain::WithSpan<nagamain::valid::ValidationError> {
     fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.spans()
-                .filter_map(move |(span, label)| Some((span.to_range(), label.clone()))),
+                .map(move |(span, label)| (span.to_range(), label.clone())),
         )
     }
     fn location(&self) -> Option<Range<usize>> {
