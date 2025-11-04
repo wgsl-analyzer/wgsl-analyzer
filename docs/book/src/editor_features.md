@@ -49,7 +49,7 @@ This also works for Markdown fenced code blocks:
 We do not expect the WGSL string within the Rust string within this literal
 Markdown document to have WGSL syntax highlighting.
 -->
-
+<!-- 
 ### Semantic style customizations
 
 You can customize the look of different semantic elements in the source code.
@@ -102,6 +102,7 @@ For example, if you wanted to use a darker text color on a specific light theme,
 
 Make sure you include the brackets around the theme name.
 For example, use `"[Ayu Light]"` to customize the theme Ayu Light.
+-->
 
 ### Special `when` clause context for keybindings
 
