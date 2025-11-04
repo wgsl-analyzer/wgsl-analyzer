@@ -1,13 +1,14 @@
-use std::{iter, ops::Index, sync::Arc};
+use std::{iter, ops::Index};
 
 use either::Either;
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
+use triomphe::Arc;
 
 use super::{BindingId, Body};
 use crate::{
     database::{DefDatabase, DefinitionWithBodyId},
-    expression::{ExpressionId, Statement, StatementId},
+    expression::{ExpressionId, Statement, StatementId, SwitchCaseSelector},
     module_data::Name,
 };
 
@@ -186,7 +187,7 @@ fn compute_compound_statement_scopes(
     }
 }
 
-#[expect(clippy::too_many_lines, reason = "TODO")]
+#[expect(clippy::too_many_lines, reason = "Long but simple match")]
 fn compute_statement_scopes(
     statement_id: StatementId,
     body: &Body,
@@ -237,7 +238,12 @@ fn compute_statement_scopes(
             compute_expression_scopes(*left_side, body, scopes, scope);
             compute_expression_scopes(*right_side, body, scopes, scope);
         },
-        Statement::IncrDecr { expression, .. } | Statement::Expression { expression } => {
+        Statement::PhonyAssignment { right_side } => {
+            compute_expression_scopes(*right_side, body, scopes, scope);
+        },
+        Statement::IncrDecr { expression, .. }
+        | Statement::Expression { expression }
+        | Statement::Assert { expression } => {
             compute_expression_scopes(*expression, body, scopes, scope);
         },
         Statement::If {
@@ -258,22 +264,18 @@ fn compute_statement_scopes(
         Statement::Switch {
             expression,
             case_blocks,
-            default_block,
         } => {
             compute_expression_scopes(*expression, body, scopes, scope);
 
             for (selectors, case) in case_blocks {
                 for selector in selectors {
-                    compute_expression_scopes(*selector, body, scopes, scope);
+                    if let SwitchCaseSelector::Expression(selector) = selector {
+                        compute_expression_scopes(*selector, body, scopes, scope);
+                    }
                 }
 
                 let case_scope = scopes.new_block_scope(scope);
                 compute_statement_scopes(*case, body, scopes, case_scope);
-            }
-
-            if let Some(default_block) = default_block {
-                let default_scope = scopes.new_block_scope(scope);
-                compute_statement_scopes(*default_block, body, scopes, default_scope);
             }
         },
         Statement::For {
@@ -304,6 +306,9 @@ fn compute_statement_scopes(
                 compute_expression_scopes(*expression, body, scopes, scope);
             }
         },
+        Statement::BreakIf { condition } => {
+            compute_expression_scopes(*condition, body, scopes, scope);
+        },
         Statement::Missing | Statement::Discard | Statement::Break | Statement::Continue => {},
         Statement::Continuing { block } | Statement::Loop { body: block } => {
             compute_statement_scopes(*block, body, scopes, scope);
@@ -319,7 +324,7 @@ fn compute_expression_scopes(
     scope: ScopeId,
 ) {
     scopes.set_scope_expression(expression, scope);
-    body.exprs[expression].walk_child_expressions(|child| {
+    body.store[expression].walk_child_expressions(|child| {
         compute_expression_scopes(child, body, scopes, scope);
     });
 }

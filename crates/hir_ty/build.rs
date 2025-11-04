@@ -84,7 +84,6 @@ enum AccessMode {
     ReadWrite,
     Read,
     Write,
-    Any,
 }
 
 impl FromStr for AccessMode {
@@ -92,10 +91,9 @@ impl FromStr for AccessMode {
 
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         Ok(match string {
-            "read_write" => Self::ReadWrite,
+            "read_write" | "_" => Self::ReadWrite,
             "read" => Self::Read,
             "write" => Self::Write,
-            "_" => Self::Any,
             _ => return Err(()),
         })
     }
@@ -118,7 +116,7 @@ enum TextureDimensionality {
 }
 
 fn main() -> Result<(), Box<dyn error::Error>> {
-    println!("cargo:rerun-if-changed=builtins.wgsl.txt");
+    println!("cargo::rerun-if-changed=builtins.wgsl.txt");
 
     let directory = PathBuf::from(env::var("OUT_DIR")?).join("generated");
     fs::create_dir_all(&directory)?;
@@ -293,7 +291,10 @@ fn only_char(input: &str) -> char {
     value
 }
 
-#[expect(clippy::unimplemented, reason = "TODO")]
+#[expect(
+    clippy::unimplemented,
+    reason = "builtin refactor https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
+)]
 fn parse_ty(
     generics: &mut BTreeMap<char, (usize, Generic)>,
     r#type: &str,
@@ -441,8 +442,11 @@ fn type_to_rust(r#type: &Type) -> String {
                 texture.dimension,
             )
         },
-        Type::Sampler { comparison } => {
-            format!("TyKind::Sampler(SamplerType {{ comparison: {comparison}  }}).intern(database)")
+        Type::Sampler { comparison: true } => {
+            "TyKind::Sampler(SamplerType::SamplerComparison).intern(database)".to_owned()
+        },
+        Type::Sampler { comparison: false } => {
+            "TyKind::Sampler(SamplerType::Sampler).intern(database)".to_owned()
         },
         Type::RuntimeArray(inner) => format!(
             "TyKind::Array(ArrayType {{

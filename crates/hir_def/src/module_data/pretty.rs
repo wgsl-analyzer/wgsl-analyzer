@@ -1,30 +1,19 @@
-use std::fmt::Write as _;
+#![expect(clippy::use_debug, reason = "debug formatting in unit tests is ok")]
 
-use super::ImportValue;
 use crate::{
+    FileAstId,
     database::DefDatabase,
     module_data::{ModuleInfo, ModuleItem},
 };
+use std::fmt::Write as _;
 
-pub fn pretty_print_module(
-    database: &dyn DefDatabase,
-    module: &ModuleInfo,
-) -> String {
+#[must_use]
+pub fn pretty_print_module(module: &ModuleInfo) -> String {
     let mut buffer = String::new();
     for &item in module.items() {
-        write_pretty_module_item(item, module, &mut buffer, database);
-        buffer.push_str(";\n");
+        write_pretty_module_item(item, module, &mut buffer);
+        buffer.push('\n');
     }
-    buffer
-}
-
-pub fn pretty_module_item(
-    item: ModuleItem,
-    module: &ModuleInfo,
-    database: &dyn DefDatabase,
-) -> String {
-    let mut buffer = String::new();
-    write_pretty_module_item(item, module, &mut buffer, database);
     buffer
 }
 
@@ -32,74 +21,46 @@ fn write_pretty_module_item(
     item: ModuleItem,
     module: &ModuleInfo,
     buffer: &mut String,
-    database: &dyn DefDatabase,
 ) {
     match item {
         ModuleItem::Function(id) => {
             let function = &module.data[id.index];
-
-            _ = write!(buffer, "fn {}(", function.name.0);
-            for parameter in function.parameters.clone().map(|index| &module.data[index]) {
-                let r#type = database.lookup_intern_type_ref(parameter.r#type);
-                _ = write!(buffer, "{}, ", &r#type);
-            }
-            trim_in_place(buffer, ", ");
-            _ = write!(buffer, ")");
+            print_ast_id(buffer, function.ast_id);
+            _ = write!(buffer, "fn {};", function.name.0);
         },
         ModuleItem::Struct(id) => {
             let r#struct = &module.data[id.index];
-            _ = writeln!(buffer, "struct {} {{", r#struct.name.0);
-            for field in r#struct.fields.clone() {
-                let field = &module.data[field];
-                let r#type = database.lookup_intern_type_ref(field.r#type);
-                _ = writeln!(buffer, "    {}: {type};", field.name.0);
-            }
-            _ = write!(buffer, "}}");
+            print_ast_id(buffer, r#struct.ast_id);
+            _ = write!(buffer, "struct {} {{ ... }}", r#struct.name.0);
         },
-        ModuleItem::GlobalVariable(var) => {
-            let var = &module.data[var.index];
-            let r#type = var
-                .r#type
-                .map(|r#type| database.lookup_intern_type_ref(r#type));
-            _ = write!(buffer, "var {}", &var.name.0);
-            if let Some(r#type) = r#type {
-                _ = write!(buffer, ": {type}");
-            }
+        ModuleItem::GlobalVariable(id) => {
+            let var = &module.data[id.index];
+            print_ast_id(buffer, var.ast_id);
+            _ = write!(buffer, "var {} = _;", &var.name.0);
         },
-        ModuleItem::GlobalConstant(var) => {
-            let constant = &module.data[var.index];
-            let r#type = constant
-                .r#type
-                .map(|r#type| database.lookup_intern_type_ref(r#type));
-            _ = write!(buffer, "let {}", &constant.name.0);
-            if let Some(r#type) = r#type {
-                _ = write!(buffer, ": {type}");
-            }
+        ModuleItem::GlobalConstant(id) => {
+            let constant = &module.data[id.index];
+            print_ast_id(buffer, constant.ast_id);
+            _ = write!(buffer, "const {} = _;", &constant.name.0);
         },
-        ModuleItem::Override(var) => {
-            let override_decl = &module.data[var.index];
-            let r#type = override_decl
-                .r#type
-                .map(|r#type| database.lookup_intern_type_ref(r#type));
-            _ = write!(buffer, "override {}", &override_decl.name.0);
-            if let Some(r#type) = r#type {
-                _ = write!(buffer, ": {type}");
-            }
+        ModuleItem::Override(id) => {
+            let override_decl = &module.data[id.index];
+            print_ast_id(buffer, override_decl.ast_id);
+            _ = write!(buffer, "override {} = _;", &override_decl.name.0);
         },
-        ModuleItem::Import(import) => {
-            let import = &module.data[import.index];
-            _ = match &import.value {
-                ImportValue::Path(path) => write!(buffer, "#import \"{path}\""),
-                ImportValue::Custom(key) => write!(buffer, "#import {key}"),
-            };
-        },
-        ModuleItem::TypeAlias(type_alias) => {
-            let type_alias = &module.data[type_alias.index];
-            let name = &type_alias.name.0;
-            let r#type = database.lookup_intern_type_ref(type_alias.r#type);
-            _ = write!(buffer, "type {name} = {type};");
+        ModuleItem::TypeAlias(id) => {
+            let type_alias = &module.data[id.index];
+            print_ast_id(buffer, type_alias.ast_id);
+            _ = write!(buffer, "alias {} = _;", &type_alias.name.0);
         },
     }
+}
+
+fn print_ast_id<T: syntax::AstNode>(
+    buffer: &mut String,
+    ast_id: FileAstId<T>,
+) {
+    writeln!(buffer, "// {ast_id:?}");
 }
 
 fn trim_in_place(

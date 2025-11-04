@@ -19,7 +19,11 @@ pub(crate) fn complete_dot(
     };
     match context
         .semantics
-        .analyze(context.container?)
+        .analyze(
+            context
+                .container
+                .and_then(hir::ChildContainer::as_def_with_body_id)?,
+        )
         .type_of_expression(&expression.expression()?)?
         .kind(context.database)
         .unref(context.database)
@@ -57,7 +61,7 @@ fn struct_completions(
             .build(context.database)
     };
 
-    let r#struct = context.database.struct_data(r#struct);
+    let r#struct = context.database.struct_data(r#struct).0;
     let items = r#struct
         .fields()
         .iter()
@@ -73,8 +77,8 @@ fn vector_completions(
     vector_type: &hir_ty::ty::VectorType,
 ) {
     let field_text = expression
-        .name_ref()
-        .map(|name| name.text().to_string())
+        .field()
+        .map(|name| name.text().to_owned())
         // It should never be `None` because `x.$0` gets parsed as `Some("")`.
         .unwrap_or_default();
 
@@ -85,8 +89,8 @@ fn vector_completions(
             "Invalid vector size: {size}"
         );
         let possible_swizzles = possible_swizzles(size, &field_text);
-        let suggestions = possible_swizzles.enumerate().map(|(index, label)| {
-            let mut binding =
+        let suggestions = possible_swizzles.map(|label| {
+            let binding =
                 CompletionItem::new(CompletionItemKind::Field, context.source_range(), label);
             binding.build(context.database)
         });

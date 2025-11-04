@@ -1,17 +1,18 @@
 mod lower;
 pub mod scope;
 
-use std::sync::Arc;
-
 use either::Either;
 use la_arena::{Arena, ArenaMap, Idx};
 use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::{ast, pointer::AstPointer};
+use triomphe::Arc;
 
 use crate::{
     HasSource as _,
+    attributes::Attribute,
     database::{DefDatabase, DefinitionWithBodyId, Lookup as _},
     expression::{Expression, ExpressionId, Statement, StatementId},
+    expression_store::{ExpressionSourceMap, ExpressionStore, SyntheticSyntax},
     module_data::Name,
 };
 
@@ -24,10 +25,10 @@ pub struct Binding {
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct Body {
-    pub exprs: Arena<Expression>,
+    pub store: ExpressionStore,
+    pub attributes: Arena<Attribute>,
     pub statements: Arena<Statement>,
     pub bindings: Arena<Binding>,
-    pub parenthesis_expressions: FxHashSet<ExpressionId>,
 
     // for global declarations
     pub main_binding: Option<BindingId>,
@@ -37,8 +38,13 @@ pub struct Body {
     pub root: Option<Either<StatementId, ExpressionId>>,
 }
 
-#[derive(PartialEq, Eq, Debug)]
-pub struct SyntheticSyntax;
+impl std::ops::Deref for Body {
+    type Target = ExpressionStore;
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.store
+    }
+}
 
 /// An item body together with the mapping from syntax nodes to HIR expression
 /// IDs.
@@ -47,23 +53,15 @@ pub struct SyntheticSyntax;
 /// expression containing it; but for type inference etc., we want to operate on
 /// a structure that is agnostic to the actual positions of expressions in the
 /// file, so that we do not recompute types whenever some whitespace is typed.
-///
-/// One complication here is that, due to macro expansion, a single `Body` might
-/// be spread across several files. So, for each `ExprId` and `PatId`, we record
-/// both the `HirFileId` and the position inside the file. However, we only store
-/// AST -> `ExprId` mapping for non-macro files, as it is not clear how to handle
-/// this properly for macros.
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct BodySourceMap {
-    expression_map: FxHashMap<AstPointer<ast::Expression>, ExpressionId>,
-    expression_map_back:
-        ArenaMap<ExpressionId, Result<AstPointer<ast::Expression>, SyntheticSyntax>>,
+    expressions: ExpressionSourceMap,
 
     statement_map: FxHashMap<AstPointer<ast::Statement>, StatementId>,
     statement_map_back: ArenaMap<StatementId, Result<AstPointer<ast::Statement>, SyntheticSyntax>>,
 
-    binding_map: FxHashMap<AstPointer<ast::Binding>, BindingId>,
-    binding_map_back: ArenaMap<BindingId, Result<AstPointer<ast::Binding>, SyntheticSyntax>>,
+    binding_map: FxHashMap<AstPointer<ast::Name>, BindingId>,
+    binding_map_back: ArenaMap<BindingId, Result<AstPointer<ast::Name>, SyntheticSyntax>>,
 }
 
 impl Body {
@@ -118,7 +116,7 @@ impl BodySourceMap {
         &self,
         source: &AstPointer<ast::Expression>,
     ) -> Option<ExpressionId> {
-        self.expression_map.get(source).copied()
+        self.expressions.lookup_expression(source)
     }
 
     #[must_use]
@@ -132,7 +130,7 @@ impl BodySourceMap {
     #[must_use]
     pub fn lookup_binding(
         &self,
-        source: &AstPointer<ast::Binding>,
+        source: &AstPointer<ast::Name>,
     ) -> Option<BindingId> {
         self.binding_map.get(source).copied()
     }
@@ -140,7 +138,7 @@ impl BodySourceMap {
     pub fn binding_to_source(
         &self,
         binding: BindingId,
-    ) -> Result<&AstPointer<ast::Binding>, &SyntheticSyntax> {
+    ) -> Result<&AstPointer<ast::Name>, &SyntheticSyntax> {
         self.binding_map_back[binding].as_ref()
     }
 
@@ -148,7 +146,7 @@ impl BodySourceMap {
         &self,
         expression: ExpressionId,
     ) -> Result<&AstPointer<ast::Expression>, &SyntheticSyntax> {
-        self.expression_map_back[expression].as_ref()
+        self.expressions.expression_to_source(expression)
     }
 
     pub fn statement_to_source(
@@ -156,5 +154,10 @@ impl BodySourceMap {
         statement: StatementId,
     ) -> Result<&AstPointer<ast::Statement>, &SyntheticSyntax> {
         self.statement_map_back[statement].as_ref()
+    }
+
+    #[must_use]
+    pub const fn expression_source_map(&self) -> &ExpressionSourceMap {
+        &self.expressions
     }
 }

@@ -476,10 +476,11 @@ workgroupUniformLoad(ptr<T>) -> T
 
 // TODO: T should only match i32, f32, u32 in a lot of ops
 
-op_unary_minus(f32) -> f32
-op_unary_minus(i32) -> i32
-op_unary_minus(vecN<f32>) -> vecN<f32>
-op_unary_minus(vecN<i32>) -> vecN<i32>
+// TODO: T should only match AbstractInt, i32, or u32 for a lot of bitwise ops
+// https://www.w3.org/TR/WGSL/#bit-expr
+
+op_unary_minus(vecN<T>) -> vecN<T>
+op_unary_minus(T) -> T
 
 op_unary_not(bool) -> bool
 op_unary_not(vecN<bool>) -> vecN<bool>
@@ -495,11 +496,8 @@ op_eq(T, T) -> bool
 op_cmp(vecN<T>, vecN<T>) -> vecN<bool>
 op_cmp(T, T) -> bool
 
-
-op_binary_bitop(vecN<u32>, vecN<u32>) -> vecN<u32>
-op_binary_bitop(u32, u32) -> u32
-op_binary_bitop(vecN<i32>, vecN<i32>) -> vecN<i32>
-op_binary_bitop(i32, i32) -> i32
+op_binary_bitop(vecN<T>, vecN<T>) -> vecN<T>
+op_binary_bitop(T, T) -> T
 
 op_binary_shift(vecN<u32>, vecN<u32>) -> vecN<u32>
 op_binary_shift(u32, u32) -> u32
@@ -608,44 +606,52 @@ op_mat2x4_constructor(col1: vec4<T>, col2: vec4<T>) -> mat2x4<T>
 op_mat3x4_constructor(col1: vec4<T>, col2: vec4<T>, col3: vec4<T>) -> mat3x4<T>
 op_mat4x4_constructor(col1: vec4<T>, col2: vec4<T>, col3: vec4<T>, col4: vec4<T>) -> mat4x4<T>
 
-op_array_constructor(T) -> array<T>
-op_array_constructor(T, T) -> array<T>
-op_array_constructor(T, T, T) -> array<T>
-op_array_constructor(T, T, T, T) -> array<T>
-op_array_constructor(T, T, T, T, T) -> array<T>
+op_bool_constructor(bool) -> bool
+op_bool_constructor(u32) -> bool
+op_bool_constructor(i32) -> bool
+op_bool_constructor(f32) -> bool
+op_bool_constructor(f16) -> bool
 
-op_convert(u32) -> bool
-op_convert(i32) -> bool
-op_convert(f32) -> bool
+op_i32_constructor(bool) -> i32
+op_i32_constructor(u32) -> i32
+op_i32_constructor(i32) -> i32
+op_i32_constructor(f32) -> i32
+op_i32_constructor(f16) -> i32
+
+op_u32_constructor(bool) -> u32
+op_u32_constructor(u32) -> u32
+op_u32_constructor(i32) -> u32
+op_u32_constructor(f32) -> u32
+op_u32_constructor(f16) -> u32
+
+op_f32_constructor(bool) -> f32
+op_f32_constructor(u32) -> f32
+op_f32_constructor(i32) -> f32
+op_f32_constructor(f32) -> f32
+op_f32_constructor(f16) -> f32
+
+op_f16_constructor(bool) -> f16
+op_f16_constructor(u32) -> f16
+op_f16_constructor(i32) -> f16
+op_f16_constructor(f32) -> f16
+
+// TODO: Those are unused. Fix that, by merging them into the vector constructors
 op_convert(vecN<u32>) -> vecN<bool>
 op_convert(vecN<i32>) -> vecN<bool>
 op_convert(vecN<f32>) -> vecN<bool>
 
-op_convert(bool) -> i32
-op_convert(u32) -> i32
-op_convert(f32) -> i32
 op_convert(vecN<bool>) -> vecN<i32>
 op_convert(vecN<u32>) -> vecN<i32>
 op_convert(vecN<f32>) -> vecN<i32>
 
-op_convert(bool) -> u32
-op_convert(i32) -> u32
-op_convert(f32) -> u32
 op_convert(vecN<bool>) -> vecN<u32>
 op_convert(vecN<i32>) -> vecN<u32>
 op_convert(vecN<f32>) -> vecN<u32>
 
-op_convert(bool) -> u32
-op_convert(i32) -> u32
-op_convert(f32) -> u32
 op_convert(vecN<bool>) -> vecN<u32>
 op_convert(vecN<i32>) -> vecN<u32>
 op_convert(vecN<f32>) -> vecN<u32>
 
-op_convert(bool) -> f32
-op_convert(i32) -> f32
-op_convert(u32) -> f32
-op_convert(f32) -> f32
 op_convert(vecN<bool>) -> vecN<f32>
 op_convert(vecN<i32>) -> vecN<f32>
 op_convert(vecN<u32>) -> vecN<f32>

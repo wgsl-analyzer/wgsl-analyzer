@@ -2,7 +2,6 @@ use std::{
     fmt::{self, Debug},
     hash,
     marker::PhantomData,
-    sync::Arc,
 };
 
 use base_db::{FileId, SourceDatabase, TextRange, TextSize};
@@ -11,6 +10,7 @@ use syntax::{
     AstNode as _, Parse,
     ast::{self, Item},
 };
+use triomphe::Arc;
 use vfs::VfsPath;
 
 use crate::{
@@ -22,13 +22,13 @@ use crate::{
         FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, StructData,
         TypeAliasData,
     },
-    hir_file_id::{HirFileIdRepr, ImportFile, relative_file},
+    expression_store::{ExpressionSourceMap, ExpressionStore},
+    hir_file_id::{HirFileIdRepr, relative_file},
     module_data::{
-        Function, GlobalConstant, GlobalVariable, Import, ModuleInfo, ModuleItemId, Override,
-        Struct, TypeAlias,
+        Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItemId, Override, Struct,
+        TypeAlias,
     },
     resolver::Resolver,
-    type_ref::TypeReference,
 };
 
 #[salsa::query_group(DefDatabaseStorage)]
@@ -36,12 +36,12 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
     fn parse_or_resolve(
         &self,
         key: HirFileId,
-    ) -> Result<Parse, ()>;
+    ) -> Parse;
 
     fn get_path(
         &self,
         key: HirFileId,
-    ) -> Result<VfsPath, ()>;
+    ) -> VfsPath;
 
     fn get_file_id(
         &self,
@@ -52,17 +52,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         &self,
         key: HirFileId,
     ) -> Arc<AstIdMap>;
-
-    fn resolve_full_source(
-        &self,
-        key: HirFileId,
-    ) -> Result<String, ()>;
-
-    fn text_range_from_full(
-        &self,
-        key: HirFileId,
-        range: TextRange,
-    ) -> Result<TextRange, ()>;
 
     #[salsa::invoke(ModuleInfo::module_info_query)]
     fn module_info(
@@ -88,56 +77,85 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         key: DefinitionWithBodyId,
     ) -> Arc<ExprScopes>;
 
-    #[salsa::invoke(FunctionData::fn_data_query)]
-    fn fn_data(
+    #[salsa::invoke(signature_with_source_map)]
+    fn signature_with_source_map(
+        &self,
+        key: DefinitionWithBodyId,
+    ) -> (Arc<ExpressionStore>, Arc<ExpressionSourceMap>);
+
+    #[salsa::invoke(FunctionData::query)]
+    fn function_data(
         &self,
         key: FunctionId,
-    ) -> Arc<FunctionData>;
+    ) -> (Arc<FunctionData>, Arc<ExpressionSourceMap>);
 
-    #[salsa::invoke(StructData::struct_data_query)]
+    #[salsa::invoke(StructData::query)]
     fn struct_data(
         &self,
         key: StructId,
-    ) -> Arc<StructData>;
+    ) -> (Arc<StructData>, Arc<ExpressionSourceMap>);
 
     #[salsa::invoke(TypeAliasData::type_alias_data_query)]
     fn type_alias_data(
         &self,
         key: TypeAliasId,
-    ) -> Arc<TypeAliasData>;
+    ) -> (Arc<TypeAliasData>, Arc<ExpressionSourceMap>);
 
     #[salsa::invoke(GlobalVariableData::global_var_data_query)]
     fn global_var_data(
         &self,
         key: GlobalVariableId,
-    ) -> Arc<GlobalVariableData>;
+    ) -> (Arc<GlobalVariableData>, Arc<ExpressionSourceMap>);
 
     #[salsa::invoke(GlobalConstantData::global_constant_data_query)]
     fn global_constant_data(
         &self,
         key: GlobalConstantId,
-    ) -> Arc<GlobalConstantData>;
+    ) -> (Arc<GlobalConstantData>, Arc<ExpressionSourceMap>);
 
     #[salsa::invoke(OverrideData::override_data_query)]
     fn override_data(
         &self,
         key: OverrideId,
-    ) -> Arc<OverrideData>;
+    ) -> (Arc<OverrideData>, Arc<ExpressionSourceMap>);
 
     #[salsa::invoke(AttributesWithOwner::attrs_query)]
     fn attrs(
         &self,
         key: AttributeDefId,
-    ) -> Arc<AttributesWithOwner>;
+    ) -> (Arc<AttributesWithOwner>, Arc<ExpressionSourceMap>);
+}
+
+fn signature_with_source_map(
+    database: &dyn DefDatabase,
+    key: DefinitionWithBodyId,
+) -> (Arc<ExpressionStore>, Arc<ExpressionSourceMap>) {
+    match key {
+        DefinitionWithBodyId::Function(id) => {
+            let (data, source_map) = database.function_data(id);
+            (data.store.clone(), source_map)
+        },
+        DefinitionWithBodyId::GlobalVariable(id) => {
+            let (data, source_map) = database.global_var_data(id);
+            (data.store.clone(), source_map)
+        },
+        DefinitionWithBodyId::GlobalConstant(id) => {
+            let (data, source_map) = database.global_constant_data(id);
+            (data.store.clone(), source_map)
+        },
+        DefinitionWithBodyId::Override(id) => {
+            let (data, source_map) = database.override_data(id);
+            (data.store.clone(), source_map)
+        },
+    }
 }
 
 fn get_path(
     database: &dyn DefDatabase,
     file_id: HirFileId,
-) -> Result<VfsPath, ()> {
+) -> VfsPath {
     match file_id.0 {
-        HirFileIdRepr::FileId(file_id) => Ok(database.file_path(file_id)),
-        HirFileIdRepr::MacroFile(_) => Err(()),
+        HirFileIdRepr::FileId(file_id) => database.file_path(file_id),
     }
 }
 
@@ -152,158 +170,23 @@ fn get_file_id(
 fn parse_or_resolve(
     database: &dyn DefDatabase,
     file_id: HirFileId,
-) -> Result<Parse, ()> {
+) -> Parse {
     match file_id.0 {
-        HirFileIdRepr::FileId(file_id) => Ok(database.parse(file_id)),
-        HirFileIdRepr::MacroFile(import_file) => {
-            let import_loc = database.lookup_intern_import(import_file.import_id);
-            let module_info = database.module_info(import_loc.file_id);
-            let import: &Import = module_info.get(import_loc.value);
-
-            match &import.value {
-                crate::module_data::ImportValue::Path(path) => {
-                    let file_id = relative_file(database, import_loc.file_id, path).ok_or(())?;
-                    Ok(database.parse(file_id))
-                },
-                crate::module_data::ImportValue::Custom(key) => {
-                    database.parse_import(key.clone(), syntax::ParseEntryPoint::File)
-                },
-            }
-        },
+        HirFileIdRepr::FileId(file_id) => database.parse(file_id),
     }
-}
-
-fn resolve_full_source(
-    database: &dyn DefDatabase,
-    file_id: HirFileId,
-) -> Result<String, ()> {
-    let parse = database.parse_or_resolve(file_id)?;
-
-    let root = ast::SourceFile::cast(parse.syntax().clone_for_update()).unwrap();
-
-    let imports: Vec<_> = root
-        .items()
-        .filter_map(|item| match item {
-            Item::Import(import) => Some(import),
-            Item::Function(_)
-            | Item::StructDeclaration(_)
-            | Item::GlobalVariableDeclaration(_)
-            | Item::GlobalConstantDeclaration(_)
-            | Item::OverrideDeclaration(_)
-            | Item::TypeAliasDeclaration(_) => None,
-        })
-        .filter_map(|import| {
-            let import_mod_id = crate::module_data::find_item(database, file_id, &import)?;
-            let import_id = database.intern_import(Location::new(file_id, import_mod_id));
-            let import_file = HirFileId::from(ImportFile { import_id });
-
-            Some((import.syntax().clone(), import_file))
-        })
-        .collect();
-
-    for (import, import_file) in imports.into_iter().rev() {
-        let import_source = match database.parse_or_resolve(import_file) {
-            Ok(parse) => parse.syntax().clone_for_update(),
-            Err(()) => continue,
-        };
-
-        let import_whitespace = import
-            .last_token()
-            .filter(|token| token.kind().is_whitespace());
-        let to_insert = match import_whitespace {
-            Some(whitespace) => vec![import_source.into(), whitespace.into()],
-            None => vec![import_source.into()],
-        };
-
-        let index = import.index();
-        import
-            .parent()
-            .unwrap()
-            .splice_children(index..index + 1, to_insert);
-    }
-
-    Ok(root.syntax().to_string())
-}
-
-fn text_range_from_full(
-    database: &dyn DefDatabase,
-    file_id: HirFileId,
-    mut range: TextRange,
-) -> Result<TextRange, ()> {
-    let root = database.parse_or_resolve(file_id)?.tree();
-
-    let imports = root
-        .items()
-        .filter_map(|item| match item {
-            Item::Import(import) => Some(import),
-            Item::Function(_)
-            | Item::StructDeclaration(_)
-            | Item::GlobalVariableDeclaration(_)
-            | Item::GlobalConstantDeclaration(_)
-            | Item::OverrideDeclaration(_)
-            | Item::TypeAliasDeclaration(_) => None,
-        })
-        .filter_map(|import| {
-            let import_mod_id = crate::module_data::find_item(database, file_id, &import)?;
-            let import_id = database.intern_import(Location::new(file_id, import_mod_id));
-            let import_file = HirFileId::from(ImportFile { import_id });
-
-            Some((import.syntax().clone(), import_file))
-        });
-
-    for (import, import_file) in imports {
-        if import.text_range().start() > range.end() {
-            break;
-        }
-
-        let import_length = match database.parse_or_resolve(import_file) {
-            Ok(parse) => parse.syntax().text().len(),
-            Err(()) => continue,
-        };
-
-        let import_whitespace = import
-            .last_token()
-            .filter(|token| token.kind().is_whitespace())
-            .map_or(0, |ws| ws.text().len());
-
-        let to_remove = import_length + TextSize::from(u32::try_from(import_whitespace).unwrap());
-
-        if let Some(new_range) = range.checked_sub(to_remove) {
-            range = new_range + import.syntax().text().len();
-        } else {
-            // original range is inside the import
-            range = import.syntax().text_range();
-            break;
-        }
-    }
-
-    Ok(range)
 }
 
 fn ast_id_map(
     database: &dyn DefDatabase,
     file_id: HirFileId,
 ) -> Arc<AstIdMap> {
-    let map = database
-        .parse_or_resolve(file_id)
-        .map(|source| AstIdMap::from_source(&source.tree()))
-        .unwrap_or_default();
+    let parsed = database.parse_or_resolve(file_id);
+    let map = AstIdMap::from_source(&parsed.tree());
     Arc::new(map)
 }
 
 #[salsa::query_group(InternDatabaseStorage)]
 pub trait InternDatabase: SourceDatabase {
-    #[salsa::interned]
-    fn intern_type_ref(
-        &self,
-        type_reference: TypeReference,
-    ) -> Interned<TypeReference>;
-    #[salsa::interned]
-    fn intern_attribute(
-        &self,
-        attribute: Attribute,
-    ) -> Interned<Attribute>;
-
     #[salsa::interned]
     fn intern_function(
         &self,
@@ -329,11 +212,6 @@ pub trait InternDatabase: SourceDatabase {
         &self,
         loc: Location<Struct>,
     ) -> StructId;
-    #[salsa::interned]
-    fn intern_import(
-        &self,
-        loc: Location<Import>,
-    ) -> ImportId;
     #[salsa::interned]
     fn intern_type_alias(
         &self,
@@ -440,9 +318,9 @@ intern_id!(
 );
 intern_id!(OverrideId, Location<Override>, lookup_intern_override);
 intern_id!(StructId, Location<Struct>, lookup_intern_struct);
-intern_id!(ImportId, Location<Import>, lookup_intern_import);
 intern_id!(TypeAliasId, Location<TypeAlias>, lookup_intern_type_alias);
 
+/// Module items with a body.
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
 pub enum DefinitionWithBodyId {
     Function(FunctionId),
@@ -470,6 +348,53 @@ impl DefinitionWithBodyId {
     ) -> Resolver {
         let file_id = self.file_id(database);
         let module_info = database.module_info(file_id);
-        Resolver::default().push_module_scope(database, file_id, module_info)
+        Resolver::default().push_module_scope(file_id, module_info)
+    }
+}
+
+/// All module items.
+#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
+pub enum ModuleDefinitionId {
+    Function(FunctionId),
+    GlobalVariable(GlobalVariableId),
+    GlobalConstant(GlobalConstantId),
+    Override(OverrideId),
+    Struct(StructId),
+    TypeAlias(TypeAliasId),
+}
+
+impl ModuleDefinitionId {
+    pub fn file_id(
+        self,
+        database: &dyn DefDatabase,
+    ) -> HirFileId {
+        match self {
+            Self::Function(id) => id.lookup(database).file_id,
+            Self::GlobalVariable(id) => id.lookup(database).file_id,
+            Self::GlobalConstant(id) => id.lookup(database).file_id,
+            Self::Override(id) => id.lookup(database).file_id,
+            Self::Struct(id) => id.lookup(database).file_id,
+            Self::TypeAlias(id) => id.lookup(database).file_id,
+        }
+    }
+
+    pub fn resolver(
+        self,
+        database: &dyn DefDatabase,
+    ) -> Resolver {
+        let file_id = self.file_id(database);
+        let module_info = database.module_info(file_id);
+        Resolver::default().push_module_scope(file_id, module_info)
+    }
+}
+
+impl From<DefinitionWithBodyId> for ModuleDefinitionId {
+    fn from(value: DefinitionWithBodyId) -> Self {
+        match value {
+            DefinitionWithBodyId::Function(id) => Self::Function(id),
+            DefinitionWithBodyId::GlobalVariable(id) => Self::GlobalVariable(id),
+            DefinitionWithBodyId::GlobalConstant(id) => Self::GlobalConstant(id),
+            DefinitionWithBodyId::Override(id) => Self::Override(id),
+        }
     }
 }

@@ -10,7 +10,7 @@ pub(crate) fn format(
     file_id: FileId,
     range: Option<TextRange>,
 ) -> Option<SyntaxNode> {
-    let file = database.parse_no_preprocessor(file_id).tree();
+    let file = database.parse(file_id).tree();
 
     let node = match range {
         None => file.syntax().clone_for_update(),
@@ -20,6 +20,7 @@ pub(crate) fn format(
         },
     };
 
-    wgsl_formatter::format_recursive(&node, &FormattingOptions::default());
+    // TODO: Re-enable the formatter
+    // wgsl_formatter::format_recursive(&node, &FormattingOptions::default());
     Some(node)
 }

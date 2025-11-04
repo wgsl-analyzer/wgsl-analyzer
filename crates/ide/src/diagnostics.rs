@@ -298,16 +298,15 @@ impl NagaErrorPolicy {
             return;
         }
         let original_range = |range: ops::Range<usize>| {
-            let range_in_full = TextRange::new(
+            TextRange::new(
                 TextSize::from(u32::try_from(range.start).expect("indexes are small numbers")),
                 TextSize::from(u32::try_from(range.end).expect("indexes are small numbers")),
-            );
-            database.text_range_from_full(file_id.into(), range_in_full)
+            )
         };
 
-        let spans = error.spans().filter_map(|(span, label)| {
-            let range = original_range(span).ok()?;
-            Some((range, label))
+        let spans = error.spans().map(|(span, label)| {
+            let range = original_range(span);
+            (range, label)
         });
 
         match *self {
@@ -358,11 +357,8 @@ fn naga_diagnostics<N: Naga>(
     config: &DiagnosticsConfig,
     accumulator: &mut Vec<AnyDiagnostic>,
 ) {
-    let Ok(source) = database.resolve_full_source(file_id.into()) else {
-        return;
-    };
-
-    let full_range = TextRange::up_to(TextSize::of(&source));
+    let source = database.file_text(file_id);
+    let full_range = TextRange::up_to(TextSize::of(source.as_str()));
 
     let policy = NagaErrorPolicy::Related;
     match N::parse(&source) {
@@ -391,7 +387,7 @@ pub fn diagnostics(
     config: &DiagnosticsConfig,
     file_id: FileId,
 ) -> Vec<Diagnostic> {
-    let (parse, unconfigured) = database.parse_with_unconfigured(file_id);
+    let parse = database.parse(file_id);
 
     let mut diagnostics = Vec::new();
 
@@ -400,18 +396,8 @@ pub fn diagnostics(
             .errors()
             .iter()
             .map(|error| AnyDiagnostic::ParseError {
-                message: error.message(),
+                message: error.message.clone(),
                 range: error.range,
-                file_id: file_id.into(),
-            }),
-    );
-
-    diagnostics.extend(
-        unconfigured
-            .iter()
-            .map(|unconfigured| AnyDiagnostic::UnconfiguredCode {
-                definition: unconfigured.definition.clone(),
-                range: unconfigured.range,
                 file_id: file_id.into(),
             }),
     );
@@ -445,7 +431,7 @@ pub fn diagnostics(
         .into_iter()
         .map(|diagnostic| {
             let file_id = diagnostic.file_id();
-            let root = database.parse_or_resolve(file_id).unwrap().syntax();
+            let root = database.parse_or_resolve(file_id).syntax();
             match diagnostic {
                 AnyDiagnostic::AssignmentNotAReference { left_side, actual } => {
                     let source = left_side.value.to_node(&root);
@@ -602,23 +588,19 @@ pub fn diagnostics(
                     let frange = original_file_range(database, var.file_id, &source);
                     Diagnostic::new(DiagnosticCode("12"), format!("{error}"), frange.range)
                 },
-                AnyDiagnostic::InvalidType {
-                    file_id,
-                    location,
+                AnyDiagnostic::InvalidTypeSpecifier {
+                    type_specifier,
                     error,
                 } => {
-                    let source = location.to_node(&root);
-                    let frange = original_file_range(database, file_id, source.syntax());
+                    let source = type_specifier.value.to_node(&root);
+                    let frange =
+                        original_file_range(database, type_specifier.file_id, source.syntax());
                     Diagnostic::new(DiagnosticCode("13"), format!("{error}"), frange.range)
                 },
-                AnyDiagnostic::UnresolvedImport { import } => {
-                    let source = import.value.to_node(&root);
-                    let frange = original_file_range(database, file_id, source.syntax());
-                    Diagnostic::new(
-                        DiagnosticCode("14"),
-                        "unresolved import".to_owned(),
-                        frange.range,
-                    )
+                AnyDiagnostic::InvalidIdentExpression { expression, error } => {
+                    let source = expression.value.to_node(&root);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(DiagnosticCode("14"), format!("{error}"), frange.range)
                 },
                 AnyDiagnostic::NagaValidationError {
                     message,
@@ -633,20 +615,9 @@ pub fn diagnostics(
                 AnyDiagnostic::ParseError { message, range, .. } => {
                     Diagnostic::new(DiagnosticCode("16"), message, range)
                 },
-                AnyDiagnostic::UnconfiguredCode {
-                    definition, range, ..
-                } => Diagnostic::new(
-                    DiagnosticCode("17"),
-                    format!(
-                        "code is inactive due to `#ifdef` directives: `{definition}` is not enabled"
-                    ),
-                    range,
-                )
-                .with_severity(Severity::WeakWarning)
-                .unused(),
                 AnyDiagnostic::NoConstructor {
                     expression,
-                    builtins: [specific, general],
+                    builtins,
                     r#type,
                     parameters,
                 } => {
@@ -658,24 +629,10 @@ pub fn diagnostics(
                         .join(", ");
 
                     let mut possible = Vec::with_capacity(32);
-                    let builtin_specific = specific.lookup(database);
+                    let builtin_specific = builtins.lookup(database);
                     possible.extend(builtin_specific.overloads().map(|(_, overload)| {
                         pretty_fn(database, &overload.r#type.lookup(database))
                     }));
-                    let builtin_general = general.lookup(database);
-                    possible.extend(
-                        builtin_general
-                            .overloads()
-                            .filter(|(_, overload)| {
-                                let function = overload.r#type.lookup(database);
-                                function.return_type.is_none_or(|return_ty| {
-                                    convert_compatible(database, r#type, return_ty)
-                                })
-                            })
-                            .map(|(_, overload)| {
-                                pretty_fn(database, &overload.r#type.lookup(database))
-                            }),
-                    );
 
                     let possible = possible.join("\n");
 
@@ -683,7 +640,7 @@ pub fn diagnostics(
                     Diagnostic::new(
                         DiagnosticCode("18"),
                         format!(
-                            "no overload of constructor `{}` found for given\
+                            "no overload of constructor `{}` found for given \
                             arguments. Found ({parameters}), expected one of:\n{possible}",
                             pretty_type(database, r#type),
                         ),
@@ -711,41 +668,45 @@ pub fn diagnostics(
                     };
                     Diagnostic::new(DiagnosticCode("19"), message, frange.range)
                 },
+                AnyDiagnostic::CyclicType { name, range, .. } => Diagnostic::new(
+                    DiagnosticCode("20"),
+                    format!("cyclic type {}", name.as_str()),
+                    range,
+                ),
+                AnyDiagnostic::UnexpectedTemplateArgument { expression } => {
+                    let source = expression.value.to_node(&root);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("21"),
+                        "unexpected template argument".to_owned(),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::WgslError {
+                    expression,
+                    message,
+                } => {
+                    let source = expression.value.to_node(&root);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(DiagnosticCode("22"), message, frange.range)
+                },
+                AnyDiagnostic::ExpectedLoweredKind {
+                    expression,
+                    expected,
+                    actual,
+                    name,
+                } => {
+                    let source = expression.value.to_node(&root);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("23"),
+                        format!("{actual} {} is not a {expected}", name.as_str()),
+                        frange.range,
+                    )
+                },
             }
         })
         .collect()
-}
-
-fn size_compatible(
-    target: VecSize,
-    overload: VecSize,
-) -> bool {
-    match overload {
-        VecSize::Two | VecSize::Three | VecSize::Four => overload == target,
-        VecSize::BoundVar(_) => true,
-    }
-}
-
-fn convert_compatible(
-    database: &dyn HirDatabase,
-    target: Type,
-    overload: Type,
-) -> bool {
-    let target_kind = target.kind(database);
-    let overload_kind = overload.kind(database);
-    match (target_kind, overload_kind) {
-        (ty::TyKind::Vector(tg), ty::TyKind::Vector(ov)) => {
-            size_compatible(tg.size, ov.size)
-                && convert_compatible(database, tg.component_type, ov.component_type)
-        },
-        (ty::TyKind::Matrix(tg), ty::TyKind::Matrix(ov)) => {
-            size_compatible(tg.columns, ov.columns)
-                && size_compatible(tg.rows, ov.rows)
-                && convert_compatible(database, tg.inner, ov.inner)
-        },
-        (ty::TyKind::Scalar(s1), ty::TyKind::Scalar(s2)) => s1 == s2,
-        _ => false,
-    }
 }
 
 fn error_message_cause_chain(

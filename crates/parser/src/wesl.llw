@@ -1,0 +1,217 @@
+// Based on https://www.w3.org/TR/WGSL with some modifications.
+
+token Enable='enable' Requires='requires' Fn='fn' Alias='alias' Struct='struct' Var='var'
+      ConstAssert='const_assert' If='if' For='for' Else='else' Loop='loop' Break='break'
+      While='while' Return='return' Switch='switch' Discard='discard' Continuing='continuing'
+      Const='const' Case='case' Default='default' Override='override' Continue='continue'
+      Let='let' True='true' False='false' Diagnostic='diagnostic';
+token Semi=';' LPar='(' RPar=')' Comma=',' Eq='=' Colon=':' LBrace='{' RBrace='}' Arrow='->'
+      Lt='<' LtEq = '<=' ShiftLeft = '<<' ShiftLeftEq = '<<=' TemplateStart = '<template start>'
+      Gt='>' GtEq = '>=' ShiftRight = '>>' ShiftRightEq = '>>=' TemplateEnd = '<template end>'
+      Dot='.' At='@' LBrak='[' RBrak=']' And='&' Excl='!' Star='*' Minus='-'
+      Tilde='~' Plus='+' Eq2='==' Pipe='|' And2='&&' Slash='/' Caret='^' Pipe2='||' ExclEq='!='
+      Percent='%' Underscore='_' AndEq='&=' StarEq='*=' PlusEq='+=' PipeEq='|=' MinusEq='-='
+      SlashEq='/=' CaretEq='^=' PercentEq='%=' Plus2='++' Minus2='--';
+token Ident='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>';
+token Blankspace LineEndingComment BlockComment;
+
+skip Blankspace LineEndingComment BlockComment;
+
+start translation_unit;
+
+// Helpers for unit tests
+part attribute;
+part expression;
+part statement;
+part type_specifier;
+
+
+
+// TODO: validate that directives come before declarations to improve error messages
+// See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/683
+translation_unit: (global_item | ';')*;
+global_item^: global_directive | global_declaration | global_assert;
+
+global_assert: 'const_assert' expression ';' @assert_statement; // §10
+global_directive:
+  'diagnostic' diagnostic_control ';' @diagnostic_directive // §4.2
+| 'enable' enable_extension_name (?1 ',' enable_extension_name)* [','] ';' @enable_directive // §4.1.1
+| 'requires' language_extension_name (?1 ',' language_extension_name)* [','] ';' @requires_directive // §4.1.2
+;
+diagnostic_control: '(' severity_control_name ',' diagnostic_rule_name [','] ')';
+severity_control_name: Ident;
+diagnostic_rule_name: Ident ['.' Ident];
+enable_extension_name: Ident;
+language_extension_name: Ident;
+
+global_declaration:
+  attribute* @function_declaration (
+    'fn' name function_parameters [return_type] compound_statement @function_declaration
+  | variable_declaration_semi @variable_declaration
+  | override_declaration_semi @override_declaration
+  | let_declaration_semi @global_let_declaration
+  )
+| const_declaration_semi @const_declaration
+| 'alias' name '=' type_specifier ';' @type_alias_declaration
+| 'struct' name struct_body @struct_declaration
+;
+function_parameters: '(' [parameter (?1 ',' parameter)* [',']] ')';
+parameter: attribute* name ':' type_specifier;
+return_type: '->' attribute* type_specifier;
+// Manual error recovery branches for structs
+struct_body: '{' & struct_member (?1 (','| ';'!1 | !1) struct_member)* [','] '}';
+struct_member: attribute* name ':' type_specifier;
+
+attribute:
+  '@' (
+    'diagnostic' diagnostic_control @diagnostic_attr
+  | Ident [argument_expression_list]
+    // TODO: interpolate is special
+    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/614
+    // builtin is special
+  )
+;
+typed_ident^: name (':' type_specifier | ());
+name: Ident; // declares an identifier
+name_ref: Ident; // wesl ident goes here
+
+// Used in places where it's guaranteed to be a type
+type_specifier: name_ref template_list;
+// Used in places where it might be a type.
+// Note that types can appear in expression, like in `array<  array<f32,1>  ,1>`
+ident_expression: name_ref expr_template_list;
+template_list^: [template_args >];
+expr_template_list^: [template_args >template_list];
+template_args^: TemplateStart expression (?1 ',' expression)* [','] TemplateEnd;
+
+// This is pratt parser, with higher elements having a higher binding power
+// Source: https://github.com/0x2a-42/lelwel/tree/main?tab=readme-ov-file#direct-left-recursion
+// TODO: check for invalid expressions, like a < b < c
+// See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/616
+expression:
+  expression '[' expression ']' @indexing_expression // §8.5
+| expression '.' (Ident @field_expression) // §8.5, but cannot distinguish swizzles and fields from syntax
+| ('-' | '!' | '~' | '*' | '&') expression @unary_expression // §8.6, §8.7, §8.9, §8.13, §8.14
+| expression ('*' | '/' | '%') expression @binary_expression // §8.7
+| expression ('+' | '-') expression @binary_expression // §8.7
+| expression ('<<' | '>>') expression @binary_expression // §8.9
+| expression ('<' | '>' | '<=' | '>=' | '==' | '!=') expression @binary_expression // §8.8
+| expression '&' expression @binary_expression // §8.9
+| expression '^' expression @binary_expression // §8.9
+| expression '|' expression @binary_expression // §8.9
+| expression '&&' expression @binary_expression // §8.6
+| expression '||' expression @binary_expression // §8.6
+| ident_or_function ^ // §8.10, §8.11
+| '(' expression ')' @paren_expression // §8.4
+| literal @literal
+;
+
+ident_or_function^: 
+ident_expression [argument_expression_list_expr >function_call];
+// §8.3
+literal^:
+  IntLiteral
+| FloatLiteral
+| 'true'
+| 'false'
+;
+argument_expression_list: '(' [expression (?1 ',' expression)* [',']] ')' @arguments;
+// extra rule for better error handling
+argument_expression_list_expr: '(' [expression (?1 ',' expression)* [',']] ')' @arguments;
+
+statement:
+  attribute* (
+    if_clause (?1 else_if_clause)* [else_clause] @if_statement // §9.4.1
+  | 'switch' expression switch_body @switch_statement // §9.4.2
+  | 'loop' loop_compound_statement @loop_statement // §9.4.3
+  | 'for' '(' [for_init] ';' [for_condition] ';' [for_update] ')' compound_statement @for_statement // §9.4.4
+  | 'while' expression compound_statement @while_statement // §9.4.5
+  // TODO: check if using & here makes it recover better https://github.com/0x2a-42/lelwel/issues/34
+  // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/684
+  | '{' statement* '}' @compound_statement // §9.1
+  )
+| ?2 function_call ';' @function_call_statement // §9.5
+| variable_declaration_semi @variable_declaration
+| let_declaration_semi @let_declaration
+| const_declaration_semi @const_declaration
+// we need to choose a statement type as the default, so we choose simple_assignment_statement
+| lhs_expression @simple_assignment_statement ( 
+    '=' expression @simple_assignment_statement // §9.2.1
+  | compound_assignment_operator expression @compound_assignment_statement // §9.2.3
+  | '++' @increment_statement // §9.3
+  | '--' @decrement_statement // §9.3
+  ) ';'
+| '_' '=' expression ';' @phony_assignment_statement // §9.2.2
+| 'const_assert' expression ';' @assert_statement // §10.1
+| 'break' ';' @break_statement // §9.4.6
+| 'continue' ';' @continue_statement // §9.4.8
+| ';' @empty_statement
+| 'discard' ';' @discard_statement // §9.4.11
+| 'return' [expression] ';' @return_statement // §9.4.10
+;
+loop_compound_statement: attribute* '{' statement* [continuing_statement] '}' @compound_statement;
+continuing_statement: 'continuing' continuing_compound_statement; // §9.4.9
+continuing_compound_statement: attribute* '{' (?1 statement)* [break_if_statement] '}' @compound_statement;
+break_if_statement: 'break' 'if' expression ';'; // §9.4.7
+for_init:
+  ?1 function_call
+| variable_declaration 
+| let_declaration 
+| const_declaration
+| variable_updating
+;
+for_condition: expression;
+for_update: ?1 function_call | variable_updating;
+if_clause: 'if' expression compound_statement;
+else_if_clause: 'else' 'if' expression compound_statement;
+else_clause: 'else' compound_statement;
+switch_body: attribute* '{' switch_clause * '}';
+switch_clause^: case_clause | default_alone_clause;
+case_clause: 'case' case_selectors [':'] compound_statement;
+case_selectors: case_selector (?1 ',' case_selector)* [','];
+case_selector^: default_case_selector | expression;
+default_case_selector: 'default';
+default_alone_clause: 'default' [':'] compound_statement;
+compound_statement: attribute* '{' & statement* '}'; // §9.1
+
+function_call: ident_expression argument_expression_list;
+
+// duplicated so it can be used with and without a semicolon
+variable_declaration: 'var' template_list typed_ident ['=' expression];
+variable_declaration_semi^: 'var' template_list typed_ident ['=' expression] ';';
+let_declaration: 'let' typed_ident '=' expression;
+let_declaration_semi^: 'let' typed_ident '=' expression ';';
+const_declaration: 'const' typed_ident '=' expression;
+const_declaration_semi^: 'const' typed_ident '=' expression ';';
+override_declaration_semi^: 'override' typed_ident ['=' expression] ';';
+
+// duplicated so it can be used in `for` statement without semicolon
+variable_updating:
+  lhs_expression @simple_assignment_statement (
+    '=' expression @simple_assignment_statement // §9.2.1
+  | compound_assignment_operator expression @compound_assignment_statement // §9.2.3
+  | '++' @increment_statement // §9.3
+  | '--' @decrement_statement // §9.3
+  )
+| '_' '=' expression @phony_assignment_statement // §9.2.2
+;
+compound_assignment_operator^:
+  '<<='
+| '>>='
+| '%='
+| '&='
+| '*='
+| '+='
+| '-='
+| '/='
+| '^='
+| '|='
+;
+lhs_expression:
+  lhs_expression '[' expression ']' @indexing_expression // §8.5
+| lhs_expression '.' (Ident @field_expression) // §8.5
+| '*' lhs_expression @unary_expression // §8.14
+| '&' lhs_expression @unary_expression // §8.13
+| '(' lhs_expression ')' @paren_expression // §8.4
+| name_ref @ident_expression
+;

@@ -51,7 +51,7 @@ impl MemoryUsage {
                 // There doesn't seem to be an API for determining heap usage, so we try to
                 // approximate that by using the Commit Charge value.
 
-                use windows_sys::Win32::System::{Threading::*, ProcessStatus::*};
+                use windows_sys::Win32::System::{Threading::GetCurrentProcess, ProcessStatus::{PROCESS_MEMORY_COUNTERS, GetProcessMemoryInfo}};
                 use std::mem::MaybeUninit;
 
                 // SAFETY: Windows API safety is undocumented.
@@ -64,9 +64,9 @@ impl MemoryUsage {
 
                 // SAFETY: mem_counters is initialized by GetProcessMemoryInfo.
                 let usage = unsafe { mem_counters.assume_init().PagefileUsage };
-                MemoryUsage { allocated: Bytes(usage as isize) }
+                Self { allocated: Bytes(usage as isize) }
             } else {
-                MemoryUsage { allocated: Bytes(0) }
+                Self { allocated: Bytes(0) }
             }
         }
     }

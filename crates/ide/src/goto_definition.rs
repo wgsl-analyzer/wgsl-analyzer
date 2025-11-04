@@ -59,7 +59,6 @@ impl TryToNavigationTarget for InFile<Local> {
 }
 
 impl TryToNavigationTarget for InFile<Definition> {
-    #[expect(clippy::too_many_lines, reason = "TODO")]
     fn try_to_navigation_target(
         &self,
         database: &RootDatabase,
@@ -86,7 +85,7 @@ impl TryToNavigationTarget for InFile<Definition> {
                     let declaration = var.source(database)?;
 
                     let frange = declaration.original_file_range(database);
-                    let focus_range = declaration.value.binding().map(|name| {
+                    let focus_range = declaration.value.name().map(|name| {
                         declaration
                             .with_value(name)
                             .original_file_range(database)
@@ -99,7 +98,7 @@ impl TryToNavigationTarget for InFile<Definition> {
                     let declaration = constant.source(database)?;
 
                     let frange = declaration.original_file_range(database);
-                    let focus_range = declaration.value.binding().map(|name| {
+                    let focus_range = declaration.value.name().map(|name| {
                         declaration
                             .with_value(name)
                             .original_file_range(database)
@@ -112,7 +111,7 @@ impl TryToNavigationTarget for InFile<Definition> {
                     let declaration = override_declaration.source(database)?;
 
                     let frange = declaration.original_file_range(database);
-                    let focus_range = declaration.value.binding().map(|name| {
+                    let focus_range = declaration.value.name().map(|name| {
                         declaration
                             .with_value(name)
                             .original_file_range(database)
@@ -152,32 +151,6 @@ impl TryToNavigationTarget for InFile<Definition> {
                 let declaration = field.source(database)?;
 
                 let frange = declaration.original_file_range(database);
-                let focus_range = declaration.value.variable_ident_declaration().map(|name| {
-                    declaration
-                        .with_value(name)
-                        .original_file_range(database)
-                        .range
-                });
-
-                NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-            },
-            Definition::Struct(r#struct) => {
-                let declaration = r#struct.source(database)?;
-                let frange = declaration.original_file_range(database);
-
-                let focus_range = declaration.value.name().map(|name| {
-                    declaration
-                        .with_value(name)
-                        .original_file_range(database)
-                        .range
-                });
-
-                NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
-            },
-            Definition::TypeAlias(type_alias) => {
-                let declaration = type_alias.source(database)?;
-                let frange = declaration.original_file_range(database);
-
                 let focus_range = declaration.value.name().map(|name| {
                     declaration
                         .with_value(name)

@@ -1,8 +1,6 @@
 pub mod definition;
 pub mod diagnostics;
 
-use std::sync::Arc;
-
 use base_db::FileId;
 use definition::Definition;
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
@@ -10,20 +8,24 @@ use either::Either;
 use hir_def::{
     HasSource as _, HirFileId, InFile,
     body::{BindingId, Body, BodySourceMap},
-    data::FieldId,
+    data::{FieldId, ParameterId},
     database::{
         DefDatabase, DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId,
-        ImportId, Location, Lookup as _, OverrideId, StructId, TypeAliasId,
+        Location, Lookup as _, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
-    hir_file_id::{ImportFile, relative_file},
-    module_data::{self, ImportValue, ModuleInfo, ModuleItem, Name},
-    resolver::{ResolveValue, Resolver},
+    hir_file_id::relative_file,
+    module_data::{self, ModuleInfo, ModuleItem, Name},
+    resolver::{ResolveKind, Resolver},
 };
 pub use hir_ty::database::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
-use syntax::{AstNode as _, HasName as _, SyntaxNode, ast, match_ast, pointer::AstPointer};
+use stdx::impl_from;
+use syntax::{
+    AstNode as _, HasName as _, SyntaxKind, SyntaxNode, ast, match_ast, pointer::AstPointer,
+};
+use triomphe::Arc;
 
 pub trait HasSource {
     type Ast;
@@ -59,22 +61,107 @@ impl<'database> Semantics<'database> {
         SourceAnalyzer::new(self.database, definition)
     }
 
+    /// Finds the root level container for a given node
     #[must_use]
     pub fn find_container(
         &self,
         file_id: HirFileId,
         source: &SyntaxNode,
-    ) -> Option<DefinitionWithBodyId> {
-        source.ancestors().find_map(|syntax| {
-            match_ast! {
-                match syntax {
-                    ast::Function(function) => self.function_to_def(&InFile::new(file_id, function)).map(DefinitionWithBodyId::Function),
-                    ast::GlobalVariableDeclaration(var) => self.global_variable_to_def(&InFile::new(file_id, var)).map(DefinitionWithBodyId::GlobalVariable),
-                    ast::GlobalConstantDeclaration(constant) => self.global_constant_to_def(&InFile::new(file_id, constant)).map(DefinitionWithBodyId::GlobalConstant),
-                    _ => None,
+    ) -> Option<ChildContainer> {
+        source
+            .ancestors()
+            .find_map(|syntax| -> Option<ChildContainer> {
+                if let Some(item) = ast::Item::cast(syntax) {
+                    let container: ChildContainer = match item {
+                        ast::Item::FunctionDeclaration(function_declaration) => {
+                            let child_offset = source.text_range().start();
+                            let is_in_body =
+                                function_declaration
+                                    .body()
+                                    .is_some_and(|compound_statement| {
+                                        compound_statement
+                                            .syntax()
+                                            .text_range()
+                                            .contains(child_offset)
+                                    });
+
+                            let definition =
+                                self.function_to_def(&InFile::new(file_id, function_declaration))?;
+                            if is_in_body {
+                                DefinitionWithBodyId::Function(definition).into()
+                            } else {
+                                ChildContainer::FunctionId(definition)
+                            }
+                        },
+                        ast::Item::VariableDeclaration(variable_declaration) => {
+                            let child_offset = source.text_range().start();
+                            let is_in_body =
+                                variable_declaration.init().is_some_and(|expression| {
+                                    expression.syntax().text_range().contains(child_offset)
+                                });
+
+                            let definition = self.global_variable_to_def(&InFile::new(
+                                file_id,
+                                variable_declaration,
+                            ))?;
+                            if is_in_body {
+                                DefinitionWithBodyId::GlobalVariable(definition).into()
+                            } else {
+                                ChildContainer::GlobalVariableId(definition)
+                            }
+                        },
+                        ast::Item::ConstantDeclaration(constant_declaration) => {
+                            let child_offset = source.text_range().start();
+                            let is_in_body =
+                                constant_declaration.init().is_some_and(|expression| {
+                                    expression.syntax().text_range().contains(child_offset)
+                                });
+
+                            let definition = self.global_constant_to_def(&InFile::new(
+                                file_id,
+                                constant_declaration,
+                            ))?;
+                            if is_in_body {
+                                DefinitionWithBodyId::GlobalConstant(definition).into()
+                            } else {
+                                ChildContainer::GlobalConstantId(definition)
+                            }
+                        },
+                        ast::Item::OverrideDeclaration(override_declaration) => {
+                            let child_offset = source.text_range().start();
+                            let is_in_body =
+                                override_declaration.init().is_some_and(|expression| {
+                                    expression.syntax().text_range().contains(child_offset)
+                                });
+
+                            let definition = self.global_override_to_def(&InFile::new(
+                                file_id,
+                                override_declaration,
+                            ))?;
+                            if is_in_body {
+                                DefinitionWithBodyId::Override(definition).into()
+                            } else {
+                                ChildContainer::OverrideId(definition)
+                            }
+                        },
+                        ast::Item::TypeAliasDeclaration(type_alias_declaration) => {
+                            let definition = self.global_type_alias_to_def(&InFile::new(
+                                file_id,
+                                type_alias_declaration,
+                            ))?;
+                            ChildContainer::TypeAliasId(definition)
+                        },
+                        ast::Item::StructDeclaration(struct_declaration) => {
+                            let definition = self
+                                .global_struct_to_def(&InFile::new(file_id, struct_declaration))?;
+                            ChildContainer::StructId(definition)
+                        },
+                    };
+                    Some(container)
+                } else {
+                    None
                 }
-            }
-        })
+            })
     }
 
     #[must_use]
@@ -87,7 +174,7 @@ impl<'database> Semantics<'database> {
             definition.resolver(self.database)
         } else {
             let module_info = self.database.module_info(file_id);
-            Resolver::default().push_module_scope(self.database, file_id, module_info)
+            Resolver::default().push_module_scope(file_id, module_info)
         }
     }
 
@@ -102,45 +189,58 @@ impl<'database> Semantics<'database> {
         }
     }
 
-    fn resolve_name_in_expression_scope(
+    fn resolve_name_in_container(
         &self,
-        definition: DefinitionWithBodyId,
-        expression: &SyntaxNode,
+        container: ChildContainer,
+        expression: &ast::Expression,
         name: &Name,
     ) -> Option<Definition> {
-        let file_id = definition.file_id(self.database);
-        let module_info = self.database.module_info(file_id);
-        let expression_scopes = self.database.expression_scopes(definition);
-        let (_, source_map) = self.database.body_with_source_map(definition);
-        let expression_id = source_map.lookup_expression(&AstPointer::new(
-            &ast::Expression::cast(expression.clone())?,
-        ))?;
-        let scope_id = expression_scopes.scope_for_expression(expression_id)?;
-        let mut resolver =
-            Resolver::default().push_module_scope(self.database, file_id, module_info);
+        let mut resolver = container.resolver(self.database);
 
-        if let DefinitionWithBodyId::Function(function) = definition {
+        if let ChildContainer::DefinitionWithBodyId(DefinitionWithBodyId::Function(function)) =
+            container
+        {
+            let (_, source_map) = self
+                .database
+                .body_with_source_map(DefinitionWithBodyId::Function(function));
+            let expression_id = source_map.lookup_expression(&AstPointer::new(expression))?;
+            let expression_scopes = self
+                .database
+                .expression_scopes(DefinitionWithBodyId::Function(function));
+            let scope_id = expression_scopes.scope_for_expression(expression_id)?;
             resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
         }
 
-        let value = resolver.resolve_value(name)?;
+        let value = resolver.resolve(name)?;
 
         let definition = match value {
-            ResolveValue::Local(binding) => Definition::Local(Local {
+            ResolveKind::Local(binding) => Definition::Local(Local {
                 parent: resolver.body_owner()?,
                 binding,
             }),
-            ResolveValue::GlobalVariable(loc) => {
+            ResolveKind::GlobalVariable(loc) => {
                 let id = self.database.intern_global_variable(loc);
                 Definition::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))
             },
-            ResolveValue::GlobalConstant(loc) => {
+            ResolveKind::GlobalConstant(loc) => {
                 let id = self.database.intern_global_constant(loc);
                 Definition::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id }))
             },
-            ResolveValue::Override(loc) => {
+            ResolveKind::Override(loc) => {
                 let id = self.database.intern_override(loc);
                 Definition::ModuleDef(ModuleDef::Override(Override { id }))
+            },
+            ResolveKind::Struct(loc) => {
+                let id = self.database.intern_struct(loc);
+                Definition::ModuleDef(ModuleDef::Struct(Struct { id }))
+            },
+            ResolveKind::TypeAlias(loc) => {
+                let id = self.database.intern_type_alias(loc);
+                Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id }))
+            },
+            ResolveKind::Function(loc) => {
+                let id = self.database.intern_function(loc);
+                Definition::ModuleDef(ModuleDef::Function(Function { id }))
             },
         };
 
@@ -149,7 +249,7 @@ impl<'database> Semantics<'database> {
 
     fn function_to_def(
         &self,
-        source: &InFile<ast::Function>,
+        source: &InFile<ast::FunctionDeclaration>,
     ) -> Option<FunctionId> {
         let function = module_data::find_item(self.database, source.file_id, &source.value)?;
         let function_id = self
@@ -160,7 +260,7 @@ impl<'database> Semantics<'database> {
 
     fn global_constant_to_def(
         &self,
-        source: &InFile<ast::GlobalConstantDeclaration>,
+        source: &InFile<ast::ConstantDeclaration>,
     ) -> Option<GlobalConstantId> {
         let global_constant = module_data::find_item(self.database, source.file_id, &source.value)?;
         let id = self
@@ -171,7 +271,7 @@ impl<'database> Semantics<'database> {
 
     fn global_variable_to_def(
         &self,
-        source: &InFile<ast::GlobalVariableDeclaration>,
+        source: &InFile<ast::VariableDeclaration>,
     ) -> Option<GlobalVariableId> {
         let global_variable = module_data::find_item(self.database, source.file_id, &source.value)?;
         let id = self
@@ -180,26 +280,106 @@ impl<'database> Semantics<'database> {
         Some(id)
     }
 
-    #[must_use]
-    pub fn import_to_def(
+    fn global_override_to_def(
         &self,
-        source: &InFile<ast::Import>,
-    ) -> Option<ImportId> {
-        let import = module_data::find_import(self.database, source.file_id, &source.value)?;
-
-        let import_id = self
+        source: &InFile<ast::OverrideDeclaration>,
+    ) -> Option<OverrideId> {
+        let item = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let id = self
             .database
-            .intern_import(Location::new(source.file_id, import));
-        Some(import_id)
+            .intern_override(Location::new(source.file_id, item));
+        Some(id)
+    }
+
+    fn global_type_alias_to_def(
+        &self,
+        source: &InFile<ast::TypeAliasDeclaration>,
+    ) -> Option<TypeAliasId> {
+        let item = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let id = self
+            .database
+            .intern_type_alias(Location::new(source.file_id, item));
+        Some(id)
+    }
+
+    fn global_struct_to_def(
+        &self,
+        source: &InFile<ast::StructDeclaration>,
+    ) -> Option<StructId> {
+        let item = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let id = self
+            .database
+            .intern_struct(Location::new(source.file_id, item));
+        Some(id)
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[expect(clippy::enum_variant_names, reason = "Suffix makes sense")]
+pub enum ChildContainer {
+    /// This variant is for when the expression is inside the body
+    DefinitionWithBodyId(DefinitionWithBodyId),
+    FunctionId(FunctionId),
+    GlobalVariableId(GlobalVariableId),
+    GlobalConstantId(GlobalConstantId),
+    OverrideId(OverrideId),
+    StructId(StructId),
+    TypeAliasId(TypeAliasId),
+}
+
+impl_from!(
+    DefinitionWithBodyId,
+    FunctionId,
+    GlobalVariableId,
+    GlobalConstantId,
+    OverrideId,
+    StructId,
+    TypeAliasId
+    for ChildContainer
+);
+
+impl ChildContainer {
+    pub fn file_id(
+        self,
+        database: &dyn DefDatabase,
+    ) -> HirFileId {
+        match self {
+            Self::DefinitionWithBodyId(id) => id.file_id(database),
+            Self::FunctionId(id) => id.lookup(database).file_id,
+            Self::GlobalVariableId(id) => id.lookup(database).file_id,
+            Self::GlobalConstantId(id) => id.lookup(database).file_id,
+            Self::OverrideId(id) => id.lookup(database).file_id,
+            Self::StructId(id) => id.lookup(database).file_id,
+            Self::TypeAliasId(id) => id.lookup(database).file_id,
+        }
+    }
+
+    pub fn resolver(
+        self,
+        database: &dyn HirDatabase,
+    ) -> Resolver {
+        match self {
+            Self::DefinitionWithBodyId(id) => id.resolver(database),
+            Self::FunctionId(_)
+            | Self::GlobalVariableId(_)
+            | Self::GlobalConstantId(_)
+            | Self::OverrideId(_)
+            | Self::StructId(_)
+            | Self::TypeAliasId(_) => {
+                let file_id = self.file_id(database);
+                let module_info = database.module_info(file_id);
+                Resolver::default().push_module_scope(file_id, module_info)
+            },
+        }
     }
 
     #[must_use]
-    pub fn resolve_import(
-        &self,
-        source: &InFile<ast::Import>,
-    ) -> Option<Import> {
-        let id = self.import_to_def(source)?;
-        Some(Import { id })
+    pub const fn as_def_with_body_id(self) -> Option<DefinitionWithBodyId> {
+        if let Self::DefinitionWithBodyId(id) = self {
+            Some(id)
+        } else {
+            None
+        }
     }
 }
 
@@ -233,29 +413,6 @@ fn module_item_to_def(
             let loc = Location::new(file_id, constant);
             let id = database.intern_override(loc);
             ModuleDef::Override(Override { id })
-        },
-        ModuleItem::Import(import) => {
-            let loc = Location::new(file_id, import);
-            let import_id = database.intern_import(loc);
-
-            let import_file = HirFileId::from(ImportFile { import_id });
-            // Process imported definitions from the original file if available
-            if let Some(original_file) = import_file.original_file(database) {
-                let original_file = original_file.into();
-                let module_info = database.module_info(original_file);
-                return module_info
-                    .items()
-                    .iter()
-                    .flat_map(|item| module_item_to_def(database, original_file, *item))
-                    .collect();
-            }
-            // For custom imports without a direct file, use the import file's module info
-            return database
-                .module_info(import_file)
-                .items()
-                .iter()
-                .flat_map(|item| module_item_to_def(database, import_file, *item))
-                .collect();
         },
         ModuleItem::TypeAlias(type_alias) => {
             let loc = Location::new(file_id, type_alias);
@@ -296,18 +453,16 @@ impl<'database> SourceAnalyzer<'database> {
         expression: &ast::Expression,
     ) -> Option<Type> {
         let id = self.expression_id(expression)?;
-        let r#type = *self.infer.type_of_expression.get(id)?;
-        Some(r#type)
+        Some(self.infer[id])
     }
 
     #[must_use]
     pub fn type_of_binding(
         &self,
-        binding: &ast::Binding,
+        binding: &ast::Name,
     ) -> Option<Type> {
         let id = self.binding_id(binding)?;
-        let r#type = *self.infer.type_of_binding.get(id)?;
-        Some(r#type)
+        Some(self.infer[id])
     }
 
     #[must_use]
@@ -359,7 +514,7 @@ impl<'database> SourceAnalyzer<'database> {
     #[must_use]
     pub fn binding_id(
         &self,
-        source: &ast::Binding,
+        source: &ast::Name,
     ) -> Option<BindingId> {
         self.body_source_map
             .lookup_binding(&AstPointer::new(source))
@@ -391,7 +546,7 @@ pub struct Local {
 }
 
 impl HasSource for Local {
-    type Ast = ast::Binding;
+    type Ast = ast::Name;
 
     fn source(
         self,
@@ -405,8 +560,39 @@ impl HasSource for Local {
             .map_err(drop)
             .ok()?;
 
-        let root = database.parse_or_resolve(file_id).unwrap().syntax();
+        let root = database.parse_or_resolve(file_id).syntax();
         Some(InFile::new(file_id, binding.to_node(&root)))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
+pub struct Parameter {
+    pub id: ParameterId,
+}
+
+impl HasSource for Parameter {
+    type Ast = ast::Parameter;
+
+    fn source(
+        self,
+        database: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
+        let function_data = database.function_data(self.id.function).0;
+        let parameter_data = &function_data.parameters[self.id.param];
+        let parameter_name = &parameter_data.name;
+
+        let function = self.id.function.lookup(database).source(database);
+
+        let parameter = function
+            .value
+            .parameter_list()?
+            .parameters()
+            .find_map(|parameter| {
+                let name = parameter.name()?;
+                (name.ident_token()?.text() == parameter_name.as_str()).then_some(parameter)
+            })?;
+
+        Some(InFile::new(function.file_id, parameter))
     }
 }
 
@@ -416,7 +602,7 @@ pub struct Function {
 }
 
 impl HasSource for Function {
-    type Ast = ast::Function;
+    type Ast = ast::FunctionDeclaration;
 
     fn source(
         self,
@@ -432,7 +618,7 @@ pub struct GlobalVariable {
 }
 
 impl HasSource for GlobalVariable {
-    type Ast = ast::GlobalVariableDeclaration;
+    type Ast = ast::VariableDeclaration;
 
     fn source(
         self,
@@ -448,7 +634,7 @@ pub struct GlobalConstant {
 }
 
 impl HasSource for GlobalConstant {
-    type Ast = ast::GlobalConstantDeclaration;
+    type Ast = ast::ConstantDeclaration;
 
     fn source(
         self,
@@ -512,20 +698,20 @@ pub struct Field {
 }
 
 impl HasSource for Field {
-    type Ast = ast::StructDeclarationField;
+    type Ast = ast::StructMember;
 
     fn source(
         self,
         database: &dyn DefDatabase,
     ) -> Option<InFile<Self::Ast>> {
-        let struct_data = database.struct_data(self.id.r#struct);
+        let struct_data = database.struct_data(self.id.r#struct).0;
         let field_data = &struct_data.fields()[self.id.field];
         let field_name = &field_data.name;
 
         let r#struct = self.id.r#struct.lookup(database).source(database);
 
         let field = r#struct.value.body()?.fields().find_map(|field| {
-            let name = field.variable_ident_declaration()?.binding()?.name()?;
+            let name = field.name()?;
             (name.ident_token()?.text() == field_name.as_str()).then_some(field)
         })?;
 
@@ -577,30 +763,6 @@ impl Module {
             .collect()
     }
 
-    pub fn imports(
-        &self,
-        database: &dyn HirDatabase,
-    ) -> Vec<Import> {
-        let module_info = database.module_info(self.file_id);
-        module_info
-            .items()
-            .iter()
-            .filter_map(|item| match item {
-                ModuleItem::Import(import) => Some(import),
-                ModuleItem::Function(_)
-                | ModuleItem::Struct(_)
-                | ModuleItem::GlobalVariable(_)
-                | ModuleItem::GlobalConstant(_)
-                | ModuleItem::Override(_)
-                | ModuleItem::TypeAlias(_) => None,
-            })
-            .map(|id| {
-                let id = database.intern_import(Location::new(self.file_id, *id));
-                Import { id }
-            })
-            .collect()
-    }
-
     pub fn module_info(
         &self,
         database: &dyn HirDatabase,
@@ -614,18 +776,6 @@ impl Module {
         config: &DiagnosticsConfig,
         accumulator: &mut Vec<AnyDiagnostic>,
     ) {
-        for import in self.imports(database) {
-            if import.resolve(database).is_err() {
-                let import_loc = import.id.lookup(database);
-
-                let module_info = self.module_info(database);
-                let def_map = database.ast_id_map(import_loc.file_id);
-
-                let source = import_loc.map(|id| def_map.get(module_info.get(id).ast_id));
-
-                accumulator.push(AnyDiagnostic::UnresolvedImport { import: source });
-            }
-        }
         for item in self.items(database) {
             match item {
                 ModuleDef::Function(_function) => {},
@@ -639,19 +789,54 @@ impl Module {
                 },
                 ModuleDef::GlobalConstant(_constant) => {},
                 ModuleDef::Override(_constant) => {},
-                ModuleDef::Struct(_strukt) => {},
-                ModuleDef::TypeAlias(_type_alias) => {},
+                ModuleDef::Struct(strukt) => {
+                    let file = strukt.id.lookup(database).file_id;
+                    let (_, signature_map) = database.struct_data(strukt.id);
+                    let diagnostics = &database.field_types(strukt.id).1;
+                    for diagnostic in diagnostics {
+                        match diagnostics::any_diag_from_infer_diagnostic(
+                            diagnostic,
+                            &signature_map,
+                            &signature_map,
+                            file,
+                        ) {
+                            Some(diagnostic) => accumulator.push(diagnostic),
+                            None => {
+                                tracing::warn!("could not create diagnostic from {:?}", diagnostic);
+                            },
+                        }
+                    }
+                },
+                ModuleDef::TypeAlias(type_alias) => {
+                    let file = type_alias.id.lookup(database).file_id;
+                    let (_, signature_map) = database.type_alias_data(type_alias.id);
+                    let diagnostics = &database.type_alias_type(type_alias.id).1;
+                    for diagnostic in diagnostics {
+                        match diagnostics::any_diag_from_infer_diagnostic(
+                            diagnostic,
+                            &signature_map,
+                            &signature_map,
+                            file,
+                        ) {
+                            Some(diagnostic) => accumulator.push(diagnostic),
+                            None => {
+                                tracing::warn!("could not create diagnostic from {:?}", diagnostic);
+                            },
+                        }
+                    }
+                },
             }
             if let Some(definition) = item.as_def_with_body_id() {
                 let file = definition.file_id(database);
+                let (_, signature_map) = database.signature_with_source_map(definition);
                 let (_, source_map) = database.body_with_source_map(definition);
                 if config.type_errors {
                     let infer = database.infer(definition);
-                    for diagnostic in &infer.diagnostics {
+                    for diagnostic in infer.diagnostics() {
                         match diagnostics::any_diag_from_infer_diagnostic(
-                            database,
                             diagnostic,
-                            &source_map,
+                            &signature_map,
+                            source_map.expression_source_map(),
                             file,
                         ) {
                             Some(diagnostic) => accumulator.push(diagnostic),
@@ -663,7 +848,11 @@ impl Module {
                 }
 
                 diagnostics::precedence::collect(database, definition, |diagnostic| {
-                    match diagnostics::any_diag_from_shift(&diagnostic, &source_map, file) {
+                    match diagnostics::any_diag_from_shift(
+                        &diagnostic,
+                        source_map.expression_source_map(),
+                        file,
+                    ) {
                         Some(diagnostic) => accumulator.push(diagnostic),
                         None => {
                             tracing::warn!("could not create diagnostic from {:?}", diagnostic);
@@ -671,73 +860,6 @@ impl Module {
                     }
                 });
             }
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Copy)]
-pub struct Import {
-    id: ImportId,
-}
-
-impl Import {
-    pub fn is_path(
-        self,
-        database: &dyn HirDatabase,
-    ) -> bool {
-        let import_loc = self.id.lookup(database);
-        let module_info = database.module_info(import_loc.file_id);
-        let import = module_info.get(import_loc.value);
-        matches!(import.value, ImportValue::Path(_))
-    }
-
-    pub fn file_text(
-        self,
-        database: &dyn HirDatabase,
-    ) -> Option<String> {
-        let import_loc = self.id.lookup(database);
-
-        let module_info = database.module_info(import_loc.file_id);
-        let import = module_info.get(import_loc.value);
-
-        match &import.value {
-            ImportValue::Path(path) => {
-                let file_id = relative_file(database, import_loc.file_id, path)?;
-                Some(database.file_text(file_id).to_string())
-            },
-            ImportValue::Custom(key) => {
-                let imports = database.custom_imports();
-                let source = imports.get(key)?;
-                Some(source.clone())
-            },
-        }
-    }
-
-    #[expect(clippy::result_unit_err, reason = "TODO")]
-    pub fn resolve(
-        self,
-        database: &dyn HirDatabase,
-    ) -> Result<(), ()> {
-        let import_location = self.id.lookup(database);
-
-        let module_info = database.module_info(import_location.file_id);
-        let import = module_info.get(import_location.value);
-
-        tracing::info!("resolving import {:?}", import);
-
-        match &import.value {
-            ImportValue::Path(path) => {
-                relative_file(database, import_location.file_id, path).ok_or(())?;
-                Ok(())
-            },
-            ImportValue::Custom(key) => {
-                let imports = database.custom_imports();
-                if imports.contains_key(key) {
-                    Ok(())
-                } else {
-                    Err(())
-                }
-            },
         }
     }
 }

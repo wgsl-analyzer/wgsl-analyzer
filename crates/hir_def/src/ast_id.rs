@@ -7,7 +7,7 @@ use syntax::{
     pointer::{AstPointer, SyntaxNodePointer},
 };
 
-/// Maps items' `SyntaxNode`s to `ErasedFileAstId`s and back.
+/// Maps items' `SyntaxNode`s to `FileAstId`s and back.
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct AstIdMap {
     arena: Arena<SyntaxNodePointer>,
@@ -23,17 +23,6 @@ impl AstIdMap {
             .filter_map(ast::Item::cast)
             .for_each(|item| {
                 map.alloc(item.syntax());
-
-                if let ast::Item::Function(function) = item
-                    && let Some(parameters) = function.parameter_list()
-                {
-                    for import in parameters
-                        .parameters()
-                        .filter_map(|parameter| parameter.import())
-                    {
-                        map.alloc(import.syntax());
-                    }
-                }
             });
         map
     }
@@ -47,8 +36,7 @@ impl AstIdMap {
         &self,
         item: &N,
     ) -> FileAstId<N> {
-        let pointer = SyntaxNodePointer::new(item.syntax());
-        let Some((id, _)) = self.arena.iter().find(|(_id, node)| **node == pointer) else {
+        self.try_ast_id(item).unwrap_or_else(|| {
             panic!(
                 "Cannot find {:?} in AstIdMap:\n{:?}",
                 item.syntax(),
@@ -57,12 +45,21 @@ impl AstIdMap {
                     .map(|(_id, node)| node)
                     .collect::<Vec<_>>(),
             )
-        };
+        })
+    }
 
-        FileAstId {
+    /// Returns an `AstId` for the given item.
+    pub fn try_ast_id<N: AstNode>(
+        &self,
+        item: &N,
+    ) -> Option<FileAstId<N>> {
+        let pointer = SyntaxNodePointer::new(item.syntax());
+        let (id, _) = self.arena.iter().find(|(_id, node)| **node == pointer)?;
+
+        Some(FileAstId {
             id,
             _marker: PhantomData,
-        }
+        })
     }
 
     /// Convert an id to a pointer to the AST.

@@ -2,20 +2,21 @@ pub mod algorithms;
 pub mod ast;
 pub mod pointer;
 
-use std::{marker::PhantomData, ops::Deref, sync::Arc};
+use std::{marker::PhantomData, ops::Deref};
 
 use either::Either;
 pub use parser::{
-    ParseEntryPoint, ParseError, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodeChildren,
+    Diagnostic, ParseEntryPoint, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodeChildren,
     SyntaxToken,
 };
 pub use rowan::Direction;
 use smol_str::SmolStr;
+use triomphe::Arc;
 
 #[derive(Clone, Debug)]
 pub struct Parse {
     green_node: rowan::GreenNode,
-    errors: Arc<[ParseError]>,
+    errors: Arc<[Diagnostic]>,
 }
 
 impl PartialEq for Parse {
@@ -36,7 +37,7 @@ impl Parse {
     }
 
     #[must_use]
-    pub fn errors(&self) -> &[ParseError] {
+    pub fn errors(&self) -> &[Diagnostic] {
         &self.errors
     }
 
@@ -82,7 +83,7 @@ pub trait AstNode {
 }
 
 pub trait AstToken {
-    fn can_cast(kind: SyntaxToken) -> bool
+    fn can_cast(kind: SyntaxKind) -> bool
     where
         Self: Sized;
 
@@ -230,25 +231,19 @@ mod support {
 
 pub trait HasName: AstNode {
     fn name(&self) -> Option<ast::Name> {
-        support::child(self.syntax())
+        crate::support::child(self.syntax())
     }
 }
 
-pub trait HasGenerics: AstNode {
-    fn generic_arg_list(&self) -> Option<ast::GenericArgumentList> {
+pub trait HasTemplateParameters: AstNode {
+    fn template_parameters(&self) -> Option<ast::TemplateList> {
         support::child(self.syntax())
     }
 }
 
 pub trait HasAttributes: AstNode {
-    fn attribute_list(&self) -> Option<ast::AttributeList> {
-        support::child(self.syntax())
-    }
-    fn attributes(&self) -> Either<AstChildren<ast::Attribute>, std::iter::Empty<ast::Attribute>> {
-        match self.attribute_list() {
-            Some(list) => Either::Left(list.attributes()),
-            None => Either::Right(std::iter::empty()),
-        }
+    fn attributes(&self) -> AstChildren<ast::Attribute> {
+        support::children(self.syntax())
     }
 }
 
@@ -297,3 +292,6 @@ impl<A: AstNode, B: AstNode> AstNode for Either<A, B> {
 pub fn format(file: &ast::SourceFile) -> SyntaxNode {
     file.syntax().clone_for_update()
 }
+
+#[cfg(test)]
+mod tests;

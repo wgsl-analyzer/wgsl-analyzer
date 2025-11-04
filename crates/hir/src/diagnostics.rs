@@ -3,12 +3,18 @@ pub mod precedence;
 
 use base_db::{FileRange, TextRange};
 use hir_def::{
-    HirFileId, InFile, body::BodySourceMap, expression::BinaryOperation, module_data::Name,
+    HirFileId, InFile,
+    body::BodySourceMap,
+    expression::BinaryOperation,
+    expression_store::{ExpressionSourceMap, ExpressionStoreSource},
+    module_data::Name,
 };
 use hir_ty::{
     builtins::BuiltinId,
-    database::HirDatabase,
-    infer::{InferenceDiagnostic, TypeExpectation, TypeLoweringError},
+    database::{FieldInferenceDiagnostic, HirDatabase},
+    infer::{
+        InferenceDiagnostic, LoweredKind, TypeExpectation, TypeLoweringError, TypeLoweringErrorKind,
+    },
     ty::Type,
     validate::AddressSpaceError,
 };
@@ -19,7 +25,9 @@ use syntax::{
 };
 
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
-use crate::{Function, GlobalConstant, GlobalVariable, HasSource as _, Override, TypeAlias};
+use crate::{
+    Field, Function, GlobalConstant, GlobalVariable, HasSource as _, Override, Parameter, TypeAlias,
+};
 
 #[derive(Clone, Debug, Deserialize, Default)]
 pub enum NagaVersion {
@@ -57,20 +65,9 @@ impl Default for DiagnosticsConfig {
     }
 }
 
-// TODO: Refactor into ShaderCreationError, PipelineCreationError, and DynamicError.
-// https://www.w3.org/TR/WGSL/#shader-creation-error
-// https://www.w3.org/TR/WGSL/#pipeline-creation-error
-// https://www.w3.org/TR/WGSL/#dynamic-error
-
 pub enum AnyDiagnostic {
     ParseError {
         message: String,
-        range: TextRange,
-        file_id: HirFileId,
-    },
-
-    UnconfiguredCode {
-        definition: String,
         range: TextRange,
         file_id: HirFileId,
     },
@@ -121,23 +118,20 @@ pub enum AnyDiagnostic {
         actual: Type,
     },
     MissingAddressSpace {
-        var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
+        var: InFile<AstPointer<ast::VariableDeclaration>>,
     },
     InvalidAddressSpace {
-        var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
+        var: InFile<AstPointer<ast::VariableDeclaration>>,
         error: AddressSpaceError,
     },
-
-    InvalidType {
-        file_id: HirFileId,
-        location: SyntaxNodePointer,
-        error: TypeLoweringError,
+    InvalidTypeSpecifier {
+        type_specifier: InFile<AstPointer<ast::TypeSpecifier>>,
+        error: TypeLoweringErrorKind,
     },
-
-    UnresolvedImport {
-        import: InFile<AstPointer<ast::Import>>,
+    InvalidIdentExpression {
+        expression: InFile<AstPointer<ast::Expression>>,
+        error: TypeLoweringErrorKind,
     },
-
     PrecedenceParensRequired {
         expression: InFile<AstPointer<ast::Expression>>,
         operation: BinaryOperation,
@@ -151,9 +145,27 @@ pub enum AnyDiagnostic {
     },
     NoConstructor {
         expression: InFile<AstPointer<ast::Expression>>,
-        builtins: [BuiltinId; 2],
+        builtins: BuiltinId,
         r#type: Type,
         parameters: Vec<Type>,
+    },
+    CyclicType {
+        file_id: HirFileId,
+        name: Name,
+        range: TextRange,
+    },
+    UnexpectedTemplateArgument {
+        expression: InFile<AstPointer<ast::Expression>>,
+    },
+    WgslError {
+        expression: InFile<AstPointer<ast::Expression>>,
+        message: String,
+    },
+    ExpectedLoweredKind {
+        expression: InFile<AstPointer<ast::Expression>>,
+        expected: LoweredKind,
+        actual: LoweredKind,
+        name: Name,
     },
 }
 
@@ -172,24 +184,27 @@ impl AnyDiagnostic {
             | Self::AddressOfNotReference { expression, .. }
             | Self::DerefNotPointer { expression, .. }
             | Self::NoConstructor { expression, .. }
-            | Self::PrecedenceParensRequired { expression, .. } => expression.file_id,
+            | Self::PrecedenceParensRequired { expression, .. }
+            | Self::UnexpectedTemplateArgument { expression, .. }
+            | Self::WgslError { expression, .. }
+            | Self::InvalidIdentExpression { expression, .. }
+            | Self::ExpectedLoweredKind { expression, .. } => expression.file_id,
             Self::MissingAddressSpace { var } | Self::InvalidAddressSpace { var, .. } => {
                 var.file_id
             },
-            Self::UnresolvedImport { import, .. } => import.file_id,
-            Self::InvalidType { file_id, .. }
-            | Self::NagaValidationError { file_id, .. }
+            Self::InvalidTypeSpecifier { type_specifier, .. } => type_specifier.file_id,
+            Self::NagaValidationError { file_id, .. }
             | Self::ParseError { file_id, .. }
-            | Self::UnconfiguredCode { file_id, .. } => *file_id,
+            | Self::CyclicType { file_id, .. } => *file_id,
         }
     }
 }
 
-#[expect(clippy::too_many_lines, reason = "TODO")]
+#[expect(clippy::too_many_lines, reason = "long but simple match")]
 pub(crate) fn any_diag_from_infer_diagnostic(
-    database: &dyn HirDatabase,
     infer_diagnostic: &InferenceDiagnostic,
-    source_map: &BodySourceMap,
+    signature_map: &ExpressionSourceMap,
+    source_map: &ExpressionSourceMap,
     file_id: HirFileId,
 ) -> Option<AnyDiagnostic> {
     Some(match infer_diagnostic {
@@ -319,45 +334,71 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 actual: *actual,
             }
         },
-        InferenceDiagnostic::InvalidType { container, error } => {
-            let location = match *container {
-                hir_ty::infer::TypeContainer::Expr(expression) => {
-                    let expression = source_map.expression_to_source(expression).ok()?;
-                    expression.syntax_node_pointer()
-                },
-                hir_ty::infer::TypeContainer::GlobalVar(id) => {
-                    let source = GlobalVariable { id }.source(database)?;
-                    SyntaxNodePointer::new(source.value.ty()?.syntax())
-                },
-                hir_ty::infer::TypeContainer::GlobalConstant(id) => {
-                    let source = GlobalConstant { id }.source(database)?;
-                    SyntaxNodePointer::new(source.value.ty()?.syntax())
-                },
-                hir_ty::infer::TypeContainer::Override(id) => {
-                    let source = Override { id }.source(database)?;
-                    SyntaxNodePointer::new(source.value.ty()?.syntax())
-                },
-                hir_ty::infer::TypeContainer::FunctionParameter(_, binding) => {
-                    let binding = source_map.binding_to_source(binding).ok()?;
-                    binding.syntax_node_pointer()
-                },
-                hir_ty::infer::TypeContainer::FunctionReturn(id) => {
-                    let source = Function { id }.source(database)?;
-                    SyntaxNodePointer::new(source.value.return_type()?.syntax())
-                },
-                hir_ty::infer::TypeContainer::VariableStatement(statement) => {
-                    let statement = source_map.statement_to_source(statement).ok()?;
-                    statement.syntax_node_pointer()
-                },
-                hir_ty::infer::TypeContainer::TypeAlias(id) => {
-                    let source = TypeAlias { id }.source(database)?;
-                    SyntaxNodePointer::new(source.value.type_declaration()?.syntax())
-                },
+        InferenceDiagnostic::InvalidType {
+            source,
+            error: TypeLoweringError { container, kind },
+        } => {
+            let source_map = match source {
+                ExpressionStoreSource::Body => source_map,
+                ExpressionStoreSource::Signature => signature_map,
             };
-            AnyDiagnostic::InvalidType {
-                file_id,
-                location,
-                error: error.clone(),
+            match container {
+                hir_ty::infer::TypeContainer::Expression(expression) => {
+                    let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+                    let source = InFile::new(file_id, pointer);
+
+                    AnyDiagnostic::InvalidIdentExpression {
+                        expression: source,
+                        error: kind.clone(),
+                    }
+                },
+                hir_ty::infer::TypeContainer::TypeSpecifier(type_specifier) => {
+                    let pointer = source_map
+                        .type_specifier_to_source(*type_specifier)
+                        .ok()?
+                        .clone();
+                    let source = InFile::new(file_id, pointer);
+                    AnyDiagnostic::InvalidTypeSpecifier {
+                        type_specifier: source,
+                        error: kind.clone(),
+                    }
+                },
+            }
+        },
+        InferenceDiagnostic::CyclicType { name, range } => AnyDiagnostic::CyclicType {
+            file_id,
+            name: name.clone(),
+            range: *range,
+        },
+        InferenceDiagnostic::UnexpectedTemplateArgument { expression } => {
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::UnexpectedTemplateArgument { expression: source }
+        },
+        InferenceDiagnostic::WgslError {
+            expression,
+            message,
+        } => {
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::WgslError {
+                expression: source,
+                message: message.clone(),
+            }
+        },
+        InferenceDiagnostic::ExpectedLoweredKind {
+            expression,
+            expected,
+            actual,
+            name,
+        } => {
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::ExpectedLoweredKind {
+                expression: source,
+                name: name.clone(),
+                expected: *expected,
+                actual: *actual,
             }
         },
     })
@@ -365,7 +406,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
 
 pub(crate) fn any_diag_from_global_var(
     var_diagnostic: GlobalVariableDiagnostic,
-    var: InFile<AstPointer<ast::GlobalVariableDeclaration>>,
+    var: InFile<AstPointer<ast::VariableDeclaration>>,
 ) -> AnyDiagnostic {
     match var_diagnostic {
         GlobalVariableDiagnostic::MissingAddressSpace => AnyDiagnostic::MissingAddressSpace { var },
@@ -377,7 +418,7 @@ pub(crate) fn any_diag_from_global_var(
 
 pub(crate) fn any_diag_from_shift(
     error: &PrecedenceDiagnostic,
-    source_map: &BodySourceMap,
+    source_map: &ExpressionSourceMap,
     file_id: HirFileId,
 ) -> Option<AnyDiagnostic> {
     match error {

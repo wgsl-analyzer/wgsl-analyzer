@@ -1,60 +1,198 @@
-use std::{collections::hash_map::Entry, fmt, sync::Arc};
+mod builtin;
+mod eval;
+mod unify;
+
+use std::{
+    borrow::Cow, collections::hash_map::Entry, ffi::os_str::Display, fmt, ops::Index,
+    str::FromStr as _,
+};
 
 use either::Either;
 use hir_def::{
+    HasSource as _,
     body::{BindingId, Body},
-    data::{FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData},
+    data::{
+        FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, ParameterId,
+        StructData, TypeAliasData,
+    },
     database::{
-        DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId, OverrideId,
-        TypeAliasId,
+        DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, Lookup as _, ModuleDefinitionId,
+        OverrideId, StructId,
     },
     expression::{
-        ArithmeticOperation, BinaryOperation, Callee, ComparisonOperation, Expression,
-        ExpressionId, Statement, StatementId, UnaryOperator,
+        ArithmeticOperation, BinaryOperation, ComparisonOperation, Expression, ExpressionId,
+        Statement, StatementId, SwitchCaseSelector, UnaryOperator,
     },
+    expression_store::{ExpressionStore, ExpressionStoreSource},
     module_data::Name,
-    resolver::{ResolveType, Resolver},
-    type_ref::{self, AccessMode, AddressSpace, TypeReference, VecDimensionality},
+    resolver::{ResolveKind, Resolver},
+    type_ref::{self, VecDimensionality},
+    type_specifier::{IdentExpression, TypeSpecifier, TypeSpecifierId},
 };
 use la_arena::ArenaMap;
 use rustc_hash::FxHashMap;
+use triomphe::Arc;
+use wgsl_types::{
+    inst::Instance,
+    syntax::{AccessMode, AddressSpace, Enumerant},
+};
 
 use crate::{
     builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
     database::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
+    infer::{
+        eval::{TemplateParameter, TemplateParameters},
+        unify::{UnificationTable, unify},
+    },
     ty::{
-        ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Pointer, Reference, SamplerType,
-        ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType, TyKind, Type,
-        VecSize, VectorType,
+        ArraySize, ArrayType, AtomicType, BoundVar, MatrixType, Pointer, Reference, ScalarType,
+        TexelFormat, TextureDimensionality, TextureKind, TextureType, TyKind, Type, VecSize,
+        VectorType,
     },
 };
 
+/// Infers the type of a global item.
+/// For `const`s and co, it first uses the specified type,
+/// and then uses the body (expression) to infer the return type.
 pub fn infer_query(
     database: &dyn HirDatabase,
     definition: DefinitionWithBodyId,
 ) -> Arc<InferenceResult> {
     let resolver = definition.resolver(database);
-    let mut context = InferenceContext::new(database, definition, resolver);
+    let body = database.body(definition);
+    let mut context = InferenceContext::new(database, definition.into(), resolver);
 
     match definition {
         DefinitionWithBodyId::Function(function) => {
-            context.collect_fn(function, &database.fn_data(function));
+            let data = database.function_data(function).0;
+            let return_type = context.collect_fn(&data, &body);
+            context.infer_body(&body, return_type, AbstractHandling::Concretize);
         },
         DefinitionWithBodyId::GlobalVariable(var) => {
-            context.collect_global_variable(var, &database.global_var_data(var));
+            let data = database.global_var_data(var).0;
+            let return_type = context.collect_global_variable(&data, &body);
+            context.infer_body(&body, return_type, AbstractHandling::Concretize);
+            context.infer_global_variable(&data, &body);
         },
         DefinitionWithBodyId::GlobalConstant(constant) => {
-            context.collect_global_constant(constant, &database.global_constant_data(constant));
+            let data = database.global_constant_data(constant).0;
+            let return_type = context.collect_global_constant(&data, &body);
+            context.infer_body(&body, return_type, AbstractHandling::Abstract);
         },
         DefinitionWithBodyId::Override(override_decl) => {
-            context.collect_override(override_decl, &database.override_data(override_decl));
+            let data = database.override_data(override_decl).0;
+            let return_type = context.collect_override(&data, &body);
+            context.infer_body(&body, return_type, AbstractHandling::Concretize);
         },
     }
 
-    context.infer_body();
-
     Arc::new(context.resolve_all())
+}
+
+#[expect(clippy::trivially_copy_pass_by_ref, reason = "must match salsa")]
+pub fn infer_cycle_result(
+    database: &dyn HirDatabase,
+    _cycle: &[String],
+    definition: &DefinitionWithBodyId,
+) -> Arc<InferenceResult> {
+    let mut inference_result = InferenceResult::new(database);
+    let (name, range) = get_name_and_range(database, ModuleDefinitionId::from(*definition));
+
+    inference_result
+        .diagnostics
+        .push(InferenceDiagnostic::CyclicType { name, range });
+
+    Arc::new(inference_result)
+}
+
+/// Infers the type of a global item's signature.
+///
+/// The [`InferenceResult`] will contain [`ExpressionId`]s from the signature expression store.
+/// The return type is purposefully left as the error type.
+/// For example, for `const a = 3` it depends on the initializer, which we do not access here.
+pub fn infer_signature_query(
+    database: &dyn HirDatabase,
+    definition: ModuleDefinitionId,
+) -> Option<Arc<InferenceResult>> {
+    let resolver = definition.resolver(database);
+    let context = InferenceContext::new(database, definition, resolver);
+    // TODO: Match the definition and deal with the generic types in the signature.
+    // Those can contain expressions, which need to land in the inference results.
+    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/657
+
+    let result = context.resolve_all();
+    if result.is_empty() {
+        None
+    } else {
+        Some(Arc::new(result))
+    }
+}
+
+#[expect(clippy::trivially_copy_pass_by_ref, reason = "must match salsa")]
+#[expect(clippy::unnecessary_wraps, reason = "must match salsa")]
+pub fn infer_signature_cycle_result(
+    database: &dyn HirDatabase,
+    _cycle: &[String],
+    definition: &ModuleDefinitionId,
+) -> Option<Arc<InferenceResult>> {
+    let mut inference_result = InferenceResult::new(database);
+    let (name, range) = get_name_and_range(database, *definition);
+    inference_result
+        .diagnostics
+        .push(InferenceDiagnostic::CyclicType { name, range });
+
+    Some(Arc::new(inference_result))
+}
+
+fn get_name_and_range(
+    database: &dyn HirDatabase,
+    definition: ModuleDefinitionId,
+) -> (Name, base_db::TextRange) {
+    match definition {
+        ModuleDefinitionId::Function(id) => (
+            database.function_data(id).0.name.clone(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
+        ),
+        ModuleDefinitionId::GlobalVariable(id) => (
+            database.global_var_data(id).0.name.clone(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
+        ),
+        ModuleDefinitionId::GlobalConstant(id) => (
+            database.global_constant_data(id).0.name.clone(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
+        ),
+        ModuleDefinitionId::Override(id) => (
+            database.override_data(id).0.name.clone(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
+        ),
+        ModuleDefinitionId::Struct(id) => (
+            database.struct_data(id).0.name.clone(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
+        ),
+        ModuleDefinitionId::TypeAlias(id) => (
+            database.type_alias_data(id).0.name.clone(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
+        ),
+    }
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -98,11 +236,10 @@ pub enum InferenceDiagnostic {
     },
     NoConstructor {
         expression: ExpressionId,
-        builtins: [BuiltinId; 2],
+        builtins: BuiltinId,
         r#type: Type,
         parameters: Vec<Type>,
     },
-
     AddressOfNotReference {
         expression: ExpressionId,
         actual: Type,
@@ -111,28 +248,38 @@ pub enum InferenceDiagnostic {
         expression: ExpressionId,
         actual: Type,
     },
-
     InvalidType {
-        container: TypeContainer,
+        source: ExpressionStoreSource,
         error: TypeLoweringError,
+    },
+    CyclicType {
+        name: Name,
+        range: base_db::TextRange,
+    },
+    UnexpectedTemplateArgument {
+        expression: ExpressionId,
+    },
+    WgslError {
+        expression: ExpressionId,
+        message: String,
+    },
+    ExpectedLoweredKind {
+        expression: ExpressionId,
+        expected: LoweredKind,
+        actual: LoweredKind,
+        name: Name,
     },
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum TypeContainer {
-    Expr(ExpressionId),
-    GlobalVar(GlobalVariableId),
-    GlobalConstant(GlobalConstantId),
-    Override(OverrideId),
-    TypeAlias(TypeAliasId),
-    FunctionParameter(FunctionId, BindingId),
-    FunctionReturn(FunctionId),
-    VariableStatement(StatementId),
+    Expression(ExpressionId),
+    TypeSpecifier(TypeSpecifierId),
 }
 
 impl From<ExpressionId> for TypeContainer {
     fn from(id: ExpressionId) -> Self {
-        Self::Expr(id)
+        Self::Expression(id)
     }
 }
 
@@ -142,18 +289,43 @@ pub enum ResolvedCall {
     OtherTypeInitializer(Type),
 }
 
-#[expect(clippy::partial_pub_fields, reason = "TODO")]
-#[derive(Default, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
+struct InternedStandardTypes {
+    unknown: Type,
+}
+
+impl InternedStandardTypes {
+    fn new(database: &dyn HirDatabase) -> Self {
+        Self {
+            unknown: TyKind::Error.intern(database),
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Debug)]
 pub struct InferenceResult {
-    pub type_of_expression: ArenaMap<ExpressionId, Type>,
-    pub type_of_binding: ArenaMap<BindingId, Type>,
-    pub diagnostics: Vec<InferenceDiagnostic>,
-    pub return_type: Option<Type>,
+    pub(crate) type_of_expression: ArenaMap<ExpressionId, Type>,
+    pub(crate) type_of_binding: ArenaMap<BindingId, Type>,
+    diagnostics: Vec<InferenceDiagnostic>,
+    return_type: Type,
     call_resolutions: FxHashMap<ExpressionId, ResolvedCall>,
     field_resolutions: FxHashMap<ExpressionId, FieldId>,
+    standard_types: InternedStandardTypes,
 }
 
 impl InferenceResult {
+    fn new(database: &dyn HirDatabase) -> Self {
+        Self {
+            type_of_expression: ArenaMap::default(),
+            type_of_binding: ArenaMap::default(),
+            diagnostics: Vec::default(),
+            return_type: TyKind::Error.intern(database),
+            call_resolutions: FxHashMap::default(),
+            field_resolutions: FxHashMap::default(),
+            standard_types: InternedStandardTypes::new(database),
+        }
+    }
+
     #[must_use]
     pub fn field_resolution(
         &self,
@@ -169,32 +341,86 @@ impl InferenceResult {
     ) -> Option<ResolvedCall> {
         self.call_resolutions.get(&expression).copied()
     }
+
+    #[must_use]
+    pub fn diagnostics(&self) -> &[InferenceDiagnostic] {
+        &self.diagnostics
+    }
+
+    #[must_use]
+    pub const fn return_type(&self) -> Type {
+        self.return_type
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.type_of_expression.values().next().is_none()
+            && self.type_of_binding.values().next().is_none()
+            && self.diagnostics.is_empty()
+            && self.call_resolutions.is_empty()
+            && self.field_resolutions.is_empty()
+    }
 }
 
+impl Index<ExpressionId> for InferenceResult {
+    type Output = Type;
+    fn index(
+        &self,
+        index: ExpressionId,
+    ) -> &Type {
+        self.type_of_expression
+            .get(index)
+            .unwrap_or(&self.standard_types.unknown)
+    }
+}
+
+impl Index<BindingId> for InferenceResult {
+    type Output = Type;
+    fn index(
+        &self,
+        index: BindingId,
+    ) -> &Type {
+        self.type_of_binding
+            .get(index)
+            .unwrap_or(&self.standard_types.unknown)
+    }
+}
+
+/// Runs inference for items that have a body, such as functions
 pub struct InferenceContext<'database> {
     database: &'database dyn HirDatabase,
-    owner: DefinitionWithBodyId,
+    owner: ModuleDefinitionId,
+    /// Root resolver for the entire module
     resolver: Resolver,
-    body: Arc<Body>,
-    result: InferenceResult,
-    return_ty: Option<Type>,
+    result: InferenceResult, // set in collect_* calls
+    return_ty: Type,
 }
 
 impl<'database> InferenceContext<'database> {
     pub fn new(
         database: &'database dyn HirDatabase,
-        owner: DefinitionWithBodyId,
+        owner: ModuleDefinitionId,
         resolver: Resolver,
     ) -> Self {
         Self {
             database,
             owner,
             resolver,
-            body: database.body(owner),
-            result: InferenceResult::default(),
-            return_ty: None,
+            result: InferenceResult::new(database),
+            return_ty: TyKind::Error.intern(database),
         }
     }
+
+    // pub fn with_store<T>(
+    //     &mut self,
+    //     store: &'database ExpressionStore,
+    //     f: impl FnOnce(&mut InferenceContext<'_>) -> T,
+    // ) -> T {
+    //     let old_store = std::mem::replace(&mut self.store, store);
+    //     let result = f(self);
+    //     self.store = old_store;
+    //     result
+    // }
 
     fn set_expression_ty(
         &mut self,
@@ -212,6 +438,20 @@ impl<'database> InferenceContext<'database> {
         self.result.type_of_binding.insert(binding, r#type);
     }
 
+    fn bind_return_ty(
+        &mut self,
+        r#type: Option<Type>,
+        body: &Body,
+    ) {
+        if let Some(r#type) = r#type
+            && let Some(binding) = body.main_binding
+        {
+            self.set_binding_ty(binding, r#type);
+        }
+
+        self.return_ty = r#type.unwrap_or_else(|| self.error_ty());
+    }
+
     fn set_field_resolution(
         &mut self,
         expression: ExpressionId,
@@ -227,6 +467,19 @@ impl<'database> InferenceContext<'database> {
         self.result.diagnostics.push(diagnostic);
     }
 
+    fn push_lowering_diagnostics(
+        &mut self,
+        diagnostics: &mut Vec<TypeLoweringError>,
+        store: &ExpressionStore,
+    ) {
+        for diagnostic in diagnostics.drain(..) {
+            self.push_diagnostic(InferenceDiagnostic::InvalidType {
+                source: store.store_source,
+                error: diagnostic,
+            });
+        }
+    }
+
     fn resolve_all(mut self) -> InferenceResult {
         self.result.return_type = self.return_ty;
         self.result
@@ -234,103 +487,158 @@ impl<'database> InferenceContext<'database> {
 
     fn collect_global_variable(
         &mut self,
-        id: GlobalVariableId,
         var: &GlobalVariableData,
-    ) {
-        let r#type = var.r#type.map(|r#type| {
-            self.lower_ty(
-                TypeContainer::GlobalVar(id),
-                &self.database.lookup_intern_type_ref(r#type),
-            )
-        });
+        body: &Body,
+    ) -> Option<Type> {
+        let r#type = var
+            .r#type
+            .map(|r#type| self.lower_ty(r#type, &self.resolver.clone(), &var.store));
 
-        if let Some(r#type) = r#type
-            && let Some(binding) = self.body.main_binding
-        {
-            self.set_binding_ty(binding, r#type);
+        self.bind_return_ty(r#type, body);
+        r#type
+    }
+
+    fn infer_global_variable(
+        &mut self,
+        var: &GlobalVariableData,
+        body: &Body,
+    ) {
+        let (address_space, access_mode) =
+            self.infer_variable_template(&var.template_parameters, &var.store);
+        if address_space == AddressSpace::Function {
+            // Function address space is not allowed at the module level
+            self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
+                expression: var.template_parameters[0],
+            });
         }
 
-        self.return_ty = r#type;
+        self.bind_return_ty(
+            Some(self.make_ref(self.return_ty, address_space, access_mode)),
+            body,
+        );
+    }
+
+    fn infer_variable_template(
+        &mut self,
+        template: &[ExpressionId],
+        store: &ExpressionStore,
+    ) -> (AddressSpace, AccessMode) {
+        let mut ctx = TyLoweringContext::new(self.database, &self.resolver, store);
+        let template_args: Vec<_> = template.iter().map(|arg| ctx.eval_tplt_arg(*arg)).collect();
+        self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
+
+        let default_address_space = match store.store_source {
+            ExpressionStoreSource::Body => AddressSpace::Function,
+            ExpressionStoreSource::Signature => AddressSpace::Handle,
+        };
+
+        let address_space = match template_args.first() {
+            Some(TemplateParameter::Enumerant(Enumerant::AddressSpace(address_space))) => {
+                *address_space
+            },
+            None => default_address_space,
+            _ => {
+                self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
+                    expression: template[0],
+                });
+                default_address_space
+            },
+        };
+        let access_mode = match template_args.get(1) {
+            Some(TemplateParameter::Enumerant(Enumerant::AccessMode(access_mode))) => {
+                if address_space == AddressSpace::Storage {
+                    *access_mode
+                } else {
+                    // Only the storage address space allows for an access mode
+                    self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
+                        expression: template[0],
+                    });
+                    address_space.default_access_mode()
+                }
+            },
+            None => address_space.default_access_mode(),
+            _ => {
+                self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
+                    expression: template[0],
+                });
+                address_space.default_access_mode()
+            },
+        };
+
+        // Mark extra template arguments as errors
+        if template.len() > 2 {
+            for expression in &template[2..] {
+                self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
+                    expression: *expression,
+                });
+            }
+        }
+        (address_space, access_mode)
     }
 
     fn collect_global_constant(
         &mut self,
-        id: GlobalConstantId,
         constant: &GlobalConstantData,
-    ) {
-        let r#type = constant.r#type.map(|r#type| {
-            self.lower_ty(
-                TypeContainer::GlobalConstant(id),
-                &self.database.lookup_intern_type_ref(r#type),
-            )
-        });
+        body: &Body,
+    ) -> Option<Type> {
+        let r#type = constant
+            .r#type
+            .map(|r#type| self.lower_ty(r#type, &self.resolver.clone(), &constant.store));
 
-        if let Some(r#type) = r#type
-            && let Some(binding) = self.body.main_binding
-        {
-            self.set_binding_ty(binding, r#type);
-        }
-
-        self.return_ty = r#type;
+        self.bind_return_ty(r#type, body);
+        r#type
     }
 
     fn collect_override(
         &mut self,
-        id: OverrideId,
-        constant: &OverrideData,
-    ) {
-        let r#type = constant.r#type.map(|r#type| {
-            self.lower_ty(
-                TypeContainer::Override(id),
-                &self.database.lookup_intern_type_ref(r#type),
-            )
-        });
+        override_data: &OverrideData,
+        body: &Body,
+    ) -> Option<Type> {
+        let r#type = override_data
+            .r#type
+            .map(|r#type| self.lower_ty(r#type, &self.resolver.clone(), &override_data.store));
 
-        if let Some(r#type) = r#type
-            && let Some(binding) = self.body.main_binding
-        {
-            self.set_binding_ty(binding, r#type);
-        }
-
-        self.return_ty = r#type;
+        self.bind_return_ty(r#type, body);
+        r#type
     }
 
     fn collect_fn(
         &mut self,
-        function_id: FunctionId,
         function_data: &FunctionData,
-    ) {
-        let body = Arc::clone(&self.body);
-        for (&(parameter, _), &id) in function_data.parameters.iter().zip(&body.parameters) {
-            let type_ref = self.database.lookup_intern_type_ref(parameter);
-            let param_ty =
-                self.lower_ty(TypeContainer::FunctionParameter(function_id, id), &type_ref);
-            self.set_binding_ty(id, param_ty);
+        body: &Body,
+    ) -> Option<Type> {
+        for ((_, parameter), &binding_id) in function_data.parameters.iter().zip(&body.parameters) {
+            let param_ty = self.lower_ty(
+                parameter.r#type,
+                &self.resolver.clone(),
+                &function_data.store,
+            );
+            self.set_binding_ty(binding_id, param_ty);
         }
-        self.return_ty = function_data.return_type.map(|type_ref| {
-            self.lower_ty(
-                TypeContainer::FunctionReturn(function_id),
-                &self.database.lookup_intern_type_ref(type_ref),
-            )
-        });
+        let r#type = function_data
+            .return_type
+            .map(|type_ref| self.lower_ty(type_ref, &self.resolver.clone(), &function_data.store));
+        self.return_ty = r#type.unwrap_or_else(|| self.error_ty());
+        r#type
     }
 
-    fn infer_body(&mut self) {
-        match self.body.root {
+    /// Runs type inference on the body and infer the type for `const`s, `var`s and `override`s
+    fn infer_body(
+        &mut self,
+        body: &Body,
+        return_type: Option<Type>,
+        abstract_handling: AbstractHandling,
+    ) {
+        match body.root {
             Some(Either::Left(statement)) => {
-                self.infer_statement(statement);
+                self.infer_statement(statement, body);
             },
             Some(Either::Right(expression)) => {
-                let r#type = self.infer_expression_expect(
-                    expression,
-                    &TypeExpectation::from_option(self.return_ty),
-                );
-                if self.return_ty.is_none() {
-                    self.return_ty = Some(r#type);
-                }
+                let r#type =
+                    self.infer_initializer(body, Some(expression), return_type, abstract_handling);
 
-                if let Some(main_binding) = self.body.main_binding {
-                    self.set_binding_ty(main_binding, r#type);
+                if return_type.is_none() {
+                    self.bind_return_ty(Some(r#type), body);
                 }
             },
             None => (),
@@ -340,59 +648,81 @@ impl<'database> InferenceContext<'database> {
     fn resolver_for_expression(
         &self,
         expression: ExpressionId,
+    ) -> Option<Resolver> {
+        let ModuleDefinitionId::Function(function) = self.owner else {
+            return None;
+        };
+        let expression_scopes = self
+            .database
+            .expression_scopes(DefinitionWithBodyId::Function(function));
+
+        let scope_id = expression_scopes.scope_for_expression(expression)?;
+
+        Some(
+            self.resolver
+                .clone()
+                .push_expression_scope(function, expression_scopes, scope_id),
+        )
+    }
+
+    fn resolver_for_statement(
+        &self,
+        statement: StatementId,
     ) -> Resolver {
-        let resolver = self.resolver.clone();
-        match self.owner {
-            DefinitionWithBodyId::Function(function) => {
-                let expression_scopes = self.database.expression_scopes(self.owner);
-                let scope_id = expression_scopes.scope_for_expression(expression).unwrap();
-                resolver.push_expression_scope(function, expression_scopes, scope_id)
-            },
-            DefinitionWithBodyId::GlobalVariable(_)
-            | DefinitionWithBodyId::GlobalConstant(_)
-            | DefinitionWithBodyId::Override(_) => resolver,
+        let ModuleDefinitionId::Function(function) = self.owner else {
+            return self.resolver.clone();
+        };
+
+        let expression_scopes = self
+            .database
+            .expression_scopes(DefinitionWithBodyId::Function(function));
+
+        if let Some(scope_id) = expression_scopes.scope_for_statement(statement) {
+            self.resolver
+                .clone()
+                .push_expression_scope(function, expression_scopes, scope_id)
+        } else {
+            self.resolver.clone()
         }
     }
 
-    #[expect(clippy::too_many_lines, reason = "TODO")]
+    #[expect(clippy::too_many_lines, reason = "match with many small cases")]
     fn infer_statement(
         &mut self,
         statement: StatementId,
+        body: &Body,
     ) {
-        let body = Arc::clone(&self.body);
+        let resolver = self.resolver_for_statement(statement);
 
         match &body.statements[statement] {
             Statement::Compound { statements } => {
                 for statement in statements {
-                    self.infer_statement(*statement);
+                    self.infer_statement(*statement, body);
                 }
             },
             Statement::Variable {
                 binding_id,
                 type_ref,
                 initializer,
-                address_space,
-                access_mode,
+                template_parameters,
             } => {
-                let r#type = type_ref.map(|r#type| {
-                    self.lower_ty(
-                        TypeContainer::VariableStatement(statement),
-                        &self.database.lookup_intern_type_ref(r#type),
-                    )
-                });
-                let r#type = if let Some(init) = initializer {
-                    let expression_ty =
-                        self.infer_expression_expect(*init, &TypeExpectation::from_option(r#type));
-                    r#type.unwrap_or(expression_ty)
-                } else {
-                    r#type.unwrap_or_else(|| self.error_ty())
-                };
-
-                let ref_ty = self.make_ref(
+                let r#type = type_ref.map(|r#type| self.lower_ty(r#type, &resolver, body));
+                let r#type = self.infer_initializer(
+                    body,
+                    *initializer,
                     r#type,
-                    address_space.unwrap_or(AddressSpace::Function),
-                    access_mode.unwrap_or_else(AccessMode::read_write),
+                    AbstractHandling::Concretize,
                 );
+
+                let (address_space, access_mode) =
+                    self.infer_variable_template(template_parameters, body);
+                if address_space != AddressSpace::Function {
+                    // Only function address space is allowed
+                    self.push_diagnostic(InferenceDiagnostic::UnexpectedTemplateArgument {
+                        expression: template_parameters[0],
+                    });
+                }
+                let ref_ty = self.make_ref(r#type, address_space, access_mode);
                 self.set_binding_ty(*binding_id, ref_ty);
             },
             Statement::Const {
@@ -401,20 +731,9 @@ impl<'database> InferenceContext<'database> {
                 initializer,
                 ..
             } => {
-                let r#type = type_ref.map(|r#type| {
-                    self.lower_ty(
-                        TypeContainer::VariableStatement(statement),
-                        &self.database.lookup_intern_type_ref(r#type),
-                    )
-                });
-                let r#type = if let Some(init) = initializer {
-                    let expression_ty =
-                        self.infer_expression_expect(*init, &TypeExpectation::from_option(r#type));
-                    r#type.unwrap_or(expression_ty)
-                } else {
-                    r#type.unwrap_or_else(|| self.error_ty())
-                };
-
+                let r#type = type_ref.map(|r#type| self.lower_ty(r#type, &resolver, body));
+                let r#type =
+                    self.infer_initializer(body, *initializer, r#type, AbstractHandling::Abstract);
                 self.set_binding_ty(*binding_id, r#type);
             },
             Statement::Let {
@@ -423,20 +742,13 @@ impl<'database> InferenceContext<'database> {
                 initializer,
                 ..
             } => {
-                let r#type = type_ref.map(|r#type| {
-                    self.lower_ty(
-                        TypeContainer::VariableStatement(statement),
-                        &self.database.lookup_intern_type_ref(r#type),
-                    )
-                });
-                let r#type = if let Some(init) = initializer {
-                    let expression_ty =
-                        self.infer_expression_expect(*init, &TypeExpectation::from_option(r#type));
-                    r#type.unwrap_or(expression_ty)
-                } else {
-                    r#type.unwrap_or_else(|| self.error_ty())
-                };
-
+                let r#type = type_ref.map(|r#type| self.lower_ty(r#type, &resolver, body));
+                let r#type = self.infer_initializer(
+                    body,
+                    *initializer,
+                    r#type,
+                    AbstractHandling::Concretize,
+                );
                 self.set_binding_ty(*binding_id, r#type);
             },
 
@@ -444,7 +756,8 @@ impl<'database> InferenceContext<'database> {
                 if let Some(expression) = expression {
                     self.infer_expression_expect(
                         *expression,
-                        &TypeExpectation::from_option(self.return_ty),
+                        &TypeExpectation::from_ty(self.return_ty),
+                        body,
                     );
                 }
             },
@@ -452,7 +765,7 @@ impl<'database> InferenceContext<'database> {
                 left_side,
                 right_side,
             } => {
-                let left_ty = self.infer_expression(*left_side);
+                let left_ty = self.infer_expression(*left_side, body);
 
                 let kind = left_ty.kind(self.database);
                 let left_inner = if let TyKind::Reference(reference) = kind {
@@ -465,14 +778,18 @@ impl<'database> InferenceContext<'database> {
                     self.error_ty()
                 };
 
-                self.infer_expression_expect(*right_side, &TypeExpectation::from_ty(left_inner));
+                self.infer_expression_expect(
+                    *right_side,
+                    &TypeExpectation::from_ty(left_inner),
+                    body,
+                );
             },
             Statement::CompoundAssignment {
                 left_side,
                 right_side,
                 op,
             } => {
-                let left_ty = self.infer_expression(*left_side);
+                let left_ty = self.infer_expression(*left_side, body);
 
                 let left_kind = left_ty.kind(self.database);
                 let left_inner = if let TyKind::Reference(reference) = left_kind {
@@ -485,12 +802,22 @@ impl<'database> InferenceContext<'database> {
                     self.error_ty()
                 };
 
-                let r#type = self.infer_binary_op(*left_side, *right_side, (*op).into());
+                let r#type =
+                    self.infer_binary_op(*right_side, *left_side, *right_side, (*op).into(), body);
 
-                self.expect_same_type(*left_side, r#type, left_inner);
+                if !r#type.is_convertible_to(left_inner, self.database) {
+                    self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
+                        expression: *right_side,
+                        actual: r#type,
+                        expected: TypeExpectation::Type(TypeExpectationInner::Exact(left_inner)),
+                    });
+                }
+            },
+            Statement::PhonyAssignment { right_side } => {
+                self.infer_expression(*right_side, body);
             },
             Statement::IncrDecr { expression, .. } => {
-                let left_ty = self.infer_expression(*expression);
+                let left_ty = self.infer_expression(*expression, body);
 
                 let left_kind = left_ty.kind(self.database);
                 let left_inner = if let TyKind::Reference(reference) = left_kind {
@@ -520,35 +847,46 @@ impl<'database> InferenceContext<'database> {
                 else_if_blocks,
                 else_block,
             } => {
-                self.infer_statement(*block);
+                self.infer_statement(*block, body);
                 for else_if_block in else_if_blocks {
-                    self.infer_statement(*else_if_block);
+                    self.infer_statement(*else_if_block, body);
                 }
                 if let Some(else_block) = else_block {
-                    self.infer_statement(*else_block);
+                    self.infer_statement(*else_block, body);
                 }
-                self.infer_expression_expect(*condition, &TypeExpectation::from_ty(self.bool_ty()));
+                self.infer_expression_expect(
+                    *condition,
+                    &TypeExpectation::from_ty(self.bool_ty()),
+                    body,
+                );
             },
             Statement::While { condition, block } => {
-                self.infer_statement(*block);
-                self.infer_expression_expect(*condition, &TypeExpectation::from_ty(self.bool_ty()));
+                self.infer_statement(*block, body);
+                self.infer_expression_expect(
+                    *condition,
+                    &TypeExpectation::from_ty(self.bool_ty()),
+                    body,
+                );
             },
             Statement::Switch {
                 expression,
                 case_blocks,
-                default_block,
             } => {
-                let r#type = self.infer_expression(*expression).unref(self.database);
+                let r#type = self
+                    .infer_expression(*expression, body)
+                    .unref(self.database);
 
                 for (selectors, case) in case_blocks {
                     for selector in selectors {
-                        self.infer_expression_expect(*selector, &TypeExpectation::from_ty(r#type));
+                        if let SwitchCaseSelector::Expression(selector) = selector {
+                            self.infer_expression_expect(
+                                *selector,
+                                &TypeExpectation::from_ty(r#type),
+                                body,
+                            );
+                        }
                     }
-                    self.infer_statement(*case);
-                }
-
-                if let Some(default_block) = *default_block {
-                    self.infer_statement(default_block);
+                    self.infer_statement(*case, body);
                 }
             },
             Statement::For {
@@ -558,29 +896,71 @@ impl<'database> InferenceContext<'database> {
                 block,
             } => {
                 if let Some(init) = initializer {
-                    self.infer_statement(*init);
+                    self.infer_statement(*init, body);
                 }
                 if let Some(cont) = continuing_part {
-                    self.infer_statement(*cont);
+                    self.infer_statement(*cont, body);
                 }
 
                 if let Some(condition) = condition {
                     self.infer_expression_expect(
                         *condition,
                         &TypeExpectation::from_ty(self.bool_ty()),
+                        body,
                     );
                 }
 
-                self.infer_statement(*block);
+                self.infer_statement(*block, body);
             },
-            Statement::Loop { body } => {
-                self.infer_statement(*body);
+            Statement::Loop { body: loop_body } => {
+                self.infer_statement(*loop_body, body);
+            },
+            Statement::Assert { expression } => {
+                self.infer_expression_expect(
+                    *expression,
+                    &TypeExpectation::from_ty(self.bool_ty()),
+                    body,
+                );
             },
             Statement::Discard | Statement::Break | Statement::Continue | Statement::Missing => {},
-            Statement::Continuing { block } => self.infer_statement(*block),
-            Statement::Expression { expression } => {
-                self.infer_expression(*expression);
+            Statement::Continuing { block } => self.infer_statement(*block, body),
+            Statement::BreakIf { condition } => {
+                self.infer_expression_expect(
+                    *condition,
+                    &TypeExpectation::from_ty(self.bool_ty()),
+                    body,
+                );
             },
+            Statement::Expression { expression } => {
+                self.infer_expression(*expression, body);
+            },
+        }
+    }
+
+    fn infer_initializer(
+        &mut self,
+        store: &ExpressionStore,
+        initializer: Option<ExpressionId>,
+        r#type: Option<Type>,
+        abstract_handling: AbstractHandling,
+    ) -> Type {
+        match (r#type, initializer) {
+            (Some(r#type), Some(initializer)) => {
+                self.infer_expression_expect(initializer, &TypeExpectation::from_ty(r#type), store);
+                r#type
+            },
+            (Some(r#type), None) => r#type,
+            (None, Some(initializer)) => {
+                let r#type = self
+                    .infer_expression(initializer, store)
+                    .unref(self.database);
+                if abstract_handling == AbstractHandling::Concretize {
+                    r#type.concretize(self.database)
+                } else {
+                    r#type
+                }
+            },
+            (None, None) => self.error_ty(),
         }
     }
 
@@ -596,24 +976,8 @@ impl<'database> InferenceContext<'database> {
 
         match *expectation {
             TypeExpectationInner::Exact(expected_type) => {
-                if expected_type.kind(self.database) == TyKind::Error || r#type == expected_type {
-                    Ok(())
-                } else {
-                    Err(())
-                }
-            },
-            TypeExpectationInner::I32OrF32 => {
-                if let TyKind::Scalar(ScalarType::I32 | ScalarType::F32) =
-                    r#type.kind(self.database).unref(self.database).as_ref()
-                {
-                    Ok(())
-                } else {
-                    Err(())
-                }
-            },
-            TypeExpectationInner::NumericScalar => {
-                if let TyKind::Scalar(ScalarType::I32 | ScalarType::F32 | ScalarType::U32) =
-                    r#type.kind(self.database).unref(self.database).as_ref()
+                if expected_type.kind(self.database) == TyKind::Error
+                    || r#type.is_convertible_to(expected_type, self.database)
                 {
                     Ok(())
                 } else {
@@ -632,30 +996,17 @@ impl<'database> InferenceContext<'database> {
         }
     }
 
-    fn expect_same_type(
-        &mut self,
-        expression: ExpressionId,
-        expected: Type,
-        actual: Type,
-    ) {
-        let actual_unref = actual.unref(self.database);
-        if expected != actual_unref {
-            self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
-                expression,
-                actual: actual_unref,
-                expected: TypeExpectation::Type(TypeExpectationInner::Exact(expected)),
-            });
-        }
-    }
-
     fn infer_expression_expect(
         &mut self,
         expression: ExpressionId,
         expected: &TypeExpectation,
+        store: &ExpressionStore,
     ) -> Type {
-        let r#type = self.infer_expression(expression).unref(self.database);
+        let r#type = self
+            .infer_expression(expression, store)
+            .unref(self.database);
 
-        match &expected {
+        match expected {
             TypeExpectation::Type(expected_type) => {
                 if self.expect_ty_inner(r#type, expected_type) != Ok(()) {
                     self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
@@ -665,39 +1016,32 @@ impl<'database> InferenceContext<'database> {
                     });
                 }
             },
-            TypeExpectation::TypeOrVecOf(expect) => {
-                if self.expect_ty_inner(r#type.this_or_vec_inner(self.database), expect) != Ok(()) {
-                    self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
-                        expression,
-                        actual: r#type,
-                        expected: expected.clone(),
-                    });
-                }
-            },
-            TypeExpectation::None => {},
+            TypeExpectation::Any => {},
         }
         r#type
     }
 
-    #[expect(clippy::too_many_lines, reason = "TODO")]
+    #[expect(clippy::too_many_lines, reason = "match with many small cases")]
     fn infer_expression(
         &mut self,
         expression: ExpressionId,
+        store: &ExpressionStore,
     ) -> Type {
-        let body = Arc::clone(&self.body);
-        let r#type = match &body.exprs[expression] {
-            Expression::Missing => self.error_ty(),
+        let r#type = match &store[expression] {
+            Expression::Missing => self.error_ty(), // this would be a parser error
             Expression::BinaryOperation {
                 left_side,
                 right_side,
                 operation,
-            } => self.infer_binary_op(*left_side, *right_side, *operation),
-            Expression::UnaryOperator { expression, op } => self.infer_unary_op(*expression, *op),
+            } => self.infer_binary_op(expression, *left_side, *right_side, *operation, store),
+            Expression::UnaryOperator { expression, op } => {
+                self.infer_unary_op(*expression, *op, store)
+            },
             Expression::Field {
                 expression: field_expression,
                 name,
             } => {
-                let expression_ty = self.infer_expression(*field_expression);
+                let expression_ty = self.infer_expression(*field_expression, store);
                 if expression_ty.is_err(self.database) {
                     return self.error_ty();
                 }
@@ -708,8 +1052,8 @@ impl<'database> InferenceContext<'database> {
                     .as_ref()
                 {
                     TyKind::Struct(r#struct) => {
-                        let struct_data = self.database.struct_data(*r#struct);
-                        let field_types = self.database.field_types(*r#struct);
+                        let struct_data = self.database.struct_data(*r#struct).0;
+                        let field_types = &self.database.field_types(*r#struct).0;
 
                         if let Some(field) = struct_data.field(name) {
                             self.set_field_resolution(
@@ -722,7 +1066,8 @@ impl<'database> InferenceContext<'database> {
 
                             let field_ty = field_types[field];
                             // TODO: correct Address Spaces/access mode
-                            self.make_ref(field_ty, AddressSpace::Private, AccessMode::read_write())
+                            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
+                            self.make_ref(field_ty, AddressSpace::Private, AccessMode::ReadWrite)
                         } else {
                             self.push_diagnostic(InferenceDiagnostic::NoSuchField {
                                 expression: *field_expression,
@@ -764,45 +1109,35 @@ impl<'database> InferenceContext<'database> {
                     },
                 }
             },
-            Expression::Call { callee, arguments } => {
+            Expression::Call {
+                ident_expression,
+                arguments,
+            } => {
                 let arguments: Vec<_> = arguments
                     .iter()
-                    .map(|&arg| self.infer_expression(arg).unref(self.database))
+                    .map(|&arg| self.infer_expression(arg, store).unref(self.database))
                     .collect();
-                self.infer_call(expression, callee, arguments)
-            },
-            Expression::Bitcast { r#type, expression } => {
-                self.infer_expression(*expression);
-
-                self.try_lower_ty(&self.database.lookup_intern_type_ref(*r#type))
-                    .unwrap_or_else(|_| self.error_ty())
+                self.infer_call(expression, ident_expression, arguments, store)
             },
             Expression::Index { left_side, index } => {
-                let left_side = self.infer_expression(*left_side);
-                let _index_expression = self.infer_expression(*index);
-                // TODO check index expression
-
+                let left_side = self.infer_expression(*left_side, store);
+                let _index_expression = self.infer_expression(*index, store);
+                // TODO: check that the type of the index expression makes sense. Can't index with a f32, for example.
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/671
                 let left_kind = left_side.kind(self.database);
                 let is_reference = matches!(left_kind, TyKind::Reference(_));
 
                 let left_inner = left_kind.unref(self.database);
 
                 let r#type = match &*left_inner {
-                    TyKind::Vector(vec) => {
-                        // TODO out of bounds
-                        vec.component_type
-                    },
+                    TyKind::Vector(vec) => vec.component_type,
                     TyKind::Matrix(matrix_type) => {
-                        // TODO out of bounds
                         self.database.intern_ty(TyKind::Vector(VectorType {
                             size: matrix_type.rows,
                             component_type: matrix_type.inner,
                         }))
                     },
-                    TyKind::Array(array) => {
-                        // TODO out of bounds
-                        array.inner
-                    },
+                    TyKind::Array(array) => array.inner,
                     TyKind::Error
                     | TyKind::Scalar(_)
                     | TyKind::Atomic(_)
@@ -822,29 +1157,31 @@ impl<'database> InferenceContext<'database> {
                 };
 
                 if is_reference {
-                    self.make_ref(r#type, AddressSpace::Private, AccessMode::read_write())
+                    self.make_ref(r#type, AddressSpace::Private, AccessMode::ReadWrite)
                 } else {
                     r#type
                 }
             },
             Expression::Literal(literal) => {
+                use hir_def::expression::{BuiltinFloat, BuiltinInt, Literal};
                 let ty_kind = match literal {
-                    hir_def::expression::Literal::Int(_, _) => TyKind::Scalar(ScalarType::I32),
-                    hir_def::expression::Literal::Uint(_, _) => TyKind::Scalar(ScalarType::U32),
-                    hir_def::expression::Literal::Float(_, _) => TyKind::Scalar(ScalarType::F32),
-                    hir_def::expression::Literal::Bool(_) => TyKind::Scalar(ScalarType::Bool),
+                    Literal::Int(_, BuiltinInt::I32) => TyKind::Scalar(ScalarType::I32),
+                    Literal::Int(_, BuiltinInt::U32) => TyKind::Scalar(ScalarType::U32),
+                    Literal::Int(_, BuiltinInt::Abstract) => {
+                        TyKind::Scalar(ScalarType::AbstractInt)
+                    },
+                    Literal::Float(_, BuiltinFloat::F16) => TyKind::Scalar(ScalarType::F16),
+                    Literal::Float(_, BuiltinFloat::F32) => TyKind::Scalar(ScalarType::F32),
+                    Literal::Float(_, BuiltinFloat::Abstract) => {
+                        TyKind::Scalar(ScalarType::AbstractFloat)
+                    },
+                    Literal::Bool(_) => TyKind::Scalar(ScalarType::Bool),
                 };
                 self.database.intern_ty(ty_kind)
             },
-            Expression::Path(name) => self
-                .resolve_path_expression(expression, name)
-                .unwrap_or_else(|| {
-                    self.push_diagnostic(InferenceDiagnostic::UnresolvedName {
-                        expression,
-                        name: name.clone(),
-                    });
-                    self.error_ty()
-                }),
+            Expression::IdentExpression(ident_expression) => {
+                self.infer_ident_expression(expression, ident_expression, store)
+            },
         };
 
         self.set_expression_ty(expression, r#type);
@@ -861,7 +1198,13 @@ impl<'database> InferenceContext<'database> {
     ) -> Type {
         if function.parameters.len() == arguments.len() {
             for (expected, actual) in function.parameters().zip(arguments.iter().copied()) {
-                self.expect_same_type(expression, expected, actual);
+                if !actual.is_convertible_to(expected, self.database) {
+                    self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
+                        expression,
+                        actual,
+                        expected: TypeExpectation::Type(TypeExpectationInner::Exact(expected)),
+                    });
+                }
             }
 
             function.return_type.unwrap_or_else(|| self.error_ty())
@@ -879,23 +1222,24 @@ impl<'database> InferenceContext<'database> {
         &mut self,
         expression: ExpressionId,
         op: UnaryOperator,
+        store: &ExpressionStore,
     ) -> Type {
-        let expression_ty = self.infer_expression(expression);
+        let expression_ty = self.infer_expression(expression, store);
         if expression_ty.is_err(self.database) {
             return self.error_ty();
         }
 
         let builtin = match op {
-            UnaryOperator::Minus => {
+            UnaryOperator::Negation => {
                 Builtin::builtin_op_unary_minus(self.database).intern(self.database)
             },
-            UnaryOperator::Not => {
+            UnaryOperator::LogicalNegation => {
                 Builtin::builtin_op_unary_not(self.database).intern(self.database)
             },
-            UnaryOperator::BitNot => {
+            UnaryOperator::BitwiseComplement => {
                 Builtin::builtin_op_unary_bitnot(self.database).intern(self.database)
             },
-            UnaryOperator::Reference => {
+            UnaryOperator::AddressOf => {
                 if let TyKind::Reference(reference) = expression_ty.kind(self.database) {
                     return self.ref_to_pointer(&reference);
                 }
@@ -905,7 +1249,7 @@ impl<'database> InferenceContext<'database> {
                 });
                 return self.error_ty();
             },
-            UnaryOperator::Dereference => {
+            UnaryOperator::Indirection => {
                 let arg_ty = expression_ty.unref(self.database);
                 if let TyKind::Pointer(pointer) = arg_ty.kind(self.database) {
                     return self.ptr_to_ref(&pointer);
@@ -924,12 +1268,16 @@ impl<'database> InferenceContext<'database> {
 
     fn infer_binary_op(
         &mut self,
+        expression: ExpressionId,
         left_side: ExpressionId,
         right_side: ExpressionId,
         op: BinaryOperation,
+        store: &ExpressionStore,
     ) -> Type {
-        let left_ty = self.infer_expression(left_side).unref(self.database);
-        let rhs_ty = self.infer_expression(right_side).unref(self.database);
+        let left_ty = self.infer_expression(left_side, store).unref(self.database);
+        let rhs_ty = self
+            .infer_expression(right_side, store)
+            .unref(self.database);
 
         if left_ty.is_err(self.database) || rhs_ty.is_err(self.database) {
             return self.error_ty();
@@ -940,20 +1288,20 @@ impl<'database> InferenceContext<'database> {
                 Builtin::builtin_op_binary_bool(self.database).intern(self.database)
             },
             BinaryOperation::Arithmetic(op) => match op {
-                ArithmeticOperation::BitOr
-                | ArithmeticOperation::BitAnd
-                | ArithmeticOperation::BitXor => {
+                ArithmeticOperation::BitwiseOr
+                | ArithmeticOperation::BitwiseAnd
+                | ArithmeticOperation::BitwiseXor => {
                     Builtin::builtin_op_binary_bitop(self.database).intern(self.database)
                 },
-                ArithmeticOperation::Multiply => {
+                ArithmeticOperation::Multiplication => {
                     Builtin::builtin_op_binary_mul(self.database).intern(self.database)
                 },
-                ArithmeticOperation::Divide => {
+                ArithmeticOperation::Division => {
                     Builtin::builtin_op_binary_div(self.database).intern(self.database)
                 },
-                ArithmeticOperation::Add
-                | ArithmeticOperation::Subtract
-                | ArithmeticOperation::Modulo => {
+                ArithmeticOperation::Addition
+                | ArithmeticOperation::Subtraction
+                | ArithmeticOperation::Remainder => {
                     Builtin::builtin_op_binary_number(self.database).intern(self.database)
                 },
                 ArithmeticOperation::ShiftLeft | ArithmeticOperation::ShiftRight => {
@@ -961,16 +1309,71 @@ impl<'database> InferenceContext<'database> {
                 },
             },
             BinaryOperation::Comparison(cmp) => match cmp {
-                ComparisonOperation::Equality { .. } => {
+                ComparisonOperation::Equality | ComparisonOperation::Inequality => {
                     Builtin::builtin_op_eq(self.database).intern(self.database)
                 },
-                ComparisonOperation::Ordering { .. } => {
+                ComparisonOperation::LessThan
+                | ComparisonOperation::LessThanEqual
+                | ComparisonOperation::GreaterThan
+                | ComparisonOperation::GreaterThanEqual => {
                     Builtin::builtin_op_cmp(self.database).intern(self.database)
                 },
             },
         };
 
-        self.call_builtin(left_side, builtin, &[left_ty, rhs_ty], Some(op.symbol()))
+        self.call_builtin(expression, builtin, &[left_ty, rhs_ty], Some(op.symbol()))
+    }
+
+    fn infer_ident_expression(
+        &mut self,
+        expression: ExpressionId,
+        ident_expression: &IdentExpression,
+        store: &ExpressionStore,
+    ) -> Type {
+        let resolver = self.resolver_for_expression(expression);
+        let mut ctx = TyLoweringContext::new(
+            self.database,
+            resolver.as_ref().unwrap_or(&self.resolver),
+            store,
+        );
+        let lowered = ctx.lower(
+            TypeContainer::Expression(expression),
+            &ident_expression.path,
+            &ident_expression.template_parameters,
+        );
+        self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
+
+        match lowered {
+            Lowered::GlobalConstant(id) => {
+                self.database
+                    .infer(DefinitionWithBodyId::GlobalConstant(id))
+                    .return_type
+            },
+            Lowered::GlobalVariable(id) => {
+                self.database
+                    .infer(DefinitionWithBodyId::GlobalVariable(id))
+                    .return_type
+            },
+            Lowered::Override(id) => {
+                self.database
+                    .infer(DefinitionWithBodyId::Override(id))
+                    .return_type
+            },
+            Lowered::Local(id) => self.result.type_of_binding[id],
+            Lowered::Type(_)
+            | Lowered::TypeWithoutTemplate(_)
+            | Lowered::Function(_)
+            | Lowered::BuiltinFunction
+            | Lowered::Enumerant(_) => {
+                self.push_diagnostic(InferenceDiagnostic::ExpectedLoweredKind {
+                    expression,
+                    expected: LoweredKind::Variable,
+                    actual: lowered.kind(),
+                    name: ident_expression.path.clone(),
+                });
+                self.error_ty()
+            },
+        }
     }
 
     fn builtin_vector_inferred_constructor(
@@ -1003,55 +1406,6 @@ impl<'database> InferenceContext<'database> {
             (Four, Four) => Builtin::builtin_op_mat4x4_constructor(self.database),
         }
         .intern(self.database)
-    }
-
-    fn resolve_path_expression(
-        &self,
-        expression: ExpressionId,
-        path: &Name,
-    ) -> Option<Type> {
-        self.resolve_path_expression_inner(expression, path)
-    }
-
-    fn resolve_path_expression_inner(
-        &self,
-        expression: ExpressionId,
-        path: &Name,
-    ) -> Option<Type> {
-        let resolver = self.resolver_for_expression(expression);
-        let resolve = resolver.resolve_value(path)?;
-        let r#type = match resolve {
-            hir_def::resolver::ResolveValue::Local(local) => {
-                *self.result.type_of_binding.get(local)?
-            },
-            hir_def::resolver::ResolveValue::GlobalVariable(loc) => {
-                let id = self.database.intern_global_variable(loc);
-                let data = self.database.global_var_data(id);
-                let result = self
-                    .database
-                    .infer(DefinitionWithBodyId::GlobalVariable(id));
-                let r#type = result.return_type.unwrap_or_else(|| self.error_ty());
-                // TODO use correct defaults
-                self.make_ref(
-                    r#type,
-                    data.address_space.unwrap_or(AddressSpace::Private),
-                    AccessMode::read_write(),
-                )
-            },
-            hir_def::resolver::ResolveValue::GlobalConstant(loc) => {
-                let id = self.database.intern_global_constant(loc);
-                let result = self
-                    .database
-                    .infer(DefinitionWithBodyId::GlobalConstant(id));
-                result.return_type.unwrap_or_else(|| self.error_ty())
-            },
-            hir_def::resolver::ResolveValue::Override(loc) => {
-                let id = self.database.intern_override(loc);
-                let result = self.database.infer(DefinitionWithBodyId::Override(id));
-                result.return_type.unwrap_or_else(|| self.error_ty())
-            },
-        };
-        Some(r#type)
     }
 
     fn ty_from_vec_size(
@@ -1099,8 +1453,10 @@ impl<'database> InferenceContext<'database> {
                     vector_type.component_type,
                     u8::try_from(name.as_str().len()).unwrap(),
                 );
+                // TODO: check correctness
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
                 let result_type =
-                    self.make_ref(r#type, AddressSpace::Function, AccessMode::read_write()); // TODO is correct?
+                    self.make_ref(r#type, AddressSpace::Function, AccessMode::ReadWrite);
                 return Ok(result_type);
             }
         }
@@ -1115,18 +1471,7 @@ impl<'database> InferenceContext<'database> {
         arguments: &[Type],
         name: Option<&'static str>,
     ) -> Type {
-        self.call_builtin_inner(expression, builtin_id, arguments, name, None)
-    }
-
-    fn call_builtin_with_return(
-        &mut self,
-        expression: ExpressionId,
-        builtin_id: BuiltinId,
-        arguments: &[Type],
-        name: Option<&'static str>,
-        r#type: Type,
-    ) -> Type {
-        self.call_builtin_inner(expression, builtin_id, arguments, name, Some(r#type))
+        self.call_builtin_inner(expression, builtin_id, arguments, name)
     }
 
     fn call_builtin_inner(
@@ -1135,11 +1480,8 @@ impl<'database> InferenceContext<'database> {
         builtin_id: BuiltinId,
         arguments: &[Type],
         name: Option<&'static str>,
-        return_ty: Option<Type>,
     ) -> Type {
-        if let Ok((return_ty, overload_id)) =
-            self.try_call_builtin(builtin_id, arguments, return_ty)
-        {
+        if let Ok((return_ty, overload_id)) = self.try_call_builtin(builtin_id, arguments) {
             let builtin = builtin_id.lookup(self.database);
             let resolved = builtin.overload(overload_id).r#type;
             self.result
@@ -1161,18 +1503,14 @@ impl<'database> InferenceContext<'database> {
         &self,
         builtin_id: BuiltinId,
         arguments: &[Type],
-        return_type: Option<Type>,
     ) -> Result<(Type, BuiltinOverloadId), ()> {
         let builtin = builtin_id.lookup(self.database);
         for (overload_id, overload) in builtin.overloads() {
-            if let Ok(r#type) = self.call_builtin_overload(overload, arguments) {
-                if let Some(return_type) = return_type {
-                    if return_type == r#type {
-                        return Ok((r#type, overload_id));
-                    }
-                } else {
-                    return Ok((r#type, overload_id));
-                }
+            // Hack: overload resolution algorithm is not implemented here or used
+            // here because it is the same as just picking the first valid overload.
+            if let Ok((r#type, _conversion_rank)) = self.call_builtin_overload(overload, arguments)
+            {
+                return Ok((r#type, overload_id));
             }
         }
         Err(())
@@ -1180,15 +1518,16 @@ impl<'database> InferenceContext<'database> {
 
     fn call_builtin_overload(
         &self,
-        signatre: &BuiltinOverload,
+        signature: &BuiltinOverload,
         arguments: &[Type],
-    ) -> Result<Type, ()> {
-        let fn_ty = signatre.r#type.lookup(self.database);
+    ) -> Result<(Type, u32), ()> {
+        let fn_ty = signature.r#type.lookup(self.database);
 
         if fn_ty.parameters.len() != arguments.len() {
             return Err(());
         }
 
+        let conversion_rank = 0;
         let mut unification_table = UnificationTable::default();
         for (expected, &found) in fn_ty.parameters().zip(arguments.iter()) {
             unify(self.database, &mut unification_table, expected, found)?;
@@ -1198,111 +1537,265 @@ impl<'database> InferenceContext<'database> {
             .return_type
             .map(|r#type| unification_table.resolve(self.database, r#type));
 
-        Ok(return_type.unwrap_or_else(|| self.error_ty()))
+        Ok((
+            return_type.unwrap_or_else(|| self.error_ty()),
+            conversion_rank,
+        ))
     }
 
     fn infer_call(
         &mut self,
         expression: ExpressionId,
-        callee: &Callee,
+        callee: &IdentExpression,
         arguments: Vec<Type>,
+        store: &ExpressionStore,
     ) -> Type {
-        match callee {
-            Callee::InferredComponentMatrix { rows, columns } => {
-                let builtin_id = self.builtin_matrix_inferred_constructor(*columns, *rows);
+        let resolver = self
+            .resolver_for_expression(expression)
+            .unwrap_or_else(|| self.resolver.clone());
+        let mut ctx = TyLoweringContext::new(self.database, &resolver, store);
+        let lowered = ctx.lower(
+            TypeContainer::Expression(expression),
+            &callee.path,
+            &callee.template_parameters,
+        );
+        self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
 
-                self.call_builtin(
+        match lowered {
+            Lowered::Type(r#type) => {
+                self.call_templated_type_constructor(expression, r#type, arguments)
+            },
+            Lowered::TypeWithoutTemplate(r#type) => {
+                self.call_type_without_template_constructor(expression, r#type, arguments)
+            },
+            Lowered::Function(id) => {
+                let details = id.lookup(self.database);
+                self.result
+                    .call_resolutions
+                    .insert(expression, ResolvedCall::Function(id));
+                self.validate_function_call(&details, &arguments, expression, expression)
+            },
+            Lowered::BuiltinFunction => {
+                let template_args = ctx.eval_template_args(
+                    TypeContainer::Expression(expression),
+                    &callee.template_parameters,
+                );
+                self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
+                self.call_builtin_function(expression, callee, template_args, &arguments)
+            },
+            Lowered::Enumerant(_)
+            | Lowered::GlobalConstant(_)
+            | Lowered::GlobalVariable(_)
+            | Lowered::Override(_)
+            | Lowered::Local(_) => {
+                self.push_diagnostic(InferenceDiagnostic::ExpectedLoweredKind {
                     expression,
-                    builtin_id,
-                    &arguments,
-                    Some("matrix construction"),
-                )
-            },
-            Callee::InferredComponentVec(size) => {
-                let builtin_id = self.builtin_vector_inferred_constructor(*size);
-
-                self.call_builtin(expression, builtin_id, &arguments, Some("vec construction"))
-            },
-            Callee::InferredComponentArray => {
-                let builtin_id =
-                    Builtin::builtin_op_array_constructor(self.database).intern(self.database);
-                // TODO: Special case calling array initialisers to allow n-ary calls
-
-                self.call_builtin(
-                    expression,
-                    builtin_id,
-                    &arguments,
-                    Some("array construction"),
-                )
-            },
-            Callee::Name(name) => {
-                if let Some(arg) = self.resolver.resolve_callable(name) {
-                    match arg {
-                        hir_def::resolver::ResolveCallable::Struct(loc) => {
-                            let r#struct = self.database.intern_struct(loc);
-                            let kind = TyKind::Struct(r#struct);
-                            let r#type = self.database.intern_ty(kind);
-                            self.check_ty_initialiser(expression, r#type, arguments);
-                            r#type
-                        },
-                        hir_def::resolver::ResolveCallable::TypeAlias(alias) => {
-                            let alias = self.database.intern_type_alias(alias);
-                            let data = self.database.type_alias_data(alias);
-                            let type_ref = self.database.lookup_intern_type_ref(data.r#type);
-
-                            let r#type = self.lower_ty(TypeContainer::TypeAlias(alias), &type_ref);
-                            self.check_ty_initialiser(expression, r#type, arguments);
-                            r#type
-                        },
-                        hir_def::resolver::ResolveCallable::Function(loc) => {
-                            let id = self.database.intern_function(loc);
-                            let resolved = self.database.function_type(id);
-                            let details = resolved.lookup(self.database);
-                            self.result
-                                .call_resolutions
-                                .insert(expression, ResolvedCall::Function(resolved));
-                            self.validate_function_call(
-                                &details, &arguments, expression, expression,
-                            )
-                        },
-                        hir_def::resolver::ResolveCallable::PredeclaredTypeAlias(type_ref) => {
-                            let r#type = self.lower_ty(expression, &type_ref);
-                            self.check_ty_initialiser(expression, r#type, arguments);
-                            r#type
-                        },
-                    }
-                } else {
-                    let builtin = Builtin::for_name(self.database, name);
-                    if let Some(builtin) = builtin {
-                        let builtin_id = builtin.intern(self.database);
-                        self.call_builtin(expression, builtin_id, &arguments, None)
-                    } else {
-                        self.push_diagnostic(InferenceDiagnostic::UnresolvedName {
-                            expression,
-                            name: name.clone(),
-                        });
-                        self.error_ty()
-                    }
-                }
-            },
-            Callee::Type(r#type) => {
-                let r#type =
-                    self.lower_ty(expression, &self.database.lookup_intern_type_ref(*r#type));
-                self.check_ty_initialiser(expression, r#type, arguments);
-                // A type initialiser always returns just the returned type
-                r#type
+                    expected: LoweredKind::Function,
+                    actual: lowered.kind(),
+                    name: callee.path.clone(),
+                });
+                self.error_ty()
             },
         }
     }
 
-    fn check_ty_initialiser(
+    fn call_builtin_function(
+        &mut self,
+        expression: ExpressionId,
+        callee: &IdentExpression,
+        mut template_parameters: TemplateParameters,
+        arguments: &[Type],
+    ) -> Type {
+        let mut converter = WgslTypeConverter::new(self.database);
+        let mut template_args = vec![];
+        while let Some((template_parameter, _)) = template_parameters.next() {
+            if let Some(template_parameter) =
+                converter.template_parameter_to_wgsl_types(template_parameter)
+            {
+                template_args.push(template_parameter);
+            } else {
+                self.push_diagnostic(InferenceDiagnostic::WgslError {
+                    expression,
+                    message:
+                        "internal error: wgsl-types did not align with wgsl-analyzer's type system"
+                            .to_owned(),
+                });
+                return self.error_ty();
+            }
+        }
+        let template_args = if template_args.is_empty() {
+            None
+        } else {
+            Some(template_args.as_slice())
+        };
+
+        let converted_arguments: Option<Vec<_>> = arguments
+            .iter()
+            .map(|r#type| converter.to_wgsl_types(*r#type))
+            .collect();
+
+        let Some(converted_arguments) = converted_arguments else {
+            // One of the arguments had an error type
+            return self.error_ty();
+        };
+
+        let return_type = wgsl_types::builtin::type_builtin_fn(
+            callee.path.as_str(),
+            template_args,
+            &converted_arguments,
+        );
+
+        match return_type {
+            Ok(Some(r#type)) => converter.from_wgsl_types(r#type),
+            Ok(None) => self.error_ty(),
+            Err(error) => {
+                self.push_diagnostic(InferenceDiagnostic::WgslError {
+                    expression,
+                    message: error.to_string(),
+                });
+                self.error_ty()
+            },
+        }
+    }
+
+    #[expect(
+        clippy::too_many_lines,
+        reason = "large bug not complex match expression"
+    )]
+    /// Constructor for a type with a fully specified template
+    fn call_templated_type_constructor(
         &mut self,
         expression: ExpressionId,
         r#type: Type,
         arguments: Vec<Type>,
-    ) {
+    ) -> Type {
         fn size_to_dimension(size: VecSize) -> VecDimensionality {
-            #[expect(clippy::unreachable, reason = "TODO")]
+            match size {
+                VecSize::Two => VecDimensionality::Two,
+                VecSize::Three => VecDimensionality::Three,
+                VecSize::Four => VecDimensionality::Four,
+                #[expect(
+                    clippy::unreachable,
+                    reason = "this is by far the easiest way to handle it, at least for now"
+                )]
+                VecSize::BoundVar(_) => unreachable!("Can never have unbound type at this point"),
+            }
+        }
+
+        match r#type.kind(self.database) {
+            TyKind::Scalar(scalar_type) => {
+                self.call_scalar_constructor(scalar_type, expression, r#type, arguments)
+            },
+            TyKind::Array(array_type) => {
+                for argument in &arguments {
+                    if !argument.is_convertible_to(array_type.inner, self.database) {
+                        self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
+                            expression,
+                            expected: TypeExpectation::Type(TypeExpectationInner::Exact(
+                                array_type.inner,
+                            )),
+                            actual: *argument,
+                        });
+                    }
+                }
+                #[expect(
+                    clippy::as_conversions,
+                    reason = "constructing an array with too many parameters is an error anyway"
+                )]
+                if let ArraySize::Constant(size) = array_type.size
+                    && arguments.len() != size as usize
+                {
+                    self.push_diagnostic(InferenceDiagnostic::FunctionCallArgCountMismatch {
+                        expression,
+                        n_expected: size as usize,
+                        n_actual: arguments.len(),
+                    });
+                }
+                r#type
+            },
+            TyKind::Vector(vec) => {
+                if arguments.is_empty() {
+                    return r#type;
+                }
+                let construction_builtin_id =
+                    self.builtin_vector_inferred_constructor(size_to_dimension(vec.size));
+                let construction_result =
+                    self.try_call_builtin(construction_builtin_id, &arguments);
+
+                if construction_result.is_ok() {
+                    r#type
+                } else {
+                    self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                        expression,
+                        builtins: construction_builtin_id,
+                        r#type,
+                        parameters: arguments,
+                    });
+                    self.error_ty()
+                }
+            },
+            TyKind::Matrix(matrix) => {
+                if arguments.is_empty() {
+                    return r#type;
+                }
+                let construction_builtin_id = self.builtin_matrix_inferred_constructor(
+                    size_to_dimension(matrix.columns),
+                    size_to_dimension(matrix.rows),
+                );
+                let construction_result =
+                    self.try_call_builtin(construction_builtin_id, &arguments);
+                if construction_result.is_ok() {
+                    r#type
+                } else {
+                    self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                        expression,
+                        builtins: construction_builtin_id,
+                        r#type,
+                        parameters: arguments,
+                    });
+                    self.error_ty()
+                }
+            },
+            TyKind::Struct(_) => {
+                // TODO: Implement checking field types
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/674
+                r#type
+            },
+
+            // Never constructible
+            TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Pointer(_)
+            | TyKind::Atomic(_)
+            | TyKind::StorageTypeOfTexelFormat(_)
+            | TyKind::BoundVar(_)
+            | TyKind::Reference(_) => {
+                self.push_diagnostic(InferenceDiagnostic::InvalidConstructionType {
+                    expression,
+                    r#type,
+                });
+                self.error_ty()
+            },
+            TyKind::Error => r#type,
+        }
+    }
+
+    #[expect(
+        clippy::too_many_lines,
+        reason = "large bug not complex match expression"
+    )]
+    /// Constructor for just a type name
+    fn call_type_without_template_constructor(
+        &mut self,
+        expression: ExpressionId,
+        r#type: Type,
+        arguments: Vec<Type>,
+    ) -> Type {
+        fn size_to_dimension(size: VecSize) -> VecDimensionality {
+            #[expect(
+                clippy::unreachable,
+                reason = "this is by far the easiest way to handle it, at least for now"
+            )]
             match size {
                 VecSize::Two => VecDimensionality::Two,
                 VecSize::Three => VecDimensionality::Three,
@@ -1312,570 +1805,210 @@ impl<'database> InferenceContext<'database> {
         }
 
         match r#type.kind(self.database) {
-            TyKind::Scalar(_) => {
-                if arguments.is_empty() {
-                    // Permit the zero value
-                    return;
-                }
-                let builtin = Builtin::builtin_op_convert(self.database).intern(self.database);
-                self.call_builtin_with_return(
-                    expression,
-                    builtin,
-                    &arguments,
-                    Some("conversion"),
-                    r#type,
-                );
+            TyKind::Scalar(scalar_type) => {
+                self.call_scalar_constructor(scalar_type, expression, r#type, arguments)
             },
             TyKind::Array(array_type) => {
-                if arguments.is_empty() {}
-                // checking that all the arguments have the same type (inner)
+                let Some(mut expected_type) = arguments.first().copied() else {
+                    self.push_diagnostic(InferenceDiagnostic::FunctionCallArgCountMismatch {
+                        expression,
+                        n_expected: 1,
+                        n_actual: arguments.len(),
+                    });
+                    return self.error_ty();
+                };
+
+                for argument_type in &arguments[1..] {
+                    if argument_type.is_convertible_to(expected_type, self.database) {
+                        // Everything is as intended
+                    } else if expected_type.is_convertible_to(*argument_type, self.database) {
+                        // Narrowing the expected type
+                        expected_type = *argument_type;
+                    } else {
+                        self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
+                            expression,
+                            expected: TypeExpectation::Type(TypeExpectationInner::Exact(
+                                expected_type,
+                            )),
+                            actual: *argument_type,
+                        });
+                    }
+                }
+                if let Ok(validated_length) = u32::try_from(arguments.len()) {
+                    TyKind::Array(ArrayType {
+                        inner: expected_type,
+                        binding_array: array_type.binding_array,
+                        size: ArraySize::Constant(validated_length),
+                    })
+                    .intern(self.database)
+                } else {
+                    self.push_diagnostic(InferenceDiagnostic::FunctionCallArgCountMismatch {
+                        expression,
+                        #[expect(clippy::as_conversions, reason = "usize always holds a u32")]
+                        n_expected: ArraySize::MAX as usize,
+                        n_actual: arguments.len(),
+                    });
+                    TyKind::Array(ArrayType {
+                        inner: expected_type,
+                        binding_array: array_type.binding_array,
+                        size: ArraySize::Constant(ArraySize::MAX),
+                    })
+                    .intern(self.database)
+                }
             },
             TyKind::Vector(vec) => {
                 if arguments.is_empty() {
-                    return;
+                    return TyKind::Vector(VectorType {
+                        size: vec.size,
+                        component_type: TyKind::Scalar(ScalarType::AbstractInt)
+                            .intern(self.database),
+                    })
+                    .intern(self.database);
                 }
                 let construction_builtin_id =
                     self.builtin_vector_inferred_constructor(size_to_dimension(vec.size));
                 let construction_result =
-                    self.try_call_builtin(construction_builtin_id, &arguments, Some(r#type));
-                if construction_result.is_ok() {
-                    return;
+                    self.try_call_builtin(construction_builtin_id, &arguments);
+
+                if let Ok((r#type, _)) = construction_result {
+                    r#type
+                } else {
+                    self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                        expression,
+                        builtins: construction_builtin_id,
+                        r#type,
+                        parameters: arguments,
+                    });
+                    self.error_ty()
                 }
-                let conversion_id =
-                    Builtin::builtin_op_convert(self.database).intern(self.database);
-                let conversion_result =
-                    self.try_call_builtin(conversion_id, &arguments, Some(r#type));
-                if conversion_result.is_ok() {
-                    return;
-                }
-                self.push_diagnostic(InferenceDiagnostic::NoConstructor {
-                    expression,
-                    builtins: [construction_builtin_id, conversion_id],
-                    r#type,
-                    parameters: arguments,
-                });
             },
             TyKind::Matrix(matrix) => {
                 if arguments.is_empty() {
-                    return;
+                    self.push_diagnostic(InferenceDiagnostic::FunctionCallArgCountMismatch {
+                        expression,
+                        n_expected: 1,
+                        n_actual: arguments.len(),
+                    });
+                    return self.error_ty();
                 }
                 let construction_builtin_id = self.builtin_matrix_inferred_constructor(
                     size_to_dimension(matrix.columns),
                     size_to_dimension(matrix.rows),
                 );
                 let construction_result =
-                    self.try_call_builtin(construction_builtin_id, &arguments, Some(r#type));
-                if construction_result.is_ok() {
-                    return;
+                    self.try_call_builtin(construction_builtin_id, &arguments);
+                if let Ok((r#type, _)) = construction_result {
+                    r#type
+                } else {
+                    self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                        expression,
+                        builtins: construction_builtin_id,
+                        r#type,
+                        parameters: arguments,
+                    });
+                    self.error_ty()
                 }
-                let conversion_id =
-                    Builtin::builtin_op_convert(self.database).intern(self.database);
-                let conversion_result =
-                    self.try_call_builtin(conversion_id, &arguments, Some(r#type));
-                if conversion_result.is_ok() {
-                    return;
-                }
-                self.push_diagnostic(InferenceDiagnostic::NoConstructor {
-                    expression,
-                    builtins: [construction_builtin_id, conversion_id],
-                    r#type,
-                    parameters: arguments,
-                });
             },
             TyKind::Struct(_) => {
-                if arguments.is_empty() {}
-                // TODO: Implement checking field types
+                // TODO: Implement checking fields' types
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/674
+                r#type
             },
-
             // Never constructible
             TyKind::Texture(_)
             | TyKind::Sampler(_)
             | TyKind::Pointer(_)
             | TyKind::Atomic(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => {
+            | TyKind::StorageTypeOfTexelFormat(_)
+            | TyKind::BoundVar(_)
+            | TyKind::Reference(_) => {
                 self.push_diagnostic(InferenceDiagnostic::InvalidConstructionType {
                     expression,
                     r#type,
                 });
+                self.error_ty()
             },
-            #[expect(clippy::unreachable, reason = "TODO")]
-            TyKind::BoundVar(_) | TyKind::Reference(_) => unreachable!(),
-            TyKind::Error => {},
-        }
-    }
-}
-
-#[derive(Default)]
-struct UnificationTable {
-    types: FxHashMap<BoundVar, Type>,
-    vec_sizes: FxHashMap<BoundVar, VecSize>,
-    texel_formats: FxHashMap<BoundVar, TexelFormat>,
-}
-
-impl UnificationTable {
-    fn set_vec_size(
-        &mut self,
-        var: BoundVar,
-        vec_size: VecSize,
-    ) -> Result<(), ()> {
-        match self.vec_sizes.entry(var) {
-            Entry::Occupied(entry) if *entry.get() == vec_size => Ok(()),
-            Entry::Occupied(_) => Err(()),
-            Entry::Vacant(entry) => {
-                entry.insert(vec_size);
-                Ok(())
-            },
+            TyKind::Error => r#type,
         }
     }
 
-    fn set_type(
+    fn call_scalar_constructor(
         &mut self,
-        var: BoundVar,
+        scalar_type: ScalarType,
+        expression: ExpressionId,
         r#type: Type,
-    ) -> Result<(), ()> {
-        match self.types.entry(var) {
-            Entry::Occupied(entry) if *entry.get() == r#type => Ok(()),
-            Entry::Occupied(_) => Err(()),
-            Entry::Vacant(entry) => {
-                entry.insert(r#type);
-                Ok(())
-            },
-        }
-    }
-
-    fn set_texel_format(
-        &mut self,
-        var: BoundVar,
-        format: TexelFormat,
-    ) -> Result<(), ()> {
-        match self.texel_formats.entry(var) {
-            Entry::Occupied(entry) if *entry.get() == format => Ok(()),
-            Entry::Occupied(_) => Err(()),
-            Entry::Vacant(entry) => {
-                entry.insert(format);
-                Ok(())
-            },
-        }
-    }
-
-    fn resolve(
-        &self,
-        database: &dyn HirDatabase,
-        r#type: Type,
+        arguments: Vec<Type>,
     ) -> Type {
-        match r#type.kind(database) {
-            TyKind::BoundVar(var) => *self.types.get(&var).expect("type var not constrained"),
-            TyKind::Vector(VectorType {
-                size,
-                component_type: inner,
-            }) => {
-                let size = match size {
-                    VecSize::BoundVar(size_var) => *self
-                        .vec_sizes
-                        .get(&size_var)
-                        .expect("vec size var not constrained"),
-                    (VecSize::Two | VecSize::Three | VecSize::Four) => size,
-                };
-                let inner = self.resolve(database, inner);
-                TyKind::Vector(VectorType {
-                    size,
-                    component_type: inner,
-                })
-                .intern(database)
+        if arguments.is_empty() {
+            // Permit the zero value
+            return r#type;
+        }
+        let construction_builtin_id = match scalar_type {
+            ScalarType::Bool => {
+                Builtin::builtin_op_bool_constructor(self.database).intern(self.database)
             },
-            TyKind::Matrix(mat) => {
-                let columns = match mat.columns {
-                    VecSize::BoundVar(var) => self.vec_sizes[&var],
-                    other @ (VecSize::Two | VecSize::Three | VecSize::Four) => other,
-                };
-                let rows = match mat.rows {
-                    VecSize::BoundVar(var) => self.vec_sizes[&var],
-                    other @ (VecSize::Two | VecSize::Three | VecSize::Four) => other,
-                };
+            ScalarType::I32 => {
+                Builtin::builtin_op_i32_constructor(self.database).intern(self.database)
+            },
+            ScalarType::U32 => {
+                Builtin::builtin_op_u32_constructor(self.database).intern(self.database)
+            },
+            ScalarType::F32 => {
+                Builtin::builtin_op_f32_constructor(self.database).intern(self.database)
+            },
+            ScalarType::F16 => {
+                Builtin::builtin_op_f16_constructor(self.database).intern(self.database)
+            },
+            ScalarType::AbstractInt | ScalarType::AbstractFloat => {
+                // Panic is correct here, since it should be impossible to enter this branch
+                panic!("cannot construct abstract types")
+            },
+        };
 
-                let inner = self.resolve(database, mat.inner);
-                TyKind::Matrix(MatrixType {
-                    columns,
-                    rows,
-                    inner,
-                })
-                .intern(database)
-            },
-            TyKind::Texture(TextureType {
-                kind: TextureKind::Storage(TexelFormat::BoundVar(var), mode),
-                dimension,
-                arrayed,
-                multisampled,
-            }) => {
-                let format = self.texel_formats[&var];
-
-                TyKind::Texture(TextureType {
-                    kind: TextureKind::Storage(format, mode),
-                    dimension,
-                    arrayed,
-                    multisampled,
-                })
-                .intern(database)
-            },
-            TyKind::Texture(TextureType {
-                kind: TextureKind::Sampled(sampled_ty),
-                dimension,
-                arrayed,
-                multisampled,
-            }) => {
-                let sampled_ty = self.resolve(database, sampled_ty);
-                TyKind::Texture(TextureType {
-                    kind: TextureKind::Sampled(sampled_ty),
-                    dimension,
-                    arrayed,
-                    multisampled,
-                })
-                .intern(database)
-            },
-            TyKind::StorageTypeOfTexelFormat(var) => {
-                let format = self.texel_formats[&var];
-                storage_type_of_texel_format(database, format)
-            },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::Pointer(_) => r#type,
+        let construction_result = self.try_call_builtin(construction_builtin_id, &arguments);
+        if let Ok((r#type, _)) = construction_result {
+            r#type
+        } else {
+            self.push_diagnostic(InferenceDiagnostic::NoConstructor {
+                expression,
+                builtins: construction_builtin_id,
+                r#type,
+                parameters: arguments,
+            });
+            self.error_ty()
         }
     }
-}
 
-// found type should not contain bound variables
-#[expect(clippy::too_many_lines, reason = "TODO")]
-fn unify(
-    database: &dyn HirDatabase,
-    table: &mut UnificationTable,
-    expected: Type,
-    found: Type,
-) -> Result<(), ()> {
-    let expected_kind = expected.kind(database);
-    let found_kind = found.kind(database);
-
-    match expected_kind {
-        TyKind::BoundVar(var) => {
-            table.set_type(var, found)?;
-            Ok(())
-        },
-        TyKind::Vector(VectorType {
-            size,
-            component_type: inner,
-        }) => match found_kind {
-            TyKind::Vector(found_vec) => {
-                unify(database, table, inner, found_vec.component_type)?;
-                if let VecSize::BoundVar(vec_size_var) = size {
-                    table.set_vec_size(vec_size_var, found_vec.size)?;
-                } else if size != found_vec.size {
-                    return Err(());
-                }
-                Ok(())
-            },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Matrix(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::Pointer(_)
-            | TyKind::BoundVar(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
-        },
-        TyKind::Matrix(MatrixType {
-            columns,
-            rows,
-            inner,
-        }) => match found_kind {
-            TyKind::Matrix(found_mat) => {
-                unify(database, table, inner, found_mat.inner)?;
-
-                if let VecSize::BoundVar(var) = columns {
-                    table.set_vec_size(var, found_mat.columns)?;
-                } else if columns != found_mat.columns {
-                    return Err(());
-                }
-
-                if let VecSize::BoundVar(var) = rows {
-                    table.set_vec_size(var, found_mat.rows)?;
-                } else if rows != found_mat.rows {
-                    return Err(());
-                }
-
-                Ok(())
-            },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Vector(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::Pointer(_)
-            | TyKind::BoundVar(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
-        },
-        TyKind::Pointer(pointer) => match found_kind {
-            TyKind::Pointer(found_pointer) => {
-                unify(database, table, pointer.inner, found_pointer.inner)?;
-
-                Ok(())
-            },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Vector(_)
-            | TyKind::Matrix(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::BoundVar(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
-        },
-        TyKind::Array(array) => match found_kind {
-            TyKind::Array(found_array) => {
-                unify(database, table, array.inner, found_array.inner)?;
-
-                Ok(())
-            },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Vector(_)
-            | TyKind::Matrix(_)
-            | TyKind::Struct(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::Pointer(_)
-            | TyKind::BoundVar(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
-        },
-        TyKind::Atomic(atomic) => match found_kind {
-            TyKind::Atomic(found_atomic) => {
-                unify(database, table, atomic.inner, found_atomic.inner)?;
-
-                Ok(())
-            },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Vector(_)
-            | TyKind::Matrix(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::Pointer(_)
-            | TyKind::BoundVar(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
-        },
-        TyKind::Texture(TextureType {
-            kind: TextureKind::Storage(format, mode),
-            arrayed,
-            multisampled,
-            dimension,
-        }) => match found_kind {
-            TyKind::Texture(TextureType {
-                kind: TextureKind::Storage(format_2, mode_2),
-                arrayed: arrayed_2,
-                multisampled: multisampled_2,
-                dimension: dimension_2,
-            }) => {
-                if arrayed != arrayed_2
-                    || multisampled != multisampled_2
-                    || dimension != dimension_2
-                {
-                    return Err(());
-                }
-
-                match format {
-                    TexelFormat::Any => {},
-                    TexelFormat::BoundVar(var) => {
-                        table.set_texel_format(var, format_2)?;
-                    },
-                    TexelFormat::Rgba8unorm
-                    | TexelFormat::Rgba8snorm
-                    | TexelFormat::Rgba8uint
-                    | TexelFormat::Rgba8sint
-                    | TexelFormat::Rgba16uint
-                    | TexelFormat::Rgba16sint
-                    | TexelFormat::Rgba16float
-                    | TexelFormat::Rgba32uint
-                    | TexelFormat::Rgba32sint
-                    | TexelFormat::Rgba32float
-                    | TexelFormat::R32uint
-                    | TexelFormat::R32sint
-                    | TexelFormat::R32float
-                    | TexelFormat::Rg32uint
-                    | TexelFormat::Rg32sint
-                    | TexelFormat::Rg32float => {
-                        if format != format_2 {
-                            return Err(());
-                        }
-                    },
-                }
-                match (mode, mode_2) {
-                    (AccessMode::Any, _)
-                    | (AccessMode::Read, AccessMode::ReadWrite | AccessMode::Read)
-                    | (AccessMode::ReadWrite, AccessMode::ReadWrite)
-                    | (AccessMode::Write, AccessMode::ReadWrite | AccessMode::Write) => {},
-                    #[expect(clippy::unreachable, reason = "TODO")]
-                    (_, AccessMode::Any) => unreachable!(),
-                    (AccessMode::Write | AccessMode::ReadWrite, AccessMode::Read)
-                    | (AccessMode::Read | AccessMode::ReadWrite, AccessMode::Write) => {
-                        return Err(());
-                    },
-                }
-
-                Ok(())
-            },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Vector(_)
-            | TyKind::Matrix(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::Pointer(_)
-            | TyKind::BoundVar(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
-        },
-        TyKind::StorageTypeOfTexelFormat(format) => {
-            let format = table.texel_formats[&format];
-            let storage_type = storage_type_of_texel_format(database, format);
-
-            if storage_type != found {
-                return Err(());
-            }
-
-            Ok(())
-        },
-
-        TyKind::Texture(TextureType {
-            kind: TextureKind::Sampled(sampled_ty),
-            arrayed,
-            multisampled,
-            dimension,
-        }) => match found_kind {
-            TyKind::Texture(TextureType {
-                kind: TextureKind::Sampled(found_sampled_ty),
-                arrayed: arrayed_2,
-                multisampled: multisampled_2,
-                dimension: dimension_2,
-            }) => {
-                if arrayed != arrayed_2
-                    || multisampled != multisampled_2
-                    || dimension != dimension_2
-                {
-                    return Err(());
-                }
-
-                unify(database, table, sampled_ty, found_sampled_ty)?;
-
-                Ok(())
-            },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Vector(_)
-            | TyKind::Matrix(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::Pointer(_)
-            | TyKind::BoundVar(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
-        },
-        TyKind::Error
-        | TyKind::Scalar(_)
-        | TyKind::Struct(_)
-        | TyKind::Texture(_)
-        | TyKind::Sampler(_)
-        | TyKind::Reference(_)
-            if expected == found =>
-        {
-            Ok(())
-        },
-        TyKind::Error
-        | TyKind::Scalar(_)
-        | TyKind::Struct(_)
-        | TyKind::Texture(_)
-        | TyKind::Sampler(_)
-        | TyKind::Reference(_) => Err(()),
+    fn lower_ty(
+        &mut self,
+        type_ref: TypeSpecifierId,
+        resolver: &Resolver,
+        store: &ExpressionStore,
+    ) -> Type {
+        let mut ctx = TyLoweringContext::new(self.database, resolver, store);
+        let r#type = ctx.lower_ty(type_ref);
+        self.push_lowering_diagnostics(&mut ctx.diagnostics, store);
+        r#type
     }
-}
-
-fn storage_type_of_texel_format(
-    database: &dyn HirDatabase,
-    format: TexelFormat,
-) -> Type {
-    let channel_type = match format {
-        TexelFormat::Rgba8unorm
-        | TexelFormat::Rgba8snorm
-        | TexelFormat::Rgba16float
-        | TexelFormat::Rgba32float
-        | TexelFormat::R32float
-        | TexelFormat::Rg32float => ScalarType::F32,
-        TexelFormat::Rgba8sint
-        | TexelFormat::Rgba16sint
-        | TexelFormat::Rgba32sint
-        | TexelFormat::R32sint
-        | TexelFormat::Rg32sint => ScalarType::I32,
-        TexelFormat::Rgba8uint
-        | TexelFormat::Rgba16uint
-        | TexelFormat::Rgba32uint
-        | TexelFormat::R32uint
-        | TexelFormat::Rg32uint => ScalarType::U32,
-
-        #[expect(clippy::unreachable, reason = "TODO")]
-        TexelFormat::BoundVar(_) | TexelFormat::Any => unreachable!(),
-    };
-    TyKind::Vector(VectorType {
-        size: VecSize::Four,
-        component_type: TyKind::Scalar(channel_type).intern(database),
-    })
-    .intern(database)
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeExpectationInner {
     Exact(Type),
-    I32OrF32,
-    NumericScalar,
     IntegerScalar,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeExpectation {
     Type(TypeExpectationInner),
-    TypeOrVecOf(TypeExpectationInner),
-    None,
+    Any,
 }
 
 impl TypeExpectation {
     const fn from_option(option: Option<Type>) -> Self {
         match option {
             Some(r#type) => Self::Type(TypeExpectationInner::Exact(r#type)),
-            None => Self::None,
+            None => Self::Any,
         }
     }
 
@@ -1920,68 +2053,162 @@ impl InferenceContext<'_> {
         }))
     }
 
-    fn error_ty(&self) -> Type {
-        self.database.intern_ty(TyKind::Error)
+    const fn error_ty(&self) -> Type {
+        self.result.standard_types.unknown
     }
 
     fn bool_ty(&self) -> Type {
         self.database.intern_ty(TyKind::Scalar(ScalarType::Bool))
     }
-
-    fn try_lower_ty(
-        &self,
-        type_ref: &TypeReference,
-    ) -> Result<Type, TypeLoweringError> {
-        TyLoweringContext::new(self.database, &self.resolver).try_lower_ty(type_ref)
-    }
-
-    fn lower_ty(
-        &mut self,
-        container: impl Into<TypeContainer>,
-        type_ref: &TypeReference,
-    ) -> Type {
-        match self.try_lower_ty(type_ref) {
-            Ok(r#type) => r#type,
-            Err(error) => {
-                self.push_diagnostic(InferenceDiagnostic::InvalidType {
-                    container: container.into(),
-                    error,
-                });
-                self.error_ty()
-            },
-        }
-    }
 }
 
+/// Lowers types and expressions, the two are deeply intertwined.
 pub struct TyLoweringContext<'database> {
     database: &'database dyn HirDatabase,
+    /// Make sure to set the correct resolver when going into function scopes
     resolver: &'database Resolver,
+    store: &'database ExpressionStore,
 
     pub(crate) diagnostics: Vec<TypeLoweringError>,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
-pub enum TypeLoweringError {
-    UnresolvedName(Name),
-    InvalidTexelFormat(String),
+pub struct TypeLoweringError {
+    pub container: TypeContainer,
+    pub kind: TypeLoweringErrorKind,
 }
 
-impl fmt::Display for TypeLoweringError {
+#[derive(PartialEq, Eq, Debug, Clone)]
+pub enum TypeLoweringErrorKind {
+    UnresolvedName(Name),
+    UnexpectedTemplateArgument(String),
+    MissingTemplateArgument(String),
+    MissingTemplate,
+    WrongNumberOfTemplateArguments {
+        expected: std::ops::RangeInclusive<usize>,
+        actual: usize,
+    },
+    // A value was provided where a type was expected.
+    ExpectedType(Name),
+    // A function was provided but not called.
+    ExpectedFunctionToBeCalled(Name),
+    // TODO: Change this to a strongly typed wgsl_types::Error
+    // The challenge here is that wgsl_types::Error doesn't implement Eq,
+    // However the inference result keeps track of all the diagnostics and is cached
+    // wgsl_types::Error cannot trivially implement Eq, because the `Instance` would
+    // need to implement Eq. And it would have to be eq where "floating point NaNs" are
+    // prooobably equal, if their bits are equal?
+    WgslError(String),
+}
+
+impl fmt::Display for TypeLoweringErrorKind {
     fn fmt(
         &self,
         formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
             Self::UnresolvedName(name) => {
-                write!(formatter, "type `{}` not found in scope", name.as_str())
+                write!(formatter, "`{}` not found in scope", name.as_str())
             },
-            Self::InvalidTexelFormat(format) => {
-                let all_formats = "rgba8unorm,\nrgba8snorm,\nrgba8uint,\nrgba8sint,\nrgba16uint,\nrgba16sint,\nrgba16float,\nr32uint,\nr32sint,\nr32float,\nrg32uint,\nrg32sint,\nrg32float,\nrgba32uint,\nrgba32sint,\nrgba32float";
+            Self::WgslError(error) => {
+                write!(formatter, "{error}")
+            },
+            Self::UnexpectedTemplateArgument(expected) => {
                 write!(
                     formatter,
-                    "`{format}` is not a valid texel format, expected one of:\n{all_formats}"
+                    "unexpected template argument, expected {expected}"
                 )
             },
+            Self::MissingTemplateArgument(expected) => {
+                write!(formatter, "missing template argument, expected {expected}")
+            },
+            Self::MissingTemplate => {
+                write!(formatter, "missing template arguments")
+            },
+            Self::WrongNumberOfTemplateArguments { expected, actual }
+                if expected.start() == expected.end() =>
+            {
+                write!(
+                    formatter,
+                    "expected {} template arguments, but got {actual}",
+                    expected.start()
+                )
+            },
+            Self::WrongNumberOfTemplateArguments { expected, actual } => {
+                write!(
+                    formatter,
+                    "expected {} to {} template arguments, but got {actual}",
+                    expected.start(),
+                    expected.end()
+                )
+            },
+            Self::ExpectedType(name) => {
+                write!(formatter, "{} is not a type", name.as_str())
+            },
+            Self::ExpectedFunctionToBeCalled(name) => {
+                write!(
+                    formatter,
+                    "{0:} was written, write {0:}() instead",
+                    name.as_str()
+                )
+            },
+        }
+    }
+}
+
+/// A lowered type, or the definition of an item
+/// Also covers built-ins
+pub enum Lowered {
+    Type(Type),
+    TypeWithoutTemplate(Type),
+    Function(ResolvedFunctionId),
+    GlobalConstant(GlobalConstantId),
+    GlobalVariable(GlobalVariableId),
+    Override(OverrideId),
+    Local(BindingId),
+    Enumerant(Enumerant),
+    BuiltinFunction,
+}
+
+impl Lowered {
+    #[must_use]
+    pub const fn kind(&self) -> LoweredKind {
+        match self {
+            Self::Type(_) | Self::TypeWithoutTemplate(_) => LoweredKind::Type,
+            Self::Function(_) | Self::BuiltinFunction => LoweredKind::Function,
+            Self::GlobalConstant(_) => LoweredKind::Constant,
+            Self::GlobalVariable(_) => LoweredKind::Variable,
+            Self::Override(_) => LoweredKind::Override,
+            Self::Local(_) => LoweredKind::Local,
+            Self::Enumerant(_) => LoweredKind::Enumerant,
+        }
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+pub enum LoweredKind {
+    Type,
+    Function,
+    Constant,
+    Variable,
+    Override,
+    Local,
+    Enumerant,
+}
+
+impl std::fmt::Display for LoweredKind {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        match self {
+            Self::Type => write!(f, "type"),
+            Self::Function => write!(f, "function"),
+            Self::Constant => write!(f, "constant"),
+            Self::Variable => write!(f, "variable"),
+            Self::Override => write!(f, "override"),
+            Self::Local => write!(f, "local variable"),
+            Self::Enumerant => write!(f, "enumerant"),
         }
     }
 }
@@ -1990,122 +2217,745 @@ impl<'database> TyLoweringContext<'database> {
     pub fn new(
         database: &'database dyn HirDatabase,
         resolver: &'database Resolver,
+        store: &'database ExpressionStore,
     ) -> Self {
         Self {
             database,
             resolver,
+            store,
             diagnostics: Vec::new(),
+        }
+    }
+
+    pub fn lower(
+        &mut self,
+        type_container: TypeContainer,
+        path: &Name,
+        template_parameters: &[ExpressionId],
+    ) -> Lowered {
+        match self.try_lower(type_container, path, template_parameters) {
+            Ok(lowered) => lowered,
+            Err(error) => {
+                self.diagnostics.push(error);
+                Lowered::Type(self.database.intern_ty(TyKind::Error))
+            },
+        }
+    }
+
+    /// Will lower types, and resolve the definition of other items.
+    pub fn try_lower(
+        &mut self,
+        type_container: TypeContainer,
+        path: &Name,
+        template_parameters: &[ExpressionId],
+    ) -> Result<Lowered, TypeLoweringError> {
+        let resolved_ty = self.resolver.resolve(path);
+
+        if resolved_ty.is_some() {
+            self.expect_no_template(template_parameters);
+        }
+
+        match resolved_ty {
+            Some(ResolveKind::TypeAlias(loc)) => {
+                let id = self.database.intern_type_alias(loc);
+                Ok(Lowered::Type(self.database.type_alias_type(id).0))
+            },
+            Some(ResolveKind::Struct(loc)) => {
+                let id = self.database.intern_struct(loc);
+                Ok(Lowered::Type(self.database.intern_ty(TyKind::Struct(id))))
+            },
+            Some(ResolveKind::Function(loc)) => {
+                let id = self.database.intern_function(loc);
+                Ok(Lowered::Function(self.database.function_type(id)))
+            },
+            Some(ResolveKind::GlobalConstant(loc)) => {
+                let id = self.database.intern_global_constant(loc);
+                Ok(Lowered::GlobalConstant(id))
+            },
+            Some(ResolveKind::GlobalVariable(loc)) => {
+                let id = self.database.intern_global_variable(loc);
+                Ok(Lowered::GlobalVariable(id))
+            },
+            Some(ResolveKind::Override(loc)) => {
+                let id = self.database.intern_override(loc);
+                Ok(Lowered::Override(id))
+            },
+            Some(ResolveKind::Local(local)) => Ok(Lowered::Local(local)),
+            None => self.lower_predeclared(type_container, path, template_parameters),
+        }
+    }
+
+    fn expect_no_template(
+        &mut self,
+        template_parameters: &[ExpressionId],
+    ) {
+        if template_parameters.is_empty() {
+            return;
+        }
+        for template_expression in template_parameters {
+            self.diagnostics.push(TypeLoweringError {
+                container: TypeContainer::Expression(*template_expression),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("nothing".to_owned()),
+            });
+        }
+    }
+
+    fn expect_n_templates(
+        &mut self,
+        template_parameters: &eval::TemplateParameters,
+        expected: std::ops::RangeInclusive<usize>,
+    ) -> bool {
+        if expected.contains(&template_parameters.len()) {
+            true
+        } else {
+            self.diagnostics.push(TypeLoweringError {
+                container: *template_parameters.container(),
+                kind: TypeLoweringErrorKind::WrongNumberOfTemplateArguments {
+                    expected,
+                    actual: template_parameters.len(),
+                },
+            });
+
+            false
         }
     }
 
     pub fn lower_ty(
         &mut self,
-        type_ref: &TypeReference,
+        type_specifier_id: TypeSpecifierId,
     ) -> Type {
-        self.try_lower_ty(type_ref)
-            .unwrap_or_else(|_| TyKind::Error.intern(self.database))
+        let type_specifier = &self.store[type_specifier_id];
+        let lowered = self.try_lower(
+            TypeContainer::TypeSpecifier(type_specifier_id),
+            &type_specifier.path,
+            &type_specifier.template_parameters,
+        );
+        match lowered {
+            Ok(Lowered::Type(r#type)) => r#type,
+            Ok(Lowered::TypeWithoutTemplate(_)) => {
+                self.diagnostics.push(TypeLoweringError {
+                    container: TypeContainer::TypeSpecifier(type_specifier_id),
+                    kind: TypeLoweringErrorKind::MissingTemplate,
+                });
+                self.database.intern_ty(TyKind::Error)
+            },
+            Ok(
+                Lowered::Enumerant(_)
+                | Lowered::Function(_)
+                | Lowered::BuiltinFunction
+                | Lowered::GlobalConstant(_)
+                | Lowered::GlobalVariable(_)
+                | Lowered::Override(_)
+                | Lowered::Local(_),
+            ) => {
+                self.diagnostics.push(TypeLoweringError {
+                    container: TypeContainer::TypeSpecifier(type_specifier_id),
+                    kind: TypeLoweringErrorKind::ExpectedType(type_specifier.path.clone()),
+                });
+                self.database.intern_ty(TyKind::Error)
+            },
+            Err(error) => {
+                self.diagnostics.push(error);
+                self.database.intern_ty(TyKind::Error)
+            },
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Copy, Clone)]
+enum AbstractHandling {
+    Concretize,
+    Abstract,
+}
+
+struct WgslTypeConverter<'database> {
+    database: &'database dyn HirDatabase,
+    interned_structs: Vec<StructId>,
+}
+
+impl<'database> WgslTypeConverter<'database> {
+    fn new(database: &'database dyn HirDatabase) -> Self {
+        Self {
+            database,
+            interned_structs: Vec::default(),
+        }
     }
 
-    /// Convert a [`TypeReference`] into a `[Type]`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if an extreme, probably impossible type is give, such as an array with a size exceeding 64 bits.
-    ///
-    /// # Errors
-    ///
-    /// This function will return an error if type is a path and the path is unknown.
-    pub fn try_lower_ty(
+    #[expect(
+        clippy::wrong_self_convention,
+        reason = "naming things is hard and this is probably changing in the future"
+    )]
+    fn to_wgsl_types(
         &mut self,
-        type_ref: &TypeReference,
-    ) -> Result<Type, TypeLoweringError> {
-        let ty_kind = match type_ref {
-            TypeReference::Error => TyKind::Error,
-            TypeReference::Scalar(scalar) => {
-                let scalar = match scalar {
-                    type_ref::ScalarType::Bool => ScalarType::Bool,
-                    type_ref::ScalarType::Float32 => ScalarType::F32,
-                    type_ref::ScalarType::Int32 => ScalarType::I32,
-                    type_ref::ScalarType::Uint32 => ScalarType::U32,
-                };
-                TyKind::Scalar(scalar)
+        r#type: Type,
+    ) -> Option<wgsl_types::Type> {
+        Some(match r#type.kind(self.database) {
+            // TODO: This should not be necessary because the types should align 1:1
+            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/672
+            TyKind::Error | TyKind::BoundVar(_) | TyKind::StorageTypeOfTexelFormat(_) => {
+                return None;
             },
-            TypeReference::Vec(vec) => TyKind::Vector(VectorType {
-                size: vec.size.into(),
-                component_type: self.lower_ty(&vec.inner),
-            }),
-            TypeReference::Matrix(matrix) => TyKind::Matrix(MatrixType {
-                columns: matrix.columns.into(),
-                rows: matrix.rows.into(),
-                inner: self.lower_ty(&matrix.inner),
-            }),
-            TypeReference::Texture(tex) => TyKind::Texture(TextureType {
-                kind: match &tex.kind {
-                    type_ref::TextureKind::Sampled(r#type) => {
-                        TextureKind::Sampled(self.lower_ty(r#type))
-                    },
-                    type_ref::TextureKind::Storage(format, mode) => TextureKind::Storage(
-                        format
-                            .parse()
-                            .map_err(|()| TypeLoweringError::InvalidTexelFormat(format.clone()))?,
-                        *mode,
-                    ),
-                    type_ref::TextureKind::Depth => TextureKind::Depth,
-                    type_ref::TextureKind::External => TextureKind::External,
+            TyKind::Scalar(ScalarType::AbstractFloat) => wgsl_types::Type::AbstractFloat,
+            TyKind::Scalar(ScalarType::AbstractInt) => wgsl_types::Type::AbstractInt,
+            TyKind::Scalar(ScalarType::Bool) => wgsl_types::Type::Bool,
+            TyKind::Scalar(ScalarType::F16) => wgsl_types::Type::F16,
+            TyKind::Scalar(ScalarType::F32) => wgsl_types::Type::F32,
+            TyKind::Scalar(ScalarType::I32) => wgsl_types::Type::I32,
+            TyKind::Scalar(ScalarType::U32) => wgsl_types::Type::U32,
+            TyKind::Atomic(AtomicType { inner }) => {
+                wgsl_types::Type::Atomic(Box::new(self.to_wgsl_types(inner)?))
+            },
+            TyKind::Vector(VectorType {
+                size,
+                component_type,
+            }) => {
+                wgsl_types::Type::Vec(size.as_u8(), Box::new(self.to_wgsl_types(component_type)?))
+            },
+            TyKind::Matrix(MatrixType {
+                columns,
+                rows,
+                inner,
+            }) => wgsl_types::Type::Mat(
+                columns.as_u8(),
+                rows.as_u8(),
+                Box::new(self.to_wgsl_types(inner)?),
+            ),
+            TyKind::Struct(struct_id) => {
+                let data = self.database.struct_data(struct_id).0;
+                let fields = &self.database.field_types(struct_id).0;
+                let name = self.intern_struct(struct_id);
+                wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
+                    name,
+                    members: data
+                        .fields
+                        .iter()
+                        .map(|(id, data)| {
+                            Some(wgsl_types::ty::StructMemberType {
+                                name: data.name.as_str().to_owned(),
+                                // Skip broken struct fields
+                                ty: self.to_wgsl_types(fields[id])?,
+                                // Don't bother reconstructing the correct layout
+                                size: None,
+                                align: None,
+                            })
+                        })
+                        .collect::<Option<Vec<_>>>()?,
+                }))
+            },
+            TyKind::Array(ArrayType {
+                inner,
+                binding_array: false,
+                size,
+            }) => wgsl_types::Type::Array(
+                Box::new(self.to_wgsl_types(inner)?),
+                match size {
+                    #[expect(clippy::as_conversions, reason = "externally defined")]
+                    ArraySize::Constant(size) => Some(size as usize),
+                    ArraySize::Dynamic => None,
                 },
-                dimension: match tex.dimension {
-                    type_ref::TextureDimension::D1 => TextureDimensionality::D1,
-                    type_ref::TextureDimension::D2 => TextureDimensionality::D2,
-                    type_ref::TextureDimension::D3 => TextureDimensionality::D3,
-                    type_ref::TextureDimension::Cube => TextureDimensionality::Cube,
+            ),
+            TyKind::Array(ArrayType {
+                inner,
+                binding_array: true,
+                size,
+            }) => wgsl_types::Type::BindingArray(
+                Box::new(self.to_wgsl_types(inner)?),
+                match size {
+                    #[expect(clippy::as_conversions, reason = "externally defined")]
+                    ArraySize::Constant(size) => Some(size as usize),
+                    ArraySize::Dynamic => None,
                 },
-                arrayed: tex.arrayed,
-                multisampled: tex.multisampled,
-            }),
-            TypeReference::Sampler(sampler) => TyKind::Sampler(SamplerType {
-                comparison: sampler.comparison,
-            }),
-            TypeReference::Atomic(atomic) => TyKind::Atomic(AtomicType {
-                inner: self.lower_ty(&atomic.inner),
-            }),
-            TypeReference::Array(array) => TyKind::Array(ArrayType {
-                inner: self.lower_ty(&array.inner),
-                binding_array: array.binding_array,
-                size: match array.size {
-                    type_ref::ArraySize::Int(integer) => {
-                        // TODO give error instead of panicking
-                        ArraySize::Constant(u64::try_from(integer).unwrap())
-                    },
-                    type_ref::ArraySize::Uint(unsigned_integer) => {
-                        ArraySize::Constant(unsigned_integer)
-                    },
-                    type_ref::ArraySize::Path(_) => ArraySize::Constant(0), // TODO: Path array sizes
-                    type_ref::ArraySize::Dynamic => ArraySize::Dynamic,
-                },
-            }),
-            TypeReference::Pointer(pointer) => TyKind::Pointer(Pointer {
-                address_space: pointer.address_space,
-                inner: self.lower_ty(&pointer.inner),
-                access_mode: pointer.access_mode,
-            }),
-            TypeReference::Path(name) => match self.resolver.resolve_type(name) {
-                Some(ResolveType::Struct(loc)) => {
-                    let r#struct = self.database.intern_struct(loc);
-                    TyKind::Struct(r#struct)
-                },
-                Some(ResolveType::TypeAlias(loc)) => {
-                    let alias = self.database.intern_type_alias(loc);
-                    let data = self.database.type_alias_data(alias);
-                    let type_ref = &self.database.lookup_intern_type_ref(data.r#type);
+            ),
+            TyKind::Texture(texture_type) => {
+                wgsl_types::Type::Texture(self.to_wgsl_texture_type(texture_type))
+            },
+            TyKind::Sampler(sampler_type) => wgsl_types::Type::Sampler(sampler_type),
+            TyKind::Reference(Reference {
+                address_space,
+                inner,
+                access_mode,
+            }) => wgsl_types::Type::Ref(
+                address_space,
+                Box::new(self.to_wgsl_types(inner)?),
+                access_mode,
+            ),
+            TyKind::Pointer(Pointer {
+                address_space,
+                inner,
+                access_mode,
+            }) => wgsl_types::Type::Ptr(
+                address_space,
+                Box::new(self.to_wgsl_types(inner)?),
+                access_mode,
+            ),
+        })
+    }
 
-                    return Ok(self.lower_ty(type_ref));
-                },
-                Some(ResolveType::PredeclaredTypeAlias(type_ref)) => {
-                    return Ok(self.lower_ty(&type_ref));
-                },
-                None => return Err(TypeLoweringError::UnresolvedName(name.clone())),
+    /// Returns none if it is an error type
+    fn template_parameter_to_wgsl_types(
+        &mut self,
+        param: eval::TemplateParameter,
+    ) -> Option<wgsl_types::tplt::TpltParam> {
+        Some(match param {
+            eval::TemplateParameter::Type(r#type) => {
+                wgsl_types::tplt::TpltParam::Type(self.to_wgsl_types(r#type)?)
             },
-        };
-        Ok(self.database.intern_ty(ty_kind))
+            eval::TemplateParameter::Instance(instance) => {
+                wgsl_types::tplt::TpltParam::Instance(instance?)
+            },
+            eval::TemplateParameter::Enumerant(enumerant) => {
+                wgsl_types::tplt::TpltParam::Enumerant(enumerant)
+            },
+        })
+    }
+
+    #[expect(
+        clippy::wrong_self_convention,
+        reason = "naming things is hard and this is probably changing in the future"
+    )]
+    fn from_wgsl_types(
+        &self,
+        r#type: wgsl_types::Type,
+    ) -> Type {
+        #[expect(
+            clippy::todo,
+            reason = "See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/442"
+        )]
+        match r#type {
+            wgsl_types::Type::Bool => TyKind::Scalar(ScalarType::Bool).intern(self.database),
+            wgsl_types::Type::AbstractInt => {
+                TyKind::Scalar(ScalarType::AbstractInt).intern(self.database)
+            },
+            wgsl_types::Type::AbstractFloat => {
+                TyKind::Scalar(ScalarType::AbstractFloat).intern(self.database)
+            },
+            wgsl_types::Type::I32 => TyKind::Scalar(ScalarType::I32).intern(self.database),
+            wgsl_types::Type::U32 => TyKind::Scalar(ScalarType::U32).intern(self.database),
+            wgsl_types::Type::I64 => todo!("naga extension"),
+            wgsl_types::Type::U64 => todo!("naga extension"),
+            wgsl_types::Type::F16 => TyKind::Scalar(ScalarType::F16).intern(self.database),
+            wgsl_types::Type::F32 => TyKind::Scalar(ScalarType::F32).intern(self.database),
+            wgsl_types::Type::F64 => todo!("naga extension"),
+            wgsl_types::Type::Struct(struct_type) => {
+                let struct_id = self
+                    .get_interned_struct(&struct_type.name)
+                    // I think this doesn't hold true when calling `atomicCompareExchangeWeak`
+                    .expect("Only struct types that have been passed in should be returned");
+                TyKind::Struct(struct_id).intern(self.database)
+            },
+            wgsl_types::Type::Array(r#type, size) => TyKind::Array(ArrayType {
+                inner: self.from_wgsl_types(*r#type),
+                binding_array: false,
+                size: match size {
+                    Some(size) => {
+                        debug_assert!(u32::try_from(size).is_ok());
+                        #[expect(
+                            clippy::cast_possible_truncation,
+                            clippy::as_conversions,
+                            reason = "externally defined"
+                        )]
+                        ArraySize::Constant(size as u32)
+                    },
+                    None => ArraySize::Dynamic,
+                },
+            })
+            .intern(self.database),
+            wgsl_types::Type::BindingArray(r#type, size) => TyKind::Array(ArrayType {
+                inner: self.from_wgsl_types(*r#type),
+                binding_array: true,
+                size: match size {
+                    Some(size) => {
+                        debug_assert!(u32::try_from(size).is_ok());
+                        #[expect(
+                            clippy::cast_possible_truncation,
+                            clippy::as_conversions,
+                            reason = "externally defined"
+                        )]
+                        ArraySize::Constant(size as u32)
+                    },
+                    None => ArraySize::Dynamic,
+                },
+            })
+            .intern(self.database),
+            wgsl_types::Type::Vec(size, r#type) => TyKind::Vector(VectorType {
+                size: VecSize::try_from(size).unwrap(),
+                component_type: self.from_wgsl_types(*r#type),
+            })
+            .intern(self.database),
+            wgsl_types::Type::Mat(columns, rows, r#type) => TyKind::Matrix(MatrixType {
+                columns: VecSize::try_from(columns).unwrap(),
+                rows: VecSize::try_from(rows).unwrap(),
+                inner: self.from_wgsl_types(*r#type),
+            })
+            .intern(self.database),
+            wgsl_types::Type::Atomic(r#type) => TyKind::Atomic(AtomicType {
+                inner: self.from_wgsl_types(*r#type),
+            })
+            .intern(self.database),
+            wgsl_types::Type::Ptr(address_space, r#type, access_mode) => TyKind::Pointer(Pointer {
+                address_space,
+                inner: self.from_wgsl_types(*r#type),
+                access_mode,
+            })
+            .intern(self.database),
+            wgsl_types::Type::Ref(address_space, r#type, access_mode) => {
+                TyKind::Reference(Reference {
+                    address_space,
+                    inner: self.from_wgsl_types(*r#type),
+                    access_mode,
+                })
+                .intern(self.database)
+            },
+            wgsl_types::Type::Texture(texture_type) => {
+                TyKind::Texture(self.from_wgsl_texture_type(&texture_type)).intern(self.database)
+            },
+            wgsl_types::Type::Sampler(sampler_type) => {
+                TyKind::Sampler(sampler_type).intern(self.database)
+            },
+            wgsl_types::Type::RayQuery(_) => todo!("naga extension"),
+            wgsl_types::Type::AccelerationStructure(_) => todo!("naga extension"),
+        }
+    }
+
+    #[expect(clippy::too_many_lines, reason = "long but simple match")]
+    #[expect(
+        clippy::wrong_self_convention,
+        reason = "naming things is hard and this is probably changing in the future"
+    )]
+    fn from_wgsl_texture_type(
+        &self,
+        value: &wgsl_types::ty::TextureType,
+    ) -> TextureType {
+        match *value {
+            wgsl_types::ty::TextureType::Sampled1D(sampled_type) => TextureType {
+                kind: TextureKind::from_sampled(sampled_type, self.database),
+                dimension: TextureDimensionality::D1,
+                arrayed: false,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::Sampled1DArray(sampled_type) => TextureType {
+                kind: TextureKind::from_sampled(sampled_type, self.database),
+                dimension: TextureDimensionality::D1,
+                arrayed: true,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::Sampled2D(sampled_type) => TextureType {
+                kind: TextureKind::from_sampled(sampled_type, self.database),
+                dimension: TextureDimensionality::D2,
+                arrayed: false,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::Sampled2DArray(sampled_type) => TextureType {
+                kind: TextureKind::from_sampled(sampled_type, self.database),
+                dimension: TextureDimensionality::D2,
+                arrayed: true,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::Sampled3D(sampled_type) => TextureType {
+                kind: TextureKind::from_sampled(sampled_type, self.database),
+                dimension: TextureDimensionality::D3,
+                arrayed: false,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::SampledCube(sampled_type) => TextureType {
+                kind: TextureKind::from_sampled(sampled_type, self.database),
+                dimension: TextureDimensionality::Cube,
+                arrayed: false,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::SampledCubeArray(sampled_type) => TextureType {
+                kind: TextureKind::from_sampled(sampled_type, self.database),
+                dimension: TextureDimensionality::Cube,
+                arrayed: true,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::Multisampled2D(sampled_type) => TextureType {
+                kind: TextureKind::from_sampled(sampled_type, self.database),
+                dimension: TextureDimensionality::D2,
+                arrayed: false,
+                multisampled: true,
+            },
+            wgsl_types::ty::TextureType::Multisampled2DArray(sampled_type) => TextureType {
+                kind: TextureKind::from_sampled(sampled_type, self.database),
+                dimension: TextureDimensionality::D2,
+                arrayed: true,
+                multisampled: true,
+            },
+            wgsl_types::ty::TextureType::DepthMultisampled2D => TextureType {
+                kind: TextureKind::Depth,
+                dimension: TextureDimensionality::D2,
+                arrayed: false,
+                multisampled: true,
+            },
+            wgsl_types::ty::TextureType::External => TextureType {
+                kind: TextureKind::External,
+                dimension: TextureDimensionality::D2,
+                arrayed: false,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::Storage1D(texel_format, access_mode) => TextureType {
+                kind: TextureKind::Storage(from_wgsl_texel_format(texel_format), access_mode),
+                dimension: TextureDimensionality::D1,
+                arrayed: false,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::Storage1DArray(texel_format, access_mode) => TextureType {
+                kind: TextureKind::Storage(from_wgsl_texel_format(texel_format), access_mode),
+                dimension: TextureDimensionality::D1,
+                arrayed: true,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::Storage2D(texel_format, access_mode) => TextureType {
+                kind: TextureKind::Storage(from_wgsl_texel_format(texel_format), access_mode),
+                dimension: TextureDimensionality::D2,
+                arrayed: false,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::Storage2DArray(texel_format, access_mode) => TextureType {
+                kind: TextureKind::Storage(from_wgsl_texel_format(texel_format), access_mode),
+                dimension: TextureDimensionality::D2,
+                arrayed: true,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::Storage3D(texel_format, access_mode) => TextureType {
+                kind: TextureKind::Storage(from_wgsl_texel_format(texel_format), access_mode),
+                dimension: TextureDimensionality::D3,
+                arrayed: false,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::Depth2D => TextureType {
+                kind: TextureKind::Depth,
+                dimension: TextureDimensionality::D2,
+                arrayed: false,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::Depth2DArray => TextureType {
+                kind: TextureKind::Depth,
+                dimension: TextureDimensionality::D2,
+                arrayed: true,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::DepthCube => TextureType {
+                kind: TextureKind::Depth,
+                dimension: TextureDimensionality::Cube,
+                arrayed: false,
+                multisampled: false,
+            },
+            wgsl_types::ty::TextureType::DepthCubeArray => TextureType {
+                kind: TextureKind::Depth,
+                dimension: TextureDimensionality::Cube,
+                arrayed: true,
+                multisampled: false,
+            },
+        }
+    }
+
+    fn to_wgsl_texture_type(
+        &self,
+        value: TextureType,
+    ) -> wgsl_types::ty::TextureType {
+        match (value.kind, value.dimension, value.arrayed) {
+            (TextureKind::Sampled(sampled), TextureDimensionality::D1, false) => {
+                wgsl_types::ty::TextureType::Sampled1D(self.to_wgsl_sampled(sampled))
+            },
+            (TextureKind::Sampled(sampled), TextureDimensionality::D1, true) => {
+                wgsl_types::ty::TextureType::Sampled1DArray(self.to_wgsl_sampled(sampled))
+            },
+            (TextureKind::Sampled(sampled), TextureDimensionality::D2, false) => {
+                wgsl_types::ty::TextureType::Sampled2D(self.to_wgsl_sampled(sampled))
+            },
+            (TextureKind::Sampled(sampled), TextureDimensionality::D2, true) => {
+                wgsl_types::ty::TextureType::Sampled2DArray(self.to_wgsl_sampled(sampled))
+            },
+            (TextureKind::Sampled(sampled), TextureDimensionality::D3, false) => {
+                wgsl_types::ty::TextureType::Sampled3D(self.to_wgsl_sampled(sampled))
+            },
+            (TextureKind::Sampled(sampled), TextureDimensionality::Cube, false) => {
+                wgsl_types::ty::TextureType::SampledCube(self.to_wgsl_sampled(sampled))
+            },
+            (TextureKind::Sampled(sampled), TextureDimensionality::Cube, true) => {
+                wgsl_types::ty::TextureType::SampledCubeArray(self.to_wgsl_sampled(sampled))
+            },
+            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D1, false) => {
+                wgsl_types::ty::TextureType::Storage1D(
+                    to_wgsl_texel_format(texel_format),
+                    access_mode,
+                )
+            },
+            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D1, true) => {
+                wgsl_types::ty::TextureType::Storage1DArray(
+                    to_wgsl_texel_format(texel_format),
+                    access_mode,
+                )
+            },
+            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D2, false) => {
+                wgsl_types::ty::TextureType::Storage2D(
+                    to_wgsl_texel_format(texel_format),
+                    access_mode,
+                )
+            },
+            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D2, true) => {
+                wgsl_types::ty::TextureType::Storage2DArray(
+                    to_wgsl_texel_format(texel_format),
+                    access_mode,
+                )
+            },
+            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D3, false) => {
+                wgsl_types::ty::TextureType::Storage3D(
+                    to_wgsl_texel_format(texel_format),
+                    access_mode,
+                )
+            },
+            (TextureKind::Depth, TextureDimensionality::D2, false) => {
+                wgsl_types::ty::TextureType::Depth2D
+            },
+            (TextureKind::Depth, TextureDimensionality::D2, true) => {
+                wgsl_types::ty::TextureType::Depth2DArray
+            },
+            (TextureKind::Depth, TextureDimensionality::Cube, false) => {
+                wgsl_types::ty::TextureType::DepthCube
+            },
+            (TextureKind::Depth, TextureDimensionality::Cube, true) => {
+                wgsl_types::ty::TextureType::DepthCubeArray
+            },
+            (TextureKind::External, _, _) => wgsl_types::ty::TextureType::External,
+            (_, _, _) => panic!("invalid texture"),
+        }
+    }
+
+    fn intern_struct(
+        &mut self,
+        struct_id: StructId,
+    ) -> String {
+        let index = self.interned_structs.len();
+        self.interned_structs.push(struct_id);
+        format!("struct{index}")
+    }
+
+    fn get_interned_struct(
+        &self,
+        name: &str,
+    ) -> Option<StructId> {
+        let index = name.strip_prefix("struct")?.parse::<usize>().ok()?;
+        self.interned_structs.get(index).copied()
+    }
+
+    fn to_wgsl_sampled(
+        &self,
+        sampled: Type,
+    ) -> wgsl_types::syntax::SampledType {
+        match sampled.kind(self.database) {
+            TyKind::Scalar(ScalarType::I32) => wgsl_types::syntax::SampledType::I32,
+            TyKind::Scalar(ScalarType::U32) => wgsl_types::syntax::SampledType::U32,
+            TyKind::Scalar(ScalarType::F32) => wgsl_types::syntax::SampledType::F32,
+            kind @ (TyKind::Error
+            | TyKind::Scalar(_)
+            | TyKind::Atomic(_)
+            | TyKind::Vector(_)
+            | TyKind::Matrix(_)
+            | TyKind::Struct(_)
+            | TyKind::Array(_)
+            | TyKind::Texture(_)
+            | TyKind::Sampler(_)
+            | TyKind::Reference(_)
+            | TyKind::Pointer(_)
+            | TyKind::BoundVar(_)
+            | TyKind::StorageTypeOfTexelFormat(_)) => panic!("invalid sampled type {kind:?}"),
+        }
+    }
+}
+
+#[must_use]
+pub fn from_wgsl_texel_format(
+    texel_format: wgsl_types::syntax::TexelFormat
+) -> crate::ty::TexelFormat {
+    match texel_format {
+        wgsl_types::syntax::TexelFormat::Rgba8Unorm => crate::ty::TexelFormat::Rgba8unorm,
+        wgsl_types::syntax::TexelFormat::Rgba8Snorm => crate::ty::TexelFormat::Rgba8snorm,
+        wgsl_types::syntax::TexelFormat::Rgba8Uint => crate::ty::TexelFormat::Rgba8uint,
+        wgsl_types::syntax::TexelFormat::Rgba8Sint => crate::ty::TexelFormat::Rgba8sint,
+        wgsl_types::syntax::TexelFormat::Rgba16Uint => crate::ty::TexelFormat::Rgba16uint,
+        wgsl_types::syntax::TexelFormat::Rgba16Sint => crate::ty::TexelFormat::Rgba16sint,
+        wgsl_types::syntax::TexelFormat::Rgba16Float => crate::ty::TexelFormat::Rgba16float,
+        wgsl_types::syntax::TexelFormat::R32Uint => crate::ty::TexelFormat::R32uint,
+        wgsl_types::syntax::TexelFormat::R32Sint => crate::ty::TexelFormat::R32sint,
+        wgsl_types::syntax::TexelFormat::R32Float => crate::ty::TexelFormat::R32float,
+        wgsl_types::syntax::TexelFormat::Rg32Uint => crate::ty::TexelFormat::Rg32uint,
+        wgsl_types::syntax::TexelFormat::Rg32Sint => crate::ty::TexelFormat::Rg32sint,
+        wgsl_types::syntax::TexelFormat::Rg32Float => crate::ty::TexelFormat::Rg32float,
+        wgsl_types::syntax::TexelFormat::Rgba32Uint => crate::ty::TexelFormat::Rgba32uint,
+        wgsl_types::syntax::TexelFormat::Rgba32Sint => crate::ty::TexelFormat::Rgba32sint,
+        wgsl_types::syntax::TexelFormat::Rgba32Float => crate::ty::TexelFormat::Rgba32float,
+        wgsl_types::syntax::TexelFormat::Bgra8Unorm => crate::ty::TexelFormat::Bgra8unorm,
+        wgsl_types::syntax::TexelFormat::R8Unorm
+        | wgsl_types::syntax::TexelFormat::R8Snorm
+        | wgsl_types::syntax::TexelFormat::R8Uint
+        | wgsl_types::syntax::TexelFormat::R8Sint
+        | wgsl_types::syntax::TexelFormat::R16Unorm
+        | wgsl_types::syntax::TexelFormat::R16Snorm
+        | wgsl_types::syntax::TexelFormat::R16Uint
+        | wgsl_types::syntax::TexelFormat::R16Sint
+        | wgsl_types::syntax::TexelFormat::R16Float
+        | wgsl_types::syntax::TexelFormat::Rg8Unorm
+        | wgsl_types::syntax::TexelFormat::Rg8Snorm
+        | wgsl_types::syntax::TexelFormat::Rg8Uint
+        | wgsl_types::syntax::TexelFormat::Rg8Sint
+        | wgsl_types::syntax::TexelFormat::Rg16Unorm
+        | wgsl_types::syntax::TexelFormat::Rg16Snorm
+        | wgsl_types::syntax::TexelFormat::Rg16Uint
+        | wgsl_types::syntax::TexelFormat::Rg16Sint
+        | wgsl_types::syntax::TexelFormat::Rg16Float
+        | wgsl_types::syntax::TexelFormat::Rgb10a2Uint
+        | wgsl_types::syntax::TexelFormat::Rgb10a2Unorm
+        | wgsl_types::syntax::TexelFormat::Rg11b10Float
+        | wgsl_types::syntax::TexelFormat::R64Uint
+        | wgsl_types::syntax::TexelFormat::Rgba16Unorm
+        | wgsl_types::syntax::TexelFormat::Rgba16Snorm => {
+            #[expect(
+                clippy::unimplemented,
+                reason = "TODO: support naga texture formats, see: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/675"
+            )]
+            {
+                unimplemented!("not yet supported naga extension")
+            }
+        },
+    }
+}
+
+/// Convert a [`crate::ty::TexelFormat`] into a [`wgsl_types::syntax::TexelFormat`].
+///
+/// # Panics
+///
+/// Panics if `texel_format` is `BoundVar` or `Any`.
+#[expect(
+    deprecated,
+    reason = "TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
+)]
+#[must_use]
+pub fn to_wgsl_texel_format(
+    texel_format: crate::ty::TexelFormat
+) -> wgsl_types::syntax::TexelFormat {
+    match texel_format {
+        crate::ty::TexelFormat::Rgba8unorm => wgsl_types::syntax::TexelFormat::Rgba8Unorm,
+        crate::ty::TexelFormat::Rgba8snorm => wgsl_types::syntax::TexelFormat::Rgba8Snorm,
+        crate::ty::TexelFormat::Rgba8uint => wgsl_types::syntax::TexelFormat::Rgba8Uint,
+        crate::ty::TexelFormat::Rgba8sint => wgsl_types::syntax::TexelFormat::Rgba8Sint,
+        crate::ty::TexelFormat::Rgba16uint => wgsl_types::syntax::TexelFormat::Rgba16Uint,
+        crate::ty::TexelFormat::Rgba16sint => wgsl_types::syntax::TexelFormat::Rgba16Sint,
+        crate::ty::TexelFormat::Rgba16float => wgsl_types::syntax::TexelFormat::Rgba16Float,
+        crate::ty::TexelFormat::R32uint => wgsl_types::syntax::TexelFormat::R32Uint,
+        crate::ty::TexelFormat::R32sint => wgsl_types::syntax::TexelFormat::R32Sint,
+        crate::ty::TexelFormat::R32float => wgsl_types::syntax::TexelFormat::R32Float,
+        crate::ty::TexelFormat::Rg32uint => wgsl_types::syntax::TexelFormat::Rg32Uint,
+        crate::ty::TexelFormat::Rg32sint => wgsl_types::syntax::TexelFormat::Rg32Sint,
+        crate::ty::TexelFormat::Rg32float => wgsl_types::syntax::TexelFormat::Rg32Float,
+        crate::ty::TexelFormat::Rgba32uint => wgsl_types::syntax::TexelFormat::Rgba32Uint,
+        crate::ty::TexelFormat::Rgba32sint => wgsl_types::syntax::TexelFormat::Rgba32Sint,
+        crate::ty::TexelFormat::Rgba32float => wgsl_types::syntax::TexelFormat::Rgba32Float,
+        crate::ty::TexelFormat::Bgra8unorm => wgsl_types::syntax::TexelFormat::Bgra8Unorm,
+        crate::ty::TexelFormat::BoundVar(_) => {
+            panic!("bound var is not a valid texel format to convert")
+        },
+        crate::ty::TexelFormat::Any => panic!("any is not a valid texel format to convert"),
     }
 }

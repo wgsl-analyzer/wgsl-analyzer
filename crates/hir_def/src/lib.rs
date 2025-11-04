@@ -4,11 +4,16 @@ pub mod body;
 pub mod data;
 pub mod database;
 pub mod expression;
+pub mod expression_store;
 pub mod hir_file_id;
 pub mod module_data;
 pub mod resolver;
+#[cfg(test)]
+mod test_db;
+#[cfg(test)]
+mod tests;
 pub mod type_ref;
-
+pub mod type_specifier;
 pub use ast_id::*;
 use base_db::{FileRange, TextRange};
 use database::DefDatabase;
@@ -17,8 +22,6 @@ use hir_file_id::HirFileIdRepr;
 use module_data::{ModuleDataNode, ModuleItemId};
 use rowan::NodeOrToken;
 use syntax::{AstNode, SyntaxNode, SyntaxToken};
-
-use crate::{database::ImportId, module_data::Import};
 
 /// `InFile<T>` stores a value of `T` inside a particular file/syntax tree.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
@@ -63,10 +66,7 @@ impl<T> InFile<T> {
         &self,
         database: &dyn database::DefDatabase,
     ) -> SyntaxNode {
-        database
-            .parse_or_resolve(self.file_id)
-            .expect("source created from invalid file")
-            .syntax()
+        database.parse_or_resolve(self.file_id).syntax()
     }
 }
 
@@ -115,39 +115,12 @@ pub fn original_file_range<T: HasTextRange>(
     file_id: HirFileId,
     value: &T,
 ) -> FileRange {
-    original_file_range_inner(database, file_id, value.text_range())
-}
-
-fn original_file_range_inner(
-    database: &dyn DefDatabase,
-    file_id: HirFileId,
-    range: TextRange,
-) -> FileRange {
     match file_id.0 {
-        HirFileIdRepr::FileId(file_id) => FileRange { file_id, range },
-        HirFileIdRepr::MacroFile(import) => {
-            let loc = import_location(database, import.import_id);
-            original_file_range_inner(database, loc.file_id, loc.value)
+        HirFileIdRepr::FileId(file_id) => FileRange {
+            file_id,
+            range: value.text_range(),
         },
     }
-}
-
-fn import_location(
-    database: &dyn DefDatabase,
-    import_id: ImportId,
-) -> InFile<TextRange> {
-    let import_loc = database.lookup_intern_import(import_id);
-    let module_info = database.module_info(import_loc.file_id);
-    let def_map = database.ast_id_map(import_loc.file_id);
-    let root = database
-        .parse_or_resolve(import_loc.file_id)
-        .unwrap()
-        .syntax();
-    let import: &Import = module_info.get(import_loc.value);
-    let pointer = def_map.get(import.ast_id);
-    let node = pointer.to_node(&root);
-
-    import_loc.with_value(node.syntax().text_range())
 }
 
 pub trait HasSource {
@@ -172,9 +145,7 @@ impl<N: ModuleDataNode> HasSource for InFile<ModuleItemId<N>> {
 
         InFile::new(
             self.file_id,
-            ast_id_map
-                .get(node.ast_id())
-                .to_node(&root.unwrap().syntax()),
+            ast_id_map.get(node.ast_id()).to_node(&root.syntax()),
         )
     }
 }

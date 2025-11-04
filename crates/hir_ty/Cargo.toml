@@ -24,6 +24,13 @@ smallvec = { version = "1.15.1", features = [
   "union",
   "const_generics",
 ] }
+triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
+syntax.workspace = true
+vfs.workspace = true
+wgsl-types.workspace = true
+
+[dev-dependencies]
+expect-test = "1.5.1"
 
 [lints]
 workspace = true

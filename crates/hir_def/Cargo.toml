@@ -1,31 +1,35 @@
 [package]
 name = "hir-def"
 version = "0.0.0"
-repository.workspace = true
-description = "RPC Api for the `proc-macro-srv` crate of wgsl-analyzer."
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+description = "RPC Api for the `proc-macro-srv` crate of wgsl-analyzer."
+repository.workspace = true
+license.workspace = true
 
 [lib]
 doctest = false
 
 [dependencies]
-la-arena = "0.3.1"
-vfs.workspace = true
-salsa = "0.17.0-pre.2"
-syntax.workspace = true
 base-db.workspace = true
-smol_str = "0.3.4"
-rustc-hash = "2.1.1"
 either = "1.15.0"
+la-arena = "0.3.1"
+rowan = "0.16.1"
+rustc-hash = "2.1.1"
+salsa = "0.17.0-pre.2"
 smallvec = { version = "1.15.1", features = [
+  "const_generics",
   "const_new",
   "union",
-  "const_generics",
 ] }
-rowan = "0.16.1"
+smol_str = "0.3.4"
+syntax.workspace = true
 tracing = "0.1.41"
+triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
+vfs.workspace = true
+
+[dev-dependencies]
+expect-test = "1.5.1"
 
 [lints]
 workspace = true

@@ -1,5 +1,7 @@
 use std::fmt::{self, Write as _};
 
+use wgsl_types::ty::SamplerType;
+
 use super::{TyKind, Type};
 use crate::{
     database::HirDatabase,
@@ -34,11 +36,7 @@ pub fn pretty_type_expectation_with_verbosity(
         TypeExpectation::Type(r#type) => {
             _ = write_type_expectation_inner(database, &r#type, false, &mut str, verbosity);
         },
-        TypeExpectation::TypeOrVecOf(inner) => {
-            _ = write_type_expectation_inner(database, &inner, true, &mut str, verbosity);
-        },
-        #[expect(clippy::unreachable, reason = "TODO")]
-        TypeExpectation::None => unreachable!(),
+        TypeExpectation::Any => _ = write!(&mut str, "any"),
     }
     str
 }
@@ -59,10 +57,6 @@ fn write_type_expectation_inner(
                 write!(buffer, ">")?;
             }
         },
-        TypeExpectationInner::I32OrF32 => {
-            write!(buffer, "i32 or f32")?;
-        },
-        TypeExpectationInner::NumericScalar => write!(buffer, "i32, u32, or f32")?,
         TypeExpectationInner::IntegerScalar => write!(buffer, "i32 or u32")?,
     }
     Ok(())
@@ -133,7 +127,7 @@ fn pretty_fn_inner(
     Ok(())
 }
 
-#[expect(clippy::too_many_lines, reason = "TODO")]
+#[expect(clippy::too_many_lines, reason = "long but simple (recursive) match")]
 fn write_ty(
     database: &dyn HirDatabase,
     r#type: Type,
@@ -142,19 +136,13 @@ fn write_ty(
 ) -> fmt::Result {
     match r#type.kind(database) {
         TyKind::Error => write!(formatter, "[error]"),
-        TyKind::Scalar(scalar) => {
-            let string = match scalar {
-                ScalarType::Bool => "bool",
-                // TODO: Is this reachable?
-                ScalarType::AbstractInt => "integer",
-                ScalarType::AbstractFloat => "float",
-                ScalarType::I32 => "i32",
-                ScalarType::U32 => "u32",
-                ScalarType::F32 => "f32",
-                ScalarType::F16 => "f16",
-            };
-            write!(formatter, "{string}")
-        },
+        TyKind::Scalar(ScalarType::Bool) => write!(formatter, "bool"),
+        TyKind::Scalar(ScalarType::AbstractInt) => write!(formatter, "integer"),
+        TyKind::Scalar(ScalarType::AbstractFloat) => write!(formatter, "float"),
+        TyKind::Scalar(ScalarType::I32) => write!(formatter, "i32"),
+        TyKind::Scalar(ScalarType::U32) => write!(formatter, "u32"),
+        TyKind::Scalar(ScalarType::F32) => write!(formatter, "f32"),
+        TyKind::Scalar(ScalarType::F16) => write!(formatter, "f16"),
         TyKind::Atomic(atomic) => {
             write!(formatter, "atomic<")?;
             write_ty(database, atomic.inner, formatter, verbosity)?;
@@ -175,11 +163,15 @@ fn write_ty(
             write!(formatter, ">")
         },
         TyKind::Struct(r#struct) => {
-            let data = database.struct_data(r#struct);
+            let data = database.struct_data(r#struct).0;
             write!(formatter, "{}", data.name.as_str())
         },
         TyKind::Array(array_type) => {
-            write!(formatter, "array<")?;
+            if array_type.binding_array {
+                write!(formatter, "binding_array<")?;
+            } else {
+                write!(formatter, "array<")?;
+            }
             write_ty(database, array_type.inner, formatter, verbosity)?;
             match array_type.size {
                 ArraySize::Constant(value) => write!(formatter, ", {value}")?,
@@ -224,12 +216,11 @@ fn write_ty(
             };
             write!(formatter, "{value}")
         },
-        TyKind::Sampler(sampler) => {
-            if sampler.comparison {
-                write!(formatter, "sampler_comparison")
-            } else {
-                write!(formatter, "sampler")
-            }
+        TyKind::Sampler(SamplerType::Sampler) => {
+            write!(formatter, "sampler")
+        },
+        TyKind::Sampler(SamplerType::SamplerComparison) => {
+            write!(formatter, "sampler_comparison")
         },
         TyKind::Reference(reference) => match verbosity {
             TypeVerbosity::Full => {

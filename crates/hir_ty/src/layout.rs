@@ -132,9 +132,9 @@ impl TyKind {
             })
             .align_of(address_space, database),
             Self::Struct(r#struct) => {
-                let fields = database.field_types(*r#struct);
+                let fields = &database.field_types(*r#struct).0;
                 let (align, _) =
-                    struct_member_layout(&fields, database, LayoutAddressSpace::Other, |_, _| {})?;
+                    struct_member_layout(fields, database, LayoutAddressSpace::Other, |_, _| {})?;
 
                 Some(match address_space {
                     LayoutAddressSpace::Other => align,
@@ -233,9 +233,9 @@ impl TyKind {
             })
             .size_of(address_space, database),
             Self::Struct(r#struct) => {
-                let fields = database.field_types(*r#struct);
+                let fields = &database.field_types(*r#struct).0;
                 let (_, size) =
-                    struct_member_layout(&fields, database, LayoutAddressSpace::Other, |_, _| {})?;
+                    struct_member_layout(fields, database, LayoutAddressSpace::Other, |_, _| {})?;
                 Some(size)
             },
             Self::Array(array) => match array.size {
@@ -277,7 +277,9 @@ pub fn struct_member_layout<Result, Function: FnMut(LocalFieldId, FieldLayout) -
     let mut last_member_size = None;
 
     for (field_id, &field) in fields.iter() {
-        let custom_align = None; // TODO handle @align @size
+        // TODO: handle @align and @size
+        // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/678
+        let custom_align = None;
         let custom_size = None;
 
         let align = custom_align.or_else(|| field.align(address_space, database))?;

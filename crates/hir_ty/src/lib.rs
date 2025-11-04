@@ -8,3 +8,8 @@ pub mod infer;
 pub mod layout;
 pub mod ty;
 pub mod validate;
+
+#[cfg(test)]
+mod test_db;
+#[cfg(test)]
+mod tests;
