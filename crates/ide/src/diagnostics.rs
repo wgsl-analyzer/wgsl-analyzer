@@ -683,12 +683,12 @@ pub fn diagnostics(
                     let message = if sequence_permitted {
                         format!(
                             "{symbol} sequences may only have unary operands.
-                            More complex operands must be this with parenthesized `()`",
+More complex operands must be this with parenthesized `()`",
                         )
                     } else {
                         format!(
                             "{symbol} expressions may only have unary operands.
-                            More complex operands must be this with parenthesized `()`"
+More complex operands must be this with parenthesized `()`"
                         )
                     };
                     Diagnostic::new(DiagnosticCode("19"), message, frange.range)
