@@ -146,7 +146,8 @@ impl NagaError for naga22::front::wgsl::ParseError {
     }
 
     fn location(&self) -> Option<Range<usize>> {
-        self.labels().next().and_then(|(range, _)| range.to_range())
+        let (range, _) = self.labels().next()?;
+        range.to_range()
     }
 }
 
@@ -188,7 +189,8 @@ impl NagaError for naga27::front::wgsl::ParseError {
         )
     }
     fn location(&self) -> Option<Range<usize>> {
-        self.labels().next().and_then(|(span, _)| span.to_range())
+        let (span, _) = self.labels().next()?;
+        span.to_range()
     }
 }
 
@@ -230,7 +232,8 @@ impl NagaError for nagamain::front::wgsl::ParseError {
         )
     }
     fn location(&self) -> Option<Range<usize>> {
-        self.labels().next().and_then(|(span, _)| span.to_range())
+        let (span, _) = self.labels().next()?;
+        span.to_range()
     }
 }
 
@@ -259,7 +262,7 @@ fn emit<Error: NagaError>(
             TextSize::from(u32::try_from(range.end).expect("indexes are small numbers")),
         )
     };
-    let location = error.location().map(original_range).unwrap_or(full_range);
+    let location = error.location().map_or(full_range, original_range);
 
     let spans = error.spans().filter_map(|(span, label)| {
         let range = original_range(span?);

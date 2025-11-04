@@ -288,7 +288,7 @@ pub(crate) fn convert_diagnostic(
     diagnostic: Diagnostic,
 ) -> lsp_types::Diagnostic {
     lsp_types::Diagnostic {
-        range: lsp::to_proto::range(&line_index, diagnostic.range),
+        range: lsp::to_proto::range(line_index, diagnostic.range),
         severity: Some(diagnostic_severity(diagnostic.severity)),
         code: Some(lsp_types::NumberOrString::String(
             diagnostic.code.as_str().to_owned(),
