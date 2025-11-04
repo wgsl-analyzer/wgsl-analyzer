@@ -12,14 +12,14 @@ on:
 permissions: {}
 
 env:
-  CARGO_INCREMENTAL: '0'
-  CARGO_NET_RETRY: '10'
+  CARGO_INCREMENTAL: "0"
+  CARGO_NET_RETRY: "10"
   RUSTFLAGS: -D warnings
-  RUSTUP_MAX_RETRIES: '10'
-  FETCH_DEPTH: '0' # pull in the tags for the version string
-  MACOSX_DEPLOYMENT_TARGET: '13.0'
-  ZIG_VERSION: '0.13.0'
-  ZIGBUILD_VERSION: '0.19.8'
+  RUSTUP_MAX_RETRIES: "10"
+  FETCH_DEPTH: "0" # pull in the tags for the version string
+  MACOSX_DEPLOYMENT_TARGET: "13.0"
+  ZIG_VERSION: "0.13.0"
+  ZIGBUILD_VERSION: "0.19.8"
 
 jobs:
   dist:
@@ -59,12 +59,7 @@ jobs:
             zig_target: arm-unknown-linux-gnueabihf.2.28
             code-target: linux-armhf
 
-          - os: macos-13
-            target: x86_64-apple-darwin
-            code-target: darwin-x64
-            pgo: bevyengine/bevy@v0.16.1
-
-          - os: macos-14
+          - os: macos-latest
             target: aarch64-apple-darwin
             code-target: darwin-arm64
             pgo: bevyengine/bevy@v0.16.1
@@ -191,7 +186,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    needs: ['dist', 'dist-x86_64-unknown-linux-musl']
+    needs: ["dist", "dist-x86_64-unknown-linux-musl"]
     steps:
       - name: Install Node.js
         uses: actions/setup-node@v5
@@ -218,12 +213,6 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: dist-aarch64-apple-darwin
-          path: dist
-
-      - name: Download dist-x86_64-apple-darwin artifact
-        uses: actions/download-artifact@v5
-        with:
-          name: dist-x86_64-apple-darwin
           path: dist
 
       - name: Download dist-x86_64-unknown-linux-gnu artifact
