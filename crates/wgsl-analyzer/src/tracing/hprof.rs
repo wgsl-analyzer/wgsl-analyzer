@@ -68,22 +68,22 @@ impl<S> SpanTree<S>
 where
     S: Subscriber + for<'span> tracing_subscriber::registry::LookupSpan<'span>,
 {
-    pub(crate) fn new_filtered(spec: &str) -> impl Layer<S> + use<S> {
+    pub(crate) fn new_filtered(spec: &str) -> impl Layer<S> {
         let (write_filter, allowed_names) = WriteFilter::from_spec(spec);
 
         // this filter the first pass for `tracing`: these are all the "profiling" spans, but things like
         // span depth or duration are not filtered here: that only occurs at write time.
         let profile_filter = filter::filter_fn(move |metadata| {
-            let allowed = allowed_names
-                .as_ref()
-                .is_none_or(|names| names.contains(metadata.name()));
+            let allowed = match &allowed_names {
+                Some(names) => names.contains(metadata.name()),
+                None => true,
+            };
 
             allowed
                 && metadata.is_span()
                 && metadata.level() >= &Level::INFO
                 && !metadata.target().starts_with("salsa")
                 && metadata.name() != "compute_exhaustiveness_and_usefulness"
-                && !metadata.target().starts_with("chalk")
         });
 
         Self {

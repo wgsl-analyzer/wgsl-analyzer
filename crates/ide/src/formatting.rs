@@ -1,6 +1,7 @@
 use base_db::{FileId, SourceDatabase as _, TextRange};
 use rowan::NodeOrToken;
-use syntax::{AstNode as _, SyntaxNode};
+use syntax::{AstNode as _, SyntaxNode, ast};
+use wgsl_formatter::FormattingOptions;
 
 use crate::RootDatabase;
 
