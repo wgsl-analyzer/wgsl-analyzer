@@ -2,18 +2,13 @@ mod builtin;
 mod eval;
 mod unify;
 
-use std::{
-    fmt, ops::Index,
-    str::FromStr as _,
-};
+use std::{fmt, ops::Index};
 
 use either::Either;
 use hir_def::{
     HasSource as _,
     body::{BindingId, Body},
-    data::{
-        FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData,
-    },
+    data::{FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData},
     database::{
         DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, Lookup as _, ModuleDefinitionId,
         OverrideId, StructId,
@@ -42,9 +37,8 @@ use crate::{
         unify::{UnificationTable, unify},
     },
     ty::{
-        ArraySize, ArrayType, AtomicType, MatrixType, Pointer, Reference,
-        ScalarType, TextureDimensionality, TextureKind, TextureType, Type, TypeKind,
-        VecSize, VectorType,
+        ArraySize, ArrayType, AtomicType, MatrixType, Pointer, Reference, ScalarType,
+        TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize, VectorType,
     },
 };
 

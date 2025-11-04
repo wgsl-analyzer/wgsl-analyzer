@@ -2,7 +2,6 @@ use std::iter;
 
 use hir_def::database::DefDatabase as _;
 use hir_ty::ty::TypeKind;
-use itertools::Itertools as _;
 
 use super::Completions;
 use crate::{

@@ -7,16 +7,13 @@ use std::mem;
 use cargo_metadata::PackageId;
 type FileId = vfs::FileId;
 use ide::diagnostics::Diagnostic;
-use itertools::Itertools as _;
 use lsp_types::DiagnosticSeverity;
 use nohash_hasher::{IntMap, IntSet};
 use rustc_hash::{FxHashMap, FxHashSet};
 use stdx::iter_eq_by;
 use triomphe::Arc;
 
-use crate::{
-    global_state::GlobalStateSnapshot, lsp, lsp::extensions, main_loop::DiagnosticsTaskKind,
-};
+use crate::{global_state::GlobalStateSnapshot, lsp, main_loop::DiagnosticsTaskKind};
 
 pub(crate) type CheckFixes =
     Arc<IntMap<usize, FxHashMap<Option<Arc<PackageId>>, IntMap<FileId, Vec<Fix>>>>>;

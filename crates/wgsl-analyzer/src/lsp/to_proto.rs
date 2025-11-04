@@ -1,4 +1,4 @@
-use std::{ops::Not as _, path};
+use std::ops::Not as _;
 
 use base_db::{FileRange, TextRange, TextSize};
 use ide::{
@@ -21,7 +21,6 @@ use serde_json::to_value;
 use vfs::FileId;
 
 use crate::{
-    Result,
     config::Config,
     global_state::GlobalStateSnapshot,
     line_index::{LineEndings, LineIndex, PositionEncoding},

@@ -72,6 +72,8 @@ pub fn cpu_span() -> CpuSpan {
 impl Drop for CpuSpan {
     #[expect(clippy::print_stderr, reason = "this is a debugging utility")]
     fn drop(&mut self) {
+        use std::{env, process};
+
         google_cpu_profiler::stop();
         let profile_data = env::current_dir().unwrap().join("out.profile");
         eprintln!("Profile data saved to:\n\n    {}\n", profile_data.display());
@@ -84,6 +86,8 @@ impl Drop for CpuSpan {
         #[expect(clippy::use_debug, reason = "debugging")]
         match out {
             Ok(out) if out.status.success() => {
+                use std::fs;
+
                 let svg = profile_data.with_extension("svg");
                 fs::write(&svg, out.stdout).unwrap();
                 eprintln!("Profile rendered to:\n\n    {}\n", svg.display());

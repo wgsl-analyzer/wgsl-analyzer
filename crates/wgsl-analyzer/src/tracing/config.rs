@@ -1,8 +1,6 @@
 //! Simple logger that logs either to stderr or to a file, using `tracing_subscriber`
 //! filter syntax and `tracing_appender` for non blocking output.
 
-use std::io;
-
 use anyhow::Context as _;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::{
@@ -11,7 +9,6 @@ use tracing_subscriber::{
     fmt::{MakeWriter, time},
     layer::SubscriberExt as _,
 };
-use tracing_tree::HierarchicalLayer;
 
 use crate::tracing::hprof;
 use crate::tracing::json;

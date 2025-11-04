@@ -303,7 +303,7 @@ fn setup_logging(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
     let log_file = match log_file {
         Some(path) => {
             if let Some(parent) = path.parent() {
-                fs::create_dir_all(parent);
+                drop(fs::create_dir_all(parent));
             }
             Some(
                 fs::File::create(&path)

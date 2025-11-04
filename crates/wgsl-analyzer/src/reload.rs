@@ -1,5 +1,5 @@
 use paths::AbsPathBuf;
-use stdx::{format_to, thread::ThreadIntent};
+use stdx::thread::ThreadIntent;
 use tracing::info;
 use vfs::file_set::FileSetConfig;
 

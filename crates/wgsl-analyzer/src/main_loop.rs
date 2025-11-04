@@ -11,7 +11,7 @@ use std::{
 use crossbeam_channel::{Receiver, select};
 // use ide_db::base_db::{SourceDatabase, SourceRootDatabase, VfsPath};
 use lsp_server::{Connection, Notification, Request};
-use lsp_types::{TextDocumentIdentifier, notification::Notification as _};
+use lsp_types::notification::Notification as _;
 use stdx::thread::ThreadIntent;
 use tracing::{Level, error, span};
 // use vfs::{loader::LoadingProgress, AbsPathBuf, FileId};
@@ -19,33 +19,25 @@ use tracing::{Level, error, span};
 use crate::{
     config::Config,
     diagnostics::{DiagnosticsGeneration, NativeDiagnosticsFetchKind, fetch_native_diagnostics},
-    global_state::{
-        FetchWorkspaceRequest, FetchWorkspaceResponse, GlobalState, file_id_to_url, url_to_file_id,
-    },
+    global_state::{FetchWorkspaceResponse, GlobalState, file_id_to_url},
     lsp::{
-        from_proto, to_proto,
+        from_proto,
         utilities::{Progress, notification_is},
     },
     reload::ProjectWorkspaceProgress,
 };
 
 use crate::lsp;
-use crate::lsp::utilities::is_cancelled;
 use base_db::SourceDatabase as _;
 use triomphe::Arc;
 
-use hir_def::HirFileId;
-use hir_def::database::DefDatabase as _;
-use hir_def::module_data::ModuleItem;
-use salsa::{Cancelled, Durability};
-use tracing::info;
+use salsa::Cancelled;
 use vfs::{AbsPathBuf, FileId};
 
 use crate::{
     Result,
     dispatch::{NotificationDispatcher, RequestDispatcher},
     handlers,
-    lsp::extensions,
 };
 
 pub fn main_loop(

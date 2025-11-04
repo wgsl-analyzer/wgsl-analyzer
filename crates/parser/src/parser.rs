@@ -26,12 +26,10 @@
     reason = "Lelwel generated code"
 )]
 use super::lexer::Token;
-use crate::{
-    Parse, ParseEntryPoint, cst_builder::CstBuilder, lexer::lex_with_templates,
-};
+use crate::{Parse, ParseEntryPoint, cst_builder::CstBuilder, lexer::lex_with_templates};
 use logos::Logos as _;
 use rowan::GreenNodeBuilder;
-use std::fmt::{self, Write as _};
+use std::fmt;
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 

@@ -2,7 +2,6 @@
 
 use crate::{
     FileAstId,
-    database::DefDatabase,
     module_data::{ModuleInfo, ModuleItem},
 };
 use std::fmt::Write as _;

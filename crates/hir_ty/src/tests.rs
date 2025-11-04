@@ -1,10 +1,9 @@
 #![expect(clippy::use_debug, reason = "tests")]
 
 mod simple;
-use base_db::SourceDatabase;
 use expect_test::Expect;
 use hir_def::{
-    AstIdMap, HasSource as _, HirFileId, InFile,
+    HasSource as _, HirFileId,
     body::{Body, BodySourceMap},
     database::{
         DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, Lookup as _,

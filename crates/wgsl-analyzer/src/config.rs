@@ -1,4 +1,4 @@
-use std::{default, env, fmt, iter, ops::Not, sync::OnceLock};
+use std::fmt;
 
 use base_db::input::SourceRootId;
 use hir::diagnostics::{DiagnosticsConfig, NagaVersion};
@@ -19,24 +19,13 @@ use ide_completion::{CompletionConfig, CompletionFieldsToResolve};
 //     imports::insert_use::{ImportGranularity, InsertUseConfig, PrefixKind},
 //     SnippetCap,
 // };
-use crate::{
-    diagnostics::DiagnosticsMapConfig,
-    lsp::{
-        capabilities::ClientCapabilities,
-        extensions::{WorkspaceSymbolSearchKind, WorkspaceSymbolSearchScope},
-    },
-};
-use camino::{Utf8Path, Utf8PathBuf};
+use crate::lsp::capabilities::ClientCapabilities;
 use itertools::Itertools as _;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use semver::Version;
-use serde::{
-    Deserialize, Serialize,
-    de::{DeserializeOwned, Error},
-};
-use stdx::format_to_acc;
+use serde::{Deserialize, Serialize};
 use triomphe::Arc;
-use vfs::{AbsPath, AbsPathBuf, VfsPath};
+use vfs::AbsPathBuf;
 
 // Defines the server-side configuration of the wgsl-analyzer. We generate *parts* of VS Code's
 // `package.json` config from this. Run `cargo test` to re-generate that file.

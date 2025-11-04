@@ -7,11 +7,7 @@ use wgsl_types::{
 };
 
 use crate::{
-    database::HirDatabase as _,
-    infer::{
-        Lowered, TyLoweringContext, TypeContainer,
-        TypeLoweringError, TypeLoweringErrorKind,
-    },
+    infer::{Lowered, TyLoweringContext, TypeContainer, TypeLoweringError, TypeLoweringErrorKind},
     ty::{Type, TypeKind},
 };
 

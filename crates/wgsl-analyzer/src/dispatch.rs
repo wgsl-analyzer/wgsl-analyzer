@@ -8,12 +8,12 @@ use salsa::Cancelled;
 use serde::{Serialize, de::DeserializeOwned};
 use stdx::thread::ThreadIntent;
 
+use crate::version::version;
 use crate::{
     LspError, Result,
     global_state::{GlobalState, GlobalStateSnapshot},
     main_loop::Task,
 };
-use crate::{lsp::utilities::is_cancelled, version::version};
 
 /// A visitor for routing a raw JSON request to an appropriate handler function.
 ///
