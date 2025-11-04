@@ -559,7 +559,6 @@ dependencies = [
  "hir-def",
  "hir-ty",
  "la-arena",
- "serde",
  "smallvec",
  "stdx 0.0.0",
  "syntax",
