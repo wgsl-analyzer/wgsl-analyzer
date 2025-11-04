@@ -159,8 +159,9 @@ fn swizzler(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use proptest::prelude::*;
+
+    use super::*;
 
     fn valid_swizzle_string() -> impl Strategy<Value = String> {
         prop_oneof![

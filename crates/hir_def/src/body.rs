@@ -40,6 +40,7 @@ pub struct Body {
 
 impl std::ops::Deref for Body {
     type Target = ExpressionStore;
+
     #[inline]
     fn deref(&self) -> &Self::Target {
         &self.store

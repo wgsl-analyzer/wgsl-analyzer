@@ -5,12 +5,11 @@ mod lexer;
 mod parser;
 mod syntax_kind;
 
-use std::fmt::{self, Debug};
+use std::fmt::{self, Debug, Write as _};
 
 pub use edition::Edition;
 pub use parser::{Diagnostic, parse_entrypoint};
 use rowan::GreenNode;
-use std::fmt::Write as _;
 
 pub struct Parse {
     green_node: GreenNode,

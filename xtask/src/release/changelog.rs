@@ -1,5 +1,4 @@
-use std::fmt::Write as _;
-use std::{env, iter};
+use std::{env, fmt::Write as _, iter};
 
 use anyhow::bail;
 use xshell::{Shell, cmd};

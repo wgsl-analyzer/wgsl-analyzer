@@ -1,4 +1,4 @@
-use std::{fmt, hash, iter};
+use std::{fmt, hash, iter, mem};
 
 use ast::Expression as AstExpression;
 use base_db::{FileId, FileRange, TextRange};
@@ -15,7 +15,6 @@ use itertools::Itertools as _;
 use rowan::NodeOrToken;
 use rustc_hash::FxHashSet;
 use smallvec::{SmallVec, smallvec};
-use std::mem;
 use syntax::{AstChildren, AstNode as _, HasName as _, SyntaxNode, ast};
 
 use crate::RootDatabase;

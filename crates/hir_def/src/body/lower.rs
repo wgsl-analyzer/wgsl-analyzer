@@ -64,6 +64,7 @@ impl Collector<'_> {
             file_id,
         }
     }
+
     fn collect_function(
         mut self,
         param_list: Option<ast::FunctionParameters>,
@@ -135,6 +136,7 @@ impl Collector<'_> {
 
         (self.body, self.source_map)
     }
+
     fn collect_name(
         &mut self,
         binding: ast::Name,
@@ -401,12 +403,14 @@ impl Collector<'_> {
     ) -> ExpressionId {
         self.expressions.collect_expression(expression)
     }
+
     fn collect_expression_opt(
         &mut self,
         expression: Option<ast::Expression>,
     ) -> ExpressionId {
         self.expressions.collect_expression_opt(expression)
     }
+
     fn allocate_statement(
         &mut self,
         statement: Statement,

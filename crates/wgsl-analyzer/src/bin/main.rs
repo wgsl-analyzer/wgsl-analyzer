@@ -4,14 +4,7 @@
 
 #![expect(clippy::print_stdout, clippy::print_stderr, reason = "CLI tool")]
 
-use std::{
-    env::{self, args as arguments},
-    fmt::Debug,
-    fs,
-    path::PathBuf,
-    process::ExitCode,
-    sync::Arc,
-};
+use std::{env, fs, path::PathBuf, process::ExitCode, sync::Arc};
 
 use anyhow::Context as _;
 use lsp_server::Connection;

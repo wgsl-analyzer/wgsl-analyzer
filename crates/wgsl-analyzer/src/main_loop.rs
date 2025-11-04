@@ -8,42 +8,36 @@ use std::{
     time::{Duration, Instant},
 };
 
+use base_db::SourceDatabase as _;
 use crossbeam_channel::{Receiver, select};
 // use ide_db::base_db::{SourceDatabase, SourceRootDatabase, VfsPath};
 use lsp_server::{Connection, Notification, Request};
 use lsp_types as lt;
 use lt::notification::Notification as _;
+use salsa::Cancelled;
 use stdx::thread::ThreadIntent;
 use tracing::{Level, error, span};
+use triomphe::Arc;
+use vfs::{AbsPathBuf, FileId};
+
 // use vfs::{loader::LoadingProgress, AbsPathBuf, FileId};
 use crate::handlers::notification::{
     handle_did_change_configuration, handle_did_change_text_document,
     handle_did_change_watched_files, handle_did_close_text_document, handle_did_open_text_document,
     handle_did_save_text_document,
 };
-
 use crate::{
+    Result,
     config::Config,
     diagnostics::{DiagnosticsGeneration, NativeDiagnosticsFetchKind, fetch_native_diagnostics},
+    dispatch::{NotificationDispatcher, RequestDispatcher},
     global_state::{FetchWorkspaceResponse, GlobalState, file_id_to_url},
+    handlers, lsp,
     lsp::{
         from_proto,
         utilities::{Progress, notification_is},
     },
     reload::ProjectWorkspaceProgress,
-};
-
-use crate::lsp;
-use base_db::SourceDatabase as _;
-use triomphe::Arc;
-
-use salsa::Cancelled;
-use vfs::{AbsPathBuf, FileId};
-
-use crate::{
-    Result,
-    dispatch::{NotificationDispatcher, RequestDispatcher},
-    handlers,
 };
 
 pub fn main_loop(

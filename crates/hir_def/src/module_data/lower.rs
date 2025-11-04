@@ -1,7 +1,3 @@
-use crate::HirFileId;
-use crate::module_data::{Function, ModuleData, ModuleItem, ModuleItemId};
-use crate::{ast_id::AstIdMap, database::DefDatabase};
-
 use syntax::{
     HasName as _,
     ast::{Item, SourceFile},
@@ -9,6 +5,12 @@ use syntax::{
 use triomphe::Arc;
 
 use super::{GlobalConstant, GlobalVariable, Override, Struct, TypeAlias};
+use crate::{
+    HirFileId,
+    ast_id::AstIdMap,
+    database::DefDatabase,
+    module_data::{Function, ModuleData, ModuleItem, ModuleItemId},
+};
 
 pub(crate) struct Ctx<'database> {
     database: &'database dyn DefDatabase,

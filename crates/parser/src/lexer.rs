@@ -1,7 +1,7 @@
-use crate::parser::to_range;
+use std::ops::Range;
 
 use super::parser::{Diagnostic, Span};
-use std::ops::Range;
+use crate::parser::to_range;
 
 #[expect(
     clippy::upper_case_acronyms,
@@ -402,10 +402,12 @@ fn collect_with_templates(
 mod tests {
     #![expect(clippy::use_debug, reason = "tests can use debug formatting")]
 
-    use super::{Token, lex_with_templates};
+    use std::fmt::Write as _;
+
     use expect_test::expect;
     use logos::Logos as _;
-    use std::fmt::Write as _;
+
+    use super::{Token, lex_with_templates};
 
     #[expect(clippy::needless_pass_by_value, reason = "intended API")]
     fn check_lex(

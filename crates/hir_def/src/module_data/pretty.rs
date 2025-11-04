@@ -1,10 +1,11 @@
 #![expect(clippy::use_debug, reason = "debug formatting in unit tests is ok")]
 
+use std::fmt::Write as _;
+
 use crate::{
     FileAstId,
     module_data::{ModuleInfo, ModuleItem},
 };
-use std::fmt::Write as _;
 
 #[must_use]
 pub fn pretty_print_module(module: &ModuleInfo) -> String {

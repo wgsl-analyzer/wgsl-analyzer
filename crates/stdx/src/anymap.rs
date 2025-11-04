@@ -57,9 +57,11 @@ impl Hasher for TypeIdHasher {
     }
 }
 
-use core::any::{Any, TypeId};
-use core::hash::BuildHasherDefault;
-use core::marker::PhantomData;
+use core::{
+    any::{Any, TypeId},
+    hash::BuildHasherDefault,
+    marker::PhantomData,
+};
 
 use ::std::collections::hash_map;
 
@@ -223,8 +225,7 @@ mod tests {
 
     #[test]
     fn type_id_hasher() {
-        use core::any::TypeId;
-        use core::hash::Hash as _;
+        use core::{any::TypeId, hash::Hash as _};
         fn verify_hashing_with(type_id: TypeId) {
             let mut hasher = TypeIdHasher::default();
             type_id.hash(&mut hasher);

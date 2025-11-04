@@ -1,7 +1,7 @@
-use rustc_hash::FxHashMap;
 use std::{fmt, panic};
 
 use base_db::{FileId, FileLoader, FileLoaderDelegate, change::Change};
+use rustc_hash::FxHashMap;
 use vfs::AnchoredPath;
 
 pub mod source_change;

@@ -4,9 +4,10 @@
 //! so `TextEdit` is the ultimate representation of the work done by
 //! rust-analyzer.
 
+use std::{cmp::max, iter, slice, vec};
+
 use itertools::Itertools as _;
 use rowan::{TextRange, TextSize};
-use std::{cmp::max, iter, slice, vec};
 
 use crate::source_change::ChangeAnnotationId;
 
@@ -41,10 +42,12 @@ impl InsertDelete {
     ) -> Self {
         Self::replace(TextRange::empty(offset), text)
     }
+
     #[must_use]
     pub const fn delete(range: TextRange) -> Self {
         Self::replace(range, String::new())
     }
+
     #[must_use]
     pub const fn replace(
         range: TextRange,
@@ -198,8 +201,8 @@ impl TextEdit {
 }
 
 impl IntoIterator for TextEdit {
-    type Item = InsertDelete;
     type IntoIter = vec::IntoIter<InsertDelete>;
+    type Item = InsertDelete;
 
     fn into_iter(self) -> Self::IntoIter {
         self.insert_deletes.into_iter()
@@ -207,8 +210,8 @@ impl IntoIterator for TextEdit {
 }
 
 impl<'item> IntoIterator for &'item TextEdit {
-    type Item = &'item InsertDelete;
     type IntoIter = slice::Iter<'item, InsertDelete>;
+    type Item = &'item InsertDelete;
 
     fn into_iter(self) -> Self::IntoIter {
         self.insert_deletes.iter()
@@ -220,6 +223,7 @@ impl TextEditBuilder {
     pub const fn is_empty(&self) -> bool {
         self.insert_deletes.is_empty()
     }
+
     pub fn replace(
         &mut self,
         range: TextRange,
@@ -227,6 +231,7 @@ impl TextEditBuilder {
     ) {
         self.insert_delete(InsertDelete::replace(range, replace_with));
     }
+
     pub fn delete(
         &mut self,
         range: TextRange,

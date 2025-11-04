@@ -1,12 +1,10 @@
-use std::fmt;
+use std::{fmt, mem};
 
 use base_db::TextRange;
-use ide_db::text_edit::TextEdit;
-use ide_db::{RootDatabase, SnippetCap};
+use ide_db::{RootDatabase, SnippetCap, text_edit::TextEdit};
 use itertools::Itertools as _;
 use smallvec::SmallVec;
 use smol_str::{SmolStr, format_smolstr};
-use std::mem;
 use stdx::never;
 
 /// `CompletionItem` describes a single completion entity which expands to 1 or more entries in the

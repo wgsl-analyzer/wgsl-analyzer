@@ -17,13 +17,12 @@ use std::{
     path::{Path, PathBuf},
 };
 
+pub use dissimilar::diff as __diff;
 use paths::Utf8PathBuf;
 use profile::StopWatch;
+pub use rustc_hash::FxHashMap;
 use stdx::is_ci;
 use text_size::{TextRange, TextSize};
-
-pub use dissimilar::diff as __diff;
-pub use rustc_hash::FxHashMap;
 
 pub use crate::assert_linear::AssertLinear;
 

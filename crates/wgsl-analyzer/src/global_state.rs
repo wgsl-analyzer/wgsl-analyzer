@@ -1,10 +1,11 @@
+use std::time::Instant;
+
 use base_db::change::Change;
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use ide::{Analysis, AnalysisHost, Cancellable};
 use lsp_types::Url;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use rustc_hash::FxHashMap;
-use std::time::Instant;
 use triomphe::Arc;
 use vfs::{AbsPathBuf, FileId, VfsPath};
 

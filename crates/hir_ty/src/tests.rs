@@ -1,6 +1,8 @@
 #![expect(clippy::use_debug, reason = "tests")]
 
 mod simple;
+use std::fmt::Write as _;
+
 use expect_test::Expect;
 use hir_def::{
     HasSource as _, HirFileId,
@@ -11,7 +13,6 @@ use hir_def::{
     expression_store::SyntheticSyntax,
     module_data::ModuleItem,
 };
-use std::fmt::Write as _;
 use syntax::{AstNode as _, SyntaxNode};
 use triomphe::Arc;
 

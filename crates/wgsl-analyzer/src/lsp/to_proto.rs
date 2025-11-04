@@ -336,7 +336,7 @@ fn completion_item(
         }
         // The relevance needs to be inverted to come up with a sort score
         // because the client will sort ascending.
-        let sort_score = relevance.score() ^ 0xFF_FF_FF_FF;
+        let sort_score = relevance.score() ^ 0xff_ff_ff_ff;
         // Zero pad the string to ensure values can be properly sorted
         // by the client. Hex format is used because it is easier to
         // visually compare very large values, which the sort text

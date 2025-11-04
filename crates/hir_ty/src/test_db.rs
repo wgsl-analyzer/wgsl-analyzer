@@ -1,5 +1,6 @@
-use base_db::{FileLoader, FileLoaderDelegate, change::Change};
 use std::{fmt, panic};
+
+use base_db::{FileLoader, FileLoaderDelegate, change::Change};
 use triomphe::Arc;
 use vfs::{AnchoredPath, FileId, VfsPath};
 

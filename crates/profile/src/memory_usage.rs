@@ -21,6 +21,7 @@ impl fmt::Display for MemoryUsage {
 
 impl std::ops::Sub for MemoryUsage {
     type Output = Self;
+
     fn sub(
         self,
         rhs: Self,
@@ -163,6 +164,7 @@ impl std::ops::AddAssign<usize> for Bytes {
 
 impl std::ops::Sub for Bytes {
     type Output = Self;
+
     fn sub(
         self,
         rhs: Self,

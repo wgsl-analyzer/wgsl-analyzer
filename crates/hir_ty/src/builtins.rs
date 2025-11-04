@@ -1,4 +1,8 @@
 use hir_def::module_data::Name;
+use wgsl_types::{
+    syntax::{AccessMode, AddressSpace},
+    ty::SamplerType,
+};
 
 use crate::{
     database::HirDatabase,
@@ -7,10 +11,6 @@ use crate::{
         ArraySize, ArrayType, AtomicType, BoundVariable, Pointer, ScalarType, TexelFormat,
         TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
     },
-};
-use wgsl_types::{
-    syntax::{AccessMode, AddressSpace},
-    ty::SamplerType,
 };
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]

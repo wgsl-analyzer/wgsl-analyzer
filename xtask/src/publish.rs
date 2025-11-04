@@ -1,7 +1,9 @@
-use crate::flags;
-use anyhow::bail;
 use std::env::var;
+
+use anyhow::bail;
 use xshell::{Shell, cmd};
+
+use crate::flags;
 
 impl flags::PublishReleaseNotes {
     pub(crate) fn run(

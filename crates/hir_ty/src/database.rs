@@ -3,21 +3,25 @@
 
 use std::fmt;
 
-use crate::builtins::{Builtin, BuiltinId};
-use crate::function::{FunctionDetails, ResolvedFunctionId};
-use crate::infer::{InferenceDiagnostic, InferenceResult, TyLoweringContext, TypeLoweringError};
-use crate::ty::{Type, TypeKind};
-use hir_def::data::FieldId;
-use hir_def::database::{DefinitionWithBodyId, ModuleDefinitionId, TypeAliasId};
 use hir_def::{
     HirFileId, InFile,
-    data::LocalFieldId,
-    database::{DefDatabase, FunctionId, Lookup as _, StructId},
+    data::{FieldId, LocalFieldId},
+    database::{
+        DefDatabase, DefinitionWithBodyId, FunctionId, Lookup as _, ModuleDefinitionId, StructId,
+        TypeAliasId,
+    },
     resolver::Resolver,
 };
 use la_arena::ArenaMap;
 use triomphe::Arc;
 use wgsl_types::syntax::AddressSpace;
+
+use crate::{
+    builtins::{Builtin, BuiltinId},
+    function::{FunctionDetails, ResolvedFunctionId},
+    infer::{InferenceDiagnostic, InferenceResult, TyLoweringContext, TypeLoweringError},
+    ty::{Type, TypeKind},
+};
 
 #[salsa::query_group(HirDatabaseStorage)]
 pub trait HirDatabase: DefDatabase + fmt::Debug {

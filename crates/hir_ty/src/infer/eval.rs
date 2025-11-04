@@ -198,9 +198,11 @@ impl TemplateParameters {
     pub fn has_next(&self) -> bool {
         !self.inner.is_empty()
     }
+
     pub fn next(&mut self) -> Option<(TemplateParameter, ExpressionId)> {
         self.inner.pop_front()
     }
+
     pub fn next_as_type(&mut self) -> Result<(Type, ExpressionId), TypeLoweringError> {
         match self.next() {
             Some((TemplateParameter::Type(r#type), id)) => Ok((r#type, id)),
@@ -214,6 +216,7 @@ impl TemplateParameters {
             }),
         }
     }
+
     pub fn next_as_instance(
         &mut self
     ) -> Result<(Option<Instance>, ExpressionId), TypeLoweringError> {
@@ -229,6 +232,7 @@ impl TemplateParameters {
             }),
         }
     }
+
     pub fn next_as_enumerant(&mut self) -> Result<(Enumerant, ExpressionId), TypeLoweringError> {
         match self.next() {
             Some((TemplateParameter::Enumerant(enumerant), id)) => Ok((enumerant, id)),

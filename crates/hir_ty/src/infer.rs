@@ -354,6 +354,7 @@ impl InferenceResult {
 
 impl Index<ExpressionId> for InferenceResult {
     type Output = Type;
+
     fn index(
         &self,
         index: ExpressionId,
@@ -366,6 +367,7 @@ impl Index<ExpressionId> for InferenceResult {
 
 impl Index<BindingId> for InferenceResult {
     type Output = Type;
+
     fn index(
         &self,
         index: BindingId,

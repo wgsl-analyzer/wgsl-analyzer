@@ -10,8 +10,7 @@ use tracing_subscriber::{
     layer::SubscriberExt as _,
 };
 
-use crate::tracing::hprof;
-use crate::tracing::json;
+use crate::tracing::{hprof, json};
 
 #[derive(Debug)]
 pub struct Config<T> {

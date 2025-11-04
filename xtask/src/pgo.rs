@@ -1,9 +1,12 @@
 //! PGO (Profile-Guided Optimization) utilities.
 
+use std::{
+    env::consts::EXE_EXTENSION,
+    ffi::OsStr,
+    path::{Path, PathBuf},
+};
+
 use anyhow::Context as _;
-use std::env::consts::EXE_EXTENSION;
-use std::ffi::OsStr;
-use std::path::{Path, PathBuf};
 use xshell::{Cmd, Shell, cmd};
 
 use crate::flags::PgoTrainingCrate;

@@ -760,6 +760,7 @@ impl AstNode for SwitchCaseSelector {
             Expression::can_cast(kind)
         }
     }
+
     fn cast(syntax: SyntaxNode) -> Option<Self> {
         if syntax.kind() == SyntaxKind::SwitchDefaultSelector {
             Some(Self::SwitchDefaultSelector(SwitchDefaultSelector {
@@ -769,6 +770,7 @@ impl AstNode for SwitchCaseSelector {
             Expression::cast(syntax).map(SwitchCaseSelector::Expression)
         }
     }
+
     fn syntax(&self) -> &SyntaxNode {
         match self {
             Self::SwitchDefaultSelector(item) => &item.syntax,

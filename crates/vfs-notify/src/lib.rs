@@ -48,18 +48,21 @@ impl loader::Handle for NotifyHandle {
             _thread: thread,
         }
     }
+
     fn set_config(
         &mut self,
         config: loader::Config,
     ) {
         self.sender.send(Message::Config(config)).unwrap();
     }
+
     fn invalidate(
         &mut self,
         path: AbsPathBuf,
     ) {
         self.sender.send(Message::Invalidate(path)).unwrap();
     }
+
     fn load_sync(
         &mut self,
         path: &AbsPath,

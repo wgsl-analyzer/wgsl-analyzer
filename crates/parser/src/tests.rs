@@ -2,8 +2,9 @@
 
 mod expression;
 
-use crate::ParseEntryPoint;
 use expect_test::{Expect, expect};
+
+use crate::ParseEntryPoint;
 
 #[expect(clippy::needless_pass_by_value, reason = "intended API")]
 fn check(

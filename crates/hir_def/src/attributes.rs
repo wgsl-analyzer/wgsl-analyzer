@@ -1,10 +1,7 @@
 use std::iter;
 
 use either::Either;
-use syntax::{
-    HasAttributes, HasName as _,
-    ast::{self},
-};
+use syntax::{HasAttributes, HasName as _, ast};
 use triomphe::Arc;
 
 use crate::{

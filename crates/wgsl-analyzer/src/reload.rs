@@ -1,9 +1,8 @@
+use ide::base_db::input::SourceRoot;
 use paths::AbsPathBuf;
 use stdx::thread::ThreadIntent;
 use tracing::info;
 use vfs::file_set::FileSetConfig;
-
-use ide::base_db::input::SourceRoot;
 
 use crate::{global_state::GlobalState, lsp, main_loop::Task, operation_queue::Cause};
 

@@ -36,9 +36,11 @@ impl Markup {
     pub const fn as_str(&self) -> &str {
         self.text.as_str()
     }
+
     pub fn fenced_block<Displayable: fmt::Display>(contents: Displayable) -> Self {
         format!("```rust\n{contents}\n```").into()
     }
+
     pub fn fenced_block_text<Displayable: fmt::Display>(contents: Displayable) -> Self {
         format!("```text\n{contents}\n```").into()
     }

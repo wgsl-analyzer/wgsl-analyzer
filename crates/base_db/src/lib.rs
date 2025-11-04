@@ -7,12 +7,11 @@ pub mod input;
 mod util_types;
 use input::{SourceRoot, SourceRootId};
 use line_index::LineIndex;
-pub use util_types::*;
-use vfs::{AnchoredPath, VfsPath};
-
 use syntax::Parse;
 use triomphe::Arc;
+pub use util_types::*;
 pub use vfs::FileId;
+use vfs::{AnchoredPath, VfsPath};
 
 pub trait FileLoader {
     fn resolve_path(

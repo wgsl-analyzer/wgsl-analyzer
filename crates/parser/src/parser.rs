@@ -25,11 +25,13 @@
     clippy::needless_continue,
     reason = "Lelwel generated code"
 )]
-use super::lexer::Token;
-use crate::{Parse, ParseEntryPoint, cst_builder::CstBuilder, lexer::lex_with_templates};
+use std::fmt;
+
 use logos::Logos as _;
 use rowan::GreenNodeBuilder;
-use std::fmt;
+
+use super::lexer::Token;
+use crate::{Parse, ParseEntryPoint, cst_builder::CstBuilder, lexer::lex_with_templates};
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
@@ -113,12 +115,14 @@ impl Cst<'_> {
     pub const fn nodes_count(&self) -> usize {
         self.data.nodes.len()
     }
+
     pub fn get_text(
         &self,
         index: CstIndex,
     ) -> &str {
         &self.source[self.get_span(index)]
     }
+
     pub fn get_span(
         &self,
         index: CstIndex,
@@ -134,8 +138,9 @@ impl Parser<'_> {
 }
 
 impl<'source> ParserCallbacks<'source> for Parser<'source> {
-    type Diagnostic = Diagnostic;
     type Context = ();
+    type Diagnostic = Diagnostic;
+
     fn create_tokens(
         _context: &mut Self::Context,
         source: &'source str,
@@ -154,45 +159,59 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
             range: to_range(span),
         }
     }
+
     fn predicate_global_directive_1(&self) -> bool {
         self.peek(1) != Token::Semi
     }
+
     fn predicate_function_parameters_1(&self) -> bool {
         self.peek(1) != Token::RPar
     }
+
     fn predicate_struct_body_1(&self) -> bool {
         self.peek(1) != Token::RBrace
     }
+
     fn predicate_template_args_1(&self) -> bool {
         self.peek(1) != Token::Gt
     }
+
     fn predicate_argument_expression_list_1(&self) -> bool {
         self.peek(1) != Token::RPar
     }
+
     fn predicate_argument_expression_list_expr_1(&self) -> bool {
         self.peek(1) != Token::RPar
     }
+
     fn predicate_statement_1(&self) -> bool {
         self.peek(1) == Token::If
     }
+
     fn predicate_statement_2(&self) -> bool {
         self.is_func_call()
     }
+
     fn predicate_continuing_compound_statement_1(&self) -> bool {
         self.peek(1) != Token::If
     }
+
     fn predicate_for_init_1(&self) -> bool {
         self.is_func_call()
     }
+
     fn predicate_for_update_1(&self) -> bool {
         self.is_func_call()
     }
+
     fn predicate_case_selectors_1(&self) -> bool {
         !matches!(self.peek(1), Token::At | Token::Colon | Token::LBrace)
     }
+
     fn assertion_struct_body_1(&self) -> Option<Self::Diagnostic> {
         Some(self.create_diagnostic(self.span(), "invalid syntax, expected ','".to_owned()))
     }
+
     /// This node exists for better error messages. It also improves the lelwel error recovery quality.
     fn create_node_global_let_declaration(
         &mut self,

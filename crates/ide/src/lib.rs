@@ -12,9 +12,6 @@ mod typing;
 
 use std::panic;
 
-use rustc_hash::FxHashMap;
-use triomphe::Arc;
-
 use base_db::{
     FilePosition, FileRange, RangeInfo, SourceDatabase as _, TextRange, change::Change,
     input::SourceRootId,
@@ -22,6 +19,12 @@ use base_db::{
 use diagnostics::Diagnostic;
 use hir::diagnostics::DiagnosticsConfig;
 use ide_completion::{CompletionConfig, item::CompletionItem};
+pub use line_index::{LineCol, LineIndex};
+use rustc_hash::FxHashMap;
+use salsa::{Cancelled, ParallelDatabase as _};
+use syntax::{Parse, SyntaxNode};
+use triomphe::Arc;
+use vfs::FileId;
 
 pub use crate::{
     // annotations::{Annotation, AnnotationConfig, AnnotationKind, AnnotationLocation},
@@ -72,17 +75,12 @@ pub use crate::{
     // },
     // test_explorer::{TestItem, TestItemKind},
 };
-pub use line_index::{LineCol, LineIndex};
-use salsa::{Cancelled, ParallelDatabase as _};
-use syntax::{Parse, SyntaxNode};
-use vfs::FileId;
 
 pub type Cancellable<T> = Result<T, Cancelled>;
 
-pub use ide_db::RootDatabase;
-
 /// `base_db` is normally also needed in places where `ide_db` is used, so this re-export is for convenience.
 pub use base_db;
+pub use ide_db::RootDatabase;
 
 #[derive(Debug)]
 pub struct AnalysisHost {

@@ -138,6 +138,7 @@ impl ExprCollector<'_> {
         };
         self.alloc_type_specifier(type_specifier, syntax_pointer)
     }
+
     pub fn collect_template_parameters(
         &mut self,
         template_parameters: Option<ast::TemplateList>,
