@@ -308,7 +308,7 @@ pub(crate) fn publish_diagnostics(
                 severity: Some(diagnostic_severity(diagnostic.severity)),
                 code: None,
                 code_description: None,
-                source: None,
+                source: Some(diagnostic.source.to_string()),
                 message: diagnostic.message,
                 related_information: (!related.is_empty()).then_some(related),
                 tags: diagnostic.unused.then(|| vec![DiagnosticTag::UNNECESSARY]),

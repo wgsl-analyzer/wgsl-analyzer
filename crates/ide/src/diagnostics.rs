@@ -1,5 +1,6 @@
 use std::{
     error,
+    fmt::Display,
     ops::{self, Range},
 };
 
@@ -25,6 +26,28 @@ pub struct Diagnostic {
     pub unused: bool,
     pub severity: Severity,
     pub related: Vec<(String, FileRange)>,
+    pub source: DiagnosticSource,
+}
+
+#[derive(Default)]
+pub enum DiagnosticSource {
+    #[default]
+    WgslAnalyzer,
+    Naga,
+    WeslRs,
+}
+
+impl Display for DiagnosticSource {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        match self {
+            Self::WgslAnalyzer => write!(f, "wgsl-analyzer"),
+            Self::Naga => write!(f, "naga"),
+            Self::WeslRs => write!(f, "wesl-rs"),
+        }
+    }
 }
 
 pub struct DiagnosticCode(&'static str);
@@ -61,6 +84,7 @@ impl Diagnostic {
             unused: false,
             severity: Severity::Error,
             related: Vec::new(),
+            source: DiagnosticSource::WgslAnalyzer,
         }
     }
 
@@ -286,7 +310,7 @@ impl NagaErrorPolicy {
         full_range: TextRange,
         accumulator: &mut Vec<AnyDiagnostic>,
     ) {
-        let message = error_message_cause_chain("naga: ", &error);
+        let message = error_message_cause_chain("", &error);
 
         if !error.has_spans() {
             accumulator.push(AnyDiagnostic::NagaValidationError {
@@ -610,6 +634,7 @@ pub fn diagnostics(
                 } => {
                     let mut message = Diagnostic::new(DiagnosticCode("15"), message, range);
                     message.related = related;
+                    message.source = DiagnosticSource::Naga;
                     message
                 },
                 AnyDiagnostic::ParseError { message, range, .. } => {
