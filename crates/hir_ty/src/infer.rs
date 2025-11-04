@@ -1960,7 +1960,19 @@ impl<'database> InferenceContext<'database> {
             },
             ScalarType::AbstractInt | ScalarType::AbstractFloat => {
                 // Panic is correct here, since it should be impossible to enter this branch
-                panic!("cannot construct abstract types")
+                #[expect(
+                    clippy::unreachable,
+                    reason = "TODO: Refactor to make this not representable"
+                )]
+                {
+                    unreachable!("cannot construct abstract types")
+                }
+            },
+            ScalarType::I64 => {
+                Builtin::builtin_op_i64_constructor(self.database).intern(self.database)
+            },
+            ScalarType::U64 => {
+                Builtin::builtin_op_u64_constructor(self.database).intern(self.database)
             },
         };
 
@@ -2403,6 +2415,8 @@ impl<'database> WgslTypeConverter<'database> {
             TypeKind::Scalar(ScalarType::F32) => wgsl_types::Type::F32,
             TypeKind::Scalar(ScalarType::I32) => wgsl_types::Type::I32,
             TypeKind::Scalar(ScalarType::U32) => wgsl_types::Type::U32,
+            TypeKind::Scalar(ScalarType::I64) => wgsl_types::Type::I64,
+            TypeKind::Scalar(ScalarType::U64) => wgsl_types::Type::U64,
             TypeKind::Atomic(AtomicType { inner }) => {
                 wgsl_types::Type::Atomic(Box::new(self.to_wgsl_types(inner)?))
             },

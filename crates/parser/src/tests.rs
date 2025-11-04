@@ -839,6 +839,51 @@ fn parse_statement_variable_declaration() {
 }
 
 #[test]
+fn parse_statement_variable_declaration_shader_in64() {
+    check_statement(
+        "
+        let x: u64 = 3uL;
+        let x: i64 = 3L;
+        ",
+        expect![[r#"
+            SourceFile@0..60
+              Blankspace@0..9 "\n        "
+              LetDeclaration@9..26
+                Let@9..12 "let"
+                Blankspace@12..13 " "
+                Name@13..14
+                  Identifier@13..14 "x"
+                Colon@14..15 ":"
+                Blankspace@15..16 " "
+                TypeSpecifier@16..19
+                  NameReference@16..19
+                    Identifier@16..19 "u64"
+                Blankspace@19..20 " "
+                Equal@20..21 "="
+                Blankspace@21..22 " "
+                Literal@22..25
+                  IntLiteral@22..25 "3uL"
+                Semicolon@25..26 ";"
+              Blankspace@26..35 "\n        "
+              Error@35..51
+                Let@35..38 "let"
+                Blankspace@38..39 " "
+                Identifier@39..40 "x"
+                Colon@40..41 ":"
+                Blankspace@41..42 " "
+                Identifier@42..45 "i64"
+                Blankspace@45..46 " "
+                Equal@46..47 "="
+                Blankspace@47..48 " "
+                IntLiteral@48..50 "3L"
+                Semicolon@50..51 ";"
+              Blankspace@51..60 "\n        "
+
+            error at 35..38: invalid syntax, expected: <end of file>"#]],
+    );
+}
+
+#[test]
 fn parse_not_statement() {
     check_statement(
         "   let a = 3;",

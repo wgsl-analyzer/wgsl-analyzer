@@ -551,6 +551,9 @@ pub enum ScalarType {
     F32,
     /// <https://www.w3.org/TR/WGSL/#f16>
     F16,
+    // SHADER_INT64
+    I64,
+    U64,
 }
 
 impl ScalarType {
