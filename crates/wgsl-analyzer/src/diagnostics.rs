@@ -6,10 +6,12 @@ use std::mem;
 
 use cargo_metadata::PackageId;
 type FileId = vfs::FileId;
-use ide::diagnostics::Diagnostic;
+use ide::diagnostics::{Diagnostic, Severity};
+use itertools::Itertools as _;
 use lsp_types::DiagnosticSeverity;
 use nohash_hasher::{IntMap, IntSet};
 use rustc_hash::{FxHashMap, FxHashSet};
+use salsa::Cancelled;
 use stdx::iter_eq_by;
 use triomphe::Arc;
 
@@ -287,19 +289,40 @@ pub(crate) fn convert_diagnostic(
 ) -> lsp_types::Diagnostic {
     lsp_types::Diagnostic {
         range: lsp::to_proto::range(line_index, diagnostic.range),
-        severity: Some(DiagnosticSeverity::ERROR),
+        severity: Some(diagnostic_severity(diagnostic.severity)),
         code: Some(lsp_types::NumberOrString::String(
             diagnostic.code.as_str().to_owned(),
         )),
-        code_description: Some(lsp_types::CodeDescription {
-            href: lsp_types::Url::parse(&diagnostic.code.url()).unwrap(),
-        }),
-        source: Some("wgsl-analyzer".to_owned()),
+        code_description: None,
+        source: Some(diagnostic.source.to_string()),
         message: diagnostic.message,
         related_information: None,
         tags: diagnostic
             .unused
             .then(|| vec![lsp_types::DiagnosticTag::UNNECESSARY]),
         data: None,
+    }
+}
+
+pub(crate) fn convert_related_information(
+    snapshot: &GlobalStateSnapshot,
+    diagnostic: &mut Diagnostic,
+) -> Result<Vec<lsp_types::DiagnosticRelatedInformation>, Cancelled> {
+    diagnostic
+        .related
+        .drain(..)
+        .map(|(message, range)| {
+            Ok(lsp_types::DiagnosticRelatedInformation {
+                location: lsp::to_proto::location(snapshot, range)?,
+                message,
+            })
+        })
+        .collect::<Result<Vec<_>, Cancelled>>()
+}
+
+const fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSeverity {
+    match severity {
+        Severity::Error => lsp_types::DiagnosticSeverity::ERROR,
+        Severity::WeakWarning => lsp_types::DiagnosticSeverity::HINT,
     }
 }

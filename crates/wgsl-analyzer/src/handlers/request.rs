@@ -14,6 +14,7 @@ use vfs::FileId;
 
 use crate::{
     Result,
+    diagnostics::{convert_diagnostic, convert_related_information},
     global_state::GlobalStateSnapshot,
     lsp::{
         self,
@@ -282,37 +283,20 @@ pub(crate) fn handle_inlay_hints(
 }
 
 pub(crate) fn publish_diagnostics(
-    snap: &GlobalStateSnapshot,
+    snapshot: &GlobalStateSnapshot,
     config: &DiagnosticsConfig,
     file_id: FileId,
 ) -> Result<Vec<lsp_types::Diagnostic>> {
-    let line_index = snap.file_line_index(file_id)?;
-    let diagnostics = snap.analysis.diagnostics(config, file_id)?;
+    let line_index = snapshot.file_line_index(file_id)?;
+    let diagnostics = snapshot.analysis.diagnostics(config, file_id)?;
 
     diagnostics
         .into_iter()
-        .map(|diagnostic| {
-            let related = diagnostic
-                .related
-                .into_iter()
-                .map(|(message, range)| {
-                    Ok(DiagnosticRelatedInformation {
-                        location: to_proto::location(snap, range)?,
-                        message,
-                    })
-                })
-                .collect::<Result<Vec<_>>>()?;
-            Ok(lsp_types::Diagnostic {
-                range: to_proto::range(&line_index, diagnostic.range),
-                severity: Some(diagnostic_severity(diagnostic.severity)),
-                code: None,
-                code_description: None,
-                source: None,
-                message: diagnostic.message,
-                related_information: (!related.is_empty()).then_some(related),
-                tags: diagnostic.unused.then(|| vec![DiagnosticTag::UNNECESSARY]),
-                data: None,
-            })
+        .map(|mut diagnostic| {
+            let related = convert_related_information(snapshot, &mut diagnostic)?;
+            let mut lsp_diagnostic = convert_diagnostic(&line_index, diagnostic);
+            lsp_diagnostic.related_information = (!related.is_empty()).then_some(related);
+            Ok(lsp_diagnostic)
         })
         .collect()
 }
