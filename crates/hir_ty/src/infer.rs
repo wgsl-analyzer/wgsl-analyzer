@@ -802,7 +802,8 @@ impl<'database> InferenceContext<'database> {
                     self.error_ty()
                 };
 
-                let r#type = self.infer_binary_op(*left_side, *right_side, (*op).into(), body);
+                let r#type =
+                    self.infer_binary_op(*right_side, *left_side, *right_side, (*op).into(), body);
 
                 if !r#type.is_convertible_to(left_inner, self.database) {
                     self.push_diagnostic(InferenceDiagnostic::TypeMismatch {
@@ -1032,7 +1033,7 @@ impl<'database> InferenceContext<'database> {
                 left_side,
                 right_side,
                 operation,
-            } => self.infer_binary_op(*left_side, *right_side, *operation, store),
+            } => self.infer_binary_op(expression, *left_side, *right_side, *operation, store),
             Expression::UnaryOperator { expression, op } => {
                 self.infer_unary_op(*expression, *op, store)
             },
@@ -1267,6 +1268,7 @@ impl<'database> InferenceContext<'database> {
 
     fn infer_binary_op(
         &mut self,
+        expression: ExpressionId,
         left_side: ExpressionId,
         right_side: ExpressionId,
         op: BinaryOperation,
@@ -1319,7 +1321,7 @@ impl<'database> InferenceContext<'database> {
             },
         };
 
-        self.call_builtin(left_side, builtin, &[left_ty, rhs_ty], Some(op.symbol()))
+        self.call_builtin(expression, builtin, &[left_ty, rhs_ty], Some(op.symbol()))
     }
 
     fn infer_ident_expression(
