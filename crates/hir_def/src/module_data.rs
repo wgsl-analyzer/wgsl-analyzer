@@ -10,11 +10,7 @@ use smol_str::SmolStr;
 use syntax::{AstNode, TokenText, ast};
 use triomphe::Arc;
 
-use crate::{
-    HirFileId,
-    ast_id::FileAstId,
-    database::DefDatabase,
-};
+use crate::{HirFileId, ast_id::FileAstId, database::DefDatabase};
 
 const MISSING_NAME_PLACEHOLDER: &str = "[missing name]";
 

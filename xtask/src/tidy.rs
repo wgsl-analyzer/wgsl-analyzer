@@ -1,10 +1,6 @@
-use std::{
-    collections::HashSet,
-    path::Path,
-};
+use std::{collections::HashSet, path::Path};
 
 use xshell::Shell;
-
 
 use crate::{flags::Tidy, project_root};
 

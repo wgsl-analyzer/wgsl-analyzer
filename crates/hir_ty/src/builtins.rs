@@ -4,8 +4,8 @@ use crate::{
     database::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
     ty::{
-        ArraySize, ArrayType, AtomicType, BoundVariable, Pointer, ScalarType,
-        TexelFormat, TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
+        ArraySize, ArrayType, AtomicType, BoundVariable, Pointer, ScalarType, TexelFormat,
+        TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
     },
 };
 use wgsl_types::{

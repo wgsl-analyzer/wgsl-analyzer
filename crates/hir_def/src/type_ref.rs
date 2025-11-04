@@ -1,7 +1,5 @@
 use std::fmt;
 
-
-
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Copy)]
 pub enum VecDimensionality {
     Two,

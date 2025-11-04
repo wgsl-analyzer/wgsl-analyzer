@@ -21,9 +21,7 @@ pub use hir_ty::database::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
 use stdx::impl_from;
-use syntax::{
-    AstNode as _, HasName as _, SyntaxNode, ast, pointer::AstPointer,
-};
+use syntax::{AstNode as _, HasName as _, SyntaxNode, ast, pointer::AstPointer};
 use triomphe::Arc;
 
 pub trait HasSource {

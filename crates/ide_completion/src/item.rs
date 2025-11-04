@@ -9,7 +9,6 @@ use smol_str::{SmolStr, format_smolstr};
 use std::mem;
 use stdx::never;
 
-
 /// `CompletionItem` describes a single completion entity which expands to 1 or more entries in the
 /// editor pop-up.
 ///

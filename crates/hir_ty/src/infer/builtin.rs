@@ -10,8 +10,7 @@ use wgsl_types::{
 use crate::{
     infer::{
         Lowered, TyLoweringContext, TypeContainer, TypeLoweringError, TypeLoweringErrorKind,
-        eval::TemplateParameters,
-        from_wgsl_texel_format,
+        eval::TemplateParameters, from_wgsl_texel_format,
     },
     ty::{
         ArraySize, ArrayType, AtomicType, MatrixType, Pointer, ScalarType, TextureDimensionality,

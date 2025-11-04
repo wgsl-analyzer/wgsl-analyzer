@@ -5,10 +5,7 @@ use std::fmt;
 
 use crate::builtins::{Builtin, BuiltinId};
 use crate::function::{FunctionDetails, ResolvedFunctionId};
-use crate::infer::{
-    InferenceDiagnostic, InferenceResult, TyLoweringContext,
-    TypeLoweringError,
-};
+use crate::infer::{InferenceDiagnostic, InferenceResult, TyLoweringContext, TypeLoweringError};
 use crate::ty::{Type, TypeKind};
 use hir_def::data::FieldId;
 use hir_def::database::{DefinitionWithBodyId, ModuleDefinitionId, TypeAliasId};

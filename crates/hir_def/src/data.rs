@@ -4,8 +4,8 @@ use triomphe::Arc;
 use crate::{
     HasSource as _,
     database::{
-        DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Lookup as _,
-        OverrideId, StructId, TypeAliasId,
+        DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Lookup as _, OverrideId,
+        StructId, TypeAliasId,
     },
     expression::ExpressionId,
     expression_store::{

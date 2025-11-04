@@ -1,6 +1,5 @@
 mod changelog;
 
-
 use xshell::{Shell, cmd};
 
 use crate::{date_iso, flags, is_release_tag, project_root};

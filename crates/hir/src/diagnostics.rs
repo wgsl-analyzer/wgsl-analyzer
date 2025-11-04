@@ -16,10 +16,7 @@ use hir_ty::{
     ty::Type,
     validate::AddressSpaceError,
 };
-use syntax::{
-    ast,
-    pointer::AstPointer,
-};
+use syntax::{ast, pointer::AstPointer};
 
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
 

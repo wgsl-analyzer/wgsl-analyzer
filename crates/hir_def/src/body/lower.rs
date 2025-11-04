@@ -5,9 +5,7 @@ use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
 use crate::{
     HirFileId,
     database::DefDatabase,
-    expression::{
-        ExpressionId, Statement, StatementId, SwitchCaseSelector,
-    },
+    expression::{ExpressionId, Statement, StatementId, SwitchCaseSelector},
     expression_store::{ExpressionStoreSource, lower::ExprCollector},
     module_data::Name,
 };
