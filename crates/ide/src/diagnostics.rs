@@ -612,7 +612,9 @@ More complex operands must be this with parenthesized `()`"
                 } => {
                     let source = expression.value.to_node(&root);
                     let frange = original_file_range(database, expression.file_id, source.syntax());
-                    Diagnostic::new(DiagnosticCode("22"), message, frange.range)
+                    let mut message = Diagnostic::new(DiagnosticCode("22"), message, frange.range);
+                    message.source = DiagnosticSource::WeslRs;
+                    message
                 },
                 AnyDiagnostic::ExpectedLoweredKind {
                     expression,
