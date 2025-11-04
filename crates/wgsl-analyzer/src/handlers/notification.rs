@@ -35,7 +35,7 @@ pub(crate) fn handle_did_open_text_document(
     };
 
     let text_bytes = parameters.text_document.text.into_bytes();
-    state.in_memory_documents.insert(
+    _ = state.in_memory_documents.insert(
         path.clone(),
         DocumentData {
             version: parameters.text_document.version,

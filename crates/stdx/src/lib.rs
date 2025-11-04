@@ -285,8 +285,8 @@ impl ops::DerefMut for JodChild {
 
 impl Drop for JodChild {
     fn drop(&mut self) {
-        self.0.kill();
-        self.0.wait();
+        let _unused = self.0.kill();
+        let _unused2 = self.0.wait();
     }
 }
 

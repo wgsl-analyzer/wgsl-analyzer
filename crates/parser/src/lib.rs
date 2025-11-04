@@ -54,7 +54,7 @@ impl Parse {
             buffer.push('\n');
         }
         for diagnostic in &self.errors {
-            write!(buffer, "\n{diagnostic}");
+            write!(buffer, "\n{diagnostic}").unwrap();
         }
         buffer
     }

@@ -640,7 +640,7 @@ pub fn try_ensure_file_contents(
         eprintln!("    NOTE: run `cargo test` locally and commit the updated files\n");
     }
     if let Some(parent) = file.parent() {
-        std::fs::create_dir_all(parent);
+        std::fs::create_dir_all(parent).unwrap();
     }
     std::fs::write(file, contents).unwrap();
     Err(())

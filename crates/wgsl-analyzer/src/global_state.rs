@@ -370,11 +370,11 @@ impl GlobalState {
                     }
                 }
 
-                let not = lsp_server::Notification::new(
+                let notification = lsp_server::Notification::new(
                     <lsp_types::notification::PublishDiagnostics as lsp_types::notification::Notification>::METHOD.to_owned(),
                     lsp_types::PublishDiagnosticsParams { uri, diagnostics, version },
                 );
-                sender.send(not.into());
+                drop(sender.send(notification.into()));
             }
         });
     }

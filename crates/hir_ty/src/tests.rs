@@ -64,7 +64,7 @@ fn infer(ra_fixture: &str) -> String {
                 node.text().to_string().replace('\n', " "),
             );
             let pretty = pretty_type_with_verbosity(&database, *r#type, TypeVerbosity::Compact);
-            writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15));
+            writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15)).unwrap();
         }
 
         // It'd be nicer if the diagnostics were sorted with the types.
@@ -94,7 +94,8 @@ fn infer(ra_fixture: &str) -> String {
                             TypeVerbosity::Compact
                         ),
                         pretty_type_with_verbosity(&database, *actual, TypeVerbosity::Compact)
-                    );
+                    )
+                    .unwrap();
                 },
                 InferenceDiagnostic::AssignmentNotAReference { .. }
                 | InferenceDiagnostic::NoSuchField { .. }
@@ -111,7 +112,7 @@ fn infer(ra_fixture: &str) -> String {
                 | InferenceDiagnostic::UnexpectedTemplateArgument { .. }
                 | InferenceDiagnostic::WgslError { .. }
                 | InferenceDiagnostic::ExpectedLoweredKind { .. } => {
-                    writeln!(buffer, "{diagnostic:?}");
+                    writeln!(buffer, "{diagnostic:?}").unwrap();
                 },
             }
         }

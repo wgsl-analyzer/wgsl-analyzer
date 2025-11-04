@@ -59,7 +59,7 @@ fn print_ast_id<T: syntax::AstNode>(
     buffer: &mut String,
     ast_id: FileAstId<T>,
 ) {
-    writeln!(buffer, "// {ast_id:?}");
+    writeln!(buffer, "// {ast_id:?}").unwrap();
 }
 
 fn trim_in_place(
