@@ -366,7 +366,7 @@ where
 }
 
 pub(crate) struct NotificationDispatcher<'global_state> {
-    pub(crate) not: Option<lsp_server::Notification>,
+    pub(crate) notification: Option<lsp_server::Notification>,
     pub(crate) global_state: &'global_state mut GlobalState,
 }
 
@@ -379,16 +379,16 @@ impl NotificationDispatcher<'_> {
         N: lsp_types::notification::Notification + 'static,
         N::Params: DeserializeOwned + Send + 'static,
     {
-        let Some(not) = self.not.take() else {
+        let Some(notification) = self.notification.take() else {
             return self;
         };
-        let parameters = match not.extract::<N::Params>(N::METHOD) {
+        let parameters = match notification.extract::<N::Params>(N::METHOD) {
             Ok(notification) => notification,
             Err(ExtractError::JsonError { method, error }) => {
                 panic!("Invalid request\nMethod: {method}\n error: {error}",)
             },
-            Err(ExtractError::MethodMismatch(not)) => {
-                self.not = Some(not);
+            Err(ExtractError::MethodMismatch(notification)) => {
+                self.notification = Some(notification);
                 return self;
             },
         };
@@ -399,10 +399,10 @@ impl NotificationDispatcher<'_> {
     }
 
     pub(crate) fn finish(&self) {
-        if let Some(not) = &self.not
-            && !not.method.starts_with("$/")
+        if let Some(notification) = &self.notification
+            && !notification.method.starts_with("$/")
         {
-            tracing::error!("Unhandled notification: {:?}", not);
+            tracing::error!("Unhandled notification: {:?}", notification);
         }
     }
 }

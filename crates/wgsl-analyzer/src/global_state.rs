@@ -281,8 +281,8 @@ impl GlobalState {
         &self,
         parameters: N::Params,
     ) {
-        let not = lsp_server::Notification::new(N::METHOD.to_owned(), parameters);
-        self.send(not.into());
+        let notification = lsp_server::Notification::new(N::METHOD.to_owned(), parameters);
+        self.send(notification.into());
     }
 
     pub(crate) fn register_request(

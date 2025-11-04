@@ -184,7 +184,7 @@ fn run_server() -> anyhow::Result<()> {
                 MessageType, ShowMessageParams,
                 notification::{Notification as _, ShowMessage},
             };
-            let not = lsp_server::Notification::new(
+            let notification = lsp_server::Notification::new(
                 ShowMessage::METHOD.to_owned(),
                 ShowMessageParams {
                     typ: MessageType::WARNING,
@@ -193,7 +193,7 @@ fn run_server() -> anyhow::Result<()> {
             );
             connection
                 .sender
-                .send(lsp_server::Message::Notification(not))
+                .send(lsp_server::Message::Notification(notification))
                 .unwrap();
         }
     }
