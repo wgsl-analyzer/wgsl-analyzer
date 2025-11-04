@@ -50,11 +50,11 @@ The VS Code extension can either be built as a platform-specific extension which
 
 Platform independent extension:
 
-`npm --prefix editors/code un package`
+`npm --prefix editors/code run package`
 
 Platform-specific extension:
 
-Copy the server binary (either `wgsl-analyzer` or `wgsl-analyzer.exe`) into `./editors/code/out/`:
+Copy the server binary (either `wgsl-analyzer` or `wgsl-analyzer.exe`) into `./editors/code/server/`:
 
 ```bash
 mkdir editors/code/server && cp target/release/wgsl-analyzer editors/code/server/wgsl-analyzer
@@ -69,3 +69,11 @@ npm --prefix editors/code run package -- --target <target> -o wgsl-analyzer-<tar
 Example: `npm --prefix editors/code run package -- --target linux-x64 -o wgsl-analyzer-linux-x64.vsix`
 
 where the target is one of the targets listed as [platform-specific extension targets](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions).
+
+The output is a file such as `editors/code/wgsl-analyzer-linux-x64.vsix`
+
+**3. Install the extension:**
+
+Open the vsix with VS Code, for example, by running the VS Code command (<kbd>F1</kbd>):
+
+`> Extensions: Install from VSIX...`
