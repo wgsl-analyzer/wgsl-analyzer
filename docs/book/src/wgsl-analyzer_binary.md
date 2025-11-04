@@ -4,7 +4,7 @@ Text editors require the `wgsl-analyzer` binary to be in `$PATH`.
 You can download pre-built binaries from the [releases] page.
 You will need to uncompress and rename the binary for your platform.
 
-For example,  on Mac OS:
+For example, on Mac OS:
 
 1. extract `wgsl-analyzer-aarch64-apple-darwin.gz` to `wgsl-analyzer`
 2. make it executable

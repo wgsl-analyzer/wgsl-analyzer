@@ -1,76 +1,71 @@
-# `wgsl-analyzer`
+# wgsl-analyzer
 
-![wgsl-analyzer logo](logo.svg)
+<!-- markdownlint-disable no-inline-html -->
+<p align="center">
+  <img
+    src="https://github.com/wgsl-analyzer/wgsl-analyzer/blob/main/logo.svg"
+    alt="wgsl-analyzer logo">
+</p>
+<!-- markdownlint-restore no-inline-html -->
 
 [![Discord](https://img.shields.io/discord/691052431525675048.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/dZJ3JTbhaU)
 
-## What `wgsl-analyzer` is
+wgsl-analyzer is a [language server][ls] plugin for the [WebGPU Shading language][WGSL] (WGSL).
+It also supports [WGSL Extended Shader Language][WESL] (WESL).
+Note: (support for WESL is experimental and in-progress)
 
-`wgsl-analyzer` is a [language server](https://microsoft.github.io/language-server-protocol) plugin for the [WGSL Shading language](https://www.w3.org/TR/WGSL).
-It also supports [WESL](https://wesl-lang.dev/)
+You can use it with any editor that supports the [Language Server Protocol][lsp] (for example, VS Code, Vim, Emacs, Zed).
 
-It comes with a [VS Code](https://code.visualstudio.com) plugin located in [./editors/code](./editors/code).
+wgsl-analyzer's features include go-to-definition, type checking, code completion, and much more is planned.
+wgsl-analyzer also supports integrated formatting (with wgslfmt) and integrated diagnostics (with naga).
+
+Internally, wgsl-analyzer is structured as a set of libraries for analyzing Rust code.
+See [Architecture][architecture] in the manual.
+
+It comes with a [VS Code][VS Code] extension located in [./editors/code](./editors/code).
 Due to the nature of the language server protocol, it should be possible to create plugins for other editors as well.
 
-## Installation
+## Quick Start
 
-### VS Code
+See the [installation guide in the manual](https://wgsl-analyzer.github.io/book/installation.html).
 
-The extension is [published on the marketplace](https://marketplace.visualstudio.com/items?itemName=wgsl-analyzer.wgsl-analyzer), so you can simply download the extension like any other.
-
-> [!NOTE]
-> If you are not using a platform for which the vscode extension ships prebuilt binaries (currently only windows-x64, linux-x64 and macos-x64), then you need to compile the language server yourself:
->
-> ```bash
-> cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer.git wgsl-analyzer
-> ```
->
-> Specify the server path in the settings:
->
-> ```json
-> {
->     "wgsl-analyzer.server.path": "~/.cargo/bin/wgsl-analyzer"
-> }
-> ```
-
-### Other editors
-
-See: [Other Editors](./docs/book/src/other_editors.md)
-
-## Configuration
-
-Configuration for the VS Code plugin can be found in its subdirectory: [./editors/code/README.md](./editors/code/README.md).
+[ls]: https://microsoft.github.io/language-server-protocol
+[WGSL]: https://www.w3.org/TR/WGSL
+[WESL]: https://wesl-lang.dev/
+[lsp]: https://microsoft.github.io/language-server-protocol/
+[architecture]: https://wgsl-analyzer.github.io/book/contributing/architecture.html
+[VS Code]: https://code.visualstudio.com
 
 ## Building from source
 
 The lsp server can be built using `cargo build --release -p wgsl-analyzer`.
 
-The vscode extension can either be built as a platform-specific extension which bundles the language server binary, or as a platform-independent one.
+The VS Code extension can either be built as a platform-specific extension which bundles the language server binary, or as a platform-independent one.
 
-**Install node modules:**
+**1. Install node modules:**
 
-`cd editors/code && npm install`
+`npm --prefix editors/code install`
 
-**Platform independent extension:**
+**2. Package extension:** (choose one)
 
-`cd editors/code && npm run package`
+Platform independent extension:
 
-**Platform-specific extension:**
+`npm --prefix editors/code un package`
 
-Copy the server binary (either `wgsl-analyzer` or `wgsl-analyzer.exe`) into `./editors/code/out/`, then run:
+Platform-specific extension:
+
+Copy the server binary (either `wgsl-analyzer` or `wgsl-analyzer.exe`) into `./editors/code/out/`:
 
 ```bash
-npm run package -- --target <target> -o wgsl-analyzer-<target>.vsix
+mkdir editors/code/server && cp target/release/wgsl-analyzer editors/code/server/wgsl-analyzer
 ```
 
+Next, run:
+
+```bash
+npm --prefix editors/code run package -- --target <target> -o wgsl-analyzer-<target>.vsix
+```
+
+Example: `npm --prefix editors/code run package -- --target linux-x64 -o wgsl-analyzer-linux-x64.vsix`
+
 where the target is one of the targets listed as [platform-specific extension targets](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions).
-
-This can be done automatically with `cargo run --bin package -- --target linux-x64 --install`.
-
-## Design
-
-The design is heavily inspired (and in large parts copied from) [rust-analyzer](https://github.com/rust-lang/rust-analyzer).
-
-See [wgsl-analyzer architecture](https://wgsl-analyzer.github.io/book/contributing/architecture.html) for a summary of the architecture.
-
-(Also see [rust-analyzer architecture](https://rust-analyzer.github.io/book/contributing/architecture.html) for a summary of the original architecture.)

@@ -4,10 +4,11 @@
 
 ## About the guide
 
-This guide describes the current state of `wgsl-analyzer` as of the 2025-xx-xx release (git tag [2025-xx-xx]).
-Its purpose is to document various problems and architectural solutions related to the problem of building an IDE-first compiler for Rust.
+This guide describes the current state of `wgsl-analyzer`.
+Its purpose is to document various problems and architectural solutions related to the problem of building an IDE-first compiler for WGSL.
 
-[2025-xx-xx]: <https://github.com/wgsl-analyzer/wgsl-analyzer/tree/2025-xx-xx>
+> [[!CAUTION]]
+> This document needs updating because this guide was forked from rust-analyzer and not everything has been rewritten to account for differences.
 
 <!-- toc -->
 <!-- TODO nothing here is correct -->
