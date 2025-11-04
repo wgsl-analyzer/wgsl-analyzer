@@ -3,18 +3,14 @@ mod lower;
 #[cfg(test)]
 pub mod pretty;
 
-use std::{hash, marker::PhantomData, ops};
+use std::{hash, marker::PhantomData};
 
-use la_arena::{Arena, Idx, IdxRange};
+use la_arena::{Arena, Idx};
 use smol_str::SmolStr;
 use syntax::{AstNode, TokenText, ast};
 use triomphe::Arc;
 
-use crate::{
-    HirFileId,
-    ast_id::FileAstId,
-    database::{DefDatabase, Interned},
-};
+use crate::{HirFileId, ast_id::FileAstId, database::DefDatabase};
 
 const MISSING_NAME_PLACEHOLDER: &str = "[missing name]";
 

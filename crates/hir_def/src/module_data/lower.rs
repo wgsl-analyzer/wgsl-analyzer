@@ -1,16 +1,16 @@
-use crate::HirFileId;
-use crate::hir_file_id::relative_file;
-use crate::module_data::{Function, ModuleData, ModuleItem, ModuleItemId};
-use crate::{ast_id::AstIdMap, database::DefDatabase};
-use la_arena::{Idx, IdxRange};
-
 use syntax::{
-    AstNode as _, HasName as _,
-    ast::{self, Item, SourceFile},
+    HasName as _,
+    ast::{Item, SourceFile},
 };
 use triomphe::Arc;
 
-use super::{GlobalConstant, GlobalVariable, Name, Override, Struct, TypeAlias};
+use super::{GlobalConstant, GlobalVariable, Override, Struct, TypeAlias};
+use crate::{
+    HirFileId,
+    ast_id::AstIdMap,
+    database::DefDatabase,
+    module_data::{Function, ModuleData, ModuleItem, ModuleItemId},
+};
 
 pub(crate) struct Ctx<'database> {
     database: &'database dyn DefDatabase,
@@ -52,8 +52,8 @@ impl<'database> Ctx<'database> {
                 ModuleItem::Function(self.lower_function(&function)?)
             },
             Item::StructDeclaration(r#struct) => ModuleItem::Struct(self.lower_struct(&r#struct)?),
-            Item::VariableDeclaration(var) => {
-                ModuleItem::GlobalVariable(self.lower_global_var(&var)?)
+            Item::VariableDeclaration(variable) => {
+                ModuleItem::GlobalVariable(self.lower_global_variable(&variable)?)
             },
             Item::ConstantDeclaration(constant) => {
                 ModuleItem::GlobalConstant(self.lower_global_constant(&constant)?)
@@ -109,14 +109,14 @@ impl<'database> Ctx<'database> {
         Some(self.module_data.global_constants.alloc(constant).into())
     }
 
-    fn lower_global_var(
+    fn lower_global_variable(
         &mut self,
-        var: &syntax::ast::VariableDeclaration,
+        variable: &syntax::ast::VariableDeclaration,
     ) -> Option<ModuleItemId<GlobalVariable>> {
-        let name = var.name()?.text().into();
-        let ast_id = self.source_ast_id_map.ast_id(var);
-        let var = GlobalVariable { name, ast_id };
-        Some(self.module_data.global_variables.alloc(var).into())
+        let name = variable.name()?.text().into();
+        let ast_id = self.source_ast_id_map.ast_id(variable);
+        let variable = GlobalVariable { name, ast_id };
+        Some(self.module_data.global_variables.alloc(variable).into())
     }
 
     fn lower_struct(

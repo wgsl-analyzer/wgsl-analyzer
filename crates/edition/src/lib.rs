@@ -12,11 +12,11 @@ pub enum Edition {
 }
 
 impl Edition {
-    pub const DEFAULT: Self = Self::Wgsl;
-    pub const LATEST: Self = Self::Wesl2025Unstable;
     pub const CURRENT: Self = Self::Wgsl;
     /// The current latest stable edition, note this is usually not the right choice in code.
     pub const CURRENT_FIXME: Self = Self::Wgsl;
+    pub const DEFAULT: Self = Self::Wgsl;
+    pub const LATEST: Self = Self::Wesl2025Unstable;
 
     /// # Panics
     ///

@@ -1,8 +1,6 @@
 use base_db::{FilePosition, FileRange, RangeInfo, SourceDatabase as _};
 use hir::Semantics;
-use hir_def::InFile;
 use ide_db::RootDatabase;
-use syntax::{AstNode as _, ast};
 
 use crate::{NavigationTarget, markup::Markup};
 

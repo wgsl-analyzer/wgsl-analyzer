@@ -1,8 +1,7 @@
-use rustc_hash::{FxHashMap, FxHashSet};
-use std::{fmt, mem::ManuallyDrop, panic};
-use triomphe::Arc;
+use std::{fmt, panic};
 
-use base_db::{FileId, FileLoader, FileLoaderDelegate, SourceDatabase as _, change::Change};
+use base_db::{FileId, FileLoader, FileLoaderDelegate, change::Change};
+use rustc_hash::FxHashMap;
 use vfs::AnchoredPath;
 
 pub mod source_change;

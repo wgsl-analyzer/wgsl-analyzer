@@ -1,10 +1,11 @@
 #![expect(clippy::use_debug, reason = "tests")]
 
 mod simple;
-use base_db::SourceDatabase;
+use std::fmt::Write as _;
+
 use expect_test::Expect;
 use hir_def::{
-    AstIdMap, HasSource as _, HirFileId, InFile,
+    HasSource as _, HirFileId,
     body::{Body, BodySourceMap},
     database::{
         DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, Lookup as _,
@@ -12,10 +13,8 @@ use hir_def::{
     expression_store::SyntheticSyntax,
     module_data::ModuleItem,
 };
-use std::fmt::Write as _;
 use syntax::{AstNode as _, SyntaxNode};
 use triomphe::Arc;
-use wgsl_types::ty::Ty;
 
 use crate::{
     database::HirDatabase as _,
@@ -66,7 +65,7 @@ fn infer(ra_fixture: &str) -> String {
                 node.text().to_string().replace('\n', " "),
             );
             let pretty = pretty_type_with_verbosity(&database, *r#type, TypeVerbosity::Compact);
-            writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15));
+            writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15)).unwrap();
         }
 
         // It'd be nicer if the diagnostics were sorted with the types.
@@ -96,7 +95,8 @@ fn infer(ra_fixture: &str) -> String {
                             TypeVerbosity::Compact
                         ),
                         pretty_type_with_verbosity(&database, *actual, TypeVerbosity::Compact)
-                    );
+                    )
+                    .unwrap();
                 },
                 InferenceDiagnostic::AssignmentNotAReference { .. }
                 | InferenceDiagnostic::NoSuchField { .. }
@@ -113,7 +113,7 @@ fn infer(ra_fixture: &str) -> String {
                 | InferenceDiagnostic::UnexpectedTemplateArgument { .. }
                 | InferenceDiagnostic::WgslError { .. }
                 | InferenceDiagnostic::ExpectedLoweredKind { .. } => {
-                    writeln!(buffer, "{diagnostic:?}");
+                    writeln!(buffer, "{diagnostic:?}").unwrap();
                 },
             }
         }

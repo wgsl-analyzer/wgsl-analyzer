@@ -8,7 +8,6 @@ rust-version.workspace = true
 
 [dependencies]
 anyhow = "1.0.100"
-directories = "6.0.0"
 flate2 = "1.1.5"
 write-json = "0.1.4"
 xshell = "0.2.7"
@@ -18,12 +17,6 @@ zip = { version = "6.0.0", default-features = false, features = [
   "deflate",
   "time",
 ] }
-stdx.workspace = true
-# proc-macro2 = "1.0.93"
-# quote = "1.0.38"
-# ungrammar = "1.16.1"
-either = "1.15.0"
-itertools = "0.14.0"
 # Avoid adding more dependencies to this crate
 
 [lints]

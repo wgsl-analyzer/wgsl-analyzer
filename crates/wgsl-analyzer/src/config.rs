@@ -1,4 +1,4 @@
-use std::{default, env, fmt, iter, ops::Not, sync::OnceLock};
+use std::{fmt, sync::OnceLock};
 
 use base_db::input::SourceRootId;
 use hir::diagnostics::{DiagnosticsConfig, NagaVersion};
@@ -8,6 +8,14 @@ use ide::{
     inlay_hints::{self, StructLayoutHints},
 };
 use ide_completion::{CompletionConfig, CompletionFieldsToResolve};
+use itertools::Itertools as _;
+use rustc_hash::FxHashMap;
+use semver::Version;
+use serde::{Deserialize, Serialize};
+use stdx::format_to_accumulator;
+use triomphe::Arc;
+use vfs::AbsPathBuf;
+
 // use ide::{
 //     AssistConfig, CallHierarchyConfig, CallableSnippets, CompletionConfig,
 //     CompletionFieldsToResolve, DiagnosticsConfig, ExprFillDefaultMode, GenericParameterHints,
@@ -19,24 +27,7 @@ use ide_completion::{CompletionConfig, CompletionFieldsToResolve};
 //     imports::insert_use::{ImportGranularity, InsertUseConfig, PrefixKind},
 //     SnippetCap,
 // };
-use crate::{
-    diagnostics::DiagnosticsMapConfig,
-    lsp::{
-        capabilities::ClientCapabilities,
-        extensions::{WorkspaceSymbolSearchKind, WorkspaceSymbolSearchScope},
-    },
-};
-use camino::{Utf8Path, Utf8PathBuf};
-use itertools::Itertools as _;
-use rustc_hash::{FxHashMap, FxHashSet};
-use semver::Version;
-use serde::{
-    Deserialize, Serialize,
-    de::{DeserializeOwned, Error},
-};
-use stdx::format_to_acc;
-use triomphe::Arc;
-use vfs::{AbsPath, AbsPathBuf, VfsPath};
+use crate::lsp::capabilities::ClientCapabilities;
 
 // Defines the server-side configuration of the wgsl-analyzer. We generate *parts* of VS Code's
 // `package.json` config from this. Run `cargo test` to re-generate that file.
@@ -1222,12 +1213,12 @@ fn manual(fields: &[SchemaField]) -> String {
             let name = format!("wgsl-analyzer.{id}");
             let doc = doc_comment_to_string(doc);
             if default.contains('\n') {
-                format_to_acc!(
+                format_to_accumulator!(
                     acc,
                     "## {name} \n\nDefault:\n```json\n{default}\n```\n\n{doc}\n"
                 )
             } else {
-                format_to_acc!(acc, "## {name}\n\nDefault: `{default}`\n\n{doc}\n")
+                format_to_accumulator!(acc, "## {name}\n\nDefault: `{default}`\n\n{doc}\n")
             }
         })
 }
@@ -1236,7 +1227,7 @@ fn doc_comment_to_string(doc: &[&str]) -> String {
     doc.iter()
         .map(|iterator| iterator.strip_prefix(' ').unwrap_or(iterator))
         .fold(String::new(), |mut out, line| {
-            format_to_acc!(out, "{line}\n")
+            format_to_accumulator!(out, "{line}\n")
         })
 }
 
@@ -1244,8 +1235,9 @@ fn doc_comment_to_string(doc: &[&str]) -> String {
 mod tests {
     use std::fs;
 
-    use crate::config::{Config, FullConfigInput};
     use test_utils::{ensure_file_contents, project_root};
+
+    use crate::config::{Config, FullConfigInput};
 
     #[test]
     fn generate_package_json_config() {

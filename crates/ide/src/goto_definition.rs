@@ -2,7 +2,6 @@ use base_db::{FilePosition, SourceDatabase as _};
 use hir::{HasSource as _, Local, Semantics, definition::Definition};
 use hir_def::InFile;
 use ide_db::RootDatabase;
-use smol_str::SmolStr;
 use syntax::{AstNode as _, HasName as _, SyntaxKind};
 
 use crate::{NavigationTarget, helpers};
@@ -81,8 +80,8 @@ impl TryToNavigationTarget for InFile<Definition> {
 
                     NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
                 },
-                hir::ModuleDef::GlobalVariable(var) => {
-                    let declaration = var.source(database)?;
+                hir::ModuleDef::GlobalVariable(variable) => {
+                    let declaration = variable.source(database)?;
 
                     let frange = declaration.original_file_range(database);
                     let focus_range = declaration.value.name().map(|name| {

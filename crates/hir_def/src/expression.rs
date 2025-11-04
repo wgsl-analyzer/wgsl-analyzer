@@ -5,7 +5,7 @@ use syntax::ast::{self, IncrementDecrement};
 use crate::{
     body::BindingId,
     module_data::Name,
-    type_specifier::{IdentExpression, TypeSpecifier, TypeSpecifierId},
+    type_specifier::{IdentExpression, TypeSpecifierId},
 };
 
 pub type ExpressionId = Idx<Expression>;

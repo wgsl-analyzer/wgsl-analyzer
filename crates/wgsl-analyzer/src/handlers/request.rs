@@ -5,11 +5,10 @@
 
 use base_db::{FilePosition, FileRange, TextRange};
 use hir::diagnostics::DiagnosticsConfig;
-use ide::{Cancellable, HoverAction, HoverGotoTypeData, HoverResult, diagnostics::Severity};
+use ide::{Cancellable, HoverAction, HoverGotoTypeData, diagnostics::Severity};
 use lsp_types::{
     DiagnosticRelatedInformation, DiagnosticTag, GotoDefinitionResponse, HoverContents, InlayHint,
-    InlayHintParams, LanguageString, MarkedString, MarkupContent, MarkupKind, Position, Range,
-    TextDocumentIdentifier, TextDocumentPositionParams,
+    InlayHintParams, MarkupContent, MarkupKind, Range, TextDocumentIdentifier,
 };
 use vfs::FileId;
 

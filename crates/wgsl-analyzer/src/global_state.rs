@@ -1,23 +1,19 @@
+use std::time::Instant;
+
 use base_db::change::Change;
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use ide::{Analysis, AnalysisHost, Cancellable};
 use lsp_types::Url;
-use nohash_hasher::IntMap;
-use parking_lot::{
-    MappedRwLockReadGuard, Mutex, RwLock, RwLockReadGuard, RwLockUpgradableReadGuard,
-    RwLockWriteGuard,
-};
+use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use rustc_hash::FxHashMap;
-use std::time::Instant;
 use triomphe::Arc;
-use vfs::{AbsPathBuf, FileId, Vfs, VfsPath};
+use vfs::{AbsPathBuf, FileId, VfsPath};
 
 use crate::{
-    Result,
     config::{Config, ConfigErrors},
     diagnostics::DiagnosticCollection,
     in_memory_documents::InMemoryDocuments,
-    line_index::{LineEndings, LineIndex, PositionEncoding},
+    line_index::{LineEndings, LineIndex},
     lsp::{from_proto, to_proto},
     main_loop::Task,
     operation_queue::{Cause, OperationQueue},
@@ -286,8 +282,8 @@ impl GlobalState {
         &self,
         parameters: N::Params,
     ) {
-        let not = lsp_server::Notification::new(N::METHOD.to_owned(), parameters);
-        self.send(not.into());
+        let notification = lsp_server::Notification::new(N::METHOD.to_owned(), parameters);
+        self.send(notification.into());
     }
 
     pub(crate) fn register_request(
@@ -375,11 +371,11 @@ impl GlobalState {
                     }
                 }
 
-                let not = lsp_server::Notification::new(
+                let notification = lsp_server::Notification::new(
                     <lsp_types::notification::PublishDiagnostics as lsp_types::notification::Notification>::METHOD.to_owned(),
                     lsp_types::PublishDiagnosticsParams { uri, diagnostics, version },
                 );
-                sender.send(not.into());
+                drop(sender.send(notification.into()));
             }
         });
     }

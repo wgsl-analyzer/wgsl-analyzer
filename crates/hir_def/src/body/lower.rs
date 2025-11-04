@@ -1,15 +1,12 @@
 use either::Either;
-use syntax::{AstNode as _, HasName as _, HasTemplateParameters as _, ast, pointer::AstPointer};
+use syntax::{HasName as _, HasTemplateParameters as _, ast, pointer::AstPointer};
 
 use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
 use crate::{
-    HirFileId, InFile,
+    HirFileId,
     database::DefDatabase,
-    expression::{
-        Expression, ExpressionId, Statement, StatementId, SwitchCaseSelector, parse_literal,
-    },
+    expression::{ExpressionId, Statement, StatementId, SwitchCaseSelector},
     expression_store::{ExpressionStoreSource, lower::ExprCollector},
-    hir_file_id::relative_file,
     module_data::Name,
 };
 
@@ -22,12 +19,12 @@ pub(super) fn lower_function_body(
     Collector::new(database, file_id).collect_function(param_list, body)
 }
 
-pub(super) fn lower_global_var_declaration(
+pub(super) fn lower_global_variable_declaration(
     database: &dyn DefDatabase,
     file_id: HirFileId,
     declaration: &ast::VariableDeclaration,
 ) -> (Body, BodySourceMap) {
-    Collector::new(database, file_id).collect_global_var_declaration(declaration)
+    Collector::new(database, file_id).collect_global_variable_declaration(declaration)
 }
 
 pub(super) fn lower_global_constant_declaration(
@@ -67,6 +64,7 @@ impl Collector<'_> {
             file_id,
         }
     }
+
     fn collect_function(
         mut self,
         param_list: Option<ast::FunctionParameters>,
@@ -94,7 +92,7 @@ impl Collector<'_> {
         }
     }
 
-    fn collect_global_var_declaration(
+    fn collect_global_variable_declaration(
         mut self,
         declaration: &ast::VariableDeclaration,
     ) -> (Body, BodySourceMap) {
@@ -138,6 +136,7 @@ impl Collector<'_> {
 
         (self.body, self.source_map)
     }
+
     fn collect_name(
         &mut self,
         binding: ast::Name,
@@ -404,12 +403,14 @@ impl Collector<'_> {
     ) -> ExpressionId {
         self.expressions.collect_expression(expression)
     }
+
     fn collect_expression_opt(
         &mut self,
         expression: Option<ast::Expression>,
     ) -> ExpressionId {
         self.expressions.collect_expression_opt(expression)
     }
+
     fn allocate_statement(
         &mut self,
         statement: Statement,

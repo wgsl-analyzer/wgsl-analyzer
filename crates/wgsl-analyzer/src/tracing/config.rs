@@ -11,10 +11,8 @@ use tracing_subscriber::{
     fmt::{MakeWriter, time},
     layer::SubscriberExt as _,
 };
-use tracing_tree::HierarchicalLayer;
 
-use crate::tracing::hprof;
-use crate::tracing::json;
+use crate::tracing::{hprof, json};
 
 #[derive(Debug)]
 pub struct Config<T> {
@@ -66,29 +64,34 @@ where
         .with_filter(targets_filter);
 
         // TODO: remove `.with_filter(LevelFilter::OFF)` on the `None` branch.
-        let profiler_layer = self.profile_filter.map_or_else(
-            || None.with_filter(LevelFilter::OFF),
-            |spec| Some(hprof::SpanTree::new_filtered(&spec)).with_filter(LevelFilter::INFO),
-        );
-        let json_profiler_layer = self.json_profile_filter.map_or_else(
-            || None,
-            |spec| {
+        let profiler_layer = match self.profile_filter {
+            Some(spec) => Some(hprof::SpanTree::new_filtered(&spec)).with_filter(LevelFilter::INFO),
+            None => None.with_filter(LevelFilter::OFF),
+        };
+
+        let json_profiler_layer = match self.json_profile_filter {
+            Some(spec) => {
                 let filter = json::JsonFilter::from_spec(&spec);
                 let filter = filter_fn(move |metadata| {
-                    let allowed = filter
-                        .allowed_names
-                        .as_ref()
-                        .is_none_or(|names| names.contains(metadata.name()));
+                    let allowed = match &filter.allowed_names {
+                        Some(names) => names.contains(metadata.name()),
+                        None => true,
+                    };
+
                     allowed && metadata.is_span()
                 });
-                Some(json::TimingLayer::new(std::io::stderr).with_filter(filter))
+                Some(json::TimingLayer::new(io::stderr).with_filter(filter))
             },
-        );
+            None => None,
+        };
+
         let subscriber = Registry::default()
             .with(wa_fmt_layer)
             .with(json_profiler_layer)
             .with(profiler_layer);
+
         tracing::subscriber::set_global_default(subscriber)?;
+
         Ok(())
     }
 }

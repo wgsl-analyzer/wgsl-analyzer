@@ -1,4 +1,4 @@
-use std::{ops::Not as _, path};
+use std::ops::Not as _;
 
 use base_db::{FileRange, TextRange, TextSize};
 use ide::{
@@ -21,7 +21,6 @@ use serde_json::to_value;
 use vfs::FileId;
 
 use crate::{
-    Result,
     config::Config,
     global_state::GlobalStateSnapshot,
     line_index::{LineEndings, LineIndex, PositionEncoding},
@@ -100,8 +99,8 @@ pub(crate) fn location(
     let url = url(snap, frange.file_id);
     let line_index = snap.file_line_index(frange.file_id)?;
     let range = range(&line_index, frange.range);
-    let loc = lsp_types::Location::new(url, range);
-    Ok(loc)
+    let location = lsp_types::Location::new(url, range);
+    Ok(location)
 }
 
 pub(crate) fn completion_items(
@@ -337,7 +336,7 @@ fn completion_item(
         }
         // The relevance needs to be inverted to come up with a sort score
         // because the client will sort ascending.
-        let sort_score = relevance.score() ^ 0xFF_FF_FF_FF;
+        let sort_score = relevance.score() ^ 0xff_ff_ff_ff;
         // Zero pad the string to ensure values can be properly sorted
         // by the client. Hex format is used because it is easier to
         // visually compare very large values, which the sort text

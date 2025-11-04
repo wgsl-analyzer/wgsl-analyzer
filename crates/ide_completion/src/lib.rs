@@ -12,12 +12,10 @@ mod patterns;
 // mod tests;
 
 use base_db::FilePosition;
-use hir::HirDatabase;
 use ide_db::RootDatabase;
 use rustc_hash::FxHashSet;
 
 use crate::{completions::Completions, context::CompletionContext};
-
 pub use crate::{
     config::{AutoImportExclusionType, CallableSnippets, CompletionConfig},
     item::{CompletionItem, CompletionItemKind, CompletionRelevance, CompletionRelevanceTypeMatch},

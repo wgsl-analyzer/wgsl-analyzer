@@ -14,7 +14,6 @@ use hir_def::{
         Location, Lookup as _, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
-    hir_file_id::relative_file,
     module_data::{self, ModuleInfo, ModuleItem, Name},
     resolver::{ResolveKind, Resolver},
 };
@@ -22,9 +21,7 @@ pub use hir_ty::database::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
 use stdx::impl_from;
-use syntax::{
-    AstNode as _, HasName as _, SyntaxKind, SyntaxNode, ast, match_ast, pointer::AstPointer,
-};
+use syntax::{AstNode as _, HasName as _, SyntaxNode, ast, pointer::AstPointer};
 use triomphe::Arc;
 
 pub trait HasSource {
@@ -218,28 +215,28 @@ impl<'database> Semantics<'database> {
                 parent: resolver.body_owner()?,
                 binding,
             }),
-            ResolveKind::GlobalVariable(loc) => {
-                let id = self.database.intern_global_variable(loc);
+            ResolveKind::GlobalVariable(location) => {
+                let id = self.database.intern_global_variable(location);
                 Definition::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))
             },
-            ResolveKind::GlobalConstant(loc) => {
-                let id = self.database.intern_global_constant(loc);
+            ResolveKind::GlobalConstant(location) => {
+                let id = self.database.intern_global_constant(location);
                 Definition::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id }))
             },
-            ResolveKind::Override(loc) => {
-                let id = self.database.intern_override(loc);
+            ResolveKind::Override(location) => {
+                let id = self.database.intern_override(location);
                 Definition::ModuleDef(ModuleDef::Override(Override { id }))
             },
-            ResolveKind::Struct(loc) => {
-                let id = self.database.intern_struct(loc);
+            ResolveKind::Struct(location) => {
+                let id = self.database.intern_struct(location);
                 Definition::ModuleDef(ModuleDef::Struct(Struct { id }))
             },
-            ResolveKind::TypeAlias(loc) => {
-                let id = self.database.intern_type_alias(loc);
+            ResolveKind::TypeAlias(location) => {
+                let id = self.database.intern_type_alias(location);
                 Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id }))
             },
-            ResolveKind::Function(loc) => {
-                let id = self.database.intern_function(loc);
+            ResolveKind::Function(location) => {
+                let id = self.database.intern_function(location);
                 Definition::ModuleDef(ModuleDef::Function(Function { id }))
             },
         };
@@ -389,34 +386,34 @@ fn module_item_to_def(
     module_item: ModuleItem,
 ) -> SmallVec<[ModuleDef; 1]> {
     let definition = match module_item {
-        ModuleItem::Function(func) => {
-            let loc = Location::new(file_id, func);
-            let id = database.intern_function(loc);
+        ModuleItem::Function(function) => {
+            let location = Location::new(file_id, function);
+            let id = database.intern_function(location);
             ModuleDef::Function(Function { id })
         },
         ModuleItem::Struct(r#struct) => {
-            let loc = Location::new(file_id, r#struct);
-            let id = database.intern_struct(loc);
+            let location = Location::new(file_id, r#struct);
+            let id = database.intern_struct(location);
             ModuleDef::Struct(Struct { id })
         },
-        ModuleItem::GlobalVariable(var) => {
-            let loc = Location::new(file_id, var);
-            let id = database.intern_global_variable(loc);
+        ModuleItem::GlobalVariable(variable) => {
+            let location = Location::new(file_id, variable);
+            let id = database.intern_global_variable(location);
             ModuleDef::GlobalVariable(GlobalVariable { id })
         },
         ModuleItem::GlobalConstant(constant) => {
-            let loc = Location::new(file_id, constant);
-            let id = database.intern_global_constant(loc);
+            let location = Location::new(file_id, constant);
+            let id = database.intern_global_constant(location);
             ModuleDef::GlobalConstant(GlobalConstant { id })
         },
         ModuleItem::Override(constant) => {
-            let loc = Location::new(file_id, constant);
-            let id = database.intern_override(loc);
+            let location = Location::new(file_id, constant);
+            let id = database.intern_override(location);
             ModuleDef::Override(Override { id })
         },
         ModuleItem::TypeAlias(type_alias) => {
-            let loc = Location::new(file_id, type_alias);
-            let id = database.intern_type_alias(loc);
+            let location = Location::new(file_id, type_alias);
+            let id = database.intern_type_alias(location);
             ModuleDef::TypeAlias(TypeAlias { id })
         },
     };
@@ -734,7 +731,9 @@ impl ModuleDef {
     pub const fn as_def_with_body_id(&self) -> Option<DefinitionWithBodyId> {
         match *self {
             Self::Function(function) => Some(DefinitionWithBodyId::Function(function.id)),
-            Self::GlobalVariable(var) => Some(DefinitionWithBodyId::GlobalVariable(var.id)),
+            Self::GlobalVariable(variable) => {
+                Some(DefinitionWithBodyId::GlobalVariable(variable.id))
+            },
             Self::GlobalConstant(constant) => {
                 Some(DefinitionWithBodyId::GlobalConstant(constant.id))
             },
@@ -779,9 +778,9 @@ impl Module {
         for item in self.items(database) {
             match item {
                 ModuleDef::Function(_function) => {},
-                ModuleDef::GlobalVariable(var) => {
-                    diagnostics::global_variable::collect(database, var.id, |error| {
-                        if let Some(source) = var.source(database) {
+                ModuleDef::GlobalVariable(variable) => {
+                    diagnostics::global_variable::collect(database, variable.id, |error| {
+                        if let Some(source) = variable.source(database) {
                             let source = source.map(|declaration| AstPointer::new(&declaration));
                             accumulator.push(diagnostics::any_diag_from_global_var(error, source));
                         }

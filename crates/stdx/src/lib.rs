@@ -2,12 +2,11 @@
 
 use std::{
     cmp::Ordering,
-    hash::{BuildHasher, BuildHasherDefault},
-    ops,
+    hash::{BuildHasher, BuildHasherDefault, Hash, Hasher},
+    io as sio, ops,
+    process::Command,
     time::Instant,
 };
-use std::{hash::Hash, io as sio};
-use std::{hash::Hasher, process::Command};
 pub mod anymap;
 pub mod assert;
 mod macros;
@@ -272,6 +271,7 @@ pub struct JodChild(pub std::process::Child);
 
 impl ops::Deref for JodChild {
     type Target = std::process::Child;
+
     fn deref(&self) -> &std::process::Child {
         &self.0
     }
@@ -285,8 +285,8 @@ impl ops::DerefMut for JodChild {
 
 impl Drop for JodChild {
     fn drop(&mut self) {
-        self.0.kill();
-        self.0.wait();
+        let _unused = self.0.kill();
+        let _unused2 = self.0.wait();
     }
 }
 

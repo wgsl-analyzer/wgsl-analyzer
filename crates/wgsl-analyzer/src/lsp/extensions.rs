@@ -15,13 +15,11 @@ use std::ops;
 use camino::Utf8PathBuf;
 use lsp_types::{
     CodeActionKind, DocumentOnTypeFormattingParams, PartialResultParams, Position, Range,
-    TextDocumentIdentifier, Url, WorkDoneProgressParams, notification::Notification,
-    request::Request,
+    TextDocumentIdentifier, TextDocumentPositionParams, Url, WorkDoneProgressParams,
+    notification::Notification, request::Request,
 };
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-
-use lsp_types::TextDocumentPositionParams;
 
 pub enum SyntaxTree {}
 
@@ -84,6 +82,7 @@ pub enum InlayHints {}
 impl Request for InlayHints {
     type Params = inlay_hints::InlayHintsParameters;
     type Result = Vec<inlay_hints::InlayHint>;
+
     const METHOD: &'static str = "experimental/inlayHints";
 }
 
@@ -103,8 +102,8 @@ pub mod inlay_hints {
     pub struct InlayHintKind(u8);
 
     impl InlayHintKind {
-        pub const TYPE: Self = Self(1);
         pub const PARAMETER: Self = Self(2);
+        pub const TYPE: Self = Self(1);
     }
 
     #[derive(Debug, Deserialize, Serialize)]
@@ -143,6 +142,7 @@ pub enum ImportTextDocument {}
 impl Request for ImportTextDocument {
     type Params = import_text_document::ImportTextDocumentParameters;
     type Result = ();
+
     const METHOD: &'static str = "wgsl-analyzer/importTextDocument";
 }
 
@@ -174,6 +174,7 @@ impl Request for InternalTestingFetchConfig {
     type Params = InternalTestingFetchConfigParameters;
     // Option is solely to circumvent Default bound.
     type Result = Option<InternalTestingFetchConfigResponse>;
+
     const METHOD: &'static str = "rust-analyzer-internal/internalTestingFetchConfig";
 }
 
@@ -188,6 +189,7 @@ pub enum AnalyzerStatus {}
 impl Request for AnalyzerStatus {
     type Params = AnalyzerStatusParameters;
     type Result = String;
+
     const METHOD: &'static str = "rust-analyzer/analyzerStatus";
 }
 
@@ -209,6 +211,7 @@ pub enum FetchDependencyList {}
 impl Request for FetchDependencyList {
     type Params = FetchDependencyListParameters;
     type Result = FetchDependencyListResult;
+
     const METHOD: &'static str = "rust-analyzer/fetchDependencyList";
 }
 
@@ -227,6 +230,7 @@ pub enum MemoryUsage {}
 impl Request for MemoryUsage {
     type Params = ();
     type Result = String;
+
     const METHOD: &'static str = "rust-analyzer/memoryUsage";
 }
 
@@ -235,6 +239,7 @@ pub enum ReloadWorkspace {}
 impl Request for ReloadWorkspace {
     type Params = ();
     type Result = ();
+
     const METHOD: &'static str = "rust-analyzer/reloadWorkspace";
 }
 
@@ -243,6 +248,7 @@ pub enum RebuildProcMacros {}
 impl Request for RebuildProcMacros {
     type Params = ();
     type Result = ();
+
     const METHOD: &'static str = "rust-analyzer/rebuildProcMacros";
 }
 
@@ -251,6 +257,7 @@ pub enum ViewSyntaxTree {}
 impl Request for ViewSyntaxTree {
     type Params = ViewSyntaxTreeParameters;
     type Result = String;
+
     const METHOD: &'static str = "rust-analyzer/viewSyntaxTree";
 }
 
@@ -265,6 +272,7 @@ pub enum ViewHir {}
 impl Request for ViewHir {
     type Params = lsp_types::TextDocumentPositionParams;
     type Result = String;
+
     const METHOD: &'static str = "rust-analyzer/viewHir";
 }
 
@@ -273,6 +281,7 @@ pub enum ViewMir {}
 impl Request for ViewMir {
     type Params = lsp_types::TextDocumentPositionParams;
     type Result = String;
+
     const METHOD: &'static str = "rust-analyzer/viewMir";
 }
 
@@ -281,6 +290,7 @@ pub enum InterpretFunction {}
 impl Request for InterpretFunction {
     type Params = lsp_types::TextDocumentPositionParams;
     type Result = String;
+
     const METHOD: &'static str = "rust-analyzer/interpretFunction";
 }
 
@@ -289,6 +299,7 @@ pub enum ViewFileText {}
 impl Request for ViewFileText {
     type Params = lsp_types::TextDocumentIdentifier;
     type Result = String;
+
     const METHOD: &'static str = "rust-analyzer/viewFileText";
 }
 
@@ -304,6 +315,7 @@ pub enum ViewCrateGraph {}
 impl Request for ViewCrateGraph {
     type Params = ViewCrateGraphParameters;
     type Result = String;
+
     const METHOD: &'static str = "rust-analyzer/viewCrateGraph";
 }
 
@@ -318,6 +330,7 @@ pub enum ViewItemTree {}
 impl Request for ViewItemTree {
     type Params = ViewItemTreeParameters;
     type Result = String;
+
     const METHOD: &'static str = "rust-analyzer/viewItemTree";
 }
 
@@ -361,6 +374,7 @@ pub enum DiscoverTest {}
 impl Request for DiscoverTest {
     type Params = DiscoverTestParameters;
     type Result = DiscoverTestResults;
+
     const METHOD: &'static str = "experimental/discoverTest";
 }
 
@@ -368,6 +382,7 @@ pub enum DiscoveredTests {}
 
 impl Notification for DiscoveredTests {
     type Params = DiscoverTestResults;
+
     const METHOD: &'static str = "experimental/discoveredTests";
 }
 
@@ -383,6 +398,7 @@ pub enum RunTest {}
 impl Request for RunTest {
     type Params = RunTestParameters;
     type Result = ();
+
     const METHOD: &'static str = "experimental/runTest";
 }
 
@@ -390,6 +406,7 @@ pub enum EndRunTest {}
 
 impl Notification for EndRunTest {
     type Params = ();
+
     const METHOD: &'static str = "experimental/endRunTest";
 }
 
@@ -397,6 +414,7 @@ pub enum AppendOutputToRunTest {}
 
 impl Notification for AppendOutputToRunTest {
     type Params = String;
+
     const METHOD: &'static str = "experimental/appendOutputToRunTest";
 }
 
@@ -404,6 +422,7 @@ pub enum AbortRunTest {}
 
 impl Notification for AbortRunTest {
     type Params = ();
+
     const METHOD: &'static str = "experimental/abortRunTest";
 }
 
@@ -428,6 +447,7 @@ pub enum ChangeTestState {}
 
 impl Notification for ChangeTestState {
     type Params = ChangeTestStateParameters;
+
     const METHOD: &'static str = "experimental/changeTestState";
 }
 
@@ -436,6 +456,7 @@ pub enum ExpandMacro {}
 impl Request for ExpandMacro {
     type Params = ExpandMacroParameters;
     type Result = Option<ExpandedMacro>;
+
     const METHOD: &'static str = "rust-analyzer/expandMacro";
 }
 
@@ -458,6 +479,7 @@ pub enum ViewRecursiveMemoryLayout {}
 impl Request for ViewRecursiveMemoryLayout {
     type Params = lsp_types::TextDocumentPositionParams;
     type Result = Option<RecursiveMemoryLayout>;
+
     const METHOD: &'static str = "rust-analyzer/viewRecursiveMemoryLayout";
 }
 
@@ -484,6 +506,7 @@ pub enum CancelFlycheck {}
 
 impl Notification for CancelFlycheck {
     type Params = ();
+
     const METHOD: &'static str = "rust-analyzer/cancelFlycheck";
 }
 
@@ -491,6 +514,7 @@ pub enum RunFlycheck {}
 
 impl Notification for RunFlycheck {
     type Params = RunFlycheckParameters;
+
     const METHOD: &'static str = "rust-analyzer/runFlycheck";
 }
 
@@ -498,6 +522,7 @@ pub enum ClearFlycheck {}
 
 impl Notification for ClearFlycheck {
     type Params = ();
+
     const METHOD: &'static str = "rust-analyzer/clearFlycheck";
 }
 
@@ -505,6 +530,7 @@ pub enum OpenServerLogs {}
 
 impl Notification for OpenServerLogs {
     type Params = ();
+
     const METHOD: &'static str = "rust-analyzer/openServerLogs";
 }
 
@@ -519,6 +545,7 @@ pub enum MatchingBrace {}
 impl Request for MatchingBrace {
     type Params = MatchingBraceParameters;
     type Result = Vec<Position>;
+
     const METHOD: &'static str = "experimental/matchingBrace";
 }
 
@@ -534,6 +561,7 @@ pub enum ParentModule {}
 impl Request for ParentModule {
     type Params = lsp_types::TextDocumentPositionParams;
     type Result = Option<lsp_types::GotoDefinitionResponse>;
+
     const METHOD: &'static str = "experimental/parentModule";
 }
 
@@ -542,6 +570,7 @@ pub enum JoinLines {}
 impl Request for JoinLines {
     type Params = JoinLinesParameters;
     type Result = Vec<lsp_types::TextEdit>;
+
     const METHOD: &'static str = "experimental/joinLines";
 }
 
@@ -557,6 +586,7 @@ pub enum OnEnter {}
 impl Request for OnEnter {
     type Params = lsp_types::TextDocumentPositionParams;
     type Result = Option<Vec<SnippetTextEdit>>;
+
     const METHOD: &'static str = "experimental/onEnter";
 }
 
@@ -565,6 +595,7 @@ pub enum Runnables {}
 impl Request for Runnables {
     type Params = RunnablesParameters;
     type Result = Vec<Runnable>;
+
     const METHOD: &'static str = "experimental/runnables";
 }
 
@@ -631,6 +662,7 @@ pub enum RelatedTests {}
 impl Request for RelatedTests {
     type Params = lsp_types::TextDocumentPositionParams;
     type Result = Vec<TestInfo>;
+
     const METHOD: &'static str = "rust-analyzer/relatedTests";
 }
 
@@ -644,6 +676,7 @@ pub enum Ssr {}
 impl Request for Ssr {
     type Params = SsrParameters;
     type Result = lsp_types::WorkspaceEdit;
+
     const METHOD: &'static str = "experimental/ssr";
 }
 
@@ -666,6 +699,7 @@ pub enum ServerStatusNotification {}
 
 impl Notification for ServerStatusNotification {
     type Params = ServerStatusParameters;
+
     const METHOD: &'static str = "experimental/serverStatus";
 }
 
@@ -703,6 +737,7 @@ pub enum CodeActionRequest {}
 impl Request for CodeActionRequest {
     type Params = lsp_types::CodeActionParams;
     type Result = Option<Vec<CodeAction>>;
+
     const METHOD: &'static str = "textDocument/codeAction";
 }
 
@@ -711,6 +746,7 @@ pub enum CodeActionResolveRequest {}
 impl Request for CodeActionResolveRequest {
     type Params = CodeAction;
     type Result = CodeAction;
+
     const METHOD: &'static str = "codeAction/resolve";
 }
 
@@ -788,6 +824,7 @@ pub enum HoverRequest {}
 impl Request for HoverRequest {
     type Params = HoverParameters;
     type Result = Option<HoverResult>;
+
     const METHOD: &'static str = lsp_types::request::HoverRequest::METHOD;
 }
 
@@ -837,6 +874,7 @@ pub enum ExternalDocs {}
 impl Request for ExternalDocs {
     type Params = lsp_types::TextDocumentPositionParams;
     type Result = ExternalDocsResponse;
+
     const METHOD: &'static str = "experimental/externalDocs";
 }
 
@@ -865,6 +903,7 @@ pub enum OpenCargoToml {}
 impl Request for OpenCargoToml {
     type Params = OpenCargoTomlParameters;
     type Result = Option<lsp_types::GotoDefinitionResponse>;
+
     const METHOD: &'static str = "experimental/openCargoToml";
 }
 
@@ -894,6 +933,7 @@ pub enum MoveItem {}
 impl Request for MoveItem {
     type Params = MoveItemParameters;
     type Result = Vec<SnippetTextEdit>;
+
     const METHOD: &'static str = "experimental/moveItem";
 }
 
@@ -917,6 +957,7 @@ pub enum WorkspaceSymbol {}
 impl Request for WorkspaceSymbol {
     type Params = WorkspaceSymbolParameters;
     type Result = Option<lsp_types::WorkspaceSymbolResponse>;
+
     const METHOD: &'static str = "workspace/symbol";
 }
 
@@ -962,6 +1003,7 @@ pub enum OnTypeFormatting {}
 impl Request for OnTypeFormatting {
     type Params = DocumentOnTypeFormattingParams;
     type Result = Option<Vec<SnippetTextEdit>>;
+
     const METHOD: &'static str = "textDocument/onTypeFormatting";
 }
 

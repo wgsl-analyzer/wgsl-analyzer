@@ -6,25 +6,25 @@ use wgsl_types::syntax::AccessMode;
 use crate::{
     database::HirDatabase,
     ty::{
-        BoundVar, MatrixType, ScalarType, TexelFormat, TextureKind, TextureType, TyKind, Type,
-        VecSize, VectorType,
+        BoundVariable, MatrixType, ScalarType, TexelFormat, TextureKind, TextureType, Type,
+        TypeKind, VecSize, VectorType,
     },
 };
 
 #[derive(Default)]
 pub struct UnificationTable {
-    types: FxHashMap<BoundVar, Type>,
-    vec_sizes: FxHashMap<BoundVar, VecSize>,
-    texel_formats: FxHashMap<BoundVar, TexelFormat>,
+    types: FxHashMap<BoundVariable, Type>,
+    vec_sizes: FxHashMap<BoundVariable, VecSize>,
+    texel_formats: FxHashMap<BoundVariable, TexelFormat>,
 }
 
 impl UnificationTable {
     fn set_vec_size(
         &mut self,
-        var: BoundVar,
+        variable: BoundVariable,
         vec_size: VecSize,
     ) -> Result<(), ()> {
-        match self.vec_sizes.entry(var) {
+        match self.vec_sizes.entry(variable) {
             Entry::Occupied(entry) if *entry.get() == vec_size => Ok(()),
             Entry::Occupied(_) => Err(()),
             Entry::Vacant(entry) => {
@@ -36,11 +36,11 @@ impl UnificationTable {
 
     fn set_type(
         &mut self,
-        var: BoundVar,
+        variable: BoundVariable,
         r#type: Type,
         database: &dyn HirDatabase,
     ) -> Result<(), ()> {
-        match self.types.entry(var) {
+        match self.types.entry(variable) {
             Entry::Occupied(entry) if *entry.get() == r#type => Ok(()),
             Entry::Occupied(mut entry) => {
                 // abstract number conversions
@@ -62,10 +62,10 @@ impl UnificationTable {
 
     fn set_texel_format(
         &mut self,
-        var: BoundVar,
+        variable: BoundVariable,
         format: TexelFormat,
     ) -> Result<(), ()> {
-        match self.texel_formats.entry(var) {
+        match self.texel_formats.entry(variable) {
             Entry::Occupied(entry) if *entry.get() == format => Ok(()),
             Entry::Occupied(_) => Err(()),
             Entry::Vacant(entry) => {
@@ -81,37 +81,39 @@ impl UnificationTable {
         r#type: Type,
     ) -> Type {
         match r#type.kind(database) {
-            TyKind::BoundVar(var) => *self.types.get(&var).expect("type var not constrained"),
-            TyKind::Vector(VectorType {
+            TypeKind::BoundVariable(variable) => {
+                *self.types.get(&variable).expect("type var not constrained")
+            },
+            TypeKind::Vector(VectorType {
                 size,
                 component_type: inner,
             }) => {
                 let size = match size {
-                    VecSize::BoundVar(size_var) => *self
+                    VecSize::BoundVariable(size_var) => *self
                         .vec_sizes
                         .get(&size_var)
                         .expect("vec size var not constrained"),
-                    (VecSize::Two | VecSize::Three | VecSize::Four) => size,
+                    VecSize::Two | VecSize::Three | VecSize::Four => size,
                 };
                 let inner = self.resolve(database, inner);
-                TyKind::Vector(VectorType {
+                TypeKind::Vector(VectorType {
                     size,
                     component_type: inner,
                 })
                 .intern(database)
             },
-            TyKind::Matrix(mat) => {
-                let columns = match mat.columns {
-                    VecSize::BoundVar(var) => self.vec_sizes[&var],
+            TypeKind::Matrix(matrix) => {
+                let columns = match matrix.columns {
+                    VecSize::BoundVariable(variable) => self.vec_sizes[&variable],
                     other @ (VecSize::Two | VecSize::Three | VecSize::Four) => other,
                 };
-                let rows = match mat.rows {
-                    VecSize::BoundVar(var) => self.vec_sizes[&var],
+                let rows = match matrix.rows {
+                    VecSize::BoundVariable(variable) => self.vec_sizes[&variable],
                     other @ (VecSize::Two | VecSize::Three | VecSize::Four) => other,
                 };
 
-                let inner = self.resolve(database, mat.inner);
-                TyKind::Matrix(MatrixType {
+                let inner = self.resolve(database, matrix.inner);
+                TypeKind::Matrix(MatrixType {
                     columns,
                     rows,
                     inner,
@@ -122,15 +124,15 @@ impl UnificationTable {
                 deprecated,
                 reason = "TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
             )]
-            TyKind::Texture(TextureType {
-                kind: TextureKind::Storage(TexelFormat::BoundVar(var), mode),
+            TypeKind::Texture(TextureType {
+                kind: TextureKind::Storage(TexelFormat::BoundVariable(variable), mode),
                 dimension,
                 arrayed,
                 multisampled,
             }) => {
-                let format = self.texel_formats[&var];
+                let format = self.texel_formats[&variable];
 
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::Storage(format, mode),
                     dimension,
                     arrayed,
@@ -138,14 +140,14 @@ impl UnificationTable {
                 })
                 .intern(database)
             },
-            TyKind::Texture(TextureType {
+            TypeKind::Texture(TextureType {
                 kind: TextureKind::Sampled(sampled_ty),
                 dimension,
                 arrayed,
                 multisampled,
             }) => {
                 let sampled_ty = self.resolve(database, sampled_ty);
-                TyKind::Texture(TextureType {
+                TypeKind::Texture(TextureType {
                     kind: TextureKind::Sampled(sampled_ty),
                     dimension,
                     arrayed,
@@ -153,19 +155,19 @@ impl UnificationTable {
                 })
                 .intern(database)
             },
-            TyKind::StorageTypeOfTexelFormat(var) => {
-                let format = self.texel_formats[&var];
+            TypeKind::StorageTypeOfTexelFormat(variable) => {
+                let format = self.texel_formats[&variable];
                 storage_type_of_texel_format(database, format)
             },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::Pointer(_) => r#type,
+            TypeKind::Error
+            | TypeKind::Scalar(_)
+            | TypeKind::Atomic(_)
+            | TypeKind::Struct(_)
+            | TypeKind::Array(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::Reference(_)
+            | TypeKind::Pointer(_) => r#type,
         }
     }
 }
@@ -185,135 +187,135 @@ pub fn unify(
     let found_kind = found.kind(database);
 
     match expected_kind {
-        TyKind::BoundVar(var) => {
-            table.set_type(var, found, database)?;
+        TypeKind::BoundVariable(variable) => {
+            table.set_type(variable, found, database)?;
             Ok(())
         },
-        TyKind::Vector(VectorType {
+        TypeKind::Vector(VectorType {
             size,
             component_type: inner,
         }) => match found_kind {
-            TyKind::Vector(found_vec) => {
+            TypeKind::Vector(found_vec) => {
                 unify(database, table, inner, found_vec.component_type)?;
-                if let VecSize::BoundVar(vec_size_var) = size {
+                if let VecSize::BoundVariable(vec_size_var) = size {
                     table.set_vec_size(vec_size_var, found_vec.size)?;
                 } else if size != found_vec.size {
                     return Err(());
                 }
                 Ok(())
             },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Matrix(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::Pointer(_)
-            | TyKind::BoundVar(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
+            TypeKind::Error
+            | TypeKind::Scalar(_)
+            | TypeKind::Atomic(_)
+            | TypeKind::Matrix(_)
+            | TypeKind::Struct(_)
+            | TypeKind::Array(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::Reference(_)
+            | TypeKind::Pointer(_)
+            | TypeKind::BoundVariable(_)
+            | TypeKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
-        TyKind::Matrix(MatrixType {
+        TypeKind::Matrix(MatrixType {
             columns,
             rows,
             inner,
         }) => match found_kind {
-            TyKind::Matrix(found_mat) => {
+            TypeKind::Matrix(found_mat) => {
                 unify(database, table, inner, found_mat.inner)?;
 
-                if let VecSize::BoundVar(var) = columns {
-                    table.set_vec_size(var, found_mat.columns)?;
+                if let VecSize::BoundVariable(variable) = columns {
+                    table.set_vec_size(variable, found_mat.columns)?;
                 } else if columns != found_mat.columns {
                     return Err(());
                 }
 
-                if let VecSize::BoundVar(var) = rows {
-                    table.set_vec_size(var, found_mat.rows)?;
+                if let VecSize::BoundVariable(variable) = rows {
+                    table.set_vec_size(variable, found_mat.rows)?;
                 } else if rows != found_mat.rows {
                     return Err(());
                 }
 
                 Ok(())
             },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Vector(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::Pointer(_)
-            | TyKind::BoundVar(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
+            TypeKind::Error
+            | TypeKind::Scalar(_)
+            | TypeKind::Atomic(_)
+            | TypeKind::Vector(_)
+            | TypeKind::Struct(_)
+            | TypeKind::Array(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::Reference(_)
+            | TypeKind::Pointer(_)
+            | TypeKind::BoundVariable(_)
+            | TypeKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
-        TyKind::Pointer(pointer) => match found_kind {
-            TyKind::Pointer(found_pointer) => {
+        TypeKind::Pointer(pointer) => match found_kind {
+            TypeKind::Pointer(found_pointer) => {
                 unify(database, table, pointer.inner, found_pointer.inner)?;
 
                 Ok(())
             },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Vector(_)
-            | TyKind::Matrix(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::BoundVar(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
+            TypeKind::Error
+            | TypeKind::Scalar(_)
+            | TypeKind::Atomic(_)
+            | TypeKind::Vector(_)
+            | TypeKind::Matrix(_)
+            | TypeKind::Struct(_)
+            | TypeKind::Array(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::Reference(_)
+            | TypeKind::BoundVariable(_)
+            | TypeKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
-        TyKind::Array(array) => match found_kind {
-            TyKind::Array(found_array) => {
+        TypeKind::Array(array) => match found_kind {
+            TypeKind::Array(found_array) => {
                 unify(database, table, array.inner, found_array.inner)?;
 
                 Ok(())
             },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Vector(_)
-            | TyKind::Matrix(_)
-            | TyKind::Struct(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::Pointer(_)
-            | TyKind::BoundVar(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
+            TypeKind::Error
+            | TypeKind::Scalar(_)
+            | TypeKind::Atomic(_)
+            | TypeKind::Vector(_)
+            | TypeKind::Matrix(_)
+            | TypeKind::Struct(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::Reference(_)
+            | TypeKind::Pointer(_)
+            | TypeKind::BoundVariable(_)
+            | TypeKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
-        TyKind::Atomic(atomic) => match found_kind {
-            TyKind::Atomic(found_atomic) => {
+        TypeKind::Atomic(atomic) => match found_kind {
+            TypeKind::Atomic(found_atomic) => {
                 unify(database, table, atomic.inner, found_atomic.inner)?;
 
                 Ok(())
             },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Vector(_)
-            | TyKind::Matrix(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::Pointer(_)
-            | TyKind::BoundVar(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
+            TypeKind::Error
+            | TypeKind::Scalar(_)
+            | TypeKind::Vector(_)
+            | TypeKind::Matrix(_)
+            | TypeKind::Struct(_)
+            | TypeKind::Array(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::Reference(_)
+            | TypeKind::Pointer(_)
+            | TypeKind::BoundVariable(_)
+            | TypeKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
-        TyKind::Texture(TextureType {
+        TypeKind::Texture(TextureType {
             kind: TextureKind::Storage(format, mode),
             arrayed,
             multisampled,
             dimension,
         }) => match found_kind {
-            TyKind::Texture(TextureType {
+            TypeKind::Texture(TextureType {
                 kind: TextureKind::Storage(format_2, mode_2),
                 arrayed: arrayed_2,
                 multisampled: multisampled_2,
@@ -332,8 +334,8 @@ pub fn unify(
                 )]
                 match format {
                     TexelFormat::Any => {},
-                    TexelFormat::BoundVar(var) => {
-                        table.set_texel_format(var, format_2)?;
+                    TexelFormat::BoundVariable(variable) => {
+                        table.set_texel_format(variable, format_2)?;
                     },
                     TexelFormat::Rgba8unorm
                     | TexelFormat::Rgba8snorm
@@ -372,21 +374,21 @@ pub fn unify(
 
                 Ok(())
             },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Vector(_)
-            | TyKind::Matrix(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::Pointer(_)
-            | TyKind::BoundVar(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
+            TypeKind::Error
+            | TypeKind::Scalar(_)
+            | TypeKind::Atomic(_)
+            | TypeKind::Vector(_)
+            | TypeKind::Matrix(_)
+            | TypeKind::Struct(_)
+            | TypeKind::Array(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::Reference(_)
+            | TypeKind::Pointer(_)
+            | TypeKind::BoundVariable(_)
+            | TypeKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
-        TyKind::StorageTypeOfTexelFormat(format) => {
+        TypeKind::StorageTypeOfTexelFormat(format) => {
             let format = table.texel_formats[&format];
             let storage_type = storage_type_of_texel_format(database, format);
 
@@ -396,13 +398,13 @@ pub fn unify(
 
             Ok(())
         },
-        TyKind::Texture(TextureType {
+        TypeKind::Texture(TextureType {
             kind: TextureKind::Sampled(sampled_ty),
             arrayed,
             multisampled,
             dimension,
         }) => match found_kind {
-            TyKind::Texture(TextureType {
+            TypeKind::Texture(TextureType {
                 kind: TextureKind::Sampled(found_sampled_ty),
                 arrayed: arrayed_2,
                 multisampled: multisampled_2,
@@ -419,26 +421,26 @@ pub fn unify(
 
                 Ok(())
             },
-            TyKind::Error
-            | TyKind::Scalar(_)
-            | TyKind::Atomic(_)
-            | TyKind::Vector(_)
-            | TyKind::Matrix(_)
-            | TyKind::Struct(_)
-            | TyKind::Array(_)
-            | TyKind::Texture(_)
-            | TyKind::Sampler(_)
-            | TyKind::Reference(_)
-            | TyKind::Pointer(_)
-            | TyKind::BoundVar(_)
-            | TyKind::StorageTypeOfTexelFormat(_) => Err(()),
+            TypeKind::Error
+            | TypeKind::Scalar(_)
+            | TypeKind::Atomic(_)
+            | TypeKind::Vector(_)
+            | TypeKind::Matrix(_)
+            | TypeKind::Struct(_)
+            | TypeKind::Array(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::Reference(_)
+            | TypeKind::Pointer(_)
+            | TypeKind::BoundVariable(_)
+            | TypeKind::StorageTypeOfTexelFormat(_) => Err(()),
         },
-        TyKind::Error
-        | TyKind::Scalar(_)
-        | TyKind::Struct(_)
-        | TyKind::Texture(_)
-        | TyKind::Sampler(_)
-        | TyKind::Reference(_) => {
+        TypeKind::Error
+        | TypeKind::Scalar(_)
+        | TypeKind::Struct(_)
+        | TypeKind::Texture(_)
+        | TypeKind::Sampler(_)
+        | TypeKind::Reference(_) => {
             // Only 1 direction is checked for now
             // Since "expected" cannot be an abstract type,
             // nor can it contain type variables
@@ -478,11 +480,13 @@ fn storage_type_of_texel_format(
             clippy::unreachable,
             reason = "TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
         )]
-        TexelFormat::BoundVar(_) | TexelFormat::Any => unreachable!("why is this unreachable?"),
+        TexelFormat::BoundVariable(_) | TexelFormat::Any => {
+            unreachable!("why is this unreachable?")
+        },
     };
-    TyKind::Vector(VectorType {
+    TypeKind::Vector(VectorType {
         size: VecSize::Four,
-        component_type: TyKind::Scalar(channel_type).intern(database),
+        component_type: TypeKind::Scalar(channel_type).intern(database),
     })
     .intern(database)
 }

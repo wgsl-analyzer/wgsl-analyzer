@@ -5,12 +5,11 @@ mod lexer;
 mod parser;
 mod syntax_kind;
 
-use std::fmt::{self, Debug};
+use std::fmt::{self, Debug, Write as _};
 
 pub use edition::Edition;
 pub use parser::{Diagnostic, parse_entrypoint};
-use rowan::{GreenNode, SyntaxNode as RowanSyntaxNode};
-use std::fmt::Write as _;
+use rowan::GreenNode;
 
 pub struct Parse {
     green_node: GreenNode,
@@ -54,7 +53,7 @@ impl Parse {
             buffer.push('\n');
         }
         for diagnostic in &self.errors {
-            write!(buffer, "\n{diagnostic}");
+            write!(buffer, "\n{diagnostic}").unwrap();
         }
         buffer
     }

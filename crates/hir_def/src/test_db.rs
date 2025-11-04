@@ -1,7 +1,6 @@
-use crate::database::DefDatabase;
-use base_db::{FileLoader, FileLoaderDelegate, SourceDatabase, TextRange, change::Change};
-use rustc_hash::FxHashMap;
-use std::{fmt, panic, sync::Mutex};
+use std::{fmt, panic};
+
+use base_db::{FileLoader, FileLoaderDelegate, change::Change};
 use triomphe::Arc;
 use vfs::{AnchoredPath, FileId, VfsPath};
 

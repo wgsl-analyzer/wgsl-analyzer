@@ -3,7 +3,7 @@ pub mod scope;
 
 use either::Either;
 use la_arena::{Arena, ArenaMap, Idx};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use syntax::{ast, pointer::AstPointer};
 use triomphe::Arc;
 
@@ -11,7 +11,7 @@ use crate::{
     HasSource as _,
     attributes::Attribute,
     database::{DefDatabase, DefinitionWithBodyId, Lookup as _},
-    expression::{Expression, ExpressionId, Statement, StatementId},
+    expression::{ExpressionId, Statement, StatementId},
     expression_store::{ExpressionSourceMap, ExpressionStore, SyntheticSyntax},
     module_data::Name,
 };
@@ -40,6 +40,7 @@ pub struct Body {
 
 impl std::ops::Deref for Body {
     type Target = ExpressionStore;
+
     #[inline]
     fn deref(&self) -> &Self::Target {
         &self.store
@@ -90,7 +91,7 @@ impl Body {
                 let location = id.lookup(database);
                 let source = location.source(database);
 
-                lower::lower_global_var_declaration(database, file_id, &source.value)
+                lower::lower_global_variable_declaration(database, file_id, &source.value)
             },
             DefinitionWithBodyId::GlobalConstant(id) => {
                 let location = id.lookup(database);

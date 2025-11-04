@@ -1,23 +1,14 @@
-use std::{collections::VecDeque, str::FromStr};
+use std::collections::VecDeque;
 
-use hir_def::{
-    expression::{BinaryOperation, Expression, ExpressionId, UnaryOperator},
-    expression_store::ExpressionStore,
-    resolver::ResolveKind,
-    type_specifier::TypeSpecifier,
-};
+use hir_def::expression::{BinaryOperation, Expression, ExpressionId, UnaryOperator};
 use wgsl_types::{
     inst::{Instance, LiteralInstance},
     syntax::Enumerant,
 };
 
 use crate::{
-    database::HirDatabase as _,
-    infer::{
-        InferenceContext, InferenceDiagnostic, Lowered, TyLoweringContext, TypeContainer,
-        TypeLoweringError, TypeLoweringErrorKind,
-    },
-    ty::{TyKind, Type},
+    infer::{Lowered, TyLoweringContext, TypeContainer, TypeLoweringError, TypeLoweringErrorKind},
+    ty::{Type, TypeKind},
 };
 
 impl TyLoweringContext<'_> {
@@ -141,7 +132,7 @@ impl TyLoweringContext<'_> {
                             container: TypeContainer::Expression(tplt),
                             kind: TypeLoweringErrorKind::MissingTemplate,
                         });
-                        TemplateParameter::Type(TyKind::Error.intern(self.database))
+                        TemplateParameter::Type(TypeKind::Error.intern(self.database))
                     },
                     Lowered::Enumerant(enumerant) => TemplateParameter::Enumerant(enumerant),
                     Lowered::Function(_) | Lowered::BuiltinFunction => {
@@ -152,7 +143,7 @@ impl TyLoweringContext<'_> {
                                 ident_expression.path.clone(),
                             ),
                         });
-                        TemplateParameter::Type(self.database.intern_ty(TyKind::Error))
+                        TemplateParameter::Type(self.database.intern_ty(TypeKind::Error))
                     },
                     Lowered::GlobalConstant(_)
                     | Lowered::GlobalVariable(_)
@@ -207,9 +198,11 @@ impl TemplateParameters {
     pub fn has_next(&self) -> bool {
         !self.inner.is_empty()
     }
+
     pub fn next(&mut self) -> Option<(TemplateParameter, ExpressionId)> {
         self.inner.pop_front()
     }
+
     pub fn next_as_type(&mut self) -> Result<(Type, ExpressionId), TypeLoweringError> {
         match self.next() {
             Some((TemplateParameter::Type(r#type), id)) => Ok((r#type, id)),
@@ -223,6 +216,7 @@ impl TemplateParameters {
             }),
         }
     }
+
     pub fn next_as_instance(
         &mut self
     ) -> Result<(Option<Instance>, ExpressionId), TypeLoweringError> {
@@ -238,6 +232,7 @@ impl TemplateParameters {
             }),
         }
     }
+
     pub fn next_as_enumerant(&mut self) -> Result<(Enumerant, ExpressionId), TypeLoweringError> {
         match self.next() {
             Some((TemplateParameter::Enumerant(enumerant), id)) => Ok((enumerant, id)),

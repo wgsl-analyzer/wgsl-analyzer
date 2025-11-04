@@ -3,7 +3,7 @@ use syntax::{HasName as _, HasTemplateParameters as _, ast, pointer::AstPointer}
 use triomphe::Arc;
 
 use crate::{
-    HirFileId, InFile,
+    InFile,
     data::{
         FieldData, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, ParamData,
         StructData, TypeAliasData,
@@ -95,7 +95,7 @@ impl ExprCollector<'_> {
                 );
                 let template_parameters = self.collect_template_parameters(
                     call.ident_expression()
-                        .and_then(|identifier| (identifier.template_parameters())),
+                        .and_then(|identifier| identifier.template_parameters()),
                 );
 
                 Expression::Call {
@@ -138,6 +138,7 @@ impl ExprCollector<'_> {
         };
         self.alloc_type_specifier(type_specifier, syntax_pointer)
     }
+
     pub fn collect_template_parameters(
         &mut self,
         template_parameters: Option<ast::TemplateList>,

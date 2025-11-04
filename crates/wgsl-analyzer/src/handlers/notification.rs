@@ -10,7 +10,6 @@ use itertools::Itertools as _;
 use lsp_types::{
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
     DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
-    PublishDiagnosticsParams, notification::PublishDiagnostics,
 };
 use tracing::error;
 
@@ -21,7 +20,6 @@ use crate::{
     global_state::GlobalState,
     in_memory_documents::DocumentData,
     lsp::{from_proto, utilities::apply_document_changes},
-    reload,
 };
 
 pub(crate) fn handle_did_open_text_document(
@@ -37,7 +35,7 @@ pub(crate) fn handle_did_open_text_document(
     };
 
     let text_bytes = parameters.text_document.text.into_bytes();
-    state.in_memory_documents.insert(
+    _ = state.in_memory_documents.insert(
         path.clone(),
         DocumentData {
             version: parameters.text_document.version,

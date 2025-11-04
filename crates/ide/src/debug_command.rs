@@ -1,6 +1,5 @@
 use base_db::FilePosition;
 use hir::HirDatabase;
-use syntax::{AstNode as _, ast};
 
 pub(crate) fn debug_command(
     database: &dyn HirDatabase,

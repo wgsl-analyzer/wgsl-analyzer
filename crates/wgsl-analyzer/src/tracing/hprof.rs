@@ -68,22 +68,22 @@ impl<S> SpanTree<S>
 where
     S: Subscriber + for<'span> tracing_subscriber::registry::LookupSpan<'span>,
 {
-    pub(crate) fn new_filtered(spec: &str) -> impl Layer<S> + use<S> {
+    pub(crate) fn new_filtered(spec: &str) -> impl Layer<S> {
         let (write_filter, allowed_names) = WriteFilter::from_spec(spec);
 
         // this filter the first pass for `tracing`: these are all the "profiling" spans, but things like
         // span depth or duration are not filtered here: that only occurs at write time.
         let profile_filter = filter::filter_fn(move |metadata| {
-            let allowed = allowed_names
-                .as_ref()
-                .is_none_or(|names| names.contains(metadata.name()));
+            let allowed = match &allowed_names {
+                Some(names) => names.contains(metadata.name()),
+                None => true,
+            };
 
             allowed
                 && metadata.is_span()
                 && metadata.level() >= &Level::INFO
                 && !metadata.target().starts_with("salsa")
                 && metadata.name() != "compute_exhaustiveness_and_usefulness"
-                && !metadata.target().starts_with("chalk")
         });
 
         Self {
@@ -102,7 +102,7 @@ struct Data {
 }
 
 impl Data {
-    fn new(attrs: &Attributes<'_>) -> Self {
+    fn new(attributes: &Attributes<'_>) -> Self {
         let mut data = Self {
             start: Instant::now(),
             children: Vec::new(),
@@ -112,7 +112,7 @@ impl Data {
         let mut visitor = DataVisitor {
             string: &mut data.fields,
         };
-        attrs.record(&mut visitor);
+        attributes.record(&mut visitor);
         data
     }
 
@@ -145,25 +145,26 @@ impl Visit for DataVisitor<'_> {
     }
 }
 
+#[expect(clippy::renamed_function_params, reason = "abbreviations")]
 impl<S> Layer<S> for SpanTree<S>
 where
     S: Subscriber + for<'span> LookupSpan<'span>,
 {
     fn on_new_span(
         &self,
-        attrs: &Attributes<'_>,
+        attributes: &Attributes<'_>,
         id: &Id,
-        ctx: Context<'_, S>,
+        context: Context<'_, S>,
     ) {
-        let span = ctx.span(id).unwrap();
-        let data = Data::new(attrs);
+        let span = context.span(id).unwrap();
+        let data = Data::new(attributes);
         span.extensions_mut().insert(data);
     }
 
     fn on_event(
         &self,
         _event: &Event<'_>,
-        _ctx: Context<'_, S>,
+        _context: Context<'_, S>,
     ) {
     }
 

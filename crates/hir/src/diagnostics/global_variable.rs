@@ -1,7 +1,7 @@
 use hir_def::database::{DefinitionWithBodyId, GlobalVariableId};
 use hir_ty::{
     database::HirDatabase,
-    ty::{ArrayType, Reference, TyKind},
+    ty::{ArrayType, Reference, TypeKind},
     validate::AddressSpaceError,
 };
 
@@ -12,13 +12,13 @@ pub enum GlobalVariableDiagnostic {
 
 pub fn collect<Function: FnMut(GlobalVariableDiagnostic)>(
     database: &dyn HirDatabase,
-    var: GlobalVariableId,
+    variable: GlobalVariableId,
     mut diagnostic_builder: Function,
 ) {
-    let inference = database.infer(DefinitionWithBodyId::GlobalVariable(var));
+    let inference = database.infer(DefinitionWithBodyId::GlobalVariable(variable));
     let ty_kind = inference.return_type().kind(database);
 
-    if let TyKind::Reference(Reference {
+    if let TypeKind::Reference(Reference {
         address_space,
         access_mode,
         ..
@@ -34,10 +34,10 @@ pub fn collect<Function: FnMut(GlobalVariableDiagnostic)>(
         );
     } else if !matches!(
         ty_kind,
-        TyKind::Error
-            | TyKind::Sampler(_)
-            | TyKind::Texture(_)
-            | TyKind::Array(ArrayType {
+        TypeKind::Error
+            | TypeKind::Sampler(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Array(ArrayType {
                 binding_array: true,
                 ..
             })

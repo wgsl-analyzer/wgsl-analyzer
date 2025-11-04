@@ -17,13 +17,6 @@ pub mod flags;
 
 use std::io::Read as _;
 
-use anyhow::Result;
-use hir::Module;
-use hir_def::module_data::Name;
-use hir_ty::database::HirDatabase;
-use itertools::Itertools;
-use vfs::Vfs;
-
 #[derive(Clone, Copy)]
 pub enum Verbosity {
     Spammy,
