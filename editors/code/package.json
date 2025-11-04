@@ -254,71 +254,6 @@
 		],
 		"configuration": [
 			{
-				"title": "wgsl-analyzer",
-				"properties": {
-					"wgsl-analyzer.diagnostics.typeErrors": {
-						"type": "boolean",
-						"default": true,
-						"description": "Controls whether to show type errors."
-					},
-					"wgsl-analyzer.diagnostics.nagaParsingErrors": {
-						"type": "boolean",
-						"default": false,
-						"description": "Controls whether to show naga's parsing errors."
-					},
-					"wgsl-analyzer.diagnostics.nagaValidationErrors": {
-						"type": "boolean",
-						"default": true,
-						"description": "Controls whether to show naga's validation errors."
-					},
-					"wgsl-analyzer.diagnostics.nagaVersion": {
-						"type": "string",
-						"enum": [
-							"0.14",
-							"0.19",
-							"0.22",
-							"main"
-						],
-						"default": "0.22",
-						"description": "Which version of naga to use for its diagnostics"
-					},
-					"wgsl-analyzer.inlayHints.enabled": {
-						"type": "boolean",
-						"default": true,
-						"description": "Whether to show inlay hints"
-					},
-					"wgsl-analyzer.inlayHints.typeHints": {
-						"type": "boolean",
-						"default": true,
-						"description": "Whether to show inlay hints for types of variable declarations"
-					},
-					"wgsl-analyzer.inlayHints.parameterHints": {
-						"type": "boolean",
-						"default": true,
-						"description": "Whether to show inlay hints for the names of function parameters"
-					},
-					"wgsl-analyzer.inlayHints.structLayoutHints": {
-						"type": "boolean",
-						"default": false,
-						"description": "Whether to show inlay hints for the layout of struct fields"
-					},
-					"wgsl-analyzer.inlayHints.typeVerbosity": {
-						"type": "string",
-						"enum": [
-							"full",
-							"compact",
-							"inner"
-						],
-						"enumDescriptions": [
-							"e.g. ref<uniform, f32, read_write>",
-							"e.g. ref<f32>",
-							"e.g. f32"
-						],
-						"default": "compact"
-					}
-				}
-			},
-			{
 				"title": "general",
 				"properties": {
 					"wgsl-analyzer.restartServerOnConfigChange": {
@@ -454,33 +389,6 @@
 				}
 			},
 			{
-				"title": "trace",
-				"properties": {
-					"wgsl-analyzer.trace.server": {
-						"type": "string",
-						"scope": "window",
-						"enum": [
-							"off",
-							"messages",
-							"verbose"
-						],
-						"enumDescriptions": [
-							"No traces",
-							"Error only",
-							"Full log"
-						],
-						"default": "off",
-						"description": "Trace requests to the wgsl-analyzer (this is usually overly verbose and not recommended for regular users)."
-					},
-					"wgsl-analyzer.trace.extension": {
-						"description": "Enable logging of VS Code extensions itself.",
-						"markdownDeprecationMessage": "Log level is now controlled by the [Developer: Set Log Level...](command:workbench.action.setLogLevel) command. You can set the log level for the current session and also the default log level from there. This is also available by clicking the gear icon on the OUTPUT tab when wgsl-analyzer Client is visible or by passing the --log wgsl-analyzer.wgsl-analyzer:debug parameter to VS Code.",
-						"type": "boolean",
-						"default": false
-					}
-				}
-			},
-			{
 				"title": "typing",
 				"properties": {
 					"wgsl-analyzer.typing.continueCommentsOnNewline": {
@@ -491,67 +399,13 @@
 				}
 			},
 			{
-				"title": "diagnostics",
-				"properties": {
-					"wgsl-analyzer.diagnostics.previewNagaOutput": {
-						"markdownDescription": "Whether to show the main part of the rendered Naga output of a diagnostic message.",
-						"default": false,
-						"type": "boolean"
-					},
-					"wgsl-analyzer.diagnostics.useNagaErrorCode": {
-						"markdownDescription": "Whether to show diagnostics using the original Naga error code. If this is false, all Naga diagnostics will have the code 'Naga(Click for full compiler diagnostics)'",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
 				"title": "$generated-start"
 			},
 			{
-				"title": "assist",
-				"properties": {
-					"wgsl-analyzer.assist.expressionFillDefault": {
-						"markdownDescription": "Placeholder expression to use for missing expressions in assists.",
-						"default": "todo",
-						"type": "string",
-						"enum": [
-							"todo",
-							"default"
-						],
-						"enumDescriptions": [
-							"Fill missing expressions with a `todo` comment.",
-							"Fill missing expressions with reasonable defaults."
-						]
-					}
-				}
-			},
-			{
-				"title": "assist",
-				"properties": {
-					"wgsl-analyzer.assist.termSearch.fuel": {
-						"markdownDescription": "Term search fuel in \"units of work\" for assists (Defaults to 1800).",
-						"default": 1800,
-						"type": "integer",
-						"minimum": 0
-					}
-				}
-			},
-			{
-				"title": "cachePriming",
-				"properties": {
-					"wgsl-analyzer.cachePriming.enable": {
-						"markdownDescription": "Warm up caches on project load.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "cachePriming",
+				"title": "Cache Priming",
 				"properties": {
 					"wgsl-analyzer.cachePriming.numThreads": {
-						"markdownDescription": "How many worker threads to handle priming caches. The default `0` means to pick automatically.",
+						"markdownDescription": "Number of worker threads used to warm caches when a project opens.\nUse `0` to let the server choose automatically based on the machine.",
 						"default": "physical",
 						"anyOf": [
 							{
@@ -575,642 +429,79 @@
 				}
 			},
 			{
-				"title": "completion",
+				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.completion.addSemicolonToUnit": {
-						"markdownDescription": "Whether to automatically add a semicolon when completing unit-returning functions.",
+					"wgsl-analyzer.diagnostics.nagaParsingErrors": {
+						"markdownDescription": "Controls whether to show naga's parsing errors.",
 						"default": true,
 						"type": "boolean"
 					}
 				}
 			},
 			{
-				"title": "completion",
+				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.completion.callable.snippets": {
-						"markdownDescription": "Whether to add parenthesis and argument snippets when completing function.",
-						"default": "fill_arguments",
+					"wgsl-analyzer.diagnostics.nagaValidationErrors": {
+						"markdownDescription": "Controls whether to show naga's validation errors.",
+						"default": true,
+						"type": "boolean"
+					}
+				}
+			},
+			{
+				"title": "Diagnostics",
+				"properties": {
+					"wgsl-analyzer.diagnostics.nagaVersion": {
+						"markdownDescription": "Naga version used for validation.",
+						"default": "0.22",
 						"type": "string",
 						"enum": [
-							"fill_arguments",
-							"add_parentheses",
-							"none"
+							"0.14",
+							"0.19",
+							"0.22",
+							"main"
 						],
 						"enumDescriptions": [
-							"Add call parentheses and pre-fill arguments.",
-							"Add call parentheses.",
-							"Do no snippet completions for callables."
+							"Naga version 14",
+							"Naga version 19",
+							"Naga version 22",
+							"Version of Naga on main (most recent stable version)"
 						]
 					}
 				}
 			},
 			{
-				"title": "completion",
+				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.completion.fullFunctionSignatures.enable": {
-						"markdownDescription": "Whether to show full function/method signatures in completion docs.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "completion",
-				"properties": {
-					"wgsl-analyzer.completion.limit": {
-						"markdownDescription": "Maximum number of completions to return. If `null`, then there is no limit.",
-						"default": null,
-						"type": [
-							"null",
-							"integer"
-						],
-						"minimum": 0
-					}
-				}
-			},
-			{
-				"title": "completion",
-				"properties": {
-					"wgsl-analyzer.completion.postfix.enable": {
-						"markdownDescription": "Whether to show postfix snippets like `if` and `not`.",
+					"wgsl-analyzer.diagnostics.typeErrors": {
+						"markdownDescription": "Controls whether to show type errors.",
 						"default": true,
 						"type": "boolean"
 					}
 				}
 			},
 			{
-				"title": "completion",
+				"title": "Inlay Hints",
 				"properties": {
-					"wgsl-analyzer.completion.snippets.custom": {
-						"markdownDescription": "Custom completion snippets.",
-						"default": {},
-						"type": "object"
-					}
-				}
-			},
-			{
-				"title": "completion",
-				"properties": {
-					"wgsl-analyzer.completion.termSearch.enable": {
-						"markdownDescription": "Whether to enable term search based snippets.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "completion",
-				"properties": {
-					"wgsl-analyzer.completion.termSearch.fuel": {
-						"markdownDescription": "Term search fuel in \"units of work\" for autocompletion (Defaults to 1000).",
-						"default": 1000,
-						"type": "integer",
-						"minimum": 0
-					}
-				}
-			},
-			{
-				"title": "diagnostics",
-				"properties": {
-					"wgsl-analyzer.diagnostics.disabled": {
-						"markdownDescription": "List of wgsl-analyzer diagnostics to disable.",
-						"default": [],
-						"type": "array",
-						"items": {
-							"type": "string"
-						},
-						"uniqueItems": true
-					}
-				}
-			},
-			{
-				"title": "diagnostics",
-				"properties": {
-					"wgsl-analyzer.diagnostics.enable": {
-						"markdownDescription": "Whether to show native wgsl-analyzer diagnostics.",
+					"wgsl-analyzer.inlayHints.enabled": {
+						"markdownDescription": "Whether to show inlay hints.",
 						"default": true,
 						"type": "boolean"
 					}
 				}
 			},
 			{
-				"title": "diagnostics",
+				"title": "Inlay Hints",
 				"properties": {
-					"wgsl-analyzer.diagnostics.experimental.enable": {
-						"markdownDescription": "Whether to show experimental wgsl-analyzer diagnostics that might have more false positives than usual.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "diagnostics",
-				"properties": {
-					"wgsl-analyzer.diagnostics.styleLints.enable": {
-						"markdownDescription": "Whether to run additional style lints.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "diagnostics",
-				"properties": {
-					"wgsl-analyzer.diagnostics.warningsAsHint": {
-						"markdownDescription": "List of warnings that should be displayed with hint severity.\n\nThe warnings will be indicated by faded text or three dots in code and will not show up in the `Problems Panel`.",
-						"default": [],
-						"type": "array",
-						"items": {
-							"type": "string"
-						}
-					}
-				}
-			},
-			{
-				"title": "diagnostics",
-				"properties": {
-					"wgsl-analyzer.diagnostics.warningsAsInfo": {
-						"markdownDescription": "List of warnings that should be displayed with info severity.\n\nThe warnings will be indicated by a blue squiggly underline in code and a blue icon in the `Problems Panel`.",
-						"default": [],
-						"type": "array",
-						"items": {
-							"type": "string"
-						}
-					}
-				}
-			},
-			{
-				"title": "files",
-				"properties": {
-					"wgsl-analyzer.files.exclude": {
-						"markdownDescription": "These paths (file/directories) will be ignored by wgsl-analyzer. They are relative to the workspace root, and globs are not supported. You may also need to add the folders to Code's `files.watcherExclude`.",
-						"default": [],
-						"type": "array",
-						"items": {
-							"type": "string"
-						}
-					}
-				}
-			},
-			{
-				"title": "files",
-				"properties": {
-					"wgsl-analyzer.files.watcher": {
-						"markdownDescription": "Controls file watching implementation.",
-						"default": "client",
-						"type": "string",
-						"enum": [
-							"client",
-							"server"
-						],
-						"enumDescriptions": [
-							"Use the client (editor) to watch files for changes",
-							"Use server-side file watching"
-						]
-					}
-				}
-			},
-			{
-				"title": "highlightRelated",
-				"properties": {
-					"wgsl-analyzer.highlightRelated.breakPoints.enable": {
-						"markdownDescription": "Enables highlighting of related references while the cursor is on `break`, `loop`, `while`, or `for` keywords.",
+					"wgsl-analyzer.inlayHints.parameterHints": {
+						"markdownDescription": "Whether to show inlay hints for the names of function parameters.",
 						"default": true,
 						"type": "boolean"
 					}
 				}
 			},
 			{
-				"title": "highlightRelated",
-				"properties": {
-					"wgsl-analyzer.highlightRelated.exitPoints.enable": {
-						"markdownDescription": "Enables highlighting of all exit points while the cursor is on any `return`, `fn`, or return type arrow (`->`).",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "highlightRelated",
-				"properties": {
-					"wgsl-analyzer.highlightRelated.references.enable": {
-						"markdownDescription": "Enables highlighting of related references while the cursor is on any identifier.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "hover",
-				"properties": {
-					"wgsl-analyzer.hover.actions.enable": {
-						"markdownDescription": "Whether to show hover actions.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "hover",
-				"properties": {
-					"wgsl-analyzer.hover.actions.gotoTypeDef.enable": {
-						"markdownDescription": "Whether to show `Go to Type Definition` action. Only applies when `#wgsl-analyzer.hover.actions.enable#` is set.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "hover",
-				"properties": {
-					"wgsl-analyzer.hover.actions.implementations.enable": {
-						"markdownDescription": "Whether to show `Implementations` action. Only applies when `#wgsl-analyzer.hover.actions.enable#` is set.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "hover",
-				"properties": {
-					"wgsl-analyzer.hover.actions.references.enable": {
-						"markdownDescription": "Whether to show `References` action. Only applies when `#wgsl-analyzer.hover.actions.enable#` is set.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "hover",
-				"properties": {
-					"wgsl-analyzer.hover.documentation.enable": {
-						"markdownDescription": "Whether to show documentation on hover.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "hover",
-				"properties": {
-					"wgsl-analyzer.hover.documentation.keywords.enable": {
-						"markdownDescription": "Whether to show keyword hover popups. Only applies when `#wgsl-analyzer.hover.documentation.enable#` is set.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "hover",
-				"properties": {
-					"wgsl-analyzer.hover.links.enable": {
-						"markdownDescription": "Use markdown syntax for links on hover.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "hover",
-				"properties": {
-					"wgsl-analyzer.hover.memoryLayout.alignment": {
-						"markdownDescription": "How to render the align information in a memory layout hover.",
-						"default": "hexadecimal",
-						"anyOf": [
-							{
-								"type": "null"
-							},
-							{
-								"type": "string",
-								"enum": [
-									"both",
-									"decimal",
-									"hexadecimal"
-								],
-								"enumDescriptions": [
-									"Render as 12 (0xC)",
-									"Render as 12",
-									"Render as 0xC"
-								]
-							}
-						]
-					}
-				}
-			},
-			{
-				"title": "hover",
-				"properties": {
-					"wgsl-analyzer.hover.memoryLayout.enable": {
-						"markdownDescription": "Whether to show memory layout data on hover.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "hover",
-				"properties": {
-					"wgsl-analyzer.hover.memoryLayout.niches": {
-						"markdownDescription": "How to render the niche information in a memory layout hover.",
-						"default": false,
-						"type": [
-							"null",
-							"boolean"
-						]
-					}
-				}
-			},
-			{
-				"title": "hover",
-				"properties": {
-					"wgsl-analyzer.hover.memoryLayout.offset": {
-						"markdownDescription": "How to render the offset information in a memory layout hover.",
-						"default": "hexadecimal",
-						"anyOf": [
-							{
-								"type": "null"
-							},
-							{
-								"type": "string",
-								"enum": [
-									"both",
-									"decimal",
-									"hexadecimal"
-								],
-								"enumDescriptions": [
-									"Render as 12 (0xC)",
-									"Render as 12",
-									"Render as 0xC"
-								]
-							}
-						]
-					}
-				}
-			},
-			{
-				"title": "hover",
-				"properties": {
-					"wgsl-analyzer.hover.memoryLayout.size": {
-						"markdownDescription": "How to render the size information in a memory layout hover.",
-						"default": "both",
-						"anyOf": [
-							{
-								"type": "null"
-							},
-							{
-								"type": "string",
-								"enum": [
-									"both",
-									"decimal",
-									"hexadecimal"
-								],
-								"enumDescriptions": [
-									"Render as 12 (0xC)",
-									"Render as 12",
-									"Render as 0xC"
-								]
-							}
-						]
-					}
-				}
-			},
-			{
-				"title": "hover",
-				"properties": {
-					"wgsl-analyzer.hover.show.fields": {
-						"markdownDescription": "How many fields of a struct to display when hovering thereover. Show none if empty.",
-						"default": 5,
-						"type": [
-							"null",
-							"integer"
-						],
-						"minimum": 0
-					}
-				}
-			},
-			{
-				"title": "imports",
-				"properties": {
-					"wgsl-analyzer.imports.granularity.enforce": {
-						"markdownDescription": "Whether to enforce the import granularity setting for all files. If set to false wgsl-analyzer will try to keep import styles consistent per file.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "imports",
-				"properties": {
-					"wgsl-analyzer.imports.granularity.group": {
-						"markdownDescription": "How imports should be grouped into import statements.",
-						"default": "package",
-						"type": "string",
-						"enum": [
-							"preserve",
-							"package",
-							"module",
-							"item",
-							"one"
-						],
-						"enumDescriptions": [
-							"Do not change the granularity of any imports and preserve the original structure written by the developer.",
-							"Merge imports from the same package into a single import statement. Conversely, imports from different packages are split into separate statements.",
-							"Merge imports from the same module into a single import statement. Conversely, imports from different modules are split into separate statements.",
-							"Flatten imports so that each has its own import statement.",
-							"Merge all imports into a single import statement as long as they have the same visibility and attributes."
-						]
-					}
-				}
-			},
-			{
-				"title": "imports",
-				"properties": {
-					"wgsl-analyzer.imports.group.enable": {
-						"markdownDescription": "Group inserted imports by the [following order](https://wgsl-analyzer.github.io/manual.html#auto-import). Groups are separated by newlines.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "imports",
-				"properties": {
-					"wgsl-analyzer.imports.merge.glob": {
-						"markdownDescription": "Whether to allow import insertion to merge new imports into single path glob imports like `import x::y::*;`.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
-				"properties": {
-					"wgsl-analyzer.inlayHints.bindingModeHints.enable": {
-						"markdownDescription": "Whether to show inlay type hints for binding modes.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
-				"properties": {
-					"wgsl-analyzer.inlayHints.closingBraceHints.enable": {
-						"markdownDescription": "Whether to show inlay hints after a closing `}` to indicate what item it belongs to.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
-				"properties": {
-					"wgsl-analyzer.inlayHints.closingBraceHints.minLines": {
-						"markdownDescription": "Minimum number of lines required before the `}` until the hint is shown (set to 0 or 1 to always show them).",
-						"default": 25,
-						"type": "integer",
-						"minimum": 0
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
-				"properties": {
-					"wgsl-analyzer.inlayHints.expressionAdjustmentHints.mode": {
-						"markdownDescription": "Whether to show inlay hints as postfix ops (`.*` instead of `*`, etc).",
-						"default": "prefix",
-						"type": "string",
-						"enum": [
-							"prefix",
-							"postfix",
-							"prefer_prefix",
-							"prefer_postfix"
-						],
-						"enumDescriptions": [
-							"Always show adjustment hints as prefix (`*expr`).",
-							"Always show adjustment hints as postfix (`expr.*`).",
-							"Show prefix or postfix depending on which uses less parenthesis, preferring prefix.",
-							"Show prefix or postfix depending on which uses less parenthesis, preferring postfix."
-						]
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
-				"properties": {
-					"wgsl-analyzer.inlayHints.genericParameterHints.const.enable": {
-						"markdownDescription": "Whether to show const generic parameter name inlay hints.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
-				"properties": {
-					"wgsl-analyzer.inlayHints.genericParameterHints.lifetime.enable": {
-						"markdownDescription": "Whether to show generic lifetime parameter name inlay hints.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
-				"properties": {
-					"wgsl-analyzer.inlayHints.genericParameterHints.type.enable": {
-						"markdownDescription": "Whether to show generic type parameter name inlay hints.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
-				"properties": {
-					"wgsl-analyzer.inlayHints.implicitDrops.enable": {
-						"markdownDescription": "Whether to show implicit drop hints.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
-				"properties": {
-					"wgsl-analyzer.inlayHints.implicitSizedBoundHints.enable": {
-						"markdownDescription": "Whether to show inlay hints for the implied type parameter `Sized` bound.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
-				"properties": {
-					"wgsl-analyzer.inlayHints.lifetimeElisionHints.enable": {
-						"markdownDescription": "Whether to show inlay type hints for elided lifetimes in function signatures.",
-						"default": "never",
-						"type": "string",
-						"enum": [
-							"always",
-							"never",
-							"skip_trivial"
-						],
-						"enumDescriptions": [
-							"Always show lifetime elision hints.",
-							"Never show lifetime elision hints.",
-							"Only show lifetime elision hints if a return type is involved."
-						]
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
-				"properties": {
-					"wgsl-analyzer.inlayHints.lifetimeElisionHints.useParameterNames": {
-						"markdownDescription": "Whether to prefer using parameter names as the name for elided lifetime hints if possible.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
-				"properties": {
-					"wgsl-analyzer.inlayHints.maxLength": {
-						"markdownDescription": "Maximum length for inlay hints. Set to null to have an unlimited length.",
-						"default": 25,
-						"type": [
-							"null",
-							"integer"
-						],
-						"minimum": 0
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
-				"properties": {
-					"wgsl-analyzer.inlayHints.parameterHints.enable": {
-						"markdownDescription": "Whether to show function parameter name inlay hints at the call site.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
-				"properties": {
-					"wgsl-analyzer.inlayHints.rangeExclusiveHints.enable": {
-						"markdownDescription": "Whether to show exclusive range inlay hints.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
+				"title": "Inlay Hints",
 				"properties": {
 					"wgsl-analyzer.inlayHints.renderColons": {
 						"markdownDescription": "Whether to render leading colons for type hints, and trailing colons for parameter hints.",
@@ -1220,188 +511,54 @@
 				}
 			},
 			{
-				"title": "inlayHints",
+				"title": "Inlay Hints",
 				"properties": {
-					"wgsl-analyzer.inlayHints.typeHints.enable": {
-						"markdownDescription": "Whether to show inlay type hints for variables.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "inlayHints",
-				"properties": {
-					"wgsl-analyzer.inlayHints.typeHints.hideNamedConstructor": {
-						"markdownDescription": "Whether to hide inlay type hints for constructors.",
+					"wgsl-analyzer.inlayHints.structLayoutHints": {
+						"markdownDescription": "Whether to show inlay hints for the layout of struct fields.",
 						"default": false,
 						"type": "boolean"
 					}
 				}
 			},
 			{
-				"title": "joinLines",
+				"title": "Inlay Hints",
 				"properties": {
-					"wgsl-analyzer.joinLines.joinAssignments": {
-						"markdownDescription": "Join lines merges consecutive declaration and initialization of an assignment.",
+					"wgsl-analyzer.inlayHints.typeHints": {
+						"markdownDescription": "Whether to show inlay hints for types of variable declarations.",
 						"default": true,
 						"type": "boolean"
 					}
 				}
 			},
 			{
-				"title": "joinLines",
+				"title": "Inlay Hints",
 				"properties": {
-					"wgsl-analyzer.joinLines.joinElseIf": {
-						"markdownDescription": "Join lines inserts else between consecutive ifs.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "joinLines",
-				"properties": {
-					"wgsl-analyzer.joinLines.removeTrailingComma": {
-						"markdownDescription": "Join lines removes trailing commas.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "joinLines",
-				"properties": {
-					"wgsl-analyzer.joinLines.unwrapTrivialBlock": {
-						"markdownDescription": "Join lines unwraps trivial blocks.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "lens",
-				"properties": {
-					"wgsl-analyzer.lens.enable": {
-						"markdownDescription": "Whether to show CodeLens.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "lens",
-				"properties": {
-					"wgsl-analyzer.lens.implementations.enable": {
-						"markdownDescription": "Whether to show `Implementations` lens. Only applies when `#wgsl-analyzer.lens.enable#` is set.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "lens",
-				"properties": {
-					"wgsl-analyzer.lens.location": {
-						"markdownDescription": "Where to render annotations.",
-						"default": "above_name",
+					"wgsl-analyzer.inlayHints.typeVerbosity": {
+						"markdownDescription": "Verbosity of type hints: `\"full\"`, `\"compact\"`, or `\"inner\"`.",
+						"default": "compact",
 						"type": "string",
 						"enum": [
-							"above_name",
-							"above_whole_item"
+							"full",
+							"compact",
+							"inner"
 						],
 						"enumDescriptions": [
-							"Render annotations above the name of the item.",
-							"Render annotations above the whole item, including documentation comments and attributes."
+							"`ref<uniform, f32, read_write>`",
+							"`ref<f32>`",
+							"`f32`"
 						]
 					}
 				}
 			},
 			{
-				"title": "lens",
-				"properties": {
-					"wgsl-analyzer.lens.references.adt.enable": {
-						"markdownDescription": "Whether to show `References` lens for Struct declarations.\nOnly applies when `#wgsl-analyzer.lens.enable#` is set.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "lens",
-				"properties": {
-					"wgsl-analyzer.lens.references.method.enable": {
-						"markdownDescription": "Whether to show `Method References` lens. Only applies when `#wgsl-analyzer.lens.enable#` is set.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "lens",
-				"properties": {
-					"wgsl-analyzer.lens.run.enable": {
-						"markdownDescription": "Whether to show `Run` lens. Only applies when `#wgsl-analyzer.lens.enable#` is set.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "general",
-				"properties": {
-					"wgsl-analyzer.linkedProjects": {
-						"markdownDescription": "Disable project auto-discovery in favor of explicitly specified set of projects.\n\nElements must be paths pointing to `wesl.toml`, `.wgsl` files, or `.wesl` files (which will be treated as standalone files).",
-						"default": [],
-						"type": "array",
-						"items": {
-							"type": [
-								"string",
-								"object"
-							]
-						}
-					}
-				}
-			},
-			{
-				"title": "lru",
-				"properties": {
-					"wgsl-analyzer.lru.capacity": {
-						"markdownDescription": "Number of syntax trees wgsl-analyzer keeps in memory. Defaults to 128.",
-						"default": null,
-						"type": [
-							"null",
-							"integer"
-						],
-						"minimum": 0,
-						"maximum": 65535
-					}
-				}
-			},
-			{
-				"title": "lru",
-				"properties": {
-					"wgsl-analyzer.lru.query.capacities": {
-						"markdownDescription": "Sets the LRU capacity of the specified queries.",
-						"default": {},
-						"type": "object"
-					}
-				}
-			},
-			{
-				"title": "general",
+				"title": "wgsl-analyzer",
 				"properties": {
 					"wgsl-analyzer.numThreads": {
-						"markdownDescription": "How many worker threads in the main loop. The default `null` means to pick automatically.",
+						"markdownDescription": "Number of worker threads for the main analysis loop.\n`null` lets the server choose automatically.",
 						"default": null,
 						"anyOf": [
 							{
 								"type": "null"
-							},
-							{
-								"type": "number",
-								"minimum": 0,
-								"maximum": 255
 							},
 							{
 								"type": "string",
@@ -1419,221 +576,31 @@
 				}
 			},
 			{
-				"title": "references",
+				"title": "Trace",
 				"properties": {
-					"wgsl-analyzer.references.excludeImports": {
-						"markdownDescription": "Exclude imports from find-all-references.",
+					"wgsl-analyzer.trace.extension": {
+						"markdownDescription": "Enable logging of VS Code extensions itself.\nThis settings is now deprecated.\nLog level is now controlled by the [Developer: Set Log Level...](command:workbench.action.setLogLevel) command. You can set the log level for the current session and also the default log level from there. This is also available by clicking the gear icon on the OUTPUT tab when wgsl-analyzer Client is visible or by passing the --log wgsl-analyzer.wgsl-analyzer:debug parameter to VS Code.",
 						"default": false,
 						"type": "boolean"
 					}
 				}
 			},
 			{
-				"title": "wgslfmt",
+				"title": "Trace",
 				"properties": {
-					"wgsl-analyzer.wgslfmt.extraArgs": {
-						"markdownDescription": "Additional arguments to `wgslfmt`.",
-						"default": [],
-						"type": "array",
-						"items": {
-							"type": "string"
-						}
-					}
-				}
-			},
-			{
-				"title": "wgslfmt",
-				"properties": {
-					"wgsl-analyzer.wgslfmt.overrideCommand": {
-						"markdownDescription": "Advanced option, fully override the command wgsl-analyzer uses for formatting. This should be the equivalent of `wgslfmt` here, and not that of `wesl fmt`. The file contents will be passed on the standard input and the formatted result will be read from the standard output.",
-						"default": null,
-						"type": [
-							"null",
-							"array"
-						],
-						"items": {
-							"type": "string"
-						}
-					}
-				}
-			},
-			{
-				"title": "wgslfmt",
-				"properties": {
-					"wgsl-analyzer.wgslfmt.rangeFormatting.enable": {
-						"markdownDescription": "Enables the use of wgslfmt's unstable range formatting command for the `textDocument/rangeFormatting` request. The wgslfmt option is unstable.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "semanticHighlighting",
-				"properties": {
-					"wgsl-analyzer.semanticHighlighting.doc.comment.inject.enable": {
-						"markdownDescription": "Inject additional highlighting into doc comments.\n\nWhen enabled, wgsl-analyzer will highlight WGSL/WESL source in doc comments as well as intra-doc links.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "semanticHighlighting",
-				"properties": {
-					"wgsl-analyzer.semanticHighlighting.nonStandardTokens": {
-						"markdownDescription": "Whether the server is allowed to emit non-standard tokens and modifiers.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "semanticHighlighting",
-				"properties": {
-					"wgsl-analyzer.semanticHighlighting.operator.enable": {
-						"markdownDescription": "Use semantic tokens for operators.\n\nWhen disabled, wgsl-analyzer will emit semantic tokens only for operator tokens when they are tagged with modifiers.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "semanticHighlighting",
-				"properties": {
-					"wgsl-analyzer.semanticHighlighting.operator.specialization.enable": {
-						"markdownDescription": "Use specialized semantic tokens for operators.\n\nWhen enabled, wgsl-analyzer will emit special token types for operator tokens instead of the generic `operator` token type.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "semanticHighlighting",
-				"properties": {
-					"wgsl-analyzer.semanticHighlighting.punctuation.enable": {
-						"markdownDescription": "Use semantic tokens for punctuation.\n\nWhen disabled, wgsl-analyzer will emit semantic tokens only for punctuation tokens when they are tagged with modifiers or have a special role.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "semanticHighlighting",
-				"properties": {
-					"wgsl-analyzer.semanticHighlighting.punctuation.specialization.enable": {
-						"markdownDescription": "Use specialized semantic tokens for punctuation.\n\nWhen enabled, wgsl-analyzer will emit special token types for punctuation tokens instead of the generic `punctuation` token type.",
-						"default": false,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "semanticHighlighting",
-				"properties": {
-					"wgsl-analyzer.semanticHighlighting.strings.enable": {
-						"markdownDescription": "Use semantic tokens for strings.\n\nIn some editors (e.g. VS Code) semantic tokens override other highlighting grammars.\nBy disabling semantic tokens for strings, other grammars can be used to highlight their contents.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "signatureInfo",
-				"properties": {
-					"wgsl-analyzer.signatureInfo.detail": {
-						"markdownDescription": "Show full signature of the callable. Only shows parameters if disabled.",
-						"default": "full",
+					"wgsl-analyzer.trace.server": {
+						"markdownDescription": "Server trace verbosity.\nOne of: `\"off\"`, `\"messages\"`, or `\"verbose\"`.",
+						"default": "off",
 						"type": "string",
 						"enum": [
-							"full",
-							"parameters"
+							"off",
+							"messages",
+							"verbose"
 						],
 						"enumDescriptions": [
-							"Show the entire signature.",
-							"Show only the parameters."
-						]
-					}
-				}
-			},
-			{
-				"title": "signatureInfo",
-				"properties": {
-					"wgsl-analyzer.signatureInfo.documentation.enable": {
-						"markdownDescription": "Show documentation.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "typing",
-				"properties": {
-					"wgsl-analyzer.typing.triggerChars": {
-						"markdownDescription": "Specify the characters allowed to invoke special on typing triggers.\n- typing `=` after `let` tries to smartly add `;` if `=` is followed by an existing expression\n- typing `=` between two expressions adds `;` when in statement position\n- typing `=` to turn an assignment into an equality comparison removes `;` when in expression position\n- typing `{` or `(` in front of an expression inserts a closing `}` or `)` after the expression\n- typing `{` in a use item adds a closing `}` in the right place\n- typing `>` to complete a return type `->` will insert a whitespace after it.",
-						"default": "=.",
-						"type": [
-							"null",
-							"string"
-						]
-					}
-				}
-			},
-			{
-				"title": "vfs",
-				"properties": {
-					"wgsl-analyzer.vfs.extraIncludes": {
-						"markdownDescription": "Additional paths to include in the virtual file system.",
-						"default": [],
-						"type": "array",
-						"items": {
-							"type": "string"
-						}
-					}
-				}
-			},
-			{
-				"title": "workspace",
-				"properties": {
-					"wgsl-analyzer.workspace.symbol.search.kind": {
-						"markdownDescription": "Workspace symbol search kind.",
-						"default": "only_types",
-						"type": "string",
-						"enum": [
-							"only_types",
-							"all_symbols"
-						],
-						"enumDescriptions": [
-							"Search for types only.",
-							"Search for all symbols kinds."
-						]
-					}
-				}
-			},
-			{
-				"title": "workspace",
-				"properties": {
-					"wgsl-analyzer.workspace.symbol.search.limit": {
-						"markdownDescription": "Limits the number of items returned from a workspace symbol search (Defaults to 128).\nSome clients like vs-code issue new searches on result filtering and don't require all results to be returned in the initial search.\nOther clients requires all results upfront and might require a higher limit.",
-						"default": 128,
-						"type": "integer",
-						"minimum": 0
-					}
-				}
-			},
-			{
-				"title": "workspace",
-				"properties": {
-					"wgsl-analyzer.workspace.symbol.search.scope": {
-						"markdownDescription": "Workspace symbol search scope.",
-						"default": "workspace",
-						"type": "string",
-						"enum": [
-							"workspace",
-							"workspace_and_dependencies"
-						],
-						"enumDescriptions": [
-							"Search in current workspace only.",
-							"Search in current workspace and dependencies."
+							"No traces",
+							"Error only",
+							"Full log"
 						]
 					}
 				}

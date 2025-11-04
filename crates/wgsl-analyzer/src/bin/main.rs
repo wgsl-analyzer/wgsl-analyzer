@@ -6,6 +6,7 @@
 
 use std::{
     env::{self, args as arguments},
+    fmt::Debug,
     fs,
     io::stderr,
     path::PathBuf,
@@ -25,7 +26,7 @@ use tracing_subscriber::{
 use wgsl_analyzer::{
     Result,
     cli::flags,
-    config::{Config, ConfigChange, ConfigErrors, TraceConfig},
+    config::{Config, ConfigChange, ConfigErrors},
     from_json,
     main_loop::main_loop,
 };
