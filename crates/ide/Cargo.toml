@@ -49,18 +49,12 @@ hir-ty.workspace = true  # todo
 
 line-index = "0.1.2"
 
-naga14 = { package = "naga", version = "0.14", features = [
-  "wgsl-in",
-  "validate",
-  "span",
-] }
-naga19 = { package = "naga", version = "0.19", features = ["wgsl-in"] }
+
 naga22 = { package = "naga", version = "22.1.0", features = ["wgsl-in"] }
-# naga23 = { package = "naga", version = "23.0.0", features = ["wgsl-in"] }
-# naga24 = { package = "naga", version = "24.0.0", features = ["wgsl-in"] }
-nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "b32cbd4ea6b6b898b27b7837145b3cfe30ac1543", features = [
+naga27 = { package = "naga", version = "27.0.3", features = ["wgsl-in"] }
+nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "2a58599dc4a2a3ba565c0540c5c45e41bc3d25e3", features = [
   "wgsl-in",
-], version = "24.0.0" }
+], version = "27.0.0" }
 
 
 [dev-dependencies]

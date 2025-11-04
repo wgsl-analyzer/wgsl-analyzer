@@ -98,13 +98,11 @@ config_data! {
     Clone, Copy, Debug, Serialize, Deserialize, Default, Hash, PartialEq, Eq, PartialOrd, Ord,
 )]
 pub enum NagaVersionConfig {
-    #[serde(rename = "0.14")]
-    Naga14,
-    #[serde(rename = "0.19")]
-    Naga19,
     #[serde(rename = "0.22")]
-    #[default]
     Naga22,
+    #[serde(rename = "0.27")]
+    #[default]
+    Naga27,
     #[serde(rename = "main")]
     NagaMain,
 }
@@ -584,9 +582,8 @@ impl Config {
             naga_parsing_errors: *self.diagnostics_nagaParsingErrors(),
             naga_validation_errors: *self.diagnostics_nagaValidationErrors(),
             naga_version: match self.diagnostics_nagaVersion() {
-                NagaVersionConfig::Naga14 => NagaVersion::Naga14,
-                NagaVersionConfig::Naga19 => NagaVersion::Naga19,
                 NagaVersionConfig::Naga22 => NagaVersion::Naga22,
+                NagaVersionConfig::Naga27 => NagaVersion::Naga27,
                 NagaVersionConfig::NagaMain => NagaVersion::NagaMain,
             },
         }
@@ -965,11 +962,10 @@ fn field_props(
         },
         "NagaVersionConfig" => set! {
             "type": "string",
-            "enum": ["0.14", "0.19", "0.22", "main"],
+            "enum": ["0.22", "0.27", "main"],
             "enumDescriptions": [
-                "Naga version 14",
-                "Naga version 19",
                 "Naga version 22",
+                "Naga version 27",
                 "Version of Naga on main (most recent stable version)"
             ],
         },

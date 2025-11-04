@@ -80,15 +80,6 @@ checksum = "3a8241f3ebb85c056b509d4327ad0358fbbba6ffb340bf388f26350aeda225b1"
 
 [[package]]
 name = "bit-set"
-version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0700ddab506f33b20a03b13996eccd309a48e5ff77d0d95926aa0210fb4e95f1"
-dependencies = [
- "bit-vec 0.6.3",
-]
-
-[[package]]
-name = "bit-set"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0481a0e032742109b1133a095184ee93d88f3dc9e0d28a5d033dc77a073f44f"
@@ -104,12 +95,6 @@ checksum = "08807e080ed7f9d5433fa9b275196cfc35414f66a0c79d864dc51a0d825231a3"
 dependencies = [
  "bit-vec 0.8.0",
 ]
-
-[[package]]
-name = "bit-vec"
-version = "0.6.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "349f9b6a179ed607305526ca489b34ad0a41aed5f7980fa90eb03160b69598fb"
 
 [[package]]
 name = "bit-vec"
@@ -217,6 +202,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3538270d33cc669650c4b093848450d380def10c331d38c768e34cac80576e6e"
 dependencies = [
  "termcolor",
+ "unicode-width",
+]
+
+[[package]]
+name = "codespan-reporting"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe6d2e5af09e8c8ad56c969f2157a3d4238cebc7c55f0a517728c38f7b200f81"
+dependencies = [
  "unicode-width",
 ]
 
@@ -427,9 +421,9 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
 name = "foldhash"
-version = "0.1.5"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
+checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 
 [[package]]
 name = "form_urlencoded"
@@ -510,18 +504,12 @@ checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 
 [[package]]
 name = "hashbrown"
-version = "0.15.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9229cfe53dfd69f0609a49f65461bd93001ea1ef889cd5529dd176593f5338a1"
-dependencies = [
- "foldhash",
-]
-
-[[package]]
-name = "hashbrown"
 version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5419bdc4f6a9207fbeba6d11b604d481addf78ecd10c11ad51e76c2f6482748d"
+dependencies = [
+ "foldhash",
+]
 
 [[package]]
 name = "heck"
@@ -531,12 +519,6 @@ checksum = "6d621efb26863f0e9924c6ac577e8275e5e6b77455db64ffa6c65c904e9e132c"
 dependencies = [
  "unicode-segmentation",
 ]
-
-[[package]]
-name = "heck"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "hermit-abi"
@@ -720,10 +702,9 @@ dependencies = [
  "itertools",
  "line-index",
  "memchr",
- "naga 0.14.2",
- "naga 0.19.2",
  "naga 22.1.0",
- "naga 24.0.0",
+ "naga 27.0.0",
+ "naga 27.0.3",
  "nohash-hasher",
  "parser",
  "rowan",
@@ -928,7 +909,7 @@ name = "lelwel"
 version = "0.10.0"
 source = "git+https://github.com/0x2a-42/lelwel.git#8e3f24abd5a34c41100e9ef8a77a6414d16dbfee"
 dependencies = [
- "codespan-reporting",
+ "codespan-reporting 0.11.1",
  "logos",
 ]
 
@@ -1124,44 +1105,6 @@ dependencies = [
 
 [[package]]
 name = "naga"
-version = "0.14.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae585df4b6514cf8842ac0f1ab4992edc975892704835b549cf818dc0191249e"
-dependencies = [
- "bit-set 0.5.3",
- "bitflags 2.10.0",
- "codespan-reporting",
- "hexf-parse",
- "indexmap 2.12.0",
- "log",
- "num-traits",
- "rustc-hash 1.1.0",
- "termcolor",
- "thiserror 1.0.69",
- "unicode-xid",
-]
-
-[[package]]
-name = "naga"
-version = "0.19.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50e3524642f53d9af419ab5e8dd29d3ba155708267667c2f3f06c88c9e130843"
-dependencies = [
- "bit-set 0.5.3",
- "bitflags 2.10.0",
- "codespan-reporting",
- "hexf-parse",
- "indexmap 2.12.0",
- "log",
- "num-traits",
- "rustc-hash 1.1.0",
- "termcolor",
- "thiserror 1.0.69",
- "unicode-xid",
-]
-
-[[package]]
-name = "naga"
 version = "22.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8bd5a652b6faf21496f2cfd88fc49989c8db0825d1f6746b1a71a6ede24a63ad"
@@ -1170,7 +1113,7 @@ dependencies = [
  "bit-set 0.6.0",
  "bitflags 2.10.0",
  "cfg_aliases 0.1.1",
- "codespan-reporting",
+ "codespan-reporting 0.11.1",
  "hexf-parse",
  "indexmap 2.12.0",
  "log",
@@ -1182,23 +1125,51 @@ dependencies = [
 
 [[package]]
 name = "naga"
-version = "24.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=b32cbd4ea6b6b898b27b7837145b3cfe30ac1543#b32cbd4ea6b6b898b27b7837145b3cfe30ac1543"
+version = "27.0.0"
+source = "git+https://github.com/gfx-rs/wgpu?rev=2a58599dc4a2a3ba565c0540c5c45e41bc3d25e3#2a58599dc4a2a3ba565c0540c5c45e41bc3d25e3"
 dependencies = [
  "arrayvec",
  "bit-set 0.8.0",
  "bitflags 2.10.0",
+ "cfg-if",
  "cfg_aliases 0.2.1",
- "codespan-reporting",
- "hashbrown 0.15.5",
+ "codespan-reporting 0.12.0",
+ "half",
+ "hashbrown 0.16.0",
  "hexf-parse",
  "indexmap 2.12.0",
+ "libm",
  "log",
+ "num-traits",
+ "once_cell",
  "rustc-hash 1.1.0",
- "strum",
- "termcolor",
  "thiserror 2.0.17",
- "unicode-xid",
+ "unicode-ident",
+]
+
+[[package]]
+name = "naga"
+version = "27.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "066cf25f0e8b11ee0df221219010f213ad429855f57c494f995590c861a9a7d8"
+dependencies = [
+ "arrayvec",
+ "bit-set 0.8.0",
+ "bitflags 2.10.0",
+ "cfg-if",
+ "cfg_aliases 0.2.1",
+ "codespan-reporting 0.12.0",
+ "half",
+ "hashbrown 0.16.0",
+ "hexf-parse",
+ "indexmap 2.12.0",
+ "libm",
+ "log",
+ "num-traits",
+ "once_cell",
+ "rustc-hash 1.1.0",
+ "thiserror 2.0.17",
+ "unicode-ident",
 ]
 
 [[package]]
@@ -1722,7 +1693,7 @@ version = "0.17.0-pre.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac6c2e352df550bf019da7b16164ed2f7fa107c39653d1311d1bba42d1582ff7"
 dependencies = [
- "heck 0.3.3",
+ "heck",
  "proc-macro2",
  "quote",
  "syn 1.0.109",
@@ -1878,28 +1849,6 @@ dependencies = [
  "miow",
  "tracing",
  "windows-sys 0.60.2",
-]
-
-[[package]]
-name = "strum"
-version = "0.26.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fec0f0aef304996cf250b31b5a10dee7980c85da9d759361292b8bca5a18f06"
-dependencies = [
- "strum_macros",
-]
-
-[[package]]
-name = "strum_macros"
-version = "0.26.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c6bee85a5a24955dc440386795aa378cd9cf82acd5f764469152d2270e581be"
-dependencies = [
- "heck 0.5.0",
- "proc-macro2",
- "quote",
- "rustversion",
- "syn 2.0.106",
 ]
 
 [[package]]

@@ -30,10 +30,9 @@ use crate::{
 
 #[derive(Clone, Copy, Debug, Default)]
 pub enum NagaVersion {
-    Naga14,
-    Naga19,
-    #[default]
     Naga22,
+    #[default]
+    Naga27,
     NagaMain,
 }
 
