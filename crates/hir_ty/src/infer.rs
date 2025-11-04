@@ -1969,9 +1969,11 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             ScalarType::I64 => {
+                todo!("self.???.config.naga_extensions.shader_int64()");
                 Builtin::builtin_op_i64_constructor(self.database).intern(self.database)
             },
             ScalarType::U64 => {
+                todo!("self.???.config.naga_extensions.shader_int64()");
                 Builtin::builtin_op_u64_constructor(self.database).intern(self.database)
             },
         };
@@ -2546,8 +2548,8 @@ impl<'database> WgslTypeConverter<'database> {
             },
             wgsl_types::Type::I32 => TypeKind::Scalar(ScalarType::I32).intern(self.database),
             wgsl_types::Type::U32 => TypeKind::Scalar(ScalarType::U32).intern(self.database),
-            wgsl_types::Type::I64 => todo!("naga extension"),
-            wgsl_types::Type::U64 => todo!("naga extension"),
+            wgsl_types::Type::I64 => TypeKind::Scalar(ScalarType::I64).intern(self.database),
+            wgsl_types::Type::U64 => TypeKind::Scalar(ScalarType::U64).intern(self.database),
             wgsl_types::Type::F16 => TypeKind::Scalar(ScalarType::F16).intern(self.database),
             wgsl_types::Type::F32 => TypeKind::Scalar(ScalarType::F32).intern(self.database),
             wgsl_types::Type::F64 => todo!("naga extension"),

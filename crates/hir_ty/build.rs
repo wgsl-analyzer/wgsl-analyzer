@@ -31,7 +31,9 @@ enum Type {
     Vec(VecSize, Box<Self>),
     Matrix(VecSize, VecSize, Box<Self>),
     Texture(TextureType),
-    Sampler { comparison: bool },
+    Sampler {
+        comparison: bool,
+    },
     Bool,
     F16,
     F32,
@@ -42,8 +44,11 @@ enum Type {
     Atomic(Box<Self>),
     Bound(usize),
     StorageTypeOfTexelFormat(usize),
+
     // naga extensions
+    /// naga `SHADER_INT64`
     I64,
+    /// naga `SHADER_INT64`
     U64,
 }
 

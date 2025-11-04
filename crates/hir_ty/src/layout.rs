@@ -77,7 +77,7 @@ impl TypeKind {
             Self::Scalar(ScalarType::Bool) => Some(4),
             Self::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => Some(4),
             // SHADER_INT64
-            Self::Scalar(ScalarType::I64 | ScalarType::U64) => Some(8),
+            Self::Scalar(ScalarType::I64 | ScalarType::U64) => todo!("8 ?"),
             Self::Scalar(ScalarType::F16) => Some(2),
             Self::Atomic(_) => Some(4),
             Self::Vector(VectorType {
@@ -180,7 +180,7 @@ impl TypeKind {
             Self::Scalar(ScalarType::Bool) => Some(4),
             Self::Scalar(ScalarType::I32 | ScalarType::U32 | ScalarType::F32) => Some(4),
             // SHADER_INT64
-            Self::Scalar(ScalarType::I64 | ScalarType::U64) => Some(4),
+            Self::Scalar(ScalarType::I64 | ScalarType::U64) => todo!("4 ?"),
             Self::Scalar(ScalarType::F16) => Some(2),
             Self::Atomic(_) => Some(4),
             Self::Vector(VectorType {
