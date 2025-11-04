@@ -35,14 +35,14 @@ impl Type {
         self,
         database: &dyn HirDatabase,
     ) -> TypeKind {
-        database.lookup_intern_ty(self)
+        database.lookup_intern_type(self)
     }
 
     pub fn is_err(
         self,
         database: &dyn HirDatabase,
     ) -> bool {
-        matches!(database.lookup_intern_ty(self), TypeKind::Error)
+        matches!(database.lookup_intern_type(self), TypeKind::Error)
     }
 
     /// `T` -> `T`, `vecN<T>` -> `T`
@@ -106,7 +106,7 @@ impl Type {
         database: &dyn HirDatabase,
     ) -> Self {
         match self.kind(database).concretize(database) {
-            Some(ty_kind) => ty_kind.intern(database),
+            Some(type_kind) => type_kind.intern(database),
             None => self,
         }
     }
@@ -270,7 +270,7 @@ impl TypeKind {
         self,
         database: &dyn HirDatabase,
     ) -> Type {
-        database.intern_ty(self)
+        database.intern_type(self)
     }
 
     #[must_use]

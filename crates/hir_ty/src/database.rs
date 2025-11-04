@@ -19,7 +19,7 @@ use wgsl_types::syntax::AddressSpace;
 use crate::{
     builtins::{Builtin, BuiltinId},
     function::{FunctionDetails, ResolvedFunctionId},
-    infer::{InferenceDiagnostic, InferenceResult, TyLoweringContext, TypeLoweringError},
+    infer::{InferenceDiagnostic, InferenceResult, TypeLoweringContext, TypeLoweringError},
     ty::{Type, TypeKind},
 };
 
@@ -58,7 +58,7 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
     ) -> bool;
 
     #[salsa::interned]
-    fn intern_ty(
+    fn intern_type(
         &self,
         r#type: TypeKind,
     ) -> Type;
@@ -92,13 +92,13 @@ fn field_types(
     let module_info = database.module_info(file_id);
     let resolver = Resolver::default().push_module_scope(file_id, module_info);
 
-    let mut ty_ctx = TyLoweringContext::new(database, &resolver, &data.store);
+    let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
 
     let mut diagnostics = vec![];
     let mut map = ArenaMap::default();
     for (index, field) in data.fields.iter() {
-        let r#type = ty_ctx.lower_ty(field.r#type);
-        diagnostics.extend(ty_ctx.diagnostics.drain(..).map(|error| {
+        let r#type = type_context.lower_type(field.r#type);
+        diagnostics.extend(type_context.diagnostics.drain(..).map(|error| {
             InferenceDiagnostic::InvalidType {
                 source: data.store.store_source,
                 error,
@@ -121,9 +121,9 @@ fn type_alias_type(
     let module_info = database.module_info(file_id);
     let resolver = Resolver::default().push_module_scope(file_id, module_info);
 
-    let mut ty_ctx = TyLoweringContext::new(database, &resolver, &data.store);
-    let result = ty_ctx.lower_ty(data.r#type);
-    let diagnostics = ty_ctx
+    let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
+    let result = type_context.lower_type(data.r#type);
+    let diagnostics = type_context
         .diagnostics
         .into_iter()
         .map(|error| InferenceDiagnostic::InvalidType {
@@ -145,16 +145,18 @@ fn function_type(
     let module_info = database.module_info(file_id);
     let resolver = Resolver::default().push_module_scope(file_id, module_info);
 
-    let mut ty_ctx = TyLoweringContext::new(database, &resolver, &data.store);
+    let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
 
-    let return_type = data.return_type.map(|type_ref| ty_ctx.lower_ty(type_ref));
+    let return_type = data
+        .return_type
+        .map(|type_reference| type_context.lower_type(type_reference));
 
     let parameters = data
         .parameters
         .iter()
-        .map(|(_, param)| {
-            let r#type = ty_ctx.lower_ty(param.r#type);
-            (r#type, param.name.clone())
+        .map(|(_, parameter)| {
+            let r#type = type_context.lower_type(parameter.r#type);
+            (r#type, parameter.name.clone())
         })
         .collect();
 
@@ -175,9 +177,9 @@ fn struct_is_used_in_uniform(
         hir_def::module_data::ModuleItem::GlobalVariable(declaration) => {
             let declaration = database.intern_global_variable(InFile::new(file_id, declaration));
             let inference = database.infer(DefinitionWithBodyId::GlobalVariable(declaration));
-            let ty_kind = inference.return_type().kind(database);
+            let type_kind = inference.return_type().kind(database);
 
-            if let TypeKind::Reference(crate::ty::Reference { address_space, .. }) = ty_kind
+            if let TypeKind::Reference(crate::ty::Reference { address_space, .. }) = type_kind
                 && !matches!(address_space, AddressSpace::Uniform)
             {
                 return false;

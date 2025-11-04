@@ -35,7 +35,7 @@ pub use crate::{
     // highlight_related::{HighlightRelatedConfig, HighlightedRange},
     hover::{
         HoverAction, HoverConfig, HoverDocFormat, HoverGotoTypeData, HoverResult,
-        MemoryLayoutHoverConfig, MemoryLayoutHoverRenderKind, SubstTyLen,
+        MemoryLayoutHoverConfig, MemoryLayoutHoverRenderKind, SubstitutionTypeLength,
     },
     inlay_hints::{
         // AdjustmentHints, AdjustmentHintsMode, ClosureReturnTypeHints, DiscriminantHints,

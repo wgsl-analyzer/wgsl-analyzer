@@ -408,22 +408,22 @@ pub(crate) fn any_diag_from_shift(
     source_map: &ExpressionSourceMap,
     file_id: HirFileId,
 ) -> Option<AnyDiagnostic> {
-    match error {
-        PrecedenceDiagnostic::NeverNested(expression, op) => {
-            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+    match *error {
+        PrecedenceDiagnostic::NeverNested(expression, operation) => {
+            let pointer = source_map.expression_to_source(expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
             Some(AnyDiagnostic::PrecedenceParensRequired {
                 expression: source,
-                operation: *op,
+                operation,
                 sequence_permitted: false,
             })
         },
-        PrecedenceDiagnostic::SequencesAllowed(expression, op) => {
-            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+        PrecedenceDiagnostic::SequencesAllowed(expression, operation) => {
+            let pointer = source_map.expression_to_source(expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
             Some(AnyDiagnostic::PrecedenceParensRequired {
                 expression: source,
-                operation: *op,
+                operation,
                 sequence_permitted: true,
             })
         },

@@ -64,18 +64,17 @@ impl fmt::Display for AddressSpaceError {
 }
 
 #[expect(clippy::cognitive_complexity, reason = "TODO")]
-pub fn validate_address_space<Function: FnMut(AddressSpaceError)>(
+#[expect(clippy::too_many_lines, reason = "TODO")]
+pub fn validate_address_space<DiagnosticBuilder: FnMut(AddressSpaceError)>(
     address_space: AddressSpace,
     access_mode: AccessMode,
     scope: Scope,
     r#type: &TypeKind,
     database: &dyn HirDatabase,
-    mut diagnostic_builder: Function,
+    mut diagnostic_builder: DiagnosticBuilder,
 ) {
     // We only care about the inner type here
     let r#type = r#type.unref(database);
-    let ty_is_err = r#type.is_error();
-
     match address_space {
         AddressSpace::Function => {
             if !matches!(scope, Scope::Function) {
@@ -86,8 +85,7 @@ pub fn validate_address_space<Function: FnMut(AddressSpaceError)>(
                     AccessMode::ReadWrite
                 ]));
             }
-
-            if !ty_is_err && !r#type.is_constructable() {
+            if !r#type.is_error() && !r#type.is_constructable() {
                 diagnostic_builder(AddressSpaceError::Constructable);
             }
         },
@@ -100,8 +98,7 @@ pub fn validate_address_space<Function: FnMut(AddressSpaceError)>(
                     AccessMode::ReadWrite
                 ]));
             }
-
-            if !ty_is_err && !r#type.is_constructable() {
+            if !r#type.is_error() && !r#type.is_constructable() {
                 diagnostic_builder(AddressSpaceError::Constructable);
             }
         },
@@ -114,8 +111,9 @@ pub fn validate_address_space<Function: FnMut(AddressSpaceError)>(
                     AccessMode::ReadWrite
                 ]));
             }
-
-            if !ty_is_err && (!r#type.is_plain() || r#type.contains_runtime_sized_array(database)) {
+            if !r#type.is_error()
+                && (!r#type.is_plain() || r#type.contains_runtime_sized_array(database))
+            {
                 diagnostic_builder(AddressSpaceError::WorkgroupCompatible);
             }
         },
@@ -128,7 +126,6 @@ pub fn validate_address_space<Function: FnMut(AddressSpaceError)>(
                     AccessMode::ReadWrite
                 ]));
             }
-
             if !r#type.is_error() && !r#type.is_host_shareable(database) {
                 diagnostic_builder(AddressSpaceError::HostShareable);
             }
@@ -145,7 +142,6 @@ pub fn validate_address_space<Function: FnMut(AddressSpaceError)>(
                     AccessMode::ReadWrite
                 ]));
             }
-
             if !r#type.is_error() && !r#type.is_host_shareable(database) {
                 diagnostic_builder(AddressSpaceError::HostShareable);
             }
@@ -159,7 +155,6 @@ pub fn validate_address_space<Function: FnMut(AddressSpaceError)>(
                     AccessMode::ReadWrite
                 ]));
             }
-
             match r#type.as_ref() {
                 TypeKind::Sampler(_) | TypeKind::Texture(_) => {},
                 TypeKind::Error

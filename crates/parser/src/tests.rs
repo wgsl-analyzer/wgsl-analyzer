@@ -2741,28 +2741,7 @@ fn type_alias_declaration_recover() {
 #[test]
 fn parse_statement_expression() {
     check_statement(
-        "test(args);",
-        expect![[r#"
-            SourceFile@0..11
-              FunctionCallStatement@0..11
-                FunctionCall@0..10
-                  IdentExpression@0..4
-                    NameReference@0..4
-                      Identifier@0..4 "test"
-                  Arguments@4..10
-                    ParenthesisLeft@4..5 "("
-                    IdentExpression@5..9
-                      NameReference@5..9
-                        Identifier@5..9 "args"
-                    ParenthesisRight@9..10 ")"
-                Semicolon@10..11 ";""#]],
-    );
-}
-
-#[test]
-fn parse_statement_nested_functions() {
-    check_statement(
-        "test(args<a>());",
+        "test(arguments);",
         expect![[r#"
             SourceFile@0..16
               FunctionCallStatement@0..16
@@ -2772,21 +2751,42 @@ fn parse_statement_nested_functions() {
                       Identifier@0..4 "test"
                   Arguments@4..15
                     ParenthesisLeft@4..5 "("
-                    FunctionCall@5..14
-                      IdentExpression@5..12
-                        NameReference@5..9
-                          Identifier@5..9 "args"
-                        TemplateList@9..12
-                          TemplateStart@9..10 "<"
-                          IdentExpression@10..11
-                            NameReference@10..11
-                              Identifier@10..11 "a"
-                          TemplateEnd@11..12 ">"
-                      Arguments@12..14
-                        ParenthesisLeft@12..13 "("
-                        ParenthesisRight@13..14 ")"
+                    IdentExpression@5..14
+                      NameReference@5..14
+                        Identifier@5..14 "arguments"
                     ParenthesisRight@14..15 ")"
                 Semicolon@15..16 ";""#]],
+    );
+}
+
+#[test]
+fn parse_statement_nested_functions() {
+    check_statement(
+        "test(arguments<a>());",
+        expect![[r#"
+            SourceFile@0..21
+              FunctionCallStatement@0..21
+                FunctionCall@0..20
+                  IdentExpression@0..4
+                    NameReference@0..4
+                      Identifier@0..4 "test"
+                  Arguments@4..20
+                    ParenthesisLeft@4..5 "("
+                    FunctionCall@5..19
+                      IdentExpression@5..17
+                        NameReference@5..14
+                          Identifier@5..14 "arguments"
+                        TemplateList@14..17
+                          TemplateStart@14..15 "<"
+                          IdentExpression@15..16
+                            NameReference@15..16
+                              Identifier@15..16 "a"
+                          TemplateEnd@16..17 ">"
+                      Arguments@17..19
+                        ParenthesisLeft@17..18 "("
+                        ParenthesisRight@18..19 ")"
+                    ParenthesisRight@19..20 ")"
+                Semicolon@20..21 ";""#]],
     );
 }
 

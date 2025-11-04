@@ -34,8 +34,8 @@ fn parse_arguments() -> Result<Arguments, lexopt::Error> {
         files: Vec::new(),
     };
 
-    while let Some(arg) = parser.next()? {
-        match arg {
+    while let Some(argument) = parser.next()? {
+        match argument {
             Short('h') | Long("help") => {
                 print!("{HELP_STR}");
                 std::process::exit(0);
@@ -43,7 +43,7 @@ fn parse_arguments() -> Result<Arguments, lexopt::Error> {
             Long("check") => arguments.check = true,
             Long("tabs") => arguments.tab_indent = true,
             Value(file) => arguments.files.push(PathBuf::from(file)),
-            Short(_) | Long(_) => return Err(arg.unexpected()),
+            Short(_) | Long(_) => return Err(argument.unexpected()),
         }
     }
     Ok(arguments)

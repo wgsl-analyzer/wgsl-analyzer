@@ -936,13 +936,13 @@ Avoid `if let ... { } else { }` construct; prefer `match`.
 ```rust
 // GOOD
 match context.expected_type.as_ref() {
-    Some(expected_type) => completion_ty == expected_type && !expected_type.is_unit(),
+    Some(expected_type) => completion_type == expected_type && !expected_type.is_unit(),
     None => false,
 }
 
 // BAD
 if let Some(expected_type) = context.expected_type.as_ref() {
-    completion_ty == expected_type && !expected_type.is_unit()
+    completion_type == expected_type && !expected_type.is_unit()
 } else {
     false
 }

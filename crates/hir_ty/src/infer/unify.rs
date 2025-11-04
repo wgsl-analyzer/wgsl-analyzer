@@ -141,14 +141,14 @@ impl UnificationTable {
                 .intern(database)
             },
             TypeKind::Texture(TextureType {
-                kind: TextureKind::Sampled(sampled_ty),
+                kind: TextureKind::Sampled(sampled_type),
                 dimension,
                 arrayed,
                 multisampled,
             }) => {
-                let sampled_ty = self.resolve(database, sampled_ty);
+                let sampled_type = self.resolve(database, sampled_type);
                 TypeKind::Texture(TextureType {
-                    kind: TextureKind::Sampled(sampled_ty),
+                    kind: TextureKind::Sampled(sampled_type),
                     dimension,
                     arrayed,
                     multisampled,
@@ -399,13 +399,13 @@ pub fn unify(
             Ok(())
         },
         TypeKind::Texture(TextureType {
-            kind: TextureKind::Sampled(sampled_ty),
+            kind: TextureKind::Sampled(sampled_type),
             arrayed,
             multisampled,
             dimension,
         }) => match found_kind {
             TypeKind::Texture(TextureType {
-                kind: TextureKind::Sampled(found_sampled_ty),
+                kind: TextureKind::Sampled(found_sampled_type),
                 arrayed: arrayed_2,
                 multisampled: multisampled_2,
                 dimension: dimension_2,
@@ -417,7 +417,7 @@ pub fn unify(
                     return Err(());
                 }
 
-                unify(database, table, sampled_ty, found_sampled_ty)?;
+                unify(database, table, sampled_type, found_sampled_type)?;
 
                 Ok(())
             },

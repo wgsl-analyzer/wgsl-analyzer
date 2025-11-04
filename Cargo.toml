@@ -134,6 +134,9 @@ integer_division_remainder_used = "allow"
 # expect-test has a special integration with raw string
 needless_raw_strings = "allow"
 needless_raw_string_hashes = "allow"
+# not useful
+shadow_same = "allow"
+
 
 # TODOs
 missing_docs_in_private_items = "allow"

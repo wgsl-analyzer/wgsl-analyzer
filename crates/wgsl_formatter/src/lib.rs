@@ -124,11 +124,6 @@ fn format_syntax_node(
     }
 
     match syntax.kind() {
-        // fn name ( parameter : type, parameter : type ) -> return_ty {}
-        // fn name(
-        //     parameter : type,
-        //     parameter : type,
-        // ) -> return_ty {}
         SyntaxKind::FunctionDeclaration => {
             let function = ast::FunctionDeclaration::cast(syntax)?;
 
@@ -285,7 +280,7 @@ fn format_syntax_node(
         SyntaxKind::InfixExpression => {
             let expression = ast::InfixExpression::cast(syntax)?;
 
-            whitespace_to_single_around(&expression.op()?);
+            whitespace_to_single_around(&expression.operator()?);
         },
         SyntaxKind::ParenthesisExpression => {
             let parenthesis_expression = ast::ParenthesisExpression::cast(syntax)?;

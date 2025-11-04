@@ -48,19 +48,21 @@ impl ExprCollector<'_> {
 
                 expression
                     .op_kind()
-                    .map_or(Expression::Missing, |op| Expression::BinaryOperation {
-                        left_side,
-                        right_side,
-                        operation: op,
+                    .map_or(Expression::Missing, |operator| {
+                        Expression::BinaryOperation {
+                            left_side,
+                            right_side,
+                            operation: operator,
+                        }
                     })
             },
             ast::Expression::PrefixExpression(prefix_expression) => {
                 let expression = self.collect_expression_opt(prefix_expression.expression());
                 prefix_expression
-                    .op_kind()
-                    .map_or(Expression::Missing, |op| Expression::UnaryOperator {
+                    .operator_kind()
+                    .map_or(Expression::Missing, |operator| Expression::UnaryOperator {
                         expression,
-                        op,
+                        operator,
                     })
             },
             ast::Expression::Literal(literal) => {
@@ -158,7 +160,7 @@ impl ExprCollector<'_> {
         function_param_list
             .parameters()
             .map(|parameter| {
-                let r#type = self.collect_type_specifier_opt(parameter.ty());
+                let r#type = self.collect_type_specifier_opt(parameter.r#type());
                 let name = parameter.name().map_or_else(Name::missing, Name::from);
                 ParamData { name, r#type }
             })
@@ -261,7 +263,7 @@ pub(crate) fn lower_function(
     let return_type = function
         .value
         .return_type()
-        .and_then(|r#type| r#type.ty())
+        .and_then(|r#type| r#type.r#type())
         .map(|r#type| collector.collect_type_specifier(&r#type));
 
     let (store, source_map) = collector.finish();
@@ -285,7 +287,7 @@ pub(crate) fn lower_struct(
     if let Some(body) = struct_declaration.value.body() {
         fields.alloc_many(body.fields().map(|field| FieldData {
             name: as_name_opt(field.name()),
-            r#type: collector.collect_type_specifier_opt(field.ty()),
+            r#type: collector.collect_type_specifier_opt(field.r#type()),
         }));
     }
 
@@ -325,7 +327,7 @@ pub(crate) fn lower_variable(
     let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
     let r#type = global_variable
         .value
-        .ty()
+        .r#type()
         .map(|r#type| collector.collect_type_specifier(&r#type));
 
     let template_parameters =
@@ -357,7 +359,7 @@ pub(crate) fn lower_constant(
     let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
     let r#type = global_constant
         .value
-        .ty()
+        .r#type()
         .map(|r#type| collector.collect_type_specifier(&r#type));
 
     let (store, source_map) = collector.finish();
@@ -377,7 +379,7 @@ pub(crate) fn lower_override(
     let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
     let r#type = global_override
         .value
-        .ty()
+        .r#type()
         .map(|r#type| collector.collect_type_specifier(&r#type));
 
     let (store, source_map) = collector.finish();

@@ -6,7 +6,6 @@ pub mod extensions;
 
 pub(crate) mod capabilities;
 pub(crate) mod from_proto;
-pub(crate) mod semantic_tokens;
 pub(crate) mod to_proto;
 pub(crate) mod utilities;
 

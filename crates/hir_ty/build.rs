@@ -227,15 +227,15 @@ fn parse_line(line: &str) -> (&str, Overload) {
                 let r#type = &r#type[1..];
                 let name = name.trim();
                 let name = (!name.is_empty()).then(|| name.to_owned());
-                (parse_ty(&mut generics, r#type.trim()), name)
+                (parse_type(&mut generics, r#type.trim()), name)
             },
-            _ => (parse_ty(&mut generics, r#type.trim()), None),
+            _ => (parse_type(&mut generics, r#type.trim()), None),
         })
         .collect();
 
     let return_type = match return_type {
         "" => None,
-        _ => Some(parse_ty(&mut generics, return_type.trim())),
+        _ => Some(parse_type(&mut generics, return_type.trim())),
     };
 
     (
@@ -298,7 +298,7 @@ fn only_char(input: &str) -> char {
     clippy::unimplemented,
     reason = "builtin refactor https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
 )]
-fn parse_ty(
+fn parse_type(
     generics: &mut BTreeMap<char, (usize, Generic)>,
     r#type: &str,
 ) -> Type {
@@ -307,7 +307,7 @@ fn parse_ty(
             let size = only_char(size);
 
             let size = parse_vec_size(generics, size);
-            let inner = parse_ty(generics, inner);
+            let inner = parse_type(generics, inner);
             return Type::Vec(size, Box::new(inner));
         } else if let Some(texture) = r#type.strip_prefix("texture_storage_") {
             let (format, mode) = inner.split_once(';').unwrap();
@@ -324,7 +324,7 @@ fn parse_ty(
             };
             return Type::Texture(texture_type);
         } else if let Some(texture) = r#type.strip_prefix("texture_") {
-            let inner = parse_ty(generics, inner);
+            let inner = parse_type(generics, inner);
             #[rustfmt::skip]
             let texture_type = match texture {
                 "1d" => TextureType { dimension: TextureDimensionality::D1, arrayed: false, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
@@ -347,16 +347,16 @@ fn parse_ty(
             let columns = parse_vec_size(generics, columns);
             let rows = parse_vec_size(generics, rows);
 
-            let inner = parse_ty(generics, inner);
+            let inner = parse_type(generics, inner);
             return Type::Matrix(columns, rows, Box::new(inner));
         } else if r#type == "array" {
-            let inner = parse_ty(generics, inner);
+            let inner = parse_type(generics, inner);
             return Type::RuntimeArray(Box::new(inner));
         } else if r#type == "ptr" {
-            let inner = parse_ty(generics, inner);
+            let inner = parse_type(generics, inner);
             return Type::Pointer(Box::new(inner));
         } else if r#type == "atomic" {
-            let inner = parse_ty(generics, inner);
+            let inner = parse_type(generics, inner);
             return Type::Atomic(Box::new(inner));
         }
         unimplemented!("{}", r#type);
@@ -509,9 +509,9 @@ impl Builtin {{
             BuiltinOverload {{
                 generics: vec![{generics}],
                 r#type: FunctionDetails {{
-                    return_type: {return_ty},
+                    return_type: {return_type},
                     parameters: vec![",
-            return_ty = overload.return_type.as_ref().map_or_else(
+            return_type = overload.return_type.as_ref().map_or_else(
                 || "None".to_owned(),
                 |r#type| format!("Some({})", type_to_rust(r#type))
             ),
@@ -529,8 +529,8 @@ impl Builtin {{
             write!(
                 sink,
                 "
-                        ({ty}, {name}),",
-                ty = type_to_rust(parameter),
+                        ({type}, {name}),",
+                r#type = type_to_rust(parameter),
                 name = match name {
                     Some(name) => format!("Name::from({name:?})"),
                     None => "Name::missing()".to_owned(),

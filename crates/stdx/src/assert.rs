@@ -57,13 +57,13 @@ macro_rules! always {
         $crate::always!($cond, "assertion failed: {}", stringify!($cond))
     };
 
-    ($cond:expr, $fmt:literal $($arg:tt)*) => {{
+    ($cond:expr, $fmt:literal $($argument:tt)*) => {{
         let cond = $cond;
         if cfg!(debug_assertions) || $crate::assert::__FORCE {
-            assert!(cond, $fmt $($arg)*);
+            assert!(cond, $fmt $($argument)*);
         }
         if !cond {
-            $crate::assert::__tracing_error!($fmt $($arg)*);
+            $crate::assert::__tracing_error!($fmt $($argument)*);
         }
         cond
     }};
@@ -90,11 +90,11 @@ macro_rules! never {
     (true $($tt:tt)*) => { $crate::never!((true) $($tt)*) };
     (false $($tt:tt)*) => { $crate::never!((false) $($tt)*) };
     () => { $crate::never!("assertion failed: entered unreachable code") };
-    ($fmt:literal $(, $($arg:tt)*)?) => {{
+    ($fmt:literal $(, $($argument:tt)*)?) => {{
         if cfg!(debug_assertions) || $crate::assert::__FORCE {
-            unreachable!($fmt $(, $($arg)*)?);
+            unreachable!($fmt $(, $($argument)*)?);
         }
-        $crate::assert::__tracing_error!($fmt $(, $($arg)*)?);
+        $crate::assert::__tracing_error!($fmt $(, $($argument)*)?);
     }};
 
     ($cond:expr) => {{
@@ -102,8 +102,8 @@ macro_rules! never {
         cond
     }};
 
-    ($cond:expr, $fmt:literal $($arg:tt)*) => {{
-        let cond = !$crate::always!(!$cond, $fmt $($arg)*);
+    ($cond:expr, $fmt:literal $($argument:tt)*) => {{
+        let cond = !$crate::always!(!$cond, $fmt $($argument)*);
         cond
     }};
 }

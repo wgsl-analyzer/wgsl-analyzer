@@ -509,7 +509,7 @@ impl Config {
             keywords: false,
             max_fields_count: None,
             max_enum_variants_count: None,
-            max_subst_ty_len: ide::SubstTyLen::LimitTo(20),
+            max_substitution_type_length: ide::SubstitutionTypeLength::LimitTo(20),
         }
     }
 
@@ -984,17 +984,17 @@ fn field_props(
     map.into()
 }
 
-macro_rules! _default_val {
-    ($default:expr, $ty:ty) => {{
-        let default_: $ty = $default;
+macro_rules! _default_value {
+    ($default:expr, $value_type:ty) => {{
+        let default_: $value_type = $default;
         default_
     }};
 }
-use _default_val as default_val;
+use _default_value as default_value;
 
 macro_rules! _default_str {
-    ($default:expr, $ty:ty) => {{
-        let val = default_val!($default, $ty);
+    ($default:expr, $config_type:ty) => {{
+        let val = default_value!($default, $config_type);
         serde_json::to_string_pretty(&val).unwrap()
     }};
 }
@@ -1003,14 +1003,14 @@ use _default_str as default_str;
 macro_rules! _impl_for_config_data {
     (local, $(
             $(#[doc=$doc:literal])*
-            $vis:vis $field:ident : $ty:ty = $default:expr,
+            $vis:vis $field:ident : $config_type:ty = $default:expr,
         )*
     ) => {
         impl Config {
             $(
                 $($doc)*
                 #[allow(non_snake_case)]
-                $vis fn $field(&self, source_root: Option<SourceRootId>) -> &$ty {
+                $vis fn $field(&self, source_root: Option<SourceRootId>) -> &$config_type {
                     let mut source_root = source_root.as_ref();
                     if let Some(v) = self.client_config.0.local.$field.as_ref() {
                         return &v;
@@ -1029,14 +1029,14 @@ macro_rules! _impl_for_config_data {
     };
     (workspace, $(
             $(#[doc=$doc:literal])*
-            $vis:vis $field:ident : $ty:ty = $default:expr,
+            $vis:vis $field:ident : $config_type:ty = $default:expr,
         )*
     ) => {
         impl Config {
             $(
                 $($doc)*
                 #[allow(non_snake_case)]
-                $vis fn $field(&self, source_root: Option<SourceRootId>) -> &$ty {
+                $vis fn $field(&self, source_root: Option<SourceRootId>) -> &$config_type {
                     let mut source_root = source_root.as_ref();
                     if let Some(v) = self.client_config.0.workspace.$field.as_ref() {
                         return &v;
@@ -1055,7 +1055,7 @@ macro_rules! _impl_for_config_data {
     };
     (global, $(
             $(#[doc=$doc:literal])*
-            $vis:vis $field:ident : $ty:ty = $default:expr,
+            $vis:vis $field:ident : $config_type:ty = $default:expr,
         )*
     ) => {
         #[expect(non_snake_case, reason="Generated accessor mirrors user-facing schema keys.")]
@@ -1063,7 +1063,7 @@ macro_rules! _impl_for_config_data {
         impl Config {
             $(
                 $($doc)*
-                $vis fn $field(&self) -> &$ty {
+                $vis fn $field(&self) -> &$config_type {
                     if let Some(value) = self.client.0.global.$field.as_ref() {
                         return value;
                     }
@@ -1081,14 +1081,14 @@ macro_rules! _impl_for_config_data {
     };
     (client, $(
             $(#[doc=$doc:literal])*
-            $vis:vis $field:ident : $ty:ty = $default:expr,
+            $vis:vis $field:ident : $config_type:ty = $default:expr,
        )*
     ) => {
         impl Config {
             $(
                 $($doc)*
                 #[allow(non_snake_case)]
-                $vis fn $field(&self) -> &$ty {
+                $vis fn $field(&self) -> &$config_type {
                     if let Some(v) = self.client_config.0.client.$field.as_ref() {
                         return &v;
                     }
@@ -1106,18 +1106,18 @@ macro_rules! _config_data {
     ($(#[doc=$dox:literal])* $modname:ident: struct $name:ident <- $input:ident -> {
         $(
             $(#[doc=$doc:literal])*
-            $vis:vis $field:ident $(| $alias:ident)*: $ty:ty = $default:expr,
+            $vis:vis $field:ident $(| $alias:ident)*: $config_type:ty = $default:expr,
         )*
     }) => {
         /// Default config values for this grouping.
         #[expect(non_snake_case, reason = "Generated accessor mirrors user-facing schema keys.")]
         #[derive(Debug, Clone)]
-        struct $name { $($field: $ty,)* }
+        struct $name { $($field: $config_type,)* }
 
         impl_for_config_data!{
             $modname,
             $(
-                $vis $field : $ty = $default,
+                $vis $field : $config_type = $default,
             )*
         }
 
@@ -1125,7 +1125,7 @@ macro_rules! _config_data {
         #[expect(non_snake_case, reason = "Fields mirror user-facing camelCase keys.")]
         #[derive(Clone, Default)]
         struct $input { $(
-            $field: Option<$ty>,
+            $field: Option<$config_type>,
         )* }
 
         impl std::fmt::Debug for $input {
@@ -1143,7 +1143,7 @@ macro_rules! _config_data {
         impl Default for $name {
             fn default() -> Self {
                 $name {$(
-                    $field: default_val!($default, $ty),
+                    $field: default_value!($default, $config_type),
                 )*}
             }
         }
@@ -1166,10 +1166,10 @@ macro_rules! _config_data {
                 sink.extend_from_slice(&[
                     $({
                         let field = stringify!($field);
-                        let ty = stringify!($ty);
-                        let default = default_str!($default, $ty);
+                        let config_type = stringify!($config_type);
+                        let default = default_str!($default, $config_type);
 
-                        (field, ty, &[$($doc),*], default)
+                        (field, config_type, &[$($doc),*], default)
                     },)*
                 ])
             }
@@ -1202,21 +1202,22 @@ pub enum ConfigErrorInner {
 
 #[cfg(test)]
 fn manual(fields: &[SchemaField]) -> String {
-    fields
-        .iter()
-        .fold(String::new(), |mut acc, (field, _ty, doc, default)| {
+    fields.iter().fold(
+        String::new(),
+        |mut accumulator, (field, _config_type, documentation, default)| {
             let id = field.replace('_', ".");
             let name = format!("wgsl-analyzer.{id}");
-            let doc = doc_comment_to_string(doc);
+            let doc = doc_comment_to_string(documentation);
             if default.contains('\n') {
                 format_to_accumulator!(
-                    acc,
+                    accumulator,
                     "## {name} \n\nDefault:\n```json\n{default}\n```\n\n{doc}\n"
                 )
             } else {
-                format_to_accumulator!(acc, "## {name}\n\nDefault: `{default}`\n\n{doc}\n")
+                format_to_accumulator!(accumulator, "## {name}\n\nDefault: `{default}`\n\n{doc}\n")
             }
-        })
+        },
+    )
 }
 
 fn doc_comment_to_string(doc: &[&str]) -> String {

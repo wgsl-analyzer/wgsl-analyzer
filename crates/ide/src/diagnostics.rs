@@ -578,12 +578,12 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::PrecedenceParensRequired {
                     expression,
-                    operation: op,
+                    operation,
                     sequence_permitted,
                 } => {
                     let source = expression.value.to_node(&root);
                     let frange = original_file_range(database, file_id, source.syntax());
-                    let symbol = op.symbol();
+                    let symbol = operation.symbol();
                     let message = if sequence_permitted {
                         format!(
                             "{symbol} sequences may only have unary operands.
