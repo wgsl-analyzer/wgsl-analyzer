@@ -980,6 +980,7 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             TypeExpectationInner::IntegerScalar => {
+                // why only these two types?
                 if let TypeKind::Scalar(ScalarType::I32 | ScalarType::U32) =
                     r#type.kind(self.database).unref(self.database).as_ref()
                 {
@@ -1162,6 +1163,8 @@ impl<'database> InferenceContext<'database> {
                 let ty_kind = match literal {
                     Literal::Int(_, BuiltinInt::I32) => TypeKind::Scalar(ScalarType::I32),
                     Literal::Int(_, BuiltinInt::U32) => TypeKind::Scalar(ScalarType::U32),
+                    Literal::Int(_, BuiltinInt::I64) => TypeKind::Scalar(ScalarType::I64),
+                    Literal::Int(_, BuiltinInt::U64) => TypeKind::Scalar(ScalarType::U64),
                     Literal::Int(_, BuiltinInt::Abstract) => {
                         TypeKind::Scalar(ScalarType::AbstractInt)
                     },
@@ -1969,11 +1972,9 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             ScalarType::I64 => {
-                todo!("self.???.config.naga_extensions.shader_int64()");
                 Builtin::builtin_op_i64_constructor(self.database).intern(self.database)
             },
             ScalarType::U64 => {
-                todo!("self.???.config.naga_extensions.shader_int64()");
                 Builtin::builtin_op_u64_constructor(self.database).intern(self.database)
             },
         };

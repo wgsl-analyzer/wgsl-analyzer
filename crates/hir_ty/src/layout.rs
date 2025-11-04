@@ -166,7 +166,7 @@ impl TypeKind {
     ///
     /// # Panics
     ///
-    /// Panics if the size of the array exceeds.
+    /// Panics if the size of the array exceeds u32.
     pub fn size_of(
         &self,
         address_space: LayoutAddressSpace,
@@ -245,7 +245,7 @@ impl TypeKind {
             Self::Array(array) => match array.size {
                 ArraySize::Constant(size) => {
                     let stride = array.stride(address_space, database)?;
-                    Some(Bytes::try_from(size).unwrap() * stride)
+                    Some(size.checked_mul(stride).unwrap())
                 },
                 ArraySize::Dynamic => None,
             },

@@ -474,6 +474,12 @@ fn conversion_rank(
         ) => Some(5),
         (TypeKind::Scalar(ScalarType::AbstractInt), TypeKind::Scalar(ScalarType::I32)) => Some(3),
         (TypeKind::Scalar(ScalarType::AbstractInt), TypeKind::Scalar(ScalarType::U32)) => Some(4),
+        (TypeKind::Scalar(ScalarType::AbstractInt), TypeKind::Scalar(ScalarType::I64)) => {
+            Some(todo!())
+        },
+        (TypeKind::Scalar(ScalarType::AbstractInt), TypeKind::Scalar(ScalarType::U64)) => {
+            Some(todo!())
+        },
         (TypeKind::Scalar(ScalarType::AbstractInt), TypeKind::Scalar(ScalarType::F32)) => Some(6),
         (TypeKind::Scalar(ScalarType::AbstractInt), TypeKind::Scalar(ScalarType::F16)) => Some(7),
         (TypeKind::Scalar(ScalarType::AbstractFloat), TypeKind::Scalar(ScalarType::F32)) => Some(1),

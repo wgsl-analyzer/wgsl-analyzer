@@ -143,6 +143,14 @@ impl TyLoweringContext<'_> {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::U32)
             },
+            "i64" if todo!("self.???.config.naga_extensions.shader_int64()") => {
+                self.expect_no_template(template_parameters);
+                TypeKind::Scalar(ScalarType::I64)
+            },
+            "u64" if todo!("self.???.config.naga_extensions.shader_int64()") => {
+                self.expect_no_template(template_parameters);
+                TypeKind::Scalar(ScalarType::U64)
+            },
             "f32" => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::F32)
@@ -922,7 +930,10 @@ impl TyLoweringContext<'_> {
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let ty_kind = r#type.kind(self.database);
-                if matches!(ty_kind, TypeKind::Scalar(ScalarType::I32 | ScalarType::U32)) {
+                if matches!(ty_kind, TypeKind::Scalar(ScalarType::I32 | ScalarType::U32))
+                    || (todo!("self.???.config.naga_extensions.shader_int64()")
+                        && matches!(ty_kind, TypeKind::Scalar(ScalarType::I64 | ScalarType::U64)))
+                {
                     r#type
                 } else {
                     // TODO: improve the error message and support naga atomics

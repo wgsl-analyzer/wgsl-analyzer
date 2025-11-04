@@ -57,7 +57,10 @@ fn write_type_expectation_inner(
                 write!(buffer, ">")?;
             }
         },
-        TypeExpectationInner::IntegerScalar => write!(buffer, "i32 or u32")?,
+        TypeExpectationInner::IntegerScalar => {
+            todo!("self.???.config.naga_extensions.shader_int64()");
+            write!(buffer, "i32 or u32")?
+        },
     }
     Ok(())
 }

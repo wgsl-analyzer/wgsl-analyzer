@@ -28,6 +28,9 @@ pub enum BuiltinFloat {
 pub enum BuiltinInt {
     I32,
     U32,
+    // SHADER_INT64
+    I64,
+    U64,
     Abstract,
 }
 
@@ -164,8 +167,10 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
             }
             .expect("invalid literal");
             let int_variant = match suffix {
-                Some('u') => BuiltinInt::U32,
-                Some('i') => BuiltinInt::I32,
+                Some("u") => BuiltinInt::U32,
+                Some("i") => BuiltinInt::I32,
+                Some("L") => BuiltinInt::I64,
+                Some("uL") => BuiltinInt::U64,
                 _ => BuiltinInt::Abstract,
             };
             Literal::Int(value, int_variant)
@@ -185,8 +190,8 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
             .expect("invalid literal");
             // future reference: naga has li and lu suffix for 64bits literals.
             let float_variant = match suffix {
-                Some('f') => BuiltinFloat::F32,
-                Some('h') => BuiltinFloat::F16,
+                Some("f") => BuiltinFloat::F32,
+                Some("h") => BuiltinFloat::F16,
                 _ => BuiltinFloat::Abstract,
             };
             Literal::Float(value.to_bits(), float_variant)
@@ -196,14 +201,15 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
     }
 }
 
-fn split_number_suffix(number: &str) -> (&str, Option<char>) {
-    if let Some(last_char) = number.chars().next_back()
-        && last_char.is_alphabetic()
-    {
-        (
-            &number[0..(number.len() - last_char.len_utf8())],
-            Some(last_char),
-        )
+fn split_number_suffix(number: &str) -> (&str, Option<&str>) {
+    let suffix_start = number
+        .char_indices()
+        .rev()
+        .find(|&(_, character)| !character.is_alphabetic())
+        .map_or(0, |(index, _)| index + 1);
+
+    if suffix_start < number.len() {
+        (&number[..suffix_start], Some(&number[suffix_start..]))
     } else {
         (number, None)
     }
