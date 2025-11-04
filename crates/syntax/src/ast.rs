@@ -6,7 +6,6 @@
 pub mod operators;
 
 use parser::{SyntaxKind, SyntaxNode};
-use rowan::NodeOrToken;
 
 use self::operators::{AssignmentOperator, BinaryOperation, UnaryOperator};
 use crate::{

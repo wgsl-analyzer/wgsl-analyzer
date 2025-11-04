@@ -1,7 +1,7 @@
 use hir_def::{HirFileId, module_data::Name, resolver::ResolveKind};
 use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast};
 
-use crate::{Field, Function, Local, ModuleDef, Semantics, Struct, TypeAlias};
+use crate::{Field, Local, ModuleDef, Semantics, Struct, TypeAlias};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Definition {

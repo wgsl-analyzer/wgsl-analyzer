@@ -4,26 +4,23 @@ use std::{
     marker::PhantomData,
 };
 
-use base_db::{FileId, SourceDatabase, TextRange, TextSize};
+use base_db::{FileId, SourceDatabase};
 use salsa::InternKey;
-use syntax::{
-    AstNode as _, Parse,
-    ast::{self, Item},
-};
+use syntax::Parse;
 use triomphe::Arc;
 use vfs::VfsPath;
 
 use crate::{
     HirFileId, InFile,
     ast_id::AstIdMap,
-    attributes::{Attribute, AttributeDefId, AttributesWithOwner},
+    attributes::{AttributeDefId, AttributesWithOwner},
     body::{Body, BodySourceMap, scope::ExprScopes},
     data::{
         FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, StructData,
         TypeAliasData,
     },
     expression_store::{ExpressionSourceMap, ExpressionStore},
-    hir_file_id::{HirFileIdRepr, relative_file},
+    hir_file_id::HirFileIdRepr,
     module_data::{
         Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItemId, Override, Struct,
         TypeAlias,

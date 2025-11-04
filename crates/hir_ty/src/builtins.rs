@@ -4,7 +4,7 @@ use crate::{
     database::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
     ty::{
-        ArraySize, ArrayType, AtomicType, BoundVariable, MatrixType, Pointer, ScalarType,
+        ArraySize, ArrayType, AtomicType, BoundVariable, Pointer, ScalarType,
         TexelFormat, TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
     },
 };

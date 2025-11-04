@@ -1,15 +1,14 @@
 use either::Either;
-use syntax::{AstNode as _, HasName as _, HasTemplateParameters as _, ast, pointer::AstPointer};
+use syntax::{HasName as _, HasTemplateParameters as _, ast, pointer::AstPointer};
 
 use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
 use crate::{
-    HirFileId, InFile,
+    HirFileId,
     database::DefDatabase,
     expression::{
-        Expression, ExpressionId, Statement, StatementId, SwitchCaseSelector, parse_literal,
+        ExpressionId, Statement, StatementId, SwitchCaseSelector,
     },
     expression_store::{ExpressionStoreSource, lower::ExprCollector},
-    hir_file_id::relative_file,
     module_data::Name,
 };
 

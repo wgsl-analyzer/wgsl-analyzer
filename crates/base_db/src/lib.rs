@@ -10,8 +10,7 @@ use line_index::LineIndex;
 pub use util_types::*;
 use vfs::{AnchoredPath, VfsPath};
 
-use rustc_hash::{FxHashMap, FxHashSet};
-use syntax::{Parse, ParseEntryPoint};
+use syntax::Parse;
 use triomphe::Arc;
 pub use vfs::FileId;
 

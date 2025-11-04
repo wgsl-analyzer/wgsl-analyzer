@@ -14,7 +14,6 @@ use hir_def::{
         Location, Lookup as _, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
-    hir_file_id::relative_file,
     module_data::{self, ModuleInfo, ModuleItem, Name},
     resolver::{ResolveKind, Resolver},
 };
@@ -23,7 +22,7 @@ use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
 use stdx::impl_from;
 use syntax::{
-    AstNode as _, HasName as _, SyntaxKind, SyntaxNode, ast, match_ast, pointer::AstPointer,
+    AstNode as _, HasName as _, SyntaxNode, ast, pointer::AstPointer,
 };
 use triomphe::Arc;
 

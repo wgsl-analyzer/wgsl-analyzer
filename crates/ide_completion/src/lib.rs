@@ -12,7 +12,6 @@ mod patterns;
 // mod tests;
 
 use base_db::FilePosition;
-use hir::HirDatabase;
 use ide_db::RootDatabase;
 use rustc_hash::FxHashSet;
 

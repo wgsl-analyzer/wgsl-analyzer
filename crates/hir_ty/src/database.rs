@@ -6,12 +6,12 @@ use std::fmt;
 use crate::builtins::{Builtin, BuiltinId};
 use crate::function::{FunctionDetails, ResolvedFunctionId};
 use crate::infer::{
-    InferenceContext, InferenceDiagnostic, InferenceResult, TyLoweringContext, TypeContainer,
+    InferenceDiagnostic, InferenceResult, TyLoweringContext,
     TypeLoweringError,
 };
 use crate::ty::{Type, TypeKind};
 use hir_def::data::FieldId;
-use hir_def::database::{DefinitionWithBodyId, GlobalVariableId, ModuleDefinitionId, TypeAliasId};
+use hir_def::database::{DefinitionWithBodyId, ModuleDefinitionId, TypeAliasId};
 use hir_def::{
     HirFileId, InFile,
     data::LocalFieldId,

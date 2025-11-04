@@ -7,7 +7,7 @@ use itertools::Itertools as _;
 use super::Completions;
 use crate::{
     context::{CompletionContext, ImmediateLocation},
-    item::{CompletionItem, CompletionItemKind, CompletionRelevance},
+    item::{CompletionItem, CompletionItemKind},
 };
 
 pub(crate) fn complete_dot(

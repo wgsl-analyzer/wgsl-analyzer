@@ -411,7 +411,7 @@ fn type_to_rust(r#type: &Type) -> String {
             type_to_rust(inner)
         ),
 
-        (Type::Bool | Type::F32 | Type::I32 | Type::U32 | Type::F16) => {
+        Type::Bool | Type::F32 | Type::I32 | Type::U32 | Type::F16 => {
             format!("TypeKind::Scalar(ScalarType::{type:?}).intern(database)")
         },
         Type::Bound(index) => {

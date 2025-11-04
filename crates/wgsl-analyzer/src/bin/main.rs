@@ -8,7 +8,6 @@ use std::{
     env::{self, args as arguments},
     fmt::Debug,
     fs,
-    io::stderr,
     path::PathBuf,
     process::ExitCode,
     sync::Arc,
@@ -16,19 +15,14 @@ use std::{
 
 use anyhow::Context as _;
 use lsp_server::Connection;
-use lsp_types::InitializeParams;
 use paths::{AbsPathBuf, Utf8PathBuf};
-use tracing::{info, warn};
-use tracing_subscriber::{
-    filter::filter_fn,
-    fmt::{Subscriber, writer::BoxMakeWriter},
-};
+use tracing::info;
+use tracing_subscriber::fmt::writer::BoxMakeWriter;
 use wgsl_analyzer::{
     Result,
     cli::flags,
     config::{Config, ConfigChange, ConfigErrors},
     from_json,
-    main_loop::main_loop,
 };
 
 fn get_cwd_as_abs_path() -> Result<AbsPathBuf, std::io::Error> {

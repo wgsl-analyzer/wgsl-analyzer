@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use xshell::{Shell, cmd};
+use xshell::Shell;
 
 use crate::{
     flags::{self, CodegenType},

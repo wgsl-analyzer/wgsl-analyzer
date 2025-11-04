@@ -93,7 +93,7 @@ impl UnificationTable {
                         .vec_sizes
                         .get(&size_var)
                         .expect("vec size var not constrained"),
-                    (VecSize::Two | VecSize::Three | VecSize::Four) => size,
+                    VecSize::Two | VecSize::Three | VecSize::Four => size,
                 };
                 let inner = self.resolve(database, inner);
                 TypeKind::Vector(VectorType {

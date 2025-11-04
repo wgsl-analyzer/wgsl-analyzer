@@ -1,4 +1,3 @@
-use tracing::info;
 use triomphe::Arc;
 
 use crate::{

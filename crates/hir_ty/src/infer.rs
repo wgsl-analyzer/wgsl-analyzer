@@ -3,7 +3,7 @@ mod eval;
 mod unify;
 
 use std::{
-    borrow::Cow, collections::hash_map::Entry, ffi::os_str::Display, fmt, ops::Index,
+    fmt, ops::Index,
     str::FromStr as _,
 };
 
@@ -12,8 +12,7 @@ use hir_def::{
     HasSource as _,
     body::{BindingId, Body},
     data::{
-        FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, ParameterId,
-        StructData, TypeAliasData,
+        FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData,
     },
     database::{
         DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, Lookup as _, ModuleDefinitionId,
@@ -27,15 +26,12 @@ use hir_def::{
     module_data::Name,
     resolver::{ResolveKind, Resolver},
     type_ref::{self, VecDimensionality},
-    type_specifier::{IdentExpression, TypeSpecifier, TypeSpecifierId},
+    type_specifier::{IdentExpression, TypeSpecifierId},
 };
 use la_arena::ArenaMap;
 use rustc_hash::FxHashMap;
 use triomphe::Arc;
-use wgsl_types::{
-    inst::Instance,
-    syntax::{AccessMode, AddressSpace, Enumerant},
-};
+use wgsl_types::syntax::{AccessMode, AddressSpace, Enumerant};
 
 use crate::{
     builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
@@ -46,8 +42,8 @@ use crate::{
         unify::{UnificationTable, unify},
     },
     ty::{
-        ArraySize, ArrayType, AtomicType, BoundVariable, MatrixType, Pointer, Reference,
-        ScalarType, TexelFormat, TextureDimensionality, TextureKind, TextureType, Type, TypeKind,
+        ArraySize, ArrayType, AtomicType, MatrixType, Pointer, Reference,
+        ScalarType, TextureDimensionality, TextureKind, TextureType, Type, TypeKind,
         VecSize, VectorType,
     },
 };

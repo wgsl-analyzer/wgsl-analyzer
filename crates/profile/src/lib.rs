@@ -6,7 +6,6 @@ mod memory_usage;
 mod stop_watch;
 
 use std::cell::RefCell;
-use std::{env, fs, process};
 
 pub use crate::{
     memory_usage::{Bytes, MemoryUsage},

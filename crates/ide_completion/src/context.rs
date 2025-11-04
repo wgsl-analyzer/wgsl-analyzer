@@ -1,9 +1,9 @@
 use base_db::{FilePosition, TextRange};
 use either::Either;
-use hir::{ChildContainer, HirDatabase, Semantics};
+use hir::{ChildContainer, Semantics};
 use hir_def::{
     HirFileId,
-    database::{DefDatabase as _, DefinitionWithBodyId},
+    database::DefDatabase as _,
     resolver::Resolver,
 };
 use ide_db::RootDatabase;

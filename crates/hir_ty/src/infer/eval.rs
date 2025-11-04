@@ -1,11 +1,6 @@
-use std::{collections::VecDeque, str::FromStr};
+use std::collections::VecDeque;
 
-use hir_def::{
-    expression::{BinaryOperation, Expression, ExpressionId, UnaryOperator},
-    expression_store::ExpressionStore,
-    resolver::ResolveKind,
-    type_specifier::TypeSpecifier,
-};
+use hir_def::expression::{BinaryOperation, Expression, ExpressionId, UnaryOperator};
 use wgsl_types::{
     inst::{Instance, LiteralInstance},
     syntax::Enumerant,
@@ -14,7 +9,7 @@ use wgsl_types::{
 use crate::{
     database::HirDatabase as _,
     infer::{
-        InferenceContext, InferenceDiagnostic, Lowered, TyLoweringContext, TypeContainer,
+        Lowered, TyLoweringContext, TypeContainer,
         TypeLoweringError, TypeLoweringErrorKind,
     },
     ty::{Type, TypeKind},

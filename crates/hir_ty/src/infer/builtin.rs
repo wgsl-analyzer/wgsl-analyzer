@@ -10,8 +10,7 @@ use wgsl_types::{
 use crate::{
     infer::{
         Lowered, TyLoweringContext, TypeContainer, TypeLoweringError, TypeLoweringErrorKind,
-        WgslTypeConverter,
-        eval::{TemplateParameter, TemplateParameters},
+        eval::TemplateParameters,
         from_wgsl_texel_format,
     },
     ty::{

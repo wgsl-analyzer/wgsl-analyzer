@@ -10,7 +10,7 @@ use hir::{
 };
 use hir_def::original_file_range;
 use hir_ty::ty::{
-    self, Type, VecSize,
+    self,
     pretty::{pretty_fn, pretty_type},
 };
 use itertools::Itertools as _;

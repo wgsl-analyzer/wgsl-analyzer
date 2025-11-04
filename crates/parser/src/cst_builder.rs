@@ -1,7 +1,7 @@
 use rowan::{GreenNode, GreenNodeBuilder};
 
 use crate::{
-    Diagnostic, SyntaxKind,
+    SyntaxKind,
     lexer::Token,
     parser::{Cst, CstIndex, Node, NodeRef, Rule},
 };

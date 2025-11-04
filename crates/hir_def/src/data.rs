@@ -4,7 +4,7 @@ use triomphe::Arc;
 use crate::{
     HasSource as _,
     database::{
-        DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Interned, Lookup as _,
+        DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Lookup as _,
         OverrideId, StructId, TypeAliasId,
     },
     expression::ExpressionId,
@@ -16,7 +16,7 @@ use crate::{
         },
     },
     module_data::Name,
-    type_specifier::{TypeSpecifier, TypeSpecifierId},
+    type_specifier::TypeSpecifierId,
 };
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]

@@ -3,7 +3,7 @@ pub mod scope;
 
 use either::Either;
 use la_arena::{Arena, ArenaMap, Idx};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use syntax::{ast, pointer::AstPointer};
 use triomphe::Arc;
 
@@ -11,7 +11,7 @@ use crate::{
     HasSource as _,
     attributes::Attribute,
     database::{DefDatabase, DefinitionWithBodyId, Lookup as _},
-    expression::{Expression, ExpressionId, Statement, StatementId},
+    expression::{ExpressionId, Statement, StatementId},
     expression_store::{ExpressionSourceMap, ExpressionStore, SyntheticSyntax},
     module_data::Name,
 };

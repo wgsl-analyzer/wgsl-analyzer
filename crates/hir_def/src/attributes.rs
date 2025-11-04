@@ -1,7 +1,6 @@
 use std::iter;
 
 use either::Either;
-use la_arena::Arena;
 use syntax::{
     HasAttributes, HasName as _,
     ast::{self},
@@ -11,7 +10,7 @@ use triomphe::Arc;
 use crate::{
     HasSource as _,
     data::FieldId,
-    database::{DefDatabase, FunctionId, GlobalVariableId, Interned, Lookup as _, StructId},
+    database::{DefDatabase, FunctionId, GlobalVariableId, Lookup as _, StructId},
     expression::ExpressionId,
     expression_store::{
         ExpressionSourceMap, ExpressionStore, ExpressionStoreSource, lower::ExprCollector,

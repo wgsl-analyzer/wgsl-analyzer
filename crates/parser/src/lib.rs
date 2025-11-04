@@ -9,7 +9,7 @@ use std::fmt::{self, Debug};
 
 pub use edition::Edition;
 pub use parser::{Diagnostic, parse_entrypoint};
-use rowan::{GreenNode, SyntaxNode as RowanSyntaxNode};
+use rowan::GreenNode;
 use std::fmt::Write as _;
 
 pub struct Parse {

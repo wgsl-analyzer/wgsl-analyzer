@@ -1,8 +1,6 @@
 use std::fmt;
 
-use syntax::{HasTemplateParameters, ast};
 
-use crate::{expression::parse_literal, module_data::Name};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Copy)]
 pub enum VecDimensionality {

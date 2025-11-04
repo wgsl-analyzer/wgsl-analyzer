@@ -21,7 +21,6 @@ use base_db::{
 };
 use diagnostics::Diagnostic;
 use hir::diagnostics::DiagnosticsConfig;
-use hir_def::database::DefDatabase as _;
 use ide_completion::{CompletionConfig, item::CompletionItem};
 
 pub use crate::{

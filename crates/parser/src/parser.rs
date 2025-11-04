@@ -27,10 +27,10 @@
 )]
 use super::lexer::Token;
 use crate::{
-    Parse, ParseEntryPoint, SyntaxKind, cst_builder::CstBuilder, lexer::lex_with_templates,
+    Parse, ParseEntryPoint, cst_builder::CstBuilder, lexer::lex_with_templates,
 };
 use logos::Logos as _;
-use rowan::{GreenNode, GreenNodeBuilder};
+use rowan::GreenNodeBuilder;
 use std::fmt::{self, Write as _};
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));

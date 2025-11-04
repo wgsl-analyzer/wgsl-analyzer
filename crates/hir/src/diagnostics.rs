@@ -4,14 +4,12 @@ pub mod precedence;
 use base_db::{FileRange, TextRange};
 use hir_def::{
     HirFileId, InFile,
-    body::BodySourceMap,
     expression::BinaryOperation,
     expression_store::{ExpressionSourceMap, ExpressionStoreSource},
     module_data::Name,
 };
 use hir_ty::{
     builtins::BuiltinId,
-    database::{FieldInferenceDiagnostic, HirDatabase},
     infer::{
         InferenceDiagnostic, LoweredKind, TypeExpectation, TypeLoweringError, TypeLoweringErrorKind,
     },
@@ -19,14 +17,11 @@ use hir_ty::{
     validate::AddressSpaceError,
 };
 use syntax::{
-    AstNode as _, ast,
-    pointer::{AstPointer, SyntaxNodePointer},
+    ast,
+    pointer::AstPointer,
 };
 
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
-use crate::{
-    Field, Function, GlobalConstant, GlobalVariable, HasSource as _, Override, Parameter, TypeAlias,
-};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub enum NagaVersion {

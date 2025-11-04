@@ -1,13 +1,12 @@
 use std::{
     collections::HashSet,
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use xshell::Shell;
 
-use xshell::cmd;
 
-use crate::{flags::Tidy, project_root, utilities::list_files};
+use crate::{flags::Tidy, project_root};
 
 impl Tidy {
     #[expect(clippy::unused_self, reason = "better API")]

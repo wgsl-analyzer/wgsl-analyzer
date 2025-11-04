@@ -1,6 +1,6 @@
 use crate::flags;
 use anyhow::bail;
-use std::env::{self, var};
+use std::env::var;
 use xshell::{Shell, cmd};
 
 impl flags::PublishReleaseNotes {
