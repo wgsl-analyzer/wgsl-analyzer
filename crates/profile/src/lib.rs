@@ -1,4 +1,4 @@
-//! A collection of tools for profiling rust-analyzer.
+//! A collection of tools for profiling wgsl-analyzer.
 
 #[cfg(feature = "cpu_profiler")]
 mod google_cpu_profiler;
@@ -24,7 +24,7 @@ thread_local! {
 /// 3. Run the code, the *raw* output would be in the `./out.profile` file.
 /// 4. Install pprof for visualization (<https://github.com/google/pprof>).
 /// 5. Bump sampling frequency to once per ms: `export CPUPROFILE_FREQUENCY=1000`
-/// 6. Use something like `pprof -svg target/release/rust-analyzer ./out.profile` to see the results.
+/// 6. Use something like `pprof -svg target/release/wgsl-analyzer ./out.profile` to see the results.
 ///
 /// For example, here's how I run profiling on `NixOS`:
 ///
@@ -38,8 +38,8 @@ thread_local! {
 ///   '';
 /// }
 /// $ set -x CPUPROFILE_FREQUENCY 1000
-/// $ nix-shell --run 'cargo test --release --package rust-analyzer --lib -- benchmarks::benchmark_integrated_highlighting --exact --nocapture'
-/// $ pprof -svg target/release/deps/rust_analyzer-8739592dc93d63cb crates/rust-analyzer/out.profile > profile.svg
+/// $ nix-shell --run 'cargo test --release --package wgsl-analyzer --lib -- benchmarks::benchmark_integrated_highlighting --exact --nocapture'
+/// $ pprof -svg target/release/deps/rust_analyzer-8739592dc93d63cb crates/wgsl-analyzer/out.profile > profile.svg
 /// ```
 ///
 /// See this diff for how to profile completions:

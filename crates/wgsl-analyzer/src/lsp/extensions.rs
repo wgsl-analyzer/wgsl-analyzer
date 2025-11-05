@@ -175,7 +175,7 @@ impl Request for InternalTestingFetchConfig {
     // Option is solely to circumvent Default bound.
     type Result = Option<InternalTestingFetchConfigResponse>;
 
-    const METHOD: &'static str = "rust-analyzer-internal/internalTestingFetchConfig";
+    const METHOD: &'static str = "wgsl-analyzer-internal/internalTestingFetchConfig";
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -190,7 +190,7 @@ impl Request for AnalyzerStatus {
     type Params = AnalyzerStatusParameters;
     type Result = String;
 
-    const METHOD: &'static str = "rust-analyzer/analyzerStatus";
+    const METHOD: &'static str = "wgsl-analyzer/analyzerStatus";
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -212,7 +212,7 @@ impl Request for FetchDependencyList {
     type Params = FetchDependencyListParameters;
     type Result = FetchDependencyListResult;
 
-    const METHOD: &'static str = "rust-analyzer/fetchDependencyList";
+    const METHOD: &'static str = "wgsl-analyzer/fetchDependencyList";
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -231,7 +231,7 @@ impl Request for MemoryUsage {
     type Params = ();
     type Result = String;
 
-    const METHOD: &'static str = "rust-analyzer/memoryUsage";
+    const METHOD: &'static str = "wgsl-analyzer/memoryUsage";
 }
 
 pub enum ReloadWorkspace {}
@@ -240,16 +240,7 @@ impl Request for ReloadWorkspace {
     type Params = ();
     type Result = ();
 
-    const METHOD: &'static str = "rust-analyzer/reloadWorkspace";
-}
-
-pub enum RebuildProcMacros {}
-
-impl Request for RebuildProcMacros {
-    type Params = ();
-    type Result = ();
-
-    const METHOD: &'static str = "rust-analyzer/rebuildProcMacros";
+    const METHOD: &'static str = "wgsl-analyzer/reloadWorkspace";
 }
 
 pub enum ViewSyntaxTree {}
@@ -258,7 +249,7 @@ impl Request for ViewSyntaxTree {
     type Params = ViewSyntaxTreeParameters;
     type Result = String;
 
-    const METHOD: &'static str = "rust-analyzer/viewSyntaxTree";
+    const METHOD: &'static str = "wgsl-analyzer/viewSyntaxTree";
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -267,22 +258,24 @@ pub struct ViewSyntaxTreeParameters {
     pub text_document: TextDocumentIdentifier,
 }
 
+// change this to ViewWgsl (used when writing WESL)
 pub enum ViewHir {}
 
 impl Request for ViewHir {
     type Params = lsp_types::TextDocumentPositionParams;
     type Result = String;
 
-    const METHOD: &'static str = "rust-analyzer/viewHir";
+    const METHOD: &'static str = "wgsl-analyzer/viewHir";
 }
 
+// change this to ViewSpirV
 pub enum ViewMir {}
 
 impl Request for ViewMir {
     type Params = lsp_types::TextDocumentPositionParams;
     type Result = String;
 
-    const METHOD: &'static str = "rust-analyzer/viewMir";
+    const METHOD: &'static str = "wgsl-analyzer/viewMir";
 }
 
 pub enum InterpretFunction {}
@@ -291,7 +284,7 @@ impl Request for InterpretFunction {
     type Params = lsp_types::TextDocumentPositionParams;
     type Result = String;
 
-    const METHOD: &'static str = "rust-analyzer/interpretFunction";
+    const METHOD: &'static str = "wgsl-analyzer/interpretFunction";
 }
 
 pub enum ViewFileText {}
@@ -300,7 +293,7 @@ impl Request for ViewFileText {
     type Params = lsp_types::TextDocumentIdentifier;
     type Result = String;
 
-    const METHOD: &'static str = "rust-analyzer/viewFileText";
+    const METHOD: &'static str = "wgsl-analyzer/viewFileText";
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -316,7 +309,7 @@ impl Request for ViewCrateGraph {
     type Params = ViewCrateGraphParameters;
     type Result = String;
 
-    const METHOD: &'static str = "rust-analyzer/viewCrateGraph";
+    const METHOD: &'static str = "wgsl-analyzer/viewCrateGraph";
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -331,7 +324,7 @@ impl Request for ViewItemTree {
     type Params = ViewItemTreeParameters;
     type Result = String;
 
-    const METHOD: &'static str = "rust-analyzer/viewItemTree";
+    const METHOD: &'static str = "wgsl-analyzer/viewItemTree";
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -457,7 +450,7 @@ impl Request for ExpandMacro {
     type Params = ExpandMacroParameters;
     type Result = Option<ExpandedMacro>;
 
-    const METHOD: &'static str = "rust-analyzer/expandMacro";
+    const METHOD: &'static str = "wgsl-analyzer/expandMacro";
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -480,7 +473,7 @@ impl Request for ViewRecursiveMemoryLayout {
     type Params = lsp_types::TextDocumentPositionParams;
     type Result = Option<RecursiveMemoryLayout>;
 
-    const METHOD: &'static str = "rust-analyzer/viewRecursiveMemoryLayout";
+    const METHOD: &'static str = "wgsl-analyzer/viewRecursiveMemoryLayout";
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -507,7 +500,7 @@ pub enum CancelFlycheck {}
 impl Notification for CancelFlycheck {
     type Params = ();
 
-    const METHOD: &'static str = "rust-analyzer/cancelFlycheck";
+    const METHOD: &'static str = "wgsl-analyzer/cancelFlycheck";
 }
 
 pub enum RunFlycheck {}
@@ -515,7 +508,7 @@ pub enum RunFlycheck {}
 impl Notification for RunFlycheck {
     type Params = RunFlycheckParameters;
 
-    const METHOD: &'static str = "rust-analyzer/runFlycheck";
+    const METHOD: &'static str = "wgsl-analyzer/runFlycheck";
 }
 
 pub enum ClearFlycheck {}
@@ -523,7 +516,7 @@ pub enum ClearFlycheck {}
 impl Notification for ClearFlycheck {
     type Params = ();
 
-    const METHOD: &'static str = "rust-analyzer/clearFlycheck";
+    const METHOD: &'static str = "wgsl-analyzer/clearFlycheck";
 }
 
 pub enum OpenServerLogs {}
@@ -531,7 +524,7 @@ pub enum OpenServerLogs {}
 impl Notification for OpenServerLogs {
     type Params = ();
 
-    const METHOD: &'static str = "rust-analyzer/openServerLogs";
+    const METHOD: &'static str = "wgsl-analyzer/openServerLogs";
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -663,7 +656,7 @@ impl Request for RelatedTests {
     type Params = lsp_types::TextDocumentPositionParams;
     type Result = Vec<TestInfo>;
 
-    const METHOD: &'static str = "rust-analyzer/relatedTests";
+    const METHOD: &'static str = "wgsl-analyzer/relatedTests";
 }
 
 #[derive(Debug, Deserialize, Serialize)]
