@@ -38,6 +38,14 @@ See the [installation guide in the manual](https://wgsl-analyzer.github.io/book/
 
 ## Building from source
 
+The easiest way to build the language server and extension and install it all in one command:
+
+```bash
+cargo xtask install
+```
+
+The following instructions describe the manual steps:
+
 The lsp server can be built using `cargo build --release -p wgsl-analyzer`.
 
 The VS Code extension can either be built as a platform-specific extension which bundles the language server binary, or as a platform-independent one.
