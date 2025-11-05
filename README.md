@@ -57,7 +57,8 @@ Platform-specific extension:
 Copy the server binary (either `wgsl-analyzer` or `wgsl-analyzer.exe`) into `./editors/code/server/`:
 
 ```bash
-mkdir editors/code/server && cp target/release/wgsl-analyzer editors/code/server/wgsl-analyzer
+mkdir editors/code/server
+cp target/release/wgsl-analyzer editors/code/server/wgsl-analyzer
 ```
 
 Next, run:
