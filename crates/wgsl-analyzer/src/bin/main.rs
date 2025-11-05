@@ -1,4 +1,4 @@
-//! Driver for rust-analyzer.
+//! Driver for wgsl-analyzer.
 //!
 //! Based on cli flags, either spawns an LSP server, or runs a batch analysis
 
@@ -328,7 +328,7 @@ fn setup_logging(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
 
 const STACK_SIZE: usize = 1 << 24;
 
-/// Parts of rust-analyzer can use a lot of stack space, and some operating systems only give us
+/// Parts of wgsl-analyzer can use a lot of stack space, and some operating systems only give us
 /// 1 MB by default (eg. Windows), so this spawns a new thread with hopefully sufficient stack
 /// space.
 fn with_extra_thread(

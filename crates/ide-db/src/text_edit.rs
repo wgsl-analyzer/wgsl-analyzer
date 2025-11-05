@@ -1,8 +1,7 @@
 //! Representation of a `TextEdit`.
 //!
-//! `rust-analyzer` never mutates text itself and only sends diffs to clients,
-//! so `TextEdit` is the ultimate representation of the work done by
-//! rust-analyzer.
+//! wgsl-analyzer never mutates text itself and only sends diffs to clients,
+//! so `TextEdit` is the ultimate representation of the work done by wgsl-analyzer.
 
 use std::{cmp::max, iter, slice, vec};
 

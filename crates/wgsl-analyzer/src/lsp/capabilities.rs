@@ -182,7 +182,7 @@ impl ClientCapabilities {
         serde_json::from_value(self.0.experimental.as_ref()?.get(index)?.clone()).ok()
     }
 
-    /// Parses client capabilities and returns all completion resolve capabilities rust-analyzer supports.
+    /// Parses client capabilities and returns all completion resolve capabilities wgsl-analyzer supports.
     pub fn completion_item_edit_resolve(&self) -> bool {
         (|| {
             Some(
