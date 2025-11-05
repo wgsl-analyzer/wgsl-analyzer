@@ -17,7 +17,7 @@ Note: (support for WESL is experimental and in-progress)
 You can use it with any editor that supports the [Language Server Protocol][lsp] (for example, VS Code, Vim, Emacs, Zed).
 
 wgsl-analyzer's features include go-to-definition, type checking, code completion, and much more is planned.
-wgsl-analyzer also supports integrated formatting (with wgslfmt) and integrated diagnostics (with naga).
+wgsl-analyzer also supports <!-- integrated formatting (with wgslfmt) and --> integrated diagnostics (with naga).
 
 Internally, wgsl-analyzer is structured as a set of libraries for analyzing Rust code.
 See [Architecture][architecture] in the manual.
