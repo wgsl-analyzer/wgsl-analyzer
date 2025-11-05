@@ -13,7 +13,7 @@ It comes bundled with a language server of the same name: [wgsl-analyzer](https:
 <!-- - [find all references][find all references], [workspace symbol search][workspace symbol], [symbol renaming][rename] -->
 <!-- - [types and documentation on hover][hover] -->
 - inlay hints for types
-<!-- - [inlay hints][inlay hints] for types and parameter names --> -->
+<!-- - [inlay hints][inlay hints] for types and parameter names -->
 - syntax highlighting (also in host languages' strings and Markdown fenced code blocks!)
 <!-- - [semantic syntax highlighting][semantic syntax highlighting] -->
 <!-- - a lot of [assists (code actions)][assists] -->
