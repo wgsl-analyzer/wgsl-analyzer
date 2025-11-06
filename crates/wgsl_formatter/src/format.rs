@@ -11,6 +11,7 @@ mod gen_if_statement;
 mod gen_statement;
 mod gen_struct;
 mod gen_types;
+pub mod multiline_group;
 mod reporting;
 
 use std::{alloc::alloc, iter::repeat_with, rc::Rc};

@@ -68,7 +68,7 @@ pub fn gen_function_call_expression_arguments(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    // TODO Abstract this "fully multiline if at all multiline" functionality from here, index exprs, fn declarations and wherever it also exists
+    // TODO Abstract this "fully multiline if at all multiline" functionality from here, index exprs, fn declarations, for-loops and wherever it also exists
     let start_ln = LineNumber::new("start");
     let end_ln = LineNumber::new("end");
     let is_multiple_lines = create_is_multiple_lines_resolver(start_ln, end_ln);

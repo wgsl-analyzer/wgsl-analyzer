@@ -38,7 +38,8 @@ pub fn format_continue_statement_with_weird_comment() {
         expect![["
             fn main() {
                 while(true) {
-                    /* A */ continue;
+                    /* A */
+                    continue;
                     /* B */ /* C */
                 }
             }
