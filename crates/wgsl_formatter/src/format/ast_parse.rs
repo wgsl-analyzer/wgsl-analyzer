@@ -12,7 +12,7 @@
 //TODO Make ***_optional functions into parser-combinator like things
 
 use itertools::PutBack;
-use parser::{SyntaxElementChildren, SyntaxKind, SyntaxToken};
+use parser::{SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 use syntax::{
     AstNode,
@@ -33,10 +33,45 @@ pub fn parse_token(
             Err(FormatDocumentErrorKind::UnexpectedToken { received: other }
                 .without_range(err_src!()))
         },
+        None => {
+            todo!();
+            Err(FormatDocumentErrorKind::MissingTokens {
+                expected: Some(expected),
+            }
+            .without_range(err_src!()))
+        },
+    }
+}
+
+pub fn parse_node_by_kind(
+    syntax: &mut SyntaxIter,
+    expected: SyntaxKind,
+) -> FormatDocumentResult<SyntaxNode> {
+    match syntax.next() {
+        Some(NodeOrToken::Node(child)) if child.kind() == expected => Ok(child),
+        Some(other) => {
+            syntax.put_back(other.clone());
+            Err(FormatDocumentErrorKind::UnexpectedToken { received: other }
+                .without_range(err_src!()))
+        },
         None => Err(FormatDocumentErrorKind::MissingTokens {
             expected: Some(expected),
         }
         .without_range(err_src!())),
+    }
+}
+
+pub fn parse_node_by_kind_optional(
+    syntax: &mut SyntaxIter,
+    expected: SyntaxKind,
+) -> Option<SyntaxNode> {
+    match syntax.next() {
+        Some(NodeOrToken::Node(child)) if child.kind() == expected => Some(child),
+        Some(other) => {
+            syntax.put_back(other);
+            None
+        },
+        None => None,
     }
 }
 

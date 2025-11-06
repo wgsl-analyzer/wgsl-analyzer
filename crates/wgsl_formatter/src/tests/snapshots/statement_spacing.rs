@@ -178,3 +178,28 @@ pub fn format_let_decl_keeps_block_comment_in_same_place_empty_line_after() {
         "]],
     );
 }
+
+#[test]
+pub fn format_nested_blocks_have_correct_line_breaks() {
+    check(
+        "fn main() {
+            loop {
+            loop {loop {
+            a += 1;b += 1;
+
+            }}}
+        }",
+        expect![[r#"
+            fn main() {
+                loop {
+                    loop {
+                        loop {
+                            a += 1;
+                            b += 1;
+                        }
+                    }
+                }
+            }
+        "#]],
+    );
+}

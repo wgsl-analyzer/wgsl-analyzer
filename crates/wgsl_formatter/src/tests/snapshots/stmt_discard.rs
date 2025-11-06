@@ -28,7 +28,8 @@ pub fn format_discard_statement_with_weird_comment() {
         }",
         expect![["
             fn main() {
-                /* A */ discard;
+                /* A */
+                discard;
                 /* B */ /* C */
             }
         "]],

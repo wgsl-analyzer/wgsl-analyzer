@@ -1,4 +1,4 @@
-use dprint_core::formatting::{ColumnNumber, PrintItems, Signal};
+use dprint_core::formatting::{ColumnNumber, LineNumber, LineNumberAnchor, PrintItems, Signal};
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::{SyntaxKind, SyntaxToken};
@@ -7,19 +7,20 @@ use syntax::{
     AstNode,
     ast::{
         self, CompoundStatement, ElseClause, ElseIfClause, Expression, IfClause, Literal,
-        ParenthesisExpression,
+        ParenthesisExpression, Statement,
     },
 };
 
 use crate::format::{
     self,
     ast_parse::{
-        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional, parse_token,
+        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_by_kind,
+        parse_node_by_kind_optional, parse_node_optional, parse_token, parse_token_optional,
     },
     gen_comments::{gen_comment, gen_comments},
     gen_expression::{gen_expression, gen_parenthesis_expression},
     gen_if_statement::gen_if_statement,
-    helpers::{gen_spaced_lines, todo_verbatim},
+    helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, todo_verbatim},
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult, err_src},
 };
@@ -46,7 +47,10 @@ pub fn gen_compound_statement(
         if let NodeOrToken::Node(child) = child
             && let Some(statement) = ast::Statement::cast(child.clone())
         {
-            gen_statement(&statement)
+            let mut formatted = PrintItemBuffer::new();
+            formatted.request_line_break(SeparationPolicy::Expected);
+            formatted.extend(gen_statement(&statement)?);
+            Ok(formatted)
         } else if let NodeOrToken::Token(child) = child
             && matches!(
                 child.kind(),
@@ -93,13 +97,33 @@ pub fn gen_compound_statement(
 }
 
 fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumentError> {
+    // Read comment in gen_statement_maybe_semicolon
+    // As most of the calls to gen_statement will always have true as the include_semicolon
+    // parameter, I want to have this alias function, so that once I properly clean up the
+    // flag, i don't need to change code that doesn't semantically change.
+    // Also, this way, places that need the flag are highlighted and easier to find.
+    gen_statement_maybe_semicolon(item, true)
+}
+
+fn gen_statement_maybe_semicolon(
+    item: &ast::Statement,
+    // TODO Consider absorbing semicolon handling into PrintItemBuffer,
+    // passing around random flags is bad, as it leads to spaghetti code and if
+    // one gen_* function forgets that it would need the flag, that will lead to weird
+    // corner cases bugs. Things like
+    // PrintItemBuffer::request_semicolon() and PrintItemBuffer::forbid_semicolon()
+    // would be much better. But there are many design questions if the PIB has to handle
+    // more than just spaces, and i don't know about all the use cases until the formatter is
+    // done.
+    include_semicolon: bool,
+) -> Result<PrintItemBuffer, FormatDocumentError> {
     match item {
         ast::Statement::IfStatement(if_statement) => gen_if_statement(if_statement),
         ast::Statement::SwitchStatement(switch_statement) => {
             todo_verbatim(switch_statement.syntax())
         },
         ast::Statement::LoopStatement(loop_statement) => gen_loop_statement(loop_statement),
-        ast::Statement::ForStatement(for_statement) => todo_verbatim(for_statement.syntax()),
+        ast::Statement::ForStatement(for_statement) => gen_for_statement(for_statement),
         ast::Statement::WhileStatement(while_statement) => gen_while_statement(while_statement),
         ast::Statement::CompoundStatement(compound_statement) => {
             gen_compound_statement(compound_statement)
@@ -108,10 +132,10 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
             todo_verbatim(function_call_statement.syntax())
         },
         ast::Statement::VariableDeclaration(variable_declaration) => {
-            gen_var_declaration_statement(variable_declaration)
+            gen_var_declaration_statement(variable_declaration, include_semicolon)
         },
         ast::Statement::LetDeclaration(let_declaration) => {
-            gen_let_declaration_statement(let_declaration)
+            gen_let_declaration_statement(let_declaration, include_semicolon)
         },
         ast::Statement::ConstantDeclaration(constant_declaration) => {
             todo_verbatim(constant_declaration.syntax())
@@ -128,7 +152,9 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
         ast::Statement::ContinuingStatement(continuing_statement) => {
             gen_continuing_statement(continuing_statement)
         },
-        ast::Statement::ReturnStatement(return_statement) => gen_return_statement(return_statement),
+        ast::Statement::ReturnStatement(return_statement) => {
+            gen_return_statement(return_statement, include_semicolon)
+        },
         ast::Statement::BreakStatement(break_statement) => {
             // ==== Parse ====
             // We still parse through the break syntax even tho there is no information for
@@ -185,12 +211,97 @@ fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumen
             todo_verbatim(assert_statement.syntax())
         },
         ast::Statement::BreakIfStatement(break_if_statement) => {
-            gen_break_if_statement(break_if_statement)
+            gen_break_if_statement(break_if_statement, include_semicolon)
         },
     }
 }
 
-fn gen_return_statement(statement: &ast::ReturnStatement) -> FormatDocumentResult<PrintItemBuffer> {
+fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {
+    dbg!(statement.syntax());
+
+    // ==== Parse ====
+    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    parse_token(&mut syntax, SyntaxKind::For)?;
+    let comments_after_for = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::ParenthesisLeft)?;
+    let comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_initializer = parse_node_by_kind_optional(&mut syntax, SyntaxKind::ForInitializer)
+        .map(|item_initializer_container| {
+            let mut sub_syntax =
+                put_back(item_initializer_container.syntax().children_with_tokens());
+            let item_initializer = parse_node::<Statement>(&mut sub_syntax)?;
+            parse_end(&mut sub_syntax);
+            Ok(item_initializer)
+        })
+        .transpose()?;
+    let comments_after_initializer = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
+    let comments_after_initializer_semicolon = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_condition = parse_node_by_kind_optional(&mut syntax, SyntaxKind::ForCondition)
+        .map(|item_condition_container| {
+            let mut sub_syntax = put_back(item_condition_container.syntax().children_with_tokens());
+            let item_condition = parse_node::<Expression>(&mut sub_syntax)?;
+            parse_end(&mut sub_syntax);
+            Ok(item_condition)
+        })
+        .transpose()?;
+    let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
+    let comments_after_condition_semicolon = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_continuing = parse_node_by_kind_optional(&mut syntax, SyntaxKind::ForContinuingPart)
+        .map(|item_continuing_container| {
+            let mut sub_syntax =
+                put_back(item_continuing_container.syntax().children_with_tokens());
+            let item_continuing = parse_node::<Statement>(&mut sub_syntax)?;
+            parse_end(&mut sub_syntax);
+            Ok(item_continuing)
+        })
+        .transpose()?;
+    let comments_after_continuing = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::ParenthesisRight)?;
+    let comments_after_close_paren = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
+    parse_end(&mut syntax);
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_sc(sc!("for"));
+    formatted.extend(gen_comments(comments_after_for));
+    formatted.push_sc(sc!("("));
+    formatted.extend(gen_comments(comments_after_open_paren));
+    if let Some(item_initializer) = item_initializer {
+        formatted.extend(gen_statement_maybe_semicolon(&item_initializer, false)?);
+    }
+    formatted.extend(gen_comments(comments_after_initializer));
+    formatted.request_space(SeparationPolicy::Discouraged);
+    formatted.push_sc(sc!(";"));
+    formatted.request_space(SeparationPolicy::Expected);
+    formatted.request_line_break(SeparationPolicy::Allowed);
+    formatted.extend(gen_comments(comments_after_initializer_semicolon));
+    if let Some(item_condition) = item_condition {
+        formatted.extend(gen_expression(&item_condition)?);
+    }
+    formatted.extend(gen_comments(comments_after_condition));
+    formatted.request_space(SeparationPolicy::Discouraged);
+    formatted.push_sc(sc!(";"));
+    formatted.request_space(SeparationPolicy::Expected);
+    formatted.request_line_break(SeparationPolicy::Allowed);
+    formatted.extend(gen_comments(comments_after_condition_semicolon));
+    if let Some(item_continuing) = item_continuing {
+        formatted.extend(gen_statement_maybe_semicolon(&item_continuing, false)?);
+    }
+    formatted.extend(gen_comments(comments_after_continuing));
+    formatted.request_space(SeparationPolicy::Discouraged);
+    formatted.push_sc(sc!(")"));
+    formatted.extend(gen_comments(comments_after_close_paren));
+    formatted.extend(gen_compound_statement(&item_body)?);
+    Ok(formatted)
+}
+
+fn gen_return_statement(
+    statement: &ast::ReturnStatement,
+    include_semicolon: bool,
+) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::Return)?;
@@ -209,12 +320,16 @@ fn gen_return_statement(statement: &ast::ReturnStatement) -> FormatDocumentResul
     }
     formatted.extend(gen_comments(comments_after_expression));
     formatted.request_space(SeparationPolicy::Discouraged);
-    formatted.push_sc(sc!(";"));
+
+    if include_semicolon {
+        formatted.push_sc(sc!(";"));
+    }
     Ok(formatted)
 }
 
 fn gen_break_if_statement(
-    statement: &ast::BreakIfStatement
+    statement: &ast::BreakIfStatement,
+    include_semicolon: bool,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
@@ -237,7 +352,9 @@ fn gen_break_if_statement(
     formatted.extend(gen_expression(&item_condition)?);
     formatted.extend(gen_comments(comments_after_condition));
     formatted.request_space(SeparationPolicy::Discouraged);
-    formatted.push_sc(sc!(";"));
+    if include_semicolon {
+        formatted.push_sc(sc!(";"));
+    }
 
     Ok(formatted)
 }
@@ -305,7 +422,8 @@ fn gen_while_statement(statement: &ast::WhileStatement) -> FormatDocumentResult<
 }
 
 fn gen_let_declaration_statement(
-    statement: &ast::LetDeclaration
+    statement: &ast::LetDeclaration,
+    include_semicolon: bool,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     //
     // NOTE!! - When changing this function, make sure to also update gen_var_declaration_statement.
@@ -326,7 +444,7 @@ fn gen_let_declaration_statement(
     let value = parse_node::<ast::Expression>(&mut syntax)?;
     let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
 
-    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
+    parse_token_optional(&mut syntax, SyntaxKind::Semicolon); //Not all var-statements have a semicolon (e.g for loop)
     parse_end(&mut syntax);
 
     // ==== Format ====
@@ -334,8 +452,6 @@ fn gen_let_declaration_statement(
     pi.push_info(ColumnNumber::new("start_expr"));
 
     let mut formatted = PrintItemBuffer::new();
-    // There are no circumstances where a let statement would not be the first item on a line.
-    formatted.expect_line_break();
     formatted.push_sc(sc!("let"));
     formatted.push_signal(Signal::StartIndent);
     formatted.expect_single_space();
@@ -349,14 +465,17 @@ fn gen_let_declaration_statement(
     formatted.extend(gen_expression(&value)?);
     formatted.extend(gen_comments(item_comments_after_value));
     formatted.request_space(SeparationPolicy::Discouraged);
-    formatted.push_sc(sc!(";"));
+    if include_semicolon {
+        formatted.push_sc(sc!(";"));
+    }
     formatted.push_signal(Signal::FinishIndent);
 
     Ok(formatted)
 }
 
 fn gen_var_declaration_statement(
-    statement: &ast::VariableDeclaration
+    statement: &ast::VariableDeclaration,
+    include_semicolon: bool,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     //
     // NOTE!! - When changing this function, make sure to also update gen_let_declaration_statement.
@@ -377,7 +496,7 @@ fn gen_var_declaration_statement(
     let value = parse_node::<ast::Expression>(&mut syntax)?;
     let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
 
-    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
+    parse_token_optional(&mut syntax, SyntaxKind::Semicolon); //Not all var-statements have a semicolon (e.g for loop)
     parse_end(&mut syntax);
 
     // ==== Format ====
@@ -385,8 +504,6 @@ fn gen_var_declaration_statement(
     pi.push_info(ColumnNumber::new("start_expr"));
 
     let mut formatted = PrintItemBuffer::new();
-    // There are no circumstances where a let statement would not be the first item on a line.
-    formatted.expect_line_break();
     formatted.push_sc(sc!("var"));
     formatted.push_signal(Signal::StartIndent);
     formatted.expect_single_space();
@@ -400,7 +517,9 @@ fn gen_var_declaration_statement(
     formatted.extend(gen_expression(&value)?);
     formatted.extend(gen_comments(item_comments_after_value));
     formatted.request_space(SeparationPolicy::Discouraged);
-    formatted.push_sc(sc!(";"));
+    if include_semicolon {
+        formatted.push_sc(sc!(";"));
+    }
     formatted.push_signal(Signal::FinishIndent);
 
     Ok(formatted)
