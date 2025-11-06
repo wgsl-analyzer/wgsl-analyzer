@@ -1,6 +1,7 @@
 #![cfg_attr(not(test), allow(unused))]
 
 mod expression;
+mod imports;
 
 use expect_test::{Expect, expect};
 

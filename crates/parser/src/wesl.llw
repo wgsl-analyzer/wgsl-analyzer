@@ -12,6 +12,7 @@ token Semi=';' LPar='(' RPar=')' Comma=',' Eq='=' Colon=':' LBrace='{' RBrace='}
       Tilde='~' Plus='+' Eq2='==' Pipe='|' And2='&&' Slash='/' Caret='^' Pipe2='||' ExclEq='!='
       Percent='%' Underscore='_' AndEq='&=' StarEq='*=' PlusEq='+=' PipeEq='|=' MinusEq='-='
       SlashEq='/=' CaretEq='^=' PercentEq='%=' Plus2='++' Minus2='--';
+token Import='import' Package='package' Super='super' As='as' DoubleColon='::';
 token Ident='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>';
 token Blankspace LineEndingComment BlockComment;
 
@@ -25,12 +26,19 @@ part expression;
 part statement;
 part type_specifier;
 
-
+// WESL: Import statements
+import_statement: 'import' [import_relative] (import_collection | import_path_or_item) ';';
+import_relative: ('package' '::') | ('super' '::')+;
+import_path_or_item: Ident (
+    '::' (import_collection | import_path_or_item)
+  | ['as' Ident]
+);
+import_collection: '{' import_path_or_item (?1 ',' import_path_or_item)* [','] '}';
 
 // TODO: validate that directives come before declarations to improve error messages
 // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/683
 translation_unit: (global_item | ';')*;
-global_item^: global_directive | global_declaration | global_assert;
+global_item^: import_statement | global_directive | global_declaration | global_assert;
 
 global_assert: 'const_assert' expression ';' @assert_statement; // §10
 global_directive:

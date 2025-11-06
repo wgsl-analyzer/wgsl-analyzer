@@ -165,6 +165,17 @@ pub enum Token {
     Plus2,
     #[token("--")]
     Minus2,
+    #[token("import")]
+    Import,
+    #[token("package")]
+    Package,
+    #[token("super")]
+    Super,
+    #[token("as")]
+    As,
+    #[token("::")]
+    DoubleColon,
+
     #[regex(r"([_\p{XID_Start}][\p{XID_Continue}]+)|[\p{XID_Start}]")]
     Ident,
     #[regex(r"0[fh]")]

@@ -160,6 +160,10 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         }
     }
 
+    fn predicate_import_collection_1(&self) -> bool {
+        self.peek(1) != Token::RBrace
+    }
+
     fn predicate_global_directive_1(&self) -> bool {
         self.peek(1) != Token::Semi
     }
