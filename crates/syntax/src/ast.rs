@@ -213,6 +213,57 @@ ast_node! {
 }
 
 ast_node! {
+    ImportStatement:
+    relative: Option<ImportRelative>;
+    item: Option<ImportSegment>;
+}
+
+ast_enum! {
+    enum ImportRelative {
+        ImportPackageRelative,
+        ImportSuperRelative,
+    }
+}
+
+ast_node! {
+    ImportPackageRelative
+}
+ast_node! {
+    ImportSuperRelative
+}
+impl ImportSuperRelative {
+    pub fn super_count(&self) -> usize {
+        self.syntax
+            .children_with_tokens()
+            .filter(|child| child.kind() == SyntaxKind::Super)
+            .count()
+    }
+}
+
+ast_enum! {
+    enum ImportSegment {
+        ImportPath,
+        ImportItem,
+        ImportCollection,
+    }
+}
+
+ast_node! {
+    ImportPath:
+    name_ref: Option<NameReference>;
+    item: Option<ImportSegment>;
+}
+ast_node! {
+    ImportItem:
+    name_ref: Option<NameReference>;
+    as_name: Option<Name>;
+}
+ast_node! {
+    ImportCollection:
+    items: AstChildren<ImportSegment>;
+}
+
+ast_node! {
     FunctionDeclaration:
     fn_token: Option<SyntaxToken Fn>;
     parameter_list: Option<FunctionParameters>;

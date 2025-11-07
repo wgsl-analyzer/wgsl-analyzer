@@ -27,13 +27,14 @@ part statement;
 part type_specifier;
 
 // WESL: Import statements
-import_statement: 'import' [import_relative] (import_collection | import_path_or_item) ';';
-import_relative: ('package' '::') | ('super' '::')+;
-import_path_or_item: Ident (
-    '::' (import_collection | import_path_or_item)
-  | ['as' Ident]
+import_statement: 'import' [import_package_relative | import_super_relative] (import_collection | import_path) ';';
+import_package_relative: 'package' '::';
+import_super_relative: ('super' '::')+;
+import_path: name_ref (
+    '::' (import_collection | import_path)
+  | ['as' name] @import_item
 );
-import_collection: '{' import_path_or_item (?1 ',' import_path_or_item)* [','] '}';
+import_collection: '{' import_path (?1 ',' import_path)* [','] '}';
 
 // TODO: validate that directives come before declarations to improve error messages
 // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/683

@@ -149,8 +149,10 @@ pub enum SyntaxKind {
     LanguageExtensionName,
 
     ImportStatement,
-    ImportRelative,
-    ImportPathOrItem,
+    ImportPackageRelative,
+    ImportSuperRelative,
+    ImportItem,
+    ImportPath,
     ImportCollection,
 
     // Tokens
