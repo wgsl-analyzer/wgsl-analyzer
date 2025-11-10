@@ -16,7 +16,14 @@ rowan.workspace = true
 salsa.workspace = true
 syntax.workspace = true
 triomphe.workspace = true
+semver = "1.0.27"
+tracing = "0.1.41"
+edition.workspace = true
 vfs.workspace = true
+# span.workspace = true
+# rust-analyzer libs
+la-arena = "0.3.1"
+line-index = "0.1.2"
 
 [lints]
 workspace = true

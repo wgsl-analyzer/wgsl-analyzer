@@ -12,10 +12,8 @@ use camino::{Utf8Path, Utf8PathBuf};
 
 #[derive(Copy, Clone)]
 pub enum Tool {
-    Cargo,
-    Rustc,
-    Rustup,
-    Rustfmt,
+    Wesl,
+    Wgslfmt,
 }
 
 impl Tool {
@@ -77,10 +75,8 @@ impl Tool {
     #[must_use]
     pub const fn name(self) -> &'static str {
         match self {
-            Self::Cargo => "cargo",
-            Self::Rustc => "rustc",
-            Self::Rustup => "rustup",
-            Self::Rustfmt => "rustfmt",
+            Self::Wesl => "wesl",
+            Self::Wgslfmt => "wgslfmt",
         }
     }
 }

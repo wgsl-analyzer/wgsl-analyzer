@@ -1,29 +1,24 @@
 use std::env::temp_dir;
 
-use base_db::PackageGraphBuilder;
+use base_db::{FileId, PackageGraph};
 use expect_test::{ExpectFile, expect_file};
-use intern::sym;
 use paths::{AbsPath, AbsPathBuf, Utf8Path, Utf8PathBuf};
 use rustc_hash::FxHashMap;
 use serde::de::DeserializeOwned;
-use span::FileId;
 use triomphe::Arc;
 use wesl_metadata::Metadata;
 
 use crate::{
-    ManifestPath, ProjectJson, ProjectJsonData, ProjectWorkspace,
-    WeslSourceWorkspaceConfig, Workspace,
-    workspace::ProjectWorkspaceKind,
+    ManifestPath, ProjectJson, ProjectJsonData, ProjectWorkspace, WeslSourceWorkspaceConfig,
+    WeslWorkspace, workspace::ProjectWorkspaceKind,
 };
 
-fn load_wesl(file: &str) -> (PackageGraphBuilder) {
+fn load_wesl(file: &str) -> (PackageGraph) {
     let project_workspace = load_workspace_from_metadata(file);
     to_package_graph(project_workspace, &mut Default::default())
 }
 
-fn load_wesl_with_overrides(
-    file: &str,
-) -> (PackageGraphBuilder) {
+fn load_wesl_with_overrides(file: &str) -> (PackageGraph) {
     let project_workspace = ProjectWorkspace {
         ..load_workspace_from_metadata(file)
     };
@@ -33,7 +28,8 @@ fn load_wesl_with_overrides(
 fn load_workspace_from_metadata(file: &str) -> ProjectWorkspace {
     let meta: Metadata = get_test_json_file(file);
     let manifest_path =
-        ManifestPath::try_from(AbsPathBuf::try_from(meta.root_package_directory.clone()).unwrap()).unwrap();
+        ManifestPath::try_from(AbsPathBuf::try_from(meta.root_package_directory.clone()).unwrap())
+            .unwrap();
     let wesl_workspace = WeslWorkspace::new(meta, manifest_path, Default::default(), false);
     ProjectWorkspace {
         kind: ProjectWorkspaceKind::Wesl {
@@ -42,18 +38,16 @@ fn load_workspace_from_metadata(file: &str) -> ProjectWorkspace {
         },
         toolchain: None,
         extra_includes: Vec::new(),
-        set_test: true,
     }
 }
 
-fn load_wesl_project(file: &str) -> (PackageGraphBuilder) {
+fn load_wesl_project(file: &str) -> (PackageGraph) {
     let data = get_test_json_file(file);
     let project = rooted_project_json(data);
     let project_workspace = ProjectWorkspace {
         kind: ProjectWorkspaceKind::Json(project),
         toolchain: None,
         extra_includes: Vec::new(),
-        set_test: true,
     };
     to_package_graph(project_workspace, &mut Default::default())
 }
@@ -107,7 +101,7 @@ fn replace_root(
 }
 
 fn get_test_path(file: &str) -> Utf8PathBuf {
-    let base = Utf8PathBuf::from(env!("WESL_MANIFEST_DIR"));
+    let base = Utf8PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     base.join("test_data").join(file)
 }
 
@@ -122,7 +116,7 @@ fn rooted_project_json(data: ProjectJsonData) -> ProjectJson {
 fn to_package_graph(
     project_workspace: ProjectWorkspace,
     file_map: &mut FxHashMap<AbsPathBuf, FileId>,
-) -> (PackageGraphBuilder) {
+) -> PackageGraph {
     project_workspace.to_package_graph(
         &mut {
             |path| {
@@ -139,7 +133,7 @@ fn to_package_graph(
 }
 
 fn check_package_graph(
-    package_graph: PackageGraphBuilder,
+    package_graph: PackageGraph,
     expect: ExpectFile,
 ) {
     let mut package_graph = format!("{package_graph:#?}");
@@ -151,8 +145,7 @@ fn check_package_graph(
 
 #[test]
 fn wesl_hello_world_project_model_with_wildcard_overrides() {
-    let (package_graph, _proc_macros) =
-        load_wesl_with_overrides("hello-world-metadata.json");
+    let package_graph = load_wesl_with_overrides("hello-world-metadata.json");
     check_package_graph(
         package_graph,
         expect_file![
@@ -163,8 +156,7 @@ fn wesl_hello_world_project_model_with_wildcard_overrides() {
 
 #[test]
 fn wesl_hello_world_project_model_with_selective_overrides() {
-    let (package_graph, _proc_macros) =
-        load_wesl_with_overrides("hello-world-metadata.json");
+    let package_graph = load_wesl_with_overrides("hello-world-metadata.json");
     check_package_graph(
         package_graph,
         expect_file![
@@ -175,7 +167,7 @@ fn wesl_hello_world_project_model_with_selective_overrides() {
 
 #[test]
 fn wesl_hello_world_project_model() {
-    let (package_graph, _proc_macros) = load_wesl("hello-world-metadata.json");
+    let package_graph = load_wesl("hello-world-metadata.json");
     check_package_graph(
         package_graph,
         expect_file!["../test_data/output/wesl_hello_world_project_model.txt"],
@@ -183,32 +175,31 @@ fn wesl_hello_world_project_model() {
 }
 
 #[test]
-fn rust_project_hello_world_project_model() {
-    let (package_graph, _proc_macros) = load_wesl_project("hello-world-project.json");
+fn wesl_project_hello_world_project_model() {
+    let package_graph = load_wesl_project("hello-world-project.json");
     check_package_graph(
         package_graph,
-        expect_file!["../test_data/output/rust_project_hello_world_project_model.txt"],
+        expect_file!["../test_data/output/wesl_project_hello_world_project_model.txt"],
     );
 }
 
 #[test]
-fn rust_project_cfg_groups() {
-    let (package_graph, _proc_macros) = load_wesl_project("cfg-groups.json");
+fn wesl_project_cfg_groups() {
+    let package_graph = load_wesl_project("cfg-groups.json");
     check_package_graph(
         package_graph,
-        expect_file!["../test_data/output/rust_project_cfg_groups.txt"],
+        expect_file!["../test_data/output/wesl_project_cfg_groups.txt"],
     );
 }
 
 #[test]
 fn package_graph_dedup_identical() {
-    let (mut package_graph, proc_macros) = load_wesl("regex-metadata.json");
+    let mut package_graph = load_wesl("regex-metadata.json");
 
-    let (d_package_graph, mut d_proc_macros) = (package_graph.clone(), proc_macros.clone());
+    let d_package_graph = package_graph.clone();
 
-    package_graph.extend(d_package_graph.clone(), &mut d_proc_macros);
+    package_graph.extend(d_package_graph.clone());
     assert!(package_graph.iter().eq(d_package_graph.iter()));
-    assert_eq!(proc_macros, d_proc_macros);
 }
 
 #[test]
@@ -216,14 +207,14 @@ fn package_graph_dedup() {
     let mut file_map = Default::default();
 
     let ripgrep_workspace = load_workspace_from_metadata("ripgrep-metadata.json");
-    let (mut package_graph, _proc_macros) = to_package_graph(ripgrep_workspace, &mut file_map);
+    let mut package_graph = to_package_graph(ripgrep_workspace, &mut file_map);
     assert_eq!(package_graph.iter().count(), 71);
 
     let regex_workspace = load_workspace_from_metadata("regex-metadata.json");
-    let (regex_package_graph, mut regex_proc_macros) = to_package_graph(regex_workspace, &mut file_map);
+    let regex_package_graph = to_package_graph(regex_workspace, &mut file_map);
     assert_eq!(regex_package_graph.iter().count(), 50);
 
-    package_graph.extend(regex_package_graph, &mut regex_proc_macros);
+    package_graph.extend(regex_package_graph);
     assert_eq!(package_graph.iter().count(), 108);
 }
 
@@ -232,7 +223,8 @@ fn smoke_test_real_sysroot_wesl() {
     let file_map = &mut FxHashMap::<AbsPathBuf, FileId>::default();
     let meta: Metadata = get_test_json_file("hello-world-metadata.json");
     let manifest_path =
-        ManifestPath::try_from(AbsPathBuf::try_from(meta.root_package_directory.clone()).unwrap()).unwrap();
+        ManifestPath::try_from(AbsPathBuf::try_from(meta.root_package_directory.clone()).unwrap())
+            .unwrap();
     let wesl_workspace = WeslWorkspace::new(meta, manifest_path, Default::default(), false);
     let cwd = AbsPathBuf::assert_utf8(temp_dir().join("smoke_test_real_sysroot_wesl"));
     std::fs::create_dir_all(&cwd).unwrap();
@@ -243,7 +235,6 @@ fn smoke_test_real_sysroot_wesl() {
         },
         toolchain: None,
         extra_includes: Vec::new(),
-        set_test: true,
     };
     project_workspace.to_package_graph(
         &mut {

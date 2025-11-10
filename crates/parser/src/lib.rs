@@ -59,7 +59,7 @@ impl Parse {
     }
 
     #[must_use]
-    pub fn syntax(&self) -> rowan::SyntaxNode<WeslLanguage> {
+    pub fn syntax(&self) -> rowan::SyntaxNode<WgslLanguage> {
         rowan::SyntaxNode::new_root(self.green_node.clone())
     }
 
@@ -76,17 +76,17 @@ impl Parse {
 
 pub use syntax_kind::SyntaxKind;
 
-pub type SyntaxNode = rowan::SyntaxNode<WeslLanguage>;
-pub type SyntaxToken = rowan::SyntaxToken<WeslLanguage>;
-pub type SyntaxElement = rowan::SyntaxElement<WeslLanguage>;
-pub type SyntaxNodeChildren = rowan::SyntaxNodeChildren<WeslLanguage>;
-pub type SyntaxElementChildren = rowan::SyntaxElementChildren<WeslLanguage>;
-pub type PreorderWithTokens = rowan::api::PreorderWithTokens<WeslLanguage>;
+pub type SyntaxNode = rowan::SyntaxNode<WgslLanguage>;
+pub type SyntaxToken = rowan::SyntaxToken<WgslLanguage>;
+pub type SyntaxElement = rowan::SyntaxElement<WgslLanguage>;
+pub type SyntaxNodeChildren = rowan::SyntaxNodeChildren<WgslLanguage>;
+pub type SyntaxElementChildren = rowan::SyntaxElementChildren<WgslLanguage>;
+pub type PreorderWithTokens = rowan::api::PreorderWithTokens<WgslLanguage>;
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub enum WeslLanguage {}
+pub enum WgslLanguage {}
 
-impl rowan::Language for WeslLanguage {
+impl rowan::Language for WgslLanguage {
     type Kind = SyntaxKind;
 
     fn kind_from_raw(raw: rowan::SyntaxKind) -> Self::Kind {

@@ -4,7 +4,6 @@ version = "0.0.0"
 repository.workspace = true
 description = "A representation for a WESL project for wgsl-analyzer."
 
-authors.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
@@ -13,27 +12,28 @@ rust-version.workspace = true
 doctest = false
 
 [dependencies]
-anyhow.workspace = true
-wesl-metadata.workspace = true
-rustc-hash.workspace = true
-semver.workspace = true
-serde_json.workspace = true
-serde.workspace = true
-tracing.workspace = true
-triomphe.workspace = true
-la-arena.workspace = true
-itertools.workspace = true
+anyhow = "1.0.100"
+wesl-metadata = "0.0.5"
+rustc-hash = "2.1.1"
+semver = "1.0.27"
+serde_json = "1.0.145"
+serde = "1.0.228"
+tracing = "0.1.41"
+triomphe = "0.1.15"
+la-arena = "0.3.1"
+itertools = "0.14.0"
 
 # local deps
 base-db.workspace = true
-# intern.workspace = true
+# intern .workspace = true
 # span.workspace = true
 paths.workspace = true
 stdx.workspace = true
-# toolchain.workspace = true
+edition.workspace = true
+toolchain.workspace = true
 
 [dev-dependencies]
-expect-test.workspace = true
+expect-test = "1.5.1"
 
 [lints]
 workspace = true

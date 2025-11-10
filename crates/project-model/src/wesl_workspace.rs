@@ -4,13 +4,13 @@ use std::str::from_utf8;
 use std::{ffi, ops, path, process};
 
 use anyhow::Context;
-use base_db::Env;
+use base_db::Environment;
+use edition::Edition;
 use la_arena::{Arena, Idx};
 use paths::{AbsPath, AbsPathBuf, Utf8Path, Utf8PathBuf};
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::Deserialize;
 use serde_json::from_value;
-use span::Edition;
 use stdx::process::spawn_with_streaming_output;
 use wesl_metadata::MetadataCommand;
 
@@ -43,8 +43,7 @@ pub struct WeslWorkspace {
     manifest_path: ManifestPath,
     is_virtual_workspace: bool,
     /// Environment variables set in the `.wesl/config` file.
-    config_env: Env,
-    requires_rustc_private: bool,
+    config_env: Environment,
 }
 
 impl ops::Index<Package2> for WeslWorkspace {
@@ -96,6 +95,8 @@ pub struct PackageData {
     pub manifest: ManifestPath,
     /// Does this package come from the local filesystem (and is editable)?
     pub is_local: bool,
+    /// Whether this package is a member of the workspace
+    pub is_member: bool,
     /// List of packages this package depends on
     pub dependencies: Vec<PackageDependency>,
     /// Rust edition for this package
@@ -123,7 +124,7 @@ pub struct WgslAnalyzerPackageMetaData {}
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct PackageDependency {
-    pub pkg: Package2,
+    pub package: Package2,
     pub name: String,
 }
 
@@ -148,9 +149,6 @@ impl WeslWorkspace {
     /// Fetches the metadata for the given `wesl_toml` manifest.
     /// A successful result may contain another metadata error if the initial fetching failed but
     /// the `--no-deps` retry succeeded.
-    ///
-    /// The sysroot is used to set the `RUSTUP_TOOLCHAIN` env var when invoking wesl
-    /// to ensure that the rustup proxy uses the correct toolchain.
     pub fn fetch_metadata(
         wesl_toml: &ManifestPath,
         current_dir: &AbsPath,
@@ -159,15 +157,16 @@ impl WeslWorkspace {
         locked: bool,
         progress: &dyn Fn(String),
     ) -> anyhow::Result<(wesl_metadata::Metadata, Option<anyhow::Error>)> {
-        let res = Self::fetch_metadata_(wesl_toml, current_dir, config, no_deps, locked, progress);
-        if let Ok((_, Some(ref e))) = res {
+        let result =
+            Self::fetch_metadata_(wesl_toml, current_dir, config, no_deps, locked, progress);
+        if let Ok((_, Some(error))) = &result {
             tracing::warn!(
                 %wesl_toml,
-                ?e,
+                ?error,
                 "`wesl metadata` failed, but retry with `--no-deps` succeeded"
             );
         }
-        res
+        result
     }
 
     fn fetch_metadata_(
@@ -258,17 +257,15 @@ impl WeslWorkspace {
     pub fn new(
         mut meta: wesl_metadata::Metadata,
         ws_manifest_path: ManifestPath,
-        wesl_config_env: Env,
+        wesl_config_env: Environment,
         is_sysroot: bool,
     ) -> WeslWorkspace {
         let mut pkg_by_id = FxHashMap::default();
         let mut packages = Arena::default();
-        let mut targets = Arena::default();
 
         let workspace_root = AbsPathBuf::assert(meta.root_package_directory);
         let target_directory = AbsPathBuf::assert(meta.target_directory);
         let mut is_virtual_workspace = true;
-        let mut requires_rustc_private = false;
 
         meta.packages.sort_by(|a, b| a.id.cmp(&b.id));
         for meta_pkg in meta.packages {
@@ -276,6 +273,7 @@ impl WeslWorkspace {
                 name,
                 version,
                 id,
+                source,
                 manifest_path,
                 repository,
                 edition,
@@ -290,12 +288,16 @@ impl WeslWorkspace {
             } = meta_pkg;
             let meta = from_value::<PackageMetadata>(metadata).unwrap_or_default();
             let edition = match edition {
-                wesl_metadata::Edition::E2024 => Edition::Edition2024,
+                wesl_metadata::Edition::WeslUnstable2025 => Edition::Wesl2025Unstable,
                 _ => {
                     tracing::error!("Unsupported edition `{:?}`", edition);
                     Edition::CURRENT
                 },
             };
+            // We treat packages without source as "local" packages. That includes all members of
+            // the current workspace, as well as any path dependency outside the workspace.
+            let is_local = source.is_none();
+            let is_member = is_local;
             let manifest = ManifestPath::try_from(AbsPathBuf::assert(manifest_path)).unwrap();
             is_virtual_workspace &= manifest != ws_manifest_path;
             let pkg = packages.alloc(PackageData {
@@ -303,7 +305,8 @@ impl WeslWorkspace {
                 name: name.to_string(),
                 version,
                 manifest: manifest.clone(),
-                is_local: true,
+                is_local,
+                is_member,
                 edition,
                 repository,
                 authors,
@@ -323,10 +326,10 @@ impl WeslWorkspace {
             node.renamed_dependencies.sort_by(|a, b| a.pkg.cmp(&b.pkg));
             let dependencies = node.renamed_dependencies;
             for (dep_node) in dependencies {
-                let &pkg = pkg_by_id.get(&dep_node.pkg).unwrap();
+                let &package = pkg_by_id.get(&dep_node.pkg).unwrap();
                 let dep = PackageDependency {
                     name: dep_node.name.to_string(),
-                    pkg,
+                    package,
                 };
                 packages[source].dependencies.push(dep);
             }
@@ -338,7 +341,6 @@ impl WeslWorkspace {
             target_directory,
             manifest_path: ws_manifest_path,
             is_virtual_workspace,
-            requires_rustc_private,
             config_env: wesl_config_env,
         }
     }
@@ -382,7 +384,8 @@ impl WeslWorkspace {
                     found = true
                 }
                 self[pkg].dependencies.iter().find_map(|dep| {
-                    (&self[dep.pkg].manifest == manifest_path).then(|| self[pkg].manifest.clone())
+                    (&self[dep.package].manifest == manifest_path)
+                        .then(|| self[pkg].manifest.clone())
                 })
             })
             .collect::<Vec<ManifestPath>>();
@@ -414,11 +417,7 @@ impl WeslWorkspace {
         self.is_virtual_workspace
     }
 
-    pub fn env(&self) -> &Env {
+    pub fn env(&self) -> &Environment {
         &self.config_env
-    }
-
-    pub fn requires_rustc_private(&self) -> bool {
-        self.requires_rustc_private
     }
 }

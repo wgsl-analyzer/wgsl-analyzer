@@ -17,7 +17,7 @@ pub(crate) fn get(
         ),
     };
     cmd.arg("--version");
-    let out = utf8_stdout(&mut cmd).with_context(|| format!("Failed to query rust toolchain version via `{cmd:?}`, is your toolchain setup correctly?"))?;
+    let out = utf8_stdout(&mut cmd).with_context(|| format!("Failed to query wesl toolchain version via `{cmd:?}`, is your toolchain setup correctly?"))?;
 
     let version = out
         .strip_prefix(prefix)

@@ -5,13 +5,39 @@ pub mod change;
 pub mod input;
 
 mod util_types;
-use input::{SourceRoot, SourceRootId};
 use line_index::LineIndex;
+use semver::Version;
 use syntax::{Edition, Parse};
 use triomphe::Arc;
 pub use util_types::*;
 pub use vfs::FileId;
 use vfs::{AnchoredPath, VfsPath};
+
+pub use crate::{
+    // change::FileChange,
+    input::{
+        // BuiltDependency,
+        // BuiltPackageData,
+        Dependency,
+        Environment,
+        // ExtraPackageData,
+        LanguagePackageOrigin,
+        PackageData,
+        PackageDisplayName,
+        PackageGraph,
+        // Package,
+        PackageId,
+        PackageName,
+        PackageOrigin,
+        // PackagesIdMap,
+        // PackagesMap,
+        ReleaseChannel,
+        SourceRoot,
+        SourceRootId,
+        TargetLayoutLoadResult,
+        // UniquePackageData,
+    },
+};
 
 pub trait FileLoader {
     fn resolve_path(
@@ -95,6 +121,13 @@ impl<T: SourceDatabase> FileLoader for FileLoaderDelegate<&'_ T> {
         let source_root = self.0.source_root(source_root);
         source_root.resolve_path(path)
     }
+}
+
+/// Package related data shared by the whole workspace.
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+pub struct PackageWorkspaceData {
+    /// Toolchain version used to compile the package.
+    pub toolchain: Option<Version>,
 }
 
 /// File together with an edition.

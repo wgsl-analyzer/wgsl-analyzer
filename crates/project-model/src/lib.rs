@@ -30,7 +30,9 @@ pub mod toolchain_info {
     }
 }
 
+mod env;
 mod manifest_path;
+mod wesl_config_file;
 mod wesl_workspace;
 mod workspace;
 
