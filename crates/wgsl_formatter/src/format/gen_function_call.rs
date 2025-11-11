@@ -22,8 +22,6 @@ use crate::format::{
 pub fn gen_function_call_expression(
     function_call: &ast::FunctionCall
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    dbg!(&function_call.syntax());
-
     // ==== Parse ====
     let mut syntax = put_back(function_call.syntax().children_with_tokens());
     let item_identifier = parse_node::<ast::IdentExpression>(&mut syntax)?;
