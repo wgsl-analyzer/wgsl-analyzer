@@ -178,8 +178,8 @@ pub fn format_loop_continuing_break_if_statement_line_comments() {
                         // E
                         break // F
                         if // G
-                        false // H
-                        ;
+                            false // H
+                            ;
                     }
                     // I
                 }

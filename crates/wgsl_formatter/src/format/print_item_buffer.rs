@@ -1,4 +1,4 @@
-pub mod request_stack;
+pub mod request_folder;
 
 use std::collections::BTreeSet;
 
@@ -7,9 +7,10 @@ use dprint_core::formatting::{
 };
 use dprint_core_macros::sc;
 
-use crate::format::print_item_buffer::request_stack::{Request, RequestFolder, RequestItem};
+use crate::format::print_item_buffer::request_folder::{Request, RequestFolder, RequestItem};
 
 #[derive(Default)]
+#[deprecated(note = "There should be a better api to directly request request_fold's requestitems")]
 pub enum SeparationPolicy {
     /// The separation will be present - even if it's discouraged
     Forced,
@@ -39,60 +40,9 @@ pub enum SeparationPolicy {
     },
 }
 
-impl SeparationPolicy {
-    pub fn combine_with(
-        self,
-        other: Self,
-    ) -> Self {
-        use SeparationPolicy::Allowed;
-        use SeparationPolicy::Discouraged;
-        use SeparationPolicy::Expected;
-        use SeparationPolicy::ExpectedIf;
-        use SeparationPolicy::Forced;
-        use SeparationPolicy::Ignored;
-
-        match (self, other) {
-            //If one side makes no statement, take the other
-            (Ignored, other) | (other, Ignored) => other,
-
-            //If one side is forced, it stays forced
-            (Forced, _) | (_, Forced) => Forced,
-
-            // If it is not forced, but discouraged, it stays discouraged
-            (_, Discouraged) | (Discouraged, _) => Discouraged,
-
-            (Allowed, Allowed) => Allowed,
-
-            // If one side says it is expected and the other says it might be expected => it is expected
-            (Expected | ExpectedIf { .. }, Expected)
-            | (Expected, ExpectedIf { .. })
-            // Expected ranks higher than allowed
-            // TODO Currently hen there is an ExpectedIf (whose condition is not met) and an allowed.
-            // it will resolve to not being there, instead of being allowed there
-            | (Expected | ExpectedIf { .. }, Allowed)
-            | (Allowed, Expected | ExpectedIf { .. }) => Expected,
-            (ExpectedIf { .. }, ExpectedIf { .. }) => {
-                //These would be combined using disjunctions if they are on the true path, and conjunctions on the false path
-                todo!("Implement support for disjuctions and conjunctions")
-            },
-        }
-    }
-}
-
-/// Request separation between items
-///
-/// When applying the different kinds of separation are checked in order
-/// If a separation with higher precedence is selected, lower precedence separations are ignored (except on conditionals, see below)
-/// 1. Empty Lines
-/// 2. Line breaks
-/// 3. Spaces
-///
-/// Because dprint's conditionals cannot support this seperation precedence, if one of the separations
-/// has an `ExpectIf`, the lower precedence items are processed nevertheless.
-/// They are expected to have matching opposite conditionals.
-///
-//TODO Find a better solution for handling conditionals
+// TODO Remove this API and replace it with a better one, once i know that the RequestFolder api works and its worth it to refactor all invocations of SeparationRequests
 #[derive(Default)]
+#[deprecated(note = "There should be a better api to directly request request_fold's requestitems")]
 pub struct SeparationRequest {
     pub empty_line: SeparationPolicy,
     pub line_break: SeparationPolicy,
@@ -105,124 +55,6 @@ impl SeparationRequest {
             empty_line: SeparationPolicy::Discouraged,
             line_break: SeparationPolicy::Discouraged,
             space: SeparationPolicy::Discouraged,
-        }
-    }
-
-    pub fn merge(
-        self,
-        other: Self,
-    ) -> Self {
-        Self {
-            empty_line: self.empty_line.combine_with(other.empty_line),
-            line_break: self.line_break.combine_with(other.line_break),
-            space: self.space.combine_with(other.space),
-        }
-    }
-
-    // TODO I really don't like how unclean this function is
-    pub fn apply(
-        self,
-        to: &mut PrintItems,
-    ) {
-        #[inline]
-        fn get_conditional(
-            on_branch: bool,
-            name: &'static str,
-            resolver: ConditionResolver,
-            items: PrintItems,
-        ) -> Condition {
-            if (on_branch) {
-                conditions::if_true(name, resolver, items)
-            } else {
-                conditions::if_false(name, resolver, items)
-            }
-        }
-
-        fn apply_empty_line(to: &mut PrintItems) {
-            to.push_signal(Signal::NewLine);
-            to.push_signal(Signal::NewLine);
-        }
-        fn apply_line_break(to: &mut PrintItems) {
-            to.push_signal(Signal::NewLine);
-        }
-        fn apply_space(to: &mut PrintItems) {
-            to.push_space();
-        }
-
-        match self.empty_line {
-            SeparationPolicy::Forced | SeparationPolicy::Expected => {
-                apply_empty_line(to);
-                return;
-            },
-            SeparationPolicy::ExpectedIf {
-                on_branch,
-                of_resolver,
-            } => {
-                to.push_condition(get_conditional(
-                    on_branch,
-                    "empty_line_expected_if",
-                    of_resolver,
-                    {
-                        let mut pi = PrintItems::new();
-                        apply_empty_line(&mut pi);
-                        pi
-                    },
-                ));
-            },
-            SeparationPolicy::Discouraged | SeparationPolicy::Ignored => {},
-            SeparationPolicy::Allowed => {
-                todo!("Allowed is only valid for line_breaks, separate the cases");
-            },
-        }
-        match self.line_break {
-            SeparationPolicy::Forced | SeparationPolicy::Expected => {
-                apply_line_break(to);
-                return;
-            },
-            SeparationPolicy::ExpectedIf {
-                on_branch,
-                of_resolver,
-            } => {
-                to.push_condition(get_conditional(
-                    on_branch,
-                    "empty_line_expected_if",
-                    of_resolver,
-                    {
-                        let mut pi = PrintItems::new();
-                        apply_line_break(&mut pi);
-                        pi
-                    },
-                ));
-            },
-            SeparationPolicy::Allowed => {
-                to.push_signal(Signal::PossibleNewLine);
-            },
-            SeparationPolicy::Discouraged | SeparationPolicy::Ignored => {},
-        }
-        match self.space {
-            SeparationPolicy::Forced | SeparationPolicy::Expected => {
-                apply_space(to);
-                //return; not needed because this is the last item
-            },
-            SeparationPolicy::ExpectedIf {
-                on_branch,
-                of_resolver,
-            } => {
-                to.push_condition(get_conditional(
-                    on_branch,
-                    "empty_line_expected_if",
-                    of_resolver,
-                    {
-                        let mut pi = PrintItems::new();
-                        apply_space(&mut pi);
-                        pi
-                    },
-                ));
-            },
-            SeparationPolicy::Discouraged | SeparationPolicy::Ignored => {},
-            SeparationPolicy::Allowed => {
-                todo!("Allowed is only valid for line_breaks, separate the cases");
-            },
         }
     }
 }
@@ -263,9 +95,9 @@ impl SeparationRequest {
 /// The `PrintItemBuffer` automatically tracks and resolves these requests, so that the outcome will be
 /// `AAA BBBCCC`, where the two spaces between A and B were collapsed and the space after B was overwritten
 ///
-/// Known downsides to this soution:
-/// * Does not integrate at all with dprint's conditionals
-/// * Another layer ontop of dprint's IR, which doesn't feel like it should be necessary
+/// Known downsides to this solution:
+/// * Exponential blowup when using with dprint's conditionals (not a big problem most of the time as not many dprint conditionals are used consecutively)
+/// * Another layer on top of dprint's IR, which doesn't feel like it should be necessary
 ///
 #[derive(Default)]
 pub struct PrintItemBuffer {
@@ -313,14 +145,14 @@ impl PrintItemBuffer {
             Request::Conditional {
                 condition: of_resolver,
                 on_true: Box::new(RequestFolder {
-                    folded_request: Some(Request::Request {
+                    folded_request: Some(Request::Unconditional {
                         expected: BTreeSet::from_iter(expect_on_true.into_iter()),
                         discouraged: BTreeSet::new(),
                         forced: BTreeSet::new(),
                     }),
                 }),
                 on_false: Box::new(RequestFolder {
-                    folded_request: Some(Request::Request {
+                    folded_request: Some(Request::Unconditional {
                         expected: BTreeSet::from_iter(expect_on_false.into_iter()),
                         discouraged: BTreeSet::new(),
                         forced: BTreeSet::new(),
@@ -331,14 +163,14 @@ impl PrintItemBuffer {
 
         match incoming_request.empty_line {
             SeparationPolicy::Forced => {
-                self.request_request(Request::Request {
+                self.request_request(Request::Unconditional {
                     forced: BTreeSet::from([RequestItem::EmptyLine]),
                     discouraged: BTreeSet::new(),
                     expected: BTreeSet::new(),
                 });
             },
             SeparationPolicy::Expected => {
-                self.request_request(Request::Request {
+                self.request_request(Request::Unconditional {
                     expected: BTreeSet::from([RequestItem::EmptyLine]),
                     discouraged: BTreeSet::new(),
                     forced: BTreeSet::new(),
@@ -346,7 +178,7 @@ impl PrintItemBuffer {
             },
             SeparationPolicy::Allowed => todo!(),
             SeparationPolicy::Discouraged => {
-                self.request_request(Request::Request {
+                self.request_request(Request::Unconditional {
                     expected: BTreeSet::new(),
                     discouraged: BTreeSet::from([RequestItem::EmptyLine]),
                     forced: BTreeSet::new(),
@@ -375,14 +207,14 @@ impl PrintItemBuffer {
 
         match incoming_request.space {
             SeparationPolicy::Forced => {
-                self.request_request(Request::Request {
+                self.request_request(Request::Unconditional {
                     forced: BTreeSet::from([RequestItem::Space]),
                     discouraged: BTreeSet::new(),
                     expected: BTreeSet::new(),
                 });
             },
             SeparationPolicy::Expected => {
-                self.request_request(Request::Request {
+                self.request_request(Request::Unconditional {
                     expected: BTreeSet::from([RequestItem::Space]),
                     discouraged: BTreeSet::new(),
                     forced: BTreeSet::new(),
@@ -390,7 +222,7 @@ impl PrintItemBuffer {
             },
             SeparationPolicy::Allowed => todo!(),
             SeparationPolicy::Discouraged => {
-                self.request_request(Request::Request {
+                self.request_request(Request::Unconditional {
                     expected: BTreeSet::new(),
                     discouraged: BTreeSet::from([RequestItem::Space]),
                     forced: BTreeSet::new(),
@@ -411,28 +243,28 @@ impl PrintItemBuffer {
 
         match incoming_request.line_break {
             SeparationPolicy::Forced => {
-                self.request_request(Request::Request {
+                self.request_request(Request::Unconditional {
                     expected: BTreeSet::new(),
                     discouraged: BTreeSet::new(),
                     forced: BTreeSet::from([RequestItem::LineBreak]),
                 });
             },
             SeparationPolicy::Expected => {
-                self.request_request(Request::Request {
+                self.request_request(Request::Unconditional {
                     expected: BTreeSet::from([RequestItem::LineBreak]),
                     discouraged: BTreeSet::new(),
                     forced: BTreeSet::new(),
                 });
             },
             SeparationPolicy::Allowed => {
-                self.request_request(Request::Request {
+                self.request_request(Request::Unconditional {
                     expected: BTreeSet::from([RequestItem::SpaceOrNewline]),
                     discouraged: BTreeSet::new(),
                     forced: BTreeSet::new(),
                 });
             },
             SeparationPolicy::Discouraged => {
-                self.request_request(Request::Request {
+                self.request_request(Request::Unconditional {
                     expected: BTreeSet::new(),
                     discouraged: BTreeSet::from([RequestItem::LineBreak]),
                     forced: BTreeSet::new(),

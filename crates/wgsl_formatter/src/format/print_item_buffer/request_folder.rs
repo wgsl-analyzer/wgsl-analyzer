@@ -1,7 +1,4 @@
-use std::{
-    collections::{BTreeSet, HashSet},
-    ops::Deref,
-};
+use std::{collections::BTreeSet, ops::Deref};
 
 use dprint_core::formatting::{
     Condition, ConditionProperties, ConditionResolver, PrintItems, Signal,
@@ -31,7 +28,7 @@ pub struct RequestSubject {
 
 #[derive(Clone)]
 pub enum Request {
-    Request {
+    Unconditional {
         // TODO use bitmaps instead of sets here
         expected: BTreeSet<RequestItem>,
         discouraged: BTreeSet<RequestItem>,
@@ -46,17 +43,17 @@ pub enum Request {
 
 impl Request {
     pub fn combine(
-        left: Request,
-        right: Request,
-    ) -> Request {
+        left: Self,
+        right: Self,
+    ) -> Self {
         match (left, right) {
             (
-                Request::Request {
+                Self::Unconditional {
                     expected: exp_left,
                     discouraged: disc_left,
                     forced: forced_left,
                 },
-                Request::Request {
+                Self::Unconditional {
                     expected: exp_right,
                     discouraged: disc_right,
                     forced: forced_right,
@@ -71,7 +68,7 @@ impl Request {
                 let mut combined_forced = forced_left;
                 combined_forced.extend(forced_right.iter());
 
-                Request::Request {
+                Self::Unconditional {
                     expected: combined_exp,
                     discouraged: combined_disc,
                     forced: combined_forced,
@@ -80,7 +77,7 @@ impl Request {
 
             (
                 request_left,
-                Request::Conditional {
+                Self::Conditional {
                     condition,
                     mut on_true,
                     mut on_false,
@@ -89,14 +86,14 @@ impl Request {
                 on_true.push_left(request_left.clone());
                 on_false.push_left(request_left);
 
-                Request::Conditional {
+                Self::Conditional {
                     condition,
                     on_true,
                     on_false,
                 }
             },
             (
-                Request::Conditional {
+                Self::Conditional {
                     condition,
                     mut on_true,
                     mut on_false,
@@ -106,31 +103,34 @@ impl Request {
                 on_true.push_left(request_right.clone());
                 on_false.push_left(request_right);
 
-                Request::Conditional {
+                Self::Conditional {
                     condition,
                     on_true,
                     on_false,
                 }
             },
             (
-                Request::Conditional {
+                Self::Conditional {
                     condition: cond_left,
                     on_true: on_true_left,
                     on_false: on_false_left,
                 },
-                Request::Conditional {
+                Self::Conditional {
                     condition: cond_right,
                     on_true: on_true_right,
                     on_false: on_false_right,
                 },
             ) => {
-                // Cartesian product the two conditionals
-                todo!()
+                // Cartesian product the two conditionals, and then reduce conditions with similar branches
+                todo!("Consecutive conditionals are not supported yet")
             },
         }
     }
 }
 
+//TODO This whole api is still a little bit clunky
+//TODO Make sure push_left is really needed, because so far RequestFolder merging is commutative, lets see if its still commutative after im done
+/// A structure to fold multiple requests into a single one.
 #[derive(Default, Clone)]
 pub struct RequestFolder {
     pub folded_request: Option<Request>,
@@ -161,7 +161,7 @@ impl RequestFolder {
 
     pub fn append(
         &mut self,
-        mut other: RequestFolder,
+        mut other: Self,
     ) {
         if let Some(new_request) = other.folded_request.take() {
             if let Some(old_request) = self.folded_request.take() {
@@ -199,7 +199,7 @@ impl RequestFolder {
 
         if let Some(request) = self.folded_request.take() {
             match request {
-                Request::Request {
+                Request::Unconditional {
                     mut expected,
                     discouraged,
                     forced,
@@ -211,8 +211,6 @@ impl RequestFolder {
                     let mut candidates = candidates.union(&forced).collect::<BTreeSet<_>>();
 
                     if let Some(chosen) = candidates.last() {
-                        dbg!(&chosen);
-
                         apply_item(**chosen, target);
                     }
                 },
@@ -242,14 +240,3 @@ impl RequestFolder {
         }
     }
 }
-
-/*
- * [a SPACE] [NEWLINE] [NO SPACE b]
- * [a SPACE] + [NEWLINE] = [a NEWLINE]
- * [a NEWLINE] + [NO SPACE b] = [a NEWLINE b]
- *
- * [a SPACE] [NEWLINE] [NO NEWLINE b]
- * [a SPACE] + [NEWLINE] = [a NEWLINE]
- * [a NEWLINE] + [NO SPACE b] = [a NEWLINE b]
- *
- */

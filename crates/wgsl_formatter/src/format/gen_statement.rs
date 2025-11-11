@@ -367,6 +367,7 @@ fn gen_break_if_statement(
     formatted.expect_single_space();
     formatted.extend(gen_comments(comments_after_break));
     formatted.push_sc(sc!("if"));
+    formatted.push_signal(Signal::StartIndent);
     formatted.expect_single_space();
     formatted.extend(gen_comments(comments_after_if));
     formatted.extend(gen_expression(&item_condition)?);
@@ -375,6 +376,7 @@ fn gen_break_if_statement(
     if include_semicolon {
         formatted.push_sc(sc!(";"));
     }
+    formatted.push_signal(Signal::FinishIndent);
 
     Ok(formatted)
 }
