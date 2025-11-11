@@ -1,7 +1,13 @@
+pub mod request_stack;
+
+use std::collections::BTreeSet;
+
 use dprint_core::formatting::{
     Anchor, Condition, ConditionResolver, Info, PrintItem, PrintItems, Signal, conditions,
 };
 use dprint_core_macros::sc;
+
+use crate::format::print_item_buffer::request_stack::{Request, RequestFolder, RequestItem};
 
 #[derive(Default)]
 pub enum SeparationPolicy {
@@ -263,9 +269,9 @@ impl SeparationRequest {
 ///
 #[derive(Default)]
 pub struct PrintItemBuffer {
-    pub start_request: Option<SeparationRequest>,
+    pub start_request: RequestFolder,
     pub items: PrintItems,
-    pub end_request: Option<SeparationRequest>,
+    pub end_request: RequestFolder,
 }
 
 impl PrintItemBuffer {
@@ -273,37 +279,197 @@ impl PrintItemBuffer {
         Self::default()
     }
 
-    pub fn request(
+    pub fn request_folder(
         &mut self,
-        incoming_request: SeparationRequest,
+        incoming_request: RequestFolder,
     ) {
         let request_tracker = if self.items.is_empty() {
             &mut self.start_request
         } else {
             &mut self.end_request
         };
-        *request_tracker = match request_tracker.take() {
-            Some(old_request) => Some(old_request.merge(incoming_request)),
-            None => Some(incoming_request),
-        };
+        request_tracker.append(incoming_request);
     }
 
-    pub fn finish(self) -> PrintItems {
+    pub fn request_request(
+        &mut self,
+        incoming_request: Request,
+    ) {
+        self.request_folder(RequestFolder {
+            folded_request: Some(incoming_request),
+        });
+    }
+
+    #[deprecated]
+    pub fn request(
+        &mut self,
+        incoming_request: SeparationRequest,
+    ) {
+        fn conditional(
+            of_resolver: ConditionResolver,
+            expect_on_true: Option<RequestItem>,
+            expect_on_false: Option<RequestItem>,
+        ) -> Request {
+            Request::Conditional {
+                condition: of_resolver,
+                on_true: Box::new(RequestFolder {
+                    folded_request: Some(Request::Request {
+                        expected: BTreeSet::from_iter(expect_on_true.into_iter()),
+                        discouraged: BTreeSet::new(),
+                        forced: BTreeSet::new(),
+                    }),
+                }),
+                on_false: Box::new(RequestFolder {
+                    folded_request: Some(Request::Request {
+                        expected: BTreeSet::from_iter(expect_on_false.into_iter()),
+                        discouraged: BTreeSet::new(),
+                        forced: BTreeSet::new(),
+                    }),
+                }),
+            }
+        }
+
+        match incoming_request.empty_line {
+            SeparationPolicy::Forced => {
+                self.request_request(Request::Request {
+                    forced: BTreeSet::from([RequestItem::EmptyLine]),
+                    discouraged: BTreeSet::new(),
+                    expected: BTreeSet::new(),
+                });
+            },
+            SeparationPolicy::Expected => {
+                self.request_request(Request::Request {
+                    expected: BTreeSet::from([RequestItem::EmptyLine]),
+                    discouraged: BTreeSet::new(),
+                    forced: BTreeSet::new(),
+                });
+            },
+            SeparationPolicy::Allowed => todo!(),
+            SeparationPolicy::Discouraged => {
+                self.request_request(Request::Request {
+                    expected: BTreeSet::new(),
+                    discouraged: BTreeSet::from([RequestItem::EmptyLine]),
+                    forced: BTreeSet::new(),
+                });
+            },
+            SeparationPolicy::Ignored => {},
+            SeparationPolicy::ExpectedIf {
+                on_branch,
+                of_resolver,
+            } => {
+                if on_branch {
+                    self.request_request(conditional(
+                        of_resolver,
+                        Some(RequestItem::EmptyLine),
+                        None,
+                    ));
+                } else {
+                    self.request_request(conditional(
+                        of_resolver,
+                        None,
+                        Some(RequestItem::EmptyLine),
+                    ));
+                }
+            },
+        }
+
+        match incoming_request.space {
+            SeparationPolicy::Forced => {
+                self.request_request(Request::Request {
+                    forced: BTreeSet::from([RequestItem::Space]),
+                    discouraged: BTreeSet::new(),
+                    expected: BTreeSet::new(),
+                });
+            },
+            SeparationPolicy::Expected => {
+                self.request_request(Request::Request {
+                    expected: BTreeSet::from([RequestItem::Space]),
+                    discouraged: BTreeSet::new(),
+                    forced: BTreeSet::new(),
+                });
+            },
+            SeparationPolicy::Allowed => todo!(),
+            SeparationPolicy::Discouraged => {
+                self.request_request(Request::Request {
+                    expected: BTreeSet::new(),
+                    discouraged: BTreeSet::from([RequestItem::Space]),
+                    forced: BTreeSet::new(),
+                });
+            },
+            SeparationPolicy::Ignored => {},
+            SeparationPolicy::ExpectedIf {
+                on_branch,
+                of_resolver,
+            } => {
+                if on_branch {
+                    self.request_request(conditional(of_resolver, Some(RequestItem::Space), None));
+                } else {
+                    self.request_request(conditional(of_resolver, None, Some(RequestItem::Space)));
+                }
+            },
+        }
+
+        match incoming_request.line_break {
+            SeparationPolicy::Forced => {
+                self.request_request(Request::Request {
+                    expected: BTreeSet::new(),
+                    discouraged: BTreeSet::new(),
+                    forced: BTreeSet::from([RequestItem::LineBreak]),
+                });
+            },
+            SeparationPolicy::Expected => {
+                self.request_request(Request::Request {
+                    expected: BTreeSet::from([RequestItem::LineBreak]),
+                    discouraged: BTreeSet::new(),
+                    forced: BTreeSet::new(),
+                });
+            },
+            SeparationPolicy::Allowed => {
+                self.request_request(Request::Request {
+                    expected: BTreeSet::from([RequestItem::SpaceOrNewline]),
+                    discouraged: BTreeSet::new(),
+                    forced: BTreeSet::new(),
+                });
+            },
+            SeparationPolicy::Discouraged => {
+                self.request_request(Request::Request {
+                    expected: BTreeSet::new(),
+                    discouraged: BTreeSet::from([RequestItem::LineBreak]),
+                    forced: BTreeSet::new(),
+                });
+            },
+            SeparationPolicy::Ignored => {},
+            SeparationPolicy::ExpectedIf {
+                on_branch,
+                of_resolver,
+            } => {
+                if on_branch {
+                    self.request_request(conditional(
+                        of_resolver,
+                        Some(RequestItem::LineBreak),
+                        None,
+                    ));
+                } else {
+                    self.request_request(conditional(
+                        of_resolver,
+                        None,
+                        Some(RequestItem::LineBreak),
+                    ));
+                }
+            },
+        }
+    }
+
+    pub fn finish(mut self) -> PrintItems {
         let mut pi = PrintItems::default();
-        if let Some(start_request) = self.start_request {
-            start_request.apply(&mut pi);
-        }
+        self.start_request.resolve(&mut pi);
         pi.extend(self.items);
-        if let Some(end_request) = self.end_request {
-            end_request.apply(&mut pi);
-        }
+        self.end_request.resolve(&mut pi);
         pi
     }
 
     fn apply_end_request(&mut self) {
-        if let Some(end_request) = self.end_request.take() {
-            end_request.apply(&mut self.items);
-        }
+        self.end_request.resolve(&mut self.items);
     }
 
     // ==== Helper Methods ====
@@ -312,10 +478,8 @@ impl PrintItemBuffer {
         &mut self,
         other: Self,
     ) {
-        // Merge the incoming start_request with our end_request
-        if let Some(start_request) = other.start_request {
-            self.request(start_request);
-        }
+        // Merge the incoming start_request
+        self.request_folder(other.start_request);
 
         // If there are incoming items, apply the current end request and add the items
         if !other.items.is_empty() {
@@ -324,9 +488,7 @@ impl PrintItemBuffer {
         }
 
         // Merge the incoming end_request
-        if let Some(end_request) = other.end_request {
-            self.request(end_request);
-        }
+        self.request_folder(other.end_request);
     }
 
     pub fn request_space(
@@ -371,6 +533,7 @@ impl PrintItemBuffer {
         &mut self,
         string: String,
     ) {
+        println!("Str== {:?}", string);
         self.apply_end_request();
         self.items.push_string(string);
     }
@@ -388,6 +551,7 @@ impl PrintItemBuffer {
         &mut self,
         sc: &'static dprint_core::formatting::StringContainer,
     ) {
+        println!("SC== {:?}", sc.text);
         self.apply_end_request();
         self.items.push_sc(sc);
     }

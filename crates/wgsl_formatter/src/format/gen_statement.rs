@@ -21,6 +21,7 @@ use crate::format::{
     gen_expression::{gen_expression, gen_parenthesis_expression},
     gen_if_statement::gen_if_statement,
     helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, todo_verbatim},
+    multiline_group::gen_multiline_group,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult, err_src},
 };
@@ -268,31 +269,50 @@ fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<Prin
     formatted.push_sc(sc!("for"));
     formatted.extend(gen_comments(comments_after_for));
     formatted.push_sc(sc!("("));
-    formatted.extend(gen_comments(comments_after_open_paren));
-    if let Some(item_initializer) = item_initializer {
-        formatted.extend(gen_statement_maybe_semicolon(&item_initializer, false)?);
-    }
-    formatted.extend(gen_comments(comments_after_initializer));
-    formatted.request_space(SeparationPolicy::Discouraged);
-    formatted.push_sc(sc!(";"));
-    formatted.request_space(SeparationPolicy::Expected);
-    formatted.request_line_break(SeparationPolicy::Allowed);
-    formatted.extend(gen_comments(comments_after_initializer_semicolon));
-    if let Some(item_condition) = item_condition {
-        formatted.extend(gen_expression(&item_condition)?);
-    }
-    formatted.extend(gen_comments(comments_after_condition));
-    formatted.request_space(SeparationPolicy::Discouraged);
-    formatted.push_sc(sc!(";"));
-    formatted.request_space(SeparationPolicy::Expected);
-    formatted.request_line_break(SeparationPolicy::Allowed);
-    formatted.extend(gen_comments(comments_after_condition_semicolon));
-    if let Some(item_continuing) = item_continuing {
-        formatted.extend(gen_statement_maybe_semicolon(&item_continuing, false)?);
-    }
-    formatted.extend(gen_comments(comments_after_continuing));
-    formatted.request_space(SeparationPolicy::Discouraged);
+
+    formatted.extend(gen_multiline_group([
+        gen_comments(comments_after_open_paren),
+        {
+            let mut formatted = PrintItemBuffer::new();
+            if let Some(item_initializer) = item_initializer {
+                formatted.extend(gen_statement_maybe_semicolon(&item_initializer, false)?);
+            } else {
+                formatted.request_space(SeparationPolicy::Discouraged);
+            }
+            formatted.extend(gen_comments(comments_after_initializer));
+            formatted.request_space(SeparationPolicy::Discouraged);
+            formatted.push_sc(sc!(";"));
+            formatted.extend(gen_comments(comments_after_initializer_semicolon));
+            formatted
+        },
+        {
+            let mut formatted = PrintItemBuffer::new();
+            if let Some(item_condition) = item_condition {
+                formatted.extend(gen_expression(&item_condition)?);
+            } else {
+                formatted.request_space(SeparationPolicy::Discouraged);
+            }
+            formatted.extend(gen_comments(comments_after_condition));
+            formatted.request_space(SeparationPolicy::Discouraged);
+            formatted.push_sc(sc!(";"));
+            formatted.extend(gen_comments(comments_after_condition_semicolon));
+            formatted
+        },
+        {
+            let mut formatted = PrintItemBuffer::new();
+            if let Some(item_continuing) = item_continuing {
+                formatted.extend(gen_statement_maybe_semicolon(&item_continuing, false)?);
+            } else {
+                formatted.request_space(SeparationPolicy::Discouraged);
+            }
+            formatted.extend(gen_comments(comments_after_continuing));
+            formatted.request_space(SeparationPolicy::Discouraged);
+            formatted
+        },
+    ]));
+
     formatted.push_sc(sc!(")"));
+    formatted.request_space(SeparationPolicy::Expected);
     formatted.extend(gen_comments(comments_after_close_paren));
     formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)

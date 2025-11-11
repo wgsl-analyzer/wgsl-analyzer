@@ -92,7 +92,7 @@ pub fn format_loop_continuing_break_if_statement_complex_expression() {
                 loop {
                     continuing {
                         break if a == 3 && b < 4 && ((a < 4) == (b > 9)) && c < 5
-                         && do_the_thing(d);
+                            && do_the_thing(d);
                     }
                 }
             }
