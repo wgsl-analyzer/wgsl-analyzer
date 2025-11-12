@@ -233,7 +233,12 @@ pub fn gen_switch_case_default_selector(
     statement: &SwitchDefaultSelector
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
+    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    parse_token(&mut syntax, SyntaxKind::Default);
+    parse_end(&mut syntax);
 
     // ==== Format ====
-    todo_verbatim(statement.syntax())
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_sc(sc!("default"));
+    Ok(formatted)
 }
