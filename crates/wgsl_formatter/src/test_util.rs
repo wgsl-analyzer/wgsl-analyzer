@@ -4,9 +4,11 @@
     clippy::missing_panics_doc,
     reason = "we want to be able to use assert!"
 )]
-use std::{ffi::OsString, fmt::Debug, panic, path::Path};
+use std::{borrow::ToOwned, ffi::OsString, fmt::Debug, panic, path::Path};
 
-use crate::{FormattingOptions, format_tree};
+use itertools::Itertools;
+
+use crate::{FormattingOptions, format, format_tree};
 
 pub trait ExpectAssertEq: Debug {
     fn assert_eq(
@@ -52,8 +54,8 @@ pub fn assert_is_formatted(source: &str) {
 pub fn check<E: ExpectAssertEq>(
     before: &str,
     after: E,
-) {
-    check_with_options(before, &after, &FormattingOptions::default());
+) -> String {
+    check_with_options(before, &after, &FormattingOptions::default())
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
@@ -105,16 +107,15 @@ pub fn check_with_options<E: ExpectAssertEq>(
     before: &str,
     after: &E,
     options: &FormattingOptions,
-) {
+) -> String {
     let parse = syntax::parse(before.trim_start());
     let syntax = parse.tree();
 
-    if !parse.errors().is_empty() {
-        panic!(
-            "Parsing the source to be formatted failed with errors: {:#?}",
-            parse.errors()
-        );
-    }
+    assert!(
+        parse.errors().is_empty(),
+        "Parsing the source to be formatted failed with errors: {:#?}",
+        parse.errors()
+    );
 
     dbg!(&parse.errors());
     dbg!(&syntax);
@@ -134,7 +135,7 @@ pub fn check_with_options<E: ExpectAssertEq>(
         .expect("Formatting already formatted sources should never fail with an error");
     let position = panic::Location::caller();
     if formatted == new_second {
-        return;
+        return formatted;
     }
 
     println!(
@@ -182,4 +183,61 @@ fn format_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> String {
         buf.push_str(&formatted);
     }
     buf
+}
+
+pub fn check_comments<E: ExpectAssertEq>(
+    before: &str,
+    after_block: E,
+    after_line: E,
+) {
+    {
+        let mut comment_index = 0;
+        let commented: String = itertools::Itertools::intersperse_with(
+            before.split("##").map(ToOwned::to_owned),
+            || {
+                let comment = format!("// {comment_index}\n");
+                comment_index += 1;
+                comment
+            },
+        )
+        .join("");
+        let formatted = check(&commented, after_line);
+
+        //Check that all the comments are still present after formatting
+        let mut remainder = formatted.as_str();
+        for search_index in 0..comment_index {
+            if let Some((_, after)) = remainder.split_once(&format!("// {search_index}")) {
+                remainder = after;
+            } else {
+                panic!(
+                    "Expected to find a comment with number {search_index} within the formatted string: {remainder}"
+                )
+            }
+        }
+    }
+    {
+        let mut comment_index = 0;
+        let commented: String = itertools::Itertools::intersperse_with(
+            before.split("##").map(ToOwned::to_owned),
+            || {
+                let comment = format!("/* {comment_index} */");
+                comment_index += 1;
+                comment
+            },
+        )
+        .join("");
+        let formatted = check(&commented, after_block);
+
+        //Check that all the comments are still present after formatting
+        let mut remainder = formatted.as_str();
+        for search_index in 0..comment_index {
+            if let Some((_, after)) = remainder.split_once(&format!("/* {search_index} */")) {
+                remainder = after;
+            } else {
+                panic!(
+                    "Expected to find a comment with number {search_index} within the formatted string: {remainder}"
+                )
+            }
+        }
+    }
 }

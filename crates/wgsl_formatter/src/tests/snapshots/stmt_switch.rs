@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::check;
+use crate::test_util::{check, check_comments};
 
 #[test]
 pub fn format_switch_statement_case_colon() {
@@ -192,30 +192,45 @@ pub fn format_switch_statement_const_expression() {
 
 #[test]
 pub fn format_switch_statement_block_comments_in_case_default_only() {
-    check(
+    check_comments(
         "fn main() {
             switch(a) {
-                /* A */
+                ##
                 case
-                /* B */
+                ##
                 default
-                /* C */
+                ##
                 {
-                /* D */
+                ##
                     let a = 1;
-                /* E */
+                    ##
                 }
-                /* F */
+                ##
             }
         }",
         expect![[r#"
             fn main() {
-                switch(a) { /* A */
-                    default /* B */ /* C */ {
-                        /* D */
+                switch(a) { /* 0 */
+                    default /* 1 */ /* 2 */ {
+                        /* 3 */
                         let a = 1;
-                        /* E */
-                    } /* F */
+                        /* 4 */
+                    } /* 5 */ 
+                }
+            }
+        "#]],
+        expect![[r#"
+            fn main() {
+                switch(a) { // 0
+                    default // 1
+                    // 2
+                    {
+                        // 3
+
+                        let a = 1;
+                        // 4
+                    } // 5
+
                 }
             }
         "#]],
@@ -223,67 +238,77 @@ pub fn format_switch_statement_block_comments_in_case_default_only() {
 }
 
 #[test]
-pub fn format_switch_statement_block_comments_in_average_switch() {
-    check(
+pub fn format_switch_statement_comments_in_average_switch() {
+    check_comments(
         "fn main() {
-        /* A */
-            switch
-            /* B */
-            (
-            /* C */
-            a
-            /* D */
-            )
-            /* E */
-            {
-            /* F */
-            case
-            /* G */
-            1
-            /* H */
-            ,
-            /* I */
-            2
-            /* J */
-            ,
-            /* K */
-            :
-            /* L */
-            {
-            /* M */
-                let a = 1;
-            /* N */
+            ## switch ## ( ## a ## ) ## {
+                ## case ## 1 ## , ## 2 ## , ## default ## {
+                    ## let a = 1;
+                ## }
+                ## case ## 3 ## {
+                    ## let a = 1;
+                ## }
+                ## case ## default ## {
+                    ## let a = 1;
+                ## }
             }
-            /* O */
-                case
-                /* P */
-                default
-                /* Q */
-                {
-                /* R */
-                    let a = 1;
-                /* S */
-                }
-                /* T */
-            }
-            /* U */
         }",
         expect![[r#"
             fn main() {
-                /* A */
-                switch /* B */ (/* C */ a /* D */) /* E */ { /* F */
-                    case /* G */ 1 /* H */ , /* I */ 2 /* J */ /* K */ /* L */ {
-                        /* M */
+                /* 0 */
+                switch /* 1 */ (/* 2 */ a /* 3 */) /* 4 */ { /* 5 */
+                    case /* 6 */ 1 /* 7 */ , /* 8 */ 2 /* 9 */ , /* 10 */ default /* 11 */ {
+                        /* 12 */
                         let a = 1;
-                        /* N */
-                    } /* O */
-                    default /* P */ /* Q */ {
-                        /* R */
+                        /* 13 */
+                    } /* 14 */
+                    case /* 15 */ 3 /* 16 */ {
+                        /* 17 */
                         let a = 1;
-                        /* S */
-                    } /* T */ 
+                        /* 18 */
+                    } /* 19 */
+                    default /* 20 */ /* 21 */ {
+                        /* 22 */
+                        let a = 1;
+                        /* 23 */
+                    }
                 }
-                /* U */
+            }
+        "#]],
+        expect![[r#"
+            fn main() {
+                // 0
+                switch // 1
+                (// 2
+                    a // 3
+                ) // 4
+                { // 5
+                    case // 6
+                    1 // 7
+                    , // 8
+                    2 // 9
+                    , // 10
+                    default // 11
+                    {
+                        // 12
+                        let a = 1;
+                        // 13
+                    } // 14
+                    case // 15
+                    3 // 16
+                    {
+                        // 17
+                        let a = 1;
+                        // 18
+                    } // 19
+                    default // 20
+                    // 21
+                    {
+                        // 22
+                        let a = 1;
+                        // 23
+                    }
+                }
             }
         "#]],
     );
