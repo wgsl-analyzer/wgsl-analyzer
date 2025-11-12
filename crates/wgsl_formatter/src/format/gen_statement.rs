@@ -20,6 +20,7 @@ use crate::format::{
     gen_comments::{gen_comment, gen_comments},
     gen_expression::{gen_expression, gen_parenthesis_expression},
     gen_if_statement::gen_if_statement,
+    gen_switch_statement::gen_switch_statement,
     helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, todo_verbatim},
     multiline_group::gen_multiline_group,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
@@ -120,9 +121,7 @@ fn gen_statement_maybe_semicolon(
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     match item {
         ast::Statement::IfStatement(if_statement) => gen_if_statement(if_statement),
-        ast::Statement::SwitchStatement(switch_statement) => {
-            todo_verbatim(switch_statement.syntax())
-        },
+        ast::Statement::SwitchStatement(switch_statement) => gen_switch_statement(switch_statement),
         ast::Statement::LoopStatement(loop_statement) => gen_loop_statement(loop_statement),
         ast::Statement::ForStatement(for_statement) => gen_for_statement(for_statement),
         ast::Statement::WhileStatement(while_statement) => gen_while_statement(while_statement),

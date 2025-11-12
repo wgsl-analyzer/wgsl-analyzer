@@ -10,6 +10,7 @@ mod gen_function_call;
 mod gen_if_statement;
 mod gen_statement;
 mod gen_struct;
+pub mod gen_switch_statement;
 mod gen_types;
 pub mod multiline_group;
 mod reporting;

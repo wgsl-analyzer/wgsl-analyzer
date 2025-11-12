@@ -33,13 +33,10 @@ pub fn parse_token(
             Err(FormatDocumentErrorKind::UnexpectedToken { received: other }
                 .without_range(err_src!()))
         },
-        None => {
-            todo!();
-            Err(FormatDocumentErrorKind::MissingTokens {
-                expected: Some(expected),
-            }
-            .without_range(err_src!()))
-        },
+        None => Err(FormatDocumentErrorKind::MissingTokens {
+            expected: Some(expected),
+        }
+        .without_range(err_src!())),
     }
 }
 
