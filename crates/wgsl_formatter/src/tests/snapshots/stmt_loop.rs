@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::check;
+use crate::test_util::{check, check_comments};
 
 #[test]
 pub fn format_loop_statement_empty() {
@@ -20,54 +20,30 @@ pub fn format_loop_statement_empty() {
 }
 
 #[test]
-pub fn format_loop_statement_block_comments() {
-    check(
+pub fn format_comment_in_loop_statement_empty() {
+    check_comments(
         "fn main() {
-        /* A */
-        loop
-        /* B */
-        {
-        /* C */
-        }
-        /* D */
-
-
+        ## loop ## {
+        ## } ##
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                /* A */
-                loop /* B */ {
-                    /* C */
+                /* 0 */
+                loop /* 1 */ {
+                    /* 2 */
                 }
-                /* D */
+                /* 3 */
             }
-        "]],
-    );
-}
-
-#[test]
-pub fn format_loop_statement_line_comments() {
-    check(
-        "fn main() {
-        // A
-        loop
-        // B
-        {
-        // C
-        }
-        // D
-
-
-        }",
-        expect![["
+        "#]],
+        expect![[r#"
             fn main() {
-                // A
-                loop // B
+                // 0
+                loop // 1
                 {
-                    // C
+                    // 2
                 }
-                // D
+                // 3
             }
-        "]],
+        "#]],
     );
 }

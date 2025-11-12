@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::check;
+use crate::test_util::{check, check_comments};
 
 #[test]
 pub fn format_while_statement_empty() {
@@ -65,34 +65,32 @@ pub fn format_while_statement_continue_statement() {
 }
 
 #[test]
-pub fn format_while_statement_with_block_comments() {
-    check(
+pub fn format_comments_in_while_statement_simple() {
+    check_comments(
         "fn main() {
-        /* A */
-        while
-        /* B */
-        (
-        /* C */
-        true
-        /* D */
-        )
-        /* E */
-        {
-        /* F */
-        }
-        /* G */
-
-
-
+        ## while ## ( ## true ## ) ## { ## }##
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                /* A */
-                while /* B */ (/* C */ true /* D */) /* E */ {
-                    /* F */
+                /* 0 */
+                while /* 1 */ (/* 2 */ true /* 3 */) /* 4 */ {
+                    /* 5 */
                 }
-                /* G */
+                /* 6 */
             }
-        "]],
+        "#]],
+        expect![[r#"
+            fn main() {
+                // 0
+                while // 1
+                (// 2
+                    true // 3
+                ) // 4
+                {
+                    // 5
+                }
+                // 6
+            }
+        "#]],
     );
 }

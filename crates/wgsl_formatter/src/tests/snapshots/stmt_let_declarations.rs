@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::check;
+use crate::test_util::{check, check_comments};
 
 #[test]
 pub fn format_let_decl_simple_literal_1() {
@@ -66,28 +66,27 @@ pub fn format_let_decl_simple_statement_with_trailing_comment() {
 }
 
 #[test]
-pub fn format_let_decl_line_comments() {
-    check(
+pub fn format_comment_in_let_decl() {
+    check_comments(
         "fn main() {
-        // Before
-        let //A
-        a //B
-        = //C
-        1 //D
-        ; //E
-        // After
+        ## let ## a ## = ## 1 ## ; ##
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                // Before
-                let //A
-                    a //B
-                    = //C
-                    1 //D
-                    ; //E
-                // After
+                /* 0 */
+                let /* 1 */ a /* 2 */ = /* 3 */ 1 /* 4 */; /* 5 */
             }
-        "]],
+        "#]],
+        expect![[r#"
+            fn main() {
+                // 0
+                let // 1
+                    a // 2
+                    = // 3
+                    1 // 4
+                    ; // 5
+            }
+        "#]],
     );
 }
 
@@ -120,28 +119,6 @@ pub fn format_let_decl_has_no_space_before_semicolon() {
         expect![["
             fn main() {
                 let a = 1 /* A */;
-            }
-        "]],
-    );
-}
-
-#[test]
-pub fn format_let_decl_block_comments() {
-    check(
-        "fn main() {
-        /* Before */
-        let /* A */
-        a /* B */
-        = /* C */
-        1 /* D */
-        ; /* E */
-        /* After */
-        }",
-        expect![["
-            fn main() {
-                /* Before */
-                let /* A */ a /* B */ = /* C */ 1 /* D */; /* E */
-                /* After */
             }
         "]],
     );
