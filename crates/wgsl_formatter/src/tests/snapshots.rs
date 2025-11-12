@@ -24,6 +24,7 @@ mod stmt_if;
 mod stmt_let_declarations;
 mod stmt_loop;
 mod stmt_return;
+mod stmt_switch;
 mod stmt_var_declarations;
 mod stmt_while;
 mod struct_def;

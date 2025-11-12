@@ -109,6 +109,13 @@ pub fn check_with_options<E: ExpectAssertEq>(
     let parse = syntax::parse(before.trim_start());
     let syntax = parse.tree();
 
+    if !parse.errors().is_empty() {
+        panic!(
+            "Parsing the source to be formatted failed with errors: {:#?}",
+            parse.errors()
+        );
+    }
+
     dbg!(&parse.errors());
     dbg!(&syntax);
     let formatted = match format_tree(&syntax, options) {
