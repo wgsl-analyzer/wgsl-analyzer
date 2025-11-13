@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::check;
+use crate::test_util::{check, check_comments};
 
 #[test]
 pub fn format_discard_statement_1() {
@@ -20,18 +20,26 @@ discard;
 
 #[test]
 pub fn format_discard_statement_with_weird_comment() {
-    check(
+    check_comments(
         "fn main() {
-/* A */ discard /* B */; /* C */
+        ## discard ## ; ##
 
 
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                /* A */
+                /* 0 */
                 discard;
-                /* B */ /* C */
+                /* 1 */ /* 2 */
             }
-        "]],
+        "#]],
+        expect![[r#"
+            fn main() {
+                // 0
+                discard;
+                // 1
+                // 2
+            }
+        "#]],
     );
 }

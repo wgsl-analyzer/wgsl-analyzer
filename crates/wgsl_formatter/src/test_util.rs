@@ -113,8 +113,9 @@ pub fn check_with_options<E: ExpectAssertEq>(
 
     assert!(
         parse.errors().is_empty(),
-        "Parsing the source to be formatted failed with errors: {:#?}",
-        parse.errors()
+        "Parsing the source to be formatted failed with errors: {:#?} \n Source: {:#?}",
+        parse.errors(),
+        parse.syntax()
     );
 
     dbg!(&parse.errors());

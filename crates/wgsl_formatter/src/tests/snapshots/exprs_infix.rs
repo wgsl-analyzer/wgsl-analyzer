@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{assert_out_of_scope, check};
+use crate::test_util::{assert_out_of_scope, check, check_comments};
 
 #[test]
 pub fn format_naked_infix_exprs_out_of_scope() {
@@ -48,16 +48,25 @@ pub fn format_infix_expr_long() {
 }
 
 #[test]
-pub fn format_infix_expr_with_comments() {
-    check(
+pub fn format_comments_in_infix_expr() {
+    check_comments(
         "fn main() {
-        let a = /* A */ 1 /* B */ + /* C */ 1 /* D */;
+        let a = ## 1 ## + ## 1 ## ; ##
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                let a = /* A */ 1 /* B */ + /* C */ 1 /* D */;
+                let a = /* 0 */ 1 /* 1 */ + /* 2 */ 1 /* 3 */; /* 4 */
             }
-        "]],
+        "#]],
+        expect![[r#"
+            fn main() {
+                let a = // 0
+                    1 // 1
+                    + // 2
+                    1 // 3
+                    ; // 4
+            }
+        "#]],
     );
 }
 

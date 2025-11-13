@@ -159,6 +159,20 @@ pub fn format_for_statement_simple_empty() {
 }
 
 #[test]
+fn format_for_statement_average() {
+    check(
+        "fn main() {
+    for( var i = 0;i < 100;   i = i + 1  ){}
+}",
+        expect![[r#"
+            fn main() {
+                for(var i = 0; i < 100; i = i + 1) {}
+            }
+        "#]],
+    );
+}
+
+#[test]
 pub fn format_for_statement_block_comments() {
     check_comments(
         "fn main() {
@@ -193,67 +207,5 @@ pub fn format_for_statement_block_comments() {
                 /* P */
             }
         "#]],
-    );
-}
-
-#[test]
-pub fn format_for_statement_line_comments() {
-    check(
-        "fn main() {
-        // A
-        for
-        // B
-        (
-        // C
-        var
-        // D
-        i
-        // E
-        =
-        // F
-        0
-        // G
-        ;
-        // H
-        i
-        // I
-        <
-        // J
-        4
-        // K
-        ;
-        // L
-        i++
-        // M
-        )
-        // N
-        {
-        // O
-        }
-        // P
-        }",
-        expect![["
-            fn main() {
-                // A
-                for // B
-                (
-                    // C
-                    var // D
-                        i // E
-                        = // F
-                        0 // G
-                    ; // H
-                    i // I
-                    < // J
-                    4 // K
-                    ; // L
-                    i++ // M
-                ) // N
-                {
-                    // O
-                }
-                // P
-            }
-        "]],
     );
 }

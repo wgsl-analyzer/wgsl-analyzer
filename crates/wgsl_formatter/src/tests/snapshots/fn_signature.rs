@@ -2,7 +2,7 @@
 
 use expect_test::expect;
 
-use crate::test_util::{assert_out_of_scope, check, check_with_options};
+use crate::test_util::{assert_out_of_scope, check, check_comments, check_with_options};
 
 #[test]
 fn format_fn_header_with_parameters_1() {
@@ -172,4 +172,44 @@ fn format_multiple_fns() {
 #[test]
 fn format_fn_header_incomplete() {
     assert_out_of_scope("fn  main ( a ", "We don't try to guess missing code.");
+}
+
+#[test]
+fn format_comments_in_fn_signature() {
+    check_comments(
+        "
+        ## fn ## main ## ( ## a ## : ## b ## , ## c ## : ## d ## ) ## { ##
+        ## }
+        ",
+        expect![[r#"
+            /* 0 */
+            fn /* 1 */ main /* 2 */ (
+                /* 3 */ a: /* 4 */ /* 5 */ b, /* 6 */ /* 7 */
+                c: /* 8 */ /* 9 */ d, /* 10 */
+            ) /* 11 */ {
+                /* 12 */
+                /* 13 */
+            }
+        "#]],
+        expect![[r#"
+            // 0
+            fn // 1
+            main // 2
+            (
+                // 3
+                a: // 4
+                // 5
+                b, // 6
+                // 7
+                c: // 8
+                // 9
+                d, // 10
+            ) // 11
+            {
+                // 12
+
+                // 13
+            }
+        "#]],
+    );
 }

@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{assert_out_of_scope, check};
+use crate::test_util::{assert_out_of_scope, check, check_comments};
 
 #[test]
 pub fn format_loop_continuing_break_if_statement_empty() {
@@ -101,90 +101,52 @@ pub fn format_loop_continuing_break_if_statement_complex_expression() {
 }
 
 #[test]
-pub fn format_loop_continuing_break_if_statement_block_comments() {
-    check(
+pub fn format_comments_in_loop_continuing_break_if_statement() {
+    check_comments(
         "fn main() {
-        /* A */
-        loop
-        /* B */
-        {
-        /* C */
-        continuing
-        /* D */
-        {
-        /* E */
-        break
-        /* F */
-        if
-        /* G */
-        false
-        /* H */
-        ;
-        }
-        /* I */
-        }
-        /* J */
+        ## loop ## {
+        ## continuing
+        ## {
+        ## break ## if ## false ## ; ##
+        ## }
+        ## }
+        ##
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                /* A */
-                loop /* B */ {
-                    /* C */
-                    continuing /* D */ {
-                        /* E */
-                        break /* F */ if /* G */ false /* H */;
+                /* 0 */
+                loop /* 1 */ {
+                    /* 2 */
+                    continuing /* 3 */ {
+                        /* 4 */
+                        break /* 5 */ if /* 6 */ false /* 7 */; /* 8 */
+                        /* 9 */
                     }
-                    /* I */
+                    /* 10 */
                 }
-                /* J */
+                /* 11 */
             }
-        "]],
-    );
-}
-
-#[test]
-pub fn format_loop_continuing_break_if_statement_line_comments() {
-    check(
-        "fn main() {
-        // A
-        loop
-        // B
-        {
-        // C
-        continuing
-        // D
-        {
-        // E
-        break
-        // F
-        if
-        // G
-        false
-        // H
-        ;
-        }
-        // I
-        }
-        // J
-        }",
-        expect![["
+        "#]],
+        expect![[r#"
             fn main() {
-                // A
-                loop // B
+                // 0
+                loop // 1
                 {
-                    // C
-                    continuing // D
+                    // 2
+                    continuing // 3
                     {
-                        // E
-                        break // F
-                        if // G
-                            false // H
-                            ;
+                        // 4
+                        break // 5
+                        if // 6
+                            false // 7
+                            ; // 8
+
+                        // 9
                     }
-                    // I
+                    // 10
                 }
-                // J
+                // 11
             }
-        "]],
+        "#]],
     );
 }

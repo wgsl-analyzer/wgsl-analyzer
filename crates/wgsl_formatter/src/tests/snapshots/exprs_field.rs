@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{assert_out_of_scope, check};
+use crate::test_util::{assert_out_of_scope, check, check_comments};
 
 #[test]
 pub fn format_naked_field_exprs_out_of_scope() {
@@ -34,41 +34,24 @@ pub fn format_field_expr_simple() {
 }
 
 #[test]
-pub fn format_field_expr_with_line_comments() {
-    check(
+pub fn format_comments_in_field_expr() {
+    check_comments(
         "fn main() {
-        let a = // A
-        foo // B
-        . // C
-        bar // D
-        ; // E
+        let a = ## foo ## . ## bar ## ; ##
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                let a = // A
-                    foo // B
-                    . // C
-                    bar // D
-                    ; // E
+                let a = /* 0 */ foo /* 1 */ . /* 2 */ bar /* 3 */; /* 4 */
             }
-        "]],
-    );
-}
-
-#[test]
-pub fn format_field_expr_with_block_comments() {
-    check(
-        "fn main() {
-        let a = /* A */
-        foo /* B */
-        . /* C */
-        bar /* D */
-        ; /* E */
-        }",
-        expect![["
+        "#]],
+        expect![[r#"
             fn main() {
-                let a = /* A */ foo /* B */ . /* C */ bar /* D */; /* E */
+                let a = // 0
+                    foo // 1
+                    . // 2
+                    bar // 3
+                    ; // 4
             }
-        "]],
+        "#]],
     );
 }
