@@ -10,7 +10,7 @@ use crate::format::{
         parse_end, parse_many_comments_and_blankspace, parse_node, parse_token, parse_token_any,
     },
     gen_comments::gen_comments,
-    gen_function_call::gen_function_call_expression,
+    gen_function_call::gen_function_call,
     helpers::create_is_multiple_lines_resolver,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::FormatDocumentResult,
@@ -33,7 +33,7 @@ pub fn gen_expression(expression: &ast::Expression) -> FormatDocumentResult<Prin
         ast::Expression::IdentExpression(ident_expression) => {
             gen_ident_expression(ident_expression)
         },
-        ast::Expression::FunctionCall(function_call) => gen_function_call_expression(function_call),
+        ast::Expression::FunctionCall(function_call) => gen_function_call(function_call),
         ast::Expression::ParenthesisExpression(parenthesis_expression) => {
             gen_parenthesis_expression(parenthesis_expression)
         },

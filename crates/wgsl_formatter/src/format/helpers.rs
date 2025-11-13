@@ -15,7 +15,7 @@ use crate::{
     FormattingOptions,
     format::{
         print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
-        reporting::{FormatDocumentErrorKind, FormatDocumentResult, err_src},
+        reporting::{FormatDocumentErrorKind, FormatDocumentResult},
     },
 };
 

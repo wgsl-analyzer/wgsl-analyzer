@@ -13,47 +13,22 @@ pub enum FormatDocumentErrorKind {
     MissingNode,
 }
 
-#[derive(Debug, Clone)]
-pub struct ErrorSource {
-    pub file: &'static str,
-    pub line: u32,
-    pub column: u32,
-}
-
-macro_rules! err_src {
-    () => {
-        $crate::format::reporting::ErrorSource {
-            file: file!(),
-            line: line!(),
-            column: column!(),
-        }
-    };
-}
-
-pub(crate) use err_src;
-
 impl FormatDocumentErrorKind {
     pub const fn at(
         self,
         text_range: TextRange,
-        rust_error_source: ErrorSource,
     ) -> FormatDocumentError {
         FormatDocumentError {
             error_kind: self,
             text_range: Some(text_range),
-            rust_error_source,
         }
     }
 
     #[deprecated(note = "Only exists while prototyping")]
-    pub const fn without_range(
-        self,
-        rust_error_source: ErrorSource,
-    ) -> FormatDocumentError {
+    pub const fn without_range(self) -> FormatDocumentError {
         FormatDocumentError {
             error_kind: self,
             text_range: None,
-            rust_error_source,
         }
     }
 }
@@ -62,8 +37,27 @@ impl FormatDocumentErrorKind {
 pub struct FormatDocumentError {
     pub error_kind: FormatDocumentErrorKind,
     pub text_range: Option<TextRange>,
-    pub rust_error_source: ErrorSource,
 }
 
 #[must_use]
 pub type FormatDocumentResult<T> = Result<T, FormatDocumentError>;
+
+pub trait UnwrapIfPreferCrash {
+    fn expect_if_prefer_crash(self) -> Self;
+}
+
+impl<T> UnwrapIfPreferCrash for FormatDocumentResult<T> {
+    #[inline]
+    fn expect_if_prefer_crash(self) -> FormatDocumentResult<T> {
+        #[cfg(feature = "prefer-immediate-crash")]
+        {
+            Ok(self.expect(
+                "Compiled with --features=prefer-immediate-crash, thus immediately crashing.",
+            ))
+        }
+        #[cfg(not(feature = "prefer-immediate-crash"))]
+        {
+            self
+        }
+    }
+}

@@ -19,7 +19,7 @@ use crate::format::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_function_call_expression(
+pub fn gen_function_call(
     function_call: &ast::FunctionCall
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -33,11 +33,11 @@ pub fn gen_function_call_expression(
     let mut formatted = PrintItemBuffer::new();
     formatted.extend(gen_ident_expression(&item_identifier)?);
     formatted.extend(gen_comments(item_comments_after_identifier));
-    formatted.extend(gen_function_call_expression_arguments(&item_arguments)?);
+    formatted.extend(gen_function_call_arguments(&item_arguments)?);
     Ok(formatted)
 }
 
-pub fn gen_function_call_expression_arguments(
+pub fn gen_function_call_arguments(
     arguments: &ast::Arguments
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====

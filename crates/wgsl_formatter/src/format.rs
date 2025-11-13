@@ -45,7 +45,7 @@ use crate::{
         gen_struct::gen_struct_declaration,
         helpers::{gen_spaced_lines, into_items},
         print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
-        reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult, err_src},
+        reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult},
     },
 };
 
@@ -133,9 +133,7 @@ fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuff
         {
             formatted.extend(gen_comment(child));
         } else {
-            return Err(
-                FormatDocumentErrorKind::UnexpectedModuleNode.at(child.text_range(), err_src!())
-            );
+            return Err(FormatDocumentErrorKind::UnexpectedModuleNode.at(child.text_range()));
         }
 
         // In a source file there will be a newline after *every* item.

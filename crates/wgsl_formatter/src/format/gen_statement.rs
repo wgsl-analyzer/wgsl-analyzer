@@ -6,8 +6,8 @@ use rowan::NodeOrToken;
 use syntax::{
     AstNode,
     ast::{
-        self, CompoundStatement, ElseClause, ElseIfClause, Expression, IfClause, Literal,
-        ParenthesisExpression, Statement,
+        self, CompoundStatement, ElseClause, ElseIfClause, Expression, FunctionCall, IfClause,
+        Literal, ParenthesisExpression, Statement,
     },
 };
 
@@ -19,12 +19,13 @@ use crate::format::{
     },
     gen_comments::{gen_comment, gen_comments},
     gen_expression::{gen_expression, gen_parenthesis_expression},
+    gen_function_call::gen_function_call,
     gen_if_statement::gen_if_statement,
     gen_switch_statement::gen_switch_statement,
     helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, todo_verbatim},
     multiline_group::gen_multiline_group,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
-    reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult, err_src},
+    reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult},
 };
 
 #[expect(
@@ -70,7 +71,7 @@ pub fn gen_compound_statement(
             Err(FormatDocumentErrorKind::UnexpectedToken {
                 received: child.clone(),
             }
-            .at(child.text_range(), err_src!()))
+            .at(child.text_range()))
         }
     })?;
 
@@ -129,7 +130,7 @@ fn gen_statement_maybe_semicolon(
             gen_compound_statement(compound_statement)
         },
         ast::Statement::FunctionCallStatement(function_call_statement) => {
-            todo_verbatim(function_call_statement.syntax())
+            gen_function_call_statement(function_call_statement, include_semicolon)
         },
         ast::Statement::VariableDeclaration(variable_declaration) => {
             gen_var_declaration_statement(variable_declaration, include_semicolon)
@@ -162,11 +163,15 @@ fn gen_statement_maybe_semicolon(
             // user's code should future changes to wgsl allow more complex break statements.
             let mut syntax = put_back(break_statement.syntax().children_with_tokens());
             parse_token(&mut syntax, SyntaxKind::Break)?;
+            parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
             parse_end(&mut syntax);
 
             // ==== Format ====
             let mut formatted = PrintItemBuffer::new();
-            formatted.push_sc(sc!("break;"));
+            formatted.push_sc(sc!("break"));
+            if include_semicolon {
+                formatted.push_sc(sc!(";"));
+            }
             formatted.expect_line_break();
             Ok(formatted)
         },
@@ -178,11 +183,15 @@ fn gen_statement_maybe_semicolon(
             let mut syntax = put_back(continue_statement.syntax().children_with_tokens());
             parse_token(&mut syntax, SyntaxKind::Continue)?;
             let comments_after_continue = parse_many_comments_and_blankspace(&mut syntax)?;
+            parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
             parse_end(&mut syntax);
 
             // ==== Format ====
             let mut formatted = PrintItemBuffer::new();
-            formatted.push_sc(sc!("continue;"));
+            formatted.push_sc(sc!("continue"));
+            if include_semicolon {
+                formatted.push_sc(sc!(";"));
+            }
             formatted.expect_line_break();
             formatted.extend(gen_comments(comments_after_continue));
             Ok(formatted)
@@ -195,11 +204,15 @@ fn gen_statement_maybe_semicolon(
             let mut syntax = put_back(discard.syntax().children_with_tokens());
             parse_token(&mut syntax, SyntaxKind::Discard)?;
             let comments_after_discard = parse_many_comments_and_blankspace(&mut syntax)?;
+            parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
             parse_end(&mut syntax);
 
             // ==== Format ====
             let mut formatted = PrintItemBuffer::new();
-            formatted.push_sc(sc!("discard;"));
+            formatted.push_sc(sc!("discard"));
+            if include_semicolon {
+                formatted.push_sc(sc!(";"));
+            }
             formatted.expect_line_break();
             formatted.extend(gen_comments(comments_after_discard));
             Ok(formatted)
@@ -214,6 +227,28 @@ fn gen_statement_maybe_semicolon(
             gen_break_if_statement(break_if_statement, include_semicolon)
         },
     }
+}
+
+fn gen_function_call_statement(
+    function_call_statement: &ast::FunctionCallStatement,
+    include_semicolon: bool,
+) -> Result<PrintItemBuffer, FormatDocumentError> {
+    dbg!(function_call_statement.syntax());
+    // ==== Parse ====
+    let mut syntax = put_back(function_call_statement.syntax().children_with_tokens());
+    let function_call = parse_node::<FunctionCall>(&mut syntax)?;
+    let comments_after_function_call = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
+    parse_end(&mut syntax);
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.extend(gen_function_call(&function_call)?);
+    formatted.extend(gen_comments(comments_after_function_call));
+    if include_semicolon {
+        formatted.push_sc(sc!(";"));
+    }
+    Ok(formatted)
 }
 
 fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {
@@ -358,6 +393,7 @@ fn gen_break_if_statement(
     let comments_after_if = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_condition = parse_node::<Expression>(&mut syntax)?;
     let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
     parse_end(&mut syntax);
 
     // ==== Format ====
