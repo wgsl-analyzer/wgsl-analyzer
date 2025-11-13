@@ -365,7 +365,12 @@ impl PrintItemBuffer {
         &mut self,
         string: String,
     ) {
-        println!("Str== {:?}", string);
+        #[cfg(feature = "prefer-immediate-crash")]
+        {
+            if string.contains("\n") {
+                panic!("Cannot push string with newlines to PrintItemBuffer {string:?}");
+            }
+        }
         self.apply_end_request();
         self.items.push_string(string);
     }

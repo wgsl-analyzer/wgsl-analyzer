@@ -19,7 +19,9 @@ use syntax::{
     ast::{self, Attribute},
 };
 
-use crate::format::reporting::{FormatDocumentErrorKind, FormatDocumentResult, err_src};
+use crate::format::reporting::{
+    FormatDocumentErrorKind, FormatDocumentResult, UnwrapIfPreferCrash,
+};
 
 pub type SyntaxIter = PutBack<SyntaxElementChildren>;
 pub fn parse_token(
@@ -30,14 +32,14 @@ pub fn parse_token(
         Some(NodeOrToken::Token(child)) if child.kind() == expected => Ok(child),
         Some(other) => {
             syntax.put_back(other.clone());
-            Err(FormatDocumentErrorKind::UnexpectedToken { received: other }
-                .without_range(err_src!()))
+            Err(FormatDocumentErrorKind::UnexpectedToken { received: other }.without_range())
         },
         None => Err(FormatDocumentErrorKind::MissingTokens {
             expected: Some(expected),
         }
-        .without_range(err_src!())),
+        .without_range()),
     }
+    .expect_if_prefer_crash()
 }
 
 pub fn parse_node_by_kind(
@@ -48,14 +50,14 @@ pub fn parse_node_by_kind(
         Some(NodeOrToken::Node(child)) if child.kind() == expected => Ok(child),
         Some(other) => {
             syntax.put_back(other.clone());
-            Err(FormatDocumentErrorKind::UnexpectedToken { received: other }
-                .without_range(err_src!()))
+            Err(FormatDocumentErrorKind::UnexpectedToken { received: other }.without_range())
         },
         None => Err(FormatDocumentErrorKind::MissingTokens {
             expected: Some(expected),
         }
-        .without_range(err_src!())),
+        .without_range()),
     }
+    .expect_if_prefer_crash()
 }
 
 pub fn parse_node_by_kind_optional(
@@ -77,13 +79,11 @@ pub fn parse_token_any(syntax: &mut SyntaxIter) -> FormatDocumentResult<SyntaxTo
         Some(NodeOrToken::Token(child)) => Ok(child),
         Some(other) => {
             syntax.put_back(other.clone());
-            Err(FormatDocumentErrorKind::UnexpectedToken { received: other }
-                .without_range(err_src!()))
+            Err(FormatDocumentErrorKind::UnexpectedToken { received: other }.without_range())
         },
-        None => {
-            Err(FormatDocumentErrorKind::MissingTokens { expected: None }.without_range(err_src!()))
-        },
+        None => Err(FormatDocumentErrorKind::MissingTokens { expected: None }.without_range()),
     }
+    .expect_if_prefer_crash()
 }
 
 pub fn parse_token_optional(
@@ -105,10 +105,10 @@ pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
         None => Ok(()),
         Some(other) => {
             syntax.put_back(other.clone());
-            Err(FormatDocumentErrorKind::UnexpectedToken { received: other }
-                .without_range(err_src!()))
+            Err(FormatDocumentErrorKind::UnexpectedToken { received: other }.without_range())
         },
     }
+    .expect_if_prefer_crash()
 }
 
 pub fn parse_end_optional(syntax: &mut SyntaxIter) -> Option<()> {
@@ -149,19 +149,19 @@ pub fn parse_node<T: AstNode>(syntax: &mut SyntaxIter) -> FormatDocumentResult<T
                 Err(FormatDocumentErrorKind::UnexpectedToken {
                     received: NodeOrToken::Node(child),
                 }
-                .without_range(err_src!()))
+                .without_range())
             }
         },
         Some(other) => {
             syntax.put_back(other.clone());
-            Err(FormatDocumentErrorKind::UnexpectedToken { received: other }
-                .without_range(err_src!()))
+            Err(FormatDocumentErrorKind::UnexpectedToken { received: other }.without_range())
         },
         None => {
             todo!();
-            Err(FormatDocumentErrorKind::MissingNode.without_range(err_src!()))
+            Err(FormatDocumentErrorKind::MissingNode.without_range())
         },
     }
+    .expect_if_prefer_crash()
 }
 
 pub fn parse_many_comments_and_blankspace(

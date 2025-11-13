@@ -26,3 +26,8 @@ serde = ["dep:serde"]
 
 [lints]
 workspace = true
+
+[features]
+# Prefer to crash at strategic places instead of returning errors.
+# This, combined with RUST_BACKTRACE=1 is useful for debugging unit-tests
+prefer-immediate-crash = []
