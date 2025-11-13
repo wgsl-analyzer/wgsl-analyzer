@@ -322,7 +322,7 @@ fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<Prin
         {
             let mut formatted = PrintItemBuffer::new();
             if let Some(item_condition) = item_condition {
-                formatted.extend(gen_expression(&item_condition)?);
+                formatted.extend(gen_expression(&item_condition, false)?);
             } else {
                 formatted.request_space(SeparationPolicy::Discouraged);
             }
@@ -362,6 +362,7 @@ fn gen_return_statement(
     let comments_after_return = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_expression = parse_node_optional::<Expression>(&mut syntax);
     let comments_after_expression = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
     parse_end(&mut syntax);
 
     // ==== Format ====
@@ -370,7 +371,7 @@ fn gen_return_statement(
     formatted.extend(gen_comments(comments_after_return));
     if let Some(item_expression) = item_expression {
         formatted.expect_single_space();
-        formatted.extend(gen_expression(&item_expression)?);
+        formatted.extend(gen_expression(&item_expression, true)?);
     }
     formatted.extend(gen_comments(comments_after_expression));
     formatted.request_space(SeparationPolicy::Discouraged);
@@ -405,7 +406,7 @@ fn gen_break_if_statement(
     formatted.push_signal(Signal::StartIndent);
     formatted.expect_single_space();
     formatted.extend(gen_comments(comments_after_if));
-    formatted.extend(gen_expression(&item_condition)?);
+    formatted.extend(gen_expression(&item_condition, true)?);
     formatted.extend(gen_comments(comments_after_condition));
     formatted.request_space(SeparationPolicy::Discouraged);
     if include_semicolon {
@@ -455,12 +456,13 @@ fn gen_continuing_statement(
 
     Ok(formatted)
 }
+
 fn gen_while_statement(statement: &ast::WhileStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::While)?;
     let comments_after_while = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_condition = parse_node::<ParenthesisExpression>(&mut syntax)?;
+    let item_condition = parse_node::<Expression>(&mut syntax)?;
     let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
     parse_end(&mut syntax);
@@ -469,7 +471,8 @@ fn gen_while_statement(statement: &ast::WhileStatement) -> FormatDocumentResult<
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("while"));
     formatted.extend(gen_comments(comments_after_while));
-    formatted.extend(gen_parenthesis_expression(&item_condition)?);
+    formatted.expect_single_space(); // Request space, because we trim parentheses
+    formatted.extend(gen_expression(&item_condition, true)?);
     formatted.expect_single_space();
     formatted.extend(gen_comments(comments_after_condition));
     formatted.extend(gen_compound_statement(&item_body)?);
@@ -519,7 +522,7 @@ fn gen_let_declaration_statement(
     formatted.push_sc(sc!("="));
     formatted.expect_single_space();
     formatted.extend(gen_comments(item_comments_after_equal));
-    formatted.extend(gen_expression(&value)?);
+    formatted.extend(gen_expression(&value, false)?);
     formatted.extend(gen_comments(item_comments_after_value));
     formatted.request_space(SeparationPolicy::Discouraged);
     if include_semicolon {
@@ -571,7 +574,7 @@ fn gen_var_declaration_statement(
     formatted.push_sc(sc!("="));
     formatted.expect_single_space();
     formatted.extend(gen_comments(item_comments_after_equal));
-    formatted.extend(gen_expression(&value)?);
+    formatted.extend(gen_expression(&value, false)?);
     formatted.extend(gen_comments(item_comments_after_value));
     formatted.request_space(SeparationPolicy::Discouraged);
     if include_semicolon {

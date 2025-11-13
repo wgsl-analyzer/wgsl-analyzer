@@ -28,6 +28,56 @@ pub fn format_loop_continuing_break_if_statement_empty() {
 }
 
 #[test]
+pub fn format_loop_continuing_break_if_statement_with_needless_parens() {
+    check(
+        "fn main() {
+        loop {
+        continuing {
+        break if (false);
+
+        }
+        }
+
+
+        }",
+        expect![[r#"
+            fn main() {
+                loop {
+                    continuing {
+                        break if false;
+                    }
+                }
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_loop_continuing_break_if_statement_with_important_parens() {
+    check(
+        "fn main() {
+        loop {
+        continuing {
+        break if (1 + (1 + 1));
+
+        }
+        }
+
+
+        }",
+        expect![[r#"
+            fn main() {
+                loop {
+                    continuing {
+                        break if 1 + (1 + 1);
+                    }
+                }
+            }
+        "#]],
+    );
+}
+
+#[test]
 pub fn format_break_if_statement_without_loop() {
     assert_out_of_scope(
         "fn main() {

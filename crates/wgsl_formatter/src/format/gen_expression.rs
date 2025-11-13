@@ -16,7 +16,10 @@ use crate::format::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_expression(expression: &ast::Expression) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_expression(
+    expression: &ast::Expression,
+    remove_parentheses: bool,
+) -> FormatDocumentResult<PrintItemBuffer> {
     match expression {
         ast::Expression::IndexExpression(index_expression) => {
             gen_index_expression(index_expression)
@@ -35,7 +38,7 @@ pub fn gen_expression(expression: &ast::Expression) -> FormatDocumentResult<Prin
         },
         ast::Expression::FunctionCall(function_call) => gen_function_call(function_call),
         ast::Expression::ParenthesisExpression(parenthesis_expression) => {
-            gen_parenthesis_expression(parenthesis_expression)
+            gen_parenthesis_expression(parenthesis_expression, remove_parentheses)
         },
         ast::Expression::Literal(literal) => gen_literal_expression(literal),
     }
@@ -69,7 +72,8 @@ pub fn gen_ident_expression(
 }
 
 pub fn gen_parenthesis_expression(
-    parenthesis_expression: &ast::ParenthesisExpression
+    parenthesis_expression: &ast::ParenthesisExpression,
+    remove_parentheses: bool,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(parenthesis_expression.syntax().children_with_tokens());
@@ -82,23 +86,39 @@ pub fn gen_parenthesis_expression(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
-    formatted.push_sc(sc!("("));
-    formatted.push_signal(Signal::StartNewLineGroup);
-    formatted.push_signal(Signal::StartIndent);
-    formatted.request(SeparationRequest {
-        space: SeparationPolicy::Discouraged,
-        ..Default::default()
-    });
+    if remove_parentheses {
+        formatted.request(SeparationRequest {
+            space: SeparationPolicy::Expected,
+            ..Default::default()
+        });
+    } else {
+        formatted.push_sc(sc!("("));
+        formatted.push_signal(Signal::StartNewLineGroup);
+        formatted.push_signal(Signal::StartIndent);
+
+        formatted.request(SeparationRequest {
+            space: SeparationPolicy::Discouraged,
+            ..Default::default()
+        });
+    }
     formatted.extend(gen_comments(item_comment_after_left_paren));
-    formatted.extend(gen_expression(&item_content)?);
+    formatted.extend(gen_expression(&item_content, true)?);
     formatted.extend(gen_comments(item_comment_after_content));
-    formatted.request(SeparationRequest {
-        space: SeparationPolicy::Discouraged,
-        ..Default::default()
-    });
-    formatted.push_signal(Signal::FinishIndent);
-    formatted.push_signal(Signal::FinishNewLineGroup);
-    formatted.push_sc(sc!(")"));
+
+    if remove_parentheses {
+        formatted.request(SeparationRequest {
+            space: SeparationPolicy::Expected,
+            ..Default::default()
+        });
+    } else {
+        formatted.request(SeparationRequest {
+            space: SeparationPolicy::Discouraged,
+            ..Default::default()
+        });
+        formatted.push_signal(Signal::FinishIndent);
+        formatted.push_signal(Signal::FinishNewLineGroup);
+        formatted.push_sc(sc!(")"));
+    }
     Ok(formatted)
 }
 
@@ -118,14 +138,14 @@ pub fn gen_infix_expression(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
-    formatted.extend(gen_expression(&item_left)?);
+    formatted.extend(gen_expression(&item_left, false)?);
     formatted.extend(gen_comments(item_comment_after_left));
     formatted.expect_single_space();
     formatted.request_line_break(SeparationPolicy::Allowed);
     formatted.push_string(item_operator.to_string()); //TODO I don't like to-stringing the operator here, would be better to special case on it... we would need a parse_token(any_of(...)) kind of thing.
     formatted.expect_single_space();
     formatted.extend(gen_comments(item_comment_after_operator));
-    formatted.extend(gen_expression(&item_right)?);
+    formatted.extend(gen_expression(&item_right, false)?);
     formatted.extend(gen_comments(item_comment_after_right));
     Ok(formatted)
 }
@@ -146,7 +166,7 @@ pub fn gen_prefix_expression(
     let mut formatted = PrintItemBuffer::new();
     formatted.push_string(item_operator.to_string()); //TODO I don't like to-stringing the operator here, would be better to match on it... we would need a parse_token(any_of(...)) kind of thing.
     formatted.extend(gen_comments(item_comment_after_operator));
-    formatted.extend(gen_expression(&item_expr)?);
+    formatted.extend(gen_expression(&item_expr, false)?);
     formatted.extend(gen_comments(item_comment_after_expr));
     Ok(formatted)
 }
