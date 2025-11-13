@@ -68,7 +68,7 @@ fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<Prin
     formatted.push_sc(sc!("if"));
     formatted.expect_single_space();
     formatted.extend(gen_comments(comments_after_if));
-    formatted.extend(gen_expression(&item_condition)?);
+    formatted.extend(gen_expression(&item_condition, true)?);
     formatted.extend(gen_comments(comments_after_condition));
     formatted.expect_single_space();
     formatted.extend(gen_compound_statement(&item_body)?);
@@ -122,7 +122,7 @@ fn gen_if_statement_else_if_clause(
     formatted.push_sc(sc!("if"));
     formatted.expect_single_space();
     formatted.extend(gen_comments(comments_after_if));
-    formatted.extend(gen_expression(&item_condition)?);
+    formatted.extend(gen_expression(&item_condition, true)?);
     formatted.extend(gen_comments(comments_after_condition));
     formatted.expect_single_space();
     formatted.extend(gen_compound_statement(&item_body)?);

@@ -130,8 +130,12 @@ pub fn check_with_options<E: ExpectAssertEq>(
 
     after.assert_eq(&formatted);
 
+    println!("==Idempodence check==");
+
     // Check for idempotence
     let syntax = syntax::parse(formatted.trim_start()).tree();
+    dbg!(&syntax);
+
     let new_second = format_tree(&syntax, options)
         .expect("Formatting already formatted sources should never fail with an error");
     let position = panic::Location::caller();

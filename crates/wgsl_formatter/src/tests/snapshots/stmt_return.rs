@@ -35,6 +35,22 @@ return 1;
 }
 
 #[test]
+pub fn format_return_statement_with_needless_parens() {
+    check(
+        "fn main() {
+return (1);
+
+
+        }",
+        expect![["
+            fn main() {
+                return 1;
+            }
+        "]],
+    );
+}
+
+#[test]
 pub fn format_return_statement_with_complex_expr() {
     check(
         "fn main() {

@@ -13,13 +13,13 @@ pub fn format_continue_statement_1() {
 
 
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                while(true) {
+                while true {
                     continue;
                 }
             }
-        "]],
+        "#]],
     );
 }
 
@@ -36,7 +36,7 @@ pub fn format_comment_in_continue_statement() {
         }",
         expect![[r#"
             fn main() {
-                while(true) {
+                while true {
                     /* 0 */
                     continue;
                     /* 1 */ /* 2 */
@@ -45,7 +45,7 @@ pub fn format_comment_in_continue_statement() {
         "#]],
         expect![[r#"
             fn main() {
-                while(true) {
+                while true {
                     // 0
                     continue;
                     // 1

@@ -5,7 +5,7 @@ use parser::{SyntaxKind, SyntaxToken};
 use syntax::{
     AstNode as _,
     ast::{
-        CompoundStatement, ParenthesisExpression, SwitchBody, SwitchBodyCase, SwitchCaseSelector,
+        CompoundStatement, Expression, SwitchBody, SwitchBodyCase, SwitchCaseSelector,
         SwitchCaseSelectors, SwitchDefaultSelector, SwitchStatement,
     },
 };
@@ -32,7 +32,7 @@ pub fn gen_switch_statement(
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::Switch)?;
     let item_comments_after_switch = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_parens = parse_node::<ParenthesisExpression>(&mut syntax)?;
+    let item_expression = parse_node::<Expression>(&mut syntax)?;
     let item_comments_after_parens = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_body = parse_node::<SwitchBody>(&mut syntax)?;
     parse_end(&mut syntax)?;
@@ -42,7 +42,8 @@ pub fn gen_switch_statement(
 
     formatted.push_sc(sc!("switch"));
     formatted.extend(gen_comments(item_comments_after_switch));
-    formatted.extend(gen_parenthesis_expression(&item_parens)?);
+    formatted.expect_single_space(); // We trim out the parens, so we expect a space
+    formatted.extend(gen_expression(&item_expression, true)?);
     formatted.expect_single_space();
     formatted.extend(gen_comments(item_comments_after_parens));
     formatted.extend(gen_switch_body(&item_body)?);
@@ -222,7 +223,7 @@ pub fn gen_switch_case_selector(
 
     // ==== Format ====
     match statement {
-        SwitchCaseSelector::Expression(expression) => gen_expression(expression),
+        SwitchCaseSelector::Expression(expression) => gen_expression(expression, true),
         SwitchCaseSelector::SwitchDefaultSelector(switch_default_selector) => {
             gen_switch_case_default_selector(switch_default_selector)
         },

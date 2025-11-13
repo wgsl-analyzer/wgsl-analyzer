@@ -103,7 +103,7 @@ pub fn gen_function_call_arguments(
     for (pos, (item_expression, item_comments_after_param, item_comments_after_comma)) in
         item_parameters.into_iter().with_position()
     {
-        formatted.extend(gen_expression(&item_expression)?);
+        formatted.extend(gen_expression(&item_expression, false)?);
         if pos == Position::Last || pos == Position::Only {
             formatted.push_condition(conditions::if_true(
                 "paramTrailingComma",

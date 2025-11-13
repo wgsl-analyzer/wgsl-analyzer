@@ -11,16 +11,16 @@ pub fn format_while_statement_empty() {
 
 
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                while(true) {}
+                while true {}
             }
-        "]],
+        "#]],
     );
 }
 
 #[test]
-fn format_while_statement_average_1() {
+fn format_while_statement_with_needless_parens() {
     check(
         "fn main() {
         while(x < 1){}
@@ -36,6 +36,20 @@ fn format_while_statement_average_1() {
 }
 
 #[test]
+fn format_while_statement_with_required_parens() {
+    check(
+        "fn main() {
+        while x < (1 + 1) {}
+    }",
+        expect![[r#"
+            fn main() {
+                while x < (1 + 1) {}
+            }
+        "#]],
+    );
+}
+
+#[test]
 pub fn format_while_statement_single_statement() {
     check(
         "fn main() {
@@ -45,13 +59,13 @@ pub fn format_while_statement_single_statement() {
 
 
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                while(true) {
+                while true {
                     let a = 3;
                 }
             }
-        "]],
+        "#]],
     );
 }
 
@@ -68,15 +82,15 @@ pub fn format_while_statement_continue_statement() {
 
 
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                while(true) {
+                while true {
                     let a = 3;
                     continue;
                     let b = 3;
                 }
             }
-        "]],
+        "#]],
     );
 }
 
@@ -89,7 +103,7 @@ pub fn format_comments_in_while_statement_simple() {
         expect![[r#"
             fn main() {
                 /* 0 */
-                while /* 1 */ (/* 2 */ true /* 3 */) /* 4 */ {
+                while /* 1 */ /* 2 */ true /* 3 */ /* 4 */ {
                     /* 5 */
                 }
                 /* 6 */
@@ -99,9 +113,9 @@ pub fn format_comments_in_while_statement_simple() {
             fn main() {
                 // 0
                 while // 1
-                (// 2
-                    true // 3
-                ) // 4
+                // 2
+                true // 3
+                // 4
                 {
                     // 5
                 }

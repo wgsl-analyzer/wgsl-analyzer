@@ -20,17 +20,18 @@ pub fn format_if_statement_empty() {
 }
 
 #[test]
-fn format_if_statement_average_1() {
+fn format_if_statement_remove_parens() {
     check(
         "fn main() {
     if(x < 1){}
-    if  (  x < 1   )  {}
+    if    x < 1     {}
 }",
-        expect![["
+        expect![[r#"
             fn main() {
                 if x < 1 {}
                 if x < 1 {}
-            }"]],
+            }
+        "#]],
     );
 }
 

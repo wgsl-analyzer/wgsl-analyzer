@@ -173,7 +173,7 @@ fn format_for_statement_average() {
 }
 
 #[test]
-pub fn format_for_statement_block_comments() {
+pub fn format_commens_in_for_statement() {
     check_comments(
         "fn main() {
         ## for ## ( ## var ## i ## = ## 0 ## ; ## i ## < ## 4 ## ; ## i ## ++ ##) ## {
