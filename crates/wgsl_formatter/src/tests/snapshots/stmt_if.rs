@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::check;
+use crate::test_util::{check, check_comments};
 
 #[test]
 pub fn format_if_statement_empty() {
@@ -217,173 +217,83 @@ pub fn format_if_elseif_elseif_else_statement_simple_expr() {
 }
 
 #[test]
-pub fn format_if_elseif_else_statement_block_comments() {
-    check(
+pub fn format_comments_in_if_elseif_else_statement() {
+    check_comments(
         "fn main() {
-        /* A */
-        if
-        /* B */
-        a
-        /* C */
-        {
-        /* D */
-        }
-        /* E */
-        else
-        /* F */
-        if
-        /* G */
-        a
-        /* H */
-        {
-        /* I */
-        }
-        /* J */
-        else
-        /* K */
-        {
-        /* L */
-        }
-        /* M */
-        }",
-        expect![["
-            fn main() {
-                /* A */
-                if /* B */ a /* C */ {
-                    /* D */
-                } /* E */ else /* F */ if /* G */ a /* H */ {
-                    /* I */
-                } /* J */ else /* K */ {
-                    /* L */
-                }
-                /* M */
-            }
-        "]],
-    );
-}
-
-#[test]
-pub fn format_if_elseif_else_statement_line_comments() {
-    check(
-        "fn main() {
-        // A
-        if
-        // B
-        a
-        // C
-        {
-        // D
-        }
-        // E
-        else
-        // F
-        if
-        // G
-        b
-        // H
-        {
-        // I
-        }
-        // J
-        else
-        // K
-        {
-        // L
-        }
-        // M
+        ## if ## a ## { ## } ##
+        ## else ## if ## a ## { ## } ##
+        ## else ## { ## } ##
         }",
         expect![[r#"
             fn main() {
-                // A
-                if // B
-                a // C
+                /* 0 */
+                if /* 1 */ a /* 2 */ {
+                    /* 3 */
+                } /* 4 */ /* 5 */ else /* 6 */ if /* 7 */ a /* 8 */ {
+                    /* 9 */
+                } /* 10 */ /* 11 */ else /* 12 */ {
+                    /* 13 */
+                } /* 14 */
+            }
+        "#]],
+        expect![[r#"
+            fn main() {
+                // 0
+                if // 1
+                a // 2
                 {
-                    // D
-                } // E
-                else // F
-                if // G
-                b // H
+                    // 3
+                } // 4
+                // 5
+                else // 6
+                if // 7
+                a // 8
                 {
-                    // I
-                } // J
-                else // K
+                    // 9
+                } // 10
+                // 11
+                else // 12
                 {
-                    // L
-                }
-                // M
+                    // 13
+                } // 14
             }
         "#]],
     );
 }
 
 #[test]
-pub fn format_if_else_statement_block_comments() {
-    check(
+pub fn format_comments_in_if_else_statement() {
+    check_comments(
         "fn main() {
-        /* A */
-        if
-        /* B */
-        a
-        /* C */
-        {
-        /* D */
-        }
-        /* E */
-        else
-        /* F */
-        {
-        /* G */
-        }
-        /* H */
+        ## if ## a ## { ## }
+        ## else ## { ## }
+        ##
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                /* A */
-                if /* B */ a /* C */ {
-                    /* D */
-                } /* E */ else /* F */ {
-                    /* G */
+                /* 0 */
+                if /* 1 */ a /* 2 */ {
+                    /* 3 */
+                } /* 4 */ else /* 5 */ {
+                    /* 6 */
                 }
-                /* H */
+                /* 7 */
             }
-        "]],
-    );
-}
-
-#[test]
-pub fn format_if_else_statement_line_comments() {
-    check(
-        "fn main() {
-        // A
-        if
-        // B
-        a
-        // C
-        {
-        // D
-        }
-        // E
-        else
-        // F
-        {
-        // G
-        }
-        // H
-        }",
-        expect![["
+        "#]],
+        expect![[r#"
             fn main() {
-                // A
-                if // B
-                a // C
+                // 0
+                if // 1
+                a // 2
                 {
-                    // D
-                } // E
-                else // F
+                    // 3
+                } // 4
+                else // 5
                 {
-                    // G
+                    // 6
                 }
-                // H
+                // 7
             }
-        "]],
+        "#]],
     );
 }

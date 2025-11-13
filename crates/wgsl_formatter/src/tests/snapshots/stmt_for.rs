@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::check;
+use crate::test_util::{check, check_comments};
 
 #[test]
 pub fn format_for_statement_no_initializer() {
@@ -160,40 +160,25 @@ pub fn format_for_statement_simple_empty() {
 
 #[test]
 pub fn format_for_statement_block_comments() {
-    check(
+    check_comments(
         "fn main() {
-        /* A */
-        for
-        /* B */
-        (
-        /* C */
-        var
-        /* D */
-        i
-        /* E */
-        =
-        /* F */
-        0
-        /* G */
-        ;
-        /* H */
-        i
-        /* I */
-        <
-        /* J */
-        4
-        /* K */
-        ;
-        /* L */
-        i++
-        /* M */
-        )
-        /* N */
-        {
-        /* O */
-        }
-        /* P */
+        ## for ## ( ## var ## i ## = ## 0 ## ; ## i ## < ## 4 ## ; ## i ## ++ ##) ## {
+        ## } ##
         }",
+        expect![[r#"
+            fn main() {
+                /* A */
+                for /* B */ (
+                    /* C */
+                    var /* D */ i /* E */ = /* F */ 0 /* G */; /* H */
+                    i /* I */ < /* J */ 4 /* K */; /* L */
+                    i++ /* M */
+                ) /* N */ {
+                    /* O */
+                }
+                /* P */
+            }
+        "#]],
         expect![[r#"
             fn main() {
                 /* A */
