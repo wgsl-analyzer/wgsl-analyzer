@@ -20,6 +20,40 @@ pub fn format_if_statement_empty() {
 }
 
 #[test]
+fn format_if_statement_average_1() {
+    check(
+        "fn main() {
+    if(x < 1){}
+    if  (  x < 1   )  {}
+}",
+        expect![["
+            fn main() {
+                if x < 1 {}
+                if x < 1 {}
+            }"]],
+    );
+}
+
+#[test]
+fn format_if_statement_average_2() {
+    check(
+        "fn main() {
+    if(x < 1){}
+    else if (x > 2){
+        let a = 3;
+    }else     if(  x > 2 ){}
+}",
+        expect![[r#"
+            fn main() {
+                if x < 1 {} else if x > 2 {
+                    let a = 3;
+                } else if x > 2 {}
+            }
+        "#]],
+    );
+}
+
+#[test]
 pub fn format_if_statement_simple_expr() {
     check(
         "fn main() {

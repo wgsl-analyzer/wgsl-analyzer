@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{assert_out_of_scope, check};
+use crate::test_util::{assert_out_of_scope, check, check_comments};
 
 #[test]
 pub fn format_loop_continuing_statement_empty() {
@@ -97,70 +97,38 @@ pub fn format_loop_statement_continue_statement() {
 
 #[test]
 pub fn format_loop_continuing_statement_block_comments() {
-    check(
+    check_comments(
         "fn main() {
-        /* A */
-        loop
-        /* B */
-        {
-        /* C */
-        continuing
-        /* D */
-        {
-        /* E */
-        }
-        /* F */
-        }
-        /* G */
+        ## loop ## {
+        ## continuing ## {
+        ## }
+        ## }
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                /* A */
-                loop /* B */ {
-                    /* C */
-                    continuing /* D */ {
-                        /* E */
+                /* 0 */
+                loop /* 1 */ {
+                    /* 2 */
+                    continuing /* 3 */ {
+                        /* 4 */
                     }
-                    /* F */
+                    /* 5 */
                 }
-                /* G */
             }
-        "]],
-    );
-}
-
-#[test]
-pub fn format_loop_continuing_statement_line_comments() {
-    check(
-        "fn main() {
-        // A
-        loop
-        // B
-        {
-        // C
-        continuing
-        // D
-        {
-        // E
-        }
-        // F
-        }
-        // G
-        }",
-        expect![["
+        "#]],
+        expect![[r#"
             fn main() {
-                // A
-                loop // B
+                // 0
+                loop // 1
                 {
-                    // C
-                    continuing // D
+                    // 2
+                    continuing // 3
                     {
-                        // E
+                        // 4
                     }
-                    // F
+                    // 5
                 }
-                // G
             }
-        "]],
+        "#]],
     );
 }

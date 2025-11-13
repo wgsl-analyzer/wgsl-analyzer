@@ -15,24 +15,3 @@ fn format_assignment() {
                 }"]],
     );
 }
-
-#[test]
-fn format_variable() {
-    check(
-        "fn main() {
-    var x=0;
-}",
-        expect![["
-                fn main() {
-                    var x = 0;
-                }"]],
-    );
-}
-
-#[test]
-fn format_variable_type() {
-    check(
-        "fn main() {var x   : u32=0;}",
-        expect!["fn main() {var x: u32 = 0;}"],
-    );
-}

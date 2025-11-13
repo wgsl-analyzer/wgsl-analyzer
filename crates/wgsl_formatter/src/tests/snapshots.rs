@@ -20,6 +20,7 @@ mod stmt_continue;
 mod stmt_continuing;
 mod stmt_discard;
 mod stmt_for;
+mod stmt_function_call;
 mod stmt_if;
 mod stmt_let_declarations;
 mod stmt_loop;

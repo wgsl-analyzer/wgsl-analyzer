@@ -43,6 +43,14 @@ pub fn format_var_decl_simple_statement_1() {
 }
 
 #[test]
+fn format_var_decl_with_simple_type() {
+    check(
+        "fn main() {var x   : u32=0;}",
+        expect!["fn main() {var x: u32 = 0;}"],
+    );
+}
+
+#[test]
 pub fn format_var_decl_simple_statement_with_trailing_comment() {
     check(
         "fn main() {

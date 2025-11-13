@@ -20,6 +20,22 @@ pub fn format_while_statement_empty() {
 }
 
 #[test]
+fn format_while_statement_average_1() {
+    check(
+        "fn main() {
+        while(x < 1){}
+        while  (  x < 1   )  {}
+    }",
+        expect![[r#"
+            fn main() {
+                while x < 1 {}
+                while x < 1 {}
+            }
+        "#]],
+    );
+}
+
+#[test]
 pub fn format_while_statement_single_statement() {
     check(
         "fn main() {

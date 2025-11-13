@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{assert_out_of_scope, check};
+use crate::test_util::{assert_out_of_scope, check, check_comments};
 
 // https://www.w3.org/TR/WGSL/#recursive-descent-syntax-unary_expression
 
@@ -101,47 +101,57 @@ pub fn format_prefix_expr_with_block_comment() {
 }
 
 #[test]
-pub fn format_prefix_expr_with_line_comment_1() {
-    check(
+pub fn format_comments_in_prefix_expr_with() {
+    check_comments(
         "fn main() {
-        let a = ~
-
-        // A
-
-        1;
+        let a = ## ~ ## 1 ## ; ##
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                let a = ~ // A
-                    1;
+                let a = /* 0 */ ~ /* 1 */ 1 /* 2 */; /* 3 */
             }
-        "]],
+        "#]],
+        expect![[r#"
+            fn main() {
+                let a = // 0
+                    ~ // 1
+                    1 // 2
+                    ; // 3
+            }
+        "#]],
     );
 }
 
 #[test]
-pub fn format_prefix_expr_in_complex_expr_with_line_comment() {
-    check(
+pub fn format_comments_in_prefix_expr_in_complex_expr() {
+    check_comments(
         "fn main() {
-        let a = 1 + 2 - ~
+        let a = 1 + 2 - ~1;
 
-
-        1;
-
-        let a = 1 + 2 - ~
-
-        // A
-
-        1;
+        let a = ## 1 ## + ## 2 ## - ## ~ ## 1 ## ; ##
         }",
-        expect![["
+        expect![[r#"
             fn main() {
                 let a = 1 + 2 - ~1;
 
-                let a = 1 + 2 - ~ // A
-                    1;
+                let a = /* 0 */ 1 /* 1 */ + /* 2 */ 2 /* 3 */
+                    - /* 4 */ ~ /* 5 */ 1 /* 6 */; /* 7 */
             }
-        "]],
+        "#]],
+        expect![[r#"
+            fn main() {
+                let a = 1 + 2 - ~1;
+
+                let a = // 0
+                    1 // 1
+                    + // 2
+                    2 // 3
+                    - // 4
+                    ~ // 5
+                    1 // 6
+                    ; // 7
+            }
+        "#]],
     );
 }
 

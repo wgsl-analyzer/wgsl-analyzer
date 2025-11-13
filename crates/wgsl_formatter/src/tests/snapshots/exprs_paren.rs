@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{assert_out_of_scope, check};
+use crate::test_util::{assert_out_of_scope, check, check_comments};
 
 #[test]
 pub fn format_naked_paren_exprs_out_of_scope() {
@@ -111,63 +111,32 @@ pub fn format_paren_expr_very_long() {
 }
 
 #[test]
-pub fn format_paren_expr_block_comments() {
-    check(
+pub fn format_comments_in_paren_expr() {
+    check_comments(
         "fn main() {
-        let a =
-        /* A */
-        (
-        /* B */
-        1
-        /* C */
-        +
-        /* D */
-        1
-        /* E */
-        )
-        /* F */
-        ;
-        /* G */
+        let a = ## ( ## 1 ## + ## ( ## 1 ## + ## 27 ## ) ## ) ## ; ##
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                let a = /* A */ (/* B */ 1 /* C */ + /* D */ 1 /* E */) /* F */;
-                /* G */
+                let a = /* 0 */ (/* 1 */ 1 /* 2 */
+                        + /* 3 */ (/* 4 */ 1 /* 5 */
+                            + /* 6 */ 27 /* 7 */) /* 8 */) /* 9 */; /* 10 */
             }
-        "]],
-    );
-}
-
-#[test]
-pub fn format_paren_expr_line_comments() {
-    check(
-        "fn main() {
-        let a =
-        // A
-        (
-        // B
-        1
-        // C
-        +
-        // D
-        1
-        // E
-        )
-        // F
-        ;
-        // G
-        }",
-        expect![["
+        "#]],
+        expect![[r#"
             fn main() {
-                let a = // A
-                    (// B
-                        1 // C
-                        + // D
-                        1 // E
-                    ) // F
-                    ;
-                // G
+                let a = // 0
+                    (// 1
+                        1 // 2
+                        + // 3
+                        (// 4
+                            1 // 5
+                            + // 6
+                            27 // 7
+                        ) // 8
+                    ) // 9
+                    ; // 10
             }
-        "]],
+        "#]],
     );
 }
