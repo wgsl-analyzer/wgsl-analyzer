@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod fixture;
+
 mod debug_command;
 pub mod diagnostics;
 mod formatting;
@@ -7,8 +10,8 @@ mod hover;
 pub mod inlay_hints;
 mod markup;
 mod navigation_target;
-mod syntax_tree;
 mod typing;
+mod view_syntax_tree;
 
 use std::panic;
 
@@ -230,14 +233,11 @@ impl Analysis {
         self.with_db(|database| database.line_index(file_id))
     }
 
-    pub fn syntax_tree(
+    pub fn view_syntax_tree(
         &self,
         file_id: FileId,
-        range: Option<TextRange>,
     ) -> Cancellable<String> {
-        self.with_db(|database| {
-            syntax_tree::syntax_tree(database, file_id, range).unwrap_or_default()
-        })
+        self.with_db(|database| view_syntax_tree::view_syntax_tree(database, file_id))
     }
 
     /// Returns a list of the places in the file where type hints can be displayed.

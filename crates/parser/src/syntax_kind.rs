@@ -148,6 +148,13 @@ pub enum SyntaxKind {
     RequiresDirective,
     LanguageExtensionName,
 
+    ImportStatement,
+    ImportPackageRelative,
+    ImportSuperRelative,
+    ImportItem,
+    ImportPath,
+    ImportCollection,
+
     // Tokens
     Blankspace,
     LineEndingComment,
@@ -220,6 +227,12 @@ pub enum SyntaxKind {
     Tilde,
     Underscore,
     Xor,
+
+    Import,
+    Package,
+    Super,
+    As,
+    DoubleColon,
 
     PlusEqual,
     MinusEqual,

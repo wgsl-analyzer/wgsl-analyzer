@@ -176,18 +176,12 @@ pub(crate) fn full_source(
     Ok(source)
 }
 
-pub(crate) fn show_syntax_tree(
+pub(crate) fn view_syntax_tree(
     snap: GlobalStateSnapshot,
-    parameters: extensions::SyntaxTreeParameters,
+    parameters: extensions::ViewSyntaxTreeParameters,
 ) -> Result<String> {
     let file_id = try_default!(from_proto::file_id(&snap, &parameters.text_document.uri)?);
-    let line_index = snap.file_line_index(file_id)?;
-    let string = snap.analysis.syntax_tree(
-        file_id,
-        parameters
-            .range
-            .and_then(|range| from_proto::text_range(&line_index, range).ok()),
-    )?;
+    let string = snap.analysis.view_syntax_tree(file_id)?;
     Ok(string)
 }
 
