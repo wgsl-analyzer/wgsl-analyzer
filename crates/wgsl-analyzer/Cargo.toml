@@ -1,14 +1,14 @@
 [package]
 name = "wgsl-analyzer"
 version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "A language server for WGSL and WESL code"
 # homepage = "https://wgsl-analyzer.github.io/"
 repository.workspace = true
-description = "A language server for WGSL and WESL code"
+license.workspace = true
 # documentation = "https://wgsl-analyzer.github.io/manual.html"
 autobins = false
-edition.workspace = true
-license.workspace = true
-rust-version.workspace = true
 
 [lib]
 
@@ -16,6 +16,7 @@ rust-version.workspace = true
 name = "wgsl-analyzer"
 path = "src/bin/main.rs"
 
+# tombi: format.rules.table-keys-order.disabled = true
 [dependencies]
 anyhow.workspace = true
 # base64 = "0.22"
@@ -72,15 +73,6 @@ camino.workspace = true
 base-db.workspace = true
 line-index.workspace = true
 
-[target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = [
-  "Win32_System_Diagnostics_Debug",
-  "Win32_System_Threading",
-] }
-
-[target.'cfg(not(target_env = "msvc"))'.dependencies]
-jemallocator = { version = "0.6.0", package = "tikv-jemallocator", optional = true }
-
 [dev-dependencies]
 # expect-test = "1.5.1"
 # xshell = "0.2.7"
@@ -89,12 +81,21 @@ test-utils.workspace = true
 # test-fixture.workspace = true
 # syntax-bridge.workspace = true
 
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+jemallocator = { package = "tikv-jemallocator", version = "0.6.0", optional = true }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+  "Win32_System_Diagnostics_Debug",
+  "Win32_System_Threading",
+] }
+
 [features]
+force-always-assert = ["stdx/force-always-assert"]
 jemalloc = [
   "jemallocator",
   # "profile/jemalloc"
 ]
-force-always-assert = ["stdx/force-always-assert"]
 sysroot-abi = []
 
 [lints]

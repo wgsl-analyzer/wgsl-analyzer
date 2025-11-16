@@ -39,10 +39,13 @@ vfs.workspace = true
 wgsl-formatter.workspace = true
 # ide should depend only on the top-level `hir` package. if you need
 # something from some `hir-xxx` subpackage, reexport the API via `hir`.
+# todo: remove this dependency by re-exporting the API via `hir`
 base-db.workspace = true
 hir.workspace = true
-hir-def.workspace = true  # todo
-hir-ty.workspace = true  # todo
+# todo: remove this dependency by re-exporting the API via `hir`
+hir-def.workspace = true
+# todo: remove this dependency by re-exporting the API via `hir`
+hir-ty.workspace = true
 
 [dev-dependencies]
 expect-test.workspace = true
