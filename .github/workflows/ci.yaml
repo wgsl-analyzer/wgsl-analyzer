@@ -193,12 +193,12 @@ jobs:
       - name: Check formatting of TOML files
         run: tombi format --check --diff
 
-      - name: Tombi  info
+      - name: Tombi info
         if: failure()
         run: |
-          echo 'To fix toml fmt, please run `tombi fmt`.'
-          echo 'To check for a diff, run `tombi fmt --check --diff`.'
-          echo 'You can find tombi here: http://tombi-toml.github.io/tombi/.'
+          echo 'To fix toml formatting, please run `tombi format`.'
+          echo 'To check for a diff, run `tombi format --check --diff`.'
+          echo 'You can find tombi here: https://tombi-toml.github.io/tombi/.'
           echo 'Also use the `Tombi` extension.'
           echo 'You can find the extension here: https://marketplace.visualstudio.com/items?itemName=tombi-toml.tombi'
 
