@@ -11,7 +11,7 @@ license.workspace = true
 
 [dependencies]
 camino = { workspace = true }
-home = "0.5.11"
+home = "0.5.12"
 
 [lints]
 workspace = true
