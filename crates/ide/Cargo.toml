@@ -1,64 +1,51 @@
 [package]
 name = "ide"
 version = "0.0.0"
-repository.workspace = true
-description = "Core data structure representing IDE state for wgsl-analyzer."
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+description = "Core data structure representing IDE state for wgsl-analyzer."
+repository.workspace = true
+license.workspace = true
 
 [lib]
 
+# tombi: format.rules.table-keys-order.disabled = true
 [dependencies]
-crossbeam-channel = "0.5.15"
-tracing = "0.1.41"
-fst = { version = "0.4.7", default-features = false }
-rustc-hash = "2.1.1"
-either = "1.15.0"
-itertools = "0.14.0"
-arrayvec = "0.7.6"
-indexmap = "2.12.0"
-memchr = "2.7.6"
-salsa = "0.17.0-pre.2"
-triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
-nohash-hasher = "0.2.0"
-bitflags = "2.10.0"
-smol_str = "0.3.4"
-smallvec = { version = "1.15.1", features = [
-  "const_new",
-  "union",
-  "const_generics",
-] }
-
-# local deps
-base-db.workspace = true
-ide-completion.workspace = true
-syntax.workspace = true
-wgsl-formatter.workspace = true
-rowan = "0.16.1"
-parser.workspace = true
-ide-db.workspace = true
-stdx.workspace = true
-# span.workspace = true
-vfs.workspace = true
-# ide should depend only on the top-level `hir` package. if you need
-# something from some `hir-xxx` subpackage, reexport the API via `hir`.
-hir.workspace = true
-hir-def.workspace = true # todo
-hir-ty.workspace = true  # todo
-
-line-index = "0.1.2"
-
-
+arrayvec.workspace = true
+bitflags.workspace = true
+either.workspace = true
+indexmap.workspace = true
+itertools.workspace = true
+line-index.workspace = true
 naga22 = { package = "naga", version = "22.1.0", features = ["wgsl-in"] }
 naga27 = { package = "naga", version = "27.0.3", features = ["wgsl-in"] }
-nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "2a58599dc4a2a3ba565c0540c5c45e41bc3d25e3", features = [
+nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "2a58599dc4a2a3ba565c0540c5c45e41bc3d25e3", version = "27.0.0", features = [
   "wgsl-in",
-], version = "27.0.0" }
-
+] }
+rowan.workspace = true
+rustc-hash.workspace = true
+salsa.workspace = true
+smallvec.workspace = true
+smol_str.workspace = true
+tracing.workspace = true
+triomphe.workspace = true
+# local deps
+ide-completion.workspace = true
+ide-db.workspace = true
+stdx.workspace = true
+syntax.workspace = true
+# span.workspace = true
+vfs.workspace = true
+wgsl-formatter.workspace = true
+# ide should depend only on the top-level `hir` package. if you need
+# something from some `hir-xxx` subpackage, reexport the API via `hir`.
+base-db.workspace = true
+hir.workspace = true
+hir-def.workspace = true  # todo
+hir-ty.workspace = true  # todo
 
 [dev-dependencies]
-expect-test = "1.5.1"
+expect-test.workspace = true
 
 # local deps
 # test-utils.workspace = true

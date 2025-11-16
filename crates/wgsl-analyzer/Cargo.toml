@@ -17,44 +17,37 @@ name = "wgsl-analyzer"
 path = "src/bin/main.rs"
 
 [dependencies]
-anyhow = "1.0.100"
+anyhow.workspace = true
 # base64 = "0.22"
-crossbeam-channel = "0.5.15"
+crossbeam-channel.workspace = true
 # dirs = "5.0.1"
-dissimilar = "1.0.10"
+dissimilar.workspace = true
 ide-completion.workspace = true
-itertools = "0.14.0"
+itertools.workspace = true
 # scip = "0.5.2"
 lsp-types = { version = "=0.95.0", features = ["proposed"] }
 parking_lot = "0.12.5"
 xflags = "0.3.2"
 # threadpool = "1.8.1"
-salsa = "0.17.0-pre.2"
+salsa.workspace = true
 oorandom = "11.1.5"
-rayon = "1.11.0"
-rustc-hash = "2.1.1"
-serde_json = { version = "1.0.145", features = ["preserve_order"] }
-serde = { version = "1.0.228", features = ["derive"] }
+rayon.workspace = true
+rustc-hash.workspace = true
+serde_json = { workspace = true, features = ["preserve_order"] }
+serde.workspace = true
 # tenthash = "1.0.0"
 num_cpus = "1.17.0"
 mimalloc = { version = "0.1.48", default-features = false, optional = true }
-lsp-server = "0.7.9"
-tracing = "0.1.41"
-tracing-subscriber = { version = "0.3.20", default-features = false, features = [
-  "registry",
-  "fmt",
-  "local-time",
-  "std",
-  "time",
-  "tracing-log",
-] }
-triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
+lsp-server.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+triomphe.workspace = true
 # toml = "0.8.8"
-nohash-hasher = "0.2.0"
-walkdir = "2.5.0"
-semver = "1.0.27"
+nohash-hasher.workspace = true
+walkdir.workspace = true
+semver.workspace = true
 memchr = "2.7.6"
-cargo_metadata = "0.23.1"
+cargo_metadata.workspace = true
 # process-wrap = { version = "8.2.0", features = ["std"] }
 # cfg.workspace = true
 hir-def.workspace = true
@@ -75,9 +68,9 @@ parser.workspace = true
 vfs-notify.workspace = true
 vfs.workspace = true
 paths.workspace = true
-camino = "1.2.1"
+camino.workspace = true
 base-db.workspace = true
-line-index = "0.1.2"
+line-index.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = [

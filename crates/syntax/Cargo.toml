@@ -11,12 +11,12 @@ license.workspace = true
 doctest = false
 
 [dependencies]
-either = "1.15.0"
-itertools = "0.14.0"
+either.workspace = true
+itertools.workspace = true
 parser.workspace = true
-rowan = "0.16.1"
-smol_str = "0.3.4"
-triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
+rowan.workspace = true
+smol_str.workspace = true
+triomphe.workspace = true
 
 [lints]
 workspace = true

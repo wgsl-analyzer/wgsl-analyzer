@@ -1,19 +1,19 @@
 [package]
 name = "wgslfmt"
 version = "0.1.0"
+edition = "2024"
 description = "Tool to find and fix WGSL/WESL formatting issues"
-repository = "https://github.com/wgsl-analyzer/wgsl-analyzer"
 readme = "README.md"
+repository = "https://github.com/wgsl-analyzer/wgsl-analyzer"
 license = "Apache-2.0 OR MIT"
 # build = "build.rs"
 categories = ["development-tools"]
-edition = "2024"
 
 [dependencies]
-wgsl-formatter.workspace = true
-anyhow = "1.0.100"
+anyhow.workspace = true
 lexopt = "0.3.1"
 prettydiff = "0.9.0"
+wgsl-formatter.workspace = true
 
 [lints]
 workspace = true

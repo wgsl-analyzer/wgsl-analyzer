@@ -1,38 +1,33 @@
 [package]
 name = "ide-completion"
 version = "0.0.0"
-repository.workspace = true
-description = "Utilities for generating completions of user input for wgsl-analyzer."
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+description = "Utilities for generating completions of user input for wgsl-analyzer."
+repository.workspace = true
+license.workspace = true
 
 [lib]
 doctest = false
 
 [dependencies]
 base-db.workspace = true
+either.workspace = true
 hir.workspace = true
-hir-ty.workspace = true
 hir-def.workspace = true
-syntax.workspace = true
-tracing = "0.1.41"
-stdx.workspace = true
+hir-ty.workspace = true
 ide-db.workspace = true
-
-itertools = "0.14.0"
-either = "1.15.0"
-rowan = "0.16.1"
-rustc-hash = "2.1.1"
-smol_str = "0.3.4"
-smallvec = { version = "1.15.1", features = [
-  "const_new",
-  "union",
-  "const_generics",
-] }
+itertools.workspace = true
+rowan.workspace = true
+rustc-hash.workspace = true
+smallvec.workspace = true
+smol_str.workspace = true
+stdx.workspace = true
+syntax.workspace = true
+tracing.workspace = true
 
 [dev-dependencies]
-proptest = "1.9.0"
+proptest.workspace = true
 
 [lints]
 workspace = true
