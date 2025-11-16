@@ -15,8 +15,8 @@ write-json = "0.1.4"
 xflags = "0.3.2"
 xshell = "0.2.7"
 zip = { version = "6.0.0", default-features = false, features = [
-  "deflate",
-  "time",
+	"deflate",
+	"time",
 ] }
 # Avoid adding more dependencies to this crate
 

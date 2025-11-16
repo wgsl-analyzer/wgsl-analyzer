@@ -1,9 +1,9 @@
 [workspace]
 resolver = "2"
 members = [
-  # "lib/*",
-  "crates/*",
-  "xtask/",
+	# "lib/*",
+	"crates/*",
+	"xtask/",
 ]
 exclude = []
 
@@ -67,27 +67,26 @@ semver = "1.0.27"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 smallvec = { version = "1.15.1", features = [
-  "const_generics",
-  "const_new",
-  "union",
+	"const_generics",
+	"const_new",
+	"union",
 ] }
 smol_str = "0.3.4"
 text-size = "1.1.1"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.20", default-features = false, features = [
-  "fmt",
-  "local-time",
-  "registry",
-  "std",
-  "time",
-  "tracing-log",
+	"fmt",
+	"local-time",
+	"registry",
+	"std",
+	"time",
+	"tracing-log",
 ] }
 triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
 walkdir = "2.5.0"
 wgsl-types = { git = "https://github.com/wgsl-tooling-wg/wesl-rs", version = "0.2.0", features = [
-  "naga-ext",
+	"naga-ext",
 ] }
-xshell = "0.2.7"
 
 # tombi: format.rules.table-keys-order.disabled = true
 [workspace.lints.clippy]

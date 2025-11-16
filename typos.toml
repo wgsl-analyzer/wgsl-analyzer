@@ -1,10 +1,10 @@
 [files]
 extend-exclude = [
-  "*.patch",  # Automatically generated files that should not be manually modified.
-  "*.bin",  # Binary files
-  ".git/",  # Version control files
-  "clippy.toml",  # Intentional typos
-  "flake.nix",  # Out of scope
+	"*.patch",  # Automatically generated files that should not be manually modified.
+	"*.bin",  # Binary files
+	".git/",  # Version control files
+	"clippy.toml",  # Intentional typos
+	"flake.nix",  # Out of scope
 ]
 ignore-hidden = false
 
@@ -16,9 +16,9 @@ ignore-hidden = false
 [default]
 locale = "en-us"
 extend-ignore-re = [
-  "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
-  "(?Rm)^.*<!--\\s*spellchecker:disable-line\\s*-->$",
-  "(?Rm) .+ ...\"$",
+	"(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
+	"(?Rm)^.*<!--\\s*spellchecker:disable-line\\s*-->$",
+	"(?Rm) .+ ...\"$",
 ]
 extend-ignore-identifiers-re = []
 

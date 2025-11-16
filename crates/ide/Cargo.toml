@@ -20,7 +20,7 @@ line-index.workspace = true
 naga22 = { package = "naga", version = "22.1.0", features = ["wgsl-in"] }
 naga27 = { package = "naga", version = "27.0.3", features = ["wgsl-in"] }
 nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "2a58599dc4a2a3ba565c0540c5c45e41bc3d25e3", version = "27.0.0", features = [
-  "wgsl-in",
+	"wgsl-in",
 ] }
 rowan.workspace = true
 rustc-hash.workspace = true

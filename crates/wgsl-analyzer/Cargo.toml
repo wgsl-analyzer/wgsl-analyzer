@@ -86,15 +86,15 @@ jemallocator = { package = "tikv-jemallocator", version = "0.6.0", optional = tr
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = [
-  "Win32_System_Diagnostics_Debug",
-  "Win32_System_Threading",
+	"Win32_System_Diagnostics_Debug",
+	"Win32_System_Threading",
 ] }
 
 [features]
 force-always-assert = ["stdx/force-always-assert"]
 jemalloc = [
-  "jemallocator",
-  # "profile/jemalloc"
+	"jemallocator",
+	# "profile/jemalloc"
 ]
 sysroot-abi = []
 
