@@ -12,24 +12,20 @@ doctest = false
 
 [dependencies]
 base-db.workspace = true
-either = "1.15.0"
-la-arena = "0.3.1"
-rowan = "0.16.1"
-rustc-hash = "2.1.1"
-salsa = "0.17.0-pre.2"
-smallvec = { version = "1.15.1", features = [
-  "const_generics",
-  "const_new",
-  "union",
-] }
-smol_str = "0.3.4"
+either.workspace = true
+la-arena.workspace = true
+rowan.workspace = true
+rustc-hash.workspace = true
+salsa.workspace = true
+smallvec.workspace = true
+smol_str.workspace = true
 syntax.workspace = true
-tracing = "0.1.41"
-triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
+tracing.workspace = true
+triomphe.workspace = true
 vfs.workspace = true
 
 [dev-dependencies]
-expect-test = "1.5.1"
+expect-test.workspace = true
 
 [lints]
 workspace = true

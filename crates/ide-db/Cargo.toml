@@ -1,44 +1,36 @@
 [package]
 name = "ide-db"
 version = "0.0.0"
-repository.workspace = true
-description = "IDE Database of wgsl-analyzer"
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+description = "IDE Database of wgsl-analyzer"
+repository.workspace = true
+license.workspace = true
 
 [lib]
 doctest = false
 
 [dependencies]
-crossbeam-channel = "0.5.15"
-tracing = "0.1.41"
-fst = { version = "0.4.7", default-features = false }
-rustc-hash = "2.1.1"
-either = "1.15.0"
-itertools = "0.14.0"
-indexmap = "2.12.0"
-memchr = "2.7.6"
-salsa = "0.17.0-pre.2"
-triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
-nohash-hasher = "0.2.0"
-smol_str = "0.3.4"
-smallvec = { version = "1.15.1", features = [
-  "const_new",
-  "union",
-  "const_generics",
-] }
-
 base-db.workspace = true
+crossbeam-channel.workspace = true
+either.workspace = true
 hir-def.workspace = true
 hir-ty.workspace = true
+indexmap.workspace = true
+itertools.workspace = true
+line-index.workspace = true
+rowan.workspace = true
+rustc-hash.workspace = true
+salsa.workspace = true
+smallvec.workspace = true
+smol_str.workspace = true
 syntax.workspace = true
-rowan = "0.16.1"
+tracing.workspace = true
+triomphe.workspace = true
 vfs.workspace = true
-line-index = "0.1.2"
 
 [dev-dependencies]
-expect-test = "1.5.1"
+expect-test.workspace = true
 
 [lints]
 workspace = true

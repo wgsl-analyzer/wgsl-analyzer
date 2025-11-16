@@ -1,21 +1,21 @@
 [package]
 name = "wgsl-formatter"
 version = "0.0.0"
-repository.workspace = true
-description = "RPC Api for the `proc-macro-srv` crate of wgsl-analyzer."
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+description = "RPC Api for the `proc-macro-srv` crate of wgsl-analyzer."
+repository.workspace = true
+license.workspace = true
 
 [dependencies]
-syntax.workspace = true
 parser.workspace = true
 rowan = "0.16.1"
+syntax.workspace = true
 
 [dev-dependencies]
+dissimilar = "1.0.10"
 # anyhow = "1.0.99"
 expect-test = "1.5.1"
-dissimilar = "1.0.10"
 
 [lints]
 workspace = true

@@ -11,12 +11,12 @@ license.workspace = true
 doctest = false
 
 [dependencies]
-line-index = "0.1.2"
-rowan = "0.16.1"
-rustc-hash = "2.1.1"
-salsa = "0.17.0-pre.2"
+line-index.workspace = true
+rowan.workspace = true
+rustc-hash.workspace = true
+salsa.workspace = true
 syntax.workspace = true
-triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
+triomphe.workspace = true
 vfs.workspace = true
 
 [lints]

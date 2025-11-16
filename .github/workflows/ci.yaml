@@ -186,19 +186,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-      - name: Check formatting with with Taplo
-        uses: docker://docker.io/tamasfe/taplo:latest
-        with:
-          args: fmt --check --diff
+      - name: Install Tombi
+        uses: tombi-toml/setup-tombi@v1
+      - name: Lint TOML files
+        run: tombi lint
+      - name: Check formatting of TOML files
+        run: tombi format --check --diff
 
-      - name: Taplo info
+      - name: Tombi info
         if: failure()
         run: |
-          echo 'To fix toml fmt, please run `taplo fmt`.'
-          echo 'To check for a diff, run `taplo fmt --check --diff`.'
-          echo 'You can find taplo here: https://taplo.tamasfe.dev/.'
-          echo 'Also use the `Even Better Toml` extension.'
-          echo 'You can find the extension here: https://marketplace.visualstudio.com/items?itemName=tamasfe.even-better-toml'
+          echo 'To fix toml formatting, please run `tombi format`.'
+          echo 'To check for a diff, run `tombi format --check --diff`.'
+          echo 'You can find tombi here: https://tombi-toml.github.io/tombi/.'
+          echo 'Also use the `Tombi` extension.'
+          echo 'You can find the extension here: https://marketplace.visualstudio.com/items?itemName=tombi-toml.tombi'
 
   typos:
     runs-on: ubuntu-latest
