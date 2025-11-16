@@ -46,54 +46,54 @@ disallowed-methods = [
 ]
 # Things that do not work due to macros can be handled by typos.toml instead.
 disallowed-names = [
-  "acc",    # accumulator
+  "acc",  # accumulator
   "alloc",  # allocate
-  "alt",    # alternate
-  "args",   # arguments
-  "attr",   # attribute
+  "alt",  # alternate
+  "args",  # arguments
+  "attr",  # attribute
   "attrs",  # attributes
-  "auth",   # authentication
-  "btn",    # button
-  "buf",    # buffer
-  "char",   # character
-  "col",    # column
-  "ctrl",   # control
-  "db",     # database
-  "dbg",    # debug
-  "decl",   # declaration
-  "def",    # definition
-  "dest",   # destination
-  "dir",    # directory
-  "dirs",   # directories
-  "elem",   # element
-  "err",    # error
-  "expr",   # expression
-  "func",   # function
+  "auth",  # authentication
+  "btn",  # button
+  "buf",  # buffer
+  "char",  # character
+  "col",  # column
+  "ctrl",  # control
+  "db",  # database
+  "dbg",  # debug
+  "decl",  # declaration
+  "def",  # definition
+  "dest",  # destination
+  "dir",  # directory
+  "dirs",  # directories
+  "elem",  # element
+  "err",  # error
+  "expr",  # expression
+  "func",  # function
   "ident",  # identifier
-  "idx",    # index
-  "it",     # item, inlay_tooltip
-  "len",    # length
-  "lex",    # lexer
-  "lit",    # literal
-  "loc",    # location
-  "msg",    # message
-  "not",    # notification
-  "opts",   # options
-  "params", # parameters
-  "prev",   # previous
-  "req",    # request
-  "res",    # result
-  "resp",   # response
-  "sel",    # selection
-  "sema",   # semantics
-  "sh",     # shell
-  "sig",    # sign
-  "src",    # source
-  "stmt",   # statement
-  "tmp",    # temporary
-  "ty",     # r#type
-  "var",    # variable
-  "vars",   # variables
+  "idx",  # index
+  "it",  # item, inlay_tooltip
+  "len",  # length
+  "lex",  # lexer
+  "lit",  # literal
+  "loc",  # location
+  "msg",  # message
+  "not",  # notification
+  "opts",  # options
+  "params",  # parameters
+  "prev",  # previous
+  "req",  # request
+  "res",  # result
+  "resp",  # response
+  "sel",  # selection
+  "sema",  # semantics
+  "sh",  # shell
+  "sig",  # sign
+  "src",  # source
+  "stmt",  # statement
+  "tmp",  # temporary
+  "ty",  # r#type
+  "var",  # variable
+  "vars",  # variables
 ]
 disallowed-types = [
   { path = "std::collections::HashMap", reason = "use FxHashMap" },

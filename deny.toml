@@ -29,7 +29,6 @@ allow = [
   "Unlicense",
   "Zlib",
 ]
-
 exceptions = [
   # { name = "unicode-ident", allow = ["Unicode-DFS-2016"] }
 ]
