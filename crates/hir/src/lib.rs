@@ -498,7 +498,7 @@ impl HasSource for Local {
             .map_err(drop)
             .ok()?;
 
-        let root = database.parse_or_resolve(file_id).syntax();
+        let root = database.parse_or_resolve(file_id).syntax_node();
         Some(InFile::new(file_id, binding.to_node(&root)))
     }
 }

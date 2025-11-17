@@ -1837,9 +1837,11 @@ name = "syntax"
 version = "0.0.0"
 dependencies = [
  "either",
+ "expect-test",
  "itertools",
  "parser",
  "rowan",
+ "rustc-hash 2.1.1",
  "smol_str",
  "triomphe",
 ]

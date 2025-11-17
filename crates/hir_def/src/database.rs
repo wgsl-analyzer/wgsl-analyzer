@@ -6,7 +6,7 @@ use std::{
 
 use base_db::{FileId, SourceDatabase};
 use salsa::InternKey;
-use syntax::Parse;
+use syntax::{Parse, ast};
 use triomphe::Arc;
 use vfs::VfsPath;
 
@@ -33,7 +33,7 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
     fn parse_or_resolve(
         &self,
         key: HirFileId,
-    ) -> Parse;
+    ) -> Parse<ast::SourceFile>;
 
     fn get_path(
         &self,
@@ -167,7 +167,7 @@ fn get_file_id(
 fn parse_or_resolve(
     database: &dyn DefDatabase,
     file_id: HirFileId,
-) -> Parse {
+) -> Parse<ast::SourceFile> {
     match file_id.0 {
         HirFileIdRepr::FileId(file_id) => database.parse(file_id),
     }

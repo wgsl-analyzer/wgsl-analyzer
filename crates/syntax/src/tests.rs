@@ -1,8 +1,8 @@
-use crate::{HasName as _, ast, parse};
+use crate::{HasName as _, SourceFile, ast};
 
 #[test]
 fn smoke_test() {
-    let ast = parse("fn foo(a: u32) -> f32 { let b = 1 + a; }").tree();
+    let ast = SourceFile::parse("fn foo(a: u32) -> f32 { let b = 1 + a; }").tree();
 
     let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
         panic!()
@@ -28,7 +28,7 @@ fn smoke_test() {
 
 #[test]
 fn discard_statement() {
-    let ast = parse("fn main() { discard; }").tree();
+    let ast = SourceFile::parse("fn main() { discard; }").tree();
 
     let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
         panic!()
@@ -41,7 +41,7 @@ fn discard_statement() {
 
 #[test]
 fn function_call_statement() {
-    let ast = parse("fn main() { foo(); }").tree();
+    let ast = SourceFile::parse("fn main() { foo(); }").tree();
 
     let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
         panic!()
@@ -66,7 +66,7 @@ fn function_call_statement() {
 
 #[test]
 fn switch_with_case_default() {
-    let ast = parse(
+    let ast = SourceFile::parse(
         "
 fn main() { 
     switch foo {
@@ -107,7 +107,7 @@ fn main() {
 
 #[test]
 fn loop_with_block() {
-    let ast = parse(
+    let ast = SourceFile::parse(
         "
 fn main() { 
     loop { let a = 3; }

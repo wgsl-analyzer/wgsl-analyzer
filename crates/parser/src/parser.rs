@@ -40,6 +40,7 @@ pub struct Context<'a> {
     marker: std::marker::PhantomData<&'a ()>,
 }
 
+#[derive(Clone)]
 pub struct Diagnostic {
     pub message: String,
     pub range: rowan::TextRange,

@@ -7,7 +7,7 @@ pub mod input;
 mod util_types;
 use input::{SourceRoot, SourceRootId};
 use line_index::LineIndex;
-use syntax::Parse;
+use syntax::{Parse, ast};
 use triomphe::Arc;
 pub use util_types::*;
 pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet};
@@ -61,7 +61,7 @@ pub trait SourceDatabase: FileLoader {
     fn parse(
         &self,
         key: FileId,
-    ) -> Parse;
+    ) -> Parse<ast::SourceFile>;
 
     fn line_index(
         &self,
@@ -80,9 +80,9 @@ fn line_index(
 fn parse_query(
     database: &dyn SourceDatabase,
     file_id: FileId,
-) -> Parse {
+) -> Parse<ast::SourceFile> {
     let source = database.file_text(file_id);
-    syntax::parse(&source)
+    ast::SourceFile::parse(&source)
 }
 
 /// Silly workaround for cyclic deps between the traits

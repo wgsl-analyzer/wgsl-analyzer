@@ -23,7 +23,7 @@ use ide_completion::{CompletionConfig, item::CompletionItem};
 pub use line_index::{LineCol, LineIndex};
 use rustc_hash::FxHashMap;
 use salsa::{Cancelled, ParallelDatabase as _};
-use syntax::{Parse, SyntaxNode};
+use syntax::{Parse, SyntaxNode, ast};
 use triomphe::Arc;
 use vfs::FileId;
 
@@ -220,7 +220,7 @@ impl Analysis {
     pub fn parse(
         &self,
         file_id: FileId,
-    ) -> Cancellable<Parse> {
+    ) -> Cancellable<Parse<ast::SourceFile>> {
         self.with_db(|database| database.parse(file_id))
     }
 

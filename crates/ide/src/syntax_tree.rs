@@ -6,7 +6,7 @@ pub(crate) fn syntax_tree(
     file_id: FileId,
     range: Option<TextRange>,
 ) -> Option<String> {
-    let syntax_node = database.parse(file_id).syntax();
+    let syntax_node = database.parse(file_id).syntax_node();
     if let Some(range) = range {
         let token_or_node = syntax_node.covering_element(range);
         match token_or_node {

@@ -66,7 +66,7 @@ impl<T> InFile<T> {
         &self,
         database: &dyn database::DefDatabase,
     ) -> SyntaxNode {
-        database.parse_or_resolve(self.file_id).syntax()
+        database.parse_or_resolve(self.file_id).syntax_node()
     }
 }
 
@@ -145,7 +145,7 @@ impl<N: ModuleDataNode> HasSource for InFile<ModuleItemId<N>> {
 
         InFile::new(
             self.file_id,
-            ast_id_map.get(node.ast_id()).to_node(&root.syntax()),
+            ast_id_map.get(node.ast_id()).to_node(&root.syntax_node()),
         )
     }
 }
