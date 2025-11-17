@@ -41,7 +41,7 @@ pub struct Fold {
 // Defines folding regions for curly braced blocks, runs of consecutive use, mod, const or static
 // items, and `region` / `endregion` comment markers.
 pub(crate) fn folding_ranges(file: &SourceFile) -> Vec<Fold> {
-    let mut res = vec![];
+    let mut result = vec![];
     let mut visited_comments = FxHashSet::default();
     let mut visited_nodes = FxHashSet::default();
 
@@ -75,14 +75,14 @@ pub(crate) fn folding_ranges(file: &SourceFile) -> Vec<Fold> {
                             .fn_token()
                             .map(|token| token.text_range().start())
                             .unwrap_or(node.text_range().start());
-                        res.push(Fold {
+                        result.push(Fold {
                             range: TextRange::new(fn_start, node.text_range().end()),
                             kind: FoldKind::Function,
                         });
                         continue;
                     }
                 }
-                res.push(Fold {
+                result.push(Fold {
                     range: element.text_range(),
                     kind,
                 });
@@ -102,7 +102,7 @@ pub(crate) fn folding_ranges(file: &SourceFile) -> Vec<Fold> {
                         region_starts.push(comment.syntax().text_range().start());
                     } else if text.starts_with(REGION_END) {
                         if let Some(region) = region_starts.pop() {
-                            res.push(Fold {
+                            result.push(Fold {
                                 range: TextRange::new(region, comment.syntax().text_range().end()),
                                 kind: FoldKind::Region,
                             })
@@ -110,7 +110,7 @@ pub(crate) fn folding_ranges(file: &SourceFile) -> Vec<Fold> {
                     } else if let Some(range) =
                         contiguous_range_for_comment(comment, &mut visited_comments)
                     {
-                        res.push(Fold {
+                        result.push(Fold {
                             range,
                             kind: FoldKind::Comment,
                         })
@@ -122,22 +122,22 @@ pub(crate) fn folding_ranges(file: &SourceFile) -> Vec<Fold> {
                     match node {
                         ast::ConstantDeclaration(konst) => {
                             if let Some(range) = contiguous_range_for_item_group(konst, &mut visited_nodes) {
-                                res.push(Fold { range, kind: FoldKind::Constants })
+                                result.push(Fold { range, kind: FoldKind::Constants })
                             }
                         },
                         ast::VariableDeclaration(variable) => {
                             if let Some(range) = contiguous_range_for_item_group(variable, &mut visited_nodes) {
-                                res.push(Fold { range, kind: FoldKind::Variables })
+                                result.push(Fold { range, kind: FoldKind::Variables })
                             }
                         },
                         ast::OverrideDeclaration(r#override) => {
                             if let Some(range) = contiguous_range_for_item_group(r#override, &mut visited_nodes) {
-                                res.push(Fold { range, kind: FoldKind::Overrides })
+                                result.push(Fold { range, kind: FoldKind::Overrides })
                             }
                         },
                         ast::TypeAliasDeclaration(alias) => {
                             if let Some(range) = contiguous_range_for_item_group(alias, &mut visited_nodes) {
-                                res.push(Fold { range, kind: FoldKind::TypeAliases })
+                                result.push(Fold { range, kind: FoldKind::TypeAliases })
                             }
                         },
                         _ => (),
@@ -147,7 +147,7 @@ pub(crate) fn folding_ranges(file: &SourceFile) -> Vec<Fold> {
         }
     }
 
-    res
+    result
 }
 
 fn fold_kind(kind: SyntaxKind) -> Option<FoldKind> {
@@ -493,8 +493,8 @@ const SECOND_CONST: u32 = 2;</fold>
     fn fold_consecutive_override() {
         check(
             r#"
-<fold overrides>override FIRST_STATIC: f32 = 1";
-override SECOND_STATIC: vec3f = vec3f(2);</fold>
+<fold overrides>override FIRST_OVERRIDE: f32 = 1;
+override SECOND_OVERRIDE: vec3f = vec3f(2);</fold>
 "#,
         )
     }
@@ -503,10 +503,10 @@ override SECOND_STATIC: vec3f = vec3f(2);</fold>
     fn fold_return_type() {
         check(
             r#"
-fn foo()<fold returntype>-> array<
+fn foo()<fold returntype>-> array<fold arglist><
     f32,
-    4,
-></fold> {  }
+    4
+></fold></fold> {  }
 
 fn bar() -> array<f32, 4> { (true, true) }
 "#,
