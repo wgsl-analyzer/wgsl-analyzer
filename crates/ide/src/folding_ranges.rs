@@ -210,14 +210,14 @@ where
         break;
     }
 
-    if first.syntax() != last.syntax() {
+    if first.syntax() == last.syntax() {
+        // The group consists of only one element, therefore it cannot be folded
+        None
+    } else {
         Some(TextRange::new(
             first.syntax().text_range().start(),
             last.syntax().text_range().end(),
         ))
-    } else {
-        // The group consists of only one element, therefore it cannot be folded
-        None
     }
 }
 
@@ -263,14 +263,14 @@ fn contiguous_range_for_comment(
         };
     }
 
-    if *first != last {
+    if *first == last {
+        // The group consists of only one element, therefore it cannot be folded
+        None
+    } else {
         Some(TextRange::new(
             first.syntax().text_range().start(),
             last.syntax().text_range().end(),
         ))
-    } else {
-        // The group consists of only one element, therefore it cannot be folded
-        None
     }
 }
 
@@ -324,7 +324,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fold_func_with_multiline_param_list() {
+    fn fold_func_with_multiline_param_list() {
         check(
             r#"
 <fold function>fn func<fold arglist>(
@@ -341,7 +341,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fold_comments() {
+    fn fold_comments() {
         check(
             r#"
 <fold comment>// Hello
@@ -364,61 +364,9 @@ fn main() <fold block>{
 "#,
         );
     }
-    /*
-       #[test]
-       fn test_fold_imports() {
-           check(
-               r#"
-use std::<fold block>{
-    str,
-    vec,
-    io as iop
-}</fold>;
-"#,
-           );
-       }
-
-       #[test]
-       fn test_fold_import_groups() {
-           check(
-               r#"
-<fold imports>use std::str;
-use std::vec;
-use std::io as iop;</fold>
-
-<fold imports>use std::mem;
-use std::f64;</fold>
-
-<fold imports>use std::collections::HashMap;
-// Some random comment
-use std::collections::VecDeque;</fold>
-"#,
-           );
-       }
-
-       #[test]
-       fn test_fold_import_and_groups() {
-           check(
-               r#"
-<fold imports>use std::str;
-use std::vec;
-use std::io as iop;</fold>
-
-<fold imports>use std::mem;
-use std::f64;</fold>
-
-use std::collections::<fold block>{
-    HashMap,
-    VecDeque,
-}</fold>;
-// Some random comment
-"#,
-           );
-       }
-    */
 
     #[test]
-    fn test_folds_structs() {
+    fn folds_structs() {
         check(
             r#"
 struct Foo <fold block>{
@@ -428,7 +376,7 @@ struct Foo <fold block>{
     }
 
     #[test]
-    fn test_fold_switch_arms() {
+    fn fold_switch_arms() {
         check(
             r#"
 fn main() <fold block>{
@@ -453,7 +401,7 @@ fn main() <fold block>{
     )</fold>
 }</fold>
 "#,
-        )
+        );
     }
 
     #[test]
@@ -465,7 +413,7 @@ fn main() <fold block>{
     y: String,
 )</fold> {}</fold>
 "#,
-        )
+        );
     }
 
     #[test]
@@ -481,7 +429,7 @@ fn f() {}
 fn f2() {}
 // endregion: test</fold>
 "#,
-        )
+        );
     }
 
     #[test]
@@ -491,7 +439,7 @@ fn f2() {}
 <fold consts>const FIRST_CONST: f32 = 1;
 const SECOND_CONST: u32 = 2;</fold>
 "#,
-        )
+        );
     }
 
     #[test]
@@ -501,7 +449,7 @@ const SECOND_CONST: u32 = 2;</fold>
 <fold overrides>override FIRST_OVERRIDE: f32 = 1;
 override SECOND_OVERRIDE: vec3f = vec3f(2);</fold>
 "#,
-        )
+        );
     }
 
     #[test]
@@ -515,7 +463,7 @@ fn foo()<fold returntype>-> array<fold arglist><
 
 fn bar() -> array<f32, 4> { (true, true) }
 "#,
-        )
+        );
     }
 
     #[test]
@@ -527,11 +475,11 @@ alias Foo = array<fold arglist><
     2 + 3,
 ></fold>;
 "#,
-        )
+        );
     }
 
     #[test]
-    fn test_fold_doc_comments_with_multiline_paramlist_function() {
+    fn fold_doc_comments_with_multiline_paramlist_function() {
         check(
             r#"
 <fold comment>/// A very very very very very very very very very very very very very very very
