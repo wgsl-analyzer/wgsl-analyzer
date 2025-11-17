@@ -1,10 +1,10 @@
 [files]
 extend-exclude = [
-  "*.patch",     # Automatically generated files that should not be manually modified.
-  "*.bin",       # Binary files
-  ".git/",       # Version control files
-  "clippy.toml", # Intentional typos
-  "flake.nix",   # Out of scope
+	"*.patch",  # Automatically generated files that should not be manually modified.
+	"*.bin",  # Binary files
+	".git/",  # Version control files
+	"clippy.toml",  # Intentional typos
+	"flake.nix",  # Out of scope
 ]
 ignore-hidden = false
 
@@ -12,6 +12,15 @@ ignore-hidden = false
 # and the value is the correct word. If the key and value are the same, the
 # word is treated as always correct. If the value is an empty string, the word
 # is treated as always incorrect.
+
+[default]
+locale = "en-us"
+extend-ignore-re = [
+	"(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
+	"(?Rm)^.*<!--\\s*spellchecker:disable-line\\s*-->$",
+	"(?Rm) .+ ...\"$",
+]
+extend-ignore-identifiers-re = []
 
 # Match Whole Word - Case Sensitive
 [default.extend-identifiers]
@@ -25,7 +34,6 @@ ignore-hidden = false
 # lsp_types
 "typ" = "typ"
 # "perf" = "performance"
-
 # Contractions
 "don't" = "do not"
 "can't" = "cannot"
@@ -84,7 +92,6 @@ ignore-hidden = false
 # "lit" = "literal"
 # "ident" = "identifier"
 # "ty" = "type"
-
 # Be concise
 ":-)" = "be concise"
 ";-)" = "be concise"
@@ -93,12 +100,3 @@ ignore-hidden = false
 
 # "argument" = "input"
 # "response" = "answer"
-
-[default]
-locale = "en-us"
-extend-ignore-re = [
-  "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
-  "(?Rm)^.*<!--\\s*spellchecker:disable-line\\s*-->$",
-  "(?Rm) .+ ...\"$",
-]
-extend-ignore-identifiers-re = []

@@ -2,7 +2,7 @@ use std::ops::Not as _;
 
 use base_db::{FileRange, TextRange, TextSize};
 use ide::{
-    Cancellable, NavigationTarget,
+    Cancellable, Fold, FoldKind, NavigationTarget,
     inlay_hints::{
         InlayFieldsToResolve, InlayHint, InlayHintLabel, InlayHintLabelPart, InlayKind,
         LazyProperty,
@@ -26,6 +26,64 @@ use crate::{
     line_index::{LineEndings, LineIndex, PositionEncoding},
     lsp,
 };
+
+pub(crate) fn folding_range(
+    text: &str,
+    line_index: &LineIndex,
+    line_folding_only: bool,
+    fold: &Fold,
+) -> lsp_types::FoldingRange {
+    let kind = match fold.kind {
+        FoldKind::Comment => Some(lsp_types::FoldingRangeKind::Comment),
+        FoldKind::Imports => Some(lsp_types::FoldingRangeKind::Imports),
+        FoldKind::Region => Some(lsp_types::FoldingRangeKind::Region),
+        FoldKind::Block
+        | FoldKind::ArgList
+        | FoldKind::Constants
+        | FoldKind::Variables
+        | FoldKind::Overrides
+        | FoldKind::TypeAliases
+        | FoldKind::ReturnType
+        | FoldKind::Function => None,
+    };
+
+    let range = range(line_index, fold.range);
+
+    if line_folding_only {
+        // Clients with line_folding_only == true (such as VSCode) will fold the whole end line
+        // even if it contains text not in the folding range. To prevent that we exclude
+        // range.end.line from the folding region if there is more text after range.end
+        // on the same line.
+        let has_more_text_on_end_line = text[TextRange::new(fold.range.end(), TextSize::of(text))]
+            .chars()
+            .take_while(|item| *item != '\n')
+            .any(|item| !item.is_whitespace());
+
+        let end_line = if has_more_text_on_end_line {
+            range.end.line.saturating_sub(1)
+        } else {
+            range.end.line
+        };
+
+        lsp_types::FoldingRange {
+            start_line: range.start.line,
+            start_character: None,
+            end_line,
+            end_character: None,
+            kind,
+            collapsed_text: None,
+        }
+    } else {
+        lsp_types::FoldingRange {
+            start_line: range.start.line,
+            start_character: Some(range.start.character),
+            end_line: range.end.line,
+            end_character: Some(range.end.character),
+            kind,
+            collapsed_text: None,
+        }
+    }
+}
 
 /// Returns a `Url` object from a given path, will lowercase drive letters if present.
 /// This will only happen when processing windows paths.

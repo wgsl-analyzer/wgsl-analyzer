@@ -14,11 +14,11 @@ allow-panic-in-tests = false
 allow-print-in-tests = false
 allow-private-module-inception = false
 allow-renamed-params-for = [
-  "core::convert::From",
-  "core::convert::TryFrom",
-  "core::fmt::Display",
-  "core::fmt::Debug",
-  "core::str::FromStr",
+	"core::convert::From",
+	"core::convert::TryFrom",
+	"core::fmt::Display",
+	"core::fmt::Debug",
+	"core::str::FromStr",
 ]
 allow-unwrap-in-consts = true
 allow-unwrap-in-tests = true
@@ -42,63 +42,63 @@ check-private-items = false
 cognitive-complexity-threshold = 25
 disallowed-macros = []
 disallowed-methods = [
-  { path = "std::process::Command::new", reason = "use `toolchain::command` instead as it forces the choice of a working directory" },
+	{ path = "std::process::Command::new", reason = "use `toolchain::command` instead as it forces the choice of a working directory" },
 ]
 # Things that do not work due to macros can be handled by typos.toml instead.
 disallowed-names = [
-  "acc",    # accumulator
-  "alloc",  # allocate
-  "alt",    # alternate
-  "args",   # arguments
-  "attr",   # attribute
-  "attrs",  # attributes
-  "auth",   # authentication
-  "btn",    # button
-  "buf",    # buffer
-  "char",   # character
-  "col",    # column
-  "ctrl",   # control
-  "db",     # database
-  "dbg",    # debug
-  "decl",   # declaration
-  "def",    # definition
-  "dest",   # destination
-  "dir",    # directory
-  "dirs",   # directories
-  "elem",   # element
-  "err",    # error
-  "expr",   # expression
-  "func",   # function
-  "ident",  # identifier
-  "idx",    # index
-  "it",     # item, inlay_tooltip
-  "len",    # length
-  "lex",    # lexer
-  "lit",    # literal
-  "loc",    # location
-  "msg",    # message
-  "not",    # notification
-  "opts",   # options
-  "params", # parameters
-  "prev",   # previous
-  "req",    # request
-  "res",    # result
-  "resp",   # response
-  "sel",    # selection
-  "sema",   # semantics
-  "sh",     # shell
-  "sig",    # sign
-  "src",    # source
-  "stmt",   # statement
-  "tmp",    # temporary
-  "ty",     # r#type
-  "var",    # variable
-  "vars",   # variables
+	"acc",  # accumulator
+	"alloc",  # allocate
+	"alt",  # alternate
+	"args",  # arguments
+	"attr",  # attribute
+	"attrs",  # attributes
+	"auth",  # authentication
+	"btn",  # button
+	"buf",  # buffer
+	"char",  # character
+	"col",  # column
+	"ctrl",  # control
+	"db",  # database
+	"dbg",  # debug
+	"decl",  # declaration
+	"def",  # definition
+	"dest",  # destination
+	"dir",  # directory
+	"dirs",  # directories
+	"elem",  # element
+	"err",  # error
+	"expr",  # expression
+	"func",  # function
+	"ident",  # identifier
+	"idx",  # index
+	"it",  # item, inlay_tooltip
+	"len",  # length
+	"lex",  # lexer
+	"lit",  # literal
+	"loc",  # location
+	"msg",  # message
+	"not",  # notification
+	"opts",  # options
+	"params",  # parameters
+	"prev",  # previous
+	"req",  # request
+	"res",  # result
+	"resp",  # response
+	"sel",  # selection
+	"sema",  # semantics
+	"sh",  # shell
+	"sig",  # sign
+	"src",  # source
+	"stmt",  # statement
+	"tmp",  # temporary
+	"ty",  # r#type
+	"var",  # variable
+	"vars",  # variables
 ]
 disallowed-types = [
-  { path = "std::collections::HashMap", reason = "use FxHashMap" },
-  { path = "std::collections::HashSet", reason = "use FxHashSet" },
-  { path = "std::collections::hash_map::RandomState", reason = "use BuildHasherDefault<FxHasher>" },
+	{ path = "std::collections::HashMap", reason = "use FxHashMap" },
+	{ path = "std::collections::HashSet", reason = "use FxHashSet" },
+	{ path = "std::collections::hash_map::RandomState", reason = "use BuildHasherDefault<FxHasher>" },
 ]
 doc-valid-idents = ["..", "QoS"]
 enable-raw-pointer-heuristic-for-send = true
@@ -132,73 +132,73 @@ single-char-binding-names-threshold = 0
 source-item-ordering = ["enum", "impl", "module", "struct", "trait"]
 stack-size-threshold = 512000
 standard-macro-braces = [
-  { name = "always", brace = "(" },
-  { name = "anyhow::anyhow", brace = "(" },
-  { name = "anyhow::bail", brace = "(" },
-  { name = "anyhow::format_err", brace = "(" },
-  { name = "assert_eq", brace = "(" },
-  { name = "assert", brace = "(" },
-  { name = "ast_enum_compound", brace = "{" },
-  { name = "ast_enum_raw", brace = "{" },
-  { name = "ast_enum", brace = "{" },
-  { name = "ast_node", brace = "{" },
-  { name = "ast_token_enum", brace = "{" },
-  { name = "cfg_if", brace = "{" },
-  { name = "cfg", brace = "(" },
-  { name = "concat", brace = "(" },
-  { name = "count_tts", brace = "(" },
-  { name = "dbg", brace = "(" },
-  { name = "define_semantic_token_modifiers", brace = "[" },
-  { name = "define_semantic_token_types", brace = "[" },
-  { name = "env", brace = "(" },
-  { name = "error", brace = "(" },
-  { name = "expect", brace = "[" },
-  { name = "format_args", brace = "(" },
-  { name = "format_err", brace = "(" },
-  { name = "format_smolstr", brace = "(" },
-  { name = "format_to", brace = "(" },
-  { name = "format", brace = "(" },
-  { name = "impl_from", brace = "(" },
-  { name = "implement", brace = "(" },
-  { name = "include", brace = "(" },
-  { name = "info_span", brace = "(" },
-  { name = "info", brace = "(" },
-  { name = "intern_id", brace = "(" },
-  { name = "match_ast", brace = "{" },
-  { name = "matches", brace = "(" },
-  { name = "mod_items", brace = "{" },
-  { name = "never", brace = "(" },
-  { name = "opt", brace = "(" },
-  { name = "panic", brace = "(" },
-  { name = "print", brace = "(" },
-  { name = "println", brace = "(" },
-  { name = "prop_oneof", brace = "[" },
-  { name = "proptest", brace = "{" },
-  { name = "select", brace = "{" },
-  { name = "smallvec::smallvec", brace = "[" },
-  { name = "smallvec", brace = "[" },
-  { name = "span", brace = "(" },
-  { name = "stringify", brace = "(" },
-  { name = "T", brace = "[" },
-  { name = "thread_local", brace = "{" },
-  { name = "todo", brace = "(" },
-  { name = "trace", brace = "(" },
-  { name = "tracing::debug", brace = "(" },
-  { name = "tracing::enabled", brace = "(" },
-  { name = "tracing::error", brace = "(" },
-  { name = "tracing::info_span", brace = "(" },
-  { name = "tracing::info", brace = "(" },
-  { name = "tracing::trace", brace = "(" },
-  { name = "tracing::warn", brace = "(" },
-  { name = "try_default", brace = "(" },
-  { name = "unimplemented", brace = "(" },
-  { name = "unreachable", brace = "(" },
-  { name = "vec", brace = "[" },
-  { name = "warn", brace = "(" },
-  { name = "write", brace = "(" },
-  { name = "writeln", brace = "(" },
-  { name = "xflags::xflags", brace = "{" },
-  { name = "xflags", brace = "{" },
+	{ name = "always", brace = "(" },
+	{ name = "anyhow::anyhow", brace = "(" },
+	{ name = "anyhow::bail", brace = "(" },
+	{ name = "anyhow::format_err", brace = "(" },
+	{ name = "assert_eq", brace = "(" },
+	{ name = "assert", brace = "(" },
+	{ name = "ast_enum_compound", brace = "{" },
+	{ name = "ast_enum_raw", brace = "{" },
+	{ name = "ast_enum", brace = "{" },
+	{ name = "ast_node", brace = "{" },
+	{ name = "ast_token_enum", brace = "{" },
+	{ name = "cfg_if", brace = "{" },
+	{ name = "cfg", brace = "(" },
+	{ name = "concat", brace = "(" },
+	{ name = "count_tts", brace = "(" },
+	{ name = "dbg", brace = "(" },
+	{ name = "define_semantic_token_modifiers", brace = "[" },
+	{ name = "define_semantic_token_types", brace = "[" },
+	{ name = "env", brace = "(" },
+	{ name = "error", brace = "(" },
+	{ name = "expect", brace = "[" },
+	{ name = "format_args", brace = "(" },
+	{ name = "format_err", brace = "(" },
+	{ name = "format_smolstr", brace = "(" },
+	{ name = "format_to", brace = "(" },
+	{ name = "format", brace = "(" },
+	{ name = "impl_from", brace = "(" },
+	{ name = "implement", brace = "(" },
+	{ name = "include", brace = "(" },
+	{ name = "info_span", brace = "(" },
+	{ name = "info", brace = "(" },
+	{ name = "intern_id", brace = "(" },
+	{ name = "match_ast", brace = "{" },
+	{ name = "matches", brace = "(" },
+	{ name = "mod_items", brace = "{" },
+	{ name = "never", brace = "(" },
+	{ name = "opt", brace = "(" },
+	{ name = "panic", brace = "(" },
+	{ name = "print", brace = "(" },
+	{ name = "println", brace = "(" },
+	{ name = "prop_oneof", brace = "[" },
+	{ name = "proptest", brace = "{" },
+	{ name = "select", brace = "{" },
+	{ name = "smallvec::smallvec", brace = "[" },
+	{ name = "smallvec", brace = "[" },
+	{ name = "span", brace = "(" },
+	{ name = "stringify", brace = "(" },
+	{ name = "T", brace = "[" },
+	{ name = "thread_local", brace = "{" },
+	{ name = "todo", brace = "(" },
+	{ name = "trace", brace = "(" },
+	{ name = "tracing::debug", brace = "(" },
+	{ name = "tracing::enabled", brace = "(" },
+	{ name = "tracing::error", brace = "(" },
+	{ name = "tracing::info_span", brace = "(" },
+	{ name = "tracing::info", brace = "(" },
+	{ name = "tracing::trace", brace = "(" },
+	{ name = "tracing::warn", brace = "(" },
+	{ name = "try_default", brace = "(" },
+	{ name = "unimplemented", brace = "(" },
+	{ name = "unreachable", brace = "(" },
+	{ name = "vec", brace = "[" },
+	{ name = "warn", brace = "(" },
+	{ name = "write", brace = "(" },
+	{ name = "writeln", brace = "(" },
+	{ name = "xflags::xflags", brace = "{" },
+	{ name = "xflags", brace = "{" },
 ]
 struct-field-name-threshold = 0
 suppress-restriction-lint-in-const = false

@@ -484,7 +484,7 @@ fn declaration_type_hints(
     file_id: FileId,
     semantics: &Semantics<'_>,
     config: &InlayHintsConfig,
-    node: &rowan::SyntaxNode<parser::WeslLanguage>,
+    node: &SyntaxNode,
     binding: &ast::Name,
     r#type: Option<&ast::TypeSpecifier>,
 ) -> Option<()> {

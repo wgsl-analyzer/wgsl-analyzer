@@ -3,6 +3,7 @@ mod fixture;
 
 mod debug_command;
 pub mod diagnostics;
+mod folding_ranges;
 mod formatting;
 mod goto_definition;
 mod helpers;
@@ -34,7 +35,7 @@ pub use crate::{
     // call_hierarchy::{CallHierarchyConfig, CallItem},
     // expand_macro::ExpandedMacro,
     // file_structure::{StructureNode, StructureNodeKind},
-    // folding_ranges::{Fold, FoldKind},
+    folding_ranges::{Fold, FoldKind},
     // highlight_related::{HighlightRelatedConfig, HighlightedRange},
     hover::{
         HoverAction, HoverConfig, HoverDocFormat, HoverGotoTypeData, HoverResult,
@@ -248,6 +249,14 @@ impl Analysis {
         range: Option<TextRange>,
     ) -> Cancellable<Vec<InlayHint>> {
         self.with_db(|database| inlay_hints::inlay_hints(database, file_id, range, config))
+    }
+
+    /// Returns the set of folding ranges.
+    pub fn folding_ranges(
+        &self,
+        file_id: FileId,
+    ) -> Cancellable<Vec<Fold>> {
+        self.with_db(|database| folding_ranges::folding_ranges(&database.parse(file_id).tree()))
     }
 
     pub fn diagnostics(

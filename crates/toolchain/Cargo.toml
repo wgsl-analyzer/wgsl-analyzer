@@ -1,17 +1,17 @@
 [package]
 name = "toolchain"
 version = "0.0.0"
-repository.workspace = true
-description = "Discovery of executables for wgsl-analyzer."
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+description = "Discovery of executables for wgsl-analyzer."
+repository.workspace = true
+license.workspace = true
 
 [lib]
 
 [dependencies]
+camino = { workspace = true }
 home = "0.5.12"
-camino = "1.2.1"
 
 [lints]
 workspace = true

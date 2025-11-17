@@ -4,8 +4,10 @@
 )]
 
 pub mod operators;
+pub mod trivia;
 
 use parser::{SyntaxKind, SyntaxNode};
+pub use trivia::{Comment, Whitespace};
 
 use self::operators::{AssignmentOperator, BinaryOperation, UnaryOperator};
 use crate::{

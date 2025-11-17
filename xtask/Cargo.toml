@@ -1,21 +1,22 @@
 [package]
 name = "xtask"
 version = "0.1.0"
-publish = false
-license = "MIT OR Apache-2.0"
 edition = "2024"
 rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+publish = false
 
+# Avoid adding more dependencies to this crate
 [dependencies]
-anyhow = "1.0.100"
+anyhow.workspace = true
 flate2 = "1.1.5"
-write-json = "0.1.4"
-xshell = "0.2.7"
-xflags = "0.3.2"
 time = { version = "0.3.44", default-features = false }
+write-json = "0.1.4"
+xflags = "0.3.2"
+xshell = "0.2.7"
 zip = { version = "6.0.0", default-features = false, features = [
-  "deflate",
-  "time",
+	"deflate",
+	"time",
 ] }
 # Avoid adding more dependencies to this crate
 

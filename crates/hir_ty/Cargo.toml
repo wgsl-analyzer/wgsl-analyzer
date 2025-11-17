@@ -1,36 +1,31 @@
 [package]
 name = "hir-ty"
 version = "0.0.0"
-repository.workspace = true
-description = "The type system for wgsl-analyzer."
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+description = "The type system for wgsl-analyzer."
+repository.workspace = true
+license.workspace = true
 
 [lib]
 doctest = false
 
 [dependencies]
 base-db.workspace = true
+either.workspace = true
 hir-def.workspace = true
-
-salsa = "0.17.0-pre.2"
-la-arena = "0.3.1"
-either = "1.15.0"
-rustc-hash = "2.1.1"
-itertools = "0.14.0"
-smallvec = { version = "1.15.1", features = [
-  "const_new",
-  "union",
-  "const_generics",
-] }
-triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
+itertools.workspace = true
+la-arena.workspace = true
+rustc-hash.workspace = true
+salsa.workspace = true
+smallvec.workspace = true
 syntax.workspace = true
+triomphe.workspace = true
 vfs.workspace = true
 wgsl-types.workspace = true
 
 [dev-dependencies]
-expect-test = "1.5.1"
+expect-test.workspace = true
 
 [lints]
 workspace = true
