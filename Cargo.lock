@@ -688,6 +688,7 @@ dependencies = [
  "smol_str",
  "stdx 0.0.0",
  "syntax",
+ "test-utils",
  "tracing",
  "triomphe",
  "vfs",
