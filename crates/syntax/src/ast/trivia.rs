@@ -47,7 +47,7 @@ impl Comment {
     /// # Panics
     /// When called with text that does not immediately start with a comment marker.
     #[must_use]
-    pub fn prefix(self) -> &'static str {
+    pub fn prefix(&self) -> &'static str {
         let &(prefix, _) = CommentKind::BY_PREFIX
             .iter()
             .find(|&(prefix, kind)| self.kind() == *kind && self.text().starts_with(prefix))
