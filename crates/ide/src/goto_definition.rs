@@ -1,7 +1,7 @@
 use base_db::{FilePosition, SourceDatabase as _};
-use hir::{HasSource as _, Local, Semantics, definition::Definition};
+use hir::{HasSource as _, Local, Semantics};
 use hir_def::InFile;
-use ide_db::RootDatabase;
+use ide_db::{RootDatabase, defs::Definition};
 use syntax::{AstNode as _, HasName as _, SyntaxKind};
 
 use crate::{NavigationTarget, helpers};

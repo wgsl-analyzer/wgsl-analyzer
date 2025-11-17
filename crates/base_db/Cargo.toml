@@ -11,6 +11,7 @@ license.workspace = true
 doctest = false
 
 [dependencies]
+indexmap.workspace = true
 line-index.workspace = true
 rowan.workspace = true
 rustc-hash.workspace = true

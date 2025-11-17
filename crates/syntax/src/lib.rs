@@ -9,7 +9,10 @@ pub use parser::{
     Diagnostic, ParseEntryPoint, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodeChildren,
     SyntaxToken,
 };
-pub use rowan::Direction;
+pub use rowan::{
+    Direction, GreenNode, NodeOrToken, SyntaxText, TextRange, TextSize, TokenAtOffset, WalkEvent,
+    api::Preorder,
+};
 use smol_str::SmolStr;
 use triomphe::Arc;
 

@@ -10,8 +10,11 @@ use line_index::LineIndex;
 use syntax::Parse;
 use triomphe::Arc;
 pub use util_types::*;
-pub use vfs::FileId;
-use vfs::{AnchoredPath, VfsPath};
+pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet};
+
+pub type FxIndexSet<T> = indexmap::IndexSet<T, rustc_hash::FxBuildHasher>;
+pub type FxIndexMap<K, V> =
+    indexmap::IndexMap<K, V, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
 
 pub trait FileLoader {
     fn resolve_path(

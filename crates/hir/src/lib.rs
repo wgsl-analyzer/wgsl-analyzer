@@ -1,8 +1,7 @@
-pub mod definition;
 pub mod diagnostics;
+mod from_id;
 
 use base_db::FileId;
-use definition::Definition;
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
 use either::Either;
 use hir_def::{
@@ -184,64 +183,6 @@ impl<'database> Semantics<'database> {
         Module {
             file_id: file_id.into(),
         }
-    }
-
-    fn resolve_name_in_container(
-        &self,
-        container: ChildContainer,
-        expression: &ast::Expression,
-        name: &Name,
-    ) -> Option<Definition> {
-        let mut resolver = container.resolver(self.database);
-
-        if let ChildContainer::DefinitionWithBodyId(DefinitionWithBodyId::Function(function)) =
-            container
-        {
-            let (_, source_map) = self
-                .database
-                .body_with_source_map(DefinitionWithBodyId::Function(function));
-            let expression_id = source_map.lookup_expression(&AstPointer::new(expression))?;
-            let expression_scopes = self
-                .database
-                .expression_scopes(DefinitionWithBodyId::Function(function));
-            let scope_id = expression_scopes.scope_for_expression(expression_id)?;
-            resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
-        }
-
-        let value = resolver.resolve(name)?;
-
-        let definition = match value {
-            ResolveKind::Local(binding) => Definition::Local(Local {
-                parent: resolver.body_owner()?,
-                binding,
-            }),
-            ResolveKind::GlobalVariable(location) => {
-                let id = self.database.intern_global_variable(location);
-                Definition::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))
-            },
-            ResolveKind::GlobalConstant(location) => {
-                let id = self.database.intern_global_constant(location);
-                Definition::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id }))
-            },
-            ResolveKind::Override(location) => {
-                let id = self.database.intern_override(location);
-                Definition::ModuleDef(ModuleDef::Override(Override { id }))
-            },
-            ResolveKind::Struct(location) => {
-                let id = self.database.intern_struct(location);
-                Definition::ModuleDef(ModuleDef::Struct(Struct { id }))
-            },
-            ResolveKind::TypeAlias(location) => {
-                let id = self.database.intern_type_alias(location);
-                Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id }))
-            },
-            ResolveKind::Function(location) => {
-                let id = self.database.intern_function(location);
-                Definition::ModuleDef(ModuleDef::Function(Function { id }))
-            },
-        };
-
-        Some(definition)
     }
 
     fn function_to_def(
@@ -716,7 +657,7 @@ impl HasSource for Field {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum ModuleDef {
     Function(Function),
     GlobalVariable(GlobalVariable),
