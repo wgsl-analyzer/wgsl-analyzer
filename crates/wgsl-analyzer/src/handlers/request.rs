@@ -7,8 +7,9 @@ use base_db::{FilePosition, FileRange, TextRange};
 use hir::diagnostics::DiagnosticsConfig;
 use ide::{Cancellable, HoverAction, HoverGotoTypeData, diagnostics::Severity};
 use lsp_types::{
-    DiagnosticRelatedInformation, DiagnosticTag, GotoDefinitionResponse, HoverContents, InlayHint,
-    InlayHintParams, MarkupContent, MarkupKind, Range, TextDocumentIdentifier,
+    DiagnosticRelatedInformation, DiagnosticTag, FoldingRange, FoldingRangeParams,
+    GotoDefinitionResponse, HoverContents, InlayHint, InlayHintParams, MarkupContent, MarkupKind,
+    Range, TextDocumentIdentifier,
 };
 use vfs::FileId;
 
@@ -87,6 +88,23 @@ pub(crate) fn handle_completion(
         items,
     };
     Ok(Some(completion_list.into()))
+}
+
+pub(crate) fn handle_folding_range(
+    snap: GlobalStateSnapshot,
+    parameters: FoldingRangeParams,
+) -> anyhow::Result<Option<Vec<FoldingRange>>> {
+    let _p = tracing::info_span!("handle_folding_range").entered();
+    let file_id = try_default!(from_proto::file_id(&snap, &parameters.text_document.uri)?);
+    let folds = snap.analysis.folding_ranges(file_id)?;
+    let text = snap.analysis.file_text(file_id)?;
+    let line_index = snap.file_line_index(file_id)?;
+    let line_folding_only = snap.config.line_folding_only();
+    let result = folds
+        .into_iter()
+        .map(|fold| to_proto::folding_range(&text, &line_index, line_folding_only, &fold))
+        .collect();
+    Ok(Some(result))
 }
 
 pub(crate) fn handle_formatting(

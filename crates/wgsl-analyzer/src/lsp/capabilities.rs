@@ -4,11 +4,12 @@ use lsp_types::{
     CodeActionKind, CodeActionOptions, CodeActionProviderCapability, CompletionOptions,
     CompletionOptionsCompletionItem, DocumentOnTypeFormattingOptions, FileOperationFilter,
     FileOperationPattern, FileOperationPatternKind, FileOperationRegistrationOptions,
-    HoverProviderCapability, InlayHintOptions, InlayHintServerCapabilities, OneOf,
-    PositionEncodingKind, SaveOptions, SelectionRangeProviderCapability, ServerCapabilities,
-    TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
-    WorkDoneProgressOptions, WorkspaceFileOperationsServerCapabilities,
-    WorkspaceFoldersServerCapabilities, WorkspaceServerCapabilities,
+    FoldingRangeProviderCapability, HoverProviderCapability, InlayHintOptions,
+    InlayHintServerCapabilities, OneOf, PositionEncodingKind, SaveOptions,
+    SelectionRangeProviderCapability, ServerCapabilities, TextDocumentSyncCapability,
+    TextDocumentSyncKind, TextDocumentSyncOptions, WorkDoneProgressOptions,
+    WorkspaceFileOperationsServerCapabilities, WorkspaceFoldersServerCapabilities,
+    WorkspaceServerCapabilities,
 };
 use rustc_hash::FxHashSet;
 
@@ -79,7 +80,7 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
             }
         }),
         selection_range_provider: Some(SelectionRangeProviderCapability::Simple(true)),
-        folding_range_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/345
+        folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
         rename_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/346
         linked_editing_range_provider: None, // Not relevant
         document_link_provider: None, // Not relevant
