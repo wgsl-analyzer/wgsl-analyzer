@@ -3,7 +3,7 @@ use rowan::{NodeOrToken, TextSize};
 use rustc_hash::FxHashSet;
 use std::hash::Hash;
 use syntax::{
-    AstNode, AstToken, Direction,
+    AstNode, AstToken as _, Direction,
     SyntaxKind::{self, *},
     SyntaxNode,
     ast::{self, SourceFile},
@@ -63,18 +63,17 @@ pub(crate) fn folding_ranges(file: &SourceFile) -> Vec<Fold> {
                 {
                     if !fn_node
                         .parameter_list()
-                        .map(|param_list| param_list.syntax().text().contains_char('\n'))
-                        .unwrap_or(false)
+                        .is_some_and(|param_list| param_list.syntax().text().contains_char('\n'))
                     {
                         continue;
                     }
 
                     if fn_node.body().is_some() {
                         // Get the actual start of the function (excluding doc comments)
-                        let fn_start = fn_node
-                            .fn_token()
-                            .map(|token| token.text_range().start())
-                            .unwrap_or(node.text_range().start());
+                        let fn_start = fn_node.fn_token().map_or_else(
+                            || node.text_range().start(),
+                            |token| token.text_range().start(),
+                        );
                         result.push(Fold {
                             range: TextRange::new(fn_start, node.text_range().end()),
                             kind: FoldKind::Function,
@@ -105,15 +104,15 @@ pub(crate) fn folding_ranges(file: &SourceFile) -> Vec<Fold> {
                             result.push(Fold {
                                 range: TextRange::new(region, comment.syntax().text_range().end()),
                                 kind: FoldKind::Region,
-                            })
+                            });
                         }
                     } else if let Some(range) =
-                        contiguous_range_for_comment(comment, &mut visited_comments)
+                        contiguous_range_for_comment(&comment, &mut visited_comments)
                     {
                         result.push(Fold {
                             range,
                             kind: FoldKind::Comment,
-                        })
+                        });
                     }
                 }
             },
@@ -121,23 +120,23 @@ pub(crate) fn folding_ranges(file: &SourceFile) -> Vec<Fold> {
                 match_ast! {
                     match node {
                         ast::ConstantDeclaration(konst) => {
-                            if let Some(range) = contiguous_range_for_item_group(konst, &mut visited_nodes) {
-                                result.push(Fold { range, kind: FoldKind::Constants })
+                            if let Some(range) = contiguous_range_for_item_group(&konst, &mut visited_nodes) {
+                                result.push(Fold { range, kind: FoldKind::Constants });
                             }
                         },
                         ast::VariableDeclaration(variable) => {
-                            if let Some(range) = contiguous_range_for_item_group(variable, &mut visited_nodes) {
-                                result.push(Fold { range, kind: FoldKind::Variables })
+                            if let Some(range) = contiguous_range_for_item_group(&variable, &mut visited_nodes) {
+                                result.push(Fold { range, kind: FoldKind::Variables });
                             }
                         },
                         ast::OverrideDeclaration(r#override) => {
-                            if let Some(range) = contiguous_range_for_item_group(r#override, &mut visited_nodes) {
-                                result.push(Fold { range, kind: FoldKind::Overrides })
+                            if let Some(range) = contiguous_range_for_item_group(&r#override, &mut visited_nodes) {
+                                result.push(Fold { range, kind: FoldKind::Overrides });
                             }
                         },
                         ast::TypeAliasDeclaration(alias) => {
-                            if let Some(range) = contiguous_range_for_item_group(alias, &mut visited_nodes) {
-                                result.push(Fold { range, kind: FoldKind::TypeAliases })
+                            if let Some(range) = contiguous_range_for_item_group(&alias, &mut visited_nodes) {
+                                result.push(Fold { range, kind: FoldKind::TypeAliases });
                             }
                         },
                         _ => (),
@@ -150,10 +149,10 @@ pub(crate) fn folding_ranges(file: &SourceFile) -> Vec<Fold> {
     result
 }
 
-fn fold_kind(kind: SyntaxKind) -> Option<FoldKind> {
+const fn fold_kind(kind: SyntaxKind) -> Option<FoldKind> {
+    #[expect(clippy::wildcard_enum_match_arm, reason = "too many match arms")]
     match kind {
-        SyntaxKind::BlockComment => Some(FoldKind::Comment),
-        SyntaxKind::LineEndingComment => Some(FoldKind::Comment),
+        SyntaxKind::BlockComment | SyntaxKind::LineEndingComment => Some(FoldKind::Comment),
         SyntaxKind::Arguments | SyntaxKind::FunctionParameters | SyntaxKind::TemplateList => {
             Some(FoldKind::ArgList)
         },
@@ -167,7 +166,7 @@ fn fold_kind(kind: SyntaxKind) -> Option<FoldKind> {
 }
 
 fn contiguous_range_for_item_group<N>(
-    first: N,
+    first: &N,
     visited: &mut FxHashSet<SyntaxNode>,
 ) -> Option<TextRange>
 where
@@ -192,7 +191,7 @@ where
                 break;
             },
             NodeOrToken::Node(node) => {
-                if let Some(_) = ast::Attribute::cast(node.clone()) {
+                if ast::Attribute::can_cast(node.kind()) {
                     // Ignore attributes
                     continue;
                 }
@@ -223,7 +222,7 @@ where
 }
 
 fn contiguous_range_for_comment(
-    first: ast::Comment,
+    first: &ast::Comment,
     visited: &mut FxHashSet<ast::Comment>,
 ) -> Option<TextRange> {
     visited.insert(first.clone());
@@ -244,14 +243,14 @@ fn contiguous_range_for_comment(
                     // Ignore whitespace without blank lines
                     continue;
                 }
-                if let Some(c) = ast::Comment::cast(token)
-                    && c.kind() == group_kind
+                if let Some(comment) = ast::Comment::cast(token)
+                    && comment.kind() == group_kind
                 {
-                    let text = c.text().trim_start();
+                    let text = comment.text().trim_start();
                     // regions are not real comments
                     if !(text.starts_with(REGION_START) || text.starts_with(REGION_END)) {
-                        visited.insert(c.clone());
-                        last = c;
+                        visited.insert(comment.clone());
+                        last = comment;
                         continue;
                     }
                 }
@@ -264,7 +263,7 @@ fn contiguous_range_for_comment(
         };
     }
 
-    if first != last {
+    if *first != last {
         Some(TextRange::new(
             first.syntax().text_range().start(),
             last.syntax().text_range().end(),

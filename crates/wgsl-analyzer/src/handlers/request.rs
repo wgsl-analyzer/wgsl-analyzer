@@ -92,17 +92,17 @@ pub(crate) fn handle_completion(
 
 pub(crate) fn handle_folding_range(
     snap: GlobalStateSnapshot,
-    params: FoldingRangeParams,
+    parameters: FoldingRangeParams,
 ) -> anyhow::Result<Option<Vec<FoldingRange>>> {
     let _p = tracing::info_span!("handle_folding_range").entered();
-    let file_id = try_default!(from_proto::file_id(&snap, &params.text_document.uri)?);
+    let file_id = try_default!(from_proto::file_id(&snap, &parameters.text_document.uri)?);
     let folds = snap.analysis.folding_ranges(file_id)?;
     let text = snap.analysis.file_text(file_id)?;
     let line_index = snap.file_line_index(file_id)?;
     let line_folding_only = snap.config.line_folding_only();
     let result = folds
         .into_iter()
-        .map(|it| to_proto::folding_range(&text, &line_index, line_folding_only, it))
+        .map(|fold| to_proto::folding_range(&text, &line_index, line_folding_only, &fold))
         .collect();
     Ok(Some(result))
 }

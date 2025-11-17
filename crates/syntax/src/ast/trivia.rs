@@ -1,6 +1,6 @@
 use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 
-use crate::{AstNode, AstToken};
+use crate::{AstNode as _, AstToken};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Comment {
@@ -19,22 +19,27 @@ impl AstToken for Comment {
 }
 
 impl Comment {
+    #[must_use]
     pub fn kind(&self) -> CommentKind {
         CommentKind::from_text(self.text())
     }
 
+    #[must_use]
     pub fn is_doc(&self) -> bool {
         self.kind().doc.is_some()
     }
 
+    #[must_use]
     pub fn is_inner(&self) -> bool {
         self.kind().doc == Some(CommentPlacement::Inner)
     }
 
+    #[must_use]
     pub fn is_outer(&self) -> bool {
         self.kind().doc == Some(CommentPlacement::Outer)
     }
 
+    #[must_use]
     pub fn prefix(&self) -> &'static str {
         let &(prefix, _kind) = CommentKind::BY_PREFIX
             .iter()
@@ -45,6 +50,7 @@ impl Comment {
 
     /// Returns the textual content of a doc comment node as a single string with prefix and suffix
     /// removed.
+    #[must_use]
     pub fn doc_comment(&self) -> Option<&str> {
         let kind = self.kind();
         match kind {
@@ -79,12 +85,14 @@ pub enum CommentShape {
 }
 
 impl CommentShape {
+    #[must_use]
     pub fn is_line(self) -> bool {
-        self == CommentShape::Line
+        self == Self::Line
     }
 
+    #[must_use]
     pub fn is_block(self) -> bool {
-        self == CommentShape::Block
+        self == Self::Block
     }
 }
 
@@ -95,86 +103,88 @@ pub enum CommentPlacement {
 }
 
 impl CommentKind {
-    const BY_PREFIX: [(&'static str, CommentKind); 9] = [
+    const BY_PREFIX: [(&'static str, Self); 9] = [
         (
             "/**/",
-            CommentKind {
+            Self {
                 shape: CommentShape::Block,
                 doc: None,
             },
         ),
         (
             "/***",
-            CommentKind {
+            Self {
                 shape: CommentShape::Block,
                 doc: None,
             },
         ),
         (
             "////",
-            CommentKind {
+            Self {
                 shape: CommentShape::Line,
                 doc: None,
             },
         ),
         (
             "///",
-            CommentKind {
+            Self {
                 shape: CommentShape::Line,
                 doc: Some(CommentPlacement::Outer),
             },
         ),
         (
             "//!",
-            CommentKind {
+            Self {
                 shape: CommentShape::Line,
                 doc: Some(CommentPlacement::Inner),
             },
         ),
         (
             "/**",
-            CommentKind {
+            Self {
                 shape: CommentShape::Block,
                 doc: Some(CommentPlacement::Outer),
             },
         ),
         (
             "/*!",
-            CommentKind {
+            Self {
                 shape: CommentShape::Block,
                 doc: Some(CommentPlacement::Inner),
             },
         ),
         (
             "//",
-            CommentKind {
+            Self {
                 shape: CommentShape::Line,
                 doc: None,
             },
         ),
         (
             "/*",
-            CommentKind {
+            Self {
                 shape: CommentShape::Block,
                 doc: None,
             },
         ),
     ];
 
-    pub(crate) fn from_text(text: &str) -> CommentKind {
-        let &(_prefix, kind) = CommentKind::BY_PREFIX
+    #[must_use]
+    pub(crate) fn from_text(text: &str) -> Self {
+        let &(_prefix, kind) = Self::BY_PREFIX
             .iter()
             .find(|&(prefix, _kind)| text.starts_with(prefix))
             .unwrap();
         kind
     }
 
-    pub fn prefix(&self) -> &'static str {
-        let &(prefix, _) = CommentKind::BY_PREFIX
+    #[must_use]
+    pub fn prefix(self) -> &'static str {
+        let &(prefix, _) = Self::BY_PREFIX
             .iter()
             .rev()
-            .find(|(_, kind)| kind == self)
-            .unwrap();
+            .find(|(_, kind)| *kind == self)
+            .expect("comment kind should have matched one of the exhaustively listed prefixes");
         prefix
     }
 }
@@ -195,6 +205,7 @@ impl AstToken for Whitespace {
     }
 }
 impl Whitespace {
+    #[must_use]
     pub fn spans_multiple_lines(&self) -> bool {
         let text = self.text();
         text.find('\n')

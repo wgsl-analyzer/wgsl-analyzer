@@ -31,7 +31,7 @@ pub(crate) fn folding_range(
     text: &str,
     line_index: &LineIndex,
     line_folding_only: bool,
-    fold: Fold,
+    fold: &Fold,
 ) -> lsp_types::FoldingRange {
     let kind = match fold.kind {
         FoldKind::Comment => Some(lsp_types::FoldingRangeKind::Comment),
@@ -56,8 +56,8 @@ pub(crate) fn folding_range(
         // on the same line.
         let has_more_text_on_end_line = text[TextRange::new(fold.range.end(), TextSize::of(text))]
             .chars()
-            .take_while(|it| *it != '\n')
-            .any(|it| !it.is_whitespace());
+            .take_while(|item| *item != '\n')
+            .any(|item| !item.is_whitespace());
 
         let end_line = if has_more_text_on_end_line {
             range.end.line.saturating_sub(1)
