@@ -39,9 +39,16 @@ impl Comment {
         self.kind().doc == Some(CommentPlacement::Outer)
     }
 
+    /// Extracts the prefix of the comment.
+    ///
+    /// Precondition:
+    /// The comment node needs to have text that is a comment.
+    ///
+    /// # Panics
+    /// When called with text that does not immediately start with a comment marker.
     #[must_use]
-    pub fn prefix(&self) -> &'static str {
-        let &(prefix, _kind) = CommentKind::BY_PREFIX
+    pub fn prefix(self) -> &'static str {
+        let &(prefix, _) = CommentKind::BY_PREFIX
             .iter()
             .find(|&(prefix, kind)| self.kind() == *kind && self.text().starts_with(prefix))
             .unwrap();
@@ -169,6 +176,13 @@ impl CommentKind {
         ),
     ];
 
+    /// Constructs a [`CommentKind`] from text.
+    ///
+    /// Precondition:
+    /// The text needs to start with a comment.
+    ///
+    /// # Panics
+    /// When called with text that does not immediately start with a comment marker.
     #[must_use]
     pub(crate) fn from_text(text: &str) -> Self {
         let &(_prefix, kind) = Self::BY_PREFIX
@@ -178,13 +192,17 @@ impl CommentKind {
         kind
     }
 
+    /// Extracts the prefix of the comment.
+    ///
+    /// # Panics
+    /// Cannot panic, by construction [`Self::BY_PREFIX`] should cover all cases
     #[must_use]
     pub fn prefix(self) -> &'static str {
         let &(prefix, _) = Self::BY_PREFIX
             .iter()
             .rev()
             .find(|(_, kind)| *kind == self)
-            .expect("comment kind should have matched one of the exhaustively listed prefixes");
+            .unwrap();
         prefix
     }
 }
