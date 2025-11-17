@@ -191,7 +191,13 @@ where
                 // group ends here
                 break;
             },
-            NodeOrToken::Node(node) => node,
+            NodeOrToken::Node(node) => {
+                if let Some(_) = ast::Attribute::cast(node.clone()) {
+                    // Ignore attributes
+                    continue;
+                }
+                node
+            },
         };
 
         if let Some(next) = N::cast(node) {
