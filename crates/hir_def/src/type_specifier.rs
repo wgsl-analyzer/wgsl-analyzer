@@ -1,6 +1,6 @@
 use la_arena::Idx;
 
-use crate::{expression::ExpressionId, module_data::Name};
+use crate::{expression::ExpressionId, item_tree::Name};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct TypeSpecifier {

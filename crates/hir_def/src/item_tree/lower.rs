@@ -1,6 +1,6 @@
 use syntax::{
     HasName as _,
-    ast::{Item, SourceFile},
+    ast::{Directive, ImportStatement, Item, SourceFile},
 };
 use triomphe::Arc;
 
@@ -9,14 +9,14 @@ use crate::{
     HirFileId,
     ast_id::AstIdMap,
     database::DefDatabase,
-    module_data::{Function, ModuleData, ModuleItem, ModuleItemId},
+    item_tree::{self, Function, ItemTree, ModuleItem, ModuleItemId},
 };
 
 pub(crate) struct Ctx<'database> {
     database: &'database dyn DefDatabase,
     file_id: HirFileId,
     source_ast_id_map: Arc<AstIdMap>,
-    pub(crate) module_data: ModuleData,
+    pub(crate) module_data: ItemTree,
     pub(crate) items: Vec<ModuleItem>,
 }
 
@@ -29,7 +29,7 @@ impl<'database> Ctx<'database> {
             database,
             file_id,
             source_ast_id_map: database.ast_id_map(file_id),
-            module_data: ModuleData::default(),
+            module_data: ItemTree::default(),
             items: vec![],
         }
     }
@@ -38,9 +38,28 @@ impl<'database> Ctx<'database> {
         &mut self,
         source_file: &SourceFile,
     ) {
+        source_file.imports().for_each(|import| {
+            self.lower_import(import);
+        });
+        source_file.directives().for_each(|directive| {
+            self.lower_directive(directive);
+        });
         source_file.items().for_each(|item| {
             self.lower_item(item);
         });
+    }
+
+    fn lower_import(
+        &mut self,
+        item: ImportStatement,
+    ) -> Option<()> {
+        None
+    }
+    fn lower_directive(
+        &mut self,
+        item: Directive,
+    ) -> Option<()> {
+        None
     }
 
     fn lower_item(

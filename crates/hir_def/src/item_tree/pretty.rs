@@ -4,7 +4,7 @@ use std::fmt::Write as _;
 
 use crate::{
     FileAstId,
-    module_data::{ModuleInfo, ModuleItem},
+    item_tree::{ModuleInfo, ModuleItem},
 };
 
 #[must_use]

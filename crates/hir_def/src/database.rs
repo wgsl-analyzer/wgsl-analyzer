@@ -6,26 +6,26 @@ use std::{
 
 use base_db::{FileId, SourceDatabase};
 use salsa::InternKey;
-use syntax::Parse;
+use syntax::{Parse, ast};
 use triomphe::Arc;
 use vfs::VfsPath;
 
 use crate::{
-    HirFileId, InFile,
+    FileAstId, HirFileId, InFile,
     ast_id::AstIdMap,
     attributes::{AttributeDefId, AttributesWithOwner},
     body::{Body, BodySourceMap, scope::ExprScopes},
-    data::{
-        FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, StructData,
-        TypeAliasData,
-    },
     expression_store::{ExpressionSourceMap, ExpressionStore},
     hir_file_id::HirFileIdRepr,
-    module_data::{
+    item_tree::{
         Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItemId, Override, Struct,
         TypeAlias,
     },
     resolver::Resolver,
+    signature::{
+        ConstantSignature, FunctionSignature, OverrideSignature, StructSignature,
+        TypeAliasSignature, VariableSignature,
+    },
 };
 
 #[salsa::query_group(DefDatabaseStorage)]
@@ -51,7 +51,7 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
     ) -> Arc<AstIdMap>;
 
     #[salsa::invoke(ModuleInfo::module_info_query)]
-    fn module_info(
+    fn item_tree(
         &self,
         key: HirFileId,
     ) -> Arc<ModuleInfo>;
@@ -80,41 +80,41 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         key: DefinitionWithBodyId,
     ) -> (Arc<ExpressionStore>, Arc<ExpressionSourceMap>);
 
-    #[salsa::invoke(FunctionData::query)]
+    #[salsa::invoke(FunctionSignature::query)]
     fn function_data(
         &self,
         key: FunctionId,
-    ) -> (Arc<FunctionData>, Arc<ExpressionSourceMap>);
+    ) -> (Arc<FunctionSignature>, Arc<ExpressionSourceMap>);
 
-    #[salsa::invoke(StructData::query)]
+    #[salsa::invoke(StructSignature::query)]
     fn struct_data(
         &self,
         key: StructId,
-    ) -> (Arc<StructData>, Arc<ExpressionSourceMap>);
+    ) -> (Arc<StructSignature>, Arc<ExpressionSourceMap>);
 
-    #[salsa::invoke(TypeAliasData::type_alias_data_query)]
+    #[salsa::invoke(TypeAliasSignature::query)]
     fn type_alias_data(
         &self,
         key: TypeAliasId,
-    ) -> (Arc<TypeAliasData>, Arc<ExpressionSourceMap>);
+    ) -> (Arc<TypeAliasSignature>, Arc<ExpressionSourceMap>);
 
-    #[salsa::invoke(GlobalVariableData::global_var_data_query)]
+    #[salsa::invoke(VariableSignature::query)]
     fn global_var_data(
         &self,
         key: GlobalVariableId,
-    ) -> (Arc<GlobalVariableData>, Arc<ExpressionSourceMap>);
+    ) -> (Arc<VariableSignature>, Arc<ExpressionSourceMap>);
 
-    #[salsa::invoke(GlobalConstantData::global_constant_data_query)]
+    #[salsa::invoke(ConstantSignature::query)]
     fn global_constant_data(
         &self,
         key: GlobalConstantId,
-    ) -> (Arc<GlobalConstantData>, Arc<ExpressionSourceMap>);
+    ) -> (Arc<ConstantSignature>, Arc<ExpressionSourceMap>);
 
-    #[salsa::invoke(OverrideData::override_data_query)]
+    #[salsa::invoke(OverrideSignature::query)]
     fn override_data(
         &self,
         key: OverrideId,
-    ) -> (Arc<OverrideData>, Arc<ExpressionSourceMap>);
+    ) -> (Arc<OverrideSignature>, Arc<ExpressionSourceMap>);
 
     #[salsa::invoke(AttributesWithOwner::attrs_query)]
     fn attrs(
@@ -185,6 +185,16 @@ fn ast_id_map(
 #[salsa::query_group(InternDatabaseStorage)]
 pub trait InternDatabase: SourceDatabase {
     #[salsa::interned]
+    fn intern_import(
+        &self,
+        location: ImportLocation,
+    ) -> ImportId;
+    #[salsa::interned]
+    fn intern_directive(
+        &self,
+        location: DirectiveLocation,
+    ) -> DirectiveId;
+    #[salsa::interned]
     fn intern_function(
         &self,
         location: Location<Function>,
@@ -217,6 +227,7 @@ pub trait InternDatabase: SourceDatabase {
 }
 
 pub type Location<T> = InFile<ModuleItemId<T>>;
+pub type Location2<T> = InFile<FileAstId<T>>;
 
 pub struct Interned<T>(salsa::InternId, PhantomData<T>);
 
@@ -301,7 +312,10 @@ pub trait Lookup: Sized {
         database: &dyn DefDatabase,
     ) -> Self::Data;
 }
-
+type ImportLocation = Location2<ast::ImportStatement>;
+intern_id!(ImportId, ImportLocation, lookup_intern_import);
+type DirectiveLocation = Location2<ast::Directive>;
+intern_id!(DirectiveId, DirectiveLocation, lookup_intern_directive);
 intern_id!(FunctionId, Location<Function>, lookup_intern_function);
 intern_id!(
     GlobalVariableId,
@@ -344,7 +358,7 @@ impl DefinitionWithBodyId {
         database: &dyn DefDatabase,
     ) -> Resolver {
         let file_id = self.file_id(database);
-        let module_info = database.module_info(file_id);
+        let module_info = database.item_tree(file_id);
         Resolver::default().push_module_scope(file_id, module_info)
     }
 }
@@ -380,7 +394,7 @@ impl ModuleDefinitionId {
         database: &dyn DefDatabase,
     ) -> Resolver {
         let file_id = self.file_id(database);
-        let module_info = database.module_info(file_id);
+        let module_info = database.item_tree(file_id);
         Resolver::default().push_module_scope(file_id, module_info)
     }
 }

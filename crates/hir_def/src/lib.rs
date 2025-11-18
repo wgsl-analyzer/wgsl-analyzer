@@ -1,13 +1,13 @@
 mod ast_id;
 pub mod attributes;
 pub mod body;
-pub mod data;
 pub mod database;
 pub mod expression;
 pub mod expression_store;
 pub mod hir_file_id;
-pub mod module_data;
+pub mod item_tree;
 pub mod resolver;
+pub mod signature;
 #[cfg(test)]
 mod test_db;
 #[cfg(test)]
@@ -19,7 +19,7 @@ use base_db::{FileRange, TextRange};
 use database::DefDatabase;
 pub use hir_file_id::HirFileId;
 use hir_file_id::HirFileIdRepr;
-use module_data::{ModuleDataNode, ModuleItemId};
+use item_tree::{ItemTreeNode, ModuleItemId};
 use rowan::NodeOrToken;
 use syntax::{AstNode, SyntaxNode, SyntaxToken};
 
@@ -131,14 +131,14 @@ pub trait HasSource {
     ) -> InFile<Self::Value>;
 }
 
-impl<N: ModuleDataNode> HasSource for InFile<ModuleItemId<N>> {
+impl<N: ItemTreeNode> HasSource for InFile<ModuleItemId<N>> {
     type Value = N::Source;
 
     fn source(
         &self,
         database: &dyn DefDatabase,
     ) -> InFile<N::Source> {
-        let module_info = database.module_info(self.file_id);
+        let module_info = database.item_tree(self.file_id);
         let ast_id_map = database.ast_id_map(self.file_id);
         let root = database.parse_or_resolve(self.file_id);
         let node = N::lookup(&module_info.data, self.value.index);

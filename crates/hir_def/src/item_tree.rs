@@ -100,25 +100,20 @@ pub struct Struct {
     pub ast_id: FileAstId<ast::StructDeclaration>,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Directive;
-
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct ModuleInfo {
-    pub(crate) data: ModuleData,
+    pub(crate) data: ItemTree,
     items: Vec<ModuleItem>,
 }
 
-/// Corresponds to the [ItemTree](https://github.com/rust-lang/rust-analyzer/blob/e10fa9393ea2df4067e2258c9b8132244e415964/crates/hir-def/src/item_tree.rs#L183) in rust-analyzer
 #[derive(Debug, Default, Eq, PartialEq)]
-pub struct ModuleData {
+pub struct ItemTree {
     functions: Arena<Function>,
     global_variables: Arena<GlobalVariable>,
     global_constants: Arena<GlobalConstant>,
     overrides: Arena<Override>,
     type_aliases: Arena<TypeAlias>,
     structs: Arena<Struct>,
-    directives: Arena<Directive>,
 }
 
 impl ModuleInfo {
@@ -154,7 +149,7 @@ impl ModuleInfo {
     }
 
     #[must_use]
-    pub fn get<M: ModuleDataNode>(
+    pub fn get<M: ItemTreeNode>(
         &self,
         id: ModuleItemId<M>,
     ) -> &M {
@@ -196,16 +191,16 @@ impl<N> Clone for ModuleItemId<N> {
     }
 }
 
-impl<N: ModuleDataNode> Copy for ModuleItemId<N> {}
+impl<N: ItemTreeNode> Copy for ModuleItemId<N> {}
 
-pub trait ModuleDataNode: Clone {
+pub trait ItemTreeNode: Clone {
     type Source: AstNode + Into<ast::Item>;
 
     fn ast_id(&self) -> FileAstId<Self::Source>;
 
     /// Looks up an instance of `Self` in an item tree.
     fn lookup(
-        data: &ModuleData,
+        data: &ItemTree,
         index: Idx<Self>,
     ) -> &Self;
 
@@ -229,7 +224,7 @@ macro_rules! mod_items {
             }
         })+
 
-        $(impl core::ops::Index<la_arena::Idx<$r#type>> for ModuleData {
+        $(impl core::ops::Index<la_arena::Idx<$r#type>> for ItemTree {
             type Output = $r#type;
 
             fn index(&self, index: la_arena::Idx<$r#type>) -> &Self::Output {
@@ -238,14 +233,14 @@ macro_rules! mod_items {
         })*
 
         $(
-        $(impl ModuleDataNode for $r#type {
+        $(impl ItemTreeNode for $r#type {
                 type Source = $ast;
 
                 fn ast_id(&self) -> FileAstId<Self::Source> {
                     self.ast_id
                 }
 
-                fn lookup(data: &ModuleData, index: Idx<Self>) -> &Self {
+                fn lookup(data: &ItemTree, index: Idx<Self>) -> &Self {
                     &data.$fld[index]
                 }
 
@@ -275,12 +270,12 @@ mod_items! {
     TypeAlias in type_aliases -> ast::TypeAliasDeclaration,
 }
 
-pub fn find_item<M: ModuleDataNode>(
+pub fn find_item<M: ItemTreeNode>(
     database: &dyn DefDatabase,
     file_id: HirFileId,
     source: &M::Source,
 ) -> Option<ModuleItemId<M>> {
-    let module_info = database.module_info(file_id);
+    let module_info = database.item_tree(file_id);
     module_info.items().iter().find_map(|&item| {
         let id = M::id_from_mod_item(item)?;
         let data = M::lookup(&module_info.data, id.index);

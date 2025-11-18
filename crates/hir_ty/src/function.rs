@@ -1,4 +1,4 @@
-use hir_def::module_data::Name;
+use hir_def::item_tree::Name;
 use triomphe::Arc;
 
 use crate::{database::HirDatabase, ty::Type};

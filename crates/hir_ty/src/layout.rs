@@ -1,6 +1,6 @@
 //! <https://www.w3.org/TR/WGSL/#memory-layouts>
 
-use hir_def::data::LocalFieldId;
+use hir_def::signature::LocalFieldId;
 use la_arena::ArenaMap;
 
 use crate::{

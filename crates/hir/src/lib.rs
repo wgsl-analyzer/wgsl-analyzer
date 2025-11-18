@@ -8,14 +8,14 @@ use either::Either;
 use hir_def::{
     HasSource as _, HirFileId, InFile,
     body::{BindingId, Body, BodySourceMap},
-    data::{FieldId, ParameterId},
     database::{
         DefDatabase, DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId,
         Location, Lookup as _, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
-    module_data::{self, ModuleInfo, ModuleItem, Name},
+    item_tree::{self, ModuleInfo, ModuleItem, Name},
     resolver::{ResolveKind, Resolver},
+    signature::{FieldId, ParameterId},
 };
 pub use hir_ty::database::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Type};
@@ -170,7 +170,7 @@ impl<'database> Semantics<'database> {
         if let Some(definition) = self.find_container(file_id, source) {
             definition.resolver(self.database)
         } else {
-            let module_info = self.database.module_info(file_id);
+            let module_info = self.database.item_tree(file_id);
             Resolver::default().push_module_scope(file_id, module_info)
         }
     }
@@ -248,7 +248,7 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::FunctionDeclaration>,
     ) -> Option<FunctionId> {
-        let function = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let function = item_tree::find_item(self.database, source.file_id, &source.value)?;
         let function_id = self
             .database
             .intern_function(Location::new(source.file_id, function));
@@ -259,7 +259,7 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::ConstantDeclaration>,
     ) -> Option<GlobalConstantId> {
-        let global_constant = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let global_constant = item_tree::find_item(self.database, source.file_id, &source.value)?;
         let id = self
             .database
             .intern_global_constant(Location::new(source.file_id, global_constant));
@@ -270,7 +270,7 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::VariableDeclaration>,
     ) -> Option<GlobalVariableId> {
-        let global_variable = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let global_variable = item_tree::find_item(self.database, source.file_id, &source.value)?;
         let id = self
             .database
             .intern_global_variable(Location::new(source.file_id, global_variable));
@@ -281,7 +281,7 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::OverrideDeclaration>,
     ) -> Option<OverrideId> {
-        let item = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let item = item_tree::find_item(self.database, source.file_id, &source.value)?;
         let id = self
             .database
             .intern_override(Location::new(source.file_id, item));
@@ -292,7 +292,7 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::TypeAliasDeclaration>,
     ) -> Option<TypeAliasId> {
-        let item = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let item = item_tree::find_item(self.database, source.file_id, &source.value)?;
         let id = self
             .database
             .intern_type_alias(Location::new(source.file_id, item));
@@ -303,7 +303,7 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::StructDeclaration>,
     ) -> Option<StructId> {
-        let item = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let item = item_tree::find_item(self.database, source.file_id, &source.value)?;
         let id = self
             .database
             .intern_struct(Location::new(source.file_id, item));
@@ -364,7 +364,7 @@ impl ChildContainer {
             | Self::StructId(_)
             | Self::TypeAliasId(_) => {
                 let file_id = self.file_id(database);
-                let module_info = database.module_info(file_id);
+                let module_info = database.item_tree(file_id);
                 Resolver::default().push_module_scope(file_id, module_info)
             },
         }
@@ -754,7 +754,7 @@ impl Module {
         &self,
         database: &dyn HirDatabase,
     ) -> Vec<ModuleDef> {
-        let module_info = database.module_info(self.file_id);
+        let module_info = database.item_tree(self.file_id);
         module_info
             .items()
             .iter()
@@ -766,7 +766,7 @@ impl Module {
         &self,
         database: &dyn HirDatabase,
     ) -> Arc<ModuleInfo> {
-        database.module_info(self.file_id)
+        database.item_tree(self.file_id)
     }
 
     pub fn diagnostics(

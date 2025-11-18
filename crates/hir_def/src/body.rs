@@ -13,7 +13,7 @@ use crate::{
     database::{DefDatabase, DefinitionWithBodyId, Lookup as _},
     expression::{ExpressionId, Statement, StatementId},
     expression_store::{ExpressionSourceMap, ExpressionStore, SyntheticSyntax},
-    module_data::Name,
+    item_tree::Name,
 };
 
 pub type BindingId = Idx<Binding>;

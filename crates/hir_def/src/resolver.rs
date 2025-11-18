@@ -7,7 +7,7 @@ use crate::{
         scope::{ExprScopes, ScopeId},
     },
     database::{FunctionId, Location},
-    module_data::{
+    item_tree::{
         Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItem, Name, Override, Struct,
         TypeAlias,
     },

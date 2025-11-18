@@ -1,6 +1,6 @@
 use std::str::FromStr as _;
 
-use hir_def::{expression::ExpressionId, module_data::Name};
+use hir_def::{expression::ExpressionId, item_tree::Name};
 use wgsl_types::{
     Instance,
     inst::LiteralInstance,

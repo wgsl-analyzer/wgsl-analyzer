@@ -3,7 +3,7 @@ use std::{fmt, hash, iter, mem};
 use ast::Expression as AstExpression;
 use base_db::{FileId, FileRange, TextRange};
 use hir::{Field, HasSource as _, Semantics};
-use hir_def::{InFile, data::FieldId, module_data::Name};
+use hir_def::{InFile, item_tree::Name, signature::FieldId};
 use hir_ty::{
     function::FunctionDetails,
     infer::ResolvedCall,
@@ -354,7 +354,7 @@ fn get_struct_layout_hints(
 ) -> Option<()> {
     let display_kind = config.struct_layout_hints?;
 
-    let module_info = semantics.database.module_info(file_id.into());
+    let module_info = semantics.database.item_tree(file_id.into());
 
     for r#struct in module_info.structs() {
         let r#struct = semantics

@@ -1,10 +1,10 @@
 use base_db::{SourceDatabase, TextRange};
 use ide_db::RootDatabase;
 use line_index::{LineCol, LineIndex};
-use parser::{SyntaxNode, SyntaxToken};
 use rowan::{NodeOrToken, TextSize, WalkEvent};
 use stdx::format_to;
 use syntax::ast;
+use syntax::{SyntaxNode, SyntaxToken};
 use triomphe::Arc;
 use vfs::FileId;
 

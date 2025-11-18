@@ -6,13 +6,12 @@
 pub mod operators;
 pub mod trivia;
 
-use parser::{SyntaxKind, SyntaxNode};
+pub use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 pub use trivia::{Comment, Whitespace};
 
 use self::operators::{AssignmentOperator, BinaryOperation, UnaryOperator};
 use crate::{
-    AstChildren, AstNode, AstToken, HasAttributes, HasName, HasTemplateParameters, SyntaxToken,
-    TokenText,
+    AstChildren, AstNode, AstToken, HasAttributes, HasName, HasTemplateParameters, TokenText,
     ast::operators::{ArithmeticOperation, ComparisonOperation, LogicOperation},
     support,
 };
@@ -210,6 +209,7 @@ macro_rules! ast_token_enum {
 
 ast_node! {
     SourceFile:
+    imports: AstChildren<ImportStatement>;
     directives: AstChildren<Directive>;
     items: AstChildren<Item>;
 }
