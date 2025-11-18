@@ -101,13 +101,8 @@ pub struct Struct {
 }
 
 #[derive(Debug, Default, Eq, PartialEq)]
-pub struct ModuleInfo {
-    pub(crate) data: ItemTree,
-    items: Vec<ModuleItem>,
-}
-
-#[derive(Debug, Default, Eq, PartialEq)]
 pub struct ItemTree {
+    top_level: Vec<ModuleItem>,
     functions: Arena<Function>,
     global_variables: Arena<GlobalVariable>,
     global_constants: Arena<GlobalConstant>,
@@ -116,29 +111,26 @@ pub struct ItemTree {
     structs: Arena<Struct>,
 }
 
-impl ModuleInfo {
-    pub fn module_info_query(
+impl ItemTree {
+    pub fn query(
         database: &dyn DefDatabase,
         file_id: HirFileId,
     ) -> Arc<Self> {
         let source = database.parse_or_resolve(file_id).tree();
 
-        let mut lower_ctx = lower::Ctx::new(database, file_id);
-        lower_ctx.lower_source_file(&source);
+        let lower_ctx = lower::Ctx::new(database, file_id);
+        let tree = lower_ctx.lower_source_file(&source);
 
-        Arc::new(Self {
-            data: lower_ctx.module_data,
-            items: lower_ctx.items,
-        })
+        Arc::new(tree)
     }
 
     #[must_use]
     pub fn items(&self) -> &[ModuleItem] {
-        &self.items
+        &self.top_level
     }
 
     pub fn structs(&self) -> impl Iterator<Item = ModuleItemId<Struct>> + '_ {
-        self.items.iter().filter_map(|item| match item {
+        self.top_level.iter().filter_map(|item| match item {
             ModuleItem::Struct(r#struct) => Some(*r#struct),
             ModuleItem::Function(_)
             | ModuleItem::GlobalVariable(_)
@@ -153,7 +145,7 @@ impl ModuleInfo {
         &self,
         id: ModuleItemId<M>,
     ) -> &M {
-        M::lookup(&self.data, id.index)
+        M::lookup(&self, id.index)
     }
 }
 
@@ -275,10 +267,10 @@ pub fn find_item<M: ItemTreeNode>(
     file_id: HirFileId,
     source: &M::Source,
 ) -> Option<ModuleItemId<M>> {
-    let module_info = database.item_tree(file_id);
-    module_info.items().iter().find_map(|&item| {
+    let item_tree = database.item_tree(file_id);
+    item_tree.items().iter().find_map(|&item| {
         let id = M::id_from_mod_item(item)?;
-        let data = M::lookup(&module_info.data, id.index);
+        let data = M::lookup(&item_tree, id.index);
         let def_map = database.ast_id_map(file_id);
 
         let source_ast_id = def_map.try_ast_id(source)?;

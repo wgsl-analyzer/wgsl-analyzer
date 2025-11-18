@@ -16,7 +16,7 @@ pub(crate) struct Ctx<'database> {
     database: &'database dyn DefDatabase,
     file_id: HirFileId,
     source_ast_id_map: Arc<AstIdMap>,
-    pub(crate) module_data: ItemTree,
+    pub(crate) tree: ItemTree,
     pub(crate) items: Vec<ModuleItem>,
 }
 
@@ -29,35 +29,27 @@ impl<'database> Ctx<'database> {
             database,
             file_id,
             source_ast_id_map: database.ast_id_map(file_id),
-            module_data: ItemTree::default(),
+            tree: ItemTree::default(),
             items: vec![],
         }
     }
 
     pub(crate) fn lower_source_file(
-        &mut self,
+        mut self,
         source_file: &SourceFile,
-    ) {
+    ) -> ItemTree {
         source_file.imports().for_each(|import| {
             self.lower_import(import);
-        });
-        source_file.directives().for_each(|directive| {
-            self.lower_directive(directive);
         });
         source_file.items().for_each(|item| {
             self.lower_item(item);
         });
+        self.tree
     }
 
     fn lower_import(
         &mut self,
         item: ImportStatement,
-    ) -> Option<()> {
-        None
-    }
-    fn lower_directive(
-        &mut self,
-        item: Directive,
     ) -> Option<()> {
         None
     }
@@ -95,7 +87,7 @@ impl<'database> Ctx<'database> {
         let name = type_alias.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(type_alias);
         Some(
-            self.module_data
+            self.tree
                 .type_aliases
                 .alloc(TypeAlias { name, ast_id })
                 .into(),
@@ -110,12 +102,7 @@ impl<'database> Ctx<'database> {
         let ast_id = self.source_ast_id_map.ast_id(override_declaration);
 
         let override_declaration = Override { name, ast_id };
-        Some(
-            self.module_data
-                .overrides
-                .alloc(override_declaration)
-                .into(),
-        )
+        Some(self.tree.overrides.alloc(override_declaration).into())
     }
 
     fn lower_global_constant(
@@ -125,7 +112,7 @@ impl<'database> Ctx<'database> {
         let name = constant.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(constant);
         let constant = GlobalConstant { name, ast_id };
-        Some(self.module_data.global_constants.alloc(constant).into())
+        Some(self.tree.global_constants.alloc(constant).into())
     }
 
     fn lower_global_variable(
@@ -135,7 +122,7 @@ impl<'database> Ctx<'database> {
         let name = variable.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(variable);
         let variable = GlobalVariable { name, ast_id };
-        Some(self.module_data.global_variables.alloc(variable).into())
+        Some(self.tree.global_variables.alloc(variable).into())
     }
 
     fn lower_struct(
@@ -145,7 +132,7 @@ impl<'database> Ctx<'database> {
         let name = r#struct.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(r#struct);
         let r#struct = Struct { name, ast_id };
-        Some(self.module_data.structs.alloc(r#struct).into())
+        Some(self.tree.structs.alloc(r#struct).into())
     }
 
     fn lower_function(
@@ -155,6 +142,6 @@ impl<'database> Ctx<'database> {
         let name = function.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(function);
         let function = Function { name, ast_id };
-        Some(self.module_data.functions.alloc(function).into())
+        Some(self.tree.functions.alloc(function).into())
     }
 }

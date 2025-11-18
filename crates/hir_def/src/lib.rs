@@ -111,7 +111,7 @@ impl<N: HasTextRange, T: HasTextRange> HasTextRange for NodeOrToken<N, T> {
 }
 
 pub fn original_file_range<T: HasTextRange>(
-    database: &dyn DefDatabase,
+    _database: &dyn DefDatabase,
     file_id: HirFileId,
     value: &T,
 ) -> FileRange {
@@ -138,10 +138,10 @@ impl<N: ItemTreeNode> HasSource for InFile<ModuleItemId<N>> {
         &self,
         database: &dyn DefDatabase,
     ) -> InFile<N::Source> {
-        let module_info = database.item_tree(self.file_id);
+        let item_tree = database.item_tree(self.file_id);
         let ast_id_map = database.ast_id_map(self.file_id);
         let root = database.parse_or_resolve(self.file_id);
-        let node = N::lookup(&module_info.data, self.value.index);
+        let node = N::lookup(&item_tree, self.value.index);
 
         InFile::new(
             self.file_id,

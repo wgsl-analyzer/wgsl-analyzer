@@ -169,9 +169,9 @@ fn text_size(
 fn module_definitions(
     db: &TestDatabase,
     file_id: HirFileId,
-    module_info: &Arc<hir_def::item_tree::ModuleInfo>,
+    item_tree: &Arc<hir_def::item_tree::ItemTree>,
 ) -> Vec<DefinitionWithBodyId> {
-    module_info
+    item_tree
         .items()
         .iter()
         .filter_map(|item| {

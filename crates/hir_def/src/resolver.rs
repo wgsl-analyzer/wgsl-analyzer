@@ -8,7 +8,7 @@ use crate::{
     },
     database::{FunctionId, Location},
     item_tree::{
-        Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItem, Name, Override, Struct,
+        Function, GlobalConstant, GlobalVariable, ItemTree, ModuleItem, Name, Override, Struct,
         TypeAlias,
     },
 };
@@ -25,7 +25,7 @@ pub enum Scope {
 
 #[derive(Clone)]
 pub struct ModuleScope {
-    module_info: Arc<ModuleInfo>,
+    module_info: Arc<ItemTree>,
     file_id: HirFileId,
 }
 
@@ -79,10 +79,10 @@ impl Resolver {
     pub fn push_module_scope(
         mut self,
         file_id: HirFileId,
-        module_info: Arc<ModuleInfo>,
+        item_tree: Arc<ItemTree>,
     ) -> Self {
         self.scopes.push(Scope::Module(ModuleScope {
-            module_info,
+            module_info: item_tree,
             file_id,
         }));
         self

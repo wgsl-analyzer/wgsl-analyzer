@@ -13,7 +13,7 @@ use hir_def::{
         Location, Lookup as _, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
-    item_tree::{self, ModuleInfo, ModuleItem, Name},
+    item_tree::{self, ItemTree, ModuleItem, Name},
     resolver::{ResolveKind, Resolver},
     signature::{FieldId, ParameterId},
 };
@@ -754,19 +754,12 @@ impl Module {
         &self,
         database: &dyn HirDatabase,
     ) -> Vec<ModuleDef> {
-        let module_info = database.item_tree(self.file_id);
-        module_info
+        let item_tree = database.item_tree(self.file_id);
+        item_tree
             .items()
             .iter()
             .flat_map(|item| module_item_to_def(database, self.file_id, *item))
             .collect()
-    }
-
-    pub fn module_info(
-        &self,
-        database: &dyn HirDatabase,
-    ) -> Arc<ModuleInfo> {
-        database.item_tree(self.file_id)
     }
 
     pub fn diagnostics(

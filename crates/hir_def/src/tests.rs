@@ -27,7 +27,9 @@ fn check_item_tree(
     let (database, file_id) = single_file_db(source);
 
     let module_info = database.item_tree(file_id.into());
-    expect.assert_eq(&crate::item_tree::pretty::pretty_print_module(&module_info));
+    expect.assert_eq(&crate::item_tree::pretty::pretty_print_item_tree(
+        &module_info,
+    ));
 }
 
 #[test]

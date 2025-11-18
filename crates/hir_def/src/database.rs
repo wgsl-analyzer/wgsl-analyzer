@@ -18,7 +18,7 @@ use crate::{
     expression_store::{ExpressionSourceMap, ExpressionStore},
     hir_file_id::HirFileIdRepr,
     item_tree::{
-        Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItemId, Override, Struct,
+        Function, GlobalConstant, GlobalVariable, ItemTree, ModuleItemId, Override, Struct,
         TypeAlias,
     },
     resolver::Resolver,
@@ -50,11 +50,11 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         key: HirFileId,
     ) -> Arc<AstIdMap>;
 
-    #[salsa::invoke(ModuleInfo::module_info_query)]
+    #[salsa::invoke(ItemTree::query)]
     fn item_tree(
         &self,
         key: HirFileId,
-    ) -> Arc<ModuleInfo>;
+    ) -> Arc<ItemTree>;
 
     #[salsa::invoke(Body::body_with_source_map_query)]
     fn body_with_source_map(
