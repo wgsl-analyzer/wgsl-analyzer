@@ -30,7 +30,7 @@ part type_specifier;
 import_statement: 'import' [import_package_relative | import_super_relative] (import_collection | import_path) ';';
 import_package_relative: 'package' '::';
 import_super_relative: ('super' '::')+;
-import_path: name_ref (
+import_path: name (
     '::' (import_collection | import_path)
   | ['as' name] @import_item
 );
@@ -81,14 +81,16 @@ attribute:
   )
 ;
 typed_ident^: name (':' type_specifier | ());
-name: Ident; // declares an identifier
-name_ref: Ident; // wesl ident goes here
+// declares an identifier
+name: Ident;
+// wesl identifier
+path: [import_package_relative | import_super_relative] Ident ('::' Ident)*;
 
 // Used in places where it's guaranteed to be a type
-type_specifier: name_ref template_list;
+type_specifier: path template_list;
 // Used in places where it might be a type.
 // Note that types can appear in expression, like in `array<  array<f32,1>  ,1>`
-ident_expression: name_ref expr_template_list;
+ident_expression: path expr_template_list;
 template_list^: [template_args >];
 expr_template_list^: [template_args >template_list];
 template_args^: TemplateStart expression (?1 ',' expression)* [','] TemplateEnd;
@@ -222,5 +224,5 @@ lhs_expression:
 | '*' lhs_expression @unary_expression // §8.14
 | '&' lhs_expression @unary_expression // §8.13
 | '(' lhs_expression ')' @paren_expression // §8.4
-| name_ref @ident_expression
+| path @ident_expression
 ;

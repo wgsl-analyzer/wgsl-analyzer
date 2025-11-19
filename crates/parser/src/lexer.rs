@@ -764,6 +764,34 @@ mod tests {
     }
 
     #[test]
+    fn lex_template_trailing_comment() {
+        check_lex_spanned(
+            "override x: array<
+                u32,
+                2,
+            >;",
+            expect![[r#"
+                Override@0..8
+                Blankspace@8..9
+                Ident@9..10
+                Colon@10..11
+                Blankspace@11..12
+                Ident@12..17
+                TemplateStart@17..18
+                Blankspace@18..35
+                Ident@35..38
+                Comma@38..39
+                Blankspace@39..56
+                IntLiteral@56..57
+                Comma@57..58
+                Blankspace@58..71
+                TemplateEnd@71..72
+                Semi@72..73
+            "#]],
+        );
+    }
+
+    #[test]
     fn lex_nested_comment() {
         check_lex_spanned(
             "foo /* bar /* // */ baz */",

@@ -10,7 +10,7 @@ use hir_def::{
     body::{BindingId, Body, BodySourceMap},
     database::{
         DefDatabase, DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId,
-        Location, Lookup as _, OverrideId, StructId, TypeAliasId,
+        ImportId, Location, Lookup as _, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
     item_tree::{self, ItemTree, ModuleItem, Name},
@@ -70,6 +70,10 @@ impl<'database> Semantics<'database> {
             .find_map(|syntax| -> Option<ChildContainer> {
                 if let Some(item) = ast::Item::cast(syntax) {
                     let container: ChildContainer = match item {
+                        ast::Item::ImportStatement(import) => {
+                            let definition = self.import_to_def(&InFile::new(file_id, import))?;
+                            ChildContainer::ImportId(definition)
+                        },
                         ast::Item::FunctionDeclaration(function_declaration) => {
                             let child_offset = source.text_range().start();
                             let is_in_body =
@@ -244,6 +248,17 @@ impl<'database> Semantics<'database> {
         Some(definition)
     }
 
+    fn import_to_def(
+        &self,
+        source: &InFile<ast::ImportStatement>,
+    ) -> Option<ImportId> {
+        let import = item_tree::find_item(self.database, source.file_id, &source.value)?;
+        let import_id = self
+            .database
+            .intern_import(Location::new(source.file_id, import));
+        Some(import_id)
+    }
+
     fn function_to_def(
         &self,
         source: &InFile<ast::FunctionDeclaration>,
@@ -316,6 +331,7 @@ impl<'database> Semantics<'database> {
 pub enum ChildContainer {
     /// This variant is for when the expression is inside the body
     DefinitionWithBodyId(DefinitionWithBodyId),
+    ImportId(ImportId),
     FunctionId(FunctionId),
     GlobalVariableId(GlobalVariableId),
     GlobalConstantId(GlobalConstantId),
@@ -326,6 +342,7 @@ pub enum ChildContainer {
 
 impl_from!(
     DefinitionWithBodyId,
+    ImportId,
     FunctionId,
     GlobalVariableId,
     GlobalConstantId,
@@ -342,6 +359,7 @@ impl ChildContainer {
     ) -> HirFileId {
         match self {
             Self::DefinitionWithBodyId(id) => id.file_id(database),
+            Self::ImportId(id) => id.lookup(database).file_id,
             Self::FunctionId(id) => id.lookup(database).file_id,
             Self::GlobalVariableId(id) => id.lookup(database).file_id,
             Self::GlobalConstantId(id) => id.lookup(database).file_id,
@@ -357,7 +375,8 @@ impl ChildContainer {
     ) -> Resolver {
         match self {
             Self::DefinitionWithBodyId(id) => id.resolver(database),
-            Self::FunctionId(_)
+            Self::ImportId(_)
+            | Self::FunctionId(_)
             | Self::GlobalVariableId(_)
             | Self::GlobalConstantId(_)
             | Self::OverrideId(_)

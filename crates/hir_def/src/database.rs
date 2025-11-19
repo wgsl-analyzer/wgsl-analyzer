@@ -18,8 +18,8 @@ use crate::{
     expression_store::{ExpressionSourceMap, ExpressionStore},
     hir_file_id::HirFileIdRepr,
     item_tree::{
-        Function, GlobalConstant, GlobalVariable, ItemTree, ModuleItemId, Override, Struct,
-        TypeAlias,
+        Directive, Function, GlobalConstant, GlobalVariable, ImportStatement, ItemTree,
+        ModuleItemId, Override, Struct, TypeAlias,
     },
     resolver::Resolver,
     signature::{
@@ -187,12 +187,12 @@ pub trait InternDatabase: SourceDatabase {
     #[salsa::interned]
     fn intern_import(
         &self,
-        location: ImportLocation,
+        location: Location<ImportStatement>,
     ) -> ImportId;
     #[salsa::interned]
     fn intern_directive(
         &self,
-        location: DirectiveLocation,
+        location: Location<Directive>,
     ) -> DirectiveId;
     #[salsa::interned]
     fn intern_function(
@@ -227,7 +227,6 @@ pub trait InternDatabase: SourceDatabase {
 }
 
 pub type Location<T> = InFile<ModuleItemId<T>>;
-pub type Location2<T> = InFile<FileAstId<T>>;
 
 pub struct Interned<T>(salsa::InternId, PhantomData<T>);
 
@@ -312,10 +311,8 @@ pub trait Lookup: Sized {
         database: &dyn DefDatabase,
     ) -> Self::Data;
 }
-type ImportLocation = Location2<ast::ImportStatement>;
-intern_id!(ImportId, ImportLocation, lookup_intern_import);
-type DirectiveLocation = Location2<ast::Directive>;
-intern_id!(DirectiveId, DirectiveLocation, lookup_intern_directive);
+intern_id!(ImportId, Location<ImportStatement>, lookup_intern_import);
+intern_id!(DirectiveId, Location<Directive>, lookup_intern_directive);
 intern_id!(FunctionId, Location<Function>, lookup_intern_function);
 intern_id!(
     GlobalVariableId,

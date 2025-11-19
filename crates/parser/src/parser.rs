@@ -177,7 +177,7 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     }
 
     fn predicate_template_args_1(&self) -> bool {
-        self.peek(1) != Token::Gt
+        self.peek(1) != Token::TemplateEnd
     }
 
     fn predicate_argument_expression_list_1(&self) -> bool {

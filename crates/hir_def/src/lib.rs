@@ -6,6 +6,7 @@ pub mod expression;
 pub mod expression_store;
 pub mod hir_file_id;
 pub mod item_tree;
+pub mod mod_path;
 pub mod resolver;
 pub mod signature;
 #[cfg(test)]

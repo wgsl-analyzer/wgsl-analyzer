@@ -4,7 +4,7 @@ use std::mem;
 #[repr(u16)]
 pub enum SyntaxKind {
     SourceFile,
-    /// A name that can be referenced by a [`NameReference`]
+    /// A name that can be referenced by a [`NameRef`]
     Name,
     /// a function
     FunctionDeclaration,
@@ -104,7 +104,9 @@ pub enum SyntaxKind {
     /// an identifier with an optional template `foo<bar>`
     /// can refer to a type
     IdentExpression,
-    NameReference,
+    /// A WESL fully qualified identifier.
+    /// `foo::bar::baz`
+    Path,
     /// `a\[0\]`
     IndexExpression,
     /// `return foo;`
@@ -148,11 +150,17 @@ pub enum SyntaxKind {
     RequiresDirective,
     LanguageExtensionName,
 
+    /// `import foo::bar as baz;`
     ImportStatement,
+    /// The `package` token in an import
     ImportPackageRelative,
+    /// The `super` token in an import
     ImportSuperRelative,
+    /// `bar as baz`
     ImportItem,
+    /// A recursive segment with a name `foo::...`
     ImportPath,
+    /// A list of imports `{foo, bar, baz}`
     ImportCollection,
 
     // Tokens

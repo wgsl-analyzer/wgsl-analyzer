@@ -10,11 +10,16 @@ use smol_str::SmolStr;
 use syntax::{AstNode, TokenText, ast};
 use triomphe::Arc;
 
-use crate::{HirFileId, ast_id::FileAstId, database::DefDatabase};
+use crate::{
+    HirFileId,
+    ast_id::FileAstId,
+    database::{DefDatabase, Interned},
+    mod_path::{ModPath, PathKind},
+};
 
 const MISSING_NAME_PLACEHOLDER: &str = "[missing name]";
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord, Hash)]
 pub struct Name(SmolStr);
 
 impl Name {
@@ -52,16 +57,87 @@ impl From<ast::Name> for Name {
     }
 }
 
-impl From<ast::NameReference> for Name {
-    fn from(name: ast::NameReference) -> Self {
-        Self(name.text().as_str().into())
-    }
-}
-
 impl From<&'_ str> for Name {
     fn from(text: &str) -> Self {
         Self(text.into())
     }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct ImportStatement {
+    pub kind: PathKind,
+    pub tree: ImportTree,
+    pub ast_id: FileAstId<ast::ImportStatement>,
+}
+
+impl ImportStatement {
+    /// Expands the `UseTree` into individually imported `FlatImport`s.
+    pub fn expand(
+        &self,
+        mut callback: impl FnMut(FlatImport),
+    ) {
+        self.tree
+            .expand_impl(ModPath::from_kind(self.kind), &mut callback)
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct FlatImport {
+    pub path: ModPath,
+    pub alias: Option<Name>,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum ImportTree {
+    Path {
+        name: Name,
+        item: Box<ImportTree>,
+    },
+    /// ```ignore
+    /// foo as bar
+    /// ```
+    Item {
+        name: Name,
+        alias: Option<Name>,
+    },
+    /// ```ignore
+    /// {Foo, Bar, Baz};
+    /// ```
+    Collection {
+        list: Vec<ImportTree>,
+    },
+}
+
+impl ImportTree {
+    fn expand_impl(
+        &self,
+        mut prefix: ModPath,
+        callback: &mut impl FnMut(FlatImport),
+    ) {
+        match self {
+            ImportTree::Path { name, item } => {
+                prefix.push_segment(name.clone());
+                item.expand_impl(prefix, callback);
+            },
+            ImportTree::Item { name, alias } => {
+                prefix.push_segment(name.clone());
+                callback(FlatImport {
+                    path: prefix,
+                    alias: alias.clone(),
+                })
+            },
+            ImportTree::Collection { list } => {
+                for tree in list {
+                    tree.expand_impl(prefix.clone(), callback);
+                }
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Directive {
+    pub ast_id: FileAstId<ast::FunctionDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -103,6 +179,7 @@ pub struct Struct {
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct ItemTree {
     top_level: Vec<ModuleItem>,
+    imports: Arena<ImportStatement>,
     functions: Arena<Function>,
     global_variables: Arena<GlobalVariable>,
     global_constants: Arena<GlobalConstant>,
@@ -132,7 +209,8 @@ impl ItemTree {
     pub fn structs(&self) -> impl Iterator<Item = ModuleItemId<Struct>> + '_ {
         self.top_level.iter().filter_map(|item| match item {
             ModuleItem::Struct(r#struct) => Some(*r#struct),
-            ModuleItem::Function(_)
+            ModuleItem::ImportStatement(_)
+            | ModuleItem::Function(_)
             | ModuleItem::GlobalVariable(_)
             | ModuleItem::GlobalConstant(_)
             | ModuleItem::Override(_)
@@ -254,6 +332,7 @@ macro_rules! mod_items {
 }
 
 mod_items! {
+    ImportStatement in imports -> ast::ImportStatement,
     Function in functions -> ast::FunctionDeclaration,
     Struct in structs -> ast::StructDeclaration,
     GlobalVariable in global_variables -> ast::VariableDeclaration,

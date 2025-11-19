@@ -209,7 +209,6 @@ macro_rules! ast_token_enum {
 
 ast_node! {
     SourceFile:
-    imports: AstChildren<ImportStatement>;
     directives: AstChildren<Directive>;
     items: AstChildren<Item>;
 }
@@ -217,7 +216,7 @@ ast_node! {
 ast_node! {
     ImportStatement:
     relative: Option<ImportRelative>;
-    item: Option<ImportSegment>;
+    item: Option<ImportTree>;
 }
 
 ast_enum! {
@@ -234,16 +233,23 @@ ast_node! {
     ImportSuperRelative
 }
 impl ImportSuperRelative {
-    pub fn super_count(&self) -> usize {
-        self.syntax
-            .children_with_tokens()
-            .filter(|child| child.kind() == SyntaxKind::Super)
-            .count()
+    /// Counts how often `super` appeared in a chain
+    ///
+    /// # Panics
+    /// If there is a chain of more than 255 `super::`s
+    pub fn super_count(&self) -> u8 {
+        u8::try_from(
+            self.syntax
+                .children_with_tokens()
+                .filter(|child| child.kind() == SyntaxKind::Super)
+                .count(),
+        )
+        .unwrap()
     }
 }
 
 ast_enum! {
-    enum ImportSegment {
+    enum ImportTree {
         ImportPath,
         ImportItem,
         ImportCollection,
@@ -252,17 +258,22 @@ ast_enum! {
 
 ast_node! {
     ImportPath:
-    name_ref: Option<NameReference>;
-    item: Option<ImportSegment>;
+    name: Option<Name>;
+    item: Option<ImportTree>;
 }
 ast_node! {
     ImportItem:
-    name_ref: Option<NameReference>;
-    as_name: Option<Name>;
+    name: Option<Name>;
+}
+impl ImportItem {
+    #[must_use]
+    pub fn alias(&self) -> Option<Name> {
+        crate::support::children(&self.syntax).nth(1)
+    }
 }
 ast_node! {
     ImportCollection:
-    items: AstChildren<ImportSegment>;
+    items: AstChildren<ImportTree>;
 }
 
 ast_node! {
@@ -358,6 +369,7 @@ impl HasAttributes for TypeAliasDeclaration {}
 
 ast_enum! {
     enum Item {
+        ImportStatement,
         FunctionDeclaration,
         VariableDeclaration,
         ConstantDeclaration,
@@ -454,9 +466,20 @@ ast_node! {
 }
 
 ast_node! {
-    NameReference:
-    ident_token: Option<SyntaxToken Identifier>;
-    text: TokenText<'_>;
+    Path:
+    relative: Option<ImportRelative>;
+}
+impl Path {
+    /// Returns a list of identifiers
+    #[must_use]
+    pub fn segments(&self) -> impl Iterator<Item = SyntaxToken> {
+        self.syntax()
+            .children_with_tokens()
+            .filter_map(|node_or_token| match node_or_token {
+                rowan::NodeOrToken::Token(t) if t.kind() == SyntaxKind::Identifier => Some(t),
+                rowan::NodeOrToken::Node(_) | rowan::NodeOrToken::Token(_) => None,
+            })
+    }
 }
 
 ast_node! {
@@ -554,7 +577,7 @@ ast_token_enum! {
 /// Can be an identifier or a type
 ast_node! {
     IdentExpression:
-    name_ref: Option<NameReference>;
+    path: Option<Path>;
 }
 impl HasTemplateParameters for IdentExpression {}
 
@@ -953,7 +976,7 @@ ast_enum! {
 
 ast_node! {
     TypeSpecifier:
-    name_ref: Option<NameReference>;
+    path: Option<Path>;
 }
 impl HasTemplateParameters for TypeSpecifier {}
 

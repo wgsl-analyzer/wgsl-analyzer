@@ -54,6 +54,12 @@ pub trait SourceDatabase: FileLoader {
         id: SourceRootId,
     ) -> Arc<SourceRoot>;
 
+    #[salsa::invoke(file_type_query)]
+    fn file_type(
+        &self,
+        key: FileId,
+    ) -> WgslFileType;
+
     #[salsa::invoke(parse_query)]
     fn parse(
         &self,
@@ -72,6 +78,26 @@ fn line_index(
 ) -> Arc<LineIndex> {
     let text = database.file_text(file_id);
     Arc::new(LineIndex::new(&text))
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum WgslFileType {
+    Wgsl,
+    Wesl,
+}
+fn file_type_query(
+    database: &dyn SourceDatabase,
+    file_id: FileId,
+) -> WgslFileType {
+    if let Some((_, Some(extension))) = database.file_path(file_id).name_and_extension() {
+        if extension.to_ascii_lowercase() == "wesl" {
+            WgslFileType::Wesl
+        } else {
+            WgslFileType::Wgsl
+        }
+    } else {
+        WgslFileType::Wgsl
+    }
 }
 
 fn parse_query(

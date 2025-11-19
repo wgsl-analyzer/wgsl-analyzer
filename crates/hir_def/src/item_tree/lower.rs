@@ -1,6 +1,6 @@
 use syntax::{
     HasName as _,
-    ast::{Directive, ImportStatement, Item, SourceFile},
+    ast::{Directive, Item, SourceFile},
 };
 use triomphe::Arc;
 
@@ -9,7 +9,8 @@ use crate::{
     HirFileId,
     ast_id::AstIdMap,
     database::DefDatabase,
-    item_tree::{self, Function, ItemTree, ModuleItem, ModuleItemId},
+    item_tree::{self, Function, ImportStatement, ImportTree, ItemTree, ModuleItem, ModuleItemId},
+    mod_path::{ModPath, PathKind},
 };
 
 pub(crate) struct Ctx<'database> {
@@ -38,20 +39,10 @@ impl<'database> Ctx<'database> {
         mut self,
         source_file: &SourceFile,
     ) -> ItemTree {
-        source_file.imports().for_each(|import| {
-            self.lower_import(import);
-        });
         source_file.items().for_each(|item| {
             self.lower_item(item);
         });
         self.tree
-    }
-
-    fn lower_import(
-        &mut self,
-        item: ImportStatement,
-    ) -> Option<()> {
-        None
     }
 
     fn lower_item(
@@ -59,6 +50,9 @@ impl<'database> Ctx<'database> {
         item: Item,
     ) -> Option<()> {
         let item = match item {
+            Item::ImportStatement(import_statement) => {
+                ModuleItem::ImportStatement(self.lower_import(&import_statement)?)
+            },
             Item::FunctionDeclaration(function) => {
                 ModuleItem::Function(self.lower_function(&function)?)
             },
@@ -78,6 +72,47 @@ impl<'database> Ctx<'database> {
         };
         self.items.push(item);
         Some(())
+    }
+
+    fn lower_import(
+        &mut self,
+        item: &syntax::ast::ImportStatement,
+    ) -> Option<ModuleItemId<ImportStatement>> {
+        let kind = PathKind::from_src(item.relative());
+        let tree = self.lower_import_tree(&item.item()?)?;
+        let ast_id = self.source_ast_id_map.ast_id(item);
+        Some(
+            self.tree
+                .imports
+                .alloc(ImportStatement { kind, tree, ast_id })
+                .into(),
+        )
+    }
+
+    fn lower_import_tree(
+        &mut self,
+        import_tree: &syntax::ast::ImportTree,
+    ) -> Option<ImportTree> {
+        Some(match import_tree {
+            syntax::ast::ImportTree::ImportPath(import_path) => ImportTree::Path {
+                name: import_path.name()?.text().into(),
+                item: Box::new(self.lower_import_tree(&import_path.item()?)?),
+            },
+            syntax::ast::ImportTree::ImportItem(import_item) => ImportTree::Item {
+                name: import_item.name()?.text().into(),
+                alias: import_item
+                    .alias()
+                    .map(|alias| item_tree::Name::from(alias.text())),
+            },
+            syntax::ast::ImportTree::ImportCollection(import_collection) => {
+                ImportTree::Collection {
+                    list: import_collection
+                        .items()
+                        .filter_map(|item| self.lower_import_tree(&item))
+                        .collect(),
+                }
+            },
+        })
     }
 
     fn lower_type_alias(
