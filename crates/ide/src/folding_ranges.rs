@@ -284,7 +284,7 @@ mod tests {
     fn check(fixture: &str) {
         let (ranges, text) = extract_tags(fixture, "fold");
 
-        let parse = syntax::parse(&text);
+        let parse = SourceFile::parse(&text);
         let mut folds = folding_ranges(&parse.tree());
         folds.sort_by_key(|fold| (fold.range.start(), fold.range.end()));
 

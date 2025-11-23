@@ -1,25 +1,37 @@
+pub mod algo;
 pub mod algorithms;
 pub mod ast;
 pub mod pointer;
+pub mod syntax_editor;
 
 use std::{marker::PhantomData, ops::Deref};
 
 use either::Either;
+use parser::Edition;
 pub use parser::{
     Diagnostic, ParseEntryPoint, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodeChildren,
     SyntaxToken,
 };
-pub use rowan::Direction;
+pub use rowan::{
+    Direction, GreenNode, NodeOrToken, SyntaxText, TextRange, TextSize, TokenAtOffset, WalkEvent,
+    api::Preorder,
+};
 use smol_str::SmolStr;
 use triomphe::Arc;
 
-#[derive(Clone, Debug)]
-pub struct Parse {
-    green_node: rowan::GreenNode,
-    errors: Arc<[Diagnostic]>,
+/// `Parse` is the result of the parsing: a syntax tree and a collection of
+/// errors.
+///
+/// Note that we always produce a syntax tree, even for completely invalid
+/// files.
+#[derive(Debug)]
+pub struct Parse<T> {
+    green_node: GreenNode,
+    errors: Option<Arc<[Diagnostic]>>,
+    _ty: PhantomData<fn() -> T>,
 }
 
-impl PartialEq for Parse {
+impl<T> PartialEq for Parse<T> {
     fn eq(
         &self,
         other: &Self,
@@ -28,44 +40,126 @@ impl PartialEq for Parse {
     }
 }
 
-impl Eq for Parse {}
+impl<T> Eq for Parse<T> {}
 
-impl Parse {
+impl<T> Clone for Parse<T> {
+    fn clone(&self) -> Parse<T> {
+        Parse {
+            green_node: self.green_node.clone(),
+            errors: self.errors.clone(),
+            _ty: PhantomData,
+        }
+    }
+}
+
+impl<T> Parse<T> {
+    fn new(
+        green_node: GreenNode,
+        errors: Vec<Diagnostic>,
+    ) -> Parse<T> {
+        Parse {
+            green_node,
+            errors: if errors.is_empty() {
+                None
+            } else {
+                Some(errors.into())
+            },
+            _ty: PhantomData,
+        }
+    }
+
     #[must_use]
-    pub fn syntax(&self) -> SyntaxNode {
+    pub fn syntax_node(&self) -> SyntaxNode {
         SyntaxNode::new_root(self.green_node.clone())
     }
 
     #[must_use]
-    pub fn errors(&self) -> &[Diagnostic] {
-        &self.errors
+    pub fn errors(&self) -> Vec<Diagnostic> {
+        if let Some(e) = self.errors.as_deref() {
+            e.to_vec()
+        } else {
+            vec![]
+        }
+    }
+}
+
+impl<T: AstNode> Parse<T> {
+    /// Converts this parse result into a parse result for an untyped syntax tree.
+    pub fn to_syntax(self) -> Parse<SyntaxNode> {
+        Parse {
+            green_node: self.green_node,
+            errors: self.errors,
+            _ty: PhantomData,
+        }
     }
 
-    /// Returns the syntax tree as a file.
+    /// Gets the parsed syntax tree as a typed ast node.
     ///
     /// # Panics
     ///
-    /// Panics if the cast fails.
-    #[must_use]
-    pub fn tree(&self) -> ast::SourceFile {
-        ast::SourceFile::cast(self.syntax()).unwrap()
+    /// Panics if the root node cannot be casted into the typed ast node
+    /// (e.g. if it's an `ERROR` node).
+    pub fn tree(&self) -> T {
+        T::cast(self.syntax_node()).unwrap()
+    }
+
+    /// Converts from `Parse<T>` to [`Result<T, Vec<SyntaxError>>`].
+    pub fn ok(self) -> Result<T, Vec<Diagnostic>> {
+        match self.errors() {
+            errors if !errors.is_empty() => Err(errors),
+            _ => Ok(self.tree()),
+        }
     }
 }
 
-#[must_use]
-pub fn parse(input: &str) -> Parse {
-    parse_entrypoint(input, ParseEntryPoint::File)
+impl Parse<SyntaxNode> {
+    pub fn cast<N: AstNode>(self) -> Option<Parse<N>> {
+        if N::cast(self.syntax_node()).is_some() {
+            Some(Parse {
+                green_node: self.green_node,
+                errors: self.errors,
+                _ty: PhantomData,
+            })
+        } else {
+            None
+        }
+    }
 }
 
-#[must_use]
-pub fn parse_entrypoint(
-    input: &str,
-    parse_entrypoint: ParseEntryPoint,
-) -> Parse {
-    let (green_node, errors) = parser::parse_entrypoint(input, parse_entrypoint).into_parts();
-    Parse {
-        green_node,
-        errors: Arc::from(errors),
+impl ast::Expression {
+    /// Parses an `ast::Expr` from `text`.
+    ///
+    /// Note that if the parsed root node is not a valid expression, [`Parse::tree`] will panic.
+    /// For example:
+    /// ```rust,should_panic
+    /// # use syntax::{ast, Edition};
+    /// ast::Expr::parse("let fail = true;", Edition::CURRENT).tree();
+    /// ```
+    pub fn parse(text: &str) -> Parse<ast::Expression> {
+        let (green_node, errors) =
+            parser::parse_entrypoint(text, ParseEntryPoint::Expression).into_parts();
+        let root = SyntaxNode::new_root(green_node.clone());
+
+        assert!(
+            ast::Expression::can_cast(root.kind()) || root.kind() == SyntaxKind::Error,
+            "{:?} isn't an expression",
+            root.kind()
+        );
+        Parse::new(green_node, errors)
+    }
+}
+
+/// `SourceFile` represents a parse tree for a single Rust file.
+pub use crate::ast::SourceFile;
+
+impl SourceFile {
+    pub fn parse(text: &str) -> Parse<SourceFile> {
+        let (green_node, errors) =
+            parser::parse_entrypoint(text, ParseEntryPoint::File).into_parts();
+        let root = SyntaxNode::new_root(green_node.clone());
+
+        assert_eq!(root.kind(), SyntaxKind::SourceFile);
+        Parse::new(green_node, errors)
     }
 }
 

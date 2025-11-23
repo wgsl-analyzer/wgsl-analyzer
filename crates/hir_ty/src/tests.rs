@@ -31,7 +31,7 @@ use crate::{
 fn infer(ra_fixture: &str) -> String {
     let (database, file_id) = single_file_db(ra_fixture);
     let file_id = HirFileId::from(file_id);
-    let root = database.parse_or_resolve(file_id).syntax();
+    let root = database.parse_or_resolve(file_id).syntax_node();
     let mut buffer = String::new();
     let mut infer_def = |inference_result: Arc<InferenceResult>,
                          _body: Arc<Body>,

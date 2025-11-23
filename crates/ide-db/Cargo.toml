@@ -14,6 +14,7 @@ doctest = false
 base-db.workspace = true
 crossbeam-channel.workspace = true
 either.workspace = true
+hir.workspace = true
 hir-def.workspace = true
 hir-ty.workspace = true
 indexmap.workspace = true

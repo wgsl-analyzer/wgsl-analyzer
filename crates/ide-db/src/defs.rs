@@ -1,9 +1,14 @@
-use hir_def::{HirFileId, module_data::Name, resolver::ResolveKind};
-use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast};
+use hir_def::{
+    HirFileId, database::DefinitionWithBodyId, module_data::Name, resolver::ResolveKind,
+};
+use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast, pointer::AstPointer};
 
-use crate::{Field, Local, ModuleDef, Semantics, Struct, TypeAlias};
+use hir::{
+    ChildContainer, Field, Function, GlobalConstant, GlobalVariable, HirDatabase, Local, ModuleDef,
+    Override, Semantics, Struct, TypeAlias,
+};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum Definition {
     Local(Local),
     Field(Field),
@@ -60,7 +65,7 @@ fn resolve_name_ref(
                 ast::Expression::cast(expression.syntax().clone())?
             };
         let definition =
-            semantics.resolve_name_in_container(definition, &expression_node, &name)?;
+            resolve_name_in_container(semantics.database, definition, &expression_node, &name)?;
 
         Some(definition)
     } else if let Some(expression) = ast::FieldExpression::cast(parent.clone()) {
@@ -71,13 +76,11 @@ fn resolve_name_ref(
         match resolver.resolve(&r#type.name_ref()?.into())? {
             ResolveKind::Struct(location) => {
                 let id = semantics.database.intern_struct(location);
-                Some(Definition::ModuleDef(ModuleDef::Struct(Struct { id })))
+                Some(Definition::ModuleDef(ModuleDef::Struct(id.into())))
             },
             ResolveKind::TypeAlias(location) => {
                 let id = semantics.database.intern_type_alias(location);
-                Some(Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias {
-                    id,
-                })))
+                Some(Definition::ModuleDef(ModuleDef::TypeAlias(id.into())))
             },
             // Type specifiers always represent types
             ResolveKind::Function(_)
@@ -89,6 +92,62 @@ fn resolve_name_ref(
     } else {
         None
     }
+}
+
+pub fn resolve_name_in_container(
+    database: &dyn HirDatabase,
+    container: ChildContainer,
+    expression: &ast::Expression,
+    name: &Name,
+) -> Option<Definition> {
+    let mut resolver = container.resolver(database);
+
+    if let ChildContainer::DefinitionWithBodyId(DefinitionWithBodyId::Function(function)) =
+        container
+    {
+        let (_, source_map) =
+            database.body_with_source_map(DefinitionWithBodyId::Function(function));
+        let expression_id = source_map.lookup_expression(&AstPointer::new(expression))?;
+        let expression_scopes =
+            database.expression_scopes(DefinitionWithBodyId::Function(function));
+        let scope_id = expression_scopes.scope_for_expression(expression_id)?;
+        resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
+    }
+
+    let value = resolver.resolve(name)?;
+
+    let definition = match value {
+        ResolveKind::Local(binding) => Definition::Local(Local {
+            parent: resolver.body_owner()?,
+            binding,
+        }),
+        ResolveKind::GlobalVariable(location) => {
+            let id = database.intern_global_variable(location);
+            Definition::ModuleDef(ModuleDef::GlobalVariable(id.into()))
+        },
+        ResolveKind::GlobalConstant(location) => {
+            let id = database.intern_global_constant(location);
+            Definition::ModuleDef(ModuleDef::GlobalConstant(id.into()))
+        },
+        ResolveKind::Override(location) => {
+            let id = database.intern_override(location);
+            Definition::ModuleDef(ModuleDef::Override(id.into()))
+        },
+        ResolveKind::Struct(location) => {
+            let id = database.intern_struct(location);
+            Definition::ModuleDef(ModuleDef::Struct(id.into()))
+        },
+        ResolveKind::TypeAlias(location) => {
+            let id = database.intern_type_alias(location);
+            Definition::ModuleDef(ModuleDef::TypeAlias(id.into()))
+        },
+        ResolveKind::Function(location) => {
+            let id = database.intern_function(location);
+            Definition::ModuleDef(ModuleDef::Function(id.into()))
+        },
+    };
+
+    Some(definition)
 }
 
 fn resolve_field(

@@ -4,6 +4,8 @@ use base_db::{FileId, FileLoader, FileLoaderDelegate, change::Change};
 use rustc_hash::FxHashMap;
 use vfs::AnchoredPath;
 
+pub mod defs;
+pub mod label;
 pub mod source_change;
 pub mod text_edit;
 

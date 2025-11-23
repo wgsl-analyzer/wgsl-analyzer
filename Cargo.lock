@@ -63,6 +63,7 @@ dependencies = [
 name = "base-db"
 version = "0.0.0"
 dependencies = [
+ "indexmap 2.12.0",
  "line-index",
  "rowan",
  "rustc-hash 2.1.1",
@@ -724,6 +725,7 @@ dependencies = [
  "crossbeam-channel",
  "either",
  "expect-test",
+ "hir",
  "hir-def",
  "hir-ty",
  "indexmap 2.12.1",
@@ -1835,9 +1837,11 @@ name = "syntax"
 version = "0.0.0"
 dependencies = [
  "either",
+ "expect-test",
  "itertools",
  "parser",
  "rowan",
+ "rustc-hash 2.1.1",
  "smol_str",
  "triomphe",
 ]
