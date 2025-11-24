@@ -201,7 +201,7 @@ rust-2024-compatibility = { level = "deny", priority = -1 }
 unused = { level = "allow", priority = 1 }
 
 [workspace.metadata.cargo-shear]
-ignored = ["wgslfmt"]
+ignored = ["bitflags", "query-group", "arrayvec", "indexmap"]
 
 [profile.dev]
 debug = 1
