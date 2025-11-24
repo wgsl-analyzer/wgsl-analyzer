@@ -12,25 +12,13 @@ doctest = false
 
 [dependencies]
 base-db.workspace = true
-crossbeam-channel.workspace = true
-either.workspace = true
 hir-def.workspace = true
 hir-ty.workspace = true
-indexmap.workspace = true
 itertools.workspace = true
-line-index.workspace = true
 rowan.workspace = true
 rustc-hash.workspace = true
 salsa.workspace = true
-smallvec.workspace = true
-smol_str.workspace = true
-syntax.workspace = true
-tracing.workspace = true
-triomphe.workspace = true
 vfs.workspace = true
-
-[dev-dependencies]
-expect-test.workspace = true
 
 [lints]
 workspace = true

@@ -31,8 +31,6 @@ parking_lot = "0.12.5"
 xflags = "0.3.2"
 # threadpool = "1.8.1"
 salsa.workspace = true
-oorandom = "11.1.5"
-rayon.workspace = true
 rustc-hash.workspace = true
 serde_json = { workspace = true, features = ["preserve_order"] }
 serde.workspace = true
@@ -45,13 +43,11 @@ tracing-subscriber.workspace = true
 triomphe.workspace = true
 # toml = "0.8.8"
 nohash-hasher.workspace = true
-walkdir.workspace = true
 semver.workspace = true
 memchr = "2.7.6"
 cargo_metadata.workspace = true
 # process-wrap = { version = "8.2.0", features = ["std"] }
 # cfg.workspace = true
-hir-def.workspace = true
 hir-ty.workspace = true
 hir.workspace = true
 ide-db.workspace = true
@@ -63,8 +59,6 @@ ide.workspace = true
 # profile.workspace = true
 # project-model.workspace = true
 stdx.workspace = true
-syntax.workspace = true
-parser.workspace = true
 # toolchain.workspace = true
 vfs-notify.workspace = true
 vfs.workspace = true
@@ -81,9 +75,6 @@ test-utils.workspace = true
 # test-fixture.workspace = true
 # syntax-bridge.workspace = true
 
-[target.'cfg(not(target_env = "msvc"))'.dependencies]
-jemallocator = { package = "tikv-jemallocator", version = "0.6.0", optional = true }
-
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = [
 	"Win32_System_Diagnostics_Debug",
@@ -92,10 +83,6 @@ windows-sys = { version = "0.61", features = [
 
 [features]
 force-always-assert = ["stdx/force-always-assert"]
-jemalloc = [
-	"jemallocator",
-	# "profile/jemalloc"
-]
 sysroot-abi = []
 
 [lints]
