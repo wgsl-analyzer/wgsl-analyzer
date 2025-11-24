@@ -19,7 +19,7 @@ rowan.workspace = true
 expect-test.workspace = true
 
 [build-dependencies]
-lelwel = { git = "https://github.com/0x2a-42/lelwel.git", version = "0.10.0" }
+lelwel = "0.10.0"
 
 [lints]
 workspace = true

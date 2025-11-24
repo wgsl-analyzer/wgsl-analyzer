@@ -879,7 +879,8 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 [[package]]
 name = "lelwel"
 version = "0.10.0"
-source = "git+https://github.com/0x2a-42/lelwel.git#0c61ae6ca1746ff6aba6d21fcf19a2d282823826"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c52180256f02d6197392b9cd17db7e5964012cb7e7cfc058b985dfd8caee37b5"
 dependencies = [
  "codespan-reporting 0.11.1",
  "logos",
