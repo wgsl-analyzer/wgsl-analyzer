@@ -28,9 +28,7 @@ profile = { path = "./crates/profile", version = "0.0.0" }
 stdx = { path = "./crates/stdx", version = "0.0.0" }
 syntax = { path = "./crates/syntax", version = "0.0.0" }
 test-utils = { path = "./crates/test-utils", version = "0.0.0" }
-wgsl-analyzer = { path = "./crates/wgsl-analyzer", version = "0.0.0" }
 wgsl-formatter = { path = "./crates/wgsl_formatter", version = "0.0.0" }
-wgslfmt = { path = "./crates/wgslfmt", version = "0.0.0" }
 edition = { path = "./crates/edition", version = "0.0.0" }
 #
 # rust-analyzer crates
@@ -201,6 +199,9 @@ rust-2018-idioms = { level = "deny", priority = -1 }
 rust-2021-compatibility = { level = "deny", priority = -1 }
 rust-2024-compatibility = { level = "deny", priority = -1 }
 unused = { level = "allow", priority = 1 }
+
+[workspace.metadata.cargo-shear]
+ignored = ["wgslfmt"]
 
 [profile.dev]
 debug = 1

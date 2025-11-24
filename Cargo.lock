@@ -65,7 +65,6 @@ version = "0.0.0"
 dependencies = [
  "line-index",
  "rowan",
- "rustc-hash 2.1.1",
  "salsa",
  "syntax",
  "triomphe",
@@ -519,13 +518,11 @@ dependencies = [
  "either",
  "hir-def",
  "hir-ty",
- "la-arena",
  "smallvec",
  "stdx 0.0.0",
  "syntax",
  "tracing",
  "triomphe",
- "vfs",
 ]
 
 [[package]]
@@ -539,10 +536,8 @@ dependencies = [
  "rowan",
  "rustc-hash 2.1.1",
  "salsa",
- "smallvec",
  "smol_str",
  "syntax",
- "tracing",
  "triomphe",
  "vfs",
 ]
@@ -665,17 +660,12 @@ dependencies = [
 name = "ide"
 version = "0.0.0"
 dependencies = [
- "arrayvec",
  "base-db",
- "bitflags 2.10.0",
- "either",
- "expect-test",
  "hir",
  "hir-def",
  "hir-ty",
  "ide-completion",
  "ide-db",
- "indexmap 2.12.1",
  "itertools",
  "line-index",
  "naga 22.1.0",
@@ -686,10 +676,8 @@ dependencies = [
  "salsa",
  "smallvec",
  "smol_str",
- "stdx 0.0.0",
  "syntax",
  "test-utils",
- "tracing",
  "triomphe",
  "vfs",
  "wgsl-formatter",
@@ -721,22 +709,12 @@ name = "ide-db"
 version = "0.0.0"
 dependencies = [
  "base-db",
- "crossbeam-channel",
- "either",
- "expect-test",
  "hir-def",
  "hir-ty",
- "indexmap 2.12.1",
  "itertools",
- "line-index",
  "rowan",
  "rustc-hash 2.1.1",
  "salsa",
- "smallvec",
- "smol_str",
- "syntax",
- "tracing",
- "triomphe",
  "vfs",
 ]
 
@@ -1964,16 +1942,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tikv-jemallocator"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cec5ff18518d81584f477e9bfdf957f5bb0979b0bac3af4ca30b5b3ae2d2865"
-dependencies = [
- "libc",
- "tikv-jemalloc-sys",
-]
-
-[[package]]
 name = "time"
 version = "0.3.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2241,7 +2209,6 @@ dependencies = [
  "crossbeam-channel",
  "dissimilar",
  "hir",
- "hir-def",
  "hir-ty",
  "ide",
  "ide-completion",
@@ -2254,26 +2221,20 @@ dependencies = [
  "mimalloc",
  "nohash-hasher",
  "num_cpus",
- "oorandom",
  "parking_lot 0.12.5",
- "parser",
  "paths",
- "rayon",
  "rustc-hash 2.1.1",
  "salsa",
  "semver",
  "serde",
  "serde_json",
  "stdx 0.0.0",
- "syntax",
  "test-utils",
- "tikv-jemallocator",
  "tracing",
  "tracing-subscriber",
  "triomphe",
  "vfs",
  "vfs-notify 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070)",
- "walkdir",
  "windows-sys 0.61.2",
  "xflags",
 ]
