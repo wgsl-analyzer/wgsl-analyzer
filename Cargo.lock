@@ -2254,7 +2254,7 @@ dependencies = [
 [[package]]
 name = "wgsl-types"
 version = "0.2.0"
-source = "git+https://github.com/wgsl-tooling-wg/wesl-rs#7f63858ab43cdf54ee57790fe0bed4eb5fd50202"
+source = "git+https://github.com/wgsl-tooling-wg/wesl-rs#885b4e560f7750331b8bb976d5cc518e0cdeff12"
 dependencies = [
  "half",
  "itertools",
