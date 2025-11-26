@@ -13,7 +13,7 @@ use triomphe::Arc;
 use crate::{
     HirFileId,
     ast_id::FileAstId,
-    database::{DefDatabase, Interned},
+    database::DefDatabase,
     mod_path::{ModPath, PathKind},
 };
 

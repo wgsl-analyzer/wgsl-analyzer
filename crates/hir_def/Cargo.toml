@@ -17,6 +17,7 @@ la-arena.workspace = true
 rowan.workspace = true
 rustc-hash.workspace = true
 salsa.workspace = true
+smallvec.workspace = true
 smol_str.workspace = true
 syntax.workspace = true
 triomphe.workspace = true

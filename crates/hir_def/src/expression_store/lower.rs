@@ -8,8 +8,10 @@ use crate::{
     expression::{Expression, ExpressionId, parse_literal},
     expression_store::{
         ExpressionSourceMap, ExpressionStoreBuilder, ExpressionStoreSource, SyntheticSyntax,
+        path::Path,
     },
     item_tree::Name,
+    mod_path::ModPath,
     signature::{
         ConstantSignature, FieldData, FunctionSignature, OverrideSignature, ParamData,
         StructSignature, TypeAliasSignature, VariableSignature,
@@ -91,10 +93,9 @@ impl ExprCollector<'_> {
                     .flat_map(|parameters| parameters.arguments())
                     .map(|expression| self.collect_expression(expression))
                     .collect();
-                let name = as_name_opt(
-                    call.ident_expression()
-                        .and_then(|identifier| identifier.name_ref()),
-                );
+
+                let path = as_path_opt(call.ident_expression().and_then(|p| p.path()));
+
                 let template_parameters = self.collect_template_parameters(
                     call.ident_expression()
                         .and_then(|identifier| identifier.template_parameters()),
@@ -102,19 +103,19 @@ impl ExprCollector<'_> {
 
                 Expression::Call {
                     ident_expression: IdentExpression {
-                        path: name,
+                        path,
                         template_parameters,
                     },
                     arguments,
                 }
             },
             ast::Expression::IdentExpression(identifier) => {
-                let name = as_name_opt(identifier.name_ref());
+                let path = as_path_opt(identifier.path());
                 let template_parameters =
                     self.collect_template_parameters(identifier.template_parameters());
 
                 Expression::IdentExpression(IdentExpression {
-                    path: name,
+                    path,
                     template_parameters,
                 })
             },
@@ -134,7 +135,7 @@ impl ExprCollector<'_> {
     ) -> TypeSpecifierId {
         let syntax_pointer = AstPointer::new(type_specifier);
         let type_specifier = TypeSpecifier {
-            path: as_name_opt(type_specifier.name_ref()),
+            path: as_path_opt(type_specifier.path()),
             template_parameters: self
                 .collect_template_parameters(type_specifier.template_parameters()),
         };
@@ -214,7 +215,7 @@ impl ExprCollector<'_> {
     fn missing_type_specifier(&mut self) -> TypeSpecifierId {
         self.make_type_specifier(
             TypeSpecifier {
-                path: Name::missing(),
+                path: Path::missing(),
                 template_parameters: vec![],
             },
             Err(SyntheticSyntax),
@@ -396,4 +397,10 @@ where
     Name: From<N>,
 {
     name.map_or_else(Name::missing, Name::from)
+}
+
+fn as_path_opt(path: Option<ast::Path>) -> Path {
+    path.and_then(ModPath::from_src)
+        .map(Path)
+        .unwrap_or_else(Path::missing)
 }

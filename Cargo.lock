@@ -536,6 +536,7 @@ dependencies = [
  "rowan",
  "rustc-hash 2.1.1",
  "salsa",
+ "smallvec",
  "smol_str",
  "syntax",
  "triomphe",
