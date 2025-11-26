@@ -65,7 +65,6 @@ version = "0.0.0"
 dependencies = [
  "line-index",
  "rowan",
- "rustc-hash 2.1.1",
  "salsa",
  "syntax",
  "triomphe",
@@ -483,9 +482,9 @@ checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 
 [[package]]
 name = "hashbrown"
-version = "0.16.0"
+version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5419bdc4f6a9207fbeba6d11b604d481addf78ecd10c11ad51e76c2f6482748d"
+checksum = "841d1cc9bed7f9236f321df977030373f4a4163ae1a7dbfe1a51a2c1a51d9100"
 dependencies = [
  "foldhash",
 ]
@@ -519,13 +518,11 @@ dependencies = [
  "either",
  "hir-def",
  "hir-ty",
- "la-arena",
  "smallvec",
  "stdx 0.0.0",
  "syntax",
  "tracing",
  "triomphe",
- "vfs",
 ]
 
 [[package]]
@@ -539,10 +536,8 @@ dependencies = [
  "rowan",
  "rustc-hash 2.1.1",
  "salsa",
- "smallvec",
  "smol_str",
  "syntax",
- "tracing",
  "triomphe",
  "vfs",
 ]
@@ -665,17 +660,12 @@ dependencies = [
 name = "ide"
 version = "0.0.0"
 dependencies = [
- "arrayvec",
  "base-db",
- "bitflags 2.10.0",
- "either",
- "expect-test",
  "hir",
  "hir-def",
  "hir-ty",
  "ide-completion",
  "ide-db",
- "indexmap 2.12.0",
  "itertools",
  "line-index",
  "naga 22.1.0",
@@ -686,10 +676,8 @@ dependencies = [
  "salsa",
  "smallvec",
  "smol_str",
- "stdx 0.0.0",
  "syntax",
  "test-utils",
- "tracing",
  "triomphe",
  "vfs",
  "wgsl-formatter",
@@ -721,22 +709,12 @@ name = "ide-db"
 version = "0.0.0"
 dependencies = [
  "base-db",
- "crossbeam-channel",
- "either",
- "expect-test",
  "hir-def",
  "hir-ty",
- "indexmap 2.12.0",
  "itertools",
- "line-index",
  "rowan",
  "rustc-hash 2.1.1",
  "salsa",
- "smallvec",
- "smol_str",
- "syntax",
- "tracing",
- "triomphe",
  "vfs",
 ]
 
@@ -773,12 +751,12 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.12.0"
+version = "2.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6717a8d2a5a929a1a2eb43a12812498ed141a0bcfb7e8f7844fbdbe4303bba9f"
+checksum = "0ad4bb2b565bca0645f4d68c5c9af97fba094e9791da685bf83cb5f3ce74acf2"
 dependencies = [
  "equivalent",
- "hashbrown 0.16.0",
+ "hashbrown 0.16.1",
  "serde",
  "serde_core",
 ]
@@ -879,7 +857,8 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 [[package]]
 name = "lelwel"
 version = "0.10.0"
-source = "git+https://github.com/0x2a-42/lelwel.git#27b4becfe5accb3ad77cbfb2004041bda1c6abd5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c52180256f02d6197392b9cd17db7e5964012cb7e7cfc058b985dfd8caee37b5"
 dependencies = [
  "codespan-reporting 0.11.1",
  "logos",
@@ -1087,7 +1066,7 @@ dependencies = [
  "cfg_aliases 0.1.1",
  "codespan-reporting 0.11.1",
  "hexf-parse",
- "indexmap 2.12.0",
+ "indexmap 2.12.1",
  "log",
  "rustc-hash 1.1.0",
  "termcolor",
@@ -1107,9 +1086,9 @@ dependencies = [
  "cfg_aliases 0.2.1",
  "codespan-reporting 0.12.0",
  "half",
- "hashbrown 0.16.0",
+ "hashbrown 0.16.1",
  "hexf-parse",
- "indexmap 2.12.0",
+ "indexmap 2.12.1",
  "libm",
  "log",
  "num-traits",
@@ -1132,9 +1111,9 @@ dependencies = [
  "cfg_aliases 0.2.1",
  "codespan-reporting 0.12.0",
  "half",
- "hashbrown 0.16.0",
+ "hashbrown 0.16.1",
  "hexf-parse",
- "indexmap 2.12.0",
+ "indexmap 2.12.1",
  "libm",
  "log",
  "num-traits",
@@ -1706,7 +1685,7 @@ version = "1.0.145"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "402a6f66d8c709116cf22f558eab210f5a50187f702eb4d7e5ef38d9a7f1c79c"
 dependencies = [
- "indexmap 2.12.0",
+ "indexmap 2.12.1",
  "itoa",
  "memchr",
  "ryu",
@@ -1964,16 +1943,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tikv-jemallocator"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cec5ff18518d81584f477e9bfdf957f5bb0979b0bac3af4ca30b5b3ae2d2865"
-dependencies = [
- "libc",
- "tikv-jemalloc-sys",
-]
-
-[[package]]
 name = "time"
 version = "0.3.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2147,7 +2116,7 @@ source = "git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7e
 dependencies = [
  "crossbeam-channel",
  "fst",
- "indexmap 2.12.0",
+ "indexmap 2.12.1",
  "nohash-hasher",
  "paths",
  "rustc-hash 2.1.1",
@@ -2241,7 +2210,6 @@ dependencies = [
  "crossbeam-channel",
  "dissimilar",
  "hir",
- "hir-def",
  "hir-ty",
  "ide",
  "ide-completion",
@@ -2254,26 +2222,20 @@ dependencies = [
  "mimalloc",
  "nohash-hasher",
  "num_cpus",
- "oorandom",
  "parking_lot 0.12.5",
- "parser",
  "paths",
- "rayon",
  "rustc-hash 2.1.1",
  "salsa",
  "semver",
  "serde",
  "serde_json",
  "stdx 0.0.0",
- "syntax",
  "test-utils",
- "tikv-jemallocator",
  "tracing",
  "tracing-subscriber",
  "triomphe",
  "vfs",
  "vfs-notify 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070)",
- "walkdir",
  "windows-sys 0.61.2",
  "xflags",
 ]
@@ -2292,7 +2254,7 @@ dependencies = [
 [[package]]
 name = "wgsl-types"
 version = "0.2.0"
-source = "git+https://github.com/wgsl-tooling-wg/wesl-rs#64ae2373605af54be3a4baf251d673683da85fe9"
+source = "git+https://github.com/wgsl-tooling-wg/wesl-rs#885b4e560f7750331b8bb976d5cc518e0cdeff12"
 dependencies = [
  "half",
  "itertools",
@@ -2670,7 +2632,7 @@ dependencies = [
  "arbitrary",
  "crc32fast",
  "flate2",
- "indexmap 2.12.0",
+ "indexmap 2.12.1",
  "memchr",
  "time",
  "zopfli",

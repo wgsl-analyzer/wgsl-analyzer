@@ -13,7 +13,6 @@ doctest = false
 [dependencies]
 line-index.workspace = true
 rowan.workspace = true
-rustc-hash.workspace = true
 salsa.workspace = true
 syntax.workspace = true
 triomphe.workspace = true

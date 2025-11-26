@@ -53,8 +53,8 @@
 		"watch": "npm run build-base -- --sourcemap --watch"
 	},
 	"dependencies": {
-		"@hpcc-js/wasm": "^2.28.0",
-		"anser": "^2.3.2",
+		"@hpcc-js/wasm": "^2.29.0",
+		"anser": "^2.3.3",
 		"d3": "^7.9.0",
 		"d3-graphviz": "^5.6.0",
 		"fp-ts": "^2.16.11",
@@ -63,16 +63,16 @@
 		"vscode-languageclient": "^9.0.1"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.3.5",
+		"@biomejs/biome": "^2.3.7",
 		"@tsconfig/node-ts": "^23.6.2",
-		"@tsconfig/node22": "^22.0.3",
+		"@tsconfig/node22": "^22.0.5",
 		"@tsconfig/strictest": "^2.0.8",
 		"@types/node": "^24.10.1",
 		"@types/vscode": "^1.105.0",
 		"@vscode/test-electron": "^2.5.2",
-		"@vscode/vsce": "^3.7.0",
+		"@vscode/vsce": "^3.7.1",
 		"esbuild": "^0.27.0",
-		"ovsx": "^0.10.6",
+		"ovsx": "^0.10.7",
 		"tslib": "^2.8.1",
 		"typescript": "^5.9.3"
 	},

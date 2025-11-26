@@ -15,13 +15,11 @@ base-db.workspace = true
 either.workspace = true
 hir-def.workspace = true
 hir-ty.workspace = true
-la-arena.workspace = true
 smallvec.workspace = true
 stdx.workspace = true
 syntax.workspace = true
 tracing.workspace = true
 triomphe.workspace = true
-vfs.workspace = true
 
 [lints]
 workspace = true
