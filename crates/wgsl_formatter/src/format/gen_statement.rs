@@ -6,8 +6,8 @@ use rowan::NodeOrToken;
 use syntax::{
     AstNode,
     ast::{
-        self, CompoundStatement, ElseClause, ElseIfClause, Expression, FunctionCall, IfClause,
-        Literal, ParenthesisExpression, Statement,
+        self, CompoundStatement, ElseClause, ElseIfClause, Expression, FunctionCall,
+        IdentExpression, IfClause, Literal, ParenthesisExpression, Statement,
     },
 };
 
@@ -139,10 +139,13 @@ fn gen_statement_maybe_semicolon(
             gen_let_declaration_statement(let_declaration, include_semicolon)
         },
         ast::Statement::ConstantDeclaration(constant_declaration) => {
-            todo_verbatim(constant_declaration.syntax())
+            gen_const_declaration_statement(constant_declaration, include_semicolon)
         },
         ast::Statement::AssignmentStatement(assignment_statement) => {
-            todo_verbatim(assignment_statement.syntax())
+            gen_assignment_statement(assignment_statement, include_semicolon)
+        },
+        ast::Statement::PhonyAssignmentStatement(phony_assignment_statement) => {
+            gen_phony_assignment_statement(phony_assignment_statement, include_semicolon)
         },
         ast::Statement::CompoundAssignmentStatement(compound_assignment_statement) => {
             todo_verbatim(compound_assignment_statement.syntax())
@@ -217,9 +220,6 @@ fn gen_statement_maybe_semicolon(
             formatted.extend(gen_comments(comments_after_discard));
             Ok(formatted)
         },
-        ast::Statement::PhonyAssignmentStatement(phony_assignment_statement) => {
-            todo_verbatim(phony_assignment_statement.syntax())
-        },
         ast::Statement::AssertStatement(assert_statement) => {
             todo_verbatim(assert_statement.syntax())
         },
@@ -229,11 +229,86 @@ fn gen_statement_maybe_semicolon(
     }
 }
 
+fn gen_assignment_statement(
+    assignment_statement: &ast::AssignmentStatement,
+    include_semicolon: bool,
+) -> Result<PrintItemBuffer, FormatDocumentError> {
+    // NOTE!! - When changing this function, make sure to also update gen_phony_assignment_statement.
+    // This is non-dry code, but when inevitably at some point there will be some differences between
+    // the two, this should clearly communicate that they should be split up and not
+    // continue to be one function with a whole lot of parameters and ifs.
+
+    dbg!(assignment_statement.syntax());
+    // ==== Parse ====
+    let mut syntax = put_back(assignment_statement.syntax().children_with_tokens());
+    let item_target = parse_node::<Expression>(&mut syntax)?;
+    let item_comments_after_target = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::Equal)?;
+    let item_comments_after_equal = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_value = parse_node::<Expression>(&mut syntax)?;
+    let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
+    parse_end(&mut syntax);
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.extend(gen_expression(&item_target, true)?);
+    formatted.extend(gen_comments(item_comments_after_target));
+    formatted.expect_single_space();
+    formatted.push_sc(sc!("="));
+    formatted.expect_single_space();
+    formatted.extend(gen_comments(item_comments_after_equal));
+    formatted.extend(gen_expression(&item_value, true)?);
+    formatted.extend(gen_comments(item_comments_after_value));
+    if include_semicolon {
+        formatted.request_space(SeparationPolicy::Discouraged);
+        formatted.push_sc(sc!(";"));
+    }
+    Ok(formatted)
+}
+
+fn gen_phony_assignment_statement(
+    phony_assignment_statement: &ast::PhonyAssignmentStatement,
+    include_semicolon: bool,
+) -> Result<PrintItemBuffer, FormatDocumentError> {
+    // NOTE!! - When changing this function, make sure to also update gen_assignment_statement.
+    // This is non-dry code, but when inevitably at some point there will be some differences between
+    // the two, this should clearly communicate that they should be split up and not
+    // continue to be one function with a whole lot of parameters and ifs.
+
+    dbg!(phony_assignment_statement.syntax());
+    // ==== Parse ====
+    let mut syntax = put_back(phony_assignment_statement.syntax().children_with_tokens());
+    parse_token(&mut syntax, SyntaxKind::Underscore)?;
+    let item_comments_after_target = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::Equal)?;
+    let item_comments_after_equal = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_value = parse_node::<Expression>(&mut syntax)?;
+    let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
+    parse_end(&mut syntax);
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_sc(sc!("_"));
+    formatted.extend(gen_comments(item_comments_after_target));
+    formatted.expect_single_space();
+    formatted.push_sc(sc!("="));
+    formatted.expect_single_space();
+    formatted.extend(gen_comments(item_comments_after_equal));
+    formatted.extend(gen_expression(&item_value, true)?);
+    formatted.extend(gen_comments(item_comments_after_value));
+    if include_semicolon {
+        formatted.request_space(SeparationPolicy::Discouraged);
+        formatted.push_sc(sc!(";"));
+    }
+    Ok(formatted)
+}
+
 fn gen_function_call_statement(
     function_call_statement: &ast::FunctionCallStatement,
     include_semicolon: bool,
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
-    dbg!(function_call_statement.syntax());
     // ==== Parse ====
     let mut syntax = put_back(function_call_statement.syntax().children_with_tokens());
     let function_call = parse_node::<FunctionCall>(&mut syntax)?;
@@ -481,12 +556,64 @@ fn gen_while_statement(statement: &ast::WhileStatement) -> FormatDocumentResult<
     Ok(formatted)
 }
 
+fn gen_const_declaration_statement(
+    statement: &ast::ConstantDeclaration,
+    include_semicolon: bool,
+) -> FormatDocumentResult<PrintItemBuffer> {
+    //
+    // NOTE!! - When changing this function, make sure to also update gen_var_declaration_statement, gen_let_declaration_statemetn.
+    // This is non-dry code, but when inevitably at some point there will be some differences between
+    // let and var, this should clearly communicate that they should be split up and not
+    // continue to be one function with a whole lot of parameters and ifs.
+    //
+
+    // ==== Parse ====
+    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    parse_token(&mut syntax, SyntaxKind::Constant)?;
+    let item_comments_after_let = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_name = parse_node::<ast::Name>(&mut syntax)?;
+    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::Equal)?;
+    let item_comments_after_equal = parse_many_comments_and_blankspace(&mut syntax)?;
+
+    let value = parse_node::<ast::Expression>(&mut syntax)?;
+    let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
+
+    parse_token_optional(&mut syntax, SyntaxKind::Semicolon); //Not all var-statements have a semicolon (e.g for loop)
+    parse_end(&mut syntax);
+
+    // ==== Format ====
+    let mut pi = PrintItems::new();
+    pi.push_info(ColumnNumber::new("start_expr"));
+
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_sc(sc!("const"));
+    formatted.push_signal(Signal::StartIndent);
+    formatted.expect_single_space();
+    formatted.extend(gen_comments(item_comments_after_let));
+    formatted.push_string(item_name.text().to_string());
+    formatted.extend(gen_comments(item_comments_after_name));
+    formatted.expect_single_space();
+    formatted.push_sc(sc!("="));
+    formatted.expect_single_space();
+    formatted.extend(gen_comments(item_comments_after_equal));
+    formatted.extend(gen_expression(&value, false)?);
+    formatted.extend(gen_comments(item_comments_after_value));
+    formatted.request_space(SeparationPolicy::Discouraged);
+    if include_semicolon {
+        formatted.push_sc(sc!(";"));
+    }
+    formatted.push_signal(Signal::FinishIndent);
+
+    Ok(formatted)
+}
+
 fn gen_let_declaration_statement(
     statement: &ast::LetDeclaration,
     include_semicolon: bool,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     //
-    // NOTE!! - When changing this function, make sure to also update gen_var_declaration_statement.
+    // NOTE!! - When changing this function, make sure to also update gen_var_declaration_statement, gen_const_declaration_statement.
     // This is non-dry code, but when inevitably at some point there will be some differences between
     // let and var, this should clearly communicate that they should be split up and not
     // continue to be one function with a whole lot of parameters and ifs.
@@ -538,7 +665,7 @@ fn gen_var_declaration_statement(
     include_semicolon: bool,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     //
-    // NOTE!! - When changing this function, make sure to also update gen_let_declaration_statement.
+    // NOTE!! - When changing this function, make sure to also update gen_let_declaration_statement, gen_const_declaration_statement.
     // This is non-dry code, but when inevitably at some point there will be some differences between
     // let and var, this should clearly communicate that they should be split up and not
     // continue to be one function with a whole lot of parameters and ifs.
