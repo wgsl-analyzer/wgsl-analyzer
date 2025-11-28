@@ -22,6 +22,11 @@ use crate::format::{
     gen_function_call::gen_function_call,
     gen_if_statement::gen_if_statement,
     gen_switch_statement::gen_switch_statement,
+    gen_types::gen_type_specifier,
+    gen_var_let_const_statement::{
+        gen_const_declaration_statement, gen_let_declaration_statement,
+        gen_var_declaration_statement,
+    },
     helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, todo_verbatim},
     multiline_group::gen_multiline_group,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
@@ -552,162 +557,6 @@ fn gen_while_statement(statement: &ast::WhileStatement) -> FormatDocumentResult<
     formatted.extend(gen_comments(comments_after_condition));
     formatted.extend(gen_compound_statement(&item_body)?);
     formatted.expect_line_break();
-
-    Ok(formatted)
-}
-
-fn gen_const_declaration_statement(
-    statement: &ast::ConstantDeclaration,
-    include_semicolon: bool,
-) -> FormatDocumentResult<PrintItemBuffer> {
-    //
-    // NOTE!! - When changing this function, make sure to also update gen_var_declaration_statement, gen_let_declaration_statemetn.
-    // This is non-dry code, but when inevitably at some point there will be some differences between
-    // let and var, this should clearly communicate that they should be split up and not
-    // continue to be one function with a whole lot of parameters and ifs.
-    //
-
-    // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Constant)?;
-    let item_comments_after_let = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_name = parse_node::<ast::Name>(&mut syntax)?;
-    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Equal)?;
-    let item_comments_after_equal = parse_many_comments_and_blankspace(&mut syntax)?;
-
-    let value = parse_node::<ast::Expression>(&mut syntax)?;
-    let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
-
-    parse_token_optional(&mut syntax, SyntaxKind::Semicolon); //Not all var-statements have a semicolon (e.g for loop)
-    parse_end(&mut syntax);
-
-    // ==== Format ====
-    let mut pi = PrintItems::new();
-    pi.push_info(ColumnNumber::new("start_expr"));
-
-    let mut formatted = PrintItemBuffer::new();
-    formatted.push_sc(sc!("const"));
-    formatted.push_signal(Signal::StartIndent);
-    formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_let));
-    formatted.push_string(item_name.text().to_string());
-    formatted.extend(gen_comments(item_comments_after_name));
-    formatted.expect_single_space();
-    formatted.push_sc(sc!("="));
-    formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_equal));
-    formatted.extend(gen_expression(&value, false)?);
-    formatted.extend(gen_comments(item_comments_after_value));
-    formatted.request_space(SeparationPolicy::Discouraged);
-    if include_semicolon {
-        formatted.push_sc(sc!(";"));
-    }
-    formatted.push_signal(Signal::FinishIndent);
-
-    Ok(formatted)
-}
-
-fn gen_let_declaration_statement(
-    statement: &ast::LetDeclaration,
-    include_semicolon: bool,
-) -> FormatDocumentResult<PrintItemBuffer> {
-    //
-    // NOTE!! - When changing this function, make sure to also update gen_var_declaration_statement, gen_const_declaration_statement.
-    // This is non-dry code, but when inevitably at some point there will be some differences between
-    // let and var, this should clearly communicate that they should be split up and not
-    // continue to be one function with a whole lot of parameters and ifs.
-    //
-
-    // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Let)?;
-    let item_comments_after_let = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_name = parse_node::<ast::Name>(&mut syntax)?;
-    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Equal)?;
-    let item_comments_after_equal = parse_many_comments_and_blankspace(&mut syntax)?;
-
-    let value = parse_node::<ast::Expression>(&mut syntax)?;
-    let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
-
-    parse_token_optional(&mut syntax, SyntaxKind::Semicolon); //Not all var-statements have a semicolon (e.g for loop)
-    parse_end(&mut syntax);
-
-    // ==== Format ====
-    let mut pi = PrintItems::new();
-    pi.push_info(ColumnNumber::new("start_expr"));
-
-    let mut formatted = PrintItemBuffer::new();
-    formatted.push_sc(sc!("let"));
-    formatted.push_signal(Signal::StartIndent);
-    formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_let));
-    formatted.push_string(item_name.text().to_string());
-    formatted.extend(gen_comments(item_comments_after_name));
-    formatted.expect_single_space();
-    formatted.push_sc(sc!("="));
-    formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_equal));
-    formatted.extend(gen_expression(&value, false)?);
-    formatted.extend(gen_comments(item_comments_after_value));
-    formatted.request_space(SeparationPolicy::Discouraged);
-    if include_semicolon {
-        formatted.push_sc(sc!(";"));
-    }
-    formatted.push_signal(Signal::FinishIndent);
-
-    Ok(formatted)
-}
-
-fn gen_var_declaration_statement(
-    statement: &ast::VariableDeclaration,
-    include_semicolon: bool,
-) -> FormatDocumentResult<PrintItemBuffer> {
-    //
-    // NOTE!! - When changing this function, make sure to also update gen_let_declaration_statement, gen_const_declaration_statement.
-    // This is non-dry code, but when inevitably at some point there will be some differences between
-    // let and var, this should clearly communicate that they should be split up and not
-    // continue to be one function with a whole lot of parameters and ifs.
-    //
-
-    // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Var)?;
-    let item_comments_after_let = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_name = parse_node::<ast::Name>(&mut syntax)?;
-    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Equal)?;
-    let item_comments_after_equal = parse_many_comments_and_blankspace(&mut syntax)?;
-
-    let value = parse_node::<ast::Expression>(&mut syntax)?;
-    let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
-
-    parse_token_optional(&mut syntax, SyntaxKind::Semicolon); //Not all var-statements have a semicolon (e.g for loop)
-    parse_end(&mut syntax);
-
-    // ==== Format ====
-    let mut pi = PrintItems::new();
-    pi.push_info(ColumnNumber::new("start_expr"));
-
-    let mut formatted = PrintItemBuffer::new();
-    formatted.push_sc(sc!("var"));
-    formatted.push_signal(Signal::StartIndent);
-    formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_let));
-    formatted.push_string(item_name.text().to_string());
-    formatted.extend(gen_comments(item_comments_after_name));
-    formatted.expect_single_space();
-    formatted.push_sc(sc!("="));
-    formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_equal));
-    formatted.extend(gen_expression(&value, false)?);
-    formatted.extend(gen_comments(item_comments_after_value));
-    formatted.request_space(SeparationPolicy::Discouraged);
-    if include_semicolon {
-        formatted.push_sc(sc!(";"));
-    }
-    formatted.push_signal(Signal::FinishIndent);
 
     Ok(formatted)
 }
