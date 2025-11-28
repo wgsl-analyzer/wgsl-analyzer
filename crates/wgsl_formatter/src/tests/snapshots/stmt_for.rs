@@ -134,7 +134,9 @@ pub fn format_for_statement_super_long_components() {
                     compute_some_value_that_has_a_long_name_from(
                         a % 12847248 * 1827348 + 182748,
                     ) < AN_INCONVENIENTLY_LONG_CONSTANT_DECLARED_SOMEWHERE_ELSE;
-                    a = increment_but_in_a_very_fancy_manner(a)
+                    a = increment_but_in_a_very_fancy_manner(
+                        a,
+                    )
                 ) {}
             }
         "#]],
@@ -181,30 +183,38 @@ pub fn format_comments_in_for_statement() {
         }",
         expect![[r#"
             fn main() {
-                /* A */
-                for /* B */ (
-                    /* C */
-                    var /* D */ i /* E */ = /* F */ 0 /* G */; /* H */
-                    i /* I */ < /* J */ 4 /* K */; /* L */
-                    i++ /* M */
-                ) /* N */ {
-                    /* O */
-                }
-                /* P */
+                /* 0 */
+                for /* 1 */ (
+                    /* 2 */
+                    var /* 3 */ i /* 4 */ = /* 5 */ 0 /* 6 */; /* 7 */
+                    i /* 8 */ < /* 9 */ 4 /* 10 */; /* 11 */
+                    i /* 12 */ ++ /* 13 */
+                ) /* 14 */ {
+                    /* 15 */
+                } /* 16 */
             }
         "#]],
         expect![[r#"
             fn main() {
-                /* A */
-                for /* B */ (
-                    /* C */
-                    var /* D */ i /* E */ = /* F */ 0 /* G */; /* H */
-                    i /* I */ < /* J */ 4 /* K */; /* L */
-                    i++ /* M */
-                ) /* N */ {
-                    /* O */
-                }
-                /* P */
+                // 0
+                for // 1
+                (
+                    // 2
+                    var // 3
+                        i // 4
+                        = // 5
+                        0 // 6
+                    ; // 7
+                    i // 8
+                    < // 9
+                    4 // 10
+                    ; // 11
+                    i // 12
+                    ++ // 13
+                ) // 14
+                {
+                    // 15
+                } // 16
             }
         "#]],
     );
