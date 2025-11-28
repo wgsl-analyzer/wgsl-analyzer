@@ -12,6 +12,7 @@ mod gen_statement;
 mod gen_struct;
 pub mod gen_switch_statement;
 mod gen_types;
+mod gen_var_let_const_statement;
 pub mod multiline_group;
 mod reporting;
 
