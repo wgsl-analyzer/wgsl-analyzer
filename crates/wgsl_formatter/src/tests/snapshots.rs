@@ -24,6 +24,7 @@ mod stmt_discard;
 mod stmt_for;
 mod stmt_function_call;
 mod stmt_if;
+mod stmt_increment_decrement;
 mod stmt_let_declarations;
 mod stmt_loop;
 mod stmt_phony_assignment;
