@@ -26,4 +26,6 @@ workspace = true
 [features]
 # Prefer to crash at strategic places instead of returning errors.
 # This, combined with RUST_BACKTRACE=1 is useful for debugging unit-tests
+# when ast-parsing succeeds but the parsing for the formatting fails somewhere.
+# RUST_BACKTRACE=1 cargo test -p wgsl-formatter tests::snapshots::[YOUR TEST] --features prefer-immediate-crash
 prefer-immediate-crash = []

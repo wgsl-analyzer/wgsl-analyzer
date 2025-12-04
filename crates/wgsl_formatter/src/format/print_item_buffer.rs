@@ -388,7 +388,6 @@ impl PrintItemBuffer {
         &mut self,
         sc: &'static dprint_core::formatting::StringContainer,
     ) {
-        println!("SC== {:?}", sc.text);
         self.apply_end_request();
         self.items.push_sc(sc);
     }
