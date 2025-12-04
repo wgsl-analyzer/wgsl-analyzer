@@ -1,24 +1,24 @@
 [package]
 name = "wgsl-formatter"
 version = "0.0.0"
-edition.workspace = true
-rust-version.workspace = true
-description = "RPC Api for the `proc-macro-srv` crate of wgsl-analyzer."
 repository.workspace = true
+description = "RPC Api for the `proc-macro-srv` crate of wgsl-analyzer."
+edition.workspace = true
 license.workspace = true
+rust-version.workspace = true
 
 [dependencies]
+syntax.workspace = true
 parser.workspace = true
 rowan = "0.16.1"
-syntax.workspace = true
 dprint-core = { version = "0.67.4", features = ["tracing"] }
 dprint-core-macros = "0.1.0"
 itertools = "0.14.0"
 
 [dev-dependencies]
-dissimilar = "1.0.10"
 # anyhow = "1.0.99"
 expect-test = "1.5.1"
+dissimilar = "1.0.10"
 
 [lints]
 workspace = true
