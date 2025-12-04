@@ -200,3 +200,56 @@ pub fn format_comments_in_loop_continuing_break_if_statement() {
         "#]],
     );
 }
+
+#[test]
+pub fn format_comments_in_loop_continuing_break_if_with_needless_parens_statement() {
+    check_comments(
+        "fn main() {
+        ## loop ## {
+        ## continuing
+        ## {
+        ## break ## if ## ( ## false ## ) ## ; ##
+        ## }
+        ## }
+        ##
+        }",
+        expect![[r#"
+            fn main() {
+                /* 0 */
+                loop /* 1 */ {
+                    /* 2 */
+                    continuing /* 3 */ {
+                        /* 4 */
+                        break /* 5 */ if /* 6 */ /* 7 */ false /* 8 */ /* 9 */; /* 10 */
+                        /* 11 */
+                    }
+                    /* 12 */
+                }
+                /* 13 */
+            }
+        "#]],
+        expect![[r#"
+            fn main() {
+                // 0
+                loop // 1
+                {
+                    // 2
+                    continuing // 3
+                    {
+                        // 4
+                        break // 5
+                        if // 6
+                            // 7
+                            false // 8
+                            // 9
+                            ; // 10
+
+                        // 11
+                    }
+                    // 12
+                }
+                // 13
+            }
+        "#]],
+    );
+}
