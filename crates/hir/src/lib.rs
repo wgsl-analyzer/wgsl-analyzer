@@ -153,6 +153,9 @@ impl<'database> Semantics<'database> {
                                 .global_struct_to_def(&InFile::new(file_id, struct_declaration))?;
                             ChildContainer::StructId(definition)
                         },
+                        ast::Item::AssertStatement(assert_statement) => {
+                            todo!()
+                        },
                     };
                     Some(container)
                 } else {
