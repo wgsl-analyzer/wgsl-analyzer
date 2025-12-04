@@ -44,10 +44,13 @@ use crate::{
         },
         gen_comments::gen_comment,
         gen_function::gen_function_declaration,
+        gen_statement::gen_const_assert_statement,
         gen_struct::gen_struct_declaration,
         helpers::{gen_spaced_lines, into_items},
         print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
-        reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult},
+        reporting::{
+            FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult, UnwrapIfPreferCrash,
+        },
     },
 };
 
@@ -113,11 +116,15 @@ fn gen_item(node: &ast::Item) -> FormatDocumentResult<PrintItemBuffer> {
         ast::Item::ConstantDeclaration(constant_declaration) => todo!(),
         ast::Item::OverrideDeclaration(override_declaration) => todo!(),
         ast::Item::TypeAliasDeclaration(type_alias_declaration) => todo!(),
-        ast::Item::AssertStatement(assert_statement) => todo!(),
+        ast::Item::AssertStatement(assert_statement) => {
+            gen_const_assert_statement(assert_statement, true)
+        },
     }
 }
 
 fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
+    dbg!(node.syntax());
+
     let mut formatted = PrintItemBuffer::new();
     formatted.request(SeparationRequest::discouraged());
 
@@ -136,7 +143,8 @@ fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuff
         {
             formatted.extend(gen_comment(child));
         } else {
-            return Err(FormatDocumentErrorKind::UnexpectedModuleNode.at(child.text_range()));
+            return Err(FormatDocumentErrorKind::UnexpectedModuleNode.at(child.text_range()))
+                .expect_if_prefer_crash();
         }
 
         // In a source file there will be a newline after *every* item.

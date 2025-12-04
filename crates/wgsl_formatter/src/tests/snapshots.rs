@@ -15,6 +15,7 @@ mod exprs_trivial;
 mod fn_body;
 mod fn_signature;
 mod statement_spacing;
+mod stmt_assert;
 mod stmt_assignment;
 mod stmt_break_if;
 mod stmt_compound_assignment;
