@@ -105,6 +105,12 @@ impl Body {
 
                 lower::lower_override_declaration(database, file_id, &source.value)
             },
+            DefinitionWithBodyId::GlobalAssertStatement(id) => {
+                let location = id.lookup(database);
+                let source = location.source(database);
+
+                lower::lower_global_assert_statement(database, file_id, &source.value)
+            },
         };
 
         (Arc::new(body), Arc::new(source_map))

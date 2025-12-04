@@ -4,15 +4,15 @@ use triomphe::Arc;
 use crate::{
     HasSource as _,
     database::{
-        DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Lookup as _, OverrideId,
-        StructId, TypeAliasId,
+        DefDatabase, FunctionId, GlobalAssertStatementId, GlobalConstantId, GlobalVariableId,
+        Lookup as _, OverrideId, StructId, TypeAliasId,
     },
     expression::ExpressionId,
     expression_store::{
         ExpressionSourceMap, ExpressionStore,
         lower::{
-            lower_constant, lower_function, lower_override, lower_struct, lower_type_alias,
-            lower_variable,
+            lower_constant, lower_function, lower_global_assert_statement, lower_override,
+            lower_struct, lower_type_alias, lower_variable,
         },
     },
     module_data::Name,
@@ -158,6 +158,24 @@ impl GlobalConstantData {
         let source = location.source(database);
 
         let (global_constant, source_map) = lower_constant(database, &source);
+        (Arc::new(global_constant), Arc::new(source_map))
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct GlobalAssertStatementData {
+    pub store: Arc<ExpressionStore>,
+}
+
+impl GlobalAssertStatementData {
+    pub fn global_assert_statement_data_query(
+        database: &dyn DefDatabase,
+        constant: GlobalAssertStatementId,
+    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
+        let location = database.lookup_intern_global_assert_statement(constant);
+        let source = location.source(database);
+
+        let (global_constant, source_map) = lower_global_assert_statement(database, &source);
         (Arc::new(global_constant), Arc::new(source_map))
     }
 }

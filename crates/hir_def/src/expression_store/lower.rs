@@ -5,8 +5,8 @@ use triomphe::Arc;
 use crate::{
     InFile,
     data::{
-        FieldData, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, ParamData,
-        StructData, TypeAliasData,
+        FieldData, FunctionData, GlobalAssertStatementData, GlobalConstantData, GlobalVariableData,
+        OverrideData, ParamData, StructData, TypeAliasData,
     },
     database::DefDatabase,
     expression::{Expression, ExpressionId, parse_literal},
@@ -370,6 +370,20 @@ pub(crate) fn lower_constant(
     };
     (specifier, source_map)
 }
+
+pub(crate) fn lower_global_assert_statement(
+    database: &dyn DefDatabase,
+    _global_assert_statement: &InFile<ast::AssertStatement>,
+) -> (GlobalAssertStatementData, ExpressionSourceMap) {
+    let collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
+
+    let (store, source_map) = collector.finish();
+    let specifier = GlobalAssertStatementData {
+        store: Arc::new(store),
+    };
+    (specifier, source_map)
+}
+
 pub(crate) fn lower_override(
     database: &dyn DefDatabase,
     global_override: &InFile<ast::OverrideDeclaration>,
