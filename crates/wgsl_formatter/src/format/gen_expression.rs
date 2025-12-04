@@ -176,7 +176,7 @@ pub fn gen_field_expression(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(field_expression.syntax().children_with_tokens());
-    let item_ident_expr = parse_node::<ast::IdentExpression>(&mut syntax)?;
+    let item_struct_expr = parse_node::<ast::Expression>(&mut syntax)?;
     let comments_after_ident_expr = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token(&mut syntax, parser::SyntaxKind::Period)?;
     let comments_after_period = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -185,7 +185,7 @@ pub fn gen_field_expression(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
-    formatted.extend(gen_ident_expression(&item_ident_expr)?);
+    formatted.extend(gen_expression(&item_struct_expr, false)?);
     formatted.extend(gen_comments(comments_after_ident_expr));
     formatted.push_sc(sc!("."));
     formatted.extend(gen_comments(comments_after_period));
@@ -198,7 +198,7 @@ pub fn gen_index_expression(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(index_expression.syntax().children_with_tokens());
-    let item_ident_expr = parse_node::<ast::IdentExpression>(&mut syntax)?;
+    let item_array_expr = parse_node::<ast::Expression>(&mut syntax)?;
     let comments_after_ident_expr = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token(&mut syntax, parser::SyntaxKind::BracketLeft)?;
     let comments_after_open_bracket = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -210,7 +210,7 @@ pub fn gen_index_expression(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
 
-    formatted.extend(gen_ident_expression(&item_ident_expr)?);
+    formatted.extend(gen_expression(&item_array_expr, false)?);
     formatted.extend(gen_comments(comments_after_ident_expr));
     // formatted.push_sc(sc!("["));
     // formatted.extend(gen_comments(comments_after_open_bracket));
