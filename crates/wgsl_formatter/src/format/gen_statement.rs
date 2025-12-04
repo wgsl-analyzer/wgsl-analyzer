@@ -229,7 +229,7 @@ fn gen_statement_maybe_semicolon(
             Ok(formatted)
         },
         ast::Statement::AssertStatement(assert_statement) => {
-            todo_verbatim(assert_statement.syntax())
+            gen_const_assert_statement(assert_statement, include_semicolon)
         },
         ast::Statement::BreakIfStatement(break_if_statement) => {
             gen_break_if_statement(break_if_statement, include_semicolon)
@@ -465,6 +465,36 @@ fn gen_break_if_statement(
     formatted.push_signal(Signal::StartIndent);
     formatted.expect_single_space();
     formatted.extend(gen_comments(comments_after_if));
+    formatted.extend(gen_expression(&item_condition, true)?);
+    formatted.extend(gen_comments(comments_after_condition));
+    formatted.request_space(SeparationPolicy::Discouraged);
+    if include_semicolon {
+        formatted.push_sc(sc!(";"));
+    }
+    formatted.push_signal(Signal::FinishIndent);
+
+    Ok(formatted)
+}
+
+pub fn gen_const_assert_statement(
+    statement: &ast::AssertStatement,
+    include_semicolon: bool,
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    parse_token(&mut syntax, SyntaxKind::ConstantAssert)?;
+    let comments_after_const_assert = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_condition = parse_node::<Expression>(&mut syntax)?;
+    let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_end(&mut syntax);
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+
+    formatted.push_sc(sc!("const_assert"));
+    formatted.push_signal(Signal::StartIndent);
+    formatted.expect_single_space();
+    formatted.extend(gen_comments(comments_after_const_assert));
     formatted.extend(gen_expression(&item_condition, true)?);
     formatted.extend(gen_comments(comments_after_condition));
     formatted.request_space(SeparationPolicy::Discouraged);
