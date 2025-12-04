@@ -74,7 +74,7 @@ pub fn format_for_statement_no_anything() {
 pub fn format_for_statement_long_first_component() {
     check(
         "fn main() {
-        for(let a = 1+1+1+1+alculate_something_really_long(172832782);a<3;a +=1) {
+        for(let a = 1+1+1+1+alculate_something_really_long(172832782);a<3;a+=1) {
         }
 
 
@@ -84,7 +84,7 @@ pub fn format_for_statement_long_first_component() {
                 for(
                     let a = 1 + 1 + 1 + 1 + alculate_something_really_long(172832782);
                     a < 3;
-                    a +=1
+                    a += 1
                 ) {}
             }
         "#]],

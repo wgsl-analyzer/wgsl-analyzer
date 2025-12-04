@@ -17,6 +17,7 @@ mod fn_signature;
 mod statement_spacing;
 mod stmt_assignment;
 mod stmt_break_if;
+mod stmt_compound_assignment;
 mod stmt_const_declaration;
 mod stmt_continue;
 mod stmt_continuing;

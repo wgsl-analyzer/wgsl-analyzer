@@ -17,6 +17,9 @@ use crate::format::{
         parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_by_kind,
         parse_node_by_kind_optional, parse_node_optional, parse_token, parse_token_optional,
     },
+    gen_assignment_statement::{
+        gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
+    },
     gen_comments::{gen_comment, gen_comments},
     gen_expression::{gen_expression, gen_parenthesis_expression},
     gen_function_call::gen_function_call,
@@ -153,7 +156,7 @@ fn gen_statement_maybe_semicolon(
             gen_phony_assignment_statement(phony_assignment_statement, include_semicolon)
         },
         ast::Statement::CompoundAssignmentStatement(compound_assignment_statement) => {
-            todo_verbatim(compound_assignment_statement.syntax())
+            gen_compound_assignment_statement(compound_assignment_statement, include_semicolon)
         },
         ast::Statement::IncrementDecrementStatement(increment_decrement_statement) => {
             gen_increment_decrement_statement(increment_decrement_statement, include_semicolon)
@@ -279,82 +282,6 @@ fn gen_increment_decrement_statement(
 
     formatted.extend(gen_comments(item_comments_after_inc_dec));
 
-    if include_semicolon {
-        formatted.request_space(SeparationPolicy::Discouraged);
-        formatted.push_sc(sc!(";"));
-    }
-    Ok(formatted)
-}
-
-fn gen_assignment_statement(
-    assignment_statement: &ast::AssignmentStatement,
-    include_semicolon: bool,
-) -> Result<PrintItemBuffer, FormatDocumentError> {
-    // NOTE!! - When changing this function, make sure to also update gen_phony_assignment_statement.
-    // This is non-dry code, but when inevitably at some point there will be some differences between
-    // the two, this should clearly communicate that they should be split up and not
-    // continue to be one function with a whole lot of parameters and ifs.
-
-    dbg!(assignment_statement.syntax());
-    // ==== Parse ====
-    let mut syntax = put_back(assignment_statement.syntax().children_with_tokens());
-    let item_target = parse_node::<Expression>(&mut syntax)?;
-    let item_comments_after_target = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Equal)?;
-    let item_comments_after_equal = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_value = parse_node::<Expression>(&mut syntax)?;
-    let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-    parse_end(&mut syntax);
-
-    // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
-    formatted.extend(gen_expression(&item_target, true)?);
-    formatted.extend(gen_comments(item_comments_after_target));
-    formatted.expect_single_space();
-    formatted.push_sc(sc!("="));
-    formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_equal));
-    formatted.extend(gen_expression(&item_value, true)?);
-    formatted.extend(gen_comments(item_comments_after_value));
-    if include_semicolon {
-        formatted.request_space(SeparationPolicy::Discouraged);
-        formatted.push_sc(sc!(";"));
-    }
-    Ok(formatted)
-}
-
-fn gen_phony_assignment_statement(
-    phony_assignment_statement: &ast::PhonyAssignmentStatement,
-    include_semicolon: bool,
-) -> Result<PrintItemBuffer, FormatDocumentError> {
-    // NOTE!! - When changing this function, make sure to also update gen_assignment_statement.
-    // This is non-dry code, but when inevitably at some point there will be some differences between
-    // the two, this should clearly communicate that they should be split up and not
-    // continue to be one function with a whole lot of parameters and ifs.
-
-    dbg!(phony_assignment_statement.syntax());
-    // ==== Parse ====
-    let mut syntax = put_back(phony_assignment_statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Underscore)?;
-    let item_comments_after_target = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Equal)?;
-    let item_comments_after_equal = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_value = parse_node::<Expression>(&mut syntax)?;
-    let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-    parse_end(&mut syntax);
-
-    // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
-    formatted.push_sc(sc!("_"));
-    formatted.extend(gen_comments(item_comments_after_target));
-    formatted.expect_single_space();
-    formatted.push_sc(sc!("="));
-    formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_equal));
-    formatted.extend(gen_expression(&item_value, true)?);
-    formatted.extend(gen_comments(item_comments_after_value));
     if include_semicolon {
         formatted.request_space(SeparationPolicy::Discouraged);
         formatted.push_sc(sc!(";"));
