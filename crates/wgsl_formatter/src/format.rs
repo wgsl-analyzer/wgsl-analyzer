@@ -2,6 +2,7 @@ mod ast_parse;
 mod helpers;
 mod print_item_buffer;
 
+pub mod gen_assignment_statement;
 mod gen_attributes;
 mod gen_comments;
 mod gen_expression;
