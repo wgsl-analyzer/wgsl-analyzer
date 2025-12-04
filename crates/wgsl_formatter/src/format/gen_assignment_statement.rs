@@ -4,7 +4,7 @@ use itertools::put_back;
 use parser::{SyntaxKind, SyntaxToken};
 use rowan::NodeOrToken;
 use syntax::{
-    AstNode,
+    AstNode as _,
     ast::{
         self, CompoundAssignmentOperator, CompoundStatement, ElseClause, ElseIfClause, Expression,
         FunctionCall, IdentExpression, IfClause, IncrementDecrement, Literal,
@@ -29,7 +29,7 @@ use crate::format::{
         gen_const_declaration_statement, gen_let_declaration_statement,
         gen_var_declaration_statement,
     },
-    helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, todo_verbatim},
+    helpers::{create_is_multiple_lines_resolver, gen_spaced_lines},
     multiline_group::gen_multiline_group,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult},
@@ -45,7 +45,6 @@ pub fn gen_assignment_statement(
     // them, this should clearly communicate that they should be split up and not
     // continue to be one function with a whole lot of parameters and ifs.
 
-    dbg!(assignment_statement.syntax());
     // ==== Parse ====
     let mut syntax = put_back(assignment_statement.syntax().children_with_tokens());
     let item_target = parse_node::<Expression>(&mut syntax)?;
@@ -84,7 +83,6 @@ pub fn gen_phony_assignment_statement(
     // them, this should clearly communicate that they should be split up and not
     // continue to be one function with a whole lot of parameters and ifs.
 
-    dbg!(phony_assignment_statement.syntax());
     // ==== Parse ====
     let mut syntax = put_back(phony_assignment_statement.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::Underscore)?;
@@ -123,7 +121,6 @@ pub fn gen_compound_assignment_statement(
     // them, this should clearly communicate that they should be split up and not
     // continue to be one function with a whole lot of parameters and ifs.
 
-    dbg!(compound_assignment_statement.syntax());
     // ==== Parse ====
     let mut syntax = put_back(
         compound_assignment_statement

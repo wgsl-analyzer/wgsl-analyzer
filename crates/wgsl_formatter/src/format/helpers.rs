@@ -80,6 +80,10 @@ pub fn into_items(sc: &'static StringContainer) -> PrintItemBuffer {
 
 /// In cases where the formatter is not yet complete we simply output source verbatim.
 #[deprecated]
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "Should follow the api of gen_* methods"
+)]
 pub fn todo_verbatim(source: &parser::SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
     let str = source.to_string();
     let mut items = PrintItemBuffer::default();
