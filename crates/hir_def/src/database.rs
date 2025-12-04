@@ -22,8 +22,8 @@ use crate::{
     expression_store::{ExpressionSourceMap, ExpressionStore},
     hir_file_id::HirFileIdRepr,
     module_data::{
-        Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItemId, Override, Struct,
-        TypeAlias,
+        Function, GlobalAssertStatement, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItemId,
+        Override, Struct, TypeAlias,
     },
     resolver::Resolver,
 };
@@ -214,6 +214,11 @@ pub trait InternDatabase: SourceDatabase {
         &self,
         location: Location<TypeAlias>,
     ) -> TypeAliasId;
+    #[salsa::interned]
+    fn intern_global_assert_statement(
+        &self,
+        location: Location<GlobalAssertStatement>,
+    ) -> GlobalAssertStatementId;
 }
 
 pub type Location<T> = InFile<ModuleItemId<T>>;
@@ -316,6 +321,11 @@ intern_id!(
 intern_id!(OverrideId, Location<Override>, lookup_intern_override);
 intern_id!(StructId, Location<Struct>, lookup_intern_struct);
 intern_id!(TypeAliasId, Location<TypeAlias>, lookup_intern_type_alias);
+intern_id!(
+    GlobalAssertStatementId,
+    Location<GlobalAssertStatement>,
+    lookup_intern_global_assert_statement
+);
 
 /// Module items with a body.
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]

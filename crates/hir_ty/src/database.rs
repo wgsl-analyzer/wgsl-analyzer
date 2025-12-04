@@ -191,6 +191,7 @@ fn struct_is_used_in_uniform(
         | hir_def::module_data::ModuleItem::Struct(_)
         | hir_def::module_data::ModuleItem::GlobalConstant(_)
         | hir_def::module_data::ModuleItem::Override(_)
+        | hir_def::module_data::ModuleItem::GlobalAssertStatement(_)
         | hir_def::module_data::ModuleItem::TypeAlias(_) => false,
     })
 }

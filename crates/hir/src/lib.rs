@@ -10,8 +10,8 @@ use hir_def::{
     body::{BindingId, Body, BodySourceMap},
     data::{FieldId, ParameterId},
     database::{
-        DefDatabase, DefinitionWithBodyId, FunctionId, GlobalConstantId, GlobalVariableId,
-        Location, Lookup as _, OverrideId, StructId, TypeAliasId,
+        DefDatabase, DefinitionWithBodyId, FunctionId, GlobalAssertStatementId, GlobalConstantId,
+        GlobalVariableId, Location, Lookup as _, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
     module_data::{self, ModuleInfo, ModuleItem, Name},
@@ -154,7 +154,11 @@ impl<'database> Semantics<'database> {
                             ChildContainer::StructId(definition)
                         },
                         ast::Item::AssertStatement(assert_statement) => {
-                            todo!()
+                            let definition = self.global_assert_statement_to_def(&InFile::new(
+                                file_id,
+                                assert_statement,
+                            ))?;
+                            ChildContainer::GlobalAssertStatementId(definition)
                         },
                     };
                     Some(container)
@@ -312,6 +316,17 @@ impl<'database> Semantics<'database> {
             .intern_struct(Location::new(source.file_id, item));
         Some(id)
     }
+
+    fn global_assert_statement_to_def(
+        &self,
+        source: &InFile<ast::AssertStatement>,
+    ) -> Option<GlobalAssertStatementId> {
+        let item = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let id = self
+            .database
+            .intern_global_assert_statement(Location::new(source.file_id, item));
+        Some(id)
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -325,6 +340,7 @@ pub enum ChildContainer {
     OverrideId(OverrideId),
     StructId(StructId),
     TypeAliasId(TypeAliasId),
+    GlobalAssertStatementId(GlobalAssertStatementId),
 }
 
 impl_from!(
@@ -351,6 +367,7 @@ impl ChildContainer {
             Self::OverrideId(id) => id.lookup(database).file_id,
             Self::StructId(id) => id.lookup(database).file_id,
             Self::TypeAliasId(id) => id.lookup(database).file_id,
+            Self::GlobalAssertStatementId(id) => id.lookup(database).file_id,
         }
     }
 
@@ -365,6 +382,7 @@ impl ChildContainer {
             | Self::GlobalConstantId(_)
             | Self::OverrideId(_)
             | Self::StructId(_)
+            | Self::GlobalAssertStatementId(_)
             | Self::TypeAliasId(_) => {
                 let file_id = self.file_id(database);
                 let module_info = database.module_info(file_id);
@@ -418,6 +436,11 @@ fn module_item_to_def(
             let location = Location::new(file_id, type_alias);
             let id = database.intern_type_alias(location);
             ModuleDef::TypeAlias(TypeAlias { id })
+        },
+        ModuleItem::GlobalAssertStatement(global_assert_statement) => {
+            let location = Location::new(file_id, global_assert_statement);
+            let id = database.intern_global_assert_statement(location);
+            ModuleDef::GlobalAssertStatement(GlobalAssertStatement { id })
         },
     };
     smallvec::smallvec![definition]
@@ -692,6 +715,22 @@ impl HasSource for TypeAlias {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
+pub struct GlobalAssertStatement {
+    id: GlobalAssertStatementId,
+}
+
+impl HasSource for GlobalAssertStatement {
+    type Ast = ast::AssertStatement;
+
+    fn source(
+        self,
+        database: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
+        Some(self.id.lookup(database).source(database))
+    }
+}
+
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub struct Field {
     pub id: FieldId,
@@ -727,6 +766,7 @@ pub enum ModuleDef {
     Override(Override),
     Struct(Struct),
     TypeAlias(TypeAlias),
+    GlobalAssertStatement(GlobalAssertStatement),
 }
 
 impl ModuleDef {
@@ -743,6 +783,7 @@ impl ModuleDef {
             Self::Override(override_declaration) => {
                 Some(DefinitionWithBodyId::Override(override_declaration.id))
             },
+            Self::GlobalAssertStatement(global_assert_statement) => Some(todo!()),
             Self::Struct(_) | Self::TypeAlias(_) => None,
         }
     }
@@ -826,6 +867,9 @@ impl Module {
                             },
                         }
                     }
+                },
+                ModuleDef::GlobalAssertStatement(global_assert_statement) => {
+                    todo!()
                 },
             }
             if let Some(definition) = item.as_def_with_body_id() {

@@ -9,7 +9,7 @@ use crate::{
     HirFileId,
     ast_id::AstIdMap,
     database::DefDatabase,
-    module_data::{Function, ModuleData, ModuleItem, ModuleItemId},
+    module_data::{Function, GlobalAssertStatement, ModuleData, ModuleItem, ModuleItemId},
 };
 
 pub(crate) struct Ctx<'database> {
@@ -64,9 +64,9 @@ impl<'database> Ctx<'database> {
             Item::TypeAliasDeclaration(type_alias) => {
                 ModuleItem::TypeAlias(self.lower_type_alias(&type_alias)?)
             },
-            Item::AssertStatement(assert_statement) => {
-                todo!()
-            },
+            Item::AssertStatement(assert_statement) => ModuleItem::GlobalAssertStatement(
+                self.lower_global_assert_statement(&assert_statement)?,
+            ),
         };
         self.items.push(item);
         Some(())
@@ -140,5 +140,12 @@ impl<'database> Ctx<'database> {
         let ast_id = self.source_ast_id_map.ast_id(function);
         let function = Function { name, ast_id };
         Some(self.module_data.functions.alloc(function).into())
+    }
+
+    fn lower_global_assert_statement(
+        &mut self,
+        constant: &syntax::ast::AssertStatement,
+    ) -> Option<ModuleItemId<GlobalAssertStatement>> {
+        todo!()
     }
 }
