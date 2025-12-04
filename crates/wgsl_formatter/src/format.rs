@@ -113,6 +113,7 @@ fn gen_item(node: &ast::Item) -> FormatDocumentResult<PrintItemBuffer> {
         ast::Item::ConstantDeclaration(constant_declaration) => todo!(),
         ast::Item::OverrideDeclaration(override_declaration) => todo!(),
         ast::Item::TypeAliasDeclaration(type_alias_declaration) => todo!(),
+        ast::Item::AssertStatement(assert_statement) => todo!(),
     }
 }
 
