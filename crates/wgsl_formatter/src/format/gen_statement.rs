@@ -4,7 +4,7 @@ use itertools::put_back;
 use parser::{SyntaxKind, SyntaxToken};
 use rowan::NodeOrToken;
 use syntax::{
-    AstNode,
+    AstNode as _,
     ast::{
         self, CompoundStatement, ElseClause, ElseIfClause, Expression, FunctionCall,
         IdentExpression, IfClause, IncrementDecrement, Literal, ParenthesisExpression, Statement,
@@ -30,16 +30,12 @@ use crate::format::{
         gen_const_declaration_statement, gen_let_declaration_statement,
         gen_var_declaration_statement,
     },
-    helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, todo_verbatim},
+    helpers::{create_is_multiple_lines_resolver, gen_spaced_lines},
     multiline_group::gen_multiline_group,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult},
 };
 
-#[expect(
-    clippy::wildcard_enum_match_arm,
-    reason = "It will match future variants, and that's intentional"
-)]
 pub fn gen_compound_statement(
     syntax: &ast::CompoundStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
@@ -246,7 +242,6 @@ fn gen_increment_decrement_statement(
     // the two, this should clearly communicate that they should be split up and not
     // continue to be one function with a whole lot of parameters and ifs.
 
-    dbg!(increment_decrement_statement.syntax());
     // ==== Parse ====
     let mut syntax = put_back(
         increment_decrement_statement
@@ -311,8 +306,6 @@ fn gen_function_call_statement(
 }
 
 fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {
-    dbg!(statement.syntax());
-
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::For)?;

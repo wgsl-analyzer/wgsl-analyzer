@@ -20,7 +20,7 @@ use syntax::{
 };
 
 use crate::format::reporting::{
-    FormatDocumentErrorKind, FormatDocumentResult, UnwrapIfPreferCrash,
+    FormatDocumentErrorKind, FormatDocumentResult, UnwrapIfPreferCrash as _,
 };
 
 pub type SyntaxIter = PutBack<SyntaxElementChildren>;
@@ -156,10 +156,7 @@ pub fn parse_node<T: AstNode>(syntax: &mut SyntaxIter) -> FormatDocumentResult<T
             syntax.put_back(other.clone());
             Err(FormatDocumentErrorKind::UnexpectedToken { received: other }.without_range())
         },
-        None => {
-            todo!();
-            Err(FormatDocumentErrorKind::MissingNode.without_range())
-        },
+        None => Err(FormatDocumentErrorKind::MissingNode.without_range()),
     }
     .expect_if_prefer_crash()
 }
@@ -181,10 +178,7 @@ pub fn parse_ast_token<T: AstToken>(syntax: &mut SyntaxIter) -> FormatDocumentRe
             syntax.put_back(other.clone());
             Err(FormatDocumentErrorKind::UnexpectedToken { received: other }.without_range())
         },
-        None => {
-            todo!();
-            Err(FormatDocumentErrorKind::MissingNode.without_range())
-        },
+        None => Err(FormatDocumentErrorKind::MissingNode.without_range()),
     }
     .expect_if_prefer_crash()
 }

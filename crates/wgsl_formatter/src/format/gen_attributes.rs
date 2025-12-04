@@ -1,10 +1,9 @@
 use dprint_core_macros::sc;
 use parser::SyntaxToken;
-use syntax::{AstNode, ast};
+use syntax::{AstNode as _, ast};
 
 use crate::format::{
-    gen_comments::gen_comments, helpers::todo_verbatim, print_item_buffer::PrintItemBuffer,
-    reporting::FormatDocumentResult,
+    gen_comments::gen_comments, print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult,
 };
 
 //TODO Properly handle the comments, instead of just passing "syntaxtoken", which seems very untyped...
@@ -25,5 +24,5 @@ pub fn gen_attributes(
 
 pub fn gen_attribute(attribute: &ast::Attribute) -> FormatDocumentResult<PrintItemBuffer> {
     //formatted.push_sc(sc!("@"));
-    todo_verbatim(attribute.syntax())
+    super::helpers::todo_verbatim(attribute.syntax())
 }

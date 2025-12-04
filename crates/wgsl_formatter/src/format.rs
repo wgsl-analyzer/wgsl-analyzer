@@ -49,7 +49,8 @@ use crate::{
         helpers::{gen_spaced_lines, into_items},
         print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
         reporting::{
-            FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult, UnwrapIfPreferCrash,
+            FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult,
+            UnwrapIfPreferCrash as _,
         },
     },
 };
@@ -99,7 +100,7 @@ pub fn format_tree(
     );
 
     match error {
-        Some(err) => Err(err),
+        Some(error) => Err(error),
         None => Ok(formatted),
     }
 }
@@ -123,8 +124,6 @@ fn gen_item(node: &ast::Item) -> FormatDocumentResult<PrintItemBuffer> {
 }
 
 fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
-    dbg!(node.syntax());
-
     let mut formatted = PrintItemBuffer::new();
     formatted.request(SeparationRequest::discouraged());
 
