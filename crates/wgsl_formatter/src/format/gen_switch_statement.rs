@@ -1,6 +1,6 @@
 use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
-use itertools::{Itertools, Position, put_back};
+use itertools::{Itertools as _, Position, put_back};
 use parser::{SyntaxKind, SyntaxToken};
 use syntax::{
     AstNode as _,
@@ -18,7 +18,6 @@ use crate::format::{
     gen_comments::gen_comments,
     gen_expression::{gen_expression, gen_parenthesis_expression},
     gen_statement::gen_compound_statement,
-    helpers::todo_verbatim,
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentError,
 };
@@ -26,8 +25,6 @@ use crate::format::{
 pub fn gen_switch_statement(
     statement: &SwitchStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
-    dbg!(statement.syntax());
-
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::Switch)?;
@@ -52,8 +49,6 @@ pub fn gen_switch_statement(
 }
 
 pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, FormatDocumentError> {
-    dbg!(statement.syntax());
-
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::BraceLeft)?;
@@ -97,8 +92,6 @@ pub enum SwitchBodyCaseKind {
 pub fn gen_switch_body_case(
     statement: &SwitchBodyCase
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
-    dbg!(statement.syntax());
-
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
 
@@ -167,22 +160,20 @@ pub fn gen_switch_body_case(
     Ok(formatted)
 }
 
-/// Check if the SwitchCaseSelectors only contains one "default" expr, and nothing else
+/// Check if the [`SwitchCaseSelectors`] only contains one "default" expr, and nothing else
 fn is_case_default(item_selectors: &SwitchCaseSelectors) -> bool {
     let mut exprs = item_selectors.exprs();
     let maybe_default = exprs.next();
 
-    return matches!(
+    (matches!(
         maybe_default,
         Some(SwitchCaseSelector::SwitchDefaultSelector(_))
-    ) && exprs.next().is_none();
+    ) && exprs.next().is_none())
 }
 
 pub fn gen_switch_case_selectors(
     statement: &SwitchCaseSelectors
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
-    dbg!(statement.syntax());
-
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
 
@@ -230,6 +221,10 @@ pub fn gen_switch_case_selector(
     }
 }
 
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "API should be analogue to the other gen* functions"
+)]
 pub fn gen_switch_case_default_selector(
     statement: &SwitchDefaultSelector
 ) -> Result<PrintItemBuffer, FormatDocumentError> {

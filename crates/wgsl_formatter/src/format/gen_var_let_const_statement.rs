@@ -37,6 +37,7 @@ pub fn gen_var_declaration_statement(
     gen_var_let_const_statement(BindingKind::Var, statement.syntax(), include_semicolon)
 }
 
+#[derive(Clone, Copy, Debug)]
 enum BindingKind {
     Var,
     Let,
@@ -44,19 +45,19 @@ enum BindingKind {
 }
 
 impl BindingKind {
-    fn syntax_kind(&self) -> SyntaxKind {
+    const fn syntax_kind(self) -> SyntaxKind {
         match self {
-            BindingKind::Var => SyntaxKind::Var,
-            BindingKind::Let => SyntaxKind::Let,
-            BindingKind::Const => SyntaxKind::Constant,
+            Self::Var => SyntaxKind::Var,
+            Self::Let => SyntaxKind::Let,
+            Self::Const => SyntaxKind::Constant,
         }
     }
 
-    fn sc(&self) -> &'static StringContainer {
+    const fn sc(self) -> &'static StringContainer {
         match self {
-            BindingKind::Var => sc!("var"),
-            BindingKind::Let => sc!("let"),
-            BindingKind::Const => sc!("const"),
+            Self::Var => sc!("var"),
+            Self::Let => sc!("let"),
+            Self::Const => sc!("const"),
         }
     }
 }

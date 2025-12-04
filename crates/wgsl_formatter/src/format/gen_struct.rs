@@ -26,7 +26,7 @@ use crate::{
         gen_attributes::gen_attributes,
         gen_comments::gen_comments,
         gen_types::gen_type_specifier,
-        helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, into_items, todo_verbatim},
+        helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, into_items},
         print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
         reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult},
     },

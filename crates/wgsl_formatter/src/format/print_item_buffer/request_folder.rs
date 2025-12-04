@@ -122,7 +122,7 @@ impl Request {
                 },
             ) => {
                 // Cartesian product the two conditionals, and then reduce conditions with similar branches
-                todo!("Consecutive conditionals are not supported yet")
+                unimplemented!("Consecutive conditionals are not supported yet")
             },
         }
     }
