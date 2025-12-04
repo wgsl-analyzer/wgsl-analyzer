@@ -64,6 +64,9 @@ impl<'database> Ctx<'database> {
             Item::TypeAliasDeclaration(type_alias) => {
                 ModuleItem::TypeAlias(self.lower_type_alias(&type_alias)?)
             },
+            Item::AssertStatement(assert_statement) => {
+                todo!()
+            },
         };
         self.items.push(item);
         Some(())
