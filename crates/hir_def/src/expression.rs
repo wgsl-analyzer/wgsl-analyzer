@@ -4,7 +4,7 @@ use syntax::ast::{self, IncrementDecrement};
 
 use crate::{
     body::BindingId,
-    module_data::Name,
+    item_tree::Name,
     type_specifier::{IdentExpression, TypeSpecifierId},
 };
 

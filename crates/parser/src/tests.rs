@@ -1,6 +1,7 @@
 #![cfg_attr(not(test), allow(unused))]
 
 mod expression;
+mod imports;
 
 use expect_test::{Expect, expect};
 
@@ -56,14 +57,14 @@ fn can_parse_array_declaration() {
                 Colon@18..19 ":"
                 Blankspace@19..20 " "
                 TypeSpecifier@20..25
-                  NameReference@20..25
+                  Path@20..25
                     Identifier@20..25 "vec3u"
                 Blankspace@25..26 " "
                 Equal@26..27 "="
                 Blankspace@27..28 " "
                 FunctionCall@28..35
                   IdentExpression@28..33
-                    NameReference@28..33
+                    Path@28..33
                       Identifier@28..33 "vec3u"
                   Arguments@33..35
                     ParenthesisLeft@33..34 "("
@@ -83,18 +84,18 @@ fn can_parse_array_declaration() {
                     Colon@54..55 ":"
                     Blankspace@55..56 " "
                     TypeSpecifier@56..73
-                      NameReference@56..61
+                      Path@56..61
                         Identifier@56..61 "array"
                       TemplateList@61..73
                         TemplateStart@61..62 "<"
                         IdentExpression@62..65
-                          NameReference@62..65
+                          Path@62..65
                             Identifier@62..65 "f32"
                         Comma@65..66 ","
                         Blankspace@66..67 " "
                         FieldExpression@67..72
                           IdentExpression@67..70
-                            NameReference@67..70
+                            Path@67..70
                               Identifier@67..70 "dim"
                           Period@70..71 "."
                           Identifier@71..72 "x"
@@ -127,14 +128,14 @@ fn cannot_parse_bad_array_declaration() {
                 Colon@18..19 ":"
                 Blankspace@19..20 " "
                 TypeSpecifier@20..25
-                  NameReference@20..25
+                  Path@20..25
                     Identifier@20..25 "vec3u"
                 Blankspace@25..26 " "
                 Equal@26..27 "="
                 Blankspace@27..28 " "
                 FunctionCall@28..35
                   IdentExpression@28..33
-                    NameReference@28..33
+                    Path@28..33
                       Identifier@28..33 "vec3u"
                   Arguments@33..35
                     ParenthesisLeft@33..34 "("
@@ -154,18 +155,18 @@ fn cannot_parse_bad_array_declaration() {
                     Colon@54..55 ":"
                     Blankspace@55..56 " "
                     TypeSpecifier@56..72
-                      NameReference@56..61
+                      Path@56..61
                         Identifier@56..61 "array"
                       TemplateList@61..72
                         TemplateStart@61..62 "<"
                         IdentExpression@62..65
-                          NameReference@62..65
+                          Path@62..65
                             Identifier@62..65 "f32"
                         Comma@65..66 ","
                         Blankspace@66..67 " "
                         FieldExpression@67..71
                           IdentExpression@67..70
-                            NameReference@67..70
+                            Path@67..70
                               Identifier@67..70 "dim"
                           Period@70..71 "."
                         TemplateEnd@71..72 ">"
@@ -298,7 +299,7 @@ fn function() {
                     Colon@9..10 ":"
                     Blankspace@10..11 " "
                     TypeSpecifier@11..14
-                      NameReference@11..14
+                      Path@11..14
                         Identifier@11..14 "f32"
                   Comma@14..15 ","
                   Blankspace@15..16 " "
@@ -308,7 +309,7 @@ fn function() {
                     Colon@17..18 ":"
                     Blankspace@18..19 " "
                     TypeSpecifier@19..22
-                      NameReference@19..22
+                      Path@19..22
                         Identifier@19..22 "i32"
                   ParenthesisRight@22..23 ")"
                 Blankspace@23..24 " "
@@ -316,7 +317,7 @@ fn function() {
                   Arrow@24..26 "->"
                   Blankspace@26..27 " "
                   TypeSpecifier@27..30
-                    NameReference@27..30
+                    Path@27..30
                       Identifier@27..30 "f32"
                 Blankspace@30..31 " "
                 CompoundStatement@31..33
@@ -354,7 +355,7 @@ let y: f32 = 2.0;
                     Colon@17..18 ":"
                     Blankspace@18..19 " "
                     TypeSpecifier@19..22
-                      NameReference@19..22
+                      Path@19..22
                         Identifier@19..22 "f32"
                     Blankspace@22..23 " "
                     Equal@23..24 "="
@@ -371,7 +372,7 @@ let y: f32 = 2.0;
                     Colon@35..36 ":"
                     Blankspace@36..37 " "
                     TypeSpecifier@37..40
-                      NameReference@37..40
+                      Path@37..40
                         Identifier@37..40 "f32"
                     Blankspace@40..41 " "
                     Equal@41..42 "="
@@ -424,7 +425,7 @@ fn nontrivial_function() {
                   Arrow@9..11 "->"
                   Blankspace@11..12 " "
                   TypeSpecifier@12..15
-                    NameReference@12..15
+                    Path@12..15
                       Identifier@12..15 "i32"
                 Blankspace@15..16 " "
                 CompoundStatement@16..34
@@ -507,7 +508,7 @@ fn parse_type_primitive() {
         expect![[r#"
             SourceFile@0..3
               TypeSpecifier@0..3
-                NameReference@0..3
+                Path@0..3
                   Identifier@0..3 "f32""#]],
     );
 }
@@ -519,12 +520,12 @@ fn parse_type_with_template() {
         expect![[r#"
             SourceFile@0..9
               TypeSpecifier@0..9
-                NameReference@0..4
+                Path@0..4
                   Identifier@0..4 "vec3"
                 TemplateList@4..9
                   TemplateStart@4..5 "<"
                   IdentExpression@5..8
-                    NameReference@5..8
+                    Path@5..8
                       Identifier@5..8 "f32"
                   TemplateEnd@8..9 ">""#]],
     );
@@ -537,17 +538,17 @@ fn parse_type_template_shift_ambiguity() {
         expect![[r#"
             SourceFile@0..19
               TypeSpecifier@0..19
-                NameReference@0..5
+                Path@0..5
                   Identifier@0..5 "array"
                 TemplateList@5..19
                   TemplateStart@5..6 "<"
                   IdentExpression@6..18
-                    NameReference@6..10
+                    Path@6..10
                       Identifier@6..10 "vec3"
                     TemplateList@10..18
                       TemplateStart@10..11 "<"
                       IdentExpression@11..14
-                        NameReference@11..14
+                        Path@11..14
                           Identifier@11..14 "f32"
                       Comma@14..15 ","
                       Blankspace@15..16 " "
@@ -565,12 +566,12 @@ fn parse_type_template_with_int() {
         expect![[r#"
             SourceFile@0..15
               TypeSpecifier@0..15
-                NameReference@0..5
+                Path@0..5
                   Identifier@0..5 "array"
                 TemplateList@5..15
                   TemplateStart@5..6 "<"
                   IdentExpression@6..9
-                    NameReference@6..9
+                    Path@6..9
                       Identifier@6..9 "f32"
                   Comma@9..10 ","
                   Blankspace@10..11 " "
@@ -581,19 +582,47 @@ fn parse_type_template_with_int() {
 }
 
 #[test]
+fn parse_type_template_trailing_comma() {
+    check_type(
+        "array<
+        f32, 
+        100,
+        >",
+        expect![[r#"
+            SourceFile@0..43
+              TypeSpecifier@0..43
+                Path@0..5
+                  Identifier@0..5 "array"
+                TemplateList@5..43
+                  TemplateStart@5..6 "<"
+                  Blankspace@6..15 "\n        "
+                  IdentExpression@15..18
+                    Path@15..18
+                      Identifier@15..18 "f32"
+                  Comma@18..19 ","
+                  Blankspace@19..29 " \n        "
+                  Literal@29..32
+                    IntLiteral@29..32 "100"
+                  Comma@32..33 ","
+                  Blankspace@33..42 "\n        "
+                  TemplateEnd@42..43 ">""#]],
+    );
+}
+
+#[test]
 fn parse_type_empty_template() {
     check_type(
         "vec3<>",
         expect![[r#"
             SourceFile@0..6
               TypeSpecifier@0..6
-                NameReference@0..4
+                Path@0..4
                   Identifier@0..4 "vec3"
                 TemplateList@4..6
                   TemplateStart@4..5 "<"
                   TemplateEnd@5..6 ">"
 
-            error at 5..6: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 5..6: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -604,15 +633,14 @@ fn parse_type_template_comma_recover() {
         expect![[r#"
             SourceFile@0..7
               TypeSpecifier@0..7
-                NameReference@0..4
+                Path@0..4
                   Identifier@0..4 "vec3"
                 TemplateList@4..7
                   TemplateStart@4..5 "<"
                   Comma@5..6 ","
                   TemplateEnd@6..7 ">"
 
-            error at 5..6: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'
-            error at 6..7: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 5..6: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -623,22 +651,22 @@ fn parse_ptr_template() {
         expect![[r#"
             SourceFile@0..29
               TypeSpecifier@0..29
-                NameReference@0..3
+                Path@0..3
                   Identifier@0..3 "ptr"
                 TemplateList@3..29
                   TemplateStart@3..4 "<"
                   IdentExpression@4..11
-                    NameReference@4..11
+                    Path@4..11
                       Identifier@4..11 "uniform"
                   Comma@11..12 ","
                   Blankspace@12..13 " "
                   IdentExpression@13..16
-                    NameReference@13..16
+                    Path@13..16
                       Identifier@13..16 "f32"
                   Comma@16..17 ","
                   Blankspace@17..18 " "
                   IdentExpression@18..28
-                    NameReference@18..28
+                    Path@18..28
                       Identifier@18..28 "read_write"
                   TemplateEnd@28..29 ">""#]],
     );
@@ -665,7 +693,7 @@ fn parse_return_statement() {
                   Arrow@9..11 "->"
                   Blankspace@11..12 " "
                   TypeSpecifier@12..15
-                    NameReference@12..15
+                    Path@12..15
                       Identifier@12..15 "u32"
                 Blankspace@15..16 " "
                 CompoundStatement@16..49
@@ -727,7 +755,7 @@ fn parse_let_statement_recover() {
                   Arrow@9..11 "->"
                   Blankspace@11..12 " "
                   TypeSpecifier@12..15
-                    NameReference@12..15
+                    Path@12..15
                       Identifier@12..15 "u32"
                 Blankspace@15..16 " "
                 CompoundStatement@16..88
@@ -757,8 +785,8 @@ fn parse_let_statement_recover() {
                   Blankspace@78..87 "\n        "
                   BraceRight@87..88 "}"
 
-            error at 50..53: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'
-            error at 70..76: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'
+            error at 50..53: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'
+            error at 70..76: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'
             error at 87..88: invalid syntax, expected: ';'"#]],
     );
 }
@@ -793,7 +821,7 @@ fn parse_recover_covers_whole_file() {
                     Equal@23..24 "="
                     Blankspace@24..25 " "
                     IdentExpression@25..26
-                      NameReference@25..26
+                      Path@25..26
                         Identifier@25..26 "a"
                   Blankspace@26..31 "\n    "
                   LetDeclaration@31..43
@@ -806,7 +834,7 @@ fn parse_recover_covers_whole_file() {
                     Blankspace@38..39 " "
                     FieldExpression@39..42
                       IdentExpression@39..40
-                        NameReference@39..40
+                        Path@39..40
                           Identifier@39..40 "b"
                       Period@40..41 "."
                       Identifier@41..42 "x"
@@ -814,7 +842,7 @@ fn parse_recover_covers_whole_file() {
                   Blankspace@43..44 "\n"
                   BraceRight@44..45 "}"
 
-            error at 31..34: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', '==', '!=', '>', '>=', '{', '[', '(', '<', '<=', '-', '%', '|', '||', '+', ']', ')', ';', '<<', '>>', '/', '*', <template end>, <template start>"#]],
+            error at 31..34: invalid syntax, expected one of: '&', '&&', '&=', '@', '^', '^=', ':', ',', '.', '::', '=', '==', '!=', '>', '>=', <identifier>, '{', '[', '(', '<', '<=', '-', '--', '-=', '%', '%=', '|', '||', '|=', '+', '++', '+=', '}', ']', ')', ';', '<<', '<<=', '>>', '>>=', '/', '/=', '*', '*=', <template end>, <template start>"#]],
     );
 }
 
@@ -952,7 +980,7 @@ fn parse_if_statement() {
                       Return@24..30 "return"
                       Blankspace@30..31 " "
                       IdentExpression@31..32
-                        NameReference@31..32
+                        Path@31..32
                           Identifier@31..32 "x"
                       Semicolon@32..33 ";"
                     Blankspace@33..34 " "
@@ -993,7 +1021,7 @@ fn parse_if_recover_paren() {
                     Blankspace@28..37 "\n        "
                     BraceRight@37..38 "}"
 
-            error at 4..5: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 4..5: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -1060,7 +1088,7 @@ fn parse_if_recover_empty() {
                     Blankspace@25..34 "\n        "
                     BraceRight@34..35 "}"
 
-            error at 3..4: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 3..4: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -1152,7 +1180,7 @@ fn parse_if_recovery_1() {
                     BraceLeft@22..23 "{"
                     BraceRight@23..24 "}"
 
-            error at 22..23: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 22..23: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -1181,7 +1209,7 @@ fn parse_for_statement() {
                 ForCondition@15..20
                   InfixExpression@15..20
                     IdentExpression@15..16
-                      NameReference@15..16
+                      Path@15..16
                         Identifier@15..16 "i"
                     Blankspace@16..17 " "
                     LessThan@17..18 "<"
@@ -1193,14 +1221,14 @@ fn parse_for_statement() {
                 ForContinuingPart@22..31
                   AssignmentStatement@22..31
                     IdentExpression@22..23
-                      NameReference@22..23
+                      Path@22..23
                         Identifier@22..23 "i"
                     Blankspace@23..24 " "
                     Equal@24..25 "="
                     Blankspace@25..26 " "
                     InfixExpression@26..31
                       IdentExpression@26..27
-                        NameReference@26..27
+                        Path@26..27
                           Identifier@26..27 "i"
                       Blankspace@27..28 " "
                       Plus@28..29 "+"
@@ -1241,7 +1269,7 @@ fn parse_for_statement_comma() {
                 ForCondition@15..20
                   InfixExpression@15..20
                     IdentExpression@15..16
-                      NameReference@15..16
+                      Path@15..16
                         Identifier@15..16 "i"
                     Blankspace@16..17 " "
                     LessThan@17..18 "<"
@@ -1254,14 +1282,14 @@ fn parse_for_statement_comma() {
                 ForContinuingPart@22..31
                   AssignmentStatement@22..31
                     IdentExpression@22..23
-                      NameReference@22..23
+                      Path@22..23
                         Identifier@22..23 "i"
                     Blankspace@23..24 " "
                     Equal@24..25 "="
                     Blankspace@25..26 " "
                     InfixExpression@26..31
                       IdentExpression@26..27
-                        NameReference@26..27
+                        Path@26..27
                           Identifier@26..27 "i"
                       Blankspace@27..28 " "
                       Plus@28..29 "+"
@@ -1308,7 +1336,7 @@ fn for_statement_incomplete_2() {
                 ForInitializer@4..7
                   AssignmentStatement@4..7
                     IdentExpression@4..5
-                      NameReference@4..5
+                      Path@4..5
                         Identifier@4..5 "i"
                     Equal@5..6 "="
                     Literal@6..7
@@ -1355,7 +1383,7 @@ fn for_statement_incomplete_4() {
                 ForContinuingPart@6..11
                   AssignmentStatement@6..11
                     IdentExpression@6..7
-                      NameReference@6..7
+                      Path@6..7
                         Identifier@6..7 "a"
                     Blankspace@7..8 " "
                     Equal@8..9 "="
@@ -1493,7 +1521,7 @@ fn parse_statement_compound() {
                   Return@13..19 "return"
                   Blankspace@19..20 " "
                   IdentExpression@20..21
-                    NameReference@20..21
+                    Path@20..21
                       Identifier@20..21 "x"
                   Semicolon@21..22 ";"
                 Blankspace@22..23 " "
@@ -1509,7 +1537,7 @@ fn parse_statement_assignment() {
             SourceFile@0..6
               AssignmentStatement@0..6
                 IdentExpression@0..1
-                  NameReference@0..1
+                  Path@0..1
                     Identifier@0..1 "a"
                 Blankspace@1..2 " "
                 Equal@2..3 "="
@@ -1529,7 +1557,7 @@ fn parse_statement_assignment_field() {
               AssignmentStatement@0..14
                 FieldExpression@0..3
                   IdentExpression@0..1
-                    NameReference@0..1
+                    Path@0..1
                       Identifier@0..1 "a"
                   Period@1..2 "."
                   Identifier@2..3 "b"
@@ -1539,7 +1567,7 @@ fn parse_statement_assignment_field() {
                 InfixExpression@6..13
                   FieldExpression@6..9
                     IdentExpression@6..7
-                      NameReference@6..7
+                      Path@6..7
                         Identifier@6..7 "a"
                     Period@7..8 "."
                     Identifier@8..9 "c"
@@ -1578,7 +1606,7 @@ fn parse_statement_assignment_invalid() {
                     Semicolon@12..13 ";"
                   BraceRight@13..14 "}"
 
-            error at 7..8: invalid syntax, expected one of: '&', '@', 'break', 'const', 'const_assert', 'continue', 'discard', 'for', <identifier>, 'if', '{', '(', 'let', 'loop', '}', 'return', ';', '*', 'switch', '_', 'var', 'while'"#]],
+            error at 7..8: invalid syntax, expected one of: '&', '@', 'break', 'const', 'const_assert', 'continue', 'discard', 'for', <identifier>, 'if', '{', '(', 'let', 'loop', 'package', '}', 'return', ';', '*', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
 
@@ -1617,7 +1645,7 @@ fn parse_statement_recover() {
                 Blankspace@26..27 " "
                 BraceRight@27..28 "}"
 
-            error at 12..13: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'
+            error at 12..13: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'
             error at 25..26: invalid syntax, expected: ';'"#]],
     );
 }
@@ -1643,7 +1671,7 @@ fn parse_missing_lhs_recover() {
                     IntLiteral@9..10 "1"
                 Semicolon@10..11 ";"
 
-            error at 8..9: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 8..9: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -1690,7 +1718,7 @@ fn parse_compound_assignment_statement() {
             SourceFile@0..7
               CompoundAssignmentStatement@0..7
                 IdentExpression@0..1
-                  NameReference@0..1
+                  Path@0..1
                     Identifier@0..1 "a"
                 Blankspace@1..2 " "
                 PlusEqual@2..4 "+="
@@ -1711,14 +1739,14 @@ fn parse_compound_assignment_statement_expression() {
                 PrefixExpression@0..2
                   Star@0..1 "*"
                   IdentExpression@1..2
-                    NameReference@1..2
+                    Path@1..2
                       Identifier@1..2 "a"
                 Blankspace@2..3 " "
                 PlusEqual@3..5 "+="
                 Blankspace@5..6 " "
                 FunctionCall@6..11
                   IdentExpression@6..9
-                    NameReference@6..9
+                    Path@6..9
                       Identifier@6..9 "foo"
                   Arguments@9..11
                     ParenthesisLeft@9..10 "("
@@ -1741,7 +1769,7 @@ fn parse_phony_assignment_statement() {
                 PrefixExpression@4..8
                   Star@4..5 "*"
                   IdentExpression@5..8
-                    NameReference@5..8
+                    Path@5..8
                       Identifier@5..8 "foo"
                 Semicolon@8..9 ";""#]],
     );
@@ -1756,7 +1784,7 @@ fn parse_indexed_statement() {
               CompoundAssignmentStatement@0..13
                 IndexExpression@0..4
                   IdentExpression@0..1
-                    NameReference@0..1
+                    Path@0..1
                       Identifier@0..1 "a"
                   BracketLeft@1..2 "["
                   Literal@2..3
@@ -1767,7 +1795,7 @@ fn parse_indexed_statement() {
                 Blankspace@7..8 " "
                 IndexExpression@8..12
                   IdentExpression@8..9
-                    NameReference@8..9
+                    Path@8..9
                       Identifier@8..9 "a"
                   BracketLeft@9..10 "["
                   Literal@10..11
@@ -1791,7 +1819,7 @@ fn parse_var_without_initializer() {
                 Colon@5..6 ":"
                 Blankspace@6..7 " "
                 TypeSpecifier@7..10
-                  NameReference@7..10
+                  Path@7..10
                     Identifier@7..10 "u32"
                 Semicolon@10..11 ";""#]],
     );
@@ -1808,7 +1836,7 @@ fn parse_var_with_initializer() {
                 TemplateList@3..13
                   TemplateStart@3..4 "<"
                   IdentExpression@4..12
-                    NameReference@4..12
+                    Path@4..12
                       Identifier@4..12 "function"
                   TemplateEnd@12..13 ">"
                 Blankspace@13..14 " "
@@ -1817,7 +1845,7 @@ fn parse_var_with_initializer() {
                 Colon@15..16 ":"
                 Blankspace@16..17 " "
                 TypeSpecifier@17..20
-                  NameReference@17..20
+                  Path@17..20
                     Identifier@17..20 "u32"
                 Semicolon@20..21 ";""#]],
     );
@@ -1848,7 +1876,7 @@ fn attribute_list_modern() {
                 Arguments@12..18
                   ParenthesisLeft@12..13 "("
                   IdentExpression@13..17
-                    NameReference@13..17
+                    Path@13..17
                       Identifier@13..17 "flat"
                   ParenthesisRight@17..18 ")""#]],
     );
@@ -1874,7 +1902,7 @@ fn attribute_list_modern() {
                   Comma@15..16 ","
                   Blankspace@16..17 " "
                   IdentExpression@17..22
-                    NameReference@17..22
+                    Path@17..22
                       Identifier@17..22 "ident"
                   ParenthesisRight@22..23 ")""#]],
     );
@@ -1934,7 +1962,7 @@ fn let_statement_recover_return_no_eq() {
                       Identifier@28..29 "x"
                     Blankspace@29..30 " "
                     IdentExpression@30..42
-                      NameReference@30..32
+                      Path@30..32
                         Identifier@30..32 "be"
                       Blankspace@32..41 "\n        "
                       Error@41..42
@@ -2060,7 +2088,7 @@ fn let_statement_recover_return_3() {
                   Blankspace@53..62 "\n        "
                   BraceRight@62..63 "}"
 
-            error at 44..50: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 44..50: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -2126,7 +2154,7 @@ fn let_statement_recover_2() {
                   Blankspace@31..40 "\n        "
                   BraceRight@40..41 "}"
 
-            error at 40..41: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 40..41: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -2191,7 +2219,7 @@ fn annotation_with_invalid_statement_recover() {
                       ParenthesisExpression@18..33
                         ParenthesisLeft@18..19 "("
                         IdentExpression@19..32
-                          NameReference@19..32
+                          Path@19..32
                             Identifier@19..32 "MIXOKLAB_SRGB"
                         ParenthesisRight@32..33 ")"
                       Blankspace@33..38 "\n    "
@@ -2205,12 +2233,12 @@ fn annotation_with_invalid_statement_recover() {
                     Blankspace@50..51 " "
                     FunctionCall@51..65
                       IdentExpression@51..59
-                        NameReference@51..59
+                        Path@51..59
                           Identifier@51..59 "srgb2rgb"
                       Arguments@59..65
                         ParenthesisLeft@59..60 "("
                         IdentExpression@60..64
-                          NameReference@60..64
+                          Path@60..64
                             Identifier@60..64 "colA"
                         ParenthesisRight@64..65 ")"
                     Semicolon@65..66 ";"
@@ -2230,7 +2258,7 @@ fn annotation_with_invalid_statement_recover() {
                 Equal@92..93 "="
                 Blankspace@93..94 " "
                 IdentExpression@94..98
-                  NameReference@94..98
+                  Path@94..98
                     Identifier@94..98 "colA"
                 Semicolon@98..99 ";"
               Blankspace@99..100 "\n"
@@ -2243,7 +2271,7 @@ fn annotation_with_invalid_statement_recover() {
             error at 38..41: invalid syntax, expected one of: '@', '{'
             error at 72..76: invalid syntax, expected one of: 'diagnostic', <identifier>
             error at 81..99: global let declarations are not allowed
-            error at 100..101: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
+            error at 100..101: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
     );
 }
 
@@ -2400,7 +2428,7 @@ struct UBO {
                     Colon@31..32 ":"
                     Blankspace@32..33 " "
                     TypeSpecifier@33..38
-                      NameReference@33..38
+                      Path@33..38
                         Identifier@33..38 "vec3f"
                   Comma@38..39 ","
                   Blankspace@39..42 "\n  "
@@ -2410,7 +2438,7 @@ struct UBO {
                     Colon@46..47 ":"
                     Blankspace@47..48 " "
                     TypeSpecifier@48..51
-                      NameReference@48..51
+                      Path@48..51
                         Identifier@48..51 "u32"
                   Blankspace@51..54 "\n  "
                   StructMember@54..63
@@ -2419,7 +2447,7 @@ struct UBO {
                     Colon@58..59 ":"
                     Blankspace@59..60 " "
                     TypeSpecifier@60..63
-                      NameReference@60..63
+                      Path@60..63
                         Identifier@60..63 "f32"
                   Comma@63..64 ","
                   Blankspace@64..65 "\n"
@@ -2458,7 +2486,7 @@ struct Test {
                     Colon@20..21 ":"
                     Blankspace@21..22 " "
                     TypeSpecifier@22..25
-                      NameReference@22..25
+                      Path@22..25
                         Identifier@22..25 "f32"
                   Semicolon@25..26 ";"
                   Blankspace@26..31 "\n    "
@@ -2468,12 +2496,12 @@ struct Test {
                     Colon@32..33 ":"
                     Blankspace@33..34 " "
                     TypeSpecifier@34..43
-                      NameReference@34..38
+                      Path@34..38
                         Identifier@34..38 "vec3"
                       TemplateList@38..43
                         TemplateStart@38..39 "<"
                         IdentExpression@39..42
-                          NameReference@39..42
+                          Path@39..42
                             Identifier@39..42 "f32"
                         TemplateEnd@42..43 ">"
                   Error@43..44
@@ -2514,7 +2542,7 @@ struct Test {
                     Colon@20..21 ":"
                     Blankspace@21..22 " "
                     TypeSpecifier@22..25
-                      NameReference@22..25
+                      Path@22..25
                         Identifier@22..25 "f32"
                   Comma@25..26 ","
                   Blankspace@26..31 "\n    "
@@ -2524,12 +2552,12 @@ struct Test {
                     Colon@32..33 ":"
                     Blankspace@33..34 " "
                     TypeSpecifier@34..43
-                      NameReference@34..38
+                      Path@34..38
                         Identifier@34..38 "vec3"
                       TemplateList@38..43
                         TemplateStart@38..39 "<"
                         IdentExpression@39..42
-                          NameReference@39..42
+                          Path@39..42
                             Identifier@39..42 "f32"
                         TemplateEnd@42..43 ">"
                   Comma@43..44 ","
@@ -2697,7 +2725,7 @@ fn type_alias_declaration() {
                 Equal@12..13 "="
                 Blankspace@13..14 " "
                 TypeSpecifier@14..17
-                  NameReference@14..17
+                  Path@14..17
                     Identifier@14..17 "f32"
                 Semicolon@17..18 ";""#]],
     );
@@ -2718,7 +2746,7 @@ fn type_alias_declaration_recover() {
                 Equal@12..13 "="
                 Blankspace@13..14 " "
                 TypeSpecifier@14..17
-                  NameReference@14..17
+                  Path@14..17
                     Identifier@14..17 "f32"
               Blankspace@17..18 "\n"
               TypeAliasDeclaration@18..36
@@ -2730,11 +2758,11 @@ fn type_alias_declaration_recover() {
                 Equal@30..31 "="
                 Blankspace@31..32 " "
                 TypeSpecifier@32..35
-                  NameReference@32..35
+                  Path@32..35
                     Identifier@32..35 "u32"
                 Semicolon@35..36 ";"
 
-            error at 18..23: invalid syntax, expected one of: '@', ',', '=', <identifier>, '{', '}', ')', ';', <template start>"#]],
+            error at 18..23: invalid syntax, expected one of: '&', '&&', '&=', '@', '^', '^=', ':', ',', '.', '::', '=', '==', '!=', '>', '>=', <identifier>, '{', '[', '(', '<', '<=', '-', '--', '-=', '%', '%=', '|', '||', '|=', '+', '++', '+=', '}', ']', ')', ';', '<<', '<<=', '>>', '>>=', '/', '/=', '*', '*=', <template end>, <template start>"#]],
     );
 }
 
@@ -2747,12 +2775,12 @@ fn parse_statement_expression() {
               FunctionCallStatement@0..16
                 FunctionCall@0..15
                   IdentExpression@0..4
-                    NameReference@0..4
+                    Path@0..4
                       Identifier@0..4 "test"
                   Arguments@4..15
                     ParenthesisLeft@4..5 "("
                     IdentExpression@5..14
-                      NameReference@5..14
+                      Path@5..14
                         Identifier@5..14 "arguments"
                     ParenthesisRight@14..15 ")"
                 Semicolon@15..16 ";""#]],
@@ -2768,18 +2796,18 @@ fn parse_statement_nested_functions() {
               FunctionCallStatement@0..21
                 FunctionCall@0..20
                   IdentExpression@0..4
-                    NameReference@0..4
+                    Path@0..4
                       Identifier@0..4 "test"
                   Arguments@4..20
                     ParenthesisLeft@4..5 "("
                     FunctionCall@5..19
                       IdentExpression@5..17
-                        NameReference@5..14
+                        Path@5..14
                           Identifier@5..14 "arguments"
                         TemplateList@14..17
                           TemplateStart@14..15 "<"
                           IdentExpression@15..16
-                            NameReference@15..16
+                            Path@15..16
                               Identifier@15..16 "a"
                           TemplateEnd@16..17 ">"
                       Arguments@17..19
@@ -2842,7 +2870,7 @@ fn empty_return_statement_no_semi() {
                   Return@13..19 "return"
                   Blankspace@19..20 " "
                   IdentExpression@20..23
-                    NameReference@20..21
+                    Path@20..21
                       Identifier@20..21 "x"
                     Blankspace@21..22 " "
                     Error@22..23
@@ -2870,7 +2898,7 @@ switch i {
                 Switch@1..7 "switch"
                 Blankspace@7..8 " "
                 IdentExpression@8..9
-                  NameReference@8..9
+                  Path@8..9
                     Identifier@8..9 "i"
                 Blankspace@9..10 " "
                 SwitchBody@10..70
@@ -2942,7 +2970,7 @@ switch i {
                 Switch@1..7 "switch"
                 Blankspace@7..8 " "
                 IdentExpression@8..9
-                  NameReference@8..9
+                  Path@8..9
                     Identifier@8..9 "i"
                 Blankspace@9..10 " "
                 SwitchBody@10..40
@@ -2990,7 +3018,7 @@ switch i {
                 Switch@1..7 "switch"
                 Blankspace@7..8 " "
                 IdentExpression@8..9
-                  NameReference@8..9
+                  Path@8..9
                     Identifier@8..9 "i"
                 Blankspace@9..10 " "
                 SwitchBody@10..20
@@ -3002,7 +3030,7 @@ switch i {
                   BraceRight@19..20 "}"
               Blankspace@20..29 "\n        "
 
-            error at 19..20: invalid syntax, expected one of: '&', 'default', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 19..20: invalid syntax, expected one of: '&', 'default', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -3021,7 +3049,7 @@ switch i {
                 Switch@1..7 "switch"
                 Blankspace@7..8 " "
                 IdentExpression@8..9
-                  NameReference@8..9
+                  Path@8..9
                     Identifier@8..9 "i"
                 Blankspace@9..10 " "
                 SwitchBody@10..22
@@ -3063,7 +3091,7 @@ let x = 3;
                   Switch@3..9 "switch"
                   Blankspace@9..10 " "
                   IdentExpression@10..11
-                    NameReference@10..11
+                    Path@10..11
                       Identifier@10..11 "i"
                   Blankspace@11..12 " "
                   SwitchBody@12..25
@@ -3119,7 +3147,7 @@ let x = 3;
                   Switch@3..9 "switch"
                   Blankspace@9..10 " "
                   IdentExpression@10..11
-                    NameReference@10..11
+                    Path@10..11
                       Identifier@10..11 "i"
                   Blankspace@11..12 " "
                   SwitchBody@12..28
@@ -3154,7 +3182,7 @@ let x = 3;
                 BraceRight@40..41 "}"
               Blankspace@41..50 "\n        "
 
-            error at 27..28: invalid syntax, expected one of: '&', 'default', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 27..28: invalid syntax, expected one of: '&', 'default', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -3214,7 +3242,7 @@ fn global_override_statement() {
                 Colon@12..13 ":"
                 Blankspace@13..14 " "
                 TypeSpecifier@14..17
-                  NameReference@14..17
+                  Path@14..17
                     Identifier@14..17 "u32"
                 Blankspace@17..18 " "
                 Equal@18..19 "="
@@ -3248,7 +3276,7 @@ fn attribute_only_recover() {
                   AttributeOperator@0..1 "@"
                   Identifier@1..9 "fragment"
 
-            error at 9..9: invalid syntax, expected one of: '@', 'fn', 'for', <identifier>, 'if', '{', '(', 'let', 'loop', 'override', 'switch', 'var', 'while'"#]],
+            error at 9..9: invalid syntax, expected one of: '@', 'fn', 'for', <identifier>, 'if', '{', '(', 'let', 'loop', 'override', 'package', 'super', 'switch', 'var', 'while'"#]],
     );
 }
 
@@ -3268,18 +3296,18 @@ fn expression_in_template() {
                 Blankspace@12..13 " "
                 FunctionCall@13..32
                   IdentExpression@13..30
-                    NameReference@13..18
+                    Path@13..18
                       Identifier@13..18 "array"
                     TemplateList@18..30
                       TemplateStart@18..19 "<"
                       IdentExpression@19..22
-                        NameReference@19..22
+                        Path@19..22
                           Identifier@19..22 "u32"
                       Comma@22..23 ","
                       Blankspace@23..24 " "
                       FieldExpression@24..29
                         IdentExpression@24..27
-                          NameReference@24..27
+                          Path@24..27
                             Identifier@24..27 "vec"
                         Period@27..28 "."
                         Identifier@28..29 "x"

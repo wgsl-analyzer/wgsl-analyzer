@@ -46,7 +46,7 @@ impl<'database> CompletionContext<'database> {
         let completion_location =
             determine_location(&semantics, file.syntax(), position.offset, &token);
 
-        let module_info = database.module_info(file_id);
+        let module_info = database.item_tree(file_id);
         let mut resolver = Resolver::default().push_module_scope(file_id, module_info);
 
         let nearest_scope = token
