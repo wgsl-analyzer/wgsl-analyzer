@@ -53,7 +53,7 @@
 		"watch": "npm run build-base -- --sourcemap --watch"
 	},
 	"dependencies": {
-		"@hpcc-js/wasm": "^2.29.0",
+		"@hpcc-js/wasm": "^2.30.0",
 		"anser": "^2.3.3",
 		"d3": "^7.9.0",
 		"d3-graphviz": "^5.6.0",
