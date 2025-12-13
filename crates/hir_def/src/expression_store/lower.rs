@@ -4,16 +4,18 @@ use triomphe::Arc;
 
 use crate::{
     InFile,
-    data::{
-        FieldData, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, ParamData,
-        StructData, TypeAliasData,
-    },
     database::DefDatabase,
     expression::{Expression, ExpressionId, parse_literal},
     expression_store::{
         ExpressionSourceMap, ExpressionStoreBuilder, ExpressionStoreSource, SyntheticSyntax,
+        path::Path,
     },
-    module_data::Name,
+    item_tree::Name,
+    mod_path::ModPath,
+    signature::{
+        ConstantSignature, FieldData, FunctionSignature, OverrideSignature, ParamData,
+        StructSignature, TypeAliasSignature, VariableSignature,
+    },
     type_specifier::{IdentExpression, TypeSpecifier, TypeSpecifierId},
 };
 
@@ -91,10 +93,9 @@ impl ExprCollector<'_> {
                     .flat_map(|parameters| parameters.arguments())
                     .map(|expression| self.collect_expression(expression))
                     .collect();
-                let name = as_name_opt(
-                    call.ident_expression()
-                        .and_then(|identifier| identifier.name_ref()),
-                );
+
+                let path = as_path_opt(call.ident_expression().and_then(|p| p.path()));
+
                 let template_parameters = self.collect_template_parameters(
                     call.ident_expression()
                         .and_then(|identifier| identifier.template_parameters()),
@@ -102,19 +103,19 @@ impl ExprCollector<'_> {
 
                 Expression::Call {
                     ident_expression: IdentExpression {
-                        path: name,
+                        path,
                         template_parameters,
                     },
                     arguments,
                 }
             },
             ast::Expression::IdentExpression(identifier) => {
-                let name = as_name_opt(identifier.name_ref());
+                let path = as_path_opt(identifier.path());
                 let template_parameters =
                     self.collect_template_parameters(identifier.template_parameters());
 
                 Expression::IdentExpression(IdentExpression {
-                    path: name,
+                    path,
                     template_parameters,
                 })
             },
@@ -134,7 +135,7 @@ impl ExprCollector<'_> {
     ) -> TypeSpecifierId {
         let syntax_pointer = AstPointer::new(type_specifier);
         let type_specifier = TypeSpecifier {
-            path: as_name_opt(type_specifier.name_ref()),
+            path: as_path_opt(type_specifier.path()),
             template_parameters: self
                 .collect_template_parameters(type_specifier.template_parameters()),
         };
@@ -214,7 +215,7 @@ impl ExprCollector<'_> {
     fn missing_type_specifier(&mut self) -> TypeSpecifierId {
         self.make_type_specifier(
             TypeSpecifier {
-                path: Name::missing(),
+                path: Path::missing(),
                 template_parameters: vec![],
             },
             Err(SyntheticSyntax),
@@ -250,7 +251,7 @@ impl ExprCollector<'_> {
 pub(crate) fn lower_function(
     database: &dyn DefDatabase,
     function: &InFile<ast::FunctionDeclaration>,
-) -> (FunctionData, ExpressionSourceMap) {
+) -> (FunctionSignature, ExpressionSourceMap) {
     let name = as_name_opt(function.value.name());
 
     let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
@@ -267,7 +268,7 @@ pub(crate) fn lower_function(
         .map(|r#type| collector.collect_type_specifier(&r#type));
 
     let (store, source_map) = collector.finish();
-    let specifier = FunctionData {
+    let specifier = FunctionSignature {
         name,
         store: Arc::new(store),
         parameters,
@@ -279,7 +280,7 @@ pub(crate) fn lower_function(
 pub(crate) fn lower_struct(
     database: &dyn DefDatabase,
     struct_declaration: &InFile<ast::StructDeclaration>,
-) -> (StructData, ExpressionSourceMap) {
+) -> (StructSignature, ExpressionSourceMap) {
     let name = as_name_opt(struct_declaration.value.name());
 
     let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
@@ -292,7 +293,7 @@ pub(crate) fn lower_struct(
     }
 
     let (store, source_map) = collector.finish();
-    let specifier = StructData {
+    let specifier = StructSignature {
         name,
         store: Arc::new(store),
         fields,
@@ -303,14 +304,14 @@ pub(crate) fn lower_struct(
 pub(crate) fn lower_type_alias(
     database: &dyn DefDatabase,
     type_alias: &InFile<ast::TypeAliasDeclaration>,
-) -> (TypeAliasData, ExpressionSourceMap) {
+) -> (TypeAliasSignature, ExpressionSourceMap) {
     let name = as_name_opt(type_alias.value.name());
 
     let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
     let r#type = collector.collect_type_specifier_opt(type_alias.value.type_declaration());
 
     let (store, source_map) = collector.finish();
-    let specifier = TypeAliasData {
+    let specifier = TypeAliasSignature {
         name,
         store: Arc::new(store),
         r#type,
@@ -321,7 +322,7 @@ pub(crate) fn lower_type_alias(
 pub(crate) fn lower_variable(
     database: &dyn DefDatabase,
     global_variable: &InFile<ast::VariableDeclaration>,
-) -> (GlobalVariableData, ExpressionSourceMap) {
+) -> (VariableSignature, ExpressionSourceMap) {
     let name = as_name_opt(global_variable.value.name());
 
     let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
@@ -341,7 +342,7 @@ pub(crate) fn lower_variable(
         };
 
     let (store, source_map) = collector.finish();
-    let specifier = GlobalVariableData {
+    let specifier = VariableSignature {
         name,
         store: Arc::new(store),
         r#type,
@@ -353,7 +354,7 @@ pub(crate) fn lower_variable(
 pub(crate) fn lower_constant(
     database: &dyn DefDatabase,
     global_constant: &InFile<ast::ConstantDeclaration>,
-) -> (GlobalConstantData, ExpressionSourceMap) {
+) -> (ConstantSignature, ExpressionSourceMap) {
     let name = as_name_opt(global_constant.value.name());
 
     let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
@@ -363,7 +364,7 @@ pub(crate) fn lower_constant(
         .map(|r#type| collector.collect_type_specifier(&r#type));
 
     let (store, source_map) = collector.finish();
-    let specifier = GlobalConstantData {
+    let specifier = ConstantSignature {
         name,
         store: Arc::new(store),
         r#type,
@@ -373,7 +374,7 @@ pub(crate) fn lower_constant(
 pub(crate) fn lower_override(
     database: &dyn DefDatabase,
     global_override: &InFile<ast::OverrideDeclaration>,
-) -> (OverrideData, ExpressionSourceMap) {
+) -> (OverrideSignature, ExpressionSourceMap) {
     let name = as_name_opt(global_override.value.name());
 
     let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
@@ -383,7 +384,7 @@ pub(crate) fn lower_override(
         .map(|r#type| collector.collect_type_specifier(&r#type));
 
     let (store, source_map) = collector.finish();
-    let specifier = OverrideData {
+    let specifier = OverrideSignature {
         name,
         store: Arc::new(store),
         r#type,
@@ -396,4 +397,10 @@ where
     Name: From<N>,
 {
     name.map_or_else(Name::missing, Name::from)
+}
+
+fn as_path_opt(path: Option<ast::Path>) -> Path {
+    path.and_then(ModPath::from_src)
+        .map(Path)
+        .unwrap_or_else(Path::missing)
 }

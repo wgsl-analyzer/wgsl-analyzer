@@ -1,6 +1,6 @@
 use syntax::{
     HasName as _,
-    ast::{Item, SourceFile},
+    ast::{Directive, Item, SourceFile},
 };
 use triomphe::Arc;
 
@@ -9,14 +9,15 @@ use crate::{
     HirFileId,
     ast_id::AstIdMap,
     database::DefDatabase,
-    module_data::{Function, ModuleData, ModuleItem, ModuleItemId},
+    item_tree::{self, Function, ImportStatement, ImportTree, ItemTree, ModuleItem, ModuleItemId},
+    mod_path::{ModPath, PathKind},
 };
 
 pub(crate) struct Ctx<'database> {
     database: &'database dyn DefDatabase,
     file_id: HirFileId,
     source_ast_id_map: Arc<AstIdMap>,
-    pub(crate) module_data: ModuleData,
+    pub(crate) tree: ItemTree,
     pub(crate) items: Vec<ModuleItem>,
 }
 
@@ -29,18 +30,19 @@ impl<'database> Ctx<'database> {
             database,
             file_id,
             source_ast_id_map: database.ast_id_map(file_id),
-            module_data: ModuleData::default(),
+            tree: ItemTree::default(),
             items: vec![],
         }
     }
 
     pub(crate) fn lower_source_file(
-        &mut self,
+        mut self,
         source_file: &SourceFile,
-    ) {
+    ) -> ItemTree {
         source_file.items().for_each(|item| {
             self.lower_item(item);
         });
+        self.tree
     }
 
     fn lower_item(
@@ -48,6 +50,9 @@ impl<'database> Ctx<'database> {
         item: Item,
     ) -> Option<()> {
         let item = match item {
+            Item::ImportStatement(import_statement) => {
+                ModuleItem::ImportStatement(self.lower_import(&import_statement)?)
+            },
             Item::FunctionDeclaration(function) => {
                 ModuleItem::Function(self.lower_function(&function)?)
             },
@@ -69,6 +74,47 @@ impl<'database> Ctx<'database> {
         Some(())
     }
 
+    fn lower_import(
+        &mut self,
+        item: &syntax::ast::ImportStatement,
+    ) -> Option<ModuleItemId<ImportStatement>> {
+        let kind = PathKind::from_src(item.relative());
+        let tree = self.lower_import_tree(&item.item()?)?;
+        let ast_id = self.source_ast_id_map.ast_id(item);
+        Some(
+            self.tree
+                .imports
+                .alloc(ImportStatement { kind, tree, ast_id })
+                .into(),
+        )
+    }
+
+    fn lower_import_tree(
+        &mut self,
+        import_tree: &syntax::ast::ImportTree,
+    ) -> Option<ImportTree> {
+        Some(match import_tree {
+            syntax::ast::ImportTree::ImportPath(import_path) => ImportTree::Path {
+                name: import_path.name()?.text().into(),
+                item: Box::new(self.lower_import_tree(&import_path.item()?)?),
+            },
+            syntax::ast::ImportTree::ImportItem(import_item) => ImportTree::Item {
+                name: import_item.name()?.text().into(),
+                alias: import_item
+                    .alias()
+                    .map(|alias| item_tree::Name::from(alias.text())),
+            },
+            syntax::ast::ImportTree::ImportCollection(import_collection) => {
+                ImportTree::Collection {
+                    list: import_collection
+                        .items()
+                        .filter_map(|item| self.lower_import_tree(&item))
+                        .collect(),
+                }
+            },
+        })
+    }
+
     fn lower_type_alias(
         &mut self,
         type_alias: &syntax::ast::TypeAliasDeclaration,
@@ -76,7 +122,7 @@ impl<'database> Ctx<'database> {
         let name = type_alias.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(type_alias);
         Some(
-            self.module_data
+            self.tree
                 .type_aliases
                 .alloc(TypeAlias { name, ast_id })
                 .into(),
@@ -91,12 +137,7 @@ impl<'database> Ctx<'database> {
         let ast_id = self.source_ast_id_map.ast_id(override_declaration);
 
         let override_declaration = Override { name, ast_id };
-        Some(
-            self.module_data
-                .overrides
-                .alloc(override_declaration)
-                .into(),
-        )
+        Some(self.tree.overrides.alloc(override_declaration).into())
     }
 
     fn lower_global_constant(
@@ -106,7 +147,7 @@ impl<'database> Ctx<'database> {
         let name = constant.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(constant);
         let constant = GlobalConstant { name, ast_id };
-        Some(self.module_data.global_constants.alloc(constant).into())
+        Some(self.tree.global_constants.alloc(constant).into())
     }
 
     fn lower_global_variable(
@@ -116,7 +157,7 @@ impl<'database> Ctx<'database> {
         let name = variable.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(variable);
         let variable = GlobalVariable { name, ast_id };
-        Some(self.module_data.global_variables.alloc(variable).into())
+        Some(self.tree.global_variables.alloc(variable).into())
     }
 
     fn lower_struct(
@@ -126,7 +167,7 @@ impl<'database> Ctx<'database> {
         let name = r#struct.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(r#struct);
         let r#struct = Struct { name, ast_id };
-        Some(self.module_data.structs.alloc(r#struct).into())
+        Some(self.tree.structs.alloc(r#struct).into())
     }
 
     fn lower_function(
@@ -136,6 +177,6 @@ impl<'database> Ctx<'database> {
         let name = function.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(function);
         let function = Function { name, ast_id };
-        Some(self.module_data.functions.alloc(function).into())
+        Some(self.tree.functions.alloc(function).into())
     }
 }
