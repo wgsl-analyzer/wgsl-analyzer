@@ -47,7 +47,7 @@ jobs:
           key: ${{ runner.os }}-target-${{ github.sha }}
 
       - name: Upload build metrics
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: build-${{ github.sha }}
           path: target/build.json
@@ -81,7 +81,7 @@ jobs:
         run: cargo xtask metrics "${{ matrix.names }}"
 
       - name: Upload metrics
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.names }}-${{ github.sha }}
           path: target/${{ matrix.names }}.json
