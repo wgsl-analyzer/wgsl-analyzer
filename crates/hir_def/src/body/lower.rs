@@ -35,6 +35,14 @@ pub(super) fn lower_global_constant_declaration(
     Collector::new(database, file_id).collect_global_constant_declaration(declaration)
 }
 
+pub(super) fn lower_global_assert_statement(
+    database: &dyn DefDatabase,
+    file_id: HirFileId,
+    declaration: &ast::AssertStatement,
+) -> (Body, BodySourceMap) {
+    Collector::new(database, file_id).collect_global_assert_statement(declaration)
+}
+
 pub(super) fn lower_override_declaration(
     database: &dyn DefDatabase,
     file_id: HirFileId,
@@ -117,6 +125,21 @@ impl Collector<'_> {
             .map(Either::Right);
 
         self.body.main_binding = declaration.name().map(|binding| self.collect_name(binding));
+        (self.body.store, self.source_map.expressions) = self.expressions.finish();
+
+        (self.body, self.source_map)
+    }
+
+    fn collect_global_assert_statement(
+        mut self,
+        declaration: &ast::AssertStatement,
+    ) -> (Body, BodySourceMap) {
+        self.body.root = declaration
+            .expression()
+            .map(|expression| self.collect_expression(expression))
+            .map(Either::Right);
+
+        //TODO(MonaMayrhofer) Does the global assert statement need more than the root? It doesn't need a binding right?
         (self.body.store, self.source_map.expressions) = self.expressions.finish();
 
         (self.body, self.source_map)

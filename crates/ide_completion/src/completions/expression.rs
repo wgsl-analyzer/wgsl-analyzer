@@ -40,6 +40,9 @@ pub(crate) fn complete_names_in_scope(
             },
             ScopeDef::ModuleItem(_, ModuleItem::Struct(_)) => CompletionItemKind::Struct,
             ScopeDef::ModuleItem(_, ModuleItem::TypeAlias(_)) => CompletionItemKind::TypeAlias,
+            ScopeDef::ModuleItem(_, ModuleItem::GlobalAssertStatement(_)) => {
+                return;
+            },
         };
 
         let detail = match item {
@@ -167,6 +170,9 @@ fn render_detail(
         ModuleItem::TypeAlias(id) => {
             let module_info = context.database.module_info(file_id);
             format!("alias {}", module_info.get(id).name.as_str())
+        },
+        ModuleItem::GlobalAssertStatement(_) => {
+            todo!();
         },
     }
 }

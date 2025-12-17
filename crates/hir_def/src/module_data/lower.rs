@@ -142,10 +142,21 @@ impl<'database> Ctx<'database> {
         Some(self.module_data.functions.alloc(function).into())
     }
 
+    #[expect(
+        clippy::unnecessary_wraps,
+        reason = "Maintain uniformity with the other lower_* functions"
+    )]
     fn lower_global_assert_statement(
         &mut self,
-        constant: &syntax::ast::AssertStatement,
+        assert_statement: &syntax::ast::AssertStatement,
     ) -> Option<ModuleItemId<GlobalAssertStatement>> {
-        todo!()
+        let ast_id = self.source_ast_id_map.ast_id(assert_statement);
+        let assert_statement = GlobalAssertStatement { ast_id };
+        Some(
+            self.module_data
+                .global_assert_statements
+                .alloc(assert_statement)
+                .into(),
+        )
     }
 }

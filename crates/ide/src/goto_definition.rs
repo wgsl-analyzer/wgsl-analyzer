@@ -145,6 +145,7 @@ impl TryToNavigationTarget for InFile<Definition> {
 
                     NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
                 },
+                hir::ModuleDef::GlobalAssertStatement(global_assert_statement) => todo!(),
             },
             Definition::Field(field) => {
                 let declaration = field.source(database)?;
