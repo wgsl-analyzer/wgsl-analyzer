@@ -1,9 +1,8 @@
-use std::{collections::BTreeSet, ops::Deref};
+use std::collections::BTreeSet;
 
 use dprint_core::formatting::{
     Condition, ConditionProperties, ConditionResolver, PrintItems, Signal,
 };
-use syntax::ast::ElseClause;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, PartialOrd, Ord)]
 pub enum RequestItem {
@@ -13,18 +12,18 @@ pub enum RequestItem {
     EmptyLine = 4,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum RequestPolicy {
-    Forced,
-    Discouraged,
-    Expected,
-}
+// #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+// pub enum RequestPolicy {
+//     Forced,
+//     Discouraged,
+//     Expected,
+// }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct RequestSubject {
-    item: RequestItem,
-    policy: RequestPolicy,
-}
+// #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+// pub struct RequestSubject {
+//     item: RequestItem,
+//     policy: RequestPolicy,
+// }
 
 #[derive(Clone)]
 pub enum Request {
@@ -109,21 +108,6 @@ impl Request {
                     on_false,
                 }
             },
-            (
-                Self::Conditional {
-                    condition: cond_left,
-                    on_true: on_true_left,
-                    on_false: on_false_left,
-                },
-                Self::Conditional {
-                    condition: cond_right,
-                    on_true: on_true_right,
-                    on_false: on_false_right,
-                },
-            ) => {
-                // Cartesian product the two conditionals, and then reduce conditions with similar branches
-                unimplemented!("Consecutive conditionals are not supported yet")
-            },
         }
     }
 }
@@ -148,16 +132,16 @@ impl RequestFolder {
         }
     }
 
-    pub fn push_right(
-        &mut self,
-        request: Request,
-    ) {
-        if let Some(old_request) = self.folded_request.take() {
-            self.folded_request = Some(Request::combine(request, old_request));
-        } else {
-            self.folded_request = Some(request);
-        }
-    }
+    // pub fn push_right(
+    //     &mut self,
+    //     request: Request,
+    // ) {
+    //     if let Some(old_request) = self.folded_request.take() {
+    //         self.folded_request = Some(Request::combine(request, old_request));
+    //     } else {
+    //         self.folded_request = Some(request);
+    //     }
+    // }
 
     pub fn append(
         &mut self,
@@ -200,15 +184,15 @@ impl RequestFolder {
         if let Some(request) = self.folded_request.take() {
             match request {
                 Request::Unconditional {
-                    mut expected,
+                    expected,
                     discouraged,
                     forced,
                 } => {
-                    let mut candidates = expected
+                    let candidates = expected
                         .difference(&discouraged)
                         .copied()
                         .collect::<BTreeSet<_>>();
-                    let mut candidates = candidates.union(&forced).collect::<BTreeSet<_>>();
+                    let candidates = candidates.union(&forced).collect::<BTreeSet<_>>();
 
                     if let Some(chosen) = candidates.last() {
                         apply_item(**chosen, target);

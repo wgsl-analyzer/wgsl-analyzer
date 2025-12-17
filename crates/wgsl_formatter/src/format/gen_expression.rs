@@ -10,8 +10,8 @@ use syntax::{
 
 use crate::format::{
     ast_parse::{
-        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_by_kind_optional,
-        parse_node_optional, parse_token, parse_token_any,
+        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
+        parse_token, parse_token_any,
     },
     gen_comments::gen_comments,
     gen_function_call::gen_function_call,

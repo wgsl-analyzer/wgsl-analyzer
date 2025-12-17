@@ -1,38 +1,20 @@
-use dprint_core::formatting::{ColumnNumber, LineNumber, LineNumberAnchor, PrintItems, Signal};
 use dprint_core_macros::sc;
 use itertools::put_back;
-use parser::{SyntaxKind, SyntaxToken};
-use rowan::NodeOrToken;
+use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
-    ast::{
-        self, CompoundAssignmentOperator, CompoundStatement, ElseClause, ElseIfClause, Expression,
-        FunctionCall, IdentExpression, IfClause, IncrementDecrement, Literal,
-        ParenthesisExpression, Statement,
-    },
+    ast::{self, CompoundAssignmentOperator, Expression},
 };
 
 use crate::format::{
-    self,
     ast_parse::{
-        parse_ast_token, parse_end, parse_many_comments_and_blankspace, parse_node,
-        parse_node_by_kind, parse_node_by_kind_optional, parse_node_optional, parse_token,
+        parse_ast_token, parse_end, parse_many_comments_and_blankspace, parse_node, parse_token,
         parse_token_optional,
     },
-    gen_comments::{gen_comment, gen_comments},
-    gen_expression::{gen_expression, gen_parenthesis_expression},
-    gen_function_call::gen_function_call,
-    gen_if_statement::gen_if_statement,
-    gen_switch_statement::gen_switch_statement,
-    gen_types::gen_type_specifier,
-    gen_var_let_const_statement::{
-        gen_const_declaration_statement, gen_let_declaration_statement,
-        gen_var_declaration_statement,
-    },
-    helpers::{create_is_multiple_lines_resolver, gen_spaced_lines},
-    multiline_group::gen_multiline_group,
-    print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
-    reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult},
+    gen_comments::gen_comments,
+    gen_expression::gen_expression,
+    print_item_buffer::{PrintItemBuffer, SeparationPolicy},
+    reporting::FormatDocumentError,
 };
 
 pub fn gen_assignment_statement(
@@ -142,16 +124,16 @@ pub fn gen_compound_assignment_statement(
     formatted.extend(gen_comments(item_comments_after_target));
 
     let operator_sc = match item_operator {
-        CompoundAssignmentOperator::PlusEqual(syntax_token) => sc!("+="),
-        CompoundAssignmentOperator::MinusEqual(syntax_token) => sc!("-="),
-        CompoundAssignmentOperator::TimesEqual(syntax_token) => sc!("*="),
-        CompoundAssignmentOperator::DivisionEqual(syntax_token) => sc!("/="),
-        CompoundAssignmentOperator::ModuloEqual(syntax_token) => sc!("%="),
-        CompoundAssignmentOperator::AndEqual(syntax_token) => sc!("&="),
-        CompoundAssignmentOperator::OrEqual(syntax_token) => sc!("|="),
-        CompoundAssignmentOperator::XorEqual(syntax_token) => sc!("^="),
-        CompoundAssignmentOperator::ShiftRightEqual(syntax_token) => sc!(">>="),
-        CompoundAssignmentOperator::ShiftLeftEqual(syntax_token) => sc!("<<="),
+        CompoundAssignmentOperator::PlusEqual(_) => sc!("+="),
+        CompoundAssignmentOperator::MinusEqual(_) => sc!("-="),
+        CompoundAssignmentOperator::TimesEqual(_) => sc!("*="),
+        CompoundAssignmentOperator::DivisionEqual(_) => sc!("/="),
+        CompoundAssignmentOperator::ModuloEqual(_) => sc!("%="),
+        CompoundAssignmentOperator::AndEqual(_) => sc!("&="),
+        CompoundAssignmentOperator::OrEqual(_) => sc!("|="),
+        CompoundAssignmentOperator::XorEqual(_) => sc!("^="),
+        CompoundAssignmentOperator::ShiftRightEqual(_) => sc!(">>="),
+        CompoundAssignmentOperator::ShiftLeftEqual(_) => sc!("<<="),
     };
     formatted.expect_single_space();
     formatted.push_sc(operator_sc);

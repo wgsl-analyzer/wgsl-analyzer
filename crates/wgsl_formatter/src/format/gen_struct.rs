@@ -1,35 +1,22 @@
-use std::{alloc::alloc, iter::repeat_with, rc::Rc};
-
-use dprint_core::formatting::{
-    ConditionResolver, ConditionResolverContext, LineNumber, LineNumberAnchor, PrintItem,
-    PrintItems, PrintOptions, Signal, actions, condition_helpers, condition_resolvers, conditions,
-    ir_helpers,
-};
+use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position, PutBack, put_back};
-use parser::{SyntaxKind, SyntaxNode, SyntaxToken, WeslLanguage};
-use rowan::{NodeOrToken, SyntaxElementChildren};
+use itertools::put_back;
+use parser::SyntaxKind;
 use syntax::{
-    AstNode as _, HasName as _,
+    AstNode as _,
     ast::{self},
-    match_ast,
 };
 
-use crate::{
-    FormattingOptions,
-    format::{
-        self,
-        ast_parse::{
-            parse_end, parse_end_optional, parse_many_comments_and_blankspace, parse_node,
-            parse_node_optional, parse_token, parse_token_optional,
-        },
-        gen_attributes::gen_attributes,
-        gen_comments::gen_comments,
-        gen_types::gen_type_specifier,
-        helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, into_items},
-        print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
-        reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult},
+use crate::format::{
+    ast_parse::{
+        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
+        parse_token, parse_token_optional,
     },
+    gen_attributes::gen_attributes,
+    gen_comments::gen_comments,
+    gen_types::gen_type_specifier,
+    print_item_buffer::PrintItemBuffer,
+    reporting::FormatDocumentResult,
 };
 
 pub fn gen_struct_declaration(
@@ -38,7 +25,7 @@ pub fn gen_struct_declaration(
     // === Parse ===
     let mut syntax = put_back(node.syntax().children_with_tokens());
 
-    let item_struct = parse_token(&mut syntax, SyntaxKind::Struct)?;
+    parse_token(&mut syntax, SyntaxKind::Struct)?;
     let item_comments_after_struct = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
     let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -141,10 +128,10 @@ fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<PrintIt
 
         attributes.push((item_attribute, item_comments_after_attribute));
     }
-    let item_comments_after_attribute = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_comments_after_attributes = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
     let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Colon);
+    parse_token(&mut syntax, SyntaxKind::Colon)?;
     let item_comments_after_colon = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_type_specifier = parse_node::<ast::TypeSpecifier>(&mut syntax)?;
     parse_end(&mut syntax)?;
@@ -153,6 +140,7 @@ fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<PrintIt
     let mut formatted = PrintItemBuffer::new();
 
     formatted.extend(gen_attributes(attributes)?);
+    formatted.extend(gen_comments(item_comments_after_attributes));
     formatted.push_string(item_name.text().to_string());
     formatted.push_sc(sc!(":"));
     formatted.expect_single_space();

@@ -1,4 +1,4 @@
-use dprint_core::formatting::{ColumnNumber, PrintItems, Signal, StringContainer};
+use dprint_core::formatting::{Signal, StringContainer};
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::{SyntaxKind, SyntaxNode};

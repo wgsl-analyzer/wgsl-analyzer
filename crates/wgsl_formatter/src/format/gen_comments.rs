@@ -1,19 +1,4 @@
-use std::{alloc::alloc, iter::repeat_with, rc::Rc};
-
-use dprint_core::formatting::{
-    ConditionResolver, ConditionResolverContext, LineNumber, LineNumberAnchor, PrintItem,
-    PrintItems, PrintOptions, Signal, actions, condition_helpers, condition_resolvers, conditions,
-    ir_helpers,
-};
-use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position, PutBack, put_back};
-use parser::{SyntaxKind, SyntaxNode, SyntaxToken, WeslLanguage};
-use rowan::{NodeOrToken, SyntaxElementChildren};
-use syntax::{
-    AstNode as _, HasName as _,
-    ast::{self},
-    match_ast,
-};
+use parser::{SyntaxKind, SyntaxToken};
 
 use crate::format::print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest};
 

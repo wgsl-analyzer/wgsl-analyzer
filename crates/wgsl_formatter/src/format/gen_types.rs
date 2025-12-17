@@ -6,7 +6,7 @@ use itertools::{Itertools as _, Position, put_back};
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
-    ast::{self, IdentExpression, NameReference, TemplateList},
+    ast::{self, NameReference, TemplateList},
 };
 
 use crate::format::{
@@ -24,8 +24,6 @@ use crate::format::{
 pub fn gen_type_specifier(
     type_specifier: &ast::TypeSpecifier
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    dbg!(type_specifier.syntax());
-
     // ==== Parse ====
     let mut syntax = put_back(type_specifier.syntax().children_with_tokens());
 
@@ -49,8 +47,6 @@ pub fn gen_type_specifier(
 pub fn gen_template_list(
     template_list: &ast::TemplateList
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    dbg!(template_list.syntax());
-
     // ==== Parse ====
     let mut syntax = put_back(template_list.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::TemplateStart)?;

@@ -2,10 +2,7 @@ pub mod request_folder;
 
 use std::collections::BTreeSet;
 
-use dprint_core::formatting::{
-    Anchor, Condition, ConditionResolver, Info, PrintItem, PrintItems, Signal, conditions,
-};
-use dprint_core_macros::sc;
+use dprint_core::formatting::{Anchor, ConditionResolver, Info, PrintItems, Signal};
 
 use crate::format::print_item_buffer::request_folder::{Request, RequestFolder, RequestItem};
 
@@ -343,6 +340,7 @@ impl PrintItemBuffer {
         });
     }
 
+    #[expect(unused, reason = "TODO")]
     pub fn request_empty_line(
         &mut self,
         policy: SeparationPolicy,

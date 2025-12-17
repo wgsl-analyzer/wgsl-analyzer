@@ -1,4 +1,4 @@
-use parser::{SyntaxKind, SyntaxNode, SyntaxToken, WeslLanguage};
+use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::{NodeOrToken, TextRange};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -39,7 +39,6 @@ pub struct FormatDocumentError {
     pub text_range: Option<TextRange>,
 }
 
-#[must_use]
 pub type FormatDocumentResult<T> = Result<T, FormatDocumentError>;
 
 pub trait UnwrapIfPreferCrash {
