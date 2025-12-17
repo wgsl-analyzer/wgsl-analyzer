@@ -54,7 +54,7 @@ pub fn gen_assignment_statement(
     let item_value = parse_node::<Expression>(&mut syntax)?;
     let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
@@ -92,7 +92,7 @@ pub fn gen_phony_assignment_statement(
     let item_value = parse_node::<Expression>(&mut syntax)?;
     let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
@@ -134,7 +134,7 @@ pub fn gen_compound_assignment_statement(
     let item_value = parse_node::<Expression>(&mut syntax)?;
     let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();

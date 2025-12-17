@@ -231,7 +231,7 @@ pub fn gen_switch_case_default_selector(
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::Default);
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
