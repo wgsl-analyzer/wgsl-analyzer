@@ -172,7 +172,9 @@ fn render_detail(
             format!("alias {}", module_info.get(id).name.as_str())
         },
         ModuleItem::GlobalAssertStatement(_) => {
-            todo!();
+            // const_asserts don't have a name or binding, and will probably never be autocompleted - or will their
+            // details have to be rendered. We implement this anyways to achieve consistency.
+            String::from("const_assert ...")
         },
     }
 }

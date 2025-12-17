@@ -783,7 +783,9 @@ impl ModuleDef {
             Self::Override(override_declaration) => {
                 Some(DefinitionWithBodyId::Override(override_declaration.id))
             },
-            Self::GlobalAssertStatement(global_assert_statement) => Some(todo!()),
+            Self::GlobalAssertStatement(global_assert_statement) => Some(
+                DefinitionWithBodyId::GlobalAssertStatement(global_assert_statement.id),
+            ),
             Self::Struct(_) | Self::TypeAlias(_) => None,
         }
     }
@@ -832,6 +834,7 @@ impl Module {
                 },
                 ModuleDef::GlobalConstant(_constant) => {},
                 ModuleDef::Override(_constant) => {},
+                ModuleDef::GlobalAssertStatement(_global_assert_statement) => {},
                 ModuleDef::Struct(strukt) => {
                     let file = strukt.id.lookup(database).file_id;
                     let (_, signature_map) = database.struct_data(strukt.id);
@@ -867,9 +870,6 @@ impl Module {
                             },
                         }
                     }
-                },
-                ModuleDef::GlobalAssertStatement(global_assert_statement) => {
-                    todo!()
                 },
             }
             if let Some(definition) = item.as_def_with_body_id() {
