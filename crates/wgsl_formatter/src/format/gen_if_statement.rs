@@ -30,7 +30,7 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
     }
 
     let item_else_clause = parse_node_optional::<ElseClause>(&mut syntax);
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();

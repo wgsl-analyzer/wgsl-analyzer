@@ -91,7 +91,7 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
     }
 
     parse_token(&mut syntax, SyntaxKind::BraceRight)?;
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // === Format ===
     let mut formatted = PrintItemBuffer::new();
