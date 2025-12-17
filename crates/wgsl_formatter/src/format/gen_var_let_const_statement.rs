@@ -97,12 +97,9 @@ fn gen_var_let_const_statement(
     let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
 
     parse_token_optional(&mut syntax, SyntaxKind::Semicolon); //Not all var-statements have a semicolon (e.g for loop)
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut pi = PrintItems::new();
-    pi.push_info(ColumnNumber::new("start_expr"));
-
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(kind.sc());
     formatted.push_signal(Signal::StartIndent);
