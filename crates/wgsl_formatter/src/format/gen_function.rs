@@ -1,35 +1,25 @@
-use std::{alloc::alloc, iter::repeat_with, rc::Rc};
+use std::rc::Rc;
 
-use dprint_core::formatting::{
-    ConditionResolver, ConditionResolverContext, LineNumber, LineNumberAnchor, PrintItem,
-    PrintItems, PrintOptions, Signal, actions, condition_helpers, condition_resolvers, conditions,
-    ir_helpers,
-};
+use dprint_core::formatting::{LineNumber, LineNumberAnchor, PrintItems, Signal, conditions};
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position, PutBack, put_back};
-use parser::{SyntaxKind, SyntaxNode, SyntaxToken, WeslLanguage};
-use rowan::{NodeOrToken, SyntaxElementChildren};
+use itertools::{Itertools as _, Position, put_back};
+use parser::SyntaxKind;
 use syntax::{
-    AstNode as _, HasName as _,
+    AstNode as _,
     ast::{self},
-    match_ast,
 };
 
-use crate::{
-    FormattingOptions,
-    format::{
-        self,
-        ast_parse::{
-            parse_end, parse_end_optional, parse_many_comments_and_blankspace, parse_node,
-            parse_node_optional, parse_token, parse_token_optional,
-        },
-        gen_comments::gen_comments,
-        gen_statement::gen_compound_statement,
-        gen_types::gen_type_specifier,
-        helpers::{create_is_multiple_lines_resolver, gen_spaced_lines, into_items},
-        print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
-        reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult},
+use crate::format::{
+    ast_parse::{
+        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
+        parse_token, parse_token_optional,
     },
+    gen_comments::gen_comments,
+    gen_statement::gen_compound_statement,
+    gen_types::gen_type_specifier,
+    helpers::create_is_multiple_lines_resolver,
+    print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
+    reporting::FormatDocumentResult,
 };
 
 pub fn gen_function_declaration(
@@ -37,7 +27,7 @@ pub fn gen_function_declaration(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = put_back(node.syntax().children_with_tokens());
 
-    let item_fn = parse_token(&mut syntax, SyntaxKind::Fn)?;
+    parse_token(&mut syntax, SyntaxKind::Fn)?;
     let item_comments_after_fn = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
     let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -215,7 +205,7 @@ pub fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintIt
 
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
     let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Colon);
+    parse_token(&mut syntax, SyntaxKind::Colon)?;
     let item_comments_after_colon = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_type_specifier = parse_node::<ast::TypeSpecifier>(&mut syntax)?;
     parse_end(&mut syntax)?;
@@ -237,10 +227,9 @@ pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<Prin
     // ==== Parse ====
     let mut syntax = put_back(syntax.syntax().children_with_tokens());
 
-    parse_token(&mut syntax, SyntaxKind::Arrow);
+    parse_token(&mut syntax, SyntaxKind::Arrow)?;
     let item_comments_after_arrow = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_type_specifier = parse_node::<ast::TypeSpecifier>(&mut syntax)?;
-    let item_comments_after_type = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

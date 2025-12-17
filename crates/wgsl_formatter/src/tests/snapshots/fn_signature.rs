@@ -178,7 +178,7 @@ fn format_fn_header_incomplete() {
 fn format_comments_in_fn_signature() {
     check_comments(
         "
-        ## fn ## main ## ( ## a ## : ## b ## , ## c ## : ## d ## ) ## { ##
+        ## fn ## main ## ( ## a ## : ## b ## , ## c ## : ## d ## ) ## -> ## f32 ## { ##
         ## }
         ",
         expect![[r#"
@@ -186,9 +186,9 @@ fn format_comments_in_fn_signature() {
             fn /* 1 */ main /* 2 */ (
                 /* 3 */ a: /* 4 */ /* 5 */ b, /* 6 */ /* 7 */
                 c: /* 8 */ /* 9 */ d, /* 10 */
-            ) /* 11 */ {
-                /* 12 */
-                /* 13 */
+            ) /* 11 */ -> /* 12 */ f32 /* 13 */ {
+                /* 14 */
+                /* 15 */
             }
         "#]],
         expect![[r#"
@@ -205,10 +205,12 @@ fn format_comments_in_fn_signature() {
                 // 9
                 d, // 10
             ) // 11
+            -> // 12
+            f32 // 13
             {
-                // 12
+                // 14
 
-                // 13
+                // 15
             }
         "#]],
     );

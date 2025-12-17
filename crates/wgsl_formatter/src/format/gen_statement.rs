@@ -1,36 +1,31 @@
-use dprint_core::formatting::{ColumnNumber, LineNumber, LineNumberAnchor, PrintItems, Signal};
+use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
 use itertools::put_back;
-use parser::{SyntaxKind, SyntaxToken};
+use parser::SyntaxKind;
 use rowan::NodeOrToken;
 use syntax::{
     AstNode as _,
-    ast::{
-        self, CompoundStatement, ElseClause, ElseIfClause, Expression, FunctionCall,
-        IdentExpression, IfClause, IncrementDecrement, Literal, ParenthesisExpression, Statement,
-    },
+    ast::{self, CompoundStatement, Expression, FunctionCall, IncrementDecrement, Statement},
 };
 
 use crate::format::{
-    self,
     ast_parse::{
-        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_by_kind,
-        parse_node_by_kind_optional, parse_node_optional, parse_token, parse_token_optional,
+        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_by_kind_optional,
+        parse_node_optional, parse_token, parse_token_optional,
     },
     gen_assignment_statement::{
         gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
     },
     gen_comments::{gen_comment, gen_comments},
-    gen_expression::{gen_expression, gen_parenthesis_expression},
+    gen_expression::gen_expression,
     gen_function_call::gen_function_call,
     gen_if_statement::gen_if_statement,
     gen_switch_statement::gen_switch_statement,
-    gen_types::gen_type_specifier,
     gen_var_let_const_statement::{
         gen_const_declaration_statement, gen_let_declaration_statement,
         gen_var_declaration_statement,
     },
-    helpers::{create_is_multiple_lines_resolver, gen_spaced_lines},
+    helpers::gen_spaced_lines,
     multiline_group::gen_multiline_group,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult},

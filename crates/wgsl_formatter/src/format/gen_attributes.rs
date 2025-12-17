@@ -1,4 +1,3 @@
-use dprint_core_macros::sc;
 use parser::SyntaxToken;
 use syntax::{AstNode as _, ast};
 

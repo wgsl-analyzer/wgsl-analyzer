@@ -1,7 +1,6 @@
 use std::rc::Rc;
 
 use dprint_core::formatting::{LineNumber, LineNumberAnchor, PrintItems, Signal, conditions};
-use dprint_core_macros::sc;
 
 use crate::format::{
     helpers::create_is_multiple_lines_resolver,
