@@ -12,6 +12,7 @@ mod gen_if_statement;
 mod gen_statement;
 mod gen_struct;
 pub mod gen_switch_statement;
+mod gen_type_alias_declaration;
 mod gen_types;
 mod gen_var_let_const_statement;
 pub mod multiline_group;
@@ -46,6 +47,7 @@ use crate::{
         gen_function::gen_function_declaration,
         gen_statement::gen_const_assert_statement,
         gen_struct::gen_struct_declaration,
+        gen_type_alias_declaration::gen_type_alias_declaration,
         helpers::{gen_spaced_lines, into_items},
         print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
         reporting::{
@@ -116,7 +118,9 @@ fn gen_item(node: &ast::Item) -> FormatDocumentResult<PrintItemBuffer> {
         ast::Item::VariableDeclaration(variable_declaration) => todo!(),
         ast::Item::ConstantDeclaration(constant_declaration) => todo!(),
         ast::Item::OverrideDeclaration(override_declaration) => todo!(),
-        ast::Item::TypeAliasDeclaration(type_alias_declaration) => todo!(),
+        ast::Item::TypeAliasDeclaration(type_alias_declaration) => {
+            gen_type_alias_declaration(type_alias_declaration, true)
+        },
         ast::Item::AssertStatement(assert_statement) => {
             gen_const_assert_statement(assert_statement, true)
         },
