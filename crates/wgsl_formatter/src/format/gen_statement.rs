@@ -171,7 +171,7 @@ fn gen_statement_maybe_semicolon(
             let mut syntax = put_back(break_statement.syntax().children_with_tokens());
             parse_token(&mut syntax, SyntaxKind::Break)?;
             parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-            parse_end(&mut syntax);
+            parse_end(&mut syntax)?;
 
             // ==== Format ====
             let mut formatted = PrintItemBuffer::new();
@@ -191,7 +191,7 @@ fn gen_statement_maybe_semicolon(
             parse_token(&mut syntax, SyntaxKind::Continue)?;
             let comments_after_continue = parse_many_comments_and_blankspace(&mut syntax)?;
             parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-            parse_end(&mut syntax);
+            parse_end(&mut syntax)?;
 
             // ==== Format ====
             let mut formatted = PrintItemBuffer::new();
@@ -212,7 +212,7 @@ fn gen_statement_maybe_semicolon(
             parse_token(&mut syntax, SyntaxKind::Discard)?;
             let comments_after_discard = parse_many_comments_and_blankspace(&mut syntax)?;
             parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-            parse_end(&mut syntax);
+            parse_end(&mut syntax)?;
 
             // ==== Format ====
             let mut formatted = PrintItemBuffer::new();
@@ -259,7 +259,7 @@ fn gen_increment_decrement_statement(
     };
     let item_comments_after_inc_dec = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
@@ -293,7 +293,7 @@ fn gen_function_call_statement(
     let function_call = parse_node::<FunctionCall>(&mut syntax)?;
     let comments_after_function_call = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
@@ -317,7 +317,7 @@ fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<Prin
             let mut sub_syntax =
                 put_back(item_initializer_container.syntax().children_with_tokens());
             let item_initializer = parse_node::<Statement>(&mut sub_syntax)?;
-            parse_end(&mut sub_syntax);
+            parse_end(&mut sub_syntax)?;
             Ok(item_initializer)
         })
         .transpose()?;
@@ -328,7 +328,7 @@ fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<Prin
         .map(|item_condition_container| {
             let mut sub_syntax = put_back(item_condition_container.syntax().children_with_tokens());
             let item_condition = parse_node::<Expression>(&mut sub_syntax)?;
-            parse_end(&mut sub_syntax);
+            parse_end(&mut sub_syntax)?;
             Ok(item_condition)
         })
         .transpose()?;
@@ -340,7 +340,7 @@ fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<Prin
             let mut sub_syntax =
                 put_back(item_continuing_container.syntax().children_with_tokens());
             let item_continuing = parse_node::<Statement>(&mut sub_syntax)?;
-            parse_end(&mut sub_syntax);
+            parse_end(&mut sub_syntax)?;
             Ok(item_continuing)
         })
         .transpose()?;
@@ -348,7 +348,7 @@ fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<Prin
     parse_token(&mut syntax, SyntaxKind::ParenthesisRight)?;
     let comments_after_close_paren = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
@@ -415,7 +415,7 @@ fn gen_return_statement(
     let item_expression = parse_node_optional::<Expression>(&mut syntax);
     let comments_after_expression = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
@@ -447,7 +447,7 @@ fn gen_break_if_statement(
     let item_condition = parse_node::<Expression>(&mut syntax)?;
     let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
@@ -479,7 +479,7 @@ pub fn gen_const_assert_statement(
     let comments_after_const_assert = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_condition = parse_node::<Expression>(&mut syntax)?;
     let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
@@ -505,7 +505,7 @@ fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<Pr
     parse_token(&mut syntax, SyntaxKind::Loop)?;
     let comments_after_loop = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
@@ -526,7 +526,7 @@ fn gen_continuing_statement(
     parse_token(&mut syntax, SyntaxKind::Continuing)?;
     let comments_after_continuing = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
@@ -547,7 +547,7 @@ fn gen_while_statement(statement: &ast::WhileStatement) -> FormatDocumentResult<
     let item_condition = parse_node::<Expression>(&mut syntax)?;
     let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
-    parse_end(&mut syntax);
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
