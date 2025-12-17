@@ -35,6 +35,7 @@ mod stmt_switch;
 mod stmt_var_declarations;
 mod stmt_while;
 mod struct_def;
+mod types;
 
 //TODO Remove this comment == MODULES THAT STILL CONTAIN FAILING TESTS ==
 //mod discard_statement;
