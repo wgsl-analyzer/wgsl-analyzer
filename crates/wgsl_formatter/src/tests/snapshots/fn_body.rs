@@ -48,7 +48,7 @@ pub fn format_fn_body_retains_block_comment_1() {
     );
 }
 
-/// This is debatable. For now it seems like a sane way to do it this way, and it causes less edge cases
+/// This is debatable. For now it seems like a sane way to do it this way, and it causes less edge cases.
 #[test]
 pub fn format_fn_body_puts_block_comment_on_seperate_line() {
     check(
