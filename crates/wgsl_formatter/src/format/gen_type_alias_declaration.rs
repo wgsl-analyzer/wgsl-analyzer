@@ -2,13 +2,12 @@ use dprint_core_macros::sc;
 use itertools::put_back;
 use syntax::{
     AstNode as _,
-    ast::{IdentExpression, Name, TypeAliasDeclaration, TypeSpecifier},
+    ast::{Name, TypeAliasDeclaration, TypeSpecifier},
 };
 
 use crate::format::{
     ast_parse::{parse_end, parse_many_comments_and_blankspace, parse_node, parse_token},
     gen_comments::gen_comments,
-    gen_expression::gen_ident_expression,
     gen_types::gen_type_specifier,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy},
     reporting::FormatDocumentError,

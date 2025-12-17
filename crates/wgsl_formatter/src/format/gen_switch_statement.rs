@@ -16,7 +16,7 @@ use crate::format::{
         parse_token, parse_token_optional,
     },
     gen_comments::gen_comments,
-    gen_expression::{gen_expression, gen_parenthesis_expression},
+    gen_expression::gen_expression,
     gen_statement::gen_compound_statement,
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentError,
@@ -61,7 +61,6 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
         item_cases.push((item_case, item_comments_after_case));
     }
 
-    let item_comments_after_cases = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::BraceRight)?;
     parse_end(&mut syntax)?;
 
@@ -101,7 +100,7 @@ pub fn gen_switch_body_case(
         if item_default.is_some() {
             SwitchBodyCaseKind::Default
         } else {
-            parse_token(&mut syntax, SyntaxKind::Case);
+            parse_token(&mut syntax, SyntaxKind::Case)?;
             let item_comments_after_case = parse_many_comments_and_blankspace(&mut syntax)?;
             let item_selectors = parse_node::<SwitchCaseSelectors>(&mut syntax)?;
 
@@ -117,9 +116,6 @@ pub fn gen_switch_body_case(
     let item_comments_after_colon = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
     parse_end(&mut syntax)?;
-
-    let item_comments_after_cases = parse_many_comments_and_blankspace(&mut syntax)?;
-    //parse_token(&mut syntax, SyntaxKind::BraceRight)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
@@ -221,16 +217,12 @@ pub fn gen_switch_case_selector(
     }
 }
 
-#[expect(
-    clippy::unnecessary_wraps,
-    reason = "API should be analogue to the other gen* functions"
-)]
 pub fn gen_switch_case_default_selector(
     statement: &SwitchDefaultSelector
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Default);
+    parse_token(&mut syntax, SyntaxKind::Default)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

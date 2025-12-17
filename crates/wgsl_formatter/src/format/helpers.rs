@@ -1,22 +1,14 @@
-use std::{alloc::alloc, iter::repeat_with, rc::Rc};
+use std::rc::Rc;
 
 use dprint_core::formatting::{
-    ConditionResolver, ConditionResolverContext, LineNumber, PrintItems, PrintOptions, Signal,
-    StringContainer, condition_helpers,
+    ConditionResolver, ConditionResolverContext, LineNumber, condition_helpers,
 };
-use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
+use parser::{SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
-use syntax::{
-    AstNode as _, HasName as _,
-    ast::{self},
-};
 
-use crate::{
-    FormattingOptions,
-    format::{
-        print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
-        reporting::{FormatDocumentErrorKind, FormatDocumentResult},
-    },
+use crate::format::{
+    print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
+    reporting::FormatDocumentResult,
 };
 
 /// Lays out the children of a node in a way so that
@@ -30,11 +22,6 @@ where
     F: FnMut(&NodeOrToken<SyntaxNode, SyntaxToken>) -> FormatDocumentResult<PrintItemBuffer>,
 {
     let mut result = PrintItemBuffer::new();
-
-    enum NewLineState {
-        AtStartOfBlock,
-        NewLinesAfterItem(usize),
-    }
 
     for child in node.children_with_tokens() {
         if let rowan::NodeOrToken::Token(token) = &child
@@ -71,13 +58,6 @@ where
     Ok(result)
 }
 
-#[inline]
-pub fn into_items(sc: &'static StringContainer) -> PrintItemBuffer {
-    let mut pi = PrintItemBuffer::new();
-    pi.push_sc(sc);
-    pi
-}
-
 /// In cases where the formatter is not yet complete we simply output source verbatim.
 #[deprecated]
 #[expect(
@@ -85,7 +65,6 @@ pub fn into_items(sc: &'static StringContainer) -> PrintItemBuffer {
     reason = "Should follow the api of gen_* methods"
 )]
 pub fn todo_verbatim(source: &parser::SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
-    let str = source.to_string();
     let mut items = PrintItemBuffer::default();
 
     for line in source.to_string().split_inclusive('\n') {

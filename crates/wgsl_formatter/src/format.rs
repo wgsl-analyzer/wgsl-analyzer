@@ -1,3 +1,9 @@
+// We re-enable a warn lint within the format.rs because it is very easy to parse an item within a gen_*-function and
+// then forget to print it to the PrintItemBuffer.
+// Also it is very easy to forget a "?" after a parse_*-function, that would be caught by
+// "unused std::result::Result that must be used"
+#![warn(unused)]
+
 mod ast_parse;
 mod helpers;
 mod print_item_buffer;
@@ -18,42 +24,25 @@ mod gen_var_let_const_statement;
 pub mod multiline_group;
 mod reporting;
 
-use std::{alloc::alloc, iter::repeat_with, rc::Rc};
-
-use dprint_core::formatting::{
-    ConditionResolver, ConditionResolverContext, LineNumber, LineNumberAnchor, PrintItem,
-    PrintItems, PrintOptions, Signal, actions, condition_helpers, condition_resolvers, conditions,
-    ir_helpers,
-};
-use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position, PutBack, put_back};
-use parser::{SyntaxKind, SyntaxNode, SyntaxToken, WeslLanguage};
-use rowan::{NodeOrToken, SyntaxElementChildren};
+use dprint_core::formatting::PrintOptions;
+use parser::SyntaxKind;
+use rowan::NodeOrToken;
 use syntax::{
-    AstNode as _, HasName as _,
+    AstNode as _,
     ast::{self},
-    match_ast,
 };
 
 use crate::{
     FormattingOptions,
     format::{
-        self,
-        ast_parse::{
-            parse_end, parse_end_optional, parse_many_comments_and_blankspace, parse_node,
-            parse_node_optional, parse_token, parse_token_optional,
-        },
         gen_comments::gen_comment,
         gen_function::gen_function_declaration,
         gen_statement::gen_const_assert_statement,
         gen_struct::gen_struct_declaration,
         gen_type_alias_declaration::gen_type_alias_declaration,
-        helpers::{gen_spaced_lines, into_items},
+        helpers::gen_spaced_lines,
         print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
-        reporting::{
-            FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult,
-            UnwrapIfPreferCrash as _,
-        },
+        reporting::{FormatDocumentErrorKind, FormatDocumentResult, UnwrapIfPreferCrash as _},
     },
 };
 
@@ -82,7 +71,7 @@ pub fn format_tree(
                 // b) We can't call gen_source_file outside of the closure because
                 //    dprint requires the gen_items to be allocated using a thread local
                 //    allocator that only exists within the closure.
-                error.insert(err);
+                let _ = error.insert(err);
 
                 //TODO maybe we should instead output the whole source verbatim
                 // so that if many things go wrong and this value does somehow
@@ -115,9 +104,9 @@ fn gen_item(node: &ast::Item) -> FormatDocumentResult<PrintItemBuffer> {
         ast::Item::StructDeclaration(struct_declaration) => {
             gen_struct_declaration(struct_declaration)
         },
-        ast::Item::VariableDeclaration(variable_declaration) => todo!(),
-        ast::Item::ConstantDeclaration(constant_declaration) => todo!(),
-        ast::Item::OverrideDeclaration(override_declaration) => todo!(),
+        ast::Item::VariableDeclaration(_variable_declaration) => todo!(),
+        ast::Item::ConstantDeclaration(_constant_declaration) => todo!(),
+        ast::Item::OverrideDeclaration(_override_declaration) => todo!(),
         ast::Item::TypeAliasDeclaration(type_alias_declaration) => {
             gen_type_alias_declaration(type_alias_declaration, true)
         },

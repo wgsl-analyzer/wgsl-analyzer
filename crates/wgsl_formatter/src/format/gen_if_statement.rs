@@ -1,6 +1,6 @@
 use dprint_core_macros::sc;
 use itertools::put_back;
-use parser::{SyntaxKind, SyntaxNode};
+use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
     ast::{self, CompoundStatement, ElseClause, ElseIfClause, Expression, IfClause},
@@ -56,7 +56,7 @@ fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<Prin
 
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::If);
+    parse_token(&mut syntax, SyntaxKind::If)?;
     let comments_after_if = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_condition = parse_node::<Expression>(&mut syntax)?;
     let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -82,7 +82,7 @@ fn gen_if_statement_else_clause(statement: &ElseClause) -> FormatDocumentResult<
 
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Else);
+    parse_token(&mut syntax, SyntaxKind::Else)?;
     let comments_after_clause_token = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
     parse_end(&mut syntax)?;
@@ -105,9 +105,9 @@ fn gen_if_statement_else_if_clause(
 
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Else);
+    parse_token(&mut syntax, SyntaxKind::Else)?;
     let comments_after_else = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::If);
+    parse_token(&mut syntax, SyntaxKind::If)?;
     let comments_after_if = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_condition = parse_node::<Expression>(&mut syntax)?;
     let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;

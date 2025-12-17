@@ -3,7 +3,7 @@ use std::rc::Rc;
 use dprint_core::formatting::{LineNumber, LineNumberAnchor, PrintItems, Signal, conditions};
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position, put_back};
-use parser::{SyntaxKind, SyntaxToken};
+use parser::SyntaxKind;
 use syntax::{AstNode as _, ast};
 
 use crate::format::{
@@ -13,7 +13,6 @@ use crate::format::{
     },
     gen_comments::gen_comments,
     gen_expression::{gen_expression, gen_ident_expression},
-    gen_function::gen_fn_parameter,
     helpers::create_is_multiple_lines_resolver,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::FormatDocumentResult,

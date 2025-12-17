@@ -14,10 +14,7 @@
 use itertools::PutBack;
 use parser::{SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
-use syntax::{
-    AstNode, AstToken,
-    ast::{self, Attribute},
-};
+use syntax::{AstNode, AstToken};
 
 use crate::format::reporting::{
     FormatDocumentErrorKind, FormatDocumentResult, UnwrapIfPreferCrash as _,
@@ -42,6 +39,7 @@ pub fn parse_token(
     .expect_if_prefer_crash()
 }
 
+#[expect(unused, reason = "TODO")]
 pub fn parse_node_by_kind(
     syntax: &mut SyntaxIter,
     expected: SyntaxKind,
@@ -111,6 +109,7 @@ pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
     .expect_if_prefer_crash()
 }
 
+#[expect(unused, reason = "TODO")]
 pub fn parse_end_optional(syntax: &mut SyntaxIter) -> Option<()> {
     match syntax.next() {
         None => Some(()),
