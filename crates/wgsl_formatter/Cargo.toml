@@ -11,6 +11,9 @@ license.workspace = true
 parser.workspace = true
 rowan = "0.16.1"
 syntax.workspace = true
+dprint-core = { version = "0.67.4", features = ["tracing"] }
+dprint-core-macros = "0.1.0"
+itertools = "0.14.0"
 
 [dev-dependencies]
 dissimilar = "1.0.10"
@@ -19,3 +22,10 @@ expect-test = "1.5.1"
 
 [lints]
 workspace = true
+
+[features]
+# Prefer to crash at strategic places instead of returning errors.
+# This, combined with RUST_BACKTRACE=1 is useful for debugging unit-tests
+# when ast-parsing succeeds but the parsing for the formatting fails somewhere.
+# RUST_BACKTRACE=1 cargo test -p wgsl-formatter tests::snapshots::[YOUR TEST] --features prefer-immediate-crash
+prefer-immediate-crash = []
