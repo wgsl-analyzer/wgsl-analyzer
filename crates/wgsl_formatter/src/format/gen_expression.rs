@@ -3,14 +3,19 @@ use std::rc::Rc;
 use dprint_core::formatting::{LineNumber, LineNumberAnchor, PrintItems, Signal, conditions};
 use dprint_core_macros::sc;
 use itertools::put_back;
-use syntax::{AstNode as _, ast};
+use syntax::{
+    AstNode as _,
+    ast::{self, TemplateList},
+};
 
 use crate::format::{
     ast_parse::{
-        parse_end, parse_many_comments_and_blankspace, parse_node, parse_token, parse_token_any,
+        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_by_kind_optional,
+        parse_node_optional, parse_token, parse_token_any,
     },
     gen_comments::gen_comments,
     gen_function_call::gen_function_call,
+    gen_types::gen_template_list,
     helpers::create_is_multiple_lines_resolver,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::FormatDocumentResult,
@@ -63,11 +68,17 @@ pub fn gen_ident_expression(
     // ==== Parse ====
     let mut syntax = put_back(ident_expression.syntax().children_with_tokens());
     let item_name_reference = parse_node::<ast::NameReference>(&mut syntax)?;
+    let item_comments_after_name_reference = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_template = parse_node_optional::<TemplateList>(&mut syntax);
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.push_string(item_name_reference.text().to_string());
+    formatted.extend(gen_comments(item_comments_after_name_reference));
+    if let Some(item_template) = item_template {
+        formatted.extend(gen_template_list(&item_template)?);
+    }
     Ok(formatted)
 }
 
