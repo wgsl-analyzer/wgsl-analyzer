@@ -67,7 +67,7 @@ smallvec = { version = "1.15.1", features = [
 ] }
 smol_str = "0.3.4"
 text-size = "1.1.1"
-tracing = "0.1.43"
+tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", default-features = false, features = [
 	"fmt",
 	"local-time",
