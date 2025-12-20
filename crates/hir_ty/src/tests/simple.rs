@@ -231,7 +231,7 @@ fn add_abstract_integers() {
 fn main() {
 var u32_expr1 = 6 + 1u;
 var u32_expr2 = 1u + (1 + 2);
-}   
+}
     ",
         expect![["
             17..26 'u32_expr1': ref<u32>
@@ -257,7 +257,7 @@ let f32_promotion1 = 1.0 + 2 + 3;
 let f32_promotion2 = 2 + 1.0 + 3;
 let f32_promotion3 = 1f + ((2 + 3) + 4);
 let f32_promotion4 = ((2 + (3 + 1f)) + 4);
-}   
+}
     ",
         expect![["
             17..31 'f32_promotion1': f32
@@ -300,7 +300,7 @@ fn main() {
 let i32_clamp = clamp(1, -5, 5);
 let u32_clamp = clamp(5, 0, 1u);
 let f32_clamp = clamp(0, 1f, 1);
-}   
+}
     ",
         expect![[r#"
             17..26 'i32_clamp': i32
@@ -355,7 +355,7 @@ fn vec_constructors() {
 const a = vec3(1f, 2f, 3f);
 fn main() {
 let b = vec4(vec3f(1f), 1f);
-}   
+}
     ",
         expect![["
             7..8 'a': vec3<f32>
@@ -380,6 +380,41 @@ var framebuffer : texture_storage_2d<rgba16float, write>;
     ",
         expect![[r#"
             5..16 'framebuffer': ref<texture_storage_2d<rgba16float,write>>
+        "#]],
+    );
+}
+
+#[test]
+fn global_assert_statement_correct() {
+    check_infer(
+        "
+        const a = 29;
+        const_assert 27 < a;
+    ",
+        expect![[r#"
+            15..16 'a': integer
+            19..21 '29': integer
+            44..46 '27': integer
+            44..50 '27 < a': bool
+            49..50 'a': integer
+        "#]],
+    );
+}
+
+#[test]
+fn global_assert_statement_wrong() {
+    check_infer(
+        "
+        const a = 29;
+        const_assert 27 + a;
+    ",
+        expect![[r#"
+            15..16 'a': integer
+            19..21 '29': integer
+            44..46 '27': integer
+            44..50 '27 + a': integer
+            49..50 'a': integer
+            44..50 '27 + a': expected bool but got integer
         "#]],
     );
 }

@@ -163,6 +163,13 @@ fn text_size(
             .syntax()
             .text_range()
             .start(),
+        DefinitionWithBodyId::GlobalAssertStatement(item) => item
+            .lookup(database)
+            .source(database)
+            .value
+            .syntax()
+            .text_range()
+            .start(),
     }
 }
 
@@ -191,6 +198,12 @@ fn module_definitions(
                 ModuleItem::Override(id) => {
                     let loc = Location::new(file_id, *id);
                     DefinitionWithBodyId::Override(db.intern_override(loc))
+                },
+                ModuleItem::GlobalAssertStatement(id) => {
+                    let loc = Location::new(file_id, *id);
+                    DefinitionWithBodyId::GlobalAssertStatement(
+                        db.intern_global_assert_statement(loc),
+                    )
                 },
                 ModuleItem::TypeAlias(_) | ModuleItem::Struct(_) => return None,
             })
