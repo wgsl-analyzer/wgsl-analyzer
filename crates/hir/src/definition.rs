@@ -1,4 +1,4 @@
-use hir_def::{HirFileId, module_data::Name, resolver::ResolveKind};
+use hir_def::{HirFileId, item_tree::Name, resolver::ResolveKind};
 use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast};
 
 use crate::{Field, Local, ModuleDef, Semantics, Struct, TypeAlias};

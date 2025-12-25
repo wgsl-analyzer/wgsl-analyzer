@@ -43,9 +43,6 @@ export const reloadWorkspace = new lc.RequestType0<null, void>("wgsl-analyzer/re
 export const runFlycheck = new lc.NotificationType<{
 	textDocument: lc.TextDocumentIdentifier | null;
 }>("wgsl-analyzer/runFlycheck");
-export const syntaxTree = new lc.RequestType<SyntaxTreeParameters, string, void>(
-	"wgsl-analyzer/syntaxTree",
-);
 export const viewSyntaxTree = new lc.RequestType<ViewSyntaxTreeParameters, string, void>(
 	"wgsl-analyzer/viewSyntaxTree",
 );

@@ -6,7 +6,7 @@ use hir_def::{
     HirFileId, InFile,
     expression::BinaryOperation,
     expression_store::{ExpressionSourceMap, ExpressionStoreSource},
-    module_data::Name,
+    item_tree::Name,
 };
 use hir_ty::{
     builtins::BuiltinId,

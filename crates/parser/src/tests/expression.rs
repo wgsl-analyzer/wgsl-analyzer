@@ -65,7 +65,7 @@ fn parse_variable_ref() {
         expect![[r#"
             SourceFile@0..7
               IdentExpression@0..7
-                NameReference@0..7
+                Path@0..7
                   Identifier@0..7 "counter""#]],
     );
 }
@@ -77,7 +77,7 @@ fn parse_variable_ref_no_comment() {
         expect![[r#"
             SourceFile@0..25
               IdentExpression@0..7
-                NameReference@0..7
+                Path@0..7
                   Identifier@0..7 "counter"
               Blankspace@7..8 " "
               LineEndingComment@8..25 "// not part of it""#]],
@@ -91,7 +91,7 @@ fn parse_variable_ref_no_comment2() {
         expect![[r#"
             SourceFile@0..28
               IdentExpression@0..7
-                NameReference@0..7
+                Path@0..7
                   Identifier@0..7 "counter"
               Blankspace@7..8 " "
               BlockComment@8..28 "/* not part of it */""#]],
@@ -190,15 +190,15 @@ fn do_not_parse_operator_if_getting_rhs_failed() {
     check(
         "(1+",
         expect![[r#"
-                SourceFile@0..3
-                  ParenthesisExpression@0..3
-                    ParenthesisLeft@0..1 "("
-                    InfixExpression@1..3
-                      Literal@1..2
-                        IntLiteral@1..2 "1"
-                      Plus@2..3 "+"
+            SourceFile@0..3
+              ParenthesisExpression@0..3
+                ParenthesisLeft@0..1 "("
+                InfixExpression@1..3
+                  Literal@1..2
+                    IntLiteral@1..2 "1"
+                  Plus@2..3 "+"
 
-                error at 3..3: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', '*', '~', 'true'"#]],
+            error at 3..3: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -292,7 +292,7 @@ fn parse_unclosed_parentheses() {
               ParenthesisExpression@0..4
                 ParenthesisLeft@0..1 "("
                 IdentExpression@1..4
-                  NameReference@1..4
+                  Path@1..4
                     Identifier@1..4 "foo"
 
             error at 4..4: invalid syntax, expected: ')'"#]],
@@ -355,7 +355,7 @@ fn parse_expression_field() {
               FieldExpression@0..5
                 FieldExpression@0..3
                   IdentExpression@0..1
-                    NameReference@0..1
+                    Path@0..1
                       Identifier@0..1 "a"
                   Period@1..2 "."
                   Identifier@2..3 "b"
@@ -373,7 +373,7 @@ fn parse_expression_field_mix_ops() {
               InfixExpression@0..21
                 FieldExpression@0..6
                   IdentExpression@0..3
-                    NameReference@0..3
+                    Path@0..3
                       Identifier@0..3 "vec"
                   Period@3..4 "."
                   Identifier@4..6 "xy"
@@ -388,7 +388,7 @@ fn parse_expression_field_mix_ops() {
                   Blankspace@12..13 " "
                   FieldExpression@13..21
                     IdentExpression@13..18
-                      NameReference@13..18
+                      Path@13..18
                         Identifier@13..18 "other"
                     Period@18..19 "."
                     Identifier@19..21 "zw""#]],
@@ -403,7 +403,7 @@ fn parse_expression_function_call() {
             SourceFile@0..9
               FunctionCall@0..9
                 IdentExpression@0..3
-                  NameReference@0..3
+                  Path@0..3
                     Identifier@0..3 "pow"
                 Arguments@3..9
                   ParenthesisLeft@3..4 "("
@@ -426,13 +426,13 @@ fn parse_expression_function_call_mixed() {
               InfixExpression@0..27
                 FunctionCall@0..21
                   IdentExpression@0..3
-                    NameReference@0..3
+                    Path@0..3
                       Identifier@0..3 "pow"
                   Arguments@3..21
                     ParenthesisLeft@3..4 "("
                     InfixExpression@4..15
                       IdentExpression@4..8
-                        NameReference@4..8
+                        Path@4..8
                           Identifier@4..8 "srgb"
                       Blankspace@8..9 " "
                       Plus@9..10 "+"
@@ -460,12 +460,12 @@ fn parse_vec3_initializer() {
             SourceFile@0..14
               FunctionCall@0..14
                 IdentExpression@0..9
-                  NameReference@0..4
+                  Path@0..4
                     Identifier@0..4 "vec3"
                   TemplateList@4..9
                     TemplateStart@4..5 "<"
                     IdentExpression@5..8
-                      NameReference@5..8
+                      Path@5..8
                         Identifier@5..8 "f32"
                     TemplateEnd@8..9 ">"
                 Arguments@9..14
@@ -484,7 +484,7 @@ fn parse_vec3_initializer_inferred() {
             SourceFile@0..9
               FunctionCall@0..9
                 IdentExpression@0..4
-                  NameReference@0..4
+                  Path@0..4
                     Identifier@0..4 "vec3"
                 Arguments@4..9
                   ParenthesisLeft@4..5 "("
@@ -665,7 +665,7 @@ fn parse_index() {
               IndexExpression@0..8
                 FieldExpression@0..3
                   IdentExpression@0..1
-                    NameReference@0..1
+                    Path@0..1
                       Identifier@0..1 "a"
                   Period@1..2 "."
                   Identifier@2..3 "b"
@@ -689,7 +689,7 @@ fn parse_modulo_comparison() {
               InfixExpression@0..12
                 InfixExpression@0..6
                   IdentExpression@0..1
-                    NameReference@0..1
+                    Path@0..1
                       Identifier@0..1 "n"
                   Blankspace@1..2 " "
                   Modulo@2..3 "%"
@@ -719,7 +719,7 @@ fn prefix_expressions() {
                     PrefixExpression@3..7
                       And@3..4 "&"
                       IdentExpression@4..7
-                        NameReference@4..7
+                        Path@4..7
                           Identifier@4..7 "foo""#]],
     );
 }
@@ -732,18 +732,18 @@ fn bitcast() {
             SourceFile@0..15
               FunctionCall@0..15
                 IdentExpression@0..12
-                  NameReference@0..7
+                  Path@0..7
                     Identifier@0..7 "bitcast"
                   TemplateList@7..12
                     TemplateStart@7..8 "<"
                     IdentExpression@8..11
-                      NameReference@8..11
+                      Path@8..11
                         Identifier@8..11 "u32"
                     TemplateEnd@11..12 ">"
                 Arguments@12..15
                   ParenthesisLeft@12..13 "("
                   IdentExpression@13..14
-                    NameReference@13..14
+                    Path@13..14
                       Identifier@13..14 "x"
                   ParenthesisRight@14..15 ")""#]],
     );
@@ -757,24 +757,24 @@ fn bitcast_vector() {
             SourceFile@0..21
               FunctionCall@0..21
                 IdentExpression@0..18
-                  NameReference@0..7
+                  Path@0..7
                     Identifier@0..7 "bitcast"
                   TemplateList@7..18
                     TemplateStart@7..8 "<"
                     IdentExpression@8..17
-                      NameReference@8..12
+                      Path@8..12
                         Identifier@8..12 "vec4"
                       TemplateList@12..17
                         TemplateStart@12..13 "<"
                         IdentExpression@13..16
-                          NameReference@13..16
+                          Path@13..16
                             Identifier@13..16 "u32"
                         TemplateEnd@16..17 ">"
                     TemplateEnd@17..18 ">"
                 Arguments@18..21
                   ParenthesisLeft@18..19 "("
                   IdentExpression@19..20
-                    NameReference@19..20
+                    Path@19..20
                       Identifier@19..20 "x"
                   ParenthesisRight@20..21 ")""#]],
     );
@@ -788,12 +788,12 @@ fn bitcast_no_template() {
             SourceFile@0..10
               FunctionCall@0..10
                 IdentExpression@0..7
-                  NameReference@0..7
+                  Path@0..7
                     Identifier@0..7 "bitcast"
                 Arguments@7..10
                   ParenthesisLeft@7..8 "("
                   IdentExpression@8..9
-                    NameReference@8..9
+                    Path@8..9
                       Identifier@8..9 "x"
                   ParenthesisRight@9..10 ")""#]],
     );
@@ -815,18 +815,18 @@ fn bitcast_in_expression() {
                     Minus@4..5 "-"
                     FunctionCall@5..20
                       IdentExpression@5..17
-                        NameReference@5..12
+                        Path@5..12
                           Identifier@5..12 "bitcast"
                         TemplateList@12..17
                           TemplateStart@12..13 "<"
                           IdentExpression@13..16
-                            NameReference@13..16
+                            Path@13..16
                               Identifier@13..16 "u32"
                           TemplateEnd@16..17 ">"
                       Arguments@17..20
                         ParenthesisLeft@17..18 "("
                         IdentExpression@18..19
-                          NameReference@18..19
+                          Path@18..19
                             Identifier@18..19 "x"
                         ParenthesisRight@19..20 ")"
                 Blankspace@20..21 " "
@@ -847,7 +847,7 @@ fn deref_field() {
                 Star@0..1 "*"
                 FieldExpression@1..4
                   IdentExpression@1..2
-                    NameReference@1..2
+                    Path@1..2
                       Identifier@1..2 "a"
                   Period@2..3 "."
                   Identifier@3..4 "b""#]],
@@ -865,7 +865,7 @@ fn deref_field_paren() {
                   PrefixExpression@1..3
                     Star@1..2 "*"
                     IdentExpression@2..3
-                      NameReference@2..3
+                      Path@2..3
                         Identifier@2..3 "a"
                   ParenthesisRight@3..4 ")"
                 Period@4..5 "."
