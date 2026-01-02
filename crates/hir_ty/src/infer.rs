@@ -8,7 +8,6 @@ use either::Either;
 use hir_def::{
     HasSource as _,
     body::{BindingId, Body},
-    data::{FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData},
     database::{
         DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, Lookup as _, ModuleDefinitionId,
         OverrideId, StructId,
@@ -18,8 +17,11 @@ use hir_def::{
         Statement, StatementId, SwitchCaseSelector, UnaryOperator,
     },
     expression_store::{ExpressionStore, ExpressionStoreSource},
-    module_data::Name,
+    item_tree::Name,
     resolver::{ResolveKind, Resolver},
+    signature::{
+        ConstantSignature, FieldId, FunctionSignature, OverrideSignature, VariableSignature,
+    },
     type_ref::{self, VecDimensionality},
     type_specifier::{IdentExpression, TypeSpecifierId},
 };
@@ -479,7 +481,7 @@ impl<'database> InferenceContext<'database> {
 
     fn collect_global_variable(
         &mut self,
-        variable: &GlobalVariableData,
+        variable: &VariableSignature,
         body: &Body,
     ) -> Option<Type> {
         let r#type = variable
@@ -492,7 +494,7 @@ impl<'database> InferenceContext<'database> {
 
     fn infer_global_variable(
         &mut self,
-        variable: &GlobalVariableData,
+        variable: &VariableSignature,
         body: &Body,
     ) {
         let (address_space, access_mode) =
@@ -573,7 +575,7 @@ impl<'database> InferenceContext<'database> {
 
     fn collect_global_constant(
         &mut self,
-        constant: &GlobalConstantData,
+        constant: &ConstantSignature,
         body: &Body,
     ) -> Option<Type> {
         let r#type = constant
@@ -586,7 +588,7 @@ impl<'database> InferenceContext<'database> {
 
     fn collect_override(
         &mut self,
-        override_data: &OverrideData,
+        override_data: &OverrideSignature,
         body: &Body,
     ) -> Option<Type> {
         let r#type = override_data
@@ -599,7 +601,7 @@ impl<'database> InferenceContext<'database> {
 
     fn collect_fn(
         &mut self,
-        function_data: &FunctionData,
+        function_data: &FunctionSignature,
         body: &Body,
     ) -> Option<Type> {
         for ((_, parameter), &binding_id) in function_data.parameters.iter().zip(&body.parameters) {
