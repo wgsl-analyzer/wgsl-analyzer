@@ -40,6 +40,9 @@ use crate::{
         gen_statement::gen_const_assert_statement,
         gen_struct::gen_struct_declaration,
         gen_type_alias_declaration::gen_type_alias_declaration,
+        gen_var_let_const_statement::{
+            gen_const_declaration_statement, gen_var_declaration_statement,
+        },
         helpers::gen_spaced_lines,
         print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
         reporting::{FormatDocumentErrorKind, FormatDocumentResult, UnwrapIfPreferCrash as _},
@@ -104,8 +107,12 @@ fn gen_item(node: &ast::Item) -> FormatDocumentResult<PrintItemBuffer> {
         ast::Item::StructDeclaration(struct_declaration) => {
             gen_struct_declaration(struct_declaration)
         },
-        ast::Item::VariableDeclaration(_variable_declaration) => todo!(),
-        ast::Item::ConstantDeclaration(_constant_declaration) => todo!(),
+        ast::Item::VariableDeclaration(variable_declaration) => {
+            gen_var_declaration_statement(variable_declaration, true)
+        },
+        ast::Item::ConstantDeclaration(constant_declaration) => {
+            gen_const_declaration_statement(constant_declaration, true)
+        },
         ast::Item::OverrideDeclaration(_override_declaration) => todo!(),
         ast::Item::TypeAliasDeclaration(type_alias_declaration) => {
             gen_type_alias_declaration(type_alias_declaration, true)
