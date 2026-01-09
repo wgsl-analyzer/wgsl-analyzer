@@ -474,6 +474,7 @@ pub fn gen_const_assert_statement(
     let comments_after_const_assert = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_condition = parse_node::<Expression>(&mut syntax)?;
     let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -485,8 +486,8 @@ pub fn gen_const_assert_statement(
     formatted.extend(gen_comments(comments_after_const_assert));
     formatted.extend(gen_expression(&item_condition, true)?);
     formatted.extend(gen_comments(comments_after_condition));
-    formatted.request_space(SeparationPolicy::Discouraged);
     if include_semicolon {
+        formatted.request_space(SeparationPolicy::Discouraged);
         formatted.push_sc(sc!(";"));
     }
     formatted.push_signal(Signal::FinishIndent);
