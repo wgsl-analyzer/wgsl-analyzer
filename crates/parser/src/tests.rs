@@ -6,9 +6,7 @@ mod conditional;
 mod conditional_compilation;
 mod diagnostic;
 mod expression;
-mod imports;
-mod keywords;
-mod naga;
+mod statement;
 
 use edition::{Capabilities, Edition};
 use expect_test::{Expect, expect};
