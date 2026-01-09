@@ -21,22 +21,6 @@ use lsp_types::{
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 
-pub enum SyntaxTree {}
-
-impl Request for SyntaxTree {
-    type Params = SyntaxTreeParameters;
-    type Result = String;
-
-    const METHOD: &'static str = "wgsl-analyzer/syntaxTree";
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct SyntaxTreeParameters {
-    pub text_document: TextDocumentIdentifier,
-    pub range: Option<Range>,
-}
-
 pub enum DebugCommand {}
 
 impl Request for DebugCommand {

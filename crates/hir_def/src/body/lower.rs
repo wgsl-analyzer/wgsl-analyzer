@@ -7,7 +7,7 @@ use crate::{
     database::DefDatabase,
     expression::{ExpressionId, Statement, StatementId, SwitchCaseSelector},
     expression_store::{ExpressionStoreSource, lower::ExprCollector},
-    module_data::Name,
+    item_tree::Name,
 };
 
 pub(super) fn lower_function_body(
