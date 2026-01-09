@@ -114,7 +114,48 @@ pub fn format_expr_function_call_many_args() {
 fn format_expr_function_call_bitcast() {
     check(
         "fn main() { let a = bitcast   <  vec4<u32>  >  ( x+5 ); }",
-        expect!["fn main() { bitcast<vec4<u32>>(x + 5) }"],
+        expect![[r#"
+            fn main() {
+                let a = bitcast<vec4<u32>>(x + 5);
+            }
+        "#]],
+    );
+}
+
+#[test]
+fn format_expr_function_call_comments_in_bitcast() {
+    check_comments(
+        "fn main() {
+        let a = ## bitcast ## < ## vec4 ## < ## u32 ## > ## > ## ( ## x ## + ## 5 ## ) ## ; ##
+        }",
+        expect![[r#"
+            fn main() {
+                let a = /* 0 */ bitcast /* 1 */ <
+                        /* 2 */ vec4 /* 3 */ </* 4 */ u32 /* 5 */>, /* 6 */
+                    > /* 7 */ (/* 8 */ x /* 9 */ + /* 10 */ 5 /* 11 */) /* 12 */; /* 13 */
+            }
+        "#]],
+        expect![[r#"
+            fn main() {
+                let a = // 0
+                    bitcast // 1
+                    <
+                        // 2
+                        vec4 // 3
+                        <
+                            // 4
+                            u32, // 5
+                        >, // 6
+                    > // 7
+                    (
+                        // 8
+                        x // 9
+                        + // 10
+                        5, // 11
+                    ) // 12
+                    ; // 13
+            }
+        "#]],
     );
 }
 
