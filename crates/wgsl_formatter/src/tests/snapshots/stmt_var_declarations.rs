@@ -135,3 +135,63 @@ pub fn format_var_decl_has_no_space_before_semicolon() {
         "]],
     );
 }
+
+#[test]
+pub fn format_global_var_decl_simple_literal_1() {
+    check(
+        "
+        var
+        a
+        =
+        1
+        ;
+        ",
+        expect![[r#"
+            var a = 1;
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_global_var_decl_with_type_1() {
+    check(
+        "
+        var
+        a: array<u32, 28>
+        =
+        make_array()
+        ;
+        ",
+        expect![[r#"
+            var a: array<u32, 28> = make_array();
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_global_var_decl_with_address_space_and_type_1() {
+    check(
+        "
+        var<workgroup>
+        a: array<u32, 28>
+        ;
+        ",
+        expect![[r#"
+            var<workgroup> a: array<u32, 28>;
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_global_var_decl_with_address_space_and_type_2() {
+    check(
+        "
+        var<storage,read_write>
+        a: array<u32, 28>
+        ;
+        ",
+        expect![[r#"
+            var<storage, read_write> a: array<u32, 28>;
+        "#]],
+    );
+}

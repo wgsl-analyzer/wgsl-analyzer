@@ -2,7 +2,10 @@ use dprint_core::formatting::{Signal, StringContainer};
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::{SyntaxKind, SyntaxNode};
-use syntax::{AstNode as _, ast};
+use syntax::{
+    AstNode as _,
+    ast::{self, TemplateList},
+};
 
 use crate::format::{
     ast_parse::{
@@ -11,7 +14,7 @@ use crate::format::{
     },
     gen_comments::gen_comments,
     gen_expression::gen_expression,
-    gen_types::gen_type_specifier,
+    gen_types::{gen_template_list, gen_type_specifier},
     print_item_buffer::{PrintItemBuffer, SeparationPolicy},
     reporting::FormatDocumentResult,
 };
@@ -74,6 +77,10 @@ fn gen_var_let_const_statement(
     let mut syntax = put_back(syntax_node.children_with_tokens());
     parse_token(&mut syntax, kind.syntax_kind())?;
     let item_comments_after_let = parse_many_comments_and_blankspace(&mut syntax)?;
+
+    let item_template_list = parse_node::<TemplateList>(&mut syntax)?;
+    let item_comments_after_template_list = parse_many_comments_and_blankspace(&mut syntax)?;
+
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
     let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
 
@@ -90,11 +97,15 @@ fn gen_var_let_const_statement(
         None
     };
 
-    parse_token(&mut syntax, SyntaxKind::Equal)?;
-    let item_comments_after_equal = parse_many_comments_and_blankspace(&mut syntax)?;
+    let assignment = if parse_token_optional(&mut syntax, SyntaxKind::Equal).is_some() {
+        let item_comments_after_equal = parse_many_comments_and_blankspace(&mut syntax)?;
 
-    let value = parse_node::<ast::Expression>(&mut syntax)?;
-    let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
+        let value = parse_node::<ast::Expression>(&mut syntax)?;
+        let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
+        Some((item_comments_after_equal, value, item_comments_after_value))
+    } else {
+        None
+    };
 
     parse_token_optional(&mut syntax, SyntaxKind::Semicolon); //Not all var-statements have a semicolon (e.g for loop)
     parse_end(&mut syntax)?;
@@ -103,8 +114,10 @@ fn gen_var_let_const_statement(
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(kind.sc());
     formatted.push_signal(Signal::StartIndent);
-    formatted.expect_single_space();
     formatted.extend(gen_comments(item_comments_after_let));
+    formatted.extend(gen_template_list(&item_template_list)?);
+    formatted.extend(gen_comments(item_comments_after_template_list));
+    formatted.expect_single_space();
     formatted.push_string(item_name.text().to_string());
     formatted.extend(gen_comments(item_comments_after_name));
 
@@ -117,13 +130,16 @@ fn gen_var_let_const_statement(
         formatted.extend(gen_comments(comments_after_type));
     }
 
-    formatted.expect_single_space();
-    formatted.push_sc(sc!("="));
-    formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_equal));
-    formatted.extend(gen_expression(&value, false)?);
-    formatted.extend(gen_comments(item_comments_after_value));
-    formatted.request_space(SeparationPolicy::Discouraged);
+    if let Some((comments_after_equal, value, comments_after_value)) = assignment {
+        formatted.expect_single_space();
+        formatted.push_sc(sc!("="));
+        formatted.expect_single_space();
+        formatted.extend(gen_comments(comments_after_equal));
+        formatted.extend(gen_expression(&value, false)?);
+        formatted.extend(gen_comments(comments_after_value));
+        formatted.request_space(SeparationPolicy::Discouraged);
+    }
+
     if include_semicolon {
         formatted.push_sc(sc!(";"));
     }
