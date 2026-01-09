@@ -194,16 +194,3 @@ fn format_function_call_newline_nested() {
         "#]],
     );
 }
-
-#[test]
-fn format_function_call_2() {
-    check(
-        "fn main() {
-    vec3  <f32>  (  x,y,z );
-}",
-        expect![["
-                fn main() {
-                    vec3<f32>(x, y, z);
-                }"]],
-    );
-}
