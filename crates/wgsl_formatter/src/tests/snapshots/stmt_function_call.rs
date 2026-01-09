@@ -194,3 +194,16 @@ fn format_function_call_newline_nested() {
         "#]],
     );
 }
+
+#[test]
+fn format_template_elaborated_function_call_statement() {
+    // TODO At the time of writing, this does not parse, however I think it should parse, and as soon as it does parse the formatter must handle it.
+    check(
+        "fn main() {
+    my_function<f32>(x,y,z);
+    my_function<array<f32, 28>>(x,y,z);
+}",
+        expect![[r#"
+        "#]],
+    );
+}
