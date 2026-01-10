@@ -373,9 +373,9 @@ pub(crate) fn lower_constant(
 
 pub(crate) fn lower_global_assert_statement(
     database: &dyn DefDatabase,
-    global_assert_statement: &InFile<ast::AssertStatement>,
+    _global_assert_statement: &InFile<ast::AssertStatement>,
 ) -> (GlobalAssertStatementData, ExpressionSourceMap) {
-    let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
+    let collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
 
     let (store, source_map) = collector.finish();
     let specifier = GlobalAssertStatementData {

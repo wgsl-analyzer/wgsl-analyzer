@@ -8,10 +8,7 @@ use either::Either;
 use hir_def::{
     HasSource as _,
     body::{BindingId, Body},
-    data::{
-        FieldId, FunctionData, GlobalAssertStatementData, GlobalConstantData, GlobalVariableData,
-        OverrideData,
-    },
+    data::{FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData},
     database::{
         DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, Lookup as _, ModuleDefinitionId,
         OverrideId, StructId,
@@ -78,7 +75,7 @@ pub fn infer_query(
             let return_type = context.collect_override(&data, &body);
             context.infer_body(&body, return_type, AbstractHandling::Concretize);
         },
-        DefinitionWithBodyId::GlobalAssertStatement(global_assert_statement) => {
+        DefinitionWithBodyId::GlobalAssertStatement(_global_assert_statement) => {
             let expression = body.root.and_then(Either::right);
 
             if let Some(expression) = expression {

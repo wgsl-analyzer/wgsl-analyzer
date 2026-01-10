@@ -151,7 +151,7 @@ impl Resolver {
                             scope.module_info.get(*id).name.clone(),
                             ScopeDef::ModuleItem(scope.file_id, *item),
                         ),
-                        ModuleItem::GlobalAssertStatement(id) => {},
+                        ModuleItem::GlobalAssertStatement(_) => {},
                     });
             },
             Scope::Expression(expression_scope) => {
