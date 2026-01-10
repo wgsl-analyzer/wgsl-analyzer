@@ -65,7 +65,7 @@ smallvec = { version = "1.15.1", features = [
 	"const_new",
 	"union",
 ] }
-smol_str = "0.3.4"
+smol_str = "0.3.5"
 text-size = "1.1.1"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", default-features = false, features = [
