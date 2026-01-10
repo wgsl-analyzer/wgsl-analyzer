@@ -8,7 +8,10 @@ use either::Either;
 use hir_def::{
     HasSource as _,
     body::{BindingId, Body},
-    data::{FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData},
+    data::{
+        FieldId, FunctionData, GlobalAssertStatementData, GlobalConstantData, GlobalVariableData,
+        OverrideData,
+    },
     database::{
         DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, Lookup as _, ModuleDefinitionId,
         OverrideId, StructId,
@@ -74,6 +77,14 @@ pub fn infer_query(
             let data = database.override_data(override_declaration).0;
             let return_type = context.collect_override(&data, &body);
             context.infer_body(&body, return_type, AbstractHandling::Concretize);
+        },
+        DefinitionWithBodyId::GlobalAssertStatement(global_assert_statement) => {
+            // TODO(MonaMayrhofer) How to handle the other cases here? am i doing this right?
+            let expression = body.root.unwrap().unwrap_right();
+            let expected_type = &TypeExpectation::from_type(
+                database.intern_type(TypeKind::Scalar(ScalarType::Bool)),
+            );
+            context.infer_expression_expect(expression, expected_type, &body.store);
         },
     }
 
@@ -177,6 +188,14 @@ fn get_name_and_range(
         ),
         ModuleDefinitionId::TypeAlias(id) => (
             database.type_alias_data(id).0.name.clone(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
+        ),
+        ModuleDefinitionId::GlobalAssertStatement(id) => (
+            // TODO(MonaMayrhofer) What name should I use here
+            Name::missing(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
