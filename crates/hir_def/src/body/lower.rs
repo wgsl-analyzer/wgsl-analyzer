@@ -139,7 +139,6 @@ impl Collector<'_> {
             .map(|expression| self.collect_expression(expression))
             .map(Either::Right);
 
-        //TODO(MonaMayrhofer) Does the global assert statement need more than the root? It doesn't need a binding right?
         (self.body.store, self.source_map.expressions) = self.expressions.finish();
 
         (self.body, self.source_map)

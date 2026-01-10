@@ -79,12 +79,14 @@ pub fn infer_query(
             context.infer_body(&body, return_type, AbstractHandling::Concretize);
         },
         DefinitionWithBodyId::GlobalAssertStatement(global_assert_statement) => {
-            // TODO(MonaMayrhofer) How to handle the other cases here? am i doing this right?
-            let expression = body.root.unwrap().unwrap_right();
-            let expected_type = &TypeExpectation::from_type(
-                database.intern_type(TypeKind::Scalar(ScalarType::Bool)),
-            );
-            context.infer_expression_expect(expression, expected_type, &body.store);
+            let expression = body.root.and_then(Either::right);
+
+            if let Some(expression) = expression {
+                let expected_type = &TypeExpectation::from_type(
+                    database.intern_type(TypeKind::Scalar(ScalarType::Bool)),
+                );
+                context.infer_expression_expect(expression, expected_type, &body.store);
+            }
         },
     }
 
@@ -194,8 +196,7 @@ fn get_name_and_range(
                 .range,
         ),
         ModuleDefinitionId::GlobalAssertStatement(id) => (
-            // TODO(MonaMayrhofer) What name should I use here
-            Name::missing(),
+            Name::from("const_assert"),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
