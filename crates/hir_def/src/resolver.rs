@@ -216,7 +216,7 @@ impl Resolver {
                         (&function.name == name)
                             .then(|| ResolveKind::Function(InFile::new(scope.file_id, *id)))
                     },
-                    ModuleItem::GlobalAssertStatement(id) => None,
+                    ModuleItem::GlobalAssertStatement(_) => None,
                 }),
             Scope::Builtin => {
                 // TODO: Match against "name.as_str()" and then point at a "builtin" file
