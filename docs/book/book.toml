@@ -9,8 +9,8 @@ title = "wgsl-analyzer"
 edition = "2024"
 
 [output.html]
-edit-url-template = "https://github.com/wgsl-analyzer/wgsl-analyzer/edit/master/docs/book/{path}"
-git-repository-url = "https://github.com/wgsl-analyzer/wgsl-analyzer/tree/master/docs/book"
+edit-url-template = "https://github.com/wgsl-analyzer/wgsl-analyzer/edit/main/docs/book/{path}"
+git-repository-url = "https://github.com/wgsl-analyzer/wgsl-analyzer/tree/main/docs/book"
 mathjax-support = true
 site-url = "/book/"
 
