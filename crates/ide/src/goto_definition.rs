@@ -145,6 +145,20 @@ impl TryToNavigationTarget for InFile<Definition> {
 
                     NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
                 },
+                hir::ModuleDef::GlobalAssertStatement(global_assert_statement) => {
+                    // Goto definition makes little sense for global assert statements - but we implement it anyway to have some parity.
+                    let statement = global_assert_statement.source(database)?;
+
+                    let frange = statement.original_file_range(database);
+                    let focus_range = statement.value.expression().map(|expression| {
+                        statement
+                            .with_value(expression)
+                            .original_file_range(database)
+                            .range
+                    });
+
+                    NavigationTarget::from_syntax(frange.file_id, frange.range, focus_range)
+                },
             },
             Definition::Field(field) => {
                 let declaration = field.source(database)?;

@@ -16,14 +16,14 @@ use crate::{
     attributes::{AttributeDefId, AttributesWithOwner},
     body::{Body, BodySourceMap, scope::ExprScopes},
     data::{
-        FunctionData, GlobalConstantData, GlobalVariableData, OverrideData, StructData,
-        TypeAliasData,
+        FunctionData, GlobalAssertStatementData, GlobalConstantData, GlobalVariableData,
+        OverrideData, StructData, TypeAliasData,
     },
     expression_store::{ExpressionSourceMap, ExpressionStore},
     hir_file_id::HirFileIdRepr,
     module_data::{
-        Function, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItemId, Override, Struct,
-        TypeAlias,
+        Function, GlobalAssertStatement, GlobalConstant, GlobalVariable, ModuleInfo, ModuleItemId,
+        Override, Struct, TypeAlias,
     },
     resolver::Resolver,
 };
@@ -110,6 +110,12 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         key: GlobalConstantId,
     ) -> (Arc<GlobalConstantData>, Arc<ExpressionSourceMap>);
 
+    #[salsa::invoke(GlobalAssertStatementData::global_assert_statement_data_query)]
+    fn global_assert_statement_data(
+        &self,
+        key: GlobalAssertStatementId,
+    ) -> (Arc<GlobalAssertStatementData>, Arc<ExpressionSourceMap>);
+
     #[salsa::invoke(OverrideData::override_data_query)]
     fn override_data(
         &self,
@@ -142,6 +148,10 @@ fn signature_with_source_map(
         },
         DefinitionWithBodyId::Override(id) => {
             let (data, source_map) = database.override_data(id);
+            (data.store.clone(), source_map)
+        },
+        DefinitionWithBodyId::GlobalAssertStatement(id) => {
+            let (data, source_map) = database.global_assert_statement_data(id);
             (data.store.clone(), source_map)
         },
     }
@@ -214,6 +224,11 @@ pub trait InternDatabase: SourceDatabase {
         &self,
         location: Location<TypeAlias>,
     ) -> TypeAliasId;
+    #[salsa::interned]
+    fn intern_global_assert_statement(
+        &self,
+        location: Location<GlobalAssertStatement>,
+    ) -> GlobalAssertStatementId;
 }
 
 pub type Location<T> = InFile<ModuleItemId<T>>;
@@ -316,6 +331,11 @@ intern_id!(
 intern_id!(OverrideId, Location<Override>, lookup_intern_override);
 intern_id!(StructId, Location<Struct>, lookup_intern_struct);
 intern_id!(TypeAliasId, Location<TypeAlias>, lookup_intern_type_alias);
+intern_id!(
+    GlobalAssertStatementId,
+    Location<GlobalAssertStatement>,
+    lookup_intern_global_assert_statement
+);
 
 /// Module items with a body.
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
@@ -323,6 +343,7 @@ pub enum DefinitionWithBodyId {
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),
     GlobalConstant(GlobalConstantId),
+    GlobalAssertStatement(GlobalAssertStatementId),
     Override(OverrideId),
 }
 
@@ -335,6 +356,7 @@ impl DefinitionWithBodyId {
             Self::Function(id) => id.lookup(database).file_id,
             Self::GlobalVariable(id) => id.lookup(database).file_id,
             Self::GlobalConstant(id) => id.lookup(database).file_id,
+            Self::GlobalAssertStatement(id) => id.lookup(database).file_id,
             Self::Override(id) => id.lookup(database).file_id,
         }
     }
@@ -355,6 +377,7 @@ pub enum ModuleDefinitionId {
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),
     GlobalConstant(GlobalConstantId),
+    GlobalAssertStatement(GlobalAssertStatementId),
     Override(OverrideId),
     Struct(StructId),
     TypeAlias(TypeAliasId),
@@ -369,6 +392,7 @@ impl ModuleDefinitionId {
             Self::Function(id) => id.lookup(database).file_id,
             Self::GlobalVariable(id) => id.lookup(database).file_id,
             Self::GlobalConstant(id) => id.lookup(database).file_id,
+            Self::GlobalAssertStatement(id) => id.lookup(database).file_id,
             Self::Override(id) => id.lookup(database).file_id,
             Self::Struct(id) => id.lookup(database).file_id,
             Self::TypeAlias(id) => id.lookup(database).file_id,
@@ -392,6 +416,7 @@ impl From<DefinitionWithBodyId> for ModuleDefinitionId {
             DefinitionWithBodyId::GlobalVariable(id) => Self::GlobalVariable(id),
             DefinitionWithBodyId::GlobalConstant(id) => Self::GlobalConstant(id),
             DefinitionWithBodyId::Override(id) => Self::Override(id),
+            DefinitionWithBodyId::GlobalAssertStatement(id) => Self::GlobalAssertStatement(id),
         }
     }
 }
