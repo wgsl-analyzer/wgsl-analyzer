@@ -26,8 +26,5 @@ stdx.workspace = true
 syntax.workspace = true
 tracing.workspace = true
 
-[dev-dependencies]
-proptest.workspace = true
-
 [lints]
 workspace = true
