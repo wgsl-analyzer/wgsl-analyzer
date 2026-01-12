@@ -5,11 +5,11 @@
 	"recommendations": [
 		"vadimcn.vscode-lldb",
 		"editorconfig.editorconfig",
-		"tamasfe.even-better-toml",
 		"github.vscode-github-actions",
 		"davidanson.vscode-markdownlint",
 		"redcmd.tmlanguage-syntax-highlighter",
-		"biomejs.biome"
+		"biomejs.biome",
+		"tombi-toml.tombi"
 	],
 	// List of extensions recommended by VS Code that should not be recommended for users of this workspace.
 	"unwantedRecommendations": []
