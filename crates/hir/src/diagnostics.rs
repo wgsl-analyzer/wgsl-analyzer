@@ -22,9 +22,9 @@ use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiag
 
 #[derive(Clone, Copy, Debug, Default)]
 pub enum NagaVersion {
-    Naga22,
-    #[default]
     Naga27,
+    #[default]
+    Naga28,
     NagaMain,
 }
 
@@ -45,7 +45,7 @@ impl Default for DiagnosticsConfig {
             type_errors: true,
             naga_parsing_errors: true,
             naga_validation_errors: true,
-            naga_version: NagaVersion::Naga22,
+            naga_version: NagaVersion::default(),
         }
     }
 }

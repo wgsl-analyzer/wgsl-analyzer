@@ -89,11 +89,11 @@ config_data! {
     Clone, Copy, Debug, Serialize, Deserialize, Default, Hash, PartialEq, Eq, PartialOrd, Ord,
 )]
 pub enum NagaVersionConfig {
-    #[serde(rename = "0.22")]
-    Naga22,
     #[serde(rename = "0.27")]
-    #[default]
     Naga27,
+    #[serde(rename = "0.28")]
+    #[default]
+    Naga28,
     #[serde(rename = "main")]
     NagaMain,
 }
@@ -573,8 +573,8 @@ impl Config {
             naga_parsing_errors: *self.diagnostics_nagaParsingErrors(),
             naga_validation_errors: *self.diagnostics_nagaValidationErrors(),
             naga_version: match self.diagnostics_nagaVersion() {
-                NagaVersionConfig::Naga22 => NagaVersion::Naga22,
                 NagaVersionConfig::Naga27 => NagaVersion::Naga27,
+                NagaVersionConfig::Naga28 => NagaVersion::Naga28,
                 NagaVersionConfig::NagaMain => NagaVersion::NagaMain,
             },
         }

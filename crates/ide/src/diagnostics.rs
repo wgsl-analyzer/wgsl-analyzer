@@ -119,50 +119,6 @@ trait NagaError: error::Error {
     fn location(&self) -> Option<Range<usize>>;
 }
 
-struct Naga22;
-impl Naga for Naga22 {
-    type Module = naga22::Module;
-    type ParseError = naga22::front::wgsl::ParseError;
-    type ValidationError = naga22::WithSpan<naga22::valid::ValidationError>;
-
-    fn parse(source: &str) -> Result<Self::Module, Self::ParseError> {
-        naga22::front::wgsl::parse_str(source)
-    }
-
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
-        let flags = naga22::valid::ValidationFlags::all();
-        let capabilities = naga22::valid::Capabilities::all();
-        let mut validator = naga22::valid::Validator::new(flags, capabilities);
-        validator.validate(module).map(drop)
-    }
-}
-
-impl NagaError for naga22::front::wgsl::ParseError {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
-        Box::new(
-            self.labels()
-                .map(|(span, label)| (span.to_range(), label.to_owned())),
-        )
-    }
-
-    fn location(&self) -> Option<Range<usize>> {
-        let (range, _) = self.labels().next()?;
-        range.to_range()
-    }
-}
-
-impl NagaError for naga22::WithSpan<naga22::valid::ValidationError> {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
-        Box::new(
-            self.spans()
-                .map(move |(span, label)| (span.to_range(), label.clone())),
-        )
-    }
-    fn location(&self) -> Option<Range<usize>> {
-        self.spans().next().and_then(|(span, _)| span.to_range())
-    }
-}
-
 struct Naga27;
 impl Naga for Naga27 {
     type Module = naga27::Module;
@@ -195,6 +151,49 @@ impl NagaError for naga27::front::wgsl::ParseError {
 }
 
 impl NagaError for naga27::WithSpan<naga27::valid::ValidationError> {
+    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
+        Box::new(
+            self.spans()
+                .map(move |(span, label)| (span.to_range(), label.clone())),
+        )
+    }
+    fn location(&self) -> Option<Range<usize>> {
+        self.spans().next().and_then(|(span, _)| span.to_range())
+    }
+}
+
+struct Naga28;
+impl Naga for Naga28 {
+    type Module = naga28::Module;
+    type ParseError = naga28::front::wgsl::ParseError;
+    type ValidationError = naga28::WithSpan<naga28::valid::ValidationError>;
+
+    fn parse(source: &str) -> Result<Self::Module, Self::ParseError> {
+        naga28::front::wgsl::parse_str(source)
+    }
+
+    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
+        let flags = naga28::valid::ValidationFlags::all();
+        let capabilities = naga28::valid::Capabilities::all();
+        let mut validator = naga28::valid::Validator::new(flags, capabilities);
+        validator.validate(module).map(drop)
+    }
+}
+
+impl NagaError for naga28::front::wgsl::ParseError {
+    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
+        Box::new(
+            self.labels()
+                .map(|(span, label)| (span.to_range(), label.to_owned())),
+        )
+    }
+    fn location(&self) -> Option<Range<usize>> {
+        let (span, _) = self.labels().next()?;
+        span.to_range()
+    }
+}
+
+impl NagaError for naga28::WithSpan<naga28::valid::ValidationError> {
     fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.spans()
@@ -341,11 +340,11 @@ pub fn diagnostics(
 
     if config.naga_parsing_errors || config.naga_validation_errors {
         match &config.naga_version {
-            NagaVersion::Naga22 => {
-                naga_diagnostics::<Naga22>(database, file_id, config, &mut diagnostics);
-            },
             NagaVersion::Naga27 => {
                 naga_diagnostics::<Naga27>(database, file_id, config, &mut diagnostics);
+            },
+            NagaVersion::Naga28 => {
+                naga_diagnostics::<Naga28>(database, file_id, config, &mut diagnostics);
             },
             NagaVersion::NagaMain => {
                 naga_diagnostics::<NagaMain>(database, file_id, config, &mut diagnostics);
