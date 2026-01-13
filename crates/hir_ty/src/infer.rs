@@ -16,7 +16,7 @@ use hir_def::{
         ArithmeticOperation, BinaryOperation, ComparisonOperation, Expression, ExpressionId,
         Statement, StatementId, SwitchCaseSelector, UnaryOperator,
     },
-    expression_store::{ExpressionStore, ExpressionStoreSource},
+    expression_store::{ExpressionStore, ExpressionStoreSource, path::Path},
     item_tree::Name,
     resolver::{ResolveKind, Resolver},
     signature::{
@@ -276,7 +276,7 @@ pub enum InferenceDiagnostic {
         expression: ExpressionId,
         expected: LoweredKind,
         actual: LoweredKind,
-        name: Name,
+        path: Path,
     },
 }
 
@@ -1403,7 +1403,7 @@ impl<'database> InferenceContext<'database> {
                     expression,
                     expected: LoweredKind::Variable,
                     actual: lowered.kind(),
-                    name: ident_expression.path.clone(),
+                    path: ident_expression.path.clone(),
                 });
                 self.error_type()
             },
@@ -1626,7 +1626,7 @@ impl<'database> InferenceContext<'database> {
                     expression,
                     expected: LoweredKind::Function,
                     actual: lowered.kind(),
-                    name: callee.path.clone(),
+                    path: callee.path.clone(),
                 });
                 self.error_type()
             },
@@ -2130,7 +2130,7 @@ pub enum TypeLoweringErrorKind {
     // A value was provided where a type was expected.
     ExpectedType(Name),
     // A function was provided but not called.
-    ExpectedFunctionToBeCalled(Name),
+    ExpectedFunctionToBeCalled(Path),
     // TODO: Change this to a strongly typed wgsl_types::Error
     // The challenge here is that wgsl_types::Error doesn't implement Eq,
     // However the inference result keeps track of all the diagnostics and is cached
@@ -2184,11 +2184,11 @@ impl fmt::Display for TypeLoweringErrorKind {
             Self::ExpectedType(name) => {
                 write!(formatter, "{} is not a type", name.as_str())
             },
-            Self::ExpectedFunctionToBeCalled(name) => {
+            Self::ExpectedFunctionToBeCalled(path) => {
                 write!(
                     formatter,
                     "{0:} was written, write {0:}() instead",
-                    name.as_str()
+                    path.mod_path()
                 )
             },
         }
@@ -2269,7 +2269,7 @@ impl<'database> TypeLoweringContext<'database> {
     pub fn lower(
         &mut self,
         type_container: TypeContainer,
-        path: &Name,
+        path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Lowered {
         match self.try_lower(type_container, path, template_parameters) {
@@ -2285,7 +2285,7 @@ impl<'database> TypeLoweringContext<'database> {
     pub fn try_lower(
         &mut self,
         type_container: TypeContainer,
-        path: &Name,
+        path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
         let resolved_type = self.resolver.resolve(path);

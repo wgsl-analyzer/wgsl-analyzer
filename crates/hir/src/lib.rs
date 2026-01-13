@@ -13,6 +13,7 @@ use hir_def::{
         GlobalVariableId, ImportId, Location, Lookup as _, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
+    expression_store::path::Path,
     item_tree::{self, ItemTree, ModuleItem, Name},
     resolver::{ResolveKind, Resolver},
     signature::{FieldId, ParameterId},
@@ -197,11 +198,11 @@ impl<'database> Semantics<'database> {
         }
     }
 
-    fn resolve_name_in_container(
+    fn resolve_path_in_container(
         &self,
         container: ChildContainer,
         expression: &ast::Expression,
-        name: &Name,
+        path: &Path,
     ) -> Option<Definition> {
         let mut resolver = container.resolver(self.database);
 
@@ -219,7 +220,7 @@ impl<'database> Semantics<'database> {
             resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
         }
 
-        let value = resolver.resolve(name)?;
+        let value = resolver.resolve(path)?;
 
         let definition = match value {
             ResolveKind::Local(binding) => Definition::Local(Local {

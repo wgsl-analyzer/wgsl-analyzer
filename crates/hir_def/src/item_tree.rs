@@ -3,7 +3,7 @@ mod lower;
 #[cfg(test)]
 pub mod pretty;
 
-use std::{hash, marker::PhantomData};
+use std::{hash, marker::PhantomData, ops::ControlFlow};
 
 use la_arena::{Arena, Idx};
 use smol_str::SmolStr;
@@ -72,10 +72,10 @@ pub struct ImportStatement {
 
 impl ImportStatement {
     /// Expands the `UseTree` into individually imported `FlatImport`s.
-    pub fn expand(
+    pub fn expand<T>(
         &self,
-        mut callback: impl FnMut(FlatImport),
-    ) {
+        mut callback: impl FnMut(FlatImport) -> ControlFlow<T>,
+    ) -> Option<T> {
         self.tree
             .expand_impl(ModPath::from_kind(self.kind), &mut callback)
     }
@@ -85,6 +85,12 @@ impl ImportStatement {
 pub struct FlatImport {
     pub path: ModPath,
     pub alias: Option<Name>,
+}
+
+impl FlatImport {
+    pub fn leaf_name(&self) -> Option<&Name> {
+        self.alias.as_ref().or(self.path.segments().last())
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -109,15 +115,15 @@ pub enum ImportTree {
 }
 
 impl ImportTree {
-    fn expand_impl(
+    fn expand_impl<T>(
         &self,
         mut prefix: ModPath,
-        callback: &mut impl FnMut(FlatImport),
-    ) {
+        callback: &mut impl FnMut(FlatImport) -> ControlFlow<T>,
+    ) -> Option<T> {
         match self {
             ImportTree::Path { name, item } => {
                 prefix.push_segment(name.clone());
-                item.expand_impl(prefix, callback);
+                item.expand_impl(prefix, callback)
             },
             ImportTree::Item { name, alias } => {
                 prefix.push_segment(name.clone());
@@ -125,11 +131,15 @@ impl ImportTree {
                     path: prefix,
                     alias: alias.clone(),
                 })
+                .break_value()
             },
             ImportTree::Collection { list } => {
                 for tree in list {
-                    tree.expand_impl(prefix.clone(), callback);
+                    if let Some(value) = tree.expand_impl(prefix.clone(), callback) {
+                        return Some(value);
+                    }
                 }
+                None
             },
         }
     }

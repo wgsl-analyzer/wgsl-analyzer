@@ -40,7 +40,8 @@ impl PathKind {
 }
 
 impl ModPath {
-    pub fn from_src(path: ast::Path) -> Option<ModPath> {
+    /// The WESL grammar guarantees that only valid paths can be in the syntax tree.
+    pub fn from_src(path: ast::Path) -> ModPath {
         convert_path(path)
     }
 
@@ -202,7 +203,7 @@ fn display_fmt_path(
     Ok(())
 }
 
-fn convert_path(path: ast::Path) -> Option<ModPath> {
+fn convert_path(path: ast::Path) -> ModPath {
     let kind = PathKind::from_src(path.relative());
 
     let mut segments: SmallVec<_> = path
@@ -211,5 +212,5 @@ fn convert_path(path: ast::Path) -> Option<ModPath> {
         .into_iter()
         .collect();
     segments.shrink_to_fit();
-    Some(ModPath { kind, segments })
+    ModPath { kind, segments }
 }

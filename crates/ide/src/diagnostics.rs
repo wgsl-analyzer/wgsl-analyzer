@@ -625,13 +625,13 @@ More complex operands must be this with parenthesized `()`"
                     expression,
                     expected,
                     actual,
-                    name,
+                    path,
                 } => {
                     let source = expression.value.to_node(&root);
                     let frange = original_file_range(database, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("23"),
-                        format!("{actual} {} is not a {expected}", name.as_str()),
+                        format!("{actual} {} is not a {expected}", path.mod_path()),
                         frange.range,
                     )
                 },

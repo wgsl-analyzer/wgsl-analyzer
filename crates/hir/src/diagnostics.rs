@@ -150,7 +150,7 @@ pub enum AnyDiagnostic {
         expression: InFile<AstPointer<ast::Expression>>,
         expected: LoweredKind,
         actual: LoweredKind,
-        name: Name,
+        path: Path,
     },
 }
 
@@ -375,13 +375,13 @@ pub(crate) fn any_diag_from_infer_diagnostic(
             expression,
             expected,
             actual,
-            name,
+            path,
         } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
             AnyDiagnostic::ExpectedLoweredKind {
                 expression: source,
-                name: name.clone(),
+                path: path.clone(),
                 expected: *expected,
                 actual: *actual,
             }

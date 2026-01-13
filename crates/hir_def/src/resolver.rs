@@ -1,3 +1,5 @@
+use std::ops::ControlFlow;
+
 use triomphe::Arc;
 
 use crate::{
@@ -7,6 +9,7 @@ use crate::{
         scope::{ExprScopes, ScopeId},
     },
     database::{FunctionId, Location},
+    expression_store::path::Path,
     item_tree::{
         Function, GlobalConstant, GlobalVariable, ItemTree, ModuleItem, Name, Override, Struct,
         TypeAlias,
@@ -152,6 +155,18 @@ impl Resolver {
                             ScopeDef::ModuleItem(scope.file_id, *item),
                         ),
                         ModuleItem::GlobalAssertStatement(_) => {},
+                        ModuleItem::ImportStatement(id) => {
+                            // The leaves of the tree are in scope
+                            scope.module_info.get(*id).expand::<()>(|flat_import| {
+                                if let Some(name) = flat_import.leaf_name() {
+                                    function(
+                                        name.clone(),
+                                        ScopeDef::ModuleItem(scope.file_id, *item),
+                                    )
+                                }
+                                std::ops::ControlFlow::Continue(())
+                            });
+                        },
                     });
             },
             Scope::Expression(expression_scope) => {
@@ -165,20 +180,38 @@ impl Resolver {
                         });
                     });
             },
-            Scope::Builtin => {},
+            Scope::Builtin => {
+                // TODO: Match against "name.as_str()" and then point at a "builtin" file
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
+            },
         });
     }
 
     #[must_use]
     pub fn resolve(
         &self,
-        name: &Name,
+        path: &Path,
     ) -> Option<ResolveKind> {
+        let mod_path = path.mod_path();
+        let leaf_name = match mod_path.kind {
+            crate::mod_path::PathKind::Plain => {
+                if let Some(name) = mod_path.as_ident() {
+                    name
+                } else {
+                    todo!("imports from other files are unsupported")
+                }
+            },
+            crate::mod_path::PathKind::Super(_) => {
+                todo!("imports from other files are unsupported")
+            },
+            crate::mod_path::PathKind::Package => todo!("imports from other files are unsupported"),
+        };
+
         self.scopes().find_map(|scope| match scope {
             Scope::Expression(scope) => {
                 let entry = scope
                     .expression_scopes
-                    .resolve_name_in_scope(scope.scope_id, name)?;
+                    .resolve_name_in_scope(scope.scope_id, leaf_name)?;
                 Some(ResolveKind::Local(entry.binding))
             },
             Scope::Module(scope) => scope
@@ -188,35 +221,48 @@ impl Resolver {
                 .find_map(|item| match item {
                     ModuleItem::Struct(id) => {
                         let r#struct = scope.module_info.get(*id);
-                        (&r#struct.name == name)
+                        (&r#struct.name == leaf_name)
                             .then(|| ResolveKind::Struct(InFile::new(scope.file_id, *id)))
                     },
                     ModuleItem::TypeAlias(id) => {
                         let type_alias = scope.module_info.get(*id);
-                        (&type_alias.name == name)
+                        (&type_alias.name == leaf_name)
                             .then(|| ResolveKind::TypeAlias(InFile::new(scope.file_id, *id)))
                     },
                     ModuleItem::GlobalVariable(id) => {
                         let variable = scope.module_info.get(*id);
-                        (&variable.name == name)
+                        (&variable.name == leaf_name)
                             .then(|| ResolveKind::GlobalVariable(Location::new(scope.file_id, *id)))
                     },
                     ModuleItem::GlobalConstant(id) => {
                         let constant = scope.module_info.get(*id);
-                        (&constant.name == name)
+                        (&constant.name == leaf_name)
                             .then(|| ResolveKind::GlobalConstant(Location::new(scope.file_id, *id)))
                     },
                     ModuleItem::Override(id) => {
                         let r#override = scope.module_info.get(*id);
-                        (&r#override.name == name)
+                        (&r#override.name == leaf_name)
                             .then(|| ResolveKind::Override(Location::new(scope.file_id, *id)))
                     },
                     ModuleItem::Function(id) => {
                         let function = scope.module_info.get(*id);
-                        (&function.name == name)
+                        (&function.name == leaf_name)
                             .then(|| ResolveKind::Function(InFile::new(scope.file_id, *id)))
                     },
                     ModuleItem::GlobalAssertStatement(_) => None,
+                    ModuleItem::ImportStatement(id) => scope
+                        .module_info
+                        .get(*id)
+                        .expand::<ResolveKind>(|flat_import| {
+                            if flat_import.leaf_name() == Some(leaf_name) {
+                                ControlFlow::Break(ResolveKind::Function(InFile::new(
+                                    scope.file_id,
+                                    *id,
+                                )))
+                            } else {
+                                ControlFlow::Continue(())
+                            }
+                        }),
                 }),
             Scope::Builtin => {
                 // TODO: Match against "name.as_str()" and then point at a "builtin" file
