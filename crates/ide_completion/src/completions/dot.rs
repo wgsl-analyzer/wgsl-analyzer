@@ -163,13 +163,23 @@ mod tests {
 
     #[test]
     fn is_swizzleable_valid() {
+        assert!(is_swizzleable(""));
         assert!(is_swizzleable("r"));
+        assert!(is_swizzleable("g"));
+        assert!(is_swizzleable("b"));
+        assert!(is_swizzleable("a"));
+        assert!(is_swizzleable("x"));
+        assert!(is_swizzleable("y"));
+        assert!(is_swizzleable("z"));
+        assert!(is_swizzleable("w"));
         assert!(is_swizzleable("rgba"));
+        assert!(is_swizzleable("xyzw"));
         assert!(is_swizzleable("yxx"));
     }
 
     #[test]
     fn is_swizzleable_invalid() {
+        assert!(!is_swizzleable("rgx"));
         assert!(!is_swizzleable("rgbaa"));
         assert!(!is_swizzleable("rgbab"));
         assert!(!is_swizzleable("rxgba"));
