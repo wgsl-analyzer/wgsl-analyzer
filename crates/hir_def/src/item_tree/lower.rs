@@ -9,7 +9,10 @@ use crate::{
     HirFileId,
     ast_id::AstIdMap,
     database::DefDatabase,
-    item_tree::{self, Function, ImportStatement, ImportTree, ItemTree, ModuleItem, ModuleItemId},
+    item_tree::{
+        self, Function, GlobalAssertStatement, ImportStatement, ImportTree, ItemTree, ModuleItem,
+        ModuleItemId,
+    },
     mod_path::{ModPath, PathKind},
 };
 
@@ -69,6 +72,9 @@ impl<'database> Ctx<'database> {
             Item::TypeAliasDeclaration(type_alias) => {
                 ModuleItem::TypeAlias(self.lower_type_alias(&type_alias)?)
             },
+            Item::AssertStatement(assert_statement) => ModuleItem::GlobalAssertStatement(
+                self.lower_global_assert_statement(&assert_statement)?,
+            ),
         };
         self.items.push(item);
         Some(())
@@ -178,5 +184,23 @@ impl<'database> Ctx<'database> {
         let ast_id = self.source_ast_id_map.ast_id(function);
         let function = Function { name, ast_id };
         Some(self.tree.functions.alloc(function).into())
+    }
+
+    #[expect(
+        clippy::unnecessary_wraps,
+        reason = "Maintain uniformity with the other lower_* functions"
+    )]
+    fn lower_global_assert_statement(
+        &mut self,
+        assert_statement: &syntax::ast::AssertStatement,
+    ) -> Option<ModuleItemId<GlobalAssertStatement>> {
+        let ast_id = self.source_ast_id_map.ast_id(assert_statement);
+        let assert_statement = GlobalAssertStatement { ast_id };
+        Some(
+            self.tree
+                .global_assert_statements
+                .alloc(assert_statement)
+                .into(),
+        )
     }
 }

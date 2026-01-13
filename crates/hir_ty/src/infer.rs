@@ -77,6 +77,16 @@ pub fn infer_query(
             let return_type = context.collect_override(&data, &body);
             context.infer_body(&body, return_type, AbstractHandling::Concretize);
         },
+        DefinitionWithBodyId::GlobalAssertStatement(_global_assert_statement) => {
+            let expression = body.root.and_then(Either::right);
+
+            if let Some(expression) = expression {
+                let expected_type = &TypeExpectation::from_type(
+                    database.intern_type(TypeKind::Scalar(ScalarType::Bool)),
+                );
+                context.infer_expression_expect(expression, expected_type, &body.store);
+            }
+        },
     }
 
     Arc::new(context.resolve_all())
@@ -179,6 +189,13 @@ fn get_name_and_range(
         ),
         ModuleDefinitionId::TypeAlias(id) => (
             database.type_alias_data(id).0.name.clone(),
+            id.lookup(database)
+                .source(database)
+                .original_file_range(database)
+                .range,
+        ),
+        ModuleDefinitionId::GlobalAssertStatement(id) => (
+            Name::from("const_assert"),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)

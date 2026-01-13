@@ -9,12 +9,12 @@ publish = false
 # Avoid adding more dependencies to this crate
 [dependencies]
 anyhow.workspace = true
-flate2 = "1.1.5"
+flate2 = "1.1.8"
 time = { version = "0.3.44", default-features = false }
 write-json = "0.1.4"
 xflags = "0.3.2"
 xshell = "0.2.7"
-zip = { version = "6.0.0", default-features = false, features = [
+zip = { version = "7.0.0", default-features = false, features = [
 	"deflate",
 	"time",
 ] }

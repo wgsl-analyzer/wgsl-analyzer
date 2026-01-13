@@ -159,24 +159,31 @@ fn swizzler(
 
 #[cfg(test)]
 mod tests {
-    use proptest::prelude::*;
-
     use super::*;
 
-    fn valid_swizzle_string() -> impl Strategy<Value = String> {
-        prop_oneof![
-            prop::collection::vec(prop::sample::select(vec!['r', 'g', 'b', 'a']), 0..=4)
-                .prop_map(|character| character.into_iter().collect()),
-            prop::collection::vec(prop::sample::select(vec!['x', 'y', 'z', 'w']), 0..=4)
-                .prop_map(|character| character.into_iter().collect()),
-        ]
+    #[test]
+    fn is_swizzleable_valid() {
+        assert!(is_swizzleable(""));
+        assert!(is_swizzleable("r"));
+        assert!(is_swizzleable("g"));
+        assert!(is_swizzleable("b"));
+        assert!(is_swizzleable("a"));
+        assert!(is_swizzleable("x"));
+        assert!(is_swizzleable("y"));
+        assert!(is_swizzleable("z"));
+        assert!(is_swizzleable("w"));
+        assert!(is_swizzleable("rgba"));
+        assert!(is_swizzleable("xyzw"));
+        assert!(is_swizzleable("yxx"));
     }
 
-    proptest! {
-        #[test]
-        fn accepts_valid_swizzles(swizzle in valid_swizzle_string()) {
-            prop_assert!(is_swizzleable(&swizzle), "Expected '{swizzle}' to be valid");
-        }
+    #[test]
+    fn is_swizzleable_invalid() {
+        assert!(!is_swizzleable("rgx"));
+        assert!(!is_swizzleable("rgbaa"));
+        assert!(!is_swizzleable("rgbab"));
+        assert!(!is_swizzleable("rxgba"));
+        assert!(!is_swizzleable("bx"));
     }
 
     #[test]

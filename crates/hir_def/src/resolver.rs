@@ -151,6 +151,7 @@ impl Resolver {
                             scope.module_info.get(*id).name.clone(),
                             ScopeDef::ModuleItem(scope.file_id, *item),
                         ),
+                        ModuleItem::GlobalAssertStatement(_) => {},
                     });
             },
             Scope::Expression(expression_scope) => {
@@ -215,6 +216,7 @@ impl Resolver {
                         (&function.name == name)
                             .then(|| ResolveKind::Function(InFile::new(scope.file_id, *id)))
                     },
+                    ModuleItem::GlobalAssertStatement(_) => None,
                 }),
             Scope::Builtin => {
                 // TODO: Match against "name.as_str()" and then point at a "builtin" file

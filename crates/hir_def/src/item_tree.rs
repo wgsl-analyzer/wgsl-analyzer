@@ -171,6 +171,11 @@ pub struct TypeAlias {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
+pub struct GlobalAssertStatement {
+    pub ast_id: FileAstId<ast::AssertStatement>,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Struct {
     pub name: Name,
     pub ast_id: FileAstId<ast::StructDeclaration>,
@@ -186,6 +191,7 @@ pub struct ItemTree {
     overrides: Arena<Override>,
     type_aliases: Arena<TypeAlias>,
     structs: Arena<Struct>,
+    global_assert_statements: Arena<GlobalAssertStatement>,
 }
 
 impl ItemTree {
@@ -214,6 +220,7 @@ impl ItemTree {
             | ModuleItem::GlobalVariable(_)
             | ModuleItem::GlobalConstant(_)
             | ModuleItem::Override(_)
+            | ModuleItem::GlobalAssertStatement(_)
             | ModuleItem::TypeAlias(_) => None,
         })
     }
@@ -339,6 +346,7 @@ mod_items! {
     GlobalConstant in global_constants -> ast::ConstantDeclaration,
     Override in overrides -> ast::OverrideDeclaration,
     TypeAlias in type_aliases -> ast::TypeAliasDeclaration,
+    GlobalAssertStatement in global_assert_statements -> ast::AssertStatement,
 }
 
 pub fn find_item<M: ItemTreeNode>(

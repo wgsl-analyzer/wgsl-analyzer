@@ -13,8 +13,8 @@ use crate::{
     item_tree::Name,
     mod_path::ModPath,
     signature::{
-        ConstantSignature, FieldData, FunctionSignature, OverrideSignature, ParamData,
-        StructSignature, TypeAliasSignature, VariableSignature,
+        ConstantSignature, FieldData, FunctionSignature, GlobalAssertStatementSignature,
+        OverrideSignature, ParamData, StructSignature, TypeAliasSignature, VariableSignature,
     },
     type_specifier::{IdentExpression, TypeSpecifier, TypeSpecifierId},
 };
@@ -371,6 +371,20 @@ pub(crate) fn lower_constant(
     };
     (specifier, source_map)
 }
+
+pub(crate) fn lower_global_assert_statement(
+    database: &dyn DefDatabase,
+    _global_assert_statement: &InFile<ast::AssertStatement>,
+) -> (GlobalAssertStatementSignature, ExpressionSourceMap) {
+    let collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
+
+    let (store, source_map) = collector.finish();
+    let specifier = GlobalAssertStatementSignature {
+        store: Arc::new(store),
+    };
+    (specifier, source_map)
+}
+
 pub(crate) fn lower_override(
     database: &dyn DefDatabase,
     global_override: &InFile<ast::OverrideDeclaration>,

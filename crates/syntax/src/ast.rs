@@ -376,6 +376,7 @@ ast_enum! {
         OverrideDeclaration,
         TypeAliasDeclaration,
         StructDeclaration,
+        AssertStatement,
     }
 }
 
