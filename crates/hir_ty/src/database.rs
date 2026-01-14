@@ -161,6 +161,7 @@ fn function_type(
         .collect();
 
     FunctionDetails {
+        name: data.name.clone(),
         return_type,
         parameters,
     }

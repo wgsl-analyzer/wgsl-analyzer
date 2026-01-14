@@ -1640,6 +1640,14 @@ impl<'database> InferenceContext<'database> {
         mut template_parameters: TemplateParameters,
         arguments: &[Type],
     ) -> Type {
+        let Some(name) = callee.path.mod_path().as_ident() else {
+            self.push_diagnostic(InferenceDiagnostic::WgslError {
+                expression,
+                message: format!("invalid builtin {}", callee.path.mod_path()),
+            });
+            return self.error_type();
+        };
+
         let mut converter = WgslTypeConverter::new(self.database);
         let mut template_args = vec![];
         while let Some((template_parameter, _)) = template_parameters.next() {
@@ -1674,7 +1682,7 @@ impl<'database> InferenceContext<'database> {
         };
 
         let return_type = wgsl_types::builtin::type_builtin_fn(
-            callee.path.as_str(),
+            name.as_str(),
             template_args,
             &converted_arguments,
         );
@@ -2120,6 +2128,7 @@ pub struct TypeLoweringError {
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeLoweringErrorKind {
     UnresolvedName(Name),
+    UnresolvedPath(Path),
     UnexpectedTemplateArgument(String),
     MissingTemplateArgument(String),
     MissingTemplate,
@@ -2128,7 +2137,7 @@ pub enum TypeLoweringErrorKind {
         actual: usize,
     },
     // A value was provided where a type was expected.
-    ExpectedType(Name),
+    ExpectedType(Path),
     // A function was provided but not called.
     ExpectedFunctionToBeCalled(Path),
     // TODO: Change this to a strongly typed wgsl_types::Error
@@ -2148,6 +2157,9 @@ impl fmt::Display for TypeLoweringErrorKind {
         match self {
             Self::UnresolvedName(name) => {
                 write!(formatter, "`{}` not found in scope", name.as_str())
+            },
+            Self::UnresolvedPath(path) => {
+                write!(formatter, "`{}` not found in scope", path.mod_path())
             },
             Self::WgslError(error) => {
                 write!(formatter, "{error}")
@@ -2181,8 +2193,8 @@ impl fmt::Display for TypeLoweringErrorKind {
                     expected.end()
                 )
             },
-            Self::ExpectedType(name) => {
-                write!(formatter, "{} is not a type", name.as_str())
+            Self::ExpectedType(path) => {
+                write!(formatter, "{} is not a type", path.mod_path())
             },
             Self::ExpectedFunctionToBeCalled(path) => {
                 write!(

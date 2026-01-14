@@ -198,11 +198,13 @@ impl Resolver {
                 if let Some(name) = mod_path.as_ident() {
                     name
                 } else {
-                    todo!("imports from other files are unsupported")
+                    // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
+                    return None;
                 }
             },
             crate::mod_path::PathKind::Super(_) => {
-                todo!("imports from other files are unsupported")
+                // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
+                return None;
             },
             crate::mod_path::PathKind::Package => todo!("imports from other files are unsupported"),
         };
@@ -250,19 +252,21 @@ impl Resolver {
                             .then(|| ResolveKind::Function(InFile::new(scope.file_id, *id)))
                     },
                     ModuleItem::GlobalAssertStatement(_) => None,
-                    ModuleItem::ImportStatement(id) => scope
-                        .module_info
-                        .get(*id)
-                        .expand::<ResolveKind>(|flat_import| {
-                            if flat_import.leaf_name() == Some(leaf_name) {
-                                ControlFlow::Break(ResolveKind::Function(InFile::new(
-                                    scope.file_id,
-                                    *id,
-                                )))
-                            } else {
-                                ControlFlow::Continue(())
-                            }
-                        }),
+                    ModuleItem::ImportStatement(_id) => None,
+                    // TODO: Support import statements https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
+                    /*scope
+                    .module_info
+                    .get(*id)
+                    .expand::<ResolveKind>(|flat_import| {
+                        if flat_import.leaf_name() == Some(leaf_name) {
+                            ControlFlow::Break(ResolveKind::Function(InFile::new(
+                                scope.file_id,
+                                *id,
+                            )))
+                        } else {
+                            ControlFlow::Continue(())
+                        }
+                    }),*/
                 }),
             Scope::Builtin => {
                 // TODO: Match against "name.as_str()" and then point at a "builtin" file

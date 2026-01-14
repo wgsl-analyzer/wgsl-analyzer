@@ -1,4 +1,7 @@
-use hir_def::{HirFileId, item_tree::Name, mod_path::ModPath, resolver::ResolveKind};
+use hir_def::{
+    HirFileId, expression_store::path::Path, item_tree::Name, mod_path::ModPath,
+    resolver::ResolveKind,
+};
 use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast};
 
 use crate::{Field, Local, ModuleDef, Semantics, Struct, TypeAlias};
@@ -51,7 +54,7 @@ fn resolve_path(
     let parent = path.syntax().parent()?;
 
     if let Some(expression) = ast::IdentExpression::cast(parent.clone()) {
-        let name = ModPath::from_src(path);
+        let path = Path(ModPath::from_src(path));
         let definition = semantics.find_container(file_id, expression.syntax())?;
         let expression_node =
             if let Some(function_call) = ast::FunctionCall::cast(expression.syntax().parent()?) {
@@ -60,7 +63,7 @@ fn resolve_path(
                 ast::Expression::cast(expression.syntax().clone())?
             };
         let definition =
-            semantics.resolve_path_in_container(definition, &expression_node, &name.into())?;
+            semantics.resolve_path_in_container(definition, &expression_node, &path)?;
 
         Some(definition)
     } else if let Some(expression) = ast::FieldExpression::cast(parent.clone()) {
@@ -68,7 +71,7 @@ fn resolve_path(
     } else if let Some(r#type) = ast::TypeSpecifier::cast(parent) {
         let resolver = semantics.resolver(file_id, r#type.syntax());
 
-        match resolver.resolve(&r#type.path()?.into())? {
+        match resolver.resolve(&Path(ModPath::from_src(r#type.path()?)))? {
             ResolveKind::Struct(location) => {
                 let id = semantics.database.intern_struct(location);
                 Some(Definition::ModuleDef(ModuleDef::Struct(Struct { id })))

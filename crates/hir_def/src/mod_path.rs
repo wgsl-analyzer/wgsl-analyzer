@@ -120,25 +120,6 @@ impl ModPath {
             _ => None,
         }
     }
-    pub fn display_verbatim<'a>(
-        &'a self,
-        database: &'a dyn DefDatabase,
-    ) -> impl fmt::Display + 'a {
-        Display {
-            database,
-            path: self,
-        }
-    }
-
-    pub fn display<'a>(
-        &'a self,
-        database: &'a dyn DefDatabase,
-    ) -> impl fmt::Display + 'a {
-        Display {
-            database,
-            path: self,
-        }
-    }
 }
 
 impl Extend<Name> for ModPath {
@@ -150,17 +131,12 @@ impl Extend<Name> for ModPath {
     }
 }
 
-struct Display<'a> {
-    database: &'a dyn DefDatabase,
-    path: &'a ModPath,
-}
-
-impl fmt::Display for Display<'_> {
+impl fmt::Display for ModPath {
     fn fmt(
         &self,
         f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        display_fmt_path(self.path, f)
+        display_fmt_path(self, f)
     }
 }
 

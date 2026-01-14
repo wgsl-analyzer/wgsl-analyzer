@@ -337,7 +337,7 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::AssertStatement>,
     ) -> Option<GlobalAssertStatementId> {
-        let item = module_data::find_item(self.database, source.file_id, &source.value)?;
+        let item = item_tree::find_item(self.database, source.file_id, &source.value)?;
         let id = self
             .database
             .intern_global_assert_statement(Location::new(source.file_id, item));
@@ -462,6 +462,7 @@ fn module_item_to_def(
             let id = database.intern_global_assert_statement(location);
             ModuleDef::GlobalAssertStatement(GlobalAssertStatement { id })
         },
+        ModuleItem::ImportStatement(_) => return smallvec::SmallVec::new(),
     };
     smallvec::smallvec![definition]
 }

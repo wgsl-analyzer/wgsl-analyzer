@@ -2,7 +2,7 @@ use base_db::{SourceDatabase, TextRange};
 use ide_db::RootDatabase;
 use line_index::{LineCol, LineIndex};
 use rowan::{NodeOrToken, TextSize, WalkEvent};
-use stdx::format_to;
+use std::fmt::Write as _;
 use syntax::ast;
 use syntax::{SyntaxNode, SyntaxToken};
 use triomphe::Arc;
@@ -75,7 +75,7 @@ fn syntax_node_to_json(
 
                 match it {
                     NodeOrToken::Node(_) => {
-                        format_to!(
+                        _ = write!(
                             result,
                             r#"{{"type":"Node","kind":"{kind:?}","start":{start},"end":{end}{inner_range_str},"children":["#
                         );
@@ -86,10 +86,10 @@ fn syntax_node_to_json(
                         } else {
                             ""
                         };
-                        format_to!(
+                        _ = write!(
                             result,
                             r#"{{"type":"Token","kind":"{kind:?}","start":{start},"end":{end}{inner_range_str}}}{comma}"#
-                        )
+                        );
                     },
                 }
             },
@@ -100,7 +100,7 @@ fn syntax_node_to_json(
                     } else {
                         ""
                     };
-                    format_to!(result, "]}}{comma}")
+                    _ = write!(result, "]}}{comma}");
                 },
                 NodeOrToken::Token(_) => (),
             },

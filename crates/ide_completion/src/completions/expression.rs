@@ -40,6 +40,11 @@ pub(crate) fn complete_names_in_scope(
             },
             ScopeDef::ModuleItem(_, ModuleItem::Struct(_)) => CompletionItemKind::Struct,
             ScopeDef::ModuleItem(_, ModuleItem::TypeAlias(_)) => CompletionItemKind::TypeAlias,
+            ScopeDef::ModuleItem(_, ModuleItem::ImportStatement(_)) => {
+                // TODO: Resolve the import statement, and then set the CompletionItemKind from there
+                // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
+                return;
+            },
             ScopeDef::ModuleItem(_, ModuleItem::GlobalAssertStatement(_)) => {
                 return;
             },
@@ -175,6 +180,10 @@ fn render_detail(
             // const_asserts don't have a name or binding, and will probably never be autocompleted - or will their
             // details have to be rendered. We implement this anyways to achieve consistency.
             String::from("const_assert ...")
+        },
+        ModuleItem::ImportStatement(_) => {
+            // TODO: Support import statements somehow https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
+            String::new()
         },
     }
 }

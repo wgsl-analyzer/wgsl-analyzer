@@ -205,7 +205,9 @@ fn module_definitions(
                         db.intern_global_assert_statement(loc),
                     )
                 },
-                ModuleItem::TypeAlias(_) | ModuleItem::Struct(_) => return None,
+                ModuleItem::TypeAlias(_)
+                | ModuleItem::Struct(_)
+                | ModuleItem::ImportStatement(_) => return None,
             })
         })
         .collect()

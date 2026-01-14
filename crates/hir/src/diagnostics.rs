@@ -5,7 +5,7 @@ use base_db::{FileRange, TextRange};
 use hir_def::{
     HirFileId, InFile,
     expression::BinaryOperation,
-    expression_store::{ExpressionSourceMap, ExpressionStoreSource},
+    expression_store::{ExpressionSourceMap, ExpressionStoreSource, path::Path},
     item_tree::Name,
 };
 use hir_ty::{

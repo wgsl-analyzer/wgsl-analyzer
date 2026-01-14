@@ -509,6 +509,7 @@ impl Builtin {{
             BuiltinOverload {{
                 generics: vec![{generics}],
                 r#type: FunctionDetails {{
+                    name: name.clone(),
                     return_type: {return_type},
                     parameters: vec![",
             return_type = overload.return_type.as_ref().map_or_else(
