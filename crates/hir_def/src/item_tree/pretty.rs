@@ -62,7 +62,9 @@ fn write_pretty_module_item(
             print_ast_id(buffer, type_alias.ast_id);
             _ = write!(buffer, "alias {} = _;", &type_alias.name.0);
         },
-        ModuleItem::GlobalAssertStatement(_) => {
+        ModuleItem::GlobalAssertStatement(id) => {
+            let const_assert = &module[id.index];
+            print_ast_id(buffer, const_assert.ast_id);
             _ = write!(buffer, "const_assert _;");
         },
     }

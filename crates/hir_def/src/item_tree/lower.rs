@@ -45,6 +45,7 @@ impl<'database> Ctx<'database> {
         source_file.items().for_each(|item| {
             self.lower_item(item);
         });
+        self.tree.top_level = self.items;
         self.tree
     }
 
