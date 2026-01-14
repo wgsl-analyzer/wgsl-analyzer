@@ -88,8 +88,9 @@ pub struct FlatImport {
 }
 
 impl FlatImport {
+    #[must_use]
     pub fn leaf_name(&self) -> Option<&Name> {
-        self.alias.as_ref().or(self.path.segments().last())
+        self.alias.as_ref().or_else(|| self.path.segments().last())
     }
 }
 
@@ -97,7 +98,7 @@ impl FlatImport {
 pub enum ImportTree {
     Path {
         name: Name,
-        item: Box<ImportTree>,
+        item: Box<Self>,
     },
     /// ```ignore
     /// foo as bar
@@ -110,7 +111,7 @@ pub enum ImportTree {
     /// {Foo, Bar, Baz};
     /// ```
     Collection {
-        list: Vec<ImportTree>,
+        list: Vec<Self>,
     },
 }
 
@@ -121,11 +122,11 @@ impl ImportTree {
         callback: &mut impl FnMut(FlatImport) -> ControlFlow<T>,
     ) -> Option<T> {
         match self {
-            ImportTree::Path { name, item } => {
+            Self::Path { name, item } => {
                 prefix.push_segment(name.clone());
                 item.expand_impl(prefix, callback)
             },
-            ImportTree::Item { name, alias } => {
+            Self::Item { name, alias } => {
                 prefix.push_segment(name.clone());
                 callback(FlatImport {
                     path: prefix,
@@ -133,7 +134,7 @@ impl ImportTree {
                 })
                 .break_value()
             },
-            ImportTree::Collection { list } => {
+            Self::Collection { list } => {
                 for tree in list {
                     if let Some(value) = tree.expand_impl(prefix.clone(), callback) {
                         return Some(value);
@@ -240,7 +241,7 @@ impl ItemTree {
         &self,
         id: ModuleItemId<M>,
     ) -> &M {
-        M::lookup(&self, id.index)
+        M::lookup(self, id.index)
     }
 }
 

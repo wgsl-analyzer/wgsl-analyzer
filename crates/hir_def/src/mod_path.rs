@@ -27,41 +27,45 @@ pub enum PathKind {
 }
 
 impl PathKind {
-    pub const SELF: PathKind = PathKind::Super(0);
-    pub fn from_src(relative: Option<ast::ImportRelative>) -> PathKind {
+    pub const SELF: Self = Self::Super(0);
+    #[must_use]
+    pub fn from_src(relative: Option<ast::ImportRelative>) -> Self {
         match relative {
-            Some(ImportRelative::ImportPackageRelative(_)) => PathKind::Package,
+            Some(ImportRelative::ImportPackageRelative(_)) => Self::Package,
             Some(ImportRelative::ImportSuperRelative(import_super)) => {
-                PathKind::Super(import_super.super_count())
+                Self::Super(import_super.super_count())
             },
-            None => PathKind::Plain,
+            None => Self::Plain,
         }
     }
 }
 
 impl ModPath {
     /// The WESL grammar guarantees that only valid paths can be in the syntax tree.
-    pub fn from_src(path: ast::Path) -> ModPath {
-        convert_path(path)
+    #[must_use]
+    pub fn from_src(path: ast::Path) -> Self {
+        convert_path(&path)
     }
 
-    pub fn from_segments(
+    pub fn from_segments<Segments: IntoIterator<Item = Name>>(
         kind: PathKind,
-        segments: impl IntoIterator<Item = Name>,
-    ) -> ModPath {
+        segments: Segments,
+    ) -> Self {
         let mut segments: SmallVec<_> = segments.into_iter().collect();
         segments.shrink_to_fit();
-        ModPath { kind, segments }
+        Self { kind, segments }
     }
 
     /// Creates a `ModPath` from a `PathKind`, with no extra path segments.
-    pub const fn from_kind(kind: PathKind) -> ModPath {
-        ModPath {
+    #[must_use]
+    pub const fn from_kind(kind: PathKind) -> Self {
+        Self {
             kind,
             segments: SmallVec::new_const(),
         }
     }
 
+    #[must_use]
     pub fn segments(&self) -> &[Name] {
         &self.segments
     }
@@ -79,20 +83,25 @@ impl ModPath {
 
     /// Returns the number of segments in the path (counting special segments like `$crate` and
     /// `super`).
+    #[must_use]
     pub fn len(&self) -> usize {
         self.segments.len()
             + match self.kind {
                 PathKind::Plain => 0,
-                PathKind::Super(i) => i as usize,
+                PathKind::Super(i) => usize::from(i),
                 PathKind::Package => 1,
             }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     pub fn textual_len(&self) -> usize {
         let base = match self.kind {
             PathKind::Plain => 0,
             PathKind::SELF => "self".len(),
-            PathKind::Super(i) => "super".len() * i as usize,
+            PathKind::Super(levels) => "super".len() * usize::from(levels),
             PathKind::Package => "crate".len(),
         };
         self.segments()
@@ -101,15 +110,18 @@ impl ModPath {
             .fold(base, core::ops::Add::add)
     }
 
+    #[must_use]
     pub fn is_ident(&self) -> bool {
         self.as_ident().is_some()
     }
 
+    #[must_use]
     pub fn is_self(&self) -> bool {
         self.kind == PathKind::SELF && self.segments.is_empty()
     }
 
     /// If this path is a single identifier, like `foo`, return its name.
+    #[must_use]
     pub fn as_ident(&self) -> Option<&Name> {
         if self.kind != PathKind::Plain {
             return None;
@@ -141,29 +153,29 @@ impl fmt::Display for ModPath {
 }
 
 impl From<Name> for ModPath {
-    fn from(name: Name) -> ModPath {
-        ModPath::from_segments(PathKind::Plain, iter::once(name))
+    fn from(name: Name) -> Self {
+        Self::from_segments(PathKind::Plain, iter::once(name))
     }
 }
 
 fn display_fmt_path(
     path: &ModPath,
-    f: &mut fmt::Formatter<'_>,
+    fmt: &mut fmt::Formatter<'_>,
 ) -> fmt::Result {
     let mut first_segment = true;
-    let mut add_segment = |s| -> fmt::Result {
+    let mut add_segment = |segment| -> fmt::Result {
         if !first_segment {
-            f.write_str("::")?;
+            fmt.write_str("::")?;
         }
         first_segment = false;
-        f.write_str(s)?;
+        fmt.write_str(segment)?;
         Ok(())
     };
     match path.kind {
         PathKind::Plain => {},
         PathKind::SELF => add_segment("self")?,
-        PathKind::Super(n) => {
-            for _ in 0..n {
+        PathKind::Super(levels) => {
+            for _ in 0..levels {
                 add_segment("super")?;
             }
         },
@@ -171,21 +183,20 @@ fn display_fmt_path(
     }
     for segment in &path.segments {
         if !first_segment {
-            f.write_str("::")?;
+            fmt.write_str("::")?;
         }
         first_segment = false;
-        fmt::Display::fmt(segment.as_str(), f)?;
+        fmt::Display::fmt(segment.as_str(), fmt)?;
     }
     Ok(())
 }
 
-fn convert_path(path: ast::Path) -> ModPath {
+fn convert_path(path: &ast::Path) -> ModPath {
     let kind = PathKind::from_src(path.relative());
 
     let mut segments: SmallVec<_> = path
         .segments()
         .map(|segment| Name::from(segment.text()))
-        .into_iter()
         .collect();
     segments.shrink_to_fit();
     ModPath { kind, segments }

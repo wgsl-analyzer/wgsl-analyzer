@@ -162,7 +162,7 @@ impl Resolver {
                                     function(
                                         name.clone(),
                                         ScopeDef::ModuleItem(scope.file_id, *item),
-                                    )
+                                    );
                                 }
                                 std::ops::ControlFlow::Continue(())
                             });
@@ -195,18 +195,13 @@ impl Resolver {
         let mod_path = path.mod_path();
         let leaf_name = match mod_path.kind {
             crate::mod_path::PathKind::Plain => {
-                if let Some(name) = mod_path.as_ident() {
-                    name
-                } else {
-                    // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
-                    return None;
-                }
+                mod_path.as_ident()?
+                // TODO: If the option fails, then we have to import it https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
             },
-            crate::mod_path::PathKind::Super(_) => {
+            crate::mod_path::PathKind::Super(_) | crate::mod_path::PathKind::Package => {
                 // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
                 return None;
             },
-            crate::mod_path::PathKind::Package => todo!("imports from other files are unsupported"),
         };
 
         self.scopes().find_map(|scope| match scope {

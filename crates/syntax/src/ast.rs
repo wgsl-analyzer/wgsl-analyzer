@@ -237,6 +237,7 @@ impl ImportSuperRelative {
     ///
     /// # Panics
     /// If there is a chain of more than 255 `super::`s
+    #[must_use]
     pub fn super_count(&self) -> u8 {
         u8::try_from(
             self.syntax
@@ -472,7 +473,6 @@ ast_node! {
 }
 impl Path {
     /// Returns a list of identifiers
-    #[must_use]
     pub fn segments(&self) -> impl Iterator<Item = SyntaxToken> {
         self.syntax()
             .children_with_tokens()

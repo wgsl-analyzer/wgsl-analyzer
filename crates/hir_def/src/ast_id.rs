@@ -102,9 +102,9 @@ impl<N: AstNode> Eq for FileAstId<N> {}
 impl<N: AstNode> std::hash::Hash for FileAstId<N> {
     fn hash<H: std::hash::Hasher>(
         &self,
-        hasher: &mut H,
+        state: &mut H,
     ) {
-        self.id.hash(hasher);
+        self.id.hash(state);
     }
 }
 

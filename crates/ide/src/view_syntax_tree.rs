@@ -1,4 +1,4 @@
-use base_db::{SourceDatabase, TextRange};
+use base_db::{SourceDatabase as _, TextRange};
 use ide_db::RootDatabase;
 use line_index::{LineCol, LineIndex};
 use rowan::{NodeOrToken, TextSize, WalkEvent};
@@ -37,15 +37,17 @@ fn syntax_node_to_json(
     let mut result = String::new();
     for event in node.preorder_with_tokens() {
         match event {
-            WalkEvent::Enter(it) => {
-                let kind = it.kind();
+            WalkEvent::Enter(node_or_token) => {
+                let kind = node_or_token.kind();
                 let (text_range, inner_range_str) = match &ctx.in_string {
                     Some(in_string) => {
-                        let start_pos = TextPosition::new(&ctx.line_index, it.text_range().start());
-                        let end_pos = TextPosition::new(&ctx.line_index, it.text_range().end());
+                        let start_pos =
+                            TextPosition::new(&ctx.line_index, node_or_token.text_range().start());
+                        let end_pos =
+                            TextPosition::new(&ctx.line_index, node_or_token.text_range().end());
 
-                        let inner_start: u32 = it.text_range().start().into();
-                        let inner_end: u32 = it.text_range().start().into();
+                        let inner_start: u32 = node_or_token.text_range().start().into();
+                        let inner_end: u32 = node_or_token.text_range().start().into();
 
                         let mut true_start = inner_start + in_string.offset;
                         let mut true_end = inner_end + in_string.offset;
@@ -56,7 +58,7 @@ fn syntax_node_to_json(
 
                             // We conditionally add to true_start in case
                             // the marker is between the start and end.
-                            true_start += 2 * (*pos < inner_start) as u32;
+                            true_start += 2 * u32::from(*pos < inner_start);
                             true_end += 2;
                         }
 
@@ -67,13 +69,13 @@ fn syntax_node_to_json(
                             format!(r#","istart":{start_pos},"iend":{end_pos}"#,),
                         )
                     },
-                    None => (it.text_range(), "".to_owned()),
+                    None => (node_or_token.text_range(), String::new()),
                 };
 
                 let start = TextPosition::new(&ctx.line_index, text_range.start());
                 let end = TextPosition::new(&ctx.line_index, text_range.end());
 
-                match it {
+                match node_or_token {
                     NodeOrToken::Node(_) => {
                         _ = write!(
                             result,
@@ -93,7 +95,7 @@ fn syntax_node_to_json(
                     },
                 }
             },
-            WalkEvent::Leave(it) => match it {
+            WalkEvent::Leave(node_or_token) => match node_or_token {
                 NodeOrToken::Node(node) => {
                     let comma = if node.next_sibling_or_token().is_some() {
                         ","
@@ -113,7 +115,7 @@ fn syntax_node_to_json(
 struct TextPosition {
     offset: TextSize,
     line: u32,
-    col: u32,
+    column: u32,
 }
 
 impl std::fmt::Display for TextPosition {
@@ -121,7 +123,7 @@ impl std::fmt::Display for TextPosition {
         &self,
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
-        write!(f, "[{:?},{},{}]", self.offset, self.line, self.col)
+        write!(f, "[{:?},{},{}]", self.offset, self.line, self.column)
     }
 }
 
@@ -130,8 +132,12 @@ impl TextPosition {
         line_index: &LineIndex,
         offset: TextSize,
     ) -> Self {
-        let LineCol { line, col } = line_index.line_col(offset);
-        Self { offset, line, col }
+        let LineCol { line, col: column } = line_index.line_col(offset);
+        Self {
+            offset,
+            line,
+            column,
+        }
     }
 }
 

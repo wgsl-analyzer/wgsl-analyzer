@@ -58,7 +58,7 @@ pub trait SourceDatabase: FileLoader {
     fn file_type(
         &self,
         key: FileId,
-    ) -> WgslFileType;
+    ) -> Option<WgslFileType>;
 
     #[salsa::invoke(parse_query)]
     fn parse(
@@ -88,15 +88,18 @@ pub enum WgslFileType {
 fn file_type_query(
     database: &dyn SourceDatabase,
     file_id: FileId,
-) -> WgslFileType {
+) -> Option<WgslFileType> {
     if let Some((_, Some(extension))) = database.file_path(file_id).name_and_extension() {
-        if extension.to_ascii_lowercase() == "wesl" {
-            WgslFileType::Wesl
+        // TODO: Don't hardcode the extension names here?
+        if extension.eq_ignore_ascii_case("wesl") {
+            Some(WgslFileType::Wesl)
+        } else if extension.eq_ignore_ascii_case("wgsl") {
+            Some(WgslFileType::Wgsl)
         } else {
-            WgslFileType::Wgsl
+            None
         }
     } else {
-        WgslFileType::Wgsl
+        None
     }
 }
 

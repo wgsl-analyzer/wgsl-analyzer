@@ -414,7 +414,5 @@ where
 }
 
 fn as_path_opt(path: Option<ast::Path>) -> Path {
-    path.map(ModPath::from_src)
-        .map(Path)
-        .unwrap_or_else(Path::missing)
+    path.map(ModPath::from_src).map_or_else(Path::missing, Path)
 }
