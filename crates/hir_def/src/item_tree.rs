@@ -72,9 +72,9 @@ pub struct ImportStatement {
 
 impl ImportStatement {
     /// Expands the `UseTree` into individually imported `FlatImport`s.
-    pub fn expand<T>(
+    pub fn expand<T, Callback: FnMut(FlatImport) -> ControlFlow<T>>(
         &self,
-        mut callback: impl FnMut(FlatImport) -> ControlFlow<T>,
+        mut callback: Callback,
     ) -> Option<T> {
         self.tree
             .expand_impl(ModPath::from_kind(self.kind), &mut callback)

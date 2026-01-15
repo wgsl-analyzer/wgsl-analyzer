@@ -157,7 +157,7 @@ impl Resolver {
                         ModuleItem::GlobalAssertStatement(_) => {},
                         ModuleItem::ImportStatement(id) => {
                             // The leaves of the tree are in scope
-                            scope.module_info.get(*id).expand::<()>(|flat_import| {
+                            scope.module_info.get(*id).expand::<(), _>(|flat_import| {
                                 if let Some(name) = flat_import.leaf_name() {
                                     function(
                                         name.clone(),
