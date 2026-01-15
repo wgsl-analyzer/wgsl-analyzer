@@ -477,7 +477,9 @@ impl Path {
         self.syntax()
             .children_with_tokens()
             .filter_map(|node_or_token| match node_or_token {
-                rowan::NodeOrToken::Token(t) if t.kind() == SyntaxKind::Identifier => Some(t),
+                rowan::NodeOrToken::Token(token) if token.kind() == SyntaxKind::Identifier => {
+                    Some(token)
+                },
                 rowan::NodeOrToken::Node(_) | rowan::NodeOrToken::Token(_) => None,
             })
     }

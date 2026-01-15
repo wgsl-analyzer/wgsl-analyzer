@@ -193,7 +193,7 @@ impl Resolver {
         path: &Path,
     ) -> Option<ResolveKind> {
         let mod_path = path.mod_path();
-        let leaf_name = match mod_path.kind {
+        let leaf_name = match mod_path.kind() {
             crate::mod_path::PathKind::Plain => {
                 mod_path.as_ident()?
                 // TODO: If the option fails, then we have to import it https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632

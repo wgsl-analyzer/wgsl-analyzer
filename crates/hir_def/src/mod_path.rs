@@ -14,7 +14,7 @@ use syntax::{
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ModPath {
-    pub kind: PathKind,
+    kind: PathKind,
     segments: SmallVec<[Name; 1]>,
 }
 
@@ -66,6 +66,11 @@ impl ModPath {
     }
 
     #[must_use]
+    pub const fn kind(&self) -> PathKind {
+        self.kind
+    }
+
+    #[must_use]
     pub fn segments(&self) -> &[Name] {
         &self.segments
     }
@@ -88,11 +93,12 @@ impl ModPath {
         self.segments.len()
             + match self.kind {
                 PathKind::Plain => 0,
-                PathKind::Super(i) => usize::from(i),
+                PathKind::Super(levels) => usize::from(levels),
                 PathKind::Package => 1,
             }
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }

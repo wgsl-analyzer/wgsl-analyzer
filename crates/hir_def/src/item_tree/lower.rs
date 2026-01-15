@@ -86,7 +86,7 @@ impl<'database> Ctx<'database> {
         item: &syntax::ast::ImportStatement,
     ) -> Option<ModuleItemId<ImportStatement>> {
         let kind = PathKind::from_src(item.relative());
-        let tree = self.lower_import_tree(&item.item()?)?;
+        let tree = Self::lower_import_tree(&item.item()?)?;
         let ast_id = self.source_ast_id_map.ast_id(item);
         Some(
             self.tree
@@ -96,14 +96,11 @@ impl<'database> Ctx<'database> {
         )
     }
 
-    fn lower_import_tree(
-        &mut self,
-        import_tree: &syntax::ast::ImportTree,
-    ) -> Option<ImportTree> {
+    fn lower_import_tree(import_tree: &syntax::ast::ImportTree) -> Option<ImportTree> {
         Some(match import_tree {
             syntax::ast::ImportTree::ImportPath(import_path) => ImportTree::Path {
                 name: import_path.name()?.text().into(),
-                item: Box::new(self.lower_import_tree(&import_path.item()?)?),
+                item: Box::new(Self::lower_import_tree(&import_path.item()?)?),
             },
             syntax::ast::ImportTree::ImportItem(import_item) => ImportTree::Item {
                 name: import_item.name()?.text().into(),
@@ -115,7 +112,7 @@ impl<'database> Ctx<'database> {
                 ImportTree::Collection {
                     list: import_collection
                         .items()
-                        .filter_map(|item| self.lower_import_tree(&item))
+                        .filter_map(|item| Self::lower_import_tree(&item))
                         .collect(),
                 }
             },

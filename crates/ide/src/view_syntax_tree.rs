@@ -30,6 +30,7 @@ pub(crate) fn view_syntax_tree(
     syntax_node_to_json(&syntax_node, &ctx)
 }
 
+#[expect(clippy::use_debug, reason = "Syntax tree view is for debugging")]
 fn syntax_node_to_json(
     node: &SyntaxNode,
     ctx: &SyntaxTreeCtx,
@@ -123,7 +124,13 @@ impl std::fmt::Display for TextPosition {
         &self,
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
-        write!(f, "[{:?},{},{}]", self.offset, self.line, self.column)
+        write!(
+            f,
+            "[{},{},{}]",
+            u32::from(self.offset),
+            self.line,
+            self.column
+        )
     }
 }
 

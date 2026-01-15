@@ -94,7 +94,10 @@ impl ExprCollector<'_> {
                     .map(|expression| self.collect_expression(expression))
                     .collect();
 
-                let path = as_path_opt(call.ident_expression().and_then(|p| p.path()));
+                let path = as_path_opt(
+                    call.ident_expression()
+                        .and_then(|identifier| identifier.path()),
+                );
 
                 let template_parameters = self.collect_template_parameters(
                     call.ident_expression()

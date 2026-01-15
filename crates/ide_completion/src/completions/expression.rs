@@ -41,9 +41,9 @@ pub(crate) fn complete_names_in_scope(
             ScopeDef::ModuleItem(_, ModuleItem::Struct(_)) => CompletionItemKind::Struct,
             ScopeDef::ModuleItem(_, ModuleItem::TypeAlias(_)) => CompletionItemKind::TypeAlias,
             ScopeDef::ModuleItem(_, ModuleItem::ImportStatement(_)) => {
-                // TODO: Resolve the import statement, and then set the CompletionItemKind from there
+                // TODO: Resolve the import statement, and then set the correct CompletionItemKind from there
                 // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
-                return;
+                CompletionItemKind::Module
             },
             ScopeDef::ModuleItem(_, ModuleItem::GlobalAssertStatement(_)) => {
                 return;
