@@ -99,6 +99,14 @@ impl<N: AstNode> PartialEq for FileAstId<N> {
 }
 
 impl<N: AstNode> Eq for FileAstId<N> {}
+impl<N: AstNode> std::hash::Hash for FileAstId<N> {
+    fn hash<H: std::hash::Hasher>(
+        &self,
+        state: &mut H,
+    ) {
+        self.id.hash(state);
+    }
+}
 
 impl<N: AstNode> Clone for FileAstId<N> {
     fn clone(&self) -> Self {

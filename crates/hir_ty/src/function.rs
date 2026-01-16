@@ -1,10 +1,11 @@
-use hir_def::module_data::Name;
+use hir_def::item_tree::Name;
 use triomphe::Arc;
 
 use crate::{database::HirDatabase, ty::Type};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FunctionDetails {
+    pub name: Name,
     pub return_type: Option<Type>,
     pub parameters: Vec<(Type, Name)>,
 }

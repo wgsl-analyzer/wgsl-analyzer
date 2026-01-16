@@ -1,4 +1,4 @@
-use crate::{HasName as _, ast, parse};
+use crate::{AstNode, HasName as _, ast, parse};
 
 #[test]
 fn smoke_test() {
@@ -41,7 +41,7 @@ fn discard_statement() {
 
 #[test]
 fn function_call_statement() {
-    let ast = parse("fn main() { foo(); }").tree();
+    let ast = parse("fn main() { foo(1,2,3); }").tree();
 
     let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
         panic!()
@@ -52,16 +52,9 @@ fn function_call_statement() {
         panic!()
     };
     let expression: ast::FunctionCall = function_call.expression().unwrap();
-    assert_eq!(
-        expression
-            .ident_expression()
-            .unwrap()
-            .name_ref()
-            .unwrap()
-            .text()
-            .as_str(),
-        "foo"
-    );
+    let path = expression.ident_expression().unwrap().path().unwrap();
+    assert_eq!(path.segments().count(), 1);
+    assert_eq!(path.segments().next().unwrap().text(), "foo");
 }
 
 #[test]

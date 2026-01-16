@@ -15,7 +15,7 @@ use crate::{
             lower_struct, lower_type_alias, lower_variable,
         },
     },
-    module_data::Name,
+    item_tree::Name,
     type_specifier::TypeSpecifierId,
 };
 
@@ -28,7 +28,7 @@ pub struct ParameterId {
 pub type LocalParameterId = Idx<ParamData>;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct FunctionData {
+pub struct FunctionSignature {
     pub name: Name,
     pub store: Arc<ExpressionStore>,
     pub parameters: Arena<ParamData>,
@@ -41,7 +41,7 @@ pub struct ParamData {
     pub r#type: TypeSpecifierId,
 }
 
-impl FunctionData {
+impl FunctionSignature {
     pub fn query(
         database: &dyn DefDatabase,
         function: FunctionId,
@@ -62,7 +62,7 @@ pub struct FieldId {
 pub type LocalFieldId = Idx<FieldData>;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct StructData {
+pub struct StructSignature {
     pub name: Name,
     pub store: Arc<ExpressionStore>,
     pub fields: Arena<FieldData>,
@@ -74,7 +74,7 @@ pub struct FieldData {
     pub r#type: TypeSpecifierId,
 }
 
-impl StructData {
+impl StructSignature {
     pub fn query(
         database: &dyn DefDatabase,
         function: StructId,
@@ -102,14 +102,14 @@ impl StructData {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct TypeAliasData {
+pub struct TypeAliasSignature {
     pub name: Name,
     pub store: Arc<ExpressionStore>,
     pub r#type: TypeSpecifierId,
 }
 
-impl TypeAliasData {
-    pub fn type_alias_data_query(
+impl TypeAliasSignature {
+    pub fn query(
         database: &dyn DefDatabase,
         function: TypeAliasId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
@@ -121,16 +121,17 @@ impl TypeAliasData {
     }
 }
 
+/// The signature of a global variable
 #[derive(Debug, PartialEq, Eq)]
-pub struct GlobalVariableData {
+pub struct VariableSignature {
     pub name: Name,
     pub store: Arc<ExpressionStore>,
     pub r#type: Option<TypeSpecifierId>,
     pub template_parameters: Vec<ExpressionId>,
 }
 
-impl GlobalVariableData {
-    pub fn global_var_data_query(
+impl VariableSignature {
+    pub fn query(
         database: &dyn DefDatabase,
         variable: GlobalVariableId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
@@ -142,15 +143,16 @@ impl GlobalVariableData {
     }
 }
 
+/// The signature of a global constant
 #[derive(Debug, PartialEq, Eq)]
-pub struct GlobalConstantData {
+pub struct ConstantSignature {
     pub name: Name,
     pub store: Arc<ExpressionStore>,
     pub r#type: Option<TypeSpecifierId>,
 }
 
-impl GlobalConstantData {
-    pub fn global_constant_data_query(
+impl ConstantSignature {
+    pub fn query(
         database: &dyn DefDatabase,
         constant: GlobalConstantId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
@@ -163,12 +165,12 @@ impl GlobalConstantData {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct GlobalAssertStatementData {
+pub struct GlobalAssertStatementSignature {
     pub store: Arc<ExpressionStore>,
 }
 
-impl GlobalAssertStatementData {
-    pub fn global_assert_statement_data_query(
+impl GlobalAssertStatementSignature {
+    pub fn query(
         database: &dyn DefDatabase,
         constant: GlobalAssertStatementId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
@@ -181,14 +183,14 @@ impl GlobalAssertStatementData {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct OverrideData {
+pub struct OverrideSignature {
     pub name: Name,
     pub store: Arc<ExpressionStore>,
     pub r#type: Option<TypeSpecifierId>,
 }
 
-impl OverrideData {
-    pub fn override_data_query(
+impl OverrideSignature {
+    pub fn query(
         database: &dyn DefDatabase,
         override_declaration: OverrideId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {

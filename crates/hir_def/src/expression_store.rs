@@ -1,4 +1,5 @@
 pub mod lower;
+pub mod path;
 
 use std::ops::Index;
 

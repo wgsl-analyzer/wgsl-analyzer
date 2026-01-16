@@ -60,12 +60,12 @@ impl MemoryUsage {
                 let mut mem_counters = MaybeUninit::uninit();
                 let cb = size_of::<PROCESS_MEMORY_COUNTERS>();
                 // SAFETY: Windows API safety is undocumented.
-                let ret = unsafe { GetProcessMemoryInfo(proc, mem_counters.as_mut_ptr(), cb as u32) };
+                let ret = unsafe { GetProcessMemoryInfo(proc, mem_counters.as_mut_ptr(), u32::try_from(cb).expect("struct size should fit into a u32")) };
                 assert!(ret != 0);
 
                 // SAFETY: mem_counters is initialized by GetProcessMemoryInfo.
                 let usage = unsafe { mem_counters.assume_init().PagefileUsage };
-                Self { allocated: Bytes(usage as isize) }
+                Self { allocated: Bytes(isize::try_from(usage).unwrap()) }
             } else {
                 Self { allocated: Bytes(0) }
             }

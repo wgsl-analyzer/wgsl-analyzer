@@ -1,7 +1,7 @@
 use hir::HirDatabase as _;
 use hir_def::{
     database::{DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location},
-    module_data::{ModuleItem, Name},
+    item_tree::{ModuleItem, Name},
     resolver::ScopeDef,
 };
 use hir_ty::{
@@ -40,6 +40,11 @@ pub(crate) fn complete_names_in_scope(
             },
             ScopeDef::ModuleItem(_, ModuleItem::Struct(_)) => CompletionItemKind::Struct,
             ScopeDef::ModuleItem(_, ModuleItem::TypeAlias(_)) => CompletionItemKind::TypeAlias,
+            ScopeDef::ModuleItem(_, ModuleItem::ImportStatement(_)) => {
+                // TODO: Resolve the import statement, and then set the correct CompletionItemKind from there
+                // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
+                CompletionItemKind::Module
+            },
             ScopeDef::ModuleItem(_, ModuleItem::GlobalAssertStatement(_)) => {
                 return;
             },
@@ -109,7 +114,7 @@ fn render_detail(
             )
         },
         ModuleItem::Struct(id) => {
-            let module_info = context.database.module_info(file_id);
+            let module_info = context.database.item_tree(file_id);
             format!("struct {}", module_info.get(id).name.as_str())
         },
         ModuleItem::GlobalVariable(id) => {
@@ -120,7 +125,7 @@ fn render_detail(
                 .database
                 .infer(DefinitionWithBodyId::GlobalVariable(variable_id));
 
-            let module_info = context.database.module_info(file_id);
+            let module_info = context.database.item_tree(file_id);
             format!(
                 "var {}: {}",
                 module_info.get(id).name.as_str(),
@@ -139,7 +144,7 @@ fn render_detail(
                 .database
                 .infer(DefinitionWithBodyId::GlobalConstant(constant_id));
 
-            let module_info = context.database.module_info(file_id);
+            let module_info = context.database.item_tree(file_id);
             format!(
                 "const {}: {}",
                 module_info.get(id).name.as_str(),
@@ -156,7 +161,7 @@ fn render_detail(
                 .database
                 .infer(DefinitionWithBodyId::Override(override_id));
 
-            let module_info = context.database.module_info(file_id);
+            let module_info = context.database.item_tree(file_id);
             format!(
                 "override {}: {}",
                 module_info.get(id).name.as_str(),
@@ -168,13 +173,17 @@ fn render_detail(
             )
         },
         ModuleItem::TypeAlias(id) => {
-            let module_info = context.database.module_info(file_id);
+            let module_info = context.database.item_tree(file_id);
             format!("alias {}", module_info.get(id).name.as_str())
         },
         ModuleItem::GlobalAssertStatement(_) => {
             // const_asserts don't have a name or binding, and will probably never be autocompleted - or will their
             // details have to be rendered. We implement this anyways to achieve consistency.
             String::from("const_assert ...")
+        },
+        ModuleItem::ImportStatement(_) => {
+            // TODO: Support import statements somehow https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
+            String::new()
         },
     }
 }

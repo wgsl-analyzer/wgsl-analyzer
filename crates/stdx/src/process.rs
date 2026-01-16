@@ -261,8 +261,8 @@ mod implementation {
             let pipe = unsafe { NamedPipe::from_raw_handle(pipe.into_raw_handle()) };
             Pipe {
                 dst,
-                inner: pipe,
                 overlapped: Overlapped::zero(),
+                inner: pipe,
                 done: false,
             }
         }

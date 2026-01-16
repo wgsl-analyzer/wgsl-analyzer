@@ -1,6 +1,6 @@
 use std::str::FromStr as _;
 
-use hir_def::{expression::ExpressionId, module_data::Name};
+use hir_def::{expression::ExpressionId, expression_store::path::Path, item_tree::Name};
 use wgsl_types::{
     Instance,
     inst::LiteralInstance,
@@ -98,21 +98,29 @@ impl TypeLoweringContext<'_> {
     pub fn lower_predeclared(
         &mut self,
         type_container: TypeContainer,
-        path: &Name,
+        path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
         // Lower predeclared types
-        if Self::is_predeclared_type(path) {
-            self.lower_predeclared_type(type_container, path, template_parameters)
-        } else if crate::builtins::Builtin::ALL_BUILTINS.contains(&path.as_str()) {
-            Ok(Lowered::BuiltinFunction)
-        } else if let Ok(enum_value) = Enumerant::from_str(path.as_str()) {
-            self.expect_no_template(template_parameters);
-            Ok(Lowered::Enumerant(enum_value))
+        if let Some(name) = path.mod_path().as_ident() {
+            if Self::is_predeclared_type(name) {
+                self.lower_predeclared_type(type_container, name, template_parameters)
+            } else if crate::builtins::Builtin::ALL_BUILTINS.contains(&name.as_str()) {
+                Ok(Lowered::BuiltinFunction)
+            } else if let Ok(enum_value) = Enumerant::from_str(name.as_str()) {
+                self.expect_no_template(template_parameters);
+                Ok(Lowered::Enumerant(enum_value))
+            } else {
+                self.diagnostics.push(TypeLoweringError {
+                    container: type_container,
+                    kind: TypeLoweringErrorKind::UnresolvedName(name.clone()),
+                });
+                Ok(Lowered::Type(TypeKind::Error.intern(self.database)))
+            }
         } else {
             self.diagnostics.push(TypeLoweringError {
                 container: type_container,
-                kind: TypeLoweringErrorKind::UnresolvedName(path.clone()),
+                kind: TypeLoweringErrorKind::UnresolvedPath(path.clone()),
             });
             Ok(Lowered::Type(TypeKind::Error.intern(self.database)))
         }
