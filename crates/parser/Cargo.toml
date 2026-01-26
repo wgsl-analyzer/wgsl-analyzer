@@ -12,7 +12,7 @@ doctest = false
 
 [dependencies]
 edition.workspace = true
-logos = "0.15.1"
+logos = "0.16.0"
 rowan.workspace = true
 
 [dev-dependencies]
