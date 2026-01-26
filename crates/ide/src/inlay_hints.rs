@@ -1,9 +1,9 @@
 use std::{fmt, hash, iter, mem};
 
 use ast::Expression as AstExpression;
-use base_db::{FileId, FileRange, TextRange};
+use base_db::{EditionedFileId, FileId, FileRange, TextRange};
 use hir::{Field, HasSource as _, Semantics};
-use hir_def::{InFile, item_tree::Name, signature::FieldId};
+use hir_def::{InFile, database::DefDatabase as _, item_tree::Name, signature::FieldId};
 use hir_ty::{
     function::FunctionDetails,
     infer::ResolvedCall,
@@ -317,6 +317,7 @@ pub(crate) fn inlay_hints(
     config: &InlayHintsConfig,
 ) -> Vec<InlayHint> {
     let semantics = Semantics::new(database);
+    let file_id = database.editioned_file_id(file_id);
     let file = semantics.parse(file_id);
 
     let mut hints = Vec::new();
@@ -348,7 +349,7 @@ pub(crate) fn inlay_hints(
 
 fn get_struct_layout_hints(
     hints: &mut Vec<InlayHint>,
-    file_id: FileId,
+    file_id: EditionedFileId,
     semantics: &Semantics<'_>,
     config: &InlayHintsConfig,
 ) -> Option<()> {
@@ -417,7 +418,7 @@ fn get_struct_layout_hints(
 
 fn get_hints(
     hints: &mut Vec<InlayHint>,
-    file_id: FileId,
+    file_id: EditionedFileId,
     semantics: &Semantics<'_>,
     config: &InlayHintsConfig,
     node: &SyntaxNode,
@@ -481,7 +482,7 @@ fn get_hints(
 
 fn declaration_type_hints(
     hints: &mut Vec<InlayHint>,
-    file_id: FileId,
+    file_id: EditionedFileId,
     semantics: &Semantics<'_>,
     config: &InlayHintsConfig,
     node: &SyntaxNode,
@@ -521,7 +522,7 @@ fn declaration_type_hints(
 
 fn function_hints(
     hints: &mut Vec<InlayHint>,
-    file_id: FileId,
+    file_id: EditionedFileId,
     semantics: &Semantics<'_>,
     config: &InlayHintsConfig,
     node: &SyntaxNode,

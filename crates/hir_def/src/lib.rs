@@ -118,7 +118,7 @@ pub fn original_file_range<T: HasTextRange>(
 ) -> FileRange {
     match file_id.0 {
         HirFileIdRepr::FileId(file_id) => FileRange {
-            file_id,
+            file_id: file_id.file_id,
             range: value.text_range(),
         },
     }

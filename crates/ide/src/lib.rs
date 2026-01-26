@@ -22,6 +22,7 @@ use base_db::{
 };
 use diagnostics::Diagnostic;
 use hir::diagnostics::DiagnosticsConfig;
+use hir_def::database::DefDatabase as _;
 use ide_completion::{CompletionConfig, item::CompletionItem};
 pub use line_index::{LineCol, LineIndex};
 use rustc_hash::FxHashMap;
@@ -224,7 +225,7 @@ impl Analysis {
         &self,
         file_id: FileId,
     ) -> Cancellable<Parse> {
-        self.with_db(|database| database.parse(file_id))
+        self.with_db(|database| database.parse(database.editioned_file_id(file_id)))
     }
 
     pub fn line_index(
@@ -256,7 +257,11 @@ impl Analysis {
         &self,
         file_id: FileId,
     ) -> Cancellable<Vec<Fold>> {
-        self.with_db(|database| folding_ranges::folding_ranges(&database.parse(file_id).tree()))
+        self.with_db(|database| {
+            folding_ranges::folding_ranges(
+                &database.parse(database.editioned_file_id(file_id)).tree(),
+            )
+        })
     }
 
     pub fn diagnostics(

@@ -1,4 +1,5 @@
 use base_db::{SourceDatabase as _, TextRange};
+use hir_def::database::DefDatabase as _;
 use ide_db::RootDatabase;
 use line_index::{LineCol, LineIndex};
 use rowan::{NodeOrToken, TextSize, WalkEvent};
@@ -19,8 +20,9 @@ pub(crate) fn view_syntax_tree(
     database: &RootDatabase,
     file_id: FileId,
 ) -> String {
+    let file_id = database.editioned_file_id(file_id);
     let syntax_node = database.parse(file_id).syntax();
-    let line_index = database.line_index(file_id);
+    let line_index = database.line_index(file_id.file_id);
 
     let ctx = SyntaxTreeCtx {
         line_index,

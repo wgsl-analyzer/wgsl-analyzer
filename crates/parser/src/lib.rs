@@ -108,9 +108,10 @@ pub enum ParseEntryPoint {
     Attribute,
 }
 
+// TODO: Remove this function, it is only used by wgsl_formatter
 #[must_use]
 pub fn parse_file(input: &str) -> Parse {
-    parse_entrypoint(input, ParseEntryPoint::File)
+    parse_entrypoint(input, ParseEntryPoint::File, Edition::Wgsl)
 }
 
 #[cfg(test)]
@@ -121,7 +122,7 @@ fn check_entrypoint(
 ) {
     use rowan::TextSize;
 
-    let parse = crate::parser::parse_entrypoint(input, entry_point);
+    let parse = crate::parser::parse_entrypoint(input, entry_point, Edition::LATEST);
     assert_eq!(parse.syntax().text_range().start(), TextSize::new(0));
     assert_eq!(
         parse.syntax().text_range().end(),

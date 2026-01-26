@@ -4,9 +4,9 @@ use std::{
     marker::PhantomData,
 };
 
-use base_db::{FileId, SourceDatabase};
+use base_db::{EditionedFileId, FileId, SourceDatabase};
 use salsa::InternKey;
-use syntax::{Parse, ast};
+use syntax::{Edition, Parse, ast};
 use triomphe::Arc;
 use vfs::VfsPath;
 
@@ -34,6 +34,11 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         &self,
         key: HirFileId,
     ) -> Parse;
+
+    fn editioned_file_id(
+        &self,
+        key: FileId,
+    ) -> EditionedFileId;
 
     fn get_path(
         &self,
@@ -165,7 +170,7 @@ fn get_path(
     file_id: HirFileId,
 ) -> VfsPath {
     match file_id.0 {
-        HirFileIdRepr::FileId(file_id) => database.file_path(file_id),
+        HirFileIdRepr::FileId(file_id) => database.file_path(file_id.file_id),
     }
 }
 
@@ -184,6 +189,26 @@ fn parse_or_resolve(
     match file_id.0 {
         HirFileIdRepr::FileId(file_id) => database.parse(file_id),
     }
+}
+
+fn editioned_file_id(
+    database: &dyn DefDatabase,
+    file_id: FileId,
+) -> EditionedFileId {
+    let edition =
+        if let Some((_, Some(extension))) = database.file_path(file_id).name_and_extension() {
+            if extension.eq_ignore_ascii_case("wesl") {
+                Edition::LATEST
+            } else if extension.eq_ignore_ascii_case("wgsl") {
+                Edition::Wgsl
+            } else {
+                Edition::CURRENT
+            }
+        } else {
+            Edition::CURRENT
+        };
+
+    EditionedFileId { file_id, edition }
 }
 
 fn ast_id_map(

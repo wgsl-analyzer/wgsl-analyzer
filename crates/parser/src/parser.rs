@@ -27,6 +27,7 @@
 )]
 use std::fmt;
 
+use edition::Edition;
 use logos::Logos as _;
 use rowan::GreenNodeBuilder;
 
@@ -35,9 +36,8 @@ use crate::{Parse, ParseEntryPoint, cst_builder::CstBuilder, lexer::lex_with_tem
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
-#[derive(Default)]
-pub struct Context<'a> {
-    marker: std::marker::PhantomData<&'a ()>,
+pub struct ParserContext {
+    edition: Edition,
 }
 
 pub struct Diagnostic {
@@ -82,22 +82,16 @@ pub(crate) fn to_range(span: Span) -> rowan::TextRange {
 pub fn parse_entrypoint(
     input: &str,
     entrypoint: ParseEntryPoint,
+    edition: Edition,
 ) -> Parse {
     let mut diagnostics = Vec::new();
+    let mut parser = Parser::new_with_context(input, &mut diagnostics, ParserContext { edition });
     let parsed = match entrypoint {
-        ParseEntryPoint::File => Parser::new(input, &mut diagnostics).parse(&mut diagnostics),
-        ParseEntryPoint::Expression => {
-            Parser::new(input, &mut diagnostics).parse_expression(&mut diagnostics)
-        },
-        ParseEntryPoint::Statement => {
-            Parser::new(input, &mut diagnostics).parse_statement(&mut diagnostics)
-        },
-        ParseEntryPoint::Type => {
-            Parser::new(input, &mut diagnostics).parse_type_specifier(&mut diagnostics)
-        },
-        ParseEntryPoint::Attribute => {
-            Parser::new(input, &mut diagnostics).parse_attribute(&mut diagnostics)
-        },
+        ParseEntryPoint::File => parser.parse(&mut diagnostics),
+        ParseEntryPoint::Expression => parser.parse_expression(&mut diagnostics),
+        ParseEntryPoint::Statement => parser.parse_statement(&mut diagnostics),
+        ParseEntryPoint::Type => parser.parse_type_specifier(&mut diagnostics),
+        ParseEntryPoint::Attribute => parser.parse_attribute(&mut diagnostics),
     };
     let green_node = CstBuilder {
         builder: GreenNodeBuilder::new(),
@@ -138,7 +132,7 @@ impl Parser<'_> {
 }
 
 impl<'source> ParserCallbacks<'source> for Parser<'source> {
-    type Context = ();
+    type Context = ParserContext;
     type Diagnostic = Diagnostic;
 
     fn create_tokens(
@@ -157,6 +151,19 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         Diagnostic {
             message,
             range: to_range(span),
+        }
+    }
+
+    fn create_node_import_statement(
+        &mut self,
+        node_ref: NodeRef,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        if !self.context.edition.at_least_wesl_0_0_1() {
+            diags.push(self.create_diagnostic(
+                self.cst.span(node_ref),
+                "import statements are not allowed in WGSL mode".to_owned(),
+            ));
         }
     }
 

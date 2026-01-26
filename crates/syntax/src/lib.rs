@@ -6,8 +6,8 @@ use std::{marker::PhantomData, ops::Deref};
 
 use either::Either;
 pub use parser::{
-    Diagnostic, ParseEntryPoint, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxNodeChildren,
-    SyntaxToken,
+    Diagnostic, Edition, ParseEntryPoint, SyntaxElement, SyntaxKind, SyntaxNode,
+    SyntaxNodeChildren, SyntaxToken,
 };
 pub use rowan::Direction;
 use smol_str::SmolStr;
@@ -53,16 +53,12 @@ impl Parse {
 }
 
 #[must_use]
-pub fn parse(input: &str) -> Parse {
-    parse_entrypoint(input, ParseEntryPoint::File)
-}
-
-#[must_use]
-pub fn parse_entrypoint(
+pub fn parse(
     input: &str,
-    parse_entrypoint: ParseEntryPoint,
+    edition: Edition,
 ) -> Parse {
-    let (green_node, errors) = parser::parse_entrypoint(input, parse_entrypoint).into_parts();
+    let (green_node, errors) =
+        parser::parse_entrypoint(input, ParseEntryPoint::File, edition).into_parts();
     Parse {
         green_node,
         errors: Arc::from(errors),

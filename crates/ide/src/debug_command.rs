@@ -5,7 +5,7 @@ pub(crate) fn debug_command(
     database: &dyn HirDatabase,
     file_position: FilePosition,
 ) -> Option<()> {
-    let file_id = file_position.file_id;
+    let file_id = database.editioned_file_id(file_position.file_id);
     let _file = database.parse(file_id).tree();
 
     None

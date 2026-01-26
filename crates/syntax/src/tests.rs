@@ -1,8 +1,10 @@
+use parser::Edition;
+
 use crate::{AstNode, HasName as _, ast, parse};
 
 #[test]
 fn smoke_test() {
-    let ast = parse("fn foo(a: u32) -> f32 { let b = 1 + a; }").tree();
+    let ast = parse("fn foo(a: u32) -> f32 { let b = 1 + a; }", Edition::LATEST).tree();
 
     let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
         panic!()
@@ -28,7 +30,7 @@ fn smoke_test() {
 
 #[test]
 fn discard_statement() {
-    let ast = parse("fn main() { discard; }").tree();
+    let ast = parse("fn main() { discard; }", Edition::LATEST).tree();
 
     let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
         panic!()
@@ -41,7 +43,7 @@ fn discard_statement() {
 
 #[test]
 fn function_call_statement() {
-    let ast = parse("fn main() { foo(1,2,3); }").tree();
+    let ast = parse("fn main() { foo(1,2,3); }", Edition::LATEST).tree();
 
     let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
         panic!()
@@ -69,6 +71,7 @@ fn main() {
     }
 }
     ",
+        Edition::LATEST,
     )
     .tree();
 
@@ -106,6 +109,7 @@ fn main() {
     loop { let a = 3; }
 }
     ",
+        Edition::LATEST,
     )
     .tree();
 

@@ -1,7 +1,7 @@
 pub mod definition;
 pub mod diagnostics;
 
-use base_db::FileId;
+use base_db::{EditionedFileId, FileId};
 use definition::Definition;
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
 use either::Either;
@@ -46,7 +46,7 @@ impl<'database> Semantics<'database> {
     #[must_use]
     pub fn parse(
         &self,
-        file_id: FileId,
+        file_id: EditionedFileId,
     ) -> ast::SourceFile {
         self.database.parse(file_id).tree()
     }
@@ -159,7 +159,7 @@ impl<'database> Semantics<'database> {
     #[expect(clippy::unused_self, reason = "intentional API")]
     pub fn module(
         self,
-        file_id: FileId,
+        file_id: EditionedFileId,
     ) -> Module {
         Module {
             file_id: file_id.into(),

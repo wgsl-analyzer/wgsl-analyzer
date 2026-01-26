@@ -4,12 +4,12 @@ use std::{
     ops::{self, Range},
 };
 
-use base_db::{FileRange, TextRange, TextSize};
+use base_db::{EditionedFileId, FileRange, TextRange, TextSize};
 use hir::{
     HirDatabase, Semantics,
     diagnostics::{AnyDiagnostic, DiagnosticsConfig, NagaVersion},
 };
-use hir_def::original_file_range;
+use hir_def::{HirFileId, original_file_range};
 use hir_ty::ty::{
     self,
     pretty::{pretty_fn, pretty_type},
@@ -251,7 +251,7 @@ impl NagaError for nagamain::WithSpan<nagamain::valid::ValidationError> {
 
 fn emit<Error: NagaError>(
     error: &Error,
-    file_id: FileId,
+    file_id: EditionedFileId,
     full_range: TextRange,
     accumulator: &mut Vec<AnyDiagnostic>,
 ) {
@@ -270,7 +270,15 @@ fn emit<Error: NagaError>(
     });
 
     let related: Vec<_> = spans
-        .map(|(range, message)| (message, FileRange { range, file_id }))
+        .map(|(range, message)| {
+            (
+                message,
+                FileRange {
+                    range,
+                    file_id: file_id.file_id,
+                },
+            )
+        })
         .collect();
 
     accumulator.push(AnyDiagnostic::NagaValidationError {
@@ -283,11 +291,11 @@ fn emit<Error: NagaError>(
 
 fn naga_diagnostics<N: Naga>(
     database: &dyn HirDatabase,
-    file_id: FileId,
+    file_id: EditionedFileId,
     config: &DiagnosticsConfig,
     accumulator: &mut Vec<AnyDiagnostic>,
 ) {
-    let source = database.file_text(file_id);
+    let source = database.file_text(file_id.file_id);
     let full_range = TextRange::up_to(TextSize::of(source.as_str()));
 
     match N::parse(&source) {
@@ -316,6 +324,7 @@ pub fn diagnostics(
     config: &DiagnosticsConfig,
     file_id: FileId,
 ) -> Vec<Diagnostic> {
+    let file_id = database.editioned_file_id(file_id);
     let parse = database.parse(file_id);
 
     let mut diagnostics = Vec::new();
