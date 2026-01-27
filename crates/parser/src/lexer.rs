@@ -776,4 +776,16 @@ mod tests {
             "]],
         );
     }
+
+    #[test]
+    fn lex_leading_zeros() {
+        check_lex_spanned(
+            "007",
+            expect![[r#"
+                IntLiteral@0..1
+                IntLiteral@1..2
+                IntLiteral@2..3
+            "#]],
+        );
+    }
 }
