@@ -148,7 +148,7 @@ impl ImportTree {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Directive {
-    pub ast_id: FileAstId<ast::FunctionDeclaration>,
+    pub ast_id: FileAstId<ast::Directive>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -202,6 +202,7 @@ pub struct ItemTree {
     overrides: Arena<Override>,
     type_aliases: Arena<TypeAlias>,
     structs: Arena<Struct>,
+    directives: Arena<Directive>,
     global_assert_statements: Arena<GlobalAssertStatement>,
 }
 
