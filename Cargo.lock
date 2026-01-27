@@ -63,10 +63,15 @@ dependencies = [
 name = "base-db"
 version = "0.0.0"
 dependencies = [
+ "edition",
+ "la-arena",
  "line-index",
  "rowan",
+ "rustc-hash 2.1.1",
  "salsa",
+ "semver",
  "syntax",
+ "tracing",
  "triomphe",
  "vfs",
 ]
@@ -1261,6 +1266,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "project-model"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "base-db",
+ "edition",
+ "expect-test",
+ "itertools",
+ "la-arena",
+ "paths",
+ "rustc-hash 2.1.1",
+ "semver",
+ "serde",
+ "serde_json",
+ "stdx 0.0.0",
+ "toolchain",
+ "tracing",
+ "triomphe",
+ "wesl-metadata",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1785,6 +1812,10 @@ name = "triomphe"
 version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd69c5aa8f924c7519d6372789a74eac5b94fb0f8fcf0d4a97eb0bfc3e785f39"
+dependencies = [
+ "serde",
+ "stable_deref_trait",
+]
 
 [[package]]
 name = "typed-path"
@@ -1943,6 +1974,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "wesl-metadata"
+version = "0.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a39e72f749143798c514376a49a42e41ddce65fc9ff86dc246ec3fc7cef93b5"
+dependencies = [
+ "camino",
+ "semver",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "wgsl-analyzer"
 version = "0.0.0"
 dependencies = [
@@ -1978,6 +2022,7 @@ dependencies = [
  "triomphe",
  "vfs",
  "vfs-notify 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070)",
+ "wesl-metadata",
  "windows-sys 0.61.2",
  "xflags",
 ]
