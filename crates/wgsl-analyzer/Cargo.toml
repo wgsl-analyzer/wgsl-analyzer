@@ -36,7 +36,7 @@ serde_json = { workspace = true, features = ["preserve_order"] }
 serde.workspace = true
 # tenthash = "1.0.0"
 num_cpus = "1.17.0"
-mimalloc = { version = "0.1.48", default-features = false, optional = true }
+# mimalloc = { version = "0.1.48", default-features = false, optional = true }
 lsp-server.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true

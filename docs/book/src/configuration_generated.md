@@ -19,7 +19,7 @@ Controls whether to show naga's validation errors.
 
 ## wgsl-analyzer.diagnostics.nagaVersion
 
-Default: `"0.27"`
+Default: `"0.28"`
 
 Naga version used for validation.
 

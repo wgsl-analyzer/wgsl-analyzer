@@ -53,7 +53,7 @@
 		"watch": "npm run build-base -- --sourcemap --watch"
 	},
 	"dependencies": {
-		"@hpcc-js/wasm": "^2.31.0",
+		"@hpcc-js/wasm": "^2.32.2",
 		"anser": "^2.3.5",
 		"d3": "^7.9.0",
 		"d3-graphviz": "^5.6.0",
@@ -67,7 +67,7 @@
 		"@tsconfig/node-ts": "^23.6.2",
 		"@tsconfig/node22": "^22.0.5",
 		"@tsconfig/strictest": "^2.0.8",
-		"@types/node": "^25.0.6",
+		"@types/node": "^25.0.10",
 		"@types/vscode": "^1.105.0",
 		"@vscode/test-electron": "^2.5.2",
 		"@vscode/vsce": "^3.7.1",
@@ -453,7 +453,7 @@
 				"properties": {
 					"wgsl-analyzer.diagnostics.nagaVersion": {
 						"markdownDescription": "Naga version used for validation.",
-						"default": "0.27",
+						"default": "0.28",
 						"type": "string",
 						"enum": [
 							"0.22",

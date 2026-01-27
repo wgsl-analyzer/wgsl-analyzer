@@ -13,9 +13,9 @@ license.workspace = true
 [dependencies]
 itertools.workspace = true
 line-index.workspace = true
-naga22 = { package = "naga", version = "22.1.0", features = ["wgsl-in"] }
 naga27 = { package = "naga", version = "27.0.3", features = ["wgsl-in"] }
-nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "2a58599dc4a2a3ba565c0540c5c45e41bc3d25e3", version = "27.0.0", features = [
+naga28 = { package = "naga", version = "28.0.0", features = ["wgsl-in"] }
+nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "2b8b5f7cdc1872a412371fc458b100de4d88068d", version = "28.0.0", features = [
 	"wgsl-in",
 ] }
 rowan.workspace = true
