@@ -166,13 +166,17 @@ mod tests {
 
     use crate::fixture;
 
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "easier to use with expect! macro"
+    )]
     fn check(
         source: &str,
         expect: expect_test::Expect,
     ) {
         let (analysis, file_id) = fixture::single_file_db(source);
         let syn = analysis.view_syntax_tree(file_id).unwrap();
-        expect.assert_eq(&syn)
+        expect.assert_eq(&syn);
     }
 
     #[test]
@@ -190,6 +194,6 @@ mod tests {
             expect![[
                 r#"{"type":"Node","kind":"SourceFile","start":[0,0,0],"end":[19,0,19],"children":[{"type":"Node","kind":"ConstantDeclaration","start":[0,0,0],"end":[19,0,19],"children":[{"type":"Token","kind":"Constant","start":[0,0,0],"end":[5,0,5]},{"type":"Token","kind":"Blankspace","start":[5,0,5],"end":[6,0,6]},{"type":"Node","kind":"Name","start":[6,0,6],"end":[9,0,9],"children":[{"type":"Token","kind":"Identifier","start":[6,0,6],"end":[9,0,9]}]},{"type":"Token","kind":"Colon","start":[9,0,9],"end":[10,0,10]},{"type":"Token","kind":"Blankspace","start":[10,0,10],"end":[11,0,11]},{"type":"Node","kind":"TypeSpecifier","start":[11,0,11],"end":[14,0,14],"children":[{"type":"Node","kind":"Path","start":[11,0,11],"end":[14,0,14],"children":[{"type":"Token","kind":"Identifier","start":[11,0,11],"end":[14,0,14]}]}]},{"type":"Token","kind":"Blankspace","start":[14,0,14],"end":[15,0,15]},{"type":"Token","kind":"Equal","start":[15,0,15],"end":[16,0,16]},{"type":"Token","kind":"Blankspace","start":[16,0,16],"end":[17,0,17]},{"type":"Node","kind":"Literal","start":[17,0,17],"end":[18,0,18],"children":[{"type":"Token","kind":"IntLiteral","start":[17,0,17],"end":[18,0,18]}]},{"type":"Token","kind":"Semicolon","start":[18,0,18],"end":[19,0,19]}]}]}"#
             ]],
-        )
+        );
     }
 }
