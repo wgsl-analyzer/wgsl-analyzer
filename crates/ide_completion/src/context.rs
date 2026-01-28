@@ -31,13 +31,14 @@ impl<'database> CompletionContext<'database> {
         config: &'database CompletionConfig,
     ) -> Option<Self> {
         let semantics = Semantics::new(database);
-        let file = semantics.parse(position.file_id);
+        let file_id = database.editioned_file_id(file_id);
+        let file = semantics.parse(file_id);
         let token = file
             .syntax()
             .token_at_offset(position.offset)
             .left_biased()?;
 
-        let file_id = HirFileId::from(position.file_id);
+        let file_id = HirFileId::from(file_id);
 
         let container = token
             .parent()
@@ -46,7 +47,7 @@ impl<'database> CompletionContext<'database> {
         let completion_location =
             determine_location(&semantics, file.syntax(), position.offset, &token);
 
-        let module_info = database.module_info(file_id);
+        let module_info = database.item_tree(file_id);
         let mut resolver = Resolver::default().push_module_scope(file_id, module_info);
 
         let nearest_scope = token

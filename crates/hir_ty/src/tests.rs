@@ -11,7 +11,7 @@ use hir_def::{
         DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, Lookup as _,
     },
     expression_store::SyntheticSyntax,
-    module_data::ModuleItem,
+    item_tree::ModuleItem,
 };
 use syntax::{AstNode as _, SyntaxNode};
 use triomphe::Arc;
@@ -118,7 +118,7 @@ fn infer(ra_fixture: &str) -> String {
             }
         }
     };
-    let module_info = database.module_info(file_id);
+    let module_info = database.item_tree(file_id);
     let mut definitions = module_definitions(&database, file_id, &module_info);
     definitions.sort_by_key(|definition| text_size(*definition, &database));
     for definition in definitions {
@@ -176,9 +176,9 @@ fn text_size(
 fn module_definitions(
     db: &TestDatabase,
     file_id: HirFileId,
-    module_info: &Arc<hir_def::module_data::ModuleInfo>,
+    item_tree: &Arc<hir_def::item_tree::ItemTree>,
 ) -> Vec<DefinitionWithBodyId> {
-    module_info
+    item_tree
         .items()
         .iter()
         .filter_map(|item| {
@@ -205,7 +205,9 @@ fn module_definitions(
                         db.intern_global_assert_statement(loc),
                     )
                 },
-                ModuleItem::TypeAlias(_) | ModuleItem::Struct(_) => return None,
+                ModuleItem::TypeAlias(_)
+                | ModuleItem::Struct(_)
+                | ModuleItem::ImportStatement(_) => return None,
             })
         })
         .collect()

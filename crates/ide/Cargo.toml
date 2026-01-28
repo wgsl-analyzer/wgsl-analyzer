@@ -42,7 +42,7 @@ hir-def.workspace = true
 hir-ty.workspace = true
 
 [dev-dependencies]
-# expect-test.workspace = true
+expect-test.workspace = true
 test-utils.workspace = true
 # test-fixture.workspace = true
 

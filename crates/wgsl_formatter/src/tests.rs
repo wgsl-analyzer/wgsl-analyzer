@@ -34,7 +34,7 @@ fn check_with_options(
     after: &Expect,
     options: &FormattingOptions,
 ) {
-    let syntax = syntax::parse(before.trim_start())
+    let syntax = syntax::parse(before.trim_start(), parser::Edition::Wgsl)
         .syntax()
         .clone_for_update();
     format_recursive(&syntax, options);
@@ -44,7 +44,9 @@ fn check_with_options(
     after.assert_eq(&new);
 
     // Check for idempotence
-    let syntax = syntax::parse(new.trim_start()).syntax().clone_for_update();
+    let syntax = syntax::parse(new.trim_start(), parser::Edition::Wgsl)
+        .syntax()
+        .clone_for_update();
     format_recursive(&syntax, options);
     let new_second = syntax.to_string();
     let diff = dissimilar::diff(&new, &new_second);

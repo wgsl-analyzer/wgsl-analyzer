@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod fixture;
+
 mod debug_command;
 pub mod diagnostics;
 mod folding_ranges;
@@ -8,8 +11,8 @@ mod hover;
 pub mod inlay_hints;
 mod markup;
 mod navigation_target;
-mod syntax_tree;
 mod typing;
+mod view_syntax_tree;
 
 use std::panic;
 
@@ -19,6 +22,7 @@ use base_db::{
 };
 use diagnostics::Diagnostic;
 use hir::diagnostics::DiagnosticsConfig;
+use hir_def::database::DefDatabase as _;
 use ide_completion::{CompletionConfig, item::CompletionItem};
 pub use line_index::{LineCol, LineIndex};
 use rustc_hash::FxHashMap;
@@ -221,7 +225,7 @@ impl Analysis {
         &self,
         file_id: FileId,
     ) -> Cancellable<Parse> {
-        self.with_db(|database| database.parse(file_id))
+        self.with_db(|database| database.parse(database.editioned_file_id(file_id)))
     }
 
     pub fn line_index(
@@ -231,14 +235,11 @@ impl Analysis {
         self.with_db(|database| database.line_index(file_id))
     }
 
-    pub fn syntax_tree(
+    pub fn view_syntax_tree(
         &self,
         file_id: FileId,
-        range: Option<TextRange>,
     ) -> Cancellable<String> {
-        self.with_db(|database| {
-            syntax_tree::syntax_tree(database, file_id, range).unwrap_or_default()
-        })
+        self.with_db(|database| view_syntax_tree::view_syntax_tree(database, file_id))
     }
 
     /// Returns a list of the places in the file where type hints can be displayed.
@@ -256,7 +257,11 @@ impl Analysis {
         &self,
         file_id: FileId,
     ) -> Cancellable<Vec<Fold>> {
-        self.with_db(|database| folding_ranges::folding_ranges(&database.parse(file_id).tree()))
+        self.with_db(|database| {
+            folding_ranges::folding_ranges(
+                &database.parse(database.editioned_file_id(file_id)).tree(),
+            )
+        })
     }
 
     pub fn diagnostics(

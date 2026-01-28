@@ -1,4 +1,4 @@
-use base_db::FileId;
+use base_db::{EditionedFileId, FileId};
 use vfs::AnchoredPath;
 
 use crate::database::DefDatabase;
@@ -12,11 +12,11 @@ pub struct HirFileId(pub(crate) HirFileIdRepr);
 )]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum HirFileIdRepr {
-    FileId(FileId),
+    FileId(EditionedFileId),
 }
 
-impl From<FileId> for HirFileId {
-    fn from(id: FileId) -> Self {
+impl From<EditionedFileId> for HirFileId {
+    fn from(id: EditionedFileId) -> Self {
         Self(HirFileIdRepr::FileId(id))
     }
 }
@@ -25,7 +25,7 @@ impl HirFileId {
     pub fn original_file(
         self,
         _database: &dyn DefDatabase,
-    ) -> base_db::FileId {
+    ) -> EditionedFileId {
         match self.0 {
             HirFileIdRepr::FileId(id) => id,
         }
@@ -39,12 +39,12 @@ pub fn relative_file(
 ) -> Option<FileId> {
     let call_site = call_id.original_file(database);
     let path = AnchoredPath {
-        anchor: call_site,
+        anchor: call_site.file_id,
         path: path_str,
     };
     match database.resolve_path(path) {
         // Prevent including itself
-        Some(result) if result != call_site => Some(result),
+        Some(result) if result != call_site.file_id => Some(result),
         // Possibly file not imported yet
         _ => None,
     }

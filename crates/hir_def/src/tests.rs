@@ -1,11 +1,12 @@
-use base_db::{FileId, change::Change};
+use base_db::{EditionedFileId, FileId, change::Change};
 use expect_test::{Expect, expect};
+use syntax::Edition;
 use triomphe::Arc;
 use vfs::VfsPath;
 
 use crate::{database::DefDatabase as _, test_db::TestDatabase};
 
-pub(crate) fn single_file_db(source: &str) -> (TestDatabase, FileId) {
+pub(crate) fn single_file_db(source: &str) -> (TestDatabase, EditionedFileId) {
     let mut database = TestDatabase::default();
     let mut change = Change::new();
     let file_id = FileId::from_raw(0);
@@ -16,7 +17,13 @@ pub(crate) fn single_file_db(source: &str) -> (TestDatabase, FileId) {
     );
     database.apply_change(change);
 
-    (database, file_id)
+    (
+        database,
+        EditionedFileId {
+            file_id: FileId::from_raw(0),
+            edition: Edition::LATEST,
+        },
+    )
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
@@ -26,8 +33,8 @@ fn check_item_tree(
 ) {
     let (database, file_id) = single_file_db(source);
 
-    let module_info = database.module_info(file_id.into());
-    expect.assert_eq(&crate::module_data::pretty::pretty_print_module(
+    let module_info = database.item_tree(file_id.into());
+    expect.assert_eq(&crate::item_tree::pretty::pretty_print_item_tree(
         &module_info,
     ));
 }

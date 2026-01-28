@@ -3,18 +3,23 @@ mod lower;
 #[cfg(test)]
 pub mod pretty;
 
-use std::{hash, marker::PhantomData};
+use std::{hash, marker::PhantomData, ops::ControlFlow};
 
 use la_arena::{Arena, Idx};
 use smol_str::SmolStr;
 use syntax::{AstNode, TokenText, ast};
 use triomphe::Arc;
 
-use crate::{HirFileId, ast_id::FileAstId, database::DefDatabase};
+use crate::{
+    HirFileId,
+    ast_id::FileAstId,
+    database::DefDatabase,
+    mod_path::{ModPath, PathKind},
+};
 
 const MISSING_NAME_PLACEHOLDER: &str = "[missing name]";
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, PartialOrd, Ord, Hash)]
 pub struct Name(SmolStr);
 
 impl Name {
@@ -52,16 +57,98 @@ impl From<ast::Name> for Name {
     }
 }
 
-impl From<ast::NameReference> for Name {
-    fn from(name: ast::NameReference) -> Self {
-        Self(name.text().as_str().into())
-    }
-}
-
 impl From<&'_ str> for Name {
     fn from(text: &str) -> Self {
         Self(text.into())
     }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct ImportStatement {
+    pub kind: PathKind,
+    pub tree: ImportTree,
+    pub ast_id: FileAstId<ast::ImportStatement>,
+}
+
+impl ImportStatement {
+    /// Expands the `UseTree` into individually imported `FlatImport`s.
+    pub fn expand<T, Callback: FnMut(FlatImport) -> ControlFlow<T>>(
+        &self,
+        mut callback: Callback,
+    ) -> Option<T> {
+        self.tree
+            .expand_impl(ModPath::from_kind(self.kind), &mut callback)
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct FlatImport {
+    pub path: ModPath,
+    pub alias: Option<Name>,
+}
+
+impl FlatImport {
+    #[must_use]
+    pub fn leaf_name(&self) -> Option<&Name> {
+        self.alias.as_ref().or_else(|| self.path.segments().last())
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum ImportTree {
+    Path {
+        name: Name,
+        item: Box<Self>,
+    },
+    /// ```ignore
+    /// foo as bar
+    /// ```
+    Item {
+        name: Name,
+        alias: Option<Name>,
+    },
+    /// ```ignore
+    /// {Foo, Bar, Baz};
+    /// ```
+    Collection {
+        list: Vec<Self>,
+    },
+}
+
+impl ImportTree {
+    fn expand_impl<T>(
+        &self,
+        mut prefix: ModPath,
+        callback: &mut impl FnMut(FlatImport) -> ControlFlow<T>,
+    ) -> Option<T> {
+        match self {
+            Self::Path { name, item } => {
+                prefix.push_segment(name.clone());
+                item.expand_impl(prefix, callback)
+            },
+            Self::Item { name, alias } => {
+                prefix.push_segment(name.clone());
+                callback(FlatImport {
+                    path: prefix,
+                    alias: alias.clone(),
+                })
+                .break_value()
+            },
+            Self::Collection { list } => {
+                for tree in list {
+                    if let Some(value) = tree.expand_impl(prefix.clone(), callback) {
+                        return Some(value);
+                    }
+                }
+                None
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct Directive {
+    pub ast_id: FileAstId<ast::Directive>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -105,18 +192,10 @@ pub struct Struct {
     pub ast_id: FileAstId<ast::StructDeclaration>,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Directive;
-
 #[derive(Debug, Default, Eq, PartialEq)]
-pub struct ModuleInfo {
-    pub(crate) data: ModuleData,
-    items: Vec<ModuleItem>,
-}
-
-/// Corresponds to the [ItemTree](https://github.com/rust-lang/rust-analyzer/blob/e10fa9393ea2df4067e2258c9b8132244e415964/crates/hir-def/src/item_tree.rs#L183) in rust-analyzer
-#[derive(Debug, Default, Eq, PartialEq)]
-pub struct ModuleData {
+pub struct ItemTree {
+    top_level: Vec<ModuleItem>,
+    imports: Arena<ImportStatement>,
     functions: Arena<Function>,
     global_variables: Arena<GlobalVariable>,
     global_constants: Arena<GlobalConstant>,
@@ -127,31 +206,29 @@ pub struct ModuleData {
     global_assert_statements: Arena<GlobalAssertStatement>,
 }
 
-impl ModuleInfo {
-    pub fn module_info_query(
+impl ItemTree {
+    pub fn query(
         database: &dyn DefDatabase,
         file_id: HirFileId,
     ) -> Arc<Self> {
         let source = database.parse_or_resolve(file_id).tree();
 
-        let mut lower_ctx = lower::Ctx::new(database, file_id);
-        lower_ctx.lower_source_file(&source);
+        let lower_ctx = lower::Ctx::new(database, file_id);
+        let tree = lower_ctx.lower_source_file(&source);
 
-        Arc::new(Self {
-            data: lower_ctx.module_data,
-            items: lower_ctx.items,
-        })
+        Arc::new(tree)
     }
 
     #[must_use]
     pub fn items(&self) -> &[ModuleItem] {
-        &self.items
+        &self.top_level
     }
 
     pub fn structs(&self) -> impl Iterator<Item = ModuleItemId<Struct>> + '_ {
-        self.items.iter().filter_map(|item| match item {
+        self.top_level.iter().filter_map(|item| match item {
             ModuleItem::Struct(r#struct) => Some(*r#struct),
-            ModuleItem::Function(_)
+            ModuleItem::ImportStatement(_)
+            | ModuleItem::Function(_)
             | ModuleItem::GlobalVariable(_)
             | ModuleItem::GlobalConstant(_)
             | ModuleItem::Override(_)
@@ -161,11 +238,11 @@ impl ModuleInfo {
     }
 
     #[must_use]
-    pub fn get<M: ModuleDataNode>(
+    pub fn get<M: ItemTreeNode>(
         &self,
         id: ModuleItemId<M>,
     ) -> &M {
-        M::lookup(&self.data, id.index)
+        M::lookup(self, id.index)
     }
 }
 
@@ -203,16 +280,16 @@ impl<N> Clone for ModuleItemId<N> {
     }
 }
 
-impl<N: ModuleDataNode> Copy for ModuleItemId<N> {}
+impl<N: ItemTreeNode> Copy for ModuleItemId<N> {}
 
-pub trait ModuleDataNode: Clone {
+pub trait ItemTreeNode: Clone {
     type Source: AstNode + Into<ast::Item>;
 
     fn ast_id(&self) -> FileAstId<Self::Source>;
 
     /// Looks up an instance of `Self` in an item tree.
     fn lookup(
-        data: &ModuleData,
+        data: &ItemTree,
         index: Idx<Self>,
     ) -> &Self;
 
@@ -236,7 +313,7 @@ macro_rules! mod_items {
             }
         })+
 
-        $(impl core::ops::Index<la_arena::Idx<$r#type>> for ModuleData {
+        $(impl core::ops::Index<la_arena::Idx<$r#type>> for ItemTree {
             type Output = $r#type;
 
             fn index(&self, index: la_arena::Idx<$r#type>) -> &Self::Output {
@@ -245,14 +322,14 @@ macro_rules! mod_items {
         })*
 
         $(
-        $(impl ModuleDataNode for $r#type {
+        $(impl ItemTreeNode for $r#type {
                 type Source = $ast;
 
                 fn ast_id(&self) -> FileAstId<Self::Source> {
                     self.ast_id
                 }
 
-                fn lookup(data: &ModuleData, index: Idx<Self>) -> &Self {
+                fn lookup(data: &ItemTree, index: Idx<Self>) -> &Self {
                     &data.$fld[index]
                 }
 
@@ -274,6 +351,7 @@ macro_rules! mod_items {
 }
 
 mod_items! {
+    ImportStatement in imports -> ast::ImportStatement,
     Function in functions -> ast::FunctionDeclaration,
     Struct in structs -> ast::StructDeclaration,
     GlobalVariable in global_variables -> ast::VariableDeclaration,
@@ -283,15 +361,15 @@ mod_items! {
     GlobalAssertStatement in global_assert_statements -> ast::AssertStatement,
 }
 
-pub fn find_item<M: ModuleDataNode>(
+pub fn find_item<M: ItemTreeNode>(
     database: &dyn DefDatabase,
     file_id: HirFileId,
     source: &M::Source,
 ) -> Option<ModuleItemId<M>> {
-    let module_info = database.module_info(file_id);
-    module_info.items().iter().find_map(|&item| {
+    let item_tree = database.item_tree(file_id);
+    item_tree.items().iter().find_map(|&item| {
         let id = M::id_from_mod_item(item)?;
-        let data = M::lookup(&module_info.data, id.index);
+        let data = M::lookup(&item_tree, id.index);
         let def_map = database.ast_id_map(file_id);
 
         let source_ast_id = def_map.try_ast_id(source)?;

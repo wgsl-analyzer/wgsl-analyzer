@@ -226,7 +226,7 @@ mod implementation {
                 if status.token() == 0 {
                     // SAFETY: TODO
                     unsafe {
-                        out_pipe.complete(status);
+                        out_pipe.complete(*status);
                     }
                     data(true, out_pipe.dst, out_pipe.done);
                     // SAFETY: TODO
@@ -236,7 +236,7 @@ mod implementation {
                 } else {
                     // SAFETY: TODO
                     unsafe {
-                        error_pipe.complete(status);
+                        error_pipe.complete(*status);
                     }
                     data(false, error_pipe.dst, error_pipe.done);
                     // SAFETY: TODO
@@ -261,8 +261,8 @@ mod implementation {
             let pipe = unsafe { NamedPipe::from_raw_handle(pipe.into_raw_handle()) };
             Pipe {
                 dst,
-                inner: pipe,
                 overlapped: Overlapped::zero(),
+                inner: pipe,
                 done: false,
             }
         }
@@ -293,7 +293,7 @@ mod implementation {
         /// `self.dst` must have a capacity of at least `self.dst.len() + status.bytes_transferred()`.
         unsafe fn complete(
             &mut self,
-            status: &CompletionStatus,
+            status: CompletionStatus,
         ) {
             let new_length = self
                 .dst

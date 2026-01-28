@@ -6,13 +6,13 @@ use triomphe::Arc;
 
 use crate::{
     HasSource as _,
-    data::FieldId,
     database::{DefDatabase, FunctionId, GlobalVariableId, Lookup as _, StructId},
     expression::ExpressionId,
     expression_store::{
         ExpressionSourceMap, ExpressionStore, ExpressionStoreSource, lower::ExprCollector,
     },
-    module_data::Name,
+    item_tree::Name,
+    signature::FieldId,
 };
 
 // TODO: Properly model the attributes (not all of them have expressions)

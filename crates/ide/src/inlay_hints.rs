@@ -1,9 +1,9 @@
 use std::{fmt, hash, iter, mem};
 
 use ast::Expression as AstExpression;
-use base_db::{FileId, FileRange, TextRange};
+use base_db::{EditionedFileId, FileId, FileRange, TextRange};
 use hir::{Field, HasSource as _, Semantics};
-use hir_def::{InFile, data::FieldId, module_data::Name};
+use hir_def::{InFile, database::DefDatabase as _, item_tree::Name, signature::FieldId};
 use hir_ty::{
     function::FunctionDetails,
     infer::ResolvedCall,
@@ -317,6 +317,7 @@ pub(crate) fn inlay_hints(
     config: &InlayHintsConfig,
 ) -> Vec<InlayHint> {
     let semantics = Semantics::new(database);
+    let file_id = database.editioned_file_id(file_id);
     let file = semantics.parse(file_id);
 
     let mut hints = Vec::new();
@@ -348,13 +349,13 @@ pub(crate) fn inlay_hints(
 
 fn get_struct_layout_hints(
     hints: &mut Vec<InlayHint>,
-    file_id: FileId,
+    file_id: EditionedFileId,
     semantics: &Semantics<'_>,
     config: &InlayHintsConfig,
 ) -> Option<()> {
     let display_kind = config.struct_layout_hints?;
 
-    let module_info = semantics.database.module_info(file_id.into());
+    let module_info = semantics.database.item_tree(file_id.into());
 
     for r#struct in module_info.structs() {
         let r#struct = semantics
@@ -417,7 +418,7 @@ fn get_struct_layout_hints(
 
 fn get_hints(
     hints: &mut Vec<InlayHint>,
-    file_id: FileId,
+    file_id: EditionedFileId,
     semantics: &Semantics<'_>,
     config: &InlayHintsConfig,
     node: &SyntaxNode,
@@ -481,7 +482,7 @@ fn get_hints(
 
 fn declaration_type_hints(
     hints: &mut Vec<InlayHint>,
-    file_id: FileId,
+    file_id: EditionedFileId,
     semantics: &Semantics<'_>,
     config: &InlayHintsConfig,
     node: &SyntaxNode,
@@ -521,7 +522,7 @@ fn declaration_type_hints(
 
 fn function_hints(
     hints: &mut Vec<InlayHint>,
-    file_id: FileId,
+    file_id: EditionedFileId,
     semantics: &Semantics<'_>,
     config: &InlayHintsConfig,
     node: &SyntaxNode,
@@ -568,10 +569,49 @@ fn function_hints(
 fn should_hide_param_name_hint(
     function: &FunctionDetails,
     param_name: &str,
-    expression: &AstExpression,
+    argument: &AstExpression,
 ) -> bool {
-    is_argument_similar_to_parameter_name(expression, param_name)
-        || (function.parameters.len() == 1 && is_obvious_parameter(param_name))
+    // These are to be tested in the `parameter_hint_heuristics` test
+    // hide when:
+    // - the parameter name is a suffix of the function's name
+    // - the argument is a qualified constructing or call expression where the qualifier is an ADT
+    // - exact argument<->parameter match(ignoring leading and trailing underscore) or
+    //   parameter is a prefix/suffix of argument with _ splitting it off
+    // - param is a well known name in a unary function
+
+    let param_name = param_name.trim_matches('_');
+    if param_name.is_empty() {
+        return true;
+    }
+
+    if function.parameters.len() == 1 {
+        if is_param_name_suffix_of_fn_name(param_name, function.name.as_str()) {
+            return true;
+        }
+        if is_obvious_parameter(param_name) {
+            return true;
+        }
+    }
+
+    is_argument_similar_to_parameter_name(argument, param_name)
+}
+
+/// Hide the parameter name of a unary function if it is a `_` - prefixed suffix of the function's name, or equal.
+///
+/// `fn strip_suffix(suffix)` will be hidden.
+/// `fn stripsuffix(suffix)` will not be hidden.
+fn is_param_name_suffix_of_fn_name(
+    param_name: &str,
+    fn_name: &str,
+) -> bool {
+    fn_name == param_name
+        || fn_name
+            .len()
+            .checked_sub(param_name.len())
+            .and_then(|at| fn_name.is_char_boundary(at).then(|| fn_name.split_at(at)))
+            .is_some_and(|(prefix, suffix)| {
+                suffix.eq_ignore_ascii_case(param_name) && prefix.ends_with('_')
+            })
 }
 
 fn is_argument_similar_to_parameter_name(
@@ -591,12 +631,14 @@ fn is_argument_similar_to_parameter_name(
     let param_name = param_name.trim_start_matches('_');
     let argument = argument.trim_start_matches('_');
 
+    // prefix match
     match str_split_at(argument, param_name.len()) {
         Some((prefix, rest)) if prefix.eq_ignore_ascii_case(param_name) => {
             return rest.is_empty() || rest.starts_with('_');
         },
         _ => (),
     }
+    // postfix match
     match argument
         .len()
         .checked_sub(param_name.len())
@@ -635,17 +677,27 @@ fn compare_ignore_case_convention(
 fn get_string_representation(expression: &AstExpression) -> Option<String> {
     match expression {
         AstExpression::IdentExpression(expression) => {
-            Some(expression.name_ref()?.text().as_str().to_owned())
+            Some(expression.path()?.segments().last()?.text().to_owned())
         },
+        AstExpression::FunctionCall(expression) => Some(
+            expression
+                .ident_expression()?
+                .path()?
+                .segments()
+                .last()?
+                .text()
+                .to_owned(),
+        ),
         AstExpression::PrefixExpression(expression) => {
+            get_string_representation(&expression.expression()?)
+        },
+        AstExpression::IndexExpression(expression) => {
             get_string_representation(&expression.expression()?)
         },
         AstExpression::FieldExpression(expression) => Some(expression.field()?.text().to_owned()),
         AstExpression::InfixExpression(_)
         | AstExpression::Literal(_)
-        | AstExpression::ParenthesisExpression(_)
-        | AstExpression::FunctionCall(_)
-        | AstExpression::IndexExpression(_) => None,
+        | AstExpression::ParenthesisExpression(_) => None,
     }
 }
 

@@ -7,7 +7,7 @@ pub mod input;
 mod util_types;
 use input::{SourceRoot, SourceRootId};
 use line_index::LineIndex;
-use syntax::Parse;
+use syntax::{Edition, Parse};
 use triomphe::Arc;
 pub use util_types::*;
 pub use vfs::FileId;
@@ -57,7 +57,7 @@ pub trait SourceDatabase: FileLoader {
     #[salsa::invoke(parse_query)]
     fn parse(
         &self,
-        key: FileId,
+        key: EditionedFileId,
     ) -> Parse;
 
     fn line_index(
@@ -76,10 +76,10 @@ fn line_index(
 
 fn parse_query(
     database: &dyn SourceDatabase,
-    file_id: FileId,
+    file_id: EditionedFileId,
 ) -> Parse {
-    let source = database.file_text(file_id);
-    syntax::parse(&source)
+    let source = database.file_text(file_id.file_id);
+    syntax::parse(&source, file_id.edition)
 }
 
 /// Silly workaround for cyclic deps between the traits
@@ -95,4 +95,13 @@ impl<T: SourceDatabase> FileLoader for FileLoaderDelegate<&'_ T> {
         let source_root = self.0.source_root(source_root);
         source_root.resolve_path(path)
     }
+}
+
+/// File together with an edition.
+/// Simpler than Rust-Analyzer, because we do not macros.
+/// We only track the editions at a file level, as opposed to tracking it per span.
+#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub struct EditionedFileId {
+    pub file_id: FileId,
+    pub edition: Edition,
 }

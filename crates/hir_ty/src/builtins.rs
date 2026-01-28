@@ -1,4 +1,4 @@
-use hir_def::module_data::Name;
+use hir_def::item_tree::Name;
 use wgsl_types::{
     syntax::{AccessMode, AddressSpace},
     ty::SamplerType,

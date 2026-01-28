@@ -9,7 +9,7 @@ use super::{BindingId, Body};
 use crate::{
     database::{DefDatabase, DefinitionWithBodyId},
     expression::{ExpressionId, Statement, StatementId, SwitchCaseSelector},
-    module_data::Name,
+    item_tree::Name,
 };
 
 pub type ScopeId = Idx<ScopeData>;

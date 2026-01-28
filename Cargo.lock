@@ -438,6 +438,7 @@ dependencies = [
  "rowan",
  "rustc-hash 2.1.1",
  "salsa",
+ "smallvec",
  "smol_str",
  "syntax",
  "triomphe",
@@ -563,6 +564,7 @@ name = "ide"
 version = "0.0.0"
 dependencies = [
  "base-db",
+ "expect-test",
  "hir",
  "hir-def",
  "hir-ty",

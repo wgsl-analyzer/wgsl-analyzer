@@ -1,13 +1,14 @@
 mod ast_id;
 pub mod attributes;
 pub mod body;
-pub mod data;
 pub mod database;
 pub mod expression;
 pub mod expression_store;
 pub mod hir_file_id;
-pub mod module_data;
+pub mod item_tree;
+pub mod mod_path;
 pub mod resolver;
+pub mod signature;
 #[cfg(test)]
 mod test_db;
 #[cfg(test)]
@@ -19,7 +20,7 @@ use base_db::{FileRange, TextRange};
 use database::DefDatabase;
 pub use hir_file_id::HirFileId;
 use hir_file_id::HirFileIdRepr;
-use module_data::{ModuleDataNode, ModuleItemId};
+use item_tree::{ItemTreeNode, ModuleItemId};
 use rowan::NodeOrToken;
 use syntax::{AstNode, SyntaxNode, SyntaxToken};
 
@@ -111,13 +112,13 @@ impl<N: HasTextRange, T: HasTextRange> HasTextRange for NodeOrToken<N, T> {
 }
 
 pub fn original_file_range<T: HasTextRange>(
-    database: &dyn DefDatabase,
+    _database: &dyn DefDatabase,
     file_id: HirFileId,
     value: &T,
 ) -> FileRange {
     match file_id.0 {
         HirFileIdRepr::FileId(file_id) => FileRange {
-            file_id,
+            file_id: file_id.file_id,
             range: value.text_range(),
         },
     }
@@ -131,17 +132,17 @@ pub trait HasSource {
     ) -> InFile<Self::Value>;
 }
 
-impl<N: ModuleDataNode> HasSource for InFile<ModuleItemId<N>> {
+impl<N: ItemTreeNode> HasSource for InFile<ModuleItemId<N>> {
     type Value = N::Source;
 
     fn source(
         &self,
         database: &dyn DefDatabase,
     ) -> InFile<N::Source> {
-        let module_info = database.module_info(self.file_id);
+        let item_tree = database.item_tree(self.file_id);
         let ast_id_map = database.ast_id_map(self.file_id);
         let root = database.parse_or_resolve(self.file_id);
-        let node = N::lookup(&module_info.data, self.value.index);
+        let node = N::lookup(&item_tree, self.value.index);
 
         InFile::new(
             self.file_id,

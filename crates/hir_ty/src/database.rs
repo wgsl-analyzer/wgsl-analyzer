@@ -5,12 +5,12 @@ use std::fmt;
 
 use hir_def::{
     HirFileId, InFile,
-    data::{FieldId, LocalFieldId},
     database::{
         DefDatabase, DefinitionWithBodyId, FunctionId, Lookup as _, ModuleDefinitionId, StructId,
         TypeAliasId,
     },
     resolver::Resolver,
+    signature::{FieldId, LocalFieldId},
 };
 use la_arena::ArenaMap;
 use triomphe::Arc;
@@ -89,7 +89,7 @@ fn field_types(
     let data = database.struct_data(r#struct).0;
 
     let file_id = r#struct.lookup(database).file_id;
-    let module_info = database.module_info(file_id);
+    let module_info = database.item_tree(file_id);
     let resolver = Resolver::default().push_module_scope(file_id, module_info);
 
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
@@ -118,7 +118,7 @@ fn type_alias_type(
     let data = database.type_alias_data(type_alias).0;
 
     let file_id = type_alias.lookup(database).file_id;
-    let module_info = database.module_info(file_id);
+    let module_info = database.item_tree(file_id);
     let resolver = Resolver::default().push_module_scope(file_id, module_info);
 
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
@@ -142,7 +142,7 @@ fn function_type(
     let data = database.function_data(function).0;
 
     let file_id = function.lookup(database).file_id;
-    let module_info = database.module_info(file_id);
+    let module_info = database.item_tree(file_id);
     let resolver = Resolver::default().push_module_scope(file_id, module_info);
 
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
@@ -161,6 +161,7 @@ fn function_type(
         .collect();
 
     FunctionDetails {
+        name: data.name.clone(),
         return_type,
         parameters,
     }
@@ -172,9 +173,9 @@ fn struct_is_used_in_uniform(
     r#struct: StructId,
     file_id: HirFileId,
 ) -> bool {
-    let module_info = database.module_info(file_id);
+    let module_info = database.item_tree(file_id);
     module_info.items().iter().any(|item| match *item {
-        hir_def::module_data::ModuleItem::GlobalVariable(declaration) => {
+        hir_def::item_tree::ModuleItem::GlobalVariable(declaration) => {
             let declaration = database.intern_global_variable(InFile::new(file_id, declaration));
             let inference = database.infer(DefinitionWithBodyId::GlobalVariable(declaration));
             let type_kind = inference.return_type().kind(database);
@@ -187,11 +188,12 @@ fn struct_is_used_in_uniform(
 
             inference.return_type().contains_struct(database, r#struct)
         },
-        hir_def::module_data::ModuleItem::Function(_)
-        | hir_def::module_data::ModuleItem::Struct(_)
-        | hir_def::module_data::ModuleItem::GlobalConstant(_)
-        | hir_def::module_data::ModuleItem::Override(_)
-        | hir_def::module_data::ModuleItem::GlobalAssertStatement(_)
-        | hir_def::module_data::ModuleItem::TypeAlias(_) => false,
+        hir_def::item_tree::ModuleItem::Function(_)
+        | hir_def::item_tree::ModuleItem::Struct(_)
+        | hir_def::item_tree::ModuleItem::GlobalConstant(_)
+        | hir_def::item_tree::ModuleItem::Override(_)
+        | hir_def::item_tree::ModuleItem::GlobalAssertStatement(_)
+        | hir_def::item_tree::ModuleItem::TypeAlias(_)
+        | hir_def::item_tree::ModuleItem::ImportStatement(_) => false,
     })
 }

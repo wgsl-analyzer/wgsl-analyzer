@@ -78,6 +78,10 @@ export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement
 			const fileText = await this.ctx.client.sendRequest(wa.viewSyntaxTree, parameters);
 
 			this.root = JSON.parse(fileText, (_key, value: RawElement): SyntaxElement => {
+				if (value.type !== "Node" && value.type !== "Token") {
+					// This is something other than a RawElement.
+					return value;
+				}
 				const [start_offset, start_line, start_column] = value.start;
 				const [end_offset, end_line, end_column] = value.end;
 				const range = new vscode.Range(start_line, start_column, end_line, end_column);
@@ -148,24 +152,26 @@ export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement
 		}
 
 		let children = this.getRawChildren(this.root);
-		outer: for (const child of children) {
-			if (child.range.contains(target)) {
-				result = child;
-				if (target.isEmpty && target.start === child.range.end) {
-					// When the cursor is on the very end of a token,
-					// we assume the user wants the next token instead.
-					continue;
-				}
+		outer: while (true) {
+			for (const child of children) {
+				if (child.range.contains(target)) {
+					result = child;
+					if (target.isEmpty && target.start === child.range.end) {
+						// When the cursor is on the very end of a token,
+						// we assume the user wants the next token instead.
+						continue;
+					}
 
-				if (child.type === "Token") {
-					return result;
-				} else {
-					children = this.getRawChildren(child);
-					continue outer;
+					if (child.type === "Token") {
+						return result;
+					} else {
+						children = this.getRawChildren(child);
+						continue outer;
+					}
 				}
 			}
+			return result;
 		}
-		return result;
 	}
 
 	async toggleWhitespace() {

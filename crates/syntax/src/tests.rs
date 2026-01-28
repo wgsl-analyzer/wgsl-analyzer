@@ -1,8 +1,10 @@
-use crate::{HasName as _, ast, parse};
+use parser::Edition;
+
+use crate::{AstNode, HasName as _, ast, parse};
 
 #[test]
 fn smoke_test() {
-    let ast = parse("fn foo(a: u32) -> f32 { let b = 1 + a; }").tree();
+    let ast = parse("fn foo(a: u32) -> f32 { let b = 1 + a; }", Edition::LATEST).tree();
 
     let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
         panic!()
@@ -28,7 +30,7 @@ fn smoke_test() {
 
 #[test]
 fn discard_statement() {
-    let ast = parse("fn main() { discard; }").tree();
+    let ast = parse("fn main() { discard; }", Edition::LATEST).tree();
 
     let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
         panic!()
@@ -41,7 +43,7 @@ fn discard_statement() {
 
 #[test]
 fn function_call_statement() {
-    let ast = parse("fn main() { foo(); }").tree();
+    let ast = parse("fn main() { foo(1,2,3); }", Edition::LATEST).tree();
 
     let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
         panic!()
@@ -52,16 +54,9 @@ fn function_call_statement() {
         panic!()
     };
     let expression: ast::FunctionCall = function_call.expression().unwrap();
-    assert_eq!(
-        expression
-            .ident_expression()
-            .unwrap()
-            .name_ref()
-            .unwrap()
-            .text()
-            .as_str(),
-        "foo"
-    );
+    let path = expression.ident_expression().unwrap().path().unwrap();
+    assert_eq!(path.segments().count(), 1);
+    assert_eq!(path.segments().next().unwrap().text(), "foo");
 }
 
 #[test]
@@ -76,6 +71,7 @@ fn main() {
     }
 }
     ",
+        Edition::LATEST,
     )
     .tree();
 
@@ -113,6 +109,7 @@ fn main() {
     loop { let a = 3; }
 }
     ",
+        Edition::LATEST,
     )
     .tree();
 

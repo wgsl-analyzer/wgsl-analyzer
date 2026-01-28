@@ -8,7 +8,6 @@ use either::Either;
 use hir_def::{
     HasSource as _,
     body::{BindingId, Body},
-    data::{FieldId, FunctionData, GlobalConstantData, GlobalVariableData, OverrideData},
     database::{
         DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, Lookup as _, ModuleDefinitionId,
         OverrideId, StructId,
@@ -17,9 +16,12 @@ use hir_def::{
         ArithmeticOperation, BinaryOperation, ComparisonOperation, Expression, ExpressionId,
         Statement, StatementId, SwitchCaseSelector, UnaryOperator,
     },
-    expression_store::{ExpressionStore, ExpressionStoreSource},
-    module_data::Name,
+    expression_store::{ExpressionStore, ExpressionStoreSource, path::Path},
+    item_tree::Name,
     resolver::{ResolveKind, Resolver},
+    signature::{
+        ConstantSignature, FieldId, FunctionSignature, OverrideSignature, VariableSignature,
+    },
     type_ref::{self, VecDimensionality},
     type_specifier::{IdentExpression, TypeSpecifierId},
 };
@@ -274,7 +276,7 @@ pub enum InferenceDiagnostic {
         expression: ExpressionId,
         expected: LoweredKind,
         actual: LoweredKind,
-        name: Name,
+        path: Path,
     },
 }
 
@@ -496,7 +498,7 @@ impl<'database> InferenceContext<'database> {
 
     fn collect_global_variable(
         &mut self,
-        variable: &GlobalVariableData,
+        variable: &VariableSignature,
         body: &Body,
     ) -> Option<Type> {
         let r#type = variable
@@ -509,7 +511,7 @@ impl<'database> InferenceContext<'database> {
 
     fn infer_global_variable(
         &mut self,
-        variable: &GlobalVariableData,
+        variable: &VariableSignature,
         body: &Body,
     ) {
         let (address_space, access_mode) =
@@ -590,7 +592,7 @@ impl<'database> InferenceContext<'database> {
 
     fn collect_global_constant(
         &mut self,
-        constant: &GlobalConstantData,
+        constant: &ConstantSignature,
         body: &Body,
     ) -> Option<Type> {
         let r#type = constant
@@ -603,7 +605,7 @@ impl<'database> InferenceContext<'database> {
 
     fn collect_override(
         &mut self,
-        override_data: &OverrideData,
+        override_data: &OverrideSignature,
         body: &Body,
     ) -> Option<Type> {
         let r#type = override_data
@@ -616,7 +618,7 @@ impl<'database> InferenceContext<'database> {
 
     fn collect_fn(
         &mut self,
-        function_data: &FunctionData,
+        function_data: &FunctionSignature,
         body: &Body,
     ) -> Option<Type> {
         for ((_, parameter), &binding_id) in function_data.parameters.iter().zip(&body.parameters) {
@@ -1401,7 +1403,7 @@ impl<'database> InferenceContext<'database> {
                     expression,
                     expected: LoweredKind::Variable,
                     actual: lowered.kind(),
-                    name: ident_expression.path.clone(),
+                    path: ident_expression.path.clone(),
                 });
                 self.error_type()
             },
@@ -1624,7 +1626,7 @@ impl<'database> InferenceContext<'database> {
                     expression,
                     expected: LoweredKind::Function,
                     actual: lowered.kind(),
-                    name: callee.path.clone(),
+                    path: callee.path.clone(),
                 });
                 self.error_type()
             },
@@ -1638,6 +1640,14 @@ impl<'database> InferenceContext<'database> {
         mut template_parameters: TemplateParameters,
         arguments: &[Type],
     ) -> Type {
+        let Some(name) = callee.path.mod_path().as_ident() else {
+            self.push_diagnostic(InferenceDiagnostic::WgslError {
+                expression,
+                message: format!("invalid builtin {}", callee.path.mod_path()),
+            });
+            return self.error_type();
+        };
+
         let mut converter = WgslTypeConverter::new(self.database);
         let mut template_args = vec![];
         while let Some((template_parameter, _)) = template_parameters.next() {
@@ -1672,7 +1682,7 @@ impl<'database> InferenceContext<'database> {
         };
 
         let return_type = wgsl_types::builtin::type_builtin_fn(
-            callee.path.as_str(),
+            name.as_str(),
             template_args,
             &converted_arguments,
         );
@@ -2118,6 +2128,7 @@ pub struct TypeLoweringError {
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeLoweringErrorKind {
     UnresolvedName(Name),
+    UnresolvedPath(Path),
     UnexpectedTemplateArgument(String),
     MissingTemplateArgument(String),
     MissingTemplate,
@@ -2126,9 +2137,9 @@ pub enum TypeLoweringErrorKind {
         actual: usize,
     },
     // A value was provided where a type was expected.
-    ExpectedType(Name),
+    ExpectedType(Path),
     // A function was provided but not called.
-    ExpectedFunctionToBeCalled(Name),
+    ExpectedFunctionToBeCalled(Path),
     // TODO: Change this to a strongly typed wgsl_types::Error
     // The challenge here is that wgsl_types::Error doesn't implement Eq,
     // However the inference result keeps track of all the diagnostics and is cached
@@ -2146,6 +2157,9 @@ impl fmt::Display for TypeLoweringErrorKind {
         match self {
             Self::UnresolvedName(name) => {
                 write!(formatter, "`{}` not found in scope", name.as_str())
+            },
+            Self::UnresolvedPath(path) => {
+                write!(formatter, "`{}` not found in scope", path.mod_path())
             },
             Self::WgslError(error) => {
                 write!(formatter, "{error}")
@@ -2179,14 +2193,14 @@ impl fmt::Display for TypeLoweringErrorKind {
                     expected.end()
                 )
             },
-            Self::ExpectedType(name) => {
-                write!(formatter, "{} is not a type", name.as_str())
+            Self::ExpectedType(path) => {
+                write!(formatter, "{} is not a type", path.mod_path())
             },
-            Self::ExpectedFunctionToBeCalled(name) => {
+            Self::ExpectedFunctionToBeCalled(path) => {
                 write!(
                     formatter,
                     "{0:} was written, write {0:}() instead",
-                    name.as_str()
+                    path.mod_path()
                 )
             },
         }
@@ -2267,7 +2281,7 @@ impl<'database> TypeLoweringContext<'database> {
     pub fn lower(
         &mut self,
         type_container: TypeContainer,
-        path: &Name,
+        path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Lowered {
         match self.try_lower(type_container, path, template_parameters) {
@@ -2283,7 +2297,7 @@ impl<'database> TypeLoweringContext<'database> {
     pub fn try_lower(
         &mut self,
         type_container: TypeContainer,
-        path: &Name,
+        path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
         let resolved_type = self.resolver.resolve(path);
