@@ -32,7 +32,7 @@ impl Definition {
         match_ast! {
             match node {
                 ast::Path(name_ref) => {
-                    resolve_path(semantics, file_id, name_ref)
+                    resolve_path(semantics, file_id, &name_ref)
                 },
                 ast::FieldExpression(field_expression) => {
                     resolve_field(semantics, file_id, field_expression)
@@ -49,7 +49,7 @@ impl Definition {
 fn resolve_path(
     semantics: &Semantics<'_>,
     file_id: HirFileId,
-    path: ast::Path,
+    path: &ast::Path,
 ) -> Option<Definition> {
     let parent = path.syntax().parent()?;
 
@@ -71,7 +71,7 @@ fn resolve_path(
     } else if let Some(r#type) = ast::TypeSpecifier::cast(parent) {
         let resolver = semantics.resolver(file_id, r#type.syntax());
 
-        match resolver.resolve(&Path(ModPath::from_src(r#type.path()?)))? {
+        match resolver.resolve(&Path(ModPath::from_src(&r#type.path()?)))? {
             ResolveKind::Struct(location) => {
                 let id = semantics.database.intern_struct(location);
                 Some(Definition::ModuleDef(ModuleDef::Struct(Struct { id })))

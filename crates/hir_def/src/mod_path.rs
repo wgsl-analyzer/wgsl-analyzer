@@ -43,8 +43,8 @@ impl PathKind {
 impl ModPath {
     /// The WESL grammar guarantees that only valid paths can be in the syntax tree.
     #[must_use]
-    pub fn from_src(path: ast::Path) -> Self {
-        convert_path(&path)
+    pub fn from_src(path: &ast::Path) -> Self {
+        convert_path(path)
     }
 
     pub fn from_segments<Segments: IntoIterator<Item = Name>>(
