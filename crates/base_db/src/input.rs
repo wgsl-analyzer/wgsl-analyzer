@@ -199,22 +199,16 @@ impl PackageOrigin {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum LanguagePackageOrigin {
-    Alloc,
     Core,
-    ProcMacro,
     Std,
-    Test,
     Other,
 }
 
 impl From<&str> for LanguagePackageOrigin {
     fn from(s: &str) -> Self {
         match s {
-            "alloc" => LanguagePackageOrigin::Alloc,
             "core" => LanguagePackageOrigin::Core,
-            "proc-macro" | "proc_macro" => LanguagePackageOrigin::ProcMacro,
             "std" => LanguagePackageOrigin::Std,
-            "test" => LanguagePackageOrigin::Test,
             _ => LanguagePackageOrigin::Other,
         }
     }
@@ -226,11 +220,8 @@ impl fmt::Display for LanguagePackageOrigin {
         f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         let text = match self {
-            LanguagePackageOrigin::Alloc => "alloc",
             LanguagePackageOrigin::Core => "core",
-            LanguagePackageOrigin::ProcMacro => "proc_macro",
             LanguagePackageOrigin::Std => "std",
-            LanguagePackageOrigin::Test => "test",
             LanguagePackageOrigin::Other => "other",
         };
         f.write_str(text)
@@ -457,9 +448,9 @@ impl PackageGraph {
                 .into_iter()
                 .map(|it| (it, self[it].display_name.clone()))
                 .collect();
-            let err = CyclicDependenciesError { path };
-            assert!(err.from().0 == from && err.to().0 == dep.package_id);
-            return Err(err);
+            let error = CyclicDependenciesError { path };
+            assert!(error.from().0 == from && error.to().0 == dep.package_id);
+            return Err(error);
         }
 
         self.arena[from].add_dep(dep);
@@ -475,7 +466,7 @@ impl PackageGraph {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = PackageId> + '_ {
-        self.arena.iter().map(|(idx, _)| idx)
+        self.arena.iter().map(|(index, _)| index)
     }
 
     // FIXME: used for fixing up the toolchain sysroot, should be removed and done differently
@@ -540,28 +531,28 @@ impl PackageGraph {
     /// Returns all packages in the graph, sorted in topological order (ie. dependencies of a package
     /// come before the package itself).
     pub fn packages_in_topological_order(&self) -> Vec<PackageId> {
-        let mut res = Vec::new();
+        let mut result = Vec::new();
         let mut visited = FxHashSet::default();
 
         for package in self.iter() {
-            go(self, &mut visited, &mut res, package);
+            go(self, &mut visited, &mut result, package);
         }
 
-        return res;
+        return result;
 
         fn go(
             graph: &PackageGraph,
             visited: &mut FxHashSet<PackageId>,
-            res: &mut Vec<PackageId>,
+            result: &mut Vec<PackageId>,
             source: PackageId,
         ) {
             if !visited.insert(source) {
                 return;
             }
             for dep in graph[source].dependencies.iter() {
-                go(graph, visited, res, dep.package_id)
+                go(graph, visited, result, dep.package_id)
             }
-            res.push(source)
+            result.push(source)
         }
     }
 

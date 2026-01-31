@@ -543,6 +543,10 @@ fn wesl_to_package_graph(
     // Next, create packages for each package, target pair
     for pkg in wesl.packages() {
         let mut lib_tgt: Option<(String, String)> = None;
+
+        let a = wesl[pkg];
+
+        for target in &wesl[pkg] {}
         let Some(file_id) = load(root) else { continue };
 
         let pkg_data = &wesl[pkg];
@@ -696,16 +700,10 @@ fn extend_package_graph_with_sysroot(
     for cid in sysroot_package_graph.iter() {
         if let PackageOrigin::Language(lang_package) = sysroot_package_graph[cid].basic.origin {
             match lang_package {
-                LanguagePackageOrigin::Test
-                | LanguagePackageOrigin::Alloc
-                | LanguagePackageOrigin::Core
-                | LanguagePackageOrigin::Std => pub_deps.push((
+                LanguagePackageOrigin::Core | LanguagePackageOrigin::Std => pub_deps.push((
                     PackageName::normalize_dashes(&lang_package.to_string()),
                     cid,
-                    !matches!(
-                        lang_package,
-                        LanguagePackageOrigin::Test | LanguagePackageOrigin::Alloc
-                    ),
+                    true,
                 )),
                 LanguagePackageOrigin::Other => (),
             }

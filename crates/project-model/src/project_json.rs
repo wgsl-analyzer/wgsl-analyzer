@@ -149,7 +149,7 @@ impl ProjectJson {
         self.packages
             .iter()
             .enumerate()
-            .map(|(idx, package)| (PackageArrayIdx(idx), package))
+            .map(|(index, package)| (PackageArrayIdx(index), package))
     }
 
     /// Returns the path to the project's root folder.
@@ -414,7 +414,7 @@ where
 {
     let name = String::deserialize(de)?;
     PackageName::new(&name)
-        .map_err(|err| de::Error::custom(format!("invalid package name: {err:?}")))
+        .map_err(|error| de::Error::custom(format!("invalid package name: {error:?}")))
 }
 
 fn serialize_package_name<S>(

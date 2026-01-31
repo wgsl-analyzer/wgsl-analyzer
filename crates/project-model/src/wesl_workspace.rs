@@ -99,24 +99,22 @@ pub struct PackageData {
     pub is_member: bool,
     /// List of packages this package depends on
     pub dependencies: Vec<PackageDependency>,
-    /// Rust edition for this package
+    /// WESL edition for this package
     pub edition: Edition,
     /// String representation of package id
     pub id: String,
-    /// Authors as given in the `wesl.toml`
-    pub authors: Vec<String>,
-    /// Description as given in the `wesl.toml`
-    pub description: Option<String>,
-    /// Homepage as given in the `wesl.toml`
-    pub homepage: Option<String>,
     /// License as given in the `wesl.toml`
     pub license: Option<String>,
     /// License file as given in the `wesl.toml`
     pub license_file: Option<Utf8PathBuf>,
-    /// Readme file as given in the `wesl.toml`
-    pub readme: Option<Utf8PathBuf>,
     /// The contents of [package.metadata.wgsl-analyzer]
     pub metadata: WgslAnalyzerPackageMetaData,
+    /// Where the main wesl file or folder is
+    pub root: Utf8PathBuf,
+    /// File inclusion globs
+    pub include: Vec<String>,
+    /// File exclusion globs, applied after the inclusions
+    pub exclude: Vec<String>,
 }
 
 #[derive(Deserialize, Default, Debug, Clone, Eq, PartialEq)]
@@ -210,7 +208,7 @@ impl WeslWorkspace {
         // unclear whether wesl itself supports it.
         progress("wesl metadata: started".to_owned());
 
-        let res = (|| -> anyhow::Result<(_, _)> {
+        let result = (|| -> anyhow::Result<(_, _)> {
             let mut errored = false;
             let output =
                 spawn_with_streaming_output(meta.wesl_command(), &mut |_| (), &mut |line| {
@@ -251,7 +249,7 @@ impl WeslWorkspace {
         })()
         .with_context(|| format!("Failed to run `{:?}`", meta.wesl_command()));
         progress("wesl metadata: finished".to_owned());
-        res
+        result
     }
 
     pub fn new(
@@ -309,14 +307,13 @@ impl WeslWorkspace {
                 is_member,
                 edition,
                 repository,
-                authors,
-                description,
-                homepage,
                 license,
                 license_file,
-                readme,
                 dependencies: Vec::new(),
                 metadata: meta.wgsl_analyzer.unwrap_or_default(),
+                root,
+                include,
+                exclude,
             });
             let pkg_data = &mut packages[pkg];
             pkg_by_id.insert(id, pkg);
