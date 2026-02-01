@@ -4,7 +4,7 @@ use std::{
     marker::PhantomData,
 };
 
-use base_db::{EditionedFileId, FileId, SourceDatabase};
+use base_db::{EditionedFileId, FileId, PackageId, SourceDatabase};
 use salsa::InternKey;
 use syntax::{Edition, Parse, ast};
 use triomphe::Arc;
@@ -21,6 +21,7 @@ use crate::{
         Directive, Function, GlobalAssertStatement, GlobalConstant, GlobalVariable,
         ImportStatement, ItemTree, ModuleItemId, Override, Struct, TypeAlias,
     },
+    nameres::DefMap,
     resolver::Resolver,
     signature::{
         ConstantSignature, FunctionSignature, GlobalAssertStatementSignature, OverrideSignature,
@@ -60,6 +61,12 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         &self,
         key: HirFileId,
     ) -> Arc<ItemTree>;
+
+    #[salsa::invoke(DefMap::package_def_map_query)]
+    fn package_def_map_query(
+        &self,
+        package: PackageId,
+    ) -> Arc<DefMap>;
 
     #[salsa::invoke(Body::body_with_source_map_query)]
     fn body_with_source_map(

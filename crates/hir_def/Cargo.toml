@@ -12,8 +12,11 @@ doctest = false
 
 [dependencies]
 base-db.workspace = true
+edition.workspace = true
 either.workspace = true
+indexmap.workspace = true
 la-arena.workspace = true
+profile.workspace = true
 rowan.workspace = true
 rustc-hash.workspace = true
 salsa.workspace = true

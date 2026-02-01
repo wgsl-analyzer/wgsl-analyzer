@@ -80,6 +80,7 @@ walkdir = "2.5.0"
 wgsl-types = { git = "https://github.com/wgsl-tooling-wg/wesl-rs", version = "0.2.0", features = [
 	"naga-ext",
 ] }
+indexmap = { version = "2.13.0" }
 
 # tombi: format.rules.table-keys-order.disabled = true
 [workspace.lints.clippy]

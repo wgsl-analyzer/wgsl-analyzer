@@ -63,10 +63,14 @@ dependencies = [
 name = "base-db"
 version = "0.0.0"
 dependencies = [
+ "edition",
+ "la-arena",
  "line-index",
  "rowan",
+ "rustc-hash 2.1.1",
  "salsa",
  "syntax",
+ "tracing",
  "triomphe",
  "vfs",
 ]
@@ -432,9 +436,12 @@ name = "hir-def"
 version = "0.0.0"
 dependencies = [
  "base-db",
+ "edition",
  "either",
  "expect-test",
+ "indexmap 2.13.0",
  "la-arena",
+ "profile",
  "rowan",
  "rustc-hash 2.1.1",
  "salsa",
@@ -654,9 +661,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.12.1"
+version = "2.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ad4bb2b565bca0645f4d68c5c9af97fba094e9791da685bf83cb5f3ce74acf2"
+checksum = "7714e70437a7dc3ac8eb7e6f8df75fd8eb422675fc7678aff7364301092b1017"
 dependencies = [
  "equivalent",
  "hashbrown 0.16.1",
@@ -961,7 +968,7 @@ dependencies = [
  "half",
  "hashbrown 0.16.1",
  "hexf-parse",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "libm",
  "log",
  "num-traits",
@@ -986,7 +993,7 @@ dependencies = [
  "half",
  "hashbrown 0.16.1",
  "hexf-parse",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "libm",
  "log",
  "num-traits",
@@ -1010,7 +1017,7 @@ dependencies = [
  "half",
  "hashbrown 0.16.1",
  "hexf-parse",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "libm",
  "log",
  "num-traits",
@@ -1459,7 +1466,7 @@ version = "1.0.149"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86"
 dependencies = [
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "itoa",
  "memchr",
  "serde",
@@ -1841,7 +1848,7 @@ source = "git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7e
 dependencies = [
  "crossbeam-channel",
  "fst",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "nohash-hasher",
  "paths",
  "rustc-hash 2.1.1",
@@ -2367,7 +2374,7 @@ checksum = "c42e33efc22a0650c311c2ef19115ce232583abbe80850bc8b66509ebef02de0"
 dependencies = [
  "crc32fast",
  "flate2",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "memchr",
  "time",
  "typed-path",
