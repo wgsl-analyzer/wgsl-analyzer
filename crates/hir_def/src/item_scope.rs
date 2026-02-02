@@ -18,7 +18,7 @@ impl ItemScope {
         buf: &mut String,
     ) {
         let mut entries: Vec<_> = self.items.iter().collect();
-        entries.sort_by_key(|(name, _)| name.clone());
+        entries.sort_by_key(|(name, _)| *name);
 
         for (name, def) in entries {
             write!(buf, "{}: v\n", name.as_str());

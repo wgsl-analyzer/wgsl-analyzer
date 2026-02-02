@@ -33,7 +33,7 @@ pub struct SourceRoot {
     ///
     /// Libraries are considered mostly immutable, this assumption is used to
     /// optimize salsa's query structure
-    pub is_library: bool,
+    is_library: bool,
     file_set: FileSet,
 }
 
@@ -77,6 +77,10 @@ impl SourceRoot {
 
     pub fn iter(&self) -> impl Iterator<Item = FileId> + '_ {
         self.file_set.iter()
+    }
+
+    pub fn is_library(&self) -> bool {
+        self.is_library
     }
 }
 

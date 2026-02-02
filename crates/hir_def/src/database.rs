@@ -417,7 +417,8 @@ impl DefinitionWithBodyId {
     }
 }
 
-/// All module items.
+/// The defs which can be visible in the module.
+/// Does not include things like import statements.
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
 pub enum ModuleDefinitionId {
     Function(FunctionId),

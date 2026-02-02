@@ -220,7 +220,7 @@ impl ItemTree {
     }
 
     #[must_use]
-    pub fn items(&self) -> &[ModuleItem] {
+    pub fn top_level_items(&self) -> &[ModuleItem] {
         &self.top_level
     }
 
@@ -367,7 +367,7 @@ pub fn find_item<M: ItemTreeNode>(
     source: &M::Source,
 ) -> Option<ModuleItemId<M>> {
     let item_tree = database.item_tree(file_id);
-    item_tree.items().iter().find_map(|&item| {
+    item_tree.top_level_items().iter().find_map(|&item| {
         let id = M::id_from_mod_item(item)?;
         let data = M::lookup(&item_tree, id.index);
         let def_map = database.ast_id_map(file_id);

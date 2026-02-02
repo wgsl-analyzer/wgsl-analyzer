@@ -11,7 +11,7 @@ use crate::{
 #[must_use]
 pub fn pretty_print_item_tree(module: &ItemTree) -> String {
     let mut buffer = String::new();
-    for &item in module.items() {
+    for &item in module.top_level_items() {
         write_pretty_module_item(item, module, &mut buffer);
         buffer.push('\n');
     }

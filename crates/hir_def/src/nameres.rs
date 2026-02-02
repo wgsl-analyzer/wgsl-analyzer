@@ -143,10 +143,10 @@ impl DefMap {
     }
 
     pub(crate) fn package_def_map_query(
-        datababse: &dyn DefDatabase,
+        database: &dyn DefDatabase,
         package_id: PackageId,
     ) -> Arc<DefMap> {
-        let package_graph = datababse.package_graph();
+        let package_graph = database.package_graph();
 
         let edition = package_graph[package_id].edition;
         let origin = EditionedFileId {
@@ -159,7 +159,7 @@ impl DefMap {
             Arc::new(DefMapCrateData::new(edition)),
             ModuleData::new(origin),
         );
-        let def_map = collector::collect_defs(datababse, def_map, origin.into());
+        let def_map = collector::collect_defs(database, def_map, origin.into());
 
         Arc::new(def_map)
     }
@@ -274,8 +274,8 @@ impl DefMap {
         original_module: FileId,
         path: &ModPath,
     ) -> (ModuleDefinitionId, Option<usize>) {
-        let res = self.resolve_path_fp_with_macro(db, original_module, path);
-        (res.resolved_def, res.segment_index)
+        let result = self.resolve_path_fp_with_macro(db, original_module, path);
+        (result.resolved_def, result.segment_index)
     }
 }
 
