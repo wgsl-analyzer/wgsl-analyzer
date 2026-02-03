@@ -7,7 +7,7 @@ use std::{collections::VecDeque, fmt, fs, iter, ops::Deref, sync, thread};
 use anyhow::Context;
 use base_db::{
     Dependency, Environment, FileId, LanguagePackageOrigin, PackageDisplayName, PackageGraph,
-    PackageId, PackageName, PackageOrigin, PackageWorkspaceData, TargetLayoutLoadResult,
+    PackageId, PackageName, PackageOrigin, TargetLayoutLoadResult,
 };
 use edition::Edition;
 use itertools::Itertools;
@@ -18,13 +18,11 @@ use tracing::instrument;
 use triomphe::Arc;
 
 use crate::{
-    InvocationStrategy, ManifestPath, Package2, ProjectJson, ProjectManifest, WeslConfig,
-    WeslSourceWorkspaceConfig, WeslWorkspace,
-    env::{inject_wesl_env, wesl_config_env},
+    InvocationStrategy, ManifestPath, ProjectJson, ProjectManifest,
+    env::inject_wesl_env,
     project_json::{Package, PackageArrayIdx},
-    toolchain_info::{QueryConfig, version},
-    utf8_stdout, wesl_config_file,
-    wesl_workspace::{PackageData, RustLibSource, WeslMetadataConfig},
+    utf8_stdout,
+    wesl_toml::WeslToml,
 };
 use tracing::{debug, error, info};
 
@@ -46,8 +44,6 @@ pub struct PackageRoot {
 #[derive(Clone)]
 pub struct ProjectWorkspace {
     pub kind: ProjectWorkspaceKind,
-    /// The toolchain version used by this workspace.
-    pub toolchain: Option<Version>,
     /// Additional includes to add for the VFS.
     pub extra_includes: Vec<AbsPathBuf>,
 }
@@ -58,8 +54,6 @@ pub enum ProjectWorkspaceKind {
     Wesl {
         /// The workspace as returned by `wesl metadata`.
         wesl: WeslWorkspace,
-        /// Additional `wesl metadata` error. (only populated if retried fetching via `--no-deps` succeeded).
-        error: Option<Arc<anyhow::Error>>,
     },
     /// Project workspace was specified using a `wesl-project.json` file.
     Json(ProjectJson),
@@ -77,6 +71,22 @@ pub enum ProjectWorkspaceKind {
     },
 }
 
+/// Simplified wesl workspace
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct WeslWorkspace {
+    // packages: Arena<PackageData>,
+    pub manifest_path: ManifestPath,
+    pub is_virtual_workspace: bool,
+}
+
+#[derive(Default, Clone, Debug, PartialEq, Eq)]
+pub struct WeslConfig {
+    /// Extra includes to add to the VFS.
+    pub extra_includes: Vec<AbsPathBuf>,
+    /// Load the project without any dependencies
+    pub no_deps: bool,
+}
+
 impl fmt::Debug for ProjectWorkspace {
     fn fmt(
         &self,
@@ -85,27 +95,22 @@ impl fmt::Debug for ProjectWorkspace {
         // Make sure this isn't too verbose.
         let Self {
             kind,
-            toolchain,
             extra_includes,
         } = self;
         match kind {
-            ProjectWorkspaceKind::Wesl { wesl, error: _ } => formatter
+            ProjectWorkspaceKind::Wesl { wesl } => formatter
                 .debug_struct("Wesl")
-                .field("root", &wesl.workspace_root().file_name())
-                .field("n_packages", &wesl.packages().len())
+                .field("manifest_path", &wesl.manifest_path)
                 .field("n_extra_includes", &extra_includes.len())
-                .field("toolchain", &toolchain)
                 .finish(),
             ProjectWorkspaceKind::Json(project) => formatter
                 .debug_struct("Json")
                 .field("n_packages", &project.n_packages())
-                .field("toolchain", &toolchain)
                 .field("n_extra_includes", &extra_includes.len())
                 .finish(),
             ProjectWorkspaceKind::DetachedFile { file } => formatter
                 .debug_struct("DetachedFiles")
                 .field("file", &file)
-                .field("toolchain", &toolchain)
                 .field("n_extra_includes", &extra_includes.len())
                 .finish(),
         }
@@ -136,7 +141,7 @@ impl ProjectWorkspace {
                 let project_location = project_json.parent().to_path_buf();
                 let project_json: ProjectJson =
                     ProjectJson::new(Some(project_json.clone()), &project_location, data);
-                ProjectWorkspace::load_inline(project_json, config, progress)
+                ProjectWorkspace::load_inline(project_json, config)
             },
             ProjectManifest::WeslToml(wesl_toml) => {
                 ProjectWorkspace::load_wesl(wesl_toml, config, progress)?
@@ -152,120 +157,32 @@ impl ProjectWorkspace {
         progress: &(dyn Fn(String) + Sync),
     ) -> Result<ProjectWorkspace, anyhow::Error> {
         progress("discovering sysroot".to_owned());
-        let WeslConfig {
-            extra_args,
-            extra_env,
-            extra_includes,
-            no_deps,
-            ..
-        } = config;
-        let workspace_dir = wesl_toml.parent();
-
-        // Resolve the `wesl.toml` to the workspace root as we base the `target` dir off of it.
-        let mut cmd = crate::command("wesl", workspace_dir, extra_env);
-        cmd.args([
-            "locate-project",
-            "--workspace",
-            "--manifest-path",
-            wesl_toml.as_str(),
-        ]);
-        let wesl_toml = &match utf8_stdout(&mut cmd) {
-            Ok(output) => {
-                #[derive(serde::Deserialize)]
-                struct Root {
-                    root: Utf8PathBuf,
-                }
-                match serde_json::from_str::<Root>(&output) {
-                    Ok(object) => ManifestPath::try_from(AbsPathBuf::assert(object.root))
-                        .expect("manifest path should be absolute"),
-                    Err(e) => {
-                        tracing::error!(%e, %wesl_toml, "failed fetching wesl workspace root");
-                        wesl_toml.clone()
-                    },
-                }
-            },
-            Err(e) => {
-                tracing::error!(%e, %wesl_toml, "failed fetching wesl workspace root");
-                wesl_toml.clone()
-            },
-        };
-        let workspace_dir = wesl_toml.parent();
+        let WeslConfig { extra_includes, .. } = config;
+        // TODO: Actually load the entire workspace
 
         progress("querying project metadata".to_owned());
-        let config_file = wesl_config_file::read(wesl_toml, extra_env);
-        let toolchain_config = QueryConfig::WeslRs(&wesl_toml);
-        let toolchain = version::get(toolchain_config, extra_env)
-            .inspect_err(|e| {
-                tracing::error!(%e,
-                    "failed fetching toolchain version for {wesl_toml:?} workspace"
-                )
-            })
-            .ok()
-            .flatten();
 
-        let target_dir = config
-            .target_dir
-            .clone()
-            .unwrap_or_else(|| workspace_dir.join("target").into());
+        let wesl_config: WeslToml = toml::from_slice(&std::fs::read(wesl_toml)?)?;
 
-        // We spawn a bunch of processes to query various information about the workspace's
-        // toolchain
-        // We can speed up loading a bit by spawning all of these processes in parallel (especially
-        // on systems were process spawning is delayed)
-        let join = thread::scope(|s| {
-            let wesl_metadata = s.spawn(|| {
-                WeslWorkspace::fetch_metadata(
-                    wesl_toml,
-                    workspace_dir,
-                    &WeslMetadataConfig {
-                        extra_args: extra_args.clone(),
-                        extra_env: extra_env.clone(),
-                        target_dir: target_dir.clone(),
-                    },
-                    *no_deps,
-                    false,
-                    progress,
-                )
-            });
-            let wesl_config_extra_env = s.spawn(move || wesl_config_env(wesl_toml, &config_file));
-            thread::Result::Ok((wesl_metadata.join()?, wesl_config_extra_env.join()?))
-        });
+        // TODO: Fetch the metadata about the dependencies
 
-        let (wesl_metadata, wesl_config_extra_env) = match join {
-            Ok(it) => it,
-            Err(e) => std::panic::resume_unwind(e),
+        let wesl = WeslWorkspace {
+            manifest_path: wesl_toml.clone(),
+            is_virtual_workspace: false,
         };
 
-        let (meta, error) = wesl_metadata.with_context(|| {
-            format!("Failed to read Wesl metadata from wesl.toml file {wesl_toml}, {toolchain:?}",)
-        })?;
-        let wesl = WeslWorkspace::new(meta, wesl_toml.clone(), wesl_config_extra_env, false);
         Ok(ProjectWorkspace {
-            kind: ProjectWorkspaceKind::Wesl {
-                wesl,
-                error: error.map(Arc::new),
-            },
-            toolchain,
+            kind: ProjectWorkspaceKind::Wesl { wesl },
             extra_includes: extra_includes.clone(),
         })
     }
 
     pub fn load_inline(
-        mut project_json: ProjectJson,
+        project_json: ProjectJson,
         config: &WeslConfig,
-        progress: &(dyn Fn(String) + Sync),
     ) -> ProjectWorkspace {
-        let query_config = todo!();
-        let toolchain = version::get(query_config, &config.extra_env).ok().flatten();
-        let project_root = project_json.project_root();
-        let target_dir = config
-            .target_dir
-            .clone()
-            .unwrap_or_else(|| project_root.join("target").into());
-
         ProjectWorkspace {
             kind: ProjectWorkspaceKind::Json(project_json),
-            toolchain,
             extra_includes: config.extra_includes.clone(),
         }
     }
@@ -274,19 +191,10 @@ impl ProjectWorkspace {
         detached_file: &ManifestPath,
         config: &WeslConfig,
     ) -> anyhow::Result<ProjectWorkspace> {
-        let dir = detached_file.parent();
-        let query_config = QueryConfig::WeslRs(detached_file);
-        let toolchain = version::get(query_config, &config.extra_env).ok().flatten();
-        let target_dir = config
-            .target_dir
-            .clone()
-            .unwrap_or_else(|| dir.join("target").into());
-
         Ok(ProjectWorkspace {
             kind: ProjectWorkspaceKind::DetachedFile {
                 file: detached_file.to_owned(),
             },
-            toolchain,
             extra_includes: config.extra_includes.clone(),
         })
     }
@@ -303,7 +211,7 @@ impl ProjectWorkspace {
 
     pub fn manifest_or_root(&self) -> &AbsPath {
         match &self.kind {
-            ProjectWorkspaceKind::Wesl { wesl, .. } => wesl.manifest_path(),
+            ProjectWorkspaceKind::Wesl { wesl, .. } => &wesl.manifest_path,
             ProjectWorkspaceKind::Json(project) => project.manifest_or_root(),
             ProjectWorkspaceKind::DetachedFile { file, .. } => file,
         }
@@ -311,7 +219,7 @@ impl ProjectWorkspace {
 
     pub fn workspace_root(&self) -> &AbsPath {
         match &self.kind {
-            ProjectWorkspaceKind::Wesl { wesl, .. } => wesl.workspace_root(),
+            ProjectWorkspaceKind::Wesl { wesl, .. } => &wesl.manifest_path,
             ProjectWorkspaceKind::Json(project) => project.project_root(),
             ProjectWorkspaceKind::DetachedFile { file, .. } => file.parent(),
         }
@@ -319,7 +227,7 @@ impl ProjectWorkspace {
 
     pub fn manifest(&self) -> Option<&ManifestPath> {
         match &self.kind {
-            ProjectWorkspaceKind::Wesl { wesl, .. } => Some(wesl.manifest_path()),
+            ProjectWorkspaceKind::Wesl { wesl, .. } => Some(&wesl.manifest_path),
             ProjectWorkspaceKind::Json(project) => project.manifest(),
             ProjectWorkspaceKind::DetachedFile { .. } => None,
         }
@@ -358,29 +266,12 @@ impl ProjectWorkspace {
                 .collect::<FxHashSet<_>>()
                 .into_iter()
                 .collect::<Vec<_>>(),
-            ProjectWorkspaceKind::Wesl { wesl, error: _ } => wesl
-                .packages()
-                .map(|pkg| {
-                    let is_local = wesl[pkg].is_local;
-                    let pkg_root = wesl[pkg].manifest.parent().to_path_buf();
-                    let mut include = vec![pkg_root.clone()];
-                    let mut exclude = vec![pkg_root.join(".git")];
-                    if is_local {
-                        include.extend(self.extra_includes.iter().cloned());
-
-                        exclude.push(pkg_root.join("target"));
-                    } else {
-                        exclude.push(pkg_root.join("tests"));
-                        exclude.push(pkg_root.join("examples"));
-                        exclude.push(pkg_root.join("benches"));
-                    }
-                    PackageRoot {
-                        is_local,
-                        include,
-                        exclude,
-                    }
-                })
-                .collect(),
+            ProjectWorkspaceKind::Wesl { wesl } => iter::once(PackageRoot {
+                is_local: true,
+                include: [wesl.manifest_path.to_path_buf()].to_vec(),
+                exclude: Vec::new(),
+            })
+            .collect(),
             ProjectWorkspaceKind::DetachedFile { file, .. } => iter::once(PackageRoot {
                 is_local: true,
                 include: vec![file.to_path_buf()],
@@ -393,8 +284,7 @@ impl ProjectWorkspace {
     pub fn n_packages(&self) -> usize {
         match &self.kind {
             ProjectWorkspaceKind::Json(project) => project.n_packages(),
-            ProjectWorkspaceKind::Wesl { wesl, .. } => wesl.packages().len(),
-            ProjectWorkspaceKind::DetachedFile { .. } => 0,
+            ProjectWorkspaceKind::Wesl { .. } | ProjectWorkspaceKind::DetachedFile { .. } => 0,
         }
     }
 
@@ -410,7 +300,7 @@ impl ProjectWorkspace {
             ProjectWorkspaceKind::Json(project) => {
                 project_json_to_package_graph(load, project, extra_env)
             },
-            ProjectWorkspaceKind::Wesl { wesl, error: _ } => wesl_to_package_graph(load, wesl),
+            ProjectWorkspaceKind::Wesl { wesl } => wesl_to_package_graph(load, wesl),
             ProjectWorkspaceKind::DetachedFile { file, .. } => {
                 detached_file_to_package_graph(load, file)
             },
@@ -423,22 +313,12 @@ impl ProjectWorkspace {
         &self,
         other: &Self,
     ) -> bool {
-        let Self {
-            kind, toolchain, ..
-        } = self;
-        let Self {
-            kind: o_kind,
-            toolchain: o_toolchain,
-            ..
-        } = other;
+        let Self { kind, .. } = self;
+        let Self { kind: o_kind, .. } = other;
         (match (kind, o_kind) {
-            (
-                ProjectWorkspaceKind::Wesl { wesl, error: _ },
-                ProjectWorkspaceKind::Wesl {
-                    wesl: o_wesl,
-                    error: _,
-                },
-            ) => wesl == o_wesl,
+            (ProjectWorkspaceKind::Wesl { wesl }, ProjectWorkspaceKind::Wesl { wesl: o_wesl }) => {
+                wesl == o_wesl
+            },
             (ProjectWorkspaceKind::Json(project), ProjectWorkspaceKind::Json(o_project)) => {
                 project == o_project
             },
@@ -447,7 +327,7 @@ impl ProjectWorkspace {
                 ProjectWorkspaceKind::DetachedFile { file: o_file },
             ) => file == o_file,
             _ => return false,
-        }) && toolchain == o_toolchain
+        })
     }
 
     /// Returns `true` if the project workspace is [`Json`].
@@ -470,10 +350,10 @@ fn project_json_to_package_graph(
 
     let idx_to_package_id: FxHashMap<PackageArrayIdx, PackageId> = project
         .packages()
-        .filter_map(|(idx, package)| Some((idx, package, load(&package.root_module)?)))
+        .filter_map(|(index, package)| Some((index, package, load(&package.root_module)?)))
         .map(
             |(
-                idx,
+                index,
                 Package {
                     display_name,
                     edition,
@@ -511,7 +391,7 @@ fn project_json_to_package_graph(
                         .map(|name| name.canonical_name().as_str()),
                     "added root to package graph"
                 );
-                (idx, package_graph_package_id)
+                (index, package_graph_package_id)
             },
         )
         .collect();
@@ -529,92 +409,10 @@ fn project_json_to_package_graph(
 }
 
 fn wesl_to_package_graph(
-    load: FileLoader<'_>,
-    wesl: &WeslWorkspace,
+    _load: FileLoader<'_>,
+    _wesl: &WeslWorkspace,
 ) -> PackageGraph {
-    let _p = tracing::info_span!("wesl_to_package_graph").entered();
-    let mut result = (PackageGraph::default());
-    let (package_graph) = &mut result;
-
-    // Mapping of a package to its library target
-    let mut pkg_to_lib_package = FxHashMap::default();
-    let mut pkg_packages = FxHashMap::default();
-
-    // Next, create packages for each package, target pair
-    for pkg in wesl.packages() {
-        let mut lib_tgt: Option<(String, String)> = None;
-
-        let a = wesl[pkg];
-
-        for target in &wesl[pkg] {}
-        let Some(file_id) = load(root) else { continue };
-
-        let pkg_data = &wesl[pkg];
-        let package_id = add_target_package_root(
-            package_graph,
-            wesl,
-            pkg_data,
-            file_id,
-            &wesl[pkg].name,
-            if pkg_data.is_local {
-                PackageOrigin::Local {
-                    repository: pkg_data.repository.clone(),
-                    name: Some(pkg_data.name),
-                }
-            } else {
-                PackageOrigin::Library {
-                    repository: pkg_data.repository.clone(),
-                    name: pkg_data.name,
-                }
-            },
-        );
-        lib_tgt = Some((package_id, name.clone()));
-        pkg_to_lib_package.insert(pkg, package_id);
-
-        pkg_packages
-            .entry(pkg)
-            .or_insert_with(Vec::new)
-            .push((package_id, kind));
-
-        // Set deps to the core, std and to the lib target of the current package
-        for &(from, kind) in pkg_packages.get(&pkg).into_iter().flatten() {
-            // Add dep edge of all targets to the package's lib target
-            if let Some((to, name)) = lib_tgt.clone() {
-                if to != from {
-                    // For root projects with dashes in their name,
-                    // wesl metadata does not do any normalization,
-                    // so we do it ourselves currently
-                    let name = PackageName::normalize_dashes(&name);
-                    add_dep(package_graph, from, name, to);
-                }
-            }
-        }
-    }
-
-    let mut delayed_dev_deps = vec![];
-
-    // Now add a dep edge from all targets of upstream to the lib
-    // target of downstream.
-    for pkg in wesl.packages() {
-        for dep in &wesl[pkg].dependencies {
-            let Some(&to) = pkg_to_lib_package.get(&dep.package) else {
-                continue;
-            };
-            let Some(targets) = pkg_packages.get(&pkg) else {
-                continue;
-            };
-
-            let name = PackageName::new(&dep.name).unwrap();
-            for &(from, kind) in targets {
-                add_dep(package_graph, from, name.clone(), to)
-            }
-        }
-    }
-
-    for (from, name, to) in delayed_dev_deps {
-        add_dep(package_graph, from, name, to);
-    }
-    result
+    PackageGraph::default()
 }
 
 fn detached_file_to_package_graph(
@@ -647,33 +445,6 @@ fn detached_file_to_package_graph(
     package_graph
 }
 
-fn add_target_package_root(
-    package_graph: &mut PackageGraph,
-    wesl: &WeslWorkspace,
-    pkg: &PackageData,
-    file_id: FileId,
-    wesl_name: &str,
-    origin: PackageOrigin,
-) -> PackageId {
-    let edition = pkg.edition;
-    let mut env = wesl.env().clone();
-    inject_wesl_env(&mut env);
-    let package_id = package_graph.add_package_root(
-        file_id,
-        edition,
-        Some(PackageDisplayName::from_canonical_name(wesl_name)),
-        Some(pkg.version.to_string()),
-        env,
-        origin,
-        Some(if pkg.is_member {
-            wesl.workspace_root().to_path_buf()
-        } else {
-            pkg.manifest.parent().to_path_buf()
-        }),
-    );
-    package_id
-}
-
 #[derive(Default, Debug)]
 struct SysrootPublicDeps {
     deps: Vec<(PackageName, PackageId, bool)>,
@@ -698,7 +469,7 @@ fn extend_package_graph_with_sysroot(
 ) -> SysrootPublicDeps {
     let mut pub_deps = vec![];
     for cid in sysroot_package_graph.iter() {
-        if let PackageOrigin::Language(lang_package) = sysroot_package_graph[cid].basic.origin {
+        if let PackageOrigin::Language(lang_package) = sysroot_package_graph[cid].origin {
             match lang_package {
                 LanguagePackageOrigin::Core | LanguagePackageOrigin::Std => pub_deps.push((
                     PackageName::normalize_dashes(&lang_package.to_string()),
@@ -759,7 +530,7 @@ fn add_dep_inner(
     from: PackageId,
     dep: Dependency,
 ) {
-    if let Err(err) = graph.add_dep(from, dep) {
-        tracing::warn!("{}", err)
+    if let Err(error) = graph.add_dep(from, dep) {
+        tracing::warn!("{}", error)
     }
 }

@@ -14,10 +14,6 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use triomphe::Arc;
 use vfs::{AbsPathBuf, AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
-use crate::PackageWorkspaceData;
-
-pub type ProcMacroPaths = FxHashMap<PackageId, Result<(String, AbsPathBuf), String>>;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct SourceRootId(pub u32);
 

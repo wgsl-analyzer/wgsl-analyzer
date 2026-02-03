@@ -308,20 +308,14 @@ struct PackageData {
     deps: Vec<Dep>,
     #[serde(default)]
     cfg_groups: FxHashSet<String>,
-    target: Option<String>,
     #[serde(default)]
     env: FxHashMap<String, String>,
-    proc_macro_dylib_path: Option<Utf8PathBuf>,
     is_workspace_member: Option<bool>,
     source: Option<PackageSource>,
-    #[serde(default)]
-    is_proc_macro: bool,
     #[serde(default)]
     repository: Option<String>,
     #[serde(default)]
     build: Option<BuildData>,
-    #[serde(default)]
-    proc_macro_cwd: Option<Utf8PathBuf>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]

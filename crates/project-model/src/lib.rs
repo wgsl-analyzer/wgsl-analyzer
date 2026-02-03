@@ -16,28 +16,11 @@
 //! * Lowering of concrete model to a [`base_db::PackageGraph`]
 
 pub mod project_json;
-pub mod toolchain_info {
-    pub mod version;
-
-    use std::path::Path;
-
-    use crate::ManifestPath;
-
-    #[derive(Copy, Clone)]
-    pub enum QueryConfig<'data> {
-        /// Attempt to use wesl-rs to query the desired information.
-        WeslRs(&'data ManifestPath),
-    }
-}
 
 mod env;
 mod manifest_path;
-mod wesl_config_file;
-mod wesl_workspace;
+mod wesl_toml;
 mod workspace;
-
-#[cfg(test)]
-mod tests;
 
 use std::{
     ffi, fmt,
@@ -53,12 +36,8 @@ use rustc_hash::FxHashSet;
 pub use crate::{
     manifest_path::ManifestPath,
     project_json::{ProjectJson, ProjectJsonData},
-    wesl_workspace::{
-        Package2, PackageData, PackageDependency, WeslConfig, WeslMetadataConfig, WeslWorkspace,
-    },
     workspace::{FileLoader, PackageRoot, ProjectWorkspace, ProjectWorkspaceKind},
 };
-pub use wesl_metadata::Metadata;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProjectJsonFromCommand {
@@ -93,7 +72,7 @@ impl ProjectManifest {
 
     pub fn discover_single(path: &AbsPath) -> anyhow::Result<ProjectManifest> {
         let mut candidates = ProjectManifest::discover(path)?;
-        let res = match candidates.pop() {
+        let result = match candidates.pop() {
             None => bail!("no projects"),
             Some(it) => it,
         };
@@ -101,7 +80,7 @@ impl ProjectManifest {
         if !candidates.is_empty() {
             bail!("more than one project");
         }
-        Ok(res)
+        Ok(result)
     }
 
     pub fn discover(path: &AbsPath) -> io::Result<Vec<ProjectManifest>> {
@@ -146,6 +125,7 @@ impl ProjectManifest {
             None
         }
 
+        // TODO: Remove this (see https://github.com/rust-lang/rust-analyzer/issues/17537 )
         fn find_wesl_toml_in_child_dir(entities: ReadDir) -> Vec<ManifestPath> {
             // Only one level down to avoid cycles the easy way and stop a runaway scan with large projects
             entities
@@ -162,15 +142,15 @@ impl ProjectManifest {
     }
 
     pub fn discover_all(paths: &[AbsPathBuf]) -> Vec<ProjectManifest> {
-        let mut res = paths
+        let mut result = paths
             .iter()
             .filter_map(|it| ProjectManifest::discover(it.as_ref()).ok())
             .flatten()
             .collect::<FxHashSet<_>>()
             .into_iter()
             .collect::<Vec<_>>();
-        res.sort();
-        res
+        result.sort();
+        result
     }
 
     pub fn manifest_path(&self) -> &ManifestPath {
@@ -208,24 +188,6 @@ pub enum InvocationStrategy {
     Once,
     #[default]
     PerWorkspace,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum WeslSourceWorkspaceConfig {
-    WeslMetadata(WeslMetadataConfig),
-    Json(ProjectJson),
-}
-
-impl Default for WeslSourceWorkspaceConfig {
-    fn default() -> Self {
-        WeslSourceWorkspaceConfig::default_wesl()
-    }
-}
-
-impl WeslSourceWorkspaceConfig {
-    pub fn default_wesl() -> Self {
-        WeslSourceWorkspaceConfig::WeslMetadata(Default::default())
-    }
 }
 
 pub fn command<H>(
