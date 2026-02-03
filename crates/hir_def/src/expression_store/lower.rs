@@ -96,7 +96,8 @@ impl ExprCollector<'_> {
 
                 let path = as_path_opt(
                     call.ident_expression()
-                        .and_then(|identifier| identifier.path()),
+                        .and_then(|identifier| identifier.path())
+                        .as_ref(),
                 );
 
                 let template_parameters = self.collect_template_parameters(
@@ -113,7 +114,7 @@ impl ExprCollector<'_> {
                 }
             },
             ast::Expression::IdentExpression(identifier) => {
-                let path = as_path_opt(identifier.path());
+                let path = as_path_opt(identifier.path().as_ref());
                 let template_parameters =
                     self.collect_template_parameters(identifier.template_parameters());
 
@@ -138,7 +139,7 @@ impl ExprCollector<'_> {
     ) -> TypeSpecifierId {
         let syntax_pointer = AstPointer::new(type_specifier);
         let type_specifier = TypeSpecifier {
-            path: as_path_opt(type_specifier.path()),
+            path: as_path_opt(type_specifier.path().as_ref()),
             template_parameters: self
                 .collect_template_parameters(type_specifier.template_parameters()),
         };
@@ -416,6 +417,6 @@ where
     name.map_or_else(Name::missing, Name::from)
 }
 
-fn as_path_opt(path: Option<ast::Path>) -> Path {
+fn as_path_opt(path: Option<&ast::Path>) -> Path {
     path.map(ModPath::from_src).map_or_else(Path::missing, Path)
 }

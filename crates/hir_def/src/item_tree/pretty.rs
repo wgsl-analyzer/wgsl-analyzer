@@ -98,7 +98,7 @@ fn write_pretty_import_tree(
     match import_tree {
         ImportTree::Path { name, item } => {
             _ = write!(buffer, "{}::", name.as_str());
-            write_pretty_import_tree(&item, buffer);
+            write_pretty_import_tree(item, buffer);
         },
         ImportTree::Item { name, alias: None } => {
             _ = write!(buffer, "{}", name.as_str());

@@ -6,7 +6,6 @@ pub mod input;
 
 mod util_types;
 use line_index::LineIndex;
-use semver::Version;
 use syntax::{Edition, Parse};
 use triomphe::Arc;
 pub use util_types::*;
@@ -121,13 +120,6 @@ impl<T: SourceDatabase> FileLoader for FileLoaderDelegate<&'_ T> {
         let source_root = self.0.source_root(source_root);
         source_root.resolve_path(path)
     }
-}
-
-/// Package related data shared by the whole workspace.
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
-pub struct PackageWorkspaceData {
-    /// Toolchain version used to compile the package.
-    pub toolchain: Option<Version>,
 }
 
 /// File together with an edition.
