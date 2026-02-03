@@ -1,13 +1,14 @@
 //! The core of the module-level name resolution algorithm.
 
-use base_db::Dependency;
+use base_db::{Dependency, EditionedFileId};
 use rustc_hash::{FxHashMap, FxHashSet};
 use triomphe::Arc;
+use vfs::FileId;
 
 use crate::{
     FxIndexMap, HirFileId,
-    database::{DefDatabase, ModuleDefinitionId},
-    item_tree::{ItemTree, ModuleItem, Name},
+    database::{DefDatabase, Location, ModuleDefinitionId},
+    item_tree::{FlatImport, ImportStatement, ItemTree, ModuleItem, Name},
     nameres::DefMap,
 };
 
@@ -31,7 +32,7 @@ pub(super) fn collect_defs(
         def_map,
         deps,
         // glob_imports: FxHashMap::default(),
-        // unresolved_imports: Vec::new(),
+        unresolved_imports: Vec::new(),
         unresolved_extern_crates: Default::default(),
         // from_glob_import: Default::default(),
     };
@@ -49,7 +50,7 @@ struct DefCollector<'db> {
     // The dependencies of the current crate, including optional deps like `test`.
     deps: FxIndexMap<Name, Dependency>,
     // glob_imports: FxHashMap<LocalModuleId, Vec<(LocalModuleId, Visibility, GlobId)>>,
-    // unresolved_imports: Vec<ImportDirective>,
+    unresolved_imports: Vec<(EditionedFileId, FlatImport)>,
     // We'd like to avoid emitting a diagnostics avalanche when some `extern crate` doesn't
     // resolve. When we emit diagnostics for unresolved imports, we only do so if the import
     // doesn't start with an unresolved crate's name.
@@ -66,14 +67,11 @@ impl<'db> DefCollector<'db> {
         self.inject_prelude();
         ModCollector {
             def_collector: self,
-            module_id: file_id,
+            file_id,
             item_tree: &item_tree,
             // mod_dir: ModDir::root(),
         }
         .collect(item_tree.top_level_items());
-        Arc::get_mut(&mut self.def_map.data)
-            .unwrap()
-            .shrink_to_fit();
     }
 
     fn inject_prelude(&mut self) {
@@ -126,7 +124,7 @@ impl<'db> DefCollector<'db> {
 /// Walks a single module, populating defs and imports
 struct ModCollector<'a, 'db> {
     def_collector: &'a mut DefCollector<'db>,
-    module_id: HirFileId,
+    file_id: HirFileId,
     item_tree: &'a ItemTree,
     // mod_dir: ModDir,
 }
@@ -136,6 +134,63 @@ impl ModCollector<'_, '_> {
         &mut self,
         items: &[ModuleItem],
     ) {
-        todo!()
+        let database = self.def_collector.database;
+        let hir_file_id = self.file_id;
+        let file_id = hir_file_id.original_file(database);
+        let item_scope = &mut self.def_collector.def_map[file_id.file_id].scope;
+        for item in items {
+            match *item {
+                ModuleItem::ImportStatement(id) => {
+                    self.item_tree.get(id).expand(|flat_import| {
+                        self.def_collector
+                            .unresolved_imports
+                            .push((file_id, flat_import));
+                    });
+                },
+                ModuleItem::Function(id) => {
+                    let def = ModuleDefinitionId::Function(
+                        database.intern_function(Location::new(hir_file_id, id)),
+                    );
+                    item_scope.declare(def);
+                    item_scope.push_item(self.item_tree.get(id).name.clone(), def);
+                },
+                ModuleItem::Struct(id) => {
+                    let def = ModuleDefinitionId::Struct(
+                        database.intern_struct(Location::new(hir_file_id, id)),
+                    );
+                    item_scope.declare(def);
+                    item_scope.push_item(self.item_tree.get(id).name.clone(), def);
+                },
+                ModuleItem::GlobalVariable(id) => {
+                    let def = ModuleDefinitionId::GlobalVariable(
+                        database.intern_global_variable(Location::new(hir_file_id, id)),
+                    );
+                    item_scope.declare(def);
+                    item_scope.push_item(self.item_tree.get(id).name.clone(), def);
+                },
+                ModuleItem::GlobalConstant(id) => {
+                    let def = ModuleDefinitionId::GlobalConstant(
+                        database.intern_global_constant(Location::new(hir_file_id, id)),
+                    );
+                    item_scope.declare(def);
+                    item_scope.push_item(self.item_tree.get(id).name.clone(), def);
+                },
+                ModuleItem::Override(id) => {
+                    let def = ModuleDefinitionId::Override(
+                        database.intern_override(Location::new(hir_file_id, id)),
+                    );
+                    item_scope.declare(def);
+                    item_scope.push_item(self.item_tree.get(id).name.clone(), def);
+                },
+                ModuleItem::TypeAlias(id) => {
+                    let def = ModuleDefinitionId::TypeAlias(
+                        database.intern_type_alias(Location::new(hir_file_id, id)),
+                    );
+                    item_scope.declare(def);
+                    item_scope.push_item(self.item_tree.get(id).name.clone(), def);
+                },
+                ModuleItem::GlobalAssertStatement(id) => (),
+            }
+        }
     }
 }

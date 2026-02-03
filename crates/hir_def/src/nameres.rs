@@ -92,13 +92,6 @@ impl DefMapCrateData {
             recursion_limit: None,
         }
     }
-
-    fn shrink_to_fit(&mut self) {
-        let Self {
-            edition: _,
-            recursion_limit: _,
-        } = self;
-    }
 }
 
 impl std::ops::Index<FileId> for DefMap {

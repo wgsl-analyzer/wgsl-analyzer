@@ -12,6 +12,21 @@ pub struct ItemScope {
 }
 
 impl ItemScope {
+    pub(crate) fn declare(
+        &mut self,
+        def: ModuleDefinitionId,
+    ) {
+        self.declarations.push(def)
+    }
+    pub(crate) fn push_item(
+        &mut self,
+        name: Name,
+        def: ModuleDefinitionId,
+    ) {
+        // TODO: Check if item is already present
+        self.items.insert(name, def);
+    }
+
     pub(crate) fn dump(
         &self,
         db: &dyn DefDatabase,
