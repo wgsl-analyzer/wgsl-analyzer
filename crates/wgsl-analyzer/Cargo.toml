@@ -66,6 +66,7 @@ paths.workspace = true
 camino.workspace = true
 base-db.workspace = true
 line-index.workspace = true
+wesl-metadata = "0.0.5"
 
 [dev-dependencies]
 # expect-test = "1.5.1"

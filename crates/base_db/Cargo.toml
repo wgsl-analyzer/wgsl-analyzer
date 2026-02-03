@@ -17,6 +17,7 @@ line-index.workspace = true
 rowan.workspace = true
 rustc-hash.workspace = true
 salsa.workspace = true
+semver = "1.0.27"
 syntax.workspace = true
 tracing.workspace = true
 triomphe.workspace = true

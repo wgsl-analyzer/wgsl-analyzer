@@ -74,7 +74,7 @@ export function createClient(
 							const parent = uri.fsPath.substring(0, parentBackslash);
 
 							if (parent.startsWith(folder)) {
-								const path = vscode.Uri.file(parent + pathSeparator + "Cargo.toml");
+								const path = vscode.Uri.file(parent + pathSeparator + "wesl.toml");
 								void vscode.workspace.fs.stat(path).then(async () => {
 									const choice = await vscode.window.showInformationMessage(
 										`This file does not belong to a loaded project. It looks like it might belong to the workspace at ${path.path}, do you want to add it to the linked projects?`,
@@ -89,7 +89,10 @@ export function createClient(
 											break;
 										case "Yes": {
 											const pathToInsert =
-												"." + parent.substring(folder.length) + pathSeparator + "Cargo.toml";
+												"."
+												+ parent.substring(folder.length)
+												+ pathSeparator
+												+ "wesl.toml";
 											const value = config
 												// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 												.get<any[]>("linkedProjects")

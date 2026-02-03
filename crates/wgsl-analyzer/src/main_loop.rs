@@ -249,17 +249,17 @@ impl GlobalState {
             lt::DocumentFilter {
                 language: None,
                 scheme: None,
-                pattern: Some("**/*.rs".into()),
+                pattern: Some("**/*.wgsl".into()),
             },
             lt::DocumentFilter {
                 language: None,
                 scheme: None,
-                pattern: Some("**/Cargo.toml".into()),
+                pattern: Some("**/*.wesl".into()),
             },
             lt::DocumentFilter {
                 language: None,
                 scheme: None,
-                pattern: Some("**/Cargo.lock".into()),
+                pattern: Some("**/wesl.toml".into()),
             },
         ];
         selectors.extend(additional_filters);
@@ -609,7 +609,7 @@ impl GlobalState {
                     // While theoretically these should never have errors, we have quite a few false
                     // positives particularly in the stdlib, and those diagnostics would stay around
                     // forever if we emitted them here.
-                    !database.source_root(source_root).is_library()
+                    !database.source_root(source_root).is_library
                 })
                 .map(|file_id| {
                     file_id.0
