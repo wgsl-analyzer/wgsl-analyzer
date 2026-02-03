@@ -55,7 +55,7 @@ ide-db.workspace = true
 # This should only be used in CLI
 # ide-ssr.workspace = true
 ide.workspace = true
-# load-wesl.workspace = true
+load-wesl.workspace = true
 # profile.workspace = true
 # project-model.workspace = true
 stdx.workspace = true

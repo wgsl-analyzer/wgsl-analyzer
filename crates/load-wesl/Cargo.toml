@@ -1,0 +1,24 @@
+[package]
+name = "load-wesl"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "Loads a WESL project into a static instance of wgsl-analyzer for analysis."
+repository.workspace = true
+license.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow.workspace = true
+crossbeam-channel.workspace = true
+ide-db.workspace = true
+itertools.workspace = true
+rustc-hash.workspace = true
+# project-model.workspace = true
+tracing.workspace = true
+vfs.workspace = true
+vfs-notify.workspace = true
+
+[lints]
+workspace = true

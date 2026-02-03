@@ -808,6 +808,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "241eaef5fd12c88705a01fc1066c48c4b36e0dd4377dcdc7ec3942cea7a69956"
 
 [[package]]
+name = "load-wesl"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "crossbeam-channel",
+ "ide-db",
+ "itertools",
+ "rustc-hash 2.1.1",
+ "tracing",
+ "vfs",
+ "vfs-notify 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070)",
+]
+
+[[package]]
 name = "lock_api"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1966,6 +1980,7 @@ dependencies = [
  "ide-db",
  "itertools",
  "line-index",
+ "load-wesl",
  "lsp-server",
  "lsp-types",
  "memchr",
