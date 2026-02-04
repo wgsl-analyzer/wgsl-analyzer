@@ -232,19 +232,6 @@ impl ProjectWorkspace {
         }
     }
 
-    pub fn buildfiles(&self) -> Vec<AbsPathBuf> {
-        match &self.kind {
-            ProjectWorkspaceKind::Json(project) => project
-                .packages()
-                .filter_map(|(_, package)| {
-                    package.build.as_ref().map(|build| build.build_file.clone())
-                })
-                .map(|build_file| self.workspace_root().join(build_file))
-                .collect(),
-            _ => vec![],
-        }
-    }
-
     /// Returns the roots for the current `ProjectWorkspace`
     /// The return type contains the path and whether or not
     /// the root is a member of the current workspace
