@@ -110,14 +110,6 @@ impl ProjectJson {
                         ),
                     };
 
-                    let build = match package_data.build {
-                        Some(build) => Some(Build {
-                            label: build.label,
-                            build_file: build.build_file,
-                        }),
-                        None => None,
-                    };
-
                     Package {
                         display_name: package_data
                             .display_name
@@ -132,7 +124,6 @@ impl ProjectJson {
                         include,
                         exclude,
                         repository: package_data.repository,
-                        build,
                     }
                 })
                 .collect(),
@@ -172,18 +163,6 @@ impl ProjectJson {
         self.manifest.as_ref()
     }
 
-    pub fn package_by_buildfile(
-        &self,
-        path: &AbsPath,
-    ) -> Option<Build> {
-        // this is fast enough for now, but it's unfortunate that this is O(packages).
-        let path: &std::path::Path = path.as_ref();
-        self.packages
-            .iter()
-            .filter_map(|package| package.build.clone())
-            .find(|build| build.build_file.as_std_path() == path)
-    }
-
     /// Returns the path to the project's manifest or root folder, if no manifest exists.
     pub fn manifest_or_root(&self) -> &AbsPath {
         self.manifest
@@ -215,7 +194,6 @@ pub struct Package {
     pub(crate) include: Vec<AbsPathBuf>,
     pub(crate) exclude: Vec<AbsPathBuf>,
     pub(crate) repository: Option<String>,
-    pub build: Option<Build>,
 }
 
 /// Additional, build-specific data about a package.
@@ -304,7 +282,7 @@ struct PackageData {
     root_module: Utf8PathBuf,
     edition: EditionData,
     #[serde(default)]
-    version: Option<semver::Version>,
+    version: Option<String>,
     deps: Vec<Dep>,
     #[serde(default)]
     cfg_groups: FxHashSet<String>,
@@ -314,8 +292,6 @@ struct PackageData {
     source: Option<PackageSource>,
     #[serde(default)]
     repository: Option<String>,
-    #[serde(default)]
-    build: Option<BuildData>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
@@ -325,12 +301,6 @@ enum EditionData {
     Wgsl,
     #[serde(rename = "WESL")]
     Wesl2025Unstable,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
-pub struct BuildData {
-    label: String,
-    build_file: Utf8PathBuf,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -45,7 +45,6 @@ triomphe.workspace = true
 nohash-hasher.workspace = true
 semver.workspace = true
 memchr = "2.7.6"
-cargo_metadata.workspace = true
 # process-wrap = { version = "8.2.0", features = ["std"] }
 # cfg.workspace = true
 hir-ty.workspace = true
@@ -66,7 +65,6 @@ paths.workspace = true
 camino.workspace = true
 base-db.workspace = true
 line-index.workspace = true
-wesl-metadata = "0.0.5"
 
 [dev-dependencies]
 # expect-test = "1.5.1"
