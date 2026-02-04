@@ -50,6 +50,12 @@ impl Change {
     ) {
         self.roots = Some(roots);
     }
+    pub fn set_package_graph(
+        &mut self,
+        package_graph: PackageGraph,
+    ) {
+        self.package_graph = Some(package_graph);
+    }
 
     pub fn change_file(
         &mut self,

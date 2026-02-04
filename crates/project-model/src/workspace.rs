@@ -290,15 +290,12 @@ impl ProjectWorkspace {
     pub fn to_package_graph(
         &self,
         load: FileLoader<'_>,
-        extra_env: &FxHashMap<String, String>,
     ) -> PackageGraph {
         let _p = tracing::info_span!("ProjectWorkspace::to_package_graph").entered();
 
         let Self { kind, .. } = self;
         let package_graph = match kind {
-            ProjectWorkspaceKind::Json(project) => {
-                project_json_to_package_graph(load, project, extra_env)
-            },
+            ProjectWorkspaceKind::Json(project) => project_json_to_package_graph(load, project),
             ProjectWorkspaceKind::Wesl { wesl } => wesl_to_package_graph(load, wesl),
             ProjectWorkspaceKind::DetachedFile { file, .. } => {
                 detached_file_to_package_graph(load, file)
@@ -342,7 +339,6 @@ impl ProjectWorkspace {
 fn project_json_to_package_graph(
     load: FileLoader<'_>,
     project: &ProjectJson,
-    extra_env: &FxHashMap<String, String>,
 ) -> PackageGraph {
     let mut result = PackageGraph::default();
     let package_graph = &mut result;
@@ -441,62 +437,6 @@ fn detached_file_to_package_graph(
     package_graph
 }
 
-#[derive(Default, Debug)]
-struct SysrootPublicDeps {
-    deps: Vec<(PackageName, PackageId, bool)>,
-}
-
-impl SysrootPublicDeps {
-    /// Makes `from` depend on the public sysroot packages.
-    fn add_to_package_graph(
-        &self,
-        package_graph: &mut PackageGraph,
-        from: PackageId,
-    ) {
-        for (name, package, prelude) in &self.deps {
-            add_dep_with_prelude(package_graph, from, name.clone(), *package, *prelude, true);
-        }
-    }
-}
-
-fn extend_package_graph_with_sysroot(
-    package_graph: &mut PackageGraph,
-    mut sysroot_package_graph: PackageGraph,
-) -> SysrootPublicDeps {
-    let mut pub_deps = vec![];
-    for cid in sysroot_package_graph.iter() {
-        if let PackageOrigin::Language(lang_package) = sysroot_package_graph[cid].origin {
-            match lang_package {
-                LanguagePackageOrigin::Core | LanguagePackageOrigin::Std => pub_deps.push((
-                    PackageName::normalize_dashes(&lang_package.to_string()),
-                    cid,
-                    true,
-                )),
-                LanguagePackageOrigin::Other => (),
-            }
-        }
-    }
-
-    let mut marker_set = vec![];
-    for &(_, cid, _) in pub_deps.iter() {
-        marker_set.extend(sysroot_package_graph.transitive_deps(cid));
-    }
-
-    marker_set.sort();
-    marker_set.dedup();
-
-    // Remove all packages except the ones we are interested in to keep the sysroot graph small.
-    let removed_mapping = sysroot_package_graph.remove_packages_except(&marker_set);
-    let mapping = package_graph.extend(sysroot_package_graph);
-
-    // Map the id through the removal mapping first, then through the package graph extension mapping.
-    pub_deps.iter_mut().for_each(|(_, cid, _)| {
-        *cid = mapping[&removed_mapping[cid.into_raw().into_u32() as usize].unwrap()]
-    });
-
-    SysrootPublicDeps { deps: pub_deps }
-}
-
 fn add_dep(
     graph: &mut PackageGraph,
     from: PackageId,
@@ -504,21 +444,6 @@ fn add_dep(
     to: PackageId,
 ) {
     add_dep_inner(graph, from, Dependency::new(name, to))
-}
-
-fn add_dep_with_prelude(
-    graph: &mut PackageGraph,
-    from: PackageId,
-    name: PackageName,
-    to: PackageId,
-    prelude: bool,
-    sysroot: bool,
-) {
-    add_dep_inner(
-        graph,
-        from,
-        Dependency::with_prelude(name, to, prelude, sysroot),
-    )
 }
 
 fn add_dep_inner(

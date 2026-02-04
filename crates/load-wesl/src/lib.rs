@@ -1,32 +1,37 @@
 //! Loads a WESL project
 //!
 
-use std::{collections::hash_map::Entry, mem, path::Path};
-
-use crossbeam_channel::unbounded;
+use base_db::{PackageGraph, SourceRoot, SourceRootId, change::Change};
+use crossbeam_channel::{Receiver, unbounded};
 use ide_db::RootDatabase;
+use itertools::Itertools as _;
+use project_model::{PackageRoot, ProjectManifest, ProjectWorkspace, WeslConfig};
 use rustc_hash::FxHashMap;
-use vfs::{AbsPath, AbsPathBuf, VfsPath, file_set::FileSetConfig, loader::Handle};
+use std::{collections::hash_map::Entry, mem, path::Path};
+use triomphe::Arc;
+use vfs::{
+    AbsPath, AbsPathBuf, VfsPath,
+    file_set::FileSetConfig,
+    loader::{Handle, LoadingProgress},
+};
 #[derive(Debug)]
 pub struct LoadWeslConfig {}
 
 pub fn load_workspace_at(
     root: &Path,
-    cargo_config: &CargoConfig,
+    cargo_config: &WeslConfig,
     load_config: &LoadWeslConfig,
     progress: &(dyn Fn(String) + Sync),
 ) -> anyhow::Result<(RootDatabase, vfs::Vfs)> {
     let root = AbsPathBuf::assert_utf8(std::env::current_dir()?.join(root));
     let root = ProjectManifest::discover_single(&root)?;
-    let manifest_path = root.manifest_path().clone();
-    let mut workspace = ProjectWorkspace::load(root, cargo_config, progress)?;
+    let workspace = ProjectWorkspace::load(root, cargo_config, progress)?;
 
-    load_workspace(workspace, &cargo_config.extra_env, load_config)
+    load_workspace(workspace, load_config)
 }
 
 pub fn load_workspace(
     ws: ProjectWorkspace,
-    extra_env: &FxHashMap<String, Option<String>>,
     load_config: &LoadWeslConfig,
 ) -> anyhow::Result<(RootDatabase, vfs::Vfs)> {
     let lru_cap = std::env::var("WA_LRU_CAP")
@@ -34,7 +39,7 @@ pub fn load_workspace(
         .and_then(|it| it.parse::<u16>().ok());
     let mut db = RootDatabase::new(lru_cap);
 
-    let vfs = load_workspace_into_db(ws, extra_env, load_config, &mut db)?;
+    let vfs = load_workspace_into_db(ws, load_config, &mut db)?;
 
     Ok((db, vfs))
 }
@@ -44,7 +49,6 @@ pub fn load_workspace(
 // now that `salsa` supports extending foreign databases (e.g. `RootDatabase`).
 pub fn load_workspace_into_db(
     ws: ProjectWorkspace,
-    extra_env: &FxHashMap<String, Option<String>>,
     load_config: &LoadWeslConfig,
     db: &mut RootDatabase,
 ) -> anyhow::Result<vfs::Vfs> {
@@ -56,17 +60,13 @@ pub fn load_workspace_into_db(
     };
 
     tracing::debug!(?load_config, "LoadCargoConfig");
-    let crate_graph = ws.to_crate_graph(
-        &mut |path: &AbsPath| {
-            let contents = loader.load_sync(path);
-            let path = vfs::VfsPath::from(path.to_path_buf());
-            vfs.set_file_contents(path.clone(), contents);
-            vfs.file_id(&path).and_then(|(file_id, excluded)| {
-                (excluded == vfs::FileExcluded::No).then_some(file_id)
-            })
-        },
-        extra_env,
-    );
+    let crate_graph = ws.to_package_graph(&mut |path: &AbsPath| {
+        let contents = loader.load_sync(path);
+        let path = vfs::VfsPath::from(path.to_path_buf());
+        vfs.set_file_contents(path.clone(), contents);
+        vfs.file_id(&path)
+            .and_then(|(file_id, excluded)| (excluded == vfs::FileExcluded::No).then_some(file_id))
+    });
 
     let project_folders = ProjectFolders::new(std::slice::from_ref(&ws), &[], None);
     loader.set_config(vfs::loader::Config {
@@ -75,7 +75,7 @@ pub fn load_workspace_into_db(
         version: 0,
     });
 
-    load_crate_graph_into_db(
+    load_package_graph_into_db(
         crate_graph,
         project_folders.source_root_config,
         &mut vfs,
@@ -99,9 +99,11 @@ impl ProjectFolders {
         global_excludes: &[AbsPathBuf],
         user_config_dir_path: Option<&AbsPath>,
     ) -> ProjectFolders {
-        let mut res = ProjectFolders::default();
+        let mut result = ProjectFolders::default();
         let mut fsc = FileSetConfig::builder();
         let mut local_filesets = vec![];
+
+        // TODO: Do we need all this complexity?
 
         // Dedup source roots
         // Depending on the project setup, we can have duplicated source roots, or for example in
@@ -135,7 +137,7 @@ impl ProjectFolders {
             // maps include paths to indices of the corresponding root
             let mut include_to_idx = FxHashMap::default();
             // Find and note down the indices of overlapping roots
-            for (idx, root) in roots
+            for (index, root) in roots
                 .iter()
                 .enumerate()
                 .filter(|(_, it)| !it.include.is_empty())
@@ -143,10 +145,10 @@ impl ProjectFolders {
                 for include in &root.include {
                     match include_to_idx.entry(include) {
                         Entry::Occupied(e) => {
-                            overlap_map.entry(*e.get()).or_default().push(idx);
+                            overlap_map.entry(*e.get()).or_default().push(index);
                         },
                         Entry::Vacant(e) => {
-                            e.insert(idx);
+                            e.insert(index);
                         },
                     }
                 }
@@ -198,9 +200,9 @@ impl ProjectFolders {
             };
 
             if root.is_local {
-                res.watch.push(res.load.len());
+                result.watch.push(result.load.len());
             }
-            res.load.push(entry);
+            result.load.push(entry);
 
             if root.is_local {
                 local_filesets.push(fsc.len() as u64);
@@ -214,8 +216,8 @@ impl ProjectFolders {
 
             if !file_set_roots.is_empty() {
                 let entry = vfs::loader::Entry::Files(entries);
-                res.watch.push(res.load.len());
-                res.load.push(entry);
+                result.watch.push(result.load.len());
+                result.load.push(entry);
                 local_filesets.push(fsc.len() as u64);
                 fsc.add_file_set(file_set_roots)
             }
@@ -231,19 +233,19 @@ impl ProjectFolders {
             let file_set_roots = vec![VfsPath::from(ratoml_path.to_owned())];
             let entry = vfs::loader::Entry::Files(vec![ratoml_path]);
 
-            res.watch.push(res.load.len());
-            res.load.push(entry);
+            result.watch.push(result.load.len());
+            result.load.push(entry);
             local_filesets.push(fsc.len() as u64);
             fsc.add_file_set(file_set_roots)
         }
 
         let fsc = fsc.build();
-        res.source_root_config = SourceRootConfig {
+        result.source_root_config = SourceRootConfig {
             fsc,
             local_filesets,
         };
 
-        res
+        result
     }
 }
 
@@ -262,8 +264,8 @@ impl SourceRootConfig {
             .partition(vfs)
             .into_iter()
             .enumerate()
-            .map(|(idx, file_set)| {
-                let is_local = self.local_filesets.contains(&(idx as u64));
+            .map(|(index, file_set)| {
+                let is_local = self.local_filesets.contains(&(index as u64));
                 if is_local {
                     SourceRoot::new_local(file_set)
                 } else {
@@ -304,14 +306,14 @@ impl SourceRootConfig {
             }
         }
 
-        for (idx, (root, root_id)) in roots.iter().enumerate() {
+        for (index, (root, root_id)) in roots.iter().enumerate() {
             if !self.local_filesets.contains(root_id)
                 || map.contains_key(&SourceRootId(*root_id as u32))
             {
                 continue;
             }
 
-            for (root2, root2_id) in roots[..idx].iter().rev() {
+            for (root2, root2_id) in roots[..index].iter().rev() {
                 if self.local_filesets.contains(root2_id)
                     && root_id != root2_id
                     && root.starts_with(root2)
@@ -332,6 +334,49 @@ impl SourceRootConfig {
 
         map
     }
+}
+
+fn load_package_graph_into_db(
+    package_graph: PackageGraph,
+    source_root_config: SourceRootConfig,
+    vfs: &mut vfs::Vfs,
+    receiver: &Receiver<vfs::loader::Message>,
+    db: &mut RootDatabase,
+) {
+    let mut analysis_change = Change::default();
+
+    // wait until Vfs has loaded all roots
+    for task in receiver {
+        match task {
+            vfs::loader::Message::Progress { n_done, .. } => {
+                if n_done == LoadingProgress::Finished {
+                    break;
+                }
+            },
+            vfs::loader::Message::Loaded { files } | vfs::loader::Message::Changed { files } => {
+                let _p =
+                    tracing::info_span!("load_cargo::load_crate_craph/LoadedChanged").entered();
+                for (path, contents) in files {
+                    vfs.set_file_contents(path.into(), contents);
+                }
+            },
+        }
+    }
+    let changes = vfs.take_changes();
+    for (_, file) in changes {
+        if let vfs::Change::Create(v, _) | vfs::Change::Modify(v, _) = file.change
+            && let Ok(text) = String::from_utf8(v)
+        {
+            let path = vfs.file_path(file.file_id);
+            analysis_change.change_file(file.file_id, Some(Arc::new(text)), path.clone());
+        }
+    }
+    let source_roots = source_root_config.partition(vfs);
+    analysis_change.set_roots(source_roots);
+
+    analysis_change.set_package_graph(package_graph);
+
+    db.apply_change(analysis_change);
 }
 
 // TODO: Port the tests

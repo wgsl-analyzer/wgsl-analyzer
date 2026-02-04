@@ -17,7 +17,6 @@
 
 pub mod project_json;
 
-mod env;
 mod manifest_path;
 mod wesl_toml;
 mod workspace;
@@ -36,7 +35,7 @@ use rustc_hash::FxHashSet;
 pub use crate::{
     manifest_path::ManifestPath,
     project_json::{ProjectJson, ProjectJsonData},
-    workspace::{FileLoader, PackageRoot, ProjectWorkspace, ProjectWorkspaceKind},
+    workspace::{FileLoader, PackageRoot, ProjectWorkspace, ProjectWorkspaceKind, WeslConfig},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]

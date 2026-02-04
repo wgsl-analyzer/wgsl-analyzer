@@ -11,12 +11,14 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+base-db.workspace = true
 crossbeam-channel.workspace = true
 ide-db.workspace = true
 itertools.workspace = true
+project-model.workspace = true
 rustc-hash.workspace = true
-# project-model.workspace = true
 tracing.workspace = true
+triomphe.workspace = true
 vfs.workspace = true
 vfs-notify.workspace = true
 

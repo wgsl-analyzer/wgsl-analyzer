@@ -813,11 +813,14 @@ name = "load-wesl"
 version = "0.0.0"
 dependencies = [
  "anyhow",
+ "base-db",
  "crossbeam-channel",
  "ide-db",
  "itertools",
+ "project-model",
  "rustc-hash 2.1.1",
  "tracing",
+ "triomphe",
  "vfs",
  "vfs-notify 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070)",
 ]
