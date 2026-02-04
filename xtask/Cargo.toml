@@ -10,7 +10,7 @@ publish = false
 [dependencies]
 anyhow.workspace = true
 flate2 = "1.1.9"
-time = { version = "0.3.45", default-features = false }
+time = { version = "0.3.46", default-features = false }
 write-json = "0.1.4"
 xflags = "0.3.2"
 xshell = "0.2.7"
