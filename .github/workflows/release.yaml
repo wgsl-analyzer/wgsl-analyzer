@@ -76,6 +76,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: ${{ env.FETCH_DEPTH }}
+          persist-credentials: false
 
       - name: Install Node.js toolchain
         uses: actions/setup-node@v6
@@ -155,6 +156,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: ${{ env.FETCH_DEPTH }}
+          persist-credentials: false
 
       - name: Dist
         run: cargo xtask dist --client-patch-version ${{ github.run_number }}
@@ -203,6 +205,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: ${{ env.FETCH_DEPTH }}
+          persist-credentials: false
 
       - name: Set HEAD_SHA
         run: |

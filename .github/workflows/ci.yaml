@@ -38,6 +38,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Filter by paths
         uses: dorny/paths-filter@v3.0.2
@@ -61,6 +63,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
 
       - name: Install stable Rust toolchain
         uses: dtolnay/rust-toolchain@1.93.0
@@ -101,6 +104,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Install Rust toolchain
         run: |
@@ -117,6 +122,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Install Rust toolchain
         run: |
@@ -172,6 +179,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: markdownlint
         uses: DavidAnson/markdownlint-cli2-action@v22
@@ -186,6 +195,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
       - name: Install Tombi
         uses: tombi-toml/setup-tombi@v1
       - name: Lint TOML files
@@ -208,6 +219,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Check for typos
         uses: crate-ci/typos@v1.43.1
@@ -229,6 +242,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
 
       - name: Install beta Rust toolchain
         uses: dtolnay/rust-toolchain@beta
@@ -261,6 +275,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@main
       - name: Install cargo-shear
@@ -281,6 +296,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Install Node.js
         uses: actions/setup-node@v6
