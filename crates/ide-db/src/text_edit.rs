@@ -10,13 +10,13 @@ use rowan::{TextRange, TextSize};
 
 use crate::source_change::ChangeAnnotationId;
 
-/// A single "atomic" change to text
+/// A single "atomic" change to text.
 ///
-/// Must not overlap with other [`InsertDelete`]s
+/// Must not overlap with other [`InsertDelete`]s.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct InsertDelete {
     pub insert: String,
-    /// Refers to offsets in the original text
+    /// Refers to offsets in the original text.
     pub delete: TextRange,
 }
 

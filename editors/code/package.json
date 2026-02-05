@@ -384,7 +384,7 @@
 							]
 						},
 						"default": null,
-						"markdownDescription": "Extra environment variables that will be passed to the wgsl-analyzer executable. Useful for passing e.g. `WA_LOG` for debugging."
+						"markdownDescription": "Extra environment variables that will be passed to the wgsl-analyzer executable. Useful for passing variables (for example, `WA_LOG`) for debugging."
 					}
 				}
 			},

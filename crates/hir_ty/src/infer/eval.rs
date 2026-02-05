@@ -16,8 +16,8 @@ use crate::{
 impl TypeLoweringContext<'_> {
     /// Used for template checking.
     /// There, many expressions are guaranteed to evaluate to a type, or a scalar.
-    /// e.g. `array<f32, 3 + 5>`
-    /// `None` is returned for the "error" instance
+    /// For example, `array<f32, 3 + 5>`.
+    /// `None` is returned for the "error" instance.
     fn eval_expression(
         &mut self,
         expression: ExpressionId,
@@ -192,7 +192,7 @@ impl TypeLoweringContext<'_> {
 #[derive(Clone, Debug, PartialEq)]
 pub enum TemplateParameter {
     Type(Type),
-    /// The error instance is encoded as a None
+    /// The error instance is encoded as a `None`.
     Instance(Option<Instance>),
     Enumerant(Enumerant),
 }

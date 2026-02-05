@@ -7,6 +7,7 @@ use crate::parser::to_range;
     clippy::upper_case_acronyms,
     reason = "Lelwel generated code emits Token::EOF"
 )]
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
 #[derive(logos::Logos, Debug, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
 #[repr(u16)]
 pub enum Token {
@@ -90,7 +91,8 @@ pub enum Token {
     /// > A template parameter is an expression,
     /// > and therefore does not start with
     /// > either a '<' (U+003C) or a '=' (U+003D) code point.
-    /// > Source <https://www.w3.org/TR/WGSL/#template-list-discovery>
+    ///
+    /// Source <https://www.w3.org/TR/WGSL/#template-list-discovery>
     #[token("<=")]
     LtEq,
     #[token("<<")]
@@ -180,7 +182,7 @@ pub enum Token {
     Ident,
     #[regex(r"0[fh]")]
     #[regex(r"[1-9][0-9]*[fh]")]
-    // We need priorities so that we avoid the fact that e.g. 1.2 would match both otherwise
+    // We need priorities because some cases (for example, 1.2) would match both
     #[regex(r"[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?[fh]?", priority = 5)]
     #[regex(r"[0-9]+\.[0-9]*([eE][+-]?[0-9]+)?[fh]?")]
     #[regex(r"[0-9]+[eE][+-]?[0-9]+[fh]?")]

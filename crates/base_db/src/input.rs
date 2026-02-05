@@ -17,7 +17,7 @@ pub struct SourceRoot {
     /// Sysroot or crates.io library.
     ///
     /// Libraries are considered mostly immutable, this assumption is used to
-    /// optimize salsa's query structure
+    /// optimize salsa's query structure.
     is_library: bool,
     file_set: FileSet,
 }

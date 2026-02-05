@@ -1,28 +1,9 @@
-// For some reason allow(clippy::all) gets ignored
 #![allow(
-    clippy::wildcard_enum_match_arm,
-    clippy::min_ident_chars,
-    clippy::use_self,
-    clippy::equatable_if_let,
-    clippy::needless_pass_by_ref_mut,
-    clippy::cognitive_complexity,
-    clippy::too_many_lines,
-    clippy::redundant_closure_for_method_calls,
-    clippy::use_debug,
-    clippy::doc_markdown,
-    clippy::inconsistent_struct_constructor,
-    clippy::missing_const_for_fn,
-    clippy::unused_self,
-    clippy::disallowed_names,
-    clippy::uninlined_format_args,
-    clippy::range_plus_one,
-    clippy::needless_pass_by_value,
-    clippy::little_endian_bytes,
-    clippy::single_char_lifetime_names,
-    clippy::allow_attributes,
-    clippy::allow_attributes_without_reason,
-    clippy::nonstandard_macro_braces,
-    clippy::needless_continue,
+    clippy::all,
+    clippy::pedantic,
+    clippy::restriction,
+    clippy::style,
+    clippy::nursery,
     reason = "Lelwel generated code"
 )]
 use std::fmt;

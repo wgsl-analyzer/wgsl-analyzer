@@ -30,7 +30,7 @@ pub enum AddressSpaceError {
     Scope(Scope),
     Constructable,
     HostShareable,
-    /// Plain type, excluding runtime-sized arrays
+    /// Plain type, excluding runtime-sized arrays.
     WorkgroupCompatible,
     HandleOrTexture,
 }

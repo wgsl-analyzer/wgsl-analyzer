@@ -404,11 +404,11 @@ impl Index<BindingId> for InferenceResult {
     }
 }
 
-/// Runs inference for items that have a body, such as functions
+/// Runs inference for items that have a body, such as functions.
 pub struct InferenceContext<'database> {
     database: &'database dyn HirDatabase,
     owner: ModuleDefinitionId,
-    /// Root resolver for the entire module
+    /// Root resolver for the entire module.
     resolver: Resolver,
     result: InferenceResult, // set in collect_* calls
     return_type: Type,
@@ -662,7 +662,7 @@ impl<'database> InferenceContext<'database> {
         r#type
     }
 
-    /// Runs type inference on the body and infer the type for `const`s, `var`s and `override`s
+    /// Runs type inference on the body and infer the type for `const`s, `var`s and `override`s.
     fn infer_body(
         &mut self,
         body: &Body,
@@ -1797,7 +1797,7 @@ impl<'database> InferenceContext<'database> {
         clippy::too_many_lines,
         reason = "large bug not complex match expression"
     )]
-    /// Constructor for a type with a fully specified template
+    /// Constructor for a type with a fully specified template.
     fn call_templated_type_constructor(
         &mut self,
         store: &ExpressionStore,
@@ -1934,7 +1934,7 @@ impl<'database> InferenceContext<'database> {
         clippy::too_many_lines,
         reason = "large bug not complex match expression"
     )]
-    /// Constructor for just a type name
+    /// Constructor for just a type name.
     fn call_type_without_template_constructor(
         &mut self,
         store: &ExpressionStore,
@@ -2241,7 +2241,7 @@ impl InferenceContext<'_> {
 /// Lowers types and expressions, the two are deeply intertwined.
 pub struct TypeLoweringContext<'database> {
     database: &'database dyn HirDatabase,
-    /// Make sure to set the correct resolver when going into function scopes
+    /// Make sure to set the correct resolver when going into function scopes.
     resolver: &'database Resolver,
     store: &'database ExpressionStore,
 
@@ -2336,8 +2336,8 @@ impl fmt::Display for TypeLoweringErrorKind {
     }
 }
 
-/// A lowered type, or the definition of an item
-/// Also covers built-ins
+/// A lowered type, or the definition of an item.
+/// Also covers built-ins.
 pub enum Lowered {
     Type(Type),
     TypeWithoutTemplate(Type),
@@ -2675,7 +2675,7 @@ impl<'database> WgslTypeConverter<'database> {
         })
     }
 
-    /// Returns none if it is an error type
+    /// Returns `None` if it is an error type.
     fn template_parameter_to_wgsl_types(
         &mut self,
         param: eval::TemplateParameter,

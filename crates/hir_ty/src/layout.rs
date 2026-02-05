@@ -1,4 +1,5 @@
 //! <https://www.w3.org/TR/WGSL/#memory-layouts>
+//! .
 
 use hir_def::signature::LocalFieldId;
 use la_arena::ArenaMap;
@@ -17,6 +18,7 @@ const fn round_up(
     num.div_ceil(multiple) * multiple
 }
 
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
 /// All address spaces except uniform have the same constraints as the storage address space.
 ///
 /// <https://www.w3.org/TR/WGSL/#address-space-layout-constraints>
@@ -62,6 +64,7 @@ impl Type {
 }
 
 impl TypeKind {
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
     /// <https://www.w3.org/TR/WGSL/#alignof>
     pub fn align_of(
         &self,
@@ -160,6 +163,7 @@ impl TypeKind {
         }
     }
 
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
     /// <https://www.w3.org/TR/WGSL/#sizeof>
     ///
     /// # Panics
@@ -264,7 +268,7 @@ pub struct FieldLayout {
     pub size: Bytes,
 }
 
-/// Returns the (align, size) of the struct, and calls `on_field` for every field
+/// Returns the (align, size) of the struct, and calls `on_field` for every field.
 pub fn struct_member_layout<Result, Function: FnMut(LocalFieldId, FieldLayout) -> Result>(
     fields: &ArenaMap<LocalFieldId, Type>,
     database: &dyn HirDatabase,

@@ -82,7 +82,7 @@ fn parse_query(
     syntax::parse(&source, file_id.edition)
 }
 
-/// Silly workaround for cyclic deps between the traits
+/// Silly workaround for cyclic deps between the traits.
 pub struct FileLoaderDelegate<T>(pub T);
 
 impl<T: SourceDatabase> FileLoader for FileLoaderDelegate<&'_ T> {

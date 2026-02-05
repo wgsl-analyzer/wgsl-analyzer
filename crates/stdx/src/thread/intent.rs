@@ -8,11 +8,11 @@
 // Please maintain order from least to most priority for the derived `Ord` impl.
 pub enum ThreadIntent {
     /// Any thread which does work that is not in the critical path of the user typing
-    /// (e.g. processing Go To Definition).
+    /// (for example, processing Go To Definition).
     Worker,
 
     /// Any thread which does work caused by the user typing
-    /// (e.g. processing syntax highlighting).
+    /// (for example, processing syntax highlighting).
     LatencySensitive,
 }
 
@@ -68,7 +68,7 @@ mod imp {
         ///
         /// * **You do not care about how long it takes for work to finish.**
         /// * **You do not care about work being deferred temporarily.**
-        ///   (e.g. if the device's battery is in a critical state)
+        ///   (for example, if the device's battery is in a critical state)
         ///
         /// Examples:
         ///

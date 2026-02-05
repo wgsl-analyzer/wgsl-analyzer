@@ -18,9 +18,9 @@ use crate::{
 
 #[derive(Clone)]
 pub enum Scope {
-    /// The items inside a module
+    /// The items inside a module.
     Module(ModuleScope),
-    /// Local bindings
+    /// Local bindings.
     Expression(ExpressionScope),
 
     Builtin,

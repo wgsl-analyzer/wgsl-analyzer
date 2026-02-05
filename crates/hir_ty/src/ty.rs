@@ -45,6 +45,7 @@ impl Type {
         matches!(database.lookup_intern_type(self), TypeKind::Error)
     }
 
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
     /// `T` -> `T`, `vecN<T>` -> `T`
     #[must_use]
     pub fn this_or_vec_inner(
@@ -77,6 +78,7 @@ impl Type {
             .is_convertible_to(&r#type.kind(database), database)
     }
 
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
     /// `ref<inner>` -> `inner`, `ptr<inner>` -> `ptr<inner>`
     #[must_use]
     pub fn unref(
@@ -125,6 +127,7 @@ pub enum TypeKind {
     Error,
     Scalar(ScalarType),
     Atomic(AtomicType),
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
     /// <https://www.w3.org/TR/WGSL/#vector-types>
     Vector(VectorType),
     Matrix(MatrixType),
@@ -135,7 +138,7 @@ pub enum TypeKind {
     Reference(Reference),
     Pointer(Pointer),
     BoundVariable(BoundVariable),
-    StorageTypeOfTexelFormat(BoundVariable), // e.g. rgba8unorm -> vec4<f32>
+    StorageTypeOfTexelFormat(BoundVariable), // for example, rgba8unorm -> vec4<f32>
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -535,6 +538,7 @@ fn conversion_rank(
 /// [`u32`]: <https://www.w3.org/TR/WGSL/#u32>
 /// [`f32`]: <https://www.w3.org/TR/WGSL/#f32>
 /// [`f16`]: <https://www.w3.org/TR/WGSL/#f16>
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum ScalarType {
     /// <https://www.w3.org/TR/WGSL/#bool>
@@ -555,9 +559,10 @@ pub enum ScalarType {
 
 impl ScalarType {
     #[must_use]
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
     /// The numeric scalar types are [`AbstractInt`], [`AbstractFloat`], [`i32`], [`u32`], [`f32`], and [`f16`].
     ///
-    /// <https://www.w3.org/TR/WGSL/#numeric-scalar>
+    /// Reference: <https://www.w3.org/TR/WGSL/#numeric-scalar>
     ///
     /// [`AbstractInt`]: <https://www.w3.org/TR/WGSL/#abstractint>
     /// [`AbstractFloat`]: <https://www.w3.org/TR/WGSL/#abstractfloat>
@@ -573,9 +578,10 @@ impl ScalarType {
     }
 
     #[must_use]
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
     /// The integer scalar types are [`AbstractInt`], [`i32`], and [`u32`].
     ///
-    /// <https://www.w3.org/TR/WGSL/#integer-scalar>
+    /// Reference: <https://www.w3.org/TR/WGSL/#integer-scalar>
     ///
     /// [`AbstractInt`]: <https://www.w3.org/TR/WGSL/#abstractint>
     /// [`i32`]: <https://www.w3.org/TR/WGSL/#i32>
@@ -585,7 +591,8 @@ impl ScalarType {
     }
 }
 
-/// N must be in {2, 3, 4}
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
+/// N must be in {2, 3, 4}.
 ///
 /// <https://www.w3.org/TR/WGSL/#vector-types>
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -655,9 +662,10 @@ impl VecSize {
     }
 }
 
-/// [6.2.6. Vector Types](https://www.w3.org/TR/WGSL/#vector-types)
-///
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
 /// A vector is a grouped sequence of 2, 3, or 4 [scalar](https://www.w3.org/TR/WGSL/#scalar) components.
+///
+/// Reference: [6.2.6. Vector Types](https://www.w3.org/TR/WGSL/#vector-types)
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct VectorType {
     /// N must be in {2, 3, 4}
@@ -672,9 +680,10 @@ impl VectorType {
     // }
 }
 
-/// [6.2.7. Matrix Types](https://www.w3.org/TR/WGSL/#matrix-types)
-///
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
 /// A matrix is a grouped sequence of 2, 3, or 4 floating point vectors.
+///
+/// Reference: [6.2.7. Matrix Types](https://www.w3.org/TR/WGSL/#matrix-types)
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct MatrixType {
     pub columns: VecSize,
@@ -805,9 +814,9 @@ pub enum TexelFormat {
     #[deprecated(
         note = "Intended to be refactored and removed in https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
     )]
-    /// this is only used for builtins which care a little bit about the format
+    /// This is only used for builtins which care a little bit about the format.
     BoundVariable(BoundVariable),
-    /// this is only used for builtins which do not care about the format
+    /// This is only used for builtins which do not care about the format.
     #[deprecated(
         note = "Intended to be refactored and removed in https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
     )]

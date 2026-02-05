@@ -65,7 +65,7 @@ impl SyntaxNodePointer {
     }
 }
 
-/// Like `SyntaxNodePointer`, but remembers the type of node
+/// Like `SyntaxNodePointer`, but remembers the type of node.
 pub struct AstPointer<N: AstNode> {
     raw: SyntaxNodePointer,
     _type: PhantomData<fn() -> N>,

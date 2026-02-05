@@ -40,7 +40,7 @@ pub enum MemoryLayoutHoverRenderKind {
     Both,
 }
 
-/// Contains the results when hovering over an item
+/// Contains the results when hovering over an item.
 #[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
 pub struct HoverResult {
     pub markup: Markup,

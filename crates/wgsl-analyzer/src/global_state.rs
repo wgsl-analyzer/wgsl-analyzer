@@ -40,7 +40,7 @@ pub(crate) struct HandleReceiver<H, C> {
     pub receiver: C,
 }
 
-/// `GlobalState` is the primary mutable state of the language server
+/// `GlobalState` is the primary mutable state of the language server.
 ///
 /// The most interesting components are `vfs`, which stores a consistent
 /// snapshot of the file systems, and `analysis_host`, which stores our

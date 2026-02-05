@@ -116,7 +116,7 @@ impl<T> JoinHandle<T> {
     #[must_use]
     /// # Panics
     ///
-    /// If there is no job
+    /// If there is no job.
     pub fn join(mut self) -> T {
         self.inner.take().unwrap().join()
     }

@@ -114,12 +114,15 @@ fn is_swizzleable(field_text: &str) -> bool {
     is_rgba || is_xyzw
 }
 
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
 /// <https://www.w3.org/TR/WGSL/#vector>
 const MIN_VECTOR_SIZE: usize = 2;
 
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
 /// <https://www.w3.org/TR/WGSL/#vector>
 const MAX_VECTOR_SIZE: usize = 4;
 
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
 /// <https://www.w3.org/TR/WGSL/#syntax-swizzle_name>
 const SWIZZLE_SETS: &[&str] = &["xyzw", "rgba"];
 

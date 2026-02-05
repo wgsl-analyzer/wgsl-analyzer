@@ -57,7 +57,7 @@ where
             },
             Err(_) => {
                 // Use system time if we can't get the time offset. This should
-                // never happen on Linux, but can happen on e.g. OpenBSD.
+                // never happen on Linux, but can happen on, for example, OpenBSD.
                 wa_fmt_layer.boxed()
             },
         }

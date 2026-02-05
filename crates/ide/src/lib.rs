@@ -212,7 +212,7 @@ impl Analysis {
     }
 
     /// Returns the full source code with imports resolved
-    /// TODO: Hook up wesl-rs over here <https://github.com/wgsl-analyzer/wgsl-analyzer/issues/324>
+    /// TODO: Hook up wesl-rs over here <https://github.com/wgsl-analyzer/wgsl-analyzer/issues/324>.
     pub fn resolve_full_source(
         &self,
         file_id: FileId,
