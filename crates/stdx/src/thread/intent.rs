@@ -62,7 +62,7 @@ mod imp {
     pub(super) enum QoSClass {
         // Documentation adapted from https://github.com/apple-oss-distributions/libpthread/blob/67e155c94093be9a204b69637d198eceff2c7c46/include/sys/qos.h#L55
         //
-        /// TLDR: invisible maintenance tasks
+        /// TLDR: invisible maintenance tasks.
         ///
         /// Contract:
         ///
@@ -89,7 +89,7 @@ mod imp {
         /// All other work is prioritized over background tasks.
         Background,
 
-        /// TLDR: tasks that do not block using your app
+        /// TLDR: tasks that do not block using your app.
         ///
         /// Contract:
         ///
@@ -118,7 +118,7 @@ mod imp {
         /// performance, responsiveness, and efficiency.
         Utility,
 
-        /// TLDR: tasks that block using your app
+        /// TLDR: tasks that block using your app.
         ///
         /// Contract:
         ///
@@ -149,7 +149,7 @@ mod imp {
         /// except for critical user-interactive work.
         UserInitiated,
 
-        /// TLDR: render loops and nothing else
+        /// TLDR: render loops and nothing else.
         ///
         /// Contract:
         ///
