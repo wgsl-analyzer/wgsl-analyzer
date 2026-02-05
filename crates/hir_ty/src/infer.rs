@@ -1744,7 +1744,9 @@ impl<'database> InferenceContext<'database> {
             {
                 template_args.push(template_parameter);
             } else {
-                self.push_diagnostic(store.store_source,InferenceDiagnosticKind::WgslError {
+                self.push_diagnostic(
+                    store.store_source,
+                    InferenceDiagnosticKind::WgslError {
                     expression,
                     message:
                         "internal error: wgsl-types did not align with wgsl-analyzer's type system"
