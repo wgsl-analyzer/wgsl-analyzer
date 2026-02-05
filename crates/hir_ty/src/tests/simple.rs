@@ -418,3 +418,14 @@ fn global_assert_statement_wrong() {
         "#]],
     );
 }
+
+#[test]
+fn global_var_function_address_space_error() {
+    check_infer(
+        "var<function> not_allowed_at_module_level: u32;",
+        expect![[r#"
+            14..41 'not_al..._level': ref<u32>
+            InferenceDiagnostic { source: Signature, kind: UnexpectedTemplateArgument { expression: Idx::<Expression>(0) } }
+        "#]],
+    );
+}

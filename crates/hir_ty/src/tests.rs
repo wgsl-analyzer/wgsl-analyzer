@@ -18,7 +18,7 @@ use triomphe::Arc;
 
 use crate::{
     database::HirDatabase as _,
-    infer::{InferenceDiagnostic, InferenceResult},
+    infer::{InferenceDiagnostic, InferenceDiagnosticKind, InferenceResult},
     test_db::{TestDatabase, single_file_db},
     ty::{
         Type,
@@ -71,8 +71,8 @@ fn infer(ra_fixture: &str) -> String {
         // It'd be nicer if the diagnostics were sorted with the types.
         // But this is good enough for unit tests
         for diagnostic in inference_result.diagnostics() {
-            match diagnostic {
-                InferenceDiagnostic::TypeMismatch {
+            match &diagnostic.kind {
+                InferenceDiagnosticKind::TypeMismatch {
                     expression,
                     expected,
                     actual,
@@ -98,21 +98,21 @@ fn infer(ra_fixture: &str) -> String {
                     )
                     .unwrap();
                 },
-                InferenceDiagnostic::AssignmentNotAReference { .. }
-                | InferenceDiagnostic::NoSuchField { .. }
-                | InferenceDiagnostic::ArrayAccessInvalidType { .. }
-                | InferenceDiagnostic::UnresolvedName { .. }
-                | InferenceDiagnostic::InvalidConstructionType { .. }
-                | InferenceDiagnostic::FunctionCallArgCountMismatch { .. }
-                | InferenceDiagnostic::NoBuiltinOverload { .. }
-                | InferenceDiagnostic::NoConstructor { .. }
-                | InferenceDiagnostic::AddressOfNotReference { .. }
-                | InferenceDiagnostic::DerefNotAPointer { .. }
-                | InferenceDiagnostic::InvalidType { .. }
-                | InferenceDiagnostic::CyclicType { .. }
-                | InferenceDiagnostic::UnexpectedTemplateArgument { .. }
-                | InferenceDiagnostic::WgslError { .. }
-                | InferenceDiagnostic::ExpectedLoweredKind { .. } => {
+                InferenceDiagnosticKind::AssignmentNotAReference { .. }
+                | InferenceDiagnosticKind::NoSuchField { .. }
+                | InferenceDiagnosticKind::ArrayAccessInvalidType { .. }
+                | InferenceDiagnosticKind::UnresolvedName { .. }
+                | InferenceDiagnosticKind::InvalidConstructionType { .. }
+                | InferenceDiagnosticKind::FunctionCallArgCountMismatch { .. }
+                | InferenceDiagnosticKind::NoBuiltinOverload { .. }
+                | InferenceDiagnosticKind::NoConstructor { .. }
+                | InferenceDiagnosticKind::AddressOfNotReference { .. }
+                | InferenceDiagnosticKind::DerefNotAPointer { .. }
+                | InferenceDiagnosticKind::InvalidType { .. }
+                | InferenceDiagnosticKind::CyclicType { .. }
+                | InferenceDiagnosticKind::UnexpectedTemplateArgument { .. }
+                | InferenceDiagnosticKind::WgslError { .. }
+                | InferenceDiagnosticKind::ExpectedLoweredKind { .. } => {
                     writeln!(buffer, "{diagnostic:?}").unwrap();
                 },
             }

@@ -663,3 +663,92 @@ fn error_message_cause_chain(error: &dyn error::Error) -> String {
 
     message
 }
+
+#[cfg(test)]
+mod tests {
+    use expect_test::{Expect, expect};
+    use hir::diagnostics::DiagnosticsConfig;
+    use itertools::Itertools;
+    use std::fmt::Write as _;
+
+    use crate::{diagnostics::Diagnostic, fixture::single_file_db};
+
+    fn check_diagnostics(
+        source: &str,
+        expected: Expect,
+    ) {
+        let (analysis, file_id) = single_file_db(source);
+        let config = DiagnosticsConfig {
+            enabled: true,
+            type_errors: true,
+            naga_parsing_errors: false,
+            naga_validation_errors: false,
+            ..Default::default()
+        };
+        let diagnostics = analysis.diagnostics(&config, file_id).unwrap();
+        let mut actual = String::new();
+        for Diagnostic {
+            code,
+            message,
+            range,
+            severity,
+            ..
+        } in diagnostics
+        {
+            let severity_text = match severity {
+                crate::diagnostics::Severity::Error => "Error",
+                crate::diagnostics::Severity::WeakWarning => "Warning",
+            };
+            writeln!(
+                actual,
+                "{range:?} {severity_text} {}: {message}",
+                code.as_str()
+            );
+        }
+
+        expected.assert_eq(&actual);
+    }
+
+    #[test]
+    fn global_var_function_address_space_error() {
+        check_diagnostics(
+            "var<function> not_allowed_at_module_level: u32;",
+            expect![[r#"
+                0..3 Error 12: address space is only valid in function-scope
+                4..12 Error 21: unexpected template argument
+            "#]],
+        );
+    }
+
+    #[test]
+    fn invalid_body() {
+        check_diagnostics(
+            "fn f() { let x: u32 = 1.0; }",
+            expect![[r#"
+                22..25 Error 2: expected u32, found float
+            "#]],
+        );
+    }
+
+    #[test]
+    fn incomplete_variable_error() {
+        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/825
+        check_diagnostics(
+            "
+@group(0) @binding(0)
+var<storage, read> a: array<f32>;
+
+@group(0) @binding(1) // line 4
+var<storage
+",
+            expect![[r#"
+                93..94 Error 16: invalid syntax, expected one of: '@', ',', '=', <identifier>, '{', '}', ')', ';', <template start>
+                102..102 Error 16: invalid syntax, expected one of: ':', '=', ';'
+                23..26 Error 12: address space is only valid for handle or texture types
+                27..34 Error 21: unexpected template argument
+                27..34 Error 21: unexpected template argument
+                90..93 Error 12: address space is only valid for handle or texture types
+            "#]],
+        );
+    }
+}
