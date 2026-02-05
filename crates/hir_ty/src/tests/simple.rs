@@ -429,3 +429,26 @@ fn global_var_function_address_space_error() {
         "#]],
     );
 }
+
+#[test]
+fn no_crash_on_hex_int() {
+    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/826
+    check_infer(
+        "
+fn f() {
+    let i2 = 0u;
+    let p0 = (i2 >> 0u) & 0xf
+}
+",
+        expect![[r#"
+            18..20 'i2': u32
+            23..25 '0u': u32
+            35..37 'p0': u32
+            40..56 '(i2 >>... & 0xf': u32
+            41..43 'i2': u32
+            41..49 'i2 >> 0u': u32
+            47..49 '0u': u32
+            53..56 '0xf': integer
+        "#]],
+    );
+}
