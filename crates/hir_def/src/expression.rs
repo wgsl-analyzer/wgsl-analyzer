@@ -157,23 +157,19 @@ pub enum SwitchCaseSelector {
 pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
     match literal {
         ast::LiteralKind::IntLiteral(literal) => {
-            let (text, suffix) = split_number_suffix(literal.text());
+            let (text, int_variant) = split_int_suffix(literal.text());
             let value = match text.strip_prefix("0x").or_else(|| text.strip_prefix("0X")) {
                 Some(hex) => u64::from_str_radix(hex, 16),
                 None => text.parse::<u64>(),
             }
             .expect("invalid literal");
-            let int_variant = match suffix {
-                Some('u') => BuiltinInt::U32,
-                Some('i') => BuiltinInt::I32,
-                _ => BuiltinInt::Abstract,
-            };
+
             Literal::Int(value, int_variant)
         },
         ast::LiteralKind::FloatLiteral(literal) => {
             use std::str::FromStr as _;
             // Float suffixes are not accepted by `f32::from_str`. Ignore them
-            let (text, suffix) = split_number_suffix(literal.text());
+            let (text, float_variant) = split_float_suffix(literal.text());
             let value = match text.strip_prefix("0x").or_else(|| text.strip_prefix("0X")) {
                 Some(_hex) => {
                     // TODO: Hex floats need to be handled
@@ -183,12 +179,6 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
                 None => f64::from_str(text),
             }
             .expect("invalid literal");
-            // future reference: naga has li and lu suffix for 64bits literals.
-            let float_variant = match suffix {
-                Some('f') => BuiltinFloat::F32,
-                Some('h') => BuiltinFloat::F16,
-                _ => BuiltinFloat::Abstract,
-            };
             Literal::Float(value.to_bits(), float_variant)
         },
         ast::LiteralKind::True(_) => Literal::Bool(true),
@@ -196,16 +186,24 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
     }
 }
 
-fn split_number_suffix(number: &str) -> (&str, Option<char>) {
-    if let Some(last_char) = number.chars().next_back()
-        && last_char.is_alphabetic()
-    {
-        (
-            &number[0..(number.len() - last_char.len_utf8())],
-            Some(last_char),
-        )
+fn split_int_suffix(number: &str) -> (&str, BuiltinInt) {
+    if number.ends_with('u') {
+        (&number[0..(number.len() - 1)], BuiltinInt::U32)
+    } else if number.ends_with('i') {
+        (&number[0..(number.len() - 1)], BuiltinInt::I32)
     } else {
-        (number, None)
+        (number, BuiltinInt::Abstract)
+    }
+}
+
+fn split_float_suffix(number: &str) -> (&str, BuiltinFloat) {
+    // future reference: naga has li and lu suffix for 64bits literals.
+    if number.ends_with('f') {
+        (&number[0..(number.len() - 1)], BuiltinFloat::F32)
+    } else if number.ends_with('h') {
+        (&number[0..(number.len() - 1)], BuiltinFloat::F16)
+    } else {
+        (number, BuiltinFloat::Abstract)
     }
 }
 
