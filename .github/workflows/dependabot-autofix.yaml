@@ -21,7 +21,7 @@ env:
 jobs:
   rust-toolchain:
     name: Apply automatic fixes for updated Rust toolchain
-    if: github.actor == 'dependabot[bot]'
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
 
     steps:
@@ -70,7 +70,7 @@ jobs:
 
   engines-vscode:
     name: Sync engines.vscode with @types/vscode
-    if: github.actor == 'dependabot[bot]'
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
 
     steps:
