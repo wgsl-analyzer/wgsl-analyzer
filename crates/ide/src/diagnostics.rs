@@ -673,9 +673,11 @@ mod tests {
 
     use crate::{diagnostics::Diagnostic, fixture::single_file_db};
 
+    #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
+    #[expect(clippy::use_debug, reason = "useful in tests")]
     fn check_diagnostics(
         source: &str,
-        expected: Expect,
+        expect: Expect,
     ) {
         let (analysis, file_id) = single_file_db(source);
         let config = DiagnosticsConfig {
@@ -706,7 +708,7 @@ mod tests {
             );
         }
 
-        expected.assert_eq(&actual);
+        expect.assert_eq(&actual);
     }
 
     #[test]
