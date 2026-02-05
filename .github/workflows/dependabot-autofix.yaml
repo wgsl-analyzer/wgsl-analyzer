@@ -19,56 +19,6 @@ env:
   RUSTFLAGS: -D warnings
 
 jobs:
-  rust-toolchain:
-    name: Apply automatic fixes for updated Rust toolchain
-    if: github.event.pull_request.user.login == 'dependabot[bot]'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.head_ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: false
-
-      - name: Check if dtolnay/rust-toolchain was updated
-        id: check_toolchain
-        run: |
-          git fetch origin main
-          if git diff origin/main...HEAD -- .github/workflows | grep -q 'dtolnay/rust-toolchain'; then
-            echo "updated=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "updated=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Install stable Rust toolchain
-        if: steps.check_toolchain.outputs.updated == 'true'
-        uses: dtolnay/rust-toolchain@1.93.0
-        with:
-          components: clippy, rustfmt
-
-      - name: Install cargo dependencies
-        if: steps.check_toolchain.outputs.updated == 'true'
-        run: cargo fetch
-
-      - name: Run cargo fmt
-        if: steps.check_toolchain.outputs.updated == 'true'
-        run: cargo fmt --all
-
-      - name: Run cargo clippy --fix
-        if: steps.check_toolchain.outputs.updated == 'true'
-        run: cargo clippy --fix --allow-dirty --allow-staged --all-targets --all-features
-
-      - name: Commit and push fixes
-        if: steps.check_toolchain.outputs.updated == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "chore: auto-fix with cargo fmt & clippy" || echo "No changes to commit"
-          git push origin HEAD:${GITHUB_HEAD_REF}
-
   engines-vscode:
     name: Sync engines.vscode with @types/vscode
     if: github.event.pull_request.user.login == 'dependabot[bot]'

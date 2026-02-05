@@ -84,8 +84,9 @@ jobs:
           node-version: 22
 
       - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@1.93.0
+        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561
         with:
+          toolchain: stable
           components: ${{ matrix.pgo && 'llvm-tools' || '' }}
           target: ${{ matrix.target }}
 
