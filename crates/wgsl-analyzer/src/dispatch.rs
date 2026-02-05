@@ -47,7 +47,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
 
     /// Dispatches the request onto the current thread, given full access to
     /// mutable global state. Unlike all other methods here, this one is not
-    /// guarded by `catch_unwind`, so, please, do not make bugs :-)
+    /// guarded by `catch_unwind`, so, please, do not make bugs!
     pub(crate) fn on_sync_mut<R>(
         &mut self,
         function: fn(&mut GlobalState, R::Params) -> anyhow::Result<R::Result>,

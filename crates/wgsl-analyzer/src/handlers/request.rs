@@ -356,7 +356,7 @@ const fn goto_type_action_links(
 }
 
 mod diff {
-    //! Generate minimal `TextEdit`s from different text versions
+    //! Generate minimal `TextEdit`s from different text versions.
     use base_db::{TextRange, TextSize};
     use dissimilar::Chunk;
     use ide_db::text_edit::TextEdit;

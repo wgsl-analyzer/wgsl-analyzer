@@ -28,7 +28,7 @@ This page assumes that you have already [installed the `wgsl-analyzer` binary](.
 
 [Eglot] is the more minimalistic and lightweight LSP client for Emacs, integrates well with existing Emacs functionality and is built into Emacs starting from release 29.
 
-After installing [Eglot], e.g. via `M-x package-install` (not needed from Emacs 29), you can enable it via the `M-x eglot` command or load it automatically in `wgsl-mode` via
+After installing [Eglot], for example, via `M-x package-install` (not needed from Emacs 29), you can enable it via the `M-x eglot` command or load it automatically in `wgsl-mode` via
 
 ```emacs-lisp
 (add-hook 'wgsl-mode-hook 'eglot-ensure)

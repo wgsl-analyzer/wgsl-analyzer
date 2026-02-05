@@ -40,7 +40,7 @@ use crate::lsp::capabilities::ClientCapabilities;
 config_data! {
     /// Configs that apply on a workspace-wide scope. There are two levels at which a global
     /// configuration can be provided:
-    /// 1. Client-specific settings (e.g. `settings.json` in VS Code).
+    /// 1. Client-specific settings (for example, `settings.json` in VS Code).
     /// 2. A user-wide configuration file in this tool's config directory.
     /// A config value is resolved by traversing the "config tree" from the most specific scope
     /// upward (nearest-first principle). The first level that specifies a value wins.
@@ -102,6 +102,7 @@ pub enum NagaVersionConfig {
     Clone, Copy, Debug, Serialize, Deserialize, Default, Hash, PartialEq, Eq, PartialOrd, Ord,
 )]
 #[serde(rename_all = "lowercase")]
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
 pub enum InlayHintsTypeVerbosity {
     /// `ref<uniform, f32, read_write>`
     Full,
@@ -131,7 +132,7 @@ struct ClientInfo {
 
 #[derive(Clone, Debug)]
 pub struct Config {
-    /// The workspace roots as registered by the LSP client
+    /// The workspace roots as registered by the LSP client.
     workspace_roots: Vec<AbsPathBuf>,
     capabilities: ClientCapabilities,
     root_path: AbsPathBuf,
@@ -152,7 +153,7 @@ pub struct Config {
     /// Use case : It is an error to have an empty value for `check_command`.
     /// Since it is a `global` command at the moment, its final value can only be determined by
     /// traversing through `global` configs and the `client` config. However the non-null value constraint
-    /// is config level agnostic, so this requires an independent error storage
+    /// is config level agnostic, so this requires an independent error storage.
     validation_errors: ConfigErrors,
 
     detached_files: Vec<AbsPathBuf>,
@@ -636,12 +637,12 @@ pub enum NumThreads {
 impl ConfigChange {
     /// # Panics
     ///
-    /// Panics if double writing
+    /// Panics if double-writing.
     pub fn change_user_config(
         &mut self,
         content: Option<Arc<str>>,
     ) {
-        assert!(self.user_config.is_none()); // Otherwise it is a double write.
+        assert!(self.user_config.is_none()); // Otherwise it is a double-write.
         self.user_config = content;
     }
 
@@ -654,7 +655,7 @@ impl ConfigChange {
 
     /// # Panics
     ///
-    /// Panics if double writing
+    /// Panics if double writing.
     pub fn change_source_root_parent_map(
         &mut self,
         source_root_map: Arc<FxHashMap<SourceRootId, SourceRootId>>,
@@ -843,7 +844,7 @@ fn schema(fields: &[SchemaField]) -> serde_json::Value {
 /// vscode settings page.
 ///
 /// First letter of word should be uppercase, if an uppercase letter is encountered, add a space
-/// before it e.g. "fooBar" -> "Foo Bar", "fooBarBaz" -> "Foo Bar Baz", "foo" -> "Foo"
+/// before it. Example: "fooBar" -> "Foo Bar", "fooBarBaz" -> "Foo Bar Baz", "foo" -> "Foo".
 ///
 /// This likely should be in stdx (or just use heck instead), but it doesn't handle any edge cases
 /// and is intentionally simple.
@@ -1059,7 +1060,6 @@ macro_rules! _impl_for_config_data {
         )*
     ) => {
         #[expect(non_snake_case, reason="Generated accessor mirrors user-facing schema keys.")]
-        #[expect(clippy::ref_option, reason="Accessors intentionally return &Option<T> to avoid cloning.")]
         impl Config {
             $(
                 $($doc)*

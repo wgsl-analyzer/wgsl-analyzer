@@ -2,6 +2,10 @@ use std::mem;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
 #[repr(u16)]
+#[expect(
+    clippy::doc_paragraphs_missing_punctuation,
+    reason = "not relevant here"
+)]
 pub enum SyntaxKind {
     SourceFile,
     /// A name that can be referenced by a [`NameRef`]

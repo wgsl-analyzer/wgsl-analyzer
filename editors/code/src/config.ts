@@ -131,19 +131,19 @@ export class Config {
 				...onEnterRules,
 				{
 					// Doc single-line comment
-					// e.g. ///|
+					// example: ///|
 					beforeText: /^\s*\/{3}.*$/,
 					action: { indentAction, appendText: "/// " },
 				},
 				{
 					// Parent doc single-line comment
-					// e.g. //!|
+					// example: //!|
 					beforeText: /^\s*\/{2}!.*$/,
 					action: { indentAction, appendText: "//! " },
 				},
 				{
 					// Begins an auto-closed multi-line comment (standard or parent doc)
-					// e.g. /** | */ or /*! | */
+					// example: /** | */ or /*! | */
 					beforeText: /^\s*\/\*(\*|!)(?!\/)([^*]|\*(?!\/))*$/,
 					afterText: /^\s*\*\/$/,
 					action: {
@@ -153,19 +153,19 @@ export class Config {
 				},
 				{
 					// Begins a multi-line comment (standard or parent doc)
-					// e.g. /** ...| or /*! ...|
+					// example: /** ...| or /*! ...|
 					beforeText: /^\s*\/\*(\*|!)(?!\/)([^*]|\*(?!\/))*$/,
 					action: { indentAction, appendText: " * " },
 				},
 				{
 					// Continues a multi-line comment
-					// e.g.  * ...|
+					// example:  * ...|
 					beforeText: /^( {3})* \*( ([^*]|\*(?!\/))*)?$/,
 					action: { indentAction, appendText: "* " },
 				},
 				{
 					// Dedents after closing a multi-line comment
-					// e.g.  */|
+					// example:  */|
 					beforeText: /^( {3})* \*\/\s*$/,
 					action: { indentAction, removeText: 1 },
 				},

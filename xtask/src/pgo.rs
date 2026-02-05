@@ -110,7 +110,7 @@ fn download_package_for_training(
     Ok(target_path)
 }
 
-/// Helper function to create a build command for wgsl-analyzer
+/// Helper function to create a build command for wgsl-analyzer.
 pub(crate) fn build_command<'shell>(
     shell: &'shell Shell,
     command: &str,

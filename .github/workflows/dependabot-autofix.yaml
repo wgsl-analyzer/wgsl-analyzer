@@ -43,7 +43,7 @@ jobs:
 
       - name: Install stable Rust toolchain
         if: steps.check_toolchain.outputs.updated == 'true'
-        uses: dtolnay/rust-toolchain@1.91.0
+        uses: dtolnay/rust-toolchain@1.93.0
         with:
           components: clippy, rustfmt
 

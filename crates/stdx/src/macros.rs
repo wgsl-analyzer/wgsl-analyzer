@@ -30,7 +30,7 @@ macro_rules! format_to_accumulator {
     };
 }
 
-/// Generates `From` impls for `Enum E { Foo(Foo), Bar(Bar) }` enums
+/// Generates `From` impls for `Enum E { Foo(Foo), Bar(Bar) }` enums.
 ///
 /// # Example
 ///

@@ -1,6 +1,6 @@
 //! Driver for wgsl-analyzer.
 //!
-//! Based on cli flags, either spawns an LSP server, or runs a batch analysis
+//! Based on cli flags, either spawns an LSP server, or runs a batch analysis.
 
 #![expect(clippy::print_stdout, clippy::print_stderr, reason = "CLI tool")]
 

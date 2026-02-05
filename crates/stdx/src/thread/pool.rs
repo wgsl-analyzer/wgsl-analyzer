@@ -40,7 +40,7 @@ struct Job {
 impl Pool {
     /// # Panics
     ///
-    /// Panics if job panics
+    /// Panics if job panics.
     #[must_use]
     pub fn new(threads: usize) -> Self {
         const STACK_SIZE: usize = 1 << 24;
@@ -86,7 +86,7 @@ impl Pool {
 
     /// # Panics
     ///
-    /// Panics if job panics
+    /// Panics if job panics.
     pub fn spawn<Function>(
         &self,
         intent: ThreadIntent,

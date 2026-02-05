@@ -33,7 +33,7 @@ pub trait HasSource {
     ) -> Option<InFile<Self::Ast>>;
 }
 
-/// Nice API on top of the layers below
+/// Nice API on top of the layers below.
 pub struct Semantics<'database> {
     pub database: &'database dyn HirDatabase,
 }
@@ -59,7 +59,7 @@ impl<'database> Semantics<'database> {
         SourceAnalyzer::new(self.database, definition)
     }
 
-    /// Finds the root level container for a given node
+    /// Finds the root level container for a given node.
     #[must_use]
     pub fn find_container(
         &self,
@@ -366,7 +366,7 @@ fn is_node_in_body(
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 #[expect(clippy::enum_variant_names, reason = "Suffix makes sense")]
 pub enum ChildContainer {
-    /// This variant is for when the expression is inside the body
+    /// This variant is for when the expression is inside the body.
     DefinitionWithBodyId(DefinitionWithBodyId),
     ImportId(ImportId),
     FunctionId(FunctionId),

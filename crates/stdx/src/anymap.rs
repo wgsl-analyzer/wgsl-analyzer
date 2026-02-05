@@ -2,7 +2,7 @@
 //!
 //! Copyright © 2014–2022 Chris Morgan.
 //! COPYING: <https://github.com/chris-morgan/anymap/blob/master/COPYING>
-//! Note that the license is changed from Blue Oak Model 1.0.0 or MIT or Apache-2.0 to MIT OR Apache-2.0
+//! Note that the license is changed from `Blue Oak Model 1.0.0 or MIT or Apache-2.0` to `MIT OR Apache-2.0`.
 //!
 //! This implementation provides a safe and convenient store for one value of each type.
 //!
@@ -15,7 +15,7 @@
 //!
 //! - **std** (default, *enabled* in this build):
 //!   an implementation using `std::collections::hash_map`, placed in the crate root
-//!   (e.g. `anymap::AnyMap`).
+//!   (for example, `anymap::AnyMap`).
 
 #![warn(missing_docs, unused_results)]
 
@@ -28,7 +28,7 @@ use core::hash::Hasher;
 /// `get_missing` benchmark is ~30ns rather than ~900ns, and being a good deal faster after that, so
 /// that my `insert_and_get_on_260_types` benchmark is ~12μs instead of ~21.5μs), but will
 /// panic in debug mode and always emit zeros in release mode for any other sorts of inputs, so
-/// yeah, do not use it! 😀
+/// yeah, do not use it!
 #[derive(Default)]
 pub struct TypeIdHasher {
     value: u64,
@@ -77,8 +77,8 @@ pub type RawMap<A> = hash_map::HashMap<TypeId, Box<A>, BuildHasherDefault<TypeId
 /// The type parameter `A` allows you to use a different value type; normally you will want
 /// it to be `core::any::Any` (also known as `std::any::Any`), but there are other choices:
 ///
-/// - You can add on `+ Send` or `+ Send + Sync` (e.g. `Map<dyn Any + Send>`) to add those
-///   auto traits.
+/// - You can add on `+ Send` or `+ Send + Sync` (for example, `Map<dyn Any + Send>`)
+///   to add those auto traits.
 ///
 /// Cumulatively, there are thus six forms of map:
 ///
@@ -135,7 +135,7 @@ impl<A: ?Sized + Downcast> Map<A> {
             .map(|any| unsafe { any.downcast_ref_unchecked::<T>() })
     }
 
-    /// Gets the entry for the given type in the collection for in-place manipulation
+    /// Gets the entry for the given type in the collection for in-place manipulation.
     pub fn entry<T: IntoBox<A>>(&mut self) -> Entry<'_, A, T> {
         match self.raw.entry(TypeId::of::<T>()) {
             hash_map::Entry::Occupied(entry) => Entry::Occupied(OccupiedEntry {
@@ -164,9 +164,9 @@ pub struct VacantEntry<'map, A: ?Sized + Downcast, V: 'map> {
 
 /// A view into a single location in an `Map`, which may be vacant or occupied.
 pub enum Entry<'map, A: ?Sized + Downcast, V> {
-    /// An occupied Entry
+    /// An occupied Entry.
     Occupied(OccupiedEntry<'map, A, V>),
-    /// A vacant Entry
+    /// A vacant Entry.
     Vacant(VacantEntry<'map, A, V>),
 }
 

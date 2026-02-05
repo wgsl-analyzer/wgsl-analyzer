@@ -269,15 +269,19 @@ pub fn add_cursor(
 ///
 /// Multiline string values are supported:
 ///
+/// ```
 /// // ^^^ first line
 /// //   | second line
+/// ```
 ///
 /// Trailing whitespace is sometimes desired but usually stripped by the editor
 /// if at the end of a line, or incorrectly sized if followed by another
 /// annotation. In those cases the annotation can be explicitly ended with the
 /// `$` character.
 ///
+/// ```
 /// // ^^^ trailing-ws-wanted  $
+/// ```
 ///
 /// Annotations point to the last line that actually was long enough for the
 /// range, not counting annotations themselves. So overlapping annotations are

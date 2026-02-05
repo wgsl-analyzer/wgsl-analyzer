@@ -26,7 +26,7 @@
 //! }
 //! ```
 //!
-//! Another example is assertions about non-critical functionality in usual apps
+//! Another example is assertions about non-critical functionality in usual apps:
 //!
 //! ```ignore
 //! use stdx::never;

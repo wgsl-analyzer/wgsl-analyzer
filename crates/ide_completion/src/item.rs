@@ -46,7 +46,7 @@ pub struct CompletionItem {
     /// Additional info to show in the UI pop up.
     pub detail: Option<String>,
     // pub documentation: Option<Documentation>,
-    /// Whether this item is marked as deprecated
+    /// Whether this item is marked as deprecated.
     pub deprecated: bool,
 
     /// If completing a function call, ask the editor to show parameter popup
@@ -125,9 +125,9 @@ pub struct CompletionRelevance {
     pub requires_import: bool,
     /// Set for item completions that are private but in the workspace.
     pub is_private_editable: bool,
-    /// Set for postfix snippet item completions
+    /// Set for postfix snippet item completions.
     pub postfix_match: Option<CompletionRelevancePostfixMatch>,
-    /// This is set for items that are function (associated or method)
+    /// This is set for items that are function (associated or method).
     pub function: Option<CompletionRelevanceFn>,
     /// true when there is an `await.method()` or `iter().method()` completion.
     pub is_skipping_completion: bool,
@@ -138,7 +138,7 @@ pub struct CompletionRelevance {
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum CompletionRelevancePostfixMatch {
-    /// Set in cases when item is postfix, but not exact
+    /// Set in cases when item is postfix, but not exact.
     NonExact,
     /// This is set in cases like these:
     ///
@@ -161,11 +161,11 @@ pub struct CompletionRelevanceFn {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum CompletionRelevanceReturnType {
     Other,
-    /// Returns the Self type of the impl/trait
+    /// Returns the Self type of the impl/trait.
     DirectConstructor,
-    /// Returns something that indirectly constructs the `Self` type of the impl/trait e.g. `Result<Self, ()>`, `Option<Self>`
+    /// Returns something that indirectly constructs the `Self` type of the impl/trait; for example, `Result<Self, ()>`, `Option<Self>`.
     Constructor,
-    /// Returns a possible builder for the type
+    /// Returns a possible builder for the type.
     Builder,
 }
 
@@ -350,7 +350,7 @@ impl CompletionItem {
         self.is_snippet
     }
 
-    /// Short one-line additional information, like a type
+    /// Short one-line additional information, such as a type.
     #[must_use]
     pub fn detail(&self) -> Option<&str> {
         self.detail.as_deref()
@@ -496,15 +496,15 @@ impl Builder {
                 .doc_aliases
                 .iter()
                 // Don't include aliases in `lookup` that aren't valid identifiers as including
-                // them results in weird completion filtering behavior e.g. `Partial>` matching
+                // them results in weird completion filtering behavior, for example, `Partial>` matching
                 // `PartialOrd` because it has an alias of ">".
                 .filter(|alias| {
                     let mut chars = alias.chars();
                     chars.next().is_some_and(char::is_alphabetic)
                         && chars.all(|character| character.is_alphanumeric() || character == '_')
                 })
-                // Deliberately concatenated without separators as adding separators e.g.
-                // `alias1, alias2` results in LSP clients continuing to display the completion even
+                // Deliberately concatenated without separators, as adding separators (for example,
+                // `alias1, alias2`) results in LSP clients continuing to display the completion even
                 // after typing a comma or space.
                 .join("");
             if !lookup_doc_aliases.is_empty() {

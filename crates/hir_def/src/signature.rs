@@ -121,7 +121,7 @@ impl TypeAliasSignature {
     }
 }
 
-/// The signature of a global variable
+/// The signature of a global variable.
 #[derive(Debug, PartialEq, Eq)]
 pub struct VariableSignature {
     pub name: Name,
@@ -143,7 +143,7 @@ impl VariableSignature {
     }
 }
 
-/// The signature of a global constant
+/// The signature of a global constant.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ConstantSignature {
     pub name: Name,

@@ -36,7 +36,7 @@ pub struct NavigationTarget {
     pub description: Option<String>,
     // pub docs: Option<Documentation>,
     /// In addition to a `name` field, a `NavigationTarget` may also be aliased
-    /// In such cases we want a `NavigationTarget` to be accessible by its alias
+    /// In such cases we want a `NavigationTarget` to be accessible by its alias.
     // FIXME: Symbol
     pub alias: Option<SmolStr>,
 }
