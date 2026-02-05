@@ -872,7 +872,13 @@ impl Module {
                     let (_, signature_map) = database.struct_data(strukt.id);
                     let diagnostics = &database.field_types(strukt.id).1;
                     for diagnostic in diagnostics {
-                        assert_eq!(diagnostic.source, ExpressionStoreSource::Signature);
+                        if diagnostic.source != ExpressionStoreSource::Signature {
+                            tracing::warn!(
+                                "struct diagnostic with an invalid source {:?}",
+                                diagnostic
+                            );
+                            continue;
+                        }
                         match diagnostics::any_diag_from_infer_diagnostic(
                             &diagnostic.kind,
                             &signature_map,
@@ -890,7 +896,13 @@ impl Module {
                     let (_, signature_map) = database.type_alias_data(type_alias.id);
                     let diagnostics = &database.type_alias_type(type_alias.id).1;
                     for diagnostic in diagnostics {
-                        assert_eq!(diagnostic.source, ExpressionStoreSource::Signature);
+                        if diagnostic.source != ExpressionStoreSource::Signature {
+                            tracing::warn!(
+                                "type alias diagnostic with an invalid source {:?}",
+                                diagnostic
+                            );
+                            continue;
+                        }
                         match diagnostics::any_diag_from_infer_diagnostic(
                             &diagnostic.kind,
                             &signature_map,

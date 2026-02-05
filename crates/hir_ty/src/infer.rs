@@ -1529,15 +1529,12 @@ impl<'database> InferenceContext<'database> {
         if vec_size == 1 {
             inner
         } else {
-            let kind = vec_size
-                .try_into()
-                .map(|size| {
-                    TypeKind::Vector(VectorType {
-                        size,
-                        component_type: inner,
-                    })
+            let kind = vec_size.try_into().map_or(TypeKind::Error, |size| {
+                TypeKind::Vector(VectorType {
+                    size,
+                    component_type: inner,
                 })
-                .unwrap_or(TypeKind::Error);
+            });
             self.database.intern_type(kind)
         }
     }
