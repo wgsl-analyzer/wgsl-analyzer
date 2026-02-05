@@ -12,6 +12,8 @@ updates:
       - C-Dependencies
       - D-Trivial
       - S-Ready-to-Review
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: github-actions
     directory: /
@@ -25,6 +27,8 @@ updates:
       - C-Dependencies
       - D-Trivial
       - S-Ready-to-Review
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: npm
     directory: /editors/code
@@ -38,3 +42,5 @@ updates:
       - C-Dependencies
       - D-Trivial
       - S-Ready-to-Review
+    cooldown:
+      default-days: 7
