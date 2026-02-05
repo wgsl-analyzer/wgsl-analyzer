@@ -37,10 +37,13 @@ jobs:
       typescript: ${{ steps.filter.outputs.typescript }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
+      # TODO: Get rid of this unmaintained action
       - name: Filter by paths
-        uses: dorny/paths-filter@v3.0.2
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
         id: filter
         with:
           filters: |
@@ -58,13 +61,15 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
 
       - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@1.93.0
+        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561
         with:
+          toolchain: stable
           components: clippy
 
       # https://github.com/actions-rust-lang/setup-rust-toolchain/blob/main/rust.json
@@ -80,7 +85,9 @@ jobs:
       #       ./crates/proc-macro-srv/proc-macro-test/imp -> target
 
       - name: Install nextest
-        uses: taiki-e/install-action@nextest
+        uses: taiki-e/install-action@7311293370c87463a0c8c31e47f2aba4cd84e7e2 # v2.67.20
+        with:
+          tool: nextest
 
       # TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/359
       # - name: Codegen checks (wgsl-analyzer)
@@ -100,7 +107,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Install Rust toolchain
         run: |
@@ -116,7 +125,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Install Rust toolchain
         run: |
@@ -151,7 +162,7 @@ jobs:
 
   #   steps:
   #     - name: Checkout repository
-  #       uses: actions/checkout@v6
+  #       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
   #     - name: Install Rust toolchain
   #       run: |
@@ -171,10 +182,12 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: markdownlint
-        uses: DavidAnson/markdownlint-cli2-action@v22
+        uses: DavidAnson/markdownlint-cli2-action@07035fd053f7be764496c0f8d8f9f41f98305101 # v22.0.0
         with:
           config: .markdownlint.jsonc
           globs: "**/*.md"
@@ -185,11 +198,15 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Install Tombi
-        uses: tombi-toml/setup-tombi@v1
+        uses: tombi-toml/setup-tombi@f7cb38e77d9a62bc27a8445bf50e660e9496b893 # v1.0.7
+
       - name: Lint TOML files
         run: tombi lint
+
       - name: Check formatting of TOML files
         run: tombi format --check --diff
 
@@ -207,10 +224,12 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Check for typos
-        uses: crate-ci/typos@v1.43.1
+        uses: crate-ci/typos@3a4d65230db538caabac6e156599c8ba8380ff07 # v1.43.1
 
       - name: Typos info
         if: failure()
@@ -226,12 +245,15 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
 
       - name: Install beta Rust toolchain
-        uses: dtolnay/rust-toolchain@beta
+        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561
+        with:
+          toolchain: beta
 
       - name: Build documentation
         run: cargo doc --workspace --all-features --no-deps --document-private-items --keep-going
@@ -245,8 +267,11 @@ jobs:
           CARGO_INCREMENTAL: 0
           RUSTFLAGS: -C debuginfo=0 -D warnings
 
-      - name: Installs cargo-deadlinks
-        uses: taiki-e/install-action@cargo-deadlinks
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@ec80feb9e330418e014932e5982599255eff6dbb # v1.17.4
+
+      - name: Install cargo-shear
+        run: cargo binstall --no-confirm cargo-deadlinks
 
       - name: Checks dead links
         run: cargo deadlinks --dir target/doc
@@ -258,14 +283,19 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
       - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@main
+        uses: cargo-bins/cargo-binstall@ec80feb9e330418e014932e5982599255eff6dbb # v1.17.4
+
       - name: Install cargo-shear
         run: cargo binstall --no-confirm cargo-shear
-      - run: cargo shear
+
+      - name: Run cargo-shear
+        run: cargo shear
 
   typescript:
     needs: changes
@@ -280,10 +310,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Install Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: 22
 
@@ -352,9 +384,11 @@ jobs:
       - name: Conclusion
         run: |
           # Print the dependent jobs to see them in the CI log
-          jq -C <<< '${{ toJson(needs) }}'
+          jq -C <<< "${NEEDS}"
           # Check if all jobs that we depend on (in the needs array) were successful (or have been skipped).
-          jq --exit-status 'all(.result == "success" or .result == "skipped")' <<< '${{ toJson(needs) }}'
+          jq --exit-status 'all(.result == "success" or .result == "skipped")' <<< "${NEEDS}"
+        env:
+          NEEDS: ${{ toJSON(needs) }}
 
   cancel-if-matrix-failed:
     needs: rust
@@ -363,7 +397,7 @@ jobs:
     steps:
       - name: Cancel parallel jobs
         run: |
-          if jq --exit-status 'all(.result == "success" or .result == "skipped")' <<< '${{ toJson(needs) }}'; then
+          if jq --exit-status 'all(.result == "success" or .result == "skipped")' <<< "${NEEDS}"; then
             exit 0
           fi
           # https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2022-11-28#cancel-a-workflow-run
@@ -373,3 +407,5 @@ jobs:
           -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/cancel
+        env:
+          NEEDS: ${{ toJSON(needs) }}
