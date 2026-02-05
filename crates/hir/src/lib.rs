@@ -13,7 +13,7 @@ use hir_def::{
         GlobalVariableId, ImportId, Location, Lookup as _, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
-    expression_store::path::Path,
+    expression_store::{ExpressionStoreSource, path::Path},
     item_tree::{self, ItemTree, ModuleItem, Name},
     resolver::{ResolveKind, Resolver},
     signature::{FieldId, ParameterId},
@@ -872,9 +872,15 @@ impl Module {
                     let (_, signature_map) = database.struct_data(strukt.id);
                     let diagnostics = &database.field_types(strukt.id).1;
                     for diagnostic in diagnostics {
+                        if diagnostic.source != ExpressionStoreSource::Signature {
+                            tracing::warn!(
+                                "struct diagnostic with an invalid source {:?}",
+                                diagnostic
+                            );
+                            continue;
+                        }
                         match diagnostics::any_diag_from_infer_diagnostic(
-                            diagnostic,
-                            &signature_map,
+                            &diagnostic.kind,
                             &signature_map,
                             file,
                         ) {
@@ -890,9 +896,15 @@ impl Module {
                     let (_, signature_map) = database.type_alias_data(type_alias.id);
                     let diagnostics = &database.type_alias_type(type_alias.id).1;
                     for diagnostic in diagnostics {
+                        if diagnostic.source != ExpressionStoreSource::Signature {
+                            tracing::warn!(
+                                "type alias diagnostic with an invalid source {:?}",
+                                diagnostic
+                            );
+                            continue;
+                        }
                         match diagnostics::any_diag_from_infer_diagnostic(
-                            diagnostic,
-                            &signature_map,
+                            &diagnostic.kind,
                             &signature_map,
                             file,
                         ) {
@@ -912,9 +924,11 @@ impl Module {
                     let infer = database.infer(definition);
                     for diagnostic in infer.diagnostics() {
                         match diagnostics::any_diag_from_infer_diagnostic(
-                            diagnostic,
-                            &signature_map,
-                            source_map.expression_source_map(),
+                            &diagnostic.kind,
+                            match diagnostic.source {
+                                ExpressionStoreSource::Body => source_map.expression_source_map(),
+                                ExpressionStoreSource::Signature => &signature_map,
+                            },
                             file,
                         ) {
                             Some(diagnostic) => accumulator.push(diagnostic),

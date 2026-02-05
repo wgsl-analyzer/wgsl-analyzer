@@ -106,8 +106,8 @@ fn const_u32_as_array_size() {
             15..24 'maxLayers': u32
             27..30 '12u': u32
             44..50 'layers': ref<[error]>
-            InvalidType { source: Signature, error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } }
-            InvalidType { source: Signature, error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } }
+            InferenceDiagnostic { source: Signature, kind: InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } }
+            InferenceDiagnostic { source: Signature, kind: InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } }
         "#]],
     );
 }
@@ -415,6 +415,17 @@ fn global_assert_statement_wrong() {
             44..50 '27 + a': integer
             49..50 'a': integer
             44..50 '27 + a': expected bool but got integer
+        "#]],
+    );
+}
+
+#[test]
+fn global_var_function_address_space_error() {
+    check_infer(
+        "var<function> not_allowed_at_module_level: u32;",
+        expect![[r#"
+            14..41 'not_al..._level': ref<u32>
+            InferenceDiagnostic { source: Signature, kind: UnexpectedTemplateArgument { expression: Idx::<Expression>(0) } }
         "#]],
     );
 }
