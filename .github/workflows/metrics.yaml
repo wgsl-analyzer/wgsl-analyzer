@@ -49,7 +49,7 @@ jobs:
           key: ${{ runner.os }}-target-${{ github.sha }}
 
       - name: Upload build metrics
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: build-${{ github.sha }}
           path: target/build.json
@@ -85,7 +85,7 @@ jobs:
         run: cargo xtask metrics "${{ matrix.names }}"
 
       - name: Upload metrics
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: ${{ matrix.names }}-${{ github.sha }}
           path: target/${{ matrix.names }}.json
@@ -101,32 +101,32 @@ jobs:
           persist-credentials: false
 
       - name: Download build metrics
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: build-${{ github.sha }}
 
       - name: Download self metrics
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: self-${{ github.sha }}
 
       - name: Download ripgrep-13.0.0 metrics
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: ripgrep-13.0.0-${{ github.sha }}
 
       - name: Download webrender-2022 metrics
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: webrender-2022-${{ github.sha }}
 
       - name: Download diesel-1.4.8 metrics
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: diesel-1.4.8-${{ github.sha }}
 
       - name: Download hyper-0.14.18 metrics
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: hyper-0.14.18-${{ github.sha }}
 
