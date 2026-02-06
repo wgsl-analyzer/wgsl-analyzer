@@ -11,7 +11,7 @@ use crate::{global_state::GlobalState, lsp, main_loop::Task, operation_queue::Ca
 /// the current workspace.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub(crate) struct PackageRoot {
-    /// Is from the local filesystem and may be edited
+    /// Is from the local filesystem and may be edited.
     pub is_local: bool,
     pub include: Vec<AbsPathBuf>,
     pub exclude: Vec<AbsPathBuf>,
@@ -25,7 +25,7 @@ pub(crate) enum ProjectWorkspace {
 impl ProjectWorkspace {
     /// Returns the roots for the current `ProjectWorkspace`
     /// The return type contains the path and whether or not
-    /// the root is a member of the current workspace
+    /// the root is a member of the current workspace.
     pub(crate) const fn to_roots() -> Vec<PackageRoot> {
         Vec::new()
     }

@@ -65,7 +65,7 @@ pub fn parse(
     }
 }
 
-/// Conversion from `SyntaxNode` to typed AST
+/// Conversion from `SyntaxNode` to typed AST.
 pub trait AstNode {
     fn can_cast(kind: SyntaxKind) -> bool
     where

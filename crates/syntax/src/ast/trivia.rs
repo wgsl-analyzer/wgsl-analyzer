@@ -195,7 +195,7 @@ impl CommentKind {
     /// Extracts the prefix of the comment.
     ///
     /// # Panics
-    /// Cannot panic, by construction [`Self::BY_PREFIX`] should cover all cases
+    /// Cannot panic, by construction [`Self::BY_PREFIX`] should cover all cases.
     #[must_use]
     pub fn prefix(self) -> &'static str {
         let &(prefix, _) = Self::BY_PREFIX

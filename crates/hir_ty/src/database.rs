@@ -19,7 +19,10 @@ use wgsl_types::syntax::AddressSpace;
 use crate::{
     builtins::{Builtin, BuiltinId},
     function::{FunctionDetails, ResolvedFunctionId},
-    infer::{InferenceDiagnostic, InferenceResult, TypeLoweringContext, TypeLoweringError},
+    infer::{
+        InferenceDiagnostic, InferenceDiagnosticKind, InferenceResult, TypeLoweringContext,
+        TypeLoweringError,
+    },
     ty::{Type, TypeKind},
 };
 
@@ -98,12 +101,15 @@ fn field_types(
     let mut map = ArenaMap::default();
     for (index, field) in data.fields.iter() {
         let r#type = type_context.lower_type(field.r#type);
-        diagnostics.extend(type_context.diagnostics.drain(..).map(|error| {
-            InferenceDiagnostic::InvalidType {
-                source: data.store.store_source,
-                error,
-            }
-        }));
+        diagnostics.extend(
+            type_context
+                .diagnostics
+                .drain(..)
+                .map(|error| InferenceDiagnostic {
+                    source: data.store.store_source,
+                    kind: InferenceDiagnosticKind::InvalidType { error },
+                }),
+        );
 
         map.insert(index, r#type);
     }
@@ -126,9 +132,9 @@ fn type_alias_type(
     let diagnostics = type_context
         .diagnostics
         .into_iter()
-        .map(|error| InferenceDiagnostic::InvalidType {
+        .map(|error| InferenceDiagnostic {
             source: data.store.store_source,
-            error,
+            kind: InferenceDiagnosticKind::InvalidType { error },
         })
         .collect();
 

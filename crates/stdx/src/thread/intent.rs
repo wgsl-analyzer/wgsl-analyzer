@@ -8,11 +8,11 @@
 // Please maintain order from least to most priority for the derived `Ord` impl.
 pub enum ThreadIntent {
     /// Any thread which does work that is not in the critical path of the user typing
-    /// (e.g. processing Go To Definition).
+    /// (for example, processing Go To Definition).
     Worker,
 
     /// Any thread which does work caused by the user typing
-    /// (e.g. processing syntax highlighting).
+    /// (for example, processing syntax highlighting).
     LatencySensitive,
 }
 
@@ -62,13 +62,13 @@ mod imp {
     pub(super) enum QoSClass {
         // Documentation adapted from https://github.com/apple-oss-distributions/libpthread/blob/67e155c94093be9a204b69637d198eceff2c7c46/include/sys/qos.h#L55
         //
-        /// TLDR: invisible maintenance tasks
+        /// TLDR: invisible maintenance tasks.
         ///
         /// Contract:
         ///
         /// * **You do not care about how long it takes for work to finish.**
         /// * **You do not care about work being deferred temporarily.**
-        ///   (e.g. if the device's battery is in a critical state)
+        ///   (for example, if the device's battery is in a critical state)
         ///
         /// Examples:
         ///
@@ -89,7 +89,7 @@ mod imp {
         /// All other work is prioritized over background tasks.
         Background,
 
-        /// TLDR: tasks that do not block using your app
+        /// TLDR: tasks that do not block using your app.
         ///
         /// Contract:
         ///
@@ -118,7 +118,7 @@ mod imp {
         /// performance, responsiveness, and efficiency.
         Utility,
 
-        /// TLDR: tasks that block using your app
+        /// TLDR: tasks that block using your app.
         ///
         /// Contract:
         ///
@@ -149,7 +149,7 @@ mod imp {
         /// except for critical user-interactive work.
         UserInitiated,
 
-        /// TLDR: render loops and nothing else
+        /// TLDR: render loops and nothing else.
         ///
         /// Contract:
         ///

@@ -24,7 +24,7 @@ pub struct Attribute {
     pub parameters: Vec<ExpressionId>,
 }
 
-// e.g. @group(0) @location(0)
+// for example, @group(0) @location(0)
 #[derive(PartialEq, Eq, Debug)]
 pub struct AttributeList {
     pub attributes: Vec<Attribute>,

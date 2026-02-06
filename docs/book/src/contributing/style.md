@@ -15,7 +15,7 @@ When reviewing pull requests, prefer extending this document to leaving non-reus
 ### Scale of Changes
 
 Everyone knows that it is better to send small & focused pull requests.
-The problem is, sometimes you *have* to, e.g., rewrite the whole compiler, and that just does not fit into a set of isolated PRs.
+The problem is, sometimes you *have* to, for example, rewrite the whole compiler, and that just does not fit into a set of isolated PRs.
 
 The main things to keep an eye on are the boundaries between various components.
 There are three kinds of changes:

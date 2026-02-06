@@ -1,0 +1,4 @@
+rules:
+  dangerous-triggers:
+    ignore:
+      - welcome.yaml # Necessary to leave the welcome comment on PRs from forks

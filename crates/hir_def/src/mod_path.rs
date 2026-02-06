@@ -21,7 +21,7 @@ pub struct ModPath {
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum PathKind {
     Plain,
-    /// `self::` is `Super(0)`
+    /// `self::` is `Super(0)`.
     Super(u8),
     Package,
 }

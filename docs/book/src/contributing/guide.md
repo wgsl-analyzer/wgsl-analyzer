@@ -92,7 +92,7 @@ Making it an absolute `PathBuf` will be bad for several reasons.
 First, filesystems are full of (platform-dependent) edge cases:
 
 - It is hard (requires a syscall) to decide if two paths are equivalent.
-- Some filesystems are case-sensitive (e.g. macOS).
+- Some filesystems are case-sensitive.
 - Paths are not necessarily UTF-8.
 - Symlinks can form cycles.
 

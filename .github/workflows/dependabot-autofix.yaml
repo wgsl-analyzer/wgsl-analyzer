@@ -19,69 +19,21 @@ env:
   RUSTFLAGS: -D warnings
 
 jobs:
-  rust-toolchain:
-    name: Apply automatic fixes for updated Rust toolchain
-    if: github.actor == 'dependabot[bot]'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.head_ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check if dtolnay/rust-toolchain was updated
-        id: check_toolchain
-        run: |
-          git fetch origin main
-          if git diff origin/main...HEAD -- .github/workflows | grep -q 'dtolnay/rust-toolchain'; then
-            echo "updated=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "updated=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Install stable Rust toolchain
-        if: steps.check_toolchain.outputs.updated == 'true'
-        uses: dtolnay/rust-toolchain@1.91.0
-        with:
-          components: clippy, rustfmt
-
-      - name: Install cargo dependencies
-        if: steps.check_toolchain.outputs.updated == 'true'
-        run: cargo fetch
-
-      - name: Run cargo fmt
-        if: steps.check_toolchain.outputs.updated == 'true'
-        run: cargo fmt --all
-
-      - name: Run cargo clippy --fix
-        if: steps.check_toolchain.outputs.updated == 'true'
-        run: cargo clippy --fix --allow-dirty --allow-staged --all-targets --all-features
-
-      - name: Commit and push fixes
-        if: steps.check_toolchain.outputs.updated == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "chore: auto-fix with cargo fmt & clippy" || echo "No changes to commit"
-          git push origin HEAD:${{ github.head_ref }}
-
   engines-vscode:
     name: Sync engines.vscode with @types/vscode
-    if: github.actor == 'dependabot[bot]'
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout PR branch
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.head_ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: 22
 
@@ -95,9 +47,11 @@ jobs:
 
       - name: Update engines.vscode
         run: |
-          npx --yes json -I -f ./editors/code/package.json -e "this.engines = this.engines || {}; this.engines.vscode = '^${{ steps.types-version.outputs.version }}'"
+          npx --yes json -I -f ./editors/code/package.json -e "this.engines = this.engines || {}; this.engines.vscode = '^${STEPS_TYPES_VERSION_OUTPUTS_VERSION}'"
           npm --prefix editors/code ci
           npm --prefix editors/code run format
+        env:
+          STEPS_TYPES_VERSION_OUTPUTS_VERSION: ${{ steps.types-version.outputs.version }}
 
       - name: Commit and push updated engines.vscode
         run: |
@@ -109,5 +63,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "chore: align engines.vscode with types/vscode@${{ steps.types-version.outputs.version }}"
-          git push origin HEAD:${{ github.head_ref }}
+          git commit -m "chore: align engines.vscode with types/vscode@${STEPS_TYPES_VERSION_OUTPUTS_VERSION}"
+          git push origin HEAD:${GITHUB_HEAD_REF}
+        env:
+          STEPS_TYPES_VERSION_OUTPUTS_VERSION: ${{ steps.types-version.outputs.version }}

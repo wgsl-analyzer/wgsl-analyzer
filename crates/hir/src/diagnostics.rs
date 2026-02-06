@@ -11,7 +11,8 @@ use hir_def::{
 use hir_ty::{
     builtins::BuiltinId,
     infer::{
-        InferenceDiagnostic, LoweredKind, TypeExpectation, TypeLoweringError, TypeLoweringErrorKind,
+        InferenceDiagnostic, InferenceDiagnosticKind, LoweredKind, TypeExpectation,
+        TypeLoweringError, TypeLoweringErrorKind,
     },
     ty::Type,
     validate::AddressSpaceError,
@@ -187,13 +188,12 @@ impl AnyDiagnostic {
 
 #[expect(clippy::too_many_lines, reason = "long but simple match")]
 pub(crate) fn any_diag_from_infer_diagnostic(
-    infer_diagnostic: &InferenceDiagnostic,
-    signature_map: &ExpressionSourceMap,
+    infer_diagnostic: &InferenceDiagnosticKind,
     source_map: &ExpressionSourceMap,
     file_id: HirFileId,
 ) -> Option<AnyDiagnostic> {
     Some(match infer_diagnostic {
-        InferenceDiagnostic::AssignmentNotAReference { left_side, actual } => {
+        InferenceDiagnosticKind::AssignmentNotAReference { left_side, actual } => {
             let pointer = source_map.expression_to_source(*left_side).ok()?.clone();
             let source = InFile::new(file_id, pointer);
             AnyDiagnostic::AssignmentNotAReference {
@@ -201,7 +201,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 actual: *actual,
             }
         },
-        InferenceDiagnostic::TypeMismatch {
+        InferenceDiagnosticKind::TypeMismatch {
             expression,
             expected,
             actual,
@@ -214,7 +214,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 actual: *actual,
             }
         },
-        InferenceDiagnostic::NoSuchField {
+        InferenceDiagnosticKind::NoSuchField {
             expression,
             name,
             r#type,
@@ -228,7 +228,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 r#type: *r#type,
             }
         },
-        InferenceDiagnostic::ArrayAccessInvalidType { expression, r#type } => {
+        InferenceDiagnosticKind::ArrayAccessInvalidType { expression, r#type } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
 
@@ -237,7 +237,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 r#type: *r#type,
             }
         },
-        InferenceDiagnostic::UnresolvedName { expression, name } => {
+        InferenceDiagnosticKind::UnresolvedName { expression, name } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
 
@@ -246,7 +246,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 name: name.clone(),
             }
         },
-        InferenceDiagnostic::InvalidConstructionType { expression, r#type } => {
+        InferenceDiagnosticKind::InvalidConstructionType { expression, r#type } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
 
@@ -255,7 +255,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 r#type: *r#type,
             }
         },
-        InferenceDiagnostic::NoConstructor {
+        InferenceDiagnosticKind::NoConstructor {
             expression,
             r#type,
             builtins,
@@ -271,7 +271,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 parameters: parameters.clone(),
             }
         },
-        InferenceDiagnostic::FunctionCallArgCountMismatch {
+        InferenceDiagnosticKind::FunctionCallArgCountMismatch {
             expression,
             n_expected,
             n_actual,
@@ -285,7 +285,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 n_actual: *n_actual,
             }
         },
-        InferenceDiagnostic::NoBuiltinOverload {
+        InferenceDiagnosticKind::NoBuiltinOverload {
             expression,
             builtin,
             parameters,
@@ -301,7 +301,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 parameters: parameters.clone(),
             }
         },
-        InferenceDiagnostic::AddressOfNotReference { expression, actual } => {
+        InferenceDiagnosticKind::AddressOfNotReference { expression, actual } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
 
@@ -310,7 +310,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 actual: *actual,
             }
         },
-        InferenceDiagnostic::DerefNotAPointer { expression, actual } => {
+        InferenceDiagnosticKind::DerefNotAPointer { expression, actual } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
 
@@ -319,48 +319,41 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 actual: *actual,
             }
         },
-        InferenceDiagnostic::InvalidType {
-            source,
+        InferenceDiagnosticKind::InvalidType {
             error: TypeLoweringError { container, kind },
-        } => {
-            let source_map = match source {
-                ExpressionStoreSource::Body => source_map,
-                ExpressionStoreSource::Signature => signature_map,
-            };
-            match container {
-                hir_ty::infer::TypeContainer::Expression(expression) => {
-                    let pointer = source_map.expression_to_source(*expression).ok()?.clone();
-                    let source = InFile::new(file_id, pointer);
+        } => match container {
+            hir_ty::infer::TypeContainer::Expression(expression) => {
+                let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+                let source = InFile::new(file_id, pointer);
 
-                    AnyDiagnostic::InvalidIdentExpression {
-                        expression: source,
-                        error: kind.clone(),
-                    }
-                },
-                hir_ty::infer::TypeContainer::TypeSpecifier(type_specifier) => {
-                    let pointer = source_map
-                        .type_specifier_to_source(*type_specifier)
-                        .ok()?
-                        .clone();
-                    let source = InFile::new(file_id, pointer);
-                    AnyDiagnostic::InvalidTypeSpecifier {
-                        type_specifier: source,
-                        error: kind.clone(),
-                    }
-                },
-            }
+                AnyDiagnostic::InvalidIdentExpression {
+                    expression: source,
+                    error: kind.clone(),
+                }
+            },
+            hir_ty::infer::TypeContainer::TypeSpecifier(type_specifier) => {
+                let pointer = source_map
+                    .type_specifier_to_source(*type_specifier)
+                    .ok()?
+                    .clone();
+                let source = InFile::new(file_id, pointer);
+                AnyDiagnostic::InvalidTypeSpecifier {
+                    type_specifier: source,
+                    error: kind.clone(),
+                }
+            },
         },
-        InferenceDiagnostic::CyclicType { name, range } => AnyDiagnostic::CyclicType {
+        InferenceDiagnosticKind::CyclicType { name, range } => AnyDiagnostic::CyclicType {
             file_id,
             name: name.clone(),
             range: *range,
         },
-        InferenceDiagnostic::UnexpectedTemplateArgument { expression } => {
+        InferenceDiagnosticKind::UnexpectedTemplateArgument { expression } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
             AnyDiagnostic::UnexpectedTemplateArgument { expression: source }
         },
-        InferenceDiagnostic::WgslError {
+        InferenceDiagnosticKind::WgslError {
             expression,
             message,
         } => {
@@ -371,7 +364,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 message: message.clone(),
             }
         },
-        InferenceDiagnostic::ExpectedLoweredKind {
+        InferenceDiagnosticKind::ExpectedLoweredKind {
             expression,
             expected,
             actual,

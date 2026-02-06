@@ -16,6 +16,7 @@ thread_local! {
     static IN_SCOPE: RefCell<bool> = const { RefCell::new(false) };
 }
 
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
 /// A wrapper around `google_cpu_profiler`.
 ///
 /// Usage:

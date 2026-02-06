@@ -610,11 +610,12 @@ pub enum RunnableKind {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+// TODO: Clean up this cruft
 pub struct CargoRunnableArguments {
     #[serde(skip_serializing_if = "FxHashMap::is_empty")]
     pub environment: FxHashMap<String, String>,
     pub cwd: Utf8PathBuf,
-    /// Command to be executed instead of cargo
+    /// Command to be executed instead of cargo.
     pub override_cargo: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workspace_root: Option<Utf8PathBuf>,
@@ -791,7 +792,7 @@ pub struct SnippetTextEdit {
     pub new_text: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub insert_text_format: Option<lsp_types::InsertTextFormat>,
-    /// The annotation id if this is an annotated
+    /// The annotation id, if this is an annotated.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub annotation_id: Option<lsp_types::ChangeAnnotationIdentifier>,
 }
@@ -947,7 +948,7 @@ pub struct WorkspaceSymbolParameters {
     #[serde(flatten)]
     pub work_done_progress_parameters: WorkDoneProgressParams,
 
-    /// A non-empty query string
+    /// A non-empty query string.
     pub query: String,
 
     pub search_scope: Option<WorkspaceSymbolSearchScope>,

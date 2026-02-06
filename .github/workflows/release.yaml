@@ -73,18 +73,21 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: ${{ env.FETCH_DEPTH }}
+          persist-credentials: false
 
-      - name: Install Node.js toolchain
-        uses: actions/setup-node@v6
+      - name: Install Node.js
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version: 22
+          package-manager-cache: false
 
       - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@1.91.0
+        uses: dtolnay/rust-toolchain@f7ccc83f9ed1e5b9c81d8a67d7ad1a747e22a561
         with:
+          toolchain: stable
           components: ${{ matrix.pgo && 'llvm-tools' || '' }}
           target: ${{ matrix.target }}
 
@@ -129,7 +132,7 @@ jobs:
         working-directory: editors/code
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: dist-${{ matrix.target }}
           path: ./dist
@@ -152,9 +155,10 @@ jobs:
         run: apk add --no-cache git clang lld musl-dev nodejs npm
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: ${{ env.FETCH_DEPTH }}
+          persist-credentials: false
 
       - name: Dist
         run: cargo xtask dist --client-patch-version ${{ github.run_number }}
@@ -175,7 +179,7 @@ jobs:
       - run: rm -rf editors/code/server
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: dist-x86_64-unknown-linux-musl
           path: ./dist
@@ -189,9 +193,10 @@ jobs:
     needs: ["dist", "dist-x86_64-unknown-linux-musl"]
     steps:
       - name: Install Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version: 22
+          package-manager-cache: false
 
       - run: echo "TAG=$(date --iso -u)" >> $GITHUB_ENV
         if: github.ref == 'refs/heads/release'
@@ -200,9 +205,10 @@ jobs:
       - run: 'echo "TAG: $TAG"'
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: ${{ env.FETCH_DEPTH }}
+          persist-credentials: false
 
       - name: Set HEAD_SHA
         run: |
@@ -210,49 +216,49 @@ jobs:
           echo "HEAD_SHA: $HEAD_SHA"
 
       - name: Download dist-aarch64-apple-darwin artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: dist-aarch64-apple-darwin
           path: dist
 
       - name: Download dist-x86_64-unknown-linux-gnu artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: dist-x86_64-unknown-linux-gnu
           path: dist
 
       - name: Download dist-x86_64-unknown-linux-musl artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: dist-x86_64-unknown-linux-musl
           path: dist
 
       - name: Download dist-aarch64-unknown-linux-gnu artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: dist-aarch64-unknown-linux-gnu
           path: dist
 
       - name: Download dist-arm-unknown-linux-gnueabihf artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: dist-arm-unknown-linux-gnueabihf
           path: dist
 
       - name: Download dist-x86_64-pc-windows-msvc artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: dist-x86_64-pc-windows-msvc
           path: dist
 
       - name: Download dist-i686-pc-windows-msvc artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: dist-i686-pc-windows-msvc
           path: dist
 
       - name: Download dist-aarch64-pc-windows-msvc artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: dist-aarch64-pc-windows-msvc
           path: dist

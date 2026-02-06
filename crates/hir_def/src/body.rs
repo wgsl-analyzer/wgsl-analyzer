@@ -17,7 +17,7 @@ use crate::{
 };
 
 pub type BindingId = Idx<Binding>;
-/// Local or parameter
+/// A local or parameter binding.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Binding {
     pub name: Name,
@@ -50,7 +50,7 @@ impl std::ops::Deref for Body {
 /// An item body together with the mapping from syntax nodes to HIR expression
 /// IDs.
 ///
-/// This is needed to go from e.g. a position in a file to the HIR
+/// This is needed to go from, for example, a position in a file to the HIR
 /// expression containing it; but for type inference etc., we want to operate on
 /// a structure that is agnostic to the actual positions of expressions in the
 /// file, so that we do not recompute types whenever some whitespace is typed.

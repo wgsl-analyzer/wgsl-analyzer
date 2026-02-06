@@ -6,7 +6,7 @@ use crate::AstNode;
 
 /// Returns ancestors of the node at the offset, sorted by length.
 ///
-/// This should do the right thing at an edge, e.g. when searching
+/// This should do the right thing at an edge, for example, when searching
 /// for expressions at `{ $0foo }` we will get the name reference instead
 /// of the whole block, which we would get if we just did
 /// `find_token_at_offset(...).flat_map(|t| t.parent().ancestors())`.
@@ -21,7 +21,7 @@ pub fn ancestors_at_offset(
 
 /// Finds a node of specific Ast type at offset. Note that this is slightly
 /// imprecise: if the cursor is strictly between two nodes of the desired type,
-/// as in
+/// as in:
 ///
 /// ```no_run,ignore
 /// struct Foo {}|struct Bar;
@@ -42,7 +42,7 @@ pub fn find_node_at_range<N: AstNode>(
     syntax.covering_element(range).ancestors().find_map(N::cast)
 }
 
-/// Skip to next non `trivia` token
+/// Skip to next non `trivia` token.
 #[must_use]
 pub fn skip_trivia_token(
     mut token: SyntaxToken,
@@ -57,7 +57,7 @@ pub fn skip_trivia_token(
     Some(token)
 }
 
-/// Skip to next non `whitespace` token
+/// Skip to next non `whitespace` token.
 #[must_use]
 pub fn skip_whitespace_token(
     mut token: SyntaxToken,
@@ -72,7 +72,7 @@ pub fn skip_whitespace_token(
     Some(token)
 }
 
-/// Finds the first sibling in the given direction which is not `trivia`
+/// Finds the first sibling in the given direction which is not `trivia`.
 pub fn non_trivia_sibling(
     element: SyntaxElement,
     direction: Direction,

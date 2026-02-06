@@ -81,7 +81,7 @@
 - Naga version can be configured to be either `0.8` (default) or `main`: `wgsl-analyzer.diagnostics.nagaVersion": "0.8"`
 - better spans in diagnostics
 - parse push constants
-- fix handling of `>>`, e.g. for `array<vec3<f32>>`
+- fix handling of `>>`. For example, in `array<vec3<f32>>`.
 - support `binding_array`s
 - verify that vscode extension and server binary match
 - add `textureGather`/`textureGatherCompare` builtins

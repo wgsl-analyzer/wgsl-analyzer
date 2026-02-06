@@ -227,8 +227,8 @@ pub(crate) fn apply_document_changes(
 
     // The changes we got must be applied sequentially, but can cross lines so we
     // have to keep our line index updated.
-    // Some clients (e.g. Code) sort the ranges in reverse. As an optimization, we
-    // remember the last valid line in the index and only rebuild it if needed.
+    // Some clients (for example, VS Code) sort the ranges in reverse.
+    // As an optimization, we remember the last valid line in the index and only rebuild it if needed.
     // The VFS will normalize the end of lines to `\n`.
     let mut index_valid = !0_u32;
     for change in content_changes {

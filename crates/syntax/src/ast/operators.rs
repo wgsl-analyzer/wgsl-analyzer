@@ -1,4 +1,5 @@
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "not relevant")]
 pub enum UnaryOperator {
     /// `-`
     Negation,

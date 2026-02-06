@@ -32,7 +32,7 @@
 		}
 	},
 	"engines": {
-		"vscode": "^1.105.0",
+		"vscode": "^1.109.0",
 		"npm": "^11.2.0"
 	},
 	"enabledApiProposals": [],
@@ -53,7 +53,7 @@
 		"watch": "npm run build-base -- --sourcemap --watch"
 	},
 	"dependencies": {
-		"@hpcc-js/wasm": "^2.32.3",
+		"@hpcc-js/wasm": "^2.33.0",
 		"anser": "^2.3.5",
 		"d3": "^7.9.0",
 		"d3-graphviz": "^5.6.0",
@@ -63,12 +63,12 @@
 		"vscode-languageclient": "^9.0.1"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.3.13",
-		"@tsconfig/node-ts": "^23.6.2",
+		"@biomejs/biome": "^2.3.14",
+		"@tsconfig/node-ts": "^23.6.3",
 		"@tsconfig/node22": "^22.0.5",
 		"@tsconfig/strictest": "^2.0.8",
-		"@types/node": "^25.1.0",
-		"@types/vscode": "^1.105.0",
+		"@types/node": "^25.2.0",
+		"@types/vscode": "^1.109.0",
 		"@vscode/test-electron": "^2.5.2",
 		"@vscode/vsce": "^3.7.1",
 		"esbuild": "^0.27.2",
@@ -384,7 +384,7 @@
 							]
 						},
 						"default": null,
-						"markdownDescription": "Extra environment variables that will be passed to the wgsl-analyzer executable. Useful for passing e.g. `WA_LOG` for debugging."
+						"markdownDescription": "Extra environment variables that will be passed to the wgsl-analyzer executable. Useful for passing variables (for example, `WA_LOG`) for debugging."
 					}
 				}
 			},
@@ -456,13 +456,13 @@
 						"default": "0.28",
 						"type": "string",
 						"enum": [
-							"0.22",
 							"0.27",
+							"0.28",
 							"main"
 						],
 						"enumDescriptions": [
-							"Naga version 22",
 							"Naga version 27",
+							"Naga version 28",
 							"Version of Naga on main (most recent stable version)"
 						]
 					}
