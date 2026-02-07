@@ -1093,7 +1093,6 @@ impl<'database> InferenceContext<'database> {
         r#type
     }
 
-    #[expect(clippy::too_many_lines, reason = "match with many small cases")]
     fn infer_expression(
         &mut self,
         expression: ExpressionId,
@@ -1118,8 +1117,7 @@ impl<'database> InferenceContext<'database> {
                 if expression_type.is_err(self.database) {
                     return self.error_type();
                 }
-
-                self.infer_field_access(expression, store, field_expression, name, expression_type)
+                self.infer_field_access(expression, store, *field_expression, name, expression_type)
             },
             Expression::Call {
                 ident_expression,
@@ -1210,7 +1208,7 @@ impl<'database> InferenceContext<'database> {
         &mut self,
         expression: la_arena::Idx<Expression>,
         store: &ExpressionStore,
-        field_expression: &la_arena::Idx<Expression>,
+        field_expression: la_arena::Idx<Expression>,
         name: &Name,
         expression_type: Type,
     ) -> Type {
@@ -1238,7 +1236,7 @@ impl<'database> InferenceContext<'database> {
                     self.push_diagnostic(
                         store.store_source,
                         InferenceDiagnosticKind::NoSuchField {
-                            expression: *field_expression,
+                            expression: field_expression,
                             name: name.clone(),
                             r#type: expression_type,
                         },
@@ -1253,7 +1251,7 @@ impl<'database> InferenceContext<'database> {
                     self.push_diagnostic(
                         store.store_source,
                         InferenceDiagnosticKind::NoSuchField {
-                            expression: *field_expression,
+                            expression: field_expression,
                             name: name.clone(),
                             r#type: expression_type,
                         },
@@ -1285,7 +1283,7 @@ impl<'database> InferenceContext<'database> {
                 self.push_diagnostic(
                     store.store_source,
                     InferenceDiagnosticKind::NoSuchField {
-                        expression: *field_expression,
+                        expression: field_expression,
                         name: name.clone(),
                         r#type: expression_type,
                     },
