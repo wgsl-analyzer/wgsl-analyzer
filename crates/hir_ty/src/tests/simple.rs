@@ -476,3 +476,315 @@ fn f() {
         "#]],
     );
 }
+
+#[test]
+fn vec_ref_access_is_ref() {
+    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
+    check_infer(
+        "
+fn f() {
+    let x = vec2(0, 0).x;
+}
+",
+        expect![[r#"
+            18..19 'x': i32
+            22..32 'vec2(0, 0)': vec2<integer>
+            22..34 'vec2(0, 0).x': ref<integer>
+            27..28 '0': integer
+            30..31 '0': integer
+        "#]],
+    );
+}
+
+#[test]
+fn vec_field_access_is_not_ref() {
+    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
+    check_infer(
+        "
+fn f() {
+    let v = vec2(0, 0);
+    v.x = v.y;
+}
+",
+        expect![[r#"
+            18..19 'v': vec2<i32>
+            22..32 'vec2(0, 0)': vec2<integer>
+            27..28 '0': integer
+            30..31 '0': integer
+            38..39 'v': vec2<i32>
+            38..41 'v.x': ref<i32>
+            44..45 'v': vec2<i32>
+            44..47 'v.y': ref<i32>
+        "#]],
+    );
+}
+
+#[test]
+fn struct_field_access_is_not_ref() {
+    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
+    check_infer(
+        "
+struct Foo {
+    bar: i32,
+}
+fn f() {
+    let my_foo = Foo { bar: 1 };
+    foo.bar = foo.bar;
+}
+",
+        expect![[r#"
+            47..53 'my_foo': [error]
+            56..59 'Foo': [error]
+            62..65 'bar': [error]
+            76..79 'foo': [error]
+            86..89 'foo': [error]
+            InferenceDiagnostic { source: Body, kind: ExpectedLoweredKind { expression: Idx::<Expression>(0), expected: Variable, actual: Type, path: Path(ModPath { kind: Plain, segments: [Name("Foo")] }) } }
+            InferenceDiagnostic { source: Body, kind: InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnresolvedName(Name("bar")) } } }
+            InferenceDiagnostic { source: Body, kind: ExpectedLoweredKind { expression: Idx::<Expression>(1), expected: Variable, actual: Type, path: Path(ModPath { kind: Plain, segments: [Name("bar")] }) } }
+            InferenceDiagnostic { source: Body, kind: AssignmentNotAReference { left_side: Idx::<Expression>(1), actual: Type { id: 0 } } }
+            InferenceDiagnostic { source: Body, kind: InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnresolvedName(Name("foo")) } } }
+            InferenceDiagnostic { source: Body, kind: ExpectedLoweredKind { expression: Idx::<Expression>(3), expected: Variable, actual: Type, path: Path(ModPath { kind: Plain, segments: [Name("foo")] }) } }
+            InferenceDiagnostic { source: Body, kind: AssignmentNotAReference { left_side: Idx::<Expression>(4), actual: Type { id: 0 } } }
+            InferenceDiagnostic { source: Body, kind: InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(5)), kind: UnresolvedName(Name("foo")) } } }
+            InferenceDiagnostic { source: Body, kind: ExpectedLoweredKind { expression: Idx::<Expression>(5), expected: Variable, actual: Type, path: Path(ModPath { kind: Plain, segments: [Name("foo")] }) } }
+        "#]],
+    );
+}
+
+#[test]
+fn component_reference_from_a_composite_reference() {
+    check_infer(
+        "
+struct S {
+    age: i32,
+    weight: f32
+}
+var<private> person: S;
+// Elsewhere, 'person' denotes the reference to the memory underlying the variable,
+// and will have type ref<private,S,read_write>.
+
+fn f() {
+    var uv: vec2<f32>;
+    // For the remainder of this function body, 'uv' denotes the reference
+    // to the memory underlying the variable, and will have type
+    // ref<function,vec2<f32>,read_write>.
+
+    // Evaluate the left-hand side of the assignment:
+    //   Evaluate 'uv.x' to yield a reference:
+    //   1. First evaluate 'uv', yielding a reference to the memory for
+    //      the 'uv' variable. The result has type ref<function,vec2<f32>,read_write>.
+    //   2. Then apply the '.x' vector access phrase, yielding a reference to
+    //      the memory for the first component of the vector pointed at by the
+    //      reference value from the previous step.
+    //      The result has type ref<function,f32,read_write>.
+    // Evaluating the right-hand side of the assignment yields the f32 value 1.0.
+    // Store the f32 value 1.0 into the storage memory locations referenced by uv.x.
+    uv.x = 1.0;
+
+    // Evaluate the left-hand side of the assignment:
+    //   Evaluate 'uv[1]' to yield a reference:
+    //   1. First evaluate 'uv', yielding a reference to the memory for
+    //      the 'uv' variable. The result has type ref<function,vec2<f32>,read_write>.
+    //   2. Then apply the '[1]' array index phrase, yielding a reference to
+    //      the memory for second component of the vector referenced from
+    //      the previous step.  The result has type ref<function,f32,read_write>.
+    // Evaluating the right-hand side of the assignment yields the f32 value 2.0.
+    // Store the f32 value 2.0 into the storage memory locations referenced by uv[1].
+    uv[1] = 2.0;
+
+    var m: mat3x2<f32>;
+    // When evaluating 'm[2]':
+    // 1. First evaluate 'm', yielding a reference to the memory for
+    //    the 'm' variable. The result has type ref<function,mat3x2<f32>,read_write>.
+    // 2. Then apply the '[2]' array index phrase, yielding a reference to
+    //    the memory for the third column vector pointed at by the reference
+    //    value from the previous step.
+    //    Therefore the 'm[2]' expression has type ref<function,vec2<f32>,read_write>.
+    // The 'let' declaration is for type vec2<f32>, so the declaration
+    // statement requires the initializer to be of type vec2<f32>.
+    // The Load Rule applies (because no other type rule can apply), and
+    // the evaluation of the initializer yields the vec2<f32> value loaded
+    // from the memory locations referenced by 'm[2]' at the time the declaration
+    // is executed.
+    let p_m_col2: vec2<f32> = m[2];
+
+    var A: array<i32,5>;
+    // When evaluating 'A[4]'
+    // 1. First evaluate 'A', yielding a reference to the memory for
+    //    the 'A' variable. The result has type ref<function,array<i32,5>,read_write>.
+    // 2. Then apply the '[4]' array index phrase, yielding a reference to
+    //    the memory for the fifth element of the array referenced by
+    //    the reference value from the previous step.
+    //    The result value has type ref<function,i32,read_write>.
+    // The let-declaration requires the right-hand-side to be of type i32.
+    // The Load Rule applies (because no other type rule can apply), and
+    // the evaluation of the initializer yields the i32 value loaded from
+    // the memory locations referenced by 'A[4]' at the time the declaration
+    // is executed.
+    let A_4_value: i32 = A[4];
+
+    // When evaluating 'person.weight'
+    // 1. First evaluate 'person', yielding a reference to the memory for
+    //    the 'person' variable declared at module scope.
+    //    The result has type ref<private,S,read_write>.
+    // 2. Then apply the '.weight' member access phrase, yielding a reference to
+    //    the memory for the second member of the memory referenced by
+    //    the reference value from the previous step.
+    //    The result has type ref<private,f32,read_write>.
+    // The let-declaration requires the right-hand-side to be of type f32.
+    // The Load Rule applies (because no other type rule can apply), and
+    // the evaluation of the initializer yields the f32 value loaded from
+    // the memory locations referenced by 'person.weight' at the time the
+    // declaration is executed.
+    let person_weight: f32 = person.weight;
+
+    // Alternatively, references can also be formed from pointers using
+    // the same syntax.
+
+    let uv_ptr = &uv;
+    // For the remainder of this function body, 'uv_ptr' denotes a pointer
+    // to the memory underlying 'uv', and will have the type
+    // ptr<function,vec2<f32>,read_write>.
+
+    // Evaluate the left-hand side of the assignment:
+    //   Evaluate '*uv_ptr' to yield a reference:
+    //   1. First evaluate 'uv_ptr', yielding a pointer to the memory for
+    //      the 'uv' variable. The result has type ptr<function,vec2<f32>,read_write>.
+    //   2. Then apply the indirection expression operator, yielding a
+    //      reference to memory for 'uv'.
+    // Evaluating the right-hand side of the assignment yields the vec2<f32> value (1.0, 2.0).
+    // Store the value (1.0, 2.0) into the storage memory locations referenced by uv.
+    *uv_ptr = vec2f(1.0, 2.0);
+
+    // Evaluate the left-hand side of the assignment:
+    //   Evaluate 'uv_ptr.x' to yield a reference:
+    //   1. First evaluate 'uv_ptr', yielding a pointer to the memory for
+    //      the 'uv' variable. The result has type ptr<function,vec2<f32>,read_write>.
+    //   2. Then apply the '.x' vector access phrase, yielding a reference to
+    //      the memory for the first component of the vector pointed at by the
+    //      reference value from the previous step.
+    //      The result has type ref<function,f32,read_write>.
+    // Evaluating the right-hand side of the assignment yields the f32 value 1.0.
+    // Store the f32 value 1.0 into the storage memory locations referenced by uv.x.
+    uv_ptr.x = 1.0;
+
+    // Evaluate the left-hand side of the assignment:
+    //   Evaluate 'uv_ptr[1]' to yield a reference:
+    //   1. First evaluate 'uv_ptr', yielding a pointer to the memory for
+    //      the 'uv' variable. The result has type ptr<function,vec2<f32>,read_write>.
+    //   2. Then apply the '[1]' array index phrase, yielding a reference to
+    //      the memory for second component of the vector referenced from
+    //      the previous step.  The result has type ref<function,f32,read_write>.
+    // Evaluating the right-hand side of the assignment yields the f32 value 2.0.
+    // Store the f32 value 2.0 into the storage memory locations referenced by uv[1].
+    uv_ptr[1] = 2.0;
+
+    let m_ptr = &m;
+    // When evaluating 'm_ptr[2]':
+    // 1. First evaluate 'm_ptr', yielding a pointer to the memory for
+    //    the 'm' variable. The result has type ptr<function,mat3x2<f32>,read_write>.
+    // 2. Then apply the '[2]' array index phrase, yielding a reference to
+    //    the memory for the third column vector pointed at by the reference
+    //    value from the previous step.
+    //    Therefore the 'm[2]' expression has type ref<function,vec2<f32>,read_write>.
+    // The 'let' declaration is for type vec2<f32>, so the declaration
+    // statement requires the initializer to be of type vec2<f32>.
+    // The Load Rule applies (because no other type rule can apply), and
+    // the evaluation of the initializer yields the vec2<f32> value loaded
+    // from the memory locations referenced by 'm[2]' at the time the declaration
+    // is executed.
+    let p_m_col2: vec2<f32> = m_ptr[2];
+
+    let A_ptr = &A;
+    // When evaluating 'A[4]'
+    // 1. First evaluate 'A', yielding a pointer to the memory for
+    //    the 'A' variable. The result has type ptr<function,array<i32,5>,read_write>.
+    // 2. Then apply the '[4]' array index phrase, yielding a reference to
+    //    the memory for the fifth element of the array referenced by
+    //    the reference value from the previous step.
+    //    The result value has type ref<function,i32,read_write>.
+    // The let-declaration requires the right-hand-side to be of type i32.
+    // The Load Rule applies (because no other type rule can apply), and
+    // the evaluation of the initializer yields the i32 value loaded from
+    // the memory locations referenced by 'A[4]' at the time the declaration
+    // is executed.
+    let A_4_value: i32 = A_ptr[4];
+
+    let person_ptr = &person;
+    // When evaluating 'person.weight'
+    // 1. First evaluate 'person_ptr', yielding a pointer to the memory for
+    //    the 'person' variable declared at module scope.
+    //    The result has type ptr<private,S,read_write>.
+    // 2. Then apply the '.weight' member access phrase, yielding a reference to
+    //    the memory for the second member of the memory referenced by
+    //    the reference value from the previous step.
+    //    The result has type ref<private,f32,read_write>.
+    // The let-declaration requires the right-hand-side to be of type f32.
+    // The Load Rule applies (because no other type rule can apply), and
+    // the evaluation of the initializer yields the f32 value loaded from
+    // the memory locations referenced by 'person.weight' at the time the
+    // declaration is executed.
+    let person_weight: f32 = person_ptr.weight;
+}
+",
+        expect![[r#"
+            57..63 'person': ref<S>
+            219..221 'uv': ref<vec2<f32>>
+            1120..1122 'uv': ref<vec2<f32>>
+            1120..1124 'uv.x': ref<f32>
+            1127..1130 '1.0': float
+            1799..1801 'uv': ref<vec2<f32>>
+            1799..1804 'uv[1]': ref<f32>
+            1802..1803 '1': integer
+            1807..1810 '2.0': float
+            1821..1822 'm': ref<mat3x2<f32>>
+            2698..2706 'p_m_col2': vec2<f32>
+            2720..2721 'm': ref<mat3x2<f32>>
+            2720..2724 'm[2]': ref<vec2<f32>>
+            2722..2723 '2': integer
+            2735..2736 'A': ref<array<i32, 5>>
+            3530..3539 'A_4_value': i32
+            3547..3548 'A': ref<array<i32, 5>>
+            3547..3551 'A[4]': ref<i32>
+            3549..3550 '4': integer
+            4383..4396 'person_weight': f32
+            4404..4410 'person': ref<S>
+            4404..4417 'person.weight': ref<f32>
+            4525..4531 'uv_ptr': ptr<vec2<f32>>
+            4534..4537 '&uv': ptr<vec2<f32>>
+            4535..4537 'uv': ref<vec2<f32>>
+            5282..5289 '*uv_ptr': ref<vec2<f32>>
+            5283..5289 'uv_ptr': ptr<vec2<f32>>
+            5292..5307 'vec2f(1.0, 2.0)': vec2<f32>
+            5298..5301 '1.0': float
+            5303..5306 '2.0': float
+            6018..6024 'uv_ptr': ptr<vec2<f32>>
+            6018..6026 'uv_ptr.x': ref<f32>
+            6029..6032 '1.0': float
+            6707..6713 'uv_ptr': ptr<vec2<f32>>
+            6707..6716 'uv_ptr[1]': ref<f32>
+            6714..6715 '1': integer
+            6719..6722 '2.0': float
+            6733..6738 'm_ptr': ptr<mat3x2<f32>>
+            6741..6743 '&m': ptr<mat3x2<f32>>
+            6742..6743 'm': ref<mat3x2<f32>>
+            7612..7620 'p_m_col2': vec2<f32>
+            7634..7639 'm_ptr': ptr<mat3x2<f32>>
+            7634..7642 'm_ptr[2]': ref<vec2<f32>>
+            7640..7641 '2': integer
+            7653..7658 'A_ptr': ptr<array<i32, 5>>
+            7661..7663 '&A': ptr<array<i32, 5>>
+            7662..7663 'A': ref<array<i32, 5>>
+            8441..8450 'A_4_value': i32
+            8458..8463 'A_ptr': ptr<array<i32, 5>>
+            8458..8466 'A_ptr[4]': ref<i32>
+            8464..8465 '4': integer
+            8477..8487 'person_ptr': ptr<S>
+            8490..8497 '&person': ptr<S>
+            8491..8497 'person': ref<S>
+            9330..9343 'person_weight': f32
+            9351..9361 'person_ptr': ptr<S>
+            9351..9368 'person...weight': ref<f32>
+        "#]],
+    )
+}
