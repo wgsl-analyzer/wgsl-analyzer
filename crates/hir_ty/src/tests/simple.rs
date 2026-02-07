@@ -786,5 +786,5 @@ fn f() {
             9351..9361 'person_ptr': ptr<S>
             9351..9368 'person...weight': ref<f32>
         "#]],
-    )
+    );
 }
