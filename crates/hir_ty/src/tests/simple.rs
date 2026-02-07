@@ -452,3 +452,27 @@ fn f() {
         "#]],
     );
 }
+
+#[test]
+fn no_ref_swizzle() {
+    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
+    check_infer(
+        "
+fn f() {
+    let v = vec2(0, 0);
+    v.xy = v.yx;
+}
+",
+        expect![[r#"
+            18..19 'v': vec2<i32>
+            22..32 'vec2(0, 0)': vec2<integer>
+            27..28 '0': integer
+            30..31 '0': integer
+            38..39 'v': vec2<i32>
+            38..42 'v.xy': vec2<i32>
+            45..46 'v': vec2<i32>
+            45..49 'v.yx': vec2<i32>
+            InferenceDiagnostic { source: Body, kind: AssignmentNotAReference { left_side: Idx::<Expression>(4), actual: Type { id: 7 } } }
+        "#]],
+    );
+}
