@@ -841,7 +841,7 @@ impl Module {
     ) -> Vec<ModuleDef> {
         let item_tree = database.item_tree(self.file_id);
         item_tree
-            .items()
+            .top_level_items()
             .iter()
             .flat_map(|item| module_item_to_def(database, self.file_id, *item))
             .collect()

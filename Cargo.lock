@@ -63,10 +63,15 @@ dependencies = [
 name = "base-db"
 version = "0.0.0"
 dependencies = [
+ "edition",
+ "la-arena",
  "line-index",
  "rowan",
+ "rustc-hash 2.1.1",
  "salsa",
+ "semver",
  "syntax",
+ "tracing",
  "triomphe",
  "vfs",
 ]
@@ -126,29 +131,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e629a66d692cb9ff1a1c664e41771b3dcaf961985a9774c0eb0bd1b51cf60a48"
 dependencies = [
  "serde_core",
-]
-
-[[package]]
-name = "cargo-platform"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "122ec45a44b270afd1402f351b782c676b173e3c3fb28d86ff7ebfb4d86a4ee4"
-dependencies = [
- "serde",
-]
-
-[[package]]
-name = "cargo_metadata"
-version = "0.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef987d17b0a113becdd19d3d0022d04d7ef41f9efe4f3fb63ac44ba61df3ade9"
-dependencies = [
- "camino",
- "cargo-platform",
- "semver",
- "serde",
- "serde_json",
- "thiserror",
 ]
 
 [[package]]
@@ -432,15 +414,19 @@ name = "hir-def"
 version = "0.0.0"
 dependencies = [
  "base-db",
+ "edition",
  "either",
  "expect-test",
+ "indexmap 2.13.0",
  "la-arena",
+ "profile",
  "rowan",
  "rustc-hash 2.1.1",
  "salsa",
  "smallvec",
  "smol_str",
  "syntax",
+ "tracing",
  "triomphe",
  "vfs",
 ]
@@ -654,9 +640,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.12.1"
+version = "2.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ad4bb2b565bca0645f4d68c5c9af97fba094e9791da685bf83cb5f3ce74acf2"
+checksum = "7714e70437a7dc3ac8eb7e6f8df75fd8eb422675fc7678aff7364301092b1017"
 dependencies = [
  "equivalent",
  "hashbrown 0.16.1",
@@ -799,6 +785,23 @@ name = "litemap"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "241eaef5fd12c88705a01fc1066c48c4b36e0dd4377dcdc7ec3942cea7a69956"
+
+[[package]]
+name = "load-wesl"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "base-db",
+ "crossbeam-channel",
+ "ide-db",
+ "itertools",
+ "project-model",
+ "rustc-hash 2.1.1",
+ "tracing",
+ "triomphe",
+ "vfs",
+ "vfs-notify 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070)",
+]
 
 [[package]]
 name = "lock_api"
@@ -959,7 +962,7 @@ dependencies = [
  "half",
  "hashbrown 0.16.1",
  "hexf-parse",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "libm",
  "log",
  "num-traits",
@@ -984,7 +987,7 @@ dependencies = [
  "half",
  "hashbrown 0.16.1",
  "hexf-parse",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "libm",
  "log",
  "num-traits",
@@ -1008,7 +1011,7 @@ dependencies = [
  "half",
  "hashbrown 0.16.1",
  "hexf-parse",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "libm",
  "log",
  "num-traits",
@@ -1259,6 +1262,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "project-model"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "base-db",
+ "edition",
+ "expect-test",
+ "itertools",
+ "la-arena",
+ "paths",
+ "rustc-hash 2.1.1",
+ "semver",
+ "serde",
+ "serde_json",
+ "stdx 0.0.0",
+ "toml",
+ "toolchain",
+ "tracing",
+ "triomphe",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1416,10 +1441,6 @@ name = "semver"
 version = "1.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d767eb0aabc880b29956c35734170f26ed551a859dbd361d140cdbeca61ab1e2"
-dependencies = [
- "serde",
- "serde_core",
-]
 
 [[package]]
 name = "serde"
@@ -1457,7 +1478,7 @@ version = "1.0.149"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86"
 dependencies = [
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "itoa",
  "memchr",
  "serde",
@@ -1474,6 +1495,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.106",
+]
+
+[[package]]
+name = "serde_spanned"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8bbf91e5a4d6315eee45e704372590b30e260ee83af6639d64557f51b067776"
+dependencies = [
+ "serde_core",
 ]
 
 [[package]]
@@ -1715,6 +1745,45 @@ dependencies = [
 ]
 
 [[package]]
+name = "toml"
+version = "0.9.11+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3afc9a848309fe1aaffaed6e1546a7a14de1f935dc9d89d32afd9a44bab7c46"
+dependencies = [
+ "indexmap 2.13.0",
+ "serde_core",
+ "serde_spanned",
+ "toml_datetime",
+ "toml_parser",
+ "toml_writer",
+ "winnow",
+]
+
+[[package]]
+name = "toml_datetime"
+version = "0.7.5+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92e1cfed4a3038bc5a127e35a2d360f145e1f4b971b551a2ba5fd7aedf7e1347"
+dependencies = [
+ "serde_core",
+]
+
+[[package]]
+name = "toml_parser"
+version = "1.0.6+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3198b4b0a8e11f09dd03e133c0280504d0801269e9afa46362ffde1cbeebf44"
+dependencies = [
+ "winnow",
+]
+
+[[package]]
+name = "toml_writer"
+version = "1.0.6+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab16f14aed21ee8bfd8ec22513f7287cd4a91aa92e44edfe2c17ddd004e92607"
+
+[[package]]
 name = "toolchain"
 version = "0.0.0"
 dependencies = [
@@ -1783,6 +1852,10 @@ name = "triomphe"
 version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd69c5aa8f924c7519d6372789a74eac5b94fb0f8fcf0d4a97eb0bfc3e785f39"
+dependencies = [
+ "serde",
+ "stable_deref_trait",
+]
 
 [[package]]
 name = "typed-path"
@@ -1839,7 +1912,7 @@ source = "git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7e
 dependencies = [
  "crossbeam-channel",
  "fst",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "nohash-hasher",
  "paths",
  "rustc-hash 2.1.1",
@@ -1947,7 +2020,6 @@ dependencies = [
  "anyhow",
  "base-db",
  "camino",
- "cargo_metadata",
  "crossbeam-channel",
  "dissimilar",
  "hir",
@@ -1957,6 +2029,7 @@ dependencies = [
  "ide-db",
  "itertools",
  "line-index",
+ "load-wesl",
  "lsp-server",
  "lsp-types",
  "memchr",
@@ -2205,6 +2278,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6bbff5f0aada427a1e5a6da5f1f98158182f26556f345ac9e04d36d0ebed650"
 
 [[package]]
+name = "winnow"
+version = "0.7.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a5364e9d77fcdeeaa6062ced926ee3381faa2ee02d3eb83a5c27a8825540829"
+
+[[package]]
 name = "write-json"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2365,7 +2444,7 @@ checksum = "c42e33efc22a0650c311c2ef19115ce232583abbe80850bc8b66509ebef02de0"
 dependencies = [
  "crc32fast",
  "flate2",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "memchr",
  "time",
  "typed-path",

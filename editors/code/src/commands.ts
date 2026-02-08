@@ -10,6 +10,11 @@ import {
 	applySnippetWorkspaceEdit,
 	type SnippetTextDocumentEdit,
 } from "./snippets";
+
+import { isWeslDocument, sleep, isWeslEditor, unwrapUndefinable } from "./util";
+import type { LanguageClient } from "vscode-languageclient/node";
+import { HOVER_REFERENCE_COMMAND } from "./client";
+import { log } from "./util";
 import type { SyntaxElement } from "./syntax_tree_provider";
 import { isWeslDocument, isWeslEditor, log, sleep, unwrapUndefinable } from "./utilities";
 
@@ -202,6 +207,101 @@ export function onEnter(ctx: CtxInit): Cmd {
 		if (await handleKeypress()) return;
 
 		await vscode.commands.executeCommand("default:type", { text: "\n" });
+	};
+}
+
+export function parentModule(ctx: CtxInit): Cmd {
+	return async () => {
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) return;
+		if (!(isWeslDocument(editor.document) || isWeslTomlDocument(editor.document))) return;
+
+		const client = ctx.client;
+
+		const locations = await client.sendRequest(wa.parentModule, {
+			textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(editor.document),
+			position: client.code2ProtocolConverter.asPosition(editor.selection.active),
+		});
+		if (!locations) return;
+
+		if (locations.length === 1) {
+			const loc = unwrapUndefinable(locations[0]);
+
+			const uri = client.protocol2CodeConverter.asUri(loc.targetUri);
+			const range = client.protocol2CodeConverter.asRange(loc.targetRange);
+
+			const doc = await vscode.workspace.openTextDocument(uri);
+			const e = await vscode.window.showTextDocument(doc);
+			e.selection = new vscode.Selection(range.start, range.start);
+			e.revealRange(range, vscode.TextEditorRevealType.InCenter);
+		} else {
+			const uri = editor.document.uri.toString();
+			const position = client.code2ProtocolConverter.asPosition(editor.selection.active);
+			await showReferencesImpl(
+				client,
+				uri,
+				position,
+				locations.map((loc) => lc.Location.create(loc.targetUri, loc.targetRange)),
+			);
+		}
+	};
+}
+
+export function childModules(ctx: CtxInit): Cmd {
+	return async () => {
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) return;
+		if (!(isWeslDocument(editor.document) || isWeslTomlDocument(editor.document))) return;
+
+		const client = ctx.client;
+
+		const locations = await client.sendRequest(wa.childModules, {
+			textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(editor.document),
+			position: client.code2ProtocolConverter.asPosition(editor.selection.active),
+		});
+		if (!locations) return;
+
+		if (locations.length === 1) {
+			const loc = unwrapUndefinable(locations[0]);
+
+			const uri = client.protocol2CodeConverter.asUri(loc.targetUri);
+			const range = client.protocol2CodeConverter.asRange(loc.targetRange);
+
+			const doc = await vscode.workspace.openTextDocument(uri);
+			const e = await vscode.window.showTextDocument(doc);
+			e.selection = new vscode.Selection(range.start, range.start);
+			e.revealRange(range, vscode.TextEditorRevealType.InCenter);
+		} else {
+			const uri = editor.document.uri.toString();
+			const position = client.code2ProtocolConverter.asPosition(editor.selection.active);
+			await showReferencesImpl(
+				client,
+				uri,
+				position,
+				locations.map((loc) => lc.Location.create(loc.targetUri, loc.targetRange)),
+			);
+		}
+	};
+}
+
+export function openWeslToml(ctx: CtxInit): Cmd {
+	return async () => {
+		const editor = ctx.activeWeslEditor;
+		if (!editor) return;
+
+		const client = ctx.client;
+		const response = await client.sendRequest(wa.openWeslToml, {
+			textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(editor.document),
+		});
+		if (!response) return;
+
+		const uri = client.protocol2CodeConverter.asUri(response.uri);
+		const range = client.protocol2CodeConverter.asRange(response.range);
+
+		const doc = await vscode.workspace.openTextDocument(uri);
+		const e = await vscode.window.showTextDocument(doc);
+		e.selection = new vscode.Selection(range.start, range.start);
+		e.revealRange(range, vscode.TextEditorRevealType.InCenter);
 	};
 }
 

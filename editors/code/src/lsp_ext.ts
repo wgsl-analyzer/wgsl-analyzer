@@ -106,7 +106,7 @@ export type AnalyzerStatusParameters = {
 	textDocument?: lc.TextDocumentIdentifier;
 };
 
-export interface FetchDependencyListParameters {}
+export interface FetchDependencyListParameters { }
 
 export interface FetchDependencyListResult {
 	crates: {
@@ -122,7 +122,7 @@ export const fetchDependencyList = new lc.RequestType<
 	void
 >("wgsl-analyzer/fetchDependencyList");
 
-export interface FetchDependencyGraphParameters {}
+export interface FetchDependencyGraphParameters { }
 
 export interface FetchDependencyGraphResult {
 	crates: {
@@ -167,9 +167,8 @@ export const moveItem = new lc.RequestType<MoveItemParameters, lc.TextEdit[], vo
 export const onEnter = new lc.RequestType<lc.TextDocumentPositionParams, lc.TextEdit[], void>(
 	"experimental/onEnter",
 );
-
-export const openCargoToml = new lc.RequestType<OpenWeslTomlParameters, lc.Location, void>(
-	"experimental/openCargoToml",
+export const openWeslToml = new lc.RequestType<OpenWeslTomlParameters, lc.Location, void>(
+	"experimental/openWeslToml",
 );
 
 export interface DocsUrls {
@@ -180,6 +179,16 @@ export interface DocsUrls {
 export const openDocs = new lc.RequestType<lc.TextDocumentPositionParams, DocsUrls, void>(
 	"experimental/externalDocs",
 );
+export const parentModule = new lc.RequestType<
+	lc.TextDocumentPositionParams,
+	lc.LocationLink[] | null,
+	void
+>("experimental/parentModule");
+export const childModules = new lc.RequestType<
+	lc.TextDocumentPositionParams,
+	lc.LocationLink[] | null,
+	void
+>("experimental/childModules");
 
 export const runnables = new lc.RequestType<RunnablesParameters, Runnable[], void>(
 	"experimental/runnables",

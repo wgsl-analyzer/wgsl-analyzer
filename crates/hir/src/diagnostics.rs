@@ -137,7 +137,7 @@ pub enum AnyDiagnostic {
     },
     CyclicType {
         file_id: HirFileId,
-        name: Name,
+        name: String,
         range: TextRange,
     },
     UnexpectedTemplateArgument {

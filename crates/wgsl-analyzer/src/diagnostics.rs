@@ -4,8 +4,8 @@
 
 use std::mem;
 
-use cargo_metadata::PackageId;
 type FileId = vfs::FileId;
+use base_db::PackageId;
 use ide::diagnostics::{Diagnostic, Severity};
 use itertools::Itertools as _;
 use lsp_types::DiagnosticSeverity;

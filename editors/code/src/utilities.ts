@@ -84,8 +84,17 @@ export function isWeslDocument(document: vscode.TextDocument): document is WeslD
 	);
 }
 
+export function isWeslTomlDocument(document: vscode.TextDocument): document is WeslDocument {
+	// ideally `document.languageId` should be 'toml' but user might not have a toml extension installed
+	return document.uri.scheme === "file" && document.fileName.endsWith("wesl.toml");
+}
+
 export function isWeslEditor(editor: vscode.TextEditor): editor is WeslEditor {
 	return isWeslDocument(editor.document);
+}
+
+export function isWeslTomlEditor(editor: vscode.TextEditor): editor is WeslEditor {
+	return isWeslTomlDocument(editor.document);
 }
 
 export function isDocumentInWorkspace(document: WeslDocument): boolean {

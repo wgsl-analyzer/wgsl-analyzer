@@ -179,7 +179,7 @@ fn module_definitions(
     item_tree: &Arc<hir_def::item_tree::ItemTree>,
 ) -> Vec<DefinitionWithBodyId> {
     item_tree
-        .items()
+        .top_level_items()
         .iter()
         .filter_map(|item| {
             Some(match item {

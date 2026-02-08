@@ -4,14 +4,14 @@ use std::{
     marker::PhantomData,
 };
 
-use base_db::{EditionedFileId, FileId, SourceDatabase};
+use base_db::{EditionedFileId, FileId, PackageId, SourceDatabase};
 use salsa::InternKey;
 use syntax::{Edition, Parse, ast};
 use triomphe::Arc;
 use vfs::VfsPath;
 
 use crate::{
-    FileAstId, HirFileId, InFile,
+    HirFileId, InFile,
     ast_id::AstIdMap,
     attributes::{AttributeDefId, AttributesWithOwner},
     body::{Body, BodySourceMap, scope::ExprScopes},
@@ -21,6 +21,7 @@ use crate::{
         Directive, Function, GlobalAssertStatement, GlobalConstant, GlobalVariable,
         ImportStatement, ItemTree, ModuleItemId, Override, Struct, TypeAlias,
     },
+    nameres::DefMap,
     resolver::Resolver,
     signature::{
         ConstantSignature, FunctionSignature, GlobalAssertStatementSignature, OverrideSignature,
@@ -60,6 +61,12 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         &self,
         key: HirFileId,
     ) -> Arc<ItemTree>;
+
+    #[salsa::invoke(DefMap::package_def_map_query)]
+    fn package_def_map_query(
+        &self,
+        package: PackageId,
+    ) -> Arc<DefMap>;
 
     #[salsa::invoke(Body::body_with_source_map_query)]
     fn body_with_source_map(
@@ -410,9 +417,13 @@ impl DefinitionWithBodyId {
     }
 }
 
-/// All module items.
+/// The defs which can be visible in the module.
+/// Does not include things like import statements.
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
 pub enum ModuleDefinitionId {
+    /// Modules can be *visible* inside of a module,
+    /// most notably when using a `import foo::somemodule` statement.
+    Module(EditionedFileId),
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),
     GlobalConstant(GlobalConstantId),
@@ -428,6 +439,7 @@ impl ModuleDefinitionId {
         database: &dyn DefDatabase,
     ) -> HirFileId {
         match self {
+            Self::Module(id) => HirFileId::from(id),
             Self::Function(id) => id.lookup(database).file_id,
             Self::GlobalVariable(id) => id.lookup(database).file_id,
             Self::GlobalConstant(id) => id.lookup(database).file_id,

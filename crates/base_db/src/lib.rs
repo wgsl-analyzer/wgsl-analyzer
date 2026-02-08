@@ -5,13 +5,38 @@ pub mod change;
 pub mod input;
 
 mod util_types;
-use input::{SourceRoot, SourceRootId};
 use line_index::LineIndex;
 use syntax::{Edition, Parse};
 use triomphe::Arc;
 pub use util_types::*;
 pub use vfs::FileId;
 use vfs::{AnchoredPath, VfsPath};
+
+pub use crate::{
+    // change::FileChange,
+    input::{
+        // BuiltDependency,
+        // BuiltPackageData,
+        Dependency,
+        // Environment,
+        // ExtraPackageData,
+        LanguagePackageOrigin,
+        PackageData,
+        PackageDisplayName,
+        PackageGraph,
+        // Package,
+        PackageId,
+        PackageName,
+        PackageOrigin,
+        // PackagesIdMap,
+        // PackagesMap,
+        // ReleaseChannel,
+        SourceRoot,
+        SourceRootId,
+        // TargetLayoutLoadResult,
+        // UniquePackageData,
+    },
+};
 
 pub trait FileLoader {
     fn resolve_path(
@@ -59,6 +84,10 @@ pub trait SourceDatabase: FileLoader {
         &self,
         key: EditionedFileId,
     ) -> Parse;
+
+    /// The package graph.
+    #[salsa::input]
+    fn package_graph(&self) -> Arc<PackageGraph>;
 
     fn line_index(
         &self,
