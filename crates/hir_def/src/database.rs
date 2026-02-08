@@ -234,11 +234,11 @@ pub trait InternDatabase: SourceDatabase {
         &self,
         location: Location<ImportStatement>,
     ) -> ImportId;
-    #[salsa::interned]
+    /* #[salsa::interned]
     fn intern_directive(
         &self,
         location: Location<Directive>,
-    ) -> DirectiveId;
+    ) -> DirectiveId;*/
     #[salsa::interned]
     fn intern_function(
         &self,
@@ -362,7 +362,7 @@ pub trait Lookup: Sized {
     ) -> Self::Data;
 }
 intern_id!(ImportId, Location<ImportStatement>, lookup_intern_import);
-intern_id!(DirectiveId, Location<Directive>, lookup_intern_directive);
+// intern_id!(DirectiveId, Location<Directive>, lookup_intern_directive);
 intern_id!(FunctionId, Location<Function>, lookup_intern_function);
 intern_id!(
     GlobalVariableId,
