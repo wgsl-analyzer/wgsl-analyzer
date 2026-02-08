@@ -242,7 +242,7 @@ impl ItemTree {
     }
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(Debug)]
 pub struct ModuleItemId<N> {
     pub(crate) index: Idx<N>,
     _marker: PhantomData<N>,
@@ -277,6 +277,17 @@ impl<N> Clone for ModuleItemId<N> {
 }
 
 impl<N: ItemTreeNode> Copy for ModuleItemId<N> {}
+
+impl<N: ItemTreeNode> PartialEq for ModuleItemId<N> {
+    fn eq(
+        &self,
+        other: &Self,
+    ) -> bool {
+        self.index == other.index
+    }
+}
+
+impl<N: ItemTreeNode> Eq for ModuleItemId<N> {}
 
 pub trait ItemTreeNode: Clone {
     type Source: AstNode + Into<ast::Item>;
