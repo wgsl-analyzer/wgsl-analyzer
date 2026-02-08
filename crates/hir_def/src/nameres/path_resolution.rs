@@ -7,21 +7,22 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub(super) struct ResolvePathResult {
-    pub(super) resolved_def: ModuleDefinitionId,
+pub(crate) struct ResolvePathResult {
+    pub resolved_def: ModuleDefinitionId,
     /// The index of the last resolved segment, or `None` if the full path has been resolved.
-    pub(super) segment_index: Option<usize>,
+    /// TODO: I don't think that I need this
+    pub segment_index: Option<usize>,
 }
 
 impl DefMap {
-    // Returns Yes if we are sure that additions to `ItemMap` wouldn't change
-    // the result.
-    pub(super) fn resolve_path_fp_with_macro(
+    pub(crate) fn resolve_path(
         &self,
         db: &dyn DefDatabase,
         mut original_module: FileId,
         path: &ModPath,
     ) -> ResolvePathResult {
+        // Look at the code in fn resolve_path_fp_with_macro_single
+        // Which ends up calling resolve_name_in_module
         todo!()
     }
 }

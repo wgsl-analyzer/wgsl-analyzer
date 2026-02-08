@@ -54,7 +54,7 @@ use crate::item_tree::Name;
 
 use crate::mod_path::ModPath;
 use crate::nameres::diagnostics::DefDiagnostic;
-use crate::{FileAstId, FxIndexMap, HirFileId, InFile};
+use crate::{FxIndexMap, HirFileId, InFile};
 
 /// Contains the results of (early) name resolution.
 ///
@@ -118,13 +118,14 @@ impl std::ops::IndexMut<FileId> for DefMap {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ModuleData {
+    /// What is the name of this module, when looking at the absolute module path.
+    /// Is empty when it is the root module.
+    pub name: Option<Name>,
     /// Where does this module come from?
     pub origin: EditionedFileId,
     /// Declared visibility of this module.
     // pub visibility: Visibility,
     /// Parent module in the same `DefMap`.
-    ///
-    /// [`None`] for block modules because they are always its `DefMap`'s root.
     pub parent: Option<FileId>,
     pub children: FxIndexMap<Name, FileId>,
     pub scope: ItemScope,
@@ -148,9 +149,8 @@ impl DefMap {
         };
         let def_map = DefMap::empty(
             package_id,
-            edition,
             Arc::new(DefMapCrateData::new(edition)),
-            ModuleData::new(origin),
+            ModuleData::new(origin, None),
         );
         let def_map = collector::collect_defs(database, def_map, origin.into());
 
@@ -159,7 +159,6 @@ impl DefMap {
 
     fn empty(
         package_id: PackageId,
-        edition: Edition,
         crate_data: Arc<DefMapCrateData>,
         module_data: ModuleData,
     ) -> DefMap {
@@ -229,52 +228,40 @@ impl DefMap {
 
     // FIXME: this can use some more human-readable format (ideally, an IR
     // even), as this should be a great debugging aid.
-    pub fn dump(
-        &self,
-        db: &dyn DefDatabase,
-    ) -> String {
+    pub fn dump(&self) -> String {
         let mut buf = String::new();
-        let mut current_map = self;
-        go(&mut buf, db, current_map, "crate", current_map.root);
+        let current_map = self;
+        go(&mut buf, current_map, "crate", current_map.root);
         return buf;
 
         fn go(
             buf: &mut String,
-            db: &dyn DefDatabase,
             map: &DefMap,
             path: &str,
             module: FileId,
         ) {
             write!(buf, "{}\n", path);
 
-            map[module].scope.dump(db, buf);
+            map[module].scope.dump(buf);
 
             let mut child_modules = map[module].children.iter().collect::<Vec<_>>();
             child_modules.sort_by(|a, b| Ord::cmp(&a.0, &b.0));
             for (name, child) in child_modules {
                 let path = format!("{path}::{}", name.as_str());
                 buf.push('\n');
-                go(buf, db, map, &path, *child);
+                go(buf, map, &path, *child);
             }
         }
     }
 }
 
-impl DefMap {
-    pub(crate) fn resolve_path(
-        &self,
-        db: &dyn DefDatabase,
-        original_module: FileId,
-        path: &ModPath,
-    ) -> (ModuleDefinitionId, Option<usize>) {
-        let result = self.resolve_path_fp_with_macro(db, original_module, path);
-        (result.resolved_def, result.segment_index)
-    }
-}
-
 impl ModuleData {
-    pub(crate) fn new(origin: EditionedFileId) -> Self {
+    pub(crate) fn new(
+        origin: EditionedFileId,
+        name: Option<Name>,
+    ) -> Self {
         ModuleData {
+            name,
             origin,
             parent: None,
             children: Default::default(),

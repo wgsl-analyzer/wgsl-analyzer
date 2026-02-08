@@ -23,6 +23,7 @@ salsa.workspace = true
 smallvec.workspace = true
 smol_str.workspace = true
 syntax.workspace = true
+tracing.workspace = true
 triomphe.workspace = true
 vfs.workspace = true
 

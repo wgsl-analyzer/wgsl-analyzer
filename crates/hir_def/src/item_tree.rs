@@ -7,13 +7,13 @@ use std::{hash, marker::PhantomData, ops::ControlFlow};
 
 use la_arena::{Arena, Idx};
 use smol_str::SmolStr;
-use syntax::{AstNode, TokenText, ast};
+use syntax::{AstNode, TokenText, ast, pointer::AstPointer};
 use triomphe::Arc;
 
 use crate::{
-    HirFileId,
+    HirFileId, InFile,
     ast_id::FileAstId,
-    database::DefDatabase,
+    database::{DefDatabase, ImportId},
     mod_path::{ModPath, PathKind},
 };
 

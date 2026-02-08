@@ -27,15 +27,22 @@ impl ItemScope {
         self.items.insert(name, def);
     }
 
+    /// Get a name from current module scope
+    pub fn get(
+        &self,
+        name: &Name,
+    ) -> Option<ModuleDefinitionId> {
+        self.items.get(name).copied()
+    }
+
     pub(crate) fn dump(
         &self,
-        db: &dyn DefDatabase,
         buf: &mut String,
     ) {
         let mut entries: Vec<_> = self.items.iter().collect();
         entries.sort_by_key(|(name, _)| *name);
 
-        for (name, def) in entries {
+        for (name, _) in entries {
             write!(buf, "{}: v\n", name.as_str());
         }
     }

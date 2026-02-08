@@ -11,7 +11,7 @@ use triomphe::Arc;
 use vfs::VfsPath;
 
 use crate::{
-    FileAstId, HirFileId, InFile,
+    HirFileId, InFile,
     ast_id::AstIdMap,
     attributes::{AttributeDefId, AttributesWithOwner},
     body::{Body, BodySourceMap, scope::ExprScopes},
