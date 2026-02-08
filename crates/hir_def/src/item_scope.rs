@@ -7,6 +7,7 @@ use std::fmt::Write as _;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct ItemScope {
+    /// Items visible in this scope. Includes both declarations and imports.
     items: FxHashMap<Name, ModuleDefinitionId>,
     declarations: Vec<ModuleDefinitionId>,
 }

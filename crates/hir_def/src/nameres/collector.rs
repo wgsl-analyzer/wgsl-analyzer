@@ -85,18 +85,27 @@ impl<'db> DefCollector<'db> {
     fn collect(&mut self) {
         // To read a file, look in mod_resolution.rs (fn resolve_declaration)
         while let Some((location, unresolved_import)) = self.unresolved_imports.pop() {
-            // The file has already been collected
-            // Now resolve the imports
             self.database.unwind_if_cancelled();
 
-            let path_resolution = self.resolve_import_with_modules(
-                location.file_id.original_file(self.database).file_id,
-                location,
-                &unresolved_import,
-            );
+            let file_id = location.file_id.original_file(self.database).file_id;
+
             // The file has already been collected
-            // But the imports are not yet resolved!
-            // TODO;
+            // Now resolve the imports
+            let resolved_import =
+                self.resolve_import_with_modules(file_id, location, &unresolved_import);
+
+            if let Ok(resolved) = resolved_import {
+                // If we do not have a leaf name, there are a few possible cases
+                // - PathKind::Plain => Must have a leaf name, otherwise the path is completely empty
+                // - PathKind::Super => Don't need to add `super` to the scope, it is already a keyword
+                // - PathKind::Package => Don't need to add `package` to the scope, it is already a keyword
+                if let Some(name) = unresolved_import.leaf_name() {
+                    let module_data = &mut self.def_map.modules[file_id];
+                    module_data
+                        .scope
+                        .push_item(name.clone(), resolved.resolved_def);
+                }
+            }
         }
     }
 
@@ -162,6 +171,7 @@ impl<'db> DefCollector<'db> {
                     self.def_map
                         .diagnostics
                         .push(DefDiagnostic::unresolved_import(file_id, location));
+                    return Err(());
                 }
                 return Ok(ResolvePathResult {
                     resolved_def,
@@ -197,7 +207,10 @@ impl<'db> DefCollector<'db> {
         }
         // We got to the end of the resolution
         Ok(ResolvePathResult {
-            resolved_def: todo!(),
+            resolved_def: ModuleDefinitionId::Module(EditionedFileId {
+                file_id,
+                edition: self.def_map.edition(),
+            }),
             segment_index: None,
         })
     }

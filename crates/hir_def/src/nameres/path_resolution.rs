@@ -1,8 +1,9 @@
+use base_db::EditionedFileId;
 use vfs::FileId;
 
 use crate::{
     database::{DefDatabase, ModuleDefinitionId},
-    mod_path::ModPath,
+    mod_path::{ModPath, PathKind},
     nameres::DefMap,
 };
 
@@ -15,14 +16,50 @@ pub(crate) struct ResolvePathResult {
 }
 
 impl DefMap {
+    /// Keep this in sync with [`DefCollector::resolve_import_with_modules`]
     pub(crate) fn resolve_path(
         &self,
-        db: &dyn DefDatabase,
-        mut original_module: FileId,
+        mut file_id: FileId,
         path: &ModPath,
-    ) -> ResolvePathResult {
-        // Look at the code in fn resolve_path_fp_with_macro_single
-        // Which ends up calling resolve_name_in_module
-        todo!()
+    ) -> Option<ResolvePathResult> {
+        file_id = match path.kind() {
+            PathKind::Plain => {
+                // TODO:
+                return None;
+            },
+            PathKind::Super(levels) => {
+                // Parent modules are guaranteed to exist and be loaded all the way until the root.
+                for _ in 0..levels {
+                    file_id = self.modules[file_id].parent?;
+                }
+                file_id
+            },
+            PathKind::Package => self.crate_root(),
+        };
+
+        for (index, segment) in path.segments().iter().enumerate() {
+            // Check in current module
+            let module_data = &self.modules[file_id];
+            if let Some(resolved_def) = module_data.scope.get(segment) {
+                if index < path.segments().len() - 1 {
+                    // Not at the last segment
+                    return None;
+                }
+                return Some(ResolvePathResult {
+                    resolved_def,
+                    segment_index: Some(index),
+                });
+            }
+            // Otherwise go to the child file
+            file_id = *module_data.children.get(segment)?;
+        }
+        // We got to the end of the resolution
+        Some(ResolvePathResult {
+            resolved_def: ModuleDefinitionId::Module(EditionedFileId {
+                file_id,
+                edition: self.edition(),
+            }),
+            segment_index: None,
+        })
     }
 }

@@ -421,6 +421,9 @@ impl DefinitionWithBodyId {
 /// Does not include things like import statements.
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
 pub enum ModuleDefinitionId {
+    /// Modules can be *visible* inside of a module,
+    /// most notably when using a `import foo::somemodule` statement.
+    Module(EditionedFileId),
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),
     GlobalConstant(GlobalConstantId),
@@ -436,6 +439,7 @@ impl ModuleDefinitionId {
         database: &dyn DefDatabase,
     ) -> HirFileId {
         match self {
+            Self::Module(id) => HirFileId::from(id),
             Self::Function(id) => id.lookup(database).file_id,
             Self::GlobalVariable(id) => id.lookup(database).file_id,
             Self::GlobalConstant(id) => id.lookup(database).file_id,

@@ -186,6 +186,7 @@ impl Resolver {
         });
     }
 
+    /// Corresponds to `resolve_path_in_type_ns` in rust-analyzer
     #[must_use]
     pub fn resolve(
         &self,
