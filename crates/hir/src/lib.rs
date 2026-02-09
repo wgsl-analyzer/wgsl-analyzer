@@ -151,7 +151,10 @@ impl<'database> Semantics<'database> {
             definition.resolver(self.database)
         } else {
             let module_info = self.database.item_tree(file_id);
-            Resolver::default().push_module_scope(file_id, module_info)
+            let def_map = self
+                .database
+                .file_def_map_query(file_id.original_file(self.database).file_id);
+            Resolver::default().push_module_scope(file_id, module_info, def_map)
         }
     }
 
@@ -424,7 +427,8 @@ impl ChildContainer {
             | Self::TypeAliasId(_) => {
                 let file_id = self.file_id(database);
                 let module_info = database.item_tree(file_id);
-                Resolver::default().push_module_scope(file_id, module_info)
+                let def_map = database.file_def_map_query(file_id.original_file(database).file_id);
+                Resolver::default().push_module_scope(file_id, module_info, def_map)
             },
         }
     }

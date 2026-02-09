@@ -68,6 +68,12 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         package: PackageId,
     ) -> Arc<DefMap>;
 
+    #[salsa::invoke(DefMap::file_def_map_query)]
+    fn file_def_map_query(
+        &self,
+        file: FileId,
+    ) -> Option<Arc<DefMap>>;
+
     #[salsa::invoke(Body::body_with_source_map_query)]
     fn body_with_source_map(
         &self,
@@ -413,7 +419,8 @@ impl DefinitionWithBodyId {
     ) -> Resolver {
         let file_id = self.file_id(database);
         let module_info = database.item_tree(file_id);
-        Resolver::default().push_module_scope(file_id, module_info)
+        let def_map = database.file_def_map_query(file_id.original_file(database).file_id);
+        Resolver::default().push_module_scope(file_id, module_info, def_map)
     }
 }
 
@@ -456,7 +463,8 @@ impl ModuleDefinitionId {
     ) -> Resolver {
         let file_id = self.file_id(database);
         let module_info = database.item_tree(file_id);
-        Resolver::default().push_module_scope(file_id, module_info)
+        let def_map = database.file_def_map_query(file_id.original_file(database).file_id);
+        Resolver::default().push_module_scope(file_id, module_info, def_map)
     }
 }
 

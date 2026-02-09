@@ -14,6 +14,7 @@ use crate::{
         Function, GlobalConstant, GlobalVariable, ItemTree, ModuleItem, Name, Override, Struct,
         TypeAlias,
     },
+    nameres::DefMap,
 };
 
 #[derive(Clone)]
@@ -29,6 +30,7 @@ pub enum Scope {
 #[derive(Clone)]
 pub struct ModuleScope {
     module_info: Arc<ItemTree>,
+    def_map: Arc<DefMap>,
     file_id: HirFileId,
 }
 
@@ -83,11 +85,17 @@ impl Resolver {
         mut self,
         file_id: HirFileId,
         item_tree: Arc<ItemTree>,
+        def_map: Option<Arc<DefMap>>,
     ) -> Self {
-        self.scopes.push(Scope::Module(ModuleScope {
-            module_info: item_tree,
-            file_id,
-        }));
+        if let Some(def_map) = def_map {
+            self.scopes.push(Scope::Module(ModuleScope {
+                module_info: item_tree,
+                def_map,
+                file_id,
+            }));
+        } else {
+            tracing::warn!("missing def map")
+        }
         self
     }
 

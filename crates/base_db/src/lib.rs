@@ -89,6 +89,12 @@ pub trait SourceDatabase: FileLoader {
     #[salsa::input]
     fn package_graph(&self) -> Arc<PackageGraph>;
 
+    #[salsa::invoke(source_root_packages_query)]
+    fn source_root_packages(
+        &self,
+        key: FileId,
+    ) -> Arc<[PackageId]>;
+
     fn line_index(
         &self,
         key: FileId,
@@ -109,6 +115,21 @@ fn parse_query(
 ) -> Parse {
     let source = database.file_text(file_id.file_id);
     syntax::parse(&source, file_id.edition)
+}
+
+fn source_root_packages_query(
+    database: &dyn SourceDatabase,
+    file_id: FileId,
+) -> Arc<[PackageId]> {
+    let source_root = database.file_source_root(file_id);
+    let package_graph = database.package_graph();
+    package_graph
+        .iter()
+        .filter(|&package_id| {
+            let root_file = database.file_source_root(package_graph[package_id].root_file_id);
+            source_root == root_file
+        })
+        .collect()
 }
 
 /// Silly workaround for cyclic deps between the traits.

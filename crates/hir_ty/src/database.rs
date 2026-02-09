@@ -93,7 +93,8 @@ fn field_types(
 
     let file_id = r#struct.lookup(database).file_id;
     let module_info = database.item_tree(file_id);
-    let resolver = Resolver::default().push_module_scope(file_id, module_info);
+    let def_map = database.file_def_map_query(file_id.original_file(database).file_id);
+    let resolver = Resolver::default().push_module_scope(file_id, module_info, def_map);
 
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
 
@@ -125,7 +126,8 @@ fn type_alias_type(
 
     let file_id = type_alias.lookup(database).file_id;
     let module_info = database.item_tree(file_id);
-    let resolver = Resolver::default().push_module_scope(file_id, module_info);
+    let def_map = database.file_def_map_query(file_id.original_file(database).file_id);
+    let resolver = Resolver::default().push_module_scope(file_id, module_info, def_map);
 
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
     let result = type_context.lower_type(data.r#type);
@@ -149,7 +151,8 @@ fn function_type(
 
     let file_id = function.lookup(database).file_id;
     let module_info = database.item_tree(file_id);
-    let resolver = Resolver::default().push_module_scope(file_id, module_info);
+    let def_map = database.file_def_map_query(file_id.original_file(database).file_id);
+    let resolver = Resolver::default().push_module_scope(file_id, module_info, def_map);
 
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
 

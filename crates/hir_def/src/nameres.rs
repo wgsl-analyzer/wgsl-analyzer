@@ -136,6 +136,25 @@ impl DefMap {
         self.data.edition
     }
 
+    pub(crate) fn file_def_map_query(
+        database: &dyn DefDatabase,
+        file: FileId,
+    ) -> Option<Arc<DefMap>> {
+        let packages = database.source_root_packages(file);
+        // TODO: handle the error cases
+        // e.g. case 0 is valid for standalone files
+        // the final case should just never happen in the first place
+        if packages.len() == 0 {
+            tracing::warn!("No package for file, so no def map");
+            None
+        } else if packages.len() == 1 {
+            Some(database.package_def_map_query(packages[0]))
+        } else {
+            tracing::error!("File is a part of multiple packages");
+            None
+        }
+    }
+
     pub(crate) fn package_def_map_query(
         database: &dyn DefDatabase,
         package_id: PackageId,
