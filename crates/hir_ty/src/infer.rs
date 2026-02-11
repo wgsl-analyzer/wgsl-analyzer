@@ -4,6 +4,7 @@ mod unify;
 
 use std::{fmt, ops::Index};
 
+use base_db::{TextRange, TextSize};
 use either::Either;
 use hir_def::{
     HasSource as _,
@@ -152,52 +153,64 @@ pub fn infer_signature_cycle_result(
 fn get_name_and_range(
     database: &dyn HirDatabase,
     definition: ModuleDefinitionId,
-) -> (Name, base_db::TextRange) {
+) -> (String, base_db::TextRange) {
     match definition {
+        ModuleDefinitionId::Module(id) => {
+            let source = database.file_text(id.file_id);
+            let full_range = TextRange::up_to(TextSize::of(source.as_str()));
+
+            // TODO: Maybe print the file name?
+            (String::from("file"), full_range)
+        },
         ModuleDefinitionId::Function(id) => (
-            database.function_data(id).0.name.clone(),
+            database.function_data(id).0.name.as_str().to_string(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::GlobalVariable(id) => (
-            database.global_var_data(id).0.name.clone(),
+            database.global_var_data(id).0.name.as_str().to_string(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::GlobalConstant(id) => (
-            database.global_constant_data(id).0.name.clone(),
+            database
+                .global_constant_data(id)
+                .0
+                .name
+                .as_str()
+                .to_string(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::Override(id) => (
-            database.override_data(id).0.name.clone(),
+            database.override_data(id).0.name.as_str().to_string(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::Struct(id) => (
-            database.struct_data(id).0.name.clone(),
+            database.struct_data(id).0.name.as_str().to_string(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::TypeAlias(id) => (
-            database.type_alias_data(id).0.name.clone(),
+            database.type_alias_data(id).0.name.as_str().to_string(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::GlobalAssertStatement(id) => (
-            Name::from("const_assert"),
+            String::from("const_assert"),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
@@ -269,7 +282,7 @@ pub enum InferenceDiagnosticKind {
         error: TypeLoweringError,
     },
     CyclicType {
-        name: Name,
+        name: String,
         range: base_db::TextRange,
     },
     UnexpectedTemplateArgument {

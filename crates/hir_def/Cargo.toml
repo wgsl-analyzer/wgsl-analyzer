@@ -12,14 +12,18 @@ doctest = false
 
 [dependencies]
 base-db.workspace = true
+edition.workspace = true
 either.workspace = true
+indexmap.workspace = true
 la-arena.workspace = true
+profile.workspace = true
 rowan.workspace = true
 rustc-hash.workspace = true
 salsa.workspace = true
 smallvec.workspace = true
 smol_str.workspace = true
 syntax.workspace = true
+tracing.workspace = true
 triomphe.workspace = true
 vfs.workspace = true
 

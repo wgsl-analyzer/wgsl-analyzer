@@ -5,8 +5,10 @@ pub mod database;
 pub mod expression;
 pub mod expression_store;
 pub mod hir_file_id;
+pub mod item_scope;
 pub mod item_tree;
 pub mod mod_path;
+pub mod nameres;
 pub mod resolver;
 pub mod signature;
 #[cfg(test)]
@@ -23,6 +25,8 @@ use hir_file_id::HirFileIdRepr;
 use item_tree::{ItemTreeNode, ModuleItemId};
 use rowan::NodeOrToken;
 use syntax::{AstNode, SyntaxNode, SyntaxToken};
+
+type FxIndexMap<K, V> = indexmap::IndexMap<K, V, rustc_hash::FxBuildHasher>;
 
 /// `InFile<T>` stores a value of `T` inside a particular file/syntax tree.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]

@@ -91,7 +91,8 @@ Including a description and GIF suitable for the changelog means less work for t
 
 ### Clippy
 
-We use Clippy to improve the code, but if some lints annoy you, allow them in the [Cargo.toml](../../Cargo.toml) [workspace.lints.clippy] section.
+We use Clippy to improve the code. If a lint is not relevant (especially a restriction lint),
+then `#[expect]` it or suggest to allow it in the workspace.
 
 ## Code
 

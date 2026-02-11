@@ -1,16 +1,41 @@
+//! Defines a unit of change that can applied to the database to get the next
+//! state. Changes are transactional.
+
 use salsa::Durability;
+use std::fmt;
 use triomphe::Arc;
 use vfs::{FileId, VfsPath};
 
 use crate::{
-    SourceDatabase,
+    PackageGraph, SourceDatabase,
     input::{SourceRoot, SourceRootId},
 };
 
+/// Encapsulate a bunch of raw `.set` calls on the database.
 #[derive(Default)]
 pub struct Change {
     pub roots: Option<Vec<SourceRoot>>,
     pub files_changed: Vec<(FileId, Option<Arc<String>>, VfsPath)>,
+    pub package_graph: Option<PackageGraph>,
+}
+
+impl fmt::Debug for Change {
+    fn fmt(
+        &self,
+        fmt: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        let mut d = fmt.debug_struct("Change");
+        if let Some(roots) = &self.roots {
+            d.field("roots", roots);
+        }
+        if !self.files_changed.is_empty() {
+            d.field("files_changed", &self.files_changed.len());
+        }
+        if self.package_graph.is_some() {
+            d.field("package_graph", &self.package_graph);
+        }
+        d.finish()
+    }
 }
 
 impl Change {
@@ -24,6 +49,12 @@ impl Change {
         roots: Vec<SourceRoot>,
     ) {
         self.roots = Some(roots);
+    }
+    pub fn set_package_graph(
+        &mut self,
+        package_graph: PackageGraph,
+    ) {
+        self.package_graph = Some(package_graph);
     }
 
     pub fn change_file(
@@ -62,6 +93,10 @@ impl Change {
             database.set_file_text(file_id, text.unwrap_or_default());
             database.set_file_path(file_id, path.clone());
             database.set_file_id(path, file_id);
+        }
+
+        if let Some(package_graph) = self.package_graph {
+            database.set_package_graph_with_durability(Arc::new(package_graph), Durability::HIGH);
         }
     }
 }

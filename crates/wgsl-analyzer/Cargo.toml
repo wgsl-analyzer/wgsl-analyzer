@@ -45,7 +45,6 @@ triomphe.workspace = true
 nohash-hasher.workspace = true
 semver.workspace = true
 memchr = "2.7.6"
-cargo_metadata.workspace = true
 # process-wrap = { version = "8.2.0", features = ["std"] }
 # cfg.workspace = true
 hir-ty.workspace = true
@@ -55,7 +54,7 @@ ide-db.workspace = true
 # This should only be used in CLI
 # ide-ssr.workspace = true
 ide.workspace = true
-# load-wesl.workspace = true
+load-wesl.workspace = true
 # profile.workspace = true
 # project-model.workspace = true
 stdx.workspace = true
