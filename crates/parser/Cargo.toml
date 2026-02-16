@@ -19,7 +19,7 @@ rowan.workspace = true
 expect-test.workspace = true
 
 [build-dependencies]
-lelwel = "0.10.0"
+lelwel = "0.10.1"
 
 [lints]
 workspace = true
