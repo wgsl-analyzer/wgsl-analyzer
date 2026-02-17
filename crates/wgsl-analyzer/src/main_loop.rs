@@ -21,11 +21,6 @@ use triomphe::Arc;
 use vfs::{AbsPathBuf, FileId};
 
 // use vfs::{loader::LoadingProgress, AbsPathBuf, FileId};
-use crate::handlers::notification::{
-    handle_did_change_configuration, handle_did_change_text_document,
-    handle_did_change_watched_files, handle_did_close_text_document, handle_did_open_text_document,
-    handle_did_save_text_document,
-};
 use crate::{
     Result,
     config::Config,
@@ -38,6 +33,15 @@ use crate::{
         utilities::{Progress, notification_is},
     },
     reload::ProjectWorkspaceProgress,
+};
+use crate::{
+    global_state::FetchWorkspaceRequest,
+    handlers::notification::{
+        handle_did_change_configuration, handle_did_change_text_document,
+        handle_did_change_watched_files, handle_did_change_workspace_folders,
+        handle_did_close_text_document, handle_did_open_text_document,
+        handle_did_save_text_document,
+    },
 };
 
 pub fn main_loop(
@@ -184,38 +188,23 @@ impl GlobalState {
         inbox: Receiver<lsp_server::Message>,
     ) -> Result<()> {
         self.update_status_or_notify();
-
-        if self.config.did_save_text_document_dynamic_registration() {
-            let additional_patterns = self
-                .config
-                .discover_workspace_config()
-                .map(|cfg| cfg.files_to_watch.clone().into_iter())
-                .into_iter()
-                .flatten()
-                .map(|file| format!("**/{file}"));
-            self.register_did_save_capability(additional_patterns);
+        self.fetch_workspaces_queue.request_operation(
+            "startup".to_owned(),
+            FetchWorkspaceRequest {
+                path: None,
+                force_crate_graph_reload: false,
+            },
+        );
+        if let Some((
+            cause,
+            FetchWorkspaceRequest {
+                path,
+                force_crate_graph_reload,
+            },
+        )) = self.fetch_workspaces_queue.should_start_operation()
+        {
+            self.fetch_workspaces(cause, path, force_crate_graph_reload);
         }
-
-        // if self.config.discover_workspace_config().is_none() {
-        //     self.fetch_workspaces_queue.request_operation(
-        //         "startup".to_owned(),
-        //         FetchWorkspaceRequest {
-        //             path: None,
-        //             force_crate_graph_reload: false,
-        //         },
-        //     );
-        //     if let Some((
-        //         cause,
-        //         FetchWorkspaceRequest {
-        //             path,
-        //             force_crate_graph_reload,
-        //         },
-        //     )) = self.fetch_workspaces_queue.should_start_operation()
-        //     {
-        //         self.fetch_workspaces(cause, path, force_crate_graph_reload);
-        //     }
-        // }
-
         while let Ok(event) = self.next_event(&inbox) {
             let Some(event) = event else {
                 anyhow::bail!("client exited without proper shutdown sequence");
@@ -429,18 +418,11 @@ impl GlobalState {
             //         self.handle_cargo_test_message(message);
             //     }
             // },
-            // Event::DiscoverProject(message) => {
-            //     self.handle_discover_message(message);
-            //     // Coalesce many project discovery events into a single loop turn.
-            //     while let Ok(message) = self.discover_receiver.try_recv() {
-            //         self.handle_discover_message(message);
-            //     }
-            // },
         }
         let event_handling_duration = loop_start.elapsed();
         let (state_changed, memdocs_added_or_removed) = if self.vfs_done {
             if let Some(cause) = self.wants_to_switch.take() {
-                self.switch_workspaces(&cause);
+                self.switch_workspaces(cause);
             }
             (
                 self.process_changes(),
@@ -808,7 +790,7 @@ impl GlobalState {
                             workspaces,
                             force_crate_graph_reload,
                         };
-                        // self.fetch_workspaces_queue.op_completed(response);
+                        self.fetch_workspaces_queue.operation_completed(response);
                         if let Err(error) = self.fetch_workspace_error() {
                             error!("FetchWorkspaceError: {error}");
                         }
@@ -881,6 +863,9 @@ impl GlobalState {
         .on_sync_mut::<lt::notification::DidCloseTextDocument>(handle_did_close_text_document)
         .on_sync_mut::<lt::notification::DidSaveTextDocument>(handle_did_save_text_document)
         .on_sync_mut::<lt::notification::DidChangeConfiguration>(handle_did_change_configuration)
+        .on_sync_mut::<lt::notification::DidChangeWorkspaceFolders>(
+            handle_did_change_workspace_folders,
+        )
         .on_sync_mut::<lt::notification::DidChangeWatchedFiles>(handle_did_change_watched_files)
         .finish();
     }

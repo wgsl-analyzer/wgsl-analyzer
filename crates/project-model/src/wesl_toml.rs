@@ -11,6 +11,7 @@ pub struct WeslToml {
     pub root: String,
     pub include: Option<Vec<String>>,
     pub exclude: Option<Vec<String>>,
+    #[serde(default)]
     pub dependencies: BTreeMap<String, WeslDependency>,
 }
 

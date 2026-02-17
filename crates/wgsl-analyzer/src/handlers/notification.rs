@@ -9,15 +9,19 @@ use anyhow::Context as _;
 use itertools::Itertools as _;
 use lsp_types::{
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
-    DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
+    DidChangeWorkspaceFoldersParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
+    DidSaveTextDocumentParams,
 };
+use paths::Utf8PathBuf;
 use tracing::error;
+use triomphe::Arc;
+use vfs::AbsPathBuf;
 
 use crate::{
     Result, // target_spec::TargetSpec,
     // try_default,
     config::{Config, ConfigChange},
-    global_state::GlobalState,
+    global_state::{FetchWorkspaceRequest, GlobalState},
     in_memory_documents::DocumentData,
     lsp::{from_proto, utilities::apply_document_changes},
 };
@@ -178,6 +182,47 @@ pub(crate) fn handle_did_change_configuration(
             }
         },
     );
+
+    Ok(())
+}
+
+pub(crate) fn handle_did_change_workspace_folders(
+    state: &mut GlobalState,
+    params: DidChangeWorkspaceFoldersParams,
+) -> anyhow::Result<()> {
+    let config = Arc::make_mut(&mut state.config);
+
+    for workspace in params.event.removed {
+        let Ok(path) = workspace.uri.to_file_path() else {
+            continue;
+        };
+        let Ok(path) = Utf8PathBuf::from_path_buf(path) else {
+            continue;
+        };
+        let Ok(path) = AbsPathBuf::try_from(path) else {
+            continue;
+        };
+        config.remove_workspace(&path);
+    }
+
+    let added = params
+        .event
+        .added
+        .into_iter()
+        .filter_map(|it| it.uri.to_file_path().ok())
+        .filter_map(|it| Utf8PathBuf::from_path_buf(it).ok())
+        .filter_map(|it| AbsPathBuf::try_from(it).ok());
+    config.add_workspaces(added);
+
+    config.rediscover_workspaces();
+
+    let req = FetchWorkspaceRequest {
+        path: None,
+        force_crate_graph_reload: false,
+    };
+    state
+        .fetch_workspaces_queue
+        .request_operation("client workspaces changed".to_owned(), req);
 
     Ok(())
 }

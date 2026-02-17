@@ -1,4 +1,4 @@
-use std::{fmt, sync::OnceLock};
+use std::{env, fmt, sync::OnceLock};
 
 use base_db::input::SourceRootId;
 use hir::diagnostics::{DiagnosticsConfig, NagaVersion};
@@ -9,12 +9,13 @@ use ide::{
 };
 use ide_completion::{CompletionConfig, CompletionFieldsToResolve};
 use itertools::Itertools as _;
+use project_model::ProjectManifest;
 use rustc_hash::FxHashMap;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use stdx::format_to_accumulator;
 use triomphe::Arc;
-use vfs::AbsPathBuf;
+use vfs::{AbsPath, AbsPathBuf};
 
 // use ide::{
 //     AssistConfig, CallHierarchyConfig, CallableSnippets, CompletionConfig,
@@ -132,6 +133,10 @@ struct ClientInfo {
 
 #[derive(Clone, Debug)]
 pub struct Config {
+    /// Projects that have a Cargo.toml or a rust-project.json in a
+    /// parent directory, so we can discover them by walking the
+    /// file system.
+    discovered_projects_from_filesystem: Vec<ProjectManifest>,
     /// The workspace roots as registered by the LSP client.
     workspace_roots: Vec<AbsPathBuf>,
     capabilities: ClientCapabilities,
@@ -163,13 +168,18 @@ pub struct Config {
 }
 
 impl Config {
-    #[must_use]
-    #[expect(
-        clippy::unused_self,
-        reason = "TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/26"
-    )]
-    pub const fn discover_workspace_config(&self) -> Option<&DiscoverWorkspaceConfig> {
-        None
+    /// Path to the user configuration dir. This can be seen as a generic way to define what would be `$XDG_CONFIG_HOME/rust-analyzer` in Linux.
+    pub fn user_config_dir_path() -> Option<AbsPathBuf> {
+        let user_config_path = if let Some(path) = env::var_os("__TEST_RA_USER_CONFIG_DIR") {
+            std::path::PathBuf::from(path)
+        } else {
+            dirs::config_dir()?.join("wgsl-analyzer")
+        };
+        Some(AbsPathBuf::assert_utf8(user_config_path))
+    }
+
+    pub fn discovered_projects(&self) -> &[ProjectManifest] {
+        &self.discovered_projects_from_filesystem
     }
 
     #[must_use]
@@ -178,6 +188,17 @@ impl Config {
         source_root: Option<SourceRootId>,
     ) -> bool {
         self.diagnostics_enable
+    }
+
+    pub fn files(&self) -> FilesConfig {
+        FilesConfig {
+            watcher: if self.did_change_watched_files_dynamic_registration() {
+                FilesWatcher::Client
+            } else {
+                FilesWatcher::Server
+            },
+            exclude: Vec::new(),
+        }
     }
 }
 
@@ -285,8 +306,8 @@ impl Config {
         static DEFAULT_CONFIG_DATA: OnceLock<&'static DefaultConfigData> = OnceLock::new();
 
         Self {
+            discovered_projects_from_filesystem: Vec::new(),
             workspace_roots,
-            // discovered_projects_from_filesystem: Vec::new(),
             // discovered_projects_from_command: Vec::new(),
             capabilities: ClientCapabilities::new(caps),
             // snippets: Default::default(),
@@ -318,13 +339,29 @@ impl Config {
         clippy::needless_pass_by_ref_mut,
         reason = "TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/26"
     )]
-    pub const fn rediscover_workspaces(&mut self) {
-        // let discovered = vec![];
-        // tracing::info!("discovered projects: {:?}", discovered);
-        // if discovered.is_empty() {
-        //     tracing::error!("failed to find any projects in {:?}", &self.workspace_roots);
-        // }
-        // self.discovered_projects_from_filesystem = discovered;
+    pub fn rediscover_workspaces(&mut self) {
+        let discovered = ProjectManifest::discover_all(&self.workspace_roots);
+        tracing::info!("discovered projects: {:?}", discovered);
+        if discovered.is_empty() {
+            tracing::error!("failed to find any projects in {:?}", &self.workspace_roots);
+        }
+        self.discovered_projects_from_filesystem = discovered;
+    }
+
+    pub fn remove_workspace(
+        &mut self,
+        path: &AbsPath,
+    ) {
+        if let Some(position) = self.workspace_roots.iter().position(|it| it == path) {
+            self.workspace_roots.remove(position);
+        }
+    }
+
+    pub fn add_workspaces(
+        &mut self,
+        paths: impl Iterator<Item = AbsPathBuf>,
+    ) {
+        self.workspace_roots.extend(paths);
     }
 
     #[must_use]
@@ -719,6 +756,18 @@ impl HoverActionsConfig {
     pub const fn runnable(&self) -> bool {
         self.run || self.debug || self.update_test
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct FilesConfig {
+    pub watcher: FilesWatcher,
+    pub exclude: Vec<AbsPathBuf>,
+}
+
+#[derive(Debug, Clone)]
+pub enum FilesWatcher {
+    Client,
+    Server,
 }
 
 #[derive(Default, Debug, Clone)]

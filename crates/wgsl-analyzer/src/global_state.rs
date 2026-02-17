@@ -3,9 +3,11 @@ use std::time::Instant;
 use base_db::change::Change;
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use ide::{Analysis, AnalysisHost, Cancellable};
+use load_wesl::SourceRootConfig;
 use lsp_types::Url;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
-use rustc_hash::FxHashMap;
+use project_model::{ManifestPath, ProjectWorkspace};
+use rustc_hash::{FxHashMap, FxHashSet};
 use triomphe::Arc;
 use vfs::{AbsPathBuf, FileId, VfsPath};
 
@@ -17,7 +19,6 @@ use crate::{
     lsp::{from_proto, to_proto},
     main_loop::Task,
     operation_queue::{Cause, OperationQueue},
-    reload::{ProjectWorkspace, SourceRootConfig},
     task_pool::{TaskPool, TaskQueue},
 };
 
@@ -80,12 +81,12 @@ pub(crate) struct GlobalState {
     // stores the result of the last fetch.
     // If the fetch (partially) fails, we do not update the current value.
     pub(crate) workspaces: Arc<[ProjectWorkspace]>,
+    pub(crate) crate_graph_file_dependencies: FxHashSet<vfs::VfsPath>,
+    pub(crate) detached_files: FxHashSet<ManifestPath>,
 
     // op queues
     pub(crate) fetch_workspaces_queue:
         OperationQueue<FetchWorkspaceRequest, FetchWorkspaceResponse>,
-    // pub(crate) fetch_build_data_queue: OperationQueue<(), FetchBuildDataResponse>,
-    // pub(crate) fetch_proc_macros_queue: OperationQueue<Vec<ProcMacroPaths>, bool>,
     pub(crate) prime_caches_queue: OperationQueue,
     pub(crate) discover_workspace_queue: OperationQueue,
 
@@ -202,8 +203,8 @@ impl GlobalState {
             source_root_config: SourceRootConfig::default(),
 
             workspaces: Arc::from(Vec::new()),
-            // crate_graph_file_dependencies: FxHashSet::default(),
-            // detached_files: FxHashSet::default(),
+            crate_graph_file_dependencies: FxHashSet::default(),
+            detached_files: FxHashSet::default(),
             fetch_workspaces_queue: OperationQueue::default(),
             // fetch_build_data_queue: OperationQueue::default(),
             // fetch_proc_macros_queue: OperationQueue::default(),
@@ -225,6 +226,10 @@ impl GlobalState {
             if changed_files.is_empty() {
                 return false;
             }
+
+            // TODO: Port r-a code, especially the code for changing workspaces
+            // which uses self.crate_graph_file_dependencies
+
             for file in changed_files.into_values() {
                 let text = if let vfs::Change::Create(vector, _) | vfs::Change::Modify(vector, _) =
                     file.change

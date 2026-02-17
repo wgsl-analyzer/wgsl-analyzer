@@ -336,6 +336,8 @@ impl SourceRootConfig {
     }
 }
 
+/// TODO: This function is effectively unused. R-a seems to not use it directly for the language server
+/// but rather for stuff like running all tests?
 fn load_package_graph_into_db(
     package_graph: PackageGraph,
     source_root_config: SourceRootConfig,
