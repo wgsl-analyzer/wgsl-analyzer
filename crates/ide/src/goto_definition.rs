@@ -67,6 +67,16 @@ impl TryToNavigationTarget for InFile<Definition> {
                 InFile::new(self.file_id, *local).try_to_navigation_target(database)?
             },
             Definition::ModuleDef(definition) => match definition {
+                hir::ModuleDef::Module(module_id) => {
+                    let declaration = module_id.source(database)?;
+                    let frange = declaration.original_file_range(database);
+
+                    NavigationTarget::from_syntax(
+                        module_id.file_id.original_file(database).file_id,
+                        frange.range,
+                        None,
+                    )
+                },
                 hir::ModuleDef::Function(function) => {
                     let declaration = function.source(database)?;
 

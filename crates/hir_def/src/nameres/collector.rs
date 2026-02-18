@@ -212,10 +212,13 @@ impl DefCollector<'_> {
         }
         // We got to the end of the resolution
         Ok(ResolvePathResult {
-            resolved_def: ModuleDefinitionId::Module(EditionedFileId {
-                file_id,
-                edition: self.def_map.edition(),
-            }),
+            resolved_def: ModuleDefinitionId::Module(
+                EditionedFileId {
+                    file_id,
+                    edition: self.def_map.edition(),
+                }
+                .into(),
+            ),
             segment_index: None,
         })
     }

@@ -71,7 +71,10 @@ fn resolve_path(
     } else if let Some(r#type) = ast::TypeSpecifier::cast(parent) {
         let resolver = semantics.resolver(file_id, r#type.syntax());
 
-        match resolver.resolve(&Path(ModPath::from_src(&r#type.path()?)))? {
+        match resolver.resolve(
+            semantics.database,
+            &Path(ModPath::from_src(&r#type.path()?)),
+        )? {
             ResolveKind::Struct(location) => {
                 let id = semantics.database.intern_struct(location);
                 Some(Definition::ModuleDef(ModuleDef::Struct(Struct { id })))
@@ -83,7 +86,8 @@ fn resolve_path(
                 })))
             },
             // Type specifiers always represent types
-            ResolveKind::Function(_)
+            ResolveKind::Module(_)
+            | ResolveKind::Function(_)
             | ResolveKind::GlobalConstant(_)
             | ResolveKind::GlobalVariable(_)
             | ResolveKind::Override(_)

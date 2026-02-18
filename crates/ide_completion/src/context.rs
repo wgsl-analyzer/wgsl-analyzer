@@ -47,9 +47,8 @@ impl<'database> CompletionContext<'database> {
         let completion_location =
             determine_location(&semantics, file.syntax(), position.offset, &token);
 
-        let module_info = database.item_tree(file_id);
         let def_map = database.file_def_map_query(file_id.original_file(database).file_id);
-        let mut resolver = Resolver::default().push_module_scope(file_id, module_info, def_map);
+        let mut resolver = Resolver::default().push_module_scope(file_id, def_map);
 
         let nearest_scope = token
             .siblings_with_tokens(Direction::Prev) // spellchecker:disable-line

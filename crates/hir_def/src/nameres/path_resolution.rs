@@ -24,7 +24,7 @@ impl DefMap {
     ) -> Option<ResolvePathResult> {
         file_id = match path.kind() {
             PathKind::Plain => {
-                // TODO:
+                // TODO: resolve the library
                 return None;
             },
             PathKind::Super(levels) => {
@@ -55,10 +55,13 @@ impl DefMap {
         }
         // We got to the end of the resolution
         Some(ResolvePathResult {
-            resolved_def: ModuleDefinitionId::Module(EditionedFileId {
-                file_id,
-                edition: self.edition(),
-            }),
+            resolved_def: ModuleDefinitionId::Module(
+                EditionedFileId {
+                    file_id,
+                    edition: self.edition(),
+                }
+                .into(),
+            ),
             segment_index: None,
         })
     }

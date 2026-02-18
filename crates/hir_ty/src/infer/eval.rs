@@ -126,7 +126,7 @@ impl TypeLoweringContext<'_> {
         match &self.store[template_argument] {
             Expression::IdentExpression(ident_expression) => {
                 let resolved_type = self.lower(
-                    TypeContainer::Expression(template_argument),
+                    template_argument,
                     &ident_expression.path,
                     &ident_expression.template_parameters,
                 );

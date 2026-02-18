@@ -1,6 +1,8 @@
 use hir::HirDatabase as _;
 use hir_def::{
-    database::{DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location},
+    database::{
+        DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, ModuleDefinitionId,
+    },
     item_tree::{ModuleItem, Name},
     resolver::ScopeDef,
 };
@@ -26,61 +28,66 @@ pub(crate) fn complete_names_in_scope(
         _ => return None,
     }
 
-    context.resolver.process_all_names(|name, item| {
-        if name == Name::missing() {
-            return;
-        }
-        let kind = match item {
-            ScopeDef::ModuleItem(_, ModuleItem::Function(_)) => CompletionItemKind::Function,
-            ScopeDef::ModuleItem(_, ModuleItem::GlobalVariable(_)) | ScopeDef::Local(_) => {
-                CompletionItemKind::Variable
-            },
-            ScopeDef::ModuleItem(_, ModuleItem::GlobalConstant(_) | ModuleItem::Override(_)) => {
-                CompletionItemKind::Constant
-            },
-            ScopeDef::ModuleItem(_, ModuleItem::Struct(_)) => CompletionItemKind::Struct,
-            ScopeDef::ModuleItem(_, ModuleItem::TypeAlias(_)) => CompletionItemKind::TypeAlias,
-            ScopeDef::ModuleItem(_, ModuleItem::ImportStatement(_)) => {
-                // TODO: Resolve the import statement, and then set the correct CompletionItemKind from there
-                // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
-                CompletionItemKind::Module
-            },
-            ScopeDef::ModuleItem(_, ModuleItem::GlobalAssertStatement(_)) => {
+    context
+        .resolver
+        .process_all_names(context.database, |name, item| {
+            if name == &Name::missing() {
                 return;
-            },
-        };
+            }
+            let kind = match item {
+                ScopeDef::ModuleDefinition(ModuleDefinitionId::Module(_)) => {
+                    CompletionItemKind::Module
+                },
+                ScopeDef::ModuleDefinition(ModuleDefinitionId::Function(_)) => {
+                    CompletionItemKind::Function
+                },
+                ScopeDef::ModuleDefinition(ModuleDefinitionId::GlobalVariable(_))
+                | ScopeDef::Local(_) => CompletionItemKind::Variable,
+                ScopeDef::ModuleDefinition(
+                    ModuleDefinitionId::GlobalConstant(_) | ModuleDefinitionId::Override(_),
+                ) => CompletionItemKind::Constant,
+                ScopeDef::ModuleDefinition(ModuleDefinitionId::Struct(_)) => {
+                    CompletionItemKind::Struct
+                },
+                ScopeDef::ModuleDefinition(ModuleDefinitionId::TypeAlias(_)) => {
+                    CompletionItemKind::TypeAlias
+                },
+                ScopeDef::ModuleDefinition(ModuleDefinitionId::GlobalAssertStatement(_)) => {
+                    return;
+                },
+            };
 
-        let detail = match item {
-            ScopeDef::Local(local) => context
-                .container
-                .and_then(hir::ChildContainer::as_def_with_body_id)
-                .map(|definition| {
-                    let inference = context.database.infer(definition);
-                    inference[local]
-                })
-                .map(|r#type| pretty_type(context.database, r#type)),
-            ScopeDef::ModuleItem(file_id, item) => {
-                let detail = render_detail(context, file_id, item);
-                Some(detail)
-            },
-        };
+            let detail = match item {
+                ScopeDef::Local(local) => context
+                    .container
+                    .and_then(hir::ChildContainer::as_def_with_body_id)
+                    .map(|definition| {
+                        let inference = context.database.infer(definition);
+                        inference[local]
+                    })
+                    .map(|r#type| pretty_type(context.database, r#type)),
+                ScopeDef::ModuleDefinition(item) => {
+                    let detail = render_detail(context, name, item);
+                    Some(detail)
+                },
+            };
 
-        let mut completion = CompletionItem::new(kind, context.source_range(), name.as_str());
-        completion.set_relevance(CompletionRelevance {
-            exact_name_match: false,
-            type_match: None,
-            is_local: matches!(item, ScopeDef::Local(_)),
-            is_name_already_imported: false,
-            requires_import: false,
-            is_private_editable: false,
-            postfix_match: None,
-            function: None,
-            is_skipping_completion: false,
-            is_builtin: false,
+            let mut completion = CompletionItem::new(kind, context.source_range(), name.as_str());
+            completion.set_relevance(CompletionRelevance {
+                exact_name_match: false,
+                type_match: None,
+                is_local: matches!(item, ScopeDef::Local(_)),
+                is_name_already_imported: false,
+                requires_import: false,
+                is_private_editable: false,
+                postfix_match: None,
+                function: None,
+                is_skipping_completion: false,
+                is_builtin: false,
+            });
+            completion.set_detail(detail);
+            completion.add_to(accumulator, context.database);
         });
-        completion.set_detail(detail);
-        completion.add_to(accumulator, context.database);
-    });
     accumulator.add_all(Builtin::ALL_BUILTINS.iter().map(|name| {
         let mut builder =
             CompletionItem::new(CompletionItemKind::Function, context.source_range(), *name);
@@ -99,91 +106,72 @@ pub(crate) fn complete_names_in_scope(
 
 fn render_detail(
     context: &CompletionContext<'_>,
-    file_id: hir_def::HirFileId,
-    item: ModuleItem,
+    name: &Name,
+    item: ModuleDefinitionId,
 ) -> String {
+    let database = context.database;
     match item {
-        ModuleItem::Function(id) => {
-            let function_id = context.database.intern_function(Location::new(file_id, id));
-            let function_type = context.database.function_type(function_id);
+        ModuleDefinitionId::Module(_id) => {
+            format!("module {}", name.as_str())
+        },
+        ModuleDefinitionId::Function(id) => {
+            let function_type = database.function_type(id);
 
             pretty_fn_with_verbosity(
-                context.database,
-                &function_type.lookup(context.database),
+                database,
+                &function_type.lookup(database),
                 TypeVerbosity::Compact,
             )
         },
-        ModuleItem::Struct(id) => {
-            let module_info = context.database.item_tree(file_id);
-            format!("struct {}", module_info.get(id).name.as_str())
+        ModuleDefinitionId::Struct(_) => {
+            format!("struct {}", name.as_str())
         },
-        ModuleItem::GlobalVariable(id) => {
-            let variable_id = context
-                .database
-                .intern_global_variable(Location::new(file_id, id));
-            let variable_type = context
-                .database
-                .infer(DefinitionWithBodyId::GlobalVariable(variable_id));
+        ModuleDefinitionId::GlobalVariable(id) => {
+            let variable_type = database.infer(DefinitionWithBodyId::GlobalVariable(id));
 
-            let module_info = context.database.item_tree(file_id);
             format!(
                 "var {}: {}",
-                module_info.get(id).name.as_str(),
+                name.as_str(),
                 pretty_type_with_verbosity(
-                    context.database,
+                    database,
                     variable_type.return_type(),
                     TypeVerbosity::Compact
                 )
             )
         },
-        ModuleItem::GlobalConstant(id) => {
-            let constant_id = context
-                .database
-                .intern_global_constant(Location::new(file_id, id));
-            let constant_type = context
-                .database
-                .infer(DefinitionWithBodyId::GlobalConstant(constant_id));
+        ModuleDefinitionId::GlobalConstant(id) => {
+            let constant_type = database.infer(DefinitionWithBodyId::GlobalConstant(id));
 
-            let module_info = context.database.item_tree(file_id);
             format!(
                 "const {}: {}",
-                module_info.get(id).name.as_str(),
+                name.as_str(),
                 pretty_type_with_verbosity(
-                    context.database,
+                    database,
                     constant_type.return_type(),
                     TypeVerbosity::Compact
                 )
             )
         },
-        ModuleItem::Override(id) => {
-            let override_id = context.database.intern_override(Location::new(file_id, id));
-            let override_type = context
-                .database
-                .infer(DefinitionWithBodyId::Override(override_id));
+        ModuleDefinitionId::Override(id) => {
+            let override_type = database.infer(DefinitionWithBodyId::Override(id));
 
-            let module_info = context.database.item_tree(file_id);
             format!(
                 "override {}: {}",
-                module_info.get(id).name.as_str(),
+                name.as_str(),
                 pretty_type_with_verbosity(
-                    context.database,
+                    database,
                     override_type.return_type(),
                     TypeVerbosity::Compact
                 )
             )
         },
-        ModuleItem::TypeAlias(id) => {
-            let module_info = context.database.item_tree(file_id);
-            format!("alias {}", module_info.get(id).name.as_str())
+        ModuleDefinitionId::TypeAlias(_) => {
+            format!("alias {}", name.as_str())
         },
-        ModuleItem::GlobalAssertStatement(_) => {
+        ModuleDefinitionId::GlobalAssertStatement(_) => {
             // const_asserts don't have a name or binding, and will probably never be autocompleted - or will their
             // details have to be rendered. We implement this anyways to achieve consistency.
             String::from("const_assert ...")
-        },
-        ModuleItem::ImportStatement(_) => {
-            // TODO: Support import statements somehow https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
-            String::new()
         },
     }
 }

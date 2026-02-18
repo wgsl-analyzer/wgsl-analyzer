@@ -87,11 +87,11 @@ pub trait SourceDatabase: FileLoader {
     #[salsa::input]
     fn package_graph(&self) -> Arc<PackageGraph>;
 
-    #[salsa::invoke(source_root_packages_query)]
-    fn source_root_packages(
+    #[salsa::invoke(source_root_package_query)]
+    fn source_root_package(
         &self,
         key: FileId,
-    ) -> Arc<[PackageId]>;
+    ) -> Option<PackageId>;
 
     fn line_index(
         &self,
@@ -115,19 +115,17 @@ fn parse_query(
     syntax::parse(&source, file_id.edition)
 }
 
-fn source_root_packages_query(
+fn source_root_package_query(
     database: &dyn SourceDatabase,
     file_id: FileId,
-) -> Arc<[PackageId]> {
+) -> Option<PackageId> {
     let source_root = database.file_source_root(file_id);
     let package_graph = database.package_graph();
-    package_graph
-        .iter()
-        .filter(|&package_id| {
-            let root_file = database.file_source_root(package_graph[package_id].root_file_id);
-            source_root == root_file
-        })
-        .collect()
+    // TODO: Document the "source root always corresponds only one package id" and "each file is in exactly one source root"
+    package_graph.iter().find(|&package_id| {
+        let root_file = database.file_source_root(package_graph[package_id].root_file_id);
+        source_root == root_file
+    })
 }
 
 /// Silly workaround for cyclic deps between the traits.

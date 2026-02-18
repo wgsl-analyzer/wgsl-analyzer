@@ -7,12 +7,15 @@ use std::fmt::Write as _;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct ItemScope {
-    /// Items visible in this scope. Includes both declarations and imports.
+    /// Items visible in this scope. Includes both declarations and imported items.
     items: FxHashMap<Name, ModuleDefinitionId>,
     declarations: Vec<ModuleDefinitionId>,
 }
 
 impl ItemScope {
+    pub fn items(&self) -> impl Iterator<Item = (&Name, &ModuleDefinitionId)> {
+        self.items.iter()
+    }
     pub(crate) fn declare(
         &mut self,
         definition: ModuleDefinitionId,

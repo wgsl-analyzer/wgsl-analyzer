@@ -418,9 +418,8 @@ impl DefinitionWithBodyId {
         database: &dyn DefDatabase,
     ) -> Resolver {
         let file_id = self.file_id(database);
-        let module_info = database.item_tree(file_id);
         let def_map = database.file_def_map_query(file_id.original_file(database).file_id);
-        Resolver::default().push_module_scope(file_id, module_info, def_map)
+        Resolver::default().push_module_scope(file_id, def_map)
     }
 }
 
@@ -430,7 +429,7 @@ impl DefinitionWithBodyId {
 pub enum ModuleDefinitionId {
     /// Modules can be *visible* inside of a module,
     /// most notably when using a `import foo::somemodule` statement.
-    Module(EditionedFileId),
+    Module(HirFileId),
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),
     GlobalConstant(GlobalConstantId),
@@ -446,7 +445,7 @@ impl ModuleDefinitionId {
         database: &dyn DefDatabase,
     ) -> HirFileId {
         match self {
-            Self::Module(id) => HirFileId::from(id),
+            Self::Module(id) => id,
             Self::Function(id) => id.lookup(database).file_id,
             Self::GlobalVariable(id) => id.lookup(database).file_id,
             Self::GlobalConstant(id) => id.lookup(database).file_id,
@@ -462,9 +461,8 @@ impl ModuleDefinitionId {
         database: &dyn DefDatabase,
     ) -> Resolver {
         let file_id = self.file_id(database);
-        let module_info = database.item_tree(file_id);
         let def_map = database.file_def_map_query(file_id.original_file(database).file_id);
-        Resolver::default().push_module_scope(file_id, module_info, def_map)
+        Resolver::default().push_module_scope(file_id, def_map)
     }
 }
 

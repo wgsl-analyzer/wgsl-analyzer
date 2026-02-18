@@ -20,9 +20,11 @@ pub struct ModPath {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum PathKind {
+    /// Either a library when used like `import foo::bar` or a plain variable name when used inline `foo`.
     Plain,
     /// `self::` is `Super(0)`.
     Super(u8),
+    /// `package::`
     Package,
 }
 
@@ -137,6 +139,15 @@ impl ModPath {
             [name] => Some(name),
             _ => None,
         }
+    }
+
+    /// Return the first part of the name, if it is a plain name.
+    #[must_use]
+    pub fn plain_name(&self) -> Option<&Name> {
+        if self.kind != PathKind::Plain {
+            return None;
+        }
+        self.segments.first()
     }
 }
 

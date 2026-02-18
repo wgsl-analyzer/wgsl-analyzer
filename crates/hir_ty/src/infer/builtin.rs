@@ -95,34 +95,30 @@ impl TypeLoweringContext<'_> {
         )
     }
 
-    pub fn lower_predeclared(
+    pub fn try_lower_predeclared(
         &mut self,
         type_container: TypeContainer,
         path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
-        // Lower predeclared types
-        if let Some(name) = path.mod_path().as_ident() {
-            if Self::is_predeclared_type(name) {
-                self.lower_predeclared_type(type_container, name, template_parameters)
-            } else if crate::builtins::Builtin::ALL_BUILTINS.contains(&name.as_str()) {
-                Ok(Lowered::BuiltinFunction)
-            } else if let Ok(enum_value) = Enumerant::from_str(name.as_str()) {
-                self.expect_no_template(template_parameters);
-                Ok(Lowered::Enumerant(enum_value))
-            } else {
-                self.diagnostics.push(TypeLoweringError {
-                    container: type_container,
-                    kind: TypeLoweringErrorKind::UnresolvedName(name.clone()),
-                });
-                Ok(Lowered::Type(TypeKind::Error.intern(self.database)))
-            }
-        } else {
-            self.diagnostics.push(TypeLoweringError {
+        let Some(name) = path.mod_path().as_ident() else {
+            return Err(TypeLoweringError {
                 container: type_container,
                 kind: TypeLoweringErrorKind::UnresolvedPath(path.clone()),
             });
-            Ok(Lowered::Type(TypeKind::Error.intern(self.database)))
+        };
+        if Self::is_predeclared_type(name) {
+            self.lower_predeclared_type(type_container, name, template_parameters)
+        } else if crate::builtins::Builtin::ALL_BUILTINS.contains(&name.as_str()) {
+            Ok(Lowered::BuiltinFunction)
+        } else if let Ok(enum_value) = Enumerant::from_str(name.as_str()) {
+            self.expect_no_template(template_parameters);
+            Ok(Lowered::Enumerant(enum_value))
+        } else {
+            Err(TypeLoweringError {
+                container: type_container,
+                kind: TypeLoweringErrorKind::UnresolvedName(name.clone()),
+            })
         }
     }
 
