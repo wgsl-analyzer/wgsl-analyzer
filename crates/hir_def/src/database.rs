@@ -417,9 +417,7 @@ impl DefinitionWithBodyId {
         self,
         database: &dyn DefDatabase,
     ) -> Resolver {
-        let file_id = self.file_id(database);
-        let def_map = database.file_def_map_query(file_id.original_file(database).file_id);
-        Resolver::default().push_module_scope(file_id, def_map)
+        self.file_id(database).resolver(database)
     }
 }
 
@@ -454,15 +452,6 @@ impl ModuleDefinitionId {
             Self::Struct(id) => id.lookup(database).file_id,
             Self::TypeAlias(id) => id.lookup(database).file_id,
         }
-    }
-
-    pub fn resolver(
-        self,
-        database: &dyn DefDatabase,
-    ) -> Resolver {
-        let file_id = self.file_id(database);
-        let def_map = database.file_def_map_query(file_id.original_file(database).file_id);
-        Resolver::default().push_module_scope(file_id, def_map)
     }
 }
 

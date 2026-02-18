@@ -128,6 +128,7 @@ impl ModPath {
         self.kind == PathKind::SELF && self.segments.is_empty()
     }
 
+    // TODO: Remove this function
     /// If this path is a single identifier, like `foo`, return its name.
     #[must_use]
     pub fn as_ident(&self) -> Option<&Name> {

@@ -150,10 +150,7 @@ impl<'database> Semantics<'database> {
         if let Some(definition) = self.find_container(file_id, source) {
             definition.resolver(self.database)
         } else {
-            let def_map = self
-                .database
-                .file_def_map_query(file_id.original_file(self.database).file_id);
-            Resolver::default().push_module_scope(file_id, def_map)
+            file_id.resolver(self.database)
         }
     }
 
@@ -426,11 +423,7 @@ impl ChildContainer {
             | Self::OverrideId(_)
             | Self::StructId(_)
             | Self::GlobalAssertStatementId(_)
-            | Self::TypeAliasId(_) => {
-                let file_id = self.file_id(database);
-                let def_map = database.file_def_map_query(file_id.original_file(database).file_id);
-                Resolver::default().push_module_scope(file_id, def_map)
-            },
+            | Self::TypeAliasId(_) => self.file_id(database).resolver(database),
         }
     }
 

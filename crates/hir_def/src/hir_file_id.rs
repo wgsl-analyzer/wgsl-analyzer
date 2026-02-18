@@ -1,7 +1,7 @@
 use base_db::{EditionedFileId, FileId};
 use vfs::AnchoredPath;
 
-use crate::database::DefDatabase;
+use crate::{database::DefDatabase, resolver::Resolver};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct HirFileId(pub(crate) HirFileIdRepr);
@@ -28,6 +28,19 @@ impl HirFileId {
     ) -> EditionedFileId {
         match self.0 {
             HirFileIdRepr::FileId(id) => id,
+        }
+    }
+
+    pub fn resolver(
+        self,
+        database: &dyn DefDatabase,
+    ) -> Resolver {
+        let def_map = database.file_def_map_query(self.original_file(database).file_id);
+        if let Some(def_map) = def_map {
+            Resolver::new(self, def_map)
+        } else {
+            tracing::warn!("This is bad");
+            Resolver::unsafe_new_without_module()
         }
     }
 }

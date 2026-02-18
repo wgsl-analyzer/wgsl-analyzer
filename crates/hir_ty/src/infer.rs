@@ -119,7 +119,7 @@ pub fn infer_signature_query(
     database: &dyn HirDatabase,
     definition: ModuleDefinitionId,
 ) -> Option<Arc<InferenceResult>> {
-    let resolver = definition.resolver(database);
+    let resolver = definition.file_id(database).resolver(database);
     let context = InferenceContext::new(database, definition, resolver);
     // TODO: Match the definition and deal with the generic types in the signature.
     // Those can contain expressions, which need to land in the inference results.

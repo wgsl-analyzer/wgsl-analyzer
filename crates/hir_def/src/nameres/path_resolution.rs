@@ -11,7 +11,7 @@ use crate::{
 pub(crate) struct ResolvePathResult {
     pub resolved_def: ModuleDefinitionId,
     /// The index of the last resolved segment, or `None` if the full path has been resolved.
-    // TODO: I don't think that I need this
+    /// Currently unused, might be used for `my_enum::foo` accesses
     pub segment_index: Option<usize>,
 }
 
@@ -24,8 +24,21 @@ impl DefMap {
     ) -> Option<ResolvePathResult> {
         file_id = match path.kind() {
             PathKind::Plain => {
-                // TODO: resolve the library
-                return None;
+                let first_segment = path.segments().first()?;
+                // It can either be a local name or refer to a library
+                if let Some(resolved_def) = self.modules[file_id].scope.get(first_segment) {
+                    if path.segments().len() > 1 {
+                        // Not at the last segment
+                        return None;
+                    }
+                    return Some(ResolvePathResult {
+                        resolved_def,
+                        segment_index: Some(0),
+                    });
+                } else {
+                    // TODO: resolve the library
+                    return None;
+                }
             },
             PathKind::Super(levels) => {
                 // Parent modules are guaranteed to exist and be loaded all the way until the root.
@@ -66,3 +79,4 @@ impl DefMap {
         })
     }
 }
+

@@ -63,15 +63,25 @@ pub struct Resolver {
     scopes: Vec<Scope>,
 }
 
-impl Default for Resolver {
-    fn default() -> Self {
+impl Resolver {
+    pub fn new(
+        file_id: HirFileId,
+        def_map: Arc<DefMap>,
+    ) -> Self {
+        Self {
+            scopes: vec![
+                Scope::Builtin,
+                Scope::Module(ModuleScope { def_map, file_id }),
+            ],
+        }
+    }
+
+    pub fn unsafe_new_without_module() -> Self {
         Self {
             scopes: vec![Scope::Builtin],
         }
     }
-}
 
-impl Resolver {
     #[must_use]
     pub fn push_scope(
         mut self,
@@ -206,3 +216,4 @@ impl Resolver {
         })
     }
 }
+

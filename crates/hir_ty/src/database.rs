@@ -90,10 +90,7 @@ fn field_types(
     r#struct: StructId,
 ) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<InferenceDiagnostic>)> {
     let data = database.struct_data(r#struct).0;
-
-    let file_id = r#struct.lookup(database).file_id;
-    let def_map = database.file_def_map_query(file_id.original_file(database).file_id);
-    let resolver = Resolver::default().push_module_scope(file_id, def_map);
+    let resolver = r#struct.lookup(database).file_id.resolver(database);
 
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
 
@@ -122,10 +119,7 @@ fn type_alias_type(
     type_alias: TypeAliasId,
 ) -> Arc<(Type, Vec<InferenceDiagnostic>)> {
     let data = database.type_alias_data(type_alias).0;
-
-    let file_id = type_alias.lookup(database).file_id;
-    let def_map = database.file_def_map_query(file_id.original_file(database).file_id);
-    let resolver = Resolver::default().push_module_scope(file_id, def_map);
+    let resolver = type_alias.lookup(database).file_id.resolver(database);
 
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
     let result = type_context.lower_type(data.r#type);
@@ -146,10 +140,7 @@ fn function_type(
     function: FunctionId,
 ) -> ResolvedFunctionId {
     let data = database.function_data(function).0;
-
-    let file_id = function.lookup(database).file_id;
-    let def_map = database.file_def_map_query(file_id.original_file(database).file_id);
-    let resolver = Resolver::default().push_module_scope(file_id, def_map);
+    let resolver = function.lookup(database).file_id.resolver(database);
 
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
 

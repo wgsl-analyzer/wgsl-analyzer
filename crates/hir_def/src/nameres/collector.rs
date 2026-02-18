@@ -88,7 +88,6 @@ impl DefCollector<'_> {
     }
 
     fn collect(&mut self) {
-        // To read a file, look in mod_resolution.rs (fn resolve_declaration)
         while let Some((location, unresolved_import)) = self.unresolved_imports.pop() {
             self.database.unwind_if_cancelled();
 
@@ -144,9 +143,25 @@ impl DefCollector<'_> {
     ) -> Result<ResolvePathResult, ()> {
         file_id = match import.path.kind() {
             PathKind::Plain => {
-                // TODO:
-                tracing::warn!("importing libraries is not yet implemented");
-                return Err(());
+                let first_segment = import.path.segments().first().ok_or(())?;
+                // Local names can shadow an import
+                if let Some(resolved_def) = self.def_map.modules[file_id].scope.get(first_segment) {
+                    if import.path.segments().len() > 1 {
+                        // Not at the last segment
+                        self.def_map
+                            .diagnostics
+                            .push(DefDiagnostic::unresolved_import(file_id, location));
+                        return Err(());
+                    }
+                    return Ok(ResolvePathResult {
+                        resolved_def,
+                        segment_index: Some(0),
+                    });
+                } else {
+                    // TODO:
+                    tracing::warn!("importing libraries is not yet implemented");
+                    return Err(());
+                }
             },
             PathKind::Super(levels) => {
                 // Parent modules are guaranteed to exist and be loaded all the way until the root.
@@ -348,3 +363,4 @@ impl ModCollector<'_, '_> {
         }
     }
 }
+
