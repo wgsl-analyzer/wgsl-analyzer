@@ -1692,6 +1692,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "test-fixture"
+version = "0.0.0"
+dependencies = [
+ "base-db",
+ "edition",
+ "indexmap 2.13.0",
+ "rustc-hash 2.1.1",
+ "stdx 0.0.0",
+ "test-utils",
+ "triomphe",
+]
+
+[[package]]
 name = "test-utils"
 version = "0.0.0"
 dependencies = [
