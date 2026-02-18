@@ -46,7 +46,7 @@ cargo xtask install
 
 The following instructions describe the manual steps:
 
-The lsp server can be built using `cargo build --release -p wgsl-analyzer`.
+The LSP server can be built using `cargo build --release -p wgsl-analyzer`.
 
 The VS Code extension can either be built as a platform-specific extension which bundles the language server binary, or as a platform-independent one.
 
@@ -83,6 +83,6 @@ The output is a file such as `editors/code/wgsl-analyzer-linux-x64.vsix`
 
 **3. Install the extension:**
 
-Open the vsix with VS Code, for example, by running the VS Code command (<kbd>F1</kbd>):
+Open the VSIX with VS Code, for example, by running the VS Code command (<kbd>F1</kbd>):
 
 `> Extensions: Install from VSIX...`
