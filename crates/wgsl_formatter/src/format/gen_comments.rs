@@ -2,7 +2,7 @@ use parser::{SyntaxKind, SyntaxToken};
 
 use crate::format::print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest};
 
-pub fn gen_comments(comments: Vec<SyntaxToken>) -> PrintItemBuffer {
+pub fn gen_comments(comments: &Vec<SyntaxToken>) -> PrintItemBuffer {
     let mut formatted = PrintItemBuffer::new();
     for item in comments {
         formatted.extend(gen_comment(&item));

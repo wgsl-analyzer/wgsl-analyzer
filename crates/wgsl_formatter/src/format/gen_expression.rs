@@ -75,7 +75,7 @@ pub fn gen_ident_expression(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.push_string(item_name_reference.text().to_string());
-    formatted.extend(gen_comments(item_comments_after_name_reference));
+    formatted.extend(gen_comments(&item_comments_after_name_reference));
     if let Some(item_template) = item_template {
         formatted.extend(gen_template_list(&item_template)?);
     }
@@ -112,9 +112,9 @@ pub fn gen_parenthesis_expression(
             ..Default::default()
         });
     }
-    formatted.extend(gen_comments(item_comment_after_left_paren));
+    formatted.extend(gen_comments(&item_comment_after_left_paren));
     formatted.extend(gen_expression(&item_content, true)?);
-    formatted.extend(gen_comments(item_comment_after_content));
+    formatted.extend(gen_comments(&item_comment_after_content));
 
     if remove_parentheses {
         formatted.request(SeparationRequest {
@@ -150,14 +150,14 @@ pub fn gen_infix_expression(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.extend(gen_expression(&item_left, false)?);
-    formatted.extend(gen_comments(item_comment_after_left));
+    formatted.extend(gen_comments(&item_comment_after_left));
     formatted.expect_single_space();
     formatted.request_line_break(SeparationPolicy::Allowed);
     formatted.push_string(item_operator.to_string()); //TODO I don't like to-stringing the operator here, would be better to special case on it... we would need a parse_token(any_of(...)) kind of thing.
     formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comment_after_operator));
+    formatted.extend(gen_comments(&item_comment_after_operator));
     formatted.extend(gen_expression(&item_right, false)?);
-    formatted.extend(gen_comments(item_comment_after_right));
+    formatted.extend(gen_comments(&item_comment_after_right));
     Ok(formatted)
 }
 
@@ -176,9 +176,9 @@ pub fn gen_prefix_expression(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.push_string(item_operator.to_string()); //TODO I don't like to-stringing the operator here, would be better to match on it... we would need a parse_token(any_of(...)) kind of thing.
-    formatted.extend(gen_comments(item_comment_after_operator));
+    formatted.extend(gen_comments(&item_comment_after_operator));
     formatted.extend(gen_expression(&item_expr, false)?);
-    formatted.extend(gen_comments(item_comment_after_expr));
+    formatted.extend(gen_comments(&item_comment_after_expr));
     Ok(formatted)
 }
 
@@ -197,9 +197,9 @@ pub fn gen_field_expression(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.extend(gen_expression(&item_struct_expr, false)?);
-    formatted.extend(gen_comments(comments_after_ident_expr));
+    formatted.extend(gen_comments(&comments_after_ident_expr));
     formatted.push_sc(sc!("."));
-    formatted.extend(gen_comments(comments_after_period));
+    formatted.extend(gen_comments(&comments_after_period));
     formatted.push_string(item_target_ident.text().to_owned());
     Ok(formatted)
 }
@@ -222,11 +222,11 @@ pub fn gen_index_expression(
     let mut formatted = PrintItemBuffer::new();
 
     formatted.extend(gen_expression(&item_array_expr, false)?);
-    formatted.extend(gen_comments(comments_after_ident_expr));
+    formatted.extend(gen_comments(&comments_after_ident_expr));
     // formatted.push_sc(sc!("["));
-    // formatted.extend(gen_comments(comments_after_open_bracket));
+    // formatted.extend(gen_comments(&comments_after_open_bracket));
     // formatted.extend(gen_literal_expression(&item_index_literal)?);
-    // formatted.extend(gen_comments(comments_after_index_expr));
+    // formatted.extend(gen_comments(&comments_after_index_expr));
     // formatted.push_sc(sc!("]"));
 
     // TODO Abstract this "fully multiline if at all multiline" functionality from here, index exprs, fn declarations and wherever it also exists
@@ -260,11 +260,11 @@ pub fn gen_index_expression(
     // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
     formatted.request(SeparationRequest::discouraged());
 
-    formatted.extend(gen_comments(comments_after_open_bracket));
+    formatted.extend(gen_comments(&comments_after_open_bracket));
 
     formatted.extend(gen_literal_expression(&item_index_literal)?);
 
-    formatted.extend(gen_comments(comments_after_index_expr));
+    formatted.extend(gen_comments(&comments_after_index_expr));
 
     formatted.request(SeparationRequest {
         line_break: SeparationPolicy::ExpectedIf {

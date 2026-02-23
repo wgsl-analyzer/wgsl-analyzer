@@ -31,7 +31,7 @@ pub fn gen_function_call(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.extend(gen_ident_expression(&item_identifier)?);
-    formatted.extend(gen_comments(item_comments_after_identifier));
+    formatted.extend(gen_comments(&item_comments_after_identifier));
     formatted.extend(gen_function_call_arguments(&item_arguments)?);
     Ok(formatted)
 }
@@ -97,7 +97,7 @@ pub fn gen_function_call_arguments(
     // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
     formatted.request(SeparationRequest::discouraged());
 
-    formatted.extend(gen_comments(item_comments_after_open_paren));
+    formatted.extend(gen_comments(&item_comments_after_open_paren));
 
     for (pos, (item_expression, item_comments_after_param, item_comments_after_comma)) in
         item_parameters.into_iter().with_position()
@@ -118,8 +118,8 @@ pub fn gen_function_call_arguments(
         }
 
         //The comma should be immediately after the parameter, we move the comment back
-        formatted.extend(gen_comments(item_comments_after_param));
-        formatted.extend(gen_comments(item_comments_after_comma));
+        formatted.extend(gen_comments(&item_comments_after_param));
+        formatted.extend(gen_comments(&item_comments_after_comma));
 
         formatted.request(SeparationRequest {
             line_break: SeparationPolicy::ExpectedIf {

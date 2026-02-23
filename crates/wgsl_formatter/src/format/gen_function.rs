@@ -43,22 +43,22 @@ pub fn gen_function_declaration(
     // Fn
     formatted.push_sc(sc!("fn"));
     formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_fn));
+    formatted.extend(gen_comments(&item_comments_after_fn));
 
     // Name
     formatted.expect_single_space();
     formatted.push_string(item_name.text().to_string());
-    formatted.extend(gen_comments(item_comments_after_name));
+    formatted.extend(gen_comments(&item_comments_after_name));
 
     // Params
     formatted.extend(gen_fn_parameters(&item_params)?);
-    formatted.extend(gen_comments(item_comments_after_params));
+    formatted.extend(gen_comments(&item_comments_after_params));
 
     // Return
     if let Some(item_return) = item_return {
         formatted.extend(gen_fn_return_type(&item_return)?);
     }
-    formatted.extend(gen_comments(item_comments_after_return));
+    formatted.extend(gen_comments(&item_comments_after_return));
 
     // Body
     formatted.expect_single_space();
@@ -136,7 +136,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
     // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
     formatted.request(SeparationRequest::discouraged());
 
-    formatted.extend(gen_comments(item_comments_start));
+    formatted.extend(gen_comments(&item_comments_start));
 
     for (pos, (item_parameter, item_comments_after_param, item_comments_after_comma)) in
         item_parameters.into_iter().with_position()
@@ -157,8 +157,8 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
         }
 
         //The comma should be immediately after the parameter, we move the comment back
-        formatted.extend(gen_comments(item_comments_after_param));
-        formatted.extend(gen_comments(item_comments_after_comma));
+        formatted.extend(gen_comments(&item_comments_after_param));
+        formatted.extend(gen_comments(&item_comments_after_comma));
 
         formatted.request(SeparationRequest {
             line_break: SeparationPolicy::ExpectedIf {
@@ -172,7 +172,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
             ..Default::default()
         });
     }
-    formatted.extend(gen_comments(item_comments_after_params));
+    formatted.extend(gen_comments(&item_comments_after_params));
 
     // No trailing spaces
     formatted.request(SeparationRequest {
@@ -217,8 +217,8 @@ pub fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintIt
     formatted.push_sc(sc!(":"));
     formatted.expect_single_space();
     //The colon should immediately follow the name, we intentionally move the comment
-    formatted.extend(gen_comments(item_comments_after_name));
-    formatted.extend(gen_comments(item_comments_after_colon));
+    formatted.extend(gen_comments(&item_comments_after_name));
+    formatted.extend(gen_comments(&item_comments_after_colon));
     formatted.extend(gen_type_specifier(&item_type_specifier)?);
     Ok(formatted)
 }
@@ -238,7 +238,7 @@ pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<Prin
     formatted.expect_single_space();
     formatted.push_sc(sc!("->"));
     formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_arrow));
+    formatted.extend(gen_comments(&item_comments_after_arrow));
     formatted.extend(gen_type_specifier(&item_type_specifier)?);
     Ok(formatted)
 }
