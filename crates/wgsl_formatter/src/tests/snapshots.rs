@@ -3,6 +3,9 @@ use expect_test::expect;
 use crate::test_util::{check, check_tabs};
 
 //TODO Remove this comment == MODULES THAT FULLY PASS ==
+mod attribute_ordering;
+mod attribute_positions;
+mod attributes;
 mod comments;
 mod expr_spacing;
 mod exprs_field;
