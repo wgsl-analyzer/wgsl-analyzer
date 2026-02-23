@@ -37,7 +37,7 @@ pub fn gen_type_specifier(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.push_string(item_ident.text().to_string());
-    formatted.extend(gen_comments(comments_after_ident));
+    formatted.extend(gen_comments(&comments_after_ident));
     if let Some(template) = item_template {
         formatted.extend(gen_template_list(&template)?);
     }
@@ -101,7 +101,7 @@ pub fn gen_template_list(
     // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
     formatted.request(SeparationRequest::discouraged());
 
-    formatted.extend(gen_comments(item_comments_after_start));
+    formatted.extend(gen_comments(&item_comments_after_start));
 
     for (pos, (item_expression, item_comments_after_arg, item_comments_after_comma)) in
         item_args.into_iter().with_position()
@@ -122,8 +122,8 @@ pub fn gen_template_list(
         }
 
         //The comma should be immediately after the parameter, we move the comment back
-        formatted.extend(gen_comments(item_comments_after_arg));
-        formatted.extend(gen_comments(item_comments_after_comma));
+        formatted.extend(gen_comments(&item_comments_after_arg));
+        formatted.extend(gen_comments(&item_comments_after_comma));
 
         formatted.request(SeparationRequest {
             line_break: SeparationPolicy::ExpectedIf {

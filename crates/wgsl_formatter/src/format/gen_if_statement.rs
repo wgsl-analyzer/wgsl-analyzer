@@ -35,11 +35,11 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.extend(gen_if_statement_if_clause(&item_if_clause)?);
-    formatted.extend(gen_comments(comments_after_if_clause));
+    formatted.extend(gen_comments(&comments_after_if_clause));
     for (else_if_clause, comments_after_else_if_clause) in else_if_clauses {
         formatted.expect_single_space();
         formatted.extend(gen_if_statement_else_if_clause(&else_if_clause)?);
-        formatted.extend(gen_comments(comments_after_else_if_clause));
+        formatted.extend(gen_comments(&comments_after_else_if_clause));
     }
     if let Some(item_else_clause) = item_else_clause {
         formatted.expect_single_space();
@@ -67,9 +67,9 @@ fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<Prin
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("if"));
     formatted.expect_single_space();
-    formatted.extend(gen_comments(comments_after_if));
+    formatted.extend(gen_comments(&comments_after_if));
     formatted.extend(gen_expression(&item_condition, true)?);
-    formatted.extend(gen_comments(comments_after_condition));
+    formatted.extend(gen_comments(&comments_after_condition));
     formatted.expect_single_space();
     formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)
@@ -91,7 +91,7 @@ fn gen_if_statement_else_clause(statement: &ElseClause) -> FormatDocumentResult<
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("else"));
     formatted.expect_single_space();
-    formatted.extend(gen_comments(comments_after_clause_token));
+    formatted.extend(gen_comments(&comments_after_clause_token));
     formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)
 }
@@ -118,12 +118,12 @@ fn gen_if_statement_else_if_clause(
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("else"));
     formatted.expect_single_space();
-    formatted.extend(gen_comments(comments_after_else));
+    formatted.extend(gen_comments(&comments_after_else));
     formatted.push_sc(sc!("if"));
     formatted.expect_single_space();
-    formatted.extend(gen_comments(comments_after_if));
+    formatted.extend(gen_comments(&comments_after_if));
     formatted.extend(gen_expression(&item_condition, true)?);
-    formatted.extend(gen_comments(comments_after_condition));
+    formatted.extend(gen_comments(&comments_after_condition));
     formatted.expect_single_space();
     formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)

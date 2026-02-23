@@ -120,31 +120,33 @@ fn gen_var_let_const_statement(
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(kind.sc());
     formatted.push_signal(Signal::StartIndent);
-    formatted.extend(gen_comments(item_comments_after_let));
+
+    formatted.extend(gen_comments(&item_comments_after_let));
     if let Some((item_template_list, item_comments_after_template_list)) = item_template_list {
         formatted.extend(gen_template_list(&item_template_list)?);
-        formatted.extend(gen_comments(item_comments_after_template_list));
+        formatted.extend(gen_comments(&item_comments_after_template_list));
     }
+
     formatted.expect_single_space();
     formatted.push_string(item_name.text().to_string());
-    formatted.extend(gen_comments(item_comments_after_name));
+    formatted.extend(gen_comments(&item_comments_after_name));
 
     if let Some((comments_after_colon, type_specifier, comments_after_type)) = items_type {
         formatted.request_space(SeparationPolicy::Discouraged);
         formatted.push_sc(sc!(":"));
         formatted.expect_single_space();
-        formatted.extend(gen_comments(comments_after_colon));
+        formatted.extend(gen_comments(&comments_after_colon));
         formatted.extend(gen_type_specifier(&type_specifier)?);
-        formatted.extend(gen_comments(comments_after_type));
+        formatted.extend(gen_comments(&comments_after_type));
     }
 
     if let Some((comments_after_equal, value, comments_after_value)) = assignment {
         formatted.expect_single_space();
         formatted.push_sc(sc!("="));
         formatted.expect_single_space();
-        formatted.extend(gen_comments(comments_after_equal));
+        formatted.extend(gen_comments(&comments_after_equal));
         formatted.extend(gen_expression(&value, false)?);
-        formatted.extend(gen_comments(comments_after_value));
+        formatted.extend(gen_comments(&comments_after_value));
         formatted.request_space(SeparationPolicy::Discouraged);
     }
 

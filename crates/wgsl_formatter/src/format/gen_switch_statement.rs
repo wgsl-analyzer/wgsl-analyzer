@@ -38,11 +38,11 @@ pub fn gen_switch_statement(
     let mut formatted = PrintItemBuffer::new();
 
     formatted.push_sc(sc!("switch"));
-    formatted.extend(gen_comments(item_comments_after_switch));
+    formatted.extend(gen_comments(&item_comments_after_switch));
     formatted.expect_single_space(); // We trim out the parens, so we expect a space
     formatted.extend(gen_expression(&item_expression, true)?);
     formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_parens));
+    formatted.extend(gen_comments(&item_comments_after_parens));
     formatted.extend(gen_switch_body(&item_body)?);
 
     Ok(formatted)
@@ -68,11 +68,11 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("{"));
     formatted.push_signal(Signal::StartIndent);
-    formatted.extend(gen_comments(item_comments_after_brace_left));
+    formatted.extend(gen_comments(&item_comments_after_brace_left));
     for (item_case, item_comments_after_case) in item_cases {
         formatted.expect_line_break();
         formatted.extend(gen_switch_body_case(&item_case)?);
-        formatted.extend(gen_comments(item_comments_after_case));
+        formatted.extend(gen_comments(&item_comments_after_case));
     }
     formatted.push_signal(Signal::FinishIndent);
     formatted.expect_line_break();
@@ -130,16 +130,16 @@ pub fn gen_switch_body_case(
         } => {
             if is_case_default(&item_selectors) {
                 formatted.push_sc(sc!("default"));
-                formatted.extend(gen_comments(item_comments_after_case));
+                formatted.extend(gen_comments(&item_comments_after_case));
             } else {
                 formatted.push_sc(sc!("case"));
                 formatted.expect_single_space();
-                formatted.extend(gen_comments(item_comments_after_case));
+                formatted.extend(gen_comments(&item_comments_after_case));
                 formatted.extend(gen_switch_case_selectors(&item_selectors)?);
             }
         },
     }
-    formatted.extend(gen_comments(item_comments_after_selectors));
+    formatted.extend(gen_comments(&item_comments_after_selectors));
 
     // For now we opted for option a) because we like it more. Its easy to add support for a wgslfmt.toml later
     // Option a) Always trim colon
@@ -150,7 +150,7 @@ pub fn gen_switch_body_case(
     // }
     // Option b) Force colon
     // formatted.push_sc(sc!(":"));
-    formatted.extend(gen_comments(item_comments_after_colon));
+    formatted.extend(gen_comments(&item_comments_after_colon));
     formatted.expect_single_space();
     formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)
@@ -193,12 +193,12 @@ pub fn gen_switch_case_selectors(
         selectors.into_iter().with_position()
     {
         formatted.extend(gen_switch_case_selector(&selector)?);
-        formatted.extend(gen_comments(item_comments_after_selector));
+        formatted.extend(gen_comments(&item_comments_after_selector));
         if !matches!(position, Position::Last | Position::Only) {
             formatted.push_sc(sc!(","));
             formatted.expect_single_space();
         }
-        formatted.extend(gen_comments(item_comments_after_comma));
+        formatted.extend(gen_comments(&item_comments_after_comma));
     }
     Ok(formatted)
 }

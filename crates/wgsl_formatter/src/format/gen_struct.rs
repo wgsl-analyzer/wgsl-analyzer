@@ -12,7 +12,7 @@ use crate::format::{
         parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
         parse_token, parse_token_optional,
     },
-    gen_attributes::gen_attributes,
+    gen_attributes::{gen_attributes, parse_attributes},
     gen_comments::gen_comments,
     gen_types::gen_type_specifier,
     print_item_buffer::PrintItemBuffer,
@@ -38,12 +38,12 @@ pub fn gen_struct_declaration(
     // Struct
     formatted.push_sc(sc!("struct"));
     formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_struct));
+    formatted.extend(gen_comments(&item_comments_after_struct));
 
     // Name
     formatted.expect_single_space();
     formatted.push_string(item_name.text().to_string());
-    formatted.extend(gen_comments(item_comments_after_name));
+    formatted.extend(gen_comments(&item_comments_after_name));
 
     // Body
     formatted.expect_single_space();
@@ -90,7 +90,7 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
     // take into account whether the comment was on the same line as the opening brace
     if !item_comments_after_open_paren.is_empty() {
         formatted.expect_line_break();
-        formatted.extend(gen_comments(item_comments_after_open_paren));
+        formatted.extend(gen_comments(&item_comments_after_open_paren));
     }
 
     if !item_members.is_empty() {
@@ -100,8 +100,8 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
             formatted.push_sc(sc!(","));
 
             // Intentionally reorder comments to move them after the comma
-            formatted.extend(gen_comments(comments_after_member));
-            formatted.extend(gen_comments(comments_after_comma));
+            formatted.extend(gen_comments(&comments_after_member));
+            formatted.extend(gen_comments(&comments_after_comma));
 
             formatted.expect_line_break();
         }
@@ -140,13 +140,13 @@ fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<PrintIt
     let mut formatted = PrintItemBuffer::new();
 
     formatted.extend(gen_attributes(attributes)?);
-    formatted.extend(gen_comments(item_comments_after_attributes));
+    formatted.extend(gen_comments(&item_comments_after_attributes));
     formatted.push_string(item_name.text().to_string());
     formatted.push_sc(sc!(":"));
     formatted.expect_single_space();
     //The colon should immediately follow the name, we intentionally move the comment
-    formatted.extend(gen_comments(item_comments_after_name));
-    formatted.extend(gen_comments(item_comments_after_colon));
+    formatted.extend(gen_comments(&item_comments_after_name));
+    formatted.extend(gen_comments(&item_comments_after_colon));
     formatted.extend(gen_type_specifier(&item_type_specifier)?);
 
     Ok(formatted)

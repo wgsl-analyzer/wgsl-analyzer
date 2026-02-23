@@ -34,15 +34,15 @@ pub fn gen_type_alias_declaration(
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("alias"));
     formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_alias));
+    formatted.extend(gen_comments(&item_comments_after_alias));
     formatted.push_string(item_name.text().to_string());
-    formatted.extend(gen_comments(item_comments_after_ident));
+    formatted.extend(gen_comments(&item_comments_after_ident));
     formatted.expect_single_space();
     formatted.push_sc(sc!("="));
     formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_equal));
+    formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_type_specifier(&item_type)?);
-    formatted.extend(gen_comments(item_comments_after_type));
+    formatted.extend(gen_comments(&item_comments_after_type));
     if include_semicolon {
         formatted.request_space(SeparationPolicy::Discouraged);
         formatted.push_sc(sc!(";"));

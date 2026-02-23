@@ -41,13 +41,13 @@ pub fn gen_assignment_statement(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.extend(gen_expression(&item_target, true)?);
-    formatted.extend(gen_comments(item_comments_after_target));
+    formatted.extend(gen_comments(&item_comments_after_target));
     formatted.expect_single_space();
     formatted.push_sc(sc!("="));
     formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_equal));
+    formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_expression(&item_value, true)?);
-    formatted.extend(gen_comments(item_comments_after_value));
+    formatted.extend(gen_comments(&item_comments_after_value));
     if include_semicolon {
         formatted.request_space(SeparationPolicy::Discouraged);
         formatted.push_sc(sc!(";"));
@@ -79,13 +79,13 @@ pub fn gen_phony_assignment_statement(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("_"));
-    formatted.extend(gen_comments(item_comments_after_target));
+    formatted.extend(gen_comments(&item_comments_after_target));
     formatted.expect_single_space();
     formatted.push_sc(sc!("="));
     formatted.expect_single_space();
-    formatted.extend(gen_comments(item_comments_after_equal));
+    formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_expression(&item_value, true)?);
-    formatted.extend(gen_comments(item_comments_after_value));
+    formatted.extend(gen_comments(&item_comments_after_value));
     if include_semicolon {
         formatted.request_space(SeparationPolicy::Discouraged);
         formatted.push_sc(sc!(";"));
@@ -121,7 +121,7 @@ pub fn gen_compound_assignment_statement(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.extend(gen_expression(&item_target, true)?);
-    formatted.extend(gen_comments(item_comments_after_target));
+    formatted.extend(gen_comments(&item_comments_after_target));
 
     let operator_sc = match item_operator {
         CompoundAssignmentOperator::PlusEqual(_) => sc!("+="),
@@ -139,9 +139,9 @@ pub fn gen_compound_assignment_statement(
     formatted.push_sc(operator_sc);
     formatted.expect_single_space();
 
-    formatted.extend(gen_comments(item_comments_after_equal));
+    formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_expression(&item_value, true)?);
-    formatted.extend(gen_comments(item_comments_after_value));
+    formatted.extend(gen_comments(&item_comments_after_value));
     if include_semicolon {
         formatted.request_space(SeparationPolicy::Discouraged);
         formatted.push_sc(sc!(";"));
