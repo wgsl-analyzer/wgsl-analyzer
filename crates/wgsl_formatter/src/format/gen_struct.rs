@@ -12,7 +12,7 @@ use crate::format::{
         parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
         parse_token, parse_token_optional,
     },
-    gen_attributes::{gen_attributes, parse_attributes},
+    gen_attributes::{gen_attributes, parse_many_attributes},
     gen_comments::gen_comments,
     gen_types::gen_type_specifier,
     print_item_buffer::PrintItemBuffer,
@@ -117,17 +117,7 @@ fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<PrintIt
     // === Parse ===
     let mut syntax = put_back(member.syntax().children_with_tokens());
 
-    // TODO Think about a clean way to abstract this, to deduplicate code from functions
-    // maybe even a "many with commments" combinator, to also deduplicate code from fn parameters/struct members
-    let mut attributes = Vec::new();
-    loop {
-        let Some(item_attribute) = parse_node_optional::<ast::Attribute>(&mut syntax) else {
-            break;
-        };
-        let item_comments_after_attribute = parse_many_comments_and_blankspace(&mut syntax)?;
-
-        attributes.push((item_attribute, item_comments_after_attribute));
-    }
+    let attributes = parse_many_attributes(&mut syntax)?;
     let item_comments_after_attributes = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
     let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -139,7 +129,7 @@ fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<PrintIt
     // === Format ===
     let mut formatted = PrintItemBuffer::new();
 
-    formatted.extend(gen_attributes(attributes)?);
+    formatted.extend(gen_attributes(&attributes)?);
     formatted.extend(gen_comments(&item_comments_after_attributes));
     formatted.push_string(item_name.text().to_string());
     formatted.push_sc(sc!(":"));

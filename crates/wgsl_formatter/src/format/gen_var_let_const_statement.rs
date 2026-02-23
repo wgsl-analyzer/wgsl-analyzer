@@ -12,6 +12,7 @@ use crate::format::{
         parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
         parse_token, parse_token_optional,
     },
+    gen_attributes::{gen_attributes, parse_many_attributes},
     gen_comments::gen_comments,
     gen_expression::gen_expression,
     gen_types::{gen_template_list, gen_type_specifier},
@@ -75,6 +76,9 @@ fn gen_var_let_const_statement(
 
     // ==== Parse ====
     let mut syntax = put_back(syntax_node.children_with_tokens());
+
+    let item_attributes = parse_many_attributes(&mut syntax)?;
+
     parse_token(&mut syntax, kind.syntax_kind())?;
     let item_comments_after_let = parse_many_comments_and_blankspace(&mut syntax)?;
 
@@ -118,6 +122,7 @@ fn gen_var_let_const_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
+    formatted.extend(gen_attributes(&item_attributes)?);
     formatted.push_sc(kind.sc());
     formatted.push_signal(Signal::StartIndent);
 

@@ -14,6 +14,7 @@ use crate::format::{
         parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
         parse_token, parse_token_optional,
     },
+    gen_attributes::{gen_attributes, parse_many_attributes},
     gen_comments::gen_comments,
     gen_statement::gen_compound_statement,
     gen_types::gen_type_specifier,
@@ -27,6 +28,7 @@ pub fn gen_function_declaration(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = put_back(node.syntax().children_with_tokens());
 
+    let item_attributes = parse_many_attributes(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::Fn)?;
     let item_comments_after_fn = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
@@ -41,6 +43,7 @@ pub fn gen_function_declaration(
     let mut formatted = PrintItemBuffer::new();
 
     // Fn
+    formatted.extend(gen_attributes(&item_attributes)?);
     formatted.push_sc(sc!("fn"));
     formatted.expect_single_space();
     formatted.extend(gen_comments(&item_comments_after_fn));
@@ -203,6 +206,7 @@ pub fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintIt
     // ==== Parse ====
     let mut syntax = put_back(syntax.syntax().children_with_tokens());
 
+    let item_attributes = parse_many_attributes(&mut syntax)?;
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
     let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::Colon)?;
@@ -213,6 +217,7 @@ pub fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintIt
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
+    formatted.extend(gen_attributes(&item_attributes)?);
     formatted.push_string(item_name.text().to_string());
     formatted.push_sc(sc!(":"));
     formatted.expect_single_space();
@@ -229,6 +234,7 @@ pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<Prin
 
     parse_token(&mut syntax, SyntaxKind::Arrow)?;
     let item_comments_after_arrow = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_attributes = parse_many_attributes(&mut syntax)?;
     let item_type_specifier = parse_node::<ast::TypeSpecifier>(&mut syntax)?;
     parse_end(&mut syntax)?;
 
@@ -238,6 +244,7 @@ pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<Prin
     formatted.expect_single_space();
     formatted.push_sc(sc!("->"));
     formatted.expect_single_space();
+    formatted.extend(gen_attributes(&item_attributes)?);
     formatted.extend(gen_comments(&item_comments_after_arrow));
     formatted.extend(gen_type_specifier(&item_type_specifier)?);
     Ok(formatted)
