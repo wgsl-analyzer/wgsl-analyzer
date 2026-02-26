@@ -2,11 +2,12 @@ use std::{
     fs::File,
     io::{self, BufWriter},
     path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use anyhow::Context as _;
 use flate2::{Compression, write::GzEncoder};
-use time::OffsetDateTime;
+use time::{OffsetDateTime, PrimitiveDateTime};
 use xshell::{Cmd, Shell, cmd};
 use zip::{DateTime, ZipWriter, write::SimpleFileOptions};
 
@@ -195,15 +196,12 @@ fn zip(
 ) -> anyhow::Result<()> {
     let file = File::create(destination_path)?;
     let mut writer = ZipWriter::new(BufWriter::new(file));
+    let modified_time =
+        system_time_to_zip_datetime(std::fs::metadata(source_path)?.modified()?).unwrap();
     writer.start_file(
         source_path.file_name().unwrap().to_str().unwrap(),
         SimpleFileOptions::default()
-            .last_modified_time(
-                DateTime::try_from(OffsetDateTime::from(
-                    std::fs::metadata(source_path)?.modified()?,
-                ))
-                .unwrap(),
-            )
+            .last_modified_time(modified_time)
             .unix_permissions(0o755)
             .compression_method(zip::CompressionMethod::Deflated)
             .compression_level(Some(9)),
@@ -214,12 +212,7 @@ fn zip(
         writer.start_file(
             symbols_path.file_name().unwrap().to_str().unwrap(),
             SimpleFileOptions::default()
-                .last_modified_time(
-                    DateTime::try_from(OffsetDateTime::from(
-                        std::fs::metadata(source_path)?.modified()?,
-                    ))
-                    .unwrap(),
-                )
+                .last_modified_time(modified_time)
                 .compression_method(zip::CompressionMethod::Deflated)
                 .compression_level(Some(9)),
         )?;
@@ -228,6 +221,17 @@ fn zip(
     }
     writer.finish()?;
     Ok(())
+}
+
+fn system_time_to_zip_datetime(
+    system_time: SystemTime
+) -> Result<DateTime, Box<dyn std::error::Error>> {
+    // because `OffsetDateTime::date_time()` is not pub
+    let offset_date_time = OffsetDateTime::from(system_time);
+    Ok(offset_date_time
+        .date()
+        .with_time(offset_date_time.time())
+        .try_into()?)
 }
 
 struct Target {
