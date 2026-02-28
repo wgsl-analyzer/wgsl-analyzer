@@ -10,12 +10,16 @@ license.workspace = true
 [dependencies]
 parser.workspace = true
 rowan = "0.16.1"
+serde = { workspace = true, optional = true }
 syntax.workspace = true
 
 [dev-dependencies]
 dissimilar = "1.0.10"
 # anyhow = "1.0.99"
 expect-test = "1.5.1"
+
+[features]
+serde = ["dep:serde"]
 
 [lints]
 workspace = true

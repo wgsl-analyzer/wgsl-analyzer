@@ -1,0 +1,33 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://plugins.dprint.dev/wgsl-analyzer/wgsl-analyzer/v0.0.0/dprint_plugin_wgslfmt_schema.json",
+    "title": "Config",
+    "description": "Configuration for dprint_plugin_wgslfmt.",
+    "type": "object",
+    "properties": {
+        "indentSymbol": {
+            "description": "The symbol to use for indentation.",
+            "type": "string",
+            "default": "    "
+        },
+        "trailingCommas": {
+            "description": "How to handle trailing commas in WGSL code.",
+            "type": "string",
+            "oneOf": [
+                {
+                    "const": "ignore",
+                    "description": "Keep trailing commas as-is."
+                },
+                {
+                    "const": "insert",
+                    "description": "Insert trailing commas where appropriate."
+                },
+                {
+                    "const": "remove",
+                    "description": "Remove all trailing commas."
+                }
+            ],
+            "default": "ignore"
+        }
+    }
+}
