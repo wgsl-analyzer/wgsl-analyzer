@@ -184,13 +184,45 @@ jobs:
           name: dist-x86_64-unknown-linux-musl
           path: ./dist
 
+  dist-dprint-plugin:
+    if: ${{ github.repository == 'wgsl-analyzer/wgsl-analyzer' || github.event_name == 'workflow_dispatch' }}
+    name: dist (dprint-plugin-wgslfmt)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: ${{ env.FETCH_DEPTH }}
+          persist-credentials: false
+
+      - name: Install stable Rust toolchain
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+
+      - name: Build dprint plugin
+        run: |
+          cargo build --release -p dprint_plugin_wgslfmt --target wasm32-unknown-unknown
+          mkdir -p dist
+          # dprint plugins have to be named `plugin.wasm`.
+          cp target/wasm32-unknown-unknown/release/dprint_plugin_wgslfmt.wasm dist/plugin.wasm
+          cp crates/wgslfmt_dprint/deployment/dprint_plugin_wgslfmt_schema.json dist/dprint_plugin_wgslfmt_schema.json
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: dist-dprint-plugin
+          path: ./dist
+
   publish:
     if: ${{ github.repository == 'wgsl-analyzer/wgsl-analyzer' || github.event_name == 'workflow_dispatch' }}
     name: publish
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    needs: ["dist", "dist-x86_64-unknown-linux-musl"]
+    needs: ["dist", "dist-x86_64-unknown-linux-musl", "dist-dprint-plugin"]
     steps:
       - name: Install Node.js
         uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
@@ -261,6 +293,13 @@ jobs:
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: dist-aarch64-pc-windows-msvc
+          path: dist
+
+      - name: Download dist-dprint-plugin artifact
+        if: false # the formatter is not ready yet, so skip downloading it for now
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: dist-dprint-plugin
           path: dist
 
       - run: ls -al ./dist

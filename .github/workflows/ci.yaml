@@ -177,6 +177,26 @@ jobs:
   #     - run: cargo check --target=${{ matrix.target }} --all-targets
   #       if: ${{ !matrix.ide-only }}
 
+  # Check wgslfmt_dprint builds for wasm32 target
+  wgslfmt-dprint-wasm:
+    name: Check wgslfmt_dprint WASM build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+
+      - name: Check wgslfmt_dprint for wasm32
+        run: cargo check -p dprint_plugin_wgslfmt --target wasm32-unknown-unknown
+
   markdown:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -370,6 +390,7 @@ jobs:
         rustdoc,
         check-unused-dependencies,
         typescript,
+        wgslfmt-dprint-wasm,
       ]
     # We need to ensure this job does *not* get skipped if its dependencies fail,
     # because a skipped job is considered a success by GitHub. So we have to

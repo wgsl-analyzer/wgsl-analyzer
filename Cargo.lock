@@ -269,6 +269,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8975ffdaa0ef3661bfe02dbdcc06c9f829dfafe6a3c474de366a8d5e44276921"
 
 [[package]]
+name = "dprint-core"
+version = "0.67.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c1d827947704a9495f705d6aeed270fa21a67f825f22902c28f38dc3af7a9ae"
+dependencies = [
+ "anyhow",
+ "indexmap 2.12.1",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "dprint_plugin_wgslfmt"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "dprint-core",
+ "serde",
+ "serde_json",
+ "wgsl-formatter",
+]
+
+[[package]]
 name = "edition"
 version = "0.0.0"
 
@@ -1942,6 +1965,7 @@ dependencies = [
  "expect-test",
  "parser",
  "rowan",
+ "serde",
  "syntax",
 ]
 
