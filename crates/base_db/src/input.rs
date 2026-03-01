@@ -29,8 +29,6 @@ pub struct SourceRootId(pub u32);
 /// by path.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceRoot {
-    /// Sysroot or remote library.
-    ///
     /// Libraries are considered mostly immutable, this assumption is used to
     /// optimize salsa's query structure.
     is_library: bool,
@@ -54,13 +52,15 @@ impl SourceRoot {
         }
     }
 
+    #[must_use]
     pub fn path_for_file(
         &self,
-        file: &FileId,
+        file: FileId,
     ) -> Option<&VfsPath> {
-        self.file_set.path_for_file(file)
+        self.file_set.path_for_file(&file)
     }
 
+    #[must_use]
     pub fn file_for_path(
         &self,
         path: &VfsPath,
@@ -68,6 +68,7 @@ impl SourceRoot {
         self.file_set.file_for_path(path)
     }
 
+    #[must_use]
     pub fn resolve_path(
         &self,
         path: AnchoredPath<'_>,
@@ -79,11 +80,13 @@ impl SourceRoot {
         self.file_set.iter()
     }
 
-    pub fn is_library(&self) -> bool {
+    #[must_use]
+    pub const fn is_library(&self) -> bool {
         self.is_library
     }
 }
 
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "clippy bug")]
 /// `PackageGraph` is a bit of information which turns a set of text files into a
 /// number of WESL packages.
 ///
@@ -100,8 +103,9 @@ impl SourceRoot {
 /// language proper, not a concept of the build system. In practice, we get
 /// `PackageGraph` by lowering `wesl metadata` output.
 ///
-/// `PackageGraph` is `!Serialize` by design, see
-/// <https://github.com/wgsl-analyzer/wgsl-analyzer/blob/main/docs/dev/architecture.md#serialization>
+/// `PackageGraph` is `!Serialize` by design.
+///
+/// See: <https://github.com/wgsl-analyzer/wgsl-analyzer/blob/main/docs/dev/architecture.md#serialization>
 #[derive(Clone, Default)]
 pub struct PackageGraph {
     arena: Arena<PackageData>,
@@ -131,7 +135,7 @@ impl PackageName {
     /// Creates a package name, checking for dashes in the string provided.
     /// Dashes are not allowed in the package names,
     /// hence the input string is returned as `Err` for those cases.
-    pub fn new(name: &str) -> Result<PackageName, &str> {
+    pub fn new(name: &str) -> Result<Self, &str> {
         // TODO: Verify that the package name is a valid WESL ident
         if name.contains('-') {
             Err(name)
@@ -141,11 +145,13 @@ impl PackageName {
     }
 
     /// Creates a package name, unconditionally replacing the dashes with underscores.
-    pub fn normalize_dashes(name: &str) -> PackageName {
+    #[must_use]
+    pub fn normalize_dashes(name: &str) -> Self {
         Self(name.replace('-', "_"))
     }
 
-    pub fn symbol(&self) -> &String {
+    #[must_use]
+    pub const fn symbol(&self) -> &String {
         &self.0
     }
 }
@@ -153,9 +159,9 @@ impl PackageName {
 impl fmt::Display for PackageName {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        self.0.fmt(f)
+        self.0.fmt(formatter)
     }
 }
 
@@ -185,16 +191,19 @@ pub enum PackageOrigin {
 }
 
 impl PackageOrigin {
-    pub fn is_local(&self) -> bool {
-        matches!(self, PackageOrigin::Local { .. })
+    #[must_use]
+    pub const fn is_local(&self) -> bool {
+        matches!(self, Self::Local { .. })
     }
 
-    pub fn is_lib(&self) -> bool {
-        matches!(self, PackageOrigin::Library { .. })
+    #[must_use]
+    pub const fn is_lib(&self) -> bool {
+        matches!(self, Self::Library { .. })
     }
 
-    pub fn is_lang(&self) -> bool {
-        matches!(self, PackageOrigin::Language { .. })
+    #[must_use]
+    pub const fn is_lang(&self) -> bool {
+        matches!(self, Self::Language { .. })
     }
 }
 
@@ -206,11 +215,11 @@ pub enum LanguagePackageOrigin {
 }
 
 impl From<&str> for LanguagePackageOrigin {
-    fn from(s: &str) -> Self {
-        match s {
-            "core" => LanguagePackageOrigin::Core,
-            "std" => LanguagePackageOrigin::Std,
-            _ => LanguagePackageOrigin::Other,
+    fn from(string: &str) -> Self {
+        match string {
+            "core" => Self::Core,
+            "std" => Self::Std,
+            _ => Self::Other,
         }
     }
 }
@@ -218,18 +227,19 @@ impl From<&str> for LanguagePackageOrigin {
 impl fmt::Display for LanguagePackageOrigin {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         let text = match self {
-            LanguagePackageOrigin::Core => "core",
-            LanguagePackageOrigin::Std => "std",
-            LanguagePackageOrigin::Other => "other",
+            Self::Core => "core",
+            Self::Std => "std",
+            Self::Other => "other",
         };
-        f.write_str(text)
+        formatter.write_str(text)
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[expect(clippy::struct_field_names, reason = "clarity")]
 pub struct PackageDisplayName {
     // The name we use to display various paths (with `_`).
     package_name: PackageName,
@@ -238,18 +248,20 @@ pub struct PackageDisplayName {
 }
 
 impl PackageDisplayName {
-    pub fn canonical_name(&self) -> &String {
+    #[must_use]
+    pub const fn canonical_name(&self) -> &String {
         &self.canonical_name
     }
-    pub fn package_name(&self) -> &PackageName {
+    #[must_use]
+    pub const fn package_name(&self) -> &PackageName {
         &self.package_name
     }
 }
 
 impl From<PackageName> for PackageDisplayName {
-    fn from(package_name: PackageName) -> PackageDisplayName {
+    fn from(package_name: PackageName) -> Self {
         let canonical_name = package_name.0.clone();
-        PackageDisplayName {
+        Self {
             package_name,
             canonical_name,
         }
@@ -273,7 +285,8 @@ impl ops::Deref for PackageDisplayName {
 }
 
 impl PackageDisplayName {
-    pub fn from_canonical_name(canonical_name: &str) -> PackageDisplayName {
+    #[must_use]
+    pub fn from_canonical_name(canonical_name: &str) -> Self {
         let package_name = PackageName::normalize_dashes(canonical_name);
         Self {
             package_name,
@@ -307,25 +320,15 @@ pub struct PackageData {
 pub struct Dependency {
     pub package_id: PackageId,
     pub name: PackageName,
-    sysroot: bool,
 }
 
 impl Dependency {
-    pub fn new(
+    #[must_use]
+    pub const fn new(
         name: PackageName,
         package_id: PackageId,
     ) -> Self {
-        Self {
-            name,
-            package_id,
-            sysroot: false,
-        }
-    }
-
-    /// Whether this dependency is a sysroot injected one.
-    #[must_use]
-    pub const fn is_sysroot(&self) -> bool {
-        self.sysroot
+        Self { package_id, name }
     }
 }
 
@@ -349,12 +352,21 @@ impl PackageGraph {
         self.arena.alloc(data)
     }
 
-    pub fn add_dep(
+    /// Add a dependency to the package graph.
+    ///
+    /// # Panics
+    ///
+    /// Panics if .
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if there is a cyclic dependency.
+    pub fn add_dependency(
         &mut self,
         from: PackageId,
         dep: Dependency,
     ) -> Result<(), CyclicDependenciesError> {
-        let _p = tracing::info_span!("add_dep").entered();
+        let _p = tracing::info_span!("add_dependency").entered();
 
         // Check if adding a dep from `from` to `to` creates a cycle. To figure
         // that out, look for a  path in the *opposite* direction, from `to` to
@@ -362,33 +374,42 @@ impl PackageGraph {
         if let Some(path) = self.find_path(&mut FxHashSet::default(), dep.package_id, from) {
             let path = path
                 .into_iter()
-                .map(|it| (it, self[it].display_name.clone()))
+                .map(|index| (index, self[index].display_name.clone()))
                 .collect();
             let error = CyclicDependenciesError { path };
             assert!(error.from().0 == from && error.to().0 == dep.package_id);
             return Err(error);
         }
-
         self.arena[from].add_dep(dep);
         Ok(())
     }
 
+    /// Add a dependency to the package graph without checking for cyclic dependencies.
+    ///
+    /// # Safety
+    ///
+    /// The caller is responsible for guaranteeing that this does not introduce a cyclic dependency.
+    pub unsafe fn add_dependency_unchecked(
+        &mut self,
+        from: PackageId,
+        dep: Dependency,
+    ) {
+        let _p = tracing::info_span!("add_dependency_unchecked").entered();
+        self.arena[from].add_dep(dep);
+    }
+
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.arena.is_empty()
     }
 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.arena.len()
     }
 
     pub fn iter(&self) -> impl Iterator<Item = PackageId> + '_ {
         self.arena.iter().map(|(index, _)| index)
-    }
-
-    // FIXME: used for fixing up the toolchain sysroot, should be removed and done differently
-    #[doc(hidden)]
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = (PackageId, &mut PackageData)> + '_ {
-        self.arena.iter_mut()
     }
 
     /// Returns an iterator over all transitive dependencies of the given package,
@@ -427,8 +448,8 @@ impl PackageGraph {
                 inverted_graph
                     .entry(dep.package_id)
                     .or_default()
-                    .push(package)
-            })
+                    .push(package);
+            });
         });
 
         while let Some(package) = worklist.pop() {
@@ -446,6 +467,7 @@ impl PackageGraph {
 
     /// Returns all packages in the graph, sorted in topological order (ie. dependencies of a package
     /// come before the package itself).
+    #[must_use]
     pub fn packages_in_topological_order(&self) -> Vec<PackageId> {
         let mut result = Vec::new();
         let mut visited = FxHashSet::default();
@@ -465,10 +487,10 @@ impl PackageGraph {
             if !visited.insert(source) {
                 return;
             }
-            for dep in graph[source].dependencies.iter() {
-                go(graph, visited, result, dep.package_id)
+            for dependency in &graph[source].dependencies {
+                go(graph, visited, result, dependency.package_id);
             }
-            result.push(source)
+            result.push(source);
         }
     }
 
@@ -481,7 +503,7 @@ impl PackageGraph {
     /// Returns a map mapping `other`'s IDs to the new IDs in `self`.
     pub fn extend(
         &mut self,
-        mut other: PackageGraph,
+        mut other: Self,
     ) -> FxHashMap<PackageId, PackageId> {
         // Sorting here is a bit pointless because the input is likely already sorted.
         // However, the overhead is small and it makes the `extend` method harder to misuse.
@@ -489,7 +511,7 @@ impl PackageGraph {
             .iter_mut()
             .for_each(|(_, data)| data.dependencies.sort_by_key(|dep| dep.package_id));
 
-        let m = self.len();
+        let length = self.len();
         let topo = other.packages_in_topological_order();
         let mut id_map: FxHashMap<PackageId, PackageId> = FxHashMap::default();
         for topo in topo {
@@ -504,8 +526,8 @@ impl PackageGraph {
             let find = self
                 .arena
                 .iter()
-                .take(m)
-                .find_map(|(k, v)| (v == package_data).then_some(k));
+                .take(length)
+                .find_map(|(index, value)| (value == package_data).then_some(index));
             let new_id = find.unwrap_or_else(|| self.arena.alloc(package_data.clone()));
             id_map.insert(topo, new_id);
         }
@@ -537,38 +559,6 @@ impl PackageGraph {
         None
     }
 
-    /// Removes all packages from this package graph except for the ones in `to_keep` and fixes up the dependencies.
-    /// Returns a mapping from old package ids to new package ids.
-    pub fn remove_packages_except(
-        &mut self,
-        to_keep: &[PackageId],
-    ) -> Vec<Option<PackageId>> {
-        let mut id_map = vec![None; self.arena.len()];
-        self.arena = std::mem::take(&mut self.arena)
-            .into_iter()
-            .filter_map(|(id, data)| {
-                if to_keep.contains(&id) {
-                    Some((id, data))
-                } else {
-                    None
-                }
-            })
-            .enumerate()
-            .map(|(new_id, (id, data))| {
-                id_map[id.into_raw().into_u32() as usize] =
-                    Some(PackageId::from_raw(RawIdx::from_u32(new_id as u32)));
-                data
-            })
-            .collect();
-        for (_, data) in self.arena.iter_mut() {
-            data.dependencies.iter_mut().for_each(|dep| {
-                dep.package_id = id_map[dep.package_id.into_raw().into_u32() as usize]
-                    .expect("package was filtered")
-            });
-        }
-        id_map
-    }
-
     pub fn shrink_to_fit(&mut self) {
         self.arena.shrink_to_fit();
     }
@@ -578,23 +568,24 @@ impl ops::Index<PackageId> for PackageGraph {
     type Output = PackageData;
     fn index(
         &self,
-        package_id: PackageId,
+        index: PackageId,
     ) -> &PackageData {
-        &self.arena[package_id]
+        &self.arena[index]
     }
 }
 
 impl PackageData {
     /// Add a dependency to `self` without checking if the dependency
-    // is existent among `self.dependencies`.
+    /// is existent among `self.dependencies`.
     fn add_dep(
         &mut self,
         dep: Dependency,
     ) {
-        self.dependencies.push(dep)
+        self.dependencies.push(dep);
     }
 
-    pub fn root_file_id(&self) -> (FileId, Edition) {
+    #[must_use]
+    pub const fn root_file_id(&self) -> (FileId, Edition) {
         (self.root_file_id, self.edition)
     }
 }
@@ -619,7 +610,7 @@ impl fmt::Display for CyclicDependenciesError {
         f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         let render = |(id, name): &(PackageId, Option<PackageDisplayName>)| match name {
-            Some(it) => format!("{it}({id:?})"),
+            Some(package_name) => format!("{package_name}({id:?})"),
             None => format!("{id:?}"),
         };
         let path = self
@@ -631,10 +622,9 @@ impl fmt::Display for CyclicDependenciesError {
             .join(" -> ");
         write!(
             f,
-            "cyclic deps: {} -> {}, alternative path: {}",
+            "cyclic deps: {} -> {}, alternative path: {path}",
             render(self.from()),
-            render(self.to()),
-            path
+            render(self.to())
         )
     }
 }
@@ -649,7 +639,7 @@ mod tests {
     fn detect_cyclic_dependency_indirect() {
         let mut graph = PackageGraph::default();
         let package1 = graph.add_package_root(
-            FileId::from_raw(1u32),
+            FileId::from_raw(1_u32),
             Wesl2025Unstable,
             None,
             None,
@@ -659,7 +649,7 @@ mod tests {
             },
         );
         let package2 = graph.add_package_root(
-            FileId::from_raw(2u32),
+            FileId::from_raw(2_u32),
             Wesl2025Unstable,
             None,
             None,
@@ -669,7 +659,7 @@ mod tests {
             },
         );
         let package3 = graph.add_package_root(
-            FileId::from_raw(3u32),
+            FileId::from_raw(3_u32),
             Wesl2025Unstable,
             None,
             None,
@@ -678,37 +668,31 @@ mod tests {
                 name: None,
             },
         );
-        assert!(
-            graph
-                .add_dep(
-                    package1,
-                    Dependency::new(PackageName::new("package2").unwrap(), package2,)
-                )
-                .is_ok()
-        );
-        assert!(
-            graph
-                .add_dep(
-                    package2,
-                    Dependency::new(PackageName::new("package3").unwrap(), package3,)
-                )
-                .is_ok()
-        );
-        assert!(
-            graph
-                .add_dep(
-                    package3,
-                    Dependency::new(PackageName::new("package1").unwrap(), package1,)
-                )
-                .is_err()
-        );
+        graph
+            .add_dependency(
+                package1,
+                Dependency::new(PackageName::new("package2").unwrap(), package2),
+            )
+            .unwrap();
+        graph
+            .add_dependency(
+                package2,
+                Dependency::new(PackageName::new("package3").unwrap(), package3),
+            )
+            .unwrap();
+        graph
+            .add_dependency(
+                package3,
+                Dependency::new(PackageName::new("package1").unwrap(), package1),
+            )
+            .unwrap_err();
     }
 
     #[test]
     fn detect_cyclic_dependency_direct() {
         let mut graph = PackageGraph::default();
         let package1 = graph.add_package_root(
-            FileId::from_raw(1u32),
+            FileId::from_raw(1_u32),
             Wesl2025Unstable,
             None,
             None,
@@ -718,7 +702,7 @@ mod tests {
             },
         );
         let package2 = graph.add_package_root(
-            FileId::from_raw(2u32),
+            FileId::from_raw(2_u32),
             Wesl2025Unstable,
             None,
             None,
@@ -727,22 +711,18 @@ mod tests {
                 name: None,
             },
         );
-        assert!(
-            graph
-                .add_dep(
-                    package1,
-                    Dependency::new(PackageName::new("package2").unwrap(), package2,)
-                )
-                .is_ok()
-        );
-        assert!(
-            graph
-                .add_dep(
-                    package2,
-                    Dependency::new(PackageName::new("package2").unwrap(), package2,)
-                )
-                .is_err()
-        );
+        graph
+            .add_dependency(
+                package1,
+                Dependency::new(PackageName::new("package2").unwrap(), package2),
+            )
+            .unwrap();
+        graph
+            .add_dependency(
+                package2,
+                Dependency::new(PackageName::new("package2").unwrap(), package2),
+            )
+            .unwrap_err();
     }
 
     #[test]
@@ -759,7 +739,7 @@ mod tests {
             },
         );
         let package2 = graph.add_package_root(
-            FileId::from_raw(2u32),
+            FileId::from_raw(2_u32),
             Wesl2025Unstable,
             None,
             None,
@@ -769,7 +749,7 @@ mod tests {
             },
         );
         let package3 = graph.add_package_root(
-            FileId::from_raw(3u32),
+            FileId::from_raw(3_u32),
             Wesl2025Unstable,
             None,
             None,
@@ -778,29 +758,25 @@ mod tests {
                 name: None,
             },
         );
-        assert!(
-            graph
-                .add_dep(
-                    package1,
-                    Dependency::new(PackageName::new("package2").unwrap(), package2,)
-                )
-                .is_ok()
-        );
-        assert!(
-            graph
-                .add_dep(
-                    package2,
-                    Dependency::new(PackageName::new("package3").unwrap(), package3,)
-                )
-                .is_ok()
-        );
+        graph
+            .add_dependency(
+                package1,
+                Dependency::new(PackageName::new("package2").unwrap(), package2),
+            )
+            .unwrap();
+        graph
+            .add_dependency(
+                package2,
+                Dependency::new(PackageName::new("package3").unwrap(), package3),
+            )
+            .unwrap();
     }
 
     #[test]
     fn dashes_are_normalized() {
         let mut graph = PackageGraph::default();
         let package1 = graph.add_package_root(
-            FileId::from_raw(1u32),
+            FileId::from_raw(1_u32),
             Wesl2025Unstable,
             None,
             None,
@@ -810,7 +786,7 @@ mod tests {
             },
         );
         let package2 = graph.add_package_root(
-            FileId::from_raw(2u32),
+            FileId::from_raw(2_u32),
             Wesl2025Unstable,
             None,
             None,
@@ -819,17 +795,15 @@ mod tests {
                 name: None,
             },
         );
-        assert!(
-            graph
-                .add_dep(
-                    package1,
-                    Dependency::new(
-                        PackageName::normalize_dashes("package-name-with-dashes"),
-                        package2,
-                    )
-                )
-                .is_ok()
-        );
+        graph
+            .add_dependency(
+                package1,
+                Dependency::new(
+                    PackageName::normalize_dashes("package-name-with-dashes"),
+                    package2,
+                ),
+            )
+            .unwrap();
         assert_eq!(
             graph[package1].dependencies,
             vec![Dependency::new(

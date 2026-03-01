@@ -21,18 +21,26 @@ impl TryFrom<AbsPathBuf> for ManifestPath {
     type Error = AbsPathBuf;
 
     fn try_from(file: AbsPathBuf) -> Result<Self, Self::Error> {
-        if file.parent().is_none() { Err(file) } else { Ok(ManifestPath { file }) }
+        if file.parent().is_none() {
+            Err(file)
+        } else {
+            Ok(Self { file })
+        }
     }
 }
 
 impl From<ManifestPath> for AbsPathBuf {
-    fn from(it: ManifestPath) -> Self {
-        it.file
+    fn from(manifest_path: ManifestPath) -> Self {
+        manifest_path.file
     }
 }
 
 impl ManifestPath {
     // Shadow `parent` from `Deref`.
+    /// # Panics
+    ///
+    /// Panics if there is no parent.
+    #[must_use]
     pub fn parent(&self) -> &AbsPath {
         self.file.parent().unwrap()
     }
@@ -41,13 +49,17 @@ impl ManifestPath {
         (**self).canonicalize()
     }
 
+    #[must_use]
     pub fn is_rust_manifest(&self) -> bool {
         self.file.extension() == Some("rs")
     }
 }
 
 impl fmt::Display for ManifestPath {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
         fmt::Display::fmt(&self.file, f)
     }
 }

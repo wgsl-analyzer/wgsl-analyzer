@@ -158,14 +158,10 @@ impl GlobalState {
                     let workspaces: Vec<_> = linked_projects
                         .iter()
                         .map(|manifest| {
-                            project_model::ProjectWorkspace::load(
-                                manifest.clone(),
-                                &wesl_config,
-                                &progress,
-                            )
+                            project_model::ProjectWorkspace::load(manifest, &wesl_config, &progress)
                         })
                         .collect();
-                    eprintln!("{:?}", workspaces);
+                    eprintln!("{workspaces:?}");
 
                     // TODO: Do we need to deduplicate?
 
@@ -182,7 +178,7 @@ impl GlobalState {
 
     pub(crate) fn switch_workspaces(
         &mut self,
-        cause: Cause,
+        cause: &Cause,
     ) {
         let _p = tracing::info_span!("GlobalState::switch_workspaces").entered();
         tracing::info!(%cause, "will switch workspaces");
@@ -199,7 +195,7 @@ impl GlobalState {
         info!(%cause, ?force_crate_graph_reload, %switching_from_empty_workspace);
         if self.fetch_workspace_error().is_err() && !switching_from_empty_workspace {
             if *force_crate_graph_reload {
-                self.recreate_crate_graph(cause, false);
+                self.recreate_package_graph(cause, false);
             }
             // It only makes sense to switch to a partially broken workspace
             // if we don't have any workspace at all yet.
@@ -215,7 +211,7 @@ impl GlobalState {
             && workspaces
                 .iter()
                 .zip(self.workspaces.iter())
-                .all(|(l, r)| l.eq_ignore_build_data(r));
+                .all(|(discovered, current)| discovered.eq_ignore_build_data(current));
 
         if same_workspaces {
             if switching_from_empty_workspace {
@@ -223,21 +219,20 @@ impl GlobalState {
                 return;
             }
             if *force_crate_graph_reload {
-                self.recreate_crate_graph(cause, switching_from_empty_workspace);
+                self.recreate_package_graph(cause, switching_from_empty_workspace);
             }
             // Unchanged workspaces
             return;
-        } else {
-            self.workspaces = (workspaces).into();
         }
+        self.workspaces = (workspaces).into();
 
-        if let FilesWatcher::Client = self.config.files().watcher {
+        if matches!(self.config.files().watcher, FilesWatcher::Client) {
             let filter = self
                 .workspaces
                 .iter()
-                .flat_map(|ws| ws.to_roots())
-                .filter(|it| it.is_local)
-                .map(|it| it.include);
+                .flat_map(project_model::ProjectWorkspace::to_roots)
+                .filter(|root| root.is_local)
+                .map(|root| root.include);
 
             let watchers: Vec<FileSystemWatcher> = if self
                 .config
@@ -319,22 +314,20 @@ impl GlobalState {
         });
         self.source_root_config = project_folders.source_root_config;
         // self.local_roots_parent_map = Arc::new(self.source_root_config.source_root_parent_map());
-
-        info!(?cause, "recreating the crate graph");
-        self.recreate_crate_graph(cause, switching_from_empty_workspace);
-
+        info!(?cause, "recreating the package graph");
+        self.recreate_package_graph(cause, switching_from_empty_workspace);
         info!("did switch workspaces");
     }
 
-    fn recreate_crate_graph(
+    fn recreate_package_graph(
         &mut self,
-        cause: String,
+        cause: &str,
         initial_build: bool,
     ) {
         eprintln!("AAAAAAAAAAAAAAAAAAAAAAAAAAA");
-        info!(?cause, "Building Crate Graph");
+        info!(?cause, "Building package graph");
         self.report_progress(
-            "Building CrateGraph",
+            "Building package graph",
             &crate::lsp::utilities::Progress::Begin,
             None,
             None,
@@ -343,52 +336,45 @@ impl GlobalState {
 
         // crate graph construction relies on these paths, record them so when one of them gets
         // deleted or created we trigger a reconstruction of the crate graph
-        self.crate_graph_file_dependencies.clear();
+        self.package_graph_file_dependencies.clear();
         self.detached_files = self
             .workspaces
             .iter()
-            .filter_map(|ws| match &ws.kind {
+            .filter_map(|workspace| match &workspace.kind {
                 ProjectWorkspaceKind::DetachedFile { file, .. } => Some(file.clone()),
-                _ => None,
+                ProjectWorkspaceKind::Wesl { .. } | ProjectWorkspaceKind::Json(_) => None,
             })
             .collect();
 
-        // TODO `incomplete_crate_graph` is a hack to fix https://github.com/rust-lang/rust-analyzer/issues/19709
-        // We should probably look at the issue and figure out if we can actually solve it
-        // self.incomplete_crate_graph = false;
-        let (crate_graph) = {
-            // Create crate graph from all the workspaces
+        let (package_graph) = {
+            // Create package graph from all the workspaces
             let vfs = &self.vfs.read().0;
             let mut load = |path: &AbsPath| {
                 let vfs_path = vfs::VfsPath::from(path.to_path_buf());
-                self.crate_graph_file_dependencies.insert(vfs_path.clone());
+                self.package_graph_file_dependencies
+                    .insert(vfs_path.clone());
                 let file_id = vfs.file_id(&vfs_path);
-                // self.incomplete_crate_graph |= file_id.is_none();
-                file_id.and_then(|(file_id, excluded)| {
-                    (excluded == vfs::FileExcluded::No).then_some(file_id)
-                })
+                let (file_id, excluded) = file_id?;
+                (excluded == vfs::FileExcluded::No).then_some(file_id)
             };
 
-            let mut crate_graph = PackageGraph::default();
-            for ws in self.workspaces.iter() {
-                let (other) = ws.to_package_graph(&mut load);
-                crate_graph.extend(other);
+            let mut package_graph = PackageGraph::default();
+            for workspace in self.workspaces.iter() {
+                let (other) = workspace.to_package_graph(&mut load);
+                package_graph.extend(other);
             }
-            crate_graph.shrink_to_fit();
-            crate_graph
+            package_graph.shrink_to_fit();
+            package_graph
         };
         let mut change = Change::default();
+        change.set_package_graph(package_graph);
         if initial_build {
-            change.set_package_graph(crate_graph);
             self.analysis_host.apply_change(change);
-
             self.finish_loading_package_graph();
-        } else {
-            change.set_package_graph(crate_graph);
         }
 
         self.report_progress(
-            "Building CrateGraph",
+            "Building package graph",
             &crate::lsp::utilities::Progress::End,
             None,
             None,

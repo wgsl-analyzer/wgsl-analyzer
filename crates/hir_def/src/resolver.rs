@@ -94,7 +94,7 @@ impl Resolver {
                 file_id,
             }));
         } else {
-            tracing::warn!("missing def map")
+            tracing::warn!("missing def map");
         }
         self
     }
@@ -194,7 +194,7 @@ impl Resolver {
         });
     }
 
-    /// Corresponds to `resolve_path_in_type_ns` in rust-analyzer
+    // Corresponds to `resolve_path_in_type_ns` in rust-analyzer.
     #[must_use]
     pub fn resolve(
         &self,

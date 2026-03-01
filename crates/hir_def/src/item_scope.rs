@@ -15,20 +15,21 @@ pub struct ItemScope {
 impl ItemScope {
     pub(crate) fn declare(
         &mut self,
-        def: ModuleDefinitionId,
+        definition: ModuleDefinitionId,
     ) {
-        self.declarations.push(def)
+        self.declarations.push(definition);
     }
     pub(crate) fn push_item(
         &mut self,
         name: Name,
-        def: ModuleDefinitionId,
+        definition: ModuleDefinitionId,
     ) {
         // TODO: Check if item is already present
-        self.items.insert(name, def);
+        self.items.insert(name, definition);
     }
 
-    /// Get a name from current module scope
+    /// Get a name from current module scope.
+    #[must_use]
     pub fn get(
         &self,
         name: &Name,
@@ -38,13 +39,13 @@ impl ItemScope {
 
     pub(crate) fn dump(
         &self,
-        buf: &mut String,
+        buffer: &mut String,
     ) {
         let mut entries: Vec<_> = self.items.iter().collect();
         entries.sort_by_key(|(name, _)| *name);
 
         for (name, _) in entries {
-            write!(buf, "{}: v\n", name.as_str());
+            writeln!(buffer, "{}: v", name.as_str());
         }
     }
 

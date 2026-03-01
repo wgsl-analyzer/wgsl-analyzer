@@ -163,14 +163,14 @@ fn get_name_and_range(
             (String::from("file"), full_range)
         },
         ModuleDefinitionId::Function(id) => (
-            database.function_data(id).0.name.as_str().to_string(),
+            database.function_data(id).0.name.as_str().to_owned(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::GlobalVariable(id) => (
-            database.global_var_data(id).0.name.as_str().to_string(),
+            database.global_var_data(id).0.name.as_str().to_owned(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
@@ -181,29 +181,28 @@ fn get_name_and_range(
                 .global_constant_data(id)
                 .0
                 .name
-                .as_str()
-                .to_string(),
+                .as_str().to_owned(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::Override(id) => (
-            database.override_data(id).0.name.as_str().to_string(),
+            database.override_data(id).0.name.as_str().to_owned(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::Struct(id) => (
-            database.struct_data(id).0.name.as_str().to_string(),
+            database.struct_data(id).0.name.as_str().to_owned(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::TypeAlias(id) => (
-            database.type_alias_data(id).0.name.as_str().to_string(),
+            database.type_alias_data(id).0.name.as_str().to_owned(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)

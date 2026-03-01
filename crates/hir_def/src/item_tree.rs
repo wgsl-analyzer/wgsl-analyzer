@@ -77,7 +77,7 @@ impl ImportStatement {
         mut callback: Callback,
     ) {
         self.tree
-            .expand_impl(ModPath::from_kind(self.kind), &mut callback)
+            .expand_impl(ModPath::from_kind(self.kind), &mut callback);
     }
 }
 

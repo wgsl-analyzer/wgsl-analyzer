@@ -188,11 +188,11 @@ pub(crate) fn handle_did_change_configuration(
 
 pub(crate) fn handle_did_change_workspace_folders(
     state: &mut GlobalState,
-    params: DidChangeWorkspaceFoldersParams,
+    parameters: DidChangeWorkspaceFoldersParams,
 ) -> anyhow::Result<()> {
     let config = Arc::make_mut(&mut state.config);
 
-    for workspace in params.event.removed {
+    for workspace in parameters.event.removed {
         let Ok(path) = workspace.uri.to_file_path() else {
             continue;
         };
@@ -205,24 +205,24 @@ pub(crate) fn handle_did_change_workspace_folders(
         config.remove_workspace(&path);
     }
 
-    let added = params
+    let added = parameters
         .event
         .added
         .into_iter()
-        .filter_map(|it| it.uri.to_file_path().ok())
-        .filter_map(|it| Utf8PathBuf::from_path_buf(it).ok())
-        .filter_map(|it| AbsPathBuf::try_from(it).ok());
+        .filter_map(|workspace_folder| workspace_folder.uri.to_file_path().ok())
+        .filter_map(|path| Utf8PathBuf::from_path_buf(path).ok())
+        .filter_map(|path| AbsPathBuf::try_from(path).ok());
     config.add_workspaces(added);
 
     config.rediscover_workspaces();
 
-    let req = FetchWorkspaceRequest {
+    let request = FetchWorkspaceRequest {
         path: None,
         force_crate_graph_reload: false,
     };
     state
         .fetch_workspaces_queue
-        .request_operation("client workspaces changed".to_owned(), req);
+        .request_operation("client workspaces changed".to_owned(), request);
 
     Ok(())
 }

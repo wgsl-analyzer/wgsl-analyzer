@@ -67,8 +67,6 @@ xflags::xflags! {
         //     optional -o, --only path: String
         //     /// Also analyze all dependencies.
         //     optional --with-deps
-        //     /// Don't load sysroot crates (`std`, `core` & friends).
-        //     optional --no-sysroot
         //     /// Don't set #[cfg(test)].
         //     optional --no-test
         //     /// Skip body lowering.

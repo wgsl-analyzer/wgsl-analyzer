@@ -94,6 +94,7 @@ disallowed-names = [
 	"ty",  # r#type
 	"var",  # variable
 	"vars",  # variables
+	"ws",  # workspace, whitespace
 ]
 disallowed-types = [
 	{ path = "std::collections::HashMap", reason = "use FxHashMap" },

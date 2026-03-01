@@ -65,13 +65,13 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
     #[salsa::invoke(DefMap::package_def_map_query)]
     fn package_def_map_query(
         &self,
-        package: PackageId,
+        key: PackageId,
     ) -> Arc<DefMap>;
 
     #[salsa::invoke(DefMap::file_def_map_query)]
     fn file_def_map_query(
         &self,
-        file: FileId,
+        key: FileId,
     ) -> Option<Arc<DefMap>>;
 
     #[salsa::invoke(Body::body_with_source_map_query)]

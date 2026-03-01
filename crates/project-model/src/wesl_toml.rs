@@ -16,7 +16,7 @@ pub struct WeslToml {
 }
 
 fn default_root() -> String {
-    "./shaders/".to_string()
+    "./shaders/".to_owned()
 }
 
 #[derive(Deserialize)]

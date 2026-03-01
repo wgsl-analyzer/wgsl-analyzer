@@ -72,23 +72,26 @@ pub struct ProjectJson {
 }
 
 impl ProjectJson {
-    /// Create a new ProjectJson instance.
+    /// Create a new `ProjectJson` instance.
     ///
     /// # Arguments
     ///
     /// * `manifest` - The path to the `wesl-project.json`.
     /// * `base` - The path to the workspace root (i.e. the folder containing `wesl-project.json`)
     /// * `data` - The parsed contents of `wesl-project.json`, or project json that's passed via configuration.
+    ///
+    /// # Panics
+    ///
+    /// Panics if .
     pub fn new(
         manifest: Option<ManifestPath>,
         base: &AbsPath,
         data: ProjectJsonData,
-    ) -> ProjectJson {
-        let absolutize_on_base = |p| base.absolutize(p);
-        ProjectJson {
+    ) -> Self {
+        let absolutize_on_base = |path| base.absolutize(path);
+        Self {
             project_root: base.to_path_buf(),
             manifest,
-            runnables: data.runnables.into_iter().map(Runnable::from).collect(),
             packages: data
                 .packages
                 .into_iter()
@@ -98,11 +101,14 @@ impl ProjectJson {
                         .is_workspace_member
                         .unwrap_or_else(|| root_module.starts_with(base));
                     let (include, exclude) = match package_data.source {
-                        Some(src) => {
-                            let absolutize = |dirs: Vec<Utf8PathBuf>| {
-                                dirs.into_iter().map(absolutize_on_base).collect::<Vec<_>>()
+                        Some(source) => {
+                            let absolutize = |directories: Vec<Utf8PathBuf>| {
+                                directories
+                                    .into_iter()
+                                    .map(absolutize_on_base)
+                                    .collect::<Vec<_>>()
                             };
-                            (absolutize(src.include_dirs), absolutize(src.exclude_dirs))
+                            (absolutize(source.include), absolutize(source.exclude))
                         },
                         None => (
                             vec![root_module.parent().unwrap().to_path_buf()],
@@ -127,11 +133,13 @@ impl ProjectJson {
                     }
                 })
                 .collect(),
+            runnables: data.runnables.into_iter().map(Runnable::from).collect(),
         }
     }
 
     /// Returns the number of packages in the project.
-    pub fn n_packages(&self) -> usize {
+    #[must_use]
+    pub const fn n_packages(&self) -> usize {
         self.packages.len()
     }
 
@@ -144,10 +152,12 @@ impl ProjectJson {
     }
 
     /// Returns the path to the project's root folder.
+    #[must_use]
     pub fn path(&self) -> &AbsPath {
         &self.project_root
     }
 
+    #[must_use]
     pub fn package_by_root(
         &self,
         root: &AbsPath,
@@ -159,11 +169,13 @@ impl ProjectJson {
     }
 
     /// Returns the path to the project's manifest, if it exists.
-    pub fn manifest(&self) -> Option<&ManifestPath> {
+    #[must_use]
+    pub const fn manifest(&self) -> Option<&ManifestPath> {
         self.manifest.as_ref()
     }
 
     /// Returns the path to the project's manifest or root folder, if no manifest exists.
+    #[must_use]
     pub fn manifest_or_root(&self) -> &AbsPath {
         self.manifest
             .as_ref()
@@ -171,10 +183,12 @@ impl ProjectJson {
     }
 
     /// Returns the path to the project's root folder.
+    #[must_use]
     pub fn project_root(&self) -> &AbsPath {
         &self.project_root
     }
 
+    #[must_use]
     pub fn runnables(&self) -> &[Runnable] {
         &self.runnables
     }
@@ -338,22 +352,22 @@ pub(crate) struct Dep {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 struct PackageSource {
-    include_dirs: Vec<Utf8PathBuf>,
-    exclude_dirs: Vec<Utf8PathBuf>,
+    include: Vec<Utf8PathBuf>,
+    exclude: Vec<Utf8PathBuf>,
 }
 
 impl From<EditionData> for Edition {
     fn from(data: EditionData) -> Self {
         match data {
-            EditionData::Wgsl => Edition::Wgsl,
-            EditionData::Wesl2025Unstable => Edition::Wesl2025Unstable,
+            EditionData::Wgsl => Self::Wgsl,
+            EditionData::Wesl2025Unstable => Self::Wesl2025Unstable,
         }
     }
 }
 
 impl From<RunnableData> for Runnable {
     fn from(data: RunnableData) -> Self {
-        Runnable {
+        Self {
             program: data.program,
             args: data.args,
             cwd: data.cwd,
@@ -365,9 +379,9 @@ impl From<RunnableData> for Runnable {
 impl From<RunnableKindData> for RunnableKind {
     fn from(data: RunnableKindData) -> Self {
         match data {
-            RunnableKindData::Check => RunnableKind::Check,
-            RunnableKindData::Run => RunnableKind::Run,
-            RunnableKindData::TestOne => RunnableKind::TestOne,
+            RunnableKindData::Check => Self::Check,
+            RunnableKindData::Run => Self::Run,
+            RunnableKindData::TestOne => Self::TestOne,
         }
     }
 }

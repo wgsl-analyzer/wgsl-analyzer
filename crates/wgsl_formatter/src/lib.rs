@@ -412,13 +412,13 @@ fn format_param_list<T: AstNode>(
             .prev_token() // spellchecker:disable-line
             .is_some_and(|token| token.kind().is_whitespace() && token.text().contains('\n'));
 
-        let ws = match (first, previous_had_newline) {
+        let whitespace = match (first, previous_had_newline) {
             (true, false) => create_whitespace(""),
             (_, true) => create_whitespace(&format!("\n{}", indent_symbol.repeat(n_indentations))),
             (false, false) => create_whitespace(" "),
         };
 
-        set_whitespace_before(&first_token, ws);
+        set_whitespace_before(&first_token, whitespace);
 
         let last_param_token = parameter.syntax().last_token()?;
         remove_if_whitespace(&last_param_token);
@@ -606,8 +606,9 @@ fn indent_after(
     indent_level: usize,
     options: &FormattingOptions,
 ) -> Option<()> {
-    let ws = create_whitespace(&format!("\n{}", options.indent_symbol.repeat(indent_level)));
-    set_whitespace_after(token, ws)
+    let whitespace =
+        create_whitespace(&format!("\n{}", options.indent_symbol.repeat(indent_level)));
+    set_whitespace_after(token, whitespace)
 }
 
 fn indent_before(
@@ -615,6 +616,7 @@ fn indent_before(
     indent_level: usize,
     options: &FormattingOptions,
 ) -> Option<()> {
-    let ws = create_whitespace(&format!("\n{}", options.indent_symbol.repeat(indent_level)));
-    set_whitespace_before(token, ws)
+    let whitespace =
+        create_whitespace(&format!("\n{}", options.indent_symbol.repeat(indent_level)));
+    set_whitespace_before(token, whitespace)
 }

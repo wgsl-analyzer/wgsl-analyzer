@@ -1,4 +1,5 @@
 //! The core of the module-level name resolution algorithm.
+
 use crate::{
     HasSource, InFile,
     database::Lookup,
@@ -6,7 +7,7 @@ use crate::{
     nameres::{ModuleData, diagnostics::DefDiagnostic, path_resolution::ResolvePathResult},
 };
 use base_db::{Dependency, EditionedFileId};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 use triomphe::Arc;
 use vfs::{AnchoredPath, FileId};
 
@@ -17,7 +18,7 @@ use crate::{
     nameres::DefMap,
 };
 
-pub(super) fn collect_defs(
+pub(super) fn collect_definitions(
     database: &dyn DefDatabase,
     def_map: DefMap,
     file_id: HirFileId,
@@ -26,8 +27,7 @@ pub(super) fn collect_defs(
     let package = &package_graph[def_map.package];
 
     // populate dependency list
-    let mut deps =
-        FxIndexMap::with_capacity_and_hasher(package.dependencies.len(), Default::default());
+    let mut deps = FxIndexMap::with_capacity_and_hasher(package.dependencies.len(), FxBuildHasher);
     for dep in &package.dependencies {
         deps.insert(Name::from(dep.name.as_str()), dep.clone());
     }
@@ -38,7 +38,7 @@ pub(super) fn collect_defs(
         deps,
         // glob_imports: FxHashMap::default(),
         unresolved_imports: Vec::new(),
-        unresolved_extern_crates: Default::default(),
+        unresolved_extern_crates: FxHashSet::default(),
         // from_glob_import: Default::default(),
     };
     collector.seed(file_id);
@@ -48,7 +48,7 @@ pub(super) fn collect_defs(
     def_map
 }
 
-/// Walks the tree of modules recursively
+/// Walks the tree of modules recursively.
 struct DefCollector<'db> {
     database: &'db dyn DefDatabase,
     def_map: DefMap,
@@ -63,7 +63,7 @@ struct DefCollector<'db> {
     // from_glob_import: PerNsGlobImports,
 }
 
-impl<'db> DefCollector<'db> {
+impl DefCollector<'_> {
     fn seed(
         &mut self,
         file_id: HirFileId,
@@ -78,7 +78,12 @@ impl<'db> DefCollector<'db> {
         .collect(item_tree.top_level_items());
     }
 
-    fn inject_prelude(&mut self) {
+    #[expect(
+        clippy::needless_pass_by_ref_mut,
+        clippy::unused_self,
+        reason = "not yet implemented"
+    )]
+    const fn inject_prelude(&mut self) {
         // Not yet implemented. This is where the wesl standard library could be injected
     }
 
@@ -94,17 +99,17 @@ impl<'db> DefCollector<'db> {
             let resolved_import =
                 self.resolve_import_with_modules(file_id, location, &unresolved_import);
 
-            if let Ok(resolved) = resolved_import {
+            if let Ok(resolved) = resolved_import
                 // If we do not have a leaf name, there are a few possible cases
                 // - PathKind::Plain => Must have a leaf name, otherwise the path is completely empty
                 // - PathKind::Super => Don't need to add `super` to the scope, it is already a keyword
                 // - PathKind::Package => Don't need to add `package` to the scope, it is already a keyword
-                if let Some(name) = unresolved_import.leaf_name() {
-                    let module_data = &mut self.def_map.modules[file_id];
-                    module_data
-                        .scope
-                        .push_item(name.clone(), resolved.resolved_def);
-                }
+                && let Some(name) = unresolved_import.leaf_name()
+            {
+                let module_data = &mut self.def_map.modules[file_id];
+                module_data
+                    .scope
+                    .push_item(name.clone(), resolved.resolved_def);
             }
         }
     }
@@ -224,12 +229,12 @@ impl<'db> DefCollector<'db> {
         let dir_path = module_data
             .name
             .as_ref()
-            .map(|name| name.as_str())
+            .map(super::super::item_tree::Name::as_str)
             .unwrap_or_default();
 
         let candidate_files = [
-            format!("{}{}.wesl", dir_path, child_name.as_str()),
-            format!("{}{}.wgsl", dir_path, child_name.as_str()),
+            format!("{dir_path}{}.wesl", child_name.as_str()),
+            format!("{dir_path}{}.wgsl", child_name.as_str()),
         ]
         .to_vec();
 
@@ -240,7 +245,7 @@ impl<'db> DefCollector<'db> {
                 path: candidate.as_str(),
             };
             if let Some(file_id) = self.database.resolve_path(path) {
-                return Ok((file_id));
+                return Ok(file_id);
             }
         }
 
@@ -268,11 +273,11 @@ impl<'db> DefCollector<'db> {
     }
 }
 
-/// Walks a single module, populating defs and imports
-struct ModCollector<'a, 'db> {
-    def_collector: &'a mut DefCollector<'db>,
+/// Walks a single module, populating defs and imports.
+struct ModCollector<'collector, 'db> {
+    def_collector: &'collector mut DefCollector<'db>,
     file_id: HirFileId,
-    item_tree: &'a ItemTree,
+    item_tree: &'collector ItemTree,
 }
 
 impl ModCollector<'_, '_> {
@@ -294,46 +299,46 @@ impl ModCollector<'_, '_> {
                     });
                 },
                 ModuleItem::Function(id) => {
-                    let def = ModuleDefinitionId::Function(
+                    let definition = ModuleDefinitionId::Function(
                         database.intern_function(Location::new(hir_file_id, id)),
                     );
-                    item_scope.declare(def);
-                    item_scope.push_item(self.item_tree.get(id).name.clone(), def);
+                    item_scope.declare(definition);
+                    item_scope.push_item(self.item_tree.get(id).name.clone(), definition);
                 },
                 ModuleItem::Struct(id) => {
-                    let def = ModuleDefinitionId::Struct(
+                    let definition = ModuleDefinitionId::Struct(
                         database.intern_struct(Location::new(hir_file_id, id)),
                     );
-                    item_scope.declare(def);
-                    item_scope.push_item(self.item_tree.get(id).name.clone(), def);
+                    item_scope.declare(definition);
+                    item_scope.push_item(self.item_tree.get(id).name.clone(), definition);
                 },
                 ModuleItem::GlobalVariable(id) => {
-                    let def = ModuleDefinitionId::GlobalVariable(
+                    let definition = ModuleDefinitionId::GlobalVariable(
                         database.intern_global_variable(Location::new(hir_file_id, id)),
                     );
-                    item_scope.declare(def);
-                    item_scope.push_item(self.item_tree.get(id).name.clone(), def);
+                    item_scope.declare(definition);
+                    item_scope.push_item(self.item_tree.get(id).name.clone(), definition);
                 },
                 ModuleItem::GlobalConstant(id) => {
-                    let def = ModuleDefinitionId::GlobalConstant(
+                    let definition = ModuleDefinitionId::GlobalConstant(
                         database.intern_global_constant(Location::new(hir_file_id, id)),
                     );
-                    item_scope.declare(def);
-                    item_scope.push_item(self.item_tree.get(id).name.clone(), def);
+                    item_scope.declare(definition);
+                    item_scope.push_item(self.item_tree.get(id).name.clone(), definition);
                 },
                 ModuleItem::Override(id) => {
-                    let def = ModuleDefinitionId::Override(
+                    let definition = ModuleDefinitionId::Override(
                         database.intern_override(Location::new(hir_file_id, id)),
                     );
-                    item_scope.declare(def);
-                    item_scope.push_item(self.item_tree.get(id).name.clone(), def);
+                    item_scope.declare(definition);
+                    item_scope.push_item(self.item_tree.get(id).name.clone(), definition);
                 },
                 ModuleItem::TypeAlias(id) => {
-                    let def = ModuleDefinitionId::TypeAlias(
+                    let definition = ModuleDefinitionId::TypeAlias(
                         database.intern_type_alias(Location::new(hir_file_id, id)),
                     );
-                    item_scope.declare(def);
-                    item_scope.push_item(self.item_tree.get(id).name.clone(), def);
+                    item_scope.declare(definition);
+                    item_scope.push_item(self.item_tree.get(id).name.clone(), definition);
                 },
                 ModuleItem::GlobalAssertStatement(_) => (),
             }

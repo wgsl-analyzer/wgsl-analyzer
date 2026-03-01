@@ -316,6 +316,7 @@ fn naga_diagnostics<N: Naga>(
 }
 
 /// # Panics
+///
 /// Panics if the file is not found in the database.
 #[expect(clippy::too_many_lines, reason = "TODO")]
 pub fn diagnostics(

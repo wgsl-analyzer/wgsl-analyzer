@@ -24,17 +24,17 @@ impl fmt::Debug for Change {
         &self,
         fmt: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        let mut d = fmt.debug_struct("Change");
+        let mut debug = fmt.debug_struct("Change");
         if let Some(roots) = &self.roots {
-            d.field("roots", roots);
+            debug.field("roots", roots);
         }
         if !self.files_changed.is_empty() {
-            d.field("files_changed", &self.files_changed.len());
+            debug.field("files_changed", &self.files_changed.len());
         }
         if self.package_graph.is_some() {
-            d.field("package_graph", &self.package_graph);
+            debug.field("package_graph", &self.package_graph);
         }
-        d.finish()
+        debug.finish()
     }
 }
 

@@ -287,7 +287,7 @@ impl GlobalState {
             {
                 let open_log_button = tracing::enabled!(tracing::Level::ERROR)
                     &&
-                    // (self.fetch_build_data_error().is_err() || 
+                    // (self.fetch_build_data_error().is_err() ||
                     self.fetch_workspace_error().is_err()
                     // )
                     ;
@@ -422,7 +422,7 @@ impl GlobalState {
         let event_handling_duration = loop_start.elapsed();
         let (state_changed, memdocs_added_or_removed) = if self.vfs_done {
             if let Some(cause) = self.wants_to_switch.take() {
-                self.switch_workspaces(cause);
+                self.switch_workspaces(&cause);
             }
             (
                 self.process_changes(),
@@ -581,20 +581,14 @@ impl GlobalState {
             self.in_memory_documents
                 .iter()
                 .map(|path| vfs.file_id(path).unwrap())
-                // .filter_map(|(file_id, excluded)| {
-                //     (excluded == vfs::FileExcluded::No).then_some(file_id)
-                // })
-                .filter(|&file_id| {
-                    let source_root = database.file_source_root(file_id.0);
-                    // Only publish diagnostics for files in the workspace, not from crates.io deps
-                    // or the sysroot.
-                    // While theoretically these should never have errors, we have quite a few false
-                    // positives particularly in the stdlib, and those diagnostics would stay around
-                    // forever if we emitted them here.
-                    !database.source_root(source_root).is_library()
+                .filter_map(|(file_id, excluded)| {
+                    (excluded == vfs::FileExcluded::No).then_some(file_id)
                 })
-                .map(|file_id| {
-                    file_id.0
+                .filter(|&file_id| {
+                    let source_root = database.file_source_root(file_id);
+                    // Only publish diagnostics for files in the workspace, not from remote deps.
+                    // Theoretically, these should never have errors.
+                    !database.source_root(source_root).is_library()
                 })
                 .collect::<Arc<_>>()
         };

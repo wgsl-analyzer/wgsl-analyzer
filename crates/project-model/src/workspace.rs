@@ -2,15 +2,15 @@
 //! (`wesl metadata` or `wesl-project.json`) into representation stored
 //! in the salsa database -- `PackageGraph`.
 
-use std::{collections::VecDeque, fmt, fs, iter, ops::Deref, sync, thread};
+use std::{collections::VecDeque, fmt, fs, iter, ops::Deref as _, sync, thread};
 
-use anyhow::Context;
+use anyhow::Context as _;
 use base_db::{
     Dependency, FileId, LanguagePackageOrigin, PackageDisplayName, PackageGraph, PackageId,
     PackageName, PackageOrigin,
 };
 use edition::Edition;
-use itertools::Itertools;
+use itertools::Itertools as _;
 use paths::{AbsPath, AbsPathBuf, Utf8PathBuf};
 use rustc_hash::{FxHashMap, FxHashSet};
 use semver::Version;
@@ -32,11 +32,11 @@ pub type FileLoader<'data> = &'data mut dyn for<'path> FnMut(&'path AbsPath) -> 
 /// the current workspace.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct PackageRoot {
-    /// Is from the local filesystem and may be edited
+    /// Whether this is from the local filesystem and may be edited.
     pub is_local: bool,
-    /// Directories to include
+    /// Directories to include in analysis.
     pub include: Vec<AbsPathBuf>,
-    /// Directories to exclude
+    /// Directories to exclude from analysis unless explicitly requested.
     pub exclude: Vec<AbsPathBuf>,
 }
 
@@ -70,7 +70,7 @@ pub enum ProjectWorkspaceKind {
     },
 }
 
-/// Simplified wesl workspace
+/// Simplified WESL workspace.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct WeslWorkspace {
     // packages: Arena<PackageData>,
@@ -82,7 +82,7 @@ pub struct WeslWorkspace {
 pub struct WeslConfig {
     /// Extra includes to add to the VFS.
     pub extra_includes: Vec<AbsPathBuf>,
-    /// Load the project without any dependencies
+    /// Whether to load the project without any dependencies.
     pub no_deps: bool,
 }
 
@@ -118,11 +118,11 @@ impl fmt::Debug for ProjectWorkspace {
 
 impl ProjectWorkspace {
     pub fn load(
-        manifest: ProjectManifest,
+        manifest: &ProjectManifest,
         config: &WeslConfig,
         progress: &(dyn Fn(String) + Sync),
-    ) -> anyhow::Result<ProjectWorkspace> {
-        ProjectWorkspace::load_inner(&manifest, config, progress)
+    ) -> anyhow::Result<Self> {
+        Self::load_inner(manifest, config, progress)
             .with_context(|| format!("Failed to load the project at {manifest}"))
     }
 
@@ -130,7 +130,7 @@ impl ProjectWorkspace {
         manifest: &ProjectManifest,
         config: &WeslConfig,
         progress: &(dyn Fn(String) + Sync),
-    ) -> anyhow::Result<ProjectWorkspace> {
+    ) -> anyhow::Result<Self> {
         let result = match manifest {
             ProjectManifest::ProjectJson(project_json) => {
                 let file = fs::read_to_string(project_json)
@@ -138,13 +138,11 @@ impl ProjectWorkspace {
                 let data = serde_json::from_str(&file)
                     .with_context(|| format!("Failed to deserialize json file {project_json}"))?;
                 let project_location = project_json.parent().to_path_buf();
-                let project_json: ProjectJson =
+                let project_json =
                     ProjectJson::new(Some(project_json.clone()), &project_location, data);
-                ProjectWorkspace::load_inline(project_json, config)
+                Self::load_inline(project_json, config)
             },
-            ProjectManifest::WeslToml(wesl_toml) => {
-                ProjectWorkspace::load_wesl(wesl_toml, config, progress)?
-            },
+            ProjectManifest::WeslToml(wesl_toml) => Self::load_wesl(wesl_toml, config, progress)?,
         };
 
         Ok(result)
@@ -154,8 +152,7 @@ impl ProjectWorkspace {
         wesl_toml: &ManifestPath,
         config: &WeslConfig,
         progress: &(dyn Fn(String) + Sync),
-    ) -> Result<ProjectWorkspace, anyhow::Error> {
-        progress("discovering sysroot".to_owned());
+    ) -> Result<Self, anyhow::Error> {
         let WeslConfig { extra_includes, .. } = config;
         // TODO: Actually load the entire workspace
 
@@ -170,44 +167,48 @@ impl ProjectWorkspace {
             is_virtual_workspace: false,
         };
 
-        Ok(ProjectWorkspace {
+        Ok(Self {
             kind: ProjectWorkspaceKind::Wesl { wesl },
             extra_includes: extra_includes.clone(),
         })
     }
 
+    #[must_use]
     pub fn load_inline(
         project_json: ProjectJson,
         config: &WeslConfig,
-    ) -> ProjectWorkspace {
-        ProjectWorkspace {
+    ) -> Self {
+        Self {
             kind: ProjectWorkspaceKind::Json(project_json),
             extra_includes: config.extra_includes.clone(),
         }
     }
 
+    #[must_use]
     pub fn load_detached_file(
         detached_file: &ManifestPath,
         config: &WeslConfig,
-    ) -> anyhow::Result<ProjectWorkspace> {
-        Ok(ProjectWorkspace {
+    ) -> Self {
+        Self {
             kind: ProjectWorkspaceKind::DetachedFile {
                 file: detached_file.to_owned(),
             },
             extra_includes: config.extra_includes.clone(),
-        })
+        }
     }
 
+    #[must_use]
     pub fn load_detached_files(
         detached_files: Vec<ManifestPath>,
         config: &WeslConfig,
-    ) -> Vec<anyhow::Result<ProjectWorkspace>> {
+    ) -> Vec<Self> {
         detached_files
             .into_iter()
             .map(|file| Self::load_detached_file(&file, config))
             .collect()
     }
 
+    #[must_use]
     pub fn manifest_or_root(&self) -> &AbsPath {
         match &self.kind {
             ProjectWorkspaceKind::Wesl { wesl, .. } => &wesl.manifest_path,
@@ -216,6 +217,7 @@ impl ProjectWorkspace {
         }
     }
 
+    #[must_use]
     pub fn workspace_root(&self) -> &AbsPath {
         match &self.kind {
             ProjectWorkspaceKind::Wesl { wesl, .. } => &wesl.manifest_path,
@@ -224,7 +226,8 @@ impl ProjectWorkspace {
         }
     }
 
-    pub fn manifest(&self) -> Option<&ManifestPath> {
+    #[must_use]
+    pub const fn manifest(&self) -> Option<&ManifestPath> {
         match &self.kind {
             ProjectWorkspaceKind::Wesl { wesl, .. } => Some(&wesl.manifest_path),
             ProjectWorkspaceKind::Json(project) => project.manifest(),
@@ -234,7 +237,8 @@ impl ProjectWorkspace {
 
     /// Returns the roots for the current `ProjectWorkspace`
     /// The return type contains the path and whether or not
-    /// the root is a member of the current workspace
+    /// the root is a member of the current workspace.
+    #[must_use]
     pub fn to_roots(&self) -> Vec<PackageRoot> {
         match &self.kind {
             ProjectWorkspaceKind::Json(project) => project
@@ -267,7 +271,8 @@ impl ProjectWorkspace {
         }
     }
 
-    pub fn n_packages(&self) -> usize {
+    #[must_use]
+    pub const fn n_packages(&self) -> usize {
         match &self.kind {
             ProjectWorkspaceKind::Json(project) => project.n_packages(),
             ProjectWorkspaceKind::Wesl { .. } | ProjectWorkspaceKind::DetachedFile { .. } => 0,
@@ -281,17 +286,17 @@ impl ProjectWorkspace {
         let _p = tracing::info_span!("ProjectWorkspace::to_package_graph").entered();
 
         let Self { kind, .. } = self;
-        let package_graph = match kind {
+
+        match kind {
             ProjectWorkspaceKind::Json(project) => project_json_to_package_graph(load, project),
             ProjectWorkspaceKind::Wesl { wesl } => wesl_to_package_graph(load, wesl),
             ProjectWorkspaceKind::DetachedFile { file, .. } => {
                 detached_file_to_package_graph(load, file)
             },
-        };
-
-        package_graph
+        }
     }
 
+    #[must_use]
     pub fn eq_ignore_build_data(
         &self,
         other: &Self,
@@ -309,7 +314,7 @@ impl ProjectWorkspace {
                 ProjectWorkspaceKind::DetachedFile { file },
                 ProjectWorkspaceKind::DetachedFile { file: o_file },
             ) => file == o_file,
-            _ => return false,
+            _ => false,
         })
     }
 
@@ -317,7 +322,7 @@ impl ProjectWorkspace {
     ///
     /// [`Json`]: ProjectWorkspace::Json
     #[must_use]
-    pub fn is_json(&self) -> bool {
+    pub const fn is_json(&self) -> bool {
         matches!(self.kind, ProjectWorkspaceKind::Json { .. })
     }
 }
@@ -380,7 +385,7 @@ fn project_json_to_package_graph(
         if let Some(&from) = idx_to_package_id.get(&from_idx) {
             for dep in &package.deps {
                 if let Some(&to) = idx_to_package_id.get(&dep.package) {
-                    add_dep(package_graph, from, dep.name.clone(), to);
+                    add_dependency(package_graph, from, dep.name.clone(), to);
                 }
             }
         }
@@ -401,12 +406,9 @@ fn detached_file_to_package_graph(
 ) -> PackageGraph {
     let _p = tracing::info_span!("detached_file_to_package_graph").entered();
     let mut package_graph = PackageGraph::default();
-    let file_id = match load(detached_file) {
-        Some(file_id) => file_id,
-        None => {
-            error!("Failed to load detached file {:?}", detached_file);
-            return package_graph;
-        },
+    let Some(file_id) = load(detached_file) else {
+        error!("Failed to load detached file {:?}", detached_file);
+        return package_graph;
     };
     let display_name = detached_file
         .file_stem()
@@ -418,27 +420,27 @@ fn detached_file_to_package_graph(
         None,
         PackageOrigin::Local {
             repository: None,
-            name: display_name.map(|n| n.canonical_name().to_owned()),
+            name: display_name.map(|package_name| package_name.canonical_name().to_owned()),
         },
     );
     package_graph
 }
 
-fn add_dep(
+fn add_dependency(
     graph: &mut PackageGraph,
     from: PackageId,
     name: PackageName,
     to: PackageId,
 ) {
-    add_dep_inner(graph, from, Dependency::new(name, to))
+    add_dependency_inner(graph, from, Dependency::new(name, to));
 }
 
-fn add_dep_inner(
+fn add_dependency_inner(
     graph: &mut PackageGraph,
     from: PackageId,
     dep: Dependency,
 ) {
-    if let Err(error) = graph.add_dep(from, dep) {
-        tracing::warn!("{}", error)
+    if let Err(error) = graph.add_dependency(from, dep) {
+        tracing::warn!("{}", error);
     }
 }

@@ -25,7 +25,7 @@ pub enum DefDiagnosticKind {
 }
 
 impl DefDiagnostic {
-    pub(super) fn unresolved_import(
+    pub(super) const fn unresolved_import(
         container: FileId,
         id: Location<ImportStatement>,
     ) -> Self {
@@ -35,7 +35,7 @@ impl DefDiagnostic {
         }
     }
 
-    pub(super) fn super_escaping_root(
+    pub(super) const fn super_escaping_root(
         container: FileId,
         id: Location<ImportStatement>,
     ) -> Self {
@@ -45,7 +45,7 @@ impl DefDiagnostic {
         }
     }
 
-    pub(super) fn unresolved_module(
+    pub(super) const fn unresolved_module(
         container: FileId,
         id: Location<ImportStatement>,
         candidates: Vec<String>,

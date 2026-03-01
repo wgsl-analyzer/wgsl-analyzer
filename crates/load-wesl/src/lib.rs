@@ -1,5 +1,8 @@
-//! Loads a WESL project
-//!
+//! Loads a WESL project into a static instance of analysis, without support
+//! for incorporating changes.
+
+// Note, do not remove any public api from this.
+// This API is consumed by external tools to run wgsl-analyzer as a library.
 
 use base_db::{PackageGraph, SourceRoot, SourceRootId, change::Change};
 use crossbeam_channel::{Receiver, unbounded};
@@ -12,10 +15,14 @@ use triomphe::Arc;
 use vfs::{
     AbsPath, AbsPathBuf, VfsPath,
     file_set::FileSetConfig,
-    loader::{Handle, LoadingProgress},
+    loader::{Handle as _, LoadingProgress},
 };
+
 #[derive(Debug)]
-pub struct LoadWeslConfig {}
+pub struct LoadWeslConfig {
+    pub load_out_dirs_from_check: bool,
+    pub prefill_caches: bool,
+}
 
 pub fn load_workspace_at(
     root: &Path,
@@ -25,33 +32,31 @@ pub fn load_workspace_at(
 ) -> anyhow::Result<(RootDatabase, vfs::Vfs)> {
     let root = AbsPathBuf::assert_utf8(std::env::current_dir()?.join(root));
     let root = ProjectManifest::discover_single(&root)?;
-    let workspace = ProjectWorkspace::load(root, cargo_config, progress)?;
-
-    load_workspace(workspace, load_config)
+    let workspace = ProjectWorkspace::load(&root, cargo_config, progress)?;
+    Ok(load_workspace(&workspace, load_config))
 }
 
+#[must_use]
 pub fn load_workspace(
-    ws: ProjectWorkspace,
+    workspace: &ProjectWorkspace,
     load_config: &LoadWeslConfig,
-) -> anyhow::Result<(RootDatabase, vfs::Vfs)> {
+) -> (ide_db::RootDatabase, vfs::Vfs) {
     let lru_cap = std::env::var("WA_LRU_CAP")
         .ok()
-        .and_then(|it| it.parse::<u16>().ok());
-    let mut db = RootDatabase::new(lru_cap);
-
-    let vfs = load_workspace_into_db(ws, load_config, &mut db)?;
-
-    Ok((db, vfs))
+        .and_then(|value| value.parse::<u16>().ok());
+    let mut database = RootDatabase::new(lru_cap);
+    let vfs = load_workspace_into_database(workspace, load_config, &mut database);
+    (database, vfs)
 }
 
-// This variant of `load_workspace` allows deferring the loading of rust-analyzer
+// This variant of `load_workspace` allows deferring the loading of wgsl-analyzer
 // into an existing database, which is useful in certain third-party scenarios,
 // now that `salsa` supports extending foreign databases (e.g. `RootDatabase`).
-pub fn load_workspace_into_db(
-    ws: ProjectWorkspace,
+pub fn load_workspace_into_database(
+    workspace: &ProjectWorkspace,
     load_config: &LoadWeslConfig,
-    db: &mut RootDatabase,
-) -> anyhow::Result<vfs::Vfs> {
+    database: &mut RootDatabase,
+) -> vfs::Vfs {
     let (sender, receiver) = unbounded();
     let mut vfs = vfs::Vfs::default();
     let mut loader = {
@@ -59,16 +64,16 @@ pub fn load_workspace_into_db(
         Box::new(loader)
     };
 
-    tracing::debug!(?load_config, "LoadCargoConfig");
-    let crate_graph = ws.to_package_graph(&mut |path: &AbsPath| {
+    tracing::debug!(?load_config, "LoadWeslConfig");
+    let package_graph = workspace.to_package_graph(&mut |path: &AbsPath| {
         let contents = loader.load_sync(path);
         let path = vfs::VfsPath::from(path.to_path_buf());
         vfs.set_file_contents(path.clone(), contents);
-        vfs.file_id(&path)
-            .and_then(|(file_id, excluded)| (excluded == vfs::FileExcluded::No).then_some(file_id))
+        let (file_id, excluded) = vfs.file_id(&path)?;
+        (excluded == vfs::FileExcluded::No).then_some(file_id)
     });
 
-    let project_folders = ProjectFolders::new(std::slice::from_ref(&ws), &[], None);
+    let project_folders = ProjectFolders::new(std::slice::from_ref(workspace), &[], None);
     loader.set_config(vfs::loader::Config {
         load: project_folders.load,
         watch: vec![],
@@ -76,14 +81,14 @@ pub fn load_workspace_into_db(
     });
 
     load_package_graph_into_db(
-        crate_graph,
-        project_folders.source_root_config,
+        package_graph,
+        &project_folders.source_root_config,
         &mut vfs,
         &receiver,
-        db,
+        database,
     );
 
-    Ok(vfs)
+    vfs
 }
 
 #[derive(Default)]
@@ -98,8 +103,8 @@ impl ProjectFolders {
         workspaces: &[ProjectWorkspace],
         global_excludes: &[AbsPathBuf],
         user_config_dir_path: Option<&AbsPath>,
-    ) -> ProjectFolders {
-        let mut result = ProjectFolders::default();
+    ) -> Self {
+        let mut result = Self::default();
         let mut fsc = FileSetConfig::builder();
         let mut local_filesets = vec![];
 
@@ -124,9 +129,9 @@ impl ProjectFolders {
 
         let mut roots: Vec<_> = workspaces
             .iter()
-            .flat_map(|ws| ws.to_roots())
+            .flat_map(project_model::ProjectWorkspace::to_roots)
             .update(|root| root.include.sort())
-            .sorted_by(|a, b| a.include.cmp(&b.include))
+            .sorted_by(|first, second| first.include.cmp(&second.include))
             .collect();
 
         // map that tracks indices of overlapping roots
@@ -140,64 +145,63 @@ impl ProjectFolders {
             for (index, root) in roots
                 .iter()
                 .enumerate()
-                .filter(|(_, it)| !it.include.is_empty())
+                .filter(|(_, root)| !root.include.is_empty())
             {
                 for include in &root.include {
                     match include_to_idx.entry(include) {
-                        Entry::Occupied(e) => {
-                            overlap_map.entry(*e.get()).or_default().push(index);
+                        Entry::Occupied(entry) => {
+                            overlap_map.entry(*entry.get()).or_default().push(index);
                         },
-                        Entry::Vacant(e) => {
-                            e.insert(index);
+                        Entry::Vacant(entry) => {
+                            entry.insert(index);
                         },
                     }
                 }
             }
-            for (k, v) in overlap_map.drain() {
+            for (key, value) in overlap_map.drain() {
                 done = false;
-                for v in v {
-                    let r = mem::replace(
-                        &mut roots[v],
+                for index in value {
+                    let root = mem::replace(
+                        &mut roots[index],
                         PackageRoot {
                             is_local: false,
                             include: vec![],
                             exclude: vec![],
                         },
                     );
-                    roots[k].is_local |= r.is_local;
-                    roots[k].include.extend(r.include);
-                    roots[k].exclude.extend(r.exclude);
+                    roots[key].is_local |= root.is_local;
+                    roots[key].include.extend(root.include);
+                    roots[key].exclude.extend(root.exclude);
                 }
-                roots[k].include.sort();
-                roots[k].exclude.sort();
-                roots[k].include.dedup();
-                roots[k].exclude.dedup();
+                roots[key].include.sort();
+                roots[key].exclude.sort();
+                roots[key].include.dedup();
+                roots[key].exclude.dedup();
             }
         }
 
-        for root in roots.into_iter().filter(|it| !it.include.is_empty()) {
+        for root in roots.into_iter().filter(|root| !root.include.is_empty()) {
             let file_set_roots: Vec<VfsPath> =
                 root.include.iter().cloned().map(VfsPath::from).collect();
 
-            let entry = {
-                let mut dirs = vfs::loader::Directories::default();
-                dirs.extensions.push("wgsl".into());
-                dirs.extensions.push("wesl".into());
-                dirs.extensions.push("toml".into());
-                dirs.include.extend(root.include);
-                dirs.exclude.extend(root.exclude);
-                for excl in global_excludes {
-                    if dirs
-                        .include
-                        .iter()
-                        .any(|incl| incl.starts_with(excl) || excl.starts_with(incl))
-                    {
-                        dirs.exclude.push(excl.clone());
+            let entry =
+                {
+                    let mut directories = vfs::loader::Directories::default();
+                    directories.extensions.push("wgsl".into());
+                    directories.extensions.push("wesl".into());
+                    directories.extensions.push("toml".into());
+                    directories.include.extend(root.include);
+                    directories.exclude.extend(root.exclude);
+                    for exclude in global_excludes {
+                        if directories.include.iter().any(|include| {
+                            include.starts_with(exclude) || exclude.starts_with(include)
+                        }) {
+                            directories.exclude.push(exclude.clone());
+                        }
                     }
-                }
 
-                vfs::loader::Entry::Directories(dirs)
-            };
+                    vfs::loader::Entry::Directories(directories)
+                };
 
             if root.is_local {
                 result.watch.push(result.load.len());
@@ -207,10 +211,10 @@ impl ProjectFolders {
             if root.is_local {
                 local_filesets.push(fsc.len() as u64);
             }
-            fsc.add_file_set(file_set_roots)
+            fsc.add_file_set(file_set_roots);
         }
 
-        for ws in workspaces.iter() {
+        for workspace in workspaces {
             let mut file_set_roots: Vec<VfsPath> = vec![];
             let mut entries = vec![];
 
@@ -219,24 +223,24 @@ impl ProjectFolders {
                 result.watch.push(result.load.len());
                 result.load.push(entry);
                 local_filesets.push(fsc.len() as u64);
-                fsc.add_file_set(file_set_roots)
+                fsc.add_file_set(file_set_roots);
             }
         }
 
         if let Some(user_config_path) = user_config_dir_path {
-            let ratoml_path = {
-                let mut p = user_config_path.to_path_buf();
-                p.push("wgsl-analyzer.toml");
-                p
+            let watoml_path = {
+                let mut path = user_config_path.to_path_buf();
+                path.push("wgsl-analyzer.toml");
+                path
             };
 
-            let file_set_roots = vec![VfsPath::from(ratoml_path.to_owned())];
-            let entry = vfs::loader::Entry::Files(vec![ratoml_path]);
+            let file_set_roots = vec![VfsPath::from(watoml_path.clone())];
+            let entry = vfs::loader::Entry::Files(vec![watoml_path]);
 
             result.watch.push(result.load.len());
             result.load.push(entry);
             local_filesets.push(fsc.len() as u64);
-            fsc.add_file_set(file_set_roots)
+            fsc.add_file_set(file_set_roots);
         }
 
         let fsc = fsc.build();
@@ -256,6 +260,7 @@ pub struct SourceRootConfig {
 }
 
 impl SourceRootConfig {
+    #[must_use]
     pub fn partition(
         &self,
         vfs: &vfs::Vfs,
@@ -277,6 +282,7 @@ impl SourceRootConfig {
 
     /// Maps local source roots to their parent source roots by bytewise comparing of root paths .
     /// If a `SourceRoot` doesn't have a parent and is local then it is not contained in this mapping but it can be asserted that it is a root `SourceRoot`.
+    #[must_use]
     pub fn source_root_parent_map(&self) -> FxHashMap<SourceRootId, SourceRootId> {
         let roots = self.fsc.roots();
 
@@ -336,14 +342,12 @@ impl SourceRootConfig {
     }
 }
 
-/// TODO: This function is effectively unused. R-a seems to not use it directly for the language server
-/// but rather for stuff like running all tests?
 fn load_package_graph_into_db(
     package_graph: PackageGraph,
-    source_root_config: SourceRootConfig,
+    source_root_config: &SourceRootConfig,
     vfs: &mut vfs::Vfs,
     receiver: &Receiver<vfs::loader::Message>,
-    db: &mut RootDatabase,
+    database: &mut RootDatabase,
 ) {
     let mut analysis_change = Change::default();
 
@@ -356,8 +360,8 @@ fn load_package_graph_into_db(
                 }
             },
             vfs::loader::Message::Loaded { files } | vfs::loader::Message::Changed { files } => {
-                let _p =
-                    tracing::info_span!("load_cargo::load_crate_craph/LoadedChanged").entered();
+                let _p = tracing::info_span!("load_wesl::load_package_graph_into_db/LoadedChanged")
+                    .entered();
                 for (path, contents) in files {
                     vfs.set_file_contents(path.into(), contents);
                 }
@@ -366,8 +370,8 @@ fn load_package_graph_into_db(
     }
     let changes = vfs.take_changes();
     for (_, file) in changes {
-        if let vfs::Change::Create(v, _) | vfs::Change::Modify(v, _) = file.change
-            && let Ok(text) = String::from_utf8(v)
+        if let vfs::Change::Create(bytes, _) | vfs::Change::Modify(bytes, _) = file.change
+            && let Ok(text) = String::from_utf8(bytes)
         {
             let path = vfs.file_path(file.file_id);
             analysis_change.change_file(file.file_id, Some(Arc::new(text)), path.clone());
@@ -378,7 +382,7 @@ fn load_package_graph_into_db(
 
     analysis_change.set_package_graph(package_graph);
 
-    db.apply_change(analysis_change);
+    database.apply_change(analysis_change);
 }
 
 // TODO: Port the tests

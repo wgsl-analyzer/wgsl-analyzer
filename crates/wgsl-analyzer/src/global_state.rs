@@ -81,7 +81,7 @@ pub(crate) struct GlobalState {
     // stores the result of the last fetch.
     // If the fetch (partially) fails, we do not update the current value.
     pub(crate) workspaces: Arc<[ProjectWorkspace]>,
-    pub(crate) crate_graph_file_dependencies: FxHashSet<vfs::VfsPath>,
+    pub(crate) package_graph_file_dependencies: FxHashSet<vfs::VfsPath>,
     pub(crate) detached_files: FxHashSet<ManifestPath>,
 
     // op queues
@@ -203,7 +203,7 @@ impl GlobalState {
             source_root_config: SourceRootConfig::default(),
 
             workspaces: Arc::from(Vec::new()),
-            crate_graph_file_dependencies: FxHashSet::default(),
+            package_graph_file_dependencies: FxHashSet::default(),
             detached_files: FxHashSet::default(),
             fetch_workspaces_queue: OperationQueue::default(),
             // fetch_build_data_queue: OperationQueue::default(),

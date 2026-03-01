@@ -126,12 +126,13 @@ We use the event loop pattern to manage the zoo, and the loop is the [`GlobalSta
 
 A typical analyzer session involves several steps.
 
+<!--
 First, we need to figure out what to analyze.
 To do this, we run `cargo metadata` to learn about Cargo packages for the current workspace and dependencies, and we run `rustc --print sysroot` and scan the "sysroot" (the directory containing the current Rust toolchain's files) to learn about crates like `std`.
 This happens in the [`GlobalState::fetch_workspaces`] method.
 We load this configuration at the start of the server in [`GlobalState::new`], but it is also triggered by workspace change events and requests to reload the workspace from the client.
 
-[`GlobalState::fetch_workspaces`]: https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/reload.rs#L186-L257
+[`GlobalState::fetch_workspaces`]: https://github.com/Rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/reload.rs#L186-L257
 
 The [`ProjectModel`] we get after this step is very Cargo and sysroot specific, it needs to be lowered to get the input in the form of `Change`.
 This happens in the [`GlobalState::process_changes`] method.
@@ -142,24 +143,24 @@ Specifically:
 - Create an analyzer's `Crate` for each Cargo **target** and sysroot crate.
 - Set up dependencies between the crates.
 
-[`ProjectModel`]: https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crates/project-model/src/workspace.rs#L57-L100
-[`GlobalState::process_changes`]: https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/global_state.rs#L217-L356
+[`ProjectModel`]: https://github.com/Rust-lang/rust-analyzer/blob/2024-01-01/crates/project-model/src/workspace.rs#L57-L100
+[`GlobalState::process_changes`]: https://github.com/Rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/global_state.rs#L217-L356
 
 The results of the scan (which may take a while) will be processed in the body of the main loop, just like any other change.
 Here, the following are handled:
 
-- [File system changes](https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/main_loop.rs#L273)
-- [Changes from the editor](https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/main_loop.rs#L801-L803)
+- [File system changes](https://github.com/Rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/main_loop.rs#L273)
+- [Changes from the editor](https://github.com/Rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/main_loop.rs#L801-L803)
 
-After a single loop's turn, we group the changes into one `Change` and [apply](https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/global_state.rs#L333) it.
+After a single loop's turn, we group the changes into one `Change` and [apply](https://github.com/Rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/global_state.rs#L333) it.
 This always happens on the main thread and blocks the loop.
 
-To handle requests, like ["goto definition"](https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/main_loop.rs#L767), we create an instance of the `Analysis` and [`schedule`](https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/dispatch.rs#L138) the task (which consumes `Analysis`) on the thread pool.
+To handle requests, like ["goto definition"](https://github.com/Rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/main_loop.rs#L767), we create an instance of the `Analysis` and [`schedule`](https://github.com/Rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/dispatch.rs#L138) the task (which consumes `Analysis`) on the thread pool.
 [The task] calls the corresponding `Analysis` method, while massaging the types into the LSP representation.
 Keep in mind that if we are executing "goto definition" on the thread pool and a new change comes in, the task will be canceled as soon as the main loop calls `apply_change` on the `AnalysisHost`.
 
-[The task]: https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/handlers/request.rs#L610-L623
-
+[The task]: https://github.com/Rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/handlers/request.rs#L610-L623
+-->
 This concludes the overview of the analyzer's programming *interface*.
 Next, explore the implementation details.
 

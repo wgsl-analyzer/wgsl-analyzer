@@ -169,6 +169,7 @@ pub struct Config {
 
 impl Config {
     /// Path to the user configuration dir. This can be seen as a generic way to define what would be `$XDG_CONFIG_HOME/rust-analyzer` in Linux.
+    #[must_use]
     pub fn user_config_dir_path() -> Option<AbsPathBuf> {
         let user_config_path = if let Some(path) = env::var_os("__TEST_RA_USER_CONFIG_DIR") {
             std::path::PathBuf::from(path)
@@ -178,6 +179,7 @@ impl Config {
         Some(AbsPathBuf::assert_utf8(user_config_path))
     }
 
+    #[must_use]
     pub fn discovered_projects(&self) -> &[ProjectManifest] {
         &self.discovered_projects_from_filesystem
     }
@@ -190,6 +192,7 @@ impl Config {
         self.diagnostics_enable
     }
 
+    #[must_use]
     pub fn files(&self) -> FilesConfig {
         FilesConfig {
             watcher: if self.did_change_watched_files_dynamic_registration() {
@@ -334,11 +337,6 @@ impl Config {
         }
     }
 
-    #[expect(
-        clippy::unused_self,
-        clippy::needless_pass_by_ref_mut,
-        reason = "TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/26"
-    )]
     pub fn rediscover_workspaces(&mut self) {
         let discovered = ProjectManifest::discover_all(&self.workspace_roots);
         tracing::info!("discovered projects: {:?}", discovered);
@@ -352,14 +350,18 @@ impl Config {
         &mut self,
         path: &AbsPath,
     ) {
-        if let Some(position) = self.workspace_roots.iter().position(|it| it == path) {
+        if let Some(position) = self
+            .workspace_roots
+            .iter()
+            .position(|root_path| root_path == path)
+        {
             self.workspace_roots.remove(position);
         }
     }
 
-    pub fn add_workspaces(
+    pub fn add_workspaces<I: Iterator<Item = AbsPathBuf>>(
         &mut self,
-        paths: impl Iterator<Item = AbsPathBuf>,
+        paths: I,
     ) {
         self.workspace_roots.extend(paths);
     }

@@ -10,7 +10,7 @@
 //! independent "phases". The phases are mutually recursive though, there's no
 //! strict ordering.
 //!
-//! ## Collecting RawItems
+//! ## Collecting `RawItems`
 //!
 //! This happens in the `raw` module, which parses a single source file into a
 //! set of top-level items. Nested imports are desugared to flat imports in this
@@ -30,7 +30,7 @@
 //! record it, by adding an item to current module scope and, if necessary, by
 //! recursively populating glob imports.
 //!
-//! TODO: ^ check if the comments there make sense
+//! TODO: ^ check if the comments there make sense.
 
 mod collector;
 mod diagnostics;
@@ -43,9 +43,10 @@ use std::ops::{Deref, DerefMut, Index, IndexMut};
 
 use base_db::{EditionedFileId, FileId, PackageId};
 use either::Either;
+use indexmap::IndexMap;
 use rowan::TextRange;
 use rustc_hash::{FxHashMap, FxHashSet};
-use syntax::{AstNode, Edition, SyntaxNode, ast};
+use syntax::{AstNode as _, Edition, SyntaxNode, ast};
 use triomphe::Arc;
 
 use crate::database::{DefDatabase, ModuleDefinitionId};
@@ -86,7 +87,7 @@ struct DefMapCrateData {
 }
 
 impl DefMapCrateData {
-    fn new(edition: Edition) -> Self {
+    const fn new(edition: Edition) -> Self {
         Self {
             edition,
             recursion_limit: None,
@@ -99,20 +100,23 @@ impl std::ops::Index<FileId> for DefMap {
 
     fn index(
         &self,
-        id: FileId,
+        index: FileId,
     ) -> &ModuleData {
-        self.modules
-            .get(&id)
-            .unwrap_or_else(|| panic!("FileId not found in ModulesMap {:#?}: {id:#?}", self.root))
+        self.modules.get(&index).unwrap_or_else(|| {
+            panic!(
+                "FileId not found in ModulesMap {:#?}: {index:#?}",
+                self.root
+            )
+        })
     }
 }
 
 impl std::ops::IndexMut<FileId> for DefMap {
     fn index_mut(
         &mut self,
-        id: FileId,
+        index: FileId,
     ) -> &mut ModuleData {
-        &mut self.modules[id]
+        &mut self.modules[index]
     }
 }
 
@@ -132,6 +136,7 @@ pub struct ModuleData {
 }
 
 impl DefMap {
+    #[must_use]
     pub fn edition(&self) -> Edition {
         self.data.edition
     }
@@ -139,12 +144,12 @@ impl DefMap {
     pub(crate) fn file_def_map_query(
         database: &dyn DefDatabase,
         file: FileId,
-    ) -> Option<Arc<DefMap>> {
+    ) -> Option<Arc<Self>> {
         let packages = database.source_root_packages(file);
         // TODO: handle the error cases
         // e.g. case 0 is valid for standalone files
         // the final case should just never happen in the first place
-        if packages.len() == 0 {
+        if packages.is_empty() {
             tracing::warn!("No package for file, so no def map");
             None
         } else if packages.len() == 1 {
@@ -158,7 +163,7 @@ impl DefMap {
     pub(crate) fn package_def_map_query(
         database: &dyn DefDatabase,
         package_id: PackageId,
-    ) -> Arc<DefMap> {
+    ) -> Arc<Self> {
         let package_graph = database.package_graph();
 
         let edition = package_graph[package_id].edition;
@@ -166,12 +171,12 @@ impl DefMap {
             file_id: package_graph[package_id].root_file_id,
             edition,
         };
-        let def_map = DefMap::empty(
+        let def_map = Self::empty(
             package_id,
             Arc::new(DefMapCrateData::new(edition)),
             ModuleData::new(origin, None),
         );
-        let def_map = collector::collect_defs(database, def_map, origin.into());
+        let def_map = collector::collect_definitions(database, def_map, origin.into());
 
         Arc::new(def_map)
     }
@@ -180,12 +185,12 @@ impl DefMap {
         package_id: PackageId,
         crate_data: Arc<DefMapCrateData>,
         module_data: ModuleData,
-    ) -> DefMap {
+    ) -> Self {
         let mut modules = ModulesMap::new();
         let root = module_data.origin.file_id;
         modules.insert(root, module_data);
 
-        DefMap {
+        Self {
             package: package_id,
             root,
             modules,
@@ -217,17 +222,20 @@ impl DefMap {
         self.modules.iter()
     }
 
-    pub fn package(&self) -> PackageId {
+    #[must_use]
+    pub const fn package(&self) -> PackageId {
         self.package
     }
 
     #[inline]
-    pub fn crate_root(&self) -> FileId {
+    #[must_use]
+    pub const fn crate_root(&self) -> FileId {
         self.root
     }
 
     /// Returns the module containing `local_mod`, either the parent `mod`, or the module (or block) containing
     /// the block, if `self` corresponds to a block expression.
+    #[must_use]
     pub fn containing_module(
         &self,
         local_mod: FileId,
@@ -236,39 +244,42 @@ impl DefMap {
     }
 
     /// Get a reference to the def map's diagnostics.
-    pub fn diagnostics(&self) -> &[DefDiagnostic] {
+    #[must_use]
+    pub const fn diagnostics(&self) -> &[DefDiagnostic] {
         self.diagnostics.as_slice()
     }
 
+    #[must_use]
     pub fn recursion_limit(&self) -> u32 {
         // 128 is the default in rustc
-        self.data.recursion_limit.unwrap_or(128)
+        self.data.recursion_limit.unwrap_or(0x0080)
     }
 
     // FIXME: this can use some more human-readable format (ideally, an IR
     // even), as this should be a great debugging aid.
+    #[must_use]
     pub fn dump(&self) -> String {
-        let mut buf = String::new();
+        let mut buffer = String::new();
         let current_map = self;
-        go(&mut buf, current_map, "crate", current_map.root);
-        return buf;
+        go(&mut buffer, current_map, "crate", current_map.root);
+        return buffer;
 
         fn go(
-            buf: &mut String,
+            buffer: &mut String,
             map: &DefMap,
             path: &str,
             module: FileId,
         ) {
-            write!(buf, "{}\n", path);
+            writeln!(buffer, "{path}");
 
-            map[module].scope.dump(buf);
+            map[module].scope.dump(buffer);
 
             let mut child_modules = map[module].children.iter().collect::<Vec<_>>();
-            child_modules.sort_by(|a, b| Ord::cmp(&a.0, &b.0));
+            child_modules.sort_by(|first, second| Ord::cmp(&first.0, &second.0));
             for (name, child) in child_modules {
                 let path = format!("{path}::{}", name.as_str());
-                buf.push('\n');
-                go(buf, map, &path, *child);
+                buffer.push('\n');
+                go(buffer, map, &path, *child);
             }
         }
     }
@@ -279,16 +290,17 @@ impl ModuleData {
         origin: EditionedFileId,
         name: Option<Name>,
     ) -> Self {
-        ModuleData {
+        Self {
             name,
             origin,
             parent: None,
-            children: Default::default(),
+            children: IndexMap::default(),
             scope: ItemScope::default(),
         }
     }
 
     /// Same as [`ModuleData::definition_source`] but only returns the file id to prevent parsing the AST.
+    #[must_use]
     pub fn definition_source_file_id(&self) -> HirFileId {
         self.origin.into()
     }
@@ -308,11 +320,11 @@ impl ModulesMap {
     }
 
     fn iter(&self) -> impl Iterator<Item = (FileId, &ModuleData)> + '_ {
-        self.inner.iter().map(|(&k, v)| (k, v))
+        self.inner.iter().map(|(&key, value)| (key, value))
     }
 
     fn iter_mut(&mut self) -> impl Iterator<Item = (FileId, &mut ModuleData)> + '_ {
-        self.inner.iter_mut().map(|(&k, v)| (k, v))
+        self.inner.iter_mut().map(|(&key, value)| (key, value))
     }
 }
 
@@ -335,21 +347,21 @@ impl Index<FileId> for ModulesMap {
 
     fn index(
         &self,
-        id: FileId,
+        index: FileId,
     ) -> &ModuleData {
         self.inner
-            .get(&id)
-            .unwrap_or_else(|| panic!("FileId not found in ModulesMap: {id:#?}"))
+            .get(&index)
+            .unwrap_or_else(|| panic!("FileId not found in ModulesMap: {index:#?}"))
     }
 }
 
 impl IndexMut<FileId> for ModulesMap {
     fn index_mut(
         &mut self,
-        id: FileId,
+        index: FileId,
     ) -> &mut ModuleData {
         self.inner
-            .get_mut(&id)
-            .unwrap_or_else(|| panic!("FileId not found in ModulesMap: {id:#?}"))
+            .get_mut(&index)
+            .unwrap_or_else(|| panic!("FileId not found in ModulesMap: {index:#?}"))
     }
 }

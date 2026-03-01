@@ -11,12 +11,12 @@ use crate::{
 pub(crate) struct ResolvePathResult {
     pub resolved_def: ModuleDefinitionId,
     /// The index of the last resolved segment, or `None` if the full path has been resolved.
-    /// TODO: I don't think that I need this
+    // TODO: I don't think that I need this
     pub segment_index: Option<usize>,
 }
 
 impl DefMap {
-    /// Keep this in sync with [`DefCollector::resolve_import_with_modules`]
+    /// Keep this in sync with [`crate::nameres::DefCollector::resolve_import_with_modules`].
     pub(crate) fn resolve_path(
         &self,
         mut file_id: FileId,
