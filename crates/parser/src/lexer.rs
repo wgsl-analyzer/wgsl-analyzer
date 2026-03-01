@@ -16,57 +16,57 @@ pub enum Token {
     EOFExpression,
     EOFStatement,
     EOFTypeSpecifier,
-    #[token("enable")]
+    /// `enable`
     Enable,
-    #[token("requires")]
+    /// `requires`
     Requires,
-    #[token("fn")]
+    /// `fn`
     Fn,
-    #[token("alias")]
+    /// `alias`
     Alias,
-    #[token("struct")]
+    /// `struct`
     Struct,
-    #[token("var")]
+    /// `var`
     Var,
-    #[token("const_assert")]
+    /// `const_assert`
     ConstAssert,
-    #[token("if")]
+    /// `if`
     If,
-    #[token("for")]
+    /// `for`
     For,
-    #[token("else")]
+    /// `else`
     Else,
-    #[token("loop")]
+    /// `loop`
     Loop,
-    #[token("break")]
+    /// `break`
     Break,
-    #[token("while")]
+    ///`while`
     While,
-    #[token("return")]
+    ///`return`
     Return,
-    #[token("switch")]
+    /// `switch`
     Switch,
-    #[token("discard")]
+    /// `discard`
     Discard,
-    #[token("continuing")]
+    /// `continuing`
     Continuing,
-    #[token("const")]
+    /// `const`
     Const,
-    #[token("case")]
+    /// `case`
     Case,
-    #[token("default")]
+    /// `default`
     Default,
-    #[token("override")]
+    /// `override`
     Override,
-    #[token("continue")]
+    /// `continue`
     Continue,
-    #[token("let")]
+    /// `let`
     Let,
-    #[token("true")]
+    /// `true`
     True,
-    #[token("false")]
+    /// `false`
     False,
-    #[token("diagnostic")]
+    /// `diagnostic`
     Diagnostic,
     #[token(";")]
     Semi,
@@ -167,18 +167,17 @@ pub enum Token {
     Plus2,
     #[token("--")]
     Minus2,
-    #[token("import")]
+    /// `import`
     Import,
-    #[token("package")]
+    /// `package`
     Package,
-    #[token("super")]
+    /// `super`
     Super,
-    #[token("as")]
+    /// `as`
     As,
     #[token("::")]
     DoubleColon,
-
-    #[regex(r"([_\p{XID_Start}][\p{XID_Continue}]+)|[\p{XID_Start}]")]
+    /// WGSL identifiers, parsing it ourselves
     Ident,
     #[regex(r"0[fh]")]
     #[regex(r"[1-9][0-9]*[fh]")]
@@ -267,17 +266,116 @@ pub fn lex_with_templates(
     lexer: logos::Lexer<'_, Token>,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> (Vec<Token>, Vec<Range<usize>>) {
-    collect_with_templates(lexer.spanned().map(|(token, span)| {
-        if let Ok(token) = token {
-            (token, span)
-        } else {
-            diagnostics.push(Diagnostic {
-                message: "unexpected tokens".to_owned(),
-                range: to_range(span.clone()),
-            });
-            (Token::Error, span)
+    collect_with_templates(WgslLexer {
+        inner: lexer,
+        diagnostics,
+    })
+}
+
+struct WgslLexer<'source, 'diagnostics> {
+    inner: logos::Lexer<'source, Token>,
+    diagnostics: &'diagnostics mut Vec<Diagnostic>,
+}
+
+impl<'source, 'diagnostics> Iterator for WgslLexer<'source, 'diagnostics> {
+    type Item = (Token, Span);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // Parse WGSL identifiers. 
+        // Avoiding Logos here for compile time reasons.
+        // ([_\p{XID_Start}][\p{XID_Continue}]+) | [\p{XID_Start}]
+        let token_start = self.inner.span().end;
+
+        let mut characters = self.inner.remainder().chars();
+        match characters.next() {
+            Some(char) if unicode_ident::is_xid_start(char) => {
+                // An ident that may have more characters
+                self.inner.bump(char.len_utf8());
+
+                while let Some(next_char) = characters.next()
+                    && unicode_ident::is_xid_continue(next_char)
+                {
+                    self.inner.bump(next_char.len_utf8());
+                }
+
+                // Check for all keywords
+                let token_end = self.inner.span().end;
+                let token_type = match &self.inner.source()[token_start..token_end] {
+                    "enable" => Token::Enable,
+                    "requires" => Token::Requires,
+                    "fn" => Token::Fn,
+                    "alias" => Token::Alias,
+                    "struct" => Token::Struct,
+                    "var" => Token::Var,
+                    "const_assert" => Token::ConstAssert,
+                    "if" => Token::If,
+                    "for" => Token::For,
+                    "else" => Token::Else,
+                    "loop" => Token::Loop,
+                    "break" => Token::Break,
+                    "while" => Token::While,
+                    "return" => Token::Return,
+                    "switch" => Token::Switch,
+                    "discard" => Token::Discard,
+                    "continuing" => Token::Continuing,
+                    "const" => Token::Const,
+                    "case" => Token::Case,
+                    "default" => Token::Default,
+                    "override" => Token::Override,
+                    "continue" => Token::Continue,
+                    "let" => Token::Let,
+                    "true" => Token::True,
+                    "false" => Token::False,
+                    "diagnostic" => Token::Diagnostic,
+
+                    "import" => Token::Import,
+                    "package" => Token::Package,
+                    "super" => Token::Super,
+                    "as" => Token::As,
+
+                    _ => Token::Ident,
+                };
+
+                return Some((token_type, token_start..token_end));
+            },
+            Some('_') => {
+                // An ident that must have more characters
+                self.inner.bump('_'.len_utf8());
+
+                match characters.next() {
+                    Some(next_char) if unicode_ident::is_xid_continue(next_char) => {
+                        self.inner.bump(next_char.len_utf8());
+                        while let Some(next_char) = characters.next()
+                            && unicode_ident::is_xid_continue(next_char)
+                        {
+                            self.inner.bump(next_char.len_utf8());
+                        }
+
+                        return Some((Token::Ident, token_start..self.inner.span().end));
+                    },
+                    _ => {
+                        return Some((Token::Underscore, token_start..self.inner.span().end));
+                    },
+                }
+            },
+            _ => (), // Not an ident
         }
-    }))
+
+        // For everything else, just ask Logos
+        self.inner.next().map(|token| {
+            let span = self.inner.span();
+
+            if let Ok(token) = token {
+                (token, span)
+            } else {
+                self.diagnostics.push(Diagnostic {
+                    message: "unexpected tokens".to_owned(),
+                    range: to_range(span.clone()),
+                });
+                (Token::Error, span)
+            }
+        })
+    }
 }
 
 /// Mutate tokens to be templates using <https://www.w3.org/TR/WGSL/#template-list-discovery>.
