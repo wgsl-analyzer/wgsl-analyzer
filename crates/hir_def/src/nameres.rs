@@ -68,9 +68,9 @@ use crate::{FxIndexMap, HirFileId, InFile};
 pub struct DefMap {
     /// The package this `DefMap` belongs to.
     package: PackageId,
-    pub root: FileId,
+    root: FileId,
     /// The modules and their data declared in this crate.
-    pub modules: ModulesMap,
+    modules: ModulesMap,
 
     /// The diagnostics that need to be emitted for this crate.
     diagnostics: Vec<DefDiagnostic>,
@@ -215,11 +215,13 @@ impl DefMap {
             module.scope.shrink_to_fit();
         }
     }
-}
 
-impl DefMap {
-    pub fn modules(&self) -> impl Iterator<Item = (FileId, &ModuleData)> + '_ {
-        self.modules.iter()
+    pub fn root(&self) -> FileId {
+        self.root
+    }
+
+    pub fn modules(&self) -> &ModulesMap {
+        &self.modules
     }
 
     #[must_use]
