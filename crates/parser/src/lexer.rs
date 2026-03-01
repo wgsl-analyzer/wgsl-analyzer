@@ -529,7 +529,7 @@ mod tests {
         let (tokens, _) = lex(source, &mut diagnostics);
         let mut expected = format!("{tokens:?}");
         if !diagnostics.is_empty() {
-            expected.push_str(&format!("\n{diagnostics:?}"));
+            writeln!(expected, "\n{diagnostics:?}");
         }
         expect.assert_eq(&expected);
     }
