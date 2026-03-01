@@ -1,6 +1,3 @@
-//! The parser is mostly copied from <https://github.com/arzg/eldiro/tree/master/crates/parser>
-//! with some adaptions and extensions.
-
 mod cst_builder;
 mod lexer;
 mod parser;

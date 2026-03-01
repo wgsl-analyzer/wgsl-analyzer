@@ -13,7 +13,7 @@ use logos::Logos as _;
 use rowan::GreenNodeBuilder;
 
 use super::lexer::Token;
-use crate::{Parse, ParseEntryPoint, cst_builder::CstBuilder, lexer::lex_with_templates};
+use crate::{Parse, ParseEntryPoint, cst_builder::CstBuilder, lexer::lex};
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
@@ -66,7 +66,7 @@ pub fn parse_entrypoint(
     edition: Edition,
 ) -> Parse {
     let mut diagnostics = Vec::new();
-    let mut parser = Parser::new_with_context(input, &mut diagnostics, ParserContext { edition });
+    let parser = Parser::new_with_context(input, &mut diagnostics, ParserContext { edition });
     let parsed = match entrypoint {
         ParseEntryPoint::File => parser.parse(&mut diagnostics),
         ParseEntryPoint::Expression => parser.parse_expression(&mut diagnostics),
@@ -121,7 +121,7 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         source: &'source str,
         diags: &mut Vec<Self::Diagnostic>,
     ) -> (Vec<Token>, Vec<Span>) {
-        lex_with_templates(Token::lexer(source), diags)
+        lex(source, diags)
     }
 
     fn create_diagnostic(
