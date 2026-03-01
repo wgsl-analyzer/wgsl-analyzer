@@ -262,12 +262,12 @@ fn lex_block_comment(lexer: &mut logos::Lexer<'_, Token>) -> Option<()> {
     None
 }
 
-pub fn lex_with_templates(
-    lexer: logos::Lexer<'_, Token>,
+pub fn lex(
+    source: &str,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> (Vec<Token>, Vec<Range<usize>>) {
     collect_with_templates(WgslLexer {
-        inner: lexer,
+        inner: <Token as logos::Logos>::lexer(source),
         diagnostics,
     })
 }
@@ -277,20 +277,20 @@ struct WgslLexer<'source, 'diagnostics> {
     diagnostics: &'diagnostics mut Vec<Diagnostic>,
 }
 
-impl<'source, 'diagnostics> Iterator for WgslLexer<'source, 'diagnostics> {
+impl Iterator for WgslLexer<'_, '_> {
     type Item = (Token, Span);
 
     fn next(&mut self) -> Option<Self::Item> {
-        // Parse WGSL identifiers. 
+        // Parse WGSL identifiers.
         // Avoiding Logos here for compile time reasons.
         // ([_\p{XID_Start}][\p{XID_Continue}]+) | [\p{XID_Start}]
         let token_start = self.inner.span().end;
 
         let mut characters = self.inner.remainder().chars();
         match characters.next() {
-            Some(char) if unicode_ident::is_xid_start(char) => {
+            Some(first_char) if unicode_ident::is_xid_start(first_char) => {
                 // An ident that may have more characters
-                self.inner.bump(char.len_utf8());
+                self.inner.bump(first_char.len_utf8());
 
                 while let Some(next_char) = characters.next()
                     && unicode_ident::is_xid_continue(next_char)
@@ -518,16 +518,20 @@ mod tests {
     use expect_test::expect;
     use logos::Logos as _;
 
-    use super::{Token, lex_with_templates};
+    use super::{Token, lex};
 
     #[expect(clippy::needless_pass_by_value, reason = "intended API")]
     fn check_lex(
         source: &str,
         expect: expect_test::Expect,
     ) {
-        let tokens: Result<Vec<_>, ()> = Token::lexer(source).collect();
-        let tokens = tokens.unwrap();
-        expect.assert_eq(&format!("{tokens:?}"));
+        let mut diagnostics = vec![];
+        let (tokens, _) = lex(source, &mut diagnostics);
+        let mut expected = format!("{tokens:?}");
+        if !diagnostics.is_empty() {
+            expected.push_str(&format!("\n{diagnostics:?}"));
+        }
+        expect.assert_eq(&expected);
     }
 
     #[expect(clippy::needless_pass_by_value, reason = "intended API")]
@@ -536,7 +540,7 @@ mod tests {
         expect: expect_test::Expect,
     ) {
         let mut diagnostics = Vec::new();
-        let (tokens, spans) = lex_with_templates(Token::lexer(source), &mut diagnostics);
+        let (tokens, spans) = lex(source, &mut diagnostics);
         let mut tokens_with_spans: String =
             tokens
                 .into_iter()
