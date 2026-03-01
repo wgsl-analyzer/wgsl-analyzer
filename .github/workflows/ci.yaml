@@ -390,6 +390,7 @@ jobs:
         rustdoc,
         check-unused-dependencies,
         typescript,
+        wgslfmt-dprint-wasm,
       ]
     # We need to ensure this job does *not* get skipped if its dependencies fail,
     # because a skipped job is considered a success by GitHub. So we have to
