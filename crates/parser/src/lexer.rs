@@ -40,9 +40,9 @@ pub enum Token {
     Loop,
     /// `break`
     Break,
-    ///`while`
+    /// `while`
     While,
-    ///`return`
+    /// `return`
     Return,
     /// `switch`
     Switch,
