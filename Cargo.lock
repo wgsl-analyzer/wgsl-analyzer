@@ -776,12 +776,13 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "lelwel"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b069ab0556ac5908dc3e020b7890fdd7fee2232e08e07df393cb00d0f7e42836"
+checksum = "89b6f64b11a960d7efbd56beae33ca8e2f10351baa6318b2be8924e6763e8644"
 dependencies = [
  "codespan-reporting 0.13.1",
  "logos",
+ "rustc-hash 2.1.1",
 ]
 
 [[package]]
