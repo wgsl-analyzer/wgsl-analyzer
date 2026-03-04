@@ -11,24 +11,24 @@ license.workspace = true
 doctest = false
 
 [dependencies]
-anyhow = "1.0.100"
+anyhow.workspace = true
 base-db.workspace = true
 edition.workspace = true
-itertools = "0.14.0"
-la-arena = "0.3.1"
+itertools.workspace = true
+la-arena.workspace = true
 paths = { workspace = true, features = ["serde1"] }
-rustc-hash = "2.1.1"
+rustc-hash.workspace = true
 semver = "1.0.27"
-serde = "1.0.228"
-serde_json = "1.0.145"
+serde.workspace = true
+serde_json.workspace = true
 stdx.workspace = true
 toml = "0.9.11"
 toolchain.workspace = true
-tracing = "0.1.41"
-triomphe = "0.1.15"
+tracing.workspace = true
+triomphe.workspace = true
 
 [dev-dependencies]
-expect-test = "1.5.1"
+expect-test.workspace = true
 
 [lints]
 workspace = true
