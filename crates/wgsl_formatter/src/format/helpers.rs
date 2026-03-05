@@ -8,6 +8,33 @@ use dprint_core::formatting::{
 
 pub use line_spacing::*;
 
+use crate::format::{
+    print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
+    reporting::FormatDocumentResult,
+};
+
+/// In cases where the formatter is not yet complete we simply output source verbatim.
+#[deprecated]
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "Should follow the api of gen_* methods"
+)]
+pub fn todo_verbatim_wesl(source: &parser::SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut items = PrintItemBuffer::default();
+
+    for line in source.to_string().split_inclusive('\n') {
+        if line.ends_with('\n') {
+            items.push_string(line[0..(line.len() - 1)].to_owned());
+            items.request(SeparationRequest {
+                line_break: SeparationPolicy::Forced,
+                ..Default::default()
+            });
+        }
+        items.push_string(line.to_owned());
+    }
+    Ok(items)
+}
+
 pub fn create_is_multiple_lines_resolver(
     start_ln: LineNumber,
     end_ln: LineNumber,

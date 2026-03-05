@@ -6,50 +6,49 @@ use syntax::{
 };
 
 use crate::format::{
-        ast_parse::{parse_end, parse_node_optional, parse_token_optional},
-        gen_comments::{Comment, gen_comment, parse_comment_optional},
-        gen_function::gen_function_declaration,
-        gen_statement::gen_const_assert_statement,
-        gen_struct::gen_struct_declaration,
-        gen_type_alias_declaration::gen_type_alias_declaration,
-        gen_var_let_const_override_statement::{
-            gen_const_declaration_statement, gen_override_declaration_statement,
-            gen_var_declaration_statement,
-        },
-        helpers::{LineSpacing, gen_line_spacing, line_spacing},
-        print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
-        reporting::FormatDocumentResult,
-    };
+    ast_parse::{parse_end, parse_node_optional, parse_token_optional},
+    gen_comments::{Comment, gen_comment, parse_comment_optional},
+    gen_function::gen_function_declaration,
+    gen_statement::gen_const_assert_statement,
+    gen_struct::gen_struct_declaration,
+    gen_type_alias_declaration::gen_type_alias_declaration,
+    gen_var_let_const_override_statement::{
+        gen_const_declaration_statement, gen_override_declaration_statement,
+        gen_var_declaration_statement,
+    },
+    helpers::{LineSpacing, gen_line_spacing, line_spacing, todo_verbatim_wesl},
+    print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
+    reporting::FormatDocumentResult,
+};
 
-fn gen_item(node: &ast::Item) -> FormatDocumentResult<PrintItemBuffer> {
+fn gen_item(node: &Item) -> FormatDocumentResult<PrintItemBuffer> {
     match node {
-        ast::Item::FunctionDeclaration(function_declaration) => {
+        Item::FunctionDeclaration(function_declaration) => {
             gen_function_declaration(function_declaration)
         },
-        ast::Item::StructDeclaration(struct_declaration) => {
-            gen_struct_declaration(struct_declaration)
-        },
-        ast::Item::VariableDeclaration(variable_declaration) => {
+        Item::StructDeclaration(struct_declaration) => gen_struct_declaration(struct_declaration),
+        Item::VariableDeclaration(variable_declaration) => {
             gen_var_declaration_statement(variable_declaration, true)
         },
-        ast::Item::ConstantDeclaration(constant_declaration) => {
+        Item::ConstantDeclaration(constant_declaration) => {
             gen_const_declaration_statement(constant_declaration, true)
         },
-        ast::Item::OverrideDeclaration(override_declaration) => {
+        Item::OverrideDeclaration(override_declaration) => {
             gen_override_declaration_statement(override_declaration, true)
         },
-        ast::Item::TypeAliasDeclaration(type_alias_declaration) => {
+        Item::TypeAliasDeclaration(type_alias_declaration) => {
             gen_type_alias_declaration(type_alias_declaration, true)
         },
-        ast::Item::AssertStatement(assert_statement) => {
+        Item::AssertStatement(assert_statement) => {
             gen_const_assert_statement(assert_statement, true)
         },
+        Item::ImportStatement(import_statement) => todo_verbatim_wesl(import_statement.syntax()),
     }
 }
 
 pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
     enum SourceFileItem {
-        Item(ast::Item),
+        Item(Item),
         Comment(Comment),
         LineSpacing(LineSpacing),
     }

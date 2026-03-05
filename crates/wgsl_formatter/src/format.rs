@@ -15,6 +15,7 @@ mod gen_expression;
 mod gen_function;
 mod gen_function_call;
 mod gen_if_statement;
+mod gen_path;
 mod gen_source_file;
 mod gen_statement;
 pub mod gen_statement_compound;
@@ -27,6 +28,7 @@ pub mod multiline_group;
 mod reporting;
 
 use dprint_core::formatting::PrintOptions;
+use parser::Edition;
 use syntax::ast;
 
 use crate::{
@@ -41,7 +43,7 @@ pub fn format_str(
     input: &str,
     options: &FormattingOptions,
 ) -> FormatDocumentResult<String> {
-    let parse = syntax::parse(input);
+    let parse = syntax::parse(input, Edition::LATEST);
     //TODO Return error if the syntax could not parse.
     let file = parse.tree();
     format_tree(&file, options)

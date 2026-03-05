@@ -1,6 +1,7 @@
 #![cfg(test)]
 
 use expect_test::expect;
+use parser::Edition;
 
 use crate::test_util::{assert_out_of_scope, check, check_comments, check_with_options};
 
@@ -81,6 +82,7 @@ fn format_fn_header_comma_multiline_wide() {
             width: 26, //Just shy of what the fn would be laid out as on a single line
             ..Default::default()
         },
+        Edition::LATEST,
     );
 }
 
@@ -98,6 +100,7 @@ fn format_fn_header_comma_multiline_narrow() {
             width: 4, //Just shy of what the fn would be laid out as on a single line
             ..Default::default()
         },
+        Edition::LATEST,
     );
 }
 

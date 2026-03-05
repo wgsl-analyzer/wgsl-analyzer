@@ -15,6 +15,7 @@ pretty = "0.12.4"
 dprint-core = { version = "0.67.4", features = ["tracing"] }
 dprint-core-macros = "0.1.0"
 itertools = "0.14.0"
+thiserror = {version = "2.0.17"}
 
 [dev-dependencies]
 dissimilar = "1.0.11"

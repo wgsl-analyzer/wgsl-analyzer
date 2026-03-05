@@ -15,6 +15,7 @@ use crate::format::{
     },
     gen_comments::gen_comments,
     gen_function_call::gen_function_call,
+    gen_path::gen_path,
     gen_types::gen_template_list,
     helpers::create_is_multiple_lines_resolver,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
@@ -67,14 +68,14 @@ pub fn gen_ident_expression(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(ident_expression.syntax().children_with_tokens());
-    let item_name_reference = parse_node::<ast::NameReference>(&mut syntax)?;
+    let item_path = parse_node::<ast::Path>(&mut syntax)?;
     let item_comments_after_name_reference = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_template = parse_node_optional::<TemplateList>(&mut syntax);
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
-    formatted.push_string(item_name_reference.text().to_string());
+    formatted.extend(gen_path(&item_path)?);
     formatted.extend(gen_comments(&item_comments_after_name_reference));
     if let Some(item_template) = item_template {
         formatted.extend(gen_template_list(&item_template)?);
