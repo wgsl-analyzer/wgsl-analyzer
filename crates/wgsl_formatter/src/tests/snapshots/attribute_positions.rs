@@ -651,6 +651,13 @@ pub fn format_attrs_on_loop_continuing_block() {
         }
         ",
         expect![[r#"
+            fn main() {
+                loop {
+                    continuing @attr(0)
+                    @attr(1)
+                    {}
+                }
+            }
         "#]],
     );
 }
@@ -666,8 +673,29 @@ pub fn format_comments_in_attrs_on_loop_continuing_block() {
         }
         ",
         expect![[r#"
+            fn main() {
+                loop {
+                    /* 0 */
+                    continuing /* 1 */ @attr(0) /* 2 */
+                    @attr(1) /* 3 */
+                    {
+                        /* 4 */
+                    }
+                }
+            }
         "#]],
         expect![[r#"
+            fn main() {
+                loop {
+                    // 0
+                    continuing // 1
+                    @attr(0) // 2
+                    @attr(1) // 3
+                    {
+                        // 4
+                    }
+                }
+            }
         "#]],
     );
 }
