@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position, put_back};
@@ -19,7 +21,10 @@ use crate::format::{
     gen_comments::{Comment, gen_comments},
     gen_expression::gen_expression,
     gen_statement_compound::gen_compound_statement,
-    print_item_buffer::PrintItemBuffer,
+    print_item_buffer::{
+        PrintItemBuffer,
+        request_folder::{Request, RequestItem},
+    },
     reporting::FormatDocumentError,
 };
 
@@ -74,14 +79,23 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
     formatted.push_sc(sc!("{"));
     formatted.push_signal(Signal::StartIndent);
     formatted.extend(gen_comments(&item_comments_after_brace_left));
-    for (item_case, item_comments_after_case) in item_cases {
+
+    let is_empty = item_cases.is_empty();
+    if !is_empty {
+        for (item_case, item_comments_after_case) in item_cases {
+            formatted.expect_line_break();
+            formatted.extend(gen_switch_body_case(&item_case)?);
+            formatted.extend(gen_comments(&item_comments_after_case));
+        }
         formatted.expect_line_break();
-        formatted.extend(gen_switch_body_case(&item_case)?);
-        formatted.extend(gen_comments(&item_comments_after_case));
     }
     formatted.push_signal(Signal::FinishIndent);
-    formatted.expect_line_break();
     formatted.push_sc(sc!("}"));
+
+    if !is_empty {
+        formatted.expect_line_break();
+    }
+
     Ok(formatted)
 }
 

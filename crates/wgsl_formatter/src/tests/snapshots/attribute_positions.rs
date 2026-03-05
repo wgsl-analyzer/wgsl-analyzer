@@ -470,8 +470,7 @@ pub fn format_attrs_on_switch_statement() {
             fn main() {
                 @attr(0)
                 @attr(1)
-                switch a {
-                }
+                switch a {}
             }
         "#]],
     );
@@ -489,8 +488,7 @@ pub fn format_attrs_on_switch_statement_body() {
             fn main() {
                 switch a @attr(0)
                 @attr(1)
-                {
-                }
+                {}
             }
         "#]],
     );
@@ -511,8 +509,7 @@ pub fn format_comments_in_attrs_on_switch_statement_and_body() {
                 @attr(1) /* 2 */
                 switch a /* 3 */ @attr(0) /* 4 */
                 @attr(1) /* 5 */
-                { /* 6 */
-                }
+                { /* 6 */ }
             }
         "#]],
         expect![[r#"
