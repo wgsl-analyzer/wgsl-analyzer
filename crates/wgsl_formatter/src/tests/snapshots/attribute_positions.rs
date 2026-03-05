@@ -709,6 +709,11 @@ pub fn format_attrs_on_while_statement() {
         }
         ",
         expect![[r#"
+            fn main() {
+                @attr(0)
+                @attr(1)
+                while true {}
+            }
         "#]],
     );
 }
@@ -722,8 +727,21 @@ pub fn format_comments_in_attrs_on_while_statement() {
         }
         ",
         expect![[r#"
+            fn main() {
+                /* 0 */
+                @attr(0) /* 1 */
+                @attr(1) /* 2 */
+                while /* 3 */ true {}
+            }
         "#]],
         expect![[r#"
+            fn main() {
+                // 0
+                @attr(0) // 1
+                @attr(1) // 2
+                while // 3
+                true {}
+            }
         "#]],
     );
 }

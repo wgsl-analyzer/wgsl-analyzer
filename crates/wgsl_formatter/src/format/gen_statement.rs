@@ -468,6 +468,7 @@ fn gen_continuing_statement(
 fn gen_while_statement(statement: &ast::WhileStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
+    let item_attributes = parse_many_attributes(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::While)?;
     let comments_after_while = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_condition = parse_node::<Expression>(&mut syntax)?;
@@ -477,6 +478,7 @@ fn gen_while_statement(statement: &ast::WhileStatement) -> FormatDocumentResult<
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
+    formatted.extend(gen_attributes(&item_attributes)?);
     formatted.push_sc(sc!("while"));
     formatted.extend(gen_comments(&comments_after_while));
     formatted.expect_single_space(); // Request space, because we trim parentheses
