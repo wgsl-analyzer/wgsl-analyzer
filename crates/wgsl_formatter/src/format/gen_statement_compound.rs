@@ -91,5 +91,18 @@ pub fn gen_compound_statement(
     }
 
     formatted.push_sc(sc!("}"));
+
+    if !body_empty {
+        // This exists mainly for things like
+        // fn a { let a = 1; } // Thing
+        // ==>
+        // fn a {
+        //   let a = 1;
+        // }
+        // // Thing
+        // So the comment is not on the same line as the closing brace.
+        formatted.expect_line_break();
+    }
+
     Ok(formatted)
 }

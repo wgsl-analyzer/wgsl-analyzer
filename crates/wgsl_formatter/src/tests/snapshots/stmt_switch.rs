@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{check, check_comments};
+use crate::test_util::{assert_out_of_scope, check, check_comments};
 
 #[test]
 pub fn format_switch_statement_case_colon() {
@@ -195,17 +195,7 @@ pub fn format_switch_statement_block_comments_in_case_default_only() {
     check_comments(
         "fn main() {
             switch(a) {
-                ##
-                case
-                ##
-                default
-                ##
-                {
-                ##
-                    let a = 1;
-                    ##
-                }
-                ##
+                ## case ## default ## { ## let a = 1; ## } ##
             }
         }",
         expect![[r#"
@@ -213,9 +203,9 @@ pub fn format_switch_statement_block_comments_in_case_default_only() {
                 switch a { /* 0 */
                     default /* 1 */ /* 2 */ {
                         /* 3 */
-                        let a = 1;
-                        /* 4 */
-                    } /* 5 */ 
+                        let a = 1; /* 4 */
+                    }
+                    /* 5 */
                 }
             }
         "#]],
@@ -226,11 +216,9 @@ pub fn format_switch_statement_block_comments_in_case_default_only() {
                     // 2
                     {
                         // 3
-
-                        let a = 1;
-                        // 4
-                    } // 5
-
+                        let a = 1; // 4
+                    }
+                    // 5
                 }
             }
         "#]],
@@ -261,12 +249,14 @@ pub fn format_switch_statement_comments_in_average_switch() {
                         /* 12 */
                         let a = 1;
                         /* 13 */
-                    } /* 14 */
+                    }
+                    /* 14 */
                     case /* 15 */ 3 /* 16 */ {
                         /* 17 */
                         let a = 1;
                         /* 18 */
-                    } /* 19 */
+                    }
+                    /* 19 */
                     default /* 20 */ /* 21 */ {
                         /* 22 */
                         let a = 1;
@@ -293,14 +283,16 @@ pub fn format_switch_statement_comments_in_average_switch() {
                         // 12
                         let a = 1;
                         // 13
-                    } // 14
+                    }
+                    // 14
                     case // 15
                     3 // 16
                     {
                         // 17
                         let a = 1;
                         // 18
-                    } // 19
+                    }
+                    // 19
                     default // 20
                     // 21
                     {
@@ -309,6 +301,48 @@ pub fn format_switch_statement_comments_in_average_switch() {
                         // 23
                     }
                 }
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_block_comments_around_empty_switch_statement() {
+    check(
+        "
+        fn main() {
+            /* Before */
+            switch a {} /* Can stay on the same line */
+            /* After */
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                /* Before */
+                switch a {} /* Can stay on the same line */
+                /* After */
+            }
+        "#]],
+    );
+}
+#[test]
+pub fn format_block_comments_around_nonempty_switch_statement() {
+    check(
+        "
+        fn main() {
+            /* Before */
+            switch a {default {}} /* Should be broken onto separate the same line */
+            /* After */
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                /* Before */
+                switch a {
+                    default {}
+                }
+                /* Should be broken onto separate the same line */
+                /* After */
             }
         "#]],
     );

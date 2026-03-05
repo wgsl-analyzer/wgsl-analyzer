@@ -178,8 +178,7 @@ fn format_for_statement_average() {
 pub fn format_comments_in_for_statement() {
     check_comments(
         "fn main() {
-        ## for ## ( ## var ## i ## = ## 0 ## ; ## i ## < ## 4 ## ; ## i ## ++ ##) ## {
-        ## } ##
+        ## for ## ( ## var ## i ## = ## 0 ## ; ## i ## < ## 4 ## ; ## i ## ++ ##) ## { ## } ##
         }",
         expect![[r#"
             fn main() {
@@ -191,7 +190,8 @@ pub fn format_comments_in_for_statement() {
                     i /* 12 */ ++ /* 13 */
                 ) /* 14 */ {
                     /* 15 */
-                } /* 16 */
+                }
+                /* 16 */
             }
         "#]],
         expect![[r#"
@@ -214,7 +214,8 @@ pub fn format_comments_in_for_statement() {
                 ) // 14
                 {
                     // 15
-                } // 16
+                }
+                // 16
             }
         "#]],
     );

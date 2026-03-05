@@ -26,13 +26,12 @@ fn format_fn_header_inline_comments_1() {
 fn format_fn_multiline_header_inline_comments_1() {
     check_with_options(
         "/*000*/ fn /*aaa*/ main /*bbb*/(/*ccc*/ a /*ddd*/ : /*eee*/ b /*fff*/ ) /*ggg*/  -> /*hhh*/ f32 /*iii*/ {} /*jjj*/",
-        &expect![["
+        &expect![[r#"
             /*000*/
             fn /*aaa*/ main /*bbb*/ (
                 /*ccc*/ a: /*ddd*/ /*eee*/ b, /*fff*/
-            ) /*ggg*/ -> /*hhh*/ f32 /*iii*/ {}
-            /*jjj*/
-        "]],
+            ) /*ggg*/ -> /*hhh*/ f32 /*iii*/ {} /*jjj*/
+        "#]],
         &FormattingOptions {
             width: 50,
             ..Default::default()
@@ -66,7 +65,7 @@ fn format_fn_header_line_comments_1() {
         {} // jjj
         // kkk
         ",
-        expect![["
+        expect![[r#"
             // 000
             fn // aaa
             main // bbb
@@ -78,10 +77,9 @@ fn format_fn_header_line_comments_1() {
             ) // ggg
             -> // hhh
             f32 // iii
-            {}
-            // jjj
+            {} // jjj
             // kkk
-        "]],
+        "#]],
     );
 }
 

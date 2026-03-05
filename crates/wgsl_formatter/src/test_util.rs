@@ -190,11 +190,38 @@ fn format_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> String {
     buf
 }
 
+/// Replaces all occurrences of `##` in the `before` string with block and line comments.
+///
+/// THIS SHOULD *NOT* BE USED TO TEST POSITIONING OF COMMENTS.
+/// This should only be used to test if all comments exist and are placed in the
+/// correct order.
+/// If exact positioning with regard to line-breaks and spaces is important,
+/// write an explicit test instead.
+///
+/// The `before` string should be a one-liner, because for line-comments the newlines
+/// will get inserted, and if its multiline already, then there might be cases
+/// where there are two newlines after one another, which could lead to unexpected
+/// empty lines.
+///
+/// For line comments, `##` gets replaced with line comments of an increasing number.
+/// `## a ## b` would become:
+/// ```
+/// // 0
+/// a // 1
+/// b
+/// ```
+///
+/// For block comments, `##` gets replaced with block comments of an increasing number.
+/// `## a ## b` would become:
+/// ```
+/// /* 0 */ a /* 1 */ b
+/// ```
 pub fn check_comments<E: ExpectAssertEq>(
     before: &str,
     after_block: E,
     after_line: E,
 ) {
+    // TODO(MonaMayrhofer) Consider enforcing the one-line rule by preprocessing before to remove newlines
     {
         let mut comment_index = 0;
         let commented: String = itertools::Itertools::intersperse_with(

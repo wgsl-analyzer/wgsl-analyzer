@@ -36,7 +36,7 @@ fn format_if_statement_remove_parens() {
 }
 
 #[test]
-fn format_if_statement_average_2() {
+fn format_if_statement_average() {
     check(
         "fn main() {
     if(x < 1){}
@@ -255,20 +255,21 @@ pub fn format_if_elseif_elseif_else_statement_simple_expr() {
 pub fn format_comments_in_if_elseif_else_statement() {
     check_comments(
         "fn main() {
-        ## if ## a ## { ## } ##
-        ## else ## if ## a ## { ## } ##
-        ## else ## { ## } ##
+        ## if ## a ## { ## } ## else ## if ## a ## { ## } ## else ## { ## } ##
         }",
         expect![[r#"
             fn main() {
                 /* 0 */
                 if /* 1 */ a /* 2 */ {
                     /* 3 */
-                } /* 4 */ /* 5 */ else /* 6 */ if /* 7 */ a /* 8 */ {
-                    /* 9 */
-                } /* 10 */ /* 11 */ else /* 12 */ {
-                    /* 13 */
-                } /* 14 */
+                }
+                /* 4 */ else /* 5 */ if /* 6 */ a /* 7 */ {
+                    /* 8 */
+                }
+                /* 9 */ else /* 10 */ {
+                    /* 11 */
+                }
+                /* 12 */
             }
         "#]],
         expect![[r#"
@@ -278,19 +279,20 @@ pub fn format_comments_in_if_elseif_else_statement() {
                 a // 2
                 {
                     // 3
-                } // 4
-                // 5
-                else // 6
-                if // 7
-                a // 8
+                }
+                // 4
+                else // 5
+                if // 6
+                a // 7
                 {
-                    // 9
-                } // 10
-                // 11
-                else // 12
+                    // 8
+                }
+                // 9
+                else // 10
                 {
-                    // 13
-                } // 14
+                    // 11
+                }
+                // 12
             }
         "#]],
     );
@@ -300,16 +302,15 @@ pub fn format_comments_in_if_elseif_else_statement() {
 pub fn format_comments_in_if_else_statement() {
     check_comments(
         "fn main() {
-        ## if ## a ## { ## }
-        ## else ## { ## }
-        ##
+        ## if ## a ## { ## } ## else ## { ## } ##
         }",
         expect![[r#"
             fn main() {
                 /* 0 */
                 if /* 1 */ a /* 2 */ {
                     /* 3 */
-                } /* 4 */ else /* 5 */ {
+                }
+                /* 4 */ else /* 5 */ {
                     /* 6 */
                 }
                 /* 7 */
@@ -322,7 +323,8 @@ pub fn format_comments_in_if_else_statement() {
                 a // 2
                 {
                     // 3
-                } // 4
+                }
+                // 4
                 else // 5
                 {
                     // 6
