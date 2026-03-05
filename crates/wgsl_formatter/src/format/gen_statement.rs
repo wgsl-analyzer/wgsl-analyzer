@@ -16,98 +16,23 @@ use crate::format::{
     gen_assignment_statement::{
         gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
     },
+    gen_attributes::{gen_attributes, parse_many_attributes},
     gen_comments::{gen_comment, gen_comments},
     gen_expression::gen_expression,
     gen_function_call::gen_function_call,
     gen_if_statement::gen_if_statement,
+    gen_statement_compound::gen_compound_statement,
     gen_switch_statement::gen_switch_statement,
     gen_var_let_const_statement::{
         gen_const_declaration_statement, gen_let_declaration_statement,
         gen_var_declaration_statement,
     },
-    helpers::gen_spaced_lines,
     multiline_group::gen_multiline_group,
-    print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
-    reporting::{FormatDocumentError, FormatDocumentErrorKind, FormatDocumentResult},
+    print_item_buffer::{PrintItemBuffer, SeparationPolicy},
+    reporting::{FormatDocumentError, FormatDocumentResult},
 };
 
-pub fn gen_compound_statement(
-    syntax: &ast::CompoundStatement
-) -> FormatDocumentResult<PrintItemBuffer> {
-    // ==== Parse ====
-    //TODO I don't really like this, but its an easy way for now
-    let body_empty = syntax.syntax().children_with_tokens().all(|child| {
-        matches!(
-            child.kind(),
-            SyntaxKind::BraceLeft | SyntaxKind::BraceRight | SyntaxKind::Blankspace
-        )
-    });
-
-    let lines = gen_spaced_lines(syntax.syntax(), |child| {
-        //TODO This clone is unnecessary if we had a cast that returned the passed in node
-        // on a failure like std::any::Any (SyntaxNode -> Result<Item, Syntaxnode>)
-        if let NodeOrToken::Node(child) = child
-            && let Some(statement) = ast::Statement::cast(child.clone())
-        {
-            let mut formatted = PrintItemBuffer::new();
-            formatted.request_line_break(SeparationPolicy::Expected);
-            formatted.extend(gen_statement(&statement)?);
-            Ok(formatted)
-        } else if let NodeOrToken::Token(child) = child
-            && matches!(
-                child.kind(),
-                SyntaxKind::BlockComment | SyntaxKind::LineEndingComment
-            )
-        {
-            Ok(gen_comment(child))
-        } else if let NodeOrToken::Token(child) = child
-            && matches!(child.kind(), SyntaxKind::BraceLeft | SyntaxKind::BraceRight)
-        {
-            //The braces are expected, we could pop them from the syntax before passing them to gen_spaced_lines,
-            // but this way is just as fine
-            Ok(PrintItemBuffer::new())
-        } else {
-            Err(FormatDocumentErrorKind::UnexpectedToken {
-                received: child.clone(),
-            }
-            .at(child.text_range()))
-        }
-    })?;
-
-    // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
-    formatted.push_sc(sc!("{"));
-
-    if !body_empty {
-        formatted.push_signal(Signal::StartIndent);
-        formatted.request(SeparationRequest {
-            empty_line: SeparationPolicy::Discouraged,
-            line_break: SeparationPolicy::Expected,
-            ..Default::default()
-        });
-        formatted.extend(lines);
-        formatted.request(SeparationRequest {
-            empty_line: SeparationPolicy::Discouraged,
-            line_break: SeparationPolicy::Expected,
-            ..Default::default()
-        });
-        formatted.push_signal(Signal::FinishIndent);
-    }
-
-    formatted.push_sc(sc!("}"));
-    Ok(formatted)
-}
-
-fn gen_statement(item: &ast::Statement) -> Result<PrintItemBuffer, FormatDocumentError> {
-    // Read comment in gen_statement_maybe_semicolon
-    // As most of the calls to gen_statement will always have true as the include_semicolon
-    // parameter, I want to have this alias function, so that once I properly clean up the
-    // flag, i don't need to change code that doesn't semantically change.
-    // Also, this way, places that need the flag are highlighted and easier to find.
-    gen_statement_maybe_semicolon(item, true)
-}
-
-fn gen_statement_maybe_semicolon(
+pub fn gen_statement_maybe_semicolon(
     item: &ast::Statement,
     // TODO Consider absorbing semicolon handling into PrintItemBuffer,
     // passing around random flags is bad, as it leads to spaghetti code and if

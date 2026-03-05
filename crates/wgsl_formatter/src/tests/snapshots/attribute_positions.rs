@@ -131,14 +131,15 @@ pub fn format_comments_in_attrs_on_function_return_type() {
         ) ## -> ## @attr(0) ## @attr(1) ## vec4<f32> ## {
         }",
         expect![[r#"
-            fn thing() -> @location(0)
-            vec4<f32> {}
+            fn thing() /* 0 */ -> /* 1 */ @attr(0) /* 2 */
+            @attr(1) /* 3 */
+            vec4<f32> /* 4 */ {}
         "#]],
         expect![[r#"
             fn thing() // 0
-            -> @attr(0) // 2
+            -> // 1
+            @attr(0) // 2
             @attr(1) // 3
-            // 1
             vec4<f32> // 4
             {}
         "#]],
@@ -204,11 +205,16 @@ pub fn format_comments_in_attrs_on_function_parameter() {
 
 #[test]
 pub fn format_attrs_on_function_body() {
+    //TODO (MonaMayrhofer) This attribute spacing is ugly.
     check(
         "
         fn thing() -> vec4<f32> @attr(0) @attr(1) {
         }",
         expect![[r#"
+            fn thing() -> vec4<f32> @attr(0)
+            @attr(1)
+            {
+            }
         "#]],
     );
 }
@@ -220,8 +226,20 @@ pub fn format_comments_in_attrs_on_function_body() {
         fn thing() -> ## vec4<f32> ## @attr(0) ## @attr(1) ## { ##
         }",
         expect![[r#"
+            fn thing() -> /* 0 */ vec4<f32> /* 1 */ @attr(0) /* 2 */
+            @attr(1) /* 3 */
+            {
+                /* 4 */
+            }
         "#]],
         expect![[r#"
+            fn thing() -> // 0
+            vec4<f32> // 1
+            @attr(0) // 2
+            @attr(1) // 3
+            {
+                // 4
+            }
         "#]],
     );
 }
@@ -293,6 +311,32 @@ pub fn format_attrs_on_compound_statement() {
         fn main() {
             @attr(0) @attr(1) {}
             if true @attr(0) @attr(1) {}
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                @attr(0)
+                @attr(1)
+                {}
+                if true @attr(0)
+                @attr(1)
+                {}
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attrs_on_nonempty_compound_statement() {
+    check(
+        "
+        fn main() {
+            @attr(0) @attr(1) {
+                let a = 0;
+            }
+            if true @attr(0) @attr(1) {
+                let a = 0;
+            }
         }
         ",
         expect![[r#"

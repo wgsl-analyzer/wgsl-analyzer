@@ -17,7 +17,7 @@ use crate::format::{
     },
     gen_comments::gen_comments,
     gen_expression::gen_expression,
-    gen_statement::gen_compound_statement,
+    gen_statement_compound::gen_compound_statement,
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentError,
 };

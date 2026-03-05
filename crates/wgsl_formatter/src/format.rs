@@ -16,6 +16,7 @@ mod gen_function;
 mod gen_function_call;
 mod gen_if_statement;
 mod gen_statement;
+pub mod gen_statement_compound;
 mod gen_struct;
 pub mod gen_switch_statement;
 mod gen_type_alias_declaration;
@@ -25,6 +26,7 @@ pub mod multiline_group;
 mod reporting;
 
 use dprint_core::formatting::PrintOptions;
+use itertools::put_back;
 use parser::SyntaxKind;
 use rowan::NodeOrToken;
 use syntax::{
@@ -127,7 +129,9 @@ fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuff
     let mut formatted = PrintItemBuffer::new();
     formatted.request(SeparationRequest::discouraged());
 
-    let lines = gen_spaced_lines(node.syntax(), |child| {
+    let mut syntax = put_back(node.syntax().children_with_tokens());
+
+    let lines = gen_spaced_lines(&mut syntax, |child| {
         let mut formatted = PrintItemBuffer::new();
 
         //TODO This clone is unnecessary if we had a cast that returned the passed in node
