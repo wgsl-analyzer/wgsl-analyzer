@@ -60,7 +60,6 @@ pub fn format_ident_expr_int_literals() {
     );
 }
 
-#[ignore = "Upstream must fix the parser"]
 #[test]
 pub fn format_ident_expr_zero_padded_int_literals_out_of_scope() {
     // https://www.w3.org/TR/WGSL/#numeric-literals
@@ -92,10 +91,14 @@ pub fn format_ident_expr_zero_padded_int_literals_out_of_scope() {
 
 #[test]
 pub fn format_ident_expr_namespaced_1() {
-    assert_out_of_scope(
+    check(
         "fn main() {
         let a = my_module::MY_CONSTANT;
         }",
-        "Currently the parser supports only wgsl. This unit test needs to be replaced with a proper one, when wesl support is added.",
+        expect![["
+            fn main() {
+                let a = my_module::MY_CONSTANT;
+            }
+        "]],
     );
 }

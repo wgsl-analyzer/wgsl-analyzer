@@ -7,6 +7,7 @@
 use std::{borrow::ToOwned, ffi::OsString, fmt::Debug, panic, path::Path};
 
 use itertools::Itertools as _;
+use parser::Edition;
 
 use crate::{FormattingOptions, format, format_tree};
 
@@ -55,7 +56,12 @@ pub fn check<E: ExpectAssertEq>(
     before: &str,
     after: E,
 ) -> String {
-    check_with_options(before, &after, &FormattingOptions::default())
+    check_with_options(
+        before,
+        &after,
+        &FormattingOptions::default(),
+        Edition::LATEST,
+    )
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
@@ -67,7 +73,7 @@ pub fn check_tabs<E: ExpectAssertEq>(
         indent_symbol: "\t".to_owned(),
         ..Default::default()
     };
-    check_with_options(before, &after, &options);
+    check_with_options(before, &after, &options, Edition::LATEST);
 }
 
 /// Checks that the given source raises parsing diagnostics and is
@@ -90,7 +96,7 @@ pub fn assert_out_of_scope(
     before: &str,
     reason: &str,
 ) {
-    let parse = syntax::parse(before.trim_start());
+    let parse = syntax::parse(before.trim_start(), Edition::LATEST);
     let syntax = parse.tree();
 
     if parse.errors().is_empty() {
@@ -107,8 +113,9 @@ pub fn check_with_options<E: ExpectAssertEq>(
     before: &str,
     after: &E,
     options: &FormattingOptions,
+    edition: Edition,
 ) -> String {
-    let parse = syntax::parse(before.trim_start());
+    let parse = syntax::parse(before.trim_start(), edition);
     let syntax = parse.tree();
 
     assert!(
@@ -133,7 +140,7 @@ pub fn check_with_options<E: ExpectAssertEq>(
     println!("==Idempodence check==");
 
     // Check for idempotence
-    let syntax = syntax::parse(formatted.trim_start()).tree();
+    let syntax = syntax::parse(formatted.trim_start(), edition).tree();
     dbg!(&syntax);
 
     let new_second = format_tree(&syntax, options)

@@ -1,4 +1,5 @@
 use expect_test::expect;
+use parser::Edition;
 
 use crate::{
     FormattingOptions,
@@ -19,6 +20,7 @@ fn format_fn_header_inline_comments_1() {
             width: 10000,
             ..Default::default()
         },
+        Edition::LATEST,
     );
 }
 
@@ -36,6 +38,7 @@ fn format_fn_multiline_header_inline_comments_1() {
             width: 50,
             ..Default::default()
         },
+        Edition::LATEST,
     );
 }
 

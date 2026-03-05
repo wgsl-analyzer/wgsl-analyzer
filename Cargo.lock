@@ -2017,6 +2017,7 @@ dependencies = [
  "rowan",
  "serde",
  "syntax",
+ "thiserror",
 ]
 
 [[package]]

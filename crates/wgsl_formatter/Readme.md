@@ -5,3 +5,7 @@ When compiled with the `prefer-immediate-crash` feature, the formatter will cras
 ```
 RUST_BACKTRACE=1 cargo test --features=prefer-immediate-crash
 ```
+
+# TODOs
+- Format Ranges
+- Polish cli

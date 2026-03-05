@@ -1,5 +1,6 @@
 use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::{NodeOrToken, TextRange};
+use thiserror::Error;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FormatDocumentErrorKind {
@@ -33,7 +34,8 @@ impl FormatDocumentErrorKind {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Error)]
+#[error("Error while formatting: {error_kind:?} at {text_range:?}")]
 pub struct FormatDocumentError {
     pub error_kind: FormatDocumentErrorKind,
     pub text_range: Option<TextRange>,

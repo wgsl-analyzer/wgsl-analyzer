@@ -6,7 +6,7 @@ use itertools::{Itertools as _, Position, put_back};
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
-    ast::{self, NameReference, TemplateList},
+    ast::{self, Path, TemplateList},
 };
 
 use crate::format::{
@@ -16,6 +16,7 @@ use crate::format::{
     },
     gen_comments::gen_comments,
     gen_expression::gen_expression,
+    gen_path::gen_path,
     helpers::create_is_multiple_lines_resolver,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::FormatDocumentResult,
@@ -27,7 +28,7 @@ pub fn gen_type_specifier(
     // ==== Parse ====
     let mut syntax = put_back(type_specifier.syntax().children_with_tokens());
 
-    let item_ident = parse_node::<NameReference>(&mut syntax)?;
+    let item_path = parse_node::<Path>(&mut syntax)?;
     let comments_after_ident = parse_many_comments_and_blankspace(&mut syntax)?;
 
     let item_template = parse_node_optional::<TemplateList>(&mut syntax);
@@ -36,7 +37,7 @@ pub fn gen_type_specifier(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
-    formatted.push_string(item_ident.text().to_string());
+    formatted.extend(gen_path(&item_path)?);
     formatted.extend(gen_comments(&comments_after_ident));
     if let Some(template) = item_template {
         formatted.extend(gen_template_list(&template)?);

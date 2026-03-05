@@ -1,4 +1,5 @@
 use expect_test::expect;
+use parser::Edition;
 
 use crate::{
     FormattingOptions,
@@ -212,5 +213,6 @@ pub fn format_expr_function_call_with_sensible_comments() {
             width: 10000,
             ..Default::default()
         },
+        Edition::LATEST,
     );
 }
