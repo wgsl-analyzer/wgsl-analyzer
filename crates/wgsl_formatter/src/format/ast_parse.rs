@@ -182,27 +182,5 @@ pub fn parse_ast_token<T: AstToken>(syntax: &mut SyntaxIter) -> FormatDocumentRe
     .expect_if_prefer_crash()
 }
 
-pub fn parse_many_comments_and_blankspace(
-    syntax: &mut SyntaxIter
-) -> FormatDocumentResult<Vec<SyntaxToken>> {
-    let mut comments = Vec::new();
-
-    while let Some(token) = syntax.next() {
-        match token {
-            NodeOrToken::Token(child) if child.kind() == SyntaxKind::Blankspace => {
-                //Allowed, we ignore it
-            },
-            NodeOrToken::Token(child) if child.kind() == SyntaxKind::BlockComment => {
-                comments.push(child);
-            },
-            NodeOrToken::Token(child) if child.kind() == SyntaxKind::LineEndingComment => {
-                comments.push(child);
-            },
-            other => {
-                syntax.put_back(other);
-                return Ok(comments);
-            },
-        }
-    }
-    Ok(comments)
-}
+// TODO (MonaMayrhofer) Update inputs to remove this
+pub use super::gen_comments::parse_many_comments_and_blankspace;

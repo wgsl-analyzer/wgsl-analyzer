@@ -15,7 +15,7 @@ use crate::format::{
         parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
         parse_token, parse_token_optional,
     },
-    gen_comments::gen_comments,
+    gen_comments::{Comment, gen_comments},
     gen_expression::gen_expression,
     gen_statement_compound::gen_compound_statement,
     print_item_buffer::PrintItemBuffer,
@@ -83,7 +83,7 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
 pub enum SwitchBodyCaseKind {
     Default,
     Case {
-        item_comments_after_case: Vec<SyntaxToken>,
+        item_comments_after_case: Vec<Comment>,
         item_selectors: SwitchCaseSelectors,
     },
 }

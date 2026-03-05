@@ -28,7 +28,6 @@ mod reporting;
 use dprint_core::formatting::PrintOptions;
 use itertools::put_back;
 use parser::SyntaxKind;
-use rowan::NodeOrToken;
 use syntax::{
     AstNode as _,
     ast::{self},
@@ -37,7 +36,8 @@ use syntax::{
 use crate::{
     FormattingOptions,
     format::{
-        gen_comments::gen_comment,
+        ast_parse::{parse_end, parse_node_optional, parse_token_optional},
+        gen_comments::{Comment, gen_comment, parse_comment_optional},
         gen_function::gen_function_declaration,
         gen_statement::gen_const_assert_statement,
         gen_struct::gen_struct_declaration,
@@ -45,9 +45,9 @@ use crate::{
         gen_var_let_const_statement::{
             gen_const_declaration_statement, gen_var_declaration_statement,
         },
-        helpers::gen_spaced_lines,
+        helpers::line_spacing,
         print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
-        reporting::{FormatDocumentErrorKind, FormatDocumentResult, UnwrapIfPreferCrash as _},
+        reporting::FormatDocumentResult,
     },
 };
 
@@ -126,28 +126,48 @@ fn gen_item(node: &ast::Item) -> FormatDocumentResult<PrintItemBuffer> {
 }
 
 fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut formatted = PrintItemBuffer::new();
-    formatted.request(SeparationRequest::discouraged());
+    enum SourceFileItem {
+        Item(ast::Item),
+        Comment(Comment),
+    }
+
+    // ==== Parse ====
 
     let mut syntax = put_back(node.syntax().children_with_tokens());
 
-    let lines = gen_spaced_lines(&mut syntax, |child| {
-        let mut formatted = PrintItemBuffer::new();
-
-        //TODO This clone is unnecessary if we had a cast that returned the passed in node
-        // on a failure like std::any::Any (SyntaxNode -> Result<Item, Syntaxnode>)
-        if let NodeOrToken::Node(child) = child
-            && let Some(item) = ast::Item::cast(child.clone())
+    let mut items = Vec::new();
+    loop {
+        if let Some(item) = parse_node_optional(&mut syntax) {
+            items.push(SourceFileItem::Item(item));
+        } else if let Some(comment) = parse_comment_optional(&mut syntax) {
+            items.push(SourceFileItem::Comment(comment));
+        } else if let Some(_line_spacing) =
+            parse_token_optional(&mut syntax, SyntaxKind::Blankspace)
         {
-            formatted.extend(gen_item(&item)?);
-        } else if let NodeOrToken::Token(child) = child
-            && (child.kind() == SyntaxKind::BlockComment
-                || child.kind() == SyntaxKind::LineEndingComment)
-        {
-            formatted.extend(gen_comment(child));
+            // Allowed, we ignore it, for now the source file has a newline after every item.
+            // If some amount of line spacing should be preserved in the future, please use
+            // parse_line_spacing(&mut syntax) to handle it,
+            // and then afterwards a separate case for non-line-spacing blankspaces with
+            // parse_token_optional(&mut syntax, SyntaxKind::Blankspace)
         } else {
-            return Err(FormatDocumentErrorKind::UnexpectedModuleNode.at(child.text_range()))
-                .expect_if_prefer_crash();
+            break;
+        }
+    }
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
+
+    let mut formatted = PrintItemBuffer::new();
+    formatted.request(SeparationRequest::discouraged());
+
+    for item in items {
+        match item {
+            SourceFileItem::Item(item) => {
+                formatted.extend(gen_item(&item)?);
+            },
+            SourceFileItem::Comment(comment) => {
+                formatted.extend(gen_comment(&comment));
+            },
         }
 
         // In a source file there will be a newline after *every* item.
@@ -155,10 +175,8 @@ fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuff
             line_break: SeparationPolicy::Expected,
             ..Default::default()
         });
-        Ok(formatted)
-    })?;
+    }
 
-    formatted.extend(lines);
     //There should be a newline, but no empty line at the end of the file
     formatted.request(SeparationRequest {
         empty_line: SeparationPolicy::Discouraged,

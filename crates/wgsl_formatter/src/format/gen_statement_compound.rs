@@ -1,68 +1,59 @@
 use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
 use itertools::put_back;
-use parser::SyntaxKind;
-use rowan::NodeOrToken;
+use parser::{SyntaxKind, WeslLanguage};
+use rowan::{NodeOrToken, SyntaxToken};
 use syntax::{
     AstNode as _,
-    ast::{self},
+    ast::{self, Statement},
 };
 
 use crate::format::{
+    self,
+    ast_parse::{parse_end, parse_node_optional, parse_token, parse_token_optional},
     gen_attributes::{gen_attributes, parse_many_attributes},
-    gen_comments::gen_comment,
+    gen_comments::{Comment, gen_comment, parse_comment_optional},
     gen_statement::gen_statement_maybe_semicolon,
-    helpers::gen_spaced_lines,
+    helpers::{LineSpacing, gen_line_spacing, line_spacing},
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::{FormatDocumentErrorKind, FormatDocumentResult},
 };
+
+enum CompoundStatementItem {
+    Statement(ast::Statement),
+    Comment(Comment),
+    LineSpacing(LineSpacing),
+}
 
 pub fn gen_compound_statement(
     syntax: &ast::CompoundStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    //TODO I don't really like this, but its an easy way for now
-    let body_empty = syntax.syntax().children_with_tokens().all(|child| {
-        matches!(
-            child.kind(),
-            SyntaxKind::BraceLeft | SyntaxKind::BraceRight | SyntaxKind::Blankspace
-        )
-    });
 
-    // First parse off the attributes
     let mut syntax = put_back(syntax.syntax().children_with_tokens());
     let item_attributes = parse_many_attributes(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::BraceLeft)?;
 
-    let lines = gen_spaced_lines(&mut syntax, |child| {
-        //TODO This clone is unnecessary if we had a cast that returned the passed in node
-        // on a failure like std::any::Any (SyntaxNode -> Result<Item, Syntaxnode>)
-        if let NodeOrToken::Node(child) = child
-            && let Some(statement) = ast::Statement::cast(child.clone())
-        {
-            let mut formatted = PrintItemBuffer::new();
-            formatted.request_line_break(SeparationPolicy::Expected);
-            formatted.extend(gen_statement_maybe_semicolon(&statement, true)?);
-            Ok(formatted)
-        } else if let NodeOrToken::Token(child) = child
-            && matches!(
-                child.kind(),
-                SyntaxKind::BlockComment | SyntaxKind::LineEndingComment
-            )
-        {
-            Ok(gen_comment(child))
-        } else if let NodeOrToken::Token(child) = child
-            && matches!(child.kind(), SyntaxKind::BraceLeft | SyntaxKind::BraceRight)
-        {
-            //The braces are expected, we could pop them from the syntax before passing them to gen_spaced_lines,
-            // but this way is just as fine
-            Ok(PrintItemBuffer::new())
+    let mut lines = Vec::new();
+    let mut body_empty = true; //TODO (MonaMayrhofer) This annoys me, brittle, easy to forget
+
+    loop {
+        if let Some(spacing) = line_spacing(&mut syntax) {
+            lines.push(CompoundStatementItem::LineSpacing(spacing));
+        } else if let Some(_statement) = parse_token_optional(&mut syntax, SyntaxKind::Blankspace) {
+            // If its not a line_spacing blankspace, then we simply discard it
+        } else if let Some(statement) = parse_node_optional::<Statement>(&mut syntax) {
+            body_empty = false;
+            lines.push(CompoundStatementItem::Statement(statement));
+        } else if let Some(comment) = parse_comment_optional(&mut syntax) {
+            body_empty = false;
+            lines.push(CompoundStatementItem::Comment(comment));
         } else {
-            Err(FormatDocumentErrorKind::UnexpectedToken {
-                received: child.clone(),
-            }
-            .at(child.text_range()))
+            break;
         }
-    })?;
+    }
+    parse_token(&mut syntax, SyntaxKind::BraceRight)?;
+    parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
@@ -77,7 +68,20 @@ pub fn gen_compound_statement(
             line_break: SeparationPolicy::Expected,
             ..Default::default()
         });
-        formatted.extend(lines);
+        for line in lines {
+            match line {
+                CompoundStatementItem::Statement(statement) => {
+                    formatted.expect_line_break();
+                    formatted.extend(gen_statement_maybe_semicolon(&statement, true)?);
+                },
+                CompoundStatementItem::Comment(comment) => {
+                    formatted.extend(gen_comment(&comment));
+                },
+                CompoundStatementItem::LineSpacing(line_spacing) => {
+                    formatted.extend(gen_line_spacing(&line_spacing)?);
+                },
+            }
+        }
         formatted.request(SeparationRequest {
             empty_line: SeparationPolicy::Discouraged,
             line_break: SeparationPolicy::Expected,
