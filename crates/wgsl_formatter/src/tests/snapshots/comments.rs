@@ -5,15 +5,16 @@ use crate::{
     test_util::{check, check_with_options},
 };
 
+// TODO (MonaMayrhofer move some of these tests to check_comments())
+
 #[test]
 fn format_fn_header_inline_comments_1() {
     check_with_options(
         "/*000*/ fn /*aaa*/ main /*bbb*/(/*ccc*/ a /*ddd*/ : /*eee*/ b /*fff*/ ) /*ggg*/  -> /*hhh*/ f32 /*iii*/ {} /*jjj*/",
-        &expect![["
+        &expect![[r#"
             /*000*/
-            fn /*aaa*/ main /*bbb*/ (/*ccc*/ a: /*ddd*/ /*eee*/ b /*fff*/) /*ggg*/ -> /*hhh*/ f32 /*iii*/ {}
-            /*jjj*/
-        "]],
+            fn /*aaa*/ main /*bbb*/ (/*ccc*/ a: /*ddd*/ /*eee*/ b /*fff*/) /*ggg*/ -> /*hhh*/ f32 /*iii*/ {} /*jjj*/
+        "#]],
         &FormattingOptions {
             width: 10000,
             ..Default::default()
@@ -342,6 +343,34 @@ fn format_comment_indent_1() {
                     a++
                 ) {}
             }
+        "#]],
+    );
+}
+
+#[test]
+fn comment_after_statement_should_stay_on_same_line() {
+    check(
+        "
+        fn main() {
+        let a = 1; // This is one
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                let a = 1; // This is one
+            }
+        "#]],
+    );
+}
+
+#[test]
+fn comment_after_toplevel_declaration_should_stay_on_same_line() {
+    check(
+        "
+        override a = 1; // This is one
+        ",
+        expect![[r#"
+            override a = 1; // This is one
         "#]],
     );
 }

@@ -166,6 +166,8 @@ fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuff
     for item in items {
         match item {
             SourceFileItem::Item(item) => {
+                // Every item should start on a new line.
+                formatted.expect_line_break();
                 formatted.extend(gen_item(&item)?);
             },
             SourceFileItem::Comment(comment) => {
@@ -175,12 +177,6 @@ fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuff
                 formatted.extend(gen_line_spacing(&line_spacing)?);
             },
         }
-
-        // In a source file there will be a newline after *every* item.
-        formatted.request(SeparationRequest {
-            line_break: SeparationPolicy::Expected,
-            ..Default::default()
-        });
     }
 
     //There should be a newline, but no empty line at the end of the file

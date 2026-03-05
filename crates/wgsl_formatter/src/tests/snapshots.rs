@@ -47,6 +47,7 @@ mod types;
 //mod bindings;
 //mod code_indentation;
 mod code_spacing;
+mod stmt_compound;
 //mod common_conventions;
 //mod control_structures;
 //mod fn_call;
