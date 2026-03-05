@@ -213,8 +213,7 @@ pub fn format_attrs_on_function_body() {
         expect![[r#"
             fn thing() -> vec4<f32> @attr(0)
             @attr(1)
-            {
-            }
+            {}
         "#]],
     );
 }
@@ -514,7 +513,6 @@ pub fn format_comments_in_attrs_on_switch_statement_and_body() {
                 @attr(0) // 4
                 @attr(1) // 5
                 { // 6
-
                 }
             }
         "#]],

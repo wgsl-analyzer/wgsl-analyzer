@@ -60,6 +60,7 @@ pub fn format_ident_expr_int_literals() {
     );
 }
 
+#[ignore = "Upstream must fix the parser"]
 #[test]
 pub fn format_ident_expr_zero_padded_int_literals_out_of_scope() {
     // https://www.w3.org/TR/WGSL/#numeric-literals
