@@ -313,6 +313,84 @@ fn format_line_comments_around_nonempty_function_declaration() {
 }
 
 #[test]
+fn format_block_comments_around_nonempty_function_declaration() {
+    check(
+        "
+        /* Alone */
+
+        /* Line Before */
+        fn a() { let a = 1; } /* Should be broken into new line */
+        /* Line After */
+
+        /* Alone */
+        ",
+        expect![[r#"
+            /* Alone */
+
+            /* Line Before */
+            fn a() {
+                let a = 1;
+            }
+            /* Should be broken into new line */
+            /* Line After */
+
+            /* Alone */
+        "#]],
+    );
+}
+
+#[test]
+fn format_block_comments_around_nonempty_struct_definition() {
+    check(
+        "
+        /* Alone */
+
+        /* Line Before */
+        struct A { item: u32 } /* Should be broken into new line */
+        /* Line After */
+
+        /* Alone */
+        ",
+        expect![[r#"
+            /* Alone */
+
+            /* Line Before */
+            struct A {
+                item: u32,
+            }
+            /* Should be broken into new line */
+            /* Line After */
+
+            /* Alone */
+        "#]],
+    );
+}
+
+#[test]
+fn format_line_comments_around_empty_function_declaration() {
+    check(
+        "
+        // Alone
+
+        // Line Before
+        fn a() {} // Can be kept on the same line
+        // Line After
+
+        // Alone
+        ",
+        expect![[r#"
+            // Alone
+
+            // Line Before
+            fn a() {} // Can be kept on the same line
+            // Line After
+
+            // Alone
+        "#]],
+    );
+}
+
+#[test]
 fn format_line_comments_around_global_declaration() {
     check(
         "
@@ -328,7 +406,7 @@ fn format_line_comments_around_global_declaration() {
             // Alone
 
             // Line Before
-            const a: i32 = 1; // Should be broken into new line
+            const a: i32 = 1; // Should be kept on the same line
             // Line After
 
             // Alone

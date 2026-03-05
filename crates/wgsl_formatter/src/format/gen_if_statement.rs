@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::SyntaxKind;
@@ -14,7 +16,10 @@ use crate::format::{
     gen_comments::gen_comments,
     gen_expression::gen_expression,
     gen_statement_compound::gen_compound_statement,
-    print_item_buffer::PrintItemBuffer,
+    print_item_buffer::{
+        PrintItemBuffer,
+        request_folder::{Request, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -42,12 +47,20 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
     formatted.extend(gen_if_statement_if_clause(&item_if_clause)?);
     formatted.extend(gen_comments(&comments_after_if_clause));
     for (else_if_clause, comments_after_else_if_clause) in else_if_clauses {
-        formatted.expect_single_space();
+        formatted.request_request(Request::Unconditional {
+            expected: BTreeSet::from([RequestItem::Space]),
+            discouraged: BTreeSet::from([RequestItem::LineBreak]),
+            forced: BTreeSet::new(),
+        });
         formatted.extend(gen_if_statement_else_if_clause(&else_if_clause)?);
         formatted.extend(gen_comments(&comments_after_else_if_clause));
     }
     if let Some(item_else_clause) = item_else_clause {
-        formatted.expect_single_space();
+        formatted.request_request(Request::Unconditional {
+            expected: BTreeSet::from([RequestItem::Space]),
+            discouraged: BTreeSet::from([RequestItem::LineBreak]),
+            forced: BTreeSet::new(),
+        });
         formatted.extend(gen_if_statement_else_clause(&item_else_clause)?);
     }
 

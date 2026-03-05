@@ -93,7 +93,8 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
         formatted.extend(gen_comments(&item_comments_after_open_paren));
     }
 
-    if !item_members.is_empty() {
+    let is_empty = item_members.is_empty();
+    if !is_empty {
         formatted.expect_line_break();
         for (member, comments_after_member, comments_after_comma) in item_members {
             formatted.extend(gen_struct_member(&member)?);
@@ -109,6 +110,10 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
 
     formatted.push_signal(Signal::FinishIndent);
     formatted.push_sc(sc!("}"));
+
+    if !is_empty {
+        formatted.expect_line_break();
+    }
 
     Ok(formatted)
 }
