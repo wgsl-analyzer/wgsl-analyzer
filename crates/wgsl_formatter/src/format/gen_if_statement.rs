@@ -10,6 +10,7 @@ use crate::format::{
     ast_parse::{
         parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional, parse_token,
     },
+    gen_attributes::{gen_attributes, parse_many_attributes},
     gen_comments::gen_comments,
     gen_expression::gen_expression,
     gen_statement_compound::gen_compound_statement,
@@ -20,6 +21,9 @@ use crate::format::{
 pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
+
+    let attributes = parse_many_attributes(&mut syntax)?;
+
     let item_if_clause = parse_node::<IfClause>(&mut syntax)?;
     let comments_after_if_clause = parse_many_comments_and_blankspace(&mut syntax)?;
 
@@ -34,6 +38,7 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
+    formatted.extend(gen_attributes(&attributes)?);
     formatted.extend(gen_if_statement_if_clause(&item_if_clause)?);
     formatted.extend(gen_comments(&comments_after_if_clause));
     for (else_if_clause, comments_after_else_if_clause) in else_if_clauses {
