@@ -170,3 +170,54 @@ fn format_comments_in_struct_def_members_with_attributes() {
         "#]],
     );
 }
+
+#[test]
+fn format_line_comments_on_multiple_struct_members() {
+    check(
+        "struct Foo {
+            // This comment describes A
+            a: i32,
+            // This comment describes B
+            b:i32
+        }",
+        expect![["
+                struct Foo {
+                    a: i32,
+                    b: i32,
+                }
+                "]],
+    );
+}
+
+#[test]
+fn format_struct_member_spacing() {
+    check(
+        "struct Foo {
+            // This comment describes A
+            a: i32,
+            b: i32,
+
+            // This comment describes C
+            // This comment also describes C
+            c:i32,
+
+
+
+
+            d: i32
+        }",
+        expect![[r#"
+            struct Foo {
+                // This comment describes A
+                a: i32,
+                b: i32,
+
+                // This comment describes C
+                // This comment also describes C
+                c: i32,
+
+                d: i32,
+            }
+        "#]],
+    );
+}
