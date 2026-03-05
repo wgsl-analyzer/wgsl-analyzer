@@ -7,6 +7,7 @@ use parser::{SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 
 use crate::format::{
+    ast_parse::SyntaxIter,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::FormatDocumentResult,
 };
@@ -15,7 +16,7 @@ use crate::format::{
 /// - after every node is exactly 1 or 2 newlines (aka. 0 to 1 blank lines)
 /// - there are no newlines before the first node
 pub fn gen_spaced_lines<F>(
-    node: &parser::SyntaxNode,
+    node: &mut SyntaxIter,
     mut pretty_item: F,
 ) -> FormatDocumentResult<PrintItemBuffer>
 where
@@ -23,7 +24,7 @@ where
 {
     let mut result = PrintItemBuffer::new();
 
-    for child in node.children_with_tokens() {
+    for child in node {
         if let rowan::NodeOrToken::Token(token) = &child
             && token.kind() == parser::SyntaxKind::Blankspace
         {

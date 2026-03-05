@@ -16,7 +16,7 @@ use crate::format::{
     },
     gen_attributes::{gen_attributes, parse_many_attributes},
     gen_comments::gen_comments,
-    gen_statement::gen_compound_statement,
+    gen_statement_compound::gen_compound_statement,
     gen_types::gen_type_specifier,
     helpers::create_is_multiple_lines_resolver,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
@@ -244,8 +244,8 @@ pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<Prin
     formatted.expect_single_space();
     formatted.push_sc(sc!("->"));
     formatted.expect_single_space();
-    formatted.extend(gen_attributes(&item_attributes)?);
     formatted.extend(gen_comments(&item_comments_after_arrow));
+    formatted.extend(gen_attributes(&item_attributes)?);
     formatted.extend(gen_type_specifier(&item_type_specifier)?);
     Ok(formatted)
 }
