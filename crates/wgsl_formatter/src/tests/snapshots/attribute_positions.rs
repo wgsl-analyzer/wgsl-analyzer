@@ -340,6 +340,18 @@ pub fn format_attrs_on_nonempty_compound_statement() {
         }
         ",
         expect![[r#"
+            fn main() {
+                @attr(0)
+                @attr(1)
+                {
+                    let a = 0;
+                }
+                if true @attr(0)
+                @attr(1)
+                {
+                    let a = 0;
+                }
+            }
         "#]],
     );
 }
@@ -354,8 +366,38 @@ pub fn format_comments_in_attrs_on_compound_statement() {
         }
         ",
         expect![[r#"
+            fn main() {
+                /* 0 */
+                @attr(0) /* 1 */
+                @attr(1) /* 2 */
+                {
+                    /* 3 */
+                }
+                /* 4 */
+                if /* 5 */ true /* 6 */ @attr(0) /* 7 */
+                @attr(1) /* 8 */
+                {
+                    /* 9 */
+                }
+            }
         "#]],
         expect![[r#"
+            fn main() {
+                // 0
+                @attr(0) // 1
+                @attr(1) // 2
+                {
+                    // 3
+                }
+                // 4
+                if // 5
+                true // 6
+                @attr(0) // 7
+                @attr(1) // 8
+                {
+                    // 9
+                }
+            }
         "#]],
     );
 }
