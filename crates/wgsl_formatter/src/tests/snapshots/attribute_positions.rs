@@ -449,14 +449,39 @@ pub fn format_comments_in_attrs_on_if_statement() {
 }
 
 #[test]
-pub fn format_attrs_on_switch_statement_and_body() {
+pub fn format_attrs_on_switch_statement() {
     check(
         "
         fn main() {
-            @attr(0) @attr(1) switch a @attr(0) @attr(1) {}
+            @attr(0) @attr(1) switch a {}
         }
         ",
         expect![[r#"
+            fn main() {
+                @attr(0)
+                @attr(1)
+                switch a {
+                }
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attrs_on_switch_statement_body() {
+    check(
+        "
+        fn main() {
+            switch a @attr(0) @attr(1) {}
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                switch a @attr(0)
+                @attr(1)
+                {
+                }
+            }
         "#]],
     );
 }
@@ -470,8 +495,28 @@ pub fn format_comments_in_attrs_on_switch_statement_and_body() {
         }
         ",
         expect![[r#"
+            fn main() {
+                /* 0 */
+                @attr(0) /* 1 */
+                @attr(1) /* 2 */
+                switch a /* 3 */ @attr(0) /* 4 */
+                @attr(1) /* 5 */
+                { /* 6 */ 
+                }
+            }
         "#]],
         expect![[r#"
+            fn main() {
+                // 0
+                @attr(0) // 1
+                @attr(1) // 2
+                switch a // 3
+                @attr(0) // 4
+                @attr(1) // 5
+                { // 6
+
+                }
+            }
         "#]],
     );
 }
