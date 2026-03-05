@@ -411,6 +411,11 @@ pub fn format_attrs_on_if_statement() {
         }
         ",
         expect![[r#"
+            fn main() {
+                @attr(0)
+                @attr(1)
+                if true {}
+            }
         "#]],
     );
 }
@@ -420,12 +425,25 @@ pub fn format_comments_in_attrs_on_if_statement() {
     check_comments(
         "
         fn main() {
-            ## @attr(0) ## @attr(1) ## if true {}
+            ## @attr(0) ## @attr(1) ## if ## true {}
         }
         ",
         expect![[r#"
+            fn main() {
+                /* 0 */
+                @attr(0) /* 1 */
+                @attr(1) /* 2 */
+                if /* 3 */ true {}
+            }
         "#]],
         expect![[r#"
+            fn main() {
+                // 0
+                @attr(0) // 1
+                @attr(1) // 2
+                if // 3
+                true {}
+            }
         "#]],
     );
 }
