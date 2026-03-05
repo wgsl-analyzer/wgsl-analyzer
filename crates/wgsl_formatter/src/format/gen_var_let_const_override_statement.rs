@@ -24,21 +24,32 @@ pub fn gen_const_declaration_statement(
     statement: &ast::ConstantDeclaration,
     include_semicolon: bool,
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_var_let_const_statement(BindingKind::Const, statement.syntax(), include_semicolon)
+    gen_var_let_const_override_statement(BindingKind::Const, statement.syntax(), include_semicolon)
 }
 
 pub fn gen_let_declaration_statement(
     statement: &ast::LetDeclaration,
     include_semicolon: bool,
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_var_let_const_statement(BindingKind::Let, statement.syntax(), include_semicolon)
+    gen_var_let_const_override_statement(BindingKind::Let, statement.syntax(), include_semicolon)
 }
 
 pub fn gen_var_declaration_statement(
     statement: &ast::VariableDeclaration,
     include_semicolon: bool,
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_var_let_const_statement(BindingKind::Var, statement.syntax(), include_semicolon)
+    gen_var_let_const_override_statement(BindingKind::Var, statement.syntax(), include_semicolon)
+}
+
+pub fn gen_override_declaration_statement(
+    statement: &ast::OverrideDeclaration,
+    include_semicolon: bool,
+) -> FormatDocumentResult<PrintItemBuffer> {
+    gen_var_let_const_override_statement(
+        BindingKind::Override,
+        statement.syntax(),
+        include_semicolon,
+    )
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -46,6 +57,10 @@ enum BindingKind {
     Var,
     Let,
     Const,
+
+    // For now we have this here, because the override syntax is basically equivalent to a global const.
+    // If the override should diverge from that, extract it into its own file instead of branching around.
+    Override,
 }
 
 impl BindingKind {
@@ -54,6 +69,7 @@ impl BindingKind {
             Self::Var => SyntaxKind::Var,
             Self::Let => SyntaxKind::Let,
             Self::Const => SyntaxKind::Constant,
+            Self::Override => SyntaxKind::Override,
         }
     }
 
@@ -62,11 +78,12 @@ impl BindingKind {
             Self::Var => sc!("var"),
             Self::Let => sc!("let"),
             Self::Const => sc!("const"),
+            Self::Override => sc!("override"),
         }
     }
 }
 
-fn gen_var_let_const_statement(
+fn gen_var_let_const_override_statement(
     kind: BindingKind,
     syntax_node: &SyntaxNode,
     include_semicolon: bool,

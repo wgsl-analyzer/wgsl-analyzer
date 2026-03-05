@@ -21,7 +21,7 @@ mod gen_struct;
 pub mod gen_switch_statement;
 mod gen_type_alias_declaration;
 mod gen_types;
-mod gen_var_let_const_statement;
+mod gen_var_let_const_override_statement;
 pub mod multiline_group;
 mod reporting;
 
@@ -42,8 +42,9 @@ use crate::{
         gen_statement::gen_const_assert_statement,
         gen_struct::gen_struct_declaration,
         gen_type_alias_declaration::gen_type_alias_declaration,
-        gen_var_let_const_statement::{
-            gen_const_declaration_statement, gen_var_declaration_statement,
+        gen_var_let_const_override_statement::{
+            gen_const_declaration_statement, gen_override_declaration_statement,
+            gen_var_declaration_statement,
         },
         helpers::line_spacing,
         print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
@@ -115,7 +116,9 @@ fn gen_item(node: &ast::Item) -> FormatDocumentResult<PrintItemBuffer> {
         ast::Item::ConstantDeclaration(constant_declaration) => {
             gen_const_declaration_statement(constant_declaration, true)
         },
-        ast::Item::OverrideDeclaration(_override_declaration) => todo!(),
+        ast::Item::OverrideDeclaration(override_declaration) => {
+            gen_override_declaration_statement(override_declaration, true)
+        },
         ast::Item::TypeAliasDeclaration(type_alias_declaration) => {
             gen_type_alias_declaration(type_alias_declaration, true)
         },

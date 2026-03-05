@@ -32,6 +32,7 @@ mod stmt_if;
 mod stmt_increment_decrement;
 mod stmt_let_declarations;
 mod stmt_loop;
+mod stmt_override_declaration;
 mod stmt_phony_assignment;
 mod stmt_return;
 mod stmt_switch;
