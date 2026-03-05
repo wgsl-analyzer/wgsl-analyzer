@@ -6,8 +6,8 @@
 /// these attributes.
 ///
 /// These tests only check if attributes are handled and the formatter doesn't crash.
-/// They aren't meant to target order or exact formatting, (for those see [crate::tests::snapshots::attributes]
-/// and [crate::tests::snapshots::attribute_ordering])
+/// They aren't meant to target order or exact formatting, (for those see [`crate::tests::snapshots::attributes`]
+/// and [`crate::tests::snapshots::attribute_ordering`])
 use expect_test::expect;
 
 use crate::test_util::{check, check_comments};

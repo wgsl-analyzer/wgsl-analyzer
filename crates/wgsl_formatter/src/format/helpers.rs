@@ -5,38 +5,8 @@ use std::rc::Rc;
 use dprint_core::formatting::{
     ConditionResolver, ConditionResolverContext, LineNumber, condition_helpers,
 };
-use parser::{SyntaxNode, SyntaxToken};
-use rowan::NodeOrToken;
-
-use crate::format::{
-    ast_parse::SyntaxIter,
-    print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
-    reporting::FormatDocumentResult,
-};
 
 pub use line_spacing::*;
-
-/// In cases where the formatter is not yet complete we simply output source verbatim.
-#[deprecated]
-#[expect(
-    clippy::unnecessary_wraps,
-    reason = "Should follow the api of gen_* methods"
-)]
-pub fn todo_verbatim(source: &parser::SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut items = PrintItemBuffer::default();
-
-    for line in source.to_string().split_inclusive('\n') {
-        if line.ends_with('\n') {
-            items.push_string(line[0..(line.len() - 1)].to_owned());
-            items.request(SeparationRequest {
-                line_break: SeparationPolicy::Forced,
-                ..Default::default()
-            });
-        }
-        items.push_string(line.to_owned());
-    }
-    Ok(items)
-}
 
 pub fn create_is_multiple_lines_resolver(
     start_ln: LineNumber,

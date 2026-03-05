@@ -2,14 +2,12 @@ use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::SyntaxKind;
-use rowan::NodeOrToken;
 use syntax::{
     AstNode as _,
     ast::{self, CompoundStatement, Expression, FunctionCall, IncrementDecrement, Statement},
 };
 
 use crate::format::{
-    self,
     ast_parse::{
         parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_by_kind_optional,
         parse_node_optional, parse_token, parse_token_optional,
@@ -18,7 +16,7 @@ use crate::format::{
         gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
     },
     gen_attributes::{gen_attributes, parse_many_attributes},
-    gen_comments::{gen_comment, gen_comments},
+    gen_comments::gen_comments,
     gen_expression::gen_expression,
     gen_function_call::gen_function_call,
     gen_if_statement::gen_if_statement,

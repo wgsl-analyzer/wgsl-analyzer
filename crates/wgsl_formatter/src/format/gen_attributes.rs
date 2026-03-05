@@ -1,14 +1,14 @@
 use dprint_core_macros::sc;
 use itertools::put_back;
-use parser::{SyntaxKind, SyntaxToken};
+use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
-    ast::{self, Arguments, Attribute, IdentExpression},
+    ast::{self, Arguments},
 };
 
 use crate::format::{
     ast_parse::{
-        SyntaxIter, parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
+        SyntaxIter, parse_end, parse_many_comments_and_blankspace, parse_node_optional,
         parse_token,
     },
     gen_comments::{Comment, gen_comments},

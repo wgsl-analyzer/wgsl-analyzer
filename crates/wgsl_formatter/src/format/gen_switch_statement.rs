@@ -1,9 +1,8 @@
-use std::collections::BTreeSet;
 
 use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position, put_back};
-use parser::{SyntaxKind, SyntaxToken};
+use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
     ast::{
@@ -21,10 +20,7 @@ use crate::format::{
     gen_comments::{Comment, gen_comments},
     gen_expression::gen_expression,
     gen_statement_compound::gen_compound_statement,
-    print_item_buffer::{
-        PrintItemBuffer,
-        request_folder::{Request, RequestItem},
-    },
+    print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentError,
 };
 

@@ -1,9 +1,8 @@
-use parser::{SyntaxKind, SyntaxToken};
+use parser::SyntaxKind;
 use rowan::NodeOrToken;
-use syntax::ast;
 
 use crate::format::{
-    ast_parse::{SyntaxIter, parse_node, parse_token_optional},
+    ast_parse::{SyntaxIter, parse_token_optional},
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::FormatDocumentResult,
 };
@@ -17,9 +16,14 @@ pub enum Comment {
 pub fn parse_comment_optional(syntax: &mut SyntaxIter) -> Option<Comment> {
     let item = syntax.next()?;
     if let NodeOrToken::Token(child) = &item {
+        #[expect(
+            clippy::wildcard_enum_match_arm,
+            reason = "We don't care about future enum variants."
+        )]
         match child.kind() {
-            SyntaxKind::BlockComment => Some(Comment::Block(child.text().to_string())),
-            SyntaxKind::LineEndingComment => Some(Comment::LineEnding(child.text().to_string())),
+            SyntaxKind::BlockComment => Some(Comment::Block(child.text().to_owned())),
+            SyntaxKind::LineEndingComment => Some(Comment::LineEnding(child.text().to_owned())),
+
             _ => {
                 syntax.put_back(item);
                 None
@@ -31,6 +35,14 @@ pub fn parse_comment_optional(syntax: &mut SyntaxIter) -> Option<Comment> {
     }
 }
 
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "Keep the API homogeneous with all gen_* functions"
+)]
+#[expect(
+    clippy::redundant_pattern_matching,
+    reason = "Make it more obvious that the syntax token is consumed"
+)]
 pub fn parse_many_comments_and_blankspace(
     syntax: &mut SyntaxIter
 ) -> FormatDocumentResult<Vec<Comment>> {
@@ -50,7 +62,7 @@ pub fn parse_many_comments_and_blankspace(
 pub fn gen_comments(comments: &[Comment]) -> PrintItemBuffer {
     let mut formatted = PrintItemBuffer::new();
     for item in comments {
-        formatted.extend(gen_comment(&item));
+        formatted.extend(gen_comment(item));
     }
     formatted
 }

@@ -1,10 +1,9 @@
 use std::collections::BTreeSet;
 
-use parser::{SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 
 use crate::format::{
-    ast_parse::{SyntaxIter, parse_token, parse_token_optional},
+    ast_parse::{SyntaxIter, parse_token_optional},
     print_item_buffer::{
         PrintItemBuffer,
         request_folder::{Request, RequestItem},
@@ -37,6 +36,10 @@ pub fn line_spacing(syntax: &mut SyntaxIter) -> Option<LineSpacing> {
     }
 }
 
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "Keep the API homogeneous with all gen_* functions"
+)]
 pub fn gen_line_spacing(line_spacing: &LineSpacing) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::new();
     match line_spacing {

@@ -6,7 +6,7 @@
 )]
 use std::{borrow::ToOwned, ffi::OsString, fmt::Debug, panic, path::Path};
 
-use itertools::Itertools;
+use itertools::Itertools as _;
 
 use crate::{FormattingOptions, format, format_tree};
 

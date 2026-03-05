@@ -26,6 +26,8 @@ fn...
 
 * Things that are on the same line, if they are semantically tied to one another. If two unrelated changes could sensibly change both attributes, they should be on seperate lines as to not cause a merge conflict. ([Benjamin](https://discord.com/channels/1289346613185351722/1341941812675481680/1406350422104477917))
 
+* [Some more thoughts](https://discord.com/channels/1289346613185351722/1341941812675481680/1475555853066047549)
+
 ### Open Questions
 ```
 @group(0) @binding(1)
