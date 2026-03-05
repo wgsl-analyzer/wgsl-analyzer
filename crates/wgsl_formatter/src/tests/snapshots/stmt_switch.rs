@@ -3,6 +3,21 @@ use expect_test::expect;
 use crate::test_util::{assert_out_of_scope, check, check_comments};
 
 #[test]
+pub fn format_switch_statement_empty() {
+    check(
+        "fn main() {
+            switch(a) {
+            }
+        }",
+        expect![[r#"
+            fn main() {
+                switch a {}
+            }
+        "#]],
+    );
+}
+
+#[test]
 pub fn format_switch_statement_case_colon() {
     check(
         "fn main() {
