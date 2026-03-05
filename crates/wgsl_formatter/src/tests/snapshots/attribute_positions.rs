@@ -286,6 +286,9 @@ pub fn format_attrs_on_override() {
         @attr(0) @attr(1) override amount: u64 = 0;
         ",
         expect![[r#"
+            @attr(0)
+            @attr(1)
+            override amount: u64 = 0;
         "#]],
     );
 }
@@ -297,8 +300,16 @@ pub fn format_comments_in_attrs_on_override() {
         ## @attr(0) ## @attr(1) ## override amount: u64 = 0;
         ",
         expect![[r#"
+            /* 0 */
+            @attr(0) /* 1 */
+            @attr(1) /* 2 */
+            override amount: u64 = 0;
         "#]],
         expect![[r#"
+            // 0
+            @attr(0) // 1
+            @attr(1) // 2
+            override amount: u64 = 0;
         "#]],
     );
 }

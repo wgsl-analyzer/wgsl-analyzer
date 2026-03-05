@@ -24,7 +24,7 @@ use crate::format::{
     gen_if_statement::gen_if_statement,
     gen_statement_compound::gen_compound_statement,
     gen_switch_statement::gen_switch_statement,
-    gen_var_let_const_statement::{
+    gen_var_let_const_override_statement::{
         gen_const_declaration_statement, gen_let_declaration_statement,
         gen_var_declaration_statement,
     },
