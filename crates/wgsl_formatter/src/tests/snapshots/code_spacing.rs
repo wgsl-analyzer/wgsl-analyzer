@@ -1,6 +1,8 @@
 use expect_test::expect;
 
-use crate::test_util::{check, check_tabs};
+use crate::test_util::{check, check_comments, check_tabs};
+
+// TODO(MonaMayrhofer) Rename this file to top-level items
 
 #[test]
 fn spacing_between_fn_headers_1() {
@@ -281,4 +283,55 @@ fn one_newline_at_end_of_file_when_missing() {
 fn one_newline_at_end_of_file_when_too_much() {
     //Do not use expect! here, because it trims newlines and tabs and as such obscures the test case.
     check("fn a() {}\n\n", "fn a() {}\n");
+}
+
+#[test]
+fn format_line_comments_around_nonempty_function_declaration() {
+    check(
+        "
+        // Alone
+
+        // Line Before
+        fn a() { let a = 1; } // Should be broken into new line
+        // Line After
+
+        // Alone
+        ",
+        expect![[r#"
+            // Alone
+
+            // Line Before
+            fn a() {
+                let a = 1;
+            }
+            // Should be broken into new line
+            // Line After
+
+            // Alone
+        "#]],
+    );
+}
+
+#[test]
+fn format_line_comments_around_global_declaration() {
+    check(
+        "
+        // Alone
+
+        // Line Before
+        const a: i32 = 1; // Should be kept on the same line
+        // Line After
+
+        // Alone
+        ",
+        expect![[r#"
+            // Alone
+
+            // Line Before
+            const a: i32 = 1; // Should be broken into new line
+            // Line After
+
+            // Alone
+        "#]],
+    );
 }
