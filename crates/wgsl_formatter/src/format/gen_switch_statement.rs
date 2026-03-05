@@ -15,6 +15,7 @@ use crate::format::{
         parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
         parse_token, parse_token_optional,
     },
+    gen_attributes::{gen_attributes, parse_many_attributes},
     gen_comments::{Comment, gen_comments},
     gen_expression::gen_expression,
     gen_statement_compound::gen_compound_statement,
@@ -27,6 +28,7 @@ pub fn gen_switch_statement(
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
+    let item_attributes = parse_many_attributes(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::Switch)?;
     let item_comments_after_switch = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_expression = parse_node::<Expression>(&mut syntax)?;
@@ -37,6 +39,7 @@ pub fn gen_switch_statement(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
 
+    formatted.extend(gen_attributes(&item_attributes)?);
     formatted.push_sc(sc!("switch"));
     formatted.extend(gen_comments(&item_comments_after_switch));
     formatted.expect_single_space(); // We trim out the parens, so we expect a space
@@ -51,6 +54,7 @@ pub fn gen_switch_statement(
 pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
+    let item_attributes = parse_many_attributes(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::BraceLeft)?;
     let item_comments_after_brace_left = parse_many_comments_and_blankspace(&mut syntax)?;
 
@@ -66,6 +70,7 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
+    formatted.extend(gen_attributes(&item_attributes)?);
     formatted.push_sc(sc!("{"));
     formatted.push_signal(Signal::StartIndent);
     formatted.extend(gen_comments(&item_comments_after_brace_left));
