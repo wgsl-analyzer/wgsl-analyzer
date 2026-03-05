@@ -229,6 +229,7 @@ fn gen_function_call_statement(
 fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
+    let item_attributes = parse_many_attributes(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::For)?;
     let comments_after_for = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::ParenthesisLeft)?;
@@ -273,6 +274,7 @@ fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<Prin
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
+    formatted.extend(gen_attributes(&item_attributes)?);
     formatted.push_sc(sc!("for"));
     formatted.extend(gen_comments(&comments_after_for));
     formatted.push_sc(sc!("("));

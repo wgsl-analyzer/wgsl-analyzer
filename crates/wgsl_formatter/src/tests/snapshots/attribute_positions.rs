@@ -602,6 +602,11 @@ pub fn format_attrs_on_for_statement() {
         }
         ",
         expect![[r#"
+            fn main() {
+                @attr(0)
+                @attr(1)
+                for(var i = 0; i < 10; i++) {}
+            }
         "#]],
     );
 }
@@ -611,12 +616,25 @@ pub fn format_comments_in_attrs_on_for_statement() {
     check_comments(
         "
         fn main() {
-            ## @attr(0) ## @attr(1) ## for(var i = 0; i < 10; i++) {}
+            ## @attr(0) ## @attr(1) ## for ## (var i = 0; i < 10; i++) {}
         }
         ",
         expect![[r#"
+            fn main() {
+                /* 0 */
+                @attr(0) /* 1 */
+                @attr(1) /* 2 */
+                for /* 3 */ (var i = 0; i < 10; i++) {}
+            }
         "#]],
         expect![[r#"
+            fn main() {
+                // 0
+                @attr(0) // 1
+                @attr(1) // 2
+                for // 3
+                (var i = 0; i < 10; i++) {}
+            }
         "#]],
     );
 }
