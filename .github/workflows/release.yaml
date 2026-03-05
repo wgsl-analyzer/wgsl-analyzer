@@ -132,7 +132,7 @@ jobs:
         working-directory: editors/code
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: dist-${{ matrix.target }}
           path: ./dist
@@ -179,7 +179,7 @@ jobs:
       - run: rm -rf editors/code/server
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: dist-x86_64-unknown-linux-musl
           path: ./dist
@@ -211,7 +211,7 @@ jobs:
           cp crates/wgslfmt_dprint/deployment/dprint_plugin_wgslfmt_schema.json dist/dprint_plugin_wgslfmt_schema.json
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: dist-dprint-plugin
           path: ./dist
