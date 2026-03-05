@@ -170,10 +170,9 @@ fn spacing_between_mixed_module_items_1() {
         fn c() {}
         fn d() {}
         struct E {
-            f: u32;
+            f: u32,
         }
         fn f() {}
-        type G = i32;
         ",
         expect![["
             alias A = array<i32, 5>;
@@ -181,18 +180,15 @@ fn spacing_between_mixed_module_items_1() {
             fn c() {}
             fn d() {}
             struct E {
-                f: u32;
+                f: u32,
             }
             fn f() {}
-            type G = i32;
             "]],
     );
 }
 
 #[test]
 fn spacing_between_nonempty_fn_decls() {
-    //https://discord.com/channels/1289346613185351722/1341941812675481680/1407083514322616342
-    // - "Rustfmt doesn't enforce blank lines between module items, so we won't either"
     check(
         "
         fn a() {
@@ -232,8 +228,6 @@ fn spacing_between_nonempty_fn_decls() {
 
 #[test]
 fn spacing_between_nonempty_struct_defs() {
-    //https://discord.com/channels/1289346613185351722/1341941812675481680/1407083514322616342
-    // - "Rustfmt doesn't enforce blank lines between module items, so we won't either"
     check(
         "
         struct A {

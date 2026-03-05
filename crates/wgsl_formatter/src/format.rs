@@ -30,7 +30,7 @@ use itertools::put_back;
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
-    ast::{self},
+    ast::{self, Item},
 };
 
 use crate::{
@@ -46,7 +46,7 @@ use crate::{
             gen_const_declaration_statement, gen_override_declaration_statement,
             gen_var_declaration_statement,
         },
-        helpers::line_spacing,
+        helpers::{LineSpacing, gen_line_spacing, line_spacing},
         print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
         reporting::FormatDocumentResult,
     },
@@ -132,6 +132,7 @@ fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuff
     enum SourceFileItem {
         Item(ast::Item),
         Comment(Comment),
+        LineSpacing(LineSpacing),
     }
 
     // ==== Parse ====
@@ -139,23 +140,22 @@ fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuff
     let mut syntax = put_back(node.syntax().children_with_tokens());
 
     let mut items = Vec::new();
+    // TODO(MonaMayrhofer) This is basically duplicated code from compound statement, and the user would
+    // expect them to behave similarly so they should be combined.
     loop {
-        if let Some(item) = parse_node_optional(&mut syntax) {
+        if let Some(spacing) = line_spacing(&mut syntax) {
+            items.push(SourceFileItem::LineSpacing(spacing));
+        } else if let Some(_statement) = parse_token_optional(&mut syntax, SyntaxKind::Blankspace) {
+            // If its not a line_spacing blankspace, then we simply discard it
+        } else if let Some(item) = parse_node_optional::<Item>(&mut syntax) {
             items.push(SourceFileItem::Item(item));
         } else if let Some(comment) = parse_comment_optional(&mut syntax) {
             items.push(SourceFileItem::Comment(comment));
-        } else if let Some(_line_spacing) =
-            parse_token_optional(&mut syntax, SyntaxKind::Blankspace)
-        {
-            // Allowed, we ignore it, for now the source file has a newline after every item.
-            // If some amount of line spacing should be preserved in the future, please use
-            // parse_line_spacing(&mut syntax) to handle it,
-            // and then afterwards a separate case for non-line-spacing blankspaces with
-            // parse_token_optional(&mut syntax, SyntaxKind::Blankspace)
         } else {
             break;
         }
     }
+
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -170,6 +170,9 @@ fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuff
             },
             SourceFileItem::Comment(comment) => {
                 formatted.extend(gen_comment(&comment));
+            },
+            SourceFileItem::LineSpacing(line_spacing) => {
+                formatted.extend(gen_line_spacing(&line_spacing)?);
             },
         }
 
