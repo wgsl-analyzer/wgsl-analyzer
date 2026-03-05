@@ -1,22 +1,20 @@
 use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
 use itertools::put_back;
-use parser::{SyntaxKind, WeslLanguage};
-use rowan::{NodeOrToken, SyntaxToken};
+use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
     ast::{self, Statement},
 };
 
 use crate::format::{
-    self,
     ast_parse::{parse_end, parse_node_optional, parse_token, parse_token_optional},
     gen_attributes::{gen_attributes, parse_many_attributes},
     gen_comments::{Comment, gen_comment, parse_comment_optional},
     gen_statement::gen_statement_maybe_semicolon,
     helpers::{LineSpacing, gen_line_spacing, line_spacing},
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
-    reporting::{FormatDocumentErrorKind, FormatDocumentResult},
+    reporting::FormatDocumentResult,
 };
 
 enum CompoundStatementItem {
