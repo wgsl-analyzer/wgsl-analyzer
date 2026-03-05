@@ -9,6 +9,7 @@ use syntax::{
 };
 
 use crate::format::{
+    self,
     ast_parse::{
         parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_by_kind_optional,
         parse_node_optional, parse_token, parse_token_optional,
@@ -423,6 +424,7 @@ pub fn gen_const_assert_statement(
 fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
+    let item_attributes = parse_many_attributes(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::Loop)?;
     let comments_after_loop = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
@@ -430,6 +432,7 @@ fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<Pr
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
+    formatted.extend(gen_attributes(&item_attributes)?);
     formatted.push_sc(sc!("loop"));
     formatted.extend(gen_comments(&comments_after_loop));
     formatted.expect_single_space();
