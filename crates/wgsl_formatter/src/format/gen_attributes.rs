@@ -11,14 +11,14 @@ use crate::format::{
         SyntaxIter, parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
         parse_token,
     },
-    gen_comments::gen_comments,
+    gen_comments::{Comment, gen_comments},
     gen_function_call::gen_function_call_arguments,
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
 };
 
 pub struct ParsedAttributes {
-    attributes: Vec<(ast::Attribute, Vec<SyntaxToken>)>,
+    attributes: Vec<(ast::Attribute, Vec<Comment>)>,
 }
 
 pub fn parse_many_attributes(syntax: &mut SyntaxIter) -> FormatDocumentResult<ParsedAttributes> {

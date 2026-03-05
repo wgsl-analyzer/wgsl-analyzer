@@ -1,3 +1,5 @@
+mod line_spacing;
+
 use std::rc::Rc;
 
 use dprint_core::formatting::{
@@ -12,52 +14,7 @@ use crate::format::{
     reporting::FormatDocumentResult,
 };
 
-/// Lays out the children of a node in a way so that
-/// - after every node is exactly 1 or 2 newlines (aka. 0 to 1 blank lines)
-/// - there are no newlines before the first node
-pub fn gen_spaced_lines<F>(
-    node: &mut SyntaxIter,
-    mut pretty_item: F,
-) -> FormatDocumentResult<PrintItemBuffer>
-where
-    F: FnMut(&NodeOrToken<SyntaxNode, SyntaxToken>) -> FormatDocumentResult<PrintItemBuffer>,
-{
-    let mut result = PrintItemBuffer::new();
-
-    for child in node {
-        if let rowan::NodeOrToken::Token(token) = &child
-            && token.kind() == parser::SyntaxKind::Blankspace
-        {
-            // if the token is a blankspace, collapse the newlines according to the rules.
-
-            //TODO Think a bit more about different types of newlines (\c\n etc.)
-            //TODO child.to_string() here surely is wasteful - there must be a better way.
-
-            let newlines = token
-                .to_string()
-                .chars()
-                .filter(|item| *item == '\n')
-                .count();
-            if newlines == 1 {
-                //There was a newline in the source
-                result.request(SeparationRequest {
-                    line_break: SeparationPolicy::Expected,
-                    ..Default::default()
-                });
-            } else if newlines >= 2 {
-                //There was an empty line in the source
-                result.request(SeparationRequest {
-                    empty_line: SeparationPolicy::Expected,
-                    ..Default::default()
-                });
-            }
-        } else {
-            result.extend(pretty_item(&child)?);
-        }
-    }
-
-    Ok(result)
-}
+pub use line_spacing::*;
 
 /// In cases where the formatter is not yet complete we simply output source verbatim.
 #[deprecated]
