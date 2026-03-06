@@ -65,6 +65,8 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
             items.push(SourceFileItem::LineSpacing(spacing));
         } else if let Some(_statement) = parse_token_optional(&mut syntax, SyntaxKind::Blankspace) {
             // If its not a line_spacing blankspace, then we simply discard it
+        } else if let Some(_statement) = parse_token_optional(&mut syntax, SyntaxKind::Semicolon) {
+            // Top level semicolons, like after struct defs
         } else if let Some(item) = parse_node_optional::<Item>(&mut syntax) {
             items.push(SourceFileItem::Item(item));
         } else if let Some(comment) = parse_comment_optional(&mut syntax) {

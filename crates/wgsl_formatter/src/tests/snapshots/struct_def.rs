@@ -221,3 +221,20 @@ fn format_struct_member_spacing() {
         "#]],
     );
 }
+
+#[test]
+fn format_struct_def_with_rogue_semicolon() {
+    check(
+        "
+        struct VertexInput {
+            @builtin(vertex_index) vertexIndex: u32,
+        };
+        ",
+        expect![[r#"
+            struct VertexInput {
+                @builtin(vertex_index)
+                vertexIndex: u32,
+            }
+        "#]],
+    );
+}
