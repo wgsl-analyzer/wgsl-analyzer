@@ -955,10 +955,13 @@ impl GlobalState {
         // FIXME: Some of these NO_RETRY could be retries if the file they are interested didn't change.
         // All other request handlers
         dispatcher
-            .on::<NO_RETRY, DefinitionRequest>(handlers::request::handle_goto_definition)
-            .on::<RETRY, CompletionRequest>(handlers::request::handle_completion)
-            .on_fmt_thread::<DocumentFormattingRequest>(handlers::request::handle_formatting)
-            .on::<RETRY, FoldingRangeRequest>(handlers::request::handle_folding_range)
+            .on::<NO_RETRY, lt::request::GotoDefinition>(handlers::request::handle_goto_definition)
+            .on::<RETRY, lt::request::Completion>(handlers::request::handle_completion)
+            .on_fmt_thread::<lt::request::Formatting>(handlers::request::handle_formatting)
+            .on_fmt_thread::<lt::request::RangeFormatting>(
+                handlers::request::handle_range_formatting,
+            )
+            .on::<RETRY, lt::request::FoldingRangeRequest>(handlers::request::handle_folding_range)
             .on::<NO_RETRY, lsp::extensions::HoverRequest>(handlers::request::handle_hover)
             .on::<NO_RETRY, ShutdownRequest>(handlers::request::handle_shutdown)
             .on::<NO_RETRY, InlayHintRequest>(handlers::request::handle_inlay_hints)
