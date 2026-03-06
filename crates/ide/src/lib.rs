@@ -30,6 +30,7 @@ use salsa::{Cancelled, ParallelDatabase as _};
 use syntax::{Parse, SyntaxNode};
 use triomphe::Arc;
 use vfs::FileId;
+use wgsl_formatter::FormattingOptions;
 
 pub use crate::{
     // annotations::{Annotation, AnnotationConfig, AnnotationKind, AnnotationLocation},
@@ -293,10 +294,11 @@ impl Analysis {
 
     pub fn format(
         &self,
+        config: &FormattingOptions,
         file_id: FileId,
         range: Option<TextRange>,
-    ) -> Cancellable<Option<SyntaxNode>> {
-        self.with_db(|database| formatting::format(database, file_id, range))
+    ) -> Cancellable<Option<String>> {
+        self.with_db(|database| formatting::format(database, config, file_id, range))
     }
 
     /// Returns a short text describing element at position.

@@ -61,9 +61,12 @@ impl SyncPluginHandler<FormattingOptions> for WgslPluginHandler {
     ) -> FormatResult {
         let config = request.config;
 
+        // TODO(MonaMayrhofer) Better error handling here
         let formatted = format_str(std::str::from_utf8(&request.file_bytes)?, config);
 
-        Ok(Some(formatted.into_bytes()))
+        formatted
+            .map(|formatted| Some(formatted.into_bytes()))
+            .map_err(|error| anyhow::anyhow!(error.to_string()))
     }
 }
 

@@ -2,6 +2,7 @@
 
 mod expression;
 mod imports;
+mod statement;
 
 use expect_test::{Expect, expect};
 
@@ -585,7 +586,7 @@ fn parse_type_template_with_int() {
 fn parse_type_template_trailing_comma() {
     check_type(
         "array<
-        f32, 
+        f32,
         100,
         >",
         expect![[r#"
