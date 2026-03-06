@@ -129,3 +129,51 @@ pub fn format_comments_in_nested_index_expr() {
         "#]],
     );
 }
+
+#[test]
+fn format_name_in_index() {
+    check(
+        "
+        fn debug_draw_line(b: array<f32, 5>, index: u32) {
+            b[index]   = 0;
+        }
+        ",
+        expect![[r#"
+            fn debug_draw_line(b: array<f32, 5>, index: u32) {
+                b[index] = 0;
+            }
+        "#]],
+    );
+}
+
+#[test]
+fn format_expr_in_index() {
+    check(
+        "
+        fn debug_draw_line(b: array<f32, 5>, index: u32) {
+            b[2+2]   = 0;
+        }
+        ",
+        expect![[r#"
+            fn debug_draw_line(b: array<f32, 5>, index: u32) {
+                b[2 + 2] = 0;
+            }
+        "#]],
+    );
+}
+
+#[test]
+fn format_parens_in_index_expr_are_removed() {
+    check(
+        "
+        fn debug_draw_line(b: array<f32, 5>, index: u32) {
+            b[(1+(2-3))]   = 0;
+        }
+        ",
+        expect![[r#"
+            fn debug_draw_line(b: array<f32, 5>, index: u32) {
+                b[1 + (2 - 3)] = 0;
+            }
+        "#]],
+    );
+}
