@@ -9,8 +9,13 @@ use crate::{Analysis, AnalysisHost, FileId, FilePosition, FileRange};
 /// Creates analysis for a single file.
 pub(crate) fn single_file_db(source: &str) -> (Analysis, FileId) {
     let mut host = AnalysisHost::default();
-    let change_fixture = ChangeFixture::parse(source);
-    host.apply_change(change_fixture.change);
+    let fixture = ChangeFixture::parse(source);
+    host.apply_change(fixture.change);
+    assert_eq!(
+        fixture.files.len(),
+        1,
+        "Multiple files found in the fixture"
+    );
 
-    (host.analysis(), change_fixture.files[0].file_id)
+    (host.analysis(), fixture.files[0].file_id)
 }

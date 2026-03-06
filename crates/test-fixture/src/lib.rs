@@ -23,7 +23,11 @@ pub trait WithFixture: Default + SourceDatabase + 'static {
         let mut database = Self::default();
         let fixture = ChangeFixture::parse(wa_fixture);
         fixture.change.apply(&mut database);
-        assert_eq!(fixture.files.len(), 1, "Multiple file found in the fixture");
+        assert_eq!(
+            fixture.files.len(),
+            1,
+            "Multiple files found in the fixture"
+        );
         (database, fixture.files[0])
     }
 

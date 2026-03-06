@@ -23,13 +23,13 @@
 //!
 //! ```ignore
 //! "
-//! //- /main.rs
+//! //- /main.wgsl
 //! import foo;
 //! fn main() {
 //!     foo::bar();
 //! }
 //!
-//! //- /foo.rs
+//! //- /foo.wgsl
 //! pub fn bar() {}
 //! "
 //! ```
@@ -38,11 +38,11 @@
 //!
 //! ```ignore
 //! r#"
-//! //- /main.rs package:a deps:b
+//! //- /main.wgsl package:a deps:b
 //! fn main() {
 //!     b::foo();
 //! }
-//! //- /lib.rs package:b
+//! //- /lib.wgsl package:b
 //! pub fn b() {
 //!     let a = abs(-3.5);
 //! }
@@ -129,12 +129,12 @@ impl FixtureWithProjectMeta {
     pub fn parse(wa_fixture: &str) -> Self {
         let fixture = trim_indent(wa_fixture);
         let mut result: Vec<Fixture> = Vec::new();
-        let first_row = 0;
+        let first_row: i32 = 0;
 
         let default = if fixture.contains("//- /") {
             None
         } else {
-            Some((first_row - 1, "//- /main.rs"))
+            Some((first_row - 1, "//- /main.wgsl"))
         };
 
         for (ix, line) in default

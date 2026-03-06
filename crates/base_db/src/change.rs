@@ -1,4 +1,4 @@
-//! Defines a unit of change that can applied to the database to get the next
+//! Defines a unit of change that can be applied to the database to get the next
 //! state. Changes are transactional.
 
 use salsa::Durability;
