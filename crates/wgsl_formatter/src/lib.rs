@@ -14,7 +14,7 @@ pub struct FormattingMdDocTests;
 use rowan::{GreenNode, GreenToken, NodeOrToken, WalkEvent};
 use syntax::{AstNode, HasName, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, ast};
 
-pub use format::{format_str, format_tree};
+pub use format::{format_node, format_str, format_tree};
 
 /// Configuration options for the WGSL formatter.
 #[derive(Debug, Clone)]
