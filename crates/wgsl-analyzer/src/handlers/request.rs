@@ -114,13 +114,16 @@ pub(crate) fn handle_formatting(
     let Some(file_id) = from_proto::file_id(&snap, &parameters.text_document.uri)? else {
         return Ok(None);
     };
-    let Some(node) = snap.analysis.format(file_id, None)? else {
+    let source_root = snap.analysis.source_root_id(file_id).ok();
+    let formatting_config = &snap.config.wgslfmt(source_root);
+
+    // TODO Pass text ranges to the formatting
+    let Some(after) = snap.analysis.format(formatting_config, file_id, None)? else {
         return Ok(None);
     };
     let line_index = snap.file_line_index(file_id)?;
 
     let before = snap.analysis.file_text(file_id)?;
-    let after = node.to_string();
 
     let diff = diff::diff(&before, &after);
     let edits = to_proto::text_edit_vec(&line_index, diff);

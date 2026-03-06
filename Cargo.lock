@@ -640,6 +640,7 @@ dependencies = [
  "smol_str",
  "syntax",
  "test-utils",
+ "tracing",
  "triomphe",
  "vfs",
  "wgsl-formatter",
@@ -2000,6 +2001,7 @@ dependencies = [
  "triomphe",
  "vfs",
  "vfs-notify 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070)",
+ "wgsl-formatter",
  "windows-sys 0.61.2",
  "xflags",
 ]

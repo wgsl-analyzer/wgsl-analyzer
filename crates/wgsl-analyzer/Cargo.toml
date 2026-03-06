@@ -66,6 +66,7 @@ paths.workspace = true
 camino.workspace = true
 base-db.workspace = true
 line-index.workspace = true
+wgsl-formatter.workspace = true
 
 [dev-dependencies]
 # expect-test = "1.5.1"

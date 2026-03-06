@@ -15,6 +15,7 @@ mod gen_expression;
 mod gen_function;
 mod gen_function_call;
 mod gen_if_statement;
+mod gen_node;
 mod gen_path;
 mod gen_source_file;
 mod gen_statement;
@@ -28,13 +29,13 @@ pub mod multiline_group;
 mod reporting;
 
 use dprint_core::formatting::PrintOptions;
-use parser::Edition;
-use syntax::ast;
+use parser::{Edition, SyntaxNode};
+use syntax::{AstNode, ast};
 
 use crate::{
     FormattingOptions,
     format::{
-        gen_source_file::gen_source_file, print_item_buffer::PrintItemBuffer,
+        gen_node::gen_node, gen_source_file::gen_source_file, print_item_buffer::PrintItemBuffer,
         reporting::FormatDocumentResult,
     },
 };
@@ -49,14 +50,22 @@ pub fn format_str(
     format_tree(&file, options)
 }
 
+#[deprecated]
 pub fn format_tree(
     syntax: &ast::SourceFile,
+    options: &FormattingOptions,
+) -> FormatDocumentResult<String> {
+    format_node(syntax.syntax(), options)
+}
+
+pub fn format_node(
+    syntax: &SyntaxNode,
     options: &FormattingOptions,
 ) -> FormatDocumentResult<String> {
     let mut error = None;
 
     let formatted = dprint_core::formatting::format(
-        || match gen_source_file(syntax) {
+        || match gen_node(syntax) {
             Ok(items) => items.finish(),
             Err(gen_error) => {
                 //We seem to have to do it this weird way, because

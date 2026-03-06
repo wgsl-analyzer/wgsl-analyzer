@@ -8,21 +8,36 @@ use crate::RootDatabase;
 
 pub(crate) fn format(
     database: &RootDatabase,
+    config: &FormattingOptions,
     file_id: FileId,
     range: Option<TextRange>,
-) -> Option<SyntaxNode> {
+) -> Option<String> {
     let file_id = database.editioned_file_id(file_id);
-    let file = database.parse(file_id).tree();
+    let parsed = database.parse(file_id);
+    let file = parsed.tree();
 
     let node = match range {
-        None => file.syntax().clone_for_update(),
+        None => file.syntax().clone(),
         Some(range) => match file.syntax().covering_element(range) {
-            NodeOrToken::Node(node) => node.clone_for_update(),
+            NodeOrToken::Node(node) => node,
             NodeOrToken::Token(_) => return None,
         },
     };
 
+    // Refuse to format documents with syntax errors
+    if !parsed.errors().is_empty() {
+        tracing::warn!("Skipped formatting, file has syntax errors");
+        return None;
+    }
+
     // TODO: Re-enable the formatter
     // wgsl_formatter::format_recursive(&node, &FormattingOptions::default());
-    Some(node)
+    match wgsl_formatter::format_node(&node, config) {
+        Ok(formatted) => Some(formatted),
+        Err(error) => {
+            // TODO: Properly display this error
+            tracing::warn!("Failed to format: {error:?}");
+            None
+        },
+    }
 }
