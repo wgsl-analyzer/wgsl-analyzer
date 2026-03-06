@@ -75,7 +75,7 @@ tracing-subscriber = { version = "0.3.22", default-features = false, features = 
 	"tracing-log",
 ] }
 triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
-wgsl-types = { git = "https://github.com/wgsl-tooling-wg/wesl-rs", version = "0.3.2", features = [
+wgsl-types = { version = "0.3.2", features = [
 	"naga-ext",
 ] }
 

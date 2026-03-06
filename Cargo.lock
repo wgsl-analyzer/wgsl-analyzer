@@ -1957,7 +1957,8 @@ dependencies = [
 [[package]]
 name = "wgsl-types"
 version = "0.3.2"
-source = "git+https://github.com/wgsl-tooling-wg/wesl-rs#6dd3c873a2a62ad7a8e3d08c8060af680235eafe"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7aed068ca1dc8fb182f574c9f2ace45ec988c71ba050f6dd334883fe3b8a88e2"
 dependencies = [
  "half",
  "itertools",
