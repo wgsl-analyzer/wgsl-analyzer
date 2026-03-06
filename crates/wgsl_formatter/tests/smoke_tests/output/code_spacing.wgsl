@@ -1,6 +1,7 @@
 struct Thingy {
     a: f32,
     b: f32,
+
     c: f32,
     d: f32,
 }
@@ -12,23 +13,12 @@ fn main() {
     let a = 3;
     let b = 3;
 
-
-
-
-
-
     let c = 3;
 }
 fn start_end_spacing() {
-
-
-
     let a = 3;
 }
 fn start_spacing() {
-
-
-
     let a = 3;
 }
 fn end_spacing() {
@@ -45,27 +35,6 @@ struct HasEmptySpaceBoth {
 }
 fn space_after_fn() {}
 
-
-
-
-
-
-
-
-
-
 fn space_around_fn() {}
-
-
-
-
-
-
-
-
-
-
-
-
 
 fn space_before_fn() {}
