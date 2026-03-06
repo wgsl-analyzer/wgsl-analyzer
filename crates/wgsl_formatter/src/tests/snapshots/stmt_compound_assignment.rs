@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{assert_out_of_scope, check, check_comments};
 
 #[test]
-pub fn format_compound_assignment_simple() {
+pub fn format_compound_assignment_simple_1() {
     // See https://gpuweb.github.io/gpuweb/wgsl/#compound-assignment-sec for a list of possible operators.
     check(
         "fn main() {
@@ -17,6 +17,20 @@ pub fn format_compound_assignment_simple() {
                 a += 1;
             }
         "]],
+    );
+}
+
+#[test]
+fn format_compound_assignment_simple_2() {
+    check(
+        "fn main() {
+    y  +=  x + y;
+}",
+        expect![[r#"
+            fn main() {
+                y += x + y;
+            }
+        "#]],
     );
 }
 
