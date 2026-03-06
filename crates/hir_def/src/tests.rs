@@ -1,5 +1,5 @@
 use expect_test::{Expect, expect};
-use test_fixture::WithFixture;
+use test_fixture::WithFixture as _;
 use triomphe::Arc;
 
 use crate::{database::DefDatabase as _, test_db::TestDatabase};
