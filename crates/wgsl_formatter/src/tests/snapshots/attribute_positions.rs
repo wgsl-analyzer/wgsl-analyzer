@@ -181,9 +181,11 @@ pub fn format_comments_in_attrs_on_function_parameter() {
         }",
         expect![[r#"
             fn thing /* 0 */ (
-                /* 1 */ /* 2 */ @attr(0) /* 3 */
+                /* 1 */ /* 2 */
+                @attr(0) /* 3 */
                 @attr(1) /* 4 */
-                position: vec4<f32>, /* 5 */
+                position: vec4<f32>,
+                /* 5 */
                 @attr(0) /* 6 */
                 @attr(1) /* 7 */
                 uv: vec2<f32>,
@@ -196,7 +198,8 @@ pub fn format_comments_in_attrs_on_function_parameter() {
                 // 2
                 @attr(0) // 3
                 @attr(1) // 4
-                position: vec4<f32>, // 5
+                position: vec4<f32>,
+                // 5
                 @attr(0) // 6
                 @attr(1) // 7
                 uv: vec2<f32>,
