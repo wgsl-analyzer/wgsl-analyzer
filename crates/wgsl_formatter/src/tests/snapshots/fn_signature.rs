@@ -246,3 +246,28 @@ fn format_fn_header_with_parameters_spacing() {
         "#]],
     );
 }
+
+#[test]
+fn format_fn_header_with_parameters_inline_line_comments() {
+    check(
+        "fn main(
+            a: u32, // This comment describes B
+            b: u32, // This comment describes C
+
+            // This comment describes C
+            c: u32,
+            // This comment describes D
+            d: u32
+        ) {}",
+        expect![[r#"
+            fn main(
+                // This comment describes A
+                a: u32,
+                // This comment describes B
+                b: u32,
+                c: u32,
+                d: u32,
+            ) {}
+        "#]],
+    );
+}
