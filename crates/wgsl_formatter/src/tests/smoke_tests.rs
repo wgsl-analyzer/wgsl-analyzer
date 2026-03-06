@@ -1,3 +1,11 @@
+/// The smoke tests should be a big collection of various WESL code that
+/// covers as many cases as possible. They aren't meant to "specify" any
+/// specific behavior, nor are the `output` files informative of how things
+/// "should" be.
+/// The smoke tests are meant to document how things "are" - whether that
+/// is correct or not, so that when changes are made to the formatter,
+/// it is easily verifiable if the formatting stayed the same or we
+/// accidentally broke formatting for some special case.
 use std::{ffi::OsString, path::Path};
 
 use expect_test::expect_file;
