@@ -31,7 +31,8 @@ fn format_fn_multiline_header_inline_comments_1() {
         &expect![[r#"
             /*000*/
             fn /*aaa*/ main /*bbb*/ (
-                /*ccc*/ a: /*ddd*/ /*eee*/ b, /*fff*/
+                /*ccc*/
+                a: /*ddd*/ /*eee*/ b, /*fff*/
             ) /*ggg*/ -> /*hhh*/ f32 /*iii*/ {} /*jjj*/
         "#]],
         &FormattingOptions {
@@ -76,7 +77,8 @@ fn format_fn_header_line_comments_1() {
                 // ccc
                 a: // ddd
                 // eee
-                b, // fff
+                b,
+                // fff
             ) // ggg
             -> // hhh
             f32 // iii

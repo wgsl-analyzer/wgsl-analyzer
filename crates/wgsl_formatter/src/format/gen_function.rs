@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{collections::BTreeSet, rc::Rc};
 
 use dprint_core::formatting::{LineNumber, LineNumberAnchor, PrintItems, Signal, conditions};
 use dprint_core_macros::sc;
@@ -6,7 +6,7 @@ use itertools::{Itertools as _, Position, put_back};
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
-    ast::{self},
+    ast::{self, Statement},
 };
 
 use crate::format::{
@@ -15,11 +15,16 @@ use crate::format::{
         parse_token, parse_token_optional,
     },
     gen_attributes::{gen_attributes, parse_many_attributes},
-    gen_comments::gen_comments,
+    gen_comments::{Comment, gen_comment, gen_comments, parse_comment_optional},
     gen_statement_compound::gen_compound_statement,
     gen_types::gen_type_specifier,
-    helpers::create_is_multiple_lines_resolver,
-    print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
+    helpers::{
+        LineSpacing, create_is_multiple_lines_resolver, gen_line_spacing, parse_line_spacing,
+    },
+    print_item_buffer::{
+        PrintItemBuffer, SeparationPolicy, SeparationRequest,
+        request_folder::{Request, RequestFolder, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -71,6 +76,11 @@ pub fn gen_function_declaration(
 }
 
 pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult<PrintItemBuffer> {
+    enum GenFnParameterItem {
+        Parameter(ast::Parameter),
+        LineSpacing(LineSpacing),
+        Comment(Comment),
+    }
     // ==== Parse ====
 
     let mut syntax = put_back(node.syntax().children_with_tokens());
@@ -78,25 +88,34 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
     parse_token(&mut syntax, SyntaxKind::ParenthesisLeft)?;
     let item_comments_start = parse_many_comments_and_blankspace(&mut syntax)?;
 
-    let mut item_parameters = Vec::new();
+    let mut items = Vec::new();
+
+    let mut possible_spacing_before_comments = None;
+    let mut last_parameter_index = 0;
 
     loop {
-        let Some(item_param) = parse_node_optional::<ast::Parameter>(&mut syntax) else {
+        let current_pending_space = possible_spacing_before_comments.take();
+
+        if let Some(spacing) = parse_line_spacing(&mut syntax) {
+            // Currently we only respect line_spacings if they occur directly before a comment
+            possible_spacing_before_comments = Some(spacing);
+        } else if let Some(_statement) = parse_token_optional(&mut syntax, SyntaxKind::Blankspace) {
+            // If its not a line_spacing blankspace, then we simply discard it
+        } else if let Some(parameter) = parse_node_optional::<ast::Parameter>(&mut syntax) {
+            last_parameter_index = items.len();
+            items.push(GenFnParameterItem::Parameter(parameter));
+        } else if let Some(comment) = parse_comment_optional(&mut syntax) {
+            if let Some(spacing) = current_pending_space {
+                items.push(GenFnParameterItem::LineSpacing(spacing));
+            }
+            items.push(GenFnParameterItem::Comment(comment));
+        } else {
             break;
-        };
-        let item_comments_after_param = parse_many_comments_and_blankspace(&mut syntax)?;
-
-        parse_token_optional(&mut syntax, SyntaxKind::Comma); //Optional
-        let item_comments_after_comma = parse_many_comments_and_blankspace(&mut syntax)?;
-
-        item_parameters.push((
-            item_param,
-            item_comments_after_param,
-            item_comments_after_comma,
-        ));
+        }
+        // We throw away any information about commas
+        parse_token_optional(&mut syntax, SyntaxKind::Comma);
     }
 
-    let item_comments_after_params = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 
@@ -141,46 +160,73 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
 
     formatted.extend(gen_comments(&item_comments_start));
 
-    for (pos, (item_parameter, item_comments_after_param, item_comments_after_comma)) in
-        item_parameters.into_iter().with_position()
-    {
-        formatted.extend(gen_fn_parameter(&item_parameter)?);
-        if pos == Position::Last || pos == Position::Only {
-            formatted.push_condition(conditions::if_true(
-                "paramTrailingComma",
-                Rc::clone(&is_multiple_lines),
-                {
-                    let mut pi = PrintItems::default();
-                    pi.push_sc(sc!(","));
-                    pi
-                },
-            ));
-        } else {
-            formatted.push_sc(sc!(","));
+    for (index, item) in items.into_iter().enumerate() {
+        match item {
+            GenFnParameterItem::Parameter(parameter) => {
+                // If the parameters are multiple lines long, every parameter should be on a new line
+                // If the parameters is a single line long, every parameter should be prepended with a space,
+                // with a chance for breaking into multiple lines
+                formatted.request_request(Request::Conditional {
+                    condition: Rc::clone(&is_multiple_lines),
+                    on_true: Box::new(RequestFolder {
+                        folded_request: Some(Request::Unconditional {
+                            expected: BTreeSet::from_iter([RequestItem::LineBreak]),
+                            discouraged: BTreeSet::new(),
+                            forced: BTreeSet::new(),
+                        }),
+                    }),
+                    on_false: Box::new(RequestFolder::default()),
+                });
+
+                if index != 0 {
+                    formatted.request_request(Request::Unconditional {
+                        expected: BTreeSet::from([RequestItem::Space]),
+                        discouraged: BTreeSet::new(),
+                        forced: BTreeSet::new(),
+                    });
+                }
+
+                formatted.extend(gen_fn_parameter(&parameter)?);
+                if index == last_parameter_index {
+                    formatted.push_condition(conditions::if_true(
+                        "paramTrailingComma",
+                        Rc::clone(&is_multiple_lines),
+                        {
+                            let mut pi = PrintItems::default();
+                            pi.push_sc(sc!(","));
+                            pi
+                        },
+                    ));
+                } else {
+                    formatted.push_sc(sc!(","));
+                }
+            },
+            GenFnParameterItem::LineSpacing(line_spacing) => {
+                formatted.extend(gen_line_spacing(&line_spacing)?);
+            },
+            GenFnParameterItem::Comment(comment) => {
+                formatted.extend(gen_comment(&comment));
+            },
         }
-
-        //The comma should be immediately after the parameter, we move the comment back
-        formatted.extend(gen_comments(&item_comments_after_param));
-        formatted.extend(gen_comments(&item_comments_after_comma));
-
-        formatted.request(SeparationRequest {
-            line_break: SeparationPolicy::ExpectedIf {
-                on_branch: true,
-                of_resolver: Rc::clone(&is_multiple_lines),
-            },
-            space: SeparationPolicy::ExpectedIf {
-                on_branch: false,
-                of_resolver: Rc::clone(&is_multiple_lines),
-            },
-            ..Default::default()
-        });
     }
-    formatted.extend(gen_comments(&item_comments_after_params));
 
     // No trailing spaces
     formatted.request(SeparationRequest {
         space: SeparationPolicy::Discouraged,
         ..Default::default()
+    });
+
+    // If we are multiple lines, the closing parenthesis should be on a new line
+    formatted.request_request(Request::Conditional {
+        condition: Rc::clone(&is_multiple_lines),
+        on_true: Box::new(RequestFolder {
+            folded_request: Some(Request::Unconditional {
+                expected: BTreeSet::from_iter([RequestItem::LineBreak]),
+                discouraged: BTreeSet::new(),
+                forced: BTreeSet::new(),
+            }),
+        }),
+        on_false: Box::new(RequestFolder::default()),
     });
 
     formatted.push_condition(conditions::if_true(

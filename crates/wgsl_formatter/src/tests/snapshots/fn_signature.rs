@@ -3,7 +3,10 @@
 use expect_test::expect;
 use parser::Edition;
 
-use crate::test_util::{assert_out_of_scope, check, check_comments, check_with_options};
+use crate::{
+    FormattingOptions,
+    test_util::{assert_out_of_scope, check, check_comments, check_with_options},
+};
 
 #[test]
 fn format_fn_header_with_parameters_1() {
@@ -123,7 +126,7 @@ fn format_fn_header_no_ws() {
 }
 
 #[test]
-fn format_fn_newline() {
+fn format_fn_newline_1() {
     check(
         "fn main(
     a:b
@@ -181,18 +184,18 @@ fn format_fn_header_incomplete() {
 fn format_comments_in_fn_signature() {
     check_comments(
         "
-        ## fn ## main ## ( ## a ## : ## b ## , ## c ## : ## d ## ) ## -> ## f32 ## { ##
-        ## }
+        ## fn ## main ## ( ## a ## : ## b ## , ## c ## : ## d ## ) ## -> ## f32 ## { ## } ##
         ",
         expect![[r#"
             /* 0 */
             fn /* 1 */ main /* 2 */ (
-                /* 3 */ a: /* 4 */ /* 5 */ b, /* 6 */ /* 7 */
+                /* 3 */
+                a: /* 4 */ /* 5 */ b, /* 6 */ /* 7 */
                 c: /* 8 */ /* 9 */ d, /* 10 */
             ) /* 11 */ -> /* 12 */ f32 /* 13 */ {
                 /* 14 */
-                /* 15 */
             }
+            /* 15 */
         "#]],
         expect![[r#"
             // 0
@@ -212,9 +215,8 @@ fn format_comments_in_fn_signature() {
             f32 // 13
             {
                 // 14
-
-                // 15
             }
+            // 15
         "#]],
     );
 }
@@ -261,13 +263,40 @@ fn format_fn_header_with_parameters_inline_line_comments() {
         ) {}",
         expect![[r#"
             fn main(
-                // This comment describes A
-                a: u32,
-                // This comment describes B
-                b: u32,
+                a: u32, // This comment describes B
+                b: u32, // This comment describes C
+
+                // This comment describes C
                 c: u32,
+                // This comment describes D
                 d: u32,
             ) {}
+        "#]],
+    );
+}
+
+#[test]
+fn format_fn_header_with_blockcomment_after_last_parameter() {
+    // This unit check exists, because at some point the formatter mistakenly put
+    // commas after the last parameter
+    // fn main(a: b, /*fff*/) -> f32 {}
+    check(
+        "fn main (a: b /*fff*/) -> f32 {}",
+        expect![[r#"
+            fn main(a: b /*fff*/) -> f32 {}
+        "#]],
+    );
+}
+
+#[test]
+fn format_fn_header_with_linecomment_after_last_parameter() {
+    check(
+        "fn main (a: b // Hi
+        ) -> f32 {}",
+        expect![[r#"
+            fn main(
+                a: b, // Hi
+            ) -> f32 {}
         "#]],
     );
 }
