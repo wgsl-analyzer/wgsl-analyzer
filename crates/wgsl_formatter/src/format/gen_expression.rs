@@ -214,7 +214,7 @@ pub fn gen_index_expression(
     let comments_after_ident_expr = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token(&mut syntax, parser::SyntaxKind::BracketLeft)?;
     let comments_after_open_bracket = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_index_literal = parse_node::<ast::Literal>(&mut syntax)?;
+    let item_actual_index = parse_node::<ast::Expression>(&mut syntax)?;
     let comments_after_index_expr = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token(&mut syntax, parser::SyntaxKind::BracketRight)?;
     parse_end(&mut syntax)?;
@@ -263,7 +263,7 @@ pub fn gen_index_expression(
 
     formatted.extend(gen_comments(&comments_after_open_bracket));
 
-    formatted.extend(gen_literal_expression(&item_index_literal)?);
+    formatted.extend(gen_expression(&item_actual_index, true)?);
 
     formatted.extend(gen_comments(&comments_after_index_expr));
 
