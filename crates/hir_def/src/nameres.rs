@@ -356,4 +356,3 @@ impl IndexMut<FileId> for ModulesMap {
             .unwrap_or_else(|| panic!("FileId not found in ModulesMap: {index:#?}"))
     }
 }
-

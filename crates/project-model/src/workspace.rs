@@ -2,15 +2,16 @@
 //! (`wesl metadata` or `wesl-project.json`) into representation stored
 //! in the salsa database -- `PackageGraph`.
 
-use std::{collections::VecDeque, fmt, fs, iter, ops::Deref as _, sync, thread};
+use std::{collections::VecDeque, fmt, fs, iter, ops::Deref as _, str::FromStr as _, sync, thread};
 
 use anyhow::Context as _;
 use base_db::{
-    Dependency, FileId, LanguagePackageOrigin, PackageDisplayName, PackageGraph, PackageId,
-    PackageName, PackageOrigin,
+    Dependency, FileId, LanguagePackageOrigin, PackageData, PackageDisplayName, PackageGraph,
+    PackageId, PackageName, PackageOrigin,
 };
 use edition::Edition;
 use itertools::Itertools as _;
+use la_arena::{Arena, Idx};
 use paths::{AbsPath, AbsPathBuf, Utf8PathBuf};
 use rustc_hash::{FxHashMap, FxHashSet};
 use semver::Version;
@@ -73,9 +74,25 @@ pub enum ProjectWorkspaceKind {
 /// Simplified WESL workspace.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct WeslWorkspace {
-    // packages: Arena<PackageData>,
+    pub packages_to_load: Arena<PackageToLoadData>,
     pub manifest_path: ManifestPath,
     pub is_virtual_workspace: bool,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct PackageToLoadData {
+    root: AbsPathBuf,
+    edition: Edition,
+}
+
+impl std::ops::Index<Idx<PackageToLoadData>> for WeslWorkspace {
+    type Output = PackageToLoadData;
+    fn index(
+        &self,
+        index: Idx<PackageToLoadData>,
+    ) -> &PackageToLoadData {
+        &self.packages_to_load[index]
+    }
 }
 
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
@@ -154,15 +171,21 @@ impl ProjectWorkspace {
         progress: &(dyn Fn(String) + Sync),
     ) -> Result<Self, anyhow::Error> {
         let WeslConfig { extra_includes, .. } = config;
-        // TODO: Actually load the entire workspace
 
-        progress("querying project metadata".to_owned());
+        progress("loading workspace".to_owned());
 
         let wesl_config: WeslToml = toml::from_slice(&std::fs::read(wesl_toml)?)?;
+        let edition = Edition::from_str(&wesl_config.edition)?;
+        let mut packages_to_load = Arena::default();
 
+        packages_to_load.alloc(PackageToLoadData {
+            root: AbsPathBuf::from(wesl_toml.clone()),
+            edition,
+        });
         // TODO: Fetch the metadata about the dependencies
 
         let wesl = WeslWorkspace {
+            packages_to_load,
             manifest_path: wesl_toml.clone(),
             is_virtual_workspace: false,
         };
@@ -394,10 +417,28 @@ fn project_json_to_package_graph(
 }
 
 fn wesl_to_package_graph(
-    _load: FileLoader<'_>,
-    _wesl: &WeslWorkspace,
+    load: FileLoader<'_>,
+    wesl: &WeslWorkspace,
 ) -> PackageGraph {
-    PackageGraph::default()
+    let mut package_graph = PackageGraph::default();
+    for (_, package) in wesl.packages_to_load.iter() {
+        let Some(file_id) = load(&package.root) else {
+            continue;
+        };
+
+        package_graph.add_package_root(
+            file_id,
+            package.edition,
+            // TODO:
+            None,
+            None,
+            PackageOrigin::Local {
+                repository: None,
+                name: None,
+            },
+        );
+    }
+    package_graph
 }
 
 fn detached_file_to_package_graph(
