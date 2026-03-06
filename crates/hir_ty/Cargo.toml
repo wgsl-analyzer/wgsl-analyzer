@@ -26,6 +26,7 @@ wgsl-types.workspace = true
 
 [dev-dependencies]
 expect-test.workspace = true
+test-fixture.workspace = true
 
 [lints]
 workspace = true

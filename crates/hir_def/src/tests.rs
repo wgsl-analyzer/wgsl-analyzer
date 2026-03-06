@@ -1,37 +1,15 @@
-use base_db::{EditionedFileId, FileId, change::Change};
 use expect_test::{Expect, expect};
-use syntax::Edition;
+use test_fixture::WithFixture;
 use triomphe::Arc;
-use vfs::VfsPath;
 
 use crate::{database::DefDatabase as _, test_db::TestDatabase};
-
-pub(crate) fn single_file_db(source: &str) -> (TestDatabase, EditionedFileId) {
-    let mut database = TestDatabase::default();
-    let mut change = Change::new();
-    let file_id = FileId::from_raw(0);
-    change.change_file(
-        file_id,
-        Some(Arc::new(source.to_owned())),
-        VfsPath::new_virtual_path("/".into()),
-    );
-    database.apply_change(change);
-
-    (
-        database,
-        EditionedFileId {
-            file_id: FileId::from_raw(0),
-            edition: Edition::LATEST,
-        },
-    )
-}
 
 #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
 fn check_item_tree(
     source: &str,
     expect: Expect,
 ) {
-    let (database, file_id) = single_file_db(source);
+    let (database, file_id) = TestDatabase::with_single_file(source);
 
     let module_info = database.item_tree(file_id.into());
     expect.assert_eq(&crate::item_tree::pretty::pretty_print_item_tree(

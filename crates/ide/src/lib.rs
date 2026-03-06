@@ -211,7 +211,7 @@ impl Analysis {
         self.with_db(|database| database.file_text(file_id))
     }
 
-    /// Returns the full source code with imports resolved
+    /// Returns the full source code with imports resolved.
     pub fn resolve_full_source(
         &self,
         file_id: FileId,

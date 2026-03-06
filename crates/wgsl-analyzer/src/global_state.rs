@@ -147,7 +147,7 @@ impl GlobalState {
             TaskQueue { sender, receiver }
         };
 
-        let mut analysis_host = AnalysisHost::new(None);
+        let analysis_host = AnalysisHost::new(None);
         // if let Some(capacities) = config.lru_query_capacities_config() {
         //     analysis_host.update_lru_capacities(capacities);
         // }
@@ -239,8 +239,7 @@ impl GlobalState {
                 } else {
                     None
                 };
-                let path = vfs.file_path(file.file_id);
-                change.change_file(file.file_id, text, path.clone());
+                change.change_file(file.file_id, text);
             }
 
             let roots = self.source_root_config.partition(vfs);

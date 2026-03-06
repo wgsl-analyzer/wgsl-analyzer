@@ -1,9 +1,9 @@
 use std::{fmt, panic};
 
-use base_db::{EditionedFileId, FileLoader, FileLoaderDelegate, change::Change};
+use base_db::{EditionedFileId, FileLoader, FileLoaderDelegate, change::Change, input::SourceRoot};
 use syntax::Edition;
 use triomphe::Arc;
-use vfs::{AnchoredPath, FileId, VfsPath};
+use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
 #[salsa::database(
     base_db::SourceDatabaseStorage,
@@ -44,33 +44,4 @@ impl FileLoader for TestDatabase {
     ) -> Option<base_db::FileId> {
         FileLoaderDelegate(self).resolve_path(path)
     }
-}
-
-impl TestDatabase {
-    pub fn apply_change(
-        &mut self,
-        change: Change,
-    ) {
-        change.apply(self);
-    }
-}
-
-pub(crate) fn single_file_db(source: &str) -> (TestDatabase, EditionedFileId) {
-    let mut database = TestDatabase::default();
-    let mut change = Change::new();
-    let file_id = FileId::from_raw(0);
-    change.change_file(
-        file_id,
-        Some(Arc::new(source.to_owned())),
-        VfsPath::new_virtual_path("/".into()),
-    );
-    database.apply_change(change);
-
-    (
-        database,
-        EditionedFileId {
-            file_id,
-            edition: Edition::LATEST,
-        },
-    )
 }

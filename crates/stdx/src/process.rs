@@ -313,7 +313,7 @@ mod implementation {
     }
 
     /// # Safety
-    /// Seems safe enough
+    /// Seems safe enough.
     unsafe fn slice_to_end(vector: &mut Vec<u8>) -> &mut [u8] {
         if vector.capacity() == 0 {
             vector.reserve(16);

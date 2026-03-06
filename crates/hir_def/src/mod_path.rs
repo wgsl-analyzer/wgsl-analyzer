@@ -24,7 +24,7 @@ pub enum PathKind {
     Plain,
     /// `self::` is `Super(0)`.
     Super(u8),
-    /// `package::`
+    /// `package::`.
     Package,
 }
 
