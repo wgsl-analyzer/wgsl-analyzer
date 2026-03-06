@@ -80,7 +80,7 @@ It is a hand-written recursive descent parser, which produces a sequence of even
 It works similarly to
 [kotlin's parser](https://github.com/JetBrains/kotlin/blob/4d951de616b20feca92f3e9cc9679b2de9e65195/compiler/frontend/src/org/jetbrains/kotlin/parsing/KotlinParsing.java),
 which is a good source of inspiration for dealing with syntax errors and incomplete input.
-Original [libsyntax parser](https://github.com/Rust-lang/Rust/blob/6b99adeb11313197f409b4f7c4083c2ceca8a4fe/src/libsyntax/parse/parser.rs) is what we use for the definition of the Rust language.
+Original [libsyntax parser](https://github.com/rust-lang/Rust/blob/6b99adeb11313197f409b4f7c4083c2ceca8a4fe/src/libsyntax/parse/parser.rs) is what we use for the definition of the Rust language.
 `TreeSink` and `TokenSource` traits bridge the tree-agnostic parser from `grammar` with `rowan` trees.
 -->
 
