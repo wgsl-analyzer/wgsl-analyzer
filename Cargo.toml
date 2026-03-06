@@ -27,6 +27,7 @@ parser = { path = "./crates/parser", version = "0.0.0" }
 profile = { path = "./crates/profile", version = "0.0.0" }
 stdx = { path = "./crates/stdx", version = "0.0.0" }
 syntax = { path = "./crates/syntax", version = "0.0.0" }
+toolchain = { path = "./crates/toolchain", version = "0.0.0" }
 test-utils = { path = "./crates/test-utils", version = "0.0.0" }
 wgsl-formatter = { path = "./crates/wgsl_formatter", version = "0.0.0" }
 edition = { path = "./crates/edition", version = "0.0.0" }
@@ -80,6 +81,7 @@ walkdir = "2.5.0"
 wgsl-types = { git = "https://github.com/wgsl-tooling-wg/wesl-rs", version = "0.2.0", features = [
 	"naga-ext",
 ] }
+indexmap = { version = "2.13.0" }
 
 # tombi: format.rules.table-keys-order.disabled = true
 [workspace.lints.clippy]

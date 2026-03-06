@@ -126,6 +126,7 @@ We use the event loop pattern to manage the zoo, and the loop is the [`GlobalSta
 
 A typical analyzer session involves several steps.
 
+<!--
 First, we need to figure out what to analyze.
 To do this, we run `cargo metadata` to learn about Cargo packages for the current workspace and dependencies, and we run `rustc --print sysroot` and scan the "sysroot" (the directory containing the current Rust toolchain's files) to learn about crates like `std`.
 This happens in the [`GlobalState::fetch_workspaces`] method.
@@ -159,7 +160,7 @@ To handle requests, like ["goto definition"](https://github.com/rust-lang/rust-a
 Keep in mind that if we are executing "goto definition" on the thread pool and a new change comes in, the task will be canceled as soon as the main loop calls `apply_change` on the `AnalysisHost`.
 
 [The task]: https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/handlers/request.rs#L610-L623
-
+-->
 This concludes the overview of the analyzer's programming *interface*.
 Next, explore the implementation details.
 

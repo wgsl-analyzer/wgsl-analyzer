@@ -258,7 +258,7 @@ For example, "what is the `edit` for the fifth completion item of the last compl
 For this, the second request should include enough info to re-create the context from scratch.
 This generally means including all the parameters of the original request.
 
-`reload` module contains the code that handles configuration and Cargo.toml changes.
+`reload` module contains the code that handles configuration and `wesl.toml` changes.
 This is a tricky business.
 
 **Architecture Invariant:** `wgsl-analyzer` should be partially available even when the build is broken.
