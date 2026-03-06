@@ -52,7 +52,6 @@ expect-test = "1.5.1"
 itertools = "0.14.0"
 libc = "0.2.181"
 nohash-hasher = "0.2.0"
-rayon = "1.11.0"
 rowan = "0.16.1"
 rustc-hash = "2.1.1"
 salsa = "0.17.0-pre.2"
@@ -76,8 +75,7 @@ tracing-subscriber = { version = "0.3.22", default-features = false, features = 
 	"tracing-log",
 ] }
 triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
-walkdir = "2.5.0"
-wgsl-types = { git = "https://github.com/wgsl-tooling-wg/wesl-rs", version = "0.2.0", features = [
+wgsl-types = { version = "0.3.2", features = [
 	"naga-ext",
 ] }
 
