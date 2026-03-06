@@ -47,7 +47,8 @@ pub fn format_comments_in_attrs_on_struct_members() {
                 /* 0 */ /* 1 */
                 @attr(0) /* 2 */
                 @attr(1) /* 3 */
-                position: /* 4 */ vec4<f32>, /* 5 */
+                position: /* 4 */ vec4<f32>,
+                /* 5 */
                 @attr(0) /* 6 */
                 @attr(1) /* 7 */
                 uv: /* 8 */ vec2<f32>,
@@ -60,7 +61,8 @@ pub fn format_comments_in_attrs_on_struct_members() {
                 @attr(0) // 2
                 @attr(1) // 3
                 position: // 4
-                vec4<f32>, // 5
+                vec4<f32>,
+                // 5
                 @attr(0) // 6
                 @attr(1) // 7
                 uv: // 8

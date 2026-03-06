@@ -60,12 +60,13 @@ fn format_struct_def_garbled_1() {
 
         }
         ",
-        expect![["
-                struct Foo {
-                    a: i32,
-                    b: i32,
-                }
-                "]],
+        expect![[r#"
+            struct Foo {
+                a: i32,
+
+                b: i32,
+            }
+        "#]],
     );
 }
 
@@ -180,17 +181,19 @@ fn format_line_comments_on_multiple_struct_members() {
             // This comment describes B
             b:i32
         }",
-        expect![["
-                struct Foo {
-                    a: i32,
-                    b: i32,
-                }
-                "]],
+        expect![[r#"
+            struct Foo {
+                // This comment describes A
+                a: i32,
+                // This comment describes B
+                b: i32,
+            }
+        "#]],
     );
 }
 
 #[test]
-fn format_struct_member_spacing() {
+fn format_struct_member_spacing_with_line_comments() {
     check(
         "struct Foo {
             // This comment describes A
@@ -201,8 +204,10 @@ fn format_struct_member_spacing() {
             // This comment also describes C
             c:i32,
 
+            d:i32, // This comment describes d
+            e:i32, // This comment describes e
 
-
+            // A lonesome comment?
 
             d: i32
         }",
@@ -215,6 +220,89 @@ fn format_struct_member_spacing() {
                 // This comment describes C
                 // This comment also describes C
                 c: i32,
+
+                d: i32, // This comment describes d
+                e: i32, // This comment describes e
+
+                // A lonesome comment?
+
+                d: i32,
+            }
+        "#]],
+    );
+}
+
+#[test]
+fn format_struct_member_comment_simple() {
+    check(
+        "
+        struct A {
+        // This comment should stick to the member
+        a: i32
+        }
+        ",
+        expect![["
+            struct A {
+                // This comment should stick to the member
+                a: i32,
+            }
+        "]],
+    );
+}
+
+#[test]
+fn format_struct_member_comment_after_opening_braces() {
+    // Following rustfmt, even if the comment is on the same line as the struct
+    // we assume it belongs to the member. If the user wanted to comment on the
+    // struct, they should put the comment in front of the struct.
+    check(
+        "
+        struct A { // This comment should stick to the member
+        a: i32
+        }
+        ",
+        expect![["
+            struct A {
+                // This comment should stick to the member
+                a: i32,
+            }
+        "]],
+    );
+}
+
+#[test]
+fn format_struct_member_spacing_with_block_comments() {
+    check(
+        "struct Foo {
+            /* This comment describes A */
+            a: i32,
+            b: i32,
+
+            /* This comment describes C */
+            /* This comment also describes C */
+            c:i32,
+
+            d:i32, /* This comment describes d */
+            e:i32, /* This comment describes e */
+
+            /* A lonesome comment? */
+
+            d: i32
+        }",
+        expect![[r#"
+            struct Foo {
+                /* This comment describes A */
+                a: i32,
+                b: i32,
+
+                /* This comment describes C */
+                /* This comment also describes C */
+                c: i32,
+
+                d: i32, /* This comment describes d */
+                e: i32, /* This comment describes e */
+
+                /* A lonesome comment? */
 
                 d: i32,
             }

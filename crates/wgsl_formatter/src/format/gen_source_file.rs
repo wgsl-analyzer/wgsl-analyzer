@@ -16,7 +16,7 @@ use crate::format::{
         gen_const_declaration_statement, gen_override_declaration_statement,
         gen_var_declaration_statement,
     },
-    helpers::{LineSpacing, gen_line_spacing, line_spacing, todo_verbatim_wesl},
+    helpers::{LineSpacing, gen_line_spacing, parse_line_spacing, todo_verbatim_wesl},
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::FormatDocumentResult,
 };
@@ -61,7 +61,7 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
     // TODO(MonaMayrhofer) This is basically duplicated code from compound statement, and the user would
     // expect them to behave similarly so they should be combined.
     loop {
-        if let Some(spacing) = line_spacing(&mut syntax) {
+        if let Some(spacing) = parse_line_spacing(&mut syntax) {
             items.push(SourceFileItem::LineSpacing(spacing));
         } else if let Some(_statement) = parse_token_optional(&mut syntax, SyntaxKind::Blankspace) {
             // If its not a line_spacing blankspace, then we simply discard it
