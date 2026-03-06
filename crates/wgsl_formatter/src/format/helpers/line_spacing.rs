@@ -16,7 +16,7 @@ pub enum LineSpacing {
     EmptyLine,
 }
 
-pub fn line_spacing(syntax: &mut SyntaxIter) -> Option<LineSpacing> {
+pub fn parse_line_spacing(syntax: &mut SyntaxIter) -> Option<LineSpacing> {
     let blankspace = parse_token_optional(syntax, parser::SyntaxKind::Blankspace)?;
 
     //TODO(MonaMayrhofer) Think a bit more about different types of newlines (\c\n etc.)

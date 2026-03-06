@@ -12,7 +12,7 @@ use crate::format::{
     gen_attributes::{gen_attributes, parse_many_attributes},
     gen_comments::{Comment, gen_comment, parse_comment_optional},
     gen_statement::gen_statement_maybe_semicolon,
-    helpers::{LineSpacing, gen_line_spacing, line_spacing},
+    helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
     reporting::FormatDocumentResult,
 };
@@ -36,7 +36,7 @@ pub fn gen_compound_statement(
     let mut body_empty = true; //TODO (MonaMayrhofer) This annoys me, brittle, easy to forget
 
     loop {
-        if let Some(spacing) = line_spacing(&mut syntax) {
+        if let Some(spacing) = parse_line_spacing(&mut syntax) {
             lines.push(CompoundStatementItem::LineSpacing(spacing));
         } else if let Some(_statement) = parse_token_optional(&mut syntax, SyntaxKind::Blankspace) {
             // If its not a line_spacing blankspace, then we simply discard it

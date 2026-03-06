@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
 use itertools::put_back;
@@ -13,9 +15,13 @@ use crate::format::{
         parse_token, parse_token_optional,
     },
     gen_attributes::{gen_attributes, parse_many_attributes},
-    gen_comments::gen_comments,
+    gen_comments::{Comment, gen_comment, gen_comments, parse_comment_optional},
     gen_types::gen_type_specifier,
-    print_item_buffer::PrintItemBuffer,
+    helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
+    print_item_buffer::{
+        PrintItemBuffer,
+        request_folder::{Request, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -53,6 +59,12 @@ pub fn gen_struct_declaration(
 }
 
 fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuffer> {
+    enum StructBodyItem {
+        StructMember(ast::StructMember),
+        LineSpacing(LineSpacing),
+        Comment(Comment),
+    }
+
     // === Parse ===
     let mut syntax = put_back(body.syntax().children_with_tokens());
 
@@ -62,19 +74,19 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
     let mut item_members = Vec::new();
 
     loop {
-        let Some(item_member) = parse_node_optional::<ast::StructMember>(&mut syntax) else {
+        if let Some(item_member) = parse_node_optional::<ast::StructMember>(&mut syntax) {
+            item_members.push(StructBodyItem::StructMember(item_member));
+        } else if let Some(line_spacing) = parse_line_spacing(&mut syntax) {
+            item_members.push(StructBodyItem::LineSpacing(line_spacing));
+        } else if let Some(_blank) = parse_token_optional(&mut syntax, SyntaxKind::Blankspace) {
+            // We throw away any non-linespacing information about blanksapces
+        } else if let Some(comment) = parse_comment_optional(&mut syntax) {
+            item_members.push(StructBodyItem::Comment(comment));
+        } else {
             break;
-        };
-        let item_comments_after_member = parse_many_comments_and_blankspace(&mut syntax)?;
-
-        parse_token_optional(&mut syntax, SyntaxKind::Comma); //Optional
-        let item_comments_after_comma = parse_many_comments_and_blankspace(&mut syntax)?;
-
-        item_members.push((
-            item_member,
-            item_comments_after_member,
-            item_comments_after_comma,
-        ));
+        }
+        // We throw away any information about commas
+        parse_token_optional(&mut syntax, SyntaxKind::Comma);
     }
 
     parse_token(&mut syntax, SyntaxKind::BraceRight)?;
@@ -96,18 +108,28 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
     let is_empty = item_members.is_empty();
     if !is_empty {
         formatted.expect_line_break();
-        for (member, comments_after_member, comments_after_comma) in item_members {
-            formatted.extend(gen_struct_member(&member)?);
-            formatted.push_sc(sc!(","));
-
-            // Intentionally reorder comments to move them after the comma
-            formatted.extend(gen_comments(&comments_after_member));
-            formatted.extend(gen_comments(&comments_after_comma));
-
-            formatted.expect_line_break();
+        for member in item_members {
+            match member {
+                StructBodyItem::StructMember(struct_member) => {
+                    formatted.expect_line_break(); // Any struct member should be on a new line
+                    formatted.extend(gen_struct_member(&struct_member)?);
+                    formatted.push_sc(sc!(","));
+                },
+                StructBodyItem::LineSpacing(line_spacing) => {
+                    formatted.extend(gen_line_spacing(&line_spacing)?);
+                },
+                StructBodyItem::Comment(comment) => {
+                    formatted.extend(gen_comment(&comment));
+                },
+            }
         }
     }
 
+    formatted.request_request(Request::Unconditional {
+        discouraged: BTreeSet::from([RequestItem::EmptyLine]),
+        expected: BTreeSet::from([RequestItem::LineBreak]),
+        forced: BTreeSet::new(),
+    });
     formatted.push_signal(Signal::FinishIndent);
     formatted.push_sc(sc!("}"));
 
