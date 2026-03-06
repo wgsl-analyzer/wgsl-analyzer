@@ -298,7 +298,7 @@ impl GlobalState {
             {
                 let open_log_button = tracing::enabled!(tracing::Level::ERROR)
                     &&
-                    // (self.fetch_build_data_error().is_err() || 
+                    // (self.fetch_build_data_error().is_err() ||
                     self.fetch_workspace_error().is_err()
                     // )
                     ;
@@ -744,6 +744,9 @@ impl GlobalState {
             .on::<NO_RETRY, lt::request::GotoDefinition>(handlers::request::handle_goto_definition)
             .on::<RETRY, lt::request::Completion>(handlers::request::handle_completion)
             .on_fmt_thread::<lt::request::Formatting>(handlers::request::handle_formatting)
+            .on_fmt_thread::<lt::request::RangeFormatting>(
+                handlers::request::handle_range_formatting,
+            )
             .on::<RETRY, lt::request::FoldingRangeRequest>(handlers::request::handle_folding_range)
             .on::<NO_RETRY, lsp::extensions::HoverRequest>(handlers::request::handle_hover)
             .on::<NO_RETRY, lt::request::Shutdown>(handlers::request::handle_shutdown)

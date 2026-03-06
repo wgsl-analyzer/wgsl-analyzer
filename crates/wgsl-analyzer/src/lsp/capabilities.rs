@@ -59,7 +59,7 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
         code_action_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/351
         code_lens_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/352
         document_formatting_provider: Some(OneOf::Left(true)),
-        document_range_formatting_provider: Some(OneOf::Left(false)), // TODO The formatter supports document range formatting
+        document_range_formatting_provider: Some(OneOf::Left(true)),
         document_on_type_formatting_provider: Some({
             let mut characters = ide::Analysis::SUPPORTED_TRIGGER_CHARS.iter();
             DocumentOnTypeFormattingOptions {
