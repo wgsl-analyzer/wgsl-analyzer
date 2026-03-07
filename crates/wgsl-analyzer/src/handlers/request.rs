@@ -124,7 +124,7 @@ pub(crate) fn handle_formatting(
 
     let before = snap.analysis.file_text(file_id)?;
 
-    let diff = diff::diff(&before, &after);
+    let diff = diff::diff(&before, &after.formatted);
     let edits = to_proto::text_edit_vec(&line_index, diff);
     Ok(Some(edits))
 }
@@ -151,7 +151,7 @@ pub(crate) fn handle_range_formatting(
         range.end().min(line_index.index.len()),
     );
 
-    let Some(foratted_range) = snap
+    let Some(formatted_range) = snap
         .analysis
         .format(formatting_config, file_id, Some(range))?
     else {
@@ -161,11 +161,11 @@ pub(crate) fn handle_range_formatting(
 
     let before = snap.analysis.file_text(file_id)?;
 
-    let range_before = TextRange::up_to(range.start());
-    let range_after = TextRange::new(range.end(), before.text_len());
+    let range_before = TextRange::up_to(formatted_range.range.start());
+    let range_after = TextRange::new(formatted_range.range.end(), before.text_len());
     let after: String = format!(
-        "{}{foratted_range}{}",
-        &before[range_before], &before[range_after]
+        "{}{}{}",
+        &before[range_before], formatted_range.formatted, &before[range_after]
     );
 
     let diff = diff::diff(&before, &after);

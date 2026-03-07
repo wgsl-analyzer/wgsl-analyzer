@@ -8,7 +8,7 @@ use dprint_core::{
         SyncPluginHandler,
     },
 };
-use wgsl_formatter::{FormattingOptions, format_str};
+use wgsl_formatter::{FormattingOptions, format_file};
 
 mod config;
 
@@ -62,7 +62,7 @@ impl SyncPluginHandler<FormattingOptions> for WgslPluginHandler {
         let config = request.config;
 
         // TODO(MonaMayrhofer) Better error handling here
-        let formatted = format_str(std::str::from_utf8(&request.file_bytes)?, config);
+        let formatted = format_file(std::str::from_utf8(&request.file_bytes)?, config);
 
         formatted
             .map(|formatted| Some(formatted.into_bytes()))

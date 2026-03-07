@@ -28,19 +28,20 @@ mod gen_var_let_const_override_statement;
 pub mod multiline_group;
 mod reporting;
 
-use dprint_core::formatting::PrintOptions;
+use dprint_core::formatting::{PrintItem, PrintOptions};
 use parser::{Edition, SyntaxNode};
 use syntax::{AstNode, ast};
 
 use crate::{
     FormattingOptions,
     format::{
-        gen_node::gen_node, gen_source_file::gen_source_file, print_item_buffer::PrintItemBuffer,
+        gen_node::{gen_node, gen_node_no_newlines},
+        print_item_buffer::PrintItemBuffer,
         reporting::FormatDocumentResult,
     },
 };
 
-pub fn format_str(
+pub fn format_file(
     input: &str,
     options: &FormattingOptions,
 ) -> FormatDocumentResult<String> {
@@ -50,22 +51,31 @@ pub fn format_str(
     format_tree(&file, options)
 }
 
-#[deprecated]
-pub fn format_tree(
+pub(crate) fn format_tree(
     syntax: &ast::SourceFile,
     options: &FormattingOptions,
 ) -> FormatDocumentResult<String> {
-    format_node(syntax.syntax(), options)
+    format(options, || gen_node(syntax.syntax()))
 }
 
 pub fn format_node(
     syntax: &SyntaxNode,
     options: &FormattingOptions,
 ) -> FormatDocumentResult<String> {
+    format(options, || gen_node_no_newlines(syntax))
+}
+
+pub fn format<F>(
+    options: &FormattingOptions,
+    format: F,
+) -> FormatDocumentResult<String>
+where
+    F: FnOnce() -> FormatDocumentResult<PrintItemBuffer>,
+{
     let mut error = None;
 
     let formatted = dprint_core::formatting::format(
-        || match gen_node(syntax) {
+        || match format() {
             Ok(items) => items.finish(),
             Err(gen_error) => {
                 //We seem to have to do it this weird way, because

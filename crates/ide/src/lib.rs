@@ -297,7 +297,7 @@ impl Analysis {
         config: &FormattingOptions,
         file_id: FileId,
         range: Option<TextRange>,
-    ) -> Cancellable<Option<String>> {
+    ) -> Cancellable<Option<formatting::FormattedRange>> {
         self.with_db(|database| formatting::format(database, config, file_id, range))
     }
 
