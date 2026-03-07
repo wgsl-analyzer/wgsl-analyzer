@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use itertools::put_back;
 use parser::SyntaxKind;
 use syntax::{
@@ -17,7 +19,10 @@ use crate::format::{
         gen_var_declaration_statement,
     },
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing, todo_verbatim_wesl},
-    print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
+    print_item_buffer::{
+        PrintItemBuffer, SeparationPolicy, SeparationRequest,
+        request_folder::{Request, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -99,11 +104,10 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
         }
     }
 
-    //There should be a newline, but no empty line at the end of the file
-    formatted.request(SeparationRequest {
-        empty_line: SeparationPolicy::Discouraged,
-        line_break: SeparationPolicy::Expected,
-        ..Default::default()
+    formatted.request_request(Request::Unconditional {
+        forced: BTreeSet::new(),
+        discouraged: BTreeSet::from([RequestItem::EmptyLine]),
+        expected: BTreeSet::from([RequestItem::LineBreak]),
     });
 
     Ok(formatted)

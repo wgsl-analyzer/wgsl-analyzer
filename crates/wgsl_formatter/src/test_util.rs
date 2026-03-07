@@ -9,7 +9,10 @@ use std::{borrow::ToOwned, ffi::OsString, fmt::Debug, panic, path::Path};
 use itertools::Itertools as _;
 use parser::Edition;
 
-use crate::{FormattingOptions, format, format_tree};
+use crate::{
+    FormattingOptions,
+    format::{self, format_tree},
+};
 
 pub trait ExpectAssertEq: Debug {
     fn assert_eq(

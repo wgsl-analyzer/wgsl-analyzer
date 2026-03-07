@@ -187,7 +187,7 @@ fn format_file(
         } else {
             raw
         }
-        let output = wgsl_formatter::format_str(&input, &formatting_options)
+        let output = wgsl_formatter::format_file(&input, &formatting_options)
             .expect("Failed to format input");
 
     // Write formatted output (skip in check mode; skip stdin in json mode).
