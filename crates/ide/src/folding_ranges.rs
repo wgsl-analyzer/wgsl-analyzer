@@ -294,7 +294,7 @@ mod tests {
             "The amount of folds is different than the expected amount"
         );
 
-        for (fold, (range, attr)) in folds.iter().zip(ranges.into_iter()) {
+        for (fold, (range, attr)) in folds.iter().zip(ranges) {
             assert_eq!(
                 fold.range.start(),
                 range.start(),

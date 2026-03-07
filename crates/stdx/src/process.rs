@@ -269,7 +269,7 @@ mod implementation {
         }
 
         /// # Safety
-        /// TODO
+        /// TODO.
         unsafe fn read(&mut self) -> io::Result<()> {
             // SAFETY: TODO
             let dst = unsafe { slice_to_end(self.dst) };

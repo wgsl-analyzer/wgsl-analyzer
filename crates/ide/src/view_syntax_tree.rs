@@ -69,7 +69,7 @@ fn syntax_node_to_json(
 
                         (
                             true_range,
-                            format!(r#","istart":{start_pos},"iend":{end_pos}"#,),
+                            format!(r#","istart":{start_pos},"iend":{end_pos}"#),
                         )
                     },
                     None => (node_or_token.text_range(), String::new()),

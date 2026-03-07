@@ -223,11 +223,17 @@ impl FixtureWithProjectMeta {
     }
 }
 
-#[test]
-#[should_panic]
-fn parse_fixture_checks_further_indented_metadata() {
-    FixtureWithProjectMeta::parse(
-        r"
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[should_panic(
+        expected = "Metadata line 4 has invalid indentation. All metadata lines need to have the same indentation."
+    )]
+    fn parse_fixture_checks_further_indented_metadata() {
+        FixtureWithProjectMeta::parse(
+            r"
         //- /lib.rs
           mod bar;
 
@@ -235,23 +241,24 @@ fn parse_fixture_checks_further_indented_metadata() {
           //- /bar.rs
           pub fn baz() {}
           ",
-    );
-}
+        );
+    }
 
-#[test]
-fn parse_fixture_gets_full_meta() {
-    let FixtureWithProjectMeta { fixture: parsed } = FixtureWithProjectMeta::parse(
-        r#"
+    #[test]
+    fn parse_fixture_gets_full_meta() {
+        let FixtureWithProjectMeta { fixture: parsed } = FixtureWithProjectMeta::parse(
+            r#"
 //- /lib.rs package:foo deps:bar,baz
 const a = 3;
 "#,
-    );
+        );
 
-    assert_eq!(1, parsed.len());
+        assert_eq!(1, parsed.len());
 
-    let meta = &parsed[0];
-    assert_eq!("const a = 3;\n", meta.text);
+        let meta = &parsed[0];
+        assert_eq!("const a = 3;\n", meta.text);
 
-    assert_eq!("foo", meta.package.as_ref().unwrap());
-    assert_eq!("/lib.rs", meta.path);
+        assert_eq!("foo", meta.package.as_ref().unwrap());
+        assert_eq!("/lib.rs", meta.path);
+    }
 }
