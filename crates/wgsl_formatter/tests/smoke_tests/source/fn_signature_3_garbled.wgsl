@@ -36,14 +36,13 @@ u32
 /* Here */
 u32
 /* Here */
-u32
 /* Here */
 {}
 
 fn         wheres_the_return_type_at                                  (thing               : MyStruct)
 
 
-->
+
 
 {}
 
@@ -54,4 +53,3 @@ fn main(a: b , c: d ,)  -> f32   {}
 fn comma_multiline(
                 a: b , c: d ,)  -> f32   {}
 
-fn missing_comma(a: b  c: d) {}

@@ -1,6 +1,6 @@
-fn fn_sig_args_generic(b: array<array<array<array<array<array<array<u32, 10>, 1>, 5>, >, 2>, 3>, 4>, 5>,)) -> vec4f {}
+fn fn_sig_args_generic(b: array<array<array<array<array<array<array<u32, 10>, 1>, 5>, 1>, 2>, 3>, 4>) -> vec4f {}
 
-fn fn_sig_ret_generic() ->  b: array<array<array<array<array<array<array<u32, 10>, 1>, 5>, >, 2>, 3>, 4>, 5> {}
+fn fn_sig_ret_generic() -> array<array<array<array<array<array<array<u32, 10>, 1>, 5>, 3>, 2>, 3>, 4> {}
 
 fn super_long_fn_name_that_is_very_long_and_has_many_parts_and_might_be_too_long_to_comprehend() {}
 

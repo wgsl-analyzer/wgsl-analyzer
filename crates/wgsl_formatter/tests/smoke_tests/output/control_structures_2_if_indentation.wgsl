@@ -1,7 +1,17 @@
-fn horizontal() {if a == b {b = 5;} else {c = 6;}}
+fn horizontal() {
+    if a == b {
+        b = 5;
+    } else {
+        c = 6;
+    }
+}
 
 fn seperated_horizontal() {
-    if a == b {b = 5;} else {c = 6;}
+    if a == b {
+        b = 5;
+    } else {
+        c = 6;
+    }
 }
 
 fn vertical() {
@@ -13,12 +23,24 @@ fn vertical() {
 }
 
 fn confused_vertical() {
-    if a == b {b = 5;} else {
+    if a == b {
+        b = 5;
+    } else {
         c = 6;
     }
 }
 
-fn nested_horizontal() {if a == b {if c == d {e = 1;} else {f = 2;}} else {c = 6;}}
+fn nested_horizontal() {
+    if a == b {
+        if c == d {
+            e = 1;
+        } else {
+            f = 2;
+        }
+    } else {
+        c = 6;
+    }
+}
 fn nested_vertical() {
     if a == b {
         if c == d {
@@ -32,7 +54,9 @@ fn nested_vertical() {
 }
 
 fn mixed() {
-    if a == b {b = 5;} else {
+    if a == b {
+        b = 5;
+    } else {
         c = 6;
     }
 }

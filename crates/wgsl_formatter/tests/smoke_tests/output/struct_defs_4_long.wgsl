@@ -4,6 +4,8 @@ struct ThisIsAStructWithAVeryLongNameThatYouCantEvenImagineHowLongItCanGetWhoaEv
 }
 
 struct StructFieldWithManyTypeConstructors {
-    this_is_a_long_name_already: array<array<array<array<array<array<array<u32, 10>, 1>, 5>, >, 2>, 3>, 4>,
-    5>,
+    this_is_a_long_name_already: array<
+        array<array<array<array<array<array<u32, 10>, 1>, 5>, 1>, 2>, 3>,
+        4,
+    >,
 }

@@ -5,7 +5,7 @@ struct StructTrailingComma {
 
 struct StructOneLine {
     a: u32,
-    b: u32
+    b: u32,
 }
 struct StructOneLineComma {
     a: u32,
@@ -14,4 +14,4 @@ struct StructOneLineComma {
 
 struct StructWithMistakenSemicolon {
     a: u32,
-};
+}
