@@ -22,9 +22,9 @@ fn main() {
     {c=6;}
 
     if(a
-    ==b){b=5;}else
+    ==b){b=5;}
 
-    {c=6;}else if q<0.1 {
+    else if q<0.1 {
 
     } else {x=true;}
 }

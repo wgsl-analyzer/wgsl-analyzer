@@ -39,10 +39,18 @@ fn smoke_tests() {
                 .join(output_path)
                 .join(smoke_test_name);
 
-            let source = std::fs::read_to_string(smoke_test_source_path)
+            let source = std::fs::read_to_string(&smoke_test_source_path)
                 .expect("source file should be a readable text file.");
 
-            check(&source, expect_file![smoke_test_output_path]);
+            let result = std::panic::catch_unwind(|| {
+                check(&source, expect_file![smoke_test_output_path]);
+            });
+            match result {
+                Ok(()) => {},
+                Err(_) => {
+                    panic!("Smoke test failed: {}", smoke_test_source_path.display());
+                },
+            }
         } else {
             panic!("Expected smoke_test directory to not have subdirectories.")
         }
