@@ -246,8 +246,8 @@ pub(crate) fn remove_whitespace_around_double_colon(syntax: &SyntaxNode) {
         if let rowan::NodeOrToken::Token(token) = &child
             && token.kind() == SyntaxKind::DoubleColon
         {
-            if let Some(preceding) = token.prev_token() {
-                // spellchecker:disable-line
+            let preceding = token.prev_token(); // spellchecker:disable-line
+            if let Some(preceding) = preceding {
                 remove_if_whitespace(&preceding);
             }
             if let Some(following) = token.next_token() {

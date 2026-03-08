@@ -38,9 +38,9 @@ pub(crate) fn format_syntax_node(
         ) {
             let start = syntax.first_token()?;
 
-            let n_newlines = n_newlines_in_whitespace(&start.prev_token()?)
+            let n_newlines = n_newlines_in_whitespace(&start.prev_token()?) // spellchecker:disable-line
                 .unwrap_or(0)
-                .min(2); // spellchecker:disable-line
+                .min(2);
 
             if n_newlines > 0 {
                 let indent = if is_indent_kind(syntax) {
@@ -108,7 +108,8 @@ pub(crate) fn format_syntax_node(
 /// Format a colon token: remove whitespace before, single space after.
 pub(super) fn format_colon(colon: Option<&SyntaxToken>) {
     if let Some(colon) = colon {
-        if let Some(preceding) = colon.prev_token() {
+        let preceding = colon.prev_token(); // spellchecker:disable-line
+        if let Some(preceding) = preceding {
             remove_if_whitespace(&preceding);
         }
         set_whitespace_single_after(colon);

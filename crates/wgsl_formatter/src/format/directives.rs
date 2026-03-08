@@ -40,7 +40,8 @@ fn format_source_file(syntax: &SyntaxNode) {
         let Some(first) = child.first_token() else {
             continue;
         };
-        let Some(preceding) = first.prev_token() else {
+        let preceding = first.prev_token(); // spellchecker:disable-line
+        let Some(preceding) = preceding else {
             continue;
         };
         if let Some(newline_count) = n_newlines_in_whitespace(&preceding)
