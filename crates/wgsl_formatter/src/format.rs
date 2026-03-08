@@ -54,18 +54,17 @@ pub(crate) fn format_syntax_node(
         remove_if_whitespace(&last.prev_token()?); // spellchecker:disable-line
     }
 
-    // Try each sub-module's handler; if one matches, we're done.
-    if directives::format_directive(syntax, indentation, options).is_some() {
-        return None;
+    // Dispatch to the appropriate handler based on node type.
+    let kind = syntax.kind();
+    if kind.is_directive() {
+        directives::format_directive(syntax, indentation, options);
+    } else if kind.is_declaration() {
+        declarations::format_declaration(syntax, indentation, options);
+    } else if kind.is_statement() {
+        statements::format_statement(syntax, indentation, options);
+    } else {
+        expressions::format_expression(syntax, indentation, options);
     }
-    if declarations::format_declaration(syntax, indentation, options).is_some() {
-        return None;
-    }
-    if statements::format_statement(syntax, indentation, options).is_some() {
-        return None;
-    }
-    // expressions handles the wildcard/default case too
-    expressions::format_expression(syntax, indentation, options);
 
     None
 }
