@@ -84,9 +84,12 @@ pub fn format_recursive(
 }
 
 fn is_indent_kind(node: &SyntaxNode) -> bool {
+    // NOTE: LoopStatement is intentionally excluded here. Its body is a
+    // CompoundStatement which already increments indentation; including
+    // LoopStatement would double-indent the loop contents.
     if matches!(
         node.kind(),
-        SyntaxKind::LoopStatement | SyntaxKind::CompoundStatement | SyntaxKind::SwitchBody
+        SyntaxKind::CompoundStatement | SyntaxKind::SwitchBody
     ) {
         return true;
     }
@@ -122,7 +125,7 @@ fn format_syntax_node(
     if syntax.parent().is_some_and(|parent| {
         matches!(
             parent.kind(),
-            SyntaxKind::LoopStatement | SyntaxKind::CompoundStatement | SyntaxKind::SwitchBody
+            SyntaxKind::CompoundStatement | SyntaxKind::SwitchBody
         )
     }) {
         let start = syntax.first_token()?;
@@ -288,7 +291,7 @@ fn format_syntax_node(
             let left_angle = template_parameters.left_angle_token()?;
             remove_if_whitespace(&left_angle.prev_token()?); // spellchecker:disable-line
             remove_if_whitespace(&left_angle.next_token()?);
-            let right_angle = template_parameters.left_angle_token()?;
+            let right_angle = template_parameters.t_angle_token()?;
             remove_if_whitespace(&right_angle.prev_token()?); // spellchecker:disable-line
         },
         SyntaxKind::FunctionCall => {
@@ -397,7 +400,7 @@ fn format_syntax_node(
                 let left_angle = template_parameters.left_angle_token()?;
                 remove_if_whitespace(&left_angle.prev_token()?); // spellchecker:disable-line
                 remove_if_whitespace(&left_angle.next_token()?);
-                let right_angle = template_parameters.left_angle_token()?;
+                let right_angle = template_parameters.t_angle_token()?;
                 remove_if_whitespace(&right_angle.prev_token()?); // spellchecker:disable-line
             }
         },
