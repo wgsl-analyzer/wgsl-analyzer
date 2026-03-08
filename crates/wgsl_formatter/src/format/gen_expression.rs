@@ -1,6 +1,4 @@
-use std::rc::Rc;
-
-use dprint_core::formatting::{LineNumber, LineNumberAnchor, PrintItems, Signal, conditions};
+use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
 use itertools::put_back;
 use syntax::{
@@ -17,8 +15,8 @@ use crate::format::{
     gen_function_call::gen_function_call,
     gen_path::gen_path,
     gen_types::gen_template_list,
-    helpers::create_is_multiple_lines_resolver,
-    print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
+    multiline_group::gen_surrounded_group,
+    print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
 };
 
@@ -213,78 +211,26 @@ pub fn gen_index_expression(
 
     formatted.extend(gen_expression(&item_array_expr, false)?);
     formatted.extend(gen_comments(&comments_after_ident_expr));
-    // formatted.push_sc(sc!("["));
-    // formatted.extend(gen_comments(&comments_after_open_bracket));
-    // formatted.extend(gen_literal_expression(&item_index_literal)?);
-    // formatted.extend(gen_comments(&comments_after_index_expr));
-    // formatted.push_sc(sc!("]"));
 
-    // TODO Abstract this "fully multiline if at all multiline" functionality from here, index exprs, fn declarations and wherever it also exists
-    let start_ln = LineNumber::new("start");
-    let end_ln = LineNumber::new("end");
-    let is_multiple_lines = create_is_multiple_lines_resolver(start_ln, end_ln);
-
-    formatted.push_info(start_ln);
-    formatted.push_anchor(LineNumberAnchor::new(end_ln));
-    formatted.push_sc(sc!("["));
-
-    let mut start_nl_condition = conditions::if_true_or(
-        "paramMultilineStartIndent",
-        Rc::clone(&is_multiple_lines),
-        {
-            let mut pi = PrintItems::default();
-            pi.push_signal(Signal::NewLine);
-            pi.push_signal(Signal::StartIndent);
-            pi
-        },
-        {
-            let mut pi = PrintItems::default();
-            pi.push_signal(Signal::PossibleNewLine);
-            pi
-        },
-    );
-    let start_reeval = start_nl_condition.create_reevaluation();
-    formatted.push_condition(start_nl_condition);
-    formatted.push_signal(Signal::StartNewLineGroup);
-
-    // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
-    formatted.request(SeparationRequest::discouraged());
-
-    formatted.extend(gen_comments(&comments_after_open_bracket));
-
-    formatted.extend(gen_expression(&item_actual_index, true)?);
-
-    formatted.extend(gen_comments(&comments_after_index_expr));
-
-    formatted.request(SeparationRequest {
-        line_break: SeparationPolicy::ExpectedIf {
-            on_branch: true,
-            of_resolver: Rc::clone(&is_multiple_lines),
-        },
-        space: SeparationPolicy::ExpectedIf {
-            on_branch: false,
-            of_resolver: Rc::clone(&is_multiple_lines),
-        },
-        ..Default::default()
-    });
-
-    // No trailing spaces
-    formatted.discourage(RequestItem::Space);
-
-    formatted.push_condition(conditions::if_true(
-        "paramMultilineEndIndent",
-        is_multiple_lines,
-        {
-            let mut pi = PrintItems::default();
-            pi.push_signal(Signal::FinishIndent);
-            pi
-        },
+    formatted.extend(gen_surrounded_group(
+        Some({
+            let mut pib = PrintItemBuffer::new();
+            pib.push_sc(sc!("["));
+            pib
+        }),
+        [{
+            let mut pib = PrintItemBuffer::new();
+            pib.extend(gen_comments(&comments_after_open_bracket));
+            pib.extend(gen_expression(&item_actual_index, true)?);
+            pib.extend(gen_comments(&comments_after_index_expr));
+            pib
+        }],
+        Some({
+            let mut pib = PrintItemBuffer::new();
+            pib.push_sc(sc!("]"));
+            pib
+        }),
     ));
-
-    formatted.push_sc(sc!("]"));
-    formatted.push_signal(Signal::FinishNewLineGroup);
-    formatted.push_info(end_ln);
-    formatted.push_reevaluation(start_reeval);
 
     Ok(formatted)
 }
