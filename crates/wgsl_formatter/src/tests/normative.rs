@@ -2,6 +2,7 @@ mod attributes;
 mod common_conventions;
 mod expression;
 mod function;
+mod no_space_before_semicolon;
 mod statement;
 mod struct_definition;
 mod top_level_layout;
