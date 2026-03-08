@@ -20,7 +20,7 @@ use crate::format::{
     },
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing, todo_verbatim_wesl},
     print_item_buffer::{
-        PrintItemBuffer, SeparationPolicy, SeparationRequest,
+        PrintItemBuffer, SeparationRequest,
         request_folder::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
@@ -92,7 +92,7 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
         match item {
             SourceFileItem::Item(item) => {
                 // Every item should start on a new line.
-                formatted.expect_line_break();
+                formatted.expect(RequestItem::LineBreak);
                 formatted.extend(gen_item(&item)?);
             },
             SourceFileItem::Comment(comment) => {

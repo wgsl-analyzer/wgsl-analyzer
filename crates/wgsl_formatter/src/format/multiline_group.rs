@@ -7,6 +7,8 @@ use crate::format::{
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
 };
 
+use super::print_item_buffer::request_folder::RequestItem;
+
 pub fn gen_multiline_group<I: IntoIterator<Item = PrintItemBuffer>>(lines: I) -> PrintItemBuffer {
     let mut formatted = PrintItemBuffer::new();
 
@@ -56,10 +58,7 @@ pub fn gen_multiline_group<I: IntoIterator<Item = PrintItemBuffer>>(lines: I) ->
     }
 
     // No trailing spaces
-    formatted.request(SeparationRequest {
-        space: SeparationPolicy::Discouraged,
-        ..Default::default()
-    });
+    formatted.discourage(RequestItem::Space);
 
     formatted.push_condition(conditions::if_true(
         "paramMultilineEndIndent",

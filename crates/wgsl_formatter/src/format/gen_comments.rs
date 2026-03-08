@@ -3,9 +3,11 @@ use rowan::NodeOrToken;
 
 use crate::format::{
     ast_parse::{SyntaxIter, parse_token_optional},
-    print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
+    print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
 };
+
+use super::print_item_buffer::request_folder::RequestItem;
 
 // We don't have a Comment SyntaxNode in the AST yet, so we use a custom enum and parser function
 pub enum Comment {
@@ -72,18 +74,15 @@ pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
     let mut formatted = PrintItemBuffer::new();
     match item {
         Comment::Block(content) => {
-            formatted.expect_single_space();
+            formatted.expect(RequestItem::Space);
             formatted.push_string(content.clone());
-            formatted.expect_single_space();
+            formatted.expect(RequestItem::Space);
         },
         Comment::LineEnding(content) => {
-            formatted.expect_single_space();
+            formatted.expect(RequestItem::Space);
             formatted.push_string(content.clone());
             //TODO(MonaMayrhofer) This should be a request, but for now we have no way of encoding a "forced newline no matter what"
-            formatted.request(SeparationRequest {
-                line_break: SeparationPolicy::Forced,
-                ..Default::default()
-            });
+            formatted.force(RequestItem::LineBreak);
         },
     }
     formatted

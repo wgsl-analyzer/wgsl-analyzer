@@ -14,7 +14,9 @@ use crate::format::{
     gen_comments::gen_comments,
     gen_expression::{gen_expression, gen_ident_expression},
     helpers::create_is_multiple_lines_resolver,
-    print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
+    print_item_buffer::{
+        PrintItemBuffer, SeparationPolicy, SeparationRequest, request_folder::RequestItem,
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -135,10 +137,7 @@ pub fn gen_function_call_arguments(
     }
 
     // No trailing spaces
-    formatted.request(SeparationRequest {
-        space: SeparationPolicy::Discouraged,
-        ..Default::default()
-    });
+    formatted.discourage(RequestItem::Space);
 
     formatted.push_condition(conditions::if_true(
         "paramMultilineEndIndent",

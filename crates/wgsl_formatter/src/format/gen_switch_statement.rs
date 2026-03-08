@@ -1,4 +1,3 @@
-
 use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position, put_back};
@@ -20,7 +19,7 @@ use crate::format::{
     gen_comments::{Comment, gen_comments},
     gen_expression::gen_expression,
     gen_statement_compound::gen_compound_statement,
-    print_item_buffer::PrintItemBuffer,
+    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::FormatDocumentError,
 };
 
@@ -43,9 +42,9 @@ pub fn gen_switch_statement(
     formatted.extend(gen_attributes(&item_attributes)?);
     formatted.push_sc(sc!("switch"));
     formatted.extend(gen_comments(&item_comments_after_switch));
-    formatted.expect_single_space(); // We trim out the parens, so we expect a space
+    formatted.expect(RequestItem::Space); // We trim out the parens, so we expect a space
     formatted.extend(gen_expression(&item_expression, true)?);
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space); // We trim out the parens, so we expect a space
     formatted.extend(gen_comments(&item_comments_after_parens));
     formatted.extend(gen_switch_body(&item_body)?);
 
@@ -79,17 +78,17 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
     let is_empty = item_cases.is_empty();
     if !is_empty {
         for (item_case, item_comments_after_case) in item_cases {
-            formatted.expect_line_break();
+            formatted.expect(RequestItem::LineBreak);
             formatted.extend(gen_switch_body_case(&item_case)?);
             formatted.extend(gen_comments(&item_comments_after_case));
         }
-        formatted.expect_line_break();
+        formatted.expect(RequestItem::LineBreak);
     }
     formatted.push_signal(Signal::FinishIndent);
     formatted.push_sc(sc!("}"));
 
     if !is_empty {
-        formatted.expect_line_break();
+        formatted.expect(RequestItem::LineBreak);
     }
 
     Ok(formatted)
@@ -148,7 +147,7 @@ pub fn gen_switch_body_case(
                 formatted.extend(gen_comments(&item_comments_after_case));
             } else {
                 formatted.push_sc(sc!("case"));
-                formatted.expect_single_space();
+                formatted.expect(RequestItem::Space);
                 formatted.extend(gen_comments(&item_comments_after_case));
                 formatted.extend(gen_switch_case_selectors(&item_selectors)?);
             }
@@ -166,7 +165,7 @@ pub fn gen_switch_body_case(
     // Option b) Force colon
     // formatted.push_sc(sc!(":"));
     formatted.extend(gen_comments(&item_comments_after_colon));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)
 }
@@ -211,7 +210,7 @@ pub fn gen_switch_case_selectors(
         formatted.extend(gen_comments(&item_comments_after_selector));
         if !matches!(position, Position::Last | Position::Only) {
             formatted.push_sc(sc!(","));
-            formatted.expect_single_space();
+            formatted.expect(RequestItem::Space);
         }
         formatted.extend(gen_comments(&item_comments_after_comma));
     }

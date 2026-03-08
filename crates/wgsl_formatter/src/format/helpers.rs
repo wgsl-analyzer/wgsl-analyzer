@@ -8,10 +8,9 @@ use dprint_core::formatting::{
 
 pub use line_spacing::*;
 
-use crate::format::{
-    print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
-    reporting::FormatDocumentResult,
-};
+use crate::format::{print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
+
+use super::print_item_buffer::request_folder::RequestItem;
 
 /// In cases where the formatter is not yet complete we simply output source verbatim.
 #[deprecated]
@@ -25,10 +24,7 @@ pub fn todo_verbatim_wesl(source: &parser::SyntaxNode) -> FormatDocumentResult<P
     for line in source.to_string().split_inclusive('\n') {
         if line.ends_with('\n') {
             items.push_string(line[0..(line.len() - 1)].to_owned());
-            items.request(SeparationRequest {
-                line_break: SeparationPolicy::Forced,
-                ..Default::default()
-            });
+            items.force(RequestItem::LineBreak);
         }
         items.push_string(line.to_owned());
     }

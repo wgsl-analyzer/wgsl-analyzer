@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use parser::SyntaxNode;
 use syntax::{
-    AstNode,
+    AstNode as _,
     ast::{
         Arguments, AssertStatement, AssignmentStatement, Attribute, CompoundAssignmentStatement,
         CompoundStatement, ConstantDeclaration, Expression, FieldExpression, FunctionCall,
@@ -19,7 +19,7 @@ use crate::format::{
     gen_assignment_statement::{
         gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
     },
-    gen_attributes::{gen_attribute, gen_attributes},
+    gen_attributes::gen_attribute,
     gen_expression::{
         gen_expression, gen_field_expression, gen_ident_expression, gen_index_expression,
         gen_infix_expression, gen_literal_expression, gen_parenthesis_expression,
