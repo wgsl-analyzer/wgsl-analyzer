@@ -848,7 +848,7 @@ fn format_const_assert_spacing() {
 fn format_switch_spacing() {
     check(
         "fn main() { switch(x){ case 0u:{return 0u;} default:{return 1u;} } }",
-        expect![["fn main() { switch (x) { case 0u:{return 0u;} default:{return 1u;} } }"]],
+        expect!["fn main() { switch (x) { case 0u: {return 0u;} default: {return 1u;} } }"],
     );
 }
 
@@ -890,17 +890,17 @@ fn main() {
         }
     }
 }",
-        expect![["
+        expect![[r#"
             fn main() {
                 switch (x) {
-                    case 0u:{
+                    case 0u: {
                         return 0u;
                     }
-                    default:{
+                    default: {
                         return 1u;
                     }
                 }
-            }"]],
+            }"#]],
     );
 }
 
@@ -1037,5 +1037,23 @@ fn nested() {
                     }
                 }
             }"]],
+    );
+}
+
+#[test]
+fn format_semicolon_spacing() {
+    check(
+        "fn main() { var x: f32 = 0.0  ; let y = 1u  ; x += 1.0  ; return  vec4<f32>(0.0)  ; }",
+        expect![["fn main() { var x: f32 = 0.0; let y = 1u; x += 1.0; return vec4<f32>(0.0); }"]],
+    );
+}
+
+#[test]
+fn format_switch_case_spacing() {
+    check(
+        "fn a() { switch z { case  0u  :  { break; } case  1u, 2u  :  { x = 1.0; } default  :  { break; } } }",
+        expect![[
+            "fn a() { switch z { case 0u: { break; } case 1u, 2u: { x = 1.0; } default: { break; } } }"
+        ]],
     );
 }

@@ -152,6 +152,13 @@ fn format_syntax_node(
         }
     }
 
+    // Remove whitespace before semicolons in any statement node.
+    if let Some(last) = syntax.last_token() {
+        if last.kind() == SyntaxKind::Semicolon {
+            remove_if_whitespace(&last.prev_token()?); // spellchecker:disable-line
+        }
+    }
+
     match syntax.kind() {
         SyntaxKind::FunctionDeclaration => {
             let function = ast::FunctionDeclaration::cast(syntax)?;
@@ -288,6 +295,27 @@ fn format_syntax_node(
             let continuing = ast::ContinuingStatement::cast(syntax)?;
             // Space before the opening brace of the continuing body
             if let Some(block) = continuing.block() {
+                set_whitespace_single_before(&block.left_brace_token()?);
+            }
+        },
+        SyntaxKind::SwitchBodyCase => {
+            let case = ast::SwitchBodyCase::cast(syntax)?;
+            // Collapse space after `case`/`default` keyword
+            let first = case.syntax().first_token()?;
+            if matches!(first.kind(), SyntaxKind::Case | SyntaxKind::Default) {
+                set_whitespace_single_after(&first);
+            }
+            // Remove space before `:`
+            for token in case.syntax().children_with_tokens() {
+                if let Some(t) = token.as_token() {
+                    if t.kind() == SyntaxKind::Colon {
+                        remove_if_whitespace(&t.prev_token()?); // spellchecker:disable-line
+                        break;
+                    }
+                }
+            }
+            // Space before the opening brace
+            if let Some(block) = case.block() {
                 set_whitespace_single_before(&block.left_brace_token()?);
             }
         },
