@@ -533,7 +533,12 @@ pub(crate) fn format_syntax_node(
             }
         },
         SyntaxKind::Attribute => {
-            if let Some(last) = syntax.last_token() {
+            // Preserve newlines after attributes (e.g. @vertex\nfn),
+            // but ensure at least a single space when on the same line.
+            if let Some(last) = syntax.last_token()
+                && let Some(next) = last.next_token()
+                && !is_whitespace_with_newline(&next)
+            {
                 set_whitespace_single_after(&last);
             }
         },

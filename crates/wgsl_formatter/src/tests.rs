@@ -1015,6 +1015,28 @@ fn format_attr_space_before_override() {
 }
 
 #[test]
+fn format_attr_preserves_newline_before_fn() {
+    check(
+        "@vertex
+fn vs() -> vec4<f32> { return vec4<f32>(0.0); }",
+        expect![[r#"
+            @vertex
+            fn vs() -> vec4<f32> { return vec4<f32>(0.0); }"#]],
+    );
+}
+
+#[test]
+fn format_attr_preserves_newline_before_var() {
+    check(
+        "@group(0) @binding(0)
+var<uniform> params: Params;",
+        expect![[r#"
+            @group(0) @binding(0)
+            var<uniform> params: Params;"#]],
+    );
+}
+
+#[test]
 fn format_phony_assignment_spacing() {
     check("fn main() { _=2; }", expect![["fn main() { _ = 2; }"]]);
 }
