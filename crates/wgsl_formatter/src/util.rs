@@ -195,6 +195,22 @@ pub(crate) fn create_syntax_token(
     node.first_token().unwrap()
 }
 
+/// Returns `true` if any token between `start` (exclusive) and `end` (exclusive)
+/// contains a newline character.
+pub(crate) fn has_newline_between(start: &SyntaxToken, end: &SyntaxToken) -> bool {
+    let mut tok = start.next_token();
+    while let Some(token) = tok {
+        if token == *end {
+            break;
+        }
+        if token.text().contains('\n') {
+            return true;
+        }
+        tok = token.next_token();
+    }
+    false
+}
+
 /// Sets the whitespace after `token` to a newline followed by indentation.
 pub(crate) fn indent_after(
     token: &SyntaxToken,

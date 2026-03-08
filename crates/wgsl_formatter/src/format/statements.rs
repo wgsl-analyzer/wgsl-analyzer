@@ -2,8 +2,8 @@ use syntax::{AstNode, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken};
 
 use crate::FormattingOptions;
 use crate::util::{
-    create_whitespace, is_whitespace_with_newline, remove_if_whitespace, remove_token,
-    set_whitespace_after, set_whitespace_before, set_whitespace_single_after,
+    create_whitespace, has_newline_between, indent_before, is_whitespace_with_newline,
+    remove_if_whitespace, remove_token, replace_token_with, set_whitespace_single_after,
     set_whitespace_single_before, whitespace_to_single_around,
 };
 
@@ -54,13 +54,8 @@ pub(crate) fn format_statement(
                 set_whitespace_single_before(&l_brace);
 
                 if is_whitespace_with_newline(&l_brace.next_token()?) {
-                    set_whitespace_before(
-                        &r_brace,
-                        create_whitespace(&format!(
-                            "\n{}",
-                            options.indent_symbol.repeat(indentation)
-                        )),
-                    );
+                    fix_comment_indentation(body.syntax(), indentation + 1, options);
+                    indent_before(&r_brace, indentation, options);
                 }
             }
         },
@@ -163,21 +158,7 @@ fn format_statement_rest(
             let statement = ast::CompoundStatement::cast(syntax.clone())?;
             let l_brace = statement.left_brace_token()?;
             let r_brace = statement.right_brace_token()?;
-            let has_newline = {
-                let mut tok = l_brace.next_token();
-                let mut found = false;
-                while let Some(token) = tok {
-                    if token == r_brace {
-                        break;
-                    }
-                    if token.text().contains('\n') {
-                        found = true;
-                        break;
-                    }
-                    tok = token.next_token();
-                }
-                found
-            };
+            let has_newline = has_newline_between(&l_brace, &r_brace);
 
             if has_newline {
                 // If `{` has content on the same line but `}` is on a new line,
@@ -188,23 +169,15 @@ fn format_statement_rest(
                             .prev_token() // spellchecker:disable-line
                             .is_none_or(|t| !t.text().contains('\n'));
                         if on_same_line {
-                            set_whitespace_before(
-                                &first_tok,
-                                create_whitespace(&format!(
-                                    "\n{}",
-                                    options.indent_symbol.repeat(indentation)
-                                )),
-                            );
+                            indent_before(&first_tok, indentation, options);
                         }
                     }
                 }
-                set_whitespace_before(
-                    &r_brace,
-                    create_whitespace(&format!(
-                        "\n{}",
-                        options.indent_symbol.repeat(indentation.saturating_sub(1))
-                    )),
-                );
+
+                // Fix indentation of standalone comment tokens inside the block.
+                fix_comment_indentation(syntax, indentation, options);
+
+                indent_before(&r_brace, indentation.saturating_sub(1), options);
             } else if statement.statements().next().is_none() {
                 remove_if_whitespace(&l_brace.next_token()?);
             } else {
@@ -272,6 +245,41 @@ fn format_statement_rest(
         _ => return None,
     }
     Some(())
+}
+
+/// Fixes indentation of standalone comment tokens that are direct children
+/// of a block node (e.g. `CompoundStatement`, `SwitchBody`).
+///
+/// Comments are tokens, not nodes, so the normal node-walking indentation
+/// logic in `format_syntax_node` doesn't reach them. This function iterates
+/// over the token children and adjusts the preceding whitespace so comments
+/// align to the expected indentation level.
+fn fix_comment_indentation(
+    block: &SyntaxNode,
+    indentation: usize,
+    options: &FormattingOptions,
+) {
+    for child in block.children_with_tokens() {
+        if let Some(token) = child.as_token() {
+            if !matches!(
+                token.kind(),
+                SyntaxKind::LineEndingComment | SyntaxKind::BlockComment
+            ) {
+                continue;
+            }
+            // Only fix comments that start on their own line (preceded by
+            // whitespace containing a newline).
+            if let Some(prev) = token.prev_token() { // spellchecker:disable-line
+                if prev.kind().is_whitespace() && prev.text().contains('\n') {
+                    let expected =
+                        format!("\n{}", options.indent_symbol.repeat(indentation));
+                    if prev.text() != expected {
+                        replace_token_with(&prev, create_whitespace(&expected));
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -514,6 +522,46 @@ fn main() {
                 let y = 2;
 
                 let z = 3;
+            }"]],
+        );
+    }
+
+    #[test]
+    fn format_comment_indentation_in_block() {
+        check(
+            "
+fn foo() {
+    var x = 1;
+  // misaligned comment
+    var y = 2;
+}",
+            expect![["
+            fn foo() {
+                var x = 1;
+                // misaligned comment
+                var y = 2;
+            }"]],
+        );
+    }
+
+    #[test]
+    fn format_comment_indentation_nested() {
+        check(
+            "
+fn foo() {
+    loop {
+        continuing {
+  // deeply misaligned
+        }
+    }
+}",
+            expect![["
+            fn foo() {
+                loop {
+                    continuing {
+                        // deeply misaligned
+                    }
+                }
             }"]],
         );
     }

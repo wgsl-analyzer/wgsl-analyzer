@@ -130,7 +130,7 @@ fn loop_example() -> u32 {
         if i >= 10u { break; }
         i = i + 1u;
         continuing {
-  // continuing block
+            // continuing block
         }
     }
     return i;

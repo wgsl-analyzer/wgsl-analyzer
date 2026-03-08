@@ -8,7 +8,7 @@ use syntax::{AstNode, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken};
 
 use crate::FormattingOptions;
 use crate::util::{
-    clamp_newlines, create_syntax_token, create_whitespace, insert_after_syntax,
+    clamp_newlines, create_syntax_token, create_whitespace, indent_before, insert_after_syntax,
     is_whitespace_with_newline, n_newlines_in_whitespace, remove_if_whitespace, remove_token,
     replace_token_with, set_whitespace_before, set_whitespace_single_after,
 };
@@ -142,17 +142,12 @@ pub(super) fn format_parameters(
         &options.indent_symbol,
     );
     if has_newline {
-        set_whitespace_before(
-            &param_list.right_parenthesis_token()?,
-            create_whitespace(&format!("\n{}", options.indent_symbol.repeat(indentation))),
-        );
+        indent_before(&param_list.right_parenthesis_token()?, indentation, options);
     } else {
         remove_if_whitespace(&param_list.right_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
     }
     Some(())
 }
-
-
 
 /// Generic formatter for comma-separated lists (parameters, arguments, struct members).
 ///
