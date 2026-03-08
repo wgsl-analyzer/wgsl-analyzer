@@ -1396,7 +1396,7 @@ fn format_index_expression_no_spaces() {
 fn format_index_expression_extra_spaces() {
     check(
         "fn a() { let x = arr  [  0  ]; }",
-        expect!["fn a() { let x = arr  [  0  ]; }"],
+        expect!["fn a() { let x = arr[0]; }"],
     );
 }
 
@@ -1404,7 +1404,7 @@ fn format_index_expression_extra_spaces() {
 fn format_index_expression_nested() {
     check(
         "fn a() { let x = arr [ 0 ] [ 1 ]; }",
-        expect!["fn a() { let x = arr [ 0 ] [ 1 ]; }"],
+        expect!["fn a() { let x = arr[0][1]; }"],
     );
 }
 
@@ -1424,7 +1424,7 @@ fn format_field_expression_no_spaces() {
 fn format_field_expression_extra_spaces() {
     check(
         "fn a() { let x = v . x; }",
-        expect!["fn a() { let x = v . x; }"],
+        expect!["fn a() { let x = v.x; }"],
     );
 }
 
@@ -1432,7 +1432,7 @@ fn format_field_expression_extra_spaces() {
 fn format_field_expression_chained() {
     check(
         "fn a() { let x = obj . field . nested; }",
-        expect!["fn a() { let x = obj . field . nested; }"],
+        expect!["fn a() { let x = obj.field.nested; }"],
     );
 }
 
@@ -1440,7 +1440,7 @@ fn format_field_expression_chained() {
 fn format_field_and_index_chained() {
     check(
         "fn a() { let x = obj . field [ 0 ] . nested; }",
-        expect!["fn a() { let x = obj . field [ 0 ] . nested; }"],
+        expect!["fn a() { let x = obj.field[0].nested; }"],
     );
 }
 
@@ -1452,7 +1452,7 @@ fn format_field_and_index_chained() {
 fn format_prefix_negate() {
     check(
         "fn a() { let x = - y; }",
-        expect!["fn a() { let x = - y; }"],
+        expect!["fn a() { let x = -y; }"],
     );
 }
 
@@ -1460,7 +1460,7 @@ fn format_prefix_negate() {
 fn format_prefix_not() {
     check(
         "fn a() { let x = ! condition; }",
-        expect!["fn a() { let x = ! condition; }"],
+        expect!["fn a() { let x = !condition; }"],
     );
 }
 
@@ -1468,7 +1468,7 @@ fn format_prefix_not() {
 fn format_prefix_deref() {
     check(
         "fn a() { let x = * ptr; }",
-        expect!["fn a() { let x = * ptr; }"],
+        expect!["fn a() { let x = *ptr; }"],
     );
 }
 
@@ -1476,7 +1476,7 @@ fn format_prefix_deref() {
 fn format_prefix_address_of() {
     check(
         "fn a() { let x = & var_name; }",
-        expect!["fn a() { let x = & var_name; }"],
+        expect!["fn a() { let x = &var_name; }"],
     );
 }
 
@@ -1490,7 +1490,7 @@ fn format_enable_directive() {
         "enable  f16;
 fn a() {}",
         expect![[r#"
-            enable  f16;
+            enable f16;
             fn a() {}"#]],
     );
 }
@@ -1501,7 +1501,7 @@ fn format_requires_directive() {
         "requires  unrestricted_pointer_parameters;
 fn a() {}",
         expect![[r#"
-            requires  unrestricted_pointer_parameters;
+            requires unrestricted_pointer_parameters;
             fn a() {}"#]],
     );
 }

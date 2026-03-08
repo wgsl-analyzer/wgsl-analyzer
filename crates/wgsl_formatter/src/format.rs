@@ -372,6 +372,55 @@ pub(crate) fn format_syntax_node(
 
             whitespace_to_single_around(&expression.operator()?);
         },
+        SyntaxKind::IndexExpression => {
+            // `arr [ 0 ]` → `arr[0]`
+            let index_expr = ast::IndexExpression::cast(syntax)?;
+            for child in index_expr.syntax().children_with_tokens() {
+                if let Some(tok) = child.as_token() {
+                    match tok.kind() {
+                        SyntaxKind::BracketLeft => {
+                            remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
+                            remove_if_whitespace(&tok.next_token()?);
+                        },
+                        SyntaxKind::BracketRight => {
+                            remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
+                        },
+                        _ => {},
+                    }
+                }
+            }
+        },
+        SyntaxKind::FieldExpression => {
+            // `v . x` → `v.x`
+            for child in syntax.children_with_tokens() {
+                if let Some(tok) = child.as_token()
+                    && tok.kind() == SyntaxKind::Period
+                {
+                    remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
+                    remove_if_whitespace(&tok.next_token()?);
+                }
+            }
+        },
+        SyntaxKind::PrefixExpression => {
+            // `- y` → `-y`, `! cond` → `!cond`, `* ptr` → `*ptr`, `& var` → `&var`
+            let prefix = ast::PrefixExpression::cast(syntax)?;
+            let first = prefix.syntax().first_token()?;
+            remove_if_whitespace(&first.next_token()?);
+        },
+        SyntaxKind::EnableDirective => {
+            // `enable  f16;` → `enable f16;`
+            let first = syntax.first_token()?;
+            if first.kind() == SyntaxKind::Enable {
+                set_whitespace_single_after(&first);
+            }
+        },
+        SyntaxKind::RequiresDirective => {
+            // `requires  x;` → `requires x;`
+            let first = syntax.first_token()?;
+            if first.kind() == SyntaxKind::Requires {
+                set_whitespace_single_after(&first);
+            }
+        },
         SyntaxKind::ParenthesisExpression => {
             let parenthesis_expression = ast::ParenthesisExpression::cast(syntax)?;
             remove_if_whitespace(
