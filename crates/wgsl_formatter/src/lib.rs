@@ -256,6 +256,33 @@ fn format_syntax_node(
 
             set_whitespace_single_before(&while_statement.block()?.left_brace_token()?);
         },
+        SyntaxKind::SwitchStatement => {
+            let switch_statement = ast::SwitchStatement::cast(syntax)?;
+            // Space after `switch` keyword
+            let first_token = switch_statement.syntax().first_token()?;
+            if first_token.kind() == SyntaxKind::Switch {
+                set_whitespace_single_after(&first_token);
+            }
+            // Space before the opening brace of SwitchBody
+            if let Some(body) = switch_statement.block() {
+                let l_brace = body.syntax().first_token()?;
+                set_whitespace_single_before(&l_brace);
+            }
+        },
+        SyntaxKind::LoopStatement => {
+            let loop_statement = ast::LoopStatement::cast(syntax)?;
+            // Space before the opening brace of the loop body
+            if let Some(block) = loop_statement.block() {
+                set_whitespace_single_before(&block.left_brace_token()?);
+            }
+        },
+        SyntaxKind::ContinuingStatement => {
+            let continuing = ast::ContinuingStatement::cast(syntax)?;
+            // Space before the opening brace of the continuing body
+            if let Some(block) = continuing.block() {
+                set_whitespace_single_before(&block.left_brace_token()?);
+            }
+        },
         SyntaxKind::ForStatement => {
             let for_statement = ast::ForStatement::cast(syntax)?;
 
@@ -417,6 +444,7 @@ fn format_syntax_node(
         },
         SyntaxKind::OverrideDeclaration => {
             let statement = ast::OverrideDeclaration::cast(syntax)?;
+            set_whitespace_single_after(&statement.override_token()?);
             if let Some(colon) = statement.colon() {
                 remove_if_whitespace(&colon.prev_token()?); // spellchecker:disable-line
                 set_whitespace_single_after(&colon);
@@ -425,7 +453,15 @@ fn format_syntax_node(
         },
         SyntaxKind::TypeAliasDeclaration => {
             let statement = ast::TypeAliasDeclaration::cast(syntax)?;
+            set_whitespace_single_after(&statement.alias_token()?);
             whitespace_to_single_around(&statement.equal_token()?);
+        },
+        SyntaxKind::AssertStatement => {
+            // Collapse extra spaces after `const_assert` keyword.
+            let first_token = syntax.first_token()?;
+            if first_token.kind() == SyntaxKind::ConstantAssert {
+                set_whitespace_single_after(&first_token);
+            }
         },
         SyntaxKind::ReturnStatement => {
             // Collapse multiple spaces after `return` to a single space.

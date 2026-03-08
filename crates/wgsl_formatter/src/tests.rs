@@ -822,3 +822,108 @@ fn format_function_call_multiline_trailing_comma() {
             }"]],
     );
 }
+
+#[test]
+fn format_override_extra_spaces() {
+    check("override   x:u32=64;", expect![["override x: u32 = 64;"]]);
+}
+
+#[test]
+fn format_alias_extra_spaces() {
+    check(
+        "alias   Vec3F=vec3<f32>;",
+        expect![["alias Vec3F = vec3<f32>;"]],
+    );
+}
+
+#[test]
+fn format_const_assert_spacing() {
+    check(
+        "const_assert  MAX<=128u;",
+        expect![["const_assert MAX <= 128u;"]],
+    );
+}
+
+#[test]
+fn format_switch_spacing() {
+    check(
+        "fn main() { switch(x){ case 0u:{return 0u;} default:{return 1u;} } }",
+        expect![["fn main() { switch (x) { case 0u:{return 0u;} default:{return 1u;} } }"]],
+    );
+}
+
+#[test]
+fn format_loop_brace_spacing() {
+    check(
+        "fn main() { loop{ x += 1; } }",
+        expect![["fn main() { loop { x += 1; } }"]],
+    );
+}
+
+#[test]
+fn format_continuing_brace_spacing() {
+    check(
+        "fn main() { loop { continuing{ x += 1; } } }",
+        expect![["fn main() { loop { continuing { x += 1; } } }"]],
+    );
+}
+
+#[test]
+fn format_loop_continuing_combined() {
+    check(
+        "fn main() { loop{ continuing{ x+=1; } } }",
+        expect![["fn main() { loop { continuing { x += 1; } } }"]],
+    );
+}
+
+#[test]
+fn format_switch_multiline() {
+    check(
+        "
+fn main() {
+    switch(x){
+        case 0u:{
+            return 0u;
+        }
+        default:{
+            return 1u;
+        }
+    }
+}",
+        expect![["
+            fn main() {
+                switch (x) {
+                    case 0u:{
+                        return 0u;
+                    }
+                    default:{
+                        return 1u;
+                    }
+                }
+            }"]],
+    );
+}
+
+#[test]
+fn format_loop_multiline() {
+    check(
+        "
+fn main() {
+    loop{
+        if true {break;}
+        continuing{
+            x+=1;
+        }
+    }
+}",
+        expect![["
+            fn main() {
+                loop {
+                    if true {break;}
+                    continuing {
+                        x += 1;
+                    }
+                }
+            }"]],
+    );
+}
