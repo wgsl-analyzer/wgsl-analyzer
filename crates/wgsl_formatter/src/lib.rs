@@ -414,11 +414,18 @@ fn format_syntax_node(
         },
         SyntaxKind::VariableDeclaration => {
             let statement = ast::VariableDeclaration::cast(syntax)?;
-            // Ensure a space after the template closing `>` (e.g. `var<uniform> camera`)
-            if let Some(tmpl) = statement.template_parameters()
-                && let Some(right_angle) = tmpl.t_angle_token()
-            {
-                set_whitespace_single_after(&right_angle);
+            if let Some(tmpl) = statement.template_parameters() {
+                // Remove space between `var` and `<` (e.g. `var<uniform>`)
+                if let Some(left_angle) = tmpl.left_angle_token() {
+                    remove_if_whitespace(&left_angle.prev_token()?); // spellchecker:disable-line
+                }
+                // Ensure a space after the closing `>` (e.g. `var<uniform> camera`)
+                if let Some(right_angle) = tmpl.t_angle_token() {
+                    set_whitespace_single_after(&right_angle);
+                }
+            } else {
+                // No template: collapse space after `var` keyword
+                set_whitespace_single_after(&statement.var_token()?);
             }
             if let Some(colon) = statement.colon() {
                 remove_if_whitespace(&colon.prev_token()?); // spellchecker:disable-line
@@ -428,6 +435,7 @@ fn format_syntax_node(
         },
         SyntaxKind::LetDeclaration => {
             let statement = ast::LetDeclaration::cast(syntax)?;
+            set_whitespace_single_after(&statement.let_token()?);
             if let Some(colon) = statement.colon() {
                 remove_if_whitespace(&colon.prev_token()?); // spellchecker:disable-line
                 set_whitespace_single_after(&colon);
@@ -436,6 +444,7 @@ fn format_syntax_node(
         },
         SyntaxKind::ConstantDeclaration => {
             let statement = ast::ConstantDeclaration::cast(syntax)?;
+            set_whitespace_single_after(&statement.constant_token()?);
             if let Some(colon) = statement.colon() {
                 remove_if_whitespace(&colon.prev_token()?); // spellchecker:disable-line
                 set_whitespace_single_after(&colon);

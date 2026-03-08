@@ -927,3 +927,35 @@ fn main() {
             }"]],
     );
 }
+
+#[test]
+fn format_var_extra_spaces() {
+    check(
+        "fn main() { var   x = 1; }",
+        expect![["fn main() { var x = 1; }"]],
+    );
+}
+
+#[test]
+fn format_let_extra_spaces() {
+    check(
+        "fn main() { let   x = 1; }",
+        expect![["fn main() { let x = 1; }"]],
+    );
+}
+
+#[test]
+fn format_const_extra_spaces() {
+    check(
+        "fn main() { const   x = 1; }",
+        expect![["fn main() { const x = 1; }"]],
+    );
+}
+
+#[test]
+fn format_var_template_no_space_before_angle() {
+    check(
+        "var  <uniform>camera: Camera;",
+        expect![["var<uniform> camera: Camera;"]],
+    );
+}
