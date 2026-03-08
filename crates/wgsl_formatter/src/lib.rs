@@ -1,6 +1,3 @@
-#[cfg(test)]
-mod tests;
-
 mod format;
 mod util;
 
@@ -85,7 +82,7 @@ pub fn format_recursive(
                 if is_indent_kind(&node) {
                     indentation += 1;
                 }
-                format::format_syntax_node(node, indentation, options);
+                format::format_syntax_node(&node, indentation, options);
             },
             WalkEvent::Leave(node) => {
                 if is_indent_kind(&node) {

@@ -1,26 +1,22 @@
+mod declarations;
+mod directives;
+mod expressions;
+mod statements;
+
 use rowan::NodeOrToken;
-use syntax::{
-    AstNode, HasName as _, HasTemplateParameters as _, SyntaxKind, SyntaxNode, ast,
-    ast::SyntaxToken,
-};
+use syntax::{AstNode, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken};
 
 use crate::FormattingOptions;
 use crate::util::{
-    create_syntax_token, create_whitespace, indent_after, indent_before, insert_after_syntax,
-    is_whitespace_with_newline, n_newlines_in_whitespace, remove_if_whitespace, remove_token,
-    set_whitespace_after, set_whitespace_before, set_whitespace_single_after,
-    set_whitespace_single_before, trim_whitespace_before_to_newline, whitespace_to_single_around,
+    create_syntax_token, create_whitespace, insert_after_syntax, is_whitespace_with_newline,
+    n_newlines_in_whitespace, remove_if_whitespace, remove_token, set_whitespace_before,
+    set_whitespace_single_after,
 };
 
 use crate::is_indent_kind;
 
-#[expect(
-    clippy::wildcard_enum_match_arm,
-    reason = "impractical to list all cases"
-)]
-#[expect(clippy::cognitive_complexity, clippy::too_many_lines, reason = "TODO")]
 pub(crate) fn format_syntax_node(
-    syntax: SyntaxNode,
+    syntax: &SyntaxNode,
     indentation: usize,
     options: &FormattingOptions,
 ) -> Option<()> {
@@ -35,10 +31,7 @@ pub(crate) fn format_syntax_node(
         let n_newlines = n_newlines_in_whitespace(&start.prev_token()?).unwrap_or(0); // spellchecker:disable-line
 
         if n_newlines > 0 {
-            // If this node is itself an indent-kind (e.g. a nested CompoundStatement),
-            // its first token (the opening `{`) should be at the parent's content level,
-            // not the bumped level. Subtract 1 to compensate for the early increment.
-            let indent = if is_indent_kind(&syntax) {
+            let indent = if is_indent_kind(syntax) {
                 indentation.saturating_sub(1)
             } else {
                 indentation
@@ -61,512 +54,24 @@ pub(crate) fn format_syntax_node(
         remove_if_whitespace(&last.prev_token()?); // spellchecker:disable-line
     }
 
-    match syntax.kind() {
-        SyntaxKind::SourceFile => {
-            // Collapse multiple blank lines between top-level items to at most one.
-            for child in syntax.children() {
-                let Some(first) = child.first_token() else {
-                    continue;
-                };
-                let Some(preceding) = first.prev_token() else {
-                    continue;
-                };
-                if let Some(newline_count) = n_newlines_in_whitespace(&preceding)
-                    && newline_count > 2
-                {
-                    // Replace with exactly 2 newlines (= one blank line).
-                    set_whitespace_before(&first, create_whitespace("\n\n"));
-                }
-            }
-        },
-        SyntaxKind::FunctionDeclaration => {
-            let function = ast::FunctionDeclaration::cast(syntax)?;
-
-            trim_whitespace_before_to_newline(&function.fn_token()?);
-
-            set_whitespace_single_after(&function.fn_token()?);
-            set_whitespace_single_before(&function.body()?.left_brace_token()?);
-
-            let param_list = function.parameter_list()?;
-
-            remove_if_whitespace(&param_list.left_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
-
-            let has_newline =
-                is_whitespace_with_newline(&param_list.left_parenthesis_token()?.next_token()?);
-
-            format_param_list(
-                param_list.parameters(),
-                param_list.parameters().count(),
-                has_newline,
-                1,
-                options.trailing_commas,
-                &options.indent_symbol,
-            );
-
-            if has_newline {
-                set_whitespace_before(
-                    &param_list.right_parenthesis_token()?,
-                    create_whitespace("\n"),
-                );
-            } else {
-                remove_if_whitespace(&param_list.right_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
-            }
-        },
-        SyntaxKind::Parameter => {
-            let item = ast::Parameter::cast(syntax)?;
-            format_colon(item.colon_token().as_ref());
-        },
-        SyntaxKind::ReturnType => {
-            let return_type = ast::ReturnType::cast(syntax)?;
-            whitespace_to_single_around(&return_type.arrow_token()?);
-        },
-        SyntaxKind::StructDeclaration => {
-            let r#struct = ast::StructDeclaration::cast(syntax)?;
-
-            trim_whitespace_before_to_newline(&r#struct.struct_token()?);
-
-            let name = r#struct.name()?;
-            whitespace_to_single_around(&name.ident_token()?);
-
-            let body = r#struct.body()?;
-            let l_brace = body.left_brace_token()?;
-            let r_brace = body.right_brace_token()?;
-            // Check if the struct has any real fields (the parser may emit
-            // zero-width StructMember nodes for empty structs).
-            let has_fields = body
-                .fields()
-                .any(|field| field.syntax().text_range().len() > 0.into());
-            if has_fields {
-                // indent opening brace
-                indent_after(&l_brace, indentation + 1, options)?;
-                // indent each field line
-                for field in body.fields() {
-                    let first = field.syntax().first_token()?;
-                    indent_before(&first, indentation + 1, options)?;
-                }
-                // closing brace on its own line
-                indent_before(&r_brace, indentation, options)?;
-            } else {
-                // empty struct: `struct Foo {}`
-                // The l_brace token is still valid. Set whitespace after it to empty.
-                set_whitespace_after(&l_brace, create_whitespace(""));
-            }
-        },
-        SyntaxKind::StructMember => {
-            let item = ast::StructMember::cast(syntax)?;
-            format_colon(item.colon_token().as_ref());
-            // Remove whitespace between the last token of the member and a following comma.
-            // The comma lives in StructBody (parent), so walk from the member's last token.
-            if let Some(last) = item.syntax().last_token() {
-                let mut tok = last.next_token()?;
-                while tok.kind().is_whitespace() {
-                    let next = tok.next_token()?;
-                    remove_token(&tok);
-                    tok = next;
-                }
-                // tok is now the comma (or something else); no action needed on it.
-            }
-        },
-
-        SyntaxKind::IfStatement => {
-            let if_statement = ast::IfStatement::cast(syntax)?;
-
-            if let Some(if_block) = if_statement.if_block() {
-                set_whitespace_single_after(&if_block.if_token()?);
-                set_whitespace_single_before(&if_block.block()?.left_brace_token()?);
-            }
-
-            if let Some(else_block) = if_statement.else_block() {
-                whitespace_to_single_around(&else_block.else_token()?);
-            }
-
-            for else_if_block in if_statement.else_if_blocks() {
-                whitespace_to_single_around(&else_if_block.else_token()?);
-                whitespace_to_single_around(&else_if_block.if_token()?);
-
-                set_whitespace_single_before(&else_if_block.block()?.left_brace_token()?);
-            }
-        },
-        SyntaxKind::WhileStatement => {
-            let while_statement = ast::WhileStatement::cast(syntax)?;
-
-            set_whitespace_single_after(&while_statement.while_token()?);
-
-            set_whitespace_single_before(&while_statement.block()?.left_brace_token()?);
-        },
-        SyntaxKind::SwitchStatement => {
-            let switch_statement = ast::SwitchStatement::cast(syntax)?;
-            // Space after `switch` keyword
-            let first_token = switch_statement.syntax().first_token()?;
-            if first_token.kind() == SyntaxKind::Switch {
-                set_whitespace_single_after(&first_token);
-            }
-            // Space before the opening brace of SwitchBody and indent closing brace
-            if let Some(body) = switch_statement.block() {
-                let l_brace = body.left_brace_token()?;
-                let r_brace = body.right_brace_token()?;
-                set_whitespace_single_before(&l_brace);
-
-                if is_whitespace_with_newline(&l_brace.next_token()?) {
-                    set_whitespace_before(
-                        &r_brace,
-                        create_whitespace(&format!(
-                            "\n{}",
-                            options.indent_symbol.repeat(indentation)
-                        )),
-                    );
-                }
-            }
-        },
-        SyntaxKind::LoopStatement => {
-            let loop_statement = ast::LoopStatement::cast(syntax)?;
-            // Space before the opening brace of the loop body
-            if let Some(block) = loop_statement.block() {
-                set_whitespace_single_before(&block.left_brace_token()?);
-            }
-        },
-        SyntaxKind::ContinuingStatement => {
-            let continuing = ast::ContinuingStatement::cast(syntax)?;
-            // Space before the opening brace of the continuing body
-            if let Some(block) = continuing.block() {
-                set_whitespace_single_before(&block.left_brace_token()?);
-            }
-        },
-        SyntaxKind::BreakIfStatement => {
-            // `break if <expr>;` — ensure single space after `break` and `if`.
-            // The semicolon whitespace is already handled above.
-            let break_if = ast::BreakIfStatement::cast(syntax)?;
-            let first = break_if.syntax().first_token()?;
-            if first.kind() == SyntaxKind::Break {
-                set_whitespace_single_after(&first);
-            }
-            // Find the `if` keyword token and ensure single space around it.
-            for child in break_if.syntax().children_with_tokens() {
-                if let Some(tok) = child.as_token()
-                    && tok.kind() == SyntaxKind::If
-                {
-                    set_whitespace_single_before(tok);
-                    set_whitespace_single_after(tok);
-                    break;
-                }
-            }
-        },
-        SyntaxKind::SwitchBodyCase => {
-            let case = ast::SwitchBodyCase::cast(syntax)?;
-            // Collapse space after `case`/`default` keyword
-            let first = case.syntax().first_token()?;
-            if matches!(first.kind(), SyntaxKind::Case | SyntaxKind::Default) {
-                set_whitespace_single_after(&first);
-            }
-            // Remove space before `:`
-            for token in case.syntax().children_with_tokens() {
-                if let Some(tok) = token.as_token()
-                    && tok.kind() == SyntaxKind::Colon
-                {
-                    remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
-                    break;
-                }
-            }
-            // Ensure spaces after commas in case selectors
-            if let Some(selectors) = case.selectors() {
-                for token in selectors.syntax().children_with_tokens() {
-                    if let Some(tok) = token.as_token()
-                        && tok.kind() == SyntaxKind::Comma
-                    {
-                        remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
-                        set_whitespace_single_after(tok);
-                    }
-                }
-            }
-            // Space before the opening brace
-            if let Some(block) = case.block() {
-                set_whitespace_single_before(&block.left_brace_token()?);
-            }
-        },
-        SyntaxKind::ForStatement => {
-            let for_statement = ast::ForStatement::cast(syntax)?;
-
-            set_whitespace_single_after(&for_statement.for_token()?);
-
-            set_whitespace_single_before(&for_statement.block()?.left_brace_token()?);
-
-            remove_if_whitespace(
-                &for_statement
-                    .initializer()?
-                    .syntax()
-                    .first_token()?
-                    .prev_token()?, // spellchecker:disable-line
-            );
-            // Remove whitespace before the semicolons separating for-header parts.
-            for child in for_statement.syntax().children_with_tokens() {
-                if let Some(tok) = child.as_token()
-                    && tok.kind() == SyntaxKind::Semicolon
-                {
-                    remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
-                }
-            }
-            set_whitespace_single_before(&for_statement.condition()?.syntax().first_token()?);
-            set_whitespace_single_before(&for_statement.continuing_part()?.syntax().first_token()?);
-            let cont_last = for_statement.continuing_part()?.syntax().last_token()?;
-            if let Some(after) = cont_last.next_token() {
-                remove_if_whitespace(&after);
-            }
-        },
-        SyntaxKind::CompoundStatement => {
-            let statement = ast::CompoundStatement::cast(syntax)?;
-            let l_brace = statement.left_brace_token()?;
-            let r_brace = statement.right_brace_token()?;
-            // Check if the block is multiline by looking for any newline between braces.
-            // This handles both whitespace-with-newline and comment-then-newline cases.
-            let has_newline = {
-                let mut tok = l_brace.next_token();
-                let mut found = false;
-                while let Some(token) = tok {
-                    if token == r_brace {
-                        break;
-                    }
-                    if token.text().contains('\n') {
-                        found = true;
-                        break;
-                    }
-                    tok = token.next_token();
-                }
-                found
-            };
-
-            if has_newline {
-                set_whitespace_before(
-                    &r_brace,
-                    create_whitespace(&format!(
-                        "\n{}",
-                        options.indent_symbol.repeat(indentation.saturating_sub(1))
-                    )),
-                );
-            } else if statement.statements().next().is_none() {
-                // Empty block: collapse to `{}`
-                remove_if_whitespace(&l_brace.next_token()?);
-            } else {
-                // Single-line block: ensure single space after `{` and before `}`
-                set_whitespace_single_after(&l_brace);
-                set_whitespace_single_before(&r_brace);
-            }
-        },
-        SyntaxKind::IdentExpression => {
-            let ident_expression = ast::IdentExpression::cast(syntax)?;
-            format_template_angles(&ident_expression.template_parameters()?);
-        },
-        SyntaxKind::FunctionCall => {
-            let function_call = ast::FunctionCall::cast(syntax)?;
-
-            if let Some(name_ref) = function_call.ident_expression()
-                && let Some(NodeOrToken::Token(token)) = name_ref.syntax().next_sibling_or_token()
-            {
-                remove_if_whitespace(&token);
-            }
-
-            let param_list = function_call.parameters()?;
-            format_parameters(&param_list, indentation, options)?;
-        },
-        SyntaxKind::InfixExpression => {
-            let expression = ast::InfixExpression::cast(syntax)?;
-
-            whitespace_to_single_around(&expression.operator()?);
-        },
-        SyntaxKind::IndexExpression => {
-            // `arr [ 0 ]` → `arr[0]`
-            let index_expr = ast::IndexExpression::cast(syntax)?;
-            for child in index_expr.syntax().children_with_tokens() {
-                if let Some(tok) = child.as_token() {
-                    match tok.kind() {
-                        SyntaxKind::BracketLeft => {
-                            remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
-                            remove_if_whitespace(&tok.next_token()?);
-                        },
-                        SyntaxKind::BracketRight => {
-                            remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
-                        },
-                        _ => {},
-                    }
-                }
-            }
-        },
-        SyntaxKind::FieldExpression => {
-            // `v . x` → `v.x`
-            for child in syntax.children_with_tokens() {
-                if let Some(tok) = child.as_token()
-                    && tok.kind() == SyntaxKind::Period
-                {
-                    remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
-                    remove_if_whitespace(&tok.next_token()?);
-                }
-            }
-        },
-        SyntaxKind::PrefixExpression => {
-            // `- y` → `-y`, `! cond` → `!cond`, `* ptr` → `*ptr`, `& var` → `&var`
-            let prefix = ast::PrefixExpression::cast(syntax)?;
-            let first = prefix.syntax().first_token()?;
-            remove_if_whitespace(&first.next_token()?);
-        },
-        SyntaxKind::EnableDirective => {
-            // `enable  f16;` → `enable f16;`
-            let first = syntax.first_token()?;
-            if first.kind() == SyntaxKind::Enable {
-                set_whitespace_single_after(&first);
-            }
-        },
-        SyntaxKind::RequiresDirective => {
-            // `requires  x;` → `requires x;`
-            let first = syntax.first_token()?;
-            if first.kind() == SyntaxKind::Requires {
-                set_whitespace_single_after(&first);
-            }
-        },
-        SyntaxKind::ParenthesisExpression => {
-            let parenthesis_expression = ast::ParenthesisExpression::cast(syntax)?;
-            remove_if_whitespace(
-                &parenthesis_expression
-                    .left_parenthesis_token()?
-                    .next_token()?,
-            );
-            remove_if_whitespace(
-                &parenthesis_expression
-                    .right_parenthesis_token()?
-                    .prev_token()?, // spellchecker:disable-line
-            );
-
-            if parenthesis_expression
-                .syntax()
-                .parent()
-                .is_some_and(|parent| {
-                    matches!(
-                        parent.kind(),
-                        SyntaxKind::WhileStatement
-                            | SyntaxKind::IfClause
-                            | SyntaxKind::ElseIfClause
-                            | SyntaxKind::BreakIfStatement
-                            | SyntaxKind::SwitchStatement
-                    )
-                })
-            {
-                remove_token(&parenthesis_expression.right_parenthesis_token()?);
-                remove_token(&parenthesis_expression.left_parenthesis_token()?);
-            }
-        },
-        SyntaxKind::AssignmentStatement => {
-            let statement = ast::AssignmentStatement::cast(syntax)?;
-            whitespace_to_single_around(&statement.equal_token()?);
-        },
-        SyntaxKind::CompoundAssignmentStatement => {
-            let statement = ast::CompoundAssignmentStatement::cast(syntax)?;
-            let left_last = statement.left_side()?.syntax().last_token()?;
-            let mut tok = left_last.next_token()?;
-            loop {
-                let kind = tok.kind();
-                let is_comment = matches!(
-                    kind,
-                    SyntaxKind::BlockComment | SyntaxKind::LineEndingComment
-                );
-                if !kind.is_whitespace() && !is_comment {
-                    break;
-                }
-                let next = tok.next_token()?;
-                if kind.is_whitespace() {
-                    remove_token(&tok);
-                }
-                if is_comment {
-                    whitespace_to_single_around(&tok);
-                }
-                tok = next;
-            }
-            whitespace_to_single_around(&tok);
-        },
-        SyntaxKind::IncrementDecrementStatement => {
-            for token in syntax.children_with_tokens() {
-                if let Some(tok) = token.as_token()
-                    && matches!(tok.kind(), SyntaxKind::PlusPlus | SyntaxKind::MinusMinus)
-                {
-                    remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
-                    break;
-                }
-            }
-        },
-        SyntaxKind::VariableDeclaration => {
-            let statement = ast::VariableDeclaration::cast(syntax)?;
-            if let Some(tmpl) = statement.template_parameters() {
-                format_template_angles(&tmpl);
-                if let Some(right_angle) = tmpl.right_angle_token() {
-                    set_whitespace_single_after(&right_angle);
-                }
-            } else {
-                set_whitespace_single_after(&statement.var_token()?);
-            }
-            format_colon(statement.colon().as_ref());
-            whitespace_to_single_around(&statement.equal_token()?);
-        },
-        SyntaxKind::LetDeclaration => {
-            let statement = ast::LetDeclaration::cast(syntax)?;
-            set_whitespace_single_after(&statement.let_token()?);
-            format_colon(statement.colon().as_ref());
-            whitespace_to_single_around(&statement.equal_token()?);
-        },
-        SyntaxKind::ConstantDeclaration => {
-            let statement = ast::ConstantDeclaration::cast(syntax)?;
-            set_whitespace_single_after(&statement.constant_token()?);
-            format_colon(statement.colon().as_ref());
-            whitespace_to_single_around(&statement.equal_token()?);
-        },
-        SyntaxKind::OverrideDeclaration => {
-            let statement = ast::OverrideDeclaration::cast(syntax)?;
-            set_whitespace_single_after(&statement.override_token()?);
-            format_colon(statement.colon().as_ref());
-            whitespace_to_single_around(&statement.equal_token()?);
-        },
-        SyntaxKind::TypeAliasDeclaration => {
-            let statement = ast::TypeAliasDeclaration::cast(syntax)?;
-            set_whitespace_single_after(&statement.alias_token()?);
-            whitespace_to_single_around(&statement.equal_token()?);
-        },
-        SyntaxKind::AssertStatement => {
-            let first_token = syntax.first_token()?;
-            if first_token.kind() == SyntaxKind::ConstantAssert {
-                set_whitespace_single_after(&first_token);
-            }
-        },
-        SyntaxKind::Attribute => {
-            // Preserve newlines after attributes (e.g. @vertex\nfn),
-            // but ensure at least a single space when on the same line.
-            if let Some(last) = syntax.last_token()
-                && let Some(next) = last.next_token()
-                && !is_whitespace_with_newline(&next)
-            {
-                set_whitespace_single_after(&last);
-            }
-        },
-        SyntaxKind::ReturnStatement => {
-            let first_token = syntax.first_token()?;
-            if first_token.kind() == SyntaxKind::Return {
-                let next = first_token.next_token()?;
-                if next.kind() != SyntaxKind::Semicolon {
-                    set_whitespace_single_after(&first_token);
-                }
-            }
-        },
-        SyntaxKind::PhonyAssignmentStatement => {
-            let statement = ast::PhonyAssignmentStatement::cast(syntax)?;
-            whitespace_to_single_around(&statement.equal_token()?);
-        },
-        _ => {
-            if let Some(r#type) = ast::TypeSpecifier::cast(syntax) {
-                format_template_angles(&r#type.template_parameters()?);
-            }
-        },
+    // Try each sub-module's handler; if one matches, we're done.
+    if directives::format_directive(syntax, indentation, options).is_some() {
+        return None;
     }
+    if declarations::format_declaration(syntax, indentation, options).is_some() {
+        return None;
+    }
+    if statements::format_statement(syntax, indentation, options).is_some() {
+        return None;
+    }
+    // expressions handles the wildcard/default case too
+    expressions::format_expression(syntax, indentation, options);
 
     None
 }
 
 /// Format a colon token: remove whitespace before, single space after.
-fn format_colon(colon: Option<&SyntaxToken>) {
+pub(super) fn format_colon(colon: Option<&SyntaxToken>) {
     if let Some(colon) = colon {
         if let Some(preceding) = colon.prev_token() {
             remove_if_whitespace(&preceding);
@@ -576,7 +81,7 @@ fn format_colon(colon: Option<&SyntaxToken>) {
 }
 
 /// Remove whitespace around template angle brackets: `foo < T >` → `foo<T>`.
-fn format_template_angles(tmpl: &ast::TemplateList) -> Option<()> {
+pub(super) fn format_template_angles(tmpl: &ast::TemplateList) -> Option<()> {
     let left_angle = tmpl.left_angle_token()?;
     remove_if_whitespace(&left_angle.prev_token()?); // spellchecker:disable-line
     remove_if_whitespace(&left_angle.next_token()?);
@@ -585,7 +90,7 @@ fn format_template_angles(tmpl: &ast::TemplateList) -> Option<()> {
     Some(())
 }
 
-fn format_parameters(
+pub(super) fn format_parameters(
     param_list: &ast::Arguments,
     indentation: usize,
     options: &FormattingOptions,
@@ -611,7 +116,9 @@ fn format_parameters(
     Some(())
 }
 
-fn format_param_list<T: AstNode>(
+
+
+pub(super) fn format_param_list<T: AstNode>(
     parameters: syntax::AstChildren<T>,
     count: usize,
     has_newline: bool,
@@ -690,4 +197,110 @@ fn format_param_list<T: AstNode>(
     }
 
     Some(())
+}
+
+#[cfg(test)]
+pub(crate) mod tests {
+    #![expect(clippy::print_stderr, reason = "useful in tests")]
+    #![expect(clippy::print_stdout, reason = "useful in tests")]
+    #![expect(clippy::use_debug, reason = "useful in tests")]
+
+    use std::panic;
+
+    use expect_test::Expect;
+
+    use crate::{FormattingOptions, format_recursive, format_str};
+
+    #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
+    pub(crate) fn check(
+        before: &str,
+        after: Expect,
+    ) {
+        check_with_options(before, &after, &FormattingOptions::default());
+    }
+
+    #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
+    pub(crate) fn check_tabs(
+        before: &str,
+        after: Expect,
+    ) {
+        let options = FormattingOptions {
+            indent_symbol: "\t".to_owned(),
+            ..Default::default()
+        };
+        check_with_options(before, &after, &options);
+    }
+
+    #[track_caller]
+    pub(crate) fn check_with_options(
+        before: &str,
+        after: &Expect,
+        options: &FormattingOptions,
+    ) {
+        let syntax = syntax::parse(before.trim_start(), parser::Edition::Wgsl)
+            .syntax()
+            .clone_for_update();
+        format_recursive(&syntax, options);
+        eprintln!("{syntax:#?}");
+
+        let new = syntax.to_string();
+        after.assert_eq(&new);
+
+        // Check for idempotence
+        let syntax = syntax::parse(new.trim_start(), parser::Edition::Wgsl)
+            .syntax()
+            .clone_for_update();
+        format_recursive(&syntax, options);
+        let new_second = syntax.to_string();
+        let diff = dissimilar::diff(&new, &new_second);
+        let position = panic::Location::caller();
+        if new == new_second {
+            return;
+        }
+        println!(
+            "\n
+\x1b[1m\x1b[91merror\x1b[97m: Formatting Idempotence check failed\x1b[0m
+\x1b[1m\x1b[34m-->\x1b[0m {position}
+\x1b[1mExpect\x1b[0m:
+----
+{new}
+----
+
+\x1b[1mActual\x1b[0m:
+----
+{new_second}
+----
+
+\x1b[1mDiff\x1b[0m:
+----
+{}
+----
+",
+            format_chunks(diff)
+        );
+        panic::resume_unwind(Box::new(()));
+    }
+
+    fn format_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> String {
+        let mut buf = String::new();
+        for chunk in chunks {
+            let formatted = match chunk {
+                dissimilar::Chunk::Equal(text) => text.into(),
+                dissimilar::Chunk::Delete(text) => format!("\x1b[41m{text}\x1b[0m"),
+                dissimilar::Chunk::Insert(text) => format!("\x1b[42m{text}\x1b[0m"),
+            };
+            buf.push_str(&formatted);
+        }
+        buf
+    }
+
+    /// Like `check`, but uses `format_str` (the public API) instead of `format_recursive`.
+    #[track_caller]
+    pub(crate) fn check_str(
+        before: &str,
+        expected: &str,
+    ) {
+        let actual = format_str(before, &FormattingOptions::default());
+        assert_eq!(actual, expected, "format_str output mismatch");
+    }
 }
