@@ -37,6 +37,9 @@ wgslfmt --check .
 
 # Use tabs instead of spaces
 wgslfmt --tabs .
+
+# JSON output for scripting (single JSON object with all results)
+wgslfmt --output-format json --check .
 ```
 
 For all options, see `wgslfmt --help`.
@@ -45,7 +48,13 @@ For all options, see `wgslfmt --help`.
 
 When running with `--check`, wgslfmt will exit with `0` if the input is
 already formatted correctly, and `1` if formatting changes are needed.
-A diff of the required changes is printed to stderr.
+A diff of the required changes is printed to stdout.
+
+### JSON output
+
+Use `--output-format json` to get machine-readable output. This emits a
+single JSON object containing per-file results (changed status, duration,
+parse errors, and diffs).
 
 ## WESL support
 
