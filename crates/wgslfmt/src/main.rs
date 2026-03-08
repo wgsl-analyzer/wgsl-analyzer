@@ -5,7 +5,7 @@
     reason = "https://github.com/rust-lang/rust-clippy/issues/15107"
 )]
 
-use std::{io::Read as _, path::PathBuf};
+use std::{io::Read as _, path::PathBuf, time::Instant};
 
 use anyhow::{Context as _, bail};
 use clap::Parser;
@@ -47,6 +47,9 @@ fn main() -> Result<(), anyhow::Error> {
         "\t".clone_into(&mut formatting_options.indent_symbol);
     }
 
+    let total_start = Instant::now();
+    let mut check_failed = false;
+
     for file in &files {
         let is_stdin = file.as_os_str() == "-";
         let input = if is_stdin {
@@ -55,19 +58,40 @@ fn main() -> Result<(), anyhow::Error> {
             std::fs::read_to_string(file)?
         };
 
+        let file_start = Instant::now();
         let output = wgsl_formatter::format_str(&input, &formatting_options);
+        let elapsed = file_start.elapsed();
 
         if cli.check {
             if output != input {
+                check_failed = true;
                 let diff = prettydiff::diff_lines(&input, &output);
-                println!("Diff in {}\n{diff}:", file.display());
+                println!("{}\n{diff}", file.display());
             }
         } else if is_stdin {
             print!("{output}");
         } else {
-            std::fs::write(file, output)
+            std::fs::write(file, &output)
                 .with_context(|| format!("failed to write to {}", file.display()))?;
+            let suffix = if output == input { " (unchanged)" } else { "" };
+            println!("{} {}ms{suffix}", file.display(), elapsed.as_millis());
         }
+    }
+
+    let total_elapsed = total_start.elapsed();
+
+    if cli.check {
+        if check_failed {
+            eprintln!(
+                "Code style issues found in the above file(s). Forgot to run wgslfmt?"
+            );
+            std::process::exit(1);
+        }
+        eprintln!(
+            "All matched files use wgslfmt code style! Checked {} file(s) in {}ms.",
+            files.len(),
+            total_elapsed.as_millis()
+        );
     }
 
     Ok(())
