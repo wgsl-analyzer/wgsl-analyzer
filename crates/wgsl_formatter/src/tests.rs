@@ -216,9 +216,9 @@ fn format_struct() {
 fn format_struct_body() {
     check(
         "
-        struct  Test   
-        {  @location(0) x: i32,                    a: i32,  
-        b: f32, 
+        struct  Test
+        {  @location(0) x: i32,                    a: i32,
+        b: f32,
 
                 }",
         expect![["
@@ -562,5 +562,30 @@ fn main() {
 					-sinR, 0.0, cosR,
 				);
 			}"]],
+    );
+}
+
+#[test]
+fn format_compound_assignment_with_comment() {
+    // A block comment between LHS and operator should be preserved,
+    // with spaces around both the comment and the operator.
+    check(
+        "fn main() {
+    a/*c*/+=1;
+}",
+        expect![["
+            fn main() {
+                a /*c*/ += 1;
+            }"]],
+    );
+}
+
+#[test]
+fn format_param_comment_before_comma() {
+    // A comment between a parameter and its comma should not cause
+    // the formatter to insert a duplicate comma.
+    check(
+        "fn main(a: f32 /* comment */ , b: f32) {}",
+        expect![["fn main(a: f32/* comment */, b: f32) {}"]],
     );
 }

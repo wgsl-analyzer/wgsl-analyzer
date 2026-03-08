@@ -351,9 +351,25 @@ fn format_syntax_node(
             // extra whitespace, to find the actual operator token.
             let left_last = statement.left_side()?.syntax().last_token()?;
             let mut tok = left_last.next_token()?;
-            while tok.kind().is_whitespace() {
+            // Advance past trivia (whitespace and comments) to find the
+            // actual operator token. Only remove whitespace; comments are
+            // preserved with a single space around them.
+            loop {
+                let kind = tok.kind();
+                let is_comment = matches!(
+                    kind,
+                    SyntaxKind::BlockComment | SyntaxKind::LineEndingComment
+                );
+                if !kind.is_whitespace() && !is_comment {
+                    break;
+                }
                 let next = tok.next_token()?;
-                remove_token(&tok);
+                if kind.is_whitespace() {
+                    remove_token(&tok);
+                }
+                if is_comment {
+                    whitespace_to_single_around(&tok);
+                }
                 tok = next;
             }
             whitespace_to_single_around(&tok);
@@ -470,17 +486,23 @@ fn format_param_list<T: AstNode>(
             Some(NodeOrToken::Token(token)) => Some(token),
             None => None,
         };
-        // Remove whitespace between the parameter and its comma
-        if let Some(tok) = &token_after_parameter
-            && tok.kind().is_whitespace()
-        {
-            let next = tok.next_token();
-            if next
-                .as_ref()
-                .is_some_and(|next_tok| next_tok.kind() == SyntaxKind::Comma)
-            {
+        // Remove whitespace between the parameter and its comma, scanning
+        // forward through all trivia tokens (whitespace and comments).
+        // Only whitespace is removed; comments are preserved.
+        while let Some(tok) = &token_after_parameter {
+            let kind = tok.kind();
+            if kind.is_whitespace() {
+                let next = tok.next_token();
                 remove_token(tok);
                 token_after_parameter = next;
+            } else if matches!(
+                kind,
+                SyntaxKind::BlockComment | SyntaxKind::LineEndingComment
+            ) {
+                // Skip past the comment but keep it
+                token_after_parameter = tok.next_token();
+            } else {
+                break;
             }
         }
 
