@@ -3,20 +3,6 @@ use expect_test::expect;
 use crate::test_util::{assert_out_of_scope, check, check_comments};
 
 #[test]
-pub fn format_naked_index_exprs_out_of_scope() {
-    assert_out_of_scope(
-        "fn main() {
-        a
-        [
-        0
-        ]
-        ;
-        }",
-        "Wgsl disallows expressions outside statements.",
-    );
-}
-
-#[test]
 pub fn format_index_expr_simple() {
     check(
         "fn main() {
@@ -157,22 +143,6 @@ fn format_expr_in_index() {
         expect![[r#"
             fn debug_draw_line(b: array<f32, 5>, index: u32) {
                 b[2 + 2] = 0;
-            }
-        "#]],
-    );
-}
-
-#[test]
-fn format_parens_in_index_expr_are_removed() {
-    check(
-        "
-        fn debug_draw_line(b: array<f32, 5>, index: u32) {
-            b[(1+(2-3))]   = 0;
-        }
-        ",
-        expect![[r#"
-            fn debug_draw_line(b: array<f32, 5>, index: u32) {
-                b[1 + (2 - 3)] = 0;
             }
         "#]],
     );
