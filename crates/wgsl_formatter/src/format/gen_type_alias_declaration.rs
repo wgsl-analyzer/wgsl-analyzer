@@ -9,7 +9,7 @@ use crate::format::{
     ast_parse::{parse_end, parse_many_comments_and_blankspace, parse_node, parse_token},
     gen_comments::gen_comments,
     gen_types::gen_type_specifier,
-    print_item_buffer::{PrintItemBuffer, SeparationPolicy},
+    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::FormatDocumentError,
 };
 
@@ -33,18 +33,18 @@ pub fn gen_type_alias_declaration(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("alias"));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&item_comments_after_alias));
     formatted.push_string(item_name.text().to_string());
     formatted.extend(gen_comments(&item_comments_after_ident));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.push_sc(sc!("="));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_type_specifier(&item_type)?);
     formatted.extend(gen_comments(&item_comments_after_type));
     if include_semicolon {
-        formatted.request_space(SeparationPolicy::Discouraged);
+        formatted.discourage(RequestItem::Space);
         formatted.push_sc(sc!(";"));
     }
     Ok(formatted)

@@ -120,6 +120,28 @@ impl PrintItemBuffer {
         request_tracker.append(incoming_request);
     }
 
+    // ==== Request Helpers ====
+    pub fn discourage(
+        &mut self,
+        item: RequestItem,
+    ) {
+        self.request_request(Request::discourage(item));
+    }
+
+    pub fn expect(
+        &mut self,
+        item: RequestItem,
+    ) {
+        self.request_request(Request::expect(item));
+    }
+
+    pub fn force(
+        &mut self,
+        item: RequestItem,
+    ) {
+        self.request_request(Request::force(item));
+    }
+
     pub fn request_request(
         &mut self,
         incoming_request: Request,
@@ -318,45 +340,6 @@ impl PrintItemBuffer {
 
         // Merge the incoming end_request
         self.request_folder(other.end_request);
-    }
-
-    pub fn request_space(
-        &mut self,
-        policy: SeparationPolicy,
-    ) {
-        self.request(SeparationRequest {
-            space: policy,
-            ..Default::default()
-        });
-    }
-
-    pub fn request_line_break(
-        &mut self,
-        policy: SeparationPolicy,
-    ) {
-        self.request(SeparationRequest {
-            line_break: policy,
-            ..Default::default()
-        });
-    }
-
-    #[expect(unused, reason = "TODO")]
-    pub fn request_empty_line(
-        &mut self,
-        policy: SeparationPolicy,
-    ) {
-        self.request(SeparationRequest {
-            empty_line: policy,
-            ..Default::default()
-        });
-    }
-
-    pub fn expect_line_break(&mut self) {
-        self.request_line_break(SeparationPolicy::Expected);
-    }
-
-    pub fn expect_single_space(&mut self) {
-        self.request_space(SeparationPolicy::Expected);
     }
 
     pub fn push_string(

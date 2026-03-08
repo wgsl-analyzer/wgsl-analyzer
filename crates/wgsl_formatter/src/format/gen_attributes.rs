@@ -8,14 +8,15 @@ use syntax::{
 
 use crate::format::{
     ast_parse::{
-        SyntaxIter, parse_end, parse_many_comments_and_blankspace, parse_node_optional,
-        parse_token,
+        SyntaxIter, parse_end, parse_many_comments_and_blankspace, parse_node_optional, parse_token,
     },
     gen_comments::{Comment, gen_comments},
     gen_function_call::gen_function_call_arguments,
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
 };
+
+use super::print_item_buffer::request_folder::RequestItem;
 
 pub struct ParsedAttributes {
     attributes: Vec<(ast::Attribute, Vec<Comment>)>,
@@ -45,7 +46,7 @@ pub fn gen_attributes(attributes: &ParsedAttributes) -> FormatDocumentResult<Pri
     for (attribute, comments_after_attribute) in &attributes.attributes {
         formatted.extend(gen_attribute(attribute)?);
         formatted.extend(gen_comments(comments_after_attribute));
-        formatted.expect_line_break();
+        formatted.expect(RequestItem::LineBreak);
     }
 
     Ok(formatted)

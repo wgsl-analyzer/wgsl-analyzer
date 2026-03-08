@@ -13,7 +13,7 @@ use crate::format::{
     gen_comments::{Comment, gen_comment, parse_comment_optional},
     gen_statement::gen_statement_maybe_semicolon,
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
-    print_item_buffer::{PrintItemBuffer, SeparationPolicy, SeparationRequest},
+    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::FormatDocumentResult,
 };
 
@@ -61,15 +61,12 @@ pub fn gen_compound_statement(
 
     if !body_empty {
         formatted.push_signal(Signal::StartIndent);
-        formatted.request(SeparationRequest {
-            empty_line: SeparationPolicy::Discouraged,
-            line_break: SeparationPolicy::Expected,
-            ..Default::default()
-        });
+        formatted.discourage(RequestItem::EmptyLine);
+        formatted.expect(RequestItem::LineBreak);
         for line in lines {
             match line {
                 CompoundStatementItem::Statement(statement) => {
-                    formatted.expect_line_break();
+                    formatted.expect(RequestItem::LineBreak);
                     formatted.extend(gen_statement_maybe_semicolon(&statement, true)?);
                 },
                 CompoundStatementItem::Comment(comment) => {
@@ -80,11 +77,8 @@ pub fn gen_compound_statement(
                 },
             }
         }
-        formatted.request(SeparationRequest {
-            empty_line: SeparationPolicy::Discouraged,
-            line_break: SeparationPolicy::Expected,
-            ..Default::default()
-        });
+        formatted.discourage(RequestItem::EmptyLine);
+        formatted.expect(RequestItem::LineBreak);
         formatted.push_signal(Signal::FinishIndent);
     }
 
@@ -99,7 +93,7 @@ pub fn gen_compound_statement(
         // }
         // // Thing
         // So the comment is not on the same line as the closing brace.
-        formatted.expect_line_break();
+        formatted.expect(RequestItem::LineBreak);
     }
 
     Ok(formatted)

@@ -41,6 +41,32 @@ pub enum Request {
 }
 
 impl Request {
+    // ==== Helper methods to create a request ====
+    pub fn expect(item: RequestItem) -> Self {
+        Self::Unconditional {
+            expected: BTreeSet::from([item]),
+            discouraged: BTreeSet::new(),
+            forced: BTreeSet::new(),
+        }
+    }
+
+    pub fn discourage(item: RequestItem) -> Self {
+        Self::Unconditional {
+            expected: BTreeSet::new(),
+            discouraged: BTreeSet::from([item]),
+            forced: BTreeSet::new(),
+        }
+    }
+
+    pub fn force(item: RequestItem) -> Self {
+        Self::Unconditional {
+            expected: BTreeSet::new(),
+            discouraged: BTreeSet::new(),
+            forced: BTreeSet::from([item]),
+        }
+    }
+
+    // ==== Request Logic ====
     pub fn combine(
         left: Self,
         right: Self,

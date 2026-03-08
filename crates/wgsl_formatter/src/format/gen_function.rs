@@ -2,11 +2,11 @@ use std::{collections::BTreeSet, rc::Rc};
 
 use dprint_core::formatting::{LineNumber, LineNumberAnchor, PrintItems, Signal, conditions};
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position, put_back};
+use itertools::put_back;
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
-    ast::{self, Statement},
+    ast::{self},
 };
 
 use crate::format::{
@@ -22,7 +22,7 @@ use crate::format::{
         LineSpacing, create_is_multiple_lines_resolver, gen_line_spacing, parse_line_spacing,
     },
     print_item_buffer::{
-        PrintItemBuffer, SeparationPolicy, SeparationRequest,
+        PrintItemBuffer, SeparationRequest,
         request_folder::{Request, RequestFolder, RequestItem},
     },
     reporting::FormatDocumentResult,
@@ -50,11 +50,11 @@ pub fn gen_function_declaration(
     // Fn
     formatted.extend(gen_attributes(&item_attributes)?);
     formatted.push_sc(sc!("fn"));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&item_comments_after_fn));
 
     // Name
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.push_string(item_name.text().to_string());
     formatted.extend(gen_comments(&item_comments_after_name));
 
@@ -69,7 +69,7 @@ pub fn gen_function_declaration(
     formatted.extend(gen_comments(&item_comments_after_return));
 
     // Body
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_fn_body(&item_body)?);
 
     Ok(formatted)
@@ -211,10 +211,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
     }
 
     // No trailing spaces
-    formatted.request(SeparationRequest {
-        space: SeparationPolicy::Discouraged,
-        ..Default::default()
-    });
+    formatted.discourage(RequestItem::Space);
 
     // If we are multiple lines, the closing parenthesis should be on a new line
     formatted.request_request(Request::Conditional {
@@ -266,7 +263,7 @@ pub fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintIt
     formatted.extend(gen_attributes(&item_attributes)?);
     formatted.push_string(item_name.text().to_string());
     formatted.push_sc(sc!(":"));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     //The colon should immediately follow the name, we intentionally move the comment
     formatted.extend(gen_comments(&item_comments_after_name));
     formatted.extend(gen_comments(&item_comments_after_colon));
@@ -287,9 +284,9 @@ pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<Prin
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.push_sc(sc!("->"));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&item_comments_after_arrow));
     formatted.extend(gen_attributes(&item_attributes)?);
     formatted.extend(gen_type_specifier(&item_type_specifier)?);

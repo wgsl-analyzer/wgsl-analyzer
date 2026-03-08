@@ -27,7 +27,7 @@ use crate::format::{
         gen_var_declaration_statement,
     },
     multiline_group::gen_multiline_group,
-    print_item_buffer::{PrintItemBuffer, SeparationPolicy},
+    print_item_buffer::{PrintItemBuffer, SeparationPolicy, request_folder::RequestItem},
     reporting::{FormatDocumentError, FormatDocumentResult},
 };
 
@@ -98,7 +98,7 @@ pub fn gen_statement_maybe_semicolon(
             if include_semicolon {
                 formatted.push_sc(sc!(";"));
             }
-            formatted.expect_line_break();
+            formatted.expect(RequestItem::LineBreak);
             Ok(formatted)
         },
         ast::Statement::ContinueStatement(continue_statement) => {
@@ -118,7 +118,7 @@ pub fn gen_statement_maybe_semicolon(
             if include_semicolon {
                 formatted.push_sc(sc!(";"));
             }
-            formatted.expect_line_break();
+            formatted.expect(RequestItem::LineBreak);
             formatted.extend(gen_comments(&comments_after_continue));
             Ok(formatted)
         },
@@ -139,7 +139,7 @@ pub fn gen_statement_maybe_semicolon(
             if include_semicolon {
                 formatted.push_sc(sc!(";"));
             }
-            formatted.expect_line_break();
+            formatted.expect(RequestItem::LineBreak);
             formatted.extend(gen_comments(&comments_after_discard));
             Ok(formatted)
         },
@@ -197,7 +197,7 @@ fn gen_increment_decrement_statement(
     formatted.extend(gen_comments(&item_comments_after_inc_dec));
 
     if include_semicolon {
-        formatted.request_space(SeparationPolicy::Discouraged);
+        formatted.discourage(RequestItem::Space);
         formatted.push_sc(sc!(";"));
     }
     Ok(formatted)
@@ -284,10 +284,10 @@ fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<Prin
             if let Some(item_initializer) = item_initializer {
                 formatted.extend(gen_statement_maybe_semicolon(&item_initializer, false)?);
             } else {
-                formatted.request_space(SeparationPolicy::Discouraged);
+                formatted.discourage(RequestItem::Space);
             }
             formatted.extend(gen_comments(&comments_after_initializer));
-            formatted.request_space(SeparationPolicy::Discouraged);
+            formatted.discourage(RequestItem::Space);
             formatted.push_sc(sc!(";"));
             formatted.extend(gen_comments(&comments_after_initializer_semicolon));
             formatted
@@ -297,10 +297,10 @@ fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<Prin
             if let Some(item_condition) = item_condition {
                 formatted.extend(gen_expression(&item_condition, false)?);
             } else {
-                formatted.request_space(SeparationPolicy::Discouraged);
+                formatted.discourage(RequestItem::Space);
             }
             formatted.extend(gen_comments(&comments_after_condition));
-            formatted.request_space(SeparationPolicy::Discouraged);
+            formatted.discourage(RequestItem::Space);
             formatted.push_sc(sc!(";"));
             formatted.extend(gen_comments(&comments_after_condition_semicolon));
             formatted
@@ -310,16 +310,16 @@ fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<Prin
             if let Some(item_continuing) = item_continuing {
                 formatted.extend(gen_statement_maybe_semicolon(&item_continuing, false)?);
             } else {
-                formatted.request_space(SeparationPolicy::Discouraged);
+                formatted.discourage(RequestItem::Space);
             }
             formatted.extend(gen_comments(&comments_after_continuing));
-            formatted.request_space(SeparationPolicy::Discouraged);
+            formatted.discourage(RequestItem::Space);
             formatted
         },
     ]));
 
     formatted.push_sc(sc!(")"));
-    formatted.request_space(SeparationPolicy::Expected);
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_close_paren));
     formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)
@@ -343,11 +343,11 @@ fn gen_return_statement(
     formatted.push_sc(sc!("return"));
     formatted.extend(gen_comments(&comments_after_return));
     if let Some(item_expression) = item_expression {
-        formatted.expect_single_space();
+        formatted.expect(RequestItem::Space);
         formatted.extend(gen_expression(&item_expression, true)?);
     }
     formatted.extend(gen_comments(&comments_after_expression));
-    formatted.request_space(SeparationPolicy::Discouraged);
+    formatted.discourage(RequestItem::Space);
 
     if include_semicolon {
         formatted.push_sc(sc!(";"));
@@ -373,15 +373,15 @@ fn gen_break_if_statement(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("break"));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_break));
     formatted.push_sc(sc!("if"));
     formatted.push_signal(Signal::StartIndent);
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_if));
     formatted.extend(gen_expression(&item_condition, true)?);
     formatted.extend(gen_comments(&comments_after_condition));
-    formatted.request_space(SeparationPolicy::Discouraged);
+    formatted.discourage(RequestItem::Space);
     if include_semicolon {
         formatted.push_sc(sc!(";"));
     }
@@ -408,12 +408,12 @@ pub fn gen_const_assert_statement(
 
     formatted.push_sc(sc!("const_assert"));
     formatted.push_signal(Signal::StartIndent);
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_const_assert));
     formatted.extend(gen_expression(&item_condition, true)?);
     formatted.extend(gen_comments(&comments_after_condition));
     if include_semicolon {
-        formatted.request_space(SeparationPolicy::Discouraged);
+        formatted.discourage(RequestItem::Space);
         formatted.push_sc(sc!(";"));
     }
     formatted.push_signal(Signal::FinishIndent);
@@ -435,9 +435,9 @@ fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<Pr
     formatted.extend(gen_attributes(&item_attributes)?);
     formatted.push_sc(sc!("loop"));
     formatted.extend(gen_comments(&comments_after_loop));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_compound_statement(&item_body)?);
-    formatted.expect_line_break();
+    formatted.expect(RequestItem::LineBreak);
 
     Ok(formatted)
 }
@@ -456,9 +456,9 @@ fn gen_continuing_statement(
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("continuing"));
     formatted.extend(gen_comments(&comments_after_continuing));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_compound_statement(&item_body)?);
-    formatted.expect_line_break();
+    formatted.expect(RequestItem::LineBreak);
 
     Ok(formatted)
 }
@@ -479,12 +479,12 @@ fn gen_while_statement(statement: &ast::WhileStatement) -> FormatDocumentResult<
     formatted.extend(gen_attributes(&item_attributes)?);
     formatted.push_sc(sc!("while"));
     formatted.extend(gen_comments(&comments_after_while));
-    formatted.expect_single_space(); // Request space, because we trim parentheses
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_expression(&item_condition, true)?);
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_condition));
     formatted.extend(gen_compound_statement(&item_body)?);
-    formatted.expect_line_break();
+    formatted.expect(RequestItem::LineBreak);
 
     Ok(formatted)
 }

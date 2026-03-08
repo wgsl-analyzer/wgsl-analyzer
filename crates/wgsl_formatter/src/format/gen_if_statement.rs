@@ -84,11 +84,11 @@ fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<Prin
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("if"));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_if));
     formatted.extend(gen_expression(&item_condition, true)?);
     formatted.extend(gen_comments(&comments_after_condition));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)
 }
@@ -108,7 +108,7 @@ fn gen_if_statement_else_clause(statement: &ElseClause) -> FormatDocumentResult<
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("else"));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_clause_token));
     formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)
@@ -135,14 +135,14 @@ fn gen_if_statement_else_if_clause(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("else"));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_else));
     formatted.push_sc(sc!("if"));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_if));
     formatted.extend(gen_expression(&item_condition, true)?);
     formatted.extend(gen_comments(&comments_after_condition));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)
 }

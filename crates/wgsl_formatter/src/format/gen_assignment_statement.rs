@@ -13,7 +13,7 @@ use crate::format::{
     },
     gen_comments::gen_comments,
     gen_expression::gen_expression,
-    print_item_buffer::{PrintItemBuffer, SeparationPolicy},
+    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::FormatDocumentError,
 };
 
@@ -42,14 +42,14 @@ pub fn gen_assignment_statement(
     let mut formatted = PrintItemBuffer::new();
     formatted.extend(gen_expression(&item_target, true)?);
     formatted.extend(gen_comments(&item_comments_after_target));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.push_sc(sc!("="));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_expression(&item_value, true)?);
     formatted.extend(gen_comments(&item_comments_after_value));
     if include_semicolon {
-        formatted.request_space(SeparationPolicy::Discouraged);
+        formatted.discourage(RequestItem::Space);
         formatted.push_sc(sc!(";"));
     }
     Ok(formatted)
@@ -80,14 +80,14 @@ pub fn gen_phony_assignment_statement(
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("_"));
     formatted.extend(gen_comments(&item_comments_after_target));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.push_sc(sc!("="));
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_expression(&item_value, true)?);
     formatted.extend(gen_comments(&item_comments_after_value));
     if include_semicolon {
-        formatted.request_space(SeparationPolicy::Discouraged);
+        formatted.discourage(RequestItem::Space);
         formatted.push_sc(sc!(";"));
     }
     Ok(formatted)
@@ -135,15 +135,15 @@ pub fn gen_compound_assignment_statement(
         CompoundAssignmentOperator::ShiftRightEqual(_) => sc!(">>="),
         CompoundAssignmentOperator::ShiftLeftEqual(_) => sc!("<<="),
     };
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
     formatted.push_sc(operator_sc);
-    formatted.expect_single_space();
+    formatted.expect(RequestItem::Space);
 
     formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_expression(&item_value, true)?);
     formatted.extend(gen_comments(&item_comments_after_value));
     if include_semicolon {
-        formatted.request_space(SeparationPolicy::Discouraged);
+        formatted.discourage(RequestItem::Space);
         formatted.push_sc(sc!(";"));
     }
     Ok(formatted)
