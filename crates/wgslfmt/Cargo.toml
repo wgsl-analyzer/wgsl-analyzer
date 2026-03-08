@@ -14,11 +14,11 @@ anyhow.workspace = true
 clap.workspace = true
 glob.workspace = true
 line-index.workspace = true
-syntax.workspace = true
 prettydiff = { version = "0.9.0", default-features = false }
-wgsl-formatter.workspace = true
-serde_json.workspace = true
 serde.workspace = true
+serde_json.workspace = true
+syntax.workspace = true
+wgsl-formatter.workspace = true
 
 [lints]
 workspace = true
