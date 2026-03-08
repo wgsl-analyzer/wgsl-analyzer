@@ -38,7 +38,9 @@ pub(crate) fn format_syntax_node(
         ) {
             let start = syntax.first_token()?;
 
-            let n_newlines = n_newlines_in_whitespace(&start.prev_token()?).unwrap_or(0).min(2); // spellchecker:disable-line
+            let n_newlines = n_newlines_in_whitespace(&start.prev_token()?)
+                .unwrap_or(0)
+                .min(2); // spellchecker:disable-line
 
             if n_newlines > 0 {
                 let indent = if is_indent_kind(syntax) {

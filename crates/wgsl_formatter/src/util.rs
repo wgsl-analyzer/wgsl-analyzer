@@ -41,7 +41,10 @@ pub(crate) fn n_newlines_in_whitespace(maybe_whitespace: &SyntaxToken) -> Option
 
 /// Clamps the number of consecutive newlines in a whitespace string to `max`.
 /// Preserves any trailing spaces/indentation after the last newline.
-pub(crate) fn clamp_newlines(text: &str, max: usize) -> String {
+pub(crate) fn clamp_newlines(
+    text: &str,
+    max: usize,
+) -> String {
     let mut result = String::new();
     let mut consecutive = 0;
     for ch in text.chars() {
@@ -197,7 +200,10 @@ pub(crate) fn create_syntax_token(
 
 /// Returns `true` if any token between `start` (exclusive) and `end` (exclusive)
 /// contains a newline character.
-pub(crate) fn has_newline_between(start: &SyntaxToken, end: &SyntaxToken) -> bool {
+pub(crate) fn has_newline_between(
+    start: &SyntaxToken,
+    end: &SyntaxToken,
+) -> bool {
     let mut tok = start.next_token();
     while let Some(token) = tok {
         if token == *end {

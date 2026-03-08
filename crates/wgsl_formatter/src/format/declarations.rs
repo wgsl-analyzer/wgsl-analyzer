@@ -13,7 +13,10 @@ use crate::util::{
 
 /// Formats declaration nodes: functions, structs, variables, let/const/override
 /// bindings, parameters, return types, and type aliases.
-#[expect(clippy::wildcard_enum_match_arm, reason = "intentional catch-all dispatcher")]
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "intentional catch-all dispatcher"
+)]
 pub(crate) fn format_declaration(
     syntax: &SyntaxNode,
     indentation: usize,
@@ -34,7 +37,10 @@ pub(crate) fn format_declaration(
     }
 }
 
-fn format_function_declaration(syntax: &SyntaxNode, options: &FormattingOptions) -> Option<()> {
+fn format_function_declaration(
+    syntax: &SyntaxNode,
+    options: &FormattingOptions,
+) -> Option<()> {
     let function = ast::FunctionDeclaration::cast(syntax.clone())?;
 
     trim_whitespace_before_to_newline(&function.fn_token()?);
@@ -171,7 +177,6 @@ fn format_type_alias_declaration(syntax: &SyntaxNode) -> Option<()> {
     whitespace_to_single_around(&statement.equal_token()?);
     Some(())
 }
-
 
 #[cfg(test)]
 mod tests {

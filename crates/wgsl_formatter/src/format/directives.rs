@@ -2,13 +2,16 @@ use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken};
 
 use crate::FormattingOptions;
 use crate::util::{
-    create_whitespace, is_whitespace_with_newline, n_newlines_in_whitespace,
-    remove_if_whitespace, set_whitespace_before, set_whitespace_single_after,
+    create_whitespace, is_whitespace_with_newline, n_newlines_in_whitespace, remove_if_whitespace,
+    set_whitespace_before, set_whitespace_single_after,
 };
 
 /// Formats directive and top-level nodes: source file, `enable`, `requires`,
 /// and attributes.
-#[expect(clippy::wildcard_enum_match_arm, reason = "intentional catch-all dispatcher")]
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "intentional catch-all dispatcher"
+)]
 pub(crate) fn format_directive(
     syntax: &SyntaxNode,
     indentation: usize,
@@ -327,5 +330,4 @@ var<uniform> params: Params;",
             expect!["@group(0) @binding(1) var<uniform> data: f32;"],
         );
     }
-
 }

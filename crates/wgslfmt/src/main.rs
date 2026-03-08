@@ -68,7 +68,10 @@ fn main() -> Result<(), anyhow::Error> {
                 file.display().to_string()
             };
             let line_index = line_index::LineIndex::new(&input);
-            eprintln!("[warn] {label}: {count} parse error(s)", count = errors.len());
+            eprintln!(
+                "[warn] {label}: {count} parse error(s)",
+                count = errors.len()
+            );
             for diagnostic in errors {
                 let start = line_index.line_col(diagnostic.range.start());
                 eprintln!(
@@ -104,9 +107,7 @@ fn main() -> Result<(), anyhow::Error> {
 
     if cli.check {
         if check_failed {
-            eprintln!(
-                "Code style issues found in the above file(s). Forgot to run wgslfmt?"
-            );
+            eprintln!("Code style issues found in the above file(s). Forgot to run wgslfmt?");
             std::process::exit(1);
         }
         eprintln!(
@@ -135,10 +136,11 @@ fn resolve_patterns(patterns: &[String]) -> Result<Vec<PathBuf>, anyhow::Error> 
         } else if PathBuf::from(pattern).is_dir() {
             collect_wgsl_files(&PathBuf::from(pattern), &mut files)?;
         } else if pattern.contains('*') || pattern.contains('?') || pattern.contains('[') {
-            let paths = glob::glob(pattern)
-                .with_context(|| format!("invalid glob pattern: {pattern}"))?;
+            let paths =
+                glob::glob(pattern).with_context(|| format!("invalid glob pattern: {pattern}"))?;
             for entry in paths {
-                let path = entry.with_context(|| format!("error reading glob match for: {pattern}"))?;
+                let path =
+                    entry.with_context(|| format!("error reading glob match for: {pattern}"))?;
                 if path.is_dir() {
                     collect_wgsl_files(&path, &mut files)?;
                 } else {
@@ -154,7 +156,10 @@ fn resolve_patterns(patterns: &[String]) -> Result<Vec<PathBuf>, anyhow::Error> 
 }
 
 /// Recursively collects all `.wgsl` files under `directory`.
-fn collect_wgsl_files(directory: &PathBuf, out: &mut Vec<PathBuf>) -> Result<(), anyhow::Error> {
+fn collect_wgsl_files(
+    directory: &PathBuf,
+    out: &mut Vec<PathBuf>,
+) -> Result<(), anyhow::Error> {
     for entry in std::fs::read_dir(directory)
         .with_context(|| format!("failed to read directory: {}", directory.display()))?
     {

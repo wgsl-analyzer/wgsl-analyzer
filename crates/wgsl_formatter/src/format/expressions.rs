@@ -1,5 +1,7 @@
 use rowan::NodeOrToken;
-use syntax::{AstNode as _, HasTemplateParameters as _, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken};
+use syntax::{
+    AstNode as _, HasTemplateParameters as _, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken,
+};
 
 use crate::FormattingOptions;
 use crate::util::{remove_if_whitespace, remove_token, whitespace_to_single_around};
@@ -7,7 +9,10 @@ use crate::util::{remove_if_whitespace, remove_token, whitespace_to_single_aroun
 /// Formats expression nodes: identifiers, function calls, infix/prefix
 /// operators, indexing, field access, parenthesized expressions, and
 /// type specifiers.
-#[expect(clippy::wildcard_enum_match_arm, reason = "intentional catch-all dispatcher")]
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "intentional catch-all dispatcher"
+)]
 pub(crate) fn format_expression(
     syntax: &SyntaxNode,
     indentation: usize,
@@ -109,7 +114,6 @@ pub(crate) fn format_expression(
     }
     Some(())
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -402,10 +406,7 @@ fn main() {
 
     #[test]
     fn format_prefix_negate() {
-        check(
-            "fn a() { let x = - y; }",
-            expect!["fn a() { let x = -y; }"],
-        );
+        check("fn a() { let x = - y; }", expect!["fn a() { let x = -y; }"]);
     }
 
     #[test]

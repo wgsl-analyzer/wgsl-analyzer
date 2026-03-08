@@ -10,7 +10,10 @@ use crate::util::{
 /// Formats statement nodes: control flow (`if`, `for`, `while`, `switch`,
 /// `loop`, `continuing`, `break if`), compound statements, assignments,
 /// return, phony assignment, and assert statements.
-#[expect(clippy::wildcard_enum_match_arm, reason = "intentional catch-all dispatcher")]
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "intentional catch-all dispatcher"
+)]
 pub(crate) fn format_statement(
     syntax: &SyntaxNode,
     indentation: usize,
@@ -177,7 +180,10 @@ fn format_statement_rest(
     indentation: usize,
     options: &FormattingOptions,
 ) -> Option<()> {
-    #[expect(clippy::wildcard_enum_match_arm, reason = "intentional catch-all dispatcher")]
+    #[expect(
+        clippy::wildcard_enum_match_arm,
+        reason = "intentional catch-all dispatcher"
+    )]
     match syntax.kind() {
         SyntaxKind::CompoundStatement => format_compound_statement(syntax, indentation, options),
         SyntaxKind::AssignmentStatement => format_assignment_statement(syntax),
@@ -324,8 +330,7 @@ fn fix_comment_indentation(
                 && preceding.kind().is_whitespace()
                 && preceding.text().contains('\n')
             {
-                let expected =
-                    format!("\n{}", options.indent_symbol.repeat(indentation));
+                let expected = format!("\n{}", options.indent_symbol.repeat(indentation));
                 if preceding.text() != expected {
                     replace_token_with(&preceding, create_whitespace(&expected));
                 }
@@ -484,7 +489,9 @@ let y = 4;
     fn format_all_compound_assignment_operators() {
         check(
             "fn main() { x+=1; y-=2; z*=3; w/=4; a%=5; b&=6; c|=7; d^=8; }",
-            expect![["fn main() { x += 1; y -= 2; z *= 3; w /= 4; a %= 5; b &= 6; c |= 7; d ^= 8; }"]],
+            expect![[
+                "fn main() { x += 1; y -= 2; z *= 3; w /= 4; a %= 5; b &= 6; c |= 7; d ^= 8; }"
+            ]],
         );
     }
 
@@ -714,7 +721,9 @@ fn main() {
     fn format_switch_case_spacing() {
         check(
             "fn a() { switch z { case  0u  :  { break; } case  1u, 2u  :  { x = 1.0; } default  :  { break; } } }",
-            expect!["fn a() { switch z { case 0u: { break; } case 1u, 2u: { x = 1.0; } default: { break; } } }"],
+            expect![
+                "fn a() { switch z { case 0u: { break; } case 1u, 2u: { x = 1.0; } default: { break; } } }"
+            ],
         );
     }
 
@@ -784,7 +793,9 @@ fn nested() {
     fn format_semicolon_spacing() {
         check(
             "fn main() { var x: f32 = 0.0  ; let y = 1u  ; x += 1.0  ; return  vec4<f32>(0.0)  ; }",
-            expect![["fn main() { var x: f32 = 0.0; let y = 1u; x += 1.0; return vec4<f32>(0.0); }"]],
+            expect![[
+                "fn main() { var x: f32 = 0.0; let y = 1u; x += 1.0; return vec4<f32>(0.0); }"
+            ]],
         );
     }
 
