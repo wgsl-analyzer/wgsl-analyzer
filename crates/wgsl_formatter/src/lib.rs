@@ -258,7 +258,13 @@ fn format_syntax_node(
             );
             set_whitespace_single_before(&for_statement.condition()?.syntax().first_token()?);
             set_whitespace_single_before(&for_statement.continuing_part()?.syntax().first_token()?);
-            remove_if_whitespace(&for_statement.continuing_part()?.syntax().last_token()?);
+            // The whitespace before ')' is a sibling of ForContinuingPart in
+            // ForStatement, not inside it. Remove it by looking at the token
+            // *after* the continuing part's last token.
+            let cont_last = for_statement.continuing_part()?.syntax().last_token()?;
+            if let Some(after) = cont_last.next_token() {
+                remove_if_whitespace(&after);
+            }
         },
         SyntaxKind::CompoundStatement => {
             let statement = ast::CompoundStatement::cast(syntax)?;
@@ -288,8 +294,10 @@ fn format_syntax_node(
         SyntaxKind::FunctionCall => {
             let function_call = ast::FunctionCall::cast(syntax)?;
 
-            if let Some(name_ref) = function_call.ident_expression() {
-                remove_if_whitespace(&name_ref.syntax().next_sibling_or_token()?.into_token()?);
+            if let Some(name_ref) = function_call.ident_expression()
+                && let Some(NodeOrToken::Token(token)) = name_ref.syntax().next_sibling_or_token()
+            {
+                remove_if_whitespace(&token);
             }
 
             let param_list = function_call.parameters()?;
@@ -334,7 +342,18 @@ fn format_syntax_node(
         },
         SyntaxKind::CompoundAssignmentStatement => {
             let statement = ast::CompoundAssignmentStatement::cast(syntax)?;
-            whitespace_to_single_around(&statement.operator_token()?);
+            // operator_token() walks from left_side().last_token().next_token(),
+            // which may return a whitespace token if multiple whitespace nodes
+            // exist between the identifier and operator. Walk forward, removing
+            // extra whitespace, to find the actual operator token.
+            let left_last = statement.left_side()?.syntax().last_token()?;
+            let mut tok = left_last.next_token()?;
+            while tok.kind().is_whitespace() {
+                let next = tok.next_token()?;
+                remove_token(&tok);
+                tok = next;
+            }
+            whitespace_to_single_around(&tok);
         },
         SyntaxKind::VariableDeclaration => {
             let statement = ast::VariableDeclaration::cast(syntax)?;
@@ -440,33 +459,55 @@ fn format_param_list<T: AstNode>(
 
         let last_param_token = parameter.syntax().last_token()?;
         remove_if_whitespace(&last_param_token);
-        // TODO: This wrongly inserts bonus commas
-        /*
-        let token_after_parameter = match parameter.syntax().next_sibling_or_token()? {
-            NodeOrToken::Node(node) => node.first_token()?,
-            NodeOrToken::Token(token) => token,
-        };
 
-        match (last, token_after_parameter.kind() == SyntaxKind::Comma) {
-            (true, true) if !has_newline => token_after_parameter.detach(),
-            (true, has_comma) => match (trailing_comma_policy, has_comma) {
-                (Policy::Remove, true) => token_after_parameter.detach(),
-                (Policy::Remove, false) | (Policy::Insert, true) | (Policy::Ignore, _) => {},
-                (Policy::Insert, false) => {
+        // Find the token after the parameter, skipping (and removing) any
+        // whitespace between the parameter and the comma.
+        let mut token_after_parameter = match parameter.syntax().next_sibling_or_token() {
+            Some(NodeOrToken::Node(node)) => node.first_token(),
+            Some(NodeOrToken::Token(token)) => Some(token),
+            None => None,
+        };
+        // Remove whitespace between the parameter and its comma
+        if let Some(tok) = &token_after_parameter
+            && tok.kind().is_whitespace()
+        {
+            let next = tok.next_token();
+            if next
+                .as_ref()
+                .is_some_and(|next_tok| next_tok.kind() == SyntaxKind::Comma)
+            {
+                remove_token(tok);
+                token_after_parameter = next;
+            }
+        }
+
+        if let Some(token_after_parameter) = token_after_parameter {
+            let is_comma = token_after_parameter.kind() == SyntaxKind::Comma;
+            match (last, is_comma) {
+                // Single-line trailing comma: remove it
+                (true, true) if !has_newline => token_after_parameter.detach(),
+                // Last param: apply trailing comma policy
+                (true, has_comma) => match (trailing_comma_policy, has_comma) {
+                    (Policy::Remove, true) => token_after_parameter.detach(),
+                    (Policy::Remove, false) | (Policy::Insert, true) | (Policy::Ignore, _) => {},
+                    (Policy::Insert, false) => {
+                        insert_after_syntax(
+                            parameter.syntax(),
+                            create_syntax_token(SyntaxKind::Comma, ","),
+                        );
+                    },
+                },
+                // Not last, comma already present: nothing to do
+                (false, true) => {},
+                // Not last, no comma: insert one
+                (false, false) => {
                     insert_after_syntax(
                         parameter.syntax(),
                         create_syntax_token(SyntaxKind::Comma, ","),
                     );
                 },
-            },
-            (false, true) => {},
-            (false, false) => {
-                insert_after_syntax(
-                    parameter.syntax(),
-                    create_syntax_token(SyntaxKind::Comma, ","),
-                );
-            },
-        } */
+            }
+        }
 
         first = false;
     }
