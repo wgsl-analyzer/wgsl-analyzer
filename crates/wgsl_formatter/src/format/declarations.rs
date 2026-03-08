@@ -10,6 +10,8 @@ use crate::util::{
     whitespace_to_single_around,
 };
 
+/// Formats declaration nodes: functions, structs, variables, let/const/override
+/// bindings, parameters, return types, and type aliases.
 pub(crate) fn format_declaration(
     syntax: &SyntaxNode,
     indentation: usize,

@@ -7,6 +7,9 @@ use crate::util::{
     whitespace_to_single_around,
 };
 
+/// Formats statement nodes: control flow (`if`, `for`, `while`, `switch`,
+/// `loop`, `continuing`, `break if`), compound statements, assignments,
+/// return, phony assignment, and assert statements.
 pub(crate) fn format_statement(
     syntax: &SyntaxNode,
     indentation: usize,

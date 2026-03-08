@@ -4,6 +4,9 @@ use syntax::{AstNode, HasTemplateParameters as _, SyntaxKind, SyntaxNode, ast, a
 use crate::FormattingOptions;
 use crate::util::{remove_if_whitespace, remove_token, whitespace_to_single_around};
 
+/// Formats expression nodes: identifiers, function calls, infix/prefix
+/// operators, indexing, field access, parenthesized expressions, and
+/// type specifiers.
 pub(crate) fn format_expression(
     syntax: &SyntaxNode,
     indentation: usize,

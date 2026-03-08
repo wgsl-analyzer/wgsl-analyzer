@@ -6,6 +6,8 @@ use crate::util::{
     set_whitespace_before, set_whitespace_single_after,
 };
 
+/// Formats directive and top-level nodes: source file, `enable`, `requires`,
+/// and attributes.
 pub(crate) fn format_directive(
     syntax: &SyntaxNode,
     _indentation: usize,

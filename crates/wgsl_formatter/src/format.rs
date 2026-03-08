@@ -15,6 +15,15 @@ use crate::util::{
 
 use crate::is_indent_kind;
 
+/// Formats a single syntax node in-place.
+///
+/// Handles two cross-cutting concerns before dispatching:
+/// 1. Preserves newline structure for children of compound statements and
+///    switch bodies, adjusting indentation as needed.
+/// 2. Removes whitespace before semicolons.
+///
+/// Then routes the node to the appropriate sub-module handler based on its
+/// [`SyntaxKind`] category.
 pub(crate) fn format_syntax_node(
     syntax: &SyntaxNode,
     indentation: usize,
@@ -89,6 +98,8 @@ pub(super) fn format_template_angles(tmpl: &ast::TemplateList) -> Option<()> {
     Some(())
 }
 
+/// Formats a parenthesized argument list, handling both single-line and
+/// multi-line layouts based on whether a newline follows the opening `(`.
 pub(super) fn format_parameters(
     param_list: &ast::Arguments,
     indentation: usize,
@@ -117,6 +128,10 @@ pub(super) fn format_parameters(
 
 
 
+/// Generic formatter for comma-separated lists (parameters, arguments, struct members).
+///
+/// Normalizes whitespace between items, inserts missing commas, and applies
+/// the trailing-comma policy on the last item.
 pub(super) fn format_param_list<T: AstNode>(
     parameters: syntax::AstChildren<T>,
     count: usize,

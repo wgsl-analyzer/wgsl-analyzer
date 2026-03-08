@@ -1,9 +1,28 @@
+//! WGSL source code formatter.
+//!
+//! Provides opinionated formatting for WGSL shader source code, normalizing
+//! whitespace, indentation, and punctuation while preserving semantic meaning.
+//!
+//! # Usage
+//!
+//! ```ignore
+//! use wgsl_formatter::{format_str, FormattingOptions};
+//!
+//! let formatted = format_str("fn  main( ) {  }", &FormattingOptions::default());
+//! assert_eq!(formatted, "fn main() {}\n");
+//! ```
+
 mod format;
 mod util;
 
 use rowan::WalkEvent;
 use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast};
 
+/// Formats a WGSL source string and returns the formatted result.
+///
+/// This is the main public entry point. It parses the input, applies formatting
+/// rules recursively, and performs file-level normalization (stripping leading
+/// blank lines and ensuring exactly one trailing newline).
 #[must_use]
 pub fn format_str(
     input: &str,
@@ -28,11 +47,14 @@ pub fn format_str(
     result
 }
 
+/// Configuration options for the WGSL formatter.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FormattingOptions {
+    /// How to handle trailing commas in parameter and argument lists.
     #[cfg_attr(feature = "serde", serde(alias = "trailingCommas"))]
     pub trailing_commas: Policy,
+    /// The string used for one level of indentation (e.g. `"    "` or `"\t"`).
     #[cfg_attr(feature = "serde", serde(alias = "indentSymbol"))]
     pub indent_symbol: String,
 }
@@ -46,12 +68,17 @@ impl Default for FormattingOptions {
     }
 }
 
+/// Controls whether the formatter should insert, remove, or leave a
+/// particular syntactic element (e.g. trailing commas) unchanged.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
 pub enum Policy {
+    /// Leave existing usage as-is.
     Ignore,
+    /// Remove the element if present.
     Remove,
+    /// Insert the element if absent.
     Insert,
 }
 
@@ -68,6 +95,11 @@ impl std::str::FromStr for Policy {
     }
 }
 
+/// Walks the syntax tree in pre-order and applies formatting to each node.
+///
+/// This is the core recursive driver. It tracks indentation depth as it
+/// enters and leaves block-like nodes, delegating per-node formatting to
+/// [`format::format_syntax_node`].
 pub fn format_recursive(
     syntax: &SyntaxNode,
     options: &FormattingOptions,
@@ -93,6 +125,10 @@ pub fn format_recursive(
     }
 }
 
+/// Returns `true` if entering this node should increase the indentation level.
+///
+/// Compound statements and switch bodies are indented. Multi-line parameter
+/// and argument lists are also treated as indent scopes.
 pub(crate) fn is_indent_kind(node: &SyntaxNode) -> bool {
     // NOTE: LoopStatement is intentionally excluded here. Its body is a
     // CompoundStatement which already increments indentation; including

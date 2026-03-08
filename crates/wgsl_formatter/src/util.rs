@@ -1,9 +1,15 @@
+//! Low-level helpers for manipulating whitespace and tokens in the syntax tree.
+//!
+//! These utilities operate directly on Rowan's mutable syntax tree, inserting,
+//! removing, and replacing tokens to achieve the desired formatting.
+
 use rowan::{GreenNode, GreenToken, NodeOrToken};
 use syntax::{SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken};
 
 use crate::FormattingOptions;
 
-// "\n  fn" -> "\nfn"
+/// Trims trailing spaces from the whitespace token preceding `before`,
+/// preserving any newlines. E.g. `"\n  fn"` → `"\nfn"`.
 pub(crate) fn trim_whitespace_before_to_newline(before: &SyntaxToken) -> Option<()> {
     let maybe_whitespace = before.prev_token()?; // spellchecker:disable-line
     if maybe_whitespace.kind().is_whitespace() {
@@ -19,10 +25,13 @@ pub(crate) fn trim_whitespace_before_to_newline(before: &SyntaxToken) -> Option<
     Some(())
 }
 
+/// Returns `true` if the token is whitespace containing at least one newline.
 pub(crate) fn is_whitespace_with_newline(maybe_whitespace: &SyntaxToken) -> bool {
     maybe_whitespace.kind().is_whitespace() && maybe_whitespace.text().contains('\n')
 }
 
+/// Counts the number of newline characters in a whitespace token.
+/// Returns `None` if the token is not whitespace.
 pub(crate) fn n_newlines_in_whitespace(maybe_whitespace: &SyntaxToken) -> Option<usize> {
     maybe_whitespace
         .kind()
@@ -30,12 +39,14 @@ pub(crate) fn n_newlines_in_whitespace(maybe_whitespace: &SyntaxToken) -> Option
         .then(|| maybe_whitespace.text().matches('\n').count())
 }
 
+/// Removes the token from the tree if it is whitespace; otherwise does nothing.
 pub(crate) fn remove_if_whitespace(maybe_whitespace: &SyntaxToken) {
     if maybe_whitespace.kind().is_whitespace() {
         remove_token(maybe_whitespace);
     }
 }
 
+/// Removes a token from its parent node.
 pub(crate) fn remove_token(token: &SyntaxToken) {
     let index = token.index();
     token
@@ -44,6 +55,7 @@ pub(crate) fn remove_token(token: &SyntaxToken) {
         .splice_children(index..index + 1, Vec::new());
 }
 
+/// Replaces a token in the tree with a different token.
 pub(crate) fn replace_token_with(
     token: &SyntaxToken,
     replacement: SyntaxToken,
@@ -55,6 +67,7 @@ pub(crate) fn replace_token_with(
         .splice_children(index..index + 1, vec![SyntaxElement::Token(replacement)]);
 }
 
+/// Inserts a token immediately after the given token.
 pub(crate) fn insert_after(
     token: &SyntaxToken,
     insert: SyntaxToken,
@@ -66,6 +79,7 @@ pub(crate) fn insert_after(
         .splice_children((index + 1)..index + 1, vec![SyntaxElement::Token(insert)]);
 }
 
+/// Inserts a token immediately after the given syntax node.
 pub(crate) fn insert_after_syntax(
     node: &SyntaxNode,
     insert: SyntaxToken,
@@ -76,6 +90,7 @@ pub(crate) fn insert_after_syntax(
         .splice_children((index + 1)..index + 1, vec![SyntaxElement::Token(insert)]);
 }
 
+/// Inserts a token immediately before the given token.
 pub(crate) fn insert_before(
     token: &SyntaxToken,
     insert: SyntaxToken,
@@ -87,11 +102,14 @@ pub(crate) fn insert_before(
         .splice_children(index..index, vec![SyntaxElement::Token(insert)]);
 }
 
+/// Ensures exactly one space before and after the given token.
 pub(crate) fn whitespace_to_single_around(around: &SyntaxToken) {
     set_whitespace_single_before(around);
     set_whitespace_single_after(around);
 }
 
+/// Sets the whitespace after `after` to `to`, replacing existing whitespace
+/// or inserting if none exists.
 pub(crate) fn set_whitespace_after(
     after: &SyntaxToken,
     to: SyntaxToken,
@@ -106,6 +124,8 @@ pub(crate) fn set_whitespace_after(
     Some(())
 }
 
+/// Sets the whitespace before `before` to `to`, replacing existing whitespace
+/// or inserting if none exists.
 pub(crate) fn set_whitespace_before(
     before: &SyntaxToken,
     to: SyntaxToken,
@@ -120,22 +140,30 @@ pub(crate) fn set_whitespace_before(
     Some(())
 }
 
+/// Shorthand: set exactly one space after the given token.
 pub(crate) fn set_whitespace_single_after(after: &SyntaxToken) -> Option<()> {
     set_whitespace_after(after, single_whitespace())
 }
 
+/// Shorthand: set exactly one space before the given token.
 pub(crate) fn set_whitespace_single_before(before: &SyntaxToken) -> Option<()> {
     set_whitespace_before(before, single_whitespace())
 }
 
+/// Creates a single-space whitespace token.
 pub(crate) fn single_whitespace() -> SyntaxToken {
     create_whitespace(" ")
 }
 
+/// Creates a whitespace token with the given text content.
 pub(crate) fn create_whitespace(text: &str) -> SyntaxToken {
     create_syntax_token(SyntaxKind::Blankspace, text)
 }
 
+/// Creates a detached syntax token with the given kind and text.
+///
+/// Wraps the token in a throwaway root node so Rowan can produce a
+/// mutable token suitable for insertion into an existing tree.
 pub(crate) fn create_syntax_token(
     kind: SyntaxKind,
     text: &str,
@@ -148,6 +176,7 @@ pub(crate) fn create_syntax_token(
     node.first_token().unwrap()
 }
 
+/// Sets the whitespace after `token` to a newline followed by indentation.
 pub(crate) fn indent_after(
     token: &SyntaxToken,
     indent_level: usize,
@@ -158,6 +187,7 @@ pub(crate) fn indent_after(
     set_whitespace_after(token, whitespace)
 }
 
+/// Sets the whitespace before `token` to a newline followed by indentation.
 pub(crate) fn indent_before(
     token: &SyntaxToken,
     indent_level: usize,
