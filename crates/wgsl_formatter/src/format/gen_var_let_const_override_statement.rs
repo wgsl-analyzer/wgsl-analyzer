@@ -167,12 +167,12 @@ fn gen_var_let_const_override_statement(
         formatted.push_sc(sc!("="));
         formatted.expect(RequestItem::Space);
         formatted.extend(gen_comments(&comments_after_equal));
-        formatted.extend(gen_expression(&value, false)?);
+        formatted.extend(gen_expression(&value, true)?);
         formatted.extend(gen_comments(&comments_after_value));
-        formatted.discourage(RequestItem::Space);
     }
 
     if include_semicolon {
+        formatted.discourage(RequestItem::Space);
         formatted.push_sc(sc!(";"));
     }
     formatted.push_signal(Signal::FinishIndent);
