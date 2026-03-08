@@ -1,5 +1,6 @@
 use syntax::{
-    AstNode, HasName as _, HasTemplateParameters as _, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken,
+    AstNode as _, HasName as _, HasTemplateParameters as _, SyntaxKind, SyntaxNode, ast,
+    ast::SyntaxToken,
 };
 
 use crate::FormattingOptions;
@@ -12,128 +13,162 @@ use crate::util::{
 
 /// Formats declaration nodes: functions, structs, variables, let/const/override
 /// bindings, parameters, return types, and type aliases.
+#[expect(clippy::wildcard_enum_match_arm, reason = "intentional catch-all dispatcher")]
 pub(crate) fn format_declaration(
     syntax: &SyntaxNode,
     indentation: usize,
     options: &FormattingOptions,
 ) -> Option<()> {
     match syntax.kind() {
-        SyntaxKind::FunctionDeclaration => {
-            let function = ast::FunctionDeclaration::cast(syntax.clone())?;
-
-            trim_whitespace_before_to_newline(&function.fn_token()?);
-
-            set_whitespace_single_after(&function.fn_token()?);
-            set_whitespace_single_before(&function.body()?.left_brace_token()?);
-
-            let param_list = function.parameter_list()?;
-
-            remove_if_whitespace(&param_list.left_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
-
-            let has_newline =
-                is_whitespace_with_newline(&param_list.left_parenthesis_token()?.next_token()?);
-
-            super::format_param_list(
-                param_list.parameters(),
-                param_list.parameters().count(),
-                has_newline,
-                1,
-                options.trailing_commas,
-                &options.indent_symbol,
-            );
-
-            if has_newline {
-                set_whitespace_before(
-                    &param_list.right_parenthesis_token()?,
-                    create_whitespace("\n"),
-                );
-            } else {
-                remove_if_whitespace(&param_list.right_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
-            }
-        },
-        SyntaxKind::Parameter => {
-            let item = ast::Parameter::cast(syntax.clone())?;
-            super::format_colon(item.colon_token().as_ref());
-        },
-        SyntaxKind::ReturnType => {
-            let return_type = ast::ReturnType::cast(syntax.clone())?;
-            whitespace_to_single_around(&return_type.arrow_token()?);
-        },
-        SyntaxKind::StructDeclaration => {
-            let r#struct = ast::StructDeclaration::cast(syntax.clone())?;
-
-            trim_whitespace_before_to_newline(&r#struct.struct_token()?);
-
-            let name = r#struct.name()?;
-            whitespace_to_single_around(&name.ident_token()?);
-
-            let body = r#struct.body()?;
-            let l_brace = body.left_brace_token()?;
-            let r_brace = body.right_brace_token()?;
-            let has_fields = body
-                .fields()
-                .any(|field| field.syntax().text_range().len() > 0.into());
-            if has_fields {
-                indent_after(&l_brace, indentation + 1, options)?;
-                for field in body.fields() {
-                    let first = field.syntax().first_token()?;
-                    indent_before(&first, indentation + 1, options)?;
-                }
-                indent_before(&r_brace, indentation, options)?;
-            } else {
-                set_whitespace_after(&l_brace, create_whitespace(""));
-            }
-        },
-        SyntaxKind::StructMember => {
-            let item = ast::StructMember::cast(syntax.clone())?;
-            super::format_colon(item.colon_token().as_ref());
-            if let Some(last) = item.syntax().last_token() {
-                let mut tok = last.next_token()?;
-                while tok.kind().is_whitespace() {
-                    let next = tok.next_token()?;
-                    remove_token(&tok);
-                    tok = next;
-                }
-            }
-        },
-        SyntaxKind::VariableDeclaration => {
-            let statement = ast::VariableDeclaration::cast(syntax.clone())?;
-            if let Some(tmpl) = statement.template_parameters() {
-                super::format_template_angles(&tmpl);
-                if let Some(right_angle) = tmpl.right_angle_token() {
-                    set_whitespace_single_after(&right_angle);
-                }
-            } else {
-                set_whitespace_single_after(&statement.var_token()?);
-            }
-            super::format_colon(statement.colon().as_ref());
-            whitespace_to_single_around(&statement.equal_token()?);
-        },
-        SyntaxKind::LetDeclaration => {
-            let statement = ast::LetDeclaration::cast(syntax.clone())?;
-            set_whitespace_single_after(&statement.let_token()?);
-            super::format_colon(statement.colon().as_ref());
-            whitespace_to_single_around(&statement.equal_token()?);
-        },
-        SyntaxKind::ConstantDeclaration => {
-            let statement = ast::ConstantDeclaration::cast(syntax.clone())?;
-            set_whitespace_single_after(&statement.constant_token()?);
-            super::format_colon(statement.colon().as_ref());
-            whitespace_to_single_around(&statement.equal_token()?);
-        },
-        SyntaxKind::OverrideDeclaration => {
-            let statement = ast::OverrideDeclaration::cast(syntax.clone())?;
-            set_whitespace_single_after(&statement.override_token()?);
-            super::format_colon(statement.colon().as_ref());
-            whitespace_to_single_around(&statement.equal_token()?);
-        },
-        SyntaxKind::TypeAliasDeclaration => {
-            let statement = ast::TypeAliasDeclaration::cast(syntax.clone())?;
-            set_whitespace_single_after(&statement.alias_token()?);
-            whitespace_to_single_around(&statement.equal_token()?);
-        },
-        _ => return None,
+        SyntaxKind::FunctionDeclaration => format_function_declaration(syntax, options),
+        SyntaxKind::Parameter => format_parameter(syntax),
+        SyntaxKind::ReturnType => format_return_type(syntax),
+        SyntaxKind::StructDeclaration => format_struct_declaration(syntax, indentation, options),
+        SyntaxKind::StructMember => format_struct_member(syntax),
+        SyntaxKind::VariableDeclaration => format_variable_declaration(syntax),
+        SyntaxKind::LetDeclaration => format_let_declaration(syntax),
+        SyntaxKind::ConstantDeclaration => format_constant_declaration(syntax),
+        SyntaxKind::OverrideDeclaration => format_override_declaration(syntax),
+        SyntaxKind::TypeAliasDeclaration => format_type_alias_declaration(syntax),
+        _ => None,
     }
+}
+
+fn format_function_declaration(syntax: &SyntaxNode, options: &FormattingOptions) -> Option<()> {
+    let function = ast::FunctionDeclaration::cast(syntax.clone())?;
+
+    trim_whitespace_before_to_newline(&function.fn_token()?);
+
+    set_whitespace_single_after(&function.fn_token()?);
+    set_whitespace_single_before(&function.body()?.left_brace_token()?);
+
+    let param_list = function.parameter_list()?;
+
+    remove_if_whitespace(&param_list.left_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
+
+    let has_newline =
+        is_whitespace_with_newline(&param_list.left_parenthesis_token()?.next_token()?);
+
+    super::format_param_list(
+        param_list.parameters(),
+        param_list.parameters().count(),
+        has_newline,
+        1,
+        options.trailing_commas,
+        &options.indent_symbol,
+    );
+
+    if has_newline {
+        set_whitespace_before(
+            &param_list.right_parenthesis_token()?,
+            create_whitespace("\n"),
+        );
+    } else {
+        remove_if_whitespace(&param_list.right_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
+    }
+    Some(())
+}
+
+fn format_parameter(syntax: &SyntaxNode) -> Option<()> {
+    let item = ast::Parameter::cast(syntax.clone())?;
+    super::format_colon(item.colon_token().as_ref());
+    Some(())
+}
+
+fn format_return_type(syntax: &SyntaxNode) -> Option<()> {
+    let return_type = ast::ReturnType::cast(syntax.clone())?;
+    whitespace_to_single_around(&return_type.arrow_token()?);
+    Some(())
+}
+
+fn format_struct_declaration(
+    syntax: &SyntaxNode,
+    indentation: usize,
+    options: &FormattingOptions,
+) -> Option<()> {
+    let r#struct = ast::StructDeclaration::cast(syntax.clone())?;
+
+    trim_whitespace_before_to_newline(&r#struct.struct_token()?);
+
+    let name = r#struct.name()?;
+    whitespace_to_single_around(&name.ident_token()?);
+
+    let body = r#struct.body()?;
+    let l_brace = body.left_brace_token()?;
+    let r_brace = body.right_brace_token()?;
+    let has_fields = body
+        .fields()
+        .any(|field| field.syntax().text_range().len() > 0.into());
+    if has_fields {
+        indent_after(&l_brace, indentation + 1, options)?;
+        for field in body.fields() {
+            let first = field.syntax().first_token()?;
+            indent_before(&first, indentation + 1, options)?;
+        }
+        indent_before(&r_brace, indentation, options)?;
+    } else {
+        set_whitespace_after(&l_brace, create_whitespace(""));
+    }
+    Some(())
+}
+
+fn format_struct_member(syntax: &SyntaxNode) -> Option<()> {
+    let item = ast::StructMember::cast(syntax.clone())?;
+    super::format_colon(item.colon_token().as_ref());
+    if let Some(last) = item.syntax().last_token() {
+        let mut tok = last.next_token()?;
+        while tok.kind().is_whitespace() {
+            let next = tok.next_token()?;
+            remove_token(&tok);
+            tok = next;
+        }
+    }
+    Some(())
+}
+
+fn format_variable_declaration(syntax: &SyntaxNode) -> Option<()> {
+    let statement = ast::VariableDeclaration::cast(syntax.clone())?;
+    if let Some(tmpl) = statement.template_parameters() {
+        super::format_template_angles(&tmpl);
+        if let Some(right_angle) = tmpl.right_angle_token() {
+            set_whitespace_single_after(&right_angle);
+        }
+    } else {
+        set_whitespace_single_after(&statement.var_token()?);
+    }
+    super::format_colon(statement.colon().as_ref());
+    whitespace_to_single_around(&statement.equal_token()?);
+    Some(())
+}
+
+fn format_let_declaration(syntax: &SyntaxNode) -> Option<()> {
+    let statement = ast::LetDeclaration::cast(syntax.clone())?;
+    set_whitespace_single_after(&statement.let_token()?);
+    super::format_colon(statement.colon().as_ref());
+    whitespace_to_single_around(&statement.equal_token()?);
+    Some(())
+}
+
+fn format_constant_declaration(syntax: &SyntaxNode) -> Option<()> {
+    let statement = ast::ConstantDeclaration::cast(syntax.clone())?;
+    set_whitespace_single_after(&statement.constant_token()?);
+    super::format_colon(statement.colon().as_ref());
+    whitespace_to_single_around(&statement.equal_token()?);
+    Some(())
+}
+
+fn format_override_declaration(syntax: &SyntaxNode) -> Option<()> {
+    let statement = ast::OverrideDeclaration::cast(syntax.clone())?;
+    set_whitespace_single_after(&statement.override_token()?);
+    super::format_colon(statement.colon().as_ref());
+    whitespace_to_single_around(&statement.equal_token()?);
+    Some(())
+}
+
+fn format_type_alias_declaration(syntax: &SyntaxNode) -> Option<()> {
+    let statement = ast::TypeAliasDeclaration::cast(syntax.clone())?;
+    set_whitespace_single_after(&statement.alias_token()?);
+    whitespace_to_single_around(&statement.equal_token()?);
     Some(())
 }
 

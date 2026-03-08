@@ -69,8 +69,8 @@ pub(crate) fn format_syntax_node(
                 if !current.kind().is_trivia() {
                     break;
                 }
-                if let Some(n) = n_newlines_in_whitespace(&current)
-                    && n > 2
+                if let Some(newline_count) = n_newlines_in_whitespace(&current)
+                    && newline_count > 2
                 {
                     let text = current.text();
                     let clamped = clamp_newlines(text, 2);

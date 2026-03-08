@@ -8,6 +8,7 @@ use crate::util::{
 
 /// Formats directive and top-level nodes: source file, `enable`, `requires`,
 /// and attributes.
+#[expect(clippy::wildcard_enum_match_arm, reason = "intentional catch-all dispatcher")]
 pub(crate) fn format_directive(
     syntax: &SyntaxNode,
     _indentation: usize,

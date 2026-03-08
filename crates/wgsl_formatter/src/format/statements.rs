@@ -1,4 +1,4 @@
-use syntax::{AstNode, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken};
+use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken};
 
 use crate::FormattingOptions;
 use crate::util::{
@@ -10,140 +10,164 @@ use crate::util::{
 /// Formats statement nodes: control flow (`if`, `for`, `while`, `switch`,
 /// `loop`, `continuing`, `break if`), compound statements, assignments,
 /// return, phony assignment, and assert statements.
+#[expect(clippy::wildcard_enum_match_arm, reason = "intentional catch-all dispatcher")]
 pub(crate) fn format_statement(
     syntax: &SyntaxNode,
     indentation: usize,
     options: &FormattingOptions,
 ) -> Option<()> {
     match syntax.kind() {
-        SyntaxKind::IfStatement => {
-            let if_statement = ast::IfStatement::cast(syntax.clone())?;
+        SyntaxKind::IfStatement => format_if_statement(syntax),
+        SyntaxKind::WhileStatement => format_while_statement(syntax),
+        SyntaxKind::SwitchStatement => format_switch_statement(syntax, indentation, options),
+        SyntaxKind::LoopStatement => format_loop_statement(syntax),
+        SyntaxKind::ContinuingStatement => format_continuing_statement(syntax),
+        SyntaxKind::BreakIfStatement => format_break_if_statement(syntax),
+        SyntaxKind::SwitchBodyCase => format_switch_body_case(syntax),
+        SyntaxKind::ForStatement => format_for_statement(syntax),
+        _ => format_statement_rest(syntax, indentation, options),
+    }
+}
 
-            if let Some(if_block) = if_statement.if_block() {
-                set_whitespace_single_after(&if_block.if_token()?);
-                set_whitespace_single_before(&if_block.block()?.left_brace_token()?);
-            }
+fn format_if_statement(syntax: &SyntaxNode) -> Option<()> {
+    let if_statement = ast::IfStatement::cast(syntax.clone())?;
 
-            if let Some(else_block) = if_statement.else_block() {
-                whitespace_to_single_around(&else_block.else_token()?);
-            }
+    if let Some(if_block) = if_statement.if_block() {
+        set_whitespace_single_after(&if_block.if_token()?);
+        set_whitespace_single_before(&if_block.block()?.left_brace_token()?);
+    }
 
-            for else_if_block in if_statement.else_if_blocks() {
-                whitespace_to_single_around(&else_if_block.else_token()?);
-                whitespace_to_single_around(&else_if_block.if_token()?);
+    if let Some(else_block) = if_statement.else_block() {
+        whitespace_to_single_around(&else_block.else_token()?);
+    }
 
-                set_whitespace_single_before(&else_if_block.block()?.left_brace_token()?);
-            }
-        },
-        SyntaxKind::WhileStatement => {
-            let while_statement = ast::WhileStatement::cast(syntax.clone())?;
+    for else_if_block in if_statement.else_if_blocks() {
+        whitespace_to_single_around(&else_if_block.else_token()?);
+        whitespace_to_single_around(&else_if_block.if_token()?);
+        set_whitespace_single_before(&else_if_block.block()?.left_brace_token()?);
+    }
+    Some(())
+}
 
-            set_whitespace_single_after(&while_statement.while_token()?);
+fn format_while_statement(syntax: &SyntaxNode) -> Option<()> {
+    let while_statement = ast::WhileStatement::cast(syntax.clone())?;
+    set_whitespace_single_after(&while_statement.while_token()?);
+    set_whitespace_single_before(&while_statement.block()?.left_brace_token()?);
+    Some(())
+}
 
-            set_whitespace_single_before(&while_statement.block()?.left_brace_token()?);
-        },
-        SyntaxKind::SwitchStatement => {
-            let switch_statement = ast::SwitchStatement::cast(syntax.clone())?;
-            let first_token = switch_statement.syntax().first_token()?;
-            if first_token.kind() == SyntaxKind::Switch {
-                set_whitespace_single_after(&first_token);
-            }
-            if let Some(body) = switch_statement.block() {
-                let l_brace = body.left_brace_token()?;
-                let r_brace = body.right_brace_token()?;
-                set_whitespace_single_before(&l_brace);
+fn format_switch_statement(
+    syntax: &SyntaxNode,
+    indentation: usize,
+    options: &FormattingOptions,
+) -> Option<()> {
+    let switch_statement = ast::SwitchStatement::cast(syntax.clone())?;
+    let first_token = switch_statement.syntax().first_token()?;
+    if first_token.kind() == SyntaxKind::Switch {
+        set_whitespace_single_after(&first_token);
+    }
+    if let Some(body) = switch_statement.block() {
+        let l_brace = body.left_brace_token()?;
+        let r_brace = body.right_brace_token()?;
+        set_whitespace_single_before(&l_brace);
 
-                if is_whitespace_with_newline(&l_brace.next_token()?) {
-                    fix_comment_indentation(body.syntax(), indentation + 1, options);
-                    indent_before(&r_brace, indentation, options);
-                }
-            }
-        },
-        SyntaxKind::LoopStatement => {
-            let loop_statement = ast::LoopStatement::cast(syntax.clone())?;
-            if let Some(block) = loop_statement.block() {
-                set_whitespace_single_before(&block.left_brace_token()?);
-            }
-        },
-        SyntaxKind::ContinuingStatement => {
-            let continuing = ast::ContinuingStatement::cast(syntax.clone())?;
-            if let Some(block) = continuing.block() {
-                set_whitespace_single_before(&block.left_brace_token()?);
-            }
-        },
-        SyntaxKind::BreakIfStatement => {
-            let break_if = ast::BreakIfStatement::cast(syntax.clone())?;
-            let first = break_if.syntax().first_token()?;
-            if first.kind() == SyntaxKind::Break {
-                set_whitespace_single_after(&first);
-            }
-            for child in break_if.syntax().children_with_tokens() {
-                if let Some(tok) = child.as_token()
-                    && tok.kind() == SyntaxKind::If
-                {
-                    set_whitespace_single_before(tok);
-                    set_whitespace_single_after(tok);
-                    break;
-                }
-            }
-        },
-        SyntaxKind::SwitchBodyCase => {
-            let case = ast::SwitchBodyCase::cast(syntax.clone())?;
-            let first = case.syntax().first_token()?;
-            if matches!(first.kind(), SyntaxKind::Case | SyntaxKind::Default) {
-                set_whitespace_single_after(&first);
-            }
-            for token in case.syntax().children_with_tokens() {
-                if let Some(tok) = token.as_token()
-                    && tok.kind() == SyntaxKind::Colon
-                {
-                    remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
-                    break;
-                }
-            }
-            if let Some(selectors) = case.selectors() {
-                for token in selectors.syntax().children_with_tokens() {
-                    if let Some(tok) = token.as_token()
-                        && tok.kind() == SyntaxKind::Comma
-                    {
-                        remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
-                        set_whitespace_single_after(tok);
-                    }
-                }
-            }
-            if let Some(block) = case.block() {
-                set_whitespace_single_before(&block.left_brace_token()?);
-            }
-        },
-        SyntaxKind::ForStatement => {
-            let for_statement = ast::ForStatement::cast(syntax.clone())?;
+        if is_whitespace_with_newline(&l_brace.next_token()?) {
+            fix_comment_indentation(body.syntax(), indentation + 1, options);
+            indent_before(&r_brace, indentation, options);
+        }
+    }
+    Some(())
+}
 
-            set_whitespace_single_after(&for_statement.for_token()?);
+fn format_loop_statement(syntax: &SyntaxNode) -> Option<()> {
+    let loop_statement = ast::LoopStatement::cast(syntax.clone())?;
+    if let Some(block) = loop_statement.block() {
+        set_whitespace_single_before(&block.left_brace_token()?);
+    }
+    Some(())
+}
 
-            set_whitespace_single_before(&for_statement.block()?.left_brace_token()?);
+fn format_continuing_statement(syntax: &SyntaxNode) -> Option<()> {
+    let continuing = ast::ContinuingStatement::cast(syntax.clone())?;
+    if let Some(block) = continuing.block() {
+        set_whitespace_single_before(&block.left_brace_token()?);
+    }
+    Some(())
+}
 
-            remove_if_whitespace(
-                &for_statement
-                    .initializer()?
-                    .syntax()
-                    .first_token()?
-                    .prev_token()?, // spellchecker:disable-line
-            );
-            for child in for_statement.syntax().children_with_tokens() {
-                if let Some(tok) = child.as_token()
-                    && tok.kind() == SyntaxKind::Semicolon
-                {
-                    remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
-                }
+fn format_break_if_statement(syntax: &SyntaxNode) -> Option<()> {
+    let break_if = ast::BreakIfStatement::cast(syntax.clone())?;
+    let first = break_if.syntax().first_token()?;
+    if first.kind() == SyntaxKind::Break {
+        set_whitespace_single_after(&first);
+    }
+    for child in break_if.syntax().children_with_tokens() {
+        if let Some(tok) = child.as_token()
+            && tok.kind() == SyntaxKind::If
+        {
+            set_whitespace_single_before(tok);
+            set_whitespace_single_after(tok);
+            break;
+        }
+    }
+    Some(())
+}
+
+fn format_switch_body_case(syntax: &SyntaxNode) -> Option<()> {
+    let case = ast::SwitchBodyCase::cast(syntax.clone())?;
+    let first = case.syntax().first_token()?;
+    if matches!(first.kind(), SyntaxKind::Case | SyntaxKind::Default) {
+        set_whitespace_single_after(&first);
+    }
+    for token in case.syntax().children_with_tokens() {
+        if let Some(tok) = token.as_token()
+            && tok.kind() == SyntaxKind::Colon
+        {
+            remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
+            break;
+        }
+    }
+    if let Some(selectors) = case.selectors() {
+        for token in selectors.syntax().children_with_tokens() {
+            if let Some(tok) = token.as_token()
+                && tok.kind() == SyntaxKind::Comma
+            {
+                remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
+                set_whitespace_single_after(tok);
             }
-            set_whitespace_single_before(&for_statement.condition()?.syntax().first_token()?);
-            set_whitespace_single_before(&for_statement.continuing_part()?.syntax().first_token()?);
-            let cont_last = for_statement.continuing_part()?.syntax().last_token()?;
-            if let Some(after) = cont_last.next_token() {
-                remove_if_whitespace(&after);
-            }
-        },
-        _ => return format_statement_rest(syntax, indentation, options),
+        }
+    }
+    if let Some(block) = case.block() {
+        set_whitespace_single_before(&block.left_brace_token()?);
+    }
+    Some(())
+}
+
+fn format_for_statement(syntax: &SyntaxNode) -> Option<()> {
+    let for_statement = ast::ForStatement::cast(syntax.clone())?;
+
+    set_whitespace_single_after(&for_statement.for_token()?);
+    set_whitespace_single_before(&for_statement.block()?.left_brace_token()?);
+
+    remove_if_whitespace(
+        &for_statement
+            .initializer()?
+            .syntax()
+            .first_token()?
+            .prev_token()?, // spellchecker:disable-line
+    );
+    for child in for_statement.syntax().children_with_tokens() {
+        if let Some(tok) = child.as_token()
+            && tok.kind() == SyntaxKind::Semicolon
+        {
+            remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
+        }
+    }
+    set_whitespace_single_before(&for_statement.condition()?.syntax().first_token()?);
+    set_whitespace_single_before(&for_statement.continuing_part()?.syntax().first_token()?);
+    let cont_last = for_statement.continuing_part()?.syntax().last_token()?;
+    if let Some(after) = cont_last.next_token() {
+        remove_if_whitespace(&after);
     }
     Some(())
 }
@@ -153,98 +177,123 @@ fn format_statement_rest(
     indentation: usize,
     options: &FormattingOptions,
 ) -> Option<()> {
+    #[expect(clippy::wildcard_enum_match_arm, reason = "intentional catch-all dispatcher")]
     match syntax.kind() {
-        SyntaxKind::CompoundStatement => {
-            let statement = ast::CompoundStatement::cast(syntax.clone())?;
-            let l_brace = statement.left_brace_token()?;
-            let r_brace = statement.right_brace_token()?;
-            let has_newline = has_newline_between(&l_brace, &r_brace);
+        SyntaxKind::CompoundStatement => format_compound_statement(syntax, indentation, options),
+        SyntaxKind::AssignmentStatement => format_assignment_statement(syntax),
+        SyntaxKind::CompoundAssignmentStatement => format_compound_assignment_statement(syntax),
+        SyntaxKind::IncrementDecrementStatement => format_increment_decrement_statement(syntax),
+        SyntaxKind::ReturnStatement => format_return_statement(syntax),
+        SyntaxKind::PhonyAssignmentStatement => format_phony_assignment_statement(syntax),
+        SyntaxKind::AssertStatement => format_assert_statement(syntax),
+        _ => None,
+    }
+}
 
-            if has_newline {
-                // If `{` has content on the same line but `}` is on a new line,
-                // push the content to a new indented line for consistency.
-                if let Some(first_tok) = statement
-                    .statements()
-                    .next()
-                    .and_then(|s| s.syntax().first_token())
-                {
-                    let on_same_line = first_tok
-                        .prev_token() // spellchecker:disable-line
-                        .is_none_or(|t| !t.text().contains('\n'));
-                    if on_same_line {
-                        indent_before(&first_tok, indentation, options);
-                    }
-                }
+fn format_compound_statement(
+    syntax: &SyntaxNode,
+    indentation: usize,
+    options: &FormattingOptions,
+) -> Option<()> {
+    let statement = ast::CompoundStatement::cast(syntax.clone())?;
+    let l_brace = statement.left_brace_token()?;
+    let r_brace = statement.right_brace_token()?;
+    let has_newline = has_newline_between(&l_brace, &r_brace);
 
-                // Fix indentation of standalone comment tokens inside the block.
-                fix_comment_indentation(syntax, indentation, options);
-
-                indent_before(&r_brace, indentation.saturating_sub(1), options);
-            } else if statement.statements().next().is_none() {
-                remove_if_whitespace(&l_brace.next_token()?);
-            } else {
-                set_whitespace_single_after(&l_brace);
-                set_whitespace_single_before(&r_brace);
+    if has_newline {
+        // If `{` has content on the same line but `}` is on a new line,
+        // push the content to a new indented line for consistency.
+        if let Some(first_tok) = statement
+            .statements()
+            .next()
+            .and_then(|first_statement| first_statement.syntax().first_token())
+        {
+            let on_same_line = first_tok
+                .prev_token() // spellchecker:disable-line
+                .is_none_or(|tok| !tok.text().contains('\n'));
+            if on_same_line {
+                indent_before(&first_tok, indentation, options);
             }
-        },
-        SyntaxKind::AssignmentStatement => {
-            let statement = ast::AssignmentStatement::cast(syntax.clone())?;
-            whitespace_to_single_around(&statement.equal_token()?);
-        },
-        SyntaxKind::CompoundAssignmentStatement => {
-            let statement = ast::CompoundAssignmentStatement::cast(syntax.clone())?;
-            let left_last = statement.left_side()?.syntax().last_token()?;
-            let mut tok = left_last.next_token()?;
-            loop {
-                let kind = tok.kind();
-                let is_comment = matches!(
-                    kind,
-                    SyntaxKind::BlockComment | SyntaxKind::LineEndingComment
-                );
-                if !kind.is_whitespace() && !is_comment {
-                    break;
-                }
-                let next = tok.next_token()?;
-                if kind.is_whitespace() {
-                    remove_token(&tok);
-                }
-                if is_comment {
-                    whitespace_to_single_around(&tok);
-                }
-                tok = next;
-            }
+        }
+
+        // Fix indentation of standalone comment tokens inside the block.
+        fix_comment_indentation(syntax, indentation, options);
+
+        indent_before(&r_brace, indentation.saturating_sub(1), options);
+    } else if statement.statements().next().is_none() {
+        remove_if_whitespace(&l_brace.next_token()?);
+    } else {
+        set_whitespace_single_after(&l_brace);
+        set_whitespace_single_before(&r_brace);
+    }
+    Some(())
+}
+
+fn format_assignment_statement(syntax: &SyntaxNode) -> Option<()> {
+    let statement = ast::AssignmentStatement::cast(syntax.clone())?;
+    whitespace_to_single_around(&statement.equal_token()?);
+    Some(())
+}
+
+fn format_compound_assignment_statement(syntax: &SyntaxNode) -> Option<()> {
+    let statement = ast::CompoundAssignmentStatement::cast(syntax.clone())?;
+    let left_last = statement.left_side()?.syntax().last_token()?;
+    let mut tok = left_last.next_token()?;
+    loop {
+        let kind = tok.kind();
+        let is_comment = matches!(
+            kind,
+            SyntaxKind::BlockComment | SyntaxKind::LineEndingComment
+        );
+        if !kind.is_whitespace() && !is_comment {
+            break;
+        }
+        let next = tok.next_token()?;
+        if kind.is_whitespace() {
+            remove_token(&tok);
+        }
+        if is_comment {
             whitespace_to_single_around(&tok);
-        },
-        SyntaxKind::IncrementDecrementStatement => {
-            for token in syntax.children_with_tokens() {
-                if let Some(tok) = token.as_token()
-                    && matches!(tok.kind(), SyntaxKind::PlusPlus | SyntaxKind::MinusMinus)
-                {
-                    remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
-                    break;
-                }
-            }
-        },
-        SyntaxKind::ReturnStatement => {
-            let first_token = syntax.first_token()?;
-            if first_token.kind() == SyntaxKind::Return {
-                let next = first_token.next_token()?;
-                if next.kind() != SyntaxKind::Semicolon {
-                    set_whitespace_single_after(&first_token);
-                }
-            }
-        },
-        SyntaxKind::PhonyAssignmentStatement => {
-            let statement = ast::PhonyAssignmentStatement::cast(syntax.clone())?;
-            whitespace_to_single_around(&statement.equal_token()?);
-        },
-        SyntaxKind::AssertStatement => {
-            let first_token = syntax.first_token()?;
-            if first_token.kind() == SyntaxKind::ConstantAssert {
-                set_whitespace_single_after(&first_token);
-            }
-        },
-        _ => return None,
+        }
+        tok = next;
+    }
+    whitespace_to_single_around(&tok);
+    Some(())
+}
+
+fn format_increment_decrement_statement(syntax: &SyntaxNode) -> Option<()> {
+    for token in syntax.children_with_tokens() {
+        if let Some(tok) = token.as_token()
+            && matches!(tok.kind(), SyntaxKind::PlusPlus | SyntaxKind::MinusMinus)
+        {
+            remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
+            break;
+        }
+    }
+    Some(())
+}
+
+fn format_return_statement(syntax: &SyntaxNode) -> Option<()> {
+    let first_token = syntax.first_token()?;
+    if first_token.kind() == SyntaxKind::Return {
+        let next = first_token.next_token()?;
+        if next.kind() != SyntaxKind::Semicolon {
+            set_whitespace_single_after(&first_token);
+        }
+    }
+    Some(())
+}
+
+fn format_phony_assignment_statement(syntax: &SyntaxNode) -> Option<()> {
+    let statement = ast::PhonyAssignmentStatement::cast(syntax.clone())?;
+    whitespace_to_single_around(&statement.equal_token()?);
+    Some(())
+}
+
+fn format_assert_statement(syntax: &SyntaxNode) -> Option<()> {
+    let first_token = syntax.first_token()?;
+    if first_token.kind() == SyntaxKind::ConstantAssert {
+        set_whitespace_single_after(&first_token);
     }
     Some(())
 }
