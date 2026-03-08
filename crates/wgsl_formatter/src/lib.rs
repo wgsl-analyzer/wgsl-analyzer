@@ -218,6 +218,17 @@ fn format_syntax_node(
             let item = ast::StructMember::cast(syntax)?;
             remove_if_whitespace(&item.colon_token()?.prev_token()?); // spellchecker:disable-line
             set_whitespace_single_after(&item.colon_token()?);
+            // Remove whitespace between the last token of the member and a following comma.
+            // The comma lives in StructBody (parent), so walk from the member's last token.
+            if let Some(last) = item.syntax().last_token() {
+                let mut tok = last.next_token()?;
+                while tok.kind().is_whitespace() {
+                    let next = tok.next_token()?;
+                    remove_token(&tok);
+                    tok = next;
+                }
+                // tok is now the comma (or something else); no action needed on it.
+            }
         },
         SyntaxKind::IfStatement => {
             let if_statement = ast::IfStatement::cast(syntax)?;
@@ -376,6 +387,12 @@ fn format_syntax_node(
         },
         SyntaxKind::VariableDeclaration => {
             let statement = ast::VariableDeclaration::cast(syntax)?;
+            // Ensure a space after the template closing `>` (e.g. `var<uniform> camera`)
+            if let Some(tmpl) = statement.template_parameters()
+                && let Some(right_angle) = tmpl.t_angle_token()
+            {
+                set_whitespace_single_after(&right_angle);
+            }
             if let Some(colon) = statement.colon() {
                 remove_if_whitespace(&colon.prev_token()?); // spellchecker:disable-line
                 set_whitespace_single_after(&colon);
@@ -409,6 +426,13 @@ fn format_syntax_node(
         SyntaxKind::TypeAliasDeclaration => {
             let statement = ast::TypeAliasDeclaration::cast(syntax)?;
             whitespace_to_single_around(&statement.equal_token()?);
+        },
+        SyntaxKind::ReturnStatement => {
+            // Collapse multiple spaces after `return` to a single space.
+            let first_token = syntax.first_token()?;
+            if first_token.kind() == SyntaxKind::Return {
+                set_whitespace_single_after(&first_token);
+            }
         },
         _ => {
             if let Some(r#type) = ast::TypeSpecifier::cast(syntax) {

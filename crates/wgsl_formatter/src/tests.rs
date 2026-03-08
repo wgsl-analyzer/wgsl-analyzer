@@ -635,7 +635,7 @@ fn format_type_alias_spacing() {
 fn format_global_var_uniform() {
     check(
         "var<uniform>camera:Camera;",
-        expect![["var<uniform>camera: Camera;"]],
+        expect![["var<uniform> camera: Camera;"]],
     );
 }
 
@@ -716,8 +716,8 @@ struct S {
 }",
         expect![["
             struct S {
-                x: f32  ,
-                y: u32  ,
+                x: f32,
+                y: u32,
             }"]],
     );
 }
@@ -760,7 +760,7 @@ fn format_pointer_params() {
 fn format_return_expression() {
     check(
         "fn main() -> f32 { return  x+y; }",
-        expect![["fn main() -> f32 { return  x + y; }"]],
+        expect![["fn main() -> f32 { return x + y; }"]],
     );
 }
 
