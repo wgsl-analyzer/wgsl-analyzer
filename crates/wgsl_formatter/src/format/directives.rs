@@ -287,5 +287,45 @@ var<uniform> params: Params;",
             }"#]],
         );
     }
-}
 
+    #[test]
+    fn format_attr_removes_space_after_at() {
+        check(
+            "@  group(0) var<uniform> data: f32;",
+            expect!["@group(0) var<uniform> data: f32;"],
+        );
+    }
+
+    #[test]
+    fn format_attr_normalizes_arg_spacing() {
+        check(
+            "@group( 0 ) @binding( 1 ) var<uniform> data: f32;",
+            expect!["@group(0) @binding(1) var<uniform> data: f32;"],
+        );
+    }
+
+    #[test]
+    fn format_attr_normalizes_multiple_args() {
+        check(
+            "@compute @workgroup_size( 64 , 1 , 1 ) fn cs() {}",
+            expect!["@compute @workgroup_size(64, 1, 1) fn cs() {}"],
+        );
+    }
+
+    #[test]
+    fn format_attr_removes_space_before_parens() {
+        check(
+            "@group (0) @binding (1) var<uniform> data: f32;",
+            expect!["@group(0) @binding(1) var<uniform> data: f32;"],
+        );
+    }
+
+    #[test]
+    fn format_attr_full_cleanup() {
+        check(
+            "@  group ( 0 )   @  binding ( 1 ) var<uniform> data: f32;",
+            expect!["@group(0) @binding(1) var<uniform> data: f32;"],
+        );
+    }
+
+}
