@@ -134,7 +134,6 @@ fn format_fn_header_comma_multiline() {
 }
 
 #[test]
-#[ignore = "parser produces Error node for missing commas"]
 fn format_fn_header_missing_comma() {
     check(
         "fn main(a: b  c: d) {}",
@@ -268,7 +267,6 @@ fn format_if() {
 }
 
 #[test]
-#[ignore = "parser produces Error node for else-if without space"]
 fn format_if_2() {
     check(
         "fn main() {
@@ -387,7 +385,6 @@ fn format_function_call_newline_nested() {
 }
 
 #[test]
-#[ignore = "parser produces Error nodes for template argument syntax"]
 fn format_function_call_2() {
     check(
         "fn main() {
@@ -517,7 +514,6 @@ fn format_expression_shift_left() {
 }
 
 #[test]
-#[ignore = "parser produces Error nodes for bitcast template syntax"]
 fn format_expression_bitcast() {
     check(
         "fn main() { bitcast   <  vec4<u32>  >  ( x+5 ) }",
