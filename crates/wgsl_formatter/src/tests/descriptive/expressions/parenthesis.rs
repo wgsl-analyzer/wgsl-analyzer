@@ -21,13 +21,13 @@ pub fn format_naked_paren_exprs_out_of_scope() {
 pub fn format_paren_expr_simple() {
     check(
         "fn main() {
-        let a = (1+1);
+        let a = 1 + (1+1);
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                let a = (1 + 1);
+                let a = 1 + (1 + 1);
             }
-        "]],
+        "#]],
     );
 }
 
@@ -36,11 +36,12 @@ pub fn format_paren_expr_long_right_associated() {
     //TODO This is awful. Have another look at how this should be formatted, once more test cases for more common parenthesised expressions are there
     check(
         "fn main() {
-        let a = (1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+1)))))))))))))))))))));
+        let a = 1+ (1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+1)))))))))))))))))))));
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                let a = (1
+                let a = 1
+                    + (1
                         + (1
                             + (1
                                 + (1
@@ -63,7 +64,7 @@ pub fn format_paren_expr_long_right_associated() {
                                                                                                     + (1
                                                                                                         + 1)))))))))))))))))))));
             }
-        "]],
+        "#]],
     );
 }
 
@@ -72,12 +73,12 @@ pub fn format_paren_expr_long_left_associated() {
     //TODO This is beyond awful. Have another look at how this should be formatted, once more test cases for more common parenthesised expressions are there
     check(
         "fn main() {
-        let a = ((((((((((((((((((((((((((((1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1);
+        let a = 1+ ((((((((((((((((((((((((((((1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1);
         }",
         expect![[r#"
             fn main() {
-                let a = ((((((((((((((((((((((((((((1) + 1) + 1) + 1) + 1) + 1) + 1) + 1)
-                                                                                                    + 1)
+                let a = 1
+                    + ((((((((((((((((((((((((((((1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1)
                                                                                                 + 1)
                                                                                             + 1)
                                                                                         + 1)
@@ -96,16 +97,9 @@ pub fn format_paren_expr_long_left_associated() {
 pub fn format_paren_expr_very_long() {
     check(
         "fn main() {
-        let a = (1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+1))))))))))))))))))))))))))))))))))))))))))))))))));
+        let a = 1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+1))))))))))))))))))))))))))))))))))))))))))))))))));
         }",
         expect![["
-            fn main() {
-                let a = 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1
-                     + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1
-                     + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1
-                     + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1
-                     + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1;
-            }
         "]],
     );
 }
@@ -114,18 +108,19 @@ pub fn format_paren_expr_very_long() {
 pub fn format_comments_in_paren_expr() {
     check_comments(
         "fn main() {
-        let a = ## ( ## 1 ## + ## ( ## 1 ## + ## 27 ## ) ## ) ## ; ##
+        let a = 1 + ## ( ## 1 ## + ## ( ## 1 ## + ## 27 ## ) ## ) ## ; ##
         }",
         expect![[r#"
             fn main() {
-                let a = /* 0 */ (/* 1 */ 1 /* 2 */
+                let a = 1
+                    + /* 0 */ (/* 1 */ 1 /* 2 */
                         + /* 3 */ (/* 4 */ 1 /* 5 */
                             + /* 6 */ 27 /* 7 */) /* 8 */) /* 9 */; /* 10 */
             }
         "#]],
         expect![[r#"
             fn main() {
-                let a = // 0
+                let a = 1 + // 0
                     (// 1
                         1 // 2
                         + // 3
