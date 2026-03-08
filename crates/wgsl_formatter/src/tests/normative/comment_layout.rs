@@ -3,16 +3,27 @@ use expect_test::expect;
 use crate::test_util::check;
 
 #[test]
-fn format_multiline_block_comment_gets_indented() {
+fn format_multiline_block_comment_keeps_exact_indentation() {
     check(
         "
-        fn a() {
-            /* AAA
-            AAA
-            AAA
-            */
-        }
+fn a() {
+    loop{
+        /* AAA
+    AAA
+        AAA
+        */
+    }
+}
         ",
-        expect![],
+        expect![[r#"
+            fn a() {
+                loop {
+                    /* AAA
+                AAA
+                    AAA
+                    */
+                }
+            }
+        "#]],
     );
 }
