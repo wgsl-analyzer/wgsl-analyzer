@@ -6,7 +6,7 @@ use syntax::{
 use crate::FormattingOptions;
 use crate::util::{
     remove_if_whitespace, remove_token, remove_whitespace_around_double_colon,
-    whitespace_to_single_around,
+    set_whitespace_single_after, set_whitespace_single_before, whitespace_to_single_around,
 };
 
 /// Formats expression nodes: identifiers, function calls, infix/prefix
@@ -67,9 +67,28 @@ fn format_function_call(
 }
 
 /// Formats infix expressions: ensures single space around operators.
+///
+/// Preserves intentional newlines around operators (multi-line expressions)
+/// — only normalizes spacing on the same line.
 fn format_infix_expression(syntax: &SyntaxNode) -> Option<()> {
     let expression = ast::InfixExpression::cast(syntax.clone())?;
-    whitespace_to_single_around(&expression.operator()?);
+    let operator = expression.operator()?;
+
+    // Before operator: preserve newlines, normalize spaces
+    let has_newline_before = operator
+        .prev_token() // spellchecker:disable-line
+        .is_some_and(|tok| tok.kind().is_whitespace() && tok.text().contains('\n'));
+    if !has_newline_before {
+        set_whitespace_single_before(&operator);
+    }
+
+    // After operator: preserve newlines, normalize spaces
+    let has_newline_after = operator
+        .next_token()
+        .is_some_and(|tok| tok.kind().is_whitespace() && tok.text().contains('\n'));
+    if !has_newline_after {
+        set_whitespace_single_after(&operator);
+    }
     Some(())
 }
 

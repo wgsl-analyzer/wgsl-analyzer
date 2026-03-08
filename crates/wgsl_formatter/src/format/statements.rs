@@ -41,11 +41,29 @@ fn format_if_statement(syntax: &SyntaxNode) -> Option<()> {
     }
 
     if let Some(else_block) = if_statement.else_block() {
-        whitespace_to_single_around(&else_block.else_token()?);
+        let else_token = else_block.else_token()?;
+        // Preserve newlines before `else` (author chose `}\n    else`).
+        let has_newline = else_token
+            .prev_token() // spellchecker:disable-line
+            .is_some_and(|tok| tok.kind().is_whitespace() && tok.text().contains('\n'));
+        if has_newline {
+            set_whitespace_single_after(&else_token);
+        } else {
+            whitespace_to_single_around(&else_token);
+        }
     }
 
     for else_if_block in if_statement.else_if_blocks() {
-        whitespace_to_single_around(&else_if_block.else_token()?);
+        let else_token = else_if_block.else_token()?;
+        // Preserve newlines before `else if` (author chose `}\n    else if`).
+        let has_newline = else_token
+            .prev_token() // spellchecker:disable-line
+            .is_some_and(|tok| tok.kind().is_whitespace() && tok.text().contains('\n'));
+        if has_newline {
+            set_whitespace_single_after(&else_token);
+        } else {
+            whitespace_to_single_around(&else_token);
+        }
         whitespace_to_single_around(&else_if_block.if_token()?);
         set_whitespace_single_before(&else_if_block.block()?.left_brace_token()?);
     }
@@ -330,7 +348,13 @@ fn fix_comment_indentation(
                 && preceding.kind().is_whitespace()
                 && preceding.text().contains('\n')
             {
-                let expected = format!("\n{}", options.indent_symbol.repeat(indentation));
+                // Preserve existing blank lines (up to one), don't collapse them.
+                let n_newlines = preceding.text().matches('\n').count().clamp(1, 2);
+                let expected = format!(
+                    "{}{}",
+                    "\n".repeat(n_newlines),
+                    options.indent_symbol.repeat(indentation)
+                );
                 if preceding.text() != expected {
                     replace_token_with(&preceding, create_whitespace(&expected));
                 }
@@ -371,7 +395,8 @@ mod tests {
 }",
             expect![["
             fn main() {
-                if x < 1 {} else {
+                if x < 1 {}
+                else {
                     let a = 3;
                 } else if x > 2 {}
             }"]],
