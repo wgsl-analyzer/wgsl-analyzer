@@ -1036,4 +1036,64 @@ continue;
             expect!["fn a() { x = foo(bar(1, 2), 3); }"],
         );
     }
+
+    #[test]
+    fn format_if_paren_removal() {
+        check(
+            "fn a() { if (x > 0) { return; } }",
+            expect!["fn a() { if x > 0 { return; } }"],
+        );
+    }
+
+    #[test]
+    fn format_switch_paren_removal() {
+        check(
+            "fn a() { switch (val) { default: { return; } } }",
+            expect!["fn a() { switch val { default: { return; } } }"],
+        );
+    }
+
+    #[test]
+    fn format_blank_lines_clamped_inside_body() {
+        check(
+            "fn a() {\n    var x = 1;\n\n\n\n    var y = 2;\n}",
+            expect![[r#"
+            fn a() {
+                var x = 1;
+
+                var y = 2;
+            }"#]],
+        );
+    }
+
+    #[test]
+    fn format_loop_with_continuing_and_break_if() {
+        check(
+            "fn a() {\n    var i: u32 = 0u;\n    loop {\n        i++;\n        continuing  {\n            break   if   i >= 10u;\n        }\n    }\n}",
+            expect![[r#"
+            fn a() {
+                var i: u32 = 0u;
+                loop {
+                    i++;
+                    continuing {
+                        break if i >= 10u;
+                    }
+                }
+            }"#]],
+        );
+    }
+
+    #[test]
+    fn format_comment_at_wrong_indent_in_nested_block() {
+        check(
+            "fn a() {\n    if true {\n// misaligned\n        var x = 1;\n    }\n}",
+            expect![[r#"
+            fn a() {
+                if true {
+                    // misaligned
+                    var x = 1;
+                }
+            }"#]],
+        );
+    }
 }
