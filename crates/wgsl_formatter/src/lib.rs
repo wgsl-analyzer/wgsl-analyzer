@@ -360,17 +360,27 @@ fn format_syntax_node(
         },
         SyntaxKind::CompoundStatement => {
             let statement = ast::CompoundStatement::cast(syntax)?;
-            let has_newline =
-                is_whitespace_with_newline(&statement.left_brace_token()?.next_token()?);
+            let l_brace = statement.left_brace_token()?;
+            let r_brace = statement.right_brace_token()?;
+            let has_newline = is_whitespace_with_newline(&l_brace.next_token()?);
 
             if has_newline {
                 set_whitespace_before(
-                    &statement.right_brace_token()?,
+                    &r_brace,
                     create_whitespace(&format!(
                         "\n{}",
                         options.indent_symbol.repeat(indentation.saturating_sub(1))
                     )),
                 );
+            } else {
+                // Single-line block: ensure single space after `{` and before `}`
+                // (e.g. `{return x;}` → `{ return x; }`,
+                //        `{   break;   }` → `{ break; }`)
+                // Only if the block is non-empty.
+                if l_brace.next_token() != Some(r_brace.clone()) {
+                    set_whitespace_single_after(&l_brace);
+                    set_whitespace_single_before(&r_brace);
+                }
             }
         },
         SyntaxKind::IdentExpression => {

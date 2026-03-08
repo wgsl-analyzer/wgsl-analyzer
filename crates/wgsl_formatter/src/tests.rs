@@ -455,7 +455,7 @@ var x=0;
 fn format_variable_type() {
     check(
         "fn main() {var x   : u32=0;}",
-        expect!["fn main() {var x: u32 = 0;}"],
+        expect!["fn main() { var x: u32 = 0; }"],
     );
 }
 
@@ -667,7 +667,9 @@ fn format_nested_templates() {
 fn format_if_else_chain_single_line() {
     check(
         "fn main() { if(x<0){return -1;}else if(x>0){return 1;}else{return 0;} }",
-        expect![["fn main() { if x < 0 {return -1;} else if x > 0 {return 1;} else {return 0;} }"]],
+        expect![
+            "fn main() { if x < 0 { return -1; } else if x > 0 { return 1; } else { return 0; } }"
+        ],
     );
 }
 
@@ -675,7 +677,7 @@ fn format_if_else_chain_single_line() {
 fn format_while_paren_removal() {
     check(
         "fn main() { while(i<10){i+=1;} }",
-        expect![["fn main() { while i < 10 {i += 1;} }"]],
+        expect!["fn main() { while i < 10 { i += 1; } }"],
     );
 }
 
@@ -848,7 +850,7 @@ fn format_const_assert_spacing() {
 fn format_switch_spacing() {
     check(
         "fn main() { switch(x){ case 0u:{return 0u;} default:{return 1u;} } }",
-        expect!["fn main() { switch (x) { case 0u: {return 0u;} default: {return 1u;} } }"],
+        expect!["fn main() { switch (x) { case 0u: { return 0u; } default: { return 1u; } } }"],
     );
 }
 
@@ -916,15 +918,15 @@ fn main() {
         }
     }
 }",
-        expect![["
+        expect![[r#"
             fn main() {
                 loop {
-                    if true {break;}
+                    if true { break; }
                     continuing {
                         x += 1;
                     }
                 }
-            }"]],
+            }"#]],
     );
 }
 
@@ -1077,4 +1079,10 @@ fn format_for_semicolon_spacing() {
         "fn a() { for (var i: u32 = 0u   ; i < 10u   ; i += 1u) { x += 1.0; } }",
         expect![["fn a() { for (var i: u32 = 0u; i < 10u; i += 1u) { x += 1.0; } }"]],
     );
+}
+
+#[test]
+fn format_single_line_block_spacing() {
+    check("fn a() {return 1;}", expect!["fn a() { return 1; }"]);
+    check("fn b() {   break;   }", expect!["fn b() { break; }"]);
 }
