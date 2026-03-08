@@ -1,3 +1,5 @@
+use dprint_core::formatting::Signal;
+use itertools::{Itertools, Position};
 use parser::SyntaxKind;
 use rowan::NodeOrToken;
 
@@ -75,13 +77,30 @@ pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
     match item {
         Comment::Block(content) => {
             formatted.expect(RequestItem::Space);
-            formatted.push_string(content.clone());
+
+            let mut lines = content.lines().with_position();
+            if let Some((pos, line)) = lines.next() {
+                formatted.push_string(line.to_owned());
+                if pos != Position::Only && pos != Position::Last {
+                    formatted.expect(RequestItem::LineBreak);
+                }
+            }
+
+            formatted.push_signal(Signal::StartIgnoringIndent);
+            for (pos, line) in lines {
+                formatted.push_string(line.to_owned());
+                if pos != Position::Only && pos != Position::Last {
+                    formatted.expect(RequestItem::LineBreak);
+                }
+            }
+            formatted.discourage(RequestItem::LineBreak);
+            formatted.push_signal(Signal::FinishIgnoringIndent);
             formatted.expect(RequestItem::Space);
         },
         Comment::LineEnding(content) => {
             formatted.expect(RequestItem::Space);
+            // TODO There should never be newlinees in a line ending comment...Right?
             formatted.push_string(content.clone());
-            //TODO(MonaMayrhofer) This should be a request, but for now we have no way of encoding a "forced newline no matter what"
             formatted.force(RequestItem::LineBreak);
         },
     }
