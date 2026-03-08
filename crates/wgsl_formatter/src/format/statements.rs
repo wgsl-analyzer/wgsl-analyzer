@@ -3,8 +3,8 @@ use syntax::{AstNode, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken};
 use crate::FormattingOptions;
 use crate::util::{
     create_whitespace, is_whitespace_with_newline, remove_if_whitespace, remove_token,
-    set_whitespace_before, set_whitespace_single_after, set_whitespace_single_before,
-    whitespace_to_single_around,
+    set_whitespace_after, set_whitespace_before, set_whitespace_single_after,
+    set_whitespace_single_before, whitespace_to_single_around,
 };
 
 /// Formats statement nodes: control flow (`if`, `for`, `while`, `switch`,
@@ -180,6 +180,24 @@ fn format_statement_rest(
             };
 
             if has_newline {
+                // If `{` has content on the same line but `}` is on a new line,
+                // push the content to a new indented line for consistency.
+                if let Some(first_stmt) = statement.statements().next() {
+                    if let Some(first_tok) = first_stmt.syntax().first_token() {
+                        let on_same_line = first_tok
+                            .prev_token() // spellchecker:disable-line
+                            .is_none_or(|t| !t.text().contains('\n'));
+                        if on_same_line {
+                            set_whitespace_before(
+                                &first_tok,
+                                create_whitespace(&format!(
+                                    "\n{}",
+                                    options.indent_symbol.repeat(indentation)
+                                )),
+                            );
+                        }
+                    }
+                }
                 set_whitespace_before(
                     &r_brace,
                     create_whitespace(&format!(

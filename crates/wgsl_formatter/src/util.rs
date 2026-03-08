@@ -39,6 +39,25 @@ pub(crate) fn n_newlines_in_whitespace(maybe_whitespace: &SyntaxToken) -> Option
         .then(|| maybe_whitespace.text().matches('\n').count())
 }
 
+/// Clamps the number of consecutive newlines in a whitespace string to `max`.
+/// Preserves any trailing spaces/indentation after the last newline.
+pub(crate) fn clamp_newlines(text: &str, max: usize) -> String {
+    let mut result = String::new();
+    let mut consecutive = 0;
+    for ch in text.chars() {
+        if ch == '\n' {
+            consecutive += 1;
+            if consecutive <= max {
+                result.push(ch);
+            }
+        } else {
+            consecutive = 0;
+            result.push(ch);
+        }
+    }
+    result
+}
+
 /// Removes the token from the tree if it is whitespace; otherwise does nothing.
 pub(crate) fn remove_if_whitespace(maybe_whitespace: &SyntaxToken) {
     if maybe_whitespace.kind().is_whitespace() {

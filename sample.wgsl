@@ -123,10 +123,6 @@ fn find_first_nonzero(count: u32) -> u32 {
     return count;
 }
 
-
-
-
-
 // ── Loop with break and continuing ──
 fn loop_example() -> u32 {
     var i: u32 = 0u;
@@ -179,7 +175,9 @@ fn pack_color(r: u32, g: u32, b: u32, a: u32) -> u32 {
     return (a << 24u) | (r << 16u) | (g << 8u) | b;
 }
 
-fn unpack_red(packed: u32) -> u32 { return (packed >> 16u) & 0xFFu; }
+fn unpack_red(packed: u32) -> u32 {
+    return (packed >> 16u) & 0xFFu;
+}
 
 // ── Built-in math functions ──
 fn lighting_calc(normal: vec3<f32>, light_dir: vec3<f32>, view_dir: vec3<f32>) -> LightingResult {

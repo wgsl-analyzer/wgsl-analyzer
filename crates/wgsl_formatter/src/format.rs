@@ -8,9 +8,9 @@ use syntax::{AstNode, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken};
 
 use crate::FormattingOptions;
 use crate::util::{
-    create_syntax_token, create_whitespace, insert_after_syntax, is_whitespace_with_newline,
-    n_newlines_in_whitespace, remove_if_whitespace, remove_token, set_whitespace_before,
-    set_whitespace_single_after,
+    clamp_newlines, create_syntax_token, create_whitespace, insert_after_syntax,
+    is_whitespace_with_newline, n_newlines_in_whitespace, remove_if_whitespace, remove_token,
+    replace_token_with, set_whitespace_before, set_whitespace_single_after,
 };
 
 use crate::is_indent_kind;
@@ -29,30 +29,56 @@ pub(crate) fn format_syntax_node(
     indentation: usize,
     options: &FormattingOptions,
 ) -> Option<()> {
-    if syntax.parent().is_some_and(|parent| {
-        matches!(
-            parent.kind(),
+    if let Some(parent) = syntax.parent() {
+        let parent_kind = parent.kind();
+
+        if matches!(
+            parent_kind,
             SyntaxKind::CompoundStatement | SyntaxKind::SwitchBody
-        )
-    }) {
-        let start = syntax.first_token()?;
+        ) {
+            let start = syntax.first_token()?;
 
-        let n_newlines = n_newlines_in_whitespace(&start.prev_token()?).unwrap_or(0); // spellchecker:disable-line
+            let n_newlines = n_newlines_in_whitespace(&start.prev_token()?).unwrap_or(0).min(2); // spellchecker:disable-line
 
-        if n_newlines > 0 {
-            let indent = if is_indent_kind(syntax) {
-                indentation.saturating_sub(1)
-            } else {
-                indentation
-            };
-            set_whitespace_before(
-                &syntax.first_token()?,
-                create_whitespace(&format!(
-                    "{}{}",
-                    "\n".repeat(n_newlines),
-                    options.indent_symbol.repeat(indent)
-                )),
-            );
+            if n_newlines > 0 {
+                let indent = if is_indent_kind(syntax) {
+                    indentation.saturating_sub(1)
+                } else {
+                    indentation
+                };
+                set_whitespace_before(
+                    &syntax.first_token()?,
+                    create_whitespace(&format!(
+                        "{}{}",
+                        "\n".repeat(n_newlines),
+                        options.indent_symbol.repeat(indent)
+                    )),
+                );
+            }
+        }
+
+        // Clamp excessive blank lines to at most one (2 newlines).
+        // Walk backwards through trivia tokens to catch whitespace before comments.
+        if matches!(
+            parent_kind,
+            SyntaxKind::SourceFile | SyntaxKind::CompoundStatement | SyntaxKind::SwitchBody
+        ) {
+            if let Some(start) = syntax.first_token() {
+                let mut tok = start.prev_token(); // spellchecker:disable-line
+                while let Some(current) = tok {
+                    if !current.kind().is_trivia() {
+                        break;
+                    }
+                    if let Some(n) = n_newlines_in_whitespace(&current) {
+                        if n > 2 {
+                            let text = current.text();
+                            let clamped = clamp_newlines(text, 2);
+                            replace_token_with(&current, create_whitespace(&clamped));
+                        }
+                    }
+                    tok = current.prev_token(); // spellchecker:disable-line
+                }
+            }
         }
     }
 
