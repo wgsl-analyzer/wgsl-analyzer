@@ -7,13 +7,14 @@
 
 use std::{io::Read as _, path::PathBuf};
 
-use anyhow::Context as _;
+use anyhow::{Context as _, bail};
 use clap::Parser;
 use wgsl_formatter::FormattingOptions;
 
 /// Tool to find and fix WGSL/WESL formatting issues.
 ///
-/// Reads from stdin when no files are given (or when a file is "-").
+/// Accepts file paths, directories (recursively finds .wgsl files), and
+/// glob patterns (e.g. "src/**/*.wgsl"). Pass "-" to read from stdin.
 #[derive(Parser)]
 #[command(name = "wgslfmt", version)]
 struct Args {
@@ -26,18 +27,25 @@ struct Args {
     #[arg(long)]
     tabs: bool,
 
-    /// Files to format. Reads from stdin if omitted or if a file is "-".
-    files: Vec<PathBuf>,
+    /// Files, directories, or glob patterns to format.
+    /// Pass "-" to read from stdin.
+    #[arg(required = true)]
+    patterns: Vec<String>,
 }
 
 fn main() -> Result<(), anyhow::Error> {
     let cli = Args::parse();
 
-    let files = if cli.files.is_empty() {
-        vec![PathBuf::from("-")]
-    } else {
-        cli.files
-    };
+    let files = resolve_patterns(&cli.patterns)?;
+
+    if files.is_empty() {
+        bail!("no .wgsl files found matching the given patterns");
+    }
+
+    let mut formatting_options = FormattingOptions::default();
+    if cli.tabs {
+        "\t".clone_into(&mut formatting_options.indent_symbol);
+    }
 
     for file in &files {
         let is_stdin = file.as_os_str() == "-";
@@ -47,10 +55,6 @@ fn main() -> Result<(), anyhow::Error> {
             std::fs::read_to_string(file)?
         };
 
-        let mut formatting_options = FormattingOptions::default();
-        if cli.tabs {
-            "\t".clone_into(&mut formatting_options.indent_symbol);
-        }
         let output = wgsl_formatter::format_str(&input, &formatting_options);
 
         if cli.check {
@@ -66,6 +70,56 @@ fn main() -> Result<(), anyhow::Error> {
         }
     }
 
+    Ok(())
+}
+
+/// Resolves a list of patterns into concrete file paths.
+///
+/// Each pattern is interpreted as:
+/// - `"-"` → stdin
+/// - A directory path → recursively walk for `.wgsl` files
+/// - A glob pattern (contains `*`, `?`, or `[`) → expand via glob
+/// - Otherwise → a literal file path
+fn resolve_patterns(patterns: &[String]) -> Result<Vec<PathBuf>, anyhow::Error> {
+    let mut files = Vec::new();
+
+    for pattern in patterns {
+        if pattern == "-" {
+            files.push(PathBuf::from("-"));
+        } else if PathBuf::from(pattern).is_dir() {
+            collect_wgsl_files(&PathBuf::from(pattern), &mut files)?;
+        } else if pattern.contains('*') || pattern.contains('?') || pattern.contains('[') {
+            let paths = glob::glob(pattern)
+                .with_context(|| format!("invalid glob pattern: {pattern}"))?;
+            for entry in paths {
+                let path = entry.with_context(|| format!("error reading glob match for: {pattern}"))?;
+                if path.is_dir() {
+                    collect_wgsl_files(&path, &mut files)?;
+                } else {
+                    files.push(path);
+                }
+            }
+        } else {
+            files.push(PathBuf::from(pattern));
+        }
+    }
+
+    Ok(files)
+}
+
+/// Recursively collects all `.wgsl` files under `directory`.
+fn collect_wgsl_files(directory: &PathBuf, out: &mut Vec<PathBuf>) -> Result<(), anyhow::Error> {
+    for entry in std::fs::read_dir(directory)
+        .with_context(|| format!("failed to read directory: {}", directory.display()))?
+    {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir() {
+            collect_wgsl_files(&path, out)?;
+        } else if path.extension().is_some_and(|ext| ext == "wgsl") {
+            out.push(path);
+        }
+    }
     Ok(())
 }
 

@@ -12,6 +12,7 @@ categories = ["development-tools"]
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+glob.workspace = true
 prettydiff = { version = "0.9.0", default-features = false }
 wgsl-formatter.workspace = true
 
