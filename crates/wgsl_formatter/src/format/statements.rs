@@ -163,14 +163,16 @@ fn format_statement_rest(
             if has_newline {
                 // If `{` has content on the same line but `}` is on a new line,
                 // push the content to a new indented line for consistency.
-                if let Some(first_stmt) = statement.statements().next() {
-                    if let Some(first_tok) = first_stmt.syntax().first_token() {
-                        let on_same_line = first_tok
-                            .prev_token() // spellchecker:disable-line
-                            .is_none_or(|t| !t.text().contains('\n'));
-                        if on_same_line {
-                            indent_before(&first_tok, indentation, options);
-                        }
+                if let Some(first_tok) = statement
+                    .statements()
+                    .next()
+                    .and_then(|s| s.syntax().first_token())
+                {
+                    let on_same_line = first_tok
+                        .prev_token() // spellchecker:disable-line
+                        .is_none_or(|t| !t.text().contains('\n'));
+                    if on_same_line {
+                        indent_before(&first_tok, indentation, options);
                     }
                 }
 
@@ -269,13 +271,14 @@ fn fix_comment_indentation(
             }
             // Only fix comments that start on their own line (preceded by
             // whitespace containing a newline).
-            if let Some(prev) = token.prev_token() { // spellchecker:disable-line
-                if prev.kind().is_whitespace() && prev.text().contains('\n') {
-                    let expected =
-                        format!("\n{}", options.indent_symbol.repeat(indentation));
-                    if prev.text() != expected {
-                        replace_token_with(&prev, create_whitespace(&expected));
-                    }
+            if let Some(preceding) = token.prev_token() // spellchecker:disable-line
+                && preceding.kind().is_whitespace()
+                && preceding.text().contains('\n')
+            {
+                let expected =
+                    format!("\n{}", options.indent_symbol.repeat(indentation));
+                if preceding.text() != expected {
+                    replace_token_with(&preceding, create_whitespace(&expected));
                 }
             }
         }

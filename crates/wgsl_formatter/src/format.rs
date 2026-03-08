@@ -62,22 +62,21 @@ pub(crate) fn format_syntax_node(
         if matches!(
             parent_kind,
             SyntaxKind::SourceFile | SyntaxKind::CompoundStatement | SyntaxKind::SwitchBody
-        ) {
-            if let Some(start) = syntax.first_token() {
-                let mut tok = start.prev_token(); // spellchecker:disable-line
-                while let Some(current) = tok {
-                    if !current.kind().is_trivia() {
-                        break;
-                    }
-                    if let Some(n) = n_newlines_in_whitespace(&current) {
-                        if n > 2 {
-                            let text = current.text();
-                            let clamped = clamp_newlines(text, 2);
-                            replace_token_with(&current, create_whitespace(&clamped));
-                        }
-                    }
-                    tok = current.prev_token(); // spellchecker:disable-line
+        ) && let Some(start) = syntax.first_token()
+        {
+            let mut tok = start.prev_token(); // spellchecker:disable-line
+            while let Some(current) = tok {
+                if !current.kind().is_trivia() {
+                    break;
                 }
+                if let Some(n) = n_newlines_in_whitespace(&current)
+                    && n > 2
+                {
+                    let text = current.text();
+                    let clamped = clamp_newlines(text, 2);
+                    replace_token_with(&current, create_whitespace(&clamped));
+                }
+                tok = current.prev_token(); // spellchecker:disable-line
             }
         }
     }

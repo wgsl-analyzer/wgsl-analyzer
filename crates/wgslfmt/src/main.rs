@@ -72,8 +72,7 @@ fn main() -> Result<(), anyhow::Error> {
             for diagnostic in errors {
                 let start = line_index.line_col(diagnostic.range.start());
                 eprintln!(
-                    "  {}:{}:{}: {}",
-                    label,
+                    "  {label}:{}:{}: {}",
                     start.line + 1,
                     start.col + 1,
                     diagnostic.message
