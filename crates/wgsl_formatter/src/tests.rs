@@ -589,3 +589,236 @@ fn format_param_comment_before_comma() {
         expect![["fn main(a: f32/* comment */, b: f32) {}"]],
     );
 }
+
+// ── Edge-case tests ──
+
+#[test]
+fn format_all_compound_assignment_operators() {
+    check(
+        "fn main() { x+=1; y-=2; z*=3; w/=4; a%=5; b&=6; c|=7; d^=8; }",
+        expect![["fn main() { x += 1; y -= 2; z *= 3; w /= 4; a %= 5; b &= 6; c |= 7; d ^= 8; }"]],
+    );
+}
+
+#[test]
+fn format_shift_compound_assignment() {
+    check(
+        "fn main() { x<<=1u; y>>=2u; }",
+        expect![["fn main() { x <<= 1u; y >>= 2u; }"]],
+    );
+}
+
+#[test]
+fn format_override_declarations() {
+    check("override x:u32=64;", expect![["override x: u32 = 64;"]]);
+}
+
+#[test]
+fn format_override_no_value() {
+    check("override y  :  f32;", expect![["override y: f32;"]]);
+}
+
+#[test]
+fn format_const_declaration() {
+    check("const PI:f32=3.14;", expect![["const PI: f32 = 3.14;"]]);
+}
+
+#[test]
+fn format_type_alias_spacing() {
+    check(
+        "alias Mat4=mat4x4<f32>;",
+        expect![["alias Mat4 = mat4x4<f32>;"]],
+    );
+}
+
+#[test]
+fn format_global_var_uniform() {
+    check(
+        "var<uniform>camera:Camera;",
+        expect![["var<uniform>camera: Camera;"]],
+    );
+}
+
+#[test]
+fn format_nested_function_calls() {
+    check(
+        "fn main() { let x=min(max(a,b),clamp(c,0.0,1.0)); }",
+        expect![["fn main() { let x = min(max(a, b), clamp(c, 0.0, 1.0)); }"]],
+    );
+}
+
+#[test]
+fn format_parenthesized_expression() {
+    check(
+        "fn main() { let x=(a+b)*(c+d); }",
+        expect![["fn main() { let x = (a + b) * (c + d); }"]],
+    );
+}
+
+#[test]
+fn format_nested_templates() {
+    check(
+        "fn main() { let x:array<vec3<f32>,4>=array<vec3<f32>,4>(); }",
+        expect![["fn main() { let x: array<vec3<f32>,4> = array<vec3<f32>,4>(); }"]],
+    );
+}
+
+#[test]
+fn format_if_else_chain_single_line() {
+    check(
+        "fn main() { if(x<0){return -1;}else if(x>0){return 1;}else{return 0;} }",
+        expect![["fn main() { if x < 0 {return -1;} else if x > 0 {return 1;} else {return 0;} }"]],
+    );
+}
+
+#[test]
+fn format_while_paren_removal() {
+    check(
+        "fn main() { while(i<10){i+=1;} }",
+        expect![["fn main() { while i < 10 {i += 1;} }"]],
+    );
+}
+
+#[test]
+fn format_for_no_spaces() {
+    check(
+        "fn main() { for(var i=0u;i<10u;i+=1u){} }",
+        expect![["fn main() { for (var i = 0u; i < 10u; i += 1u) {} }"]],
+    );
+}
+
+#[test]
+fn format_empty_struct() {
+    check("struct Empty {}", expect![["struct Empty {}"]]);
+}
+
+#[test]
+fn format_struct_trailing_semicolon() {
+    check(
+        "
+struct A {
+    x: f32,
+};",
+        expect![["
+            struct A {
+                x: f32,
+            };"]],
+    );
+}
+
+#[test]
+fn format_struct_member_bad_spacing() {
+    check(
+        "
+struct S {
+    x  :  f32  ,
+    y  :  u32  ,
+}",
+        expect![["
+            struct S {
+                x: f32  ,
+                y: u32  ,
+            }"]],
+    );
+}
+
+#[test]
+fn format_deeply_nested() {
+    check(
+        "
+fn main() {
+    if true {
+        if true {
+            for(var i=0;i<10;i+=1) {
+                let x=1;
+            }
+        }
+    }
+}",
+        expect![["
+            fn main() {
+                if true {
+                    if true {
+                        for (var i = 0; i < 10; i += 1) {
+                            let x = 1;
+                        }
+                    }
+                }
+            }"]],
+    );
+}
+
+#[test]
+fn format_pointer_params() {
+    check(
+        "fn inc(p:ptr<function,f32>) { *p=*p+1.0; }",
+        expect![["fn inc(p: ptr<function,f32>) { *p = *p + 1.0; }"]],
+    );
+}
+
+#[test]
+fn format_return_expression() {
+    check(
+        "fn main() -> f32 { return  x+y; }",
+        expect![["fn main() -> f32 { return  x + y; }"]],
+    );
+}
+
+#[test]
+fn format_multiple_statements_blank_line() {
+    check(
+        "
+fn main() {
+    let x = 1;
+
+    let y = 2;
+
+    let z = 3;
+}",
+        expect![["
+            fn main() {
+                let x = 1;
+
+                let y = 2;
+
+                let z = 3;
+            }"]],
+    );
+}
+
+#[test]
+fn format_bitcast_nested() {
+    check(
+        "fn main() { bitcast<vec4<u32>>(bitcast<u32>(x)); }",
+        expect![["fn main() { bitcast<vec4<u32>>(bitcast<u32>(x)); }"]],
+    );
+}
+
+#[test]
+fn format_function_call_many_args() {
+    check(
+        "fn main() { foo(a,b,c,d,e,f); }",
+        expect![["fn main() { foo(a, b, c, d, e, f); }"]],
+    );
+}
+
+#[test]
+fn format_function_call_multiline_trailing_comma() {
+    check(
+        "fn main() {
+    foo(
+        a,
+        b,
+        c,
+    );
+}",
+        expect![["
+            fn main() {
+                foo(
+                    a,
+                    b,
+                    c,
+                );
+            }"]],
+    );
+}
