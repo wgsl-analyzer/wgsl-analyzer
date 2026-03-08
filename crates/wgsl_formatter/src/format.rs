@@ -255,6 +255,15 @@ pub(crate) mod tests {
         check_with_options(before, &after, &FormattingOptions::default());
     }
 
+    /// Alias for [`check`] — kept for readability in WESL-specific tests.
+    #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
+    pub(crate) fn check_wesl(
+        before: &str,
+        after: Expect,
+    ) {
+        check_with_options(before, &after, &FormattingOptions::default());
+    }
+
     #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
     pub(crate) fn check_tabs(
         before: &str,
@@ -273,7 +282,7 @@ pub(crate) mod tests {
         after: &Expect,
         options: &FormattingOptions,
     ) {
-        let syntax = syntax::parse(before.trim_start(), parser::Edition::Wgsl)
+        let syntax = syntax::parse(before.trim_start(), syntax::Edition::LATEST)
             .syntax()
             .clone_for_update();
         format_recursive(&syntax, options);
@@ -282,11 +291,12 @@ pub(crate) mod tests {
         let new = syntax.to_string();
         after.assert_eq(&new);
 
-        // Check for idempotence
-        let syntax = syntax::parse(new.trim_start(), parser::Edition::Wgsl)
+        // Check for idempotence.
+        let syntax = syntax::parse(new.trim_start(), syntax::Edition::LATEST)
             .syntax()
             .clone_for_update();
         format_recursive(&syntax, options);
+
         let new_second = syntax.to_string();
         let diff = dissimilar::diff(&new, &new_second);
         let position = panic::Location::caller();
@@ -314,6 +324,7 @@ pub(crate) mod tests {
 ",
             format_chunks(diff)
         );
+
         panic::resume_unwind(Box::new(()));
     }
 

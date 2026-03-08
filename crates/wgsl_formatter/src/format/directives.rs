@@ -3,7 +3,8 @@ use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken};
 use crate::FormattingOptions;
 use crate::util::{
     create_whitespace, is_whitespace_with_newline, n_newlines_in_whitespace, remove_if_whitespace,
-    set_whitespace_before, set_whitespace_single_after,
+    remove_whitespace_around_double_colon, set_whitespace_before, set_whitespace_single_after,
+    set_whitespace_single_before,
 };
 
 /// Formats directive and top-level nodes: source file, `enable`, `requires`,
@@ -72,16 +73,91 @@ pub(crate) fn format_directive(
                 set_whitespace_single_after(&last);
             }
         },
+        SyntaxKind::ImportStatement => format_import_statement(syntax)?,
+        SyntaxKind::ImportPath
+        | SyntaxKind::ImportPackageRelative
+        | SyntaxKind::ImportSuperRelative => format_import_path(syntax),
+        SyntaxKind::ImportCollection => format_import_collection(syntax)?,
+        SyntaxKind::ImportItem => format_import_item(syntax),
         _ => return None,
     }
     Some(())
+}
+
+/// Formats `import  package::foo::{ bar , baz };`
+/// → `import package::foo::{bar, baz};`.
+///
+/// Normalizes the space after `import` and removes whitespace around `::` tokens
+/// between the `import` keyword and the first path/collection node.
+fn format_import_statement(syntax: &SyntaxNode) -> Option<()> {
+    let first = syntax.first_token()?;
+    if first.kind() == SyntaxKind::Import {
+        set_whitespace_single_after(&first);
+    }
+    // Remove whitespace around `::` tokens that are direct children.
+    remove_whitespace_around_double_colon(syntax);
+    Some(())
+}
+
+/// Formats an `ImportPath` node: `foo :: bar` → `foo::bar`.
+fn format_import_path(syntax: &SyntaxNode) {
+    remove_whitespace_around_double_colon(syntax);
+}
+
+/// Formats an `ImportCollection` node: `{ foo , bar , baz }` → `{foo, bar, baz}`
+/// on a single line, or preserves the multi-line layout.
+fn format_import_collection(syntax: &SyntaxNode) -> Option<()> {
+    // Check if this collection spans multiple lines.
+    let is_multiline = syntax.text().to_string().contains('\n');
+
+    for child in syntax.children_with_tokens() {
+        match &child {
+            rowan::NodeOrToken::Token(token) if token.kind() == SyntaxKind::BraceLeft => {
+                if !is_multiline {
+                    // Single-line: remove space after `{`.
+                    remove_if_whitespace(&token.next_token()?);
+                }
+            },
+            rowan::NodeOrToken::Token(token) if token.kind() == SyntaxKind::BraceRight => {
+                if !is_multiline {
+                    // Single-line: remove space before `}`.
+                    remove_if_whitespace(&token.prev_token()?); // spellchecker:disable-line
+                }
+            },
+            rowan::NodeOrToken::Token(token) if token.kind() == SyntaxKind::Comma => {
+                // Remove space before comma.
+                remove_if_whitespace(&token.prev_token()?); // spellchecker:disable-line
+                // Ensure single space after comma (single-line only).
+                if !is_multiline {
+                    set_whitespace_single_after(token);
+                }
+            },
+            rowan::NodeOrToken::Token(_) | rowan::NodeOrToken::Node(_) => {},
+        }
+    }
+    // Also clean up `::` inside the collection node itself.
+    remove_whitespace_around_double_colon(syntax);
+    Some(())
+}
+
+/// Formats an `ImportItem` node: `foo  as  bar` → `foo as bar`.
+fn format_import_item(syntax: &SyntaxNode) {
+    for child in syntax.children_with_tokens() {
+        if let rowan::NodeOrToken::Token(token) = &child
+            && token.kind() == SyntaxKind::As
+        {
+            // Ensure single space before and after `as`.
+            set_whitespace_single_before(token);
+            set_whitespace_single_after(token);
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use expect_test::expect;
 
-    use crate::format::tests::{check, check_str};
+    use crate::format::tests::{check, check_str, check_wesl};
 
     #[test]
     fn format_enable_directive() {
@@ -329,5 +405,65 @@ var<uniform> params: Params;",
             "@  group ( 0 )   @  binding ( 1 ) var<uniform> data: f32;",
             expect!["@group(0) @binding(1) var<uniform> data: f32;"],
         );
+    }
+
+    // ── WESL import formatting ──────────────────────────────────────────
+
+    #[test]
+    fn format_import_simple() {
+        check_wesl("import  package::foo;", expect!["import package::foo;"]);
+    }
+
+    #[test]
+    fn format_import_path_spacing() {
+        check_wesl(
+            "import  package :: utils :: math;",
+            expect!["import package::utils::math;"],
+        );
+    }
+
+    #[test]
+    fn format_import_collection_single_line() {
+        check_wesl(
+            "import  package :: { foo , bar , baz };",
+            expect!["import package::{foo, bar, baz};"],
+        );
+    }
+
+    #[test]
+    fn format_import_alias() {
+        check_wesl(
+            "import  foo :: bar  as  qux;",
+            expect!["import foo::bar as qux;"],
+        );
+    }
+
+    #[test]
+    fn format_import_super() {
+        check_wesl(
+            "import  super :: super :: thing;",
+            expect!["import super::super::thing;"],
+        );
+    }
+
+    #[test]
+    fn format_import_nested_collection_multiline() {
+        check_wesl(
+            "import bevy_pbr::{
+  forward_io::VertexOutput,
+  pbr_types::{PbrInput  as  PbrOutput, pbr_input_new},
+  pbr_bindings,
+};",
+            expect![[r#"import bevy_pbr::{
+  forward_io::VertexOutput,
+  pbr_types::{PbrInput as PbrOutput, pbr_input_new},
+  pbr_bindings,
+};"#]],
+        );
+    }
+
+    #[test]
+    fn format_import_already_clean() {
+        check_wesl("import package::foo;", expect!["import package::foo;"]);
     }
 }

@@ -4,7 +4,10 @@ use syntax::{
 };
 
 use crate::FormattingOptions;
-use crate::util::{remove_if_whitespace, remove_token, whitespace_to_single_around};
+use crate::util::{
+    remove_if_whitespace, remove_token, remove_whitespace_around_double_colon,
+    whitespace_to_single_around,
+};
 
 /// Formats expression nodes: identifiers, function calls, infix/prefix
 /// operators, indexing, field access, parenthesized expressions, and
@@ -19,6 +22,10 @@ pub(crate) fn format_expression(
     options: &FormattingOptions,
 ) -> Option<()> {
     match syntax.kind() {
+        SyntaxKind::Path => {
+            // WESL fully qualified identifier: `foo :: bar :: baz` → `foo::bar::baz`.
+            remove_whitespace_around_double_colon(syntax);
+        },
         SyntaxKind::IdentExpression => {
             let ident_expression = ast::IdentExpression::cast(syntax.clone())?;
             super::format_template_angles(&ident_expression.template_parameters()?);
@@ -119,7 +126,7 @@ pub(crate) fn format_expression(
 mod tests {
     use expect_test::expect;
 
-    use crate::format::tests::{check, check_tabs};
+    use crate::format::tests::{check, check_tabs, check_wesl};
 
     #[test]
     fn format_function_call() {
@@ -430,6 +437,14 @@ fn main() {
         check(
             "fn a() { let x = & var_name; }",
             expect!["fn a() { let x = &var_name; }"],
+        );
+    }
+
+    #[test]
+    fn format_wesl_path_double_colon_spacing() {
+        check_wesl(
+            "fn a() { let x = foo :: bar :: baz; }",
+            expect!["fn a() { let x = foo::bar::baz; }"],
         );
     }
 }

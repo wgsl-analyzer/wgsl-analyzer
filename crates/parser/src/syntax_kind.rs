@@ -315,6 +315,12 @@ impl SyntaxKind {
                 | Self::EnableDirective
                 | Self::RequiresDirective
                 | Self::Attribute
+                | Self::ImportStatement
+                | Self::ImportPath
+                | Self::ImportCollection
+                | Self::ImportItem
+                | Self::ImportPackageRelative
+                | Self::ImportSuperRelative
         )
     }
 

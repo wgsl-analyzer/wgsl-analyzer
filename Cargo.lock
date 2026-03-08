@@ -2090,7 +2090,6 @@ version = "0.0.0"
 dependencies = [
  "dissimilar",
  "expect-test",
- "parser",
  "rowan",
  "serde",
  "syntax",
@@ -2115,8 +2114,8 @@ dependencies = [
  "clap",
  "glob",
  "line-index",
- "parser",
  "prettydiff",
+ "syntax",
  "wgsl-formatter",
 ]
 

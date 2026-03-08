@@ -238,3 +238,21 @@ pub(crate) fn indent_before(
         create_whitespace(&format!("\n{}", options.indent_symbol.repeat(indent_level)));
     set_whitespace_before(token, whitespace)
 }
+
+/// Removes whitespace before and after all `::` tokens that are direct children
+/// of the given node.
+pub(crate) fn remove_whitespace_around_double_colon(syntax: &SyntaxNode) {
+    for child in syntax.children_with_tokens() {
+        if let rowan::NodeOrToken::Token(token) = &child
+            && token.kind() == SyntaxKind::DoubleColon
+        {
+            if let Some(preceding) = token.prev_token() {
+                // spellchecker:disable-line
+                remove_if_whitespace(&preceding);
+            }
+            if let Some(following) = token.next_token() {
+                remove_if_whitespace(&following);
+            }
+        }
+    }
+}

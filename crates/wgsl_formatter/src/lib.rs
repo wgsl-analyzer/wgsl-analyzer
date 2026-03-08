@@ -18,17 +18,17 @@ mod util;
 use rowan::WalkEvent;
 use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast};
 
-/// Formats a WGSL source string and returns the formatted result.
+/// Formats a WGSL/WESL source string and returns the formatted result.
 ///
-/// This is the main public entry point. It parses the input, applies formatting
-/// rules recursively, and performs file-level normalization (stripping leading
-/// blank lines and ensuring exactly one trailing newline).
+/// Parses with `Edition::LATEST` so that all syntax (including WESL
+/// extensions like imports and qualified paths) is recognized and
+/// formatted correctly regardless of file extension.
 #[must_use]
 pub fn format_str(
     input: &str,
     options: &FormattingOptions,
 ) -> String {
-    let parse = parser::parse_file(input);
+    let parse = syntax::parse(input, syntax::Edition::LATEST);
     let node = parse.syntax().clone_for_update();
     format_recursive(&node, options);
     let mut result = node.to_string();

@@ -39,7 +39,7 @@ fn main() -> Result<(), anyhow::Error> {
     let files = resolve_patterns(&cli.patterns)?;
 
     if files.is_empty() {
-        bail!("no .wgsl files found matching the given patterns");
+        bail!("no .wgsl/.wesl files found matching the given patterns");
     }
 
     let mut formatting_options = FormattingOptions::default();
@@ -58,8 +58,21 @@ fn main() -> Result<(), anyhow::Error> {
             std::fs::read_to_string(file)?
         };
 
+        // Detect edition from file extension for diagnostics.
+        // The formatter always parses with Edition::LATEST so all syntax
+        // (including WESL extensions) is recognized regardless.
+        let edition = if !is_stdin
+            && file
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("wesl"))
+        {
+            syntax::Edition::Wesl2025Unstable
+        } else {
+            syntax::Edition::Wgsl
+        };
+
         // Check for parse errors and warn (but still format).
-        let parse = parser::parse_file(&input);
+        let parse = syntax::parse(&input, edition);
         let errors = parse.errors();
         if !errors.is_empty() {
             let label = if is_stdin {
@@ -155,7 +168,7 @@ fn resolve_patterns(patterns: &[String]) -> Result<Vec<PathBuf>, anyhow::Error> 
     Ok(files)
 }
 
-/// Recursively collects all `.wgsl` files under `directory`.
+/// Recursively collects all `.wgsl` and `.wesl` files under `directory`.
 fn collect_wgsl_files(
     directory: &PathBuf,
     out: &mut Vec<PathBuf>,
@@ -167,7 +180,10 @@ fn collect_wgsl_files(
         let path = entry.path();
         if path.is_dir() {
             collect_wgsl_files(&path, out)?;
-        } else if path.extension().is_some_and(|ext| ext == "wgsl") {
+        } else if path
+            .extension()
+            .is_some_and(|ext| ext == "wgsl" || ext == "wesl")
+        {
             out.push(path);
         }
     }
