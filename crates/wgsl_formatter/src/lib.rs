@@ -479,11 +479,19 @@ fn format_syntax_node(
             }
         },
         SyntaxKind::ReturnStatement => {
-            // Collapse multiple spaces after `return` to a single space.
+            // Collapse multiple spaces after `return` to a single space,
+            // but only when there is a return expression (not bare `return;`).
             let first_token = syntax.first_token()?;
             if first_token.kind() == SyntaxKind::Return {
-                set_whitespace_single_after(&first_token);
+                let next = first_token.next_token()?;
+                if next.kind() != SyntaxKind::Semicolon {
+                    set_whitespace_single_after(&first_token);
+                }
             }
+        },
+        SyntaxKind::PhonyAssignmentStatement => {
+            let statement = ast::PhonyAssignmentStatement::cast(syntax)?;
+            whitespace_to_single_around(&statement.equal_token()?);
         },
         _ => {
             if let Some(r#type) = ast::TypeSpecifier::cast(syntax) {

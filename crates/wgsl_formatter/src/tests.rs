@@ -999,3 +999,21 @@ fn format_attr_space_before_override() {
         expect![["@id(1) override threads: u32 = 64;"]],
     );
 }
+
+#[test]
+fn format_phony_assignment_spacing() {
+    check("fn main() { _=2; }", expect![["fn main() { _ = 2; }"]]);
+}
+
+#[test]
+fn format_bare_return_no_space() {
+    check("fn main() { return; }", expect![["fn main() { return; }"]]);
+}
+
+#[test]
+fn format_return_with_expr_spacing() {
+    check(
+        "fn main() { return  42; }",
+        expect![["fn main() { return 42; }"]],
+    );
+}
