@@ -1017,3 +1017,25 @@ fn format_return_with_expr_spacing() {
         expect![["fn main() { return 42; }"]],
     );
 }
+
+#[test]
+fn format_nested_blocks() {
+    check(
+        "
+fn nested() {
+    {
+        {
+            var x = 1;
+        }
+    }
+}",
+        expect![["
+            fn nested() {
+                {
+                    {
+                        var x = 1;
+                    }
+                }
+            }"]],
+    );
+}

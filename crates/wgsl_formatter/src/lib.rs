@@ -133,12 +133,20 @@ fn format_syntax_node(
         let n_newlines = n_newlines_in_whitespace(&start.prev_token()?).unwrap_or(0); // spellchecker:disable-line
 
         if n_newlines > 0 {
+            // If this node is itself an indent-kind (e.g. a nested CompoundStatement),
+            // its first token (the opening `{`) should be at the parent's content level,
+            // not the bumped level. Subtract 1 to compensate for the early increment.
+            let indent = if is_indent_kind(&syntax) {
+                indentation.saturating_sub(1)
+            } else {
+                indentation
+            };
             set_whitespace_before(
                 &syntax.first_token()?,
                 create_whitespace(&format!(
                     "{}{}",
                     "\n".repeat(n_newlines),
-                    options.indent_symbol.repeat(indentation)
+                    options.indent_symbol.repeat(indent)
                 )),
             );
         }
