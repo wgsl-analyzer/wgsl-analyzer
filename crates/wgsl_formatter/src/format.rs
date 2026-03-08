@@ -304,7 +304,10 @@ pub(crate) fn format_syntax_node(
                         options.indent_symbol.repeat(indentation.saturating_sub(1))
                     )),
                 );
-            } else if l_brace.next_token() != Some(r_brace.clone()) {
+            } else if statement.statements().next().is_none() {
+                // Empty block: collapse to `{}`
+                remove_if_whitespace(&l_brace.next_token()?);
+            } else {
                 // Single-line block: ensure single space after `{` and before `}`
                 set_whitespace_single_after(&l_brace);
                 set_whitespace_single_before(&r_brace);

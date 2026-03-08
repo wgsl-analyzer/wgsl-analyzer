@@ -1379,3 +1379,405 @@ fn format_struct_member_with_builtin_attribute() {
             }"#]],
     );
 }
+
+
+// ============================================================
+// Index expressions
+// ============================================================
+
+#[test]
+fn format_index_expression_no_spaces() {
+    check(
+        "fn a() { let x = arr[0]; }",
+        expect!["fn a() { let x = arr[0]; }"],
+    );
+}
+
+#[test]
+fn format_index_expression_extra_spaces() {
+    check(
+        "fn a() { let x = arr  [  0  ]; }",
+        expect!["fn a() { let x = arr  [  0  ]; }"],
+    );
+}
+
+#[test]
+fn format_index_expression_nested() {
+    check(
+        "fn a() { let x = arr [ 0 ] [ 1 ]; }",
+        expect!["fn a() { let x = arr [ 0 ] [ 1 ]; }"],
+    );
+}
+
+// ============================================================
+// Field expressions
+// ============================================================
+
+#[test]
+fn format_field_expression_no_spaces() {
+    check(
+        "fn a() { let x = v.x; }",
+        expect!["fn a() { let x = v.x; }"],
+    );
+}
+
+#[test]
+fn format_field_expression_extra_spaces() {
+    check(
+        "fn a() { let x = v . x; }",
+        expect!["fn a() { let x = v . x; }"],
+    );
+}
+
+#[test]
+fn format_field_expression_chained() {
+    check(
+        "fn a() { let x = obj . field . nested; }",
+        expect!["fn a() { let x = obj . field . nested; }"],
+    );
+}
+
+#[test]
+fn format_field_and_index_chained() {
+    check(
+        "fn a() { let x = obj . field [ 0 ] . nested; }",
+        expect!["fn a() { let x = obj . field [ 0 ] . nested; }"],
+    );
+}
+
+// ============================================================
+// Prefix expressions
+// ============================================================
+
+#[test]
+fn format_prefix_negate() {
+    check(
+        "fn a() { let x = - y; }",
+        expect!["fn a() { let x = - y; }"],
+    );
+}
+
+#[test]
+fn format_prefix_not() {
+    check(
+        "fn a() { let x = ! condition; }",
+        expect!["fn a() { let x = ! condition; }"],
+    );
+}
+
+#[test]
+fn format_prefix_deref() {
+    check(
+        "fn a() { let x = * ptr; }",
+        expect!["fn a() { let x = * ptr; }"],
+    );
+}
+
+#[test]
+fn format_prefix_address_of() {
+    check(
+        "fn a() { let x = & var_name; }",
+        expect!["fn a() { let x = & var_name; }"],
+    );
+}
+
+// ============================================================
+// Enable/requires directives
+// ============================================================
+
+#[test]
+fn format_enable_directive() {
+    check(
+        "enable  f16;
+fn a() {}",
+        expect![[r#"
+            enable  f16;
+            fn a() {}"#]],
+    );
+}
+
+#[test]
+fn format_requires_directive() {
+    check(
+        "requires  unrestricted_pointer_parameters;
+fn a() {}",
+        expect![[r#"
+            requires  unrestricted_pointer_parameters;
+            fn a() {}"#]],
+    );
+}
+
+// ============================================================
+// Comments in various positions
+// ============================================================
+
+#[test]
+fn format_comment_after_fn_header() {
+    check(
+        "fn a() { // comment
+    let x = 1;
+}",
+        expect![[r#"
+            fn a() { // comment
+                let x = 1; }"#]],
+    );
+}
+
+#[test]
+fn format_comment_between_statements() {
+    check(
+        "fn a() {
+    let x = 1;
+    // comment
+    let y = 2;
+}",
+        expect![[r#"
+            fn a() {
+                let x = 1;
+                // comment
+                let y = 2;
+            }"#]],
+    );
+}
+
+#[test]
+fn format_block_comment_inline() {
+    check(
+        "fn a() { let x = /* comment */ 1; }",
+        expect!["fn a() { let x = /* comment */ 1; }"],
+    );
+}
+
+#[test]
+fn format_comment_after_struct_member() {
+    check(
+        "struct A {
+    x: i32, // x coord
+    y: i32, // y coord
+}",
+        expect![[r#"
+            struct A {
+                x: i32, // x coord
+                y: i32, // y coord
+            }"#]],
+    );
+}
+
+#[test]
+fn format_comment_before_closing_brace() {
+    check(
+        "fn a() {
+    let x = 1;
+    // trailing comment
+}",
+        expect![[r#"
+            fn a() {
+                let x = 1;
+                // trailing comment
+            }"#]],
+    );
+}
+
+// ============================================================
+// Nested control flow combinations
+// ============================================================
+
+#[test]
+fn format_if_inside_for() {
+    check(
+        "fn a() {
+for(var i: u32 = 0u;i < 10u;i += 1u){
+if(i > 5u){
+break;
+}
+}
+}",
+        expect![[r#"
+            fn a() {
+                for (var i: u32 = 0u; i < 10u; i += 1u) {
+                    if i > 5u {
+                        break;
+                    }
+                }
+            }"#]],
+    );
+}
+
+#[test]
+fn format_while_inside_if() {
+    check(
+        "fn a() {
+if(true){
+while(x < 10){
+x += 1;
+}
+}
+}",
+        expect![[r#"
+            fn a() {
+                if true {
+                    while x < 10 {
+                        x += 1;
+                    }
+                }
+            }"#]],
+    );
+}
+
+// ============================================================
+// Switch with multiple case selectors
+// ============================================================
+
+#[test]
+fn format_switch_multiple_selectors() {
+    check(
+        "fn a() {
+switch(x){
+case 1,2,3:{
+y = 1;
+}
+default:{
+y = 0;
+}
+}
+}",
+        expect![[r#"
+            fn a() {
+                switch (x) {
+                    case 1,2,3: {
+                        y = 1;
+                    }
+                    default: {
+                        y = 0;
+                    }
+            }
+            }"#]],
+    );
+}
+
+// ============================================================
+// Complex attribute combinations
+// ============================================================
+
+#[test]
+fn format_multiple_attributes_on_var() {
+    check(
+        "@group(0)@binding(1)var<uniform>  params:  Params;",
+        expect!["@group(0) @binding(1) var<uniform> params: Params;"],
+    );
+}
+
+#[test]
+fn format_attribute_on_fn_with_return() {
+    check(
+        "@vertex fn  main(  )  ->  @builtin(position)  vec4<f32>  { return vec4<f32>(0.0); }",
+        expect!["@vertex fn main() -> @builtin(position) vec4<f32> { return vec4<f32>(0.0); }"],
+    );
+}
+
+// ============================================================
+// Empty blocks in various contexts
+// ============================================================
+
+#[test]
+fn format_empty_if_body() {
+    check(
+        "fn a() { if true {    } }",
+        expect!["fn a() { if true {} }"],
+    );
+}
+
+#[test]
+fn format_empty_else_body() {
+    check(
+        "fn a() { if true { x = 1; } else {    } }",
+        expect!["fn a() { if true { x = 1; } else {} }"],
+    );
+}
+
+#[test]
+fn format_empty_for_body() {
+    check(
+        "fn a() { for (var i: u32 = 0u; i < 10u; i += 1u) {    } }",
+        expect!["fn a() { for (var i: u32 = 0u; i < 10u; i += 1u) {} }"],
+    );
+}
+
+#[test]
+fn format_empty_while_body() {
+    check(
+        "fn a() { while true {    } }",
+        expect!["fn a() { while true {} }"],
+    );
+}
+
+// ============================================================
+// Miscellaneous edge cases
+// ============================================================
+
+#[test]
+fn format_discard_statement() {
+    check(
+        "fn a() {
+discard;
+}",
+        expect![[r#"
+            fn a() {
+                discard;
+            }"#]],
+    );
+}
+
+#[test]
+fn format_continue_statement() {
+    check(
+        "fn a() {
+loop {
+continue;
+}
+}",
+        expect![[r#"
+            fn a() {
+                loop {
+                    continue;
+                }
+            }"#]],
+    );
+}
+
+#[test]
+fn format_multiple_attributes_on_struct_member() {
+    check(
+        "struct V {
+@location(0)@interpolate(flat)color:  vec4<f32>,
+}",
+        expect![[r#"
+            struct V {
+                @location(0) @interpolate(flat) color: vec4<f32>,
+            }"#]],
+    );
+}
+
+#[test]
+fn format_nested_function_call_in_assignment() {
+    check(
+        "fn a() { x  =  foo(  bar(  1  ,  2  )  ,  3  ); }",
+        expect!["fn a() { x = foo(bar(1, 2), 3); }"],
+    );
+}
+
+#[test]
+fn format_let_without_type_annotation() {
+    check(
+        "fn a() { let   x   =   1; }",
+        expect!["fn a() { let x = 1; }"],
+    );
+}
+
+#[test]
+fn format_var_without_initializer() {
+    check(
+        "fn a() { var   x  :  u32; }",
+        expect!["fn a() { var x: u32; }"],
+    );
+}
