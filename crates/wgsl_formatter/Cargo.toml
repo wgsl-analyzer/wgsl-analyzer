@@ -8,7 +8,6 @@ repository.workspace = true
 license.workspace = true
 
 [dependencies]
-parser.workspace = true
 rowan = "0.16.1"
 serde = { workspace = true, optional = true }
 syntax.workspace = true
