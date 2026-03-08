@@ -338,6 +338,16 @@ fn format_syntax_node(
                     .first_token()?
                     .prev_token()?, // spellchecker:disable-line
             );
+            // Remove whitespace before the semicolons separating for-header parts.
+            // The semicolons are direct children of ForStatement, after ForInit and
+            // ForCondition.
+            for child in for_statement.syntax().children_with_tokens() {
+                if let Some(t) = child.as_token() {
+                    if t.kind() == SyntaxKind::Semicolon {
+                        remove_if_whitespace(&t.prev_token()?); // spellchecker:disable-line
+                    }
+                }
+            }
             set_whitespace_single_before(&for_statement.condition()?.syntax().first_token()?);
             set_whitespace_single_before(&for_statement.continuing_part()?.syntax().first_token()?);
             // The whitespace before ')' is a sibling of ForContinuingPart in

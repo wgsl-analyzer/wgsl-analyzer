@@ -1070,3 +1070,11 @@ fn format_increment_decrement() {
         expect![["fn a() { var x = 0; x++; x--; }"]],
     );
 }
+
+#[test]
+fn format_for_semicolon_spacing() {
+    check(
+        "fn a() { for (var i: u32 = 0u   ; i < 10u   ; i += 1u) { x += 1.0; } }",
+        expect![["fn a() { for (var i: u32 = 0u; i < 10u; i += 1u) { x += 1.0; } }"]],
+    );
+}
