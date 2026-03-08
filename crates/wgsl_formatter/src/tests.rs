@@ -1,2 +1,2 @@
-mod smoke_tests;
-mod snapshots;
+mod descriptive;
+mod normative;
