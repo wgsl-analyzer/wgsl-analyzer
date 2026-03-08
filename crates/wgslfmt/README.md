@@ -38,6 +38,9 @@ wgslfmt --check .
 # Use tabs instead of spaces
 wgslfmt --tabs .
 
+# Use 2-space indentation
+wgslfmt --indent-width 2 .
+
 # JSON output for scripting (single JSON object with all results)
 wgslfmt --output-format json --check .
 ```

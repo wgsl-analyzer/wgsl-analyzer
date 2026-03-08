@@ -25,8 +25,12 @@ struct Args {
     check: bool,
 
     /// Use tabs for indentation (instead of spaces).
-    #[arg(long)]
+    #[arg(long, conflicts_with = "indent_width")]
     tabs: bool,
+
+    /// Number of spaces per indentation level (default: 4).
+    #[arg(long, value_name = "N", conflicts_with = "tabs")]
+    indent_width: Option<usize>,
 
     /// Output format. "text" (default) prints human-readable output.
     /// "json" emits a single JSON object with all results.
@@ -83,6 +87,8 @@ fn main() -> Result<(), anyhow::Error> {
     let mut formatting_options = FormattingOptions::default();
     if cli.tabs {
         "\t".clone_into(&mut formatting_options.indent_symbol);
+    } else if let Some(width) = cli.indent_width {
+        formatting_options.indent_symbol = " ".repeat(width);
     }
 
     let json_mode = matches!(cli.output_format, OutputFormat::Json);
