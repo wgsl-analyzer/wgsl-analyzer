@@ -213,15 +213,20 @@ fn format_syntax_node(
             let body = r#struct.body()?;
             let l_brace = body.left_brace_token()?;
             let r_brace = body.right_brace_token()?;
-            let mut fields = body.fields();
-            // indent opening brace
-            indent_after(&l_brace, indentation + 1, options)?;
-            if fields.next().is_none() {
-                // empty struct: no inner indentation
-                set_whitespace_before(&r_brace, create_whitespace(""));
+            // Check if the struct has any real fields (the parser may emit
+            // zero-width StructMember nodes for empty structs).
+            let has_fields = body
+                .fields()
+                .any(|f| f.syntax().text_range().len() > 0.into());
+            if !has_fields {
+                // empty struct: `struct Foo {}`
+                // The l_brace token is still valid. Set whitespace after it to empty.
+                set_whitespace_after(&l_brace, create_whitespace(""));
             } else {
+                // indent opening brace
+                indent_after(&l_brace, indentation + 1, options)?;
                 // indent each field line
-                for field in fields {
+                for field in body.fields() {
                     let first = field.syntax().first_token()?;
                     indent_before(&first, indentation + 1, options)?;
                 }
@@ -447,6 +452,17 @@ fn format_syntax_node(
                 tok = next;
             }
             whitespace_to_single_around(&tok);
+        },
+        SyntaxKind::IncrementDecrementStatement => {
+            // Remove whitespace before `++`/`--` (e.g. `x  ++` → `x++`)
+            for token in syntax.children_with_tokens() {
+                if let Some(t) = token.as_token() {
+                    if matches!(t.kind(), SyntaxKind::PlusPlus | SyntaxKind::MinusMinus) {
+                        remove_if_whitespace(&t.prev_token()?); // spellchecker:disable-line
+                        break;
+                    }
+                }
+            }
         },
         SyntaxKind::VariableDeclaration => {
             let statement = ast::VariableDeclaration::cast(syntax)?;

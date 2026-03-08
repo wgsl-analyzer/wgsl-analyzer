@@ -1057,3 +1057,16 @@ fn format_switch_case_spacing() {
         ]],
     );
 }
+
+#[test]
+fn format_empty_struct_extra_spaces() {
+    check("struct  Empty  {  }", expect![["struct Empty {}"]]);
+}
+
+#[test]
+fn format_increment_decrement() {
+    check(
+        "fn a() { var x = 0; x  ++; x  --; }",
+        expect![["fn a() { var x = 0; x++; x--; }"]],
+    );
+}
