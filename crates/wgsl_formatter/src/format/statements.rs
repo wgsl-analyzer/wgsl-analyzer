@@ -1132,4 +1132,55 @@ continue;
             }"#]],
         );
     }
+
+    #[test]
+    fn format_blank_line_before_comment_preserved() {
+        check(
+            "
+fn main() {
+    var x = 1;
+
+    // comment after blank line
+    var y = 2;
+
+    // another comment
+    var z = 3;
+}",
+            expect![[r#"
+            fn main() {
+                var x = 1;
+
+                // comment after blank line
+                var y = 2;
+
+                // another comment
+                var z = 3;
+            }"#]],
+        );
+    }
+
+    #[test]
+    fn format_else_on_new_line_preserved() {
+        check(
+            "fn main() {
+    if x < 1 { a = 1; }
+    else if x < 2 { a = 2; }
+    else { a = 3; }
+}",
+            expect![[r#"
+            fn main() {
+                if x < 1 { a = 1; }
+                else if x < 2 { a = 2; }
+                else { a = 3; }
+            }"#]],
+        );
+    }
+
+    #[test]
+    fn format_else_same_line_preserved() {
+        check(
+            "fn main() { if true { a = 1; } else { a = 2; } }",
+            expect!["fn main() { if true { a = 1; } else { a = 2; } }"],
+        );
+    }
 }

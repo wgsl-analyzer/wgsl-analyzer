@@ -504,4 +504,30 @@ fn main() {
             expect!["fn a() { let x = foo::bar::baz; }"],
         );
     }
+
+    #[test]
+    fn format_multiline_infix_preserved() {
+        check(
+            "
+fn main() {
+    let p = a
+        + b
+        + c;
+}",
+            expect![[r#"
+            fn main() {
+                let p = a
+                    + b
+                    + c;
+            }"#]],
+        );
+    }
+
+    #[test]
+    fn format_single_line_infix_stays_single() {
+        check(
+            "fn main() { let x = a+b+c; }",
+            expect!["fn main() { let x = a + b + c; }"],
+        );
+    }
 }
