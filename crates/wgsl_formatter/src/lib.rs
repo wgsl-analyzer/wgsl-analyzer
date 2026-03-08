@@ -472,6 +472,12 @@ fn format_syntax_node(
                 set_whitespace_single_after(&first_token);
             }
         },
+        SyntaxKind::Attribute => {
+            // Ensure a space after each attribute (e.g. `@vertex fn`, `@group(0) @binding(1)`)
+            if let Some(last) = syntax.last_token() {
+                set_whitespace_single_after(&last);
+            }
+        },
         SyntaxKind::ReturnStatement => {
             // Collapse multiple spaces after `return` to a single space.
             let first_token = syntax.first_token()?;

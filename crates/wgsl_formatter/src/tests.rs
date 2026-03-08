@@ -959,3 +959,43 @@ fn format_var_template_no_space_before_angle() {
         expect![["var<uniform> camera: Camera;"]],
     );
 }
+
+#[test]
+fn format_attr_space_between_attrs() {
+    check(
+        "@group(0)@binding(1) var<storage> data: array<f32>;",
+        expect![["@group(0) @binding(1) var<storage> data: array<f32>;"]],
+    );
+}
+
+#[test]
+fn format_attr_space_before_fn() {
+    check(
+        "@vertex fn vs() -> vec4<f32> { return vec4<f32>(0.0); }",
+        expect![["@vertex fn vs() -> vec4<f32> { return vec4<f32>(0.0); }"]],
+    );
+}
+
+#[test]
+fn format_attr_space_before_fn_paren() {
+    check(
+        "@compute @workgroup_size(64)fn cs_main() {}",
+        expect![["@compute @workgroup_size(64) fn cs_main() {}"]],
+    );
+}
+
+#[test]
+fn format_attr_space_before_type() {
+    check(
+        "fn vs() -> @builtin(position)vec4<f32> { return vec4<f32>(0.0); }",
+        expect![["fn vs() -> @builtin(position) vec4<f32> { return vec4<f32>(0.0); }"]],
+    );
+}
+
+#[test]
+fn format_attr_space_before_override() {
+    check(
+        "@id(1)override threads: u32 = 64;",
+        expect![["@id(1) override threads: u32 = 64;"]],
+    );
+}
