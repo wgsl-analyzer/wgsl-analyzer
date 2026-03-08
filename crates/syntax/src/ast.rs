@@ -811,6 +811,8 @@ ast_node! {
 
 ast_node! {
     SwitchBody:
+    left_brace_token: Option<SyntaxToken BraceLeft>;
+    right_brace_token: Option<SyntaxToken BraceRight>;
     cases: AstChildren<SwitchBodyCase>;
 }
 

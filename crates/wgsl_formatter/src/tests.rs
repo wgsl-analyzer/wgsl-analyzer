@@ -862,7 +862,7 @@ fn format_const_assert_spacing() {
 fn format_switch_spacing() {
     check(
         "fn main() { switch(x){ case 0u:{return 0u;} default:{return 1u;} } }",
-        expect!["fn main() { switch (x) { case 0u: { return 0u; } default: { return 1u; } } }"],
+        expect!["fn main() { switch x { case 0u: { return 0u; } default: { return 1u; } } }"],
     );
 }
 
@@ -906,7 +906,7 @@ fn main() {
 }",
         expect![[r#"
             fn main() {
-                switch (x) {
+                switch x {
                     case 0u: {
                         return 0u;
                     }
@@ -1380,7 +1380,6 @@ fn format_struct_member_with_builtin_attribute() {
     );
 }
 
-
 // ============================================================
 // Index expressions
 // ============================================================
@@ -1519,7 +1518,8 @@ fn format_comment_after_fn_header() {
 }",
         expect![[r#"
             fn a() { // comment
-                let x = 1; }"#]],
+                let x = 1;
+            }"#]],
     );
 }
 
@@ -1643,14 +1643,14 @@ y = 0;
 }",
         expect![[r#"
             fn a() {
-                switch (x) {
-                    case 1,2,3: {
+                switch x {
+                    case 1, 2, 3: {
                         y = 1;
                     }
                     default: {
                         y = 0;
                     }
-            }
+                }
             }"#]],
     );
 }

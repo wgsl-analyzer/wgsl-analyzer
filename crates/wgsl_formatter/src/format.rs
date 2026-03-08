@@ -201,10 +201,21 @@ pub(crate) fn format_syntax_node(
             if first_token.kind() == SyntaxKind::Switch {
                 set_whitespace_single_after(&first_token);
             }
-            // Space before the opening brace of SwitchBody
+            // Space before the opening brace of SwitchBody and indent closing brace
             if let Some(body) = switch_statement.block() {
-                let l_brace = body.syntax().first_token()?;
+                let l_brace = body.left_brace_token()?;
+                let r_brace = body.right_brace_token()?;
                 set_whitespace_single_before(&l_brace);
+
+                if is_whitespace_with_newline(&l_brace.next_token()?) {
+                    set_whitespace_before(
+                        &r_brace,
+                        create_whitespace(&format!(
+                            "\n{}",
+                            options.indent_symbol.repeat(indentation)
+                        )),
+                    );
+                }
             }
         },
         SyntaxKind::LoopStatement => {
@@ -256,6 +267,17 @@ pub(crate) fn format_syntax_node(
                     break;
                 }
             }
+            // Ensure spaces after commas in case selectors
+            if let Some(selectors) = case.selectors() {
+                for token in selectors.syntax().children_with_tokens() {
+                    if let Some(tok) = token.as_token()
+                        && tok.kind() == SyntaxKind::Comma
+                    {
+                        remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
+                        set_whitespace_single_after(tok);
+                    }
+                }
+            }
             // Space before the opening brace
             if let Some(block) = case.block() {
                 set_whitespace_single_before(&block.left_brace_token()?);
@@ -294,7 +316,23 @@ pub(crate) fn format_syntax_node(
             let statement = ast::CompoundStatement::cast(syntax)?;
             let l_brace = statement.left_brace_token()?;
             let r_brace = statement.right_brace_token()?;
-            let has_newline = is_whitespace_with_newline(&l_brace.next_token()?);
+            // Check if the block is multiline by looking for any newline between braces.
+            // This handles both whitespace-with-newline and comment-then-newline cases.
+            let has_newline = {
+                let mut tok = l_brace.next_token();
+                let mut found = false;
+                while let Some(token) = tok {
+                    if token == r_brace {
+                        break;
+                    }
+                    if token.text().contains('\n') {
+                        found = true;
+                        break;
+                    }
+                    tok = token.next_token();
+                }
+                found
+            };
 
             if has_newline {
                 set_whitespace_before(
@@ -357,6 +395,7 @@ pub(crate) fn format_syntax_node(
                             | SyntaxKind::IfClause
                             | SyntaxKind::ElseIfClause
                             | SyntaxKind::BreakIfStatement
+                            | SyntaxKind::SwitchStatement
                     )
                 })
             {
