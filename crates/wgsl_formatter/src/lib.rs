@@ -5,7 +5,7 @@ mod format;
 mod util;
 
 use rowan::WalkEvent;
-use syntax::{AstNode, SyntaxKind, SyntaxNode, ast};
+use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast};
 
 #[must_use]
 pub fn format_str(
@@ -15,7 +15,20 @@ pub fn format_str(
     let parse = parser::parse_file(input);
     let node = parse.syntax().clone_for_update();
     format_recursive(&node, options);
-    node.to_string()
+    let mut result = node.to_string();
+
+    // File-level normalization: strip leading blank lines.
+    let trimmed = result.trim_start_matches(['\n', '\r']);
+    if trimmed.len() != result.len() {
+        result = trimmed.to_owned();
+    }
+
+    // Ensure exactly one trailing newline.
+    let trimmed_end = result.trim_end_matches(['\n', '\r']);
+    result.truncate(trimmed_end.len());
+    result.push('\n');
+
+    result
 }
 
 #[derive(Debug, Clone)]

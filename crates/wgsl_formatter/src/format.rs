@@ -1,5 +1,8 @@
 use rowan::NodeOrToken;
-use syntax::{AstNode, HasName as _, HasTemplateParameters as _, SyntaxKind, SyntaxNode, ast};
+use syntax::{
+    AstNode, HasName as _, HasTemplateParameters as _, SyntaxKind, SyntaxNode, ast,
+    ast::SyntaxToken,
+};
 
 use crate::FormattingOptions;
 use crate::util::{
@@ -52,13 +55,30 @@ pub(crate) fn format_syntax_node(
     }
 
     // Remove whitespace before semicolons in any statement node.
-    if let Some(last) = syntax.last_token() {
-        if last.kind() == SyntaxKind::Semicolon {
-            remove_if_whitespace(&last.prev_token()?); // spellchecker:disable-line
-        }
+    if let Some(last) = syntax.last_token()
+        && last.kind() == SyntaxKind::Semicolon
+    {
+        remove_if_whitespace(&last.prev_token()?); // spellchecker:disable-line
     }
 
     match syntax.kind() {
+        SyntaxKind::SourceFile => {
+            // Collapse multiple blank lines between top-level items to at most one.
+            for child in syntax.children() {
+                let Some(first) = child.first_token() else {
+                    continue;
+                };
+                let Some(preceding) = first.prev_token() else {
+                    continue;
+                };
+                if let Some(newline_count) = n_newlines_in_whitespace(&preceding)
+                    && newline_count > 2
+                {
+                    // Replace with exactly 2 newlines (= one blank line).
+                    set_whitespace_before(&first, create_whitespace("\n\n"));
+                }
+            }
+        },
         SyntaxKind::FunctionDeclaration => {
             let function = ast::FunctionDeclaration::cast(syntax)?;
 
@@ -94,8 +114,7 @@ pub(crate) fn format_syntax_node(
         },
         SyntaxKind::Parameter => {
             let item = ast::Parameter::cast(syntax)?;
-            remove_if_whitespace(&item.colon_token()?.prev_token()?); // spellchecker:disable-line
-            set_whitespace_single_after(&item.colon_token()?);
+            format_colon(item.colon_token().as_ref());
         },
         SyntaxKind::ReturnType => {
             let return_type = ast::ReturnType::cast(syntax)?;
@@ -116,12 +135,8 @@ pub(crate) fn format_syntax_node(
             // zero-width StructMember nodes for empty structs).
             let has_fields = body
                 .fields()
-                .any(|f| f.syntax().text_range().len() > 0.into());
-            if !has_fields {
-                // empty struct: `struct Foo {}`
-                // The l_brace token is still valid. Set whitespace after it to empty.
-                set_whitespace_after(&l_brace, create_whitespace(""));
-            } else {
+                .any(|field| field.syntax().text_range().len() > 0.into());
+            if has_fields {
                 // indent opening brace
                 indent_after(&l_brace, indentation + 1, options)?;
                 // indent each field line
@@ -131,12 +146,15 @@ pub(crate) fn format_syntax_node(
                 }
                 // closing brace on its own line
                 indent_before(&r_brace, indentation, options)?;
+            } else {
+                // empty struct: `struct Foo {}`
+                // The l_brace token is still valid. Set whitespace after it to empty.
+                set_whitespace_after(&l_brace, create_whitespace(""));
             }
         },
         SyntaxKind::StructMember => {
             let item = ast::StructMember::cast(syntax)?;
-            remove_if_whitespace(&item.colon_token()?.prev_token()?); // spellchecker:disable-line
-            set_whitespace_single_after(&item.colon_token()?);
+            format_colon(item.colon_token().as_ref());
             // Remove whitespace between the last token of the member and a following comma.
             // The comma lives in StructBody (parent), so walk from the member's last token.
             if let Some(last) = item.syntax().last_token() {
@@ -203,6 +221,25 @@ pub(crate) fn format_syntax_node(
                 set_whitespace_single_before(&block.left_brace_token()?);
             }
         },
+        SyntaxKind::BreakIfStatement => {
+            // `break if <expr>;` — ensure single space after `break` and `if`.
+            // The semicolon whitespace is already handled above.
+            let break_if = ast::BreakIfStatement::cast(syntax)?;
+            let first = break_if.syntax().first_token()?;
+            if first.kind() == SyntaxKind::Break {
+                set_whitespace_single_after(&first);
+            }
+            // Find the `if` keyword token and ensure single space around it.
+            for child in break_if.syntax().children_with_tokens() {
+                if let Some(tok) = child.as_token()
+                    && tok.kind() == SyntaxKind::If
+                {
+                    set_whitespace_single_before(tok);
+                    set_whitespace_single_after(tok);
+                    break;
+                }
+            }
+        },
         SyntaxKind::SwitchBodyCase => {
             let case = ast::SwitchBodyCase::cast(syntax)?;
             // Collapse space after `case`/`default` keyword
@@ -212,11 +249,11 @@ pub(crate) fn format_syntax_node(
             }
             // Remove space before `:`
             for token in case.syntax().children_with_tokens() {
-                if let Some(t) = token.as_token() {
-                    if t.kind() == SyntaxKind::Colon {
-                        remove_if_whitespace(&t.prev_token()?); // spellchecker:disable-line
-                        break;
-                    }
+                if let Some(tok) = token.as_token()
+                    && tok.kind() == SyntaxKind::Colon
+                {
+                    remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
+                    break;
                 }
             }
             // Space before the opening brace
@@ -240,10 +277,10 @@ pub(crate) fn format_syntax_node(
             );
             // Remove whitespace before the semicolons separating for-header parts.
             for child in for_statement.syntax().children_with_tokens() {
-                if let Some(t) = child.as_token() {
-                    if t.kind() == SyntaxKind::Semicolon {
-                        remove_if_whitespace(&t.prev_token()?); // spellchecker:disable-line
-                    }
+                if let Some(tok) = child.as_token()
+                    && tok.kind() == SyntaxKind::Semicolon
+                {
+                    remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
                 }
             }
             set_whitespace_single_before(&for_statement.condition()?.syntax().first_token()?);
@@ -267,23 +304,15 @@ pub(crate) fn format_syntax_node(
                         options.indent_symbol.repeat(indentation.saturating_sub(1))
                     )),
                 );
-            } else {
+            } else if l_brace.next_token() != Some(r_brace.clone()) {
                 // Single-line block: ensure single space after `{` and before `}`
-                if l_brace.next_token() != Some(r_brace.clone()) {
-                    set_whitespace_single_after(&l_brace);
-                    set_whitespace_single_before(&r_brace);
-                }
+                set_whitespace_single_after(&l_brace);
+                set_whitespace_single_before(&r_brace);
             }
         },
         SyntaxKind::IdentExpression => {
             let ident_expression = ast::IdentExpression::cast(syntax)?;
-
-            let template_parameters = ident_expression.template_parameters()?;
-            let left_angle = template_parameters.left_angle_token()?;
-            remove_if_whitespace(&left_angle.prev_token()?); // spellchecker:disable-line
-            remove_if_whitespace(&left_angle.next_token()?);
-            let right_angle = template_parameters.t_angle_token()?;
-            remove_if_whitespace(&right_angle.prev_token()?); // spellchecker:disable-line
+            format_template_angles(&ident_expression.template_parameters()?);
         },
         SyntaxKind::FunctionCall => {
             let function_call = ast::FunctionCall::cast(syntax)?;
@@ -321,8 +350,10 @@ pub(crate) fn format_syntax_node(
                 .is_some_and(|parent| {
                     matches!(
                         parent.kind(),
-                        |SyntaxKind::WhileStatement| SyntaxKind::IfClause
+                        SyntaxKind::WhileStatement
+                            | SyntaxKind::IfClause
                             | SyntaxKind::ElseIfClause
+                            | SyntaxKind::BreakIfStatement
                     )
                 })
             {
@@ -360,57 +391,43 @@ pub(crate) fn format_syntax_node(
         },
         SyntaxKind::IncrementDecrementStatement => {
             for token in syntax.children_with_tokens() {
-                if let Some(t) = token.as_token() {
-                    if matches!(t.kind(), SyntaxKind::PlusPlus | SyntaxKind::MinusMinus) {
-                        remove_if_whitespace(&t.prev_token()?); // spellchecker:disable-line
-                        break;
-                    }
+                if let Some(tok) = token.as_token()
+                    && matches!(tok.kind(), SyntaxKind::PlusPlus | SyntaxKind::MinusMinus)
+                {
+                    remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
+                    break;
                 }
             }
         },
         SyntaxKind::VariableDeclaration => {
             let statement = ast::VariableDeclaration::cast(syntax)?;
             if let Some(tmpl) = statement.template_parameters() {
-                if let Some(left_angle) = tmpl.left_angle_token() {
-                    remove_if_whitespace(&left_angle.prev_token()?); // spellchecker:disable-line
-                }
+                format_template_angles(&tmpl);
                 if let Some(right_angle) = tmpl.t_angle_token() {
                     set_whitespace_single_after(&right_angle);
                 }
             } else {
                 set_whitespace_single_after(&statement.var_token()?);
             }
-            if let Some(colon) = statement.colon() {
-                remove_if_whitespace(&colon.prev_token()?); // spellchecker:disable-line
-                set_whitespace_single_after(&colon);
-            }
+            format_colon(statement.colon().as_ref());
             whitespace_to_single_around(&statement.equal_token()?);
         },
         SyntaxKind::LetDeclaration => {
             let statement = ast::LetDeclaration::cast(syntax)?;
             set_whitespace_single_after(&statement.let_token()?);
-            if let Some(colon) = statement.colon() {
-                remove_if_whitespace(&colon.prev_token()?); // spellchecker:disable-line
-                set_whitespace_single_after(&colon);
-            }
+            format_colon(statement.colon().as_ref());
             whitespace_to_single_around(&statement.equal_token()?);
         },
         SyntaxKind::ConstantDeclaration => {
             let statement = ast::ConstantDeclaration::cast(syntax)?;
             set_whitespace_single_after(&statement.constant_token()?);
-            if let Some(colon) = statement.colon() {
-                remove_if_whitespace(&colon.prev_token()?); // spellchecker:disable-line
-                set_whitespace_single_after(&colon);
-            }
+            format_colon(statement.colon().as_ref());
             whitespace_to_single_around(&statement.equal_token()?);
         },
         SyntaxKind::OverrideDeclaration => {
             let statement = ast::OverrideDeclaration::cast(syntax)?;
             set_whitespace_single_after(&statement.override_token()?);
-            if let Some(colon) = statement.colon() {
-                remove_if_whitespace(&colon.prev_token()?); // spellchecker:disable-line
-                set_whitespace_single_after(&colon);
-            }
+            format_colon(statement.colon().as_ref());
             whitespace_to_single_around(&statement.equal_token()?);
         },
         SyntaxKind::TypeAliasDeclaration => {
@@ -444,17 +461,32 @@ pub(crate) fn format_syntax_node(
         },
         _ => {
             if let Some(r#type) = ast::TypeSpecifier::cast(syntax) {
-                let template_parameters = r#type.template_parameters()?;
-                let left_angle = template_parameters.left_angle_token()?;
-                remove_if_whitespace(&left_angle.prev_token()?); // spellchecker:disable-line
-                remove_if_whitespace(&left_angle.next_token()?);
-                let right_angle = template_parameters.t_angle_token()?;
-                remove_if_whitespace(&right_angle.prev_token()?); // spellchecker:disable-line
+                format_template_angles(&r#type.template_parameters()?);
             }
         },
     }
 
     None
+}
+
+/// Format a colon token: remove whitespace before, single space after.
+fn format_colon(colon: Option<&SyntaxToken>) {
+    if let Some(colon) = colon {
+        if let Some(preceding) = colon.prev_token() {
+            remove_if_whitespace(&preceding);
+        }
+        set_whitespace_single_after(colon);
+    }
+}
+
+/// Remove whitespace around template angle brackets: `foo < T >` → `foo<T>`.
+fn format_template_angles(tmpl: &ast::TemplateList) -> Option<()> {
+    let left_angle = tmpl.left_angle_token()?;
+    remove_if_whitespace(&left_angle.prev_token()?); // spellchecker:disable-line
+    remove_if_whitespace(&left_angle.next_token()?);
+    let right_angle = tmpl.t_angle_token()?;
+    remove_if_whitespace(&right_angle.prev_token()?); // spellchecker:disable-line
+    Some(())
 }
 
 fn format_parameters(

@@ -6,7 +6,7 @@ use std::panic;
 
 use expect_test::{Expect, expect};
 
-use crate::{FormattingOptions, format_recursive};
+use crate::{FormattingOptions, format_recursive, format_str};
 
 #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
 fn check(
@@ -90,6 +90,18 @@ fn format_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> String {
         buf.push_str(&formatted);
     }
     buf
+}
+
+/// Like `check`, but uses `format_str` (the public API) instead of `format_recursive`.
+/// This tests file-level transformations (leading/trailing newline normalization)
+/// that `format_recursive` alone does not perform.
+#[track_caller]
+fn check_str(
+    before: &str,
+    expected: &str,
+) {
+    let actual = format_str(before, &FormattingOptions::default());
+    assert_eq!(actual, expected, "format_str output mismatch");
 }
 
 #[test]
@@ -1085,4 +1097,285 @@ fn format_for_semicolon_spacing() {
 fn format_single_line_block_spacing() {
     check("fn a() {return 1;}", expect!["fn a() { return 1; }"]);
     check("fn b() {   break;   }", expect!["fn b() { break; }"]);
+}
+
+// ============================================================
+// File-level newline normalization
+// ============================================================
+
+#[test]
+fn format_no_newlines_at_start_of_file() {
+    // Do not use expect! here, because it trims newlines and as such obscures the test case.
+    check_str("\n\n\nfn a() {}\n", "fn a() {}\n");
+}
+
+#[test]
+fn format_one_newline_at_end_of_file_when_missing() {
+    check_str("fn a() {}", "fn a() {}\n");
+}
+
+#[test]
+fn format_one_newline_at_end_of_file_when_too_much() {
+    check_str("fn a() {}\n\n", "fn a() {}\n");
+}
+
+// ============================================================
+// Top-level item spacing
+// ============================================================
+
+#[test]
+fn format_collapse_excess_blank_lines_between_fns() {
+    check(
+        "fn a() {}
+
+
+
+fn e() {}",
+        expect![[r#"
+            fn a() {}
+
+            fn e() {}"#]],
+    );
+}
+
+#[test]
+fn format_preserve_single_blank_line_between_fns() {
+    check(
+        "fn a() {}
+
+fn b() {}",
+        expect![[r#"
+            fn a() {}
+
+            fn b() {}"#]],
+    );
+}
+
+#[test]
+fn format_collapse_excess_blank_lines_between_structs() {
+    check(
+        "struct A {
+    a: i32,
+}
+
+
+
+
+struct B {
+    b: i32,
+}",
+        expect![[r#"
+            struct A {
+                a: i32,
+            }
+
+            struct B {
+                b: i32,
+            }"#]],
+    );
+}
+
+// ============================================================
+// Break-if paren removal
+// ============================================================
+
+#[test]
+fn format_break_if_basic() {
+    check(
+        "
+        fn main() {
+        loop {
+        continuing {
+        break if false;
+        }
+        }
+        }",
+        expect![[r#"
+            fn main() {
+                loop {
+                    continuing {
+                        break if false;
+                    }
+                }
+            }"#]],
+    );
+}
+
+#[test]
+fn format_break_if_paren_removal() {
+    check(
+        "
+        fn main() {
+        loop {
+        continuing {
+        break if (false);
+        }
+        }
+        }",
+        expect![[r#"
+            fn main() {
+                loop {
+                    continuing {
+                        break if false;
+                    }
+                }
+            }"#]],
+    );
+}
+
+#[test]
+fn format_break_if_important_parens_kept() {
+    check(
+        "
+        fn main() {
+        loop {
+        continuing {
+        break if (1 + (1 + 1));
+        }
+        }
+        }",
+        expect![[r#"
+            fn main() {
+                loop {
+                    continuing {
+                        break if 1 + (1 + 1);
+                    }
+                }
+            }"#]],
+    );
+}
+
+// ============================================================
+// Break-if spacing variations
+// ============================================================
+
+#[test]
+fn format_break_if_spacing() {
+    check(
+        "
+        fn main() {
+        loop {
+        continuing {
+        break   if   false ;
+        }
+        }
+        }",
+        expect![[r#"
+            fn main() {
+                loop {
+                    continuing {
+                        break if false;
+                    }
+                }
+            }"#]],
+    );
+}
+
+#[test]
+fn format_break_if_complex_expression() {
+    check(
+        "
+        fn main() {
+        loop {
+        continuing {
+        break if x > 10 && y < 20;
+        }
+        }
+        }",
+        expect![[r#"
+            fn main() {
+                loop {
+                    continuing {
+                        break if x > 10 && y < 20;
+                    }
+                }
+            }"#]],
+    );
+}
+
+// ============================================================
+// Garbled input formatting
+// ============================================================
+
+#[test]
+fn format_garbled_struct() {
+    check(
+        "struct
+A
+{
+a
+:
+i32
+,
+b
+:
+u32
+,
+}",
+        expect![[r#"
+            struct A {
+                a: i32,
+                b: u32,
+            }"#]],
+    );
+}
+
+#[test]
+fn format_garbled_fn() {
+    check(
+        "fn
+main
+(
+)
+{
+}",
+        expect![[r#"
+            fn main(
+            ) {
+            }"#]],
+    );
+}
+
+#[test]
+fn format_garbled_fn_with_params() {
+    check(
+        "fn
+main
+(
+a
+:
+i32
+,
+b
+:
+u32
+)
+{
+}",
+        expect![[r#"
+            fn main(
+                a: i32,
+                b: u32
+            ) {
+            }"#]],
+    );
+}
+
+// ============================================================
+// Struct with attributes
+// ============================================================
+
+#[test]
+fn format_struct_member_with_builtin_attribute() {
+    check(
+        "struct VertexOutput {
+    @builtin(position) pos: vec4<f32>,
+    @location(0) color: vec4<f32>,
+}",
+        expect![[r#"
+            struct VertexOutput {
+                @builtin(position) pos: vec4<f32>,
+                @location(0) color: vec4<f32>,
+            }"#]],
+    );
 }
