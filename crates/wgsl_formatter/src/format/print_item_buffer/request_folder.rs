@@ -250,3 +250,11 @@ impl RequestFolder {
         }
     }
 }
+
+impl From<Request> for RequestFolder {
+    fn from(value: Request) -> Self {
+        Self {
+            folded_request: Some(value),
+        }
+    }
+}

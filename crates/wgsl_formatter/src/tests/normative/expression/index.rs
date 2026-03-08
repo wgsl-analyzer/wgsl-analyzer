@@ -22,7 +22,7 @@ fn format_parens_in_index_expr_are_removed() {
         ",
         expect![[r#"
             fn main() {
-                b[1+1] = 0;
+                b[1 + 1] = 0;
             }
         "#]],
     );
