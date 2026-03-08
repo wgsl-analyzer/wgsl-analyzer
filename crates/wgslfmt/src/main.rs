@@ -58,6 +58,29 @@ fn main() -> Result<(), anyhow::Error> {
             std::fs::read_to_string(file)?
         };
 
+        // Check for parse errors and warn (but still format).
+        let parse = parser::parse_file(&input);
+        let errors = parse.errors();
+        if !errors.is_empty() {
+            let label = if is_stdin {
+                "stdin".to_owned()
+            } else {
+                file.display().to_string()
+            };
+            let line_index = line_index::LineIndex::new(&input);
+            eprintln!("[warn] {label}: {count} parse error(s)", count = errors.len());
+            for diagnostic in errors {
+                let start = line_index.line_col(diagnostic.range.start());
+                eprintln!(
+                    "  {}:{}:{}: {}",
+                    label,
+                    start.line + 1,
+                    start.col + 1,
+                    diagnostic.message
+                );
+            }
+        }
+
         let file_start = Instant::now();
         let output = wgsl_formatter::format_str(&input, &formatting_options);
         let elapsed = file_start.elapsed();

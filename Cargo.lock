@@ -2114,6 +2114,8 @@ dependencies = [
  "anyhow",
  "clap",
  "glob",
+ "line-index",
+ "parser",
  "prettydiff",
  "wgsl-formatter",
 ]
