@@ -19,60 +19,10 @@ pub(crate) fn format_directive(
     options: &FormattingOptions,
 ) -> Option<()> {
     match syntax.kind() {
-        SyntaxKind::SourceFile => {
-            // Collapse multiple blank lines between top-level items to at most one.
-            for child in syntax.children() {
-                let Some(first) = child.first_token() else {
-                    continue;
-                };
-                let Some(preceding) = first.prev_token() else {
-                    continue;
-                };
-                if let Some(newline_count) = n_newlines_in_whitespace(&preceding)
-                    && newline_count > 2
-                {
-                    // Replace with exactly 2 newlines (= one blank line).
-                    set_whitespace_before(&first, create_whitespace("\n\n"));
-                }
-            }
-        },
-        SyntaxKind::EnableDirective => {
-            // `enable  f16;` → `enable f16;`
-            let first = syntax.first_token()?;
-            if first.kind() == SyntaxKind::Enable {
-                set_whitespace_single_after(&first);
-            }
-        },
-        SyntaxKind::RequiresDirective => {
-            // `requires  x;` → `requires x;`
-            let first = syntax.first_token()?;
-            if first.kind() == SyntaxKind::Requires {
-                set_whitespace_single_after(&first);
-            }
-        },
-        SyntaxKind::Attribute => {
-            let attribute = ast::Attribute::cast(syntax.clone())?;
-
-            // Remove whitespace between `@` and the attribute name.
-            if let Some(name_token) = attribute.ident_token() {
-                remove_if_whitespace(&name_token.prev_token()?); // spellchecker:disable-line
-            }
-
-            // Format arguments: remove whitespace before `(`, normalize inside.
-            if let Some(arguments) = attribute.parameters() {
-                remove_if_whitespace(&arguments.left_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
-                super::format_parameters(&arguments, indentation, options)?;
-            }
-
-            // Preserve newlines after attributes (e.g. @vertex\nfn),
-            // but ensure at least a single space when on the same line.
-            if let Some(last) = syntax.last_token()
-                && let Some(next) = last.next_token()
-                && !is_whitespace_with_newline(&next)
-            {
-                set_whitespace_single_after(&last);
-            }
-        },
+        SyntaxKind::SourceFile => format_source_file(syntax),
+        SyntaxKind::EnableDirective => format_enable_directive(syntax)?,
+        SyntaxKind::RequiresDirective => format_requires_directive(syntax)?,
+        SyntaxKind::Attribute => format_attribute(syntax, indentation, options)?,
         SyntaxKind::ImportStatement => format_import_statement(syntax)?,
         SyntaxKind::ImportPath
         | SyntaxKind::ImportPackageRelative
@@ -80,6 +30,73 @@ pub(crate) fn format_directive(
         SyntaxKind::ImportCollection => format_import_collection(syntax)?,
         SyntaxKind::ImportItem => format_import_item(syntax),
         _ => return None,
+    }
+    Some(())
+}
+
+/// Collapses multiple blank lines between top-level items to at most one.
+fn format_source_file(syntax: &SyntaxNode) {
+    for child in syntax.children() {
+        let Some(first) = child.first_token() else {
+            continue;
+        };
+        let Some(preceding) = first.prev_token() else {
+            continue;
+        };
+        if let Some(newline_count) = n_newlines_in_whitespace(&preceding)
+            && newline_count > 2
+        {
+            // Replace with exactly 2 newlines (= one blank line).
+            set_whitespace_before(&first, create_whitespace("\n\n"));
+        }
+    }
+}
+
+/// Formats `enable  f16;` → `enable f16;`.
+fn format_enable_directive(syntax: &SyntaxNode) -> Option<()> {
+    let first = syntax.first_token()?;
+    if first.kind() == SyntaxKind::Enable {
+        set_whitespace_single_after(&first);
+    }
+    Some(())
+}
+
+/// Formats `requires  x;` → `requires x;`.
+fn format_requires_directive(syntax: &SyntaxNode) -> Option<()> {
+    let first = syntax.first_token()?;
+    if first.kind() == SyntaxKind::Requires {
+        set_whitespace_single_after(&first);
+    }
+    Some(())
+}
+
+/// Formats attributes: removes whitespace between `@` and the name,
+/// normalizes argument parentheses, and ensures proper spacing after.
+fn format_attribute(
+    syntax: &SyntaxNode,
+    indentation: usize,
+    options: &FormattingOptions,
+) -> Option<()> {
+    let attribute = ast::Attribute::cast(syntax.clone())?;
+
+    // Remove whitespace between `@` and the attribute name.
+    if let Some(name_token) = attribute.ident_token() {
+        remove_if_whitespace(&name_token.prev_token()?); // spellchecker:disable-line
+    }
+
+    // Format arguments: remove whitespace before `(`, normalize inside.
+    if let Some(arguments) = attribute.parameters() {
+        remove_if_whitespace(&arguments.left_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
+        super::format_parameters(&arguments, indentation, options)?;
+    }
+
+    // Preserve newlines after attributes (e.g. @vertex\nfn),
+    // but ensure at least a single space when on the same line.
+    if let Some(last) = syntax.last_token()
+        && let Some(next) = last.next_token()
+        && !is_whitespace_with_newline(&next)
+    {
+        set_whitespace_single_after(&last);
     }
     Some(())
 }

@@ -22,103 +22,141 @@ pub(crate) fn format_expression(
     options: &FormattingOptions,
 ) -> Option<()> {
     match syntax.kind() {
-        SyntaxKind::Path => {
-            // WESL fully qualified identifier: `foo :: bar :: baz` → `foo::bar::baz`.
-            remove_whitespace_around_double_colon(syntax);
-        },
-        SyntaxKind::IdentExpression => {
-            let ident_expression = ast::IdentExpression::cast(syntax.clone())?;
-            super::format_template_angles(&ident_expression.template_parameters()?);
-        },
-        SyntaxKind::FunctionCall => {
-            let function_call = ast::FunctionCall::cast(syntax.clone())?;
+        SyntaxKind::Path => format_path(syntax),
+        SyntaxKind::IdentExpression => format_ident_expression(syntax)?,
+        SyntaxKind::FunctionCall => format_function_call(syntax, indentation, options)?,
+        SyntaxKind::InfixExpression => format_infix_expression(syntax)?,
+        SyntaxKind::IndexExpression => format_index_expression(syntax)?,
+        SyntaxKind::FieldExpression => format_field_expression(syntax)?,
+        SyntaxKind::PrefixExpression => format_prefix_expression(syntax)?,
+        SyntaxKind::ParenthesisExpression => format_parenthesis_expression(syntax)?,
+        _ => format_type_specifier(syntax)?,
+    }
+    Some(())
+}
 
-            if let Some(name_ref) = function_call.ident_expression()
-                && let Some(NodeOrToken::Token(token)) = name_ref.syntax().next_sibling_or_token()
-            {
-                remove_if_whitespace(&token);
-            }
+/// WESL fully qualified identifier: `foo :: bar :: baz` → `foo::bar::baz`.
+fn format_path(syntax: &SyntaxNode) {
+    remove_whitespace_around_double_colon(syntax);
+}
 
-            let param_list = function_call.parameters()?;
-            super::format_parameters(&param_list, indentation, options)?;
-        },
-        SyntaxKind::InfixExpression => {
-            let expression = ast::InfixExpression::cast(syntax.clone())?;
+/// Formats template angles on identifier expressions (e.g. `vec3 < f32 >` → `vec3<f32>`).
+fn format_ident_expression(syntax: &SyntaxNode) -> Option<()> {
+    let ident_expression = ast::IdentExpression::cast(syntax.clone())?;
+    super::format_template_angles(&ident_expression.template_parameters()?);
+    Some(())
+}
 
-            whitespace_to_single_around(&expression.operator()?);
-        },
-        SyntaxKind::IndexExpression => {
-            // `arr [ 0 ]` → `arr[0]`
-            let index_expr = ast::IndexExpression::cast(syntax.clone())?;
-            for child in index_expr.syntax().children_with_tokens() {
-                if let Some(tok) = child.as_token() {
-                    match tok.kind() {
-                        SyntaxKind::BracketLeft => {
-                            remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
-                            remove_if_whitespace(&tok.next_token()?);
-                        },
-                        SyntaxKind::BracketRight => {
-                            remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
-                        },
-                        _ => {},
-                    }
-                }
-            }
-        },
-        SyntaxKind::FieldExpression => {
-            // `v . x` → `v.x`
-            for child in syntax.children_with_tokens() {
-                if let Some(tok) = child.as_token()
-                    && tok.kind() == SyntaxKind::Period
-                {
+/// Formats function calls: removes whitespace before `(` and normalizes arguments.
+fn format_function_call(
+    syntax: &SyntaxNode,
+    indentation: usize,
+    options: &FormattingOptions,
+) -> Option<()> {
+    let function_call = ast::FunctionCall::cast(syntax.clone())?;
+
+    if let Some(name_ref) = function_call.ident_expression()
+        && let Some(NodeOrToken::Token(token)) = name_ref.syntax().next_sibling_or_token()
+    {
+        remove_if_whitespace(&token);
+    }
+
+    let param_list = function_call.parameters()?;
+    super::format_parameters(&param_list, indentation, options)?;
+    Some(())
+}
+
+/// Formats infix expressions: ensures single space around operators.
+fn format_infix_expression(syntax: &SyntaxNode) -> Option<()> {
+    let expression = ast::InfixExpression::cast(syntax.clone())?;
+    whitespace_to_single_around(&expression.operator()?);
+    Some(())
+}
+
+/// Formats index expressions: `arr [ 0 ]` → `arr[0]`.
+#[expect(
+    clippy::wildcard_enum_match_arm,
+    reason = "only bracket tokens need formatting"
+)]
+fn format_index_expression(syntax: &SyntaxNode) -> Option<()> {
+    let index_expr = ast::IndexExpression::cast(syntax.clone())?;
+    for child in index_expr.syntax().children_with_tokens() {
+        if let Some(tok) = child.as_token() {
+            match tok.kind() {
+                SyntaxKind::BracketLeft => {
                     remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
                     remove_if_whitespace(&tok.next_token()?);
-                }
+                },
+                SyntaxKind::BracketRight => {
+                    remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
+                },
+                _ => {},
             }
-        },
-        SyntaxKind::PrefixExpression => {
-            // `- y` → `-y`, `! cond` → `!cond`, `* ptr` → `*ptr`, `& var` → `&var`
-            let prefix = ast::PrefixExpression::cast(syntax.clone())?;
-            let first = prefix.syntax().first_token()?;
-            remove_if_whitespace(&first.next_token()?);
-        },
-        SyntaxKind::ParenthesisExpression => {
-            let parenthesis_expression = ast::ParenthesisExpression::cast(syntax.clone())?;
-            remove_if_whitespace(
-                &parenthesis_expression
-                    .left_parenthesis_token()?
-                    .next_token()?,
-            );
-            remove_if_whitespace(
-                &parenthesis_expression
-                    .right_parenthesis_token()?
-                    .prev_token()?, // spellchecker:disable-line
-            );
-
-            if parenthesis_expression
-                .syntax()
-                .parent()
-                .is_some_and(|parent| {
-                    matches!(
-                        parent.kind(),
-                        SyntaxKind::WhileStatement
-                            | SyntaxKind::IfClause
-                            | SyntaxKind::ElseIfClause
-                            | SyntaxKind::BreakIfStatement
-                            | SyntaxKind::SwitchStatement
-                    )
-                })
-            {
-                remove_token(&parenthesis_expression.right_parenthesis_token()?);
-                remove_token(&parenthesis_expression.left_parenthesis_token()?);
-            }
-        },
-        _ => {
-            if let Some(r#type) = ast::TypeSpecifier::cast(syntax.clone()) {
-                super::format_template_angles(&r#type.template_parameters()?);
-            }
-        },
+        }
     }
+    Some(())
+}
+
+/// Formats field expressions: `v . x` → `v.x`.
+fn format_field_expression(syntax: &SyntaxNode) -> Option<()> {
+    for child in syntax.children_with_tokens() {
+        if let Some(tok) = child.as_token()
+            && tok.kind() == SyntaxKind::Period
+        {
+            remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
+            remove_if_whitespace(&tok.next_token()?);
+        }
+    }
+    Some(())
+}
+
+/// Formats prefix expressions: `- y` → `-y`, `! cond` → `!cond`, etc.
+fn format_prefix_expression(syntax: &SyntaxNode) -> Option<()> {
+    let prefix = ast::PrefixExpression::cast(syntax.clone())?;
+    let first = prefix.syntax().first_token()?;
+    remove_if_whitespace(&first.next_token()?);
+    Some(())
+}
+
+/// Formats parenthesized expressions and removes redundant parentheses
+/// around conditions in `if`, `while`, `switch`, and `break if` statements.
+fn format_parenthesis_expression(syntax: &SyntaxNode) -> Option<()> {
+    let parenthesis_expression = ast::ParenthesisExpression::cast(syntax.clone())?;
+    remove_if_whitespace(
+        &parenthesis_expression
+            .left_parenthesis_token()?
+            .next_token()?,
+    );
+    remove_if_whitespace(
+        &parenthesis_expression
+            .right_parenthesis_token()?
+            .prev_token()?, // spellchecker:disable-line
+    );
+
+    if parenthesis_expression
+        .syntax()
+        .parent()
+        .is_some_and(|parent| {
+            matches!(
+                parent.kind(),
+                SyntaxKind::WhileStatement
+                    | SyntaxKind::IfClause
+                    | SyntaxKind::ElseIfClause
+                    | SyntaxKind::BreakIfStatement
+                    | SyntaxKind::SwitchStatement
+            )
+        })
+    {
+        remove_token(&parenthesis_expression.right_parenthesis_token()?);
+        remove_token(&parenthesis_expression.left_parenthesis_token()?);
+    }
+    Some(())
+}
+
+/// Formats type specifiers by normalizing template angles.
+fn format_type_specifier(syntax: &SyntaxNode) -> Option<()> {
+    let r#type = ast::TypeSpecifier::cast(syntax.clone())?;
+    super::format_template_angles(&r#type.template_parameters()?);
     Some(())
 }
 
