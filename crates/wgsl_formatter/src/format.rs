@@ -445,7 +445,7 @@ pub(crate) fn format_syntax_node(
             let statement = ast::VariableDeclaration::cast(syntax)?;
             if let Some(tmpl) = statement.template_parameters() {
                 format_template_angles(&tmpl);
-                if let Some(right_angle) = tmpl.t_angle_token() {
+                if let Some(right_angle) = tmpl.right_angle_token() {
                     set_whitespace_single_after(&right_angle);
                 }
             } else {
@@ -526,7 +526,7 @@ fn format_template_angles(tmpl: &ast::TemplateList) -> Option<()> {
     let left_angle = tmpl.left_angle_token()?;
     remove_if_whitespace(&left_angle.prev_token()?); // spellchecker:disable-line
     remove_if_whitespace(&left_angle.next_token()?);
-    let right_angle = tmpl.t_angle_token()?;
+    let right_angle = tmpl.right_angle_token()?;
     remove_if_whitespace(&right_angle.prev_token()?); // spellchecker:disable-line
     Some(())
 }
