@@ -8,7 +8,8 @@
 use std::{io::Read as _, path::PathBuf, time::Instant};
 
 use anyhow::{Context as _, bail};
-use clap::Parser;
+use clap::{Parser, ValueEnum};
+use serde::Serialize;
 use wgsl_formatter::FormattingOptions;
 
 /// Tool to find and fix WGSL/WESL formatting issues.
@@ -27,10 +28,47 @@ struct Args {
     #[arg(long)]
     tabs: bool,
 
+    /// Output format. "text" (default) prints human-readable output.
+    /// "json" emits a single JSON object with all results.
+    #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
+    output_format: OutputFormat,
+
     /// Files, directories, or glob patterns to format.
     /// Pass "-" to read from stdin.
     #[arg(required = true)]
     patterns: Vec<String>,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum OutputFormat {
+    Text,
+    Json,
+}
+
+#[derive(Serialize)]
+struct JsonOutput {
+    files: Vec<FileResult>,
+    total_files: usize,
+    files_changed: usize,
+    total_duration_ms: u128,
+}
+
+#[derive(Serialize)]
+struct FileResult {
+    file: String,
+    changed: bool,
+    duration_ms: u128,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    parse_errors: Vec<ParseError>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    diff: Option<String>,
+}
+
+#[derive(Serialize)]
+struct ParseError {
+    line: u32,
+    col: u32,
+    message: String,
 }
 
 fn main() -> Result<(), anyhow::Error> {
@@ -47,78 +85,41 @@ fn main() -> Result<(), anyhow::Error> {
         "\t".clone_into(&mut formatting_options.indent_symbol);
     }
 
+    let json_mode = matches!(cli.output_format, OutputFormat::Json);
     let total_start = Instant::now();
     let mut check_failed = false;
+    let mut results: Vec<FileResult> = Vec::new();
 
     for file in &files {
-        let is_stdin = file.as_os_str() == "-";
-        let input = if is_stdin {
-            read_stdin()?
-        } else {
-            std::fs::read_to_string(file)?
-        };
+        let result = format_file(file, &formatting_options, json_mode, cli.check)?;
 
-        // Detect edition from file extension for diagnostics.
-        // The formatter always parses with Edition::LATEST so all syntax
-        // (including WESL extensions) is recognized regardless.
-        let edition = if !is_stdin
-            && file
-                .extension()
-                .is_some_and(|ext| ext.eq_ignore_ascii_case("wesl"))
-        {
-            syntax::Edition::Wesl2025Unstable
-        } else {
-            syntax::Edition::Wgsl
-        };
-
-        // Check for parse errors and warn (but still format).
-        let parse = syntax::parse(&input, edition);
-        let errors = parse.errors();
-        if !errors.is_empty() {
-            let label = if is_stdin {
-                "stdin".to_owned()
-            } else {
-                file.display().to_string()
-            };
-            let line_index = line_index::LineIndex::new(&input);
-            eprintln!(
-                "[warn] {label}: {count} parse error(s)",
-                count = errors.len()
-            );
-            for diagnostic in errors {
-                let start = line_index.line_col(diagnostic.range.start());
-                eprintln!(
-                    "  {label}:{}:{}: {}",
-                    start.line + 1,
-                    start.col + 1,
-                    diagnostic.message
-                );
-            }
+        if !json_mode {
+            emit_text_result(file, &result, cli.check);
         }
 
-        let file_start = Instant::now();
-        let output = wgsl_formatter::format_str(&input, &formatting_options);
-        let elapsed = file_start.elapsed();
-
-        if cli.check {
-            if output != input {
-                check_failed = true;
-                let diff = prettydiff::diff_lines(&input, &output);
-                println!("{}\n{diff}", file.display());
-            }
-        } else if is_stdin {
-            print!("{output}");
-        } else {
-            std::fs::write(file, &output)
-                .with_context(|| format!("failed to write to {}", file.display()))?;
-            let suffix = if output == input { " (unchanged)" } else { "" };
-            println!("{} {}ms{suffix}", file.display(), elapsed.as_millis());
+        if result.changed {
+            check_failed = true;
         }
+
+        results.push(result);
     }
 
     let total_elapsed = total_start.elapsed();
 
-    if cli.check {
+    if json_mode {
+        let total_files = results.len();
+        let files_changed = results.iter().filter(|result| result.changed).count();
+        let json_output = JsonOutput {
+            files: results,
+            total_files,
+            files_changed,
+            total_duration_ms: total_elapsed.as_millis(),
+        };
+        println!("{}", serde_json::to_string_pretty(&json_output)?);
+        if cli.check && check_failed {
+            std::process::exit(1);
+        }
+    } else if cli.check {
         if check_failed {
             eprintln!("Code style issues found in the above file(s). Forgot to run wgslfmt?");
             std::process::exit(1);
@@ -131,6 +132,124 @@ fn main() -> Result<(), anyhow::Error> {
     }
 
     Ok(())
+}
+
+/// Formats a single file (or stdin) and returns a [`FileResult`].
+///
+/// When `json_mode` is false, parse errors are printed to stderr.
+fn format_file(
+    file: &std::path::Path,
+    options: &FormattingOptions,
+    json_mode: bool,
+    check_mode: bool,
+) -> Result<FileResult, anyhow::Error> {
+    let is_stdin = file.as_os_str() == "-";
+    let input = if is_stdin {
+        read_stdin()?
+    } else {
+        std::fs::read_to_string(file)?
+    };
+
+    let label = if is_stdin {
+        "stdin".to_owned()
+    } else {
+        file.display().to_string()
+    };
+
+    // Detect edition from file extension for diagnostics.
+    let edition = if !is_stdin
+        && file
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("wesl"))
+    {
+        syntax::Edition::Wesl2025Unstable
+    } else {
+        syntax::Edition::Wgsl
+    };
+
+    let parse = syntax::parse(&input, edition);
+    let errors = parse.errors();
+    let parse_errors: Vec<ParseError> = if errors.is_empty() {
+        Vec::new()
+    } else {
+        let line_index = line_index::LineIndex::new(&input);
+        if !json_mode {
+            eprintln!(
+                "[warn] {label}: {count} parse error(s)",
+                count = errors.len()
+            );
+        }
+        errors
+            .iter()
+            .map(|diagnostic| {
+                let start = line_index.line_col(diagnostic.range.start());
+                if !json_mode {
+                    eprintln!(
+                        "  {label}:{}:{}: {}",
+                        start.line + 1,
+                        start.col + 1,
+                        diagnostic.message
+                    );
+                }
+                ParseError {
+                    line: start.line + 1,
+                    col: start.col + 1,
+                    message: diagnostic.message.clone(),
+                }
+            })
+            .collect()
+    };
+
+    let file_start = Instant::now();
+    let output = wgsl_formatter::format_str(&input, options);
+    let elapsed = file_start.elapsed();
+    let changed = output != input;
+
+    let diff = changed.then(|| {
+        let raw = format!("{}", prettydiff::diff_lines(&input, &output));
+        if json_mode {
+            // Strip ANSI escape codes for machine-readable output.
+            strip_ansi_codes(&raw)
+        } else {
+            raw
+        }
+    });
+
+    // Write formatted output (skip in check mode; skip stdin in json mode).
+    if !check_mode {
+        if is_stdin {
+            if !json_mode {
+                print!("{output}");
+            }
+        } else {
+            std::fs::write(file, &output)
+                .with_context(|| format!("failed to write to {}", file.display()))?;
+        }
+    }
+
+    Ok(FileResult {
+        file: label,
+        changed,
+        duration_ms: elapsed.as_millis(),
+        parse_errors,
+        diff,
+    })
+}
+
+/// Prints human-readable output for a single file result.
+fn emit_text_result(
+    file: &std::path::Path,
+    result: &FileResult,
+    check_mode: bool,
+) {
+    if check_mode {
+        if let (true, Some(diff)) = (result.changed, &result.diff) {
+            println!("{}\n{diff}", file.display());
+        }
+    } else if file.as_os_str() != "-" {
+        let suffix = if result.changed { "" } else { " (unchanged)" };
+        println!("{} {}ms{suffix}", file.display(), result.duration_ms);
+    }
 }
 
 /// Resolves a list of patterns into concrete file paths.
@@ -194,4 +313,23 @@ fn read_stdin() -> Result<String, std::io::Error> {
     let mut buffer = String::new();
     std::io::stdin().read_to_string(&mut buffer)?;
     Ok(buffer)
+}
+
+/// Strips ANSI escape sequences (e.g. color codes) from a string.
+fn strip_ansi_codes(input: &str) -> String {
+    let mut result = String::with_capacity(input.len());
+    let mut chars = input.chars();
+    while let Some(character) = chars.next() {
+        if character == '\x1b' {
+            // Skip until we hit the terminating letter [A-Za-z].
+            for character in chars.by_ref() {
+                if character.is_ascii_alphabetic() {
+                    break;
+                }
+            }
+        } else {
+            result.push(character);
+        }
+    }
+    result
 }

@@ -2115,6 +2115,8 @@ dependencies = [
  "glob",
  "line-index",
  "prettydiff",
+ "serde",
+ "serde_json",
  "syntax",
  "wgsl-formatter",
 ]
