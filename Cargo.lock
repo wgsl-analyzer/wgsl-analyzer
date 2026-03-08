@@ -460,6 +460,7 @@ dependencies = [
  "smallvec",
  "smol_str",
  "syntax",
+ "test-fixture",
  "triomphe",
  "vfs",
 ]
@@ -478,6 +479,7 @@ dependencies = [
  "salsa",
  "smallvec",
  "syntax",
+ "test-fixture",
  "triomphe",
  "vfs",
  "wgsl-types",
@@ -595,6 +597,7 @@ dependencies = [
  "smallvec",
  "smol_str",
  "syntax",
+ "test-fixture",
  "test-utils",
  "triomphe",
  "vfs",
@@ -1577,6 +1580,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06794f8f6c5c898b3275aebefa6b8a1cb24cd2c6c79397ab15774837a0bc5755"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "test-fixture"
+version = "0.0.0"
+dependencies = [
+ "base-db",
+ "edition",
+ "indexmap 2.13.0",
+ "rustc-hash 2.1.1",
+ "stdx 0.0.0",
+ "test-utils",
+ "triomphe",
 ]
 
 [[package]]

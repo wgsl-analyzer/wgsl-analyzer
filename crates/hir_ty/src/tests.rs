@@ -14,12 +14,13 @@ use hir_def::{
     item_tree::ModuleItem,
 };
 use syntax::{AstNode as _, SyntaxNode};
+use test_fixture::WithFixture as _;
 use triomphe::Arc;
 
 use crate::{
     database::HirDatabase as _,
     infer::{InferenceDiagnostic, InferenceDiagnosticKind, InferenceResult},
-    test_db::{TestDatabase, single_file_db},
+    test_db::TestDatabase,
     ty::{
         Type,
         pretty::{
@@ -28,8 +29,8 @@ use crate::{
     },
 };
 
-fn infer(ra_fixture: &str) -> String {
-    let (database, file_id) = single_file_db(ra_fixture);
+fn infer(wa_fixture: &str) -> String {
+    let (database, file_id) = TestDatabase::with_single_file(wa_fixture);
     let file_id = HirFileId::from(file_id);
     let root = database.parse_or_resolve(file_id).syntax();
     let mut buffer = String::new();

@@ -316,6 +316,7 @@ fn naga_diagnostics<N: Naga>(
 }
 
 /// # Panics
+///
 /// Panics if the file is not found in the database.
 #[expect(clippy::too_many_lines, reason = "TODO")]
 pub fn diagnostics(
@@ -744,12 +745,12 @@ var<storage, read> a: array<f32>;
 var<storage
 ",
             expect![[r#"
-                93..94 Error 16: invalid syntax, expected one of: '@', ',', '=', <identifier>, '{', '}', ')', ';', <template start>
-                102..102 Error 16: invalid syntax, expected one of: ':', '=', ';'
-                23..26 Error 12: address space is only valid for handle or texture types
-                27..34 Error 21: unexpected template argument
-                27..34 Error 21: unexpected template argument
-                90..93 Error 12: address space is only valid for handle or texture types
+                92..93 Error 16: invalid syntax, expected one of: '@', ',', '=', <identifier>, '{', '}', ')', ';', <template start>
+                101..101 Error 16: invalid syntax, expected one of: ':', '=', ';'
+                22..25 Error 12: address space is only valid for handle or texture types
+                26..33 Error 21: unexpected template argument
+                26..33 Error 21: unexpected template argument
+                89..92 Error 12: address space is only valid for handle or texture types
             "#]],
         );
     }

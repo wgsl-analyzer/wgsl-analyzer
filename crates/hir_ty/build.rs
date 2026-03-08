@@ -415,7 +415,7 @@ fn type_to_rust(r#type: &Type) -> String {
             format!("TypeKind::Scalar(ScalarType::{type:?}).intern(database)")
         },
         Type::Bound(index) => {
-            format!("TypeKind::BoundVariable(BoundVariable {{ index: {index} }}).intern(database)",)
+            format!("TypeKind::BoundVariable(BoundVariable {{ index: {index} }}).intern(database)")
         },
         Type::Texture(texture) => {
             format!(

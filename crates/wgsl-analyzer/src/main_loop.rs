@@ -249,17 +249,17 @@ impl GlobalState {
             lt::DocumentFilter {
                 language: None,
                 scheme: None,
-                pattern: Some("**/*.rs".into()),
+                pattern: Some("**/*.wgsl".into()),
             },
             lt::DocumentFilter {
                 language: None,
                 scheme: None,
-                pattern: Some("**/Cargo.toml".into()),
+                pattern: Some("**/*.wesl".into()),
             },
             lt::DocumentFilter {
                 language: None,
                 scheme: None,
-                pattern: Some("**/Cargo.lock".into()),
+                pattern: Some("**/wesl.toml".into()),
             },
         ];
         selectors.extend(additional_filters);

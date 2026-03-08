@@ -2265,9 +2265,9 @@ pub enum TypeLoweringErrorKind {
         expected: std::ops::RangeInclusive<usize>,
         actual: usize,
     },
-    // A value was provided where a type was expected.
+    /// A value was provided where a type was expected.
     ExpectedType(Path),
-    // A function was provided but not called.
+    /// A function was provided but not called.
     ExpectedFunctionToBeCalled(Path),
     // TODO: Change this to a strongly typed wgsl_types::Error
     // The challenge here is that wgsl_types::Error doesn't implement Eq,
