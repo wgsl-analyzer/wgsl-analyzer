@@ -1,9 +1,9 @@
-use syntax::{SyntaxKind, SyntaxNode, ast::SyntaxToken};
+use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken};
 
 use crate::FormattingOptions;
 use crate::util::{
     create_whitespace, is_whitespace_with_newline, n_newlines_in_whitespace,
-    set_whitespace_before, set_whitespace_single_after,
+    remove_if_whitespace, set_whitespace_before, set_whitespace_single_after,
 };
 
 /// Formats directive and top-level nodes: source file, `enable`, `requires`,
@@ -11,8 +11,8 @@ use crate::util::{
 #[expect(clippy::wildcard_enum_match_arm, reason = "intentional catch-all dispatcher")]
 pub(crate) fn format_directive(
     syntax: &SyntaxNode,
-    _indentation: usize,
-    _options: &FormattingOptions,
+    indentation: usize,
+    options: &FormattingOptions,
 ) -> Option<()> {
     match syntax.kind() {
         SyntaxKind::SourceFile => {
@@ -47,6 +47,19 @@ pub(crate) fn format_directive(
             }
         },
         SyntaxKind::Attribute => {
+            let attribute = ast::Attribute::cast(syntax.clone())?;
+
+            // Remove whitespace between `@` and the attribute name.
+            if let Some(name_token) = attribute.ident_token() {
+                remove_if_whitespace(&name_token.prev_token()?); // spellchecker:disable-line
+            }
+
+            // Format arguments: remove whitespace before `(`, normalize inside.
+            if let Some(arguments) = attribute.parameters() {
+                remove_if_whitespace(&arguments.left_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
+                super::format_parameters(&arguments, indentation, options)?;
+            }
+
             // Preserve newlines after attributes (e.g. @vertex\nfn),
             // but ensure at least a single space when on the same line.
             if let Some(last) = syntax.last_token()
