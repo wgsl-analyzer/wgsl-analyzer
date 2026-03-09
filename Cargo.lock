@@ -52,6 +52,7 @@ name = "base-db"
 version = "0.0.0"
 dependencies = [
  "dashmap",
+ "edition",
  "query-group-macro",
  "rowan",
  "rustc-hash 2.1.1",
