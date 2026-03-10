@@ -3402,3 +3402,122 @@ fn expression_in_template() {
                 Semicolon@32..33 ";""#]],
     );
 }
+
+#[test]
+fn fn_recover_missing_comma_between_params() {
+    check(
+        "fn foo(a: f32 b: f32) {}",
+        expect![[r#"
+            SourceFile@0..24
+              FunctionDeclaration@0..24
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..6
+                  Identifier@3..6 "foo"
+                FunctionParameters@6..21
+                  ParenthesisLeft@6..7 "("
+                  Parameter@7..13
+                    Name@7..8
+                      Identifier@7..8 "a"
+                    Colon@8..9 ":"
+                    Blankspace@9..10 " "
+                    TypeSpecifier@10..13
+                      Path@10..13
+                        Identifier@10..13 "f32"
+                  Blankspace@13..14 " "
+                  Parameter@14..20
+                    Name@14..15
+                      Identifier@14..15 "b"
+                    Colon@15..16 ":"
+                    Blankspace@16..17 " "
+                    TypeSpecifier@17..20
+                      Path@17..20
+                        Identifier@17..20 "f32"
+                  ParenthesisRight@20..21 ")"
+                Blankspace@21..22 " "
+                CompoundStatement@22..24
+                  BraceLeft@22..23 "{"
+                  BraceRight@23..24 "}"
+
+            error at 14..15: expected ',' between parameters"#]],
+    );
+}
+
+#[test]
+fn struct_recover_missing_comma_between_members() {
+    check(
+        "struct Foo { x: f32 y: f32 }",
+        expect![[r#"
+            SourceFile@0..28
+              StructDeclaration@0..28
+                Struct@0..6 "struct"
+                Blankspace@6..7 " "
+                Name@7..10
+                  Identifier@7..10 "Foo"
+                Blankspace@10..11 " "
+                StructBody@11..28
+                  BraceLeft@11..12 "{"
+                  Blankspace@12..13 " "
+                  StructMember@13..19
+                    Name@13..14
+                      Identifier@13..14 "x"
+                    Colon@14..15 ":"
+                    Blankspace@15..16 " "
+                    TypeSpecifier@16..19
+                      Path@16..19
+                        Identifier@16..19 "f32"
+                  Blankspace@19..20 " "
+                  StructMember@20..26
+                    Name@20..21
+                      Identifier@20..21 "y"
+                    Colon@21..22 ":"
+                    Blankspace@22..23 " "
+                    TypeSpecifier@23..26
+                      Path@23..26
+                        Identifier@23..26 "f32"
+                  Blankspace@26..27 " "
+                  BraceRight@27..28 "}"
+
+            error at 20..21: invalid syntax, expected ','"#]],
+    );
+}
+
+#[test]
+fn struct_recover_semicolon_instead_of_comma() {
+    check(
+        "struct Foo { x: f32; y: f32 }",
+        expect![[r#"
+            SourceFile@0..29
+              StructDeclaration@0..29
+                Struct@0..6 "struct"
+                Blankspace@6..7 " "
+                Name@7..10
+                  Identifier@7..10 "Foo"
+                Blankspace@10..11 " "
+                StructBody@11..29
+                  BraceLeft@11..12 "{"
+                  Blankspace@12..13 " "
+                  StructMember@13..19
+                    Name@13..14
+                      Identifier@13..14 "x"
+                    Colon@14..15 ":"
+                    Blankspace@15..16 " "
+                    TypeSpecifier@16..19
+                      Path@16..19
+                        Identifier@16..19 "f32"
+                  Semicolon@19..20 ";"
+                  Blankspace@20..21 " "
+                  StructMember@21..27
+                    Name@21..22
+                      Identifier@21..22 "y"
+                    Colon@22..23 ":"
+                    Blankspace@23..24 " "
+                    TypeSpecifier@24..27
+                      Path@24..27
+                        Identifier@24..27 "f32"
+                  Blankspace@27..28 " "
+                  BraceRight@28..29 "}"
+
+            error at 21..22: invalid syntax, expected ','"#]],
+    );
+}
