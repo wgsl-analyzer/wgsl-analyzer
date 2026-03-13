@@ -516,7 +516,7 @@ ast_node! {
     TemplateList:
     left_angle_token: Option<SyntaxToken TemplateStart>;
     parameters: AstChildren<Expression>;
-    t_angle_token: Option<SyntaxToken TemplateEnd>;
+    right_angle_token: Option<SyntaxToken TemplateEnd>;
 }
 
 ast_node! {
@@ -811,6 +811,8 @@ ast_node! {
 
 ast_node! {
     SwitchBody:
+    left_brace_token: Option<SyntaxToken BraceLeft>;
+    right_brace_token: Option<SyntaxToken BraceRight>;
     cases: AstChildren<SwitchBodyCase>;
 }
 

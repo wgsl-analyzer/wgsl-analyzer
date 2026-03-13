@@ -22,7 +22,6 @@ pub(crate) fn format(
         },
     };
 
-    // TODO: Re-enable the formatter
-    // wgsl_formatter::format_recursive(&node, &FormattingOptions::default());
+    wgsl_formatter::format_recursive(&node, &FormattingOptions::default());
     Some(node)
 }
