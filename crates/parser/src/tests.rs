@@ -585,27 +585,27 @@ fn parse_type_template_with_int() {
 fn parse_type_template_trailing_comma() {
     check_type(
         "array<
-        f32, 
+        f32,
         100,
         >",
         expect![[r#"
-            SourceFile@0..43
-              TypeSpecifier@0..43
+            SourceFile@0..42
+              TypeSpecifier@0..42
                 Path@0..5
                   Identifier@0..5 "array"
-                TemplateList@5..43
+                TemplateList@5..42
                   TemplateStart@5..6 "<"
                   Blankspace@6..15 "\n        "
                   IdentExpression@15..18
                     Path@15..18
                       Identifier@15..18 "f32"
                   Comma@18..19 ","
-                  Blankspace@19..29 " \n        "
-                  Literal@29..32
-                    IntLiteral@29..32 "100"
-                  Comma@32..33 ","
-                  Blankspace@33..42 "\n        "
-                  TemplateEnd@42..43 ">""#]],
+                  Blankspace@19..28 "\n        "
+                  Literal@28..31
+                    IntLiteral@28..31 "100"
+                  Comma@31..32 ","
+                  Blankspace@32..41 "\n        "
+                  TemplateEnd@41..42 ">""#]],
     );
 }
 
@@ -1181,6 +1181,90 @@ fn parse_if_recovery_1() {
                     BraceRight@23..24 "}"
 
             error at 22..23: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
+    );
+}
+
+#[test]
+fn parse_if_multiple_else_clauses() {
+    check_statement(
+        "if (0) {} else {} else {}",
+        expect![[r#"
+            SourceFile@0..25
+              IfStatement@0..25
+                IfClause@0..9
+                  If@0..2 "if"
+                  Blankspace@2..3 " "
+                  ParenthesisExpression@3..6
+                    ParenthesisLeft@3..4 "("
+                    Literal@4..5
+                      IntLiteral@4..5 "0"
+                    ParenthesisRight@5..6 ")"
+                  Blankspace@6..7 " "
+                  CompoundStatement@7..9
+                    BraceLeft@7..8 "{"
+                    BraceRight@8..9 "}"
+                Blankspace@9..10 " "
+                ElseClause@10..17
+                  Else@10..14 "else"
+                  Blankspace@14..15 " "
+                  CompoundStatement@15..17
+                    BraceLeft@15..16 "{"
+                    BraceRight@16..17 "}"
+                Blankspace@17..18 " "
+                ElseClause@18..25
+                  Else@18..22 "else"
+                  Blankspace@22..23 " "
+                  CompoundStatement@23..25
+                    BraceLeft@23..24 "{"
+                    BraceRight@24..25 "}"
+
+            error at 18..25: multiple 'else' clauses are not allowed"#]],
+    );
+}
+
+#[test]
+fn parse_if_else_if_after_else() {
+    check_statement(
+        "if (0) {} else {} else if (1) {}",
+        expect![[r#"
+            SourceFile@0..32
+              IfStatement@0..32
+                IfClause@0..9
+                  If@0..2 "if"
+                  Blankspace@2..3 " "
+                  ParenthesisExpression@3..6
+                    ParenthesisLeft@3..4 "("
+                    Literal@4..5
+                      IntLiteral@4..5 "0"
+                    ParenthesisRight@5..6 ")"
+                  Blankspace@6..7 " "
+                  CompoundStatement@7..9
+                    BraceLeft@7..8 "{"
+                    BraceRight@8..9 "}"
+                Blankspace@9..10 " "
+                ElseClause@10..17
+                  Else@10..14 "else"
+                  Blankspace@14..15 " "
+                  CompoundStatement@15..17
+                    BraceLeft@15..16 "{"
+                    BraceRight@16..17 "}"
+                Blankspace@17..18 " "
+                ElseIfClause@18..32
+                  Else@18..22 "else"
+                  Blankspace@22..23 " "
+                  If@23..25 "if"
+                  Blankspace@25..26 " "
+                  ParenthesisExpression@26..29
+                    ParenthesisLeft@26..27 "("
+                    Literal@27..28
+                      IntLiteral@27..28 "1"
+                    ParenthesisRight@28..29 ")"
+                  Blankspace@29..30 " "
+                  CompoundStatement@30..32
+                    BraceLeft@30..31 "{"
+                    BraceRight@31..32 "}"
+
+            error at 18..32: 'else if' after 'else' is not allowed"#]],
     );
 }
 
@@ -3316,5 +3400,124 @@ fn expression_in_template() {
                     ParenthesisLeft@30..31 "("
                     ParenthesisRight@31..32 ")"
                 Semicolon@32..33 ";""#]],
+    );
+}
+
+#[test]
+fn fn_recover_missing_comma_between_params() {
+    check(
+        "fn foo(a: f32 b: f32) {}",
+        expect![[r#"
+            SourceFile@0..24
+              FunctionDeclaration@0..24
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..6
+                  Identifier@3..6 "foo"
+                FunctionParameters@6..21
+                  ParenthesisLeft@6..7 "("
+                  Parameter@7..13
+                    Name@7..8
+                      Identifier@7..8 "a"
+                    Colon@8..9 ":"
+                    Blankspace@9..10 " "
+                    TypeSpecifier@10..13
+                      Path@10..13
+                        Identifier@10..13 "f32"
+                  Blankspace@13..14 " "
+                  Parameter@14..20
+                    Name@14..15
+                      Identifier@14..15 "b"
+                    Colon@15..16 ":"
+                    Blankspace@16..17 " "
+                    TypeSpecifier@17..20
+                      Path@17..20
+                        Identifier@17..20 "f32"
+                  ParenthesisRight@20..21 ")"
+                Blankspace@21..22 " "
+                CompoundStatement@22..24
+                  BraceLeft@22..23 "{"
+                  BraceRight@23..24 "}"
+
+            error at 14..15: expected ',' between parameters"#]],
+    );
+}
+
+#[test]
+fn struct_recover_missing_comma_between_members() {
+    check(
+        "struct Foo { x: f32 y: f32 }",
+        expect![[r#"
+            SourceFile@0..28
+              StructDeclaration@0..28
+                Struct@0..6 "struct"
+                Blankspace@6..7 " "
+                Name@7..10
+                  Identifier@7..10 "Foo"
+                Blankspace@10..11 " "
+                StructBody@11..28
+                  BraceLeft@11..12 "{"
+                  Blankspace@12..13 " "
+                  StructMember@13..19
+                    Name@13..14
+                      Identifier@13..14 "x"
+                    Colon@14..15 ":"
+                    Blankspace@15..16 " "
+                    TypeSpecifier@16..19
+                      Path@16..19
+                        Identifier@16..19 "f32"
+                  Blankspace@19..20 " "
+                  StructMember@20..26
+                    Name@20..21
+                      Identifier@20..21 "y"
+                    Colon@21..22 ":"
+                    Blankspace@22..23 " "
+                    TypeSpecifier@23..26
+                      Path@23..26
+                        Identifier@23..26 "f32"
+                  Blankspace@26..27 " "
+                  BraceRight@27..28 "}"
+
+            error at 20..21: invalid syntax, expected ','"#]],
+    );
+}
+
+#[test]
+fn struct_recover_semicolon_instead_of_comma() {
+    check(
+        "struct Foo { x: f32; y: f32 }",
+        expect![[r#"
+            SourceFile@0..29
+              StructDeclaration@0..29
+                Struct@0..6 "struct"
+                Blankspace@6..7 " "
+                Name@7..10
+                  Identifier@7..10 "Foo"
+                Blankspace@10..11 " "
+                StructBody@11..29
+                  BraceLeft@11..12 "{"
+                  Blankspace@12..13 " "
+                  StructMember@13..19
+                    Name@13..14
+                      Identifier@13..14 "x"
+                    Colon@14..15 ":"
+                    Blankspace@15..16 " "
+                    TypeSpecifier@16..19
+                      Path@16..19
+                        Identifier@16..19 "f32"
+                  Semicolon@19..20 ";"
+                  Blankspace@20..21 " "
+                  StructMember@21..27
+                    Name@21..22
+                      Identifier@21..22 "y"
+                    Colon@22..23 ":"
+                    Blankspace@23..24 " "
+                    TypeSpecifier@24..27
+                      Path@24..27
+                        Identifier@24..27 "f32"
+                  Blankspace@27..28 " "
+                  BraceRight@28..29 "}"
+
+            error at 21..22: invalid syntax, expected ','"#]],
     );
 }

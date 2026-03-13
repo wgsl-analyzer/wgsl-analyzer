@@ -11,8 +11,13 @@ categories = ["development-tools"]
 
 [dependencies]
 anyhow.workspace = true
-lexopt = "0.3.1"
+clap.workspace = true
+glob.workspace = true
+line-index.workspace = true
 prettydiff = { version = "0.9.0", default-features = false }
+serde.workspace = true
+serde_json.workspace = true
+syntax.workspace = true
 wgsl-formatter.workspace = true
 
 [lints]

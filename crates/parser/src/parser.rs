@@ -108,7 +108,8 @@ impl Cst<'_> {
 
 impl Parser<'_> {
     fn is_func_call(&self) -> bool {
-        matches!(self.peek(1), Token::LPar | Token::Lt) && self.peek(2) != Token::Lt
+        matches!(self.peek(1), Token::LPar | Token::Lt | Token::TemplateStart)
+            && self.peek(2) != Token::Lt
     }
 }
 
@@ -200,8 +201,36 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         !matches!(self.peek(1), Token::At | Token::Colon | Token::LBrace)
     }
 
+    fn assertion_function_parameters_1(&self) -> Option<Self::Diagnostic> {
+        Some(self.create_diagnostic(self.span(), "expected ',' between parameters".to_owned()))
+    }
+
     fn assertion_struct_body_1(&self) -> Option<Self::Diagnostic> {
         Some(self.create_diagnostic(self.span(), "invalid syntax, expected ','".to_owned()))
+    }
+
+    fn create_node_if_statement(
+        &mut self,
+        node_ref: NodeRef,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        let mut seen_else = false;
+        for child in self.cst.children(node_ref) {
+            if self.cst.match_rule(child, Rule::ElseClause) {
+                if seen_else {
+                    diags.push(self.create_diagnostic(
+                        self.cst.span(child),
+                        "multiple 'else' clauses are not allowed".to_owned(),
+                    ));
+                }
+                seen_else = true;
+            } else if self.cst.match_rule(child, Rule::ElseIfClause) && seen_else {
+                diags.push(self.create_diagnostic(
+                    self.cst.span(child),
+                    "'else if' after 'else' is not allowed".to_owned(),
+                ));
+            }
+        }
     }
 
     /// This node exists for better error messages. It also improves the lelwel error recovery quality.
