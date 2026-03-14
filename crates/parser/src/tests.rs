@@ -2053,7 +2053,8 @@ fn let_statement_recover_return_no_eq() {
                         BraceRight@41..42 "}"
 
             error at 30..32: invalid syntax, expected one of: ':', '=', ';'
-            error at 41..42: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', '==', '!=', '>', '>=', '{', '[', '(', '<', '<=', '-', '%', '|', '||', '+', ']', ')', ';', '<<', '>>', '/', '*', <template end>, <template start>"#]],
+            error at 41..42: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', '==', '!=', '>', '>=', '{', '[', '(', '<', '<=', '-', '%', '|', '||', '+', ']', ')', ';', '<<', '>>', '/', '*', <template end>, <template start>
+            error at 24..42: let declaration requires an initializer expression"#]],
     );
 }
 
@@ -2130,7 +2131,8 @@ fn let_statement_recover_return_2() {
                   Blankspace@51..60 "\n        "
                   BraceRight@60..61 "}"
 
-            error at 42..48: invalid syntax, expected one of: ':', '=', ';'"#]],
+            error at 42..48: invalid syntax, expected one of: ':', '=', ';'
+            error at 24..29: let declaration requires an initializer expression"#]],
     );
 }
 
@@ -2204,7 +2206,8 @@ fn let_statement_recover_1() {
                   Blankspace@29..38 "\n        "
                   BraceRight@38..39 "}"
 
-            error at 38..39: invalid syntax, expected one of: ':', '=', ';'"#]],
+            error at 38..39: invalid syntax, expected one of: ':', '=', ';'
+            error at 24..29: let declaration requires an initializer expression"#]],
     );
 }
 
@@ -2270,6 +2273,43 @@ fn let_statement_recover_3() {
             error at 36..37: invalid syntax, expected: <identifier>"#]],
     );
 }
+
+#[test]
+fn let_statement_missing_initializer() {
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/721
+    // A let declaration with a type but no initializer should produce
+    // a clear "requires an initializer" error.
+    check_statement(
+        "let stack: array<f32, 10>;",
+        expect![[r#"
+            SourceFile@0..26
+              LetDeclaration@0..26
+                Let@0..3 "let"
+                Blankspace@3..4 " "
+                Name@4..9
+                  Identifier@4..9 "stack"
+                Colon@9..10 ":"
+                Blankspace@10..11 " "
+                TypeSpecifier@11..25
+                  Path@11..16
+                    Identifier@11..16 "array"
+                  TemplateList@16..25
+                    TemplateStart@16..17 "<"
+                    IdentExpression@17..20
+                      Path@17..20
+                        Identifier@17..20 "f32"
+                    Comma@20..21 ","
+                    Blankspace@21..22 " "
+                    Literal@22..24
+                      IntLiteral@22..24 "10"
+                    TemplateEnd@24..25 ">"
+                Semicolon@25..26 ";"
+
+            error at 25..26: invalid syntax, expected: '='
+            error at 0..26: let declaration requires an initializer expression"#]],
+    );
+}
+
 
 #[test]
 fn annotation_with_invalid_statement_recover() {

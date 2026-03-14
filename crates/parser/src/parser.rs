@@ -233,6 +233,32 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         }
     }
 
+    fn create_node_let_declaration(
+        &mut self,
+        node_ref: NodeRef,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        // Only emit this diagnostic when the parser successfully parsed a name
+        // but did not find an '=' token (i.e. the initializer is missing).
+        // Empty Name nodes (end_offset == 0) are created by error recovery and should be ignored.
+        let has_name = self.cst.children(node_ref).any(|child| {
+            matches!(
+                self.cst.get(child),
+                Node::Rule(Rule::Name, end_offset) if usize::from(end_offset) > 0
+            )
+        });
+        let has_eq = self
+            .cst
+            .children(node_ref)
+            .any(|child| self.cst.match_token(child, Token::Eq).is_some());
+        if has_name && !has_eq {
+            diags.push(self.create_diagnostic(
+                self.cst.span(node_ref),
+                "let declaration requires an initializer expression".to_owned(),
+            ));
+        }
+    }
+
     /// This node exists for better error messages. It also improves the lelwel error recovery quality.
     fn create_node_global_let_declaration(
         &mut self,
