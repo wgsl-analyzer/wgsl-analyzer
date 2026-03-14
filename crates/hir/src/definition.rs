@@ -157,7 +157,7 @@ impl Definition {
                     hover_global_variable(database, global_var.id)
                 },
                 ModuleDef::GlobalConstant(constant) => hover_global_constant(database, constant.id),
-                ModuleDef::Override(override_decl) => hover_override(database, override_decl.id),
+                ModuleDef::Override(override_declaration) => hover_override(database, override_declaration.id),
                 ModuleDef::Struct(struct_def) => {
                     let data = database.struct_data(struct_def.id).0;
                     let field_types = &database.field_types(struct_def.id).0;
@@ -272,9 +272,9 @@ impl Definition {
                         )
                     ))
                 },
-                ModuleDef::Override(override_decl) => {
-                    let infer = database.infer(DefinitionWithBodyId::Override(override_decl.id));
-                    let data = database.override_data(override_decl.id).0;
+                ModuleDef::Override(override_declaration) => {
+                    let infer = database.infer(DefinitionWithBodyId::Override(override_declaration.id));
+                    let data = database.override_data(override_declaration.id).0;
                     Some(format!(
                         "override {}: {}",
                         data.name.as_str(),
@@ -320,8 +320,8 @@ impl Definition {
                     let source = constant.source(database)?;
                     doc_comments_from_syntax(source.value.syntax())
                 },
-                ModuleDef::Override(override_decl) => {
-                    let source = override_decl.source(database)?;
+                ModuleDef::Override(override_declaration) => {
+                    let source = override_declaration.source(database)?;
                     doc_comments_from_syntax(source.value.syntax())
                 },
                 ModuleDef::Struct(struct_def) => {
@@ -347,7 +347,7 @@ pub fn doc_comments_from_syntax(node: &SyntaxNode) -> Option<String> {
     let mut doc_lines: Vec<String> = Vec::new();
 
     // Walk backwards through preceding siblings (tokens and nodes)
-    for sibling in node.siblings_with_tokens(Direction::Prev).skip(1) {
+    for sibling in node.siblings_with_tokens(Direction::Prev).skip(1) { // spellchecker:disable-line
         if let Some(token) = sibling.as_token() {
             if let Some(comment) = ast::Comment::cast(token.clone())
                 && let Some(doc_text) = comment.doc_comment()
@@ -585,8 +585,8 @@ fn resolve_struct_member_field(
     let member = name.syntax().parent()?;
     let body = member.parent()?;
     let struct_node = body.parent()?;
-    let struct_decl = ast::StructDeclaration::cast(struct_node)?;
-    let struct_id = semantics.global_struct_to_def(&InFile::new(file_id, struct_decl))?;
+    let struct_declaration = ast::StructDeclaration::cast(struct_node)?;
+    let struct_id = semantics.global_struct_to_def(&InFile::new(file_id, struct_declaration))?;
 
     // Find which field index this member is
     let struct_data = semantics.database.struct_data(struct_id).0;

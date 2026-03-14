@@ -66,7 +66,7 @@ pub(crate) fn signature_help(
     let expression_id = analyzed.expression_id(&call_expr);
 
     let mut signatures = Vec::new();
-    let mut active_sig = None;
+    let mut active_signature = None;
 
     // Try to extract doc comments for the function being called
     let fn_doc = function_call.ident_expression().and_then(|ident_expr| {
@@ -82,7 +82,7 @@ pub(crate) fn signature_help(
             ResolvedCall::Function(func_id) => {
                 let function = func_id.lookup(database);
                 signatures.push(build_signature(database, &function, fn_doc.as_deref()));
-                active_sig = Some(0);
+                active_signature = Some(0);
             },
             ResolvedCall::OtherTypeInitializer(_) => return None,
         }
@@ -111,7 +111,7 @@ pub(crate) fn signature_help(
                 let function = overload.r#type.lookup(database);
                 signatures.push(build_signature(database, &function, None));
                 if overload_index == 0 {
-                    active_sig = Some(0);
+                    active_signature = Some(0);
                 }
             }
         }
@@ -123,7 +123,7 @@ pub(crate) fn signature_help(
 
     Some(SignatureHelp {
         signatures,
-        active_signature: active_sig,
+        active_signature,
         active_parameter: Some(active_parameter),
     })
 }

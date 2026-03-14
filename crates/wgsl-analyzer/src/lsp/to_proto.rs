@@ -727,7 +727,7 @@ pub(crate) fn signature_help(help: SignatureHelp) -> lsp_types::SignatureHelp {
                     })
                     .collect(),
             );
-            let sig_doc = signature.documentation.map(|doc| {
+            let signature_doc = signature.documentation.map(|doc| {
                 lsp_types::Documentation::MarkupContent(lsp_types::MarkupContent {
                     kind: lsp_types::MarkupKind::Markdown,
                     value: doc,
@@ -735,7 +735,7 @@ pub(crate) fn signature_help(help: SignatureHelp) -> lsp_types::SignatureHelp {
             });
             lsp_types::SignatureInformation {
                 label: signature.label,
-                documentation: sig_doc,
+                documentation: signature_doc,
                 parameters,
                 active_parameter: None,
             }
@@ -749,7 +749,7 @@ pub(crate) fn signature_help(help: SignatureHelp) -> lsp_types::SignatureHelp {
             clippy::as_conversions,
             reason = "active_signature index fits in u32"
         )]
-        active_signature: help.active_signature.map(|active_sig| active_sig as u32),
+        active_signature: help.active_signature.map(|active_signature| active_signature as u32),
         active_parameter: help.active_parameter,
     }
 }

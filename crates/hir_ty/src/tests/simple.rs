@@ -454,7 +454,7 @@ fn main() {
         expect![[r#"
             26..27 't': ref<texture_multisampled_2d<f32>>
             79..80 'n': u32
-            83..103 'textur...les(t)': u32
+            83..103 'textur...les(t)': u32 // spellchecker:disable-line
             101..102 't': ref<texture_multisampled_2d<f32>>
         "#]],
     );

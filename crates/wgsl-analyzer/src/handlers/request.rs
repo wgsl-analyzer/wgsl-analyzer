@@ -116,12 +116,12 @@ pub(crate) fn handle_completion(
 
 pub(crate) fn handle_signature_help(
     snap: GlobalStateSnapshot,
-    sig_help_params: lsp_types::SignatureHelpParams,
+    signature_help_params: lsp_types::SignatureHelpParams,
 ) -> anyhow::Result<Option<lsp_types::SignatureHelp>> {
     let _p = tracing::info_span!("handle_signature_help").entered();
     let position = try_default!(from_proto::file_position(
         &snap,
-        &sig_help_params.text_document_position_params
+        &signature_help_params.text_document_position_params
     )?);
     let help = snap.analysis.signature_help(position)?;
     Ok(help.map(to_proto::signature_help))
