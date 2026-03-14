@@ -25,6 +25,32 @@ use crate::{
     try_default,
 };
 
+pub(crate) fn handle_analyzer_status(
+    snap: GlobalStateSnapshot,
+    parameters: extensions::AnalyzerStatusParameters,
+) -> Result<String> {
+    let mut buf = String::new();
+
+    buf.push_str("wgsl-analyzer status\n\n");
+
+    buf.push_str(&format!(
+        "Workspaces: {}\n",
+        snap.workspaces.len()
+    ));
+
+    if let Some(text_document) = parameters.text_document {
+        if let Some(file_id) = from_proto::file_id(&snap, &text_document.uri)? {
+            let source_root_id = snap.analysis.source_root_id(file_id)?;
+            buf.push_str(&format!(
+                "Current file: {:?}, source root: {:?}\n",
+                file_id, source_root_id
+            ));
+        }
+    }
+
+    Ok(buf)
+}
+
 pub(crate) fn handle_goto_definition(
     snap: GlobalStateSnapshot,
     parameters: lsp_types::GotoDefinitionParams,
