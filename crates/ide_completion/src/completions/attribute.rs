@@ -1,29 +1,10 @@
+use ide_db::wgsl_attributes::WGSL_ATTRIBUTES;
+
 use super::Completions;
 use crate::{
     context::{CompletionContext, ImmediateLocation},
     item::{CompletionItem, CompletionItemKind},
 };
-
-/// WGSL attributes (used after `@`).
-/// See <https://www.w3.org/TR/WGSL/#attribute-names>.
-const ATTRIBUTES: &[&str] = &[
-    "align",
-    "binding",
-    "builtin",
-    "compute",
-    "const",
-    "diagnostic",
-    "fragment",
-    "group",
-    "id",
-    "interpolate",
-    "invariant",
-    "location",
-    "must_use",
-    "size",
-    "vertex",
-    "workgroup_size",
-];
 
 pub(crate) fn complete_attributes(
     accumulator: &mut Completions,
@@ -34,9 +15,12 @@ pub(crate) fn complete_attributes(
         _ => return None,
     }
 
-    for attr in ATTRIBUTES {
-        CompletionItem::new(CompletionItemKind::Keyword, context.source_range(), *attr)
-            .add_to(accumulator, context.database);
+    for attr in WGSL_ATTRIBUTES {
+        let mut builder =
+            CompletionItem::new(CompletionItemKind::Keyword, context.source_range(), attr.name);
+        builder.detail(attr.syntax);
+        builder.set_documentation(Some(attr.description.to_owned()));
+        builder.add_to(accumulator, context.database);
     }
 
     Some(())
