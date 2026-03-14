@@ -10,16 +10,18 @@ use hir_def::{
 use hir_ty::{
     database::HirDatabase,
     infer::TypeLoweringContext,
-    ty::pretty::{pretty_fn, pretty_type},
+    ty::pretty::{TypeVerbosity, pretty_fn, pretty_fn_with_verbosity, pretty_type, pretty_type_with_verbosity},
 };
 use syntax::{
     AstNode as _, AstToken as _, Direction, HasAttributes as _, HasTemplateParameters as _,
     SyntaxNode, SyntaxToken, ast, match_ast,
 };
 
+use hir_def::item_tree::ModuleItem;
+
 use crate::{
     Field, Function, GlobalConstant, GlobalVariable, HasSource as _, Local, ModuleDef, Override,
-    Semantics, Struct, TypeAlias,
+    Semantics, Struct, TypeAlias, module_item_to_def,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -66,6 +68,23 @@ impl Definition {
             }
         }
     }
+
+    /// Creates a `Definition` from a `ModuleItem` and its file ID.
+    ///
+    /// This is the bridge between the item-tree level (used by completions/resolver)
+    /// and the `Definition` level (used by hover/doc-comments).
+    #[must_use]
+    pub fn from_module_item(
+        database: &dyn HirDatabase,
+        file_id: HirFileId,
+        item: ModuleItem,
+    ) -> Option<Self> {
+        module_item_to_def(database, file_id, item)
+            .into_iter()
+            .next()
+            .map(Self::ModuleDef)
+    }
+
 
     /// Returns a human-readable hover text for this definition.
     #[must_use]
@@ -171,6 +190,72 @@ impl Definition {
         }
     }
 
+    /// Returns a compact one-line detail string for this definition.
+    ///
+    /// Used in completion popups where space is limited. Uses compact type verbosity.
+    #[must_use]
+    pub fn detail_text(
+        &self,
+        database: &dyn HirDatabase,
+    ) -> Option<String> {
+        match self {
+            Self::Local(local) => {
+                let infer = database.infer(DefinitionWithBodyId::Function(local.parent));
+                let ty = infer[local.binding];
+                Some(pretty_type_with_verbosity(database, ty, TypeVerbosity::Compact))
+            },
+            Self::Field(field) => {
+                let field_types = database.field_types(field.id.r#struct);
+                let ty = field_types.0.get(field.id.field)?;
+                Some(pretty_type_with_verbosity(database, *ty, TypeVerbosity::Compact))
+            },
+            Self::ModuleDef(module_def) => match module_def {
+                ModuleDef::Function(function) => {
+                    let resolved = database.function_type(function.id);
+                    let details = resolved.lookup(database);
+                    Some(pretty_fn_with_verbosity(database, &details, TypeVerbosity::Compact))
+                },
+                ModuleDef::GlobalVariable(var) => {
+                    let infer = database.infer(DefinitionWithBodyId::GlobalVariable(var.id));
+                    let data = database.global_var_data(var.id).0;
+                    Some(format!(
+                        "var {}: {}",
+                        data.name.as_str(),
+                        pretty_type_with_verbosity(database, infer.return_type(), TypeVerbosity::Compact)
+                    ))
+                },
+                ModuleDef::GlobalConstant(constant) => {
+                    let infer = database.infer(DefinitionWithBodyId::GlobalConstant(constant.id));
+                    let data = database.global_constant_data(constant.id).0;
+                    Some(format!(
+                        "const {}: {}",
+                        data.name.as_str(),
+                        pretty_type_with_verbosity(database, infer.return_type(), TypeVerbosity::Compact)
+                    ))
+                },
+                ModuleDef::Override(override_decl) => {
+                    let infer = database.infer(DefinitionWithBodyId::Override(override_decl.id));
+                    let data = database.override_data(override_decl.id).0;
+                    Some(format!(
+                        "override {}: {}",
+                        data.name.as_str(),
+                        pretty_type_with_verbosity(database, infer.return_type(), TypeVerbosity::Compact)
+                    ))
+                },
+                ModuleDef::Struct(s) => {
+                    let data = database.struct_data(s.id).0;
+                    Some(format!("struct {}", data.name.as_str()))
+                },
+                ModuleDef::TypeAlias(alias) => {
+                    let data = database.type_alias_data(alias.id).0;
+                    Some(format!("alias {}", data.name.as_str()))
+                },
+                ModuleDef::GlobalAssertStatement(_) => Some(String::from("const_assert ...")),
+            },
+        }
+    }
+
+
     /// Returns doc comments (lines starting with `///`) associated with this definition.
     #[must_use]
     pub fn doc_comments(
@@ -215,7 +300,7 @@ impl Definition {
 ///
 /// Walks backwards through siblings, collecting contiguous doc comment lines.
 /// Stops at the first non-trivia, non-doc-comment token.
-fn doc_comments_from_syntax(node: &SyntaxNode) -> Option<String> {
+pub fn doc_comments_from_syntax(node: &SyntaxNode) -> Option<String> {
     let mut doc_lines: Vec<String> = Vec::new();
 
     // Walk backwards through preceding siblings (tokens and nodes)
@@ -482,7 +567,7 @@ fn resolve_struct_member_field(
 
 /// Extracts attribute text from an AST node that implements `HasAttributes`.
 /// Returns lines like `@group(0) @binding(0)` from the source.
-fn format_attributes(source: &dyn syntax::HasAttributes) -> Option<String> {
+pub fn format_attributes(source: &dyn syntax::HasAttributes) -> Option<String> {
     let attrs: Vec<String> = source
         .attributes()
         .map(|attr| attr.syntax().text().to_string())

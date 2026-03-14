@@ -2,7 +2,7 @@ pub mod definition;
 pub mod diagnostics;
 
 use base_db::{EditionedFileId, FileId};
-pub use definition::Definition;
+pub use definition::{Definition, doc_comments_from_syntax, format_attributes};
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
 use either::Either;
 use hir_def::{
@@ -439,7 +439,7 @@ impl ChildContainer {
     }
 }
 
-fn module_item_to_def(
+pub fn module_item_to_def(
     database: &dyn HirDatabase,
     file_id: HirFileId,
     module_item: ModuleItem,
