@@ -15,7 +15,7 @@ use crate::flags::PgoTrainingCrate;
 /// wgsl-analyzer on itself to gather a PGO profile.
 pub(crate) fn gather_pgo_profile<'shell>(
     shell: &'shell Shell,
-    ra_build_cmd: Cmd<'shell>,
+    wa_build_cmd: Cmd<'shell>,
     target: &str,
     train_crate: &PgoTrainingCrate,
 ) -> anyhow::Result<PathBuf> {
@@ -36,7 +36,7 @@ pub(crate) fn gather_pgo_profile<'shell>(
         .with_extension(EXE_EXTENSION);
 
     // Build RA with PGO instrumentation
-    let cmd_gather = ra_build_cmd.env(
+    let cmd_gather = wa_build_cmd.env(
         "RUSTFLAGS",
         format!("-Cprofile-generate={}", pgo_dir.to_str().unwrap()),
     );

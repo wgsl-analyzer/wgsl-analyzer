@@ -238,10 +238,10 @@ fn ellipsize(
 
 #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
 fn check_infer(
-    ra_fixture: &str,
+    wa_fixture: &str,
     expect: Expect,
 ) {
-    let mut actual = infer(ra_fixture);
+    let mut actual = infer(wa_fixture);
     actual.push('\n');
     expect.assert_eq(&actual);
 }
