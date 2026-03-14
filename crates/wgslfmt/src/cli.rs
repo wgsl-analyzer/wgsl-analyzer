@@ -11,7 +11,7 @@ pub struct Args {
     pub check: bool,
     pub use_tabs: bool,
     pub indent_width: Option<usize>,
-    pub output: OutputFormat,
+    pub output_format: OutputFormat,
     /// Files, directories, or glob patterns to format.
     /// Pass "-" to read from stdin.
     pub patterns: Vec<String>,
@@ -87,18 +87,17 @@ Exits with 1 and prints a diff if formatting is required.",
                     .action(ArgAction::SetTrue),
             )
             .arg(
-                arg!(
-                    --indent-width <WIDTH>
-                    "Number of spaces per indentation level (default: 4)"
-                )
-                .required(false)
-                .value_parser(value_parser!(usize)),
+                Arg::new("indent-width")
+                    .long("indent-width")
+                    .value_name("WIDTH")
+                    .help("Number of spaces per indentation level (default: 4)")
+                    .value_parser(value_parser!(usize)),
             )
             .arg(
-                arg!(--output <FORMAT>)
-                    .required(false)
-                    .value_parser(value_parser!(OutputFormat))
-                    .default_value("text"),
+                Arg::new("output-format")
+                    .long("output-format")
+                    .value_name("FORMAT")
+                    .value_parser(value_parser!(OutputFormat)),
             )
             .arg(
                 Arg::new("patterns")
@@ -118,8 +117,8 @@ Pass \"-\" to read from stdin",
             check: matches.remove_one::<bool>("check").unwrap_or_default(),
             use_tabs: matches.remove_one::<bool>("tabs").unwrap_or_default(),
             indent_width: matches.remove_one::<usize>("indent-width"),
-            output: matches
-                .remove_one::<OutputFormat>("output")
+            output_format: matches
+                .remove_one::<OutputFormat>("output-format")
                 .unwrap_or_default(),
             patterns: matches
                 .remove_many::<String>("patterns")
