@@ -200,22 +200,6 @@ impl ChangeFixture {
                 });
         }
 
-        // source_change.set_roots(ChangeRoots {
-        //     projects: roots
-        //         .into_iter()
-        //         .map(|(file_set, package)| {
-        //             let source_root = match package.origin {
-        //                 PackageOrigin::Local => SourceRoot::new_local(file_set),
-        //                 PackageOrigin::Library | PackageOrigin::Language => {
-        //                     SourceRoot::new_library(file_set)
-        //                 },
-        //             };
-        //             (source_root, package)
-        //         })
-        //         .collect(),
-        //     detached: Vec::default(),
-        // });
-
         source_change.set_roots(
             roots
                 .into_iter()

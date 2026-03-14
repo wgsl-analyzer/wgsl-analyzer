@@ -1,6 +1,7 @@
 pub mod cli;
 pub mod config;
 mod diagnostics;
+mod discover;
 mod dispatch;
 mod global_state;
 mod in_memory_documents;
@@ -10,6 +11,8 @@ pub mod main_loop;
 mod operation_queue;
 mod reload;
 mod task_pool;
+#[cfg(test)]
+mod tests;
 mod version;
 
 pub type Result<T, E = anyhow::Error> = std::result::Result<T, E>;

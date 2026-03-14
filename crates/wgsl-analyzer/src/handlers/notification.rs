@@ -6,26 +6,45 @@
 use std::ops::Not as _;
 
 use anyhow::Context as _;
+use base_db::input::PackageOrigin;
 use itertools::Itertools as _;
 use lsp_types::{
-    DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
-    DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
+    CancelParams, DidChangeConfigurationParams, DidChangeTextDocumentParams,
+    DidChangeWatchedFilesParams, DidChangeWorkspaceFoldersParams, DidCloseTextDocumentParams,
+    DidOpenTextDocumentParams, DidSaveTextDocumentParams,
 };
+use paths::Utf8PathBuf;
 use tracing::error;
+use triomphe::Arc;
+use vfs::AbsPathBuf;
 
 use crate::{
-    Result, // target_spec::TargetSpec,
-    // try_default,
+    Result,
     config::{Config, ConfigChange},
+    discover::DiscoverArgument,
     global_state::GlobalState,
     in_memory_documents::DocumentData,
     lsp::{from_proto, utilities::apply_document_changes},
 };
 
+pub(crate) fn handle_cancel(
+    state: &mut GlobalState,
+    parameters: CancelParams,
+) -> anyhow::Result<()> {
+    let id: lsp_server::RequestId = match parameters.id {
+        lsp_types::NumberOrString::Number(id) => id.into(),
+        lsp_types::NumberOrString::String(id) => id.into(),
+    };
+    state.cancel(id);
+    Ok(())
+}
+
 pub(crate) fn handle_did_open_text_document(
     state: &mut GlobalState,
     parameters: DidOpenTextDocumentParams,
 ) -> Result<()> {
+    let _p = tracing::info_span!("handle_did_open_text_document").entered();
+
     let path = match from_proto::vfs_path(&parameters.text_document.uri) {
         Ok(path) => path,
         Err(error) => {
@@ -35,13 +54,19 @@ pub(crate) fn handle_did_open_text_document(
     };
 
     let text_bytes = parameters.text_document.text.into_bytes();
-    _ = state.in_memory_documents.insert(
-        path.clone(),
-        DocumentData {
-            version: parameters.text_document.version,
-            data: text_bytes.clone(),
-        },
-    );
+    let already_exists = state
+        .in_memory_documents
+        .insert(
+            path.clone(),
+            DocumentData {
+                version: parameters.text_document.version,
+                data: text_bytes.clone(),
+            },
+        )
+        .is_err();
+    if already_exists {
+        tracing::error!("duplicate DidOpenTextDocument: {}", path);
+    }
 
     let file_id = {
         let mut vfs = state.vfs.write();
@@ -49,12 +74,15 @@ pub(crate) fn handle_did_open_text_document(
         vfs.0.file_id(&path)
     };
 
-    // When the file gets closed, we hide the diagnostics, because the LSP does not give a good way to determine when a file has been deleted
-    // If there are pre-existing diagnostics, send them now
-    if let Some(file_id) = file_id {
-        state.diagnostics.make_updated(file_id.0);
+    if let Some(file_path) = path.as_path() {
+        state.request_project_discover(
+            DiscoverArgument {
+                path: file_path.to_path_buf(),
+                search_parents: true,
+            },
+            &"opened file".to_owned(),
+        );
     }
-
     Ok(())
 }
 
@@ -133,8 +161,29 @@ pub(crate) fn handle_did_save_text_document(
     state: &mut GlobalState,
     parameters: DidSaveTextDocumentParams,
 ) -> Result<()> {
-    let path = from_proto::vfs_path(&parameters.text_document.uri)
-        .context("invalid path in did_change_text_document")?;
+    let _p = tracing::info_span!("handle_did_save_text_document").entered();
+
+    let path = match from_proto::vfs_path(&parameters.text_document.uri) {
+        Ok(path) => path,
+        Err(error) => {
+            error!("Invalid path in DidSaveTextDocument: {}", error);
+            return Ok(());
+        },
+    };
+
+    // Re-fetch workspaces if the wesl.toml has changed
+    if let Some(file_path) = path.as_path()
+        && path.name_and_extension() == Some(("wesl", Some("toml")))
+    {
+        state.request_project_discover(
+            DiscoverArgument {
+                path: file_path.to_path_buf(),
+                search_parents: false,
+            },
+            &"wesl.toml changed".to_owned(),
+        );
+    }
+
     Ok(())
 }
 
@@ -178,6 +227,50 @@ pub(crate) fn handle_did_change_configuration(
             }
         },
     );
+
+    Ok(())
+}
+
+pub(crate) fn handle_did_change_workspace_folders(
+    state: &mut GlobalState,
+    parameters: DidChangeWorkspaceFoldersParams,
+) -> anyhow::Result<()> {
+    let config = Arc::make_mut(&mut state.config);
+
+    for workspace in parameters.event.removed {
+        let Ok(path) = workspace.uri.to_file_path() else {
+            continue;
+        };
+        let Ok(path) = Utf8PathBuf::from_path_buf(path) else {
+            continue;
+        };
+        let Ok(path) = AbsPathBuf::try_from(path) else {
+            continue;
+        };
+        config.remove_workspace(&path);
+    }
+
+    let added: Vec<_> = parameters
+        .event
+        .added
+        .into_iter()
+        .filter_map(|folder| folder.uri.to_file_path().ok())
+        .filter_map(|folder| Utf8PathBuf::from_path_buf(folder).ok())
+        .filter_map(|folder| AbsPathBuf::try_from(folder).ok())
+        .collect();
+    config.add_workspaces(added.iter().cloned());
+
+    state.refresh_packages();
+
+    for workspace_root in added {
+        state.request_project_discover(
+            DiscoverArgument {
+                path: workspace_root,
+                search_parents: false,
+            },
+            &"client workspaces changed".to_owned(),
+        );
+    }
 
     Ok(())
 }

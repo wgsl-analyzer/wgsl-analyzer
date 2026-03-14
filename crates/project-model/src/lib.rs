@@ -18,13 +18,14 @@ mod package_interner;
 mod wesl_package;
 mod wesl_toml;
 use anyhow::{bail, format_err};
+use base_db::input::PackageOrigin;
 use indexmap::IndexMap;
 pub use manifest_path::ManifestPath;
 pub use package_graph::{PackageChange, PackageGraph, PackageKey};
 use paths::{AbsPath, AbsPathBuf};
 use rustc_hash::{FxHashSet, FxHasher};
 use std::{fmt, fs, hash::BuildHasherDefault, io};
-pub use wesl_package::{PackageDependency, WeslPackage};
+pub use wesl_package::{PackageDependency, WeslPackage, WeslPackageRoot};
 pub use wesl_toml::{WeslDependency, WeslToml};
 
 use crate::package_interner::PackageInterner;
@@ -109,4 +110,19 @@ impl fmt::Display for ProjectManifest {
     ) -> fmt::Result {
         fmt::Display::fmt(self.manifest_path(), formatter)
     }
+}
+
+/// `PackageRoot` describes a package root folder.
+/// Which may be an external dependency, or a member of
+/// the current workspace.
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct PackageRoot {
+    pub origin: PackageOrigin,
+    pub manifest: ManifestPath,
+    /// Files to include.
+    pub include_files: Vec<AbsPathBuf>,
+    /// Directories to include.
+    pub include: Vec<AbsPathBuf>,
+    /// Directories to exclude.
+    pub exclude: Vec<AbsPathBuf>,
 }

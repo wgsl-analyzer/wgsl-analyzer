@@ -1,0 +1,5 @@
+edition = "2026_pre"
+root = "./package.wesl"
+package_manager = "cargo"
+
+[dependencies]

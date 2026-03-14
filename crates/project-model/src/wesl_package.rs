@@ -1,8 +1,9 @@
+use base_db::input::PackageOrigin;
 use edition::Edition;
 use paths::{AbsPath, AbsPathBuf};
 use triomphe::Arc;
 
-use crate::{PackageKey, manifest_path::ManifestPath};
+use crate::{PackageKey, PackageRoot, manifest_path::ManifestPath};
 
 /// Information associated with a wesl package.
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -12,30 +13,41 @@ pub struct WeslPackage {
     /// Name generated from the folder name.
     pub display_name: Option<String>,
     /// Path to the main source file of the target.
-    pub root: AbsPathBuf,
+    pub root: WeslPackageRoot,
     /// Does this package come from the local filesystem (and is editable)?
-    pub is_local: bool,
+    pub origin: PackageOrigin,
     /// List of packages this package depends on.
     pub dependencies: Vec<PackageDependency>,
     /// WESL edition for this package.
     pub edition: Edition,
-    // TODO: Add "include" and "exclude" here
+    // TODO: Support include and excludes https://github.com/wgsl-analyzer/wgsl-analyzer/issues/993
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum WeslPackageRoot {
+    File(AbsPathBuf),
+    Folder(AbsPathBuf),
 }
 
 impl WeslPackage {
     #[must_use]
     pub fn to_root(&self) -> PackageRoot {
-        let root_folder = if self.root.extension().is_some() {
-            self.root.parent().map_or_else(
-                || self.manifest.parent().to_path_buf(),
-                AbsPath::to_path_buf,
-            )
-        } else {
-            self.root.clone()
+        // We purposefully do not support the case where the user replaces a `shaders/main.wesl` file with a folder named `shaders/main.wesl/`.
+        // If the user does that, then it is on them to restart the language server.
+        let root_folder = match &self.root {
+            #[expect(
+                clippy::missing_panics_doc,
+                reason = "This panic should not be possible"
+            )]
+            WeslPackageRoot::File(path) => path
+                .parent()
+                .expect("Files are always contained in a parent folder")
+                .to_path_buf(),
+            WeslPackageRoot::Folder(path) => path.clone(),
         };
         // TODO: For maximal correctness, we'd opportunistically include every wesl.toml between the `self.manifest.parent()` folder and the `root_folder`
         PackageRoot {
-            is_local: self.is_local,
+            origin: self.origin,
             manifest: self.manifest.clone(),
             include_files: [AbsPathBuf::from(self.manifest.clone())].to_vec(),
             include: [root_folder].to_vec(),
@@ -48,20 +60,4 @@ impl WeslPackage {
 pub struct PackageDependency {
     pub pkg: PackageKey,
     pub name: String,
-}
-
-/// `PackageRoot` describes a package root folder.
-/// Which may be an external dependency, or a member of
-/// the current workspace.
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct PackageRoot {
-    /// Is from the local filesystem and may be edited.
-    pub is_local: bool,
-    pub manifest: ManifestPath,
-    /// Files to include.
-    pub include_files: Vec<AbsPathBuf>,
-    /// Directories to include.
-    pub include: Vec<AbsPathBuf>,
-    /// Directories to exclude.
-    pub exclude: Vec<AbsPathBuf>,
 }

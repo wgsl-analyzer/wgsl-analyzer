@@ -176,7 +176,7 @@ impl ops::Deref for PackageName {
 }
 
 /// Origin of the packages.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum PackageOrigin {
     /// Packages that are workspace members.
     Local,
@@ -188,17 +188,17 @@ pub enum PackageOrigin {
 
 impl PackageOrigin {
     #[must_use]
-    pub const fn is_local(&self) -> bool {
+    pub const fn is_local(self) -> bool {
         matches!(self, Self::Local { .. })
     }
 
     #[must_use]
-    pub const fn is_lib(&self) -> bool {
+    pub const fn is_lib(self) -> bool {
         matches!(self, Self::Library { .. })
     }
 
     #[must_use]
-    pub const fn is_lang(&self) -> bool {
+    pub const fn is_lang(self) -> bool {
         matches!(self, Self::Language { .. })
     }
 }

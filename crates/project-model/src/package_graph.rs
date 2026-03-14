@@ -126,12 +126,12 @@ impl PackageGraph {
     /// Cleans up the set of discovered projects.
     pub fn retain<F>(
         &mut self,
-        f: F,
+        filter: F,
     ) where
-        F: Fn(&WeslPackage) -> bool,
+        F: Fn(PackageId, &WeslPackage) -> bool,
     {
         self.packages.retain(|id, package| {
-            let retain = f(package);
+            let retain = filter(*id, package);
             if !retain {
                 self.changes.insert(*id, PackageChange::Delete);
             }
@@ -140,13 +140,25 @@ impl PackageGraph {
     }
 
     pub fn retain_referenced(&mut self) {
-        let roots: FxHashSet<PackageId> = self
+        let mut seen = FxHashSet::default();
+        let mut stack: Vec<PackageId> = self
             .packages
             .iter()
-            .filter(|(_, package)| package.is_local)
+            .filter(|(_, package)| package.origin.is_local())
             .map(|(id, _)| *id)
             .collect();
-        // TODO: finish this, it should clear all packages that are not somehow depended upon by a root package.
+        while let Some(id) = stack.pop() {
+            if seen.insert(id) {
+                continue;
+            }
+
+            for dependency in &self.packages[&id].dependencies {
+                if let Some(child_id) = self.package_id(&dependency.pkg) {
+                    stack.push(child_id);
+                }
+            }
+        }
+        self.retain(|id, _| seen.contains(&id));
     }
 
     /// Returns an iterator over the stored ids and their corresponding data.

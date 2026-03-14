@@ -158,7 +158,7 @@ fn apply_package_graph(
             display_name: None,
             dependencies: Vec::new(),
             cyclic_dependencies: Vec::new(),
-            origin: package_data.origin.clone(),
+            origin: package_data.origin,
         });
         // Salsa does not have a removal API yet, see: https://github.com/salsa-rs/salsa/issues/37
         remaining_package.set_data(database).to(dummy_package);
@@ -516,7 +516,7 @@ mod tests {
             &[],
             expect![[r#"
 
-            "#]],
+"#]],
         );
     }
 }

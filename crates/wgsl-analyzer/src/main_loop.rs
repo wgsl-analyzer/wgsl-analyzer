@@ -2,7 +2,7 @@
 //! requests/replies and notifications back to the client.
 
 use std::{
-    fmt,
+    fmt::{self, Write as _},
     ops::Div as _,
     panic::AssertUnwindSafe,
     time::{Duration, Instant},
@@ -15,15 +15,15 @@ use hir::database::DefDatabase as _;
 use lsp_server::{Connection, Notification, Request};
 use lsp_types as lt;
 use lt::notification::Notification as _;
+use project_model::PackageKey;
 use salsa::{Cancelled, Durability};
 use stdx::thread::ThreadIntent;
 use tracing::{Level, error, span};
 use triomphe::Arc;
-use vfs::{AbsPathBuf, FileId};
+use vfs::{FileId, VfsPath, loader::LoadingProgress};
 
-// use vfs::{loader::LoadingProgress, AbsPathBuf, FileId};
 use crate::handlers::notification::{
-    handle_did_change_configuration, handle_did_change_text_document,
+    handle_cancel, handle_did_change_configuration, handle_did_change_text_document,
     handle_did_change_watched_files, handle_did_close_text_document, handle_did_open_text_document,
     handle_did_save_text_document,
 };
@@ -31,14 +31,14 @@ use crate::{
     Result,
     config::Config,
     diagnostics::{DiagnosticsGeneration, NativeDiagnosticsFetchKind, fetch_native_diagnostics},
+    discover::{DiscoverArgument, LoadPackageMessage, LoadPackageTask},
     dispatch::{NotificationDispatcher, RequestDispatcher},
-    global_state::{FetchWorkspaceResponse, GlobalState, file_id_to_url},
-    handlers, lsp,
+    global_state::{GlobalState, file_id_to_url},
+    handlers::{self, notification::handle_did_change_workspace_folders},
     lsp::{
-        from_proto,
+        self, from_proto,
         utilities::{Progress, notification_is},
     },
-    reload::ProjectWorkspaceProgress,
 };
 
 pub fn main_loop(
@@ -80,6 +80,7 @@ enum Event {
     Vfs(vfs::loader::Message),
     // Flycheck(FlycheckMessage),
     // TestResult(CargoTestMessage),
+    LoadPackage(LoadPackageMessage),
 }
 
 impl fmt::Display for Event {
@@ -94,6 +95,7 @@ impl fmt::Display for Event {
             // Self::Flycheck(_) => write!(formatter, "Event::Flycheck"),
             Self::QueuedTask(_) => write!(formatter, "Event::QueuedTask"),
             // Event::TestResult(_) => write!(formatter, "Event::TestResult"),
+            Self::LoadPackage(_) => write!(formatter, "Event::DiscoverProject"),
         }
     }
 }
@@ -107,12 +109,9 @@ pub(crate) enum DeferredTask {
 #[derive(Debug)]
 pub(crate) enum Task {
     Response(lsp_server::Response),
-    Diagnostics(DiagnosticsTaskKind),
-    // Diagnostics(Vec<(FileId, Vec<lt::Diagnostic>)>),
-    FetchWorkspace(ProjectWorkspaceProgress),
-
-    // DiscoverLinkedProjects(DiscoverProjectParameter),
+    DiscoverProject(DiscoverArgument),
     Retry(lsp_server::Request),
+    Diagnostics(DiagnosticsTaskKind),
     // DiscoverTest(lsp::ext::DiscoverTestResults),
     PrimeCaches(PrimeCachesProgress),
 }
@@ -121,12 +120,6 @@ pub(crate) enum Task {
 pub(crate) enum DiagnosticsTaskKind {
     Syntax(DiagnosticsGeneration, Vec<(FileId, Vec<lt::Diagnostic>)>),
     Semantic(DiagnosticsGeneration, Vec<(FileId, Vec<lt::Diagnostic>)>),
-}
-
-#[derive(Debug)]
-pub(crate) enum DiscoverProjectParam {
-    Buildfile(AbsPathBuf),
-    Path(AbsPathBuf),
 }
 
 #[derive(Debug)]
@@ -164,7 +157,11 @@ impl fmt::Debug for Event {
                     .field("error", &response.error)
                     .finish();
             },
-            Self::Lsp(_) | Self::Task(_) | Self::QueuedTask(_) | Self::Vfs(_) => (),
+            Self::Lsp(_)
+            | Self::Task(_)
+            | Self::QueuedTask(_)
+            | Self::Vfs(_)
+            | Self::LoadPackage(_) => (),
         }
         match self {
             Self::Lsp(message) => fmt::Debug::fmt(message, formatter),
@@ -173,7 +170,7 @@ impl fmt::Debug for Event {
             Self::Vfs(message) => fmt::Debug::fmt(message, formatter),
             // Event::Flycheck(it) => fmt::Debug::fmt(it, formatter),
             // Event::TestResult(it) => fmt::Debug::fmt(it, formatter),
-            // Event::DiscoverProject(it) => fmt::Debug::fmt(it, formatter),
+            Self::LoadPackage(message) => fmt::Debug::fmt(message, formatter),
         }
     }
 }
@@ -197,25 +194,15 @@ impl GlobalState {
             self.register_did_save_capability(additional_patterns);
         }
 
-        // if self.config.discover_workspace_config().is_none() {
-        //     self.fetch_workspaces_queue.request_operation(
-        //         "startup".to_owned(),
-        //         FetchWorkspaceRequest {
-        //             path: None,
-        //             force_crate_graph_reload: false,
-        //         },
-        //     );
-        //     if let Some((
-        //         cause,
-        //         FetchWorkspaceRequest {
-        //             path,
-        //             force_crate_graph_reload,
-        //         },
-        //     )) = self.fetch_workspaces_queue.should_start_operation()
-        //     {
-        //         self.fetch_workspaces(cause, path, force_crate_graph_reload);
-        //     }
-        // }
+        for workspace_root in self.config.workspace_roots() {
+            self.request_project_discover(
+                DiscoverArgument {
+                    path: workspace_root.clone(),
+                    search_parents: false,
+                },
+                &"startup".to_owned(),
+            );
+        }
 
         while let Ok(event) = self.next_event(&inbox) {
             let Some(event) = event else {
@@ -353,8 +340,8 @@ impl GlobalState {
             // recv(self.test_run_receiver) -> task =>
             //     task.map(Event::TestResult),
 
-            // recv(self.discover_receiver) -> task =>
-            //     task.map(Event::DiscoverProject),
+            recv(self.load_package_receiver) -> task =>
+                task.map(Event::LoadPackage),
         }
         .map(Some)
     }
@@ -417,10 +404,20 @@ impl GlobalState {
             },
             Event::Vfs(message) => {
                 let _p = tracing::info_span!("GlobalState::handle_event/vfs").entered();
-                self.handle_vfs_message(message);
+                let mut last_progress_report = None;
+                self.handle_vfs_message(message, &mut last_progress_report);
                 // Coalesce many VFS event into a single loop turn
                 while let Ok(message) = self.loader.receiver.try_recv() {
-                    self.handle_vfs_message(message);
+                    self.handle_vfs_message(message, &mut last_progress_report);
+                }
+                if let Some((message, fraction)) = last_progress_report {
+                    self.report_progress(
+                        "Roots Scanned",
+                        &Progress::Report,
+                        Some(message),
+                        Some(fraction),
+                        None,
+                    );
                 }
             },
             // Event::Flycheck(message) => {
@@ -439,13 +436,13 @@ impl GlobalState {
             //         self.handle_cargo_test_message(message);
             //     }
             // },
-            // Event::DiscoverProject(message) => {
-            //     self.handle_discover_message(message);
-            //     // Coalesce many project discovery events into a single loop turn.
-            //     while let Ok(message) = self.discover_receiver.try_recv() {
-            //         self.handle_discover_message(message);
-            //     }
-            // },
+            Event::LoadPackage(message) => {
+                self.handle_load_package_message(message);
+                // Coalesce many project discovery events into a single loop turn.
+                while let Ok(message) = self.load_package_receiver.try_recv() {
+                    self.handle_load_package_message(message);
+                }
+            },
         }
         let event_handling_duration = loop_start.elapsed();
         let (state_changed, memdocs_added_or_removed) = if self.vfs_done {
@@ -524,6 +521,8 @@ impl GlobalState {
             }
         }
 
+        self.cleanup_load_package_tasks();
+
         if let Some(diagnostic_changes) = self.diagnostics.take_changes() {
             for file_id in diagnostic_changes {
                 let uri = file_id_to_url(&self.vfs.read().0, file_id);
@@ -540,31 +539,6 @@ impl GlobalState {
                     .collect::<Vec<_>>();
                 self.publish_diagnostics(uri, version, diagnostics);
             }
-        }
-
-        // if self.config.cargo_autoreload_config(None)
-        //     || self.config.discover_workspace_config().is_some()
-        // {
-        //     if let Some((
-        //         cause,
-        //         FetchWorkspaceRequest {
-        //             path,
-        //             force_crate_graph_reload,
-        //         },
-        //     )) = self.fetch_workspaces_queue.should_start_op()
-        //     {
-        //         self.fetch_workspaces(cause, path, force_crate_graph_reload);
-        //     }
-        // }
-
-        if !self.fetch_workspaces_queue.operation_in_progress() {
-            // if let Some((cause, ())) = self.fetch_build_data_queue.should_start_op() {
-            //     self.fetch_build_data(cause);
-            // } else if let Some((cause, (change, paths))) =
-            //     self.fetch_proc_macros_queue.should_start_op()
-            // {
-            //     self.fetch_proc_macros(cause, change, paths);
-            // }
         }
 
         if let Some((cause, ())) = self.prime_caches_queue.should_start_operation() {
@@ -619,21 +593,18 @@ impl GlobalState {
             self.in_memory_documents
                 .iter()
                 .map(|path| vfs.file_id(path).unwrap())
-                // .filter_map(|(file_id, excluded)| {
-                //     (excluded == vfs::FileExcluded::No).then_some(file_id)
+                .filter_map(|(file_id, excluded)| {
+                    (excluded == vfs::FileExcluded::No).then_some(file_id)
+                })
+                // .filter(|&file_id| {
+                //     let source_root = database.file_source_root(file_id.0).source_root_id(database);
+                //     // Only publish diagnostics for files in the workspace, not from crates.io deps
+                //     // or the sysroot.
+                //     // While theoretically these should never have errors, we have quite a few false
+                //     // positives particularly in the stdlib, and those diagnostics would stay around
+                //     // forever if we emitted them here.
+                //     !database.source_root(source_root).source_root(database).is_library()
                 // })
-                .filter(|&file_id| {
-                    let source_root = database.file_source_root(file_id.0).source_root_id(database);
-                    // Only publish diagnostics for files in the workspace, not from crates.io deps
-                    // or the sysroot.
-                    // While theoretically these should never have errors, we have quite a few false
-                    // positives particularly in the stdlib, and those diagnostics would stay around
-                    // forever if we emitted them here.
-                    !database.source_root(source_root).source_root(database).is_library()
-                })
-                .map(|file_id| {
-                    file_id.0
-                })
                 .collect::<Arc<_>>()
         };
         tracing::trace!("updating notifications for {:?}", subscriptions);
@@ -666,11 +637,7 @@ impl GlobalState {
                     let subscriptions = subscriptions.clone();
                     // Do not fetch semantic diagnostics (and populate query results) if we haven't even
                     // loaded the initial workspace yet.
-                    let fetch_semantic = self.vfs_done
-                        && self
-                            .fetch_workspaces_queue
-                            .last_operation_result()
-                            .is_some();
+                    let fetch_semantic = self.vfs_done && self.load_package_jobs_active == 0;
                     move |sender| {
                         // We aren't observing the semantics token cache here
                         let snapshot = AssertUnwindSafe(&snapshot);
@@ -711,6 +678,205 @@ impl GlobalState {
                 });
             start = end;
         }
+    }
+
+    #[expect(clippy::ignored_unit_patterns, reason = "wip")]
+    #[expect(clippy::match_same_arms, reason = "wip")]
+    fn handle_task(
+        &mut self,
+        prime_caches_progress: &mut Vec<PrimeCachesProgress>,
+        task: Task,
+    ) {
+        match task {
+            Task::Response(response) => self.respond(response),
+            Task::Retry(request) if !self.is_completed(&request) => self.on_request(request),
+            Task::Retry(_) => (),
+            Task::Diagnostics(kind) => {
+                self.diagnostics.set_native_diagnostics(kind);
+            },
+            Task::PrimeCaches(progress) => match progress {
+                PrimeCachesProgress::Begin => prime_caches_progress.push(progress),
+                PrimeCachesProgress::Report(_) => {
+                    match prime_caches_progress.last_mut() {
+                        Some(last @ PrimeCachesProgress::Report(_)) => {
+                            // Coalesce subsequent update events.
+                            *last = progress;
+                        },
+                        _ => prime_caches_progress.push(progress),
+                    }
+                },
+                PrimeCachesProgress::End { .. } => prime_caches_progress.push(progress),
+            },
+            Task::DiscoverProject(argument) => {
+                if let Some(load_package_task) =
+                    LoadPackageTask::discover_local(&argument, self.load_package_sender.clone())
+                {
+                    if self.load_package_jobs_active == 0 {
+                        self.report_progress("Project loading", &Progress::Begin, None, None, None);
+                    }
+                    self.load_package_jobs_active += 1;
+                    let last_entry = self.load_package_tasks.len();
+                    self.load_package_tasks.push(load_package_task);
+                    self.load_package_tasks[last_entry].run();
+                }
+            },
+        }
+    }
+
+    fn handle_vfs_message(
+        &mut self,
+        message: vfs::loader::Message,
+        last_progress_report: &mut Option<(String, f64)>,
+    ) {
+        let _p = tracing::info_span!("GlobalState::handle_vfs_message").entered();
+        let is_changed = matches!(message, vfs::loader::Message::Changed { .. });
+        match message {
+            vfs::loader::Message::Changed { files } | vfs::loader::Message::Loaded { files } => {
+                let _p =
+                    tracing::info_span!("GlobalState::handle_vfs_message{changed/load}").entered();
+                let vfs = &mut self.vfs.write().0;
+                for (path, contents) in files {
+                    let path = VfsPath::from(path);
+                    // if the file is in mem docs, it's managed by the client via notifications
+                    // so only set it if its not in there
+                    if !self.in_memory_documents.contains(&path)
+                        && (is_changed || vfs.file_id(&path).is_none())
+                    {
+                        vfs.set_file_contents(path, contents);
+                    }
+                }
+            },
+            vfs::loader::Message::Progress {
+                n_total,
+                n_done,
+                dir: directory, // spellchecker:disable-line
+                config_version,
+            } => {
+                let _p = span!(Level::INFO, "GlobalState::handle_vfs_message/progress").entered();
+                stdx::always!(config_version <= self.vfs_config_version);
+
+                let (n_done, state) = match n_done {
+                    LoadingProgress::Started => {
+                        self.vfs_span =
+                            Some(span!(Level::INFO, "vfs_load", total = n_total).entered());
+                        (0, Progress::Begin)
+                    },
+                    LoadingProgress::Progress(n_done) => (n_done.min(n_total), Progress::Report),
+                    LoadingProgress::Finished => {
+                        self.vfs_span = None;
+                        (n_total, Progress::End)
+                    },
+                };
+
+                self.vfs_progress_config_version = config_version;
+                self.vfs_done = state == Progress::End;
+
+                let mut message = format!("{n_done}/{n_total}");
+                if let Some(directory) = directory {
+                    write!(
+                        message,
+                        ": {}",
+                        match directory.strip_prefix(self.config.root_path()) {
+                            Some(relative_path) => relative_path.as_utf8_path(),
+                            None => directory.as_ref(),
+                        }
+                    );
+                }
+
+                match state {
+                    Progress::Begin => self.report_progress(
+                        "Roots Scanned",
+                        &state,
+                        Some(message),
+                        Some(Progress::fraction(n_done, n_total)),
+                        None,
+                    ),
+                    // Don't send too many notifications while batching, sending progress reports
+                    // serializes notifications on the mainthread at the moment which slows us down
+                    Progress::Report => {
+                        if last_progress_report.is_none() {
+                            self.report_progress(
+                                "Roots Scanned",
+                                &state,
+                                Some(message.clone()),
+                                Some(Progress::fraction(n_done, n_total)),
+                                None,
+                            );
+                        }
+
+                        *last_progress_report =
+                            Some((message, Progress::fraction(n_done, n_total)));
+                    },
+                    Progress::End => {
+                        last_progress_report.take();
+                        self.report_progress(
+                            "Roots Scanned",
+                            &state,
+                            Some(message),
+                            Some(Progress::fraction(n_done, n_total)),
+                            None,
+                        );
+                    },
+                }
+            },
+        }
+    }
+
+    #[expect(clippy::unused_self, reason = "wip")]
+    #[expect(clippy::needless_pass_by_ref_mut, reason = "wip")]
+    fn handle_queued_task(
+        &mut self,
+        task: DeferredTask,
+    ) {
+        match task {
+            DeferredTask::CheckIfIndexed(uri) => {},
+        }
+    }
+
+    fn handle_load_package_message(
+        &mut self,
+        message: LoadPackageMessage,
+    ) {
+        let title = "Project loading";
+        match message {
+            LoadPackageMessage::Finished { project } => {
+                self.load_package_jobs_active = self.load_package_jobs_active.strict_sub(1);
+                if self.load_package_jobs_active == 0 {
+                    self.report_progress(title, &Progress::End, None, None, None);
+                    self.wants_to_switch = Some("fetched project".to_owned());
+                }
+
+                let mut packages = self.packages.write();
+                packages.set(PackageKey::from_package(&project), project);
+            },
+            LoadPackageMessage::Progress { message } => {
+                if self.load_package_jobs_active > 0 {
+                    self.report_progress(title, &Progress::Report, Some(message), None, None);
+                }
+            },
+            LoadPackageMessage::Error { error, source } => {
+                let message = format!("Project discovery failed: {error}");
+                self.show_and_log_error(message.clone(), source);
+
+                self.load_package_jobs_active = self.load_package_jobs_active.strict_sub(1);
+                if self.load_package_jobs_active == 0 {
+                    self.report_progress(title, &Progress::End, Some(message), None, None);
+                }
+            },
+        }
+    }
+
+    /// Drop any package loading processes that have exited, due to
+    /// finishing or erroring.
+    fn cleanup_load_package_tasks(&mut self) {
+        let mut active_handles = vec![];
+
+        for mut task in self.load_package_tasks.drain(..) {
+            if !task.has_exited() {
+                active_handles.push(task);
+            }
+        }
+        self.load_package_tasks = active_handles;
     }
 
     /// Registers and handles a request. This should only be called once per incoming request.
@@ -795,99 +961,6 @@ impl GlobalState {
             .finish();
     }
 
-    #[expect(clippy::ignored_unit_patterns, reason = "wip")]
-    #[expect(clippy::match_same_arms, reason = "wip")]
-    fn handle_task(
-        &mut self,
-        prime_caches_progress: &mut Vec<PrimeCachesProgress>,
-        task: Task,
-    ) {
-        match task {
-            Task::Response(response) => self.respond(response),
-            Task::Retry(request) if !self.is_completed(&request) => self.on_request(request),
-            Task::Retry(_) => (),
-            Task::Diagnostics(kind) => {
-                self.diagnostics.set_native_diagnostics(kind);
-            },
-            Task::PrimeCaches(progress) => match progress {
-                PrimeCachesProgress::Begin => prime_caches_progress.push(progress),
-                PrimeCachesProgress::Report(_) => {
-                    match prime_caches_progress.last_mut() {
-                        Some(last @ PrimeCachesProgress::Report(_)) => {
-                            // Coalesce subsequent update events.
-                            *last = progress;
-                        },
-                        _ => prime_caches_progress.push(progress),
-                    }
-                },
-                PrimeCachesProgress::End { .. } => prime_caches_progress.push(progress),
-            },
-            Task::FetchWorkspace(progress) => {
-                let (state, message) = match progress {
-                    ProjectWorkspaceProgress::Begin => (Progress::Begin, None),
-                    ProjectWorkspaceProgress::Report(message) => (Progress::Report, Some(message)),
-                    ProjectWorkspaceProgress::End(workspaces, force_crate_graph_reload) => {
-                        let response = FetchWorkspaceResponse {
-                            workspaces,
-                            force_crate_graph_reload,
-                        };
-                        // self.fetch_workspaces_queue.op_completed(response);
-                        if let Err(error) = self.fetch_workspace_error() {
-                            error!("FetchWorkspaceError: {error}");
-                        }
-                        self.wants_to_switch = Some("fetched workspace".to_owned());
-                        self.diagnostics.clear_check_all();
-                        (Progress::End, None)
-                    },
-                };
-
-                self.report_progress("Fetching", &state, message, None, None);
-            },
-        }
-    }
-
-    #[expect(clippy::unused_self, reason = "wip")]
-    #[expect(clippy::needless_pass_by_ref_mut, reason = "wip")]
-    fn handle_vfs_message(
-        &mut self,
-        message: vfs::loader::Message,
-    ) {
-        let _p = tracing::info_span!("GlobalState::handle_vfs_message").entered();
-        let is_changed = matches!(message, vfs::loader::Message::Changed { .. });
-        match message {
-            vfs::loader::Message::Changed { files } | vfs::loader::Message::Loaded { files } => {},
-            vfs::loader::Message::Progress {
-                n_total,
-                n_done,
-                dir: directory, // spellchecker:disable-line
-                config_version,
-            } => {},
-        }
-    }
-
-    #[expect(clippy::unused_self, reason = "wip")]
-    #[expect(clippy::needless_pass_by_ref_mut, reason = "wip")]
-    fn handle_queued_task(
-        &mut self,
-        task: DeferredTask,
-    ) {
-        match task {
-            DeferredTask::CheckIfIndexed(uri) => {},
-        }
-    }
-
-    fn complete_request(
-        &mut self,
-        response: lsp_server::Response,
-    ) {
-        let handler = self
-            .request_queue
-            .outgoing
-            .complete(response.id.clone())
-            .expect("received response for unknown request");
-        handler(self, response);
-    }
-
     /// Handles an incoming notification.
     fn on_notification(
         &mut self,
@@ -899,26 +972,16 @@ impl GlobalState {
             notification: Some(notification),
             global_state: self,
         }
+        .on_sync_mut::<lt::notification::Cancel>(handle_cancel)
         .on_sync_mut::<lt::notification::DidOpenTextDocument>(handle_did_open_text_document)
         .on_sync_mut::<lt::notification::DidChangeTextDocument>(handle_did_change_text_document)
         .on_sync_mut::<lt::notification::DidCloseTextDocument>(handle_did_close_text_document)
         .on_sync_mut::<lt::notification::DidSaveTextDocument>(handle_did_save_text_document)
         .on_sync_mut::<lt::notification::DidChangeConfiguration>(handle_did_change_configuration)
+        .on_sync_mut::<lt::notification::DidChangeWorkspaceFolders>(
+            handle_did_change_workspace_folders,
+        )
         .on_sync_mut::<lt::notification::DidChangeWatchedFiles>(handle_did_change_watched_files)
         .finish();
-    }
-
-    pub(crate) fn update_configuration(
-        &mut self,
-        config: Config,
-    ) {
-        let _p = tracing::info_span!("GlobalState::update_configuration").entered();
-        let old_config = std::mem::replace(&mut self.config, Arc::new(config));
-
-        if self.analysis_host.raw_database().extensions() != self.config.extensions() {
-            self.analysis_host
-                .raw_database_mut()
-                .set_extensions_with_durability(self.config.extensions(), Durability::MEDIUM);
-        }
     }
 }

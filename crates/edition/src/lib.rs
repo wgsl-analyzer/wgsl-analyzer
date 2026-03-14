@@ -61,8 +61,8 @@ impl str::FromStr for Edition {
 
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         match string {
-            "WGSL" => Ok(Self::Wgsl),
-            "WESL 2025 (Unstable)" => Ok(Self::Wesl2025Unstable),
+            "wgsl" => Ok(Self::Wgsl),
+            "2026_pre" => Ok(Self::Wesl2025Unstable),
             _ => Err(ParseEditionError {
                 invalid_input: string.to_owned(),
             }),

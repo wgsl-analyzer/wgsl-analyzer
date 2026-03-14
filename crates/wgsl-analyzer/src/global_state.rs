@@ -1,12 +1,20 @@
 use std::time::Instant;
 
-use base_db::{SourceDatabase as _, change::Change as BaseDbChange};
+use base_db::{
+    SourceDatabase as _,
+    change::Change as BaseDbChange,
+    input::{Dependency, PackageData, PackageName, PackageOrigin},
+};
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use ide::{Analysis, AnalysisHost, Cancellable};
 use lsp_types::Url;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
+use project_model::{
+    ManifestPath, PackageChange, PackageGraph, PackageKey, WeslPackage, WeslPackageRoot,
+};
 use rustc_hash::FxHashMap;
 use salsa::Revision;
+use tracing::Level;
 use triomphe::Arc;
 use vfs::{
     AbsPathBuf, Change as VfsChange, FileExcluded, FileId, Vfs, VfsPath,
@@ -17,24 +25,15 @@ use vfs_notify::NotifyHandle;
 use crate::{
     config::{Config, ConfigErrors},
     diagnostics::DiagnosticCollection,
+    discover::{self, DiscoverArgument},
     in_memory_documents::InMemoryDocuments,
     line_index::{LineEndings, LineIndex},
     lsp::{from_proto, to_proto},
     main_loop::Task,
     operation_queue::{Cause, OperationQueue},
-    reload::{ProjectWorkspace, SourceRootConfig},
+    reload::SourceRootConfig,
     task_pool::{DeferredTaskQueue, TaskPool},
 };
-
-pub(crate) struct FetchWorkspaceRequest {
-    pub(crate) path: Option<AbsPathBuf>,
-    pub(crate) force_crate_graph_reload: bool,
-}
-
-pub(crate) struct FetchWorkspaceResponse {
-    pub(crate) workspaces: Vec<anyhow::Result<ProjectWorkspace>>,
-    pub(crate) force_crate_graph_reload: bool,
-}
 
 type RequestHandler = fn(&mut GlobalState, lsp_server::Response);
 type RequestQueue = lsp_server::ReqQueue<(String, Instant), RequestHandler>;
@@ -63,6 +62,12 @@ pub(crate) struct GlobalState {
     pub(crate) shutdown_requested: bool,
     pub(crate) last_reported_status: crate::lsp::extensions::ServerStatusParameters,
 
+    // Project loading
+    pub(crate) load_package_tasks: Vec<discover::LoadPackageTask>,
+    pub(crate) load_package_sender: Sender<discover::LoadPackageMessage>,
+    pub(crate) load_package_receiver: Receiver<discover::LoadPackageMessage>,
+    pub(crate) load_package_jobs_active: u32,
+
     // VFS
     pub(crate) loader: HandleReceiver<Box<dyn Handle>, Receiver<Message>>,
     pub(crate) vfs: Arc<RwLock<(Vfs, FxHashMap<FileId, LineEndings>)>>,
@@ -81,18 +86,11 @@ pub(crate) struct GlobalState {
     pub(crate) config: Arc<Config>,
     pub(crate) config_errors: Option<ConfigErrors>,
     pub(crate) source_root_config: SourceRootConfig,
-    // `workspaces` field stores the data we actually use, while the `OperationQueue`
-    // stores the result of the last fetch.
-    // If the fetch (partially) fails, we do not update the current value.
-    pub(crate) workspaces: Arc<[ProjectWorkspace]>,
+
+    pub(crate) packages: Arc<RwLock<PackageGraph>>,
 
     // op queues
-    pub(crate) fetch_workspaces_queue:
-        OperationQueue<FetchWorkspaceRequest, FetchWorkspaceResponse>,
-    // pub(crate) fetch_build_data_queue: OperationQueue<(), FetchBuildDataResponse>,
-    // pub(crate) fetch_proc_macros_queue: OperationQueue<Vec<ProcMacroPaths>, bool>,
     pub(crate) prime_caches_queue: OperationQueue,
-    pub(crate) discover_workspace_queue: OperationQueue,
 
     /// A deferred task queue.
     ///
@@ -116,10 +114,7 @@ pub(crate) struct GlobalStateSnapshot {
     in_memory_documents: InMemoryDocuments,
     // pub(crate) semantic_tokens_cache: Arc<Mutex<FxHashMap<Url, SemanticTokens>>>,
     vfs: Arc<RwLock<(Vfs, FxHashMap<FileId, LineEndings>)>>,
-    pub(crate) workspaces: Arc<[ProjectWorkspace]>,
-    // used to signal semantic highlighting to fall back to syntax based highlighting until
-    // proc-macros have been loaded
-    // FIXME: Can we derive this from somewhere else?
+    // pub(crate) packages: Arc<[Package]>,
     // pub(crate) flycheck: Arc<[FlycheckHandle]>,
 }
 
@@ -161,7 +156,7 @@ impl GlobalState {
         // let (flycheck_sender, flycheck_receiver) = unbounded();
         // let (test_run_sender, test_run_receiver) = unbounded();
 
-        // let (discover_sender, discover_receiver) = unbounded();
+        let (load_package_sender, load_package_receiver) = unbounded();
         let last_gc_revision = analysis_host.raw_database().nonce_and_revision().1;
 
         let mut this = Self {
@@ -175,6 +170,10 @@ impl GlobalState {
                 quiescent: true,
                 message: None,
             },
+            load_package_tasks: Vec::new(),
+            load_package_sender,
+            load_package_receiver,
+            load_package_jobs_active: 0,
             loader,
             vfs: Arc::new(RwLock::new((Vfs::default(), FxHashMap::default()))),
             vfs_config_version: 0,
@@ -182,8 +181,8 @@ impl GlobalState {
             vfs_progress_config_version: 0,
             vfs_done: true,
             vfs_span: None,
-            // local_roots_parent_map: Arc::new(FxHashMap::default()),
             wants_to_switch: None,
+            // local_roots_parent_map: Arc::new(FxHashMap::default()),
 
             // proc_macro_clients: Arc::from_iter([]),
 
@@ -198,25 +197,16 @@ impl GlobalState {
             // test_run_sender,
             // test_run_receiver,
             // test_run_remaining_jobs: 0,
-
-            // discover_handle: None,
-            // discover_sender,
-            // discover_receiver,
             analysis_host,
             diagnostics: DiagnosticCollection::default(),
             in_memory_documents: InMemoryDocuments::default(),
             config: Arc::new(config.clone()),
             config_errors: None,
             source_root_config: SourceRootConfig::default(),
+            packages: Arc::new(RwLock::new(PackageGraph::default())),
 
-            workspaces: Arc::from(Vec::new()),
             // crate_graph_file_dependencies: FxHashSet::default(),
-            // detached_files: FxHashSet::default(),
-            fetch_workspaces_queue: OperationQueue::default(),
-            // fetch_build_data_queue: OperationQueue::default(),
-            // fetch_proc_macros_queue: OperationQueue::default(),
             prime_caches_queue: OperationQueue::default(),
-            discover_workspace_queue: OperationQueue::default(),
 
             deferred_task_queue: task_queue,
             last_gc_revision,
@@ -226,18 +216,43 @@ impl GlobalState {
         this
     }
 
+    /// Returns whether any change happened or not.
     pub(crate) fn process_changes(&mut self) -> bool {
-        let change = {
-            let mut change = BaseDbChange::new();
-            let (vfs, line_endings_map) = &mut *self.vfs.write();
-            let changed_files = vfs.take_changes();
-            if changed_files.is_empty() {
-                return false;
-            }
-            for file in changed_files.into_values() {
-                let text = if let VfsChange::Create(vector, _) | VfsChange::Modify(vector, _) =
-                    file.change
+        let _p = tracing::span!(Level::INFO, "GlobalState::process_changes").entered();
+        let mut modified_local_packages: FxHashMap<ManifestPath, PackageChange> =
+            FxHashMap::default();
+
+        let mut change = BaseDbChange::new();
+        // VFS changes
+        let (vfs, line_endings_map) = &mut *self.vfs.write();
+        let changed_files = vfs.take_changes();
+
+        // A file was added or deleted
+        let mut has_structure_changes = false;
+        for file in changed_files.into_values() {
+            let vfs_path = vfs.file_path(file.file_id);
+
+            if let Some(path) = vfs_path.as_path() {
+                has_structure_changes |= file.is_created_or_deleted();
+                // Update wesl.toml projects in the workspace
+                if path.name_and_extension() == Some(("wesl", Some("toml")))
+                    && self.config.is_in_workspace(path)
+                    && let Ok(package_path) = ManifestPath::try_from(path.to_path_buf())
                 {
+                    let change = match file.change {
+                        VfsChange::Create(_, _) | VfsChange::Modify(_, _) => PackageChange::Set,
+                        VfsChange::Delete => PackageChange::Delete,
+                    };
+                    modified_local_packages.insert(package_path, change);
+                }
+            }
+            // Clear native diagnostics when their file gets deleted
+            if !file.exists() {
+                self.diagnostics.clear_native_for(file.file_id);
+            }
+
+            let text =
+                if let VfsChange::Create(vector, _) | VfsChange::Modify(vector, _) = file.change {
                     String::from_utf8(vector).ok().map(|text| {
                         // FIXME: Consider doing normalization in the `vfs` instead? That allows
                         // getting rid of some locking
@@ -248,17 +263,93 @@ impl GlobalState {
                 } else {
                     None
                 };
-                change.change_file(file.file_id, text);
-            }
+            change.change_file(file.file_id, text);
+        }
 
+        if has_structure_changes {
             let roots = self.source_root_config.partition(vfs);
             change.set_roots(roots);
+        }
+        // Package graph changes
 
-            change
-        };
+        let mut packages = &mut *self.packages.write();
+        for (path, modified) in modified_local_packages {
+            match modified {
+                PackageChange::Set => self.request_project_discover(
+                    DiscoverArgument {
+                        path: path.into(),
+                        search_parents: false,
+                    },
+                    &"wesl.toml changed".to_owned(),
+                ),
+                PackageChange::Delete => {
+                    if let Some(package_id) =
+                        packages.package_id(&PackageKey::from_manifest_path(path))
+                    {
+                        packages.remove(package_id);
+                    }
+                },
+            }
+        }
 
-        self.analysis_host.apply_change(change);
-        true
+        let changed_packages = packages.take_changes();
+        for (id, package_change) in changed_packages {
+            let package_data = packages.get(id).and_then(|package| {
+                let vfs_path = match &package.root {
+                    WeslPackageRoot::File(path) => vfs::VfsPath::from(path.clone()),
+                    WeslPackageRoot::Folder(path) => {
+                        // TODO: Support folders as the root https://github.com/wgsl-analyzer/wgsl-analyzer/issues/992
+                        tracing::error!(
+                            "Folders as the root are not supported at the moment {}",
+                            path
+                        );
+                        return None;
+                    },
+                };
+                let Some((root_file_id, root_file_excluded)) = vfs.file_id(&vfs_path) else {
+                    // TODO: Properly report the error
+                    tracing::error!("Could not find root file {}", &vfs_path);
+                    return None;
+                };
+                if root_file_excluded == FileExcluded::Yes {
+                    return None;
+                }
+
+                let dependencies = package
+                    .dependencies
+                    .iter()
+                    .filter_map(|dependency| {
+                        // TODO: Properly report the errors
+                        let Some(package_id) = packages.package_id(&dependency.pkg) else {
+                            tracing::error!("Could not find dependency {}", &dependency.name);
+                            return None;
+                        };
+                        let Ok(name) = PackageName::new(&dependency.name) else {
+                            tracing::error!("Invalid dependency name {}", &dependency.name);
+                            return None;
+                        };
+                        Some(Dependency { package_id, name })
+                    })
+                    .collect();
+
+                Some(PackageData {
+                    root_file_id,
+                    edition: package.edition,
+                    display_name: package.display_name.clone(),
+                    dependencies,
+                    cyclic_dependencies: Vec::new(),
+                    origin: package.origin,
+                })
+            });
+            change.change_package(id, package_data);
+        }
+
+        if change.is_empty() {
+            false
+        } else {
+            self.analysis_host.apply_change(change);
+            true
+        }
     }
 
     pub(crate) fn snapshot(&self) -> GlobalStateSnapshot {
@@ -268,7 +359,7 @@ impl GlobalState {
             in_memory_documents: self.in_memory_documents.clone(),
             vfs: Arc::clone(&self.vfs),
             // check_fixes: Arc::clone(&self.diagnostics.check_fixes),
-            workspaces: Arc::clone(&self.workspaces),
+            // packages: Arc::clone(&self.packages),
             // semantic_tokens_cache: Arc::clone(&self.semantic_tokens_cache),
             // flycheck: self.flycheck.clone(),
         }
@@ -284,6 +375,18 @@ impl GlobalState {
                 .outgoing
                 .register(R::METHOD.to_owned(), parameters, handler);
         self.send(request.into());
+    }
+
+    pub(crate) fn complete_request(
+        &mut self,
+        response: lsp_server::Response,
+    ) {
+        let handler = self
+            .request_queue
+            .outgoing
+            .complete(response.id.clone())
+            .expect("received response for unknown request");
+        handler(self, response);
     }
 
     pub(crate) fn send_notification<N: lsp_types::notification::Notification>(
