@@ -756,6 +756,17 @@ var<storage
     }
 
     #[test]
+    fn invalid_bitcast() {
+        // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/908
+        check_diagnostics(
+            "
+fn foo() { let bar: f32 = bitcast<f32>(vec4u(1, 2, 3, 4)); }
+",
+            expect![""],
+        );
+    }
+
+    #[test]
     fn invalid_identifier_underscore() {
         // An identifier must not be _ (a single underscore, U+005F).
         // https://www.w3.org/TR/WGSL/#identifiers

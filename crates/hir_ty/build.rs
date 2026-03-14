@@ -213,7 +213,7 @@ impl Builtin {{
 }
 
 fn parse_line(line: &str) -> (&str, Overload) {
-    let (name, line) = line.split_once('(').unwrap();
+    let (name, line) = line.split_once('(').unwrap(); // all builtins are functions, so each line has parentheses
     let (parameters, line) = line.split_once(')').unwrap();
     let return_type = line.trim_start_matches(" ->").trim();
 
