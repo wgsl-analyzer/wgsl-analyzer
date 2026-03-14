@@ -1120,6 +1120,17 @@ impl<'database> InferenceContext<'database> {
                     return self.error_type();
                 }
 
+                // Extract address space and access mode from the parent reference,
+                // so that field access preserves them.
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/704
+                let (address_space, access_mode) = if let TypeKind::Reference(ref reference) =
+                    expression_type.kind(self.database)
+                {
+                    (reference.address_space, reference.access_mode)
+                } else {
+                    (AddressSpace::Function, AccessMode::ReadWrite)
+                };
+
                 match expression_type
                     .kind(self.database)
                     .unref(self.database)
@@ -1139,9 +1150,7 @@ impl<'database> InferenceContext<'database> {
                             );
 
                             let field_type = field_types[field];
-                            // TODO: correct Address Spaces/access mode
-                            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
-                            self.make_ref(field_type, AddressSpace::Private, AccessMode::ReadWrite)
+                            self.make_ref(field_type, address_space, access_mode)
                         } else {
                             self.push_diagnostic(
                                 store.store_source,
@@ -1175,9 +1184,7 @@ impl<'database> InferenceContext<'database> {
                             .iter()
                             .find(|(field_name, _)| field_name.as_str() == name.as_str())
                         {
-                            // TODO: correct Address Spaces/access mode
-                            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
-                            self.make_ref(*field_type, AddressSpace::Private, AccessMode::ReadWrite)
+                            self.make_ref(*field_type, address_space, access_mode)
                         } else {
                             self.push_diagnostic(
                                 store.store_source,
@@ -1229,7 +1236,15 @@ impl<'database> InferenceContext<'database> {
                 // TODO: check that the type of the index expression makes sense. Can't index with a f32, for example.
                 // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/671
                 let left_kind = left_side.kind(self.database);
-                let is_reference = matches!(left_kind, TypeKind::Reference(_));
+
+                // Extract address space and access mode from the parent reference,
+                // so that index access preserves them.
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/704
+                let ref_info = if let TypeKind::Reference(ref reference) = left_kind {
+                    Some((reference.address_space, reference.access_mode))
+                } else {
+                    None
+                };
 
                 let left_inner = left_kind.unref(self.database);
 
@@ -1264,8 +1279,8 @@ impl<'database> InferenceContext<'database> {
                     },
                 };
 
-                if is_reference {
-                    self.make_ref(r#type, AddressSpace::Private, AccessMode::ReadWrite)
+                if let Some((address_space, access_mode)) = ref_info {
+                    self.make_ref(r#type, address_space, access_mode)
                 } else {
                     r#type
                 }
@@ -2998,7 +3013,12 @@ impl<'database> WgslTypeConverter<'database> {
         &self,
         value: TextureType,
     ) -> wgsl_types::ty::TextureType {
-        match (value.kind, value.dimension, value.arrayed, value.multisampled) {
+        match (
+            value.kind,
+            value.dimension,
+            value.arrayed,
+            value.multisampled,
+        ) {
             (TextureKind::Sampled(sampled), TextureDimensionality::D1, false, false) => {
                 wgsl_types::ty::TextureType::Sampled1D(self.to_wgsl_sampled(sampled))
             },
@@ -3023,36 +3043,51 @@ impl<'database> WgslTypeConverter<'database> {
             (TextureKind::Sampled(sampled), TextureDimensionality::Cube, true, false) => {
                 wgsl_types::ty::TextureType::SampledCubeArray(self.to_wgsl_sampled(sampled))
             },
-            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D1, false, false) => {
-                wgsl_types::ty::TextureType::Storage1D(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
-            },
-            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D1, true, false) => {
-                wgsl_types::ty::TextureType::Storage1DArray(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
-            },
-            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D2, false, false) => {
-                wgsl_types::ty::TextureType::Storage2D(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
-            },
-            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D2, true, false) => {
-                wgsl_types::ty::TextureType::Storage2DArray(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
-            },
-            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D3, false, false) => {
-                wgsl_types::ty::TextureType::Storage3D(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
-            },
+            (
+                TextureKind::Storage(texel_format, access_mode),
+                TextureDimensionality::D1,
+                false,
+                false,
+            ) => wgsl_types::ty::TextureType::Storage1D(
+                to_wgsl_texel_format(texel_format),
+                access_mode,
+            ),
+            (
+                TextureKind::Storage(texel_format, access_mode),
+                TextureDimensionality::D1,
+                true,
+                false,
+            ) => wgsl_types::ty::TextureType::Storage1DArray(
+                to_wgsl_texel_format(texel_format),
+                access_mode,
+            ),
+            (
+                TextureKind::Storage(texel_format, access_mode),
+                TextureDimensionality::D2,
+                false,
+                false,
+            ) => wgsl_types::ty::TextureType::Storage2D(
+                to_wgsl_texel_format(texel_format),
+                access_mode,
+            ),
+            (
+                TextureKind::Storage(texel_format, access_mode),
+                TextureDimensionality::D2,
+                true,
+                false,
+            ) => wgsl_types::ty::TextureType::Storage2DArray(
+                to_wgsl_texel_format(texel_format),
+                access_mode,
+            ),
+            (
+                TextureKind::Storage(texel_format, access_mode),
+                TextureDimensionality::D3,
+                false,
+                false,
+            ) => wgsl_types::ty::TextureType::Storage3D(
+                to_wgsl_texel_format(texel_format),
+                access_mode,
+            ),
             (TextureKind::Depth, TextureDimensionality::D2, false, false) => {
                 wgsl_types::ty::TextureType::Depth2D
             },

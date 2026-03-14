@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::tests::check_infer;
+use crate::tests::{check_infer, check_infer_full};
 
 #[test]
 fn type_alias_in_struct() {
@@ -456,6 +456,59 @@ fn main() {
             79..80 'n': u32
             83..103 'textur...les(t)': u32
             101..102 't': ref<texture_multisampled_2d<f32>>
+        "#]],
+    );
+}
+
+#[test]
+fn field_access_preserves_address_space() {
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/704
+    // Verifies that field access on a storage variable produces a storage reference/pointer,
+    // not a function/private one. Uses Full verbosity to assert the address space explicitly.
+    check_infer_full(
+        "
+struct MyStruct {
+    field: u32
+}
+@group(0) @binding(0)
+var<storage> my_struct: MyStruct;
+fn test() {
+    let p1 = &my_struct.field;
+    let p2: ptr<storage, u32, read> = &my_struct.field;
+}
+    ",
+        expect![[r#"
+            70..79 'my_struct': ref<storage, MyStruct, read>
+            111..113 'p1': ptr<storage, u32, read>
+            116..132 '&my_st....field': ptr<storage, u32, read>
+            117..126 'my_struct': ref<storage, MyStruct, read>
+            117..132 'my_struct.field': ref<storage, u32, read>
+            142..144 'p2': ptr<storage, u32, read>
+            172..188 '&my_st....field': ptr<storage, u32, read>
+            173..182 'my_struct': ref<storage, MyStruct, read>
+            173..188 'my_struct.field': ref<storage, u32, read>
+        "#]],
+    );
+}
+
+#[test]
+fn index_access_preserves_address_space() {
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/704
+    check_infer_full(
+        "
+@group(0) @binding(0)
+var<storage> my_array: array<u32>;
+fn test() {
+    let a1 = &my_array[0];
+}
+    ",
+        expect![[r#"
+            35..43 'my_array': ref<storage, array<u32>, read>
+            77..79 'a1': ptr<storage, u32, read>
+            82..94 '&my_array[0]': ptr<storage, u32, read>
+            83..91 'my_array': ref<storage, array<u32>, read>
+            83..94 'my_array[0]': ref<storage, u32, read>
+            92..93 '0': integer
         "#]],
     );
 }
