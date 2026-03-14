@@ -12,13 +12,14 @@ use crate::format::{
     gen_comments::{Comment, gen_comment, parse_comment_optional},
     gen_function::gen_function_declaration,
     gen_statement::gen_const_assert_statement,
+    gen_statement_import::gen_import_statement,
     gen_struct::gen_struct_declaration,
     gen_type_alias_declaration::gen_type_alias_declaration,
     gen_var_let_const_override_statement::{
         gen_const_declaration_statement, gen_override_declaration_statement,
         gen_var_declaration_statement,
     },
-    helpers::{LineSpacing, gen_line_spacing, parse_line_spacing, todo_verbatim_wesl},
+    helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
     print_item_buffer::{
         PrintItemBuffer,
         request_folder::{Request, RequestItem},
@@ -47,7 +48,7 @@ fn gen_item(node: &Item) -> FormatDocumentResult<PrintItemBuffer> {
         Item::AssertStatement(assert_statement) => {
             gen_const_assert_statement(assert_statement, true)
         },
-        Item::ImportStatement(import_statement) => todo_verbatim_wesl(import_statement.syntax()),
+        Item::ImportStatement(import_statement) => gen_import_statement(import_statement),
     }
 }
 

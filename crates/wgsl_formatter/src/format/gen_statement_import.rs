@@ -5,6 +5,8 @@ use crate::format::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_path(path: &ast::Path) -> FormatDocumentResult<PrintItemBuffer> {
-    todo_verbatim_wesl(path.syntax())
+pub fn gen_import_statement(
+    import: &ast::ImportStatement
+) -> FormatDocumentResult<PrintItemBuffer> {
+    todo_verbatim_wesl(import.syntax())
 }

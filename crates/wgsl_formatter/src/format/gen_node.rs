@@ -6,8 +6,8 @@ use syntax::{
     ast::{
         Arguments, AssertStatement, AssignmentStatement, Attribute, CompoundAssignmentStatement,
         CompoundStatement, ConstantDeclaration, Expression, FieldExpression, FunctionCall,
-        FunctionDeclaration, FunctionParameters, IdentExpression, IfStatement, IndexExpression,
-        InfixExpression, LetDeclaration, Literal, OverrideDeclaration, Parameter,
+        FunctionDeclaration, FunctionParameters, IdentExpression, IfStatement, ImportStatement,
+        IndexExpression, InfixExpression, LetDeclaration, Literal, OverrideDeclaration, Parameter,
         ParenthesisExpression, Path, PhonyAssignmentStatement, PrefixExpression, ReturnType,
         SourceFile, Statement, StructDeclaration, SwitchBody, SwitchBodyCase, SwitchCaseSelector,
         SwitchCaseSelectors, SwitchDefaultSelector, SwitchStatement, TemplateList,
@@ -34,6 +34,7 @@ use crate::format::{
     gen_source_file::gen_source_file,
     gen_statement::{gen_const_assert_statement, gen_statement_maybe_semicolon},
     gen_statement_compound::gen_compound_statement,
+    gen_statement_import::gen_import_statement,
     gen_struct::gen_struct_declaration,
     gen_switch_statement::{
         gen_switch_body, gen_switch_body_case, gen_switch_case_default_selector,
@@ -67,6 +68,11 @@ pub fn gen_node_no_newlines(node: &SyntaxNode) -> FormatDocumentResult<PrintItem
     });
     Ok(formatted)
 }
+
+#[expect(
+    clippy::cognitive_complexity,
+    reason = "It doesn't make sense to break this else_if into multiple functions"
+)]
 pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
     // TODO These clones are all unnecessary.
     // TODO This is very brittle, someone can easily write a gen_* function and not register it here... maybe some proc macro magic?
@@ -158,6 +164,8 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
         gen_type_specifier(&node)
     } else if let Some(node) = VariableDeclaration::cast(node.clone()) {
         gen_var_declaration_statement(&node, needs_semicolon(node.syntax().parent()))
+    } else if let Some(node) = ImportStatement::cast(node.clone()) {
+        gen_import_statement(&node)
     } else {
         todo!("Implement gen_node for {:?}", node.kind());
     }
