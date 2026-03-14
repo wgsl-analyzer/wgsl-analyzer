@@ -20,6 +20,7 @@ mod gen_path;
 mod gen_source_file;
 mod gen_statement;
 pub mod gen_statement_compound;
+mod gen_statement_import;
 mod gen_struct;
 pub mod gen_switch_statement;
 mod gen_type_alias_declaration;

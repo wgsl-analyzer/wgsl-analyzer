@@ -1,5 +1,5 @@
 use dprint_core::formatting::Signal;
-use itertools::{Itertools, Position};
+use itertools::{Itertools as _, Position};
 use parser::SyntaxKind;
 use rowan::NodeOrToken;
 
