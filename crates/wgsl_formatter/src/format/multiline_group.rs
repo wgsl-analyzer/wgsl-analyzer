@@ -5,15 +5,14 @@ use std::{
 };
 
 use dprint_core::formatting::{
-    ConditionReevaluation, ConditionResolver, LineNumber, LineNumberAnchor, PrintItem, PrintItems,
-    Signal, conditions,
+    ConditionReevaluation, ConditionResolver, LineNumber, LineNumberAnchor, PrintItems, Signal,
+    conditions,
 };
 
 use crate::format::{
-    format,
     helpers::create_is_multiple_lines_resolver,
     print_item_buffer::{
-        PrintItemBuffer, SeparationPolicy, SeparationRequest,
+        PrintItemBuffer,
         request_folder::{Request, RequestFolder},
     },
 };
@@ -65,7 +64,15 @@ impl<'buffer> MultilineGroup<'buffer> {
         self.buffer.push_signal(Signal::StartNewLineGroup);
 
         // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
-        self.buffer.request(SeparationRequest::discouraged());
+        self.buffer.request_request(Request::Unconditional {
+            expected: BTreeSet::new(),
+            discouraged: BTreeSet::from([
+                RequestItem::Space,
+                RequestItem::LineBreak,
+                RequestItem::EmptyLine,
+            ]),
+            forced: BTreeSet::new(),
+        });
     }
 
     pub fn grouped_newline_or_space(&mut self) {
@@ -119,15 +126,15 @@ impl<'buffer> MultilineGroup<'buffer> {
     }
 }
 
-impl<'buffer> Deref for MultilineGroup<'buffer> {
+impl Deref for MultilineGroup<'_> {
     type Target = PrintItemBuffer;
 
     fn deref(&self) -> &Self::Target {
-        &self.buffer
+        self.buffer
     }
 }
 
-impl<'buffer> DerefMut for MultilineGroup<'buffer> {
+impl DerefMut for MultilineGroup<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.buffer
     }
