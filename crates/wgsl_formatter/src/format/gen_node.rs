@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
 
 use parser::SyntaxNode;
+use rowan::NodeOrToken;
 use syntax::{
     AstNode as _,
     ast::{
@@ -50,7 +51,7 @@ use crate::format::{
         PrintItemBuffer,
         request_folder::{Request, RequestItem},
     },
-    reporting::FormatDocumentResult,
+    reporting::{FormatDocumentError, FormatDocumentResult},
 };
 
 pub fn gen_node_no_newlines(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
@@ -167,6 +168,8 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
     } else if let Some(node) = ImportStatement::cast(node.clone()) {
         gen_import_statement(&node)
     } else {
-        todo!("Implement gen_node for {:?}", node.kind());
+        Err(FormatDocumentError::UnsupportedNodeOrToken {
+            received: NodeOrToken::Node(node.clone()),
+        })
     }
 }

@@ -29,9 +29,9 @@ mod gen_var_let_const_override_statement;
 pub mod multiline_group;
 mod reporting;
 
-use dprint_core::formatting::{PrintItem, PrintOptions};
+use dprint_core::formatting::PrintOptions;
 use parser::{Edition, SyntaxNode};
-use syntax::{AstNode, ast};
+use syntax::{AstNode as _, ast};
 
 use crate::{
     FormattingOptions,

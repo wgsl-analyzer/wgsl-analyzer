@@ -66,7 +66,7 @@ impl SyncPluginHandler<FormattingOptions> for WgslPluginHandler {
 
         formatted
             .map(|formatted| Some(formatted.into_bytes()))
-            .map_err(|error| anyhow::anyhow!(error.to_string()))
+            .map_err(|error| anyhow::anyhow!("Formatter encountered an error. This is a bug in the formatter. Feel free to report this. {error:?}"))
     }
 }
 
