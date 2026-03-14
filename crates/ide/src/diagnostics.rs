@@ -343,13 +343,15 @@ fn emit_with_offset<Error: NagaError>(
 
 /// Resolve an import statement to the FileId of the imported module file.
 ///
-/// Delegates to `hir_def::resolver::resolve_import_to_file`.
+/// Extracts module segments from the import tree and delegates to
+/// `hir_def::resolver::resolve_import_to_file`.
 fn resolve_import_to_file(
     database: &dyn HirDatabase,
     anchor_file: FileId,
     import: &ImportStatement,
 ) -> Option<FileId> {
-    hir_def::resolver::resolve_import_to_file(database, anchor_file, import)
+    let module_segments = hir_def::resolver::import_tree_module_segments(&import.tree);
+    hir_def::resolver::resolve_import_to_file(database, anchor_file, import.kind, &module_segments)
 }
 
 /// Collect all files transitively imported by the given file.

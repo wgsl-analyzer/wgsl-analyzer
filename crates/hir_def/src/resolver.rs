@@ -315,33 +315,34 @@ fn resolve_kind_from_item(
 
 /// Resolve an import's leaf to the actual item in the target file.
 ///
-/// Given an import like `import foo::bar;`, this resolves `foo.wesl` and finds
-/// the item named `bar` in that file's ItemTree.
+/// Given an import like `import package::shared::normal::compute_tbn;`,
+/// this resolves `shared/normal.wesl` and finds `compute_tbn` in that file.
 fn resolve_import_item(
     database: &dyn DefDatabase,
     anchor_file_id: HirFileId,
     import: &ImportStatement,
     flat_import: &crate::item_tree::FlatImport,
 ) -> Option<(HirFileId, ModuleItem)> {
+    let segments = flat_import.path.segments();
+    if segments.len() < 2 {
+        return None;
+    }
+
+    // All segments except the last are the module path (directories + file name).
+    // The last segment is the item name to find in that file.
+    let module_segments = &segments[..segments.len() - 1];
+    let item_name = &segments[segments.len() - 1];
+
     let anchor_file = anchor_file_id.original_file(database).file_id;
-    let target_file = resolve_import_to_file(database, anchor_file, import)?;
+    let target_file = resolve_import_to_file(
+        database,
+        anchor_file,
+        import.kind,
+        module_segments,
+    )?;
     let target_editioned = database.editioned_file_id(target_file);
     let target_hir_file = HirFileId::from(target_editioned);
     let target_tree = database.item_tree(target_hir_file);
-
-    // The leaf name is what we're looking for in the target file.
-    // For `import foo::bar::baz;`, the path segments are [foo, bar, baz].
-    // The first segment is the file name, the rest are nested items.
-    // For now, we look for the last segment (the leaf) in the target file's items.
-    let segments = flat_import.path.segments();
-    // Skip the first segment (file name), look for the remaining path.
-    // For `import foo::bar;` → segments = [foo, bar], we want "bar" in foo.wesl
-    let item_name = if segments.len() >= 2 {
-        &segments[segments.len() - 1]
-    } else {
-        // Single-segment import like `import foo;` — the file itself
-        return None;
-    };
 
     // Find the matching item in the target file
     let target_item = target_tree
@@ -369,29 +370,46 @@ fn item_name_matches(
     }
 }
 
-/// Resolve an import statement to the FileId of the imported module file.
+/// Resolve an import to the FileId of the imported module file.
+///
+/// `kind` is the import path kind (Plain, Super, Package).
+/// `module_segments` are all path segments except the leaf item name.
+/// For `import package::shared::normal::compute_tbn`, module_segments = ["shared", "normal"].
 pub fn resolve_import_to_file(
     database: &dyn DefDatabase,
     anchor_file: base_db::FileId,
-    import: &ImportStatement,
+    kind: PathKind,
+    module_segments: &[Name],
 ) -> Option<base_db::FileId> {
-    let first_segment = import_tree_first_segment(&import.tree)?;
+    if module_segments.is_empty() {
+        return None;
+    }
 
-    let relative_path = match import.kind {
-        PathKind::Plain => {
-            format!("../{first_segment}.wesl")
+    // Build the file path from module segments: shared/normal → shared/normal.wesl
+    let module_path = module_segments
+        .iter()
+        .map(|s| s.as_str())
+        .collect::<Vec<_>>()
+        .join("/");
+
+    // AnchoredPath resolution: pops the anchor filename (leaving its directory),
+    // then joins the relative path. So paths are relative to the anchor file's directory.
+    //
+    // For `package::` imports, files are relative to the package root.
+    // Currently we approximate the package root as the anchor file's directory.
+    // For `super::` imports, each `super` goes up one additional directory level.
+    // For plain imports, files are siblings of the anchor file.
+    let relative_path = match kind {
+        PathKind::Plain | PathKind::Package => {
+            format!("{module_path}.wesl")
         },
         PathKind::Super(levels) => {
             let mut path = String::new();
-            path.push_str("../");
             for _ in 0..levels {
                 path.push_str("../");
             }
-            path.push_str(&format!("{first_segment}.wesl"));
+            path.push_str(&format!("{module_path}.wesl"));
             path
-        },
-        PathKind::Package => {
-            format!("../{first_segment}.wesl")
         },
     };
 
@@ -402,11 +420,32 @@ pub fn resolve_import_to_file(
     database.resolve_path(path)
 }
 
-/// Extract the first segment name from an ImportTree.
-fn import_tree_first_segment(tree: &ImportTree) -> Option<&str> {
+/// Extract module segments (all segments except the leaf) from an ImportTree.
+/// For `shared::normal::compute_tbn`, returns ["shared", "normal"].
+pub fn import_tree_module_segments(tree: &ImportTree) -> Vec<Name> {
+    let mut segments = Vec::new();
+    collect_path_segments(tree, &mut segments);
+    // Remove the last segment (the leaf item name)
+    if !segments.is_empty() {
+        segments.pop();
+    }
+    segments
+}
+
+fn collect_path_segments(tree: &ImportTree, segments: &mut Vec<Name>) {
     match tree {
-        ImportTree::Path { name, .. } => Some(name.as_str()),
-        ImportTree::Item { name, .. } => Some(name.as_str()),
-        ImportTree::Collection { list } => list.first().and_then(|t| import_tree_first_segment(t)),
+        ImportTree::Path { name, item } => {
+            segments.push(name.clone());
+            collect_path_segments(item, segments);
+        },
+        ImportTree::Item { name, .. } => {
+            segments.push(name.clone());
+        },
+        ImportTree::Collection { list } => {
+            // For collections, use the first item to determine the path
+            if let Some(first) = list.first() {
+                collect_path_segments(first, segments);
+            }
+        },
     }
 }

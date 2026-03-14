@@ -1,8 +1,15 @@
-feat: resolve imports for completions, go-to-definition, and type checking
+fix: correct import path resolution for multi-segment and package imports
 
-- Move import-to-file resolution logic from ide to hir_def::resolver
-- Add database parameter to Resolver::resolve() and process_all_names()
-- When encountering an ImportStatement, resolve it to the target file,
-  find the matching item, and return the correct ScopeDef/ResolveKind
-- Completions now show imported functions with correct icons and details
-- Go-to-definition and type inference now work across file boundaries
+Two bugs fixed:
+
+1. Multi-segment paths: resolve_import_to_file only used the first path
+   segment, so `import package::shared::normal::compute_tbn` looked for
+   `shared.wesl` instead of `shared/normal.wesl`. Now all segments except
+   the leaf item name are used to build the file path.
+
+2. Relative path prefix: AnchoredPath resolution pops the anchor filename
+   first (leaving its directory), then joins the relative path. The old
+   code prepended `../` for all path kinds, which went up one directory
+   too many. Now:
+   - Plain and Package imports resolve relative to the anchor's directory
+   - Super imports add `../` per super level (relative to anchor's dir)
