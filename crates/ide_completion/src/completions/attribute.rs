@@ -15,14 +15,14 @@ pub(crate) fn complete_attributes(
         _ => return None,
     }
 
-    for attr in WGSL_ATTRIBUTES {
+    for attribute in WGSL_ATTRIBUTES {
         let mut builder = CompletionItem::new(
             CompletionItemKind::Keyword,
             context.source_range(),
-            attr.name,
+            attribute.name,
         );
-        builder.detail(attr.syntax);
-        builder.set_documentation(Some(attr.description.to_owned()));
+        builder.detail(attribute.syntax);
+        builder.set_documentation(Some(attribute.description.to_owned()));
         builder.add_to(accumulator, context.database);
     }
 

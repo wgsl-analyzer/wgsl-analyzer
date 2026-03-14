@@ -73,7 +73,7 @@ impl Builtin {
     }
 
     #[must_use]
-    pub fn required_extension(&self) -> Option<EnableExtension> {
+    pub const fn required_extension(&self) -> Option<EnableExtension> {
         self.required_extension
     }
 
@@ -106,7 +106,7 @@ impl Builtin {
             return None;
         }
         let mut table = crate::infer::unify::UnificationTable::default();
-        let mut score = 0usize;
+        let mut score = 0_usize;
         for (expected, &found) in function.parameters().zip(argument_types.iter()) {
             let found = found.unref(database);
             if crate::infer::unify::unify(database, &mut table, expected, found).is_ok() {
@@ -120,11 +120,11 @@ impl Builtin {
 
     /// Returns matching overloads sorted by match quality (best first).
     /// Falls back to all overloads when none match or `argument_types` is empty.
-    pub fn matching_overloads<'a>(
-        &'a self,
-        database: &'a dyn HirDatabase,
-        argument_types: &'a [crate::ty::Type],
-    ) -> Vec<(BuiltinOverloadId, &'a BuiltinOverload)> {
+    pub fn matching_overloads<'overloads>(
+        &'overloads self,
+        database: &'overloads dyn HirDatabase,
+        argument_types: &'overloads [crate::ty::Type],
+    ) -> Vec<(BuiltinOverloadId, &'overloads BuiltinOverload)> {
         if argument_types.is_empty() {
             return self.overloads().collect();
         }
@@ -134,11 +134,7 @@ impl Builtin {
             .filter_map(|(id, overload)| {
                 let score = Self::overload_match_score(database, overload, argument_types)?;
                 // Only include overloads that matched at least the first argument
-                if score > 0 {
-                    Some((score, id, overload))
-                } else {
-                    None
-                }
+                (score > 0).then_some((score, id, overload))
             })
             .collect();
 
@@ -147,7 +143,7 @@ impl Builtin {
         }
 
         // Sort by score descending (best match first)
-        scored.sort_by(|a, b| b.0.cmp(&a.0));
+        scored.sort_by(|lhs, rhs| rhs.0.cmp(&lhs.0));
         scored
             .into_iter()
             .map(|(_, id, overload)| (id, overload))
@@ -157,11 +153,11 @@ impl Builtin {
     /// Returns the single overload that is an exact match (all parameters
     /// accounted for and unified), or `None` if zero or multiple overloads
     /// match exactly.  Used for hover where we want a single best result.
-    pub fn exact_overload<'a>(
-        &'a self,
-        database: &'a dyn HirDatabase,
-        argument_types: &'a [crate::ty::Type],
-    ) -> Option<&'a BuiltinOverload> {
+    pub fn exact_overload<'overloads>(
+        &'overloads self,
+        database: &'overloads dyn HirDatabase,
+        argument_types: &'overloads [crate::ty::Type],
+    ) -> Option<&'overloads BuiltinOverload> {
         if argument_types.is_empty() {
             return None;
         }
@@ -185,11 +181,7 @@ impl Builtin {
             })
             .collect();
 
-        if exact.len() == 1 {
-            Some(exact[0].1)
-        } else {
-            None
-        }
+        (exact.len() == 1).then(|| exact[0].1)
     }
 }
 

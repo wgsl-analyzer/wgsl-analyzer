@@ -203,6 +203,10 @@ pub(crate) fn completion_items(
 }
 
 #[expect(clippy::too_many_arguments, reason = "TODO")]
+#[expect(
+    clippy::too_many_lines,
+    reason = "LSP protocol conversion with many fields"
+)]
 fn completion_item(
     accumulator: &mut Vec<lsp_types::CompletionItem>,
     config: &Config,
@@ -709,9 +713,10 @@ pub(crate) fn signature_help(help: SignatureHelp) -> lsp_types::SignatureHelp {
     let signatures = help
         .signatures
         .into_iter()
-        .map(|sig| {
+        .map(|signature| {
             let parameters = Some(
-                sig.parameters
+                signature
+                    .parameters
                     .into_iter()
                     .map(|param| lsp_types::ParameterInformation {
                         label: lsp_types::ParameterLabel::LabelOffsets([
@@ -722,14 +727,14 @@ pub(crate) fn signature_help(help: SignatureHelp) -> lsp_types::SignatureHelp {
                     })
                     .collect(),
             );
-            let sig_doc = sig.documentation.map(|doc| {
+            let sig_doc = signature.documentation.map(|doc| {
                 lsp_types::Documentation::MarkupContent(lsp_types::MarkupContent {
                     kind: lsp_types::MarkupKind::Markdown,
                     value: doc,
                 })
             });
             lsp_types::SignatureInformation {
-                label: sig.label,
+                label: signature.label,
                 documentation: sig_doc,
                 parameters,
                 active_parameter: None,
@@ -739,7 +744,12 @@ pub(crate) fn signature_help(help: SignatureHelp) -> lsp_types::SignatureHelp {
 
     lsp_types::SignatureHelp {
         signatures,
-        active_signature: help.active_signature.map(|s| s as u32),
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::as_conversions,
+            reason = "active_signature index fits in u32"
+        )]
+        active_signature: help.active_signature.map(|active_sig| active_sig as u32),
         active_parameter: help.active_parameter,
     }
 }

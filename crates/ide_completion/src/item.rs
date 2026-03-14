@@ -315,8 +315,8 @@ impl CompletionItem {
             label,
             insert_text: None,
             is_snippet: false,
-            documentation: None,
             detail: None,
+            documentation: None,
             lookup: None,
             kind: kind.into(),
             text_edit: None,
@@ -551,9 +551,9 @@ impl Builder {
             text_edit,
             is_snippet: self.is_snippet,
             kind: self.kind,
-            documentation: self.documentation,
             lookup,
             detail: self.detail,
+            documentation: self.documentation,
             deprecated: self.deprecated,
             trigger_call_info: self.trigger_call_info,
             relevance: self.relevance,
@@ -612,7 +612,7 @@ impl Builder {
     }
 
     /// Mark this completion item as a snippet (uses `${}` tab stop syntax).
-    pub(crate) fn mark_as_snippet(&mut self) -> &mut Self {
+    pub(crate) const fn mark_as_snippet(&mut self) -> &mut Self {
         self.is_snippet = true;
         self
     }

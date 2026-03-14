@@ -177,7 +177,7 @@ pub enum Token {
     As,
     #[token("::")]
     DoubleColon,
-    /// A WGSL reserved word (https://www.w3.org/TR/WGSL/#reserved-words)
+    /// A WGSL reserved word (<https://www.w3.org/TR/WGSL/#reserved-words>)
     Reserved,
     /// WGSL identifiers, parsing it ourselves
     Ident,
@@ -266,6 +266,7 @@ fn lex_block_comment(lexer: &mut logos::Lexer<'_, Token>) -> Option<()> {
 
 /// Returns `true` if the given word is a WGSL reserved word.
 /// See <https://www.w3.org/TR/WGSL/#reserved-words>.
+#[expect(clippy::too_many_lines, reason = "long but simple match list")]
 pub(crate) fn is_reserved_word(word: &str) -> bool {
     matches!(
         word,

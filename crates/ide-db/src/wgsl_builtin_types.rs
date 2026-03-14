@@ -1,6 +1,6 @@
-/// Metadata for WGSL predeclared (builtin) types.
-///
-/// Used by hover and completion to show descriptions for types like `f32`, `vec3`, `mat4x4`, etc.
+//! Metadata for WGSL predeclared (builtin) types.
+//!
+//! Used by hover and completion to show descriptions for types like `f32`, `vec3`, `mat4x4`, etc.
 
 /// A WGSL builtin type with its description and spec reference.
 pub struct WgslBuiltinType {
@@ -127,139 +127,139 @@ pub static WGSL_BUILTIN_TYPES: &[WgslBuiltinType] = &[
     // Matrix types
     WgslBuiltinType {
         name: "mat2x2",
-        description: "2×2 matrix.",
+        description: "2\u{d7}2 matrix.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat2x3",
-        description: "2×3 matrix (2 columns, 3 rows).",
+        description: "2\u{d7}3 matrix (2 columns, 3 rows).",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat2x4",
-        description: "2×4 matrix (2 columns, 4 rows).",
+        description: "2\u{d7}4 matrix (2 columns, 4 rows).",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat3x2",
-        description: "3×2 matrix (3 columns, 2 rows).",
+        description: "3\u{d7}2 matrix (3 columns, 2 rows).",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat3x3",
-        description: "3×3 matrix.",
+        description: "3\u{d7}3 matrix.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat3x4",
-        description: "3×4 matrix (3 columns, 4 rows).",
+        description: "3\u{d7}4 matrix (3 columns, 4 rows).",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat4x2",
-        description: "4×2 matrix (4 columns, 2 rows).",
+        description: "4\u{d7}2 matrix (4 columns, 2 rows).",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat4x3",
-        description: "4×3 matrix (4 columns, 3 rows).",
+        description: "4\u{d7}3 matrix (4 columns, 3 rows).",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat4x4",
-        description: "4×4 matrix.",
+        description: "4\u{d7}4 matrix.",
         spec_anchor: "matrix-types",
     },
     // Shorthand matrix types (f32)
     WgslBuiltinType {
         name: "mat2x2f",
-        description: "2×2 matrix of `f32`.",
+        description: "2\u{d7}2 matrix of `f32`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat2x3f",
-        description: "2×3 matrix of `f32`.",
+        description: "2\u{d7}3 matrix of `f32`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat2x4f",
-        description: "2×4 matrix of `f32`.",
+        description: "2\u{d7}4 matrix of `f32`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat3x2f",
-        description: "3×2 matrix of `f32`.",
+        description: "3\u{d7}2 matrix of `f32`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat3x3f",
-        description: "3×3 matrix of `f32`.",
+        description: "3\u{d7}3 matrix of `f32`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat3x4f",
-        description: "3×4 matrix of `f32`.",
+        description: "3\u{d7}4 matrix of `f32`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat4x2f",
-        description: "4×2 matrix of `f32`.",
+        description: "4\u{d7}2 matrix of `f32`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat4x3f",
-        description: "4×3 matrix of `f32`.",
+        description: "4\u{d7}3 matrix of `f32`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat4x4f",
-        description: "4×4 matrix of `f32`.",
+        description: "4\u{d7}4 matrix of `f32`.",
         spec_anchor: "matrix-types",
     },
     // Shorthand matrix types (f16)
     WgslBuiltinType {
         name: "mat2x2h",
-        description: "2×2 matrix of `f16`.",
+        description: "2\u{d7}2 matrix of `f16`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat2x3h",
-        description: "2×3 matrix of `f16`.",
+        description: "2\u{d7}3 matrix of `f16`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat2x4h",
-        description: "2×4 matrix of `f16`.",
+        description: "2\u{d7}4 matrix of `f16`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat3x2h",
-        description: "3×2 matrix of `f16`.",
+        description: "3\u{d7}2 matrix of `f16`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat3x3h",
-        description: "3×3 matrix of `f16`.",
+        description: "3\u{d7}3 matrix of `f16`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat3x4h",
-        description: "3×4 matrix of `f16`.",
+        description: "3\u{d7}4 matrix of `f16`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat4x2h",
-        description: "4×2 matrix of `f16`.",
+        description: "4\u{d7}2 matrix of `f16`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat4x3h",
-        description: "4×3 matrix of `f16`.",
+        description: "4\u{d7}3 matrix of `f16`.",
         spec_anchor: "matrix-types",
     },
     WgslBuiltinType {
         name: "mat4x4h",
-        description: "4×4 matrix of `f16`.",
+        description: "4\u{d7}4 matrix of `f16`.",
         spec_anchor: "matrix-types",
     },
     // Other types
@@ -380,5 +380,7 @@ pub static WGSL_BUILTIN_TYPES: &[WgslBuiltinType] = &[
 /// Look up a WGSL builtin type by name.
 #[must_use]
 pub fn find_builtin_type(name: &str) -> Option<&'static WgslBuiltinType> {
-    WGSL_BUILTIN_TYPES.iter().find(|ty| ty.name == name)
+    WGSL_BUILTIN_TYPES
+        .iter()
+        .find(|builtin| builtin.name == name)
 }

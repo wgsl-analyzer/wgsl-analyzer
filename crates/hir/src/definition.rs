@@ -89,6 +89,7 @@ impl Definition {
 
     /// Returns a human-readable hover text for this definition.
     #[must_use]
+    #[expect(clippy::too_many_lines, reason = "match arms for each definition kind")]
     pub fn hover_text(
         &self,
         database: &dyn HirDatabase,
@@ -96,39 +97,46 @@ impl Definition {
         match self {
             Self::Local(local) => {
                 let infer = database.infer(DefinitionWithBodyId::Function(local.parent));
-                let ty = infer[local.binding];
+                let local_type = infer[local.binding];
                 let (body, _) =
                     database.body_with_source_map(DefinitionWithBodyId::Function(local.parent));
                 let name = &body.bindings[local.binding].name;
                 let is_param = body.parameters.contains(&local.binding);
                 if is_param {
-                    Some(format!("{}: {}", name.as_str(), pretty_type(database, ty)))
+                    Some(format!(
+                        "{}: {}",
+                        name.as_str(),
+                        pretty_type(database, local_type)
+                    ))
                 } else {
                     Some(format!(
                         "let {}: {}",
                         name.as_str(),
-                        pretty_type(database, ty)
+                        pretty_type(database, local_type)
                     ))
                 }
             },
             Self::Field(field) => {
                 let field_types = database.field_types(field.id.r#struct);
-                let ty = field_types.0.get(field.id.field)?;
+                let field_type = field_types.0.get(field.id.field)?;
                 let struct_data = database.struct_data(field.id.r#struct).0;
                 let field_data = &struct_data.fields()[field.id.field];
                 let mut result = String::new();
                 // Extract attributes from the field's source AST
-                if let Some(source) = field.source(database) {
-                    if let Some(attrs) = format_attributes(&source.value) {
-                        result.push_str(&attrs);
-                        result.push('\n');
-                    }
+                if let Some(source) = field.source(database)
+                    && let Some(formatted_attributes) = format_attributes(&source.value)
+                {
+                    result.push_str(&formatted_attributes);
+                    result.push('\n');
                 }
-                result.push_str(&format!(
+                use std::fmt::Write as _;
+                write!(
+                    result,
                     "{}: {}",
                     field_data.name.as_str(),
-                    pretty_type(database, *ty)
-                ));
+                    pretty_type(database, *field_type)
+                )
+                .unwrap();
                 Some(result)
             },
             Self::ModuleDef(module_def) => match module_def {
@@ -136,46 +144,51 @@ impl Definition {
                     let resolved = database.function_type(function.id);
                     let details = resolved.lookup(database);
                     let mut result = String::new();
-                    if let Some(source) = function.source(database) {
-                        if let Some(attrs) = format_attributes(&source.value) {
-                            result.push_str(&attrs);
-                            result.push('\n');
-                        }
+                    if let Some(source) = function.source(database)
+                        && let Some(formatted_attributes) = format_attributes(&source.value)
+                    {
+                        result.push_str(&formatted_attributes);
+                        result.push('\n');
                     }
                     result.push_str(&pretty_fn(database, &details));
                     Some(result)
                 },
-                ModuleDef::GlobalVariable(var) => hover_global_variable(database, var.id),
+                ModuleDef::GlobalVariable(global_var) => {
+                    hover_global_variable(database, global_var.id)
+                },
                 ModuleDef::GlobalConstant(constant) => hover_global_constant(database, constant.id),
                 ModuleDef::Override(override_decl) => hover_override(database, override_decl.id),
-                ModuleDef::Struct(s) => {
-                    let data = database.struct_data(s.id).0;
-                    let field_types = &database.field_types(s.id).0;
+                ModuleDef::Struct(struct_def) => {
+                    let data = database.struct_data(struct_def.id).0;
+                    let field_types = &database.field_types(struct_def.id).0;
 
                     // Get the source AST to extract field attributes
-                    let source = s.source(database);
+                    let source = struct_def.source(database);
                     let ast_fields: Vec<_> = source
                         .as_ref()
-                        .and_then(|src| src.value.body())
+                        .and_then(|source| source.value.body())
                         .map(|body| body.fields().collect())
                         .unwrap_or_default();
 
+                    use std::fmt::Write as _;
                     let mut result = format!("struct {} {{\n", data.name.as_str());
-                    for (idx, (field_id, field_data)) in data.fields().iter().enumerate() {
+                    for (field_index, (field_id, field_data)) in data.fields().iter().enumerate() {
                         // Extract attributes from the corresponding AST member
-                        if let Some(ast_member) = ast_fields.get(idx) {
-                            if let Some(attrs) = format_attributes(ast_member) {
-                                result.push_str(&format!("    {attrs}\n"));
-                            }
+                        if let Some(ast_member) = ast_fields.get(field_index)
+                            && let Some(formatted_attributes) = format_attributes(ast_member)
+                        {
+                            writeln!(result, "    {formatted_attributes}").unwrap();
                         }
-                        if let Some(ty) = field_types.get(field_id) {
-                            result.push_str(&format!(
-                                "    {}: {},\n",
+                        if let Some(field_type) = field_types.get(field_id) {
+                            writeln!(
+                                result,
+                                "    {}: {},",
                                 field_data.name.as_str(),
-                                pretty_type(database, *ty)
-                            ));
+                                pretty_type(database, *field_type)
+                            )
+                            .unwrap();
                         } else {
-                            result.push_str(&format!("    {},\n", field_data.name.as_str()));
+                            writeln!(result, "    {},", field_data.name.as_str()).unwrap();
                         }
                     }
                     result.push('}');
@@ -183,12 +196,12 @@ impl Definition {
                 },
                 ModuleDef::TypeAlias(alias) => {
                     let resolved = database.type_alias_type(alias.id);
-                    let ty = resolved.0;
+                    let alias_type = resolved.0;
                     let data = database.type_alias_data(alias.id).0;
                     Some(format!(
                         "alias {} = {}",
                         data.name.as_str(),
-                        pretty_type(database, ty)
+                        pretty_type(database, alias_type)
                     ))
                 },
                 ModuleDef::GlobalAssertStatement(_) => None,
@@ -207,19 +220,19 @@ impl Definition {
         match self {
             Self::Local(local) => {
                 let infer = database.infer(DefinitionWithBodyId::Function(local.parent));
-                let ty = infer[local.binding];
+                let local_type = infer[local.binding];
                 Some(pretty_type_with_verbosity(
                     database,
-                    ty,
+                    local_type,
                     TypeVerbosity::Compact,
                 ))
             },
             Self::Field(field) => {
                 let field_types = database.field_types(field.id.r#struct);
-                let ty = field_types.0.get(field.id.field)?;
+                let field_type = field_types.0.get(field.id.field)?;
                 Some(pretty_type_with_verbosity(
                     database,
-                    *ty,
+                    *field_type,
                     TypeVerbosity::Compact,
                 ))
             },
@@ -233,9 +246,9 @@ impl Definition {
                         TypeVerbosity::Compact,
                     ))
                 },
-                ModuleDef::GlobalVariable(var) => {
-                    let infer = database.infer(DefinitionWithBodyId::GlobalVariable(var.id));
-                    let data = database.global_var_data(var.id).0;
+                ModuleDef::GlobalVariable(global_var) => {
+                    let infer = database.infer(DefinitionWithBodyId::GlobalVariable(global_var.id));
+                    let data = database.global_var_data(global_var.id).0;
                     Some(format!(
                         "var {}: {}",
                         data.name.as_str(),
@@ -272,8 +285,8 @@ impl Definition {
                         )
                     ))
                 },
-                ModuleDef::Struct(s) => {
-                    let data = database.struct_data(s.id).0;
+                ModuleDef::Struct(struct_def) => {
+                    let data = database.struct_data(struct_def.id).0;
                     Some(format!("struct {}", data.name.as_str()))
                 },
                 ModuleDef::TypeAlias(alias) => {
@@ -299,8 +312,8 @@ impl Definition {
                     let source = function.source(database)?;
                     doc_comments_from_syntax(source.value.syntax())
                 },
-                ModuleDef::GlobalVariable(var) => {
-                    let source = var.source(database)?;
+                ModuleDef::GlobalVariable(global_var) => {
+                    let source = global_var.source(database)?;
                     doc_comments_from_syntax(source.value.syntax())
                 },
                 ModuleDef::GlobalConstant(constant) => {
@@ -311,8 +324,8 @@ impl Definition {
                     let source = override_decl.source(database)?;
                     doc_comments_from_syntax(source.value.syntax())
                 },
-                ModuleDef::Struct(s) => {
-                    let source = s.source(database)?;
+                ModuleDef::Struct(struct_def) => {
+                    let source = struct_def.source(database)?;
                     doc_comments_from_syntax(source.value.syntax())
                 },
                 ModuleDef::TypeAlias(alias) => {
@@ -329,30 +342,28 @@ impl Definition {
 ///
 /// Walks backwards through siblings, collecting contiguous doc comment lines.
 /// Stops at the first non-trivia, non-doc-comment token.
+#[must_use]
 pub fn doc_comments_from_syntax(node: &SyntaxNode) -> Option<String> {
     let mut doc_lines: Vec<String> = Vec::new();
 
     // Walk backwards through preceding siblings (tokens and nodes)
     for sibling in node.siblings_with_tokens(Direction::Prev).skip(1) {
         if let Some(token) = sibling.as_token() {
-            if let Some(comment) = ast::Comment::cast(token.clone()) {
-                if let Some(doc_text) = comment.doc_comment() {
-                    // Trim leading space if present (common in `/// text`)
-                    let text = doc_text.strip_prefix(' ').unwrap_or(doc_text);
-                    doc_lines.push(text.to_string());
-                    continue;
-                }
+            if let Some(comment) = ast::Comment::cast(token.clone())
+                && let Some(doc_text) = comment.doc_comment()
+            {
+                // Trim leading space if present (common in `/// text`)
+                let text = doc_text.strip_prefix(' ').unwrap_or(doc_text);
+                doc_lines.push(text.to_owned());
+                continue;
             }
             // Skip whitespace between doc comment lines
             if token.kind().is_whitespace() {
                 continue;
             }
-            // Any other token means we've gone past the doc comments
-            break;
-        } else {
-            // Hit a node — stop
-            break;
         }
+        // Hit a non-doc-comment token or a node — stop
+        break;
     }
 
     if doc_lines.is_empty() {
@@ -437,16 +448,16 @@ fn resolve_import_name(
         std::iter::once(Name::from(name_text.as_str())),
     ));
 
-    let resolved = resolver.resolve(semantics.database, &path)?;
-    resolve_kind_to_definition(semantics, resolved)
+    let resolve_result = resolver.resolve(semantics.database, &path)?;
+    resolve_kind_to_definition(semantics, &resolve_result)
 }
 
 /// Converts a `ResolveKind` to a `Definition`, interning as needed.
 fn resolve_kind_to_definition(
     semantics: &Semantics<'_>,
-    kind: ResolveKind,
+    kind: &ResolveKind,
 ) -> Option<Definition> {
-    let definition = match kind {
+    let definition = match *kind {
         ResolveKind::Local(_) => return None,
         ResolveKind::GlobalVariable(location) => {
             let id = semantics.database.intern_global_variable(location);
@@ -499,39 +510,39 @@ fn resolve_name_at_declaration(
     let parent = name_node.parent()?;
     match_ast! {
         match parent {
-            ast::FunctionDeclaration(decl) => {
-                let id = semantics.function_to_def(&InFile::new(file_id, decl))?;
+            ast::FunctionDeclaration(declaration) => {
+                let id = semantics.function_to_def(&InFile::new(file_id, declaration))?;
                 Some(Definition::ModuleDef(ModuleDef::Function(Function { id })))
             },
-            ast::VariableDeclaration(decl) => {
+            ast::VariableDeclaration(declaration) => {
                 // Try global var first, then local binding
-                if let Some(id) = semantics.global_variable_to_def(&InFile::new(file_id, decl)) {
+                if let Some(id) = semantics.global_variable_to_def(&InFile::new(file_id, declaration)) {
                     Some(Definition::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id })))
                 } else {
                     resolve_local_binding(semantics, file_id, &name)
                 }
             },
-            ast::LetDeclaration(_decl) => {
+            ast::LetDeclaration(_declaration) => {
                 resolve_local_binding(semantics, file_id, &name)
             },
-            ast::ConstantDeclaration(decl) => {
+            ast::ConstantDeclaration(declaration) => {
                 // Try global const first, then local binding
-                if let Some(id) = semantics.global_constant_to_def(&InFile::new(file_id, decl)) {
+                if let Some(id) = semantics.global_constant_to_def(&InFile::new(file_id, declaration)) {
                     Some(Definition::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id })))
                 } else {
                     resolve_local_binding(semantics, file_id, &name)
                 }
             },
-            ast::OverrideDeclaration(decl) => {
-                let id = semantics.global_override_to_def(&InFile::new(file_id, decl))?;
+            ast::OverrideDeclaration(declaration) => {
+                let id = semantics.global_override_to_def(&InFile::new(file_id, declaration))?;
                 Some(Definition::ModuleDef(ModuleDef::Override(Override { id })))
             },
-            ast::StructDeclaration(decl) => {
-                let id = semantics.global_struct_to_def(&InFile::new(file_id, decl))?;
+            ast::StructDeclaration(declaration) => {
+                let id = semantics.global_struct_to_def(&InFile::new(file_id, declaration))?;
                 Some(Definition::ModuleDef(ModuleDef::Struct(Struct { id })))
             },
-            ast::TypeAliasDeclaration(decl) => {
-                let id = semantics.global_type_alias_to_def(&InFile::new(file_id, decl))?;
+            ast::TypeAliasDeclaration(declaration) => {
+                let id = semantics.global_type_alias_to_def(&InFile::new(file_id, declaration))?;
                 Some(Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id })))
             },
             ast::StructMember(_member) => {
@@ -579,7 +590,7 @@ fn resolve_struct_member_field(
 
     // Find which field index this member is
     let struct_data = semantics.database.struct_data(struct_id).0;
-    let name_text = name.ident_token()?.text().to_string();
+    let name_text = name.ident_token()?.text().to_owned();
     let field_id = struct_data
         .fields()
         .iter()
@@ -597,17 +608,21 @@ fn resolve_struct_member_field(
 /// Extracts attribute text from an AST node that implements `HasAttributes`.
 /// Returns lines like `@group(0) @binding(0)` from the source.
 pub fn format_attributes(source: &dyn syntax::HasAttributes) -> Option<String> {
-    let attrs: Vec<String> = source
+    let attribute_texts: Vec<String> = source
         .attributes()
-        .map(|attr| attr.syntax().text().to_string())
+        .map(|attribute| attribute.syntax().text().to_string())
         .collect();
-    if attrs.is_empty() {
+    if attribute_texts.is_empty() {
         None
     } else {
-        Some(attrs.join(" "))
+        Some(attribute_texts.join(" "))
     }
 }
 
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "return type must match hover_text signature"
+)]
 fn hover_global_variable(
     database: &dyn HirDatabase,
     id: hir_def::database::GlobalVariableId,
@@ -620,15 +635,15 @@ fn hover_global_variable(
 
     // Extract attributes and template params from source AST
     let source = id.lookup(database).source(database);
-    let attrs_text = format_attributes(&source.value);
+    let formatted_attributes = format_attributes(&source.value);
     let template_text = source
         .value
         .template_parameters()
         .map(|tmpl: ast::TemplateList| tmpl.syntax().text().to_string());
 
     let mut result = String::new();
-    if let Some(attrs) = attrs_text {
-        result.push_str(&attrs);
+    if let Some(attribute_text) = formatted_attributes {
+        result.push_str(&attribute_text);
         result.push('\n');
     }
     result.push_str("var");
@@ -638,13 +653,17 @@ fn hover_global_variable(
     result.push(' ');
     result.push_str(data.name.as_str());
     if let Some(type_ref) = data.r#type {
-        let ty = type_context.lower_type(type_ref);
+        let lowered_type = type_context.lower_type(type_ref);
         result.push_str(": ");
-        result.push_str(&pretty_type(database, ty));
+        result.push_str(&pretty_type(database, lowered_type));
     }
     Some(result)
 }
 
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "return type must match hover_text signature"
+)]
 fn hover_global_constant(
     database: &dyn HirDatabase,
     id: hir_def::database::GlobalConstantId,
@@ -657,23 +676,27 @@ fn hover_global_constant(
 
     // Extract attributes from source AST
     let source = id.lookup(database).source(database);
-    let attrs_text = format_attributes(&source.value);
+    let formatted_attributes = format_attributes(&source.value);
 
     let mut result = String::new();
-    if let Some(attrs) = attrs_text {
-        result.push_str(&attrs);
+    if let Some(attribute_text) = formatted_attributes {
+        result.push_str(&attribute_text);
         result.push('\n');
     }
     result.push_str("const ");
     result.push_str(data.name.as_str());
     if let Some(type_ref) = data.r#type {
-        let ty = type_context.lower_type(type_ref);
+        let lowered_type = type_context.lower_type(type_ref);
         result.push_str(": ");
-        result.push_str(&pretty_type(database, ty));
+        result.push_str(&pretty_type(database, lowered_type));
     }
     Some(result)
 }
 
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "return type must match hover_text signature"
+)]
 fn hover_override(
     database: &dyn HirDatabase,
     id: hir_def::database::OverrideId,
@@ -686,19 +709,19 @@ fn hover_override(
 
     // Extract attributes from source AST
     let source = id.lookup(database).source(database);
-    let attrs_text = format_attributes(&source.value);
+    let formatted_attributes = format_attributes(&source.value);
 
     let mut result = String::new();
-    if let Some(attrs) = attrs_text {
-        result.push_str(&attrs);
+    if let Some(attribute_text) = formatted_attributes {
+        result.push_str(&attribute_text);
         result.push('\n');
     }
     result.push_str("override ");
     result.push_str(data.name.as_str());
     if let Some(type_ref) = data.r#type {
-        let ty = type_context.lower_type(type_ref);
+        let lowered_type = type_context.lower_type(type_ref);
         result.push_str(": ");
-        result.push_str(&pretty_type(database, ty));
+        result.push_str(&pretty_type(database, lowered_type));
     }
     Some(result)
 }

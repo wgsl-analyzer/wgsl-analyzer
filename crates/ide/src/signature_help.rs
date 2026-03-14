@@ -11,7 +11,7 @@ use hir_ty::{
     ty::pretty::{TypeVerbosity, pretty_fn_inner_with_offsets},
 };
 use ide_db::RootDatabase;
-use syntax::{AstNode, SyntaxKind, SyntaxToken, ast};
+use syntax::{AstNode as _, SyntaxKind, SyntaxToken, ast};
 
 /// Signature help information for a function call.
 #[derive(Debug, Clone)]
@@ -31,6 +31,10 @@ pub struct SignatureInformation {
 
 /// Information about a single parameter.
 #[derive(Debug, Clone)]
+#[expect(
+    clippy::struct_field_names,
+    reason = "label_start/label_end clearly describe byte offset range"
+)]
 pub struct ParameterInformation {
     /// Byte offset range within the signature label string.
     pub label_start: u32,
@@ -67,47 +71,47 @@ pub(crate) fn signature_help(
     // Try to extract doc comments for the function being called
     let fn_doc = function_call.ident_expression().and_then(|ident_expr| {
         let name_token = ident_expr.syntax().first_token()?;
-        let def = Definition::from_token(&semantics, file_id.into(), &name_token)?;
-        def.doc_comments(database)
+        let definition = Definition::from_token(&semantics, file_id.into(), &name_token)?;
+        definition.doc_comments(database)
     });
 
-    if let Some(expr_id) = expression_id {
-        if let Some(resolved) = analyzed.infer.call_resolution(expr_id) {
-            match resolved {
-                ResolvedCall::Function(func_id) => {
-                    let function = func_id.lookup(database);
-                    signatures.push(build_signature(database, &function, fn_doc.as_deref()));
-                    active_sig = Some(0);
-                },
-                ResolvedCall::OtherTypeInitializer(_) => return None,
-            }
+    if let Some(expr_id) = expression_id
+        && let Some(resolved) = analyzed.infer.call_resolution(expr_id)
+    {
+        match resolved {
+            ResolvedCall::Function(func_id) => {
+                let function = func_id.lookup(database);
+                signatures.push(build_signature(database, &function, fn_doc.as_deref()));
+                active_sig = Some(0);
+            },
+            ResolvedCall::OtherTypeInitializer(_) => return None,
         }
     }
 
     // If we couldn't resolve via inference, try name-based lookup for builtins
-    if signatures.is_empty() {
-        if let Some(ident_expr) = function_call.ident_expression() {
-            let name_text = ident_expr.syntax().text().to_string();
-            // Remove template parameters if present
-            let name_text = name_text.split('<').next().unwrap_or(&name_text).trim();
-            let name = Name::from(name_text);
-            if let Some(builtin) = Builtin::for_name(database, &name) {
-                // Collect types of already-typed arguments to filter overloads
-                let arg_types: Vec<_> = arguments_node
-                    .arguments()
-                    .filter_map(|arg| analyzed.type_of_expression(&arg))
-                    .collect();
+    if signatures.is_empty()
+        && let Some(ident_expr) = function_call.ident_expression()
+    {
+        let name_text = ident_expr.syntax().text().to_string();
+        // Remove template parameters if present
+        let name_text = name_text.split('<').next().unwrap_or(&name_text).trim();
+        let name = Name::from(name_text);
+        if let Some(builtin) = Builtin::for_name(database, &name) {
+            // Collect types of already-typed arguments to filter overloads
+            let arg_types: Vec<_> = arguments_node
+                .arguments()
+                .filter_map(|arg| analyzed.type_of_expression(&arg))
+                .collect();
 
-                for (idx, (_, overload)) in builtin
-                    .matching_overloads(database, &arg_types)
-                    .iter()
-                    .enumerate()
-                {
-                    let function = overload.r#type.lookup(database);
-                    signatures.push(build_signature(database, &function, None));
-                    if idx == 0 {
-                        active_sig = Some(0);
-                    }
+            for (overload_index, (_, overload)) in builtin
+                .matching_overloads(database, &arg_types)
+                .iter()
+                .enumerate()
+            {
+                let function = overload.r#type.lookup(database);
+                signatures.push(build_signature(database, &function, None));
+                if overload_index == 0 {
+                    active_sig = Some(0);
                 }
             }
         }

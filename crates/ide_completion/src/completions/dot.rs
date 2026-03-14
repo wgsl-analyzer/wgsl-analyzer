@@ -60,13 +60,13 @@ fn builtin_struct_completions(
     context: &CompletionContext<'_>,
     builtin_struct: &hir_ty::ty::BuiltinStruct,
 ) {
-    let items = builtin_struct.fields.iter().map(|(name, ty)| {
+    let items = builtin_struct.fields.iter().map(|(name, field_type)| {
         let mut builder = CompletionItem::new(
             CompletionItemKind::Field,
             context.source_range(),
             name.as_str(),
         );
-        builder.detail(pretty_type(context.database, *ty));
+        builder.detail(pretty_type(context.database, *field_type));
         builder.build(context.database)
     });
     accumulator.add_all(items);
@@ -86,8 +86,8 @@ fn struct_completions(
             context.source_range(),
             field.name.as_str(),
         );
-        if let Some(ty) = field_types.get(field_id) {
-            builder.detail(pretty_type(context.database, *ty));
+        if let Some(field_type) = field_types.get(field_id) {
+            builder.detail(pretty_type(context.database, *field_type));
         }
         builder.build(context.database)
     });

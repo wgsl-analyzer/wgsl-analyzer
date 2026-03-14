@@ -1,5 +1,4 @@
 use std::{
-    collections::HashSet,
     error,
     fmt::Display,
     ops::{self, Range},
@@ -10,7 +9,7 @@ use hir::{
     HirDatabase, Semantics,
     diagnostics::{AnyDiagnostic, DiagnosticsConfig, NagaVersion},
 };
-use hir_def::item_tree::{ImportStatement, ItemTreeNode, ModuleItem};
+use hir_def::item_tree::{ImportStatement, ItemTreeNode as _, ModuleItem};
 use hir_def::{HirFileId, original_file_range};
 use hir_ty::ty::{
     self,
@@ -18,6 +17,7 @@ use hir_ty::ty::{
 };
 use itertools::Itertools as _;
 use rowan::NodeOrToken;
+use rustc_hash::FxHashSet;
 use syntax::AstNode as _;
 use vfs::FileId;
 
@@ -316,7 +316,7 @@ fn emit_with_offset<Error: NagaError>(
     // still report it but use the full file range.
     let location = error
         .location()
-        .and_then(|loc| remap_range(loc))
+        .and_then(&remap_range)
         .unwrap_or(full_range);
 
     let related: Vec<_> = error
@@ -341,7 +341,7 @@ fn emit_with_offset<Error: NagaError>(
     });
 }
 
-/// Resolve an import statement to the FileId of the imported module file.
+/// Resolve an import statement to the `FileId` of the imported module file.
 ///
 /// Extracts module segments from the import tree and delegates to
 /// `hir_def::resolver::resolve_import_to_file`.
@@ -359,7 +359,7 @@ fn collect_transitive_imports(
     database: &dyn HirDatabase,
     root_file: FileId,
 ) -> Vec<FileId> {
-    let mut visited = HashSet::new();
+    let mut visited = FxHashSet::default();
     let mut queue = vec![root_file];
     let mut result = Vec::new();
 
@@ -399,19 +399,19 @@ fn collect_transitive_imports(
 
 /// A mapping from byte offsets in the combined source to the original file.
 struct SourceMap {
-    /// Each entry: (start_offset_in_combined, length, original_file_id)
+    /// Each entry: (`start_offset_in_combined`, length, `original_file_id`).
     segments: Vec<(usize, usize, FileId)>,
 }
 
 impl SourceMap {
-    /// Map a byte offset in the combined source back to (file_id, offset_in_file).
+    /// Map a byte offset in the combined source back to (`file_id`, `offset_in_file`).
     /// Returns None if the offset falls in a gap or outside any segment.
     fn map_offset(
         &self,
         combined_offset: usize,
     ) -> Option<(FileId, usize)> {
-        for &(start, len, file_id) in &self.segments {
-            if combined_offset >= start && combined_offset < start + len {
+        for &(start, length, file_id) in &self.segments {
+            if combined_offset >= start && combined_offset < start + length {
                 return Some((file_id, combined_offset - start));
             }
         }
@@ -425,13 +425,10 @@ fn strip_import_lines(source: &str) -> String {
     let mut result = String::with_capacity(source.len());
     for line in source.lines() {
         let trimmed = line.trim();
-        if trimmed.starts_with("import ") || trimmed == "import" {
-            // Replace with a blank line to preserve byte offsets within the file
-            result.push('\n');
-        } else {
+        if !(trimmed.starts_with("import ") || trimmed == "import") {
             result.push_str(line);
-            result.push('\n');
         }
+        result.push('\n');
     }
     // Remove trailing newline if original didn't have one
     if !source.ends_with('\n') && result.ends_with('\n') {

@@ -75,6 +75,11 @@ impl UnificationTable {
         }
     }
 
+    /// Resolves all bound variables in a type to their unified values.
+    ///
+    /// # Panics
+    ///
+    /// Panics if a bound variable has not been constrained.
     pub fn resolve(
         &self,
         database: &dyn HirDatabase,
@@ -177,6 +182,10 @@ impl UnificationTable {
 #[expect(
     clippy::too_many_lines,
     reason = "This long match is not easily broken up"
+)]
+#[expect(
+    clippy::result_unit_err,
+    reason = "unification either succeeds or fails with no extra info"
 )]
 pub fn unify(
     database: &dyn HirDatabase,

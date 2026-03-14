@@ -46,7 +46,7 @@ enum Type {
     Bound(usize),
     StorageTypeOfTexelFormat(usize),
     /// A synthetic struct returned by builtins like `frexp` and `modf`.
-    /// Fields: (struct_name, vec of (field_name, field_type))
+    /// Fields: (`struct_name`, vec of (`field_name`, `field_type`)).
     BuiltinStruct(String, Vec<(String, Box<Self>)>),
 }
 
@@ -141,7 +141,10 @@ fn main() -> Result<(), Box<dyn error::Error>> {
             continue;
         }
         // Parse [enable X] section headers
-        if let Some(inner) = line.strip_prefix('[').and_then(|l| l.strip_suffix(']')) {
+        if let Some(inner) = line
+            .strip_prefix('[')
+            .and_then(|line| line.strip_suffix(']'))
+        {
             let inner = inner.trim();
             if let Some(ext) = inner.strip_prefix("enable ") {
                 current_extension = Some(ext.trim().to_owned());
@@ -153,7 +156,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         let (name, overload) = parse_line(line);
         let builtin = builtins.entry(name.to_owned()).or_default();
         if builtin.required_extension.is_none() {
-            builtin.required_extension = current_extension.clone();
+            builtin.required_extension.clone_from(&current_extension);
         }
         builtin.overloads.push(overload);
     }
@@ -237,7 +240,7 @@ fn parse_line(line: &str) -> (&str, Overload) {
     // Strip function-level template parameters (e.g. `bitcast<T>` -> `bitcast`).
     // The generic type variables inside `<...>` are still picked up when
     // `parse_type` processes the parameters and return type.
-    let name = name.split_once('<').map_or(name, |(n, _)| n);
+    let name = name.split_once('<').map_or(name, |(head, _)| head);
     let (parameters, line) = line.split_once(')').unwrap();
     let return_type = line.trim_start_matches(" ->").trim();
 
@@ -322,6 +325,7 @@ fn only_char(input: &str) -> char {
     clippy::unimplemented,
     reason = "builtin refactor https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
 )]
+#[expect(clippy::too_many_lines, reason = "long but straightforward match")]
 fn parse_type(
     generics: &mut BTreeMap<char, (usize, Generic)>,
     r#type: &str,
@@ -406,7 +410,7 @@ fn parse_type(
         let fields_str = r#type[brace_pos + 1..].strip_suffix('}').unwrap();
         let fields = fields_str
             .split(',')
-            .filter(|s| !s.is_empty())
+            .filter(|field| !field.is_empty())
             .map(|field| {
                 let (field_name, field_type) = field.split_once(':').unwrap();
                 (

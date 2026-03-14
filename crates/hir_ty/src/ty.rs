@@ -348,12 +348,10 @@ impl TypeKind {
         database: &dyn HirDatabase,
     ) -> bool {
         match self {
-            Self::Scalar(_) => true,
             Self::Vector(vec) => vec.component_type.kind(database).is_numeric_scalar(),
             Self::Struct(r#struct) => {
                 database.field_types(*r#struct).0.iter().all(|(_, r#type)| {
                     match r#type.kind(database) {
-                        Self::Scalar(_) => true,
                         Self::Vector(vec)
                             if vec.component_type.kind(database).is_numeric_scalar() =>
                         {
@@ -361,7 +359,7 @@ impl TypeKind {
                         },
                         // Error types are treated as optimistically compatible to avoid
                         // cascading diagnostics.
-                        Self::Error => true,
+                        Self::Scalar(_) | Self::Error => true,
                         Self::Atomic(_)
                         | Self::Vector(_)
                         | Self::Matrix(_)
@@ -379,7 +377,7 @@ impl TypeKind {
             },
             // Error types are treated as optimistically compatible to avoid
             // cascading diagnostics.
-            Self::Error => true,
+            Self::Scalar(_) | Self::Error => true,
             Self::Atomic(_)
             | Self::BuiltinStruct(_)
             | Self::Matrix(_)
@@ -400,17 +398,16 @@ impl TypeKind {
         match self {
             Self::Scalar(scalar) => scalar.is_numeric(),
             Self::Vector(vec) => vec.component_type.kind(database).is_numeric_scalar(),
-            Self::Matrix(_) | Self::Atomic(_) => true,
+            // Error types are treated as optimistically compatible to avoid
+            // cascading diagnostics (e.g. when a struct is not yet defined).
+            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/722
+            Self::Matrix(_) | Self::Atomic(_) | Self::Error => true,
             Self::Array(array) => array.inner.kind(database).is_host_shareable(database),
             Self::Struct(r#struct) => database
                 .field_types(*r#struct)
                 .0
                 .iter()
                 .all(|(_, r#type)| r#type.kind(database).is_host_shareable(database)),
-            // Error types are treated as optimistically compatible to avoid
-            // cascading diagnostics (e.g. when a struct is not yet defined).
-            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/722
-            Self::Error => true,
             Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::Sampler(_)

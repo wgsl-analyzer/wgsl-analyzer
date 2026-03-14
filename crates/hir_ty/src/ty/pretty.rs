@@ -133,12 +133,22 @@ pub fn pretty_fn_inner_with_offsets(
         if index != 0 {
             buffer.push_str(", ");
         }
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::as_conversions,
+            reason = "buffer length will not exceed u32::MAX in practice"
+        )]
         let start = buffer.len() as u32;
         if !param_name.is_empty() && !hir_def::item_tree::Name::is_missing(param_name) {
             write!(buffer, "{param_name}: ")?;
         }
         write_type(database, param_type, buffer, verbosity)?;
         if let Some(ref mut offsets) = param_offsets {
+            #[expect(
+                clippy::cast_possible_truncation,
+                clippy::as_conversions,
+                reason = "buffer length will not exceed u32::MAX in practice"
+            )]
             offsets.push((start, buffer.len() as u32));
         }
     }

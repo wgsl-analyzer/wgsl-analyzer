@@ -1,4 +1,4 @@
-use std::ops::ControlFlow;
+use std::{fmt::Write as _, ops::ControlFlow};
 
 use triomphe::Arc;
 use vfs::AnchoredPath;
@@ -121,6 +121,10 @@ impl Resolver {
     }
 
     /// Calls the passed closure `function` on all names in scope.
+    #[expect(
+        clippy::impl_trait_in_params,
+        reason = "closure parameter is idiomatic"
+    )]
     pub fn process_all_names(
         &self,
         database: &dyn DefDatabase,
@@ -266,19 +270,17 @@ impl Resolver {
                     ModuleItem::ImportStatement(id) => {
                         let import = scope.module_info.get(*id);
                         import.expand::<ResolveKind, _>(|flat_import| {
-                            if flat_import.leaf_name() == Some(leaf_name) {
-                                if let Some((target_file_id, target_item)) = resolve_import_item(
+                            if flat_import.leaf_name() == Some(leaf_name)
+                                && let Some((target_file_id, target_item)) = resolve_import_item(
                                     database,
                                     scope.file_id,
                                     import,
                                     &flat_import,
-                                ) {
-                                    if let Some(kind) =
-                                        resolve_kind_from_item(target_file_id, &target_item)
-                                    {
-                                        return ControlFlow::Break(kind);
-                                    }
-                                }
+                                )
+                                && let Some(kind) =
+                                    resolve_kind_from_item(target_file_id, target_item)
+                            {
+                                return ControlFlow::Break(kind);
                             }
                             ControlFlow::Continue(())
                         })
@@ -294,21 +296,21 @@ impl Resolver {
 }
 
 /// Convert a `ModuleItem` to a `ResolveKind`.
-fn resolve_kind_from_item(
+const fn resolve_kind_from_item(
     file_id: HirFileId,
-    item: &ModuleItem,
+    item: ModuleItem,
 ) -> Option<ResolveKind> {
     match item {
-        ModuleItem::Function(id) => Some(ResolveKind::Function(InFile::new(file_id, *id))),
-        ModuleItem::Struct(id) => Some(ResolveKind::Struct(InFile::new(file_id, *id))),
-        ModuleItem::TypeAlias(id) => Some(ResolveKind::TypeAlias(InFile::new(file_id, *id))),
+        ModuleItem::Function(id) => Some(ResolveKind::Function(InFile::new(file_id, id))),
+        ModuleItem::Struct(id) => Some(ResolveKind::Struct(InFile::new(file_id, id))),
+        ModuleItem::TypeAlias(id) => Some(ResolveKind::TypeAlias(InFile::new(file_id, id))),
         ModuleItem::GlobalVariable(id) => {
-            Some(ResolveKind::GlobalVariable(Location::new(file_id, *id)))
+            Some(ResolveKind::GlobalVariable(Location::new(file_id, id)))
         },
         ModuleItem::GlobalConstant(id) => {
-            Some(ResolveKind::GlobalConstant(Location::new(file_id, *id)))
+            Some(ResolveKind::GlobalConstant(Location::new(file_id, id)))
         },
-        ModuleItem::Override(id) => Some(ResolveKind::Override(Location::new(file_id, *id))),
+        ModuleItem::Override(id) => Some(ResolveKind::Override(Location::new(file_id, id))),
         ModuleItem::GlobalAssertStatement(_) | ModuleItem::ImportStatement(_) => None,
     }
 }
@@ -343,33 +345,33 @@ fn resolve_import_item(
     let target_item = target_tree
         .items()
         .iter()
-        .find(|target| item_name_matches(target, &target_tree, item_name))?;
+        .find(|target| item_name_matches(**target, &target_tree, item_name))?;
 
     Some((target_hir_file, *target_item))
 }
 
 /// Check if a module item's name matches the given name.
 fn item_name_matches(
-    item: &ModuleItem,
+    item: ModuleItem,
     tree: &ItemTree,
     name: &Name,
 ) -> bool {
     match item {
-        ModuleItem::Function(id) => &tree.get(*id).name == name,
-        ModuleItem::Struct(id) => &tree.get(*id).name == name,
-        ModuleItem::TypeAlias(id) => &tree.get(*id).name == name,
-        ModuleItem::GlobalVariable(id) => &tree.get(*id).name == name,
-        ModuleItem::GlobalConstant(id) => &tree.get(*id).name == name,
-        ModuleItem::Override(id) => &tree.get(*id).name == name,
+        ModuleItem::Function(id) => &tree.get(id).name == name,
+        ModuleItem::Struct(id) => &tree.get(id).name == name,
+        ModuleItem::TypeAlias(id) => &tree.get(id).name == name,
+        ModuleItem::GlobalVariable(id) => &tree.get(id).name == name,
+        ModuleItem::GlobalConstant(id) => &tree.get(id).name == name,
+        ModuleItem::Override(id) => &tree.get(id).name == name,
         ModuleItem::GlobalAssertStatement(_) | ModuleItem::ImportStatement(_) => false,
     }
 }
 
-/// Resolve an import to the FileId of the imported module file.
+/// Resolve an import to the `FileId` of the imported module file.
 ///
 /// `kind` is the import path kind (Plain, Super, Package).
 /// `module_segments` are all path segments except the leaf item name.
-/// For `import package::shared::normal::compute_tbn`, module_segments = ["shared", "normal"].
+/// For `import package::shared::normal::compute_tbn`, `module_segments` = `["shared", "normal"]`.
 pub fn resolve_import_to_file(
     database: &dyn DefDatabase,
     anchor_file: base_db::FileId,
@@ -383,7 +385,7 @@ pub fn resolve_import_to_file(
     // Build the file path from module segments: shared/normal → shared/normal.wesl
     let module_path = module_segments
         .iter()
-        .map(|s| s.as_str())
+        .map(Name::as_str)
         .collect::<Vec<_>>()
         .join("/");
 
@@ -403,7 +405,7 @@ pub fn resolve_import_to_file(
             for _ in 0..levels {
                 path.push_str("../");
             }
-            path.push_str(&format!("{module_path}.wesl"));
+            write!(path, "{module_path}.wesl").expect("writing to String never fails");
             path
         },
     };
@@ -415,8 +417,9 @@ pub fn resolve_import_to_file(
     database.resolve_path(path)
 }
 
-/// Extract module segments (all segments except the leaf) from an ImportTree.
-/// For `shared::normal::compute_tbn`, returns ["shared", "normal"].
+/// Extract module segments (all segments except the leaf) from an `ImportTree`.
+/// For `shared::normal::compute_tbn`, returns `["shared", "normal"]`.
+#[must_use]
 pub fn import_tree_module_segments(tree: &ImportTree) -> Vec<Name> {
     let mut segments = Vec::new();
     collect_path_segments(tree, &mut segments);

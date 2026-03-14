@@ -847,6 +847,11 @@ impl Module {
             .collect()
     }
 
+    #[expect(
+        clippy::cognitive_complexity,
+        clippy::too_many_lines,
+        reason = "diagnostic collection requires checking many conditions"
+    )]
     pub fn diagnostics(
         &self,
         database: &dyn HirDatabase,

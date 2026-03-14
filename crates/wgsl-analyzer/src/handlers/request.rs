@@ -29,23 +29,26 @@ pub(crate) fn handle_analyzer_status(
     snap: GlobalStateSnapshot,
     parameters: extensions::AnalyzerStatusParameters,
 ) -> Result<String> {
-    let mut buf = String::new();
+    use std::fmt::Write as _;
+    let mut output = String::new();
 
-    buf.push_str("wgsl-analyzer status\n\n");
+    output.push_str("wgsl-analyzer status\n\n");
 
-    buf.push_str(&format!("Workspaces: {}\n", snap.workspaces.len()));
+    writeln!(output, "Workspaces: {}", snap.workspaces.len()).unwrap();
 
-    if let Some(text_document) = parameters.text_document {
-        if let Some(file_id) = from_proto::file_id(&snap, &text_document.uri)? {
-            let source_root_id = snap.analysis.source_root_id(file_id)?;
-            buf.push_str(&format!(
-                "Current file: {:?}, source root: {:?}\n",
-                file_id, source_root_id
-            ));
-        }
+    if let Some(text_document) = parameters.text_document
+        && let Some(file_id) = from_proto::file_id(&snap, &text_document.uri)?
+    {
+        let source_root_id = snap.analysis.source_root_id(file_id)?;
+        #[expect(clippy::use_debug, reason = "debug output for analyzer status")]
+        writeln!(
+            output,
+            "Current file: {file_id:?}, source root: {source_root_id:?}"
+        )
+        .unwrap();
     }
 
-    Ok(buf)
+    Ok(output)
 }
 
 pub(crate) fn handle_goto_definition(
@@ -113,12 +116,12 @@ pub(crate) fn handle_completion(
 
 pub(crate) fn handle_signature_help(
     snap: GlobalStateSnapshot,
-    params: lsp_types::SignatureHelpParams,
+    sig_help_params: lsp_types::SignatureHelpParams,
 ) -> anyhow::Result<Option<lsp_types::SignatureHelp>> {
     let _p = tracing::info_span!("handle_signature_help").entered();
     let position = try_default!(from_proto::file_position(
         &snap,
-        &params.text_document_position_params
+        &sig_help_params.text_document_position_params
     )?);
     let help = snap.analysis.signature_help(position)?;
     Ok(help.map(to_proto::signature_help))
