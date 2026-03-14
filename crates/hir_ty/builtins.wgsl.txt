@@ -492,6 +492,9 @@ pack4xI8Clamp(vec4<i32>) -> u32
 unpack4xI8(u32) -> vec4<i32>
 unpack4xU8(u32) -> vec4<u32>
 
+// data reinterpretation
+bitcast<R>(T) -> R
+
 // synchronization
 storageBarrier()
 workgroupBarrier()
