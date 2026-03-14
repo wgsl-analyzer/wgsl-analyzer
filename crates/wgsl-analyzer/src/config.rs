@@ -456,7 +456,7 @@ impl Config {
             enable_term_search: false,
             term_search_fuel: 400,
             full_function_signatures: false,
-            callable: None,
+            callable: Some(ide_completion::CallableSnippets::FillArguments),
             add_semicolon_to_unit: false,
             // pub snippet_cap: Option<SnippetCap>,
             // pub insert_use: InsertUseConfig,

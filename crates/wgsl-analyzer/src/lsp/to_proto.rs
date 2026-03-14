@@ -722,9 +722,15 @@ pub(crate) fn signature_help(help: SignatureHelp) -> lsp_types::SignatureHelp {
                     })
                     .collect(),
             );
+            let sig_doc = sig.documentation.map(|doc| {
+                lsp_types::Documentation::MarkupContent(lsp_types::MarkupContent {
+                    kind: lsp_types::MarkupKind::Markdown,
+                    value: doc,
+                })
+            });
             lsp_types::SignatureInformation {
                 label: sig.label,
-                documentation: None,
+                documentation: sig_doc,
                 parameters,
                 active_parameter: None,
             }

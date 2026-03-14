@@ -1,6 +1,6 @@
 use base_db::{FilePosition, TextSize};
-use hir::{HirDatabase as _, Semantics};
-use hir_def::{database::DefDatabase as _, item_tree::Name};
+use hir::{Definition, Function, HirDatabase as _, ModuleDef, Semantics};
+use hir_def::{database::{DefDatabase as _, Lookup as _}, item_tree::Name};
 use hir_ty::{
     builtins::Builtin,
     function::FunctionDetails,
@@ -22,6 +22,7 @@ pub struct SignatureHelp {
 #[derive(Debug, Clone)]
 pub struct SignatureInformation {
     pub label: String,
+    pub documentation: Option<String>,
     pub parameters: Vec<ParameterInformation>,
 }
 
@@ -60,12 +61,21 @@ pub(crate) fn signature_help(
     let mut signatures = Vec::new();
     let mut active_sig = None;
 
+    // Try to extract doc comments for the function being called
+    let fn_doc = function_call
+        .ident_expression()
+        .and_then(|ident_expr| {
+            let name_token = ident_expr.syntax().first_token()?;
+            let def = Definition::from_token(&semantics, file_id.into(), &name_token)?;
+            def.doc_comments(database)
+        });
+
     if let Some(expr_id) = expression_id {
         if let Some(resolved) = analyzed.infer.call_resolution(expr_id) {
             match resolved {
                 ResolvedCall::Function(func_id) => {
                     let function = func_id.lookup(database);
-                    signatures.push(build_signature(database, &function));
+                    signatures.push(build_signature(database, &function, fn_doc.as_deref()));
                     active_sig = Some(0);
                 },
                 ResolvedCall::OtherTypeInitializer(_) => return None,
@@ -93,7 +103,7 @@ pub(crate) fn signature_help(
                     .enumerate()
                 {
                     let function = overload.r#type.lookup(database);
-                    signatures.push(build_signature(database, &function));
+                    signatures.push(build_signature(database, &function, None));
                     if idx == 0 {
                         active_sig = Some(0);
                     }
@@ -143,6 +153,7 @@ fn find_enclosing_call(
 fn build_signature(
     database: &RootDatabase,
     function: &FunctionDetails,
+    documentation: Option<&str>,
 ) -> SignatureInformation {
     let mut label = String::new();
     let mut offsets = Vec::new();
@@ -163,5 +174,9 @@ fn build_signature(
         })
         .collect();
 
-    SignatureInformation { label, parameters }
+    SignatureInformation {
+        label,
+        documentation: documentation.map(String::from),
+        parameters,
+    }
 }

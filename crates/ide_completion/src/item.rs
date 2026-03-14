@@ -611,6 +611,12 @@ impl Builder {
         self.insert_text(snippet)
     }
 
+    /// Mark this completion item as a snippet (uses `${}` tab stop syntax).
+    pub(crate) fn mark_as_snippet(&mut self) -> &mut Self {
+        self.is_snippet = true;
+        self
+    }
+
     pub(crate) fn text_edit(
         &mut self,
         edit: TextEdit,

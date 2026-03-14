@@ -105,7 +105,21 @@ impl Definition {
                 ModuleDef::Override(override_decl) => hover_override(database, override_decl.id),
                 ModuleDef::Struct(s) => {
                     let data = database.struct_data(s.id).0;
-                    Some(format!("struct {}", data.name.as_str()))
+                    let field_types = &database.field_types(s.id).0;
+                    let mut result = format!("struct {} {{\n", data.name.as_str());
+                    for (field_id, field_data) in data.fields().iter() {
+                        if let Some(ty) = field_types.get(field_id) {
+                            result.push_str(&format!(
+                                "    {}: {},\n",
+                                field_data.name.as_str(),
+                                pretty_type(database, *ty)
+                            ));
+                        } else {
+                            result.push_str(&format!("    {},\n", field_data.name.as_str()));
+                        }
+                    }
+                    result.push('}');
+                    Some(result)
                 },
                 ModuleDef::TypeAlias(alias) => {
                     let resolved = database.type_alias_type(alias.id);
