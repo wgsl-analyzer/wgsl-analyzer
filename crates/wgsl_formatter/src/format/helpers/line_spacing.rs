@@ -45,7 +45,7 @@ pub fn gen_line_spacing(line_spacing: &LineSpacing) -> FormatDocumentResult<Prin
     match line_spacing {
         LineSpacing::EmptyLine => {
             //There was an empty line in the source
-            formatted.request_request(Request::Unconditional {
+            formatted.request(Request::Unconditional {
                 expected: BTreeSet::from([RequestItem::EmptyLine]),
                 discouraged: BTreeSet::new(),
                 forced: BTreeSet::new(),
@@ -53,7 +53,7 @@ pub fn gen_line_spacing(line_spacing: &LineSpacing) -> FormatDocumentResult<Prin
         },
         LineSpacing::LineBreak => {
             //There was a newline in the source
-            formatted.request_request(Request::Unconditional {
+            formatted.request(Request::Unconditional {
                 expected: BTreeSet::from([RequestItem::LineBreak]),
                 discouraged: BTreeSet::new(),
                 forced: BTreeSet::new(),

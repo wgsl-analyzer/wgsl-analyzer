@@ -47,7 +47,7 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
     formatted.extend(gen_if_statement_if_clause(&item_if_clause)?);
     formatted.extend(gen_comments(&comments_after_if_clause));
     for (else_if_clause, comments_after_else_if_clause) in else_if_clauses {
-        formatted.request_request(Request::Unconditional {
+        formatted.request(Request::Unconditional {
             expected: BTreeSet::from([RequestItem::Space]),
             discouraged: BTreeSet::from([RequestItem::LineBreak]),
             forced: BTreeSet::new(),
@@ -56,7 +56,7 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
         formatted.extend(gen_comments(&comments_after_else_if_clause));
     }
     if let Some(item_else_clause) = item_else_clause {
-        formatted.request_request(Request::Unconditional {
+        formatted.request(Request::Unconditional {
             expected: BTreeSet::from([RequestItem::Space]),
             discouraged: BTreeSet::from([RequestItem::LineBreak]),
             forced: BTreeSet::new(),

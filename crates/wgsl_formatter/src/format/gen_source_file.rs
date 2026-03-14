@@ -86,7 +86,7 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
     // ==== Format ====
 
     let mut formatted = PrintItemBuffer::new();
-    formatted.request_request(Request::Unconditional {
+    formatted.request(Request::Unconditional {
         expected: BTreeSet::new(),
         discouraged: BTreeSet::from([
             RequestItem::EmptyLine,
@@ -112,7 +112,7 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
         }
     }
 
-    formatted.request_request(Request::Unconditional {
+    formatted.request(Request::Unconditional {
         forced: BTreeSet::new(),
         discouraged: BTreeSet::from([RequestItem::EmptyLine]),
         expected: BTreeSet::from([RequestItem::LineBreak]),

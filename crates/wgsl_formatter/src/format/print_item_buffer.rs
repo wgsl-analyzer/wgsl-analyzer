@@ -73,24 +73,24 @@ impl PrintItemBuffer {
         &mut self,
         item: RequestItem,
     ) {
-        self.request_request(Request::discourage(item));
+        self.request(Request::discourage(item));
     }
 
     pub fn expect(
         &mut self,
         item: RequestItem,
     ) {
-        self.request_request(Request::expect(item));
+        self.request(Request::expect(item));
     }
 
     pub fn force(
         &mut self,
         item: RequestItem,
     ) {
-        self.request_request(Request::force(item));
+        self.request(Request::force(item));
     }
 
-    pub fn request_request(
+    pub fn request(
         &mut self,
         incoming_request: Request,
     ) {
