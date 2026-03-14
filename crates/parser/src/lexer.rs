@@ -485,13 +485,7 @@ impl Iterator for WgslLexer<'_, '_> {
                     "super" => Token::Super,
                     "as" => Token::As,
 
-                    word if is_reserved_word(word) => {
-                        self.diagnostics.push(Diagnostic {
-                            message: format!("'{word}' is a reserved word in WGSL"),
-                            range: to_range(token_start..token_end),
-                        });
-                        Token::Reserved
-                    },
+                    word if is_reserved_word(word) => Token::Reserved,
                     _ => Token::Ident,
                 };
 

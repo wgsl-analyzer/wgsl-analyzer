@@ -1068,7 +1068,6 @@ fn test() {
 }
 ",
             expect![[r#"
-                20..24 Error 16: 'enum' is a reserved word in WGSL
                 20..24 Error 16: invalid syntax, expected: <identifier>
             "#]],
         );
