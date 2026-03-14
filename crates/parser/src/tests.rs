@@ -327,6 +327,80 @@ fn function() {
 }
 
 #[test]
+fn path_function_call() {
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/896
+    check(
+        "fn main() { foo::bar::baz(); }",
+        expect![[r#"
+            SourceFile@0..30
+              FunctionDeclaration@0..30
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..7
+                  Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
+                Blankspace@9..10 " "
+                CompoundStatement@10..30
+                  BraceLeft@10..11 "{"
+                  Blankspace@11..12 " "
+                  FunctionCallStatement@12..28
+                    FunctionCall@12..27
+                      IdentExpression@12..25
+                        Path@12..25
+                          Identifier@12..15 "foo"
+                          DoubleColon@15..17 "::"
+                          Identifier@17..20 "bar"
+                          DoubleColon@20..22 "::"
+                          Identifier@22..25 "baz"
+                      Arguments@25..27
+                        ParenthesisLeft@25..26 "("
+                        ParenthesisRight@26..27 ")"
+                    Semicolon@27..28 ";"
+                  Blankspace@28..29 " "
+                  BraceRight@29..30 "}""#]],
+    );
+}
+
+#[test]
+fn path_assignment() {
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/896
+    check(
+        "fn main() { foo::bar = 3; }",
+        expect![[r#"
+            SourceFile@0..27
+              FunctionDeclaration@0..27
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..7
+                  Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
+                Blankspace@9..10 " "
+                CompoundStatement@10..27
+                  BraceLeft@10..11 "{"
+                  Blankspace@11..12 " "
+                  AssignmentStatement@12..25
+                    IdentExpression@12..20
+                      Path@12..20
+                        Identifier@12..15 "foo"
+                        DoubleColon@15..17 "::"
+                        Identifier@17..20 "bar"
+                    Blankspace@20..21 " "
+                    Equal@21..22 "="
+                    Blankspace@22..23 " "
+                    Literal@23..24
+                      IntLiteral@23..24 "3"
+                    Semicolon@24..25 ";"
+                  Blankspace@25..26 " "
+                  BraceRight@26..27 "}""#]],
+    );
+}
+
+
+#[test]
 fn variable_declarations() {
     check(
         "fn name() {
