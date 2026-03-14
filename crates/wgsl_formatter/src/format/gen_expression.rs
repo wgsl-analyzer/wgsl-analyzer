@@ -15,7 +15,7 @@ use crate::format::{
     gen_function_call::gen_function_call,
     gen_path::gen_path,
     gen_types::gen_template_list,
-    multiline_group::gen_surrounded_group,
+    multiline_group::MultilineGroup,
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
 };
@@ -212,25 +212,22 @@ pub fn gen_index_expression(
     formatted.extend(gen_expression(&item_array_expr, false)?);
     formatted.extend(gen_comments(&comments_after_ident_expr));
 
-    formatted.extend(gen_surrounded_group(
-        Some({
-            let mut pib = PrintItemBuffer::new();
-            pib.push_sc(sc!("["));
-            pib
-        }),
-        [{
-            let mut pib = PrintItemBuffer::new();
-            pib.extend(gen_comments(&comments_after_open_bracket));
-            pib.extend(gen_expression(&item_actual_index, true)?);
-            pib.extend(gen_comments(&comments_after_index_expr));
-            pib
-        }],
-        Some({
-            let mut pib = PrintItemBuffer::new();
-            pib.push_sc(sc!("]"));
-            pib
-        }),
-    ));
+    let mut multiline_group = MultilineGroup::new(&mut formatted);
+
+    multiline_group.push_sc(sc!("["));
+
+    multiline_group.start_indent();
+
+    multiline_group.extend(gen_comments(&comments_after_open_bracket));
+    multiline_group.extend(gen_expression(&item_actual_index, true)?);
+    multiline_group.extend(gen_comments(&comments_after_index_expr));
+    multiline_group.grouped_newline_or_space();
+
+    multiline_group.finish_indent();
+
+    multiline_group.push_sc(sc!("]"));
+
+    multiline_group.end();
 
     Ok(formatted)
 }

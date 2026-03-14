@@ -1,6 +1,6 @@
 use std::{collections::BTreeSet, rc::Rc};
 
-use dprint_core::formatting::{LineNumber, LineNumberAnchor, PrintItems, Signal, conditions};
+use dprint_core::formatting::{PrintItems, conditions};
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::SyntaxKind;
@@ -18,11 +18,10 @@ use crate::format::{
     gen_comments::{Comment, gen_comment, gen_comments, parse_comment_optional},
     gen_statement_compound::gen_compound_statement,
     gen_types::gen_type_specifier,
-    helpers::{
-        LineSpacing, create_is_multiple_lines_resolver, gen_line_spacing, parse_line_spacing,
-    },
+    helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
+    multiline_group::MultilineGroup,
     print_item_buffer::{
-        PrintItemBuffer, SeparationRequest,
+        PrintItemBuffer,
         request_folder::{Request, RequestFolder, RequestItem},
     },
     reporting::FormatDocumentResult,
@@ -120,54 +119,27 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-
-    //TODO Once the formatter is in a state where definitive statement can be made,
-    // look at if this formatting of comma seperated items could be sensibly abstracted out
-    // and combined with e.g struct members, fn call arguments, etc.
-    // Abstract this "fully multiline if at all multiline" functionality from here, index exprs, fn declarations and wherever it also exists
-    let start_ln = LineNumber::new("start");
-    let end_ln = LineNumber::new("end");
-    let is_multiple_lines = create_is_multiple_lines_resolver(start_ln, end_ln);
-
     let mut formatted = PrintItemBuffer::new();
 
-    formatted.push_info(start_ln);
-    formatted.push_anchor(LineNumberAnchor::new(end_ln));
+    let mut multiline_group = MultilineGroup::new(&mut formatted);
 
-    formatted.push_sc(sc!("("));
+    multiline_group.push_sc(sc!("("));
 
-    let mut start_nl_condition = conditions::if_true_or(
-        "paramMultilineStartIndent",
-        Rc::clone(&is_multiple_lines),
-        {
-            let mut pi = PrintItems::default();
-            pi.push_signal(Signal::NewLine);
-            pi.push_signal(Signal::StartIndent);
-            pi
-        },
-        {
-            let mut pi = PrintItems::default();
-            pi.push_signal(Signal::PossibleNewLine);
-            pi
-        },
-    );
-    let start_reeval = start_nl_condition.create_reevaluation();
-    formatted.push_condition(start_nl_condition);
-    formatted.push_signal(Signal::StartNewLineGroup);
+    multiline_group.start_indent();
 
-    // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
-    formatted.request(SeparationRequest::discouraged());
-
-    formatted.extend(gen_comments(&item_comments_start));
+    multiline_group.extend(gen_comments(&item_comments_start));
 
     for (index, item) in items.into_iter().enumerate() {
         match item {
             GenFnParameterItem::Parameter(parameter) => {
+                // TODO Polish Newline api to make this prettier
+
                 // If the parameters are multiple lines long, every parameter should be on a new line
                 // If the parameters is a single line long, every parameter should be prepended with a space,
                 // with a chance for breaking into multiple lines
-                formatted.request_request(Request::Conditional {
-                    condition: Rc::clone(&is_multiple_lines),
+                let is_multiline = Rc::clone(&multiline_group.is_multiple_lines);
+                multiline_group.request_request(Request::Conditional {
+                    condition: is_multiline,
                     on_true: Box::new(RequestFolder {
                         folded_request: Some(Request::Unconditional {
                             expected: BTreeSet::from_iter([RequestItem::LineBreak]),
@@ -179,18 +151,19 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
                 });
 
                 if index != 0 {
-                    formatted.request_request(Request::Unconditional {
+                    multiline_group.request_request(Request::Unconditional {
                         expected: BTreeSet::from([RequestItem::Space]),
                         discouraged: BTreeSet::new(),
                         forced: BTreeSet::new(),
                     });
                 }
 
-                formatted.extend(gen_fn_parameter(&parameter)?);
+                multiline_group.extend(gen_fn_parameter(&parameter)?);
                 if index == last_parameter_index {
-                    formatted.push_condition(conditions::if_true(
+                    let is_multiline = Rc::clone(&multiline_group.is_multiple_lines);
+                    multiline_group.push_condition(conditions::if_true(
                         "paramTrailingComma",
-                        Rc::clone(&is_multiple_lines),
+                        is_multiline,
                         {
                             let mut pi = PrintItems::default();
                             pi.push_sc(sc!(","));
@@ -198,49 +171,24 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
                         },
                     ));
                 } else {
-                    formatted.push_sc(sc!(","));
+                    multiline_group.push_sc(sc!(","));
                 }
             },
             GenFnParameterItem::LineSpacing(line_spacing) => {
-                formatted.extend(gen_line_spacing(&line_spacing)?);
+                multiline_group.extend(gen_line_spacing(&line_spacing)?);
             },
             GenFnParameterItem::Comment(comment) => {
-                formatted.extend(gen_comment(&comment));
+                multiline_group.extend(gen_comment(&comment));
             },
         }
     }
 
-    // No trailing spaces
-    formatted.discourage(RequestItem::Space);
+    multiline_group.grouped_newline_or_space();
+    multiline_group.finish_indent();
 
-    // If we are multiple lines, the closing parenthesis should be on a new line
-    formatted.request_request(Request::Conditional {
-        condition: Rc::clone(&is_multiple_lines),
-        on_true: Box::new(RequestFolder {
-            folded_request: Some(Request::Unconditional {
-                expected: BTreeSet::from_iter([RequestItem::LineBreak]),
-                discouraged: BTreeSet::new(),
-                forced: BTreeSet::new(),
-            }),
-        }),
-        on_false: Box::new(RequestFolder::default()),
-    });
+    multiline_group.push_sc(sc!(")"));
 
-    formatted.push_condition(conditions::if_true(
-        "paramMultilineEndIndent",
-        is_multiple_lines,
-        {
-            let mut pi = PrintItems::default();
-            pi.push_signal(Signal::FinishIndent);
-            pi
-        },
-    ));
-
-    formatted.push_sc(sc!(")"));
-
-    formatted.push_signal(Signal::FinishNewLineGroup);
-    formatted.push_info(end_ln);
-    formatted.push_reevaluation(start_reeval);
+    multiline_group.end();
 
     Ok(formatted)
 }
