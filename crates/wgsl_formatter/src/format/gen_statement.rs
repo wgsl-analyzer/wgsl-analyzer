@@ -27,7 +27,7 @@ use crate::format::{
         gen_var_declaration_statement,
     },
     multiline_group::MultilineGroup,
-    print_item_buffer::{PrintItemBuffer, SeparationPolicy, request_folder::RequestItem},
+    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::{FormatDocumentError, FormatDocumentResult},
 };
 
