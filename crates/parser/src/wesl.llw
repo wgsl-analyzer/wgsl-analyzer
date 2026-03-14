@@ -14,6 +14,7 @@ token Semi=';' LPar='(' RPar=')' Comma=',' Eq='=' Colon=':' LBrace='{' RBrace='}
       SlashEq='/=' CaretEq='^=' PercentEq='%=' Plus2='++' Minus2='--';
 token Import='import' Package='package' Super='super' As='as' DoubleColon='::';
 token Ident='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>';
+token Reserved='<reserved word>';
 token Blankspace LineEndingComment BlockComment;
 
 skip Blankspace LineEndingComment BlockComment;
@@ -27,10 +28,12 @@ part statement;
 part type_specifier;
 
 // WESL: Import statements
+// import_name accepts both identifiers and reserved words (e.g. `shared`) as valid path segments.
+import_name: Ident | Reserved;
 import_statement: 'import' [import_package_relative | import_super_relative] (import_collection | import_path) ';';
 import_package_relative: 'package' '::';
 import_super_relative: ('super' '::')+;
-import_path: name (
+import_path: import_name (
     '::' (import_collection | import_path)
   | ['as' name] @import_item
 );

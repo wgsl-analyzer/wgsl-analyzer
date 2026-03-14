@@ -111,11 +111,11 @@ impl<'database> Ctx<'database> {
     fn lower_import_tree(import_tree: &syntax::ast::ImportTree) -> Option<ImportTree> {
         Some(match import_tree {
             syntax::ast::ImportTree::ImportPath(import_path) => ImportTree::Path {
-                name: import_path.name()?.text().into(),
+                name: import_path.import_name()?.text().into(),
                 item: Box::new(Self::lower_import_tree(&import_path.item()?)?),
             },
             syntax::ast::ImportTree::ImportItem(import_item) => ImportTree::Item {
-                name: import_item.name()?.text().into(),
+                name: import_item.import_name()?.text().into(),
                 alias: import_item
                     .alias()
                     .map(|alias| item_tree::Name::from(alias.text())),

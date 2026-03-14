@@ -1,14 +1,17 @@
 use std::{
+    collections::HashSet,
     error,
     fmt::Display,
     ops::{self, Range},
 };
 
-use base_db::{EditionedFileId, FileRange, TextRange, TextSize};
+use base_db::{AnchoredPath, EditionedFileId, FileRange, TextRange, TextSize};
 use hir::{
     HirDatabase, Semantics,
     diagnostics::{AnyDiagnostic, DiagnosticsConfig, NagaVersion},
 };
+use hir_def::item_tree::{ImportStatement, ItemTreeNode, ModuleItem};
+use hir_def::mod_path::PathKind;
 use hir_def::{HirFileId, original_file_range};
 use hir_ty::ty::{
     self,
@@ -288,13 +291,258 @@ fn emit<Error: NagaError>(
     });
 }
 
+/// Like `emit`, but remaps byte offsets from a combined source back to the main file.
+/// Errors whose locations fall outside the main file's range are silently dropped.
+fn emit_with_offset<Error: NagaError>(
+    error: &Error,
+    file_id: EditionedFileId,
+    full_range: TextRange,
+    main_file_offset: usize,
+    accumulator: &mut Vec<AnyDiagnostic>,
+) {
+    let message = error_message_cause_chain(&error);
+
+    // Remap a byte range from combined source to main file coordinates.
+    // Returns None if the range falls outside the main file.
+    let remap_range = |range: ops::Range<usize>| -> Option<TextRange> {
+        let start = range.start.checked_sub(main_file_offset)?;
+        let end = range.end.checked_sub(main_file_offset)?;
+        Some(TextRange::new(
+            TextSize::from(u32::try_from(start).ok()?),
+            TextSize::from(u32::try_from(end).ok()?),
+        ))
+    };
+
+    // Try to remap the main error location. If it falls outside the main file,
+    // still report it but use the full file range.
+    let location = error
+        .location()
+        .and_then(|loc| remap_range(loc))
+        .unwrap_or(full_range);
+
+    let related: Vec<_> = error
+        .spans()
+        .filter_map(|(span, label)| {
+            let range = remap_range(span?)?;
+            Some((
+                label,
+                FileRange {
+                    range,
+                    file_id: file_id.file_id,
+                },
+            ))
+        })
+        .collect();
+
+    accumulator.push(AnyDiagnostic::NagaValidationError {
+        file_id: file_id.into(),
+        range: location,
+        message,
+        related,
+    });
+}
+
+/// Resolve an import statement to the FileId of the imported module file.
+///
+/// WESL import path mapping:
+/// - `import foo::bar;` (Plain) → `./foo.wesl`
+/// - `import super::foo::bar;` (Super(1)) → `../foo.wesl`
+/// - `import super::super::foo;` (Super(2)) → `../../foo.wesl`
+/// - `import package::foo::bar;` (Package) → `foo.wesl` from package root
+fn resolve_import_to_file(
+    database: &dyn HirDatabase,
+    anchor_file: FileId,
+    import: &ImportStatement,
+) -> Option<FileId> {
+    // The first segment of the import path is the module (file) name.
+    // For `import foo::bar::baz;`, the tree is Path { name: "foo", item: Path { name: "bar", ... } }
+    // We need the first segment name to find the file.
+    let first_segment = import_tree_first_segment(&import.tree)?;
+
+    let relative_path = match import.kind {
+        PathKind::Plain => {
+            // `import foo::bar;` → look for `./foo.wesl`
+            format!("../{first_segment}.wesl")
+        },
+        PathKind::Super(levels) => {
+            // `import super::foo::bar;` → `../foo.wesl` (1 level)
+            // `import super::super::foo;` → `../../foo.wesl` (2 levels)
+            // AnchoredPath is relative to the anchor file's directory,
+            // so super(1) means go up one more level from the file's dir.
+            let mut path = String::new();
+            // One `../` to get out of the anchor file's directory
+            path.push_str("../");
+            for _ in 0..levels {
+                path.push_str("../");
+            }
+            path.push_str(&format!("{first_segment}.wesl"));
+            path
+        },
+        PathKind::Package => {
+            // Package-relative imports need the package root.
+            // For now, we try resolving from the source root.
+            // This is a simplification — proper package root detection
+            // would use wesl.toml location.
+            format!("../{first_segment}.wesl")
+        },
+    };
+
+    let path = AnchoredPath {
+        anchor: anchor_file,
+        path: &relative_path,
+    };
+    database.resolve_path(path)
+}
+
+/// Extract the first segment name from an ImportTree.
+fn import_tree_first_segment(tree: &hir_def::item_tree::ImportTree) -> Option<&str> {
+    match tree {
+        hir_def::item_tree::ImportTree::Path { name, .. } => Some(name.as_str()),
+        hir_def::item_tree::ImportTree::Item { name, .. } => Some(name.as_str()),
+        hir_def::item_tree::ImportTree::Collection { list } => {
+            // For `import {foo, bar};` — this is unusual at the top level
+            list.first().and_then(|t| import_tree_first_segment(t))
+        },
+    }
+}
+
+/// Collect all files transitively imported by the given file.
+fn collect_transitive_imports(
+    database: &dyn HirDatabase,
+    root_file: FileId,
+) -> Vec<FileId> {
+    let mut visited = HashSet::new();
+    let mut queue = vec![root_file];
+    let mut result = Vec::new();
+
+    while let Some(file_id) = queue.pop() {
+        if !visited.insert(file_id) {
+            continue;
+        }
+
+        let editioned = database.editioned_file_id(file_id);
+        // Only follow imports in WESL files
+        if !editioned.edition.at_least_wesl_0_0_1() {
+            continue;
+        }
+
+        let hir_file = HirFileId::from(editioned);
+        let item_tree = database.item_tree(hir_file);
+
+        for item in item_tree.items() {
+            if let ModuleItem::ImportStatement(import_id) = item {
+                let import = item_tree.get(*import_id);
+                if let Some(imported_file) = resolve_import_to_file(database, file_id, import) {
+                    if !visited.contains(&imported_file) {
+                        queue.push(imported_file);
+                    }
+                    if imported_file != root_file {
+                        result.push(imported_file);
+                    }
+                }
+            }
+        }
+    }
+
+    result.dedup();
+    result
+}
+
+/// A mapping from byte offsets in the combined source to the original file.
+struct SourceMap {
+    /// Each entry: (start_offset_in_combined, length, original_file_id)
+    segments: Vec<(usize, usize, FileId)>,
+}
+
+impl SourceMap {
+    /// Map a byte offset in the combined source back to (file_id, offset_in_file).
+    /// Returns None if the offset falls in a gap or outside any segment.
+    fn map_offset(
+        &self,
+        combined_offset: usize,
+    ) -> Option<(FileId, usize)> {
+        for &(start, len, file_id) in &self.segments {
+            if combined_offset >= start && combined_offset < start + len {
+                return Some((file_id, combined_offset - start));
+            }
+        }
+        None
+    }
+}
+
+/// Strip `import` lines from WESL source, replacing them with blank lines
+/// to preserve line numbers within the file.
+fn strip_import_lines(source: &str) -> String {
+    let mut result = String::with_capacity(source.len());
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("import ") || trimmed == "import" {
+            // Replace with a blank line to preserve byte offsets within the file
+            result.push('\n');
+        } else {
+            result.push_str(line);
+            result.push('\n');
+        }
+    }
+    // Remove trailing newline if original didn't have one
+    if !source.ends_with('\n') && result.ends_with('\n') {
+        result.pop();
+    }
+    result
+}
+
+/// Build a combined WGSL source from a WESL file and all its transitive imports.
+/// Returns the combined source string, a source map for error remapping,
+/// and the byte range in the combined source that corresponds to the main file.
+fn build_combined_source(
+    database: &dyn HirDatabase,
+    main_file: FileId,
+) -> (String, SourceMap, ops::Range<usize>) {
+    let imported_files = collect_transitive_imports(database, main_file);
+
+    let mut combined = String::new();
+    let mut segments = Vec::new();
+
+    // First, add all imported files (dependencies come before the main file)
+    for &dep_file in &imported_files {
+        let source = database.file_text(dep_file);
+        let stripped = strip_import_lines(&source);
+        let start = combined.len();
+        combined.push_str(&stripped);
+        combined.push('\n');
+        segments.push((start, stripped.len(), dep_file));
+    }
+
+    // Then add the main file
+    let main_source = database.file_text(main_file);
+    let main_stripped = strip_import_lines(&main_source);
+    let main_start = combined.len();
+    let main_len = main_stripped.len();
+    combined.push_str(&main_stripped);
+    segments.push((main_start, main_len, main_file));
+
+    let source_map = SourceMap { segments };
+    (combined, source_map, main_start..main_start + main_len)
+}
+
 fn naga_diagnostics<N: Naga>(
     database: &dyn HirDatabase,
     file_id: EditionedFileId,
     config: &DiagnosticsConfig,
     accumulator: &mut Vec<AnyDiagnostic>,
 ) {
-    let source = database.file_text(file_id.file_id);
+    let is_wesl = file_id.edition.at_least_wesl_0_0_1();
+
+    // For WESL files, build a combined source with all imports resolved.
+    // For WGSL files, just use the file's source directly.
+    let (source, main_file_offset) = if is_wesl {
+        let (combined, _source_map, main_range) = build_combined_source(database, file_id.file_id);
+        (combined, main_range.start)
+    } else {
+        let text = database.file_text(file_id.file_id).to_string();
+        (text, 0)
+    };
+
     let full_range = TextRange::up_to(TextSize::of(source.as_str()));
 
     match N::parse(&source) {
@@ -303,14 +551,22 @@ fn naga_diagnostics<N: Naga>(
                 return;
             }
             if let Err(error) = N::validate(&module) {
-                emit(&error, file_id, full_range, accumulator);
+                if is_wesl {
+                    emit_with_offset(&error, file_id, full_range, main_file_offset, accumulator);
+                } else {
+                    emit(&error, file_id, full_range, accumulator);
+                }
             }
         },
         Err(error) => {
             if !config.naga_parsing_errors {
                 return;
             }
-            emit(&error, file_id, full_range, accumulator);
+            if is_wesl {
+                emit_with_offset(&error, file_id, full_range, main_file_offset, accumulator);
+            } else {
+                emit(&error, file_id, full_range, accumulator);
+            }
         },
     }
 }
@@ -348,6 +604,8 @@ pub fn diagnostics(
             .diagnostics(database, config, &mut diagnostics);
     }
 
+    // For WESL files, naga receives a combined source with imports resolved.
+    // For WGSL files, naga receives the raw source directly.
     if config.naga_parsing_errors || config.naga_validation_errors {
         match &config.naga_version {
             NagaVersion::Naga27 => {

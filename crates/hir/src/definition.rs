@@ -69,13 +69,16 @@ impl Definition {
     ) -> Option<String> {
         match self {
             Self::Local(local) => {
-                let infer =
-                    database.infer(DefinitionWithBodyId::Function(local.parent));
+                let infer = database.infer(DefinitionWithBodyId::Function(local.parent));
                 let ty = infer[local.binding];
-                let (body, _) = database
-                    .body_with_source_map(DefinitionWithBodyId::Function(local.parent));
+                let (body, _) =
+                    database.body_with_source_map(DefinitionWithBodyId::Function(local.parent));
                 let name = &body.bindings[local.binding].name;
-                Some(format!("let {}: {}", name.as_str(), pretty_type(database, ty)))
+                Some(format!(
+                    "let {}: {}",
+                    name.as_str(),
+                    pretty_type(database, ty)
+                ))
             },
             Self::Field(field) => {
                 let field_types = database.field_types(field.id.r#struct);
@@ -94,15 +97,9 @@ impl Definition {
                     let details = resolved.lookup(database);
                     Some(pretty_fn(database, &details))
                 },
-                ModuleDef::GlobalVariable(var) => {
-                    hover_global_variable(database, var.id)
-                },
-                ModuleDef::GlobalConstant(constant) => {
-                    hover_global_constant(database, constant.id)
-                },
-                ModuleDef::Override(override_decl) => {
-                    hover_override(database, override_decl.id)
-                },
+                ModuleDef::GlobalVariable(var) => hover_global_variable(database, var.id),
+                ModuleDef::GlobalConstant(constant) => hover_global_constant(database, constant.id),
+                ModuleDef::Override(override_decl) => hover_override(database, override_decl.id),
                 ModuleDef::Struct(s) => {
                     let data = database.struct_data(s.id).0;
                     Some(format!("struct {}", data.name.as_str()))
@@ -289,7 +286,6 @@ fn resolve_struct_member_field(
     }))
 }
 
-
 fn hover_global_variable(
     database: &dyn HirDatabase,
     id: hir_def::database::GlobalVariableId,
@@ -301,7 +297,11 @@ fn hover_global_variable(
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
     if let Some(type_ref) = data.r#type {
         let ty = type_context.lower_type(type_ref);
-        Some(format!("var {}: {}", data.name.as_str(), pretty_type(database, ty)))
+        Some(format!(
+            "var {}: {}",
+            data.name.as_str(),
+            pretty_type(database, ty)
+        ))
     } else {
         Some(format!("var {}", data.name.as_str()))
     }

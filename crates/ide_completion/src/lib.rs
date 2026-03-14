@@ -243,7 +243,10 @@ fn test() {
             .iter()
             .find(|item| item.kind == CompletionItemKind::Function && item.label.primary == "abs")
             .expect("Expected 'abs' builtin completion");
-        let detail = abs_item.detail.as_deref().expect("Expected 'abs' to have a detail string");
+        let detail = abs_item
+            .detail
+            .as_deref()
+            .expect("Expected 'abs' to have a detail string");
         // The detail should be a function signature like "fn abs(T) -> T"
         assert!(
             detail.starts_with("fn abs("),

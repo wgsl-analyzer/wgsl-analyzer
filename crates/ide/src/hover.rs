@@ -1,7 +1,11 @@
 use base_db::{FilePosition, FileRange, RangeInfo, SourceDatabase as _};
 use hir::{Definition, HirDatabase as _, Semantics};
 use hir_def::{database::DefDatabase as _, item_tree::Name};
-use hir_ty::{builtins::Builtin, infer::ResolvedCall, ty::pretty::{pretty_fn, pretty_type}};
+use hir_ty::{
+    builtins::Builtin,
+    infer::ResolvedCall,
+    ty::pretty::{pretty_fn, pretty_type},
+};
 use ide_db::RootDatabase;
 use syntax::{AstNode as _, SyntaxKind, ast};
 
@@ -131,7 +135,9 @@ pub(crate) fn hover(
         let name = Name::from(token.text());
         if let Some(builtin) = Builtin::for_name(database, &name) {
             // Try to resolve the specific overload if this is a call site
-            if let Some(markup_text) = try_resolve_call_at_token(semantics, file_id.into(), &token, database) {
+            if let Some(markup_text) =
+                try_resolve_call_at_token(semantics, file_id.into(), &token, database)
+            {
                 return Some(RangeInfo::new(
                     range,
                     HoverResult {
@@ -188,9 +194,7 @@ fn try_resolve_call_at_token(
     database: &RootDatabase,
 ) -> Option<String> {
     // Walk up ancestors: Identifier -> Path -> IdentExpression -> FunctionCall
-    let func_call = token
-        .parent_ancestors()
-        .find_map(ast::FunctionCall::cast)?;
+    let func_call = token.parent_ancestors().find_map(ast::FunctionCall::cast)?;
     let call_expr = ast::Expression::FunctionCall(func_call);
 
     let container = semantics.find_container(file_id, call_expr.syntax())?;
@@ -202,11 +206,10 @@ fn try_resolve_call_at_token(
         ResolvedCall::Function(fn_id) => {
             let function = fn_id.lookup(database);
             Some(pretty_fn(database, &function))
-        }
+        },
         ResolvedCall::OtherTypeInitializer(_) => None,
     }
 }
-
 
 /// Collects the inferred types of already-typed arguments at a builtin call site.
 /// Returns an empty vec if the token is not inside a function call.
@@ -216,10 +219,7 @@ fn collect_call_arg_types(
     token: &syntax::SyntaxToken,
     database: &RootDatabase,
 ) -> Vec<hir_ty::ty::Type> {
-    let func_call = match token
-        .parent_ancestors()
-        .find_map(ast::FunctionCall::cast)
-    {
+    let func_call = match token.parent_ancestors().find_map(ast::FunctionCall::cast) {
         Some(fc) => fc,
         None => return Vec::new(),
     };

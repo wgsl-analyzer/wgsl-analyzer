@@ -148,7 +148,10 @@ impl Builtin {
 
         // Sort by score descending (best match first)
         scored.sort_by(|a, b| b.0.cmp(&a.0));
-        scored.into_iter().map(|(_, id, overload)| (id, overload)).collect()
+        scored
+            .into_iter()
+            .map(|(_, id, overload)| (id, overload))
+            .collect()
     }
 
     /// Returns the single overload that is an exact match (all parameters

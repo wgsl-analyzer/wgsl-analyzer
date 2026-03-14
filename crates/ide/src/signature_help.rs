@@ -87,8 +87,10 @@ pub(crate) fn signature_help(
                     .filter_map(|arg| analyzed.type_of_expression(&arg))
                     .collect();
 
-                for (idx, (_, overload)) in
-                    builtin.matching_overloads(database, &arg_types).iter().enumerate()
+                for (idx, (_, overload)) in builtin
+                    .matching_overloads(database, &arg_types)
+                    .iter()
+                    .enumerate()
                 {
                     let function = overload.r#type.lookup(database);
                     signatures.push(build_signature(database, &function));
@@ -163,4 +165,3 @@ fn build_signature(
 
     SignatureInformation { label, parameters }
 }
-

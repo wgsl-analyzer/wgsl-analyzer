@@ -705,7 +705,6 @@ pub(crate) fn goto_definition_response(
     }
 }
 
-
 pub(crate) fn signature_help(help: SignatureHelp) -> lsp_types::SignatureHelp {
     let signatures = help
         .signatures

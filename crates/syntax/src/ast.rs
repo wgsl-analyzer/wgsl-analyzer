@@ -259,17 +259,17 @@ ast_enum! {
 
 ast_node! {
     ImportPath:
-    name: Option<Name>;
+    import_name: Option<ImportName>;
     item: Option<ImportTree>;
 }
 ast_node! {
     ImportItem:
-    name: Option<Name>;
+    import_name: Option<ImportName>;
 }
 impl ImportItem {
     #[must_use]
     pub fn alias(&self) -> Option<Name> {
-        crate::support::children(&self.syntax).nth(1)
+        crate::support::child(&self.syntax)
     }
 }
 ast_node! {
@@ -470,6 +470,13 @@ ast_enum! {
 ast_node! {
     Name:
     ident_token: Option<SyntaxToken Identifier>;
+    text: TokenText<'_>;
+}
+
+/// A name segment in an import path. Unlike [`Name`], this also accepts
+/// reserved words (e.g. `shared`) as valid identifiers.
+ast_node! {
+    ImportName:
     text: TokenText<'_>;
 }
 

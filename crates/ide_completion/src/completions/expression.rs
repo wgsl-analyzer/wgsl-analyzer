@@ -7,8 +7,7 @@ use hir_def::{
 use hir_ty::{
     builtins::Builtin,
     ty::pretty::{
-        TypeVerbosity, pretty_fn, pretty_fn_with_verbosity, pretty_type,
-        pretty_type_with_verbosity,
+        TypeVerbosity, pretty_fn, pretty_fn_with_verbosity, pretty_type, pretty_type_with_verbosity,
     },
 };
 
