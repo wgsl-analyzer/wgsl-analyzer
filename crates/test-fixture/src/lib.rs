@@ -206,7 +206,7 @@ impl ChangeFixture {
         //     crate_graph.add_package_root(
         //         crate_root,
         //         default_edition,
-        //         Some(PackageName::new("ra_test_fixture").unwrap().into()),
+        //         Some(PackageName::new("wa_test_fixture").unwrap().into()),
         //         None,
         //         PackageOrigin::Local {
         //             repository: None,
