@@ -340,8 +340,10 @@ impl TypeKind {
                         {
                             true
                         },
-                        Self::Error
-                        | Self::Atomic(_)
+                        // Error types are treated as optimistically compatible to avoid
+                        // cascading diagnostics.
+                        Self::Error => true,
+                        Self::Atomic(_)
                         | Self::Vector(_)
                         | Self::Matrix(_)
                         | Self::Struct(_)
@@ -355,8 +357,10 @@ impl TypeKind {
                     }
                 })
             },
-            Self::Error
-            | Self::Atomic(_)
+            // Error types are treated as optimistically compatible to avoid
+            // cascading diagnostics.
+            Self::Error => true,
+            Self::Atomic(_)
             | Self::Matrix(_)
             | Self::Array(_)
             | Self::Texture(_)
@@ -382,8 +386,11 @@ impl TypeKind {
                 .0
                 .iter()
                 .all(|(_, r#type)| r#type.kind(database).is_host_shareable(database)),
-            Self::Error
-            | Self::Texture(_)
+            // Error types are treated as optimistically compatible to avoid
+            // cascading diagnostics (e.g. when a struct is not yet defined).
+            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/722
+            Self::Error => true,
+            Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
             | Self::Pointer(_)
