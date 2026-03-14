@@ -22,10 +22,16 @@ abs(f32) -> f32
 abs(vecN<f32>) -> vecN<f32>
 acos(f32) -> f32
 acos(vecN<f32>) -> vecN<f32>
+acosh(f32) -> f32
+acosh(vecN<f32>) -> vecN<f32>
 asin(f32) -> f32
 asin(vecN<f32>) -> vecN<f32>
+asinh(f32) -> f32
+asinh(vecN<f32>) -> vecN<f32>
 atan(f32) -> f32
 atan(vecN<f32>) -> vecN<f32>
+atanh(f32) -> f32
+atanh(vecN<f32>) -> vecN<f32>
 atan2(f32, f32) -> f32
 atan2(vecN<f32>, vecN<f32>) -> vecN<f32>
 ceil(f32) -> f32
@@ -53,7 +59,8 @@ fract(vecN<f32>) -> vecN<f32>
 // TODO frexp
 inverseSqrt(f32) -> f32
 inverseSqrt(vecN<f32>) -> vecN<f32>
-// TODO ldexp
+ldexp(f32, i32) -> f32
+ldexp(vecN<f32>, vecN<i32>) -> vecN<f32>
 length(f32) -> f32
 length(vecN<f32>) -> f32
 log(f32) -> f32
@@ -163,6 +170,8 @@ transpose(matMxN<T>) -> matNxM<T>
 dot(vecN<f32>, vecN<f32>) -> f32
 dot(vecN<i32>, vecN<i32>) -> i32
 dot(vecN<u32>, vecN<u32>) -> u32
+dot4I8Packed(u32, u32) -> i32
+dot4U8Packed(u32, u32) -> u32
 
 // derivative
 dpdx(f32) -> f32
@@ -471,10 +480,16 @@ unpack4x8unorm(u32) -> vec4<f32>
 unpack2x16snorm(u32) -> vec2<f32>
 unpack2x16unorm(u32) -> vec2<f32>
 unpack2x16float(u32) -> vec2<f32>
+pack4xI8(vec4<i32>) -> u32
+pack4xU8(vec4<u32>) -> u32
+pack4xI8Clamp(vec4<i32>) -> u32
+unpack4xI8(u32) -> vec4<i32>
+unpack4xU8(u32) -> vec4<u32>
 
 // synchronization
 storageBarrier()
 workgroupBarrier()
+textureBarrier()
 workgroupUniformLoad(ptr<T>) -> T
 
 // TODO: T should only match i32, f32, u32 in a lot of ops
