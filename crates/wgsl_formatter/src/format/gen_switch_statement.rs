@@ -1,4 +1,3 @@
-use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position, put_back};
 use parser::SyntaxKind;
@@ -72,7 +71,7 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
     let mut formatted = PrintItemBuffer::new();
     formatted.extend(gen_attributes(&item_attributes)?);
     formatted.push_sc(sc!("{"));
-    formatted.push_signal(Signal::StartIndent);
+    formatted.start_indent();
     formatted.extend(gen_comments(&item_comments_after_brace_left));
 
     let is_empty = item_cases.is_empty();
@@ -84,7 +83,7 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
         }
         formatted.expect(RequestItem::LineBreak);
     }
-    formatted.push_signal(Signal::FinishIndent);
+    formatted.finish_indent();
     formatted.push_sc(sc!("}"));
 
     if !is_empty {
@@ -170,7 +169,7 @@ pub fn gen_switch_body_case(
     Ok(formatted)
 }
 
-/// Check if the [`SwitchCaseSelectors`] only contains one "default" expr, and nothing else
+/// Check if the [`SwitchCaseSelectors`] only contains one "default" expr, and nothing else.
 fn is_case_default(item_selectors: &SwitchCaseSelectors) -> bool {
     let mut exprs = item_selectors.exprs();
     let maybe_default = exprs.next();

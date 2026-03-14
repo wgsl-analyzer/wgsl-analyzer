@@ -1,4 +1,3 @@
-use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::SyntaxKind;
@@ -60,7 +59,7 @@ pub fn gen_compound_statement(
     formatted.push_sc(sc!("{"));
 
     if !body_empty {
-        formatted.push_signal(Signal::StartIndent);
+        formatted.start_indent();
         formatted.discourage(RequestItem::EmptyLine);
         formatted.expect(RequestItem::LineBreak);
         for line in lines {
@@ -79,7 +78,7 @@ pub fn gen_compound_statement(
         }
         formatted.discourage(RequestItem::EmptyLine);
         formatted.expect(RequestItem::LineBreak);
-        formatted.push_signal(Signal::FinishIndent);
+        formatted.finish_indent();
     }
 
     formatted.push_sc(sc!("}"));

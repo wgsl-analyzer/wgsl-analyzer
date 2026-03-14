@@ -1,4 +1,4 @@
-use dprint_core::formatting::{Signal, StringContainer};
+use dprint_core::formatting::StringContainer;
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::{SyntaxKind, SyntaxNode};
@@ -141,7 +141,7 @@ fn gen_var_let_const_override_statement(
     let mut formatted = PrintItemBuffer::new();
     formatted.extend(gen_attributes(&item_attributes)?);
     formatted.push_sc(kind.sc());
-    formatted.push_signal(Signal::StartIndent);
+    formatted.start_indent();
 
     formatted.extend(gen_comments(&item_comments_after_let));
     if let Some((item_template_list, item_comments_after_template_list)) = item_template_list {
@@ -175,7 +175,7 @@ fn gen_var_let_const_override_statement(
         formatted.discourage(RequestItem::Space);
         formatted.push_sc(sc!(";"));
     }
-    formatted.push_signal(Signal::FinishIndent);
+    formatted.finish_indent();
 
     Ok(formatted)
 }

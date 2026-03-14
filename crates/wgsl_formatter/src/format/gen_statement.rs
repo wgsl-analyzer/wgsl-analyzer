@@ -1,4 +1,3 @@
-use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::SyntaxKind;
@@ -378,7 +377,7 @@ fn gen_break_if_statement(
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_break));
     formatted.push_sc(sc!("if"));
-    formatted.push_signal(Signal::StartIndent);
+    formatted.start_indent();
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_if));
     formatted.extend(gen_expression(&item_condition, true)?);
@@ -387,7 +386,7 @@ fn gen_break_if_statement(
     if include_semicolon {
         formatted.push_sc(sc!(";"));
     }
-    formatted.push_signal(Signal::FinishIndent);
+    formatted.finish_indent();
 
     Ok(formatted)
 }
@@ -409,7 +408,7 @@ pub fn gen_const_assert_statement(
     let mut formatted = PrintItemBuffer::new();
 
     formatted.push_sc(sc!("const_assert"));
-    formatted.push_signal(Signal::StartIndent);
+    formatted.start_indent();
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_const_assert));
     formatted.extend(gen_expression(&item_condition, true)?);
@@ -418,7 +417,7 @@ pub fn gen_const_assert_statement(
         formatted.discourage(RequestItem::Space);
         formatted.push_sc(sc!(";"));
     }
-    formatted.push_signal(Signal::FinishIndent);
+    formatted.finish_indent();
 
     Ok(formatted)
 }

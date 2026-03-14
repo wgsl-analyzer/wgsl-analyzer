@@ -1,6 +1,5 @@
 use std::collections::BTreeSet;
 
-use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::SyntaxKind;
@@ -93,10 +92,11 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
     parse_end(&mut syntax)?;
 
     // === Format ===
+    let is_empty = item_members.is_empty();
     let mut formatted = PrintItemBuffer::new();
 
     formatted.push_sc(sc!("{"));
-    formatted.push_signal(Signal::StartIndent);
+    formatted.start_indent();
 
     //TODO This should be handled by gen_comments, and probably
     // take into account whether the comment was on the same line as the opening brace
@@ -105,7 +105,6 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
         formatted.extend(gen_comments(&item_comments_after_open_paren));
     }
 
-    let is_empty = item_members.is_empty();
     if !is_empty {
         formatted.expect(RequestItem::LineBreak);
         for member in item_members {
@@ -130,7 +129,8 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
         expected: BTreeSet::from([RequestItem::LineBreak]),
         forced: BTreeSet::new(),
     });
-    formatted.push_signal(Signal::FinishIndent);
+
+    formatted.finish_indent();
     formatted.push_sc(sc!("}"));
 
     if !is_empty {
