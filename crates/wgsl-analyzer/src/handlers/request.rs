@@ -60,14 +60,12 @@ pub(crate) fn handle_goto_definition(
     let Some(navigation_info) = snap.analysis.goto_definition(position)? else {
         return Ok(None);
     };
-    let source = FileRange {
-        file_id: position.file_id,
+    let target = FileRange {
+        file_id: navigation_info.file_id,
         range: navigation_info.focus_or_full_range(),
     };
-    let location = to_proto::location(&snap, source)?;
+    let location = to_proto::location(&snap, target)?;
     Ok(Some(GotoDefinitionResponse::Scalar(location)))
-    // let result = to_proto::goto_definition_response(&snap, Some(source), vec![navigation_info])?;
-    // Ok(Some(result))
 }
 
 pub(crate) fn handle_completion(

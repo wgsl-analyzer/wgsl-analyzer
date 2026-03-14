@@ -1,7 +1,7 @@
 use hir::HirDatabase as _;
 use hir_def::{
     database::{DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location},
-    item_tree::{ModuleItem, Name},
+    item_tree::{ItemTreeNode, ModuleItem, Name},
     resolver::ScopeDef,
 };
 use hir_ty::{
@@ -10,6 +10,7 @@ use hir_ty::{
         TypeVerbosity, pretty_fn, pretty_fn_with_verbosity, pretty_type, pretty_type_with_verbosity,
     },
 };
+use syntax::{AstNode as _, AstToken as _, Direction, SyntaxNode, ast};
 
 use super::Completions;
 use crate::{
@@ -68,6 +69,13 @@ pub(crate) fn complete_names_in_scope(
                 },
             };
 
+            let doc = match item {
+                ScopeDef::ModuleItem(file_id, ref module_item) => {
+                    render_doc_comments(context, file_id, module_item)
+                },
+                ScopeDef::Local(_) => None,
+            };
+
             let mut completion = CompletionItem::new(kind, context.source_range(), name.as_str());
             completion.set_relevance(CompletionRelevance {
                 exact_name_match: false,
@@ -82,6 +90,7 @@ pub(crate) fn complete_names_in_scope(
                 is_builtin: false,
             });
             completion.set_detail(detail);
+            completion.set_documentation(doc);
             completion.add_to(accumulator, context.database);
         });
     for name in Builtin::ALL_BUILTINS {
@@ -199,4 +208,83 @@ fn render_detail(
             String::new()
         },
     }
+}
+
+
+/// Extract doc comments from the AST node of a module item.
+fn render_doc_comments(
+    context: &CompletionContext<'_>,
+    file_id: hir_def::HirFileId,
+    item: &ModuleItem,
+) -> Option<String> {
+    let item_tree = context.database.item_tree(file_id);
+    let ast_id_map = context.database.ast_id_map(file_id);
+    let root = context.database.parse_or_resolve(file_id);
+
+    // Get the syntax node for this item via its ast_id
+    let syntax_node: SyntaxNode = match item {
+        ModuleItem::Function(id) => {
+            let node = item_tree.get(*id);
+            let ptr = ast_id_map.get(node.ast_id());
+            ptr.to_node(&root.syntax()).syntax().clone()
+        },
+        ModuleItem::Struct(id) => {
+            let node = item_tree.get(*id);
+            let ptr = ast_id_map.get(node.ast_id());
+            ptr.to_node(&root.syntax()).syntax().clone()
+        },
+        ModuleItem::GlobalVariable(id) => {
+            let node = item_tree.get(*id);
+            let ptr = ast_id_map.get(node.ast_id());
+            ptr.to_node(&root.syntax()).syntax().clone()
+        },
+        ModuleItem::GlobalConstant(id) => {
+            let node = item_tree.get(*id);
+            let ptr = ast_id_map.get(node.ast_id());
+            ptr.to_node(&root.syntax()).syntax().clone()
+        },
+        ModuleItem::Override(id) => {
+            let node = item_tree.get(*id);
+            let ptr = ast_id_map.get(node.ast_id());
+            ptr.to_node(&root.syntax()).syntax().clone()
+        },
+        ModuleItem::TypeAlias(id) => {
+            let node = item_tree.get(*id);
+            let ptr = ast_id_map.get(node.ast_id());
+            ptr.to_node(&root.syntax()).syntax().clone()
+        },
+        ModuleItem::GlobalAssertStatement(_) | ModuleItem::ImportStatement(_) => return None,
+    };
+
+    doc_comments_from_syntax(&syntax_node)
+}
+
+/// Extracts doc comments (`///`) from the preceding siblings of a syntax node.
+fn doc_comments_from_syntax(node: &SyntaxNode) -> Option<String> {
+    let mut doc_lines: Vec<String> = Vec::new();
+
+    for sibling in node.siblings_with_tokens(Direction::Prev).skip(1) {
+        if let Some(token) = sibling.as_token() {
+            if let Some(comment) = ast::Comment::cast(token.clone()) {
+                if let Some(doc_text) = comment.doc_comment() {
+                    let text = doc_text.strip_prefix(' ').unwrap_or(doc_text);
+                    doc_lines.push(text.to_string());
+                    continue;
+                }
+            }
+            if token.kind().is_whitespace() {
+                continue;
+            }
+            break;
+        } else {
+            break;
+        }
+    }
+
+    if doc_lines.is_empty() {
+        return None;
+    }
+
+    doc_lines.reverse();
+    Some(doc_lines.join("\n"))
 }

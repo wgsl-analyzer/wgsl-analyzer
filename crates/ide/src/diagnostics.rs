@@ -384,7 +384,9 @@ fn collect_transitive_imports(
                     if !visited.contains(&imported_file) {
                         queue.push(imported_file);
                     }
-                    if imported_file != root_file {
+                    // Only add each file once to the result to avoid duplicate definitions
+                    // when multiple imports reference the same file
+                    if imported_file != root_file && !result.contains(&imported_file) {
                         result.push(imported_file);
                     }
                 }
@@ -392,7 +394,6 @@ fn collect_transitive_imports(
         }
     }
 
-    result.dedup();
     result
 }
 
@@ -865,7 +866,10 @@ mod tests {
     use itertools::Itertools;
     use std::fmt::Write as _;
 
-    use crate::{diagnostics::Diagnostic, fixture::single_file_db};
+    use crate::{
+        diagnostics::Diagnostic,
+        fixture::{multi_file_db, single_file_db},
+    };
 
     #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
     #[expect(clippy::use_debug, reason = "useful in tests")]
@@ -1018,6 +1022,100 @@ fn test() {
             expect![[r#"
                 20..24 Error 16: 'enum' is a reserved word in WGSL
             "#]],
+        );
+    }
+
+    /// Check naga diagnostics for a specific file in a multi-file fixture.
+    /// `file_index` is the 0-based index of the file to check (in fixture order).
+    #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
+    #[expect(clippy::use_debug, reason = "useful in tests")]
+    fn check_naga_diagnostics_multi(
+        source: &str,
+        file_index: usize,
+        expect: Expect,
+    ) {
+        let (analysis, files) = multi_file_db(source);
+        let file_id = files[file_index].file_id;
+        let config = DiagnosticsConfig {
+            enabled: true,
+            type_errors: false,
+            naga_parsing_errors: true,
+            naga_validation_errors: true,
+            ..Default::default()
+        };
+        let diagnostics = analysis.diagnostics(&config, file_id).unwrap();
+        let mut actual = String::new();
+        for Diagnostic {
+            code,
+            message,
+            range,
+            severity,
+            ..
+        } in diagnostics
+        {
+            let severity_text = match severity {
+                crate::diagnostics::Severity::Error => "Error",
+                crate::diagnostics::Severity::WeakWarning => "Warning",
+            };
+            writeln!(
+                actual,
+                "{range:?} {severity_text} {}: {message}",
+                code.as_str()
+            );
+        }
+
+        expect.assert_eq(&actual);
+    }
+
+    #[test]
+    fn cross_file_import_resolves_for_naga() {
+        // The main file imports a function from a sibling file.
+        // Naga should see the imported function and produce no errors.
+        check_naga_diagnostics_multi(
+            r#"
+//- /shared/math.wesl
+fn add_one(x: f32) -> f32 {
+    return x + 1.0;
+}
+
+//- /main.wesl
+import package::shared::math::add_one;
+
+fn main() -> f32 {
+    return add_one(2.0);
+}
+"#,
+            1, // check the main file (index 1)
+            expect![[r#"
+"#]],
+        );
+    }
+
+    #[test]
+    fn cross_file_import_multiple_from_same_file() {
+        // Multiple imports from the same file should not cause duplicate definitions.
+        check_naga_diagnostics_multi(
+            r#"
+//- /shared/helpers.wesl
+fn helper_a(x: f32) -> f32 {
+    return x * 2.0;
+}
+
+fn helper_b(x: f32) -> f32 {
+    return x + 1.0;
+}
+
+//- /main.wesl
+import package::shared::helpers::helper_a;
+import package::shared::helpers::helper_b;
+
+fn main() -> f32 {
+    return helper_a(helper_b(1.0));
+}
+"#,
+            1,
+            expect![[r#"
+"#]],
         );
     }
 }

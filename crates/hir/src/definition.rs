@@ -12,7 +12,7 @@ use hir_ty::{
     infer::TypeLoweringContext,
     ty::pretty::{pretty_fn, pretty_type},
 };
-use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast};
+use syntax::{AstNode as _, AstToken as _, Direction, SyntaxNode, SyntaxToken, ast, match_ast};
 
 use crate::{
     Field, Function, GlobalConstant, GlobalVariable, Local, ModuleDef, Override, Semantics, Struct,
@@ -52,6 +52,9 @@ impl Definition {
                 },
                 ast::Name(_name) => {
                     resolve_name_at_declaration(semantics, file_id, node)
+                },
+                ast::ImportName(import_name) => {
+                    resolve_import_name(semantics, file_id, &import_name)
                 },
                 _ => {
                     tracing::warn!("attempted to go to definition {:?}", node);
@@ -118,6 +121,84 @@ impl Definition {
             },
         }
     }
+
+    /// Returns doc comments (lines starting with `///`) associated with this definition.
+    #[must_use]
+    pub fn doc_comments(
+        &self,
+        database: &dyn HirDatabase,
+    ) -> Option<String> {
+        use crate::HasSource as _;
+        match self {
+            Self::Local(_) | Self::Field(_) => None,
+            Self::ModuleDef(module_def) => match module_def {
+                ModuleDef::Function(function) => {
+                    let source = function.source(database)?;
+                    doc_comments_from_syntax(source.value.syntax())
+                },
+                ModuleDef::GlobalVariable(var) => {
+                    let source = var.source(database)?;
+                    doc_comments_from_syntax(source.value.syntax())
+                },
+                ModuleDef::GlobalConstant(constant) => {
+                    let source = constant.source(database)?;
+                    doc_comments_from_syntax(source.value.syntax())
+                },
+                ModuleDef::Override(override_decl) => {
+                    let source = override_decl.source(database)?;
+                    doc_comments_from_syntax(source.value.syntax())
+                },
+                ModuleDef::Struct(s) => {
+                    let source = s.source(database)?;
+                    doc_comments_from_syntax(source.value.syntax())
+                },
+                ModuleDef::TypeAlias(alias) => {
+                    let source = alias.source(database)?;
+                    doc_comments_from_syntax(source.value.syntax())
+                },
+                ModuleDef::GlobalAssertStatement(_) => None,
+            },
+        }
+    }
+}
+
+/// Extracts doc comments (`///`) from the preceding siblings of a syntax node.
+///
+/// Walks backwards through siblings, collecting contiguous doc comment lines.
+/// Stops at the first non-trivia, non-doc-comment token.
+fn doc_comments_from_syntax(node: &SyntaxNode) -> Option<String> {
+    let mut doc_lines: Vec<String> = Vec::new();
+
+    // Walk backwards through preceding siblings (tokens and nodes)
+    for sibling in node.siblings_with_tokens(Direction::Prev).skip(1) {
+        if let Some(token) = sibling.as_token() {
+            if let Some(comment) = ast::Comment::cast(token.clone()) {
+                if let Some(doc_text) = comment.doc_comment() {
+                    // Trim leading space if present (common in `/// text`)
+                    let text = doc_text.strip_prefix(' ').unwrap_or(doc_text);
+                    doc_lines.push(text.to_string());
+                    continue;
+                }
+            }
+            // Skip whitespace between doc comment lines
+            if token.kind().is_whitespace() {
+                continue;
+            }
+            // Any other token means we've gone past the doc comments
+            break;
+        } else {
+            // Hit a node — stop
+            break;
+        }
+    }
+
+    if doc_lines.is_empty() {
+        return None;
+    }
+
+    // Reverse since we collected them bottom-up
+    doc_lines.reverse();
+    Some(doc_lines.join("\n"))
 }
 
 fn resolve_path(
@@ -169,6 +250,67 @@ fn resolve_path(
     } else {
         None
     }
+}
+
+/// Resolves an `ImportName` in an import statement to the target `Definition`.
+///
+/// For a leaf name (e.g., `compute_tbn` in `import package::shared::normal::compute_tbn`),
+/// this resolves to the function/struct/etc. definition in the imported file.
+fn resolve_import_name(
+    semantics: &Semantics<'_>,
+    file_id: HirFileId,
+    import_name: &ast::ImportName,
+) -> Option<Definition> {
+    let name_text = import_name.text();
+
+    // Build a resolver for the file's module scope.
+    // The resolver already handles imports: when it sees a name that matches
+    // an import's leaf name, it follows the import to the target file and item.
+    let module_info = semantics.database.item_tree(file_id);
+    let resolver = Resolver::default().push_module_scope(file_id, module_info);
+
+    let path = Path(ModPath::from_segments(
+        hir_def::mod_path::PathKind::Plain,
+        std::iter::once(Name::from(name_text.as_str())),
+    ));
+
+    let resolved = resolver.resolve(semantics.database, &path)?;
+    resolve_kind_to_definition(semantics, resolved)
+}
+
+/// Converts a `ResolveKind` to a `Definition`, interning as needed.
+fn resolve_kind_to_definition(
+    semantics: &Semantics<'_>,
+    kind: ResolveKind,
+) -> Option<Definition> {
+    let definition = match kind {
+        ResolveKind::Local(_) => return None,
+        ResolveKind::GlobalVariable(location) => {
+            let id = semantics.database.intern_global_variable(location);
+            Definition::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))
+        },
+        ResolveKind::GlobalConstant(location) => {
+            let id = semantics.database.intern_global_constant(location);
+            Definition::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id }))
+        },
+        ResolveKind::Override(location) => {
+            let id = semantics.database.intern_override(location);
+            Definition::ModuleDef(ModuleDef::Override(Override { id }))
+        },
+        ResolveKind::Struct(location) => {
+            let id = semantics.database.intern_struct(location);
+            Definition::ModuleDef(ModuleDef::Struct(Struct { id }))
+        },
+        ResolveKind::TypeAlias(location) => {
+            let id = semantics.database.intern_type_alias(location);
+            Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id }))
+        },
+        ResolveKind::Function(location) => {
+            let id = semantics.database.intern_function(location);
+            Definition::ModuleDef(ModuleDef::Function(Function { id }))
+        },
+    };
+    Some(definition)
 }
 
 fn resolve_field(

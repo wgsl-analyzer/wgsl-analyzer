@@ -286,12 +286,12 @@ fn completion_item(
         item.detail.clone()
     };
 
-    // let documentation = if fields_to_resolve.resolve_documentation {
-    //     something_to_resolve |= item.documentation.is_some();
-    //     None
-    // } else {
-    //     item.documentation.clone().map(documentation)
-    // };
+    let documentation = item.documentation.as_ref().map(|doc| {
+        lsp_types::Documentation::MarkupContent(lsp_types::MarkupContent {
+            kind: lsp_types::MarkupKind::Markdown,
+            value: doc.clone(),
+        })
+    });
 
     let mut lsp_item = lsp_types::CompletionItem {
         label: item.label.primary.to_string(),
@@ -303,7 +303,7 @@ fn completion_item(
             .is_empty()
             .not()
             .then_some(additional_text_edits),
-        // documentation,
+        documentation,
         deprecated: item.deprecated.then_some(item.deprecated),
         tags,
         // command,

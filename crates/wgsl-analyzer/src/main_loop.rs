@@ -216,6 +216,10 @@ impl GlobalState {
         //     }
         // }
 
+        // Configure VFS loader to scan the workspace for .wgsl/.wesl files at startup.
+        // This enables cross-file features (import resolution, naga diagnostics, etc.).
+        self.switch_workspaces(&"startup".to_owned());
+
         while let Ok(event) = self.next_event(&inbox) {
             let Some(event) = event else {
                 anyhow::bail!("client exited without proper shutdown sequence");
@@ -829,8 +833,6 @@ impl GlobalState {
         }
     }
 
-    #[expect(clippy::unused_self, reason = "wip")]
-    #[expect(clippy::needless_pass_by_ref_mut, reason = "wip")]
     fn handle_vfs_message(
         &mut self,
         message: vfs::loader::Message,
@@ -838,13 +840,34 @@ impl GlobalState {
         let _p = tracing::info_span!("GlobalState::handle_vfs_message").entered();
         let is_changed = matches!(message, vfs::loader::Message::Changed { .. });
         match message {
-            vfs::loader::Message::Changed { files } | vfs::loader::Message::Loaded { files } => {},
+            vfs::loader::Message::Changed { files } | vfs::loader::Message::Loaded { files } => {
+                let mut vfs = self.vfs.write();
+                for (path, contents) in files {
+                    let vfs_path = vfs::VfsPath::from(path);
+                    // Only update files that are NOT currently open in the editor
+                    // (open files are managed by didOpen/didChange notifications)
+                    if !self.in_memory_documents.contains(&vfs_path) {
+                        vfs.0.set_file_contents(vfs_path, contents);
+                    }
+                }
+            },
             vfs::loader::Message::Progress {
                 n_total,
                 n_done,
-                dir: directory, // spellchecker:disable-line
+                dir: _directory,
                 config_version,
-            } => {},
+            } => {
+                let dominated = self.vfs_progress_config_version >= config_version;
+                self.vfs_progress_config_version =
+                    config_version.max(self.vfs_progress_config_version);
+                if !dominated {
+                    let done = matches!(n_done, vfs::loader::LoadingProgress::Finished);
+                    if done {
+                        self.vfs_done = true;
+                        tracing::info!("VFS loading complete: {n_total} files");
+                    }
+                }
+            },
         }
     }
 

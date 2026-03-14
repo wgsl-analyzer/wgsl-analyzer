@@ -45,7 +45,8 @@ pub struct CompletionItem {
 
     /// Additional info to show in the UI pop up.
     pub detail: Option<String>,
-    // pub documentation: Option<Documentation>,
+    /// Documentation (e.g., doc comments) to show in the completion pop-up.
+    pub documentation: Option<String>,
     /// Whether this item is marked as deprecated.
     pub deprecated: bool,
 
@@ -314,7 +315,7 @@ impl CompletionItem {
             label,
             insert_text: None,
             is_snippet: false,
-            // documentation: None,
+            documentation: None,
             detail: None,
             lookup: None,
             kind: kind.into(),
@@ -412,7 +413,7 @@ pub(crate) struct Builder {
     insert_text: Option<String>,
     is_snippet: bool,
     detail: Option<String>,
-    // documentation: Option<Documentation>,
+    documentation: Option<String>,
     lookup: Option<SmolStr>,
     kind: CompletionItemKind,
     text_edit: Option<TextEdit>,
@@ -550,7 +551,7 @@ impl Builder {
             text_edit,
             is_snippet: self.is_snippet,
             kind: self.kind,
-            // documentation: self.documentation,
+            documentation: self.documentation,
             lookup,
             detail: self.detail,
             deprecated: self.deprecated,
@@ -647,21 +648,13 @@ impl Builder {
         self
     }
 
-    // #[allow(unused)]
-    // pub(crate) fn documentation(
-    //     &mut self,
-    //     docs: Documentation,
-    // ) -> &mut Builder {
-    //     self.set_documentation(Some(docs))
-    // }
-
-    // pub(crate) fn set_documentation(
-    //     &mut self,
-    //     docs: Option<Documentation>,
-    // ) -> &mut Builder {
-    //     self.documentation = docs;
-    //     self
-    // }
+    pub(crate) fn set_documentation(
+        &mut self,
+        docs: Option<String>,
+    ) -> &mut Self {
+        self.documentation = docs;
+        self
+    }
 
     pub(crate) const fn set_deprecated(
         &mut self,

@@ -334,12 +334,7 @@ fn resolve_import_item(
     let item_name = &segments[segments.len() - 1];
 
     let anchor_file = anchor_file_id.original_file(database).file_id;
-    let target_file = resolve_import_to_file(
-        database,
-        anchor_file,
-        import.kind,
-        module_segments,
-    )?;
+    let target_file = resolve_import_to_file(database, anchor_file, import.kind, module_segments)?;
     let target_editioned = database.editioned_file_id(target_file);
     let target_hir_file = HirFileId::from(target_editioned);
     let target_tree = database.item_tree(target_hir_file);
@@ -432,7 +427,10 @@ pub fn import_tree_module_segments(tree: &ImportTree) -> Vec<Name> {
     segments
 }
 
-fn collect_path_segments(tree: &ImportTree, segments: &mut Vec<Name>) {
+fn collect_path_segments(
+    tree: &ImportTree,
+    segments: &mut Vec<Name>,
+) {
     match tree {
         ImportTree::Path { name, item } => {
             segments.push(name.clone());

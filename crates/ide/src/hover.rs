@@ -101,10 +101,20 @@ pub(crate) fn hover(
     // Try resolving as a user-defined definition first
     if let Some(definition) = Definition::from_token(semantics, file_id.into(), &token) {
         if let Some(markup_text) = definition.hover_text(database) {
+            let mut hover_content = String::new();
+
+            // Add doc comments above the code block if present
+            if let Some(doc) = definition.doc_comments(database) {
+                hover_content.push_str(&doc);
+                hover_content.push_str("\n\n---\n\n");
+            }
+
+            hover_content.push_str(&format!("```wgsl\n{markup_text}\n```"));
+
             return Some(RangeInfo::new(
                 range,
                 HoverResult {
-                    markup: Markup::fenced_block(&markup_text),
+                    markup: Markup::from(hover_content),
                     actions: Vec::new(),
                 },
             ));
