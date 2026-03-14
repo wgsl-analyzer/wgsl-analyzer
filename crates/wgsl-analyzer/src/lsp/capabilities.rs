@@ -46,7 +46,7 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
         completion_provider: Some(CompletionOptions {
             completion_item: None,
             resolve_provider: None,
-            trigger_characters: Some(vec![".".to_owned()]),
+            trigger_characters: Some(vec![".".to_owned(), "@".to_owned()]),
             all_commit_characters: None,
             work_done_progress_options: WorkDoneProgressOptions {
                 work_done_progress: None,

@@ -98,5 +98,9 @@ pub(crate) enum ImmediateLocation {
     ItemList,
     StatementList,
     InsideStatement,
-    FieldAccess { expression: ast::FieldExpression },
+    FieldAccess {
+        expression: ast::FieldExpression,
+    },
+    /// After `@` — completing an attribute name.
+    Attribute,
 }

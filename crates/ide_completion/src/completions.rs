@@ -2,8 +2,11 @@ use ide_db::RootDatabase;
 
 use crate::item::{Builder, CompletionItem};
 
+pub(crate) mod attribute;
 pub(crate) mod dot;
 pub(crate) mod expression;
+pub(crate) mod keyword;
+pub(crate) mod types;
 
 /// Represents an in-progress set of completions being built.
 #[derive(Debug, Default)]

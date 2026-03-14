@@ -164,28 +164,28 @@
 		"vector_types": {
 			"patterns": [
 				{
-					"comment": "vector types: https://www.w3.org/TR/WGSL/#vector-types",
-					"name": "storage.type.vectors.wgsl",
-					"match": "\\b(vec)([2-4])\\b"
-				},
-				{
 					"comment": "vector type aliases: https://www.w3.org/TR/WGSL/#vector-types",
 					"name": "storage.type.vectors.wgsl",
-					"match": "\\b(vec)([2-4])(i|u|f|h)\\b"
+					"match": "\\bvec[2-4][iufh]\\b"
+				},
+				{
+					"comment": "vector types: https://www.w3.org/TR/WGSL/#vector-types",
+					"name": "storage.type.vectors.wgsl",
+					"match": "\\bvec[2-4]\\b"
 				}
 			]
 		},
 		"matrix_types": {
 			"patterns": [
 				{
-					"comment": "matrix types: https://www.w3.org/TR/WGSL/#matrix-types",
-					"name": "storage.type.matrixes.wgsl",
-					"match": "\\b(mat[2-4]x[2-4])\\b"
-				},
-				{
 					"comment": "matrix type aliases: https://www.w3.org/TR/WGSL/#matrix-types",
 					"name": "storage.type.matrixes.wgsl",
-					"match": "\\b(mat[2-4]x[2-4])(f|h)\\b"
+					"match": "\\bmat[2-4]x[2-4][fh]\\b"
+				},
+				{
+					"comment": "matrix types: https://www.w3.org/TR/WGSL/#matrix-types",
+					"name": "storage.type.matrixes.wgsl",
+					"match": "\\bmat[2-4]x[2-4]\\b"
 				}
 			]
 		},
