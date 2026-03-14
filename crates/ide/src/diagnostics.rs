@@ -819,4 +819,21 @@ fn test() {
             "#]],
         );
     }
+
+    #[test]
+    fn reserved_word_diagnostic() {
+        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/624
+        // WGSL reserved words should produce a diagnostic.
+        check_diagnostics(
+            "
+fn test() {
+    let enum = 1u;
+}
+",
+            expect![[r#"
+                20..24 Error 16: 'enum' is a reserved word in WGSL
+                20..24 Error 16: invalid syntax, expected: <identifier>
+            "#]],
+        );
+    }
 }

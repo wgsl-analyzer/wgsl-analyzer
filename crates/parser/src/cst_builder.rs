@@ -300,6 +300,7 @@ impl TryFrom<Token> for SyntaxKind {
             Token::Super => Self::Super,
             Token::As => Self::As,
             Token::DoubleColon => Self::DoubleColon,
+            Token::Reserved => Self::Reserved,
             Token::Ident => Self::Identifier,
             Token::FloatLiteral => Self::FloatLiteral,
             Token::IntLiteral => Self::IntLiteral,

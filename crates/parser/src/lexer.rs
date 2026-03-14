@@ -177,6 +177,8 @@ pub enum Token {
     As,
     #[token("::")]
     DoubleColon,
+    /// A WGSL reserved word (https://www.w3.org/TR/WGSL/#reserved-words)
+    Reserved,
     /// WGSL identifiers, parsing it ourselves
     Ident,
     #[regex(r"0[fh]")]
@@ -262,6 +264,156 @@ fn lex_block_comment(lexer: &mut logos::Lexer<'_, Token>) -> Option<()> {
     None
 }
 
+/// Returns `true` if the given word is a WGSL reserved word.
+/// See <https://www.w3.org/TR/WGSL/#reserved-words>.
+fn is_reserved_word(word: &str) -> bool {
+    matches!(
+        word,
+        "NULL"
+            | "Self"
+            | "abstract"
+            | "active"
+            | "alignas"
+            | "alignof"
+            | "asm"
+            | "asm_fragment"
+            | "async"
+            | "attribute"
+            | "auto"
+            | "await"
+            | "become"
+            | "cast"
+            | "catch"
+            | "class"
+            | "co_await"
+            | "co_return"
+            | "co_yield"
+            | "coherent"
+            | "column_major"
+            | "common"
+            | "compile"
+            | "compile_fragment"
+            | "concept"
+            | "const_cast"
+            | "consteval"
+            | "constexpr"
+            | "constinit"
+            | "crate"
+            | "debugger"
+            | "decltype"
+            | "delete"
+            | "demote"
+            | "demote_to_helper"
+            | "do"
+            | "dynamic_cast"
+            | "enum"
+            | "explicit"
+            | "export"
+            | "extends"
+            | "extern"
+            | "external"
+            | "fallthrough"
+            | "filter"
+            | "final"
+            | "finally"
+            | "friend"
+            | "from"
+            | "fxgroup"
+            | "get"
+            | "goto"
+            | "groupshared"
+            | "highp"
+            | "impl"
+            | "implements"
+            | "inline"
+            | "instanceof"
+            | "interface"
+            | "layout"
+            | "lowp"
+            | "macro"
+            | "macro_rules"
+            | "match"
+            | "mediump"
+            | "meta"
+            | "mod"
+            | "module"
+            | "move"
+            | "mut"
+            | "mutable"
+            | "namespace"
+            | "new"
+            | "nil"
+            | "noexcept"
+            | "noinline"
+            | "nointerpolation"
+            | "non_coherent"
+            | "noncoherent"
+            | "noperspective"
+            | "null"
+            | "nullptr"
+            | "of"
+            | "operator"
+            | "packoffset"
+            | "partition"
+            | "pass"
+            | "patch"
+            | "pixelfragment"
+            | "precise"
+            | "precision"
+            | "premerge"
+            | "priv"
+            | "protected"
+            | "pub"
+            | "public"
+            | "readonly"
+            | "ref"
+            | "regardless"
+            | "register"
+            | "reinterpret_cast"
+            | "require"
+            | "resource"
+            | "restrict"
+            | "self"
+            | "set"
+            | "shared"
+            | "sizeof"
+            | "smooth"
+            | "snorm"
+            | "static"
+            | "static_assert"
+            | "static_cast"
+            | "std"
+            | "subroutine"
+            | "target"
+            | "template"
+            | "this"
+            | "thread_local"
+            | "throw"
+            | "trait"
+            | "try"
+            | "type"
+            | "typedef"
+            | "typeid"
+            | "typename"
+            | "typeof"
+            | "union"
+            | "unless"
+            | "unorm"
+            | "unsafe"
+            | "unsized"
+            | "use"
+            | "using"
+            | "varying"
+            | "virtual"
+            | "volatile"
+            | "wgsl"
+            | "where"
+            | "with"
+            | "writeonly"
+            | "yield"
+    )
+}
+
 pub fn lex(
     source: &str,
     diagnostics: &mut Vec<Diagnostic>,
@@ -333,6 +485,13 @@ impl Iterator for WgslLexer<'_, '_> {
                     "super" => Token::Super,
                     "as" => Token::As,
 
+                    word if is_reserved_word(word) => {
+                        self.diagnostics.push(Diagnostic {
+                            message: format!("'{word}' is a reserved word in WGSL"),
+                            range: to_range(token_start..token_end),
+                        });
+                        Token::Reserved
+                    },
                     _ => Token::Ident,
                 };
 
