@@ -754,4 +754,20 @@ var<storage
             "#]],
         );
     }
+
+    #[test]
+    fn invalid_identifier_underscore() {
+        // An identifier must not be _ (a single underscore, U+005F).
+        // https://www.w3.org/TR/WGSL/#identifiers
+        check_diagnostics(
+            "
+fn _() {}
+fn foo() { let _ = 1; }
+",
+            expect![[r#"
+                3..4 Error 16: invalid syntax, expected: <identifier>
+                25..26 Error 16: invalid syntax, expected: <identifier>
+            "#]],
+        );
+    }
 }
