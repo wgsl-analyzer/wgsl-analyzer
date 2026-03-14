@@ -13,7 +13,7 @@ use logos::Logos as _;
 use rowan::GreenNodeBuilder;
 
 use super::lexer::Token;
-use crate::{Parse, ParseEntryPoint, cst_builder::CstBuilder, lexer::lex};
+use crate::{Parse, ParseEntryPoint, cst_builder::CstBuilder, lexer::{is_reserved_word, lex}};
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
@@ -142,6 +142,14 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         span: Span,
         message: String,
     ) -> Self::Diagnostic {
+        // When the parser expected an identifier but found a reserved word,
+        // emit a more specific diagnostic message.
+        let text = &self.cst.source[span.clone()];
+        let message = if message.contains("expected") && is_reserved_word(text) {
+            format!("'{text}' is a reserved word in WGSL")
+        } else {
+            message
+        };
         Diagnostic {
             message,
             range: to_range(span),

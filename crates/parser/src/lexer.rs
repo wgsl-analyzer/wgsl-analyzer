@@ -266,7 +266,7 @@ fn lex_block_comment(lexer: &mut logos::Lexer<'_, Token>) -> Option<()> {
 
 /// Returns `true` if the given word is a WGSL reserved word.
 /// See <https://www.w3.org/TR/WGSL/#reserved-words>.
-fn is_reserved_word(word: &str) -> bool {
+pub(crate) fn is_reserved_word(word: &str) -> bool {
     matches!(
         word,
         "NULL"

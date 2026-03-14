@@ -1,1 +1,1 @@
-fix: remove lexer-level reserved word diagnostic, let parser handle it contextually
+fix: re-add specific reserved word diagnostic via parser context
