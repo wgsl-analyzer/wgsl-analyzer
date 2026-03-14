@@ -1,4 +1,4 @@
-use hir_def::item_tree::Name;
+use hir_def::item_tree::{EnableExtension, Name};
 use wgsl_types::{
     syntax::{AccessMode, AddressSpace},
     ty::SamplerType,
@@ -60,6 +60,7 @@ pub enum GenericArg {
 pub struct Builtin {
     name: Name,
     overloads: Vec<BuiltinOverload>,
+    required_extension: Option<EnableExtension>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -69,6 +70,11 @@ impl Builtin {
     #[must_use]
     pub fn name(&self) -> &str {
         self.name.as_str()
+    }
+
+    #[must_use]
+    pub fn required_extension(&self) -> Option<EnableExtension> {
+        self.required_extension
     }
 
     pub fn overloads(&self) -> impl Iterator<Item = (BuiltinOverloadId, &BuiltinOverload)> {

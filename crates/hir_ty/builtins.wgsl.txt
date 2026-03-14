@@ -686,3 +686,59 @@ op_convert(vecN<u32>) -> vecN<f32>
 
 // op_convert(matNxM<f16>) -> matNxM<f32>
 // op_convert(matNxM<f32>) -> matNxM<f16>
+
+[enable subgroups]
+
+// subgroup built-in functions (§ 17.12)
+subgroupElect() -> bool
+subgroupAll(bool) -> bool
+subgroupAny(bool) -> bool
+subgroupBallot(bool) -> vec4<u32>
+
+subgroupBroadcast(T, u32) -> T
+subgroupBroadcast(vecN<T>, u32) -> vecN<T>
+subgroupBroadcastFirst(T) -> T
+subgroupBroadcastFirst(vecN<T>) -> vecN<T>
+
+subgroupShuffle(T, u32) -> T
+subgroupShuffle(vecN<T>, u32) -> vecN<T>
+subgroupShuffleDown(T, u32) -> T
+subgroupShuffleDown(vecN<T>, u32) -> vecN<T>
+subgroupShuffleUp(T, u32) -> T
+subgroupShuffleUp(vecN<T>, u32) -> vecN<T>
+subgroupShuffleXor(T, u32) -> T
+subgroupShuffleXor(vecN<T>, u32) -> vecN<T>
+
+subgroupAdd(T) -> T
+subgroupAdd(vecN<T>) -> vecN<T>
+subgroupMul(T) -> T
+subgroupMul(vecN<T>) -> vecN<T>
+subgroupAnd(T) -> T
+subgroupAnd(vecN<T>) -> vecN<T>
+subgroupOr(T) -> T
+subgroupOr(vecN<T>) -> vecN<T>
+subgroupXor(T) -> T
+subgroupXor(vecN<T>) -> vecN<T>
+subgroupMin(T) -> T
+subgroupMin(vecN<T>) -> vecN<T>
+subgroupMax(T) -> T
+subgroupMax(vecN<T>) -> vecN<T>
+
+subgroupExclusiveAdd(T) -> T
+subgroupExclusiveAdd(vecN<T>) -> vecN<T>
+subgroupExclusiveMul(T) -> T
+subgroupExclusiveMul(vecN<T>) -> vecN<T>
+subgroupInclusiveAdd(T) -> T
+subgroupInclusiveAdd(vecN<T>) -> vecN<T>
+subgroupInclusiveMul(T) -> T
+subgroupInclusiveMul(vecN<T>) -> vecN<T>
+
+// quad built-in functions (§ 17.13)
+quadBroadcast(T, u32) -> T
+quadBroadcast(vecN<T>, u32) -> vecN<T>
+quadSwapX(T) -> T
+quadSwapX(vecN<T>) -> vecN<T>
+quadSwapY(T) -> T
+quadSwapY(vecN<T>) -> vecN<T>
+quadSwapDiagonal(T) -> T
+quadSwapDiagonal(vecN<T>) -> vecN<T>

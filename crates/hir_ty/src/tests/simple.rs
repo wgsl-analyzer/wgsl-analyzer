@@ -734,3 +734,40 @@ fn main() {
         "#]],
     );
 }
+
+#[test]
+fn subgroup_builtin_without_enable() {
+    // Subgroup builtins should produce a diagnostic when `enable subgroups` is missing.
+    check_infer(
+        "
+fn test() {
+    let a = subgroupAdd(1u);
+}
+    ",
+        expect![[r#"
+            20..21 'a': [error]
+            24..39 'subgroupAdd(1u)': [error]
+            36..38 '1u': u32
+            InferenceDiagnostic { source: Body, kind: WgslError { expression: Idx::<Expression>(1), message: "`subgroupAdd` requires `enable subgroups`" } }
+        "#]],
+    );
+}
+
+#[test]
+fn subgroup_builtin_with_enable() {
+    // Subgroup builtins should work when `enable subgroups` is present.
+    // Note: the actual type resolution goes through wgsl_types which may not
+    // support subgroup builtins yet, so we just verify no extension-gate diagnostic.
+    check_infer(
+        "
+enable subgroups;
+fn test() {
+    let a = subgroupElect();
+}
+    ",
+        expect![[r#"
+            38..39 'a': bool
+            42..57 'subgroupElect()': bool
+        "#]],
+    );
+}

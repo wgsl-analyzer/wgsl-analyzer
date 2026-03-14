@@ -17,7 +17,7 @@ use hir_def::{
         Statement, StatementId, SwitchCaseSelector, UnaryOperator,
     },
     expression_store::{ExpressionStore, ExpressionStoreSource, path::Path},
-    item_tree::Name,
+    item_tree::{EnableExtension, Name},
     resolver::{ResolveKind, Resolver},
     signature::{
         ConstantSignature, FieldId, FunctionSignature, OverrideSignature, VariableSignature,
@@ -44,6 +44,16 @@ use crate::{
         VectorType,
     },
 };
+
+fn extension_name(ext: EnableExtension) -> &'static str {
+    match ext {
+        EnableExtension::F16 => "f16",
+        EnableExtension::ClipDistances => "clip_distances",
+        EnableExtension::DualSourceBlending => "dual_source_blending",
+        EnableExtension::Subgroups => "subgroups",
+        EnableExtension::PrimitiveIndex => "primitive_index",
+    }
+}
 
 /// Infers the type of a global item.
 /// For `const`s and co, it first uses the specified type,
@@ -440,6 +450,15 @@ impl<'database> InferenceContext<'database> {
     //     self.store = old_store;
     //     result
     // }
+
+    fn is_extension_enabled(
+        &self,
+        extension: EnableExtension,
+    ) -> bool {
+        let file_id = self.owner.file_id(self.database);
+        let item_tree = self.database.item_tree(file_id);
+        item_tree.is_extension_enabled(extension)
+    }
 
     fn set_expression_type(
         &mut self,
@@ -1773,6 +1792,26 @@ impl<'database> InferenceContext<'database> {
             );
             return self.error_type();
         };
+
+        // Check if this builtin requires an enable extension
+        if let Some(builtin) = Builtin::for_name(self.database, name) {
+            if let Some(required_ext) = builtin.required_extension() {
+                if !self.is_extension_enabled(required_ext) {
+                    self.push_diagnostic(
+                        store.store_source,
+                        InferenceDiagnosticKind::WgslError {
+                            expression,
+                            message: format!(
+                                "`{}` requires `enable {}`",
+                                name.as_str(),
+                                extension_name(required_ext),
+                            ),
+                        },
+                    );
+                    return self.error_type();
+                }
+            }
+        }
 
         let mut converter = WgslTypeConverter::new(self.database);
         let mut template_args = vec![];

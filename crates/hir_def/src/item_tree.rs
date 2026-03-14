@@ -7,6 +7,7 @@ use std::{hash, marker::PhantomData, ops::ControlFlow};
 
 use la_arena::{Arena, Idx};
 use smol_str::SmolStr;
+pub use syntax::ast::EnableExtension;
 use syntax::{AstNode, TokenText, ast};
 use triomphe::Arc;
 
@@ -204,6 +205,7 @@ pub struct ItemTree {
     structs: Arena<Struct>,
     directives: Arena<Directive>,
     global_assert_statements: Arena<GlobalAssertStatement>,
+    enabled_extensions: Vec<EnableExtension>,
 }
 
 impl ItemTree {
@@ -243,6 +245,19 @@ impl ItemTree {
         id: ModuleItemId<M>,
     ) -> &M {
         M::lookup(self, id.index)
+    }
+
+    #[must_use]
+    pub fn enabled_extensions(&self) -> &[EnableExtension] {
+        &self.enabled_extensions
+    }
+
+    #[must_use]
+    pub fn is_extension_enabled(
+        &self,
+        extension: EnableExtension,
+    ) -> bool {
+        self.enabled_extensions.contains(&extension)
     }
 }
 

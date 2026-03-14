@@ -10,6 +10,7 @@ use std::{
 #[derive(Default, Debug)]
 struct Builtin {
     overloads: Vec<Overload>,
+    required_extension: Option<String>,
 }
 
 #[derive(Debug)]
@@ -132,14 +133,28 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let mut file = File::create(path)?;
 
     let mut builtins: BTreeMap<String, Builtin> = BTreeMap::new();
+    let mut current_extension: Option<String> = None;
 
     let builtins_file = fs::read_to_string("builtins.wgsl.txt")?;
     for line in builtins_file.lines() {
         if line.is_empty() || line.starts_with("//") {
             continue;
         }
+        // Parse [enable X] section headers
+        if let Some(inner) = line.strip_prefix('[').and_then(|l| l.strip_suffix(']')) {
+            let inner = inner.trim();
+            if let Some(ext) = inner.strip_prefix("enable ") {
+                current_extension = Some(ext.trim().to_owned());
+            } else if inner == "core" {
+                current_extension = None;
+            }
+            continue;
+        }
         let (name, overload) = parse_line(line);
         let builtin = builtins.entry(name.to_owned()).or_default();
+        if builtin.required_extension.is_none() {
+            builtin.required_extension = current_extension.clone();
+        }
         builtin.overloads.push(overload);
     }
 
@@ -590,11 +605,26 @@ impl Builtin {{
         )?;
     }
 
+    let required_ext = match &builtin.required_extension {
+        Some(ext) => {
+            let variant = match ext.as_str() {
+                "subgroups" => "Subgroups",
+                "f16" => "F16",
+                "clip_distances" => "ClipDistances",
+                "dual_source_blending" => "DualSourceBlending",
+                "primitive_index" => "PrimitiveIndex",
+                other => panic!("unknown enable extension: {other}"),
+            };
+            format!("Some(EnableExtension::{variant})")
+        },
+        None => "None".to_owned(),
+    };
+
     write!(
         sink,
         "
         ];
-        Builtin {{ name, overloads }}
+        Builtin {{ name, overloads, required_extension: {required_ext} }}
     }}
 }}
 ",

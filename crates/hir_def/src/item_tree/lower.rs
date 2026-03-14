@@ -42,6 +42,18 @@ impl<'database> Ctx<'database> {
         mut self,
         source_file: &SourceFile,
     ) -> ItemTree {
+        // Collect enabled extensions from enable directives
+        for directive in source_file.directives() {
+            if let Directive::EnableDirective(enable) = directive {
+                for ext_name in enable.enable_extensions() {
+                    if let Ok(ext) = ext_name.extension() {
+                        self.tree.enabled_extensions.push(ext);
+                    }
+                }
+            }
+        }
+        self.tree.enabled_extensions.dedup();
+
         source_file.items().for_each(|item| {
             self.lower_item(item);
         });

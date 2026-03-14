@@ -804,4 +804,19 @@ var<storage
             "#]],
         );
     }
+
+    #[test]
+    fn subgroup_builtin_requires_enable_diagnostic() {
+        // Using a subgroup builtin without `enable subgroups` should produce a diagnostic.
+        check_diagnostics(
+            "
+fn test() {
+    let a = subgroupAdd(1u);
+}
+",
+            expect![[r#"
+                24..39 Error 22: `subgroupAdd` requires `enable subgroups`
+            "#]],
+        );
+    }
 }
