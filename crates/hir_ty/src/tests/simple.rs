@@ -442,6 +442,25 @@ var framebuffer : texture_storage_2d<rgba16float, write>;
 }
 
 #[test]
+fn texture_num_samples() {
+    check_infer(
+        "
+@group(0) @binding(0)
+var t: texture_multisampled_2d<f32>;
+fn main() {
+    let n = textureNumSamples(t);
+}
+    ",
+        expect![[r#"
+            26..27 't': ref<texture_multisampled_2d<f32>>
+            79..80 'n': u32
+            83..103 'textur...les(t)': u32
+            101..102 't': ref<texture_multisampled_2d<f32>>
+        "#]],
+    );
+}
+
+#[test]
 fn global_assert_statement_correct() {
     check_infer(
         "

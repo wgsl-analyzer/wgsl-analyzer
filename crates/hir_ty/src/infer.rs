@@ -2998,72 +2998,78 @@ impl<'database> WgslTypeConverter<'database> {
         &self,
         value: TextureType,
     ) -> wgsl_types::ty::TextureType {
-        match (value.kind, value.dimension, value.arrayed) {
-            (TextureKind::Sampled(sampled), TextureDimensionality::D1, false) => {
+        match (value.kind, value.dimension, value.arrayed, value.multisampled) {
+            (TextureKind::Sampled(sampled), TextureDimensionality::D1, false, false) => {
                 wgsl_types::ty::TextureType::Sampled1D(self.to_wgsl_sampled(sampled))
             },
-            (TextureKind::Sampled(sampled), TextureDimensionality::D1, true) => {
+            (TextureKind::Sampled(sampled), TextureDimensionality::D1, true, false) => {
                 wgsl_types::ty::TextureType::Sampled1DArray(self.to_wgsl_sampled(sampled))
             },
-            (TextureKind::Sampled(sampled), TextureDimensionality::D2, false) => {
+            (TextureKind::Sampled(sampled), TextureDimensionality::D2, false, false) => {
                 wgsl_types::ty::TextureType::Sampled2D(self.to_wgsl_sampled(sampled))
             },
-            (TextureKind::Sampled(sampled), TextureDimensionality::D2, true) => {
+            (TextureKind::Sampled(sampled), TextureDimensionality::D2, false, true) => {
+                wgsl_types::ty::TextureType::Multisampled2D(self.to_wgsl_sampled(sampled))
+            },
+            (TextureKind::Sampled(sampled), TextureDimensionality::D2, true, false) => {
                 wgsl_types::ty::TextureType::Sampled2DArray(self.to_wgsl_sampled(sampled))
             },
-            (TextureKind::Sampled(sampled), TextureDimensionality::D3, false) => {
+            (TextureKind::Sampled(sampled), TextureDimensionality::D3, false, false) => {
                 wgsl_types::ty::TextureType::Sampled3D(self.to_wgsl_sampled(sampled))
             },
-            (TextureKind::Sampled(sampled), TextureDimensionality::Cube, false) => {
+            (TextureKind::Sampled(sampled), TextureDimensionality::Cube, false, false) => {
                 wgsl_types::ty::TextureType::SampledCube(self.to_wgsl_sampled(sampled))
             },
-            (TextureKind::Sampled(sampled), TextureDimensionality::Cube, true) => {
+            (TextureKind::Sampled(sampled), TextureDimensionality::Cube, true, false) => {
                 wgsl_types::ty::TextureType::SampledCubeArray(self.to_wgsl_sampled(sampled))
             },
-            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D1, false) => {
+            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D1, false, false) => {
                 wgsl_types::ty::TextureType::Storage1D(
                     to_wgsl_texel_format(texel_format),
                     access_mode,
                 )
             },
-            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D1, true) => {
+            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D1, true, false) => {
                 wgsl_types::ty::TextureType::Storage1DArray(
                     to_wgsl_texel_format(texel_format),
                     access_mode,
                 )
             },
-            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D2, false) => {
+            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D2, false, false) => {
                 wgsl_types::ty::TextureType::Storage2D(
                     to_wgsl_texel_format(texel_format),
                     access_mode,
                 )
             },
-            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D2, true) => {
+            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D2, true, false) => {
                 wgsl_types::ty::TextureType::Storage2DArray(
                     to_wgsl_texel_format(texel_format),
                     access_mode,
                 )
             },
-            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D3, false) => {
+            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D3, false, false) => {
                 wgsl_types::ty::TextureType::Storage3D(
                     to_wgsl_texel_format(texel_format),
                     access_mode,
                 )
             },
-            (TextureKind::Depth, TextureDimensionality::D2, false) => {
+            (TextureKind::Depth, TextureDimensionality::D2, false, false) => {
                 wgsl_types::ty::TextureType::Depth2D
             },
-            (TextureKind::Depth, TextureDimensionality::D2, true) => {
+            (TextureKind::Depth, TextureDimensionality::D2, false, true) => {
+                wgsl_types::ty::TextureType::DepthMultisampled2D
+            },
+            (TextureKind::Depth, TextureDimensionality::D2, true, false) => {
                 wgsl_types::ty::TextureType::Depth2DArray
             },
-            (TextureKind::Depth, TextureDimensionality::Cube, false) => {
+            (TextureKind::Depth, TextureDimensionality::Cube, false, false) => {
                 wgsl_types::ty::TextureType::DepthCube
             },
-            (TextureKind::Depth, TextureDimensionality::Cube, true) => {
+            (TextureKind::Depth, TextureDimensionality::Cube, true, false) => {
                 wgsl_types::ty::TextureType::DepthCubeArray
             },
-            (TextureKind::External, _, _) => wgsl_types::ty::TextureType::External,
-            (_, _, _) => panic!("invalid texture"),
+            (TextureKind::External, _, _, _) => wgsl_types::ty::TextureType::External,
+            (_, _, _, _) => panic!("invalid texture"),
         }
     }
 
