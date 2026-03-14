@@ -1848,6 +1848,10 @@ impl<'database> InferenceContext<'database> {
                 self.call_scalar_constructor(store, scalar_type, expression, r#type, arguments)
             },
             TypeKind::Array(array_type) => {
+                if arguments.is_empty() {
+                    // Zero-value constructor: e.g. array<f32, 3>()
+                    return r#type;
+                }
                 for argument in &arguments {
                     if !argument.is_convertible_to(array_type.inner, self.database) {
                         self.push_diagnostic(

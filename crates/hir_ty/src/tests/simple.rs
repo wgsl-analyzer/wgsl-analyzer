@@ -409,6 +409,27 @@ fn foo() {
 }
 
 #[test]
+fn array_zero_value_constructor() {
+    check_infer(
+        "
+fn foo() {
+    let a = array<f32, 3>();
+    let b = array<i32, 2>();
+    let c = array<bool, 4>();
+}
+    ",
+        expect![[r#"
+            19..20 'a': array<f32, 3>
+            23..38 'array<f32, 3>()': array<f32, 3>
+            48..49 'b': array<i32, 2>
+            52..67 'array<i32, 2>()': array<i32, 2>
+            77..78 'c': array<bool, 4>
+            81..97 'array<..., 4>()': array<bool, 4>
+        "#]],
+    );
+}
+
+#[test]
 fn texture_storage_2d_template() {
     check_infer(
         "
