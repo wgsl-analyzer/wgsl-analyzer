@@ -112,12 +112,15 @@ fn pretty_fn_inner(
     buffer: &mut String,
     verbosity: TypeVerbosity,
 ) -> fmt::Result {
-    write!(buffer, "fn(")?;
-    for (index, parameter) in function.parameters().enumerate() {
+    write!(buffer, "fn {name}(", name = function.name.as_str())?;
+    for (index, (param_type, param_name)) in function.parameters_with_names().enumerate() {
         if index != 0 {
             buffer.push_str(", ");
         }
-        write_type(database, parameter, buffer, verbosity)?;
+        if !param_name.is_empty() && !hir_def::item_tree::Name::is_missing(param_name) {
+            write!(buffer, "{param_name}: ")?;
+        }
+        write_type(database, param_type, buffer, verbosity)?;
     }
     write!(buffer, ")")?;
     if let Some(return_type) = function.return_type {

@@ -81,7 +81,15 @@ pub(crate) fn signature_help(
             let name_text = name_text.split('<').next().unwrap_or(&name_text).trim();
             let name = Name::from(name_text);
             if let Some(builtin) = Builtin::for_name(database, &name) {
-                for (idx, (_, overload)) in builtin.overloads().enumerate() {
+                // Collect types of already-typed arguments to filter overloads
+                let arg_types: Vec<_> = arguments_node
+                    .arguments()
+                    .filter_map(|arg| analyzed.type_of_expression(&arg))
+                    .collect();
+
+                for (idx, (_, overload)) in
+                    builtin.matching_overloads(database, &arg_types).iter().enumerate()
+                {
                     let function = overload.r#type.lookup(database);
                     signatures.push(build_signature(database, &function));
                     if idx == 0 {

@@ -1,6 +1,6 @@
 mod builtin;
 mod eval;
-mod unify;
+pub mod unify;
 
 use std::{fmt, ops::Index};
 

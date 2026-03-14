@@ -486,10 +486,6 @@ impl Config {
     }
 
     #[must_use]
-    #[expect(
-        clippy::unused_self,
-        reason = "TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/362"
-    )]
     pub fn hover(&self) -> HoverConfig {
         let mem_kind = |kind| match kind {
             MemoryLayoutHoverRenderKindDef::Both => MemoryLayoutHoverRenderKind::Both,
@@ -501,7 +497,7 @@ impl Config {
             memory_layout: None,
             documentation: false,
             format: {
-                if false {
+                if self.capabilities.hover_markdown_support() {
                     HoverDocFormat::Markdown
                 } else {
                     HoverDocFormat::PlainText
