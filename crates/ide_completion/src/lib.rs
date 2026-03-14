@@ -12,7 +12,7 @@ use rustc_hash::FxHashSet;
 
 use crate::{completions::Completions, context::CompletionContext};
 pub use crate::{
-    config::{AutoImportExclusionType, CallableSnippets, CompletionConfig},
+    config::{CallableSnippets, CompletionConfig},
     item::{CompletionItem, CompletionItemKind, CompletionRelevance, CompletionRelevanceTypeMatch},
 };
 

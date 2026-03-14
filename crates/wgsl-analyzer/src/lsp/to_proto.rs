@@ -328,6 +328,7 @@ fn completion_item(
 
     set_score(&mut lsp_item, max_relevance, item.relevance);
 
+    // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/914
     // let imports =
     //     if config.completion(None).enable_imports_on_the_fly && !item.import_to_add.is_empty() {
     //         item.import_to_add

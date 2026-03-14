@@ -1,7 +1,7 @@
 use std::{fmt, mem};
 
 use base_db::TextRange;
-use ide_db::{RootDatabase, SnippetCap, text_edit::TextEdit};
+use ide_db::{RootDatabase, SnippetCapability, text_edit::TextEdit};
 use itertools::Itertools as _;
 use smallvec::SmallVec;
 use smol_str::{SmolStr, format_smolstr};
@@ -603,7 +603,7 @@ impl Builder {
 
     pub(crate) fn insert_snippet(
         &mut self,
-        cap: SnippetCap,
+        capability: SnippetCapability,
         snippet: impl Into<String>,
     ) -> &mut Self {
         self.is_snippet = true;
@@ -620,7 +620,7 @@ impl Builder {
 
     pub(crate) fn snippet_edit(
         &mut self,
-        _cap: SnippetCap,
+        _capability: SnippetCapability,
         edit: TextEdit,
     ) -> &mut Self {
         self.is_snippet = true;
