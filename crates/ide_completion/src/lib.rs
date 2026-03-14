@@ -130,7 +130,8 @@ mod tests {
             assert!(
                 completions
                     .iter()
-                    .any(|(kind, completion_label)| *kind == expected_kind && completion_label == label),
+                    .any(|(kind, completion_label)| *kind == expected_kind
+                        && completion_label == label),
                 "Expected completion '{label}' with kind '{expected_kind:?}' not found.\nGot: {completions:?}"
             );
         }
@@ -143,7 +144,9 @@ mod tests {
         let completions = get_completions(source);
         for label in labels {
             assert!(
-                !completions.iter().any(|(_, completion_label)| completion_label == label),
+                !completions
+                    .iter()
+                    .any(|(_, completion_label)| completion_label == label),
                 "Completion '{label}' should NOT be present.\nGot: {completions:?}"
             );
         }
@@ -268,7 +271,9 @@ fn test() {
         assert!(
             !completions
                 .iter()
-                .any(|(_, completion_label)| completion_label == "vertex" || completion_label == "fragment" || completion_label == "compute"),
+                .any(|(_, completion_label)| completion_label == "vertex"
+                    || completion_label == "fragment"
+                    || completion_label == "compute"),
             "Attribute completions should not appear inside function body.\nGot: {completions:?}"
         );
     }
