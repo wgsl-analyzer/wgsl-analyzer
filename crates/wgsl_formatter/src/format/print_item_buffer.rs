@@ -26,10 +26,10 @@ use crate::format::print_item_buffer::request_folder::{Request, RequestFolder, R
 //   "add a comma, unless its followed by ')'" or "there should be a single space after 'fn' and before the name"
 // * In the formatting code we don't actually care about "what exactly the next or previous token is", instead
 //   we wan't to communicate that we may want separation to adjacent text.
-/// A wrapper for `PrintItem`s which adds the ability to do "item-requests"
+/// A wrapper for `PrintItem`s which adds the ability to do "item-requests".
 ///
 /// In a lot of places the intent is to have code of a particular shape, depending on its surroundings.
-/// "Add a space, if the previous item was something that we need to separation from"
+/// "Add a space, if the previous item was something that we need to separation from".
 ///
 /// All formatting should go through this struct, which keeps track of `PrintItemRequest`s.
 /// Example:
@@ -38,7 +38,7 @@ use crate::format::print_item_buffer::request_folder::{Request, RequestFolder, R
 /// * Snippet C requests that there may never be a space in front of it `|X|CCC`
 ///
 /// The `PrintItemBuffer` automatically tracks and resolves these requests, so that the outcome will be
-/// `AAA BBBCCC`, where the two spaces between A and B were collapsed and the space after B was overwritten
+/// `AAA BBBCCC`, where the two spaces between A and B were collapsed and the space after B was overwritten.
 ///
 /// Known downsides to this solution:
 /// * Exponential blowup when using with dprint's conditionals (not a big problem most of the time as not many dprint conditionals are used consecutively)
@@ -191,5 +191,15 @@ impl PrintItemBuffer {
     ) {
         self.apply_end_request();
         self.items.push_reevaluation(reeval);
+    }
+
+    pub fn start_indent(&mut self) {
+        // We do not apply_end_request, because the indentation can without problem "move" to before the spacing request
+        self.items.push_signal(Signal::StartIndent);
+    }
+
+    pub fn finish_indent(&mut self) {
+        // We do not apply_end_request, because the indentation can without problem "move" to before the spacing request
+        self.items.push_signal(Signal::FinishIndent);
     }
 }

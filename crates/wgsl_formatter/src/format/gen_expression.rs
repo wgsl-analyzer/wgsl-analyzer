@@ -103,7 +103,7 @@ pub fn gen_parenthesis_expression(
     } else {
         formatted.push_sc(sc!("("));
         formatted.push_signal(Signal::StartNewLineGroup);
-        formatted.push_signal(Signal::StartIndent);
+        formatted.start_indent();
 
         formatted.discourage(RequestItem::Space);
     }
@@ -115,7 +115,7 @@ pub fn gen_parenthesis_expression(
         formatted.expect(RequestItem::Space);
     } else {
         formatted.discourage(RequestItem::Space);
-        formatted.push_signal(Signal::FinishIndent);
+        formatted.finish_indent();
         formatted.push_signal(Signal::FinishNewLineGroup);
         formatted.push_sc(sc!(")"));
     }
