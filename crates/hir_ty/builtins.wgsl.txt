@@ -658,6 +658,7 @@ op_f16_constructor(bool) -> f16
 op_f16_constructor(u32) -> f16
 op_f16_constructor(i32) -> f16
 op_f16_constructor(f32) -> f16
+op_f16_constructor(f16) -> f16
 
 // TODO: Those are unused. Fix that, by merging them into the vector constructors
 op_convert(vecN<u32>) -> vecN<bool>

@@ -373,6 +373,42 @@ let b = vec4(vec3f(1f), 1f);
 }
 
 #[test]
+fn scalar_constructors() {
+    check_infer(
+        "
+fn foo() {
+    let a = f16(1.0f);
+    let b = f16(1h);
+    let c = i32(true);
+    let d = u32(3i);
+    let e = f32(2u);
+    let f = bool(0i);
+}
+    ",
+        expect![[r#"
+            19..20 'a': f16
+            23..32 'f16(1.0f)': f16
+            27..31 '1.0f': f32
+            42..43 'b': f16
+            46..53 'f16(1h)': f16
+            50..52 '1h': f16
+            63..64 'c': i32
+            67..76 'i32(true)': i32
+            71..75 'true': bool
+            86..87 'd': u32
+            90..97 'u32(3i)': u32
+            94..96 '3i': i32
+            107..108 'e': f32
+            111..118 'f32(2u)': f32
+            115..117 '2u': u32
+            128..129 'f': bool
+            132..140 'bool(0i)': bool
+            137..139 '0i': i32
+        "#]],
+    );
+}
+
+#[test]
 fn texture_storage_2d_template() {
     check_infer(
         "
