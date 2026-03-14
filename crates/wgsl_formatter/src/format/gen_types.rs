@@ -1,6 +1,4 @@
-use std::rc::Rc;
-
-use dprint_core::formatting::{LineNumber, LineNumberAnchor, PrintItems, Signal, conditions};
+use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position, put_back};
 use parser::SyntaxKind;
@@ -17,10 +15,8 @@ use crate::format::{
     gen_comments::gen_comments,
     gen_expression::gen_expression,
     gen_path::gen_path,
-    helpers::create_is_multiple_lines_resolver,
-    print_item_buffer::{
-        PrintItemBuffer, SeparationPolicy, SeparationRequest, request_folder::RequestItem,
-    },
+    multiline_group::MultilineGroup,
+    print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
 };
 
@@ -72,93 +68,42 @@ pub fn gen_template_list(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    // TODO Abstract this "fully multiline if at all multiline" functionality from here, index exprs, fn declarations, template lists, for-loops and wherever it also exists
-    let start_ln = LineNumber::new("start");
-    let end_ln = LineNumber::new("end");
-    let is_multiple_lines = create_is_multiple_lines_resolver(start_ln, end_ln);
-
     let mut formatted = PrintItemBuffer::new();
-    formatted.push_info(start_ln);
-    formatted.push_anchor(LineNumberAnchor::new(end_ln));
-    formatted.push_sc(sc!("<"));
 
-    let mut start_nl_condition = conditions::if_true_or(
-        "paramMultilineStartIndent",
-        Rc::clone(&is_multiple_lines),
-        {
-            let mut pi = PrintItems::default();
-            pi.push_signal(Signal::NewLine);
-            pi.push_signal(Signal::StartIndent);
-            pi
-        },
-        {
-            let mut pi = PrintItems::default();
-            pi.push_signal(Signal::PossibleNewLine);
-            pi
-        },
-    );
-    let start_reeval = start_nl_condition.create_reevaluation();
-    formatted.push_condition(start_nl_condition);
-    formatted.push_signal(Signal::StartNewLineGroup);
+    let mut multiline_group = MultilineGroup::new(&mut formatted);
 
-    // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
-    formatted.request(SeparationRequest::discouraged());
+    multiline_group.push_sc(sc!("<"));
 
-    formatted.extend(gen_comments(&item_comments_after_start));
+    multiline_group.start_indent();
+
+    multiline_group.extend(gen_comments(&item_comments_after_start));
 
     for (pos, (item_expression, item_comments_after_arg, item_comments_after_comma)) in
         item_args.into_iter().with_position()
     {
-        formatted.extend(gen_expression(&item_expression, false)?);
+        multiline_group.extend(gen_expression(&item_expression, false)?);
         if pos == Position::Last || pos == Position::Only {
-            formatted.push_condition(conditions::if_true(
-                "paramTrailingComma",
-                Rc::clone(&is_multiple_lines),
-                {
-                    let mut pi = PrintItems::default();
-                    pi.push_sc(sc!(","));
-                    pi
-                },
-            ));
+            multiline_group.extend_if_multi_line({
+                let mut pi = PrintItems::default();
+                pi.push_sc(sc!(","));
+                pi
+            });
         } else {
-            formatted.push_sc(sc!(","));
+            multiline_group.push_sc(sc!(","));
         }
 
         //The comma should be immediately after the parameter, we move the comment back
-        formatted.extend(gen_comments(&item_comments_after_arg));
-        formatted.extend(gen_comments(&item_comments_after_comma));
+        multiline_group.extend(gen_comments(&item_comments_after_arg));
+        multiline_group.extend(gen_comments(&item_comments_after_comma));
 
-        formatted.request(SeparationRequest {
-            line_break: SeparationPolicy::ExpectedIf {
-                on_branch: true,
-                of_resolver: Rc::clone(&is_multiple_lines),
-            },
-            space: SeparationPolicy::ExpectedIf {
-                on_branch: false,
-                of_resolver: Rc::clone(&is_multiple_lines),
-            },
-            ..Default::default()
-        });
+        multiline_group.grouped_newline_or_space();
     }
 
-    // No trailing spaces
-    formatted.discourage(RequestItem::Space);
+    multiline_group.finish_indent();
 
-    formatted.push_condition(conditions::if_true(
-        "paramMultilineEndIndent",
-        is_multiple_lines,
-        {
-            let mut pi = PrintItems::default();
-            pi.push_signal(Signal::FinishIndent);
-            pi
-        },
-    ));
+    multiline_group.push_sc(sc!(">"));
 
-    formatted.push_sc(sc!(">"));
-
-    formatted.push_signal(Signal::FinishNewLineGroup);
-    formatted.push_info(end_ln);
-    formatted.push_reevaluation(start_reeval);
+    multiline_group.end();
 
     Ok(formatted)
 }

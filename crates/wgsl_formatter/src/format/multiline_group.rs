@@ -84,6 +84,17 @@ impl<'buffer> MultilineGroup<'buffer> {
         });
     }
 
+    pub fn extend_if_multi_line(
+        &mut self,
+        items: PrintItems,
+    ) {
+        self.buffer.push_condition(conditions::if_true(
+            "paramTrailingComma",
+            Rc::clone(&self.is_multiple_lines),
+            items,
+        ));
+    }
+
     pub fn finish_indent(&mut self) {
         // No trailing spaces
         self.buffer.discourage(RequestItem::Space);
