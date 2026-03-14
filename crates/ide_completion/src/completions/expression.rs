@@ -7,7 +7,8 @@ use hir_def::{
 use hir_ty::{
     builtins::Builtin,
     ty::pretty::{
-        TypeVerbosity, pretty_fn_with_verbosity, pretty_type, pretty_type_with_verbosity,
+        TypeVerbosity, pretty_fn, pretty_fn_with_verbosity, pretty_type,
+        pretty_type_with_verbosity,
     },
 };
 
@@ -81,7 +82,7 @@ pub(crate) fn complete_names_in_scope(
         completion.set_detail(detail);
         completion.add_to(accumulator, context.database);
     });
-    accumulator.add_all(Builtin::ALL_BUILTINS.iter().map(|name| {
+    for name in Builtin::ALL_BUILTINS {
         let mut builder =
             CompletionItem::new(CompletionItemKind::Function, context.source_range(), *name);
         builder.with_relevance(|relevance| CompletionRelevance {
@@ -92,8 +93,18 @@ pub(crate) fn complete_names_in_scope(
             is_builtin: true,
             ..relevance
         });
-        builder.build(context.database)
-    }));
+
+        // Look up the builtin to get its signature for the detail string
+        if let Some(builtin) = Builtin::for_name(context.database, &Name::from(*name)) {
+            if let Some((_, overload)) = builtin.overloads().next() {
+                let function_details = overload.r#type.lookup(context.database);
+                let detail = pretty_fn(context.database, &function_details);
+                builder.set_detail(Some(detail));
+            }
+        }
+
+        builder.add_to(accumulator, context.database);
+    }
     None
 }
 

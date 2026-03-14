@@ -413,7 +413,13 @@ impl Parser<'_> {
             let node = self.cst.get(child);
             if let Node::Token(token, _) = node {
                 // Skip trivia tokens (whitespace, comments, errors).
-                if matches!(token, Token::Blankspace | Token::LineEndingComment | Token::BlockComment | Token::Error) {
+                if matches!(
+                    token,
+                    Token::Blankspace
+                        | Token::LineEndingComment
+                        | Token::BlockComment
+                        | Token::Error
+                ) {
                     continue;
                 }
                 return Some(token);

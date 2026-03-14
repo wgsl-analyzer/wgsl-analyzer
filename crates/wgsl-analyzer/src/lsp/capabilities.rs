@@ -6,10 +6,10 @@ use lsp_types::{
     FileOperationPattern, FileOperationPatternKind, FileOperationRegistrationOptions,
     FoldingRangeProviderCapability, HoverProviderCapability, InlayHintOptions,
     InlayHintServerCapabilities, OneOf, PositionEncodingKind, SaveOptions,
-    SelectionRangeProviderCapability, ServerCapabilities, TextDocumentSyncCapability,
-    TextDocumentSyncKind, TextDocumentSyncOptions, WorkDoneProgressOptions,
-    WorkspaceFileOperationsServerCapabilities, WorkspaceFoldersServerCapabilities,
-    WorkspaceServerCapabilities,
+    SelectionRangeProviderCapability, ServerCapabilities, SignatureHelpOptions,
+    TextDocumentSyncCapability, TextDocumentSyncKind, TextDocumentSyncOptions,
+    WorkDoneProgressOptions, WorkspaceFileOperationsServerCapabilities,
+    WorkspaceFoldersServerCapabilities, WorkspaceServerCapabilities,
 };
 use rustc_hash::FxHashSet;
 
@@ -142,7 +142,13 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
             },
         )),
         inline_completion_provider: None, // Not relevant
-        signature_help_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/341
+        signature_help_provider: Some(SignatureHelpOptions {
+            trigger_characters: Some(vec!["(".to_owned(), ",".to_owned()]),
+            retrigger_characters: None,
+            work_done_progress_options: WorkDoneProgressOptions {
+                work_done_progress: None,
+            },
+        }),
     }
 }
 

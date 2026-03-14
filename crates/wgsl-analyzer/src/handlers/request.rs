@@ -113,6 +113,19 @@ pub(crate) fn handle_completion(
     Ok(Some(completion_list.into()))
 }
 
+pub(crate) fn handle_signature_help(
+    snap: GlobalStateSnapshot,
+    params: lsp_types::SignatureHelpParams,
+) -> anyhow::Result<Option<lsp_types::SignatureHelp>> {
+    let _p = tracing::info_span!("handle_signature_help").entered();
+    let position = try_default!(from_proto::file_position(
+        &snap,
+        &params.text_document_position_params
+    )?);
+    let help = snap.analysis.signature_help(position)?;
+    Ok(help.map(to_proto::signature_help))
+}
+
 pub(crate) fn handle_folding_range(
     snap: GlobalStateSnapshot,
     parameters: FoldingRangeParams,

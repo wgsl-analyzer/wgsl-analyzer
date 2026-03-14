@@ -393,4 +393,3 @@ pub(crate) fn any_diag_from_global_var(
         },
     }
 }
-

@@ -2,7 +2,7 @@ use std::ops::Not as _;
 
 use base_db::{FileRange, TextRange, TextSize};
 use ide::{
-    Cancellable, Fold, FoldKind, NavigationTarget,
+    Cancellable, Fold, FoldKind, NavigationTarget, SignatureHelp,
     inlay_hints::{
         InlayFieldsToResolve, InlayHint, InlayHintLabel, InlayHintLabelPart, InlayKind,
         LazyProperty,
@@ -702,5 +702,39 @@ pub(crate) fn goto_definition_response(
             .map(|range| location(snap, range))
             .collect::<Cancellable<Vec<_>>>()?;
         Ok(locations.into())
+    }
+}
+
+
+pub(crate) fn signature_help(help: SignatureHelp) -> lsp_types::SignatureHelp {
+    let signatures = help
+        .signatures
+        .into_iter()
+        .map(|sig| {
+            let parameters = Some(
+                sig.parameters
+                    .into_iter()
+                    .map(|param| lsp_types::ParameterInformation {
+                        label: lsp_types::ParameterLabel::LabelOffsets([
+                            param.label_start,
+                            param.label_end,
+                        ]),
+                        documentation: None,
+                    })
+                    .collect(),
+            );
+            lsp_types::SignatureInformation {
+                label: sig.label,
+                documentation: None,
+                parameters,
+                active_parameter: None,
+            }
+        })
+        .collect();
+
+    lsp_types::SignatureHelp {
+        signatures,
+        active_signature: help.active_signature.map(|s| s as u32),
+        active_parameter: help.active_parameter,
     }
 }

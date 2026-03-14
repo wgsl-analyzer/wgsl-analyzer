@@ -1,0 +1,165 @@
+use base_db::{FilePosition, TextSize};
+use hir::{HirDatabase as _, Semantics};
+use hir_def::{database::DefDatabase as _, item_tree::Name};
+use hir_ty::{
+    builtins::Builtin,
+    function::FunctionDetails,
+    infer::ResolvedCall,
+    ty::pretty::pretty_type,
+};
+use ide_db::RootDatabase;
+use syntax::{AstNode, SyntaxKind, SyntaxToken, ast};
+
+/// Signature help information for a function call.
+#[derive(Debug, Clone)]
+pub struct SignatureHelp {
+    pub signatures: Vec<SignatureInformation>,
+    pub active_signature: Option<usize>,
+    pub active_parameter: Option<u32>,
+}
+
+/// Information about a single function signature.
+#[derive(Debug, Clone)]
+pub struct SignatureInformation {
+    pub label: String,
+    pub parameters: Vec<ParameterInformation>,
+}
+
+/// Information about a single parameter.
+#[derive(Debug, Clone)]
+pub struct ParameterInformation {
+    /// Byte offset range within the signature label string.
+    pub label_start: u32,
+    pub label_end: u32,
+}
+
+pub(crate) fn signature_help(
+    database: &RootDatabase,
+    position: FilePosition,
+) -> Option<SignatureHelp> {
+    let semantics = Semantics::new(database);
+    let file_id = database.editioned_file_id(position.file_id);
+    let source_file = semantics.parse(file_id);
+    let syntax = source_file.syntax();
+
+    // Find the token at the cursor position
+    let token = syntax.token_at_offset(position.offset).left_biased()?;
+
+    // Walk up to find the enclosing Arguments node
+    let (function_call, arguments_node, active_parameter) =
+        find_enclosing_call(&token, position.offset)?;
+
+    // Try to resolve the function call via type inference
+    let container = semantics.find_container(file_id.into(), function_call.syntax())?;
+    let def_with_body = container.as_def_with_body_id()?;
+    let analyzed = semantics.analyze(def_with_body);
+
+    let call_expr = ast::Expression::FunctionCall(function_call.clone());
+    let expression_id = analyzed.expression_id(&call_expr);
+
+    let mut signatures = Vec::new();
+    let mut active_sig = None;
+
+    if let Some(expr_id) = expression_id {
+        if let Some(resolved) = analyzed.infer.call_resolution(expr_id) {
+            match resolved {
+                ResolvedCall::Function(func_id) => {
+                    let function = func_id.lookup(database);
+                    signatures.push(build_signature(database, &function));
+                    active_sig = Some(0);
+                },
+                ResolvedCall::OtherTypeInitializer(_) => return None,
+            }
+        }
+    }
+
+    // If we couldn't resolve via inference, try name-based lookup for builtins
+    if signatures.is_empty() {
+        if let Some(ident_expr) = function_call.ident_expression() {
+            let name_text = ident_expr.syntax().text().to_string();
+            // Remove template parameters if present
+            let name_text = name_text.split('<').next().unwrap_or(&name_text).trim();
+            let name = Name::from(name_text);
+            if let Some(builtin) = Builtin::for_name(database, &name) {
+                for (idx, (_, overload)) in builtin.overloads().enumerate() {
+                    let function = overload.r#type.lookup(database);
+                    signatures.push(build_signature(database, &function));
+                    if idx == 0 {
+                        active_sig = Some(0);
+                    }
+                }
+            }
+        }
+    }
+
+    if signatures.is_empty() {
+        return None;
+    }
+
+    Some(SignatureHelp {
+        signatures,
+        active_signature: active_sig,
+        active_parameter: Some(active_parameter),
+    })
+}
+
+fn find_enclosing_call(
+    token: &SyntaxToken,
+    offset: TextSize,
+) -> Option<(ast::FunctionCall, ast::Arguments, u32)> {
+    // Walk up ancestors to find an Arguments node
+    for ancestor in token.parent_ancestors() {
+        if let Some(arguments) = ast::Arguments::cast(ancestor.clone()) {
+            // The parent of Arguments should be a FunctionCall
+            let function_call = ast::FunctionCall::cast(ancestor.parent()?)?;
+
+            // Count commas before the cursor to determine active parameter
+            let mut param_index: u32 = 0;
+            for child in arguments.syntax().children_with_tokens() {
+                if child.text_range().start() >= offset {
+                    break;
+                }
+                if child.kind() == SyntaxKind::Comma {
+                    param_index += 1;
+                }
+            }
+
+            return Some((function_call, arguments, param_index));
+        }
+    }
+    None
+}
+
+fn build_signature(
+    database: &RootDatabase,
+    function: &FunctionDetails,
+) -> SignatureInformation {
+    let mut label = format!("fn {}(", function.name.as_str());
+    let mut parameters = Vec::new();
+
+    for (idx, (ty, name)) in function.parameters_with_names().enumerate() {
+        if idx > 0 {
+            label.push_str(", ");
+        }
+        let param_start = label.len() as u32;
+        let type_str = pretty_type(database, ty);
+        let param_name = name;
+        label.push_str(param_name);
+        label.push_str(": ");
+        label.push_str(&type_str);
+        let param_end = label.len() as u32;
+        parameters.push(ParameterInformation {
+            label_start: param_start,
+            label_end: param_end,
+        });
+    }
+
+    label.push(')');
+    if let Some(return_type) = function.return_type {
+        label.push_str(" -> ");
+        label.push_str(&pretty_type(database, return_type));
+    }
+
+    SignatureInformation { label, parameters }
+}
+

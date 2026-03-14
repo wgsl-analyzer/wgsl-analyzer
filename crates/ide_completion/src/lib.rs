@@ -80,7 +80,7 @@ mod tests {
 
     use crate::{CompletionConfig, CompletionFieldsToResolve, CompletionItemKind, completions2};
 
-    fn get_completions(source: &str) -> Vec<(CompletionItemKind, String)> {
+    fn get_completion_items(source: &str) -> Vec<crate::CompletionItem> {
         let fixture = ChangeFixture::parse(source);
         let mut database = ide_db::RootDatabase::new(None);
         database.apply_change(fixture.change);
@@ -110,8 +110,11 @@ mod tests {
             fields_to_resolve: CompletionFieldsToResolve::empty(),
             exclude_flyimport: vec![],
         };
-        let items = completions2(&database, &config, position, None).unwrap_or_default();
-        items
+        completions2(&database, &config, position, None).unwrap_or_default()
+    }
+
+    fn get_completions(source: &str) -> Vec<(CompletionItemKind, String)> {
+        get_completion_items(source)
             .into_iter()
             .map(|item| (item.kind, item.label.primary.to_string()))
             .collect()
@@ -221,6 +224,30 @@ fn test() {}
 ",
             CompletionItemKind::Keyword,
             &["vertex", "fragment", "compute"],
+        );
+    }
+
+    // --- Builtin detail completions (#291) ---
+
+    #[test]
+    fn builtin_completions_have_signature_detail() {
+        let items = get_completion_items(
+            "
+fn test() {
+    $0
+}
+",
+        );
+        // Find the `abs` builtin completion
+        let abs_item = items
+            .iter()
+            .find(|item| item.kind == CompletionItemKind::Function && item.label.primary == "abs")
+            .expect("Expected 'abs' builtin completion");
+        let detail = abs_item.detail.as_deref().expect("Expected 'abs' to have a detail string");
+        // The detail should be a function signature like "fn(T) -> T"
+        assert!(
+            detail.starts_with("fn("),
+            "Expected detail to start with 'fn(', got: {detail}"
         );
     }
 
