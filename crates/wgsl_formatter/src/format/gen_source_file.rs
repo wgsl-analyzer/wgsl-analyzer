@@ -20,7 +20,7 @@ use crate::format::{
     },
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing, todo_verbatim_wesl},
     print_item_buffer::{
-        PrintItemBuffer, SeparationRequest,
+        PrintItemBuffer,
         request_folder::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
@@ -86,7 +86,15 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
     // ==== Format ====
 
     let mut formatted = PrintItemBuffer::new();
-    formatted.request(SeparationRequest::discouraged());
+    formatted.request_request(Request::Unconditional {
+        expected: BTreeSet::new(),
+        discouraged: BTreeSet::from([
+            RequestItem::EmptyLine,
+            RequestItem::LineBreak,
+            RequestItem::Space,
+        ]),
+        forced: BTreeSet::new(),
+    });
 
     for item in items {
         match item {
