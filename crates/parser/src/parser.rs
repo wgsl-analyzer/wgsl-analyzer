@@ -233,6 +233,44 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         }
     }
 
+    fn create_node_translation_unit(
+        &mut self,
+        node_ref: NodeRef,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        let mut seen_declaration = false;
+        for child in self.cst.children(node_ref) {
+            match self.cst.get(child) {
+                Node::Rule(rule, end_offset) if usize::from(end_offset) > 0 => match rule {
+                    // Declarations and asserts
+                    Rule::FunctionDeclaration
+                    | Rule::VariableDeclaration
+                    | Rule::ConstDeclaration
+                    | Rule::OverrideDeclaration
+                    | Rule::TypeAliasDeclaration
+                    | Rule::StructDeclaration
+                    | Rule::GlobalLetDeclaration
+                    | Rule::AssertStatement => {
+                        seen_declaration = true;
+                    },
+                    // Directives
+                    Rule::DiagnosticDirective
+                    | Rule::EnableDirective
+                    | Rule::RequiresDirective => {
+                        if seen_declaration {
+                            diags.push(self.create_diagnostic(
+                                self.cst.span(child),
+                                "directives must come before any declarations".to_owned(),
+                            ));
+                        }
+                    },
+                    _ => {},
+                },
+                _ => {},
+            }
+        }
+    }
+
     fn create_node_let_declaration(
         &mut self,
         node_ref: NodeRef,

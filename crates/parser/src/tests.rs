@@ -2525,6 +2525,68 @@ fn requires_directive() {
 }
 
 #[test]
+fn directive_after_declaration() {
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/683
+    // Directives must come before any declarations.
+    check(
+        "const a = 3;
+enable f16;",
+        expect![[r#"
+            SourceFile@0..24
+              ConstantDeclaration@0..12
+                Constant@0..5 "const"
+                Blankspace@5..6 " "
+                Name@6..7
+                  Identifier@6..7 "a"
+                Blankspace@7..8 " "
+                Equal@8..9 "="
+                Blankspace@9..10 " "
+                Literal@10..11
+                  IntLiteral@10..11 "3"
+                Semicolon@11..12 ";"
+              Blankspace@12..13 "\n"
+              EnableDirective@13..24
+                Enable@13..19 "enable"
+                Blankspace@19..20 " "
+                EnableExtensionName@20..23
+                  Identifier@20..23 "f16"
+                Semicolon@23..24 ";"
+
+            error at 13..24: directives must come before any declarations"#]],
+    );
+}
+
+#[test]
+fn directive_before_declaration_ok() {
+    // Directives before declarations should NOT produce an error.
+    check(
+        "enable f16;
+const a = 3;",
+        expect![[r#"
+            SourceFile@0..24
+              EnableDirective@0..11
+                Enable@0..6 "enable"
+                Blankspace@6..7 " "
+                EnableExtensionName@7..10
+                  Identifier@7..10 "f16"
+                Semicolon@10..11 ";"
+              Blankspace@11..12 "\n"
+              ConstantDeclaration@12..24
+                Constant@12..17 "const"
+                Blankspace@17..18 " "
+                Name@18..19
+                  Identifier@18..19 "a"
+                Blankspace@19..20 " "
+                Equal@20..21 "="
+                Blankspace@21..22 " "
+                Literal@22..23
+                  IntLiteral@22..23 "3"
+                Semicolon@23..24 ";""#]],
+    );
+}
+
+
+#[test]
 fn struct_underscore_field_name() {
     check(
         "
