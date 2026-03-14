@@ -1,44 +1,20 @@
+use std::fmt::Display;
+
 use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
-use rowan::{NodeOrToken, TextRange};
-use thiserror::Error;
+use rowan::NodeOrToken;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum FormatDocumentErrorKind {
-    UnexpectedToken {
+pub enum FormatDocumentError {
+    UnexpectedNodeOrToken {
         received: NodeOrToken<SyntaxNode, SyntaxToken>,
     },
-    UnexpectedModuleNode,
+    UnsupportedNodeOrToken {
+        received: NodeOrToken<SyntaxNode, SyntaxToken>,
+    },
     MissingTokens {
         expected: Option<SyntaxKind>,
     },
     MissingNode,
-}
-
-impl FormatDocumentErrorKind {
-    pub const fn at(
-        self,
-        text_range: TextRange,
-    ) -> FormatDocumentError {
-        FormatDocumentError {
-            error_kind: self,
-            text_range: Some(text_range),
-        }
-    }
-
-    #[deprecated(note = "Only exists while prototyping")]
-    pub const fn without_range(self) -> FormatDocumentError {
-        FormatDocumentError {
-            error_kind: self,
-            text_range: None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Error)]
-#[error("Error while formatting: {error_kind:?} at {text_range:?}")]
-pub struct FormatDocumentError {
-    pub error_kind: FormatDocumentErrorKind,
-    pub text_range: Option<TextRange>,
 }
 
 pub type FormatDocumentResult<T> = Result<T, FormatDocumentError>;
