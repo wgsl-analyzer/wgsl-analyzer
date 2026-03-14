@@ -644,6 +644,14 @@ More complex operands must be this with parenthesized `()`"
                         frange.range,
                     )
                 },
+                AnyDiagnostic::ReservedIdentifier { name, range, .. } => Diagnostic::new(
+                    DiagnosticCode("24"),
+                    format!(
+                        "identifier '{}' is reserved; identifiers starting with '__' are reserved by the WGSL specification",
+                        name.as_str()
+                    ),
+                    range,
+                ),
             }
         })
         .collect()
@@ -746,6 +754,32 @@ var<storage> lines: array<LineSegment>;
             expect![[r#"
                 48..59 Error 14: `LineSegment` not found in scope
             "#]],
+        );
+    }
+
+    #[test]
+    fn reserved_identifier_double_underscore() {
+        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/681
+        // Identifiers starting with "__" are reserved by the WGSL spec.
+        check_diagnostics(
+            "
+fn __my_func() {}
+",
+            expect![[r#"
+                3..12 Error 24: identifier '__my_func' is reserved; identifiers starting with '__' are reserved by the WGSL specification
+            "#]],
+        );
+    }
+
+    #[test]
+    fn non_reserved_identifier_single_underscore() {
+        // A single underscore prefix should NOT trigger the reserved identifier diagnostic.
+        check_diagnostics(
+            "
+fn _my_func() {}
+",
+            expect![[r#"
+"#]],
         );
     }
 

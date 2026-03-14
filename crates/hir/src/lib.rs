@@ -853,6 +853,54 @@ impl Module {
         config: &DiagnosticsConfig,
         accumulator: &mut Vec<AnyDiagnostic>,
     ) {
+        // Check for identifiers starting with "__" (reserved by the WGSL spec)
+        {
+            let item_tree = database.item_tree(self.file_id);
+            let ast_id_map = database.ast_id_map(self.file_id);
+            let root = database.parse_or_resolve(self.file_id).syntax();
+
+            macro_rules! check_reserved {
+                ($id:expr, $item_tree:expr, $ast_id_map:expr, $root:expr, $accumulator:expr, $file_id:expr) => {{
+                    let data = $item_tree.get(*$id);
+                    if data.name.as_str().starts_with("__") {
+                        let ast_ptr = $ast_id_map.get(data.ast_id);
+                        let node = ast_ptr.to_node(&$root);
+                        if let Some(name_node) = node.name() {
+                            $accumulator.push(AnyDiagnostic::ReservedIdentifier {
+                                file_id: $file_id,
+                                name: data.name.clone(),
+                                range: name_node.syntax().text_range(),
+                            });
+                        }
+                    }
+                }};
+            }
+
+            for item in item_tree.items() {
+                match item {
+                    ModuleItem::Function(id) => {
+                        check_reserved!(id, item_tree, ast_id_map, root, accumulator, self.file_id);
+                    },
+                    ModuleItem::GlobalVariable(id) => {
+                        check_reserved!(id, item_tree, ast_id_map, root, accumulator, self.file_id);
+                    },
+                    ModuleItem::GlobalConstant(id) => {
+                        check_reserved!(id, item_tree, ast_id_map, root, accumulator, self.file_id);
+                    },
+                    ModuleItem::Override(id) => {
+                        check_reserved!(id, item_tree, ast_id_map, root, accumulator, self.file_id);
+                    },
+                    ModuleItem::Struct(id) => {
+                        check_reserved!(id, item_tree, ast_id_map, root, accumulator, self.file_id);
+                    },
+                    ModuleItem::TypeAlias(id) => {
+                        check_reserved!(id, item_tree, ast_id_map, root, accumulator, self.file_id);
+                    },
+                    ModuleItem::ImportStatement(_) | ModuleItem::GlobalAssertStatement(_) => {},
+                }
+            }
+        }
+
         for item in self.items(database) {
             match item {
                 ModuleDef::Function(_function) => {},

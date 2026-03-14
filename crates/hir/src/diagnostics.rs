@@ -147,6 +147,11 @@ pub enum AnyDiagnostic {
         expression: InFile<AstPointer<ast::Expression>>,
         message: String,
     },
+    ReservedIdentifier {
+        file_id: HirFileId,
+        name: Name,
+        range: TextRange,
+    },
     ExpectedLoweredKind {
         expression: InFile<AstPointer<ast::Expression>>,
         expected: LoweredKind,
@@ -181,7 +186,8 @@ impl AnyDiagnostic {
             Self::InvalidTypeSpecifier { type_specifier, .. } => type_specifier.file_id,
             Self::NagaValidationError { file_id, .. }
             | Self::ParseError { file_id, .. }
-            | Self::CyclicType { file_id, .. } => *file_id,
+            | Self::CyclicType { file_id, .. }
+            | Self::ReservedIdentifier { file_id, .. } => *file_id,
         }
     }
 }
